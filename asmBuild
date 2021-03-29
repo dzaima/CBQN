@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+clang -std=c11 -Wall -Wno-microsoft-anon-tag -fms-extensions -O3 -masm=intel -S src/main.c

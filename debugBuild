@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+clang -DDEBUG -std=c11 -g -Wall -Wno-microsoft-anon-tag -fms-extensions -o BQN -lm src/main.c

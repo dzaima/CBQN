@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+./cc.bqn $1 r > src/runtime
+./cc.bqn $1 c > src/compiler
