@@ -47,9 +47,9 @@ B scan_c1(B t, B f, B x) {
   if (!isArr(x)) return err("`: argument cannot be a scalar");
   ur xr = a(x)->rank;
   if (xr==0) return err("`: argument cannot be a scalar");
-  HArr_p r = m_harrc(x);
+  HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inci(x)) : m_harrc(x);
   usz ia = r.c->ia;
-  if (ia==0) return r.b;
+  if (ia==0) { dec(x); return r.b; }
   BS2B xget = TI(x).get;
   if (xr==1) {
     r.a[0] = xget(x,0);
@@ -65,30 +65,26 @@ B scan_c1(B t, B f, B x) {
 B scan_c2(B t, B f, B w, B x) {
   if (!isArr(x)) return err("`: 𝕩 cannot be a scalar");
   ur xr = a(x)->rank; usz* xsh = a(x)->sh; BS2B xget = TI(x).get;
+  HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inci(x)) : m_harrc(x);
+  usz ia = r.c->ia;
   if (isArr(w)) {
     ur wr = a(w)->rank; usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");
     if (wr+1 != xr) return err("`: shape of 𝕨 must match the cell of 𝕩");
     if (memcmp(wsh, xsh+1, wr)) return err("`: shape of 𝕨 must match the cell of 𝕩");
-    HArr_p r = m_harrc(x);
-    usz ia = r.c->ia;
-    if (ia==0) return r.b;
+    if (ia==0) { dec(x); return r.b; }
     usz csz = arr_csz(x);
     for (usz i = 0; i < csz; i++) r.a[i] = c2(f, wget(w,i), xget(x,i));
     for (usz i = csz; i < ia; i++) r.a[i] = c2(f, inci(r.a[i-csz]), xget(x,i));
     dec(w);
-    dec(x);
-    return r.b;
   } else {
     if (xr!=1) return err("`: if 𝕨 is scalar, 𝕩 must be a vector");
-    HArr_p r = m_harrc(x);
-    usz ia = r.c->ia;
-    if (ia==0) return r.b;
+    if (ia==0) { dec(x); return r.b; }
     B pr = r.a[0] = c2(f, w, xget(x,0));
     for (usz i = 1; i < ia; i++) r.a[i] = pr = c2(f, inci(pr), xget(x,i));
-    dec(x);
-    return r.b;
   }
+  dec(x);
+  return r.b;
 }
 
 
