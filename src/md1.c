@@ -3,6 +3,11 @@
 B tbl_c1(B t, B f, B x) {
   if (!isArr(x)) return err("⌜: argument was atom");
   usz ia = a(x)->ia;
+  if (v(x)->type==t_harr && reusable(x)) {
+    B* p = harr_ptr(x);
+    for (usz i = 0; i < ia; i++) p[i] = c1(f, p[i]);
+    return x;
+  }
   HArr_p r = m_harrc(x);
   BS2B xget = TI(x).get;
   for (usz i = 0; i < ia; i++) r.a[i] = c1(f, xget(x,i));
