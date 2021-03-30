@@ -8,7 +8,7 @@ enum {
   ARRM =  4, // N; create a mutable vector of top N items
   FN1C =  5, // monadic function call ⟨…,x,f  ⟩ → F x
   FN2C =  6, //  dyadic function call ⟨…,x,f,w⟩ → w F x
-  OP1D =  7, // derive 1-modifier to function; ⟨…,  _m,f⟩ → (f _m) 
+  OP1D =  7, // derive 1-modifier to function; ⟨…,  _m,f⟩ → (f _m)
   OP2D =  8, // derive 2-modifier to function; ⟨…,g,_m,f⟩ → (f _m_ g)
   TR2D =  9, // derive 2-train aka atop; ⟨…,  g,f⟩ → (f g)
   TR3D = 10, // derive 3-train aka fork; ⟨…,h,g,f⟩ → (f g h)
@@ -211,7 +211,7 @@ B v_set(Scope* sc, B s, B x, bool upd) { // frees s, consumes x, returns previou
     }
     sc->vars[(u32)s.u] = x;
   } else {
-    assert(isArr(s) && v(s)->type==t_harr);
+    VT(s, t_harr);
     if (!shEq(s, x)) return err("spread assignment: mismatched shape");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
@@ -228,7 +228,7 @@ B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut;
     sc->vars[(u32)s.u] = bi_optOut;
     return r;
   } else {
-    assert(isArr(s) && v(s)->type==t_harr);
+    VT(s, t_harr);
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
     HArr_p r = m_harrv(ia);

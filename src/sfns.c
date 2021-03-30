@@ -8,11 +8,9 @@ B shape_c1(B t, B x) {
       arr_shVec(x, ia);
       return x;
     }
-    HArr_p r = m_harrv(ia);
-    BS2B xget = TI(x).get;
-    for (i32 i = 0; i < ia; i++) r.a[i] = xget(x,i);
-    dec(x);
-    return r.b;
+    B r = TI(x).slice(x, 0);
+    arr_shVec(r, ia);
+    return r;
   } else return err("reshaping non-array");
 }
 B shape_c2(B t, B w, B x) {
@@ -22,19 +20,10 @@ B shape_c2(B t, B w, B x) {
     ur nr = a(w)->ia;
     usz nia = a(x)->ia;
     B r;
-    bool reuse = reusable(x);
-    if (reuse) {
-      r = x;
-      decSh(x);
-    } else {
-      HArr_p rg = m_harrp(nia);
-      BS2B xget = TI(x).get;
-      for (usz i = 0; i < nia; i++) rg.a[i] = xget(x,i);
-      r = rg.b;
-    }
+    if (reusable(x)) { r = x; decSh(x); }
+    else r = TI(x).slice(x, 0);
     usz* sh = arr_shAlloc(r, nia, nr);
     if (sh) for (i32 i = 0; i < nr; i++) sh[i] = o2i(wget(w,i));
-    if (!reuse) dec(x);
     dec(w);
     return r;
   } else return err("reshaping non-array");

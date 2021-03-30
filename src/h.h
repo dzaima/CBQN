@@ -59,8 +59,9 @@ enum Type {
   /*10*/ t_md1D, t_md2D, t_md2H,
   
   /*13*/ t_harr, t_i32arr,
+  /*15*/ t_hslice, t_i32slice,
   
-  /*15*/ t_comp, t_block, t_body, t_scope,
+  /*17*/ t_comp, t_block, t_body, t_scope,
   
   
   Type_MAX
@@ -103,7 +104,7 @@ typedef struct Value {
   i32 refc;
   u16 flags; // incl GC stuff when that's a thing, possibly whether is sorted/a permutation/whatever, bucket size, etc
   u8 type; // needed globally so refc-- and GC know what to visit
-  u8 extra; // whatever object-specific stuff. Rank for arrays, id for functions
+  ur extra; // whatever object-specific stuff. Rank for arrays, id for functions
 } Value;
 typedef struct Arr {
   struct Value;
@@ -112,7 +113,8 @@ typedef struct Arr {
 } Arr;
 
 // memory manager
-B mm_alloc(usz sz, u8 type, u64 tag);
+B     mm_alloc (usz sz, u8 type, u64 tag);
+void* mm_allocN(usz sz, u8 type);
 void mm_free(Value* x);
 void mm_visit(B x);
 
@@ -122,15 +124,18 @@ void inc(B x);
 void ptr_dec(void* x);
 void ptr_inc(void* x);
 void print(B x);
+void arr_print(B x);
 B m_v1(B a               );
 B m_v2(B a, B b          );
 B m_v3(B a, B b, B c     );
 B m_v4(B a, B b, B c, B d);
 
 #define c(T,x) ((T*)((x).u&0xFFFFFFFFFFFFull))
+#define VT(x,t) assert(isVal(x) && v(x)->type==t)
 Value* v(B x) { return c(Value, x); }
 Arr*   a(B x) { return c(Arr  , x); }
-#define rnk(x) (v(x)->extra) // expects argument to be Arr
+#define  rnk(x  ) (v(x)->extra) // expects argument to be Arr
+#define srnk(x,v) (x)->extra=(v)
 
 void print_vmStack();
 #ifdef DEBUG
@@ -237,8 +242,19 @@ usz o2s  (B x) { if ((usz)x.f!=x.f) err("o2s"": expected integer"); return (usz)
 i64 o2i64(B x) { if ((i64)x.f!=x.f) err("o2i64: expected integer"); return (i64)x.f; }
 
 
+
+typedef struct Slice {
+  struct Arr;
+  B p;
+} Slice;
+void slice_free(B x) { dec(c(Slice,x)->p); decSh(x); }
+void slice_print(B x) { arr_print(x); }
+
+
+
 typedef void (*B2V)(B);
-typedef B (*BS2B)(B, usz);
+typedef B (* BS2B)(B, usz);
+typedef B (*BSS2B)(B, usz, usz);
 typedef B (*    B2B)(B);
 typedef B (*   BB2B)(B, B);
 typedef B (*  BBB2B)(B, B, B);
@@ -253,16 +269,18 @@ typedef struct TypeInfo {
   BB2B  m1_d; // consume all args
   BBB2B m2_d; // consume all args
   B2B decompose; // consumes; must return a HArr
+  BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
 } TypeInfo;
 TypeInfo ti[Type_MAX];
 #define TI(x) (ti[v(x)->type])
 
 
 void do_nothing(B x) { }
-B    get_self(B x, usz n) { return x; }
 void def_print(B x) { printf("(type %d)", v(x)->type); }
+B    get_self(B x, usz n) { return x; }
 B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
 B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
+B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
 B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 
 B bi_nothing, bi_noVar, bi_badHdr, bi_optOut;
@@ -274,6 +292,7 @@ void hdr_init() {
     ti[i].m1_d = def_m1_d;
     ti[i].m2_d = def_m2_d;
     ti[i].decompose = def_decompose;
+    ti[i].slice = def_slice;
   }
   bi_nothing = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);
@@ -402,7 +421,6 @@ void arr_print(B x) {
   }
   printf("⟩");
 }
-
 
 
 #ifdef DEBUG

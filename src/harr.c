@@ -34,10 +34,7 @@ HArr_p m_harrp(usz ia) { // doesn't write any shape/size info! be careful!
 
 
 
-B* harr_ptr(B x) {
-  assert(v(x)->type==t_harr);
-  return c(HArr,x)->a;
-}
+B* harr_ptr(B x) { VT(x,t_harr); return c(HArr,x)->a; }
 
 HArr* toHArr(B x) {
   if (v(x)->type==t_harr) return c(HArr,x);
@@ -75,22 +72,27 @@ B m_v3(B a, B b, B c     ) { HArr_p r = m_harrv(3); r.a[0] = a; r.a[1] = b; r.a[
 B m_v4(B a, B b, B c, B d) { HArr_p r = m_harrv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; return r.b; }
 
 
+typedef struct HSlice {
+  struct Slice;
+  B* a;
+} HSlice;
+B m_hslice(B p, B* ptr) { HSlice* r = mm_allocN(sizeof(HSlice), t_hslice); r->p=p; r->a = ptr; return tag(r, ARR_TAG); }
+B harr_slice  (B x, usz s) { return m_hslice(x, c(HArr,x)->a+s); }
+B hslice_slice(B x, usz s) { B r=m_hslice(inci(c(HSlice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
 
-void harr_print(B x) {
-  arr_print(x);
-}
-B harr_get(B x, usz n) {
-  return inci(c(HArr,x)->a[n]);
-}
+
 void harr_free(B x) {
   decSh(x);
   B* p = harr_ptr(x);
   usz ia = a(x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
+B harr_get  (B x, usz n) { VT(x,t_harr  ); return inci(c(HArr  ,x)->a[n]); }
+B hslice_get(B x, usz n) { VT(x,t_hslice); return inci(c(HSlice,x)->a[n]); }
 
 void harr_init() {
-  ti[t_harr].free = harr_free;
-  ti[t_harr].print = harr_print;
-  ti[t_harr].get = harr_get;
+  ti[t_harr].get   = harr_get;   ti[t_hslice].get   = hslice_get;
+  ti[t_harr].slice = harr_slice; ti[t_hslice].slice = hslice_slice;
+  ti[t_harr].free  = harr_free;  ti[t_hslice].free  =  slice_free;
+  ti[t_harr].print =  arr_print; ti[t_hslice].print = arr_print;
 }
