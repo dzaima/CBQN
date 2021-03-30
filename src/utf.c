@@ -25,3 +25,10 @@ B fromUTF8(char* s, u64 len) {
   for (u64 i = 0; i < len; i+= utf8_len(s[i])) r.a[p++] = m_c32(utf8_p((u8*)s+i)); // may read after end, eh
   return r.b;
 }
+
+void printUTF8(u32 c) {
+  if (c<128) printf("%c", c);
+  else if (c<=0x07FF) printf("%c%c"    , 0xC0| c>>6 , 0x80| (c      &0x3F)                                    );
+  else if (c<=0xFFFF) printf("%c%c%c"  , 0xE0| c>>12, 0x80| (c>>6   &0x3F), 0x80| (c    &0x3F)                );
+  else                printf("%c%c%c%c", 0xF0| c>>18, 0x80| (c>>12  &0x3F), 0x80| (c>>6 &0x3F), 0x80| (c&0x3F));
+}

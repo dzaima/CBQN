@@ -67,7 +67,7 @@ enum Type {
 };
 
 enum PrimFns {
-  pf_not,
+  pf_none,
   pf_add, pf_sub, pf_mul, pf_div, pf_pow, pf_floor, pf_eq, pf_le, pf_log, // arith.c
   pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_lt, pf_rt, // sfns.c
   pf_fork, pf_atop, pf_md1d, pf_md2d, // derv.c
@@ -75,19 +75,19 @@ enum PrimFns {
 };
 char* format_pf(u8 u) {
   switch(u) {
-    default: case pf_not: return"(unknown fn)";
+    default: case pf_none: return"(unknown fn)";
     case pf_add:return"+"; case pf_sub:return"-"; case pf_mul:return"×"; case pf_div:return"÷"; case pf_pow:return"⋆"; case pf_floor:return"⌊"; case pf_eq:return"="; case pf_le:return"≤"; case pf_log:return"⋆⁼";
     case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_lt:return"⊣"; case pf_rt:return"⊢";
     case pf_fork:return"(fork)"; case pf_atop:return"(atop)"; case pf_md1d:return"(derived 1-modifier)"; case pf_md2d:return"(derived 2-modifier)";
     case pf_type:return"•Type"; case pf_decp:return"•Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•GroupOrd"; case pf_asrt:return"!";  }
 }
 enum PrimMd1 {
-  pm1_not,
+  pm1_none,
   pm1_tbl, pm1_scan, // md1.c
 };
 char* format_pm1(u8 u) {
   switch(u) {
-    default: case pf_not: return"(unknown 1-modifier)";
+    default: case pf_none: return"(unknown 1-modifier)";
     case pm1_tbl: return"⌜"; case pm1_scan: return"`";
   }
 }
@@ -298,12 +298,8 @@ void ptr_dec(void* x) { dec(tag(x, OBJ_TAG)); }
 void ptr_inc(void* x) { inc(tag(x, OBJ_TAG)); }
 bool reusable(B x) { return v(x)->refc==1; }
 
-void printUTF8(u32 c) {
-  if (c<128) printf("%c", c);
-  else if (c<=0x07FF) printf("%c%c"    , 0xC0| c>>6 , 0x80| (c      &0x3F)                                    );
-  else if (c<=0xFFFF) printf("%c%c%c"  , 0xE0| c>>12, 0x80| (c>>6   &0x3F), 0x80| (c    &0x3F)                );
-  else                printf("%c%c%c%c", 0xF0| c>>18, 0x80| (c>>12  &0x3F), 0x80| (c>>6 &0x3F), 0x80| (c&0x3F));
-}
+
+void printUTF8(u32 c);
 
 void print(B x) {
   if (isF64(x)) {
