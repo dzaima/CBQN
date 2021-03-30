@@ -148,6 +148,7 @@ void print_vmStack();
 B err(char* s) {
   puts(s); fflush(stdout);
   print_vmStack();
+  __builtin_trap();
   exit(1);
 }
 
@@ -314,11 +315,12 @@ void dec(B x) {
     mm_free(vx);
   }
 }
+void ptr_dec(void* x) { dec(tag(x, OBJ_TAG)); }
+bool reusable(B x) { return v(x)->refc==1; }
+
 void inc (B x) { if (isVal(VALIDATE(x))) v(x)->refc++; }
 B    inci(B x) { inc(x); return x; }
-void ptr_dec(void* x) { dec(tag(x, OBJ_TAG)); }
-void ptr_inc(void* x) { inc(tag(x, OBJ_TAG)); }
-bool reusable(B x) { return v(x)->refc==1; }
+void ptr_inc(void* x) { ((Value*)x)->refc++; }
 
 
 void printUTF8(u32 c);

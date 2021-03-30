@@ -150,7 +150,7 @@ int main() {
   dec(comp);
   
   #ifdef ALLOC_STAT
-    printf("total allocated: %lu\n", talloc);
+    printf("total bytes allocated: %lu\n", talloc);
     printf("ctrA←"); for (i64 j = 0; j < Type_MAX; j++) { if(j)printf("‿"); printf("%lu", ctr_a[j]); } printf("\n");
     printf("ctrF←"); for (i64 j = 0; j < Type_MAX; j++) { if(j)printf("‿"); printf("%lu", ctr_f[j]); } printf("\n");
     for(i64 i = 0; i < actrc; i++) {
