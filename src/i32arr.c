@@ -58,4 +58,3 @@ void i32arr_init() {
   ti[t_i32arr].print = i32arr_print;
   ti[t_i32arr].get = i32arr_get;
 }
-
