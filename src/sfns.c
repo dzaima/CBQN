@@ -76,7 +76,7 @@ B pair_c2(B t, B w, B x) { return m_v2(w, x); }
 
 B fne_c1(B t, B x) {
   if (isArr(x)) {
-    ur xr = a(x)->rank;
+    ur xr = rnk(x);
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < xr; i++) if (sh[i]>I32_MAX) {
       HArr_p r = m_harrv(xr);
@@ -100,11 +100,11 @@ B lt_c2(B t, B w, B x) { dec(x); return w; }
 B rt_c1(B t,      B x) {         return x; }
 B rt_c2(B t, B w, B x) { dec(w); return x; }
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->id=pf_##NAME;
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->id=pf_##NAME;
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->id=pf_##NAME;
+#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
+#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
+#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 
-void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->id)); }
+void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
 B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_lt, bi_rt;
 void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) bm(fne) ba(lt) ba(rt)

@@ -56,13 +56,13 @@ B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); return err("getti
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); return err("getting exp of non-number"); }
 B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); return err("getting floor of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); return err("getting log of non-number"); }
-B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? a(x)->rank : 0); dec(x); return r; }
+B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); dec(x); return r; }
 
 
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->id=pf_##NAME;
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->id=pf_##NAME;
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->id=pf_##NAME;
+#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
+#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
+#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 
 B                   bi_add, bi_sub, bi_mul, bi_div, bi_pow, bi_floor, bi_eq, bi_le, bi_log;
 void arith_init() { ba(add) ba(sub) ba(mul) ba(div) ba(pow) bm(floor) ba(eq) bd(le) ba(log) }

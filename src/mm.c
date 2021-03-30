@@ -5,6 +5,7 @@
 u64* ctr_a = 0;
 u64* ctr_f = 0;
 u64 actrc = 21000;
+u64 talloc = 0;
 u32** actrs;
 #endif
 
@@ -25,6 +26,7 @@ void* mm_allocN(usz sz, u8 type) {
     assert(type<Type_MAX);
     actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
     ctr_a[type]++;
+    talloc+= sz;
   #endif
   #ifdef DEBUG
     memset(x, 'a', sz);

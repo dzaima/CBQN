@@ -16,8 +16,8 @@ B tbl_c1(B t, B f, B x) {
 }
 B tbl_c2(B t, B f, B w, B x) {
   if (isArr(w) & isArr(x)) {
-    usz wia = a(w)->ia; ur wr = a(w)->rank;
-    usz xia = a(x)->ia; ur xr = a(x)->rank;
+    usz wia = a(w)->ia; ur wr = rnk(w);
+    usz xia = a(x)->ia; ur xr = rnk(x);
     usz ria = wia*xia;  ur rr = wr+xr;
     if (rr<xr) return err("⌜: result rank too large");
     HArr_p r = m_harrp(ria);
@@ -45,7 +45,7 @@ B tbl_c2(B t, B f, B w, B x) {
 
 B scan_c1(B t, B f, B x) {
   if (!isArr(x)) return err("`: argument cannot be a scalar");
-  ur xr = a(x)->rank;
+  ur xr = rnk(x);
   if (xr==0) return err("`: argument cannot be a scalar");
   HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inci(x)) : m_harrc(x);
   usz ia = r.c->ia;
@@ -64,11 +64,11 @@ B scan_c1(B t, B f, B x) {
 }
 B scan_c2(B t, B f, B w, B x) {
   if (!isArr(x)) return err("`: 𝕩 cannot be a scalar");
-  ur xr = a(x)->rank; usz* xsh = a(x)->sh; BS2B xget = TI(x).get;
+  ur xr = rnk(x); usz* xsh = a(x)->sh; BS2B xget = TI(x).get;
   HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inci(x)) : m_harrc(x);
   usz ia = r.c->ia;
   if (isArr(w)) {
-    ur wr = a(w)->rank; usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
+    ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");
     if (wr+1 != xr) return err("`: shape of 𝕨 must match the cell of 𝕩");
     if (memcmp(wsh, xsh+1, wr)) return err("`: shape of 𝕨 must match the cell of 𝕩");
@@ -88,11 +88,11 @@ B scan_c2(B t, B f, B w, B x) {
 }
 
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->id=pm1_##NAME;
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->id=pm1_##NAME;
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->id=pm1_##NAME;
+#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME;
+#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME;
+#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME;
 
-void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->id)); }
+void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
 B                 bi_tbl, bi_scan;
 void md1_init() { ba(tbl) ba(scan)

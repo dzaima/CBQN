@@ -103,10 +103,10 @@ typedef struct Value {
   i32 refc;
   u16 flags; // incl GC stuff when that's a thing, possibly whether is sorted/a permutation/whatever, bucket size, etc
   u8 type; // needed globally so refc-- and GC know what to visit
+  u8 extra; // whatever object-specific stuff. Rank for arrays, id for functions
 } Value;
 typedef struct Arr {
   struct Value;
-  ur rank;
   usz ia;
   usz* sh;
 } Arr;
@@ -126,9 +126,11 @@ B m_v1(B a               );
 B m_v2(B a, B b          );
 B m_v3(B a, B b, B c     );
 B m_v4(B a, B b, B c, B d);
+
 #define c(T,x) ((T*)((x).u&0xFFFFFFFFFFFFull))
 Value* v(B x) { return c(Value, x); }
 Arr*   a(B x) { return c(Arr  , x); }
+#define rnk(x) (v(x)->extra) // expects argument to be Arr
 
 void print_vmStack();
 #ifdef DEBUG
@@ -177,23 +179,24 @@ usz* allocSh(ur r) {
   return ((ShArr*)v(x))->a;
 }
 ShArr* shObj(B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
-void decSh(B x) { if (a(x)->rank>1) ptr_dec(shObj(x)); }
+void decSh(B x) { if (rnk(x)>1) ptr_dec(shObj(x)); }
 
 void arr_shVec(B x, usz ia) {
   a(x)->ia = ia;
-  a(x)->rank = 1;
+  v(x)->extra = 1;
   a(x)->sh = &a(x)->ia;
 }
 usz* arr_shAlloc(B x, usz ia, usz r) {
   a(x)->ia = ia;
-  a(x)->rank = r;
+  a(x)->extra = r;
   if (r>1) return a(x)->sh = allocSh(r);
   a(x)->sh = &a(x)->ia;
   return 0;
 }
 void arr_shCopy(B n, B o) { // copy shape from o to n
+  assert(isArr(o));
   a(n)->ia = a(o)->ia;
-  ur r = a(n)->rank = a(o)->rank;
+  ur r = a(n)->extra = rnk(o);
   if (r<=1) {
     a(n)->sh = &a(n)->ia;
   } else {
@@ -201,15 +204,15 @@ void arr_shCopy(B n, B o) { // copy shape from o to n
     ptr_inc(shObj(o));
   }
 }
-bool shEq(B w, B x) { // assumes both are Arr
-  ur wr = a(w)->rank; usz* wsh = a(w)->sh;
-  ur xr = a(x)->rank; usz* xsh = a(x)->sh;
+bool shEq(B w, B x) { assert(isArr(w)); assert(isArr(x));
+  ur wr = rnk(w); usz* wsh = a(w)->sh;
+  ur xr = rnk(x); usz* xsh = a(x)->sh;
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
   return memcmp(wsh,xsh,wr*sizeof(usz))==0;
 }
 usz arr_csz(B x) {
-  ur xr = a(x)->rank;
+  ur xr = rnk(x);
   if (xr<=1) return 1;
   usz* sh = a(x)->sh;
   usz r = 1;
@@ -327,7 +330,6 @@ void print(B x) {
 
 typedef struct Fun {
   struct Value;
-  u8 id;
   BB2B c1;
   BBB2B c2;
 } Fun;
@@ -352,20 +354,18 @@ B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
 
 typedef struct Md1 {
   struct Value;
-  u8 id;
   BBB2B  c1; // f(m,f,  x); consumes x
   BBBB2B c2; // f(m,f,w,x); consumes w,x
 } Md1;
 typedef struct Md2 {
   struct Value;
-  u8 id;
   BBBB2B  c1; // f(m,f,g,  x); consumes x
   BBBBB2B c2; // f(m,f,g,w,x); consumes w,x
 } Md2;
 
 
 void arr_print(B x) {
-  usz r = a(x)->rank;
+  usz r = rnk(x);
   BS2B xget = TI(x).get;
   usz ia = a(x)->ia;
   if (r!=1) {
@@ -414,7 +414,7 @@ void arr_print(B x) {
       err("");
     }
     if (isArr(x)) {
-      ur r = a(x)->rank;
+      ur r = rnk(x);
       if (r<=1) assert(a(x)->sh == &a(x)->ia);
       else validate(tag(shObj(x),OBJ_TAG));
     }

@@ -54,11 +54,11 @@ B fork_decompose(B x) { B r=m_v4(m_i32(3),inci(c(Fork,x)->f),inci(c(Fork,x)->g),
 B atop_decompose(B x) { B r=m_v3(m_i32(2),                   inci(c(Atop,x)->g), inci(c(Atop,x)->h)); dec(x); return r; }
 
 // consume all args
-B m_md1D(B m, B f     ) { B r = mm_alloc(sizeof(Md1D), t_md1D, ftag(FUN_TAG)); c(Md1D,r)->f = f; c(Md1D,r)->m = m;                   c(Md1D,r)->c1=md1D_c1; c(Md1D,r)->c2=md1D_c2; c(Md1D,r)->id=pf_md1d; return r; }
-B m_md2D(B m, B f, B g) { B r = mm_alloc(sizeof(Md2D), t_md2D, ftag(FUN_TAG)); c(Md2D,r)->f = f; c(Md2D,r)->m = m; c(Md2D,r)->g = g; c(Md2D,r)->c1=md2D_c1; c(Md2D,r)->c2=md2D_c2; c(Md2D,r)->id=pf_md2d; return r; }
-B m_md2H(B m,      B g) { B r = mm_alloc(sizeof(Md2H), t_md2H, ftag(MD1_TAG));                   c(Md2H,r)->m = m; c(Md2H,r)->g = g; c(Md2H,r)->c1=md2H_c1; c(Md2H,r)->c2=md2H_c2;                        return r; }
-B m_fork(B f, B g, B h) { B r = mm_alloc(sizeof(Fork), t_fork, ftag(FUN_TAG)); c(Fork,r)->f = f; c(Fork,r)->g = g; c(Fork,r)->h = h; c(Fork,r)->c1=fork_c1; c(Fork,r)->c2=fork_c2; c(Fork,r)->id=pf_fork; return r; }
-B m_atop(     B g, B h) { B r = mm_alloc(sizeof(Atop), t_atop, ftag(FUN_TAG));                   c(Atop,r)->g = g; c(Atop,r)->h = h; c(Atop,r)->c1=atop_c1; c(Atop,r)->c2=atop_c2; c(Atop,r)->id=pf_atop; return r; }
+B m_md1D(B m, B f     ) { B r = mm_alloc(sizeof(Md1D), t_md1D, ftag(FUN_TAG)); c(Md1D,r)->f = f; c(Md1D,r)->m = m;                   c(Md1D,r)->c1=md1D_c1; c(Md1D,r)->c2=md1D_c2; c(Md1D,r)->extra=pf_md1d; return r; }
+B m_md2D(B m, B f, B g) { B r = mm_alloc(sizeof(Md2D), t_md2D, ftag(FUN_TAG)); c(Md2D,r)->f = f; c(Md2D,r)->m = m; c(Md2D,r)->g = g; c(Md2D,r)->c1=md2D_c1; c(Md2D,r)->c2=md2D_c2; c(Md2D,r)->extra=pf_md2d; return r; }
+B m_md2H(B m,      B g) { B r = mm_alloc(sizeof(Md2H), t_md2H, ftag(MD1_TAG));                   c(Md2H,r)->m = m; c(Md2H,r)->g = g; c(Md2H,r)->c1=md2H_c1; c(Md2H,r)->c2=md2H_c2;                           return r; }
+B m_fork(B f, B g, B h) { B r = mm_alloc(sizeof(Fork), t_fork, ftag(FUN_TAG)); c(Fork,r)->f = f; c(Fork,r)->g = g; c(Fork,r)->h = h; c(Fork,r)->c1=fork_c1; c(Fork,r)->c2=fork_c2; c(Fork,r)->extra=pf_fork; return r; }
+B m_atop(     B g, B h) { B r = mm_alloc(sizeof(Atop), t_atop, ftag(FUN_TAG));                   c(Atop,r)->g = g; c(Atop,r)->h = h; c(Atop,r)->c1=atop_c1; c(Atop,r)->c2=atop_c2; c(Atop,r)->extra=pf_atop; return r; }
 
 // consume all args
 B m1_d(B m, B f     ) { if(isMd1(m)) return TI(m).m1_d(m, f   ); return err("Interpreting non-1-modifier as 1-modifier"); }
