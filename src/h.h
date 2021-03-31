@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdarg.h>
+
+#define usz u64
+#define ur u8
+
 #define i8  int8_t
 #define u8 uint8_t
 #define i16  int16_t
@@ -28,8 +32,6 @@
 #endif
 
 #define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*n) // type; FAM name; FAM type; amount
-#define usz u32
-#define ur u8
 #define ftag(x) ((u64)(x) << 48)
 #define tag(v, t) b(((u64)(v)) | ftag(t))
                                   // .111111111110000000000000000000000000000000000000000000000000000 infinity
@@ -101,10 +103,11 @@ typedef union B {
 #define b(x) ((B)(x))
 
 typedef struct Value {
-  i32 refc;
-  u16 flags; // incl GC stuff when that's a thing, possibly whether is sorted/a permutation/whatever, bucket size, etc
-  u8 type; // needed globally so refc-- and GC know what to visit
-  ur extra; // whatever object-specific stuff. Rank for arrays, id for functions
+  i32 refc;  // plain old reference count
+  u8 mmInfo; // bucket size, mark&sweep bits when that's needed; currently unused
+  u8 flags;  // is sorted/a permutation/whatever in the future, currently primitive index for self-hosted runtime
+  u8 type;   // access into TypeInfo among generally knowing what type of object this is
+  ur extra;  // whatever object-specific stuff. Rank for arrays, id for functions
 } Value;
 typedef struct Arr {
   struct Value;
@@ -131,11 +134,11 @@ B m_v3(B a, B b, B c     );
 B m_v4(B a, B b, B c, B d);
 
 #define c(T,x) ((T*)((x).u&0xFFFFFFFFFFFFull))
+#define v(x) c(Value, x)
+#define a(x) c(Arr  , x)
+#define  rnk(x  ) (v(x)->extra)   // expects argument to be Arr
+#define srnk(x,r) (v(x)->extra=(r))
 #define VT(x,t) assert(isVal(x) && v(x)->type==t)
-Value* v(B x) { return c(Value, x); }
-Arr*   a(B x) { return c(Arr  , x); }
-#define  rnk(x  ) (v(x)->extra) // expects argument to be Arr
-#define srnk(x,v) (x)->extra=(v)
 
 void print_vmStack();
 #ifdef DEBUG
@@ -189,12 +192,12 @@ void decSh(B x) { if (rnk(x)>1) ptr_dec(shObj(x)); }
 
 void arr_shVec(B x, usz ia) {
   a(x)->ia = ia;
-  v(x)->extra = 1;
+  srnk(x, 1);
   a(x)->sh = &a(x)->ia;
 }
 usz* arr_shAlloc(B x, usz ia, usz r) {
   a(x)->ia = ia;
-  a(x)->extra = r;
+  srnk(x,r);
   if (r>1) return a(x)->sh = allocSh(r);
   a(x)->sh = &a(x)->ia;
   return 0;
@@ -202,7 +205,7 @@ usz* arr_shAlloc(B x, usz ia, usz r) {
 void arr_shCopy(B n, B o) { // copy shape from o to n
   assert(isArr(o));
   a(n)->ia = a(o)->ia;
-  ur r = a(n)->extra = rnk(o);
+  ur r = srnk(n,rnk(o));
   if (r<=1) {
     a(n)->sh = &a(n)->ia;
   } else {
@@ -299,21 +302,21 @@ void hdr_init() {
   bi_noVar   = tag(1, TAG_TAG);
   bi_badHdr  = tag(2, TAG_TAG);
   bi_optOut  = tag(3, TAG_TAG);
+  assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
 }
 
 bool isNothing(B b) { return b.u==bi_nothing.u; }
 
 
 // refcount
+void value_free(B x, Value* vx) {
+  ti[vx->type].free(x);
+  mm_free(vx);
+}
 void dec(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
-  assert(vx->refc>0);
-  if (!--vx->refc) {
-    // printf("freeing type %d: %p\n", vx->type, (void*)x.u);fflush(stdout);
-    ti[vx->type].free(x);
-    mm_free(vx);
-  }
+  if(!--vx->refc) value_free(x, vx);
 }
 void ptr_dec(void* x) { dec(tag(x, OBJ_TAG)); }
 bool reusable(B x) { return v(x)->refc==1; }
