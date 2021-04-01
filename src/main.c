@@ -45,12 +45,6 @@ B m_str32(u32* s) {
   for (u64 i = 0; i < sz; i++) r.a[i] = m_c32(s[i]);
   return r.b;
 }
-B m_cai32(usz ia, i32* a) {
-  B r = m_i32arrv(ia);
-  i32* rp = i32arr_ptr(r);
-  for (usz i = 0; i < ia; i++) rp[i] = a[i];
-  return r;
-}
 
 __ssize_t getline (char **__restrict __lineptr, size_t *restrict n, FILE *restrict stream);
 

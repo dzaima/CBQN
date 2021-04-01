@@ -5,7 +5,7 @@ args↓˜↩ return
 "call with argument specifying path of mlochbaum/BQN!"!2≤≠args
 path←(⊑args)∾"/src/"
 args↓˜↩1
-L ← {"m_vaB("∾(⍕≠𝕩)∾(∾","⊸∾¨𝕩)∾")"}
+L  ← {"m_caB("  ∾(⍕≠𝕩)∾",(B[]){"  ∾(1↓∾","⊸∾¨𝕩)∾"})"}
 LI ← {"m_cai32("∾(⍕≠𝕩)∾",(i32[]){"∾(1↓∾","⊸∾¨𝕩)∾"})"}
 # Escape the special characters that appear in BQN sources.
 Esc←{

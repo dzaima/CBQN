@@ -13,6 +13,13 @@ void* aalloc(usz sz) { // actual allocate
   void* p = malloc(sz);
   return p;
 }
+void mm_free(Value* x) {
+  #ifdef ALLOC_STAT
+    ctr_f[x->type]++;
+    x->refc = 0x61616161;
+  #endif
+  free(x);
+}
 
 void* mm_allocN(usz sz, u8 type) {
   Value* x = aalloc(sz);
@@ -31,21 +38,14 @@ void* mm_allocN(usz sz, u8 type) {
   #ifdef DEBUG
     memset(x, 'a', sz);
   #endif
+  x->flags = x->extra = x->mmInfo = x->type = 0;
   x->refc = 1;
-  x->flags = 0;
   x->type = type;
   return x;
 }
 B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16); // make sure it's `ftag`ged :|
   return b((u64)mm_allocN(sz,type) | tag);
-}
-void mm_free(Value* x) {
-  #ifdef ALLOC_STAT
-    ctr_f[x->type]++;
-    x->refc = 0x61616161;
-  #endif
-  free(x);
 }
 void mm_visit(B x) {
   

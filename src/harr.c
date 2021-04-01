@@ -48,21 +48,14 @@ HArr* toHArr(B x) {
 
 
 
-B m_vaf64(usz sz, ...) {
-  va_list vargs;
-  va_start(vargs, sz);
+B m_caf64(usz sz, f64* a) {
   HArr_p r = m_harrv(sz);
-  for (usz i = 0; i < sz; i++) r.a[i] = m_f64(va_arg(vargs, f64));
-  va_end(vargs);
+  for (usz i = 0; i < sz; i++) r.a[i] = m_f64(a[i]);
   return r.b;
 }
-
-B m_vaB(usz sz, ...) {
-  va_list vargs;
-  va_start(vargs, sz);
-  HArr_p r = m_harrv(sz);
-  for (usz i = 0; i < sz; i++) r.a[i] = va_arg(vargs, B);
-  va_end(vargs);
+B m_caB(usz ia, B* a) {
+  HArr_p r = m_harrv(ia);
+  for (usz i = 0; i < ia; i++) r.a[i] = a[i];
   return r.b;
 }
 
