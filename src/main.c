@@ -4,6 +4,8 @@
 #endif
 // #define ALLOC_STAT
 // #define FORMATTER
+// #define TIME
+#define FAKE_RUNTIME false
 
 #include "h.h"
 #include "mm.c"
@@ -33,6 +35,12 @@ Block* ca3(B b) {
   return r;
 }
 
+#include <time.h>
+u64 nsTime() {
+  struct timespec t;
+  timespec_get(&t, TIME_UTC);
+  return t.tv_sec*1000000000ull + t.tv_nsec;
+}
 
 __ssize_t getline (char **__restrict __lineptr, size_t *restrict n, FILE *restrict stream);
 
@@ -50,21 +58,17 @@ int main() {
   
   
   // fake runtime
-  // B bi_N = bi_nothing;
-  // B runtime[] = {
-  //   /* +-×÷⋆√⌊⌈|¬  */ bi_add, bi_sub , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_N  , bi_N, bi_N,
-  //   /* ∧∨<>≠=≤≥≡≢  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_eq, bi_le   , bi_N  , bi_N, bi_fne,
-  //   /* ⊣⊢⥊∾≍↑↓↕«» */ bi_lt , bi_rt  , bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud , bi_N, bi_N,
-  //   /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N  , bi_N, bi_N,
-  //   /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N  , bi_N   , bi_asrt , bi_N  , bi_N  , bi_N , bi_N    , bi_tbl, bi_N, bi_N,
-  //   /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N  , bi_scan, bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val, bi_N, bi_N,
-  //   /* ⚇⍟          */ bi_N  , bi_N
-  // };
-  // Block* c = ca3(
-  //   #include "interp"
-  // );
-  // B interp = m_funBlock(c, 0); ptr_dec(c);
-  // pr("interpreted: ", interp);
+  B bi_N = bi_nothing;
+  B fruntime[] = {
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add, bi_sub , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_N  , bi_N, bi_N,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_eq, bi_le   , bi_N  , bi_N, bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_lt , bi_rt  , bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud , bi_N, bi_N,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N  , bi_N, bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N  , bi_N   , bi_asrt , bi_N  , bi_N  , bi_N , bi_N    , bi_tbl, bi_N, bi_N,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N  , bi_scan, bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val, bi_N, bi_N,
+    /* ⚇⍟          */ bi_N  , bi_N
+  };
+  B frtObj = m_caB(62, fruntime);
   
   Block* runtime_b = compile(
     #include "runtime"
@@ -123,6 +127,7 @@ int main() {
   //   free(c_src);
   // }
   
+  B currentRuntime = FAKE_RUNTIME? frtObj : rtObj;
   
   while (true) { // exit by evaluating an empty expression
     char* ln = NULL;
@@ -130,16 +135,27 @@ int main() {
     getline(&ln, &gl, stdin);
     if (ln[0]==10) break;
     B obj = fromUTF8(ln, strlen(ln));
-    B cbc = c2(comp, inci(rtObj), obj);
+    B cbc = c2(comp, inci(currentRuntime), obj);
     free(ln);
     Block* cbc_b = ca3(cbc);
+    
+    #ifdef TIME
+    u64 sns = nsTime();
+    B res = m_funBlock(cbc_b, 0);
+    u64 ens = nsTime();
+    printf("%fms\n", (ens-sns)/1e6);
+    #else
+    B res = m_funBlock(cbc_b, 0);
+    #endif
+    
     #ifdef FORMATTER
-    B res = c1(fmt, m_funBlock(cbc_b, 0));
-    printRaw(res); dec(res);
+    B resFmt = c1(fmt, res);
+    printRaw(resFmt); dec(resFmt);
     printf("\n");
     #else
-    pr("", m_funBlock(cbc_b, 0));
+    pr("", res);
     #endif
+    
   }
   
   dec(rtRes);
