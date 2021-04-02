@@ -34,21 +34,21 @@
 #define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*n) // type; FAM name; FAM type; amount
 #define ftag(x) ((u64)(x) << 48)
 #define tag(v, t) b(((u64)(v)) | ftag(t))
-                                  // .111111111110000000000000000000000000000000000000000000000000000 infinity
-                                  // .111111111111000000000000000000000000000000000000000000000000000 qNaN
-                                  // .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
-                                  // 0111111111110................................................... direct value with no need of refcounting
-u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
-u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?)
-u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
-u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
-u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
-u16 MD2_TAG = 0b1111111111110011; // 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
-u16 FUN_TAG = 0b1111111111110100; // 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
-u16 NSP_TAG = 0b1111111111110101; // 1111111111110101ppppppppppppppppppppppppppppppppppppppppppppp000 namespace maybe?
-u16 OBJ_TAG = 0b1111111111110110; // 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom object (e.g. bigints)
-u16 ARR_TAG = 0b1111111111110111; // 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
-u16 VAL_TAG = 0b1111111111110   ; // 1111111111110................................................... pointer to Value, needs refcounting
+                                        // .111111111110000000000000000000000000000000000000000000000000000 infinity
+                                        // .111111111111000000000000000000000000000000000000000000000000000 qNaN
+                                        // .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
+                                        // 0111111111110................................................... direct value with no need of refcounting
+const u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
+const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?)
+const u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
+const u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
+const u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
+const u16 MD2_TAG = 0b1111111111110011; // 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
+const u16 FUN_TAG = 0b1111111111110100; // 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
+const u16 NSP_TAG = 0b1111111111110101; // 1111111111110101ppppppppppppppppppppppppppppppppppppppppppppp000 namespace maybe?
+const u16 OBJ_TAG = 0b1111111111110110; // 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom object (e.g. bigints)
+const u16 ARR_TAG = 0b1111111111110111; // 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
+const u16 VAL_TAG = 0b1111111111110   ; // 1111111111110................................................... pointer to Value, needs refcounting
 
 enum Type {
   /* 0*/ t_empty, // empty bucket placeholder
