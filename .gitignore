@@ -3,4 +3,6 @@ BQN
 src/runtime
 src/compiler
 src/interp
+src/formatter
 c.bqn
+perf.*
