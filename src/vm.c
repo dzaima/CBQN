@@ -341,7 +341,12 @@ B evalBC(Body* b, Scope* sc) {
         break;
       }
       // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM RETD SYSV
-      default: printf("todo %d\n", bc[-1]); bc++; break;
+      default:
+        #ifdef DEBUG
+          printf("todo %d\n", bc[-1]); bc++; break;
+        #else
+          UD;
+        #endif
       case RETN: goto end;
     }
     #ifdef DEBUG_VM

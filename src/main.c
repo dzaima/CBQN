@@ -3,11 +3,13 @@
   // #define DEBUG_VM
 #endif
 // #define ALLOC_STAT
+// #define FORMATTER
 
 #include "h.h"
 #include "mm.c"
 #include "harr.c"
 #include "i32arr.c"
+#include "utf.c"
 #include "arith.c"
 #include "sfns.c"
 #include "md1.c"
@@ -15,7 +17,6 @@
 #include "sysfn.c"
 #include "derv.c"
 #include "vm.c"
-#include "utf.c"
 
 void pr(char* a, B b) {
   printf("%s", a);
@@ -32,19 +33,6 @@ Block* ca3(B b) {
   return r;
 }
 
-B m_str8(char* s) {
-  u64 sz = strlen(s);
-  HArr_p r = m_harrv(sz);
-  for (u64 i = 0; i < sz; i++) r.a[i] = m_c32(s[i]);
-  return r.b;
-}
-B m_str32(u32* s) {
-  u64 sz = 0;
-  while(s[sz])sz++;
-  HArr_p r = m_harrv(sz);
-  for (u64 i = 0; i < sz; i++) r.a[i] = m_c32(s[i]);
-  return r.b;
-}
 
 __ssize_t getline (char **__restrict __lineptr, size_t *restrict n, FILE *restrict stream);
 
@@ -104,6 +92,14 @@ int main() {
   );
   B comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
   
+  #ifdef FORMATTER
+  Block* fmt_b = compile(
+    #include "formatter"
+  );
+  B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
+  B fmt = TI(fmtM).m1_d(fmtM, m_caB(4, (B[]){inci(bi_type), inci(bi_decp), inci(bi_fmtF), inci(bi_fmtN)}));
+  #endif
+  
   
   // uncomment to self-compile and use that for the REPL; expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory
   // char* c_src = 0;
@@ -137,7 +133,13 @@ int main() {
     B cbc = c2(comp, inci(rtObj), obj);
     free(ln);
     Block* cbc_b = ca3(cbc);
+    #ifdef FORMATTER
+    B res = c1(fmt, m_funBlock(cbc_b, 0));
+    printRaw(res); dec(res);
+    printf("\n");
+    #else
     pr("", m_funBlock(cbc_b, 0));
+    #endif
   }
   
   dec(rtRes);

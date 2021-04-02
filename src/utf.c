@@ -32,3 +32,10 @@ void printUTF8(u32 c) {
   else if (c<=0xFFFF) printf("%c%c%c"  , 0xE0| c>>12, 0x80| (c>>6   &0x3F), 0x80| (c    &0x3F)                );
   else                printf("%c%c%c%c", 0xF0| c>>18, 0x80| (c>>12  &0x3F), 0x80| (c>>6 &0x3F), 0x80| (c&0x3F));
 }
+
+u64 snprintUTF8(char* p, u64 l, u32 c) {
+  if (c<128) return snprintf(p, l, "%c", c);
+  else if (c<=0x07FF) return snprintf(p, l, "%c%c"    , 0xC0| c>>6 , 0x80| (c      &0x3F)                                    );
+  else if (c<=0xFFFF) return snprintf(p, l, "%c%c%c"  , 0xE0| c>>12, 0x80| (c>>6   &0x3F), 0x80| (c    &0x3F)                );
+  else                return snprintf(p, l, "%c%c%c%c", 0xF0| c>>18, 0x80| (c>>12  &0x3F), 0x80| (c>>6 &0x3F), 0x80| (c&0x3F));
+}

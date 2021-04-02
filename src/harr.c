@@ -48,14 +48,26 @@ HArr* toHArr(B x) {
 
 
 
-B m_caf64(usz sz, f64* a) {
-  HArr_p r = m_harrv(sz);
-  for (usz i = 0; i < sz; i++) r.a[i] = m_f64(a[i]);
-  return r.b;
-}
 B m_caB(usz ia, B* a) {
   HArr_p r = m_harrv(ia);
   for (usz i = 0; i < ia; i++) r.a[i] = a[i];
+  return r.b;
+}
+B m_str8(u64 sz, char* s) {
+  HArr_p r = m_harrv(sz);
+  for (u64 i = 0; i < sz; i++) r.a[i] = m_c32(s[i]);
+  return r.b;
+}
+B m_str32(u32* s) { // meant to be used as m_str32(U"{𝕨‿𝕩}")
+  u64 sz = 0;
+  while(s[sz])sz++;
+  HArr_p r = m_harrv(sz);
+  for (u64 i = 0; i < sz; i++) r.a[i] = m_c32(s[i]);
+  return r.b;
+}
+B m_caf64(usz sz, f64* a) {
+  HArr_p r = m_harrv(sz);
+  for (usz i = 0; i < sz; i++) r.a[i] = m_f64(a[i]);
   return r.b;
 }
 

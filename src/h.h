@@ -7,9 +7,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#define usz u64
-#define ur u8
-
 #define i8  int8_t
 #define u8 uint8_t
 #define i16  int16_t
@@ -22,6 +19,9 @@
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define U16_MAX ((u16)-1)
 #define UD __builtin_unreachable();
+
+#define usz u32
+#define ur u8
 
 #ifdef DEBUG
   #include<assert.h>
@@ -72,7 +72,7 @@ enum Type {
 enum PrimFns {
   pf_none,
   pf_add, pf_sub, pf_mul, pf_div, pf_pow, pf_floor, pf_eq, pf_le, pf_log, // arith.c
-  pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_lt, pf_rt, // sfns.c
+  pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_lt, pf_rt, pf_fmtF, pf_fmtN, // sfns.c
   pf_fork, pf_atop, pf_md1d, pf_md2d, // derv.c
   pf_type, pf_decp, pf_primInd, pf_glyph, pf_fill, pf_grLen, pf_grOrd, pf_asrt, // sysfn.c
 };
@@ -80,7 +80,7 @@ char* format_pf(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown fn)";
     case pf_add:return"+"; case pf_sub:return"-"; case pf_mul:return"×"; case pf_div:return"÷"; case pf_pow:return"⋆"; case pf_floor:return"⌊"; case pf_eq:return"="; case pf_le:return"≤"; case pf_log:return"⋆⁼";
-    case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_lt:return"⊣"; case pf_rt:return"⊢";
+    case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_lt:return"⊣"; case pf_rt:return"⊢"; case pf_fmtF:case pf_fmtN:return"⍕";
     case pf_fork:return"(fork)"; case pf_atop:return"(atop)"; case pf_md1d:return"(derived 1-modifier)"; case pf_md2d:return"(derived 2-modifier)";
     case pf_type:return"•Type"; case pf_decp:return"•Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•GroupOrd"; case pf_asrt:return"!";  }
 }
@@ -270,8 +270,8 @@ typedef struct TypeInfo {
   B2V visit;  // for GC when that comes around
   B2V print;  // doesn't consume
   BS2B get;   // increments result, doesn't consume arg
-  BB2B  m1_d; // consume all args
-  BBB2B m2_d; // consume all args
+  BB2B  m1_d; // consume all args; (m, f)
+  BBB2B m2_d; // consume all args; (m, f, g)
   B2B decompose; // consumes; must return a HArr
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
 } TypeInfo;
@@ -348,6 +348,22 @@ void print(B x) {
   else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
   else if (x.u==bi_badHdr.u) printf("(bad header note)");
   else printf("(todo tag %lx)", x.u>>48);
+}
+void printRaw(B x) {
+  if (isAtm(x)) {
+    if (isF64(x)) printf("%g", x.f);
+    else if (isC32(x)) printUTF8((u32)x.u);
+    else err("bad printRaw argument: atom arguments should be either numerical or characters");
+  } else {
+    usz ia = a(x)->ia;
+    BS2B xget = TI(x).get;
+    for (usz i = 0; i < ia; i++) {
+      B c = xget(x,i);
+      if (c.u==0) { printf(" "); continue; }
+      if (!isC32(c)) err("bad printRaw argument: expected all character items");
+      printUTF8((u32)c.u);
+    }
+  }
 }
 
 

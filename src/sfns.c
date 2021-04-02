@@ -89,14 +89,28 @@ B lt_c2(B t, B w, B x) { dec(x); return w; }
 B rt_c1(B t,      B x) {         return x; }
 B rt_c2(B t, B w, B x) { dec(w); return x; }
 
+B fmtN_c1(B t, B x) {
+  const u64 BL = 100;
+  char buf[BL];
+  if (isF64(x)) snprintf(buf, BL, "%g", x.f);
+  else snprintf(buf, BL, "(fmtN: not given a number?)");
+  return m_str8(strlen(buf), buf);
+}
+B fmtF_c1(B t, B x) {
+  if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
+  u8 fl = v(x)->flags;
+  if (fl==0 || fl>=62) return m_str32(U"(fmtF: not given a runtime primitive)");
+  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟"[fl-1]);
+}
+
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
-B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_lt, bi_rt;
-void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) bm(fne) ba(lt) ba(rt)
+B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_lt, bi_rt, bi_fmtF, bi_fmtN;
+void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) bm(fne) ba(lt) ba(rt) bm(fmtF) bm(fmtN)
   ti[t_fun_def].print = print_fun_def;
 }
 
