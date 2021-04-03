@@ -366,7 +366,7 @@ B evalBC(Body* b, Scope* sc) {
   return stack[0];
 }
 
-B actualExec(Block* bl, Scope* psc, u32 ga, ...) {
+B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
   Body* bdy = bl->body;
   Scope* sc = mm_allocN(fsizeof(Scope, vars, B, bdy->varAm), t_scope);
   sc->psc = psc; if(psc)ptr_inc(psc);
@@ -374,11 +374,8 @@ B actualExec(Block* bl, Scope* psc, u32 ga, ...) {
   assert(varAm>=ga);
   sc->bcInd = bdy->bc-c(I32Arr,bdy->comp->bc)->a;
   i32 i = 0;
-  va_list vargs;
-  va_start(vargs, ga);
-  while (i<ga) sc->vars[i++] = va_arg(vargs, B);
+  while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
-  va_end(vargs);
   // if (ga & !(bdy->flags&1)) {
   //   B v0 = sc->vars[0];
   //   dec(v0); sc->vars[0] = bi_optOut; // prevent reference cycle; TODO more properly do this (or just remove, it doesn't seem to be doing much)
@@ -388,14 +385,14 @@ B actualExec(Block* bl, Scope* psc, u32 ga, ...) {
   return r;
 }
 
-B funBl_c1(B t,                B x) { return actualExec(c(FunBlock, t)->bl, c(FunBlock, t)->sc, 3, inci(t),                         x, bi_nothing);                            }
-B funBl_c2(B t,           B w, B x) { return actualExec(c(FunBlock, t)->bl, c(FunBlock, t)->sc, 3, inci(t),                         x, w);                                     }
-B md1Bl_c1(B t, B f,           B x) { return actualExec(c(Md1Block, t)->bl, c(Md1Block, t)->sc, 5, m_md1D(inci(t),inci(f)        ), x, bi_nothing, inci(t), inci(f));          }
-B md1Bl_c2(B t, B f,      B w, B x) { return actualExec(c(Md1Block, t)->bl, c(Md1Block, t)->sc, 5, m_md1D(inci(t),inci(f)        ), x, w         , inci(t), inci(f));          }
-B md2Bl_c1(B t, B f, B g,      B x) { return actualExec(c(Md2Block, t)->bl, c(Md2Block, t)->sc, 6, m_md2D(inci(t),inci(f),inci(g)), x, bi_nothing, inci(t), inci(f), inci(g)); }
-B md2Bl_c2(B t, B f, B g, B w, B x) { return actualExec(c(Md2Block, t)->bl, c(Md2Block, t)->sc, 6, m_md2D(inci(t),inci(f),inci(g)), x, w         , inci(t), inci(f), inci(g)); }
+B funBl_c1(B t,                B x) { return actualExec(c(FunBlock, t)->bl, c(FunBlock, t)->sc, 3, (B[]){inci(t),                         x, bi_nothing                           }); }
+B funBl_c2(B t,           B w, B x) { return actualExec(c(FunBlock, t)->bl, c(FunBlock, t)->sc, 3, (B[]){inci(t),                         x, w                                    }); }
+B md1Bl_c1(B t, B f,           B x) { return actualExec(c(Md1Block, t)->bl, c(Md1Block, t)->sc, 5, (B[]){m_md1D(inci(t),inci(f)        ), x, bi_nothing, inci(t), inci(f)         }); }
+B md1Bl_c2(B t, B f,      B w, B x) { return actualExec(c(Md1Block, t)->bl, c(Md1Block, t)->sc, 5, (B[]){m_md1D(inci(t),inci(f)        ), x, w         , inci(t), inci(f)         }); }
+B md2Bl_c1(B t, B f, B g,      B x) { return actualExec(c(Md2Block, t)->bl, c(Md2Block, t)->sc, 6, (B[]){m_md2D(inci(t),inci(f),inci(g)), x, bi_nothing, inci(t), inci(f), inci(g)}); }
+B md2Bl_c2(B t, B f, B g, B w, B x) { return actualExec(c(Md2Block, t)->bl, c(Md2Block, t)->sc, 6, (B[]){m_md2D(inci(t),inci(f),inci(g)), x, w         , inci(t), inci(f), inci(g)}); }
 B m_funBlock(Block* bl, Scope* psc) {
-  if (bl->imm) return actualExec(bl, psc, 0);
+  if (bl->imm) return actualExec(bl, psc, 0, NULL);
   B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));
   c(FunBlock, r)->bl = bl; ptr_inc(bl);
   c(FunBlock, r)->sc = psc; ptr_inc(psc);
@@ -450,8 +447,8 @@ void md2Bl_print(B x) { printf("{2-modifier}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
-B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actualExec(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, m, f   ) : m_md1D(m,f  ); }
-B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, m, f, g) : m_md2D(m,f,g); }
+B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actualExec(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
+B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
 void comp_init() {
   ti[t_comp     ].free = comp_free;  ti[t_comp     ].print =  comp_print;

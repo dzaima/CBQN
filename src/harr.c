@@ -81,19 +81,25 @@ typedef struct HSlice {
   struct Slice;
   B* a;
 } HSlice;
-B m_hslice(B p, B* ptr) { HSlice* r = mm_allocN(sizeof(HSlice), t_hslice); r->p=p; r->a = ptr; return tag(r, ARR_TAG); }
-B harr_slice  (B x, usz s) { return m_hslice(x, c(HArr,x)->a+s); }
-B hslice_slice(B x, usz s) { B r=m_hslice(inci(c(HSlice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
+B m_hslice(B p, B* ptr) {
+  HSlice* r = mm_allocN(sizeof(HSlice), t_hslice);
+  r->p = p;
+  r->a = ptr;
+  return tag(r, ARR_TAG);
+}
+
+B harr_slice  (B x, usz s) {return m_hslice(x                   , c(HArr  ,x)->a+s); }
+B hslice_slice(B x, usz s) { B r = m_hslice(inci(c(HSlice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
 
 
+B harr_get  (B x, usz n) { VT(x,t_harr  ); return inci(c(HArr  ,x)->a[n]); }
+B hslice_get(B x, usz n) { VT(x,t_hslice); return inci(c(HSlice,x)->a[n]); }
 void harr_free(B x) {
   decSh(x);
   B* p = harr_ptr(x);
   usz ia = a(x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
-B harr_get  (B x, usz n) { VT(x,t_harr  ); return inci(c(HArr  ,x)->a[n]); }
-B hslice_get(B x, usz n) { VT(x,t_hslice); return inci(c(HSlice,x)->a[n]); }
 
 void harr_init() {
   ti[t_harr].get   = harr_get;   ti[t_hslice].get   = hslice_get;
