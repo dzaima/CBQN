@@ -8,7 +8,7 @@
 #define FAKE_RUNTIME false
 
 #include "h.h"
-#include "mm.c"
+#include "mm_buddy.c"
 #include "harr.c"
 #include "i32arr.c"
 #include "utf.c"

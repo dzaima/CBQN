@@ -116,10 +116,13 @@ typedef struct Arr {
 } Arr;
 
 // memory manager
-B     mm_alloc (usz sz, u8 type, u64 tag);
 void* mm_allocN(usz sz, u8 type);
 void mm_free(Value* x);
 void mm_visit(B x);
+B mm_alloc(usz sz, u8 type, u64 tag) {
+  assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
+  return b((u64)mm_allocN(sz,type) | tag);
+}
 
 // some primitive actions
 void dec(B x);
@@ -474,3 +477,34 @@ void arr_print(B x) {
     return x;
   }
 #endif
+
+#ifdef ALLOC_STAT
+u64* ctr_a = 0;
+u64* ctr_f = 0;
+u64 actrc = 21000;
+u64 talloc = 0;
+u32** actrs;
+#endif
+
+void onAlloc(usz sz, u8 type) {
+  #ifdef ALLOC_STAT
+    if (!actrs) {
+      actrs = malloc(sizeof(u32*)*actrc);
+      ctr_a = calloc(Type_MAX, sizeof(u64));
+      ctr_f = calloc(Type_MAX, sizeof(u64));
+      for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(Type_MAX, sizeof(u32));
+    }
+    assert(type<Type_MAX);
+    actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
+    ctr_a[type]++;
+    talloc+= sz;
+  #endif
+}
+void onFree(Value* x) {
+  #ifdef ALLOC_STAT
+    ctr_f[x->type]++;
+  #endif
+  #ifdef DEBUG
+    x->refc = 0x61616161;
+  #endif
+}
