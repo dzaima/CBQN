@@ -63,7 +63,7 @@ B grLen_c1(B t, B x) {
   return r.b;
 }
 B grLen_c2(B t, B w, B x) {
-  i64 ria = o2s(w)-1;
+  i64 ria = o2i64(w)-1;
   usz ia = a(x)->ia;
   BS2B xget = TI(x).get;
   for (usz i = 0; i < ia; i++) {
