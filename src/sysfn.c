@@ -31,8 +31,18 @@ B glyph_c1(B t, B x) {
   return x;
 }
 
-B fill_c1(B t,      B x) { dec(x); return m_f64(0); }
-B fill_c2(B t, B w, B x) { dec(w); return x; }
+B fill_c1(B t, B x) {
+  return getFill(x);
+}
+B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
+  if (isArr(x)) {
+    B fill = asFill(w);
+    if (fill.u == bi_noFill.u) return x;
+    return withFill(x, fill);
+  }
+  dec(w);
+  return x;
+}
 
 B grLen_c1(B t, B x) {
   i64 ria = -1;

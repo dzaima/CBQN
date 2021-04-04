@@ -140,6 +140,9 @@ typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 Block* compile(B bcq, B objs, B blocks) {
   usz bam = a(blocks)->ia;
   
+  // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
+  // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inci(objPtr[i])), objPtr[i]);
+  
   I32Arr* bca = toI32Arr(bcq);
   i32* bc = bca->a;
   usz bcl = bca->ia;

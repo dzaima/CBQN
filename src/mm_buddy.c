@@ -15,7 +15,7 @@ EmptyValue* buckets[64];
 
 #define BSZ(x) (1ull<<(x))
 
-EmptyValue* makeBucket(u8 bucket) { // next field of output is garbage
+EmptyValue* makeEmpty(u8 bucket) { // result->next is garbage
   u8 cb = bucket;
   EmptyValue* c;
   while (true) {
@@ -63,7 +63,7 @@ void* mm_allocN(usz sz, u8 type) {
   assert(sz>8);
   u8 bucket = 64-__builtin_clzl(sz-1ull); // inverse of BSZ
   EmptyValue* x = buckets[bucket];
-  if (x==NULL) x = makeBucket(bucket);
+  if (x==NULL) x = makeEmpty(bucket);
   else buckets[bucket] = x->next;
   onAlloc(sz, type);
   x->flags = x->extra = x->type = 0;

@@ -39,7 +39,7 @@
                                         // .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
                                         // 0111111111110................................................... direct value with no need of refcounting
 const u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
-const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?)
+const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
 const u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
 const u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
 const u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
@@ -60,11 +60,10 @@ enum Type {
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
   
-  /*13*/ t_harr, t_i32arr,
-  /*15*/ t_hslice, t_i32slice,
+  /*13*/ t_harr  , t_i32arr  , t_fillarr  , t_c32arr  ,
+  /*17*/ t_hslice, t_i32slice, t_fillslice, t_c32slice,
   
-  /*17*/ t_comp, t_block, t_body, t_scope,
-  
+  /*21*/ t_comp, t_block, t_body, t_scope,
   
   Type_MAX
 };
@@ -290,7 +289,7 @@ B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
 B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
 B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 
-B bi_nothing, bi_noVar, bi_badHdr, bi_optOut;
+B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 void hdr_init() {
   for (i32 i = 0; i < Type_MAX; ++i) {
     ti[i].visit = ti[i].free = do_nothing;
@@ -305,6 +304,7 @@ void hdr_init() {
   bi_noVar   = tag(1, TAG_TAG);
   bi_badHdr  = tag(2, TAG_TAG);
   bi_optOut  = tag(3, TAG_TAG);
+  bi_noFill  = tag(5, TAG_TAG);
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
 }
 

@@ -10,7 +10,9 @@
 #include "h.h"
 #include "mm_buddy.c"
 #include "harr.c"
+#include "fillarr.c"
 #include "i32arr.c"
+#include "c32arr.c"
 #include "utf.c"
 #include "arith.c"
 #include "sfns.c"
@@ -47,7 +49,9 @@ __ssize_t getline (char **__restrict __lineptr, size_t *restrict n, FILE *restri
 int main() {
   hdr_init();
   harr_init();
+  fillarr_init();
   i32arr_init();
+  c32arr_init();
   arith_init();
   sfns_init();
   md1_init();
@@ -55,7 +59,6 @@ int main() {
   sysfn_init();
   derv_init();
   comp_init();
-  
   
   // fake runtime
   B bi_N = bi_nothing;
@@ -66,7 +69,7 @@ int main() {
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N  , bi_N, bi_N,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N  , bi_N   , bi_asrt , bi_N  , bi_N  , bi_N , bi_N    , bi_tbl, bi_N, bi_N,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N  , bi_scan, bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val, bi_N, bi_N,
-    /* ⚇⍟          */ bi_N  , bi_N
+    /* ⚇⍟          */ bi_N  , bi_fill
   };
   B frtObj = m_caB(62, fruntime);
   

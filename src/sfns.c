@@ -31,7 +31,11 @@ B shape_c2(B t, B w, B x) {
 
 B pick_c1(B t, B x) {
   if (!isArr(x)) return x;
-  // if (a(x)->ia==0) return err("⊑: called on empty array"); // no bounds check for now
+  if (a(x)->ia==0) {
+    B r = getFill(x);
+    if (r.u==bi_noFill.u) return err("⊑: called on empty array without fill");
+    return r;
+  }
   B r = TI(x).get(x, 0);
   dec(x);
   return r;
