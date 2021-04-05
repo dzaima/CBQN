@@ -1,6 +1,18 @@
 EmptyValue* buckets[64];
 
-static EmptyValue* mm_makeEmpty(u8 bucket) { // result->next is garbage
+#define AllocInfo BN(AllocInfo)
+#define al     BN(al)
+#define alCap  BN(alCap)
+#define alSize BN(alSize)
+typedef struct AllocInfo {
+  Value* p;
+  u64 sz;
+} AllocInfo;
+AllocInfo* al;
+u64 alCap;
+u64 alSize;
+
+static EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
   u8 cb = bucket;
   EmptyValue* c;
   while (true) {
@@ -14,6 +26,11 @@ static EmptyValue* mm_makeEmpty(u8 bucket) { // result->next is garbage
     if (cb >= 20) {
       u64 sz = BSZ(cb);
       c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+      if (alSize+1>=alCap) {
+        alCap = alCap? alCap*2 : 1024;
+        al = realloc(al, sizeof(AllocInfo)*alCap);
+      }
+      al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
       if (c==MAP_FAILED) {
         printf("failed to allocate memory\n");
         exit(1);
@@ -36,7 +53,7 @@ static EmptyValue* mm_makeEmpty(u8 bucket) { // result->next is garbage
   return c;
 }
 
-void mm_free(Value* x) {
+void BN(free)(Value* x) {
   onFree(x);
   EmptyValue* c = (EmptyValue*) x;
   c->type = t_empty;
@@ -45,16 +62,34 @@ void mm_free(Value* x) {
   buckets[b] = c;
 }
 
-void* mm_allocL(u8 bucket, u8 type) {
+void* BN(allocL)(u8 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
-  if (x==NULL) x = mm_makeEmpty(bucket);
+  if (x==NULL) x = BN(makeEmpty)(bucket);
   else buckets[bucket] = x->next;
   x->flags = x->extra = x->type = 0;
   x->refc = 1;
   x->type = type;
   return x;
 }
+void BN(forHeap)(V2v f) {
+  for (u64 i = 0; i < alSize; i++) {
+    AllocInfo ci = al[i];
+    Value* s = ci.p;
+    Value* e = ci.sz + (void*)ci.p;
+    while (s!=e) {
+      if (s->type!=t_empty) f(s);
+      s = BSZ(s->mmInfo&63) + (void*)s;
+    }
+  }
+}
+u64 BN(totalAllocated)() {
+  u64 res = 0;
+  for (u64 i = 0; i < alSize; i++) res+= al[i].sz;
+  return res;
+}
 
-#undef BSZ
-#undef BSZI
 #undef MMI
+#undef AllocInfo
+#undef al
+#undef alSize
+#undef alCap

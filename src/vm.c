@@ -259,8 +259,7 @@ void allocStack(u64 am) {
   if (am>left) {
     u64 n = gStackEnd-gStackStart + am + 500;
     u64 d = gStackStart-gStack;
-    if (gStack==NULL) gStackStart = malloc(n*sizeof(B));
-    else gStackStart = realloc(gStackStart, n*sizeof(B));
+    gStackStart = realloc(gStackStart, n*sizeof(B));
     gStack    = gStackStart+d;
     gStackEnd = gStackStart+n;
   }

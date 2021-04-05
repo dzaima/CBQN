@@ -11,47 +11,55 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   EmptyValue* next;
 };
 
-#define BSZ(x) (1ull<<(x))
-#define BSZI(x) (64-__builtin_clzl((x)-1ull))
-#define MMI(x) x
-#define buckets      b1_buckets
-#define mm_free      b1_free
-#define mm_makeEmpty b1_makeEmpty
-#define mm_allocL    b1_allocL
+#define  BSZ(X) (1ull<<(X))
+#define BSZI(X) (64-__builtin_clzl((X)-1ull))
+#define  MMI(X) X
+#define   BN(X) b1_##X
+#define buckets b1_buckets
 #include "mm_buddyTemplate.c"
 #undef buckets
-#undef mm_free
-#undef mm_makeEmpty
-#undef mm_allocL
+#undef BN
+#undef BSZ
+#undef BSZI
 
-#define BSZ(x) ((1ull<<(x))*3)
-#define BSZI(x) (64-__builtin_clzl((x/3)-1ull))
-#define MMI(x) ((x)|64)
-#define buckets      b3_buckets
-#define mm_free      b3_free
-#define mm_makeEmpty b3_makeEmpty
-#define mm_allocL    b3_allocL
+#define  BSZ(X) (3ull<<(X))
+#define BSZI(X) (64-__builtin_clzl((X)/3-1ull))
+#define  MMI(X) ((X)|64)
+#define   BN(X) b3_##X
+#define buckets b3_buckets
 #include "mm_buddyTemplate.c"
 #undef buckets
-#undef mm_free
-#undef mm_makeEmpty
-#undef mm_allocL
+#undef BN
+#undef BSZ
+#undef BSZI
 
 void* mm_allocN(usz sz, u8 type) {
   assert(sz>12);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);
-  if (sz <= (1ull<<(b1-2)) * 3) return b3_allocL(b1-2, type);
+  if (sz <= (3ull<<(b1-2))) return b3_allocL(b1-2, type);
   return b1_allocL(b1, type);
 }
 void mm_free(Value* x) {
   if (x->mmInfo&64) b3_free(x);
   else b1_free(x);
 }
+void mm_forHeap(V2v f) {
+  b1_forHeap(f);
+  b3_forHeap(f);
+}
 
-u64 mm_round(usz sz) {
-  u8 b1 = 64-__builtin_clzl(sz-1ull);
-  u64 s3 = (1ull<<(b1-2)) * 3;
-  if (sz<=s3) return s3;
+u64 mm_round(usz x) {
+  u8 b1 = 64-__builtin_clzl(x-1ull);
+  u64 s3 = 3ull<<(b1-2);
+  if (x<=s3) return s3;
   return 1ull<<b1;
+}
+u64 mm_size(Value* x) {
+  u8 m = x->mmInfo;
+  if (m&64) return 3ull<<(x->mmInfo&63);
+  else      return 1ull<<(x->mmInfo&63);
+}
+u64 mm_totalAllocated() {
+  return b1_totalAllocated() + b3_totalAllocated();
 }

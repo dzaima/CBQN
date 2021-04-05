@@ -10,23 +10,29 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   struct Value;
   EmptyValue* next;
 };
-#define BSZI2(x) (64-__builtin_clzl((x)-1ull))
-#define BSZ(x) (1ull<<(x))
-#define BSZI BSZI2
-#define MMI(x) x
 
-u64 mm_round(usz sz) {
-  return BSZ(BSZI(sz));
-}
+#define  BSZ(x) (1ull<<(x))
+#define BSZI(x) (64-__builtin_clzl((x)-1ull))
+#define  MMI(x) x
+#define   BN(x) mm_##x
+
+#include "mm_buddyTemplate.c"
 
 void mm_visit(B x) {
   
 }
-
-#include "mm_buddyTemplate.c"
-
 void* mm_allocN(usz sz, u8 type) {
   assert(sz>8);
   onAlloc(sz, type);
-  return mm_allocL(BSZI2(sz), type);
+  return mm_allocL(BSZI(sz), type);
 }
+
+u64 mm_round(usz sz) {
+  return BSZ(BSZI(sz));
+}
+u64 mm_size(Value* x) {
+  return BSZ(x->mmInfo&63);
+}
+
+#undef BSZ
+#undef BSZI

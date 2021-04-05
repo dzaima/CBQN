@@ -115,10 +115,15 @@ typedef struct Arr {
 } Arr;
 
 // memory manager
+typedef void (*V2v)(Value*);
+
 void* mm_allocN(usz sz, u8 type);
 void mm_free(Value* x);
 void mm_visit(B x);
-u64 mm_round(usz x);
+u64  mm_round(usz x);
+u64  mm_size(Value* x);
+u64  mm_totalAllocated();
+void mm_forHeap(V2v f);
 B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
   return b((u64)mm_allocN(sz,type) | tag);

@@ -44,6 +44,14 @@ u64 nsTime() {
   return t.tv_sec*1000000000ull + t.tv_nsec;
 }
 
+u64 temp_heapUsage;
+void heapUsedFn(Value* p) { temp_heapUsage+= mm_size(p); }
+u64 heapUsed() {
+  temp_heapUsage = 0;
+  mm_forHeap(heapUsedFn);
+  return temp_heapUsage;
+}
+
 __ssize_t getline (char **__restrict __lineptr, size_t *restrict n, FILE *restrict stream);
 
 int main() {
@@ -164,8 +172,12 @@ int main() {
   dec(rtRes);
   dec(comp);
   
+  
+  // printf("done\n");fflush(stdout); while(1);
   #ifdef ALLOC_STAT
-    printf("total bytes allocated: %lu\n", talloc);
+    printf("total ever allocated: %lu\n", talloc);
+    printf("final heap size:      %ld\n", mm_totalAllocated());
+    printf("leaked heap size:     %ld\n", heapUsed());
     printf("ctrA←"); for (i64 i = 0; i < Type_MAX; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
     printf("ctrF←"); for (i64 i = 0; i < Type_MAX; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
     for(i64 i = 0; i < actrc; i++) {
@@ -173,7 +185,7 @@ int main() {
       bool any = false;
       for (i64 j = 0; j < Type_MAX; j++) if (c[j]) any=true;
       if (any) {
-        printf("%ld", i);
+        printf("%ld", i*4);
         for (i64 k = 0; k < Type_MAX; k++) printf("‿%u", c[k]);
         printf("\n");
       }

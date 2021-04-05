@@ -15,10 +15,8 @@ void* mm_allocN(usz sz, u8 type) {
   return x;
 }
 
-u64 mm_round(usz sz) {
-  return sz;
-}
-
-void mm_visit(B x) {
-  
-}
+void mm_visit(B x) { }
+u64  mm_round(usz x) { return x; }
+u64  mm_size(Value* x) { return -1; }
+u64  mm_totalAllocated() { return -1; }
+void mm_forHeap(V2v f) { }
