@@ -487,7 +487,7 @@ u64 talloc = 0;
 u32** actrs;
 #endif
 
-void onAlloc(usz sz, u8 type) {
+static void onAlloc(usz sz, u8 type) {
   #ifdef ALLOC_STAT
     if (!actrs) {
       actrs = malloc(sizeof(u32*)*actrc);
@@ -501,7 +501,7 @@ void onAlloc(usz sz, u8 type) {
     talloc+= sz;
   #endif
 }
-void onFree(Value* x) {
+static void onFree(Value* x) {
   #ifdef ALLOC_STAT
     ctr_f[x->type]++;
   #endif
