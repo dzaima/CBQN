@@ -41,7 +41,7 @@ void* mm_allocN(usz sz, u8 type) {
   assert(sz>12);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);
-  if (sz*3 <= 1ull<<(b1+1)) return b3_allocL(b1-2, type);
+  if (sz <= (1ull<<(b1-2)) * 3) return b3_allocL(b1-2, type);
   return b1_allocL(b1, type);
 }
 void mm_free(Value* x) {
@@ -51,6 +51,7 @@ void mm_free(Value* x) {
 
 u64 mm_round(usz sz) {
   u8 b1 = 64-__builtin_clzl(sz-1ull);
-  if (sz*3 <= 1ull<<(b1+1)) return (1ull<<(b1-2)) * 3;
+  u64 s3 = (1ull<<(b1-2)) * 3;
+  if (sz<=s3) return s3;
   return 1ull<<b1;
 }
