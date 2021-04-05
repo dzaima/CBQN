@@ -14,6 +14,7 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 EmptyValue* buckets[64];
 
 #define BSZ(x) (1ull<<(x))
+#define BSZI(x) (64-__builtin_clzl((x)-1ull))
 
 EmptyValue* makeEmpty(u8 bucket) { // result->next is garbage
   u8 cb = bucket;
@@ -38,15 +39,15 @@ EmptyValue* makeEmpty(u8 bucket) { // result->next is garbage
       break;
     }
   }
+  c->mmInfo = bucket;
   while (cb != bucket) {
     cb--;
-    EmptyValue* b = (EmptyValue*) (((char*)c)+BSZ(cb));
+    EmptyValue* b = (EmptyValue*) (BSZ(cb) + (char*)c);
     b->type = t_empty;
     b->mmInfo = cb;
     b->next = 0; assert(buckets[cb]==0);
     buckets[cb] = b;
   }
-  c->mmInfo = bucket;
   return c;
 }
 
@@ -61,7 +62,7 @@ void mm_free(Value* x) {
 
 void* mm_allocN(usz sz, u8 type) {
   assert(sz>8);
-  u8 bucket = 64-__builtin_clzl(sz-1ull); // inverse of BSZ
+  u8 bucket = BSZI(sz); // inverse of BSZ
   EmptyValue* x = buckets[bucket];
   if (x==NULL) x = makeEmpty(bucket);
   else buckets[bucket] = x->next;
@@ -70,6 +71,10 @@ void* mm_allocN(usz sz, u8 type) {
   x->refc = 1;
   x->type = type;
   return x;
+}
+
+u64 mm_round(usz sz) {
+  return BSZ(BSZI(sz));
 }
 
 void mm_visit(B x) {

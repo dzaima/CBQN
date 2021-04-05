@@ -118,6 +118,7 @@ typedef struct Arr {
 void* mm_allocN(usz sz, u8 type);
 void mm_free(Value* x);
 void mm_visit(B x);
+u64 mm_round(usz x);
 B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
   return b((u64)mm_allocN(sz,type) | tag);

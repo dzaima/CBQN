@@ -14,6 +14,11 @@ void* mm_allocN(usz sz, u8 type) {
   x->type = type;
   return x;
 }
+
+u64 mm_round(usz sz) {
+  return sz;
+}
+
 void mm_visit(B x) {
   
 }

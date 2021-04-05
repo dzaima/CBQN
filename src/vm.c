@@ -249,6 +249,23 @@ i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
+
+B* gStack;
+B* gStackStart;
+B* gStackEnd;
+
+void allocStack(u64 am) {
+  u64 left = gStackEnd-gStack;
+  if (am>left) {
+    u64 n = gStackEnd-gStackStart + am + 500;
+    u64 d = gStackStart-gStack;
+    if (gStack==NULL) gStackStart = malloc(n*sizeof(B));
+    else gStackStart = realloc(gStackStart, n*sizeof(B));
+    gStack    = gStackStart+d;
+    gStackEnd = gStackStart+n;
+  }
+}
+
 B evalBC(Body* b, Scope* sc) {
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -260,11 +277,11 @@ B evalBC(Body* b, Scope* sc) {
   B* objs = b->comp->objs->a;
   Block** blocks = b->comp->blocks;
   i32* bc = b->bc;
-  B stack[b->maxStack];
-  i32 sh = 0;
-  #define POP stack[--sh]
+  allocStack(b->maxStack);
+  #define POP (*--gStack)
   #define P(N) B N=POP;
-  #define ADD stack[sh++] = 
+  #define ADD(X) { B tr=X; *(gStack++) = tr; } // if ordering is needed
+  // #define ADD(X) *(gStack++) = X; }         // if ordering is not needed
   while(true) {
     #ifdef DEBUG_VM
       i32* sbc = bc;
@@ -279,24 +296,24 @@ B evalBC(Body* b, Scope* sc) {
     switch(*bc++) {
       case POPS: dec(POP); break;
       case PUSH: {
-        ADD inci(objs[*bc++]);
+        ADD(inci(objs[*bc++]));
         break;
       }
       case FN1C: { P(f)P(x)
-        ADD c1(f, x); dec(f);
+        ADD(c1(f, x); dec(f));
         break;
       }
       case FN1O: { P(f)P(x)
-        ADD isNothing(x)? x : c1(f, x); dec(f);
+        ADD(isNothing(x)? x : c1(f, x); dec(f));
         break;
       }
       case FN2C: { P(w)P(f)P(x)
-        ADD c2(f, w, x); dec(f);
+        ADD(c2(f, w, x); dec(f));
         break;
       }
       case FN2O: { P(w)P(f)P(x)
-        if (isNothing(x)) { dec(w); ADD x; }
-        else ADD isNothing(w)? c1(f, x) : c2(f, w, x);
+        if (isNothing(x)) { dec(w); ADD(x); }
+        else ADD(isNothing(w)? c1(f, x) : c2(f, w, x));
         dec(f);
         break;
       }
@@ -304,43 +321,43 @@ B evalBC(Body* b, Scope* sc) {
         i32 sz = *bc++;
         HArr_p r = m_harrv(sz);
         for (i32 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
-        ADD r.b;
+        ADD(r.b);
         break;
       }
       case DFND: {
         Block* bl = blocks[*bc++];
         switch(bl->ty) { default: UD;
-          case 0: ADD m_funBlock(bl, sc); break;
-          case 1: ADD m_md1Block(bl, sc); break;
-          case 2: ADD m_md2Block(bl, sc); break;
+          case 0: ADD(m_funBlock(bl, sc)); break;
+          case 1: ADD(m_md1Block(bl, sc)); break;
+          case 2: ADD(m_md2Block(bl, sc)); break;
         }
         break;
       }
-      case OP1D: { P(f)P(m)     ADD m1_d  (m,f  ); break; }
-      case OP2D: { P(f)P(m)P(g) ADD m2_d  (m,f,g); break; }
-      case OP2H: {     P(m)P(g) ADD m2_h  (m,  g); break; }
-      case TR2D: {     P(g)P(h) ADD m_atop(  g,h); break; }
-      case TR3D: { P(f)P(g)P(h) ADD m_fork(f,g,h); break; }
+      case OP1D: { P(f)P(m)     ADD(m1_d  (m,f  )); break; }
+      case OP2D: { P(f)P(m)P(g) ADD(m2_d  (m,f,g)); break; }
+      case OP2H: {     P(m)P(g) ADD(m2_h  (m,  g)); break; }
+      case TR2D: {     P(g)P(h) ADD(m_atop(  g,h)); break; }
+      case TR3D: { P(f)P(g)P(h) ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h)
-        if (isNothing(f)) { ADD m_atop(g,h); dec(f); }
-        else ADD m_fork(f,g,h);
+        if (isNothing(f)) { ADD(m_atop(g,h)); dec(f); }
+        else ADD(m_fork(f,g,h));
         break;
       }
       case LOCM: { i32 d = *bc++; i32 p = *bc++;
-        ADD tag((u64)d<<32 | p, VAR_TAG);
+        ADD(tag((u64)d<<32 | p, VAR_TAG));
         break;
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
-        ADD inci(scd(sc,d)->vars[p]);
+        ADD(inci(scd(sc,d)->vars[p]));
         break;
       }
-      case SETN: { P(s)    P(x) v_set(sc, s, inci(x), false); ADD x; break; }
-      case SETU: { P(s)    P(x) v_set(sc, s, inci(x), true ); ADD x; break; }
+      case SETN: { P(s)    P(x) v_set(sc, s, inci(x), false); ADD(x); break; }
+      case SETU: { P(s)    P(x) v_set(sc, s, inci(x), true ); ADD(x); break; }
       case SETM: { P(s)P(f)P(x)
         B w = v_get(sc, s);
         B r = c2(f,w,x); dec(f);
         v_set(sc, s, inci(r), true);
-        ADD r;
+        ADD(r);
         break;
       }
       // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM RETD SYSV
@@ -358,15 +375,14 @@ B evalBC(Body* b, Scope* sc) {
       for (i32 i = 0; i < sh; i++) { if(i)printf(" ⋄ "); print(stack[i]); } puts(""); fflush(stdout);
     #endif
   }
-  #undef P
-  #undef ADD
-  #undef POP
   end:;
   #ifdef DEBUG_VM
     bcDepth-= 2;
   #endif
-  assert(sh==1);
-  return stack[0];
+  return POP;
+  #undef P
+  #undef ADD
+  #undef POP
 }
 
 B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
