@@ -403,15 +403,19 @@ B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
 
 typedef struct Md1 {
   struct Value;
-  BBB2B  c1; // f(m,f,  x); consumes x
-  BBBB2B c2; // f(m,f,w,x); consumes w,x
+  BB2B  c1; // f(md1d{this,f},  x); consumes x
+  BBB2B c2; // f(md1d{this,f},w,x); consumes w,x
 } Md1;
 typedef struct Md2 {
   struct Value;
-  BBBB2B  c1; // f(m,f,g,  x); consumes x
-  BBBBB2B c2; // f(m,f,g,w,x); consumes w,x
+  BB2B  c1; // f(md2d{this,f,g},  x); consumes x
+  BBB2B c2; // f(md2d{this,f,g},w,x); consumes w,x
 } Md2;
-
+B m_md1D(B m, B f     );
+B m_md2D(B m, B f, B g);
+B m_md2H(B m,      B g);
+B m_fork(B f, B g, B h);
+B m_atop(     B g, B h);
 
 void arr_print(B x) {
   usz r = rnk(x);

@@ -9,14 +9,14 @@ L  ← {"m_caB("  ∾(⍕≠𝕩)∾",(B[]){"  ∾(1↓∾","⊸∾¨𝕩)∾"})
 LI ← {"m_cai32("∾(⍕≠𝕩)∾",(i32[]){"∾(1↓∾","⊸∾¨𝕩)∾"})"}
 # Escape the special characters that appear in BQN sources.
 Esc←{
-  in ← (@+0‿9‿10‿13)∾"'"""    # Null, Tab, LF, CR, and quotes
-  out ← "0tnr"                # Whitespace characters changed to letters
+  in ← (@+0‿9‿10‿13)∾"'"""   # Null, Tab, LF, CR, and quotes
+  out ← "0tnr"               # Whitespace characters changed to letters
   i ← in⊐𝕩
-  𝕩 ↩ i ⊏⟜out⌾((i<≠out)⊸/) 𝕩  # Replace
-  ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩         # Insert \
+  𝕩 ↩ i ⊏⟜out⌾((i<≠out)⊸/) 𝕩 # Replace
+  ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩        # Insert \
 }
-Str ← "m_str32(U"""∾Esc∾""")"˜     # A BQN string
-Char ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"}          # A BQN character
+Str ← "m_str32(U"""∾Esc∾""")"˙    # A BQN string
+Char ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
 Num ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾⍕∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
 
 F ← ⍕  # Format number

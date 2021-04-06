@@ -1,6 +1,6 @@
 #include "h.h"
 
-B tbl_c1(B t, B f, B x) {
+B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("⌜: argument was atom");
   usz ia = a(x)->ia;
   if (v(x)->type==t_harr && reusable(x)) {
@@ -14,7 +14,7 @@ B tbl_c1(B t, B f, B x) {
   dec(x);
   return r.b;
 }
-B tbl_c2(B t, B f, B w, B x) {
+B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isArr(w) & isArr(x)) {
     usz wia = a(w)->ia; ur wr = rnk(w);
     usz xia = a(x)->ia; ur xr = rnk(x);
@@ -43,7 +43,7 @@ B tbl_c2(B t, B f, B w, B x) {
 }
 
 
-B scan_c1(B t, B f, B x) {
+B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("`: argument cannot be a scalar");
   ur xr = rnk(x);
   if (xr==0) return err("`: argument cannot be a scalar");
@@ -62,7 +62,7 @@ B scan_c1(B t, B f, B x) {
   dec(x);
   return r.b;
 }
-B scan_c2(B t, B f, B w, B x) {
+B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("`: 𝕩 cannot be a scalar");
   ur xr = rnk(x); usz* xsh = a(x)->sh; BS2B xget = TI(x).get;
   HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inci(x)) : m_harrc(x);

@@ -14,12 +14,12 @@
 #include "i32arr.c"
 #include "c32arr.c"
 #include "utf.c"
+#include "derv.c"
 #include "arith.c"
 #include "sfns.c"
 #include "md1.c"
 #include "md2.c"
 #include "sysfn.c"
-#include "derv.c"
 #include "vm.c"
 
 void pr(char* a, B b) {
