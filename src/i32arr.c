@@ -24,7 +24,7 @@ B m_i32arrp(usz ia) { // doesn't write any shape/size info! be careful!
 i32* i32arr_ptr(B x) { VT(x, t_i32arr); return c(I32Arr,x)->a; }
 
 
-B m_cai32(usz ia, i32* a) {
+NOINLINE B m_cai32(usz ia, i32* a) {
   B r = m_i32arrv(ia);
   i32* rp = i32arr_ptr(r);
   for (usz i = 0; i < ia; i++) rp[i] = a[i];
