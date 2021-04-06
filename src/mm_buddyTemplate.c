@@ -12,7 +12,7 @@ AllocInfo* al;
 u64 alCap;
 u64 alSize;
 
-static EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
+static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
   u8 cb = bucket;
   EmptyValue* c;
   while (true) {

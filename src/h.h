@@ -19,6 +19,7 @@
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define U16_MAX ((u16)-1)
 #define UD __builtin_unreachable();
+#define NOINLINE __attribute__ ((noinline))
 
 #define usz u32
 #define ur u8
