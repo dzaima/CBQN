@@ -56,7 +56,7 @@ B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); return err("getti
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); return err("getting exp of non-number"); }
 B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); return err("getting floor of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); return err("getting log of non-number"); }
-B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); dec(x); return r; }
+B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 
 
 

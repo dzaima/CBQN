@@ -204,7 +204,7 @@ Scope* scd(Scope* sc, u16 d) {
   return sc;
 }
 
-B v_set(Scope* sc, B s, B x, bool upd) { // frees s, consumes x, returns previous value
+B v_set(Scope* sc, B s, B x, bool upd) { // frees s; returns previous value
   if (isVar(s)) {
     sc = scd(sc, (u16)(s.u>>32));
     B prev = sc->vars[(u32)s.u];
@@ -214,15 +214,19 @@ B v_set(Scope* sc, B s, B x, bool upd) { // frees s, consumes x, returns previou
     } else {
       if (prev.u!=bi_noVar.u) return err("redefining variable");
     }
-    sc->vars[(u32)s.u] = x;
+    sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
     if (!shEq(s, x)) return err("spread assignment: mismatched shape");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xget = TI(x).get;
-    for (u64 i = 0; i < ia; i++) v_set(sc, sp[i], xget(x,i), upd);
-    dec(s); dec(x);
+    for (u64 i = 0; i < ia; i++) {
+      B c = xget(x,i);
+      v_set(sc, sp[i], c, upd);
+      decR(c); // should never free actually
+    }
+    dec(s);
   }
   return m_f64(0);
 }
@@ -305,7 +309,7 @@ B evalBC(Body* b, Scope* sc) {
         break;
       }
       case FN1O: { P(f)P(x)
-        ADD(isNothing(x)? x : c1(f, x); dec(f));
+        ADD(isNothing(x)? x : c1(f, x)); dec(f);
         break;
       }
       case FN2C: { P(w)P(f)P(x)
@@ -352,12 +356,12 @@ B evalBC(Body* b, Scope* sc) {
         ADD(inc(scd(sc,d)->vars[p]));
         break;
       }
-      case SETN: { P(s)    P(x) v_set(sc, s, inc(x), false); ADD(x); break; }
-      case SETU: { P(s)    P(x) v_set(sc, s, inc(x), true ); ADD(x); break; }
+      case SETN: { P(s)    P(x) v_set(sc, s, x, false); ADD(x); break; }
+      case SETU: { P(s)    P(x) v_set(sc, s, x, true ); ADD(x); break; }
       case SETM: { P(s)P(f)P(x)
         B w = v_get(sc, s);
         B r = c2(f,w,x); dec(f);
-        v_set(sc, s, inc(r), true);
+        v_set(sc, s, r, true);
         ADD(r);
         break;
       }
@@ -439,18 +443,18 @@ B m_md2Block(Block* bl, Scope* psc) {
   return r;
 }
 
-void  comp_free(B x) { Comp*  c = c(Comp ,x); ptr_dec(c->objs); dec(c->bc); }
-void  body_free(B x) { Body*  c = c(Body ,x); ptr_dec(c->comp); }
-void block_free(B x) { Block* c = c(Block,x); ptr_dec(c->body); }
+void  comp_free(B x) { Comp*  c = c(Comp ,x); ptr_decR(c->objs); decR(c->bc); }
+void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); }
+void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
 void scope_free(B x) {
   Scope* c = c(Scope,x);
-  if (c->psc) ptr_dec_rare(c->psc);
+  if (c->psc) ptr_decR(c->psc);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
-void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
-void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
+void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_decR(c->sc); ptr_decR(c->bl); }
+void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
+void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }

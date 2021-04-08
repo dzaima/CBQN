@@ -319,10 +319,12 @@ bool isNothing(B b) { return b.u==bi_nothing.u; }
 
 
 // refcount
-void value_free(B x, Value* vx) {
+static inline void value_free(B x, Value* vx) {
   ti[vx->type].free(x);
   mm_free(vx);
 }
+static NOINLINE void value_freeR1(Value* x) { value_free(tag(x, OBJ_TAG), x); }
+static NOINLINE void value_freeR2(Value* vx, B x) { value_free(x, vx); }
 void dec(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
@@ -334,8 +336,11 @@ B inc(B x) {
 }
 void ptr_dec(void* x) { if(!--((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x); }
 void ptr_inc(void* x) { ((Value*)x)->refc++; }
-static NOINLINE void value_free_rare(B x, Value* vx) { value_free(x, vx); }
-void ptr_dec_rare(void* x) { if(!--((Value*)x)->refc) value_free_rare(tag(x, OBJ_TAG), x); }
+void ptr_decR(void* x) { if(!--((Value*)x)->refc) value_freeR1(x); }
+void decR(B x) {
+  if (!isVal(x)) return; Value* vx = v(x);
+  if(!--vx->refc) value_freeR2(vx, x);
+}
 bool reusable(B x) { return v(x)->refc==1; }
 
 
