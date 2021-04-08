@@ -32,7 +32,7 @@ void pr(char* a, B b) {
 
 Block* ca3(B b) {
   B* ps = harr_ptr(b);
-  Block* r = compile(inci(ps[0]),inci(ps[1]),inci(ps[2]));
+  Block* r = compile(inc(ps[0]),inc(ps[1]),inc(ps[2]));
   dec(b);
   return r;
 }
@@ -92,7 +92,7 @@ int main() {
   for (usz i = 0; i < runtimeLen; i++) {
     if (isVal(runtime[i])) v(runtime[i])->flags|= i+1;
   }
-  c1(rtFinish, m_v2(inci(bi_decp), inci(bi_primInd)));
+  c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)));
   
   // uncomment to use src/interp; needed for test.bqn
   // Block* c = ca3(
@@ -112,7 +112,7 @@ int main() {
     #include "formatter"
   );
   B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
-  B fmt = TI(fmtM).m1_d(fmtM, m_caB(4, (B[]){inci(bi_type), inci(bi_decp), inci(bi_fmtF), inci(bi_fmtN)}));
+  B fmt = TI(fmtM).m1_d(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_fmtN)}));
   #endif
   
   
@@ -132,7 +132,7 @@ int main() {
   //   exit(1);
   // }
   // if (c_src) {
-  //   B cbc = c2(comp, inci(rtObj), fromUTF8(c_src, c_len));
+  //   B cbc = c2(comp, inc(rtObj), fromUTF8(c_src, c_len));
   //   Block* cbc_b = ca3(cbc);
   //   comp = m_funBlock(cbc_b, 0);
   //   free(c_src);
@@ -146,7 +146,7 @@ int main() {
     getline(&ln, &gl, stdin);
     if (ln[0]==10) break;
     B obj = fromUTF8(ln, strlen(ln));
-    B cbc = c2(comp, inci(currentRuntime), obj);
+    B cbc = c2(comp, inc(currentRuntime), obj);
     free(ln);
     Block* cbc_b = ca3(cbc);
     

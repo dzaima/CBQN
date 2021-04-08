@@ -43,7 +43,7 @@ B eq_c2(B t, B w, B x) {
   i32 wia = a(w)->ia;
   i32 xia = a(x)->ia;
   if (wia != xia)             { dec(w);dec(x); return m_i32(0); }
-  for (i32 i = 0; i<wia; i++) if(!o2i(eq_c2(t,inci(wp[i]),inci(xp[i]))))
+  for (i32 i = 0; i<wia; i++) if(!o2i(eq_c2(t,inc(wp[i]),inc(xp[i]))))
                               { dec(w);dec(x); return m_i32(0); }
                                 dec(w);dec(x); return m_i32(1);
 }

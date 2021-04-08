@@ -35,8 +35,8 @@ B withFill(B x, B fill) {
 B getFill(B x) {
   if (isArr(x)) {
     u8 t = v(x)->type;
-    if (t==t_fillarr  ) { B r = inci(c(FillArr,x            )->fill); dec(x); return r; }
-    if (t==t_fillslice) { B r = inci(c(FillArr,c(Slice,x)->p)->fill); dec(x); return r; }
+    if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); dec(x); return r; }
+    if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); dec(x); return r; }
     if (t==t_c32arr || t==t_c32slice) return m_c32(' ');
   }
   if (isC32(x)) return m_c32(' ');
@@ -54,12 +54,12 @@ B m_fillslice(B p, B* ptr) {
   return tag(r, ARR_TAG);
 }
 
-B fillarr_slice  (B x, usz s) {return m_fillslice(x                      , c(FillArr  ,x)->a+s); }
-B fillslice_slice(B x, usz s) { B r = m_fillslice(inci(c(FillSlice,x)->p), c(FillSlice,x)->a+s); dec(x); return r; }
+B fillarr_slice  (B x, usz s) {return m_fillslice(x                     , c(FillArr  ,x)->a+s); }
+B fillslice_slice(B x, usz s) { B r = m_fillslice(inc(c(FillSlice,x)->p), c(FillSlice,x)->a+s); dec(x); return r; }
 
 
-B fillarr_get  (B x, usz n) { VT(x,t_fillarr  ); return inci(c(FillArr  ,x)->a[n]); }
-B fillslice_get(B x, usz n) { VT(x,t_fillslice); return inci(c(FillSlice,x)->a[n]); }
+B fillarr_get  (B x, usz n) { VT(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n]); }
+B fillslice_get(B x, usz n) { VT(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
 void fillarr_free(B x) {
   decSh(x);
   B* p = c(FillArr, x)->a;

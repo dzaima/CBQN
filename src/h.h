@@ -132,7 +132,7 @@ B mm_alloc(usz sz, u8 type, u64 tag) {
 
 // some primitive actions
 void dec(B x);
-void inc(B x);
+B    inc(B x);
 void ptr_dec(void* x);
 void ptr_inc(void* x);
 void print(B x);
@@ -328,12 +328,16 @@ void dec(B x) {
   Value* vx = v(x);
   if(!--vx->refc) value_free(x, vx);
 }
-void ptr_dec(void* x) { dec(tag(x, OBJ_TAG)); }
+B inc(B x) {
+  if (isVal(VALIDATE(x))) v(x)->refc++;
+  return x;
+}
+void ptr_dec(void* x) { if(!--((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x); }
+void ptr_inc(void* x) { ((Value*)x)->refc++; }
+static NOINLINE void value_free_rare(B x, Value* vx) { value_free(x, vx); }
+void ptr_dec_rare(void* x) { if(!--((Value*)x)->refc) value_free_rare(tag(x, OBJ_TAG), x); }
 bool reusable(B x) { return v(x)->refc==1; }
 
-void inc (B x) { if (isVal(VALIDATE(x))) v(x)->refc++; }
-B    inci(B x) { inc(x); return x; }
-void ptr_inc(void* x) { ((Value*)x)->refc++; }
 
 
 void printUTF8(u32 c);
@@ -389,11 +393,11 @@ B c2_invalid(B f, B w, B x) { return err("This function can't be called dyadical
 
 NOINLINE B c1_rare(B f, B x) { dec(x);
   if (isMd(f)) return err("Calling a modifier");
-  return inci(VALIDATE(f));
+  return inc(VALIDATE(f));
 }
 NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
   if (isMd(f)) return err("Calling a modifier");
-  return inci(VALIDATE(f));
+  return inc(VALIDATE(f));
 }
 B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));

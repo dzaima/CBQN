@@ -76,12 +76,12 @@ B m_hslice(B p, B* ptr) {
   return tag(r, ARR_TAG);
 }
 
-B harr_slice  (B x, usz s) {return m_hslice(x                   , c(HArr  ,x)->a+s); }
-B hslice_slice(B x, usz s) { B r = m_hslice(inci(c(HSlice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
+B harr_slice  (B x, usz s) {return m_hslice(x                  , c(HArr  ,x)->a+s); }
+B hslice_slice(B x, usz s) { B r = m_hslice(inc(c(HSlice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
 
 
-B harr_get  (B x, usz n) { VT(x,t_harr  ); return inci(c(HArr  ,x)->a[n]); }
-B hslice_get(B x, usz n) { VT(x,t_hslice); return inci(c(HSlice,x)->a[n]); }
+B harr_get  (B x, usz n) { VT(x,t_harr  ); return inc(c(HArr  ,x)->a[n]); }
+B hslice_get(B x, usz n) { VT(x,t_hslice); return inc(c(HSlice,x)->a[n]); }
 void harr_free(B x) {
   decSh(x);
   B* p = harr_ptr(x);

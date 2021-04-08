@@ -126,7 +126,9 @@ typedef struct Body {
 
 typedef struct Scope {
   struct Value;
-  u64 bcInd; // DEBUG: place of this in bytecode array
+  #ifdef DEBUG
+    u64 bcInd; // DEBUG: place of this in bytecode array
+  #endif
   u16 varAm;
   Scope* psc;
   B vars[];
@@ -141,7 +143,7 @@ Block* compile(B bcq, B objs, B blocks) {
   usz bam = a(blocks)->ia;
   
   // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
-  // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inci(objPtr[i])), objPtr[i]);
+  // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inc(objPtr[i])), objPtr[i]);
   
   I32Arr* bca = toI32Arr(bcq);
   i32* bc = bca->a;
@@ -189,7 +191,7 @@ Block* compile(B bcq, B objs, B blocks) {
     comp->blocks[i] = bl;
   }
   
-  Block* ret = c(Block,inci(tag(comp->blocks[0], OBJ_TAG)));
+  Block* ret = c(Block,inc(tag(comp->blocks[0], OBJ_TAG)));
   // TODO store blocks in each body, then decrement each of comp->blocks; also then move temp block list out of Comp as it's useless then
   // for (usz i = 0; i < bam; i++) ptr_dec(comp->blocks[i]);
   
@@ -295,7 +297,7 @@ B evalBC(Body* b, Scope* sc) {
     switch(*bc++) {
       case POPS: dec(POP); break;
       case PUSH: {
-        ADD(inci(objs[*bc++]));
+        ADD(inc(objs[*bc++]));
         break;
       }
       case FN1C: { P(f)P(x)
@@ -347,15 +349,15 @@ B evalBC(Body* b, Scope* sc) {
         break;
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
-        ADD(inci(scd(sc,d)->vars[p]));
+        ADD(inc(scd(sc,d)->vars[p]));
         break;
       }
-      case SETN: { P(s)    P(x) v_set(sc, s, inci(x), false); ADD(x); break; }
-      case SETU: { P(s)    P(x) v_set(sc, s, inci(x), true ); ADD(x); break; }
+      case SETN: { P(s)    P(x) v_set(sc, s, inc(x), false); ADD(x); break; }
+      case SETU: { P(s)    P(x) v_set(sc, s, inc(x), true ); ADD(x); break; }
       case SETM: { P(s)P(f)P(x)
         B w = v_get(sc, s);
         B r = c2(f,w,x); dec(f);
-        v_set(sc, s, inci(r), true);
+        v_set(sc, s, inc(r), true);
         ADD(r);
         break;
       }
@@ -390,7 +392,9 @@ B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
   sc->psc = psc; if(psc)ptr_inc(psc);
   u16 varAm = sc->varAm = bdy->varAm;
   assert(varAm>=ga);
-  sc->bcInd = bdy->bc-c(I32Arr,bdy->comp->bc)->a;
+  #ifdef DEBUG
+    sc->bcInd = bdy->bc-c(I32Arr,bdy->comp->bc)->a;
+  #endif
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
@@ -403,12 +407,12 @@ B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inci(t), x, bi_nothing                                     }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inci(t), x, w                                              }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inci(D), x, bi_nothing, inci(d->m1), inci(d->f)            }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inci(D), x, w         , inci(d->m1), inci(d->f)            }); }
-B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inci(D), x, bi_nothing, inci(d->m2), inci(d->f), inci(d->g)}); }
-B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inci(D), x, w         , inci(d->m2), inci(d->f), inci(d->g)}); }
+B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, bi_nothing                                     }); }
+B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, w                                              }); }
+B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, bi_nothing, inc(d->m1), inc(d->f)            }); }
+B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, w         , inc(d->m1), inc(d->f)            }); }
+B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, bi_nothing, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, w         , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) {
   if (bl->imm) return actualExec(bl, psc, 0, NULL);
   B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));
@@ -440,13 +444,13 @@ void  body_free(B x) { Body*  c = c(Body ,x); ptr_dec(c->comp); }
 void block_free(B x) { Block* c = c(Block,x); ptr_dec(c->body); }
 void scope_free(B x) {
   Scope* c = c(Scope,x);
-  if (c->psc) ptr_dec(c->psc);
+  if (c->psc) ptr_dec_rare(c->psc);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_dec(c->sc); ptr_dec(c->bl); }
-void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_dec(c->sc); ptr_dec(c->bl); }
-void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_dec(c->sc); ptr_dec(c->bl); }
+void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
+void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
+void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_dec_rare(c->sc); ptr_dec_rare(c->bl); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }

@@ -42,16 +42,16 @@ B md2D_c1(B t,      B x) { return c(Md2,c(Md2D, t)->m2)->c1(t,    x); }
 B md2D_c2(B t, B w, B x) { return c(Md2,c(Md2D, t)->m2)->c2(t, w, x); }
 B atop_c1(B t,      B x) { return c1(c(Atop,t)->g, c1(c(Atop,t)->h,    x)); }
 B atop_c2(B t, B w, B x) { return c1(c(Atop,t)->g, c2(c(Atop,t)->h, w, x)); }
-B fork_c1(B t,      B x) { B g=c1(c(Fork,t)->h,          inci(x)); return c2(c(Fork,t)->g, c1(c(Fork,t)->f,    x), g); }
-B fork_c2(B t, B w, B x) { B g=c2(c(Fork,t)->h, inci(w), inci(x)); return c2(c(Fork,t)->g, c2(c(Fork,t)->f, w, x), g); }
+B fork_c1(B t,      B x) { B g=c1(c(Fork,t)->h,         inc(x)); return c2(c(Fork,t)->g, c1(c(Fork,t)->f,    x), g); }
+B fork_c2(B t, B w, B x) { B g=c2(c(Fork,t)->h, inc(w), inc(x)); return c2(c(Fork,t)->g, c2(c(Fork,t)->f, w, x), g); }
 B md2H_c1(B d,      B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
 B md2H_c2(B d, B w, B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
 
-B md1D_decompose(B x) { B r=m_v3(m_i32(4),inci(c(Md1D,x)->f),inci(c(Md1D,x)->m1)                    ); dec(x); return r; }
-B md2D_decompose(B x) { B r=m_v4(m_i32(5),inci(c(Md2D,x)->f),inci(c(Md2D,x)->m2), inci(c(Md2D,x)->g)); dec(x); return r; }
-B md2H_decompose(B x) { B r=m_v3(m_i32(6),                   inci(c(Md2H,x)->m2), inci(c(Md2H,x)->g)); dec(x); return r; }
-B fork_decompose(B x) { B r=m_v4(m_i32(3),inci(c(Fork,x)->f),inci(c(Fork,x)->g ), inci(c(Fork,x)->h)); dec(x); return r; }
-B atop_decompose(B x) { B r=m_v3(m_i32(2),                   inci(c(Atop,x)->g ), inci(c(Atop,x)->h)); dec(x); return r; }
+B md1D_decompose(B x) { B r=m_v3(m_i32(4),inc(c(Md1D,x)->f),inc(c(Md1D,x)->m1)                   ); dec(x); return r; }
+B md2D_decompose(B x) { B r=m_v4(m_i32(5),inc(c(Md2D,x)->f),inc(c(Md2D,x)->m2), inc(c(Md2D,x)->g)); dec(x); return r; }
+B md2H_decompose(B x) { B r=m_v3(m_i32(6),                  inc(c(Md2H,x)->m2), inc(c(Md2H,x)->g)); dec(x); return r; }
+B fork_decompose(B x) { B r=m_v4(m_i32(3),inc(c(Fork,x)->f),inc(c(Fork,x)->g ), inc(c(Fork,x)->h)); dec(x); return r; }
+B atop_decompose(B x) { B r=m_v3(m_i32(2),                  inc(c(Atop,x)->g ), inc(c(Atop,x)->h)); dec(x); return r; }
 
 // consume all args
 B m_md1D(B m, B f     ) { B r = mm_alloc(sizeof(Md1D), t_md1D, ftag(FUN_TAG)); c(Md1D,r)->f = f; c(Md1D,r)->m1 = m;                   c(Md1D,r)->c1=md1D_c1; c(Md1D,r)->c2=md1D_c2; c(Md1D,r)->extra=pf_md1d; return r; }

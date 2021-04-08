@@ -54,8 +54,8 @@ B m_i32slice(B p, i32* ptr) {
   return tag(r, ARR_TAG);
 }
 
-B i32arr_slice  (B x, usz s) {return m_i32slice(x                     , c(I32Arr  ,x)->a+s); }
-B i32slice_slice(B x, usz s) { B r = m_i32slice(inci(c(I32Slice,x)->p), c(I32Slice,x)->a+s); dec(x); return r; }
+B i32arr_slice  (B x, usz s) {return m_i32slice(x                    , c(I32Arr  ,x)->a+s); }
+B i32slice_slice(B x, usz s) { B r = m_i32slice(inc(c(I32Slice,x)->p), c(I32Slice,x)->a+s); dec(x); return r; }
 
 
 B i32arr_get  (B x, usz n) { VT(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
