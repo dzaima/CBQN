@@ -8,30 +8,52 @@ B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz i = 0;
   B cr = c1(f, xget(x,0));
   HArr_p rH;
-  if (reusable(x) && TI(x).canStore(cr)) {
+  if (TI(x).canStore(cr)) {
+    bool reuse = reusable(x);
     if (v(x)->type==t_harr) {
-      B* p = harr_ptr(x);
-      p[i++] = cr;
-      for (; i < ia; i++) p[i] = c1(f, p[i]);
-      return x;
+      B* xp = harr_ptr(x);
+      if (reuse) {
+        xp[i++] = cr;
+        for (; i < ia; i++) xp[i] = c1(f, xp[i]);
+        return x;
+      } else {
+        HArr_p rp = m_harrc(x);
+        rp.a[i++] = cr;
+        for (; i < ia; i++) rp.a[i] = c1(f, inc(xp[i]));
+        dec(x);
+        return rp.b;
+      }
     } else if (v(x)->type==t_i32arr) {
-      i32* p = i32arr_ptr(x);
-      p[i++] = o2iu(cr);
+      i32* xp = i32arr_ptr(x);
+      B r = reuse? x : m_i32arrc(x);
+      i32* rp = i32arr_ptr(r);
+      rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
-        cr = c1(f, m_i32(p[i]));
+        cr = c1(f, m_i32(xp[i]));
         if (!q_i32(cr)) {
           rH = m_harrc(x);
-          for (usz j = 0; j < i; j++) rH.a[j] = m_i32(p[j]);
+          for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
+          if (!reuse) dec(r);
           goto fallback;
         }
-        p[i] = o2iu(cr);
+        rp[i] = o2iu(cr);
       }
-      return x;
+      if (!reuse) dec(x);
+      return r;
     } else if (v(x)->type==t_fillarr) {
-      B* p = fillarr_ptr(x);
-      p[i++] = cr;
-      for (; i < ia; i++) p[i] = c1(f, p[i]);
-      return x;
+      B* xp = fillarr_ptr(x);
+      if (reuse) {
+        c(FillArr,x)->fill = bi_noFill;
+        xp[i++] = cr;
+        for (; i < ia; i++) xp[i] = c1(f, xp[i]);
+        return x;
+      } else {
+        HArr_p rp = m_harrc(x);
+        rp.a[i++] = cr;
+        for (; i < ia; i++) rp.a[i] = c1(f, inc(xp[i]));
+        dec(x);
+        return rp.b;
+      }
     } else rH = m_harrc(x);
   } else rH = m_harrc(x);
   fallback:
