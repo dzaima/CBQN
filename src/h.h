@@ -73,21 +73,36 @@ enum Type {
   
   Type_MAX
 };
+char* format_type(u8 u) {
+  switch(u) { default: return"(unknown type)";
+    case t_empty:return"empty"; case t_noGC:return"noGC";
+    case t_fun_def:return"fun_def"; case t_fun_block:return"fun_block";
+    case t_md1_def:return"md1_def"; case t_md1_block:return"md1_block";
+    case t_md2_def:return"md2_def"; case t_md2_block:return"md2_block";
+    case t_fork:return"fork"; case t_atop:return"atop";
+    case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
+    case t_harr  :return"harr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ;
+    case t_hslice:return"hslice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice";
+    case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
+  }
+}
 
 enum PrimFns {
   pf_none,
   pf_add, pf_sub, pf_mul, pf_div, pf_pow, pf_floor, pf_eq, pf_le, pf_log, // arith.c
-  pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_lt, pf_rt, pf_fmtF, pf_fmtN, // sfns.c
+  pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_feq, pf_lt, pf_rt, pf_fmtF, pf_fmtN, // sfns.c
   pf_fork, pf_atop, pf_md1d, pf_md2d, // derv.c
-  pf_type, pf_decp, pf_primInd, pf_glyph, pf_fill, pf_grLen, pf_grOrd, pf_asrt, // sysfn.c
+  pf_type, pf_decp, pf_primInd, pf_glyph, pf_fill, // sysfn.c
+  pf_grLen, pf_grOrd, pf_asrt, pf_sys, pf_internal, // sysfn.c
 };
 char* format_pf(u8 u) {
-  switch(u) {
-    default: case pf_none: return"(unknown fn)";
+  switch(u) { default: case pf_none: return"(unknown fn)";
     case pf_add:return"+"; case pf_sub:return"-"; case pf_mul:return"×"; case pf_div:return"÷"; case pf_pow:return"⋆"; case pf_floor:return"⌊"; case pf_eq:return"="; case pf_le:return"≤"; case pf_log:return"⋆⁼";
-    case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_lt:return"⊣"; case pf_rt:return"⊢"; case pf_fmtF:case pf_fmtN:return"⍕";
+    case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_feq:return"≡"; case pf_lt:return"⊣"; case pf_rt:return"⊢"; case pf_fmtF:case pf_fmtN:return"⍕";
     case pf_fork:return"(fork)"; case pf_atop:return"(atop)"; case pf_md1d:return"(derived 1-modifier)"; case pf_md2d:return"(derived 2-modifier)";
-    case pf_type:return"•Type"; case pf_decp:return"•Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•GroupOrd"; case pf_asrt:return"!";  }
+    case pf_type:return"•Type"; case pf_decp:return"Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; 
+    case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•groupOrd"; case pf_asrt:return"!"; case pf_sys:return"•getsys"; case pf_internal:return"•Internal"; 
+  }
 }
 enum PrimMd1 {
   pm1_none,
@@ -283,7 +298,7 @@ typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
   B2v free;   // expects refc==0
-  BS2B get;   // increments result, doesn't consume arg
+  BS2B get;   // increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
@@ -393,6 +408,25 @@ void printRaw(B x) {
       printUTF8((u32)c.u);
     }
   }
+}
+
+B eq_c2(B t, B w, B x);
+bool equal(B w, B x) { // doesn't consume
+  bool wa = isArr(w);
+  bool xa = isArr(x);
+  if (wa!=xa) return false;
+  if (!wa) return o2iu(eq_c2(bi_nothing, inc(w), inc(x)))?1:0;
+  if (!shEq(w,x)) return false;
+  usz ia = a(x)->ia;
+  BS2B xget = TI(x).get;
+  BS2B wget = TI(w).get;
+  for (usz i = 0; i < ia; i++) {
+    B wc=wget(w,i); B xc=xget(x,i); // getdec
+    bool eq=equal(wc,xc);
+    decR(wc); decR(xc);
+    if(!eq) return false;
+  }
+  return true;
 }
 
 

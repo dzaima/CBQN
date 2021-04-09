@@ -22,6 +22,17 @@ B asFill(B x) {
   return bi_noFill;
 }
 B withFill(B x, B fill) {
+  assert(isArr(x));
+  switch(v(x)->type) {
+    case t_i32arr : case t_i32slice : if(fill.u == m_i32(0  ).u) return x; break;
+    case t_c32arr : case t_c32slice : if(fill.u == m_c32(' ').u) return x; break;
+    case t_fillarr: case t_fillslice: if (equal(c(FillArr,x)->fill, fill)) return x;
+      if (reusable(x)) {
+        c(FillArr, x)->fill = fill;
+        return x;
+      }
+      break;
+  }
   B r = m_arr(fsizeof(FillArr,a,B,a(x)->ia), t_fillarr);
   arr_shCopy(r, x);
   c(FillArr,r)->fill = fill;

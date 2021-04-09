@@ -117,14 +117,40 @@ B asrt_c2(B t, B w, B x) {
   return err("assertion error with message");
 }
 
+B internal_c2(B t, B w, B x) {
+  B r;
+  u64 id = o2s(w);
+  if(id==0) { char* c = format_type(v(x)->type); r = m_str8(strlen(c), c); }
+  else if(id==1) { r = m_i32(v(x)->mmInfo); }
+  else if(id==2) { r = m_i32(v(x)->refc); }
+  else return err("Unknown •Internal 𝕨");
+  dec(x);
+  return r;
+}
+B sys_c1(B t, B x);
+
 
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 
-B                   bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt;
-void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) }
+B                   bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt, bi_sys, bi_internal;
+void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) bm(sys) bd(internal) }
 
 #undef ba
 #undef bd
 #undef bm
+
+B sys_c1(B t, B x) {
+  assert(isArr(x));
+  HArr_p r = m_harrc(x);
+  BS2B xget = TI(x).get;
+  for (usz i = 0; i < a(x)->ia; i++) {
+    B c = xget(x,i);
+    if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
+    else if (eqStr(c, U"eq")) r.a[i] = inc(bi_feq);
+    else err("Unknown system function");
+  }
+  dec(x);
+  return r.b;
+}

@@ -55,6 +55,20 @@ B c32slice_get(B x, usz n) { VT(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n])
 void c32arr_free(B x) { decSh(x); }
 bool c32arr_canStore(B x) { return isC32(x); }
 
+
+bool eqStr(B w, u32* x) {
+  if (!isArr(w) || rnk(w)!=1) return false;
+  BS2B wget = TI(w).get;
+  u64 i = 0;
+  while (x[i]) {
+    B c = wget(w, i);
+    if (!isC32(c) || x[i]!=(u32)c.u) return false;
+    i++;
+  }
+  return i==a(w)->ia;
+}
+
+
 void c32arr_init() {
   ti[t_c32arr].get   = c32arr_get;   ti[t_c32slice].get   = c32slice_get;
   ti[t_c32arr].slice = c32arr_slice; ti[t_c32slice].slice = c32slice_slice;

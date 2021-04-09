@@ -107,14 +107,20 @@ B fmtF_c1(B t, B x) {
   return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟"[fl-1]);
 }
 
+B feq_c2(B t, B w, B x) {
+  bool r = equal(w, x);
+  dec(w); dec(x);
+  return m_i32(r);
+}
+
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
-B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_lt, bi_rt, bi_fmtF, bi_fmtN;
-void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) bm(fne) ba(lt) ba(rt) bm(fmtF) bm(fmtN)
+B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_lt, bi_rt, bi_fmtF, bi_fmtN;
+void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) bm(fne) bd(feq) ba(lt) ba(rt) bm(fmtF) bm(fmtN)
   ti[t_fun_def].print = print_fun_def;
 }
 

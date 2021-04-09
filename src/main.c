@@ -138,7 +138,7 @@ int main() {
   //   free(c_src);
   // }
   
-  B currentRuntime = FAKE_RUNTIME? frtObj : rtObj;
+  B compArg = m_v2(FAKE_RUNTIME? frtObj : rtObj, bi_sys);
   
   while (true) { // exit by evaluating an empty expression
     char* ln = NULL;
@@ -146,7 +146,7 @@ int main() {
     getline(&ln, &gl, stdin);
     if (ln[0]==10) break;
     B obj = fromUTF8(ln, strlen(ln));
-    B cbc = c2(comp, inc(currentRuntime), obj);
+    B cbc = c2(comp, inc(compArg), obj);
     free(ln);
     Block* cbc_b = ca3(cbc);
     
