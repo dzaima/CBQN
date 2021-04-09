@@ -172,7 +172,7 @@ int main() {
   dec(rtRes);
   dec(comp);
   
-  
+  CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
   #ifdef ALLOC_STAT
     printf("total ever allocated: %lu\n", talloc);

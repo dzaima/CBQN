@@ -24,6 +24,11 @@
 #define usz u32
 #define ur u8
 
+#define CTR_FOR(F)
+#define CTR_DEF(N) u64 N;
+#define CTR_PRINT(N) printf(#N ": %lu\n", N);
+CTR_FOR(CTR_DEF)
+
 #ifdef DEBUG
   #include<assert.h>
   #define VALIDATE(x) validate(x) // preferred validating level
@@ -253,7 +258,8 @@ B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
 i32 o2i  (B x) { if ((i32)x.f!=x.f) err("o2i"": expected integer"); return (i32)x.f; }
 usz o2s  (B x) { if ((usz)x.f!=x.f) err("o2s"": expected integer"); return (usz)x.f; }
 i64 o2i64(B x) { if ((i64)x.f!=x.f) err("o2i64: expected integer"); return (i64)x.f; }
-
+i32 o2iu (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
 
 
 typedef struct Slice {
@@ -265,7 +271,7 @@ void slice_print(B x) { arr_print(x); }
 
 
 
-typedef void (*B2V)(B);
+typedef void (*B2v)(B);
 typedef B (* BS2B)(B, usz);
 typedef B (*BSS2B)(B, usz, usz);
 typedef B (*    B2B)(B);
@@ -273,16 +279,19 @@ typedef B (*   BB2B)(B, B);
 typedef B (*  BBB2B)(B, B, B);
 typedef B (* BBBB2B)(B, B, B, B);
 typedef B (*BBBBB2B)(B, B, B, B, B);
+typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
-  B2V free;   // expects refc==0
-  B2V visit;  // for GC when that comes around
-  B2V print;  // doesn't consume
+  B2v free;   // expects refc==0
   BS2B get;   // increments result, doesn't consume arg
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
-  B2B decompose; // consumes; must return a HArr
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
+  B2b canStore; // doesn't consume
+  
+  B2v print;  // doesn't consume
+  B2v visit;  // for GC when that comes around
+  B2B decompose; // consumes; must return a HArr
 } TypeInfo;
 TypeInfo ti[Type_MAX];
 #define TI(x) (ti[v(x)->type])
@@ -295,7 +304,7 @@ B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
 B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
 B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
 B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
-
+bool def_canStore(B x) { return false; }
 B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 void hdr_init() {
   for (i32 i = 0; i < Type_MAX; ++i) {
@@ -306,6 +315,7 @@ void hdr_init() {
     ti[i].m2_d = def_m2_d;
     ti[i].decompose = def_decompose;
     ti[i].slice = def_slice;
+    ti[i].canStore = def_canStore;
   }
   bi_nothing = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);

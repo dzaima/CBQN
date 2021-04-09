@@ -53,10 +53,12 @@ B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(C32Slice,x)->p), c(C32Slic
 B c32arr_get  (B x, usz n) { VT(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
 B c32slice_get(B x, usz n) { VT(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
 void c32arr_free(B x) { decSh(x); }
+bool c32arr_canStore(B x) { return isC32(x); }
 
 void c32arr_init() {
   ti[t_c32arr].get   = c32arr_get;   ti[t_c32slice].get   = c32slice_get;
   ti[t_c32arr].slice = c32arr_slice; ti[t_c32slice].slice = c32slice_slice;
   ti[t_c32arr].free  = c32arr_free;  ti[t_c32slice].free  =    slice_free;
   ti[t_c32arr].print =    arr_print; ti[t_c32slice].print = arr_print;
+  ti[t_c32arr].canStore = c32arr_canStore;
 }

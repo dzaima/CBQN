@@ -88,10 +88,12 @@ void harr_free(B x) {
   usz ia = a(x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
+bool harr_canStore(B x) { return true; }
 
 void harr_init() {
   ti[t_harr].get   = harr_get;   ti[t_hslice].get   = hslice_get;
   ti[t_harr].slice = harr_slice; ti[t_hslice].slice = hslice_slice;
   ti[t_harr].free  = harr_free;  ti[t_hslice].free  =  slice_free;
   ti[t_harr].print =  arr_print; ti[t_hslice].print = arr_print;
+  ti[t_harr].canStore = harr_canStore;
 }

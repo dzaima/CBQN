@@ -3,16 +3,42 @@
 B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("⌜: argument was atom");
   usz ia = a(x)->ia;
-  if (v(x)->type==t_harr && reusable(x)) {
-    B* p = harr_ptr(x);
-    for (usz i = 0; i < ia; i++) p[i] = c1(f, p[i]);
-    return x;
-  }
-  HArr_p r = m_harrc(x);
+  if (ia==0) return x;
   BS2B xget = TI(x).get;
-  for (usz i = 0; i < ia; i++) r.a[i] = c1(f, xget(x,i));
+  usz i = 0;
+  B cr = c1(f, xget(x,0));
+  HArr_p rH;
+  if (reusable(x) && TI(x).canStore(cr)) {
+    if (v(x)->type==t_harr) {
+      B* p = harr_ptr(x);
+      p[i++] = cr;
+      for (; i < ia; i++) p[i] = c1(f, p[i]);
+      return x;
+    } else if (v(x)->type==t_i32arr) {
+      i32* p = i32arr_ptr(x);
+      p[i++] = o2iu(cr);
+      for (; i < ia; i++) {
+        cr = c1(f, m_i32(p[i]));
+        if (!q_i32(cr)) {
+          rH = m_harrc(x);
+          for (usz j = 0; j < i; j++) rH.a[j] = m_i32(p[j]);
+          goto fallback;
+        }
+        p[i] = o2iu(cr);
+      }
+      return x;
+    } else if (v(x)->type==t_fillarr) {
+      B* p = fillarr_ptr(x);
+      p[i++] = cr;
+      for (; i < ia; i++) p[i] = c1(f, p[i]);
+      return x;
+    } else rH = m_harrc(x);
+  } else rH = m_harrc(x);
+  fallback:
+  rH.a[i++] = cr;
+  for (; i < ia; i++) rH.a[i] = c1(f, xget(x,i));
   dec(x);
-  return r.b;
+  return rH.b;
 }
 B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isArr(w) & isArr(x)) {
@@ -64,9 +90,8 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
 }
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("`: 𝕩 cannot be a scalar");
-  ur xr = rnk(x); usz* xsh = a(x)->sh; BS2B xget = TI(x).get;
+  ur xr = rnk(x); usz* xsh = a(x)->sh; BS2B xget = TI(x).get; usz ia = a(x)->ia;
   HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inc(x)) : m_harrc(x);
-  usz ia = r.c->ia;
   if (isArr(w)) {
     ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");

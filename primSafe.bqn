@@ -1,7 +1,11 @@
 #! /usr/bin/env dbqn
 "usage: ./primSafe.bqn path/to/mlochbaum/BQN | ./BQN (while compiled for REPL mode)"!1≤≠•args
 path←⊑•args
+case←"prim"
+{case↩⊑𝕩}⍟(×≠) 1↓•args
+case∾↩".bqn"
 
-('%'⊸∊∨ '#'= ·⊑ ∾⟜"#")◶•Out‿@¨•FLines path∾"/test/cases/prim.bqn"
+
+('%'⊸∊∨ '#'= ·⊑ ∾⟜"#")◶•Out‿@¨•FLines path∾"/test/cases/"∾case
 •Out """finished"""
 •Out ""
