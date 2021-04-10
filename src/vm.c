@@ -32,6 +32,7 @@ enum {
   NSPM = 28, // N0,N1; create a destructible namespace from top N0 items, with the keys objs[N1]
   RETD = 29, // return a namespace of exported items
   SYSV = 30, // N; get system function N
+  LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
 };
 
 i32* nextBC(i32* p) {
@@ -46,14 +47,14 @@ i32* nextBC(i32* p) {
     case SETN: case SETU: case SETM: case SETH:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
       return p+1;
-    case LOCO: case LOCM: case NSPM:
+    case LOCO: case LOCM: case NSPM: case LOCU:
       return p+3;
     default: return 0;
   }
 }
 i32 stackDiff(i32* p) {
   switch(*p) {
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case SYSV:
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case SYSV:
       return 1;
     case CHKV: case VFYM: case FLDO: case FLDM: case RETD:
       return 0;
@@ -75,7 +76,7 @@ char* nameBC(i32* p) {
     case FN1O:return "FN1O";case FN2O:return "FN2O";case CHKV:return "CHKV";case TR3O:return "TR3O";
     case OP2H:return "OP2H";case LOCO:return "LOCO";case LOCM:return "LOCM";case VFYM:return "VFYM";
     case SETH:return "SETH";case RETN:return "RETN";case FLDO:return "FLDO";case FLDM:return "FLDM";
-    case NSPM:return "NSPM";case RETD:return "RETD";case SYSV:return "SYSV";
+    case NSPM:return "NSPM";case RETD:return "RETD";case SYSV:return "SYSV";case LOCU:return "LOCU";
   }
 }
 void printBC(i32* p) {
@@ -139,7 +140,7 @@ typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
 typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
-Block* compile(B bcq, B objs, B blocks) {
+Block* compile(B bcq, B objs, B blocks) { // consumes all
   usz bam = a(blocks)->ia;
   
   // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
@@ -182,7 +183,6 @@ Block* compile(B bcq, B objs, B blocks) {
     body->bc = cbc;
     body->maxStack = mssz;
     body->varAm = vam;
-    if (needsV0) body->flags|= 1;
     
     Block* bl = mm_allocN(sizeof(Block), t_block);
     bl->body = body;
@@ -354,6 +354,12 @@ B evalBC(Body* b, Scope* sc) {
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
         ADD(inc(scd(sc,d)->vars[p]));
+        break;
+      }
+      case LOCU: { i32 d = *bc++; i32 p = *bc++;
+        B* vars = scd(sc,d)->vars;
+        ADD(vars[p]);
+        vars[p] = bi_optOut;
         break;
       }
       case SETN: { P(s)    P(x) v_set(sc, s, x, false); ADD(x); break; }
