@@ -23,7 +23,8 @@ B decp_c1(B t, B x) {
 usz runtimeLen;
 B primInd_c1(B t, B x) {
   if (!isVal(x)) return m_i32(runtimeLen);
-  if (v(x)->flags) return m_i32(v(x)->flags-1);
+  if (v(x)->flags) { B r = m_i32(v(x)->flags-1); dec(x); return r; }
+  dec(x);
   return m_i32(runtimeLen);
 }
 
@@ -37,7 +38,7 @@ B fill_c1(B t, B x) {
 B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   if (isArr(x)) {
     B fill = asFill(w);
-    if (fill.u == bi_noFill.u) return x;
+    if (fill.u == bi_noFill.u) { dec(fill); return x; }
     return withFill(x, fill);
   }
   dec(w);
@@ -84,8 +85,8 @@ B grLen_c2(B t, B w, B x) {
 B grOrd_c2(B t, B w, B x) {
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  if (wia==0) return c1(bi_ud, m_i32(0));
-  if (xia==0) return x;
+  if (wia==0) { dec(w); dec(x); return c1(bi_ud, m_i32(0)); }
+  if (xia==0) { dec(w); dec(x); return x; }
   BS2B wget = TI(w).get;
   BS2B xget = TI(x).get;
   usz tmp[wia];
@@ -109,8 +110,8 @@ B asrt_c1(B t, B x) {
   return err("assertion error");
 }
 B asrt_c2(B t, B w, B x) {
-  if (isI32(x) && 1==(i32)x.u) return x;
-  if (isF64(x) && 1==x.f) return x;
+  if (isI32(x) && 1==(u32)x.u) { dec(w); return x; }
+  if (isF64(x) && 1==x.f) { dec(w); return x; }
   dec(x);
   printf("Assertion error: "); fflush(stdout); print(w); printf("\n");
   dec(w);

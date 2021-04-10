@@ -59,7 +59,7 @@ B ud_c1(B t, B x) {
     for (usz i = 0; i < xu; i++) pr[i] = i;
     return r;
   }
-  HArr_p r = m_harrv(xu);
+  HArr_p r = m_harrv(xu); // TODO f64arr
   for (usz i = 0; i < xu; i++) r.a[i] = m_f64(i);
   return r.b;
 }
@@ -104,6 +104,7 @@ B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
   u8 fl = v(x)->flags;
   if (fl==0 || fl>=62) return m_str32(U"(fmtF: not given a runtime primitive)");
+  dec(x);
   return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟"[fl-1]);
 }
 

@@ -5,9 +5,9 @@ envP←1⊑•args
 
 tests ← •FLines path∾"/test/cases/prim.bqn"
 # tests ← •FLines path∾"/test/cases/identity.bqn"
+# tests ← •FLines path∾"/test/cases/undo.bqn"
 # tests ← •FLines path∾"/test/cases/under.bqn"
 # tests ← •FLines path∾"/test/cases/fill.bqn"
-# tests ← •FLines "primLeft.bqn"
 {tests↩𝕩}⍟(×≠) 2↓•args
 
 ('#'≠ ·⊑ ∾⟜"#")◶@‿{

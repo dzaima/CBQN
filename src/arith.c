@@ -33,6 +33,7 @@ B decp_c1(B t, B x);
 B eq_c2(B t, B w, B x) {
   if(isF64(w)&isF64(x)) return m_i32(w.f==x.f);
   if (w.u==x.u) return m_i32(1);
+  // doesn't handle int=float
   if (!isVal(w) | !isVal(x))  { dec(w);dec(x); return m_i32(0); }
   if (v(w)->type!=v(x)->type) { dec(w);dec(x); return m_i32(0); }
   B2B dcf = TI(w).decompose;

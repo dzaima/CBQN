@@ -13,7 +13,7 @@ B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
     if (v(x)->type==t_harr) {
       B* xp = harr_ptr(x);
       if (reuse) {
-        xp[i++] = cr;
+        dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = c1(f, xp[i]);
         return x;
       } else {
@@ -43,8 +43,9 @@ B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
     } else if (v(x)->type==t_fillarr) {
       B* xp = fillarr_ptr(x);
       if (reuse) {
+        dec(c(FillArr,x)->fill);
         c(FillArr,x)->fill = bi_noFill;
-        xp[i++] = cr;
+        dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = c1(f, xp[i]);
         return x;
       } else {
@@ -54,8 +55,10 @@ B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
         dec(x);
         return rp.b;
       }
-    } else rH = m_harrc(x);
-  } else rH = m_harrc(x);
+    } else
+    rH = m_harrc(x);
+  } else
+  rH = m_harrc(x);
   fallback:
   rH.a[i++] = cr;
   for (; i < ia; i++) rH.a[i] = c1(f, xget(x,i));
@@ -94,10 +97,10 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("`: argument cannot be a scalar");
   ur xr = rnk(x);
+  usz ia = a(x)->ia;
   if (xr==0) return err("`: argument cannot be a scalar");
+  if (ia==0) return x;
   HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inc(x)) : m_harrc(x);
-  usz ia = r.c->ia;
-  if (ia==0) { dec(x); return r.b; }
   BS2B xget = TI(x).get;
   if (xr==1) {
     r.a[0] = xget(x,0);
@@ -119,14 +122,14 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");
     if (wr+1 != xr) return err("`: shape of 𝕨 must match the cell of 𝕩");
     if (memcmp(wsh, xsh+1, wr)) return err("`: shape of 𝕨 must match the cell of 𝕩");
-    if (ia==0) { dec(x); return r.b; }
+    if (ia==0) { ptr_dec(r.c); return x; }
     usz csz = arr_csz(x);
     for (usz i = 0; i < csz; i++) r.a[i] = c2(f, wget(w,i), xget(x,i));
     for (usz i = csz; i < ia; i++) r.a[i] = c2(f, inc(r.a[i-csz]), xget(x,i));
     dec(w);
   } else {
     if (xr!=1) return err("`: if 𝕨 is scalar, 𝕩 must be a vector");
-    if (ia==0) { dec(x); return r.b; }
+    if (ia==0) { ptr_dec(r.c); return x; }
     B pr = r.a[0] = c2(f, w, xget(x,0));
     for (usz i = 1; i < ia; i++) r.a[i] = pr = c2(f, inc(pr), xget(x,i));
   }

@@ -551,19 +551,25 @@ u64* ctr_a = 0;
 u64* ctr_f = 0;
 u64 actrc = 21000;
 u64 talloc = 0;
+#ifdef ALLOC_SIZES
 u32** actrs;
+#endif
 #endif
 
 static void onAlloc(usz sz, u8 type) {
   #ifdef ALLOC_STAT
-    if (!actrs) {
-      actrs = malloc(sizeof(u32*)*actrc);
+    if (!ctr_a) {
+      #ifdef ALLOC_SIZES
+        actrs = malloc(sizeof(u32*)*actrc);
+        for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(Type_MAX, sizeof(u32));
+      #endif
       ctr_a = calloc(Type_MAX, sizeof(u64));
       ctr_f = calloc(Type_MAX, sizeof(u64));
-      for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(Type_MAX, sizeof(u32));
     }
     assert(type<Type_MAX);
-    actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
+    #ifdef ALLOC_SIZES
+      actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
+    #endif
     ctr_a[type]++;
     talloc+= sz;
   #endif

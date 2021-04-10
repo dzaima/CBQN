@@ -3,6 +3,7 @@
   // #define DEBUG_VM
 #endif
 // #define ALLOC_STAT
+// #define ALLOC_SIZES
 // #define FORMATTER
 // #define TIME
 #define FAKE_RUNTIME false
@@ -166,7 +167,7 @@ int main() {
     #else
     pr("", res);
     #endif
-    
+    ptr_dec(cbc_b);
   }
   
   dec(rtRes);
@@ -180,15 +181,20 @@ int main() {
     printf("leaked heap size:     %ld\n", heapUsed());
     printf("ctrA←"); for (i64 i = 0; i < Type_MAX; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
     printf("ctrF←"); for (i64 i = 0; i < Type_MAX; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
-    for(i64 i = 0; i < actrc; i++) {
-      u32* c = actrs[i];
-      bool any = false;
-      for (i64 j = 0; j < Type_MAX; j++) if (c[j]) any=true;
-      if (any) {
-        printf("%ld", i*4);
-        for (i64 k = 0; k < Type_MAX; k++) printf("‿%u", c[k]);
-        printf("\n");
+    u64 leakedCount = 0;
+    for (i64 i = 0; i < Type_MAX; i++) leakedCount+= ctr_a[i]-ctr_f[i];
+    printf("leaked object count: %ld\n", leakedCount);
+    #ifdef ALLOC_SIZES
+      for(i64 i = 0; i < actrc; i++) {
+        u32* c = actrs[i];
+        bool any = false;
+        for (i64 j = 0; j < Type_MAX; j++) if (c[j]) any=true;
+        if (any) {
+          printf("%ld", i*4);
+          for (i64 k = 0; k < Type_MAX; k++) printf("‿%u", c[k]);
+          printf("\n");
+        }
       }
-    }
+    #endif
   #endif
 }

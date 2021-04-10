@@ -6,7 +6,7 @@ typedef struct FillArr {
   B a[];
 } FillArr;
 
-B asFill(B x) {
+B asFill(B x) { // consumes
   if (isArr(x)) {
     HArr_p r = m_harrc(x);
     usz ia = r.c->ia;
@@ -14,20 +14,22 @@ B asFill(B x) {
     bool noFill = false;
     for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;
     dec(x);
-    if (noFill) { dec(r.b); return bi_noFill; }
+    if (noFill) { ptr_dec(r.c); return bi_noFill; }
     return r.b;
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
+  dec(x);
   return bi_noFill;
 }
-B withFill(B x, B fill) {
+B withFill(B x, B fill) { // consumes both
   assert(isArr(x));
   switch(v(x)->type) {
     case t_i32arr : case t_i32slice : if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr : case t_c32slice : if(fill.u == m_c32(' ').u) return x; break;
-    case t_fillarr: case t_fillslice: if (equal(c(FillArr,x)->fill, fill)) return x;
+    case t_fillarr: case t_fillslice: if (equal(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {
+        dec(c(FillArr, x)->fill);
         c(FillArr, x)->fill = fill;
         return x;
       }
@@ -43,14 +45,19 @@ B withFill(B x, B fill) {
   dec(x);
   return r;
 }
-B getFill(B x) {
+B getFill(B x) { // consumes
   if (isArr(x)) {
     u8 t = v(x)->type;
     if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); dec(x); return r; }
     if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); dec(x); return r; }
-    if (t==t_c32arr || t==t_c32slice) return m_c32(' ');
+    if (t==t_c32arr || t==t_c32slice) { dec(x); return m_c32(' '); }
+    if (t==t_i32arr || t==t_i32slice) { dec(x); return m_f64(0  ); }
+    dec(x);
+    return m_f64(0);
   }
   if (isC32(x)) return m_c32(' ');
+  if (isF64(x)|isI32(x)) return m_i32(0);
+  dec(x);
   return m_f64(0);
 }
 
