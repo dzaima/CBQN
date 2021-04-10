@@ -122,7 +122,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");
     if (wr+1 != xr) return err("`: shape of 𝕨 must match the cell of 𝕩");
     if (memcmp(wsh, xsh+1, wr)) return err("`: shape of 𝕨 must match the cell of 𝕩");
-    if (ia==0) { ptr_dec(r.c); return x; }
+    if (ia==0) { ptr_dec(r.c); return x; } // only safe as r would have 0 items too
     usz csz = arr_csz(x);
     for (usz i = 0; i < csz; i++) r.a[i] = c2(f, wget(w,i), xget(x,i));
     for (usz i = csz; i < ia; i++) r.a[i] = c2(f, inc(r.a[i-csz]), xget(x,i));

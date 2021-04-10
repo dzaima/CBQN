@@ -403,7 +403,7 @@ void printRaw(B x) {
     BS2B xget = TI(x).get;
     for (usz i = 0; i < ia; i++) {
       B c = xget(x,i);
-      if (c.u==0) { printf(" "); continue; }
+      if (c.u==0 | c.u==bi_noFill.u) { printf(" "); continue; }
       if (!isC32(c)) err("bad printRaw argument: expected all character items");
       printUTF8((u32)c.u);
     }

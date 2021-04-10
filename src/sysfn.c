@@ -150,6 +150,9 @@ B sys_c1(B t, B x) {
     B c = xget(x,i);
     if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
     else if (eqStr(c, U"eq")) r.a[i] = inc(bi_feq);
+    else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
+    else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
+    else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else err("Unknown system function");
   }
   dec(x);
