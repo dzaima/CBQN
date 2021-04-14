@@ -177,7 +177,7 @@ int main() {
     char* ln = NULL;
     size_t gl = 0;
     getline(&ln, &gl, stdin);
-    if (ln[0]==10) break;
+    if (ln[0]==0 || ln[0]==10) break;
     B cbc = c2(comp, inc(compArg), fromUTF8(ln, strlen(ln)));
     free(ln);
     Block* cbc_b = ca3(cbc);
