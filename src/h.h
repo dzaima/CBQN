@@ -31,10 +31,12 @@ CTR_FOR(CTR_DEF)
 
 #ifdef DEBUG
   #include<assert.h>
-  #define VALIDATE(x) validate(x) // preferred validating level
+  #define VALIDATE(x) validate(x)
+  #define VALIDATEP(x) validateP(x)
 #else
   #define assert(x) {if (!(x)) __builtin_unreachable();}
   #define VALIDATE(x) (x)
+  #define VALIDATEP(x) (x)
 #endif
 
 #define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*(n)) // type; FAM name; FAM type; amount
@@ -71,7 +73,7 @@ enum Type {
   
   /*21*/ t_comp, t_block, t_body, t_scope,
   /*25*/ t_freed,
-  Type_MAX
+  t_COUNT
 };
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
@@ -207,10 +209,7 @@ B m_v4(B a, B b, B c, B d);
 void print_vmStack();
 #ifdef DEBUG
   B validate(B x);
-  B recvalidate(B x);
-#else
-  #define validate(x) (x)
-  #define recvalidate(x) (x)
+  Value* validateP(Value* x);
 #endif
 B err(char* s) {
   puts(s); fflush(stdout);
@@ -254,10 +253,11 @@ void arr_shVec(B x, usz ia) {
   srnk(x, 1);
   a(x)->sh = &a(x)->ia;
 }
+bool gotShape[t_COUNT];
 usz* arr_shAlloc(B x, usz ia, usz r) {
   a(x)->ia = ia;
   srnk(x,r);
-  if (r>1) return a(x)->sh = c(ShArr,mm_alloc(fsizeof(ShArr, a, usz, r), t_shape, ftag(OBJ_TAG)))->a;
+  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
   a(x)->sh = &a(x)->ia;
   return 0;
 }
@@ -268,8 +268,8 @@ void arr_shCopy(B n, B o) { // copy shape from o to n
   if (r<=1) {
     a(n)->sh = &a(n)->ia;
   } else {
-    a(n)->sh = a(o)->sh;
     ptr_inc(shObj(o));
+    a(n)->sh = a(o)->sh;
   }
 }
 bool shEq(B w, B x) { assert(isArr(w)); assert(isArr(x));
@@ -341,7 +341,7 @@ typedef struct TypeInfo {
   B2B decompose; // consumes; must return a HArr
   bool isArr;
 } TypeInfo;
-TypeInfo ti[Type_MAX];
+TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
 
@@ -349,6 +349,7 @@ void do_nothing(B x) { }
 void empty_free(B x) { err("FREEING EMPTY\n"); }
 void builtin_free(B x) { err("FREEING BUILTIN\n"); }
 void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
+void freeed_visit(B x) { err("visiting t_freed\n"); }
 void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
 B    def_get (B x, usz n) { return inc(x); }
 B    def_getU(B x, usz n) { return x; }
@@ -359,7 +360,7 @@ B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 bool def_canStore(B x) { return false; }
 B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 void hdr_init() {
-  for (i32 i = 0; i < Type_MAX; i++) {
+  for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = do_nothing;
     ti[i].visit = def_visit;
     ti[i].get   = def_get;
@@ -374,6 +375,7 @@ void hdr_init() {
   }
   ti[t_empty].free = empty_free;
   ti[t_freed].free = do_nothing;
+  ti[t_freed].visit = freeed_visit;
   ti[t_shape].visit = do_nothing;
   ti[t_fun_def].visit = ti[t_md1_def].visit = ti[t_md2_def].visit = do_nothing;
   ti[t_fun_def].free  = ti[t_md1_def].free  = ti[t_md2_def].free  = builtin_free;
@@ -404,11 +406,11 @@ B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
 }
-void ptr_dec(void* x) { if(!--((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x); }
-void ptr_inc(void* x) { ((Value*)x)->refc++; }
-void ptr_decR(void* x) { if(!--((Value*)x)->refc) value_freeR1(x); }
+void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x); }
+void ptr_inc(void* x) { VALIDATEP((Value*)x)->refc++; }
+void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR1(x); }
 void decR(B x) {
-  if (!isVal(x)) return;
+  if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
   if(!--vx->refc) value_freeR2(vx, x);
 }
@@ -572,31 +574,26 @@ u64 nsTime() {
 }
 
 #ifdef DEBUG
-  B validate(B x) {
-    if (!isVal(x)) return x;
-    if (v(x)->refc<=0 || (v(x)->refc>>28) == 'a') {
-      printf("bad refcount for type %d: %d; val=%p\nattempting to print: ", v(x)->type, v(x)->refc, (void*)x.u); fflush(stdout);
-      print(x); puts(""); fflush(stdout);
+  Value* validateP(Value* x) {
+    if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
+      printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
+      print(tag(x,OBJ_TAG)); puts(""); fflush(stdout);
       err("");
     }
-    if (isArr(x) && v(x)->type!=t_freed) {
-      ur r = rnk(x);
-      if (r<=1) assert(a(x)->sh == &a(x)->ia);
-      else validate(tag(shObj(x),OBJ_TAG));
+    if (ti[x->type].isArr) {
+      Arr* a = (Arr*)x;
+      if (rnk(tag(x,ARR_TAG))<=1) assert(a->sh == &a->ia);
+      else validate(tag(shObj(tag(x,ARR_TAG)),OBJ_TAG));
     }
     return x;
   }
-  B recvalidate(B x) {
-    validate(x);
-    if (isArr(x)) {
-      BS2B xget = TI(x).get;
-      usz ia = a(x)->ia;
-      for (usz i = 0; i < ia; i++) {
-        B c = xget(x,i);
-        assert(c.u!=x.u);
-        recvalidate(c);
-        dec(c);
-      }
+  B validate(B x) {
+    if (!isVal(x)) return x;
+    validateP(v(x));
+    if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed) {
+      printf("wat %d %p\n", v(x)->type, (void*)x.u);
+      print(x);
+      err("\nk");
     }
     return x;
   }
@@ -617,12 +614,12 @@ static inline void onAlloc(usz sz, u8 type) {
     if (!ctr_a) {
       #ifdef ALLOC_SIZES
         actrs = malloc(sizeof(u32*)*actrc);
-        for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(Type_MAX, sizeof(u32));
+        for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(t_COUNT, sizeof(u32));
       #endif
-      ctr_a = calloc(Type_MAX, sizeof(u64));
-      ctr_f = calloc(Type_MAX, sizeof(u64));
+      ctr_a = calloc(t_COUNT, sizeof(u64));
+      ctr_f = calloc(t_COUNT, sizeof(u64));
     }
-    assert(type<Type_MAX);
+    assert(type<t_COUNT);
     #ifdef ALLOC_SIZES
       actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
     #endif
@@ -635,6 +632,7 @@ static inline void onFree(Value* x) {
     ctr_f[x->type]++;
   #endif
   #ifdef DEBUG
+    if (x->type==t_empty) err("double-free");
     // u32 undef;
     // x->refc = undef;
     x->refc = -1431655000;

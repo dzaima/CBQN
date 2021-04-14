@@ -86,7 +86,7 @@ B grOrd_c2(B t, B w, B x) {
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
   if (wia==0) { dec(w); dec(x); return c1(bi_ud, m_i32(0)); }
-  if (xia==0) { dec(w); dec(x); return x; }
+  if (xia==0) { dec(w); return x; }
   BS2B wget = TI(w).get;
   BS2B xget = TI(x).get;
   usz tmp[wia];
@@ -145,9 +145,9 @@ void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) b
 B sys_c1(B t, B x) {
   assert(isArr(x));
   HArr_p r = m_harrc(x);
-  BS2B xget = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < a(x)->ia; i++) {
-    B c = xget(x,i);
+    B c = xgetU(x,i);
     if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
     else if (eqStr(c, U"eq")) r.a[i] = inc(bi_feq);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);

@@ -46,8 +46,8 @@ B m_c32slice(B p, u32* ptr) {
   return tag(r, ARR_TAG);
 }
 
-B c32arr_slice  (B x, usz s) {return m_c32slice(x                    , c(C32Arr  ,x)->a+s); }
-B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(C32Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
+B c32arr_slice  (B x, usz s) {return m_c32slice(x                 , c(C32Arr  ,x)->a+s); }
+B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
 
 
 B c32arr_get  (B x, usz n) { VT(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
