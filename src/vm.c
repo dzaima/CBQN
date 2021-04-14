@@ -544,19 +544,21 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   return &(cf++)->jmp;
 }
 void popCatch() {
-  assert(cf>cfStart);
-  cf--;
+  #ifdef CATCH_ERRORS
+    assert(cf>cfStart);
+    cf--;
+  #endif
 }
 
-NORETURN void thr(B msg) {
+void thr(B msg) {
   if (cf>cfStart) {
     catchMessage = msg;
     cf--;
     
     B* gStackNew = gStackStart + cf->gStackDepth;
     if (gStackNew>gStack) err("bad catch gStack");
-    // while (gStack!=gStackNew) dec(*--gStack);
-    gStack = gStackNew;
+    while (gStack!=gStackNew) dec(*--gStack);
+    // gStack = gStackNew;
     
     cf = cfStart + cf->cfDepth;
     longjmp(cf->jmp, 1);
@@ -566,10 +568,13 @@ NORETURN void thr(B msg) {
   printf("Error: ");
   print(msg);
   puts("");
-  // exit(1);
+  #ifdef DEBUG
   __builtin_trap();
+  #else
+  exit(1);
+  #endif
 }
 
-NORETURN void thrM(char* s) {
+void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }

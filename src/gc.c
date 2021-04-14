@@ -55,13 +55,17 @@ void mm_visitP(void* xp) {
 }
 void gc_tryFree(Value* v) {
   u8 t = v->type;
-  #ifdef DEBUG
+  #if defined(DEBUG) && !defined(CATCH_ERRORS)
     if (t==t_freed) err("GC found t_freed\n");
   #endif
   if (t!=t_empty & (v->mmInfo&0x80)==gc_tagCurr) {
     if (t==t_shape) return;
     #ifdef DONT_FREE
       v->flags = t;
+    #else
+      #ifdef CATCH_ERRORS
+        if (t==t_freed) { mm_free(v); return; }
+      #endif
     #endif
     #ifdef LOG_GC
       gc_freedBytes+= mm_size(v); gc_freedCount++;

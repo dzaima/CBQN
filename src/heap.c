@@ -50,7 +50,13 @@ void heap_getReferents(Value* v) {
   if (ti[v->type].isArr && rnk(tag(v,ARR_TAG))>1) heapVerify_visitP(shObj(tag(v,ARR_TAG)));
   ti[v->type].visit(tag(v,OBJ_TAG));
 }
+#ifdef CATCH_ERRORS
+bool heapVerify_msg;
+#endif
 void heapVerify() {
+  #ifdef CATCH_ERRORS
+  if(!heapVerify_msg) { printf("note: heapVerify() will give garbage in combination with CATCH_ERRORS\n"); heapVerify_msg=true; }
+  #endif
   heap_observed = 0;
   heapVerify_mode=0; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
   mm_forHeap(heapVerify_checkFn);

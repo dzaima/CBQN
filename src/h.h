@@ -202,7 +202,12 @@ B m_v4(B a, B b, B c, B d);
 B m_str32(u32* s);
 NORETURN void thr(B b);
 NORETURN void thrM(char* s);
-jmp_buf* prepareCatch(); // use with `if (setjmp(prepareCatch())) { /*catch*/ } /*regular execution*/`
+jmp_buf* prepareCatch();
+#ifdef CATCH_ERRORS
+#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error; dec(catchMessage);*/ } /*regular execution*/ popCatch();`
+#else
+#define CATCH false
+#endif
 void popCatch();
 B catchMessage;
 
@@ -357,7 +362,11 @@ void do_nothing(B x) { }
 void empty_free(B x) { err("FREEING EMPTY\n"); }
 void builtin_free(B x) { err("FREEING BUILTIN\n"); }
 void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
-void freeed_visit(B x) { err("visiting t_freed\n"); }
+void freeed_visit(B x) {
+  #ifndef CATCH_ERRORS
+  err("visiting t_freed\n");
+  #endif
+}
 void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
 B    def_get (B x, usz n) { return inc(x); }
 B    def_getU(B x, usz n) { return x; }

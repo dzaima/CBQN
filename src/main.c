@@ -3,6 +3,7 @@
   // #define DEBUG_VM
 #endif
 
+#define CATCH_ERRORS // whether to allow catching errors; currently means refcounts won't be accurate and can't be tested for
 // #define HEAP_VERIFY  // enable usage of heapVerify()
 // #define ALLOC_STAT   // store basic allocation statistics
 // #define ALLOC_SIZES  // store per-type allocation size statistics
@@ -167,7 +168,7 @@ int main() {
   //   comp = m_funBlock(cbc_b, 0);
   //   free(c_src);
   // }
-  while (setjmp(*prepareCatch())) {
+  while (CATCH) {
     printf("caught: ");
     print(catchMessage);
     puts("");
@@ -204,7 +205,7 @@ int main() {
     #ifdef DEBUG
     #endif
   }
-  
+  popCatch();
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
   printAllocStats();
