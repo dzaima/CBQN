@@ -167,6 +167,12 @@ int main() {
   //   comp = m_funBlock(cbc_b, 0);
   //   free(c_src);
   // }
+  while (setjmp(*prepareCatch())) {
+    printf("caught: ");
+    print(catchMessage);
+    puts("");
+    dec(catchMessage);
+  }
   while (true) { // exit by evaluating an empty expression
     char* ln = NULL;
     size_t gl = 0;

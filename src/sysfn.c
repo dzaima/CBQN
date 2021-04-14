@@ -107,15 +107,13 @@ B asrt_c1(B t, B x) {
   if (isI32(x) && 1==(i32)x.u) return x;
   if (isF64(x) && 1==x.f) return x;
   dec(x);
-  return err("assertion error");
+  thrM("assertion error");
 }
 B asrt_c2(B t, B w, B x) {
   if (isI32(x) && 1==(u32)x.u) { dec(w); return x; }
   if (isF64(x) && 1==x.f) { dec(w); return x; }
   dec(x);
-  printf("Assertion error: "); fflush(stdout); print(w); printf("\n");
-  dec(w);
-  return err("assertion error with message");
+  thr(w);
 }
 
 B internal_c2(B t, B w, B x) {

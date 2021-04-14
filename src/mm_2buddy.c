@@ -37,7 +37,7 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 u64 currObjCounter;
 #endif
 void* mm_allocN(usz sz, u8 type) {
-  assert(sz>12);
+  assert(sz>=16);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);
   Value* r;

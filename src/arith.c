@@ -4,7 +4,7 @@
 #define ffnx(name, expr, extra) B name(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(expr); \
   extra \
-  return err(#name ": invalid arithmetic"); \
+  thrM(#name ": invalid arithmetic"); \
 }
 #define ffn(name, op, extra) ffnx(name, w.f op x.f, extra)
 
@@ -51,12 +51,12 @@ B eq_c2(B t, B w, B x) {
 
 
 B   add_c1(B t, B x) { return x; }
-B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f ); return err("negating non-number"); }
-B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f?x.f>0?1:-1:0); return err("getting sign of non-number"); }
-B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); return err("getting reciprocal of non-number"); }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); return err("getting exp of non-number"); }
-B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); return err("getting floor of non-number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); return err("getting log of non-number"); }
+B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f );       thrM("negating non-number"); }
+B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f?x.f>0?1:-1:0); thrM("getting sign of non-number"); }
+B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f );       thrM("getting reciprocal of non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f));       thrM("getting exp of non-number"); }
+B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f));       thrM("getting floor of non-number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f));       thrM("getting log of non-number"); }
 B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 
 

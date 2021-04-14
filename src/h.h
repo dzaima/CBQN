@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <setjmp.h>
 
 #define i8  int8_t
 #define u8 uint8_t
@@ -20,6 +21,7 @@
 #define U16_MAX ((u16)-1)
 #define UD __builtin_unreachable();
 #define NOINLINE __attribute__ ((noinline))
+#define NORETURN __attribute__ ((noreturn))
 
 #define usz u32
 #define ur u8
@@ -180,7 +182,6 @@ u64  mm_size(Value* x);
 
 u64  mm_heapAllocated();
 u64  mm_heapUsed();
-
 void mm_forHeap(V2v f);
 B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
@@ -198,6 +199,13 @@ B m_v1(B a               );
 B m_v2(B a, B b          );
 B m_v3(B a, B b, B c     );
 B m_v4(B a, B b, B c, B d);
+B m_str32(u32* s);
+NORETURN void thr(B b);
+NORETURN void thrM(char* s);
+jmp_buf* prepareCatch(); // use with `if (setjmp(prepareCatch())) { /*catch*/ } /*regular execution*/`
+void popCatch();
+B catchMessage;
+
 
 #define c(T,x) ((T*)((x).u&0xFFFFFFFFFFFFull))
 #define v(x) c(Value, x)

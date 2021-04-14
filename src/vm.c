@@ -257,7 +257,7 @@ i32* vmStack;
 i32 bcCtr = 0;
 #endif
 
-B* gStack;
+B* gStack; // points to after end
 B* gStackStart;
 B* gStackEnd;
 
@@ -517,4 +517,59 @@ void print_vmStack() {
     for (i32 i = 0; i < (bcDepth>>1) + 1; i++) { printf(" %d", vmStack[i]); fflush(stdout); }
     printf("\n"); fflush(stdout);
   #endif
+}
+
+
+
+typedef struct CatchFrame {
+  jmp_buf jmp;
+  u64 gStackDepth;
+  u64 cfDepth;
+} CatchFrame;
+CatchFrame* cf; // points to after end
+CatchFrame* cfStart;
+CatchFrame* cfEnd;
+
+jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch();
+  if (cf==cfEnd) {
+    u64 n = cfEnd-cfStart;
+    n = n<8? 8 : n*2;
+    u64 d = cfStart-cf;
+    cfStart = realloc(cfStart, n*sizeof(CatchFrame));
+    cf    = cfStart+d;
+    cfEnd = cfStart+n;
+  }
+  cf->cfDepth = cf-cfStart;
+  cf->gStackDepth = gStack-gStackStart;
+  return &(cf++)->jmp;
+}
+void popCatch() {
+  assert(cf>cfStart);
+  cf--;
+}
+
+NORETURN void thr(B msg) {
+  if (cf>cfStart) {
+    catchMessage = msg;
+    cf--;
+    
+    B* gStackNew = gStackStart + cf->gStackDepth;
+    if (gStackNew>gStack) err("bad catch gStack");
+    // while (gStack!=gStackNew) dec(*--gStack);
+    gStack = gStackNew;
+    
+    cf = cfStart + cf->cfDepth;
+    longjmp(cf->jmp, 1);
+    printf("wat\n");
+  }
+  assert(cf==cfStart);
+  printf("Error: ");
+  print(msg);
+  puts("");
+  // exit(1);
+  __builtin_trap();
+}
+
+NORETURN void thrM(char* s) {
+  thr(fromUTF8(s, strlen(s)));
 }

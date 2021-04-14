@@ -56,20 +56,18 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
 
 void BN(free)(Value* x) {
   onFree(x);
-  EmptyValue* c = (EmptyValue*) x;
-  #ifdef DONT_FREE
-    if (c->type!=t_freed) c->flags = c->type;
-  #else
-    u8 b = c->mmInfo&63;
-    c->next = buckets[b];
-    buckets[b] = c;
-  #endif
-  c->type = t_empty;
   #ifdef USE_VALGRIND
-    VALGRIND_MAKE_MEM_NOACCESS(x, BSZ(c->mmInfo&63));
-    VALGRIND_MAKE_MEM_DEFINED(&x->type, 1);
+    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(x->mmInfo&63));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
   #endif
+  #ifdef DONT_FREE
+    if (x->type!=t_freed) x->flags = x->type;
+  #else
+    u8 b = x->mmInfo&63;
+    ((EmptyValue*)x)->next = buckets[b];
+    buckets[b] = (EmptyValue*)x;
+  #endif
+  x->type = t_empty;
 }
 
 void* BN(allocL)(u8 bucket, u8 type) {
