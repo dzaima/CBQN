@@ -71,8 +71,11 @@ bool eqStr(B w, u32* x) {
 
 void c32arr_init() {
   ti[t_c32arr].get   = c32arr_get;   ti[t_c32slice].get   = c32slice_get;
+  ti[t_c32arr].getU  = c32arr_get;   ti[t_c32slice].getU  = c32slice_get;
   ti[t_c32arr].slice = c32arr_slice; ti[t_c32slice].slice = c32slice_slice;
   ti[t_c32arr].free  = c32arr_free;  ti[t_c32slice].free  =    slice_free;
+  ti[t_c32arr].visit = do_nothing;   ti[t_c32slice].visit =    slice_visit;
   ti[t_c32arr].print =    arr_print; ti[t_c32slice].print = arr_print;
+  ti[t_c32arr].isArr = true;         ti[t_c32slice].isArr = true;
   ti[t_c32arr].canStore = c32arr_canStore;
 }

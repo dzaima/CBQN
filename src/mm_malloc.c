@@ -15,7 +15,17 @@ void* mm_allocN(usz sz, u8 type) {
   return x;
 }
 
+
+void gc_add(B x) { }
+void gc_addFn(vfn f) { }
+void gc_disable() { }
+void gc_enable() { }
+void gc_maybeGC() { }
+void gc_forceGC() { }
+void gc_visitRoots() { }
 void mm_visit(B x) { }
+void mm_visitP(void* x) { }
+
 u64  mm_round(usz x) { return x; }
 u64  mm_size(Value* x) { return -1; }
 u64  mm_totalAllocated() { return -1; }

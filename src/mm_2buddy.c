@@ -1,4 +1,5 @@
 #include "h.h"
+#include "gc.c"
 #include <sys/mman.h>
 
 #ifndef MAP_NORESERVE
@@ -32,13 +33,20 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 #undef BN
 #undef BSZ
 #undef BSZI
-
+#ifdef OBJ_COUNTER
+u64 currObjCounter;
+#endif
 void* mm_allocN(usz sz, u8 type) {
   assert(sz>12);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);
-  if (sz <= (3ull<<(b1-2))) return b3_allocL(b1-2, type);
-  return b1_allocL(b1, type);
+  Value* r;
+  if (sz <= (3ull<<(b1-2))) r = b3_allocL(b1-2, type);
+  else r = b1_allocL(b1, type);
+  #ifdef OBJ_COUNTER
+  r->uid = currObjCounter++;
+  #endif
+  return r;
 }
 void mm_free(Value* x) {
   if (x->mmInfo&64) b3_free(x);
@@ -60,6 +68,6 @@ u64 mm_size(Value* x) {
   if (m&64) return 3ull<<(x->mmInfo&63);
   else      return 1ull<<(x->mmInfo&63);
 }
-u64 mm_totalAllocated() {
-  return b1_totalAllocated() + b3_totalAllocated();
+u64 mm_heapAllocated() {
+  return b1_heapAllocated() + b3_heapAllocated();
 }

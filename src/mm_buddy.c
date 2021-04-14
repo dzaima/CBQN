@@ -1,4 +1,5 @@
 #include "h.h"
+#include "gc.c"
 #include <sys/mman.h>
 
 #ifndef MAP_NORESERVE
@@ -11,20 +12,24 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   EmptyValue* next;
 };
 
-#define  BSZ(x) (1ull<<(x))
-#define BSZI(x) (64-__builtin_clzl((x)-1ull))
-#define  MMI(x) x
-#define   BN(x) mm_##x
+#define  BSZ(X) (1ull<<(X))
+#define BSZI(X) (64-__builtin_clzl((X)-1ull))
+#define  MMI(X) X
+#define   BN(X) mm_##X
 
 #include "mm_buddyTemplate.c"
 
-void mm_visit(B x) {
-  
-}
+#ifdef OBJ_COUNTER
+u64 currObjCounter;
+#endif
 void* mm_allocN(usz sz, u8 type) {
   assert(sz>8);
   onAlloc(sz, type);
-  return mm_allocL(BSZI(sz), type);
+  Value* r = mm_allocL(BSZI(sz), type);
+  #ifdef OBJ_COUNTER
+  r->uid = currObjCounter++;
+  #endif
+  return r;
 }
 
 u64 mm_round(usz sz) {

@@ -25,6 +25,7 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
     }
     if (cb >= 20) {
       u64 sz = BSZ(cb);
+      gc_maybeGC();
       c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
       if (alSize+1>=alCap) {
         alCap = alCap? alCap*2 : 1024;
@@ -56,16 +57,30 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
 void BN(free)(Value* x) {
   onFree(x);
   EmptyValue* c = (EmptyValue*) x;
+  #ifdef DONT_FREE
+    if (c->type!=t_freed) c->flags = c->type;
+  #else
+    u8 b = c->mmInfo&63;
+    c->next = buckets[b];
+    buckets[b] = c;
+  #endif
   c->type = t_empty;
-  u8 b = c->mmInfo&63;
-  c->next = buckets[b];
-  buckets[b] = c;
+  #ifdef USE_VALGRIND
+    VALGRIND_MAKE_MEM_NOACCESS(x, BSZ(c->mmInfo&63));
+    VALGRIND_MAKE_MEM_DEFINED(&x->type, 1);
+    VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
+  #endif
 }
 
 void* BN(allocL)(u8 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
   if (x==NULL) x = BN(makeEmpty)(bucket);
   else buckets[bucket] = x->next;
+  #ifdef USE_VALGRIND
+    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
+    VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
+  #endif
+  x->mmInfo = (x->mmInfo&0x7f) | gc_tagCurr;
   x->flags = x->extra = x->type = 0;
   x->refc = 1;
   x->type = type;
@@ -82,7 +97,7 @@ void BN(forHeap)(V2v f) {
     }
   }
 }
-u64 BN(totalAllocated)() {
+u64 BN(heapAllocated)() {
   u64 res = 0;
   for (u64 i = 0; i < alSize; i++) res+= al[i].sz;
   return res;

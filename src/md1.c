@@ -100,8 +100,9 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz ia = a(x)->ia;
   if (xr==0) return err("`: argument cannot be a scalar");
   if (ia==0) return x;
-  HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inc(x)) : m_harrc(x);
-  BS2B xget = TI(x).get;
+  bool reuse = v(x)->type==t_harr && reusable(x);
+  HArr_p r = reuse? harr_parts(inc(x)) : m_harrc(x);
+  BS2B xget = reuse? TI(x).getU : TI(x).get;
   if (xr==1) {
     r.a[0] = xget(x,0);
     for (usz i = 1; i < ia; i++) r.a[i] = c2(f, inc(r.a[i-1]), xget(x,i));
@@ -115,8 +116,10 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
 }
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x)) return err("`: 𝕩 cannot be a scalar");
-  ur xr = rnk(x); usz* xsh = a(x)->sh; BS2B xget = TI(x).get; usz ia = a(x)->ia;
-  HArr_p r = (v(x)->type==t_harr && reusable(x))? harr_parts(inc(x)) : m_harrc(x);
+  ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
+  bool reuse = v(x)->type==t_harr && reusable(x);
+  HArr_p r = reuse? harr_parts(inc(x)) : m_harrc(x);
+  BS2B xget = reuse? TI(x).getU : TI(x).get;
   if (isArr(w)) {
     ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
     if (xr==0) return err("`: 𝕩 cannot be a scalar");
@@ -138,9 +141,9 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 }
 
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME;
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME;
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME;
+#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
+#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
+#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1_def, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 
 void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 

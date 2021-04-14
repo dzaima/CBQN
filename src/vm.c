@@ -105,6 +105,7 @@ typedef struct Comp {
   struct Value;
   B bc;
   HArr* objs;
+  u32 blockAm;
   Block* blocks[];
 } Comp;
 
@@ -127,11 +128,11 @@ typedef struct Body {
 
 typedef struct Scope {
   struct Value;
+  Scope* psc;
+  u16 varAm;
   #ifdef DEBUG
     u64 bcInd; // DEBUG: place of this in bytecode array
   #endif
-  u16 varAm;
-  Scope* psc;
   B vars[];
 } Scope;
 
@@ -140,8 +141,9 @@ typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
 typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
-Block* compile(B bcq, B objs, B blocks) { // consumes all
-  usz bam = a(blocks)->ia;
+Block* compile(B bcq, B objs, B blocksq) { // consumes all
+  HArr* h = toHArr(blocksq);
+  usz bam = h->ia;
   
   // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
   // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inc(objPtr[i])), objPtr[i]);
@@ -152,7 +154,8 @@ Block* compile(B bcq, B objs, B blocks) { // consumes all
   Comp* comp = mm_allocN(fsizeof(Comp,blocks,Block*,bam), t_comp);
   comp->bc = tag(bca, ARR_TAG);
   comp->objs = toHArr(objs);
-  B* blockDefs = toHArr(blocks)->a;
+  comp->blockAm = bam;
+  B* blockDefs = h->a;
   
   for (usz i = 0; i < bam; i++) {
     B cbld = blockDefs[i];
@@ -166,13 +169,11 @@ Block* compile(B bcq, B objs, B blocks) { // consumes all
     
     i32* scan = cbc;
     i32 ssz = 0, mssz=0;
-    bool needsV0 = false;
     while (*scan!=RETN & *scan!=RETD) {
       ssz+= stackDiff(scan);
       if (ssz>mssz) mssz = ssz;
-      if (*scan==LOCO|*scan==LOCM) { i32 d=scan[1]; i32 p=scan[2];
-        if (d>U16_MAX) return c(Block,err("LOC_ too deep"));
-        if (d==0 & p==0) needsV0 = true;
+      if (*scan==LOCO | *scan==LOCM) {
+        if (scan[1]>U16_MAX) return c(Block,err("LOC_ too deep"));
       }
       scan = nextBC(scan);
       if (scan-bc >= bcl) return c(Block,err("no RETN/RETD found at end of bytecode"));
@@ -183,6 +184,7 @@ Block* compile(B bcq, B objs, B blocks) { // consumes all
     body->bc = cbc;
     body->maxStack = mssz;
     body->varAm = vam;
+    ptr_inc(comp);
     
     Block* bl = mm_allocN(sizeof(Block), t_block);
     bl->body = body;
@@ -194,8 +196,8 @@ Block* compile(B bcq, B objs, B blocks) { // consumes all
   Block* ret = c(Block,inc(tag(comp->blocks[0], OBJ_TAG)));
   // TODO store blocks in each body, then decrement each of comp->blocks; also then move temp block list out of Comp as it's useless then
   // for (usz i = 0; i < bam; i++) ptr_dec(comp->blocks[i]);
-  
-  dec(blocks);
+  ptr_dec(comp);
+  ptr_dec(h);
   return ret;
 }
 
@@ -204,20 +206,20 @@ Scope* scd(Scope* sc, u16 d) {
   return sc;
 }
 
-B v_set(Scope* sc, B s, B x, bool upd) { // frees s; returns previous value
+void v_set(Scope* sc, B s, B x, bool upd) { // frees s, doesn't consume x
   if (isVar(s)) {
     sc = scd(sc, (u16)(s.u>>32));
     B prev = sc->vars[(u32)s.u];
     if (upd) {
-      if (prev.u==bi_noVar.u) return err("updating undefined variable");
+      if (prev.u==bi_noVar.u) err("updating undefined variable");
       dec(prev);
     } else {
-      if (prev.u!=bi_noVar.u) return err("redefining variable");
+      if (prev.u!=bi_noVar.u) err("redefining variable");
     }
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (!shEq(s, x)) return err("spread assignment: mismatched shape");
+    if (!shEq(s, x)) err("spread assignment: mismatched shape");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xget = TI(x).get;
@@ -228,7 +230,6 @@ B v_set(Scope* sc, B s, B x, bool upd) { // frees s; returns previous value
     }
     dec(s);
   }
-  return m_f64(0);
 }
 B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut; doesn't consume
   if (isVar(s)) {
@@ -246,7 +247,7 @@ B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut;
   }
 }
 
-// none consume anything consume
+// all don't consume anything
 B m_funBlock(Block* bl, Scope* psc); // may return evaluated result, whatever
 B m_md1Block(Block* bl, Scope* psc);
 B m_md2Block(Block* bl, Scope* psc);
@@ -271,7 +272,7 @@ void allocStack(u64 am) {
   }
 }
 
-B evalBC(Body* b, Scope* sc) {
+B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
     if (!vmStack) vmStack = malloc(400);
@@ -396,10 +397,10 @@ B evalBC(Body* b, Scope* sc) {
   #undef POP
 }
 
-B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
+B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) { // consumes svar contents
   Body* bdy = bl->body;
   Scope* sc = mm_allocN(fsizeof(Scope, vars, B, bdy->varAm), t_scope);
-  sc->psc = psc; if(psc)ptr_inc(psc);
+  sc->psc = psc; if(psc) ptr_inc(psc);
   u16 varAm = sc->varAm = bdy->varAm;
   assert(varAm>=ga);
   #ifdef DEBUG
@@ -408,22 +409,18 @@ B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) {
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
-  // if (ga & !(bdy->flags&1)) {
-  //   B v0 = sc->vars[0];
-  //   dec(v0); sc->vars[0] = bi_optOut; // prevent reference cycle; TODO more properly do this (or just remove, it doesn't seem to be doing much)
-  // }
   B r = evalBC(bdy, sc);
   ptr_dec(sc);
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, bi_nothing                                     }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, w                                              }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, bi_nothing, inc(d->m1), inc(d->f)            }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, w         , inc(d->m1), inc(d->f)            }); }
+B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, bi_nothing                                  }); }
+B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, w                                           }); }
+B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, bi_nothing, inc(d->m1), inc(d->f)           }); }
+B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, w         , inc(d->m1), inc(d->f)           }); }
 B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, bi_nothing, inc(d->m2), inc(d->f), inc(d->g)}); }
 B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, w         , inc(d->m2), inc(d->f), inc(d->g)}); }
-B m_funBlock(Block* bl, Scope* psc) {
+B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return actualExec(bl, psc, 0, NULL);
   B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));
   c(FunBlock, r)->bl = bl; ptr_inc(bl);
@@ -449,18 +446,40 @@ B m_md2Block(Block* bl, Scope* psc) {
   return r;
 }
 
-void  comp_free(B x) { Comp*  c = c(Comp ,x); ptr_decR(c->objs); decR(c->bc); }
-void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); }
-void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
+void comp_free(B x) {
+  Comp* c = c(Comp ,x);
+  ptr_decR(c->objs);
+  decR(c->bc);
+  u32 am = c->blockAm; for(u32 i = 0; i < am; i++) ptr_dec(c->blocks[i]);
+}
 void scope_free(B x) {
   Scope* c = c(Scope,x);
   if (c->psc) ptr_decR(c->psc);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
+void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); }
+void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
 void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
+
+void comp_visit(B x) {
+  Comp* c = c(Comp,x);
+  mm_visitP(c->objs); mm_visit(c->bc);
+  u32 am = c->blockAm; for(u32 i = 0; i < am; i++) mm_visitP(c->blocks[i]);
+}
+void scope_visit(B x) {
+  Scope* c = c(Scope,x);
+  if (c->psc) mm_visitP(c->psc);
+  u16 am = c->varAm;
+  for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
+}
+void  body_visit(B x) { Body*  c = c(Body ,x); mm_visitP(c->comp); }
+void block_visit(B x) { Block* c = c(Block,x); mm_visitP(c->body); }
+void funBl_visit(B x) { FunBlock* c = c(FunBlock,x); mm_visitP(c->sc); mm_visitP(c->bl); }
+void md1Bl_visit(B x) { Md1Block* c = c(Md1Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
+void md2Bl_visit(B x) { Md2Block* c = c(Md2Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
@@ -470,12 +489,12 @@ void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for
 // void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
 // void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
 // void md2Bl_print(B x) { printf("(%p: 2-modifier block bl=%p sc=%p)",v(x),c(Md2Block,x)->bl,c(Md2Block,x)->sc); }
-// void funBl_print(B x) { printf("(%p: function"" block @%ld)",v(x),c(FunBlock,x)->bl->body->bc-c(I32Arr,c(FunBlock,x)->bl->body->comp->bc)->a); }
-// void md1Bl_print(B x) { printf("(%p: 1-modifier block @%ld)",v(x),c(Md1Block,x)->bl->body->bc-c(I32Arr,c(Md1Block,x)->bl->body->comp->bc)->a); }
-// void md2Bl_print(B x) { printf("(%p: 2-modifier block @%ld)",v(x),c(Md2Block,x)->bl->body->bc-c(I32Arr,c(Md2Block,x)->bl->body->comp->bc)->a); }
-void funBl_print(B x) { printf("{function""}"); }
-void md1Bl_print(B x) { printf("{1-modifier}"); }
-void md2Bl_print(B x) { printf("{2-modifier}"); }
+void funBl_print(B x) { printf("(function"" block @%ld)",c(FunBlock,x)->bl->body->bc-c(I32Arr,c(FunBlock,x)->bl->body->comp->bc)->a); }
+void md1Bl_print(B x) { printf("(1-modifier block @%ld)",c(Md1Block,x)->bl->body->bc-c(I32Arr,c(Md1Block,x)->bl->body->comp->bc)->a); }
+void md2Bl_print(B x) { printf("(2-modifier block @%ld)",c(Md2Block,x)->bl->body->bc-c(I32Arr,c(Md2Block,x)->bl->body->comp->bc)->a); }
+// void funBl_print(B x) { printf("{function""}"); }
+// void md1Bl_print(B x) { printf("{1-modifier}"); }
+// void md2Bl_print(B x) { printf("{2-modifier}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
@@ -483,13 +502,13 @@ B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actual
 B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
 void comp_init() {
-  ti[t_comp     ].free = comp_free;  ti[t_comp     ].print =  comp_print;
-  ti[t_body     ].free = body_free;  ti[t_body     ].print =  body_print;
-  ti[t_block    ].free = block_free; ti[t_block    ].print = block_print;
-  ti[t_scope    ].free = scope_free; ti[t_scope    ].print = scope_print;
-  ti[t_fun_block].free = funBl_free; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
-  ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
-  ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;
+  ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
+  ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
+  ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;
+  ti[t_scope    ].free = scope_free; ti[t_scope    ].visit = scope_visit; ti[t_scope    ].print = scope_print;
+  ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
+  ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
+  ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].visit = md2Bl_visit; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;
 }
 
 void print_vmStack() {

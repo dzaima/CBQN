@@ -65,8 +65,11 @@ bool i32arr_canStore(B x) { return q_i32(x); }
 
 void i32arr_init() {
   ti[t_i32arr].get   = i32arr_get;   ti[t_i32slice].get   = i32slice_get;
+  ti[t_i32arr].getU  = i32arr_get;   ti[t_i32slice].getU  = i32slice_get;
   ti[t_i32arr].slice = i32arr_slice; ti[t_i32slice].slice = i32slice_slice;
   ti[t_i32arr].free  = i32arr_free;  ti[t_i32slice].free  =    slice_free;
+  ti[t_i32arr].visit = do_nothing;   ti[t_i32slice].visit =    slice_visit;
   ti[t_i32arr].print =    arr_print; ti[t_i32slice].print = arr_print;
+  ti[t_i32arr].isArr = true;         ti[t_i32slice].isArr = true;
   ti[t_i32arr].canStore = i32arr_canStore;
 }

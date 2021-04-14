@@ -34,10 +34,10 @@ CTR_FOR(CTR_DEF)
   #define VALIDATE(x) validate(x) // preferred validating level
 #else
   #define assert(x) {if (!(x)) __builtin_unreachable();}
-  #define VALIDATE(x) x
+  #define VALIDATE(x) (x)
 #endif
 
-#define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*n) // type; FAM name; FAM type; amount
+#define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*(n)) // type; FAM name; FAM type; amount
 #define ftag(x) ((u64)(x) << 48)
 #define tag(v, t) b(((u64)(v)) | ftag(t))
                                         // .111111111110000000000000000000000000000000000000000000000000000 infinity
@@ -61,7 +61,7 @@ enum Type {
   /* 1*/ t_fun_def, t_fun_block,
   /* 3*/ t_md1_def, t_md1_block,
   /* 5*/ t_md2_def, t_md2_block,
-  /* 7*/ t_noGC, // doesn't get visited, shouldn't be unallocated by gc
+  /* 7*/ t_shape, // doesn't get visited, shouldn't be unallocated by gc
   
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
@@ -70,12 +70,12 @@ enum Type {
   /*17*/ t_hslice, t_i32slice, t_fillslice, t_c32slice,
   
   /*21*/ t_comp, t_block, t_body, t_scope,
-  
+  /*25*/ t_freed,
   Type_MAX
 };
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
-    case t_empty:return"empty"; case t_noGC:return"noGC";
+    case t_empty:return"empty"; case t_shape:return"shape";
     case t_fun_def:return"fun_def"; case t_fun_block:return"fun_block";
     case t_md1_def:return"md1_def"; case t_md1_block:return"md1_block";
     case t_md2_def:return"md2_def"; case t_md2_block:return"md2_block";
@@ -84,6 +84,7 @@ char* format_type(u8 u) {
     case t_harr  :return"harr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ;
     case t_hslice:return"hslice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice";
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
+    case t_freed:return"(freed by GC)";
   }
 }
 
@@ -100,7 +101,7 @@ char* format_pf(u8 u) {
     case pf_add:return"+"; case pf_sub:return"-"; case pf_mul:return"×"; case pf_div:return"÷"; case pf_pow:return"⋆"; case pf_floor:return"⌊"; case pf_eq:return"="; case pf_le:return"≤"; case pf_log:return"⋆⁼";
     case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_feq:return"≡"; case pf_lt:return"⊣"; case pf_rt:return"⊢"; case pf_fmtF:case pf_fmtN:return"⍕";
     case pf_fork:return"(fork)"; case pf_atop:return"(atop)"; case pf_md1d:return"(derived 1-modifier)"; case pf_md2d:return"(derived 2-modifier)";
-    case pf_type:return"•Type"; case pf_decp:return"Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; 
+    case pf_type:return"•Type"; case pf_decp:return"•Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; 
     case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•groupOrd"; case pf_asrt:return"!"; case pf_sys:return"•getsys"; case pf_internal:return"•Internal"; 
   }
 }
@@ -114,6 +115,25 @@ char* format_pm1(u8 u) {
     case pm1_tbl: return"⌜"; case pm1_scan: return"`";
   }
 }
+enum PrimMd2 {
+  pm2_none,
+  pm2_val, pm2_fillBy, // md2.c
+};
+char* format_pm2(u8 u) {
+  switch(u) {
+    default: case pf_none: return"(unknown 1-modifier)";
+    case pm2_val: return"⊘"; case pm2_fillBy: return"•_fillBy_";
+  }
+}
+
+
+#ifdef USE_VALGRIND
+#include <valgrind/valgrind.h>
+#include <valgrind/memcheck.h>
+void pst(char* msg) {
+  VALGRIND_PRINTF_BACKTRACE("%s", msg);
+}
+#endif
 
 typedef union B {
   u64 u;
@@ -128,6 +148,9 @@ typedef struct Value {
   u8 flags;  // is sorted/a permutation/whatever in the future, currently primitive index for self-hosted runtime
   u8 type;   // access into TypeInfo among generally knowing what type of object this is
   ur extra;  // whatever object-specific stuff. Rank for arrays, id for functions
+  #ifdef OBJ_COUNTER
+  u64 uid;
+  #endif
 } Value;
 typedef struct Arr {
   struct Value;
@@ -137,13 +160,25 @@ typedef struct Arr {
 
 // memory manager
 typedef void (*V2v)(Value*);
+typedef void (*vfn)();
 
+void gc_add(B x); // add permanent root object
+void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic roots
+void gc_disable(); // gc starts disabled
+void gc_enable();  // can be nested (e.g. gc_disable(); gc_disable(); gc_enable(); will keep gc disabled until another gc_enable(); )
+void gc_maybeGC(); // gc if that seems necessary
+void gc_forceGC(); // force a gc; who knows what happens if gc is disabled (probably should error)
+void gc_visitRoots();
 void* mm_allocN(usz sz, u8 type);
 void mm_free(Value* x);
 void mm_visit(B x);
+void mm_visitP(void* x);
 u64  mm_round(usz x);
 u64  mm_size(Value* x);
-u64  mm_totalAllocated();
+
+u64  mm_heapAllocated();
+u64  mm_heapUsed();
+
 void mm_forHeap(V2v f);
 B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
@@ -174,8 +209,8 @@ void print_vmStack();
   B validate(B x);
   B recvalidate(B x);
 #else
-  #define validate(x) x
-  #define recvalidate(x) x
+  #define validate(x) (x)
+  #define recvalidate(x) (x)
 #endif
 B err(char* s) {
   puts(s); fflush(stdout);
@@ -211,11 +246,6 @@ typedef struct ShArr {
   struct Value;
   usz a[];
 } ShArr;
-usz* allocSh(ur r) {
-  assert(r>0);
-  B x = mm_alloc(fsizeof(ShArr, a, usz, r), t_noGC, ftag(OBJ_TAG));
-  return ((ShArr*)v(x))->a;
-}
 ShArr* shObj(B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
 void decSh(B x) { if (rnk(x)>1) ptr_dec(shObj(x)); }
 
@@ -227,7 +257,7 @@ void arr_shVec(B x, usz ia) {
 usz* arr_shAlloc(B x, usz ia, usz r) {
   a(x)->ia = ia;
   srnk(x,r);
-  if (r>1) return a(x)->sh = allocSh(r);
+  if (r>1) return a(x)->sh = c(ShArr,mm_alloc(fsizeof(ShArr, a, usz, r), t_shape, ftag(OBJ_TAG)))->a;
   a(x)->sh = &a(x)->ia;
   return 0;
 }
@@ -282,6 +312,7 @@ typedef struct Slice {
   B p;
 } Slice;
 void slice_free(B x) { dec(c(Slice,x)->p); decSh(x); }
+void slice_visit(B x) { mm_visit(c(Slice,x)->p); }
 void slice_print(B x) { arr_print(x); }
 
 
@@ -297,24 +328,30 @@ typedef B (*BBBBB2B)(B, B, B, B, B);
 typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
-  B2v free;   // expects refc==0
+  B2v free;   // expects refc==0, type may be cleared to t_empty for garbage collection
   BS2B get;   // increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen
+  BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
   B2b canStore; // doesn't consume
   
   B2v print;  // doesn't consume
-  B2v visit;  // for GC when that comes around
+  B2v visit;  // call mm_visit for all referents
   B2B decompose; // consumes; must return a HArr
+  bool isArr;
 } TypeInfo;
 TypeInfo ti[Type_MAX];
 #define TI(x) (ti[v(x)->type])
 
 
 void do_nothing(B x) { }
-void def_print(B x) { printf("(type %d)", v(x)->type); }
-B    get_self(B x, usz n) { return x; }
+void empty_free(B x) { err("FREEING EMPTY\n"); }
+void builtin_free(B x) { err("FREEING BUILTIN\n"); }
+void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
+void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+B    def_get (B x, usz n) { return inc(x); }
+B    def_getU(B x, usz n) { return x; }
 B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
 B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
 B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
@@ -322,16 +359,24 @@ B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 bool def_canStore(B x) { return false; }
 B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 void hdr_init() {
-  for (i32 i = 0; i < Type_MAX; ++i) {
-    ti[i].visit = ti[i].free = do_nothing;
-    ti[i].get = get_self;
+  for (i32 i = 0; i < Type_MAX; i++) {
+    ti[i].free  = do_nothing;
+    ti[i].visit = def_visit;
+    ti[i].get   = def_get;
+    ti[i].getU  = def_get;
     ti[i].print = def_print;
-    ti[i].m1_d = def_m1_d;
-    ti[i].m2_d = def_m2_d;
+    ti[i].m1_d  = def_m1_d;
+    ti[i].m2_d  = def_m2_d;
+    ti[i].isArr = false;
     ti[i].decompose = def_decompose;
-    ti[i].slice = def_slice;
-    ti[i].canStore = def_canStore;
+    ti[i].slice     = def_slice;
+    ti[i].canStore  = def_canStore;
   }
+  ti[t_empty].free = empty_free;
+  ti[t_freed].free = do_nothing;
+  ti[t_shape].visit = do_nothing;
+  ti[t_fun_def].visit = ti[t_md1_def].visit = ti[t_md2_def].visit = do_nothing;
+  ti[t_fun_def].free  = ti[t_md1_def].free  = ti[t_md2_def].free  = builtin_free;
   bi_nothing = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);
   bi_badHdr  = tag(2, TAG_TAG);
@@ -363,7 +408,8 @@ void ptr_dec(void* x) { if(!--((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x);
 void ptr_inc(void* x) { ((Value*)x)->refc++; }
 void ptr_decR(void* x) { if(!--((Value*)x)->refc) value_freeR1(x); }
 void decR(B x) {
-  if (!isVal(x)) return; Value* vx = v(x);
+  if (!isVal(x)) return;
+  Value* vx = v(x);
   if(!--vx->refc) value_freeR2(vx, x);
 }
 bool reusable(B x) { return v(x)->refc==1; }
@@ -377,12 +423,20 @@ void print(B x) {
     printf("%g", x.f);
   } else if (isC32(x)) {
     if ((u32)x.u>=32) { printf("'"); printUTF8((u32)x.u); printf("'"); }
-    else printf("\\x%x", (u32)x.u);
+    else if((u32)x.u>15) printf("\\x%x", (u32)x.u);
+    else printf("\\x0%x", (u32)x.u);
   } else if (isI32(x)) {
     printf("%d", (i32)x.u);
   } else if (isVal(x)) {
     #ifdef DEBUG
-    if (isVal(x) && v(x)->refc<0) {printf("(FREED)"); exit(1);} else
+    if (isVal(x) && (v(x)->type==t_freed || v(x)->type==t_empty)) {
+      u8 t = v(x)->type;
+      v(x)->type = v(x)->flags;
+      printf(t==t_freed?"FREED:":"EMPTY:");
+      TI(x).print(x);
+      v(x)->type = t;
+      return;
+    }
     #endif
     TI(x).print(x);
   }
@@ -458,7 +512,6 @@ B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
 }
 
 
-
 typedef struct Md1 {
   struct Value;
   BB2B  c1; // f(md1d{this,f},  x); consumes x
@@ -475,14 +528,14 @@ B m_md2H(B m,      B g);
 B m_fork(B f, B g, B h);
 B m_atop(     B g, B h);
 
-void arr_print(B x) {
+void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   usz r = rnk(x);
-  BS2B xget = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   usz ia = a(x)->ia;
   if (r!=1) {
     if (r==0) {
       printf("<");
-      print(xget(x,0));
+      print(xgetU(x,0));
       return;
     }
     usz* sh = a(x)->sh;
@@ -493,13 +546,11 @@ void arr_print(B x) {
     printf("⥊");
   } else if (ia>0) {
     for (usz i = 0; i < ia; i++) {
-      B c = xget(x,i);
-      bool is = isC32(c);
-      dec(c);
-      if (!is) goto reg;
+      B c = xgetU(x,i);
+      if (!isC32(c) || (u32)c.u=='\n') goto reg;
     }
     printf("\"");
-    for (usz i = 0; i < ia; i++) printUTF8((u32)xget(x,i).u); // c32, no need to decrement
+    for (usz i = 0; i < ia; i++) printUTF8((u32)xgetU(x,i).u); // c32, no need to decrement
     printf("\"");
     return;
   }
@@ -507,13 +558,18 @@ void arr_print(B x) {
   printf("⟨");
   for (usz i = 0; i < ia; i++) {
     if (i!=0) printf(", ");
-    B c = xget(x,i);
-    print(c);
-    dec(c);
+    print(xgetU(x,i));
   }
   printf("⟩");
 }
 
+
+#include <time.h>
+u64 nsTime() {
+  struct timespec t;
+  timespec_get(&t, TIME_UTC);
+  return t.tv_sec*1000000000ull + t.tv_nsec;
+}
 
 #ifdef DEBUG
   B validate(B x) {
@@ -523,7 +579,7 @@ void arr_print(B x) {
       print(x); puts(""); fflush(stdout);
       err("");
     }
-    if (isArr(x)) {
+    if (isArr(x) && v(x)->type!=t_freed) {
       ur r = rnk(x);
       if (r<=1) assert(a(x)->sh == &a(x)->ia);
       else validate(tag(shObj(x),OBJ_TAG));
@@ -556,7 +612,7 @@ u32** actrs;
 #endif
 #endif
 
-static void onAlloc(usz sz, u8 type) {
+static inline void onAlloc(usz sz, u8 type) {
   #ifdef ALLOC_STAT
     if (!ctr_a) {
       #ifdef ALLOC_SIZES
@@ -574,11 +630,14 @@ static void onAlloc(usz sz, u8 type) {
     talloc+= sz;
   #endif
 }
-static void onFree(Value* x) {
+static inline void onFree(Value* x) {
   #ifdef ALLOC_STAT
     ctr_f[x->type]++;
   #endif
   #ifdef DEBUG
-    x->refc = 0x61616161;
+    // u32 undef;
+    // x->refc = undef;
+    x->refc = -1431655000;
   #endif
+  // x->refc = 0x61616161;
 }

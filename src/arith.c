@@ -32,7 +32,7 @@ ffnx(log_c2, log(x.f)/log(w.f), {})
 B decp_c1(B t, B x);
 B eq_c2(B t, B w, B x) {
   if(isF64(w)&isF64(x)) return m_i32(w.f==x.f);
-  if (w.u==x.u) return m_i32(1);
+  if (w.u==x.u)               { dec(w);dec(x); return m_i32(1); }
   // doesn't handle int=float
   if (!isVal(w) | !isVal(x))  { dec(w);dec(x); return m_i32(0); }
   if (v(w)->type!=v(x)->type) { dec(w);dec(x); return m_i32(0); }
@@ -61,9 +61,9 @@ B    eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 
 
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME;
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME;
+#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME; gc_add(bi_##NAME);
+#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = NAME##_c2; c(Fun,bi_##NAME)->c1 = c1_invalid; c(Fun,bi_##NAME)->extra=pf_##NAME; gc_add(bi_##NAME);
+#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Fun), t_fun_def, ftag(FUN_TAG)); c(Fun,bi_##NAME)->c2 = c2_invalid;c(Fun,bi_##NAME)->c1 = NAME##_c1 ; c(Fun,bi_##NAME)->extra=pf_##NAME; gc_add(bi_##NAME);
 
 B                   bi_add, bi_sub, bi_mul, bi_div, bi_pow, bi_floor, bi_eq, bi_le, bi_log;
 void arith_init() { ba(add) ba(sub) ba(mul) ba(div) ba(pow) bm(floor) ba(eq) bd(le) ba(log) }
