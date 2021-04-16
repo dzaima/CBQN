@@ -121,12 +121,12 @@ char* format_pm1(u8 u) {
 }
 enum PrimMd2 {
   pm2_none,
-  pm2_val, pm2_fillBy, // md2.c
+  pm2_val, pm2_fillBy, pm2_catch, // md2.c
 };
 char* format_pm2(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm2_val: return"⊘"; case pm2_fillBy: return"•_fillBy_";
+    case pm2_val: return"⊘"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
   }
 }
 
@@ -204,8 +204,8 @@ NORETURN void thr(B b);
 NORETURN void thrM(char* s);
 jmp_buf* prepareCatch();
 #ifdef CATCH_ERRORS
-#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error; dec(catchMessage);*/ } /*regular execution*/ popCatch();`
-#else
+#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error; dec(catchMessage);*/ } /*potentially erroring thing*/ popCatch();`
+#else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false
 #endif
 void popCatch();
@@ -252,6 +252,7 @@ bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } 
 bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
 
 bool isAtm(B x) { return !isVal(x); }
+bool noFill(B x);
 
 // shape mess
 typedef struct ShArr {
@@ -313,9 +314,9 @@ B m_i32(i32 n) { return m_f64(n); }
 B m_error() { return tag(4, TAG_TAG); }
 B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
 
-i32 o2i  (B x) { if ((i32)x.f!=x.f) err("o2i"": expected integer"); return (i32)x.f; }
-usz o2s  (B x) { if ((usz)x.f!=x.f) err("o2s"": expected integer"); return (usz)x.f; }
-i64 o2i64(B x) { if ((i64)x.f!=x.f) err("o2i64: expected integer"); return (i64)x.f; }
+i32 o2i  (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; }
+usz o2s  (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
+i64 o2i64(B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
 i32 o2iu (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
 
@@ -464,6 +465,7 @@ void print(B x) {
   else if (x.u==bi_optOut.u) printf("(value optimized out)");
   else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
   else if (x.u==bi_badHdr.u) printf("(bad header note)");
+  else if (x.u==bi_noFill.u) printf("(no fill placeholder)");
   else printf("(todo tag %lx)", x.u>>48);
 }
 void printRaw(B x) {
@@ -476,7 +478,7 @@ void printRaw(B x) {
     BS2B xget = TI(x).get;
     for (usz i = 0; i < ia; i++) {
       B c = xget(x,i);
-      if (c.u==0 | c.u==bi_noFill.u) { printf(" "); continue; }
+      if (c.u==0 || noFill(c)) { printf(" "); continue; }
       if (!isC32(c)) err("bad printRaw argument: expected all character items");
       printUTF8((u32)c.u);
     }

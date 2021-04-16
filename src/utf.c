@@ -20,10 +20,11 @@ B fromUTF8(char* s, u64 len) {
   u64 j;
   for (j = 0; j < len; j+= utf8_len(s[j])) sz++;
   if (j!=len) return err("invalid UTF-8");
-  HArr_p r = m_harrv(sz);
+  B r = m_c32arrv(sz);
+  u32* rp = c32arr_ptr(r);
   u64 p = 0;
-  for (u64 i = 0; i < len; i+= utf8_len(s[i])) r.a[p++] = m_c32(utf8_p((u8*)s+i)); // may read after end, eh
-  return r.b;
+  for (u64 i = 0; i < len; i+= utf8_len(s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh
+  return r;
 }
 
 void printUTF8(u32 c) {

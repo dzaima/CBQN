@@ -16,6 +16,7 @@
 // #define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
 
+#define rtLen 63
 #include "h.h"
 #include "heap.c"
 #include "mm_buddy.c"
@@ -27,9 +28,9 @@
 #include "derv.c"
 #include "arith.c"
 #include "sfns.c"
+#include "sysfn.c"
 #include "md1.c"
 #include "md2.c"
-#include "sysfn.c"
 #include "vm.c"
 
 void pr(char* a, B b) {
@@ -97,10 +98,11 @@ int main() {
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N  , bi_N, bi_N,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N  , bi_N   , bi_asrt , bi_N  , bi_N  , bi_N , bi_N    , bi_tbl, bi_N, bi_N,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N  , bi_scan, bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val, bi_N, bi_N,
-    /* ⚇⍟          */ bi_N  , bi_fill
+    /* ⚇⍟⎊         */ bi_N  , bi_fill, bi_catch
   };
-  for (i32 i = 0; i < 62; i++) inc(fruntime[i]);
-  B frtObj = m_caB(62, fruntime);
+  assert(sizeof(fruntime)/sizeof(B) == rtLen);
+  for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
+  B frtObj = m_caB(rtLen, fruntime);
   
   
   Block* runtime_b = compile(

@@ -29,7 +29,7 @@ useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← (3+useInd) ↑ ((<"inc(runtime["∾⍕∾"])"˙)¨↕62)⊸Compile
 J ← ∾∾⟜\n¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
-prov ← {"inc("∾𝕩∾")"}¨"bi_type"‿"bi_fill"‿"bi_log"‿"bi_grLen"‿"bi_grOrd"‿"bi_asrt"‿"bi_add"‿"bi_sub"‿"bi_mul"‿"bi_div"‿"bi_pow"‿"bi_floor"‿"bi_eq"‿"bi_le"‿"bi_fne"‿"bi_shape"‿"bi_pick"‿"bi_ud"‿"bi_tbl"‿"bi_scan"‿"bi_fillBy"‿"bi_val"
+prov ← {"inc("∾𝕩∾")"}¨"bi_type"‿"bi_fill"‿"bi_log"‿"bi_grLen"‿"bi_grOrd"‿"bi_asrt"‿"bi_add"‿"bi_sub"‿"bi_mul"‿"bi_div"‿"bi_pow"‿"bi_floor"‿"bi_eq"‿"bi_le"‿"bi_fne"‿"bi_shape"‿"bi_pick"‿"bi_ud"‿"bi_tbl"‿"bi_scan"‿"bi_fillBy"‿"bi_val"‿"bi_catch"
 Fout ← {((≠𝕩)↑⟨LI F¨,L ·prov⊸∾⍟(𝕨⊣0) Fconst¨,L (LI F¨)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾\n}

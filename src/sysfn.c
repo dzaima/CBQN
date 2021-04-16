@@ -9,8 +9,8 @@ B type_c1(B t, B x) {
   else if (isFun(x)) r = 3;
   else if (isMd1(x)) r = 4;
   else if (isMd2(x)) r = 5;
-  decR(x);
   if (r==-1) return err("getting type");
+  decR(x);
   return m_i32(r);
 }
 
@@ -33,12 +33,14 @@ B glyph_c1(B t, B x) {
 }
 
 B fill_c1(B t, B x) {
-  return getFill(x);
+  B f = getFill(x);
+  if (noFill(f)) return m_f64(0); // thrM("No fill found");
+  return f;
 }
 B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   if (isArr(x)) {
     B fill = asFill(w);
-    if (fill.u == bi_noFill.u) { dec(fill); return x; }
+    if (noFill(fill)) return x;
     return withFill(x, fill);
   }
   dec(w);

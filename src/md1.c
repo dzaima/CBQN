@@ -96,6 +96,7 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x) || rnk(x)==0) thrM("`: argument cannot have rank 0");
+  B xf = getFill(inc(x));
   ur xr = rnk(x);
   usz ia = a(x)->ia;
   if (ia==0) return x;
@@ -111,7 +112,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
     for (usz i = csz; i < ia; i++) r.a[i] = c2(f, inc(r.a[i-csz]), xget(x,i));
   }
   dec(x);
-  return r.b;
+  return withFill(r.b, xf);
 }
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");

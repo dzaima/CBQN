@@ -1,39 +1,37 @@
 #include "h.h"
 
 B shape_c1(B t, B x) {
-  if (isArr(x)) {
-    usz ia = a(x)->ia;
-    if (reusable(x)) {
-      decSh(x);
-      arr_shVec(x, ia);
-      return x;
-    }
-    B r = TI(x).slice(x, 0);
-    arr_shVec(r, ia);
-    return r;
-  } else return err("reshaping non-array");
+  if (!isArr(x)) thrM("reshaping non-array");
+  usz ia = a(x)->ia;
+  if (reusable(x)) {
+    decSh(x);
+    arr_shVec(x, ia);
+    return x;
+  }
+  B r = TI(x).slice(x, 0);
+  arr_shVec(r, ia);
+  return r;
 }
 B shape_c2(B t, B w, B x) {
-  if (isArr(x)) {
-    if (!isArr(w)) return shape_c1(t, x);
-    BS2B wget = TI(w).get;
-    ur nr = a(w)->ia;
-    usz nia = a(x)->ia;
-    B r;
-    if (reusable(x)) { r = x; decSh(x); }
-    else r = TI(x).slice(x, 0);
-    usz* sh = arr_shAlloc(r, nia, nr);
-    if (sh) for (i32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
-    dec(w);
-    return r;
-  } else return err("reshaping non-array");
+  if (!isArr(x)) { dec(x); dec(w); thrM("reshaping non-array"); }
+  if (!isArr(w)) return shape_c1(t, x);
+  BS2B wget = TI(w).get;
+  ur nr = a(w)->ia;
+  usz nia = a(x)->ia;
+  B r;
+  if (reusable(x)) { r = x; decSh(x); }
+  else r = TI(x).slice(x, 0);
+  usz* sh = arr_shAlloc(r, nia, nr);
+  if (sh) for (i32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
+  dec(w);
+  return r;
 }
 
 B pick_c1(B t, B x) {
   if (!isArr(x)) return x;
   if (a(x)->ia==0) {
     B r = getFill(x);
-    if (r.u==bi_noFill.u) return err("⊑: called on empty array without fill");
+    if (noFill(r)) thrM("⊑: called on empty array without fill");
     return r;
   }
   B r = TI(x).get(x, 0);
@@ -42,13 +40,11 @@ B pick_c1(B t, B x) {
 }
 B pick_c2(B t, B w, B x) {
   usz wu = o2s(w);
-  if (isArr(x)) {
-    // if (wu >= a(x)->ia) err("⊑: 𝕨 is greater than length of 𝕩"); // no bounds check for now
-    B r = TI(x).get(x, wu);
-    dec(x);
-    return r;
-  }
-  dec(x); return err("n⊑atom");
+  if (!isArr(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
+  // if (wu >= a(x)->ia) err("⊑: 𝕨 is greater than length of 𝕩"); // no bounds check for now
+  B r = TI(x).get(x, wu);
+  dec(x);
+  return r;
 }
 
 B ud_c1(B t, B x) {
@@ -103,7 +99,7 @@ B fmtN_c1(B t, B x) {
 B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
   u8 fl = v(x)->flags;
-  if (fl==0 || fl>=62) return m_str32(U"(fmtF: not given a runtime primitive)");
+  if (fl==0 || fl>=rtLen) return m_str32(U"(fmtF: not given a runtime primitive)");
   dec(x);
   return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟"[fl-1]);
 }

@@ -28,7 +28,7 @@ B m_str8(usz sz, char* s) {
   for (u64 i = 0; i < sz; i++) p[i] = s[i];
   return r;
 }
-B m_str32(u32* s) { // meant to be used as m_str32(U"{𝕨‿𝕩}")
+NOINLINE B m_str32(u32* s) { // meant to be used as m_str32(U"{𝕨‿𝕩}")
   u64 sz = 0; while(s[sz]) sz++;
   B r = m_c32arrv(sz); u32* p = c32arr_ptr(r);
   for (u64 i = 0; i < sz; i++) p[i] = s[i];

@@ -265,7 +265,7 @@ void allocStack(u64 am) {
   u64 left = gStackEnd-gStack;
   if (am>left) {
     u64 n = gStackEnd-gStackStart + am + 500;
-    u64 d = gStackStart-gStack;
+    u64 d = gStack-gStackStart;
     gStackStart = realloc(gStackStart, n*sizeof(B));
     gStack    = gStackStart+d;
     gStackEnd = gStackStart+n;
@@ -534,7 +534,7 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   if (cf==cfEnd) {
     u64 n = cfEnd-cfStart;
     n = n<8? 8 : n*2;
-    u64 d = cfStart-cf;
+    u64 d = cf-cfStart;
     cfStart = realloc(cfStart, n*sizeof(CatchFrame));
     cf    = cfStart+d;
     cfEnd = cfStart+n;
@@ -556,13 +556,12 @@ void thr(B msg) {
     cf--;
     
     B* gStackNew = gStackStart + cf->gStackDepth;
-    if (gStackNew>gStack) err("bad catch gStack");
+    if (gStackNew>gStack) err("bad catch gStackDepth");
     while (gStack!=gStackNew) dec(*--gStack);
-    // gStack = gStackNew;
     
-    cf = cfStart + cf->cfDepth;
+    if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
+    cf = cfStart+cf->cfDepth;
     longjmp(cf->jmp, 1);
-    printf("wat\n");
   }
   assert(cf==cfStart);
   printf("Error: ");
