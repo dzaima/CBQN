@@ -1,8 +1,10 @@
 #! /usr/bin/env dbqn
+# Modified version of https://github.com/mlochbaum/BQN/blob/master/src/cjs.bqn, which is under the ISC license (https://github.com/mlochbaum/BQN/blob/master/LICENSE)
+
 args←•args
+"Usage: ./cc.bqn path/to/mlochbaum/BQN <one of [rcfe] or an expression>"!2≤≠args
 return ← 1≡⊑args
 args↓˜↩ return
-"call with argument specifying path of mlochbaum/BQN!"!2≤≠args
 path←(⊑args)∾"/src/"
 args↓˜↩1
 L  ← {"m_caB("  ∾(⍕≠𝕩)∾",(B[]){"  ∾(1↓∾","⊸∾¨𝕩)∾"})"}

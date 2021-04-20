@@ -13,3 +13,5 @@ Test precompiled safe prim tests:
 
 1. uncomment [this](https://github.com/dzaima/CBQN/blob/528279b8e3e0fb108868f47b7bdfe772c26f10c3/src/main.c#L101-L106)
 2. `./test.bqn path/to/mlochbaum/BQN "$PATH"`
+
+Any file without an explicit copyright message is copyright (c) 2021 dzaima, GNU GPLv3 - see LICENSE

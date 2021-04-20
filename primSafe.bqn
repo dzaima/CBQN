@@ -1,5 +1,5 @@
 #! /usr/bin/env dbqn
-"usage: ./primSafe.bqn path/to/mlochbaum/BQN | ./BQN (while compiled for REPL mode)"!1≤≠•args
+"Usage: ./primSafe.bqn path/to/mlochbaum/BQN | ./BQN"!1≤≠•args
 path←⊑•args
 case←"prim"
 {case↩⊑𝕩}⍟(×≠) 1↓•args

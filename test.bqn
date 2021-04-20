@@ -1,5 +1,5 @@
 #! /usr/bin/env dbqn
-"usage: ./test.bqn path/to/mlochbaum/BQN ""$PATH"" [optional expressions to evaluate]"!2≤≠•args
+"Usage: ./test.bqn path/to/mlochbaum/BQN ""$PATH"" [optional expressions to evaluate]"!2≤≠•args
 path←0⊑•args
 envP←1⊑•args
 
