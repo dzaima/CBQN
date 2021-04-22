@@ -23,10 +23,12 @@ Num ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾⍕∘| �
 
 F ← ⍕  # Format number
 
-Import ← •Import path⊸∾
-FChars ← •FChars path⊸∾
+Import ← {𝕨•Import path∾𝕩}
+FChars ← {𝕨•FChars path∾𝕩}
+FLines ← {𝕨•FLines path∾𝕩}
 
-compile ← Import "c.bqn"
+glyphs ← Import "glyphs.bqn"
+compile ← glyphs Import "c.bqn"
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← (3+useInd) ↑ ((<"inc(runtime["∾⍕∾"])"˙)¨↕62)⊸Compile
 J ← ∾∾⟜\n¨
@@ -35,10 +37,16 @@ prov ← {"inc("∾𝕩∾")"}¨"bi_type"‿"bi_fill"‿"bi_log"‿"bi_grLen"‿
 Fout ← {((≠𝕩)↑⟨LI F¨,L ·prov⊸∾⍟(𝕨⊣0) Fconst¨,L (LI F¨)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾\n}
-•Out⍟(¬return) (⊑"r"‿"c"‿"f"‿"e"⊐⊏)◶⟨
+
+LFC ← Long∘Fout∘Comp
+CArg ← {J (¯5⊸↓∾𝕩˙)⌾⊑ FLines "c.bqn"}
+
+•Out⍟(¬return) (⊑"r"‿"c"‿"cc"‿"f"‿"e"‿"p"⊐⊏)◶⟨
   {𝕩⋄ref‿len←Import "pr.bqn"⋄Long Frun len⊸↓⌾(1⊸⊑)Comp ref}
-  {𝕩⋄Long Fout Comp FChars "c.bqn"}
-  {𝕩⋄Long Fout Comp FChars "f.bqn"}
-  {𝕩⋄Long Fout Comp ⟨"Modify←GetHighlights←⊢⋄"⟩∾∾ (FChars ⊢)∘∾⟜".bqn"¨ "../svg"‿"e"}
+  {𝕩⋄LFC CArg "⟨"∾"⟩"«∾","⊸∾¨'"'(⊣∾∾˜)¨glyphs}
+  {𝕩⋄LFC "{"∾"}"∾˜CArg"𝕩"}
+  {𝕩⋄LFC FChars "f.bqn"}
+  {𝕩⋄LFC SVG "e"}
+  {𝕩⋄LFC SVG "p"}
   ¯1 ↓ · J L∘Fout∘Comp¨
 ⟩ args
