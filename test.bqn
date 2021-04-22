@@ -1,29 +1,20 @@
 #! /usr/bin/env dbqn
-"Usage: ./test.bqn path/to/mlochbaum/BQN ""$PATH"" [optional expressions to evaluate]"!2≤≠•args
-path←0⊑•args
-envP←1⊑•args
+"Usage: ./test.bqn path/to/mlochbaum/BQN [-sme] name | ./BQN"!2≤≠•args
+path←⊑•args
+args←1↓•args
+opt←""
+{𝕊: opt↩𝕩 ⋄ args↓˜↩1}⍟('-'≡⊑) ⊑args
 
-tests ← •FLines path∾"/test/cases/prim.bqn"
-# tests ← •FLines path∾"/test/cases/identity.bqn"
-# tests ← •FLines path∾"/test/cases/undo.bqn"
-# tests ← •FLines path∾"/test/cases/under.bqn"
-# tests ← •FLines path∾"/test/cases/fill.bqn"
-{tests↩𝕩}⍟(×≠) 2↓•args
+"Missing argument!"!1=≠args
+case←⊑args
+case∾↩".bqn"
+tests ← •FLines path∾"/test/cases/"∾case
+tests/˜↩ (('#'≢⊑)∧0<≠)¨tests
+{𝕊: tests/˜↩{"! %"≢3↑𝕩}¨tests}⍟⊑ 's'∊opt
+{𝕊: tests/˜↩{"! %"≡3↑𝕩}¨tests}⍟⊑ 'e'∊opt
+Out ← {•Out'%'⊸∊◶⊢‿{𝕩↓˜1+⊑𝕩⊐'%'}𝕩}
 
-('#'≠ ·⊑ ∾⟜"#")◶@‿{
-  '%'⊸∊◶{𝕤
-    •Out 𝕩
-    "src/interp" •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"
-    (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"./debugBuild"
-    code‿out‿err←•SH"./BQN"
-    •Out out
-    {𝕤⋄•Out"exit code "∾(⍕code) ⋄ •Out err}⍟(×code) err
-  }‿{𝕤
-    # •Out 𝕩
-    # "src/interp" •FChars ⟨1,path,3↓𝕩⟩ •Import "cc.bqn"
-    # (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"./debugBuild"
-    # code‿out‿err←•SH"./BQN"
-    # •Out out
-    # {𝕤⋄•Out"exit code "∾(⍕code) ⋄ •Out err}⍟(×code) err
-  }
-}¨tests
+((⊑'m'∊opt)⊑Out‿{•Show𝕩⋄Out𝕩})¨tests
+# ('%'⊸∊∨ '#'= ·⊑ ∾⟜"#")◶•Out‿@¨tests
+•Out """finished"""
+•Out ""

@@ -295,7 +295,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc); printf("@%d << ", bcPos);
-      for (i32 i = 0; i < sh; i++) { if(i)printf(" ⋄ "); print(stack[i]); } puts(""); fflush(stdout);
+      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } puts(""); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) validate(sc->vars[i]);
     #endif
@@ -384,7 +384,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc); printf("@%ld:   ", sbc-c(I32Arr,b->comp->bc)->a);
-      for (i32 i = 0; i < sh; i++) { if(i)printf(" ⋄ "); print(stack[i]); } puts(""); fflush(stdout);
+      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } puts(""); fflush(stdout);
     #endif
   }
   end:;
