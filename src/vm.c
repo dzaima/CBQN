@@ -219,7 +219,7 @@ void v_set(Scope* sc, B s, B x, bool upd) { // frees s, doesn't consume x
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (!shEq(s, x)) err("spread assignment: mismatched shape");
+    if (!eqShape(s, x)) err("spread assignment: mismatched shape");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xget = TI(x).get;
@@ -501,7 +501,7 @@ B block_decompose(B x) { return m_v2(m_i32(1), x); }
 B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actualExec(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
 B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
-void comp_init() {
+static inline void comp_init() {
   ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
   ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;

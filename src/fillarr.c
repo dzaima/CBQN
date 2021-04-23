@@ -74,7 +74,7 @@ void fillarr_visit(B x) {
 }
 bool fillarr_canStore(B x) { return true; }
 
-void fillarr_init() {
+static inline void fillarr_init() {
   ti[t_fillarr].get   = fillarr_get;   ti[t_fillslice].get   = fillslice_get;
   ti[t_fillarr].getU  = fillarr_getU;  ti[t_fillslice].getU  = fillslice_getU;
   ti[t_fillarr].slice = fillarr_slice; ti[t_fillslice].slice = fillslice_slice;

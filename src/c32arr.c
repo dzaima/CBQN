@@ -69,7 +69,7 @@ bool eqStr(B w, u32* x) {
 }
 
 
-void c32arr_init() {
+static inline void c32arr_init() {
   ti[t_c32arr].get   = c32arr_get;   ti[t_c32slice].get   = c32slice_get;
   ti[t_c32arr].getU  = c32arr_get;   ti[t_c32slice].getU  = c32slice_get;
   ti[t_c32arr].slice = c32arr_slice; ti[t_c32slice].slice = c32slice_slice;

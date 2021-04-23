@@ -18,6 +18,7 @@
 #define u64 uint64_t
 #define f64 double
 #define I32_MAX ((i32)((1LL<<31)-1))
+#define CHR_MAX 1114111
 #define U16_MAX ((u16)-1)
 #define UD __builtin_unreachable();
 #define NOINLINE __attribute__ ((noinline))
@@ -62,10 +63,10 @@ const u16 VAL_TAG = 0b1111111111110   ; // 1111111111110........................
 
 enum Type {
   /* 0*/ t_empty, // empty bucket placeholder
-  /* 1*/ t_fun_def, t_fun_block,
-  /* 3*/ t_md1_def, t_md1_block,
-  /* 5*/ t_md2_def, t_md2_block,
-  /* 7*/ t_shape, // doesn't get visited, shouldn't be unallocated by gc
+  /* 1*/ t_funBI, t_fun_block,
+  /* 3*/ t_md1BI, t_md1_block,
+  /* 5*/ t_md2BI, t_md2_block,
+  /* 7*/ t_shape, // doesn't get visited, shouldn't be unallocated by gcWMd1
   
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
@@ -75,14 +76,17 @@ enum Type {
   
   /*21*/ t_comp, t_block, t_body, t_scope,
   /*25*/ t_freed,
+  #ifdef RT_PERF
+  /*26*/ t_funPerf, t_md1Perf, t_md2Perf,
+  #endif
   t_COUNT
 };
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
     case t_empty:return"empty"; case t_shape:return"shape";
-    case t_fun_def:return"fun_def"; case t_fun_block:return"fun_block";
-    case t_md1_def:return"md1_def"; case t_md1_block:return"md1_block";
-    case t_md2_def:return"md2_def"; case t_md2_block:return"md2_block";
+    case t_funBI:return"fun_def"; case t_fun_block:return"fun_block";
+    case t_md1BI:return"md1_def"; case t_md1_block:return"md1_block";
+    case t_md2BI:return"md2_def"; case t_md2_block:return"md2_block";
     case t_fork:return"fork"; case t_atop:return"atop";
     case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
     case t_harr  :return"harr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ;
@@ -92,31 +96,33 @@ char* format_type(u8 u) {
   }
 }
 
+#define FOR_PF(F) F(none, "(unknown fn)") \
+    F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") /*arith.c*/ \
+    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") /*sfns.c*/ \
+    F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") /*derv.c*/ \
+    F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") /*sysfn.c*/ \
+    F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") /*sysfn.c*/
+
 enum PrimFns {
-  pf_none,
-  pf_add, pf_sub, pf_mul, pf_div, pf_pow, pf_floor, pf_eq, pf_le, pf_log, // arith.c
-  pf_shape, pf_pick, pf_ud, pf_pair, pf_fne, pf_feq, pf_lt, pf_rt, pf_fmtF, pf_fmtN, // sfns.c
-  pf_fork, pf_atop, pf_md1d, pf_md2d, // derv.c
-  pf_type, pf_decp, pf_primInd, pf_glyph, pf_fill, // sysfn.c
-  pf_grLen, pf_grOrd, pf_asrt, pf_sys, pf_internal, // sysfn.c
+  #define F(N,X) pf_##N,
+  FOR_PF(F)
+  #undef F
 };
 char* format_pf(u8 u) {
-  switch(u) { default: case pf_none: return"(unknown fn)";
-    case pf_add:return"+"; case pf_sub:return"-"; case pf_mul:return"×"; case pf_div:return"÷"; case pf_pow:return"⋆"; case pf_floor:return"⌊"; case pf_eq:return"="; case pf_le:return"≤"; case pf_log:return"⋆⁼";
-    case pf_shape:return"⥊"; case pf_pick:return"⊑"; case pf_ud:return"↕"; case pf_pair:return"{𝕨‿𝕩}"; case pf_fne:return"≢"; case pf_feq:return"≡"; case pf_lt:return"⊣"; case pf_rt:return"⊢"; case pf_fmtF:case pf_fmtN:return"⍕";
-    case pf_fork:return"(fork)"; case pf_atop:return"(atop)"; case pf_md1d:return"(derived 1-modifier)"; case pf_md2d:return"(derived 2-modifier)";
-    case pf_type:return"•Type"; case pf_decp:return"•Decompose"; case pf_primInd:return"•PrimInd"; case pf_glyph:return"•Glyph"; case pf_fill:return"•FillFn"; 
-    case pf_grLen:return"•GroupLen"; case pf_grOrd:return"•groupOrd"; case pf_asrt:return"!"; case pf_sys:return"•getsys"; case pf_internal:return"•Internal"; 
+  switch(u) { default: return "(unknown fn)";
+    #define F(N,X) case pf_##N: return X;
+    FOR_PF(F)
+    #undef F
   }
 }
 enum PrimMd1 {
   pm1_none,
-  pm1_tbl, pm1_scan, // md1.c
+  pm1_tbl, pm1_each, pm1_fold, pm1_scan, // md1.c
 };
 char* format_pm1(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm1_tbl: return"⌜"; case pm1_scan: return"`";
+    case pm1_tbl: return"⌜"; case pm1_each: return"¨"; case pm1_fold: return"´"; case pm1_scan: return"`";
   }
 }
 enum PrimMd2 {
@@ -199,6 +205,7 @@ B m_v1(B a               );
 B m_v2(B a, B b          );
 B m_v3(B a, B b, B c     );
 B m_v4(B a, B b, B c, B d);
+B m_unit(B a);
 B m_str32(u32* s);
 NORETURN void thr(B b);
 NORETURN void thrM(char* s);
@@ -286,12 +293,25 @@ void arr_shCopy(B n, B o) { // copy shape from o to n
     a(n)->sh = a(o)->sh;
   }
 }
-bool shEq(B w, B x) { assert(isArr(w)); assert(isArr(x));
+bool eqShPrefix(usz* w, usz* x, ur len) {
+  return memcmp(w, x, len*sizeof(usz))==0;
+}
+ur minRank(B w, B x) { // assumes both are arrays
+  ur wr = rnk(w);
+  ur xr = rnk(x);
+  return wr<xr? wr : xr;
+}
+ur maxRank(B w, B x) { // assumes both are arrays
+  ur wr = rnk(w);
+  ur xr = rnk(x);
+  return wr>xr? wr : xr;
+}
+bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   ur wr = rnk(w); usz* wsh = a(w)->sh;
   ur xr = rnk(x); usz* xsh = a(x)->sh;
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
-  return memcmp(wsh,xsh,wr*sizeof(usz))==0;
+  return eqShPrefix(wsh, xsh, wr);
 }
 usz arr_csz(B x) {
   ur xr = rnk(x);
@@ -349,6 +369,7 @@ typedef struct TypeInfo {
   BBB2B m2_d; // consume all args; (m, f, g)
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
   B2b canStore; // doesn't consume
+  B2B identity; // return identity element of this function; doesn't consume
   
   B2v print;  // doesn't consume
   B2v visit;  // call mm_visit for all referents
@@ -358,6 +379,8 @@ typedef struct TypeInfo {
 TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
+
+B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 
 void do_nothing(B x) { }
 void empty_free(B x) { err("FREEING EMPTY\n"); }
@@ -369,6 +392,7 @@ void freeed_visit(B x) {
   #endif
 }
 void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+B    def_identity(B f) { return bi_nothing; }
 B    def_get (B x, usz n) { return inc(x); }
 B    def_getU(B x, usz n) { return x; }
 B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
@@ -376,17 +400,17 @@ B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
 B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
 B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 bool def_canStore(B x) { return false; }
-B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
-void hdr_init() {
+static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = do_nothing;
     ti[i].visit = def_visit;
     ti[i].get   = def_get;
-    ti[i].getU  = def_get;
+    ti[i].getU  = def_getU;
     ti[i].print = def_print;
     ti[i].m1_d  = def_m1_d;
     ti[i].m2_d  = def_m2_d;
     ti[i].isArr = false;
+    ti[i].identity = def_identity;
     ti[i].decompose = def_decompose;
     ti[i].slice     = def_slice;
     ti[i].canStore  = def_canStore;
@@ -395,8 +419,8 @@ void hdr_init() {
   ti[t_freed].free = do_nothing;
   ti[t_freed].visit = freeed_visit;
   ti[t_shape].visit = do_nothing;
-  ti[t_fun_def].visit = ti[t_md1_def].visit = ti[t_md2_def].visit = do_nothing;
-  ti[t_fun_def].free  = ti[t_md1_def].free  = ti[t_md2_def].free  = builtin_free;
+  ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = do_nothing;
+  ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
   bi_nothing = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);
   bi_badHdr  = tag(2, TAG_TAG);
@@ -491,7 +515,7 @@ bool equal(B w, B x) { // doesn't consume
   bool xa = isArr(x);
   if (wa!=xa) return false;
   if (!wa) return o2iu(eq_c2(bi_nothing, inc(w), inc(x)))?1:0;
-  if (!shEq(w,x)) return false;
+  if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
   BS2B xget = TI(x).get;
   BS2B wget = TI(w).get;
@@ -530,6 +554,10 @@ B c1(B f, B x) { // BQN-call f monadically; consumes x
 B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
   return c2_rare(f, w, x);
+}
+B c1_modifier(B f, B w, B x) {
+  dec(w); dec(x);
+  thrM("Calling a modifier");
 }
 
 
@@ -589,6 +617,7 @@ void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
 u64 nsTime() {
   struct timespec t;
   timespec_get(&t, TIME_UTC);
+  // clock_gettime(CLOCK_REALTIME, &t);
   return t.tv_sec*1000000000ull + t.tv_nsec;
 }
 

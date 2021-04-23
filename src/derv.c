@@ -73,12 +73,12 @@ B m2_h(B m,      B g) {              return     m_md2H(m,    g); }
 
 
 
-void derv_init() {
+static inline void derv_init() {
   ti[t_md1D].free = md1D_free; ti[t_md1D].visit = md1D_visit; ti[t_md1D].print = md1D_print; ti[t_md1D].decompose = md1D_decompose;
   ti[t_md2D].free = md2D_free; ti[t_md2D].visit = md2D_visit; ti[t_md2D].print = md2D_print; ti[t_md2D].decompose = md2D_decompose;
   ti[t_md2H].free = md2H_free; ti[t_md2H].visit = md2H_visit; ti[t_md2H].print = md2H_print; ti[t_md2H].decompose = md2H_decompose;
   ti[t_fork].free = fork_free; ti[t_fork].visit = fork_visit; ti[t_fork].print = fork_print; ti[t_fork].decompose = fork_decompose;
   ti[t_atop].free = atop_free; ti[t_atop].visit = atop_visit; ti[t_atop].print = atop_print; ti[t_atop].decompose = atop_decompose;
-  ti[t_md1_def].m1_d = m_md1D;
-  ti[t_md2_def].m2_d = m_md2D;
+  ti[t_md1BI].m1_d = m_md1D;
+  ti[t_md2BI].m2_d = m_md2D;
 }

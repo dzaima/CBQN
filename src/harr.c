@@ -64,6 +64,7 @@ B m_v1(B a               ) { HArr_p r = m_harrv(1); r.a[0] = a;                 
 B m_v2(B a, B b          ) { HArr_p r = m_harrv(2); r.a[0] = a; r.a[1] = b;                         return r.b; }
 B m_v3(B a, B b, B c     ) { HArr_p r = m_harrv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             return r.b; }
 B m_v4(B a, B b, B c, B d) { HArr_p r = m_harrv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; return r.b; }
+B m_unit(B x) { HArr_p r = m_harrp(1); arr_shAlloc(r.b, 1, 0); r.a[0] = x; return r.b; }
 
 
 typedef struct HSlice {
@@ -97,7 +98,7 @@ void harr_visit(B x) {
 }
 bool harr_canStore(B x) { return true; }
 
-void harr_init() {
+static inline void harr_init() {
   ti[t_harr].get   = harr_get;   ti[t_hslice].get   = hslice_get;
   ti[t_harr].getU  = harr_getU;  ti[t_hslice].getU  = hslice_getU;
   ti[t_harr].slice = harr_slice; ti[t_hslice].slice = hslice_slice;

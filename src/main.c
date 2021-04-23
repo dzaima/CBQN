@@ -11,10 +11,12 @@
 // #define DONT_FREE    // don't actually ever free objects, such that they can be printed after being freed for debugging
 // #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
+// #define ALL_RUNTIME  // don't use custom native runtime parts
 
 // #define LOG_GC       // log GC stats
 // #define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
+// #define RT_PERF      // time runtime primitives
 
 #define rtLen 63
 #include "h.h"
@@ -26,12 +28,13 @@
 #include "c32arr.c"
 #include "utf.c"
 #include "derv.c"
-#include "arith.c"
 #include "sfns.c"
 #include "sysfn.c"
+#include "arith.c"
 #include "md1.c"
 #include "md2.c"
 #include "vm.c"
+#include "rtPerf.c"
 
 void pr(char* a, B b) {
   printf("%s", a);
@@ -75,6 +78,7 @@ void printAllocStats() {
     #endif
   #endif
 }
+
 int main() {
   hdr_init();
   harr_init();
@@ -88,17 +92,27 @@ int main() {
   sysfn_init();
   derv_init();
   comp_init();
+  rtPerf_init();
   
   // fake runtime
   B bi_N = bi_nothing;
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add, bi_sub , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_N  , bi_N, bi_N,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_eq, bi_le   , bi_N  , bi_N, bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_lt , bi_rt  , bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud , bi_N, bi_N,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N  , bi_N   , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N  , bi_N, bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N  , bi_N   , bi_asrt , bi_N  , bi_N  , bi_N , bi_N    , bi_tbl, bi_N, bi_N,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N  , bi_scan, bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val, bi_N, bi_N,
-    /* ⚇⍟⎊         */ bi_N  , bi_fill, bi_catch
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub  , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_ceil, bi_stile, bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or   , bi_lt   , bi_gt , bi_ne , bi_eq, bi_le   , bi_ge  , bi_feq  , bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack, bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud  , bi_N    , bi_N,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N    , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N   , bi_N    , bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N    , bi_asrt , bi_N  , bi_N  , bi_N , bi_each , bi_tbl , bi_N    , bi_fold,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan , bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val , bi_N    , bi_N,
+    /* ⚇⍟⎊         */ bi_N    , bi_fill , bi_catch
+  };
+  bool rtComplete[] = {
+    /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
+    /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,0,0,0,0,0,0,0,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,0,0,0,0,0,0,0,0,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,0,0,0,1,1,0,1,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,0,0,0,0,0,1,0,0,
+    /* ⚇⍟⎊         */ 0,0,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
   for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
@@ -109,14 +123,31 @@ int main() {
     #include "runtime"
   );
   B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-  B rtObj    = TI(rtRes).get(rtRes,0);
+  B rtObjRaw = TI(rtRes).get(rtRes,0);
   B rtFinish = TI(rtRes).get(rtRes,1);
   dec(rtRes);
-  B* runtime = toHArr(rtObj)->a;
-  runtimeLen = c(Arr,rtObj)->ia;
+  
+  runtimeLen = c(Arr,rtObjRaw)->ia;
+  HArr_p runtimeH = m_harrc(rtObjRaw);
+  BS2B rtObjGet = TI(rtObjRaw).get;
+  
+  rt_sortAsc = rtObjGet(rtObjRaw, 10); gc_add(rt_sortAsc);
+  rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
+  rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
+  
   for (usz i = 0; i < runtimeLen; i++) {
-    if (isVal(runtime[i])) v(runtime[i])->flags|= i+1;
+    #ifdef ALL_RUNTIME
+      B r = rtObjGet(rtObjRaw, i);
+    #else
+      B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
+    #endif
+    r = rtPerf_wrap(r);
+    runtimeH.a[i] = r;
+    if (isVal(r)) v(r)->flags|= i+1;
   }
+  dec(rtObjRaw);
+  B* runtime = runtimeH.a;
+  B rtObj = runtimeH.b;
   dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
   
   
@@ -203,10 +234,12 @@ int main() {
     pr("", res);
     #endif
     
+    // heapVerify();
     gc_forceGC();
     #ifdef DEBUG
     #endif
   }
+  rtPerf_print();
   popCatch();
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
