@@ -414,12 +414,12 @@ B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) { // consumes svar contents
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, bi_nothing                                  }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, w                                           }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, bi_nothing, inc(d->m1), inc(d->f)           }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, w         , inc(d->m1), inc(d->f)           }); }
-B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, bi_nothing, inc(d->m2), inc(d->f), inc(d->g)}); }
-B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, w         , inc(d->m2), inc(d->f), inc(d->g)}); }
+B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, bi_N                                  }); }
+B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); return actualExec(b->bl, b->sc, 3, (B[]){inc(t), x, w                                     }); }
+B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, bi_N, inc(d->m1), inc(d->f)           }); }
+B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); return actualExec(b->bl, b->sc, 5, (B[]){inc(D), x, w   , inc(d->m1), inc(d->f)           }); }
+B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); return actualExec(b->bl, b->sc, 6, (B[]){inc(D), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return actualExec(bl, psc, 0, NULL);
   B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));

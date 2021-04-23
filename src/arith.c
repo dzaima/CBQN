@@ -1,8 +1,8 @@
 #include "h.h"
 #include <math.h>
 
-#define P1(N) { if(         isArr(x)) return eachm_fn(N##_c1, bi_nothing,    x); }
-#define P2(N) { if(isArr(w)|isArr(x)) return eachd_fn(N##_c2, bi_nothing, w, x); }
+#define P1(N) { if(         isArr(x)) return eachm_fn(N##_c1, bi_N,    x); }
+#define P2(N) { if(isArr(w)|isArr(x)) return eachd_fn(N##_c2, bi_N, w, x); }
 #define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(expr); \
   extra \
@@ -100,9 +100,9 @@ B  gt_c1(B t, B x) { return c1(rt_merge,   x); }
 #undef P1
 #undef P2
 
-#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
-#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
-#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
+#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
+#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
+#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
 B                   bi_add, bi_sub, bi_mul, bi_div, bi_pow, bi_floor, bi_ceil, bi_stile, bi_eq, bi_ne, bi_le, bi_ge, bi_lt, bi_gt, bi_and, bi_or, bi_not, bi_log;
 static inline void arith_init() { ba(add) ba(sub) ba(mul) ba(div) ba(pow) ba(floor) ba(ceil) ba(stile) ba(eq) ba(ne) bd(le) bd(ge) ba(lt) ba(gt) ba(and) ba(or) ba(not) ba(log)

@@ -11,7 +11,26 @@ B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is a
   if (isArr(w)) { wia = a(w)->ia; wr = rnk(w); wget = TI(w).get; } else { wia=1; wr=0; wget=def_get; }
   if (isArr(x)) { xia = a(x)->ia; xr = rnk(x); xget = TI(x).get; } else { xia=1; xr=0; xget=def_get; }
   bool wg = wr>xr;
-  if (isArr(w) & isArr(x) && !eqShPrefix(a(w)->sh, a(x)->sh, wg?xr:wr)) thrM("Mapping: Expected equal shape prefix");
+  ur rM = wg? wr : xr;
+  ur rm = wg? xr : wr;
+  if (rM==0) return f(fo, xget(w,0), wget(x,0));
+  if (isArr(w) & isArr(x) && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrM("Mapping: Expected equal shape prefix");
+  bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
+  bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
+  if (rw|rx && (wr==xr | rm==0)) {
+    HArr_p r = harr_parts(rw? w : x);
+    usz ria = r.c->ia;
+    if      (wr==0) { B c=wget(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c), r.a[i]); dec(c); }
+    else if (xr==0) { B c=xget(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, r.a[i], inc(c)); dec(c); }
+    else {
+      assert(wr==xr);
+      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, r.a[i], xget(x,i));
+      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), r.a[i]);
+    }
+    dec(rw? x : w);
+    return r.b;
+  }
+  
   HArr_p r = m_harrc(wg? w : x);
   usz ria = r.c->ia;
   if (wr==xr) for(usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), xget(x,i));
@@ -247,9 +266,9 @@ B funBI_identity(B x) {
   return inc(c(BFn,x)->ident);
 }
 
-#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
-#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
-#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_nothing; gc_add(bi_##N);
+#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
+#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
+#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 

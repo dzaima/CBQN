@@ -95,7 +95,6 @@ int main() {
   rtPerf_init();
   
   // fake runtime
-  B bi_N = bi_nothing;
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub  , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_ceil, bi_stile, bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or   , bi_lt   , bi_gt , bi_ne , bi_eq, bi_le   , bi_ge  , bi_feq  , bi_fne,
@@ -103,7 +102,7 @@ int main() {
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N    , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N   , bi_N    , bi_N,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N    , bi_asrt , bi_N  , bi_N  , bi_N , bi_each , bi_tbl , bi_N    , bi_fold,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan , bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val , bi_N    , bi_N,
-    /* ⚇⍟⎊         */ bi_N    , bi_fill , bi_catch
+    /* ⚇⍟⎊         */ bi_N    , bi_N    , bi_catch
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
@@ -234,7 +233,9 @@ int main() {
     pr("", res);
     #endif
     
-    // heapVerify();
+    #ifdef HEAP_VERIFY
+    heapVerify();
+    #endif
     gc_forceGC();
     #ifdef DEBUG
     #endif

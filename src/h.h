@@ -380,7 +380,7 @@ TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
 
-B bi_nothing, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
+B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 
 void do_nothing(B x) { }
 void empty_free(B x) { err("FREEING EMPTY\n"); }
@@ -392,7 +392,7 @@ void freeed_visit(B x) {
   #endif
 }
 void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
-B    def_identity(B f) { return bi_nothing; }
+B    def_identity(B f) { return bi_N; }
 B    def_get (B x, usz n) { return inc(x); }
 B    def_getU(B x, usz n) { return x; }
 B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
@@ -421,7 +421,7 @@ static inline void hdr_init() {
   ti[t_shape].visit = do_nothing;
   ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = do_nothing;
   ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
-  bi_nothing = tag(0, TAG_TAG);
+  bi_N = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);
   bi_badHdr  = tag(2, TAG_TAG);
   bi_optOut  = tag(3, TAG_TAG);
@@ -429,7 +429,7 @@ static inline void hdr_init() {
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
 }
 
-bool isNothing(B b) { return b.u==bi_nothing.u; }
+bool isNothing(B b) { return b.u==bi_N.u; }
 
 
 // refcount
@@ -485,7 +485,7 @@ void print(B x) {
     TI(x).print(x);
   }
   else if (isVar(x)) printf("(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
-  else if (x.u==bi_nothing.u) printf("·");
+  else if (x.u==bi_N.u) printf("·");
   else if (x.u==bi_optOut.u) printf("(value optimized out)");
   else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
   else if (x.u==bi_badHdr.u) printf("(bad header note)");
@@ -514,7 +514,7 @@ bool equal(B w, B x) { // doesn't consume
   bool wa = isArr(w);
   bool xa = isArr(x);
   if (wa!=xa) return false;
-  if (!wa) return o2iu(eq_c2(bi_nothing, inc(w), inc(x)))?1:0;
+  if (!wa) return o2iu(eq_c2(bi_N, inc(w), inc(x)))?1:0;
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
   BS2B xget = TI(x).get;
