@@ -1,8 +1,32 @@
 #include "h.h"
 #include <math.h>
 
-#define P1(N) { if(         isArr(x)) return eachm_fn(N##_c1, bi_N,    x); }
-#define P2(N) { if(isArr(w)|isArr(x)) return eachd_fn(N##_c2, bi_N, w, x); }
+static inline B arith_recm(BB2B f, B x) {
+  B fx = getFill(inc(x));
+  B r = eachm_fn(f, bi_N, x);
+  return withFill(r, fx);
+}
+#ifdef CATCH_ERRORS
+static inline B arith_recd(BBB2B f, B w, B x) {
+  B fx = getFill(inc(x));
+  if (noFill(fx)) return eachd_fn(f, bi_N, w, x);
+  B fw = getFill(inc(w));
+  B r = eachd_fn(f, bi_N, w, x);
+  if (noFill(fw)) return r;
+  if (CATCH) { dec(catchMessage); return r; }
+  B fr = f(bi_N, fw, fx);
+  popCatch();
+  return withFill(r, asFill(fr));
+}
+#else
+static inline B arith_recd(BBB2B f, B w, B x) {
+  return eachd_fn(f, bi_N, w, x);
+}
+#endif
+
+
+#define P1(N) { if(         isArr(x)) return arith_recm(N##_c1,    x); }
+#define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
 #define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(expr); \
   extra \

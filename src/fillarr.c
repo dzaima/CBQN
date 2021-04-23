@@ -85,8 +85,37 @@ static inline void fillarr_init() {
   ti[t_fillarr].canStore = fillarr_canStore;
 }
 
+B m_unit(B x) {
+  B xf = asFill(inc(x));
+  if (noFill(xf)) {
+    HArr_p r = m_harrp(1);
+    arr_shAlloc(r.b, 1, 0);
+    r.a[0] = x;
+    return r.b;
+  }
+  B r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr);
+  arr_shAlloc(r, 1, 0);
+  c(FillArr,r)->fill = xf;
+  c(FillArr,r)->a[0] = x;
+  return r;
+}
+
+void validateFill(B x) {
+  if (isArr(x)) {
+    BS2B xgetU = TI(x).getU;
+    usz ia = a(x)->ia;
+    for (usz i = 0; i < ia; i++) validateFill(xgetU(x,i));
+  } else if (isF64(x)) {
+    assert(x.f==0);
+  } else if (isC32(x)) {
+    assert(' '==(u32)x.u);
+  }
+}
 B withFill(B x, B fill) { // consumes both
   assert(isArr(x));
+  #ifdef DEBUG
+  validateFill(fill);
+  #endif
   if (noFill(fill) && v(x)->type!=t_fillarr && v(x)->type!=t_fillslice) return x;
   switch(v(x)->type) {
     case t_i32arr : case t_i32slice : if(fill.u == m_i32(0  ).u) return x; break;
