@@ -120,7 +120,7 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
-B                 bi_tbl, bi_each, bi_fold, bi_scan;
+B                               bi_tbl, bi_each, bi_fold, bi_scan;
 static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan)
   ti[t_md1BI].print = print_md1_def;
 }

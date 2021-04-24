@@ -13,7 +13,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is a
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
-  if (rM==0) return f(fo, wget(w,0), xget(x,0));
+  if (rM==0) { B r = f(fo, wget(w,0), xget(x,0)); dec(w); dec(x); return m_unit(r); }
   if (isArr(w) & isArr(x) && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrM("Mapping: Expected equal shape prefix");
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
   bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
@@ -272,7 +272,7 @@ B funBI_identity(B x) {
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
-B                  bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
+B                                bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
 static inline void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) ba(fne) ba(feq) ba(ltack) ba(rtack) bm(fmtF) bm(fmtN)
   ti[t_funBI].print = print_fun_def;
   ti[t_funBI].identity = funBI_identity;

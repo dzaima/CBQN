@@ -96,13 +96,13 @@ int main() {
   
   // fake runtime
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub  , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_ceil, bi_stile, bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or   , bi_lt   , bi_gt , bi_ne , bi_eq, bi_le   , bi_ge  , bi_feq  , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack, bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud  , bi_N    , bi_N,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N    , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N   , bi_N    , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N    , bi_asrt , bi_N  , bi_N  , bi_N , bi_each , bi_tbl , bi_N    , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan , bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val , bi_N    , bi_N,
-    /* ⚇⍟⎊         */ bi_N    , bi_N    , bi_catch
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div, bi_pow, bi_N , bi_floor, bi_ceil, bi_stile, bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt , bi_ne , bi_eq, bi_le   , bi_ge  , bi_feq  , bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_N  , bi_N  , bi_N , bi_N    , bi_ud  , bi_N    , bi_N,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_N    , bi_N  , bi_N  , bi_N , bi_pick , bi_N   , bi_N    , bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_N  , bi_N  , bi_N , bi_each , bi_tbl , bi_N    , bi_fold,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_N    , bi_N  , bi_N  , bi_N , bi_N    , bi_val , bi_N    , bi_N,
+    /* ⚇⍟⎊         */ bi_N    , bi_repeat, bi_catch
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
@@ -111,7 +111,7 @@ int main() {
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,0,0,0,0,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,0,0,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,0,0,0,0,0,1,0,0,
-    /* ⚇⍟⎊         */ 0,0,1
+    /* ⚇⍟⎊         */ 0,1,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
   for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
@@ -133,6 +133,7 @@ int main() {
   rt_sortAsc = rtObjGet(rtObjRaw, 10); gc_add(rt_sortAsc);
   rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
   rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
+  rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
   
   for (usz i = 0; i < runtimeLen; i++) {
     #ifdef ALL_RUNTIME

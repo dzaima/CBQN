@@ -127,12 +127,12 @@ char* format_pm1(u8 u) {
 }
 enum PrimMd2 {
   pm2_none,
-  pm2_val, pm2_fillBy, pm2_catch, // md2.c
+  pm2_val, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
 };
 char* format_pm2(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm2_val: return"⊘"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
+    case pm2_val: return"⊘"; case pm2_repeat: return"⍟"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
   }
 }
 
@@ -257,6 +257,7 @@ bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
 // bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
 bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
 bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
+bool isNum(B x) { return isF64(x)|isI32(x); }
 
 bool isAtm(B x) { return !isVal(x); }
 bool noFill(B x);
@@ -334,10 +335,11 @@ B m_i32(i32 n) { return m_f64(n); }
 B m_error() { return tag(4, TAG_TAG); }
 B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
 
-i32 o2i  (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; }
-usz o2s  (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
-i64 o2i64(B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
-i32 o2iu (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+i32 o2i   (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; }
+usz o2s   (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
+i64 o2i64 (B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
+i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
 
 
