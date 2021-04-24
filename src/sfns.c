@@ -209,9 +209,9 @@ B fmtN_c1(B t, B x) {
 B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
   u8 fl = v(x)->flags;
-  if (fl==0 || fl>=rtLen) return m_str32(U"(fmtF: not given a runtime primitive)");
+  if (fl==0 || fl>rtLen) return m_str32(U"(fmtF: not given a runtime primitive)");
   dec(x);
-  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟"[fl-1]);
+  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
 }
 
 B fne_c1(B t, B x) {
