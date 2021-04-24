@@ -130,7 +130,7 @@ B  gt_c1(B t, B x) { return c1(rt_merge,   x); }
 
 B                   bi_add, bi_sub, bi_mul, bi_div, bi_pow, bi_floor, bi_ceil, bi_stile, bi_eq, bi_ne, bi_le, bi_ge, bi_lt, bi_gt, bi_and, bi_or, bi_not, bi_log;
 static inline void arith_init() { ba(add) ba(sub) ba(mul) ba(div) ba(pow) ba(floor) ba(ceil) ba(stile) ba(eq) ba(ne) bd(le) bd(ge) ba(lt) ba(gt) ba(and) ba(or) ba(not) ba(log)
-  c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ne)->ident = m_i32(0);
+  c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_ne)->ident = c(BFn,bi_gt)->ident = m_i32(0);
   c(BFn,bi_mul)->ident = c(BFn,bi_div)->ident = c(BFn,bi_and)->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ge)->ident = c(BFn,bi_pow)->ident = c(BFn,bi_not)->ident = m_i32(1);
   c(BFn,bi_floor)->ident = m_f64(1.0/0.0);
   c(BFn,bi_ceil )->ident = m_f64(-1.0/0.0);
