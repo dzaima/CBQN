@@ -71,5 +71,6 @@ static inline void i32arr_init() {
   ti[t_i32arr].visit = do_nothing;   ti[t_i32slice].visit =    slice_visit;
   ti[t_i32arr].print =    arr_print; ti[t_i32slice].print = arr_print;
   ti[t_i32arr].isArr = true;         ti[t_i32slice].isArr = true;
+  ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
   ti[t_i32arr].canStore = i32arr_canStore;
 }

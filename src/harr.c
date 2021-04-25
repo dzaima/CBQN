@@ -46,6 +46,12 @@ HArr* toHArr(B x) {
   return r.c;
 }
 
+NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
+  B* p = harr_ptr(x);
+  for (usz i = 0; i < am; i++) dec(p[i]);
+  mm_free(v(x));
+}
+
 
 
 B m_caB(usz ia, B* a) {

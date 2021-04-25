@@ -98,7 +98,7 @@ char* format_type(u8 u) {
 
 #define FOR_PF(F) F(none, "(unknown fn)") \
     F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") /*arith.c*/ \
-    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") /*sfns.c*/ \
+    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(select,"⊏") F(slash,"/") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") /*sfns.c*/ \
     F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") /*derv.c*/ \
     F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") /*sysfn.c*/ \
     F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") /*sysfn.c*/
@@ -127,12 +127,12 @@ char* format_pm1(u8 u) {
 }
 enum PrimMd2 {
   pm2_none,
-  pm2_val, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
+  pm2_val, pm2_before, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
 };
 char* format_pm2(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm2_val: return"⊘"; case pm2_repeat: return"⍟"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
+    case pm2_val: return"⊘"; case pm2_before: return"⊸"; case pm2_repeat: return"⍟"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
   }
 }
 
@@ -276,8 +276,14 @@ void arr_shVec(B x, usz ia) {
   a(x)->sh = &a(x)->ia;
 }
 bool gotShape[t_COUNT];
-usz* arr_shAlloc(B x, usz ia, usz r) {
+usz* arr_shAlloc(B x, usz ia, ur r) {
   a(x)->ia = ia;
+  srnk(x,r);
+  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
+  a(x)->sh = &a(x)->ia;
+  return 0;
+}
+usz* arr_shAllocR(B x, ur r) { // allocates shape, leaves ia unchanged
   srnk(x,r);
   if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
   a(x)->sh = &a(x)->ia;
@@ -338,6 +344,7 @@ B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
 i32 o2i   (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; }
 usz o2s   (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
 i64 o2i64 (B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
+f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }
 i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
@@ -377,6 +384,7 @@ typedef struct TypeInfo {
   B2v visit;  // call mm_visit for all referents
   B2B decompose; // consumes; must return a HArr
   bool isArr;
+  bool arrD1; // is always an array with depth 1
 } TypeInfo;
 TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
@@ -412,6 +420,7 @@ static inline void hdr_init() {
     ti[i].m1_d  = def_m1_d;
     ti[i].m2_d  = def_m2_d;
     ti[i].isArr = false;
+    ti[i].arrD1 = false;
     ti[i].identity = def_identity;
     ti[i].decompose = def_decompose;
     ti[i].slice     = def_slice;

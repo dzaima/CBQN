@@ -235,14 +235,15 @@ B fne_c1(B t, B x) {
 }
 u64 depth(B x) { // doesn't consume
   if (!isArr(x)) return 0;
-  u64 r = 1;
+  if (TI(x).arrD1) return 1;
+  u64 r = 0;
   usz ia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
-    u64 n = depth(xgetU(x,i))+1;
+    u64 n = depth(xgetU(x,i));
     if (n>r) r = n;
   }
-  return r;
+  return r+1;
 }
 B feq_c1(B t, B x) {
   u64 r = depth(x);
@@ -266,14 +267,119 @@ B funBI_identity(B x) {
   return inc(c(BFn,x)->ident);
 }
 
+B rt_select;
+B select_c1(B t, B x) {
+  if (!isArr(x)) thrM("⊏: Argument cannot be an atom");
+  ur xr = rnk(x);
+  if (xr==0) thrM("⊏: Argument cannot be rank 0");
+  if (a(x)->sh[0]==0) thrM("⊏: Argument shape cannot start with 0");
+  inc(x);
+  B r = TI(x).slice(x,0);
+  usz* sh = arr_shAllocR(r, xr-1);
+  usz ia = 1;
+  for (i32 i = 1; i < xr; i++) {
+    if (sh) sh[i-1] = a(x)->sh[i];
+    ia*= a(x)->sh[i];
+  }
+  a(r)->ia = ia;
+  dec(x);
+  return r;
+}
+B select_c2(B t, B w, B x) {
+  if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1) {
+    usz wia = a(w)->ia;
+    usz xia = a(x)->ia;
+    B xf = getFill(inc(x));
+    HArr_p r = m_harrc(w);
+    BS2B wgetU = TI(w).getU;
+    BS2B xget = TI(x).get;
+    for (usz i = 0; i < wia; i++) {
+      B cw = wgetU(w, i);
+      if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
+      f64 c = o2f(cw);
+      if (c<0) c+= xia;
+      if (c!=(usz)c | c>=xia) { harr_pfree(r.b, i); goto base; }
+      r.a[i] = xget(x, c);
+    }
+    dec(w); dec(x);
+    return withFill(r.b,xf);
+  }
+  base:
+  return c2(rt_select, w, x); 
+}
+
+i64 isum(B x) { // doesn't consume; assumes is array; may error
+  BS2B xgetU = TI(x).getU;
+  i64 r = 0;
+  usz xia = a(x)->ia;
+  for (usz i = 0; i < xia; i++) r+= o2f(xgetU(x,i)); // TODO error on overflow and non-integers or something
+  return r;
+}
+
+B rt_slash;
+B slash_c1(B t, B x) {
+  if (!isArr(x)) thrM("/: Argument must be a list");
+  if (rnk(x)!=1) thrM("/: Argument must have rank 1");
+  i64 s = isum(x);
+  if(s<0) thrM("/: Argument must consist of natural numbers");
+  usz xia = a(x)->ia;
+  BS2B xgetU = TI(x).getU;
+  usz ri = 0;
+  if (xia<I32_MAX) {
+    B r = m_i32arrv(s); i32* rp = i32arr_ptr(r);
+    for (usz i = 0; i < xia; i++) {
+      usz c = o2s(xgetU(x, i));
+      for (usz j = 0; j < c; j++) rp[ri++] = i;
+    }
+    dec(x);
+    return r;
+  }
+  HArr_p r = m_harrv(s);
+  for (usz i = 0; i < xia; i++) {
+    usz c = o2s(xgetU(x, i));
+    for (usz j = 0; j < c; j++) r.a[ri++] = m_i32(i);
+  }
+  dec(x);
+  return withFill(r.b,m_f64(0));
+}
+B slash_c2(B t, B w, B x) {
+  if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
+    usz wia = a(w)->ia;
+    usz xia = a(x)->ia;
+    B xf = getFill(inc(x));
+    if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
+    usz ria = isum(w);
+    HArr_p r = m_harrv(ria);
+    BS2B wgetU = TI(w).getU;
+    BS2B xgetU = TI(x).getU;
+    usz ri = 0;
+    for (usz i = 0; i < wia; i++) {
+      B cw = wgetU(w, i);
+      if (isNum(cw)) {
+        f64 cf = o2f(cw);
+        usz c = (usz)cf;
+        if (cf!=c) goto base; // TODO clean up half-written r
+        if (c) {
+          B cx = xgetU(x, i);
+          for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
+        }
+      } else { dec(cw); goto base; }
+    }
+    dec(w); dec(x);
+    return withFill(r.b,xf);
+  }
+  base:
+  return c2(rt_slash, w, x);
+}
+
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
-B                                bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
-static inline void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) ba(fne) ba(feq) ba(ltack) ba(rtack) bm(fmtF) bm(fmtN)
+B                                bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_select, bi_slash, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
+static inline void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) ba(fne) ba(feq) ba(select) ba(slash) ba(ltack) ba(rtack) bm(fmtF) bm(fmtN)
   ti[t_funBI].print = print_fun_def;
   ti[t_funBI].identity = funBI_identity;
 }
