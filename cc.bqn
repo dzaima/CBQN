@@ -28,9 +28,9 @@ FChars ← {𝕨•FChars path∾𝕩}
 FLines ← {𝕨•FLines path∾𝕩}
 
 glyphs ← Import "glyphs.bqn"
-compile ← glyphs Import "c.bqn"
+_getComp ← { (3+useInd) ↑ (𝕗 Import "c.bqn"){𝔽} }
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
-Comp ← (3+useInd) ↑ ((<"inc(runtime["∾⍕∾"])"˙)¨↕62)⊸Compile
+Comp ← ((<"inc(runtime["∾⍕∾"])"˙)¨↕62) glyphs _getComp ⊢
 J ← ∾∾⟜\n¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
 prov ← {"inc("∾𝕩∾")"}¨"bi_type"‿"bi_fill"‿"bi_log"‿"bi_grLen"‿"bi_grOrd"‿"bi_asrt"‿"bi_add"‿"bi_sub"‿"bi_mul"‿"bi_div"‿"bi_pow"‿"bi_floor"‿"bi_eq"‿"bi_le"‿"bi_fne"‿"bi_shape"‿"bi_pick"‿"bi_ud"‿"bi_tbl"‿"bi_scan"‿"bi_fillBy"‿"bi_val"‿"bi_catch"
@@ -38,11 +38,15 @@ Fout ← {((≠𝕩)↑⟨LI F¨,L ·prov⊸∾⍟(𝕨⊣0) Fconst¨,L (LI F¨)
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾\n}
 
-LFC ← Long∘Fout∘Comp
+RT ← {𝕩
+  prims‿ref←Import"pr.bqn" ⋄ l←≠∾prims
+  Long Frun l⊸↓⌾(1⊸⊑) (↕l) prims _getComp ref
+}
 CArg ← {J (¯5⊸↓∾𝕩˙)⌾⊑ FLines "c.bqn"}
+LFC ← Long∘Fout∘Comp
 
 •Out⍟(¬return) (⊑"r"‿"c"‿"cc"‿"f"‿"e"‿"p"⊐⊏)◶⟨
-  {𝕩⋄ref‿len←Import "pr.bqn"⋄Long Frun len⊸↓⌾(1⊸⊑)Comp ref}
+  RT
   {𝕩⋄LFC CArg "⟨"∾"⟩"«∾","⊸∾¨'"'(⊣∾∾˜)¨glyphs}
   {𝕩⋄LFC "{"∾"}"∾˜CArg"𝕩"}
   {𝕩⋄LFC FChars "f.bqn"}

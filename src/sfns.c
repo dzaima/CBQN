@@ -171,10 +171,10 @@ B pick_c1(B t, B x) {
   return r;
 }
 B pick_c2(B t, B w, B x) {
-  usz wu = o2s(w);
-  if (!isArr(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
+  // usz wu = o2s(w);
+  // if (!isArr(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
   // if (wu >= a(x)->ia) err("⊑: 𝕨 is greater than length of 𝕩"); // no bounds check for now
-  B r = TI(x).get(x, wu);
+  B r = TI(x).get(x, o2su(w));
   dec(x);
   return r;
 }
