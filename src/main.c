@@ -20,6 +20,7 @@
 
 #define rtLen 63
 #include "h.h"
+#include "stuff.c"
 #include "heap.c"
 #include "mm_buddy.c"
 #include "harr.c"

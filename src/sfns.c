@@ -124,7 +124,10 @@ B eachm(B f, B x) { // complete F¨ x
 B eachd(B f, B w, B x) { // complete w F¨ x
   if (!isArr(w) & !isArr(x)) return m_unit(c2(f, w, x));
   if (isFun(f)) return eachd_fn(c(Fun,f)->c2, f, w, x);
-  if (isArr(w) && isArr(x) && !eqShPrefix(a(w)->sh, a(x)->sh, minRank(w, x))) { decR(x); thrM("Mapping: Expected equal shape prefix"); }
+  if (isArr(w) && isArr(x)) {
+    ur mr = rnk(w); if(rnk(w)<mr) mr = rnk(w);
+    if(!eqShPrefix(a(w)->sh, a(x)->sh, mr)) { decR(x); thrM("Mapping: Expected equal shape prefix"); }
+  }
   if (isMd(f)) if ((isArr(w)&&a(w)->ia) || (isArr(x)&&a(x)->ia)) { decR(x); thrM("Calling a modifier"); } // case where both are scalars has already been taken care of
   
   HArr_p r = m_harrc(!isArr(w)? x : rnk(w)>rnk(x)? w : x);
