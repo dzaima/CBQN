@@ -52,7 +52,7 @@ Block* ca3(B b) {
   return r;
 }
 
-ssize_t getline(char** __lineptr, size_t* n, FILE* stream);
+ssize_t getline(char** line, size_t* n, FILE* stream);
 
 
 void printAllocStats() {

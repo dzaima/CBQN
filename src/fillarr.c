@@ -89,12 +89,12 @@ B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) {
     HArr_p r = m_harrp(1);
-    arr_shAlloc(r.b, 1, 0);
+    arr_shAllocR(r.b, 0);
     r.a[0] = x;
     return r.b;
   }
   B r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr);
-  arr_shAlloc(r, 1, 0);
+  arr_shAllocI(r, 1, 0);
   c(FillArr,r)->fill = xf;
   c(FillArr,r)->a[0] = x;
   return r;

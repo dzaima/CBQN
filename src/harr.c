@@ -28,8 +28,10 @@ HArr_p m_harrc(B x) { assert(isArr(x));
   return harr_parts(r);
 }
 
-HArr_p m_harrp(usz ia) { // doesn't write any shape/size info! be careful!
-  return harr_parts(m_arr(fsizeof(HArr,a,B,ia), t_harr));
+HArr_p m_harrp(usz ia) { // doesn't write shape/rank
+  B r = m_arr(fsizeof(HArr,a,B,ia), t_harr);
+  a(r)->ia = ia;
+  return harr_parts(r);
 }
 
 

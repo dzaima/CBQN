@@ -156,7 +156,7 @@ B shape_c2(B t, B w, B x) {
   B r;
   if (reusable(x)) { r = x; decSh(x); }
   else r = TI(x).slice(x, 0);
-  usz* sh = arr_shAlloc(r, nia, nr);
+  usz* sh = arr_shAllocI(r, nia, nr);
   if (sh) for (i32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
   dec(w);
   return r;

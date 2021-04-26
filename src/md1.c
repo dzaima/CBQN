@@ -13,7 +13,7 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   usz ria = wia*xia;  ur rr = wr+xr;
   if (rr<xr) thrM("⌜: Required result rank too large");
   HArr_p r = m_harrp(ria);
-  usz* rsh = arr_shAlloc(r.b, ria, rr);
+  usz* rsh = arr_shAllocR(r.b, rr);
   if (rsh) {
     memcpy(rsh   , a(w)->sh, wr*sizeof(usz));
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));

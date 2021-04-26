@@ -16,8 +16,10 @@ B m_i32arrc(B x) { assert(isArr(x));
   arr_shCopy(r, x);
   return r;
 }
-B m_i32arrp(usz ia) { // doesn't write any shape/size info! be careful!
-  return m_arr(fsizeof(I32Arr,a,i32,ia), t_i32arr);
+B m_i32arrp(usz ia) { // doesn't write shape/rank
+  B r = m_arr(fsizeof(I32Arr,a,i32,ia), t_i32arr);
+  a(r)->ia = ia;
+  return r;
 }
 
 

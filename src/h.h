@@ -32,16 +32,6 @@
 #define CTR_PRINT(N) printf(#N ": %lu\n", N);
 CTR_FOR(CTR_DEF)
 
-#ifdef DEBUG
-  #include<assert.h>
-  B VALIDATE(B x);
-  Value* VALIDATEP(Value* x);
-#else
-  #define assert(x) {if (!(x)) __builtin_unreachable();}
-  #define VALIDATE(x) (x)
-  #define VALIDATEP(x) (x)
-#endif
-
 #define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*(n)) // type, flexible array member name, flexible array member type, item amount
 #define ftag(x) ((u64)(x) << 48)
 #define tag(v, t) b(((u64)(v)) | ftag(t))
@@ -161,6 +151,16 @@ typedef struct Arr {
   usz* sh;
 } Arr;
 
+#ifdef DEBUG
+  #include<assert.h>
+  B VALIDATE(B x);
+  Value* VALIDATEP(Value* x);
+#else
+  #define assert(x) {if (!(x)) __builtin_unreachable();}
+  #define VALIDATE(x) (x)
+  #define VALIDATEP(x) (x)
+#endif
+
 // memory manager
 typedef void (*V2v)(Value*);
 typedef void (*vfn)();
@@ -186,6 +186,7 @@ B mm_alloc(usz sz, u8 type, u64 tag) {
   assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
   return b((u64)mm_allocN(sz,type) | tag);
 }
+
 
 // some primitive actions
 void dec(B x);
@@ -278,14 +279,14 @@ void arr_shVec(B x, usz ia) {
   a(x)->sh = &a(x)->ia;
 }
 bool gotShape[t_COUNT];
-usz* arr_shAlloc(B x, usz ia, ur r) {
+usz* arr_shAllocI(B x, usz ia, ur r) {
   a(x)->ia = ia;
   srnk(x,r);
   if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
   a(x)->sh = &a(x)->ia;
   return 0;
 }
-usz* arr_shAllocR(B x, ur r) { // allocates shape, leaves ia unchanged
+usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank, leaves ia unchanged
   srnk(x,r);
   if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
   a(x)->sh = &a(x)->ia;
@@ -467,7 +468,7 @@ B m_atop(     B g, B h);
 
 
 #include <time.h>
-u64 nsTime() {
+static inline u64 nsTime() {
   struct timespec t;
   timespec_get(&t, TIME_UTC);
   // clock_gettime(CLOCK_REALTIME, &t);
