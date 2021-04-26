@@ -74,9 +74,9 @@ void printRaw(B x) {
     else err("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
     usz ia = a(x)->ia;
-    BS2B xget = TI(x).get;
+    BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) {
-      B c = xget(x,i);
+      B c = xgetU(x,i);
       if (c.u==0 || noFill(c)) { printf(" "); continue; }
       if (!isC32(c)) err("bad printRaw argument: expected all character items");
       printUTF8((u32)c.u);
@@ -92,14 +92,9 @@ bool equal(B w, B x) { // doesn't consume
   if (!wa) return o2iu(eq_c2(bi_N, inc(w), inc(x)))?1:0;
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
-  BS2B xget = TI(x).get;
-  BS2B wget = TI(w).get;
-  for (usz i = 0; i < ia; i++) {
-    B wc=wget(w,i); B xc=xget(x,i); // getdec
-    bool eq=equal(wc,xc);
-    decR(wc); decR(xc);
-    if(!eq) return false;
-  }
+  BS2B xgetU = TI(x).getU;
+  BS2B wgetU = TI(w).getU;
+  for (usz i = 0; i < ia; i++) if(!equal(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
 

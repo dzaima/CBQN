@@ -38,8 +38,8 @@ I32Arr* toI32Arr(B x) {
   B r = m_i32arrc(x);
   i32* rp = i32arr_ptr(r);
   usz ia = a(r)->ia;
-  BS2B xget = TI(x).get;
-  for (usz i = 0; i < ia; i++) rp[i] = o2i(xget(x,i));
+  BS2B xgetU = TI(x).get;
+  for (usz i = 0; i < ia; i++) rp[i] = o2i(xgetU(x,i));
   dec(x);
   return c(I32Arr,r);
 }

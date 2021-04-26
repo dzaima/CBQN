@@ -19,15 +19,14 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
   }
   
-  BS2B wget = TI(w).get;
+  BS2B wgetU = TI(w).getU;
   BS2B xget = TI(x).get;
   usz ri = 0;
   for (usz wi = 0; wi < wia; wi++) {
-    B cw = wget(w,wi);
+    B cw = wgetU(w,wi);
     for (usz xi = 0; xi < xia; xi++) {
       r.a[ri++] = c2(f, inc(cw), xget(x,xi));
     }
-    dec(cw);
   }
   dec(w); dec(x);
   return r.b;

@@ -222,11 +222,9 @@ void v_set(Scope* sc, B s, B x, bool upd) { // frees s, doesn't consume x
     if (!eqShape(s, x)) err("spread assignment: mismatched shape");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
-    BS2B xget = TI(x).get;
+    BS2B xgetU = TI(x).getU;
     for (u64 i = 0; i < ia; i++) {
-      B c = xget(x,i);
-      v_set(sc, sp[i], c, upd);
-      decR(c); // should never free actually
+      v_set(sc, sp[i], xgetU(x,i), upd);
     }
     dec(s);
   }

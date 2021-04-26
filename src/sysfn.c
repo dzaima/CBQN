@@ -50,16 +50,16 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
 B grLen_c1(B t, B x) {
   i64 ria = -1;
   usz ia = a(x)->ia;
-  BS2B xget = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64(xget(x, i));
+    i64 c = o2i64(xgetU(x, i));
     if (c>ria) ria = c;
   }
   ria++;
   HArr_p r = m_harrv(ria);
   for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64(xget(x, i));
+    i64 n = o2i64(xgetU(x, i));
     if (n>=0) r.a[n].f++;
   }
   dec(x);
@@ -68,16 +68,16 @@ B grLen_c1(B t, B x) {
 B grLen_c2(B t, B w, B x) {
   i64 ria = o2i64(w)-1;
   usz ia = a(x)->ia;
-  BS2B xget = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64(xget(x, i));
+    i64 c = o2i64(xgetU(x, i));
     if (c>ria) ria = c;
   }
   ria++;
   HArr_p r = m_harrv(ria);
   for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64(xget(x, i));
+    i64 n = o2i64(xgetU(x, i));
     if (n>=0) r.a[n].f++;
   }
   dec(x);
@@ -89,15 +89,15 @@ B grOrd_c2(B t, B w, B x) {
   usz xia = a(x)->ia;
   if (wia==0) { dec(w); dec(x); return c1(bi_ud, m_i32(0)); }
   if (xia==0) { dec(w); return x; }
-  BS2B wget = TI(w).get;
-  BS2B xget = TI(x).get;
+  BS2B wgetU = TI(w).getU;
+  BS2B xgetU = TI(x).getU;
   usz tmp[wia];
   tmp[0] = 0;
-  for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2s(wget(w,i-1));
-  usz ria = tmp[wia-1]+o2s(wget(w,wia-1));
+  for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2s(wgetU(w,i-1));
+  usz ria = tmp[wia-1]+o2s(wgetU(w,wia-1));
   HArr_p r = m_harrv(ria);
   for (usz i = 0; i < xia; i++) {
-    i64 c = o2i64(xget(x,i));
+    i64 c = o2i64(xgetU(x,i));
     if (c>=0) r.a[tmp[c]++] = m_usz(i);
   }
   dec(w);

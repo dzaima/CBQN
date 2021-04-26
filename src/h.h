@@ -316,7 +316,7 @@ B m_i32(i32 n) { return m_f64(n); }
 B m_error() { return tag(4, TAG_TAG); }
 B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
 
-i32 o2i   (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; }
+i32 o2i   (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
 usz o2s   (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
 i64 o2i64 (B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
 f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }

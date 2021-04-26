@@ -60,10 +60,10 @@ bool c32arr_canStore(B x) { return isC32(x); }
 
 bool eqStr(B w, u32* x) {
   if (!isArr(w) || rnk(w)!=1) return false;
-  BS2B wget = TI(w).get;
+  BS2B wgetU = TI(w).getU;
   u64 i = 0;
   while (x[i]) {
-    B c = wget(w, i);
+    B c = wgetU(w, i);
     if (!isC32(c) || x[i]!=(u32)c.u) return false;
     i++;
   }
