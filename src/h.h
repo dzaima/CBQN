@@ -365,23 +365,8 @@ TypeInfo ti[t_COUNT];
 B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 
 void do_nothing(B x) { }
-void empty_free(B x) { err("FREEING EMPTY\n"); }
-void builtin_free(B x) { err("FREEING BUILTIN\n"); }
-void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
-void freed_visit(B x) {
-  #ifndef CATCH_ERRORS
-  err("visiting t_freed\n");
-  #endif
-}
-void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
-B    def_identity(B f) { return bi_N; }
-B    def_get (B x, usz n) { return inc(x); }
-B    def_getU(B x, usz n) { return x; }
-B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
-B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
-B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
-B    def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
-bool def_canStore(B x) { return false; }
+B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
+
 
 bool isNothing(B b) { return b.u==bi_N.u; }
 

@@ -154,6 +154,23 @@ usz arr_csz(B x) {
   }
 #endif
 
+void empty_free(B x) { err("FREEING EMPTY\n"); }
+void builtin_free(B x) { err("FREEING BUILTIN\n"); }
+void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
+void freed_visit(B x) {
+  #ifndef CATCH_ERRORS
+  err("visiting t_freed\n");
+  #endif
+}
+void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+B    def_identity(B f) { return bi_N; }
+B    def_get (B x, usz n) { return inc(x); }
+B    def_getU(B x, usz n) { return x; }
+B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
+B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
+B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
+bool def_canStore(B x) { return false; }
+
 static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = do_nothing;
