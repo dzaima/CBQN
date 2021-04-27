@@ -47,44 +47,44 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   return x;
 }
 
-B grLen_c1(B t, B x) {
+B grLen_c1(B t, B x) { // assumes valid arguments
   i64 ria = -1;
   usz ia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64(xgetU(x, i));
+    i64 c = o2i64u(xgetU(x, i));
     if (c>ria) ria = c;
   }
   ria++;
-  HArr_p r = m_harrv(ria);
+  HArr_p r = m_harrUv(ria);
   for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64(xgetU(x, i));
+    i64 n = o2i64u(xgetU(x, i));
     if (n>=0) r.a[n].f++;
   }
   dec(x);
   return r.b;
 }
-B grLen_c2(B t, B w, B x) {
-  i64 ria = o2i64(w)-1;
+B grLen_c2(B t, B w, B x) { // assumes valid arguments
+  i64 ria = o2i64u(w)-1;
   usz ia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64(xgetU(x, i));
+    i64 c = o2i64u(xgetU(x, i));
     if (c>ria) ria = c;
   }
   ria++;
-  HArr_p r = m_harrv(ria);
+  HArr_p r = m_harrUv(ria);
   for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64(xgetU(x, i));
+    i64 n = o2i64u(xgetU(x, i));
     if (n>=0) r.a[n].f++;
   }
   dec(x);
   return r.b;
 }
 
-B grOrd_c2(B t, B w, B x) {
+B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
   if (wia==0) { dec(w); dec(x); return c1(bi_ud, m_i32(0)); }
@@ -93,9 +93,9 @@ B grOrd_c2(B t, B w, B x) {
   BS2B xgetU = TI(x).getU;
   usz tmp[wia];
   tmp[0] = 0;
-  for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2s(wgetU(w,i-1));
-  usz ria = tmp[wia-1]+o2s(wgetU(w,wia-1));
-  HArr_p r = m_harrv(ria);
+  for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
+  usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
+  HArr_p r = m_harrUv(ria);
   for (usz i = 0; i < xia; i++) {
     i64 c = o2i64(xgetU(x,i));
     if (c>=0) r.a[tmp[c]++] = m_usz(i);
@@ -144,17 +144,17 @@ static inline void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fil
 
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  HArr_p r = m_harrc(x);
+  usz i = 0;
+  HArr_p r = m_harrs(a(x)->ia, &i);
   BS2B xgetU = TI(x).getU;
-  for (usz i = 0; i < a(x)->ia; i++) {
+  for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);
     if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
     else if (eqStr(c, U"eq")) r.a[i] = inc(bi_feq);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
-    else err("Unknown system function");
+    else thrM("Unknown system function");
   }
-  dec(x);
-  return r.b;
+  return harr_fcd(r, x);
 }

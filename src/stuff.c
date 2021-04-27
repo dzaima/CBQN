@@ -137,7 +137,7 @@ usz arr_csz(B x) {
   B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
-    if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed) {
+    if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
       printf("wat %d %p\n", v(x)->type, (void*)x.u);
       print(x);
       err("\nk");

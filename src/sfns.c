@@ -35,20 +35,22 @@ B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is a
     return r.b;
   }
   
-  HArr_p r = m_harrc(wg? w : x);
-  usz ria = r.c->ia;
-  if (wr==xr) for(usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), xget(x,i));
-  else if (wr==0) { B c=wget(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c), xget(x,i)); dec(c); }
-  else if (xr==0) { B c=xget(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), inc(c)); dec(c); }
+  B bo = wg? w : x;
+  usz ria = a(bo)->ia;
+  usz ri = 0;
+  HArr_p r = m_harrs(ria, &ri);
+  if (wr==xr)                       for(; ri < ria; ri++) r.a[ri] = f(fo, wget(w,ri), xget(x,ri));
+  else if (wr==0) { B c=wget(w, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, inc(c)    , xget(x,ri)); dec(c); }
+  else if (xr==0) { B c=xget(x, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, wget(w,ri), inc(c)    ); dec(c); }
   else if (ria>0) {
     usz min = wg? a(x)->ia : a(w)->ia;
     usz ext = ria / min;
-    usz k = 0;
-    if (wg) for (usz i = 0; i < min; i++) { B c=xget(x,i); for (usz j = 0; j < ext; j++) { r.a[k] = f(fo, wget(w,k), inc(c)); k++; } }
-    else    for (usz i = 0; i < min; i++) { B c=wget(w,i); for (usz j = 0; j < ext; j++) { r.a[k] = f(fo, inc(c), xget(x,k)); k++; } }
+    if (wg) for (usz i = 0; i < min; i++) { B c=xget(x,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, wget(w,ri), inc(c)); }
+    else    for (usz i = 0; i < min; i++) { B c=wget(w,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, inc(c), xget(x,ri)); }
   }
+  B rb = harr_fc(r, bo);
   dec(w); dec(x);
-  return r.b;
+  return rb;
 }
 B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   usz ia = a(x)->ia;
@@ -66,11 +68,10 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         for (; i < ia; i++) xp[i] = f(fo, xp[i]);
         return x;
       } else {
-        HArr_p rp = m_harrc(x);
-        rp.a[i++] = cr;
-        for (; i < ia; i++) rp.a[i] = f(fo, inc(xp[i]));
-        dec(x);
-        return rp.b;
+        rH = m_harrs(ia, &i);
+        rH.a[i++] = cr;
+        for (; i < ia; i++) rH.a[i] = f(fo, inc(xp[i]));
+        return harr_fcd(rH, x);
       }
     } else if (v(x)->type==t_i32arr) {
       i32* xp = i32arr_ptr(x);
@@ -80,7 +81,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       for (; i < ia; i++) {
         cr = f(fo, m_i32(xp[i]));
         if (!q_i32(cr)) {
-          rH = m_harrc(x);
+          rH = m_harrs(ia, &i);
           for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
           if (!reuse) dec(r);
           goto fallback;
@@ -98,30 +99,29 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         for (; i < ia; i++) xp[i] = f(fo, xp[i]);
         return x;
       } else {
-        HArr_p rp = m_harrc(x);
+        HArr_p rp = m_harrs(ia, &i);
         rp.a[i++] = cr;
         for (; i < ia; i++) rp.a[i] = f(fo, inc(xp[i]));
-        dec(x);
-        return rp.b;
+        return harr_fcd(rp, x);
       }
     } else
-    rH = m_harrc(x);
+    rH = m_harrs(ia, &i);
   } else
-  rH = m_harrc(x);
+  rH = m_harrs(ia, &i);
   fallback:
   rH.a[i++] = cr;
   for (; i < ia; i++) rH.a[i] = f(fo, xget(x,i));
-  dec(x);
-  return rH.b;
+  return harr_fcd(rH, x);
 }
 B eachm(B f, B x) { // complete F¨ x
   if (!isArr(x)) return m_hunit(c1(f, x));
   if (isFun(f)) return eachm_fn(c(Fun,f)->c1, f, x);
   if (isMd(f)) if (!isArr(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
   
-  HArr_p r = m_harrc(x);
-  for(usz i = 0; i < r.c->ia; i++) r.a[i] = inc(f);
+  usz ia = a(x)->ia;
   dec(x);
+  HArr_p r = m_harrUv(ia);
+  for(usz i = 0; i < ia; i++) r.a[i] = inc(f);
   return r.b;
 }
 
@@ -134,7 +134,7 @@ B eachd(B f, B w, B x) { // complete w F¨ x
   }
   if (isMd(f)) if ((isArr(w)&&a(w)->ia) || (isArr(x)&&a(x)->ia)) { decR(x); thrM("Calling a modifier"); } // case where both are scalars has already been taken care of
   
-  HArr_p r = m_harrc(!isArr(w)? x : rnk(w)>rnk(x)? w : x);
+  HArr_p r = m_harrUc(!isArr(w)? x : rnk(w)>rnk(x)? w : x);
   for(usz i = 0; i < r.c->ia; i++) r.a[i] = inc(f);
   dec(w); dec(x);
   return r.b;
@@ -194,7 +194,7 @@ B ud_c1(B t, B x) {
     for (usz i = 0; i < xu; i++) pr[i] = i;
     return r;
   }
-  HArr_p r = m_harrv(xu); // TODO f64arr
+  HArr_p r = m_harrUv(xu); // TODO f64arr
   for (usz i = 0; i < xu; i++) r.a[i] = m_f64(i);
   return r.b;
 }
@@ -226,7 +226,7 @@ B fne_c1(B t, B x) {
     ur xr = rnk(x);
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < xr; i++) if (sh[i]>I32_MAX) {
-      HArr_p r = m_harrv(xr);
+      HArr_p r = m_harrUv(xr);
       for (i32 j = 0; j < xr; j++) r.a[j] = m_f64(sh[j]);
       dec(x);
       return r.b;
@@ -297,7 +297,7 @@ B select_c2(B t, B w, B x) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     B xf = getFill(inc(x));
-    HArr_p r = m_harrc(w);
+    HArr_p r = m_harrUc(w);
     BS2B wgetU = TI(w).getU;
     BS2B xget = TI(x).get;
     for (usz i = 0; i < wia; i++) {
@@ -341,13 +341,13 @@ B slash_c1(B t, B x) {
     dec(x);
     return r;
   }
-  HArr_p r = m_harrv(s);
+  HArr_p r = m_harrs(s, &ri);
   for (usz i = 0; i < xia; i++) {
     usz c = o2s(xgetU(x, i));
     for (usz j = 0; j < c; j++) r.a[ri++] = m_i32(i);
   }
   dec(x);
-  return withFill(r.b,m_f64(0));
+  return withFill(harr_fv(r),m_f64(0));
 }
 B slash_c2(B t, B w, B x) {
   if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
@@ -356,10 +356,10 @@ B slash_c2(B t, B w, B x) {
     B xf = getFill(inc(x));
     if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
     usz ria = isum(w);
-    HArr_p r = m_harrv(ria);
+    usz ri = 0;
+    HArr_p r = m_harrs(ria, &ri);
     BS2B wgetU = TI(w).getU;
     BS2B xgetU = TI(x).getU;
-    usz ri = 0;
     for (usz i = 0; i < wia; i++) {
       B cw = wgetU(w, i);
       if (isNum(cw)) {
@@ -373,7 +373,7 @@ B slash_c2(B t, B w, B x) {
       } else { dec(cw); goto base; }
     }
     dec(w); dec(x);
-    return withFill(r.b,xf);
+    return withFill(harr_fv(r), xf);
   }
   base:
   return c2(rt_slash, w, x);

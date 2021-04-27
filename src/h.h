@@ -65,7 +65,7 @@ enum Type {
   /*17*/ t_hslice, t_i32slice, t_fillslice, t_c32slice,
   
   /*21*/ t_comp, t_block, t_body, t_scope,
-  /*25*/ t_freed,
+  /*25*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
   /*26*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
@@ -187,6 +187,8 @@ B mm_alloc(usz sz, u8 type, u64 tag) {
   return b((u64)mm_allocN(sz,type) | tag);
 }
 
+void gsAdd(B x);
+B gsPop();
 
 // some primitive actions
 void dec(B x);

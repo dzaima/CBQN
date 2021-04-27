@@ -128,7 +128,7 @@ int main() {
   dec(rtRes);
   
   runtimeLen = c(Arr,rtObjRaw)->ia;
-  HArr_p runtimeH = m_harrc(rtObjRaw);
+  HArr_p runtimeH = m_harrUc(rtObjRaw);
   BS2B rtObjGet = TI(rtObjRaw).get;
   
   rt_sortAsc = rtObjGet(rtObjRaw, 10); gc_add(rt_sortAsc);

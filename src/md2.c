@@ -51,7 +51,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
     BS2B ggetU = TI(g).getU;
     usz ia = a(g)->ia;
-    HArr_p r = m_harrc(g);
+    HArr_p r = m_harrUc(g);
     for (usz i = 0; i < ia; i++) r.a[i] = repeat_replace(ggetU(g,i), q);
     return r.b;
   } else {

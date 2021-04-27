@@ -239,7 +239,7 @@ B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut;
     VT(s, t_harr);
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
-    HArr_p r = m_harrv(ia);
+    HArr_p r = m_harrUv(ia);
     for (u64 i = 0; i < ia; i++) r.a[i] = v_get(sc, sp[i]);
     return r.b;
   }
@@ -259,7 +259,7 @@ B* gStack; // points to after end
 B* gStackStart;
 B* gStackEnd;
 
-void allocStack(u64 am) {
+void gsReserve(u64 am) {
   u64 left = gStackEnd-gStack;
   if (am>left) {
     u64 n = gStackEnd-gStackStart + am + 500;
@@ -268,6 +268,14 @@ void allocStack(u64 am) {
     gStack    = gStackStart+d;
     gStackEnd = gStackStart+n;
   }
+}
+NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
+void gsAdd(B x) {
+  if (gStack==gStackEnd) gsReserveR(1);
+  *(gStack++) = x;
+}
+B gsPop() {
+  return *--gStack;
 }
 
 B evalBC(Body* b, Scope* sc) { // doesn't consume
@@ -281,7 +289,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   B* objs = b->comp->objs->a;
   Block** blocks = b->comp->blocks;
   i32* bc = b->bc;
-  allocStack(b->maxStack);
+  gsReserve(b->maxStack);
   #define POP (*--gStack)
   #define P(N) B N=POP;
   #define ADD(X) { B tr=X; *(gStack++) = tr; } // if ordering is needed
@@ -324,7 +332,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       }
       case ARRO: case ARRM: {
         i32 sz = *bc++;
-        HArr_p r = m_harrv(sz);
+        HArr_p r = m_harrUv(sz);
         for (i32 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
         ADD(r.b);
         break;

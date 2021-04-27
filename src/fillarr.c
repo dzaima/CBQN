@@ -8,7 +8,7 @@ typedef struct FillArr {
 
 B asFill(B x) { // consumes
   if (isArr(x)) {
-    HArr_p r = m_harrc(x);
+    HArr_p r = m_harrUc(x);
     usz ia = r.c->ia;
     BS2B xget = TI(x).get;
     bool noFill = false;
@@ -88,7 +88,7 @@ static inline void fillarr_init() {
 B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) {
-    HArr_p r = m_harrp(1);
+    HArr_p r = m_harrUp(1);
     arr_shAllocR(r.b, 0);
     r.a[0] = x;
     return r.b;
