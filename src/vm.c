@@ -33,7 +33,12 @@ enum {
   RETD = 29, // return a namespace of exported items
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
+  BC_SIZE = 32
 };
+
+#define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
+                  F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
+                  F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) 
 
 i32* nextBC(i32* p) {
   switch(*p) {
@@ -69,14 +74,9 @@ i32 stackDiff(i32* p) {
 }
 char* nameBC(i32* p) {
   switch(*p) { default: return "(unknown)";
-    case PUSH:return "PUSH";case VARO:return "VARO";case VARM:return "VARM";case ARRO:return "ARRO";
-    case ARRM:return "ARRM";case FN1C:return "FN1C";case FN2C:return "FN2C";case OP1D:return "OP1D";
-    case OP2D:return "OP2D";case TR2D:return "TR2D";case TR3D:return "TR3D";case SETN:return "SETN";
-    case SETU:return "SETU";case SETM:return "SETM";case POPS:return "POPS";case DFND:return "DFND";
-    case FN1O:return "FN1O";case FN2O:return "FN2O";case CHKV:return "CHKV";case TR3O:return "TR3O";
-    case OP2H:return "OP2H";case LOCO:return "LOCO";case LOCM:return "LOCM";case VFYM:return "VFYM";
-    case SETH:return "SETH";case RETN:return "RETN";case FLDO:return "FLDO";case FLDM:return "FLDM";
-    case NSPM:return "NSPM";case RETD:return "RETD";case SYSV:return "SYSV";case LOCU:return "LOCU";
+    #define F(X) case X: return #X;
+    FOR_BC(F)
+    #undef F
   }
 }
 void printBC(i32* p) {
@@ -286,6 +286,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #define P(N) B N=POP;
   #define ADD(X) { B tr=X; *(gStack++) = tr; } // if ordering is needed
   // #define ADD(X) *(gStack++) = X; }         // if ordering is not needed
+  
   while(true) {
     #ifdef DEBUG_VM
       i32* sbc = bc;
@@ -295,7 +296,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       printBC(sbc); printf("@%d << ", bcPos);
       for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } puts(""); fflush(stdout);
       bcCtr++;
-      for (i32 i = 0; i < sc->varAm; i++) validate(sc->vars[i]);
+      for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
     switch(*bc++) {
       case POPS: dec(POP); break;
