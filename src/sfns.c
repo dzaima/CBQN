@@ -6,15 +6,19 @@ typedef struct BFn {
 } BFn;
 
 B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is array
-  usz wia; ur wr; BS2B wget;
-  usz xia; ur xr; BS2B xget;
-  if (isArr(w)) { wia = a(w)->ia; wr = rnk(w); wget = TI(w).get; } else { wia=1; wr=0; wget=def_get; }
-  if (isArr(x)) { xia = a(x)->ia; xr = rnk(x); xget = TI(x).get; } else { xia=1; xr=0; xget=def_get; }
+  if (!isArr(w)) w = m_hunit(w);
+  if (!isArr(x)) x = m_hunit(x);
+  ur wr = rnk(w); BS2B wget = TI(w).get;
+  ur xr = rnk(x); BS2B xget = TI(x).get;
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
-  if (rM==0) { B r = f(fo, wget(w,0), xget(x,0)); dec(w); dec(x); return m_unit(r); }
-  if (isArr(w) & isArr(x) && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrM("Mapping: Expected equal shape prefix");
+  if (rM==0) {
+    B r = f(fo, wget(w,0), xget(x,0));
+    dec(w); dec(x);
+    return m_hunit(r);
+  }
+  if (rm && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrM("Mapping: Expected equal shape prefix");
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
   bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
   if (rw|rx && (wr==xr | rm==0)) {
@@ -111,7 +115,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   return rH.b;
 }
 B eachm(B f, B x) { // complete F¨ x
-  if (!isArr(x)) return m_unit(c1(f, x));
+  if (!isArr(x)) return m_hunit(c1(f, x));
   if (isFun(f)) return eachm_fn(c(Fun,f)->c1, f, x);
   if (isMd(f)) if (!isArr(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
   
@@ -122,7 +126,7 @@ B eachm(B f, B x) { // complete F¨ x
 }
 
 B eachd(B f, B w, B x) { // complete w F¨ x
-  if (!isArr(w) & !isArr(x)) return m_unit(c2(f, w, x));
+  if (!isArr(w) & !isArr(x)) return m_hunit(c2(f, w, x));
   if (isFun(f)) return eachd_fn(c(Fun,f)->c2, f, w, x);
   if (isArr(w) && isArr(x)) {
     ur mr = rnk(w); if(rnk(w)<mr) mr = rnk(w);

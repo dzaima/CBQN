@@ -21,19 +21,23 @@ HArr_p m_harrv(usz ia) {
   arr_shVec(r, ia);
   return harr_parts(r);
 }
-
 HArr_p m_harrc(B x) { assert(isArr(x));
   B r = m_arr(fsizeof(HArr,a,B,a(x)->ia), t_harr);
   arr_shCopy(r, x);
   return harr_parts(r);
 }
-
 HArr_p m_harrp(usz ia) { // doesn't write shape/rank
   B r = m_arr(fsizeof(HArr,a,B,ia), t_harr);
   a(r)->ia = ia;
   return harr_parts(r);
 }
 
+B m_hunit(B x) {
+  HArr_p r = m_harrp(1);
+  arr_shAllocR(r.b, 0);
+  r.a[0] = x;
+  return r.b;
+}
 
 
 B* harr_ptr(B x) { VT(x,t_harr); return c(HArr,x)->a; }

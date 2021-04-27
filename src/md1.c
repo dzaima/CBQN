@@ -4,10 +4,8 @@ B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
   return eachm(f, x);
 }
 B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  if (isAtm(w) | isAtm(x)) {
-    if (isAtm(w)) w = m_unit(w);
-    if (isAtm(x)) x = m_unit(x);
-  }
+  if (isAtm(w)) w = m_hunit(w);
+  if (isAtm(x)) x = m_hunit(x);
   usz wia = a(w)->ia; ur wr = rnk(w);
   usz xia = a(x)->ia; ur xr = rnk(x);
   usz ria = wia*xia;  ur rr = wr+xr;

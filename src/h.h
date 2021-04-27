@@ -278,21 +278,17 @@ void arr_shVec(B x, usz ia) {
   srnk(x, 1);
   a(x)->sh = &a(x)->ia;
 }
-bool gotShape[t_COUNT];
-usz* arr_shAllocI(B x, usz ia, ur r) {
+usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank
+  srnk(x,r);
+  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
+  a(x)->sh = &a(x)->ia;
+  return 0;
+}
+usz* arr_shAllocI(B x, usz ia, ur r) { // allocates shape, sets ia,rank
   a(x)->ia = ia;
-  srnk(x,r);
-  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
-  a(x)->sh = &a(x)->ia;
-  return 0;
+  return arr_shAllocR(x, r);
 }
-usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank, leaves ia unchanged
-  srnk(x,r);
-  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
-  a(x)->sh = &a(x)->ia;
-  return 0;
-}
-void arr_shCopy(B n, B o) { // copy shape from o to n
+void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
   assert(isArr(o));
   a(n)->ia = a(o)->ia;
   ur r = srnk(n,rnk(o));
@@ -352,7 +348,7 @@ typedef struct TypeInfo {
   BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
-  BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself
+  BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object
   B2b canStore; // doesn't consume
   B2B identity; // return identity element of this function; doesn't consume
   
