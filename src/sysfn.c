@@ -121,22 +121,34 @@ B asrt_c2(B t, B w, B x) {
 B internal_c2(B t, B w, B x) {
   B r;
   u64 id = o2s(w);
-  if(id==0) { char* c = format_type(v(x)->type); r = m_str8(strlen(c), c); }
-  else if(id==1) { r = m_i32(v(x)->mmInfo); }
-  else if(id==2) { r = m_i32(v(x)->refc); }
-  else return err("Unknown •Internal 𝕨");
+  if(id==0) {
+    if(isVal(x)) { char* c = format_type(v(x)->type); r = m_str8(strlen(c), c); }
+    else {
+      if      (isF64(x)) r = m_str32(U"tagged f64");
+      else if (isI32(x)) r = m_str32(U"tagged i32");
+      else if (isC32(x)) r = m_str32(U"tagged c32");
+      else if (isTag(x)) r = m_str32(U"tagged tag");
+      else if (isVar(x)) r = m_str32(U"tagged var");
+      else r = m_str32(U"tagged unknown");
+    }
+  } else if(id==1) { r = isVal(x)? m_i32(v(x)->mmInfo & 0x7f) : m_str32(U"(not heap-allocated)"); }
+  else if(id==2) { r = isVal(x)? m_i32(v(x)->refc) : m_str32(U"(not heap-allocated)"); }
+  else if(id==3) { printf("%p\n", (void*)x.u); r = inc(x); }
+  else { dec(x); thrM("Bad 𝕨 argument for •Internal"); }
   dec(x);
   return r;
 }
 B sys_c1(B t, B x);
+B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
+B show_c1(B t, B x) { print   (x); putchar('\n'); return x; }
 
 
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
-B                                 bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt, bi_sys, bi_internal;
-static inline void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) bm(sys) bd(internal) }
+B                                 bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt, bi_out, bi_show, bi_sys, bi_internal;
+static inline void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) bm(out) bm(show) bm(sys) bd(internal) }
 
 #undef ba
 #undef bd
@@ -154,6 +166,8 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
+    else if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
+    else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
     else thrM("Unknown system function");
   }
   return harr_fcd(r, x);

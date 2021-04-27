@@ -91,7 +91,7 @@ char* format_type(u8 u) {
     F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(select,"⊏") F(slash,"/") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") /*sfns.c*/ \
     F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") /*derv.c*/ \
     F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") /*sysfn.c*/ \
-    F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") /*sysfn.c*/
+    F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") /*sysfn.c*/
 
 enum PrimFns {
   #define F(N,X) pf_##N,
@@ -253,6 +253,7 @@ bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
 bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
 bool isC32(B x) { return (x.u>>48) == C32_TAG; }
 bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
+bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
 bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
 bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
 bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }

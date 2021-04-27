@@ -71,14 +71,14 @@ void printRaw(B x) {
   if (isAtm(x)) {
     if (isF64(x)) printf("%g", x.f);
     else if (isC32(x)) printUTF8((u32)x.u);
-    else err("bad printRaw argument: atom arguments should be either numerical or characters");
+    else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
     usz ia = a(x)->ia;
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) {
       B c = xgetU(x,i);
       if (c.u==0 || noFill(c)) { printf(" "); continue; }
-      if (!isC32(c)) err("bad printRaw argument: expected all character items");
+      if (!isC32(c)) thrM("bad printRaw argument: expected all character items");
       printUTF8((u32)c.u);
     }
   }
