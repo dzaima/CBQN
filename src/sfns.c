@@ -4,7 +4,8 @@ typedef struct BFn {
   struct Fun;
   B ident;
 } BFn;
-
+static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
+static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
 B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is array
   if (!isArr(w)) w = m_hunit(w);
   if (!isArr(x)) x = m_hunit(x);
@@ -24,12 +25,12 @@ B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is a
   if (rw|rx && (wr==xr | rm==0)) {
     HArr_p r = harr_parts(rw? w : x);
     usz ria = r.c->ia;
-    if      (wr==0) { B c=wget(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c), r.a[i]); dec(c); }
-    else if (xr==0) { B c=xget(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, r.a[i], inc(c)); dec(c); }
+    if      (wr==0) { B c=wget(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c),   hmv(r,i)); dec(c); }
+    else if (xr==0) { B c=xget(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
     else {
       assert(wr==xr);
-      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, r.a[i], xget(x,i));
-      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), r.a[i]);
+      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i),  xget(x,i));
+      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), hmv(r,i));
     }
     dec(rw? x : w);
     return r.b;
@@ -65,7 +66,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       B* xp = harr_ptr(x);
       if (reuse) {
         dec(xp[i]); xp[i++] = cr;
-        for (; i < ia; i++) xp[i] = f(fo, xp[i]);
+        for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
         return x;
       } else {
         rH = m_harrs(ia, &i);
@@ -113,7 +114,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         dec(c(FillArr,x)->fill);
         c(FillArr,x)->fill = bi_noFill;
         dec(xp[i]); xp[i++] = cr;
-        for (; i < ia; i++) xp[i] = f(fo, xp[i]);
+        for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
         return x;
       } else {
         HArr_p rp = m_harrs(ia, &i);
