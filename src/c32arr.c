@@ -37,6 +37,17 @@ NOINLINE B m_str32(u32* s) {
   return r;
 }
 
+C32Arr* toC32Arr(B x) {
+  if (v(x)->type==t_c32arr) return c(C32Arr,x);
+  B r = m_c32arrc(x);
+  u32* rp = c32arr_ptr(r);
+  usz ia = a(r)->ia;
+  BS2B xgetU = TI(x).get;
+  for (usz i = 0; i < ia; i++) rp[i] = o2c(xgetU(x,i));
+  dec(x);
+  return c(C32Arr,r);
+}
+
 typedef struct C32Slice {
   struct Slice;
   u32* a;

@@ -320,6 +320,7 @@ usz o2s   (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; 
 i64 o2i64 (B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
 f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }
 i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+usz o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
 usz o2su  (B x) { return (usz)x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
