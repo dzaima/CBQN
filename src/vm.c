@@ -122,6 +122,7 @@ typedef struct Body {
   // B* objs;
   i32* bc; // pointer in comp->bc
   u32 maxStack;
+  u16 maxPSC;
   u16 varAm;
   // HArr* vNames;
 } Body;
@@ -169,20 +170,23 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
     
     i32* scan = cbc;
     i32 ssz = 0, mssz=0;
+    i32 mpsc = 0;
     while (*scan!=RETN & *scan!=RETD) {
       ssz+= stackDiff(scan);
       if (ssz>mssz) mssz = ssz;
-      if (*scan==LOCO | *scan==LOCM) {
-        if (scan[1]>U16_MAX) return c(Block,err("LOC_ too deep"));
+      if (*scan==LOCO | *scan==LOCM | *scan==LOCU) {
+        if (scan[1]>mpsc) mpsc = scan[1];
       }
       scan = nextBC(scan);
       if (scan-bc >= bcl) return c(Block,err("no RETN/RETD found at end of bytecode"));
     }
+    if (mpsc>U16_MAX) thrM("LOC_ too deep");
     
     Body* body = mm_allocN(sizeof(Body), t_body);
     body->comp = comp;
     body->bc = cbc;
     body->maxStack = mssz;
+    body->maxPSC = mpsc;
     body->varAm = vam;
     ptr_inc(comp);
     
@@ -201,14 +205,9 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   return ret;
 }
 
-Scope* scd(Scope* sc, u16 d) {
-  for (i32 i = 0; i < d; i++) sc = sc->psc;
-  return sc;
-}
-
-void v_set(Scope* sc, B s, B x, bool upd) { // frees s, doesn't consume x
+void v_set(Scope* pscs[], B s, B x, bool upd) { // frees s, doesn't consume x
   if (isVar(s)) {
-    sc = scd(sc, (u16)(s.u>>32));
+    Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->vars[(u32)s.u];
     if (upd) {
       if (prev.u==bi_noVar.u) err("updating undefined variable");
@@ -224,14 +223,14 @@ void v_set(Scope* sc, B s, B x, bool upd) { // frees s, doesn't consume x
     B* sp = harr_ptr(s);
     BS2B xgetU = TI(x).getU;
     for (u64 i = 0; i < ia; i++) {
-      v_set(sc, sp[i], xgetU(x,i), upd);
+      v_set(pscs, sp[i], xgetU(x,i), upd);
     }
     dec(s);
   }
 }
-B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut; doesn't consume
+B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
   if (isVar(s)) {
-    sc = scd(sc, (u16)(s.u>>32));
+    Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->vars[(u32)s.u];
     sc->vars[(u32)s.u] = bi_optOut;
     return r;
@@ -240,7 +239,7 @@ B v_get(Scope* sc, B s) { // get value representing s, replacing with bi_optOut;
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);
-    for (u64 i = 0; i < ia; i++) r.a[i] = v_get(sc, sp[i]);
+    for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i]);
     return r.b;
   }
 }
@@ -277,7 +276,6 @@ void gsAdd(B x) {
 B gsPop() {
   return *--gStack;
 }
-
 B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -290,6 +288,10 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   Block** blocks = b->comp->blocks;
   i32* bc = b->bc;
   gsReserve(b->maxStack);
+  Scope* pscs[b->maxPSC+1];
+  pscs[0] = sc;
+  for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
+  
   #define POP (*--gStack)
   #define P(N) B N=POP;
   #define ADD(X) { B tr=X; *(gStack++) = tr; } // if ordering is needed
@@ -361,21 +363,21 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
-        ADD(inc(scd(sc,d)->vars[p]));
+        ADD(inc(pscs[d]->vars[p]));
         break;
       }
       case LOCU: { i32 d = *bc++; i32 p = *bc++;
-        B* vars = scd(sc,d)->vars;
+        B* vars = pscs[d]->vars;
         ADD(vars[p]);
         vars[p] = bi_optOut;
         break;
       }
-      case SETN: { P(s)    P(x) v_set(sc, s, x, false); ADD(x); break; }
-      case SETU: { P(s)    P(x) v_set(sc, s, x, true ); ADD(x); break; }
+      case SETN: { P(s)    P(x) v_set(pscs, s, x, false); ADD(x); break; }
+      case SETU: { P(s)    P(x) v_set(pscs, s, x, true ); ADD(x); break; }
       case SETM: { P(s)P(f)P(x)
-        B w = v_get(sc, s);
+        B w = v_get(pscs, s);
         B r = c2(f,w,x); dec(f);
-        v_set(sc, s, r, true);
+        v_set(pscs, s, r, true);
         ADD(r);
         break;
       }
