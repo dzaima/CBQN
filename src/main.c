@@ -120,6 +120,7 @@ int main() {
   for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
   B frtObj = m_caB(rtLen, fruntime);
   
+  B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
   
   Block* runtime_b = compile(
     #include "runtime"

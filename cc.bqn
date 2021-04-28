@@ -33,20 +33,20 @@ useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← ((<"inc(runtime["∾⍕∾"])"˙)¨↕62) glyphs _getComp ⊢
 J ← ∾∾⟜\n¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
-prov ← {"inc("∾𝕩∾")"}¨"bi_type"‿"bi_fill"‿"bi_log"‿"bi_grLen"‿"bi_grOrd"‿"bi_asrt"‿"bi_add"‿"bi_sub"‿"bi_mul"‿"bi_div"‿"bi_pow"‿"bi_floor"‿"bi_eq"‿"bi_le"‿"bi_fne"‿"bi_shape"‿"bi_pick"‿"bi_ud"‿"bi_tbl"‿"bi_scan"‿"bi_fillBy"‿"bi_val"‿"bi_catch"
-Fout ← {((≠𝕩)↑⟨LI F¨,L ·prov⊸∾⍟(𝕨⊣0) Fconst¨,L (LI F¨)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
+Fout ← {((≠𝕩)↑⟨LI F¨,L Fconst¨,L (LI F¨)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾\n}
 
-RT ← {𝕩
-  prims‿ref←Import"pr.bqn" ⋄ l←≠∾prims
-  Long Frun l⊸↓⌾(1⊸⊑) (↕l) prims _getComp ref
+RT ← {
+  src‿need‿inputs←𝕩Import"pr.bqn"
+  pr←"runtime_0"‿"provide"{(∾𝕨<⊸(<∘{∾"inc("‿𝕨‿"["‿𝕩‿"])"}⟜F¨)⟜(↕≠)¨𝕩)⊏˜(∾𝕩)⊐∾need}○((-1+1=𝕩)⊸↑)inputs
+  Long Fout pr need _getComp src
 }
 CArg ← {J (¯5⊸↓∾𝕩˙)⌾⊑ FLines "c.bqn"}
 LFC ← Long∘Fout∘Comp
 
-•Out⍟(¬return) (⊑"r"‿"c"‿"cc"‿"f"‿"e"‿"p"⊐⊏)◶⟨
-  RT
+•Out⍟(¬return) (⊑"r"‿"r0"‿"r1"‿"c"‿"cc"‿"f"‿"e"‿"p"⊐⊏)◶⟨
+  RT∘2, RT∘0, RT∘1
   {𝕩⋄LFC CArg "⟨"∾"⟩"«∾","⊸∾¨'"'(⊣∾∾˜)¨glyphs}
   {𝕩⋄LFC "{"∾"}"∾˜CArg"𝕩"}
   {𝕩⋄LFC FChars "f.bqn"}
