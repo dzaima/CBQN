@@ -56,14 +56,15 @@ B grLen_c1(B t, B x) { // assumes valid arguments
     if (c>ria) ria = c;
   }
   ria++;
-  HArr_p r = m_harrUv(ria);
-  for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
+  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
-    if (n>=0) r.a[n].f++;
+    if (n==(usz)n) rp[n]++;
+    else if (n!=-1) thrM("grLen: Too large");
   }
   dec(x);
-  return r.b;
+  return r;
 }
 B grLen_c2(B t, B w, B x) { // assumes valid arguments
   i64 ria = o2i64u(w)-1;
@@ -74,14 +75,15 @@ B grLen_c2(B t, B w, B x) { // assumes valid arguments
     if (c>ria) ria = c;
   }
   ria++;
-  HArr_p r = m_harrUv(ria);
-  for (usz i = 0; i < ria; i++) r.a[i] = m_f64(0);
+  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
-    if (n>=0) r.a[n].f++;
+    if (n==(usz)n) rp[n]++;
+    else if (n!=-1) thrM("grLen: Too large");
   }
   dec(x);
-  return r.b;
+  return r;
 }
 
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
@@ -95,14 +97,15 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   tmp[0] = 0;
   for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
   usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
-  HArr_p r = m_harrUv(ria);
+  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  if (xia>=I32_MAX) thrM("grOrd: Too large");
   for (usz i = 0; i < xia; i++) {
     i64 c = o2i64(xgetU(x,i));
-    if (c>=0) r.a[tmp[c]++] = m_usz(i);
+    if (c>=0) rp[tmp[c]++] = i;
   }
   dec(w);
   dec(x);
-  return r.b;
+  return r;
 }
 
 B asrt_c1(B t, B x) {

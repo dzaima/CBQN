@@ -27,6 +27,7 @@
 #include "fillarr.c"
 #include "i32arr.c"
 #include "c32arr.c"
+#include "f64arr.c"
 #include "utf.c"
 #include "derv.c"
 #include "sfns.c"
@@ -86,6 +87,7 @@ int main() {
   fillarr_init();
   i32arr_init();
   c32arr_init();
+  f64arr_init();
   arith_init();
   sfns_init();
   md1_init();

@@ -91,11 +91,6 @@ B m_caB(usz ia, B* a) {
   for (usz i = 0; i < ia; i++) r.a[i] = a[i];
   return r.b;
 }
-B m_caf64(usz sz, f64* a) {
-  HArr_p r = m_harrUv(sz);
-  for (usz i = 0; i < sz; i++) r.a[i] = m_f64(a[i]);
-  return r.b;
-}
 
 // consumes all
 B m_v1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;                                     return r.b; }

@@ -90,6 +90,23 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       }
       if (!reuse) dec(x);
       return r;
+    } else if (v(x)->type==t_f64arr) {
+      f64* xp = f64arr_ptr(x);
+      B r = reuse? x : m_f64arrc(x);
+      f64* rp = f64arr_ptr(r);
+      rp[i++] = o2iu(cr);
+      for (; i < ia; i++) {
+        cr = f(fo, m_f64(xp[i]));
+        if (!q_f64(cr)) {
+          rH = m_harrs(ia, &i);
+          for (usz j = 0; j < i; j++) rH.a[j] = m_f64(rp[j]);
+          if (!reuse) dec(r);
+          goto fallback;
+        }
+        rp[i] = o2iu(cr);
+      }
+      if (!reuse) dec(x);
+      return r;
     } else if (v(x)->type==t_fillarr) {
       B* xp = fillarr_ptr(x);
       if (reuse) {
@@ -189,14 +206,13 @@ B pick_c2(B t, B w, B x) {
 B ud_c1(B t, B x) {
   usz xu = o2s(x);
   if (xu<I32_MAX) {
-    B r = m_i32arrv(xu);
-    i32* pr = i32arr_ptr(r);
-    for (usz i = 0; i < xu; i++) pr[i] = i;
+    B r = m_i32arrv(xu); i32* rp = i32arr_ptr(r);
+    for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  HArr_p r = m_harrUv(xu); // TODO f64arr
-  for (usz i = 0; i < xu; i++) r.a[i] = m_f64(i);
-  return r.b;
+  B r = m_f64arrv(xu); f64* rp = f64arr_ptr(r);
+  for (usz i = 0; i < xu; i++) rp[i] = i;
+  return r;
 }
 
 B pair_c1(B t,      B x) { return m_v1(   x); }
@@ -226,10 +242,10 @@ B fne_c1(B t, B x) {
     ur xr = rnk(x);
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < xr; i++) if (sh[i]>I32_MAX) {
-      HArr_p r = m_harrUv(xr);
-      for (i32 j = 0; j < xr; j++) r.a[j] = m_f64(sh[j]);
+      B r = m_f64arrv(xr); f64* rp = f64arr_ptr(r);
+      for (i32 j = 0; j < xr; j++) rp[j] = sh[j];
       dec(x);
-      return r.b;
+      return r;
     }
     B r = m_i32arrv(xr); i32* rp = i32arr_ptr(r);
     for (i32 i = 0; i < xr; i++) rp[i] = sh[i];

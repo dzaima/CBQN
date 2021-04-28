@@ -61,13 +61,13 @@ enum Type {
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
   
-  /*13*/ t_harr  , t_i32arr  , t_fillarr  , t_c32arr  ,
-  /*17*/ t_hslice, t_i32slice, t_fillslice, t_c32slice,
+  /*13*/ t_harr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
+  /*18*/ t_hslice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
-  /*21*/ t_comp, t_block, t_body, t_scope,
-  /*25*/ t_freed, t_harrPartial,
+  /*22*/ t_comp, t_block, t_body, t_scope,
+  /*26*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
-  /*26*/ t_funPerf, t_md1Perf, t_md2Perf,
+  /*28*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
   t_COUNT
 };
@@ -323,6 +323,7 @@ i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 usz o2su  (B x) { return (usz)x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
+bool q_f64(B x) { return isF64(x) || isI32(x); }
 
 
 typedef struct Slice {

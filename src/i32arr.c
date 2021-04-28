@@ -12,7 +12,7 @@ B m_i32arrv(usz ia) {
   return r;
 }
 B m_i32arrc(B x) { assert(isArr(x));
-  B r = m_arr(fsizeof(I32Arr,a,B,a(x)->ia), t_i32arr);
+  B r = m_arr(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr);
   arr_shCopy(r, x);
   return r;
 }
