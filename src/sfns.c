@@ -328,7 +328,7 @@ B select_c2(B t, B w, B x) {
     return withFill(r.b,xf);
   }
   base:
-  return c2(rt_select, w, x); 
+  return c2(rt_select, w, x);
 }
 
 i64 isum(B x) { // doesn't consume; assumes is array; may error

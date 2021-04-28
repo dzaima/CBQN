@@ -46,10 +46,10 @@ void pr(char* a, B b) {
   fflush(stdout);
 }
 
-Block* ca3(B b) {
-  B* ps = harr_ptr(b);
-  Block* r = compile(inc(ps[0]),inc(ps[1]),inc(ps[2]));
-  dec(b);
+Block* ca3(B x) {
+  B* xp = harr_ptr(x);
+  Block* r = compile(inc(xp[0]),inc(xp[1]),inc(xp[2]));
+  dec(x);
   return r;
 }
 

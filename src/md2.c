@@ -7,7 +7,7 @@ B val_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, w,x); }
 
 
 #ifdef CATCH_ERRORS
-B fillBy_c1(B d, B x) { 
+B fillBy_c1(B d, B x) {
   B xf=getFill(inc(x));
   B r = c1(c(Md2D,d)->f, x);
   if(!isArr(r) || noFill(xf)) { dec(xf); return r; }

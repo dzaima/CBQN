@@ -35,6 +35,12 @@ static inline B arith_recd(BBB2B f, B w, B x) {
 }
 #define ffn(name, op, extra) ffnx(name, w.f op x.f, extra)
 
+f64 pfmod(f64 a, f64 b) {
+  f64 r = fmod(a, b);
+  if (a<0 != b<0 && r) r+= b;
+  return r;
+}
+
 ffn(add, +, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(u32)w.u + o2i64(x); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32(r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(u32)x.u + o2i64(w); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32(r); }
@@ -46,18 +52,13 @@ ffn(sub, -, {
 ffn(mul, *, {})
 ffn(and, *, {})
 ffn(div, /, {})
-ffnx(pow, pow(w.f,x.f), {})
-ffnx(floor, fmin(w.f, x.f), {})
-ffnx(ceil, fmax(w.f, x.f), {})
-f64 pfmod(f64 a, f64 b) {
-  f64 r = fmod(a, b);
-  if (a<0 != b<0 && r) r+= b;
-  return r;
-}
-ffnx(stile, pfmod(x.f, w.f), {})
-ffnx(log, log(x.f)/log(w.f), {})
-ffnx(or, (w.f+x.f)-(w.f*x.f), {})
-ffnx(not, 1+w.f-x.f, {})
+ffnx(pow  ,       pow(w.f, x.f), {})
+ffnx(floor,      fmin(w.f, x.f), {})
+ffnx(ceil ,      fmax(w.f, x.f), {})
+ffnx(stile,     pfmod(x.f, w.f), {})
+ffnx(log  ,   log(x.f)/log(w.f), {})
+ffnx(or   , (w.f+x.f)-(w.f*x.f), {})
+ffnx(not  , 1+w.f-x.f          , {})
 
 #define CMP(X, N, G) \
   ffn(N, X, { \

@@ -70,7 +70,7 @@ void fillarr_free(B x) {
 void fillarr_visit(B x) {
   usz ia = a(x)->ia; B* p = fillarr_ptr(x);
   mm_visit(c(FillArr,x)->fill);
-  for (usz i = 0; i < ia; i++) mm_visit(p[i]); 
+  for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 bool fillarr_canStore(B x) { return true; }
 

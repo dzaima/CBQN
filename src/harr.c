@@ -126,7 +126,7 @@ void harr_free(B x) {
 }
 void harr_visit(B x) {
   usz ia = a(x)->ia; B* p = harr_ptr(x);
-  for (usz i = 0; i < ia; i++) mm_visit(p[i]); 
+  for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 bool harr_canStore(B x) { return true; }
 
