@@ -166,9 +166,9 @@ void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
 B    def_identity(B f) { return bi_N; }
 B    def_get (B x, usz n) { return inc(x); }
 B    def_getU(B x, usz n) { return x; }
-B    def_m1_d(B m, B f     ) { return err("cannot derive this"); }
-B    def_m2_d(B m, B f, B g) { return err("cannot derive this"); }
-B    def_slice(B x, usz s) { return err("cannot slice non-array!"); }
+B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
+B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
+B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 bool def_canStore(B x) { return false; }
 
 static inline void hdr_init() {

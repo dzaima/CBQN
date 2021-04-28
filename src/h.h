@@ -410,15 +410,15 @@ typedef struct Fun {
   BBB2B c2;
 } Fun;
 
-B c1_invalid(B f,      B x) { return err("This function can't be called monadically"); }
-B c2_invalid(B f, B w, B x) { return err("This function can't be called dyadically"); }
+NOINLINE B c1_invalid(B f,      B x) { thrM("This function can't be called monadically"); }
+NOINLINE B c2_invalid(B f, B w, B x) { thrM("This function can't be called dyadically"); }
 
 NOINLINE B c1_rare(B f, B x) { dec(x);
-  if (isMd(f)) return err("Calling a modifier");
+  if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
 NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
-  if (isMd(f)) return err("Calling a modifier");
+  if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
 B c1(B f, B x) { // BQN-call f monadically; consumes x

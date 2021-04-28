@@ -67,8 +67,8 @@ B m_fork(B f, B g, B h) { B r = mm_alloc(sizeof(Fork), t_fork, ftag(FUN_TAG)); c
 B m_atop(     B g, B h) { B r = mm_alloc(sizeof(Atop), t_atop, ftag(FUN_TAG));                   c(Atop,r)->g  = g; c(Atop,r)->h = h; c(Atop,r)->c1=atop_c1; c(Atop,r)->c2=atop_c2; c(Atop,r)->extra=pf_atop; return r; }
 
 // consume all args
-B m1_d(B m, B f     ) { if(isMd1(m)) return TI(m).m1_d(m, f   ); return err("Interpreting non-1-modifier as 1-modifier"); }
-B m2_d(B m, B f, B g) { if(isMd2(m)) return TI(m).m2_d(m, f, g); return err("Interpreting non-2-modifier as 2-modifier"); }
+B m1_d(B m, B f     ) { if(isMd1(m)) return TI(m).m1_d(m, f   ); thrM("Interpreting non-1-modifier as 1-modifier"); }
+B m2_d(B m, B f, B g) { if(isMd2(m)) return TI(m).m2_d(m, f, g); thrM("Interpreting non-2-modifier as 2-modifier"); }
 B m2_h(B m,      B g) {              return     m_md2H(m,    g); }
 
 

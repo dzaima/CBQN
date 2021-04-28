@@ -160,11 +160,11 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   
   for (usz i = 0; i < bam; i++) {
     B cbld = blockDefs[i];
-    if (a(cbld)->ia != 4) return c(Block,err("bad compile block")); // todo not cast errors here weirdly
+    if (a(cbld)->ia != 4) thrM("bad compile block");
     BS2B bget = TI(cbld).get;
-    usz  ty  = o2s(bget(cbld,0)); if (ty<0|ty>2) return c(Block,err("bad block type"));
+    usz  ty  = o2s(bget(cbld,0)); if (ty<0|ty>2) thrM("bad block type");
     bool imm = o2s(bget(cbld,1)); // todo o2b or something
-    usz  idx = o2s(bget(cbld,2)); if (idx>=bcl) return c(Block,err("oob bytecode index"));
+    usz  idx = o2s(bget(cbld,2)); if (idx>=bcl) thrM("oob bytecode index");
     usz  vam = o2s(bget(cbld,3));
     i32* cbc = bc+idx;
     
@@ -178,7 +178,7 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
         if (scan[1]>mpsc) mpsc = scan[1];
       }
       scan = nextBC(scan);
-      if (scan-bc >= bcl) return c(Block,err("no RETN/RETD found at end of bytecode"));
+      if (scan-bc >= bcl) thrM("no RETN/RETD found at end of bytecode");
     }
     if (mpsc>U16_MAX) thrM("LOC_ too deep");
     
@@ -210,15 +210,15 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // frees s, doesn't consume x
     Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->vars[(u32)s.u];
     if (upd) {
-      if (prev.u==bi_noVar.u) err("updating undefined variable");
+      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
     } else {
-      if (prev.u!=bi_noVar.u) err("redefining variable");
+      if (prev.u!=bi_noVar.u) thrM("←: redefining variable");
     }
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (!eqShape(s, x)) err("spread assignment: mismatched shape");
+    if (!eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xgetU = TI(x).getU;
@@ -559,7 +559,7 @@ void popCatch() {
   #endif
 }
 
-void thr(B msg) {
+NOINLINE void thr(B msg) {
   if (cf>cfStart) {
     catchMessage = msg;
     cf--;
@@ -583,6 +583,6 @@ void thr(B msg) {
   #endif
 }
 
-void thrM(char* s) {
+NOINLINE void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }
