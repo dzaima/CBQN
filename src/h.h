@@ -88,13 +88,13 @@ char* format_type(u8 u) {
 }
 
 #define FOR_PF(F) F(none, "(unknown fn)") \
-    F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") /*arith.c*/ \
-    F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼")          /*arith.c*/ \
-    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(select,"⊏")                /*sfns.c*/  \
-    F(slash,"/") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") F(join,"∾") F(take,"↑") F(drop,"↓")     /*sfns.c*/  \
-    F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)")        /*derv.c*/  \
-    F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn")         /*sysfn.c*/ \
-    F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") /*sysfn.c*/
+    /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
+    /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
+    /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(fmtN,"•FmtN") \
+    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(take,"↑") F(drop,"↓") \
+    /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
+    /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
+    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
 
 enum PrimFns {
   #define F(N,X) pf_##N,

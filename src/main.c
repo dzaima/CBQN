@@ -30,6 +30,7 @@
 #include "f64arr.c"
 #include "utf.c"
 #include "derv.c"
+#include "fns.c"
 #include "sfns.c"
 #include "sysfn.c"
 #include "arith.c"
@@ -89,6 +90,7 @@ int main() {
   c32arr_init();
   f64arr_init();
   arith_init();
+  fns_init();
   sfns_init();
   md1_init();
   md2_init();
