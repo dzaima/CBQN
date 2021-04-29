@@ -74,5 +74,6 @@ static inline void i32arr_init() {
   ti[t_i32arr].print =    arr_print; ti[t_i32slice].print = arr_print;
   ti[t_i32arr].isArr = true;         ti[t_i32slice].isArr = true;
   ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
+  ti[t_i32arr].elType = el_i32;      ti[t_i32slice].elType = el_i32;
   ti[t_i32arr].canStore = i32arr_canStore;
 }

@@ -29,6 +29,7 @@ B getFill(B x) { // consumes; can return bi_noFill
     if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); dec(x); return r; }
     if (t==t_c32arr || t==t_c32slice) { dec(x); return m_c32(' '); }
     if (t==t_i32arr || t==t_i32slice) { dec(x); return m_f64(0  ); }
+    if (t==t_f64arr || t==t_f64slice) { dec(x); return m_f64(0  ); }
     dec(x);
     return bi_noFill;
   }
@@ -118,8 +119,9 @@ B withFill(B x, B fill) { // consumes both
   #endif
   if (noFill(fill) && v(x)->type!=t_fillarr && v(x)->type!=t_fillslice) return x;
   switch(v(x)->type) {
-    case t_i32arr : case t_i32slice : if(fill.u == m_i32(0  ).u) return x; break;
-    case t_c32arr : case t_c32slice : if(fill.u == m_c32(' ').u) return x; break;
+    case t_f64arr : case t_f64slice:
+    case t_i32arr : case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
+    case t_c32arr : case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (equal(c(FillArr,c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (equal(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {

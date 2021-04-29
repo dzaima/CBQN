@@ -118,6 +118,12 @@ usz arr_csz(B x) {
   return r;
 }
 
+u8 fillElType(B x) {
+  if (isNum(x)) return el_i32;
+  if (isC32(x)) return el_c32;
+  return el_B;
+}
+
 
 
 #ifdef DEBUG
@@ -182,7 +188,8 @@ static inline void hdr_init() {
     ti[i].m2_d  = def_m2_d;
     ti[i].isArr = false;
     ti[i].arrD1 = false;
-    ti[i].identity = def_identity;
+    ti[i].elType    = el_B;
+    ti[i].identity  = def_identity;
     ti[i].decompose = def_decompose;
     ti[i].slice     = def_slice;
     ti[i].canStore  = def_canStore;

@@ -245,23 +245,24 @@ B select_c2(B t, B w, B x) {
       if (rr>UR_MAX) thrM("⊏: Result rank too large");
       usz csz = arr_csz(x);
       usz cam = a(x)->sh[0];
-      usz ria = wia*csz;
-      HArr_p r = m_harrUp(ria);
-      usz* rsh = arr_shAllocR(r.b, rr);
+      MAKE_MUT(r, wia*csz);
+      mut_to(r, fillElType(xf));
+      for (usz i = 0; i < wia; i++) {
+        B cw = wgetU(w, i);
+        if (!isNum(cw)) { harr_pfree(mut_fp(r), i*csz); goto base; }
+        f64 c = o2f(cw);
+        if (c<0) c+= cam;
+        if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
+        mut_copy(r, i*csz, x, csz*(usz)c, csz);
+      }
+      B rb = mut_fp(r);
+      usz* rsh = arr_shAllocR(rb, rr);
       if (rsh) {
         memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
         memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
       }
-      for (usz i = 0; i < wia; i++) {
-        B cw = wgetU(w, i);
-        if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
-        f64 c = o2f(cw);
-        if (c<0) c+= cam;
-        if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
-        for (usz j = 0; j < csz; j++) r.a[i*csz+j] = xget(x, c*csz+j);
-      }
       dec(w); dec(x);
-      return withFill(r.b,xf);
+      return withFill(rb,xf);
     }
   }
   base:
@@ -342,13 +343,14 @@ B drop_c2(B t, B w, B x) {
 }
 B join_c2(B t, B w, B x) {
   if (!isArr(w)|!isArr(x) || rnk(w)!=1 | rnk(x)!=1) thrM("∾: NYI non-vector args");
-  usz wia = a(w)->ia; BS2B wget = TI(w).get;
-  usz xia = a(x)->ia; BS2B xget = TI(x).get;
-  HArr_p r = m_harrUv(wia+xia);
-  for (i64 i = 0; i < wia; i++) r.a[i    ] = wget(w, i);
-  for (i64 i = 0; i < xia; i++) r.a[i+wia] = xget(x, i);
+  usz wia = a(w)->ia;
+  usz xia = a(x)->ia;
+  MAKE_MUT(r, wia+xia);
+  mut_to(r, el_or(TI(w).elType, TI(x).elType));
+  mut_copy(r, 0,   w, 0, wia);
+  mut_copy(r, wia, x, 0, xia);
   dec(x); dec(w);
-  return r.b;
+  return mut_fv(r);
 }
 
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);

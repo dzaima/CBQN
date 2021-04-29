@@ -28,6 +28,7 @@
 #include "i32arr.c"
 #include "c32arr.c"
 #include "f64arr.c"
+#include "mut.c"
 #include "utf.c"
 #include "derv.c"
 #include "fns.c"

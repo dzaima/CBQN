@@ -72,6 +72,15 @@ enum Type {
   #endif
   t_COUNT
 };
+
+enum ElType { // a⌈b shall return the type that can store both, if possible
+  el_i32=0,
+  el_f64=1,
+  el_c32=2,
+  el_B  =3,
+  el_MAX=4 // also used for incomplete in mut.c
+};
+
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
     case t_empty:return"empty"; case t_shape:return"shape";
@@ -204,6 +213,7 @@ void printRaw(B x);     // doesn't consume
 void print(B x);        // doesn't consume
 bool equal(B w, B x);   // doesn't consume
 void arr_print(B x);    // doesn't consume
+u8   fillElType(B x);   // doesn't consume
 bool eqShape(B w, B x); // doesn't consume
 usz arr_csz(B x);       // doesn't consume
 bool eqShPrefix(usz* w, usz* x, ur len);
@@ -228,12 +238,14 @@ B catchMessage;
 
 
 
-#define c(T,x) ((T*)((x).u&0xFFFFFFFFFFFFull))
-#define v(x) c(Value, x)
-#define a(x) c(Arr  , x)
-#define  rnk(x  ) (v(x)->extra)   // expects argument to be Arr
-#define srnk(x,r) (v(x)->extra=(r))
-#define VT(x,t) assert(isVal(x) && v(x)->type==t)
+#define c(T,X) ((T*)((X).u&0xFFFFFFFFFFFFull))
+#define v(X) c(Value, X)
+#define a(X) c(Arr  , X)
+#define  prnk(X  ) (X->extra)
+#define sprnk(X,R) (X->extra=(R))
+#define  rnk(X  )  prnk(v(X))
+#define srnk(X,R) sprnk(v(X),R)
+#define VT(X,T) assert(isVal(X) && v(X)->type==(T))
 
 void print_vmStack();
 #ifdef DEBUG
@@ -358,8 +370,10 @@ typedef struct TypeInfo {
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object
-  B2b canStore; // doesn't consume
   B2B identity; // return identity element of this function; doesn't consume
+  
+  B2b canStore; // doesn't consume
+  u8 elType;
   
   B2v print;  // doesn't consume
   B2v visit;  // call mm_visit for all referents
