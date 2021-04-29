@@ -206,7 +206,6 @@ B select_c1(B t, B x) {
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrM("⊏: Argument shape cannot start with 0");
-  inc(x);
   B r = TI(x).slice(x,0);
   usz* sh = arr_shAllocR(r, xr-1);
   usz ia = 1;
@@ -215,18 +214,39 @@ B select_c1(B t, B x) {
     ia*= a(x)->sh[i];
   }
   a(r)->ia = ia;
-  dec(x);
   return r;
 }
 B select_c2(B t, B w, B x) {
-  if (isArr(w) && isArr(x)) {
-    B xf = getFill(inc(x));
-    BS2B wgetU = TI(w).getU;
-    BS2B xget = TI(x).get;
-    if (rnk(x)==1) {
-      usz wia = a(w)->ia;
-      usz xia = a(x)->ia;
-      HArr_p r = m_harrUc(w);
+  if (!isArr(x)) thrM("⊏: 𝕩 cannot be an atom");
+  ur xr = rnk(x);
+  if (!isArr(w)) {
+    if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
+    usz csz = arr_csz(x);
+    usz cam = a(x)->sh[0];
+    i64 wi = o2i64(w);
+    if (wi<0) wi+= cam;
+    if ((usz)wi >= cam) thrM("⊏: Indexing out-of-bounds");
+    B r = TI(x).slice(x, wi*csz);
+    usz* sh = arr_shAllocI(r, csz, xr-1);
+    if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
+    return r;
+  }
+  B xf = getFill(inc(x));
+  BS2B xget = TI(x).get;
+  if (xr==1) {
+    usz wia = a(w)->ia;
+    usz xia = a(x)->ia;
+    HArr_p r = m_harrUc(w);
+    if(v(w)->type==t_i32arr | v(w)->type==t_i32slice) {
+      i32* wp = v(w)->type==t_i32arr? i32arr_ptr(w) : c(I32Slice,w)->a;
+      for (usz i = 0; i < wia; i++) {
+        i64 c = wp[i];
+        if (c<0) c+= xia;
+        if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
+        r.a[i] = xget(x, c);
+      }
+    } else {
+      BS2B wgetU = TI(w).getU;
       for (usz i = 0; i < wia; i++) {
         B cw = wgetU(w, i);
         if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
@@ -235,35 +255,35 @@ B select_c2(B t, B w, B x) {
         if ((usz)c >= xia) thrM("⊏: Indexing out-of-bounds");
         r.a[i] = xget(x, c);
       }
-      dec(w); dec(x);
-      return withFill(r.b,xf);
-    } else {
-      ur wr = rnk(w); usz wia = a(w)->ia;
-      ur xr = rnk(x);
-      u32 rr = wr+xr-1;
-      if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
-      if (rr>UR_MAX) thrM("⊏: Result rank too large");
-      usz csz = arr_csz(x);
-      usz cam = a(x)->sh[0];
-      MAKE_MUT(r, wia*csz);
-      mut_to(r, fillElType(xf));
-      for (usz i = 0; i < wia; i++) {
-        B cw = wgetU(w, i);
-        if (!isNum(cw)) { harr_pfree(mut_fp(r), i*csz); goto base; }
-        f64 c = o2f(cw);
-        if (c<0) c+= cam;
-        if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
-        mut_copy(r, i*csz, x, csz*(usz)c, csz);
-      }
-      B rb = mut_fp(r);
-      usz* rsh = arr_shAllocR(rb, rr);
-      if (rsh) {
-        memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
-        memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
-      }
-      dec(w); dec(x);
-      return withFill(rb,xf);
     }
+    dec(w); dec(x);
+    return withFill(r.b,xf);
+  } else {
+    BS2B wgetU = TI(w).getU;
+    ur wr = rnk(w); usz wia = a(w)->ia;
+    u32 rr = wr+xr-1;
+    if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
+    if (rr>UR_MAX) thrM("⊏: Result rank too large");
+    usz csz = arr_csz(x);
+    usz cam = a(x)->sh[0];
+    MAKE_MUT(r, wia*csz);
+    mut_to(r, fillElType(xf));
+    for (usz i = 0; i < wia; i++) {
+      B cw = wgetU(w, i);
+      if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
+      f64 c = o2f(cw);
+      if (c<0) c+= cam;
+      if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
+      mut_copy(r, i*csz, x, csz*(usz)c, csz);
+    }
+    B rb = mut_fp(r);
+    usz* rsh = arr_shAllocR(rb, rr);
+    if (rsh) {
+      memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
+      memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
+    }
+    dec(w); dec(x);
+    return withFill(rb,xf);
   }
   base:
   return c2(rt_select, w, x);

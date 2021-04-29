@@ -369,7 +369,7 @@ typedef struct TypeInfo {
   BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
-  BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object
+  BS2B slice; // consumes, but keeps original object alive; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object
   B2B identity; // return identity element of this function; doesn't consume
   
   B2b canStore; // doesn't consume

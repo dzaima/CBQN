@@ -52,6 +52,10 @@ u8 el_or(u8 a, u8 b) {
   #undef M
 }
 
+void mut_pfree(Mut* m, usz n) { // free the first n elements
+  if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
+}
+
 // expects x to be an array, each position must be written to precisely once
 // doesn't consume x
 void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
