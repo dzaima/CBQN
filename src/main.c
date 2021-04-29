@@ -99,21 +99,21 @@ int main() {
   
   // fake runtime
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div, bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile, bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq  , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_N  , bi_N     , bi_N     , bi_N    , bi_ud  , bi_N    , bi_N,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N  , bi_N     , bi_select, bi_pick , bi_N   , bi_N    , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_N  , bi_N     , bi_N     , bi_each , bi_tbl , bi_N    , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_N    , bi_N  , bi_before, bi_N     , bi_N    , bi_val , bi_N    , bi_N,
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile, bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq  , bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_N     , bi_take  , bi_drop , bi_ud  , bi_N    , bi_N,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N    , bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N    , bi_fold,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond , bi_N,
     /* ⚇⍟⎊         */ bi_N    , bi_repeat, bi_catch
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,0,0,0,0,0,0,0,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,0,0,0,1,1,0,1,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,0,0,1,0,0,1,0,0,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,0,0,0,0,0,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
     /* ⚇⍟⎊         */ 0,1,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
@@ -121,9 +121,10 @@ int main() {
   B frtObj = m_caB(rtLen, fruntime);
   
   B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
+  B runtime_0[] = {bi_floor, bi_ceil, bi_stile, bi_lt, bi_gt, bi_ne, bi_ge, bi_rtack, bi_ltack, bi_join, bi_take, bi_drop, bi_select, bi_const, bi_swap, bi_fold, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_repeat};
   
   Block* runtime_b = compile(
-    #include "runtime"
+    #include "runtime1"
   );
   B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
   B rtObjRaw = TI(rtRes).get(rtRes,0);

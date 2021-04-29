@@ -150,7 +150,7 @@ B eachd(B f, B w, B x) { // complete w F¨ x
     ur mr = rnk(w); if(rnk(w)<mr) mr = rnk(w);
     if(!eqShPrefix(a(w)->sh, a(x)->sh, mr)) { decR(x); thrM("Mapping: Expected equal shape prefix"); }
   }
-  if (isMd(f)) if ((isArr(w)&&a(w)->ia) || (isArr(x)&&a(x)->ia)) { decR(x); thrM("Calling a modifier"); } // case where both are scalars has already been taken care of
+  if (isMd(f)) if ((isArr(w)&&a(w)->ia) || (isArr(x)&&a(x)->ia)) { decR(x); thrM("Calling a modifier"); } // case where both are units has already been taken care of
   
   HArr_p r = m_harrUc(!isArr(w)? x : rnk(w)>rnk(x)? w : x);
   for(usz i = 0; i < r.c->ia; i++) r.a[i] = inc(f);
@@ -310,23 +310,50 @@ B select_c1(B t, B x) {
   return r;
 }
 B select_c2(B t, B w, B x) {
-  if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1) {
-    usz wia = a(w)->ia;
-    usz xia = a(x)->ia;
+  if (isArr(w) && isArr(x)) {
     B xf = getFill(inc(x));
-    HArr_p r = m_harrUc(w);
     BS2B wgetU = TI(w).getU;
     BS2B xget = TI(x).get;
-    for (usz i = 0; i < wia; i++) {
-      B cw = wgetU(w, i);
-      if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
-      f64 c = o2f(cw);
-      if (c<0) c+= xia;
-      if (c!=(usz)c | c>=xia) { harr_pfree(r.b, i); goto base; }
-      r.a[i] = xget(x, c);
+    if (rnk(x)==1) {
+      usz wia = a(w)->ia;
+      usz xia = a(x)->ia;
+      HArr_p r = m_harrUc(w);
+      for (usz i = 0; i < wia; i++) {
+        B cw = wgetU(w, i);
+        if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
+        f64 c = o2f(cw);
+        if (c<0) c+= xia;
+        if ((usz)c >= xia) thrM("⊏: Indexing out-of-bounds");
+        r.a[i] = xget(x, c);
+      }
+      dec(w); dec(x);
+      return withFill(r.b,xf);
+    } else {
+      ur wr = rnk(w); usz wia = a(w)->ia;
+      ur xr = rnk(x);
+      u32 rr = wr+xr-1;
+      if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
+      if (rr>UR_MAX) thrM("⊏: Result rank too large");
+      usz csz = arr_csz(x);
+      usz cam = a(x)->sh[0];
+      usz ria = wia*csz;
+      HArr_p r = m_harrUp(ria);
+      usz* rsh = arr_shAllocR(r.b, rr);
+      if (rsh) {
+        memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
+        memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
+      }
+      for (usz i = 0; i < wia; i++) {
+        B cw = wgetU(w, i);
+        if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
+        f64 c = o2f(cw);
+        if (c<0) c+= cam;
+        if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
+        for (usz j = 0; j < csz; j++) r.a[i*csz+j] = xget(x, c*csz+j);
+      }
+      dec(w); dec(x);
+      return withFill(r.b,xf);
     }
-    dec(w); dec(x);
-    return withFill(r.b,xf);
   }
   base:
   return c2(rt_select, w, x);
@@ -396,14 +423,41 @@ B slash_c2(B t, B w, B x) {
   return c2(rt_slash, w, x);
 }
 
+B slicev(B x, usz s, usz ia) {
+  usz xia = a(x)->ia; if (s+ia>xia) thrM("↑/↓: NYI fills");
+  B r = TI(x).slice(x, s);
+  arr_shVec(r, ia);
+  return r;
+}
+B take_c2(B t, B w, B x) {
+  if (!isArr(x) || rnk(x)!=1) thrM("↑: NYI 1≠=𝕩");
+  i64 v = o2i64(w); usz ia = a(x)->ia;
+  return v<0? slicev(x, ia+v, -v) : slicev(x, 0, v);
+}
+B drop_c2(B t, B w, B x) {
+  if (!isArr(x) || rnk(x)!=1) thrM("↓: NYI 1≠=𝕩");
+  i64 v = o2i64(w); usz ia = a(x)->ia;
+  return v<0? slicev(x, 0, v+ia) : slicev(x, v, ia-v);
+}
+B join_c2(B t, B w, B x) {
+  if (!isArr(w)|!isArr(x) || rnk(w)!=1 | rnk(x)!=1) thrM("∾: NYI non-vector args");
+  usz wia = a(w)->ia; BS2B wget = TI(w).get;
+  usz xia = a(x)->ia; BS2B xget = TI(x).get;
+  HArr_p r = m_harrUv(wia+xia);
+  for (i64 i = 0; i < wia; i++) r.a[i    ] = wget(w, i);
+  for (i64 i = 0; i < xia; i++) r.a[i+wia] = xget(x, i);
+  dec(x); dec(w);
+  return r.b;
+}
+
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
 void print_fun_def(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 
-B                                bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_select, bi_slash, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
-static inline void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) ba(fne) ba(feq) ba(select) ba(slash) ba(ltack) ba(rtack) bm(fmtF) bm(fmtN)
+B                                bi_shape, bi_pick, bi_ud, bi_pair, bi_fne, bi_feq, bi_select, bi_slash, bi_ltack, bi_rtack, bi_join, bi_take, bi_drop, bi_fmtF, bi_fmtN;
+static inline void sfns_init() { ba(shape) ba(pick) bm(ud) ba(pair) ba(fne) ba(feq) ba(select) ba(slash) ba(ltack) ba(rtack) bd(join) bd(take) bd(drop) bm(fmtF) bm(fmtN)
   ti[t_funBI].print = print_fun_def;
   ti[t_funBI].identity = funBI_identity;
 }

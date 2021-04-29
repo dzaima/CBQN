@@ -3,6 +3,6 @@ if [[ $# -ne 1 ]]; then
   echo "Usage: ./genRuntime path/to/mlochbaum/BQN"
   exit
 fi
-./cc.bqn $1 r > src/runtime
+./cc.bqn $1 r1 > src/runtime1
 ./cc.bqn $1 c > src/compiler
 ./cc.bqn $1 f > src/formatter

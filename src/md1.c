@@ -114,6 +114,12 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return c;
 }
 
+B const_c1(B d     , B x) {         dec(x); return inc(c(Md1D,d)->f); }
+B const_c2(B d, B w, B x) { dec(w); dec(x); return inc(c(Md1D,d)->f); }
+
+B swap_c1(B d     , B x) { return c2(c(Md1D,d)->f, inc(x), x); }
+B swap_c2(B d, B w, B x) { return c2(c(Md1D,d)->f,     x , w); }
+
 
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
@@ -121,8 +127,8 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
-B                               bi_tbl, bi_each, bi_fold, bi_scan;
-static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan)
+B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap;
+static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap)
   ti[t_md1BI].print = print_md1_def;
 }
 

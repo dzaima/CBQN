@@ -26,6 +26,7 @@
 
 #define usz u32
 #define ur u8
+#define UR_MAX 255
 
 #define CTR_FOR(F)
 #define CTR_DEF(N) u64 N;
@@ -87,10 +88,12 @@ char* format_type(u8 u) {
 }
 
 #define FOR_PF(F) F(none, "(unknown fn)") \
-    F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") /*arith.c*/ \
-    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(select,"⊏") F(slash,"/") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") /*sfns.c*/ \
-    F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") /*derv.c*/ \
-    F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") /*sysfn.c*/ \
+    F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") /*arith.c*/ \
+    F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼")          /*arith.c*/ \
+    F(shape,"⥊") F(pick,"⊑") F(ud,"↕") F(pair,"{𝕨‿𝕩}") F(fne,"≢") F(feq,"≡") F(select,"⊏")                /*sfns.c*/  \
+    F(slash,"/") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"⍕") F(fmtN,"⍕") F(join,"∾") F(take,"↑") F(drop,"↓")     /*sfns.c*/  \
+    F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)")        /*derv.c*/  \
+    F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn")         /*sysfn.c*/ \
     F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") /*sysfn.c*/
 
 enum PrimFns {
@@ -107,22 +110,23 @@ char* format_pf(u8 u) {
 }
 enum PrimMd1 {
   pm1_none,
-  pm1_tbl, pm1_each, pm1_fold, pm1_scan, // md1.c
+  pm1_tbl, pm1_each, pm1_fold, pm1_scan, pm1_const, pm1_swap, // md1.c
 };
 char* format_pm1(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm1_tbl: return"⌜"; case pm1_each: return"¨"; case pm1_fold: return"´"; case pm1_scan: return"`";
+    case pm1_tbl:return"⌜"; case pm1_each:return"¨"; case pm1_fold:return"´"; case pm1_scan:return"`"; case pm1_const:return"˙"; case pm1_swap:return"˜";
   }
 }
 enum PrimMd2 {
   pm2_none,
-  pm2_val, pm2_before, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
+  pm2_val, pm2_atop, pm2_over, pm2_before, pm2_after, pm2_cond, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
 };
 char* format_pm2(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm2_val: return"⊘"; case pm2_before: return"⊸"; case pm2_repeat: return"⍟"; case pm2_fillBy: return"•_fillBy_"; case pm2_catch: return"⎊";
+    case pm2_val:return"⊘"; case pm2_repeat:return"⍟"; case pm2_fillBy:return"•_fillBy_"; case pm2_catch:return"⎊";
+    case pm2_atop:return"∘"; case pm2_over:return"○"; case pm2_before:return"⊸"; case pm2_after:return"⟜"; case pm2_cond:return"◶";
   }
 }
 
