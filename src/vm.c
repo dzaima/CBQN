@@ -205,7 +205,7 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   return ret;
 }
 
-void v_set(Scope* pscs[], B s, B x, bool upd) { // frees s, doesn't consume x
+void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
   if (isVar(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->vars[(u32)s.u];
@@ -218,14 +218,11 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // frees s, doesn't consume x
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (!eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
+    if (!isArr(x) || !eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xgetU = TI(x).getU;
-    for (u64 i = 0; i < ia; i++) {
-      v_set(pscs, sp[i], xgetU(x,i), upd);
-    }
-    dec(s);
+    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
   }
 }
 B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
@@ -372,12 +369,12 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
-      case SETN: { P(s)    P(x) v_set(pscs, s, x, false); ADD(x); break; }
-      case SETU: { P(s)    P(x) v_set(pscs, s, x, true ); ADD(x); break; }
+      case SETN: { P(s)    P(x) v_set(pscs, s, x, false); dec(s); ADD(x); break; }
+      case SETU: { P(s)    P(x) v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
       case SETM: { P(s)P(f)P(x)
         B w = v_get(pscs, s);
         B r = c2(f,w,x); dec(f);
-        v_set(pscs, s, r, true);
+        v_set(pscs, s, r, true); dec(s);
         ADD(r);
         break;
       }

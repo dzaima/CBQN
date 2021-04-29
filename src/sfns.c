@@ -286,6 +286,7 @@ B select_c2(B t, B w, B x) {
     return withFill(rb,xf);
   }
   base:
+  dec(xf);
   return c2(rt_select, w, x);
 }
 

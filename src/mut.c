@@ -54,6 +54,7 @@ u8 el_or(u8 a, u8 b) {
 
 void mut_pfree(Mut* m, usz n) { // free the first n elements
   if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
+  else mm_free((Value*) m->val);
 }
 
 // expects x to be an array, each position must be written to precisely once
