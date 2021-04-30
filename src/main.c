@@ -124,7 +124,7 @@ int main() {
   B frtObj = m_caB(rtLen, fruntime);
   
   B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
-  B runtime_0[] = {bi_floor, bi_ceil, bi_stile, bi_lt, bi_gt, bi_ne, bi_ge, bi_rtack, bi_ltack, bi_join, bi_take, bi_drop, bi_select, bi_const, bi_swap, bi_fold, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_repeat};
+  B runtime_0[] = {bi_floor, bi_ceil, bi_stile, bi_lt, bi_gt, bi_ne, bi_ge, bi_rtack, bi_ltack, bi_join, bi_take, bi_drop, bi_select, bi_const, bi_swap, bi_each, bi_fold, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_repeat};
   
   Block* runtime_b = compile(
     #include "runtime1"
