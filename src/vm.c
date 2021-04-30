@@ -332,8 +332,9 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       case ARRO: case ARRM: {
         i32 sz = *bc++;
         HArr_p r = m_harrUv(sz);
-        for (i32 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
-        ADD(r.b);
+        bool allNum = true;
+        for (i32 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+        ADD(allNum && sz? withFill(r.b, m_f64(0)) : r.b);
         break;
       }
       case DFND: {

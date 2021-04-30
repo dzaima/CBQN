@@ -365,24 +365,82 @@ B drop_c2(B t, B w, B x) {
   i64 v = o2i64(w); usz ia = a(x)->ia;
   return v<0? slicev(x, 0, v+ia) : slicev(x, v, ia-v);
 }
+
+B rt_join;
+B join_c1(B t, B x) {
+  return c1(rt_join, x);
+}
 B join_c2(B t, B w, B x) {
-  if (!isArr(w)|!isArr(x) || rnk(w)!=1 | rnk(x)!=1) thrM("∾: NYI non-vector args");
-  usz wia = a(w)->ia;
-  usz xia = a(x)->ia;
+  B f = fill_both(w, x);
+  if (!isArr(w)) w = m_hunit(w); ur wr = rnk(w); usz wia = a(w)->ia; usz* wsh = a(w)->sh;
+  if (!isArr(x)) x = m_hunit(x); ur xr = rnk(x); usz xia = a(x)->ia; usz* xsh = a(x)->sh;
+  ur c = wr>xr?wr:xr;
+  if (c==0) {
+    HArr_p r = m_harrUv(2);
+    r.a[0] = TI(w).get(w,0); dec(w);
+    r.a[1] = TI(x).get(x,0); dec(x);
+    return r.b;
+  }
+  if (c-wr > 1 || c-xr > 1) thrM("∾: Argument ranks must differ by 1 or less");
   MAKE_MUT(r, wia+xia);
   mut_to(r, el_or(TI(w).elType, TI(x).elType));
   mut_copy(r, 0,   w, 0, wia);
   mut_copy(r, wia, x, 0, xia);
-  dec(x); dec(w);
-  return mut_fv(r);
+  B rb = mut_fp(r);
+  usz* sh = arr_shAllocR(rb, c);
+  if (sh) {
+    for (i32 i = 1; i < c; i++) {
+      usz s = xsh[i+xr-c];
+      if (wsh[i+wr-c] != s) { mut_pfree(r, wia+xia); thrM("∾: Lengths not matchable"); }
+      sh[i] = s;
+    }
+    sh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
+  }
+  dec(w); dec(x);
+  return qWithFill(rb, f);
+}
+
+B shiftb_c1(B t, B x) {
+  if (!isArr(x) || rnk(x)==0) thrM("»: Argument cannot be a scalar");
+  usz ia = a(x)->ia;
+  if (ia==0) return x;
+  B xf = getFill(inc(x));
+  if (noFill(xf)) thrM("»: Argument didn't have a fill");
+  usz csz = arr_csz(x);
+  
+  MAKE_MUT(r, ia);
+  mut_copy(r, csz, x, 0, ia-csz);
+  mut_fill(r, 0, xf, csz);
+  return qWithFill(mut_fcd(r, x), xf);
+}
+
+void shift_check(B w, B x) {
+  ur wr = rnk(w); usz* wsh = a(w)->sh;
+  ur xr = rnk(x); usz* xsh = a(x)->sh;
+  if (wr+1!=xr & wr!=xr) thrM("shift: =𝕨 must be =𝕩 or ¯1+=𝕩");
+  for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrM("shift: Lengths not matchable");
+}
+B shiftb_c2(B t, B w, B x) {
+  // return c2(rt_shiftb, w, x);
+  if (!isArr(x) || rnk(x)==0) thrM("»: 𝕩 cannot be a scalar");
+  if (!isArr(w)) w = m_hunit(w); usz wia = a(w)->ia;
+  if (!isArr(x)) x = m_hunit(x); usz xia = a(x)->ia;
+  B f = fill_both(w, x);
+  shift_check(w, x);
+  MAKE_MUT(r, xia);
+  int mid = wia<xia? wia : xia;
+  mut_copy(r, 0  , w, 0, mid);
+  mut_copy(r, mid, x, 0, xia-mid);
+  dec(w);
+  return qWithFill(mut_fcd(r, x), f);
 }
 
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
-B                                bi_shape, bi_pick, bi_pair, bi_select, bi_slash, bi_join, bi_take, bi_drop;
-static inline void sfns_init() { ba(shape) ba(pick) ba(pair) ba(select) ba(slash) bd(join) bd(take) bd(drop)
+B                                bi_shape, bi_pick, bi_pair, bi_select, bi_slash, bi_join, bi_shiftb, /*bi_shifta,*/ bi_take, bi_drop;
+static inline void sfns_init() { ba(shape) ba(pick) ba(pair) ba(select) ba(slash) ba(join) ba(shiftb) /*ba(shifta)*/ bd(take) bd(drop)
 }
 
 #undef ba

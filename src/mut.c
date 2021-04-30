@@ -27,16 +27,25 @@ void mut_to(Mut* m, u8 n) {
   }
 }
 
-B mut_fv(Mut* m) {
-  assert(m->type!=el_MAX);
+B mut_fv(Mut* m) { assert(m->type!=el_MAX);
   m->val->sh = &m->val->ia;
   B r = tag(m->val, ARR_TAG);
   srnk(r, 1);
   return r;
 }
-B mut_fp(Mut* m) {
-  assert(m->type!=el_MAX);
+B mut_fp(Mut* m) { assert(m->type!=el_MAX);
   return tag(m->val, ARR_TAG);
+}
+B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
+  B r = tag(m->val, ARR_TAG);
+  arr_shCopy(r, x);
+  return r;
+}
+B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
+  B r = tag(m->val, ARR_TAG);
+  arr_shCopy(r, x);
+  dec(x);
+  return r;
 }
 
 u8 el_or(u8 a, u8 b) {
@@ -55,6 +64,44 @@ u8 el_or(u8 a, u8 b) {
 void mut_pfree(Mut* m, usz n) { // free the first n elements
   if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
   else mm_free((Value*) m->val);
+}
+
+// doesn't consume x; fills m[ms…ms+l] with x
+void mut_fill(Mut* m, usz ms, B x, usz l) {
+  again:
+  #define AGAIN(T) { mut_to(m, T); goto again; }
+  switch(m->type) {
+    case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
+    
+    case el_i32: {
+      if (!q_i32(x)) AGAIN(isF64(x)? el_f64 : el_B);
+      i32* p = ((I32Arr*)m->val)->a+ms;
+      i32 v = o2iu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_c32: {
+      if (!isC32(x)) AGAIN(el_B);
+      u32* p = ((C32Arr*)m->val)->a+ms;
+      u32 v = o2cu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_f64: {
+      if (!isF64(x)) AGAIN(el_B);
+      f64* p = ((F64Arr*)m->val)->a+ms;
+      f64 v = o2fu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_B: {
+      B* p = ((HArr*)m->val)->a+ms;
+      for (usz i = 0; i < l; i++) p[i] = x;
+      if (isVal(x)) for (usz i = 0; i < l; i++) inc(x);
+      return;
+    }
+  }
+  #undef AGAIN
 }
 
 // expects x to be an array, each position must be written to precisely once

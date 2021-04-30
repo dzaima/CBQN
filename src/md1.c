@@ -1,7 +1,8 @@
 #include "h.h"
 
 B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
-  return eachm(f, x);
+  // return eachm(f, x);
+  return withFill(eachm(f, x), m_f64(0));
 }
 B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isAtm(w)) w = m_hunit(w);
@@ -27,14 +28,17 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
   }
   dec(w); dec(x);
-  return r.b;
+  // return r.b;
+  return withFill(r.b, m_f64(0));
 }
 
 B each_c1(B d, B x) { B f = c(Md1D,d)->f;
-  return eachm(f, x);
+  // return eachm(f, x);
+  return withFill(eachm(f, x), m_f64(0));
 }
 B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  return eachd(f, w, x);
+  // return eachd(f, w, x);
+  return withFill(eachd(f, w, x), m_f64(0));
 }
 
 
@@ -63,7 +67,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!isArr(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
-  
+  B wf = getFill(inc(w));
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
@@ -84,7 +88,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     B pr = r.a[0] = c2(f, w, xget(x,0)); i++;
     for (; i < ia; i++) r.a[i] = pr = c2(f, inc(pr), xget(x,i));
   }
-  return reuse? x : harr_fcd(r, x);
+  return withFill(reuse? x : harr_fcd(r, x), wf);
 }
 
 B fold_c1(B d, B x) { B f = c(Md1D,d)->f;

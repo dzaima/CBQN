@@ -23,6 +23,10 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 B getFill(B x) { // consumes; can return bi_noFill
+  bool defZero = true;
+  #ifdef CATCH_ERRORS
+  defZero = false;
+  #endif
   if (isArr(x)) {
     u8 t = v(x)->type;
     if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); dec(x); return r; }
@@ -31,13 +35,12 @@ B getFill(B x) { // consumes; can return bi_noFill
     if (t==t_i32arr || t==t_i32slice) { dec(x); return m_f64(0  ); }
     if (t==t_f64arr || t==t_f64slice) { dec(x); return m_f64(0  ); }
     dec(x);
-    return bi_noFill;
+    return defZero? m_f64(0) : bi_noFill;
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
   dec(x);
-  if (isMd(x) || isFun(x)) return bi_noFill;
-  return bi_noFill;
+  return defZero? m_f64(0) : bi_noFill;
 }
 bool noFill(B x) { return x.u == bi_noFill.u; }
 
@@ -112,6 +115,19 @@ void validateFill(B x) {
     assert(' '==(u32)x.u);
   }
 }
+
+B fill_both(B w, B x) { // doesn't consume
+  B fw = getFill(inc(w));
+  if (noFill(fw)) return bi_noFill;
+  B fx = getFill(inc(x));
+  if (!equal(fw, fx)) {
+    dec(fw); dec(fx);
+    return bi_noFill;
+  }
+  dec(fw);
+  return fx;
+}
+
 B withFill(B x, B fill) { // consumes both
   assert(isArr(x));
   #ifdef DEBUG
@@ -140,4 +156,8 @@ B withFill(B x, B fill) { // consumes both
   for (usz i = 0; i < ia; i++) a[i] = xget(x,i);
   dec(x);
   return r;
+}
+B qWithFill(B x, B fill) { // consumes both
+  if (noFill(fill)) return x;
+  return withFill(x, fill);
 }

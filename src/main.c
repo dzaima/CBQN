@@ -10,8 +10,9 @@
 // #define USE_VALGRIND // whether to mark freed memory for valgrind
 // #define DONT_FREE    // don't actually ever free objects, such that they can be printed after being freed for debugging
 // #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
+// #define ALL_R0       // use all of r0.bqn for runtime_0
+// #define ALL_R1       // use all of r1.bqn for runtime
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
-// #define ALL_RUNTIME  // don't use custom native runtime parts
 
 // #define LOG_GC       // log GC stats
 // #define FORMATTER    // use self-hosted formatter for output
@@ -102,18 +103,18 @@ int main() {
   
   // fake runtime
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile, bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq  , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_N     , bi_take  , bi_drop , bi_ud  , bi_N    , bi_N,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N    , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N    , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond , bi_N,
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_N     , bi_take  , bi_drop , bi_ud  , bi_N     , bi_shiftb,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N     , bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N     , bi_fold,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond  , bi_N,
     /* ⚇⍟⎊         */ bi_N    , bi_repeat, bi_catch
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,0,0,0,0,0,0,0,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,0,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
@@ -124,11 +125,25 @@ int main() {
   B frtObj = m_caB(rtLen, fruntime);
   
   B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
-  B runtime_0[] = {bi_floor, bi_ceil, bi_stile, bi_lt, bi_gt, bi_ne, bi_ge, bi_rtack, bi_ltack, bi_join, bi_take, bi_drop, bi_select, bi_const, bi_swap, bi_each, bi_fold, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_repeat};
+  
+  #ifndef ALL_R0
+  B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
+  #else
+  Block* runtime0_b = compile(
+    #include "runtime0"
+  );
+  B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
+  B* runtime_0 = toHArr(r0r)->a;
+  #endif
   
   Block* runtime_b = compile(
     #include "runtime1"
   );
+  
+  #ifdef ALL_R0
+  dec(r0r);
+  #endif
+  
   B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
   B rtObjRaw = TI(rtRes).get(rtRes,0);
   B rtFinish = TI(rtRes).get(rtRes,1);
@@ -144,9 +159,10 @@ int main() {
   rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
   rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
   rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
+  rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
   
   for (usz i = 0; i < runtimeLen; i++) {
-    #ifdef ALL_RUNTIME
+    #ifdef ALL_R1
       B r = rtObjGet(rtObjRaw, i);
     #else
       B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);

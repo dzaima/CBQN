@@ -101,7 +101,7 @@ char* format_type(u8 u) {
     /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
     /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
     /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(fmtN,"•FmtN") \
-    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(take,"↑") F(drop,"↓") \
+    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(shiftb,"»") F(take,"↑") F(drop,"↓") \
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
     /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
@@ -216,7 +216,7 @@ bool equal(B w, B x);   // doesn't consume
 void arr_print(B x);    // doesn't consume
 u8   fillElType(B x);   // doesn't consume
 bool eqShape(B w, B x); // doesn't consume
-usz arr_csz(B x);       // doesn't consume
+usz  arr_csz(B x);      // doesn't consume
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all
@@ -337,10 +337,11 @@ usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)
 i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
 u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
 f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }
-i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
+i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 i32 o2cu  (B x) { return (u32)x.u; }
 usz o2su  (B x) { return (usz)x.f; }
+i64 o2fu  (B x) { return      x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
 bool q_f64(B x) { return isF64(x) || isI32(x); }
