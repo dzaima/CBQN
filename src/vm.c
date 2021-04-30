@@ -83,9 +83,9 @@ void printBC(i32* p) {
   printf("%s", nameBC(p));
   i32* n = nextBC(p);
   p++;
-  i32 am = n-p;
+  i64 am = n-p;
   i32 len = 0;
-  for (i32 i = 0; i < am; i++) printf(" %d", p[i]);
+  for (i64 i = 0; i < am; i++) printf(" %d", p[i]);
   while(p!=n) {
     i32 c = *p++;
     i32 pow = 10;
@@ -162,10 +162,10 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
     B cbld = blockDefs[i];
     if (a(cbld)->ia != 4) thrM("bad compile block");
     BS2B bget = TI(cbld).get;
-    usz  ty  = o2s(bget(cbld,0)); if (ty<0|ty>2) thrM("bad block type");
+    usz  ty  = o2s(bget(cbld,0)); if (ty>2) thrM("bad block type");
     bool imm = o2s(bget(cbld,1)); // todo o2b or something
     usz  idx = o2s(bget(cbld,2)); if (idx>=bcl) thrM("oob bytecode index");
-    usz  vam = o2s(bget(cbld,3));
+    usz  vam = o2s(bget(cbld,3)); if (vam!=(u16)vam) thrM("too many variables");
     i32* cbc = bc+idx;
     
     i32* scan = cbc;
@@ -186,14 +186,14 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
     body->comp = comp;
     body->bc = cbc;
     body->maxStack = mssz;
-    body->maxPSC = mpsc;
-    body->varAm = vam;
+    body->maxPSC = (u16)mpsc;
+    body->varAm = (u16)vam;
     ptr_inc(comp);
     
     Block* bl = mm_allocN(sizeof(Block), t_block);
     bl->body = body;
     bl->imm = imm;
-    bl->ty = ty;
+    bl->ty = (u8)ty;
     comp->blocks[i] = bl;
   }
   
@@ -356,7 +356,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case LOCM: { i32 d = *bc++; i32 p = *bc++;
-        ADD(tag((u64)d<<32 | p, VAR_TAG));
+        ADD(tag((u64)d<<32 | (u32)p, VAR_TAG));
         break;
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
@@ -403,7 +403,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #undef POP
 }
 
-B actualExec(Block* bl, Scope* psc, u32 ga, B* svar) { // consumes svar contents
+B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   Body* bdy = bl->body;
   Scope* sc = mm_allocN(fsizeof(Scope, vars, B, bdy->varAm), t_scope);
   sc->psc = psc; if(psc) ptr_inc(psc);

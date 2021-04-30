@@ -45,7 +45,7 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
   c->mmInfo = MMI(bucket);
   while (cb != bucket) {
     cb--;
-    EmptyValue* b = (EmptyValue*) (BSZ(cb) + (char*)c);
+    EmptyValue* b = (EmptyValue*) (BSZ(cb) + (u8*)c);
     b->type = t_empty;
     b->mmInfo = MMI(cb);
     b->next = 0; assert(buckets[cb]==0);
@@ -88,10 +88,10 @@ void BN(forHeap)(V2v f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
     Value* s = ci.p;
-    Value* e = ci.sz + (void*)ci.p;
+    Value* e = (Value*)(ci.sz + (u8*)ci.p);
     while (s!=e) {
       if (s->type!=t_empty) f(s);
-      s = BSZ(s->mmInfo&63) + (void*)s;
+      s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
     }
   }
 }

@@ -60,8 +60,8 @@ B grLen_c1(B t, B x) { // assumes valid arguments
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
-    if (n==(usz)n) rp[n]++;
-    else if (n!=-1) thrM("grLen: Too large");
+    if (n>USZ_MAX) thrM("grLen: Bad item in 𝕩");
+    else if (n>=0) rp[n]++;
   }
   dec(x);
   return r;
@@ -95,7 +95,7 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   BS2B xgetU = TI(x).getU;
   usz tmp[wia];
   tmp[0] = 0;
-  for (int i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
+  for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
   usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
   B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
   if (xia>=I32_MAX) thrM("grOrd: Too large");

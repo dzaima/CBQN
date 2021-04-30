@@ -24,9 +24,10 @@
 #define NOINLINE __attribute__ ((noinline))
 #define NORETURN __attribute__ ((noreturn))
 
-#define usz u32
-#define ur u8
-#define UR_MAX 255
+typedef u32 usz;
+typedef u8 ur;
+#define USZ_MAX ((u32)((1LL<<32)-1))
+#define  UR_MAX 255
 
 #define CTR_FOR(F)
 #define CTR_DEF(N) u64 N;
@@ -322,21 +323,23 @@ void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
 // make objects
 B m_arr(usz min, u8 type) { return mm_alloc(min, type, ftag(ARR_TAG)); }
 B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
-B m_c32(i32 n) { return tag(n, C32_TAG); } // TODO check validity?
+B m_c32(u32 n) { return tag(n, C32_TAG); } // TODO check validity?
 #ifdef ATOM_I32
 B m_i32(i32 n) { return tag(n, I32_TAG); }
 #else
 B m_i32(i32 n) { return m_f64(n); }
 #endif
 B m_error() { return tag(4, TAG_TAG); }
-B m_usz(usz n) { return n==(i32)n? m_i32(n) : m_f64(n); }
+B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 
-i32 o2i   (B x) { if ((i32)x.f!=x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
-usz o2s   (B x) { if ((usz)x.f!=x.f) thrM("Expected integer"); return (usz)x.f; }
-i64 o2i64 (B x) { if ((i64)x.f!=x.f) thrM("Expected integer"); return (i64)x.f; }
+i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
+usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)x.f; }
+i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
+u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
 f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }
 i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
-usz o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
+u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
+i32 o2cu  (B x) { return (u32)x.u; }
 usz o2su  (B x) { return (usz)x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }

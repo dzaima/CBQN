@@ -2,7 +2,7 @@
 // a bunch of random things that don't really belong in any other file
 
 void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
-  usz r = rnk(x);
+  ur r = rnk(x);
   BS2B xgetU = TI(x).getU;
   usz ia = a(x)->ia;
   if (r!=1) {

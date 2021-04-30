@@ -37,17 +37,17 @@ static inline B arith_recd(BBB2B f, B w, B x) {
 
 f64 pfmod(f64 a, f64 b) {
   f64 r = fmod(a, b);
-  if (a<0 != b<0 && r) r+= b;
+  if (a<0 != b<0 && r!=0) r+= b;
   return r;
 }
 
 ffn(add, +, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(u32)w.u + o2i64(x); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32(r); }
-  if (isF64(w) & isC32(x)) { u64 r = (u64)(u32)x.u + o2i64(w); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32(r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
+  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
 })
 ffn(sub, -, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(u32)w.u - o2i64(x); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32(r); }
-  if (isC32(w) & isC32(x)) return m_f64((u32)w.u - (i64)(u32)x.u);
+  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)-o2u64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
 ffn(mul, *, {})
 ffn(and, *, {})
@@ -88,8 +88,8 @@ B eq_c2(B t, B w, B x) {
   w=dcf(w); B* wp = harr_ptr(w);
   x=dcf(x); B* xp = harr_ptr(x);
   if (o2i(wp[0])<=1)          { dec(w);dec(x); return m_i32(0); }
-  i32 wia = a(w)->ia;
-  i32 xia = a(x)->ia;
+  usz wia = a(w)->ia;
+  usz xia = a(x)->ia;
   if (wia != xia)             { dec(w);dec(x); return m_i32(0); }
   for (i32 i = 0; i<wia; i++) if(!equal(wp[i], xp[i]))
                               { dec(w);dec(x); return m_i32(0); }
@@ -103,15 +103,15 @@ B ne_c2(B t, B w, B x) {
 
 
 B   add_c1(B t, B x) { return x; }
-B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f );       P1(  sub); thrM("-: Negating non-number"); }
-B   not_c1(B t, B x) { if (isF64(x)) return m_f64(    1-x.f );       P1(  not); thrM("¬: Argument was not a number"); }
-B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f?x.f>0?1:-1:0); P1(  mul); thrM("×: Getting sign of non-number"); }
-B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f );       P1(  div); thrM("÷: Getting reciprocal of non-number"); }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f));       P1(  pow); thrM("⋆: Getting exp of non-number"); }
-B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f));       P1(floor); thrM("⌊: Argument was not a number"); }
-B  ceil_c1(B t, B x) { if (isF64(x)) return m_f64( ceil(x.f));       P1( ceil); thrM("⌈: Argument was not a number"); }
-B stile_c1(B t, B x) { if (isF64(x)) return m_f64( fabs(x.f));       P1(stile); thrM("|: Argument was not a number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f));       P1(  log); thrM("⋆⁼: Getting log of non-number"); }
+B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f ); P1(  sub); thrM("-: Negating non-number"); }
+B   not_c1(B t, B x) { if (isF64(x)) return m_f64(    1-x.f ); P1(  not); thrM("¬: Argument was not a number"); }
+B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f==0?0:x.f>0?1:-1); P1(mul); thrM("×: Getting sign of non-number"); }
+B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
+B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); P1(floor); thrM("⌊: Argument was not a number"); }
+B  ceil_c1(B t, B x) { if (isF64(x)) return m_f64( ceil(x.f)); P1( ceil); thrM("⌈: Argument was not a number"); }
+B stile_c1(B t, B x) { if (isF64(x)) return m_f64( fabs(x.f)); P1(stile); thrM("|: Argument was not a number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
 
 B lt_c1(B t, B x) { return m_unit(x); }
 B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }

@@ -27,13 +27,13 @@ u32* c32arr_ptr(B x) { VT(x, t_c32arr); return c(C32Arr,x)->a; }
 
 B m_str8(usz sz, char* s) {
   B r = m_c32arrv(sz); u32* rp = c32arr_ptr(r);
-  for (u64 i = 0; i < sz; i++) rp[i] = s[i];
+  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
   return r;
 }
 NOINLINE B m_str32(u32* s) {
-  u64 sz = 0; while(s[sz]) sz++;
+  usz sz = 0; while(s[sz]) sz++;
   B r = m_c32arrv(sz); u32* rp = c32arr_ptr(r);
-  for (u64 i = 0; i < sz; i++) rp[i] = s[i];
+  for (usz i = 0; i < sz; i++) rp[i] = s[i];
   return r;
 }
 

@@ -13,7 +13,7 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 };
 
 #define  BSZ(X) (1ull<<(X))
-#define BSZI(X) (64-__builtin_clzl((X)-1ull))
+#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mm_##X
 

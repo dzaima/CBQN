@@ -71,22 +71,22 @@ B repeat_replace(B g, B* q) { // doesn't consume
   }                                                \
   i64 bound[2] = {0,0};                            \
   repeat_bounds(bound, g);                         \
-  u64 min = -bound[0]; u64 max = bound[1];         \
+  u64 min=(u64)-bound[0]; u64 max=(u64)bound[1];   \
   B all[min+max+1];                                \
   B* q = all+min;                                  \
   q[0] = inc(x);                                   \
   if (min) {                                       \
     B x2 = inc(x);                                 \
     B fi = m1_d(inc(rt_undo), inc(f));             \
-    for (i64 i = 0; i < min; i++) q[-1-i] = inc(x2 = CN(fi, __VA_ARGS__ x2)); \
+    for (u64 i = 0; i < min; i++) q[-1-i] = inc(x2 = CN(fi, __VA_ARGS__ x2)); \
     dec(x2);                                       \
     dec(fi);                                       \
   }                                                \
-  for (i64 i = 0; i < max; i++) q[i+1] = inc(x = CN(f, __VA_ARGS__ x)); \
+  for (u64 i = 0; i < max; i++) q[i+1] = inc(x = CN(f, __VA_ARGS__ x)); \
   dec(x);                                          \
   B r = repeat_replace(g, q);                      \
   dec(g);                                          \
-  for (i64 i = 0; i < min+max+1; i++) dec(all[i]); \
+  for (u64 i = 0; i < min+max+1; i++) dec(all[i]); \
   END;                                             \
   return r;
 

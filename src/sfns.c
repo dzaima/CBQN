@@ -154,7 +154,7 @@ B eachd(B f, B w, B x) { // complete w F¨ x
   return r.b;
 }
 B shape_c1(B t, B x) {
-  if (!isArr(x)) thrM("reshaping non-array");
+  if (!isArr(x)) thrM("⥊: deshaping non-array");
   usz ia = a(x)->ia;
   if (reusable(x)) {
     decSh(x);
@@ -166,16 +166,18 @@ B shape_c1(B t, B x) {
   return r;
 }
 B shape_c2(B t, B w, B x) {
-  if (!isArr(x)) { dec(x); dec(w); thrM("reshaping non-array"); }
+  if (!isArr(x)) { dec(x); dec(w); thrM("⥊: Reshaping non-array"); }
   if (!isArr(w)) return shape_c1(t, x);
   BS2B wget = TI(w).get;
-  ur nr = a(w)->ia;
+  usz wia = a(w)->ia;
+  if (wia>UR_MAX) thrM("⥊: Result rank too large");
+  ur nr = (ur)wia;
   usz nia = a(x)->ia;
   B r;
   if (reusable(x)) { r = x; decSh(x); }
   else r = TI(x).slice(x, 0);
   usz* sh = arr_shAllocI(r, nia, nr);
-  if (sh) for (i32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
+  if (sh) for (u32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
   dec(w);
   return r;
 }
@@ -261,7 +263,7 @@ B select_c2(B t, B w, B x) {
   } else {
     BS2B wgetU = TI(w).getU;
     ur wr = rnk(w); usz wia = a(w)->ia;
-    u32 rr = wr+xr-1;
+    ur rr = wr+xr-1;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     if (rr>UR_MAX) thrM("⊏: Result rank too large");
     usz csz = arr_csz(x);
@@ -301,20 +303,20 @@ B slash_c1(B t, B x) {
   usz ri = 0;
   if (xia<I32_MAX) {
     B r = m_i32arrv(s); i32* rp = i32arr_ptr(r);
-    for (usz i = 0; i < xia; i++) {
+    for (i32 i = 0; i < xia; i++) {
       usz c = o2s(xgetU(x, i));
       for (usz j = 0; j < c; j++) rp[ri++] = i;
     }
     dec(x);
     return r;
   }
-  HArr_p r = m_harrs(s, &ri);
+  B r = m_f64arrv(s); f64* rp = f64arr_ptr(r);
   for (usz i = 0; i < xia; i++) {
     usz c = o2s(xgetU(x, i));
-    for (usz j = 0; j < c; j++) r.a[ri++] = m_i32(i);
+    for (usz j = 0; j < c; j++) rp[ri++] = i;
   }
   dec(x);
-  return withFill(harr_fv(r),m_f64(0));
+  return r;
 }
 B slash_c2(B t, B w, B x) {
   if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
@@ -322,7 +324,8 @@ B slash_c2(B t, B w, B x) {
     usz xia = a(x)->ia;
     B xf = getFill(inc(x));
     if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
-    usz ria = isum(w);
+    i64 wsum = isum(w); if (wsum>USZ_MAX) thrM("/: Result too large");
+    usz ria = wsum;
     usz ri = 0;
     HArr_p r = m_harrs(ria, &ri);
     BS2B wgetU = TI(w).getU;

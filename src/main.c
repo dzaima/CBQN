@@ -191,8 +191,9 @@ int main() {
   #endif
   
   
-  // uncomment to self-compile and use that for the REPL; expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory
-  // char* c_src = 0;
+  // uncomment to self-compile and use that for the REPL
+  // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
+  // char* c_src = NULL;
   // u64 c_len;
   // FILE* f = fopen("c.bqn", "rb");
   // if (f) {
@@ -207,11 +208,13 @@ int main() {
   //   exit(1);
   // }
   // if (c_src) {
-  //   B cbc = c2(comp, inc(rtObj), fromUTF8(c_src, c_len));
+  //   B cbc = c2(comp, inc(compArg), fromUTF8(c_src, c_len));
   //   Block* cbc_b = ca3(cbc);
-  //   comp = m_funBlock(cbc_b, 0);
+  //   comp = m_funBlock(cbc_b, 0); ptr_dec(cbc_b);
+  //   gc_add(comp);
   //   free(c_src);
   // }
+  
   while (CATCH) {
     printf("caught: ");
     print(catchMessage);

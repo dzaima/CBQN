@@ -1,4 +1,4 @@
-i32 utf8_len(u8 ch) {
+i8 utf8_len(u8 ch) {
   if (ch<128)           return 1;
   if ((ch>>5)==  0b110) return 2;
   if ((ch>>4)== 0b1110) return 3;
@@ -10,20 +10,29 @@ u32 utf8_p(u8* p) {
   switch (len) { default: UD;
     case -1: return (u32)-1;
     case  1: return *p;
-    case  2: return (0b11111&*p)<< 6  |  (0b111111&p[1]);
-    case  3: return (0b1111 &*p)<<12  |  (0b111111&p[2]) | (0b111111&p[1])<<6;
-    case  4: return (0b111  &*p)<<18  |  (0b111111&p[3]) | (0b111111&p[2])<<6 | (0b111111&p[1])<<12;
+    case  2: return (0b11111u&*p)<< 6  |  (0b111111u&p[1]);
+    case  3: return (0b1111u &*p)<<12  |  (0b111111u&p[2]) | (0b111111u&p[1])<<6;
+    case  4: return (0b111u  &*p)<<18  |  (0b111111u&p[3]) | (0b111111u&p[2])<<6 | (0b111111u&p[1])<<12;
   }
 }
-B fromUTF8(char* s, u64 len) {
+B fromUTF8(char* s, i64 len) {
   u64 sz = 0;
-  u64 j;
-  for (j = 0; j < len; j+= utf8_len(s[j])) sz++;
-  if (j!=len) return err("invalid UTF-8");
+  i64 j = 0;
+  while (true) {
+    i8 l = utf8_len((u8)s[j]);
+    if (l==-1) thrM("Invalid UTF-8");
+    if (j>=len) {
+      if (j!=len) thrM("Invalid UTF-8");
+      break;
+    }
+    sz++;
+    j+= l;
+  }
   B r = m_c32arrv(sz);
   u32* rp = c32arr_ptr(r);
   u64 p = 0;
-  for (u64 i = 0; i < len; i+= utf8_len(s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh
+  // TODO verify
+  for (i64 i = 0; i < len; i+= utf8_len((u8)s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh
   return r;
 }
 

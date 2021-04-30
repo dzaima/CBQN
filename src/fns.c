@@ -30,7 +30,7 @@ B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
 B fmtN_c1(B t, B x) {
-  const u64 BL = 100;
+  #define BL 100
   char buf[BL];
   if (isF64(x)) snprintf(buf, BL, "%g", x.f);
   else snprintf(buf, BL, "(fmtN: not given a number?)");
@@ -48,7 +48,7 @@ i64 isum(B x) { // doesn't consume; assumes is array; may error
   BS2B xgetU = TI(x).getU;
   i64 r = 0;
   usz xia = a(x)->ia;
-  for (usz i = 0; i < xia; i++) r+= o2f(xgetU(x,i)); // TODO error on overflow and non-integers or something
+  for (usz i = 0; i < xia; i++) r+= (i64)o2f(xgetU(x,i)); // TODO error on overflow and non-integers or something
   return r;
 }
 
