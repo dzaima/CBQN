@@ -20,10 +20,12 @@
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
 
-
-#ifndef CATCH_ERRORS
+#ifdef CATCH_ERRORS
+  #define PROPER_FILLS EACH_FILLS
+#else
   #undef EACH_FILLS
   #define EACH_FILLS false
+  #define PROPER_FILLS false
 #endif
 
 #define rtLen 63
@@ -121,7 +123,7 @@ int main() {
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,0,0,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,0,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,

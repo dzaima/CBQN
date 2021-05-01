@@ -35,9 +35,7 @@ B glyph_c1(B t, B x) {
 B fill_c1(B t, B x) {
   B f = getFill(x);
   if (noFill(f)) {
-    #if !defined(CATCH_ERRORS) || !EACH_FILLS
-      return m_f64(0);
-    #endif
+    if (!PROPER_FILLS) return m_f64(0);
     thrM("No fill found");
   }
   return f;

@@ -405,7 +405,10 @@ B shiftb_c1(B t, B x) {
   usz ia = a(x)->ia;
   if (ia==0) return x;
   B xf = getFill(inc(x));
-  if (noFill(xf)) thrM("»: Argument didn't have a fill");
+  if (noFill(xf)) {
+    if (PROPER_FILLS) thrM("»: Argument didn't have a fill");
+    else xf = m_f64(0);
+  }
   usz csz = arr_csz(x);
   
   MAKE_MUT(r, ia);
@@ -421,7 +424,6 @@ void shift_check(B w, B x) {
   for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrM("shift: Lengths not matchable");
 }
 B shiftb_c2(B t, B w, B x) {
-  // return c2(rt_shiftb, w, x);
   if (!isArr(x) || rnk(x)==0) thrM("»: 𝕩 cannot be a scalar");
   if (!isArr(w)) w = m_hunit(w); usz wia = a(w)->ia;
   if (!isArr(x)) x = m_hunit(x); usz xia = a(x)->ia;
