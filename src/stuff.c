@@ -176,6 +176,7 @@ B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 bool def_canStore(B x) { return false; }
+B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 
 static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {

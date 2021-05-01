@@ -392,11 +392,7 @@ TypeInfo ti[t_COUNT];
 B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill;
 
 void do_nothing(B x) { }
-B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
-
-
 bool isNothing(B b) { return b.u==bi_N.u; }
-
 
 // refcount
 bool reusable(B x) { return v(x)->refc==1; }

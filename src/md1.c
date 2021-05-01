@@ -1,10 +1,58 @@
 #include "h.h"
 
+
+bool isPureFn(B x) { // doesn't consume
+  if (!isFun(x) && !isMd(x)) return true;
+  if (v(x)->flags) return true;
+  B2B dcf = TI(x).decompose;
+  B xd = dcf(inc(x));
+  B* xdp = harr_ptr(xd);
+  i32 t = o2iu(xdp[0]);
+  if (t<2) { dec(xd); return t==0; }
+  usz xdia = a(xd)->ia;
+  for (i32 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
+  dec(xd); return true;
+}
+
+B homFil1(B f, B r, B xf) {
+  assert(EACH_FILLS);
+  if (isPureFn(f)) {
+    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return tag(toI32Arr(r), ARR_TAG); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
+    if (f.u==bi_fne.u) { dec(xf); return withFill(r, m_harrUv(0).b); }
+    if (!noFill(xf)) {
+      if (CATCH) { dec(catchMessage); return r; }
+      B rf = asFill(c1(f, xf));
+      popCatch();
+      return withFill(r, rf);
+    }
+  }
+  dec(xf);
+  return r;
+}
+B homFil2(B f, B r, B wf, B xf) {
+  assert(EACH_FILLS);
+  if (isPureFn(f)) {
+    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return tag(toI32Arr(r), ARR_TAG); }
+    if (!noFill(wf) && !noFill(xf)) {
+      if (CATCH) { dec(catchMessage); return r; }
+      B rf = asFill(c2(f, wf, xf));
+      popCatch();
+      return withFill(r, rf);
+    }
+  }
+  dec(wf); dec(xf);
+  return r;
+}
+
 B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
-  // return eachm(f, x);
-  return withFill(eachm(f, x), m_f64(0));
+  if (!EACH_FILLS) return eachm(f, x);
+  B xf = getFill(inc(x));
+  return homFil1(f, eachm(f, x), xf);
 }
 B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+  B wf, xf;
+  if (EACH_FILLS) wf = getFill(inc(w));
+  if (EACH_FILLS) xf = getFill(inc(x));
   if (isAtm(w)) w = m_hunit(w);
   if (isAtm(x)) x = m_hunit(x);
   usz wia = a(w)->ia; ur wr = rnk(w);
@@ -28,17 +76,20 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
   }
   dec(w); dec(x);
-  // return r.b;
-  return withFill(r.b, m_f64(0));
+  if (EACH_FILLS) return homFil2(f, r.b, wf, xf);
+  return r.b;
 }
 
 B each_c1(B d, B x) { B f = c(Md1D,d)->f;
-  // return eachm(f, x);
-  return withFill(eachm(f, x), m_f64(0));
+  if (!EACH_FILLS) return eachm(f, x);
+  B xf = getFill(inc(x));
+  return homFil1(f, eachm(f, x), xf);
 }
 B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  // return eachd(f, w, x);
-  return withFill(eachd(f, w, x), m_f64(0));
+  if (!EACH_FILLS) return eachd(f, w, x);
+  B wf = getFill(inc(w));
+  B xf = getFill(inc(x));
+  return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
 

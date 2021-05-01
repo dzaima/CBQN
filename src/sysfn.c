@@ -9,7 +9,7 @@ B type_c1(B t, B x) {
   else if (isFun(x)) r = 3;
   else if (isMd1(x)) r = 4;
   else if (isMd2(x)) r = 5;
-  if (r==-1) return err("getting type");
+  if (r==-1) { print(x); err(": getting type"); }
   decR(x);
   return m_i32(r);
 }
@@ -34,7 +34,12 @@ B glyph_c1(B t, B x) {
 
 B fill_c1(B t, B x) {
   B f = getFill(x);
-  if (noFill(f)) thrM("No fill found");
+  if (noFill(f)) {
+    #if !defined(CATCH_ERRORS) || !EACH_FILLS
+      return m_f64(0);
+    #endif
+    thrM("No fill found");
+  }
   return f;
 }
 B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
@@ -121,6 +126,7 @@ B asrt_c2(B t, B w, B x) {
   thr(w);
 }
 
+bool isPureFn(B x);
 B internal_c2(B t, B w, B x) {
   B r;
   u64 id = o2s(w);
@@ -137,6 +143,7 @@ B internal_c2(B t, B w, B x) {
   } else if(id==1) { r = isVal(x)? m_i32(v(x)->mmInfo & 0x7f) : m_str32(U"(not heap-allocated)"); }
   else if(id==2) { r = isVal(x)? m_i32(v(x)->refc) : m_str32(U"(not heap-allocated)"); }
   else if(id==3) { printf("%p\n", (void*)x.u); r = inc(x); }
+  else if(id==4) { r = m_f64(isPureFn(x)); }
   else { dec(x); thrM("Bad 𝕨 argument for •Internal"); }
   dec(x);
   return r;

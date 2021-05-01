@@ -12,12 +12,19 @@
 // #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
+#define EACH_FILLS false // whether to try to squeeze out fills for ¨ and ⌜
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
 
 // #define LOG_GC       // log GC stats
 // #define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
+
+
+#ifndef CATCH_ERRORS
+  #undef EACH_FILLS
+  #define EACH_FILLS false
+#endif
 
 #define rtLen 63
 #include "h.h"
@@ -101,7 +108,7 @@ int main() {
   comp_init();
   rtPerf_init();
   
-  // fake runtime
+  
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
@@ -114,7 +121,7 @@ int main() {
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,0,1,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,0,0,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
