@@ -89,14 +89,16 @@ void gc_forceGC() {
     gc_visitBytes = 0; gc_freedBytes = 0;
     gc_visitCount = 0; gc_freedCount = 0;
   #endif
-  gc_visitRoots();
-  mm_forHeap(gc_tryFree);
-  gc_tagNew = gc_tagCurr;
-  gc_tagCurr^= 0x80;
-  #ifdef LOG_GC
-    fprintf(stderr, "GC kept %ldB from %ld objects, freed %ldB from %ld objects; took %.3fms\n", gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
+  #ifdef ENABLE_GC
+    gc_visitRoots();
+    mm_forHeap(gc_tryFree);
+    gc_tagNew = gc_tagCurr;
+    gc_tagCurr^= 0x80;
+    #ifdef LOG_GC
+      fprintf(stderr, "GC kept %ldB from %ld objects, freed %ldB from %ld objects; took %.3fms\n", gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
+    #endif
+    gc_lastAlloc = allocB;
   #endif
-  gc_lastAlloc = allocB;
 }
 
 

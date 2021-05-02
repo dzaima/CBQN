@@ -156,26 +156,58 @@ B withFill(B x, B fill) { // consumes both
       break;
   }
   usz ia = a(x)->ia;
-  // if (isNum(fill)) {
-  //   B r = m_f64arrc(x); f64* rp = f64arr_ptr(r);
-  //   BS2B xgetU = TI(x).getU;
-  //   for (usz i = 0; i < ia; i++) {
-  //     B c = xgetU(x, i);
-  //     if (!q_f64(c)) { dec(r); goto base; }
-  //     rp[i] = o2f(c);
-  //   }
-  //   return r;
-  // } else if (isC32(fill)) {
-  //   B r = m_c32arrc(x); u32* rp = c32arr_ptr(r);
-  //   BS2B xgetU = TI(x).getU;
-  //   for (usz i = 0; i < ia; i++) {
-  //     B c = xgetU(x, i);
-  //     if (!isC32(c)) { dec(r); goto base; }
-  //     rp[i] = o2c(c);
-  //   }
-  //   return r;
-  // }
-  // base:
+  if (isNum(fill)) {
+    BS2B xgetU = TI(x).getU;
+    {
+      B r = m_i32arrc(x); i32* rp = i32arr_ptr(r);
+      for (usz i = 0; i < ia; i++) {
+        B c = xgetU(x, i);
+        if (!q_i32(c)) { dec(r); goto l_f64; }
+        rp[i] = o2iu(c);
+      }
+      dec(x);
+      return r;
+    }
+    l_f64: {
+      B r = m_f64arrc(x); f64* rp = f64arr_ptr(r);
+      for (usz i = 0; i < ia; i++) {
+        B c = xgetU(x, i);
+        if (!q_f64(c)) { dec(r); goto base; }
+        rp[i] = o2fu(c);
+      }
+      dec(x);
+      return r;
+    }
+    
+    // bool ints = true;
+    // for (usz i = 0; i < ia; i++) {
+    //   B c = xgetU(x, i);
+    //   if (!isNum(c)) goto base;
+    //   if (!q_i32(c)) ints = false;
+    // }
+    // if (ints) {
+    //   B r = m_i32arrc(x); i32* rp = i32arr_ptr(r);
+    //   for (usz i = 0; i < ia; i++) rp[i] = o2iu(xgetU(x, i));
+    //   dec(x);
+    //   return r;
+    // } else {
+    //   B r = m_f64arrc(x); f64* rp = f64arr_ptr(r);
+    //   for (usz i = 0; i < ia; i++) rp[i] = o2fu(xgetU(x, i));
+    //   dec(x);
+    //   return r;
+    // }
+  } else if (isC32(fill)) {
+    B r = m_c32arrc(x); u32* rp = c32arr_ptr(r);
+    BS2B xgetU = TI(x).getU;
+    for (usz i = 0; i < ia; i++) {
+      B c = xgetU(x, i);
+      if (!isC32(c)) { dec(r); goto base; }
+      rp[i] = o2c(c);
+    }
+    dec(x);
+    return r;
+  }
+  base:
   B r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
   arr_shCopy(r, x);
   c(FillArr,r)->fill = fill;

@@ -336,14 +336,14 @@ i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)
 usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)x.f; }
 i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
 u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
-f64 o2f   (B x) { if (!isNum(x))     thrM("Expected integer"); return x.f; }
+f64 o2f   (B x) { if (!isNum(x)) thrM("Expected integer"); return x.f; }
 u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
 i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
 i32 o2cu  (B x) { return (u32)x.u; }
 usz o2su  (B x) { return (usz)x.f; }
-i64 o2fu  (B x) { return      x.f; }
+f64 o2fu  (B x) { return      x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
-bool q_i32(B x) { return isI32(x) || isF64(x)&(x.f==(i32)x.f); }
+bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
 bool q_f64(B x) { return isF64(x) || isI32(x); }
 
 

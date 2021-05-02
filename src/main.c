@@ -4,6 +4,7 @@
 #endif
 
 #define CATCH_ERRORS // whether to allow catching errors; currently means refcounts won't be accurate and can't be tested for
+#define ENABLE_GC    // whether to ever garbage-collect
 // #define HEAP_VERIFY  // enable usage of heapVerify()
 // #define ALLOC_STAT   // store basic allocation statistics
 // #define ALLOC_SIZES  // store per-type allocation size statistics
@@ -68,30 +69,6 @@ Block* ca3(B x) {
 ssize_t getline(char** line, size_t* n, FILE* stream);
 
 
-void printAllocStats() {
-  #ifdef ALLOC_STAT
-    printf("total ever allocated: %lu\n", talloc);
-    printf("allocated heap size:  %ld\n", mm_heapAllocated());
-    printf("used heap size:       %ld\n", mm_heapUsed());
-    printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
-    printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
-    u64 leakedCount = 0;
-    for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
-    printf("leaked object count: %ld\n", leakedCount);
-    #ifdef ALLOC_SIZES
-      for(i64 i = 0; i < actrc; i++) {
-        u32* c = actrs[i];
-        bool any = false;
-        for (i64 j = 0; j < t_COUNT; j++) if (c[j]) any=true;
-        if (any) {
-          printf("%ld", i*4);
-          for (i64 k = 0; k < t_COUNT; k++) printf("‿%u", c[k]);
-          printf("\n");
-        }
-      }
-    #endif
-  #endif
-}
 
 int main() {
   hdr_init();

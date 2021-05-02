@@ -91,7 +91,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       f64* xp = f64arr_ptr(x);
       B r = reuse? x : m_f64arrc(x);
       f64* rp = f64arr_ptr(r);
-      rp[i++] = o2iu(cr);
+      rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_f64(xp[i]));
         if (!q_f64(cr)) {
@@ -100,7 +100,7 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
           if (!reuse) dec(r);
           goto fallback;
         }
-        rp[i] = o2iu(cr);
+        rp[i] = o2fu(cr);
       }
       if (!reuse) dec(x);
       return r;

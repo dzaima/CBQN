@@ -265,3 +265,31 @@ static inline void onFree(Value* x) {
   #endif
   // x->refc = 0x61616161;
 }
+
+
+void printAllocStats() {
+  #ifdef ALLOC_STAT
+    printf("total ever allocated: %lu\n", talloc);
+    printf("allocated heap size:  %ld\n", mm_heapAllocated());
+    printf("used heap size:       %ld\n", mm_heapUsed());
+    ctr_a[t_harr]+= ctr_a[t_harrPartial];
+    ctr_a[t_harrPartial] = 0;
+    printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
+    printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
+    u64 leakedCount = 0;
+    for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
+    printf("leaked object count: %ld\n", leakedCount);
+    #ifdef ALLOC_SIZES
+      for(i64 i = 0; i < actrc; i++) {
+        u32* c = actrs[i];
+        bool any = false;
+        for (i64 j = 0; j < t_COUNT; j++) if (c[j]) any=true;
+        if (any) {
+          printf("%ld", i*4);
+          for (i64 k = 0; k < t_COUNT; k++) printf("‿%u", c[k]);
+          printf("\n");
+        }
+      }
+    #endif
+  #endif
+}
