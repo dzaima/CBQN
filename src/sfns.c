@@ -3,8 +3,8 @@
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
 B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is array
-  if (!isArr(w)) w = m_hunit(w);
-  if (!isArr(x)) x = m_hunit(x);
+  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(x)) x = m_atomUnit(x);
   ur wr = rnk(w); BS2B wget = TI(w).get;
   ur xr = rnk(x); BS2B xget = TI(x).get;
   bool wg = wr>xr;
@@ -128,9 +128,9 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   return harr_fcd(rH, x);
 }
 B eachm(B f, B x) { // complete F¨ x without fills
-  if (!isArr(x)) return m_hunit(c1(f, x));
+  if (isAtm(x)) return m_hunit(c1(f, x));
   if (isFun(f)) return eachm_fn(c(Fun,f)->c1, f, x);
-  if (isMd(f)) if (!isArr(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
+  if (isMd(f)) if (isAtm(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
   
   usz ia = a(x)->ia;
   MAKE_MUT(r, ia);
@@ -139,11 +139,11 @@ B eachm(B f, B x) { // complete F¨ x without fills
 }
 
 B eachd(B f, B w, B x) { // complete w F¨ x without fills
-  if (!isArr(w) & !isArr(x)) return m_hunit(c2(f, w, x));
+  if (isAtm(w) & isAtm(x)) return m_hunit(c2(f, w, x));
   return eachd_fn(c2fn(f), f, w, x);
 }
 B shape_c1(B t, B x) {
-  if (!isArr(x)) thrM("⥊: deshaping non-array");
+  if (isAtm(x)) thrM("⥊: deshaping non-array");
   usz ia = a(x)->ia;
   if (reusable(x)) {
     decSh(x);
@@ -155,8 +155,8 @@ B shape_c1(B t, B x) {
   return r;
 }
 B shape_c2(B t, B w, B x) {
-  if (!isArr(x)) { dec(x); dec(w); thrM("⥊: Reshaping non-array"); }
-  if (!isArr(w)) return shape_c1(t, x);
+  if (isAtm(x)) { dec(x); dec(w); thrM("⥊: Reshaping non-array"); }
+  if (isAtm(w)) return shape_c1(t, x);
   BS2B wget = TI(w).get;
   usz wia = a(w)->ia;
   if (wia>UR_MAX) thrM("⥊: Result rank too large");
@@ -172,7 +172,7 @@ B shape_c2(B t, B w, B x) {
 }
 
 B pick_c1(B t, B x) {
-  if (!isArr(x)) return x;
+  if (isAtm(x)) return x;
   if (a(x)->ia==0) {
     B r = getFill(x);
     if (noFill(r)) thrM("⊑: called on empty array without fill");
@@ -184,7 +184,7 @@ B pick_c1(B t, B x) {
 }
 B pick_c2(B t, B w, B x) {
   // usz wu = o2s(w);
-  // if (!isArr(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
+  // if (isAtm(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
   // if (wu >= a(x)->ia) thrM("⊑: 𝕨 is greater than length of 𝕩"); // no bounds check for now
   B r = TI(x).get(x, o2su(w));
   dec(x);
@@ -193,7 +193,7 @@ B pick_c2(B t, B w, B x) {
 
 B rt_select;
 B select_c1(B t, B x) {
-  if (!isArr(x)) thrM("⊏: Argument cannot be an atom");
+  if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrM("⊏: Argument shape cannot start with 0");
@@ -208,9 +208,9 @@ B select_c1(B t, B x) {
   return r;
 }
 B select_c2(B t, B w, B x) {
-  if (!isArr(x)) thrM("⊏: 𝕩 cannot be an atom");
+  if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
   ur xr = rnk(x);
-  if (!isArr(w)) {
+  if (isAtm(w)) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
@@ -224,19 +224,36 @@ B select_c2(B t, B w, B x) {
   }
   B xf = getFill(inc(x));
   BS2B xget = TI(x).get;
+  usz wia = a(w)->ia;
+  
   if (xr==1) {
-    usz wia = a(w)->ia;
     usz xia = a(x)->ia;
-    HArr_p r = m_harrUc(w);
-    if(v(w)->type==t_i32arr | v(w)->type==t_i32slice) {
-      i32* wp = v(w)->type==t_i32arr? i32arr_ptr(w) : c(I32Slice,w)->a;
-      for (usz i = 0; i < wia; i++) {
-        i64 c = wp[i];
-        if (c<0) c+= xia;
-        if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
-        r.a[i] = xget(x, c);
+    if (v(w)->type==t_i32arr | v(w)->type==t_i32slice) {
+      i32* wp = v(w)->type==t_i32slice? c(I32Slice,w)->a : i32arr_ptr(w);
+      if (v(x)->type==t_i32arr) {
+        B r = m_i32arrc(w); i32* rp = i32arr_ptr(r);
+        i32* xp = i32arr_ptr(x);
+        for (usz i = 0; i < wia; i++) {
+          i64 c = wp[i];
+          if (c<0) c+= xia;
+          if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
+          rp[i] = xp[c];
+        }
+        dec(w); dec(x);
+        return r;
+      } else {
+        HArr_p r = m_harrUc(w);
+        for (usz i = 0; i < wia; i++) {
+          i64 c = wp[i];
+          if (c<0) c+= xia;
+          if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
+          r.a[i] = xget(x, c);
+        }
+        dec(w); dec(x);
+        return withFill(r.b,xf);
       }
     } else {
+      HArr_p r = m_harrUc(w);
       BS2B wgetU = TI(w).getU;
       for (usz i = 0; i < wia; i++) {
         B cw = wgetU(w, i);
@@ -246,12 +263,12 @@ B select_c2(B t, B w, B x) {
         if ((usz)c >= xia) thrM("⊏: Indexing out-of-bounds");
         r.a[i] = xget(x, c);
       }
+      dec(w); dec(x);
+      return withFill(r.b,xf);
     }
-    dec(w); dec(x);
-    return withFill(r.b,xf);
   } else {
     BS2B wgetU = TI(w).getU;
-    ur wr = rnk(w); usz wia = a(w)->ia;
+    ur wr = rnk(w);
     ur rr = wr+xr-1;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     if (rr>UR_MAX) thrM("⊏: Result rank too large");
@@ -283,7 +300,7 @@ B select_c2(B t, B w, B x) {
 
 B rt_slash;
 B slash_c1(B t, B x) {
-  if (!isArr(x)) thrM("/: Argument must be a list");
+  if (isAtm(x)) thrM("/: Argument must be a list");
   if (rnk(x)!=1) thrM("/: Argument must have rank 1");
   i64 s = isum(x);
   if(s<0) thrM("/: Argument must consist of natural numbers");
@@ -345,12 +362,12 @@ B slicev(B x, usz s, usz ia) {
   return r;
 }
 B take_c2(B t, B w, B x) {
-  if (!isArr(x) || rnk(x)!=1) thrM("↑: NYI 1≠=𝕩");
+  if (isAtm(x) || rnk(x)!=1) thrM("↑: NYI 1≠=𝕩");
   i64 v = o2i64(w); usz ia = a(x)->ia;
   return v<0? slicev(x, ia+v, -v) : slicev(x, 0, v);
 }
 B drop_c2(B t, B w, B x) {
-  if (!isArr(x) || rnk(x)!=1) thrM("↓: NYI 1≠=𝕩");
+  if (isAtm(x) || rnk(x)!=1) thrM("↓: NYI 1≠=𝕩");
   i64 v = o2i64(w); usz ia = a(x)->ia;
   return v<0? slicev(x, 0, v+ia) : slicev(x, v, ia-v);
 }
@@ -361,8 +378,8 @@ B join_c1(B t, B x) {
 }
 B join_c2(B t, B w, B x) {
   B f = fill_both(w, x);
-  if (!isArr(w)) w = m_hunit(w); ur wr = rnk(w); usz wia = a(w)->ia; usz* wsh = a(w)->sh;
-  if (!isArr(x)) x = m_hunit(x); ur xr = rnk(x); usz xia = a(x)->ia; usz* xsh = a(x)->sh;
+  if (isAtm(w)) w = m_atomUnit(w); ur wr = rnk(w); usz wia = a(w)->ia; usz* wsh = a(w)->sh;
+  if (isAtm(x)) x = m_atomUnit(x); ur xr = rnk(x); usz xia = a(x)->ia; usz* xsh = a(x)->sh;
   ur c = wr>xr?wr:xr;
   if (c==0) {
     HArr_p r = m_harrUv(2);
@@ -398,7 +415,7 @@ static void shift_check(B w, B x) {
 }
 
 B shiftb_c1(B t, B x) {
-  if (!isArr(x) || rnk(x)==0) thrM("»: Argument cannot be a scalar");
+  if (isAtm(x) || rnk(x)==0) thrM("»: Argument cannot be a scalar");
   usz ia = a(x)->ia;
   if (ia==0) return x;
   B xf = getFillE(inc(x));
@@ -410,8 +427,8 @@ B shiftb_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shiftb_c2(B t, B w, B x) {
-  if (!isArr(x) || rnk(x)==0) thrM("»: 𝕩 cannot be a scalar");
-  if (!isArr(w)) w = m_hunit(w);
+  if (isAtm(x) || rnk(x)==0) thrM("»: 𝕩 cannot be a scalar");
+  if (isAtm(w)) w = m_atomUnit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
   usz wia = a(w)->ia;
@@ -425,7 +442,7 @@ B shiftb_c2(B t, B w, B x) {
 }
 
 B shifta_c1(B t, B x) {
-  if (!isArr(x) || rnk(x)==0) thrM("«: Argument cannot be a scalar");
+  if (isAtm(x) || rnk(x)==0) thrM("«: Argument cannot be a scalar");
   usz ia = a(x)->ia;
   if (ia==0) return x;
   B xf = getFillE(inc(x));
@@ -436,8 +453,8 @@ B shifta_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shifta_c2(B t, B w, B x) {
-  if (!isArr(x) || rnk(x)==0) thrM("«: 𝕩 cannot be a scalar");
-  if (!isArr(w)) w = m_hunit(w);
+  if (isAtm(x) || rnk(x)==0) thrM("«: 𝕩 cannot be a scalar");
+  if (isAtm(w)) w = m_atomUnit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
   usz wia = a(w)->ia;

@@ -73,7 +73,7 @@ B fne_c1(B t, B x) {
   }
 }
 u64 depth(B x) { // doesn't consume
-  if (!isArr(x)) return 0;
+  if (isAtm(x)) return 0;
   if (TI(x).arrD1) return 1;
   u64 r = 0;
   usz ia = a(x)->ia;

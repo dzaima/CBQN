@@ -218,7 +218,7 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (!isArr(x) || !eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
+    if (isAtm(x) || !eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
     usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
     BS2B xgetU = TI(x).getU;

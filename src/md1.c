@@ -53,8 +53,8 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   B wf, xf;
   if (EACH_FILLS) wf = getFill(inc(w));
   if (EACH_FILLS) xf = getFill(inc(x));
-  if (isAtm(w)) w = m_hunit(w);
-  if (isAtm(x)) x = m_hunit(x);
+  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(x)) x = m_atomUnit(x);
   usz wia = a(w)->ia; ur wr = rnk(w);
   usz xia = a(x)->ia; ur xr = rnk(x);
   usz ria = wia*xia;  ur rr = wr+xr;
@@ -94,7 +94,7 @@ B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 
 B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
-  if (!isArr(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
+  if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
   B xf = getFill(inc(x));
   ur xr = rnk(x);
   usz ia = a(x)->ia;
@@ -116,7 +116,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   return withFill(reuse? x : harr_fcd(r, x), xf);
 }
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  if (!isArr(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
+  if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
   B wf = getFill(inc(w));
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
@@ -143,7 +143,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 }
 
 B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
-  if (!isArr(x) || rnk(x)!=1) thrM("´: argument must be a list");
+  if (isAtm(x) || rnk(x)!=1) thrM("´: argument must be a list");
   usz ia = a(x)->ia;
   if (ia==0) {
     dec(x);
@@ -160,7 +160,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   return c;
 }
 B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  if (!isArr(x) || rnk(x)!=1) thrM("´: 𝕩 must be a list");
+  if (isAtm(x) || rnk(x)!=1) thrM("´: 𝕩 must be a list");
   usz ia = a(x)->ia;
   B c = w;
   BS2B xget = TI(x).get;

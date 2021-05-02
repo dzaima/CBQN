@@ -70,7 +70,7 @@ bool c32arr_canStore(B x) { return isC32(x); }
 
 
 bool eqStr(B w, u32* x) {
-  if (!isArr(w) || rnk(w)!=1) return false;
+  if (isAtm(w) || rnk(w)!=1) return false;
   BS2B wgetU = TI(w).getU;
   u64 i = 0;
   while (x[i]) {

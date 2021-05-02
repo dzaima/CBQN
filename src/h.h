@@ -282,7 +282,7 @@ bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } 
 bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
 bool isNum(B x) { return isF64(x)|isI32(x); }
 
-bool isAtm(B x) { return !isVal(x); }
+bool isAtm(B x) { return !isArr(x); }
 bool noFill(B x);
 
 // shape mess
