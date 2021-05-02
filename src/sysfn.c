@@ -33,12 +33,7 @@ B glyph_c1(B t, B x) {
 }
 
 B fill_c1(B t, B x) {
-  B f = getFill(x);
-  if (noFill(f)) {
-    if (!PROPER_FILLS) return m_f64(0);
-    thrM("No fill found");
-  }
-  return f;
+  return getFillE(x);
 }
 B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   if (isArr(x)) {

@@ -25,7 +25,7 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
     }
     if (cb >= 20) {
       u64 sz = BSZ(cb);
-      gc_maybeGC();
+      // gc_maybeGC();
       c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
       if (alSize+1>=alCap) {
         alCap = alCap? alCap*2 : 1024;
@@ -48,7 +48,7 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
     EmptyValue* b = (EmptyValue*) (BSZ(cb) + (u8*)c);
     b->type = t_empty;
     b->mmInfo = MMI(cb);
-    b->next = 0; assert(buckets[cb]==0);
+    b->next = buckets[cb];
     buckets[cb] = b;
   }
   return c;
