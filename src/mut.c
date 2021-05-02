@@ -66,7 +66,7 @@ void mut_pfree(Mut* m, usz n) { // free the first n elements
   else mm_free((Value*) m->val);
 }
 
-// doesn't consume x; fills m[ms…ms+l] with x
+// doesn't consume; fills m[ms…ms+l] with x
 void mut_fill(Mut* m, usz ms, B x, usz l) {
   again:
   #define AGAIN(T) { mut_to(m, T); goto again; }

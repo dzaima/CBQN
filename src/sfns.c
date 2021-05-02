@@ -127,31 +127,20 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   for (; i < ia; i++) rH.a[i] = f(fo, xget(x,i));
   return harr_fcd(rH, x);
 }
-B eachm(B f, B x) { // complete F¨ x
+B eachm(B f, B x) { // complete F¨ x without fills
   if (!isArr(x)) return m_hunit(c1(f, x));
   if (isFun(f)) return eachm_fn(c(Fun,f)->c1, f, x);
   if (isMd(f)) if (!isArr(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
   
   usz ia = a(x)->ia;
-  dec(x);
-  HArr_p r = m_harrUv(ia);
-  for(usz i = 0; i < ia; i++) r.a[i] = inc(f);
-  return r.b;
+  MAKE_MUT(r, ia);
+  mut_fill(r, 0, f, ia);
+  return mut_fcd(r, x);
 }
 
-B eachd(B f, B w, B x) { // complete w F¨ x
+B eachd(B f, B w, B x) { // complete w F¨ x without fills
   if (!isArr(w) & !isArr(x)) return m_hunit(c2(f, w, x));
-  if (isFun(f)) return eachd_fn(c(Fun,f)->c2, f, w, x);
-  if (isArr(w) && isArr(x)) {
-    ur mr = rnk(w); if(rnk(w)<mr) mr = rnk(w);
-    if(!eqShPrefix(a(w)->sh, a(x)->sh, mr)) { decR(x); thrM("Mapping: Expected equal shape prefix"); }
-  }
-  if (isMd(f)) if ((isArr(w)&&a(w)->ia) || (isArr(x)&&a(x)->ia)) { decR(x); thrM("Calling a modifier"); } // case where both are units has already been taken care of
-  
-  HArr_p r = m_harrUc(!isArr(w)? x : rnk(w)>rnk(x)? w : x);
-  for(usz i = 0; i < r.c->ia; i++) r.a[i] = inc(f);
-  dec(w); dec(x);
-  return r.b;
+  return eachd_fn(c2fn(f), f, w, x);
 }
 B shape_c1(B t, B x) {
   if (!isArr(x)) thrM("⥊: deshaping non-array");

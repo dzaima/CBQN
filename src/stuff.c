@@ -209,6 +209,21 @@ static inline void hdr_init() {
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
 }
 
+B md_c1(B t,      B x) { thrM("Cannot call a modifier"); }
+B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }
+B arr_c1(B t,      B x) { return inc(t); }
+B arr_c2(B t, B w, B x) { return inc(t); }
+BB2B c1fn(B f) {
+  if (isFun(f)) return c(Fun,f)->c1;
+  if (isMd(f)) return md_c1;
+  return arr_c1;
+}
+BBB2B c2fn(B f) {
+  if (isFun(f)) return c(Fun,f)->c2;
+  if (isMd(f)) return md_c2;
+  return arr_c2;
+}
+
 
 #ifdef ALLOC_STAT
   u64* ctr_a = 0;

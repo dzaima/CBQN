@@ -451,6 +451,8 @@ B c1_modifier(B f, B w, B x) {
   dec(w); dec(x);
   thrM("Calling a modifier");
 }
+BB2B c1fn(B f);
+BBB2B c2fn(B f);
 
 
 typedef struct Md1 {
