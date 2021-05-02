@@ -239,6 +239,7 @@ int main() {
   //   gc_add(comp);
   //   free(c_src);
   // }
+  gc_enable();
   
   while (CATCH) {
     printf("caught: ");
@@ -276,7 +277,7 @@ int main() {
     #ifdef HEAP_VERIFY
     heapVerify();
     #endif
-    gc_forceGC();
+    gc_maybeGC();
     #ifdef DEBUG
     #endif
   }

@@ -82,6 +82,7 @@ void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
   for (u32 i = 0; i < gc_rootObjSz; i++) mm_visit(gc_rootObjs[i]);
 }
+u64 gc_lastAlloc;
 void gc_forceGC() {
   #ifdef LOG_GC
     u64 start = nsTime();
@@ -95,9 +96,10 @@ void gc_forceGC() {
   #ifdef LOG_GC
     fprintf(stderr, "GC kept %ldB from %ld objects, freed %ldB from %ld objects; took %.3fms\n", gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
   #endif
+  gc_lastAlloc = allocB;
 }
 
 
 void gc_maybeGC() {
-  if (!gc_depth) gc_forceGC();
+  if (!gc_depth && allocB > gc_lastAlloc*2) gc_forceGC();
 }

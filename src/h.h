@@ -480,3 +480,5 @@ static inline u64 nsTime() {
   // clock_gettime(CLOCK_REALTIME, &t);
   return t.tv_sec*1000000000ull + t.tv_nsec;
 }
+
+u64 allocB; // currently allocated number of bytes

@@ -66,6 +66,7 @@ void BN(free)(Value* x) {
     u8 b = x->mmInfo&63;
     ((EmptyValue*)x)->next = buckets[b];
     buckets[b] = (EmptyValue*)x;
+    allocB-= BSZ(b);
   #endif
   x->type = t_empty;
 }
@@ -78,6 +79,7 @@ void* BN(allocL)(u8 bucket, u8 type) {
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
   #endif
+  allocB+= BSZ(bucket);
   x->mmInfo = (x->mmInfo&0x7f) | gc_tagCurr;
   x->flags = x->extra = x->type = 0;
   x->refc = 1;
