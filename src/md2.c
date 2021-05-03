@@ -8,7 +8,7 @@ B val_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, w,x); }
 
 #ifdef CATCH_ERRORS
 B fillBy_c1(B d, B x) {
-  B xf=getFill(inc(x));
+  B xf=getFillQ(x);
   B r = c1(c(Md2D,d)->f, x);
   if(isAtm(r) || noFill(xf)) { dec(xf); return r; }
   if (CATCH) { dec(catchMessage); return r; }
@@ -17,7 +17,7 @@ B fillBy_c1(B d, B x) {
   return withFill(r, fill);
 }
 B fillBy_c2(B d, B w, B x) {
-  B wf=getFill(inc(w)); B xf=getFill(inc(x));
+  B wf=getFillQ(w); B xf=getFillQ(x);
   B r = c2(c(Md2D,d)->f, w,x);
   if(isAtm(r) || noFill(xf)) { dec(xf); dec(wf); return r; }
   if (CATCH) { dec(catchMessage); return r; }

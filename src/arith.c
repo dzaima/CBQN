@@ -2,15 +2,15 @@
 #include <math.h>
 
 static inline B arith_recm(BB2B f, B x) {
-  B fx = getFill(inc(x));
+  B fx = getFillQ(x);
   B r = eachm_fn(f, bi_N, x);
   return withFill(r, fx);
 }
 #ifdef CATCH_ERRORS
 static inline B arith_recd(BBB2B f, B w, B x) {
-  B fx = getFill(inc(x));
+  B fx = getFillQ(x);
   if (noFill(fx)) return eachd_fn(f, bi_N, w, x);
-  B fw = getFill(inc(w));
+  B fw = getFillQ(w);
   B r = eachd_fn(f, bi_N, w, x);
   if (noFill(fw)) return r;
   if (CATCH) { dec(catchMessage); return r; }

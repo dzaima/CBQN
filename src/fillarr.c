@@ -22,28 +22,27 @@ B asFill(B x) { // consumes
   dec(x);
   return bi_noFill;
 }
-B getFill(B x) { // consumes; can return bi_noFill
+B getFillQ(B x) { // doesn't consume; can return bi_noFill
   bool defZero = true;
   #ifdef CATCH_ERRORS
   defZero = false;
   #endif
   if (isArr(x)) {
     u8 t = v(x)->type;
-    if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); dec(x); return r; }
-    if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); dec(x); return r; }
-    if (t==t_c32arr || t==t_c32slice) { dec(x); return m_c32(' '); }
-    if (t==t_i32arr || t==t_i32slice) { dec(x); return m_f64(0  ); }
-    if (t==t_f64arr || t==t_f64slice) { dec(x); return m_f64(0  ); }
-    dec(x);
+    if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); return r; }
+    if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); return r; }
+    if (t==t_c32arr || t==t_c32slice) return m_c32(' ');
+    if (t==t_i32arr || t==t_i32slice) return m_f64(0  );
+    if (t==t_f64arr || t==t_f64slice) return m_f64(0  );
     return defZero? m_f64(0) : bi_noFill;
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
-  dec(x);
+  
   return defZero? m_f64(0) : bi_noFill;
 }
 B getFillE(B x) { // errors if there's no fill
-  B xf = getFill(x);
+  B xf = getFillQ(x);
   if (noFill(xf)) {
     if (PROPER_FILLS) thrM("No fill found");
     else return m_f64(0);
@@ -150,9 +149,9 @@ B fill_or(B wf, B xf) { // consumes
 }
 
 B fill_both(B w, B x) { // doesn't consume
-  B wf = getFill(inc(w));
+  B wf = getFillQ(w);
   if (noFill(wf)) return bi_noFill;
-  B xf = getFill(inc(x));
+  B xf = getFillQ(x);
   return fill_or(wf, xf);
 }
 

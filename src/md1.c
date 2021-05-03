@@ -46,13 +46,13 @@ B homFil2(B f, B r, B wf, B xf) {
 
 B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFill(inc(x));
+  B xf = getFillQ(x);
   return homFil1(f, eachm(f, x), xf);
 }
 B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   B wf, xf;
-  if (EACH_FILLS) wf = getFill(inc(w));
-  if (EACH_FILLS) xf = getFill(inc(x));
+  if (EACH_FILLS) wf = getFillQ(w);
+  if (EACH_FILLS) xf = getFillQ(x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
   usz wia = a(w)->ia; ur wr = rnk(w);
@@ -84,20 +84,20 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 B each_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFill(inc(x));
+  B xf = getFillQ(x);
   return homFil1(f, eachm(f, x), xf);
 }
 B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (!EACH_FILLS) return eachd(f, w, x);
-  B wf = getFill(inc(w));
-  B xf = getFill(inc(x));
+  B wf = getFillQ(w);
+  B xf = getFillQ(x);
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
 
 B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
-  B xf = getFill(inc(x));
+  B xf = getFillQ(x);
   ur xr = rnk(x);
   usz ia = a(x)->ia;
   if (ia==0) return x;
@@ -121,7 +121,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
 B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
-  B wf = getFill(inc(w));
+  B wf = getFillQ(w);
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);

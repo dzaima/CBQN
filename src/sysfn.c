@@ -33,7 +33,9 @@ B glyph_c1(B t, B x) {
 }
 
 B fill_c1(B t, B x) {
-  return getFillE(x);
+  B r = getFillE(x);
+  dec(x);
+  return r;
 }
 B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   if (isArr(x)) {

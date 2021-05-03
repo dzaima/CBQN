@@ -174,7 +174,8 @@ B shape_c2(B t, B w, B x) {
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (a(x)->ia==0) {
-    B r = getFill(x);
+    B r = getFillQ(x);
+    dec(x);
     if (noFill(r)) thrM("⊑: called on empty array without fill");
     return r;
   }
@@ -224,7 +225,7 @@ B select_c2(B t, B w, B x) {
     dec(x);
     return r;
   }
-  B xf = getFill(inc(x));
+  B xf = getFillQ(x);
   BS2B xget = TI(x).get;
   usz wia = a(w)->ia;
   
@@ -330,7 +331,7 @@ B slash_c2(B t, B w, B x) {
   if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
-    B xf = getFill(inc(x));
+    B xf = getFillQ(x);
     if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
     i64 wsum = isum(w); if (wsum>USZ_MAX) thrM("/: Result too large");
     usz ria = wsum;
@@ -380,11 +381,11 @@ B join_c1(B t, B x) {
   if (rnk(x)==1) {
     usz xia = a(x)->ia;
     if (xia==0) {
-      B xf = getFillE(x);
+      B xf = getFillE(x); dec(x);
       if (isAtm(xf)) thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
       ur ir = rnk(xf);
       if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
-      B xff = getFill(inc(xf));
+      B xff = getFillQ(xf);
       HArr_p r = m_harrUp(0);
       usz* sh = arr_shAllocR(r.b, ir);
       if (sh) {
@@ -397,7 +398,7 @@ B join_c1(B t, B x) {
     BS2B xgetU = TI(x).getU;
     
     B x0 = xgetU(x,0);
-    B rf; if(SFNS_FILLS) rf = getFill(inc(x0));
+    B rf; if(SFNS_FILLS) rf = getFillQ(x0);
     if (isAtm(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
     usz ir = rnk(x0);
     usz* x0sh = a(x0)->sh;
@@ -411,7 +412,7 @@ B join_c1(B t, B x) {
       usz* csh = a(c)->sh;
       if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrM("∾: Item trailing shapes must be equal");
       cam+= a(c)->sh[0];
-      if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFill(inc(c)));
+      if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
     }
     
     MAKE_MUT(r, cam*csz);
@@ -517,7 +518,7 @@ B shiftb_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("»: Argument cannot be a scalar");
   usz ia = a(x)->ia;
   if (ia==0) return x;
-  B xf = getFillE(inc(x));
+  B xf = getFillE(x);
   usz csz = arr_csz(x);
   
   MAKE_MUT(r, ia); mut_to(r, TI(x).elType);
@@ -544,7 +545,7 @@ B shifta_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("«: Argument cannot be a scalar");
   usz ia = a(x)->ia;
   if (ia==0) return x;
-  B xf = getFillE(inc(x));
+  B xf = getFillE(x);
   usz csz = arr_csz(x);
   MAKE_MUT(r, ia); mut_to(r, TI(x).elType);
   mut_copy(r, 0, x, csz, ia-csz);
