@@ -7,6 +7,7 @@ typedef struct Mut {
 
 void mut_to(Mut* m, u8 n) {
   u8 o = m->type;
+  assert(o!=el_B);
   m->type = n;
   if (o==el_MAX) {
     switch(n) { default: UD;
@@ -18,6 +19,9 @@ void mut_to(Mut* m, u8 n) {
   } else {
     sprnk(m->val, 1);
     m->val->sh = &m->val->ia;
+    #ifdef USE_VALGRIND
+      VALGRIND_MAKE_MEM_DEFINED(m->val, mm_size((Value*)m->val)); // it's incomplete, but it's a typed array so garbage is acceptable
+    #endif
     switch(n) { default: UD;
       case el_i32: m->val = (Arr*)toI32Arr(tag(m->val, ARR_TAG)); return;
       case el_f64: m->val = (Arr*)toF64Arr(tag(m->val, ARR_TAG)); return;

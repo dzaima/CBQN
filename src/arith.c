@@ -79,26 +79,16 @@ B decp_c1(B t, B x);
 B eq_c2(B t, B w, B x) {
   if(isF64(w)&isF64(x)) return m_i32(w.f==x.f);
   P2(eq);
-  if (w.u==x.u)               { dec(w);dec(x); return m_i32(1); }
-  // doesn't handle int=float
-  if (!isVal(w) | !isVal(x))  { dec(w);dec(x); return m_i32(0); }
-  if (v(w)->type!=v(x)->type) { dec(w);dec(x); return m_i32(0); }
-  B2B dcf = TI(w).decompose;
-  if (dcf == def_decompose)   { dec(w);dec(x); return m_i32(0); }
-  w=dcf(w); B* wp = harr_ptr(w);
-  x=dcf(x); B* xp = harr_ptr(x);
-  if (o2i(wp[0])<=1)          { dec(w);dec(x); return m_i32(0); }
-  usz wia = a(w)->ia;
-  usz xia = a(x)->ia;
-  if (wia != xia)             { dec(w);dec(x); return m_i32(0); }
-  for (i32 i = 0; i<wia; i++) if(!equal(wp[i], xp[i]))
-                              { dec(w);dec(x); return m_i32(0); }
-                                dec(w);dec(x); return m_i32(1);
+  B r = m_i32(atomEqual(w, x));
+  dec(w); dec(x);
+  return r;
 }
 B ne_c2(B t, B w, B x) {
   if(isF64(w)&isF64(x)) return m_i32(w.f!=x.f);
   P2(ne);
-  return m_i32(1-o2i(eq_c2(t,w,x)));
+  B r = m_i32(!atomEqual(w, x));
+  dec(w); dec(x);
+  return r;
 }
 
 

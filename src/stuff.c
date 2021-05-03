@@ -84,12 +84,28 @@ void printRaw(B x) {
   }
 }
 
-B eq_c2(B t, B w, B x);
+B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
+bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
+  if(isF64(w)&isF64(x)) return w.f==x.f;
+  if (w.u==x.u) return true;
+  if (!isVal(w) | !isVal(x)) return false;
+  if (v(w)->type!=v(x)->type) return false;
+  B2B dcf = TI(w).decompose;
+  if (dcf == def_decompose) return false;
+  B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
+  B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
+  if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
+  usz wia = a(wd)->ia;
+  if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
+  for (i32 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
+                      { dec(wd);dec(xd); return false; }
+                        dec(wd);dec(xd); return true;
+}
 bool equal(B w, B x) { // doesn't consume
-  bool wa = isArr(w);
-  bool xa = isArr(x);
+  bool wa = isAtm(w);
+  bool xa = isAtm(x);
   if (wa!=xa) return false;
-  if (!wa) return o2iu(eq_c2(bi_N, inc(w), inc(x)))?1:0;
+  if (wa) return atomEqual(w, x);
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
@@ -176,7 +192,6 @@ B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 bool def_canStore(B x) { return false; }
-B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
 
 static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {

@@ -210,13 +210,14 @@ B    inc(B x);
 void ptr_dec(void* x);
 void ptr_inc(void* x);
 void printUTF8(u32 c);
-void printRaw(B x);     // doesn't consume
-void print(B x);        // doesn't consume
-bool equal(B w, B x);   // doesn't consume
-void arr_print(B x);    // doesn't consume
-u8   fillElType(B x);   // doesn't consume
-bool eqShape(B w, B x); // doesn't consume
-usz  arr_csz(B x);      // doesn't consume
+void printRaw(B x);       // doesn't consume
+void print(B x);          // doesn't consume
+bool equal(B w, B x);     // doesn't consume
+void arr_print(B x);      // doesn't consume
+u8   fillElType(B x);     // doesn't consume
+bool eqShape(B w, B x);   // doesn't consume
+usz  arr_csz(B x);        // doesn't consume
+bool atomEqual(B w, B x); // doesn't consume
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all
@@ -355,6 +356,7 @@ void slice_free(B x) { dec(c(Slice,x)->p); decSh(x); }
 void slice_visit(B x) { mm_visit(c(Slice,x)->p); }
 void slice_print(B x) { arr_print(x); }
 
+B* harr_ptr(B x);
 
 
 typedef void (*B2v)(B);

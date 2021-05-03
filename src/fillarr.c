@@ -141,12 +141,12 @@ void validateFill(B x) {
 }
 
 B fill_or(B wf, B xf) { // consumes
-  if (!equal(wf, xf)) {
-    dec(wf); dec(xf);
-    return bi_noFill;
+  if (wf.u==xf.u || equal(wf, xf)) {
+    dec(wf);
+    return xf;
   }
-  dec(wf);
-  return xf;
+  dec(wf); dec(xf);
+  return bi_noFill;
 }
 
 B fill_both(B w, B x) { // doesn't consume

@@ -59,6 +59,7 @@ void BN(free)(Value* x) {
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(x->mmInfo&63));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
+    VALGRIND_MAKE_MEM_DEFINED(&x->type, 1);
   #endif
   #ifdef DONT_FREE
     if (x->type!=t_freed) x->flags = x->type;
