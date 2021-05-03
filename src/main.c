@@ -14,6 +14,7 @@
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
 #define EACH_FILLS false // whether to try to squeeze out fills for ¨ and ⌜
+#define SFNS_FILLS true // whether to insert fills for structural functions (∾, ≍, etc)
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
 
 // #define LOG_GC       // log GC stats
@@ -22,7 +23,7 @@
 // #define RT_PERF      // time runtime primitives
 
 #ifdef CATCH_ERRORS
-  #define PROPER_FILLS EACH_FILLS
+  #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
 #else
   #undef EACH_FILLS
   #define EACH_FILLS false
@@ -91,7 +92,7 @@ int main() {
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_N     , bi_take  , bi_drop , bi_ud  , bi_shifta, bi_shiftb,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_couple, bi_take  , bi_drop , bi_ud  , bi_shifta, bi_shiftb,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N     , bi_N,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N     , bi_fold,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond  , bi_N,
@@ -100,7 +101,7 @@ int main() {
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,0,0,0,0,1,1,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,0,1,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,

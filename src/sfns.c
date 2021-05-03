@@ -197,7 +197,7 @@ B select_c1(B t, B x) {
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrM("⊏: Argument shape cannot start with 0");
-  B r = TI(x).slice(x,0);
+  B r = TI(x).slice(inc(x),0);
   usz* sh = arr_shAllocR(r, xr-1);
   usz ia = 1;
   for (i32 i = 1; i < xr; i++) {
@@ -205,6 +205,7 @@ B select_c1(B t, B x) {
     ia*= a(x)->sh[i];
   }
   a(r)->ia = ia;
+  dec(x);
   return r;
 }
 B select_c2(B t, B w, B x) {
@@ -217,9 +218,10 @@ B select_c2(B t, B w, B x) {
     i64 wi = o2i64(w);
     if (wi<0) wi+= cam;
     if ((usz)wi >= cam) thrM("⊏: Indexing out-of-bounds");
-    B r = TI(x).slice(x, wi*csz);
+    B r = TI(x).slice(inc(x), wi*csz);
     usz* sh = arr_shAllocI(r, csz, xr-1);
     if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
+    dec(x);
     return r;
   }
   B xf = getFill(inc(x));
@@ -374,12 +376,12 @@ B drop_c2(B t, B w, B x) {
 
 B rt_join;
 B join_c1(B t, B x) {
-  if (!isArr(x)) thrM("∾: Argument must be an array");
+  if (isAtm(x)) thrM("∾: Argument must be an array");
   if (rnk(x)==1) {
     usz xia = a(x)->ia;
     if (xia==0) {
       B xf = getFillE(x);
-      if (!isArr(xf)) thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
+      if (isAtm(xf)) thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
       ur ir = rnk(xf);
       if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
       B xff = getFill(inc(xf));
@@ -395,8 +397,8 @@ B join_c1(B t, B x) {
     BS2B xgetU = TI(x).getU;
     
     B x0 = xgetU(x,0);
-    B rf = getFill(inc(x0));
-    if (!isArr(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
+    B rf; if(SFNS_FILLS) rf = getFill(inc(x0));
+    if (isAtm(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
     usz ir = rnk(x0);
     usz* x0sh = a(x0)->sh;
     if (ir==0) thrM("∾: Rank of items must be equal or greater than rank of argument");
@@ -409,7 +411,7 @@ B join_c1(B t, B x) {
       usz* csh = a(c)->sh;
       if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrM("∾: Item trailing shapes must be equal");
       cam+= a(c)->sh[0];
-      if (!noFill(rf)) rf = fill_or(rf, getFill(inc(c)));
+      if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFill(inc(c)));
     }
     
     MAKE_MUT(r, cam*csz);
@@ -428,7 +430,7 @@ B join_c1(B t, B x) {
       memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
     }
     dec(x);
-    return qWithFill(rb, rf);
+    return SFNS_FILLS? qWithFill(rb, rf) : rb;
   }
   return c1(rt_join, x);
 }
@@ -460,6 +462,47 @@ B join_c2(B t, B w, B x) {
   }
   dec(w); dec(x);
   return qWithFill(rb, f);
+}
+
+
+B couple_c1(B t, B x) {
+  if (isArr(x)) {
+    usz rr = rnk(x);
+    usz ia = a(x)->ia;
+    B r = TI(x).slice(inc(x),0);
+    usz* sh = arr_shAllocI(r, ia, rr+1);
+    if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
+    dec(x);
+    return r;
+  }
+  if (q_i32(x)) { B r = m_i32arrv(1); i32arr_ptr(r)[0] = o2iu(x); return r; }
+  if (isF64(x)) { B r = m_f64arrv(1); f64arr_ptr(r)[0] = o2fu(x); return r; }
+  if (isC32(x)) { B r = m_c32arrv(1); c32arr_ptr(r)[0] = o2cu(x); return r; }
+  HArr_p r = m_harrUv(1);
+  r.a[0] = x;
+  return r.b;
+}
+B couple_c2(B t, B w, B x) {
+  if (isAtm(w)&isAtm(x)) {
+    if (q_i32(x)&q_i32(w)) { B r = m_i32arrv(2); i32* rp=i32arr_ptr(r); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
+    if (isF64(x)&isF64(w)) { B r = m_f64arrv(2); f64* rp=f64arr_ptr(r); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
+    if (isC32(x)&isC32(w)) { B r = m_c32arrv(2); u32* rp=c32arr_ptr(r); rp[0]=o2cu(w); rp[1]=o2cu(x); return r; }
+  }
+  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(x)) x = m_atomUnit(x);
+  if (!eqShape(w, x)) thrM("≍: 𝕨 and 𝕩 must have equal shapes");
+  usz ia = a(w)->ia;
+  ur wr = rnk(w);
+  MAKE_MUT(r, ia*2);
+  mut_copy(r, 0,  w, 0, ia);
+  mut_copy(r, ia, x, 0, ia);
+  B rb = mut_fp(r);
+  usz* sh = arr_shAllocR(rb, wr+1);
+  if (sh) { sh[0]=2; memcpy(sh+1, a(w)->sh, wr*sizeof(usz)); }
+  if (!SFNS_FILLS) { dec(w); dec(x); return rb; }
+  B rf = fill_both(w, x);
+  dec(w); dec(x);
+  return qWithFill(rb, rf);
 }
 
 
@@ -531,8 +574,8 @@ B shifta_c2(B t, B w, B x) {
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
-B                                bi_shape, bi_pick, bi_pair, bi_select, bi_slash, bi_join, bi_shiftb, bi_shifta, bi_take, bi_drop;
-static inline void sfns_init() { ba(shape) ba(pick) ba(pair) ba(select) ba(slash) ba(join) ba(shiftb) ba(shifta) bd(take) bd(drop)
+B                                bi_shape, bi_pick, bi_pair, bi_select, bi_slash, bi_join, bi_couple, bi_shiftb, bi_shifta, bi_take, bi_drop;
+static inline void sfns_init() { ba(shape) ba(pick) ba(pair) ba(select) ba(slash) ba(join) ba(couple) ba(shiftb) ba(shifta) bd(take) bd(drop)
 }
 
 #undef ba
