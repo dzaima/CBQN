@@ -139,8 +139,33 @@ void validateFill(B x) {
   }
 }
 
+bool fillEqual(B w, B x) { // doesn't consume
+  if (w.u==x.u) return true;
+  bool wa = isAtm(w);
+  bool xa = isAtm(x);
+  if (wa!=xa) return false;
+  if (wa) return false;
+  if (!eqShape(w, x)) return false;
+  usz ia = a(w)->ia;
+  if (ia==0) return true;
+  
+  u8 we = TI(w).elType;
+  u8 xe = TI(x).elType;
+  if (we!=el_B && xe!=el_B) {
+    if (we==xe) return true;
+    if (we==el_c32 ^ xe==el_c32) return false;
+    assert(we==el_i32|we==el_f64);
+    assert(xe==el_i32|xe==el_f64);
+    return true;
+  }
+  BS2B xgetU = TI(x).getU;
+  BS2B wgetU = TI(w).getU;
+  for (usz i = 0; i < ia; i++) if(!fillEqual(wgetU(w,i),xgetU(x,i))) return false;
+  return true;
+}
+
 B fill_or(B wf, B xf) { // consumes
-  if (wf.u==xf.u || equal(wf, xf)) {
+  if (fillEqual(wf, xf)) {
     dec(wf);
     return xf;
   }
@@ -165,8 +190,8 @@ B withFill(B x, B fill) { // consumes both
     case t_f64arr : case t_f64slice:
     case t_i32arr : case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr : case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
-    case t_fillslice: if (equal(c(FillArr,c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
-    case t_fillarr: if (equal(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
+    case t_fillslice: if (fillEqual(c(FillArr,c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
+    case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {
         dec(c(FillArr, x)->fill);
         c(FillArr, x)->fill = fill;
