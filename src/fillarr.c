@@ -140,16 +140,20 @@ void validateFill(B x) {
   }
 }
 
-B fill_both(B w, B x) { // doesn't consume
-  B fw = getFill(inc(w));
-  if (noFill(fw)) return bi_noFill;
-  B fx = getFill(inc(x));
-  if (!equal(fw, fx)) {
-    dec(fw); dec(fx);
+B fill_or(B wf, B xf) { // consumes
+  if (!equal(wf, xf)) {
+    dec(wf); dec(xf);
     return bi_noFill;
   }
-  dec(fw);
-  return fx;
+  dec(wf);
+  return xf;
+}
+
+B fill_both(B w, B x) { // doesn't consume
+  B wf = getFill(inc(w));
+  if (noFill(wf)) return bi_noFill;
+  B xf = getFill(inc(x));
+  return fill_or(wf, xf);
 }
 
 B withFill(B x, B fill) { // consumes both

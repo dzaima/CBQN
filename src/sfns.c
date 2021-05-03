@@ -377,10 +377,25 @@ B join_c1(B t, B x) {
   if (!isArr(x)) thrM("∾: Argument must be an array");
   if (rnk(x)==1) {
     usz xia = a(x)->ia;
-    if (xia==0) return x;
+    if (xia==0) {
+      B xf = getFillE(x);
+      if (!isArr(xf)) thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
+      ur ir = rnk(xf);
+      if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
+      B xff = getFill(inc(xf));
+      HArr_p r = m_harrUp(0);
+      usz* sh = arr_shAllocR(r.b, ir);
+      if (sh) {
+        sh[0] = 0;
+        memcpy(sh+1, a(xf)->sh+1, sizeof(usz)*(ir-1));
+      }
+      dec(xf);
+      return withFill(r.b, xff);
+    }
     BS2B xgetU = TI(x).getU;
     
     B x0 = xgetU(x,0);
+    B rf = getFill(inc(x0));
     if (!isArr(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
     usz ir = rnk(x0);
     usz* x0sh = a(x0)->sh;
@@ -394,6 +409,7 @@ B join_c1(B t, B x) {
       usz* csh = a(c)->sh;
       if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrM("∾: Item trailing shapes must be equal");
       cam+= a(c)->sh[0];
+      if (!noFill(rf)) rf = fill_or(rf, getFill(inc(c)));
     }
     
     MAKE_MUT(r, cam*csz);
@@ -412,7 +428,7 @@ B join_c1(B t, B x) {
       memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
     }
     dec(x);
-    return rb;
+    return qWithFill(rb, rf);
   }
   return c1(rt_join, x);
 }
