@@ -374,6 +374,46 @@ B drop_c2(B t, B w, B x) {
 
 B rt_join;
 B join_c1(B t, B x) {
+  if (!isArr(x)) thrM("∾: Argument must be an array");
+  if (rnk(x)==1) {
+    usz xia = a(x)->ia;
+    if (xia==0) return x;
+    BS2B xgetU = TI(x).getU;
+    
+    B x0 = xgetU(x,0);
+    if (!isArr(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
+    usz ir = rnk(x0);
+    usz* x0sh = a(x0)->sh;
+    if (ir==0) thrM("∾: Rank of items must be equal or greater than rank of argument");
+    
+    usz csz = arr_csz(x0);
+    usz cam = x0sh[0];
+    for (usz i = 1; i < xia; i++) {
+      B c = xgetU(x, i);
+      if (!isArr(c) || rnk(c)!=ir) thrM("∾: All items in argument should have same rank");
+      usz* csh = a(c)->sh;
+      if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrM("∾: Item trailing shapes must be equal");
+      cam+= a(c)->sh[0];
+    }
+    
+    MAKE_MUT(r, cam*csz);
+    usz ri = 0;
+    for (usz i = 0; i < xia; i++) {
+      B c = xgetU(x, i);
+      usz cia = a(c)->ia;
+      mut_copy(r, ri, c, 0, cia);
+      ri+= cia;
+    }
+    assert(ri==cam*csz);
+    B rb = mut_fp(r);
+    usz* sh = arr_shAllocR(rb, ir);
+    if (sh) {
+      sh[0] = cam;
+      memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
+    }
+    dec(x);
+    return rb;
+  }
   return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
