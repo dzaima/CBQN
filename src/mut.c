@@ -22,6 +22,13 @@ void mut_to(Mut* m, u8 n) {
     #ifdef USE_VALGRIND
       VALGRIND_MAKE_MEM_DEFINED(m->val, mm_size((Value*)m->val)); // it's incomplete, but it's a typed array so garbage is acceptable
     #endif
+    #ifdef DEBUG
+      if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
+        usz ia = m->val->ia;
+        f64* p = f64arr_ptr(tag(m->val,ARR_TAG));
+        for (usz i = 0; i < ia; i++) if (!isF64(b(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161 
+      }
+    #endif
     switch(n) { default: UD;
       case el_i32: m->val = (Arr*)toI32Arr(tag(m->val, ARR_TAG)); return;
       case el_f64: m->val = (Arr*)toF64Arr(tag(m->val, ARR_TAG)); return;
@@ -53,7 +60,7 @@ B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
 }
 
 u8 el_or(u8 a, u8 b) {
-  #define M(X) if(b==X) return b>X?b:X;
+  #define M(X) if(b==X) return a>X?a:X;
   switch (a) {
     case el_c32: M(el_c32);            return el_B;
     case el_i32: M(el_i32); M(el_f64); return el_B;
@@ -141,6 +148,12 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       f64* xp;
       if (xt==t_f64arr) xp = f64arr_ptr(x);
       else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
+      else if (xt==t_i32arr|xt==t_i32slice) {
+        i32* xp = xt==t_i32arr? i32arr_ptr(x) : c(I32Slice,x)->a;
+        f64* rp = ((F64Arr*)m->val)->a+ms;
+        for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
+        return;
+      }
       else AGAIN;
       memcpy(((F64Arr*)m->val)->a+ms, xp+xs, l*8);
       return;

@@ -73,5 +73,6 @@ static inline void f64arr_init() {
   ti[t_f64arr].print =    arr_print; ti[t_f64slice].print = arr_print;
   ti[t_f64arr].isArr = true;         ti[t_f64slice].isArr = true;
   ti[t_f64arr].arrD1 = true;         ti[t_f64slice].arrD1 = true;
+  ti[t_f64arr].elType = el_f64;      ti[t_f64slice].elType = el_f64;
   ti[t_f64arr].canStore = f64arr_canStore;
 }
