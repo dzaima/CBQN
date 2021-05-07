@@ -1,6 +1,15 @@
 #include "h.h"
 // a bunch of random things that don't really belong in any other file
 
+
+#include <sys/mman.h>
+#include <unistd.h>
+
+#ifndef MAP_NORESERVE
+ #define MAP_NORESERVE 0 // apparently needed for freebsd or something
+#endif
+
+
 void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   BS2B xgetU = TI(x).getU;

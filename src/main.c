@@ -67,9 +67,6 @@ Block* ca3(B x) {
   return r;
 }
 
-ssize_t getline(char** line, size_t* n, FILE* stream);
-
-
 
 int main() {
   hdr_init();

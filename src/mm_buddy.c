@@ -1,10 +1,5 @@
 #include "h.h"
 #include "gc.c"
-#include <sys/mman.h>
-
-#ifndef MAP_NORESERVE
- #define MAP_NORESERVE 0 // apparently needed for freebsd or something
-#endif
 
 typedef struct EmptyValue EmptyValue;
 struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else can be garbage

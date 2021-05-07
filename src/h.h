@@ -85,9 +85,9 @@ enum ElType { // a⌈b shall return the type that can store both, if possible
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
     case t_empty:return"empty"; case t_shape:return"shape";
-    case t_funBI:return"fun_def"; case t_fun_block:return"fun_block";
-    case t_md1BI:return"md1_def"; case t_md1_block:return"md1_block";
-    case t_md2BI:return"md2_def"; case t_md2_block:return"md2_block";
+    case t_funBI:return"builtin fun"; case t_fun_block:return"fun_block";
+    case t_md1BI:return"builtin md1"; case t_md1_block:return"md1_block";
+    case t_md2BI:return"builtin md2"; case t_md2_block:return"md2_block";
     case t_fork:return"fork"; case t_atop:return"atop";
     case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
     case t_harr  :return"harr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;

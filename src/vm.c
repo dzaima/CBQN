@@ -1,5 +1,10 @@
 #include "h.h"
 
+// #define GS_REALLOC // whether to dynamically realloc gStack
+#ifndef GS_SIZE
+#define GS_SIZE 16384 // if !GS_REALLOC, size in number of B objects of the global object stack
+#endif
+
 enum {
   PUSH =  0, // N; push object from objs[N]
   VARO =  1, // N; push variable with name strs[N]
@@ -257,18 +262,29 @@ B* gStackStart;
 B* gStackEnd;
 
 void gsReserve(u64 am) {
-  u64 left = gStackEnd-gStack;
-  if (am>left) {
-    u64 n = gStackEnd-gStackStart + am + 500;
-    u64 d = gStack-gStackStart;
-    gStackStart = realloc(gStackStart, n*sizeof(B));
-    gStack    = gStackStart+d;
-    gStackEnd = gStackStart+n;
-  }
+  #ifdef GS_REALLOC
+    if (am>gStackEnd-gStack) {
+      u64 n = gStackEnd-gStackStart + am + 500;
+      u64 d = gStack-gStackStart;
+      gStackStart = realloc(gStackStart, n*sizeof(B));
+      gStack    = gStackStart+d;
+      gStackEnd = gStackStart+n;
+    }
+  #elif DEBUG
+    if (am>gStackEnd-gStack) err("stack overflow");
+  #endif
 }
-NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
+#ifdef GS_REALLOC
+NOINLINE
+#endif
+void gsReserveR(u64 am) { gsReserve(am); }
+
 void gsAdd(B x) {
-  if (gStack==gStackEnd) gsReserveR(1);
+  #ifdef GS_REALLOC
+    if (gStack==gStackEnd) gsReserveR(1);
+  #elif DEBUG
+    if (gStack==gStackEnd) err("early stack overflow");
+  #endif
   *(gStack++) = x;
 }
 B gsPop() {
@@ -289,11 +305,18 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
   for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
-  
-  #define POP (*--gStack)
-  #define P(N) B N=POP;
-  #define ADD(X) { B tr=X; *(gStack++) = tr; } // if ordering is needed
-  // #define ADD(X) *(gStack++) = X; }         // if ordering is not needed
+  #ifdef GS_REALLOC
+    #define POP (*--gStack)
+    #define P(N) B N=POP;
+    #define ADD(X) { B tr=X; *(gStack++) = tr; }
+    #define GS_UPD
+  #else
+    B* lgStack = gStack;
+    #define POP (*--lgStack)
+    #define P(N) B N=POP;
+    #define ADD(X) { *(lgStack++) = X; }
+    #define GS_UPD { gStack = lgStack; }
+  #endif
   
   while(true) {
     #ifdef DEBUG_VM
@@ -313,18 +336,22 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case FN1C: { P(f)P(x)
+        GS_UPD;
         ADD(c1(f, x); dec(f));
         break;
       }
       case FN1O: { P(f)P(x)
+        GS_UPD;
         ADD(isNothing(x)? x : c1(f, x)); dec(f);
         break;
       }
       case FN2C: { P(w)P(f)P(x)
+        GS_UPD;
         ADD(c2(f, w, x); dec(f));
         break;
       }
       case FN2O: { P(w)P(f)P(x)
+        GS_UPD;
         if (isNothing(x)) { dec(w); ADD(x); }
         else ADD(isNothing(w)? c1(f, x) : c2(f, w, x));
         dec(f);
@@ -339,6 +366,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case DFND: {
+        GS_UPD;
         Block* bl = blocks[*bc++];
         switch(bl->ty) { default: UD;
           case 0: ADD(m_funBlock(bl, sc)); break;
@@ -347,11 +375,11 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         }
         break;
       }
-      case OP1D: { P(f)P(m)     ADD(m1_d  (m,f  )); break; }
-      case OP2D: { P(f)P(m)P(g) ADD(m2_d  (m,f,g)); break; }
-      case OP2H: {     P(m)P(g) ADD(m2_h  (m,  g)); break; }
-      case TR2D: {     P(g)P(h) ADD(m_atop(  g,h)); break; }
-      case TR3D: { P(f)P(g)P(h) ADD(m_fork(f,g,h)); break; }
+      case OP1D: { P(f)P(m)     GS_UPD; ADD(m1_d  (m,f  )); break; }
+      case OP2D: { P(f)P(m)P(g) GS_UPD; ADD(m2_d  (m,f,g)); break; }
+      case OP2H: {     P(m)P(g)         ADD(m2_h  (m,  g)); break; }
+      case TR2D: {     P(g)P(h)         ADD(m_atop(  g,h)); break; }
+      case TR3D: { P(f)P(g)P(h)         ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h)
         if (isNothing(f)) { ADD(m_atop(g,h)); dec(f); }
         else ADD(m_fork(f,g,h));
@@ -517,6 +545,13 @@ static inline void comp_init() {
   ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
   ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
   ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].visit = md2Bl_visit; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;
+  #ifndef GS_REALLOC
+    usz pageSize = sysconf(_SC_PAGESIZE);
+    u64 sz = (GS_SIZE + pageSize-1)/pageSize * pageSize;
+    gStack = gStackStart = mmap(NULL, sz*sizeof(B)+pageSize, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+    gStackEnd = gStackStart+sz;
+    mprotect(gStackEnd, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
+  #endif
 }
 
 void print_vmStack() {
