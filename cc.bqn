@@ -33,7 +33,7 @@ useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← ((<"inc(runtime["∾⍕∾"])"˙)¨↕62) glyphs _getComp ⊢
 J ← ∾∾⟜\n¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
-Fout ← {((≠𝕩)↑⟨LI F¨,L Fconst¨,L (LI F¨)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
+Fout ← {((≠𝕩)↑⟨LI F¨,L Fconst¨,L (LI ·F¨ 4↑⊢)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾\n}
 

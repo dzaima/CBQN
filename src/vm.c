@@ -143,8 +143,8 @@ typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
 Block* compile(B bcq, B objs, B blocksq) { // consumes all
-  HArr* h = toHArr(blocksq);
-  usz bam = h->ia;
+  HArr* blocksH = toHArr(blocksq);
+  usz bam = blocksH->ia;
   
   // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
   // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inc(objPtr[i])), objPtr[i]);
@@ -156,11 +156,12 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   comp->bc = tag(bca, ARR_TAG);
   comp->objs = toHArr(objs);
   comp->blockAm = bam;
-  B* blockDefs = h->a;
+  B* blockDefs = blocksH->a;
   
   for (usz i = 0; i < bam; i++) {
     B cbld = blockDefs[i];
-    if (a(cbld)->ia != 4) thrM("bad compile block");
+    usz cbia = a(cbld)->ia;
+    if (cbia!=4 && cbia!=6) thrM("bad compile block");
     BS2B bget = TI(cbld).get;
     usz  ty  = o2s(bget(cbld,0)); if (ty>2) thrM("bad block type");
     bool imm = o2s(bget(cbld,1)); // todo o2b or something
@@ -201,7 +202,7 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   // TODO store blocks in each body, then decrement each of comp->blocks; also then move temp block list out of Comp as it's useless then
   // for (usz i = 0; i < bam; i++) ptr_dec(comp->blocks[i]);
   ptr_dec(comp);
-  ptr_dec(h);
+  ptr_dec(blocksH);
   return ret;
 }
 
