@@ -53,6 +53,8 @@ const u16 OBJ_TAG = 0b1111111111110110; // 1111111111110110ppppppppppppppppppppp
 const u16 ARR_TAG = 0b1111111111110111; // 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
 const u16 VAL_TAG = 0b1111111111110   ; // 1111111111110................................................... pointer to Value, needs refcounting
 
+void cbqn_init();
+
 enum Type {
   /* 0*/ t_empty, // empty bucket placeholder
   /* 1*/ t_funBI, t_fun_block,

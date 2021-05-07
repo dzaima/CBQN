@@ -69,21 +69,7 @@ Block* ca3(B x) {
 
 
 int main() {
-  hdr_init();
-  harr_init();
-  fillarr_init();
-  i32arr_init();
-  c32arr_init();
-  f64arr_init();
-  arith_init();
-  fns_init();
-  sfns_init();
-  md1_init();
-  md2_init();
-  sysfn_init();
-  derv_init();
-  comp_init();
-  rtPerf_init();
+  cbqn_init();
   
   
   B fruntime[] = {
