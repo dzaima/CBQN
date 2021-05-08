@@ -314,7 +314,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     B* lgStack = gStack;
     #define POP (*--lgStack)
     #define P(N) B N=POP;
-    #define ADD(X) { *(lgStack++) = X; }
+    #define ADD(X) { *(lgStack++) = X; } // fine, as, if an error occurs, lgStack is ignored anyways
     #define GS_UPD { gStack = lgStack; }
   #endif
   
@@ -362,6 +362,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         HArr_p r = m_harrUv(sz);
         bool allNum = true;
         for (i32 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+        GS_UPD;
         ADD(allNum && sz? withFill(r.b, m_f64(0)) : r.b);
         break;
       }
@@ -399,9 +400,9 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
-      case SETN: { P(s)    P(x) v_set(pscs, s, x, false); dec(s); ADD(x); break; }
-      case SETU: { P(s)    P(x) v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
-      case SETM: { P(s)P(f)P(x)
+      case SETN: { P(s)    P(x) GS_UPD; v_set(pscs, s, x, false); dec(s); ADD(x); break; }
+      case SETU: { P(s)    P(x) GS_UPD; v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
+      case SETM: { P(s)P(f)P(x) GS_UPD;
         B w = v_get(pscs, s);
         B r = c2(f,w,x); dec(f);
         v_set(pscs, s, r, true); dec(s);
@@ -431,6 +432,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #undef P
   #undef ADD
   #undef POP
+  #undef GS_UPD
 }
 
 B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
