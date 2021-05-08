@@ -290,6 +290,18 @@ void gsAdd(B x) {
 B gsPop() {
   return *--gStack;
 }
+void gsPrint() {
+  B* c = gStackStart;
+  i32 i = 0;
+  while (c!=gStack) {
+    printf("%d: ", i);
+    print(*c);
+    printf(", refc=%d\n", v(*c)->refc);
+    c++;
+    i++;
+  }
+}
+
 B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -359,11 +371,17 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       }
       case ARRO: case ARRM: {
         i32 sz = *bc++;
-        HArr_p r = m_harrUv(sz);
-        bool allNum = true;
-        for (i32 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
-        GS_UPD;
-        ADD(allNum && sz? withFill(r.b, m_f64(0)) : r.b);
+        if (sz==0) {
+          ADD(inc(bi_emptyHVec));
+        } else {
+          HArr_p r = m_harrUv(sz);
+          bool allNum = true;
+          for (i32 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+          if (allNum) {
+            GS_UPD;
+            ADD(withFill(r.b, m_f64(0)));
+          } else ADD(r.b);
+        }
         break;
       }
       case DFND: {
@@ -428,7 +446,9 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth-= 2;
   #endif
-  return POP;
+  B r = POP;
+  GS_UPD;
+  return r;
   #undef P
   #undef ADD
   #undef POP

@@ -167,13 +167,12 @@ B sys_c1(B t, B x) {
   for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);
     if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
-    else if (eqStr(c, U"eq")) r.a[i] = inc(bi_feq);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
-    else thrM("Unknown system function");
+    else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);
 }

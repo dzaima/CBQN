@@ -174,4 +174,6 @@ static inline void harr_init() {
   ti[t_harr].print =  arr_print; ti[t_hslice].print = arr_print;    ti[t_harrPartial].print = harrP_print;
   ti[t_harr].isArr = true;       ti[t_hslice].isArr = true;
   ti[t_harr].canStore = harr_canStore;
+  bi_emptyHVec = m_harrUv(0).b;
+  gc_add(bi_emptyHVec);
 }
