@@ -1,15 +1,15 @@
 #include "h.h"
 
-Block* compB(B x) { // consumes
+Block* load_compObj(B x) { // consumes
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
-  if (xia!=5 & xia!=3) thrM("compB: bad item count");
+  if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
   Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4))
                    : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,bi_N);
   dec(x);
   return r;
 }
-Block* compile3(B bc, B objs, B blocks) { // consumes all
+Block* load_compImport(B bc, B objs, B blocks) { // consumes all
   return compile(bc, objs, blocks, bi_N, bi_N);
 }
 
@@ -25,7 +25,7 @@ B bqn_fmt(B x) { // consumes
 
 
 Block* bqn_comp(B str) { // consumes
-  return compB(c2(load_comp, inc(load_compArg), str));
+  return load_compObj(c2(load_comp, inc(load_compArg), str));
 }
 B bqn_exec(B str) { // consumes
   Block* block = bqn_comp(str);
@@ -33,7 +33,7 @@ B bqn_exec(B str) { // consumes
   ptr_dec(block);
   return res;
 }
-void bqn_setComp(B comp) {
+void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
   load_comp = comp;
   gc_add(load_comp);
 }
@@ -66,14 +66,14 @@ static inline void load_init() {
   #ifndef ALL_R0
   B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
   #else
-  Block* runtime0_b = compile3(
+  Block* runtime0_b = load_compImport(
     #include "runtime0"
   );
   B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
   B* runtime_0 = toHArr(r0r)->a;
   #endif
   
-  Block* runtime_b = compile3(
+  Block* runtime_b = load_compImport(
     #include "runtime1"
   );
   
@@ -120,7 +120,7 @@ static inline void load_init() {
   
   
   #ifdef NO_COMP
-    Block* c = compB(
+    Block* c = load_compObj(
       #include "interp"
     );
     B interp = m_funBlock(c, 0); ptr_dec(c);
@@ -129,7 +129,7 @@ static inline void load_init() {
     dec(interp);
     exit(0);
   #else // use compiler
-    Block* comp_b = compile3(
+    Block* comp_b = load_compImport(
       #include "compiler"
     );
     load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
@@ -137,7 +137,7 @@ static inline void load_init() {
     
     
     #ifdef FORMATTER
-    Block* fmt_b = compile3(
+    Block* fmt_b = load_compImport(
       #include "formatter"
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);

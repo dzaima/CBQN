@@ -50,14 +50,21 @@ B m_ns(Scope* sc, NSDesc* desc) { // consumes both
   return r;
 }
 
-B ns_getU(B ns, B nameList, i32 nameID) {
+B ns_getU(B ns, B cNL, i32 nameID) {
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
-  if (n->nameList.u != nameList.u) thrM("TODO cross-program namespace access");
-  i32 varAm = d->varAm;
-  // printf("getting from %p with vam=%d\n", d, d->varAm);
-  assert(nameID<a(nameList)->ia && nameID>=0);
-  for (i32 i = 0; i < varAm; i++) {
+  i32 dVarAm = d->varAm;
+  assert(nameID<a(cNL)->ia && nameID>=0);
+  B dNL = d->nameList;
+  if (cNL.u != dNL.u) {
+    B cName = TI(cNL).getU(cNL, nameID);
+    BS2B dNLgetU = TI(dNL).getU;
+    for (i32 i = 0; i < dVarAm; i++) {
+      i32 dID = d->expIDs[i];
+      if (dID>=0 && equal(dNLgetU(dNL, dID), cName)) return n->sc->vars[i];
+    }
+  }
+  for (i32 i = 0; i < dVarAm; i++) {
     if (d->expIDs[i]==nameID) return n->sc->vars[i];
   }
   thrM("No key found");
