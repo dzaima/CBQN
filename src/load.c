@@ -1,16 +1,16 @@
 #include "h.h"
 
-Block* load_compObj(B x) { // consumes
+Block* load_compObj(B x, B src) { // consumes
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4))
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,bi_N);
+  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src);
   dec(x);
   return r;
 }
 Block* load_compImport(B bc, B objs, B blocks) { // consumes all
-  return compile(bc, objs, blocks, bi_N, bi_N);
+  return compile(bc, objs, blocks, bi_N, bi_N, bi_N);
 }
 
 B load_comp;
@@ -25,7 +25,8 @@ B bqn_fmt(B x) { // consumes
 
 
 Block* bqn_comp(B str) { // consumes
-  return load_compObj(c2(load_comp, inc(load_compArg), str));
+  inc(str);
+  return load_compObj(c2(load_comp, inc(load_compArg), str), str);
 }
 B bqn_exec(B str) { // consumes
   Block* block = bqn_comp(str);

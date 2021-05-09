@@ -242,6 +242,7 @@ jmp_buf* prepareCatch();
 #endif
 void popCatch();
 B catchMessage;
+u64 envPrevHeight; // envStart+prevEnvHeight will give the original envCurr
 
 
 

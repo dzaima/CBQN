@@ -3,7 +3,10 @@
 
 // #define GS_REALLOC // whether to dynamically realloc gStack
 #ifndef GS_SIZE
-#define GS_SIZE 16384 // if !GS_REALLOC, size in number of B objects of the global object stack
+#define GS_SIZE 65536 // if !GS_REALLOC, size in number of B objects of the global object stack
+#endif
+#ifndef ENV_SIZE
+#define ENV_SIZE 4096 // max recursion depth; GS_SIZE and C stack size may limit this
 #endif
 
 enum {
@@ -65,16 +68,11 @@ i32* nextBC(i32* p) {
 }
 i32 stackDiff(i32* p) {
   switch(*p) {
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case SYSV:
-      return 1;
-    case CHKV: case VFYM: case FLDO: case FLDM: case RETD:
-      return 0;
-    case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN:
-      return -1;
-    case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O:
-      return -2;
-    case ARRO: case ARRM: case NSPM:
-      return 1-p[1];
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case SYSV: return 1;
+    case CHKV: case VFYM: case FLDO: case FLDM: case RETD: return 0;
+    case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN: return -1;
+    case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O: return -2;
+    case ARRO: case ARRM: case NSPM: return 1-p[1];
     default: return 9999999;
   }
 }
@@ -110,6 +108,8 @@ typedef struct Scope Scope;
 typedef struct Comp {
   struct Value;
   B bc;
+  B src;
+  B indices;
   HArr* objs;
   u32 blockAm;
   Block* blocks[];
@@ -142,9 +142,6 @@ struct Scope {
   Scope* psc;
   Body* body;
   u16 varAm;
-  #ifdef DEBUG
-    u64 bcInd; // DEBUG: place of this in bytecode array
-  #endif
   B vars[];
 };
 
@@ -153,7 +150,7 @@ typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
 typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
-Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo) { // consumes all
+Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // consumes all
   HArr* blocksH = toHArr(blocksq);
   usz bam = blocksH->ia;
   
@@ -165,16 +162,26 @@ Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo) { // consumes a
   usz bcl = bca->ia;
   Comp* comp = mm_allocN(fsizeof(Comp,blocks,Block*,bam), t_comp);
   comp->bc = tag(bca, ARR_TAG);
+  comp->indices = indices;
+  comp->src = src;
   comp->objs = toHArr(objs);
   comp->blockAm = bam;
   B* blockDefs = blocksH->a;
-  dec(indices);
   B nameList;
   if (isNothing(tokenInfo)) {
     nameList = bi_emptyHVec;
   } else {
     B t = TI(tokenInfo).getU(tokenInfo,2);
     nameList = TI(t).getU(t,0);
+  }
+  if (!isNothing(src) && !isNothing(indices)) {
+    if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("compile: bad indices");
+    for (i32 i = 0; i < 2; i++) {
+      B ind = TI(indices).getU(indices,i);
+      if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcl) thrM("compile: bad indices");
+      BS2B indGetU = TI(ind).getU;
+      for (usz j = 0; j < bcl; j++) o2i(indGetU(ind,j));
+    }
   }
   
   for (usz i = 0; i < bam; i++) {
@@ -290,10 +297,12 @@ i32* vmStack;
 i32 bcCtr = 0;
 #endif
 
+
+
+
 B* gStack; // points to after end
 B* gStackStart;
 B* gStackEnd;
-
 void gsReserve(u64 am) {
   #ifdef GS_REALLOC
     if (am>gStackEnd-gStack) {
@@ -311,7 +320,6 @@ void gsReserve(u64 am) {
 NOINLINE
 #endif
 void gsReserveR(u64 am) { gsReserve(am); }
-
 void gsAdd(B x) {
   #ifdef GS_REALLOC
     if (gStack==gStackEnd) gsReserveR(1);
@@ -335,6 +343,32 @@ void gsPrint() {
   }
 }
 
+
+
+typedef struct Env {
+  Scope* sc;
+  union { i32** bcP; i32* bcL; i32 bcV; };
+} Env;
+
+Env* envCurr;
+Env* envStart;
+Env* envEnd;
+
+static inline void pushEnv(Scope* sc, i32** bc) {
+  if (envCurr==envEnd) thrM("stack overflow");
+  envCurr->sc = sc;
+  #if VM_POS
+  envCurr->bcP = bc;
+  #else
+  envCurr->bcL = *bc;
+  #endif
+  envCurr++;
+}
+static inline void popEnv() {
+  assert(envCurr>envStart);
+  envCurr--;
+}
+
 B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -346,6 +380,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   B* objs = b->comp->objs->a;
   Block** blocks = b->comp->blocks;
   i32* bc = b->bc;
+  pushEnv(sc, &bc);
   gsReserve(b->maxStack);
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
@@ -490,6 +525,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #endif
   B r = POP;
   GS_UPD;
+  popEnv();
   return r;
   #undef P
   #undef ADD
@@ -504,9 +540,6 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   sc->psc = psc; if(psc) ptr_inc(psc);
   u16 varAm = sc->varAm = body->varAm;
   assert(varAm>=ga);
-  #ifdef DEBUG
-    sc->bcInd = body->bc-c(I32Arr,body->comp->bc)->a;
-  #endif
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
@@ -549,8 +582,7 @@ B m_md2Block(Block* bl, Scope* psc) {
 
 void comp_free(B x) {
   Comp* c = c(Comp, x);
-  ptr_decR(c->objs);
-  decR(c->bc);
+  ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices);
   u32 am = c->blockAm; for(u32 i = 0; i < am; i++) ptr_dec(c->blocks[i]);
 }
 void scope_free(B x) {
@@ -568,7 +600,7 @@ void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_decR(c->sc); ptr_decR(c-
 
 void comp_visit(B x) {
   Comp* c = c(Comp,x);
-  mm_visitP(c->objs); mm_visit(c->bc);
+  mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices);
   u32 am = c->blockAm; for(u32 i = 0; i < am; i++) mm_visitP(c->blocks[i]);
 }
 void scope_visit(B x) {
@@ -604,6 +636,15 @@ B block_decompose(B x) { return m_v2(m_i32(1), x); }
 B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actualExec(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
 B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
+void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
+  usz pageSize = sysconf(_SC_PAGESIZE);
+  u64 sz = (elSize*count + pageSize-1)/pageSize * pageSize;
+  assert(sz%elSize == 0);
+  *curr = *start = mmap(NULL, sz+pageSize, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+  *end = ((char*)*start)+sz;
+  mprotect(*end, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
+}
+
 static inline void comp_init() {
   ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
@@ -613,12 +654,9 @@ static inline void comp_init() {
   ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
   ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].visit = md2Bl_visit; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;
   #ifndef GS_REALLOC
-    usz pageSize = sysconf(_SC_PAGESIZE);
-    u64 sz = (GS_SIZE + pageSize-1)/pageSize * pageSize;
-    gStack = gStackStart = mmap(NULL, sz*sizeof(B)+pageSize, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
-    gStackEnd = gStackStart+sz;
-    mprotect(gStackEnd, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
+    allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
   #endif
+  allocStack((void**)&envCurr, (void**)&envStart, (void**)&envEnd, sizeof(Env), ENV_SIZE);
 }
 
 void print_vmStack() {
@@ -633,7 +671,8 @@ void print_vmStack() {
 
 typedef struct CatchFrame {
   jmp_buf jmp;
-  u64 gStackDepth;
+  u64 gsDepth;
+  u64 envDepth;
   u64 cfDepth;
 } CatchFrame;
 CatchFrame* cf; // points to after end
@@ -650,7 +689,8 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
     cfEnd = cfStart+n;
   }
   cf->cfDepth = cf-cfStart;
-  cf->gStackDepth = gStack-gStackStart;
+  cf->gsDepth = gStack-gStackStart;
+  cf->envDepth = envCurr-envStart;
   return &(cf++)->jmp;
 }
 void popCatch() {
@@ -665,9 +705,20 @@ NOINLINE void thr(B msg) {
     catchMessage = msg;
     cf--;
     
-    B* gStackNew = gStackStart + cf->gStackDepth;
-    if (gStackNew>gStack) err("bad catch gStackDepth");
+    B* gStackNew = gStackStart + cf->gsDepth;
+    assert(gStackNew<=gStack);
     while (gStack!=gStackNew) dec(*--gStack);
+    envPrevHeight = envCurr-envStart;
+    Env* envNew = envStart + cf->envDepth;
+    assert(envNew<=envCurr);
+    while (envCurr!=envNew) {
+      envCurr--;
+      #if VM_POS
+        envCurr->bcV = *envCurr->bcP - i32arr_ptr(envCurr->sc->body->comp->bc) - 1;
+      #else
+        envCurr->bcV = envCurr->bcL - i32arr_ptr(envCurr->sc->body->comp->bc);
+      #endif
+    }
     
     if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
     cf = cfStart+cf->cfDepth;
@@ -686,4 +737,44 @@ NOINLINE void thr(B msg) {
 
 NOINLINE void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
+}
+
+
+
+NOINLINE void vm_pst(Env* s, Env* e) {
+  assert(s<=e);
+  i64 l = e-s;
+  i64 i = l-1;
+  while (i>=0) {
+    Env* c = s+i;
+    if (l>30 && i==l-10) {
+      printf("(%ld entries omitted)\n", l-20);
+      i = 10;
+    }
+    i32 bcPos = c->bcV;
+    Comp* comp = c->sc->body->comp;
+    B src = comp->src;
+    if (!isNothing(src) && !isNothing(comp->indices)) {
+      B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
+      B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
+      int start = printf("%ld: ", i);
+      usz srcL = a(src)->ia;
+      BS2B srcGetU = TI(src).getU;
+      usz srcS = cs;
+      while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
+      usz srcE = srcS;
+      while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+      if (ce>srcE) ce = srcE;
+      cs-= srcS;
+      ce-= srcS;
+      putchar('\n');
+      for (i32 i = 0; i < cs+start; i++) putchar(' ');
+      for (i32 i = cs; i < ce; i++) putchar('^');
+      putchar('\n');
+      // printf("  inds:%d…%d\n", cinds, cinde);
+    } else {
+      printf("%ld: source unknown\n", i);
+    }
+    i--;
+  }
 }
