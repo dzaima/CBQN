@@ -26,8 +26,8 @@ B fillBy_c2(B d, B w, B x) {
   popCatch();
   return withFill(r, fill);
 }
-B catch_c1(B d,      B x) { if(CATCH) return c1(c(Md2D,d)->g,   x); B r = c1(c(Md2D,d)->f,   x); popCatch(); return r; }
-B catch_c2(B d, B w, B x) { if(CATCH) return c2(c(Md2D,d)->g, w,x); B r = c2(c(Md2D,d)->f, w,x); popCatch(); return r; }
+B catch_c1(B d,      B x) { if(CATCH) return c1(c(Md2D,d)->g,   x);         inc(x); B r = c1(c(Md2D,d)->f,   x); popCatch();         dec(x); return r; }
+B catch_c2(B d, B w, B x) { if(CATCH) return c2(c(Md2D,d)->g, w,x); inc(w); inc(x); B r = c2(c(Md2D,d)->f, w,x); popCatch(); dec(w); dec(x); return r; }
 #else
 B fillBy_c1(B d,      B x) { return c1(c(Md2D,d)->f,   x); }
 B fillBy_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w,x); }
