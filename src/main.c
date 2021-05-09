@@ -60,14 +60,13 @@ int main() {
   
   // uncomment to self-compile and use that for the REPL
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
+  
   // char* c_src = NULL;
   // u64 c_len;
   // FILE* f = fopen("c.bqn", "rb");
   // if (f) {
-  //   fseek(f, 0, SEEK_END);
-  //   c_len = ftell(f);
-  //   fseek(f, 0, SEEK_SET);
-  //   c_src = malloc(c_len);
+  //   fseek(f, 0, SEEK_END); c_len = ftell(f);
+  //   fseek(f, 0, SEEK_SET); c_src = malloc(c_len);
   //   if (c_src) fread(c_src, 1, c_len, f);
   //   fclose(f);
   // } else {
@@ -75,10 +74,12 @@ int main() {
   // }
   // if (c_src) {
   //   bqn_setComp(bqn_exec(fromUTF8(c_src, c_len)));
+  //   // for (i32 i = 0; i < 100; i++) { dec(bqn_exec(fromUTF8(c_src, c_len))); gc_maybeGC(); }
   // } else {
   //   printf("couldn't read c.bqn\n");
   //   exit(1);
   // }
+  
   
   while (CATCH) {
     printf("caught: ");

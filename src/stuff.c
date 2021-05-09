@@ -95,7 +95,7 @@ void printRaw(B x) {
   }
 }
 
-B def_decompose(B x) { return m_v2(m_i32((isFun(x)|isMd(x))? 0 : -1),x); }
+B def_decompose(B x) { return m_v2(m_i32(isCallable(x)? 0 : -1),x); }
 bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if(isF64(w)&isF64(x)) return w.f==x.f;
   if (w.u==x.u) return true;

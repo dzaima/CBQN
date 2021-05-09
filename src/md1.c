@@ -2,7 +2,7 @@
 
 
 bool isPureFn(B x) { // doesn't consume
-  if (!isFun(x) && !isMd(x)) return true;
+  if (!isCallable(x)) return true;
   if (v(x)->flags) return true;
   B2B dcf = TI(x).decompose;
   B xd = dcf(inc(x));
