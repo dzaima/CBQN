@@ -86,7 +86,9 @@ void printRaw(B x) {
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) {
       B c = xgetU(x,i);
+      #ifndef CATCH_ERRORS
       if (c.u==0 || noFill(c)) { printf(" "); continue; }
+      #endif
       if (!isC32(c)) thrM("bad printRaw argument: expected all character items");
       printUTF8((u32)c.u);
     }
@@ -320,7 +322,7 @@ void printAllocStats() {
   #endif
 }
 
-#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(arith) F(fns) F(sfns) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns)
+#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(arith) F(fns) F(sfns) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
 #define F(X) static inline void X##_init();
 FOR_INIT(F)
 #undef F

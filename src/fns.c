@@ -39,7 +39,13 @@ B fmtN_c1(B t, B x) {
 B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
   u8 fl = v(x)->flags;
-  if (fl==0 || fl>rtLen) return m_str32(U"(fmtF: not given a runtime primitive)");
+  if (fl==0 || fl>rtLen) {
+    u8 ty = v(x)->type;
+    if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
+    if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
+    if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
+    return m_str32(U"(fmtF: not given a runtime primitive)");
+  }
   dec(x);
   return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
 }

@@ -107,7 +107,7 @@ char* format_type(u8 u) {
     /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") \
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
-    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
+    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•bqn") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
 
 enum PrimFns {
   #define F(N,X) pf_##N,
@@ -229,6 +229,8 @@ B m_v3(B a, B b, B c     ); // consumes all
 B m_v4(B a, B b, B c, B d); // consumes all
 B m_unit(B a); // consumes
 B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
+
+B bqn_exec(B str); // consumes
 
 NORETURN void thr(B b);
 NORETURN void thrM(char* s);

@@ -147,13 +147,22 @@ B sys_c1(B t, B x);
 B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
 B show_c1(B t, B x) { print   (x); putchar('\n'); return x; }
 
+B bqn_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)!=1) thrM("•BQN: Argument must be a character vector");
+  if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
+    usz ia = a(x)->ia;
+    BS2B xgetU = TI(x).getU;
+    for (usz i = 0; i < ia; i++) if (!isC32(xgetU(x,i))) thrM("•BQN: Argument must be a character vector");
+  }
+  return bqn_exec(x);
+}
 
 #define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 #define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
 
-B                                 bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt, bi_out, bi_show, bi_sys, bi_internal;
-static inline void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) bm(out) bm(show) bm(sys) bd(internal) }
+B                                 bi_type, bi_decp, bi_primInd, bi_glyph, bi_fill, bi_grLen, bi_grOrd, bi_asrt, bi_out, bi_show, bi_sys, bi_bqn, bi_internal;
+static inline void sysfn_init() { bm(type) bm(decp) bm(primInd) bm(glyph) ba(fill) ba(grLen) bd(grOrd) ba(asrt) bm(out) bm(show) bm(sys) bm(bqn) bd(internal) }
 
 #undef ba
 #undef bd
@@ -166,12 +175,13 @@ B sys_c1(B t, B x) {
   BS2B xgetU = TI(x).getU;
   for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);
-    if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
+    if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
+    else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
+    else if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
+    else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
-    else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
-    else if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
-    else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
+    else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);

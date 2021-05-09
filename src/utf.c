@@ -36,6 +36,10 @@ B fromUTF8(char* s, i64 len) {
   return r;
 }
 
+B fromUTF8l(char* s) {
+  return fromUTF8(s, strlen(s));
+}
+
 void printUTF8(u32 c) {
   if (c<128) printf("%c", c);
   else if (c<=0x07FF) printf("%c%c"    , 0xC0| c>>6 , 0x80| (c      &0x3F)                                    );

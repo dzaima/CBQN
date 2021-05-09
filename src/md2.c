@@ -122,11 +122,11 @@ B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md2), t_md2BI, ftag(MD2_TAG)); c(Md2,bi_##NAME)->c2 = NAME##_c2; c(Md2,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm2_##NAME; gc_add(bi_##NAME);
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md2), t_md2BI, ftag(MD2_TAG)); c(Md2,bi_##NAME)->c2 = c2_invalid;c(Md2,bi_##NAME)->c1 = NAME##_c1;  c(Md1,bi_##NAME)->extra=pm2_##NAME; gc_add(bi_##NAME);
 
-void print_md2_def(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
+void print_md2BI(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
 
 B                               bi_val, bi_repeat, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_fillBy, bi_catch;
 static inline void md2_init() { ba(val) ba(repeat) ba(atop) ba(over) ba(before) ba(after) ba(cond) ba(fillBy) ba(catch)
-  ti[t_md2BI].print = print_md2_def;
+  ti[t_md2BI].print = print_md2BI;
 }
 
 #undef ba

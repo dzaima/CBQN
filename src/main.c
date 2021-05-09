@@ -21,6 +21,7 @@
 // #define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
+// #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
 
 #ifdef CATCH_ERRORS
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
@@ -52,134 +53,10 @@
 #include "vm.c"
 #include "ns.c"
 #include "rtPerf.c"
-
-void pr(char* a, B b) {
-  printf("%s", a);
-  print(b);
-  puts("");
-  dec(b);
-  fflush(stdout);
-}
-
-Block* compB(B x) {
-  BS2B xget = TI(x).get;
-  Block* r = compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4));
-  dec(x);
-  return r;
-}
-Block* compile3(B bc, B objs, B blocks) {
-  return compile(bc, objs, blocks, bi_N, bi_N);
-}
-
+#include "load.c"
 
 int main() {
   cbqn_init();
-  
-  
-  B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_couple, bi_take  , bi_drop , bi_ud  , bi_shifta, bi_shiftb,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N     , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N     , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond  , bi_N,
-    /* ⚇⍟⎊         */ bi_N    , bi_repeat, bi_catch
-  };
-  bool rtComplete[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
-    /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,0,1,1,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
-    /* ⚇⍟⎊         */ 0,1,1
-  };
-  assert(sizeof(fruntime)/sizeof(B) == rtLen);
-  for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
-  B frtObj = m_caB(rtLen, fruntime);
-  
-  B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
-  
-  #ifndef ALL_R0
-  B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
-  #else
-  Block* runtime0_b = compile3(
-    #include "runtime0"
-  );
-  B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
-  B* runtime_0 = toHArr(r0r)->a;
-  #endif
-  
-  Block* runtime_b = compile3(
-    #include "runtime1"
-  );
-  
-  #ifdef ALL_R0
-  dec(r0r);
-  #endif
-  
-  B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-  B rtObjRaw = TI(rtRes).get(rtRes,0);
-  B rtFinish = TI(rtRes).get(rtRes,1);
-  dec(rtRes);
-  
-  runtimeLen = c(Arr,rtObjRaw)->ia;
-  HArr_p runtimeH = m_harrUc(rtObjRaw);
-  BS2B rtObjGet = TI(rtObjRaw).get;
-  
-  rt_sortAsc = rtObjGet(rtObjRaw, 10); gc_add(rt_sortAsc);
-  rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
-  rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
-  rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
-  rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
-  rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
-  rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
-  
-  for (usz i = 0; i < runtimeLen; i++) {
-    #ifdef ALL_R1
-      B r = rtObjGet(rtObjRaw, i);
-    #else
-      B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
-    #endif
-    if (isNothing(r)) { printf("· in runtime!\n"); exit(1); }
-    r = rtPerf_wrap(r);
-    runtimeH.a[i] = r;
-    if (isVal(r)) v(r)->flags|= i+1;
-  }
-  dec(rtObjRaw);
-  B* runtime = runtimeH.a;
-  B rtObj = runtimeH.b;
-  dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
-  
-  
-  B compArg = m_v2(FAKE_RUNTIME? frtObj : rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
-  gc_add(compArg);
-  
-  
-  // uncomment to use src/interp; needed for test.bqn
-  // Block* c = compB(
-  //   #include "interp"
-  // );
-  // B interp = m_funBlock(c, 0); ptr_dec(c);
-  // pr("result: ", interp);
-  // exit(0);
-  
-  Block* comp_b = compile3(
-    #include "compiler"
-  );
-  B comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
-  gc_add(comp);
-  
-  
-  #ifdef FORMATTER
-  Block* fmt_b = compile3(
-    #include "formatter"
-  );
-  B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
-  B fmt = TI(fmtM).m1_d(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_fmtN)}));
-  gc_add(fmt);
-  #endif
-  
   
   // uncomment to self-compile and use that for the REPL
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
@@ -194,17 +71,14 @@ int main() {
   //   if (c_src) fread(c_src, 1, c_len, f);
   //   fclose(f);
   // } else {
+  //   c_src = NULL;
+  // }
+  // if (c_src) {
+  //   bqn_setComp(bqn_exec(fromUTF8(c_src, c_len)));
+  // } else {
   //   printf("couldn't read c.bqn\n");
   //   exit(1);
   // }
-  // if (c_src) {
-  //   B cbc = c2(comp, inc(compArg), fromUTF8(c_src, c_len));
-  //   Block* cbc_b = compB(cbc);
-  //   comp = m_funBlock(cbc_b, 0); ptr_dec(cbc_b);
-  //   gc_add(comp);
-  //   free(c_src);
-  // }
-  gc_enable();
   
   while (CATCH) {
     printf("caught: ");
@@ -217,26 +91,26 @@ int main() {
     size_t gl = 0;
     getline(&ln, &gl, stdin);
     if (ln[0]==0 || ln[0]==10) break;
-    B cbc = c2(comp, inc(compArg), fromUTF8(ln, strlen(ln)));
+    Block* block = bqn_comp(fromUTF8(ln, strlen(ln)));
     free(ln);
-    Block* cbc_b = compB(cbc);
     
     #ifdef TIME
     u64 sns = nsTime();
-    B res = m_funBlock(cbc_b, 0);
+    B res = m_funBlock(block, 0);
     u64 ens = nsTime();
     printf("%fms\n", (ens-sns)/1e6);
     #else
-    B res = m_funBlock(cbc_b, 0);
+    B res = m_funBlock(block, 0);
     #endif
-    ptr_dec(cbc_b);
+    ptr_dec(block);
     
     #ifdef FORMATTER
-    B resFmt = c1(fmt, res);
+    B resFmt = bqn_fmt(res);
     printRaw(resFmt); dec(resFmt);
     printf("\n");
     #else
-    pr("", res);
+    print(res); putchar('\n'); fflush(stdout);
+    dec(res);
     #endif
     
     #ifdef HEAP_VERIFY

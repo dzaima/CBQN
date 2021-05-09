@@ -186,11 +186,11 @@ B swap_c2(B d, B w, B x) { return c2(c(Md1D,d)->f,     x , w); }
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 
-void print_md1_def(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
+void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
 B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap;
 static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap)
-  ti[t_md1BI].print = print_md1_def;
+  ti[t_md1BI].print = print_md1BI;
 }
 
 #undef ba
