@@ -78,7 +78,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   if (min) {                                       \
     B x2 = inc(x);                                 \
     B fi = m1_d(inc(rt_undo), inc(f));             \
-    for (u64 i = 0; i < min; i++) q[-1-i] = inc(x2 = CN(fi, __VA_ARGS__ x2)); \
+    for (i64 i = 0; i < min; i++) q[-1-i] = inc(x2 = CN(fi, __VA_ARGS__ x2)); \
     dec(x2);                                       \
     dec(fi);                                       \
   }                                                \

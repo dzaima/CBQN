@@ -69,9 +69,10 @@ enum Type {
   /*18*/ t_hslice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*22*/ t_comp, t_block, t_body, t_scope,
-  /*26*/ t_freed, t_harrPartial,
+  /*26*/ t_ns, t_nsDesc,
+  /*27*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
-  /*28*/ t_funPerf, t_md1Perf, t_md2Perf,
+  /*29*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
   t_COUNT
 };
@@ -346,6 +347,7 @@ i32 o2cu  (B x) { return (u32)x.u; }
 usz o2su  (B x) { return (usz)x.f; }
 f64 o2fu  (B x) { return      x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
+bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
 bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
 bool q_f64(B x) { return isF64(x) || isI32(x); }
 

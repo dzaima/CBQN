@@ -50,6 +50,7 @@
 #include "md1.c"
 #include "md2.c"
 #include "vm.c"
+#include "ns.c"
 #include "rtPerf.c"
 
 void pr(char* a, B b) {
@@ -60,11 +61,14 @@ void pr(char* a, B b) {
   fflush(stdout);
 }
 
-Block* ca3(B x) {
-  B* xp = harr_ptr(x);
-  Block* r = compile(inc(xp[0]),inc(xp[1]),inc(xp[2]));
+Block* compB(B x) {
+  BS2B xget = TI(x).get;
+  Block* r = compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4));
   dec(x);
   return r;
+}
+Block* compile3(B bc, B objs, B blocks) {
+  return compile(bc, objs, blocks, bi_N, bi_N);
 }
 
 
@@ -99,14 +103,14 @@ int main() {
   #ifndef ALL_R0
   B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
   #else
-  Block* runtime0_b = compile(
+  Block* runtime0_b = compile3(
     #include "runtime0"
   );
   B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
   B* runtime_0 = toHArr(r0r)->a;
   #endif
   
-  Block* runtime_b = compile(
+  Block* runtime_b = compile3(
     #include "runtime1"
   );
   
@@ -153,14 +157,14 @@ int main() {
   
   
   // uncomment to use src/interp; needed for test.bqn
-  // Block* c = ca3(
+  // Block* c = compB(
   //   #include "interp"
   // );
   // B interp = m_funBlock(c, 0); ptr_dec(c);
   // pr("result: ", interp);
   // exit(0);
   
-  Block* comp_b = compile(
+  Block* comp_b = compile3(
     #include "compiler"
   );
   B comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
@@ -168,7 +172,7 @@ int main() {
   
   
   #ifdef FORMATTER
-  Block* fmt_b = compile(
+  Block* fmt_b = compile3(
     #include "formatter"
   );
   B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
@@ -195,7 +199,7 @@ int main() {
   // }
   // if (c_src) {
   //   B cbc = c2(comp, inc(compArg), fromUTF8(c_src, c_len));
-  //   Block* cbc_b = ca3(cbc);
+  //   Block* cbc_b = compB(cbc);
   //   comp = m_funBlock(cbc_b, 0); ptr_dec(cbc_b);
   //   gc_add(comp);
   //   free(c_src);
@@ -215,7 +219,7 @@ int main() {
     if (ln[0]==0 || ln[0]==10) break;
     B cbc = c2(comp, inc(compArg), fromUTF8(ln, strlen(ln)));
     free(ln);
-    Block* cbc_b = ca3(cbc);
+    Block* cbc_b = compB(cbc);
     
     #ifdef TIME
     u64 sns = nsTime();

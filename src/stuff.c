@@ -320,7 +320,7 @@ void printAllocStats() {
   #endif
 }
 
-#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(arith) F(fns) F(sfns) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf)
+#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(arith) F(fns) F(sfns) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns)
 #define F(X) static inline void X##_init();
 FOR_INIT(F)
 #undef F

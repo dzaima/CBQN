@@ -1,4 +1,5 @@
 #include "h.h"
+#include "ns.h"
 
 // #define GS_REALLOC // whether to dynamically realloc gStack
 #ifndef GS_SIZE
@@ -114,14 +115,15 @@ typedef struct Comp {
   Block* blocks[];
 } Comp;
 
-typedef struct Block {
+struct Block {
   struct Value;
   bool imm;
   u8 ty;
   Body* body;
-} Block;
+};
 
-typedef struct Body {
+typedef struct NSDesc NSDesc;
+struct Body {
   struct Value;
   Comp* comp;
   // B* objs;
@@ -129,25 +131,29 @@ typedef struct Body {
   u32 maxStack;
   u16 maxPSC;
   u16 varAm;
+  u32 endStack;
+  NSDesc* nsDesc;
+  i32 varIDs[];
   // HArr* vNames;
-} Body;
+};
 
-typedef struct Scope {
+struct Scope {
   struct Value;
   Scope* psc;
+  Body* body;
   u16 varAm;
   #ifdef DEBUG
     u64 bcInd; // DEBUG: place of this in bytecode array
   #endif
   B vars[];
-} Scope;
+};
 
 typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;
 typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
 typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
-Block* compile(B bcq, B objs, B blocksq) { // consumes all
+Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo) { // consumes all
   HArr* blocksH = toHArr(blocksq);
   usz bam = blocksH->ia;
   
@@ -162,22 +168,31 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   comp->objs = toHArr(objs);
   comp->blockAm = bam;
   B* blockDefs = blocksH->a;
+  dec(indices);
+  B nameList;
+  if (isNothing(tokenInfo)) {
+    nameList = bi_emptyHVec;
+  } else {
+    B t = TI(tokenInfo).getU(tokenInfo,2);
+    nameList = TI(t).getU(t,0);
+  }
   
   for (usz i = 0; i < bam; i++) {
     B cbld = blockDefs[i];
     usz cbia = a(cbld)->ia;
     if (cbia!=4 && cbia!=6) thrM("bad compile block");
-    BS2B bget = TI(cbld).get;
-    usz  ty  = o2s(bget(cbld,0)); if (ty>2) thrM("bad block type");
-    bool imm = o2s(bget(cbld,1)); // todo o2b or something
-    usz  idx = o2s(bget(cbld,2)); if (idx>=bcl) thrM("oob bytecode index");
-    usz  vam = o2s(bget(cbld,3)); if (vam!=(u16)vam) thrM("too many variables");
+    BS2B bgetU = TI(cbld).getU;
+    usz  ty  = o2s(bgetU(cbld,0)); if (ty>2) thrM("bad block type");
+    bool imm = o2s(bgetU(cbld,1)); // todo o2b or something
+    usz  idx = o2s(bgetU(cbld,2)); if (idx>=bcl) thrM("oob bytecode index");
+    usz  vam = o2s(bgetU(cbld,3)); if (vam!=(u16)vam) thrM("too many variables");
     i32* cbc = bc+idx;
-    
     i32* scan = cbc;
     i32 ssz = 0, mssz=0;
     i32 mpsc = 0;
-    while (*scan!=RETN & *scan!=RETD) {
+    while (true) {
+      if (*scan==RETN) { if(ssz!=1)thrM("Wrong stack size before RETN"); break; }
+      if (*scan==RETD) { if(ssz!=1&ssz!=0)thrM("Wrong stack size before RETN"); break; }
       ssz+= stackDiff(scan);
       if (ssz>mssz) mssz = ssz;
       if (*scan==LOCO | *scan==LOCM | *scan==LOCU) {
@@ -188,12 +203,17 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
     }
     if (mpsc>U16_MAX) thrM("LOC_ too deep");
     
-    Body* body = mm_allocN(sizeof(Body), t_body);
+    Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
     body->comp = comp;
     body->bc = cbc;
     body->maxStack = mssz;
     body->maxPSC = (u16)mpsc;
+    body->endStack = ssz;
     body->varAm = (u16)vam;
+    if (cbia==4) {
+      body->nsDesc = NULL;
+      for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
+    } else m_nsDesc(body, imm, ty, inc(nameList), bgetU(cbld,4), bgetU(cbld,5));
     ptr_inc(comp);
     
     Block* bl = mm_allocN(sizeof(Block), t_block);
@@ -208,6 +228,7 @@ Block* compile(B bcq, B objs, B blocksq) { // consumes all
   // for (usz i = 0; i < bam; i++) ptr_dec(comp->blocks[i]);
   ptr_dec(comp);
   ptr_dec(blocksH);
+  dec(tokenInfo);
   return ret;
 }
 
@@ -219,14 +240,26 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
       if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
     } else {
-      if (prev.u!=bi_noVar.u) thrM("←: redefining variable");
+      if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
     }
     sc->vars[(u32)s.u] = inc(x);
   } else {
     VT(s, t_harr);
-    if (isAtm(x) || !eqShape(s, x)) thrM("Assignment: Mismatched shape for spread assignment");
-    usz ia = a(x)->ia;
     B* sp = harr_ptr(s);
+    usz ia = a(s)->ia;
+    if (isAtm(x) || !eqShape(s, x)) {
+      if (isNsp(x)) {
+        for (u64 i = 0; i < ia; i++) {
+          B c = sp[i];
+          if (!isVar(c)) thrM("Assignment: extracting non-name from namespace");
+          Scope* sc = pscs[(u16)(c.u>>32)];
+          i32 nameID = sc->body->varIDs[(u32)c.u];
+          v_set(pscs, c, ns_getU(x, ns_nameList(sc->body->nsDesc), nameID), upd);
+        }
+        return;
+      }
+      thrM("Assignment: Mismatched shape for spread assignment");
+    }
     BS2B xgetU = TI(x).getU;
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
   }
@@ -409,7 +442,9 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
-        ADD(inc(pscs[d]->vars[p]));
+        B l = pscs[d]->vars[p];
+        if(l.u==bi_noVar.u) thrM("Reading variable before its defined");
+        ADD(inc(l));
         break;
       }
       case LOCU: { i32 d = *bc++; i32 p = *bc++;
@@ -427,14 +462,21 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(r);
         break;
       }
-      // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM RETD SYSV
+      case RETD: {
+        if (b->endStack) dec(POP);
+        ptr_inc(sc);
+        ptr_inc(b->nsDesc);
+        ADD(m_ns(sc, b->nsDesc));
+        goto end;
+      }
+      case RETN: goto end;
+      // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM SYSV
       default:
         #ifdef DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
         #else
           UD;
         #endif
-      case RETN: goto end;
     }
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
@@ -456,18 +498,19 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
 }
 
 B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
-  Body* bdy = bl->body;
-  Scope* sc = mm_allocN(fsizeof(Scope, vars, B, bdy->varAm), t_scope);
+  Body* body = bl->body;
+  Scope* sc = mm_allocN(fsizeof(Scope, vars, B, body->varAm), t_scope);
+  sc->body = body; ptr_inc(body);
   sc->psc = psc; if(psc) ptr_inc(psc);
-  u16 varAm = sc->varAm = bdy->varAm;
+  u16 varAm = sc->varAm = body->varAm;
   assert(varAm>=ga);
   #ifdef DEBUG
-    sc->bcInd = bdy->bc-c(I32Arr,bdy->comp->bc)->a;
+    sc->bcInd = body->bc-c(I32Arr,body->comp->bc)->a;
   #endif
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
-  B r = evalBC(bdy, sc);
+  B r = evalBC(body, sc);
   ptr_dec(sc);
   return r;
 }
@@ -505,7 +548,7 @@ B m_md2Block(Block* bl, Scope* psc) {
 }
 
 void comp_free(B x) {
-  Comp* c = c(Comp ,x);
+  Comp* c = c(Comp, x);
   ptr_decR(c->objs);
   decR(c->bc);
   u32 am = c->blockAm; for(u32 i = 0; i < am; i++) ptr_dec(c->blocks[i]);
@@ -513,10 +556,11 @@ void comp_free(B x) {
 void scope_free(B x) {
   Scope* c = c(Scope,x);
   if (c->psc) ptr_decR(c->psc);
+  ptr_decR(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); }
+void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
 void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
 void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
@@ -530,10 +574,11 @@ void comp_visit(B x) {
 void scope_visit(B x) {
   Scope* c = c(Scope,x);
   if (c->psc) mm_visitP(c->psc);
+  mm_visitP(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
-void  body_visit(B x) { Body*  c = c(Body ,x); mm_visitP(c->comp); }
+void  body_visit(B x) { Body*  c = c(Body ,x); mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); }
 void block_visit(B x) { Block* c = c(Block,x); mm_visitP(c->body); }
 void funBl_visit(B x) { FunBlock* c = c(FunBlock,x); mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(B x) { Md1Block* c = c(Md1Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
