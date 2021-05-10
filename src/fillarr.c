@@ -275,7 +275,7 @@ B withFill(B x, B fill) { // consumes both
     dec(x);
     return r;
   }
-  base:
+  base:;
   B r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
   arr_shCopy(r, x);
   c(FillArr,r)->fill = fill;

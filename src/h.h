@@ -126,12 +126,12 @@ char* format_pf(u8 u) {
 }
 enum PrimMd1 {
   pm1_none,
-  pm1_tbl, pm1_each, pm1_fold, pm1_scan, pm1_const, pm1_swap, // md1.c
+  pm1_tbl, pm1_each, pm1_fold, pm1_scan, pm1_const, pm1_swap, pm1_timed, // md1.c
 };
 char* format_pm1(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
-    case pm1_tbl:return"⌜"; case pm1_each:return"¨"; case pm1_fold:return"´"; case pm1_scan:return"`"; case pm1_const:return"˙"; case pm1_swap:return"˜";
+    case pm1_tbl:return"⌜"; case pm1_each:return"¨"; case pm1_fold:return"´"; case pm1_scan:return"`"; case pm1_const:return"˙"; case pm1_swap:return"˜"; case pm1_timed:return"•_timed";
   }
 }
 enum PrimMd2 {

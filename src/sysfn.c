@@ -168,6 +168,7 @@ BI_FNS0(F);
 static inline void sysfn_init() { BI_FNS1(F) }
 #undef F
 
+B bi_timed;
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
@@ -183,6 +184,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
+    else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
     else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);
