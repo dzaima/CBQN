@@ -313,7 +313,7 @@ void gsReserve(u64 am) {
       gStackEnd = gStackStart+n;
     }
   #elif DEBUG
-    if (am>gStackEnd-gStack) err("stack overflow");
+    if (am>gStackEnd-gStack) thrM("Stack overflow");
   #endif
 }
 #ifdef GS_REALLOC
@@ -323,8 +323,8 @@ void gsReserveR(u64 am) { gsReserve(am); }
 void gsAdd(B x) {
   #ifdef GS_REALLOC
     if (gStack==gStackEnd) gsReserveR(1);
-  #elif DEBUG
-    if (gStack==gStackEnd) err("early stack overflow");
+  #else
+    if (gStack==gStackEnd) thrM("Stack overflow");
   #endif
   *(gStack++) = x;
 }
@@ -355,7 +355,7 @@ Env* envStart;
 Env* envEnd;
 
 static inline void pushEnv(Scope* sc, i32** bc) {
-  if (envCurr==envEnd) thrM("stack overflow");
+  if (envCurr==envEnd) thrM("Stack overflow");
   envCurr->sc = sc;
   #if VM_POS
   envCurr->bcP = bc;

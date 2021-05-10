@@ -204,7 +204,7 @@ B mm_alloc(usz sz, u8 type, u64 tag) {
   return b((u64)mm_allocN(sz,type) | tag);
 }
 
-void gsAdd(B x);
+void gsAdd(B x); // may throw
 B gsPop();
 
 // some primitive actions
@@ -221,6 +221,7 @@ u8   fillElType(B x);     // doesn't consume
 bool eqShape(B w, B x);   // doesn't consume
 usz  arr_csz(B x);        // doesn't consume
 bool atomEqual(B w, B x); // doesn't consume
+B    toCells(B x);        // consumes
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all

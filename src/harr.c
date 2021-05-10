@@ -71,6 +71,23 @@ B m_hunit(B x) {
   r.a[0] = x;
   return r.b;
 }
+B toCells(B x) {
+  assert(isArr(x) && rnk(x)>1);
+  usz cam = a(x)->sh[0];
+  usz csz = arr_csz(x);
+  usz i = 0;
+  HArr_p r = m_harrs(cam, &i);
+  BS2B slice = TI(x).slice;
+  usz p = 0;
+  for (; i < cam; i++) {
+    B s = slice(inc(x), p);
+    arr_shVec(s, csz);
+    r.a[i] = s;
+    p+= csz;
+  }
+  dec(x);
+  return harr_fv(r);
+}
 
 
 B* harr_ptr(B x) { VT(x,t_harr); return c(HArr,x)->a; }
