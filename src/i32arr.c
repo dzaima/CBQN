@@ -23,8 +23,6 @@ B m_i32arrp(usz ia) { // doesn't write shape/rank
 }
 
 
-
-
 typedef struct I32Slice {
   struct Slice;
   i32* a;
@@ -36,12 +34,12 @@ B m_i32slice(B p, i32* ptr) {
   return tag(r, ARR_TAG);
 }
 
+
 i32* i32arr_ptr(B x) { VT(x, t_i32arr); return c(I32Arr,x)->a; }
 i32* i32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_i32arr) return c(I32Arr,x)->a; assert(t==t_i32slice); return c(I32Slice,x)->a; }
 
 NOINLINE B m_cai32(usz ia, i32* a) {
-  B r = m_i32arrv(ia);
-  i32* rp = i32arr_ptr(r);
+  B r = m_i32arrv(ia); i32* rp = i32arr_ptr(r);
   for (usz i = 0; i < ia; i++) rp[i] = a[i];
   return r;
 }
