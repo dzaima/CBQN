@@ -2,16 +2,22 @@
 
 
 bool isPureFn(B x) { // doesn't consume
-  if (!isCallable(x)) return true;
-  if (v(x)->flags) return true;
-  B2B dcf = TI(x).decompose;
-  B xd = dcf(inc(x));
-  B* xdp = harr_ptr(xd);
-  i32 t = o2iu(xdp[0]);
-  if (t<2) { dec(xd); return t==0; }
-  usz xdia = a(xd)->ia;
-  for (i32 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
-  dec(xd); return true;
+  if (isCallable(x)) {
+    if (v(x)->flags) return true;
+    B2B dcf = TI(x).decompose;
+    B xd = dcf(inc(x));
+    B* xdp = harr_ptr(xd);
+    i32 t = o2iu(xdp[0]);
+    if (t<2) { dec(xd); return t==0; }
+    usz xdia = a(xd)->ia;
+    for (i32 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
+    dec(xd); return true;
+  } else if (isArr(x)) {
+    usz ia = a(x)->ia;
+    BS2B xgetU = TI(x).getU;
+    for (usz i = 0; i < ia; i++) if (!isPureFn(xgetU(x,i))) return false;
+    return true;
+  } else return isNum(x) || isC32(x);
 }
 
 B homFil1(B f, B r, B xf) {

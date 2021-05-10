@@ -42,7 +42,7 @@ C32Arr* toC32Arr(B x) {
   B r = m_c32arrc(x);
   u32* rp = c32arr_ptr(r);
   usz ia = a(r)->ia;
-  BS2B xgetU = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) rp[i] = o2c(xgetU(x,i));
   dec(x);
   return c(C32Arr,r);

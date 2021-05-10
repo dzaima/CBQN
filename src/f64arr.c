@@ -36,7 +36,7 @@ F64Arr* toF64Arr(B x) {
   B r = m_f64arrc(x);
   f64* rp = f64arr_ptr(r);
   usz ia = a(r)->ia;
-  BS2B xgetU = TI(x).get;
+  BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) rp[i] = o2f(xgetU(x,i));
   dec(x);
   return c(F64Arr,r);
