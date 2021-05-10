@@ -18,6 +18,7 @@
 #define u64 uint64_t
 #define f64 double
 #define I32_MAX ((i32)((1LL<<31)-1))
+#define I32_MIN ((i32)(-(1LL<<31)))
 #define CHR_MAX 1114111
 #define U16_MAX ((u16)-1)
 #define UD __builtin_unreachable();

@@ -1,7 +1,41 @@
 #include "h.h"
 
 B rt_gradeUp;
+
+static void gradeUp_rec(i32* b, i32* I, i32* O, usz s, usz e) {
+  if (e-s<=1) return;
+  usz m = (s+(u64)e)/2;
+  gradeUp_rec(b, O, I, s, m);
+  gradeUp_rec(b, O, I, m, e);
+  
+  usz i1 = s;
+  usz i2 = m;
+  for (usz i = s; i < e; i++) {
+    if (i1<m && (i2>=e || b[I[i1]]<=b[I[i2]])) { O[i] = I[i1]; i1++; }
+    else                                       { O[i] = I[i2]; i2++; }
+  }
+}
 B gradeUp_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)==0) thrM("⍋: Argument cannot be a unit");
+  if (rnk(x)>1) x = toCells(x);
+  if (TI(x).elType==el_i32) {
+    i32* xp = i32any_ptr(x);
+    usz ia = a(x)->ia;
+    // i32 min=I32_MAX, max=I32_MIN;
+    // for (usz i = 0; i < ia; i++) {
+    //   i32 c = xp[i];
+    //   if (c<min) min=c;
+    //   if (c>max) max=c;
+    // }
+    
+    B r = m_i32arrv(ia);
+    i32* ri = i32arr_ptr(r);
+    i32 tmp[ia];
+    for (usz i = 0; i < ia; i++) tmp[i] = ri[i] = i;
+    gradeUp_rec(xp, tmp, ri, 0, ia);
+    dec(x);
+    return r;
+  }
   return c1(rt_gradeUp, x);
 }
 B gradeUp_c2(B t, B w, B x) {
