@@ -10,6 +10,24 @@
 #endif
 
 
+void empty_free(B x) { err("FREEING EMPTY\n"); }
+void builtin_free(B x) { err("FREEING BUILTIN\n"); }
+void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
+void freed_visit(B x) {
+  #ifndef CATCH_ERRORS
+  err("visiting t_freed\n");
+  #endif
+}
+void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+B    def_identity(B f) { return bi_N; }
+B    def_get (B x, usz n) { return inc(x); }
+B    def_getU(B x, usz n) { return x; }
+B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
+B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
+B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
+bool def_canStore(B x) { return false; }
+
+
 void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   BS2B xgetU = TI(x).getU;
@@ -125,6 +143,44 @@ bool equal(B w, B x) { // doesn't consume
   return true;
 }
 
+#define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
+i32 compare(B w, B x) {
+  if (isNum(w) & isNum(x)) return CMP(o2fu(w), o2fu(x));
+  if (isC32(w) & isC32(x)) return CMP(o2cu(w), o2cu(x));
+  if (isNum(w) & isC32(x)) return -1;
+  if (isC32(w) & isNum(x)) return  1;
+  if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
+  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; BS2B wgetU;
+  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; BS2B xgetU;
+  if(wa) { wia=1; wr=0; wsh=NULL; wgetU=def_getU; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w).getU; }
+  if(xa) { xia=1; xr=0; xsh=NULL; xgetU=def_getU; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x).getU; }
+  if (wia==0 || xia==0) return CMP(wia, xia);
+  
+  i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
+  ur rr = wr<xr? wr : xr;
+  i32 ri = 0; // matching shape tail
+  i32 rm = 1;
+  while (ri<rr  &&  wsh[wr-1-ri] == xsh[xr-1-ri]) {
+    rm*= wsh[wr-ri-1];
+    ri++;
+  }
+  if (ri<rr) {
+    usz wm = wsh[wr-1-ri];
+    usz xm = xsh[xr-1-ri];
+    rc = CMP(wm, xm);
+    rm*= wm<xm? wm : xm;
+  }
+  for (int i = 0; i < rm; i++) {
+    int c = compare(wgetU(w,i), xgetU(x,i));
+    if (c!=0) return c;
+  }
+  return rc;
+}
+#undef CMP
+
+
+
+
 bool eqShPrefix(usz* w, usz* x, ur len) {
   return memcmp(w, x, len*sizeof(usz))==0;
 }
@@ -186,23 +242,6 @@ u8 fillElType(B x) {
     VALGRIND_PRINTF_BACKTRACE("%s", msg);
   }
 #endif
-
-void empty_free(B x) { err("FREEING EMPTY\n"); }
-void builtin_free(B x) { err("FREEING BUILTIN\n"); }
-void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
-void freed_visit(B x) {
-  #ifndef CATCH_ERRORS
-  err("visiting t_freed\n");
-  #endif
-}
-void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
-B    def_identity(B f) { return bi_N; }
-B    def_get (B x, usz n) { return inc(x); }
-B    def_getU(B x, usz n) { return x; }
-B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
-B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
-B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
-bool def_canStore(B x) { return false; }
 
 static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {
@@ -322,7 +361,7 @@ void printAllocStats() {
   #endif
 }
 
-#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(arith) F(fns) F(sfns) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
+#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(fns) F(sfns) F(arith) F(grade) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
 #define F(X) static inline void X##_init();
 FOR_INIT(F)
 #undef F

@@ -41,19 +41,19 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
 
 static inline void load_init() {
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div  , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt   , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join , bi_couple, bi_take  , bi_drop , bi_ud  , bi_shifta, bi_shiftb,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_N    , bi_N     , bi_select, bi_pick , bi_N   , bi_N     , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const, bi_swap  , bi_N     , bi_each , bi_tbl , bi_N     , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over , bi_before, bi_after , bi_N    , bi_val , bi_cond  , bi_N,
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div    , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt     , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack, bi_rtack , bi_shape, bi_join   , bi_couple, bi_take  , bi_drop , bi_ud  , bi_shifta, bi_shiftb,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_N    , bi_N     , bi_slash, bi_gradeUp, bi_N     , bi_select, bi_pick , bi_N   , bi_N     , bi_N,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N    , bi_N     , bi_asrt , bi_const  , bi_swap  , bi_N     , bi_each , bi_tbl , bi_N     , bi_fold,
+    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N    , bi_scan  , bi_atop , bi_over   , bi_before, bi_after , bi_N    , bi_val , bi_cond  , bi_N,
     /* ⚇⍟⎊         */ bi_N    , bi_repeat, bi_catch
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,0,1,1,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,0,0,1,0,0,0,0,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,1,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
     /* ⚇⍟⎊         */ 0,1,1
@@ -98,6 +98,7 @@ static inline void load_init() {
   rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
   rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
   rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
+  rt_gradeUp = rtObjGet(rtObjRaw, 33); gc_add(rt_gradeUp);
   
   for (usz i = 0; i < runtimeLen; i++) {
     #ifdef ALL_R1

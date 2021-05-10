@@ -88,6 +88,35 @@ B toCells(B x) {
   dec(x);
   return harr_fv(r);
 }
+B toKCells(B x, ur k) {
+  assert(isArr(x) && k<=rnk(x) && k>=0);
+  ur xr = rnk(x); usz* xsh = a(x)->sh;
+  ur cr = xr-k;
+  usz cam = 1; for (i32 i = 0; i < k ; i++) cam*= xsh[i];
+  usz csz = 1; for (i32 i = k; i < xr; i++) csz*= xsh[i];
+  
+  ShArr* csh;
+  if (cr>1) {
+    csh = m_shArr(cr);
+    for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+k];
+  }
+  
+  usz i = 0;
+  usz p = 0;
+  HArr_p r = m_harrs(cam, &i);
+  BS2B slice = TI(x).slice;
+  for (; i < cam; i++) {
+    B s = slice(inc(x), p);
+    arr_shSetI(s, csz, cr, csh);
+    r.a[i] = s;
+    p+= csz;
+  }
+  if (cr>1) ptr_dec(csh);
+  usz* rsh = harr_fa(r, k);
+  if (rsh) for (i32 i = 0; i < k; i++) rsh[i] = xsh[i];
+  dec(x);
+  return r.b;
+}
 
 
 B* harr_ptr(B x) { VT(x,t_harr); return c(HArr,x)->a; }

@@ -109,18 +109,18 @@ B fne_c2(B t, B w, B x) {
 }
 
 
-#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
-#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
-#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
+#define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
+#define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
+#define BI_M(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=c2_invalid; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
+#define BI_VAR(N) B bi_##N;
+#define BI_FNS0(F) F(BI_VAR,BI_VAR,BI_VAR)
+#define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-
-B                               bi_ud, bi_fne, bi_feq, bi_ltack, bi_rtack, bi_fmtF, bi_fmtN;
-static inline void fns_init() { bm(ud) ba(fne) ba(feq) ba(ltack) ba(rtack) bm(fmtF) bm(fmtN)
+#define F(A,M,D) M(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) M(fmtN)
+BI_FNS0(F);
+static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;
   ti[t_funBI].identity = funBI_identity;
 }
-
-#undef ba
-#undef bd
-#undef bm
+#undef F

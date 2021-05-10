@@ -129,10 +129,8 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
     case el_MAX: AGAIN;
     
     case el_i32: {
-      i32* xp;
-      if (xt==t_i32arr) xp = i32arr_ptr(x);
-      else if (xt==t_i32slice) xp = c(I32Slice,x)->a;
-      else AGAIN;
+      if (xt!=t_i32arr & xt!=t_i32slice) AGAIN;
+      i32* xp = i32any_ptr(x);
       memcpy(((I32Arr*)m->val)->a+ms, xp+xs, l*4);
       return;
     }
@@ -149,7 +147,7 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       if (xt==t_f64arr) xp = f64arr_ptr(x);
       else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
       else if (xt==t_i32arr|xt==t_i32slice) {
-        i32* xp = xt==t_i32arr? i32arr_ptr(x) : c(I32Slice,x)->a;
+        i32* xp = i32any_ptr(x);
         f64* rp = ((F64Arr*)m->val)->a+ms;
         for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
         return;

@@ -14,6 +14,7 @@
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
 #define VM_POS       false // whether to store detailed execution position information for stacktraces
+#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒)
 #define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜
 #define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
@@ -49,6 +50,7 @@
 #include "sfns.c"
 #include "sysfn.c"
 #include "arith.c"
+#include "grade.c"
 #include "md1.c"
 #include "md2.c"
 #include "vm.c"
@@ -75,7 +77,7 @@ int main() {
   // }
   // if (c_src) {
   //   bqn_setComp(bqn_exec(fromUTF8(c_src, c_len)));
-  //   // for (i32 i = 0; i < 100; i++) { dec(bqn_exec(fromUTF8(c_src, c_len))); gc_maybeGC(); }
+  //   // for (i32 i = 0; i < 100; i++) { dec(bqn_exec(fromUTF8(c_src, c_len))); gc_maybeGC(); } rtPerf_print(); exit(0);
   // } else {
   //   printf("couldn't read c.bqn\n");
   //   exit(1);

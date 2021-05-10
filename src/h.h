@@ -23,6 +23,7 @@
 #define UD __builtin_unreachable();
 #define NOINLINE __attribute__ ((noinline))
 #define NORETURN __attribute__ ((noreturn))
+#define AUTO __auto_type
 
 typedef u32 usz;
 typedef u8 ur;
@@ -106,8 +107,9 @@ char* format_type(u8 u) {
     /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(fmtN,"•FmtN") \
     /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") \
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
+    /*sort.c*/  F(gradeUp,"⍋") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
-    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•bqn") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
+    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
 
 enum PrimFns {
   #define F(N,X) pf_##N,
@@ -216,19 +218,22 @@ void printUTF8(u32 c);
 void printRaw(B x);       // doesn't consume
 void print(B x);          // doesn't consume
 bool equal(B w, B x);     // doesn't consume
+i32  compare(B w, B x);   // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
 void arr_print(B x);      // doesn't consume
 u8   fillElType(B x);     // doesn't consume
 bool eqShape(B w, B x);   // doesn't consume
 usz  arr_csz(B x);        // doesn't consume
 bool atomEqual(B w, B x); // doesn't consume
 B    toCells(B x);        // consumes
+B    toKCells(B x, ur k); // consumes
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all
 B m_v2(B a, B b          ); // consumes all
 B m_v3(B a, B b, B c     ); // consumes all
 B m_v4(B a, B b, B c, B d); // consumes all
-B m_unit(B a); // consumes
+B m_unit (B x); // consumes
+B m_hunit(B x); // consumes
 B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
 
 B bqn_exec(B str); // consumes
@@ -307,15 +312,25 @@ void arr_shVec(B x, usz ia) {
   srnk(x, 1);
   a(x)->sh = &a(x)->ia;
 }
+ShArr* m_shArr(ur r) {
+  assert(r>1);
+  return ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape));
+}
 usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank
   srnk(x,r);
-  if (r>1) return a(x)->sh = ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape))->a;
+  if (r>1) return a(x)->sh = m_shArr(r)->a;
   a(x)->sh = &a(x)->ia;
   return 0;
 }
 usz* arr_shAllocI(B x, usz ia, ur r) { // allocates shape, sets ia,rank
   a(x)->ia = ia;
   return arr_shAllocR(x, r);
+}
+void arr_shSetI(B x, usz ia, ur r, ShArr* sh) {
+  srnk(x,r);
+  a(x)->ia = ia;
+  if (r>1) { a(x)->sh = sh->a; ptr_inc(sh); }
+  else     { a(x)->sh = &a(x)->ia; }
 }
 void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
   assert(isArr(o));

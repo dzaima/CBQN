@@ -571,14 +571,7 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
-#define ba(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
-#define bd(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = N##_c2    ;c(Fun,bi_##N)->c1 = c1_invalid; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
-#define bm(N) bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); c(Fun,bi_##N)->c2 = c2_invalid;c(Fun,bi_##N)->c1 = N##_c1    ; c(Fun,bi_##N)->extra=pf_##N; c(BFn,bi_##N)->ident=bi_N; gc_add(bi_##N);
-
-B                                bi_shape, bi_pick, bi_pair, bi_select, bi_slash, bi_join, bi_couple, bi_shiftb, bi_shifta, bi_take, bi_drop;
-static inline void sfns_init() { ba(shape) ba(pick) ba(pair) ba(select) ba(slash) ba(join) ba(couple) ba(shiftb) ba(shifta) bd(take) bd(drop)
-}
-
-#undef ba
-#undef bd
-#undef bm
+#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) D(take) D(drop)
+BI_FNS0(F);
+static inline void sfns_init() { BI_FNS1(F) }
+#undef F
