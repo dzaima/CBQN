@@ -28,11 +28,10 @@ B gradeUp_c1(B t, B x) {
     //   if (c>max) max=c;
     // }
     
-    B r = m_i32arrv(ia);
-    i32* ri = i32arr_ptr(r);
+    i32* rp; B r = m_i32arrv(&rp, ia);
     i32 tmp[ia];
-    for (usz i = 0; i < ia; i++) tmp[i] = ri[i] = i;
-    gradeUp_rec(xp, tmp, ri, 0, ia);
+    for (usz i = 0; i < ia; i++) tmp[i] = rp[i] = i;
+    gradeUp_rec(xp, tmp, rp, 0, ia);
     dec(x);
     return r;
   }
@@ -55,8 +54,7 @@ B gradeUp_c2(B t, B w, B x) {
   u8 xe = TI(x).elType; usz xia = a(x)->ia;
   
   if (wia>I32_MAX-10) thrM("⍋: 𝕨 too big");
-  B r = m_i32arrc(x);
-  i32* ri = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrc(&rp, x);
   
   if (we==el_i32 & xe==el_i32) {
     i32* wi = i32any_ptr(w);
@@ -71,7 +69,7 @@ B gradeUp_c2(B t, B w, B x) {
         if (c < wi[m-1]) e = m;
         else s = m;
       }
-      ri[i] = s;
+      rp[i] = s;
     }
   } else {
     BS2B wgetU = TI(w).getU;
@@ -86,7 +84,7 @@ B gradeUp_c2(B t, B w, B x) {
         if (compare(c, wgetU(w,m-1)) < 0) e = m;
         else s = m;
       }
-      ri[i] = s;
+      rp[i] = s;
     }
   }
   dec(w);dec(x);

@@ -28,8 +28,7 @@ B fromUTF8(char* s, i64 len) {
     sz++;
     j+= l;
   }
-  B r = m_c32arrv(sz);
-  u32* rp = c32arr_ptr(r);
+  u32* rp; B r = m_c32arrv(&rp, sz);
   u64 p = 0;
   // TODO verify
   for (i64 i = 0; i < len; i+= utf8_len((u8)s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh

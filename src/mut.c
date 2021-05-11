@@ -10,11 +10,12 @@ void mut_to(Mut* m, u8 n) {
   assert(o!=el_B);
   m->type = n;
   if (o==el_MAX) {
+    void* t;
     switch(n) { default: UD;
-      case el_i32: m->val =    a(m_i32arrp(m->ia)) ; return;
-      case el_f64: m->val =    a(m_f64arrp(m->ia)) ; return;
-      case el_c32: m->val =    a(m_c32arrp(m->ia)) ; return;
-      case el_B  : m->val = (Arr*)m_harrUp(m->ia).c; return;
+      case el_i32: m->val =    a(m_i32arrp((i32**)&t, m->ia)) ; return;
+      case el_f64: m->val =    a(m_f64arrp((f64**)&t, m->ia)) ; return;
+      case el_c32: m->val =    a(m_c32arrp((u32**)&t, m->ia)) ; return;
+      case el_B  : m->val = (Arr*)m_harrUp(           m->ia).c; return;
     }
   } else {
     sprnk(m->val, 1);
@@ -135,10 +136,8 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       return;
     }
     case el_c32: {
-      u32* xp;
-      if (xt==t_c32arr) xp = c32arr_ptr(x);
-      else if (xt==t_c32slice) xp = c(C32Slice,x)->a;
-      else AGAIN;
+      if (xt!=t_c32arr & xt!=t_c32slice) AGAIN;
+      u32* xp = c32any_ptr(x);
       memcpy(((C32Arr*)m->val)->a+ms, xp+xs, l*4);
       return;
     }

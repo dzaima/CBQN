@@ -6,20 +6,23 @@ typedef struct I32Arr {
 } I32Arr;
 
 
-B m_i32arrv(usz ia) {
-  B r = m_arr(fsizeof(I32Arr,a,i32,ia), t_i32arr);
-  arr_shVec(r, ia);
-  return r;
+B m_i32arrv(i32** p, usz ia) {
+  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,ia), t_i32arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shVec(rb, ia);
+  return rb;
 }
-B m_i32arrc(B x) { assert(isArr(x));
-  B r = m_arr(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr);
-  arr_shCopy(r, x);
-  return r;
+B m_i32arrc(i32** p, B x) { assert(isArr(x));
+  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shCopy(rb, x);
+  return rb;
 }
-B m_i32arrp(usz ia) { // doesn't write shape/rank
-  B r = m_arr(fsizeof(I32Arr,a,i32,ia), t_i32arr);
-  a(r)->ia = ia;
-  return r;
+B m_i32arrp(i32** p, usz ia) { // doesn't write shape/rank
+  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,ia), t_i32arr);
+  *p = r->a;
+  r->ia = ia;
+  return tag(r, ARR_TAG);
 }
 
 
@@ -39,15 +42,14 @@ i32* i32arr_ptr(B x) { VT(x, t_i32arr); return c(I32Arr,x)->a; }
 i32* i32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_i32arr) return c(I32Arr,x)->a; assert(t==t_i32slice); return c(I32Slice,x)->a; }
 
 NOINLINE B m_cai32(usz ia, i32* a) {
-  B r = m_i32arrv(ia); i32* rp = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrv(&rp, ia);
   for (usz i = 0; i < ia; i++) rp[i] = a[i];
   return r;
 }
 
 I32Arr* toI32Arr(B x) {
   if (v(x)->type==t_i32arr) return c(I32Arr,x);
-  B r = m_i32arrc(x);
-  i32* rp = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrc(&rp, x);
   usz ia = a(r)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) rp[i] = o2i(xgetU(x,i));

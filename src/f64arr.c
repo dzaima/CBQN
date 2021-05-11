@@ -6,20 +6,23 @@ typedef struct F64Arr {
 } F64Arr;
 
 
-B m_f64arrv(usz ia) {
-  B r = m_arr(fsizeof(F64Arr,a,f64,ia), t_f64arr);
-  arr_shVec(r, ia);
-  return r;
+B m_f64arrv(f64** p, usz ia) {
+  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,ia), t_f64arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shVec(rb, ia);
+  return rb;
 }
-B m_f64arrc(B x) { assert(isArr(x));
-  B r = m_arr(fsizeof(F64Arr,a,f64,a(x)->ia), t_f64arr);
-  arr_shCopy(r, x);
-  return r;
+B m_f64arrc(f64** p, B x) { assert(isArr(x));
+  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,a(x)->ia), t_f64arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shCopy(rb, x);
+  return rb;
 }
-B m_f64arrp(usz ia) { // doesn't write shape/rank
-  B r = m_arr(fsizeof(F64Arr,a,f64,ia), t_f64arr);
-  a(r)->ia = ia;
-  return r;
+B m_f64arrp(f64** p, usz ia) { // doesn't write shape/rank
+  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,ia), t_f64arr);
+  *p = r->a;
+  r->ia = ia;
+  return tag(r, ARR_TAG);
 }
 
 
@@ -39,15 +42,14 @@ f64* f64arr_ptr(B x) { VT(x, t_f64arr); return c(F64Arr,x)->a; }
 f64* f64any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_f64arr) return c(F64Arr,x)->a; assert(t==t_f64slice); return c(F64Slice,x)->a; }
 
 NOINLINE B m_caf64(usz sz, f64* a) {
-  B r = m_f64arrv(sz); f64* rp = f64arr_ptr(r);
+  f64* rp; B r = m_f64arrv(&rp, sz);
   for (usz i = 0; i < sz; i++) rp[i] = a[i];
   return r;
 }
 
 F64Arr* toF64Arr(B x) {
   if (v(x)->type==t_f64arr) return c(F64Arr,x);
-  B r = m_f64arrc(x);
-  f64* rp = f64arr_ptr(r);
+  f64* rp; B r = m_f64arrc(&rp, x);
   usz ia = a(r)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) rp[i] = o2f(xgetU(x,i));

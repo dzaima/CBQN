@@ -72,8 +72,9 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       }
     } else if (v(x)->type==t_i32arr) {
       i32* xp = i32arr_ptr(x);
-      B r = reuse? x : m_i32arrc(x);
-      i32* rp = i32arr_ptr(r);
+      B r; i32* rp;
+      if (reuse) { r=x; rp = xp; }
+      else       r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_i32(xp[i]));
@@ -89,8 +90,9 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       return r;
     } else if (v(x)->type==t_f64arr) {
       f64* xp = f64arr_ptr(x);
-      B r = reuse? x : m_f64arrc(x);
-      f64* rp = f64arr_ptr(r);
+      B r; f64* rp;
+      if (reuse) { r=x; rp = xp; }
+      else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_f64(xp[i]));
@@ -234,7 +236,7 @@ B select_c2(B t, B w, B x) {
     if (v(w)->type==t_i32arr | v(w)->type==t_i32slice) {
       i32* wp = v(w)->type==t_i32slice? c(I32Slice,w)->a : i32arr_ptr(w);
       if (v(x)->type==t_i32arr) {
-        B r = m_i32arrc(w); i32* rp = i32arr_ptr(r);
+        i32* rp; B r = m_i32arrc(&rp, w);
         i32* xp = i32arr_ptr(x);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
@@ -311,7 +313,7 @@ B slash_c1(B t, B x) {
   BS2B xgetU = TI(x).getU;
   usz ri = 0;
   if (xia<I32_MAX) {
-    B r = m_i32arrv(s); i32* rp = i32arr_ptr(r);
+    i32* rp; B r = m_i32arrv(&rp, s);
     for (i32 i = 0; i < xia; i++) {
       usz c = o2s(xgetU(x, i));
       for (usz j = 0; j < c; j++) rp[ri++] = i;
@@ -319,7 +321,7 @@ B slash_c1(B t, B x) {
     dec(x);
     return r;
   }
-  B r = m_f64arrv(s); f64* rp = f64arr_ptr(r);
+  f64* rp; B r = m_f64arrv(&rp, s);
   for (usz i = 0; i < xia; i++) {
     usz c = o2s(xgetU(x, i));
     for (usz j = 0; j < c; j++) rp[ri++] = i;
@@ -476,18 +478,18 @@ B couple_c1(B t, B x) {
     dec(x);
     return r;
   }
-  if (q_i32(x)) { B r = m_i32arrv(1); i32arr_ptr(r)[0] = o2iu(x); return r; }
-  if (isF64(x)) { B r = m_f64arrv(1); f64arr_ptr(r)[0] = o2fu(x); return r; }
-  if (isC32(x)) { B r = m_c32arrv(1); c32arr_ptr(r)[0] = o2cu(x); return r; }
+  if (q_i32(x)) { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = o2iu(x); return r; }
+  if (isF64(x)) { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = o2fu(x); return r; }
+  if (isC32(x)) { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = o2cu(x); return r; }
   HArr_p r = m_harrUv(1);
   r.a[0] = x;
   return r.b;
 }
 B couple_c2(B t, B w, B x) {
   if (isAtm(w)&isAtm(x)) {
-    if (q_i32(x)&q_i32(w)) { B r = m_i32arrv(2); i32* rp=i32arr_ptr(r); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
-    if (isF64(x)&isF64(w)) { B r = m_f64arrv(2); f64* rp=f64arr_ptr(r); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
-    if (isC32(x)&isC32(w)) { B r = m_c32arrv(2); u32* rp=c32arr_ptr(r); rp[0]=o2cu(w); rp[1]=o2cu(x); return r; }
+    if (q_i32(x)&q_i32(w)) { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
+    if (isF64(x)&isF64(w)) { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
+    if (isC32(x)&isC32(w)) { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=o2cu(w); rp[1]=o2cu(x); return r; }
   }
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);

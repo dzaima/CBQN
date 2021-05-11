@@ -56,7 +56,7 @@ B grLen_c1(B t, B x) { // assumes valid arguments
     if (c>ria) ria = c;
   }
   ria++;
-  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
@@ -75,7 +75,7 @@ B grLen_c2(B t, B w, B x) { // assumes valid arguments
     if (c>ria) ria = c;
   }
   ria++;
-  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
@@ -97,7 +97,7 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   tmp[0] = 0;
   for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
   usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
-  B r = m_i32arrv(ria); i32* rp = i32arr_ptr(r);
+  i32* rp; B r = m_i32arrv(&rp, ria);
   if (xia>=I32_MAX) thrM("grOrd: Too large");
   for (usz i = 0; i < xia; i++) {
     i64 c = o2i64(xgetU(x,i));

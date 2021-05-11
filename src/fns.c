@@ -13,11 +13,11 @@ B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 B ud_c1(B t, B x) {
   usz xu = o2s(x);
   if (xu<I32_MAX) {
-    B r = m_i32arrv(xu); i32* rp = i32arr_ptr(r);
+    i32* rp; B r = m_i32arrv(&rp, xu);
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  B r = m_f64arrv(xu); f64* rp = f64arr_ptr(r);
+  f64* rp; B r = m_f64arrv(&rp, xu);
   for (usz i = 0; i < xu; i++) rp[i] = i;
   return r;
 }
@@ -64,18 +64,19 @@ B fne_c1(B t, B x) {
     ur xr = rnk(x);
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < xr; i++) if (sh[i]>I32_MAX) {
-      B r = m_f64arrv(xr); f64* rp = f64arr_ptr(r);
+      f64* rp; B r = m_f64arrv(&rp, xr);
       for (i32 j = 0; j < xr; j++) rp[j] = sh[j];
       dec(x);
       return r;
     }
-    B r = m_i32arrv(xr); i32* rp = i32arr_ptr(r);
+    i32* rp;
+    B r = m_i32arrv(&rp, xr);
     for (i32 i = 0; i < xr; i++) rp[i] = sh[i];
     dec(x);
     return r;
   } else {
-    dec(x);
-    return m_i32arrv(0);
+    dec(x); i32* tmp;
+    return m_i32arrv(&tmp, 0);
   }
 }
 u64 depth(B x) { // doesn't consume

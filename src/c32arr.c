@@ -6,47 +6,25 @@ typedef struct C32Arr {
 } C32Arr;
 
 
-B m_c32arrv(usz ia) {
-  B r = m_arr(fsizeof(C32Arr,a,u32,ia), t_c32arr);
-  arr_shVec(r, ia);
-  return r;
+B m_c32arrv(u32** p, usz ia) {
+  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,ia), t_c32arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shVec(rb, ia);
+  return rb;
 }
-B m_c32arrc(B x) { assert(isArr(x));
-  B r = m_arr(fsizeof(C32Arr,a,u32,a(x)->ia), t_c32arr);
-  arr_shCopy(r, x);
-  return r;
+B m_c32arrc(u32** p, B x) { assert(isArr(x));
+  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,a(x)->ia), t_c32arr); B rb = tag(r, ARR_TAG);
+  *p = r->a;
+  arr_shCopy(rb, x);
+  return rb;
 }
-B m_c32arrp(usz ia) { // doesn't write shape/rank
-  B r = m_arr(fsizeof(C32Arr,a,u32,ia), t_c32arr);
-  a(r)->ia = ia;
-  return r;
-}
-
-
-u32* c32arr_ptr(B x) { VT(x, t_c32arr); return c(C32Arr,x)->a; }
-
-B m_str8(usz sz, char* s) {
-  B r = m_c32arrv(sz); u32* rp = c32arr_ptr(r);
-  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
-  return r;
-}
-NOINLINE B m_str32(u32* s) {
-  usz sz = 0; while(s[sz]) sz++;
-  B r = m_c32arrv(sz); u32* rp = c32arr_ptr(r);
-  for (usz i = 0; i < sz; i++) rp[i] = s[i];
-  return r;
+B m_c32arrp(u32** p, usz ia) { // doesn't write shape/rank
+  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,ia), t_c32arr);
+  *p = r->a;
+  r->ia = ia;
+  return tag(r, ARR_TAG);
 }
 
-C32Arr* toC32Arr(B x) {
-  if (v(x)->type==t_c32arr) return c(C32Arr,x);
-  B r = m_c32arrc(x);
-  u32* rp = c32arr_ptr(r);
-  usz ia = a(r)->ia;
-  BS2B xgetU = TI(x).getU;
-  for (usz i = 0; i < ia; i++) rp[i] = o2c(xgetU(x,i));
-  dec(x);
-  return c(C32Arr,r);
-}
 
 typedef struct C32Slice {
   struct Slice;
@@ -59,16 +37,30 @@ B m_c32slice(B p, u32* ptr) {
   return tag(r, ARR_TAG);
 }
 
-B c32arr_slice  (B x, usz s) {return m_c32slice(x                 , c(C32Arr  ,x)->a+s); }
-B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
 
+u32* c32arr_ptr(B x) { VT(x, t_c32arr); return c(C32Arr,x)->a; }
+u32* c32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_c32arr) return c(C32Arr,x)->a; assert(t==t_c32slice); return c(C32Slice,x)->a; }
 
-B c32arr_get  (B x, usz n) { VT(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
-B c32slice_get(B x, usz n) { VT(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
-void c32arr_free(B x) { decSh(x); }
-bool c32arr_canStore(B x) { return isC32(x); }
-
-
+B m_str8(usz sz, char* s) {
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
+  return r;
+}
+NOINLINE B m_str32(u32* s) {
+  usz sz = 0; while(s[sz]) sz++;
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (usz i = 0; i < sz; i++) rp[i] = s[i];
+  return r;
+}
+C32Arr* toC32Arr(B x) {
+  if (v(x)->type==t_c32arr) return c(C32Arr,x);
+  u32* rp; B r = m_c32arrc(&rp, x);
+  usz ia = a(r)->ia;
+  BS2B xgetU = TI(x).getU;
+  for (usz i = 0; i < ia; i++) rp[i] = o2c(xgetU(x,i));
+  dec(x);
+  return c(C32Arr,r);
+}
 bool eqStr(B w, u32* x) {
   if (isAtm(w) || rnk(w)!=1) return false;
   BS2B wgetU = TI(w).getU;
@@ -82,6 +74,14 @@ bool eqStr(B w, u32* x) {
 }
 
 
+B c32arr_slice  (B x, usz s) {return m_c32slice(x                 , c(C32Arr  ,x)->a+s); }
+B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
+
+B c32arr_get  (B x, usz n) { VT(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
+B c32slice_get(B x, usz n) { VT(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
+void c32arr_free(B x) { decSh(x); }
+bool c32arr_canStore(B x) { return isC32(x); }
+
 static inline void c32arr_init() {
   ti[t_c32arr].get   = c32arr_get;   ti[t_c32slice].get   = c32slice_get;
   ti[t_c32arr].getU  = c32arr_get;   ti[t_c32slice].getU  = c32slice_get;
@@ -91,5 +91,6 @@ static inline void c32arr_init() {
   ti[t_c32arr].print =    arr_print; ti[t_c32slice].print = arr_print;
   ti[t_c32arr].isArr = true;         ti[t_c32slice].isArr = true;
   ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
+  ti[t_c32arr].elType = el_c32;      ti[t_c32slice].elType = el_c32;
   ti[t_c32arr].canStore = c32arr_canStore;
 }
