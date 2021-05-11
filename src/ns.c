@@ -1,18 +1,5 @@
 #include "ns.h"
 
-typedef struct NSDesc {
-  struct Value;
-  B nameList;
-  i32 varAm; // number of items in expIDs (currently equal to sc->varAm/body->varAm)
-  i32 expIDs[]; // each item is an index in nameList (or -1), and its position is the corresponding position in sc->vars
-} NSDesc;
-typedef struct NS {
-  struct Value;
-  B nameList; // copy of desc->nameList for quick checking; isn't owned
-  NSDesc* desc;
-  Scope* sc;
-} NS;
-
 void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { // consumes nameList
   if (!isArr(varIDs) || !isArr(exported)) thrM("Bad namespace description information");
   

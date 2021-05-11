@@ -1,4 +1,4 @@
-#include "h.h"
+#include "vm.h"
 #include "ns.h"
 
 // #define GS_REALLOC // whether to dynamically realloc gStack
@@ -101,53 +101,6 @@ void printBC(i32* p) {
   while(len-->0) printf(" ");
 }
 
-typedef struct Block Block;
-typedef struct Body Body;
-typedef struct Scope Scope;
-
-typedef struct Comp {
-  struct Value;
-  B bc;
-  B src;
-  B indices;
-  HArr* objs;
-  u32 blockAm;
-  Block* blocks[];
-} Comp;
-
-struct Block {
-  struct Value;
-  bool imm;
-  u8 ty;
-  Body* body;
-};
-
-typedef struct NSDesc NSDesc;
-struct Body {
-  struct Value;
-  Comp* comp;
-  // B* objs;
-  i32* bc; // pointer in comp->bc
-  u32 maxStack;
-  u16 maxPSC;
-  u16 varAm;
-  u32 endStack;
-  NSDesc* nsDesc;
-  i32 varIDs[];
-  // HArr* vNames;
-};
-
-struct Scope {
-  struct Value;
-  Scope* psc;
-  Body* body;
-  u16 varAm;
-  B vars[];
-};
-
-typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;
-typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
-typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 
 
 Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // consumes all
@@ -261,7 +214,7 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
           if (!isVar(c)) thrM("Assignment: extracting non-name from namespace");
           Scope* sc = pscs[(u16)(c.u>>32)];
           i32 nameID = sc->body->varIDs[(u32)c.u];
-          v_set(pscs, c, ns_getU(x, ns_nameList(sc->body->nsDesc), nameID), upd);
+          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
         }
         return;
       }
