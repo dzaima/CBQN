@@ -653,7 +653,7 @@ void popCatch() {
   #endif
 }
 
-NOINLINE void thr(B msg) {
+NOINLINE NORETURN void thr(B msg) {
   if (cf>cfStart) {
     catchMessage = msg;
     cf--;
@@ -688,7 +688,7 @@ NOINLINE void thr(B msg) {
   #endif
 }
 
-NOINLINE void thrM(char* s) {
+NOINLINE NORETURN void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }
 

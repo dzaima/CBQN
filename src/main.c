@@ -75,10 +75,14 @@ int main() {
       c_src = NULL;
     }
     if (c_src) {
+      B srcB = fromUTF8(c_src, c_len);
       #ifdef COMP_COMP_TIME
-        for (i32 i = 0; i < 100; i++) { dec(bqn_exec(fromUTF8(c_src, c_len))); gc_maybeGC(); } rtPerf_print(); exit(0);
+        gc_add(srcB);
+        for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB))); gc_maybeGC(); }
+        rtPerf_print();
+        exit(0);
       #endif
-      bqn_setComp(bqn_exec(fromUTF8(c_src, c_len)));
+      bqn_setComp(bqn_exec(srcB));
     } else {
       printf("couldn't read c.bqn\n");
       exit(1);

@@ -163,7 +163,46 @@ B cmp_c2(B t, B w, B x) {
   return r;
 }
 
-#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal)
+typedef struct TmpFile { // to be turned into a proper I8Arr
+  struct Arr;
+  i8 a[];
+} TmpFile;
+
+TmpFile* readFile(B path) { // consumes
+  u64 plen = utf8lenB(path);
+  char p[plen+1];
+  toUTF8(path, p);
+  p[plen] = 0;
+  FILE* f = fopen(p, "r");
+  if (f==NULL) thrM("Couldn't read file");
+  fseek(f, 0, SEEK_END);
+  u64 len = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  TmpFile* src = mm_allocN(fsizeof(TmpFile,a,u8,len), t_i8arr);
+  arr_shVec(tag(src,ARR_TAG), len);
+  fread((char*)src->a, 1, len, f);
+  fclose(f);
+  dec(path);
+  return src;
+}
+
+B fchars_c1(B t, B x) {
+  TmpFile* c = readFile(x);
+  B r = fromUTF8((char*)c->a, c->ia);
+  ptr_dec(c);
+  return r;
+}
+B fbytes_c1(B t, B x) {
+  TmpFile* f = readFile(x); usz ia = f->ia; u8* p = (u8*)f->a;
+  u32* rp; B r = m_c32arrv(&rp, ia);
+  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
+  ptr_dec(f);
+  return r;
+}
+
+
+
+#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal) M(fchars) M(fbytes)
 BI_FNS0(F);
 static inline void sysfn_init() { BI_FNS1(F) }
 #undef F
@@ -185,6 +224,8 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
+    else if (eqStr(c, U"fchars")) r.a[i] = inc(bi_fchars);
+    else if (eqStr(c, U"fbytes")) r.a[i] = inc(bi_fbytes);
     else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);

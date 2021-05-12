@@ -67,14 +67,14 @@ enum Type {
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
   
-  /*13*/ t_harr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
-  /*18*/ t_hslice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
+  /*13*/ t_harr  , t_i8arr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
+  /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
-  /*22*/ t_comp, t_block, t_body, t_scope,
-  /*26*/ t_ns, t_nsDesc,
-  /*27*/ t_freed, t_harrPartial,
+  /*25*/ t_comp, t_block, t_body, t_scope,
+  /*29*/ t_ns, t_nsDesc,
+  /*31*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
-  /*29*/ t_funPerf, t_md1Perf, t_md2Perf,
+  /*33*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
   t_COUNT
 };
@@ -110,7 +110,8 @@ char* format_type(u8 u) {
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sort.c*/  F(gradeUp,"⍋") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
-    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out")
+    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") \
+    /*sysfn.c*/ F(fchars,"•FChars") F(fbytes,"•FBytes")
 
 enum PrimFns {
   #define F(N,X) pf_##N,
