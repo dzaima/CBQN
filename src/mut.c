@@ -2,6 +2,12 @@ typedef struct Mut {
   u8 type;
   usz ia;
   Arr* val;
+  union {
+    i32* ai32;
+    f64* af64;
+    u32* ac32;
+    B* aB;
+  };
 } Mut;
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.type = el_MAX; N##_val.ia = (IA); Mut* N = &N##_val;
 
@@ -10,12 +16,11 @@ void mut_to(Mut* m, u8 n) {
   assert(o!=el_B);
   m->type = n;
   if (o==el_MAX) {
-    void* t;
     switch(n) { default: UD;
-      case el_i32: m->val =    a(m_i32arrp((i32**)&t, m->ia)) ; return;
-      case el_f64: m->val =    a(m_f64arrp((f64**)&t, m->ia)) ; return;
-      case el_c32: m->val =    a(m_c32arrp((u32**)&t, m->ia)) ; return;
-      case el_B  : m->val = (Arr*)m_harrUp(           m->ia).c; return;
+      case el_i32: m->val = a(m_i32arrp(&m->ai32, m->ia)); return;
+      case el_f64: m->val = a(m_f64arrp(&m->af64, m->ia)); return;
+      case el_c32: m->val = a(m_c32arrp(&m->ac32, m->ia)); return;
+      case el_B  : HArr_p t =  m_harrUp(          m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
     }
   } else {
     sprnk(m->val, 1);
@@ -31,10 +36,10 @@ void mut_to(Mut* m, u8 n) {
       }
     #endif
     switch(n) { default: UD;
-      case el_i32: m->val = (Arr*)toI32Arr(tag(m->val, ARR_TAG)); return;
-      case el_f64: m->val = (Arr*)toF64Arr(tag(m->val, ARR_TAG)); return;
-      case el_c32: m->val = (Arr*)toC32Arr(tag(m->val, ARR_TAG)); return;
-      case el_B  : m->val = (Arr*)toHArr  (tag(m->val, ARR_TAG)); return;
+      case el_i32: { I32Arr* t= toI32Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->ai32 = t->a; return; }
+      case el_f64: { F64Arr* t= toF64Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->af64 = t->a; return; }
+      case el_c32: { C32Arr* t= toC32Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->ac32 = t->a; return; }
+      case el_B  : { HArr*   t= toHArr  (tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->aB   = t->a; return; }
     }
   }
 }
@@ -87,27 +92,27 @@ void mut_fill(Mut* m, usz ms, B x, usz l) {
     
     case el_i32: {
       if (!q_i32(x)) AGAIN(isF64(x)? el_f64 : el_B);
-      i32* p = ((I32Arr*)m->val)->a+ms;
+      i32* p = m->ai32+ms;
       i32 v = o2iu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
       return;
     }
     case el_c32: {
       if (!isC32(x)) AGAIN(el_B);
-      u32* p = ((C32Arr*)m->val)->a+ms;
+      u32* p = m->ac32+ms;
       u32 v = o2cu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
       return;
     }
     case el_f64: {
       if (!isF64(x)) AGAIN(el_B);
-      f64* p = ((F64Arr*)m->val)->a+ms;
+      f64* p = m->af64+ms;
       f64 v = o2fu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
       return;
     }
     case el_B: {
-      B* p = ((HArr*)m->val)->a+ms;
+      B* p = m->aB+ms;
       for (usz i = 0; i < l; i++) p[i] = x;
       if (isVal(x)) for (usz i = 0; i < l; i++) inc(x);
       return;
@@ -132,13 +137,13 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
     case el_i32: {
       if (xt!=t_i32arr & xt!=t_i32slice) AGAIN;
       i32* xp = i32any_ptr(x);
-      memcpy(((I32Arr*)m->val)->a+ms, xp+xs, l*4);
+      memcpy(m->ai32+ms, xp+xs, l*4);
       return;
     }
     case el_c32: {
       if (xt!=t_c32arr & xt!=t_c32slice) AGAIN;
       u32* xp = c32any_ptr(x);
-      memcpy(((C32Arr*)m->val)->a+ms, xp+xs, l*4);
+      memcpy(m->ac32+ms, xp+xs, l*4);
       return;
     }
     case el_f64: {
@@ -147,16 +152,16 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
       else if (xt==t_i32arr|xt==t_i32slice) {
         i32* xp = i32any_ptr(x);
-        f64* rp = ((F64Arr*)m->val)->a+ms;
+        f64* rp = m->af64+ms;
         for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
         return;
       }
       else AGAIN;
-      memcpy(((F64Arr*)m->val)->a+ms, xp+xs, l*8);
+      memcpy(m->af64+ms, xp+xs, l*8);
       return;
     }
     case el_B: {
-      B* mpo = ((HArr*)m->val)->a+ms;
+      B* mpo = m->aB+ms;
       B* xp;
       if (xt==t_harr) xp = harr_ptr(x);
       else if (xt==t_hslice) xp = c(HSlice,x)->a;
