@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-clang -std=gnu11 -O3 -Wall -Wno-microsoft-anon-tag -fms-extensions -o BQN src/main.c -lm
+clang -std=gnu11 -O3 -Wall -Wno-microsoft-anon-tag -fms-extensions $@ -o BQN src/main.c -lm
