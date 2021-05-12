@@ -417,7 +417,7 @@ TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
 
-B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec;
+B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec;
 
 void do_nothing(B x) { }
 bool isNothing(B b) { return b.u==bi_N.u; }

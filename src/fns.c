@@ -75,8 +75,8 @@ B fne_c1(B t, B x) {
     dec(x);
     return r;
   } else {
-    dec(x); i32* tmp;
-    return m_i32arrv(&tmp, 0);
+    dec(x);
+    return inc(bi_emptyIVec);
   }
 }
 u64 depth(B x) { // doesn't consume
