@@ -52,7 +52,7 @@ static inline void load_init() {
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,0,1,1,
+    /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,1,1,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,1,0,1,0,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
@@ -99,6 +99,7 @@ static inline void load_init() {
   rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
   rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
   rt_gradeUp = rtObjGet(rtObjRaw, 33); gc_add(rt_gradeUp);
+  rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
   
   for (usz i = 0; i < runtimeLen; i++) {
     #ifdef ALL_R1

@@ -25,15 +25,7 @@
 // #define RT_PERF      // time runtime primitives
 // #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
 
-#ifdef CATCH_ERRORS
-  #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
-#else
-  #undef EACH_FILLS
-  #define EACH_FILLS false
-  #define PROPER_FILLS false
-#endif
 
-#define rtLen 63
 #include "h.h"
 #include "stuff.c"
 #include "heap.c"

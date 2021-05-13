@@ -74,7 +74,7 @@ void BN(free)(Value* x) {
 
 void* BN(allocL)(u8 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
-  if (x==NULL) x = BN(makeEmpty)(bucket);
+  if (RARE(x==NULL)) x = BN(makeEmpty)(bucket);
   else buckets[bucket] = x->next;
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));

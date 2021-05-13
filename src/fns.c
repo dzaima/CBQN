@@ -9,17 +9,69 @@ void print_funBI(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
 B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 
 
-
+void ud_rec(B** p, usz d, usz r, usz* pos, usz* sh) {
+  if (d==r) {
+    i32* rp;
+    *(*p)++ = m_i32arrv(&rp, r);
+    memcpy(rp, pos, 4*r);
+  } else {
+    usz c = sh[d];
+    for (usz i = 0; i < c; i++) {
+      pos[d] = i;
+      ud_rec(p, d+1, r, pos, sh);
+    }
+  }
+}
 B ud_c1(B t, B x) {
-  usz xu = o2s(x);
-  if (xu<I32_MAX) {
+  if (isAtm(x)) {
+    usz xu = o2s(x);
+    if (RARE(xu>=I32_MAX)) {
+      f64* rp; B r = m_f64arrv(&rp, xu);
+      for (usz i = 0; i < xu; i++) rp[i] = i;
+      return r;
+    }
+    if (xu==0) { B r = bi_emptyIVec; ptr_inc(v(r)); return r; }
     i32* rp; B r = m_i32arrv(&rp, xu);
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  f64* rp; B r = m_f64arrv(&rp, xu);
-  for (usz i = 0; i < xu; i++) rp[i] = i;
+  BS2B xgetU = TI(x).getU;
+  usz xia = a(x)->ia;
+  if (rnk(x)!=1) thrM("↕: Argument must be a vector");
+  if (xia>UR_MAX) thrM("↕: Result rank too large");
+  usz sh[xia];
+  usz ria = 1;
+  for (usz i = 0; i < xia; i++) {
+    usz c = o2s(xgetU(x, i));
+    if (c > I32_MAX) thrM("↕: Result too large");
+    sh[i] = c;
+    if (c*(u64)ria >= U32_MAX) thrM("↕: Result too large");
+    ria*= c;
+  }
+  dec(x);
+  B r = m_fillarrp(ria);
+  
+  fillarr_setFill(r, m_f64(0));
+  B* rp = fillarr_ptr(r);
+  for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
+  usz* rsh = arr_shAllocI(r, ria, xia);
+  if (rsh) memcpy(rsh, sh, sizeof(usz)*xia);
+  
+  usz pos[xia]; B* crp = rp;
+  ud_rec(&crp, 0, xia, pos, sh);
+  
+  if (ria) fillarr_setFill(r, inc(rp[0]));
+  else {
+    i32* fp;
+    fillarr_setFill(r, m_i32arrv(&fp, xia));
+    for (usz i = 0; i < xia; i++) fp[i] = 0;
+  }
   return r;
+}
+
+B rt_ud;
+B ud_c2(B t, B w, B x) {
+  return c2(rt_ud, w, x);
 }
 
 B pair_c1(B t,      B x) { return m_v1(   x); }
@@ -118,7 +170,7 @@ B fne_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) M(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) M(fmtN)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) M(fmtN)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;

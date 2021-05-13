@@ -8,8 +8,17 @@
 #include <stdarg.h>
 #include <setjmp.h>
 
-#define i8  int8_t
-#define u8 uint8_t
+#define rtLen 63
+#ifdef CATCH_ERRORS
+  #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
+#else
+  #undef EACH_FILLS
+  #define EACH_FILLS false
+  #define PROPER_FILLS false
+#endif
+
+#define i8    int8_t
+#define u8   uint8_t
 #define i16  int16_t
 #define u16 uint16_t
 #define i32  int32_t
@@ -20,11 +29,13 @@
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define I32_MIN ((i32)(-(1LL<<31)))
 #define CHR_MAX 1114111
-#define U16_MAX ((u16)-1)
+#define U16_MAX ((u16)~(u16)0)
+#define U32_MAX ((u32)~(u32)0)
 #define UD __builtin_unreachable();
 #define NOINLINE __attribute__ ((noinline))
 #define NORETURN __attribute__ ((noreturn))
 #define AUTO __auto_type
+#define RARE(X) __builtin_expect(X,0)
 
 typedef u32 usz;
 typedef u8 ur;

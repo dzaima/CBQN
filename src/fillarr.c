@@ -51,6 +51,13 @@ B getFillE(B x) { // errors if there's no fill
 }
 bool noFill(B x) { return x.u == bi_noFill.u; }
 
+B m_fillarrp(usz ia) {
+  return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
+}
+void fillarr_setFill(B x, B fill) { // consumes fill
+  c(FillArr, x)->fill = fill;
+}
+
 typedef struct FillSlice {
   struct Slice;
   B* a;
