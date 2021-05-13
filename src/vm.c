@@ -450,6 +450,12 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(r);
         break;
       }
+      case FLDO: { P(ns) GS_UPD; i32 p = *bc++;
+        if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
+        ADD(inc(ns_getU(ns, sc->body->nsDesc->nameList, p)));
+        dec(ns);
+        break;
+      }
       case RETD: {
         if (b->endStack) dec(POP);
         ptr_inc(sc);
