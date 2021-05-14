@@ -392,15 +392,36 @@ B slicev(B x, usz s, usz ia) {
   arr_shVec(r, ia);
   return r;
 }
+B rt_take, rt_drop;
+B take_c1(B t, B x) { return c1(rt_take, x); }
+B drop_c1(B t, B x) { return c1(rt_drop, x); }
 B take_c2(B t, B w, B x) {
-  if (isAtm(x) || rnk(x)!=1) thrM("↑: NYI 1≠=𝕩");
-  i64 v = o2i64(w); usz ia = a(x)->ia;
-  return v<0? slicev(x, ia+v, -v) : slicev(x, 0, v);
+  if (isNum(w) && isArr(x) && rnk(x)==1) {
+    i64 v = o2i64(w);
+    usz ia = a(x)->ia;
+    u64 va = v<0? -v : v;
+    if (va>ia) {
+      MAKE_MUT(r, va);
+      B xf = getFillE(x);
+      mut_copy(r, v<0? va-ia : 0, x, 0, ia);
+      mut_fill(r, v<0? 0 : ia, xf, va-ia);
+      dec(x);
+      dec(xf);
+      return mut_fv(r);
+    }
+    if (v<0) return slicev(x, ia+v, -v);
+    else     return slicev(x, 0,     v);
+  }
+  return c2(rt_take, w, x);
 }
 B drop_c2(B t, B w, B x) {
-  if (isAtm(x) || rnk(x)!=1) thrM("↓: NYI 1≠=𝕩");
-  i64 v = o2i64(w); usz ia = a(x)->ia;
-  return v<0? slicev(x, 0, v+ia) : slicev(x, v, ia-v);
+  if (isNum(w) && isArr(x) && rnk(x)==1) {
+    i64 v = o2i64(w);
+    usz ia = a(x)->ia;
+    if (v<0) return -v>ia? slicev(x, 0, 0) : slicev(x, 0, v+ia);
+    else     return  v>ia? slicev(x, 0, 0) : slicev(x, v, ia-v);
+  }
+  return c2(rt_drop, w, x);
 }
 
 B rt_join;
@@ -599,7 +620,10 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
-#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) D(take) D(drop)
+
+
+
+#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop)
 BI_FNS0(F);
 static inline void sfns_init() { BI_FNS1(F) }
 #undef F
