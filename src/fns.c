@@ -102,11 +102,21 @@ B fmtF_c1(B t, B x) {
   return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
 }
 
-i64 isum(B x) { // doesn't consume; assumes is array; may error
-  BS2B xgetU = TI(x).getU;
+i64 isum(B x) { // doesn't consume; may error; TODO error on overflow
+  assert(isArr(x));
   i64 r = 0;
   usz xia = a(x)->ia;
-  for (usz i = 0; i < xia; i++) r+= (i64)o2f(xgetU(x,i)); // TODO error on overflow and non-integers or something
+  u8 xe = TI(x).elType;
+  if (xe==el_i32) {
+    i32* p = i32any_ptr(x);
+    for (usz i = 0; i < xia; i++) r+= p[i];
+  } else if (xe==el_f64) {
+    f64* p = f64any_ptr(x);
+    for (usz i = 0; i < xia; i++) { if(p[i]!=(f64)p[i]) thrM("Expected integer"); r+= p[i]; }
+  } else {
+    BS2B xgetU = TI(x).getU;
+    for (usz i = 0; i < xia; i++) r+= o2i64(xgetU(x,i));
+  }
   return r;
 }
 

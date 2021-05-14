@@ -342,25 +342,47 @@ B slash_c2(B t, B w, B x) {
     i64 wsum = isum(w); if (wsum>USZ_MAX) thrM("/: Result too large");
     usz ria = wsum;
     usz ri = 0;
-    HArr_p r = m_harrs(ria, &ri);
-    BS2B wgetU = TI(w).getU;
-    BS2B xgetU = TI(x).getU;
-    for (usz i = 0; i < wia; i++) {
-      B cw = wgetU(w, i);
-      if (isNum(cw)) {
-        f64 cf = o2f(cw);
-        usz c = (usz)cf;
-        if (cf!=c) goto base; // TODO clean up half-written r
+    if (TI(w).elType==el_i32) {
+      i32* wp = i32any_ptr(w);
+      if (TI(x).elType==el_i32) {
+        i32* xp = i32any_ptr(x);
+        i32* rp; B r = m_i32arrv(&rp, ria);
+        for (usz i = 0; i < wia; i++) {
+          i32 c = wp[i];
+          if (c<0) thrM("/: 𝕨 must consist of natural numbers");
+          i32 cx = xp[i];
+          for (usz j = 0; j < c; j++) *rp++ = cx;
+        }
+        dec(w); dec(x);
+        return r;
+      } else {
+        HArr_p r = m_harrs(ria, &ri);
+        BS2B xgetU = TI(x).getU;
+        for (usz i = 0; i < wia; i++) {
+          i32 c = wp[i];
+          if (c==0) continue;
+          if (c<0) thrM("/: 𝕨 must consist of natural numbers");
+          B cx = xgetU(x, i);
+          for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
+        }
+        dec(w); dec(x);
+        return withFill(harr_fv(r), xf);
+      }
+    } else {
+      HArr_p r = m_harrs(ria, &ri);
+      BS2B wgetU = TI(w).getU;
+      BS2B xgetU = TI(x).getU;
+      for (usz i = 0; i < wia; i++) {
+        usz c = o2s(wgetU(w, i));
         if (c) {
           B cx = xgetU(x, i);
           for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
         }
-      } else { dec(cw); goto base; }
+      }
+      dec(w); dec(x);
+      return withFill(harr_fv(r), xf);
     }
-    dec(w); dec(x);
-    return withFill(harr_fv(r), xf);
   }
-  base:
   return c2(rt_slash, w, x);
 }
 
