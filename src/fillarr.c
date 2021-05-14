@@ -6,22 +6,6 @@ typedef struct FillArr {
   B a[];
 } FillArr;
 
-B asFill(B x) { // consumes
-  if (isArr(x)) {
-    HArr_p r = m_harrUc(x);
-    usz ia = r.c->ia;
-    BS2B xget = TI(x).get;
-    bool noFill = false;
-    for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;
-    dec(x);
-    if (noFill) { ptr_dec(r.c); return bi_noFill; }
-    return r.b;
-  }
-  if (isF64(x)|isI32(x)) return m_i32(0);
-  if (isC32(x)) return m_c32(' ');
-  dec(x);
-  return bi_noFill;
-}
 B getFillQ(B x) { // doesn't consume; can return bi_noFill
   bool defZero = true;
   #ifdef CATCH_ERRORS
@@ -50,6 +34,24 @@ B getFillE(B x) { // errors if there's no fill
   return xf;
 }
 bool noFill(B x) { return x.u == bi_noFill.u; }
+
+B asFill(B x) { // consumes
+  if (isArr(x)) {
+    HArr_p r = m_harrUc(x);
+    usz ia = r.c->ia;
+    BS2B xget = TI(x).get;
+    bool noFill = false;
+    for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;
+    B xf = getFillQ(x);
+    dec(x);
+    if (noFill) { ptr_dec(r.c); return bi_noFill; }
+    return withFill(r.b, xf);
+  }
+  if (isF64(x)|isI32(x)) return m_i32(0);
+  if (isC32(x)) return m_c32(' ');
+  dec(x);
+  return bi_noFill;
+}
 
 B m_fillarrp(usz ia) {
   return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);

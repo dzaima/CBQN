@@ -47,49 +47,32 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   return x;
 }
 
-B grLen_c1(B t, B x) { // assumes valid arguments
-  i64 ria = -1;
+B grLen_both(i64 ria, B x) {
   usz ia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < ia; i++) {
     i64 c = o2i64u(xgetU(x, i));
     if (c>ria) ria = c;
   }
+  if (ria>USZ_MAX-1) thrOOM();
   ria++;
   i32* rp; B r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
     i64 n = o2i64u(xgetU(x, i));
-    if (n>USZ_MAX) thrM("grLen: Bad item in 𝕩");
-    else if (n>=0) rp[n]++;
+    if (n>=0) rp[n]++;
+    assert(n>=-1);
   }
   dec(x);
   return r;
 }
-B grLen_c2(B t, B w, B x) { // assumes valid arguments
-  i64 ria = o2i64u(w)-1;
-  usz ia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
-  for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64u(xgetU(x, i));
-    if (c>ria) ria = c;
-  }
-  ria++;
-  i32* rp; B r = m_i32arrv(&rp, ria);
-  for (usz i = 0; i < ria; i++) rp[i] = 0;
-  for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64u(xgetU(x, i));
-    if (n==(usz)n) rp[n]++;
-    else if (n!=-1) thrM("grLen: Too large");
-  }
-  dec(x);
-  return r;
-}
+B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes valid arguments
+B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes valid arguments
 
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  if (wia==0) { dec(w); dec(x); return c1(bi_ud, m_i32(0)); }
+  if (wia==0) { dec(w); dec(x); return inc(bi_emptyIVec); }
   if (xia==0) { dec(w); return x; }
   BS2B wgetU = TI(w).getU;
   BS2B xgetU = TI(x).getU;
@@ -98,7 +81,7 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
   usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
   i32* rp; B r = m_i32arrv(&rp, ria);
-  if (xia>=I32_MAX) thrM("grOrd: Too large");
+  if (xia>=I32_MAX) thrM("⊔: Too large");
   for (usz i = 0; i < xia; i++) {
     i64 c = o2i64(xgetU(x,i));
     if (c>=0) rp[tmp[c]++] = i;

@@ -117,7 +117,7 @@ char* format_type(u8 u) {
     /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
     /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
     /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(fmtN,"•FmtN") \
-    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") \
+    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") F(group,"⊔") \
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sort.c*/  F(gradeUp,"⍋") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
@@ -239,6 +239,7 @@ usz  arr_csz(B x);        // doesn't consume
 bool atomEqual(B w, B x); // doesn't consume
 B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
+B    withFill(B x, B f);  // consumes both
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all
@@ -251,8 +252,9 @@ B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't 
 
 B bqn_exec(B str); // consumes
 
-NORETURN void thr(B b);
-NORETURN void thrM(char* s);
+NOINLINE NORETURN void thr(B b);
+NOINLINE NORETURN void thrM(char* s);
+NOINLINE NORETURN void thrOOM();
 jmp_buf* prepareCatch();
 #ifdef CATCH_ERRORS
 #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error; dec(catchMessage);*/ } /*potentially erroring thing*/ popCatch();`

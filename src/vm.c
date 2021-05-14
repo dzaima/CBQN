@@ -697,7 +697,7 @@ NOINLINE NORETURN void thr(B msg) {
 NOINLINE NORETURN void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }
-
+NOINLINE NORETURN void thrOOM() { thrM("Out of memory"); }
 
 
 NOINLINE void vm_pst(Env* s, Env* e) {

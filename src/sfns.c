@@ -339,7 +339,7 @@ B slash_c2(B t, B w, B x) {
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
     if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
-    i64 wsum = isum(w); if (wsum>USZ_MAX) thrM("/: Result too large");
+    i64 wsum = isum(w); if (wsum>USZ_MAX) thrOOM();
     usz ria = wsum;
     usz ri = 0;
     if (TI(w).elType==el_i32) {
@@ -620,10 +620,66 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
+B rt_group;
+B group_c1(B t, B x) {
+  return c1(rt_group, x);
+}
+B group_c2(B t, B w, B x) {
+  if (isArr(w)&isArr(x) && rnk(w)==1 && rnk(x)==1) {
+    usz wia = a(w)->ia;
+    usz xia = a(x)->ia;
+    if (wia-xia > 1) thrM("⊔: ≠𝕨 must be either ≠𝕩 or one bigger");
+    
+    BS2B wgetU = TI(w).getU;
+    i64 ria = wia==xia? -1 : o2i64(wgetU(w, xia))-1;
+    for (usz i = 0; i < xia; i++) {
+      if (!isNum(w)) goto base;
+      i64 c = o2i64(wgetU(w, i));
+      if (c>ria) ria = c;
+    }
+    if (ria>USZ_MAX-1) thrOOM();
+    ria++;
+    i32 len[ria];
+    i32 pos[ria];
+    for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
+    for (usz i = 0; i < xia; i++) {
+      i64 n = o2i64u(wgetU(w, i));
+      if (n>=0) len[n]++;
+    }
+    
+    B r = m_fillarrp(ria);
+    arr_shVec(r, ria);
+    fillarr_setFill(r, m_f64(0));
+    B* rp = fillarr_ptr(r);
+    for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
+    B xf = getFillQ(x);
+    
+    
+    for (usz i = 0; i < ria; i++) {
+      B c = m_fillarrp(len[i]);
+      fillarr_setFill(c, inc(xf));
+      a(c)->ia = 0;
+      rp[i] = c;
+    }
+    B rf = m_fillarrp(ria);
+    arr_shVec(rf, 0);
+    fillarr_setFill(rf, xf);
+    fillarr_setFill(r, rf);
+    BS2B xget = TI(x).get;
+    for (usz i = 0; i < xia; i++) {
+      i64 n = o2i64u(wgetU(w, i));
+      if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
+    }
+    for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
+    dec(w); dec(x);
+    return r;
+  }
+  base:
+  return c2(rt_group, w, x);
+}
 
 
-
-#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop)
+#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group)
 BI_FNS0(F);
 static inline void sfns_init() { BI_FNS1(F) }
 #undef F

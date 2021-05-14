@@ -227,7 +227,7 @@ u8 fillElType(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
     if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
-      printf("wat %d %p\n", v(x)->type, (void*)x.u);
+      printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
       print(x);
       err("\nk");
     }
