@@ -36,9 +36,9 @@ enum {
   VFYM = 23, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
   SETH = 24, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
   RETN = 25, // returns top of stack
-  FLDO = 26, // N; get field objs[N] of ToS
-  FLDM = 27, // N; set field objs[N] from ToS
-  NSPM = 28, // N0,N1; create a destructible namespace from top N0 items, with the keys objs[N1]
+  FLDO = 26, // N; get field nameList[N] from ToS
+  FLDM = 27, // N; get mutable field nameList[N] from ToS
+  NSPM = 28, // N; replace ToS with one with a namespace field alias N
   RETD = 29, // return a namespace of exported items
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
@@ -51,17 +51,17 @@ enum {
 
 i32* nextBC(i32* p) {
   switch(*p) {
-    case PUSH: case DFND: case ARRO: case ARRM:
-    case VARO: case VARM: case FLDO: case FLDM:
-    case SYSV:
-      return p+2;
     case FN1C: case FN2C: case FN1O: case FN2O:
     case OP1D: case OP2D: case OP2H:
     case TR2D: case TR3D: case TR3O:
     case SETN: case SETU: case SETM: case SETH:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
       return p+1;
-    case LOCO: case LOCM: case NSPM: case LOCU:
+    case PUSH: case DFND: case ARRO: case ARRM:
+    case VARO: case VARM: case FLDO: case FLDM:
+    case SYSV: case NSPM:
+      return p+2;
+    case LOCO: case LOCM: case LOCU:
       return p+3;
     default: return 0;
   }
@@ -69,10 +69,10 @@ i32* nextBC(i32* p) {
 i32 stackDiff(i32* p) {
   switch(*p) {
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case SYSV: return 1;
-    case CHKV: case VFYM: case FLDO: case FLDM: case RETD: return 0;
+    case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
     case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN: return -1;
     case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O: return -2;
-    case ARRO: case ARRM: case NSPM: return 1-p[1];
+    case ARRO: case ARRM: return 1-p[1];
     default: return 9999999;
   }
 }
@@ -192,6 +192,13 @@ Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // con
   return ret;
 }
 
+
+
+typedef struct FldAlias {
+  struct Value;
+  B obj;
+  i32 p;
+} FldAlias;
 void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
   if (isVar(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
@@ -211,10 +218,16 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
       if (isNsp(x)) {
         for (u64 i = 0; i < ia; i++) {
           B c = sp[i];
-          if (!isVar(c)) thrM("Assignment: extracting non-name from namespace");
-          Scope* sc = pscs[(u16)(c.u>>32)];
-          i32 nameID = sc->body->varIDs[(u32)c.u];
-          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
+          if (isVar(c)) {
+            Scope* sc = pscs[(u16)(c.u>>32)];
+            i32 nameID = sc->body->varIDs[(u32)c.u];
+            v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
+          } else if (isObj(c)) {
+            assert(v(c)->type == t_fldAlias);
+            Scope* sc = pscs[0];
+            FldAlias* cf = c(FldAlias,c);
+            v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd);
+          } else thrM("Assignment: extracting non-name from namespace");
         }
         return;
       }
@@ -239,6 +252,8 @@ B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_opt
     return r.b;
   }
 }
+
+
 
 // all don't consume anything
 B m_funBlock(Block* bl, Scope* psc); // may return evaluated result, whatever
@@ -463,6 +478,13 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(m_ns(sc, b->nsDesc));
         goto end;
       }
+      case NSPM: { P(o) i32 l = *bc++;
+        B a = mm_alloc(sizeof(FldAlias), t_fldAlias, ftag(OBJ_TAG));
+        c(FldAlias,a)->obj = o;
+        c(FldAlias,a)->p = l;
+        ADD(a);
+        break;
+      }
       case RETN: goto end;
       // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM SYSV
       default:
@@ -556,6 +578,7 @@ void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
 void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
+void alias_free(B x) { dec(c(FldAlias,x)->obj); }
 
 void comp_visit(B x) {
   Comp* c = c(Comp,x);
@@ -574,11 +597,13 @@ void block_visit(B x) { Block* c = c(Block,x); mm_visitP(c->body); }
 void funBl_visit(B x) { FunBlock* c = c(FunBlock,x); mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(B x) { Md1Block* c = c(Md1Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(B x) { Md2Block* c = c(Md2Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
+void alias_visit(B x) { mm_visit(c(FldAlias,x)->obj); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
 void block_print(B x) { printf("(%p: block for %p)",v(x),c(Block,x)->body); }
 void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
+void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
 
 // void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
 // void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
@@ -609,6 +634,7 @@ static inline void comp_init() {
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
   ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;
   ti[t_scope    ].free = scope_free; ti[t_scope    ].visit = scope_visit; ti[t_scope    ].print = scope_print;
+  ti[t_fldAlias ].free = alias_free; ti[t_fldAlias ].visit = alias_visit; ti[t_fldAlias ].print = alias_print;
   ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
   ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
   ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].visit = md2Bl_visit; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;

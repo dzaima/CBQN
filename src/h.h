@@ -82,7 +82,7 @@ enum Type {
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*25*/ t_comp, t_block, t_body, t_scope,
-  /*29*/ t_ns, t_nsDesc,
+  /*29*/ t_ns, t_nsDesc, t_fldAlias,
   /*31*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
   /*33*/ t_funPerf, t_md1Perf, t_md2Perf,
