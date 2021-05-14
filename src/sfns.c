@@ -70,11 +70,11 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         for (; i < ia; i++) rH.a[i] = f(fo, inc(xp[i]));
         return harr_fcd(rH, x);
       }
-    } else if (v(x)->type==t_i32arr) {
-      i32* xp = i32arr_ptr(x);
+    } else if (TI(x).elType==el_i32) {
+      i32* xp = i32any_ptr(x);
       B r; i32* rp;
-      if (reuse) { r=x; rp = xp; }
-      else       r = m_i32arrc(&rp, x);
+      if (reuse && v(x)->type==t_i32arr) { r=x; rp = xp; }
+      else r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_i32(xp[i]));
@@ -88,10 +88,10 @@ B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       }
       if (!reuse) dec(x);
       return r;
-    } else if (v(x)->type==t_f64arr) {
-      f64* xp = f64arr_ptr(x);
+    } else if (TI(x).elType==el_f64) {
+      f64* xp = f64any_ptr(x);
       B r; f64* rp;
-      if (reuse) { r=x; rp = xp; }
+      if (reuse && v(x)->type==t_f64arr) { r=x; rp = xp; }
       else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
@@ -237,11 +237,11 @@ B select_c2(B t, B w, B x) {
   
   if (xr==1) {
     usz xia = a(x)->ia;
-    if (v(w)->type==t_i32arr | v(w)->type==t_i32slice) {
-      i32* wp = v(w)->type==t_i32slice? c(I32Slice,w)->a : i32arr_ptr(w);
-      if (v(x)->type==t_i32arr) {
+    if (TI(w).elType==el_i32) {
+      i32* wp = i32any_ptr(w);
+      if (TI(x).elType==el_i32) {
         i32* rp; B r = m_i32arrc(&rp, w);
-        i32* xp = i32arr_ptr(x);
+        i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
           if (c<0) c+= xia;
