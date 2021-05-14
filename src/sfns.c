@@ -173,12 +173,12 @@ B shape_c2(B t, B w, B x) {
   return r;
 }
 
+B rt_pick;
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (a(x)->ia==0) {
-    B r = getFillQ(x);
+    B r = getFillE(x);
     dec(x);
-    if (noFill(r)) thrM("⊑: called on empty array without fill");
     return r;
   }
   B r = TI(x).get(x, 0);
@@ -186,12 +186,16 @@ B pick_c1(B t, B x) {
   return r;
 }
 B pick_c2(B t, B w, B x) {
-  // usz wu = o2s(w);
-  // if (isAtm(x)) { dec(x); dec(w); thrM("⊑: 𝕩 wasn't an array"); }
-  // if (wu >= a(x)->ia) thrM("⊑: 𝕨 is greater than length of 𝕩"); // no bounds check for now
-  B r = TI(x).get(x, o2su(w));
-  dec(x);
-  return r;
+  if (isNum(w) && isArr(x) && rnk(x)==1) {
+    i64 p = o2i64(w);
+    usz xia = a(x)->ia;
+    if (p<0) p+= (i64)xia;
+    if ((u64)p >= xia) thrM("⊑: indexing out-of-bounds");
+    B r = TI(x).get(x, p);
+    dec(x);
+    return r;
+  }
+  return c2(rt_pick, w, x);
 }
 
 B rt_select;

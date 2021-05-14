@@ -53,7 +53,7 @@ static inline void load_init() {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,0,0,1,1,1,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,1,0,1,0,0,0,0,
+    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 0,0,1,1,0,1,1,0,0,0,
     /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,0,1,1,1,0,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,0,1,0,0,
     /* ⚇⍟⎊         */ 0,1,1
@@ -100,6 +100,7 @@ static inline void load_init() {
   rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
   rt_gradeUp = rtObjGet(rtObjRaw, 33); gc_add(rt_gradeUp);
   rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
+  rt_pick    = rtObjGet(rtObjRaw, 36); gc_add(rt_pick);
   
   for (usz i = 0; i < runtimeLen; i++) {
     #ifdef ALL_R1
