@@ -654,25 +654,39 @@ B group_c2(B t, B w, B x) {
     for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
     B xf = getFillQ(x);
     
-    
-    for (usz i = 0; i < ria; i++) {
-      B c = m_fillarrp(len[i]);
-      fillarr_setFill(c, inc(xf));
-      a(c)->ia = 0;
-      rp[i] = c;
+    if (TI(x).elType==el_i32) {
+      for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
+      B rf = m_fillarrp(ria);
+      arr_shVec(rf, 0);
+      fillarr_setFill(rf, xf);
+      fillarr_setFill(r, rf);
+      i32* xp = i32any_ptr(x);
+      for (usz i = 0; i < xia; i++) {
+        i64 n = o2i64u(wgetU(w, i));
+        if (n>=0) i32arr_ptr(rp[n])[pos[n]++] = xp[i];
+      }
+      dec(w); dec(x);
+      return r;
+    } else {
+      for (usz i = 0; i < ria; i++) {
+        B c = m_fillarrp(len[i]);
+        fillarr_setFill(c, inc(xf));
+        a(c)->ia = 0;
+        rp[i] = c;
+      }
+      B rf = m_fillarrp(ria);
+      arr_shVec(rf, 0);
+      fillarr_setFill(rf, xf);
+      fillarr_setFill(r, rf);
+      BS2B xget = TI(x).get;
+      for (usz i = 0; i < xia; i++) {
+        i64 n = o2i64u(wgetU(w, i));
+        if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
+      }
+      for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
+      dec(w); dec(x);
+      return r;
     }
-    B rf = m_fillarrp(ria);
-    arr_shVec(rf, 0);
-    fillarr_setFill(rf, xf);
-    fillarr_setFill(r, rf);
-    BS2B xget = TI(x).get;
-    for (usz i = 0; i < xia; i++) {
-      i64 n = o2i64u(wgetU(w, i));
-      if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
-    }
-    for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
-    dec(w); dec(x);
-    return r;
   }
   base:
   return c2(rt_group, w, x);
