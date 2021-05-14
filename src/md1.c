@@ -164,9 +164,16 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
     thrM("´: No identity found");
   }
   BS2B xget = TI(x).get;
-  B c = xget(x, ia-1);
   BBB2B fc2 = c2fn(f);
-  for (usz i = ia-1; i>0; i--) c = fc2(f, xget(x, i-1), c);
+  B c;
+  if (TI(x).elType==el_i32) {
+    i32* xp = i32any_ptr(x);
+    c = m_i32(xp[ia-1]);
+    for (usz i = ia-1; i>0; i--) c = fc2(f, m_i32(xp[i-1]), c);
+  } else {
+    c = xget(x, ia-1);
+    for (usz i = ia-1; i>0; i--) c = fc2(f, xget(x, i-1), c);
+  }
   dec(x);
   return c;
 }
