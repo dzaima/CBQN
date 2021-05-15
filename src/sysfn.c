@@ -32,6 +32,14 @@ B glyph_c1(B t, B x) {
   return x;
 }
 
+B repr_c1(B t, B x) {
+  #define BL 100
+  char buf[BL];
+  if (isF64(x)) snprintf(buf, BL, "%g", x.f);
+  else snprintf(buf, BL, "(fmtN: not given a number?)");
+  return m_str8(strlen(buf), buf);
+}
+
 B fill_c1(B t, B x) {
   B r = getFillE(x);
   dec(x);
@@ -137,7 +145,7 @@ B bqn_c1(B t, B x) {
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) if (!isC32(xgetU(x,i))) thrM("•BQN: Argument must be a character vector");
   }
-  return bqn_exec(x, bi_N);
+  return bqn_exec(x, bi_N, bi_N);
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -147,7 +155,7 @@ B cmp_c2(B t, B w, B x) {
 }
 
 
-#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal)
+#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) M(repr) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal)
 BI_FNS0(F);
 static inline void sysfn_init() { BI_FNS1(F) }
 #undef F
@@ -156,7 +164,7 @@ static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
 }
 
-B bi_timed, bi_fchars, bi_fbytes, bi_import;
+B bi_timed, bi_fchars, bi_fbytes, bi_flines, bi_import;
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
@@ -173,10 +181,15 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
+    else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"fchars")) r.a[i] = makeRel(bi_fchars);
     else if (eqStr(c, U"fbytes")) r.a[i] = makeRel(bi_fbytes);
+    else if (eqStr(c, U"flines")) r.a[i] = makeRel(bi_flines);
     else if (eqStr(c, U"import")) r.a[i] = makeRel(bi_import);
-    else { dec(x); thrM("Unknown system function"); }
+    else if (eqStr(c, U"args")) {
+      if(isNothing(comp_currArgs)) thrM("No arguments present for •args");
+      r.a[i] = inc(comp_currArgs);
+    } else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);
 }

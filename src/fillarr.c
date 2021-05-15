@@ -6,11 +6,7 @@ typedef struct FillArr {
   B a[];
 } FillArr;
 
-B getFillQ(B x) { // doesn't consume; can return bi_noFill
-  bool defZero = true;
-  #ifdef CATCH_ERRORS
-  defZero = false;
-  #endif
+B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
     u8 t = v(x)->type;
     if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); return r; }
@@ -18,12 +14,18 @@ B getFillQ(B x) { // doesn't consume; can return bi_noFill
     if (t==t_c32arr || t==t_c32slice) return m_c32(' ');
     if (t==t_i32arr || t==t_i32slice) return m_f64(0  );
     if (t==t_f64arr || t==t_f64slice) return m_f64(0  );
-    return defZero? m_f64(0) : bi_noFill;
+    return bi_noFill;
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
-  
-  return defZero? m_f64(0) : bi_noFill;
+  return bi_noFill;
+}
+B getFillQ(B x) { // doesn't consume; can return bi_noFill if CATCH_ERRORS
+  B r = getFillR(x);
+  #ifdef CATCH_ERRORS
+    return r;
+  #endif
+  return noFill(r)? m_f64(0) : r;
 }
 B getFillE(B x) { // errors if there's no fill
   B xf = getFillQ(x);

@@ -81,8 +81,77 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
   #endif
-  
-  if (argc==1) {
+  bool startREPL = argc==1;
+  if (!startREPL) {
+    i32 i = 1;
+    while (i!=argc) {
+      char* carg = argv[i];
+      if (carg[0]!='-') break;
+      i++;
+      if (carg[1]=='-') {
+        if (!strcmp(carg, "--help")) {
+          printf(
+          "Usage: %s [options] [file.bqn [arguments]]\n"
+          "Options:\n"
+          "-f file: execute the contents of the file with all further arguments as •args\n"
+          "-e code: execute the argument as BQN\n"
+          "-p code: execute the argument as BQN and print its result pretty-printed\n"
+          "-o code: execute the argument as BQN and print its raw result\n"
+          "-r     : start the REPL after all further arguments\n"
+          , argv[0]);
+          exit(0);
+        } else {
+          printf("%s: Unknown option: %s\n", argv[0], carg);
+          exit(1);
+        }
+      } else {
+        carg++;
+        char c;
+        while ((c=*carg++) != '\0') {
+          switch(c) { default: printf("Unknown option: -%c\n", c);
+            #define REQARG(X) if(*carg) { printf("%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { printf("%s: -%s requires an argument\n", argv[0], #X); exit(1); }
+            case 'f': REQARG(f); goto execFile;
+            case 'e': { REQARG(e);
+              dec(bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec)));
+              break;
+            }
+            case 'p': { REQARG(p);
+              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec));
+              print(r); dec(r);
+              printf("\n");
+              break;
+            }
+            case 'o': { REQARG(o);
+              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec));
+              printRaw(r); dec(r);
+              printf("\n");
+              break;
+            }
+            case 'r': {
+              startREPL = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    execFile:
+    if (i!=argc) {
+      B src = fromUTF8l(argv[i++]);
+      B args;
+      if (i==argc) {
+        args = inc(bi_emptyHVec);
+      } else {
+        HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
+        for (usz j = 0; j < argc-i; j++) {
+          ap.a[j] = fromUTF8l(argv[i+j]);
+        }
+        args = ap.b;
+      }
+      dec(bqn_execFile(src, args));
+    }
+  }
+  if (startREPL) {
     while (CATCH) {
       printf("Error: "); print(catchMessage); putchar('\n');
       vm_pst(envCurr, envStart+envPrevHeight);
@@ -94,7 +163,7 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       getline(&ln, &gl, stdin);
       if (ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), inc(replPath));
+      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec));
       free(ln);
       
       #ifdef TIME
@@ -124,8 +193,6 @@ int main(int argc, char* argv[]) {
       #endif
     }
     popCatch();
-  } else {
-    bqn_execFile(fromUTF8l(argv[1]));
   }
   rtPerf_print();
   CTR_FOR(CTR_PRINT)

@@ -430,8 +430,19 @@ B join_c1(B t, B x) {
   if (rnk(x)==1) {
     usz xia = a(x)->ia;
     if (xia==0) {
-      B xf = getFillE(x); dec(x);
-      if (isAtm(xf)) thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
+      B xf = getFillE(x);
+      if (isAtm(xf)) {
+        decR(xf);
+        if (!PROPER_FILLS) {
+          B xfq = getFillR(x);
+          bool no = noFill(xfq);
+          decR(xfq);
+          if (no) return x;
+        }
+        dec(x);
+        thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
+      }
+      dec(x);
       ur ir = rnk(xf);
       if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
       B xff = getFillQ(xf);
@@ -493,7 +504,7 @@ B join_c2(B t, B w, B x) {
     HArr_p r = m_harrUv(2);
     r.a[0] = TI(w).get(w,0); dec(w);
     r.a[1] = TI(x).get(x,0); dec(x);
-    return r.b;
+    return withFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrM("∾: Argument ranks must differ by 1 or less");
   MAKE_MUT(r, wia+xia);

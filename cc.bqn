@@ -7,8 +7,8 @@ return ← 1≡⊑args
 args↓˜↩ return
 path←(⊑args)∾"/src/"
 args↓˜↩1
-L  ← {"m_caB("  ∾(⍕≠𝕩)∾",(B[]){"  ∾(1↓∾","⊸∾¨𝕩)∾"})"}
-LI ← {"m_cai32("∾(⍕≠𝕩)∾",(i32[]){"∾(1↓∾","⊸∾¨𝕩)∾"})"}
+L  ← {"m_caB("  ∾(•Repr≠𝕩)∾",(B[]){"  ∾(1↓∾","⊸∾¨𝕩)∾"})"}
+LI ← {"m_cai32("∾(•Repr≠𝕩)∾",(i32[]){"∾(1↓∾","⊸∾¨𝕩)∾"})"}
 # Escape the special characters that appear in BQN sources.
 Esc←{
   in ← (@+0‿9‿10‿13)∾"'"""   # Null, Tab, LF, CR, and quotes
@@ -19,9 +19,9 @@ Esc←{
 }
 Str ← "m_str32(U"""∾Esc∾""")"˙    # A BQN string
 Char ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
-Num ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾⍕∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
+Num ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾•Repr∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
 
-F ← ⍕  # Format number
+F ← •Repr  # Format number
 
 Import ← {𝕨•Import path∾𝕩}
 FChars ← {𝕨•FChars path∾𝕩}
@@ -30,12 +30,13 @@ FLines ← {𝕨•FLines path∾𝕩}
 glyphs ← Import "glyphs.bqn"
 _getComp ← { (3+useInd) ↑ (𝕗 Import "c.bqn"){𝔽} }
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
-Comp ← ((<"inc(runtime["∾⍕∾"])"˙)¨↕62) glyphs _getComp ⊢
-J ← ∾∾⟜\n¨
+Comp ← ((<"inc(runtime["∾•Repr∾"])"˙)¨↕62) glyphs _getComp ⊢
+J ← ∾∾⟜(@+10)¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
 Fout ← {((≠𝕩)↑⟨LI F¨,L Fconst¨,L (LI ·F¨ 4↑⊢)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
-Long ← {¯2↓∾𝕩∾¨<","∾\n}
+Long ← {¯2↓∾𝕩∾¨<","∾@+10}
+LFC ← Long∘Fout∘Comp
 
 RT ← {
   src‿need‿inputs←𝕩Import"pr.bqn"
@@ -43,7 +44,7 @@ RT ← {
   Long Fout pr need _getComp src
 }
 CArg ← {J (¯5⊸↓∾𝕩˙)⌾⊑ FLines "c.bqn"}
-LFC ← Long∘Fout∘Comp
+SVG ← {∾⟨"Modify←GetHighlights←⊢⋄"⟩∾ FChars∘∾⟜".bqn"¨ "../svg"‿𝕩}
 
 •Out⍟(¬return) (⊑"r"‿"r0"‿"r1"‿"c"‿"cc"‿"f"‿"e"‿"p"⊐⊏)◶⟨
   RT∘2, RT∘0, RT∘1

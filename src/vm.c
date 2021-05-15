@@ -685,46 +685,6 @@ void popCatch() {
   #endif
 }
 
-NOINLINE NORETURN void thr(B msg) {
-  if (cf>cfStart) {
-    catchMessage = msg;
-    cf--;
-    
-    B* gStackNew = gStackStart + cf->gsDepth;
-    assert(gStackNew<=gStack);
-    while (gStack!=gStackNew) dec(*--gStack);
-    envPrevHeight = envCurr-envStart;
-    Env* envNew = envStart + cf->envDepth;
-    assert(envNew<=envCurr);
-    while (envCurr!=envNew) {
-      envCurr--;
-      #if VM_POS
-        envCurr->bcV = *envCurr->bcP - i32arr_ptr(envCurr->sc->body->comp->bc) - 1;
-      #else
-        envCurr->bcV = envCurr->bcL - i32arr_ptr(envCurr->sc->body->comp->bc);
-      #endif
-    }
-    
-    if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
-    cf = cfStart+cf->cfDepth;
-    longjmp(cf->jmp, 1);
-  }
-  assert(cf==cfStart);
-  printf("Error: ");
-  print(msg);
-  puts("");
-  #ifdef DEBUG
-  __builtin_trap();
-  #else
-  exit(1);
-  #endif
-}
-
-NOINLINE NORETURN void thrM(char* s) {
-  thr(fromUTF8(s, strlen(s)));
-}
-NOINLINE NORETURN void thrOOM() { thrM("Out of memory"); }
-
 
 NOINLINE void vm_pst(Env* s, Env* e) {
   assert(s<=e);
@@ -763,3 +723,48 @@ NOINLINE void vm_pst(Env* s, Env* e) {
     i--;
   }
 }
+
+static void unwindEnv(Env* envNew) {
+    assert(envNew<=envCurr);
+    while (envCurr!=envNew) {
+      envCurr--;
+      #if VM_POS
+        envCurr->bcV = *envCurr->bcP - i32arr_ptr(envCurr->sc->body->comp->bc) - 1;
+      #else
+        envCurr->bcV = envCurr->bcL - i32arr_ptr(envCurr->sc->body->comp->bc);
+      #endif
+    }
+}
+
+NOINLINE NORETURN void thr(B msg) {
+  if (cf>cfStart) {
+    catchMessage = msg;
+    cf--;
+    
+    B* gStackNew = gStackStart + cf->gsDepth;
+    assert(gStackNew<=gStack);
+    while (gStack!=gStackNew) dec(*--gStack);
+    envPrevHeight = envCurr-envStart;
+    unwindEnv(envStart + cf->envDepth);
+    
+    
+    if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
+    cf = cfStart+cf->cfDepth;
+    longjmp(cf->jmp, 1);
+  }
+  assert(cf==cfStart);
+  printf("Error: "); print(msg); putchar('\n');
+  Env* envPrev = envCurr;
+  unwindEnv(envStart);
+  vm_pst(envCurr, envPrev);
+  #ifdef DEBUG
+  __builtin_trap();
+  #else
+  exit(1);
+  #endif
+}
+
+NOINLINE NORETURN void thrM(char* s) {
+  thr(fromUTF8(s, strlen(s)));
+}
+NOINLINE NORETURN void thrOOM() { thrM("Out of memory"); }

@@ -81,13 +81,6 @@ B ltack_c2(B t, B w, B x) { dec(x); return w; }
 B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
-B fmtN_c1(B t, B x) {
-  #define BL 100
-  char buf[BL];
-  if (isF64(x)) snprintf(buf, BL, "%g", x.f);
-  else snprintf(buf, BL, "(fmtN: not given a number?)");
-  return m_str8(strlen(buf), buf);
-}
 B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
   u8 fl = v(x)->flags;
@@ -180,7 +173,7 @@ B fne_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) M(fmtN)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;
