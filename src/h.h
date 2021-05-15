@@ -393,7 +393,7 @@ typedef struct Slice {
   B p;
 } Slice;
 void slice_free(Value* x) { dec(((Slice*)x)->p); decSh(x); }
-void slice_visit(B x) { mm_visit(c(Slice,x)->p); }
+void slice_visit(Value* x) { mm_visit(((Slice*)x)->p); }
 void slice_print(B x) { arr_print(x); }
 
 B* harr_ptr(B x);
@@ -422,7 +422,7 @@ typedef struct TypeInfo {
   u8 elType;
   
   B2v print;  // doesn't consume
-  B2v visit;  // call mm_visit for all referents
+  V2v visit;  // call mm_visit for all referents
   B2B decompose; // consumes; must return a HArr
   bool isArr;
   bool arrD1; // is always an array with depth 1
@@ -433,7 +433,6 @@ TypeInfo ti[t_COUNT];
 
 B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec;
 
-void do_nothing(B x) { }
 bool isNothing(B b) { return b.u==bi_N.u; }
 
 // refcount

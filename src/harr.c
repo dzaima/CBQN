@@ -170,8 +170,8 @@ void harr_free(Value* x) {
   usz ia = ((Arr*)x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
-void harr_visit(B x) {
-  usz ia = a(x)->ia; B* p = harr_ptr(x);
+void harr_visit(Value* x) {
+  usz ia = ((Arr*)x)->ia; B* p = ((HArr*)x)->a;
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 bool harr_canStore(B x) { return true; }
@@ -191,10 +191,10 @@ void harrP_free(Value* x) { assert(x->type==t_harrPartial|x->type==t_freed);
   // printf("partfree %d/%d %p\n", am, a(x)->ia, (void*)x.u);
   for (usz i = 0; i < am; i++) dec(p[i]);
 }
-void harrP_visit(B x) { VT(x, t_harrPartial);
-  assert(rnk(x)>1? true : a(x)->sh!=&a(x)->ia);
-  B* p   =  c(HArr,x)->a;
-  usz am = *c(HArr,x)->sh;
+void harrP_visit(Value* x) { assert(x->type==t_harrPartial);
+  assert(prnk(x)>1? true : ((Arr*)x)->sh!=&((Arr*)x)->ia);
+  B* p   =  ((HArr*)x)->a;
+  usz am = *((HArr*)x)->sh;
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
 B harrP_get(B x, usz n) { return err("getting item from t_harrPartial"); }

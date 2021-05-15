@@ -68,8 +68,8 @@ void ns_free(Value* x) {
   ptr_decR(c->desc);
   ptr_decR(c->sc);
 }
-void ns_visit(B x) {
-  NS* c = c(NS, x);
+void ns_visit(Value* x) {
+  NS* c = (NS*)x;
   mm_visitP(c->desc);
   mm_visitP(c->sc);
 }
@@ -96,8 +96,8 @@ void ns_print(B x) {
 void nsDesc_free(Value* x) {
   decR(((NSDesc*)x)->nameList);
 }
-void nsDesc_visit(B x) {
-  mm_visit(c(NSDesc,x)->nameList);
+void nsDesc_visit(Value* x) {
+  mm_visit(((NSDesc*)x)->nameList);
 }
 void nsDesc_print(B x) {
   printf("(namespace description)");

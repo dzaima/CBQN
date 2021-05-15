@@ -573,31 +573,31 @@ void scope_free(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void  body_free(Value* x) { Body*  c = (Body*)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
-void block_free(Value* x) { Block* c = (Block*)x; ptr_decR(c->body); }
+void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
+void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(Value* x) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void alias_free(Value* x) { dec(((FldAlias*)x)->obj); }
 
-void comp_visit(B x) {
-  Comp* c = c(Comp,x);
+void comp_visit(Value* x) {
+  Comp* c = (Comp*)x;
   mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices);
   u32 am = c->blockAm; for(u32 i = 0; i < am; i++) mm_visitP(c->blocks[i]);
 }
-void scope_visit(B x) {
-  Scope* c = c(Scope,x);
+void scope_visit(Value* x) {
+  Scope* c = (Scope*)x;
   if (c->psc) mm_visitP(c->psc);
   mm_visitP(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
-void  body_visit(B x) { Body*  c = c(Body ,x); mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); }
-void block_visit(B x) { Block* c = c(Block,x); mm_visitP(c->body); }
-void funBl_visit(B x) { FunBlock* c = c(FunBlock,x); mm_visitP(c->sc); mm_visitP(c->bl); }
-void md1Bl_visit(B x) { Md1Block* c = c(Md1Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
-void md2Bl_visit(B x) { Md2Block* c = c(Md2Block,x); mm_visitP(c->sc); mm_visitP(c->bl); }
-void alias_visit(B x) { mm_visit(c(FldAlias,x)->obj); }
+void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); }
+void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
+void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
+void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
+void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
+void alias_visit(Value* x) { mm_visit(((FldAlias*)x)->obj); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }

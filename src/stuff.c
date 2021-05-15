@@ -13,8 +13,9 @@
 void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
 void def_free(Value* x) { }
-void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
-void freed_visit(B x) {
+void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
+void noop_visit(Value* x) { }
+void freed_visit(Value* x) {
   #ifndef CATCH_ERRORS
   err("visiting t_freed\n");
   #endif
@@ -264,8 +265,8 @@ static inline void hdr_init() {
   ti[t_empty].free = empty_free;
   ti[t_freed].free = def_free;
   ti[t_freed].visit = freed_visit;
-  ti[t_shape].visit = do_nothing;
-  ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = do_nothing;
+  ti[t_shape].visit = noop_visit;
+  ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = noop_visit;
   ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
   bi_N = tag(0, TAG_TAG);
   bi_noVar   = tag(1, TAG_TAG);

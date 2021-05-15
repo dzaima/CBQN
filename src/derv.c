@@ -30,11 +30,11 @@ void md2H_free(Value* x) { dec(((Md2H*)x)->m2); dec(((Md2H*)x)->g);             
 void fork_free(Value* x) { dec(((Fork*)x)->f ); dec(((Fork*)x)->g); dec(((Fork*)x)->h); }
 void atop_free(Value* x) {                      dec(((Atop*)x)->g); dec(((Atop*)x)->h); }
 
-void md1D_visit(B x) { mm_visit(c(Md1D,x)->m1); mm_visit(c(Md1D,x)->f);                         }
-void md2D_visit(B x) { mm_visit(c(Md2D,x)->m2); mm_visit(c(Md2D,x)->f); mm_visit(c(Md2D,x)->g); }
-void md2H_visit(B x) { mm_visit(c(Md2H,x)->m2); mm_visit(c(Md2H,x)->g);                         }
-void fork_visit(B x) { mm_visit(c(Fork,x)->f ); mm_visit(c(Fork,x)->g); mm_visit(c(Fork,x)->h); }
-void atop_visit(B x) {                          mm_visit(c(Atop,x)->g); mm_visit(c(Atop,x)->h); }
+void md1D_visit(Value* x) { mm_visit(((Md1D*)x)->m1); mm_visit(((Md1D*)x)->f);                          }
+void md2D_visit(Value* x) { mm_visit(((Md2D*)x)->m2); mm_visit(((Md2D*)x)->f); mm_visit(((Md2D*)x)->g); }
+void md2H_visit(Value* x) { mm_visit(((Md2H*)x)->m2); mm_visit(((Md2H*)x)->g);                          }
+void fork_visit(Value* x) { mm_visit(((Fork*)x)->f ); mm_visit(((Fork*)x)->g); mm_visit(((Fork*)x)->h); }
+void atop_visit(Value* x) {                           mm_visit(((Atop*)x)->g); mm_visit(((Atop*)x)->h); }
 
 void md1D_print(B x) { printf("(md1D ");print(c(Md1D,x)->f);printf(" ");print(c(Md1D,x)->m1);                                printf(")"); }
 void md2D_print(B x) { printf("(md2D ");print(c(Md2D,x)->f);printf(" ");print(c(Md2D,x)->m2);printf(" ");print(c(Md2D,x)->g);printf(")"); }

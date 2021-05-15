@@ -71,7 +71,7 @@ static inline void f64arr_init() {
   ti[t_f64arr].getU  = f64arr_get;   ti[t_f64slice].getU  = f64slice_get;
   ti[t_f64arr].slice = f64arr_slice; ti[t_f64slice].slice = f64slice_slice;
   ti[t_f64arr].free  = f64arr_free;  ti[t_f64slice].free  =    slice_free;
-  ti[t_f64arr].visit = do_nothing;   ti[t_f64slice].visit =    slice_visit;
+  ti[t_f64arr].visit = noop_visit;   ti[t_f64slice].visit =    slice_visit;
   ti[t_f64arr].print =    arr_print; ti[t_f64slice].print = arr_print;
   ti[t_f64arr].isArr = true;         ti[t_f64slice].isArr = true;
   ti[t_f64arr].arrD1 = true;         ti[t_f64slice].arrD1 = true;

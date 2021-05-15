@@ -87,9 +87,9 @@ void fillarr_free(Value* x) {
   usz ia = ((Arr*)x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
-void fillarr_visit(B x) {
-  usz ia = a(x)->ia; B* p = fillarr_ptr(x);
-  mm_visit(c(FillArr,x)->fill);
+void fillarr_visit(Value* x) { assert(x->type == t_fillarr);
+  usz ia = ((Arr*)x)->ia; B* p = ((FillArr*)x)->a;
+  mm_visit(((FillArr*)x)->fill);
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 bool fillarr_canStore(B x) { return true; }

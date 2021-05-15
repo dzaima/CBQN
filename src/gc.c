@@ -31,13 +31,14 @@ void mm_visit(B x) {
   #endif
   
   if (!isVal(x)) return;
-  u8 p = v(x)->mmInfo;
+  Value* vx = v(x);
+  u8 p = vx->mmInfo;
   if ((p&0x80)==gc_tagNew) return;
-  v(x)->mmInfo = p^0x80;
+  vx->mmInfo = p^0x80;
   #ifdef LOG_GC
-    gc_visitBytes+= mm_size(v(x)); gc_visitCount++;
+    gc_visitBytes+= mm_size(vx); gc_visitCount++;
   #endif
-  TI(x).visit(x);
+  TI(x).visit(vx);
 }
 void mm_visitP(void* xp) {
   #ifdef HEAP_VERIFY
@@ -51,7 +52,7 @@ void mm_visitP(void* xp) {
   #ifdef LOG_GC
     gc_visitBytes+= mm_size(x); gc_visitCount++;
   #endif
-  ti[x->type].visit(tag(x, OBJ_TAG));
+  ti[x->type].visit(x);
 }
 void gc_tryFree(Value* v) {
   u8 t = v->type;
