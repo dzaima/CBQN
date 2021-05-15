@@ -50,7 +50,7 @@
 #include "rtPerf.c"
 #include "load.c"
 
-int main() {
+int main(int argc, char* argv[]) {
   cbqn_init();
   
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
@@ -81,48 +81,51 @@ int main() {
     }
   #endif
   
-  
-  while (CATCH) {
-    printf("Error: "); print(catchMessage); putchar('\n');
-    vm_pst(envCurr, envStart+envPrevHeight);
-    dec(catchMessage);
-  }
-  while (true) { // exit by evaluating an empty expression
-    char* ln = NULL;
-    size_t gl = 0;
-    getline(&ln, &gl, stdin);
-    if (ln[0]==0 || ln[0]==10) break;
-    Block* block = bqn_comp(fromUTF8(ln, strlen(ln)));
-    free(ln);
-    
-    #ifdef TIME
-    u64 sns = nsTime();
-    B res = m_funBlock(block, 0);
-    u64 ens = nsTime();
-    printf("%fms\n", (ens-sns)/1e6);
-    #else
-    B res = m_funBlock(block, 0);
-    #endif
-    ptr_dec(block);
-    
-    #ifdef FORMATTER
-    B resFmt = bqn_fmt(res);
-    printRaw(resFmt); dec(resFmt);
-    printf("\n");
-    #else
-    print(res); putchar('\n'); fflush(stdout);
-    dec(res);
-    #endif
-    
-    #ifdef HEAP_VERIFY
-    heapVerify();
-    #endif
-    gc_maybeGC();
-    #ifdef DEBUG
-    #endif
+  if (argc==1) {
+    while (CATCH) {
+      printf("Error: "); print(catchMessage); putchar('\n');
+      vm_pst(envCurr, envStart+envPrevHeight);
+      dec(catchMessage);
+    }
+    while (true) { // exit by evaluating an empty expression
+      char* ln = NULL;
+      size_t gl = 0;
+      getline(&ln, &gl, stdin);
+      if (ln[0]==0 || ln[0]==10) break;
+      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)));
+      free(ln);
+      
+      #ifdef TIME
+      u64 sns = nsTime();
+      B res = m_funBlock(block, 0);
+      u64 ens = nsTime();
+      printf("%fms\n", (ens-sns)/1e6);
+      #else
+      B res = m_funBlock(block, 0);
+      #endif
+      ptr_dec(block);
+      
+      #ifdef FORMATTER
+      B resFmt = bqn_fmt(res);
+      printRaw(resFmt); dec(resFmt);
+      printf("\n");
+      #else
+      print(res); putchar('\n'); fflush(stdout);
+      dec(res);
+      #endif
+      
+      #ifdef HEAP_VERIFY
+      heapVerify();
+      #endif
+      gc_maybeGC();
+      #ifdef DEBUG
+      #endif
+    }
+    popCatch();
+  } else {
+    bqn_execFile(m_str8(strlen(argv[1]), argv[1]));
   }
   rtPerf_print();
-  popCatch();
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
   printAllocStats();

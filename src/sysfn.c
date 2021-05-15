@@ -151,7 +151,7 @@ typedef struct TmpFile { // to be turned into a proper I8Arr
   i8 a[];
 } TmpFile;
 
-TmpFile* readFile(B path) { // consumes
+TmpFile* file_bytes(B path) { // consumes; may throw
   u64 plen = utf8lenB(path);
   char p[plen+1];
   toUTF8(path, p);
@@ -168,15 +168,18 @@ TmpFile* readFile(B path) { // consumes
   dec(path);
   return src;
 }
-
-B fchars_c1(B t, B x) {
-  TmpFile* c = readFile(x);
+B file_chars(B path) { // consumes; may throw
+  TmpFile* c = file_bytes(path);
   B r = fromUTF8((char*)c->a, c->ia);
   ptr_dec(c);
   return r;
 }
+
+B fchars_c1(B t, B x) {
+  return file_chars(x);
+}
 B fbytes_c1(B t, B x) {
-  TmpFile* f = readFile(x); usz ia = f->ia; u8* p = (u8*)f->a;
+  TmpFile* f = file_bytes(x); usz ia = f->ia; u8* p = (u8*)f->a;
   u32* rp; B r = m_c32arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
   ptr_dec(f);

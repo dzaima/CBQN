@@ -154,3 +154,7 @@ static inline void load_init() {
     gc_enable();
   #endif // NO_COMP
 }
+
+B bqn_execFile(B path) {
+  return bqn_exec(file_chars(path));
+}
