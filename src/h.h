@@ -106,10 +106,14 @@ char* format_type(u8 u) {
     case t_md2BI:return"builtin md2"; case t_md2_block:return"md2_block";
     case t_fork:return"fork"; case t_atop:return"atop";
     case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
-    case t_harr  :return"harr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
-    case t_hslice:return"hslice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
+    case t_harr  :return"harr"  ; case t_i8arr  :return"i8arr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
+    case t_hslice:return"hslice"; case t_i8slice:return"i8slice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
-    case t_freed:return"(freed by GC)";
+    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias";
+    case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
+    #ifdef RT_PERF
+    case t_funPerf:return"perf fn"; case t_md1Perf:return"perf m1"; case t_md2Perf:return "perf m2";
+    #endif
   }
 }
 

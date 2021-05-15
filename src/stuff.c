@@ -345,6 +345,7 @@ void printAllocStats() {
     ctr_a[t_harrPartial] = 0;
     printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
     printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
+    printf("names←⟨"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf(","); printf("\"%s\"", format_type(i)); } printf("⟩\n");
     u64 leakedCount = 0;
     for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
     printf("leaked object count: %ld\n", leakedCount);
