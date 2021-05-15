@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       getline(&ln, &gl, stdin);
       if (ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), replPath);
+      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), inc(replPath));
       free(ln);
       
       #ifdef TIME
