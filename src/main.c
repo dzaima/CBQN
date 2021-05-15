@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     }
     popCatch();
   } else {
-    bqn_execFile(m_str8(strlen(argv[1]), argv[1]));
+    bqn_execFile(fromUTF8l(argv[1]));
   }
   rtPerf_print();
   CTR_FOR(CTR_PRINT)

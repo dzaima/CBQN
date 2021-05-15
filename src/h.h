@@ -16,6 +16,9 @@
   #define EACH_FILLS false
   #define PROPER_FILLS false
 #endif
+#if defined(CATCH_ERRORS) && defined(HEAP_VERIFY)
+  #error CATCH_ERRORS and HEAP_VERIFY cannot both be enabled
+#endif
 
 #define i8    int8_t
 #define u8   uint8_t
