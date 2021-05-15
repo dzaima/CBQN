@@ -63,7 +63,7 @@ B f64slice_slice(B x, usz s) { B r = m_f64slice(inc(c(Slice,x)->p), c(F64Slice,x
 
 B f64arr_get  (B x, usz n) { VT(x,t_f64arr  ); return m_f64(c(F64Arr  ,x)->a[n]); }
 B f64slice_get(B x, usz n) { VT(x,t_f64slice); return m_f64(c(F64Slice,x)->a[n]); }
-void f64arr_free(B x) { decSh(x); }
+void f64arr_free(Value* x) { decSh(x); }
 bool f64arr_canStore(B x) { return q_f64(x); }
 
 static inline void f64arr_init() {

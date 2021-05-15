@@ -561,24 +561,24 @@ B m_md2Block(Block* bl, Scope* psc) {
   return r;
 }
 
-void comp_free(B x) {
-  Comp* c = c(Comp, x);
+void comp_free(Value* x) {
+  Comp* c = (Comp*)x;
   ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices);
   u32 am = c->blockAm; for(u32 i = 0; i < am; i++) ptr_dec(c->blocks[i]);
 }
-void scope_free(B x) {
-  Scope* c = c(Scope,x);
+void scope_free(Value* x) {
+  Scope* c = (Scope*)x;
   if (c->psc) ptr_decR(c->psc);
   ptr_decR(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void  body_free(B x) { Body*  c = c(Body ,x); ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
-void block_free(B x) { Block* c = c(Block,x); ptr_decR(c->body); }
-void funBl_free(B x) { FunBlock* c = c(FunBlock,x); ptr_decR(c->sc); ptr_decR(c->bl); }
-void md1Bl_free(B x) { Md1Block* c = c(Md1Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
-void md2Bl_free(B x) { Md2Block* c = c(Md2Block,x); ptr_decR(c->sc); ptr_decR(c->bl); }
-void alias_free(B x) { dec(c(FldAlias,x)->obj); }
+void  body_free(Value* x) { Body*  c = (Body*)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
+void block_free(Value* x) { Block* c = (Block*)x; ptr_decR(c->body); }
+void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
+void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
+void md2Bl_free(Value* x) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
+void alias_free(Value* x) { dec(((FldAlias*)x)->obj); }
 
 void comp_visit(B x) {
   Comp* c = c(Comp,x);

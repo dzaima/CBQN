@@ -63,7 +63,7 @@ B i32slice_slice(B x, usz s) { B r = m_i32slice(inc(c(Slice,x)->p), c(I32Slice,x
 
 B i32arr_get  (B x, usz n) { VT(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
 B i32slice_get(B x, usz n) { VT(x,t_i32slice); return m_i32(c(I32Slice,x)->a[n]); }
-void i32arr_free(B x) { decSh(x); }
+void i32arr_free(Value* x) { decSh(x); }
 bool i32arr_canStore(B x) { return q_i32(x); }
 
 static inline void i32arr_init() {

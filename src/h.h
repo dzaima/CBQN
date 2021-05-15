@@ -319,8 +319,9 @@ typedef struct ShArr {
   struct Value;
   usz a[];
 } ShArr;
-ShArr* shObj(B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
-void decSh(B x) { if (rnk(x)>1) ptr_dec(shObj(x)); }
+ShArr* shObj (B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
+ShArr* shObjP(Value* x) { return (ShArr*)((u64)((Arr*)x)->sh-offsetof(ShArr,a)); }
+void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
 
 void arr_shVec(B x, usz ia) {
   a(x)->ia = ia;
@@ -391,7 +392,7 @@ typedef struct Slice {
   struct Arr;
   B p;
 } Slice;
-void slice_free(B x) { dec(c(Slice,x)->p); decSh(x); }
+void slice_free(Value* x) { dec(((Slice*)x)->p); decSh(x); }
 void slice_visit(B x) { mm_visit(c(Slice,x)->p); }
 void slice_print(B x) { arr_print(x); }
 
@@ -409,7 +410,7 @@ typedef B (*BBBBB2B)(B, B, B, B, B);
 typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
-  B2v free;   // expects refc==0, type may be cleared to t_empty for garbage collection
+  V2v free;   // expects refc==0, type may be cleared to t_empty for garbage collection
   BS2B get;   // increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen
   BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
   BB2B  m1_d; // consume all args; (m, f)
@@ -437,23 +438,22 @@ bool isNothing(B b) { return b.u==bi_N.u; }
 
 // refcount
 bool reusable(B x) { return v(x)->refc==1; }
-static inline void value_free(B x, Value* vx) {
-  ti[vx->type].free(x);
-  mm_free(vx);
+static inline void value_free(Value* x) {
+  ti[x->type].free(x);
+  mm_free(x);
 }
-static NOINLINE void value_freeR1(Value* x) { value_free(tag(x, OBJ_TAG), x); }
-static NOINLINE void value_freeR2(Value* vx, B x) { value_free(x, vx); }
+static NOINLINE void value_freeR(Value* x) { value_free(x); }
 void dec(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
-  if(!--vx->refc) value_free(x, vx);
+  if(!--vx->refc) value_free(vx);
 }
-void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(tag(x, OBJ_TAG), x); }
-void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR1(x); }
+void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(x); }
+void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR(x); }
 void decR(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
-  if(!--vx->refc) value_freeR2(vx, x);
+  if(!--vx->refc) value_freeR(vx);
 }
 B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;

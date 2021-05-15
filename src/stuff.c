@@ -10,8 +10,9 @@
 #endif
 
 
-void empty_free(B x) { err("FREEING EMPTY\n"); }
-void builtin_free(B x) { err("FREEING BUILTIN\n"); }
+void empty_free(Value* x) { err("FREEING EMPTY\n"); }
+void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
+void def_free(Value* x) { }
 void def_visit(B x) { printf("(no visit for %d=%s)\n", v(x)->type, format_type(v(x)->type)); }
 void freed_visit(B x) {
   #ifndef CATCH_ERRORS
@@ -218,8 +219,8 @@ u8 fillElType(B x) {
     }
     if (ti[x->type].isArr) {
       Arr* a = (Arr*)x;
-      if (rnk(tag(x,ARR_TAG))<=1) assert(a->sh == &a->ia);
-      else VALIDATE(tag(shObj(tag(x,ARR_TAG)),OBJ_TAG));
+      if (prnk(x)<=1) assert(a->sh == &a->ia);
+      else VALIDATE(tag(shObjP(x),OBJ_TAG));
     }
     return x;
   }
@@ -245,7 +246,7 @@ u8 fillElType(B x) {
 
 static inline void hdr_init() {
   for (i32 i = 0; i < t_COUNT; i++) {
-    ti[i].free  = do_nothing;
+    ti[i].free  = def_free;
     ti[i].visit = def_visit;
     ti[i].get   = def_get;
     ti[i].getU  = def_getU;
@@ -261,7 +262,7 @@ static inline void hdr_init() {
     ti[i].canStore  = def_canStore;
   }
   ti[t_empty].free = empty_free;
-  ti[t_freed].free = do_nothing;
+  ti[t_freed].free = def_free;
   ti[t_freed].visit = freed_visit;
   ti[t_shape].visit = do_nothing;
   ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = do_nothing;

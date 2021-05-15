@@ -24,11 +24,11 @@ typedef struct Atop {
   B g, h;
 } Atop;
 
-void md1D_free(B x) { dec(c(Md1D,x)->m1); dec(c(Md1D,x)->f);                    }
-void md2D_free(B x) { dec(c(Md2D,x)->m2); dec(c(Md2D,x)->f); dec(c(Md2D,x)->g); }
-void md2H_free(B x) { dec(c(Md2H,x)->m2); dec(c(Md2H,x)->g);                    }
-void fork_free(B x) { dec(c(Fork,x)->f ); dec(c(Fork,x)->g); dec(c(Fork,x)->h); }
-void atop_free(B x) {                     dec(c(Atop,x)->g); dec(c(Atop,x)->h); }
+void md1D_free(Value* x) { dec(((Md1D*)x)->m1); dec(((Md1D*)x)->f);                     }
+void md2D_free(Value* x) { dec(((Md2D*)x)->m2); dec(((Md2D*)x)->f); dec(((Md2D*)x)->g); }
+void md2H_free(Value* x) { dec(((Md2H*)x)->m2); dec(((Md2H*)x)->g);                     }
+void fork_free(Value* x) { dec(((Fork*)x)->f ); dec(((Fork*)x)->g); dec(((Fork*)x)->h); }
+void atop_free(Value* x) {                      dec(((Atop*)x)->g); dec(((Atop*)x)->h); }
 
 void md1D_visit(B x) { mm_visit(c(Md1D,x)->m1); mm_visit(c(Md1D,x)->f);                         }
 void md2D_visit(B x) { mm_visit(c(Md2D,x)->m2); mm_visit(c(Md2D,x)->f); mm_visit(c(Md2D,x)->g); }

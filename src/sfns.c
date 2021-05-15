@@ -148,7 +148,7 @@ B shape_c1(B t, B x) {
   if (isAtm(x)) thrM("⥊: deshaping non-array");
   usz ia = a(x)->ia;
   if (reusable(x)) {
-    decSh(x);
+    decSh(v(x));
     arr_shVec(x, ia);
     return x;
   }
@@ -165,7 +165,7 @@ B shape_c2(B t, B w, B x) {
   ur nr = (ur)wia;
   usz nia = a(x)->ia;
   B r;
-  if (reusable(x)) { r = x; decSh(x); }
+  if (reusable(x)) { r = x; decSh(v(x)); }
   else r = TI(x).slice(x, 0);
   usz* sh = arr_shAllocI(r, nia, nr);
   if (sh) for (u32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));

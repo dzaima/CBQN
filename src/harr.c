@@ -164,10 +164,10 @@ B harr_get   (B x, usz n) { VT(x,t_harr  ); return inc(c(HArr  ,x)->a[n]); }
 B hslice_get (B x, usz n) { VT(x,t_hslice); return inc(c(HSlice,x)->a[n]); }
 B harr_getU  (B x, usz n) { VT(x,t_harr  ); return     c(HArr  ,x)->a[n] ; }
 B hslice_getU(B x, usz n) { VT(x,t_hslice); return     c(HSlice,x)->a[n] ; }
-void harr_free(B x) {
+void harr_free(Value* x) {
   decSh(x);
-  B* p = c(HArr,x)->a; // don't use harr_ptr so type isn't checked
-  usz ia = a(x)->ia;
+  B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
+  usz ia = ((Arr*)x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 void harr_visit(B x) {
@@ -184,10 +184,10 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
   for (usz i = 0; i < am; i++) dec(p[i]);
   mm_free(v(x));
 }
-void harrP_free(B x) { assert(v(x)->type==t_harrPartial|v(x)->type==t_freed);
-  assert(rnk(x)>1? true : a(x)->sh!=&a(x)->ia);
-  B* p   =  c(HArr,x)->a;
-  usz am = *c(HArr,x)->sh;
+void harrP_free(Value* x) { assert(x->type==t_harrPartial|x->type==t_freed);
+  assert(prnk(x)>1? true : ((Arr*)x)->sh!=&((Arr*)x)->ia);
+  B* p   =  ((HArr*)x)->a;
+  usz am = *((HArr*)x)->sh;
   // printf("partfree %d/%d %p\n", am, a(x)->ia, (void*)x.u);
   for (usz i = 0; i < am; i++) dec(p[i]);
 }

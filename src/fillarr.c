@@ -80,11 +80,11 @@ B fillarr_get   (B x, usz n) { VT(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n
 B fillslice_get (B x, usz n) { VT(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
 B fillarr_getU  (B x, usz n) { VT(x,t_fillarr  ); return     c(FillArr  ,x)->a[n] ; }
 B fillslice_getU(B x, usz n) { VT(x,t_fillslice); return     c(FillSlice,x)->a[n] ; }
-void fillarr_free(B x) {
+void fillarr_free(Value* x) {
   decSh(x);
-  B* p = c(FillArr, x)->a;
-  dec(c(FillArr, x)->fill);
-  usz ia = a(x)->ia;
+  B* p = ((FillArr*)x)->a;
+  dec(((FillArr*)x)->fill);
+  usz ia = ((Arr*)x)->ia;
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 void fillarr_visit(B x) {

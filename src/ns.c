@@ -63,8 +63,8 @@ B ns_nameList(NSDesc* d) {
 
 
 
-void ns_free(B x) {
-  NS* c = c(NS, x);
+void ns_free(Value* x) {
+  NS* c = (NS*)x;
   ptr_decR(c->desc);
   ptr_decR(c->sc);
 }
@@ -93,8 +93,8 @@ void ns_print(B x) {
   putchar('}');
 }
 
-void nsDesc_free(B x) {
-  decR(c(NSDesc,x)->nameList);
+void nsDesc_free(Value* x) {
+  decR(((NSDesc*)x)->nameList);
 }
 void nsDesc_visit(B x) {
   mm_visit(c(NSDesc,x)->nameList);
