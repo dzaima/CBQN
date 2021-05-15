@@ -71,11 +71,11 @@ int main(int argc, char* argv[]) {
       B srcB = fromUTF8(c_src, c_len);
       #ifdef COMP_COMP_TIME
         gc_add(srcB);
-        for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB))); gc_maybeGC(); }
+        for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB), bi_N)); gc_maybeGC(); }
         rtPerf_print();
         exit(0);
       #endif
-      bqn_setComp(bqn_exec(srcB));
+      bqn_setComp(bqn_exec(srcB, bi_N));
     } else {
       printf("couldn't read c.bqn\n");
       exit(1);
