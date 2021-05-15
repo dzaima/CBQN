@@ -49,10 +49,13 @@ B path_resolve(B base, B rel) { // consumes rel; may error; assumes base is a ch
 }
 
 B path_dir(B path) { // consumes; returns directory part of file path, with trailing slash; may error
+  assert(isArr(path) || isNothing(path));
+  if (isNothing(path)) return path;
   BS2B pgetU = TI(path).getU;
   usz pia = a(path)->ia;
+  if (pia==0) thrM("Empty file path");
   for (usz i = 0; i < pia; i++) if (!isC32(pgetU(path, i))) thrM("Paths must be character vectors");
-  for (usz i = pia-1; i >= 0; i--) {
+  for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(pgetU(path, i))=='/') {
       B r = TI(path).slice(path, 0);
       arr_shVec(r, i+1);

@@ -24,7 +24,7 @@ B bqn_fmt(B x) { // consumes
 #endif
 
 void load_gcFn() { mm_visit(comp_currPath); }
-Block* bqn_comp(B str, B path) { // consumes
+Block* bqn_comp(B str, B path) { // consumes both
   comp_currPath = path;
   Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str);
   dec(path);

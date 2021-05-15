@@ -88,12 +88,13 @@ int main(int argc, char* argv[]) {
       vm_pst(envCurr, envStart+envPrevHeight);
       dec(catchMessage);
     }
+    B replPath = m_str32(U"REPL"); gc_add(replPath);
     while (true) { // exit by evaluating an empty expression
       char* ln = NULL;
       size_t gl = 0;
       getline(&ln, &gl, stdin);
       if (ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), bi_N);
+      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), replPath);
       free(ln);
       
       #ifdef TIME
