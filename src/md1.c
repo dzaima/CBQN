@@ -211,14 +211,28 @@ B timed_c1(B d, B x) { B f = c(Md1D,d)->f;
   return m_f64((ens-sns)/1e9);
 }
 
+B fchars_c1(B d, B x) { B f = c(Md1D,d)->f;
+  return file_chars(path_resolve(f, x));
+}
+B fbytes_c1(B d, B x) { B f = c(Md1D,d)->f;
+  TmpFile* tf = file_bytes(path_resolve(f, x)); usz ia = tf->ia; u8* p = (u8*)tf->a;
+  u32* rp; B r = m_c32arrv(&rp, ia);
+  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
+  ptr_dec(tf);
+  return r;
+}
+B import_c1(B d, B x) { B f = c(Md1D,d)->f;
+  return bqn_execFile(path_resolve(f, x));
+}
+
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 
 void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
-B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap, bi_timed;
-static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(timed)
+B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap, bi_timed, bi_fchars, bi_fbytes, bi_import;
+static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(timed) bm(fchars) bm(fbytes) bm(import)
   ti[t_md1BI].print = print_md1BI;
 }
 

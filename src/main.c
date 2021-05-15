@@ -37,6 +37,7 @@
 #include "fillarr.c"
 #include "mut.c"
 #include "utf.c"
+#include "file.c"
 #include "derv.c"
 #include "fns.c"
 #include "sfns.c"
@@ -92,7 +93,7 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       getline(&ln, &gl, stdin);
       if (ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)));
+      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), bi_N);
       free(ln);
       
       #ifdef TIME

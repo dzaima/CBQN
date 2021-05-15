@@ -126,7 +126,6 @@ char* format_type(u8 u) {
     /*sort.c*/  F(gradeUp,"⍋") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(fill,"•FillFn") \
     /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") \
-    /*sysfn.c*/ F(fchars,"•FChars") F(fbytes,"•FBytes")
 
 enum PrimFns {
   #define F(N,X) pf_##N,
@@ -143,11 +142,13 @@ char* format_pf(u8 u) {
 enum PrimMd1 {
   pm1_none,
   pm1_tbl, pm1_each, pm1_fold, pm1_scan, pm1_const, pm1_swap, pm1_timed, // md1.c
+  pm1_fchars, pm1_fbytes, pm1_import, // md1.c
 };
 char* format_pm1(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
     case pm1_tbl:return"⌜"; case pm1_each:return"¨"; case pm1_fold:return"´"; case pm1_scan:return"`"; case pm1_const:return"˙"; case pm1_swap:return"˜"; case pm1_timed:return"•_timed";
+    case pm1_fchars:return"•FChars"; case pm1_fbytes:return"•FBytes"; case pm1_import:return"•Import";
   }
 }
 enum PrimMd2 {
@@ -254,7 +255,8 @@ B m_unit (B x); // consumes
 B m_hunit(B x); // consumes
 B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
 
-B bqn_exec(B str); // consumes
+B bqn_exec(B str, B path); // consumes both
+B bqn_execFile(B path); // consumes
 
 NOINLINE NORETURN void thr(B b);
 NOINLINE NORETURN void thrM(char* s);

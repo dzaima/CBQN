@@ -19,12 +19,12 @@ B fromUTF8(char* s, i64 len) {
   u64 sz = 0;
   i64 j = 0;
   while (true) {
-    i8 l = utf8lenb((u8)s[j]);
-    if (l==-1) thrM("Invalid UTF-8");
     if (j>=len) {
       if (j!=len) thrM("Invalid UTF-8");
       break;
     }
+    i8 l = utf8lenb((u8)s[j]);
+    if (l==-1) thrM("Invalid UTF-8");
     sz++;
     j+= l;
   }

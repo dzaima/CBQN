@@ -137,7 +137,7 @@ B bqn_c1(B t, B x) {
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) if (!isC32(xgetU(x,i))) thrM("•BQN: Argument must be a character vector");
   }
-  return bqn_exec(x);
+  return bqn_exec(x, bi_N);
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -146,54 +146,17 @@ B cmp_c2(B t, B w, B x) {
   return r;
 }
 
-typedef struct TmpFile { // to be turned into a proper I8Arr
-  struct Arr;
-  i8 a[];
-} TmpFile;
 
-TmpFile* file_bytes(B path) { // consumes; may throw
-  u64 plen = utf8lenB(path);
-  char p[plen+1];
-  toUTF8(path, p);
-  p[plen] = 0;
-  FILE* f = fopen(p, "r");
-  if (f==NULL) thrM("Couldn't read file");
-  fseek(f, 0, SEEK_END);
-  u64 len = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  TmpFile* src = mm_allocN(fsizeof(TmpFile,a,u8,len), t_i8arr);
-  arr_shVec(tag(src,ARR_TAG), len);
-  fread((char*)src->a, 1, len, f);
-  fclose(f);
-  dec(path);
-  return src;
-}
-B file_chars(B path) { // consumes; may throw
-  TmpFile* c = file_bytes(path);
-  B r = fromUTF8((char*)c->a, c->ia);
-  ptr_dec(c);
-  return r;
-}
-
-B fchars_c1(B t, B x) {
-  return file_chars(x);
-}
-B fbytes_c1(B t, B x) {
-  TmpFile* f = file_bytes(x); usz ia = f->ia; u8* p = (u8*)f->a;
-  u32* rp; B r = m_c32arrv(&rp, ia);
-  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
-  ptr_dec(f);
-  return r;
-}
-
-
-
-#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal) M(fchars) M(fbytes)
+#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal)
 BI_FNS0(F);
 static inline void sysfn_init() { BI_FNS1(F) }
 #undef F
 
-B bi_timed;
+static B makeRel(B md) { // doesn't consume
+  return m1_d(inc(md), path_dir(inc(comp_currPath)));
+}
+
+B bi_timed, bi_fchars, bi_fbytes, bi_import;
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
@@ -210,8 +173,9 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
-    else if (eqStr(c, U"fchars")) r.a[i] = inc(bi_fchars);
-    else if (eqStr(c, U"fbytes")) r.a[i] = inc(bi_fbytes);
+    else if (eqStr(c, U"fchars")) r.a[i] = makeRel(bi_fchars);
+    else if (eqStr(c, U"fbytes")) r.a[i] = makeRel(bi_fbytes);
+    else if (eqStr(c, U"import")) r.a[i] = makeRel(bi_import);
     else { dec(x); thrM("Unknown system function"); }
   }
   return harr_fcd(r, x);

@@ -23,13 +23,17 @@ B bqn_fmt(B x) { // consumes
 }
 #endif
 
-
-Block* bqn_comp(B str) { // consumes
-  inc(str);
-  return load_compObj(c2(load_comp, inc(load_compArg), str), str);
+void load_gcFn() { mm_visit(comp_currPath); }
+Block* bqn_comp(B str, B path) { // consumes
+  comp_currPath = path;
+  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str);
+  dec(path);
+  comp_currPath = bi_N;
+  return r;
 }
-B bqn_exec(B str) { // consumes
-  Block* block = bqn_comp(str);
+
+B bqn_exec(B str, B path) { // consumes both
+  Block* block = bqn_comp(str, path);
   B res = m_funBlock(block, 0);
   ptr_dec(block);
   return res;
@@ -40,6 +44,8 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
 }
 
 static inline void load_init() {
+  comp_currPath = bi_N;
+  gc_addFn(load_gcFn);
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add  , bi_sub   , bi_mul  , bi_div    , bi_pow   , bi_N     , bi_floor, bi_ceil, bi_stile , bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and  , bi_or    , bi_lt   , bi_gt     , bi_ne    , bi_eq    , bi_le   , bi_ge  , bi_feq   , bi_fne,
@@ -155,6 +161,6 @@ static inline void load_init() {
   #endif // NO_COMP
 }
 
-B bqn_execFile(B path) {
-  return bqn_exec(file_chars(path));
+B bqn_execFile(B path) { // consumes
+  return bqn_exec(file_chars(inc(path)), path);
 }
