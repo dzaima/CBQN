@@ -42,13 +42,13 @@ bool heapVerify_visitP(void* x) {
 
 void heapVerify_callVisit(Value* v) {
   if (ti[v->type].isArr && prnk(v)>1) heapVerify_visitP(shObjP(v));
-  ti[v->type].visit(tag(v,OBJ_TAG));
+  ti[v->type].visit(v);
 }
 
 void heap_getReferents(Value* v) {
   heap_curr = v;
   if (ti[v->type].isArr && prnk(v)>1) heapVerify_visitP(shObjP(v));
-  ti[v->type].visit(tag(v,OBJ_TAG));
+  ti[v->type].visit(v);
 }
 #ifdef CATCH_ERRORS
 bool heapVerify_msg;

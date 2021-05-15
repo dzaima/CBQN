@@ -8,7 +8,7 @@ struct WFun {
   WFun* prev;
 };
 WFun* lastWF;
-void wf_visit(B x) { mm_visit(c(WFun,x)->v); }
+void wf_visit(Value* x) { mm_visit(((WFun*)x)->v); }
 B wf_identity(B x) {
   B f = c(WFun,x)->v;
   return inc(TI(f).identity(f));
@@ -50,7 +50,7 @@ struct WMd1 {
   WMd1* prev;
 };
 WMd1* lastWM1;
-void wm1_visit(B x) { mm_visit(c(WMd1,x)->v); }
+void wm1_visit(Value* x) { mm_visit(((WMd1*)x)->v); }
 typedef struct WMd2 WMd2;
 struct WMd2 {
   struct Md2;
@@ -60,7 +60,7 @@ struct WMd2 {
   WMd2* prev;
 };
 WMd2* lastWM2;
-void wm2_visit(B x) { mm_visit(c(WMd2,x)->v); }
+void wm2_visit(Value* x) { mm_visit(((WMd2*)x)->v); }
 
 B wm1_c1(B d, B x) { B f = c(Md1D,d)->f; B t = c(Md1D,d)->m1;
   u64 pfwt=fwTotal; fwTotal = 0;
