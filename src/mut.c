@@ -78,9 +78,38 @@ u8 el_or(u8 a, u8 b) {
   #undef M
 }
 
-void mut_pfree(Mut* m, usz n) { // free the first n elements
+void mut_pfree(Mut* m, usz n) { // free the first n-1 elements
   if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
   else mm_free((Value*) m->val);
+}
+
+void mut_set(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x
+  again:
+  #define AGAIN(T) { mut_to(m, T); goto again; }
+  switch(m->type) {
+    case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
+    
+    case el_i32: {
+      if (!q_i32(x)) AGAIN(isF64(x)? el_f64 : el_B);
+      m->ai32[ms] = o2iu(x);
+      return;
+    }
+    case el_c32: {
+      if (!isC32(x)) AGAIN(el_B);
+      m->ac32[ms] = o2cu(x);
+      return;
+    }
+    case el_f64: {
+      if (!isF64(x)) AGAIN(el_B);
+      m->af64[ms] = o2fu(x);
+      return;
+    }
+    case el_B: {
+      m->aB[ms] = x;
+      return;
+    }
+  }
+  #undef AGAIN
 }
 
 // doesn't consume; fills m[ms…ms+l] with x

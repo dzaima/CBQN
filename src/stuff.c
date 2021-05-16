@@ -29,6 +29,29 @@ B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 bool def_canStore(B x) { return false; }
 
+B rt_under, bi_before;
+B rtUnder_c1(B f, B g, B x) { // consumes x
+  B fn = m2_d(inc(rt_under), inc(f), inc(g));
+  B r = c1(fn, x);
+  dec(fn);
+  return r;
+}
+B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
+  B fn = m2_d(inc(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
+  B r = c1(fn, x);
+  dec(fn);
+  return r;
+}
+
+
+B bi_before;
+B def_fn_uc1(B t, B o,                B x) { return rtUnder_c1(o, t,    x); }
+B def_fn_ucw(B t, B o,           B w, B x) { return rtUnder_cw(o, t, w, x); }
+B def_m1_uc1(B t, B o, B f,           B x) { B t2 = m1_d(inc(t),inc(f)       ); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
+B def_m1_ucw(B t, B o, B f,      B w, B x) { B t2 = m1_d(inc(t),inc(f)       ); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
+B def_m2_uc1(B t, B o, B f, B g,      B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
+B def_m2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
+
 
 void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
@@ -208,6 +231,11 @@ u8 fillElType(B x) {
   if (isC32(x)) return el_c32;
   return el_B;
 }
+u8 selfElType(B x) {
+  if (isF64(x)) return q_i32(x)? el_i32 : el_f64;
+  if (isC32(x)) return el_c32;
+  return el_B;
+}
 
 
 
@@ -261,6 +289,12 @@ static inline void hdr_init() {
     ti[i].decompose = def_decompose;
     ti[i].slice     = def_slice;
     ti[i].canStore  = def_canStore;
+    ti[i].fn_uc1 = def_fn_uc1;
+    ti[i].fn_ucw = def_fn_ucw;
+    ti[i].m1_uc1 = def_m1_uc1;
+    ti[i].m1_ucw = def_m1_ucw;
+    ti[i].m2_uc1 = def_m2_uc1;
+    ti[i].m2_ucw = def_m2_ucw;
   }
   ti[t_empty].free = empty_free;
   ti[t_freed].free = def_free;

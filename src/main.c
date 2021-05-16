@@ -13,8 +13,9 @@
 // #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
+// #define RT_SRC       // whether ./genRuntimeSrc was used to generate precompiled sources
 #define VM_POS       false // whether to store detailed execution position information for stacktraces
-#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒)
+#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc)
 #define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜
 #define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime

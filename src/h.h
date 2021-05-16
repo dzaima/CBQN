@@ -156,13 +156,13 @@ char* format_pm1(u8 u) {
 }
 enum PrimMd2 {
   pm2_none,
-  pm2_val, pm2_atop, pm2_over, pm2_before, pm2_after, pm2_cond, pm2_repeat, pm2_fillBy, pm2_catch, // md2.c
+  pm2_val, pm2_atop, pm2_over, pm2_before, pm2_after, pm2_cond, pm2_repeat, pm2_fillBy, pm2_catch, pm2_under, // md2.c
 };
 char* format_pm2(u8 u) {
   switch(u) {
     default: case pf_none: return"(unknown 1-modifier)";
     case pm2_val:return"⊘"; case pm2_repeat:return"⍟"; case pm2_fillBy:return"•_fillBy_"; case pm2_catch:return"⎊";
-    case pm2_atop:return"∘"; case pm2_over:return"○"; case pm2_before:return"⊸"; case pm2_after:return"⟜"; case pm2_cond:return"◶";
+    case pm2_atop:return"∘"; case pm2_over:return"○"; case pm2_before:return"⊸"; case pm2_after:return"⟜"; case pm2_cond:return"◶"; case pm2_under:return"⌾";
   }
 }
 
@@ -411,11 +411,12 @@ B* harr_ptr(B x);
 typedef void (*B2v)(B);
 typedef B (* BS2B)(B, usz);
 typedef B (*BSS2B)(B, usz, usz);
-typedef B (*    B2B)(B);
-typedef B (*   BB2B)(B, B);
-typedef B (*  BBB2B)(B, B, B);
-typedef B (* BBBB2B)(B, B, B, B);
-typedef B (*BBBBB2B)(B, B, B, B, B);
+typedef B (*     B2B)(B);
+typedef B (*    BB2B)(B, B);
+typedef B (*   BBB2B)(B, B, B);
+typedef B (*  BBBB2B)(B, B, B, B);
+typedef B (* BBBBB2B)(B, B, B, B, B);
+typedef B (*BBBBBB2B)(B, B, B, B, B, B);
 typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
@@ -426,6 +427,13 @@ typedef struct TypeInfo {
   BBB2B m2_d; // consume all args; (m, f, g)
   BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object
   B2B identity; // return identity element of this function; doesn't consume
+  
+     BBB2B fn_uc1; // t,o,      x→r; r≡O⌾(      T    ) x; consumes x
+    BBBB2B fn_ucw; // t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x
+    BBBB2B m1_uc1; // t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x
+   BBBBB2B m1_ucw; // t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x
+   BBBBB2B m2_uc1; // t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x
+  BBBBBB2B m2_ucw; // t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x
   
   B2b canStore; // doesn't consume
   u8 elType;
@@ -496,6 +504,9 @@ B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
   return c2_rare(f, w, x);
 }
+B m1_d(B m, B f     );
+B m2_d(B m, B f, B g);
+B m2_h(B m,      B g);
 
 
 typedef struct Md1 {

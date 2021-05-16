@@ -3,9 +3,13 @@
 typedef struct BFn {
   struct Fun;
   B ident;
+   BBB2B uc1;
+  BBBB2B ucw;
 } BFn;
 
 void print_funBI(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
+B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
+B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 
 
@@ -165,9 +169,9 @@ B fne_c2(B t, B w, B x) {
 }
 
 
-#define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
-#define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
-#define BI_M(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=c2_invalid; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; gc_add(t); }
+#define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
+#define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
+#define BI_M(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=c2_invalid; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
 #define BI_VAR(N) B bi_##N;
 #define BI_FNS0(F) F(BI_VAR,BI_VAR,BI_VAR)
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
@@ -178,5 +182,7 @@ BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;
   ti[t_funBI].identity = funBI_identity;
+  ti[t_funBI].fn_uc1 = funBI_uc1;
+  ti[t_funBI].fn_ucw = funBI_ucw;
 }
 #undef F

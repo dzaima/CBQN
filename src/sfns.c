@@ -736,8 +736,49 @@ B group_c2(B t, B w, B x) {
   return c2(rt_group, w, x);
 }
 
+B pick_uc1(B t, B o, B x) {
+  if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
+  usz ia = a(x)->ia;
+  B x0 = TI(x).get(x, 0);
+  B item = c1(o, x0);
+  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, selfElType(item)));
+  mut_set(r, 0, item);
+  mut_copy(r, 1, x, 1, ia-1);
+  return mut_fcd(r, x);
+}
+
+B slash_ucw(B t, B o, B w, B x) {
+  if (isAtm(w) || rnk(w)!=1 || rnk(x)!=1 || a(w)->ia!=a(x)->ia) return def_fn_ucw(t, o, w, x);
+  usz ia = a(x)->ia;
+  BS2B wgetU = TI(w).getU;
+  for (usz i = 0; i < ia; i++) { B cw=wgetU(w,i); if (!q_i32(cw)) return def_fn_ucw(t, o, w, x); }
+  B arg = slash_c2(t, inc(w), inc(x));
+  usz argIA = a(arg)->ia;
+  B rep = c1(o, arg);
+  if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrM("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩");
+  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
+  BS2B xget = TI(x).get;
+  BS2B rgetU = TI(rep).getU;
+  BS2B rget = TI(rep).get;
+  usz repI = 0;
+  for (usz i = 0; i < ia; i++) {
+    i32 cw = o2iu(wgetU(w, i));
+    if (cw) {
+      B cr = rget(rep,repI);
+      if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(rgetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
+      mut_set(r, i, cr);
+      repI+= cw;
+    } else mut_set(r, i, xget(x,i));
+  }
+  dec(w); dec(rep);
+  return mut_fcd(r, x);
+}
+
 
 #define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group)
 BI_FNS0(F);
-static inline void sfns_init() { BI_FNS1(F) }
+static inline void sfns_init() { BI_FNS1(F)
+  c(BFn,bi_pick)->uc1 = pick_uc1;
+  c(BFn,bi_slash)->ucw = slash_ucw;
+}
 #undef F
