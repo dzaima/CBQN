@@ -131,9 +131,12 @@ static inline void load_init() {
       B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
     #endif
     if (isNothing(r)) { printf("· in runtime!\n"); exit(1); }
-    r = rtPerf_wrap(r);
-    runtimeH.a[i] = r;
     if (isVal(r)) v(r)->flags|= i+1;
+    #ifdef RT_PERF
+      r = rtPerf_wrap(r);
+      if (isVal(r)) v(r)->flags|= i+1;
+    #endif
+    runtimeH.a[i] = r;
   }
   dec(rtObjRaw);
   B* runtime = runtimeH.a;

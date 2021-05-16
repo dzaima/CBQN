@@ -188,13 +188,27 @@ void rtPerf_print() {
     cm2 = cm2->prev;
   }
 }
+
+
+B wfn_uc1(B t, B o,                B x) { B t2 = c(WFun,t)->v; return TI(t2).fn_uc1(t2, o,          x); }
+B wfn_ucw(B t, B o,           B w, B x) { B t2 = c(WFun,t)->v; return TI(t2).fn_ucw(t2, o,       w, x); }
+B wm1_uc1(B t, B o, B f,           B x) { B t2 = c(WMd1,t)->v; return TI(t2).m1_uc1(t2, o, f,       x); }
+B wm1_ucw(B t, B o, B f,      B w, B x) { B t2 = c(WMd1,t)->v; return TI(t2).m1_ucw(t2, o, f,    w, x); }
+B wm2_uc1(B t, B o, B f, B g,      B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_uc1(t2, o, f, g,    x); }
+B wm2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_ucw(t2, o, f, g, w, x); }
+
 static inline void rtPerf_init() {
   ti[t_funPerf].visit =  wf_visit; ti[t_funPerf].identity = wf_identity;
   ti[t_md1Perf].visit = wm1_visit; ti[t_md1Perf].m1_d = m_md1D;
   ti[t_md2Perf].visit = wm2_visit; ti[t_md2Perf].m2_d = m_md2D;
+  ti[t_funPerf].fn_uc1 = wfn_uc1;
+  ti[t_funPerf].fn_ucw = wfn_ucw;
+  ti[t_md1Perf].m1_uc1 = wm1_uc1;
+  ti[t_md1Perf].m1_ucw = wm1_ucw;
+  ti[t_md2Perf].m2_uc1 = wm2_uc1;
+  ti[t_md2Perf].m2_ucw = wm2_ucw;
 }
 #else
 static inline void rtPerf_init() { }
-static inline B rtPerf_wrap(B f) { return f; }
 static inline void rtPerf_print() { }
 #endif
