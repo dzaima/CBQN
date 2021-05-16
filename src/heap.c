@@ -21,7 +21,7 @@ void heapVerify_checkFn(Value* v) {
       printf("delta %d for %s: ", (i32)v->refc, format_type(v->type));
     #endif
     heap_observed = v;
-    print(tag(v,OBJ_TAG)); puts("");
+    print(tag(v,OBJ_TAG)); putchar('\n');
   }
 }
 
@@ -36,7 +36,7 @@ bool heapVerify_visitP(void* x) {
   Value* v = x;
        if(heapVerify_mode==0) v->refc--;
   else if(heapVerify_mode==1) v->refc++;
-  else if(heapVerify_mode==2) if (x==heap_observed) { printf("referee: %p ", heap_curr); print(tag(heap_curr,OBJ_TAG)); puts(""); }
+  else if(heapVerify_mode==2) if (x==heap_observed) { printf("referee: %p ", heap_curr); print(tag(heap_curr,OBJ_TAG)); putchar('\n'); }
   return true;
 }
 

@@ -9,9 +9,15 @@ Block* load_compObj(B x, B src) { // consumes
   dec(x);
   return r;
 }
+#ifdef RT_SRC
+Block* load_compImport(B bc, B objs, B blocks, B inds, B src) { // consumes all
+  return compile(bc, objs, blocks, inds, bi_N, src);
+}
+#else
 Block* load_compImport(B bc, B objs, B blocks) { // consumes all
   return compile(bc, objs, blocks, bi_N, bi_N, bi_N);
 }
+#endif
 
 B load_comp;
 B load_compArg;

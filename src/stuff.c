@@ -215,7 +215,7 @@ u8 fillElType(B x) {
   Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
-      print(tag(x,OBJ_TAG)); puts(""); fflush(stdout);
+      print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
       err("");
     }
     if (ti[x->type].isArr) {

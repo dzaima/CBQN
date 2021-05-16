@@ -1,4 +1,4 @@
-#! /usr/bin/env dbqn
+#!/usr/bin/env bqn
 # Modified version of https://github.com/mlochbaum/BQN/blob/master/src/cjs.bqn, which is under the ISC license (https://github.com/mlochbaum/BQN/blob/master/LICENSE)
 
 args←•args
@@ -28,12 +28,12 @@ FChars ← {𝕨•FChars path∾𝕩}
 FLines ← {𝕨•FLines path∾𝕩}
 
 glyphs ← Import "glyphs.bqn"
-_getComp ← { (3+useInd) ↑ (𝕗 Import "c.bqn"){𝔽} }
+_getComp ← { (3+2×useInd)↑ <∘⊢∾˜ 4↑ (𝕗 Import "c.bqn"){𝔽} }
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← ((<"inc(runtime["∾•Repr∾"])"˙)¨↕62) glyphs _getComp ⊢
 J ← ∾∾⟜(@+10)¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
-Fout ← {((≠𝕩)↑⟨LI F¨,L Fconst¨,L (LI ·F¨ 4↑⊢)¨,L (L F¨)¨⟩) {𝕎𝕩}¨ 𝕩}
+Fout ← {((≠𝕩)↑⟨LI F¨ ⋄ L Fconst¨ ⋄ L (LI ·F¨ 4↑⊢)¨ ⋄ L (LI F¨)¨ ⋄ Str⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾@+10}
 LFC ← Long∘Fout∘Comp

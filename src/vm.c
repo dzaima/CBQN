@@ -373,7 +373,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc); printf("@%d << ", bcPos);
-      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } puts(""); fflush(stdout);
+      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } putchar('\n'); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -497,7 +497,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc); printf("@%ld:   ", sbc-c(I32Arr,b->comp->bc)->a);
-      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } puts(""); fflush(stdout);
+      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
   end:;
@@ -685,6 +685,31 @@ void popCatch() {
   #endif
 }
 
+NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
+  B src = comp->src;
+  if (!isNothing(src) && !isNothing(comp->indices)) {
+    B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
+    B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
+    int start = pos==-1? 0 : printf("%ld: ", pos);
+    usz srcL = a(src)->ia;
+    BS2B srcGetU = TI(src).getU;
+    usz srcS = cs;
+    while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
+    usz srcE = srcS;
+    while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+    if (ce>srcE) ce = srcE;
+    cs-= srcS;
+    ce-= srcS;
+    putchar('\n');
+    for (i32 i = 0; i < cs+start; i++) putchar(' ');
+    for (i32 i = cs; i < ce; i++) putchar('^');
+    putchar('\n');
+    // printf("  inds:%d…%d\n", cinds, cinde);
+  } else {
+    if (pos!=-1) printf("%ld: ", pos);
+    printf("source unknown\n");
+  }
+}
 
 NOINLINE void vm_pst(Env* s, Env* e) {
   assert(s<=e);
@@ -698,28 +723,7 @@ NOINLINE void vm_pst(Env* s, Env* e) {
     }
     i32 bcPos = c->bcV;
     Comp* comp = c->sc->body->comp;
-    B src = comp->src;
-    if (!isNothing(src) && !isNothing(comp->indices)) {
-      B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
-      B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
-      int start = printf("%ld: ", i);
-      usz srcL = a(src)->ia;
-      BS2B srcGetU = TI(src).getU;
-      usz srcS = cs;
-      while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
-      usz srcE = srcS;
-      while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
-      if (ce>srcE) ce = srcE;
-      cs-= srcS;
-      ce-= srcS;
-      putchar('\n');
-      for (i32 i = 0; i < cs+start; i++) putchar(' ');
-      for (i32 i = cs; i < ce; i++) putchar('^');
-      putchar('\n');
-      // printf("  inds:%d…%d\n", cinds, cinde);
-    } else {
-      printf("%ld: source unknown\n", i);
-    }
+    vm_printPos(comp, bcPos, i);
     i--;
   }
 }
