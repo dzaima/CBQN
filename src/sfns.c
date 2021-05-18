@@ -739,11 +739,47 @@ B group_c2(B t, B w, B x) {
 B pick_uc1(B t, B o, B x) {
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
   usz ia = a(x)->ia;
-  B x0 = TI(x).get(x, 0);
-  B item = c1(o, x0);
-  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, selfElType(item)));
-  mut_set(r, 0, item);
+  B arg = TI(x).get(x, 0);
+  B rep = c1(o, arg);
+  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, selfElType(rep)));
+  mut_set(r, 0, rep);
   mut_copy(r, 1, x, 1, ia-1);
+  return mut_fcd(r, x);
+}
+
+B pick_ucw(B t, B o, B w, B x) {
+  if (isArr(w) || isAtm(x) || rnk(x)!=1) return def_fn_ucw(t, o, w, x);
+  usz xia = a(x)->ia;
+  i64 wi = o2i64(w);
+  if (wi<0) wi+= (i64)xia;
+  if ((u64)wi >= xia) thrM("⌾(n⊸⊑): reading out-of-bounds");
+  B arg = TI(x).get(x, wi);
+  B rep = c1(o, arg);
+  if (reusable(x) && TI(x).canStore(rep)) {
+    if (TI(x).elType==el_i32) {
+      i32* xp = i32any_ptr(x);
+      xp[wi] = o2i(rep);
+      return x;
+    } else if (v(x)->type==t_harr) {
+      B* xp = harr_ptr(x);
+      dec(xp[wi]);
+      xp[wi] = rep;
+      return x;
+    } else if (TI(x).elType==el_f64) {
+      f64* xp = f64any_ptr(x);
+      xp[wi] = o2f(rep);
+      return x;
+    } else if (v(x)->type==t_fillarr) {
+      B* xp = fillarr_ptr(x);
+      dec(xp[wi]);
+      xp[wi] = rep;
+      return x;
+    }
+  }
+  MAKE_MUT(r, xia); mut_to(r, el_or(TI(x).elType, selfElType(rep)));
+  mut_set(r, wi, rep);
+  mut_copy(r, 0, x, 0, wi);
+  mut_copy(r, wi+1, x, wi+1, xia-wi-1);
   return mut_fcd(r, x);
 }
 
@@ -779,6 +815,7 @@ B slash_ucw(B t, B o, B w, B x) {
 BI_FNS0(F);
 static inline void sfns_init() { BI_FNS1(F)
   c(BFn,bi_pick)->uc1 = pick_uc1;
+  c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_slash)->ucw = slash_ucw;
 }
 #undef F
