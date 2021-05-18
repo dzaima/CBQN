@@ -525,6 +525,23 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
   B r = evalBC(body, sc);
+  if (sc->refc>1) {
+    usz innerRef = 1;
+    for (i = 0; i < varAm; i++) {
+      B c = sc->vars[i];
+      if (isVal(c) && v(c)->refc==1) {
+        u8 t = v(c)->type;
+        if      (t==t_fun_block && c(FunBlock,c)->sc==sc) innerRef++;
+        else if (t==t_md1_block && c(Md1Block,c)->sc==sc) innerRef++;
+        else if (t==t_md2_block && c(Md2Block,c)->sc==sc) innerRef++;
+      }
+    }
+    assert(innerRef<=sc->refc);
+    if (innerRef==sc->refc) {
+      value_free((Value*)sc);
+      return r;
+    }
+  }
   ptr_dec(sc);
   return r;
 }

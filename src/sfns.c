@@ -387,7 +387,7 @@ B slash_c2(B t, B w, B x) {
 }
 
 B slicev(B x, usz s, usz ia) {
-  usz xia = a(x)->ia; if (s+ia>xia) thrM("↑/↓: NYI fills");
+  usz xia = a(x)->ia; assert(s+ia <= xia);
   B r = TI(x).slice(x, s);
   arr_shVec(r, ia);
   return r;
