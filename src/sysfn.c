@@ -161,8 +161,24 @@ B cmp_c2(B t, B w, B x) {
   return r;
 }
 
+B hash_c2(B t, B w, B x) {
+  u64 secret[4]; make_secret(o2i64(w), secret);
+  u64 rv = bqn_hash(x, secret);
+  i32* rp; B r = m_i32arrv(&rp, 4);
+  rp[0] = (u16)(rv>>48); rp[1] = (u16)(rv>>32);
+  rp[2] = (u16)(rv>>16); rp[3] = (u16)(rv    );
+  return r;
+}
+B hash_c1(B t, B x) {
+  u64 rv = bqn_hash(x, _wyp);
+  i32* rp; B r = m_i32arrv(&rp, 4);
+  rp[0] = (u16)(rv>>48); rp[1] = (u16)(rv>>32);
+  rp[2] = (u16)(rv>>16); rp[3] = (u16)(rv    );
+  return r;
+}
 
-#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) M(repr) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal)
+
+#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) M(repr) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal) A(hash)
 BI_FNS0(F);
 static inline void sysfn_init() { BI_FNS1(F) }
 #undef F
@@ -188,6 +204,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
+    else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"fchars")) r.a[i] = makeRel(bi_fchars);
     else if (eqStr(c, U"fbytes")) r.a[i] = makeRel(bi_fbytes);

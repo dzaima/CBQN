@@ -37,6 +37,7 @@
 #include "c32arr.c"
 #include "f64arr.c"
 #include "fillarr.c"
+#include "hash.c"
 #include "mut.c"
 #include "utf.c"
 #include "file.c"

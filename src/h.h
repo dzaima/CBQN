@@ -129,7 +129,7 @@ char* format_type(u8 u) {
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sort.c*/  F(gradeUp,"⍋") \
     /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(repr,"•Repr") F(fill,"•FillFn") \
-    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") \
+    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") F(hash,"•Hash") \
 
 enum PrimFns {
   #define F(N,X) pf_##N,
