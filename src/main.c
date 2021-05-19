@@ -14,6 +14,7 @@
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
 // #define RT_SRC       // whether ./genRuntimeSrc was used to generate precompiled sources
+#define TYPED_ARITH  true  // whether to use typed arith
 #define VM_POS       true  // whether to store detailed execution position information for stacktraces
 #define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc)
 #define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜

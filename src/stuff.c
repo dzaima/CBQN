@@ -353,6 +353,8 @@ u8 selfElType(B x) {
   return el_B;
 }
 
+bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
+
 
 
 #ifdef DEBUG

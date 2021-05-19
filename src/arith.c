@@ -27,12 +27,74 @@ static inline B arith_recd(BBB2B f, B w, B x) {
 
 #define P1(N) { if(         isArr(x)) return arith_recm(N##_c1,    x); }
 #define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
-#define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
-  if (isF64(w) & isF64(x)) return m_f64(expr); \
-  extra \
-  P2(name) \
-  thrM(#name ": invalid arithmetic"); \
-}
+#if TYPED_ARITH
+  static B f64_maybe_i32(B x) {
+    f64* xp = f64arr_ptr(x);
+    usz ia = a(x)->ia;
+    if (ia==0) { dec(x); return inc(bi_emptyIVec); }
+    if (xp[0] != (i32)xp[0]) return x;
+    i32* rp; B r = m_i32arrc(&rp, x);
+    for (usz i = 0; i < ia; i++) {
+      f64 cf = xp[i];
+      i32 c = (i32)cf;
+      if (cf!=c) { dec(r); return x; }
+      rp[i] = c;
+    }
+    dec(x);
+    return r;
+  }
+  #define ffnx(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {               \
+    if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
+    EXTRA                                                                    \
+    if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
+      if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
+        usz ia = a(x)->ia;                                                   \
+        u8 we = TI(w).elType;                                                \
+        u8 xe = TI(x).elType;                                                \
+        if (isNumEl(we)&isNumEl(xe)) {                                       \
+          f64* rp; B r = m_f64arrc(&rp, x);                                  \
+          if (we==el_i32) { B w,x/*shadow*/; i32* wp = i32any_ptr(ow);       \
+            if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
+            else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
+          } else {          B w,x/*shadow*/; f64* wp = f64any_ptr(ow);       \
+            if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
+            else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
+          }                                                                  \
+          dec(w); dec(x); return f64_maybe_i32(r);                           \
+        }                                                                    \
+      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia;                     \
+        u8 xe = TI(x).elType; f64*rp;                                        \
+        if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
+          for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
+          dec(x); return f64_maybe_i32(r);                                   \
+        }                                                                    \
+        if (xe==el_f64) { B r=m_f64arrc(&rp, x); f64*xp=f64any_ptr(x);       \
+          for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
+          dec(x); return f64_maybe_i32(r);                                   \
+        }                                                                    \
+      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia;                     \
+        u8 we = TI(w).elType; f64*rp;                                        \
+        if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
+          for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
+          dec(w); return f64_maybe_i32(r);                                   \
+        }                                                                    \
+        if (we==el_f64) { B r=m_f64arrc(&rp, w); f64*wp=f64any_ptr(w);       \
+          for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
+          dec(w); return f64_maybe_i32(r);                                   \
+        }                                                                    \
+      }                                                                      \
+      P2(NAME)                                                               \
+    }                                                                        \
+    thrM(#NAME ": invalid arithmetic");                                      \
+  }
+#else // !TYPED_ARITH
+  #define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
+    if (isF64(w) & isF64(x)) return m_f64(expr); \
+    extra \
+    P2(name) \
+    thrM(#name ": invalid arithmetic"); \
+  }
+#endif // TYPED_ARITH
 #define ffn(name, op, extra) ffnx(name, w.f op x.f, extra)
 
 f64 pfmod(f64 a, f64 b) {
