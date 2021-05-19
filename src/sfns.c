@@ -507,6 +507,11 @@ B join_c2(B t, B w, B x) {
     return withFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrM("∾: Argument ranks must differ by 1 or less");
+  if (c==1) {
+    B r = vec_join(w, x);
+    if (rnk(r)==0) srnk(r,1);
+    return r;
+  }
   MAKE_MUT(r, wia+xia);
   mut_to(r, el_or(TI(w).elType, TI(x).elType));
   mut_copy(r, 0,   w, 0, wia);

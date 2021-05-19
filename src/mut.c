@@ -207,3 +207,62 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
   }
   #undef AGAIN
 }
+
+
+B vec_join(B w, B x) { // consumes both
+  usz wia = a(w)->ia;
+  usz xia = a(x)->ia;
+  usz ria = wia+xia;
+  if (v(w)->refc==1) {
+    u64 wsz = mm_size(v(w));
+    u8 wt = v(w)->type;
+    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && TI(x).elType==el_i32) {
+      a(w)->ia = ria;
+      memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4);
+      dec(x);
+      return w;
+    }
+    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && TI(x).elType==el_c32) {
+      a(w)->ia = ria;
+      memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4);
+      dec(x);
+      return w;
+    }
+    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && TI(x).elType==el_f64) { // TODO handle f64∾i32
+      a(w)->ia = ria;
+      memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8);
+      dec(x);
+      return w;
+    }
+    if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
+      a(w)->ia = ria;
+      B* rp = harr_ptr(w)+wia;
+      u8 xt = v(x)->type;
+      u8 xe = TI(x).elType;
+      if (xt==t_harr | xt==t_hslice | xt==t_fillarr) {
+        B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(x);
+        memcpy(rp, xp, xia*sizeof(B));
+        for (usz i = 0; i < xia; i++) inc(rp[i]);
+      } else if (xe==el_i32) {
+        i32* xp = i32any_ptr(x);
+        for (usz i = 0; i < xia; i++) rp[i] = m_i32(xp[i]);
+      } else if (xe==el_c32) {
+        u32* xp = c32any_ptr(x);
+        for (usz i = 0; i < xia; i++) rp[i] = m_c32(xp[i]);
+      } else if (xe==el_f64) {
+        f64* xp = f64any_ptr(x);
+        for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]);
+      } else {
+        BS2B xget = TI(x).get;
+        for (usz i = 0; i < xia; i++) rp[i] = xget(x, i);
+      }
+      dec(x);
+      return w;
+    }
+  }
+  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w).elType, TI(x).elType));
+  mut_copy(r, 0,   w, 0, wia);
+  mut_copy(r, wia, x, 0, xia);
+  dec(w); dec(x);
+  return mut_fv(r);
+}
