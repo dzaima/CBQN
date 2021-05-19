@@ -15,7 +15,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is a
     dec(w); dec(x);
     return m_hunit(r);
   }
-  if (rm && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrM("Mapping: Expected equal shape prefix");
+  if (rm && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
   bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
   if (rw|rx && (wr==xr | rm==0)) {
@@ -190,7 +190,7 @@ B pick_c2(B t, B w, B x) {
     i64 p = o2i64(w);
     usz xia = a(x)->ia;
     if (p<0) p+= (i64)xia;
-    if ((u64)p >= xia) thrM("⊑: indexing out-of-bounds");
+    if ((u64)p >= xia) thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, xia);
     B r = TI(x).get(x, p);
     dec(x);
     return r;
@@ -203,7 +203,7 @@ B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
-  if (a(x)->sh[0]==0) thrM("⊏: Argument shape cannot start with 0");
+  if (a(x)->sh[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
   B r = TI(x).slice(inc(x),0);
   usz* sh = arr_shAllocR(r, xr-1);
   usz ia = 1;
@@ -224,7 +224,7 @@ B select_c2(B t, B w, B x) {
     usz cam = a(x)->sh[0];
     i64 wi = o2i64(w);
     if (wi<0) wi+= cam;
-    if ((usz)wi >= cam) thrM("⊏: Indexing out-of-bounds");
+    if ((usz)wi >= cam) thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam);
     B r = TI(x).slice(inc(x), wi*csz);
     usz* sh = arr_shAllocI(r, csz, xr-1);
     if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
@@ -245,7 +245,7 @@ B select_c2(B t, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
           if (c<0) c+= xia;
-          if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
+          if (c<0 | c>=xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -255,7 +255,7 @@ B select_c2(B t, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
           if (c<0) c+= xia;
-          if (c<0 | c>=xia) thrM("⊏: Indexing out-of-bounds");
+          if (c<0 | c>=xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
           r.a[i] = xget(x, c);
         }
         dec(w); dec(x);
@@ -269,7 +269,7 @@ B select_c2(B t, B w, B x) {
         if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
         f64 c = o2f(cw);
         if (c<0) c+= xia;
-        if ((usz)c >= xia) thrM("⊏: Indexing out-of-bounds");
+        if ((usz)c >= xia) thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia);
         r.a[i] = xget(x, c);
       }
       dec(w); dec(x);
@@ -278,9 +278,9 @@ B select_c2(B t, B w, B x) {
   } else {
     BS2B wgetU = TI(w).getU;
     ur wr = rnk(w);
-    ur rr = wr+xr-1;
+    i32 rr = wr+xr-1;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
-    if (rr>UR_MAX) thrM("⊏: Result rank too large");
+    if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
     MAKE_MUT(r, wia*csz);
@@ -290,7 +290,7 @@ B select_c2(B t, B w, B x) {
       if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
       f64 c = o2f(cw);
       if (c<0) c+= cam;
-      if ((usz)c >= cam) thrM("⊏: Indexing out-of-bounds");
+      if ((usz)c >= cam) { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); }
       mut_copy(r, i*csz, x, csz*(usz)c, csz);
     }
     B rb = mut_fp(r);
@@ -309,8 +309,7 @@ B select_c2(B t, B w, B x) {
 
 B rt_slash;
 B slash_c1(B t, B x) {
-  if (isAtm(x)) thrM("/: Argument must be a list");
-  if (rnk(x)!=1) thrM("/: Argument must have rank 1");
+  if (isAtm(x) || rnk(x)!=1) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   i64 s = isum(x);
   if(s<0) thrM("/: Argument must consist of natural numbers");
   usz xia = a(x)->ia;
@@ -338,7 +337,7 @@ B slash_c2(B t, B w, B x) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
-    if (wia!=xia) thrM("/: Lengths of components of 𝕨 must match 𝕩");
+    if (wia!=xia) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
     i64 wsum = isum(w); if (wsum>USZ_MAX) thrOOM();
     usz ria = wsum;
     usz ri = 0;
@@ -349,7 +348,7 @@ B slash_c2(B t, B w, B x) {
         i32* rp; B r = m_i32arrv(&rp, ria);
         for (usz i = 0; i < wia; i++) {
           i32 c = wp[i];
-          if (c<0) thrM("/: 𝕨 must consist of natural numbers");
+          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
           i32 cx = xp[i];
           for (usz j = 0; j < c; j++) *rp++ = cx;
         }
@@ -361,7 +360,7 @@ B slash_c2(B t, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i32 c = wp[i];
           if (c==0) continue;
-          if (c<0) thrM("/: 𝕨 must consist of natural numbers");
+          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
           B cx = xgetU(x, i);
           for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
         }
@@ -468,9 +467,9 @@ B join_c1(B t, B x) {
     usz cam = x0sh[0];
     for (usz i = 1; i < xia; i++) {
       B c = xgetU(x, i);
-      if (!isArr(c) || rnk(c)!=ir) thrM("∾: All items in argument should have same rank");
+      if (!isArr(c) || rnk(c)!=ir) thrF("∾: All items in argument should have same rank (contained items with ranks %i and %i)", ir, isArr(c)? rnk(c) : 0);
       usz* csh = a(c)->sh;
-      if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrM("∾: Item trailing shapes must be equal");
+      if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       cam+= a(c)->sh[0];
       if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
     }
@@ -506,7 +505,7 @@ B join_c2(B t, B w, B x) {
     r.a[1] = TI(x).get(x,0); dec(x);
     return withFill(r.b, f);
   }
-  if (c-wr > 1 || c-xr > 1) thrM("∾: Argument ranks must differ by 1 or less");
+  if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   if (c==1) {
     B r = vec_join(w, x);
     if (rnk(r)==0) srnk(r,1);
@@ -521,7 +520,7 @@ B join_c2(B t, B w, B x) {
   if (sh) {
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
-      if (wsh[i+wr-c] != s) { mut_pfree(r, wia+xia); thrM("∾: Lengths not matchable"); }
+      if (wsh[i+wr-c] != s) { mut_pfree(r, wia+xia); thrF("∾: Lengths not matchable (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); }
       sh[i] = s;
     }
     sh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
@@ -556,7 +555,7 @@ B couple_c2(B t, B w, B x) {
   }
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  if (!eqShape(w, x)) thrM("≍: 𝕨 and 𝕩 must have equal shapes");
+  if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = a(w)->ia;
   ur wr = rnk(w);
   MAKE_MUT(r, ia*2);
@@ -575,8 +574,8 @@ B couple_c2(B t, B w, B x) {
 static void shift_check(B w, B x) {
   ur wr = rnk(w); usz* wsh = a(w)->sh;
   ur xr = rnk(x); usz* xsh = a(x)->sh;
-  if (wr+1!=xr & wr!=xr) thrM("shift: =𝕨 must be =𝕩 or ¯1+=𝕩");
-  for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrM("shift: Lengths not matchable");
+  if (wr+1!=xr & wr!=xr) thrF("shift: =𝕨 must be =𝕩 or ¯1+=𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrF("shift: Lengths not matchable (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
 }
 
 B shiftb_c1(B t, B x) {
@@ -644,7 +643,7 @@ B group_c2(B t, B w, B x) {
   if (isArr(w)&isArr(x) && rnk(w)==1 && rnk(x)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
-    if (wia-xia > 1) thrM("⊔: ≠𝕨 must be either ≠𝕩 or one bigger");
+    if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
     
     if (TI(w).elType==el_i32) {
       i32* wp = i32any_ptr(w);
@@ -757,7 +756,7 @@ B pick_ucw(B t, B o, B w, B x) {
   usz xia = a(x)->ia;
   i64 wi = o2i64(w);
   if (wi<0) wi+= (i64)xia;
-  if ((u64)wi >= xia) thrM("⌾(n⊸⊑): reading out-of-bounds");
+  if ((u64)wi >= xia) thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia);
   B arg = TI(x).get(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x).canStore(rep)) {
@@ -796,7 +795,7 @@ B slash_ucw(B t, B o, B w, B x) {
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = a(arg)->ia;
   B rep = c1(o, arg);
-  if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrM("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩");
+  if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
   MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
   BS2B xget = TI(x).get;
   BS2B rgetU = TI(rep).getU;

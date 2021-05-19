@@ -9,7 +9,7 @@ TmpFile* file_bytes(B path) { // consumes; may throw
   toUTF8(path, p);
   p[plen] = 0;
   FILE* f = fopen(p, "r");
-  if (f==NULL) thrM("Couldn't read file");
+  if (f==NULL) thrF("Couldn't read file \"%R\"", path);
   fseek(f, 0, SEEK_END);
   u64 len = ftell(f);
   fseek(f, 0, SEEK_SET);

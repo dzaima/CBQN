@@ -157,6 +157,10 @@ int main(int argc, char* argv[]) {
       printf("Error: "); print(catchMessage); putchar('\n');
       vm_pst(envCurr, envStart+envPrevHeight);
       dec(catchMessage);
+      #ifdef HEAP_VERIFY
+        heapVerify();
+      #endif
+      gc_maybeGC();
     }
     B replPath = m_str32(U"REPL"); gc_add(replPath);
     while (true) { // exit by evaluating an empty expression
@@ -187,11 +191,9 @@ int main(int argc, char* argv[]) {
       #endif
       
       #ifdef HEAP_VERIFY
-      heapVerify();
+        heapVerify();
       #endif
       gc_maybeGC();
-      #ifdef DEBUG
-      #endif
     }
     popCatch();
   }

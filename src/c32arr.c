@@ -46,6 +46,13 @@ B m_str8(usz sz, char* s) {
   for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
   return r;
 }
+B m_str8l(char* s) {
+  usz sz = strlen(s);
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
+  return r;
+}
+
 NOINLINE B m_str32(u32* s) {
   usz sz = 0; while(s[sz]) sz++;
   u32* rp; B r = m_c32arrv(&rp, sz);
@@ -93,4 +100,6 @@ static inline void c32arr_init() {
   ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
   ti[t_c32arr].elType = el_c32;      ti[t_c32slice].elType = el_c32;
   ti[t_c32arr].canStore = c32arr_canStore;
+  u32* tmp; bi_emptyCVec = m_c32arrv(&tmp, 0);
+  gc_add(bi_emptyCVec);
 }

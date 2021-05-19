@@ -64,7 +64,7 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   usz wia = a(w)->ia; ur wr = rnk(w);
   usz xia = a(x)->ia; ur xr = rnk(x);
   usz ria = wia*xia;  ur rr = wr+xr;
-  if (rr<xr) thrM("⌜: Required result rank too large");
+  if (rr<xr) thrF("⌜: Required result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   BS2B wgetU = TI(w).getU;
   BS2B xget = TI(x).get;
@@ -136,15 +136,14 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   
   if (isArr(w)) {
     ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
-    if (wr+1 != xr) thrM("`: Shape of 𝕨 must match the cell of 𝕩");
-    if (memcmp(wsh, xsh+1, wr)) thrM("`: Shape of 𝕨 must match the cell of 𝕩");
+    if (wr+1!=xr || !eqShPrefix(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
     for (; i < csz; i++) r.a[i] = fc2(f, wget(w,i), xget(x,i));
     for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(x,i));
     dec(w);
   } else {
-    if (xr!=1) thrM("`: Shape of 𝕨 must match the cell of 𝕩");
+    if (xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     B pr = r.a[0] = fc2(f, w, xget(x,0)); i++;
     for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(x,i));
@@ -153,7 +152,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 }
 
 B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
-  if (isAtm(x) || rnk(x)!=1) thrM("´: argument must be a list");
+  if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
   if (ia==0) {
     dec(x);
@@ -178,7 +177,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   return c;
 }
 B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  if (isAtm(x) || rnk(x)!=1) thrM("´: 𝕩 must be a list");
+  if (isAtm(x) || rnk(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
   B c = w;
   BS2B xget = TI(x).get;

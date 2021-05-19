@@ -115,7 +115,7 @@ B asrt_c2(B t, B w, B x) {
 bool isPureFn(B x);
 B internal_c2(B t, B w, B x) {
   B r;
-  u64 id = o2s(w);
+  i32 id = o2i(w);
   if(id==0) {
     if(isVal(x)) { char* c = format_type(v(x)->type); r = m_str8(strlen(c), c); }
     else {
@@ -130,7 +130,7 @@ B internal_c2(B t, B w, B x) {
   else if(id==2) { r = isVal(x)? m_i32(v(x)->refc) : m_str32(U"(not heap-allocated)"); }
   else if(id==3) { printf("%p\n", (void*)x.u); r = inc(x); }
   else if(id==4) { r = m_f64(isPureFn(x)); }
-  else { dec(x); thrM("Bad 𝕨 argument for •Internal"); }
+  else { dec(x); thrF("•Internal: 𝕨≡%i is invalid", id); }
   dec(x);
   return r;
 }
@@ -189,7 +189,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"args")) {
       if(isNothing(comp_currArgs)) thrM("No arguments present for •args");
       r.a[i] = inc(comp_currArgs);
-    } else { dec(x); thrM("Unknown system function"); }
+    } else { dec(x); thrF("Unknown system function •%R", c); }
   }
   return harr_fcd(r, x);
 }

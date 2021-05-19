@@ -29,6 +29,122 @@ B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 bool def_canStore(B x) { return false; }
 
+B m_c32arrv(u32** p, usz ia);
+B m_str8l(char* s);
+B m_str32c(u32 c) {
+  u32* rp; B r = m_c32arrv(&rp, 1);
+  rp[0] = c;
+  return r;
+}
+B fromUTF8(char* x, i64 len);
+B fromUTF8l(char* x);
+#define A8(X) s = vec_join(s,m_str8l(X))
+#define AU(X) s = vec_join(s,fromUTF8l(X))
+#define AC(X) s = vec_join(s,m_str32c(X))
+#define AFMT(...) s = append_fmt(s, __VA_ARGS__)
+NOINLINE B append_fmt(B s, char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  char buf[30];
+  char c;
+  char* lp = p;
+  while ((c = *p++) != 0) {
+    if (c!='%') continue;
+    if (lp!=p-1) s = vec_join(s, fromUTF8(lp, p-1-lp));
+    switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
+      case 'R': { // TODO proper
+        B b = va_arg(a, B);
+        if (isNum(b)) {
+          AFMT("%f", o2f(b));
+        } else { assert(isArr(b) && rnk(b)==1);
+          s = vec_join(s, inc(b));
+        }
+        break;
+      }
+      case 'H': {
+        B o = va_arg(a, B);
+        ur r = isArr(o)? rnk(o) : 0;
+        usz* sh = isArr(o)? a(o)->sh : NULL;
+        if (r==0) AU("⟨⟩");
+        else if (r==1) AFMT("⟨%s⟩", sh[0]);
+        else {
+          for (i32 i = 0; i < r; i++) {
+            if(i) AU("‿");
+            AFMT("%s", sh[i]);
+          }
+        }
+        break;
+      }
+      case 'S': {
+        A8(va_arg(a, char*));
+        break;
+      }
+      case 'U': {
+        AU(va_arg(a, char*));
+        break;
+      }
+      case 'u': case 'x': case 'i': case 'l': {
+        i32 mode = c=='u'? 1 : c=='x'? 2 : 0;
+        if (mode) c = *p++;
+        assert(c);
+        if (mode) {
+         assert(c=='l'||c=='i');
+          if (c=='i') snprintf(buf, 30, mode==1?  "%u" :  "%x", va_arg(a, u32));
+          else        snprintf(buf, 30, mode==1? "%lu" : "%lx", va_arg(a, u64));
+        } else {
+          if (c=='i') {
+            i32 v = va_arg(a, i32);
+            if (v<0) AU("¯");
+            snprintf(buf, 30, "%lu", (u64)(v<0?-v:v));
+          } else { assert(c=='l');
+            i64 v = va_arg(a, i64);
+            if (v<0) AU("¯");
+            if (v==I64_MIN) snprintf(buf, 30, "9223372036854775808");
+            else snprintf(buf, 30, "%lu", (u64)(v<0?-v:v));
+          }
+        }
+        A8(buf);
+        break;
+      }
+      case 's': {
+        usz v = va_arg(a, usz);
+        snprintf(buf, 30, sizeof(usz)==4? "%u" : "%lu", v);
+        A8(buf);
+        break;
+      }
+      case 'p': {
+        snprintf(buf, 30, "%p", va_arg(a, void*));
+        A8(buf);
+        break;
+      }
+      case 'f': {
+        f64 f = va_arg(a, f64);
+        if (f<0) {
+          AU("¯");
+          f=-f;
+        }
+        snprintf(buf, 30, "%g", f);
+        A8(buf);
+        break;
+      }
+      case 'c': {
+        buf[0] = va_arg(a, int); buf[1] = 0;
+        A8(buf);
+        break;
+      }
+      case '%': {
+        buf[0] = '%'; buf[1] = 0;
+        A8(buf);
+        break;
+      }
+    }
+    lp = p;
+  }
+  if (lp!=p) s = vec_join(s, fromUTF8(lp, p-lp));
+  va_end(a);
+  return s;
+}
+
 B rt_under, bi_before;
 B rtUnder_c1(B f, B g, B x) { // consumes x
   B fn = m2_d(inc(rt_under), inc(f), inc(g));

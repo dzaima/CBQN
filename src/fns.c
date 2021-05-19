@@ -41,8 +41,8 @@ B ud_c1(B t, B x) {
   }
   BS2B xgetU = TI(x).getU;
   usz xia = a(x)->ia;
-  if (rnk(x)!=1) thrM("↕: Argument must be a vector");
-  if (xia>UR_MAX) thrM("↕: Result rank too large");
+  if (rnk(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", rnk(x));
+  if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
   usz sh[xia];
   usz ria = 1;
   for (usz i = 0; i < xia; i++) {

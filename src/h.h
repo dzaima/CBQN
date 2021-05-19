@@ -31,6 +31,7 @@
 #define f64 double
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define I32_MIN ((i32)(-(1LL<<31)))
+#define I64_MIN ((i64)(-(1LL<<63)))
 #define CHR_MAX 1114111
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
@@ -231,6 +232,7 @@ void gsAdd(B x); // may throw
 B gsPop();
 
 // some primitive actions
+B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
 void dec(B x);
 B    inc(B x);
 void ptr_dec(void* x);
@@ -248,6 +250,7 @@ bool atomEqual(B w, B x); // doesn't consume
 B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
+B    vec_join(B w, B x);  // consumes both
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all
@@ -263,10 +266,11 @@ B bqn_execFile(B path, B args); // consumes
 
 NOINLINE NORETURN void thr(B b);
 NOINLINE NORETURN void thrM(char* s);
+#define thrF(...) thr(append_fmt(inc(bi_emptyCVec), __VA_ARGS__))
 NOINLINE NORETURN void thrOOM();
 jmp_buf* prepareCatch();
 #ifdef CATCH_ERRORS
-#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error; dec(catchMessage);*/ } /*potentially erroring thing*/ popCatch();`
+#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); } /*potentially erroring thing*/ popCatch();`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false
 #endif
@@ -447,8 +451,6 @@ typedef struct TypeInfo {
 TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
-
-B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec;
 
 bool isNothing(B b) { return b.u==bi_N.u; }
 
