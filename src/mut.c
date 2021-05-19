@@ -110,6 +110,26 @@ void mut_set(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x
   }
   #undef AGAIN
 }
+void mut_setS(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
+  switch(m->type) { default: UD;
+    case el_i32: { assert(q_i32(x));
+      m->ai32[ms] = o2iu(x);
+      return;
+    }
+    case el_c32: { assert(isC32(x));
+      m->ac32[ms] = o2cu(x);
+      return;
+    }
+    case el_f64: { assert(isF64(x));
+      m->af64[ms] = o2fu(x);
+      return;
+    }
+    case el_B: {
+      m->aB[ms] = x;
+      return;
+    }
+  }
+}
 void mut_rm(Mut* m, usz ms) { // clears the object at position ms
   if (m->type == el_B) dec(m->aB[ms]);
 }

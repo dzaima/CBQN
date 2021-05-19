@@ -740,6 +740,54 @@ B group_c2(B t, B w, B x) {
   return c2(rt_group, w, x);
 }
 
+B rt_reverse;
+B reverse_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)==0) thrM("⌽: Argument cannot be a unit");
+  B xf = getFillQ(x);
+  u8 xe = TI(x).elType;
+  usz xia = a(x)->ia;
+  if (rnk(x)==1) {
+    if (xe==el_i32) {
+      i32* xp = i32any_ptr(x);
+      i32* rp; B r = m_i32arrv(&rp, xia);
+      for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1];
+      dec(x);
+      return r;
+    }
+  }
+  usz csz = arr_csz(x);
+  usz cam = a(x)->sh[0];
+  usz rp = 0;
+  usz ip = xia;
+  MAKE_MUT(r, xia); mut_to(r, xe);
+  for (usz i = 0; i < cam; i++) {
+    ip-= csz;
+    mut_copy(r, rp, x, ip, csz);
+    rp+= csz;
+  }
+  return withFill(mut_fcd(r, x), xf);
+}
+B reverse_c2(B t, B w, B x) {
+  if (isArr(w)) return c2(rt_reverse, w, x);
+  if (isAtm(x) || rnk(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
+  usz xia = a(x)->ia;
+  if (xia==0) return x;
+  B xf = getFillQ(x);
+  usz cam = a(x)->sh[0];
+  usz csz = arr_csz(x);
+  i64 am = o2i64(w);
+  if (am<0 || am>=cam) { am%= cam; if(am<0) am+= cam; }
+  am*= csz;
+  MAKE_MUT(r, xia); mut_to(r, TI(x).elType);
+  mut_copy(r, 0, x, am, xia-am);
+  mut_copy(r, xia-am, x, 0, am);
+  return withFill(mut_fcd(r, x), xf);
+}
+
+B reverse_uc1(B t, B o, B x) {
+  return reverse_c1(t, c1(o, reverse_c1(t, x)));
+}
+
 B pick_uc1(B t, B o, B x) {
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
   usz ia = a(x)->ia;
@@ -858,6 +906,18 @@ B select_ucw(B t, B o, B w, B x) {
         return x;
       }
     }
+    MAKE_MUT(r, xia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
+    mut_copy(r, 0, x, 0, xia);
+    BS2B rget = TI(rep).get;
+    for (usz i = 0; i < wia; i++) {
+      i64 cw = wp[i]; if (cw<0) cw+= (i64)xia; // oob already checked by original select_c2 call
+      B cr = rget(rep, i);
+      EQ(!equal(mut_getU(r, cw), cr));
+      mut_rm(r, cw);
+      mut_setS(r, cw, cr);
+    }
+    dec(w); dec(rep);
+    return mut_fcd(r, x);
   }
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
   mut_copy(r, 0, x, 0, xia);
@@ -875,10 +935,11 @@ B select_ucw(B t, B o, B w, B x) {
 }
 
 
-#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group)
+#define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group) A(reverse)
 BI_FNS0(F);
 static inline void sfns_init() { BI_FNS1(F)
   c(BFn,bi_pick)->uc1 = pick_uc1;
+  c(BFn,bi_reverse)->uc1 = reverse_uc1;
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_slash)->ucw = slash_ucw;
   c(BFn,bi_select)->ucw = select_ucw;
