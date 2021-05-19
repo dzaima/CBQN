@@ -38,7 +38,13 @@ B repr_c1(B t, B x) {
     char buf[BL];
     snprintf(buf, BL, "%g", x.f);
     return m_str8(strlen(buf), buf);
-  } else return bqn_repr(x);
+  } else {
+    #ifdef FORMATTER
+      return bqn_repr(x);
+    #else
+      thrM("•Repr: Cannot represent non-numbers");
+    #endif
+  }
 }
 
 B fill_c1(B t, B x) {
