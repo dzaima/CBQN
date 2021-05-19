@@ -169,6 +169,42 @@ B fne_c2(B t, B w, B x) {
 }
 
 
+B rt_indexOf;
+B indexOf_c1(B t, B x) {
+  if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
+  usz xia = a(x)->ia;
+  if (xia==0) { dec(x); return inc(bi_emptyIVec); }
+  if (rnk(x)==1 && TI(x).elType==el_i32) {
+    i32* xp = i32any_ptr(x);
+    i32 min=I32_MAX, max=I32_MIN;
+    for (usz i = 0; i < xia; i++) {
+      i32 c = xp[i];
+      if (c<min) min = c;
+      if (c>max) max = c;
+    }
+    i32 dst = 1 + max-(i64)min;
+    if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
+      i32* rp; B r = m_i32arrv(&rp, xia);
+      i32 tmp[dst];
+      for (usz i = 0; i < dst; i++) tmp[i] = I32_MIN;
+      i32* tc = tmp-min;
+      i32 ctr = 0;
+      for (usz i = 0; i < xia; i++) {
+        i32 c = xp[i];
+        if (tc[c]==I32_MIN) tc[c] = ctr++;
+        rp[i] = tc[c];
+      }
+      dec(x);
+      return r;
+    }
+  }
+  return c1(rt_indexOf, x);
+}
+B indexOf_c2(B t, B w, B x) {
+  return c2(rt_indexOf, w, x);
+}
+
+
 #define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
 #define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
 #define BI_M(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=c2_invalid; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
@@ -177,7 +213,7 @@ B fne_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;
