@@ -315,21 +315,17 @@ void gsPrint() {
 
 typedef struct Env {
   Scope* sc;
-  union { i32** bcP; i32* bcL; i32 bcV; };
+  union { i32* bcL; i32 bcV; };
 } Env;
 
 Env* envCurr;
 Env* envStart;
 Env* envEnd;
 
-static inline void pushEnv(Scope* sc, i32** bc) {
+static inline void pushEnv(Scope* sc, i32* bc) {
   if (envCurr==envEnd) thrM("Stack overflow");
   envCurr->sc = sc;
-  #if VM_POS
-  envCurr->bcP = bc;
-  #else
-  envCurr->bcL = *bc;
-  #endif
+  envCurr->bcL = bc;
   envCurr++;
 }
 static inline void popEnv() {
@@ -348,7 +344,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   B* objs = b->comp->objs->a;
   Block** blocks = b->comp->blocks;
   i32* bc = b->bc;
-  pushEnv(sc, &bc);
+  pushEnv(sc, bc);
   gsReserve(b->maxStack);
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
@@ -364,6 +360,11 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #define P(N) B N=POP;
     #define ADD(X) { *(lgStack++) = X; } // fine, as, if an error occurs, lgStack is ignored anyways
     #define GS_UPD { gStack = lgStack; }
+  #endif
+  #if VM_POS
+    #define POS_UPD (envCurr-1)->bcL = bc-1;
+  #else
+    #define POS_UPD
   #endif
   
   while(true) {
@@ -384,22 +385,22 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case FN1C: { P(f)P(x)
-        GS_UPD;
+        GS_UPD;POS_UPD;
         ADD(c1(f, x); dec(f));
         break;
       }
       case FN1O: { P(f)P(x)
-        GS_UPD;
+        GS_UPD;POS_UPD;
         ADD(isNothing(x)? x : c1(f, x)); dec(f);
         break;
       }
       case FN2C: { P(w)P(f)P(x)
-        GS_UPD;
+        GS_UPD;POS_UPD;
         ADD(c2(f, w, x); dec(f));
         break;
       }
       case FN2O: { P(w)P(f)P(x)
-        GS_UPD;
+        GS_UPD;POS_UPD;
         if (isNothing(x)) { dec(w); ADD(x); }
         else ADD(isNothing(w)? c1(f, x) : c2(f, w, x));
         dec(f);
@@ -421,7 +422,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case DFND: {
-        GS_UPD;
+        GS_UPD;POS_UPD;
         Block* bl = blocks[*bc++];
         switch(bl->ty) { default: UD;
           case 0: ADD(m_funBlock(bl, sc)); break;
@@ -430,11 +431,11 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         }
         break;
       }
-      case OP1D: { P(f)P(m)     GS_UPD; ADD(m1_d  (m,f  )); break; }
-      case OP2D: { P(f)P(m)P(g) GS_UPD; ADD(m2_d  (m,f,g)); break; }
-      case OP2H: {     P(m)P(g)         ADD(m2_h  (m,  g)); break; }
-      case TR2D: {     P(g)P(h)         ADD(m_atop(  g,h)); break; }
-      case TR3D: { P(f)P(g)P(h)         ADD(m_fork(f,g,h)); break; }
+      case OP1D: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
+      case OP2D: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
+      case OP2H: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }
+      case TR2D: {     P(g)P(h)                 ADD(m_atop(  g,h)); break; }
+      case TR3D: { P(f)P(g)P(h)                 ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h)
         if (isNothing(f)) { ADD(m_atop(g,h)); dec(f); }
         else ADD(m_fork(f,g,h));
@@ -446,7 +447,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       }
       case LOCO: { i32 d = *bc++; i32 p = *bc++;
         B l = pscs[d]->vars[p];
-        if(l.u==bi_noVar.u) thrM("Reading variable before its defined");
+        if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
         ADD(inc(l));
         break;
       }
@@ -456,16 +457,16 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
-      case SETN: { P(s)    P(x) GS_UPD; v_set(pscs, s, x, false); dec(s); ADD(x); break; }
-      case SETU: { P(s)    P(x) GS_UPD; v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
-      case SETM: { P(s)P(f)P(x) GS_UPD;
+      case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false); dec(s); ADD(x); break; }
+      case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
+      case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
         B w = v_get(pscs, s);
         B r = c2(f,w,x); dec(f);
         v_set(pscs, s, r, true); dec(s);
         ADD(r);
         break;
       }
-      case FLDO: { P(ns) GS_UPD; i32 p = *bc++;
+      case FLDO: { P(ns) GS_UPD; i32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, sc->body->nsDesc->nameList, p)));
         dec(ns);
@@ -746,15 +747,11 @@ NOINLINE void vm_pst(Env* s, Env* e) {
 }
 
 static void unwindEnv(Env* envNew) {
-    assert(envNew<=envCurr);
-    while (envCurr!=envNew) {
-      envCurr--;
-      #if VM_POS
-        envCurr->bcV = *envCurr->bcP - i32arr_ptr(envCurr->sc->body->comp->bc) - 1;
-      #else
-        envCurr->bcV = envCurr->bcL - i32arr_ptr(envCurr->sc->body->comp->bc);
-      #endif
-    }
+  assert(envNew<=envCurr);
+  while (envCurr!=envNew) {
+    envCurr--;
+    envCurr->bcV = envCurr->bcL - i32arr_ptr(envCurr->sc->body->comp->bc);
+  }
 }
 
 NOINLINE NORETURN void thr(B msg) {
