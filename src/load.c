@@ -23,9 +23,12 @@ B load_comp;
 B load_compArg;
 
 #ifdef FORMATTER
-B load_fmt;
+B load_fmt, load_repr;
 B bqn_fmt(B x) { // consumes
   return c1(load_fmt, x);
+}
+B bqn_repr(B x) { // consumes
+  return c1(load_repr, x);
 }
 #endif
 
@@ -170,8 +173,11 @@ static inline void load_init() {
       #include "formatter"
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
-    load_fmt = TI(fmtM).m1_d(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_fmtN)}));
-    gc_add(load_fmt);
+    B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_repr)}));
+    BS2B fget = TI(fmtR).get;
+    load_fmt  = fget(fmtR, 0); gc_add(load_fmt);
+    load_repr = fget(fmtR, 1); gc_add(load_repr);
+    dec(fmtR);
     #endif
     gc_enable();
   #endif // NO_COMP

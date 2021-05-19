@@ -34,10 +34,11 @@ B glyph_c1(B t, B x) {
 
 B repr_c1(B t, B x) {
   #define BL 100
-  char buf[BL];
-  if (isF64(x)) snprintf(buf, BL, "%g", x.f);
-  else snprintf(buf, BL, "(fmtN: not given a number?)");
-  return m_str8(strlen(buf), buf);
+  if (isF64(x)) {
+    char buf[BL];
+    snprintf(buf, BL, "%g", x.f);
+    return m_str8(strlen(buf), buf);
+  } else return bqn_repr(x);
 }
 
 B fill_c1(B t, B x) {
