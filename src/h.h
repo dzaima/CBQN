@@ -400,6 +400,7 @@ f64 o2fu  (B x) { return      x.f; }
 i64 o2i64u(B x) { return (i64)x.f; }
 bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
 bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
+bool q_i64(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i64)x.f); }
 bool q_f64(B x) { return isF64(x) || isI32(x); }
 
 

@@ -67,13 +67,12 @@ B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
 
 u8 el_or(u8 a, u8 b) {
   #define M(X) if(b==X) return a>X?a:X;
-  switch (a) {
+  switch (a) { default: UD;
     case el_c32: M(el_c32);            return el_B;
     case el_i32: M(el_i32); M(el_f64); return el_B;
     case el_f64: M(el_i32); M(el_f64); return el_B;
     case el_B:                         return el_B;
     case el_MAX: return b;
-    default: UD;
   }
   #undef M
 }
@@ -86,7 +85,7 @@ void mut_pfree(Mut* m, usz n) { // free the first n-1 elements
 void mut_set(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x
   again:
   #define AGAIN(T) { mut_to(m, T); goto again; }
-  switch(m->type) {
+  switch(m->type) { default: UD;
     case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
     
     case el_i32: {
@@ -111,12 +110,23 @@ void mut_set(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x
   }
   #undef AGAIN
 }
+void mut_rm(Mut* m, usz ms) { // clears the object at position ms
+  if (m->type == el_B) dec(m->aB[ms]);
+}
+B mut_getU(Mut* m, usz ms) {
+  switch(m->type) { default: UD;
+    case el_i32: return m_i32(m->ai32[ms]);
+    case el_c32: return m_c32(m->ac32[ms]);
+    case el_f64: return m_c32(m->af64[ms]);
+    case el_B:   return m->aB[ms];
+  }
+}
 
 // doesn't consume; fills m[ms…ms+l] with x
 void mut_fill(Mut* m, usz ms, B x, usz l) {
   again:
   #define AGAIN(T) { mut_to(m, T); goto again; }
-  switch(m->type) {
+  switch(m->type) { default: UD;
     case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
     
     case el_i32: {
@@ -160,7 +170,7 @@ void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
   again:
   #define AGAIN { mut_to(m, el_or(m->type, xe)); goto again; }
   // TODO try harder to not bump type
-  switch(m->type) {
+  switch(m->type) { default: UD;
     case el_MAX: AGAIN;
     
     case el_i32: {

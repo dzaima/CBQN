@@ -89,6 +89,7 @@ void gc_forceGC() {
     u64 start = nsTime();
     gc_visitBytes = 0; gc_freedBytes = 0;
     gc_visitCount = 0; gc_freedCount = 0;
+    u64 startAllocB = allocB;
   #endif
   #ifdef ENABLE_GC
     gc_visitRoots();
@@ -96,7 +97,7 @@ void gc_forceGC() {
     gc_tagNew = gc_tagCurr;
     gc_tagCurr^= 0x80;
     #ifdef LOG_GC
-      fprintf(stderr, "GC kept %ldB from %ld objects, freed %ldB from %ld objects; took %.3fms\n", gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
+      fprintf(stderr, "GC kept %ldB from %ld objects, freed %ldB, including directly %ldB from %ld objects; took %.3fms\n", gc_visitBytes, gc_visitCount, startAllocB-allocB, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
     #endif
     gc_lastAlloc = allocB;
   #endif

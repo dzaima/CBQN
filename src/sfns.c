@@ -788,10 +788,10 @@ B pick_ucw(B t, B o, B w, B x) {
 }
 
 B slash_ucw(B t, B o, B w, B x) {
-  if (isAtm(w) || rnk(w)!=1 || rnk(x)!=1 || a(w)->ia!=a(x)->ia) return def_fn_ucw(t, o, w, x);
+  if (isAtm(w) || isAtm(x) || rnk(w)!=1 || rnk(x)!=1 || a(w)->ia!=a(x)->ia) return def_fn_ucw(t, o, w, x);
   usz ia = a(x)->ia;
   BS2B wgetU = TI(w).getU;
-  for (usz i = 0; i < ia; i++) { B cw=wgetU(w,i); if (!q_i32(cw)) return def_fn_ucw(t, o, w, x); }
+  if (TI(w).elType!=el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(wgetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = a(arg)->ia;
   B rep = c1(o, arg);
@@ -814,6 +814,66 @@ B slash_ucw(B t, B o, B w, B x) {
   return mut_fcd(r, x);
 }
 
+B select_ucw(B t, B o, B w, B x) {
+  if (isAtm(x) || rnk(x)!=1 || isAtm(w) || rnk(w)!=1) return def_fn_ucw(t, o, w, x);
+  usz xia = a(x)->ia;
+  usz wia = a(w)->ia;
+  BS2B wgetU = TI(w).getU;
+  if (TI(w).elType!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(wgetU(w,i))) return def_fn_ucw(t, o, w, x);
+  B arg = select_c2(t, inc(w), inc(x));
+  B rep = c1(o, arg);
+  if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != wia) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as a⊏𝕩 (expected ⟨%s⟩, got %H)", wia, rep);
+  #if CHECK_VALID
+    bool set[xia];
+    for (i64 i = 0; i < xia; i++) set[i] = false;
+    #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
+  #else
+    #define EQ(F)
+  #endif
+  if (TI(w).elType==el_i32) {
+    i32* wp = i32any_ptr(w);
+    if (reusable(x) && TI(x).elType==TI(rep).elType) {
+      if (v(x)->type==t_i32arr) {
+        i32* xp = i32arr_ptr(x);
+        i32* rp = i32any_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
+          i32 cr = rp[i];
+          EQ(cr!=xp[cw]);
+          xp[cw] = cr;
+        }
+        dec(w); dec(rep);
+        return x;
+      } else if (v(x)->type==t_harr) {
+        B* xp = harr_ptr(x);
+        BS2B rget = TI(rep).get;
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
+          B cr = rget(rep, i);
+          EQ(!equal(cr,xp[cw]));
+          dec(xp[cw]);
+          xp[cw] = cr;
+        }
+        dec(w); dec(rep);
+        return x;
+      }
+    }
+  }
+  MAKE_MUT(r, xia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
+  mut_copy(r, 0, x, 0, xia);
+  BS2B rget = TI(rep).get;
+  for (usz i = 0; i < wia; i++) {
+    i64 cw = o2i64u(wgetU(w, i)); if (cw<0) cw+= (i64)xia; // oob already checked by original select_c2 call
+    B cr = rget(rep, i);
+    EQ(!equal(mut_getU(r, cw), cr));
+    mut_rm(r, cw);
+    mut_set(r, cw, cr);
+  }
+  dec(w); dec(rep);
+  return mut_fcd(r, x);
+  #undef EQ
+}
+
 
 #define F(A,M,D) A(shape) A(pick) A(pair) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group)
 BI_FNS0(F);
@@ -821,5 +881,6 @@ static inline void sfns_init() { BI_FNS1(F)
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_slash)->ucw = slash_ucw;
+  c(BFn,bi_select)->ucw = select_ucw;
 }
 #undef F
