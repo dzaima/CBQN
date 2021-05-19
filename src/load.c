@@ -66,7 +66,7 @@ static inline void load_init() {
     /* ∧∨<>≠=≤≥≡≢  */ bi_and    , bi_or    , bi_lt   , bi_gt     , bi_ne    , bi_eq    , bi_le   , bi_ge     , bi_feq   , bi_fne,
     /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack  , bi_rtack , bi_shape, bi_join   , bi_couple, bi_take  , bi_drop , bi_ud     , bi_shifta, bi_shiftb,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_reverse, bi_N     , bi_slash, bi_gradeUp, bi_N     , bi_select, bi_pick , bi_indexOf, bi_N     , bi_N,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N      , bi_group , bi_asrt , bi_const  , bi_swap  , bi_N     , bi_each , bi_tbl    , bi_N     , bi_fold,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_N      , bi_group , bi_asrt , bi_const  , bi_swap  , bi_cell  , bi_each , bi_tbl    , bi_N     , bi_fold,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N      , bi_scan  , bi_atop , bi_over   , bi_before, bi_after , bi_under, bi_val    , bi_cond  , bi_N,
     /* ⚇⍟⎊         */ bi_N      , bi_repeat, bi_catch
   };
@@ -75,7 +75,7 @@ static inline void load_init() {
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,1,1,1,1,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 1,0,1,1,0,1,1,1,0,0,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,1,1,1,1,0,1,1,0,1,
+    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 0,1,1,1,1,1,1,1,0,1,
     /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,1,1,0,0,
     /* ⚇⍟⎊         */ 0,1,1
   };
@@ -128,6 +128,7 @@ static inline void load_init() {
   rt_under   = rtObjGet(rtObjRaw, 56); gc_add(rt_under);
   rt_reverse = rtObjGet(rtObjRaw, 30); gc_add(rt_reverse);
   rt_indexOf = rtObjGet(rtObjRaw, 37); gc_add(rt_indexOf);
+  rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
   
   for (usz i = 0; i < runtimeLen; i++) {
     #ifdef ALL_R1

@@ -64,7 +64,7 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   usz wia = a(w)->ia; ur wr = rnk(w);
   usz xia = a(x)->ia; ur xr = rnk(x);
   usz ria = wia*xia;  ur rr = wr+xr;
-  if (rr<xr) thrF("⌜: Required result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   BS2B wgetU = TI(w).getU;
   BS2B xget = TI(x).get;
@@ -252,14 +252,50 @@ B import_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return bqn_execFile(path_resolve(f, x), w);
 }
 
+B rt_cell;
+B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
+  if (isAtm(x) || rnk(x)==0) {
+    B r = c1(f, x);
+    return isAtm(r)? m_atomUnit(r) : r;
+  }
+  if (f.u == bi_lt.u) return toCells(x);
+  usz cr = rnk(x)-1;
+  usz cam = a(x)->sh[0];
+  usz csz = arr_csz(x);
+  ShArr* csh; if (cr>1) csh = m_shArr(cr);
+  usz i = 0;
+  BS2B slice = TI(x).slice;
+  HArr_p r = m_harrs(cam, &i);
+  usz p = 0;
+  for (; i < cam; i++) {
+    B s = slice(inc(x), p);
+    arr_shSetI(s, csz, cr, csh);
+    r.a[i] = c1(f, s);
+    p+= csz;
+  }
+  if (cr>1) ptr_dec(csh);
+  dec(x);
+  return c1(bi_gt, harr_fv(r));
+}
+B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+  if ((isAtm(x) || rnk(x)==0) && (isAtm(w) || rnk(w)==0)) {
+    B r = c2(f, w, x);
+    return isAtm(r)? m_atomUnit(r) : r;
+  }
+  B fn = m1_d(inc(rt_cell), inc(f)); // TODO
+  B r = c2(fn, w, x);
+  dec(fn);
+  return r;
+}
+
 #define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 #define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
 
 void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
-B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap, bi_timed, bi_fchars, bi_fbytes, bi_flines, bi_import;
-static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(timed) bm(fchars) bm(fbytes) bm(flines) ba(import)
+B                               bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap, bi_cell, bi_timed, bi_fchars, bi_fbytes, bi_flines, bi_import;
+static inline void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(cell) ba(timed) bm(fchars) bm(fbytes) bm(flines) ba(import)
   ti[t_md1BI].print = print_md1BI;
 }
 

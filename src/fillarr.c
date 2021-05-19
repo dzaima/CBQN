@@ -55,7 +55,7 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 
-B m_fillarrp(usz ia) {
+B m_fillarrp(usz ia) { // doesn't set ia
   return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
 }
 void fillarr_setFill(B x, B fill) { // consumes fill

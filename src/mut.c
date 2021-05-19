@@ -50,7 +50,7 @@ B mut_fv(Mut* m) { assert(m->type!=el_MAX);
   srnk(r, 1);
   return r;
 }
-B mut_fp(Mut* m) { assert(m->type!=el_MAX);
+B mut_fp(Mut* m) { assert(m->type!=el_MAX); // has ia set
   return tag(m->val, ARR_TAG);
 }
 B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
@@ -77,7 +77,7 @@ u8 el_or(u8 a, u8 b) {
   #undef M
 }
 
-void mut_pfree(Mut* m, usz n) { // free the first n-1 elements
+void mut_pfree(Mut* m, usz n) { // free the first n elements
   if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
   else mm_free((Value*) m->val);
 }

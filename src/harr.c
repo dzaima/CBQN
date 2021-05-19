@@ -76,14 +76,28 @@ B toCells(B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   usz i = 0;
-  HArr_p r = m_harrs(cam, &i);
   BS2B slice = TI(x).slice;
   usz p = 0;
-  for (; i < cam; i++) {
-    B s = slice(inc(x), p);
-    arr_shVec(s, csz);
-    r.a[i] = s;
-    p+= csz;
+  HArr_p r = m_harrs(cam, &i);
+  if (rnk(x)==2) {
+    for (; i < cam; i++) {
+      B s = slice(inc(x), p);
+      arr_shVec(s, csz);
+      r.a[i] = s;
+      p+= csz;
+    }
+  } else {
+    usz cr = rnk(x)-1;
+    ShArr* csh = m_shArr(cr);
+    usz* xsh = a(x)->sh;
+    for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
+    for (; i < cam; i++) {
+      B s = slice(inc(x), p);
+      arr_shSetI(s, csz, cr, csh);
+      r.a[i] = s;
+      p+= csz;
+    }
+    ptr_dec(csh);
   }
   dec(x);
   return harr_fv(r);
