@@ -86,6 +86,18 @@ u64 bqn_hashP(B x, const u64 secret[4]) { // bqn_hash but never zero
 #define VT i32
 #include "hashmap.c"
 
+#define N(X) X##_Sb
+#define HT u64
+#define KT B
+#define H1(K) bqn_hashP(K, wy_secret)
+#define H2(K,h1) h1
+#define H1R(K,h2) h2
+#define EMPTY(S,K) ((S)==0)
+#define HDEF 0
+#define KEYS
+#define EQUAL(A,B) equal(A,B)
+#include "hashmap.c"
+
 
 
 void hash_init() {

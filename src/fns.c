@@ -239,6 +239,26 @@ B indexOf_c2(B t, B w, B x) {
   return c2(rt_indexOf, w, x);
 }
 
+B rt_memberOf;
+B memberOf_c1(B t, B x) {
+  return c1(rt_memberOf, x);
+}
+B memberOf_c2(B t, B w, B x) {
+  if (!isArr(w) || rnk(w)!=1 || !isArr(x) || rnk(x)!=1) return c2(rt_memberOf, w, x);
+  usz wia = a(w)->ia;
+  usz xia = a(x)->ia;
+  // TODO O(wia×xia) for small wia
+  H_Sb* set = m_Sb(64);
+  bool had;
+  BS2B xgetU = TI(x).getU;
+  BS2B wgetU = TI(w).getU;
+  for (usz i = 0; i < xia; i++) mk_Sb(&set, xgetU(x,i), &had);
+  i32* rp; B r = m_i32arrv(&rp, wia);
+  for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, wgetU(w,i));
+  dec(w);dec(x);
+  return r;
+}
+
 
 #define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
 #define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
@@ -248,7 +268,7 @@ B indexOf_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;

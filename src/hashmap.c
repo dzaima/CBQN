@@ -75,6 +75,12 @@ static inline u64 N(find) (Map* m, KT k, u64 h1, u64 h2, bool* had) {
     if (RARE(p++==mask)) p = 0;
   }
 }
+static inline bool N(has) (Map* m, KT k) {
+  bool has;
+  u64 h1 = H1(k); u64 h2 = H2(k, h1);
+  N(find)(m, k, h1, h2, &has);
+  return has;
+}
 
 
 static inline void N(qins) (Map* m, u64 h1, HT h2, KT k IFVAL(, VT v)) { // if guaranteed that k doesn't exist in the map yet and there's space for this

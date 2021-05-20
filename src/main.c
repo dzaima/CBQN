@@ -56,6 +56,19 @@
 
 int main(int argc, char* argv[]) {
   cbqn_init();
+  // M_b2i* map = m_b2i(16);
+  // i32 data[] = {5,7,1,5,9,5,3,1,7,9,4,2,6,8,43,3,234,123,5435,435,6745,23,2332,2,3,5,63,3,87};
+  // for (i32 i = 0; i < 29; i++) {
+  //   printf("upd %d→%d: %d\n", data[i], i, upd_b2i(&map, m_i32(data[i]), i, false));
+  // }
+  // printf("sz=%ld pop=%ld\n", map->sz, map->pop);
+  // u64 sz = map->sz;
+  // for (u64 i = 0; i < sz; i++) {
+  //   Ent_b2i e = map->ent[i];
+  //   if (e.hash) { print(e.key); printf(": %d\n", e.val); }
+  // }
+  // free_b2i(map);
+  // exit(0);
   
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
   #if defined(COMP_COMP) || defined(COMP_COMP_TIME)
