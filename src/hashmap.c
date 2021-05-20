@@ -81,6 +81,14 @@ static inline bool N(has) (Map* m, KT k) {
   N(find)(m, k, h1, h2, &has);
   return has;
 }
+#ifdef VALS
+  static inline u64 N(getD) (Map* m, KT k, VT def) {
+    bool has;
+    u64 h1 = H1(k); u64 h2 = H2(k, h1);
+    u64 p = N(find)(m, k, h1, h2, &has);
+    return has? m->a[p].val : def;
+  }
+#endif
 
 
 static inline void N(qins) (Map* m, u64 h1, HT h2, KT k IFVAL(, VT v)) { // if guaranteed that k doesn't exist in the map yet and there's space for this
