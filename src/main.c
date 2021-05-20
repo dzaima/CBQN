@@ -169,6 +169,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (startREPL) {
+    B replPath = m_str32(U"REPL"); gc_add(replPath);
     while (CATCH) {
       printf("Error: "); print(catchMessage); putchar('\n');
       vm_pst(envCurr, envStart+envPrevHeight);
@@ -178,7 +179,6 @@ int main(int argc, char* argv[]) {
       #endif
       gc_maybeGC();
     }
-    B replPath = m_str32(U"REPL"); gc_add(replPath);
     while (true) { // exit by evaluating an empty expression
       char* ln = NULL;
       size_t gl = 0;
