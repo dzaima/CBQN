@@ -283,6 +283,7 @@ bool equal(B w, B x) { // doesn't consume
   for (usz i = 0; i < ia; i++) if(!equal(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
+B bqn_merge(B x);
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 i32 compare(B w, B x) {
@@ -518,7 +519,7 @@ void printAllocStats() {
 
 _Thread_local B comp_currPath;
 _Thread_local B comp_currArgs;
-#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(fns) F(sfns) F(arith) F(grade) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
+#define FOR_INIT(F) F(hdr) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(fns) F(sfns) F(arith) F(sort) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
 #define F(X) static inline void X##_init();
 FOR_INIT(F)
 #undef F

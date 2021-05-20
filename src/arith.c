@@ -156,49 +156,7 @@ B ne_c2(B t, B w, B x) {
 B rt_merge;
 B gt_c1(B t, B x) {
   if (isAtm(x)) return x;
-  usz xia = a(x)->ia;
-  ur xr = rnk(x);
-  if (xia==0) {
-    B xf = getFillE(x);
-    if (isAtm(xf)) { dec(xf); return x; }
-    B r = m_fillarrp(0);
-    i32 xfr = rnk(xf);
-    fillarr_setFill(r, getFillQ(xf));
-    if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
-    usz* rsh = arr_shAllocI(r, 0, xr+xfr);
-    if (rsh) {
-      memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
-      if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));
-    }
-    return r;
-  }
-  
-  BS2B xgetU = TI(x).getU;
-  B x0 = xgetU(x, 0);
-  usz* elSh = isArr(x0)? a(x0)->sh : NULL;
-  ur elR = isArr(x0)? rnk(x0) : 0;
-  usz elIA = isArr(x0)? a(x0)->ia : 1;
-  B fill = getFillQ(x0);
-  if (xr+elR > UR_MAX) thrM(">: Result rank too large");
-  
-  MAKE_MUT(r, xia*elIA);
-  usz rp = 0;
-  for (usz i = 0; i < xia; i++) {
-    B c = xgetU(x, i);
-    if (isArr(c)? (elR!=rnk(c) || !eqShPrefix(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained %H and %H)", x0, c); }
-    if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
-    else mut_set(r, rp, c);
-    if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
-    rp+= elIA;
-  }
-  B rb = mut_fp(r);
-  usz* rsh = arr_shAllocR(rb, xr+elR);
-  if (rsh) {
-    memcpy         (rsh   , a(x)->sh, xr *sizeof(usz));
-    if (elSh)memcpy(rsh+xr, elSh,     elR*sizeof(usz));
-  }
-  dec(x);
-  return withFill(rb,fill);
+  return bqn_merge(x);
 }
 
 B   add_c1(B t, B x) { return x; }
@@ -216,9 +174,8 @@ B lt_c1(B t, B x) { return m_unit(x); }
 B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
 
-B rt_sortAsc, rt_sortDsc;
-B and_c1(B t, B x) { return c1(rt_sortAsc, x); }
-B  or_c1(B t, B x) { return c1(rt_sortDsc, x); }
+B rt_sortDsc;
+B or_c1(B t, B x) { return c1(rt_sortDsc, x); }
 
 #undef P1
 #undef P2

@@ -2,6 +2,7 @@
 
 B rt_gradeUp;
 
+
 static void gradeUp_rec(i32* b, i32* I, i32* O, usz s, usz e) {
   if (e-s<=1) return;
   usz m = (s+(u64)e)/2;
@@ -91,7 +92,30 @@ B gradeUp_c2(B t, B w, B x) {
   return r;
 }
 
+int sort_icmp(const void* w, const void* x) { return *(int*)w - *(int*)x; }
+int sort_bcmp(const void* w, const void* x) { return compare(*(B*)w, *(B*)x); }
+B rt_sortAsc;
+B and_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)==0) thrM("∧: Argument cannot have rank 0");
+  if (rnk(x)!=1) return bqn_merge(and_c1(t, toCells(x)));
+  usz xia = a(x)->ia;
+  if (TI(x).elType==el_i32) {
+    i32* xp = i32any_ptr(x);
+    i32* rp; B r = m_i32arrv(&rp, xia);
+    memcpy(rp, xp, xia*4);
+    qsort(rp, xia, 4, sort_icmp);
+    dec(x);
+    return r;
+  }
+  HArr_p r = m_harrUv(xia);
+  BS2B xget = TI(x).get;
+  for (usz i = 0; i < xia; i++) r.a[i] = xget(x,i);
+  qsort(r.a, xia, sizeof(B), sort_bcmp);
+  dec(x);
+  return r.b;
+}
+
 #define F(A,M,D) A(gradeUp)
 BI_FNS0(F);
-static inline void grade_init() { BI_FNS1(F) }
+static inline void sort_init() { BI_FNS1(F) }
 #undef F
