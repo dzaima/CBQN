@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-if [[ $# -ne 1 ]]; then
-  echo "Usage: ./genRuntimeSrc path/to/mlochbaum/BQN"
-  exit
-fi
-./BQN cc.bqn $1 -i r0 > src/runtime0
-./BQN cc.bqn $1 -i r1 > src/runtime1
-./BQN cc.bqn $1 -i c > src/compiler
-./BQN cc.bqn $1 -i f > src/formatter

@@ -3,13 +3,18 @@ typedef struct TmpFile { // to be turned into a proper I8Arr
   i8 a[];
 } TmpFile;
 
-TmpFile* file_bytes(B path) { // consumes; may throw
+FILE* file_open(B path, char* desc, char* mode) { // consumes path; can error
   u64 plen = utf8lenB(path);
   char p[plen+1];
   toUTF8(path, p);
   p[plen] = 0;
-  FILE* f = fopen(p, "r");
-  if (f==NULL) thrF("Couldn't read file \"%R\"", path);
+  FILE* f = fopen(p, mode);
+  if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
+  return f;
+}
+
+TmpFile* file_bytes(B path) { // consumes; may throw
+  FILE* f = file_open(path, "read", "r");
   fseek(f, 0, SEEK_END);
   u64 len = ftell(f);
   fseek(f, 0, SEEK_SET);
@@ -17,7 +22,6 @@ TmpFile* file_bytes(B path) { // consumes; may throw
   arr_shVec(tag(src,ARR_TAG), len);
   fread((char*)src->a, 1, len, f);
   fclose(f);
-  dec(path);
   return src;
 }
 B file_chars(B path) { // consumes; may throw
@@ -65,4 +69,16 @@ B path_dir(B path) { // consumes; returns directory part of file path, with trai
   dec(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = '/';
   return r;
+}
+
+
+void file_write(B path, B x) { // consumes path
+  FILE* f = file_open(path, "write to", "w");
+  
+  u64 len = utf8lenB(x);
+  char val[len];
+  toUTF8(x, val);
+  
+  fwrite(val, 1, len, f);
+  fclose(f);
 }
