@@ -182,6 +182,7 @@ static inline void load_init() {
     load_fmt  = fget(fmtR, 0); gc_add(load_fmt);
     load_repr = fget(fmtR, 1); gc_add(load_repr);
     dec(fmtR);
+    dec(fmtM);
     #endif
     gc_enable();
   #endif // NO_COMP

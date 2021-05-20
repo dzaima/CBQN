@@ -143,7 +143,16 @@ B internal_c2(B t, B w, B x) {
 }
 B sys_c1(B t, B x);
 B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
-B show_c1(B t, B x) { print   (x); putchar('\n'); return x; }
+B show_c1(B t, B x) {
+  #ifdef FORMATTER
+    B fmt = bqn_fmt(inc(x));
+    printRaw(fmt); dec(fmt);
+  #else
+    print(x);
+  #endif
+  putchar('\n');
+  return x;
+}
 
 B bqn_c1(B t, B x) {
   if (isAtm(x) || rnk(x)!=1) thrM("•BQN: Argument must be a character vector");

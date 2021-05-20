@@ -41,17 +41,17 @@ typedef struct Map {
   u64 pop; // count of defined entries
   u64 mask; // sz-1
   u64 sz; // count of allocated entries, a power of 2
-  Ent ent[];
+  Ent a[];
 } Map;
 
 Map* N(m) (u64 sz) {
   assert(sz && (sz & sz-1)==0);
-  Map* r = mm_allocN(fsizeof(Map,ent,Ent,sz), t_hashmap);
+  Map* r = mm_allocN(fsizeof(Map,a,Ent,sz), t_hashmap);
   #ifdef HDEF
-    for (u64 i = 0; i < sz; i++) r->ent[i].hash = HDEF;
+    for (u64 i = 0; i < sz; i++) r->a[i].hash = HDEF;
   #endif
   #ifdef KDEF
-    for (u64 i = 0; i < sz; i++) r->ent[i].key = KDEF;
+    for (u64 i = 0; i < sz; i++) r->a[i].key = KDEF;
   #endif
   r->sz = sz;
   r->mask = sz-1;
@@ -69,7 +69,7 @@ static inline u64 N(find) (Map* m, KT k, u64 h1, u64 h2, bool* had) {
   u64 mask = m->mask;
   u64 p = h1 & mask;
   while (true) {
-    Ent e = m->ent[p];
+    Ent e = m->a[p];
     if (e.hash==h2 IFKEY(&& LIKELY(EQUAL(e.key, k)))) return p;
     if (EMPTY(e.hash, e.key)) { *had=false; return p; }
     if (RARE(p++==mask)) p = 0;
@@ -87,11 +87,11 @@ static inline void N(qins) (Map* m, u64 h1, HT h2, KT k IFVAL(, VT v)) { // if g
   u64 mask = m->mask;
   u64 p = h1 & mask;
   while (true) {
-    u64 ch2 = m->ent[p].hash;
-    if (EMPTY(ch2, m->ent[p].key)) {
-      m->ent[p].hash = h2;
-      IFKEY(m->ent[p].key = k);
-      IFVAL(m->ent[p].val = v);
+    u64 ch2 = m->a[p].hash;
+    if (EMPTY(ch2, m->a[p].key)) {
+      m->a[p].hash = h2;
+      IFKEY(m->a[p].key = k);
+      IFVAL(m->a[p].val = v);
       m->pop++;
       return;
     }
@@ -103,7 +103,7 @@ void N(dbl) (Map** m) {
   u64 psz = pm->sz;
   Map* nm = N(m)(psz*2);
   for (u64 i = 0; i < psz; i++) {
-    Ent e = pm->ent[i];
+    Ent e = pm->a[i];
     if(!EMPTY(e.hash, e.key)) N(qins)(nm, H1R(e.key, e.hash), e.hash, e.key IFVAL(, e.val));
   }
   mm_free((Value*)pm);
@@ -117,15 +117,15 @@ static inline u64 N(mk) (Map** mp, KT k, bool* had) {
   u64 h1 = H1(k); u64 h2 = H2(k, h1);
   u64 p = N(find)(m, k, h1, h2, had);
   if (*had) return p;
-  m->ent[p].hash = h2;
-  IFKEY(m->ent[p].key = k);
+  m->a[p].hash = h2;
+  IFKEY(m->a[p].key = k);
   m->pop++;
   return p;
 }
 #ifdef VALS
   static inline bool N(ins) (Map** mp, KT k, VT v) { // returns whether element was replaced
     bool had; u64 p = N(mk)(mp, k, &had);
-    (*mp)->ent[p].val = v;
+    (*mp)->a[p].val = v;
     return had;
   }
 #endif

@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
       #ifdef FORMATTER
       B resFmt = bqn_fmt(res);
       printRaw(resFmt); dec(resFmt);
-      printf("\n");
+      putchar('\n');
       #else
       print(res); putchar('\n'); fflush(stdout);
       dec(res);
@@ -213,6 +213,9 @@ int main(int argc, char* argv[]) {
     }
     popCatch();
   }
+  #ifdef HEAP_VERIFY
+    heapVerify();
+  #endif
   rtPerf_print();
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);

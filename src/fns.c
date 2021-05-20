@@ -225,8 +225,8 @@ B indexOf_c1(B t, B x) {
     i32 ctr = 0;
     for (usz i = 0; i < xia; i++) {
       bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
-      if (had) rp[i] = map->ent[p].val;
-      else     rp[i] = map->ent[p].val = ctr++;
+      if (had) rp[i] = map->a[p].val;
+      else     rp[i] = map->a[p].val = ctr++;
     }
     free_b2i(map);
     dec(x);
@@ -255,7 +255,7 @@ B memberOf_c2(B t, B w, B x) {
   for (usz i = 0; i < xia; i++) mk_Sb(&set, xgetU(x,i), &had);
   i32* rp; B r = m_i32arrv(&rp, wia);
   for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, wgetU(w,i));
-  dec(w);dec(x);
+  dec(w);dec(x); free_Sb(set);
   return r;
 }
 
