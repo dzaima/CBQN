@@ -107,12 +107,13 @@ B and_c1(B t, B x) {
     dec(x);
     return r;
   }
+  B xf = getFillQ(x);
   HArr_p r = m_harrUv(xia);
   BS2B xget = TI(x).get;
   for (usz i = 0; i < xia; i++) r.a[i] = xget(x,i);
   qsort(r.a, xia, sizeof(B), sort_bcmp);
   dec(x);
-  return r.b;
+  return withFill(r.b,xf);
 }
 
 #define F(A,M,D) A(gradeUp)
