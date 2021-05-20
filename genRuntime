@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
-if [[ $# -ne 1 ]]; then
-  echo "Usage: ./genRuntime path/to/mlochbaum/BQN"
-  exit
-fi
-./cc.bqn $1 r0 > src/runtime0
-./cc.bqn $1 r1 > src/runtime1
-./cc.bqn $1 c > src/compiler
-./cc.bqn $1 f > src/formatter
+#!/usr/bin/env bqn
+args←•args
+"Usage: ./getRuntime.bqn path/to/mlochbaum/BQN"!1≤≠args
+path←⊑•args
+CC ← {𝕨 •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"}
+ "src/runtime0"CC"r0"
+ "src/runtime1"CC"r1"
+ "src/compiler"CC"c"
+"src/formatter"CC"f"
