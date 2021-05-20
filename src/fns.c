@@ -228,8 +228,7 @@ B indexOf_c1(B t, B x) {
       if (had) rp[i] = map->a[p].val;
       else     rp[i] = map->a[p].val = ctr++;
     }
-    free_b2i(map);
-    dec(x);
+    free_b2i(map); dec(x);
     // u64 e = nsTime(); q1+= e-s;
     return r;
   }
@@ -255,8 +254,29 @@ B memberOf_c2(B t, B w, B x) {
   for (usz i = 0; i < xia; i++) mk_Sb(&set, xgetU(x,i), &had);
   i32* rp; B r = m_i32arrv(&rp, wia);
   for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, wgetU(w,i));
-  dec(w);dec(x); free_Sb(set);
+  free_Sb(set); dec(w);dec(x);
   return r;
+}
+
+B rt_find;
+B find_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)==0) thrM("⍷: Argument cannot have rank 0");
+  usz xia = a(x)->ia;
+  B xf = getFillQ(x);
+  if (rnk(x)!=1) return c1(rt_find, x);
+  
+  B r = inc(bi_emptyHVec);
+  H_Sb* set = m_Sb(64);
+  BS2B xgetU = TI(x).getU;
+  for (usz i = 0; i < xia; i++) {
+    B c = xgetU(x,i);
+    if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
+  }
+  free_Sb(set); dec(x);
+  return withFill(r, xf);
+}
+B find_c2(B t, B w, B x) {
+  return c2(rt_find, w, x);
 }
 
 
@@ -268,7 +288,7 @@ B memberOf_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf) A(find)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;

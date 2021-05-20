@@ -82,7 +82,7 @@ void mut_pfree(Mut* m, usz n) { // free the first n elements
   else mm_free((Value*) m->val);
 }
 
-void mut_set(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x
+void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
   again:
   #define AGAIN(T) { mut_to(m, T); goto again; }
   switch(m->type) { default: UD;
@@ -294,5 +294,38 @@ B vec_join(B w, B x) { // consumes both
   mut_copy(r, 0,   w, 0, wia);
   mut_copy(r, wia, x, 0, xia);
   dec(w); dec(x);
+  return mut_fv(r);
+}
+B vec_add(B w, B x) { // consumes both
+  usz wia = a(w)->ia;
+  usz ria = wia+1;
+  if (v(w)->refc==1) {
+    u64 wsz = mm_size(v(w));
+    u8 wt = v(w)->type;
+    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && q_i32(x)) {
+      a(w)->ia = ria;
+      i32arr_ptr(w)[wia] = o2iu(x);
+      return w;
+    }
+    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && isC32(x)) {
+      a(w)->ia = ria;
+      c32arr_ptr(w)[wia] = o2cu(x);
+      return w;
+    }
+    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && isNum(x)) {
+      a(w)->ia = ria;
+      f64arr_ptr(w)[wia] = o2fu(x);
+      return w;
+    }
+    if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
+      a(w)->ia = ria;
+      harr_ptr(w)[wia] = x;
+      return w;
+    }
+  }
+  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w).elType, selfElType(x)));
+  mut_copy(r, 0, w, 0, wia);
+  mut_set(r, wia, x);
+  dec(w);
   return mut_fv(r);
 }

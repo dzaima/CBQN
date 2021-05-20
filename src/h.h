@@ -114,7 +114,7 @@ char* format_type(u8 u) {
     case t_harr  :return"harr"  ; case t_i8arr  :return"i8arr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
     case t_hslice:return"hslice"; case t_i8slice:return"i8slice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
-    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias";
+    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap";
     case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
     #ifdef RT_PERF
     case t_funPerf:return"perf fn"; case t_md1Perf:return"perf m1"; case t_md2Perf:return "perf m2";
@@ -125,7 +125,7 @@ char* format_type(u8 u) {
 #define FOR_PF(F) F(none, "(unknown fn)") \
     /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
     /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
-    /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(indexOf,"⊐") F(memberOf,"∊") \
+    /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(indexOf,"⊐") F(memberOf,"∊") F(find,"⍷") \
     /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") F(group,"⊔") F(reverse,"⌽") \
     /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
     /*sort.c*/  F(gradeUp,"⍋") \
@@ -251,7 +251,8 @@ bool atomEqual(B w, B x); // doesn't consume
 B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
-B    vec_join(B w, B x);  // consumes both
+B    vec_join(B w, B x);  // consumes both; w∾x for vectors
+B    vec_add(B w, B x);   // consumes both; w∾<x for vector w
 bool eqShPrefix(usz* w, usz* x, ur len);
 
 B m_v1(B a               ); // consumes all

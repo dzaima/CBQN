@@ -122,13 +122,12 @@ static inline u64 N(mk) (Map** mp, KT k, bool* had) {
   m->pop++;
   return p;
 }
-#ifdef VALS
-  static inline bool N(ins) (Map** mp, KT k, VT v) { // returns whether element was replaced
-    bool had; u64 p = N(mk)(mp, k, &had);
-    (*mp)->a[p].val = v;
-    return had;
-  }
-#endif
+static inline bool N(ins) (Map** mp, KT k IFVAL(, VT v)) { // returns whether element was replaced
+  bool had;
+  IFVAL(u64 p =) N(mk)(mp, k, &had);
+  IFVAL((*mp)->a[p].val = v);
+  return had;
+}
 
 
 #undef IFKEY
