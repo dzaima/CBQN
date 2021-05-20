@@ -95,7 +95,7 @@ enum Type {
   t_COUNT
 };
 
-enum ElType { // a⌈b shall return the type that can store both, if possible
+enum ElType { // a⌈b shall return the type that can store both, if possible; any x<=el_f64 is an integer type
   el_i32=0,
   el_f64=1,
   el_c32=2,

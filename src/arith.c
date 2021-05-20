@@ -138,15 +138,31 @@ CMP(> , gt, 1)
 #undef ffnx
 
 B decp_c1(B t, B x);
+#define CMP_IMPL(OP) \
+  if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f);  \
+  bool wa = isArr(w);                               \
+  bool xa = isArr(x);                               \
+  if (wa|xa) {                                      \
+    u8 we = wa? TI(w).elType : selfElType(w);       \
+    u8 xe = xa? TI(x).elType : selfElType(x);       \
+    if (we==el_i32 && xe==el_i32) {                 \
+      i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
+      if      (!wa) { i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
+      else if (!xa) { i32 xv=o2iu(x); i32* wp=i32any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
+      else { i32* wp=i32any_ptr(w);   i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
+      if(wa) dec(w); if(xa) dec(x); return r;       \
+    }                                               \
+  }
+
 B eq_c2(B t, B w, B x) {
-  if(isF64(w)&isF64(x)) return m_i32(w.f==x.f);
+  CMP_IMPL(==)
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
 B ne_c2(B t, B w, B x) {
-  if(isF64(w)&isF64(x)) return m_i32(w.f!=x.f);
+  CMP_IMPL(!=)
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
