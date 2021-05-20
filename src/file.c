@@ -5,11 +5,13 @@ typedef struct TmpFile { // to be turned into a proper I8Arr
 
 FILE* file_open(B path, char* desc, char* mode) { // consumes path; can error
   u64 plen = utf8lenB(path);
-  char p[plen+1];
+  TALLOC(char, p, plen+1);
   toUTF8(path, p);
   p[plen] = 0;
   FILE* f = fopen(p, mode);
+  TFREE(p);
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
+  dec(path);
   return f;
 }
 
@@ -76,9 +78,10 @@ void file_write(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
   
   u64 len = utf8lenB(x);
-  char val[len];
+  TALLOC(char, val, len);
   toUTF8(x, val);
   
   fwrite(val, 1, len, f);
+  TFREE(val);
   fclose(f);
 }

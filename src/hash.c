@@ -55,10 +55,11 @@ u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
     r = wyhash(f64any_ptr(x), xia*8, shHash, secret);
   } else {
     assert(xe==el_B);
-    u64 data[xia];
+    TALLOC(u64, data, xia);
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < xia; i++) data[i] = bqn_hash(xgetU(x, i), secret);
     r = wyhash(data, xia*8, shHash, secret);
+    TFREE(data);
   }
   dec(x);
   return r;

@@ -243,6 +243,7 @@ B flines_c1(B d, B x) { B f = c(Md1D,d)->f;
     if (p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
     else pos++;
   }
+  ptr_dec(tf);
   return harr_fv(r);
 }
 B import_c1(B d, B x) { B f = c(Md1D,d)->f;

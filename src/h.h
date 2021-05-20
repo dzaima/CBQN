@@ -87,10 +87,10 @@ enum Type {
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*25*/ t_comp, t_block, t_body, t_scope,
-  /*29*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap,
-  /*33*/ t_freed, t_harrPartial,
+  /*29*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
+  /*34*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
-  /*35*/ t_funPerf, t_md1Perf, t_md2Perf,
+  /*36*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
   t_COUNT
 };
@@ -114,7 +114,7 @@ char* format_type(u8 u) {
     case t_harr  :return"harr"  ; case t_i8arr  :return"i8arr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
     case t_hslice:return"hslice"; case t_i8slice:return"i8slice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
-    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap";
+    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap"; case t_temp:return"temporary";
     case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
     #ifdef RT_PERF
     case t_funPerf:return"perf fn"; case t_md1Perf:return"perf m1"; case t_md2Perf:return "perf m2";

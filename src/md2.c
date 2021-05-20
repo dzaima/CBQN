@@ -81,7 +81,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   i64 bound[2] = {0,0};                            \
   repeat_bounds(bound, g);                         \
   u64 min=(u64)-bound[0]; u64 max=(u64)bound[1];   \
-  B all[min+max+1];                                \
+  TALLOC(B, all, min+max+1);                       \
   B* q = all+min;                                  \
   q[0] = inc(x);                                   \
   if (min) {                                       \
@@ -96,7 +96,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   B r = repeat_replace(g, q);                      \
   dec(g);                                          \
   for (u64 i = 0; i < min+max+1; i++) dec(all[i]); \
-  END;                                             \
+  END; TFREE(all);                                 \
   return r;
 
 B repeat_c1(B d,      B x) { REPEAT_T(c1,{}              ); }

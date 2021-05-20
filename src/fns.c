@@ -234,7 +234,7 @@ B indexOf_c1(B t, B x) {
     i32 dst = 1 + max-(i64)min;
     if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
       i32* rp; B r = m_i32arrv(&rp, xia);
-      i32 tmp[dst];
+      TALLOC(i32, tmp, dst);
       for (usz i = 0; i < dst; i++) tmp[i] = I32_MIN;
       i32* tc = tmp-min;
       i32 ctr = 0;
@@ -243,7 +243,7 @@ B indexOf_c1(B t, B x) {
         if (tc[c]==I32_MIN) tc[c] = ctr++;
         rp[i] = tc[c];
       }
-      dec(x);
+      dec(x); TFREE(tmp);
       return r;
     }
   }

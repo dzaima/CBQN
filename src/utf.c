@@ -64,7 +64,7 @@ u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all 
   }
   return res;
 }
-void toUTF8(B x, char* p) { // doesn't consume; doesn't verify anything; p must have utf8lenB(x) bytes
+void toUTF8(B x, char* p) { // doesn't consume; doesn't verify anything; p must have utf8lenB(x) bytes (calculating which should verify that this call is ok)
   BS2B xgetU = TI(x).getU;
   usz ia = a(x)->ia;
   for (usz i = 0; i < ia; i++) {

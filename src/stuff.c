@@ -9,6 +9,12 @@
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
+typedef struct TAlloc {
+  struct Value;
+  u8 data[];
+} TAlloc;
+#define TALLOC(T,N,AM) TAlloc* N##_obj = mm_allocN(sizeof(TAlloc) + (AM)*sizeof(T) + 8, t_temp); T* N = (T*) N##_obj->data; // +8 so mm is happy
+#define TFREE(N) mm_free((Value*)N##_obj);
 
 void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }

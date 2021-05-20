@@ -651,8 +651,8 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < xia; i++) if (wp[i]>ria) ria = wp[i];
       if (ria>USZ_MAX-1) thrOOM();
       ria++;
-      i32 len[ria];
-      i32 pos[ria];
+      TALLOC(i32, len, ria);
+      TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) len[n]++; }
       
@@ -689,7 +689,7 @@ B group_c2(B t, B w, B x) {
         }
         for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
       }
-      dec(w); dec(x);
+      dec(w); dec(x); TFREE(len); TFREE(pos);
       return r;
     } else {
       BS2B wgetU = TI(w).getU;
@@ -701,8 +701,8 @@ B group_c2(B t, B w, B x) {
       }
       if (ria>USZ_MAX-1) thrOOM();
       ria++;
-      i32 len[ria];
-      i32 pos[ria];
+      TALLOC(i32, len, ria);
+      TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) {
         i64 n = o2i64u(wgetU(w, i));
@@ -732,7 +732,7 @@ B group_c2(B t, B w, B x) {
         if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
       }
       for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
-      dec(w); dec(x);
+      dec(w); dec(x); TFREE(len); TFREE(pos);
       return r;
     }
   }
@@ -872,11 +872,13 @@ B select_ucw(B t, B o, B w, B x) {
   B rep = c1(o, arg);
   if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != wia) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as a⊏𝕩 (expected ⟨%s⟩, got %H)", wia, rep);
   #if CHECK_VALID
-    bool set[xia];
+    TALLOC(bool, set, xia);
     for (i64 i = 0; i < xia; i++) set[i] = false;
     #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
+    #define FREE_CHECK TFREE(set)
   #else
     #define EQ(F)
+    #define FREE_CHECK
   #endif
   if (TI(w).elType==el_i32) {
     i32* wp = i32any_ptr(w);
@@ -890,7 +892,7 @@ B select_ucw(B t, B o, B w, B x) {
           EQ(cr!=xp[cw]);
           xp[cw] = cr;
         }
-        dec(w); dec(rep);
+        dec(w); dec(rep); FREE_CHECK;
         return x;
       } else if (v(x)->type==t_harr) {
         B* xp = harr_ptr(x);
@@ -902,7 +904,7 @@ B select_ucw(B t, B o, B w, B x) {
           dec(xp[cw]);
           xp[cw] = cr;
         }
-        dec(w); dec(rep);
+        dec(w); dec(rep); FREE_CHECK;
         return x;
       }
     }
@@ -916,7 +918,7 @@ B select_ucw(B t, B o, B w, B x) {
       mut_rm(r, cw);
       mut_setS(r, cw, cr);
     }
-    dec(w); dec(rep);
+    dec(w); dec(rep); FREE_CHECK;
     return mut_fcd(r, x);
   }
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(x).elType, TI(rep).elType));
@@ -929,9 +931,10 @@ B select_ucw(B t, B o, B w, B x) {
     mut_rm(r, cw);
     mut_set(r, cw, cr);
   }
-  dec(w); dec(rep);
+  dec(w); dec(rep); FREE_CHECK;
   return mut_fcd(r, x);
   #undef EQ
+  #undef FREE_CHECK
 }
 
 

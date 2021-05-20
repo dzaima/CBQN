@@ -30,10 +30,11 @@ B gradeUp_c1(B t, B x) {
     // }
     
     i32* rp; B r = m_i32arrv(&rp, ia);
-    i32 tmp[ia];
+    TALLOC(i32, tmp, ia);
     for (usz i = 0; i < ia; i++) tmp[i] = rp[i] = i;
     gradeUp_rec(xp, tmp, rp, 0, ia);
     dec(x);
+    TFREE(tmp);
     return r;
   }
   return c1(rt_gradeUp, x);
