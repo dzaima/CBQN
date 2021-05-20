@@ -1,4 +1,4 @@
-#!/usr/bin/env ./BQN
+#!./BQN
 args←•args
 "Usage: ./getRuntime.bqn path/to/mlochbaum/BQN"!1≤≠args
 path←⊑•args
