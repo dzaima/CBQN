@@ -39,6 +39,7 @@
 #define NOINLINE __attribute__ ((noinline))
 #define NORETURN __attribute__ ((noreturn))
 #define AUTO __auto_type
+#define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
 
 typedef u32 usz;
@@ -86,10 +87,10 @@ enum Type {
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*25*/ t_comp, t_block, t_body, t_scope,
-  /*29*/ t_ns, t_nsDesc, t_fldAlias,
-  /*31*/ t_freed, t_harrPartial,
+  /*29*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap,
+  /*33*/ t_freed, t_harrPartial,
   #ifdef RT_PERF
-  /*33*/ t_funPerf, t_md1Perf, t_md2Perf,
+  /*35*/ t_funPerf, t_md1Perf, t_md2Perf,
   #endif
   t_COUNT
 };
@@ -289,7 +290,7 @@ u64 envPrevHeight; // envStart+prevEnvHeight will give the original envCurr
 #define sprnk(X,R) (X->extra=(R))
 #define  rnk(X  )  prnk(v(X))
 #define srnk(X,R) sprnk(v(X),R)
-#define VT(X,T) assert(isVal(X) && v(X)->type==(T))
+#define VTY(X,T) assert(isVal(X) && v(X)->type==(T))
 
 void print_vmStack();
 #ifdef DEBUG

@@ -174,29 +174,64 @@ B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = a(x)->ia;
   if (xia==0) { dec(x); return inc(bi_emptyIVec); }
-  if (rnk(x)==1 && TI(x).elType==el_i32) {
-    i32* xp = i32any_ptr(x);
-    i32 min=I32_MAX, max=I32_MIN;
+  // if (rnk(x)==1 && TI(x).elType==el_i32) {
+  //   i32* xp = i32any_ptr(x);
+  //   i32 min=I32_MAX, max=I32_MIN;
+  //   for (usz i = 0; i < xia; i++) {
+  //     i32 c = xp[i];
+  //     if (c<min) min = c;
+  //     if (c>max) max = c;
+  //   }
+  //   i32 dst = 1 + max-(i64)min;
+  //   if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
+  //     i32* rp; B r = m_i32arrv(&rp, xia);
+  //     i32 tmp[dst];
+  //     for (usz i = 0; i < dst; i++) tmp[i] = I32_MIN;
+  //     i32* tc = tmp-min;
+  //     i32 ctr = 0;
+  //     for (usz i = 0; i < xia; i++) {
+  //       i32 c = xp[i];
+  //       if (tc[c]==I32_MIN) tc[c] = ctr++;
+  //       rp[i] = tc[c];
+  //     }
+  //     dec(x);
+  //     return r;
+  //   }
+  // }
+  // if (rnk(x)==1) { // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
+  //   // u64 s = nsTime();
+  //   i32* rp; B r = m_i32arrv(&rp, xia);
+  //   u64 size = xia*2;
+  //   wyhashmap_t idx[size];
+  //   i32 val[size];
+  //   for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
+  //   BS2B xget = TI(x).get;
+  //   i32 ctr = 0;
+  //   for (usz i = 0; i < xia; i++) {
+  //     u64 hash = bqn_hash(xget(x,i), wy_secret);
+  //     u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
+  //     if (val[p]==-1) val[p] = ctr++;
+  //     rp[i] = val[p];
+  //   }
+  //   dec(x);
+  //   // u64 e = nsTime(); q1+= e-s;
+  //   return r;
+  // }
+  if (rnk(x)==1) {
+    // u64 s = nsTime();
+    i32* rp; B r = m_i32arrv(&rp, xia);
+    H_b2i* map = m_b2i(64);
+    BS2B xgetU = TI(x).getU;
+    i32 ctr = 0;
     for (usz i = 0; i < xia; i++) {
-      i32 c = xp[i];
-      if (c<min) min = c;
-      if (c>max) max = c;
+      bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
+      if (had) rp[i] = map->ent[p].val;
+      else     rp[i] = map->ent[p].val = ctr++;
     }
-    i32 dst = 1 + max-(i64)min;
-    if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
-      i32* rp; B r = m_i32arrv(&rp, xia);
-      i32 tmp[dst];
-      for (usz i = 0; i < dst; i++) tmp[i] = I32_MIN;
-      i32* tc = tmp-min;
-      i32 ctr = 0;
-      for (usz i = 0; i < xia; i++) {
-        i32 c = xp[i];
-        if (tc[c]==I32_MIN) tc[c] = ctr++;
-        rp[i] = tc[c];
-      }
-      dec(x);
-      return r;
-    }
+    free_b2i(map);
+    dec(x);
+    // u64 e = nsTime(); q1+= e-s;
+    return r;
   }
   return c1(rt_indexOf, x);
 }

@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
         gc_add(srcB);
         for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB), bi_N, bi_N)); gc_maybeGC(); }
         rtPerf_print();
+        CTR_FOR(CTR_PRINT)
         exit(0);
       #endif
       bqn_setComp(bqn_exec(srcB, bi_N, bi_N));

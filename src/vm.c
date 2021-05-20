@@ -211,7 +211,7 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
     }
     sc->vars[(u32)s.u] = inc(x);
   } else {
-    VT(s, t_harr);
+    VTY(s, t_harr);
     B* sp = harr_ptr(s);
     usz ia = a(s)->ia;
     if (isAtm(x) || !eqShape(s, x)) {
@@ -244,7 +244,7 @@ B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_opt
     sc->vars[(u32)s.u] = bi_optOut;
     return r;
   } else {
-    VT(s, t_harr);
+    VTY(s, t_harr);
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);

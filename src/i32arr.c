@@ -38,7 +38,7 @@ B m_i32slice(B p, i32* ptr) {
 }
 
 
-i32* i32arr_ptr(B x) { VT(x, t_i32arr); return c(I32Arr,x)->a; }
+i32* i32arr_ptr(B x) { VTY(x, t_i32arr); return c(I32Arr,x)->a; }
 i32* i32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_i32arr) return c(I32Arr,x)->a; assert(t==t_i32slice); return c(I32Slice,x)->a; }
 
 NOINLINE B m_cai32(usz ia, i32* a) {
@@ -67,8 +67,8 @@ I32Arr* toI32Arr(B x) { // assumes it's possible
 B i32arr_slice  (B x, usz s) {return m_i32slice(x                 , c(I32Arr  ,x)->a+s); }
 B i32slice_slice(B x, usz s) { B r = m_i32slice(inc(c(Slice,x)->p), c(I32Slice,x)->a+s); dec(x); return r; }
 
-B i32arr_get  (B x, usz n) { VT(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
-B i32slice_get(B x, usz n) { VT(x,t_i32slice); return m_i32(c(I32Slice,x)->a[n]); }
+B i32arr_get  (B x, usz n) { VTY(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
+B i32slice_get(B x, usz n) { VTY(x,t_i32slice); return m_i32(c(I32Slice,x)->a[n]); }
 void i32arr_free(Value* x) { decSh(x); }
 bool i32arr_canStore(B x) { return q_i32(x); }
 

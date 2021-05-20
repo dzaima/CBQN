@@ -38,7 +38,7 @@ B m_c32slice(B p, u32* ptr) {
 }
 
 
-u32* c32arr_ptr(B x) { VT(x, t_c32arr); return c(C32Arr,x)->a; }
+u32* c32arr_ptr(B x) { VTY(x, t_c32arr); return c(C32Arr,x)->a; }
 u32* c32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_c32arr) return c(C32Arr,x)->a; assert(t==t_c32slice); return c(C32Slice,x)->a; }
 
 B m_str8(usz sz, char* s) {
@@ -84,8 +84,8 @@ bool eqStr(B w, u32* x) {
 B c32arr_slice  (B x, usz s) {return m_c32slice(x                 , c(C32Arr  ,x)->a+s); }
 B c32slice_slice(B x, usz s) { B r = m_c32slice(inc(c(Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
 
-B c32arr_get  (B x, usz n) { VT(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
-B c32slice_get(B x, usz n) { VT(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
+B c32arr_get  (B x, usz n) { VTY(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
+B c32slice_get(B x, usz n) { VTY(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
 void c32arr_free(Value* x) { decSh(x); }
 bool c32arr_canStore(B x) { return isC32(x); }
 

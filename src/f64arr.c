@@ -38,7 +38,7 @@ B m_f64slice(B p, f64* ptr) {
 }
 
 
-f64* f64arr_ptr(B x) { VT(x, t_f64arr); return c(F64Arr,x)->a; }
+f64* f64arr_ptr(B x) { VTY(x, t_f64arr); return c(F64Arr,x)->a; }
 f64* f64any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_f64arr) return c(F64Arr,x)->a; assert(t==t_f64slice); return c(F64Slice,x)->a; }
 
 NOINLINE B m_caf64(usz sz, f64* a) {
@@ -61,8 +61,8 @@ F64Arr* toF64Arr(B x) {
 B f64arr_slice  (B x, usz s) {return m_f64slice(x                 , c(F64Arr  ,x)->a+s); }
 B f64slice_slice(B x, usz s) { B r = m_f64slice(inc(c(Slice,x)->p), c(F64Slice,x)->a+s); dec(x); return r; }
 
-B f64arr_get  (B x, usz n) { VT(x,t_f64arr  ); return m_f64(c(F64Arr  ,x)->a[n]); }
-B f64slice_get(B x, usz n) { VT(x,t_f64slice); return m_f64(c(F64Slice,x)->a[n]); }
+B f64arr_get  (B x, usz n) { VTY(x,t_f64arr  ); return m_f64(c(F64Arr  ,x)->a[n]); }
+B f64slice_get(B x, usz n) { VTY(x,t_f64slice); return m_f64(c(F64Slice,x)->a[n]); }
 void f64arr_free(Value* x) { decSh(x); }
 bool f64arr_canStore(B x) { return q_f64(x); }
 
