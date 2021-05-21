@@ -739,11 +739,14 @@ NOINLINE void vm_pst(Env* s, Env* e) {
       printf("(%ld entries omitted)\n", l-20);
       i = 10;
     }
-    i32 bcPos = c->bcV;
     Comp* comp = c->sc->body->comp;
+    i32 bcPos = c>=envStart && c<envCurr? c->bcL - i32arr_ptr(comp->bc) : c->bcV;
     vm_printPos(comp, bcPos, i);
     i--;
   }
+}
+NOINLINE void vm_pstLive(Env* s, Env* e) {
+  vm_pst(envStart, envCurr);
 }
 
 static void unwindEnv(Env* envNew) {

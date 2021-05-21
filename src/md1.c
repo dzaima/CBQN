@@ -107,6 +107,31 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   ur xr = rnk(x);
   usz ia = a(x)->ia;
   if (ia==0) return x;
+  if (xr==1 && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+    u8 rtid = v(f)->flags-1;
+    i32* xp = i32any_ptr(x);
+    if (rtid==0) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i64 c = 0;
+      for (usz i = 0; i < ia; i++) {
+        rp[i] = c+= xp[i];
+        if (c>I32_MAX) goto base;
+      }
+      dec(x);
+      return r;
+    }
+    if (rtid==7) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i32 c = 0;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]>c) c = xp[i];
+        rp[i] = c;
+      }
+      dec(x);
+      return r;
+    }
+  }
+  base:;
   
   bool reuse = v(x)->type==t_harr && reusable(x);
   usz i = 0;
@@ -238,7 +263,7 @@ B flines_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz pos = 0;
   while (i < lineCount) {
     usz spos = pos;
-    while(p[pos]!='\n' && p[pos]!='\r') pos++;
+    while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
     r.a[i++] = fromUTF8((char*)p+spos, pos-spos);
     if (p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
     else pos++;
