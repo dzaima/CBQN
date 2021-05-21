@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-clang -std=gnu11 -O3 -g -Wall -Wno-microsoft-anon-tag -fms-extensions $@ -fno-omit-frame-pointer -o BQN src/main.c -lm
+clang -std=gnu11 -O3 -g -Wall -Wno-microsoft-anon-tag -fms-extensions -fno-omit-frame-pointer $@ -o BQN src/main.c -lm
+# gcc -std=gnu11 -O3 -g -Wall -Wno-parentheses -Wno-misleading-indentation -fms-extensions -fno-omit-frame-pointer $@ -o BQN src/main.c -lm

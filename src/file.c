@@ -3,7 +3,7 @@ typedef struct TmpFile { // to be turned into a proper I8Arr
   i8 a[];
 } TmpFile;
 
-FILE* file_open(B path, char* desc, char* mode) { // consumes path; can error
+FILE* file_open(B path, char* desc, char* mode) { // doesn't consume; can error
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
   toUTF8(path, p);
@@ -11,7 +11,6 @@ FILE* file_open(B path, char* desc, char* mode) { // consumes path; can error
   FILE* f = fopen(p, mode);
   TFREE(p);
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
-  dec(path);
   return f;
 }
 
@@ -22,7 +21,8 @@ TmpFile* file_bytes(B path) { // consumes; may throw
   fseek(f, 0, SEEK_SET);
   TmpFile* src = mm_allocN(fsizeof(TmpFile,a,u8,len), t_i8arr);
   arr_shVec(tag(src,ARR_TAG), len);
-  fread((char*)src->a, 1, len, f);
+  if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
+  dec(path);
   fclose(f);
   return src;
 }
@@ -81,7 +81,8 @@ void file_write(B path, B x) { // consumes path
   TALLOC(char, val, len);
   toUTF8(x, val);
   
-  fwrite(val, 1, len, f);
+  if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
   TFREE(val);
+  dec(path);
   fclose(f);
 }

@@ -20,7 +20,7 @@ void mut_to(Mut* m, u8 n) {
       case el_i32: m->val = a(m_i32arrp(&m->ai32, m->ia)); return;
       case el_f64: m->val = a(m_f64arrp(&m->af64, m->ia)); return;
       case el_c32: m->val = a(m_c32arrp(&m->ac32, m->ia)); return;
-      case el_B  : HArr_p t =  m_harrUp(          m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
+      case el_B  :; HArr_p t = m_harrUp(          m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
     }
   } else {
     sprnk(m->val, 1);

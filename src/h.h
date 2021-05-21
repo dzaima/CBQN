@@ -31,7 +31,7 @@
 #define f64 double
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define I32_MIN ((i32)(-(1LL<<31)))
-#define I64_MIN ((i64)(-(1LL<<63)))
+#define I64_MIN ((i64)(1ULL<<63))
 #define CHR_MAX 1114111
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
