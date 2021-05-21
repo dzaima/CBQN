@@ -130,6 +130,13 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return r;
     }
+    if (rtid==14) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i32 c = 0;
+      for (usz i = 0; i < ia; i++) rp[i] = c = c!=xp[i];
+      dec(x);
+      return r;
+    }
   }
   base:;
   
