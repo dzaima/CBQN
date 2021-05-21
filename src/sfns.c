@@ -307,27 +307,37 @@ B select_c2(B t, B w, B x) {
   return c2(rt_select, w, x);
 }
 
+static NOINLINE B slash_c1R(B x, u64 s) {
+  usz xia = a(x)->ia;
+  BS2B xgetU = TI(x).getU;
+  f64* rp; B r = m_f64arrv(&rp, s); usz ri = 0;
+  for (usz i = 0; i < xia; i++) {
+    usz c = o2s(xgetU(x, i));
+    for (usz j = 0; j < c; j++) rp[ri++] = i;
+  }
+  dec(x);
+  return r;
+}
 B rt_slash;
 B slash_c1(B t, B x) {
-  if (isAtm(x) || rnk(x)!=1) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
+  if (RARE(isAtm(x)) || RARE(rnk(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   i64 s = isum(x);
   if(s<0) thrM("/: Argument must consist of natural numbers");
   usz xia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
-  usz ri = 0;
-  if (xia<I32_MAX) {
-    i32* rp; B r = m_i32arrv(&rp, s);
+  if (RARE(xia>=I32_MAX)) return slash_c1R(x, s);
+  i32* rp; B r = m_i32arrv(&rp, s); usz ri = 0;
+  if (TI(x).elType==el_i32) {
+    i32* xp = i32any_ptr(x);
+    for (i32 i = 0; i < xia; i++) {
+      if (RARE(xp[i])<0) thrF("/: Argument must consist of natural numbers (contained %i)", xp[i]);
+      for (usz j = 0; j < xp[i]; j++) rp[ri++] = i;
+    }
+  } else {
+    BS2B xgetU = TI(x).getU;
     for (i32 i = 0; i < xia; i++) {
       usz c = o2s(xgetU(x, i));
       for (usz j = 0; j < c; j++) rp[ri++] = i;
     }
-    dec(x);
-    return r;
-  }
-  f64* rp; B r = m_f64arrv(&rp, s);
-  for (usz i = 0; i < xia; i++) {
-    usz c = o2s(xgetU(x, i));
-    for (usz j = 0; j < c; j++) rp[ri++] = i;
   }
   dec(x);
   return r;

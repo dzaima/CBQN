@@ -261,6 +261,7 @@ void printRaw(B x) {
 }
 
 B def_decompose(B x) { return m_v2(m_i32(isCallable(x)? 0 : -1),x); }
+static NOINLINE bool equalR(B w, B x) { return equal(w, x); }
 bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if(isF64(w)&isF64(x)) return w.f==x.f;
   if (w.u==x.u) return true;
@@ -273,7 +274,7 @@ bool atomEqual(B w, B x) { // doesn't consume (not that that matters really curr
   if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
   usz wia = a(wd)->ia;
   if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
-  for (i32 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
+  for (i32 i = 0; i<wia; i++) if(!equalR(wdp[i], xdp[i]))
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
