@@ -1,4 +1,4 @@
-#define GRADE_CAT(N) CAT(GRADE_N,N)
+#define GRADE_CAT(N) CAT(GRADE_UD(gradeUp,gradeDown),N)
 
 #define SORT_CMP(W, X) GRADE_NEG compare((W).k, (X).k)
 #define SORT_NAME GRADE_CAT(BP)
@@ -30,15 +30,15 @@ B GRADE_CAT(c1)(B t, B x) {
     if (range/2 < ia) {
       TALLOC(usz, tmp, range+1);
       for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
-#if GRADE_UP
-      for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
-      for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
-      for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
-#else
-      for (usz i = 0; i < ia; i++) (tmp-min)[xp[i]]++;
-      for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
-      for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
-#endif
+      GRADE_UD(
+        for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
+        for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
+        for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
+      ,
+        for (usz i = 0; i < ia; i++) (tmp-min)[xp[i]]++;
+        for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
+        for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
+      )
       TFREE(tmp); dec(x);
       return r;
     }
@@ -87,7 +87,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (we==el_i32 & xe==el_i32) {
     i32* wi = i32any_ptr(w);
     i32* xi = i32any_ptr(x);
-    if (CHECK_VALID) for (usz i = 0; i < (i64)wia-1; i++) if (GRADE_NEG(wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (CHECK_VALID) for (usz i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
     
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
@@ -118,8 +118,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   dec(w);dec(x);
   return r;
 }
-#undef GRADE_N
+#undef GRADE_CAT
 #undef GRADE_CHR
 #undef GRADE_NEG
-#undef GRADE_UP
 #undef GRADE_UD

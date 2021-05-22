@@ -6,17 +6,13 @@
 typedef struct BI32p { B k; i32 v; } BI32p;
 typedef struct I32I32p { i32 k; i32 v; } I32I32p;
 
-#define GRADE_N gradeUp
-#define GRADE_CHR "⍋"
-#define GRADE_NEG
-#define GRADE_UP 1
 #define GRADE_UD(U,D) U
+#define GRADE_NEG
+#define GRADE_CHR "⍋"
 #include "grade.c"
-#define GRADE_N gradeDown
-#define GRADE_CHR "⍒"
-#define GRADE_NEG -
-#define GRADE_UP 0
 #define GRADE_UD(U,D) D
+#define GRADE_NEG -
+#define GRADE_CHR "⍒"
 #include "grade.c"
 
 #define SORT_CMP(W, X) compare(W, X)
