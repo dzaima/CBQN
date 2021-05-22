@@ -162,6 +162,40 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   B wf = getFillQ(w);
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
+  if (xr==1 && q_i32(w) && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+    u8 rtid = v(f)->flags-1;
+    i32* xp = i32any_ptr(x);
+    i32 wv = o2iu(w);
+    if (rtid==0) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i64 c = wv;
+      for (usz i = 0; i < ia; i++) {
+        rp[i] = c+= xp[i];
+        if (c>I32_MAX) goto base;
+      }
+      dec(x);
+      return r;
+    }
+    if (rtid==7) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i32 c = wv;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]>c) c = xp[i];
+        rp[i] = c;
+      }
+      dec(x);
+      return r;
+    }
+    if (rtid==14) {
+      i32* rp; B r = m_i32arrv(&rp, ia);
+      i32 c = wv;
+      for (usz i = 0; i < ia; i++) rp[i] = c = c!=xp[i];
+      dec(x);
+      return r;
+    }
+  }
+  base:;
+  
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
   BS2B xget = reuse? TI(x).getU : TI(x).get;
   BBB2B fc2 = c2fn(f);
@@ -194,6 +228,22 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
     }
     thrM("´: No identity found");
   }
+  if (TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+    u8 rtid = v(f)->flags-1;
+    i32* xp = i32any_ptr(x);
+    if (rtid==11) {
+      bool any = false;
+      for (usz i = 0; i < ia; i++) {
+        i32 c = xp[i];
+        if (c!=0 && c!=1) goto base;
+        any|= c;
+      }
+      dec(x);
+      return m_i32(any);
+    }
+  }
+  base:;
+  
   BS2B xget = TI(x).get;
   BBB2B fc2 = c2fn(f);
   B c;

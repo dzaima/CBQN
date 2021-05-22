@@ -13,27 +13,39 @@ typedef struct TAlloc {
   struct Value;
   u8 data[];
 } TAlloc;
-#define TALLOC(T,N,AM) TAlloc* N##_obj = mm_allocN(sizeof(TAlloc) + (AM)*sizeof(T) + 8, t_temp); T* N = (T*) N##_obj->data; // +8 so mm is happy
-#define TFREE(N) mm_free((Value*)N##_obj);
+#define TOFF offsetof(TAlloc, data)
+#define TALLOC(T,N,AM) T* N = (T*) ((TAlloc*)mm_allocN(TOFF + (AM)*sizeof(T) + 8, t_temp))->data; // +8 so mm is happy
+#define TOBJ(N) (void*)((u8*)(N) - TOFF)
+#define TFREE(N) mm_free((Value*)TOBJ(N));
+#define TREALLOC(N, AM) talloc_realloc(TOBJ(N), AM)
+#define TSIZE(N) (mm_size(TOBJ(N))-TOFF)
+static inline void* talloc_realloc(TAlloc* t, u64 am) {
+  u64 stored = mm_size((Value*)t)-TOFF;
+  if (stored > am) return t->data;
+  TALLOC(u8,r,am);
+  memcpy(r, t->data, stored);
+  mm_free((Value*)t);
+  return r;
+}
 
-void empty_free(Value* x) { err("FREEING EMPTY\n"); }
-void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
-void def_free(Value* x) { }
-void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
-void noop_visit(Value* x) { }
-void freed_visit(Value* x) {
+static void freed_visit(Value* x) {
   #ifndef CATCH_ERRORS
   err("visiting t_freed\n");
   #endif
 }
-void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
-B    def_identity(B f) { return bi_N; }
-B    def_get (B x, usz n) { return inc(x); }
-B    def_getU(B x, usz n) { return x; }
-B    def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
-B    def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
-B    def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
-bool def_canStore(B x) { return false; }
+static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
+static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
+static void noop_visit(Value* x) { }
+static void def_free(Value* x) { }
+static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
+static void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+static bool def_canStore(B x) { return false; }
+static B def_identity(B f) { return bi_N; }
+static B def_get (B x, usz n) { return inc(x); }
+static B def_getU(B x, usz n) { return x; }
+static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
+static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
+static B def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 
 B m_c32arrv(u32** p, usz ia);
 B m_str8l(char* s);

@@ -136,6 +136,7 @@ B internal_c2(B t, B w, B x) {
   else if(id==2) { r = isVal(x)? m_i32(v(x)->refc) : m_str32(U"(not heap-allocated)"); }
   else if(id==3) { printf("%p\n", (void*)x.u); r = inc(x); }
   else if(id==4) { r = m_f64(isPureFn(x)); }
+  else if(id==5) { r = bqn_squeeze(inc(x)); }
   else { dec(x); thrF("•Internal: 𝕨≡%i is invalid", id); }
   dec(x);
   return r;

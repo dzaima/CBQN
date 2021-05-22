@@ -119,7 +119,6 @@ static inline void load_init() {
   rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
   rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
   rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
-  rt_gradeUp = rtObjGet(rtObjRaw, 33); gc_add(rt_gradeUp);
   rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
   rt_pick    = rtObjGet(rtObjRaw, 36); gc_add(rt_pick);
   rt_take    = rtObjGet(rtObjRaw, 25); gc_add(rt_take);

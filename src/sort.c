@@ -1,43 +1,54 @@
-#include "h.h"
+#include "sort.h"
 
-B rt_gradeUp;
-
-
-static void gradeUp_rec(i32* b, i32* I, i32* O, usz s, usz e) {
-  if (e-s<=1) return;
-  usz m = (s+(u64)e)/2;
-  gradeUp_rec(b, O, I, s, m);
-  gradeUp_rec(b, O, I, m, e);
-  
-  usz i1 = s;
-  usz i2 = m;
-  for (usz i = s; i < e; i++) {
-    if (i1<m && (i2>=e || b[I[i1]]<=b[I[i2]])) { O[i] = I[i1]; i1++; }
-    else                                       { O[i] = I[i2]; i2++; }
-  }
-}
 B gradeUp_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⍋: Argument cannot be a unit");
   if (rnk(x)>1) x = toCells(x);
+  usz ia = a(x)->ia;
+  if (ia>I32_MAX) thrM("⍋: Argument too large");
+  if (ia==0) return inc(bi_emptyIVec);
+  
+  i32* rp; B r = m_i32arrv(&rp, ia);
   if (TI(x).elType==el_i32) {
     i32* xp = i32any_ptr(x);
-    usz ia = a(x)->ia;
-    // i32 min=I32_MAX, max=I32_MIN;
-    // for (usz i = 0; i < ia; i++) {
-    //   i32 c = xp[i];
-    //   if (c<min) min=c;
-    //   if (c>max) max=c;
-    // }
+    i32 min=I32_MAX, max=I32_MIN;
+    for (usz i = 0; i < ia; i++) {
+      i32 c = xp[i];
+      if (c<min) min=c;
+      if (c>max) max=c;
+    }
+    i64 range = max - (i64)min + 1;
+    if (range/2 < ia) {
+      TALLOC(usz, tmp, range+1);
+      for (i64 i = 0; i < range; i++) tmp[i] = 0;
+      for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
+      for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
+      for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
+      
+      TFREE(tmp); dec(x);
+      return r;
+    }
     
-    i32* rp; B r = m_i32arrv(&rp, ia);
-    TALLOC(i32, tmp, ia);
-    for (usz i = 0; i < ia; i++) tmp[i] = rp[i] = i;
-    gradeUp_rec(xp, tmp, rp, 0, ia);
-    dec(x);
-    TFREE(tmp);
+    TALLOC(I32I32p, tmp, ia);
+    for (usz i = 0; i < ia; i++) {
+      tmp[i].v = i;
+      tmp[i].k = xp[i];
+    }
+    ip_tim_sort(tmp, ia);
+    for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
+    TFREE(tmp); dec(x);
     return r;
   }
-  return c1(rt_gradeUp, x);
+  
+  TALLOC(BI32p, tmp, ia);
+  BS2B xgetU = TI(x).getU;
+  for (usz i = 0; i < ia; i++) {
+    tmp[i].v = i;
+    tmp[i].k = xgetU(x,i);
+  }
+  bp_tim_sort(tmp, ia);
+  for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
+  TFREE(tmp); dec(x);
+  return r;
 }
 B gradeUp_c2(B t, B w, B x) {
   if (isAtm(w) || rnk(w)==0) thrM("⍋: 𝕨 must have rank≥1");
@@ -104,7 +115,7 @@ B and_c1(B t, B x) {
     i32* xp = i32any_ptr(x);
     i32* rp; B r = m_i32arrv(&rp, xia);
     memcpy(rp, xp, xia*4);
-    qsort(rp, xia, 4, sort_icmp);
+    i_tim_sort(rp, xia);
     dec(x);
     return r;
   }
@@ -112,7 +123,7 @@ B and_c1(B t, B x) {
   HArr_p r = m_harrUv(xia);
   BS2B xget = TI(x).get;
   for (usz i = 0; i < xia; i++) r.a[i] = xget(x,i);
-  qsort(r.a, xia, sizeof(B), sort_bcmp);
+  b_tim_sort(r.a, xia);
   dec(x);
   return withFill(r.b,xf);
 }

@@ -154,6 +154,7 @@ Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // con
       if (*scan==RETN) { if(ssz!=1)thrM("Wrong stack size before RETN"); break; }
       if (*scan==RETD) { if(ssz!=1&ssz!=0)thrM("Wrong stack size before RETN"); break; }
       ssz+= stackDiff(scan);
+      if (ssz < 0) thrM("Invalid bytecode: stack size goes negative");
       if (ssz>mssz) mssz = ssz;
       if (*scan==LOCO | *scan==LOCM | *scan==LOCU) {
         if (scan[1]>mpsc) mpsc = scan[1];
