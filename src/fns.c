@@ -342,6 +342,26 @@ B find_c2(B t, B w, B x) {
   return c2(rt_find, w, x);
 }
 
+B rt_count;
+B count_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)==0) thrM("⊒: Argument cannot have rank 0");
+  if (rnk(x)>1) x = toCells(x);
+  usz xia = a(x)->ia;
+  i32* rp; B r = m_i32arrv(&rp, xia);
+  H_b2i* map = m_b2i(64);
+  BS2B xgetU = TI(x).getU;
+  for (usz i = 0; i < xia; i++) {
+    bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
+    rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
+  }
+  dec(x); free_b2i(map);
+  return r;
+}
+B count_c2(B t, B w, B x) {
+  return c2(rt_count, w, x);
+}
+
+
 
 #define BI_A(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
 #define BI_D(N) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }
@@ -351,7 +371,7 @@ B find_c2(B t, B w, B x) {
 #define BI_FNS1(F) F(BI_A,BI_M,BI_D)
 
 
-#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf) A(find)
+#define F(A,M,D) A(ud) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf) A(find) A(count)
 BI_FNS0(F);
 static inline void fns_init() { BI_FNS1(F)
   ti[t_funBI].print = print_funBI;
