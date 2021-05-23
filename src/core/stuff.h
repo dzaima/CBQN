@@ -136,7 +136,7 @@ B bqn_squeeze(B x); // consumes
 static void noop_visit(Value* x) { }
 static B def_getU(B x, usz n) { return x; }
 
-B rt_under, bi_before;
+extern B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
   B fn = m2_d(inc(rt_under), inc(f), inc(g));
   B r = c1(fn, x);

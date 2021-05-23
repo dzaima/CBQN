@@ -71,7 +71,7 @@ B ud_c1(B t, B x) {
   return r;
 }
 
-B rt_ud;
+extern B rt_ud;
 B ud_c2(B t, B w, B x) {
   return c2(rt_ud, w, x);
 }
@@ -137,7 +137,7 @@ B fne_c2(B t, B w, B x) {
 }
 
 
-B rt_indexOf;
+extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = a(x)->ia;
@@ -220,7 +220,7 @@ B indexOf_c2(B t, B w, B x) {
   return r;
 }
 
-B rt_memberOf;
+extern B rt_memberOf;
 B memberOf_c1(B t, B x) {
   return c1(rt_memberOf, x);
 }
@@ -240,7 +240,7 @@ B memberOf_c2(B t, B w, B x) {
   return r;
 }
 
-B rt_find;
+extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz xia = a(x)->ia;
@@ -261,7 +261,7 @@ B find_c2(B t, B w, B x) {
   return c2(rt_find, w, x);
 }
 
-B rt_count;
+extern B rt_count;
 B count_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⊒: Argument cannot have rank 0");
   if (rnk(x)>1) x = toCells(x);

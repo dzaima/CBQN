@@ -177,7 +177,7 @@ B ne_c2(B t, B w, B x) {
   return r;
 }
 
-B rt_merge;
+extern B rt_merge;
 B gt_c1(B t, B x) {
   if (isAtm(x)) return x;
   return bqn_merge(x);
@@ -198,7 +198,7 @@ B lt_c1(B t, B x) { return m_unit(x); }
 B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
 
-B rt_sortDsc;
+extern B rt_sortDsc;
 B or_c1(B t, B x) { return c1(rt_sortDsc, x); }
 B and_c1(B t, B x); // defined in sort.c
 

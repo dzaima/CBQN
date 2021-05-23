@@ -325,7 +325,7 @@ B fchars_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return x;
 }
 
-B rt_cell;
+extern B rt_cell;
 B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)==0) {
     B r = c1(f, x);
@@ -367,7 +367,6 @@ B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 static void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 
-B                 bi_tbl, bi_each, bi_fold, bi_scan, bi_const, bi_swap, bi_cell, bi_timed, bi_fchars, bi_fbytes, bi_flines, bi_import;
 void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(cell) ba(timed) ba(fchars) bm(fbytes) bm(flines) ba(import)
   ti[t_md1BI].print = print_md1BI;
 }

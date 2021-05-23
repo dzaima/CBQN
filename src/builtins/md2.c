@@ -44,7 +44,7 @@ B catch_c1 (B d,      B x) { return c1(c(Md2D,d)->f,   x); }
 B catch_c2 (B d, B w, B x) { return c2(c(Md2D,d)->f, w,x); }
 #endif
 
-B rt_undo;
+extern B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   if (isArr(g)) {
     BS2B xgetU = TI(g).getU;
@@ -127,7 +127,7 @@ B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
   return c2(TI(g).getU(g, fr), w, x);
 }
 
-B rt_under, bi_before;
+extern B rt_under, bi_before;
 B under_c1(B d, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
   if (!isVal(g)) { // ugh idk
     B fn = m2_d(inc(rt_under), inc(f), inc(g));
@@ -160,7 +160,6 @@ B before_uc1(B t, B o, B f, B g, B x) {
 #define bd(N) { B t=bi_##N=mm_alloc(sizeof(BMd2), t_md2BI, ftag(MD2_TAG)); BMd2*m=c(BMd2,t); m->c2 = N##_c2    ; m->c1 = c1_invalid; m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(t); }
 #define bm(N) { B t=bi_##N=mm_alloc(sizeof(BMd2), t_md2BI, ftag(MD2_TAG)); BMd2*m=c(BMd2,t); m->c2 = c2_invalid; m->c1 = N##_c1;     m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(t); }
 
-B                 bi_val, bi_repeat, bi_atop, bi_over, bi_before, bi_after, bi_cond, bi_fillBy, bi_under, bi_catch;
 void md2_init() { ba(val) ba(repeat) ba(atop) ba(over) ba(before) ba(after) ba(cond) ba(fillBy) ba(under) ba(catch)
   ti[t_md2BI].print = print_md2BI;
   ti[t_md2BI].m2_uc1 = md2BI_uc1;
