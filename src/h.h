@@ -26,6 +26,7 @@
 // #define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
+// #define RT_VERIFY    // compare native and runtime versions of primitives
 // #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
 
 
@@ -42,12 +43,19 @@
 #endif
 
 #define rtLen 63
+
 #ifdef CATCH_ERRORS
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
 #else
   #undef EACH_FILLS
   #define EACH_FILLS false
   #define PROPER_FILLS false
+#endif
+#if defined(RT_PERF) || defined(RT_VERIFY)
+  #define RT_WRAP
+  #if defined(RT_PERF) && defined(RT_VERIFY)
+    #error "can't have both RT_PERF and RT_VERIFY"
+  #endif
 #endif
 
 #define i8    int8_t
@@ -127,8 +135,8 @@ enum Type {
   /*25*/ t_comp, t_block, t_body, t_scope,
   /*29*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
   /*34*/ t_freed, t_harrPartial,
-  #ifdef RT_PERF
-  /*36*/ t_funPerf, t_md1Perf, t_md2Perf,
+  #ifdef RT_WRAP
+  /*36*/ t_funWrap, t_md1Wrap, t_md2Wrap,
   #endif
   t_COUNT
 };
@@ -257,6 +265,7 @@ void printRaw(B x);       // doesn't consume
 void print(B x);          // doesn't consume
 void arr_print(B x);      // doesn't consume
 bool equal(B w, B x);     // doesn't consume
+bool eequal(B w, B x);    // doesn't consume
 i32  compare(B w, B x);   // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
 bool atomEqual(B w, B x); // doesn't consume
 u64  depth(B x);          // doesn't consume

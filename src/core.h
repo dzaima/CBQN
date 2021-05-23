@@ -21,6 +21,10 @@
 #include "core/fillarr.h"
 #include "core/derv.h"
 
+#ifdef RT_VERIFY
+  extern B r1Objs[rtLen];
+#endif
+
 typedef struct BFn {
   struct Fun;
   B ident;

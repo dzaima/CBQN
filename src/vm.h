@@ -47,8 +47,9 @@ typedef struct Env {
   union { i32* bcL; i32 bcV; };
 } Env;
 
-NOINLINE Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src);
-NOINLINE void vm_pst(Env* s, Env* e);
+Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src);
+void vm_pst(Env* s, Env* e);
+void vm_pstLive();
 
 typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;
 typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;

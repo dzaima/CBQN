@@ -231,7 +231,6 @@ i32 compare(B w, B x) {
 #undef CMP
 
 
-static NOINLINE bool equalR(B w, B x) { return equal(w, x); }
 bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if(isF64(w)&isF64(x)) return w.f==x.f;
   if (w.u==x.u) return true;
@@ -244,7 +243,7 @@ bool atomEqual(B w, B x) { // doesn't consume (not that that matters really curr
   if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
   usz wia = a(wd)->ia;
   if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
-  for (i32 i = 0; i<wia; i++) if(!equalR(wdp[i], xdp[i]))
+  for (i32 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
@@ -260,6 +259,42 @@ bool equal(B w, B x) { // doesn't consume
   for (usz i = 0; i < ia; i++) if(!equal(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
+
+bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really currently)
+  if (w.u==x.u) return true;
+  if(isNum(w)|isNum(x)) return false;
+  if (!isVal(w) | !isVal(x)) return false;
+  if (v(w)->type!=v(x)->type) return false;
+  B2B dcf = TI(w).decompose;
+  if (dcf == def_decompose) return false;
+  B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
+  B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
+  if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
+  usz wia = a(wd)->ia;
+  if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
+  for (i32 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
+                      { dec(wd);dec(xd); return false; }
+                        dec(wd);dec(xd); return true;
+}
+bool eequal(B w, B x) { // doesn't consume
+  if (w.u==x.u) return true;
+  bool wa = isAtm(w);
+  bool xa = isAtm(x);
+  if (wa!=xa) return false;
+  if (wa) return atomEEqual(w, x);
+  // B wf = getFillQ(w);
+  // B xf = getFillQ(x);
+  // bool feq = eequal(wf, xf);
+  // dec(wf); dec(xf);
+  // if (!feq) return false;
+  if (!eqShape(w,x)) return false;
+  usz ia = a(x)->ia;
+  BS2B xgetU = TI(x).getU;
+  BS2B wgetU = TI(w).getU;
+  for (usz i = 0; i < ia; i++) if(!eequal(wgetU(w,i),xgetU(x,i))) return false;
+  return true;
+}
+
 u64 depth(B x) { // doesn't consume
   if (isAtm(x)) return 0;
   if (TI(x).arrD1) return 1;
@@ -289,8 +324,8 @@ char* format_type(u8 u) {
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
     case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap"; case t_temp:return"temporary";
     case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
-    #ifdef RT_PERF
-    case t_funPerf:return"perf fn"; case t_md1Perf:return"perf m1"; case t_md2Perf:return "perf m2";
+    #ifdef RT_WRAP
+    case t_funWrap:return"wrapped function"; case t_md1Wrap:return"wrapped 1-modifier"; case t_md2Wrap:return "wrapped 2-modifier";
     #endif
   }
 }

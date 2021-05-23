@@ -4,7 +4,7 @@
 
 // TODO these are hacks around not needing tiny headers
 Block* bqn_comp(B str, B path, B args);
-void rtPerf_print();
+void rtWrap_print();
 
 int main(int argc, char* argv[]) {
   cbqn_init();
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
       #ifdef COMP_COMP_TIME
         gc_add(srcB);
         for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB), bi_N, bi_N)); gc_maybeGC(); }
-        rtPerf_print();
+        rtWrap_print();
         CTR_FOR(CTR_PRINT)
         exit(0);
       #endif
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
   #ifdef HEAP_VERIFY
     heapVerify();
   #endif
-  rtPerf_print();
+  rtWrap_print();
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
   printAllocStats();

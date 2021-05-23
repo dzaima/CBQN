@@ -20,6 +20,6 @@
 #include "../builtins/md2.c"
 #include "../vm.c"
 #include "../ns.c"
-#include "../rtPerf.c"
+#include "../rtwrap.c"
 #include "../load.c"
 #include "../main.c"

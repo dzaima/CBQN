@@ -692,7 +692,7 @@ NOINLINE void vm_pst(Env* s, Env* e) {
     i--;
   }
 }
-NOINLINE void vm_pstLive(Env* s, Env* e) {
+NOINLINE void vm_pstLive() {
   vm_pst(envStart, envCurr);
 }
 

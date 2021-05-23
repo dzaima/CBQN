@@ -53,7 +53,7 @@ static u64 bqn_hashP(B x, const u64 secret[4]) { // bqn_hash but never zero
 #define EQUAL(A,B) equal(A,B)
 #define VALS
 #define VT i32
-#include "hashmap.h"
+#include "hashmapTemplate.h"
 
 #define N(X) X##_Sb
 #define HT u64
@@ -65,4 +65,4 @@ static u64 bqn_hashP(B x, const u64 secret[4]) { // bqn_hash but never zero
 #define HDEF 0
 #define KEYS
 #define EQUAL(A,B) equal(A,B)
-#include "hashmap.h"
+#include "hashmapTemplate.h"

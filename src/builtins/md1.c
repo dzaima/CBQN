@@ -99,14 +99,14 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
       i64 c = 0;
       for (usz i = 0; i < ia; i++) {
         rp[i] = c+= xp[i];
-        if (c>I32_MAX) goto base;
+        if (c>I32_MAX) { dec(r); goto base; }
       }
       dec(x);
       return r;
     }
     if (rtid==7) {
       i32* rp; B r = m_i32arrv(&rp, ia);
-      i32 c = 0;
+      i32 c = I32_MIN;
       for (usz i = 0; i < ia; i++) {
         if (xp[i]>c) c = xp[i];
         rp[i] = c;
@@ -155,7 +155,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
       i64 c = wv;
       for (usz i = 0; i < ia; i++) {
         rp[i] = c+= xp[i];
-        if (c>I32_MAX) goto base;
+        if (c>I32_MAX) { dec(r); goto base; }
       }
       dec(x);
       return r;

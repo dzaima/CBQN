@@ -14,7 +14,9 @@ FOR_PM2(F)
 #undef F
 TypeInfo ti[t_COUNT];
 
-B rtPerf_wrap(B x); // consumes
+B r1Objs[rtLen];
+B rtWrap_wrap(B x); // consumes
+
 
 _Thread_local B comp_currPath;
 _Thread_local B comp_currArgs;
@@ -154,6 +156,9 @@ static inline void load_init() {
   rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
   
   for (usz i = 0; i < rtLen; i++) {
+    #ifdef RT_WRAP
+    r1Objs[i] = rtObjGet(rtObjRaw, i); gc_add(r1Objs[i]);
+    #endif
     #ifdef ALL_R1
       B r = rtObjGet(rtObjRaw, i);
     #else
@@ -161,8 +166,8 @@ static inline void load_init() {
     #endif
     if (isNothing(r)) { printf("· in runtime!\n"); exit(1); }
     if (isVal(r)) v(r)->flags|= i+1;
-    #ifdef RT_PERF
-      r = rtPerf_wrap(r);
+    #ifdef RT_WRAP
+      r = rtWrap_wrap(r);
       if (isVal(r)) v(r)->flags|= i+1;
     #endif
     runtimeH.a[i] = r;
@@ -272,7 +277,7 @@ static inline void base_init() {
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
 }
 
-#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(fns) F(sfns) F(arith) F(sort) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
+#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(fns) F(sfns) F(arith) F(sort) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtWrap) F(ns) F(load)
 #define F(X) void X##_init();
 FOR_INIT(F)
 #undef F

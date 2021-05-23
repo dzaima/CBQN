@@ -13,6 +13,8 @@ rtperf: FLAGS=-O3 -DRT_PERF
 rtperf: gen
 heapverify: FLAGS=-DDEBUG -g -DHEAP_VERIFY
 heapverify: gen
+rtverify: FLAGS=-O3 -DRT_VERIFY
+rtverify: gen
 
 gen: builtins core base utils
 	@$(CC) -o BQN *.o -lm
@@ -24,7 +26,7 @@ core: i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
 
-base: load.o main.o rtPerf.o vm.o ns.o
+base: load.o main.o rtwrap.o vm.o ns.o
 %.o: ../../src/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
