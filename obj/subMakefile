@@ -1,0 +1,45 @@
+CC=clang
+CCFLAGS=-Wno-microsoft-anon-tag
+# CC=gcc
+# CCFLAGS=-Wno-parentheses
+
+CMD=$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions ${CCFLAGS} $(FLAGS) -fPIE -MMD -MP -MF
+
+o3: FLAGS=-O3
+o3: gen
+debug: FLAGS=-g -DDEBUG
+debug: gen
+rtperf: FLAGS=-O3 -DRT_PERF
+rtperf: gen
+
+gen: builtins core base utils
+	@$(CC) -o BQN *.o -lm
+	@mv BQN ../../BQN
+	@echo
+
+core: i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o
+%.o: ../../src/core/%.c
+	@echo $< | cut -c 11-
+	@$(CMD) $@.d -c $<
+
+base: load.o main.o rtPerf.o vm.o ns.o
+%.o: ../../src/%.c
+	@echo $< | cut -c 11-
+	@$(CMD) $@.d -c $<
+
+utils: utf.o hash.o file.o
+%.o: ../../src/utils/%.c
+	@echo $< | cut -c 11-
+	@$(CMD) $@.d -c $<
+
+builtins: arith.o sfns.o sort.o md1.o md2.o fns.o sysfn.o
+%.o: ../../src/builtins/%.c
+	@echo $< | cut -c 11-
+	@$(CMD) $@.d -c $<
+
+-include *.d
+
+
+clean:
+	@rm -f *.o
+	@rm -f *.d

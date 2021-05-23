@@ -1,74 +1,13 @@
-// #define ATOM_I32
-#ifdef DEBUG
-  // #define DEBUG_VM
-#endif
+#include "core.h"
+#include "vm.h"
+#include "utils/utf.h"
 
-#define CATCH_ERRORS // whether to allow catching errors; currently means refcounts won't be accurate and can't be tested for
-#define ENABLE_GC    // whether to ever garbage-collect
-// #define HEAP_VERIFY  // enable usage of heapVerify()
-// #define ALLOC_STAT   // store basic allocation statistics
-// #define ALLOC_SIZES  // store per-type allocation size statistics
-// #define USE_VALGRIND // whether to mark freed memory for valgrind
-// #define DONT_FREE    // don't actually ever free objects, such that they can be printed after being freed for debugging
-// #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
-// #define ALL_R0       // use all of r0.bqn for runtime_0
-// #define ALL_R1       // use all of r1.bqn for runtime
-// #define RT_SRC       // whether ./genRuntimeSrc was used to generate precompiled sources
-#define TYPED_ARITH  true  // whether to use typed arith
-#define VM_POS       true  // whether to store detailed execution position information for stacktraces
-#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc)
-#define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜
-#define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
-#define FAKE_RUNTIME false // whether to disable the self-hosted runtime
-
-// #define LOG_GC       // log GC stats
-// #define FORMATTER    // use self-hosted formatter for output
-// #define TIME         // output runtime of every expression
-// #define RT_PERF      // time runtime primitives
-// #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
-
-
-#include "h.h"
-#include "stuff.c"
-#include "heap.c"
-#include "mm_buddy.c"
-#include "harr.c"
-#include "i32arr.c"
-#include "c32arr.c"
-#include "f64arr.c"
-#include "fillarr.c"
-#include "hash.c"
-#include "mut.c"
-#include "utf.c"
-#include "file.c"
-#include "derv.c"
-#include "fns.c"
-#include "sfns.c"
-#include "sysfn.c"
-#include "sort.c"
-#include "arith.c"
-#include "md1.c"
-#include "md2.c"
-#include "vm.c"
-#include "ns.c"
-#include "rtPerf.c"
-#include "load.c"
+// TODO these are hacks around not needing tiny headers
+Block* bqn_comp(B str, B path, B args);
+void rtPerf_print();
 
 int main(int argc, char* argv[]) {
   cbqn_init();
-  // M_b2i* map = m_b2i(16);
-  // i32 data[] = {5,7,1,5,9,5,3,1,7,9,4,2,6,8,43,3,234,123,5435,435,6745,23,2332,2,3,5,63,3,87};
-  // for (i32 i = 0; i < 29; i++) {
-  //   printf("upd %d→%d: %d\n", data[i], i, upd_b2i(&map, m_i32(data[i]), i, false));
-  // }
-  // printf("sz=%ld pop=%ld\n", map->sz, map->pop);
-  // u64 sz = map->sz;
-  // for (u64 i = 0; i < sz; i++) {
-  //   Ent_b2i e = map->ent[i];
-  //   if (e.hash) { print(e.key); printf(": %d\n", e.val); }
-  // }
-  // free_b2i(map);
-  // exit(0);
   
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
   #if defined(COMP_COMP) || defined(COMP_COMP_TIME)
@@ -182,8 +121,8 @@ int main(int argc, char* argv[]) {
     while (true) { // exit by evaluating an empty expression
       char* ln = NULL;
       size_t gl = 0;
-      getline(&ln, &gl, stdin);
-      if (ln[0]==0 || ln[0]==10) break;
+      i64 read = getline(&ln, &gl, stdin);
+      if (read<=0 || ln[0]==0 || ln[0]==10) break;
       Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec));
       free(ln);
       

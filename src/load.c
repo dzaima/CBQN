@@ -1,5 +1,14 @@
-#include "h.h"
+#include "core.h"
+#include "vm.h"
+#include "utils/file.h"
 
+B rtPerf_wrap(B x); // consumes
+
+_Thread_local B comp_currPath;
+_Thread_local B comp_currArgs;
+
+B rt_sortDsc, rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take,
+  rt_drop, rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
 Block* load_compObj(B x, B src) { // consumes
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
@@ -9,7 +18,8 @@ Block* load_compObj(B x, B src) { // consumes
   dec(x);
   return r;
 }
-#ifdef RT_SRC
+#include "gen/src"
+#if RT_SRC
 Block* load_compImport(B bc, B objs, B blocks, B inds, B src) { // consumes all
   return compile(bc, objs, blocks, inds, bi_N, src);
 }
@@ -37,7 +47,7 @@ void load_gcFn() {
   mm_visit(comp_currArgs);
 }
 
-Block* bqn_comp(B str, B path, B args) { // consumes all
+NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currPath = path;
   comp_currArgs = args;
   Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str);
@@ -89,14 +99,14 @@ static inline void load_init() {
   B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
   #else
   Block* runtime0_b = load_compImport(
-    #include "runtime0"
+    #include "gen/runtime0"
   );
   B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
   B* runtime_0 = toHArr(r0r)->a;
   #endif
   
   Block* runtime_b = load_compImport(
-    #include "runtime1"
+    #include "gen/runtime1"
   );
   
   #ifdef ALL_R0
@@ -108,11 +118,10 @@ static inline void load_init() {
   B rtFinish = TI(rtRes).get(rtRes,1);
   dec(rtRes);
   
-  runtimeLen = c(Arr,rtObjRaw)->ia;
+  if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
   HArr_p runtimeH = m_harrUc(rtObjRaw);
   BS2B rtObjGet = TI(rtObjRaw).get;
   
-  rt_sortAsc = rtObjGet(rtObjRaw, 10); gc_add(rt_sortAsc);
   rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
   rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
   rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
@@ -132,7 +141,7 @@ static inline void load_init() {
   rt_find    = rtObjGet(rtObjRaw, 40); gc_add(rt_find);
   rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
   
-  for (usz i = 0; i < runtimeLen; i++) {
+  for (usz i = 0; i < rtLen; i++) {
     #ifdef ALL_R1
       B r = rtObjGet(rtObjRaw, i);
     #else
@@ -158,7 +167,7 @@ static inline void load_init() {
   
   #ifdef NO_COMP
     Block* c = load_compObj(
-      #include "interp"
+      #include "gen/interp"
     );
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);
@@ -167,7 +176,7 @@ static inline void load_init() {
     exit(0);
   #else // use compiler
     Block* comp_b = load_compImport(
-      #include "compiler"
+      #include "gen/compiler"
     );
     load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
     gc_add(load_comp);
@@ -175,7 +184,7 @@ static inline void load_init() {
     
     #ifdef FORMATTER
     Block* fmt_b = load_compImport(
-      #include "formatter"
+      #include "gen/formatter"
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_repr)}));
@@ -192,3 +201,71 @@ static inline void load_init() {
 B bqn_execFile(B path, B args) { // consumes both
   return bqn_exec(file_chars(inc(path)), path, args);
 }
+
+
+
+
+static void freed_visit(Value* x) {
+  #ifndef CATCH_ERRORS
+  err("visiting t_freed\n");
+  #endif
+}
+static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
+static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
+static void def_free(Value* x) { }
+static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
+static void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+static bool def_canStore(B x) { return false; }
+static B def_identity(B f) { return bi_N; }
+static B def_get(B x, usz n) { return inc(x); }
+static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
+static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
+static B def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
+
+static inline void base_init() {
+  for (i32 i = 0; i < t_COUNT; i++) {
+    ti[i].free  = def_free;
+    ti[i].visit = def_visit;
+    ti[i].get   = def_get;
+    ti[i].getU  = def_getU;
+    ti[i].print = def_print;
+    ti[i].m1_d  = def_m1_d;
+    ti[i].m2_d  = def_m2_d;
+    ti[i].isArr = false;
+    ti[i].arrD1 = false;
+    ti[i].elType    = el_B;
+    ti[i].identity  = def_identity;
+    ti[i].decompose = def_decompose;
+    ti[i].slice     = def_slice;
+    ti[i].canStore  = def_canStore;
+    ti[i].fn_uc1 = def_fn_uc1;
+    ti[i].fn_ucw = def_fn_ucw;
+    ti[i].m1_uc1 = def_m1_uc1;
+    ti[i].m1_ucw = def_m1_ucw;
+    ti[i].m2_uc1 = def_m2_uc1;
+    ti[i].m2_ucw = def_m2_ucw;
+  }
+  ti[t_empty].free = empty_free;
+  ti[t_freed].free = def_free;
+  ti[t_freed].visit = freed_visit;
+  ti[t_shape].visit = noop_visit;
+  ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = noop_visit;
+  ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
+  bi_N = tag(0, TAG_TAG);
+  bi_noVar   = tag(1, TAG_TAG);
+  bi_badHdr  = tag(2, TAG_TAG);
+  bi_optOut  = tag(3, TAG_TAG);
+  bi_noFill  = tag(5, TAG_TAG);
+  assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
+}
+
+#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(fns) F(sfns) F(arith) F(sort) F(md1) F(md2) F(sysfn) F(derv) F(comp) F(rtPerf) F(ns) F(load)
+#define F(X) void X##_init();
+FOR_INIT(F)
+#undef F
+void cbqn_init() {
+  #define F(X) X##_init();
+   FOR_INIT(F)
+  #undef F
+}
+#undef FOR_INIT

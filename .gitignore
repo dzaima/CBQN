@@ -1,10 +1,6 @@
-main.s
 BQN
-src/runtime
-src/runtime0
-src/runtime1
-src/compiler
-src/interp
-src/formatter
 c.bqn
 perf.*
+obj/*/*.o
+obj/*/*.d
+obj/*/*.tmp

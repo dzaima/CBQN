@@ -1,3 +1,4 @@
+#include "core.h"
 #include "ns.h"
 
 void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { // consumes nameList
@@ -102,7 +103,7 @@ void nsDesc_visit(Value* x) {
 void nsDesc_print(B x) {
   printf("(namespace description)");
 }
-static inline void ns_init() {
+void ns_init() {
   ti[t_ns].free  = ns_free;  ti[t_nsDesc].free  = nsDesc_free;
   ti[t_ns].visit = ns_visit; ti[t_nsDesc].visit = nsDesc_visit;
   ti[t_ns].print = ns_print; ti[t_nsDesc].print = nsDesc_print;

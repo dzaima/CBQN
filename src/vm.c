@@ -1,13 +1,7 @@
+#include "core.h"
 #include "vm.h"
 #include "ns.h"
-
-// #define GS_REALLOC // whether to dynamically realloc gStack
-#ifndef GS_SIZE
-#define GS_SIZE 65536 // if !GS_REALLOC, size in number of B objects of the global object stack
-#endif
-#ifndef ENV_SIZE
-#define ENV_SIZE 4096 // max recursion depth; GS_SIZE and C stack size may limit this
-#endif
+#include "utils/utf.h"
 
 enum {
   PUSH =  0, // N; push object from objs[N]
@@ -103,7 +97,25 @@ void printBC(i32* p) {
 
 
 
-Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // consumes all
+B* gStack; // points to after end
+B* gStackStart;
+B* gStackEnd;
+void gsPrint() {
+  B* c = gStackStart;
+  i32 i = 0;
+  while (c!=gStack) {
+    printf("%d: ", i);
+    print(*c);
+    printf(", refc=%d\n", v(*c)->refc);
+    c++;
+    i++;
+  }
+}
+
+
+
+
+NOINLINE Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // consumes all
   HArr* blocksH = toHArr(blocksq);
   usz bam = blocksH->ia;
   
@@ -256,84 +268,12 @@ B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_opt
 
 
 
-// all don't consume anything
-B m_funBlock(Block* bl, Scope* psc); // may return evaluated result, whatever
-B m_md1Block(Block* bl, Scope* psc);
-B m_md2Block(Block* bl, Scope* psc);
+
 #ifdef DEBUG_VM
 i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
-
-
-
-
-B* gStack; // points to after end
-B* gStackStart;
-B* gStackEnd;
-void gsReserve(u64 am) {
-  #ifdef GS_REALLOC
-    if (am>gStackEnd-gStack) {
-      u64 n = gStackEnd-gStackStart + am + 500;
-      u64 d = gStack-gStackStart;
-      gStackStart = realloc(gStackStart, n*sizeof(B));
-      gStack    = gStackStart+d;
-      gStackEnd = gStackStart+n;
-    }
-  #elif DEBUG
-    if (am>gStackEnd-gStack) thrM("Stack overflow");
-  #endif
-}
-#ifdef GS_REALLOC
-NOINLINE
-#endif
-void gsReserveR(u64 am) { gsReserve(am); }
-void gsAdd(B x) {
-  #ifdef GS_REALLOC
-    if (gStack==gStackEnd) gsReserveR(1);
-  #else
-    if (gStack==gStackEnd) thrM("Stack overflow");
-  #endif
-  *(gStack++) = x;
-}
-B gsPop() {
-  return *--gStack;
-}
-void gsPrint() {
-  B* c = gStackStart;
-  i32 i = 0;
-  while (c!=gStack) {
-    printf("%d: ", i);
-    print(*c);
-    printf(", refc=%d\n", v(*c)->refc);
-    c++;
-    i++;
-  }
-}
-
-
-
-typedef struct Env {
-  Scope* sc;
-  union { i32* bcL; i32 bcV; };
-} Env;
-
-Env* envCurr;
-Env* envStart;
-Env* envEnd;
-
-static inline void pushEnv(Scope* sc, i32* bc) {
-  if (envCurr==envEnd) thrM("Stack overflow");
-  envCurr->sc = sc;
-  envCurr->bcL = bc;
-  envCurr++;
-}
-static inline void popEnv() {
-  assert(envCurr>envStart);
-  envCurr--;
-}
-
 B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -648,7 +588,7 @@ void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   mprotect(*end, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
 }
 
-static inline void comp_init() {
+void comp_init() {
   ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
   ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;

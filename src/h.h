@@ -1,4 +1,34 @@
 #pragma once
+
+// #define ATOM_I32
+#ifdef DEBUG
+  // #define DEBUG_VM
+#endif
+#define CATCH_ERRORS // whether to allow catching errors; currently means refcounts won't be accurate and can't be tested for
+#define ENABLE_GC    // whether to ever garbage-collect
+// #define HEAP_VERIFY  // enable usage of heapVerify()
+// #define ALLOC_STAT   // store basic allocation statistics
+// #define ALLOC_SIZES  // store per-type allocation size statistics
+// #define USE_VALGRIND // whether to mark freed memory for valgrind
+// #define DONT_FREE    // don't actually ever free objects, such that they can be printed after being freed for debugging
+// #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
+// #define ALL_R0       // use all of r0.bqn for runtime_0
+// #define ALL_R1       // use all of r1.bqn for runtime
+#define TYPED_ARITH  true  // whether to use typed arith
+#define VM_POS       true  // whether to store detailed execution position information for stacktraces
+#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc)
+#define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜
+#define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
+#define FAKE_RUNTIME false // whether to disable the self-hosted runtime
+#define MM 1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
+
+// #define LOG_GC       // log GC stats
+// #define FORMATTER    // use self-hosted formatter for output
+// #define TIME         // output runtime of every expression
+// #define RT_PERF      // time runtime primitives
+// #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
+
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -48,30 +78,38 @@ typedef u8 ur;
 #define  UR_MAX 255
 
 #define CTR_FOR(F)
-#define CTR_DEF(N) u64 N;
 #define CTR_PRINT(N) printf(#N ": %lu\n", N);
-CTR_FOR(CTR_DEF)
+#define F(N) extern u64 N;
+CTR_FOR(F)
+#undef F
 
 #define fsizeof(T,F,E,n) (offsetof(T, F) + sizeof(E)*(n)) // type, flexible array member name, flexible array member type, item amount
 #define ftag(x) ((u64)(x) << 48)
 #define tag(v, t) b(((u64)(v)) | ftag(t))
-                                        // .111111111110000000000000000000000000000000000000000000000000000 infinity
-                                        // .111111111111000000000000000000000000000000000000000000000000000 qNaN
-                                        // .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
-                                        // 0111111111110................................................... direct value with no need of refcounting
-const u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
-const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
-const u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
-const u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
-const u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
-const u16 MD2_TAG = 0b1111111111110011; // 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
-const u16 FUN_TAG = 0b1111111111110100; // 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
-const u16 NSP_TAG = 0b1111111111110101; // 1111111111110101ppppppppppppppppppppppppppppppppppppppppppppp000 namespace maybe?
-const u16 OBJ_TAG = 0b1111111111110110; // 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom object (e.g. bigints)
-const u16 ARR_TAG = 0b1111111111110111; // 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
-const u16 VAL_TAG = 0b1111111111110   ; // 1111111111110................................................... pointer to Value, needs refcounting
+                                               // .111111111110000000000000000000000000000000000000000000000000000 infinity
+                                               // .111111111111000000000000000000000000000000000000000000000000000 qNaN
+                                               // .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
+                                               // 0111111111110................................................... direct value with no need of refcounting
+static const u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
+static const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
+static const u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
+static const u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
+static const u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
+static const u16 MD2_TAG = 0b1111111111110011; // 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
+static const u16 FUN_TAG = 0b1111111111110100; // 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
+static const u16 NSP_TAG = 0b1111111111110101; // 1111111111110101ppppppppppppppppppppppppppppppppppppppppppppp000 namespace maybe?
+static const u16 OBJ_TAG = 0b1111111111110110; // 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom object (e.g. bigints)
+static const u16 ARR_TAG = 0b1111111111110111; // 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
+static const u16 VAL_TAG = 0b1111111111110   ; // 1111111111110................................................... pointer to Value, needs refcounting
 
 void cbqn_init();
+
+typedef union B {
+  u64 u;
+  i64 s;
+  f64 f;
+} B;
+#define b(x) ((B)(x))
 
 enum Type {
   /* 0*/ t_empty, // empty bucket placeholder
@@ -103,79 +141,75 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
   el_MAX=4 // also used for incomplete in mut.c
 };
 
-char* format_type(u8 u) {
-  switch(u) { default: return"(unknown type)";
-    case t_empty:return"empty"; case t_shape:return"shape";
-    case t_funBI:return"builtin fun"; case t_fun_block:return"fun_block";
-    case t_md1BI:return"builtin md1"; case t_md1_block:return"md1_block";
-    case t_md2BI:return"builtin md2"; case t_md2_block:return"md2_block";
-    case t_fork:return"fork"; case t_atop:return"atop";
-    case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
-    case t_harr  :return"harr"  ; case t_i8arr  :return"i8arr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
-    case t_hslice:return"hslice"; case t_i8slice:return"i8slice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
-    case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope";
-    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap"; case t_temp:return"temporary";
-    case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
-    #ifdef RT_PERF
-    case t_funPerf:return"perf fn"; case t_md1Perf:return"perf m1"; case t_md2Perf:return "perf m2";
-    #endif
-  }
-}
+char* format_type(u8 u);
 
-#define FOR_PF(F) F(none, "(unknown fn)") \
-    /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
-    /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
-    /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(indexOf,"⊐") F(memberOf,"∊") F(find,"⍷") F(count,"⊒") \
-    /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") F(group,"⊔") F(reverse,"⌽") \
-    /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
-    /*sort.c*/  F(gradeUp,"⍋") F(gradeDown,"⍒") \
-    /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(repr,"•Repr") F(fill,"•FillFn") \
-    /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") F(hash,"•Hash") \
+#define FOR_PFN(F) F(none, "(unknown fn)") \
+       /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
+       /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
+       /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(indexOf,"⊐") F(memberOf,"∊") F(find,"⍷") F(count,"⊒") \
+       /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") F(group,"⊔") F(reverse,"⌽") \
+       /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
+       /*sort.c*/  F(gradeUp,"⍋") F(gradeDown,"⍒") \
+       /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(repr,"•Repr") F(fill,"•FillFn") \
+       /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") F(hash,"•Hash") \
+
+#define FOR_PM1(F) F(none, "(unknown 1-modifier)") \
+         /*md1.c*/ F(tbl,"⌜") F(each,"¨") F(fold,"´") F(scan,"`") F(const,"˙") F(swap,"˜") F(cell,"˘") \
+         /*md1.c*/ F(timed,"•_timed") F(fchars,"•FChars") F(fbytes,"•FBytes") F(flines,"•FLines") F(import,"•Import")
+
+#define FOR_PM2(F) F(none, "(unknown 2-modifier)") \
+         /*md2.c*/ F(val,"⊘") F(repeat,"⍟") F(fillBy,"•_fillBy_") F(catch,"⎊") \
+         /*md2.c*/ F(atop,"∘") F(over,"○") F(before,"⊸") F(after,"⟜") F(cond,"◶") F(under,"⌾")
 
 enum PrimFns {
   #define F(N,X) pf_##N,
-  FOR_PF(F)
+  FOR_PFN(F)
   #undef F
 };
-char* format_pf(u8 u) {
-  switch(u) { default: return "(unknown fn)";
+enum PrimMd1 {
+  #define F(N,X) pm1_##N,
+  FOR_PM1(F)
+  #undef F
+};
+enum PrimMd2 {
+  #define F(N,X) pm2_##N,
+  FOR_PM2(F)
+  #undef F
+};
+
+static char* format_pf(u8 u) {
+  switch(u) { default: return "(unknown function)";
     #define F(N,X) case pf_##N: return X;
-    FOR_PF(F)
+    FOR_PFN(F)
     #undef F
   }
 }
-enum PrimMd1 {
-  pm1_none,
-  pm1_tbl, pm1_each, pm1_fold, pm1_scan, pm1_const, pm1_swap, pm1_cell, // md1.c
-  pm1_timed, pm1_fchars, pm1_fbytes, pm1_flines, pm1_import, // md1.c
-};
-char* format_pm1(u8 u) {
-  switch(u) {
-    default: case pf_none: return"(unknown 1-modifier)";
-    case pm1_tbl:return"⌜"; case pm1_each:return"¨"; case pm1_fold:return"´"; case pm1_scan:return"`"; case pm1_const:return"˙"; case pm1_swap:return"˜"; case pm1_cell:return"˘";
-    case pm1_timed:return"•_timed"; case pm1_fchars:return"•FChars"; case pm1_fbytes:return"•FBytes"; case pm1_flines:return"•FLines"; case pm1_import:return"•Import";
+static char* format_pm1(u8 u) {
+  switch(u) { default: return"(unknown 1-modifier)";
+    #define F(N,X) case pm1_##N: return X;
+    FOR_PM1(F)
+    #undef F
   }
 }
-enum PrimMd2 {
-  pm2_none,
-  pm2_val, pm2_atop, pm2_over, pm2_before, pm2_after, pm2_cond, pm2_repeat, pm2_fillBy, pm2_catch, pm2_under, // md2.c
-};
-char* format_pm2(u8 u) {
-  switch(u) {
-    default: case pf_none: return"(unknown 1-modifier)";
-    case pm2_val:return"⊘"; case pm2_repeat:return"⍟"; case pm2_fillBy:return"•_fillBy_"; case pm2_catch:return"⎊";
-    case pm2_atop:return"∘"; case pm2_over:return"○"; case pm2_before:return"⊸"; case pm2_after:return"⟜"; case pm2_cond:return"◶"; case pm2_under:return"⌾";
+static char* format_pm2(u8 u) {
+  switch(u) { default: return"(unknown 2-modifier)";
+    #define F(N,X) case pm2_##N: return X;
+    FOR_PM2(F)
+    #undef F
   }
 }
 
+#define F(N,X) B bi_##N;
+FOR_PFN(F)
+#undef F
+#define F(N,X) B bi_##N;
+FOR_PM1(F)
+#undef F
+#define F(N,X) B bi_##N;
+FOR_PM2(F)
+#undef F
 
 
-typedef union B {
-  u64 u;
-  i64 s;
-  f64 f;
-} B;
-#define b(x) ((B)(x))
 
 typedef struct Value {
   i32 refc;  // plain old reference count
@@ -195,8 +229,8 @@ typedef struct Arr {
 
 #ifdef DEBUG
   #include<assert.h>
-  B VALIDATE(B x);
-  Value* VALIDATEP(Value* x);
+  static B VALIDATE(B x);
+  static Value* VALIDATEP(Value* x);
 #else
   #define assert(x) {if (!(x)) __builtin_unreachable();}
   #define VALIDATE(x) (x)
@@ -209,58 +243,29 @@ typedef void (*vfn)();
 
 void gc_add(B x); // add permanent root object
 void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic roots
-void gc_disable(); // gc starts disabled
-void gc_enable();  // can be nested (e.g. gc_disable(); gc_disable(); gc_enable(); will keep gc disabled until another gc_enable(); )
 void gc_maybeGC(); // gc if that seems necessary
 void gc_forceGC(); // force a gc; who knows what happens if gc is disabled (probably should error)
 void gc_visitRoots();
-void* mm_allocN(usz sz, u8 type);
-void mm_free(Value* x);
-void mm_visit(B x);
-void mm_visitP(void* x);
-u64  mm_round(usz x);
-u64  mm_size(Value* x);
-
-u64  mm_heapAllocated();
-u64  mm_heapUsed();
-void mm_forHeap(V2v f);
-B mm_alloc(usz sz, u8 type, u64 tag) {
-  assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
-  return b((u64)mm_allocN(sz,type) | tag);
-}
-
-void gsAdd(B x); // may throw
-B gsPop();
 
 // some primitive actions
-B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
-void dec(B x);
-B    inc(B x);
-void ptr_dec(void* x);
-void ptr_inc(void* x);
-void printUTF8(u32 c);
+extern B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
+static void dec(B x);
+static B    inc(B x);
+static void ptr_dec(void* x);
+static void ptr_inc(void* x);
 void printRaw(B x);       // doesn't consume
 void print(B x);          // doesn't consume
+void arr_print(B x);      // doesn't consume
 bool equal(B w, B x);     // doesn't consume
 i32  compare(B w, B x);   // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
-void arr_print(B x);      // doesn't consume
-u8   fillElType(B x);     // doesn't consume
-bool eqShape(B w, B x);   // doesn't consume
-usz  arr_csz(B x);        // doesn't consume
 bool atomEqual(B w, B x); // doesn't consume
+u64  depth(B x);          // doesn't consume
 B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
-B    vec_join(B w, B x);  // consumes both; w∾x for vectors
-B    vec_add(B w, B x);   // consumes both; w∾<x for vector w
-bool eqShPrefix(usz* w, usz* x, ur len);
 
-B m_v1(B a               ); // consumes all
-B m_v2(B a, B b          ); // consumes all
-B m_v3(B a, B b, B c     ); // consumes all
-B m_v4(B a, B b, B c, B d); // consumes all
-B m_unit (B x); // consumes
-B m_hunit(B x); // consumes
+static B m_unit (B x); // consumes
+static B m_hunit(B x); // consumes
 B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
 
 B bqn_exec(B str, B path, B args); // consumes both
@@ -298,7 +303,7 @@ void print_vmStack();
   B validate(B x);
   Value* validateP(Value* x);
 #endif
-B err(char* s) {
+static B err(char* s) {
   puts(s); fflush(stdout);
   print_vmStack();
   __builtin_trap();
@@ -307,114 +312,64 @@ B err(char* s) {
 
 // tag checks
 #ifdef ATOM_I32
-bool isI32(B x) { return (x.u>>48) == I32_TAG; }
+static inline bool isI32(B x) { return (x.u>>48) == I32_TAG; }
 #else
-bool isI32(B x) { return false; }
+static inline bool isI32(B x) { return false; }
 #endif
-bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
-bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
-bool isC32(B x) { return (x.u>>48) == C32_TAG; }
-bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
-bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
-bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
-bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
-bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
-bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
-bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
-// bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
-// bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
-bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
-bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
-bool isNum(B x) { return isF64(x)|isI32(x); }
+static inline bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
+static inline bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
+static inline bool isC32(B x) { return (x.u>>48) == C32_TAG; }
+static inline bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
+static inline bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
+static inline bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
+static inline bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
+static inline bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
+static inline bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
+static inline bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
+// static inline bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
+// static inline bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
+static inline bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
+static inline bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
+static inline bool isNum(B x) { return isF64(x)|isI32(x); }
 
-bool isAtm(B x) { return !isArr(x); }
-bool isCallable(B x) { return isMd(x) | isFun(x); }
-bool noFill(B x);
-
-// shape mess
-typedef struct ShArr {
-  struct Value;
-  usz a[];
-} ShArr;
-ShArr* shObj (B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
-ShArr* shObjP(Value* x) { return (ShArr*)((u64)((Arr*)x)->sh-offsetof(ShArr,a)); }
-void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
-
-void arr_shVec(B x, usz ia) {
-  a(x)->ia = ia;
-  srnk(x, 1);
-  a(x)->sh = &a(x)->ia;
-}
-ShArr* m_shArr(ur r) {
-  assert(r>1);
-  return ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape));
-}
-usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank
-  srnk(x,r);
-  if (r>1) return a(x)->sh = m_shArr(r)->a;
-  a(x)->sh = &a(x)->ia;
-  return 0;
-}
-usz* arr_shAllocI(B x, usz ia, ur r) { // allocates shape, sets ia,rank
-  a(x)->ia = ia;
-  return arr_shAllocR(x, r);
-}
-void arr_shSetI(B x, usz ia, ur r, ShArr* sh) {
-  srnk(x,r);
-  a(x)->ia = ia;
-  if (r>1) { a(x)->sh = sh->a; ptr_inc(sh); }
-  else     { a(x)->sh = &a(x)->ia; }
-}
-void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
-  assert(isArr(o));
-  a(n)->ia = a(o)->ia;
-  ur r = srnk(n,rnk(o));
-  if (r<=1) {
-    a(n)->sh = &a(n)->ia;
-  } else {
-    ptr_inc(shObj(o));
-    a(n)->sh = a(o)->sh;
-  }
-}
+static inline bool isAtm(B x) { return !isArr(x); }
+static inline bool isCallable(B x) { return isMd(x) | isFun(x); }
+static inline bool noFill(B x) { return x.u == bi_noFill.u; }
 
 // make objects
-B m_arr(usz min, u8 type) { return mm_alloc(min, type, ftag(ARR_TAG)); }
-B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
-B m_c32(u32 n) { return tag(n, C32_TAG); } // TODO check validity?
+static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
+static B m_c32(u32 n) { return tag(n, C32_TAG); } // TODO check validity?
 #ifdef ATOM_I32
-B m_i32(i32 n) { return tag(n, I32_TAG); }
+static B m_i32(i32 n) { return tag(n, I32_TAG); }
 #else
-B m_i32(i32 n) { return m_f64(n); }
+static B m_i32(i32 n) { return m_f64(n); }
 #endif
-B m_error() { return tag(4, TAG_TAG); }
-B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
+static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 
-i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
-usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)x.f; }
-i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
-u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
-f64 o2f   (B x) { if (!isNum(x)) thrM("Expected integer"); return x.f; }
-u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
-i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
-i32 o2cu  (B x) { return (u32)x.u; }
-usz o2su  (B x) { return (usz)x.f; }
-f64 o2fu  (B x) { return      x.f; }
-i64 o2i64u(B x) { return (i64)x.f; }
-bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
-bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
-bool q_i64(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i64)x.f); }
-bool q_f64(B x) { return isF64(x) || isI32(x); }
+static i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
+static usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)x.f; }
+static i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
+static u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
+static f64 o2f   (B x) { if (!isNum(x)) thrM("Expected integer"); return x.f; }
+static u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
+static i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+static i32 o2cu  (B x) { return (u32)x.u; }
+static usz o2su  (B x) { return (usz)x.f; }
+static f64 o2fu  (B x) { return      x.f; }
+static i64 o2i64u(B x) { return (i64)x.f; }
+static bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
+static bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
+static bool q_i64(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i64)x.f); }
+static bool q_f64(B x) { return isF64(x) || isI32(x); }
 
 
 typedef struct Slice {
   struct Arr;
   B p;
 } Slice;
-void slice_free(Value* x) { dec(((Slice*)x)->p); decSh(x); }
-void slice_visit(Value* x) { mm_visit(((Slice*)x)->p); }
-void slice_print(B x) { arr_print(x); }
-
-B* harr_ptr(B x);
+void slice_free(Value* x);
+void slice_visit(Value* x);
+void slice_print(B x);
 
 
 typedef void (*B2v)(B);
@@ -457,32 +412,33 @@ TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
 
-bool isNothing(B b) { return b.u==bi_N.u; }
+static bool isNothing(B b) { return b.u==bi_N.u; }
+static void mm_free(Value* x);
 
 // refcount
-bool reusable(B x) { return v(x)->refc==1; }
+static bool reusable(B x) { return v(x)->refc==1; }
 static inline void value_free(Value* x) {
   ti[x->type].free(x);
   mm_free(x);
 }
 static NOINLINE void value_freeR(Value* x) { value_free(x); }
-void dec(B x) {
+static void dec(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
   if(!--vx->refc) value_free(vx);
 }
-void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(x); }
-void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR(x); }
-void decR(B x) {
+static void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(x); }
+static void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR(x); }
+static void decR(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
   if(!--vx->refc) value_freeR(vx);
 }
-B inc(B x) {
+static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
 }
-void ptr_inc(void* x) { VALIDATEP((Value*)x)->refc++; }
+static void ptr_inc(void* x) { VALIDATEP((Value*)x)->refc++; }
 
 
 
@@ -493,27 +449,22 @@ typedef struct Fun {
 } Fun;
 
 
-B c1_rare(B f, B x) { dec(x);
+static B c1_rare(B f, B x) { dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-B c2_rare(B f, B w, B x) { dec(w); dec(x);
+static B c2_rare(B f, B w, B x) { dec(w); dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-BB2B c1fn(B f);
-BBB2B c2fn(B f);
-B c1(B f, B x) { // BQN-call f monadically; consumes x
+static B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
   return c1_rare(f, x);
 }
-B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
+static B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
   return c2_rare(f, w, x);
 }
-B m1_d(B m, B f     );
-B m2_d(B m, B f, B g);
-B m2_h(B m,      B g);
 
 
 typedef struct Md1 {
@@ -526,11 +477,14 @@ typedef struct Md2 {
   BB2B  c1; // f(md2d{this,f,g},  x); consumes x
   BBB2B c2; // f(md2d{this,f,g},w,x); consumes w,x
 } Md2;
-B m_md1D(B m, B f     );
-B m_md2D(B m, B f, B g);
-B m_md2H(B m,      B g);
-B m_fork(B f, B g, B h);
-B m_atop(     B g, B h);
+static B m1_d(B m, B f     );
+static B m2_d(B m, B f, B g);
+static B m2_h(B m,      B g);
+static B m_md1D(B m, B f     );
+static B m_md2D(B m, B f, B g);
+static B m_md2H(B m,      B g);
+static B m_fork(B f, B g, B h);
+static B m_atop(     B g, B h);
 
 
 
@@ -542,4 +496,15 @@ static inline u64 nsTime() {
   return t.tv_sec*1000000000ull + t.tv_nsec;
 }
 
-u64 allocB; // currently allocated number of bytes
+
+
+static u8 fillElType(B x) {
+  if (isNum(x)) return el_i32;
+  if (isC32(x)) return el_c32;
+  return el_B;
+}
+static u8 selfElType(B x) {
+  if (isF64(x)) return q_i32(x)? el_i32 : el_f64;
+  if (isC32(x)) return el_c32;
+  return el_B;
+}

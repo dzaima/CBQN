@@ -1,3 +1,5 @@
+#include "core.h"
+
 #ifdef RT_PERF
 typedef struct WFun WFun;
 struct WFun {
@@ -197,7 +199,7 @@ B wm1_ucw(B t, B o, B f,      B w, B x) { B t2 = c(WMd1,t)->v; return TI(t2).m1_
 B wm2_uc1(B t, B o, B f, B g,      B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_uc1(t2, o, f, g,    x); }
 B wm2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_ucw(t2, o, f, g, w, x); }
 
-static inline void rtPerf_init() {
+void rtPerf_init() {
   ti[t_funPerf].visit =  wf_visit; ti[t_funPerf].identity = wf_identity;
   ti[t_md1Perf].visit = wm1_visit; ti[t_md1Perf].m1_d = m_md1D;
   ti[t_md2Perf].visit = wm2_visit; ti[t_md2Perf].m2_d = m_md2D;
@@ -209,6 +211,6 @@ static inline void rtPerf_init() {
   ti[t_md2Perf].m2_ucw = wm2_ucw;
 }
 #else
-static inline void rtPerf_init() { }
-static inline void rtPerf_print() { }
+void rtPerf_init() { }
+void rtPerf_print() { }
 #endif
