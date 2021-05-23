@@ -284,8 +284,8 @@ jmp_buf* prepareCatch();
 #define CATCH false
 #endif
 void popCatch();
-B catchMessage;
-u64 envPrevHeight; // envStart+prevEnvHeight will give the original envCurr
+extern B catchMessage;
+extern u64 envPrevHeight; // envStart+prevEnvHeight will give the original envCurr
 
 
 

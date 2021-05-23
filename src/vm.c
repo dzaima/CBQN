@@ -96,6 +96,8 @@ void printBC(i32* p) {
 }
 
 
+B catchMessage;
+u64 envPrevHeight;
 
 B* gStack; // points to after end
 B* gStackStart;
