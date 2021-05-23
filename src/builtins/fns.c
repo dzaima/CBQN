@@ -222,7 +222,19 @@ B indexOf_c2(B t, B w, B x) {
 
 extern B rt_memberOf;
 B memberOf_c1(B t, B x) {
-  return c1(rt_memberOf, x);
+  if (isAtm(x) || rnk(x)==0) thrM("⍷: Argument cannot have rank 0");
+  if (rnk(x)!=1) x = toCells(x);
+  usz xia = a(x)->ia;
+  
+  i32* rp; B r = m_i32arrv(&rp, xia);
+  H_Sb* set = m_Sb(64);
+  BS2B xgetU = TI(x).getU;
+  for (usz i = 0; i < xia; i++) {
+    B c = xgetU(x,i);
+    rp[i] = !ins_Sb(&set, c);
+  }
+  free_Sb(set); dec(x);
+  return r;
 }
 B memberOf_c2(B t, B w, B x) {
   if (!isArr(w) || rnk(w)!=1 || !isArr(x) || rnk(x)!=1) return c2(rt_memberOf, w, x);
