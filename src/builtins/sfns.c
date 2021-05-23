@@ -32,7 +32,7 @@ B shape_c2(B t, B w, B x) {
   return r;
 }
 
-extern B pick;
+extern B rt_pick;
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (a(x)->ia==0) {
@@ -57,7 +57,7 @@ B pick_c2(B t, B w, B x) {
   return c2(rt_pick, w, x);
 }
 
-extern B select;
+extern B rt_select;
 B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
   ur xr = rnk(x);
@@ -177,7 +177,7 @@ static NOINLINE B slash_c1R(B x, u64 s) {
   dec(x);
   return r;
 }
-extern B slash;
+extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(rnk(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   i64 s = isum(x);
@@ -260,7 +260,7 @@ B slicev(B x, usz s, usz ia) {
   arr_shVec(r, ia);
   return r;
 }
-extern B take, rt_drop;
+extern B rt_take, rt_drop;
 B take_c1(B t, B x) { return c1(rt_take, x); }
 B drop_c1(B t, B x) { return c1(rt_drop, x); }
 B take_c2(B t, B w, B x) {
@@ -292,7 +292,7 @@ B drop_c2(B t, B w, B x) {
   return c2(rt_drop, w, x);
 }
 
-extern B join;
+extern B rt_join;
 B join_c1(B t, B x) {
   if (isAtm(x)) thrM("∾: Argument must be an array");
   if (rnk(x)==1) {
@@ -504,7 +504,7 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
-extern B group;
+extern B rt_group;
 B group_c1(B t, B x) {
   return c1(rt_group, x);
 }
@@ -609,7 +609,7 @@ B group_c2(B t, B w, B x) {
   return c2(rt_group, w, x);
 }
 
-extern B reverse;
+extern B rt_reverse;
 B reverse_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⌽: Argument cannot be a unit");
   B xf = getFillQ(x);
