@@ -3,8 +3,8 @@ build/run:
 1. `./genRuntime path/to/mlochbaum/BQN`
 2. Optionally choose what to build by changing `src/h.h`
 3. `make`
-  - Options are: `make o3`, `make debug`, `make rtperf`
-  - Do `make clean` or `make [o3|debug|rtperf]-clean` before to force recompile
+  - Options: `make o3`, `make debug` (`make rtperf` and `make heapverify` may also be useful)
+  - Do `make clean` or `make [o3|debug]-clean` before to force recompile
   - `./build` and `./debugBuild` compile everything at once and allow specifying extra compiler arguments, but may be slower
 4. `./BQN` (or `rlwrap ./BQN` for a fancier interface)
 

@@ -37,6 +37,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <setjmp.h>
+#ifdef HEAP_VERIFY
+  #undef CATCH_ERRORS
+#endif
 
 #define rtLen 63
 #ifdef CATCH_ERRORS
@@ -45,9 +48,6 @@
   #undef EACH_FILLS
   #define EACH_FILLS false
   #define PROPER_FILLS false
-#endif
-#if defined(CATCH_ERRORS) && defined(HEAP_VERIFY)
-  #error CATCH_ERRORS and HEAP_VERIFY cannot both be enabled
 #endif
 
 #define i8    int8_t

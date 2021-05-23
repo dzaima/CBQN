@@ -11,6 +11,8 @@ debug: FLAGS=-g -DDEBUG
 debug: gen
 rtperf: FLAGS=-O3 -DRT_PERF
 rtperf: gen
+heapverify: FLAGS=-DDEBUG -g -DHEAP_VERIFY
+heapverify: gen
 
 gen: builtins core base utils
 	@$(CC) -o BQN *.o -lm
