@@ -2,6 +2,17 @@
 #include "vm.h"
 #include "utils/file.h"
 
+
+#define F(N,X) B bi_##N;
+FOR_PFN(F)
+#undef F
+#define F(N,X) B bi_##N;
+FOR_PM1(F)
+#undef F
+#define F(N,X) B bi_##N;
+FOR_PM2(F)
+#undef F
+
 B rtPerf_wrap(B x); // consumes
 
 _Thread_local B comp_currPath;

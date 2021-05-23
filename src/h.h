@@ -199,13 +199,13 @@ static char* format_pm2(u8 u) {
   }
 }
 
-#define F(N,X) B bi_##N;
+#define F(N,X) extern B bi_##N;
 FOR_PFN(F)
 #undef F
-#define F(N,X) B bi_##N;
+#define F(N,X) extern B bi_##N;
 FOR_PM1(F)
 #undef F
-#define F(N,X) B bi_##N;
+#define F(N,X) extern B bi_##N;
 FOR_PM2(F)
 #undef F
 
