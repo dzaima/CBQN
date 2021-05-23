@@ -12,6 +12,7 @@ FOR_PM1(F)
 #define F(N,X) B bi_##N;
 FOR_PM2(F)
 #undef F
+TypeInfo ti[t_COUNT];
 
 B rtPerf_wrap(B x); // consumes
 

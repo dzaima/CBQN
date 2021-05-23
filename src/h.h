@@ -408,7 +408,7 @@ typedef struct TypeInfo {
   bool isArr;
   bool arrD1; // is always an array with depth 1
 } TypeInfo;
-TypeInfo ti[t_COUNT];
+extern TypeInfo ti[t_COUNT];
 #define TI(x) (ti[v(x)->type])
 
 

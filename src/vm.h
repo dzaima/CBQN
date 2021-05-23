@@ -63,9 +63,9 @@ B m_md2Block(Block* bl, Scope* psc);
 
 
 
-Env* envCurr;
-Env* envStart;
-Env* envEnd;
+extern Env* envCurr;
+extern Env* envStart;
+extern Env* envEnd;
 
 static inline void pushEnv(Scope* sc, i32* bc) {
   if (envCurr==envEnd) thrM("Stack overflow");
