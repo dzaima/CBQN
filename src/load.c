@@ -168,6 +168,7 @@ static inline void load_init() {
   #ifdef NO_COMP
     Block* c = load_compObj(
       #include "gen/interp"
+      , bi_N
     );
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);
