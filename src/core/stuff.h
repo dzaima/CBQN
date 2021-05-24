@@ -157,6 +157,14 @@ static B def_m2_uc1(B t, B o, B f, B g,      B x) { B t2 = m2_d(inc(t),inc(f),in
 static B def_m2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
 static B def_decompose(B x) { return m_v2(m_i32(isCallable(x)? 0 : -1),x); }
 
+#define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
+NOINLINE i32 compareR(B w, B x);
+static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
+  if (isNum(w) & isNum(x)) return CMP(o2fu(w), o2fu(x));
+  if (isC32(w) & isC32(x)) return CMP(o2cu(w), o2cu(x));
+  return compareR(w, x);
+}
+#undef CMP
 
 
 

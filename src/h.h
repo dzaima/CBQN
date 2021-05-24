@@ -265,7 +265,6 @@ void print(B x);          // doesn't consume
 void arr_print(B x);      // doesn't consume
 bool equal(B w, B x);     // doesn't consume
 bool eequal(B w, B x);    // doesn't consume
-i32  compare(B w, B x);   // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
 bool atomEqual(B w, B x); // doesn't consume
 u64  depth(B x);          // doesn't consume
 B    toCells(B x);        // consumes

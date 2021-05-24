@@ -196,9 +196,7 @@ NOINLINE B append_fmt(B s, char* p, ...) {
 }
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
-i32 compare(B w, B x) {
-  if (isNum(w) & isNum(x)) return CMP(o2fu(w), o2fu(x));
-  if (isC32(w) & isC32(x)) return CMP(o2cu(w), o2cu(x));
+NOINLINE i32 compareR(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
