@@ -135,10 +135,10 @@ void harrP_print(B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;
   usz ia = a(x)->ia;
-  printf("(partial HArr %d/%d %p %p: ?⥊⟨", am, ia, c(HArr,x)->sh, &a(x)->ia);
+  printf("(partial HArr %d/%d: ⟨", am, ia);
   for (usz i = 0; i < ia; i++) {
     if (i) printf(", ");
-    if (i>=am) printf("(…)\n");
+    if (i>=am) printf("?");
     else print(p[i]);
   }
   printf("⟩)");

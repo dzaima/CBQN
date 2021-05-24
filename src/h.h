@@ -86,7 +86,7 @@ typedef u8 ur;
 #define  UR_MAX 255
 
 #define CTR_FOR(F)
-#define CTR_PRINT(N) printf(#N ": %lu\n", N);
+#define CTR_PRINT(N) if(N) printf(#N ": %lu\n", N);
 #define F(N) extern u64 N;
 CTR_FOR(F)
 #undef F

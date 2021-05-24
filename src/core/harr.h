@@ -28,6 +28,7 @@ static HArr_p m_harrs(usz ia, usz* ctr) { // writes just ia
   return harr_parts(r);
 }
 static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
+  assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
   p.c->sh = &p.c->ia;
   srnk(p.b, 1);
@@ -35,12 +36,14 @@ static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
   return p.b;
 }
 static B harr_fc(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+  assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
   arr_shCopy(p.b, x);
   gsPop();
   return p.b;
 }
 static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+  assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
   arr_shCopy(p.b, x);
   dec(x);

@@ -13,7 +13,7 @@ rtperf: FLAGS=-O3 -DRT_PERF
 rtperf: gen
 heapverify: FLAGS=-DDEBUG -g -DHEAP_VERIFY
 heapverify: gen
-rtverify: FLAGS=-O3 -DRT_VERIFY
+rtverify: FLAGS=-DDEBUG -O3 -DRT_VERIFY
 rtverify: gen
 
 gen: builtins core base utils
