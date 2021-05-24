@@ -52,6 +52,7 @@ static void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
 
 // some array stuff
 
+#define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) MSG; }; (usz)wV; })
 static void arr_shVec(B x, usz ia) {
   a(x)->ia = ia;
   srnk(x, 1);

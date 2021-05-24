@@ -46,10 +46,7 @@ B pick_c1(B t, B x) {
 }
 B pick_c2(B t, B w, B x) {
   if (isNum(w) && isArr(x) && rnk(x)==1) {
-    i64 p = o2i64(w);
-    usz xia = a(x)->ia;
-    if (p<0) p+= (i64)xia;
-    if ((u64)p >= xia) thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, xia);
+    usz p = WRAP(o2i64(w), a(x)->ia, thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
     B r = TI(x).get(x, p);
     dec(x);
     return r;
@@ -81,9 +78,7 @@ B select_c2(B t, B w, B x) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
-    i64 wi = o2i64(w);
-    if (wi<0) wi+= cam;
-    if ((usz)wi >= cam) thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam);
+    usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
     B r = TI(x).slice(inc(x), wi*csz);
     usz* sh = arr_shAllocI(r, csz, xr-1);
     if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
@@ -102,8 +97,7 @@ B select_c2(B t, B w, B x) {
         i32* rp; B r = m_i32arrc(&rp, w);
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
-          i64 c = wp[i];
-          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
+          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -112,8 +106,7 @@ B select_c2(B t, B w, B x) {
         u32* rp; B r = m_c32arrc(&rp, w);
         u32* xp = c32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
-          i64 c = wp[i];
-          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
+          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -121,8 +114,7 @@ B select_c2(B t, B w, B x) {
       } else {
         HArr_p r = m_harrUc(w);
         for (usz i = 0; i < wia; i++) {
-          i64 c = wp[i];
-          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
+          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
           r.a[i] = xget(x, c);
         }
         dec(w); dec(x);
@@ -134,9 +126,7 @@ B select_c2(B t, B w, B x) {
       for (usz i = 0; i < wia; i++) {
         B cw = wgetU(w, i);
         if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
-        f64 c = o2f(cw);
-        if (c<0) c+= xia;
-        if ((usz)c >= xia) thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia);
+        usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
         r.a[i] = xget(x, c);
       }
       dec(w); dec(x);
@@ -709,9 +699,7 @@ B pick_uc1(B t, B o, B x) {
 B pick_ucw(B t, B o, B w, B x) {
   if (isArr(w) || isAtm(x) || rnk(x)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = a(x)->ia;
-  i64 wi = o2i64(w);
-  if (wi<0) wi+= (i64)xia;
-  if ((u64)wi >= xia) thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia);
+  usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
   B arg = TI(x).get(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x).canStore(rep)) {
@@ -794,7 +782,7 @@ B select_ucw(B t, B o, B w, B x) {
         i32* xp = i32arr_ptr(x);
         i32* rp = i32any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
+          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia; // already checked
           i32 cr = rp[i];
           EQ(cr!=xp[cw]);
           xp[cw] = cr;
@@ -819,7 +807,7 @@ B select_ucw(B t, B o, B w, B x) {
     mut_copy(r, 0, x, 0, xia);
     BS2B rget = TI(rep).get;
     for (usz i = 0; i < wia; i++) {
-      i64 cw = wp[i]; if (cw<0) cw+= (i64)xia; // oob already checked by original select_c2 call
+      i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
       B cr = rget(rep, i);
       EQ(!equal(mut_getU(r, cw), cr));
       mut_rm(r, cw);
@@ -832,7 +820,7 @@ B select_ucw(B t, B o, B w, B x) {
   mut_copy(r, 0, x, 0, xia);
   BS2B rget = TI(rep).get;
   for (usz i = 0; i < wia; i++) {
-    i64 cw = o2i64u(wgetU(w, i)); if (cw<0) cw+= (i64)xia; // oob already checked by original select_c2 call
+    i64 cw = o2i64u(wgetU(w, i)); if (cw<0) cw+= (i64)xia;
     B cr = rget(rep, i);
     EQ(!equal(mut_getU(r, cw), cr));
     mut_rm(r, cw);

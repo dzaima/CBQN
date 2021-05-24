@@ -107,16 +107,12 @@ B over_c2(B d, B w, B x) { B xr=c1(c(Md2D,d)->g, x); return c2(c(Md2D,d)->f, c1(
 
 B cond_c1(B d, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  i64 fr = o2i64(c1(c(Md2D,d)->f, inc(x)));
-  if (fr<0) fr+= a(g)->ia;
-  if ((u64)fr >= a(g)->ia) thrM("◶: 𝔽 out of bounds of 𝕘");
+  usz fr = WRAP(o2i64(c1(c(Md2D,d)->f, inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c1(TI(g).getU(g, fr), x);
 }
 B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  i64 fr = o2i64(c2(c(Md2D,d)->f, inc(w), inc(x)));
-  if (fr<0) fr+= a(g)->ia;
-  if ((u64)fr >= a(g)->ia) thrM("◶: 𝔽 out of bounds of 𝕘");
+  usz fr = WRAP(o2i64(c2(c(Md2D,d)->f, inc(w), inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c2(TI(g).getU(g, fr), w, x);
 }
 
