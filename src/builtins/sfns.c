@@ -202,7 +202,7 @@ B slash_c1(B t, B x) {
   return r;
 }
 B slash_c2(B t, B w, B x) {
-  if (isArr(w) && isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
+  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
@@ -249,6 +249,36 @@ B slash_c2(B t, B w, B x) {
       }
       dec(w); dec(x);
       return withFill(harr_fv(r), xf);
+    }
+  }
+  if (isArr(x) && rnk(x)==1 && q_i32(w)) {
+    usz xia = a(x)->ia;
+    i32 wv = o2i(w);
+    if (wv<=0) {
+      if (wv<0) thrM("/: 𝕨 cannot be negative");
+      B r = TI(x).slice(x, 0);
+      arr_shVec(r,0);
+      return r;
+    }
+    usz ri = 0;
+    if (TI(x).elType==el_i32) {
+      i32* xp = i32any_ptr(x);
+      i32* rp; B r = m_i32arrv(&rp, xia*wv);
+      for (usz i = 0; i < xia; i++) {
+        for (usz j = 0; j < wv; j++) rp[ri++] = xp[i];
+      }
+      dec(x);
+      return r;
+    } else {
+      B xf = getFillQ(x);
+      HArr_p r = m_harrUv(xia*wv);
+      BS2B xgetU = TI(x).getU;
+      for (usz i = 0; i < xia; i++) {
+        B cx = xgetU(x, i);
+        for (usz j = 0; j < wv; j++) r.a[ri++] = inc(cx);
+      }
+      dec(x);
+      return withFill(r.b, xf);
     }
   }
   return c2(rt_slash, w, x);
