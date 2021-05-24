@@ -48,7 +48,3 @@ B and_c1(B t, B x) {
   dec(x);
   return withFill(r.b,xf);
 }
-
-#define F(A,M,D) A(gradeUp) A(gradeDown)
-void sort_init() { BI_FNS(F) }
-#undef F

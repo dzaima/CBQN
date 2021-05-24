@@ -380,16 +380,9 @@ B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return r;
 }
 
-#define ba(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
-#define bd(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = NAME##_c2; c(Md1,bi_##NAME)->c1 = c1_invalid; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
-#define bm(NAME) bi_##NAME = mm_alloc(sizeof(Md1), t_md1BI, ftag(MD1_TAG)); c(Md1,bi_##NAME)->c2 = c2_invalid;c(Md1,bi_##NAME)->c1 = NAME##_c1 ; c(Md1,bi_##NAME)->extra=pm1_##NAME; gc_add(bi_##NAME);
+
 
 static void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
-
-void md1_init() { ba(tbl) ba(each) ba(fold) ba(scan) ba(const) ba(swap) ba(cell) ba(timed) ba(fchars) bm(fbytes) bm(flines) ba(import)
+void md1_init() {
   ti[t_md1BI].print = print_md1BI;
 }
-
-#undef ba
-#undef bd
-#undef bm

@@ -103,6 +103,9 @@ void nsDesc_visit(Value* x) {
 void nsDesc_print(B x) {
   printf("(namespace description)");
 }
+
+
+
 void ns_init() {
   ti[t_ns].free  = ns_free;  ti[t_nsDesc].free  = nsDesc_free;
   ti[t_ns].visit = ns_visit; ti[t_nsDesc].visit = nsDesc_visit;

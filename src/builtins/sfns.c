@@ -845,12 +845,10 @@ B select_ucw(B t, B o, B w, B x) {
 }
 
 
-#define F(A,M,D) A(shape) A(pick) A(select) A(slash) A(join) A(couple) A(shiftb) A(shifta) A(take) A(drop) A(group) A(reverse)
-void sfns_init() { BI_FNS(F)
+void sfns_init() {
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_reverse)->uc1 = reverse_uc1;
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_slash)->ucw = slash_ucw;
   c(BFn,bi_select)->ucw = select_ucw;
 }
-#undef F

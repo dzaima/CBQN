@@ -190,10 +190,6 @@ B hash_c1(B t, B x) {
 }
 
 
-#define F(A,M,D) M(type) M(decp) M(primInd) M(glyph) M(repr) A(fill) A(grLen) D(grOrd) A(asrt) M(out) M(show) M(sys) M(bqn) D(cmp) D(internal) A(hash)
-void sysfn_init() { BI_FNS(F) }
-#undef F
-
 static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
 }

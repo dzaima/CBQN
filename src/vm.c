@@ -593,6 +593,15 @@ void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   *end = ((char*)*start)+sz;
   mprotect(*end, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
 }
+void print_vmStack() {
+  #ifdef DEBUG_VM
+    printf("vm stack:");
+    for (i32 i = 0; i < (bcDepth>>1) + 1; i++) { printf(" %d", vmStack[i]); fflush(stdout); }
+    printf("\n"); fflush(stdout);
+  #endif
+}
+
+
 
 void comp_init() {
   ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
@@ -609,13 +618,6 @@ void comp_init() {
   allocStack((void**)&envCurr, (void**)&envStart, (void**)&envEnd, sizeof(Env), ENV_SIZE);
 }
 
-void print_vmStack() {
-  #ifdef DEBUG_VM
-    printf("vm stack:");
-    for (i32 i = 0; i < (bcDepth>>1) + 1; i++) { printf(" %d", vmStack[i]); fflush(stdout); }
-    printf("\n"); fflush(stdout);
-  #endif
-}
 
 
 

@@ -151,70 +151,69 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
 
 char* format_type(u8 u);
 
-#define FOR_PFN(F) F(none, "(unknown fn)") \
-       /*arith.c*/ F(add,"+") F(sub,"-") F(mul,"×") F(div,"÷") F(pow,"⋆") F(floor,"⌊") F(ceil,"⌈") F(stile,"|") F(eq,"=") \
-       /*arith.c*/ F(ne,"≠") F(le,"≤") F(ge,"≥") F(lt,"<") F(gt,">") F(and,"∧") F(or,"∨") F(not,"¬") F(log,"⋆⁼") \
-       /*fns.c*/   F(ud,"↕") F(fne,"≢") F(feq,"≡") F(ltack,"⊣") F(rtack,"⊢") F(fmtF,"•FmtF") F(indexOf,"⊐") F(memberOf,"∊") F(find,"⍷") F(count,"⊒") \
-       /*sfns.c*/  F(shape,"⥊") F(pick,"⊑") F(pair,"{𝕨‿𝕩}") F(select,"⊏") F(slash,"/") F(join,"∾") F(couple,"≍") F(shiftb,"»") F(shifta,"«") F(take,"↑") F(drop,"↓") F(group,"⊔") F(reverse,"⌽") \
-       /*derv.c*/  F(fork,"(fork)") F(atop,"(atop)") F(md1d,"(derived 1-modifier)") F(md2d,"(derived 2-modifier)") \
-       /*sort.c*/  F(gradeUp,"⍋") F(gradeDown,"⍒") \
-       /*sysfn.c*/ F(type,"•Type") F(decp,"•Decompose") F(primInd,"•PrimInd") F(glyph,"•Glyph") F(repr,"•Repr") F(fill,"•FillFn") \
-       /*sysfn.c*/ F(grLen,"•GroupLen") F(grOrd,"•groupOrd") F(asrt,"!") F(sys,"•getsys") F(bqn,"•BQN") F(cmp,"•Cmp") F(internal,"•Internal") F(show,"•Show") F(out,"•Out") F(hash,"•Hash") \
+#define FOR_PFN(A,M,D) \
+  /*arith.c*/ A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
+  /*arith.c*/ A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
+  /*fns.c*/   A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") M(fmtF,"•FmtF") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
+  /*sfns.c*/  A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
+  /*sort.c*/  A(gradeUp,"⍋") A(gradeDown,"⍒") \
+  /*sysfn.c*/ M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") M(repr,"•Repr") A(fill,"•FillFn") \
+  /*sysfn.c*/ A(grLen,"•GroupLen") D(grOrd,"•groupOrd") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(sys,"•getsys") M(bqn,"•BQN") D(cmp,"•Cmp") D(internal,"•Internal") A(hash,"•Hash") \
 
-#define FOR_PM1(F) F(none, "(unknown 1-modifier)") \
-         /*md1.c*/ F(tbl,"⌜") F(each,"¨") F(fold,"´") F(scan,"`") F(const,"˙") F(swap,"˜") F(cell,"˘") \
-         /*md1.c*/ F(timed,"•_timed") F(fchars,"•FChars") F(fbytes,"•FBytes") F(flines,"•FLines") F(import,"•Import")
+#define FOR_PM1(A,M,D) \
+  /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
+  /*md1.c*/ A(timed,"•_timed") A(fchars,"•FChars") M(fbytes,"•FBytes") M(flines,"•FLines") A(import,"•Import")
 
-#define FOR_PM2(F) F(none, "(unknown 2-modifier)") \
-         /*md2.c*/ F(val,"⊘") F(repeat,"⍟") F(fillBy,"•_fillBy_") F(catch,"⎊") \
-         /*md2.c*/ F(atop,"∘") F(over,"○") F(before,"⊸") F(after,"⟜") F(cond,"◶") F(under,"⌾")
+#define FOR_PM2(A,M,D) \
+  /*md2.c*/ A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
+  /*md2.c*/ A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾")
 
-enum PrimFns {
+enum PrimFns { pf_none,
   #define F(N,X) pf_##N,
-  FOR_PFN(F)
+  FOR_PFN(F,F,F)
   #undef F
 };
-enum PrimMd1 {
+enum PrimMd1 { pm1_none,
   #define F(N,X) pm1_##N,
-  FOR_PM1(F)
+  FOR_PM1(F,F,F)
   #undef F
 };
-enum PrimMd2 {
+enum PrimMd2 { pm2_none,
   #define F(N,X) pm2_##N,
-  FOR_PM2(F)
+  FOR_PM2(F,F,F)
   #undef F
 };
 
 static char* format_pf(u8 u) {
   switch(u) { default: return "(unknown function)";
     #define F(N,X) case pf_##N: return X;
-    FOR_PFN(F)
+    FOR_PFN(F,F,F)
     #undef F
   }
 }
 static char* format_pm1(u8 u) {
   switch(u) { default: return"(unknown 1-modifier)";
     #define F(N,X) case pm1_##N: return X;
-    FOR_PM1(F)
+    FOR_PM1(F,F,F)
     #undef F
   }
 }
 static char* format_pm2(u8 u) {
   switch(u) { default: return"(unknown 2-modifier)";
     #define F(N,X) case pm2_##N: return X;
-    FOR_PM2(F)
+    FOR_PM2(F,F,F)
     #undef F
   }
 }
 
 #define F(N,X) extern B bi_##N;
-FOR_PFN(F)
+FOR_PFN(F,F,F)
 #undef F
 #define F(N,X) extern B bi_##N;
-FOR_PM1(F)
+FOR_PM1(F,F,F)
 #undef F
 #define F(N,X) extern B bi_##N;
-FOR_PM2(F)
+FOR_PM2(F,F,F)
 #undef F
 
 

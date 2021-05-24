@@ -1,12 +1,5 @@
 #include "../core.h"
 
-typedef struct BMd2 {
-  struct Md1;
-   BBBBB2B uc1;
-  BBBBBB2B ucw;
-} BMd2;
-
-void print_md2BI(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
 B md2BI_uc1(B t, B o, B f, B g,      B x) { return c(BMd2,t)->uc1(t, o, f, g,    x); }
 B md2BI_ucw(B t, B o, B f, B g, B w, B x) { return c(BMd2,t)->ucw(t, o, f, g, w, x); }
 
@@ -156,17 +149,11 @@ B before_uc1(B t, B o, B f, B g, B x) {
 }
 
 
-#define ba(N) { B t=bi_##N=mm_alloc(sizeof(BMd2), t_md2BI, ftag(MD2_TAG)); BMd2*m=c(BMd2,t); m->c2 = N##_c2    ; m->c1 = N##_c1;     m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(t); }
-#define bd(N) { B t=bi_##N=mm_alloc(sizeof(BMd2), t_md2BI, ftag(MD2_TAG)); BMd2*m=c(BMd2,t); m->c2 = N##_c2    ; m->c1 = c1_invalid; m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(t); }
-#define bm(N) { B t=bi_##N=mm_alloc(sizeof(BMd2), t_md2BI, ftag(MD2_TAG)); BMd2*m=c(BMd2,t); m->c2 = c2_invalid; m->c1 = N##_c1;     m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(t); }
 
-void md2_init() { ba(val) ba(repeat) ba(atop) ba(over) ba(before) ba(after) ba(cond) ba(fillBy) ba(under) ba(catch)
+static void print_md2BI(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
+void md2_init() {
   ti[t_md2BI].print = print_md2BI;
   ti[t_md2BI].m2_uc1 = md2BI_uc1;
   ti[t_md2BI].m2_ucw = md2BI_ucw;
   c(BMd2,bi_before)->uc1 = before_uc1;
 }
-
-#undef ba
-#undef bd
-#undef bm

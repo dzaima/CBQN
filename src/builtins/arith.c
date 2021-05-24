@@ -44,7 +44,7 @@ static inline B arith_recd(BBB2B f, B w, B x) {
     dec(x);
     return r;
   }
-  #define ffnx(NAME, EXPR, EXTRA) static B NAME##_c2(B t, B w, B x) {        \
+  #define ffnx(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {               \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
     EXTRA                                                                    \
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
@@ -89,7 +89,7 @@ static inline B arith_recd(BBB2B f, B w, B x) {
     thrM(#NAME ": invalid arithmetic");                                      \
   }
 #else // if !TYPED_ARITH
-  #define ffnx(name, expr, extra) static B name##_c2(B t, B w, B x) { \
+  #define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) return m_f64(expr); \
     extra \
     P2(name) \
@@ -153,8 +153,8 @@ B decp_c1(B t, B x);
     }                                              \
   }
 
-#define CMP(NAME,OP,FC,CF) \
-static B NAME##_c2(B t, B w, B x) { \
+#define CMP(NAME,OP,FC,CF)          \
+B NAME##_c2(B t, B w, B x) {        \
   CMP_IMPL(OP, FC, CF);             \
   P2(NAME);                         \
   return m_i32(compare(w, x) OP 0); \
@@ -165,14 +165,14 @@ CMP(lt, < , 1, 0)
 CMP(gt, > , 0, 1)
 #undef CMP
 
-static B eq_c2(B t, B w, B x) {
+B eq_c2(B t, B w, B x) {
   CMP_IMPL(==, 0, 0);
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
-static B ne_c2(B t, B w, B x) {
+B ne_c2(B t, B w, B x) {
   CMP_IMPL(!=, 1, 1);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
@@ -181,38 +181,38 @@ static B ne_c2(B t, B w, B x) {
 }
 
 extern B rt_merge;
-static B gt_c1(B t, B x) {
+B gt_c1(B t, B x) {
   if (isAtm(x)) return x;
   return bqn_merge(x);
 }
 
-static B   add_c1(B t, B x) { return x; }
-static B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f ); P1(  sub); thrM("-: Negating non-number"); }
-static B   not_c1(B t, B x) { if (isF64(x)) return m_f64(    1-x.f ); P1(  not); thrM("¬: Argument was not a number"); }
-static B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f==0?0:x.f>0?1:-1); P1(mul); thrM("×: Getting sign of non-number"); }
-static B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
-static B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
-static B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); P1(floor); thrM("⌊: Argument was not a number"); }
-static B  ceil_c1(B t, B x) { if (isF64(x)) return m_f64( ceil(x.f)); P1( ceil); thrM("⌈: Argument was not a number"); }
-static B stile_c1(B t, B x) { if (isF64(x)) return m_f64( fabs(x.f)); P1(stile); thrM("|: Argument was not a number"); }
-static B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
+B   add_c1(B t, B x) { return x; }
+B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f ); P1(  sub); thrM("-: Negating non-number"); }
+B   not_c1(B t, B x) { if (isF64(x)) return m_f64(    1-x.f ); P1(  not); thrM("¬: Argument was not a number"); }
+B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f==0?0:x.f>0?1:-1); P1(mul); thrM("×: Getting sign of non-number"); }
+B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
+B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); P1(floor); thrM("⌊: Argument was not a number"); }
+B  ceil_c1(B t, B x) { if (isF64(x)) return m_f64( ceil(x.f)); P1( ceil); thrM("⌈: Argument was not a number"); }
+B stile_c1(B t, B x) { if (isF64(x)) return m_f64( fabs(x.f)); P1(stile); thrM("|: Argument was not a number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
 
-static B lt_c1(B t, B x) { return m_unit(x); }
-static B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
-static B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
+B lt_c1(B t, B x) { return m_unit(x); }
+B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
+B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
 
 extern B rt_sortDsc;
-static B or_c1(B t, B x) { return c1(rt_sortDsc, x); }
+B or_c1(B t, B x) { return c1(rt_sortDsc, x); }
 B and_c1(B t, B x); // defined in sort.c
 
 #undef P1
 #undef P2
 
-#define F(A,M,D) A(add) A(sub) A(mul) A(div) A(pow) A(floor) A(ceil) A(stile) A(eq) A(ne) D(le) D(ge) A(lt) A(gt) A(and) A(or) A(not) A(log)
-void arith_init() { BI_FNS(F)
+
+
+void arith_init() {
   c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_ne)->ident = c(BFn,bi_gt)->ident = m_i32(0);
   c(BFn,bi_mul)->ident = c(BFn,bi_div)->ident = c(BFn,bi_and)->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ge)->ident = c(BFn,bi_pow)->ident = c(BFn,bi_not)->ident = m_i32(1);
   c(BFn,bi_floor)->ident = m_f64(1.0/0.0);
   c(BFn,bi_ceil )->ident = m_f64(-1.0/0.0);
 }
-#undef F

@@ -291,13 +291,9 @@ B count_c2(B t, B w, B x) {
 
 
 
-
-
-#define F(A,M,D) A(ud) A(pair) A(fne) A(feq) A(ltack) A(rtack) M(fmtF) A(indexOf) A(memberOf) A(find) A(count)
-void fns_init() { BI_FNS(F)
+void fns_init() {
   ti[t_funBI].print = print_funBI;
   ti[t_funBI].identity = funBI_identity;
   ti[t_funBI].fn_uc1 = funBI_uc1;
   ti[t_funBI].fn_ucw = funBI_ucw;
 }
-#undef F
