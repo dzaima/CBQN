@@ -148,3 +148,22 @@ static B eachd(B f, B w, B x) { // complete w F¨ x without fills
   if (isAtm(w) & isAtm(x)) return m_hunit(c2(f, w, x));
   return eachd_fn(c2fn(f), f, w, x);
 }
+
+
+#ifdef CATCH_ERRORS
+static inline B arith_recd(BBB2B f, B w, B x) {
+  B fx = getFillQ(x);
+  if (noFill(fx)) return eachd_fn(f, bi_N, w, x);
+  B fw = getFillQ(w);
+  B r = eachd_fn(f, bi_N, w, x);
+  if (noFill(fw)) return r;
+  if (CATCH) { dec(catchMessage); return r; }
+  B fr = f(bi_N, fw, fx);
+  popCatch();
+  return withFill(r, asFill(fr));
+}
+#else
+static inline B arith_recd(BBB2B f, B w, B x) {
+  return eachd_fn(f, bi_N, w, x);
+}
+#endif
