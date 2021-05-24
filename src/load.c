@@ -2,6 +2,9 @@
 #include "vm.h"
 #include "utils/file.h"
 
+u64 mm_heapMax = HEAP_MAX;
+u64 mm_heapAlloc;
+
 #define FA(N,X) B bi_##N; B N##_c1(B t, B x); B N##_c2(B t, B w, B x);
 #define FM(N,X) B bi_##N; B N##_c1(B t, B x);
 #define FD(N,X) B bi_##N; B N##_c2(B t, B w, B x);
@@ -241,7 +244,6 @@ static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static B def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 
 static inline void base_init() { // very first init function
-  mm_heapMax = HEAP_MAX;
   for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = def_free;
     ti[i].visit = def_visit;

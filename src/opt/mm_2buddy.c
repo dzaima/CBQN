@@ -4,9 +4,6 @@
 u64 currObjCounter;
 #endif
 
-u64 mm_heapAlloc;
-u64 mm_heapMax;
-
 EmptyValue* b1_buckets[64];
 b1_AllocInfo* b1_al;
 u64 b1_alCap;
