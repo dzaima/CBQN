@@ -103,7 +103,7 @@ B select_c2(B t, B w, B x) {
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
-          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -113,7 +113,7 @@ B select_c2(B t, B w, B x) {
         u32* xp = c32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
-          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -122,7 +122,7 @@ B select_c2(B t, B w, B x) {
         HArr_p r = m_harrUc(w);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
-          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          if (RARE((u64)c >= xia)) { if (c<0) c+= xia; if ((u64)c >= xia)thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia); }
           r.a[i] = xget(x, c);
         }
         dec(w); dec(x);
