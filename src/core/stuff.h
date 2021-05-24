@@ -166,6 +166,13 @@ static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if wâ‰
 }
 #undef CMP
 
+NOINLINE bool atomEqualR(B w, B x);
+static bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
+  if(isF64(w)&isF64(x)) return w.f==x.f;
+  if (w.u==x.u) return true;
+  if (!isVal(w) | !isVal(x)) return false;
+  return atomEqualR(w, x);
+}
 
 
 

@@ -228,11 +228,7 @@ NOINLINE i32 compareR(B w, B x) {
 }
 #undef CMP
 
-
-bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
-  if(isF64(w)&isF64(x)) return w.f==x.f;
-  if (w.u==x.u) return true;
-  if (!isVal(w) | !isVal(x)) return false;
+NOINLINE bool atomEqualR(B w, B x) {
   if (v(w)->type!=v(x)->type) return false;
   B2B dcf = TI(w).decompose;
   if (dcf == def_decompose) return false;
@@ -245,7 +241,7 @@ bool atomEqual(B w, B x) { // doesn't consume (not that that matters really curr
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
-bool equal(B w, B x) { // doesn't consume
+NOINLINE bool equal(B w, B x) { // doesn't consume
   bool wa = isAtm(w);
   bool xa = isAtm(x);
   if (wa!=xa) return false;
