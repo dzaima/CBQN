@@ -53,6 +53,7 @@ int main(int argc, char* argv[]) {
           "-e code: execute the argument as BQN\n"
           "-p code: execute the argument as BQN and print its result pretty-printed\n"
           "-o code: execute the argument as BQN and print its raw result\n"
+          "-M num : set maximum heap size to num megabytes\n"
           "-r     : start the REPL after all further arguments\n"
           , argv[0]);
           exit(0);
@@ -72,15 +73,27 @@ int main(int argc, char* argv[]) {
               break;
             }
             case 'p': { REQARG(p);
-              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec));
+              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-p"), inc(bi_emptyHVec));
               print(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { REQARG(o);
-              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec));
+              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-o"), inc(bi_emptyHVec));
               printRaw(r); dec(r);
               printf("\n");
+              break;
+            }
+            case 'M': { REQARG(M);
+              char* str = argv[i++];
+              u64 am = 0;
+              while (*str) {
+                char c = *str++;
+                if (c<'0' | c>'9') { printf("%s: -M: Argument not a number\n", argv[0]); exit(1); }
+                if (am>1ULL<<48) { printf("%s: -M: Too large\n", argv[0]); exit(1); }
+                am = am*10 + c-48;
+              }
+              mm_heapMax = am*1024*1024;
               break;
             }
             case 'r': {

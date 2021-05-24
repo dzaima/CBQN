@@ -241,6 +241,7 @@ static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static B def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 
 static inline void base_init() { // very first init function
+  mm_heapMax = HEAP_MAX;
   for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = def_free;
     ti[i].visit = def_visit;

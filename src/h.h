@@ -21,6 +21,7 @@
 #define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
 #define FAKE_RUNTIME false // whether to disable the self-hosted runtime
 #define MM 1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
+#define HEAP_MAX 1ULL<<48 // default heap max size
 
 // #define LOG_GC       // log GC stats
 // #define FORMATTER    // use self-hosted formatter for output

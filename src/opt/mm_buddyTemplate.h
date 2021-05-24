@@ -25,6 +25,8 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
     }
     if (cb >= 20) {
       u64 sz = BSZ(cb);
+      if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
+      mm_heapAlloc+= sz;
       // gc_maybeGC();
       c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
       if (alSize+1>=alCap) {
@@ -32,10 +34,7 @@ static NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbag
         al = realloc(al, sizeof(AllocInfo)*alCap);
       }
       al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
-      if (c==MAP_FAILED) {
-        printf("failed to allocate memory\n");
-        exit(1);
-      }
+      if (c==MAP_FAILED) { printf("Failed to allocate memory\n"); exit(1); }
       c->type = t_empty;
       c->mmInfo = cb;
       c->next = 0;
@@ -97,11 +96,6 @@ static void BN(forHeap)(V2v f) {
       s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
     }
   }
-}
-static u64 BN(heapAllocated)() {
-  u64 res = 0;
-  for (u64 i = 0; i < alSize; i++) res+= al[i].sz;
-  return res;
 }
 
 #undef MMI

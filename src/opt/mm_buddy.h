@@ -5,6 +5,8 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   struct Value;
   EmptyValue* next;
 };
+extern u64 mm_heapAlloc;
+extern u64 mm_heapMax;
 
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
