@@ -138,7 +138,7 @@ CMP(> , gt, 1)
 #undef ffn
 #undef ffnx
 
-static B decp_c1(B t, B x);
+B decp_c1(B t, B x);
 #define CMP_IMPL(OP) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   bool wa = isArr(w);                              \

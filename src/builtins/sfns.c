@@ -103,8 +103,17 @@ B select_c2(B t, B w, B x) {
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
-          if (c<0) c+= xia;
-          if (c<0 | c>=xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          rp[i] = xp[c];
+        }
+        dec(w); dec(x);
+        return r;
+      } else if (TI(x).elType==el_c32) {
+        u32* rp; B r = m_c32arrc(&rp, w);
+        u32* xp = c32any_ptr(x);
+        for (usz i = 0; i < wia; i++) {
+          i64 c = wp[i];
+          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
           rp[i] = xp[c];
         }
         dec(w); dec(x);
@@ -113,8 +122,7 @@ B select_c2(B t, B w, B x) {
         HArr_p r = m_harrUc(w);
         for (usz i = 0; i < wia; i++) {
           i64 c = wp[i];
-          if (c<0) c+= xia;
-          if (c<0 | c>=xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
+          if (c<0) c+= xia; if ((u64)c >= xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia);
           r.a[i] = xget(x, c);
         }
         dec(w); dec(x);
@@ -675,7 +683,7 @@ B reverse_c2(B t, B w, B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   i64 am = o2i64(w);
-  if (am<0 || am>=cam) { am%= cam; if(am<0) am+= cam; }
+  if ((usz)am >= cam) { am%= cam; if(am<0) am+= cam; }
   am*= csz;
   MAKE_MUT(r, xia); mut_to(r, TI(x).elType);
   mut_copy(r, 0, x, am, xia-am);
