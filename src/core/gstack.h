@@ -26,10 +26,7 @@ static void gsReserve(u64 am) {
   #endif
 }
 
-#ifdef GS_REALLOC
-NOINLINE
-#endif
-static void gsReserveR(u64 am) { gsReserve(am); }
+static NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
 
 
 static inline void gsAdd(B x) {

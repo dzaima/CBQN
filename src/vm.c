@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "core.h"
 #include "vm.h"
 #include "ns.h"

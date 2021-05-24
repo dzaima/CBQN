@@ -1,7 +1,5 @@
 extern u64 allocB; // currently allocated number of bytes
 
-#include <sys/mman.h>
-#include <unistd.h>
 
 // memory defs
 
@@ -130,6 +128,9 @@ NOINLINE B append_fmt(B s, char* p, ...);
 
 // function stuff
 
+char* format_pf(u8 u);
+char* format_pm1(u8 u);
+char* format_pm2(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 B bqn_squeeze(B x); // consumes

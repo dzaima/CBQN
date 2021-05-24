@@ -185,35 +185,10 @@ enum PrimMd2 { pm2_none,
   #undef F
 };
 
-static char* format_pf(u8 u) {
-  switch(u) { default: return "(unknown function)";
-    #define F(N,X) case pf_##N: return X;
-    FOR_PFN(F,F,F)
-    #undef F
-  }
-}
-static char* format_pm1(u8 u) {
-  switch(u) { default: return"(unknown 1-modifier)";
-    #define F(N,X) case pm1_##N: return X;
-    FOR_PM1(F,F,F)
-    #undef F
-  }
-}
-static char* format_pm2(u8 u) {
-  switch(u) { default: return"(unknown 2-modifier)";
-    #define F(N,X) case pm2_##N: return X;
-    FOR_PM2(F,F,F)
-    #undef F
-  }
-}
 
 #define F(N,X) extern B bi_##N;
 FOR_PFN(F,F,F)
-#undef F
-#define F(N,X) extern B bi_##N;
 FOR_PM1(F,F,F)
-#undef F
-#define F(N,X) extern B bi_##N;
 FOR_PM2(F,F,F)
 #undef F
 

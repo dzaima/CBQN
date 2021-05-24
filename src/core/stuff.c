@@ -8,6 +8,28 @@ B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, b
 CTR_FOR(F)
 #undef F
 
+char* format_pf(u8 u) {
+  switch(u) { default: return "(unknown function)";
+    #define F(N,X) case pf_##N: return X;
+    FOR_PFN(F,F,F)
+    #undef F
+  }
+}
+char* format_pm1(u8 u) {
+  switch(u) { default: return"(unknown 1-modifier)";
+    #define F(N,X) case pm1_##N: return X;
+    FOR_PM1(F,F,F)
+    #undef F
+  }
+}
+char* format_pm2(u8 u) {
+  switch(u) { default: return"(unknown 2-modifier)";
+    #define F(N,X) case pm2_##N: return X;
+    FOR_PM2(F,F,F)
+    #undef F
+  }
+}
+
 NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   BS2B xgetU = TI(x).getU;
