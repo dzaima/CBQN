@@ -7,10 +7,12 @@ Block* bqn_comp(B str, B path, B args);
 void rtWrap_print();
 
 int main(int argc, char* argv[]) {
-  cbqn_init();
+  #define INIT { if(!init) { cbqn_init(); init = true; } }
+  bool init = false;
   
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
   #if defined(COMP_COMP) || defined(COMP_COMP_TIME)
+    INIT;
     char* c_src = NULL;
     u64 c_len;
     FILE* f = fopen("c.bqn", "rb");
@@ -67,18 +69,18 @@ int main(int argc, char* argv[]) {
         while ((c=*carg++) != '\0') {
           switch(c) { default: printf("Unknown option: -%c\n", c);
             #define REQARG(X) if(*carg) { printf("%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { printf("%s: -%s requires an argument\n", argv[0], #X); exit(1); }
-            case 'f': REQARG(f); goto execFile;
-            case 'e': { REQARG(e);
+            case 'f': INIT; REQARG(f); goto execFile;
+            case 'e': { INIT; REQARG(e);
               dec(bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec)));
               break;
             }
-            case 'p': { REQARG(p);
+            case 'p': { INIT; REQARG(p);
               B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-p"), inc(bi_emptyHVec));
               print(r); dec(r);
               printf("\n");
               break;
             }
-            case 'o': { REQARG(o);
+            case 'o': { INIT; REQARG(o);
               B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-o"), inc(bi_emptyHVec));
               printRaw(r); dec(r);
               printf("\n");
@@ -104,6 +106,7 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+    INIT;
     execFile:
     if (i!=argc) {
       B src = fromUTF8l(argv[i++]);
@@ -121,6 +124,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (startREPL) {
+    INIT;
     B replPath = m_str32(U"REPL"); gc_add(replPath);
     while (CATCH) {
       printf("Error: "); print(catchMessage); putchar('\n');
@@ -172,4 +176,5 @@ int main(int argc, char* argv[]) {
   CTR_FOR(CTR_PRINT)
   // printf("done\n");fflush(stdout); while(1);
   printAllocStats();
+  #undef INIT
 }
