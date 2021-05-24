@@ -204,17 +204,14 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
-  if (ia==0) {
-    dec(x);
-    if (isFun(f)) {
-      B r = TI(f).identity(f);
-      if (!isNothing(r)) return inc(r);
-    }
-    thrM("´: No identity found");
-  }
   if (TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
+    if (rtid==2) {
+      i64 c = 1;
+      for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
+      return m_i32(c);
+    }
     if (rtid==11) {
       bool any = false;
       for (usz i = 0; i < ia; i++) {
@@ -225,6 +222,14 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return m_i32(any);
     }
+  }
+  if (ia==0) {
+    dec(x);
+    if (isFun(f)) {
+      B r = TI(f).identity(f);
+      if (!isNothing(r)) return inc(r);
+    }
+    thrM("´: No identity found");
   }
   base:;
   
@@ -245,6 +250,18 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
 B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
+  if (q_i32(w) && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+    u8 rtid = v(f)->flags-1;
+    i32* xp = i32any_ptr(x);
+    i32 wv = o2iu(w);
+    if (rtid==2) {
+      i64 c = wv;
+      for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
+      return m_i32(c);
+    }
+  }
+  base:;
+  
   B c = w;
   BS2B xget = TI(x).get;
   BBB2B fc2 = c2fn(f);
