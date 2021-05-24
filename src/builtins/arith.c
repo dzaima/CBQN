@@ -123,24 +123,15 @@ ffnx(log  ,   log(x.f)/log(w.f), {})
 ffnx(or   , (w.f+x.f)-(w.f*x.f), {})
 ffnx(not  , 1+w.f-x.f          , {})
 
-#define CMP(X, N, G) \
-  ffn(N, X, { \
-    if (isC32(w) & isC32(x)) return m_f64(w.u X x.u); \
-    if (isF64(w) & isC32(x)) return m_f64(1-G); \
-    if (isC32(w) & isF64(x)) return m_f64(G); \
-  })
-CMP(<=, le, 0)
-CMP(>=, ge, 1)
-CMP(< , lt, 0)
-CMP(> , gt, 1)
-#undef CMP
-
 #undef ffn
 #undef ffnx
 
 B decp_c1(B t, B x);
-#define CMP_IMPL(OP) \
+#define CMP_IMPL(OP,FC,CF) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
+  if (isC32(w)&isC32(x)) return m_f64(w.u OP x.u); \
+  if (isF64(w)&isC32(x)) return m_f64(FC);         \
+  if (isC32(w)&isF64(x)) return m_f64(CF);         \
   bool wa = isArr(w);                              \
   bool xa = isArr(x);                              \
   if (wa|xa) {                                     \
@@ -162,15 +153,27 @@ B decp_c1(B t, B x);
     }                                              \
   }
 
+#define CMP(NAME,OP,FC,CF) \
+static B NAME##_c2(B t, B w, B x) { \
+  CMP_IMPL(OP, FC, CF);             \
+  P2(NAME);                         \
+  return m_i32(compare(w, x) OP 0); \
+}
+CMP(le, <=, 1, 0)
+CMP(ge, >=, 0, 1)
+CMP(lt, < , 1, 0)
+CMP(gt, > , 0, 1)
+#undef CMP
+
 static B eq_c2(B t, B w, B x) {
-  CMP_IMPL(==)
+  CMP_IMPL(==, 0, 0);
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
 static B ne_c2(B t, B w, B x) {
-  CMP_IMPL(!=)
+  CMP_IMPL(!=, 0, 0);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
