@@ -44,7 +44,7 @@ static inline B arith_recd(BBB2B f, B w, B x) {
     dec(x);
     return r;
   }
-  #define ffnx(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {               \
+  #define GC2f(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {               \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
     EXTRA                                                                    \
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
@@ -88,15 +88,80 @@ static inline B arith_recd(BBB2B f, B w, B x) {
     }                                                                        \
     thrM(#NAME ": invalid arithmetic");                                      \
   }
+  
+  #define PF(N) f64* N##p = f64any_ptr(N);
+  #define PI(N) i32* N##p = i32any_ptr(N);
+  #define RI(A) i32* rp; B r=m_i32arrc(&rp, A);
+  #define RF(A) f64* rp; B r=m_f64arrc(&rp, A);
+  
+  #define DOF(EXPR,A,W,X) {        \
+    for (usz i = 0; i < ia; i++) { \
+      f64 wv = W; f64 xv = X;      \
+      rp[i] = EXPR;                \
+    }                              \
+  }
+  #define DOI(EXPR,A,W,X,BASE) {   \
+    RI(A)                          \
+    for (usz i = 0; i < ia; i++) { \
+      i64 wv = W; i64 xv = X;      \
+      i64 rv = EXPR;               \
+      if (RARE(rv!=(i32)rv)) {     \
+        mm_free(v(r));             \
+        goto BASE;                 \
+      }                            \
+      rp[i] = rv;                  \
+    }                              \
+    dec(w); dec(x);                \
+    return r;                      \
+  }
+  #define GC2i(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {       \
+    if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
+    EXTRA                                                            \
+    if (isArr(w)|isArr(x)) {                                         \
+      if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
+        usz ia = a(x)->ia;                                           \
+        u8 we = TI(w).elType;                                        \
+        u8 xe = TI(x).elType;                                        \
+        if (isNumEl(we)&isNumEl(xe)) {                               \
+          bool wei = we==el_i32; bool xei = xe==el_i32;              \
+          if (wei&xei) { PI(w) PI(x) DOI(EXPR,w,wp[i],xp[i],aaB); }  \
+          aaB:; RF(x)                                                \
+          if (wei) { PI(w)                                           \
+            if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+            else     { PF(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+          } else { PF(w)                                             \
+            if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+            else     { PF(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+          }                                                          \
+          dec(w); dec(x); return f64_maybe_i32(r);                   \
+        }                                                            \
+      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x).elType;                 \
+        if (xe==el_i32 && q_i32(w)) { PI(x) i32 wc=o2iu(w); DOI(EXPR,x,wc,xp[i],naB) } naB:;   \
+        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
+        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
+      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w).elType;                 \
+        if (we==el_i32 && q_i32(x)) { PI(w) i32 xc=o2iu(x); DOI(EXPR,w,wp[i],xc,anB) } anB:;   \
+        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
+        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
+      }                                                              \
+      P2(NAME)                                                       \
+    }                                                                \
+    thrM(#NAME ": invalid arithmetic");                              \
+  }
 #else // if !TYPED_ARITH
-  #define ffnx(name, expr, extra) B name##_c2(B t, B w, B x) { \
-    if (isF64(w) & isF64(x)) return m_f64(expr); \
-    extra \
-    P2(name) \
-    thrM(#name ": invalid arithmetic"); \
+  #define GC2i(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
+    if (isF64(w) & isF64(x)) { f64 wv=w.f; f64 xv=x.f; return m_f64(EXPR); } \
+    EXTRA \
+    P2(NAME) \
+    thrM(#NAME ": invalid arithmetic"); \
+  }
+  #define GC2f(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
+    if (isF64(w) & isF64(x)) return m_f64(EXPR); \
+    EXTRA \
+    P2(NAME) \
+    thrM(#NAME ": invalid arithmetic"); \
   }
 #endif // TYPED_ARITH
-#define ffn(name, op, extra) ffnx(name, w.f op x.f, extra)
 
 static f64 pfmod(f64 a, f64 b) {
   f64 r = fmod(a, b);
@@ -104,27 +169,28 @@ static f64 pfmod(f64 a, f64 b) {
   return r;
 }
 
-ffn(add, +, {
+GC2i(add, wv+xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
 })
-ffn(sub, -, {
+GC2i(sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)-o2u64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
-ffn(mul, *, {})
-ffn(and, *, {})
-ffn(div, /, {})
-ffnx(pow  ,       pow(w.f, x.f), {})
-ffnx(floor,      fmin(w.f, x.f), {})
-ffnx(ceil ,      fmax(w.f, x.f), {})
-ffnx(stile,     pfmod(x.f, w.f), {})
-ffnx(log  ,   log(x.f)/log(w.f), {})
-ffnx(or   , (w.f+x.f)-(w.f*x.f), {})
-ffnx(not  , 1+w.f-x.f          , {})
+GC2i(mul, wv*xv, {})
+GC2i(and, wv*xv, {})
+GC2i(or , (wv+xv)-(wv*xv), {})
+GC2i(not, 1+wv-xv, {})
 
-#undef ffn
-#undef ffnx
+GC2f(div  ,           w.f/x.f, {})
+GC2f(pow  ,     pow(w.f, x.f), {})
+GC2f(floor,    fmin(w.f, x.f), {})
+GC2f(ceil ,    fmax(w.f, x.f), {})
+GC2f(stile,   pfmod(x.f, w.f), {})
+GC2f(log  , log(x.f)/log(w.f), {})
+
+#undef GC2i
+#undef GC2f
 
 B decp_c1(B t, B x);
 #define CMP_IMPL(OP,FC,CF) \

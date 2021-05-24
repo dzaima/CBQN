@@ -45,7 +45,7 @@ NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging p
 
 NOINLINE void print(B x) {
   if (isF64(x)) {
-    printf("%g", x.f);
+    printf("%.14g", x.f);
   } else if (isC32(x)) {
     if ((u32)x.u>=32) { printf("'"); printUTF8((u32)x.u); printf("'"); }
     else if((u32)x.u>15) printf("\\x%x", (u32)x.u);
