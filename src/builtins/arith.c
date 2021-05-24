@@ -173,7 +173,7 @@ static B eq_c2(B t, B w, B x) {
   return r;
 }
 static B ne_c2(B t, B w, B x) {
-  CMP_IMPL(!=, 0, 0);
+  CMP_IMPL(!=, 1, 1);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
