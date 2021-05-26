@@ -34,11 +34,11 @@ struct Body {
   Comp* comp;
   BlBlocks* blocks;
   // B* objs;
-  i32* bc; // pointer in comp->bc
+  i32* bc; // pointer in an owned I32Arr
+  i32* map; // pointer in an owned I32Arr
   u32 maxStack;
   u16 maxPSC;
   u16 varAm;
-  u32 endStack;
   NSDesc* nsDesc;
   i32 varIDs[];
 };

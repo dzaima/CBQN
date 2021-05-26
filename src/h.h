@@ -81,6 +81,7 @@
 #define AUTO __auto_type
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
+#define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
 
 typedef u32 usz;
 typedef u8 ur;

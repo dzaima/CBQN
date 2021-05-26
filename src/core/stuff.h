@@ -45,7 +45,7 @@ typedef struct TStack {
   usz cap;
   u8 data[];
 } TStack;
-#define TSALLOC(T,N) u32 N##_e=sizeof(T); TStack* N##_o = (TStack*)mm_allocN(sizeof(TStack)+N##_e*2, t_temp); N##_o->size=0; N##_o->cap=2; T* N = (T*)N##_o->data;
+#define TSALLOC(T,N,I) usz N##_dc=(I); u32 N##_e=sizeof(T); TStack* N##_o = (TStack*)mm_allocN(sizeof(TStack)+N##_e*N##_dc, t_temp); N##_o->size=0; N##_o->cap=N##_dc; T* N = (T*)N##_o->data;
 #define TSFREE(N) mm_free((Value*)N##_o);
 #define TSADD(N,X) { if (N##_o->size==N##_o->cap) { N##_o = tstack_ext(N##_o, N##_e); N = (void*)N##_o->data; } N[N##_o->size++] = X; }
 #define TSSIZE(N) (N##_o->size)
