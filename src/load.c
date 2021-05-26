@@ -30,19 +30,19 @@ Block* load_compObj(B x, B src) { // consumes
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src);
+  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, NULL)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, NULL);
   dec(x);
   return r;
 }
 #include "gen/src"
 #if RT_SRC
 Block* load_compImport(B bc, B objs, B blocks, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, inds, bi_N, src);
+  return compile(bc, objs, blocks, inds, bi_N, src, NULL);
 }
 #else
 Block* load_compImport(B bc, B objs, B blocks) { // consumes all
-  return compile(bc, objs, blocks, bi_N, bi_N, bi_N);
+  return compile(bc, objs, blocks, bi_N, bi_N, bi_N, NULL);
 }
 #endif
 
@@ -110,82 +110,86 @@ static inline void load_init() { // very last init function
   for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
   B frtObj = m_caB(rtLen, fruntime);
   
-  B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
-  
-  #ifndef ALL_R0
-  B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
-  #else
-  Block* runtime0_b = load_compImport(
-    #include "gen/runtime0"
-  );
-  B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
-  B* runtime_0 = toHArr(r0r)->a;
-  #endif
-  
-  Block* runtime_b = load_compImport(
-    #include "gen/runtime1"
-  );
-  
-  #ifdef ALL_R0
-  dec(r0r);
-  #endif
-  
-  B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-  B rtObjRaw = TI(rtRes).get(rtRes,0);
-  B rtFinish = TI(rtRes).get(rtRes,1);
-  dec(rtRes);
-  
-  if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
-  HArr_p runtimeH = m_harrUc(rtObjRaw);
-  BS2B rtObjGet = TI(rtObjRaw).get;
-  
-  rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
-  rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
-  rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
-  rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
-  rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
-  rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
-  rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
-  rt_pick    = rtObjGet(rtObjRaw, 36); gc_add(rt_pick);
-  rt_take    = rtObjGet(rtObjRaw, 25); gc_add(rt_take);
-  rt_drop    = rtObjGet(rtObjRaw, 26); gc_add(rt_drop);
-  rt_group   = rtObjGet(rtObjRaw, 41); gc_add(rt_group);
-  rt_under   = rtObjGet(rtObjRaw, 56); gc_add(rt_under);
-  rt_reverse = rtObjGet(rtObjRaw, 30); gc_add(rt_reverse);
-  rt_indexOf = rtObjGet(rtObjRaw, 37); gc_add(rt_indexOf);
-  rt_count   = rtObjGet(rtObjRaw, 38); gc_add(rt_count);
-  rt_memberOf= rtObjGet(rtObjRaw, 39); gc_add(rt_memberOf);
-  rt_find    = rtObjGet(rtObjRaw, 40); gc_add(rt_find);
-  rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
-  
-  for (usz i = 0; i < rtLen; i++) {
-    #ifdef RT_WRAP
-    r1Objs[i] = rtObjGet(rtObjRaw, i); gc_add(r1Objs[i]);
-    #endif
-    #ifdef ALL_R1
-      B r = rtObjGet(rtObjRaw, i);
+  #ifndef NO_RT
+    B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
+    
+    #ifndef ALL_R0
+    B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-      B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
+    Block* runtime0_b = load_compImport(
+      #include "gen/runtime0"
+    );
+    B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
+    B* runtime_0 = toHArr(r0r)->a;
     #endif
-    if (isNothing(r)) { printf("· in runtime!\n"); exit(1); }
-    if (isVal(r)) v(r)->flags|= i+1;
-    #ifdef RT_WRAP
-      r = rtWrap_wrap(r);
+    
+    Block* runtime_b = load_compImport(
+      #include "gen/runtime1"
+    );
+    
+    #ifdef ALL_R0
+    dec(r0r);
+    #endif
+  
+    B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
+    B rtObjRaw = TI(rtRes).get(rtRes,0);
+    B rtFinish = TI(rtRes).get(rtRes,1);
+    dec(rtRes);
+    
+    if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
+    HArr_p runtimeH = m_harrUc(rtObjRaw);
+    BS2B rtObjGet = TI(rtObjRaw).get;
+    
+    rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
+    rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
+    rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
+    rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
+    rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
+    rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
+    rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
+    rt_pick    = rtObjGet(rtObjRaw, 36); gc_add(rt_pick);
+    rt_take    = rtObjGet(rtObjRaw, 25); gc_add(rt_take);
+    rt_drop    = rtObjGet(rtObjRaw, 26); gc_add(rt_drop);
+    rt_group   = rtObjGet(rtObjRaw, 41); gc_add(rt_group);
+    rt_under   = rtObjGet(rtObjRaw, 56); gc_add(rt_under);
+    rt_reverse = rtObjGet(rtObjRaw, 30); gc_add(rt_reverse);
+    rt_indexOf = rtObjGet(rtObjRaw, 37); gc_add(rt_indexOf);
+    rt_count   = rtObjGet(rtObjRaw, 38); gc_add(rt_count);
+    rt_memberOf= rtObjGet(rtObjRaw, 39); gc_add(rt_memberOf);
+    rt_find    = rtObjGet(rtObjRaw, 40); gc_add(rt_find);
+    rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
+    
+    for (usz i = 0; i < rtLen; i++) {
+      #ifdef RT_WRAP
+      r1Objs[i] = rtObjGet(rtObjRaw, i); gc_add(r1Objs[i]);
+      #endif
+      #ifdef ALL_R1
+        B r = rtObjGet(rtObjRaw, i);
+      #else
+        B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
+      #endif
+      if (isNothing(r)) { printf("· in runtime!\n"); exit(1); }
       if (isVal(r)) v(r)->flags|= i+1;
-    #endif
-    runtimeH.a[i] = r;
-  }
-  dec(rtObjRaw);
-  B* runtime = runtimeH.a;
-  B rtObj = runtimeH.b;
-  dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
+      #ifdef RT_WRAP
+        r = rtWrap_wrap(r);
+        if (isVal(r)) v(r)->flags|= i+1;
+      #endif
+      runtimeH.a[i] = r;
+    }
+    dec(rtObjRaw);
+    B* runtime = runtimeH.a;
+    B rtObj = runtimeH.b;
+    dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
+    load_compArg = m_v2(FAKE_RUNTIME? frtObj : rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    gc_add(load_compArg);
+  #else
+    B* runtime = fruntime;
+  #endif
   
   
-  load_compArg = m_v2(FAKE_RUNTIME? frtObj : rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
-  gc_add(load_compArg);
   
   
-  #ifdef NO_COMP
+  #ifdef PRECOMP
     Block* c = load_compObj(
       #include "gen/interp"
       , bi_N
@@ -194,6 +198,12 @@ static inline void load_init() { // very last init function
     print(interp);
     printf("\n");
     dec(interp);
+    #ifdef HEAP_VERIFY
+      heapVerify();
+    #endif
+    rtWrap_print();
+    CTR_FOR(CTR_PRINT)
+    printAllocStats();
     exit(0);
   #else // use compiler
     Block* comp_b = load_compImport(
@@ -216,7 +226,7 @@ static inline void load_init() { // very last init function
     dec(fmtM);
     #endif
     gc_enable();
-  #endif // NO_COMP
+  #endif // PRECOMP
 }
 
 B bqn_execFile(B path, B args) { // consumes both

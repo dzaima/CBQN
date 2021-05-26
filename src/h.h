@@ -28,7 +28,8 @@
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
 // #define RT_VERIFY    // compare native and runtime versions of primitives
-// #define NO_COMP      // don't load the compiler, instead execute src/interp; needed for ./precompiled.bqn
+// #define NO_RT        // whether to completely disable self-hosted runtime loading
+// #define PRECOMP      // execute just precompiled code at src/gen/interp
 
 
 #include <inttypes.h>
@@ -133,11 +134,11 @@ enum Type {
   /*13*/ t_harr  , t_i8arr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
-  /*25*/ t_comp, t_block, t_body, t_scope,
-  /*29*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
-  /*34*/ t_freed, t_harrPartial,
+  /*25*/ t_comp, t_block, t_body, t_scope, t_blBlocks,
+  /*30*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
+  /*35*/ t_freed, t_harrPartial,
   #ifdef RT_WRAP
-  /*36*/ t_funWrap, t_md1Wrap, t_md2Wrap,
+  /*37*/ t_funWrap, t_md1Wrap, t_md2Wrap,
   #endif
   t_COUNT
 };

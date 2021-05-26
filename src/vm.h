@@ -1,7 +1,10 @@
 #pragma once
+typedef struct Comp Comp;
+typedef struct BlBlocks BlBlocks;
 typedef struct Block Block;
 typedef struct Body Body;
 typedef struct Scope Scope;
+typedef struct ScopeExt ScopeExt;
 
 typedef struct Comp {
   struct Value;
@@ -10,8 +13,13 @@ typedef struct Comp {
   B indices;
   HArr* objs;
   u32 blockAm;
-  Block* blocks[];
 } Comp;
+
+struct BlBlocks {
+  struct Value;
+  u32 am;
+  Block* a[];
+};
 
 struct Block {
   struct Value;
@@ -24,6 +32,7 @@ typedef struct NSDesc NSDesc;
 struct Body {
   struct Value;
   Comp* comp;
+  BlBlocks* blocks;
   // B* objs;
   i32* bc; // pointer in comp->bc
   u32 maxStack;
@@ -34,20 +43,29 @@ struct Body {
   i32 varIDs[];
 };
 
+struct ScopeExt {
+  u16 varAm;
+  B vars[];
+};
+
 struct Scope {
   struct Value;
   Scope* psc;
   Body* body;
   u16 varAm;
+  ScopeExt* ext;
   B vars[];
 };
+
+
+Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, Scope* sc);
+
 
 typedef struct Env {
   Scope* sc;
   union { i32* bcL; i32 bcV; };
 } Env;
 
-Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src);
 void vm_pst(Env* s, Env* e);
 void vm_pstLive();
 

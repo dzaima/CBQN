@@ -8,7 +8,6 @@ static void mm_free(Value* x);
 static u64 mm_size(Value* x);
 static void mm_visit(B x);
 static void mm_visitP(void* x);
-static u64 mm_heapAllocated();
 u64 mm_heapUsed();
 void printAllocStats();
 static B mm_alloc(usz sz, u8 type, u64 tag) {
@@ -31,13 +30,33 @@ typedef struct TAlloc {
 #define TFREE(N) mm_free((Value*)TOBJ(N));
 #define TREALLOC(N, AM) talloc_realloc(TOBJ(N), AM)
 #define TSIZE(N) (mm_size(TOBJ(N))-TOFF)
-static inline void* talloc_realloc(TAlloc* t, u64 am) {
+static inline void* talloc_realloc(TAlloc* t, u64 am) { // TODO maybe shouldn't be inline?
   u64 stored = mm_size((Value*)t)-TOFF;
   if (stored > am) return t->data;
   TALLOC(u8,r,am);
   memcpy(r, t->data, stored);
   mm_free((Value*)t);
   return r;
+}
+
+typedef struct TStack {
+  struct Value;
+  usz size;
+  usz cap;
+  u8 data[];
+} TStack;
+#define TSALLOC(T,N) u32 N##_e=sizeof(T); TStack* N##_o = (TStack*)mm_allocN(sizeof(TStack)+N##_e*2, t_temp); N##_o->size=0; N##_o->cap=2; T* N = (T*)N##_o->data;
+#define TSFREE(N) mm_free((Value*)N##_o);
+#define TSADD(N,X) { if (N##_o->size==N##_o->cap) { N##_o = tstack_ext(N##_o, N##_e); N = (void*)N##_o->data; } N[N##_o->size++] = X; }
+#define TSSIZE(N) (N##_o->size)
+static NOINLINE TStack* tstack_ext(TStack* o, u32 elsz) {
+  usz ncap = o->cap*2;
+  TStack* n = (TStack*)mm_allocN(sizeof(TStack) + elsz*ncap, t_temp);
+  memcpy(n->data, o->data, o->cap*elsz);
+  n->cap = ncap;
+  n->size = o->size;
+  mm_free((Value*)o);
+  return n;
 }
 
 // shape mess

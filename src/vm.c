@@ -119,26 +119,86 @@ void gsPrint() {
   }
 }
 
-
-
-
-NOINLINE Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src) { // consumes all
-  HArr* blocksH = toHArr(blocksq);
-  usz bam = blocksH->ia;
+Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B blocks, B nameList, Scope* sc, i32 depth) {
+  usz cIA = a(block)->ia;
+  if (cIA!=4 && cIA!=6) thrM("VM compiler: Bad block info size");
+  BS2B bgetU = TI(block).getU;
+  usz  ty  = o2s(bgetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
+  bool imm = o2b(bgetU(block,1));
+  usz  idx = o2s(bgetU(block,2)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
+  usz  vam = o2s(bgetU(block,3)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no?
+  i32* thisBC = bc+idx;
+  i32 h = 0; // stack height
+  i32 hM = 0; // max stack height
+  i32 mpsc = 0;
+  i32* c = thisBC;
+  TSALLOC(Block*,nBlT);
+  while (true) {
+    i32* n = nextBC(c);
+    if (n-thisBC-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
+    switch (*c) {
+      case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
+        goto returned;
+      case RETD: if(h!=1&h!=0) thrM("VM compiler: Wrong stack size before RETD");
+        goto returned;
+      case DFND:
+        u32 id = c[1];
+        if ((u32)id >= a(blocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
+        if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
+        bDone[id] = true;
+        c[1] = TSSIZE(nBlT);
+        TSADD(nBlT, compileBlock(TI(blocks).getU(blocks,id), comp, bDone, bc, bcIA, blocks, nameList, sc, depth+1));
+        break;
+      case LOCO: case LOCM: case LOCU:
+        if (c[1]>mpsc) mpsc = c[1];
+        break;
+      default:
+        break;
+    }
+    h+= stackDiff(c);
+    if (h<0) thrM("VM compiler: Stack size goes negative");
+    if (h>hM) hM = h;
+    c = n;
+  } returned:;
+  u64 blC = TSSIZE(nBlT);
+  BlBlocks* nBl = mm_allocN(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
+  nBl->am = blC;
+  memcpy(nBl->a, nBlT, blC*sizeof(Block*));
+  TSFREE(nBlT);
+  if (mpsc>U16_MAX) thrM("VM compiler: LOC_ too deep");
   
-  // B* objPtr = harr_ptr(objs); usz objIA = a(objs)->ia;
-  // for (usz i = 0; i < objIA; i++) objPtr[i] = c2(bi_fill, c1(bi_pick, inc(objPtr[i])), objPtr[i]);
+  Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
+  body->comp = comp; ptr_inc(comp);
+  body->bc = thisBC;
+  body->blocks = nBl;
+  body->maxStack = hM;
+  body->maxPSC = (u16)mpsc;
+  body->endStack = h;
+  body->varAm = (u16)vam;
+  if (cIA==4) {
+    body->nsDesc = NULL;
+    for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
+  } else m_nsDesc(body, imm, ty, inc(nameList), bgetU(block,4), bgetU(block,5));
+  
+  Block* bl = mm_allocN(sizeof(Block), t_block);
+  bl->body = body;
+  bl->imm = imm;
+  bl->ty = (u8)ty;
+  return bl;
+}
+
+NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) { // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
+  usz bIA = a(blocks)->ia;
   
   I32Arr* bca = toI32Arr(bcq);
   i32* bc = bca->a;
-  usz bcl = bca->ia;
-  Comp* comp = mm_allocN(fsizeof(Comp,blocks,Block*,bam), t_comp);
+  usz bcIA = bca->ia;
+  Comp* comp = mm_allocN(sizeof(Comp), t_comp);
   comp->bc = tag(bca, ARR_TAG);
   comp->indices = indices;
   comp->src = src;
   comp->objs = toHArr(objs);
-  comp->blockAm = bam;
-  B* blockDefs = blocksH->a;
+  comp->blockAm = 0;
   B nameList;
   if (isNothing(tokenInfo)) {
     nameList = bi_emptyHVec;
@@ -147,68 +207,19 @@ NOINLINE Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src)
     nameList = TI(t).getU(t,0);
   }
   if (!isNothing(src) && !isNothing(indices)) {
-    if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("compile: bad indices");
+    if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
       B ind = TI(indices).getU(indices,i);
-      if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcl) thrM("compile: bad indices");
+      if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcIA) thrM("VM compiler: Bad indices");
       BS2B indGetU = TI(ind).getU;
-      for (usz j = 0; j < bcl; j++) o2i(indGetU(ind,j));
+      for (usz j = 0; j < bcIA; j++) o2i(indGetU(ind,j));
     }
   }
-  
-  for (usz i = 0; i < bam; i++) {
-    B cbld = blockDefs[i];
-    usz cbia = a(cbld)->ia;
-    if (cbia!=4 && cbia!=6) thrM("bad compile block");
-    BS2B bgetU = TI(cbld).getU;
-    usz  ty  = o2s(bgetU(cbld,0)); if (ty>2) thrM("bad block type");
-    bool imm = o2s(bgetU(cbld,1)); // todo o2b or something
-    usz  idx = o2s(bgetU(cbld,2)); if (idx>=bcl) thrM("oob bytecode index");
-    usz  vam = o2s(bgetU(cbld,3)); if (vam!=(u16)vam) thrM("too many variables");
-    i32* cbc = bc+idx;
-    i32* scan = cbc;
-    i32 ssz = 0, mssz=0;
-    i32 mpsc = 0;
-    while (true) {
-      if (*scan==RETN) { if(ssz!=1)thrM("Wrong stack size before RETN"); break; }
-      if (*scan==RETD) { if(ssz!=1&ssz!=0)thrM("Wrong stack size before RETN"); break; }
-      ssz+= stackDiff(scan);
-      if (ssz < 0) thrM("Invalid bytecode: stack size goes negative");
-      if (ssz>mssz) mssz = ssz;
-      if (*scan==LOCO | *scan==LOCM | *scan==LOCU) {
-        if (scan[1]>mpsc) mpsc = scan[1];
-      }
-      scan = nextBC(scan);
-      if (scan-bc >= bcl) thrM("no RETN/RETD found at end of bytecode");
-    }
-    if (mpsc>U16_MAX) thrM("LOC_ too deep");
-    
-    Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
-    body->comp = comp;
-    body->bc = cbc;
-    body->maxStack = mssz;
-    body->maxPSC = (u16)mpsc;
-    body->endStack = ssz;
-    body->varAm = (u16)vam;
-    if (cbia==4) {
-      body->nsDesc = NULL;
-      for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
-    } else m_nsDesc(body, imm, ty, inc(nameList), bgetU(cbld,4), bgetU(cbld,5));
-    ptr_inc(comp);
-    
-    Block* bl = mm_allocN(sizeof(Block), t_block);
-    bl->body = body;
-    bl->imm = imm;
-    bl->ty = (u8)ty;
-    comp->blocks[i] = bl;
-  }
-  
-  Block* ret = c(Block,inc(tag(comp->blocks[0], OBJ_TAG)));
-  // TODO store blocks in each body, then decrement each of comp->blocks; also then move temp block list out of Comp as it's useless then
-  // for (usz i = 0; i < bam; i++) ptr_dec(comp->blocks[i]);
-  ptr_dec(comp);
-  ptr_dec(blocksH);
-  dec(tokenInfo);
+  TALLOC(bool,bDone,bIA);
+  for (usz i = 0; i < bIA; i++) bDone[i] = false;
+  Block* ret = compileBlock(TI(blocks).getU(blocks, 0), comp, bDone, bc, bcIA, blocks, nameList, sc, 0);
+  TFREE(bDone);
+  ptr_dec(comp); dec(blocks); dec(tokenInfo);
   return ret;
 }
 
@@ -290,7 +301,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     printf("new eval\n");
   #endif
   B* objs = b->comp->objs->a;
-  Block** blocks = b->comp->blocks;
+  Block** blocks = b->blocks->a; // b->comp->blocks;
   i32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
@@ -527,11 +538,6 @@ B m_md2Block(Block* bl, Scope* psc) {
   return r;
 }
 
-void comp_free(Value* x) {
-  Comp* c = (Comp*)x;
-  ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices);
-  u32 am = c->blockAm; for(u32 i = 0; i < am; i++) ptr_dec(c->blocks[i]);
-}
 void scope_free(Value* x) {
   Scope* c = (Scope*)x;
   if (c->psc) ptr_decR(c->psc);
@@ -539,18 +545,15 @@ void scope_free(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); }
+void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); }
+void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); ptr_decR(c->blocks); }
 void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(Value* x) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void alias_free(Value* x) { dec(((FldAlias*)x)->obj); }
+void bBlks_free(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (u32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
 
-void comp_visit(Value* x) {
-  Comp* c = (Comp*)x;
-  mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices);
-  u32 am = c->blockAm; for(u32 i = 0; i < am; i++) mm_visitP(c->blocks[i]);
-}
 void scope_visit(Value* x) {
   Scope* c = (Scope*)x;
   if (c->psc) mm_visitP(c->psc);
@@ -558,18 +561,21 @@ void scope_visit(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
-void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); }
+void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); mm_visitP(c->blocks); }
 void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void alias_visit(Value* x) { mm_visit(((FldAlias*)x)->obj); }
+void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (u32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
 void block_print(B x) { printf("(%p: block for %p)",v(x),c(Block,x)->body); }
 void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
 void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
+void bBlks_print(B x) { printf("(block list)"); }
 
 // void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
 // void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
@@ -609,6 +615,7 @@ void comp_init() {
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
   ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;
   ti[t_scope    ].free = scope_free; ti[t_scope    ].visit = scope_visit; ti[t_scope    ].print = scope_print;
+  ti[t_blBlocks ].free = bBlks_free; ti[t_blBlocks ].visit = bBlks_visit; ti[t_blBlocks ].print = bBlks_print;
   ti[t_fldAlias ].free = alias_free; ti[t_fldAlias ].visit = alias_visit; ti[t_fldAlias ].print = alias_print;
   ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
   ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;

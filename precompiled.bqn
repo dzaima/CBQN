@@ -14,7 +14,7 @@ tests ← •FLines path∾"/test/cases/prim.bqn"
   '%'⊸∊◶{𝕤
     •Out 𝕩
     "src/gen/interp" •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"
-    (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"./debugBuild"‿"-DNO_COMP"
+    (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"./debugBuild"‿"-DPRECOMP"
     code‿out‿err←•SH"./BQN"
     •Out out
     {𝕤⋄•Out"exit code "∾(⍕code) ⋄ •Out err}⍟(×code) err
