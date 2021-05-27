@@ -27,4 +27,4 @@ heapverify-clean:
 rtverify-clean:
 	@$(MAKE) -C obj/rtverify clean
 
-clean: o3-clean debug-clean rtperf-clean heapverify-clean rtverify-clean
+clean: o3-clean o3g-clean debug-clean rtperf-clean heapverify-clean rtverify-clean

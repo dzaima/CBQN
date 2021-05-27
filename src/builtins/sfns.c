@@ -687,19 +687,21 @@ B reverse_uc1(B t, B o, B x) {
 
 B pick_uc1(B t, B o, B x) {
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
+  B xf = getFillQ(x);
   usz ia = a(x)->ia;
   B arg = TI(x).get(x, 0);
   B rep = c1(o, arg);
   MAKE_MUT(r, ia); mut_to(r, el_or(TI(x).elType, selfElType(rep)));
   mut_set(r, 0, rep);
   mut_copy(r, 1, x, 1, ia-1);
-  return mut_fcd(r, x);
+  return qWithFill(mut_fcd(r, x), xf);
 }
 
 B pick_ucw(B t, B o, B w, B x) {
   if (isArr(w) || isAtm(x) || rnk(x)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = a(x)->ia;
   usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
+  B xf = getFillQ(x);
   B arg = TI(x).get(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x).canStore(rep)) {
@@ -727,7 +729,7 @@ B pick_ucw(B t, B o, B w, B x) {
   mut_set(r, wi, rep);
   mut_copy(r, 0, x, 0, wi);
   mut_copy(r, wi+1, x, wi+1, xia-wi-1);
-  return mut_fcd(r, x);
+  return qWithFill(mut_fcd(r, x), xf);
 }
 
 B slash_ucw(B t, B o, B w, B x) {

@@ -367,7 +367,7 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
   }
   if (cr>1) ptr_dec(csh);
   dec(x);
-  return c1(bi_gt, harr_fv(r));
+  return bqn_merge(harr_fv(r));
 }
 B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if ((isAtm(x) || rnk(x)==0) && (isAtm(w) || rnk(w)==0)) {
