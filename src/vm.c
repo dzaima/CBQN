@@ -165,10 +165,12 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
     i32* n = nextBC(c);
     if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
     bool ret = false;
+    #define A64(X) { u64 a64=(X); TSADD(nBCT, (u32)a64); TSADD(nBCT, a64>>32); }
     switch (*c) {
       case PUSH:
-        TSADD(nBCT, isVal(comp->objs->a[c[1]])? ADDI : ADDU);
-        TSADD(nBCT, c[1]);
+        B obj = comp->objs->a[c[1]];
+        TSADD(nBCT, isVal(obj)? ADDI : ADDU);
+        A64(obj.u);
         break;
       case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
         TSADD(nBCT, RETN);
@@ -412,6 +414,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #define ADD(X) { *(lgStack++) = X; } // fine, as, if an error occurs, lgStack is ignored anyways
     #define GS_UPD { gStack = lgStack; }
   #endif
+  #define L64 ({ u64 r = (u32)bc[0] | ((u64)(u32)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
     #define POS_UPD (envCurr-1)->bcL = bc-1;
   #else
@@ -436,13 +439,13 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case ADDI: {
-        B o = objs[*bc++];
+        B o = b(L64);
         ptr_inc(v(o));
         ADD(o);
         break;
       }
       case ADDU: {
-        ADD(objs[*bc++]);
+        ADD(b(L64));
         break;
       }
       case FN1C: { P(f)P(x)
@@ -585,6 +588,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   GS_UPD;
   popEnv();
   return r;
+  #undef L64
   #undef P
   #undef ADD
   #undef POP

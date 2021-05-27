@@ -54,13 +54,13 @@ void gc_visitRoots() {
 }
 u64 gc_lastAlloc;
 void gc_forceGC() {
-  #ifdef LOG_GC
-    u64 start = nsTime();
-    gc_visitBytes = 0; gc_freedBytes = 0;
-    gc_visitCount = 0; gc_freedCount = 0;
-    u64 startAllocB = allocB;
-  #endif
   #ifdef ENABLE_GC
+    #ifdef LOG_GC
+      u64 start = nsTime();
+      gc_visitBytes = 0; gc_freedBytes = 0;
+      gc_visitCount = 0; gc_freedCount = 0;
+      u64 startAllocB = allocB;
+    #endif
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
     gc_tagNew = gc_tagCurr;
