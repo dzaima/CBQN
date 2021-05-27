@@ -406,7 +406,7 @@ B join_c2(B t, B w, B x) {
   if (c==1) {
     B r = vec_join(w, x);
     if (rnk(r)==0) srnk(r,1);
-    return r;
+    return withFill(r, f);
   }
   MAKE_MUT(r, wia+xia);
   mut_to(r, el_or(TI(w).elType, TI(x).elType));
