@@ -560,7 +560,7 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
-      B rf = m_fillarrp(ria);
+      B rf = m_fillarrp(0);
       arr_shVec(rf, 0);
       fillarr_setFill(r, rf);
       if (TI(x).elType==el_i32) {
@@ -619,7 +619,7 @@ B group_c2(B t, B w, B x) {
         a(c)->ia = 0;
         rp[i] = c;
       }
-      B rf = m_fillarrp(ria);
+      B rf = m_fillarrp(0);
       arr_shVec(rf, 0);
       fillarr_setFill(rf, xf);
       fillarr_setFill(r, rf);
