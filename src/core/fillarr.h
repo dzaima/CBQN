@@ -12,7 +12,11 @@ B asFill(B x); // consumes
 void validateFill(B x);
 bool fillEqual(B w, B x);
 B withFill(B x, B fill); // consumes both
-B qWithFill(B x, B fill); // consumes both
+static B qWithFill(B x, B fill) { // consumes both
+  if (noFill(fill)) return x;
+  return withFill(x, fill);
+}
+
 
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {

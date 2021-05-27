@@ -3,7 +3,7 @@
 #include "../utils/utf.h"
 
 u64 allocB; // currently allocated number of bytes
-B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
+B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
 #define F(N) u64 N;
 CTR_FOR(F)
 #undef F

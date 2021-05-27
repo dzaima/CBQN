@@ -39,7 +39,7 @@ enum {
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
   EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
   ADDI, ADDU, // PUSH with required increment & not required increment
-  BC_SIZE = 32
+  BC_SIZE
 };
 
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \

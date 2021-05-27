@@ -196,7 +196,3 @@ B withFill(B x, B fill) { // consumes both
   dec(x);
   return r;
 }
-B qWithFill(B x, B fill) { // consumes both
-  if (noFill(fill)) return x;
-  return withFill(x, fill);
-}

@@ -313,11 +313,6 @@ static inline void base_init() { // very first init function
   ti[t_shape].visit = noop_visit;
   ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = noop_visit;
   ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
-  bi_N = tag(0, TAG_TAG);
-  bi_noVar   = tag(1, TAG_TAG);
-  bi_badHdr  = tag(2, TAG_TAG);
-  bi_optOut  = tag(3, TAG_TAG);
-  bi_noFill  = tag(5, TAG_TAG);
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
   #define FA(N,X) { B t=bi_##N = mm_alloc(sizeof(BFn), t_funBI, ftag(FUN_TAG)); BFn*f=c(BFn,t); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(t); }

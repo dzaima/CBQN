@@ -234,7 +234,12 @@ void gc_forceGC(); // force a gc; who knows what happens if gc is disabled (prob
 void gc_visitRoots();
 
 // some primitive actions
-extern B bi_N, bi_noVar, bi_badHdr, bi_optOut, bi_noFill, bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
+static const B bi_N       = tag(0, TAG_TAG);
+static const B bi_noVar   = tag(1, TAG_TAG);
+static const B bi_badHdr  = tag(2, TAG_TAG);
+static const B bi_optOut  = tag(3, TAG_TAG);
+static const B bi_noFill  = tag(5, TAG_TAG);
+extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);

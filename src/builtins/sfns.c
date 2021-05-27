@@ -400,13 +400,13 @@ B join_c2(B t, B w, B x) {
     HArr_p r = m_harrUv(2);
     r.a[0] = TI(w).get(w,0); dec(w);
     r.a[1] = TI(x).get(x,0); dec(x);
-    return withFill(r.b, f);
+    return qWithFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   if (c==1) {
     B r = vec_join(w, x);
     if (rnk(r)==0) srnk(r,1);
-    return withFill(r, f);
+    return qWithFill(r, f);
   }
   MAKE_MUT(r, wia+xia);
   mut_to(r, el_or(TI(w).elType, TI(x).elType));
@@ -468,7 +468,7 @@ B couple_c2(B t, B w, B x) {
 }
 
 
-static void shift_check(B w, B x) {
+static inline void shift_check(B w, B x) {
   ur wr = rnk(w); usz* wsh = a(w)->sh;
   ur xr = rnk(x); usz* xsh = a(x)->sh;
   if (wr+1!=xr & wr!=xr) thrF("shift: =𝕨 must be =𝕩 or ¯1+=𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
