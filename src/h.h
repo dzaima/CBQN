@@ -435,11 +435,11 @@ typedef struct Fun {
 } Fun;
 
 
-static B c1_rare(B f, B x) { dec(x);
+static NOINLINE B c1_rare(B f, B x) { dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-static B c2_rare(B f, B w, B x) { dec(w); dec(x);
+static NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
