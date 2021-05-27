@@ -297,22 +297,26 @@ typedef struct FldAlias {
   B obj;
   i32 p;
 } FldAlias;
-void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
-  if (isVar(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B prev = sc->vars[(u32)s.u];
-    if (upd) {
-      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
-      dec(prev);
-    } // else if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
-    sc->vars[(u32)s.u] = inc(x);
-  } else if (isExt(s)) {
+
+static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd);
+static void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
+  if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);;
+  Scope* sc = pscs[(u16)(s.u>>32)];
+  B prev = sc->vars[(u32)s.u];
+  if (upd) {
+    if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
+    dec(prev);
+  }
+  sc->vars[(u32)s.u] = inc(x);
+}
+static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
+  if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->ext->vars[(u32)s.u];
     if (upd) {
       if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
-    } // else if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
+    }
     sc->ext->vars[(u32)s.u] = inc(x);
   } else {
     VTY(s, t_harr);
@@ -344,13 +348,19 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
   }
 }
-B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
-  if (isVar(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B r = sc->vars[(u32)s.u];
-    sc->vars[(u32)s.u] = bi_optOut;
-    return r;
-  } else if (isExt(s)) {
+
+
+
+static NOINLINE B v_getR(Scope* pscs[], B s);
+static B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
+  if (RARE(!isVar(s))) return v_getR(pscs, s);
+  Scope* sc = pscs[(u16)(s.u>>32)];
+  B r = sc->vars[(u32)s.u];
+  sc->vars[(u32)s.u] = bi_optOut;
+  return r;
+}
+static NOINLINE B v_getR(Scope* pscs[], B s) {
+  if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->ext->vars[(u32)s.u];
     sc->ext->vars[(u32)s.u] = bi_optOut;

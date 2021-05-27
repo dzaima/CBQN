@@ -13,26 +13,27 @@ void validateFill(B x);
 bool fillEqual(B w, B x);
 B withFill(B x, B fill); // consumes both
 static B qWithFill(B x, B fill) { // consumes both
-  if (noFill(fill)) return x;
+  assert(isArr(x));
+  if (noFill(fill) || TI(x).elType!=el_B) return x;
   return withFill(x, fill);
 }
 
 
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
+    u8 xe = TI(x).elType;
+    if (xe<=el_f64) return m_f64(0);
+    if (xe==el_c32) return m_c32(' ');
     u8 t = v(x)->type;
-    if (t==t_fillarr  ) { B r = inc(c(FillArr,x            )->fill); return r; }
-    if (t==t_fillslice) { B r = inc(c(FillArr,c(Slice,x)->p)->fill); return r; }
-    if (t==t_c32arr || t==t_c32slice) return m_c32(' ');
-    if (t==t_i32arr || t==t_i32slice) return m_f64(0  );
-    if (t==t_f64arr || t==t_f64slice) return m_f64(0  );
+    if (t==t_fillarr  ) return inc(c(FillArr,x            )->fill);
+    if (t==t_fillslice) return inc(c(FillArr,c(Slice,x)->p)->fill);
     return bi_noFill;
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
   return bi_noFill;
 }
-static B getFillQ(B x) { // doesn't consume; can return bi_noFill if CATCH_ERRORS
+static B getFillQ(B x) { // doesn't consume; returns 0 if !CATCH_ERRORS
   B r = getFillR(x);
   #ifdef CATCH_ERRORS
     return r;
