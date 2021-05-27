@@ -52,9 +52,9 @@ struct ScopeExt {
 struct Scope {
   struct Value;
   Scope* psc;
-  Body* body;
+  Body* body; // last place where code was executed in this scope; also used for variable name resolution, so can only safely be replaced if varAm==0
   u16 varAm;
-  ScopeExt* ext;
+  ScopeExt* ext; // will probably be NULL
   B vars[];
 };
 

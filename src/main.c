@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
   if (startREPL) {
     INIT;
     B replPath = m_str32(U"REPL"); gc_add(replPath);
-    Block* gscInit = bqn_comp(m_str32(U"1"), inc(replPath), m_f64(0));
+    Block* gscInit = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
     Scope* gsc = m_scope(gscInit->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
     ptr_dec(gscInit);
     while (CATCH) {
@@ -146,6 +146,9 @@ int main(int argc, char* argv[]) {
       if (read<=0 || ln[0]==0 || ln[0]==10) break;
       Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec), gsc, true);
       free(ln);
+      
+      ptr_dec(gsc->body); ptr_inc(block->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
+      gsc->body = block->body;
       
       #ifdef TIME
       u64 sns = nsTime();
