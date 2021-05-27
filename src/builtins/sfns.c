@@ -392,9 +392,15 @@ B join_c1(B t, B x) {
   return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
+  if (isAtm(w)) w = m_atomUnit(w);
+  ur wr = rnk(w);
+  if (isAtm(x)) {
+    if (wr==1 && inplace_add(w, x)) return w;
+    x = m_atomUnit(x);
+  }
+  usz wia = a(w)->ia; usz* wsh = a(w)->sh;
+  usz xia = a(x)->ia; usz* xsh = a(x)->sh; ur xr = rnk(x);
   B f = fill_both(w, x);
-  if (isAtm(w)) w = m_atomUnit(w); ur wr = rnk(w); usz wia = a(w)->ia; usz* wsh = a(w)->sh;
-  if (isAtm(x)) x = m_atomUnit(x); ur xr = rnk(x); usz xia = a(x)->ia; usz* xsh = a(x)->sh;
   ur c = wr>xr?wr:xr;
   if (c==0) {
     HArr_p r = m_harrUv(2);

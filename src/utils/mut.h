@@ -298,7 +298,7 @@ static B vec_join(B w, B x) { // consumes both
   dec(w); dec(x);
   return mut_fv(r);
 }
-static B vec_add(B w, B x) { // consumes both
+static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
   usz wia = a(w)->ia;
   usz ria = wia+1;
   if (v(w)->refc==1) {
@@ -307,25 +307,30 @@ static B vec_add(B w, B x) { // consumes both
     if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && q_i32(x)) {
       a(w)->ia = ria;
       i32arr_ptr(w)[wia] = o2iu(x);
-      return w;
+      return true;
     }
     if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && isC32(x)) {
       a(w)->ia = ria;
       c32arr_ptr(w)[wia] = o2cu(x);
-      return w;
+      return true;
     }
     if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && isNum(x)) {
       a(w)->ia = ria;
       f64arr_ptr(w)[wia] = o2fu(x);
-      return w;
+      return true;
     }
     if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
       a(w)->ia = ria;
       harr_ptr(w)[wia] = x;
-      return w;
+      return true;
     }
   }
-  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w).elType, selfElType(x)));
+  return false;
+}
+static B vec_add(B w, B x) { // consumes both; fills may be wrong
+  if (inplace_add(w, x)) return w;
+  usz wia = a(w)->ia;
+  MAKE_MUT(r, wia+1); mut_to(r, el_or(TI(w).elType, selfElType(x)));
   mut_copy(r, 0, w, 0, wia);
   mut_set(r, wia, x);
   dec(w);

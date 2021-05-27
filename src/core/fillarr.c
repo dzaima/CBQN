@@ -72,10 +72,8 @@ NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be array
   u8 we = TI(w).elType;
   u8 xe = TI(x).elType;
   if (we!=el_B && xe!=el_B) {
-    if (we==xe) return true;
     if (we==el_c32 ^ xe==el_c32) return false;
-    assert(we==el_i32|we==el_f64);
-    assert(xe==el_i32|xe==el_f64);
+    assert(we==el_c32 & xe==el_c32  ||  we<=el_f64 & xe<=el_f64);
     return true;
   }
   BS2B xgetU = TI(x).getU;

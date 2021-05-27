@@ -28,13 +28,15 @@ static bool fillEqual(B w, B x) {
 
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
-    u8 xe = TI(x).elType;
-    if (xe<=el_f64) return m_f64(0);
-    if (xe==el_c32) return m_c32(' ');
-    u8 t = v(x)->type;
-    if (t==t_fillarr  ) return inc(c(FillArr,x            )->fill);
-    if (t==t_fillslice) return inc(c(FillArr,c(Slice,x)->p)->fill);
-    return bi_noFill;
+    switch(TI(x).elType) { default: UD;
+      case el_f64: case el_i32: return m_i32(0);
+      case el_c32: return m_c32(' ');
+      case el_B:
+        u8 t = v(x)->type;
+        if (t==t_fillarr  ) return inc(c(FillArr,x            )->fill);
+        if (t==t_fillslice) return inc(c(FillArr,c(Slice,x)->p)->fill);
+        return bi_noFill;
+    }
   }
   if (isF64(x)|isI32(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
