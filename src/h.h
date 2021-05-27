@@ -104,6 +104,7 @@ CTR_FOR(F)
 static const u16 C32_TAG = 0b0111111111110001; // 0111111111110001................00000000000ccccccccccccccccccccc char
 static const u16 TAG_TAG = 0b0111111111110010; // 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
 static const u16 VAR_TAG = 0b0111111111110011; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
+static const u16 EXT_TAG = 0b0111111111110100; // 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn extended variable reference
 static const u16 I32_TAG = 0b0111111111110111; // 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
 static const u16 MD1_TAG = 0b1111111111110010; // 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
 static const u16 MD2_TAG = 0b1111111111110011; // 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
@@ -135,11 +136,11 @@ enum Type {
   /*13*/ t_harr  , t_i8arr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
-  /*25*/ t_comp, t_block, t_body, t_scope, t_blBlocks,
-  /*30*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
-  /*35*/ t_freed, t_harrPartial,
+  /*25*/ t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks,
+  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
+  /*36*/ t_freed, t_harrPartial,
   #ifdef RT_WRAP
-  /*37*/ t_funWrap, t_md1Wrap, t_md2Wrap,
+  /*38*/ t_funWrap, t_md1Wrap, t_md2Wrap,
   #endif
   t_COUNT
 };
@@ -304,6 +305,7 @@ static inline bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
 static inline bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
 static inline bool isC32(B x) { return (x.u>>48) == C32_TAG; }
 static inline bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
+static inline bool isExt(B x) { return (x.u>>48) == EXT_TAG; }
 static inline bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
 static inline bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
 static inline bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }

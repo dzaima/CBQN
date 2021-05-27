@@ -44,8 +44,9 @@ struct Body {
 };
 
 struct ScopeExt {
+  struct Value;
   u16 varAm;
-  B vars[];
+  B vars[]; // vars has length varAm*2; position varAm and onwards are corresponding names to variables at regular indexes
 };
 
 struct Scope {
@@ -59,7 +60,8 @@ struct Scope {
 
 
 Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, Scope* sc);
-
+Scope* m_scope(Body* body, Scope* psc, u16 varAm);
+B evalBC(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body directly in the scope
 
 typedef struct Env {
   Scope* sc;

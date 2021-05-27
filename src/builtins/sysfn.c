@@ -131,6 +131,7 @@ B internal_c2(B t, B w, B x) {
       else if (isC32(x)) r = m_str32(U"tagged c32");
       else if (isTag(x)) r = m_str32(U"tagged tag");
       else if (isVar(x)) r = m_str32(U"tagged var");
+      else if (isExt(x)) r = m_str32(U"tagged extvar");
       else r = m_str32(U"tagged unknown");
     }
   } else if(id==1) { r = isVal(x)? m_i32(v(x)->mmInfo & 0x7f) : m_str32(U"(not heap-allocated)"); }

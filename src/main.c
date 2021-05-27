@@ -4,6 +4,7 @@
 
 // TODO these are hacks around not needing tiny headers
 Block* bqn_comp(B str, B path, B args);
+Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
 void rtWrap_print();
 
 int main(int argc, char* argv[]) {
@@ -126,6 +127,9 @@ int main(int argc, char* argv[]) {
   if (startREPL) {
     INIT;
     B replPath = m_str32(U"REPL"); gc_add(replPath);
+    Block* gscInit = bqn_comp(m_str32(U"1"), inc(replPath), m_f64(0));
+    Scope* gsc = m_scope(gscInit->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
+    ptr_dec(gscInit);
     while (CATCH) {
       printf("Error: "); print(catchMessage); putchar('\n');
       vm_pst(envCurr, envStart+envPrevHeight);
@@ -140,16 +144,16 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_comp(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec));
+      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec), gsc, true);
       free(ln);
       
       #ifdef TIME
       u64 sns = nsTime();
-      B res = m_funBlock(block, 0);
+      B res = evalBC(block->body, gsc);
       u64 ens = nsTime();
       printf("%fms\n", (ens-sns)/1e6);
       #else
-      B res = m_funBlock(block, 0);
+      B res = evalBC(block->body, gsc);
       #endif
       ptr_dec(block);
       

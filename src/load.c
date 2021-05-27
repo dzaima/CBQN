@@ -1,5 +1,7 @@
 #include "core.h"
 #include "vm.h"
+#include "ns.h"
+#include "utils/mut.h"
 #include "utils/file.h"
 
 u64 mm_heapMax = HEAP_MAX;
@@ -26,12 +28,12 @@ _Thread_local B comp_currArgs;
 
 B rt_sortDsc, rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take,
   rt_drop, rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
-Block* load_compObj(B x, B src) { // consumes
+Block* load_compObj(B x, B src, Scope* sc) { // consumes x,src
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, NULL)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, NULL);
+  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, sc)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, sc);
   dec(x);
   return r;
 }
@@ -47,6 +49,7 @@ Block* load_compImport(B bc, B objs, B blocks) { // consumes all
 #endif
 
 B load_comp;
+B load_rtObj;
 B load_compArg;
 
 #ifdef FORMATTER
@@ -67,7 +70,34 @@ void load_gcFn() {
 NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currPath = path;
   comp_currArgs = args;
-  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str);
+  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, NULL);
+  dec(path); dec(args);
+  comp_currArgs = comp_currPath = bi_N;
+  return r;
+}
+NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
+  comp_currPath = path;
+  comp_currArgs = args;
+  B vName = inc(bi_emptyHVec);
+  B vDepth = inc(bi_emptyIVec);
+  if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
+  i32 depth = repl? -1 : 0;
+  Scope* csc = sc;
+  while (csc) {
+    for (i32 i = 0; i < csc->varAm; i++) {
+      i32 nameID = csc->body->varIDs[i];
+      B nl = csc->body->nsDesc->nameList;
+      vName = vec_add(vName, TI(nl).get(nl, nameID));
+      vDepth = vec_add(vDepth, m_i32(depth));
+    }
+    if (csc->ext) for (i32 i = 0; i < csc->ext->varAm; i++) {
+      vName = vec_add(vName, inc(csc->ext->vars[i+csc->ext->varAm]));
+      vDepth = vec_add(vDepth, m_i32(depth));
+    }
+    csc = csc->psc;
+    depth++;
+  }
+  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, sc);
   dec(path); dec(args);
   comp_currArgs = comp_currPath = bi_N;
   return r;
@@ -180,7 +210,8 @@ static inline void load_init() { // very last init function
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
     dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
-    load_compArg = m_v2(FAKE_RUNTIME? frtObj : rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
+    load_compArg = m_v2(load_rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
     gc_add(load_compArg);
   #else
     B* runtime = fruntime;

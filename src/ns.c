@@ -57,6 +57,18 @@ B ns_getU(B ns, B cNL, i32 nameID) {
   }
   thrM("No key found");
 }
+B ns_getNU(B ns, B name) {
+  NS* n = c(NS, ns);
+  NSDesc* d = n->desc;
+  i32 dVarAm = d->varAm;
+  B dNL = d->nameList;
+  BS2B dNLgetU = TI(dNL).getU;
+  for (i32 i = 0; i < dVarAm; i++) {
+    i32 dID = d->expIDs[i];
+    if (dID>=0 && equal(dNLgetU(dNL, dID), name)) return n->sc->vars[i];
+  }
+  thrM("No key found");
+}
 
 B ns_nameList(NSDesc* d) {
   return d->nameList;

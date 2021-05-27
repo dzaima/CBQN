@@ -37,12 +37,14 @@ enum {
   RETD = 29, // return a namespace of exported items
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
+  EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
   BC_SIZE = 32
 };
 
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU)
+                  F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
+                  F(EXTO) F(EXTM) F(EXTU)
 
 i32* nextBC(i32* p) {
   switch(*p) {
@@ -57,13 +59,14 @@ i32* nextBC(i32* p) {
     case SYSV: case NSPM:
       return p+2;
     case LOCO: case LOCM: case LOCU:
+    case EXTO: case EXTM: case EXTU:
       return p+3;
     default: return 0;
   }
 }
 i32 stackDiff(i32* p) {
   switch(*p) {
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case SYSV: return 1;
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: return 1;
     case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
     case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN: return -1;
     case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O: return -2;
@@ -133,6 +136,29 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
   TSALLOC(Block*, nBlT, 2);
   TSALLOC(i32, nBCT, 20);
   TSALLOC(i32, mapT, 20);
+  if (depth==0 && sc && vam > sc->varAm) {
+    if (cIA==4) thrM("VM compiler: full block info must be provided for extending scopes");
+    i32 regAm = sc->varAm;
+    ScopeExt* oE = sc->ext;
+    if (oE==NULL || vam > regAm + oE->varAm) {
+      i32 nSZ = vam - regAm;
+      ScopeExt* nE = mm_allocN(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
+      nE->varAm = nSZ;
+      i32 oSZ = 0;
+      if (oE) {
+        oSZ = oE->varAm;
+        memcpy(nE->vars    , oE->vars    , oSZ*sizeof(B));
+        memcpy(nE->vars+nSZ, oE->vars+oSZ, oSZ*sizeof(B));
+        mm_free((Value*)oE);
+      }
+      B varIDs = bgetU(block,4);
+      for (i32 i = oSZ; i < nSZ; i++) {
+        nE->vars[i] = bi_noVar;
+        nE->vars[i+nSZ] = TI(nameList).get(nameList, o2s(TI(varIDs).getU(varIDs, regAm+i)));
+      }
+      sc->ext = nE;
+    }
+  }
   i32* c = bc+idx;
   while (true) {
     i32* n = nextBC(c);
@@ -159,10 +185,21 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
         break;
       }
       case LOCO: case LOCM: case LOCU: {
-        if (c[1]>mpsc) mpsc = c[1];
-        TSADD(nBCT, c[0]);
-        TSADD(nBCT, c[1]);
-        TSADD(nBCT, c[2]);
+        i32 ins = c[0];
+        i32 cdepth = c[1];
+        i32 cpos = c[2];
+        if (cdepth>mpsc) mpsc = cdepth;
+        if (sc && cdepth>=depth) {
+          Scope* csc = sc;
+          for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
+          if (cpos >= csc->varAm) {
+            cpos-= csc->varAm;
+            ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTU;
+          }
+        }
+        TSADD(nBCT, ins);
+        TSADD(nBCT, cdepth);
+        TSADD(nBCT, cpos);
         break;
       }
       default: {
@@ -211,9 +248,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
   return bl;
 }
 
-NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) { // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
+// consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
+// if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
+NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) { 
   usz bIA = a(blocks)->ia;
-  
   I32Arr* bca = toI32Arr(bcq);
   i32* bc = bca->a;
   usz bcIA = bca->ia;
@@ -261,10 +299,16 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
     if (upd) {
       if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
-    } else {
-      if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
-    }
+    } // else if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
     sc->vars[(u32)s.u] = inc(x);
+  } else if (isExt(s)) {
+    Scope* sc = pscs[(u16)(s.u>>32)];
+    B prev = sc->ext->vars[(u32)s.u];
+    if (upd) {
+      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
+      dec(prev);
+    } // else if (prev.u!=bi_noVar.u) thrM("←: Redefining variable");
+    sc->ext->vars[(u32)s.u] = inc(x);
   } else {
     VTY(s, t_harr);
     B* sp = harr_ptr(s);
@@ -277,6 +321,9 @@ void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
             Scope* sc = pscs[(u16)(c.u>>32)];
             i32 nameID = sc->body->varIDs[(u32)c.u];
             v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
+          } else if (isExt(c)) {
+            ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
+            v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm]), upd);
           } else if (isObj(c)) {
             assert(v(c)->type == t_fldAlias);
             Scope* sc = pscs[0];
@@ -297,6 +344,11 @@ B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_opt
     Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->vars[(u32)s.u];
     sc->vars[(u32)s.u] = bi_optOut;
+    return r;
+  } else if (isExt(s)) {
+    Scope* sc = pscs[(u16)(s.u>>32)];
+    B r = sc->ext->vars[(u32)s.u];
+    sc->ext->vars[(u32)s.u] = bi_optOut;
     return r;
   } else {
     VTY(s, t_harr);
@@ -441,6 +493,22 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
+      case EXTM: { i32 d = *bc++; i32 p = *bc++;
+        ADD(tag((u64)d<<32 | (u32)p, EXT_TAG));
+        break;
+      }
+      case EXTO: { i32 d = *bc++; i32 p = *bc++;
+        B l = pscs[d]->ext->vars[p];
+        if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
+        ADD(inc(l));
+        break;
+      }
+      case EXTU: { i32 d = *bc++; i32 p = *bc++;
+        B* vars = pscs[d]->ext->vars;
+        ADD(vars[p]);
+        vars[p] = bi_optOut;
+        break;
+      }
       case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false); dec(s); ADD(x); break; }
       case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
       case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
@@ -498,13 +566,20 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #undef GS_UPD
 }
 
-B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
-  Body* body = bl->body;
-  Scope* sc = mm_allocN(fsizeof(Scope, vars, B, body->varAm), t_scope);
+Scope* m_scope(Body* body, Scope* psc, u16 varAm) { // doesn't consume
+  Scope* sc = mm_allocN(fsizeof(Scope, vars, B, varAm), t_scope);
   sc->body = body; ptr_inc(body);
   sc->psc = psc; if(psc) ptr_inc(psc);
-  u16 varAm = sc->varAm = body->varAm;
+  sc->varAm = varAm;
+  sc->ext = NULL;
+  return sc;
+}
+
+B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
+  Body* body = bl->body;
+  u16 varAm = body->varAm;
   assert(varAm>=ga);
+  Scope* sc = m_scope(body, psc, varAm);
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
@@ -565,6 +640,7 @@ B m_md2Block(Block* bl, Scope* psc) {
 void scope_free(Value* x) {
   Scope* c = (Scope*)x;
   if (c->psc) ptr_decR(c->psc);
+  if (c->ext) ptr_decR(c->ext);
   ptr_decR(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
@@ -576,11 +652,13 @@ void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_dec
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(Value* x) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void alias_free(Value* x) { dec(((FldAlias*)x)->obj); }
-void bBlks_free(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (u32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
+void bBlks_free(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
+void scExt_free(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) dec(c->vars[i]); }
 
 void scope_visit(Value* x) {
   Scope* c = (Scope*)x;
   if (c->psc) mm_visitP(c->psc);
+  if (c->ext) mm_visitP(c->ext);
   mm_visitP(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
@@ -592,7 +670,8 @@ void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_vi
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void alias_visit(Value* x) { mm_visit(((FldAlias*)x)->obj); }
-void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (u32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
+void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
+void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) mm_visit(c->vars[i]); }
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
@@ -600,6 +679,7 @@ void block_print(B x) { printf("(%p: block for %p)",v(x),c(Block,x)->body); }
 void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
 void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
 void bBlks_print(B x) { printf("(block list)"); }
+void scExt_print(B x) { printf("(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
 
 // void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
 // void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
@@ -639,6 +719,7 @@ void comp_init() {
   ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
   ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;
   ti[t_scope    ].free = scope_free; ti[t_scope    ].visit = scope_visit; ti[t_scope    ].print = scope_print;
+  ti[t_scopeExt ].free = scExt_free; ti[t_scopeExt ].visit = scExt_visit; ti[t_scopeExt ].print = scExt_print;
   ti[t_blBlocks ].free = bBlks_free; ti[t_blBlocks ].visit = bBlks_visit; ti[t_blBlocks ].print = bBlks_print;
   ti[t_fldAlias ].free = alias_free; ti[t_fldAlias ].visit = alias_visit; ti[t_fldAlias ].print = alias_print;
   ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
