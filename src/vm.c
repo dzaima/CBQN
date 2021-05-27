@@ -38,6 +38,7 @@ enum {
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
   EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
+  ADDI, ADDU, // PUSH with required increment & not required increment
   BC_SIZE = 32
 };
 
@@ -165,6 +166,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
     if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
     bool ret = false;
     switch (*c) {
+      case PUSH:
+        TSADD(nBCT, isVal(comp->objs->a[c[1]])? ADDI : ADDU);
+        TSADD(nBCT, c[1]);
+        break;
       case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
         TSADD(nBCT, RETN);
         ret = true;
@@ -420,6 +425,16 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(inc(objs[*bc++]));
         break;
       }
+      case ADDI: {
+        B o = objs[*bc++];
+        ptr_inc(v(o));
+        ADD(o);
+        break;
+      }
+      case ADDU: {
+        ADD(objs[*bc++]);
+        break;
+      }
       case FN1C: { P(f)P(x)
         GS_UPD;POS_UPD;
         ADD(c1(f, x); dec(f));
@@ -639,8 +654,8 @@ B m_md2Block(Block* bl, Scope* psc) {
 
 void scope_free(Value* x) {
   Scope* c = (Scope*)x;
-  if (c->psc) ptr_decR(c->psc);
-  if (c->ext) ptr_decR(c->ext);
+  if (LIKELY(c->psc!=NULL)) ptr_decR(c->psc);
+  if (RARE  (c->ext!=NULL)) ptr_decR(c->ext);
   ptr_decR(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
@@ -684,12 +699,12 @@ void scExt_print(B x) { printf("(scope extension with %d vars)", c(ScopeExt,x)->
 // void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
 // void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
 // void md2Bl_print(B x) { printf("(%p: 2-modifier block bl=%p sc=%p)",v(x),c(Md2Block,x)->bl,c(Md2Block,x)->sc); }
-void funBl_print(B x) { printf("(function"" block @%d)",c(FunBlock,x)->bl->body->map[0]); }
-void md1Bl_print(B x) { printf("(1-modifier block @%d)",c(Md1Block,x)->bl->body->map[0]); }
-void md2Bl_print(B x) { printf("(2-modifier block @%d)",c(Md2Block,x)->bl->body->map[0]); }
-// void funBl_print(B x) { printf("{function""}"); }
-// void md1Bl_print(B x) { printf("{1-modifier}"); }
-// void md2Bl_print(B x) { printf("{2-modifier}"); }
+// void funBl_print(B x) { printf("(function"" block @%d)",c(FunBlock,x)->bl->body->map[0]); }
+// void md1Bl_print(B x) { printf("(1-modifier block @%d)",c(Md1Block,x)->bl->body->map[0]); }
+// void md2Bl_print(B x) { printf("(2-modifier block @%d)",c(Md2Block,x)->bl->body->map[0]); }
+void funBl_print(B x) { printf("{function"" block}"); }
+void md1Bl_print(B x) { printf("{1-modifier block}"); }
+void md2Bl_print(B x) { printf("{2-modifier block}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
