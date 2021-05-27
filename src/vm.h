@@ -34,7 +34,7 @@ struct Body {
   Comp* comp;
   BlBlocks* blocks;
   // B* objs;
-  i32* bc; // pointer in an owned I32Arr
+  u32* bc; // pointer in an owned I32Arr
   i32* map; // pointer in an owned I32Arr
   u32 maxStack;
   u16 maxPSC;
@@ -65,7 +65,7 @@ B evalBC(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body 
 
 typedef struct Env {
   Scope* sc;
-  union { i32* bcL; i32 bcV; };
+  union { u32* bcL; i32 bcV; };
 } Env;
 
 void vm_pst(Env* s, Env* e);
@@ -88,7 +88,7 @@ extern Env* envCurr;
 extern Env* envStart;
 extern Env* envEnd;
 
-static inline void pushEnv(Scope* sc, i32* bc) {
+static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr==envEnd) thrM("Stack overflow");
   envCurr->sc = sc;
   envCurr->bcL = bc;

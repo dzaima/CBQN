@@ -237,7 +237,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
   
   Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
   body->comp = comp; ptr_inc(comp);
-  body->bc = nbc;
+  body->bc = (u32*)nbc;
   body->map = map;
   body->blocks = nBl;
   body->maxStack = hM;
@@ -396,7 +396,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #endif
   B* objs = b->comp->objs->a;
   Block** blocks = b->blocks->a; // b->comp->blocks;
-  i32* bc = b->bc;
+  u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
   Scope* pscs[b->maxPSC+1];
@@ -414,7 +414,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #define ADD(X) { *(lgStack++) = X; } // fine, as, if an error occurs, lgStack is ignored anyways
     #define GS_UPD { gStack = lgStack; }
   #endif
-  #define L64 ({ u64 r = (u32)bc[0] | ((u64)(u32)bc[1])<<32; bc+= 2; r; })
+  #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
     #define POS_UPD (envCurr-1)->bcL = bc-1;
   #else
@@ -423,7 +423,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   
   while(true) {
     #ifdef DEBUG_VM
-      i32* sbc = bc;
+      u32* sbc = bc;
       i32 bcPos = BCPOS(b,sbc);
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
@@ -471,13 +471,13 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case ARRO: case ARRM: {
-        i32 sz = *bc++;
+        u32 sz = *bc++;
         if (sz==0) {
           ADD(inc(bi_emptyHVec));
         } else {
           HArr_p r = m_harrUv(sz);
           bool allNum = true;
-          for (i32 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+          for (i64 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
           if (allNum) {
             GS_UPD;
             ADD(withFill(r.b, m_f64(0)));
@@ -505,33 +505,33 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         else ADD(m_fork(f,g,h));
         break;
       }
-      case LOCM: { i32 d = *bc++; i32 p = *bc++;
+      case LOCM: { u32 d = *bc++; u32 p = *bc++;
         ADD(tag((u64)d<<32 | (u32)p, VAR_TAG));
         break;
       }
-      case LOCO: { i32 d = *bc++; i32 p = *bc++;
+      case LOCO: { u32 d = *bc++; u32 p = *bc++;
         B l = pscs[d]->vars[p];
         if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
         ADD(inc(l));
         break;
       }
-      case LOCU: { i32 d = *bc++; i32 p = *bc++;
+      case LOCU: { u32 d = *bc++; u32 p = *bc++;
         B* vars = pscs[d]->vars;
         ADD(vars[p]);
         vars[p] = bi_optOut;
         break;
       }
-      case EXTM: { i32 d = *bc++; i32 p = *bc++;
+      case EXTM: { u32 d = *bc++; u32 p = *bc++;
         ADD(tag((u64)d<<32 | (u32)p, EXT_TAG));
         break;
       }
-      case EXTO: { i32 d = *bc++; i32 p = *bc++;
+      case EXTO: { u32 d = *bc++; u32 p = *bc++;
         B l = pscs[d]->ext->vars[p];
         if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
         ADD(inc(l));
         break;
       }
-      case EXTU: { i32 d = *bc++; i32 p = *bc++;
+      case EXTU: { u32 d = *bc++; u32 p = *bc++;
         B* vars = pscs[d]->ext->vars;
         ADD(vars[p]);
         vars[p] = bi_optOut;
@@ -546,7 +546,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(r);
         break;
       }
-      case FLDO: { P(ns) GS_UPD; i32 p = *bc++; POS_UPD;
+      case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, sc->body->nsDesc->nameList, p)));
         dec(ns);
@@ -558,7 +558,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         ADD(m_ns(sc, b->nsDesc));
         goto end;
       }
-      case NSPM: { P(o) i32 l = *bc++;
+      case NSPM: { P(o) u32 l = *bc++;
         B a = mm_alloc(sizeof(FldAlias), t_fldAlias, ftag(OBJ_TAG));
         c(FldAlias,a)->obj = o;
         c(FldAlias,a)->p = l;
