@@ -64,12 +64,7 @@ void validateFill(B x) {
   }
 }
 
-bool fillEqual(B w, B x) { // doesn't consume
-  if (w.u==x.u) return true;
-  bool wa = isAtm(w);
-  bool xa = isAtm(x);
-  if (wa!=xa) return false;
-  if (wa) return false;
+NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be arrays
   if (!eqShape(w, x)) return false;
   usz ia = a(w)->ia;
   if (ia==0) return true;

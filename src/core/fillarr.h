@@ -10,12 +10,19 @@ typedef struct FillSlice {
 
 B asFill(B x); // consumes
 void validateFill(B x);
-bool fillEqual(B w, B x);
+
 B withFill(B x, B fill); // consumes both
 static B qWithFill(B x, B fill) { // consumes both
   assert(isArr(x));
   if (noFill(fill) || TI(x).elType!=el_B) return x;
   return withFill(x, fill);
+}
+
+NOINLINE bool fillEqualR(B w, B x);
+static bool fillEqual(B w, B x) {
+  if (w.u==x.u) return true;
+  if (isAtm(w)|isAtm(x)) return false;
+  return fillEqualR(w, x);
 }
 
 
