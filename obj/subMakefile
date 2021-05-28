@@ -38,7 +38,7 @@ utils: utf.o hash.o file.o
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
 
-builtins: arithm.o arithd.o cmp.o sfns.o sort.o md1.o md2.o fns.o sysfn.o
+builtins: arithm.o arithd.o cmp.o sfns.o sort.o md1.o md2.o fns.o sysfn.o internal.o
 %.o: ../../src/builtins/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<

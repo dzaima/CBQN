@@ -119,30 +119,6 @@ B asrt_c2(B t, B w, B x) {
   thr(w);
 }
 
-bool isPureFn(B x);
-B internal_c2(B t, B w, B x) {
-  B r;
-  i32 id = o2i(w);
-  if(id==0) {
-    if(isVal(x)) { char* c = format_type(v(x)->type); r = m_str8(strlen(c), c); }
-    else {
-      if      (isF64(x)) r = m_str32(U"tagged f64");
-      else if (isI32(x)) r = m_str32(U"tagged i32");
-      else if (isC32(x)) r = m_str32(U"tagged c32");
-      else if (isTag(x)) r = m_str32(U"tagged tag");
-      else if (isVar(x)) r = m_str32(U"tagged var");
-      else if (isExt(x)) r = m_str32(U"tagged extvar");
-      else r = m_str32(U"tagged unknown");
-    }
-  } else if(id==1) { r = isVal(x)? m_i32(v(x)->mmInfo & 0x7f) : m_str32(U"(not heap-allocated)"); }
-  else if(id==2) { r = isVal(x)? m_i32(v(x)->refc) : m_str32(U"(not heap-allocated)"); }
-  else if(id==3) { printf("%p\n", (void*)x.u); r = inc(x); }
-  else if(id==4) { r = m_f64(isPureFn(x)); }
-  else if(id==5) { r = bqn_squeeze(inc(x)); }
-  else { dec(x); thrF("•Internal: 𝕨≡%i is invalid", id); }
-  dec(x);
-  return r;
-}
 B sys_c1(B t, B x);
 B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
 B show_c1(B t, B x) {
@@ -195,6 +171,8 @@ static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
 }
 
+B getInternalNS();
+
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
@@ -204,7 +182,7 @@ B sys_c1(B t, B x) {
     B c = xgetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
-    else if (eqStr(c, U"internal")) r.a[i] = inc(bi_internal);
+    else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);

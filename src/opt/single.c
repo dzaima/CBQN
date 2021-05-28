@@ -20,6 +20,7 @@
 #include "../builtins/cmp.c"
 #include "../builtins/md1.c"
 #include "../builtins/md2.c"
+#include "../builtins/internal.c"
 #include "../vm.c"
 #include "../ns.c"
 #include "../rtwrap.c"

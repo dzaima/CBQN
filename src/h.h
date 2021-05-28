@@ -155,17 +155,18 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
 char* format_type(u8 u);
 
 #define FOR_PFN(A,M,D) \
-  /*arith.c*/ A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
-  /*arith.c*/ A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
-  /*fns.c*/   A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") M(fmtF,"•FmtF") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
-  /*sfns.c*/  A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
-  /*sort.c*/  A(gradeUp,"⍋") A(gradeDown,"⍒") \
-  /*sysfn.c*/ M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") M(repr,"•Repr") A(fill,"•FillFn") \
-  /*sysfn.c*/ A(grLen,"•GroupLen") D(grOrd,"•groupOrd") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(sys,"•getsys") M(bqn,"•BQN") D(cmp,"•Cmp") D(internal,"•Internal") A(hash,"•Hash") \
+/*   arith.c*/A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
+/*   arith.c*/A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
+/*     fns.c*/A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") M(fmtF,"•FmtF") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
+/*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
+/*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
+/*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
+/*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") \
+/*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") M(info,"•internal.Info")
 
 #define FOR_PM1(A,M,D) \
   /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
-  /*md1.c*/ A(timed,"•_timed") A(fchars,"•FChars") M(fbytes,"•FBytes") M(flines,"•FLines") A(import,"•Import")
+  /*md1.c*/ A(timed,"•_timed") A(fchars,"•FChars") M(fbytes,"•FBytes") M(flines,"•FLines") A(import,"•Import") \
 
 #define FOR_PM2(A,M,D) \
   /*md2.c*/ A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
