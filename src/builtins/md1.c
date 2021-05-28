@@ -350,7 +350,7 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
-  if (f.u == bi_lt.u) return toCells(x);
+  // if (f.u == bi_lt.u) return toCells(x); // TODO fix fills
   usz cr = rnk(x)-1;
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
