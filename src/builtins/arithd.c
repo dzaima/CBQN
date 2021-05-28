@@ -24,6 +24,7 @@
     EXTRA                                                                    \
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
+        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                                   \
         u8 we = TI(w).elType;                                                \
         u8 xe = TI(x).elType;                                                \
@@ -94,6 +95,7 @@
     EXTRA                                                            \
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
+        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                           \
         u8 we = TI(w).elType;                                        \
         u8 xe = TI(x).elType;                                        \
