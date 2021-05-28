@@ -75,7 +75,6 @@
 #define CHR_MAX 1114111
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
-#define UD __builtin_unreachable();
 #define NOINLINE __attribute__ ((noinline))
 #define NORETURN __attribute__ ((noreturn))
 #define AUTO __auto_type
@@ -217,10 +216,12 @@ typedef struct Arr {
   #include<assert.h>
   static B VALIDATE(B x);
   static Value* VALIDATEP(Value* x);
+  #define UD assert(false);
 #else
   #define assert(x) {if (!(x)) __builtin_unreachable();}
   #define VALIDATE(x) (x)
   #define VALIDATEP(x) (x)
+  #define UD __builtin_unreachable();
 #endif
 
 // memory manager
@@ -258,7 +259,7 @@ static B m_unit (B x); // consumes
 static B m_hunit(B x); // consumes
 B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
 
-B bqn_exec(B str, B path, B args); // consumes both
+B bqn_exec(B str, B path, B args); // consumes all
 B bqn_execFile(B path, B args); // consumes
 B bqn_fmt(B x); // consumes
 B bqn_repr(B x); // consumes

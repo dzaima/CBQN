@@ -7,13 +7,33 @@ Block* bqn_comp(B str, B path, B args);
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
 void rtWrap_print();
 
+static B replPath;
+static Scope* gsc;
+static bool init = false;
+
+static void repl_init() {
+  if (init) return;
+  cbqn_init(); 
+  replPath = m_str32(U"REPL"); gc_add(replPath);
+  Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
+  gsc = m_scope(initBlock->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
+  ptr_dec(initBlock);
+  init = true;
+}
+
+static B gsc_exec_inline(B src, B path, B args) {
+  Block* block = bqn_compSc(src, path, args, gsc, true);
+  ptr_dec(gsc->body); ptr_inc(block->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
+  gsc->body = block->body;
+  B r = evalBC(block->body, gsc);
+  ptr_dec(block);
+  return r;
+}
+
 int main(int argc, char* argv[]) {
-  #define INIT { if(!init) { cbqn_init(); init = true; } }
-  bool init = false;
-  
   // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
   #if defined(COMP_COMP) || defined(COMP_COMP_TIME)
-    INIT;
+    repl_init();
     char* c_src = NULL;
     u64 c_len;
     FILE* f = fopen("c.bqn", "rb");
@@ -68,21 +88,21 @@ int main(int argc, char* argv[]) {
         carg++;
         char c;
         while ((c=*carg++) != '\0') {
-          switch(c) { default: printf("Unknown option: -%c\n", c);
-            #define REQARG(X) if(*carg) { printf("%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { printf("%s: -%s requires an argument\n", argv[0], #X); exit(1); }
-            case 'f': INIT; REQARG(f); goto execFile;
-            case 'e': { INIT; REQARG(e);
-              dec(bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-e"), inc(bi_emptyHVec)));
+          switch(c) { default: fprintf(stderr, "%s: Unknown option: -%c\n", argv[0], c); exit(1);
+            #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
+            case 'f': repl_init(); REQARG(f); goto execFile;
+            case 'e': { repl_init(); REQARG(e);
+              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-e)"), inc(bi_emptyHVec)));
               break;
             }
-            case 'p': { INIT; REQARG(p);
-              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-p"), inc(bi_emptyHVec));
+            case 'p': { repl_init(); REQARG(p);
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-p)"), inc(bi_emptyHVec));
               print(r); dec(r);
               printf("\n");
               break;
             }
-            case 'o': { INIT; REQARG(o);
-              B r = bqn_exec(fromUTF8l(argv[i++]), m_str32(U"-o"), inc(bi_emptyHVec));
+            case 'o': { repl_init(); REQARG(o);
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-o)"), inc(bi_emptyHVec));
               printRaw(r); dec(r);
               printf("\n");
               break;
@@ -107,9 +127,9 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-    INIT;
     execFile:
     if (i!=argc) {
+      repl_init();
       B src = fromUTF8l(argv[i++]);
       B args;
       if (i==argc) {
@@ -125,11 +145,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (startREPL) {
-    INIT;
-    B replPath = m_str32(U"REPL"); gc_add(replPath);
-    Block* gscInit = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
-    Scope* gsc = m_scope(gscInit->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
-    ptr_dec(gscInit);
+    repl_init();
     while (CATCH) {
       printf("Error: "); print(catchMessage); putchar('\n');
       vm_pst(envCurr, envStart+envPrevHeight);
@@ -147,7 +163,7 @@ int main(int argc, char* argv[]) {
       Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec), gsc, true);
       free(ln);
       
-      ptr_dec(gsc->body); ptr_inc(block->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
+      ptr_dec(gsc->body); ptr_inc(block->body);
       gsc->body = block->body;
       
       #ifdef TIME
