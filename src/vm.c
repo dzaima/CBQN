@@ -227,9 +227,12 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
   if (mpsc>U16_MAX) thrM("VM compiler: LOC_ too deep");
   
   usz blC = TSSIZE(nBlT);
-  BlBlocks* nBl = mm_allocN(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
-  nBl->am = blC;
-  memcpy(nBl->a, nBlT, blC*sizeof(Block*));
+  BlBlocks* nBl = NULL;
+  if (blC) {
+    nBl = mm_allocN(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
+    nBl->am = blC;
+    memcpy(nBl->a, nBlT, blC*sizeof(Block*));
+  }
   TSFREE(nBlT);
   
   usz nbcC = TSSIZE(nBCT); i32* nbc; m_i32arrv(&nbc, nbcC); memcpy(nbc, nBCT, nbcC*4); TSFREE(nBCT);
@@ -675,7 +678,7 @@ void scope_free(Value* x) {
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
 void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); }
-void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); ptr_decR(c->blocks); ptr_decR(RFLD(c->bc,I32Arr,a)); ptr_decR(RFLD(c->map,I32Arr,a)); }
+void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); if(c->blocks)ptr_decR(c->blocks); ptr_decR(RFLD(c->bc,I32Arr,a)); ptr_decR(RFLD(c->map,I32Arr,a)); }
 void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
@@ -693,7 +696,7 @@ void scope_visit(Value* x) {
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
 void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); }
-void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); mm_visitP(c->blocks); mm_visitP(RFLD(c->bc,I32Arr,a)); mm_visitP(RFLD(c->map,I32Arr,a)); }
+void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); if(c->blocks)mm_visitP(c->blocks); mm_visitP(RFLD(c->bc,I32Arr,a)); mm_visitP(RFLD(c->map,I32Arr,a)); }
 void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
