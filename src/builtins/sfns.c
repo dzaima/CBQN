@@ -559,23 +559,28 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) len[n]++; }
       
-      B r = m_fillarrp(ria);
+      B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
       arr_shVec(r, ria);
-      fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
-      B rf = m_fillarrp(0);
+      B rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0));
       arr_shVec(rf, 0);
       fillarr_setFill(r, rf);
       if (TI(x).elType==el_i32) {
         for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
-        fillarr_setFill(rf, xf);
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
           if (n>=0) i32arr_ptr(rp[n])[pos[n]++] = xp[i];
+        }
+      } else if (TI(x).elType==el_c32) {
+        for (usz i = 0; i < ria; i++) { u32* t; rp[i] = m_c32arrv(&t, len[i]); }
+        u32* xp = c32any_ptr(x);
+        for (usz i = 0; i < xia; i++) {
+          i32 n = wp[i];
+          if (n>=0) c32arr_ptr(rp[n])[pos[n]++] = xp[i];
         }
       } else {
         for (usz i = 0; i < ria; i++) {
@@ -584,7 +589,6 @@ B group_c2(B t, B w, B x) {
           a(c)->ia = 0;
           rp[i] = c;
         }
-        fillarr_setFill(rf, xf);
         BS2B xget = TI(x).get;
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
@@ -592,6 +596,7 @@ B group_c2(B t, B w, B x) {
         }
         for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
       }
+      fillarr_setFill(rf, xf);
       dec(w); dec(x); TFREE(len); TFREE(pos);
       return r;
     } else {
@@ -612,9 +617,8 @@ B group_c2(B t, B w, B x) {
         if (n>=0) len[n]++;
       }
       
-      B r = m_fillarrp(ria);
+      B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
       arr_shVec(r, ria);
-      fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);

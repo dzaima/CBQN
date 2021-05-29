@@ -51,11 +51,11 @@ B ud_c1(B t, B x) {
     ria*= c;
   }
   dec(x);
-  B r = m_fillarrp(ria);
   
-  fillarr_setFill(r, m_f64(0));
+  B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
   B* rp = fillarr_ptr(r);
   for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
+  
   usz* rsh = arr_shAllocI(r, ria, xia);
   if (rsh) memcpy(rsh, sh, sizeof(usz)*xia);
   
