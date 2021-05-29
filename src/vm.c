@@ -321,7 +321,7 @@ static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
     if (upd) {
       if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
-    }
+    } else dec(prev);
     sc->ext->vars[(u32)s.u] = inc(x);
   } else {
     VTY(s, t_harr);

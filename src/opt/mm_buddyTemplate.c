@@ -25,6 +25,9 @@ NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
       mm_heapAlloc+= sz;
       // gc_maybeGC();
       c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+      #ifdef USE_VALGRIND
+        VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
+      #endif
       if (alSize+1>=alCap) {
         alCap = alCap? alCap*2 : 1024;
         al = realloc(al, sizeof(AllocInfo)*alCap);

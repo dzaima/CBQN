@@ -45,6 +45,12 @@ static void* BN(allocL)(u8 bucket, u8 type) {
   x->flags = x->extra = x->type = 0;
   x->refc = 1;
   x->type = type;
+  #ifdef DEBUG
+    u64* p = (u64*)x;
+    u64* s = p + sizeof(Value)/8;
+    u64* e = p + BSZ(bucket)/8;
+    while(s<e) *s++ = tag(NULL, OBJ_TAG).u;
+  #endif
   return x;
 }
 
