@@ -102,6 +102,15 @@ B select_c2(B t, B w, B x) {
         }
         dec(w); dec(x);
         return r;
+      } else if (TI(x).elType==el_f64) {
+        f64* rp; B r = m_f64arrc(&rp, w);
+        f64* xp = f64any_ptr(x);
+        for (usz i = 0; i < wia; i++) {
+          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
+          rp[i] = xp[c];
+        }
+        dec(w); dec(x);
+        return r;
       } else if (TI(x).elType==el_c32) {
         u32* rp; B r = m_c32arrc(&rp, w);
         u32* xp = c32any_ptr(x);
@@ -111,26 +120,38 @@ B select_c2(B t, B w, B x) {
         }
         dec(w); dec(x);
         return r;
+      } else if (v(x)->type==t_harr) {
+        usz i = 0;
+        B* xp = harr_ptr(x);
+        HArr_p r = m_harrs(wia, &i);
+        for (; i < wia; i++) {
+          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
+          r.a[i] = inc(xp[c]);
+        }
+        dec(x);
+        return harr_fcd(r, w);
       } else {
-        HArr_p r = m_harrUc(w);
-        for (usz i = 0; i < wia; i++) {
+        usz i = 0;
+        HArr_p r = m_harrs(wia, &i);
+        for (; i < wia; i++) {
           usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
           r.a[i] = xget(x, c);
         }
-        dec(w); dec(x);
-        return withFill(r.b,xf);
+        dec(x);
+        return withFill(harr_fcd(r,w),xf);
       }
     } else {
-      HArr_p r = m_harrUc(w);
+      usz i = 0;
+      HArr_p r = m_harrs(wia, &i);
       BS2B wgetU = TI(w).getU;
-      for (usz i = 0; i < wia; i++) {
+      for (; i < wia; i++) {
         B cw = wgetU(w, i);
         if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
         usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
         r.a[i] = xget(x, c);
       }
-      dec(w); dec(x);
-      return withFill(r.b,xf);
+      dec(x);
+      return withFill(harr_fcd(r,w),xf);
     }
   } else {
     BS2B wgetU = TI(w).getU;

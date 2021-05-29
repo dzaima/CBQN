@@ -38,7 +38,7 @@ enum {
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
   EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
-  ADDI, ADDU, // PUSH with required increment & not required increment
+  ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline, instead of reading from `objs`)
   BC_SIZE
 };
 

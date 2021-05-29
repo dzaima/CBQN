@@ -23,13 +23,13 @@
 #define MM 1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
 #define HEAP_MAX ~0ULL // default heap max size
 
-// #define LOG_GC       // log GC stats
+// #define LOG_GC    // log GC stats
 #define FORMATTER    // use self-hosted formatter for output
-// #define TIME         // output runtime of every expression
-// #define RT_PERF      // time runtime primitives
-// #define RT_VERIFY    // compare native and runtime versions of primitives
-// #define NO_RT        // whether to completely disable self-hosted runtime loading
-// #define PRECOMP      // execute just precompiled code at src/gen/interp
+// #define TIME      // output runtime of every expression
+// #define RT_PERF   // time runtime primitives
+// #define RT_VERIFY // compare native and runtime versions of primitives
+// #define NO_RT     // whether to completely disable self-hosted runtime loading
+// #define PRECOMP   // execute just precompiled code at src/gen/interp
 
 
 #include <inttypes.h>
