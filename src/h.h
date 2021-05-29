@@ -24,7 +24,7 @@
 #define HEAP_MAX ~0ULL // default heap max size
 
 // #define LOG_GC       // log GC stats
-// #define FORMATTER    // use self-hosted formatter for output
+#define FORMATTER    // use self-hosted formatter for output
 // #define TIME         // output runtime of every expression
 // #define RT_PERF      // time runtime primitives
 // #define RT_VERIFY    // compare native and runtime versions of primitives
@@ -162,7 +162,8 @@ char* format_type(u8 u);
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
 /*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") \
-/*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") M(info,"•internal.Info")
+/*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
+/*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations")  M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
 
 #define FOR_PM1(A,M,D) \
   /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
@@ -393,7 +394,7 @@ typedef struct TypeInfo {
   BBBBBB2B m2_ucw; // t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x
   
   B2b canStore; // doesn't consume
-  u8 elType;
+  u8 elType; // guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds
   
   B2v print;  // doesn't consume
   V2v visit;  // call mm_visit for all referents
