@@ -121,7 +121,7 @@ NOINLINE B append_fmt(B s, char* p, ...) {
   char buf[30];
   char c;
   char* lp = p;
-  while ((c = *p++) != 0) {
+  while (*p != 0) { c = *p++;
     if (c!='%') continue;
     if (lp!=p-1) s = vec_join(s, fromUTF8(lp, p-1-lp));
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
