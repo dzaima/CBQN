@@ -55,6 +55,10 @@ static usz* harr_fa(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   gsPop();
   return arr_shAllocR(p.b, r);
 }
+static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
+  gsPop();
+  value_free((Value*)p.c);
+}
 
 static HArr_p m_harrUv(usz ia) {
   B r = m_arr(fsizeof(HArr,a,B,ia), t_harr);

@@ -146,7 +146,7 @@ B select_c2(B t, B w, B x) {
       BS2B wgetU = TI(w).getU;
       for (; i < wia; i++) {
         B cw = wgetU(w, i);
-        if (!isNum(cw)) { harr_pfree(r.b, i); goto base; }
+        if (!isNum(cw)) { harr_abandon(r); goto base; }
         usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
         r.a[i] = xget(x, c);
       }
