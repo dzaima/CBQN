@@ -27,7 +27,6 @@ B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); retur
 
 extern B rt_sortDsc;
 B or_c1(B t, B x) { return c1(rt_sortDsc, x); }
-B and_c1(B t, B x); // defined in sort.c
 
 void arith_init() {
   c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_ne)->ident = c(BFn,bi_gt)->ident = m_i32(0);

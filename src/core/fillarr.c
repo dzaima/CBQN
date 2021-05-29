@@ -89,8 +89,9 @@ B withFill(B x, B fill) { // consumes both
   #ifdef DEBUG
   validateFill(fill);
   #endif
-  if (noFill(fill) && v(x)->type!=t_fillarr && v(x)->type!=t_fillslice) return x;
-  switch(v(x)->type) {
+  u8 xt = v(x)->type;
+  if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
+  switch(xt) {
     case t_f64arr : case t_f64slice:
     case t_i32arr : case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr : case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
@@ -105,7 +106,7 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = a(x)->ia;
   if (isNum(fill)) {
-    if (v(x)->type==t_harr) {
+    if (xt==t_harr) {
       B* xp = harr_ptr(x);
       {
         i32* rp; B r = m_i32arrc(&rp, x);
