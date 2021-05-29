@@ -36,6 +36,7 @@ static u64 mm_round(usz sz) {
 static u64 mm_size(Value* x) {
   return BSZ(x->mmInfo&63);
 }
+void mm_forHeap(V2v f);
 
 #undef BSZ
 #undef BSZI

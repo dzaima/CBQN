@@ -51,10 +51,6 @@ static void mm_free(Value* x) {
   if (x->mmInfo&64) b3_free(x);
   else b1_free(x);
 }
-static void mm_forHeap(V2v f) {
-  b1_forHeap(f);
-  b3_forHeap(f);
-}
 
 static u64 mm_round(usz x) {
   u8 b1 = 64-__builtin_clzl(x-1ull);
@@ -67,3 +63,4 @@ static u64 mm_size(Value* x) {
   if (m&64) return 3ull<<(x->mmInfo&63);
   else      return 1ull<<(x->mmInfo&63);
 }
+void mm_forHeap(V2v f);

@@ -1,5 +1,8 @@
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <malloc.h>
+extern u64 mm_heapAlloc;
+extern u64 mm_heapMax;
 
 static void mm_free(Value* x) {
   onFree(x);
@@ -26,8 +29,8 @@ void gc_addFn(vfn f);
 void gc_maybeGC();
 void gc_forceGC();
 void gc_visitRoots();
+void mm_forHeap(V2v f);
 
 static u64  mm_round(usz x) { return x; }
 static u64  mm_size(Value* x) { return malloc_usable_size(x); }
 static u64  mm_totalAllocated() { return -1; }
-static void mm_forHeap(V2v f) { }
