@@ -149,10 +149,44 @@ static f64 pfmod(f64 a, f64 b) {
 GC2i(add, wv+xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
+  if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
+    if (TI(x).elType == el_i32) {
+      u32 wv = o2cu(w);
+      i32* xp = i32any_ptr(x); usz xia = a(x)->ia;
+      u32* rp; B r = m_c32arrc(&rp, x);
+      for (usz i = 0; i < xia; i++) {
+        rp[i] = (u32)(xp[i]+(i32)wv);
+        if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
+      }
+      return r;
+    }
+  }
 })
 GC2i(sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)-o2u64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
+  if (isArr(w) && TI(w).elType==el_c32) {
+    if (isC32(x)) {
+      i32 xv = (i32)o2cu(x);
+      u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
+      i32* rp; B r = m_i32arrc(&rp, w);
+      for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
+      return r;
+    }
+    if (isArr(x)) {
+      if (!eqShape(w, x)) thrF("-: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+      u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
+      if (TI(x).elType==el_i32) {
+        u32* rp; B r = m_c32arrc(&rp, w);
+        i32* xp = i32any_ptr(x);
+        for (usz i = 0; i < wia; i++) {
+          rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
+          if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
+        }
+        return r;
+      }
+    }
+  }
 })
 GC2i(mul, wv*xv, {})
 GC2i(and, wv*xv, {})

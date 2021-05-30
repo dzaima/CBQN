@@ -21,12 +21,31 @@
       else { i32* wp=i32any_ptr(w);   i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
       if(wa) dec(w); if(xa) dec(x); return r;      \
     }                                              \
+    if ((we==el_f64||isNum(w)) && (xe==el_f64||isNum(x))) { \
+      f64* rp; B r = m_f64arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
+      if      (!wa) { f64 wv=o2fu(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
+      else if (!xa) { f64 xv=o2fu(x); f64* wp=f64any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
+      else { f64* wp=f64any_ptr(w);   f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
+      if(wa) dec(w); if(xa) dec(x); return r;      \
+    }                                              \
     if (we==el_c32 && xe==el_c32) {                \
       i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
       if      (!wa) { u32 wv=o2cu(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
       else if (!xa) { u32 xv=o2cu(x); u32* wp=c32any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
       else { u32* wp=c32any_ptr(w);   u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
       if(wa) dec(w); if(xa) dec(x); return r;      \
+    }                                              \
+    if (wa&xa) {                                   \
+      if (we==el_f64 && xe==el_i32) {              \
+        f64* rp; B r = m_f64arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                         \
+        f64* wp=f64any_ptr(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; \
+        dec(w); dec(x); return r;                  \
+      }                                            \
+      if (we==el_i32 && xe==el_f64) {              \
+        f64* rp; B r = m_f64arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                         \
+        i32* wp=i32any_ptr(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; \
+        dec(w); dec(x); return r;                  \
+      }                                            \
     }                                              \
   }
 
