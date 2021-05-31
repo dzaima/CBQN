@@ -170,35 +170,49 @@ B hash_c1(B t, B x) {
   return r;
 }
 
+
+
 static B rand_ns;
-static B rand_intsName;
+static B rand_rangeName;
 static i32 rand_a, rand_b;
-static NFnDesc* rand_ints;
-B rand_ints_c1(B t, B x) {
+static NFnDesc* rand_range;
+B rand_range_c1(B t, B x) {
+  i64 xv = o2i64(x);
+  if (xv<0) thrM("(rand).Range: 𝕩 cannot be negative");
   Scope* sc = c(NS,nfn_objU(t))->sc;
   u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
   u64 rnd = wyrand(&seed);
   sc->vars[rand_a].u = seed>>32;
   sc->vars[rand_a].u = seed&0xFFFFFFFF;
-  return m_f64(wy2u0k(rnd, o2i64(x)));
+  return xv? m_f64(wy2u0k(rnd, xv)) : m_f64(wy2u01(rnd));
 }
-B rand_ints_c2(B t, B w, B x) {
+B rand_range_c2(B t, B w, B x) {
   Scope* sc = c(NS,nfn_objU(t))->sc;
   u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
   usz am = o2s(w);
   i64 max = o2i64(x);
-  if (max>I32_MAX | max<1) thrM("(rand).Ints: bad 𝕩");
-  i32* rp; B r = m_i32arrv(&rp, am);
-  for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
+  B r;
+  if (max<1) {
+    if (max!=0) thrM("(rand).Range: 𝕩 cannot be negative");
+    f64* rp; r = m_f64arrv(&rp, am);
+    for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
+  } else if (max > I32_MAX) {
+    if (max >= 1ULL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");
+    f64* rp; r = m_f64arrv(&rp, am);
+    for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
+  } else {
+    i32* rp; r = m_i32arrv(&rp, am);
+    for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
+  }
   sc->vars[rand_a].u = seed>>32;
   sc->vars[rand_a].u = seed&0xFFFFFFFF;
   return r;
 }
 
 static NOINLINE void rand_init() {
-  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄ints⇐0}"), inc(bi_emptyHVec), inc(bi_emptyHVec)); gc_add(rand_ns);
-  rand_intsName = m_str32(U"ints"); gc_add(rand_intsName);
-  rand_ints = registerNFn(m_str32(U"(rand).Ints"), rand_ints_c1, rand_ints_c2);
+  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), inc(bi_emptyHVec), inc(bi_emptyHVec)); gc_add(rand_ns);
+  rand_rangeName = m_str32(U"range"); gc_add(rand_rangeName);
+  rand_range = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
   B tmp = c1(rand_ns, m_f64(0));
   rand_a = ns_pos(tmp, m_str32(U"a"));
   rand_b = ns_pos(tmp, m_str32(U"b"));
@@ -208,9 +222,11 @@ B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
   if (rand_ns.u==0) rand_init();
   B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
-  ns_set(r, rand_intsName, m_nfn(rand_ints, inc(r)));
+  ns_set(r, rand_rangeName, m_nfn(rand_range, inc(r)));
   return r;
 }
+
+
 
 static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
