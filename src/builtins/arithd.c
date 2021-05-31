@@ -161,6 +161,7 @@ GC2i(add, wv+xv, {
         rp[i] = (u32)(xp[i]+(i32)wv);
         if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
       }
+      dec(x);
       return r;
     }
   }
@@ -174,6 +175,7 @@ GC2i(sub, wv-xv, {
       u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
       i32* rp; B r = m_i32arrc(&rp, w);
       for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
+      dec(w);
       return r;
     }
     if (isArr(x)) {
@@ -186,6 +188,7 @@ GC2i(sub, wv-xv, {
           rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
           if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
         }
+        dec(w); dec(x);
         return r;
       }
     }
