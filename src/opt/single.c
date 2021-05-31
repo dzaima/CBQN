@@ -23,6 +23,7 @@
 #include "../builtins/internal.c"
 #include "../vm.c"
 #include "../ns.c"
+#include "../nfns.c"
 #include "../rtwrap.c"
 #include "../load.c"
 #include "../main.c"

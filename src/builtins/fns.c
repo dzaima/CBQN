@@ -1,6 +1,7 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/mut.h"
+#include "../nfns.h"
 
 
 void print_funBI(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
@@ -91,6 +92,7 @@ B fmtF_c1(B t, B x) {
     if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
     if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
     if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
+    if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
     return m_str32(U"(fmtF: not given a runtime primitive)");
   }
   dec(x);

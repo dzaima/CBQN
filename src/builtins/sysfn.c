@@ -1,6 +1,9 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/file.h"
+#include "../utils/wyhash.h"
+#include "../ns.h"
+#include "../nfns.h"
 
 B type_c1(B t, B x) {
   i32 r = -1;
@@ -167,6 +170,47 @@ B hash_c1(B t, B x) {
   return r;
 }
 
+static B rand_ns;
+static B rand_intsName;
+static i32 rand_a, rand_b;
+static NFnDesc* rand_ints;
+B rand_ints_c1(B t, B x) {
+  Scope* sc = c(NS,nfn_objU(t))->sc;
+  u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
+  u64 rnd = wyrand(&seed);
+  sc->vars[rand_a].u = seed>>32;
+  sc->vars[rand_a].u = seed&0xFFFFFFFF;
+  return m_f64(wy2u0k(rnd, o2i64(x)));
+}
+B rand_ints_c2(B t, B w, B x) {
+  Scope* sc = c(NS,nfn_objU(t))->sc;
+  u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
+  usz am = o2s(w);
+  i64 max = o2i64(x);
+  if (max>I32_MAX | max<1) thrM("(rand).Ints: bad 𝕩");
+  i32* rp; B r = m_i32arrv(&rp, am);
+  for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
+  sc->vars[rand_a].u = seed>>32;
+  sc->vars[rand_a].u = seed&0xFFFFFFFF;
+  return r;
+}
+
+static NOINLINE void rand_init() {
+  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄ints⇐0}"), inc(bi_emptyHVec), inc(bi_emptyHVec)); gc_add(rand_ns);
+  rand_intsName = m_str32(U"ints"); gc_add(rand_intsName);
+  rand_ints = registerNFn(m_str32(U"(rand).Ints"), rand_ints_c1, rand_ints_c2);
+  B tmp = c1(rand_ns, m_f64(0));
+  rand_a = ns_pos(tmp, m_str32(U"a"));
+  rand_b = ns_pos(tmp, m_str32(U"b"));
+  dec(tmp);
+}
+B makeRand_c1(B t, B x) {
+  if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
+  if (rand_ns.u==0) rand_init();
+  B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
+  ns_set(r, rand_intsName, m_nfn(rand_ints, inc(r)));
+  return r;
+}
 
 static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
@@ -192,6 +236,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
+    else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
     else if (eqStr(c, U"fchars")) r.a[i] = makeRel(bi_fchars);
     else if (eqStr(c, U"fbytes")) r.a[i] = makeRel(bi_fbytes);
     else if (eqStr(c, U"flines")) r.a[i] = makeRel(bi_flines);

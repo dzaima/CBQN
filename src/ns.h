@@ -18,3 +18,5 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported); //
 B m_ns(Scope* sc, NSDesc* desc); // consumes both
 B ns_getU(B ns, B nameList, i32 nameID); // doesn't consume anything, doesn't increment result
 B ns_getNU(B ns, B name); // doesn't consume anything, doesn't increment result
+void ns_set(B ns, B name, B val); // consumes val
+i32 ns_pos(B ns, B name); // consumes name; returns an index in sc->vars for any variable, exported or local

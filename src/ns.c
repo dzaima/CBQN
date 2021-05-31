@@ -38,7 +38,7 @@ B m_ns(Scope* sc, NSDesc* desc) { // consumes both
   return r;
 }
 
-B ns_getU(B ns, B cNL, i32 nameID) {
+B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
@@ -58,7 +58,7 @@ B ns_getU(B ns, B cNL, i32 nameID) {
   }
   thrM("No key found");
 }
-B ns_getNU(B ns, B name) {
+B ns_getNU(B ns, B name) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
@@ -67,6 +67,34 @@ B ns_getNU(B ns, B name) {
   for (i32 i = 0; i < dVarAm; i++) {
     i32 dID = d->expIDs[i];
     if (dID>=0 && equal(dNLgetU(dNL, dID), name)) return n->sc->vars[i];
+  }
+  thrM("No key found");
+}
+void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
+  NS* n = c(NS, ns);
+  NSDesc* d = n->desc;
+  i32 dVarAm = d->varAm;
+  B dNL = d->nameList;
+  BS2B dNLgetU = TI(dNL).getU;
+  for (i32 i = 0; i < dVarAm; i++) {
+    i32 dID = d->expIDs[i];
+    if (dID>=0 && equal(dNLgetU(dNL, dID), name)) {
+      dec(n->sc->vars[i]);
+      n->sc->vars[i] = val;
+      return;
+    }
+  }
+  thrM("No key found");
+}
+
+i32 ns_pos(B ns, B name) { VTY(ns, t_ns);
+  Body* b = c(NS, ns)->sc->body;
+  B nameList = c(NS, ns)->desc->nameList;
+  i32 bVarAm = b->varAm;
+  BS2B nlGetU = TI(nameList).getU;
+  for (i32 i = 0; i < bVarAm; i++) {
+    i32 id = b->varIDs[i];
+    if (id>=0) if (equal(nlGetU(nameList, id), name)) { dec(name); return i; }
   }
   thrM("No key found");
 }

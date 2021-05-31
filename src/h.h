@@ -136,10 +136,10 @@ enum Type {
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*25*/ t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks,
-  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp,
-  /*36*/ t_freed, t_harrPartial,
+  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp, t_nfn, t_nfnDesc,
+  /*38*/ t_freed, t_harrPartial,
   #ifdef RT_WRAP
-  /*38*/ t_funWrap, t_md1Wrap, t_md2Wrap,
+  /*40*/ t_funWrap, t_md1Wrap, t_md2Wrap,
   #endif
   t_COUNT
 };
@@ -161,9 +161,9 @@ char* format_type(u8 u);
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
-/*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") \
+/*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") M(makeRand,"•MakeRand") \
 /*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
-/*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations")  M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
+/*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
 
 #define FOR_PM1(A,M,D) \
   /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
@@ -296,7 +296,7 @@ void print_vmStack();
   B validate(B x);
   Value* validateP(Value* x);
 #endif
-static B err(char* s) {
+static NORETURN B err(char* s) {
   puts(s); fflush(stdout);
   print_vmStack();
   __builtin_trap();

@@ -28,7 +28,7 @@ core: i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
 
-base: load.o main.o rtwrap.o vm.o ns.o
+base: load.o main.o rtwrap.o vm.o ns.o nfns.o
 %.o: ../../src/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
