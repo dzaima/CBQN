@@ -23,6 +23,7 @@ B refc_c1(B t, B x) {
   return r;
 }
 B squeeze_c1(B t, B x) {
+  if (!isArr(x)) return x;
   return bqn_squeeze(x);
 }
 B isPure_c1(B t, B x) {

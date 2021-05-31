@@ -242,6 +242,17 @@ B slash_c2(B t, B w, B x) {
         }
         dec(w); dec(x);
         return r;
+      } else if (TI(x).elType==el_f64) {
+        f64* xp = f64any_ptr(x);
+        f64* rp; B r = m_f64arrv(&rp, ria);
+        for (usz i = 0; i < wia; i++) {
+          i32 c = wp[i];
+          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
+          f64 cx = xp[i];
+          for (usz j = 0; j < c; j++) *rp++ = cx;
+        }
+        dec(w); dec(x);
+        return r;
       } else {
         HArr_p r = m_harrs(ria, &ri);
         BS2B xgetU = TI(x).getU;
