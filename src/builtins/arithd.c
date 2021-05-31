@@ -7,7 +7,10 @@
   static B f64_maybe_i32(B x) {
     f64* xp = f64arr_ptr(x);
     usz ia = a(x)->ia;
-    if (ia==0) { dec(x); return inc(bi_emptyIVec); }
+    if (ia==0) {
+      if (rnk(x)>1) return x;
+      dec(x); return inc(bi_emptyIVec);
+    }
     if (xp[0] != (i32)xp[0]) return x;
     i32* rp; B r = m_i32arrc(&rp, x);
     for (usz i = 0; i < ia; i++) {
