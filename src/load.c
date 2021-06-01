@@ -284,6 +284,21 @@ static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static B def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 
+#ifdef DONT_FREE
+static B empty_get(B x, usz n) {
+  v(x)->type = v(x)->flags;
+  B r = TI(x).get(x, n);
+  v(x)->type = t_empty;
+  return r;
+}
+static B empty_getU(B x, usz n) {
+  v(x)->type = v(x)->flags;
+  B r = TI(x).getU(x, n);
+  v(x)->type = t_empty;
+  return r;
+}
+#endif
+
 static inline void base_init() { // very first init function
   for (i32 i = 0; i < t_COUNT; i++) {
     ti[i].free  = def_free;
@@ -310,6 +325,10 @@ static inline void base_init() { // very first init function
   ti[t_empty].free = empty_free;
   ti[t_freed].free = def_free;
   ti[t_freed].visit = freed_visit;
+  #ifdef DONT_FREE
+    ti[t_empty].get = empty_get;
+    ti[t_empty].getU = empty_getU;
+  #endif
   ti[t_shape].visit = noop_visit;
   ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = noop_visit;
   ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
