@@ -61,19 +61,21 @@ B info_c1(B t, B x) {
 
 B listVariations_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
+  
   if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
   usz wia = a(w)->ia;
   BS2B wgetU = TI(w).getU;
-  bool c_incr=false, c_changeFill=false;
+  bool c_incr=false, c_rmFill=false;
   for (usz i = 0; i < wia; i++) {
     u32 c = o2c(wgetU(w, i));
     if (c=='i') c_incr=true;
-    else if (c=='f') c_changeFill=true;
+    else if (c=='f') c_rmFill=true;
     else thrF("internal.ListVariations: Unknown option '%c' in 𝕨", c);
   }
+  dec(w);
   
   B xf = getFillQ(x);
-  bool ah = c_changeFill || noFill(xf);
+  bool ah = c_rmFill || noFill(xf);
   bool ai32=false, af64=false, ac32=false;
   usz xia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
