@@ -47,5 +47,5 @@ void c32arr_init() {
   u32* tmp; bi_emptyCVec = m_c32arrv(&tmp, 0); gc_add(bi_emptyCVec);
   bi_emptySVec = m_fillarrp(0); gc_add(bi_emptySVec);
   arr_shVec(bi_emptySVec, 0);
-  fillarr_setFill(bi_emptySVec, bi_emptyCVec);
+  fillarr_setFill(bi_emptySVec, inc(bi_emptyCVec));
 }
