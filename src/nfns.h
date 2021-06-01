@@ -11,7 +11,7 @@ typedef struct NFn { // native function
 } NFn;
 
 NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2); // should be called a constant number of times; consumes name
-B m_nfn(NFnDesc* desc, B obj);
+B m_nfn(NFnDesc* desc, B obj); // consumes obj
 B nfn_name(B x); // doesn't consume
 static B nfn_objU(B t) {
   return c(NFn,t)->obj;

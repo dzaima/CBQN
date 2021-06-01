@@ -233,7 +233,7 @@ static B internalNS;
 B getInternalNS() {
   if (internalNS.u == 0) {
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), inc(bi_emptyHVec), inc(bi_emptyHVec));
+    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec));
     B arg =    m_caB(9, (B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)});
     #undef F
     internalNS = c1(fn,arg);

@@ -175,7 +175,7 @@ B hash_c1(B t, B x) {
 static B rand_ns;
 static B rand_rangeName;
 static i32 rand_a, rand_b;
-static NFnDesc* rand_range;
+static NFnDesc* rand_rangeDesc;
 B rand_range_c1(B t, B x) {
   i64 xv = o2i64(x);
   if (xv<0) thrM("(rand).Range: 𝕩 cannot be negative");
@@ -210,9 +210,9 @@ B rand_range_c2(B t, B w, B x) {
 }
 
 static NOINLINE void rand_init() {
-  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), inc(bi_emptyHVec), inc(bi_emptyHVec)); gc_add(rand_ns);
+  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), inc(bi_emptyCVec), inc(bi_emptySVec)); gc_add(rand_ns);
   rand_rangeName = m_str32(U"range"); gc_add(rand_rangeName);
-  rand_range = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_rangeDesc = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
   B tmp = c1(rand_ns, m_f64(0));
   rand_a = ns_pos(tmp, m_str32(U"a"));
   rand_b = ns_pos(tmp, m_str32(U"b"));
@@ -222,21 +222,21 @@ B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
   if (rand_ns.u==0) rand_init();
   B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
-  ns_set(r, rand_rangeName, m_nfn(rand_range, inc(r)));
+  ns_set(r, rand_rangeName, m_nfn(rand_rangeDesc, inc(r)));
   return r;
 }
 
 static NFnDesc* fCharsDesc;
-B fchars_c1(B d, B x) { B base = nfn_objU(d);
-  return file_chars(path_resolve(base, x));
+B fchars_c1(B d, B x) {
+  return file_chars(path_resolve(nfn_objU(d), x));
 }
-B fchars_c2(B d, B w, B x) { B base = nfn_objU(d);
-  file_write(path_resolve(base, w), x);
+B fchars_c2(B d, B w, B x) {
+  file_write(path_resolve(nfn_objU(d), w), x);
   return x;
 }
 static NFnDesc* fBytesDesc;
-B fbytes_c1(B d, B x) { B base = nfn_objU(d);
-  TmpFile* tf = file_bytes(path_resolve(base, x));
+B fbytes_c1(B d, B x) {
+  TmpFile* tf = file_bytes(path_resolve(nfn_objU(d), x));
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   u32* rp; B r = m_c32arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
@@ -244,8 +244,8 @@ B fbytes_c1(B d, B x) { B base = nfn_objU(d);
   return r;
 }
 static NFnDesc* fLinesDesc;
-B flines_c1(B d, B x) { B base = nfn_objU(d);
-  TmpFile* tf = file_bytes(path_resolve(base, x));
+B flines_c1(B d, B x) {
+  TmpFile* tf = file_bytes(path_resolve(nfn_objU(d), x));
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   usz lineCount = 0;
   for (usz i = 0; i < ia; i++) {
@@ -270,11 +270,11 @@ B flines_c1(B d, B x) { B base = nfn_objU(d);
   return harr_fv(r);
 }
 static NFnDesc* importDesc;
-B import_c1(B d, B x) { B base = nfn_objU(d);
-  return bqn_execFile(path_resolve(base, x), inc(bi_emptyHVec));
-}
-B import_c2(B d, B w, B x) { B base = nfn_objU(d);
-  return bqn_execFile(path_resolve(base, x), w);
+B import_c1(B d,      B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), inc(bi_emptySVec)); }
+B import_c2(B d, B w, B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), w); }
+static NFnDesc* listDesc;
+B list_c1(B d, B x) {
+  return file_list(path_resolve(nfn_objU(d), x));
 }
 
 B exit_c1(B t, B x) {
@@ -283,16 +283,27 @@ B exit_c1(B t, B x) {
 
 B getInternalNS();
 
+static B file_nsGen;
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
   HArr_p r = m_harrs(a(x)->ia, &i);
   BS2B xgetU = TI(x).getU;
+  B fileNS = m_f64(0);
   for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
     else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);
+    else if (eqStr(c, U"file")) {
+      if(fileNS.u==m_f64(0).u) {
+        #define F(X) m_nfn(X##Desc, path_dir(inc(comp_currPath))),
+        B arg =    m_caB(4, (B[]){F(list)F(fBytes)F(fChars)F(fLines)});
+        #undef F
+        fileNS = c1(file_nsGen,arg);
+      }
+      r.a[i] = inc(fileNS);
+    }
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
@@ -312,6 +323,7 @@ B sys_c1(B t, B x) {
       r.a[i] = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
   }
+  dec(fileNS);
   return harr_fcd(r, x);
 }
 
@@ -320,4 +332,8 @@ void sysfn_init() {
   fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
   fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
+  listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
+}
+void sysfnPost_init() {
+  file_nsGen = bqn_exec(m_str32(U"{⟨List,   Bytes,   Chars,   Lines⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec)); gc_add(file_nsGen);
 }

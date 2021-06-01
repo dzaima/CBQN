@@ -89,17 +89,17 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-e)"), inc(bi_emptyHVec)));
+              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-e)"), inc(bi_emptySVec)));
               break;
             }
             case 'p': { repl_init(); REQARG(p);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-p)"), inc(bi_emptyHVec));
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-p)"), inc(bi_emptySVec));
               print(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-o)"), inc(bi_emptyHVec));
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-o)"), inc(bi_emptySVec));
               printRaw(r); dec(r);
               printf("\n");
               break;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
       B src = fromUTF8l(argv[i++]);
       B args;
       if (i==argc) {
-        args = inc(bi_emptyHVec);
+        args = inc(bi_emptySVec);
       } else {
         HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
         for (usz j = 0; j < argc-i; j++) {
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0 || ln[0]==10) break;
-      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptyHVec), gsc, true);
+      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptySVec), gsc, true);
       free(ln);
       
       ptr_dec(gsc->body); ptr_inc(block->body);

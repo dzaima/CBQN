@@ -1,7 +1,9 @@
+#include <dirent.h>
 #include "../core.h"
 #include "file.h"
+#include "mut.h"
 
-static FILE* file_open(B path, char* desc, char* mode) { // doesn't consume; can error
+static FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
   toUTF8(path, p);
@@ -11,8 +13,18 @@ static FILE* file_open(B path, char* desc, char* mode) { // doesn't consume; can
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
   return f;
 }
+static DIR* dir_open(B path) { // doesn't consume
+  u64 plen = utf8lenB(path);
+  TALLOC(char, p, plen+1);
+  toUTF8(path, p);
+  p[plen] = 0;
+  DIR* f = opendir(p);
+  TFREE(p);
+  if (f==NULL) thrF("Couldn't open directory \"%R\"", path);
+  return f;
+}
 
-TmpFile* file_bytes(B path) { // consumes; may throw
+TmpFile* file_bytes(B path) { // consumes
   FILE* f = file_open(path, "read", "r");
   fseek(f, 0, SEEK_END);
   u64 len = ftell(f);
@@ -24,14 +36,14 @@ TmpFile* file_bytes(B path) { // consumes; may throw
   fclose(f);
   return src;
 }
-B file_chars(B path) { // consumes; may throw
+B file_chars(B path) { // consumes
   TmpFile* c = file_bytes(path);
   B r = fromUTF8((char*)c->a, c->ia);
   ptr_dec(c);
   return r;
 }
 
-B path_resolve(B base, B rel) { // consumes rel; may error; assumes base is a char vector or bi_N
+B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert((isArr(base) || isNothing(base)) && isArr(rel));
   BS2B rgetU = TI(rel).getU;
   usz ria = a(rel)->ia;
@@ -52,7 +64,7 @@ B path_resolve(B base, B rel) { // consumes rel; may error; assumes base is a ch
   return r;
 }
 
-B path_dir(B path) { // consumes; returns directory part of file path, with trailing slash; may error
+B path_dir(B path) { // consumes; returns directory part of file path with trailing slash, or ·
   assert(isArr(path) || isNothing(path));
   if (isNothing(path)) return path;
   BS2B pgetU = TI(path).getU;
@@ -72,7 +84,7 @@ B path_dir(B path) { // consumes; returns directory part of file path, with trai
 }
 
 
-void file_write(B path, B x) { // consumes path; may throw
+void file_write(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
   
   u64 len = utf8lenB(x);
@@ -83,4 +95,15 @@ void file_write(B path, B x) { // consumes path; may throw
   TFREE(val);
   dec(path);
   fclose(f);
+}
+
+B file_list(B path) {
+  DIR* d = dir_open(path);
+  struct dirent *c;
+  B res = inc(bi_emptySVec);
+  while ((c = readdir(d)) != NULL) {
+    char* name = c->d_name;
+    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_add(res, m_str8l(name));
+  }
+  return res;
 }

@@ -242,7 +242,7 @@ static const B bi_noVar  = tag(1, TAG_TAG);
 static const B bi_badHdr = tag(2, TAG_TAG);
 static const B bi_optOut = tag(3, TAG_TAG);
 static const B bi_noFill = tag(5, TAG_TAG);
-extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec;
+extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
