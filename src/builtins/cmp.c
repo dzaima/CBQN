@@ -4,14 +4,15 @@
 
 #define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
 
-#define CMP_IMPL(OP,FC,CF) \
+#define CMP_IMPL(CHR,OP,FC,CF) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_f64(w.u OP x.u); \
   if (isF64(w)&isC32(x)) return m_f64(FC);         \
   if (isC32(w)&isF64(x)) return m_f64(CF);         \
   bool wa = isArr(w);                              \
   bool xa = isArr(x);                              \
-  if (wa|xa) {                                     \
+  if (wa|xa && (!wa|!xa || rnk(w)==rnk(x))) {      \
+    if (wa&xa && !eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
     u8 we = wa? TI(w).elType : selfElType(w);      \
     u8 xe = xa? TI(x).elType : selfElType(x);      \
     if (we==el_i32 && xe==el_i32) {                \
@@ -49,27 +50,27 @@
     }                                              \
   }
 
-#define CMP(NAME,OP,FC,CF)          \
+#define CMP(CHR,NAME,OP,FC,CF)      \
 B NAME##_c2(B t, B w, B x) {        \
-  CMP_IMPL(OP, FC, CF);             \
+  CMP_IMPL(CHR, OP, FC, CF);        \
   P2(NAME);                         \
   return m_i32(compare(w, x) OP 0); \
 }
-CMP(le, <=, 1, 0)
-CMP(ge, >=, 0, 1)
-CMP(lt, < , 1, 0)
-CMP(gt, > , 0, 1)
+CMP("≤", le, <=, 1, 0)
+CMP("≥", ge, >=, 0, 1)
+CMP("<", lt, < , 1, 0)
+CMP(">", gt, > , 0, 1)
 #undef CMP
 
 B eq_c2(B t, B w, B x) {
-  CMP_IMPL(==, 0, 0);
+  CMP_IMPL("=", ==, 0, 0);
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
 B ne_c2(B t, B w, B x) {
-  CMP_IMPL(!=, 1, 1);
+  CMP_IMPL("≠", !=, 1, 1);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
