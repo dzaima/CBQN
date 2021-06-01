@@ -85,7 +85,7 @@
       i64 wv = W; i64 xv = X;      \
       i64 rv = EXPR;               \
       if (RARE(rv!=(i32)rv)) {     \
-        mm_free(v(r));             \
+        dec(r);                    \
         goto BASE;                 \
       }                            \
       rp[i] = rv;                  \
