@@ -105,5 +105,6 @@ B file_list(B path) {
     char* name = c->d_name;
     if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_add(res, m_str8l(name));
   }
+  dec(path);
   return res;
 }
