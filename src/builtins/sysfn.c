@@ -319,4 +319,5 @@ void sysfn_init() {
   fCharsDesc = registerNFn(m_str32(U"•FChars"), fchars_c1, fchars_c2);
   fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
   fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
+  importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
 }

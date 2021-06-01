@@ -167,7 +167,7 @@ char* format_type(u8 u);
 
 #define FOR_PM1(A,M,D) \
   /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
-  /*md1.c*/ A(timed,"•_timed") A(fchars,"•FChars") M(fbytes,"•FBytes") M(flines,"•FLines") A(import,"•Import") \
+  /*md1.c*/ A(timed,"•_timed") \
 
 #define FOR_PM2(A,M,D) \
   /*md2.c*/ A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
