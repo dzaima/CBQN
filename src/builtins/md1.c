@@ -295,54 +295,6 @@ B timed_c1(B d, B x) { B f = c(Md1D,d)->f;
   return m_f64((ens-sns)/1e9);
 }
 
-B fchars_c1(B d, B x) { B f = c(Md1D,d)->f;
-  return file_chars(path_resolve(f, x));
-}
-B fbytes_c1(B d, B x) { B f = c(Md1D,d)->f;
-  TmpFile* tf = file_bytes(path_resolve(f, x));
-  usz ia = tf->ia; u8* p = (u8*)tf->a;
-  u32* rp; B r = m_c32arrv(&rp, ia);
-  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
-  ptr_dec(tf);
-  return r;
-}
-B flines_c1(B d, B x) { B f = c(Md1D,d)->f;
-  TmpFile* tf = file_bytes(path_resolve(f, x));
-  usz ia = tf->ia; u8* p = (u8*)tf->a;
-  usz lineCount = 0;
-  for (usz i = 0; i < ia; i++) {
-    if (p[i]=='\n') lineCount++;
-    else if (p[i]=='\r') {
-      lineCount++;
-      if(i+1<ia && p[i+1]=='\n') i++;
-    }
-  }
-  if (ia && (p[ia-1]!='\n' && p[ia-1]!='\r')) lineCount++;
-  usz i = 0;
-  HArr_p r = m_harrs(lineCount, &i);
-  usz pos = 0;
-  while (i < lineCount) {
-    usz spos = pos;
-    while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
-    r.a[i++] = fromUTF8((char*)p+spos, pos-spos);
-    if (p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
-    else pos++;
-  }
-  ptr_dec(tf);
-  return harr_fv(r);
-}
-B import_c1(B d, B x) { B f = c(Md1D,d)->f;
-  return bqn_execFile(path_resolve(f, x), inc(bi_emptyHVec));
-}
-B import_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  return bqn_execFile(path_resolve(f, x), w);
-}
-
-
-B fchars_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
-  file_write(path_resolve(f, w), x);
-  return x;
-}
 
 extern B rt_cell;
 B cell_c1(B d, B x) { B f = c(Md1D,d)->f;

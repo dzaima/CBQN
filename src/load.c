@@ -365,7 +365,7 @@ static inline void base_init() { // very first init function
   #undef FD
 }
 
-#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(load)
+#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load)
 #define F(X) void X##_init();
 FOR_INIT(F)
 #undef F

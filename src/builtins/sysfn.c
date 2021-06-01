@@ -226,14 +226,59 @@ B makeRand_c1(B t, B x) {
   return r;
 }
 
-
+static NFnDesc* fCharsDesc;
+B fchars_c1(B d, B x) { B base = nfn_objU(d);
+  return file_chars(path_resolve(base, x));
+}
+B fchars_c2(B d, B w, B x) { B base = nfn_objU(d);
+  file_write(path_resolve(base, w), x);
+  return x;
+}
+static NFnDesc* fBytesDesc;
+B fbytes_c1(B d, B x) { B base = nfn_objU(d);
+  TmpFile* tf = file_bytes(path_resolve(base, x));
+  usz ia = tf->ia; u8* p = (u8*)tf->a;
+  u32* rp; B r = m_c32arrv(&rp, ia);
+  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
+  ptr_dec(tf);
+  return r;
+}
+static NFnDesc* fLinesDesc;
+B flines_c1(B d, B x) { B base = nfn_objU(d);
+  TmpFile* tf = file_bytes(path_resolve(base, x));
+  usz ia = tf->ia; u8* p = (u8*)tf->a;
+  usz lineCount = 0;
+  for (usz i = 0; i < ia; i++) {
+    if (p[i]=='\n') lineCount++;
+    else if (p[i]=='\r') {
+      lineCount++;
+      if(i+1<ia && p[i+1]=='\n') i++;
+    }
+  }
+  if (ia && (p[ia-1]!='\n' && p[ia-1]!='\r')) lineCount++;
+  usz i = 0;
+  HArr_p r = m_harrs(lineCount, &i);
+  usz pos = 0;
+  while (i < lineCount) {
+    usz spos = pos;
+    while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
+    r.a[i++] = fromUTF8((char*)p+spos, pos-spos);
+    if (p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
+    else pos++;
+  }
+  ptr_dec(tf);
+  return harr_fv(r);
+}
+static NFnDesc* importDesc;
+B import_c1(B d, B x) { B base = nfn_objU(d);
+  return bqn_execFile(path_resolve(base, x), inc(bi_emptyHVec));
+}
+B import_c2(B d, B w, B x) { B base = nfn_objU(d);
+  return bqn_execFile(path_resolve(base, x), w);
+}
 
 B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
-}
-
-static B makeRel(B md) { // doesn't consume
-  return m1_d(inc(md), path_dir(inc(comp_currPath)));
 }
 
 B getInternalNS();
@@ -258,14 +303,20 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
-    else if (eqStr(c, U"fchars")) r.a[i] = makeRel(bi_fchars);
-    else if (eqStr(c, U"fbytes")) r.a[i] = makeRel(bi_fbytes);
-    else if (eqStr(c, U"flines")) r.a[i] = makeRel(bi_flines);
-    else if (eqStr(c, U"import")) r.a[i] = makeRel(bi_import);
+    else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, path_dir(inc(comp_currPath)));
+    else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, path_dir(inc(comp_currPath)));
+    else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, path_dir(inc(comp_currPath)));
+    else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"args")) {
       if(isNothing(comp_currArgs)) thrM("No arguments present for •args");
       r.a[i] = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
   }
   return harr_fcd(r, x);
+}
+
+void sysfn_init() {
+  fCharsDesc = registerNFn(m_str32(U"•FChars"), fchars_c1, fchars_c2);
+  fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
+  fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
 }
