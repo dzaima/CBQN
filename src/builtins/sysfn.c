@@ -228,6 +228,10 @@ B makeRand_c1(B t, B x) {
 
 
 
+B exit_c1(B t, B x) {
+  bqn_exit(q_i32(x)? o2i(x) : 0);
+}
+
 static B makeRel(B md) { // doesn't consume
   return m1_d(inc(md), path_dir(inc(comp_currPath)));
 }
@@ -243,6 +247,7 @@ B sys_c1(B t, B x) {
     B c = xgetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
+    else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);

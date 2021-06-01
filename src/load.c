@@ -264,7 +264,13 @@ B bqn_execFile(B path, B args) { // consumes both
   return bqn_exec(file_chars(inc(path)), path, args);
 }
 
-
+void rtWrap_print();
+void bqn_exit(i32 code) {
+  rtWrap_print();
+  CTR_FOR(CTR_PRINT)
+  printAllocStats();
+  exit(code);
+}
 
 
 static void freed_visit(Value* x) {
