@@ -60,10 +60,20 @@ B info_c1(B t, B x) {
 
 
 B listVariations_c2(B t, B w, B x) {
-  if (!isArr(x)) thrM("•internal.ListVariations: Argument must be an array");
-  i32 wv = o2i(w);
+  if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
+  if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
+  usz wia = a(w)->ia;
+  BS2B wgetU = TI(w).getU;
+  bool c_incr=false, c_changeFill=false;
+  for (usz i = 0; i < wia; i++) {
+    u32 c = o2c(wgetU(w, i));
+    if (c=='i') c_incr=true;
+    else if (c=='f') c_changeFill=true;
+    else thrF("internal.ListVariations: Unknown option '%c' in 𝕨", c);
+  }
+  
   B xf = getFillQ(x);
-  bool ah = wv || noFill(xf);
+  bool ah = c_changeFill || noFill(xf);
   bool ai32=false, af64=false, ac32=false;
   usz xia = a(x)->ia;
   BS2B xgetU = TI(x).getU;
@@ -82,17 +92,17 @@ B listVariations_c2(B t, B w, B x) {
     }
   } else ai32=af64=false;
   B r = inc(bi_emptyHVec);
-  if(ai32) { r=vec_add(r,m_str32(U"Ai32")); r=vec_add(r,m_str32(U"Ai32Inc")); r=vec_add(r,m_str32(U"Si32")); r=vec_add(r,m_str32(U"Si32Inc")); }
-  if(af64) { r=vec_add(r,m_str32(U"Af64")); r=vec_add(r,m_str32(U"Af64Inc")); r=vec_add(r,m_str32(U"Sf64")); r=vec_add(r,m_str32(U"Sf64Inc")); }
-  if(ac32) { r=vec_add(r,m_str32(U"Ac32")); r=vec_add(r,m_str32(U"Ac32Inc")); r=vec_add(r,m_str32(U"Sc32")); r=vec_add(r,m_str32(U"Sc32Inc")); }
-  if(ah)   { r=vec_add(r,m_str32(U"Ah"  )); r=vec_add(r,m_str32(U"AhInc"));   r=vec_add(r,m_str32(U"Sh"  )); r=vec_add(r,m_str32(U"ShInc")); }
-  {          r=vec_add(r,m_str32(U"Af"  )); r=vec_add(r,m_str32(U"AfInc"));   r=vec_add(r,m_str32(U"Sf"  )); r=vec_add(r,m_str32(U"SfInc")); }
+  if(ai32) { r=vec_add(r,m_str32(U"Ai32")); r=vec_add(r,m_str32(U"Si32")); if(c_incr) {r=vec_add(r,m_str32(U"Ai32Inc")); r=vec_add(r,m_str32(U"Si32Inc"));} }
+  if(af64) { r=vec_add(r,m_str32(U"Af64")); r=vec_add(r,m_str32(U"Sf64")); if(c_incr) {r=vec_add(r,m_str32(U"Af64Inc")); r=vec_add(r,m_str32(U"Sf64Inc"));} }
+  if(ac32) { r=vec_add(r,m_str32(U"Ac32")); r=vec_add(r,m_str32(U"Sc32")); if(c_incr) {r=vec_add(r,m_str32(U"Ac32Inc")); r=vec_add(r,m_str32(U"Sc32Inc"));} }
+  if(ah)   { r=vec_add(r,m_str32(U"Ah"  )); r=vec_add(r,m_str32(U"Sh"  )); if(c_incr) {r=vec_add(r,m_str32(U"AhInc"));   r=vec_add(r,m_str32(U"ShInc"));  } }
+  {          r=vec_add(r,m_str32(U"Af"  )); r=vec_add(r,m_str32(U"Sf"  )); if(c_incr) {r=vec_add(r,m_str32(U"AfInc"));   r=vec_add(r,m_str32(U"SfInc"));  } }
   dec(x);
   dec(xf);
   return r;
 }
 B listVariations_c1(B t, B x) {
-  return listVariations_c2(t, m_i32(1), x);
+  return listVariations_c2(t, m_str32(U"if"), x);
 }
 static bool u32_get(u32** cv, u32* cE, u32* x) {
   u32* c = *cv;
