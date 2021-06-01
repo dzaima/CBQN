@@ -41,7 +41,7 @@ B repr_c1(B t, B x) {
   #define BL 100
   if (isF64(x)) {
     char buf[BL];
-    snprintf(buf, BL, "%g", x.f);
+    snprintf(buf, BL, "%.14g", x.f);
     return m_str8(strlen(buf), buf);
   } else {
     #ifdef FORMATTER

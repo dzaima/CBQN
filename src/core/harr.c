@@ -85,6 +85,7 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
   assert(v(x)->type==t_harr);
   B* p = harr_ptr(x);
   for (usz i = 0; i < am; i++) dec(p[i]);
+  if (rnk(x)>1) ptr_dec(shObj(x));
   mm_free(v(x));
 }
 

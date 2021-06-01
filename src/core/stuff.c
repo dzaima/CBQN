@@ -99,7 +99,7 @@ NOINLINE void print(B x) {
 
 NOINLINE void printRaw(B x) {
   if (isAtm(x)) {
-    if (isF64(x)) printf("%g", x.f);
+    if (isF64(x)) printf("%.14g", x.f);
     else if (isC32(x)) printUTF8((u32)x.u);
     else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
@@ -196,7 +196,7 @@ NOINLINE B append_fmt(B s, char* p, ...) {
           AU("¯");
           f=-f;
         }
-        snprintf(buf, 30, "%g", f);
+        snprintf(buf, 30, "%.14g", f);
         A8(buf);
         break;
       }

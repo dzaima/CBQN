@@ -87,10 +87,10 @@ B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
-  B xf = getFillQ(x);
   ur xr = rnk(x);
   usz ia = a(x)->ia;
   if (ia==0) return x;
+  B xf = getFillQ(x);
   if (xr==1 && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
