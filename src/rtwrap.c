@@ -1,6 +1,8 @@
 #include "core.h"
 #include "vm.h"
-
+#ifdef RT_PERF
+#include "utils/builtins.h"
+#endif
 
 #ifdef RT_WRAP
 typedef struct WFun WFun;
