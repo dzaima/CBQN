@@ -26,8 +26,8 @@ B rtWrap_wrap(B x); // consumes
 _Thread_local B comp_currPath;
 _Thread_local B comp_currArgs;
 
-B rt_sortDsc, rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take,
-  rt_drop, rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
+B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
+  rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
 Block* load_compObj(B x, B src, Scope* sc) { // consumes x,src
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
@@ -170,8 +170,6 @@ static inline void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     BS2B rtObjGet = TI(rtObjRaw).get;
     
-    rt_sortDsc = rtObjGet(rtObjRaw, 11); gc_add(rt_sortDsc);
-    rt_merge   = rtObjGet(rtObjRaw, 13); gc_add(rt_merge);
     rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
     rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
     rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
