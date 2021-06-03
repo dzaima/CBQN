@@ -167,7 +167,7 @@ GC2i(add, wv+xv, {
   }
 })
 GC2i(sub, wv-xv, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)-o2u64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
   if (isArr(w) && TI(w).elType==el_c32) {
     if (isC32(x)) {
