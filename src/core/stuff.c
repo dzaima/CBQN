@@ -4,31 +4,6 @@
 
 u64 allocB; // currently allocated number of bytes
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
-#define F(N) u64 N;
-CTR_FOR(F)
-#undef F
-
-char* format_pf(u8 u) {
-  switch(u) { default: return "(unknown function)";
-    #define F(N,X) case pf_##N: return X;
-    FOR_PFN(F,F,F)
-    #undef F
-  }
-}
-char* format_pm1(u8 u) {
-  switch(u) { default: return"(unknown 1-modifier)";
-    #define F(N,X) case pm1_##N: return X;
-    FOR_PM1(F,F,F)
-    #undef F
-  }
-}
-char* format_pm2(u8 u) {
-  switch(u) { default: return"(unknown 2-modifier)";
-    #define F(N,X) case pm2_##N: return X;
-    FOR_PM2(F,F,F)
-    #undef F
-  }
-}
 
 NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);

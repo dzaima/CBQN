@@ -3,9 +3,12 @@
 #include "ns.h"
 #include "utils/mut.h"
 #include "utils/file.h"
+#include "utils/builtins.h"
 
 u64 mm_heapMax = HEAP_MAX;
 u64 mm_heapAlloc;
+
+
 
 #define FA(N,X) B bi_##N; B N##_c1(B t, B x); B N##_c2(B t, B w, B x);
 #define FM(N,X) B bi_##N; B N##_c1(B t, B x);
@@ -16,6 +19,33 @@ FOR_PM2(FA,FM,FD)
 #undef FA
 #undef FM
 #undef FD
+
+#define F(N) u64 N;
+CTR_FOR(F)
+#undef F
+char* format_pf(u8 u) {
+  switch(u) { default: return "(unknown function)";
+    #define F(N,X) case pf_##N: return X;
+    FOR_PFN(F,F,F)
+    #undef F
+  }
+}
+char* format_pm1(u8 u) {
+  switch(u) { default: return"(unknown 1-modifier)";
+    #define F(N,X) case pm1_##N: return X;
+    FOR_PM1(F,F,F)
+    #undef F
+  }
+}
+char* format_pm2(u8 u) {
+  switch(u) { default: return"(unknown 2-modifier)";
+    #define F(N,X) case pm2_##N: return X;
+    FOR_PM2(F,F,F)
+    #undef F
+  }
+}
+
+
 
 TypeInfo ti[t_COUNT];
 

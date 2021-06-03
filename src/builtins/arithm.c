@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../utils/each.h"
+#include "../utils/builtins.h"
 #include <math.h>
 
 static inline B arith_recm(BB2B f, B x) {
