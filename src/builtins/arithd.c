@@ -178,8 +178,7 @@ GC2i(sub, wv-xv, {
       dec(w);
       return r;
     }
-    if (isArr(x)) {
-      if (!eqShape(w, x)) thrF("-: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    if (isArr(x) && eqShape(w, x)) {
       u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
       if (TI(x).elType==el_i32) {
         u32* rp; B r = m_c32arrc(&rp, w);
