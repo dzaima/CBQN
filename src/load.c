@@ -149,7 +149,7 @@ static inline void load_init() { // very last init function
   comp_currArgs = bi_N;
   gc_addFn(load_gcFn);
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add    , bi_sub   , bi_mul  , bi_div    , bi_pow      , bi_N     , bi_floor, bi_ceil   , bi_stile , bi_not,
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add    , bi_sub   , bi_mul  , bi_div    , bi_pow      , bi_root  , bi_floor, bi_ceil   , bi_stile , bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and    , bi_or    , bi_lt   , bi_gt     , bi_ne       , bi_eq    , bi_le   , bi_ge     , bi_feq   , bi_fne,
     /* ⊣⊢⥊∾≍↑↓↕«» */ bi_ltack  , bi_rtack , bi_shape, bi_join   , bi_couple   , bi_take  , bi_drop , bi_ud     , bi_shifta, bi_shiftb,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_reverse, bi_N     , bi_slash, bi_gradeUp, bi_gradeDown, bi_select, bi_pick , bi_indexOf, bi_count , bi_memberOf,
@@ -158,7 +158,7 @@ static inline void load_init() { // very last init function
     /* ⚇⍟⎊         */ bi_N      , bi_repeat, bi_catch
   };
   bool rtComplete[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,0,1,1,1,1,
+    /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,1,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍↑↓↕«» */ 1,1,0,1,1,1,1,1,1,1,
     /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 1,0,1,1,1,1,1,1,1,1,
