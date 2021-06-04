@@ -31,7 +31,7 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
     switch(TI(x).elType) { default: UD;
       case el_f64: case el_i32: return m_i32(0);
       case el_c32: return m_c32(' ');
-      case el_B:
+      case el_B:;
         u8 t = v(x)->type;
         if (t==t_fillarr  ) return inc(c(FillArr,x            )->fill);
         if (t==t_fillslice) return inc(c(FillArr,c(Slice,x)->p)->fill);

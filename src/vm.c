@@ -167,7 +167,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
     bool ret = false;
     #define A64(X) { u64 a64=(X); TSADD(nBCT, (u32)a64); TSADD(nBCT, a64>>32); }
     switch (*c) {
-      case PUSH:
+      case PUSH:;
         B obj = comp->objs->a[c[1]];
         TSADD(nBCT, isVal(obj)? ADDI : ADDU);
         A64(obj.u);
