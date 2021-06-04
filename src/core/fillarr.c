@@ -12,7 +12,7 @@ B asFill(B x) { // consumes
     }
     if (xe==el_c32) {
       u32* rp; B r = m_c32arrc(&rp, x);
-      for (usz i = 0; i < ia; i++) rp[i] = 0;
+      for (usz i = 0; i < ia; i++) rp[i] = ' ';
       dec(x);
       return r;
     }
