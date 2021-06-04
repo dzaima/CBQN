@@ -84,8 +84,14 @@ B ltack_c2(B t, B w, B x) { dec(x); return w; }
 B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
+#ifdef RT_WRAP
+B rtWrap_unwrap(B x);
+#endif
 B fmtF_c1(B t, B x) {
   if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
+  #ifdef RT_WRAP
+    x = rtWrap_unwrap(x);
+  #endif
   u8 fl = v(x)->flags;
   if (fl==0 || fl>rtLen) {
     u8 ty = v(x)->type;

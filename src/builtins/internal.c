@@ -59,6 +59,16 @@ B info_c1(B t, B x) {
   return info_c2(t, m_i32(0), x);
 }
 
+#define FOR_VARIATION(F) F(Ai32) F(Si32) F(Ai32Inc) F(Si32Inc) \
+                         F(Af64) F(Sf64) F(Af64Inc) F(Sf64Inc) \
+                         F(Ac32) F(Sc32) F(Ac32Inc) F(Sc32Inc) \
+                         F(Ah)   F(Sh)   F(AhInc)   F(ShInc) \
+                         F(Af)   F(Sf)   F(AfInc)   F(SfInc)
+
+#define F(X) static B v_##X;
+FOR_VARIATION(F)
+#undef F
+static B listVariations_def;
 
 B listVariations_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
@@ -75,6 +85,7 @@ B listVariations_c2(B t, B w, B x) {
   }
   dec(w);
   
+  u8 xe = TI(x).elType;
   B xf = getFillQ(x);
   bool ah = c_rmFill || noFill(xf);
   bool ai32=false, af64=false, ac32=false;
@@ -82,30 +93,38 @@ B listVariations_c2(B t, B w, B x) {
   BS2B xgetU = TI(x).getU;
   if (isNum(xf)) {
     ai32=af64=true;
-    for (usz i = 0; i < xia; i++) {
-      B c = xgetU(x, i);
-      if (!isNum(c)) { ai32=af64=false; break; }
-      if (!q_i32(c)) ai32=false;
+    if (xe!=el_i32) {
+      if (xe==el_f64) { f64* xp = f64any_ptr(x);
+        for (usz i = 0; i < xia; i++) if (xp[i] != (i32)xp[i]) { ai32=false; break; }
+      } else {
+        for (usz i = 0; i < xia; i++) {
+          B c = xgetU(x, i);
+          if (!isNum(c)) { ai32=af64=false; break; }
+          if (!q_i32(c)) ai32=false;
+        }
+      }
     }
   } else if (isC32(xf)) {
     ac32=true;
-    for (usz i = 0; i < xia; i++) {
-      B c = xgetU(x, i);
-      if (!isC32(c)) { ac32=false; break; }
+    if (xe!=el_c32) {
+      for (usz i = 0; i < xia; i++) {
+        B c = xgetU(x, i);
+        if (!isC32(c)) { ac32=false; break; }
+      }
     }
   } else ai32=af64=false;
   B r = inc(bi_emptyHVec);
-  if(ai32) { r=vec_add(r,m_str32(U"Ai32")); r=vec_add(r,m_str32(U"Si32")); if(c_incr) {r=vec_add(r,m_str32(U"Ai32Inc")); r=vec_add(r,m_str32(U"Si32Inc"));} }
-  if(af64) { r=vec_add(r,m_str32(U"Af64")); r=vec_add(r,m_str32(U"Sf64")); if(c_incr) {r=vec_add(r,m_str32(U"Af64Inc")); r=vec_add(r,m_str32(U"Sf64Inc"));} }
-  if(ac32) { r=vec_add(r,m_str32(U"Ac32")); r=vec_add(r,m_str32(U"Sc32")); if(c_incr) {r=vec_add(r,m_str32(U"Ac32Inc")); r=vec_add(r,m_str32(U"Sc32Inc"));} }
-  if(ah)   { r=vec_add(r,m_str32(U"Ah"  )); r=vec_add(r,m_str32(U"Sh"  )); if(c_incr) {r=vec_add(r,m_str32(U"AhInc"));   r=vec_add(r,m_str32(U"ShInc"));  } }
-  {          r=vec_add(r,m_str32(U"Af"  )); r=vec_add(r,m_str32(U"Sf"  )); if(c_incr) {r=vec_add(r,m_str32(U"AfInc"));   r=vec_add(r,m_str32(U"SfInc"));  } }
+  if(ai32) { r=vec_add(r,inc(v_Ai32)); r=vec_add(r,inc(v_Si32)); if(c_incr) {r=vec_add(r,inc(v_Ai32Inc)); r=vec_add(r,inc(v_Si32Inc)); } }
+  if(af64) { r=vec_add(r,inc(v_Af64)); r=vec_add(r,inc(v_Sf64)); if(c_incr) {r=vec_add(r,inc(v_Af64Inc)); r=vec_add(r,inc(v_Sf64Inc)); } }
+  if(ac32) { r=vec_add(r,inc(v_Ac32)); r=vec_add(r,inc(v_Sc32)); if(c_incr) {r=vec_add(r,inc(v_Ac32Inc)); r=vec_add(r,inc(v_Sc32Inc)); } }
+  if(ah)   { r=vec_add(r,inc(v_Ah  )); r=vec_add(r,inc(v_Sh  )); if(c_incr) {r=vec_add(r,inc(v_AhInc  )); r=vec_add(r,inc(v_ShInc  )); } }
+  {          r=vec_add(r,inc(v_Af  )); r=vec_add(r,inc(v_Sf  )); if(c_incr) {r=vec_add(r,inc(v_AfInc  )); r=vec_add(r,inc(v_SfInc  )); } }
   dec(x);
   dec(xf);
   return r;
 }
 B listVariations_c1(B t, B x) {
-  return listVariations_c2(t, m_str32(U"if"), x);
+  return listVariations_c2(t, inc(listVariations_def), x);
 }
 static bool u32_get(u32** cv, u32* cE, u32* x) {
   u32* c = *cv;
@@ -121,14 +140,18 @@ static bool u32_get(u32** cv, u32* cE, u32* x) {
 }
 
 static B variation_refs;
-static bool variation_rootAdded;
 static void variation_root() {
   mm_visit(variation_refs);
+  mm_visit(listVariations_def);
+  #define F(X) mm_visit(v_##X);
+  FOR_VARIATION(F)
+  #undef F
 }
 
 B variation_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
   usz xia = a(x)->ia;
+  u8 xe = TI(x).elType;
   BS2B xget = TI(x).get;
   BS2B xgetU = TI(x).getU;
   C32Arr* wc = toC32Arr(w);
@@ -141,23 +164,31 @@ B variation_c2(B t, B w, B x) {
     wp++;
     if (u32_get(&wp, wpE, U"i32")) {
       i32* tp; res = m_i32arrc(&tp, x);
-      for (usz i = 0; i < xia; i++) tp[i] = o2i(xgetU(x,i));
+      if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
+      else for (usz i = 0; i < xia; i++) tp[i] = o2i(xgetU(x,i));
     } else if (u32_get(&wp, wpE, U"f64")) {
       f64* tp; res = m_f64arrc(&tp, x);
-      for (usz i = 0; i < xia; i++) tp[i] = o2f(xgetU(x,i));
+      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
+      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
+      else for (usz i = 0; i < xia; i++) tp[i] = o2f(xgetU(x,i));
     } else if (u32_get(&wp, wpE, U"c32")) {
       u32* tp; res = m_c32arrc(&tp, x);
-      for (usz i = 0; i < xia; i++) tp[i] = o2c(xgetU(x,i));
+      if (xe==el_c32) { u32* xp=c32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
+      else for (usz i = 0; i < xia; i++) tp[i] = o2c(xgetU(x,i));
     } else if (u32_get(&wp, wpE, U"h")) {
       HArr_p t = m_harrUc(x);
-      for (usz i = 0; i < xia; i++) t.a[i] = xget(x,i);
+      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
+      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
+      else for (usz i = 0; i < xia; i++) t.a[i] = xget(x,i);
       res = t.b;
     } else if (u32_get(&wp, wpE, U"f")) {
       res = m_fillarrp(xia);
       fillarr_setFill(res, getFillQ(x));
       arr_shCopy(res, x);
       B* rp = fillarr_ptr(res);
-      for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
+      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
+      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
+      else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
     } else thrF("•internal.Variation: Bad type \"%R\"", tag(wc,ARR_TAG));
     if (slice) {
       B slice = TI(res).slice(res, 0);
@@ -167,7 +198,6 @@ B variation_c2(B t, B w, B x) {
     if (u32_get(&wp, wpE, U"Inc")) {
       if (!variation_refs.u) {
         variation_refs = inc(bi_emptyHVec);
-        if (!variation_rootAdded) { gc_addFn(variation_root); variation_rootAdded = true; }
       }
       variation_refs = vec_add(variation_refs, inc(res));
     }
@@ -229,10 +259,14 @@ B unshare_c1(B t, B x) {
   dec(x);
   return r;
 }
-
 static B internalNS;
 B getInternalNS() {
   if (internalNS.u == 0) {
+    #define F(X) v_##X = m_str8l(#X);
+    FOR_VARIATION(F)
+    #undef F
+    listVariations_def = m_str32(U"if");
+    gc_addFn(variation_root);
     #define F(X) inc(bi_##X),
     B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec));
     B arg =    m_caB(9, (B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)});
