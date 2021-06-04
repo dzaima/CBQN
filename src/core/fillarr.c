@@ -2,8 +2,21 @@
 
 B asFill(B x) { // consumes
   if (isArr(x)) {
+    u8 xe = TI(x).elType;
+    usz ia = a(x)->ia;
+    if (xe<=el_f64) {
+      i32* rp; B r = m_i32arrc(&rp, x);
+      for (usz i = 0; i < ia; i++) rp[i] = 0;
+      dec(x);
+      return r;
+    }
+    if (xe==el_c32) {
+      u32* rp; B r = m_c32arrc(&rp, x);
+      for (usz i = 0; i < ia; i++) rp[i] = 0;
+      dec(x);
+      return r;
+    }
     HArr_p r = m_harrUc(x);
-    usz ia = r.c->ia;
     BS2B xget = TI(x).get;
     bool noFill = false;
     for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;

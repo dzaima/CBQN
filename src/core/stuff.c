@@ -248,7 +248,7 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   usz ia = a(x)->ia;
   u8 we = TI(w).elType;
   u8 xe = TI(x).elType;
-  if (we<=el_f64 && xe<=el_f64) {
+  if (we<=el_f64 && xe<=el_f64) { assert(we==el_i32|we==el_f64); assert(xe==el_i32|xe==el_f64);
     if (we==el_i32) { i32* wp = i32any_ptr(w);
       if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
       else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
