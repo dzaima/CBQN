@@ -69,7 +69,7 @@ NOINLINE void print(B x) {
   else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
   else if (x.u==bi_badHdr.u) printf("(bad header note)");
   else if (x.u==bi_noFill.u) printf("(no fill placeholder)");
-  else printf("(todo tag %lx)", x.u>>48);
+  else printf("(todo tag "N64x")", x.u>>48);
 }
 
 NOINLINE void printRaw(B x) {
@@ -137,18 +137,18 @@ NOINLINE B append_fmt(B s, char* p, ...) {
         assert(c);
         if (mode) {
          assert(c=='l'||c=='i');
-          if (c=='i') snprintf(buf, 30, mode==1?  "%u" :  "%x", va_arg(a, u32));
-          else        snprintf(buf, 30, mode==1? "%lu" : "%lx", va_arg(a, u64));
+          if (c=='i') snprintf(buf, 30, mode==1? "%u" : "%x", va_arg(a, u32));
+          else        snprintf(buf, 30, mode==1? N64u : N64x, va_arg(a, u64));
         } else {
           if (c=='i') {
             i32 v = va_arg(a, i32);
             if (v<0) AU("¯");
-            snprintf(buf, 30, "%lu", (u64)(v<0?-v:v));
+            snprintf(buf, 30, N64u, (u64)(v<0?-v:v));
           } else { assert(c=='l');
             i64 v = va_arg(a, i64);
             if (v<0) AU("¯");
             if (v==I64_MIN) snprintf(buf, 30, "9223372036854775808");
-            else snprintf(buf, 30, "%lu", (u64)(v<0?-v:v));
+            else snprintf(buf, 30, N64u, (u64)(v<0?-v:v));
           }
         }
         A8(buf);
@@ -156,7 +156,7 @@ NOINLINE B append_fmt(B s, char* p, ...) {
       }
       case 's': {
         usz v = va_arg(a, usz);
-        snprintf(buf, 30, sizeof(usz)==4? "%u" : "%lu", v);
+        snprintf(buf, 30, sizeof(usz)==4? "%u" : N64u, v);
         A8(buf);
         break;
       }
@@ -450,24 +450,24 @@ B bqn_merge(B x) { // consumes
 
 NOINLINE void printAllocStats() {
   #ifdef ALLOC_STAT
-    printf("total ever allocated: %lu\n", talloc);
-    printf("allocated heap size:  %ld\n", mm_heapAlloc);
-    printf("used heap size:       %ld\n", mm_heapUsed());
+    printf("total ever allocated: "N64u"\n", talloc);
+    printf("allocated heap size:  "N64u"\n", mm_heapAlloc);
+    printf("used heap size:       "N64u"\n", mm_heapUsed());
     ctr_a[t_harr]+= ctr_a[t_harrPartial];
     ctr_a[t_harrPartial] = 0;
-    printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_a[i]); } printf("\n");
-    printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf("%lu", ctr_f[i]); } printf("\n");
+    printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_a[i]); } printf("\n");
+    printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_f[i]); } printf("\n");
     printf("names←⟨"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf(","); printf("\"%s\"", format_type(i)); } printf("⟩\n");
     u64 leakedCount = 0;
     for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
-    printf("leaked object count: %ld\n", leakedCount);
+    printf("leaked object count: "N64u"\n", leakedCount);
     #ifdef ALLOC_SIZES
       for(i64 i = 0; i < actrc; i++) {
         u32* c = actrs[i];
         bool any = false;
         for (i64 j = 0; j < t_COUNT; j++) if (c[j]) any=true;
         if (any) {
-          printf("%ld", i*4);
+          printf(N64u, i*4);
           for (i64 k = 0; k < t_COUNT; k++) printf("‿%u", c[k]);
           printf("\n");
         }

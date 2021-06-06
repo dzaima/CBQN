@@ -55,12 +55,12 @@
 // #define PRECOMP   // execute just precompiled code at src/gen/interp
 
 
+#ifdef __OpenBSD__
+  #define __wchar_t __wchar_t2 // horrible hack for BSD
+#endif
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
-#ifdef __OpenBSD__
-#define __wchar_t __wchar_t2 // horrible hack for BSD
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
@@ -107,6 +107,9 @@
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
+#define N64x "%"SCNx64
+#define N64d "%"SCNd64
+#define N64u "%"SCNu64
 
 typedef u32 usz;
 typedef u8 ur;
@@ -114,7 +117,7 @@ typedef u8 ur;
 #define  UR_MAX 255
 
 #define CTR_FOR(F)
-#define CTR_PRINT(N) if(N) printf(#N ": %lu\n", N);
+#define CTR_PRINT(N) if(N) printf(#N ": "N64u"\n", N);
 #define F(N) extern u64 N;
 CTR_FOR(F)
 #undef F

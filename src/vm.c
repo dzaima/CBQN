@@ -579,7 +579,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     }
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      printBC(sbc); printf("@%ld:   ", BCPOS(b, sbc));
+      printBC(sbc); printf("@"N64d":   ", BCPOS(b, sbc));
       for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
@@ -802,7 +802,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   if (!isNothing(src) && !isNothing(comp->indices)) {
     B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
     B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
-    int start = pos==-1? 0 : printf("%ld: ", pos);
+    int start = pos==-1? 0 : printf(N64d": ", pos);
     usz srcL = a(src)->ia;
     BS2B srcGetU = TI(src).getU;
     usz srcS = cs;
@@ -818,7 +818,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     putchar('\n');
     // printf("  inds:%d…%d\n", cinds, cinde);
   } else {
-    if (pos!=-1) printf("%ld: ", pos);
+    if (pos!=-1) printf(N64d": ", pos);
     printf("source unknown\n");
   }
 }
@@ -830,7 +830,7 @@ NOINLINE void vm_pst(Env* s, Env* e) {
   while (i>=0) {
     Env* c = s+i;
     if (l>30 && i==l-10) {
-      printf("(%ld entries omitted)\n", l-20);
+      printf("("N64d" entries omitted)\n", l-20);
       i = 10;
     }
     Comp* comp = c->sc->body->comp;
