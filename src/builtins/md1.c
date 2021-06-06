@@ -95,7 +95,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (xr==1 && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
-    if (rtid==0) {
+    if (rtid==0) { // +
       i32* rp; B r = m_i32arrv(&rp, ia);
       i64 c = 0;
       for (usz i = 0; i < ia; i++) {
@@ -105,7 +105,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return r;
     }
-    if (rtid==7) {
+    if (rtid==7) { // ⌈
       i32* rp; B r = m_i32arrv(&rp, ia);
       i32 c = I32_MIN;
       for (usz i = 0; i < ia; i++) {
@@ -115,7 +115,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return r;
     }
-    if (rtid==14) {
+    if (rtid==14) { // ≠
       i32* rp; B r = m_i32arrv(&rp, ia);
       i32 c = 0;
       for (usz i = 0; i < ia; i++) rp[i] = c = c!=xp[i];
@@ -151,7 +151,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
-    if (rtid==0) {
+    if (rtid==0) { // +
       i32* rp; B r = m_i32arrv(&rp, ia);
       i64 c = wv;
       for (usz i = 0; i < ia; i++) {
@@ -161,7 +161,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return r;
     }
-    if (rtid==7) {
+    if (rtid==7) { // ⌈
       i32* rp; B r = m_i32arrv(&rp, ia);
       i32 c = wv;
       for (usz i = 0; i < ia; i++) {
@@ -171,7 +171,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
       dec(x);
       return r;
     }
-    if (rtid==14) {
+    if (rtid==14) { // ≠
       i32* rp; B r = m_i32arrv(&rp, ia);
       i32 c = wv;
       for (usz i = 0; i < ia; i++) rp[i] = c = c!=xp[i];
@@ -208,13 +208,31 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
-    if (rtid==2) {
+    if (rtid==2) { // ×
       i64 c = 1;
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
       dec(x);
       return m_i32(c);
     }
-    if (rtid==11) {
+    if (rtid==6) { // ⌊
+      if (ia==0) return m_f64(1.0/0.0);
+      i32 c = I32_MAX;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]<c) c = xp[i];
+      }
+      dec(x);
+      return m_i32(c);
+    }
+    if (rtid==7) { // ⌈
+      if (ia==0) return m_f64(-1.0/0.0);
+      i32 c = I32_MIN;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]>c) c = xp[i];
+      }
+      dec(x);
+      return m_i32(c);
+    }
+    if (rtid==11) { // ∨
       bool any = false;
       for (usz i = 0; i < ia; i++) {
         i32 c = xp[i];
@@ -256,9 +274,25 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
-    if (rtid==2) {
+    if (rtid==2) { // ×
       i64 c = wv;
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
+      dec(x);
+      return m_i32(c);
+    }
+    if (rtid==6) { // ⌊
+      i32 c = wv;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]<c) c = xp[i];
+      }
+      dec(x);
+      return m_i32(c);
+    }
+    if (rtid==7) { // ⌈
+      i32 c = wv;
+      for (usz i = 0; i < ia; i++) {
+        if (xp[i]>c) c = xp[i];
+      }
       dec(x);
       return m_i32(c);
     }
