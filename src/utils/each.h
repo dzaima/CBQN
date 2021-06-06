@@ -150,7 +150,7 @@ static B eachd(B f, B w, B x) { // complete w F¨ x without fills
 }
 
 
-#ifdef CATCH_ERRORS
+#if CATCH_ERRORS
 static inline B arith_recd(BBB2B f, B w, B x) {
   B fx = getFillQ(x);
   if (noFill(fx)) return eachd_fn(f, bi_N, w, x);

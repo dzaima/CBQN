@@ -171,7 +171,7 @@ static void BINARY_INSERTION_SORT_START(SORT_TYPE *dst, const size_t start, cons
 
     for (size_t j = i-1; j >= location; j--) {
       dst[j + 1] = dst[j];
-      if (j==0) break; // check edge case because j is unsigned 
+      if (j==0) break; // check edge case because j is unsigned
     }
 
     dst[location] = x;

@@ -2,17 +2,13 @@
 #include "vm.h"
 #include "utils/utf.h"
 
-// TODO these are hacks around not needing tiny headers
-Block* bqn_comp(B str, B path, B args);
-Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
-
 static B replPath;
 static Scope* gsc;
 static bool init = false;
 
 static void repl_init() {
   if (init) return;
-  cbqn_init(); 
+  cbqn_init();
   replPath = m_str32(U"REPL"); gc_add(replPath);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
   gsc = m_scope(initBlock->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
@@ -174,7 +170,7 @@ int main(int argc, char* argv[]) {
       #endif
       ptr_dec(block);
       
-      #ifdef FORMATTER
+      #if FORMATTER
       B resFmt = bqn_fmt(res);
       printRaw(resFmt); dec(resFmt);
       putchar('\n');

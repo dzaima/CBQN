@@ -260,7 +260,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) { 
+NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) {
   usz bIA = a(blocks)->ia;
   I32Arr* bca = toI32Arr(bcq);
   i32* bc = bca->a;
@@ -791,7 +791,7 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   return &(cf++)->jmp;
 }
 void popCatch() {
-  #ifdef CATCH_ERRORS
+  #if CATCH_ERRORS
     assert(cf>cfStart);
     cf--;
   #endif

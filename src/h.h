@@ -4,8 +4,40 @@
 #ifdef DEBUG
   // #define DEBUG_VM
 #endif
-#define CATCH_ERRORS // whether to allow catching errors; currently means refcounts won't be accurate and can't be tested for
-#define ENABLE_GC    // whether to ever garbage-collect
+#ifndef CATCH_ERRORS
+  #define CATCH_ERRORS 1 // whether to allow catching errors
+#endif                   // currently means refcounts won't be accurate and can't be tested for
+#ifndef ENABLE_GC
+  #define ENABLE_GC    1 // whether to ever garbage-collect
+#endif
+#ifndef TYPED_ARITH
+  #define TYPED_ARITH  1 // whether to use typed arith
+#endif
+#ifndef VM_POS
+  #define VM_POS       1 // whether to store detailed execution position information for stacktraces
+#endif
+#ifndef CHECK_VALID
+  #define CHECK_VALID  1 // whether to check for valid arguments in places where that would be detrimental to performance
+#endif                   // e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc
+#ifndef EACH_FILLS
+  #define EACH_FILLS   0 // whether to try to squeeze out fills for ¨ and ⌜
+#endif
+#ifndef SFNS_FILLS
+  #define SFNS_FILLS   1 // whether to generate fills for structural functions (∾, ≍, etc)
+#endif
+#ifndef FAKE_RUNTIME
+  #define FAKE_RUNTIME 0 // whether to disable the self-hosted runtime
+#endif
+#ifndef MM
+  #define MM           1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
+#endif
+#ifndef HEAP_MAX
+  #define HEAP_MAX ~0ULL // default heap max size
+#endif
+#ifndef FORMATTER
+  #define FORMATTER 1  // use self-hosted formatter for output
+#endif
+
 // #define HEAP_VERIFY  // enable usage of heapVerify()
 // #define ALLOC_STAT   // store basic allocation statistics
 // #define ALLOC_SIZES  // store per-type allocation size statistics
@@ -14,17 +46,8 @@
 // #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
-#define TYPED_ARITH  true  // whether to use typed arith
-#define VM_POS       true  // whether to store detailed execution position information for stacktraces
-#define CHECK_VALID  true  // whether to check for valid arguments in places where that would be detrimental to performance (e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc)
-#define EACH_FILLS   false // whether to try to squeeze out fills for ¨ and ⌜
-#define SFNS_FILLS   true  // whether to insert fills for structural functions (∾, ≍, etc)
-#define FAKE_RUNTIME false // whether to disable the self-hosted runtime
-#define MM 1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
-#define HEAP_MAX ~0ULL // default heap max size
 
 // #define LOG_GC    // log GC stats
-#define FORMATTER    // use self-hosted formatter for output
 // #define TIME      // output runtime of every expression
 // #define RT_PERF   // time runtime primitives
 // #define RT_VERIFY // compare native and runtime versions of primitives
@@ -46,7 +69,7 @@
 
 #define rtLen 63
 
-#ifdef CATCH_ERRORS
+#if CATCH_ERRORS
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
 #else
   #undef EACH_FILLS
@@ -228,7 +251,7 @@ NOINLINE NORETURN void thrM(char* s);
 #define thrF(...) thr(append_fmt(inc(bi_emptyCVec), __VA_ARGS__))
 NOINLINE NORETURN void thrOOM();
 jmp_buf* prepareCatch();
-#ifdef CATCH_ERRORS
+#if CATCH_ERRORS
 #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); } /*potentially erroring thing*/ popCatch();`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false

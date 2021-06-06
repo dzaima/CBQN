@@ -9,7 +9,7 @@ B val_c1(B d,      B x) { return c1(c(Md2D,d)->f,   x); }
 B val_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, w,x); }
 
 
-#ifdef CATCH_ERRORS
+#if CATCH_ERRORS
 B fillBy_c1(B d, B x) {
   B xf=getFillQ(x);
   B r = c1(c(Md2D,d)->f, x);

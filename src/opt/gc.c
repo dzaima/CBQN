@@ -33,7 +33,7 @@ void gc_tryFree(Value* v) {
     #ifdef DONT_FREE
       v->flags = t;
     #else
-      #ifdef CATCH_ERRORS
+      #if CATCH_ERRORS
         if (t==t_freed) { mm_free(v); return; }
       #endif
     #endif
@@ -56,7 +56,7 @@ void gc_visitRoots() {
 }
 u64 gc_lastAlloc;
 void gc_forceGC() {
-  #ifdef ENABLE_GC
+  #if ENABLE_GC
     #ifdef LOG_GC
       u64 start = nsTime();
       gc_visitBytes = 0; gc_freedBytes = 0;

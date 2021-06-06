@@ -38,5 +38,6 @@ static u64 mm_size(Value* x) {
 }
 void mm_forHeap(V2v f);
 
+#undef BN
 #undef BSZ
 #undef BSZI

@@ -45,7 +45,7 @@ B repr_c1(B t, B x) {
     snprintf(buf, BL, "%.14g", x.f);
     return m_str8(strlen(buf), buf);
   } else {
-    #ifdef FORMATTER
+    #if FORMATTER
       return bqn_repr(x);
     #else
       thrM("•Repr: Cannot represent non-numbers");
@@ -127,7 +127,7 @@ B asrt_c2(B t, B w, B x) {
 B sys_c1(B t, B x);
 B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
 B show_c1(B t, B x) {
-  #ifdef FORMATTER
+  #if FORMATTER
     B fmt = bqn_fmt(inc(x));
     printRaw(fmt); dec(fmt);
   #else

@@ -82,7 +82,7 @@ B load_comp;
 B load_rtObj;
 B load_compArg;
 
-#ifdef FORMATTER
+#if FORMATTER
 B load_fmt, load_repr;
 B bqn_fmt(B x) { // consumes
   return c1(load_fmt, x);
@@ -272,7 +272,7 @@ static inline void load_init() { // very last init function
     gc_add(load_comp);
     
     
-    #ifdef FORMATTER
+    #if FORMATTER
     Block* fmt_b = load_compImport(
       #include "gen/formatter"
     );
@@ -302,7 +302,7 @@ void bqn_exit(i32 code) {
 
 
 static void freed_visit(Value* x) {
-  #ifndef CATCH_ERRORS
+  #if CATCH_ERRORS
   err("visiting t_freed\n");
   #endif
 }

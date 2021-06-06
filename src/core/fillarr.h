@@ -44,7 +44,7 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
 }
 static B getFillQ(B x) { // doesn't consume; returns 0 if !CATCH_ERRORS
   B r = getFillR(x);
-  #ifdef CATCH_ERRORS
+  #if CATCH_ERRORS
     return r;
   #endif
   return noFill(r)? m_f64(0) : r;

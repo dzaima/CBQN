@@ -2,6 +2,13 @@
 #define al     BN(al)
 #define alCap  BN(alCap)
 #define alSize BN(alSize)
+#define str(X) #X
+#ifndef PROT
+  #define PROT PROT_READ|PROT_WRITE
+#endif
+#ifndef FLAGS
+  #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON
+#endif
 
 EmptyValue* buckets[64];
 AllocInfo* al;
@@ -19,12 +26,12 @@ NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
       buckets[cb] = c->next;
       break;
     }
-    if (cb >= 20) {
+    if (cb >= ALSZ) {
       u64 sz = BSZ(cb);
       if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
       mm_heapAlloc+= sz;
       // gc_maybeGC();
-      c = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+      c = mmap(NULL, sz, PROT, FLAGS, -1, 0);
       #ifdef USE_VALGRIND
         VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
       #endif
@@ -63,8 +70,11 @@ void BN(forHeap)(V2v f) {
   }
 }
 
+#undef FLAGS
+#undef PROT
 #undef AllocInfo
 #undef al
 #undef alSize
 #undef alCap
 #undef MMI
+#undef ALSZ

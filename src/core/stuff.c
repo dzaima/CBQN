@@ -82,7 +82,7 @@ NOINLINE void printRaw(B x) {
     BS2B xgetU = TI(x).getU;
     for (usz i = 0; i < ia; i++) {
       B c = xgetU(x,i);
-      #ifndef CATCH_ERRORS
+      #if CATCH_ERRORS
       if (c.u==0 || noFill(c)) { printf(" "); continue; }
       #endif
       if (!isC32(c)) thrM("bad printRaw argument: expected all character items");
