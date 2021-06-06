@@ -58,6 +58,9 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
+#ifdef __OpenBSD__
+#define __wchar_t __wchar_t2 // horrible hack for BSD
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
