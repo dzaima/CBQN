@@ -84,12 +84,25 @@ B path_dir(B path) { // consumes; returns directory part of file path with trail
 }
 
 
-void file_write(B path, B x) { // consumes path
+void file_wChars(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
   
   u64 len = utf8lenB(x);
   TALLOC(char, val, len);
   toUTF8(x, val);
+  
+  if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
+  TFREE(val);
+  dec(path);
+  fclose(f);
+}
+void file_wBytes(B path, B x) { // consumes path
+  FILE* f = file_open(path, "write to", "w");
+  
+  u64 len = a(x)->ia;
+  TALLOC(char, val, len);
+  BS2B xgetU = TI(x).getU;
+  for (u64 i = 0; i < len; i++) val[i] = o2i(xgetU(x,i));
   
   if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
   TFREE(val);

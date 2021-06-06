@@ -227,47 +227,62 @@ B slash_c2(B t, B w, B x) {
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
     if (wia!=xia) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
-    i64 wsum = isum(w); if (wsum>USZ_MAX) thrOOM();
-    usz ria = wsum;
+    
     usz ri = 0;
     if (TI(w).elType==el_i32) {
       i32* wp = i32any_ptr(w);
+      while (wia>0 && !wp[wia-1]) wia--;
+      
+      i64 wsum = 0;
+      u32 or = 0;
+      for (usz i = 0; i < wia; i++) {
+        wsum+= wp[i];
+        or|= (u32)wp[i];
+      }
+      if (or>>31) thrM("/: 𝕨 must consist of natural numbers");
+      
       if (TI(x).elType==el_i32) {
         i32* xp = i32any_ptr(x);
-        i32* rp; B r = m_i32arrv(&rp, ria);
-        for (usz i = 0; i < wia; i++) {
-          i32 c = wp[i];
-          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
-          i32 cx = xp[i];
-          for (usz j = 0; j < c; j++) *rp++ = cx;
+        i32* rp; B r = m_i32arrv(&rp, wsum);
+        if (or<2) {
+          for (usz i = 0; i < wia; i++) {
+            *rp = xp[i];
+            rp+= wp[i];
+          }
+        } else {
+          for (usz i = 0; i < wia; i++) {
+            i32 cw = wp[i];
+            i32 cx = xp[i];
+            for (usz j = 0; j < cw; j++) *rp++ = cx;
+          }
         }
         dec(w); dec(x);
         return r;
       } else if (TI(x).elType==el_f64) {
         f64* xp = f64any_ptr(x);
-        f64* rp; B r = m_f64arrv(&rp, ria);
+        f64* rp; B r = m_f64arrv(&rp, wsum);
         for (usz i = 0; i < wia; i++) {
-          i32 c = wp[i];
-          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
+          i32 cw = wp[i];
           f64 cx = xp[i];
-          for (usz j = 0; j < c; j++) *rp++ = cx;
+          for (usz j = 0; j < cw; j++) *rp++ = cx;
         }
         dec(w); dec(x);
         return r;
       } else {
-        HArr_p r = m_harrs(ria, &ri);
+        HArr_p r = m_harrs(wsum, &ri);
         BS2B xgetU = TI(x).getU;
         for (usz i = 0; i < wia; i++) {
-          i32 c = wp[i];
-          if (c==0) continue;
-          if (c<0) thrF("/: 𝕨 must consist of natural numbers (%i∊𝕨)", c);
+          i32 cw = wp[i];
+          if (cw==0) continue;
           B cx = xgetU(x, i);
-          for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
+          for (usz j = 0; j < cw; j++) r.a[ri++] = inc(cx);
         }
         dec(w); dec(x);
         return withFill(harr_fv(r), xf);
       }
     } else {
+      i64 ria = isum(w);
+      if (ria>USZ_MAX) thrOOM();
       HArr_p r = m_harrs(ria, &ri);
       BS2B wgetU = TI(w).getU;
       BS2B xgetU = TI(x).getU;

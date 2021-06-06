@@ -232,7 +232,7 @@ B fchars_c1(B d, B x) {
   return file_chars(path_resolve(nfn_objU(d), x));
 }
 B fchars_c2(B d, B w, B x) {
-  file_write(path_resolve(nfn_objU(d), w), x);
+  file_wChars(path_resolve(nfn_objU(d), w), x);
   return x;
 }
 static NFnDesc* fBytesDesc;

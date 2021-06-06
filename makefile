@@ -3,6 +3,8 @@ J=-j4
 
 o3:
 	@$(MAKE) $(J) -C obj/o3 o3
+o3n:
+	@$(MAKE) $(J) -C obj/o3n o3n
 o3g:
 	@$(MAKE) $(J) -C obj/o3g o3g
 debug:
@@ -16,6 +18,8 @@ rtverify:
 
 o3-clean:
 	@$(MAKE) -C obj/o3 clean
+o3n-clean:
+	@$(MAKE) -C obj/o3n clean
 o3g-clean:
 	@$(MAKE) -C obj/o3g clean
 debug-clean:
@@ -27,4 +31,4 @@ heapverify-clean:
 rtverify-clean:
 	@$(MAKE) -C obj/rtverify clean
 
-clean: o3-clean o3g-clean debug-clean rtperf-clean heapverify-clean rtverify-clean
+clean: o3-clean o3n-clean o3g-clean debug-clean rtperf-clean heapverify-clean rtverify-clean

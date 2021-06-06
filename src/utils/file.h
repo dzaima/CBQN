@@ -12,6 +12,7 @@ B path_dir(B path); // consumes; returns directory part of file path, with trail
 TmpFile* file_bytes(B path); // consumes
 B file_chars(B path); // consumes
 
-void file_write(B path, B x); // consumes path
+void file_wChars(B path, B x); // consumes path
+void file_wBytes(B path, B x); // consumes path
 
 B file_list(B path); // consumes
