@@ -7,7 +7,7 @@
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
-/*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") M(makeRand,"•MakeRand") M(exit,"•Exit") \
+/*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") D(cmp,"•Cmp") A(hash,"•Hash") M(delay,"•Delay") M(makeRand,"•MakeRand") M(exit,"•Exit") \
 /*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
 

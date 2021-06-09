@@ -3,7 +3,7 @@
 #include "file.h"
 #include "mut.h"
 
-static FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
+FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
   toUTF8(path, p);

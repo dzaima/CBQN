@@ -27,3 +27,4 @@
 #include "../rtwrap.c"
 #include "../load.c"
 #include "../main.c"
+#include "../jit/nvm.c"

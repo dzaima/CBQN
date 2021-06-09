@@ -20,7 +20,7 @@ heapverify: gen
 rtverify: FLAGS=-DDEBUG -O3 -DRT_VERIFY
 rtverify: gen
 
-gen: builtins core base utils
+gen: builtins core base jit utils
 	@$(CC) -o BQN *.o -lm
 	@mv BQN ../../BQN
 	@echo
@@ -37,6 +37,11 @@ base: load.o main.o rtwrap.o vm.o ns.o nfns.o
 
 utils: utf.o hash.o file.o
 %.o: ../../src/utils/%.c
+	@echo $< | cut -c 11-
+	@$(CMD) $@.d -c $<
+
+jit: nvm.o
+%.o: ../../src/jit/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
 

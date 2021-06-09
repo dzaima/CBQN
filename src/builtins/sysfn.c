@@ -278,6 +278,16 @@ B list_c1(B d, B x) {
   return file_list(path_resolve(nfn_objU(d), x));
 }
 
+B delay_c1(B t, B x) {
+  f64 sf = o2f(x);
+  if (sf<0 || sf>1ULL<<63) thrF("•Delay: Bad argument: %f", sf);
+  struct timespec ts;
+  u64 s = (u64)sf;
+  ts.tv_sec = (u64)sf;
+  ts.tv_nsec = (u64)((sf-s)*1e9);
+  nanosleep(&ts, &ts);
+  return x; // TODO figure out how to return an actually correct thing
+}
 B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
 }
@@ -312,6 +322,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
+    else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);

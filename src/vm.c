@@ -1,53 +1,21 @@
 #include <unistd.h>
 #include "core.h"
 #include "vm.h"
+#include "jit/nvm.h"
 #include "ns.h"
 #include "utils/utf.h"
 
-enum {
-  PUSH =  0, // N; push object from objs[N]
-  VARO =  1, // N; push variable with name strs[N]
-  VARM =  2, // N; push mutable variable with name strs[N]
-  ARRO =  3, // N; create a vector of top N items
-  ARRM =  4, // N; create a mutable vector of top N items
-  FN1C =  5, // monadic function call ⟨…,x,f  ⟩ → F x
-  FN2C =  6, //  dyadic function call ⟨…,x,f,w⟩ → w F x
-  OP1D =  7, // derive 1-modifier to function; ⟨…,  _m,f⟩ → (f _m)
-  OP2D =  8, // derive 2-modifier to function; ⟨…,g,_m,f⟩ → (f _m_ g)
-  TR2D =  9, // derive 2-train aka atop; ⟨…,  g,f⟩ → (f g)
-  TR3D = 10, // derive 3-train aka fork; ⟨…,h,g,f⟩ → (f g h)
-  SETN = 11, // set new; _  ←_; ⟨…,x,  mut⟩ → mut←x
-  SETU = 12, // set upd; _  ↩_; ⟨…,x,  mut⟩ → mut↩x
-  SETM = 13, // set mod; _ F↩_; ⟨…,x,F,mut⟩ → mut F↩x
-  POPS = 14, // pop object from stack
-  DFND = 15, // N; push dfns[N], derived to current scope
-  FN1O = 16, // optional monadic call (FN1C but checks for · at 𝕩)
-  FN2O = 17, // optional  dyadic call (FN2C but checks for · at 𝕩 & 𝕨)
-  CHKV = 18, // throw error if top of stack is ·
-  TR3O = 19, // TR3D but creates an atop if F is ·
-  OP2H = 20, // derive 2-modifier to 1-modifier ⟨…,g,_m_⟩ → (_m_ g)
-  LOCO = 21, // N0,N1; push variable at depth N0 and position N1
-  LOCM = 22, // N0,N1; push mutable variable at depth N0 and position N1
-  VFYM = 23, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
-  SETH = 24, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
-  RETN = 25, // returns top of stack
-  FLDO = 26, // N; get field nameList[N] from ToS
-  FLDM = 27, // N; get mutable field nameList[N] from ToS
-  NSPM = 28, // N; replace ToS with one with a namespace field alias N
-  RETD = 29, // return a namespace of exported items
-  SYSV = 30, // N; get system function N
-  LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
-  EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
-  ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline, instead of reading from `objs`)
-  BC_SIZE
-};
+#ifndef USE_JIT
+  #define USE_JIT 1 // enable the extremely basic JIT that just genrates MOVs and CALLs
+#endif
+
 
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
                   F(EXTO) F(EXTM) F(EXTU)
 
-i32* nextBC(i32* p) {
+u32* nextBC(u32* p) {
   switch(*p) {
     case FN1C: case FN2C: case FN1O: case FN2O:
     case OP1D: case OP2D: case OP2H:
@@ -61,13 +29,14 @@ i32* nextBC(i32* p) {
       return p+2;
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
+    case ADDI: case ADDU:
       return p+3;
     default: return 0;
   }
 }
-i32 stackDiff(i32* p) {
+i32 stackDiff(u32* p) {
   switch(*p) {
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: return 1;
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
     case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
     case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN: return -1;
     case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O: return -2;
@@ -75,16 +44,16 @@ i32 stackDiff(i32* p) {
     default: return 9999999;
   }
 }
-char* nameBC(i32* p) {
+char* nameBC(u32* p) {
   switch(*p) { default: return "(unknown)";
     #define F(X) case X: return #X;
     FOR_BC(F)
     #undef F
   }
 }
-void printBC(i32* p) {
+void printBC(u32* p) {
   printf("%s", nameBC(p));
-  i32* n = nextBC(p);
+  u32* n = nextBC(p);
   p++;
   i64 am = n-p;
   i32 len = 0;
@@ -123,7 +92,7 @@ void gsPrint() {
   }
 }
 
-Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B blocks, B nameList, Scope* sc, i32 depth) {
+Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B blocks, B nameList, Scope* sc, i32 depth) {
   usz cIA = a(block)->ia;
   if (cIA!=4 && cIA!=6) thrM("VM compiler: Bad block info size");
   BS2B bgetU = TI(block).getU;
@@ -160,9 +129,9 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
       sc->ext = nE;
     }
   }
-  i32* c = bc+idx;
+  u32* c = bc+idx;
   while (true) {
-    i32* n = nextBC(c);
+    u32* n = nextBC(c);
     if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
     bool ret = false;
     #define A64(X) { u64 a64=(X); TSADD(nBCT, (u32)a64); TSADD(nBCT, a64>>32); }
@@ -210,7 +179,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
         break;
       }
       default: {
-        i32* ccpy = c;
+        u32* ccpy = c;
         while (ccpy!=n) TSADD(nBCT, *ccpy++);
         break;
       }
@@ -241,6 +210,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
   Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
   body->comp = comp; ptr_inc(comp);
   body->bc = (u32*)nbc;
+  body->nvm = NULL;
   body->map = map;
   body->blocks = nBl;
   body->maxStack = hM;
@@ -263,7 +233,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, i32* bc, usz bcIA, B block
 NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) {
   usz bIA = a(blocks)->ia;
   I32Arr* bca = toI32Arr(bcq);
-  i32* bc = bca->a;
+  u32* bc = (u32*)bca->a;
   usz bcIA = bca->ia;
   Comp* comp = mm_allocN(sizeof(Comp), t_comp);
   comp->bc = tag(bca, ARR_TAG);
@@ -297,24 +267,8 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
 
 
 
-typedef struct FldAlias {
-  struct Value;
-  B obj;
-  i32 p;
-} FldAlias;
 
-static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd);
-static void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
-  if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);;
-  Scope* sc = pscs[(u16)(s.u>>32)];
-  B prev = sc->vars[(u32)s.u];
-  if (upd) {
-    if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
-    dec(prev);
-  }
-  sc->vars[(u32)s.u] = inc(x);
-}
-static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
+NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
   if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->ext->vars[(u32)s.u];
@@ -356,15 +310,7 @@ static NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
 
 
 
-static NOINLINE B v_getR(Scope* pscs[], B s);
-static B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
-  if (RARE(!isVar(s))) return v_getR(pscs, s);
-  Scope* sc = pscs[(u16)(s.u>>32)];
-  B r = sc->vars[(u32)s.u];
-  sc->vars[(u32)s.u] = bi_optOut;
-  return r;
-}
-static NOINLINE B v_getR(Scope* pscs[], B s) {
+NOINLINE B v_getR(Scope* pscs[], B s) {
   if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->ext->vars[(u32)s.u];
@@ -615,7 +561,14 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
-  B r = evalBC(body, sc);
+  bool jit = USE_JIT; // body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
+  B r;
+  if (jit) {
+    if (!body->nvm) body->nvm = m_nvm(body);
+    r = evalJIT(body, sc, body->nvm);
+  } else {
+    r = evalBC(body, sc);
+  }
   if (sc->refc>1) {
     usz innerRef = 1;
     for (i = 0; i < varAm; i++) {
@@ -677,8 +630,16 @@ void scope_free(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
+void  body_free(Value* x) {
+  Body* c = (Body*) x;
+  if(c->nsDesc) ptr_decR(c->nsDesc);
+  if(c->blocks) ptr_decR(c->blocks);
+  if(c->nvm   ) nvm_free(c->nvm);
+  ptr_decR(c->comp);
+  ptr_decR(RFLD(c->bc, I32Arr,a));
+  ptr_decR(RFLD(c->map,I32Arr,a));
+}
 void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); }
-void  body_free(Value* x) { Body*     c = (Body    *)x; ptr_decR(c->comp); if(c->nsDesc)ptr_decR(c->nsDesc); if(c->blocks)ptr_decR(c->blocks); ptr_decR(RFLD(c->bc,I32Arr,a)); ptr_decR(RFLD(c->map,I32Arr,a)); }
 void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
@@ -695,8 +656,15 @@ void scope_visit(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
+void  body_visit(Value* x) {
+  Body* c = (Body*) x;
+  if(c->nsDesc) mm_visitP(c->nsDesc);
+  if(c->blocks) mm_visitP(c->blocks);
+  mm_visitP(c->comp);
+  mm_visitP(RFLD(c->bc, I32Arr,a));
+  mm_visitP(RFLD(c->map,I32Arr,a));
+}
 void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); }
-void  body_visit(Value* x) { Body*     c = (Body    *)x; mm_visitP(c->comp); if(c->nsDesc)mm_visitP(c->nsDesc); if(c->blocks)mm_visitP(c->blocks); mm_visitP(RFLD(c->bc,I32Arr,a)); mm_visitP(RFLD(c->map,I32Arr,a)); }
 void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
