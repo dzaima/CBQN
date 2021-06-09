@@ -201,7 +201,7 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
 
 
 #ifdef DEBUG
-  static Value* VALIDATEP(Value* x) {
+  static NOINLINE Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
       print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
@@ -214,7 +214,7 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
     }
     return x;
   }
-  static B VALIDATE(B x) {
+  static NOINLINE B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
     if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {

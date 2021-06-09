@@ -33,6 +33,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // . r11              x
 // . r12-r15        x
 
+typedef unsigned char U;
 typedef unsigned char UC;
 typedef unsigned char Reg;
 #define REG_RES 0
@@ -244,3 +245,10 @@ typedef unsigned short RegM;
 #define CMOVG(I,O)  {REX8(O,I),0x0F,0x4F,A_REG(O,I)}
 
 #define RET {0xC3}
+
+
+#define ASM(INS, O, I) ASM_RAW(bin, INS(O, I))
+#define IMM(O,I) { u64 v=(u64)(I); if(v==0) ASM(XOR,O,O); else if(v>=0 & v<(1ULL<<32)) ASM(MOV4_RI,O,v); else ASM(MOV_RI,O,v); }
+#define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
+#define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32
+
