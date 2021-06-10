@@ -561,7 +561,8 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   i32 i = 0;
   while (i<ga) { sc->vars[i] = svar[i]; i++; }
   while (i<varAm) sc->vars[i++] = bi_noVar;
-  bool jit = USE_JIT; // body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
+  bool jit = USE_JIT;
+  // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
   B r;
   if (jit) {
     if (!body->nvm) body->nvm = m_nvm(body);
@@ -820,6 +821,8 @@ static void unwindEnv(Env* envNew) {
 }
 
 NOINLINE NORETURN void thr(B msg) {
+  // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
+  // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
   if (cf>cfStart) {
     catchMessage = msg;
     cf--;

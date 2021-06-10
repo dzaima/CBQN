@@ -126,10 +126,11 @@ typedef unsigned short RegM;
                             ,((UC)((I)>>48)),((UC)((I)>>56))
 
 #define MOV_MR(O,I,OFF) {REX8(O,I),0x89,0x40+A_0REG(O,I),OFF}
-#define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)}
+#define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)} // TODO is broken on (12,14)
 #define MOV_RM(I,O,OFF) {REX8(O,I),0x8B,0x40+A_0REG(O,I),OFF}
 #define MOV_RM0(I,O)    {REX8(O,I),0x8B,A_0REG(O,I)}
 #define MOV_RI(O,I)     {REX8(O,0),0xB8+((O)&7), BYTES8(I)}
+#define LEAo1(I,O,OFF)  {REX8(O,I),0x8D,0x40+A_0REG(O,I),OFF}
 
 #define MOV4_MI(O,I,OFF) {REX4(O,0),0xC7,0x40+A_0REG(O,0),OFF,BYTES4(I)}
 #define MOV4_RI(O,I)     {REX4(O,0),0xB8+((O)&7) , BYTES4(I)}
@@ -248,6 +249,7 @@ typedef unsigned short RegM;
 
 
 #define ASM(INS, O, I) ASM_RAW(bin, INS(O, I))
+#define ASM3(INS, O, A, B) ASM_RAW(bin, INS(O, A, B))
 #define IMM(O,I) { u64 v=(u64)(I); if(v==0) ASM(XOR,O,O); else if(v>=0 & v<(1ULL<<32)) ASM(MOV4_RI,O,v); else ASM(MOV_RI,O,v); }
 #define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
 #define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32

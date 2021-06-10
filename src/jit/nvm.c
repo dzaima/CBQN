@@ -222,12 +222,13 @@ static u32 readBytes4(u8* d) {
 }
 
 typedef B JITFn(B* cStack, Scope** pscs);
+static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 u8* m_nvm(Body* body) {
   TSALLOC(u8, bin, 64);
   TSALLOC(u32, rel, 64);
-  #define r_TMP 12
-  #define r_PSCS 13
-  #define r_CS 14
+  #define r_TMP 3
+  #define r_PSCS 14
+  #define r_CS 15
   ASM(PUSH, r_TMP, -);
   ASM(PUSH, r_PSCS, -);
   ASM(PUSH, r_CS, -);
@@ -243,70 +244,71 @@ u8* m_nvm(Body* body) {
     u32* n = nextBC(bc);
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
+    // #define LEA0(O,I,OFF) { ASM(MOV,O,I); ADDI(O,OFF); }
+    #define LEA0(O,I,OFF) { i32 o=(OFF); if(!o) { ASM(MOV,O,I); } else if(o==(i8)o) { ASM3(LEAo1,O,I,o); } else { ASM(MOV,O,I); ADDI(O,o); } }
+    #define SPOS(R,N) LEA0(R, r_CS, maxi32(0, depth+(N)-1)*sizeof(B)) // TODO return register number, so that depth 0 can eliminate a mov
     #if CSTACK
-      #define CADD(R) ASM(MOV_MR0, r_CS, R); ADDI(r_CS,sizeof(B))
-      #define CPOP SUBI(r_CS,sizeof(B)); ASM(MOV_RM0, REG_RES, r_CS)
-      #define INV(N,D,F) ASM(MOV,REG_ARG##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
+      // #define INV(N,D,F) ASM(MOV,REG_ARG##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
+      #define INV(N,D,F) SPOS(REG_ARG##N, D); CCALL(F)
     #else
-      #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS only?)
+      #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS and things with stack delta 1)
     #endif
     #define TOPp ASM(MOV,REG_ARG0,REG_RES)
-    #define TOPs if (depth) { CADD(REG_RES); }
+    #define TOPs if (depth) { SPOS(r_TMP, 0); ASM(MOV_MR0, r_TMP, REG_RES); }
     switch (*bc++) {
       case POPS: TOPp;
         INV(1,0,i_POPS); // (B, S)
-        if (depth>1) { if(depth<=0)thrM("JIT: POPS at stack size 0"); CPOP; }
+        if (depth>1) { SPOS(r_TMP, -1); ASM(MOV_RM0, REG_RES, r_TMP); }
       break;
-      case ADDI: TOPs; IMM(REG_ARG0, L64); INV(1,0,i_ADDI); break; // (u64 v, S)
+      case ADDI: TOPs; IMM(REG_ARG0, L64); INV(1,1,i_ADDI); break; // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
         #if CSTACK
-          // IMM(r_TMP, L64); ASM(MOV_MR0, r_CS, r_TMP); ADDI(r_CS,sizeof(B));
           IMM(REG_RES, L64);
         #else
-          IMM(REG_ARG0, L64); INV(1,-,i_ADDU);
+          IMM(REG_ARG0, L64); INV(1,1,i_ADDU);
         #endif
       break;
-      case FN1C: TOPp; IMM(REG_ARG1, s); INV(2,-1,i_FN1C); break; // (B, u32* bc, S)
-      case FN2C: TOPp; IMM(REG_ARG1, s); INV(2,-2,i_FN2C); break; // (B, u32* bc, S)
-      case FN1O: TOPp; IMM(REG_ARG1, s); INV(2,-1,i_FN1O); break; // (B, u32* bc, S)
-      case FN2O: TOPp; IMM(REG_ARG1, s); INV(2,-2,i_FN2O); break; // (B, u32* bc, S)
+      case FN1C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1C); break; // (B, u32* bc, S)
+      case FN2C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
+      case FN1O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
+      case FN2O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
       case ARRM: case ARRO:
         u32 sz = *bc++;
-        if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,1-(i32)sz,i_ARR_p); } // (B, i64 sz, S)
-        else    { TOPs;                    INV(0,        0,i_ARR_0); } // (S)
+        if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
+        else    { TOPs;                    INV(0,1,i_ARR_0); } // (S)
         break;
       case DFND: TOPs; // (u32* bc, Scope** pscs, Block* bl, S)
         Block* bl = blocks[*bc++];
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
         if (fn==0) thrM("JIT: Bad DFND argument");
-        IMM(REG_ARG0,s); ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,bl); INV(3,0,fn);
+        IMM(REG_ARG0,s); ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,bl); INV(3,1,fn);
         break;
-      case OP1D: TOPp; IMM(REG_ARG1,s); INV(2,-1,i_OP1D); break; // (B, u32* bc, S)
-      case OP2D: TOPp; IMM(REG_ARG1,s); INV(2,-2,i_OP2D); break; // (B, u32* bc, S)
-      case OP2H: TOPp; INV(1,-1,i_OP2H); break; // (B, S)
-      case TR2D: TOPp; INV(1,-1,i_TR2D); break; // (B, S)
-      case TR3D: TOPp; INV(1,-2,i_TR3D); break; // (B, S)
-      case TR3O: TOPp; INV(1,-2,i_TR3O); break; // (B, S)
-      case LOCM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,0,i_LOCM); break; // (u32 d, u32 p, S)
-      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,0,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,0,i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case EXTM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,0,i_EXTM); break; // (u32 d, u32 p, S)
-      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,0,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,0,i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,-1,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
-      case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,-1,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
-      case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,-2,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
+      case OP1D: TOPp; IMM(REG_ARG1,s); INV(2,0,i_OP1D); break; // (B, u32* bc, S)
+      case OP2D: TOPp; IMM(REG_ARG1,s); INV(2,0,i_OP2D); break; // (B, u32* bc, S)
+      case OP2H: TOPp; INV(1,0,i_OP2H); break; // (B, S)
+      case TR2D: TOPp; INV(1,0,i_TR2D); break; // (B, S)
+      case TR3D: TOPp; INV(1,0,i_TR3D); break; // (B, S)
+      case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
+      case LOCM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,1,i_LOCM); break; // (u32 d, u32 p, S)
+      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,1,i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case EXTM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,1,i_EXTM); break; // (u32 d, u32 p, S)
+      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,1,i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
+      case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
+      case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
       case FLDO: TOPp; IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); INV(3,0,i_FLDO); break; // (B, u32 p, Scope** pscs, S)
       case NSPM: TOPp; IMM(REG_ARG1,*bc++); INV(2,0,i_NSPM); break; // (B, u32 l, S)
-      case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,0,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless
-      case RETN: TOPp;                     INV(1,0,i_RETN); ret=true; break; // (B, S); TODO remove
+      case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,1,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless
+      // case RETN: TOPp;                     INV(1,0,i_RETN); ret=true; break; // (B, S); TODO remove
+      case RETN: IMM(r_TMP, &gStack); ASM(MOV_MR0, r_TMP, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
     #undef TOPs
     #undef TOPp
     #undef INV
-    #undef CPOP
-    #undef CADD
+    #undef SPOS
     #undef L64
     if (n!=bc) thrM("JIT: Wrong parsing of bytecode");
     depth+= stackDiff(s);
@@ -355,7 +357,9 @@ B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
   // write_asm(ptr, RFLD(ptr, TmpFile, a)->ia);
   
+  B* sp = gStack;
   B r = ((JITFn*)ptr)(gStack, pscs);
+  if (sp!=gStack) thrM("uh oh");
   
   popEnv();
   return r;
