@@ -277,7 +277,16 @@ typedef unsigned short RegM;
 
 #define ASM(INS, O, I) ASM_RAW(bin, INS(O, I))
 #define ASM3(INS, O, A, B) ASM_RAW(bin, INS(O, A, B))
-#define IMM(O,I) { u64 v=(u64)(I); if(v==0) ASM(XOR,O,O); else if(v>=0 & v<(1ULL<<32)) ASM(MOV4_RI,O,v); else ASM(MOV_RI,O,v); }
 #define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
 #define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32
-
+#define IMM(O, I) b_o=imm_impl(b_o, O, (u64)(I));
+static NOINLINE TStack* imm_impl(TStack* b_o, Reg o, u64 i) {
+  if(i==0) {
+    ASM(XOR,o,o);
+  } else if(i>=0 & i<(1ULL<<32)) {
+    ASM(MOV4_RI,o,i);
+  } else {
+    ASM(MOV_RI,o,i);
+  }
+  return b_o;
+}
