@@ -35,12 +35,10 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 
 // all the instructions to be called by the generated code
 #if CSTACK
-  #define GA0  B* cStack
   #define GA1 ,B* cStack
   #define GSP (*--cStack)
   #define GS_UPD { gStack=cStack; }
 #else
-  #define GA0
   #define GA1
   #define GSP (*--gStack)
   #define GS_UPD
@@ -52,15 +50,15 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
   #define POS_UPD
 #endif
 #define INS NOINLINE
-INS void i_POPS(B x GA1) {
+INS void i_POPS(B x) {
   dec(x);
 }
-INS B i_ADDI(u64 v GA1) {
+INS B i_ADDI(u64 v) {
   B o = b(v);
   ptr_inc(v(o));
   return o;
 }
-INS B i_ADDU(u64 v GA1) {
+INS B i_ADDU(u64 v) {
   return b(v);
 }
 INS B i_FN1C(B f, u32* bc GA1) { P(x) // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
@@ -85,7 +83,7 @@ INS B i_FN2O(B w, u32* bc GA1) { P(f)P(x)
   dec(f);
   return r;
 }
-INS B i_ARR_0(GA0) { // TODO combine with ADDI
+INS B i_ARR_0() { // TODO combine with ADDI
   return inc(bi_emptyHVec);
 }
 INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
@@ -111,21 +109,21 @@ INS B i_TR3O(B f          GA1) { P(g)P(h) B r;
   else              { r=m_fork(f,g,h); }
   return r;
 }
-INS B i_LOCM(u32 d, u32 p GA1) {
+INS B i_LOCM(u32 d, u32 p) {
   return tag((u64)d<<32 | (u32)p, VAR_TAG);
 }
 INS B i_LOCO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
   B l = pscs[d]->vars[p];
-  if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
+  if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); } // TODO probably should GS_UPD (also EXTO)
   return inc(l);
 }
-INS B i_LOCU(u32 d, u32 p, Scope** pscs GA1) {
+INS B i_LOCU(u32 d, u32 p, Scope** pscs) {
   B* vars = pscs[d]->vars;
   B r = vars[p];
   vars[p] = bi_optOut;
   return r;
 }
-INS B i_EXTM(u32 d, u32 p GA1) {
+INS B i_EXTM(u32 d, u32 p) {
   return tag((u64)d<<32 | (u32)p, EXT_TAG);
 }
 INS B i_EXTO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
@@ -133,7 +131,7 @@ INS B i_EXTO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
   if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
   return inc(l);
 }
-INS B i_EXTU(u32 d, u32 p, Scope** pscs GA1) {
+INS B i_EXTU(u32 d, u32 p, Scope** pscs) {
   B* vars = pscs[d]->ext->vars;
   B r = vars[p];
   vars[p] = bi_optOut;
@@ -153,7 +151,7 @@ INS B i_FLDO(B ns, u32 p, Scope** pscs GA1) { GS_UPD;
   dec(ns);
   return r;
 }
-INS B i_NSPM(B o, u32 l GA1) {
+INS B i_NSPM(B o, u32 l) {
   B a = mm_alloc(sizeof(FldAlias), t_fldAlias, ftag(OBJ_TAG));
   c(FldAlias,a)->obj = o;
   c(FldAlias,a)->p = l;
@@ -167,17 +165,12 @@ INS B i_RETD(Scope** pscs GA1) {
   GS_UPD;
   return m_ns(sc, b->nsDesc);
 }
-INS B i_RETN(B o, GA0) {
-  GS_UPD;
-  return o;
-}
 
 #undef INS
 #undef P
 #undef GSP
 #undef GS_UPD
 #undef POS_UPD
-#undef GA0
 #undef GA1
 
 
@@ -257,15 +250,15 @@ u8* m_nvm(Body* body) {
     #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); ASM(MOV_MR0, t, REG_RES); }
     switch (*bc++) {
       case POPS: TOPp;
-        INV(1,0,i_POPS); // (B, S)
+        CCALL(i_POPS);
         if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); ASM(MOV_RM0, REG_RES, t); }
       break;
-      case ADDI: TOPs; IMM(REG_ARG0, L64); INV(1,1,i_ADDI); break; // (u64 v, S)
+      case ADDI: TOPs; IMM(REG_ARG0, L64); CCALL(i_ADDI); break; // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
         #if CSTACK
           IMM(REG_RES, L64);
         #else
-          IMM(REG_ARG0, L64); INV(1,1,i_ADDU);
+          IMM(REG_ARG0, L64); CCALL(i_ADDU);
         #endif
       break;
       case FN1C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1C); break; // (B, u32* bc, S)
@@ -275,7 +268,7 @@ u8* m_nvm(Body* body) {
       case ARRM: case ARRO:
         u32 sz = *bc++;
         if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
-        else    { TOPs;                    INV(0,1,i_ARR_0); } // (S)
+        else    { TOPs;                      CCALL(i_ARR_0); } // (S)
         break;
       case DFND: TOPs; // (u32* bc, Scope** pscs, Block* bl, S)
         Block* bl = blocks[*bc++];
@@ -289,19 +282,18 @@ u8* m_nvm(Body* body) {
       case TR2D: TOPp; INV(1,0,i_TR2D); break; // (B, S)
       case TR3D: TOPp; INV(1,0,i_TR3D); break; // (B, S)
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
-      case LOCM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,1,i_LOCM); break; // (u32 d, u32 p, S)
+      case LOCM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                              CCALL(i_LOCM); break; // (u32 d, u32 p, S)
       case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,1,i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case EXTM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                            INV(2,1,i_EXTM); break; // (u32 d, u32 p, S)
+      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case EXTM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                              CCALL(i_EXTM); break; // (u32 d, u32 p, S)
       case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                  INV(3,1,i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
       case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
       case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
       case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
       case FLDO: TOPp; IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); INV(3,0,i_FLDO); break; // (B, u32 p, Scope** pscs, S)
-      case NSPM: TOPp; IMM(REG_ARG1,*bc++); INV(2,0,i_NSPM); break; // (B, u32 l, S)
+      case NSPM: TOPp; IMM(REG_ARG1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,1,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless
-      // case RETN: TOPp;                     INV(1,0,i_RETN); ret=true; break; // (B, S); TODO remove
       case RETN: IMM(r_TMP, &gStack); ASM(MOV_MR0, r_TMP, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
