@@ -245,20 +245,20 @@ u8* m_nvm(Body* body) {
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     // #define LEA0(O,I,OFF) { ASM(MOV,O,I); ADDI(O,OFF); }
-    #define LEA0(O,I,OFF) { i32 o=(OFF); if(!o) { ASM(MOV,O,I); } else if(o==(i8)o) { ASM3(LEAo1,O,I,o); } else { ASM(MOV,O,I); ADDI(O,o); } }
-    #define SPOS(R,N) LEA0(R, r_CS, maxi32(0, depth+(N)-1)*sizeof(B)) // TODO return register number, so that depth 0 can eliminate a mov
+    #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); u8 r; if(!o) { r=I; if(Q)ASM(MOV,O,I); } else { r=O; if(o==(i8)o) { ASM3(LEAo1,O,I,o); } else { ASM(MOV,O,I); ADDI(O,o); } } r; })
+    #define SPOS(R,N,Q) LEA0(R, r_CS, maxi32(0, depth+(N)-1)*sizeof(B),Q)
     #if CSTACK
       // #define INV(N,D,F) ASM(MOV,REG_ARG##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
-      #define INV(N,D,F) SPOS(REG_ARG##N, D); CCALL(F)
+      #define INV(N,D,F) SPOS(REG_ARG##N, D, 1); CCALL(F)
     #else
       #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS and things with stack delta 1)
     #endif
     #define TOPp ASM(MOV,REG_ARG0,REG_RES)
-    #define TOPs if (depth) { SPOS(r_TMP, 0); ASM(MOV_MR0, r_TMP, REG_RES); }
+    #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); ASM(MOV_MR0, t, REG_RES); }
     switch (*bc++) {
       case POPS: TOPp;
         INV(1,0,i_POPS); // (B, S)
-        if (depth>1) { SPOS(r_TMP, -1); ASM(MOV_RM0, REG_RES, r_TMP); }
+        if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); ASM(MOV_RM0, REG_RES, t); }
       break;
       case ADDI: TOPs; IMM(REG_ARG0, L64); INV(1,1,i_ADDI); break; // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
