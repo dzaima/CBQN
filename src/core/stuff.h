@@ -52,15 +52,7 @@ typedef struct TStack {
 #define TSADD(N,X) { if (N##_o->size==N##_o->cap) TSDBL(N); N[N##_o->size++] = X; }
 #define TSADDA(N,P,AM) { u64 n=AM; while(N##_o->size+n>N##_o->cap) TSDBL(N); memcpy(N+N##_o->size,P,n*N##_e); N##_o->size+= AM; }
 #define TSSIZE(N) (N##_o->size)
-static NOINLINE TStack* tstack_ext(TStack* o, u32 elsz) {
-  usz ncap = o->cap*2;
-  TStack* n = (TStack*)mm_allocN(sizeof(TStack) + elsz*ncap, t_temp);
-  memcpy(n->data, o->data, o->cap*elsz);
-  n->cap = ncap;
-  n->size = o->size;
-  mm_free((Value*)o);
-  return n;
-}
+TStack* tstack_ext(TStack* o, u32 elsz);
 
 // shape mess
 

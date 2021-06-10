@@ -16,6 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #pragma once
+#include "../core.h"
 
 // 16 integer registers:
 //                0 1 2  (0: not saved, 1: callee saves, 2: caller saves)
@@ -32,6 +33,32 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // . r10              x
 // . r11              x
 // . r12-r15        x
+
+
+#define ALLOC_ASM(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N);
+#define GET_ASM() u8* bin = b_o->data;
+#define AADD(P,N) b_o=asm_add(b_o, P, N)
+#define ASM_SIZE (b_o->size)
+#define FREE_ASM() mm_free((Value*)b_o);
+static NOINLINE TStack* asm_addR(TStack* o, u8* data, u64 am) {
+  u64 osz = o->size;
+  u64 ncap = o->cap;
+  while (osz+am > ncap) ncap*= 2;
+  ALLOC_ASM(ncap);
+  memcpy(b_o->data, o->data, osz);
+  memcpy(b_o->data+osz, data, am);
+  b_o->size = osz+am;
+  mm_free((Value*)o);
+  return b_o;
+}
+static NOINLINE TStack* asm_add(TStack* o, u8* data, u64 am) {
+  u64 osz = o->size;
+  if (RARE(osz+am > o->cap)) return asm_addR(o, data, am);
+  o->size+= am;
+  memcpy(o->data+osz, data, am);
+  return o;
+}
+
 
 typedef unsigned char U;
 typedef unsigned char UC;
@@ -55,7 +82,7 @@ typedef unsigned short RegM;
 
 // Ignore leading 0x40
 // TODO Doesn't drop 0xF2 0x40, etc.
-#define ASM_RAW(A, OP) do { UC aa[] = OP; u8 off=aa[0]==0x40; TSADDA(A, aa+off, sizeof(aa)-off); } while(0)
+#define ASM_RAW(A, OP) do { UC aa[] = OP; u8 off=aa[0]==0x40; AADD(aa+off, sizeof(aa)-off); } while(0)
 
 // Instructions
 #define A_0REG(O,I) ((((I)&7)<<3) + ((O)&7))

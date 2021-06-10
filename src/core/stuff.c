@@ -5,6 +5,16 @@
 u64 allocB; // currently allocated number of bytes
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
+NOINLINE TStack* tstack_ext(TStack* o, u32 elsz) {
+  usz ncap = o->cap*2;
+  TStack* n = (TStack*)mm_allocN(sizeof(TStack) + elsz*ncap, t_temp);
+  memcpy(n->data, o->data, o->cap*elsz);
+  n->cap = ncap;
+  n->size = o->size;
+  mm_free((Value*)o);
+  return n;
+}
+
 NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   BS2B xgetU = TI(x).getU;

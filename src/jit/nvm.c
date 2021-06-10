@@ -211,7 +211,7 @@ static u32 readBytes4(u8* d) {
 typedef B JITFn(B* cStack, Scope** pscs);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 u8* m_nvm(Body* body) {
-  TSALLOC(u8, bin, 64);
+  ALLOC_ASM(64);
   TSALLOC(u32, rel, 64);
   #define r_TMP 3
   #define r_PSCS 14
@@ -222,7 +222,7 @@ u8* m_nvm(Body* body) {
   ASM(MOV, r_CS  , REG_ARG0);
   ASM(MOV, r_PSCS, REG_ARG1);
   // #define CCALL(F) { IMM(r_TMP, F); ASM(CALL, r_TMP, -); }
-  #define CCALL(F) { if((u64)F < 1ULL<<31) { TSADD(rel, TSSIZE(bin)); ASM(CALLI, (u32)F, -); } else { IMM(r_TMP, F); ASM(CALL, r_TMP, -); } }
+  #define CCALL(F) { TSADD(rel, ASM_SIZE); ASM(CALLI, (u32)F, -); }
   u32* bc = body->bc;
   Block** blocks = body->blocks->a;
   i32 depth = 0;
@@ -305,8 +305,8 @@ u8* m_nvm(Body* body) {
   ASM(POP, r_TMP, -);
   ASM_RAW(bin, RET);
   #undef CCALL
-  
-  u64 sz = TSSIZE(bin);
+  GET_ASM();
+  u64 sz = ASM_SIZE;
   u8* binEx = nvm_alloc(sz);
   #if USE_PERF
     if (!perf_map) {
@@ -330,7 +330,7 @@ u8* m_nvm(Body* body) {
     memcpy(ins+1, (u8[]){BYTES4(n)}, 4);
   }
   // write_asm(binEx, sz);
-  TSFREE(bin);
+  FREE_ASM();
   TSFREE(rel);
   return binEx;
 }
