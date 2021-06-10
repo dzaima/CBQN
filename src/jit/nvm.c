@@ -109,9 +109,6 @@ INS B i_TR3O(B f          GA1) { P(g)P(h) B r;
   else              { r=m_fork(f,g,h); }
   return r;
 }
-INS B i_LOCM(u32 d, u32 p) {
-  return tag((u64)d<<32 | (u32)p, VAR_TAG);
-}
 INS B i_LOCO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
   B l = pscs[d]->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); } // TODO probably should GS_UPD (also EXTO)
@@ -122,9 +119,6 @@ INS B i_LOCU(u32 d, u32 p, Scope** pscs) {
   B r = vars[p];
   vars[p] = bi_optOut;
   return r;
-}
-INS B i_EXTM(u32 d, u32 p) {
-  return tag((u64)d<<32 | (u32)p, EXT_TAG);
 }
 INS B i_EXTO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
   B l = pscs[d]->ext->vars[p];
@@ -282,11 +276,11 @@ u8* m_nvm(Body* body) {
       case TR2D: TOPp; INV(1,0,i_TR2D); break; // (B, S)
       case TR3D: TOPp; INV(1,0,i_TR3D); break; // (B, S)
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
-      case LOCM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                              CCALL(i_LOCM); break; // (u32 d, u32 p, S)
+      case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
+      case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
       case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case EXTM: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++);                                              CCALL(i_EXTM); break; // (u32 d, u32 p, S)
       case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
       case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
       case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
       case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
