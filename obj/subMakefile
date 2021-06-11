@@ -1,3 +1,4 @@
+SHELL=/usr/bin/env bash
 CC=clang
 CCFLAGS=-Wno-microsoft-anon-tag
 # CC=gcc
@@ -29,6 +30,12 @@ core: i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o
 %.o: ../../src/core/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
+
+../../src/gen/src:
+	@echo "no precompiled bytecode found; copying from the bytecode branch"
+	git checkout bytecode ../../src/gen/{compiler,formatter,runtime0,runtime1,src}
+	git reset ../../src/gen/{compiler,formatter,runtime0,runtime1,src}
+load.o: ../../src/gen/src
 
 base: load.o main.o rtwrap.o vm.o ns.o nfns.o
 %.o: ../../src/%.c
