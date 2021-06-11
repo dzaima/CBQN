@@ -221,8 +221,9 @@ u8* m_nvm(Body* body) {
   ASM(PUSH, r_CS, -);
   ASM(MOV, r_CS  , REG_ARG0);
   ASM(MOV, r_PSCS, REG_ARG1);
+  if ((u64)i_SETN != (u32)(u64)i_SETN) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
   // #define CCALL(F) { IMM(r_TMP, F); ASM(CALL, r_TMP, -); }
-  #define CCALL(F) { TSADD(rel, ASM_SIZE); ASM(CALLI, (u32)F, -); }
+  #define CCALL(F) { TSADD(rel, ASM_SIZE); ASM(CALLI, (u32)(u64)F, -); }
   u32* bc = body->bc;
   Block** blocks = body->blocks->a;
   i32 depth = 0;
@@ -259,7 +260,7 @@ u8* m_nvm(Body* body) {
       case FN2C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
       case FN1O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
       case FN2O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
-      case ARRM: case ARRO:
+      case ARRM: case ARRO:;
         u32 sz = *bc++;
         if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
         else    { TOPs;                      CCALL(i_ARR_0); } // (S)
@@ -326,7 +327,7 @@ u8* m_nvm(Body* body) {
   for (u64 i = 0; i < relAm; i++) {
     u8* ins = binEx+rel[i];
     u32 o = readBytes4(ins+1);
-    u32 n = o-(u32)ins-5;
+    u32 n = o-(u32)(u64)ins-5;
     memcpy(ins+1, (u8[]){BYTES4(n)}, 4);
   }
   // write_asm(binEx, sz);
