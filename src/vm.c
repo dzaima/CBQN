@@ -6,7 +6,7 @@
 #include "utils/utf.h"
 
 #ifndef USE_JIT
-  #define USE_JIT 1 // enable the extremely basic JIT that just genrates MOVs and CALLs
+  #define USE_JIT 0 // enable the extremely basic x86-64 JIT that mostly just generates MOVs and CALLs
 #endif
 
 

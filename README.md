@@ -8,8 +8,10 @@ build/run:
   - `./build` and `./debugBuild` compile everything at once and allow specifying extra compiler arguments, but may be slower
 4. `./BQN` (or `rlwrap ./BQN` for a fancier interface)
 
-Time safe prim tests with self-hosted compiler: `./test.bqn ~/git/BQN -s prim > SP; time ./BQN<SP>/dev/null`
+Run tests with `./BQN mlochbaum/BQN/test/this.bqn` (with `-noerr` for a heapverify build).
 
-Test precompiled expression: `./precompiled.bqn path/to/mlochbaum/BQN "$PATH" '2+2'`
+Time REPL-executed safe prim tests: `./test.bqn mlochbaum/BQN -s prim > SP; time ./BQN<SP>/dev/null`
+
+Test precompiled expression: `./precompiled.bqn mlochbaum/BQN "$PATH" '2+2'`
 
 Any file without an explicit copyright message is copyright (c) 2021 dzaima, GNU GPLv3 - see LICENSE
