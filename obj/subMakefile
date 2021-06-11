@@ -33,7 +33,7 @@ core: i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o
 
 ../../src/gen/src:
 	@echo "no precompiled bytecode found; copying from the bytecode branch"
-	git checkout bytecode ../../src/gen/{compiler,formatter,runtime0,runtime1,src}
+	git checkout remotes/origin/bytecode ../../src/gen/{compiler,formatter,runtime0,runtime1,src}
 	git reset ../../src/gen/{compiler,formatter,runtime0,runtime1,src}
 load.o: ../../src/gen/src
 

@@ -1,7 +1,7 @@
 build/run:
 
-1. `./genRuntime path/to/mlochbaum/BQN`
-2. Optionally choose what to build by changing `src/h.h`
+1. (optional) run `./genRuntime path/to/mlochbaum/BQN`; Otherwise, the necessary precompiled bytecode will be retrieved from `remotes/origin/bytecode`
+2. If needed, customize settings in `src/h.h`
 3. `make`
   - Options: `make o3`, `make debug` (`make rtperf`, `make heapverify` and `make rtverify` also exist for further testing/debugging)
   - Do `make clean` or `make [o3|debug|…]-clean` before to force recompile
