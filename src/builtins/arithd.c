@@ -193,10 +193,13 @@ GC2i(sub, wv-xv, {
     }
   }
 })
+GC2i(not, 1+wv-xv, {
+  if (isC32(w) & isF64(x)) { u64 r = (u64)(1+(i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("¬: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
+})
 GC2i(mul, wv*xv, {})
 GC2i(and, wv*xv, {})
 GC2i(or , (wv+xv)-(wv*xv), {})
-GC2i(not, 1+wv-xv, {})
 
 GC2f(div  ,           w.f/x.f, {})
 GC2f(pow  ,     pow(w.f, x.f), {})
