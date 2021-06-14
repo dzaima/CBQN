@@ -1,6 +1,7 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/mut.h"
+#include "../utils/talloc.h"
 #include "../nfns.h"
 
 

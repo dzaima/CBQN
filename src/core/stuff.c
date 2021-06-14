@@ -1,17 +1,22 @@
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../utils/utf.h"
+#include "../utils/talloc.h"
 
-u64 allocB; // currently allocated number of bytes
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
-NOINLINE TStack* tstack_ext(TStack* o, u32 elsz) {
-  usz ncap = o->cap*2;
-  TStack* n = (TStack*)mm_allocN(sizeof(TStack) + elsz*ncap, t_temp);
-  memcpy(n->data, o->data, o->cap*elsz);
-  n->cap = ncap;
-  n->size = o->size;
-  mm_free((Value*)o);
+NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
+  u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));
+  TStack* n;
+  if (alsz==mm_size((Value*)o)) {
+    n = o;
+  } else {
+    n = (TStack*)mm_allocN(alsz, t_temp);
+    memcpy(n->data, o->data, o->cap*elsz);
+    mm_free((Value*)o);
+    n->size = size;
+  }
+  n->cap = (mm_size((Value*)n)-offsetof(TStack,data))/elsz;
   return n;
 }
 

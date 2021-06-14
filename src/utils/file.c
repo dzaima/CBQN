@@ -2,6 +2,7 @@
 #include "../core.h"
 #include "file.h"
 #include "mut.h"
+#include "talloc.h"
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   u64 plen = utf8lenB(path);

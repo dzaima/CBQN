@@ -4,6 +4,7 @@
 #include "jit/nvm.h"
 #include "ns.h"
 #include "utils/utf.h"
+#include "utils/talloc.h"
 
 #ifndef USE_JIT
   #define USE_JIT 0 // enable the extremely basic x86-64 JIT that mostly just generates MOVs and CALLs
@@ -13,7 +14,7 @@
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
-                  F(EXTO) F(EXTM) F(EXTU)
+                  F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi)
 
 u32* nextBC(u32* p) {
   switch(*p) {
@@ -29,20 +30,35 @@ u32* nextBC(u32* p) {
       return p+2;
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
-    case ADDI: case ADDU:
+    case ADDI: case ADDU: case FN1Ci: case FN1Oi: case FN2Ci:
       return p+3;
+    case FN2Oi:
+      return p+5;
     default: return 0;
   }
 }
 i32 stackDiff(u32* p) {
-  switch(*p) {
+  if (*p==ARRO|*p==ARRM) return 1-p[1];
+  switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
-    case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
-    case FN1C: case OP1D: case TR2D: case SETN: case SETU: case POPS: case FN1O: case OP2H: case SETH: case RETN: return -1;
-    case FN2C: case OP2D: case TR3D: case SETM: case FN2O: case TR3O: return -2;
-    case ARRO: case ARRM: return 1-p[1];
-    default: return 9999999;
+    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case POPS: case OP2H: case SETH: case RETN: return -1;
+    case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return -2;
   }
+}
+i32 stackConsumed(u32* p) {
+  if (*p==ARRO|*p==ARRM) return p[1];
+  switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
+    case CHKV: case VFYM: case RETD: return 0;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: return 1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case OP2H: case SETH: return 2;
+    case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return 3;
+  }
+}
+i32 stackAdded(u32* p) {
+  if (*p==ARRO|*p==ARRM) return 1;
+  return stackDiff(p)+stackConsumed(p);
 }
 char* nameBC(u32* p) {
   switch(*p) { default: return "(unknown)";
@@ -184,6 +200,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
         break;
       }
     }
+    #undef A64
     usz nlen = TSSIZE(nBCT)-TSSIZE(mapT);
     for (usz i = 0; i < nlen; i++) TSADD(mapT, c-bc);
     h+= stackDiff(c);

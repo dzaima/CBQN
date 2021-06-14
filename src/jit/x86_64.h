@@ -17,6 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #pragma once
 #include "../core.h"
+#include "../utils/talloc.h"
 
 // 16 integer registers:
 //                0 1 2  (0: not saved, 1: callee saves, 2: caller saves)

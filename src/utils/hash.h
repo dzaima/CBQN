@@ -1,5 +1,6 @@
 #pragma once
 #include "wyhash.h"
+#include "talloc.h"
 
 extern u64 wy_secret[4];
 

@@ -2,6 +2,7 @@
 #include "../core/gstack.h"
 #include "../ns.h"
 #include "../utils/file.h"
+#include "../utils/talloc.h"
 
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
@@ -45,7 +46,7 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 #endif
 #define P(N) B N=GSP;
 #if VM_POS
-  #define POS_UPD (envCurr-1)->bcL = bc-1;
+  #define POS_UPD (envCurr-1)->bcL = bc;
 #else
   #define POS_UPD
 #endif
@@ -61,27 +62,38 @@ INS B i_ADDI(u64 v) {
 INS B i_ADDU(u64 v) {
   return b(v);
 }
-INS B i_FN1C(B f, u32* bc GA1) { P(x) // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
-  GS_UPD;POS_UPD;
+INS B i_FN1C(B f, u32* bc GA1) { P(x) GS_UPD;POS_UPD; // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
   B r = c1(f, x);
   dec(f); return r;
 }
-INS B i_FN1O(B f, u32* bc GA1) { P(x)
-  GS_UPD;POS_UPD;
+INS B i_FN1O(B f, u32* bc GA1) { P(x) GS_UPD;POS_UPD;
   B r = isNothing(x)? x : c1(f, x);
   dec(f); return r;
 }
-INS B i_FN2C(B w, u32* bc GA1) { P(f)P(x)
-  GS_UPD;POS_UPD;
+INS B i_FN2C(B w, u32* bc GA1) { P(f)P(x) GS_UPD;POS_UPD;
   B r = c2(f, w, x);
   dec(f); return r;
 }
-INS B i_FN2O(B w, u32* bc GA1) { P(f)P(x)
-  GS_UPD;POS_UPD; B r;
+INS B i_FN2O(B w, u32* bc GA1) { P(f)P(x) GS_UPD;POS_UPD;
+  B r;
   if (isNothing(x)) { dec(w); r = x; }
   else r = isNothing(w)? c1(f, x) : c2(f, w, x);
   dec(f);
   return r;
+}
+INS B i_FN1Ci(B x, BB2B fi, u32* bc GA1) { GS_UPD;POS_UPD;
+  return fi(b((u64)0), x);
+}
+INS B i_FN2Ci(B w, BBB2B fi, u32* bc GA1) { P(x) GS_UPD;POS_UPD;
+  return fi(b((u64)0), w, x);
+}
+INS B i_FN1Oi(B x, BB2B fm, u32* bc GA1) { GS_UPD;POS_UPD;
+  B r = isNothing(x)? x : fm(b((u64)0), x);
+  return r;
+}
+INS B i_FN2Oi(B w, BB2B fm, BBB2B fd, u32* bc GA1) { P(x) GS_UPD;POS_UPD;
+  if (isNothing(x)) { dec(w); return x; }
+  else return isNothing(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
 INS B i_ARR_0() { // TODO combine with ADDI
   return inc(bi_emptyHVec);
@@ -151,12 +163,11 @@ INS B i_NSPM(B o, u32 l) {
   c(FldAlias,a)->p = l;
   return a;
 }
-INS B i_RETD(Scope** pscs GA1) {
+INS B i_RETD(Scope** pscs GA1) { GS_UPD;
   Scope* sc = pscs[0];
   Body* b = sc->body;
   ptr_inc(sc);
   ptr_inc(b->nsDesc);
-  GS_UPD;
   return m_ns(sc, b->nsDesc);
 }
 
@@ -166,8 +177,6 @@ INS B i_RETD(Scope** pscs GA1) {
 #undef GS_UPD
 #undef POS_UPD
 #undef GA1
-
-
 
 
 
@@ -204,6 +213,110 @@ static void write_asm(u8* p, u64 sz) { // for debugging; view with objdump -b bi
 }
 
 
+typedef struct SRef { B v; i32 p; } SRef;
+#define SREF(V,P) ((SRef){.v=V,  .p=P})
+typedef struct OptRes { u32* bc; u32* offset; } OptRes;
+static OptRes opt(u32* bc0) {
+  TSALLOC(SRef, stk, 8);
+  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 2: remove; 3: FN1_/FN2C; 4: FN2O
+  TSALLOC(u64, data, 64); // variable length; whatever things are needed for the specific action
+  u32* bc = bc0; usz pos = 0;
+  while (true) {
+    u32* sbc = bc;
+    #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
+    bool ret = false;
+    u8 cact = 0;
+    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("JIT optimization: didn't already expect immediate FN__");
+      case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
+      case FN1C: case FN1O: { SRef f = stk[TSSIZE(stk)-1];
+        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        actions[f.p] = 2; cact = 3;
+        TSADD(data, (u64) c(Fun, f.v)->c1);
+        goto defStk;
+        break;
+      }
+      case FN2C: { SRef f = stk[TSSIZE(stk)-2];
+        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        actions[f.p] = 2; cact = 3;
+        TSADD(data, (u64) c(Fun, f.v)->c2);
+        goto defStk;
+        break;
+      }
+      case FN2O: { SRef f = stk[TSSIZE(stk)-2];
+        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        actions[f.p] = 2; cact = 4;
+        TSADD(data, (u64) c(Fun, f.v)->c1);
+        TSADD(data, (u64) c(Fun, f.v)->c2);
+        goto defStk;
+        break;
+      }
+      case RETN: case RETD:
+        ret = true;
+        cact = 1;
+        goto defIns;
+      default: defIns:;
+        defStk:
+        TSSIZE(stk)-= stackConsumed(sbc);
+        i32 added = stackAdded(sbc);
+        for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1))
+    }
+    TSADD(actions, cact);
+    #undef L64
+    if (ret) break;
+    bc = nextBC(sbc);
+    pos++;
+  }
+  TSFREE(stk);
+  
+  TSALLOC(u32, rbc, TSSIZE(actions));
+  TSALLOC(u32, roff, TSSIZE(actions));
+  bc = bc0;
+  u64 tpos = 0, dpos = 0;
+  while (true) {
+    u32* sbc = bc;
+    u32* ebc = nextBC(sbc);
+    #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
+    u32 ctype = actions[tpos++];
+    bool ret = false;
+    u32 v = *bc++;
+    u64 psz = TSSIZE(rbc);
+    #define A64(X) { u64 a64=(X); TSADD(rbc, (u32)a64); TSADD(rbc, a64>>32); }
+    switch (ctype) { default: UD;
+      case 3: assert(v==FN1C|v==FN1O|v==FN2C);
+        TSADD(rbc, v==FN1C? FN1Ci : v==FN1O? FN1Oi : FN2Ci);
+        A64(data[dpos++]);
+        break;
+      case 4: assert(v==FN2O);
+        TSADD(rbc, FN2Oi);
+        A64(data[dpos++]);
+        A64(data[dpos++]);
+        break;
+      
+      case 2: break; // remove
+      
+      case 1: ret = true; goto def2; // return
+      
+      case 0: def2:; // do nothing
+        TSADDA(rbc, sbc, ebc-sbc);
+    }
+    u64 added = TSSIZE(rbc)-psz;
+    for (i32 i = 0; i < added; i++) TSADD(roff, sbc-bc0);
+    #undef A64
+    if (ret) break;
+    bc = ebc;
+  }
+  bc = bc0; pos = 0;
+  
+  TSFREE(data);
+  TSFREE(actions);
+  return (OptRes){.bc = rbc, .offset = roff};
+}
+#undef SREF
+void freeOpt(OptRes o) {
+  TSFREEP(o.bc);
+  TSFREEP(o.offset);
+}
+
 static u32 readBytes4(u8* d) {
   return d[0] | d[1]<<8 | d[2]<<16 | d[3]<<24;
 }
@@ -224,12 +337,15 @@ u8* m_nvm(Body* body) {
   if ((u64)i_SETN != (u32)(u64)i_SETN) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
   // #define CCALL(F) { IMM(r_TMP, F); ASM(CALL, r_TMP, -); }
   #define CCALL(F) { TSADD(rel, ASM_SIZE); ASM(CALLI, (u32)(u64)F, -); }
-  u32* bc = body->bc;
+  u32* origBC = body->bc;
+  OptRes optRes = opt(origBC);
   Block** blocks = body->blocks->a;
   i32 depth = 0;
+  u32* bc = optRes.bc;
   while (true) {
     u32* s = bc;
     u32* n = nextBC(bc);
+    u32* off = origBC + optRes.offset[s-optRes.bc];
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     // #define LEA0(O,I,OFF) { ASM(MOV,O,I); ADDI(O,OFF); }
@@ -256,10 +372,14 @@ u8* m_nvm(Body* body) {
           IMM(REG_ARG0, L64); CCALL(i_ADDU);
         #endif
       break;
-      case FN1C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1C); break; // (B, u32* bc, S)
-      case FN2C: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
-      case FN1O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
-      case FN2O: TOPp; IMM(REG_ARG1, s); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
+      case FN1C: TOPp; IMM(REG_ARG1,off); INV(2,0,i_FN1C); break; // (B, u32* bc, S)
+      case FN2C: TOPp; IMM(REG_ARG1,off); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
+      case FN1O: TOPp; IMM(REG_ARG1,off); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
+      case FN2O: TOPp; IMM(REG_ARG1,off); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
+      case FN1Ci:TOPp; IMM(REG_ARG1,L64);                     IMM(REG_ARG2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
+      case FN2Ci:TOPp; IMM(REG_ARG1,L64);                     IMM(REG_ARG2,off); INV(3,0,i_FN2Ci); break; // (B, BBB2B fd, u32* bc, S)
+      case FN1Oi:TOPp; IMM(REG_ARG1,L64);                     IMM(REG_ARG2,off); INV(3,0,i_FN1Oi); break; // (B, BB2B  fm,           u32* bc, S)
+      case FN2Oi:TOPp; IMM(REG_ARG1,L64); IMM(REG_ARG2, L64); IMM(REG_ARG3,off); INV(4,0,i_FN2Oi); break; // (B, BB2B  fm, BBB2B fd, u32* bc, S)
       case ARRM: case ARRO:;
         u32 sz = *bc++;
         if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
@@ -269,23 +389,23 @@ u8* m_nvm(Body* body) {
         Block* bl = blocks[*bc++];
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
         if (fn==0) thrM("JIT: Bad DFND argument");
-        IMM(REG_ARG0,s); ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,bl); INV(3,1,fn);
+        IMM(REG_ARG0,off); ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,bl); INV(3,1,fn);
         break;
-      case OP1D: TOPp; IMM(REG_ARG1,s); INV(2,0,i_OP1D); break; // (B, u32* bc, S)
-      case OP2D: TOPp; IMM(REG_ARG1,s); INV(2,0,i_OP2D); break; // (B, u32* bc, S)
+      case OP1D: TOPp; IMM(REG_ARG1,off); INV(2,0,i_OP1D); break; // (B, u32* bc, S)
+      case OP2D: TOPp; IMM(REG_ARG1,off); INV(2,0,i_OP2D); break; // (B, u32* bc, S)
       case OP2H: TOPp; INV(1,0,i_OP2H); break; // (B, S)
       case TR2D: TOPp; INV(1,0,i_TR2D); break; // (B, S)
       case TR3D: TOPp; INV(1,0,i_TR3D); break; // (B, S)
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
       case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
-      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,s); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
       case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
       case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
-      case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
-      case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,s); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
+      case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
+      case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
+      case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
       case FLDO: TOPp; IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); INV(3,0,i_FLDO); break; // (B, u32 p, Scope** pscs, S)
       case NSPM: TOPp; IMM(REG_ARG1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,1,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless
@@ -301,6 +421,7 @@ u8* m_nvm(Body* body) {
     depth+= stackDiff(s);
     if (ret) break;
   }
+  freeOpt(optRes);
   ASM(POP, r_CS, -);
   ASM(POP, r_PSCS, -);
   ASM(POP, r_TMP, -);

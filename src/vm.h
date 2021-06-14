@@ -34,7 +34,8 @@ enum {
   SYSV = 30, // N; get system function N
   LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
   EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
-  ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline, instead of reading from `objs`)
+  ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline as 2 u32s, instead of reading from `objs`)
+  FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   BC_SIZE
 };
 
@@ -106,6 +107,9 @@ B evalBC(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body 
 
 u32* nextBC(u32* p);
 i32 stackDiff(u32* p);
+i32 stackConsumed(u32* p);
+i32 stackAdded(u32* p);
+char* nameBC(u32* p);
 
 
 typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;

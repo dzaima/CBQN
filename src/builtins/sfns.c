@@ -2,6 +2,7 @@
 #include "../utils/each.h"
 #include "../utils/mut.h"
 #include "../utils/builtins.h"
+#include "../utils/talloc.h"
 
 
 B shape_c1(B t, B x) {
