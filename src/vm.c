@@ -228,6 +228,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
   body->comp = comp; ptr_inc(comp);
   body->bc = (u32*)nbc;
   body->nvm = NULL;
+  body->nvmRefs = m_f64(0);
   body->map = map;
   body->blocks = nBl;
   body->maxStack = hM;
@@ -558,6 +559,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #undef P
   #undef ADD
   #undef POP
+  #undef POS_UPD
   #undef GS_UPD
 }
 
@@ -582,7 +584,11 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
   B r;
   if (jit) {
-    if (!body->nvm) body->nvm = m_nvm(body);
+    if (!body->nvm) {
+      Nvm_res r = m_nvm(body);
+      body->nvm = r.p;
+      body->nvmRefs = r.refs;
+    }
     r = evalJIT(body, sc, body->nvm);
   } else {
     r = evalBC(body, sc);
@@ -650,9 +656,10 @@ void scope_free(Value* x) {
 }
 void  body_free(Value* x) {
   Body* c = (Body*) x;
-  if(c->nsDesc) ptr_decR(c->nsDesc);
-  if(c->blocks) ptr_decR(c->blocks);
-  if(c->nvm   ) nvm_free(c->nvm);
+  if(c->nsDesc ) ptr_decR(c->nsDesc);
+  if(c->blocks ) ptr_decR(c->blocks);
+  if(c->nvm    ) nvm_free(c->nvm);
+  dec(c->nvmRefs);
   ptr_decR(c->comp);
   ptr_decR(RFLD(c->bc, I32Arr,a));
   ptr_decR(RFLD(c->map,I32Arr,a));
@@ -678,6 +685,7 @@ void  body_visit(Value* x) {
   Body* c = (Body*) x;
   if(c->nsDesc) mm_visitP(c->nsDesc);
   if(c->blocks) mm_visitP(c->blocks);
+  mm_visit(c->nvmRefs);
   mm_visitP(c->comp);
   mm_visitP(RFLD(c->bc, I32Arr,a));
   mm_visitP(RFLD(c->map,I32Arr,a));

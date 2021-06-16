@@ -81,6 +81,7 @@ struct Body {
   u16 maxPSC;
   u16 varAm;
   NSDesc* nsDesc;
+  B nvmRefs;
   i32 varIDs[];
 };
 

@@ -3,6 +3,8 @@
 #include "../ns.h"
 #include "../utils/file.h"
 #include "../utils/talloc.h"
+#include "../utils/mut.h"
+#include "nvm.h"
 
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
@@ -215,39 +217,79 @@ static void write_asm(u8* p, u64 sz) { // for debugging; view with objdump -b bi
 
 typedef struct SRef { B v; i32 p; } SRef;
 #define SREF(V,P) ((SRef){.v=V,  .p=P})
-typedef struct OptRes { u32* bc; u32* offset; } OptRes;
+typedef struct OptRes { u32* bc; u32* offset; B refs; } OptRes;
 static OptRes opt(u32* bc0) {
   TSALLOC(SRef, stk, 8);
-  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 2: remove; 3: FN1_/FN2C; 4: FN2O
+  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 3: FN1_/FN2C; 4: FN2O; 5: replace with PUSH; 6: decrement 1 data; 10+N: ignore N data
   TSALLOC(u64, data, 64); // variable length; whatever things are needed for the specific action
+  u8 rm_map[] = {10,10,10,11,12,6,6,99,99,99,11,12,13,14,15,16,17,18,19};
+  #define RM(N) actions[N] = rm_map[actions[N]]
   u32* bc = bc0; usz pos = 0;
   while (true) {
     u32* sbc = bc;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     bool ret = false;
     u8 cact = 0;
+    #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
     switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("JIT optimization: didn't already expect immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
-      case FN1C: case FN1O: { SRef f = stk[TSSIZE(stk)-1];
+      case FN1C: case FN1O: { S(f,0)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
-        actions[f.p] = 2; cact = 3;
+        RM(f.p); cact = 3;
         TSADD(data, (u64) c(Fun, f.v)->c1);
         goto defStk;
         break;
       }
-      case FN2C: { SRef f = stk[TSSIZE(stk)-2];
+      case FN2C: { S(f,1)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
-        actions[f.p] = 2; cact = 3;
+        cact = 3; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c2);
         goto defStk;
         break;
       }
-      case FN2O: { SRef f = stk[TSSIZE(stk)-2];
+      case FN2O: { S(f,1)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
-        actions[f.p] = 2; cact = 4;
+        cact = 4; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c1);
         TSADD(data, (u64) c(Fun, f.v)->c2);
         goto defStk;
+        break;
+      }
+      case OP1D: { S(f,0) S(m,1)
+        if (f.p==-1 | m.p==-1) goto defIns;
+        B d = m1_d(inc(m.v), inc(f.v));
+        cact = 5; RM(f.p); RM(m.p);
+        TSADD(data, d.u);
+        TSSIZE(stk)--;
+        stk[TSSIZE(stk)-1] = SREF(d, pos);
+        break;
+      }
+      case OP2D: { S(f,0) S(m,1) S(g,2)
+        if (f.p==-1 | m.p==-1 | g.p==-1) goto defIns;
+        B d = m2_d(inc(m.v), inc(f.v), inc(g.v));
+        cact = 5; RM(f.p); RM(m.p); RM(g.p);
+        TSADD(data, d.u);
+        TSSIZE(stk)-= 2;
+        stk[TSSIZE(stk)-1] = SREF(d, pos);
+        break;
+      }
+      case TR2D: { S(g,0) S(h,1)
+        if (g.p==-1 | h.p==-1) goto defIns;
+        B d = m_atop(inc(g.v), inc(h.v));
+        cact = 5; RM(g.p); RM(h.p);
+        TSADD(data, d.u);
+        TSSIZE(stk)--;
+        stk[TSSIZE(stk)-1] = SREF(d, pos);
+        break;
+      }
+      case TR3D: case TR3O: { S(f,0) S(g,1) S(h,2)
+        if (f.p==-1 | g.p==-1 | h.p==-1) goto defIns;
+        if (isNothing(f.v)) thrM("JIT optimization: didn't expect constant ·");
+        B d = m_fork(inc(f.v), inc(g.v), inc(h.v));
+        cact = 5; RM(f.p); RM(g.p); RM(h.p);
+        TSADD(data, d.u);
+        TSSIZE(stk)-= 2;
+        stk[TSSIZE(stk)-1] = SREF(d, pos);
         break;
       }
       case RETN: case RETD:
@@ -260,8 +302,10 @@ static OptRes opt(u32* bc0) {
         i32 added = stackAdded(sbc);
         for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1))
     }
+    #undef S
     TSADD(actions, cact);
     #undef L64
+    #undef RM
     if (ret) break;
     bc = nextBC(sbc);
     pos++;
@@ -270,6 +314,7 @@ static OptRes opt(u32* bc0) {
   
   TSALLOC(u32, rbc, TSSIZE(actions));
   TSALLOC(u32, roff, TSSIZE(actions));
+  B refs = inc(bi_emptyHVec);
   bc = bc0;
   u64 tpos = 0, dpos = 0;
   while (true) {
@@ -291,11 +336,20 @@ static OptRes opt(u32* bc0) {
         A64(data[dpos++]);
         A64(data[dpos++]);
         break;
-      
-      case 2: break; // remove
-      
+      case 5:
+        u64 on = data[dpos++]; B ob = b(on);
+        TSADD(rbc, isVal(ob)? ADDI : ADDU);
+        A64(on);
+        if (isVal(ob)) refs = vec_add(refs, ob);
+        break;
+      case 6:
+        dec(b(data[dpos++]));
+        break;
+      case 10:
+      case 11:case 12:case 13:case 14:case 15:case 16:case 17:case 18:case 19:
+        dpos+= ctype-10;
+        break;
       case 1: ret = true; goto def2; // return
-      
       case 0: def2:; // do nothing
         TSADDA(rbc, sbc, ebc-sbc);
     }
@@ -306,10 +360,10 @@ static OptRes opt(u32* bc0) {
     bc = ebc;
   }
   bc = bc0; pos = 0;
-  
   TSFREE(data);
   TSFREE(actions);
-  return (OptRes){.bc = rbc, .offset = roff};
+  if (a(refs)->ia==0) { dec(refs); refs=m_f64(0); }
+  return (OptRes){.bc = rbc, .offset = roff, .refs = refs};
 }
 #undef SREF
 void freeOpt(OptRes o) {
@@ -323,7 +377,7 @@ static u32 readBytes4(u8* d) {
 
 typedef B JITFn(B* cStack, Scope** pscs);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
-u8* m_nvm(Body* body) {
+Nvm_res m_nvm(Body* body) {
   ALLOC_ASM(64);
   TSALLOC(u32, rel, 64);
   #define r_TMP 3
@@ -454,7 +508,7 @@ u8* m_nvm(Body* body) {
   // write_asm(binEx, sz);
   FREE_ASM();
   TSFREE(rel);
-  return binEx;
+  return (Nvm_res){.p = binEx, .refs = optRes.refs};
 }
 B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   u32* bc = b->bc;
