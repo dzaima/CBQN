@@ -9,6 +9,9 @@
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
 #endif
+#ifndef WRITE_ASM
+  #define WRITE_ASM 0 // writes on every compilation, overriding the previous; view with:
+#endif                // objdump -b binary -m i386 -M x86-64,intel -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+7 | sed "$(cat asm_sed)"
 #ifndef CSTACK
   #define CSTACK 1
 #endif
@@ -204,15 +207,22 @@ static void* nvm_alloc(u64 sz) {
 void nvm_free(u8* ptr) {
   if (!USE_PERF) mmX_free((Value*)RFLD(ptr, TmpFile, a));
 }
-static void write_asm(u8* p, u64 sz) { // for debugging; view with objdump -b binary -m i386 -M x86-64,intel -D --adjust-vma=$(cat tmp_off) tmp_bin | tail -n+7
-  i32* rp; B r = m_i32arrv(&rp, sz);
-  for (u64 i = 0; i < sz; i++) rp[i] = p[i];
-  file_wBytes(m_str32(U"tmp_bin"), r);
-  char off[20]; snprintf(off, 20, "%p", p);
-  B o = m_str8l(off);
-  file_wChars(m_str32(U"tmp_off"), o);
-  dec(r); dec(o);
-}
+
+#if WRITE_ASM
+  static void write_asm(u8* p, u64 sz) {
+    i32* rp; B r = m_i32arrv(&rp, sz);
+    for (u64 i = 0; i < sz; i++) rp[i] = p[i];
+    file_wBytes(m_str32(U"asm_bin"), r); dec(r);
+    char off[20]; snprintf(off, 20, "%p", p);
+    B o = m_str8l(off);
+    file_wChars(m_str32(U"asm_off"), o); dec(o);
+    B s = inc(bi_emptyCVec);
+    #define F(X) AFMT("s/%p$/%p == i_" #X "/;", i_##X, i_##X);
+    F(POPS) F(ADDI) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD)
+    #undef F
+    file_wChars(m_str32(U"asm_sed"), s); dec(s);
+  }
+#endif
 
 
 typedef struct SRef { B v; i32 p; } SRef;
@@ -505,7 +515,9 @@ Nvm_res m_nvm(Body* body) {
     u32 n = o-(u32)(u64)ins-5;
     memcpy(ins+1, (u8[]){BYTES4(n)}, 4);
   }
-  // write_asm(binEx, sz);
+  #if WRITE_ASM
+    write_asm(binEx, sz);
+  #endif
   FREE_ASM();
   TSFREE(rel);
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
@@ -517,7 +529,6 @@ B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
   for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
-  // write_asm(ptr, RFLD(ptr, TmpFile, a)->ia);
   
   B* sp = gStack;
   B r = ((JITFn*)ptr)(gStack, pscs);

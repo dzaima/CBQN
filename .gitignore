@@ -4,4 +4,4 @@ perf.*
 obj/*/*.o
 obj/*/*.d
 obj/*/*.tmp
-tmp_*
+asm_*
