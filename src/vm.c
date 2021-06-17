@@ -186,7 +186,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
           for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
           if (cpos >= csc->varAm) {
             cpos-= csc->varAm;
-            ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTU;
+            ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTO;
           }
         }
         TSADD(nBCT, ins);

@@ -55,7 +55,7 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 #else
   #define POS_UPD
 #endif
-#define INS NOINLINE
+#define INS NOINLINE __attribute__ ((aligned(64), hot)) // idk man
 INS void i_POPS(B x) {
   dec(x);
 }
@@ -247,23 +247,20 @@ static OptRes opt(u32* bc0) {
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
         RM(f.p); cact = 3;
         TSADD(data, (u64) c(Fun, f.v)->c1);
-        goto defStk;
-        break;
+        goto defIns;
       }
       case FN2C: { S(f,1)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
         cact = 3; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c2);
-        goto defStk;
-        break;
+        goto defIns;
       }
       case FN2O: { S(f,1)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
         cact = 4; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c1);
         TSADD(data, (u64) c(Fun, f.v)->c2);
-        goto defStk;
-        break;
+        goto defIns;
       }
       case OP1D: { S(f,0) S(m,1)
         if (f.p==-1 | m.p==-1) goto defIns;
@@ -307,7 +304,6 @@ static OptRes opt(u32* bc0) {
         cact = 1;
         goto defIns;
       default: defIns:;
-        defStk:
         TSSIZE(stk)-= stackConsumed(sbc);
         i32 added = stackAdded(sbc);
         for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1))
