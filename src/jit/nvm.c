@@ -342,7 +342,7 @@ static OptRes opt(u32* bc0) {
         A64(data[dpos++]);
         A64(data[dpos++]);
         break;
-      case 5:
+      case 5:;
         u64 on = data[dpos++]; B ob = b(on);
         TSADD(rbc, isVal(ob)? ADDI : ADDU);
         A64(on);
