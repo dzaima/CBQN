@@ -30,7 +30,8 @@ u32* nextBC(u32* p) {
       return p+2;
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
-    case ADDI: case ADDU: case FN1Ci: case FN1Oi: case FN2Ci:
+    case ADDI: case ADDU:
+    case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi:
       return p+3;
     case FN2Oi:
       return p+5;
@@ -41,8 +42,8 @@ i32 stackDiff(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1-p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
-    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case POPS: case OP2H: case SETH: case RETN: return -1;
+    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case SETNi:case SETUi:case RETD: case NSPM: return 0;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case SETMi:case POPS: case OP2H: case SETH: case RETN: return -1;
     case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return -2;
   }
 }
@@ -51,8 +52,8 @@ i32 stackConsumed(u32* p) {
   switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
     case CHKV: case VFYM: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case OP2H: case SETH: return 2;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case SETNi:case SETUi:return 1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case SETMi:case OP1D: case TR2D: case SETN: case SETU: case OP2H: case SETH: return 2;
     case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return 3;
   }
 }

@@ -156,6 +156,14 @@ INS B i_SETM(B s, Scope** pscs, u32* bc GA1) { P(f)P(x) GS_UPD; POS_UPD;
   v_set(pscs, s, r, true); dec(s);
   return r;
 }
+INS B i_SETNi(B x, Scope** pscs, u32 d, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(pscs, d, p, inc(x), false); return x; }
+INS B i_SETUi(B x, Scope** pscs, u32 d, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(pscs, d, p, inc(x), true ); return x; }
+INS B i_SETMi(B f, Scope** pscs, u32 d, u32 p, u32* bc GA1) { P(x) GS_UPD; POS_UPD;
+  B w = v_getI(pscs, d, p);
+  B r = c2(f,w,x); dec(f);
+  v_setI(pscs, d, p, inc(r), true);
+  return r;
+}
 INS B i_FLDO(B ns, u32 p, Scope** pscs GA1) { GS_UPD;
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, pscs[0]->body->nsDesc->nameList, p));
@@ -218,7 +226,7 @@ void nvm_free(u8* ptr) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = inc(bi_emptyCVec);
     #define F(X) AFMT("s/%p$/%p == i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(ADDI) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD)
+    F(POPS) F(ADDI) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -230,7 +238,7 @@ typedef struct SRef { B v; i32 p; } SRef;
 typedef struct OptRes { u32* bc; u32* offset; B refs; } OptRes;
 static OptRes opt(u32* bc0) {
   TSALLOC(SRef, stk, 8);
-  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 3: FN1_/FN2C; 4: FN2O; 5: replace with PUSH; 6: decrement 1 data; 10+N: ignore N data
+  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 2: immediate SET; 3: immediate FN1_/FN2C; 4: FN2O; 5: replace with PUSH; 6: decrement 1 data; 10+N: ignore N data
   TSALLOC(u64, data, 64); // variable length; whatever things are needed for the specific action
   u8 rm_map[] = {10,10,10,11,12,6,6,99,99,99,11,12,13,14,15,16,17,18,19};
   #define RM(N) actions[N] = rm_map[actions[N]]
@@ -243,6 +251,10 @@ static OptRes opt(u32* bc0) {
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
     switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("JIT optimization: didn't already expect immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
+      case LOCM: { u32 d = *bc++; u32 p = *bc++;
+        TSADD(stk,SREF(tag((u64)d<<32 | (u32)p, VAR_TAG), pos));
+        break;
+      }
       case FN1C: case FN1O: { S(f,0)
         if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
         RM(f.p); cact = 3;
@@ -299,6 +311,13 @@ static OptRes opt(u32* bc0) {
         stk[TSSIZE(stk)-1] = SREF(d, pos);
         break;
       }
+      case SETN: case SETU: case SETM: { S(s,0)
+        if (!isVar(s.v)) goto defIns;
+        cact = 2; RM(s.p);
+        TSADD(data, s.v.u);
+        TSSIZE(stk)-= SETM==*sbc? 2 : 1;
+        break;
+      }
       case RETN: case RETD:
         ret = true;
         cact = 1;
@@ -333,6 +352,12 @@ static OptRes opt(u32* bc0) {
     u64 psz = TSSIZE(rbc);
     #define A64(X) { u64 a64=(X); TSADD(rbc, (u32)a64); TSADD(rbc, a64>>32); }
     switch (ctype) { default: UD;
+      case 2: assert(v==SETN|v==SETU|v==SETM);
+        TSADD(rbc, v==SETN? SETNi : v==SETU? SETUi : SETMi);
+        u64 d = data[dpos++];
+        TSADD(rbc, (u16)(d>>32));
+        TSADD(rbc, (u32)d);
+        break;
       case 3: assert(v==FN1C|v==FN1O|v==FN2C);
         TSADD(rbc, v==FN1C? FN1Ci : v==FN1O? FN1Oi : FN2Ci);
         A64(data[dpos++]);
@@ -466,6 +491,9 @@ Nvm_res m_nvm(Body* body) {
       case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
       case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
       case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
+      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETNi); break; } // (B, Scope** pscs. u32 d. u32 p, u32* bc, S)
+      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETUi); break; } // (B, Scope** pscs. u32 d. u32 p, u32* bc, S)
+      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETMi); break; } // (B, Scope** pscs. u32 d. u32 p, u32* bc, S)
       case FLDO: TOPp; IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); INV(3,0,i_FLDO); break; // (B, u32 p, Scope** pscs, S)
       case NSPM: TOPp; IMM(REG_ARG1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,1,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless

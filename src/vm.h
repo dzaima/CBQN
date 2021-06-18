@@ -36,6 +36,7 @@ enum {
   EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
   ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline as 2 u32s, instead of reading from `objs`)
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
+  SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like LOC_
   BC_SIZE
 };
 
@@ -155,23 +156,30 @@ typedef struct FldAlias {
   i32 p;
 } FldAlias;
 
-NOINLINE B v_getR(Scope* pscs[], B s);
-static B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
-  if (RARE(!isVar(s))) return v_getR(pscs, s);
-  Scope* sc = pscs[(u16)(s.u>>32)];
-  B r = sc->vars[(u32)s.u];
-  sc->vars[(u32)s.u] = bi_optOut;
+
+NOINLINE B v_getR(Scope* pscs[], B s); // doesn't consume
+static inline B v_getI(Scope* pscs[], u32 d, u32 p) {
+  Scope* sc = pscs[d];
+  B r = sc->vars[p];
+  sc->vars[p] = bi_optOut;
   return r;
 }
+static inline B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
+  if (RARE(!isVar(s))) return v_getR(pscs, s);
+  return v_getI(pscs, (u16)(s.u>>32), (u32)s.u);
+}
 
-NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd);
-static void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
-  if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);;
-  Scope* sc = pscs[(u16)(s.u>>32)];
-  B prev = sc->vars[(u32)s.u];
+NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd); // doesn't consume
+static inline void v_setI(Scope* pscs[], u32 d, u32 p, B x, bool upd) { // consumes x
+  Scope* sc = pscs[d];
+  B prev = sc->vars[p];
   if (upd) {
     if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
     dec(prev);
   }
-  sc->vars[(u32)s.u] = inc(x);
+  sc->vars[p] = x;
+}
+static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
+  if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);
+  v_setI(pscs, (u16)(s.u>>32), (u32)s.u, inc(x), upd);
 }
