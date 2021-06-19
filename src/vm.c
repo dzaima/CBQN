@@ -534,7 +534,11 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case RETN: goto end;
-      // not implemented: VARO VARM CHKV VFYM SETH FLDO FLDM NSPM SYSV
+      case CHKV: {
+        if (isNothing(gsGet(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
+        break;
+      }
+      // not implemented: VARO VARM VFYM SETH FLDM SYSV
       default:
         #ifdef DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
