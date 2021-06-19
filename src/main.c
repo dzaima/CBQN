@@ -11,7 +11,7 @@ static void repl_init() {
   cbqn_init();
   replPath = m_str32(U"REPL"); gc_add(replPath);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
-  gsc = m_scope(initBlock->body, NULL, 0); gc_add(tag(gsc,OBJ_TAG));
+  gsc = m_scope(initBlock->body, NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
   ptr_dec(initBlock);
   init = true;
 }

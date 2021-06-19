@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-clang -std=gnu11 -O3 -Wall -Wno-microsoft-anon-tag -Wno-unused-function -fms-extensions $@ -o BQN src/opt/single.c -lm
-# gcc -std=gnu11 -O3 -Wall -Wno-parentheses -Wno-misleading-indentation -Wno-unused-function -fms-extensions $@ -o BQN src/opt/single.c -lm
+clang -std=gnu11 -O3 -Wall -Wno-microsoft-anon-tag -Wno-unused-function -fms-extensions -no-pie $@ -o BQN src/opt/single.c -lm
+# gcc -std=gnu11 -O3 -Wall -Wno-parentheses -Wno-misleading-indentation -Wno-unused-function -fms-extensions -no-pie $@ -o BQN src/opt/single.c -lm

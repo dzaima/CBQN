@@ -564,39 +564,22 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #undef GS_UPD
 }
 
-Scope* m_scope(Body* body, Scope* psc, u16 varAm) { // doesn't consume
+Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // doesn't consume
   Scope* sc = mm_allocN(fsizeof(Scope, vars, B, varAm), t_scope);
   sc->body = body; ptr_inc(body);
   sc->psc = psc; if(psc) ptr_inc(psc);
   sc->varAm = varAm;
   sc->ext = NULL;
+  i32 i = 0;
+  while (i<initVarAm) { sc->vars[i] = initVars[i]; i++; }
+  while (i<varAm) sc->vars[i++] = bi_noVar;
   return sc;
 }
-
-B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
-  Body* body = bl->body;
-  u16 varAm = body->varAm;
-  assert(varAm>=ga);
-  Scope* sc = m_scope(body, psc, varAm);
-  i32 i = 0;
-  while (i<ga) { sc->vars[i] = svar[i]; i++; }
-  while (i<varAm) sc->vars[i++] = bi_noVar;
-  bool jit = USE_JIT;
-  // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
-  B r;
-  if (jit) {
-    if (!body->nvm) {
-      Nvm_res r = m_nvm(body);
-      body->nvm = r.p;
-      body->nvmRefs = r.refs;
-    }
-    r = evalJIT(body, sc, body->nvm);
-  } else {
-    r = evalBC(body, sc);
-  }
+static void scope_dec(Scope* sc) {
+  i32 varAm = sc->varAm;
   if (sc->refc>1) {
     usz innerRef = 1;
-    for (i = 0; i < varAm; i++) {
+    for (i32 i = 0; i < varAm; i++) {
       B c = sc->vars[i];
       if (isVal(c) && v(c)->refc==1) {
         u8 t = v(c)->type;
@@ -608,21 +591,45 @@ B actualExec(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
     assert(innerRef<=sc->refc);
     if (innerRef==sc->refc) {
       value_free((Value*)sc);
-      return r;
+      return;
     }
   }
   ptr_dec(sc);
+}
+
+B execBodyInline(Body* body, Scope* sc) {
+  bool jit = USE_JIT;
+  // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
+  if (jit) {
+    if (!body->nvm) {
+      Nvm_res r = m_nvm(body);
+      body->nvm = r.p;
+      body->nvmRefs = r.refs;
+    }
+    return evalJIT(body, sc, body->nvm);
+  } else {
+    return evalBC(body, sc);
+  }
+}
+
+FORCE_INLINE B execBlock(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
+  Body* body = bl->body;
+  u16 varAm = body->varAm;
+  assert(varAm>=ga);
+  Scope* sc = m_scope(body, psc, varAm, ga, svar);
+  B r = execBodyInline(body, sc);
+  scope_dec(sc);
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return actualExec(b->bl, b->sc, 3, (B[]){t, x, bi_N                                  }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return actualExec(b->bl, b->sc, 3, (B[]){t, x, w                                     }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return actualExec(b->bl, b->sc, 5, (B[]){D, x, bi_N, inc(d->m1), inc(d->f)           }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return actualExec(b->bl, b->sc, 5, (B[]){D, x, w   , inc(d->m1), inc(d->f)           }); }
-B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return actualExec(b->bl, b->sc, 6, (B[]){D, x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
-B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return actualExec(b->bl, b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
+B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->sc, 3, (B[]){t, x, bi_N                                  }); }
+B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->sc, 3, (B[]){t, x, w                                     }); }
+B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->sc, 5, (B[]){D, x, bi_N, inc(d->m1), inc(d->f)           }); }
+B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->sc, 5, (B[]){D, x, w   , inc(d->m1), inc(d->f)           }); }
+B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
-  if (bl->imm) return actualExec(bl, psc, 0, NULL);
+  if (bl->imm) return execBlock(bl, psc, 0, NULL);
   B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));
   c(FunBlock, r)->bl = bl; ptr_inc(bl);
   c(FunBlock, r)->sc = psc; ptr_inc(psc);
@@ -720,8 +727,8 @@ void md2Bl_print(B x) { printf("{2-modifier block}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
-B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? actualExec(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
-B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? actualExec(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
+B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? execBlock(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
+B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? execBlock(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
 void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   usz pageSize = sysconf(_SC_PAGESIZE);
