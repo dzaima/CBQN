@@ -374,12 +374,14 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     #define POP (*--gStack)
     #define P(N) B N=POP;
     #define ADD(X) { B tr=X; *(gStack++) = tr; }
+    #define PEEK(X) gStack[-(X)]
     #define GS_UPD
   #else
     B* lgStack = gStack;
     #define POP (*--lgStack)
     #define P(N) B N=POP;
     #define ADD(X) { *(lgStack++) = X; } // fine, as, if an error occurs, lgStack is ignored anyways
+    #define PEEK(X) lgStack[-(X)]
     #define GS_UPD { gStack = lgStack; }
   #endif
   #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
@@ -535,7 +537,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       }
       case RETN: goto end;
       case CHKV: {
-        if (isNothing(gsGet(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
+        if (isNothing(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
       }
       // not implemented: VARO VARM VFYM SETH FLDM SYSV

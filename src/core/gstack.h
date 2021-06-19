@@ -40,6 +40,3 @@ static inline void gsAdd(B x) {
 static inline B gsPop() {
   return *--gStack;
 }
-static inline B gsGet(i32 p) { // p>0; 1 is the top item, etc
-  return gStack[-p];
-}
