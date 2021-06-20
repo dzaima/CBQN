@@ -60,6 +60,46 @@ static NOINLINE TStack* asm_add(TStack* o, u8* data, u64 am) {
   return o;
 }
 
+static NOINLINE TStack* asm_reserve(TStack* o) {
+  u64 osz = o->size;
+  u64 ncap = o->cap*2;
+  ALLOC_ASM(ncap);
+  memcpy(b_o->data, o->data, osz);
+  b_o->size = osz;
+  mm_free((Value*)o);
+  return b_o;
+}
+static inline TStack* asm_r(TStack* o) {
+  if (o->size+16>o->cap) return asm_reserve(o);
+  return o;
+}
+static inline void asm_a(TStack* o, u64 len, u8 v[]) {
+  memcpy(o->data, v, len);
+  o->size+= len;
+}
+
+static inline void asm_1(TStack* o, i8 v) {
+  o->data[o->size++] = v;
+}
+static inline void asm_4(TStack* o, i32 v) { int size = o->size;
+  // o->data[size+0] = (v    ) & 0xff; o->data[size+1] = (v>> 8) & 0xff;
+  // o->data[size+2] = (v>>16) & 0xff; o->data[size+3] = (v>>24) & 0xff;
+  *(u32*)(o->data+size) = v; // clang for whatever reason fails to optimize the above when it's inlined
+  o->size = size+4;
+}
+static inline void asm_8(TStack* o, i64 v) { int size = o->size; u8* p = o->data;
+  // p[size+0] = (u8)(v    ); p[size+1] = (u8)(v>> 8);
+  // p[size+2] = (u8)(v>>16); p[size+3] = (u8)(v>>24);
+  // p[size+4] = (u8)(v>>32); p[size+5] = (u8)(v>>40);
+  // p[size+6] = (u8)(v>>48); p[size+7] = (u8)(v>>56);
+  *(u64*)(p+size) = v;
+  o->size+= 8;
+}
+#define ASM1(X) asm_1(bin,X)
+#define ASM4(X) asm_4(bin,X)
+#define ASM8(X) asm_8(bin,X)
+#define ASMA(A) { u8 t[]=A; asm_a(bin,sizeof(t),t); }
+
 
 typedef unsigned char U;
 typedef unsigned char UC;
@@ -96,10 +136,10 @@ typedef unsigned short RegM;
 #define REX4_3(O,I,E) (0x40 + REX0_3(O,I,E))
 #define REX1(O,I) 0x40 , (0x40 + REX0(O,I))
 
-#define MOV(O,I)  {REX8(O,I),0x89,A_REG(O,I)}
-#define ADD(O,I)  {REX8(O,I),0x01,A_REG(O,I)}
-#define SUB(O,I)  {REX8(O,I),0x29,A_REG(O,I)}
-#define XOR(O,I)  {REX8(O,I),0x31,A_REG(O,I)}
+// #define MOV(O,I) {REX8(O,I),0x89,A_REG(O,I)}
+// #define ADD(O,I)  {REX8(O,I),0x01,A_REG(O,I)}
+// #define SUB(O,I)  {REX8(O,I),0x29,A_REG(O,I)}
+// #define XOR(O,I)  {REX8(O,I),0x31,A_REG(O,I)}
 #define TEST(O,I) {REX8(O,I),0x85,A_REG(O,I)}
 #define IMUL(I,O) {REX8(O,I),0x0F,0xAF,A_REG(O,I)}
 #define CMP(O,I)  {REX8(O,I),0x39,A_REG(O,I)}
@@ -110,15 +150,15 @@ typedef unsigned short RegM;
 // TODO REX for sil, etc
 #define MOVZX4(I,O) {REX4(O,I),0x0F,0xB6,A_REG(O,I)}
 
-#define ADDI4(O,I) {REX8(O,0),0x81,A_REG(O,0),BYTES4(I)}
-#define SUBI4(O,I) {REX8(O,0),0x81,A_REG(O,5),BYTES4(I)}
+// #define ADDI4(O,I) {REX8(O,0),0x81,A_REG(O,0),BYTES4(I)}
+// #define SUBI4(O,I) {REX8(O,0),0x81,A_REG(O,5),BYTES4(I)}
 
-#define ADDI1(O,I) {REX8(O,0),0x83,A_REG(O,0),(U)(I)}
-#define SUBI1(O,I) {REX8(O,0),0x83,A_REG(O,5),(U)(I)}
-#define SHLI1(O,I) {REX8(O,0),0xC1,A_REG(O,4),(U)(I)}
-#define SHRI1(O,I) {REX8(O,0),0xC1,A_REG(O,5),(U)(I)}
+// #define ADDI1(O,I) {REX8(O,0),0x83,A_REG(O,0),(U)(I)}
+// #define SUBI1(O,I) {REX8(O,0),0x83,A_REG(O,5),(U)(I)}
+// #define SHLI1(O,I) {REX8(O,0),0xC1,A_REG(O,4),(U)(I)}
+// #define SHRI1(O,I) {REX8(O,0),0xC1,A_REG(O,5),(U)(I)}
 
-#define XOR4(O,I)  {REX4(O,I),0x31,A_REG(O,I)}
+// #define XOR4(O,I)  {REX4(O,I),0x31,A_REG(O,I)}
 
 #define LEA1(O,A,B)  {REX8_3(A,O,B),0x8D,A_0REG(4,O),A_0REG(A,B)}
 
@@ -146,26 +186,26 @@ typedef unsigned short RegM;
 
 #define UCOMISD(O,I)  {0x66,REX4(I,O),0x0F,0x2E,A_REG(I,O)}
 
-#define PUSH(O,I) {REX4(O,0),0x50+((O)&7)}
-#define POP(O,I)  {REX4(O,0),0x58+((O)&7)}
+// #define PUSH(O,I) {REX4(O,0),0x50+((O)&7)}
+// #define POP(O,I)  {REX4(O,0),0x58+((O)&7)}
 
 #define BYTES4(I) ((UC)(I)),((UC)((I)>>8)),((UC)((I)>>16)),((UC)((I)>>24))
 #define BYTES8(I) BYTES4(I) ,((UC)((I)>>32)),((UC)((I)>>40)) \
                             ,((UC)((I)>>48)),((UC)((I)>>56))
 
-#define MOV_MR(O,I,OFF) {REX8(O,I),0x89,0x40+A_0REG(O,I),OFF}
-#define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)} // TODO is broken on (12,14)
-#define MOV_RM(I,O,OFF) {REX8(O,I),0x8B,0x40+A_0REG(O,I),OFF}
-#define MOV_RM0(I,O)    {REX8(O,I),0x8B,A_0REG(O,I)}
-#define MOV_RI(O,I)     {REX8(O,0),0xB8+((O)&7), BYTES8(I)}
-#define LEAo1(I,O,OFF)  {REX8(O,I),0x8D,0x40+A_0REG(O,I),OFF}
+// #define MOV_MR(O,I,OFF) {REX8(O,I),0x89,0x40+A_0REG(O,I),OFF}
+// #define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)} // TODO is broken on (12,14)
+// #define MOV_RM(I,O,OFF) {REX8(O,I),0x8B,0x40+A_0REG(O,I),OFF}
+// #define MOV_RM0(I,O)    {REX8(O,I),0x8B,A_0REG(O,I)}
+// #define MOV_RI(O,I)     {REX8(O,0),0xB8+((O)&7), BYTES8(I)}
+// #define LEAo1(I,O,OFF)  {REX8(O,I),0x8D,0x40+A_0REG(O,I),OFF}
 
 #define MOV4_MI(O,I,OFF) {REX4(O,0),0xC7,0x40+A_0REG(O,0),OFF,BYTES4(I)}
 #define MOV4_RI(O,I)     {REX4(O,0),0xB8+((O)&7) , BYTES4(I)}
-#define MOV4_MR(O,I,OFF) {REX4(O,I),0x89,0x40+A_0REG(O,I),OFF}
-#define MOV4_MR0(O,I)    {REX4(O,I),0x89,A_0REG(O,I)}
-#define MOV4_RM(I,O,OFF) {REX4(O,I),0x8B,0x40+A_0REG(O,I),OFF}
-#define MOV4_RM0(I,O)    {REX4(O,I),0x8B,A_0REG(O,I)}
+// #define MOV4_MR(O,I,OFF) {REX4(O,I),0x89,0x40+A_0REG(O,I),OFF}
+// #define MOV4_MR0(O,I)    {REX4(O,I),0x89,A_0REG(O,I)}
+// #define MOV4_RM(I,O,OFF) {REX4(O,I),0x8B,0x40+A_0REG(O,I),OFF}
+// #define MOV4_RM0(I,O)    {REX4(O,I),0x8B,A_0REG(O,I)}
 
 #define MOV1_MR(O,I,OFF) {REX4(O,I),0x88,0x40+A_0REG(O,I),OFF}
 #define MOV1_MR0(O,I)    {REX4(O,I),0x88,A_0REG(O,I)}
@@ -191,8 +231,8 @@ typedef unsigned short RegM;
 #define AD_MRRS(O,A,B,S) {A_0REG(4,A),(((S)&3)<<6)+A_0REG(O,B)}
 #define AD_RMRS(A,O,B,S) AD_MRRS(O,A,B,S)
 
-#define CALL(O,I) {REX4(O,0),0xFF,A_REG(O,2)}
-#define CALLI(I,O) {0xE8,BYTES4((u32)(I))}
+// #define CALL(O,I) {REX4(O,0),0xFF,A_REG(O,2)}
+// #define CALLI(I,O) {0xE8,BYTES4((u32)(I))}
 
 #define LOOP(O,I) {0xE2,((UC)(O)-2)}
 #define REG_LOOP 1
@@ -273,21 +313,134 @@ typedef unsigned short RegM;
 #define CMOVLE(I,O) {REX8(O,I),0x0F,0x4E,A_REG(O,I)}
 #define CMOVG(I,O)  {REX8(O,I),0x0F,0x4F,A_REG(O,I)}
 
-#define RET {0xC3}
+// #define RET {0xC3}
+
+
+
+
+
+
+
+
+
+
 
 
 #define ASM(INS, O, I) ASM_RAW(bin, INS(O, I))
 #define ASM3(INS, O, A, B) ASM_RAW(bin, INS(O, A, B))
-#define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
-#define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32
-#define IMM(O, I) b_o=imm_impl(b_o, O, (u64)(I));
-static NOINLINE TStack* imm_impl(TStack* b_o, Reg o, u64 i) {
-  if(i==0) {
-    ASM(XOR,o,o);
-  } else if(i>=0 & i<(1ULL<<32)) {
-    ASM(MOV4_RI,o,i);
-  } else {
-    ASM(MOV_RI,o,i);
-  }
-  return b_o;
+// #define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
+// #define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32
+// #define IMM(O, I) b_o=imm_impl(b_o, O, (u64)(I));
+// static NOINLINE TStack* imm_impl(TStack* b_o, Reg o, u64 i) {
+//   if(i==0) {
+//     ASM(XOR,o,o);
+//   } else if(i>=0 & i<(1ULL<<32)) {
+//     ASM(MOV4_RI,o,i);
+//   } else {
+//     ASM(MOV_RI,o,i);
+//   }
+//   return b_o;
+// }
+
+
+
+// #define nREX0_3(O,I,E) (REX0(O,I)+(((E)>7)<<1))
+// #define nREX8_3(O,I,E) (0x48 + nREX0_3(O,I,E))
+// #define nREX4_3(O,I,E) (0x40 + nREX0_3(O,I,E))
+
+// #define nREX1(O,I) 0x40 , (0x40 + REX0(O,I))
+#define nREX8(O,I) ASM1(0x48 + REX0(O,I))
+#define nREX4(O,I) {u8 t=REX0(O,I); if(t) ASM1(0x40+t); }
+#define CHK4(O) (((O)&7)==4)
+#define CHK5(O) (((O)&7)==5)
+#define CHK45(O) (((O)&7)>>1==2)
+
+// ModR/M and SIB stuff
+#define MRM(O,I) ASM1((((I)&7)<<3) + ((O)&7) + 0x40*CHK5(O)); if(CHK45(O)) ASM1(CHK4(O)?0x24:0);
+#define MRMo(O,I,OFF) { i64 t=OFF;                       \
+  bool b1 = t||CHK5(O); bool b4 = t!=(i8)t;              \
+  ASM1((((I)&7)<<3) + ((O)&7) + (b1? b4?0x80:0x40 : 0)); \
+  if(CHK4(O)) ASM1(0x24);                                \
+  if(b4) ASM4(t); else if (b1) ASM1(t);                  \
 }
+#define nA_0REG(O,I) (((I)&7)<<3) + ((O)&7)
+#define nA_REG(O,I) ASM1(0xC0 + nA_0REG(O,I))
+
+#define ASMI(N, ...) static NOINLINE void i##N(TStack* bin, __VA_ARGS__)
+#define  AC1(N,A    ) (i##N(b_o=asm_r(b_o),A    ))
+#define  AC2(N,A,B  ) (i##N(b_o=asm_r(b_o),A,B  ))
+#define  AC3(N,A,B,C) (i##N(b_o=asm_r(b_o),A,B,C))
+
+// meaning of lowercase after basic instr name:
+//   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced; if all are 'r' or they don't have other options, they can be omitted
+//   add 'o' for an offset argument (e.g. the 5 in 'mov rax, [rdi+5]'), 'i' for an immediate (e.g. 5 in 'add r12,5', or in 'lea rax, [rdi+5]')
+#define INC4mo(O,IMM) AC2(INC4mo,O,IMM)
+#define INC8mo(O,IMM) AC2(INC8mo,O,IMM)
+#define DEC4mo(O,IMM) AC2(DEC4mo,O,IMM)
+#define DEC8mo(O,IMM) AC2(DEC8mo,O,IMM)
+
+#define MOV(O,I) AC2(MOV,O,I)
+#define MOV4(O,I) AC2(MOV4,O,I)
+#define MOVi(O,IMM) AC2(MOVi,O,IMM)
+#define ADDi(O,IMM) AC2(ADDi,O,IMM)
+#define SUBi(O,IMM) AC2(SUBi,O,IMM)
+#define SHLi(O,IMM) AC2(SHLi,O,IMM)
+#define SHRi(O,IMM) AC2(SHRi,O,IMM)
+#define ADD4mi(O,IMM) AC2(ADD4mi,O,IMM) // ADD4mi(o,1) is an alternative for INC4mo(o,0)
+
+#define MOV8rm(O,I) AC2(MOV8rm,O,I) // O ← ((u64*)RAM)[I]
+#define MOV8mr(I,O) AC2(MOV8mr,I,O) // ((u64*)RAM)[I] ← O
+#define MOV4rm(O,I) AC2(MOV4rm,O,I)
+#define MOV4mr(I,O) AC2(MOV4mr,I,O)
+#define MOV8rmo(O,I,IMM) AC3(MOV8rmo,O,I,IMM)  // O ← ((u64*)(RAM+IMM))[I]
+#define MOV8mro(I,O,IMM) AC3(MOV8mro,I,O,IMM)  // ((u64*)(RAM+IMM))[I] ← O
+#define MOV4rmo(O,I,IMM) AC3(MOV4rmo,O,I,IMM)
+#define MOV4mro(I,O,IMM) AC3(MOV4mro,I,O,IMM)
+#define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
+
+#define PUSH(O) AC1(PUSH,O)
+#define POP(O) AC1(POP,O)
+#define CALL(IMM) AC1(CALL,IMM)
+#define CALLi(I) AC1(CALLi,(i32)(I))
+#define RET() {b_o=asm_r(b_o); TStack* bin=b_o; ASM1(0xC3);}
+
+ASMI(ADD, Reg o, Reg i) { nREX8(o,i); ASM1(0x01); nA_REG(o,i); }
+ASMI(SUB, Reg o, Reg i) { nREX8(o,i); ASM1(0x29); nA_REG(o,i); }
+ASMI(XOR, Reg o, Reg i) { nREX8(o,i); ASM1(0x31); nA_REG(o,i); }
+ASMI(XOR4, Reg o, Reg i) { nREX4(o,i); ASM1(0x31); nA_REG(o,i); }
+ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,0); ASM1(imm); } else { ASM1(0x81); nA_REG(o,0); ASM4(imm); } }
+ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,5); ASM1(imm); } else { ASM1(0x81); nA_REG(o,5); ASM4(imm); } }
+ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; nREX8(o,0); ASM1(0xC1); nA_REG(o,4); ASM1(imm); }
+ASMI(SHRi, Reg o, i8 imm) { if(!imm) return; nREX8(o,0); ASM1(0xC1); nA_REG(o,5); ASM1(imm); }
+ASMI(ADD4mi, Reg o, i32 imm) { nREX4(o,0); ASM1(0x83); MRM(o,0); ASM1(imm); }
+
+ASMI(INC4mo, Reg o, i32 off) { nREX4(o,0); ASM1(0xff); MRMo(o,0,off); }
+ASMI(INC8mo, Reg o, i32 off) { nREX8(o,0); ASM1(0xff); MRMo(o,0,off); }
+ASMI(DEC4mo, Reg o, i32 off) { nREX4(o,0); ASM1(0xff); MRMo(o,1,off); }
+ASMI(DEC8mo, Reg o, i32 off) { nREX8(o,0); ASM1(0xff); MRMo(o,1,off); }
+
+
+ASMI(MOV4, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); nA_REG(o,i); }
+ASMI(MOV , Reg o, Reg i) { nREX8(o,i); ASM1(0x89); nA_REG(o,i); }
+ASMI(MOVi, Reg o, i64 i) {
+  if (i==0) { iXOR4(bin,o,o); }
+  else if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
+  else                { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
+}
+
+
+ASMI(MOV8mr, Reg o, Reg i) { nREX8(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { nREX8(o,i); ASM1(0x89); MRMo(o,i, off); }
+ASMI(MOV8rm, Reg i, Reg o) { nREX8(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); }
+ASMI(MOV4mr, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { nREX4(o,i); ASM1(0x89); MRMo(o,i, off); }
+ASMI(MOV4rm, Reg i, Reg o) { nREX4(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); }
+
+
+ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(bin,o,i); else { nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); } }
+
+ASMI(PUSH, Reg O) { nREX4(O,0); ASM1(0x50+((O)&7)); }
+ASMI(POP , Reg O) { nREX4(O,0); ASM1(0x58+((O)&7)); }
+
+ASMI(CALL, Reg i) { nREX4(i,0); ASM1(0xFF); nA_REG(i,2); }
+ASMI(CALLi, i32 imm) { ASM1(0xE8); ASM4(imm); }
+
+#define IMM(A,B) MOVi(A,(u64)(B))

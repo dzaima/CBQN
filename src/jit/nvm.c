@@ -20,6 +20,7 @@
   #define CSTACK 0
 #endif
 
+
 // separate memory management system for executable code; isn't garbage-collected
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
@@ -59,10 +60,8 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 INS void i_POPS(B x) {
   dec(x);
 }
-INS B i_ADDI(u64 v) {
-  B o = b(v);
-  ptr_inc(v(o));
-  return o;
+INS void i_INC(Value* v) {
+  ptr_inc(v);
 }
 INS B i_ADDU(u64 v) {
   return b(v);
@@ -113,9 +112,9 @@ INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
     return withFill(r.b, m_f64(0));
   } else return r.b;
 }
-INS B i_DFND_0(u32* bc, Scope** pscs, Block* bl GA1) { GS_UPD;POS_UPD; return m_funBlock(bl, *pscs); }
-INS B i_DFND_1(u32* bc, Scope** pscs, Block* bl GA1) { GS_UPD;POS_UPD; return m_md1Block(bl, *pscs); }
-INS B i_DFND_2(u32* bc, Scope** pscs, Block* bl GA1) { GS_UPD;POS_UPD; return m_md2Block(bl, *pscs); }
+INS B i_DFND_0(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_funBlock(bl, sc); }
+INS B i_DFND_1(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md1Block(bl, sc); }
+INS B i_DFND_2(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md2Block(bl, sc); }
 INS B i_OP1D(B f, u32* bc GA1) { P(m)     GS_UPD;POS_UPD; return m1_d  (m,f  ); }
 INS B i_OP2D(B f, u32* bc GA1) { P(m)P(g) GS_UPD;POS_UPD; return m2_d  (m,f,g); }
 INS B i_OP2H(B m          GA1) {     P(g)                 return m2_h  (m,  g); }
@@ -164,9 +163,9 @@ INS B i_SETMi(B f, Scope** pscs, u32 d, u32 p, u32* bc GA1) { P(x) GS_UPD; POS_U
   v_setI(pscs, d, p, inc(r), true);
   return r;
 }
-INS B i_FLDO(B ns, u32 p, Scope** pscs GA1) { GS_UPD;
+INS B i_FLDO(B ns, u32 p, Scope* sc GA1) { GS_UPD;
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
-  B r = inc(ns_getU(ns, pscs[0]->body->nsDesc->nameList, p));
+  B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));
   dec(ns);
   return r;
 }
@@ -177,11 +176,10 @@ INS B i_NSPM(B o, u32 l) {
   return a;
 }
 INS B i_CHKV(B x, u32* bc GA1) {
-  if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
+  if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
-INS B i_RETD(Scope** pscs GA1) { GS_UPD;
-  Scope* sc = pscs[0];
+INS B i_RETD(Scope* sc GA1) { GS_UPD;
   Body* b = sc->body;
   ptr_inc(sc);
   ptr_inc(b->nsDesc);
@@ -220,21 +218,6 @@ void nvm_free(u8* ptr) {
   if (!USE_PERF) mmX_free((Value*)RFLD(ptr, TmpFile, a));
 }
 
-#if WRITE_ASM
-  static void write_asm(u8* p, u64 sz) {
-    i32* rp; B r = m_i32arrv(&rp, sz);
-    for (u64 i = 0; i < sz; i++) rp[i] = p[i];
-    file_wBytes(m_str32(U"asm_bin"), r); dec(r);
-    char off[20]; snprintf(off, 20, "%p", p);
-    B o = m_str8l(off);
-    file_wChars(m_str32(U"asm_off"), o); dec(o);
-    B s = inc(bi_emptyCVec);
-    #define F(X) AFMT("s/%p$/%p == i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(ADDI) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
-    #undef F
-    file_wChars(m_str32(U"asm_sed"), s); dec(s);
-  }
-#endif
 
 
 typedef struct SRef { B v; i32 p; } SRef;
@@ -410,22 +393,59 @@ static u32 readBytes4(u8* d) {
   return d[0] | d[1]<<8 | d[2]<<16 | d[3]<<24;
 }
 
+#define ASM_TEST 0 // make -j4 debug&&./BQN&&objdump -b binary -m i386 -M x86-64,intel --insn-width=8 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
+#if ASM_TEST
+  #undef WRITE_ASM
+  #define WRITE_ASM 1
+  static void write_asm(u8* p, u64 sz);
+  static void asm_test() {
+    ALLOC_ASM(64);
+    for (int i = 0; i < 16; i++) MOV8rmo(i,0,4*8);
+    GET_ASM();
+    write_asm(bin, ASM_SIZE);
+    exit(0);
+  }
+#endif
+
+#if WRITE_ASM
+  static void write_asm(u8* p, u64 sz) {
+    i32* rp; B r = m_i32arrv(&rp, sz);
+    for (u64 i = 0; i < sz; i++) rp[i] = p[i];
+    file_wBytes(m_str32(U"asm_bin"), r); dec(r);
+    char off[20]; snprintf(off, 20, "%p", p);
+    B o = m_str8l(off);
+    file_wChars(m_str32(U"asm_off"), o); dec(o);
+    B s = inc(bi_emptyCVec);
+    #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
+    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    #undef F
+    file_wChars(m_str32(U"asm_sed"), s); dec(s);
+  }
+#endif
+
 typedef B JITFn(B* cStack, Scope** pscs);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
   ALLOC_ASM(64);
   TSALLOC(u32, rel, 64);
-  #define r_TMP 3
-  #define r_PSCS 14
-  #define r_CS 15
-  ASM(PUSH, r_TMP, -);
-  ASM(PUSH, r_PSCS, -);
-  ASM(PUSH, r_CS, -);
-  ASM(MOV, r_CS  , REG_ARG0);
-  ASM(MOV, r_PSCS, REG_ARG1);
+  #if ASM_TEST
+    asm_test();
+  #endif
+  Reg r_TMP  = 3;
+  Reg r_PSCS = 14;
+  Reg r_CS   = 15;
+  Reg r_SC   = 12;
+  PUSH(5);
+  PUSH(r_TMP);
+  PUSH(r_PSCS);
+  PUSH(r_CS);
+  PUSH(r_SC);
+  MOV(r_CS  , REG_ARG0);
+  MOV(r_PSCS, REG_ARG1);
+  MOV8rm(r_SC, r_PSCS);
   if ((u64)i_SETN != (u32)(u64)i_SETN) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
-  // #define CCALL(F) { IMM(r_TMP, F); ASM(CALL, r_TMP, -); }
-  #define CCALL(F) { TSADD(rel, ASM_SIZE); ASM(CALLI, (u32)(u64)F, -); }
+  // #define CCALL(F) { IMM(r_TMP, F); CALL(r_TMP); }
+  #define CCALL(F) { TSADD(rel, ASM_SIZE); CALLi(F); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
   Block** blocks = body->blocks->a;
@@ -437,23 +457,23 @@ Nvm_res m_nvm(Body* body) {
     u32* off = origBC + optRes.offset[s-optRes.bc];
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
-    // #define LEA0(O,I,OFF) { ASM(MOV,O,I); ADDI(O,OFF); }
-    #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); u8 r; if(!o) { r=I; if(Q)ASM(MOV,O,I); } else { r=O; if(o==(i8)o) { ASM3(LEAo1,O,I,o); } else { ASM(MOV,O,I); ADDI(O,o); } } r; })
+    // #define LEA0(O,I,OFF) { MOV(O,I); ADDI(O,OFF); }
+    #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if(o) LEAi(O,I,o); else if (Q) MOV(O,I); o?O:I; })
     #define SPOS(R,N,Q) LEA0(R, r_CS, maxi32(0, depth+(N)-1)*sizeof(B),Q)
     #if CSTACK
-      // #define INV(N,D,F) ASM(MOV,REG_ARG##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
+      // #define INV(N,D,F) MOV(REG_ARG##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
       #define INV(N,D,F) SPOS(REG_ARG##N, D, 1); CCALL(F)
     #else
       #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS and things with stack delta 1)
     #endif
-    #define TOPp ASM(MOV,REG_ARG0,REG_RES)
-    #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); ASM(MOV_MR0, t, REG_RES); }
+    #define TOPp MOV(REG_ARG0,REG_RES)
+    #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); MOV8mr(t, REG_RES); }
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
-        if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); ASM(MOV_RM0, REG_RES, t); }
+        if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); MOV8rm(REG_RES, t); }
       break;
-      case ADDI: TOPs; IMM(REG_ARG0, L64); CCALL(i_ADDI); break; // (u64 v, S)
+      case ADDI: TOPs; { u64 x = L64; IMM(REG_RES, x); IMM(r_TMP, v(b(x))); INC4mo(r_TMP, offsetof(Value,refc)); /*ADD4mi(r_TMP, 1);*/ /*CCALL(i_INC);*/ break; } // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
         #if CSTACK
           IMM(REG_RES, L64);
@@ -474,11 +494,11 @@ Nvm_res m_nvm(Body* body) {
         if (sz) { TOPp; IMM(REG_ARG1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
         else    { TOPs;                      CCALL(i_ARR_0); } // (S)
         break;
-      case DFND: TOPs; // (u32* bc, Scope** pscs, Block* bl, S)
+      case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl, S)
         Block* bl = blocks[*bc++];
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
         if (fn==0) thrM("JIT: Bad DFND argument");
-        IMM(REG_ARG0,off); ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,bl); INV(3,1,fn);
+        IMM(REG_ARG0,off); MOV(REG_ARG1,r_SC); IMM(REG_ARG2,bl); INV(3,1,fn);
         break;
       case OP1D: TOPp; IMM(REG_ARG1,off); INV(2,0,i_OP1D); break; // (B, u32* bc, S)
       case OP2D: TOPp; IMM(REG_ARG1,off); INV(2,0,i_OP2D); break; // (B, u32* bc, S)
@@ -488,21 +508,21 @@ Nvm_res m_nvm(Body* body) {
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
       case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
-      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case SETN: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
-      case SETU: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
-      case SETM: TOPp; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
-      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETNi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
-      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETUi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
-      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; ASM(MOV,REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETMi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
-      case FLDO: TOPp; IMM(REG_ARG1,*bc++); ASM(MOV,REG_ARG2,r_PSCS); INV(3,0,i_FLDO); break; // (B, u32 p, Scope** pscs, S)
+      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
+      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case SETN: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
+      case SETU: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
+      case SETM: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
+      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETNi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
+      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETUi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
+      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETMi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
+      case FLDO: TOPp; IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_SC); INV(3,0,i_FLDO); break; // (B, u32 p, Scope* sc, S)
       case NSPM: TOPp; IMM(REG_ARG1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case CHKV: TOPp; IMM(REG_ARG1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
-      case RETD: ASM(MOV,REG_ARG0,r_PSCS); INV(1,1,i_RETD); ret=true; break; // (Scope** pscs, S); stack diff 0 is wrong, but updating it is useless
-      case RETN: IMM(r_TMP, &gStack); ASM(MOV_MR0, r_TMP, r_CS); ret=true; break;
+      case RETD: MOV(REG_ARG0,r_SC); INV(1,1,i_RETD); ret=true; break; // (Scope* sc, S); stack diff 0 is wrong, but updating it is useless
+      case RETN: IMM(r_TMP, &gStack); MOV8mr(r_TMP, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
     #undef TOPs
@@ -515,10 +535,12 @@ Nvm_res m_nvm(Body* body) {
     if (ret) break;
   }
   freeOpt(optRes);
-  ASM(POP, r_CS, -);
-  ASM(POP, r_PSCS, -);
-  ASM(POP, r_TMP, -);
-  ASM_RAW(bin, RET);
+  POP(r_SC);
+  POP(r_CS);
+  POP(r_PSCS);
+  POP(r_TMP);
+  POP(5);
+  RET();
   #undef CCALL
   GET_ASM();
   u64 sz = ASM_SIZE;
