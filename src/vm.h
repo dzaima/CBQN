@@ -158,20 +158,18 @@ typedef struct FldAlias {
 
 
 NOINLINE B v_getR(Scope* pscs[], B s); // doesn't consume
-static inline B v_getI(Scope* pscs[], u32 d, u32 p) {
-  Scope* sc = pscs[d];
+static inline B v_getI(Scope* sc, u32 p) {
   B r = sc->vars[p];
   sc->vars[p] = bi_optOut;
   return r;
 }
 static inline B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
   if (RARE(!isVar(s))) return v_getR(pscs, s);
-  return v_getI(pscs, (u16)(s.u>>32), (u32)s.u);
+  return v_getI(pscs[(u16)(s.u>>32)], (u32)s.u);
 }
 
 NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd); // doesn't consume
-static inline void v_setI(Scope* pscs[], u32 d, u32 p, B x, bool upd) { // consumes x
-  Scope* sc = pscs[d];
+static inline void v_setI(Scope* sc, u32 p, B x, bool upd) { // consumes x
   B prev = sc->vars[p];
   if (upd) {
     if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
@@ -181,5 +179,5 @@ static inline void v_setI(Scope* pscs[], u32 d, u32 p, B x, bool upd) { // consu
 }
 static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
   if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);
-  v_setI(pscs, (u16)(s.u>>32), (u32)s.u, inc(x), upd);
+  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
 }

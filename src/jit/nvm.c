@@ -125,24 +125,24 @@ INS B i_TR3O(B f          GA1) { P(g)P(h) B r;
   else              { r=m_fork(f,g,h); }
   return r;
 }
-INS B i_LOCO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
-  B l = pscs[d]->vars[p];
+INS B i_LOCO(u32 p, Scope* sc, u32* bc GA1) {
+  B l = sc->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
   return inc(l);
 }
-INS B i_LOCU(u32 d, u32 p, Scope** pscs) {
-  B* vars = pscs[d]->vars;
+INS B i_LOCU(u32 p, Scope* sc) {
+  B* vars = sc->vars;
   B r = vars[p];
   vars[p] = bi_optOut;
   return r;
 }
-INS B i_EXTO(u32 d, u32 p, Scope** pscs, u32* bc GA1) {
-  B l = pscs[d]->ext->vars[p];
+INS B i_EXTO(u32 p, Scope* sc, u32* bc GA1) {
+  B l = sc->ext->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
   return inc(l);
 }
-INS B i_EXTU(u32 d, u32 p, Scope** pscs) {
-  B* vars = pscs[d]->ext->vars;
+INS B i_EXTU(u32 p, Scope* sc) {
+  B* vars = sc->ext->vars;
   B r = vars[p];
   vars[p] = bi_optOut;
   return r;
@@ -155,12 +155,12 @@ INS B i_SETM(B s, Scope** pscs, u32* bc GA1) { P(f)P(x) GS_UPD; POS_UPD;
   v_set(pscs, s, r, true); dec(s);
   return r;
 }
-INS B i_SETNi(B x, Scope** pscs, u32 d, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(pscs, d, p, inc(x), false); return x; }
-INS B i_SETUi(B x, Scope** pscs, u32 d, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(pscs, d, p, inc(x), true ); return x; }
-INS B i_SETMi(B f, Scope** pscs, u32 d, u32 p, u32* bc GA1) { P(x) GS_UPD; POS_UPD;
-  B w = v_getI(pscs, d, p);
+INS B i_SETNi(B x, Scope* sc, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(sc, p, inc(x), false); return x; }
+INS B i_SETUi(B x, Scope* sc, u32 p, u32* bc GA1) { GS_UPD; POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
+INS B i_SETMi(B f, Scope* sc, u32 p, u32* bc GA1) { P(x) GS_UPD; POS_UPD;
+  B w = v_getI(sc, p);
   B r = c2(f,w,x); dec(f);
-  v_setI(pscs, d, p, inc(r), true);
+  v_setI(sc, p, inc(r), true);
   return r;
 }
 INS B i_FLDO(B ns, u32 p, Scope* sc GA1) { GS_UPD;
@@ -468,6 +468,7 @@ Nvm_res m_nvm(Body* body) {
     #endif
     #define TOPp MOV(REG_ARG0,REG_RES)
     #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); MOV8mr(t, REG_RES); }
+    #define LSC(R,D) { if(D) MOV8rmo(R,r_PSCS,D*8); else MOV(R,r_SC); }
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
@@ -508,16 +509,16 @@ Nvm_res m_nvm(Body* body) {
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
       case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
-      case LOCO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_LOCO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case EXTO: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS); IMM(REG_ARG3,off); INV(4,1,i_EXTO); break; // (u32 d, u32 p, Scope** pscs, u32* bc, S)
-      case LOCU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS);                    CCALL(i_LOCU); break; // (u32 d, u32 p, Scope** pscs, S)
-      case EXTU: TOPs; IMM(REG_ARG0,*bc++); IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_PSCS);                    CCALL(i_EXTU); break; // (u32 d, u32 p, Scope** pscs, S)
+      case LOCO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d); IMM(REG_ARG2,off); INV(3,1,i_LOCO); } break; // (u32 p, Scope* sc, u32* bc, S)
+      case EXTO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d); IMM(REG_ARG2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
+      case LOCU: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d);                      CCALL(i_LOCU); } break; // (u32 p, Scope* sc, S)
+      case EXTU: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d);                      CCALL(i_EXTU); } break; // (u32 p, Scope* sc, S)
       case SETN: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETN); break; // (B, Scope** pscs, u32* bc, S)
       case SETU: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETU); break; // (B, Scope** pscs, u32* bc, S)
       case SETM: TOPp; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,off); INV(3,0,i_SETM); break; // (B, Scope** pscs, u32* bc, S)
-      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETNi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
-      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETUi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
-      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; MOV(REG_ARG1,r_PSCS); IMM(REG_ARG2,d); IMM(REG_ARG3,p); IMM(REG_ARG4,off); INV(5,0,i_SETMi); break; } // (B, Scope** pscs, u32 d, u32 p, u32* bc, S)
+      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; LSC(REG_ARG1,d); IMM(REG_ARG2,p); IMM(REG_ARG3,off); INV(4,0,i_SETNi); break; } // (B, Scope* sc, u32 p, u32* bc, S)
+      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; LSC(REG_ARG1,d); IMM(REG_ARG2,p); IMM(REG_ARG3,off); INV(4,0,i_SETUi); break; } // (B, Scope* sc, u32 p, u32* bc, S)
+      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; LSC(REG_ARG1,d); IMM(REG_ARG2,p); IMM(REG_ARG3,off); INV(4,0,i_SETMi); break; } // (B, Scope* sc, u32 p, u32* bc, S)
       case FLDO: TOPp; IMM(REG_ARG1,*bc++); MOV(REG_ARG2,r_SC); INV(3,0,i_FLDO); break; // (B, u32 p, Scope* sc, S)
       case NSPM: TOPp; IMM(REG_ARG1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case CHKV: TOPp; IMM(REG_ARG1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
@@ -525,6 +526,7 @@ Nvm_res m_nvm(Body* body) {
       case RETN: IMM(r_TMP, &gStack); MOV8mr(r_TMP, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
+    #undef LSC
     #undef TOPs
     #undef TOPp
     #undef INV
