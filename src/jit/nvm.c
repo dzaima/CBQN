@@ -423,7 +423,7 @@ static u32 readBytes4(u8* d) {
   }
 #endif
 
-typedef B JITFn(B* cStack, Scope** pscs);
+typedef B JITFn(B* cStack, Scope** pscs, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
   ALLOC_ASM(64);
@@ -442,7 +442,11 @@ Nvm_res m_nvm(Body* body) {
   PUSH(r_SC);
   MOV(r_CS  , REG_ARG0);
   MOV(r_PSCS, REG_ARG1);
-  MOV8rm(r_SC, r_PSCS);
+  MOV(r_SC  , REG_ARG2);
+  for (i32 i = 1; i < body->maxPSC+1; i++) {
+    MOV8rmo(REG_ARG2, REG_ARG2, offsetof(Scope, psc));
+    MOV8mro(r_PSCS, REG_ARG2, i*8);
+  }
   if ((u64)i_SETN != (u32)(u64)i_SETN) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
   // #define CCALL(F) { IMM(r_TMP, F); CALL(r_TMP); }
   #define CCALL(F) { TSADD(rel, ASM_SIZE); CALLi(F); }
@@ -469,12 +473,13 @@ Nvm_res m_nvm(Body* body) {
     #define TOPp MOV(REG_ARG0,REG_RES)
     #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); MOV8mr(t, REG_RES); }
     #define LSC(R,D) { if(D) MOV8rmo(R,r_PSCS,D*8); else MOV(R,r_SC); }
+    #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(r_TMP, 1); CCALL(i_INC);
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
         if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); MOV8rm(REG_RES, t); }
       break;
-      case ADDI: TOPs; { u64 x = L64; IMM(REG_RES, x); IMM(r_TMP, v(b(x))); INC4mo(r_TMP, offsetof(Value,refc)); /*ADD4mi(r_TMP, 1);*/ /*CCALL(i_INC);*/ break; } // (u64 v, S)
+      case ADDI: TOPs; { u64 x = L64; IMM(REG_RES, x); IMM(r_TMP, v(b(x))); INCV(r_TMP); break; } // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
         #if CSTACK
           IMM(REG_RES, L64);
@@ -581,10 +586,9 @@ B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   gsReserve(b->maxStack);
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
-  for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
   
   B* sp = gStack;
-  B r = ((JITFn*)ptr)(gStack, pscs);
+  B r = ((JITFn*)ptr)(gStack, pscs, sc);
   if (sp!=gStack) thrM("uh oh");
   
   popEnv();
