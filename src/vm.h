@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef JIT_START
+  #define JIT_START -1 // number of calls for when to start JITting. -1: never JIT; 0: JIT everything, 1: JIT after 1 non-JIT invocation; max ¯1+2⋆16
+#endif
+
 enum {
   PUSH =  0, // N; push object from objs[N]
   VARO =  1, // N; push variable with name strs[N]
@@ -77,12 +81,21 @@ struct Body {
   // B* objs;
   u32* bc; // pointer in an owned I32Arr
   i32* map; // pointer in an owned I32Arr
-  u8* nvm; // either NULL or a pointer to machine code otherwise
+#if JIT_START > 255
+  u16 callCount;
+#elif JIT_START > 0
+  u8 callCount;
+#endif
+#if JIT_START != -1
+  u8* nvm; // either NULL or a pointer to machine code
+#endif
   u32 maxStack;
   u16 maxPSC;
   u16 varAm;
   NSDesc* nsDesc;
+#if JIT_START != -1
   B nvmRefs;
+#endif
   i32 varIDs[];
 };
 

@@ -6,11 +6,6 @@
 #include "utils/utf.h"
 #include "utils/talloc.h"
 
-#ifndef USE_JIT
-  #define USE_JIT 0 // enable the extremely basic x86-64 JIT that mostly just generates MOVs and CALLs
-#endif
-
-
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
@@ -228,8 +223,13 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
   Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
   body->comp = comp; ptr_inc(comp);
   body->bc = (u32*)nbc;
+  #if JIT_START != -1
   body->nvm = NULL;
   body->nvmRefs = m_f64(0);
+  #endif
+  #if JIT_START > 0
+  body->callCount = 0;
+  #endif
   body->map = map;
   body->blocks = nBl;
   body->maxStack = hM;
@@ -603,19 +603,22 @@ static void scope_dec(Scope* sc) {
   ptr_dec(sc);
 }
 
-B execBodyInline(Body* body, Scope* sc) {
-  bool jit = USE_JIT;
-  // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT just for blocks starting with `123456⋄`
-  if (jit) {
-    if (!body->nvm) {
+FORCE_INLINE B execBodyInline(Body* body, Scope* sc) {
+  #if JIT_START != -1
+    if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
+    bool jit = true;
+    #if JIT_START > 0
+      jit = body->callCount++ >= JIT_START;
+    #endif
+    // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT for blocks starting with `123456⋄`
+    if (jit) {
       Nvm_res r = m_nvm(body);
       body->nvm = r.p;
       body->nvmRefs = r.refs;
+      goto toJIT;
     }
-    return evalJIT(body, sc, body->nvm);
-  } else {
-    return evalBC(body, sc);
-  }
+  #endif
+  return evalBC(body, sc);
 }
 
 FORCE_INLINE B execBlock(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
@@ -672,8 +675,10 @@ void  body_free(Value* x) {
   Body* c = (Body*) x;
   if(c->nsDesc ) ptr_decR(c->nsDesc);
   if(c->blocks ) ptr_decR(c->blocks);
-  if(c->nvm    ) nvm_free(c->nvm);
-  dec(c->nvmRefs);
+  #if JIT_START != -1
+    if(c->nvm    ) nvm_free(c->nvm);
+    dec(c->nvmRefs);
+  #endif
   ptr_decR(c->comp);
   ptr_decR(RFLD(c->bc, I32Arr,a));
   ptr_decR(RFLD(c->map,I32Arr,a));
@@ -699,7 +704,9 @@ void  body_visit(Value* x) {
   Body* c = (Body*) x;
   if(c->nsDesc) mm_visitP(c->nsDesc);
   if(c->blocks) mm_visitP(c->blocks);
-  mm_visit(c->nvmRefs);
+  #if JIT_START != -1
+    mm_visit(c->nvmRefs);
+  #endif
   mm_visitP(c->comp);
   mm_visitP(RFLD(c->bc, I32Arr,a));
   mm_visitP(RFLD(c->map,I32Arr,a));
