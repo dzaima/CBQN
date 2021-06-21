@@ -61,13 +61,6 @@ typedef u8 Reg;
 #define R_P4 15 // r15
 
 
-#define REG_RES 0
-#define REG_ARG0 7
-#define REG_ARG1 6
-#define REG_ARG2 2
-#define REG_ARG3 1
-#define REG_ARG4 8
-#define REG_ARG5 9
 
 #define ALLOC_ASM(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N);
 #define GET_ASM() u8* bin = b_o->data;
@@ -158,8 +151,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 
 #define CQO(O,I)   {0x48,0x99}
 #define IDIV(O,I)  {REX8(O,0),0xF7,A_REG(O,7)}
-#define REG_IDIV_0  REG_RES
-#define REG_IDIV_1  REG_ARG2
+#define REG_IDIV_0  R_RES
+#define REG_IDIV_1  R_A2
 
 #define CVTSI2SD(O,I)  {0xF2,REX8(I,O),0x0F,0x2A,A_REG(I,O)}
 #define CVTTSD2SI(O,I) {0xF2,REX8(I,O),0x0F,0x2C,A_REG(I,O)}
