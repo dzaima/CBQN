@@ -388,12 +388,12 @@ typedef unsigned short RegM;
 #define SHRi(O,IMM) AC2(SHRi,O,IMM)
 #define ADD4mi(O,IMM) AC2(ADD4mi,O,IMM) // ADD4mi(o,1) is an alternative for INC4mo(o,0)
 
-#define MOV8rm(O,I) AC2(MOV8rm,O,I) // O ← ((u64*)RAM)[I]
-#define MOV8mr(I,O) AC2(MOV8mr,I,O) // ((u64*)RAM)[I] ← O
-#define MOV4rm(O,I) AC2(MOV4rm,O,I)
-#define MOV4mr(I,O) AC2(MOV4mr,I,O)
-#define MOV8rmo(O,I,IMM) AC3(MOV8rmo,O,I,IMM)  // O ← ((u64*)(RAM+IMM))[I]
-#define MOV8mro(I,O,IMM) AC3(MOV8mro,I,O,IMM)  // ((u64*)(RAM+IMM))[I] ← O
+#define MOV8rm(O,I) AC2(MOV8rm,O,I) // O ← *(u64*)(nullptr + I)
+#define MOV8mr(I,O) AC2(MOV8mr,I,O) // *(u64*)(nullptr + I) ← O
+#define MOV4rm(O,I) AC2(MOV4rm,O,I) // O ← *(u32*)(nullptr + I)
+#define MOV4mr(I,O) AC2(MOV4mr,I,O) // *(u32*)(nullptr + I) ← O
+#define MOV8rmo(O,I,IMM) AC3(MOV8rmo,O,I,IMM) // O ← *(u64*)(nullptr + I + IMM)
+#define MOV8mro(I,O,IMM) AC3(MOV8mro,I,O,IMM) // *(u64*)(nullptr + I + IMM) ← O
 #define MOV4rmo(O,I,IMM) AC3(MOV4rmo,O,I,IMM)
 #define MOV4mro(I,O,IMM) AC3(MOV4mro,I,O,IMM)
 #define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
@@ -401,7 +401,7 @@ typedef unsigned short RegM;
 #define PUSH(O) AC1(PUSH,O)
 #define POP(O) AC1(POP,O)
 #define CALL(IMM) AC1(CALL,IMM)
-#define CALLi(I) AC1(CALLi,(i32)(I))
+#define CALLi(I) AC1(CALLi,(i32)(i64)(I))
 #define RET() {b_o=asm_r(b_o); TStack* bin=b_o; ASM1(0xC3);}
 
 ASMI(ADD, Reg o, Reg i) { nREX8(o,i); ASM1(0x01); nA_REG(o,i); }
