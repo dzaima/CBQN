@@ -130,6 +130,9 @@ INS B i_LOCO(u32 p, Scope* sc, u32* bc GA1) {
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
   return inc(l);
 }
+INS B i_NOVAR(u32* bc GA1) {
+  POS_UPD; GS_UPD; thrM("Reading variable before its defined");
+}
 INS B i_LOCU(u32 p, Scope* sc) {
   B* vars = sc->vars;
   B r = vars[p];
@@ -400,7 +403,7 @@ static u32 readBytes4(u8* d) {
   static void write_asm(u8* p, u64 sz);
   static void asm_test() {
     ALLOC_ASM(64);
-    for (int i = 0; i < 16; i++) MOV8rmo(i,0,4*8);
+    for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int k = 0; k < 16; k++) BZHI(i,j,k);
     GET_ASM();
     write_asm(bin, ASM_SIZE);
     exit(0);
@@ -431,7 +434,7 @@ Nvm_res m_nvm(Body* body) {
   #if ASM_TEST
     asm_test();
   #endif
-  Reg r_TMP  = 3;
+  Reg r_TMP  = 3; // TODO this doesn't really need to be non-volatile
   Reg r_PSCS = 14;
   Reg r_CS   = 15;
   Reg r_SC   = 12;
@@ -474,6 +477,11 @@ Nvm_res m_nvm(Body* body) {
     #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); MOV8mr(t, REG_RES); }
     #define LSC(R,D) { if(D) MOV8rmo(R,r_PSCS,D*8); else MOV(R,r_SC); }
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(r_TMP, 1); CCALL(i_INC);
+    #ifdef __BMI2__ // TODO move to runtime detection maybe
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOV1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
+    #else
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
+    #endif
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
@@ -514,7 +522,14 @@ Nvm_res m_nvm(Body* body) {
       case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
       case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(REG_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
-      case LOCO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d); IMM(REG_ARG2,off); INV(3,1,i_LOCO); } break; // (u32 p, Scope* sc, u32* bc, S)
+      case LOCO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
+        MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
+        INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
+        if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); JNE(lN); IMM(REG_ARG0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
+      } break;
+      // case LOCO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d); MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); INCB(R_RES,R_A2,R_A3); } break; // non-erroring inline
+      // case LOCO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d); IMM(REG_ARG2,off); INV(3,1,i_LOCO); } break; // original
+      // case LOCO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d);                      CCALL(i_LOCO); } break; // original with no error handling
       case EXTO: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d); IMM(REG_ARG2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case LOCU: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d);                      CCALL(i_LOCU); } break; // (u32 p, Scope* sc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(REG_ARG0,*bc++); LSC(REG_ARG1,d);                      CCALL(i_EXTU); } break; // (u32 p, Scope* sc, S)
@@ -531,6 +546,8 @@ Nvm_res m_nvm(Body* body) {
       case RETN: IMM(r_TMP, &gStack); MOV8mr(r_TMP, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
+    #undef INCB
+    #undef INCV
     #undef LSC
     #undef TOPs
     #undef TOPp
