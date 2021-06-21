@@ -20,7 +20,7 @@ static B gsc_exec_inline(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
   ptr_dec(gsc->body); ptr_inc(block->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
   gsc->body = block->body;
-  B r = evalBC(block->body, gsc);
+  B r = execBodyInline(block->body, gsc);
   ptr_dec(block);
   return r;
 }
@@ -162,11 +162,11 @@ int main(int argc, char* argv[]) {
       
       #ifdef TIME
       u64 sns = nsTime();
-      B res = evalBC(block->body, gsc);
+      B res = execBodyInline(block->body, gsc);
       u64 ens = nsTime();
       printf("%fms\n", (ens-sns)/1e6);
       #else
-      B res = evalBC(block->body, gsc);
+      B res = execBodyInline(block->body, gsc);
       #endif
       ptr_dec(block);
       

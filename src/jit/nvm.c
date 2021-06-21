@@ -527,9 +527,6 @@ Nvm_res m_nvm(Body* body) {
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
         if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); JNE(lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
       } break;
-      // case LOCO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d); MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); INCB(R_RES,R_A2,R_A3); } break; // non-erroring inline
-      // case LOCO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_LOCO); } break; // original
-      // case LOCO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                      CCALL(i_LOCO); } break; // original with no error handling
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc, S)

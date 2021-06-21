@@ -105,7 +105,7 @@ Block* bqn_comp(B str, B path, B args);
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
 Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
-B evalBC(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body directly in the scope
+B execBodyInline(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body directly in the scope
 
 u32* nextBC(u32* p);
 i32 stackDiff(u32* p);
@@ -128,8 +128,8 @@ B m_md2Block(Block* bl, Scope* psc);
 
 
 typedef struct Env {
-  Scope* sc;
   union { u32* bcL; i32 bcV; };
+  Scope* sc;
 } Env;
 extern Env* envCurr;
 extern Env* envStart;
