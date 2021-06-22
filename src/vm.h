@@ -147,14 +147,15 @@ typedef struct Env {
 extern Env* envCurr;
 extern Env* envStart;
 extern Env* envEnd;
+extern u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
 static inline void pushEnv(Scope* sc, u32* bc) {
+  envCurr++;
   if (envCurr==envEnd) thrM("Stack overflow");
   envCurr->sc = sc;
   envCurr->bcL = bc;
-  envCurr++;
 }
 static inline void popEnv() {
-  assert(envCurr>envStart);
+  assert(envCurr>=envStart);
   envCurr--;
 }
 void vm_pst(Env* s, Env* e);

@@ -52,7 +52,7 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 #endif
 #define P(N) B N=GSP;
 #if VM_POS
-  #define POS_UPD (envCurr-1)->bcL = bc;
+  #define POS_UPD envCurr->bcL = bc;
 #else
   #define POS_UPD
 #endif

@@ -85,7 +85,7 @@ void printBC(u32* p) {
 B catchMessage;
 u64 envPrevHeight;
 
-Env* envCurr;
+Env* envCurr; // pointer to current environment; included to make for simpler current position updating
 Env* envStart;
 Env* envEnd;
 
@@ -386,7 +386,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #endif
   #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
-    #define POS_UPD (envCurr-1)->bcL = bc-1;
+    #define POS_UPD envCurr->bcL = bc-1;
   #else
     #define POS_UPD
   #endif
@@ -776,6 +776,7 @@ void comp_init() {
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
   #endif
   allocStack((void**)&envCurr, (void**)&envStart, (void**)&envEnd, sizeof(Env), ENV_SIZE);
+  envCurr--;
 }
 
 
@@ -802,7 +803,7 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   }
   cf->cfDepth = cf-cfStart;
   cf->gsDepth = gStack-gStackStart;
-  cf->envDepth = envCurr-envStart;
+  cf->envDepth = (envCurr+1)-envStart;
   return &(cf++)->jmp;
 }
 void popCatch() {
@@ -838,7 +839,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   }
 }
 
-NOINLINE void vm_pst(Env* s, Env* e) {
+NOINLINE void vm_pst(Env* s, Env* e) { // e not included
   assert(s<=e);
   i64 l = e-s;
   i64 i = l-1;
@@ -849,20 +850,20 @@ NOINLINE void vm_pst(Env* s, Env* e) {
       i = 10;
     }
     Comp* comp = c->sc->body->comp;
-    i32 bcPos = c>=envStart && c<envCurr? BCPOS(c->sc->body, c->bcL) : c->bcV;
+    i32 bcPos = c>=envStart && c<=envCurr? BCPOS(c->sc->body, c->bcL) : c->bcV;
     vm_printPos(comp, bcPos, i);
     i--;
   }
 }
 NOINLINE void vm_pstLive() {
-  vm_pst(envStart, envCurr);
+  vm_pst(envStart, envCurr+1);
 }
 
-static void unwindEnv(Env* envNew) {
+static void unwindEnv(Env* envNew) { // envNew==envStart-1 for emptying the env stack
   assert(envNew<=envCurr);
   while (envCurr!=envNew) {
-    envCurr--;
     envCurr->bcV = BCPOS(envCurr->sc->body, envCurr->bcL);
+    envCurr--;
   }
 }
 
@@ -876,8 +877,8 @@ NOINLINE NORETURN void thr(B msg) {
     B* gStackNew = gStackStart + cf->gsDepth;
     assert(gStackNew<=gStack);
     while (gStack!=gStackNew) dec(*--gStack);
-    envPrevHeight = envCurr-envStart;
-    unwindEnv(envStart + cf->envDepth);
+    envPrevHeight = envCurr-envStart + 1;
+    unwindEnv(envStart + cf->envDepth - 1);
     
     
     if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
@@ -885,10 +886,10 @@ NOINLINE NORETURN void thr(B msg) {
     longjmp(cf->jmp, 1);
   }
   assert(cf==cfStart);
-  printf("Error: "); print(msg); putchar('\n');
-  Env* envPrev = envCurr;
-  unwindEnv(envStart);
-  vm_pst(envCurr, envPrev);
+  printf("Error: "); print(msg); putchar('\n'); fflush(stdout);
+  Env* envEnd = envCurr+1;
+  unwindEnv(envStart-1);
+  vm_pst(envCurr+1, envEnd);
   #ifdef DEBUG
   __builtin_trap();
   #else
