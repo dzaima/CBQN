@@ -214,7 +214,7 @@ static NOINLINE void rand_init() {
   rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), inc(bi_emptyCVec), inc(bi_emptySVec)); gc_add(rand_ns);
   rand_rangeName = m_str32(U"range"); gc_add(rand_rangeName);
   rand_rangeDesc = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
-  B tmp = c1(rand_ns, m_f64(0));
+  B tmp = c2(rand_ns, m_f64(0), m_f64(0));
   rand_a = ns_pos(tmp, m_str32(U"a"));
   rand_b = ns_pos(tmp, m_str32(U"b"));
   dec(tmp);
