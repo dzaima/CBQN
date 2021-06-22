@@ -478,7 +478,7 @@ Nvm_res m_nvm(Body* body) {
     #define LSC(R,D) { if(D) MOV8rmo(R,r_PSCS,D*8); else MOV(R,r_SC); }
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(r_TMP, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
-      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOV1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
     #else
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif

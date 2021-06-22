@@ -379,7 +379,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define SHLi(O,IMM) AC2(SHLi,O,IMM)
 #define SHRi(O,IMM) AC2(SHRi,O,IMM)
 #define MOVi(O,IMM) AC2(MOVi,O,IMM)
-#define MOV1l(O,IMM) AC2(MOV1l,O,IMM)
+#define MOVi1l(O,IMM) AC2(MOVi1l,O,IMM)
 #define ADD4mi(O,IMM) AC2(ADD4mi,O,IMM) // ADD4mi(o,1) is an alternative for INC4mo(o,0)
 
 #define MOV8rm(O,I) AC2(MOV8rm,O,I) // O ← *(u64*)(nullptr + I)
@@ -444,7 +444,7 @@ ASMI(MOVi, Reg o, i64 i) {
   else if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
   else                { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
 }
-ASMI(MOV1l, Reg o, i8 imm) { if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); }
+ASMI(MOVi1l, Reg o, i8 imm) { if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); }
 
 ASMI(MOV8mr, Reg o, Reg i) { nREX8(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { nREX8(o,i); ASM1(0x89); MRMo(o,i, off); }
 ASMI(MOV8rm, Reg i, Reg o) { nREX8(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); }
