@@ -308,6 +308,25 @@ static OptRes opt(u32* bc0) {
         TSSIZE(stk)-= SETM==*sbc? 2 : 1;
         break;
       }
+      case ARRO: case ARRM: { i32 len = *bc++;
+        bool allNum = len>0; bool allI32 = true;
+        for (i32 i = 0; i < len; i++) { S(c,i);
+          if(c.p==-1) goto defIns;
+          allNum&= isNum(c.v);
+          allI32&= q_i32(c.v);
+        }
+        TSSIZE(stk)-= len-1; // huh, doing this beforehand works out nicely
+        B r;
+        if (allNum) {
+          if (allI32) { i32* rp; r = m_i32arrv(&rp, len); for (i32 i = 0; i < len; i++) { S(c,-i); rp[i] = o2iu(c.v); } }
+          else        { f64* rp; r = m_f64arrv(&rp, len); for (i32 i = 0; i < len; i++) { S(c,-i); rp[i] = o2fu(c.v); } }
+        } else        { HArr_p h = m_harrUv(len); r=h.b;  for (i32 i = 0; i < len; i++) { S(c,-i); h.a[i] = inc(c.v); } }
+        for (i32 i = 0; i < len; i++) { S(c,-i); RM(c.p); }
+        cact = 5;
+        TSADD(data, r.u);
+        stk[TSSIZE(stk)-1] = SREF(r, pos);
+        break;
+      }
       case RETN: case RETD:
         ret = true;
         cact = 1;
@@ -519,7 +538,7 @@ Nvm_res m_nvm(Body* body) {
       case ARRM: case ARRO:;
         u32 sz = *bc++;
         if (sz) { TOPp; IMM(R_A1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
-        else    { TOPs;                      CCALL(i_ARR_0); } // (S)
+        else    { TOPs;                  CCALL(i_ARR_0); } // unused with optimizations
         break;
       case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl, S)
         Block* bl = blocks[*bc++];
