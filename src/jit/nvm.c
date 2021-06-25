@@ -403,7 +403,7 @@ static u32 readBytes4(u8* d) {
   static void write_asm(u8* p, u64 sz);
   static void asm_test() {
     ALLOC_ASM(64);
-    for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) for (int k = 0; k < 16; k++) BZHI(i,j,k);
+    for (int i = 0; i < 16; i++) CALLi(123);
     GET_ASM();
     write_asm(bin, ASM_SIZE);
     exit(0);
@@ -430,29 +430,29 @@ typedef B JITFn(B* cStack, Scope** pscs, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
   ALLOC_ASM(64);
-  TSALLOC(u32, rel, 64);
+  TSALLOC(u32, rel, 64); // TODO move to x86_64.h
   #if ASM_TEST
     asm_test();
   #endif
-  Reg r_TMP  = 3; // TODO this doesn't really need to be non-volatile
+  Reg r_ENV  = 15;
   Reg r_PSCS = 14;
-  Reg r_CS   = 15;
+  Reg r_CS   =  3;
   Reg r_SC   = 12;
   PUSH(5);
-  PUSH(r_TMP);
-  PUSH(r_PSCS);
-  PUSH(r_CS);
-  PUSH(r_SC);
+  PUSH(r_ENV);
+  PUSH(r_PSCS); // Scope* pscs[]
+  PUSH(r_CS); // starting gStack
+  PUSH(r_SC); // Scope* sc
   MOV(r_CS  , R_A0);
   MOV(r_PSCS, R_A1);
   MOV(r_SC  , R_A2);
+  MOV8rp(r_ENV, (u64)&envCurr - 4); TSADD(rel, ASM_SIZE-4);
   for (i32 i = 1; i < body->maxPSC+1; i++) {
     MOV8rmo(R_A2, R_A2, offsetof(Scope, psc));
     MOV8mro(r_PSCS, R_A2, i*8);
   }
-  if ((u64)i_SETN != (u32)(u64)i_SETN) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
-  // #define CCALL(F) { IMM(r_TMP, F); CALL(r_TMP); }
-  #define CCALL(F) { TSADD(rel, ASM_SIZE); CALLi(F); }
+  if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
+  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f-4); TSADD(rel, ASM_SIZE-4); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
   Block** blocks = body->blocks->a;
@@ -465,8 +465,9 @@ Nvm_res m_nvm(Body* body) {
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     // #define LEA0(O,I,OFF) { MOV(O,I); ADDI(O,OFF); }
-    #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if(o) LEAi(O,I,o); else if (Q) MOV(O,I); o?O:I; })
-    #define SPOS(R,N,Q) LEA0(R, r_CS, maxi32(0, depth+(N)-1)*sizeof(B),Q)
+    #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if (Q||o) LEAi(O,I,o); o?O:I; })
+    #define SPOSq(N) (maxi32(0, depth+(N)-1) * sizeof(B))
+    #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if !Q, then might not write and instead return another register which will have the wanted value
     #if CSTACK
       // #define INV(N,D,F) MOV(R_A##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
       #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
@@ -474,20 +475,21 @@ Nvm_res m_nvm(Body* body) {
       #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS and things with stack delta 1)
     #endif
     #define TOPp MOV(R_A0,R_RES)
-    #define TOPs if (depth) { u8 t = SPOS(r_TMP, 0, 0); MOV8mr(t, R_RES); }
+    #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
     #define LSC(R,D) { if(D) MOV8rmo(R,r_PSCS,D*8); else MOV(R,r_SC); }
-    #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(r_TMP, 1); CCALL(i_INC);
+    #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
     #else
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
+    #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,bcL));
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
-        if (depth>1) { u8 t = SPOS(r_TMP, -1, 0); MOV8rm(R_RES, t); }
+        if (depth>1) { u8 t = SPOS(R_A3, -1, 0); MOV8rm(R_RES, t); }
       break;
-      case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(r_TMP, v(b(x))); INCV(r_TMP); break; } // (u64 v, S)
+      case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(b(x))); INCV(R_A3); break; } // (u64 v, S)
       case ADDU: TOPs; // (u64 v, S)
         #if CSTACK
           IMM(R_RES, L64);
@@ -499,8 +501,19 @@ Nvm_res m_nvm(Body* body) {
       case FN2C: TOPp; IMM(R_A1,off); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
       case FN1O: TOPp; IMM(R_A1,off); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
       case FN2O: TOPp; IMM(R_A1,off); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
-      case FN1Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
-      case FN2Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN2Ci); break; // (B, BBB2B fd, u32* bc, S)
+      case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
+        MOV(R_A1, R_RES);
+        MOV8pr((u64)&gStack - 4, SPOS(R_A3, 0, 0)); TSADD(rel, ASM_SIZE-4); // GS_UPD
+        CCALL(fn);
+      } break;
+      case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
+        Reg r_sp = SPOS(R_A2, -1, 0);
+        MOV8pr((u64)&gStack - 4, r_sp); TSADD(rel, ASM_SIZE-4); // GS_UPD
+        MOV(R_A1, R_RES); MOV8rm(R_A2, r_sp); // load args
+        CCALL(fn);
+      } break;
+      // case FN1Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
+      // case FN2Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN2Ci); break; // (B, BBB2B fd, u32* bc, S)
       case FN1Oi:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Oi); break; // (B, BB2B  fm,           u32* bc, S)
       case FN2Oi:TOPp; IMM(R_A1,L64); IMM(R_A2, L64); IMM(R_A3,off); INV(4,0,i_FN2Oi); break; // (B, BB2B  fm, BBB2B fd, u32* bc, S)
       case ARRM: case ARRO:;
@@ -540,7 +553,8 @@ Nvm_res m_nvm(Body* body) {
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l, S)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: MOV(R_A0,r_SC); INV(1,1,i_RETD); ret=true; break; // (Scope* sc, S); stack diff 0 is wrong, but updating it is useless
-      case RETN: IMM(r_TMP, &gStack); MOV8mr(r_TMP, r_CS); ret=true; break;
+      // case RETN: IMM(R_A3, &gStack); MOV8mr(R_A3, r_CS); ret=true; break;
+      case RETN: MOV8pr((u64)&gStack - 4, r_CS); TSADD(rel, ASM_SIZE-4); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
     #undef INCB
@@ -559,7 +573,7 @@ Nvm_res m_nvm(Body* body) {
   POP(r_SC);
   POP(r_CS);
   POP(r_PSCS);
-  POP(r_TMP);
+  POP(r_ENV);
   POP(5);
   RET();
   #undef CCALL
@@ -576,19 +590,20 @@ Nvm_res m_nvm(Body* body) {
     u32 bcPos = body->map[0];
     // printf("JIT %d:\n", perfid);
     // vm_printPos(body->comp, bcPos, -1);
-    fprintf(perf_map, "%lx %lx JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
+    fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
   #endif
   memcpy(binEx, bin, sz);
   u64 relAm = TSSIZE(rel);
   // printf("allocated at %p; i_ADDU: %p\n", binEx, i_ADDU);
   for (u64 i = 0; i < relAm; i++) {
     u8* ins = binEx+rel[i];
-    u32 o = readBytes4(ins+1);
-    u32 n = o-(u32)(u64)ins-5;
-    memcpy(ins+1, (u8[]){BYTES4(n)}, 4);
+    u32 o = readBytes4(ins);
+    u32 n = o-(u32)(u64)ins;
+    memcpy(ins, (u8[]){BYTES4(n)}, 4);
   }
   #if WRITE_ASM
     write_asm(binEx, sz);
+    // exit(0);
   #endif
   FREE_ASM();
   TSFREE(rel);
@@ -601,9 +616,9 @@ B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   Scope* pscs[b->maxPSC+1];
   pscs[0] = sc;
   
-  B* sp = gStack;
+  // B* sp = gStack;
   B r = ((JITFn*)ptr)(gStack, pscs, sc);
-  if (sp!=gStack) thrM("uh oh");
+  // if (sp!=gStack) thrM("uh oh");
   
   popEnv();
   return r;

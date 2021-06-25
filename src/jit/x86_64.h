@@ -61,7 +61,6 @@ typedef u8 Reg;
 #define R_P4 15 // r15
 
 
-
 #define ALLOC_ASM(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N);
 #define GET_ASM() u8* bin = b_o->data;
 #define AADD(P,N) b_o=asm_add(b_o, P, N)
@@ -350,6 +349,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
   if(CHK4(O)) ASM1(0x24);                                \
   if(b4) ASM4(t); else if (b1) ASM1(t);                  \
 }
+#define MRMp(OFF,I) ASM1((((I)&7)<<3) + 5); ASM4(OFF); // offset to rip
 #define nA_0REG(O,I) (((I)&7)<<3) + ((O)&7)
 #define nA_REG(O,I) ASM1(0xC0 + nA_0REG(O,I)) // aka MRM immediate
 
@@ -359,7 +359,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define  AC3(N,A,B,C) (i##N(b_o=asm_r(b_o),A,B,C))
 
 // meaning of lowercase after basic instr name:
-//   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced; if all are 'r' or they don't have other options, they can be omitted
+//   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced, 'p' - offset to rip; if all are 'r' or they don't have other options, they can be omitted
 //   add 'o' for an offset argument (e.g. the 5 in 'mov rax, [rdi+5]'), 'i' for an immediate (e.g. 5 in 'add r12,5', or in 'lea rax, [rdi+5]')
 #define INC4mo(O,IMM) AC2(INC4mo,O,IMM)
 #define INC8mo(O,IMM) AC2(INC8mo,O,IMM)
@@ -386,10 +386,12 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define MOV8mr(I,O) AC2(MOV8mr,I,O) // *(u64*)(nullptr + I) ← O
 #define MOV4rm(O,I) AC2(MOV4rm,O,I) // O ← *(u32*)(nullptr + I)
 #define MOV4mr(I,O) AC2(MOV4mr,I,O) // *(u32*)(nullptr + I) ← O
-#define MOV8rmo(O,I,IMM) AC3(MOV8rmo,O,I,IMM) // O ← *(u64*)(nullptr + I + IMM)
-#define MOV8mro(I,O,IMM) AC3(MOV8mro,I,O,IMM) // *(u64*)(nullptr + I + IMM) ← O
-#define MOV4rmo(O,I,IMM) AC3(MOV4rmo,O,I,IMM)
-#define MOV4mro(I,O,IMM) AC3(MOV4mro,I,O,IMM)
+#define MOV8rmo(O,I,OFF) AC3(MOV8rmo,O,I,OFF) // O ← *(u64*)(nullptr + I + OFF)
+#define MOV8mro(I,O,OFF) AC3(MOV8mro,I,O,OFF) // *(u64*)(nullptr + I + OFF) ← O
+#define MOV4rmo(O,I,OFF) AC3(MOV4rmo,O,I,OFF)
+#define MOV4mro(I,O,OFF) AC3(MOV4mro,I,O,OFF)
+#define MOV8pr(OFF,I) AC2(MOV8pr,OFF,I)
+#define MOV8rp(I,OFF) AC2(MOV8rp,OFF,I)
 
 #define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
 #define BZHI(O,I,N) AC3(BZHI,O,I,N) // requires __BMI2__
@@ -397,7 +399,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define PUSH(O) AC1(PUSH,O)
 #define POP(O) AC1(POP,O)
 #define CALL(IMM) AC1(CALL,IMM)
-#define CALLi(I) AC1(CALLi,(i32)(i64)(I))
+#define CALLi(I) AC1(CALLi,(i64)(I)) // I must be 32-bit
 #define RET() {b_o=asm_r(b_o); ASM1(0xC3);}
 
 #define JO(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x70);ASM1(-2);}
@@ -445,11 +447,12 @@ ASMI(MOVi, Reg o, i64 i) {
   else                { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
 }
 ASMI(MOVi1l, Reg o, i8 imm) { if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); }
-
 ASMI(MOV8mr, Reg o, Reg i) { nREX8(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { nREX8(o,i); ASM1(0x89); MRMo(o,i, off); }
 ASMI(MOV8rm, Reg i, Reg o) { nREX8(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); }
 ASMI(MOV4mr, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { nREX4(o,i); ASM1(0x89); MRMo(o,i, off); }
 ASMI(MOV4rm, Reg i, Reg o) { nREX4(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); }
+ASMI(MOV8pr,i32 off, Reg i) { nREX8(0,i); ASM1(0x89); MRMp(off,i); }
+ASMI(MOV8rp,i32 off, Reg i) { nREX8(0,i); ASM1(0x8B); MRMp(off,i); }
 
 ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(b_o,o,i); else { nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); } }
 ASMI(BZHI, Reg o, Reg i, Reg n) { ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); }
@@ -458,6 +461,6 @@ ASMI(PUSH, Reg O) { nREX4(O,0); ASM1(0x50+((O)&7)); }
 ASMI(POP , Reg O) { nREX4(O,0); ASM1(0x58+((O)&7)); }
 
 ASMI(CALL, Reg i) { nREX4(i,0); ASM1(0xFF); nA_REG(i,2); }
-ASMI(CALLi, i32 imm) { ASM1(0xE8); ASM4(imm); }
+ASMI(CALLi, i32 imm) { ASM1(0xE8); if (imm>I32_MAX)err("immediate call outside of 32-bit range!"); ASM4(imm); }
 
 #define IMM(A,B) MOVi(A,(u64)(B))

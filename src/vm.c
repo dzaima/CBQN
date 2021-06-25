@@ -95,10 +95,12 @@ B* gStackEnd;
 void gsPrint() {
   B* c = gStackStart;
   i32 i = 0;
+  printf("gStack %p, height "N64d":\n", gStackStart, gStack-gStackStart);
   while (c!=gStack) {
-    printf("%d: ", i);
-    print(*c);
-    printf(", refc=%d\n", v(*c)->refc);
+    printf("  %d: ", i); fflush(stdout);
+    print(*c); fflush(stdout);
+    if (isVal(*c)) printf(", refc=%d", v(*c)->refc); fflush(stdout);
+    printf("\n");
     c++;
     i++;
   }
