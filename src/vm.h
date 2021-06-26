@@ -1,7 +1,13 @@
 #pragma once
 
-#ifndef JIT_START
-  #define JIT_START -1 // number of calls for when to start JITting. -1: never JIT; 0: JIT everything, 1: JIT after 1 non-JIT invocation; max ¯1+2⋆16
+
+#if defined(__x86_64) || defined(__amd64__)
+  #ifndef JIT_START
+    #define JIT_START 2 // number of calls for when to start JITting. -1: never JIT; 0: JIT everything, n: JIT after n non-JIT invocations; max ¯1+2⋆16
+  #endif
+#else
+  #undef JIT_START
+  #define JIT_START -1
 #endif
 
 enum {

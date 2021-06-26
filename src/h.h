@@ -472,8 +472,8 @@ static B m_atop(     B g, B h);
 #include <time.h>
 static inline u64 nsTime() {
   struct timespec t;
-  timespec_get(&t, TIME_UTC);
-  // clock_gettime(CLOCK_REALTIME, &t);
+  // timespec_get(&t, TIME_UTC); // doesn't seem to exist on Android
+  clock_gettime(CLOCK_REALTIME, &t);
   return t.tv_sec*1000000000ull + t.tv_nsec;
 }
 
