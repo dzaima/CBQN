@@ -293,6 +293,7 @@ B exit_c1(B t, B x) {
 }
 
 B getInternalNS();
+B getMathNS();
 
 static B file_nsGen;
 B sys_c1(B t, B x) {
@@ -316,6 +317,7 @@ B sys_c1(B t, B x) {
       r.a[i] = inc(fileNS);
     }
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
+    else if (eqStr(c, U"math")) r.a[i] = getMathNS();
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
