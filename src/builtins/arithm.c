@@ -35,18 +35,18 @@ B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
 B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
 
 
-static B internalNS;
+static B mathNS;
 B getMathNS() {
-  if (internalNS.u == 0) {
+  if (mathNS.u == 0) {
     #define F(X,N) m_nfn(registerNFn(m_str32(U"•math." N), X##_c1, c2_invalid),m_f64(0)),
     B fn = bqn_exec(m_str32(U"{⟨      Sin,         Cos,         Tan,          Asin,          Acos,          Atan ⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec));
     B arg =    m_caB(6, (B[]){F(sin,U"Sin")F(cos,U"Cos")F(tan,U"Tan")F(asin,U"Asin")F(acos,U"Acos")F(atan,U"Atan")});
     #undef F
-    internalNS = c1(fn,arg);
-    gc_add(internalNS);
+    mathNS = c1(fn,arg);
+    gc_add(mathNS);
     dec(fn);
   }
-  return inc(internalNS);
+  return inc(mathNS);
 }
 
 void arith_init() {
