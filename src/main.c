@@ -54,6 +54,7 @@ int main(int argc, char* argv[]) {
     }
   #endif
   bool startREPL = argc==1;
+  bool silentREPL = false;
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
@@ -70,7 +71,8 @@ int main(int argc, char* argv[]) {
           "-p code: execute the argument as BQN and print its result pretty-printed\n"
           "-o code: execute the argument as BQN and print its raw result\n"
           "-M num : set maximum heap size to num megabytes\n"
-          "-r     : start the REPL after all further arguments\n"
+          "-r     : start the REPL after executing all arguments\n"
+          "-s     : start a silent REPL\n"
           , argv[0]);
           exit(0);
         } else {
@@ -112,10 +114,8 @@ int main(int argc, char* argv[]) {
               mm_heapMax = am*1024*1024;
               break;
             }
-            case 'r': {
-              startREPL = true;
-              break;
-            }
+            case 'r': { startREPL = true;                    break; }
+            case 's': { startREPL = true; silentREPL = true; break; }
           }
         }
       }
@@ -152,8 +152,9 @@ int main(int argc, char* argv[]) {
     while (true) { // exit by evaluating an empty expression
       char* ln = NULL;
       size_t gl = 0;
+      if (!silentREPL) printf("   ");
       i64 read = getline(&ln, &gl, stdin);
-      if (read<=0 || ln[0]==0 || ln[0]==10) break;
+      if (read<=0 || ln[0]==0 || ln[0]==10) { if(!silentREPL) putchar('\n'); break; }
       Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptySVec), gsc, true);
       free(ln);
       
