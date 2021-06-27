@@ -113,14 +113,14 @@ NOINLINE B append_fmt(B s, char* p, ...) {
   char* lp = p;
   while (*p != 0) { c = *p++;
     if (c!='%') continue;
-    if (lp!=p-1) s = vec_join(s, fromUTF8(lp, p-1-lp));
+    if (lp!=p-1) AJOIN(fromUTF8(lp, p-1-lp));
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
       case 'R': { // TODO proper
         B b = va_arg(a, B);
         if (isNum(b)) {
           AFMT("%f", o2f(b));
         } else { assert(isArr(b) && rnk(b)==1);
-          s = vec_join(s, inc(b));
+          AJOIN(inc(b));
         }
         break;
       }
@@ -203,7 +203,7 @@ NOINLINE B append_fmt(B s, char* p, ...) {
     }
     lp = p;
   }
-  if (lp!=p) s = vec_join(s, fromUTF8(lp, p-lp));
+  if (lp!=p) AJOIN(fromUTF8(lp, p-lp));
   va_end(a);
   return s;
 }

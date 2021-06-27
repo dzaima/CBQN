@@ -103,8 +103,11 @@ static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
 
 B m_str8l(char* s);
 B fromUTF8l(char* x);
-#define A8(X) s = vec_join(s,m_str8l(X))
-#define AU(X) s = vec_join(s,fromUTF8l(X))
+#define AJOIN(X) s = vec_join(s,X) // consumes X
+#define AOBJ(X) s = vec_add(s,X) // consumes X
+#define ACHR(X) AOBJ(m_c32(X))
+#define A8(X) AJOIN(m_str8l(X))
+#define AU(X) AJOIN(fromUTF8l(X))
 #define AFMT(...) s = append_fmt(s, __VA_ARGS__)
 NOINLINE B append_fmt(B s, char* p, ...);
 
@@ -255,5 +258,7 @@ static inline void onFree(Value* x) {
 }
 
 
+extern _Thread_local i64 comp_envPos;
 extern _Thread_local B comp_currPath;
 extern _Thread_local B comp_currArgs;
+extern _Thread_local B comp_currSrc;

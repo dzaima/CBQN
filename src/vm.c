@@ -5,6 +5,11 @@
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"
+#include "utils/mut.h"
+
+#ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
+  #define UNWIND_COMPILER 1
+#endif
 
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
@@ -815,26 +820,50 @@ void popCatch() {
   #endif
 }
 
+NOINLINE B vm_fmtPoint(B src, B prepend, usz cs, usz ce) { // consumes prepend
+  BS2B srcGetU = TI(src).getU;
+  i64 padEnd = (i64)a(prepend)->ia;
+  i64 padStart = padEnd;
+  while (padStart>0 && o2cu(srcGetU(prepend,padStart-1))!='\n') padStart--;
+  B s = prepend;
+  usz srcL = a(src)->ia;
+  usz srcS = cs;
+  while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
+  usz srcE = srcS;
+  while (srcE<srcL) { if(o2cu(srcGetU(src, srcE))=='\n') break; srcE++; }
+  if (ce>srcE) ce = srcE;
+  B srcSl = TI(src).slice(inc(src),srcS); arr_shVec(srcSl, srcE-srcS);
+  AJOIN(srcSl);
+  cs-= srcS;
+  ce-= srcS;
+  ACHR('\n');
+  for (i64 i = padStart; i < padEnd; i++) ACHR(' ');
+  for (i32 i = 0; i < cs; i++) ACHR(o2cu(srcGetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
+  for (i32 i = cs; i < ce; i++) ACHR('^');
+  return s;
+}
+
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!isNothing(src) && !isNothing(comp->indices)) {
     B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
     B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
-    int start = pos==-1? 0 : printf(N64d": ", pos);
-    usz srcL = a(src)->ia;
-    BS2B srcGetU = TI(src).getU;
-    usz srcS = cs;
-    while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
-    usz srcE = srcS;
-    while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
-    if (ce>srcE) ce = srcE;
-    cs-= srcS;
-    ce-= srcS;
+    // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken
+    // printf(" inds:%d…%d\n", cs, ce);
+    // int start = pos==-1? 0 : printf(N64d": ", pos);
+    // usz srcL = a(src)->ia;
+    // BS2B srcGetU = TI(src).getU;
+    // usz srcS = cs;   while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
+    // usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+    // if (ce>srcE) ce = srcE;
+    // cs-= srcS; ce-= srcS;
+    // putchar('\n');
+    // for (i32 i = 0; i < cs+start; i++) putchar(' ');
+    // for (i32 i = cs; i < ce; i++) putchar('^');
+    // putchar('\n');
+    B s = inc(bi_emptyCVec); if (pos!=-1) AFMT("%l: ", pos);
+    printRaw(vm_fmtPoint(src, s, cs, ce));
     putchar('\n');
-    for (i32 i = 0; i < cs+start; i++) putchar(' ');
-    for (i32 i = cs; i < ce; i++) putchar('^');
-    putchar('\n');
-    // printf("  inds:%d…%d\n", cinds, cinde);
   } else {
     if (pos!=-1) printf(N64d": ", pos);
     printf("source unknown\n");
@@ -861,13 +890,31 @@ NOINLINE void vm_pstLive() {
   vm_pst(envStart, envCurr+1);
 }
 
-static void unwindEnv(Env* envNew) { // envNew==envStart-1 for emptying the env stack
+void unwindEnv(Env* envNew) {
   assert(envNew<=envCurr);
   while (envCurr!=envNew) {
     envCurr->bcV = BCPOS(envCurr->sc->body, envCurr->bcL);
     envCurr--;
   }
 }
+void unwindCompiler() {
+  #if UNWIND_COMPILER
+    unwindEnv(envStart+comp_envPos);
+  #endif
+}
+
+NOINLINE void printErrMsg(B msg) {
+  if (isArr(msg)) {
+    BS2B msgGetU = TI(msg).getU;
+    usz msgLen = a(msg)->ia;
+    for (usz i = 0; i < msgLen; i++) if (!isC32(msgGetU(msg,i))) goto base;
+    printRaw(msg);
+    return;
+  }
+  base:
+  print(msg);
+}
+
 
 NOINLINE NORETURN void thr(B msg) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
@@ -888,7 +935,7 @@ NOINLINE NORETURN void thr(B msg) {
     longjmp(cf->jmp, 1);
   }
   assert(cf==cfStart);
-  printf("Error: "); print(msg); putchar('\n'); fflush(stdout);
+  printf("Error: "); printErrMsg(msg); putchar('\n'); fflush(stdout);
   Env* envEnd = envCurr+1;
   unwindEnv(envStart-1);
   vm_pst(envCurr+1, envEnd);

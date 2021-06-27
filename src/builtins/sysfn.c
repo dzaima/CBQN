@@ -115,12 +115,37 @@ B asrt_c1(B t, B x) {
   if (isI32(x) && 1==(i32)x.u) return x;
   if (isF64(x) && 1==x.f) return x;
   dec(x);
-  thrM("assertion error");
+  thrM("Assertion error");
 }
 B asrt_c2(B t, B w, B x) {
   if (isI32(x) && 1==(u32)x.u) { dec(w); return x; }
   if (isF64(x) && 1==x.f) { dec(w); return x; }
   dec(x);
+  thr(w);
+}
+B casrt_c1(B t, B x) {
+  if (isI32(x) && 1==(i32)x.u) return x;
+  if (isF64(x) && 1==x.f) return x;
+  unwindCompiler();
+  dec(x);
+  thrM("Compilation error");
+}
+B casrt_c2(B t, B w, B x) {
+  if (isI32(x) && 1==(u32)x.u) { dec(w); return x; }
+  if (isF64(x) && 1==x.f) { dec(w); return x; }
+  unwindCompiler();
+  dec(x);
+  if (isArr(w) && a(w)->ia==2) {
+    B w0 = TI(w).getU(w,0);
+    if (!isArr(w0) || a(w0)->ia<2) goto base;
+    B s = TI(w).get(w,1);
+    BS2B w0getU = TI(w0).getU;
+    AFMT("\n   ");
+    s = vm_fmtPoint(comp_currSrc, s, o2s(w0getU(w0,0)), o2s(w0getU(w0,1))+1);
+    dec(w);
+    thr(s);
+  }
+  base:
   thr(w);
 }
 

@@ -53,8 +53,10 @@ B r1Objs[rtLen];
 B rtWrap_wrap(B x); // consumes
 
 
+_Thread_local i64 comp_envPos;
 _Thread_local B comp_currPath;
 _Thread_local B comp_currArgs;
+_Thread_local B comp_currSrc;
 
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
@@ -95,19 +97,24 @@ B bqn_repr(B x) { // consumes
 void load_gcFn() {
   mm_visit(comp_currPath);
   mm_visit(comp_currArgs);
+  mm_visit(comp_currSrc);
 }
 
 NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currPath = path;
   comp_currArgs = args;
+  comp_currSrc  = str;
+  comp_envPos = envCurr-envStart;
   Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, NULL);
   dec(path); dec(args);
-  comp_currArgs = comp_currPath = bi_N;
+  comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
   comp_currPath = path;
   comp_currArgs = args;
+  comp_currSrc  = str;
+  comp_envPos = envCurr-envStart;
   B vName = inc(bi_emptyHVec);
   B vDepth = inc(bi_emptyIVec);
   if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
@@ -129,7 +136,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
   }
   Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, sc);
   dec(path); dec(args);
-  comp_currArgs = comp_currPath = bi_N;
+  comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
 }
 
@@ -147,6 +154,7 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
 static inline void load_init() { // very last init function
   comp_currPath = bi_N;
   comp_currArgs = bi_N;
+  comp_currSrc  = bi_N;
   gc_addFn(load_gcFn);
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add    , bi_sub   , bi_mul  , bi_div    , bi_pow      , bi_root  , bi_floor, bi_ceil   , bi_stile , bi_not,
@@ -265,9 +273,12 @@ static inline void load_init() { // very last init function
     printAllocStats();
     exit(0);
   #else // use compiler
+    B prevAsrt = runtime[42];
+    runtime[42] = bi_casrt; // horrible but GC is off so it's fiiiiiine
     Block* comp_b = load_compImport(
       #include "gen/compiler"
     );
+    runtime[42] = prevAsrt;
     load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
     gc_add(load_comp);
     
