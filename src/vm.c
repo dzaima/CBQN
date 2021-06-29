@@ -256,7 +256,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, Scope* sc) {
+NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, B path, Scope* sc) {
   usz bIA = a(blocks)->ia;
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
@@ -265,6 +265,7 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
   comp->bc = tag(bca, ARR_TAG);
   comp->indices = indices;
   comp->src = src;
+  comp->path = path;
   comp->objs = toHArr(objs);
   comp->blockAm = 0;
   B nameList;
@@ -820,20 +821,26 @@ void popCatch() {
   #endif
 }
 
-NOINLINE B vm_fmtPoint(B src, B prepend, usz cs, usz ce) { // consumes prepend
+NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
   BS2B srcGetU = TI(src).getU;
-  i64 padEnd = (i64)a(prepend)->ia;
-  i64 padStart = padEnd;
-  while (padStart>0 && o2cu(srcGetU(prepend,padStart-1))!='\n') padStart--;
-  B s = prepend;
   usz srcL = a(src)->ia;
   usz srcS = cs;
   while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
   usz srcE = srcS;
   while (srcE<srcL) { if(o2cu(srcGetU(src, srcE))=='\n') break; srcE++; }
   if (ce>srcE) ce = srcE;
-  B srcSl = TI(src).slice(inc(src),srcS); arr_shVec(srcSl, srcE-srcS);
-  AJOIN(srcSl);
+  
+  i64 ln = 1;
+  for (usz i = 0; i < srcS; i++) if(o2cu(srcGetU(src, i))=='\n') ln++;
+  B s = prepend;
+  if (isArr(path) && a(path)->ia>0) AFMT("%R:%l:\n  ", path, ln);
+  else AFMT("at ");
+  i64 padEnd = (i64)a(s)->ia;
+  i64 padStart = padEnd;
+  while (padStart>0 && o2cu(srcGetU(s,padStart-1))!='\n') padStart--;
+  
+  B slice = TI(src).slice(inc(src),srcS); arr_shVec(slice, srcE-srcS);
+  AJOIN(slice);
   cs-= srcS;
   ce-= srcS;
   ACHR('\n');
@@ -861,8 +868,8 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     // for (i32 i = 0; i < cs+start; i++) putchar(' ');
     // for (i32 i = cs; i < ce; i++) putchar('^');
     // putchar('\n');
-    B s = inc(bi_emptyCVec); if (pos!=-1) AFMT("%l: ", pos);
-    printRaw(vm_fmtPoint(src, s, cs, ce));
+    B s = inc(bi_emptyCVec);
+    printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
   } else {
     if (pos!=-1) printf(N64d": ", pos);

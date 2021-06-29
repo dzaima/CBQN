@@ -9,7 +9,7 @@ static bool init = false;
 static void repl_init() {
   if (init) return;
   cbqn_init();
-  replPath = m_str32(U"REPL"); gc_add(replPath);
+  replPath = m_str32(U""); gc_add(replPath);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
   gsc = m_scope(initBlock->body, NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
   ptr_dec(initBlock);

@@ -140,8 +140,8 @@ B casrt_c2(B t, B w, B x) {
     if (!isArr(w0) || a(w0)->ia<2) goto base;
     B s = TI(w).get(w,1);
     BS2B w0getU = TI(w0).getU;
-    AFMT("\n   ");
-    s = vm_fmtPoint(comp_currSrc, s, o2s(w0getU(w0,0)), o2s(w0getU(w0,1))+1);
+    AFMT("\n");
+    s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(w0getU(w0,0)), o2s(w0getU(w0,1))+1);
     dec(w);
     thr(s);
   }

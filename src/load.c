@@ -60,23 +60,23 @@ _Thread_local B comp_currSrc;
 
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
-Block* load_compObj(B x, B src, Scope* sc) { // consumes x,src
+Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, sc)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, sc);
+  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, path, sc)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, path, sc);
   dec(x);
   return r;
 }
 #include "gen/src"
 #if RT_SRC
-Block* load_compImport(B bc, B objs, B blocks, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, inds, bi_N, src, NULL);
+Block* load_compImport(B bc, B objs, B blocks, B inds, B src, B path) { // consumes all
+  return compile(bc, objs, blocks, inds, bi_N, src, path, NULL);
 }
 #else
 Block* load_compImport(B bc, B objs, B blocks) { // consumes all
-  return compile(bc, objs, blocks, bi_N, bi_N, bi_N, NULL);
+  return compile(bc, objs, blocks, bi_N, bi_N, bi_N, bi_N, NULL);
 }
 #endif
 
@@ -105,7 +105,7 @@ NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currArgs = args;
   comp_currSrc  = str;
   comp_envPos = envCurr-envStart;
-  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, NULL);
+  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, inc(path), NULL);
   dec(path); dec(args);
   comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
@@ -134,7 +134,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, sc);
+  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, inc(path), sc);
   dec(path); dec(args);
   comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
@@ -259,7 +259,7 @@ static inline void load_init() { // very last init function
   #ifdef PRECOMP
     Block* c = load_compObj(
       #include "gen/interp"
-      , bi_N
+      , bi_N, bi_N
     );
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);

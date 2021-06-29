@@ -61,6 +61,7 @@ typedef struct Comp {
   struct Value;
   B bc;
   B src;
+  B path;
   B indices;
   HArr* objs;
   u32 blockAm;
@@ -122,7 +123,7 @@ struct Scope {
 
 Block* bqn_comp(B str, B path, B args);
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
-Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, Scope* sc);
+Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, B path, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
 B execBodyInline(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body directly in the scope
 
@@ -155,8 +156,8 @@ extern Env* envStart;
 extern Env* envEnd;
 extern u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
 static inline void pushEnv(Scope* sc, u32* bc) {
+  if (envCurr+1==envEnd) thrM("Stack overflow");
   envCurr++;
-  if (envCurr==envEnd) thrM("Stack overflow");
   envCurr->sc = sc;
   envCurr->bcL = bc;
 }
@@ -167,7 +168,7 @@ static inline void popEnv() {
 void vm_pst(Env* s, Env* e);
 void vm_pstLive();
 void vm_printPos(Comp* comp, i32 bcPos, i64 pos);
-NOINLINE B vm_fmtPoint(B src, B prepend, usz cs, usz ce); // consumes prepend
+NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce); // consumes prepend
 NOINLINE void printErrMsg(B msg);
 NOINLINE void unwindEnv(Env* envNew); // envNew==envStart-1 for emptying the env stack
 NOINLINE void unwindCompiler(); // unwind to the env of the invocation of the compiler; UB when not in compiler!
