@@ -208,11 +208,15 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
+    if (rtid==0) { // +
+      i64 c = 0;
+      for (usz i = 0; i < ia; i++) if ((c+= xp[i]) > I32_MAX) goto base;
+      dec(x); return m_i32(c);
+    }
     if (rtid==2) { // ×
       i64 c = 1;
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
-      dec(x);
-      return m_i32(c);
+      dec(x); return m_i32(c);
     }
     if (rtid==6) { // ⌊
       if (ia==0) return m_f64(1.0/0.0);
@@ -220,8 +224,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
       for (usz i = 0; i < ia; i++) {
         if (xp[i]<c) c = xp[i];
       }
-      dec(x);
-      return m_i32(c);
+      dec(x); return m_i32(c);
     }
     if (rtid==7) { // ⌈
       if (ia==0) return m_f64(-1.0/0.0);
@@ -229,8 +232,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
       for (usz i = 0; i < ia; i++) {
         if (xp[i]>c) c = xp[i];
       }
-      dec(x);
-      return m_i32(c);
+      dec(x); return m_i32(c);
     }
     if (rtid==11) { // ∨
       bool any = false;
@@ -239,8 +241,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
         if (c!=0 && c!=1) goto base;
         any|= c;
       }
-      dec(x);
-      return m_i32(any);
+      dec(x); return m_i32(any);
     }
   }
   if (ia==0) {
@@ -274,27 +275,22 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
+    i64 c = wv;
+    if (rtid==0) { // +
+      for (usz i = 0; i < ia; i++) if ((c+= xp[i]) > I32_MAX) goto base;
+      dec(x); return m_i32(c);
+    }
     if (rtid==2) { // ×
-      i64 c = wv;
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
-      dec(x);
-      return m_i32(c);
+      dec(x); return m_i32(c);
     }
     if (rtid==6) { // ⌊
-      i32 c = wv;
-      for (usz i = 0; i < ia; i++) {
-        if (xp[i]<c) c = xp[i];
-      }
-      dec(x);
-      return m_i32(c);
+      for (usz i = 0; i < ia; i++) if (xp[i]<c) c = xp[i];
+      dec(x); return m_i32(c);
     }
     if (rtid==7) { // ⌈
-      i32 c = wv;
-      for (usz i = 0; i < ia; i++) {
-        if (xp[i]>c) c = xp[i];
-      }
-      dec(x);
-      return m_i32(c);
+      for (usz i = 0; i < ia; i++) if (xp[i]>c) c = xp[i];
+      dec(x); return m_i32(c);
     }
   }
   base:;
