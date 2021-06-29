@@ -105,7 +105,7 @@ NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currArgs = args;
   comp_currSrc  = str;
   comp_envPos = envCurr-envStart;
-  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, inc(path), NULL);
+  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
@@ -134,7 +134,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, inc(path), sc);
+  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   comp_currPath = comp_currArgs = comp_currSrc = bi_N;
   return r;
