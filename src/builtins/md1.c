@@ -213,7 +213,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
       for (usz i = 0; i < ia; i++) if ((c+= xp[i]) > I32_MAX) goto base;
       dec(x); return m_i32(c);
     }
-    if (rtid==2) { // ×
+    if (rtid==2 | rtid==10) { // ×/∧
       i64 c = 1;
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
       dec(x); return m_i32(c);
@@ -280,7 +280,7 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
       for (usz i = 0; i < ia; i++) if ((c+= xp[i]) > I32_MAX) goto base;
       dec(x); return m_i32(c);
     }
-    if (rtid==2) { // ×
+    if (rtid==2 | rtid==10) { // ×/∧
       for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
       dec(x); return m_i32(c);
     }
