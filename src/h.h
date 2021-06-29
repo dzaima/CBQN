@@ -282,12 +282,7 @@ void print_vmStack();
   B validate(B x);
   Value* validateP(Value* x);
 #endif
-static NORETURN B err(char* s) {
-  puts(s); fflush(stdout);
-  print_vmStack();
-  __builtin_trap();
-  exit(1);
-}
+NORETURN NOINLINE void err(char* s);
 
 // tag checks
 #ifdef ATOM_I32

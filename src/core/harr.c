@@ -131,7 +131,7 @@ void harrP_visit(Value* x) { assert(x->type==t_harrPartial);
   usz am = *((HArr*)x)->sh;
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
-B harrP_get(B x, usz n) { return err("getting item from t_harrPartial"); }
+B harrP_get(B x, usz n) { err("getting item from t_harrPartial"); }
 void harrP_print(B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;

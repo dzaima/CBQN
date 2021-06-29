@@ -3,6 +3,14 @@
 #include "../utils/utf.h"
 #include "../utils/talloc.h"
 
+
+NORETURN NOINLINE void err(char* s) {
+  puts(s); fflush(stdout);
+  print_vmStack();
+  __builtin_trap();
+  exit(1);
+}
+
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
