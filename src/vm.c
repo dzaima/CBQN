@@ -691,7 +691,7 @@ void  body_free(Value* x) {
   ptr_decR(RFLD(c->bc, I32Arr,a));
   ptr_decR(RFLD(c->map,I32Arr,a));
 }
-void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); }
+void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); }
 void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
@@ -719,7 +719,7 @@ void  body_visit(Value* x) {
   mm_visitP(RFLD(c->bc, I32Arr,a));
   mm_visitP(RFLD(c->map,I32Arr,a));
 }
-void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); }
 void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }

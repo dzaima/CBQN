@@ -64,8 +64,8 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   BS2B xget = TI(x).get;
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, path, sc)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, path, sc);
+  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, inc(path), sc)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, inc(path), sc);
   dec(x);
   return r;
 }
