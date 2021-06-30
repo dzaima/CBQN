@@ -87,7 +87,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (we==el_i32 & xe==el_i32) {
     i32* wi = i32any_ptr(w);
     i32* xi = i32any_ptr(x);
-    if (CHECK_VALID) for (usz i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
     
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
@@ -102,7 +102,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   } else {
     BS2B wgetU = TI(w).getU;
     BS2B xgetU = TI(x).getU;
-    if (CHECK_VALID) for (usz i = 0; i < wia-1; i++) if (compare(wgetU(w,i), wgetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wgetU(w,i), wgetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
     
     for (usz i = 0; i < xia; i++) {
       B c = xgetU(x,i);
