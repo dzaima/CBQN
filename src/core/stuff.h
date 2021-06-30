@@ -258,7 +258,7 @@ static inline void onFree(Value* x) {
 }
 
 
-extern _Thread_local i64 comp_envPos;
+extern _Thread_local i64 comp_currEnvPos;
 extern _Thread_local B comp_currPath;
 extern _Thread_local B comp_currArgs;
 extern _Thread_local B comp_currSrc;

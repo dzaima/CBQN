@@ -53,7 +53,7 @@ B r1Objs[rtLen];
 B rtWrap_wrap(B x); // consumes
 
 
-_Thread_local i64 comp_envPos;
+_Thread_local i64 comp_currEnvPos;
 _Thread_local B comp_currPath;
 _Thread_local B comp_currArgs;
 _Thread_local B comp_currSrc;
@@ -99,22 +99,24 @@ void load_gcFn() {
   mm_visit(comp_currArgs);
   mm_visit(comp_currSrc);
 }
-
 NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
-  comp_currPath = path;
-  comp_currArgs = args;
-  comp_currSrc  = str;
-  comp_envPos = envCurr-envStart;
+  B   prevPath   = comp_currPath  ; comp_currPath = path;
+  B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
+  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
+  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
   Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
-  comp_currPath = comp_currArgs = comp_currSrc = bi_N;
+  comp_currPath   = prevPath;
+  comp_currArgs   = prevArgs;
+  comp_currSrc    = prevSrc;
+  comp_currEnvPos = prevEnvPos;
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  comp_currPath = path;
-  comp_currArgs = args;
-  comp_currSrc  = str;
-  comp_envPos = envCurr-envStart;
+  B   prevPath   = comp_currPath  ; comp_currPath = path;
+  B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
+  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
+  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
   B vName = inc(bi_emptyHVec);
   B vDepth = inc(bi_emptyIVec);
   if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
@@ -136,7 +138,10 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
   }
   Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
-  comp_currPath = comp_currArgs = comp_currSrc = bi_N;
+  comp_currPath   = prevPath;
+  comp_currArgs   = prevArgs;
+  comp_currSrc    = prevSrc;
+  comp_currEnvPos = prevEnvPos;
   return r;
 }
 

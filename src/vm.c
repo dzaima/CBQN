@@ -906,7 +906,7 @@ void unwindEnv(Env* envNew) {
 }
 void unwindCompiler() {
   #if UNWIND_COMPILER
-    unwindEnv(envStart+comp_envPos);
+    unwindEnv(envStart+comp_currEnvPos);
   #endif
 }
 
