@@ -449,7 +449,6 @@ typedef B JITFn(B* cStack, Scope** pscs, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
   ALLOC_ASM(64);
-  TSALLOC(u32, rel, 64); // TODO move to x86_64.h
   #if ASM_TEST
     asm_test();
   #endif
@@ -465,13 +464,13 @@ Nvm_res m_nvm(Body* body) {
   MOV(r_CS  , R_A0);
   MOV(r_PSCS, R_A1);
   MOV(r_SC  , R_A2);
-  MOV8rp(r_ENV, (u64)&envCurr - 4); TSADD(rel, ASM_SIZE-4);
+  MOV8rp(r_ENV, (u64)&envCurr - 4);
   for (i32 i = 1; i < body->maxPSC+1; i++) {
     MOV8rmo(R_A2, R_A2, offsetof(Scope, psc));
     MOV8mro(r_PSCS, R_A2, i*8);
   }
   if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
-  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f-4); TSADD(rel, ASM_SIZE-4); }
+  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f-4); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
   Block** blocks = body->blocks->a;
@@ -522,12 +521,12 @@ Nvm_res m_nvm(Body* body) {
       case FN2O: TOPp; IMM(R_A1,off); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
         MOV(R_A1, R_RES);
-        MOV8pr((u64)&gStack - 4, SPOS(R_A3, 0, 0)); TSADD(rel, ASM_SIZE-4); // GS_UPD
+        MOV8pr((u64)&gStack - 4, SPOS(R_A3, 0, 0)); // GS_UPD
         CCALL(fn);
       } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
         Reg r_sp = SPOS(R_A2, -1, 0);
-        MOV8pr((u64)&gStack - 4, r_sp); TSADD(rel, ASM_SIZE-4); // GS_UPD
+        MOV8pr((u64)&gStack - 4, r_sp); // GS_UPD
         MOV(R_A1, R_RES); MOV8rm(R_A2, r_sp); // load args
         CCALL(fn);
       } break;
@@ -573,7 +572,7 @@ Nvm_res m_nvm(Body* body) {
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: MOV(R_A0,r_SC); INV(1,1,i_RETD); ret=true; break; // (Scope* sc, S); stack diff 0 is wrong, but updating it is useless
       // case RETN: IMM(R_A3, &gStack); MOV8mr(R_A3, r_CS); ret=true; break;
-      case RETN: MOV8pr((u64)&gStack - 4, r_CS); TSADD(rel, ASM_SIZE-4); ret=true; break;
+      case RETN: MOV8pr((u64)&gStack - 4, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
     #undef INCB
@@ -611,21 +610,12 @@ Nvm_res m_nvm(Body* body) {
     // vm_printPos(body->comp, bcPos, -1);
     fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
   #endif
-  memcpy(binEx, bin, sz);
-  u64 relAm = TSSIZE(rel);
-  // printf("allocated at %p; i_ADDU: %p\n", binEx, i_ADDU);
-  for (u64 i = 0; i < relAm; i++) {
-    u8* ins = binEx+rel[i];
-    u32 o = readBytes4(ins);
-    u32 n = o-(u32)(u64)ins;
-    memcpy(ins, (u8[]){BYTES4(n)}, 4);
-  }
+  ASM_WRITE(binEx);
   #if WRITE_ASM
     write_asm(binEx, sz);
     // exit(0);
   #endif
   FREE_ASM();
-  TSFREE(rel);
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
 }
 B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume

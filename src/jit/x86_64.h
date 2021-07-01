@@ -61,16 +61,27 @@ typedef u8 Reg;
 #define R_P4 15 // r15
 
 
-#define ALLOC_ASM(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N);
+#define ALLOC_ASM_ARR(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N)
+#define ALLOC_ASM(N) ALLOC_ASM_ARR(N); TSALLOC(u32, b_r, 64);
 #define GET_ASM() u8* bin = b_o->data;
 #define AADD(P,N) b_o=asm_add(b_o, P, N)
 #define ASM_SIZE (b_o->size)
-#define FREE_ASM() mm_free((Value*)b_o);
+#define FREE_ASM() mm_free((Value*)b_o); TSFREE(b_r);
+#define ASM_WRITE(P) {                 \
+  memcpy(binEx, bin, sz);              \
+  u64 relAm = TSSIZE(b_r);             \
+  for (u64 i = 0; i < relAm; i++) {    \
+    u8* ins = binEx+b_r[i];            \
+    u32 o = readBytes4(ins);           \
+    u32 n = o-(u32)(u64)ins;           \
+    memcpy(ins, (u8[]){BYTES4(n)}, 4); \
+  }                                    \
+}                                      \
 
 static NOINLINE TStack* asm_reserve(TStack* o) {
   u64 osz = o->size;
   u64 ncap = o->cap*2;
-  ALLOC_ASM(ncap);
+  ALLOC_ASM_ARR(ncap);
   memcpy(b_o->data, o->data, osz);
   b_o->size = osz;
   mm_free((Value*)o);
@@ -390,8 +401,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define MOV8mro(I,O,OFF) AC3(MOV8mro,I,O,OFF) // *(u64*)(nullptr + I + OFF) ← O
 #define MOV4rmo(O,I,OFF) AC3(MOV4rmo,O,I,OFF)
 #define MOV4mro(I,O,OFF) AC3(MOV4mro,I,O,OFF)
-#define MOV8pr(OFF,I) AC2(MOV8pr,OFF,I)
-#define MOV8rp(I,OFF) AC2(MOV8rp,OFF,I)
+#define MOV8pr(OFF,I) {AC2(MOV8pr,OFF,I); TSADD(b_r, ASM_SIZE-4);}
+#define MOV8rp(I,OFF) {AC2(MOV8rp,OFF,I); TSADD(b_r, ASM_SIZE-4);}
 
 #define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
 #define BZHI(O,I,N) AC3(BZHI,O,I,N) // requires __BMI2__
@@ -399,7 +410,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define PUSH(O) AC1(PUSH,O)
 #define POP(O) AC1(POP,O)
 #define CALL(IMM) AC1(CALL,IMM)
-#define CALLi(I) AC1(CALLi,(i64)(I)) // I must be 32-bit
+#define CALLi(I) {AC1(CALLi,(i64)(I)); TSADD(b_r, ASM_SIZE-4);} // I must be 32-bit
 #define RET() {b_o=asm_r(b_o); ASM1(0xC3);}
 
 #define JO(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x70);ASM1(-2);}
