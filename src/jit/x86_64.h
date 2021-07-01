@@ -20,16 +20,16 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "../utils/talloc.h"
 
 //       V - volatile (overwritten by calls)
-// 0 rax   result
-// 1 rcx   arg 3
-// 2 rdx   arg 2
-// 3 rbx V
-// 4 rsp V stack
-// 5 rbp V base
-// 6 rsi   arg 1
-// 7 rdi   arg 0
-// 8 r8    arg 4
-// 9 r9    arg 5
+// 0 rax V result
+// 1 rcx V arg 3
+// 2 rdx V arg 2
+// 3 rbx  
+// 4 rsp   stack
+// 5 rbp   base
+// 6 rsi V arg 1
+// 7 rdi V arg 0
+// 8 r8  V arg 4
+// 9 r9  V arg 5
 // . r10 V
 // . r11 V
 // . r12
@@ -54,11 +54,11 @@ typedef u8 Reg;
 #define R_V0 10
 #define R_V1 11
 // non-volatile/callee-saved/preserved registers
-#define R_P0 3 // rbx
-#define R_P1 12 // r12
-#define R_P2 13 // r13
-#define R_P3 14 // r14
-#define R_P4 15 // r15
+#define R_P0  3 // rbx
+#define R_P1 14 // r14
+#define R_P2 15 // r15
+#define R_P3 13 // r13
+#define R_P4 12 // r12
 
 
 #define ALLOC_ASM_ARR(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N)
