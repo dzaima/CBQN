@@ -42,7 +42,7 @@ typedef u8 UC;
 typedef u8 Reg;
 #define R_RES 0 // rax
 #define R_SP 4 // rsp
-#define R_BP 4 // rbp
+#define R_BP 5 // rbp
 // aregument registers
 #define R_A0 7 // rdi
 #define R_A1 6 // rsi

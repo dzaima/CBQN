@@ -456,7 +456,7 @@ Nvm_res m_nvm(Body* body) {
   Reg r_PSCS = 14;
   Reg r_CS   =  3;
   Reg r_SC   = 12;
-  PUSH(5);
+  PUSH(R_BP);
   PUSH(r_ENV);
   PUSH(r_PSCS); // Scope* pscs[]
   PUSH(r_CS); // starting gStack
@@ -592,7 +592,7 @@ Nvm_res m_nvm(Body* body) {
   POP(r_CS);
   POP(r_PSCS);
   POP(r_ENV);
-  POP(5);
+  POP(R_BP);
   RET();
   #undef CCALL
   GET_ASM();
