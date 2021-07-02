@@ -8,14 +8,14 @@ B toCells(B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   usz i = 0;
-  BS2B slice = TI(x).slice;
+  BS2A slice = TI(x).slice;
   usz p = 0;
   HArr_p r = m_harrs(cam, &i);
   if (rnk(x)==2) {
     for (; i < cam; i++) {
-      B s = slice(inc(x), p);
-      arr_shVec(s, csz);
-      r.a[i] = s;
+      Arr* s = slice(inc(x), p);
+      arrP_shVec(s, csz);
+      r.a[i] = taga(s);
       p+= csz;
     }
   } else {
@@ -24,9 +24,9 @@ B toCells(B x) {
     usz* xsh = a(x)->sh;
     for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
     for (; i < cam; i++) {
-      B s = slice(inc(x), p);
-      arr_shSetI(s, csz, cr, csh);
-      r.a[i] = s;
+      Arr* s = slice(inc(x), p);
+      arrP_shSetI(s, csz, cr, csh);
+      r.a[i] = taga(s);
       p+= csz;
     }
     ptr_dec(csh);
@@ -50,11 +50,11 @@ B toKCells(B x, ur k) {
   usz i = 0;
   usz p = 0;
   HArr_p r = m_harrs(cam, &i);
-  BS2B slice = TI(x).slice;
+  BS2A slice = TI(x).slice;
   for (; i < cam; i++) {
-    B s = slice(inc(x), p);
-    arr_shSetI(s, csz, cr, csh);
-    r.a[i] = s;
+    Arr* s = slice(inc(x), p);
+    arrP_shSetI(s, csz, cr, csh);
+    r.a[i] = taga(s);
     p+= csz;
   }
   if (cr>1) ptr_dec(csh);
@@ -91,14 +91,14 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
 
 
 
-B m_hslice(B p, B* ptr) {
+static Arr* m_hslice(B p, B* ptr) {
   HSlice* r = mm_alloc(sizeof(HSlice), t_hslice);
   r->p = p;
   r->a = ptr;
-  return tag(r, ARR_TAG);
+  return (Arr*)r;
 }
-B harr_slice  (B x, usz s) {return m_hslice(x                 , c(HArr  ,x)->a+s); }
-B hslice_slice(B x, usz s) { B r = m_hslice(inc(c(Slice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
+Arr* harr_slice  (B x, usz s) { return   m_hslice(x                 , c(HArr  ,x)->a+s); }
+Arr* hslice_slice(B x, usz s) { Arr* r = m_hslice(inc(c(Slice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
 
 B harr_get   (B x, usz n) { VTY(x,t_harr  ); return inc(c(HArr  ,x)->a[n]); }
 B hslice_get (B x, usz n) { VTY(x,t_hslice); return inc(c(HSlice,x)->a[n]); }

@@ -31,8 +31,15 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 
-static B fillarr_slice  (B x, usz s) {return m_fillslice(x                 , c(FillArr  ,x)->a+s); }
-static B fillslice_slice(B x, usz s) { B r = m_fillslice(inc(c(Slice,x)->p), c(FillSlice,x)->a+s); dec(x); return r; }
+static Arr* m_fillslice(B p, B* ptr) {
+  FillSlice* r = mm_alloc(sizeof(FillSlice), t_fillslice);
+  r->p = p;
+  r->a = ptr;
+  return (Arr*)r;
+}
+
+static Arr* fillarr_slice  (B x, usz s) { return   m_fillslice(x                 , c(FillArr  ,x)->a+s); }
+static Arr* fillslice_slice(B x, usz s) { Arr* r = m_fillslice(inc(c(Slice,x)->p), c(FillSlice,x)->a+s); dec(x); return r; }
 
 static B fillarr_get   (B x, usz n) { VTY(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n]); }
 static B fillslice_get (B x, usz n) { VTY(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
@@ -201,5 +208,5 @@ B withFill(B x, B fill) { // consumes both
   BS2B xget = TI(x).get;
   for (usz i = 0; i < ia; i++) a[i] = xget(x,i);
   dec(x);
-  return tag(r, ARR_TAG);
+  return taga(r);
 }

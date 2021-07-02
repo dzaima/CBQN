@@ -18,7 +18,7 @@ static inline HArr_p harr_parts(B b) {
   return (HArr_p){.b = b, .a = p->a, .c = p};
 }
 static inline HArr_p harrP_parts(HArr* p) {
-  return (HArr_p){.b = tag(p,ARR_TAG), .a = p->a, .c = p};
+  return (HArr_p){.b = taga(p), .a = p->a, .c = p};
 }
 NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 

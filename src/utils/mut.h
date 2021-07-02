@@ -33,35 +33,35 @@ static void mut_to(Mut* m, u8 n) {
     #ifdef DEBUG
       if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
         usz ia = m->val->ia;
-        f64* p = f64arr_ptr(tag(m->val,ARR_TAG));
+        f64* p = f64arr_ptr(taga(m->val));
         for (usz i = 0; i < ia; i++) if (!isF64(b(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
       }
     #endif
     switch(n) { default: UD;
-      case el_i32: { I32Arr* t= toI32Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->ai32 = t->a; return; }
-      case el_f64: { F64Arr* t= toF64Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->af64 = t->a; return; }
-      case el_c32: { C32Arr* t= toC32Arr(tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->ac32 = t->a; return; }
-      case el_B  : { HArr*   t= toHArr  (tag(m->val, ARR_TAG)); m->val = (Arr*)t; m->aB   = t->a; return; }
+      case el_i32: { I32Arr* t= toI32Arr(taga(m->val)); m->val = (Arr*)t; m->ai32 = t->a; return; }
+      case el_f64: { F64Arr* t= toF64Arr(taga(m->val)); m->val = (Arr*)t; m->af64 = t->a; return; }
+      case el_c32: { C32Arr* t= toC32Arr(taga(m->val)); m->val = (Arr*)t; m->ac32 = t->a; return; }
+      case el_B  : { HArr*   t= toHArr  (taga(m->val)); m->val = (Arr*)t; m->aB   = t->a; return; }
     }
   }
 }
 
 static B mut_fv(Mut* m) { assert(m->type!=el_MAX);
   m->val->sh = &m->val->ia;
-  B r = tag(m->val, ARR_TAG);
+  B r = taga(m->val);
   srnk(r, 1);
   return r;
 }
 static B mut_fp(Mut* m) { assert(m->type!=el_MAX); // has ia set
-  return tag(m->val, ARR_TAG);
+  return taga(m->val);
 }
 static B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
-  B r = tag(m->val, ARR_TAG);
+  B r = taga(m->val);
   arr_shCopy(r, x);
   return r;
 }
 static B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
-  B r = tag(m->val, ARR_TAG);
+  B r = taga(m->val);
   arr_shCopy(r, x);
   dec(x);
   return r;
@@ -80,7 +80,7 @@ static u8 el_or(u8 a, u8 b) {
 }
 
 static void mut_pfree(Mut* m, usz n) { // free the first n elements
-  if (m->type==el_B) harr_pfree(tag(m->val,ARR_TAG), n);
+  if (m->type==el_B) harr_pfree(taga(m->val), n);
   else mm_free((Value*) m->val);
 }
 

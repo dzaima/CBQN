@@ -262,7 +262,7 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
   u32* bc = (u32*)bca->a;
   usz bcIA = bca->ia;
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
-  comp->bc = tag(bca, ARR_TAG);
+  comp->bc = taga(bca);
   comp->indices = indices;
   comp->src = src;
   comp->path = path;
@@ -842,8 +842,8 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 padStart = padEnd;
   while (padStart>0 && o2cu(srcGetU(s,padStart-1))!='\n') padStart--;
   
-  B slice = TI(src).slice(inc(src),srcS); arr_shVec(slice, srcE-srcS);
-  AJOIN(slice);
+  Arr* slice = TI(src).slice(inc(src),srcS); arrP_shVec(slice, srcE-srcS);
+  AJOIN(taga(slice));
   cs-= srcS;
   ce-= srcS;
   ACHR('\n');

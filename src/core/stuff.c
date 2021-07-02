@@ -390,7 +390,7 @@ B bqn_squeeze(B x) { // consumes
   if (xe==el_f64) {
     f64* xp = f64any_ptr(x);
     for (usz i = 0; i < ia; i++) if (xp[i] != (f64)(i32)xp[i]) return x;
-    return tag(toI32Arr(x), ARR_TAG);
+    return taga(toI32Arr(x));
   }
   assert(xe==el_B);
   BS2B xgetU = TI(x).getU;
@@ -401,16 +401,16 @@ B bqn_squeeze(B x) { // consumes
       if (!isNum(c)) return x;
       if (!q_i32(c)) {
         for (i++; i < ia; i++) if (!isNum(xgetU(x, i))) return x;
-        return tag(toF64Arr(x), ARR_TAG);
+        return taga(toF64Arr(x));
       }
     }
-    return tag(toI32Arr(x), ARR_TAG);
+    return taga(toI32Arr(x));
   } else if (isC32(x0)) {
     for (usz i = 1; i < ia; i++) {
       B c = xgetU(x, i);
       if (!isC32(c)) return x;
     }
-    return tag(toC32Arr(x), ARR_TAG);
+    return taga(toC32Arr(x));
   } else return x;
 }
 B bqn_merge(B x) { // consumes

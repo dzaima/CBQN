@@ -124,8 +124,6 @@ CTR_FOR(F)
 #undef F
 
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
-#define ftag(x) ((u64)(x) << 48)
-#define tag(v, t) b(((u64)(v)) | ftag(t))
                                                // .FF0 .111111111110000000000000000000000000000000000000000000000000000 infinity
                                                // .FF8 .111111111111000000000000000000000000000000000000000000000000000 qNaN
                                                // .FF. .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
@@ -142,6 +140,9 @@ static const u16 NSP_TAG = 0b1111111111110101; // FFF5 1111111111110101ppppppppp
 static const u16 OBJ_TAG = 0b1111111111110110; // FFF6 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom object (e.g. bigints)
 static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else is an atom)
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
+#define ftag(X) ((u64)(X) << 48)
+#define tag(V, T) b(((u64)(V)) | ftag(T))
+#define taga(V) tag(V, ARR_TAG)
 
 void cbqn_init();
 
@@ -348,6 +349,7 @@ void slice_print(B x);
 
 
 typedef void (*B2v)(B);
+typedef Arr* (*BS2A)(B, usz);
 typedef B (* BS2B)(B, usz);
 typedef B (*BSS2B)(B, usz, usz);
 typedef B (*     B2B)(B);
@@ -364,7 +366,7 @@ typedef struct TypeInfo {
   BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
   BB2B  m1_d; // consume all args; (m, f)
   BBB2B m2_d; // consume all args; (m, f, g)
-  BS2B slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object; preserves fill
+  BS2A slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object; preserves fill
   B2B identity; // return identity element of this function; doesn't consume
   
      BBB2B fn_uc1; // t,o,      x→r; r≡O⌾(      T    ) x; consumes x

@@ -8,7 +8,7 @@
 static B homFil1(B f, B r, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return tag(toI32Arr(r), ARR_TAG); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
+    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return taga(toI32Arr(r)); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
     if (f.u==bi_fne.u) { dec(xf); return withFill(r, m_harrUv(0).b); }
     if (!noFill(xf)) {
       if (CATCH) { dec(catchMessage); return r; }
@@ -23,7 +23,7 @@ static B homFil1(B f, B r, B xf) {
 static B homFil2(B f, B r, B wf, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return tag(toI32Arr(r), ARR_TAG); }
+    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return taga(toI32Arr(r)); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { dec(catchMessage); return r; }
       B rf = asFill(c2(f, wf, xf));
@@ -343,13 +343,13 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
     memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
   }
   usz i = 0;
-  BS2B slice = TI(x).slice;
+  BS2A slice = TI(x).slice;
   HArr_p r = m_harrs(cam, &i);
   usz p = 0;
   for (; i < cam; i++) {
-    B s = slice(inc(x), p);
-    arr_shSetI(s, csz, cr, csh);
-    r.a[i] = c1(f, s);
+    Arr* s = slice(inc(x), p);
+    arrP_shSetI(s, csz, cr, csh);
+    r.a[i] = c1(f, taga(s));
     p+= csz;
   }
   if (cr>1) ptr_dec(csh);

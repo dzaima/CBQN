@@ -13,9 +13,9 @@ B shape_c1(B t, B x) {
     arr_shVec(x, ia);
     return x;
   }
-  B r = TI(x).slice(x, 0);
-  arr_shVec(r, ia);
-  return r;
+  Arr* r = TI(x).slice(x, 0);
+  arrP_shVec(r, ia);
+  return taga(r);
 }
 B shape_c2(B t, B w, B x) {
   if (isAtm(x)) { dec(x); dec(w); thrM("⥊: Reshaping non-array"); }
@@ -25,10 +25,10 @@ B shape_c2(B t, B w, B x) {
   if (wia>UR_MAX) thrM("⥊: Result rank too large");
   ur nr = (ur)wia;
   usz nia = a(x)->ia;
-  B r;
-  if (reusable(x)) { r = x; decSh(v(x)); }
-  else r = TI(x).slice(x, 0);
-  usz* sh = arr_shAllocI(r, nia, nr);
+  B r; Arr* ra;
+  if (reusable(x)) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
+  else { ra = TI(x).slice(x, 0); r = taga(ra); }
+  usz* sh = arrP_shAllocI(ra, nia, nr);
   if (sh) for (u32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
   dec(w);
   return r;
@@ -62,16 +62,16 @@ B select_c1(B t, B x) {
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
-  B r = TI(x).slice(inc(x),0);
-  usz* sh = arr_shAllocR(r, xr-1);
+  Arr* r = TI(x).slice(inc(x),0);
+  usz* sh = arrP_shAllocR(r, xr-1);
   usz ia = 1;
   for (i32 i = 1; i < xr; i++) {
     if (sh) sh[i-1] = a(x)->sh[i];
     ia*= a(x)->sh[i];
   }
-  a(r)->ia = ia;
+  r->ia = ia;
   dec(x);
-  return r;
+  return taga(r);
 }
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
@@ -81,11 +81,11 @@ B select_c2(B t, B w, B x) {
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
     usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
-    B r = TI(x).slice(inc(x), wi*csz);
-    usz* sh = arr_shAllocI(r, csz, xr-1);
+    Arr* r = TI(x).slice(inc(x), wi*csz);
+    usz* sh = arrP_shAllocI(r, csz, xr-1);
     if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
     dec(x);
-    return r;
+    return taga(r);
   }
   B xf = getFillQ(x);
   BS2B xget = TI(x).get;
@@ -306,9 +306,9 @@ B slash_c2(B t, B w, B x) {
     i32 wv = o2i(w);
     if (wv<=0) {
       if (wv<0) thrM("/: 𝕨 cannot be negative");
-      B r = TI(x).slice(x, 0);
-      arr_shVec(r,0);
-      return r;
+      Arr* r = TI(x).slice(x, 0);
+      arrP_shVec(r,0);
+      return taga(r);
     }
     usz ri = 0;
     if (TI(x).elType==el_i32) {
@@ -336,9 +336,9 @@ B slash_c2(B t, B w, B x) {
 
 B slicev(B x, usz s, usz ia) {
   usz xia = a(x)->ia; assert(s+ia <= xia);
-  B r = TI(x).slice(x, s);
-  arr_shVec(r, ia);
-  return r;
+  Arr* r = TI(x).slice(x, s);
+  arrP_shVec(r, ia);
+  return taga(r);
 }
 extern B rt_take, rt_drop;
 B take_c1(B t, B x) { return c1(rt_take, x); }
@@ -489,11 +489,11 @@ B couple_c1(B t, B x) {
   if (isArr(x)) {
     usz rr = rnk(x);
     usz ia = a(x)->ia;
-    B r = TI(x).slice(inc(x),0);
-    usz* sh = arr_shAllocI(r, ia, rr+1);
+    Arr* r = TI(x).slice(inc(x),0);
+    usz* sh = arrP_shAllocI(r, ia, rr+1);
     if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
     dec(x);
-    return r;
+    return taga(r);
   }
   if (q_i32(x)) { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = o2iu(x); return r; }
   if (isF64(x)) { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = o2fu(x); return r; }

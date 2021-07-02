@@ -189,11 +189,11 @@ B variation_c2(B t, B w, B x) {
       if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
       else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
       else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
-    } else thrF("•internal.Variation: Bad type \"%R\"", tag(wc,ARR_TAG));
+    } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     if (slice) {
-      B slice = TI(res).slice(res, 0);
-      arr_shCopy(slice, res);
-      res = slice;
+      Arr* slice = TI(res).slice(res, 0);
+      arrP_shCopy(slice, res);
+      res = taga(slice);
     }
     if (u32_get(&wp, wpE, U"Inc")) {
       if (!variation_refs.u) {
