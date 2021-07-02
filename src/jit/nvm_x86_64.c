@@ -109,16 +109,12 @@ INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_funBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md1Block(bl, sc); }
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md2Block(bl, sc); }
-INS B i_OP1D(B f, u32* bc GA1) { P(m)     GS_UPD;POS_UPD; return m1_d  (m,f  ); }
-INS B i_OP2D(B f, u32* bc GA1) { P(m)P(g) GS_UPD;POS_UPD; return m2_d  (m,f,g); }
-INS B i_OP2H(B m          GA1) {     P(g)                 return m2_h  (m,  g); }
-INS B i_TR2D(B g          GA1) {     P(h)                 return m_atop(  g,h); }
-INS B i_TR3D(B f          GA1) { P(g)P(h)                 return m_fork(f,g,h); }
-INS B i_TR3O(B f          GA1) { P(g)P(h) B r;
-  if (isNothing(f)) { r=m_atop(g,h); dec(f); }
-  else              { r=m_fork(f,g,h); }
-  return r;
-}
+INS B i_OP1D(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
+INS B i_OP2D(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
+INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
+INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
+INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
+INS B i_TR3O(B f,B g, B h         ) {          return isNothing(f)? m_atop(g,h) : m_fork(f,g,h); }
 INS B i_LOCO(u32 p, Scope* sc, u32* bc GA1) {
   B l = sc->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
@@ -523,14 +519,12 @@ Nvm_res m_nvm(Body* body) {
           IMM(R_A0, L64); CCALL(i_ADDU);
         #endif
       break;
-      case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (B f, B x, u32* bc)
-      case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (B f, B x, u32* bc)
-      case FN2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2C); break; // (B w, B f, B x, u32* bc, S)
-      case FN2O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2O); break; // (B w, B f, B x, u32* bc, S)
+      case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (     B f, B x, u32* bc)
+      case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (     B f, B x, u32* bc)
+      case FN2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2C); break; // (B w, B f, B x, u32* bc)
+      case FN2O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2O); break; // (B w, B f, B x, u32* bc)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,0,2); CCALL(fn); } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
-      // case FN1Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
-      // case FN2Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN2Ci); break; // (B, BBB2B fd, u32* bc, S)
       case FN1Oi:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Oi); break; // (B, BB2B  fm,           u32* bc, S)
       case FN2Oi:TOPp; IMM(R_A1,L64); IMM(R_A2, L64); IMM(R_A3,off); INV(4,0,i_FN2Oi); break; // (B, BB2B  fm, BBB2B fd, u32* bc, S)
       case ARRM: case ARRO:;
@@ -544,12 +538,12 @@ Nvm_res m_nvm(Body* body) {
         if (fn==0) thrM("JIT: Bad DFND argument");
         IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); INV(3,1,fn);
         break;
-      case OP1D: TOPp; IMM(R_A1,off); INV(2,0,i_OP1D); break; // (B, u32* bc, S)
-      case OP2D: TOPp; IMM(R_A1,off); INV(2,0,i_OP2D); break; // (B, u32* bc, S)
-      case OP2H: TOPp; INV(1,0,i_OP2H); break; // (B, S)
-      case TR2D: TOPp; INV(1,0,i_TR2D); break; // (B, S)
-      case TR3D: TOPp; INV(1,0,i_TR3D); break; // (B, S)
-      case TR3O: TOPp; INV(1,0,i_TR3O); break; // (B, S)
+      case OP1D: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_OP1D); break; // (B f,B m,      u32* bc)
+      case OP2D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_OP2D); break; // (B f,B m, B g, u32* bc)
+      case OP2H: TOPp; GET(R_A1,1,0);                               CCALL(i_OP2H); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
+      case TR2D: TOPp; GET(R_A1,1,0);                               CCALL(i_TR2D); break; // (B g,     B h)
+      case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3D); break; // (B f,B g, B h)
+      case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3O); break; // (B f,B g, B h)
       case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
       case LOCO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
