@@ -12,13 +12,6 @@
 #ifndef WRITE_ASM
   #define WRITE_ASM 0 // writes on every compilation, overriding the previous; view with:
 #endif                // objdump -b binary -m i386 -M x86-64,intel -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+7 | sed "$(cat asm_sed)"
-#ifndef CSTACK
-  #define CSTACK 1
-#endif
-#ifdef GS_REALLOC
-  #undef CSTACK
-  #define CSTACK 0
-#endif
 
 
 // separate memory management system for executable code; isn't garbage-collected
@@ -41,15 +34,8 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 
 
 // all the instructions to be called by the generated code
-#if CSTACK
-  #define GA1 ,B* cStack
-  #define GSP (*--cStack)
-  #define GS_UPD { gStack=cStack; }
-#else
-  #define GA1
-  #define GSP (*--gStack)
-  #define GS_UPD
-#endif
+#define GSP (*--cStack)
+#define GS_UPD { gStack=cStack; }
 #define P(N) B N=GSP;
 #if VM_POS
   #define POS_UPD envCurr->bcL = bc;
@@ -62,9 +48,6 @@ INS void i_POPS(B x) {
 }
 INS void i_INC(Value* v) {
   ptr_inc(v);
-}
-INS B i_ADDU(u64 v) {
-  return b(v);
 }
 INS B i_FN1C(B f, B x, u32* bc) { POS_UPD; // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
   B r = c1(f, x);
@@ -96,7 +79,7 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
 INS B i_ARR_0() { // TODO combine with ADDI
   return inc(bi_emptyHVec);
 }
-INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
+INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
@@ -114,7 +97,7 @@ INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
 INS B i_TR3O(B f,B g, B h         ) {          return isNothing(f)? m_atop(g,h) : m_fork(f,g,h); }
-INS B i_NOVAR(u32* bc GA1) {
+INS B i_NOVAR(u32* bc, B* cStack) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
 INS B i_LOCU(u32 p, Scope* sc) {
@@ -123,7 +106,7 @@ INS B i_LOCU(u32 p, Scope* sc) {
   vars[p] = bi_optOut;
   return r;
 }
-INS B i_EXTO(u32 p, Scope* sc, u32* bc GA1) {
+INS B i_EXTO(u32 p, Scope* sc, u32* bc, B* cStack) {
   B l = sc->ext->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
   return inc(l);
@@ -162,7 +145,7 @@ INS B i_NSPM(B o, u32 l) {
   c(FldAlias,a)->p = l;
   return a;
 }
-INS B i_CHKV(B x, u32* bc GA1) {
+INS B i_CHKV(B x, u32* bc, B* cStack) {
   if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
@@ -178,7 +161,6 @@ INS B i_RETD(Scope* sc) {
 #undef GSP
 #undef GS_UPD
 #undef POS_UPD
-#undef GA1
 
 
 
@@ -423,7 +405,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = inc(bi_emptyCVec);
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -484,12 +466,7 @@ Nvm_res m_nvm(Body* body) {
     #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if (Q||o) LEAi(O,I,o); o?O:I; })
     #define SPOSq(N) (maxi32(0, depth+(N)-1) * sizeof(B))
     #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if Q==0, then might not write and instead return another register which will have the wanted value
-    #if CSTACK
-      // #define INV(N,D,F) MOV(R_A##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
-      #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
-    #else
-      #define INV(N,D,F) CCALL(F) // N - stack argument number; D - expected stack delta; F - called function; TODO instrs which don't need stack (POPS and things with stack delta 1)
-    #endif
+    #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
     #define TOPp MOV(R_A0,R_RES)
     #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
     #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); }
@@ -508,12 +485,7 @@ Nvm_res m_nvm(Body* body) {
         if (depth>1) { u8 t = SPOS(R_A3, -1, 0); MOV8rm(R_RES, t); }
       break;
       case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(b(x))); INCV(R_A3); break; } // (u64 v, S)
-      case ADDU: TOPs; // (u64 v, S)
-        #if CSTACK
-          IMM(R_RES, L64);
-        #else
-          IMM(R_A0, L64); CCALL(i_ADDU);
-        #endif
+      case ADDU: TOPs; IMM(R_RES, L64);
       break;
       case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (     B f, B x, u32* bc)
       case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (     B f, B x, u32* bc)
