@@ -93,17 +93,17 @@ static B m_unit(B x) {
 
 static B m_atomUnit(B x) {
   if (isNum(x)) {
-    B r;
-    if (q_i32(x)) { i32* rp; r=m_i32arrp(&rp, 1); rp[0] = o2iu(x); }
-    else          { f64* rp; r=m_f64arrp(&rp, 1); rp[0] = o2fu(x); }
-    arr_shAllocR(r,0);
-    return r;
+    Arr* r;
+    if (q_i32(x)) { i32* rp; r = m_i32arrp(&rp, 1); rp[0] = o2iu(x); }
+    else          { f64* rp; r = m_f64arrp(&rp, 1); rp[0] = o2fu(x); }
+    arrP_shAllocR(r, 0);
+    return tag(r, ARR_TAG);
   }
   if (isC32(x)) {
-    u32* rp; B r = m_c32arrp(&rp, 1);
+    u32* rp; Arr* r = m_c32arrp(&rp, 1);
     rp[0] = o2cu(x);
-    arr_shAllocR(r,0);
-    return r;
+    arrP_shAllocR(r,0);
+    return tag(r, ARR_TAG);
   }
   return m_unit(x);
 }

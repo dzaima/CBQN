@@ -20,11 +20,11 @@ static B m_i32arrc(i32** p, B x) { assert(isArr(x));
   arrP_shCopy((Arr*)r, x);
   return tag(r, ARR_TAG);
 }
-static B m_i32arrp(i32** p, usz ia) { // doesn't write shape/rank
+static Arr* m_i32arrp(i32** p, usz ia) { // doesn't write shape/rank
   I32Arr* r = mm_alloc(fsizeof(I32Arr,a,i32,ia), t_i32arr);
   *p = r->a;
   r->ia = ia;
-  return tag(r, ARR_TAG);
+  return (Arr*)r;
 }
 
 B m_cai32(usz ia, i32* a);

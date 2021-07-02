@@ -20,11 +20,11 @@ static B m_c32arrc(u32** p, B x) { assert(isArr(x));
   arrP_shCopy((Arr*)r, x);
   return tag(r, ARR_TAG);
 }
-static B m_c32arrp(u32** p, usz ia) { // doesn't write shape/rank
+static Arr* m_c32arrp(u32** p, usz ia) { // doesn't write shape/rank
   C32Arr* r = mm_alloc(fsizeof(C32Arr,a,u32,ia), t_c32arr);
   *p = r->a;
   r->ia = ia;
-  return tag(r, ARR_TAG);
+  return (Arr*)r;
 }
 
 B m_str8(usz sz, char* s);

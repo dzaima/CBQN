@@ -233,10 +233,10 @@ B indexOf_c2(B t, B w, B x) {
         }
       }
       dec(w); dec(x);
-      i32* rp; B r = m_i32arrp(&rp, 1);
-      arr_shAllocR(r,0);
+      i32* rp; Arr* r = m_i32arrp(&rp, 1);
+      arrP_shAllocR(r, 0);
       rp[0] = res;
-      return r;
+      return tag(r, ARR_TAG);
     } else if (rnk(x)==1) {
       usz wia = a(w)->ia;
       usz xia = a(x)->ia;

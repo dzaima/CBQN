@@ -20,11 +20,11 @@ static B m_f64arrc(f64** p, B x) { assert(isArr(x));
   arrP_shCopy((Arr*)r, x);
   return tag(r, ARR_TAG);
 }
-static B m_f64arrp(f64** p, usz ia) { // doesn't write shape/rank
+static Arr* m_f64arrp(f64** p, usz ia) { // doesn't write shape/rank
   F64Arr* r = mm_alloc(fsizeof(F64Arr,a,f64,ia), t_f64arr);
   *p = r->a;
   r->ia = ia;
-  return tag(r, ARR_TAG);
+  return (Arr*)r;
 }
 
 B m_caf64(usz sz, f64* a);
