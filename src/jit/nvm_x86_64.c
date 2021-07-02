@@ -97,14 +97,13 @@ INS B i_ARR_0() { // TODO combine with ADDI
   return inc(bi_emptyHVec);
 }
 INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
-  HArr_p r = m_harrUv(sz);
+  HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) if (!isNum(r.a[sz-i-1] = GSP)) allNum = false;
-  if (allNum) {
-    GS_UPD;
-    return withFill(r.b, m_f64(0));
-  } else return r.b;
+  GS_UPD;
+  if (allNum) return withFill(r.b, m_f64(0));
+  return r.b;
 }
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); }
@@ -458,13 +457,11 @@ Nvm_res m_nvm(Body* body) {
   
   #define VAR(OFF,N) (OFF##Off + (N))
   #define VAR8(OFF,N) VAR(OFF,(N)*8)
-  ADDi(R_A4, 0x12);
   MOV8mro(R_SP, R_A1, VAR(pscs,0));
   for (i32 i = 1; i < body->maxPSC+1; i++) {
     MOV8rmo(R_A1, R_A1, offsetof(Scope, psc));
     MOV8mro(R_SP, R_A1, VAR8(pscs,i));
   }
-  ADDi(R_A4, 0x34);
   
   if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
   #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f); }
@@ -473,6 +470,8 @@ Nvm_res m_nvm(Body* body) {
   Block** blocks = body->blocks->a;
   i32 depth = 0;
   u32* bc = optRes.bc;
+  i32 lGPos = 0; // last updated gStack offset
+  
   while (true) {
     u32* s = bc;
     u32* n = nextBC(bc);
@@ -500,7 +499,7 @@ Nvm_res m_nvm(Body* body) {
     #endif
     #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,bcL));
     #define GS_SET(R) MOV8pr(&gStack, R)
-    #define GET(R,P,U) { if (U) { Reg t=SPOS(R, -(P), 0); if(U) GS_SET(t); if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, SPOSq(-(P))); } }
+    #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
@@ -524,8 +523,8 @@ Nvm_res m_nvm(Body* body) {
       case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B  fm, BBB2B fd, u32* bc)
       case ARRM: case ARRO:;
         u32 sz = *bc++;
-        if (sz) { TOPp; IMM(R_A1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
-        else    { TOPs;                  CCALL(i_ARR_0); } // unused with optimizations
+        if (sz) { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
+        else    { TOPs; CCALL(i_ARR_0); } // unused with optimizations
         break;
       case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = blocks[*bc++];
@@ -560,7 +559,7 @@ Nvm_res m_nvm(Body* body) {
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
-      case RETD: GET(R_A1,-1,2); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
+      case RETD: GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: GS_SET(r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
