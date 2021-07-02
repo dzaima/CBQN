@@ -74,11 +74,11 @@ INS B i_FN1O(B f, B x, u32* bc) { POS_UPD;
   B r = isNothing(x)? x : c1(f, x);
   dec(f); return r;
 }
-INS B i_FN2C(B w, B f, B x, u32* bc GA1) { POS_UPD;
+INS B i_FN2C(B w, B f, B x, u32* bc) { POS_UPD;
   B r = c2(f, w, x);
   dec(f); return r;
 }
-INS B i_FN2O(B w, B f, B x, u32* bc GA1) { POS_UPD;
+INS B i_FN2O(B w, B f, B x, u32* bc) { POS_UPD;
   B r;
   if (isNothing(x)) { dec(w); r = x; }
   else r = isNothing(w)? c1(f, x) : c2(f, w, x);
@@ -509,7 +509,7 @@ Nvm_res m_nvm(Body* body) {
     #endif
     #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,bcL));
     #define GS_SET(R) MOV8pr(&gStack, R)
-    #define GET(R,P,U) { Reg t=SPOS(R, -(P), 0); if(U) GS_SET(t); if(U!=2) MOV8rm(R,t); }
+    #define GET(R,P,U) { if (U) { Reg t=SPOS(R, -(P), 0); if(U) GS_SET(t); if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, SPOSq(-(P))); } }
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
