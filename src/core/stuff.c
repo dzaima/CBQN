@@ -12,6 +12,9 @@ NORETURN NOINLINE void err(char* s) {
 }
 
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
+NOINLINE B emptyCVecR() {
+  return emptyCVec();
+}
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));
