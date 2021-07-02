@@ -41,9 +41,10 @@ static void* BN(allocL)(u8 bucket, u8 type) {
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
   #endif
   allocB+= BSZ(bucket);
-  x->mmInfo = (x->mmInfo&0x7f) | gc_tagCurr;
-  x->flags = x->extra = x->type = 0;
+  u8 mmInfo = x->mmInfo;
+  x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;
+  x->mmInfo = (mmInfo&0x7f) | gc_tagCurr;
   x->type = type;
   #if defined(DEBUG) && !defined(DONT_FREE)
     u64* p = (u64*)x;
