@@ -66,19 +66,19 @@ INS void i_INC(Value* v) {
 INS B i_ADDU(u64 v) {
   return b(v);
 }
-INS B i_FN1C(B f, u32* bc GA1) { P(x) GS_UPD;POS_UPD; // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
+INS B i_FN1C(B f, B x, u32* bc) { POS_UPD; // TODO figure out a way to instead pass an offset in bc, so that shorter `mov`s can be used to pass it
   B r = c1(f, x);
   dec(f); return r;
 }
-INS B i_FN1O(B f, u32* bc GA1) { P(x) GS_UPD;POS_UPD;
+INS B i_FN1O(B f, B x, u32* bc) { POS_UPD;
   B r = isNothing(x)? x : c1(f, x);
   dec(f); return r;
 }
-INS B i_FN2C(B w, u32* bc GA1) { P(f)P(x) GS_UPD;POS_UPD;
+INS B i_FN2C(B w, B f, B x, u32* bc GA1) { POS_UPD;
   B r = c2(f, w, x);
   dec(f); return r;
 }
-INS B i_FN2O(B w, u32* bc GA1) { P(f)P(x) GS_UPD;POS_UPD;
+INS B i_FN2O(B w, B f, B x, u32* bc GA1) { POS_UPD;
   B r;
   if (isNothing(x)) { dec(w); r = x; }
   else r = isNothing(w)? c1(f, x) : c2(f, w, x);
@@ -523,10 +523,10 @@ Nvm_res m_nvm(Body* body) {
           IMM(R_A0, L64); CCALL(i_ADDU);
         #endif
       break;
-      case FN1C: TOPp; IMM(R_A1,off); INV(2,0,i_FN1C); break; // (B, u32* bc, S)
-      case FN2C: TOPp; IMM(R_A1,off); INV(2,0,i_FN2C); break; // (B, u32* bc, S)
-      case FN1O: TOPp; IMM(R_A1,off); INV(2,0,i_FN1O); break; // (B, u32* bc, S)
-      case FN2O: TOPp; IMM(R_A1,off); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
+      case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (B f, B x, u32* bc)
+      case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (B f, B x, u32* bc)
+      case FN2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2C); break; // (B w, B f, B x, u32* bc, S)
+      case FN2O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2O); break; // (B w, B f, B x, u32* bc, S)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,0,2); CCALL(fn); } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
       // case FN1Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
