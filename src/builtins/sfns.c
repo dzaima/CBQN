@@ -173,14 +173,14 @@ B select_c2(B t, B w, B x) {
       if ((usz)c >= cam) { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); }
       mut_copy(r, i*csz, x, csz*(usz)c, csz);
     }
-    B rb = mut_fp(r);
-    usz* rsh = arr_shAllocR(rb, rr);
+    Arr* ra = mut_fp(r);
+    usz* rsh = arrP_shAllocR(ra, rr);
     if (rsh) {
       memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
       memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
     }
     dec(w); dec(x);
-    return withFill(rb,xf);
+    return withFill(taga(ra),xf);
   }
   base:
   dec(xf);
@@ -432,14 +432,14 @@ B join_c1(B t, B x) {
       ri+= cia;
     }
     assert(ri==cam*csz);
-    B rb = mut_fp(r);
-    usz* sh = arr_shAllocR(rb, ir);
+    Arr* ra = mut_fp(r);
+    usz* sh = arrP_shAllocR(ra, ir);
     if (sh) {
       sh[0] = cam;
       memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
     }
     dec(x);
-    return SFNS_FILLS? qWithFill(rb, rf) : rb;
+    return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   }
   return c1(rt_join, x);
 }
@@ -470,8 +470,8 @@ B join_c2(B t, B w, B x) {
   mut_to(r, el_or(TI(w).elType, TI(x).elType));
   mut_copy(r, 0,   w, 0, wia);
   mut_copy(r, wia, x, 0, xia);
-  B rb = mut_fp(r);
-  usz* sh = arr_shAllocR(rb, c);
+  Arr* ra = mut_fp(r);
+  usz* sh = arrP_shAllocR(ra, c);
   if (sh) {
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
@@ -481,7 +481,7 @@ B join_c2(B t, B w, B x) {
     sh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
   }
   dec(w); dec(x);
-  return qWithFill(rb, f);
+  return qWithFill(taga(ra), f);
 }
 
 
@@ -516,13 +516,13 @@ B couple_c2(B t, B w, B x) {
   MAKE_MUT(r, ia*2);
   mut_copy(r, 0,  w, 0, ia);
   mut_copy(r, ia, x, 0, ia);
-  B rb = mut_fp(r);
-  usz* sh = arr_shAllocR(rb, wr+1);
+  Arr* ra = mut_fp(r);
+  usz* sh = arrP_shAllocR(ra, wr+1);
   if (sh) { sh[0]=2; memcpy(sh+1, a(w)->sh, wr*sizeof(usz)); }
-  if (!SFNS_FILLS) { dec(w); dec(x); return rb; }
+  if (!SFNS_FILLS) { dec(w); dec(x); return taga(ra); }
   B rf = fill_both(w, x);
   dec(w); dec(x);
-  return qWithFill(rb, rf);
+  return qWithFill(taga(ra), rf);
 }
 
 

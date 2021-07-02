@@ -451,14 +451,14 @@ B bqn_merge(B x) { // consumes
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
     rp+= elIA;
   }
-  B rb = mut_fp(r);
-  usz* rsh = arr_shAllocR(rb, xr+elR);
+  Arr* ra = mut_fp(r);
+  usz* rsh = arrP_shAllocR(ra, xr+elR);
   if (rsh) {
     memcpy         (rsh   , a(x)->sh, xr *sizeof(usz));
     if (elSh)memcpy(rsh+xr, elSh,     elR*sizeof(usz));
   }
   dec(x);
-  return withFill(rb,fill);
+  return withFill(taga(ra),fill);
 }
 
 #ifdef ALLOC_STAT
