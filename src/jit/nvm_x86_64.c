@@ -106,9 +106,9 @@ INS B i_ARR_p(B el0, i64 sz GA1) { assert(sz>0);
     return withFill(r.b, m_f64(0));
   } else return r.b;
 }
-INS B i_DFND_0(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_funBlock(bl, sc); }
-INS B i_DFND_1(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md1Block(bl, sc); }
-INS B i_DFND_2(u32* bc, Scope* sc, Block* bl GA1) { GS_UPD;POS_UPD; return m_md2Block(bl, sc); }
+INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
+INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); }
+INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
 INS B i_OP1D(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
 INS B i_OP2D(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
 INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
@@ -532,11 +532,12 @@ Nvm_res m_nvm(Body* body) {
         if (sz) { TOPp; IMM(R_A1, sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
         else    { TOPs;                  CCALL(i_ARR_0); } // unused with optimizations
         break;
-      case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl, S)
+      case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = blocks[*bc++];
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
         if (fn==0) thrM("JIT: Bad DFND argument");
-        IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); INV(3,1,fn);
+        GET(R_A3,-1,2);
+        IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); CCALL(fn);
         break;
       case OP1D: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_OP1D); break; // (B f,B m,      u32* bc)
       case OP2D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_OP2D); break; // (B f,B m, B g, u32* bc)
