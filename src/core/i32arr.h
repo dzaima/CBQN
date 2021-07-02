@@ -11,13 +11,13 @@ typedef struct I32Slice {
 static B m_i32arrv(i32** p, usz ia) {
   I32Arr* r = mm_alloc(fsizeof(I32Arr,a,i32,ia), t_i32arr);
   *p = r->a;
-  arrP_shVec((Arr*)r, ia);
+  arr_shVec((Arr*)r, ia);
   return taga(r);
 }
 static B m_i32arrc(i32** p, B x) { assert(isArr(x));
   I32Arr* r = mm_alloc(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr);
   *p = r->a;
-  arrP_shCopy((Arr*)r, x);
+  arr_shCopy((Arr*)r, x);
   return taga(r);
 }
 static Arr* m_i32arrp(i32** p, usz ia) { // doesn't write shape/rank

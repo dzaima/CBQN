@@ -36,28 +36,28 @@ static ShArr* m_shArr(ur r) {
   return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
-static void arrP_shVec(Arr* x, usz ia) {
+static void arr_shVec(Arr* x, usz ia) {
   x->ia = ia;
   sprnk(x, 1);
   x->sh = &x->ia;
 }
-static usz* arrP_shAllocR(Arr* x, ur r) { // allocates shape, sets rank
+static usz* arr_shAllocR(Arr* x, ur r) { // allocates shape, sets rank
   sprnk(x,r);
   if (r>1) return x->sh = m_shArr(r)->a;
   x->sh = &x->ia;
   return 0;
 }
-static usz* arrP_shAllocI(Arr* x, usz ia, ur r) { // allocates shape, sets ia,rank
+static usz* arr_shAllocI(Arr* x, usz ia, ur r) { // allocates shape, sets ia,rank
   x->ia = ia;
-  return arrP_shAllocR(x, r);
+  return arr_shAllocR(x, r);
 }
-static void arrP_shSetI(Arr* x, usz ia, ur r, ShArr* sh) {
+static void arr_shSetI(Arr* x, usz ia, ur r, ShArr* sh) {
   sprnk(x,r);
   x->ia = ia;
   if (r>1) { x->sh = sh->a; ptr_inc(sh); }
   else     { x->sh = &x->ia; }
 }
-static void arrP_shCopy(Arr* n, B o) { // copy shape,rank,ia from o to n
+static void arr_shCopy(Arr* n, B o) { // copy shape,rank,ia from o to n
   assert(isArr(o));
   n->ia = a(o)->ia;
   ur r = sprnk(n,rnk(o));

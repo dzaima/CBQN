@@ -31,7 +31,7 @@ TmpFile* file_bytes(B path) { // consumes
   u64 len = ftell(f);
   fseek(f, 0, SEEK_SET);
   TmpFile* src = mm_alloc(fsizeof(TmpFile,a,u8,len), t_i8arr);
-  arrP_shVec((Arr*)src, len);
+  arr_shVec((Arr*)src, len);
   if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
   dec(path);
   fclose(f);
@@ -75,7 +75,7 @@ B path_dir(B path) { // consumes; returns directory part of file path with trail
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(pgetU(path, i))=='/') {
       Arr* r = TI(path).slice(path, 0);
-      arrP_shVec(r, i+1);
+      arr_shVec(r, i+1);
       return taga(r);
     }
   }

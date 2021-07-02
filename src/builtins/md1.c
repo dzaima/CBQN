@@ -348,7 +348,7 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz p = 0;
   for (; i < cam; i++) {
     Arr* s = slice(inc(x), p);
-    arrP_shSetI(s, csz, cr, csh);
+    arr_shSetI(s, csz, cr, csh);
     r.a[i] = c1(f, taga(s));
     p+= csz;
   }

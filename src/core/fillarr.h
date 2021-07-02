@@ -73,12 +73,12 @@ static B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) {
     HArr_p r = m_harrUp(1);
-    arrP_shAllocR((Arr*)r.c, 0);
+    arr_shAllocR((Arr*)r.c, 0);
     r.a[0] = x;
     return r.b;
   }
   FillArr* r = mm_alloc(fsizeof(FillArr,a,B,1), t_fillarr);
-  arrP_shAllocI((Arr*)r, 1, 0);
+  arr_shAllocI((Arr*)r, 1, 0);
   r->fill = xf;
   r->a[0] = x;
   return taga(r);
@@ -89,13 +89,13 @@ static B m_atomUnit(B x) {
     Arr* r;
     if (q_i32(x)) { i32* rp; r = m_i32arrp(&rp, 1); rp[0] = o2iu(x); }
     else          { f64* rp; r = m_f64arrp(&rp, 1); rp[0] = o2fu(x); }
-    arrP_shAllocR(r, 0);
+    arr_shAllocR(r, 0);
     return taga(r);
   }
   if (isC32(x)) {
     u32* rp; Arr* r = m_c32arrp(&rp, 1);
     rp[0] = o2cu(x);
-    arrP_shAllocR(r,0);
+    arr_shAllocR(r,0);
     return taga(r);
   }
   return m_unit(x);

@@ -202,7 +202,7 @@ B withFill(B x, B fill) { // consumes both
   }
   base:;
   FillArr* r = mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
-  arrP_shCopy((Arr*)r, x);
+  arr_shCopy((Arr*)r, x);
   r->fill = fill;
   B* a = r->a;
   BS2B xget = TI(x).get;

@@ -425,7 +425,7 @@ B bqn_merge(B x) { // consumes
     B r = m_fillarrp(0);
     fillarr_setFill(r, xff);
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
-    usz* rsh = arrP_shAllocI(a(r), 0, xr+xfr);
+    usz* rsh = arr_shAllocI(a(r), 0, xr+xfr);
     if (rsh) {
       memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
       if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));
@@ -452,7 +452,7 @@ B bqn_merge(B x) { // consumes
     rp+= elIA;
   }
   Arr* ra = mut_fp(r);
-  usz* rsh = arrP_shAllocR(ra, xr+elR);
+  usz* rsh = arr_shAllocR(ra, xr+elR);
   if (rsh) {
     memcpy         (rsh   , a(x)->sh, xr *sizeof(usz));
     if (elSh)memcpy(rsh+xr, elSh,     elR*sizeof(usz));

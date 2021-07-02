@@ -42,14 +42,14 @@ static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
 static B harr_fc(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
-  arrP_shCopy((Arr*)p.c, x);
+  arr_shCopy((Arr*)p.c, x);
   gsPop();
   return p.b;
 }
 static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
-  arrP_shCopy((Arr*)p.c, x);
+  arr_shCopy((Arr*)p.c, x);
   dec(x);
   gsPop();
   return p.b;
@@ -57,7 +57,7 @@ static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
 static usz* harr_fa(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   gsPop();
-  return arrP_shAllocR((Arr*)p.c, r);
+  return arr_shAllocR((Arr*)p.c, r);
 }
 static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
   gsPop();
@@ -66,12 +66,12 @@ static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
 
 static HArr_p m_harrUv(usz ia) {
   HArr* r = mm_alloc(fsizeof(HArr,a,B,ia), t_harr);
-  arrP_shVec((Arr*)r, ia);
+  arr_shVec((Arr*)r, ia);
   return harrP_parts(r);
 }
 static HArr_p m_harrUc(B x) { assert(isArr(x));
   HArr* r = mm_alloc(fsizeof(HArr,a,B,a(x)->ia), t_harr);
-  arrP_shCopy((Arr*)r, x);
+  arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
 static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
@@ -82,7 +82,7 @@ static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
 
 static B m_hunit(B x) {
   HArr_p r = m_harrUp(1);
-  arrP_shAllocR((Arr*)r.c, 0);
+  arr_shAllocR((Arr*)r.c, 0);
   r.a[0] = x;
   return r.b;
 }

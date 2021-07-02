@@ -14,7 +14,7 @@ B toCells(B x) {
   if (rnk(x)==2) {
     for (; i < cam; i++) {
       Arr* s = slice(inc(x), p);
-      arrP_shVec(s, csz);
+      arr_shVec(s, csz);
       r.a[i] = taga(s);
       p+= csz;
     }
@@ -25,7 +25,7 @@ B toCells(B x) {
     for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
     for (; i < cam; i++) {
       Arr* s = slice(inc(x), p);
-      arrP_shSetI(s, csz, cr, csh);
+      arr_shSetI(s, csz, cr, csh);
       r.a[i] = taga(s);
       p+= csz;
     }
@@ -53,7 +53,7 @@ B toKCells(B x, ur k) {
   BS2A slice = TI(x).slice;
   for (; i < cam; i++) {
     Arr* s = slice(inc(x), p);
-    arrP_shSetI(s, csz, cr, csh);
+    arr_shSetI(s, csz, cr, csh);
     r.a[i] = taga(s);
     p+= csz;
   }
