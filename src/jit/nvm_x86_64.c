@@ -115,11 +115,6 @@ INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
 INS B i_TR3O(B f,B g, B h         ) {          return isNothing(f)? m_atop(g,h) : m_fork(f,g,h); }
-INS B i_LOCO(u32 p, Scope* sc, u32* bc GA1) {
-  B l = sc->vars[p];
-  if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
-  return inc(l);
-}
 INS B i_NOVAR(u32* bc GA1) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
@@ -156,7 +151,7 @@ INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD;
   v_setI(sc, p, inc(r), true);
   return r;
 }
-INS B i_FLDO(B ns, u32 p, Scope* sc GA1) { GS_UPD;
+INS B i_FLDO(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));
   dec(ns);
@@ -172,7 +167,7 @@ INS B i_CHKV(B x, u32* bc GA1) {
   if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
-INS B i_RETD(Scope* sc GA1) { GS_UPD;
+INS B i_RETD(Scope* sc) {
   Body* b = sc->body;
   ptr_inc(sc);
   ptr_inc(b->nsDesc);
@@ -429,7 +424,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = inc(bi_emptyCVec);
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -562,11 +557,10 @@ Nvm_res m_nvm(Body* body) {
       case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMi); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
-      case FLDO: TOPp; IMM(R_A1,*bc++); MOV(R_A2,r_SC); INV(3,0,i_FLDO); break; // (B, u32 p, Scope* sc, S)
+      case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
-      case RETD: MOV(R_A0,r_SC); INV(1,1,i_RETD); ret=true; break; // (Scope* sc, S); stack diff 0 is wrong, but updating it is useless
-      // case RETN: IMM(R_A3, &gStack); MOV8mr(R_A3, r_CS); ret=true; break;
+      case RETD: GET(R_A1,-1,2); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: GS_SET(r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
