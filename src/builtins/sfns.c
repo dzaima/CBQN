@@ -223,7 +223,7 @@ B slash_c1(B t, B x) {
   return r;
 }
 B slash_c2(B t, B w, B x) {
-  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
+  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && a(w)->ia && depth(w)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
