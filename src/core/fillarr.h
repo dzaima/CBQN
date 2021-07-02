@@ -73,7 +73,7 @@ static B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) {
     HArr_p r = m_harrUp(1);
-    arr_shAllocR(r.b, 0);
+    arrP_shAllocR((Arr*)r.c, 0);
     r.a[0] = x;
     return r.b;
   }

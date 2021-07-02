@@ -53,15 +53,15 @@ static B mut_fv(Mut* m) { assert(m->type!=el_MAX);
   return r;
 }
 static B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
-  B r = taga(m->val);
-  arr_shCopy(r, x);
-  return r;
+  Arr* a = m->val;
+  arrP_shCopy(a, x);
+  return taga(a);
 }
 static B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
-  B r = taga(m->val);
-  arr_shCopy(r, x);
+  Arr* a = m->val;
+  arrP_shCopy(a, x);
   dec(x);
-  return r;
+  return taga(a);
 }
 static Arr* mut_fp(Mut* m) { assert(m->type!=el_MAX); // has ia set
   return m->val;

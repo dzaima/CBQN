@@ -348,17 +348,17 @@ void slice_visit(Value* x);
 void slice_print(B x);
 
 
-typedef void (*B2v)(B);
-typedef Arr* (*BS2A)(B, usz);
-typedef B (* BS2B)(B, usz);
-typedef B (*BSS2B)(B, usz, usz);
+typedef bool (*  B2b)(B);
+typedef void (*  B2v)(B);
+typedef Arr* (* BS2A)(B, usz);
+typedef B (*    BS2B)(B, usz);
+typedef B (*   BSS2B)(B, usz, usz);
 typedef B (*     B2B)(B);
 typedef B (*    BB2B)(B, B);
 typedef B (*   BBB2B)(B, B, B);
 typedef B (*  BBBB2B)(B, B, B, B);
 typedef B (* BBBBB2B)(B, B, B, B, B);
 typedef B (*BBBBBB2B)(B, B, B, B, B, B);
-typedef bool (*B2b)(B);
 
 typedef struct TypeInfo {
   V2v free;   // expects refc==0, type may be cleared to t_empty for garbage collection

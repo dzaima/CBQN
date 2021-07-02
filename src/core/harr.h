@@ -42,14 +42,14 @@ static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
 static B harr_fc(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
-  arr_shCopy(p.b, x);
+  arrP_shCopy((Arr*)p.c, x);
   gsPop();
   return p.b;
 }
 static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   assert(p.c->ia == *p.c->sh);
   p.c->type = t_harr;
-  arr_shCopy(p.b, x);
+  arrP_shCopy((Arr*)p.c, x);
   dec(x);
   gsPop();
   return p.b;
@@ -57,7 +57,7 @@ static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
 static usz* harr_fa(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   gsPop();
-  return arr_shAllocR(p.b, r);
+  return arrP_shAllocR((Arr*)p.c, r);
 }
 static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
   gsPop();
@@ -82,7 +82,7 @@ static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
 
 static B m_hunit(B x) {
   HArr_p r = m_harrUp(1);
-  arr_shAllocR(r.b, 0);
+  arrP_shAllocR((Arr*)r.c, 0);
   r.a[0] = x;
   return r.b;
 }

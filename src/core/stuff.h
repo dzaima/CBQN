@@ -36,39 +36,6 @@ static ShArr* m_shArr(ur r) {
   return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
-static void arr_shVec(B x, usz ia) {
-  a(x)->ia = ia;
-  srnk(x, 1);
-  a(x)->sh = &a(x)->ia;
-}
-static usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank
-  srnk(x,r);
-  if (r>1) return a(x)->sh = m_shArr(r)->a;
-  a(x)->sh = &a(x)->ia;
-  return 0;
-}
-static usz* arr_shAllocI(B x, usz ia, ur r) { // allocates shape, sets ia,rank
-  a(x)->ia = ia;
-  return arr_shAllocR(x, r);
-}
-static void arr_shSetI(B x, usz ia, ur r, ShArr* sh) {
-  srnk(x,r);
-  a(x)->ia = ia;
-  if (r>1) { a(x)->sh = sh->a; ptr_inc(sh); }
-  else     { a(x)->sh = &a(x)->ia; }
-}
-static void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
-  assert(isArr(o));
-  a(n)->ia = a(o)->ia;
-  ur r = srnk(n,rnk(o));
-  if (r<=1) {
-    a(n)->sh = &a(n)->ia;
-  } else {
-    ptr_inc(shObj(o));
-    a(n)->sh = a(o)->sh;
-  }
-}
-
 static void arrP_shVec(Arr* x, usz ia) {
   x->ia = ia;
   sprnk(x, 1);

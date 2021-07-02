@@ -11,7 +11,7 @@ NORETURN NOINLINE void err(char* s) {
   exit(1);
 }
 
-B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
+B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec; // TODO add some way to get inc(these) without going through the tagging mess
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));
@@ -425,7 +425,7 @@ B bqn_merge(B x) { // consumes
     B r = m_fillarrp(0);
     fillarr_setFill(r, xff);
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
-    usz* rsh = arr_shAllocI(r, 0, xr+xfr);
+    usz* rsh = arrP_shAllocI(a(r), 0, xr+xfr);
     if (rsh) {
       memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
       if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));

@@ -10,7 +10,7 @@ B shape_c1(B t, B x) {
   usz ia = a(x)->ia;
   if (reusable(x)) {
     decSh(v(x));
-    arr_shVec(x, ia);
+    arrP_shVec(a(x), ia);
     return x;
   }
   Arr* r = TI(x).slice(x, 0);
@@ -395,7 +395,7 @@ B join_c1(B t, B x) {
       if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
       B xff = getFillQ(xf);
       HArr_p r = m_harrUp(0);
-      usz* sh = arr_shAllocR(r.b, ir);
+      usz* sh = arrP_shAllocR((Arr*)r.c, ir);
       if (sh) {
         sh[0] = 0;
         memcpy(sh+1, a(xf)->sh+1, sizeof(usz)*(ir-1));
@@ -612,13 +612,13 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) len[n]++; }
       
       B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(r, ria);
+      arrP_shVec(a(r), ria);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
       B rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0));
-      arr_shVec(rf, 0);
+      arrP_shVec(a(rf), 0);
       fillarr_setFill(r, rf);
       if (TI(x).elType==el_i32) {
         for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
@@ -646,7 +646,7 @@ B group_c2(B t, B w, B x) {
           i32 n = wp[i];
           if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
         }
-        for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
+        for (usz i = 0; i < ria; i++) { arrP_shVec(a(rp[i]), len[i]); }
       }
       fillarr_setFill(rf, xf);
       dec(w); dec(x); TFREE(len); TFREE(pos);
@@ -670,7 +670,7 @@ B group_c2(B t, B w, B x) {
       }
       
       B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(r, ria);
+      arrP_shVec(a(r), ria);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
@@ -682,7 +682,7 @@ B group_c2(B t, B w, B x) {
         rp[i] = c;
       }
       B rf = m_fillarrp(0);
-      arr_shVec(rf, 0);
+      arrP_shVec(a(rf), 0);
       fillarr_setFill(rf, xf);
       fillarr_setFill(r, rf);
       BS2B xget = TI(x).get;
@@ -690,7 +690,7 @@ B group_c2(B t, B w, B x) {
         i64 n = o2i64u(wgetU(w, i));
         if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
       }
-      for (usz i = 0; i < ria; i++) { arr_shVec(rp[i], len[i]); }
+      for (usz i = 0; i < ria; i++) { arrP_shVec(a(rp[i]), len[i]); }
       dec(w); dec(x); TFREE(len); TFREE(pos);
       return r;
     }
