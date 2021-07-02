@@ -7,7 +7,7 @@ NOINLINE B m_cai32(usz ia, i32* a) {
 }
 
 static B m_i32slice(B p, i32* ptr) {
-  I32Slice* r = mm_allocN(sizeof(I32Slice), t_i32slice);
+  I32Slice* r = mm_alloc(sizeof(I32Slice), t_i32slice);
   r->p = p;
   r->a = ptr;
   return tag(r, ARR_TAG);

@@ -61,7 +61,7 @@ typedef u8 Reg;
 #define R_P4 12 // r12
 
 
-#define ALLOC_ASM_ARR(N) TStack* b_o = (TStack*)mm_allocN(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N)
+#define ALLOC_ASM_ARR(N) TStack* b_o = (TStack*)mm_alloc(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N)
 #define ALLOC_ASM(N) ALLOC_ASM_ARR(N); TSALLOC(u32, b_r, 64);
 #define GET_ASM() u8* bin = b_o->data;
 #define AADD(P,N) b_o=asm_add(b_o, P, N)

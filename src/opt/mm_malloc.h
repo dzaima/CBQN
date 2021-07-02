@@ -9,7 +9,7 @@ static void mm_free(Value* x) {
   free(x);
 }
 
-static void* mm_allocN(usz sz, u8 type) {
+static void* mm_alloc(usz sz, u8 type) {
   Value* x = malloc(sz);
   onAlloc(sz, type);
   x->flags = x->extra = x->mmInfo = x->type = 0;

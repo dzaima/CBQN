@@ -20,7 +20,7 @@ extern u64 mm_heapMax;
 extern u64 currObjCounter;
 #endif
 
-static void* mm_allocN(usz sz, u8 type) {
+static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
   Value* r = mm_allocL(BSZI(sz), type);

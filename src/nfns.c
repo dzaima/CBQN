@@ -15,7 +15,7 @@ static B nfn_list;
 
 NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2) {
   u32 id = nfn_curr++;
-  NFnDesc* r = mm_allocN(sizeof(NFnDesc), t_nfnDesc);
+  NFnDesc* r = mm_alloc(sizeof(NFnDesc), t_nfnDesc);
   r->id = id;
   r->c1 = c1;
   r->c2 = c2;
@@ -24,7 +24,7 @@ NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2) {
   return r;
 }
 B m_nfn(NFnDesc* desc, B obj) {
-  NFn* r = mm_allocN(sizeof(NFn), t_nfn);
+  NFn* r = mm_alloc(sizeof(NFn), t_nfn);
   r->id = desc->id;
   r->c1 = desc->c1;
   r->c2 = desc->c2;

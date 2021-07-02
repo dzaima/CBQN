@@ -10,7 +10,7 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   i32 vam = ia+off;
   if (vam != body->varAm) thrM("Bad namespace description information");
   
-  NSDesc* r = mm_allocN(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
+  NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
   r->nameList = nameList;
   r->varAm = vam;
   BS2B getIDU = TI(varIDs).getU;
@@ -30,7 +30,7 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   body->nsDesc = r;
 }
 B m_ns(Scope* sc, NSDesc* desc) { // consumes both
-  NS* r = mm_allocN(sizeof(NS), t_ns);
+  NS* r = mm_alloc(sizeof(NS), t_ns);
   r->desc = desc;
   r->nameList = r->desc->nameList;
   r->sc = sc;

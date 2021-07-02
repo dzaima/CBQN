@@ -35,7 +35,7 @@ extern u64 mm_heapMax;
 extern u64 currObjCounter;
 #endif
 
-static void* mm_allocN(usz sz, u8 type) {
+static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);

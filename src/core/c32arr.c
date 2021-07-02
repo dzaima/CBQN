@@ -20,7 +20,7 @@ B m_str32(u32* s) {
 }
 
 static B m_c32slice(B p, u32* ptr) {
-  C32Slice* r = mm_allocN(sizeof(C32Slice), t_c32slice);
+  C32Slice* r = mm_alloc(sizeof(C32Slice), t_c32slice);
   r->p = p;
   r->a = ptr;
   return tag(r, ARR_TAG);

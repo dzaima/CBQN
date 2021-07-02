@@ -9,19 +9,19 @@ typedef struct C32Slice {
 
 
 static B m_c32arrv(u32** p, usz ia) {
-  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,ia), t_c32arr);
+  C32Arr* r = mm_alloc(fsizeof(C32Arr,a,u32,ia), t_c32arr);
   *p = r->a;
   arrP_shVec((Arr*)r, ia);
   return tag(r, ARR_TAG);
 }
 static B m_c32arrc(u32** p, B x) { assert(isArr(x));
-  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,a(x)->ia), t_c32arr);
+  C32Arr* r = mm_alloc(fsizeof(C32Arr,a,u32,a(x)->ia), t_c32arr);
   *p = r->a;
   arrP_shCopy((Arr*)r, x);
   return tag(r, ARR_TAG);
 }
 static B m_c32arrp(u32** p, usz ia) { // doesn't write shape/rank
-  C32Arr* r = mm_allocN(fsizeof(C32Arr,a,u32,ia), t_c32arr);
+  C32Arr* r = mm_alloc(fsizeof(C32Arr,a,u32,ia), t_c32arr);
   *p = r->a;
   r->ia = ia;
   return tag(r, ARR_TAG);

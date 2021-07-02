@@ -92,7 +92,7 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
 
 
 B m_hslice(B p, B* ptr) {
-  HSlice* r = mm_allocN(sizeof(HSlice), t_hslice);
+  HSlice* r = mm_alloc(sizeof(HSlice), t_hslice);
   r->p = p;
   r->a = ptr;
   return tag(r, ARR_TAG);

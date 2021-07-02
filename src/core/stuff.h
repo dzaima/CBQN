@@ -3,7 +3,7 @@ extern u64 allocB; // currently allocated number of bytes
 
 // memory defs
 
-static void* mm_allocN(usz sz, u8 type);
+static void* mm_alloc(usz sz, u8 type);
 static void mm_free(Value* x);
 static u64 mm_size(Value* x);
 static void mm_visit(B x);
@@ -11,10 +11,6 @@ static void mm_visitP(void* x);
 NORETURN void bqn_exit(i32 code);
 u64 mm_heapUsed();
 void printAllocStats();
-static B mm_alloc(usz sz, u8 type, u64 tag) {
-  assert(tag>1LL<<16 || tag==0); // make sure it's `ftag`ged :|
-  return b((u64)mm_allocN(sz,type) | tag);
-}
 
 
 #ifndef MAP_NORESERVE
@@ -37,7 +33,7 @@ static void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
 
 static ShArr* m_shArr(ur r) {
   assert(r>1);
-  return ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape));
+  return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
 static void arr_shVec(B x, usz ia) {

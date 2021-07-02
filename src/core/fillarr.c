@@ -194,7 +194,7 @@ B withFill(B x, B fill) { // consumes both
     return r;
   }
   base:;
-  FillArr* r = mm_allocN(fsizeof(FillArr,a,B,ia), t_fillarr);
+  FillArr* r = mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
   arrP_shCopy((Arr*)r, x);
   r->fill = fill;
   B* a = r->a;

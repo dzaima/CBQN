@@ -60,14 +60,14 @@ static B getFillE(B x) { // errors if there's no fill
 
 
 static B m_fillarrp(usz ia) { // doesn't set ia
-  return tag(mm_allocN(fsizeof(FillArr,a,B,ia), t_fillarr), ARR_TAG);
+  return tag(mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr), ARR_TAG);
 }
 static void fillarr_setFill(B x, B fill) { // consumes fill
   c(FillArr, x)->fill = fill;
 }
 
 static B m_fillslice(B p, B* ptr) {
-  FillSlice* r = mm_allocN(sizeof(FillSlice), t_fillslice);
+  FillSlice* r = mm_alloc(sizeof(FillSlice), t_fillslice);
   r->p = p;
   r->a = ptr;
   return tag(r, ARR_TAG);
@@ -84,7 +84,7 @@ static B m_unit(B x) {
     r.a[0] = x;
     return r.b;
   }
-  FillArr* r = mm_allocN(fsizeof(FillArr,a,B,1), t_fillarr);
+  FillArr* r = mm_alloc(fsizeof(FillArr,a,B,1), t_fillarr);
   arrP_shAllocI((Arr*)r, 1, 0);
   r->fill = xf;
   r->a[0] = x;

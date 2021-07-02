@@ -140,7 +140,7 @@ INS B i_FLDO(B ns, u32 p, Scope* sc) {
   return r;
 }
 INS B i_NSPM(B o, u32 l) {
-  FldAlias* a = mm_allocN(sizeof(FldAlias), t_fldAlias);
+  FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
   a->obj = o;
   a->p = l;
   return tag(a,OBJ_TAG);

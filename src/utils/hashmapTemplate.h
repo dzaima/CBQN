@@ -46,7 +46,7 @@ typedef struct Map {
 
 static Map* N(m) (u64 sz) {
   assert(sz && (sz & sz-1)==0);
-  Map* r = mm_allocN(fsizeof(Map,a,Ent,sz), t_hashmap);
+  Map* r = mm_alloc(fsizeof(Map,a,Ent,sz), t_hashmap);
   #ifdef HDEF
     for (u64 i = 0; i < sz; i++) r->a[i].hash = HDEF;
   #endif

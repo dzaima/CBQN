@@ -131,7 +131,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
     ScopeExt* oE = sc->ext;
     if (oE==NULL || vam > regAm + oE->varAm) {
       i32 nSZ = vam - regAm;
-      ScopeExt* nE = mm_allocN(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
+      ScopeExt* nE = mm_alloc(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
       nE->varAm = nSZ;
       i32 oSZ = 0;
       if (oE) {
@@ -218,7 +218,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
   usz blC = TSSIZE(nBlT);
   BlBlocks* nBl = NULL;
   if (blC) {
-    nBl = mm_allocN(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
+    nBl = mm_alloc(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
     nBl->am = blC;
     memcpy(nBl->a, nBlT, blC*sizeof(Block*));
   }
@@ -227,7 +227,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
   usz nbcC = TSSIZE(nBCT); i32* nbc; m_i32arrv(&nbc, nbcC); memcpy(nbc, nBCT, nbcC*4); TSFREE(nBCT);
   usz mapC = TSSIZE(mapT); i32* map; m_i32arrv(&map, mapC); memcpy(map, mapT, mapC*4); TSFREE(mapT);
   
-  Body* body = mm_allocN(fsizeof(Body,varIDs,i32,vam), t_body);
+  Body* body = mm_alloc(fsizeof(Body,varIDs,i32,vam), t_body);
   body->comp = comp; ptr_inc(comp);
   body->bc = (u32*)nbc;
   #if JIT_START != -1
@@ -247,7 +247,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
     for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
   } else m_nsDesc(body, imm, ty, inc(nameList), bgetU(block,4), bgetU(block,5));
   
-  Block* bl = mm_allocN(sizeof(Block), t_block);
+  Block* bl = mm_alloc(sizeof(Block), t_block);
   bl->body = body;
   bl->imm = imm;
   bl->ty = (u8)ty;
@@ -261,7 +261,7 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
   usz bcIA = bca->ia;
-  Comp* comp = mm_allocN(sizeof(Comp), t_comp);
+  Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   comp->bc = tag(bca, ARR_TAG);
   comp->indices = indices;
   comp->src = src;
@@ -539,7 +539,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         goto end;
       }
       case NSPM: { P(o) u32 l = *bc++;
-        FldAlias* a = mm_allocN(sizeof(FldAlias), t_fldAlias);
+        FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
         a->obj = o;
         a->p = l;
         ADD(tag(a,OBJ_TAG));
@@ -581,7 +581,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
 }
 
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // doesn't consume
-  Scope* sc = mm_allocN(fsizeof(Scope, vars, B, varAm), t_scope);
+  Scope* sc = mm_alloc(fsizeof(Scope, vars, B, varAm), t_scope);
   sc->body = body; ptr_inc(body);
   sc->psc = psc; if(psc) ptr_inc(psc);
   sc->varAm = varAm;
@@ -650,7 +650,7 @@ B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); p
 B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, psc, 0, NULL);
-  FunBlock* r = mm_allocN(sizeof(FunBlock), t_fun_block);
+  FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);
   r->bl = bl; ptr_inc(bl);
   r->sc = psc; ptr_inc(psc);
   r->c1 = funBl_c1;
@@ -658,7 +658,7 @@ B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   return tag(r, FUN_TAG);
 }
 B m_md1Block(Block* bl, Scope* psc) {
-  Md1Block* r = mm_allocN(sizeof(Md1Block), t_md1_block);
+  Md1Block* r = mm_alloc(sizeof(Md1Block), t_md1_block);
   r->bl = bl; ptr_inc(bl);
   r->sc = psc; ptr_inc(psc);
   r->c1 = md1Bl_c1;
@@ -666,7 +666,7 @@ B m_md1Block(Block* bl, Scope* psc) {
   return tag(r, MD1_TAG);
 }
 B m_md2Block(Block* bl, Scope* psc) {
-  Md2Block* r = mm_allocN(sizeof(Md2Block), t_md2_block);
+  Md2Block* r = mm_alloc(sizeof(Md2Block), t_md2_block);
   r->bl = bl; ptr_inc(bl);
   r->sc = psc; ptr_inc(psc);
   r->c1 = md2Bl_c1;

@@ -19,7 +19,7 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   if (alsz==mm_size((Value*)o)) {
     n = o;
   } else {
-    n = (TStack*)mm_allocN(alsz, t_temp);
+    n = (TStack*)mm_alloc(alsz, t_temp);
     memcpy(n->data, o->data, o->cap*elsz);
     mm_free((Value*)o);
     n->size = size;

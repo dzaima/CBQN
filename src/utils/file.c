@@ -30,7 +30,7 @@ TmpFile* file_bytes(B path) { // consumes
   fseek(f, 0, SEEK_END);
   u64 len = ftell(f);
   fseek(f, 0, SEEK_SET);
-  TmpFile* src = mm_allocN(fsizeof(TmpFile,a,u8,len), t_i8arr);
+  TmpFile* src = mm_alloc(fsizeof(TmpFile,a,u8,len), t_i8arr);
   arr_shVec(tag(src,ARR_TAG), len);
   if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
   dec(path);

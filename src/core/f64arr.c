@@ -7,7 +7,7 @@ NOINLINE B m_caf64(usz sz, f64* a) {
 }
 
 static B m_f64slice(B p, f64* ptr) {
-  F64Slice* r = mm_allocN(sizeof(F64Slice), t_f64slice);
+  F64Slice* r = mm_alloc(sizeof(F64Slice), t_f64slice);
   r->p = p;
   r->a = ptr;
   return tag(r, ARR_TAG);

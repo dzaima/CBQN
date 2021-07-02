@@ -153,7 +153,7 @@ B rtWrap_wrap(B t) {
     #ifdef RT_VERIFY
       if(v(t)->flags==0) return t;
     #endif
-    WFun* r = mm_allocN(sizeof(WFun), t_funWrap);
+    WFun* r = mm_alloc(sizeof(WFun), t_funWrap);
     r->extra = v(t)->extra;
     r->flags = v(t)->flags;
     r->c1 = wf_c1;
@@ -171,7 +171,7 @@ B rtWrap_wrap(B t) {
   }
   #ifdef RT_PERF
   if (isMd1(t)) {
-    WMd1* r = mm_allocN(sizeof(WMd1), t_md1Wrap);
+    WMd1* r = mm_alloc(sizeof(WMd1), t_md1Wrap);
     r->extra = v(t)->extra;
     r->flags = v(t)->flags;
     r->c1 = wm1_c1;
@@ -184,7 +184,7 @@ B rtWrap_wrap(B t) {
   }
   if (isMd2(t)) {
     Md2* fc = c(Md2,t);
-    WMd2* r = mm_allocN(sizeof(WMd2), t_md2Wrap);
+    WMd2* r = mm_alloc(sizeof(WMd2), t_md2Wrap);
     r->c1 = wm2_c1;
     r->c2 = wm2_c2;
     r->extra = fc->extra;
