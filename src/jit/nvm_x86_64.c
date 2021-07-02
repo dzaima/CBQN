@@ -447,7 +447,7 @@ Nvm_res m_nvm(Body* body) {
   u64 lsz = 0; // local variable used up space
   #define ALLOCL(NAME,N) u64 NAME##Off = lsz; lsz+= (N)
   
-  ALLOCL(pscs, (body->maxPSC+1)*8);
+  ALLOCL(pscs, (body->maxPSC)*8);
   while (((lsz+pushAm*8)&0xf) != 8) lsz++; // lazy way to make sure we're properly aligned
   SUBi(R_SP, lsz);
   
@@ -457,10 +457,12 @@ Nvm_res m_nvm(Body* body) {
   
   #define VAR(OFF,N) (OFF##Off + (N))
   #define VAR8(OFF,N) VAR(OFF,(N)*8)
-  MOV8mro(R_SP, R_A1, VAR(pscs,0));
-  for (i32 i = 1; i < body->maxPSC+1; i++) {
-    MOV8rmo(R_A1, R_A1, offsetof(Scope, psc));
-    MOV8mro(R_SP, R_A1, VAR8(pscs,i));
+  if (body->maxPSC) {
+    MOV8mro(R_SP, R_A1, VAR(pscs,0));
+    for (i32 i = 1; i < body->maxPSC; i++) {
+      MOV8rmo(R_A1, R_A1, offsetof(Scope, psc));
+      MOV8mro(R_SP, R_A1, VAR8(pscs,i));
+    }
   }
   
   if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");

@@ -183,7 +183,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
         i32 ins = c[0];
         i32 cdepth = c[1];
         i32 cpos = c[2];
-        if (cdepth>mpsc) mpsc = cdepth;
+        if (cdepth+1 > mpsc) mpsc = cdepth+1;
         if (sc && cdepth>=depth) {
           Scope* csc = sc;
           for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
@@ -213,7 +213,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
     c = n;
   }
   
-  if (mpsc>U16_MAX) thrM("VM compiler: LOC_ too deep");
+  if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
   
   usz blC = TSSIZE(nBlT);
   BlBlocks* nBl = NULL;
@@ -375,9 +375,11 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
-  Scope* pscs[b->maxPSC+1];
-  pscs[0] = sc;
-  for (i32 i = 0; i < b->maxPSC; i++) pscs[i+1] = pscs[i]->psc;
+  Scope* pscs[b->maxPSC];
+  if (b->maxPSC) {
+    pscs[0] = sc;
+    for (i32 i = 1; i < b->maxPSC; i++) pscs[i] = pscs[i-1]->psc;
+  }
   #ifdef GS_REALLOC
     #define POP (*--gStack)
     #define P(N) B N=POP;
