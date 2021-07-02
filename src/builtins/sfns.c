@@ -223,11 +223,14 @@ B slash_c1(B t, B x) {
   return r;
 }
 B slash_c2(B t, B w, B x) {
-  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && a(w)->ia && depth(w)==1) {
+  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     B xf = getFillQ(x);
-    if (wia!=xia) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
+    if (RARE(wia!=xia)) {
+      if (wia==0) return x;
+      thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
+    }
     
     usz ri = 0;
     if (TI(w).elType==el_i32) {
