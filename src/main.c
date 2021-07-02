@@ -9,7 +9,7 @@ static bool init = false;
 static void repl_init() {
   if (init) return;
   cbqn_init();
-  replPath = inc(bi_emptyCVec); gc_add(replPath);
+  replPath = emptyCVec(); gc_add(replPath);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
   gsc = m_scope(initBlock->body, NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
   ptr_dec(initBlock);
@@ -87,17 +87,17 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-e)"), inc(bi_emptySVec)));
+              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-e)"), emptySVec()));
               break;
             }
             case 'p': { repl_init(); REQARG(p);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-p)"), inc(bi_emptySVec));
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-p)"), emptySVec());
               print(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-o)"), inc(bi_emptySVec));
+              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str32(U"(-o)"), emptySVec());
               printRaw(r); dec(r);
               printf("\n");
               break;
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
       B src = fromUTF8l(argv[i++]);
       B args;
       if (i==argc) {
-        args = inc(bi_emptySVec);
+        args = emptySVec();
       } else {
         HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
         for (usz j = 0; j < argc-i; j++) {
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
       if (!silentREPL) printf("   ");
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0 || ln[0]==10) { if(!silentREPL) putchar('\n'); break; }
-      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), inc(bi_emptySVec), gsc, true);
+      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), emptySVec(), gsc, true);
       free(ln);
       
       ptr_dec(gsc->body); ptr_inc(block->body);

@@ -31,6 +31,5 @@ void i32arr_init() {
   ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
   ti[t_i32arr].elType = el_i32;      ti[t_i32slice].elType = el_i32;
   ti[t_i32arr].canStore = i32arr_canStore;
-  i32* tmp; bi_emptyIVec = m_i32arrv(&tmp, 0);
-  gc_add(bi_emptyIVec);
+  i32* tmp; bi_emptyIVec = m_i32arrv(&tmp, 0); gc_add(bi_emptyIVec);
 }

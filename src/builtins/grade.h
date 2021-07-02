@@ -15,7 +15,7 @@ B GRADE_CAT(c1)(B t, B x) {
   if (rnk(x)>1) x = toCells(x);
   usz ia = a(x)->ia;
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
-  if (ia==0) { dec(x); return inc(bi_emptyIVec); }
+  if (ia==0) { dec(x); return emptyIVec(); }
   
   i32* rp; B r = m_i32arrv(&rp, ia);
   if (TI(x).elType==el_i32) {

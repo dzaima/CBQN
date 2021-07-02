@@ -34,7 +34,7 @@ B isPure_c1(B t, B x) {
 }
 
 B info_c2(B t, B w, B x) {
-  B s = inc(bi_emptyCVec);
+  B s = emptyCVec();
   i32 m = o2i(w);
   if (isVal(x)) {
     if (m) AFMT("%xl: ", x.u);
@@ -113,7 +113,7 @@ B listVariations_c2(B t, B w, B x) {
       }
     }
   } else ai32=af64=false;
-  B r = inc(bi_emptyHVec);
+  B r = emptyHVec();
   if(ai32) { r=vec_add(r,inc(v_Ai32)); r=vec_add(r,inc(v_Si32)); if(c_incr) {r=vec_add(r,inc(v_Ai32Inc)); r=vec_add(r,inc(v_Si32Inc)); } }
   if(af64) { r=vec_add(r,inc(v_Af64)); r=vec_add(r,inc(v_Sf64)); if(c_incr) {r=vec_add(r,inc(v_Af64Inc)); r=vec_add(r,inc(v_Sf64Inc)); } }
   if(ac32) { r=vec_add(r,inc(v_Ac32)); r=vec_add(r,inc(v_Sc32)); if(c_incr) {r=vec_add(r,inc(v_Ac32Inc)); r=vec_add(r,inc(v_Sc32Inc)); } }
@@ -198,7 +198,7 @@ B variation_c2(B t, B w, B x) {
     }
     if (u32_get(&wp, wpE, U"Inc")) {
       if (!variation_refs.u) {
-        variation_refs = inc(bi_emptyHVec);
+        variation_refs = emptyHVec();
       }
       variation_refs = vec_add(variation_refs, inc(res));
     }
@@ -269,7 +269,7 @@ B getInternalNS() {
     listVariations_def = m_str32(U"if");
     gc_addFn(variation_root);
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec));
+    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), emptyCVec(), emptySVec());
     B arg =    m_caB(9, (B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)});
     #undef F
     internalNS = c1(fn,arg);

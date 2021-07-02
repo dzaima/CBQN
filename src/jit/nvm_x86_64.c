@@ -77,7 +77,7 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
   else return isNothing(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
 INS B i_ARR_0() { // TODO combine with ADDI
-  return inc(bi_emptyHVec);
+  return emptyHVec();
 }
 INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
@@ -314,7 +314,7 @@ static OptRes opt(u32* bc0) {
   
   TSALLOC(u32, rbc, TSSIZE(actions));
   TSALLOC(u32, roff, TSSIZE(actions));
-  B refs = inc(bi_emptyHVec);
+  B refs = emptyHVec();
   bc = bc0;
   u64 tpos = 0, dpos = 0;
   while (true) {
@@ -403,7 +403,7 @@ static u32 readBytes4(u8* d) {
     char off[20]; snprintf(off, 20, "%p", p);
     B o = m_str8l(off);
     file_wChars(m_str32(U"asm_off"), o); dec(o);
-    B s = inc(bi_emptyCVec);
+    B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
     F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F

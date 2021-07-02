@@ -93,7 +93,7 @@ B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes vali
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  if (wia==0) { dec(w); dec(x); return inc(bi_emptyIVec); }
+  if (wia==0) { dec(w); dec(x); return emptyIVec(); }
   if (xia==0) { dec(w); return x; }
   BS2B wgetU = TI(w).getU;
   BS2B xgetU = TI(x).getU;
@@ -236,7 +236,7 @@ B rand_range_c2(B t, B w, B x) {
 }
 
 static NOINLINE void rand_init() {
-  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), inc(bi_emptyCVec), inc(bi_emptySVec)); gc_add(rand_ns);
+  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
   rand_rangeName = m_str32(U"range"); gc_add(rand_rangeName);
   rand_rangeDesc = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
   B tmp = c2(rand_ns, m_f64(0), m_f64(0));
@@ -296,7 +296,7 @@ B flines_c1(B d, B x) {
   return harr_fv(r);
 }
 static NFnDesc* importDesc;
-B import_c1(B d,      B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), inc(bi_emptySVec)); }
+B import_c1(B d,      B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), emptySVec()); }
 B import_c2(B d, B w, B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), w); }
 static NFnDesc* listDesc;
 B list_c1(B d, B x) {
@@ -374,5 +374,5 @@ void sysfn_init() {
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
 }
 void sysfnPost_init() {
-  file_nsGen = bqn_exec(m_str32(U"{⟨List,   Bytes,   Chars,   Lines⟩⇐𝕩}"), inc(bi_emptyCVec), inc(bi_emptySVec)); gc_add(file_nsGen);
+  file_nsGen = bqn_exec(m_str32(U"{⟨List,   Bytes,   Chars,   Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);
 }

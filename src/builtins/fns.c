@@ -34,7 +34,7 @@ B ud_c1(B t, B x) {
       for (usz i = 0; i < xu; i++) rp[i] = i;
       return r;
     }
-    if (xu==0) { B r = bi_emptyIVec; ptr_inc(v(r)); return r; }
+    if (xu==0) return emptyIVec();
     i32* rp; B r = m_i32arrv(&rp, xu);
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
@@ -124,7 +124,7 @@ B fne_c1(B t, B x) {
     return r;
   } else {
     dec(x);
-    return inc(bi_emptyIVec);
+    return emptyIVec();
   }
 }
 B feq_c1(B t, B x) {
@@ -150,7 +150,7 @@ extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = a(x)->ia;
-  if (xia==0) { dec(x); return inc(bi_emptyIVec); }
+  if (xia==0) { dec(x); return emptyIVec(); }
   if (rnk(x)==1 && TI(x).elType==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
@@ -293,7 +293,7 @@ B find_c1(B t, B x) {
   B xf = getFillQ(x);
   if (rnk(x)!=1) return c1(rt_find, x);
   
-  B r = inc(bi_emptyHVec);
+  B r = emptyHVec();
   H_Sb* set = m_Sb(64);
   BS2B xgetU = TI(x).getU;
   for (usz i = 0; i < xia; i++) {

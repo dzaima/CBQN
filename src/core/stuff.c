@@ -11,7 +11,7 @@ NORETURN NOINLINE void err(char* s) {
   exit(1);
 }
 
-B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec; // TODO add some way to get inc(these) without going through the tagging mess
+B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));

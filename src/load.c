@@ -117,8 +117,8 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
-  B vName = inc(bi_emptyHVec);
-  B vDepth = inc(bi_emptyIVec);
+  B vName = emptyHVec();
+  B vDepth = emptyIVec();
   if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
   i32 depth = repl? -1 : 0;
   Scope* csc = sc;

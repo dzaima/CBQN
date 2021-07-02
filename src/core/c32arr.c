@@ -44,9 +44,11 @@ void c32arr_init() {
   ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
   ti[t_c32arr].elType = el_c32;      ti[t_c32slice].elType = el_c32;
   ti[t_c32arr].canStore = c32arr_canStore;
+  
   u32* tmp; bi_emptyCVec = m_c32arrv(&tmp, 0); gc_add(bi_emptyCVec);
+  
   Arr* emptySVec = m_fillarrp(0);
   arr_shVec(emptySVec, 0);
-  fillarr_setFill(emptySVec, inc(bi_emptyCVec));
+  fillarr_setFill(emptySVec, emptyCVec());
   bi_emptySVec = taga(emptySVec); gc_add(bi_emptySVec);
 }

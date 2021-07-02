@@ -453,7 +453,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
       case ARRO: case ARRM: {
         u32 sz = *bc++;
         if (sz==0) {
-          ADD(inc(bi_emptyHVec));
+          ADD(emptyHVec());
         } else {
           HArr_p r = m_harrUv(sz);
           bool allNum = true;
@@ -871,7 +871,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     // for (i32 i = 0; i < cs+start; i++) putchar(' ');
     // for (i32 i = cs; i < ce; i++) putchar('^');
     // putchar('\n');
-    B s = inc(bi_emptyCVec);
+    B s = emptyCVec();
     printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
   } else {

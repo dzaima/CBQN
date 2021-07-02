@@ -9,7 +9,7 @@
     usz ia = a(x)->ia;
     if (ia==0) {
       if (rnk(x)>1) return x;
-      dec(x); return inc(bi_emptyIVec);
+      dec(x); return emptyIVec();
     }
     if (xp[0] != (i32)xp[0]) return x;
     i32* rp; B r = m_i32arrc(&rp, x);

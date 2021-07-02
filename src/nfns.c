@@ -46,7 +46,7 @@ void nfn_gcFn() {
   mm_visit(nfn_list);
 }
 void nfn_init() {
-  nfn_list = inc(bi_emptyHVec);
+  nfn_list = emptyHVec();
   ti[t_nfn].free  = nfn_free;  ti[t_nfnDesc].free  = nfnDesc_free;
   ti[t_nfn].visit = nfn_visit; ti[t_nfnDesc].visit = nfnDesc_visit;
   ti[t_nfn].print = nfn_print; ti[t_nfnDesc].print = nfnDesc_print;

@@ -114,7 +114,7 @@ void file_wBytes(B path, B x) { // consumes path
 B file_list(B path) {
   DIR* d = dir_open(path);
   struct dirent *c;
-  B res = inc(bi_emptySVec);
+  B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
     char* name = c->d_name;
     if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_add(res, m_str8l(name));
