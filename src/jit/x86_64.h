@@ -401,16 +401,16 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define MOV8mro(I,O,OFF) AC3(MOV8mro,I,O,OFF) // *(u64*)(nullptr + I + OFF) ← O
 #define MOV4rmo(O,I,OFF) AC3(MOV4rmo,O,I,OFF)
 #define MOV4mro(I,O,OFF) AC3(MOV4mro,I,O,OFF)
-#define MOV8pr(OFF,I) {AC2(MOV8pr,OFF,I); TSADD(b_r, ASM_SIZE-4);}
-#define MOV8rp(I,OFF) {AC2(MOV8rp,OFF,I); TSADD(b_r, ASM_SIZE-4);}
+#define MOV8pr(POS,I) {AC2(MOV8pr,(u64)(POS),I); TSADD(b_r, ASM_SIZE-4);}
+#define MOV8rp(I,POS) {AC2(MOV8rp,(u64)(POS),I); TSADD(b_r, ASM_SIZE-4);}
 
 #define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
 #define BZHI(O,I,N) AC3(BZHI,O,I,N) // requires __BMI2__
 
 #define PUSH(O) AC1(PUSH,O)
 #define POP(O) AC1(POP,O)
-#define CALL(IMM) AC1(CALL,IMM)
-#define CALLi(I) {AC1(CALLi,(i64)(I)); TSADD(b_r, ASM_SIZE-4);} // I must be 32-bit
+#define CALL(I) AC1(CALL,I)
+#define CALLi(POS) {AC1(CALLi,(u64)(POS)); TSADD(b_r, ASM_SIZE-4);} // POS must be 32-bit
 #define RET() {b_o=asm_r(b_o); ASM1(0xC3);}
 
 #define JO(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x70);ASM1(-2);}
@@ -429,7 +429,7 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define JGE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7D);ASM1(-2);}
 #define JLE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7E);ASM1(-2);}
 #define JG(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7F);ASM1(-2);}
-#define LBL1(L) { i64 t=(i8)b_o->data[L+1] + ASM_SIZE-(i64)L; if(t!=(i8)t)thrM("x86-64 codegen: jump too long!"); b_o->data[L+1] = t; }
+#define LBL1(L) { i64 t=(i8)b_o->data[L+1] + ASM_SIZE-(i64)L; if(t!=(i8)t)err("x86-64 codegen: jump too long!"); b_o->data[L+1] = t; }
 
 ASMI(ADD, Reg o, Reg i) { nREX8(o,i); ASM1(0x01); nA_REG(o,i); }
 ASMI(SUB, Reg o, Reg i) { nREX8(o,i); ASM1(0x29); nA_REG(o,i); }
@@ -462,8 +462,8 @@ ASMI(MOV8mr, Reg o, Reg i) { nREX8(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV8mro,
 ASMI(MOV8rm, Reg i, Reg o) { nREX8(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); }
 ASMI(MOV4mr, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { nREX4(o,i); ASM1(0x89); MRMo(o,i, off); }
 ASMI(MOV4rm, Reg i, Reg o) { nREX4(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); }
-ASMI(MOV8pr,i32 off, Reg i) { nREX8(0,i); ASM1(0x89); MRMp(off,i); }
-ASMI(MOV8rp,i32 off, Reg i) { nREX8(0,i); ASM1(0x8B); MRMp(off,i); }
+ASMI(MOV8pr, u64 pos, Reg i) { nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); }
+ASMI(MOV8rp, u64 pos, Reg i) { nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); }
 
 ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(b_o,o,i); else { nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); } }
 ASMI(BZHI, Reg o, Reg i, Reg n) { ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); }
@@ -472,6 +472,6 @@ ASMI(PUSH, Reg O) { nREX4(O,0); ASM1(0x50+((O)&7)); }
 ASMI(POP , Reg O) { nREX4(O,0); ASM1(0x58+((O)&7)); }
 
 ASMI(CALL, Reg i) { nREX4(i,0); ASM1(0xFF); nA_REG(i,2); }
-ASMI(CALLi, i32 imm) { ASM1(0xE8); if (imm>I32_MAX)err("immediate call outside of 32-bit range!"); ASM4(imm); }
+ASMI(CALLi, u64 pos) { ASM1(0xE8); if (pos>I32_MAX)err("immediate call outside of 32-bit range!"); ASM4(pos-4); }
 
 #define IMM(A,B) MOVi(A,(u64)(B))

@@ -85,12 +85,6 @@ INS B i_FN2O(B w, u32* bc GA1) { P(f)P(x) GS_UPD;POS_UPD;
   dec(f);
   return r;
 }
-INS B i_FN1Ci(B x, BB2B fi, u32* bc GA1) { GS_UPD;POS_UPD;
-  return fi(b((u64)0), x);
-}
-INS B i_FN2Ci(B w, BBB2B fi, u32* bc GA1) { P(x) GS_UPD;POS_UPD;
-  return fi(b((u64)0), w, x);
-}
 INS B i_FN1Oi(B x, BB2B fm, u32* bc GA1) { GS_UPD;POS_UPD;
   B r = isNothing(x)? x : fm(b((u64)0), x);
   return r;
@@ -439,7 +433,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = inc(bi_emptyCVec);
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Ci) F(FN2Ci) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS) F(INC) F(ADDU) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCO) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -469,12 +463,12 @@ Nvm_res m_nvm(Body* body) {
   
   MOV(r_CS, R_A0);
   MOV(r_SC, R_A1);
-  MOV8rp(r_ENV, (u64)&envCurr - 4);
+  MOV8rp(r_ENV, &envCurr);
   
   #define VAR(OFF,N) (OFF##Off + (N))
   #define VAR8(OFF,N) VAR(OFF,(N)*8)
   ADDi(R_A4, 0x12);
-  MOV8mro(R_SP, R_A1, VAR8(pscs,0));
+  MOV8mro(R_SP, R_A1, VAR(pscs,0));
   for (i32 i = 1; i < body->maxPSC+1; i++) {
     MOV8rmo(R_A1, R_A1, offsetof(Scope, psc));
     MOV8mro(R_SP, R_A1, VAR8(pscs,i));
@@ -482,7 +476,7 @@ Nvm_res m_nvm(Body* body) {
   ADDi(R_A4, 0x34);
   
   if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
-  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f-4); }
+  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
   Block** blocks = body->blocks->a;
@@ -497,7 +491,7 @@ Nvm_res m_nvm(Body* body) {
     // #define LEA0(O,I,OFF) { MOV(O,I); ADDI(O,OFF); }
     #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if (Q||o) LEAi(O,I,o); o?O:I; })
     #define SPOSq(N) (maxi32(0, depth+(N)-1) * sizeof(B))
-    #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if !Q, then might not write and instead return another register which will have the wanted value
+    #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if Q==0, then might not write and instead return another register which will have the wanted value
     #if CSTACK
       // #define INV(N,D,F) MOV(R_A##N,r_CS); ADDI(r_CS,(D)*sizeof(B)); CCALL(F)
       #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
@@ -533,13 +527,13 @@ Nvm_res m_nvm(Body* body) {
       case FN2O: TOPp; IMM(R_A1,off); INV(2,0,i_FN2O); break; // (B, u32* bc, S)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
         MOV(R_A1, R_RES);
-        MOV8pr((u64)&gStack - 4, SPOS(R_A3, 0, 0)); // GS_UPD
+        MOV8pr(&gStack, SPOS(R_A3, 0, 0)); // GS_UPD
         CCALL(fn);
       } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3);
-        Reg r_sp = SPOS(R_A2, -1, 0);
-        MOV8pr((u64)&gStack - 4, r_sp); // GS_UPD
-        MOV(R_A1, R_RES); MOV8rm(R_A2, r_sp); // load args
+        Reg r_p2 = SPOS(R_A2, -1, 0);
+        MOV8pr(&gStack, r_p2); // GS_UPD
+        MOV(R_A1, R_RES); MOV8rm(R_A2, r_p2); // load args
         CCALL(fn);
       } break;
       // case FN1Ci:TOPp; IMM(R_A1,L64);                 IMM(R_A2,off); INV(3,0,i_FN1Ci); break; // (B, BB2B  fm, u32* bc, S)
@@ -584,7 +578,7 @@ Nvm_res m_nvm(Body* body) {
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: MOV(R_A0,r_SC); INV(1,1,i_RETD); ret=true; break; // (Scope* sc, S); stack diff 0 is wrong, but updating it is useless
       // case RETN: IMM(R_A3, &gStack); MOV8mr(R_A3, r_CS); ret=true; break;
-      case RETN: MOV8pr((u64)&gStack - 4, r_CS); ret=true; break;
+      case RETN: MOV8pr(&gStack, r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i", *s);
     }
     #undef INCB
