@@ -153,49 +153,47 @@ B rtWrap_wrap(B t) {
     #ifdef RT_VERIFY
       if(v(t)->flags==0) return t;
     #endif
-    B r = mm_alloc(sizeof(WFun), t_funWrap, ftag(FUN_TAG));
-    c(Value,r)->extra = v(t)->extra;
-    c(Value,r)->flags = v(t)->flags;
-    c(Fun,r)->c1 = wf_c1;
-    c(Fun,r)->c2 = wf_c2;
-    c(WFun,r)->v = t;
-    c(WFun,r)->prev = lastWF;
-    lastWF = c(WFun,r);
+    WFun* r = mm_allocN(sizeof(WFun), t_funWrap);
+    r->extra = v(t)->extra;
+    r->flags = v(t)->flags;
+    r->c1 = wf_c1;
+    r->c2 = wf_c2;
+    r->v = t;
+    r->prev = lastWF;
+    lastWF = r;
     #ifdef RT_VERIFY
-      c(WFun,r)->r1 = r1Objs[v(t)->flags-1];
+      r->r1 = r1Objs[v(t)->flags-1];
     #else
-      c(WFun,r)->c1t = 0; c(WFun,r)->c1a = 0;
-      c(WFun,r)->c2t = 0; c(WFun,r)->c2a = 0;
+      r->c1t = 0; r->c1a = 0;
+      r->c2t = 0; r->c2a = 0;
     #endif
-    return r;
+    return tag(r, FUN_TAG);
   }
   #ifdef RT_PERF
   if (isMd1(t)) {
-    B r = mm_alloc(sizeof(WMd1), t_md1Wrap, ftag(MD1_TAG));
-    c(Value,r)->extra = v(t)->extra;
-    c(Value,r)->flags = v(t)->flags;
-    c(Md1,r)->c1 = wm1_c1;
-    c(Md1,r)->c2 = wm1_c2;
-    c(WMd1,r)->v = t;
-    c(WMd1,r)->prev = lastWM1;
-    c(WMd1,r)->c1t = 0; c(WMd1,r)->c1a = 0;
-    c(WMd1,r)->c2t = 0; c(WMd1,r)->c2a = 0;
-    lastWM1 = c(WMd1,r);
-    return r;
+    WMd1* r = mm_allocN(sizeof(WMd1), t_md1Wrap);
+    r->extra = v(t)->extra;
+    r->flags = v(t)->flags;
+    r->c1 = wm1_c1;
+    r->c2 = wm1_c2;
+    r->v = t;
+    r->prev = lastWM1;
+    lastWM1 = r;
+    r->c1a = 0; r->c2a = 0;
+    return tag(r, MD1_TAG);
   }
   if (isMd2(t)) {
     Md2* fc = c(Md2,t);
-    B r = mm_alloc(sizeof(WMd2), t_md2Wrap, ftag(MD2_TAG));
-    c(Md2,r)->c1 = wm2_c1;
-    c(Md2,r)->c2 = wm2_c2;
-    c(Md2,r)->extra = fc->extra;
-    c(Md2,r)->flags = fc->flags;
-    c(WMd2,r)->v = t;
-    c(WMd2,r)->prev = lastWM2;
-    c(WMd2,r)->c1t = 0; c(WMd2,r)->c1a = 0;
-    c(WMd2,r)->c2t = 0; c(WMd2,r)->c2a = 0;
-    lastWM2 = c(WMd2,r);
-    return r;
+    WMd2* r = mm_allocN(sizeof(WMd2), t_md2Wrap);
+    r->c1 = wm2_c1;
+    r->c2 = wm2_c2;
+    r->extra = fc->extra;
+    r->flags = fc->flags;
+    r->v = t;
+    r->prev = lastWM2;
+    lastWM2 = r;
+    r->c1a = 0; r->c2a = 0;
+    return tag(r, MD2_TAG);
   }
   #endif
   return t;

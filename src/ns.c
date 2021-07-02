@@ -10,32 +10,31 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   i32 vam = ia+off;
   if (vam != body->varAm) thrM("Bad namespace description information");
   
-  NSDesc* rc = c(NSDesc, mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc, ftag(OBJ_TAG)));
-  rc->nameList = nameList;
-  rc->varAm = vam;
+  NSDesc* r = mm_allocN(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
+  r->nameList = nameList;
+  r->varAm = vam;
   BS2B getIDU = TI(varIDs).getU;
   BS2B getOnU = TI(exported).getU;
   for (i32 i = 0; i < off; i++) {
     body->varIDs[i] = -1;
-    rc  ->expIDs[i] = -1;
+    r   ->expIDs[i] = -1;
   }
   for (usz i = 0; i < ia; i++) {
     i32 cid = o2i(getIDU(varIDs, i));
     bool cexp = o2b(getOnU(exported, i));
     body->varIDs[i+off] = cid;
-    rc->expIDs[i+off] = cexp? cid : -1;
+    r->expIDs[i+off] = cexp? cid : -1;
   }
-  // printf("def %p:\n", rc);
-  // for (usz i = 0; i < vam; i++) printf("  %d: %d %d\n", i, body->varIDs[i], rc->expIDs[i]);
-  body->nsDesc = rc;
+  // printf("def %p:\n", r);
+  // for (usz i = 0; i < vam; i++) printf("  %d: %d %d\n", i, body->varIDs[i], r->expIDs[i]);
+  body->nsDesc = r;
 }
 B m_ns(Scope* sc, NSDesc* desc) { // consumes both
-  B r = mm_alloc(sizeof(NS), t_ns, ftag(NSP_TAG));
-  NS* rc = c(NS,r);
-  rc->desc = desc;
-  rc->nameList = rc->desc->nameList;
-  rc->sc = sc;
-  return r;
+  NS* r = mm_allocN(sizeof(NS), t_ns);
+  r->desc = desc;
+  r->nameList = r->desc->nameList;
+  r->sc = sc;
+  return tag(r, NSP_TAG);
 }
 
 B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);

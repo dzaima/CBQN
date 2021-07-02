@@ -539,10 +539,10 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         goto end;
       }
       case NSPM: { P(o) u32 l = *bc++;
-        B a = mm_alloc(sizeof(FldAlias), t_fldAlias, ftag(OBJ_TAG));
-        c(FldAlias,a)->obj = o;
-        c(FldAlias,a)->p = l;
-        ADD(a);
+        FldAlias* a = mm_allocN(sizeof(FldAlias), t_fldAlias);
+        a->obj = o;
+        a->p = l;
+        ADD(tag(a,OBJ_TAG));
         break;
       }
       case RETN: goto end;
@@ -650,28 +650,28 @@ B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); p
 B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, psc, 0, NULL);
-  B r = mm_alloc(sizeof(FunBlock), t_fun_block, ftag(FUN_TAG));
-  c(FunBlock, r)->bl = bl; ptr_inc(bl);
-  c(FunBlock, r)->sc = psc; ptr_inc(psc);
-  c(FunBlock, r)->c1 = funBl_c1;
-  c(FunBlock, r)->c2 = funBl_c2;
-  return r;
+  FunBlock* r = mm_allocN(sizeof(FunBlock), t_fun_block);
+  r->bl = bl; ptr_inc(bl);
+  r->sc = psc; ptr_inc(psc);
+  r->c1 = funBl_c1;
+  r->c2 = funBl_c2;
+  return tag(r, FUN_TAG);
 }
 B m_md1Block(Block* bl, Scope* psc) {
-  B r = mm_alloc(sizeof(Md1Block), t_md1_block, ftag(MD1_TAG));
-  c(Md1Block, r)->bl = bl; ptr_inc(bl);
-  c(Md1Block, r)->sc = psc; ptr_inc(psc);
-  c(Md1Block, r)->c1 = md1Bl_c1;
-  c(Md1Block, r)->c2 = md1Bl_c2;
-  return r;
+  Md1Block* r = mm_allocN(sizeof(Md1Block), t_md1_block);
+  r->bl = bl; ptr_inc(bl);
+  r->sc = psc; ptr_inc(psc);
+  r->c1 = md1Bl_c1;
+  r->c2 = md1Bl_c2;
+  return tag(r, MD1_TAG);
 }
 B m_md2Block(Block* bl, Scope* psc) {
-  B r = mm_alloc(sizeof(Md2Block), t_md2_block, ftag(MD2_TAG));
-  c(Md2Block, r)->bl = bl; ptr_inc(bl);
-  c(Md2Block, r)->sc = psc; ptr_inc(psc);
-  c(Md2Block, r)->c1 = md2Bl_c1;
-  c(Md2Block, r)->c2 = md2Bl_c2;
-  return r;
+  Md2Block* r = mm_allocN(sizeof(Md2Block), t_md2_block);
+  r->bl = bl; ptr_inc(bl);
+  r->sc = psc; ptr_inc(psc);
+  r->c1 = md2Bl_c1;
+  r->c2 = md2Bl_c2;
+  return tag(r, MD2_TAG);
 }
 
 void scope_free(Value* x) {
