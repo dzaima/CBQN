@@ -611,7 +611,7 @@ static void scope_dec(Scope* sc) {
   ptr_dec(sc);
 }
 
-FORCE_INLINE B execBodyInline(Body* body, Scope* sc) {
+FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc) {
   #if JIT_START != -1
     if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
     bool jit = true;
@@ -628,13 +628,14 @@ FORCE_INLINE B execBodyInline(Body* body, Scope* sc) {
   #endif
   return evalBC(body, sc);
 }
+B execBodyInline(Body* b, Scope* sc) { return execBodyInlineI(b, sc); } // ugh
 
 FORCE_INLINE B execBlock(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   Body* body = bl->body;
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   Scope* sc = m_scope(body, psc, varAm, ga, svar);
-  B r = execBodyInline(body, sc);
+  B r = execBodyInlineI(body, sc);
   scope_dec(sc);
   return r;
 }
