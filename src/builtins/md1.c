@@ -337,7 +337,11 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz cr = rnk(x)-1;
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
-  ShArr* csh; if (cr>1) csh = m_shArr(cr);
+  ShArr* csh;
+  if (cr>1) {
+    csh = m_shArr(cr);
+    memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
+  }
   usz i = 0;
   BS2B slice = TI(x).slice;
   HArr_p r = m_harrs(cam, &i);
