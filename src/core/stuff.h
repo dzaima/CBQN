@@ -34,14 +34,16 @@ static void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
 // some array stuff
 
 #define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })
+
+static ShArr* m_shArr(ur r) {
+  assert(r>1);
+  return ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape));
+}
+
 static void arr_shVec(B x, usz ia) {
   a(x)->ia = ia;
   srnk(x, 1);
   a(x)->sh = &a(x)->ia;
-}
-static ShArr* m_shArr(ur r) {
-  assert(r>1);
-  return ((ShArr*)mm_allocN(fsizeof(ShArr, a, usz, r), t_shape));
 }
 static usz* arr_shAllocR(B x, ur r) { // allocates shape, sets rank
   srnk(x,r);
@@ -70,6 +72,40 @@ static void arr_shCopy(B n, B o) { // copy shape,rank,ia from o to n
     a(n)->sh = a(o)->sh;
   }
 }
+
+static void arrP_shVec(Arr* x, usz ia) {
+  x->ia = ia;
+  sprnk(x, 1);
+  x->sh = &x->ia;
+}
+static usz* arrP_shAllocR(Arr* x, ur r) { // allocates shape, sets rank
+  sprnk(x,r);
+  if (r>1) return x->sh = m_shArr(r)->a;
+  x->sh = &x->ia;
+  return 0;
+}
+static usz* arrP_shAllocI(Arr* x, usz ia, ur r) { // allocates shape, sets ia,rank
+  x->ia = ia;
+  return arrP_shAllocR(x, r);
+}
+static void arrP_shSetI(Arr* x, usz ia, ur r, ShArr* sh) {
+  sprnk(x,r);
+  x->ia = ia;
+  if (r>1) { x->sh = sh->a; ptr_inc(sh); }
+  else     { x->sh = &x->ia; }
+}
+static void arrP_shCopy(Arr* n, B o) { // copy shape,rank,ia from o to n
+  assert(isArr(o));
+  n->ia = a(o)->ia;
+  ur r = sprnk(n,rnk(o));
+  if (r<=1) {
+    n->sh = &n->ia;
+  } else {
+    ptr_inc(shObj(o));
+    n->sh = a(o)->sh;
+  }
+}
+
 static usz arr_csz(B x) {
   ur xr = rnk(x);
   if (xr<=1) return 1;
@@ -90,7 +126,6 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
 }
 
 
-static B m_arr(usz min, u8 type) { return mm_alloc(min, type, ftag(ARR_TAG)); }
 static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
 static B m_v3(B a, B b, B c     ); // consumes all

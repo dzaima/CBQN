@@ -9,16 +9,16 @@ typedef struct F64Slice {
 
 
 static B m_f64arrv(f64** p, usz ia) {
-  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,ia), t_f64arr); B rb = tag(r, ARR_TAG);
+  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,ia), t_f64arr);
   *p = r->a;
-  arr_shVec(rb, ia);
-  return rb;
+  arrP_shVec((Arr*)r, ia);
+  return tag(r, ARR_TAG);
 }
 static B m_f64arrc(f64** p, B x) { assert(isArr(x));
-  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,a(x)->ia), t_f64arr); B rb = tag(r, ARR_TAG);
+  F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,a(x)->ia), t_f64arr);
   *p = r->a;
-  arr_shCopy(rb, x);
-  return rb;
+  arrP_shCopy((Arr*)r, x);
+  return tag(r, ARR_TAG);
 }
 static B m_f64arrp(f64** p, usz ia) { // doesn't write shape/rank
   F64Arr* r = mm_allocN(fsizeof(F64Arr,a,f64,ia), t_f64arr);

@@ -60,7 +60,7 @@ static B getFillE(B x) { // errors if there's no fill
 
 
 static B m_fillarrp(usz ia) { // doesn't set ia
-  return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
+  return tag(mm_allocN(fsizeof(FillArr,a,B,ia), t_fillarr), ARR_TAG);
 }
 static void fillarr_setFill(B x, B fill) { // consumes fill
   c(FillArr, x)->fill = fill;
@@ -84,11 +84,11 @@ static B m_unit(B x) {
     r.a[0] = x;
     return r.b;
   }
-  B r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr);
-  arr_shAllocI(r, 1, 0);
-  c(FillArr,r)->fill = xf;
-  c(FillArr,r)->a[0] = x;
-  return r;
+  FillArr* r = mm_allocN(fsizeof(FillArr,a,B,1), t_fillarr);
+  arrP_shAllocI((Arr*)r, 1, 0);
+  r->fill = xf;
+  r->a[0] = x;
+  return tag(r, ARR_TAG);
 }
 
 static B m_atomUnit(B x) {

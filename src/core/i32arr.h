@@ -9,16 +9,16 @@ typedef struct I32Slice {
 
 
 static B m_i32arrv(i32** p, usz ia) {
-  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,ia), t_i32arr); B rb = tag(r, ARR_TAG);
+  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,ia), t_i32arr);
   *p = r->a;
-  arr_shVec(rb, ia);
-  return rb;
+  arrP_shVec((Arr*)r, ia);
+  return tag(r, ARR_TAG);
 }
 static B m_i32arrc(i32** p, B x) { assert(isArr(x));
-  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr); B rb = tag(r, ARR_TAG);
+  I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,a(x)->ia), t_i32arr);
   *p = r->a;
-  arr_shCopy(rb, x);
-  return rb;
+  arrP_shCopy((Arr*)r, x);
+  return tag(r, ARR_TAG);
 }
 static B m_i32arrp(i32** p, usz ia) { // doesn't write shape/rank
   I32Arr* r = mm_allocN(fsizeof(I32Arr,a,i32,ia), t_i32arr);

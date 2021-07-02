@@ -194,12 +194,12 @@ B withFill(B x, B fill) { // consumes both
     return r;
   }
   base:;
-  B r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr);
-  arr_shCopy(r, x);
-  c(FillArr,r)->fill = fill;
-  B* a = c(FillArr,r)->a;
+  FillArr* r = mm_allocN(fsizeof(FillArr,a,B,ia), t_fillarr);
+  arrP_shCopy((Arr*)r, x);
+  r->fill = fill;
+  B* a = r->a;
   BS2B xget = TI(x).get;
   for (usz i = 0; i < ia; i++) a[i] = xget(x,i);
   dec(x);
-  return r;
+  return tag(r, ARR_TAG);
 }

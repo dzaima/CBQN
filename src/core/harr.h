@@ -17,15 +17,19 @@ static inline HArr_p harr_parts(B b) {
   HArr* p = c(HArr,b);
   return (HArr_p){.b = b, .a = p->a, .c = p};
 }
+static inline HArr_p harrP_parts(HArr* p) {
+  return (HArr_p){.b = tag(p,ARR_TAG), .a = p->a, .c = p};
+}
 NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 
 
 static HArr_p m_harrs(usz ia, usz* ctr) { // writes just ia
-  B r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial);
-  a(r)->ia = ia;
-  a(r)->sh = ctr;
-  gsAdd(r);
-  return harr_parts(r);
+  HArr* r = mm_allocN(fsizeof(HArr,a,B,ia), t_harrPartial);
+  r->ia = ia;
+  r->sh = ctr;
+  HArr_p rp = harrP_parts(r);
+  gsAdd(rp.b);
+  return rp;
 }
 static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
   assert(p.c->ia == *p.c->sh);
@@ -61,19 +65,19 @@ static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
 }
 
 static HArr_p m_harrUv(usz ia) {
-  B r = m_arr(fsizeof(HArr,a,B,ia), t_harr);
-  arr_shVec(r, ia);
-  return harr_parts(r);
+  HArr* r = mm_allocN(fsizeof(HArr,a,B,ia), t_harr);
+  arrP_shVec((Arr*)r, ia);
+  return harrP_parts(r);
 }
 static HArr_p m_harrUc(B x) { assert(isArr(x));
-  B r = m_arr(fsizeof(HArr,a,B,a(x)->ia), t_harr);
-  arr_shCopy(r, x);
-  return harr_parts(r);
+  HArr* r = mm_allocN(fsizeof(HArr,a,B,a(x)->ia), t_harr);
+  arrP_shCopy((Arr*)r, x);
+  return harrP_parts(r);
 }
 static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
-  B r = m_arr(fsizeof(HArr,a,B,ia), t_harr);
-  a(r)->ia = ia;
-  return harr_parts(r);
+  HArr* r = mm_allocN(fsizeof(HArr,a,B,ia), t_harr);
+  r->ia = ia;
+  return harrP_parts(r);
 }
 
 static B m_hunit(B x) {
