@@ -110,7 +110,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       if (!reuse) dec(x);
       return r;
     } else if (v(x)->type==t_fillarr) {
-      B* xp = fillarr_ptr(x);
+      B* xp = fillarr_ptr(a(x));
       if (reuse) {
         dec(c(FillArr,x)->fill);
         c(FillArr,x)->fill = bi_noFill;

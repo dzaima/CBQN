@@ -422,15 +422,15 @@ B bqn_merge(B x) { // consumes
     if (isAtm(xf)) { dec(xf); return x; }
     i32 xfr = rnk(xf);
     B xff = getFillQ(xf);
-    B r = m_fillarrp(0);
+    Arr* r = m_fillarrp(0);
     fillarr_setFill(r, xff);
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
-    usz* rsh = arr_shAllocI(a(r), 0, xr+xfr);
+    usz* rsh = arr_shAllocI(r, 0, xr+xfr);
     if (rsh) {
       memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
       if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));
     }
-    return r;
+    return taga(r);
   }
   
   BS2B xgetU = TI(x).getU;

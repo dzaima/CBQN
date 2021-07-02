@@ -611,15 +611,15 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) len[n]++; }
       
-      B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(a(r), ria);
+      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
+      arr_shVec(r, ria);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
-      B rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0));
-      arr_shVec(a(rf), 0);
-      fillarr_setFill(r, rf);
+      Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0));
+      arr_shVec(rf, 0);
+      fillarr_setFill(r, taga(rf));
       if (TI(x).elType==el_i32) {
         for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
         i32* xp = i32any_ptr(x);
@@ -636,21 +636,21 @@ B group_c2(B t, B w, B x) {
         }
       } else {
         for (usz i = 0; i < ria; i++) {
-          B c = m_fillarrp(len[i]);
+          Arr* c = m_fillarrp(len[i]);
           fillarr_setFill(c, inc(xf));
-          a(c)->ia = 0;
-          rp[i] = c;
+          c->ia = 0;
+          rp[i] = taga(c);
         }
         BS2B xget = TI(x).get;
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
-          if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
+          if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
         }
         for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
       }
       fillarr_setFill(rf, xf);
       dec(w); dec(x); TFREE(len); TFREE(pos);
-      return r;
+      return taga(r);
     } else {
       BS2B wgetU = TI(w).getU;
       i64 ria = wia==xia? -1 : o2i64(wgetU(w, xia))-1;
@@ -669,30 +669,30 @@ B group_c2(B t, B w, B x) {
         if (n>=0) len[n]++;
       }
       
-      B r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(a(r), ria);
+      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
+      arr_shVec(r, ria);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
       for (usz i = 0; i < ria; i++) {
-        B c = m_fillarrp(len[i]);
+        Arr* c = m_fillarrp(len[i]);
         fillarr_setFill(c, inc(xf));
-        a(c)->ia = 0;
-        rp[i] = c;
+        c->ia = 0;
+        rp[i] = taga(c);
       }
-      B rf = m_fillarrp(0);
-      arr_shVec(a(rf), 0);
+      Arr* rf = m_fillarrp(0);
+      arr_shVec(rf, 0);
       fillarr_setFill(rf, xf);
-      fillarr_setFill(r, rf);
+      fillarr_setFill(r, taga(rf));
       BS2B xget = TI(x).get;
       for (usz i = 0; i < xia; i++) {
         i64 n = o2i64u(wgetU(w, i));
-        if (n>=0) fillarr_ptr(rp[n])[pos[n]++] = xget(x, i);
+        if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
       }
       for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
       dec(w); dec(x); TFREE(len); TFREE(pos);
-      return r;
+      return taga(r);
     }
   }
   base:
@@ -781,7 +781,7 @@ B pick_ucw(B t, B o, B w, B x) {
       xp[wi] = o2f(rep);
       return x;
     } else if (v(x)->type==t_fillarr) {
-      B* xp = fillarr_ptr(x);
+      B* xp = fillarr_ptr(a(x));
       dec(xp[wi]);
       xp[wi] = rep;
       return x;

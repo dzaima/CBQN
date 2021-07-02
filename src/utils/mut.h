@@ -272,7 +272,7 @@ static B vec_join(B w, B x) { // consumes both
       u8 xt = v(x)->type;
       u8 xe = TI(x).elType;
       if (xt==t_harr | xt==t_hslice | xt==t_fillarr) {
-        B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(x);
+        B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(a(x));
         memcpy(rp, xp, xia*sizeof(B));
         for (usz i = 0; i < xia; i++) inc(rp[i]);
       } else if (xe==el_i32) {

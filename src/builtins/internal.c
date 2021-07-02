@@ -182,10 +182,11 @@ B variation_c2(B t, B w, B x) {
       else for (usz i = 0; i < xia; i++) t.a[i] = xget(x,i);
       res = t.b;
     } else if (u32_get(&wp, wpE, U"f")) {
-      res = m_fillarrp(xia);
-      fillarr_setFill(res, getFillQ(x));
-      arr_shCopy(a(res), x);
-      B* rp = fillarr_ptr(res);
+      Arr* t = m_fillarrp(xia);
+      res = taga(t);
+      fillarr_setFill(t, getFillQ(x));
+      arr_shCopy(t, x);
+      B* rp = fillarr_ptr(t);
       if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
       else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
       else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
@@ -243,11 +244,11 @@ static B unshare(B x) {
       return r.b;
     }
     case t_fillarr: {
-      B r = m_fillarrp(xia); arr_shCopy(a(r), x);
+      Arr* r = m_fillarrp(xia); arr_shCopy(r, x);
       fillarr_setFill(r, unshare(c(FillArr,x)->fill));
-      B* rp = fillarr_ptr(r); B* xp = fillarr_ptr(x);
+      B* rp = fillarr_ptr(r); B* xp = fillarr_ptr(a(x));
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
-      return r;
+      return taga(r);
     }
     default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", v(x)->type, format_type((v(x)->type)));
   }

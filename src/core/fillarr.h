@@ -59,14 +59,11 @@ static B getFillE(B x) { // errors if there's no fill
 }
 
 
-static B m_fillarrp(usz ia) { // doesn't set ia
-  return taga(mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr));
+static Arr* m_fillarrp(usz ia) { // doesn't set ia
+  return mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
 }
-static void fillarr_setFill(B x, B fill) { // consumes fill
-  c(FillArr, x)->fill = fill;
-}
-
-static B* fillarr_ptr(B x) { VTY(x,t_fillarr); return c(FillArr,x)->a; }
+static void fillarr_setFill(Arr* x, B fill) { assert(x->type==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
+static B* fillarr_ptr(Arr* x) { assert(x->type==t_fillarr); return ((FillArr*)x)->a; }
 
 
 static B m_unit(B x) {
