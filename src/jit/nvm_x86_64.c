@@ -38,7 +38,7 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZ
 #define GS_UPD { gStack=cStack; }
 #define P(N) B N=GSP;
 #if VM_POS
-  #define POS_UPD envCurr->bcL = bc;
+  #define POS_UPD envCurr->pos = (u64)bc;
 #else
   #define POS_UPD
 #endif
@@ -402,7 +402,8 @@ static u32 readBytes4(u8* d) {
   static void write_asm(u8* p, u64 sz);
   static void asm_test() {
     ALLOC_ASM(64);
-    for (int i = 0; i < 16; i++) CALLi(123);
+    for (int i = 0; i < 16; i++) MOV4moi(i, 0, 0xaaaaaaaa);
+    for (int i = 0; i < 16; i++) MOV4moi(i, 400, 0xaaaaaaaa);
     GET_ASM();
     write_asm(bin, ASM_SIZE);
     exit(0);
@@ -492,7 +493,8 @@ Nvm_res m_nvm(Body* body) {
   while (true) {
     u32* s = bc;
     u32* n = nextBC(bc);
-    u32* off = origBC + optRes.offset[s-optRes.bc];
+    u32 bcpos = optRes.offset[s-optRes.bc];
+    u32* off = origBC + bcpos;
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     // #define LEA0(O,I,OFF) { MOV(O,I); ADDI(O,OFF); }
@@ -509,7 +511,8 @@ Nvm_res m_nvm(Body* body) {
     #else
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
-    #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,bcL));
+    // #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,pos));
+    #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->map[bcpos]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
     #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count

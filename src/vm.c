@@ -370,7 +370,7 @@ i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
-#define BCPOS(B,P) (B->map[P-B->bc])
+#define BCPOS(B,P) (B->map[(P)-B->bc])
 B evalBC(Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -405,7 +405,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
   #endif
   #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
-    #define POS_UPD envCurr->bcL = bc-1;
+    #define POS_UPD envCurr->pos = (u64)(bc-1);
   #else
     #define POS_UPD
   #endif
@@ -900,7 +900,7 @@ NOINLINE void vm_pst(Env* s, Env* e) { // e not included
       i = 10;
     }
     Comp* comp = c->sc->body->comp;
-    i32 bcPos = c>=envStart && c<=envCurr? BCPOS(c->sc->body, c->bcL) : c->bcV;
+    i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, (u32*)c->pos);
     vm_printPos(comp, bcPos, i);
     i--;
   }
@@ -912,7 +912,7 @@ NOINLINE void vm_pstLive() {
 void unwindEnv(Env* envNew) {
   assert(envNew<=envCurr);
   while (envCurr!=envNew) {
-    envCurr->bcV = BCPOS(envCurr->sc->body, envCurr->bcL);
+    if ((envCurr->pos&1) == 0) envCurr->pos = (BCPOS(envCurr->sc->body, (u32*)envCurr->pos)<<1) | 1;
     envCurr--;
   }
 }

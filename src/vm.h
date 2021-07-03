@@ -149,7 +149,7 @@ B m_md2Block(Block* bl, Scope* psc);
 
 
 typedef struct Env {
-  union { u32* bcL; i32 bcV; };
+  u64 pos; // if top bit set, ((u32)pos)>>1 is an offset into bytecode; otherwise, it's a pointer in the bytecode
   Scope* sc;
 } Env;
 extern Env* envCurr;
@@ -160,7 +160,7 @@ static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr+1==envEnd) thrM("Stack overflow");
   envCurr++;
   envCurr->sc = sc;
-  envCurr->bcL = bc;
+  envCurr->pos = (u64)bc;
 }
 static inline void popEnv() {
   assert(envCurr>=envStart);
