@@ -447,10 +447,10 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
 typedef B JITFn(B* cStack, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
-  ALLOC_ASM(64);
   #if ASM_TEST
     asm_test();
   #endif
+  ALLOC_ASM(64);
   Reg r_CS  = R_P0;
   Reg r_SC  = R_P1;
   Reg r_ENV = R_P2;
@@ -571,8 +571,8 @@ Nvm_res m_nvm(Body* body) {
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
-      case RETD: GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
-      case RETN: GS_SET(r_CS); ret=true; break;
+      case RETD: if (lGPos) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
+      case RETN: if (lGPos) GS_SET(r_CS); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET
