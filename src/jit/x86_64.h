@@ -67,11 +67,11 @@ typedef u8 Reg;
 #define AADD(P,N) b_o=asm_add(b_o, P, N)
 #define ASM_SIZE (b_o->size)
 #define FREE_ASM() mm_free((Value*)b_o); TSFREE(b_r);
-#define ASM_WRITE(P) {                 \
-  memcpy(binEx, bin, sz);              \
+#define ASM_WRITE(P,SZ) {              \
+  memcpy(P, bin, SZ);                  \
   u64 relAm = TSSIZE(b_r);             \
   for (u64 i = 0; i < relAm; i++) {    \
-    u8* ins = binEx+b_r[i];            \
+    u8* ins = P+b_r[i];                \
     u32 o = readBytes4(ins);           \
     u32 n = o-(u32)(u64)ins;           \
     memcpy(ins, (u8[]){BYTES4(n)}, 4); \

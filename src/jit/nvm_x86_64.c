@@ -425,6 +425,25 @@ static u32 readBytes4(u8* d) {
   }
 #endif
 
+static void onJIT(Body* body, u8* binEx, u64 sz) {
+  #if USE_PERF
+    if (!perf_map) {
+      B s = m_str32(U"/tmp/perf-"); AFMT("%l.map", getpid());
+      perf_map = file_open(s, "open", "wa");
+      print(s); printf(": map\n");
+      dec(s);
+    }
+    u32 bcPos = body->map[0];
+    // printf("JIT %d:\n", perfid);
+    // vm_printPos(body->comp, bcPos, -1);
+    fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
+  #endif
+  #if WRITE_ASM
+    write_asm(binEx, sz);
+    // exit(0);
+  #endif
+}
+
 typedef B JITFn(B* cStack, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
@@ -585,24 +604,9 @@ Nvm_res m_nvm(Body* body) {
   GET_ASM();
   u64 sz = ASM_SIZE;
   u8* binEx = nvm_alloc(sz);
-  #if USE_PERF
-    if (!perf_map) {
-      B s = m_str32(U"/tmp/perf-"); AFMT("%l.map", getpid());
-      perf_map = file_open(s, "open", "wa");
-      print(s); printf(": map\n");
-      dec(s);
-    }
-    u32 bcPos = body->map[0];
-    // printf("JIT %d:\n", perfid);
-    // vm_printPos(body->comp, bcPos, -1);
-    fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
-  #endif
-  ASM_WRITE(binEx);
-  #if WRITE_ASM
-    write_asm(binEx, sz);
-    // exit(0);
-  #endif
+  ASM_WRITE(binEx, sz);
   FREE_ASM();
+  onJIT(body, binEx, sz);
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
 }
 B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
