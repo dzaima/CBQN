@@ -14,7 +14,8 @@
 #define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
-                  F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi)
+                  F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
+                  F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)
 
 u32* nextBC(u32* p) {
   switch(*p) {
@@ -31,7 +32,7 @@ u32* nextBC(u32* p) {
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
     case ADDI: case ADDU:
-    case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi:
+    case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
       return p+3;
     case FN2Oi:
       return p+5;
@@ -42,9 +43,13 @@ i32 stackDiff(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1-p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
-    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case SETNi:case SETUi:case RETD: case NSPM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case SETN: case SETU: case SETMi:case POPS: case OP2H: case SETH: case RETN: return -1;
-    case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return -2;
+    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case SETH: case RETN: return -1;
+    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return -2;
+    
+    case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
+    case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
+    case SETM: return -2; case SETMi:return -1; case SETMv:return -2;
   }
 }
 i32 stackConsumed(u32* p) {
@@ -52,9 +57,13 @@ i32 stackConsumed(u32* p) {
   switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
     case CHKV: case VFYM: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case SETNi:case SETUi:return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case SETMi:case OP1D: case TR2D: case SETN: case SETU: case OP2H: case SETH: return 2;
-    case OP2D: case TR3D: case FN2C: case FN2O: case SETM: case TR3O: return 3;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: return 1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: return 2;
+    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
+    
+    case SETN: return 2; case SETNi: case SETNv: return 1;
+    case SETU: return 2; case SETUi: case SETUv: return 1;
+    case SETM: return 3; case SETMi: case SETMv: return 2;
   }
 }
 i32 stackAdded(u32* p) {

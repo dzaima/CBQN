@@ -127,12 +127,10 @@ INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
 }
 INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
 INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
-INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD;
-  B w = v_getI(sc, p);
-  B r = c2(f,w,x); dec(f);
-  v_setI(sc, p, inc(r), true);
-  return r;
-}
+INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, inc(r), true); return r; }
+INS void i_SETNv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, false); }
+INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true ); }
+INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, r, true); }
 INS B i_FLDO(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));
@@ -194,19 +192,27 @@ typedef struct SRef { B v; i32 p; } SRef;
 typedef struct OptRes { u32* bc; u32* offset; B refs; } OptRes;
 static OptRes opt(u32* bc0) {
   TSALLOC(SRef, stk, 8);
-  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 2: immediate SET; 3: immediate FN1_/FN2C; 4: FN2O; 5: replace with PUSH; 6: decrement 1 data; 10+N: ignore N data
+  TSALLOC(u8, actions, 64); // 1 per instruction; 0: nothing; 1: indicates return; 2: immediate SET; 3: immediate FN1_/FN2C; 4: FN2O; 5: replace with PUSH; 6: decrement 1 data; 7: SET_i+POPS merge; 10+N: ignore N data
   TSALLOC(u64, data, 64); // variable length; whatever things are needed for the specific action
-  u8 rm_map[] = {10,10,10,11,12,6,6,99,99,99,11,12,13,14,15,16,17,18,19};
+  u8 rm_map[] = {10,10,10,11,12,6,6,11,99,99,11,12,13,14,15,16,17,18,19};
   #define RM(N) actions[N] = rm_map[actions[N]]
   u32* bc = bc0; usz pos = 0;
   while (true) {
     u32* sbc = bc;
-    #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     bool ret = false;
     u8 cact = 0;
+    #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
-    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("JIT optimization: didn't already expect immediate FN__");
+    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("optimization: didn't expect already immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
+      case POPS: { assert(TSSIZE(actions) > 0);
+        u64 asz = TSSIZE(actions);
+        if (actions[asz-1]!=2) goto defIns;
+        actions[asz-1] = 7;
+        cact = 10;
+        TSSIZE(stk)--;
+        break;
+      }
       case LOCM: { u32 d = *bc++; u32 p = *bc++;
         TSADD(stk,SREF(tag((u64)d<<32 | (u32)p, VAR_TAG), pos));
         break;
@@ -303,13 +309,13 @@ static OptRes opt(u32* bc0) {
         for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1))
     }
     #undef S
-    TSADD(actions, cact);
     #undef L64
-    #undef RM
+    TSADD(actions, cact);
     if (ret) break;
     bc = nextBC(sbc);
     pos++;
   }
+  #undef RM
   TSFREE(stk);
   
   TSALLOC(u32, rbc, TSSIZE(actions));
@@ -327,12 +333,20 @@ static OptRes opt(u32* bc0) {
     u64 psz = TSSIZE(rbc);
     #define A64(X) { u64 a64=(X); TSADD(rbc, (u32)a64); TSADD(rbc, a64>>32); }
     switch (ctype) { default: UD;
-      case 2: assert(v==SETN|v==SETU|v==SETM);
+      case 2: { assert(v==SETN|v==SETU|v==SETM);
         TSADD(rbc, v==SETN? SETNi : v==SETU? SETUi : SETMi);
         u64 d = data[dpos++];
         TSADD(rbc, (u16)(d>>32));
         TSADD(rbc, (u32)d);
         break;
+      }
+      case 7: { assert(v==SETN|v==SETU|v==SETM);
+        TSADD(rbc, v==SETN? SETNv : v==SETU? SETUv : SETMv);
+        u64 d = data[dpos++];
+        TSADD(rbc, (u16)(d>>32));
+        TSADD(rbc, (u32)d);
+        break;
+      }
       case 3: assert(v==FN1C|v==FN1O|v==FN2C);
         TSADD(rbc, v==FN1C? FN1Ci : v==FN1O? FN1Oi : FN2Ci);
         A64(data[dpos++]);
@@ -479,10 +493,12 @@ Nvm_res m_nvm(Body* body) {
     #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,bcL));
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
+    #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count
     switch (*bc++) {
       case POPS: TOPp;
         CCALL(i_POPS);
-        if (depth>1) { u8 t = SPOS(R_A3, -1, 0); MOV8rm(R_RES, t); }
+        // if (depth>1) MOV8rm(R_RES, SPOS(R_A3, -1, 0));
+        NORES(1);
       break;
       case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(b(x))); INCV(R_A3); break; } // (u64 v, S)
       case ADDU: TOPs; IMM(R_RES, L64);
@@ -527,15 +543,18 @@ Nvm_res m_nvm(Body* body) {
       case SETU: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETM: TOPp; GET(R_A1,1,1) GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
       // TODO SETNi doesn't really need to update gStack
-      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi); break; } // (     B x, Scope* sc, u32 p, u32* bc)
-      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi); break; } // (     B x, Scope* sc, u32 p, u32* bc)
-      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMi); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
+      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMi);           break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
+      case SETNv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETUv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: GS_SET(r_CS); ret=true; break;
-      default: thrF("JIT: Unsupported bytecode %i", *s);
+      default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET
     #undef GS_SET
