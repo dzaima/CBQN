@@ -41,7 +41,7 @@ void c32arr_init() {
   ti[t_c32arr].visit = noop_visit;   ti[t_c32slice].visit =    slice_visit;
   ti[t_c32arr].print =    arr_print; ti[t_c32slice].print = arr_print;
   ti[t_c32arr].isArr = true;         ti[t_c32slice].isArr = true;
-  ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
+  ti[t_c32arr].arrD1 = true;         ti[t_c32slice].arrD1 = true;
   ti[t_c32arr].elType = el_c32;      ti[t_c32slice].elType = el_c32;
   ti[t_c32arr].canStore = c32arr_canStore;
   
