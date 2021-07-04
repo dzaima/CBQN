@@ -100,12 +100,12 @@ INS B i_TR3O(B f,B g, B h         ) {          return isNothing(f)? m_atop(g,h) 
 INS B i_NOVAR(u32* bc, B* cStack) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
-INS B i_LOCU(u32 p, Scope* sc) {
-  B* vars = sc->vars;
-  B r = vars[p];
-  vars[p] = bi_optOut;
-  return r;
-}
+// INS B i_LOCU(u32 p, Scope* sc) {
+//   B* vars = sc->vars;
+//   B r = vars[p];
+//   vars[p] = bi_optOut;
+//   return r;
+// }
 INS B i_EXTO(u32 p, Scope* sc, u32* bc, B* cStack) {
   B l = sc->ext->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
@@ -420,7 +420,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(LOCU) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -558,8 +558,12 @@ Nvm_res m_nvm(Body* body) {
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
         if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); JNE(lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
       } break;
+      case LOCU: TOPs; { u64 d=*bc++; u64 p=*bc++;
+        LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
+        IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to 
+      } break;
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
-      case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)
+      // case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
       case SETN: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETU: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
