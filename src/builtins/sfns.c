@@ -595,7 +595,7 @@ B group_c1(B t, B x) {
   return c1(rt_group, x);
 }
 B group_c2(B t, B w, B x) {
-  if (isArr(w)&isArr(x) && rnk(w)==1 && rnk(x)==1) {
+  if (isArr(w)&isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
