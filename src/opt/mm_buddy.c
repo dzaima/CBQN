@@ -6,7 +6,6 @@ u64 currObjCounter;
 
 #define  ALSZ   20
 #define  BSZ(X) (1ull<<(X))
-#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mm_##X
 
@@ -14,4 +13,3 @@ u64 currObjCounter;
 
 #undef BN
 #undef BSZ
-#undef BSZI

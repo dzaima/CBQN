@@ -26,10 +26,9 @@
 #define PROT PROT_READ|PROT_WRITE|PROT_EXEC
 #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT
 #include "../opt/mm_buddyTemplate.c"
-static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(BSZI(sz), type); }
+static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-__builtin_clzl(sz-1ull), type); }
 #undef mmX_buckets
 #undef BN
-#undef BSZI
 #undef BSZ
 
 

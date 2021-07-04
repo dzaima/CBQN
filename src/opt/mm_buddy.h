@@ -10,7 +10,6 @@ extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
 #define  BSZ(X) (1ull<<(X))
-#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mm_##X
 
@@ -20,6 +19,7 @@ extern u64 mm_heapMax;
 extern u64 currObjCounter;
 #endif
 
+#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
@@ -38,6 +38,6 @@ static u64 mm_size(Value* x) {
 }
 void mm_forHeap(V2v f);
 
+#undef BSZI
 #undef BN
 #undef BSZ
-#undef BSZI
