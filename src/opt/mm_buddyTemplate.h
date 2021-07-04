@@ -12,7 +12,6 @@ extern AllocInfo* al;
 extern u64 alCap;
 extern u64 alSize;
 
-extern NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket); // result->next is garbage
 
 static void BN(free)(Value* x) {
   onFree(x);
@@ -32,10 +31,11 @@ static void BN(free)(Value* x) {
   x->type = t_empty;
 }
 
-static void* BN(allocL)(u8 bucket, u8 type) {
+NOINLINE void* BN(allocS)(i64 bucket, u8 type);
+static   void* BN(allocL)(i64 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
-  if (RARE(x==NULL)) x = BN(makeEmpty)(bucket);
-  else buckets[bucket] = x->next;
+  if (RARE(x==NULL)) return BN(allocS)(bucket, type);
+  buckets[bucket] = x->next;
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);

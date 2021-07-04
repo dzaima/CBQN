@@ -15,7 +15,7 @@ AllocInfo* al;
 u64 alCap;
 u64 alSize;
 
-NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
+static void BN(guaranteeEmpty)(u8 bucket) {
   u8 cb = bucket;
   EmptyValue* c;
   while (true) {
@@ -56,8 +56,14 @@ NOINLINE EmptyValue* BN(makeEmpty)(u8 bucket) { // result->next is garbage
     b->next = buckets[cb];
     buckets[cb] = b;
   }
-  return c;
+  c->next = buckets[cb];
+  buckets[cb] = c;
 }
+NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
+  BN(guaranteeEmpty)(bucket);
+  return BN(allocL)(bucket, type);
+}
+
 void BN(forHeap)(V2v f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
