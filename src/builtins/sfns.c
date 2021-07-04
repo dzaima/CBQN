@@ -602,17 +602,19 @@ B group_c2(B t, B w, B x) {
     
     if (TI(w).elType==el_i32) {
       i32* wp = i32any_ptr(w);
-      i64 ria = wia==xia? -1 : wp[xia]-1;
+      i64 ria = wia==xia? 0 : wp[xia];
+      if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+      ria--;
       for (usz i = 0; i < xia; i++) if (wp[i]>ria) ria = wp[i];
       if (ria>USZ_MAX-1) thrOOM();
       ria++;
-      TALLOC(i32, len, ria);
+      TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) {
         i32 n = wp[i];
-        if (n>=0) len[n]++;
         if (n<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+        len[n]++; // overallocation makes this safe after n<-1 check
       }
       
       Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
@@ -653,27 +655,26 @@ B group_c2(B t, B w, B x) {
         for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
       }
       fillarr_setFill(rf, xf);
-      dec(w); dec(x); TFREE(len); TFREE(pos);
+      dec(w); dec(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     } else {
       BS2B wgetU = TI(w).getU;
-      i64 ria = wia==xia? -1 : o2i64(wgetU(w, xia))-1;
+      i64 ria = wia==xia? 0 : o2i64(wgetU(w, xia));
+      if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+      ria--;
       for (usz i = 0; i < xia; i++) {
         B cw = wgetU(w, i);
         if (!q_i64(cw)) goto base;
         i64 c = o2i64u(cw);
         if (c>ria) ria = c;
+        if (c<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       }
       if (ria>USZ_MAX-1) thrOOM();
       ria++;
-      TALLOC(i32, len, ria);
+      TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xia; i++) {
-        i64 n = o2i64u(wgetU(w, i));
-        if (n>=0) len[n]++;
-        if (n<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
-      }
+      for (usz i = 0; i < xia; i++) len[o2i64u(wgetU(w, i))]++;
       
       Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
       arr_shVec(r, ria);
@@ -697,7 +698,7 @@ B group_c2(B t, B w, B x) {
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
       }
       for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
-      dec(w); dec(x); TFREE(len); TFREE(pos);
+      dec(w); dec(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     }
   }
