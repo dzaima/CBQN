@@ -11,7 +11,7 @@
 #endif
 #ifndef WRITE_ASM
   #define WRITE_ASM 0 // writes on every compilation, overriding the previous; view with:
-#endif                // objdump -b binary -m i386 -M x86-64,intel -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+7 | sed "$(cat asm_sed)"
+#endif                // objdump -b binary -m i386 -M x86-64,intel --insn-width=10 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
 
 
 // separate memory management system for executable code; isn't garbage-collected
@@ -395,7 +395,7 @@ static u32 readBytes4(u8* d) {
   return d[0] | d[1]<<8 | d[2]<<16 | d[3]<<24;
 }
 
-#define ASM_TEST 0 // make -j4 debug&&./BQN&&objdump -b binary -m i386 -M x86-64,intel --insn-width=8 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
+#define ASM_TEST 0 // make -j4 debug&&./BQN&&objdump -b binary -m i386 -M x86-64,intel --insn-width=12 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
 #if ASM_TEST
   #undef WRITE_ASM
   #define WRITE_ASM 1
