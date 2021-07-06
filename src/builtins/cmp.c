@@ -13,8 +13,8 @@
   bool xa = isArr(x);                              \
   if (wa|xa && (!wa|!xa || rnk(w)==rnk(x))) {      \
     if (wa&xa && !eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-    u8 we = wa? TI(w).elType : selfElType(w);      \
-    u8 xe = xa? TI(x).elType : selfElType(x);      \
+    u8 we = wa? TI(w,elType) : selfElType(w);      \
+    u8 xe = xa? TI(x,elType) : selfElType(x);      \
     if (we==el_i32 && xe==el_i32) {                \
       i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
       if      (!wa) { i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \

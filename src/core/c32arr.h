@@ -39,14 +39,14 @@ static C32Arr* toC32Arr(B x) {
   if (v(x)->type==t_c32arr) return c(C32Arr,x);
   u32* rp; B r = m_c32arrc(&rp, x);
   usz ia = a(r)->ia;
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < ia; i++) rp[i] = o2c(xgetU(x,i));
   dec(x);
   return c(C32Arr,r);
 }
 static bool eqStr(B w, u32* x) {
   if (isAtm(w) || rnk(w)!=1) return false;
-  BS2B wgetU = TI(w).getU;
+  BS2B wgetU = TI(w,getU);
   u64 i = 0;
   while (x[i]) {
     B c = wgetU(w, i);

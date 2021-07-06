@@ -8,7 +8,7 @@ B toCells(B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   usz i = 0;
-  BS2A slice = TI(x).slice;
+  BS2A slice = TI(x,slice);
   usz p = 0;
   HArr_p r = m_harrs(cam, &i);
   if (rnk(x)==2) {
@@ -50,7 +50,7 @@ B toKCells(B x, ur k) {
   usz i = 0;
   usz p = 0;
   HArr_p r = m_harrs(cam, &i);
-  BS2A slice = TI(x).slice;
+  BS2A slice = TI(x,slice);
   for (; i < cam; i++) {
     Arr* s = slice(inc(x), p);
     arr_shSetI(s, csz, cr, csh);
@@ -69,7 +69,7 @@ HArr* toHArr(B x) {
   if (v(x)->type==t_harr) return c(HArr,x);
   HArr_p r = m_harrUc(x);
   usz ia = r.c->ia;
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   for (usz i = 0; i < ia; i++) r.a[i] = xget(x,i);
   dec(x);
   return r.c;
@@ -146,13 +146,13 @@ static void harrP_print(B x) {
 }
 
 void harr_init() {
-  ti[t_harr].get   = harr_get;   ti[t_hslice].get   = hslice_get;   ti[t_harrPartial].get   = harrP_get;
-  ti[t_harr].getU  = harr_getU;  ti[t_hslice].getU  = hslice_getU;  ti[t_harrPartial].getU  = harrP_get;
-  ti[t_harr].slice = harr_slice; ti[t_hslice].slice = hslice_slice;
-  ti[t_harr].free  = harr_free;  ti[t_hslice].free  =  slice_free;  ti[t_harrPartial].free  = harrP_free;
-  ti[t_harr].visit = harr_visit; ti[t_hslice].visit =  slice_visit; ti[t_harrPartial].visit = harrP_visit;
-  ti[t_harr].print =  arr_print; ti[t_hslice].print = arr_print;    ti[t_harrPartial].print = harrP_print;
-  ti[t_harr].isArr = true;       ti[t_hslice].isArr = true;
-  ti[t_harr].canStore = harr_canStore;
+  TIi(t_harr,get)   = harr_get;   TIi(t_hslice,get)   = hslice_get;   TIi(t_harrPartial,get)   = harrP_get;
+  TIi(t_harr,getU)  = harr_getU;  TIi(t_hslice,getU)  = hslice_getU;  TIi(t_harrPartial,getU)  = harrP_get;
+  TIi(t_harr,slice) = harr_slice; TIi(t_hslice,slice) = hslice_slice;
+  TIi(t_harr,free)  = harr_free;  TIi(t_hslice,free)  =  slice_free;  TIi(t_harrPartial,free)  = harrP_free;
+  TIi(t_harr,visit) = harr_visit; TIi(t_hslice,visit) =  slice_visit; TIi(t_harrPartial,visit) = harrP_visit;
+  TIi(t_harr,print) =  arr_print; TIi(t_hslice,print) = arr_print;    TIi(t_harrPartial,print) = harrP_print;
+  TIi(t_harr,isArr) = true;       TIi(t_hslice,isArr) = true;
+  TIi(t_harr,canStore) = harr_canStore;
   bi_emptyHVec = m_harrUv(0).b; gc_add(bi_emptyHVec);
 }

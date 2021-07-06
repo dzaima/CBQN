@@ -51,8 +51,8 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   usz ria = wia*xia;  ur rr = wr+xr;
   if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
-  BS2B wgetU = TI(w).getU;
-  BS2B xget = TI(x).get;
+  BS2B wgetU = TI(w,getU);
+  BS2B xget = TI(x,get);
   BBB2B fc2 = c2fn(f);
   
   usz ri = 0;
@@ -92,7 +92,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   usz ia = a(x)->ia;
   if (ia==0) return x;
   B xf = getFillQ(x);
-  if (xr==1 && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+  if (xr==1 && TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     if (rtid==0) { // +
@@ -128,7 +128,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   bool reuse = v(x)->type==t_harr && reusable(x);
   usz i = 0;
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
-  BS2B xget = reuse? TI(x).getU : TI(x).get;
+  BS2B xget = reuse? TI(x,getU) : TI(x,get);
   BBB2B fc2 = c2fn(f);
   
   if (xr==1) {
@@ -147,7 +147,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   B wf = getFillQ(w);
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
-  if (xr==1 && q_i32(w) && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+  if (xr==1 && q_i32(w) && TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
@@ -182,11 +182,11 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   base:;
   
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
-  BS2B xget = reuse? TI(x).getU : TI(x).get;
+  BS2B xget = reuse? TI(x,getU) : TI(x,get);
   BBB2B fc2 = c2fn(f);
   
   if (isArr(w)) {
-    ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w).get;
+    ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w,get);
     if (wr+1!=xr || !eqShPrefix(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
@@ -205,7 +205,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
-  if (TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+  if (TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     if (rtid==0) { // +
@@ -247,17 +247,17 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   if (ia==0) {
     dec(x);
     if (isFun(f)) {
-      B r = TI(f).identity(f);
+      B r = TI(f,identity)(f);
       if (!isNothing(r)) return inc(r);
     }
     thrM("´: No identity found");
   }
   base:;
   
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   BBB2B fc2 = c2fn(f);
   B c;
-  if (TI(x).elType==el_i32) {
+  if (TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
     c = m_i32(xp[ia-1]);
     for (usz i = ia-1; i>0; i--) c = fc2(f, m_i32(xp[i-1]), c);
@@ -271,7 +271,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
 B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
-  if (q_i32(w) && TI(x).elType==el_i32 && isFun(f) && v(f)->flags) {
+  if (q_i32(w) && TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
@@ -296,7 +296,7 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   base:;
   
   B c = w;
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   BBB2B fc2 = c2fn(f);
   for (usz i = ia; i>0; i--) c = fc2(f, xget(x, i-1), c);
   dec(x);
@@ -343,7 +343,7 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
     memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
   }
   usz i = 0;
-  BS2A slice = TI(x).slice;
+  BS2A slice = TI(x,slice);
   HArr_p r = m_harrs(cam, &i);
   usz p = 0;
   for (; i < cam; i++) {
@@ -371,5 +371,5 @@ B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 
 static void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
 void md1_init() {
-  ti[t_md1BI].print = print_md1BI;
+  TIi(t_md1BI,print) = print_md1BI;
 }

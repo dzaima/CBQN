@@ -61,7 +61,7 @@ _Thread_local B comp_currSrc;
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   usz xia = a(x)->ia;
   if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
   Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, inc(path), sc)
@@ -126,7 +126,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     for (i32 i = 0; i < csc->varAm; i++) {
       i32 nameID = csc->body->varIDs[i];
       B nl = csc->body->nsDesc->nameList;
-      vName = vec_add(vName, TI(nl).get(nl, nameID));
+      vName = vec_add(vName, TI(nl,get)(nl, nameID));
       vDepth = vec_add(vDepth, m_i32(depth));
     }
     if (csc->ext) for (i32 i = 0; i < csc->ext->varAm; i++) {
@@ -205,13 +205,13 @@ static inline void load_init() { // very last init function
     #endif
   
     B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-    B rtObjRaw = TI(rtRes).get(rtRes,0);
-    B rtFinish = TI(rtRes).get(rtRes,1);
+    B rtObjRaw = TI(rtRes,get)(rtRes,0);
+    B rtFinish = TI(rtRes,get)(rtRes,1);
     dec(rtRes);
     
     if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
     HArr_p runtimeH = m_harrUc(rtObjRaw);
-    BS2B rtObjGet = TI(rtObjRaw).get;
+    BS2B rtObjGet = TI(rtObjRaw,get);
     
     rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
     rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
@@ -294,7 +294,7 @@ static inline void load_init() { // very last init function
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_repr)}));
-    BS2B fget = TI(fmtR).get;
+    BS2B fget = TI(fmtR,get);
     load_fmt  = fget(fmtR, 0); gc_add(load_fmt);
     load_repr = fget(fmtR, 1); gc_add(load_repr);
     dec(fmtR);
@@ -337,13 +337,13 @@ static Arr* def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
 #ifdef DONT_FREE
 static B empty_get(B x, usz n) {
   v(x)->type = v(x)->flags;
-  B r = TI(x).get(x, n);
+  B r = TI(x,get)(x, n);
   v(x)->type = t_empty;
   return r;
 }
 static B empty_getU(B x, usz n) {
   v(x)->type = v(x)->flags;
-  B r = TI(x).getU(x, n);
+  B r = TI(x,getU)(x, n);
   v(x)->type = t_empty;
   return r;
 }
@@ -351,37 +351,37 @@ static B empty_getU(B x, usz n) {
 
 static inline void base_init() { // very first init function
   for (i32 i = 0; i < t_COUNT; i++) {
-    ti[i].free  = def_free;
-    ti[i].visit = def_visit;
-    ti[i].get   = def_get;
-    ti[i].getU  = def_getU;
-    ti[i].print = def_print;
-    ti[i].m1_d  = def_m1_d;
-    ti[i].m2_d  = def_m2_d;
-    ti[i].isArr = false;
-    ti[i].arrD1 = false;
-    ti[i].elType    = el_B;
-    ti[i].identity  = def_identity;
-    ti[i].decompose = def_decompose;
-    ti[i].slice     = def_slice;
-    ti[i].canStore  = def_canStore;
-    ti[i].fn_uc1 = def_fn_uc1;
-    ti[i].fn_ucw = def_fn_ucw;
-    ti[i].m1_uc1 = def_m1_uc1;
-    ti[i].m1_ucw = def_m1_ucw;
-    ti[i].m2_uc1 = def_m2_uc1;
-    ti[i].m2_ucw = def_m2_ucw;
+    TIi(i,free)  = def_free;
+    TIi(i,visit) = def_visit;
+    TIi(i,get)   = def_get;
+    TIi(i,getU)  = def_getU;
+    TIi(i,print) = def_print;
+    TIi(i,m1_d)  = def_m1_d;
+    TIi(i,m2_d)  = def_m2_d;
+    TIi(i,isArr) = false;
+    TIi(i,arrD1) = false;
+    TIi(i,elType)    = el_B;
+    TIi(i,identity)  = def_identity;
+    TIi(i,decompose) = def_decompose;
+    TIi(i,slice)     = def_slice;
+    TIi(i,canStore)  = def_canStore;
+    TIi(i,fn_uc1) = def_fn_uc1;
+    TIi(i,fn_ucw) = def_fn_ucw;
+    TIi(i,m1_uc1) = def_m1_uc1;
+    TIi(i,m1_ucw) = def_m1_ucw;
+    TIi(i,m2_uc1) = def_m2_uc1;
+    TIi(i,m2_ucw) = def_m2_ucw;
   }
-  ti[t_empty].free = empty_free;
-  ti[t_freed].free = def_free;
-  ti[t_freed].visit = freed_visit;
+  TIi(t_empty,free) = empty_free;
+  TIi(t_freed,free) = def_free;
+  TIi(t_freed,visit) = freed_visit;
   #ifdef DONT_FREE
-    ti[t_empty].get = empty_get;
-    ti[t_empty].getU = empty_getU;
+    TIi(t_empty,get) = empty_get;
+    TIi(t_empty,getU) = empty_getU;
   #endif
-  ti[t_shape].visit = noop_visit;
-  ti[t_funBI].visit = ti[t_md1BI].visit = ti[t_md2BI].visit = noop_visit;
-  ti[t_funBI].free  = ti[t_md1BI].free  = ti[t_md2BI].free  = builtin_free;
+  TIi(t_shape,visit) = noop_visit;
+  TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
+  TIi(t_funBI,free)  = TIi(t_md1BI,free)  = TIi(t_md2BI,free)  = builtin_free;
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
   #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }

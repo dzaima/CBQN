@@ -14,7 +14,7 @@ void validateFill(B x);
 B withFill(B x, B fill); // consumes both
 static B qWithFill(B x, B fill) { // consumes both
   assert(isArr(x));
-  if (noFill(fill) || TI(x).elType!=el_B) return x;
+  if (noFill(fill) || TI(x,elType)!=el_B) return x;
   return withFill(x, fill);
 }
 
@@ -28,7 +28,7 @@ static bool fillEqual(B w, B x) {
 
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
-    switch(TI(x).elType) { default: UD;
+    switch(TI(x,elType)) { default: UD;
       case el_f64: case el_i32: return m_i32(0);
       case el_c32: return m_c32(' ');
       case el_B:;

@@ -7,8 +7,8 @@ static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r
 static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is array
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = rnk(w); BS2B wget = TI(w).get;
-  ur xr = rnk(x); BS2B xget = TI(x).get;
+  ur wr = rnk(w); BS2B wget = TI(w,get);
+  ur xr = rnk(x); BS2B xget = TI(x,get);
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
@@ -55,11 +55,11 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
 static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   usz ia = a(x)->ia;
   if (ia==0) return x;
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   usz i = 0;
   B cr = f(fo, xget(x,0));
   HArr_p rH;
-  if (TI(x).canStore(cr)) {
+  if (TI(x,canStore)(cr)) {
     bool reuse = reusable(x);
     if (v(x)->type==t_harr) {
       B* xp = harr_ptr(x);
@@ -73,7 +73,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         for (; i < ia; i++) rH.a[i] = f(fo, inc(xp[i]));
         return harr_fcd(rH, x);
       }
-    } else if (TI(x).elType==el_i32) {
+    } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       B r; i32* rp;
       if (reuse && v(x)->type==t_i32arr) { r=x; rp = xp; }
@@ -91,7 +91,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       }
       if (!reuse) dec(x);
       return r;
-    } else if (TI(x).elType==el_f64) {
+    } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
       if (reuse && v(x)->type==t_f64arr) { r=x; rp = xp; }

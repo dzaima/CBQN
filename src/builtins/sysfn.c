@@ -24,7 +24,7 @@ B type_c1(B t, B x) {
 B decp_c1(B t, B x) {
   if (!isVal(x)) return m_v2(m_i32(-1), x);
   if (v(x)->flags) return m_v2(m_i32(0), x);
-  return TI(x).decompose(x);
+  return TI(x,decompose)(x);
 }
 
 B primInd_c1(B t, B x) {
@@ -70,7 +70,7 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
 
 B grLen_both(i64 ria, B x) {
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < ia; i++) {
     i64 c = o2i64u(xgetU(x, i));
     if (c>ria) ria = c;
@@ -95,8 +95,8 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz xia = a(x)->ia;
   if (wia==0) { dec(w); dec(x); return emptyIVec(); }
   if (xia==0) { dec(w); return x; }
-  BS2B wgetU = TI(w).getU;
-  BS2B xgetU = TI(x).getU;
+  BS2B wgetU = TI(w,getU);
+  BS2B xgetU = TI(x,getU);
   TALLOC(usz, tmp, wia);
   tmp[0] = 0;
   for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
@@ -136,10 +136,10 @@ B casrt_c2(B t, B w, B x) {
   unwindCompiler();
   dec(x);
   if (isArr(w) && a(w)->ia==2) {
-    B w0 = TI(w).getU(w,0);
+    B w0 = TI(w,getU)(w,0);
     if (!isArr(w0) || a(w0)->ia<2) goto base;
-    B s = TI(w).get(w,1);
-    BS2B w0getU = TI(w0).getU;
+    B s = TI(w,get)(w,1);
+    BS2B w0getU = TI(w0,getU);
     AFMT("\n");
     s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(w0getU(w0,0)), o2s(w0getU(w0,1))+1);
     dec(w);
@@ -166,7 +166,7 @@ B bqn_c1(B t, B x) {
   if (isAtm(x) || rnk(x)!=1) thrM("•BQN: Argument must be a character vector");
   if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < ia; i++) if (!isC32(xgetU(x,i))) thrM("•BQN: Argument must be a character vector");
   }
   return bqn_exec(x, bi_N, bi_N);
@@ -325,7 +325,7 @@ B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
   HArr_p r = m_harrs(a(x)->ia, &i);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   B fileNS = m_f64(0);
   for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);

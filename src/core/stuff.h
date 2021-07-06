@@ -167,7 +167,7 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
       print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
       err("");
     }
-    if (ti[x->type].isArr) {
+    if (TIv(x,isArr)) {
       Arr* a = (Arr*)x;
       if (prnk(x)<=1) assert(a->sh == &a->ia);
       else VALIDATE(tag(shObjP(x),OBJ_TAG));
@@ -177,7 +177,7 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
   static NOINLINE B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
-    if(isArr(x)!=TI(x).isArr && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
+    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
       printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
       print(x);
       err("\nk");

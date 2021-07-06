@@ -41,7 +41,7 @@ static i64 isum(B x) { // doesn't consume; may error; TODO error on overflow
   assert(isArr(x));
   i64 r = 0;
   usz xia = a(x)->ia;
-  u8 xe = TI(x).elType;
+  u8 xe = TI(x,elType);
   if (xe==el_i32) {
     i32* p = i32any_ptr(x);
     for (usz i = 0; i < xia; i++) r+= p[i];
@@ -49,7 +49,7 @@ static i64 isum(B x) { // doesn't consume; may error; TODO error on overflow
     f64* p = f64any_ptr(x);
     for (usz i = 0; i < xia; i++) { if(p[i]!=(f64)p[i]) thrM("Expected integer"); r+= p[i]; }
   } else {
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < xia; i++) r+= o2i64(xgetU(x,i));
   }
   return r;

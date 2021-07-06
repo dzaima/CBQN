@@ -2,7 +2,7 @@
 
 B asFill(B x) { // consumes
   if (isArr(x)) {
-    u8 xe = TI(x).elType;
+    u8 xe = TI(x,elType);
     usz ia = a(x)->ia;
     if (xe<=el_f64) {
       i32* rp; B r = m_i32arrc(&rp, x);
@@ -17,7 +17,7 @@ B asFill(B x) { // consumes
       return r;
     }
     HArr_p r = m_harrUc(x);
-    BS2B xget = TI(x).get;
+    BS2B xget = TI(x,get);
     bool noFill = false;
     for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;
     B xf = getFillQ(x);
@@ -60,21 +60,21 @@ static void fillarr_visit(Value* x) { assert(x->type == t_fillarr);
 static bool fillarr_canStore(B x) { return true; }
 
 void fillarr_init() {
-  ti[t_fillarr].get   = fillarr_get;   ti[t_fillslice].get   = fillslice_get;
-  ti[t_fillarr].getU  = fillarr_getU;  ti[t_fillslice].getU  = fillslice_getU;
-  ti[t_fillarr].slice = fillarr_slice; ti[t_fillslice].slice = fillslice_slice;
-  ti[t_fillarr].free  = fillarr_free;  ti[t_fillslice].free  =     slice_free;
-  ti[t_fillarr].visit = fillarr_visit; ti[t_fillslice].visit =     slice_visit;
-  ti[t_fillarr].print =     arr_print; ti[t_fillslice].print = arr_print;
-  ti[t_fillarr].isArr = true;          ti[t_fillslice].isArr = true;
-  ti[t_fillarr].canStore = fillarr_canStore;
+  TIi(t_fillarr,get)   = fillarr_get;   TIi(t_fillslice,get)   = fillslice_get;
+  TIi(t_fillarr,getU)  = fillarr_getU;  TIi(t_fillslice,getU)  = fillslice_getU;
+  TIi(t_fillarr,slice) = fillarr_slice; TIi(t_fillslice,slice) = fillslice_slice;
+  TIi(t_fillarr,free)  = fillarr_free;  TIi(t_fillslice,free)  =     slice_free;
+  TIi(t_fillarr,visit) = fillarr_visit; TIi(t_fillslice,visit) =     slice_visit;
+  TIi(t_fillarr,print) =     arr_print; TIi(t_fillslice,print) = arr_print;
+  TIi(t_fillarr,isArr) = true;          TIi(t_fillslice,isArr) = true;
+  TIi(t_fillarr,canStore) = fillarr_canStore;
 }
 
 
 
 void validateFill(B x) {
   if (isArr(x)) {
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     usz ia = a(x)->ia;
     for (usz i = 0; i < ia; i++) validateFill(xgetU(x,i));
   } else if (isF64(x)) {
@@ -89,15 +89,15 @@ NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be array
   usz ia = a(w)->ia;
   if (ia==0) return true;
   
-  u8 we = TI(w).elType;
-  u8 xe = TI(x).elType;
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
   if (we!=el_B && xe!=el_B) {
     if (we==el_c32 ^ xe==el_c32) return false;
     assert(we==el_c32 & xe==el_c32  ||  we<=el_f64 & xe<=el_f64);
     return true;
   }
-  BS2B xgetU = TI(x).getU;
-  BS2B wgetU = TI(w).getU;
+  BS2B xgetU = TI(x,getU);
+  BS2B wgetU = TI(w,getU);
   for (usz i = 0; i < ia; i++) if(!fillEqual(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
@@ -149,7 +149,7 @@ B withFill(B x, B fill) { // consumes both
         return r;
       }
     } else {
-      BS2B xgetU = TI(x).getU;
+      BS2B xgetU = TI(x,getU);
       {
         i32* rp; B r = m_i32arrc(&rp, x);
         for (usz i = 0; i < ia; i++) {
@@ -191,7 +191,7 @@ B withFill(B x, B fill) { // consumes both
     }
   } else if (isC32(fill)) {
     u32* rp; B r = m_c32arrc(&rp, x);
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < ia; i++) {
       B c = xgetU(x, i);
       if (!isC32(c)) { dec(r); goto base; }
@@ -205,7 +205,7 @@ B withFill(B x, B fill) { // consumes both
   arr_shCopy((Arr*)r, x);
   r->fill = fill;
   B* a = r->a;
-  BS2B xget = TI(x).get;
+  BS2B xget = TI(x,get);
   for (usz i = 0; i < ia; i++) a[i] = xget(x,i);
   dec(x);
   return taga(r);

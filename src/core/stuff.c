@@ -33,7 +33,7 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
 
 NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   usz ia = a(x)->ia;
   if (r!=1) {
     if (r==0) {
@@ -81,12 +81,12 @@ NOINLINE void print(B x) {
       u8 t = v(x)->type;
       v(x)->type = v(x)->flags;
       printf(t==t_freed?"FREED:":"EMPTY:");
-      TI(x).print(x);
+      TI(x,print)(x);
       v(x)->type = t;
       return;
     }
     #endif
-    TI(x).print(x);
+    TI(x,print)(x);
   }
   else if (isVar(x)) printf("(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
   else if (isExt(x)) printf("(extvar d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
@@ -105,7 +105,7 @@ NOINLINE void printRaw(B x) {
     else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < ia; i++) {
       B c = xgetU(x,i);
       #if !CATCH_ERRORS
@@ -226,8 +226,8 @@ NOINLINE i32 compareR(B w, B x) {
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
   bool wa=isAtm(w); usz wia; ur wr; usz* wsh; BS2B wgetU;
   bool xa=isAtm(x); usz xia; ur xr; usz* xsh; BS2B xgetU;
-  if(wa) { wia=1; wr=0; wsh=NULL; wgetU=def_getU; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w).getU; }
-  if(xa) { xia=1; xr=0; xsh=NULL; xgetU=def_getU; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x).getU; }
+  if(wa) { wia=1; wr=0; wsh=NULL; wgetU=def_getU; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); }
+  if(xa) { xia=1; xr=0; xsh=NULL; xgetU=def_getU; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); }
   if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
@@ -254,7 +254,7 @@ NOINLINE i32 compareR(B w, B x) {
 
 NOINLINE bool atomEqualR(B w, B x) {
   if (v(w)->type!=v(x)->type) return false;
-  B2B dcf = TI(w).decompose;
+  B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
@@ -272,8 +272,8 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   if (wa) return atomEqual(w, x);
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
-  u8 we = TI(w).elType;
-  u8 xe = TI(x).elType;
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
   if (we<=el_f64 && xe<=el_f64) { assert(we==el_i32|we==el_f64); assert(xe==el_i32|xe==el_f64);
     if (we==el_i32) { i32* wp = i32any_ptr(w);
       if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
@@ -290,8 +290,8 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
     for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false;
     return true;
   }
-  BS2B xgetU = TI(x).getU;
-  BS2B wgetU = TI(w).getU;
+  BS2B xgetU = TI(x,getU);
+  BS2B wgetU = TI(w,getU);
   for (usz i = 0; i < ia; i++) if(!equal(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
@@ -301,7 +301,7 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   if(isNum(w)|isNum(x)) return false;
   if (!isVal(w) | !isVal(x)) return false;
   if (v(w)->type!=v(x)->type) return false;
-  B2B dcf = TI(w).decompose;
+  B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
@@ -325,18 +325,18 @@ bool eequal(B w, B x) { // doesn't consume
   // if (!feq) return false;
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
-  BS2B wgetU = TI(w).getU;
+  BS2B xgetU = TI(x,getU);
+  BS2B wgetU = TI(w,getU);
   for (usz i = 0; i < ia; i++) if(!eequal(wgetU(w,i),xgetU(x,i))) return false;
   return true;
 }
 
 u64 depth(B x) { // doesn't consume
   if (isAtm(x)) return 0;
-  if (TI(x).arrD1) return 1;
+  if (TI(x,arrD1)) return 1;
   u64 r = 0;
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < ia; i++) {
     u64 n = depth(xgetU(x,i));
     if (n>r) r = n;
@@ -368,7 +368,7 @@ char* format_type(u8 u) {
 bool isPureFn(B x) { // doesn't consume
   if (isCallable(x)) {
     if (v(x)->flags) return true;
-    B2B dcf = TI(x).decompose;
+    B2B dcf = TI(x,decompose);
     B xd = dcf(inc(x));
     B* xdp = harr_ptr(xd);
     i32 t = o2iu(xdp[0]);
@@ -378,7 +378,7 @@ bool isPureFn(B x) { // doesn't consume
     dec(xd); return true;
   } else if (isArr(x)) {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < ia; i++) if (!isPureFn(xgetU(x,i))) return false;
     return true;
   } else return isNum(x) || isC32(x);
@@ -386,7 +386,7 @@ bool isPureFn(B x) { // doesn't consume
 
 B bqn_squeeze(B x) { // consumes
   assert(isArr(x));
-  u8 xe = TI(x).elType;
+  u8 xe = TI(x,elType);
   if (xe==el_i32 || xe==el_c32) return x;
   usz ia = a(x)->ia;
   if (ia==0) return x;
@@ -396,7 +396,7 @@ B bqn_squeeze(B x) { // consumes
     return taga(toI32Arr(x));
   }
   assert(xe==el_B);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   B x0 = xgetU(x, 0);
   if (isNum(x0)) {
     for (usz i = 0; i < ia; i++) {
@@ -436,7 +436,7 @@ B bqn_merge(B x) { // consumes
     return taga(r);
   }
   
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   B x0 = xgetU(x, 0);
   usz* elSh = isArr(x0)? a(x0)->sh : NULL;
   ur elR = isArr(x0)? rnk(x0) : 0;

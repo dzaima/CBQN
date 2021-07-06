@@ -123,7 +123,7 @@ void gsPrint() {
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B blocks, B nameList, Scope* sc, i32 depth) {
   usz cIA = a(block)->ia;
   if (cIA!=4 && cIA!=6) thrM("VM compiler: Bad block info size");
-  BS2B bgetU = TI(block).getU;
+  BS2B bgetU = TI(block,getU);
   usz  ty  = o2s(bgetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
   bool imm = o2b(bgetU(block,1));
   usz  idx = o2s(bgetU(block,2)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
@@ -152,7 +152,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
       B varIDs = bgetU(block,4);
       for (i32 i = oSZ; i < nSZ; i++) {
         nE->vars[i] = bi_noVar;
-        nE->vars[i+nSZ] = TI(nameList).get(nameList, o2s(TI(varIDs).getU(varIDs, regAm+i)));
+        nE->vars[i+nSZ] = TI(nameList,get)(nameList, o2s(TI(varIDs,getU)(varIDs, regAm+i)));
       }
       sc->ext = nE;
     }
@@ -185,7 +185,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B block
         bDone[id] = true;
         TSADD(nBCT, DFND);
         TSADD(nBCT, TSSIZE(nBlT));
-        TSADD(nBlT, compileBlock(TI(blocks).getU(blocks,id), comp, bDone, bc, bcIA, blocks, nameList, sc, depth+1));
+        TSADD(nBlT, compileBlock(TI(blocks,getU)(blocks,id), comp, bDone, bc, bcIA, blocks, nameList, sc, depth+1));
         break;
       }
       case LOCO: case LOCM: case LOCU: {
@@ -281,21 +281,21 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
   if (isNothing(tokenInfo)) {
     nameList = bi_emptyHVec;
   } else {
-    B t = TI(tokenInfo).getU(tokenInfo,2);
-    nameList = TI(t).getU(t,0);
+    B t = TI(tokenInfo,getU)(tokenInfo,2);
+    nameList = TI(t,getU)(t,0);
   }
   if (!isNothing(src) && !isNothing(indices)) {
     if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
-      B ind = TI(indices).getU(indices,i);
+      B ind = TI(indices,getU)(indices,i);
       if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcIA) thrM("VM compiler: Bad indices");
-      BS2B indGetU = TI(ind).getU;
+      BS2B indGetU = TI(ind,getU);
       for (usz j = 0; j < bcIA; j++) o2i(indGetU(ind,j));
     }
   }
   TALLOC(bool,bDone,bIA);
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
-  Block* ret = compileBlock(TI(blocks).getU(blocks, 0), comp, bDone, bc, bcIA, blocks, nameList, sc, 0);
+  Block* ret = compileBlock(TI(blocks,getU)(blocks, 0), comp, bDone, bc, bcIA, blocks, nameList, sc, 0);
   TFREE(bDone);
   ptr_dec(comp); dec(blocks); dec(tokenInfo);
   return ret;
@@ -339,7 +339,7 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
       }
       thrM("Assignment: Mismatched shape for spread assignment");
     }
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
   }
 }
@@ -782,16 +782,16 @@ void print_vmStack() {
 
 
 void comp_init() {
-  ti[t_comp     ].free = comp_free;  ti[t_comp     ].visit = comp_visit;  ti[t_comp     ].print =  comp_print;
-  ti[t_body     ].free = body_free;  ti[t_body     ].visit = body_visit;  ti[t_body     ].print =  body_print;
-  ti[t_block    ].free = block_free; ti[t_block    ].visit = block_visit; ti[t_block    ].print = block_print;
-  ti[t_scope    ].free = scope_free; ti[t_scope    ].visit = scope_visit; ti[t_scope    ].print = scope_print;
-  ti[t_scopeExt ].free = scExt_free; ti[t_scopeExt ].visit = scExt_visit; ti[t_scopeExt ].print = scExt_print;
-  ti[t_blBlocks ].free = bBlks_free; ti[t_blBlocks ].visit = bBlks_visit; ti[t_blBlocks ].print = bBlks_print;
-  ti[t_fldAlias ].free = alias_free; ti[t_fldAlias ].visit = alias_visit; ti[t_fldAlias ].print = alias_print;
-  ti[t_fun_block].free = funBl_free; ti[t_fun_block].visit = funBl_visit; ti[t_fun_block].print = funBl_print; ti[t_fun_block].decompose = block_decompose;
-  ti[t_md1_block].free = md1Bl_free; ti[t_md1_block].visit = md1Bl_visit; ti[t_md1_block].print = md1Bl_print; ti[t_md1_block].decompose = block_decompose; ti[t_md1_block].m1_d=bl_m1d;
-  ti[t_md2_block].free = md2Bl_free; ti[t_md2_block].visit = md2Bl_visit; ti[t_md2_block].print = md2Bl_print; ti[t_md2_block].decompose = block_decompose; ti[t_md2_block].m2_d=bl_m2d;
+  TIi(t_comp     ,free) = comp_free;  TIi(t_comp     ,visit) = comp_visit;  TIi(t_comp     ,print) =  comp_print;
+  TIi(t_body     ,free) = body_free;  TIi(t_body     ,visit) = body_visit;  TIi(t_body     ,print) =  body_print;
+  TIi(t_block    ,free) = block_free; TIi(t_block    ,visit) = block_visit; TIi(t_block    ,print) = block_print;
+  TIi(t_scope    ,free) = scope_free; TIi(t_scope    ,visit) = scope_visit; TIi(t_scope    ,print) = scope_print;
+  TIi(t_scopeExt ,free) = scExt_free; TIi(t_scopeExt ,visit) = scExt_visit; TIi(t_scopeExt ,print) = scExt_print;
+  TIi(t_blBlocks ,free) = bBlks_free; TIi(t_blBlocks ,visit) = bBlks_visit; TIi(t_blBlocks ,print) = bBlks_print;
+  TIi(t_fldAlias ,free) = alias_free; TIi(t_fldAlias ,visit) = alias_visit; TIi(t_fldAlias ,print) = alias_print;
+  TIi(t_fun_block,free) = funBl_free; TIi(t_fun_block,visit) = funBl_visit; TIi(t_fun_block,print) = funBl_print; TIi(t_fun_block,decompose) = block_decompose;
+  TIi(t_md1_block,free) = md1Bl_free; TIi(t_md1_block,visit) = md1Bl_visit; TIi(t_md1_block,print) = md1Bl_print; TIi(t_md1_block,decompose) = block_decompose; TIi(t_md1_block,m1_d)=bl_m1d;
+  TIi(t_md2_block,free) = md2Bl_free; TIi(t_md2_block,visit) = md2Bl_visit; TIi(t_md2_block,print) = md2Bl_print; TIi(t_md2_block,decompose) = block_decompose; TIi(t_md2_block,m2_d)=bl_m2d;
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
   #endif
@@ -834,7 +834,7 @@ void popCatch() {
 }
 
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
-  BS2B srcGetU = TI(src).getU;
+  BS2B srcGetU = TI(src,getU);
   usz srcL = a(src)->ia;
   usz srcS = cs;
   while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
@@ -851,7 +851,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 padStart = padEnd;
   while (padStart>0 && o2cu(srcGetU(s,padStart-1))!='\n') padStart--;
   
-  Arr* slice = TI(src).slice(inc(src),srcS); arr_shVec(slice, srcE-srcS);
+  Arr* slice = TI(src,slice)(inc(src),srcS); arr_shVec(slice, srcE-srcS);
   AJOIN(taga(slice));
   cs-= srcS;
   ce-= srcS;
@@ -865,13 +865,13 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!isNothing(src) && !isNothing(comp->indices)) {
-    B inds = TI(comp->indices).getU(comp->indices, 0); usz cs = o2s(TI(inds).getU(inds,bcPos));
-    B inde = TI(comp->indices).getU(comp->indices, 1); usz ce = o2s(TI(inde).getU(inde,bcPos))+1;
+    B inds = TI(comp->indices,getU)(comp->indices, 0); usz cs = o2s(TI(inds,getU)(inds,bcPos));
+    B inde = TI(comp->indices,getU)(comp->indices, 1); usz ce = o2s(TI(inde,getU)(inde,bcPos))+1;
     // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken
     // printf(" inds:%d…%d\n", cs, ce);
     // int start = pos==-1? 0 : printf(N64d": ", pos);
     // usz srcL = a(src)->ia;
-    // BS2B srcGetU = TI(src).getU;
+    // BS2B srcGetU = TI(src,getU);
     // usz srcS = cs;   while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
     // usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
     // if (ce>srcE) ce = srcE;
@@ -924,7 +924,7 @@ void unwindCompiler() {
 
 NOINLINE void printErrMsg(B msg) {
   if (isArr(msg)) {
-    BS2B msgGetU = TI(msg).getU;
+    BS2B msgGetU = TI(msg,getU);
     usz msgLen = a(msg)->ia;
     for (usz i = 0; i < msgLen; i++) if (!isC32(msgGetU(msg,i))) goto base;
     printRaw(msg);

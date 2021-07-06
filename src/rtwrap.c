@@ -21,7 +21,7 @@ WFun* lastWF;
 void wf_visit(Value* x) { mm_visit(((WFun*)x)->v); }
 B wf_identity(B x) {
   B f = c(WFun,x)->v;
-  return inc(TI(f).identity(f));
+  return inc(TI(f,identity)(f));
 }
 #define CHK(A,B) { if (!eequal(A,B)) { print(f); printf(": failed RT_VERIFY\n"); vm_pstLive(); exit(1); } }
 u64 fwTotal;
@@ -207,23 +207,23 @@ B rtWrap_unwrap(B x) {
 }
 
 
-B wfn_uc1(B t, B o,                B x) { B t2 = c(WFun,t)->v; return TI(t2).fn_uc1(t2, o,          x); }
-B wfn_ucw(B t, B o,           B w, B x) { B t2 = c(WFun,t)->v; return TI(t2).fn_ucw(t2, o,       w, x); }
-B wm1_uc1(B t, B o, B f,           B x) { B t2 = c(WMd1,t)->v; return TI(t2).m1_uc1(t2, o, f,       x); }
-B wm1_ucw(B t, B o, B f,      B w, B x) { B t2 = c(WMd1,t)->v; return TI(t2).m1_ucw(t2, o, f,    w, x); }
-B wm2_uc1(B t, B o, B f, B g,      B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_uc1(t2, o, f, g,    x); }
-B wm2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = c(WMd2,t)->v; return TI(t2).m2_ucw(t2, o, f, g, w, x); }
+B wfn_uc1(B t, B o,                B x) { B t2 = c(WFun,t)->v; return TI(t2,fn_uc1)(t2, o,          x); }
+B wfn_ucw(B t, B o,           B w, B x) { B t2 = c(WFun,t)->v; return TI(t2,fn_ucw)(t2, o,       w, x); }
+B wm1_uc1(B t, B o, B f,           B x) { B t2 = c(WMd1,t)->v; return TI(t2,m1_uc1)(t2, o, f,       x); }
+B wm1_ucw(B t, B o, B f,      B w, B x) { B t2 = c(WMd1,t)->v; return TI(t2,m1_ucw)(t2, o, f,    w, x); }
+B wm2_uc1(B t, B o, B f, B g,      B x) { B t2 = c(WMd2,t)->v; return TI(t2,m2_uc1)(t2, o, f, g,    x); }
+B wm2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = c(WMd2,t)->v; return TI(t2,m2_ucw)(t2, o, f, g, w, x); }
 
 void rtWrap_init() {
-  ti[t_funWrap].visit =  wf_visit; ti[t_funWrap].identity = wf_identity;
-  ti[t_md1Wrap].visit = wm1_visit; ti[t_md1Wrap].m1_d = m_md1D;
-  ti[t_md2Wrap].visit = wm2_visit; ti[t_md2Wrap].m2_d = m_md2D;
-  ti[t_funWrap].fn_uc1 = wfn_uc1;
-  ti[t_funWrap].fn_ucw = wfn_ucw;
-  ti[t_md1Wrap].m1_uc1 = wm1_uc1;
-  ti[t_md1Wrap].m1_ucw = wm1_ucw;
-  ti[t_md2Wrap].m2_uc1 = wm2_uc1;
-  ti[t_md2Wrap].m2_ucw = wm2_ucw;
+  TIi(t_funWrap,visit) =  wf_visit; TIi(t_funWrap,identity) = wf_identity;
+  TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,m1_d) = m_md1D;
+  TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,m2_d) = m_md2D;
+  TIi(t_funWrap,fn_uc1) = wfn_uc1;
+  TIi(t_funWrap,fn_ucw) = wfn_ucw;
+  TIi(t_md1Wrap,m1_uc1) = wm1_uc1;
+  TIi(t_md1Wrap,m1_ucw) = wm1_ucw;
+  TIi(t_md2Wrap,m2_uc1) = wm2_uc1;
+  TIi(t_md2Wrap,m2_ucw) = wm2_ucw;
 }
 #else
 void rtWrap_init() { }

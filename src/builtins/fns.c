@@ -39,7 +39,7 @@ B ud_c1(B t, B x) {
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   usz xia = a(x)->ia;
   if (rnk(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", rnk(x));
   if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
@@ -151,7 +151,7 @@ B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = a(x)->ia;
   if (xia==0) { dec(x); return emptyIVec(); }
-  if (rnk(x)==1 && TI(x).elType==el_i32) {
+  if (rnk(x)==1 && TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < xia; i++) {
@@ -182,7 +182,7 @@ B indexOf_c1(B t, B x) {
   //   wyhashmap_t idx[size];
   //   i32 val[size];
   //   for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
-  //   BS2B xget = TI(x).get;
+  //   BS2B xget = TI(x,get);
   //   i32 ctr = 0;
   //   for (usz i = 0; i < xia; i++) {
   //     u64 hash = bqn_hash(xget(x,i), wy_secret);
@@ -198,7 +198,7 @@ B indexOf_c1(B t, B x) {
     // u64 s = nsTime();
     i32* rp; B r = m_i32arrv(&rp, xia);
     H_b2i* map = m_b2i(64);
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     i32 ctr = 0;
     for (usz i = 0; i < xia; i++) {
       bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
@@ -216,9 +216,9 @@ B indexOf_c2(B t, B w, B x) {
   if (rnk(w)==1) {
     if (!isArr(x) || rnk(x)==0) {
       usz wia = a(w)->ia;
-      B el = isArr(x)? TI(x).getU(x,0) : x;
+      B el = isArr(x)? TI(x,getU)(x,0) : x;
       i32 res = wia;
-      if (TI(w).elType==el_i32) {
+      if (TI(w,elType)==el_i32) {
         if (q_i32(el)) {
           i32* wp = i32any_ptr(w);
           i32 v = o2iu(el);
@@ -227,7 +227,7 @@ B indexOf_c2(B t, B w, B x) {
           }
         }
       } else {
-        BS2B wgetU = TI(w).getU;
+        BS2B wgetU = TI(w,getU);
         for (usz i = 0; i < wia; i++) {
           if (equal(wgetU(w,i), el)) { res = i; break; }
         }
@@ -243,8 +243,8 @@ B indexOf_c2(B t, B w, B x) {
       // TODO O(wia×xia) for small wia
       i32* rp; B r = m_i32arrv(&rp, xia);
       H_b2i* map = m_b2i(64);
-      BS2B xgetU = TI(x).getU;
-      BS2B wgetU = TI(w).getU;
+      BS2B xgetU = TI(x,getU);
+      BS2B wgetU = TI(w,getU);
       for (usz i = 0; i < wia; i++) {
         bool had; u64 p = mk_b2i(&map, wgetU(w,i), &had);
         if (!had) map->a[p].val = i;
@@ -265,7 +265,7 @@ B memberOf_c1(B t, B x) {
   
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_Sb* set = m_Sb(64);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < xia; i++) rp[i] = !ins_Sb(&set, xgetU(x,i));
   free_Sb(set); dec(x);
   return r;
@@ -277,8 +277,8 @@ B memberOf_c2(B t, B w, B x) {
   // TODO O(wia×xia) for small wia
   H_Sb* set = m_Sb(64);
   bool had;
-  BS2B xgetU = TI(x).getU;
-  BS2B wgetU = TI(w).getU;
+  BS2B xgetU = TI(x,getU);
+  BS2B wgetU = TI(w,getU);
   for (usz i = 0; i < xia; i++) mk_Sb(&set, xgetU(x,i), &had);
   i32* rp; B r = m_i32arrv(&rp, wia);
   for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, wgetU(w,i));
@@ -295,7 +295,7 @@ B find_c1(B t, B x) {
   
   B r = emptyHVec();
   H_Sb* set = m_Sb(64);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < xia; i++) {
     B c = xgetU(x,i);
     if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
@@ -314,7 +314,7 @@ B count_c1(B t, B x) {
   usz xia = a(x)->ia;
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_b2i* map = m_b2i(64);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < xia; i++) {
     bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
@@ -329,8 +329,8 @@ B count_c2(B t, B w, B x) {
 
 
 void fns_init() {
-  ti[t_funBI].print = print_funBI;
-  ti[t_funBI].identity = funBI_identity;
-  ti[t_funBI].fn_uc1 = funBI_uc1;
-  ti[t_funBI].fn_ucw = funBI_ucw;
+  TIi(t_funBI,print) = print_funBI;
+  TIi(t_funBI,identity) = funBI_identity;
+  TIi(t_funBI,fn_uc1) = funBI_uc1;
+  TIi(t_funBI,fn_ucw) = funBI_ucw;
 }

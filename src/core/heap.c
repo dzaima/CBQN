@@ -30,14 +30,14 @@ void heapVerify_checkFn(Value* v) {
 
 
 void heapVerify_callVisit(Value* v) {
-  if (ti[v->type].isArr && prnk(v)>1) heapVerify_visitP(shObjP(v));
-  ti[v->type].visit(v);
+  if (TIv(v,isArr) && prnk(v)>1) heapVerify_visitP(shObjP(v));
+  TIv(v,visit)(v);
 }
 
 void heap_getReferents(Value* v) {
   heap_curr = v;
-  if (ti[v->type].isArr && prnk(v)>1) heapVerify_visitP(shObjP(v));
-  ti[v->type].visit(v);
+  if (TIv(v,isArr) && prnk(v)>1) heapVerify_visitP(shObjP(v));
+  TIv(v,visit)(v);
 }
 void heapVerify() {
   heap_observed = 0;

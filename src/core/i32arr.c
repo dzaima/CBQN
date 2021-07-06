@@ -21,15 +21,15 @@ static void i32arr_free(Value* x) { decSh(x); }
 static bool i32arr_canStore(B x) { return q_i32(x); }
 
 void i32arr_init() {
-  ti[t_i32arr].get   = i32arr_get;   ti[t_i32slice].get   = i32slice_get;
-  ti[t_i32arr].getU  = i32arr_get;   ti[t_i32slice].getU  = i32slice_get;
-  ti[t_i32arr].slice = i32arr_slice; ti[t_i32slice].slice = i32slice_slice;
-  ti[t_i32arr].free  = i32arr_free;  ti[t_i32slice].free  =    slice_free;
-  ti[t_i32arr].visit = noop_visit;   ti[t_i32slice].visit =    slice_visit;
-  ti[t_i32arr].print =    arr_print; ti[t_i32slice].print = arr_print;
-  ti[t_i32arr].isArr = true;         ti[t_i32slice].isArr = true;
-  ti[t_i32arr].arrD1 = true;         ti[t_i32slice].arrD1 = true;
-  ti[t_i32arr].elType = el_i32;      ti[t_i32slice].elType = el_i32;
-  ti[t_i32arr].canStore = i32arr_canStore;
+  TIi(t_i32arr,get)   = i32arr_get;   TIi(t_i32slice,get)   = i32slice_get;
+  TIi(t_i32arr,getU)  = i32arr_get;   TIi(t_i32slice,getU)  = i32slice_get;
+  TIi(t_i32arr,slice) = i32arr_slice; TIi(t_i32slice,slice) = i32slice_slice;
+  TIi(t_i32arr,free)  = i32arr_free;  TIi(t_i32slice,free)  =    slice_free;
+  TIi(t_i32arr,visit) = noop_visit;   TIi(t_i32slice,visit) =    slice_visit;
+  TIi(t_i32arr,print) =    arr_print; TIi(t_i32slice,print) = arr_print;
+  TIi(t_i32arr,isArr) = true;         TIi(t_i32slice,isArr) = true;
+  TIi(t_i32arr,arrD1) = true;         TIi(t_i32slice,arrD1) = true;
+  TIi(t_i32arr,elType) = el_i32;      TIi(t_i32slice,elType) = el_i32;
+  TIi(t_i32arr,canStore) = i32arr_canStore;
   i32* tmp; bi_emptyIVec = m_i32arrv(&tmp, 0); gc_add(bi_emptyIVec);
 }

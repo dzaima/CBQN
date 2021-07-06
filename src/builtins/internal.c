@@ -75,7 +75,7 @@ B listVariations_c2(B t, B w, B x) {
   
   if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
   usz wia = a(w)->ia;
-  BS2B wgetU = TI(w).getU;
+  BS2B wgetU = TI(w,getU);
   bool c_incr=false, c_rmFill=false;
   for (usz i = 0; i < wia; i++) {
     u32 c = o2c(wgetU(w, i));
@@ -85,12 +85,12 @@ B listVariations_c2(B t, B w, B x) {
   }
   dec(w);
   
-  u8 xe = TI(x).elType;
+  u8 xe = TI(x,elType);
   B xf = getFillQ(x);
   bool ah = c_rmFill || noFill(xf);
   bool ai32=false, af64=false, ac32=false;
   usz xia = a(x)->ia;
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   if (isNum(xf)) {
     ai32=af64=true;
     if (xe!=el_i32) {
@@ -151,9 +151,9 @@ static void variation_root() {
 B variation_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
   usz xia = a(x)->ia;
-  u8 xe = TI(x).elType;
-  BS2B xget = TI(x).get;
-  BS2B xgetU = TI(x).getU;
+  u8 xe = TI(x,elType);
+  BS2B xget = TI(x,get);
+  BS2B xgetU = TI(x,getU);
   C32Arr* wc = toC32Arr(w);
   u32* wp = wc->a;
   u32* wpE = wp+wc->ia;
@@ -192,7 +192,7 @@ B variation_c2(B t, B w, B x) {
       else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     if (slice) {
-      Arr* slice = TI(res).slice(res, 0);
+      Arr* slice = TI(res,slice)(res, 0);
       arr_shCopy(slice, res);
       res = taga(slice);
     }

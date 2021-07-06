@@ -29,8 +29,8 @@
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
         if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                                   \
-        u8 we = TI(w).elType;                                                \
-        u8 xe = TI(x).elType;                                                \
+        u8 we = TI(w,elType);                                                \
+        u8 xe = TI(x,elType);                                                \
         if (isNumEl(we)&isNumEl(xe)) {                                       \
           f64* rp; B r = m_f64arrc(&rp, x);                                  \
           if (we==el_i32) { B w,x/*shadow*/; i32* wp = i32any_ptr(ow);       \
@@ -43,7 +43,7 @@
           dec(w); dec(x); return f64_maybe_i32(r);                           \
         }                                                                    \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia;                     \
-        u8 xe = TI(x).elType; f64*rp;                                        \
+        u8 xe = TI(x,elType); f64*rp;                                        \
         if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
           dec(x); return f64_maybe_i32(r);                                   \
@@ -53,7 +53,7 @@
           dec(x); return f64_maybe_i32(r);                                   \
         }                                                                    \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia;                     \
-        u8 we = TI(w).elType; f64*rp;                                        \
+        u8 we = TI(w,elType); f64*rp;                                        \
         if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
           dec(w); return f64_maybe_i32(r);                                   \
@@ -100,8 +100,8 @@
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
         if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                           \
-        u8 we = TI(w).elType;                                        \
-        u8 xe = TI(x).elType;                                        \
+        u8 we = TI(w,elType);                                        \
+        u8 xe = TI(x,elType);                                        \
         if (isNumEl(we)&isNumEl(xe)) {                               \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
           if (wei&xei) { PI(w) PI(x) DOI(EXPR,w,wp[i],xp[i],aaB); }  \
@@ -115,11 +115,11 @@
           }                                                          \
           dec(w); dec(x); return f64_maybe_i32(r);                   \
         }                                                            \
-      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x).elType;                 \
+      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);                 \
         if (xe==el_i32 && q_i32(w)) { PI(x) i32 wc=o2iu(w); DOI(EXPR,x,wc,xp[i],naB) } naB:;   \
         if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
         if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
-      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w).elType;                 \
+      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                 \
         if (we==el_i32 && q_i32(x)) { PI(w) i32 xc=o2iu(x); DOI(EXPR,w,wp[i],xc,anB) } anB:;   \
         if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
         if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
@@ -153,7 +153,7 @@ GC2i(add, wv+xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
-    if (TI(x).elType == el_i32) {
+    if (TI(x,elType) == el_i32) {
       u32 wv = o2cu(w);
       i32* xp = i32any_ptr(x); usz xia = a(x)->ia;
       u32* rp; B r = m_c32arrc(&rp, x);
@@ -169,7 +169,7 @@ GC2i(add, wv+xv, {
 GC2i(sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
-  if (isArr(w) && TI(w).elType==el_c32) {
+  if (isArr(w) && TI(w,elType)==el_c32) {
     if (isC32(x)) {
       i32 xv = (i32)o2cu(x);
       u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
@@ -180,7 +180,7 @@ GC2i(sub, wv-xv, {
     }
     if (isArr(x) && eqShape(w, x)) {
       u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
-      if (TI(x).elType==el_i32) {
+      if (TI(x,elType)==el_i32) {
         u32* rp; B r = m_c32arrc(&rp, w);
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {

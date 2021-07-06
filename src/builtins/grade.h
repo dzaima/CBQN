@@ -18,7 +18,7 @@ B GRADE_CAT(c1)(B t, B x) {
   if (ia==0) { dec(x); return emptyIVec(); }
   
   i32* rp; B r = m_i32arrv(&rp, ia);
-  if (TI(x).elType==el_i32) {
+  if (TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < ia; i++) {
@@ -55,7 +55,7 @@ B GRADE_CAT(c1)(B t, B x) {
   }
   
   TALLOC(BI32p, tmp, ia);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (usz i = 0; i < ia; i++) {
     tmp[i].v = i;
     tmp[i].k = xgetU(x,i);
@@ -78,8 +78,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     w = toCells(w);       xr = 1;
   }
   
-  u8 we = TI(w).elType; usz wia = a(w)->ia;
-  u8 xe = TI(x).elType; usz xia = a(x)->ia;
+  u8 we = TI(w,elType); usz wia = a(w)->ia;
+  u8 xe = TI(x,elType); usz xia = a(x)->ia;
   
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
   i32* rp; B r = m_i32arrc(&rp, x);
@@ -100,8 +100,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   } else {
-    BS2B wgetU = TI(w).getU;
-    BS2B xgetU = TI(x).getU;
+    BS2B wgetU = TI(w,getU);
+    BS2B xgetU = TI(x,getU);
     if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wgetU(w,i), wgetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
     
     for (usz i = 0; i < xia; i++) {

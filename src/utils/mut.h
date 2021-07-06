@@ -187,7 +187,7 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) {
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
   assert(isArr(x));
   u8 xt = v(x)->type;
-  u8 xe = ti[xt].elType;
+  u8 xe = TIi(xt,elType);
   // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, format_type(xt), xs, xs+l); fflush(stdout);
   again:
   #define AGAIN { mut_to(m, el_or(m->type, xe)); goto again; }
@@ -228,7 +228,7 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       else if (xt==t_hslice) xp = c(HSlice,x)->a;
       else if (xt==t_fillarr) xp = c(FillArr,x)->a;
       else {
-        BS2B xget = ti[xt].get;
+        BS2B xget = TIi(xt,get);
         for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
         return;
       }
@@ -248,19 +248,19 @@ static B vec_join(B w, B x) { // consumes both
   if (v(w)->refc==1) {
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
-    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && TI(x).elType==el_i32) {
+    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && TI(x,elType)==el_i32) {
       a(w)->ia = ria;
       memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4);
       dec(x);
       return w;
     }
-    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && TI(x).elType==el_c32) {
+    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && TI(x,elType)==el_c32) {
       a(w)->ia = ria;
       memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4);
       dec(x);
       return w;
     }
-    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && TI(x).elType==el_f64) { // TODO handle f64∾i32
+    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && TI(x,elType)==el_f64) { // TODO handle f64∾i32
       a(w)->ia = ria;
       memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8);
       dec(x);
@@ -270,7 +270,7 @@ static B vec_join(B w, B x) { // consumes both
       a(w)->ia = ria;
       B* rp = harr_ptr(w)+wia;
       u8 xt = v(x)->type;
-      u8 xe = TI(x).elType;
+      u8 xe = TI(x,elType);
       if (xt==t_harr | xt==t_hslice | xt==t_fillarr) {
         B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(a(x));
         memcpy(rp, xp, xia*sizeof(B));
@@ -285,14 +285,14 @@ static B vec_join(B w, B x) { // consumes both
         f64* xp = f64any_ptr(x);
         for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]);
       } else {
-        BS2B xget = TI(x).get;
+        BS2B xget = TI(x,get);
         for (usz i = 0; i < xia; i++) rp[i] = xget(x, i);
       }
       dec(x);
       return w;
     }
   }
-  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w).elType, TI(x).elType));
+  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
   mut_copy(r, 0,   w, 0, wia);
   mut_copy(r, wia, x, 0, xia);
   dec(w); dec(x);
@@ -330,7 +330,7 @@ static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
 static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
   usz wia = a(w)->ia;
-  MAKE_MUT(r, wia+1); mut_to(r, el_or(TI(w).elType, selfElType(x)));
+  MAKE_MUT(r, wia+1); mut_to(r, el_or(TI(w,elType), selfElType(x)));
   mut_copy(r, 0, w, 0, wia);
   mut_set(r, wia, x);
   dec(w);

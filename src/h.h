@@ -391,7 +391,9 @@ typedef struct TypeInfo {
   bool arrD1; // is always an array with depth 1
 } TypeInfo;
 extern TypeInfo ti[t_COUNT];
-#define TI(x) (ti[v(x)->type])
+#define TIi(X,V) (ti[X].V)
+#define TIv(X,V) (ti[(X)->type].V)
+#define TI(X,V) (ti[v(X)->type].V)
 
 
 static bool isNothing(B b) { return b.u==bi_N.u; }
@@ -400,7 +402,7 @@ static void mm_free(Value* x);
 // refcount
 static bool reusable(B x) { return v(x)->refc==1; }
 static inline void value_free(Value* x) {
-  ti[x->type].free(x);
+  TIv(x,free)(x);
   mm_free(x);
 }
 static NOINLINE void value_freeR(Value* x) { value_free(x); }

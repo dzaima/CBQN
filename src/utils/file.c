@@ -46,14 +46,14 @@ B file_chars(B path) { // consumes
 
 B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert((isArr(base) || isNothing(base)) && isArr(rel));
-  BS2B rgetU = TI(rel).getU;
+  BS2B rgetU = TI(rel,getU);
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
   for (usz i = 0; i < ria; i++) if (!isC32(rgetU(rel, i))) thrM("Paths must be character vectors");
   if (ria==0) { dec(rel); return inc(base); }
   if (o2cu(rgetU(rel, 0))=='/') return rel;
   if (isNothing(base)) thrM("Using relative path with no absolute base path known");
-  BS2B bgetU = TI(base).getU;
+  BS2B bgetU = TI(base,getU);
   usz bia = a(base)->ia;
   bool has = bia && o2cu(bgetU(base, bia-1))=='/';
   u32* rp; B r = m_c32arrv(&rp, bia+ria+(has?0:1));
@@ -68,13 +68,13 @@ B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector o
 B path_dir(B path) { // consumes; returns directory part of file path with trailing slash, or ·
   assert(isArr(path) || isNothing(path));
   if (isNothing(path)) return path;
-  BS2B pgetU = TI(path).getU;
+  BS2B pgetU = TI(path,getU);
   usz pia = a(path)->ia;
   if (pia==0) thrM("Empty file path");
   for (usz i = 0; i < pia; i++) if (!isC32(pgetU(path, i))) thrM("Paths must be character vectors");
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(pgetU(path, i))=='/') {
-      Arr* r = TI(path).slice(path, 0);
+      Arr* r = TI(path,slice)(path, 0);
       arr_shVec(r, i+1);
       return taga(r);
     }
@@ -102,7 +102,7 @@ void file_wBytes(B path, B x) { // consumes path
   
   u64 len = a(x)->ia;
   TALLOC(char, val, len);
-  BS2B xgetU = TI(x).getU;
+  BS2B xgetU = TI(x,getU);
   for (u64 i = 0; i < len; i++) val[i] = o2i(xgetU(x,i));
   
   if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);

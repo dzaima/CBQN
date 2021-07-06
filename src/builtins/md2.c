@@ -42,7 +42,7 @@ B catch_c2 (B d, B w, B x) { return c2(c(Md2D,d)->f, w,x); }
 extern B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   if (isArr(g)) {
-    BS2B xgetU = TI(g).getU;
+    BS2B xgetU = TI(g,getU);
     usz ia = a(g)->ia;
     for (usz i = 0; i < ia; i++) repeat_bounds(bound, xgetU(g, i));
   } else if (isNum(g)) {
@@ -53,7 +53,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
 }
 B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
-    BS2B ggetU = TI(g).getU;
+    BS2B ggetU = TI(g,getU);
     usz ia = a(g)->ia;
     HArr_p r = m_harrUc(g);
     for (usz i = 0; i < ia; i++) r.a[i] = repeat_replace(ggetU(g,i), q);
@@ -110,12 +110,12 @@ B over_c2(B d, B w, B x) { B xr=c1(c(Md2D,d)->g, x); return c2(c(Md2D,d)->f, c1(
 B cond_c1(B d, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
   usz fr = WRAP(o2i64(c1(c(Md2D,d)->f, inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c1(TI(g).getU(g, fr), x);
+  return c1(TI(g,getU)(g, fr), x);
 }
 B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
   usz fr = WRAP(o2i64(c2(c(Md2D,d)->f, inc(w), inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c2(TI(g).getU(g, fr), w, x);
+  return c2(TI(g,getU)(g, fr), w, x);
 }
 
 extern B rt_under, bi_before;
@@ -126,7 +126,7 @@ B under_c1(B d, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
     dec(fn);
     return r;
   }
-  return TI(g).fn_uc1(g, f, x);
+  return TI(g,fn_uc1)(g, f, x);
 }
 B under_c2(B d, B w, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
   if (!isVal(g)) {
@@ -136,22 +136,22 @@ B under_c2(B d, B w, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
     return r;
   }
   B f2 = m2_d(inc(bi_before), c1(g, w), inc(f));
-  B r = TI(g).fn_uc1(g, f2, x);
+  B r = TI(g,fn_uc1)(g, f2, x);
   dec(f2);
   return r;
 }
 
 B before_uc1(B t, B o, B f, B g, B x) {
   if (!isFun(g)) return def_m2_uc1(t, o, f, g, x);
-  return TI(g).fn_ucw(g, o, inc(f), x);
+  return TI(g,fn_ucw)(g, o, inc(f), x);
 }
 
 
 
 static void print_md2BI(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
 void md2_init() {
-  ti[t_md2BI].print = print_md2BI;
-  ti[t_md2BI].m2_uc1 = md2BI_uc1;
-  ti[t_md2BI].m2_ucw = md2BI_ucw;
+  TIi(t_md2BI,print) = print_md2BI;
+  TIi(t_md2BI,m2_uc1) = md2BI_uc1;
+  TIi(t_md2BI,m2_ucw) = md2BI_ucw;
   c(BMd2,bi_before)->uc1 = before_uc1;
 }

@@ -14,7 +14,7 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   inc(x);
   x = bqn_squeeze(x);
   u64 shHash = wyhash(a(x)->sh, rnk(x)*sizeof(usz), 0, secret);
-  u8 xe = TI(x).elType;
+  u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
   u64 r;
   if (xe==el_i32) {
@@ -26,7 +26,7 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   } else {
     assert(xe==el_B);
     TALLOC(u64, data, xia);
-    BS2B xgetU = TI(x).getU;
+    BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < xia; i++) data[i] = bqn_hash(xgetU(x, i), secret);
     r = wyhash(data, xia*8, shHash, secret);
     TFREE(data);

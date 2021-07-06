@@ -42,6 +42,6 @@ static B m_fork(B f, B g, B h) { Fork* r = mm_alloc(sizeof(Fork), t_fork); r->f 
 static B m_atop(     B g, B h) { Atop* r = mm_alloc(sizeof(Atop), t_atop);           r->g  = g; r->h = h; r->c1=tr2D_c1; r->c2=tr2D_c2; return tag(r,FUN_TAG); }
 
 // consume all args
-static B m1_d(B m, B f     ) { if(isMd1(m)) return TI(m).m1_d(m, f   ); thrM("Interpreting non-1-modifier as 1-modifier"); }
-static B m2_d(B m, B f, B g) { if(isMd2(m)) return TI(m).m2_d(m, f, g); thrM("Interpreting non-2-modifier as 2-modifier"); }
+static B m1_d(B m, B f     ) { if(isMd1(m)) return TI(m,m1_d)(m, f   ); thrM("Interpreting non-1-modifier as 1-modifier"); }
+static B m2_d(B m, B f, B g) { if(isMd2(m)) return TI(m,m2_d)(m, f, g); thrM("Interpreting non-2-modifier as 2-modifier"); }
 static B m2_h(B m,      B g) {              return     m_md2H(m,    g); }

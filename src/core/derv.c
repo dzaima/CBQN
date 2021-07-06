@@ -40,16 +40,16 @@ static B md2D_uc1(B t, B o, B x) {
   B f = c(Md2D, t)->f;
   B g = c(Md2D, t)->g;
   if (v(t)->flags || !isMd2(m)) return def_fn_uc1(t, o, x); // flags check to not deconstruct builtins
-  return TI(m).m2_uc1(m, o, f, g, x);
+  return TI(m,m2_uc1)(m, o, f, g, x);
 }
 
 
 void derv_init() {
-  ti[t_md1D].free = md1D_free; ti[t_md1D].visit = md1D_visit; ti[t_md1D].print = md1D_print; ti[t_md1D].decompose = md1D_decompose;
-  ti[t_md2D].free = md2D_free; ti[t_md2D].visit = md2D_visit; ti[t_md2D].print = md2D_print; ti[t_md2D].decompose = md2D_decompose; ti[t_md2D].fn_uc1 = md2D_uc1;
-  ti[t_md2H].free = md2H_free; ti[t_md2H].visit = md2H_visit; ti[t_md2H].print = md2H_print; ti[t_md2H].decompose = md2H_decompose;
-  ti[t_fork].free = fork_free; ti[t_fork].visit = fork_visit; ti[t_fork].print = fork_print; ti[t_fork].decompose = fork_decompose;
-  ti[t_atop].free = atop_free; ti[t_atop].visit = atop_visit; ti[t_atop].print = atop_print; ti[t_atop].decompose = atop_decompose;
-  ti[t_md1BI].m1_d = m_md1D;
-  ti[t_md2BI].m2_d = m_md2D;
+  TIi(t_md1D,free) = md1D_free; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
+  TIi(t_md2D,free) = md2D_free; TIi(t_md2D,visit) = md2D_visit; TIi(t_md2D,print) = md2D_print; TIi(t_md2D,decompose) = md2D_decompose; TIi(t_md2D,fn_uc1) = md2D_uc1;
+  TIi(t_md2H,free) = md2H_free; TIi(t_md2H,visit) = md2H_visit; TIi(t_md2H,print) = md2H_print; TIi(t_md2H,decompose) = md2H_decompose;
+  TIi(t_fork,free) = fork_free; TIi(t_fork,visit) = fork_visit; TIi(t_fork,print) = fork_print; TIi(t_fork,decompose) = fork_decompose;
+  TIi(t_atop,free) = atop_free; TIi(t_atop,visit) = atop_visit; TIi(t_atop,print) = atop_print; TIi(t_atop,decompose) = atop_decompose;
+  TIi(t_md1BI,m1_d) = m_md1D;
+  TIi(t_md2BI,m2_d) = m_md2D;
 }

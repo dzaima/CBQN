@@ -13,8 +13,8 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
   r->nameList = nameList;
   r->varAm = vam;
-  BS2B getIDU = TI(varIDs).getU;
-  BS2B getOnU = TI(exported).getU;
+  BS2B getIDU = TI(varIDs,getU);
+  BS2B getOnU = TI(exported,getU);
   for (i32 i = 0; i < off; i++) {
     body->varIDs[i] = -1;
     r   ->expIDs[i] = -1;
@@ -44,8 +44,8 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   assert(nameID<a(cNL)->ia && nameID>=0);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
-    B cName = TI(cNL).getU(cNL, nameID);
-    BS2B dNLgetU = TI(dNL).getU;
+    B cName = TI(cNL,getU)(cNL, nameID);
+    BS2B dNLgetU = TI(dNL,getU);
     for (i32 i = 0; i < dVarAm; i++) {
       i32 dID = d->expIDs[i];
       if (dID>=0 && equal(dNLgetU(dNL, dID), cName)) return n->sc->vars[i];
@@ -62,7 +62,7 @@ B ns_getNU(B ns, B name) { VTY(ns, t_ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
   B dNL = d->nameList;
-  BS2B dNLgetU = TI(dNL).getU;
+  BS2B dNLgetU = TI(dNL,getU);
   for (i32 i = 0; i < dVarAm; i++) {
     i32 dID = d->expIDs[i];
     if (dID>=0 && equal(dNLgetU(dNL, dID), name)) return n->sc->vars[i];
@@ -74,7 +74,7 @@ void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
   B dNL = d->nameList;
-  BS2B dNLgetU = TI(dNL).getU;
+  BS2B dNLgetU = TI(dNL,getU);
   for (i32 i = 0; i < dVarAm; i++) {
     i32 dID = d->expIDs[i];
     if (dID>=0 && equal(dNLgetU(dNL, dID), name)) {
@@ -90,7 +90,7 @@ i32 ns_pos(B ns, B name) { VTY(ns, t_ns);
   Body* b = c(NS, ns)->sc->body;
   B nameList = c(NS, ns)->desc->nameList;
   i32 bVarAm = b->varAm;
-  BS2B nlGetU = TI(nameList).getU;
+  BS2B nlGetU = TI(nameList,getU);
   for (i32 i = 0; i < bVarAm; i++) {
     i32 id = b->varIDs[i];
     if (id>=0) if (equal(nlGetU(nameList, id), name)) { dec(name); return i; }
@@ -119,7 +119,7 @@ void ns_print(B x) {
   NSDesc* desc = c(NS,x)->desc;
   Scope* sc = c(NS,x)->sc;
   i32 am = desc->varAm;
-  BS2B getNameU = TI(desc->nameList).getU;
+  BS2B getNameU = TI(desc->nameList,getU);
   bool first = true;
   for (i32 i = 0; i < am; i++) {
     i32 id = desc->expIDs[i];
@@ -147,7 +147,7 @@ void nsDesc_print(B x) {
 
 
 void ns_init() {
-  ti[t_ns].free  = ns_free;  ti[t_nsDesc].free  = nsDesc_free;
-  ti[t_ns].visit = ns_visit; ti[t_nsDesc].visit = nsDesc_visit;
-  ti[t_ns].print = ns_print; ti[t_nsDesc].print = nsDesc_print;
+  TIi(t_ns,free)  = ns_free;  TIi(t_nsDesc,free)  = nsDesc_free;
+  TIi(t_ns,visit) = ns_visit; TIi(t_nsDesc,visit) = nsDesc_visit;
+  TIi(t_ns,print) = ns_print; TIi(t_nsDesc,print) = nsDesc_print;
 }

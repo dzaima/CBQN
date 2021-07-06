@@ -26,7 +26,7 @@ static void mm_visit(B x) {
   #ifdef LOG_GC
     gc_visitBytes+= mm_size(vx); gc_visitCount++;
   #endif
-  TI(x).visit(vx);
+  TI(x,visit)(vx);
 }
 static void mm_visitP(void* xp) {
   #ifdef HEAP_VERIFY
@@ -40,5 +40,5 @@ static void mm_visitP(void* xp) {
   #ifdef LOG_GC
     gc_visitBytes+= mm_size(x); gc_visitCount++;
   #endif
-  ti[x->type].visit(x);
+  TIv(x,visit)(x);
 }
