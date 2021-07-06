@@ -47,7 +47,9 @@ char* format_pm2(u8 u) {
 
 
 
-TypeInfo ti[t_COUNT];
+#define F(TY,N) TY ti_##N[t_COUNT];
+  FOR_TI(F)
+#undef F
 
 B r1Objs[rtLen];
 B rtWrap_wrap(B x); // consumes

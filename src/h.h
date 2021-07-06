@@ -365,35 +365,37 @@ typedef B (*  BBBB2B)(B, B, B, B);
 typedef B (* BBBBB2B)(B, B, B, B, B);
 typedef B (*BBBBBB2B)(B, B, B, B, B, B);
 
-typedef struct TypeInfo {
-  V2v free;   // expects refc==0, type may be cleared to t_empty for garbage collection
-  BS2B get;   // increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen
-  BS2B getU;  // like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`)
-  BB2B  m1_d; // consume all args; (m, f)
-  BBB2B m2_d; // consume all args; (m, f, g)
-  BS2A slice; // consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object; preserves fill
-  B2B identity; // return identity element of this function; doesn't consume
-  
-     BBB2B fn_uc1; // t,o,      x→r; r≡O⌾(      T    ) x; consumes x
-    BBBB2B fn_ucw; // t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x
-    BBBB2B m1_uc1; // t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x
-   BBBBB2B m1_ucw; // t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x
-   BBBBB2B m2_uc1; // t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x
-  BBBBBB2B m2_ucw; // t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x
-  
-  B2b canStore; // doesn't consume
-  u8 elType; // guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds
-  
-  B2v print;  // doesn't consume
-  V2v visit;  // call mm_visit for all referents
-  B2B decompose; // consumes; must return a HArr
-  bool isArr;
-  bool arrD1; // is always an array with depth 1
-} TypeInfo;
-extern TypeInfo ti[t_COUNT];
-#define TIi(X,V) (ti[X].V)
-#define TIv(X,V) (ti[(X)->type].V)
-#define TI(X,V) (ti[v(X)->type].V)
+#define FOR_TI(F) \
+  F(V2v, free)   /* expects refc==0, type may be cleared to t_empty for garbage collection */ \
+  F(BS2B, get)   /* increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen */ \
+  F(BS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
+  F(BB2B,  m1_d) /* consume all args; (m, f)    */ \
+  F(BBB2B, m2_d) /* consume all args; (m, f, g) */ \
+  F(BS2A, slice) /* consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object; preserves fill */ \
+  F(B2B, identity) /* return identity element of this function; doesn't consume */ \
+  \
+  F(   BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \
+  F(  BBBB2B, fn_ucw) /* t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x */ \
+  F(  BBBB2B, m1_uc1) /* t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x   */ \
+  F( BBBBB2B, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
+  F( BBBBB2B, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
+  F(BBBBBB2B, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
+  \
+  F(B2b, canStore) /* doesn't consume */ \
+  F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \
+  \
+  F(B2v, print) /* doesn't consume */ \
+  F(V2v, visit) /* call mm_visit for all referents */ \
+  F(B2B, decompose) /* consumes; must return a HArr */ \
+  F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
+  F(bool, arrD1) /* is always an array with depth 1 */ \
+
+#define F(TY,N) extern TY ti_##N[t_COUNT];
+  FOR_TI(F)
+#undef F
+#define TIi(X,V) (ti_##V[X])
+#define TIv(X,V) (ti_##V[(X)->type])
+#define TI(X,V)  (ti_##V[v(X)->type])
 
 
 static bool isNothing(B b) { return b.u==bi_N.u; }
