@@ -91,7 +91,7 @@ static inline bool N(has) (Map* m, KT k) {
 #endif
 
 
-static inline void N(qins) (Map* m, u64 h1, HT h2, KT k IFVAL(, VT v)) { // if guaranteed that k doesn't exist in the map yet and there's space for this
+static inline void N(qins) (Map* m, u64 h1, HT h2 IFKEY(, KT k) IFVAL(, VT v)) { // if guaranteed that k doesn't exist in the map yet and there's space for this
   u64 mask = m->mask;
   u64 p = h1 & mask;
   while (true) {
@@ -112,7 +112,7 @@ static void N(dbl) (Map** m) {
   Map* nm = N(m)(psz*2);
   for (u64 i = 0; i < psz; i++) {
     Ent e = pm->a[i];
-    if(!EMPTY(e.hash, e.key)) N(qins)(nm, H1R(e.key, e.hash), e.hash, e.key IFVAL(, e.val));
+    if(!EMPTY(e.hash, e.key)) N(qins)(nm, H1R(e.key, e.hash), e.hash IFKEY(, e.key) IFVAL(, e.val));
   }
   mm_free((Value*)pm);
   *m = nm;
@@ -136,6 +136,15 @@ static inline bool N(ins) (Map** mp, KT k IFVAL(, VT v)) { // returns whether el
   IFVAL((*mp)->a[p].val = v);
   return had;
 }
+#ifdef VALS
+  static inline VT N(swap) (Map** mp, KT k, VT v, VT def) { // returns either previous element or def; sets new element to v
+    bool had;
+    u64 p = N(mk)(mp, k, &had);
+    VT prev = (*mp)->a[p].val;
+    (*mp)->a[p].val = v;
+    return had? prev : def;
+  }
+#endif
 
 
 #undef IFKEY
@@ -146,6 +155,7 @@ static inline bool N(ins) (Map** mp, KT k IFVAL(, VT v)) { // returns whether el
 #undef HT
 #undef KT
 #undef H1
+#undef H1R
 #undef H2
 #undef EMPTY
 #undef HDEF

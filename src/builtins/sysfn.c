@@ -199,24 +199,26 @@ B hash_c1(B t, B x) {
 
 
 static B rand_ns;
-static B rand_rangeName;
 static i32 rand_a, rand_b;
-static NFnDesc* rand_rangeDesc;
+static B rand_rangeName;   static NFnDesc* rand_rangeDesc;
+static B rand_dealName;    static NFnDesc* rand_dealDesc;
+static B rand_subsetName;  static NFnDesc* rand_subsetDesc;
+#define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
+                   u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
+#define RAND_END sc->vars[rand_a].u = seed>>32; \
+                 sc->vars[rand_a].u = seed&0xFFFFFFFF;
 B rand_range_c1(B t, B x) {
   i64 xv = o2i64(x);
   if (xv<0) thrM("(rand).Range: 𝕩 cannot be negative");
-  Scope* sc = c(NS,nfn_objU(t))->sc;
-  u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
+  RAND_START;
   u64 rnd = wyrand(&seed);
-  sc->vars[rand_a].u = seed>>32;
-  sc->vars[rand_a].u = seed&0xFFFFFFFF;
+  RAND_END;
   return xv? m_f64(wy2u0k(rnd, xv)) : m_f64(wy2u01(rnd));
 }
 B rand_range_c2(B t, B w, B x) {
-  Scope* sc = c(NS,nfn_objU(t))->sc;
-  u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
   usz am = o2s(w);
   i64 max = o2i64(x);
+  RAND_START;
   B r;
   if (max<1) {
     if (max!=0) thrM("(rand).Range: 𝕩 cannot be negative");
@@ -230,15 +232,96 @@ B rand_range_c2(B t, B w, B x) {
     i32* rp; r = m_i32arrv(&rp, am);
     for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
   }
-  sc->vars[rand_a].u = seed>>32;
-  sc->vars[rand_a].u = seed&0xFFFFFFFF;
+  RAND_END;
+  return r;
+}
+
+B rand_deal_c1(B t, B x) {
+  i32 xi = o2i(x);
+  if (RARE(xi<0)) thrM("(rand).Deal: Argument cannot be negative");
+  if (xi==0) return emptyIVec();
+  RAND_START;
+  i32* rp; B r = m_i32arrv(&rp, xi);
+  for (i64 i = 0; i < xi; i++) rp[i] = i;
+  for (i64 i = 0; i < xi; i++) {
+    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
+    i32 c = rp[j];
+    rp[j] = rp[i];
+    rp[i] = c;
+  }
+  RAND_END;
+  return r;
+}
+
+B rand_deal_c2(B t, B w, B x) {
+  i32 wi = o2i(w);
+  i32 xi = o2i(x);
+  if (RARE(wi<0)) thrM("(rand).Deal: 𝕨 cannot be negative");
+  if (RARE(xi<0)) thrM("(rand).Deal: 𝕩 cannot be negative");
+  if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
+  if (wi==0) return emptyIVec();
+  RAND_START;
+  TALLOC(i32,s,xi);
+  for (i64 i = 0; i < xi; i++) s[i] = i;
+  for (i64 i = 0; i < wi; i++) {
+    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
+    i32 c = s[j];
+    s[j] = s[i];
+    s[i] = c;
+  }
+  i32* rp; B r = m_i32arrv(&rp, wi);
+  memcpy(rp, s, wi*4);
+  TFREE(s);
+  RAND_END;
+  return r;
+}
+
+#define N(X) X##_i2i
+#define KT i32
+#define HT i32
+#define H1(K) K
+#define H2(K,h1) h1
+#define H1R(K,h2) h2
+#define EMPTY(S,K) ((S)==0)
+#define HDEF 0
+#define EQUAL(A,B) (A)==(B)
+#define VALS
+#define VT i32
+#include "../utils/hashmapTemplate.h"
+B rand_subset_c2(B t, B w, B x) {
+  i32 wi = o2i(w);
+  i32 xi = o2i(x);
+  if (RARE(wi<0)) thrM("(rand).Subset: 𝕨 cannot be negative");
+  if (RARE(xi<0)) thrM("(rand).Subset: 𝕩 cannot be negative");
+  if (RARE(wi>xi)) thrM("(rand).Subset: 𝕨 cannot exceed 𝕩");
+  if (wi==0) return emptyIVec();
+  RAND_START;
+  i32* rp; B r = m_i32arrv(&rp, wi);
+  i64 sz = 1;
+  while (sz < wi*2) sz*= 2;
+  sz*= 2;
+  H_i2i* map = m_i2i(sz);
+  for (i64 i = 0; i < wi; i++) rp[i] = i;
+  for (i64 i = 0; i < wi; i++) {
+    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
+    if (j<wi) {
+      i32 c = rp[j];
+      rp[j] = rp[i];
+      rp[i] = c;
+    } else {
+      rp[i] = swap_i2i(&map, j, rp[i], j);
+    }
+  }
+  free_i2i(map);
+  RAND_END;
   return r;
 }
 
 static NOINLINE void rand_init() {
-  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
-  rand_rangeName = m_str32(U"range"); gc_add(rand_rangeName);
-  rand_rangeDesc = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0⋄deal⇐0⋄subset⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
+  rand_rangeName  = m_str32(U"range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_dealName   = m_str32(U"deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str32(U"(rand).Deal"),   rand_deal_c1, rand_deal_c2);
+  rand_subsetName = m_str32(U"subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str32(U"(rand).Subset"),   c1_invalid, rand_subset_c2);
   B tmp = c2(rand_ns, m_f64(0), m_f64(0));
   rand_a = ns_pos(tmp, m_str32(U"a"));
   rand_b = ns_pos(tmp, m_str32(U"b"));
@@ -248,7 +331,9 @@ B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
   if (rand_ns.u==0) rand_init();
   B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
-  ns_set(r, rand_rangeName, m_nfn(rand_rangeDesc, inc(r)));
+  ns_set(r, rand_rangeName,   m_nfn(rand_rangeDesc,   inc(r)));
+  ns_set(r, rand_dealName,    m_nfn(rand_dealDesc,    inc(r)));
+  ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  inc(r)));
   return r;
 }
 
