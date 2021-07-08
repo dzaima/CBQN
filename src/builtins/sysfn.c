@@ -326,11 +326,6 @@ B rand_subset_c2(B t, B w, B x) {
   bool invert = wi > xi/2;
   i32 wn = invert ? xi-wi : wi;
   RAND_START;
-  #define FILTER(COND, SIZE, ELT) \
-    for (u64 i = 0; i < SIZE; i++) if (COND) *rp++=ELT;
-  #define OUTPUT(COND, S,E) \
-    i32* rp; r = m_i32arrv(&rp, wi); \
-    if (invert) { FILTER(!(COND), S,E); } else { FILTER(COND, S,E); }
   if (wn > xi/8) {
     // Bit set (as bytes)
     TALLOC(u8, set, xi);
@@ -340,7 +335,9 @@ B rand_subset_c2(B t, B w, B x) {
       if (set[j]) j=i;
       set[j] = 1;
     }
-    OUTPUT(set[i], xi, i);
+    i32* rp; r = m_i32arrv(&rp, wi);
+    if (!invert) { for (u64 i = 0; i < xi; i++) if ( set[i]) *rp++=i; }
+    else         { for (u64 i = 0; i < xi; i++) if (!set[i]) *rp++=i; }
     TFREE(set);
   } else {
     // Sorted "hash" set
@@ -363,11 +360,19 @@ B rand_subset_c2(B t, B w, B x) {
         p++;
       }
     }
-    OUTPUT(hash[i]!=xi, sz, hash[i]);
+    i32* rp; r = m_i32arrv(&rp, wi);
+    if (!invert) {
+      for (u64 i = 0; i < sz; i++) if (hash[i]!=xi) *rp++=hash[i];
+    } else {
+      i32 e = 0;
+      for (u64 i = 0; i < sz; i++) {
+        i32 f = hash[i];
+        if (f!=xi) { while (e<f) *rp++=e++; e++; }
+      }
+      while (e<xi) *rp++=e++;
+    }
     TFREE(hash);
   }
-  #undef FILT
-  #undef OUTPUT
   RAND_END;
   return r;
 }
