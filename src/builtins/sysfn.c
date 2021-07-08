@@ -260,34 +260,56 @@ B rand_deal_c2(B t, B w, B x) {
   if (RARE(xi<0)) thrM("(rand).Deal: 𝕩 cannot be negative");
   if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
   if (wi==0) return emptyIVec();
+  B r;
   RAND_START;
-  TALLOC(i32,s,xi);
-  for (i64 i = 0; i < xi; i++) s[i] = i;
-  for (i64 i = 0; i < wi; i++) {
-    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
-    i32 c = s[j];
-    s[j] = s[i];
-    s[i] = c;
+  if (wi > xi/64) {
+    // Dense shuffle
+    TALLOC(i32,s,xi);
+    for (i64 i = 0; i < xi; i++) s[i] = i;
+    for (i64 i = 0; i < wi; i++) {
+      i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
+      i32 c = s[j];
+      s[j] = s[i];
+      s[i] = c;
+    }
+    i32* rp; r = m_i32arrv(&rp, wi);
+    memcpy(rp, s, wi*4);
+    TFREE(s);
+  } else {
+    // Hash-based shuffle
+    i32* rp; r = m_i32arrv(&rp, wi);
+    i64 sz = 1;
+    while (sz < wi*2) sz*= 2;
+    TALLOC(i32, hash, 2*sz); i32* val = hash+1;
+    for (u64 i = 0; i < 2*sz; i++) hash[i] = 0;
+    for (i64 i = 0; i < wi; i++) rp[i] = i;
+    u64 mask = 2*(sz-1);
+    for (i64 i = 0; i < wi; i++) {
+      u64 j = wy2u0k(wyrand(&seed), xi-i) + i;
+      if (j<wi) {
+        i32 c = rp[j];
+        rp[j] = rp[i];
+        rp[i] = c;
+      } else {
+        u64 p = 2*j;
+        i32 prev = j;
+        while (true) {
+          p &= mask;
+          i32 h = hash[p];
+          if (h==0) { hash[p] = j; break; }
+          if (h==j) { prev = val[p]; break; }
+          p += 2;
+        }
+        val[p] = rp[i];
+        rp[i] = prev;
+      }
+    }
+    TFREE(hash);
   }
-  i32* rp; B r = m_i32arrv(&rp, wi);
-  memcpy(rp, s, wi*4);
-  TFREE(s);
   RAND_END;
   return r;
 }
 
-#define N(X) X##_i2i
-#define KT i32
-#define HT i32
-#define H1(K) K
-#define H2(K,h1) h1
-#define H1R(K,h2) h2
-#define EMPTY(S,K) ((S)==0)
-#define HDEF 0
-#define EQUAL(A,B) (A)==(B)
-#define VALS
-#define VT i32
-#include "../utils/hashmapTemplate.h"
 B rand_subset_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
@@ -295,24 +317,57 @@ B rand_subset_c2(B t, B w, B x) {
   if (RARE(xi<0)) thrM("(rand).Subset: 𝕩 cannot be negative");
   if (RARE(wi>xi)) thrM("(rand).Subset: 𝕨 cannot exceed 𝕩");
   if (wi==0) return emptyIVec();
-  RAND_START;
-  i32* rp; B r = m_i32arrv(&rp, wi);
-  i64 sz = 1;
-  while (sz < wi*2) sz*= 2;
-  sz*= 2;
-  H_i2i* map = m_i2i(sz);
-  for (i64 i = 0; i < wi; i++) rp[i] = i;
-  for (i64 i = 0; i < wi; i++) {
-    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
-    if (j<wi) {
-      i32 c = rp[j];
-      rp[j] = rp[i];
-      rp[i] = c;
-    } else {
-      rp[i] = swap_i2i(&map, j, rp[i], j);
-    }
+  B r;
+  if (wi==xi) { // Only one complete subset; will hang without this
+    i32* rp; r = m_i32arrv(&rp, wi);
+    for (u64 i = 0; i < wi; i++) rp[i] = i;
+    return r;
   }
-  free_i2i(map);
+  bool invert = wi > xi/2;
+  i32 wn = invert ? xi-wi : wi;
+  RAND_START;
+  #define FILTER(COND, SIZE, ELT) \
+    for (u64 i = 0; i < SIZE; i++) if (COND) *rp++=ELT;
+  #define OUTPUT(COND, S,E) \
+    i32* rp; r = m_i32arrv(&rp, wi); \
+    if (invert) { FILTER(!(COND), S,E); } else { FILTER(COND, S,E); }
+  if (wn > xi/8) {
+    // Bit set (as bytes)
+    TALLOC(u8, set, xi);
+    for (u64 i = 0; i < xi; i++) set[i] = 0;
+    for (i32 i = xi-wn; i < xi; i++) {
+      i32 j = wy2u0k(wyrand(&seed), i+1);
+      if (set[j]) j=i;
+      set[j] = 1;
+    }
+    OUTPUT(set[i], xi, i);
+    TFREE(set);
+  } else {
+    // Sorted "hash" set
+    u64 sh = 0;
+    for (u64 xt=xi/4; xt>=wn; xt>>=1) sh++;
+    u64 sz = ((xi-1)>>sh)+1 + wn;
+    TALLOC(i32, hash, sz);
+    for (u64 i = 0; i < sz; i++) hash[i] = xi;
+    for (i32 i = xi-wn; i < xi; i++) {
+      i32 j = wy2u0k(wyrand(&seed), i+1);
+      u64 p = (u64)j >> sh;
+      while (true) {
+        i32 h = hash[p];
+        if (LIKELY(j<h)) {
+          hash[p]=j;
+          while (RARE(h!=xi)) { p++; i32 ht=hash[p]; hash[p]=h; h=ht; }
+          break;
+        }
+        if (h==j) { if (j==i) break; j=i; p=(u64)j>>sh; continue; }
+        p++;
+      }
+    }
+    OUTPUT(hash[i]!=xi, sz, hash[i]);
+    TFREE(hash);
+  }
+  #undef FILT
+  #undef OUTPUT
   RAND_END;
   return r;
 }
