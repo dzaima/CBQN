@@ -31,13 +31,8 @@ static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
   u8 b1 = 64-__builtin_clzl(sz-1ull);
-  Value* r;
-  if (sz <= (3ull<<(b1-2))) r = b3_allocL(b1-2, type);
-  else r = b1_allocL(b1, type);
-  #ifdef OBJ_COUNTER
-  r->uid = currObjCounter++;
-  #endif
-  return r;
+  if (sz <= (3ull<<(b1-2))) return b3_allocL(b1-2, type);
+  else return b1_allocL(b1, type);
 }
 static void mm_free(Value* x) {
   if (x->mmInfo&64) b3_free(x);

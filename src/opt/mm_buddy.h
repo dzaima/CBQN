@@ -23,9 +23,6 @@ static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
   Value* r = mm_allocL(BSZI(sz), type);
-  #ifdef OBJ_COUNTER
-  r->uid = currObjCounter++;
-  #endif
   return r;
 }
 
