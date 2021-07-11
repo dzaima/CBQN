@@ -1,17 +1,4 @@
-#define AllocInfo BN(AllocInfo)
-#define al     BN(al)
-#define alCap  BN(alCap)
-#define alSize BN(alSize)
-
 extern EmptyValue* buckets[64];
-typedef struct AllocInfo {
-  Value* p;
-  u64 sz;
-} AllocInfo;
-extern AllocInfo* al;
-extern u64 alCap;
-extern u64 alSize;
-
 
 static void BN(free)(Value* x) {
   onFree(x);
@@ -54,9 +41,3 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   #endif
   return x;
 }
-
-#undef MMI
-#undef AllocInfo
-#undef al
-#undef alSize
-#undef alCap

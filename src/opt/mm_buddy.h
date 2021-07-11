@@ -10,7 +10,6 @@ extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
 #define  BSZ(X) (1ull<<(X))
-#define  MMI(X) X
 #define   BN(X) mm_##X
 
 #include "mm_buddyTemplate.h"

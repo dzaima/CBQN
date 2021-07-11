@@ -11,6 +11,10 @@
 #endif
 
 EmptyValue* buckets[64];
+typedef struct AllocInfo {
+  Value* p;
+  u64 sz;
+} AllocInfo;
 AllocInfo* al;
 u64 alCap;
 u64 alSize;
