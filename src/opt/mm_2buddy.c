@@ -26,3 +26,7 @@ void mm_forHeap(V2v f) {
   b1_forHeap(f);
   b3_forHeap(f);
 }
+
+u64 mm_heapUsed() {
+  return allocB;
+}

@@ -12,3 +12,7 @@ EmptyValue* mm_buckets[64];
 #include "mm_buddyTemplate.c"
 #undef BN
 #undef BSZ
+
+u64 mm_heapUsed() {
+  return allocB;
+}

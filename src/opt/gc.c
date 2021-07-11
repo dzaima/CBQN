@@ -61,20 +61,21 @@ void gc_forceGC() {
       u64 start = nsTime();
       gc_visitBytes = 0; gc_freedBytes = 0;
       gc_visitCount = 0; gc_freedCount = 0;
-      u64 startAllocB = allocB;
+      u64 startSize = mm_heapUsed();
     #endif
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
     gc_tagNew = gc_tagCurr;
     gc_tagCurr^= 0x80;
+    u64 endSize = mm_heapUsed();
     #ifdef LOG_GC
-      fprintf(stderr, "GC kept "N64d"B from "N64d" objects, freed "N64d"B, including directly "N64d"B from "N64d" objects; took %.3fms\n", gc_visitBytes, gc_visitCount, startAllocB-allocB, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
+      fprintf(stderr, "GC kept "N64d"B from "N64d" objects, freed "N64d"B, including directly "N64d"B from "N64d" objects; took %.3fms\n", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
     #endif
-    gc_lastAlloc = allocB;
+    gc_lastAlloc = endSize;
   #endif
 }
 
 
 void gc_maybeGC() {
-  if (!gc_depth && allocB > gc_lastAlloc*2) gc_forceGC();
+  if (!gc_depth && mm_heapUsed() > gc_lastAlloc*2) gc_forceGC();
 }

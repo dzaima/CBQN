@@ -1,15 +1,5 @@
 #include "../core.h"
 
-u64 heapUsed_ctr;
-static void heapUsedFn(Value* p) { heapUsed_ctr+= mm_size(p); }
-u64 mm_heapUsed() {
-  heapUsed_ctr = 0;
-  mm_forHeap(heapUsedFn);
-  return heapUsed_ctr;
-}
-
-
-
 #ifdef HEAP_VERIFY
 u32 heapVerify_mode = -1;
 
