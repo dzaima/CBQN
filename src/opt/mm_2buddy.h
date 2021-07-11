@@ -12,40 +12,27 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
-extern u64 b1_ctrs[64];
-extern EmptyValue* b1_buckets[64];
-#define  BSZ(X) (1ull<<(X))
-#define   BN(X) b1_##X
+extern u64 mm_ctrs[128];
+extern EmptyValue* mm_buckets[128];
+#define BSZ(X) (((X)&64? 3ull : 1ull)<<(X))
+#define  BN(X) mm_##X
 #include "mm_buddyTemplate.h"
-#undef BN
-#undef BSZ
-
-extern u64 b3_ctrs[64];
-extern EmptyValue* b3_buckets[64];
-#define  BSZ(X) (3ull<<(X))
-#define   BN(X) b3_##X
-#include "mm_buddyTemplate.h"
-#undef BN
-#undef BSZ
 
 
+#define LOG2(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
-  onAlloc(sz, type);
-  u8 b1 = 64-__builtin_clzl(sz-1ull);
-  if (sz <= (3ull<<(b1-2))) return b3_allocL(b1-2, b1-2|64, type);
-  else return b1_allocL(b1, b1, type);
-}
-static void mm_free(Value* x) {
-  if (x->mmInfo&64) b3_free(x);
-  else b1_free(x);
+  u32 log = LOG2(sz);
+  u32 logm2 = log-2;
+  bool b2 = sz <= (3ull<<logm2);
+  return mm_allocL(b2? logm2|64 : log, type);
 }
 
 static u64 mm_round(usz x) {
-  u8 b1 = 64-__builtin_clzl(x-1ull);
-  u64 s3 = 3ull<<(b1-2);
+  u8 log = LOG2(x);
+  u64 s3 = 3ull<<(log-2);
   if (x<=s3) return s3;
-  return 1ull<<b1;
+  return 1ull<<log;
 }
 static u64 mm_size(Value* x) {
   u8 m = x->mmInfo;
@@ -53,3 +40,7 @@ static u64 mm_size(Value* x) {
   else      return 1ull<<(x->mmInfo&63);
 }
 void mm_forHeap(V2v f);
+
+#undef BN
+#undef BSZ
+#undef LOG2

@@ -2,25 +2,25 @@
 static void BN(free)(Value* x) {
   onFree(x);
   #ifdef USE_VALGRIND
-    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(x->mmInfo&63));
+    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(x->mmInfo&127));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
     VALGRIND_MAKE_MEM_DEFINED(&x->type, 1);
   #endif
   #ifdef DONT_FREE
     if (x->type!=t_freed) x->flags = x->type;
   #else
-    u8 b = x->mmInfo&63;
-    BN(ctrs)[x->mmInfo&63]--;
+    u8 b = x->mmInfo&127;
+    BN(ctrs)[b]--;
     ((EmptyValue*)x)->next = buckets[b];
     buckets[b] = (EmptyValue*)x;
   #endif
   x->type = t_empty;
 }
 
-NOINLINE void* BN(allocS)(i64 bucket, i64 info, u8 type);
-static   void* BN(allocL)(i64 bucket, i64 info, u8 type) {
+NOINLINE void* BN(allocS)(i64 bucket, u8 type);
+static   void* BN(allocL)(i64 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
-  if (RARE(x==NULL)) return BN(allocS)(bucket, info, type);
+  if (RARE(x==NULL)) return BN(allocS)(bucket, type);
   buckets[bucket] = x->next;
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
@@ -29,8 +29,8 @@ static   void* BN(allocL)(i64 bucket, i64 info, u8 type) {
   BN(ctrs)[bucket]++;
   x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;
-  x->mmInfo = info | gc_tagCurr;
   x->type = type;
+  x->mmInfo = bucket | gc_tagCurr;
   #if defined(DEBUG) && !defined(DONT_FREE)
     u64* p = (u64*)x;
     u64* s = p + sizeof(Value)/8;

@@ -14,28 +14,26 @@ extern u64 mm_heapMax;
 
 extern u64 mm_ctrs[64];
 extern EmptyValue* mm_buckets[64];
-#define  BSZ(X) (1ull<<(X))
-#define   BN(X) mm_##X
+#define BSZ(X) (1ull<<(X))
+#define  BN(X) mm_##X
 #include "mm_buddyTemplate.h"
 
 
-#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
+#define LOG2(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
-  u64 b = BSZI(sz);
-  Value* r = mm_allocL(b, b, type);
-  return r;
+  return mm_allocL(LOG2(sz), type);
 }
 
 static u64 mm_round(usz sz) {
-  return BSZ(BSZI(sz));
+  return BSZ(LOG2(sz));
 }
 static u64 mm_size(Value* x) {
   return BSZ(x->mmInfo&63);
 }
 void mm_forHeap(V2v f);
 
-#undef BSZI
+#undef LOG2
 #undef BN
 #undef BSZ

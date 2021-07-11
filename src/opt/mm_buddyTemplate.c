@@ -19,7 +19,7 @@ AllocInfo* al;
 u64 alCap;
 u64 alSize;
 
-static void BN(guaranteeEmpty)(u8 bucket) {
+static inline void BN(guaranteeEmpty)(u8 bucket) {
   u8 cb = bucket;
   EmptyValue* c;
   while (true) {
@@ -63,9 +63,9 @@ static void BN(guaranteeEmpty)(u8 bucket) {
   c->next = buckets[cb];
   buckets[cb] = c;
 }
-NOINLINE void* BN(allocS)(i64 bucket, i64 info, u8 type) {
-  BN(guaranteeEmpty)(bucket);
-  return BN(allocL)(bucket, info, type);
+NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
+  BN(guaranteeEmpty)(bucket&63);
+  return BN(allocL)(bucket, type);
 }
 
 void BN(forHeap)(V2v f) {

@@ -27,7 +27,7 @@ u64* mmX_ctrs[64];
 #define PROT PROT_READ|PROT_WRITE|PROT_EXEC
 #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT
 #include "../opt/mm_buddyTemplate.c"
-static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); u64 b = 64-__builtin_clzl(sz-1ull); return mmX_allocL(b, b, type); }
+static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-__builtin_clzl(sz-1ull), type); }
 #undef BN
 #undef BSZ
 
