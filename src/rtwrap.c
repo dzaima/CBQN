@@ -180,6 +180,7 @@ B rtWrap_wrap(B t) {
     r->prev = lastWM1;
     lastWM1 = r;
     r->c1a = 0; r->c2a = 0;
+    r->c1t = 0; r->c2t = 0;
     return tag(r, MD1_TAG);
   }
   if (isMd2(t)) {
@@ -193,6 +194,7 @@ B rtWrap_wrap(B t) {
     r->prev = lastWM2;
     lastWM2 = r;
     r->c1a = 0; r->c2a = 0;
+    r->c1t = 0; r->c2t = 0;
     return tag(r, MD2_TAG);
   }
   #endif
