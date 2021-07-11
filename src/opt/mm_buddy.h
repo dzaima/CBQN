@@ -12,6 +12,7 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
 extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
+extern u64 mm_ctrs[64];
 extern EmptyValue* mm_buckets[64];
 #define  BSZ(X) (1ull<<(X))
 #define   BN(X) mm_##X

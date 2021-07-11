@@ -1,6 +1,3 @@
-extern u64 allocB; // currently allocated number of bytes
-
-
 // memory defs
 
 static void* mm_alloc(usz sz, u8 type);

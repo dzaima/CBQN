@@ -1,7 +1,5 @@
 #include "../core.h"
 
-u64 allocB; // currently allocated number of bytes
-
 #if MM==0
   #include "../opt/mm_malloc.c"
 #elif MM==1

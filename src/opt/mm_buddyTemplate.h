@@ -10,9 +10,9 @@ static void BN(free)(Value* x) {
     if (x->type!=t_freed) x->flags = x->type;
   #else
     u8 b = x->mmInfo&63;
+    BN(ctrs)[x->mmInfo&63]--;
     ((EmptyValue*)x)->next = buckets[b];
     buckets[b] = (EmptyValue*)x;
-    allocB-= BSZ(b);
   #endif
   x->type = t_empty;
 }
@@ -26,7 +26,7 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
   #endif
-  allocB+= BSZ(bucket);
+  BN(ctrs)[bucket]++;
   u8 mmInfo = x->mmInfo;
   x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;

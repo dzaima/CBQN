@@ -16,8 +16,7 @@
 
 // separate memory management system for executable code; isn't garbage-collected
 EmptyValue* mmX_buckets[64];
-u64 mmX_allocB;
-#define allocB mmX_allocB
+u64* mmX_ctrs[64];
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X
@@ -29,8 +28,6 @@ u64 mmX_allocB;
 #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT
 #include "../opt/mm_buddyTemplate.c"
 static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-__builtin_clzl(sz-1ull), type); }
-#undef allocB
-#undef mmX_buckets
 #undef BN
 #undef BSZ
 
