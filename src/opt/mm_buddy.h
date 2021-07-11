@@ -6,17 +6,17 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   struct Value;
   EmptyValue* next;
 };
+#ifdef OBJ_COUNTER
+  extern u64 currObjCounter;
+#endif
 extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
+extern EmptyValue* mm_buckets[64];
 #define  BSZ(X) (1ull<<(X))
 #define   BN(X) mm_##X
-
 #include "mm_buddyTemplate.h"
 
-#ifdef OBJ_COUNTER
-extern u64 currObjCounter;
-#endif
 
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 static void* mm_alloc(usz sz, u8 type) {

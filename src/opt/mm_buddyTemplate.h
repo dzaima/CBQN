@@ -1,5 +1,4 @@
-extern EmptyValue* buckets[64];
-
+#define buckets BN(buckets)
 static void BN(free)(Value* x) {
   onFree(x);
   #ifdef USE_VALGRIND
@@ -41,3 +40,4 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   #endif
   return x;
 }
+#undef buckets

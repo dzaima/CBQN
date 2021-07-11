@@ -15,11 +15,11 @@
 
 
 // separate memory management system for executable code; isn't garbage-collected
+EmptyValue* mmX_buckets[64];
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mmX_##X
-#define buckets mmX_buckets
 #include "../opt/mm_buddyTemplate.h"
 #define  MMI(X) X
 #define  ALSZ  17

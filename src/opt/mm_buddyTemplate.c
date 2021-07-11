@@ -1,7 +1,8 @@
 #define AllocInfo BN(AllocInfo)
-#define al     BN(al)
-#define alCap  BN(alCap)
-#define alSize BN(alSize)
+#define buckets   BN(buckets)
+#define al        BN(al)
+#define alCap     BN(alCap)
+#define alSize    BN(alSize)
 #define str(X) #X
 #ifndef PROT
   #define PROT PROT_READ|PROT_WRITE
@@ -10,7 +11,6 @@
   #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON
 #endif
 
-EmptyValue* buckets[64];
 typedef struct AllocInfo {
   Value* p;
   u64 sz;
@@ -83,6 +83,7 @@ void BN(forHeap)(V2v f) {
 #undef FLAGS
 #undef PROT
 #undef AllocInfo
+#undef buckets
 #undef al
 #undef alSize
 #undef alCap
