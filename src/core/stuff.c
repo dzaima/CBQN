@@ -43,8 +43,8 @@ NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging p
     }
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < r; i++) {
-      if(i==0)printf("%d",sh[i]);
-      else printf("‿%d",sh[i]);
+      if(i==0)printf(N64d,(u64)sh[i]);
+      else printf("‿"N64d,(u64)sh[i]);
     }
     printf("⥊");
   } else if (ia>0) {

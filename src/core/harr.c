@@ -136,7 +136,7 @@ static void harrP_print(B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;
   usz ia = a(x)->ia;
-  printf("(partial HArr %d/%d: ⟨", am, ia);
+  printf("(partial HArr "N64d"/"N64d": ⟨", (u64)am, (u64)ia);
   for (usz i = 0; i < ia; i++) {
     if (i) printf(", ");
     if (i>=am) printf("?");
