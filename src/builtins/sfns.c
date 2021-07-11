@@ -742,7 +742,7 @@ B reverse_c2(B t, B w, B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   i64 am = o2i64(w);
-  if ((usz)am >= cam) { am%= cam; if(am<0) am+= cam; }
+  if ((u64)am >= (u64)cam) { am%= (i64)cam; if(am<0) am+= cam; }
   am*= csz;
   MAKE_MUT(r, xia); mut_to(r, TI(x,elType));
   mut_copy(r, 0, x, am, xia-am);

@@ -13,7 +13,7 @@ B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 
 
 
-void ud_rec(B** p, usz d, usz r, usz* pos, usz* sh) {
+void ud_rec(B** p, usz d, usz r, i32* pos, usz* sh) {
   if (d==r) {
     i32* rp;
     *(*p)++ = m_i32arrv(&rp, r);
@@ -61,7 +61,7 @@ B ud_c1(B t, B x) {
   usz* rsh = arr_shAllocI(r, ria, xia);
   if (rsh) memcpy(rsh, sh, sizeof(usz)*xia);
   
-  usz pos[xia]; B* crp = rp;
+  i32 pos[xia]; B* crp = rp;
   ud_rec(&crp, 0, xia, pos, sh);
   
   if (ria) fillarr_setFill(r, inc(rp[0]));
