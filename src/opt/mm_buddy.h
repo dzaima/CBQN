@@ -23,7 +23,8 @@ extern EmptyValue* mm_buckets[64];
 static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
-  Value* r = mm_allocL(BSZI(sz), type);
+  u64 b = BSZI(sz);
+  Value* r = mm_allocL(b, b, type);
   return r;
 }
 

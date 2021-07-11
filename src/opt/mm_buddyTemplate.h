@@ -17,20 +17,19 @@ static void BN(free)(Value* x) {
   x->type = t_empty;
 }
 
-NOINLINE void* BN(allocS)(i64 bucket, u8 type);
-static   void* BN(allocL)(i64 bucket, u8 type) {
+NOINLINE void* BN(allocS)(i64 bucket, i64 info, u8 type);
+static   void* BN(allocL)(i64 bucket, i64 info, u8 type) {
   EmptyValue* x = buckets[bucket];
-  if (RARE(x==NULL)) return BN(allocS)(bucket, type);
+  if (RARE(x==NULL)) return BN(allocS)(bucket, info, type);
   buckets[bucket] = x->next;
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
     VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
   #endif
   BN(ctrs)[bucket]++;
-  u8 mmInfo = x->mmInfo;
   x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;
-  x->mmInfo = (mmInfo&0x7f) | gc_tagCurr;
+  x->mmInfo = info | gc_tagCurr;
   x->type = type;
   #if defined(DEBUG) && !defined(DONT_FREE)
     u64* p = (u64*)x;

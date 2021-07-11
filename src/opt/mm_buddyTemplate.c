@@ -63,9 +63,9 @@ static void BN(guaranteeEmpty)(u8 bucket) {
   c->next = buckets[cb];
   buckets[cb] = c;
 }
-NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
+NOINLINE void* BN(allocS)(i64 bucket, i64 info, u8 type) {
   BN(guaranteeEmpty)(bucket);
-  return BN(allocL)(bucket, type);
+  return BN(allocL)(bucket, info, type);
 }
 
 void BN(forHeap)(V2v f) {
