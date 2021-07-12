@@ -845,7 +845,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 ln = 1;
   for (usz i = 0; i < srcS; i++) if(o2cu(srcGetU(src, i))=='\n') ln++;
   B s = prepend;
-  if (isArr(path) && a(path)->ia>0) AFMT("%R:%l:\n  ", path, ln);
+  if (isArr(path) && (a(path)->ia>1 || (a(path)->ia==1 && TI(path,getU)(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
   else AFMT("at ");
   i64 padEnd = (i64)a(s)->ia;
   i64 padStart = padEnd;
