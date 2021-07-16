@@ -8,7 +8,30 @@
 u64 mm_heapMax = HEAP_MAX;
 u64 mm_heapAlloc;
 
-
+// compiler result:
+// [
+//   [...bytecode],
+//   [...objects],
+//   [ // block data
+//     [
+//       type, // 0: function; 1: 1-modifier; 2: 2-modifier
+//       immediateness, // 0: non-immediate; 1: immediate
+//       ambivalentIndex OR [monadicIndices, dyadicIndices], // indexes into body data array
+//     ]*
+//   ],
+//   [ // body data
+//     [
+//       bytecodeOffset,
+//       variableCount, // number of variable slots needed
+//       ( // optional extra info for namespace stuff
+//         [...variableIDs] // a number for each variable slot; indexes into nameList
+//         [...exportMask] // a unique number for each variable
+//       )?
+//     ]*
+//   ],
+//   [[...startIndices], [...endIndices]],? // optional, for each bytecode; inclusive
+//   [%, %, [[...nameList], %], %]? // optional; % marks things i haven't bothered to understand
+// ]
 
 #define FA(N,X) B bi_##N; B N##_c1(B t, B x); B N##_c2(B t, B w, B x);
 #define FM(N,X) B bi_##N; B N##_c1(B t, B x);
@@ -65,20 +88,20 @@ B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_dr
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   BS2B xget = TI(x,get);
   usz xia = a(x)->ia;
-  if (xia!=5 & xia!=3) thrM("load_compObj: bad item count");
-  Block* r = xia==5? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4), src, inc(path), sc)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),bi_N,     bi_N,      src, inc(path), sc);
+  if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
+  Block* r = xia==6? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4),xget(x,5), src, inc(path), sc)
+                   : compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),bi_N,     bi_N,      src, inc(path), sc);
   dec(x);
   return r;
 }
 #include "gen/src"
 #if RT_SRC
-Block* load_compImport(B bc, B objs, B blocks, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, inds, bi_N, src, m_str32(U"(precompiled)"), NULL);
+Block* load_compImport(B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
+  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_str32(U"(precompiled)"), NULL);
 }
 #else
-Block* load_compImport(B bc, B objs, B blocks) { // consumes all
-  return compile(bc, objs, blocks, bi_N, bi_N, bi_N, bi_N, NULL);
+Block* load_compImport(B bc, B objs, B blocks, B bodies) { // consumes all
+  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, bi_N, NULL);
 }
 #endif
 

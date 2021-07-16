@@ -11,16 +11,16 @@ static void repl_init() {
   cbqn_init();
   replPath = m_str32(U"."); gc_add(replPath);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
-  gsc = m_scope(initBlock->body, NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
+  gsc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
   ptr_dec(initBlock);
   init = true;
 }
 
 static B gsc_exec_inline(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
-  ptr_dec(gsc->body); ptr_inc(block->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
-  gsc->body = block->body;
-  B r = execBodyInline(block->body, gsc);
+  ptr_dec(gsc->body); ptr_inc(block->bodies[0]); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
+  gsc->body = block->bodies[0];
+  B r = execBlockInline(block, gsc);
   ptr_dec(block);
   return r;
 }
@@ -158,16 +158,16 @@ int main(int argc, char* argv[]) {
       Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), emptySVec(), gsc, true);
       free(ln);
       
-      ptr_dec(gsc->body); ptr_inc(block->body);
-      gsc->body = block->body;
+      ptr_dec(gsc->body); ptr_inc(block->bodies[0]);
+      gsc->body = block->bodies[0];
       
       #ifdef TIME
       u64 sns = nsTime();
-      B res = execBodyInline(block->body, gsc);
+      B res = execBlockInline(block, gsc);
       u64 ens = nsTime();
       printf("%fms\n", (ens-sns)/1e6);
       #else
-      B res = execBodyInline(block->body, gsc);
+      B res = execBlockInline(block, gsc);
       #endif
       ptr_dec(block);
       

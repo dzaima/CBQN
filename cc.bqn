@@ -2,7 +2,7 @@
 # Modified version of https://github.com/mlochbaum/BQN/blob/master/src/cjs.bqn, which is under the ISC license (https://github.com/mlochbaum/BQN/blob/master/LICENSE)
 
 args←•args
-"Usage: ./cc.bqn path/to/mlochbaum/BQN <one of [rcfe] or an expression>"!2≤≠args
+"Usage: ./cc.bqn path/to/mlochbaum/BQN [-i] <(r|r0|r1|c|cc|f|e|p) or an expression>"!2≤≠args
 return ← 1≡⊑args
 args↓˜↩ return
 path←(⊑args)∾"/src/"
@@ -28,12 +28,12 @@ FChars ← {𝕨•FChars path∾𝕩}
 FLines ← {𝕨•FLines path∾𝕩}
 
 glyphs ← Import "glyphs.bqn"
-_getComp ← { (3+2×useInd)↑ <∘⊢∾˜ 4↑ (𝕗 Import "c.bqn"){𝔽} }
+_getComp ← { (4+2×useInd)↑ <∘⊢∾˜ 5↑ (𝕗 Import "c.bqn"){𝔽} }
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
 Comp ← ((<"inc(runtime["∾•Repr∾"])"˙)¨↕62) glyphs _getComp ⊢
 J ← ∾∾⟜(@+10)¨
 Fconst ← ≡◶⟨@⊸≤◶Num‿Char, Str, ⊑⟩
-Fout ← {((≠𝕩)↑⟨LI F¨ ⋄ L Fconst¨ ⋄ L (LI ·F¨ 4↑⊢)¨ ⋄ L (LI F¨)¨ ⋄ Str⟩) {𝕎𝕩}¨ 𝕩}
+Fout ← {((≠𝕩)↑⟨LI F¨ ⋄ L Fconst¨ ⋄ L (L =◶⟨Num,L(LI F¨)¨⟩¨)¨ ⋄ L (LI ·F¨ 2⊸↑)¨ ⋄ L (LI F¨)¨ ⋄ Str⟩) {𝕎𝕩}¨ 𝕩}
 Frun ← 1⊸Fout
 Long ← {¯2↓∾𝕩∾¨<","∾@+10}
 LFC ← Long∘Fout∘Comp
@@ -53,5 +53,6 @@ SVG ← {∾⟨"Modify←GetHighlights←⊢⋄"⟩∾ FChars∘∾⟜".bqn"¨ "
   {𝕩⋄LFC FChars "f.bqn"}
   {𝕩⋄LFC SVG "e"}
   {𝕩⋄LFC SVG "p"}
-  ¯1 ↓ · J L∘Fout∘Comp¨
+  ∾LFC¨
+  # ¯1 ↓ · J L∘Fout∘Comp¨
 ⟩ args

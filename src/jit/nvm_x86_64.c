@@ -146,6 +146,9 @@ INS B i_CHKV(B x, u32* bc, B* cStack) {
   if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
+INS B i_FAIL(u32* bc, B* cStack) {
+  POS_UPD; GS_UPD; thrM("No body matched");
+}
 INS B i_RETD(Scope* sc) {
   Body* b = sc->body;
   ptr_inc(sc);
@@ -484,7 +487,7 @@ Nvm_res m_nvm(Body* body) {
   #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
-  Block** blocks = body->blocks->a;
+  Block** blocks = body->bl->blocks;
   i32 depth = 0;
   u32* bc = optRes.bc;
   i32 lGPos = 0; // last updated gStack offset
@@ -511,7 +514,7 @@ Nvm_res m_nvm(Body* body) {
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
     // #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,pos));
-    #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->map[bcpos]<<1 | 1);
+    #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
     #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count
@@ -579,6 +582,7 @@ Nvm_res m_nvm(Body* body) {
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: if (lGPos) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos) GS_SET(r_CS); ret=true; break;
+      case FAIL: TOPs; IMM(R_A0,off); INV(1,0,i_FAIL); break;
       default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET

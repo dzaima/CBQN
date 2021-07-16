@@ -48,6 +48,7 @@ enum {
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like LOC_
   SETNv, SETUv, SETMv, // SET_i alternatives that also don't return the result
+  FAIL, // no body matched
   BC_SIZE
 };
 
@@ -74,36 +75,36 @@ struct BlBlocks {
   Block* a[];
 };
 
+typedef struct NSDesc NSDesc;
 struct Block {
   struct Value;
+  Comp* comp;
   bool imm;
   u8 ty;
-  Body* body;
+  Block** blocks; // pointer in an owned BlBlocks, or null
+  i32* map; // pointer in an owned I32Arr
+  i32* bc; // pointer in an owned I32Arr
+  i32 bodyCount;
+  Body* dyBody; // pointer within bodies; not owned; TODO move to the second item of bodies or something
+  Body* bodies[]; // bodies[0] is the first monadic body (also niladic body)
 };
-
-typedef struct NSDesc NSDesc;
 struct Body {
   struct Value;
-  Comp* comp;
-  BlBlocks* blocks;
-  // B* objs;
-  u32* bc; // pointer in an owned I32Arr
-  i32* map; // pointer in an owned I32Arr
-#if JIT_START > 255
-  u16 callCount;
-#elif JIT_START > 0
-  u8 callCount;
-#endif
 #if JIT_START != -1
   u8* nvm; // either NULL or a pointer to machine code
 #endif
+#if JIT_START > 0
+  u16 callCount;
+#endif
+  u32* bc; // pointer in bl->bc
   u32 maxStack;
   u16 maxPSC;
-  u16 varAm;
-  NSDesc* nsDesc;
 #if JIT_START != -1
   B nvmRefs;
 #endif
+  Block* bl; // non-owned pointer to corresponding block
+  NSDesc* nsDesc;
+  u16 varAm;
   i32 varIDs[];
 };
 
@@ -124,9 +125,9 @@ struct Scope {
 
 Block* bqn_comp(B str, B path, B args);
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
-Block* compile(B bcq, B objs, B blocksq, B indices, B tokenInfo, B src, B path, Scope* sc);
+Block* compile(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src, B path, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
-B execBodyInline(Body* b, Scope* sc); // doesn't consume; executes bytecode of the body directly in the scope
+B execBlockInline(Block* block, Scope* sc); // doesn't consume; executes bytecode of the monadic body directly in the scope
 
 u32* nextBC(u32* p);
 i32 stackDiff(u32* p);

@@ -15,7 +15,7 @@
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
-                  F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)
+                  F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)F(FAIL)
 
 u32* nextBC(u32* p) {
   switch(*p) {
@@ -24,6 +24,7 @@ u32* nextBC(u32* p) {
     case TR2D: case TR3D: case TR3O:
     case SETN: case SETU: case SETM: case SETH:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
+    case FAIL:
       return p+1;
     case PUSH: case DFND: case ARRO: case ARRM:
     case VARO: case VARM: case FLDO: case FLDM:
@@ -50,6 +51,7 @@ i32 stackDiff(u32* p) {
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
     case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
     case SETM: return -2; case SETMi:return -1; case SETMv:return -2;
+    case FAIL: return 0;
   }
 }
 i32 stackConsumed(u32* p) {
@@ -64,6 +66,7 @@ i32 stackConsumed(u32* p) {
     case SETN: return 2; case SETNi: case SETNv: return 1;
     case SETU: return 2; case SETUi: case SETUv: return 1;
     case SETM: return 3; case SETMi: case SETMv: return 2;
+    case FAIL: return 0;
   }
 }
 i32 stackAdded(u32* p) {
@@ -120,153 +123,240 @@ void gsPrint() {
   }
 }
 
-Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B blocks, B nameList, Scope* sc, i32 depth) {
-  usz cIA = a(block)->ia;
-  if (cIA!=4 && cIA!=6) thrM("VM compiler: Bad block info size");
-  BS2B bgetU = TI(block,getU);
-  usz  ty  = o2s(bgetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
-  bool imm = o2b(bgetU(block,1));
-  usz  idx = o2s(bgetU(block,2)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
-  usz  vam = o2s(bgetU(block,3)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no?
-  i32 h = 0; // stack height
-  i32 hM = 0; // max stack height
-  i32 mpsc = 0;
-  TSALLOC(Block*, nBlT, 2);
-  TSALLOC(i32, nBCT, 20);
-  TSALLOC(i32, mapT, 20);
-  if (depth==0 && sc && vam > sc->varAm) {
-    if (cIA==4) thrM("VM compiler: full block info must be provided for extending scopes");
-    i32 regAm = sc->varAm;
-    ScopeExt* oE = sc->ext;
-    if (oE==NULL || vam > regAm + oE->varAm) {
-      i32 nSZ = vam - regAm;
-      ScopeExt* nE = mm_alloc(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
-      nE->varAm = nSZ;
-      i32 oSZ = 0;
-      if (oE) {
-        oSZ = oE->varAm;
-        memcpy(nE->vars    , oE->vars    , oSZ*sizeof(B));
-        memcpy(nE->vars+nSZ, oE->vars+oSZ, oSZ*sizeof(B));
-        mm_free((Value*)oE);
-      }
-      B varIDs = bgetU(block,4);
-      for (i32 i = oSZ; i < nSZ; i++) {
-        nE->vars[i] = bi_noVar;
-        nE->vars[i+nSZ] = TI(nameList,get)(nameList, o2s(TI(varIDs,getU)(varIDs, regAm+i)));
-      }
-      sc->ext = nE;
-    }
+static Body* m_body(i32 vam, i32 pos, u16 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
+  Body* body = mm_alloc(fsizeof(Body,varIDs,i32,vam), t_body);
+  
+  #if JIT_START != -1
+    body->nvm = NULL;
+    body->nvmRefs = m_f64(0);
+  #endif
+  #if JIT_START > 0
+    body->callCount = 0;
+  #endif
+  body->bc = pos + (u32*)NULL; // hackish way to temporarily store the offset
+  body->maxStack = maxStack;
+  body->maxPSC = maxPSC;
+  body->bl = NULL;
+  body->varAm = (u16)vam;
+  return body;
+}
+
+Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth) {
+  usz blIA = a(block)->ia;
+  if (blIA!=3) thrM("VM compiler: Bad block info size");
+  BS2B blGetU = TI(block,getU);
+  usz  ty  = o2s(blGetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
+  bool imm = o2b(blGetU(block,1));
+  B    bodyObj = blGetU(block,2);
+  i32* bodyI;
+  i32 bodyAm1, bodyAm2, bodyILen;
+  if (isArr(bodyObj)) {
+    if (a(bodyObj)->ia!=2) thrM("VM compiler: Unexpected body list length");
+    BS2B boGetU = TI(bodyObj,getU);
+    B b1 = boGetU(bodyObj,0);
+    B b2 = boGetU(bodyObj,1);
+    if (!isArr(b1) || !isArr(b2)) thrM("VM compiler: Body list contained non-arrays");
+    bodyAm1 = a(b1)->ia; BS2B b1GetU = TI(b1,getU);
+    bodyAm2 = a(b2)->ia; BS2B b2GetU = TI(b2,getU);
+    bodyILen = bodyAm1+bodyAm2;
+    TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_;
+    for (i32 i = 0; i < bodyAm1; i++) bodyI[i          ] = o2i(b1GetU(b1, i)); for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
+    for (i32 i = 0; i < bodyAm2; i++) bodyI[i+bodyAm1+1] = o2i(b2GetU(b2, i)); for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
+    bodyI[bodyAm1] = bodyI[bodyILen+1] = I32_MAX;
+  } else {
+    bodyILen = 2;
+    TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_;
+    bodyI[0] = bodyI[2] = o2i(bodyObj);
+    bodyI[1] = bodyI[3] = I32_MAX;
+    bodyAm1 = 1;
+    bodyAm2 = 1;
   }
-  u32* c = bc+idx;
+  
+  TSALLOC(Block*, usedBlocks, 2); // list of blocks to be referenced by DFND, stored in result->blocks
+  TSALLOC(Body*, bodies, 2); // list of bodies of this block
+  TSALLOC(i32, newBC, 20); // transformed bytecode
+  TSALLOC(i32, mapBC, 20); // map of original bytecode to transformed
+  
+  i32 pos1 = 0;
+  i32 pos2 = bodyAm1+1;
+  i32 index1 = -1;
+  i32 index2 = -1;
+  if (bodyAm1==0 || bodyAm2==0) {
+    i32 sz = TSSIZE(bodies);
+    if (bodyAm1==0) index1 = sz;
+    if (bodyAm2==0) index2 = sz;
+    i32 bcStart = TSSIZE(newBC);
+    TSADD(newBC, FAIL);
+    TSADD(mapBC, 0);
+    
+    Body* body = m_body(6, bcStart, 1, 0);
+    body->nsDesc = NULL;
+    TSADD(bodies, body);
+  }
+  
   while (true) {
-    u32* n = nextBC(c);
-    if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
-    bool ret = false;
-    #define A64(X) { u64 a64=(X); TSADD(nBCT, (u32)a64); TSADD(nBCT, a64>>32); }
-    switch (*c) {
-      case PUSH:;
-        B obj = comp->objs->a[c[1]];
-        TSADD(nBCT, isVal(obj)? ADDI : ADDU);
-        A64(obj.u);
-        break;
-      case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
-        TSADD(nBCT, RETN);
-        ret = true;
-        break;
-      case RETD: if(h!=1&h!=0) thrM("VM compiler: Wrong stack size before RETD");
-        if (h==1) TSADD(nBCT, POPS);
-        TSADD(nBCT, RETD);
-        ret = true;
-        break;
-      case DFND: {
-        u32 id = c[1];
-        if ((u32)id >= a(blocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
-        if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
-        bDone[id] = true;
-        TSADD(nBCT, DFND);
-        TSADD(nBCT, TSSIZE(nBlT));
-        TSADD(nBlT, compileBlock(TI(blocks,getU)(blocks,id), comp, bDone, bc, bcIA, blocks, nameList, sc, depth+1));
-        break;
-      }
-      case LOCO: case LOCM: case LOCU: {
-        i32 ins = c[0];
-        i32 cdepth = c[1];
-        i32 cpos = c[2];
-        if (cdepth+1 > mpsc) mpsc = cdepth+1;
-        if (sc && cdepth>=depth) {
-          Scope* csc = sc;
-          for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
-          if (cpos >= csc->varAm) {
-            cpos-= csc->varAm;
-            ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTO;
-          }
+    i32 curr1 = bodyI[pos1];
+    i32 curr2 = bodyI[pos2];
+    i32 currBody = curr1<curr2? curr1 : curr2;
+    if (currBody==I32_MAX) break;
+    if (curr1==currBody) { if (index1==-1) index1=TSSIZE(bodies); pos1++; }
+    if (curr2==currBody) { if (index2==-1) index2=TSSIZE(bodies); pos2++; }
+    
+    
+    B bodyRepr = TI(allBodies,getU)(allBodies, currBody); if (!isArr(bodyRepr)) thrM("VM compiler: Body array contained non-array");
+    usz boIA = a(bodyRepr)->ia; if (boIA!=2 && boIA!=4) thrM("VM compiler: Body array had invalid length");
+    BS2B biGetU = TI(bodyRepr,getU);
+    usz idx = o2s(biGetU(bodyRepr,0)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
+    usz vam = o2s(biGetU(bodyRepr,1)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no? // oh, some size fields are u16s. but i doubt those change much, or even make things worse
+    
+    i32 h = 0; // stack height
+    i32 hM = 0; // max stack height
+    i32 mpsc = 0;
+    if (depth==0 && sc && vam > sc->varAm) {
+      if (boIA==2) thrM("VM compiler: Full block info must be provided for extending scopes");
+      i32 regAm = sc->varAm;
+      ScopeExt* oE = sc->ext;
+      if (oE==NULL || vam > regAm + oE->varAm) {
+        i32 nSZ = vam - regAm;
+        ScopeExt* nE = mm_alloc(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
+        nE->varAm = nSZ;
+        i32 oSZ = 0;
+        if (oE) {
+          oSZ = oE->varAm;
+          memcpy(nE->vars    , oE->vars    , oSZ*sizeof(B));
+          memcpy(nE->vars+nSZ, oE->vars+oSZ, oSZ*sizeof(B));
+          mm_free((Value*)oE);
         }
-        TSADD(nBCT, ins);
-        TSADD(nBCT, cdepth);
-        TSADD(nBCT, cpos);
-        break;
-      }
-      default: {
-        u32* ccpy = c;
-        while (ccpy!=n) TSADD(nBCT, *ccpy++);
-        break;
+        B varIDs = biGetU(bodyRepr,2);
+        for (i32 i = oSZ; i < nSZ; i++) {
+          nE->vars[i] = bi_noVar;
+          nE->vars[i+nSZ] = TI(nameList,get)(nameList, o2s(TI(varIDs,getU)(varIDs, regAm+i)));
+        }
+        sc->ext = nE;
       }
     }
-    #undef A64
-    usz nlen = TSSIZE(nBCT)-TSSIZE(mapT);
-    for (usz i = 0; i < nlen; i++) TSADD(mapT, c-bc);
-    h+= stackDiff(c);
-    if (h<0) thrM("VM compiler: Stack size goes negative");
-    if (h>hM) hM = h;
-    if (ret) break;
-    c = n;
+    i32 bcStart = TSSIZE(newBC);
+    u32* c = bc+idx;
+    while (true) {
+      u32* n = nextBC(c);
+      if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
+      bool ret = false;
+      #define A64(X) { u64 a64=(X); TSADD(newBC, (u32)a64); TSADD(newBC, a64>>32); }
+      switch (*c) {
+        case PUSH:;
+          B obj = comp->objs->a[c[1]];
+          TSADD(newBC, isVal(obj)? ADDI : ADDU);
+          A64(obj.u);
+          break;
+        case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
+          TSADD(newBC, RETN);
+          ret = true;
+          break;
+        case RETD: if(h!=1&h!=0) thrM("VM compiler: Wrong stack size before RETD");
+          if (h==1) TSADD(newBC, POPS);
+          TSADD(newBC, RETD);
+          ret = true;
+          break;
+        case DFND: {
+          u32 id = c[1];
+          if ((u32)id >= a(allBlocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
+          if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
+          bDone[id] = true;
+          TSADD(newBC, DFND);
+          TSADD(newBC, TSSIZE(usedBlocks));
+          TSADD(usedBlocks, compileBlock(TI(allBlocks,getU)(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1));
+          break;
+        }
+        case LOCO: case LOCM: case LOCU: {
+          i32 ins = c[0];
+          i32 cdepth = c[1];
+          i32 cpos = c[2];
+          if (cdepth+1 > mpsc) mpsc = cdepth+1;
+          if (sc && cdepth>=depth) {
+            Scope* csc = sc;
+            for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
+            if (cpos >= csc->varAm) {
+              cpos-= csc->varAm;
+              ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTO;
+            }
+          }
+          TSADD(newBC, ins);
+          TSADD(newBC, cdepth);
+          TSADD(newBC, cpos);
+          break;
+        }
+        default: {
+          u32* ccpy = c;
+          while (ccpy!=n) TSADD(newBC, *ccpy++);
+          break;
+        }
+      }
+      #undef A64
+      usz nlen = TSSIZE(newBC)-TSSIZE(mapBC);
+      for (usz i = 0; i < nlen; i++) TSADD(mapBC, c-bc);
+      h+= stackDiff(c);
+      if (h<0) thrM("VM compiler: Stack size goes negative");
+      if (h>hM) hM = h;
+      if (ret) break;
+      c = n;
+    }
+    
+    if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
+    
+    Body* body = m_body(vam, bcStart, hM, mpsc);
+    if (boIA>2) {
+      m_nsDesc(body, imm, ty, inc(nameList), biGetU(bodyRepr,2), biGetU(bodyRepr,3));
+    } else {
+      body->nsDesc = NULL;
+      for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
+    }
+    
+    TSADD(bodies, body);
   }
+  TFREE(bodyI);
   
-  if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
-  
-  usz blC = TSSIZE(nBlT);
+  usz blC = TSSIZE(usedBlocks);
   BlBlocks* nBl = NULL;
   if (blC) {
     nBl = mm_alloc(fsizeof(BlBlocks,a,Block*,blC), t_blBlocks);
     nBl->am = blC;
-    memcpy(nBl->a, nBlT, blC*sizeof(Block*));
+    memcpy(nBl->a, usedBlocks, blC*sizeof(Block*));
   }
-  TSFREE(nBlT);
+  TSFREE(usedBlocks);
   
-  usz nbcC = TSSIZE(nBCT); i32* nbc; m_i32arrv(&nbc, nbcC); memcpy(nbc, nBCT, nbcC*4); TSFREE(nBCT);
-  usz mapC = TSSIZE(mapT); i32* map; m_i32arrv(&map, mapC); memcpy(map, mapT, mapC*4); TSFREE(mapT);
+  usz nbcC = TSSIZE(newBC); i32* nbc; m_i32arrv(&nbc, nbcC); memcpy(nbc, newBC, nbcC*4); TSFREE(newBC);
+  usz mapC = TSSIZE(mapBC); i32* map; m_i32arrv(&map, mapC); memcpy(map, mapBC, mapC*4); TSFREE(mapBC);
   
-  Body* body = mm_alloc(fsizeof(Body,varIDs,i32,vam), t_body);
-  body->comp = comp; ptr_inc(comp);
-  body->bc = (u32*)nbc;
-  #if JIT_START != -1
-  body->nvm = NULL;
-  body->nvmRefs = m_f64(0);
-  #endif
-  #if JIT_START > 0
-  body->callCount = 0;
-  #endif
-  body->map = map;
-  body->blocks = nBl;
-  body->maxStack = hM;
-  body->maxPSC = (u16)mpsc;
-  body->varAm = (u16)vam;
-  if (cIA==4) {
-    body->nsDesc = NULL;
-    for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
-  } else m_nsDesc(body, imm, ty, inc(nameList), bgetU(block,4), bgetU(block,5));
-  
-  Block* bl = mm_alloc(sizeof(Block), t_block);
-  bl->body = body;
-  bl->imm = imm;
+  i32 bodyCount = TSSIZE(bodies);
+  Block* bl = mm_alloc(fsizeof(Block,bodies,Body*,bodyCount), t_block);
+  bl->comp = comp; ptr_inc(comp);
   bl->ty = (u8)ty;
+  bl->bc = nbc;
+  bl->blocks = nBl==NULL? NULL : nBl->a;
+  bl->map = map;
+  bl->imm = imm;
+  
+  bl->bodyCount = bodyCount;
+  if (index1 != 0) {
+    Body* t = bodies[0];
+    bodies[0] = bodies[index1];
+    bodies[index1] = t;
+    index1 = 0;
+  }
+  for (i32 i = 0; i < bodyCount; i++) {
+    bl->bodies[i] = bodies[i];
+    bodies[i]->bc+= nbc-(i32*)NULL;
+    bodies[i]->bl = bl;
+  }
+  bl->dyBody = bodies[index2];
+  TSFREE(bodies);
   return bl;
 }
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, B path, Scope* sc) {
-  usz bIA = a(blocks)->ia;
+NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc) {
+  usz bIA = a(allBlocks)->ia;
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
   usz bcIA = bca->ia;
@@ -295,9 +385,9 @@ NOINLINE Block* compile(B bcq, B objs, B blocks, B indices, B tokenInfo, B src, 
   }
   TALLOC(bool,bDone,bIA);
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
-  Block* ret = compileBlock(TI(blocks,getU)(blocks, 0), comp, bDone, bc, bcIA, blocks, nameList, sc, 0);
+  Block* ret = compileBlock(TI(allBlocks,getU)(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0);
   TFREE(bDone);
-  ptr_dec(comp); dec(blocks); dec(tokenInfo);
+  ptr_dec(comp); dec(allBlocks); dec(allBodies); dec(tokenInfo);
   return ret;
 }
 
@@ -370,8 +460,8 @@ i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
-#define BCPOS(B,P) (B->map[(P)-B->bc])
-B evalBC(Body* b, Scope* sc) { // doesn't consume
+#define BCPOS(B,P) (B->bl->map[(P)-B->bc])
+B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
     if (!vmStack) vmStack = malloc(400);
@@ -379,8 +469,8 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
     vmStack[stackNum] = -1;
     printf("new eval\n");
   #endif
-  B* objs = b->comp->objs->a;
-  Block** blocks = b->blocks->a; // b->comp->blocks;
+  B* objs = bl->comp->objs->a;
+  Block** blocks = bl->blocks;
   u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
@@ -559,6 +649,7 @@ B evalBC(Body* b, Scope* sc) { // doesn't consume
         if (isNothing(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
       }
+      case FAIL: thrM("No body matched");
       // not implemented: VARO VARM VFYM SETH FLDM SYSV
       default:
         #ifdef DEBUG
@@ -622,7 +713,7 @@ static void scope_dec(Scope* sc) {
   ptr_dec(sc);
 }
 
-FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc) {
+FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) {
   #if JIT_START != -1
     if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
     bool jit = true;
@@ -637,28 +728,27 @@ FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc) {
       goto toJIT;
     }
   #endif
-  return evalBC(body, sc);
+  return evalBC(block, body, sc);
 }
-B execBodyInline(Body* b, Scope* sc) { return execBodyInlineI(b, sc); } // ugh
+B execBlockInline(Block* block, Scope* sc) { return execBodyInlineI(block, block->bodies[0], sc); }
 
-FORCE_INLINE B execBlock(Block* bl, Scope* psc, i32 ga, B* svar) { // consumes svar contents
-  Body* body = bl->body;
+FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   Scope* sc = m_scope(body, psc, varAm, ga, svar);
-  B r = execBodyInlineI(body, sc);
+  B r = execBodyInlineI(block, body, sc);
   scope_dec(sc);
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->sc, 3, (B[]){t, x, bi_N                                  }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->sc, 3, (B[]){t, x, w                                     }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->sc, 5, (B[]){D, x, bi_N, inc(d->m1), inc(d->f)           }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->sc, 5, (B[]){D, x, w   , inc(d->m1), inc(d->f)           }); }
-B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
-B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
+B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->bodies[0], b->sc, 3, (B[]){t, x, bi_N                                  }); }
+B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->dyBody,    b->sc, 3, (B[]){t, x, w                                     }); }
+B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 5, (B[]){D, x, bi_N, inc(d->m1), inc(d->f)           }); }
+B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 5, (B[]){D, x, w   , inc(d->m1), inc(d->f)           }); }
+B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){D, x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
-  if (bl->imm) return execBlock(bl, psc, 0, NULL);
+  if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
   FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);
   r->bl = bl; ptr_inc(bl);
   r->sc = psc; ptr_inc(psc);
@@ -691,20 +781,24 @@ void scope_free(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
 }
-void  body_free(Value* x) {
-  Body* c = (Body*) x;
-  if(c->nsDesc ) ptr_decR(c->nsDesc);
-  if(c->blocks ) ptr_decR(c->blocks);
-  #if JIT_START != -1
-    if(c->nvm    ) nvm_free(c->nvm);
+void body_free(Value* x) {
+  Body* c = (Body*)x;
+  #if JIT_START!=-1
+    if(c->nvm) nvm_free(c->nvm);
     dec(c->nvmRefs);
   #endif
+  if(c->nsDesc) ptr_decR(c->nsDesc);
+}
+void block_free(Value* x) {
+  Block* c = (Block*)x;
   ptr_decR(c->comp);
+  if(c->blocks) ptr_decR(RFLD(c->blocks,BlBlocks,a));
   ptr_decR(RFLD(c->bc, I32Arr,a));
   ptr_decR(RFLD(c->map,I32Arr,a));
+  i32 am = c->bodyCount;
+  for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
 void  comp_free(Value* x) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); }
-void block_free(Value* x) { Block*    c = (Block   *)x; ptr_decR(c->body); }
 void funBl_free(Value* x) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md1Bl_free(Value* x) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
 void md2Bl_free(Value* x) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
@@ -720,19 +814,23 @@ void scope_visit(Value* x) {
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) mm_visit(c->vars[i]);
 }
-void  body_visit(Value* x) {
+void body_visit(Value* x) {
   Body* c = (Body*) x;
-  if(c->nsDesc) mm_visitP(c->nsDesc);
-  if(c->blocks) mm_visitP(c->blocks);
   #if JIT_START != -1
     mm_visit(c->nvmRefs);
   #endif
+  if(c->nsDesc) mm_visitP(c->nsDesc);
+}
+void block_visit(Value* x) {
+  Block* c = (Block*)x;
   mm_visitP(c->comp);
+  if(c->blocks) mm_visitP(RFLD(c->blocks,BlBlocks,a));
   mm_visitP(RFLD(c->bc, I32Arr,a));
   mm_visitP(RFLD(c->map,I32Arr,a));
+  i32 am = c->bodyCount;
+  for (i32 i = 0; i < am; i++) mm_visitP(c->bodies[i]);
 }
 void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); }
-void block_visit(Value* x) { Block*    c = (Block   *)x; mm_visitP(c->body); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
@@ -742,7 +840,7 @@ void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; fo
 
 void comp_print (B x) { printf("(%p: comp)",v(x)); }
 void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
-void block_print(B x) { printf("(%p: block for %p)",v(x),c(Block,x)->body); }
+void block_print(B x) { printf("(%p: block)",v(x)); }
 void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
 void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
 void bBlks_print(B x) { printf("(block list)"); }
@@ -760,8 +858,8 @@ void md2Bl_print(B x) { printf("{2-modifier block}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
-B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); return c->bl->imm? execBlock(c(Md1Block, m)->bl, c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
-B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); return c->bl->imm? execBlock(c(Md2Block, m)->bl, c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
+B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
+B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
 void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   usz pageSize = sysconf(_SC_PAGESIZE);
@@ -899,7 +997,7 @@ NOINLINE void vm_pst(Env* s, Env* e) { // e not included
       printf("("N64d" entries omitted)\n", l-20);
       i = 10;
     }
-    Comp* comp = c->sc->body->comp;
+    Comp* comp = c->sc->body->bl->comp;
     i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, (u32*)c->pos);
     vm_printPos(comp, bcPos, i);
     i--;
