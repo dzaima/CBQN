@@ -18,6 +18,7 @@
                   F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)F(FAIL)
 
 u32* nextBC(u32* p) {
+  i32 off;
   switch(*p) {
     case FN1C: case FN2C: case FN1O: case FN2O:
     case OP1D: case OP2D: case OP2H:
@@ -25,20 +26,21 @@ u32* nextBC(u32* p) {
     case SETN: case SETU: case SETM: case SETH:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
     case FAIL:
-      return p+1;
+      off = 1; break;
     case PUSH: case DFND: case ARRO: case ARRM:
     case VARO: case VARM: case FLDO: case FLDM:
     case SYSV: case NSPM:
-      return p+2;
+      off = 2; break;
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
     case ADDI: case ADDU:
     case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
-      return p+3;
+      off = 3; break;
     case FN2Oi:
-      return p+5;
-    default: return 0;
+      off = 5; break;
+    default: UD;
   }
+  return p+off;
 }
 i32 stackDiff(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1-p[1];
@@ -133,7 +135,7 @@ static Body* m_body(i32 vam, i32 pos, u16 maxStack, u16 maxPSC) { // leaves varI
   #if JIT_START > 0
     body->callCount = 0;
   #endif
-  body->bc = pos + (u32*)NULL; // hackish way to temporarily store the offset
+  body->bcTmp = pos;
   body->maxStack = maxStack;
   body->maxPSC = maxPSC;
   body->bl = NULL;
@@ -345,7 +347,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   }
   for (i32 i = 0; i < bodyCount; i++) {
     bl->bodies[i] = bodies[i];
-    bodies[i]->bc+= nbc-(i32*)NULL;
+    bodies[i]->bc = (u32*)nbc + bodies[i]->bcTmp;
     bodies[i]->bl = bl;
   }
   bl->dyBody = bodies[index2];

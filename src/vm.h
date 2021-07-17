@@ -96,7 +96,7 @@ struct Body {
 #if JIT_START > 0
   u16 callCount;
 #endif
-  u32* bc; // pointer in bl->bc
+  union { u32* bc; i32 bcTmp; }; // pointer in bl->bc; bcTmp to make ubsan happy (god dammit C)
   u32 maxStack;
   u16 maxPSC;
 #if JIT_START != -1

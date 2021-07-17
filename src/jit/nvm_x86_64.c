@@ -16,7 +16,7 @@
 
 // separate memory management system for executable code; isn't garbage-collected
 EmptyValue* mmX_buckets[64];
-u64* mmX_ctrs[64];
+u64 mmX_ctrs[64];
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
 #define  MMI(X) X

@@ -98,13 +98,13 @@ static inline void asm_1(TStack* o, i8 v) {
 static inline void asm_4(TStack* o, i32 v) { int size = o->size;
   // o->data[size+0] = (v    ) & 0xff; o->data[size+1] = (v>> 8) & 0xff;
   // o->data[size+2] = (v>>16) & 0xff; o->data[size+3] = (v>>24) & 0xff;
-  *(u32*)(o->data+size) = v; // clang for whatever reason fails to optimize the above when it's inlined
+  memcpy(o->data+size, (i32[]){v}, 4); // slightly less UB than an unaligned move
   o->size = size+4;
 }
-static inline void asm_8(TStack* o, i64 v) { int size = o->size; u8* p = o->data;
-  // p[size+0] = (u8)(v    ); p[size+1] = (u8)(v>> 8); p[size+2] = (u8)(v>>16); p[size+3] = (u8)(v>>24);
-  // p[size+4] = (u8)(v>>32); p[size+5] = (u8)(v>>40); p[size+6] = (u8)(v>>48); p[size+7] = (u8)(v>>56);
-  *(u64*)(p+size) = v;
+static inline void asm_8(TStack* o, i64 v) { int size = o->size;
+  // o->data[size+0] = (u8)(v    ); o->data[size+1] = (u8)(v>> 8); o->data[size+2] = (u8)(v>>16); o->data[size+3] = (u8)(v>>24);
+  // o->data[size+4] = (u8)(v>>32); o->data[size+5] = (u8)(v>>40); o->data[size+6] = (u8)(v>>48); o->data[size+7] = (u8)(v>>56);
+  memcpy(o->data+size, (i64[]){v}, 8);
   o->size+= 8;
 }
 static inline void asm_a(TStack* o, u64 len, u8 v[]) {
