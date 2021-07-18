@@ -22,12 +22,12 @@
     dec(x);
     return r;
   }
-  #define GC2f(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {               \
+  #define GC2f(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {         \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
     EXTRA                                                                    \
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
-        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                                   \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
@@ -65,7 +65,7 @@
       }                                                                      \
       P2(NAME)                                                               \
     }                                                                        \
-    thrM(#NAME ": invalid arithmetic");                                      \
+    thrM(SYMB ": Unexpected argument types");                                \
   }
   
   #define PF(N) f64* N##p = f64any_ptr(N);
@@ -93,12 +93,12 @@
     dec(w); dec(x);                \
     return r;                      \
   }
-  #define GC2i(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {       \
+  #define GC2i(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
     EXTRA                                                            \
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
-        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(#NAME ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+        if (memcmp(a(w)->sh, a(x)->sh, rnk(w)*sizeof(usz))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = a(x)->ia;                                           \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
@@ -126,20 +126,20 @@
       }                                                              \
       P2(NAME)                                                       \
     }                                                                \
-    thrM(#NAME ": invalid arithmetic");                              \
+    thrM(SYMB ": Unexpected argument types");                        \
   }
 #else // if !TYPED_ARITH
   #define GC2i(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) { f64 wv=w.f; f64 xv=x.f; return m_f64(EXPR); } \
     EXTRA \
     P2(NAME) \
-    thrM(#NAME ": invalid arithmetic"); \
+    thrM(SYMB ": Unexpected argument types"); \
   }
   #define GC2f(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) return m_f64(EXPR); \
     EXTRA \
     P2(NAME) \
-    thrM(#NAME ": invalid arithmetic"); \
+    thrM(SYMB ": Unexpected argument types"); \
   }
 #endif // TYPED_ARITH
 
@@ -149,7 +149,7 @@ static f64 pfmod(f64 a, f64 b) {
   return r;
 }
 
-GC2i(add, wv+xv, {
+GC2i("+", add, wv+xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
@@ -166,7 +166,7 @@ GC2i(add, wv+xv, {
     }
   }
 })
-GC2i(sub, wv-xv, {
+GC2i("-", sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
   if (isArr(w) && TI(w,elType)==el_c32) {
@@ -193,21 +193,21 @@ GC2i(sub, wv-xv, {
     }
   }
 })
-GC2i(not, 1+wv-xv, {
+GC2i("¬", not, 1+wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(1+(i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("¬: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
 })
-GC2i(mul, wv*xv, {})
-GC2i(and, wv*xv, {})
-GC2i(or , (wv+xv)-(wv*xv), {})
+GC2i("×", mul, wv*xv, {})
+GC2i("∧", and, wv*xv, {})
+GC2i("∨", or , (wv+xv)-(wv*xv), {})
 
-GC2f(div  ,           w.f/x.f, {})
-GC2f(pow  ,     pow(w.f, x.f), {})
-GC2f(root , pow(x.f, 1.0/w.f), {})
-GC2f(floor,    fmin(w.f, x.f), {})
-GC2f(ceil ,    fmax(w.f, x.f), {})
-GC2f(stile,   pfmod(x.f, w.f), {})
-GC2f(log  , log(x.f)/log(w.f), {})
+GC2f("÷", div  ,           w.f/x.f, {})
+GC2f("⋆", pow  ,     pow(w.f, x.f), {})
+GC2f("√", root , pow(x.f, 1.0/w.f), {})
+GC2f("⌊", floor,    fmin(w.f, x.f), {})
+GC2f("⌈", ceil ,    fmax(w.f, x.f), {})
+GC2f("|", stile,   pfmod(x.f, w.f), {})
+GC2f("⋆⁼",log  , log(x.f)/log(w.f), {})
 
 #undef GC2i
 #undef GC2f
