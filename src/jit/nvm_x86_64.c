@@ -436,7 +436,7 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
       print(s); printf(": map\n");
       dec(s);
     }
-    u32 bcPos = body->map[0];
+    u32 bcPos = body->bl->map[0];
     // printf("JIT %d:\n", perfid);
     // vm_printPos(body->comp, bcPos, -1);
     fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);

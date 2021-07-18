@@ -26,7 +26,7 @@ static void gsReserve(u64 am) {
   #endif
 }
 
-static NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
+void gsReserveR(u64 am);
 
 
 static inline void gsAdd(B x) {

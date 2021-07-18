@@ -20,9 +20,10 @@ typedef struct ShArr {
   struct Value;
   usz a[];
 } ShArr;
-static ShArr* shObj (B x) { return (ShArr*)((u64)a(x)->sh-offsetof(ShArr,a)); }
-static ShArr* shObjP(Value* x) { return (ShArr*)((u64)((Arr*)x)->sh-offsetof(ShArr,a)); }
-static void decSh(Value* x) { if (prnk(x)>1) ptr_dec(shObjP(x)); }
+static ShArr* shObj (B x) { return RFLD(a(x)->sh, ShArr, a); }
+static ShArr* shObjP(Value* x) { return RFLD(((Arr*)x)->sh, ShArr, a); }
+void decShR(Value* x);
+static void decSh(Value* x) { if (RARE(prnk(x)>1)) decShR(x); }
 
 // some array stuff
 
@@ -114,29 +115,17 @@ char* format_pm2(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 B bqn_squeeze(B x); // consumes
-static void noop_visit(Value* x) { }
-static B def_getU(B x, usz n) { return x; }
-
-extern B rt_under, bi_before;
-static B rtUnder_c1(B f, B g, B x) { // consumes x
-  B fn = m2_d(inc(rt_under), inc(f), inc(g));
-  B r = c1(fn, x);
-  dec(fn);
-  return r;
-}
-static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
-  B fn = m2_d(inc(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
-  B r = c1(fn, x);
-  dec(fn);
-  return r;
-}
-static B def_fn_uc1(B t, B o,                B x) { return rtUnder_c1(o, t,    x); }
-static B def_fn_ucw(B t, B o,           B w, B x) { return rtUnder_cw(o, t, w, x); }
-static B def_m1_uc1(B t, B o, B f,           B x) { B t2 = m1_d(inc(t),inc(f)       ); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
-static B def_m1_ucw(B t, B o, B f,      B w, B x) { B t2 = m1_d(inc(t),inc(f)       ); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
-static B def_m2_uc1(B t, B o, B f, B g,      B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
-static B def_m2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
-static B def_decompose(B x) { return m_v2(m_i32(isCallable(x)? 0 : -1),x); }
+B rtUnder_c1(B f, B g, B x);
+B rtUnder_cw(B f, B g, B w, B x);
+B def_getU(B x, usz n);
+B def_fn_uc1(B t, B o,                B x);
+B def_fn_ucw(B t, B o,           B w, B x);
+B def_m1_uc1(B t, B o, B f,           B x);
+B def_m1_ucw(B t, B o, B f,      B w, B x);
+B def_m2_uc1(B t, B o, B f, B g,      B x);
+B def_m2_ucw(B t, B o, B f, B g, B w, B x);
+B def_decompose(B x);
+void noop_visit(Value* x);
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 NOINLINE i32 compareR(B w, B x);
@@ -157,31 +146,6 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
 
 
 
-#ifdef DEBUG
-  static NOINLINE Value* VALIDATEP(Value* x) {
-    if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
-      printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
-      print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
-      err("");
-    }
-    if (TIv(x,isArr)) {
-      Arr* a = (Arr*)x;
-      if (prnk(x)<=1) assert(a->sh == &a->ia);
-      else VALIDATE(tag(shObjP(x),OBJ_TAG));
-    }
-    return x;
-  }
-  static NOINLINE B VALIDATE(B x) {
-    if (!isVal(x)) return x;
-    VALIDATEP(v(x));
-    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
-      printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
-      print(x);
-      err("\nk");
-    }
-    return x;
-  }
-#endif
 
 #ifdef USE_VALGRIND
   #include <valgrind/valgrind.h>
@@ -193,8 +157,8 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
 
 // call stuff
 
-static NOINLINE B c1_invalid(B f,      B x) { thrM("This function can't be called monadically"); }
-static NOINLINE B c2_invalid(B f, B w, B x) { thrM("This function can't be called dyadically"); }
+NORETURN B c1_invalid(B f,      B x);
+NORETURN B c2_invalid(B f, B w, B x);
 static B md_c1(B t,      B x) { thrM("Cannot call a modifier"); }
 static B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }
 static B arr_c1(B t,      B x) { return inc(t); }

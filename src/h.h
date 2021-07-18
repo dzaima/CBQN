@@ -204,8 +204,8 @@ typedef struct Arr {
 
 #ifdef DEBUG
   #include<assert.h>
-  static B VALIDATE(B x);
-  static Value* VALIDATEP(Value* x);
+  B VALIDATE(B x);
+  Value* VALIDATEP(Value* x);
   #define UD assert(false);
 #else
   #define assert(x) {if (!(x)) __builtin_unreachable();}
@@ -407,7 +407,7 @@ static inline void value_free(Value* x) {
   TIv(x,free)(x);
   mm_free(x);
 }
-static NOINLINE void value_freeR(Value* x) { value_free(x); }
+void value_freeR(Value* x);
 static void dec(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
@@ -435,14 +435,8 @@ typedef struct Fun {
 } Fun;
 
 
-static NOINLINE B c1_rare(B f, B x) { dec(x);
-  if (isMd(f)) thrM("Calling a modifier");
-  return inc(VALIDATE(f));
-}
-static NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
-  if (isMd(f)) thrM("Calling a modifier");
-  return inc(VALIDATE(f));
-}
+B c1_rare(B f, B x);
+B c2_rare(B f, B w, B x);
 static B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
   return c1_rare(f, x);

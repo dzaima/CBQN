@@ -111,6 +111,7 @@ Env* envEnd;
 B* gStack; // points to after end
 B* gStackStart;
 B* gStackEnd;
+NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
 void gsPrint() {
   B* c = gStackStart;
   i32 i = 0;
