@@ -10,17 +10,40 @@ static inline B arith_recm(BB2B f, B x) {
   return withFill(r, fx);
 }
 
+#define GC1i(SYMB, NAME, FEXPR, IBAD, IEXPR) B NAME##_c1(B t, B x) {    \
+  if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
+  if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
+  u8 xe = TI(x,elType);                                                 \
+  i64 sz = a(x)->ia;                                                    \
+  if (xe==el_i32) { i32* xp = i32any_ptr(x);                            \
+    i32* rp; B r = m_i32arrc(&rp, x);                                   \
+    for (i64 i = 0; i < sz; i++) { i32 v = xp[i];                       \
+      if (RARE(IBAD)) { dec(r); goto base; }                            \
+      rp[i] = IEXPR;                                                    \
+    }                                                                   \
+    dec(x); return r;                                                   \
+  }                                                                     \
+  if (xe==el_f64) { f64* xp = f64any_ptr(x);                            \
+    f64* rp; B r = m_f64arrc(&rp, x);                                   \
+    for (i64 i = 0; i < sz; i++) { f64 v = xp[i]; rp[i] = FEXPR; }      \
+    dec(x); return r;                                                   \
+  }                                                                     \
+  base: return arith_recm(NAME##_c1, x);                                \
+}
+  
+
 #define P1(N) { if(isArr(x)) return arith_recm(N##_c1, x); }
 B   add_c1(B t, B x) { return x; }
-B   sub_c1(B t, B x) { if (isF64(x)) return m_f64(     -x.f ); P1(  sub); thrM("-: Negating non-number"); }
-B   not_c1(B t, B x) { if (isF64(x)) return m_f64(    1-x.f ); P1(  not); thrM("¬: Argument was not a number"); }
-B   mul_c1(B t, B x) { if (isF64(x)) return m_f64(x.f==0?0:x.f>0?1:-1); P1(mul); thrM("×: Getting sign of non-number"); }
+GC1i("-", sub,   -v,              v==I32_MAX,  -v) // change icond to v==-v to support ¯0
+GC1i("¬", not,   1-v,             v<=-I32_MAX, 1-v) // v<=-I32_MAX
+GC1i("|", stile, fabs(v),         v==I32_MIN,  v<0?-v:v)
+GC1i("⌊", floor, floor(v),        0,           v)
+GC1i("⌈", ceil,  ceil(v),         0,           v)
+GC1i("×", mul,   v==0?0:v>0?1:-1, 0,           v==0?0:v>0?1:-1)
+
 B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
 B  root_c1(B t, B x) { if (isF64(x)) return m_f64( sqrt(x.f)); P1( root); thrM("√: Getting root of non-number"); }
-B floor_c1(B t, B x) { if (isF64(x)) return m_f64(floor(x.f)); P1(floor); thrM("⌊: Argument was not a number"); }
-B  ceil_c1(B t, B x) { if (isF64(x)) return m_f64( ceil(x.f)); P1( ceil); thrM("⌈: Argument was not a number"); }
-B stile_c1(B t, B x) { if (isF64(x)) return m_f64( fabs(x.f)); P1(stile); thrM("|: Argument was not a number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
 B   sin_c1(B t, B x) { if (isF64(x)) return m_f64(  sin(x.f)); P1(  sin); thrM("•math.Sin: Argument contained non-number"); }
 B   cos_c1(B t, B x) { if (isF64(x)) return m_f64(  cos(x.f)); P1(  cos); thrM("•math.Cos: Argument contained non-number"); }
