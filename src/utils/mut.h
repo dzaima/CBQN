@@ -368,8 +368,8 @@ static B vec_join(B w, B x) { // consumes both
     }
   }
   MAKE_MUT(r, ria); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
-  mut_copy(r, 0,   w, 0, wia);
-  mut_copy(r, wia, x, 0, xia);
+  mut_copyG(r, 0,   w, 0, wia);
+  mut_copyG(r, wia, x, 0, xia);
   dec(w); dec(x);
   return mut_fv(r);
 }
