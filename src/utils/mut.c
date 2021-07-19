@@ -8,3 +8,7 @@ NOINLINE B vec_addR(B w, B x) {
   dec(w);
   return mut_fv(r);
 }
+NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
+  if (m->type==el_B) harr_pfree(taga(m->val), n);
+  else mm_free((Value*) m->val);
+}

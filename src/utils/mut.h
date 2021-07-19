@@ -79,10 +79,7 @@ static u8 el_or(u8 a, u8 b) {
   #undef M
 }
 
-static void mut_pfree(Mut* m, usz n) { // free the first n elements
-  if (m->type==el_B) harr_pfree(taga(m->val), n);
-  else mm_free((Value*) m->val);
-}
+void mut_pfree(Mut* m, usz n);
 
 static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
   again:
