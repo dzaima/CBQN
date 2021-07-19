@@ -38,10 +38,10 @@ static void mut_to(Mut* m, u8 n) {
       }
     #endif
     switch(n) { default: UD;
-      case el_i32: { I32Arr* t= toI32Arr(taga(m->val)); m->val = (Arr*)t; m->ai32 = t->a; return; }
-      case el_f64: { F64Arr* t= toF64Arr(taga(m->val)); m->val = (Arr*)t; m->af64 = t->a; return; }
-      case el_c32: { C32Arr* t= toC32Arr(taga(m->val)); m->val = (Arr*)t; m->ac32 = t->a; return; }
-      case el_B  : { HArr*   t= toHArr  (taga(m->val)); m->val = (Arr*)t; m->aB   = t->a; return; }
+      case el_i32: { I32Arr* t=toI32Arr(taga(m->val)); m->val=(Arr*)t; m->ai32=t->a; return; }
+      case el_f64: { F64Arr* t=toF64Arr(taga(m->val)); m->val=(Arr*)t; m->af64=t->a; return; }
+      case el_c32: { C32Arr* t=toC32Arr(taga(m->val)); m->val=(Arr*)t; m->ac32=t->a; return; }
+      case el_B  : { HArr*   t=toHArr  (taga(m->val)); m->val=(Arr*)t; m->aB  =t->a; return; }
     }
   }
 }
@@ -403,12 +403,8 @@ static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
   }
   return false;
 }
+B vec_addR(B w, B x);
 static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
-  usz wia = a(w)->ia;
-  MAKE_MUT(r, wia+1); mut_to(r, el_or(TI(w,elType), selfElType(x)));
-  mut_copy(r, 0, w, 0, wia);
-  mut_set(r, wia, x);
-  dec(w);
-  return mut_fv(r);
+  return vec_addR(w, x);
 }

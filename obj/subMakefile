@@ -42,7 +42,7 @@ base: load.o main.o rtwrap.o vm.o ns.o nfns.o
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
 
-utils: utf.o hash.o file.o
+utils: utf.o hash.o file.o mut.o
 %.o: ../../src/utils/%.c
 	@echo $< | cut -c 11-
 	@$(CMD) $@.d -c $<
