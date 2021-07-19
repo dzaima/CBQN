@@ -234,7 +234,6 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyIVec() ({ B t = bi_emptyIVec; ptr_inc(v(t)); t; })
 #define emptyCVec() ({ B t = bi_emptyCVec; ptr_inc(v(t)); t; })
 #define emptySVec() ({ B t = bi_emptySVec; ptr_inc(v(t)); t; })
-NOINLINE B emptyCVecR();
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
@@ -260,7 +259,7 @@ B bqn_repr(B x); // consumes
 
 NOINLINE NORETURN void thr(B b);
 NOINLINE NORETURN void thrM(char* s);
-#define thrF(...) thr(append_fmt(emptyCVecR(), __VA_ARGS__))
+NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM();
 jmp_buf* prepareCatch();
 #if CATCH_ERRORS

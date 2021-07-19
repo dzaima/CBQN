@@ -55,9 +55,6 @@ void decShR(Value* x) {
 }
 
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
-NOINLINE B emptyCVecR() {
-  return emptyCVec();
-}
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));
@@ -159,9 +156,7 @@ NOINLINE void printRaw(B x) {
     }
   }
 }
-NOINLINE B append_fmt(B s, char* p, ...) {
-  va_list a;
-  va_start(a, p);
+NOINLINE B do_fmt(B s, char* p, va_list a) {
   char buf[30];
   char c;
   char* lp = p;
@@ -258,8 +253,28 @@ NOINLINE B append_fmt(B s, char* p, ...) {
     lp = p;
   }
   if (lp!=p) AJOIN(fromUTF8(lp, p-lp));
-  va_end(a);
   return s;
+}
+NOINLINE B append_fmt(B s, char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B r = do_fmt(s, p, a);
+  va_end(a);
+  return r;
+}
+NOINLINE B make_fmt(char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B r = do_fmt(emptyCVec(), p, a);
+  va_end(a);
+  return r;
+}
+NOINLINE void thrF(char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B r = do_fmt(emptyCVec(), p, a);
+  va_end(a);
+  thr(r);
 }
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })

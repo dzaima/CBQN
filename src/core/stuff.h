@@ -100,13 +100,14 @@ static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
 
 B m_str8l(char* s);
 B fromUTF8l(char* x);
+B append_fmt(B s, char* p, ...);
+B make_fmt(char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X
 #define AOBJ(X) s = vec_add(s,X) // consumes X
 #define ACHR(X) AOBJ(m_c32(X))
 #define A8(X) AJOIN(m_str8l(X))
 #define AU(X) AJOIN(fromUTF8l(X))
 #define AFMT(...) s = append_fmt(s, __VA_ARGS__)
-NOINLINE B append_fmt(B s, char* p, ...);
 
 // function stuff
 
