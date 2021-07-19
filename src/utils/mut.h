@@ -112,7 +112,7 @@ static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
   }
   #undef AGAIN
 }
-static void mut_setS(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
+static void mut_setG(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
   switch(m->type) { default: UD;
     case el_i32: { assert(q_i32(x));
       m->ai32[ms] = o2iu(x);
@@ -181,6 +181,37 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) {
   }
   #undef AGAIN
 }
+static void mut_fillG(Mut* m, usz ms, B x, usz l) {
+  switch(m->type) { default: UD;
+    case el_i32: {
+      assert(q_i32(x));
+      i32* p = m->ai32+ms;
+      i32 v = o2iu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_c32: {
+      assert(isC32(x));
+      u32* p = m->ac32+ms;
+      u32 v = o2cu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_f64: {
+      assert(isF64(x));
+      f64* p = m->af64+ms;
+      f64 v = o2fu(x);
+      for (usz i = 0; i < l; i++) p[i] = v;
+      return;
+    }
+    case el_B: {
+      B* p = m->aB+ms;
+      for (usz i = 0; i < l; i++) p[i] = x;
+      if (isVal(x)) for (usz i = 0; i < l; i++) inc(x);
+      return;
+    }
+  }
+}
 
 // expects x to be an array, each position must be written to precisely once
 // doesn't consume x
@@ -238,6 +269,51 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
     }
   }
   #undef AGAIN
+}
+static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { // mut_copy but x is guaranteed to be a subtype of m
+  assert(isArr(x));
+  u8 xt = v(x)->type;
+  switch(m->type) { default: UD;
+    case el_i32: {
+      i32* xp = i32any_ptr(x);
+      memcpy(m->ai32+ms, xp+xs, l*4);
+      return;
+    }
+    case el_c32: {
+      u32* xp = c32any_ptr(x);
+      memcpy(m->ac32+ms, xp+xs, l*4);
+      return;
+    }
+    case el_f64: {
+      f64* xp;
+      if (xt==t_f64arr) xp = f64arr_ptr(x);
+      else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
+      else {
+        assert(TIi(xt,elType)==el_i32);
+        i32* xp = i32any_ptr(x);
+        f64* rp = m->af64+ms;
+        for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
+        return;
+      }
+      memcpy(m->af64+ms, xp+xs, l*8);
+      return;
+    }
+    case el_B: {
+      B* mpo = m->aB+ms;
+      B* xp;
+      if (xt==t_harr) xp = harr_ptr(x);
+      else if (xt==t_hslice) xp = c(HSlice,x)->a;
+      else if (xt==t_fillarr) xp = c(FillArr,x)->a;
+      else {
+        BS2B xget = TIi(xt,get);
+        for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
+        return;
+      }
+      memcpy(mpo, xp+xs, l*sizeof(B*));
+      for (usz i = 0; i < l; i++) inc(mpo[i]);
+      return;
+    }
+  }
 }
 
 

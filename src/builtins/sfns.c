@@ -163,15 +163,14 @@ B select_c2(B t, B w, B x) {
     if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
-    MAKE_MUT(r, wia*csz);
-    mut_to(r, fillElType(xf));
+    MAKE_MUT(r, wia*csz); mut_to(r, TI(x,elType));
     for (usz i = 0; i < wia; i++) {
       B cw = wgetU(w, i);
       if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
       f64 c = o2f(cw);
       if (c<0) c+= cam;
       if ((usz)c >= cam) { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); }
-      mut_copy(r, i*csz, x, csz*(usz)c, csz);
+      mut_copyG(r, i*csz, x, csz*(usz)c, csz);
     }
     Arr* ra = mut_fp(r);
     usz* rsh = arr_shAllocR(ra, rr);
@@ -349,12 +348,11 @@ B take_c2(B t, B w, B x) {
     usz ia = a(x)->ia;
     u64 va = v<0? -v : v;
     if (va>ia) {
-      MAKE_MUT(r, va);
       B xf = getFillE(x);
-      mut_copy(r, v<0? va-ia : 0, x, 0, ia);
+      MAKE_MUT(r, va); mut_to(r, TI(x,elType));
+      mut_copyG(r, v<0? va-ia : 0, x, 0, ia);
       mut_fill(r, v<0? 0 : ia, xf, va-ia);
-      dec(x);
-      dec(xf);
+      dec(x); dec(xf);
       return mut_fv(r);
     }
     if (v<0) return slicev(x, ia+v, -v);
@@ -466,10 +464,9 @@ B join_c2(B t, B w, B x) {
     if (rnk(r)==0) srnk(r,1);
     return qWithFill(r, f);
   }
-  MAKE_MUT(r, wia+xia);
-  mut_to(r, el_or(TI(w,elType), TI(x,elType)));
-  mut_copy(r, 0,   w, 0, wia);
-  mut_copy(r, wia, x, 0, xia);
+  MAKE_MUT(r, wia+xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  mut_copyG(r, 0,   w, 0, wia);
+  mut_copyG(r, wia, x, 0, xia);
   Arr* ra = mut_fp(r);
   usz* sh = arr_shAllocR(ra, c);
   if (sh) {
@@ -513,9 +510,9 @@ B couple_c2(B t, B w, B x) {
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = a(w)->ia;
   ur wr = rnk(w);
-  MAKE_MUT(r, ia*2);
-  mut_copy(r, 0,  w, 0, ia);
-  mut_copy(r, ia, x, 0, ia);
+  MAKE_MUT(r, ia*2); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  mut_copyG(r, 0,  w, 0, ia);
+  mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
   usz* sh = arr_shAllocR(ra, wr+1);
   if (sh) { sh[0]=2; memcpy(sh+1, a(w)->sh, wr*sizeof(usz)); }
@@ -541,7 +538,7 @@ B shiftb_c1(B t, B x) {
   usz csz = arr_csz(x);
   
   MAKE_MUT(r, ia); mut_to(r, TI(x,elType));
-  mut_copy(r, csz, x, 0, ia-csz);
+  mut_copyG(r, csz, x, 0, ia-csz);
   mut_fill(r, 0, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
 }
@@ -554,8 +551,8 @@ B shiftb_c2(B t, B w, B x) {
   usz xia = a(x)->ia;
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
   int mid = wia<xia? wia : xia;
-  mut_copy(r, 0  , w, 0, mid);
-  mut_copy(r, mid, x, 0, xia-mid);
+  mut_copyG(r, 0  , w, 0, mid);
+  mut_copyG(r, mid, x, 0, xia-mid);
   dec(w);
   return qWithFill(mut_fcd(r, x), f);
 }
@@ -567,7 +564,7 @@ B shifta_c1(B t, B x) {
   B xf = getFillE(x);
   usz csz = arr_csz(x);
   MAKE_MUT(r, ia); mut_to(r, TI(x,elType));
-  mut_copy(r, 0, x, csz, ia-csz);
+  mut_copyG(r, 0, x, csz, ia-csz);
   mut_fill(r, ia-csz, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
 }
@@ -581,10 +578,10 @@ B shifta_c2(B t, B w, B x) {
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
   if (wia < xia) {
     usz m = xia-wia;
-    mut_copy(r, 0, x, wia, m);
-    mut_copy(r, m, w, 0, wia);
+    mut_copyG(r, 0, x, wia, m);
+    mut_copyG(r, m, w, 0, wia);
   } else {
-    mut_copy(r, 0, w, wia-xia, xia);
+    mut_copyG(r, 0, w, wia-xia, xia);
   }
   dec(w);
   return qWithFill(mut_fcd(r, x), f);
@@ -728,7 +725,7 @@ B reverse_c1(B t, B x) {
   MAKE_MUT(r, xia); mut_to(r, xe);
   for (usz i = 0; i < cam; i++) {
     ip-= csz;
-    mut_copy(r, rp, x, ip, csz);
+    mut_copyG(r, rp, x, ip, csz);
     rp+= csz;
   }
   return withFill(mut_fcd(r, x), xf);
@@ -745,8 +742,8 @@ B reverse_c2(B t, B w, B x) {
   if ((u64)am >= (u64)cam) { am%= (i64)cam; if(am<0) am+= cam; }
   am*= csz;
   MAKE_MUT(r, xia); mut_to(r, TI(x,elType));
-  mut_copy(r, 0, x, am, xia-am);
-  mut_copy(r, xia-am, x, 0, am);
+  mut_copyG(r, 0, x, am, xia-am);
+  mut_copyG(r, xia-am, x, 0, am);
   return withFill(mut_fcd(r, x), xf);
 }
 
@@ -761,8 +758,8 @@ B pick_uc1(B t, B o, B x) {
   B arg = TI(x,get)(x, 0);
   B rep = c1(o, arg);
   MAKE_MUT(r, ia); mut_to(r, el_or(TI(x,elType), selfElType(rep)));
-  mut_set(r, 0, rep);
-  mut_copy(r, 1, x, 1, ia-1);
+  mut_setG(r, 0, rep);
+  mut_copyG(r, 1, x, 1, ia-1);
   return qWithFill(mut_fcd(r, x), xf);
 }
 
@@ -795,9 +792,9 @@ B pick_ucw(B t, B o, B w, B x) {
     }
   }
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), selfElType(rep)));
-  mut_set(r, wi, rep);
-  mut_copy(r, 0, x, 0, wi);
-  mut_copy(r, wi+1, x, wi+1, xia-wi-1);
+  mut_setG(r, wi, rep);
+  mut_copyG(r, 0, x, 0, wi);
+  mut_copyG(r, wi+1, x, wi+1, xia-wi-1);
   return qWithFill(mut_fcd(r, x), xf);
 }
 
@@ -820,9 +817,9 @@ B slash_ucw(B t, B o, B w, B x) {
     if (cw) {
       B cr = rget(rep,repI);
       if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(rgetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
-      mut_set(r, i, cr);
+      mut_setG(r, i, cr);
       repI+= cw;
-    } else mut_set(r, i, xget(x,i));
+    } else mut_setG(r, i, xget(x,i));
   }
   dec(w); dec(rep);
   return mut_fcd(r, x);
@@ -875,27 +872,27 @@ B select_ucw(B t, B o, B w, B x) {
       }
     }
     MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), TI(rep,elType)));
-    mut_copy(r, 0, x, 0, xia);
+    mut_copyG(r, 0, x, 0, xia);
     BS2B rget = TI(rep,get);
     for (usz i = 0; i < wia; i++) {
       i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
       B cr = rget(rep, i);
       EQ(!equal(mut_getU(r, cw), cr));
       mut_rm(r, cw);
-      mut_setS(r, cw, cr);
+      mut_setG(r, cw, cr);
     }
     dec(w); dec(rep); FREE_CHECK;
     return mut_fcd(r, x);
   }
   MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), TI(rep,elType)));
-  mut_copy(r, 0, x, 0, xia);
+  mut_copyG(r, 0, x, 0, xia);
   BS2B rget = TI(rep,get);
   for (usz i = 0; i < wia; i++) {
     i64 cw = o2i64u(wgetU(w, i)); if (cw<0) cw+= (i64)xia;
     B cr = rget(rep, i);
     EQ(!equal(mut_getU(r, cw), cr));
     mut_rm(r, cw);
-    mut_set(r, cw, cr);
+    mut_setG(r, cw, cr);
   }
   dec(w); dec(rep); FREE_CHECK;
   return mut_fcd(r, x);

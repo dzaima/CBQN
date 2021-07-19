@@ -109,6 +109,7 @@ NOINLINE B append_fmt(B s, char* p, ...);
 
 // function stuff
 
+char* format_type(u8 u);
 char* format_pf(u8 u);
 char* format_pm1(u8 u);
 char* format_pm2(u8 u);

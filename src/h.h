@@ -183,7 +183,6 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
   el_MAX=4 // also used for incomplete in mut.c
 };
 
-char* format_type(u8 u);
 
 
 typedef struct Value {
