@@ -163,7 +163,7 @@ B select_c2(B t, B w, B x) {
     if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
-    MAKE_MUT(r, wia*csz); mut_to(r, TI(x,elType));
+    MAKE_MUT(r, wia*csz); mut_init(r, TI(x,elType));
     for (usz i = 0; i < wia; i++) {
       B cw = wgetU(w, i);
       if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
@@ -349,7 +349,7 @@ B take_c2(B t, B w, B x) {
     u64 va = v<0? -v : v;
     if (va>ia) {
       B xf = getFillE(x);
-      MAKE_MUT(r, va); mut_to(r, TI(x,elType));
+      MAKE_MUT(r, va); mut_init(r, TI(x,elType));
       mut_copyG(r, v<0? va-ia : 0, x, 0, ia);
       mut_fill(r, v<0? 0 : ia, xf, va-ia);
       dec(x); dec(xf);
@@ -464,7 +464,7 @@ B join_c2(B t, B w, B x) {
     if (rnk(r)==0) srnk(r,1);
     return qWithFill(r, f);
   }
-  MAKE_MUT(r, wia+xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT(r, wia+xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
   Arr* ra = mut_fp(r);
@@ -510,7 +510,7 @@ B couple_c2(B t, B w, B x) {
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = a(w)->ia;
   ur wr = rnk(w);
-  MAKE_MUT(r, ia*2); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT(r, ia*2); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
@@ -537,7 +537,7 @@ B shiftb_c1(B t, B x) {
   B xf = getFillE(x);
   usz csz = arr_csz(x);
   
-  MAKE_MUT(r, ia); mut_to(r, TI(x,elType));
+  MAKE_MUT(r, ia); mut_init(r, TI(x,elType));
   mut_copyG(r, csz, x, 0, ia-csz);
   mut_fill(r, 0, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
@@ -549,7 +549,7 @@ B shiftb_c2(B t, B w, B x) {
   B f = fill_both(w, x);
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  MAKE_MUT(r, xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT(r, xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   int mid = wia<xia? wia : xia;
   mut_copyG(r, 0  , w, 0, mid);
   mut_copyG(r, mid, x, 0, xia-mid);
@@ -563,7 +563,7 @@ B shifta_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
-  MAKE_MUT(r, ia); mut_to(r, TI(x,elType));
+  MAKE_MUT(r, ia); mut_init(r, TI(x,elType));
   mut_copyG(r, 0, x, csz, ia-csz);
   mut_fill(r, ia-csz, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
@@ -575,7 +575,7 @@ B shifta_c2(B t, B w, B x) {
   B f = fill_both(w, x);
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  MAKE_MUT(r, xia); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT(r, xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   if (wia < xia) {
     usz m = xia-wia;
     mut_copyG(r, 0, x, wia, m);
@@ -722,7 +722,7 @@ B reverse_c1(B t, B x) {
   usz cam = a(x)->sh[0];
   usz rp = 0;
   usz ip = xia;
-  MAKE_MUT(r, xia); mut_to(r, xe);
+  MAKE_MUT(r, xia); mut_init(r, xe);
   for (usz i = 0; i < cam; i++) {
     ip-= csz;
     mut_copyG(r, rp, x, ip, csz);
@@ -741,7 +741,7 @@ B reverse_c2(B t, B w, B x) {
   i64 am = o2i64(w);
   if ((u64)am >= (u64)cam) { am%= (i64)cam; if(am<0) am+= cam; }
   am*= csz;
-  MAKE_MUT(r, xia); mut_to(r, TI(x,elType));
+  MAKE_MUT(r, xia); mut_init(r, TI(x,elType));
   mut_copyG(r, 0, x, am, xia-am);
   mut_copyG(r, xia-am, x, 0, am);
   return withFill(mut_fcd(r, x), xf);
@@ -757,7 +757,7 @@ B pick_uc1(B t, B o, B x) {
   usz ia = a(x)->ia;
   B arg = TI(x,get)(x, 0);
   B rep = c1(o, arg);
-  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x,elType), selfElType(rep)));
+  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
   mut_setG(r, 0, rep);
   mut_copyG(r, 1, x, 1, ia-1);
   return qWithFill(mut_fcd(r, x), xf);
@@ -791,7 +791,7 @@ B pick_ucw(B t, B o, B w, B x) {
       return x;
     }
   }
-  MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), selfElType(rep)));
+  MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
   mut_setG(r, wi, rep);
   mut_copyG(r, 0, x, 0, wi);
   mut_copyG(r, wi+1, x, wi+1, xia-wi-1);
@@ -807,7 +807,7 @@ B slash_ucw(B t, B o, B w, B x) {
   usz argIA = a(arg)->ia;
   B rep = c1(o, arg);
   if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
-  MAKE_MUT(r, ia); mut_to(r, el_or(TI(x,elType), TI(rep,elType)));
+  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
   BS2B xget = TI(x,get);
   BS2B rgetU = TI(rep,getU);
   BS2B rget = TI(rep,get);
@@ -871,7 +871,7 @@ B select_ucw(B t, B o, B w, B x) {
         return x;
       }
     }
-    MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), TI(rep,elType)));
+    MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
     mut_copyG(r, 0, x, 0, xia);
     BS2B rget = TI(rep,get);
     for (usz i = 0; i < wia; i++) {
@@ -884,7 +884,7 @@ B select_ucw(B t, B o, B w, B x) {
     dec(w); dec(rep); FREE_CHECK;
     return mut_fcd(r, x);
   }
-  MAKE_MUT(r, xia); mut_to(r, el_or(TI(x,elType), TI(rep,elType)));
+  MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
   mut_copyG(r, 0, x, 0, xia);
   BS2B rget = TI(rep,get);
   for (usz i = 0; i < wia; i++) {

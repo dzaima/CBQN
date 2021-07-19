@@ -13,38 +13,16 @@ typedef struct Mut {
 } Mut;
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.type = el_MAX; N##_val.ia = (IA); Mut* N = &N##_val;
 
-static void mut_to(Mut* m, u8 n) {
-  u8 o = m->type;
-  assert(o!=el_B);
+static void mut_init(Mut* m, u8 n) {
   m->type = n;
-  if (o==el_MAX) {
-    switch(n) { default: UD;
-      case el_i32: m->val = m_i32arrp(&m->ai32, m->ia); return;
-      case el_f64: m->val = m_f64arrp(&m->af64, m->ia); return;
-      case el_c32: m->val = m_c32arrp(&m->ac32, m->ia); return;
-      case el_B  :; HArr_p t = m_harrUp(        m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
-    }
-  } else {
-    sprnk(m->val, 1);
-    m->val->sh = &m->val->ia;
-    #ifdef USE_VALGRIND
-      VALGRIND_MAKE_MEM_DEFINED(m->val, mm_size((Value*)m->val)); // it's incomplete, but it's a typed array so garbage is acceptable
-    #endif
-    #ifdef DEBUG
-      if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
-        usz ia = m->val->ia;
-        f64* p = f64arr_ptr(taga(m->val));
-        for (usz i = 0; i < ia; i++) if (!isF64(b(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
-      }
-    #endif
-    switch(n) { default: UD;
-      case el_i32: { I32Arr* t=toI32Arr(taga(m->val)); m->val=(Arr*)t; m->ai32=t->a; return; }
-      case el_f64: { F64Arr* t=toF64Arr(taga(m->val)); m->val=(Arr*)t; m->af64=t->a; return; }
-      case el_c32: { C32Arr* t=toC32Arr(taga(m->val)); m->val=(Arr*)t; m->ac32=t->a; return; }
-      case el_B  : { HArr*   t=toHArr  (taga(m->val)); m->val=(Arr*)t; m->aB  =t->a; return; }
-    }
+  switch(n) { default: UD;
+    case el_i32: m->val = m_i32arrp(&m->ai32, m->ia); return;
+    case el_f64: m->val = m_f64arrp(&m->af64, m->ia); return;
+    case el_c32: m->val = m_c32arrp(&m->ac32, m->ia); return;
+    case el_B  :; HArr_p t = m_harrUp(        m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
   }
 }
+void mut_to(Mut* m, u8 n);
 
 static B mut_fv(Mut* m) { assert(m->type!=el_MAX);
   m->val->sh = &m->val->ia;
@@ -373,7 +351,7 @@ static B vec_join(B w, B x) { // consumes both
       return w;
     }
   }
-  MAKE_MUT(r, ria); mut_to(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT(r, ria); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   mut_copy(r, 0,   w, 0, wia);
   mut_copy(r, wia, x, 0, xia);
   dec(w); dec(x);
