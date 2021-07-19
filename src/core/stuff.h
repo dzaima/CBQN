@@ -8,6 +8,7 @@ static void mm_visitP(void* x);
 NORETURN void bqn_exit(i32 code);
 u64 mm_heapUsed();
 void printAllocStats();
+void vm_pstLive();
 
 
 #ifndef MAP_NORESERVE

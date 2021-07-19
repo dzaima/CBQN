@@ -6,8 +6,12 @@
 
 NORETURN NOINLINE void err(char* s) {
   puts(s); fflush(stdout);
-  print_vmStack();
-  __builtin_trap();
+  vm_pstLive(); fflush(stdout);
+  print_vmStack(); fflush(stdout);
+  puts("CBQN interpreter entered unexpected state, exiting.");
+  #ifdef DEBUG
+    __builtin_trap();
+  #endif
   exit(1);
 }
 
