@@ -83,22 +83,24 @@ void mut_pfree(Mut* m, usz n);
 
 static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
   again:
-  #define AGAIN(T) { mut_to(m, T); goto again; }
+  u8 nty;
   switch(m->type) { default: UD;
-    case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
+    case el_MAX:
+      nty = isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B);
+      goto change;
     
     case el_i32: {
-      if (!q_i32(x)) AGAIN(isF64(x)? el_f64 : el_B);
+      if (!q_i32(x)) { nty = isF64(x)? el_f64 : el_B; goto change; }
       m->ai32[ms] = o2iu(x);
       return;
     }
     case el_c32: {
-      if (!isC32(x)) AGAIN(el_B);
+      if (!isC32(x)) { nty = el_B; goto change; }
       m->ac32[ms] = o2cu(x);
       return;
     }
     case el_f64: {
-      if (!isF64(x)) AGAIN(el_B);
+      if (!isF64(x)) { nty = el_B; goto change; }
       m->af64[ms] = o2fu(x);
       return;
     }
@@ -107,7 +109,9 @@ static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
       return;
     }
   }
-  #undef AGAIN
+  change:
+  mut_to(m, nty);
+  goto again;
 }
 static void mut_setG(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
   switch(m->type) { default: UD;
@@ -144,26 +148,28 @@ static B mut_getU(Mut* m, usz ms) {
 // doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) {
   again:
-  #define AGAIN(T) { mut_to(m, T); goto again; }
+  u8 nty;
   switch(m->type) { default: UD;
-    case el_MAX: AGAIN(isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B));
+    case el_MAX:
+      nty = isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B);
+      goto change;
     
     case el_i32: {
-      if (!q_i32(x)) AGAIN(isF64(x)? el_f64 : el_B);
+      if (RARE(!q_i32(x))) { nty = isF64(x)? el_f64 : el_B; goto change; }
       i32* p = m->ai32+ms;
       i32 v = o2iu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
       return;
     }
     case el_c32: {
-      if (!isC32(x)) AGAIN(el_B);
+      if (RARE(!isC32(x))) { nty = el_B; goto change; }
       u32* p = m->ac32+ms;
       u32 v = o2cu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
       return;
     }
     case el_f64: {
-      if (!isF64(x)) AGAIN(el_B);
+      if (RARE(!isF64(x))) { nty = el_B; goto change; }
       f64* p = m->af64+ms;
       f64 v = o2fu(x);
       for (usz i = 0; i < l; i++) p[i] = v;
@@ -176,7 +182,9 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) {
       return;
     }
   }
-  #undef AGAIN
+  change:
+  mut_to(m, nty);
+  goto again;
 }
 static void mut_fillG(Mut* m, usz ms, B x, usz l) {
   switch(m->type) { default: UD;
@@ -212,25 +220,23 @@ static void mut_fillG(Mut* m, usz ms, B x, usz l) {
 
 // expects x to be an array, each position must be written to precisely once
 // doesn't consume x
-static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
+static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { // TODO try harder to not bump type
   assert(isArr(x));
   u8 xt = v(x)->type;
   u8 xe = TIi(xt,elType);
   // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, format_type(xt), xs, xs+l); fflush(stdout);
   again:
-  #define AGAIN { mut_to(m, el_or(m->type, xe)); goto again; }
-  // TODO try harder to not bump type
   switch(m->type) { default: UD;
-    case el_MAX: AGAIN;
+    case el_MAX: goto change;
     
     case el_i32: {
-      if (xt!=t_i32arr & xt!=t_i32slice) AGAIN;
+      if (RARE(xt!=t_i32arr & xt!=t_i32slice)) goto change;
       i32* xp = i32any_ptr(x);
       memcpy(m->ai32+ms, xp+xs, l*4);
       return;
     }
     case el_c32: {
-      if (xt!=t_c32arr & xt!=t_c32slice) AGAIN;
+      if (RARE(xt!=t_c32arr & xt!=t_c32slice)) goto change;
       u32* xp = c32any_ptr(x);
       memcpy(m->ac32+ms, xp+xs, l*4);
       return;
@@ -239,13 +245,13 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       f64* xp;
       if (xt==t_f64arr) xp = f64arr_ptr(x);
       else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
-      else if (xt==t_i32arr|xt==t_i32slice) {
+      else if (LIKELY(xt==t_i32arr|xt==t_i32slice)) {
         i32* xp = i32any_ptr(x);
         f64* rp = m->af64+ms;
         for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
         return;
       }
-      else AGAIN;
+      else goto change;
       memcpy(m->af64+ms, xp+xs, l*8);
       return;
     }
@@ -265,7 +271,9 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) {
       return;
     }
   }
-  #undef AGAIN
+  change:
+  mut_to(m, el_or(m->type, xe));
+  goto again;
 }
 static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { // mut_copy but x is guaranteed to be a subtype of m
   assert(isArr(x));
