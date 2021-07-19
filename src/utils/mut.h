@@ -15,11 +15,27 @@ typedef struct Mut {
 
 static void mut_init(Mut* m, u8 n) {
   m->type = n;
+  usz ia = m->ia;
+  u8 ty;
+  usz sz;
+  // hack around inlining of the allocator too many times
   switch(n) { default: UD;
-    case el_i32: m->val = m_i32arrp(&m->ai32, m->ia); return;
-    case el_f64: m->val = m_f64arrp(&m->af64, m->ia); return;
-    case el_c32: m->val = m_c32arrp(&m->ac32, m->ia); return;
-    case el_B  :; HArr_p t = m_harrUp(        m->ia); m->val = (Arr*)t.c; m->aB = t.c->a; return;
+    case el_i32: ty = t_i32arr; sz = I32A_SZ(ia); break;
+    case el_f64: ty = t_f64arr; sz = F64A_SZ(ia); break;
+    case el_c32: ty = t_c32arr; sz = C32A_SZ(ia); break;
+    case el_B:;
+      HArr_p t = m_harrUp(ia);
+      m->val = (Arr*)t.c;
+      m->aB = t.c->a;
+      return;
+  }
+  Arr* a = mm_alloc(sz, ty);
+  a->ia = ia;
+  m->val = a;
+  switch(n) { default: UD; // gcc generates horrible code for this (which should just be two instructions), but that's what gcc does
+    case el_i32: m->ai32 = ((I32Arr*)a)->a; break;
+    case el_f64: m->af64 = ((F64Arr*)a)->a; break;
+    case el_c32: m->ac32 = ((C32Arr*)a)->a; break;
   }
 }
 void mut_to(Mut* m, u8 n);
@@ -60,7 +76,7 @@ static u8 el_or(u8 a, u8 b) {
 void mut_pfree(Mut* m, usz n);
 
 static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
-  again:
+  again:;
   u8 nty;
   switch(m->type) { default: UD;
     case el_MAX:
@@ -125,7 +141,7 @@ static B mut_getU(Mut* m, usz ms) {
 
 // doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) {
-  again:
+  again:;
   u8 nty;
   switch(m->type) { default: UD;
     case el_MAX:
