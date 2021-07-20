@@ -569,11 +569,11 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case DFND: {
         GS_UPD;POS_UPD;
-        Block* bl = blocks[*bc++];
-        switch(bl->ty) { default: UD;
-          case 0: ADD(m_funBlock(bl, sc)); break;
-          case 1: ADD(m_md1Block(bl, sc)); break;
-          case 2: ADD(m_md2Block(bl, sc)); break;
+        Block* cbl = blocks[*bc++];
+        switch(cbl->ty) { default: UD;
+          case 0: ADD(m_funBlock(cbl, sc)); break;
+          case 1: ADD(m_md1Block(cbl, sc)); break;
+          case 2: ADD(m_md2Block(cbl, sc)); break;
         }
         break;
       }
