@@ -319,7 +319,7 @@ NOINLINE bool atomEqualR(B w, B x) {
   if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
   usz wia = a(wd)->ia;
   if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
-  for (i32 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
+  for (u64 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
@@ -366,7 +366,7 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
   usz wia = a(wd)->ia;
   if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
-  for (i32 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
+  for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
@@ -432,7 +432,7 @@ bool isPureFn(B x) { // doesn't consume
     i32 t = o2iu(xdp[0]);
     if (t<2) { dec(xd); return t==0; }
     usz xdia = a(xd)->ia;
-    for (i32 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
+    for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
     dec(xd); return true;
   } else if (isArr(x)) {
     usz ia = a(x)->ia;

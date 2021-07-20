@@ -204,18 +204,25 @@ B slash_c1(B t, B x) {
   if(s<0) thrM("/: Argument must consist of natural numbers");
   usz xia = a(x)->ia;
   if (RARE(xia>=I32_MAX)) return slash_c1R(x, s);
-  i32* rp; B r = m_i32arrv(&rp, s); usz ri = 0;
+  i32* rp; B r = m_i32arrv(&rp, s);
   if (TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
+    while (xia>0 && !xp[xia-1]) xia--;
     for (i32 i = 0; i < xia; i++) {
-      if (RARE(xp[i])<0) thrF("/: Argument must consist of natural numbers (contained %i)", xp[i]);
-      for (usz j = 0; j < xp[i]; j++) rp[ri++] = i;
+      i32 c = xp[i];
+      if (LIKELY(c==0 || c==1)) {
+        *rp = i;
+        rp+= c;
+      } else {
+        if (RARE(c)<0) thrF("/: Argument must consist of natural numbers (contained %i)", c);
+        for (i32 j = 0; j < c; j++) *rp++ = i;
+      }
     }
   } else {
     BS2B xgetU = TI(x,getU);
-    for (i32 i = 0; i < xia; i++) {
+    for (u64 i = 0; i < xia; i++) {
       usz c = o2s(xgetU(x, i));
-      for (usz j = 0; j < c; j++) rp[ri++] = i;
+      for (u64 j = 0; j < c; j++) *rp++ = i;
     }
   }
   dec(x);
@@ -256,7 +263,7 @@ B slash_c2(B t, B w, B x) {
           for (usz i = 0; i < wia; i++) {
             i32 cw = wp[i];
             i32 cx = xp[i];
-            for (usz j = 0; j < cw; j++) *rp++ = cx;
+            for (i64 j = 0; j < cw; j++) *rp++ = cx;
           }
         }
         dec(w); dec(x);
@@ -267,7 +274,7 @@ B slash_c2(B t, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i32 cw = wp[i];
           f64 cx = xp[i];
-          for (usz j = 0; j < cw; j++) *rp++ = cx;
+          for (i64 j = 0; j < cw; j++) *rp++ = cx;
         }
         dec(w); dec(x);
         return r;
@@ -278,7 +285,7 @@ B slash_c2(B t, B w, B x) {
           i32 cw = wp[i];
           if (cw==0) continue;
           B cx = xgetU(x, i);
-          for (usz j = 0; j < cw; j++) r.a[ri++] = inc(cx);
+          for (i64 j = 0; j < cw; j++) r.a[ri++] = inc(cx);
         }
         dec(w); dec(x);
         return withFill(harr_fv(r), xf);

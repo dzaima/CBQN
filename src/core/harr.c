@@ -22,7 +22,7 @@ B toCells(B x) {
     usz cr = rnk(x)-1;
     ShArr* csh = m_shArr(cr);
     usz* xsh = a(x)->sh;
-    for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
+    for (u64 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
     for (; i < cam; i++) {
       Arr* s = slice(inc(x), p);
       arr_shSetI(s, csz, cr, csh);

@@ -148,13 +148,13 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
   i32 depth = repl? -1 : 0;
   Scope* csc = sc;
   while (csc) {
-    for (i32 i = 0; i < csc->varAm; i++) {
+    for (u64 i = 0; i < csc->varAm; i++) {
       i32 nameID = csc->body->varIDs[i];
       B nl = csc->body->nsDesc->nameList;
       vName = vec_add(vName, TI(nl,get)(nl, nameID));
       vDepth = vec_add(vDepth, m_i32(depth));
     }
-    if (csc->ext) for (i32 i = 0; i < csc->ext->varAm; i++) {
+    if (csc->ext) for (u64 i = 0; i < csc->ext->varAm; i++) {
       vName = vec_add(vName, inc(csc->ext->vars[i+csc->ext->varAm]));
       vDepth = vec_add(vDepth, m_i32(depth));
     }
@@ -205,7 +205,7 @@ static inline void load_init() { // very last init function
     /* ⚇⍟⎊         */ 0,1,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
-  for (i32 i = 0; i < rtLen; i++) inc(fruntime[i]);
+  for (u64 i = 0; i < rtLen; i++) inc(fruntime[i]);
   B frtObj = m_caB(rtLen, fruntime);
   
   #ifndef NO_RT
@@ -375,7 +375,7 @@ static B empty_getU(B x, usz n) {
 #endif
 
 static inline void base_init() { // very first init function
-  for (i32 i = 0; i < t_COUNT; i++) {
+  for (u64 i = 0; i < t_COUNT; i++) {
     TIi(i,free)  = def_free;
     TIi(i,visit) = def_visit;
     TIi(i,get)   = def_get;
