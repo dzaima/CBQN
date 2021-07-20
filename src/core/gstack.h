@@ -10,7 +10,7 @@
 extern B* gStack; // points to after end
 extern B* gStackStart;
 extern B* gStackEnd;
-void gsPrint();
+void gsPrint(void);
 
 static void gsReserve(u64 am) {
   #ifdef GS_REALLOC

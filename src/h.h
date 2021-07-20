@@ -144,7 +144,7 @@ static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110............
 #define tag(V, T) b(((u64)(V)) | ftag(T))
 #define taga(V) tag(V, ARR_TAG)
 
-void cbqn_init();
+void cbqn_init(void);
 
 typedef union B {
   u64 u;
@@ -215,13 +215,13 @@ typedef struct Arr {
 
 // memory manager
 typedef void (*V2v)(Value*);
-typedef void (*vfn)();
+typedef void (*vfn)(void);
 
 void gc_add(B x); // add permanent root object
 void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic roots
-void gc_maybeGC(); // gc if that seems necessary
-void gc_forceGC(); // force a gc; who knows what happens if gc is disabled (probably should error)
-void gc_visitRoots();
+void gc_maybeGC(void); // gc if that seems necessary
+void gc_forceGC(void); // force a gc; who knows what happens if gc is disabled (probably should error)
+void gc_visitRoots(void);
 
 // some primitive actions
 static const B bi_N      = b((u64)0x7FF2000000000000ull); // tag(0, TAG_TAG); // make gcc happy
@@ -260,14 +260,14 @@ B bqn_repr(B x); // consumes
 NOINLINE NORETURN void thr(B b);
 NOINLINE NORETURN void thrM(char* s);
 NOINLINE NORETURN void thrF(char* s, ...);
-NOINLINE NORETURN void thrOOM();
-jmp_buf* prepareCatch();
+NOINLINE NORETURN void thrOOM(void);
+jmp_buf* prepareCatch(void);
 #if CATCH_ERRORS
 #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); } /*potentially erroring thing*/ popCatch();`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false
 #endif
-void popCatch();
+void popCatch(void);
 extern B catchMessage;
 
 
@@ -281,7 +281,7 @@ extern B catchMessage;
 #define srnk(X,R) sprnk(v(X),R)
 #define VTY(X,T) assert(isVal(X) && v(X)->type==(T))
 
-void print_vmStack();
+void print_vmStack(void);
 #ifdef DEBUG
   B validate(B x);
   Value* validateP(Value* x);

@@ -453,8 +453,8 @@ B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
 }
 
-B getInternalNS();
-B getMathNS();
+B getInternalNS(void);
+B getMathNS(void);
 
 static B file_nsGen;
 B sys_c1(B t, B x) {

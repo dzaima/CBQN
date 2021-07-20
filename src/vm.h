@@ -168,12 +168,12 @@ static inline void popEnv() {
   envCurr--;
 }
 void vm_pst(Env* s, Env* e);
-void vm_pstLive();
+void vm_pstLive(void);
 void vm_printPos(Comp* comp, i32 bcPos, i64 pos);
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce); // consumes prepend
 NOINLINE void printErrMsg(B msg);
 NOINLINE void unwindEnv(Env* envNew); // envNew==envStart-1 for emptying the env stack
-NOINLINE void unwindCompiler(); // unwind to the env of the invocation of the compiler; UB when not in compiler!
+NOINLINE void unwindCompiler(void); // unwind to the env of the invocation of the compiler; UB when not in compiler!
 
 
 typedef struct FldAlias {

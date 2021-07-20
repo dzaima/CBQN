@@ -333,7 +333,7 @@ B bqn_execFile(B path, B args) { // consumes both
   return bqn_exec(file_chars(inc(path)), path, args);
 }
 
-void rtWrap_print();
+void rtWrap_print(void);
 void bqn_exit(i32 code) {
   rtWrap_print();
   CTR_FOR(CTR_PRINT)
@@ -435,7 +435,7 @@ static inline void base_init() { // very first init function
 }
 
 #define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
-#define F(X) void X##_init();
+#define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
 void cbqn_init() {

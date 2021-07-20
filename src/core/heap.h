@@ -1,4 +1,4 @@
-u64 mm_heapUsed();
+u64 mm_heapUsed(void);
 
 #ifdef HEAP_VERIFY
 
@@ -18,6 +18,6 @@ static bool heapVerify_visitP(void* x) {
   else if(heapVerify_mode==2) if (x==heap_observed) { printf("referee: %p ", heap_curr); print(tag(heap_curr,OBJ_TAG)); putchar('\n'); }
   return true;
 }
-void heapVerify();
+void heapVerify(void);
 
 #endif
