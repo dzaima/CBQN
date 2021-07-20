@@ -582,7 +582,7 @@ Nvm_res m_nvm(Body* body) {
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: if (lGPos) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos) GS_SET(r_CS); ret=true; break;
-      case FAIL: TOPs; IMM(R_A0,off); INV(1,0,i_FAIL); break;
+      case FAIL: TOPs; IMM(R_A0,off); INV(1,0,i_FAIL); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET
