@@ -134,7 +134,7 @@ static B mut_getU(Mut* m, usz ms) {
   switch(m->type) { default: UD;
     case el_i32: return m_i32(m->ai32[ms]);
     case el_c32: return m_c32(m->ac32[ms]);
-    case el_f64: return m_c32(m->af64[ms]);
+    case el_f64: return m_f64(m->af64[ms]);
     case el_B:   return m->aB[ms];
   }
 }

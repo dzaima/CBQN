@@ -204,6 +204,6 @@ static inline void v_setI(Scope* sc, u32 p, B x, bool upd) { // consumes x
   sc->vars[p] = x;
 }
 static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
-  if (RARE(!isVar(s))) return v_setR(pscs, s, x, upd);
-  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
+  if (RARE(!isVar(s))) v_setR(pscs, s, x, upd);
+  else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
 }

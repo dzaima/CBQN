@@ -47,7 +47,7 @@ static i64 isum(B x) { // doesn't consume; may error; TODO error on overflow
     for (usz i = 0; i < xia; i++) r+= p[i];
   } else if (xe==el_f64) {
     f64* p = f64any_ptr(x);
-    for (usz i = 0; i < xia; i++) { if(p[i]!=(f64)p[i]) thrM("Expected integer"); r+= p[i]; }
+    for (usz i = 0; i < xia; i++) { if(p[i]!=(i64)p[i]) thrM("Expected integer"); r+= p[i]; }
   } else {
     BS2B xgetU = TI(x,getU);
     for (usz i = 0; i < xia; i++) r+= o2i64(xgetU(x,i));

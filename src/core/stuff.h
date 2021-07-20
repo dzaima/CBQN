@@ -118,8 +118,6 @@ char* format_pm2(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 B bqn_squeeze(B x); // consumes
-B rtUnder_c1(B f, B g, B x);
-B rtUnder_cw(B f, B g, B w, B x);
 B def_getU(B x, usz n);
 B def_fn_uc1(B t, B o,                B x);
 B def_fn_ucw(B t, B o,           B w, B x);
