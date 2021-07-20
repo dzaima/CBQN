@@ -302,7 +302,7 @@ NOINLINE i32 compareR(B w, B x) {
     rc = CMP(wm, xm);
     rm*= wm<xm? wm : xm;
   }
-  for (int i = 0; i < rm; i++) {
+  for (u64 i = 0; i < (u64)rm; i++) {
     int c = compare(wgetU(w,i), xgetU(x,i));
     if (c!=0) return c;
   }
