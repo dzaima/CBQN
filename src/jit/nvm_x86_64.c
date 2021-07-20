@@ -376,7 +376,7 @@ static OptRes opt(u32* bc0) {
         TSADDA(rbc, sbc, ebc-sbc);
     }
     u64 added = TSSIZE(rbc)-psz;
-    for (i32 i = 0; i < added; i++) TSADD(roff, sbc-bc0);
+    for (u64 i = 0; i < added; i++) TSADD(roff, sbc-bc0);
     #undef A64
     if (ret) break;
     bc = ebc;

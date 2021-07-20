@@ -208,7 +208,7 @@ B slash_c1(B t, B x) {
   if (TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
     while (xia>0 && !xp[xia-1]) xia--;
-    for (i32 i = 0; i < xia; i++) {
+    for (u64 i = 0; i < xia; i++) {
       i32 c = xp[i];
       if (LIKELY(c==0 || c==1)) {
         *rp = i;
@@ -284,8 +284,8 @@ B slash_c2(B t, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i32 cw = wp[i];
           if (cw==0) continue;
-          B cx = xgetU(x, i);
-          for (i64 j = 0; j < cw; j++) r.a[ri++] = inc(cx);
+          B cx = incBy(xgetU(x, i), cw);
+          for (i64 j = 0; j < cw; j++) r.a[ri++] = cx;
         }
         dec(w); dec(x);
         return withFill(harr_fv(r), xf);
@@ -299,8 +299,8 @@ B slash_c2(B t, B w, B x) {
       for (usz i = 0; i < wia; i++) {
         usz c = o2s(wgetU(w, i));
         if (c) {
-          B cx = xgetU(x, i);
-          for (usz j = 0; j < c; j++) r.a[ri++] = inc(cx);
+          B cx = incBy(xgetU(x, i), c);
+          for (usz j = 0; RARE(j < c); j++) *r.a++ = cx;
         }
       }
       dec(w); dec(x);
@@ -316,12 +316,11 @@ B slash_c2(B t, B w, B x) {
       arr_shVec(r,0);
       return taga(r);
     }
-    usz ri = 0;
     if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       i32* rp; B r = m_i32arrv(&rp, xia*wv);
       for (usz i = 0; i < xia; i++) {
-        for (usz j = 0; j < wv; j++) rp[ri++] = xp[i];
+        for (i64 j = 0; j < wv; j++) *rp++ = xp[i];
       }
       dec(x);
       return r;
@@ -330,8 +329,8 @@ B slash_c2(B t, B w, B x) {
       HArr_p r = m_harrUv(xia*wv);
       BS2B xgetU = TI(x,getU);
       for (usz i = 0; i < xia; i++) {
-        B cx = xgetU(x, i);
-        for (usz j = 0; j < wv; j++) r.a[ri++] = inc(cx);
+        B cx = incBy(xgetU(x, i), wv);
+        for (i64 j = 0; j < wv; j++) *r.a++ = cx;
       }
       dec(x);
       return withFill(r.b, xf);

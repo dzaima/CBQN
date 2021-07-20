@@ -75,7 +75,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   }                                                \
   i64 bound[2] = {0,0};                            \
   repeat_bounds(bound, g);                         \
-  u64 min=(u64)-bound[0]; u64 max=(u64)bound[1];   \
+  i64 min=(u64)-bound[0]; i64 max=(u64)bound[1];   \
   TALLOC(B, all, min+max+1);                       \
   B* q = all+min;                                  \
   q[0] = inc(x);                                   \
@@ -86,11 +86,11 @@ B repeat_replace(B g, B* q) { // doesn't consume
     dec(x2);                                       \
     dec(fi);                                       \
   }                                                \
-  for (u64 i = 0; i < max; i++) q[i+1] = inc(x = CN(f, __VA_ARGS__ x)); \
+  for (i64 i = 0; i < max; i++) q[i+1] = inc(x = CN(f, __VA_ARGS__ x)); \
   dec(x);                                          \
   B r = repeat_replace(g, q);                      \
   dec(g);                                          \
-  for (u64 i = 0; i < min+max+1; i++) dec(all[i]); \
+  for (i64 i = 0; i < min+max+1; i++) dec(all[i]); \
   END; TFREE(all);                                 \
   return r;
 

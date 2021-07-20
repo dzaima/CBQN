@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
         args = emptySVec();
       } else {
         HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
-        for (usz j = 0; j < argc-i; j++) {
+        for (i64 j = 0; j < argc-i; j++) {
           ap.a[j] = fromUTF8l(argv[i+j]);
         }
         args = ap.b;

@@ -225,7 +225,7 @@ B rand_range_c2(B t, B w, B x) {
     f64* rp; r = m_f64arrv(&rp, am);
     for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
   } else if (max > I32_MAX) {
-    if (max >= 1ULL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");
+    if (max >= 1LL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");
     f64* rp; r = m_f64arrv(&rp, am);
     for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
   } else {
@@ -281,12 +281,12 @@ B rand_deal_c2(B t, B w, B x) {
     i64 sz = 1;
     while (sz < wi*2) sz*= 2;
     TALLOC(i32, hash, 2*sz); i32* val = hash+1;
-    for (u64 i = 0; i < 2*sz; i++) hash[i] = 0;
+    for (i64 i = 0; i < 2*sz; i++) hash[i] = 0;
     for (i64 i = 0; i < wi; i++) rp[i] = i;
     u64 mask = 2*(sz-1);
     for (i64 i = 0; i < wi; i++) {
       u64 j = wy2u0k(wyrand(&seed), xi-i) + i;
-      if (j<wi) {
+      if (j<(u64)wi) {
         i32 c = rp[j];
         rp[j] = rp[i];
         rp[i] = c;
@@ -294,11 +294,11 @@ B rand_deal_c2(B t, B w, B x) {
         u64 p = 2*j;
         i32 prev = j;
         while (true) {
-          p &= mask;
+          p&= mask;
           i32 h = hash[p];
           if (h==0) { hash[p] = j; break; }
-          if (h==j) { prev = val[p]; break; }
-          p += 2;
+          if ((u64)h==j) { prev = val[p]; break; }
+          p+= 2;
         }
         val[p] = rp[i];
         rp[i] = prev;
@@ -320,7 +320,7 @@ B rand_subset_c2(B t, B w, B x) {
   B r;
   if (wi==xi) { // Only one complete subset; will hang without this
     i32* rp; r = m_i32arrv(&rp, wi);
-    for (u64 i = 0; i < wi; i++) rp[i] = i;
+    for (i64 i = 0; i < wi; i++) rp[i] = i;
     return r;
   }
   RAND_START;
@@ -329,20 +329,20 @@ B rand_subset_c2(B t, B w, B x) {
     TALLOC(u8, set, xi);
     bool invert = wi > xi/2;
     i32 wn = invert ? xi-wi : wi;
-    for (u64 i = 0; i < xi; i++) set[i] = 0;
+    for (i64 i = 0; i < xi; i++) set[i] = 0;
     for (i32 i = xi-wn; i < xi; i++) {
       i32 j = wy2u0k(wyrand(&seed), i+1);
       if (set[j]) j=i;
       set[j] = 1;
     }
     i32* rp; r = m_i32arrv(&rp, wi);
-    if (!invert) { for (u64 i = 0; i < xi; i++) if ( set[i]) *rp++=i; }
-    else         { for (u64 i = 0; i < xi; i++) if (!set[i]) *rp++=i; }
+    if (!invert) { for (i64 i = 0; i < xi; i++) if ( set[i]) *rp++=i; }
+    else         { for (i64 i = 0; i < xi; i++) if (!set[i]) *rp++=i; }
     TFREE(set);
   } else {
     // Sorted "hash" set
     u64 sh = 0;
-    for (u64 xt=xi/4; xt>=wi; xt>>=1) sh++;
+    for (u64 xt=xi/4; xt>=(u64)wi; xt>>=1) sh++;
     u64 sz = ((xi-1)>>sh)+1 + wi;
     TALLOC(i32, hash, sz);
     for (u64 i = 0; i < sz; i++) hash[i] = xi;

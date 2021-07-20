@@ -217,9 +217,9 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     i32 mpsc = 0;
     if (depth==0 && sc && vam > sc->varAm) {
       if (boIA==2) thrM("VM compiler: Full block info must be provided for extending scopes");
-      i32 regAm = sc->varAm;
+      u32 regAm = sc->varAm;
       ScopeExt* oE = sc->ext;
-      if (oE==NULL || vam > regAm + oE->varAm) {
+      if (oE==NULL || vam > regAm+oE->varAm) {
         i32 nSZ = vam - regAm;
         ScopeExt* nE = mm_alloc(fsizeof(ScopeExt, vars, B, nSZ*2), t_scopeExt);
         nE->varAm = nSZ;
@@ -311,7 +311,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       m_nsDesc(body, imm, ty, inc(nameList), biGetU(bodyRepr,2), biGetU(bodyRepr,3));
     } else {
       body->nsDesc = NULL;
-      for (i32 i = 0; i < vam; i++) body->varIDs[i] = -1;
+      for (u64 i = 0; i < vam; i++) body->varIDs[i] = -1;
     }
     
     TSADD(bodies, body);
@@ -697,7 +697,7 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
 static void scope_dec(Scope* sc) {
   i32 varAm = sc->varAm;
   if (sc->refc>1) {
-    usz innerRef = 1;
+    i32 innerRef = 1;
     for (i32 i = 0; i < varAm; i++) {
       B c = sc->vars[i];
       if (isVal(c) && v(c)->refc==1) {
@@ -707,7 +707,7 @@ static void scope_dec(Scope* sc) {
         else if (t==t_md2_block && c(Md2Block,c)->sc==sc) innerRef++;
       }
     }
-    assert(innerRef<=sc->refc);
+    assert(innerRef <= sc->refc);
     if (innerRef==sc->refc) {
       value_free((Value*)sc);
       return;
@@ -958,8 +958,8 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   ce-= srcS;
   ACHR('\n');
   for (i64 i = padStart; i < padEnd; i++) ACHR(' ');
-  for (i32 i = 0; i < cs; i++) ACHR(o2cu(srcGetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
-  for (i32 i = cs; i < ce; i++) ACHR('^');
+  for (u64 i = 0; i < cs; i++) ACHR(o2cu(srcGetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
+  for (u64 i = cs; i < ce; i++) ACHR('^');
   return s;
 }
 

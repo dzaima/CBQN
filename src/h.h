@@ -422,6 +422,10 @@ static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
 }
+static B incBy(B x, i64 am) {
+  if (isVal(VALIDATE(x))) v(x)->refc+= am;
+  return x;
+}
 static void ptr_inc(void* x) { VALIDATEP((Value*)x)->refc++; }
 
 

@@ -22,7 +22,7 @@ static void gsReserve(u64 am) {
       gStackEnd = gStackStart+n;
     }
   #elif DEBUG
-    if (am>gStackEnd-gStack) thrM("Stack overflow");
+    if ((i64)am > gStackEnd-gStack) thrM("Stack overflow");
   #endif
 }
 

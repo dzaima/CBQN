@@ -41,7 +41,7 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
-  assert(nameID<a(cNL)->ia && nameID>=0);
+  assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
     B cName = TI(cNL,getU)(cNL, nameID);
