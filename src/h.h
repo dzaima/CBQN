@@ -187,9 +187,9 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
 
 typedef struct Value {
   i32 refc;  // plain old reference count
-  u8 mmInfo; // bucket size, mark&sweep bits when that's needed; currently unused
+  u8 mmInfo; // bucket size, mark&sweep bits when that's needed
   u8 flags;  // is sorted/a permutation/whatever in the future, currently primitive index for self-hosted runtime
-  u8 type;   // access into ti_*, among generally knowing what type of object this is
+  u8 type;   // used by TI, among generally knowing what type of object this is
   ur extra;  // whatever object-specific stuff. Rank for arrays, id for functions
   #ifdef OBJ_COUNTER
   u64 uid;
