@@ -300,7 +300,7 @@ B slash_c2(B t, B w, B x) {
         usz c = o2s(wgetU(w, i));
         if (c) {
           B cx = incBy(xgetU(x, i), c);
-          for (usz j = 0; RARE(j < c); j++) *r.a++ = cx;
+          for (usz j = 0; RARE(j < c); j++) r.a[ri++] = cx;
         }
       }
       dec(w); dec(x);
