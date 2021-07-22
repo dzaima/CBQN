@@ -1,8 +1,10 @@
 SHELL=/usr/bin/env bash
 CC=clang
+ifeq ($(CC),gcc)
+CCFLAGS=-Wno-parentheses
+else
 CCFLAGS=-Wno-microsoft-anon-tag
-# CC=gcc
-# CCFLAGS=-Wno-parentheses
+endif
 
 CMD=$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions ${CCFLAGS} $(FLAGS) -fPIE -MMD -MP -MF
 
