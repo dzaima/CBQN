@@ -186,6 +186,18 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
   gc_add(load_comp);
 }
 
+
+static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
+static NOINLINE B m_lvB_1(B a               ) { return m_v1(a); }
+static NOINLINE B m_lvB_2(B a, B b          ) { return m_v2(a,b); }
+static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_v3(a,b,c); }
+static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_v4(a,b,c,d); }
+static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
+static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
+static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
+static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
+static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
+
 void load_init() { // very last init function
   comp_currPath = bi_N;
   comp_currArgs = bi_N;
