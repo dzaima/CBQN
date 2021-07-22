@@ -5,6 +5,11 @@
 #include "utils/file.h"
 #include "utils/builtins.h"
 
+#define FOR_INIT(F) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
+#define F(X) void X##_init(void);
+FOR_INIT(F)
+#undef F
+
 u64 mm_heapMax = HEAP_MAX;
 u64 mm_heapAlloc;
 
@@ -181,7 +186,7 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
   gc_add(load_comp);
 }
 
-static inline void load_init() { // very last init function
+void load_init() { // very last init function
   comp_currPath = bi_N;
   comp_currArgs = bi_N;
   comp_currSrc  = bi_N;
@@ -374,7 +379,7 @@ static B empty_getU(B x, usz n) {
 }
 #endif
 
-static inline void base_init() { // very first init function
+void base_init() { // very first init function
   for (u64 i = 0; i < t_COUNT; i++) {
     TIi(i,free)  = def_free;
     TIi(i,visit) = def_visit;
@@ -434,10 +439,6 @@ static inline void base_init() { // very first init function
   #undef FD
 }
 
-#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
-#define F(X) void X##_init(void);
-FOR_INIT(F)
-#undef F
 void cbqn_init() {
   #define F(X) X##_init();
    FOR_INIT(F)

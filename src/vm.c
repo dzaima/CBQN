@@ -119,8 +119,9 @@ void gsPrint() {
   while (c!=gStack) {
     printf("  %d: ", i); fflush(stdout);
     print(*c); fflush(stdout);
-    if (isVal(*c)) printf(", refc=%d", v(*c)->refc); fflush(stdout);
+    if (isVal(*c)) printf(", refc=%d", v(*c)->refc);
     printf("\n");
+    fflush(stdout);
     c++;
     i++;
   }
@@ -163,8 +164,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     bodyAm2 = a(b2)->ia; BS2B b2GetU = TI(b2,getU);
     bodyILen = bodyAm1+bodyAm2;
     TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_;
-    for (i32 i = 0; i < bodyAm1; i++) bodyI[i          ] = o2i(b1GetU(b1, i)); for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
-    for (i32 i = 0; i < bodyAm2; i++) bodyI[i+bodyAm1+1] = o2i(b2GetU(b2, i)); for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
+    for (i32 i = 0; i < bodyAm1; i++) bodyI[i          ] = o2i(b1GetU(b1, i));
+    for (i32 i = 0; i < bodyAm2; i++) bodyI[i+bodyAm1+1] = o2i(b2GetU(b2, i));
+    for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
+    for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
     bodyI[bodyAm1] = bodyI[bodyILen+1] = I32_MAX;
   } else {
     bodyILen = 2;
