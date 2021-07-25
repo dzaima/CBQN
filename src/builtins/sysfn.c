@@ -452,6 +452,19 @@ B delay_c1(B t, B x) {
 B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
 }
+B getLine_c1(B t, B x) {
+  dec(x);
+  char* ln = NULL;
+  size_t gl = 0;
+  i64 read = getline(&ln, &gl, stdin);
+  if (read<=0 || ln[0]==0) {
+    if (ln) free(ln);
+    return m_c32(0);
+  }
+  B r = fromUTF8(ln, strlen(ln)-1);
+  free(ln);
+  return r;
+}
 
 B getInternalNS(void);
 B getMathNS(void);
@@ -468,6 +481,7 @@ B sys_c1(B t, B x) {
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
     else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);
+    else if (eqStr(c, U"getline")) r.a[i] = inc(bi_getLine);
     else if (eqStr(c, U"file")) {
       if(fileNS.u==m_f64(0).u) {
         #define F(X) m_nfn(X##Desc, path_dir(inc(comp_currPath))),
