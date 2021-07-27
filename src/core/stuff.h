@@ -56,6 +56,11 @@ static void arr_shSetI(Arr* x, usz ia, ur r, ShArr* sh) {
   if (r>1) { x->sh = sh->a; ptr_inc(sh); }
   else     { x->sh = &x->ia; }
 }
+static void arr_shSetU(Arr* x, ur r, ShArr* sh) {
+  sprnk(x,r);
+  if (r>1) { x->sh = sh->a;  }
+  else     { x->sh = &x->ia; }
+}
 static void arr_shCopy(Arr* n, B o) { // copy shape,rank,ia from o to n
   assert(isArr(o));
   n->ia = a(o)->ia;

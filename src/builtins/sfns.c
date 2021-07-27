@@ -6,32 +6,184 @@
 
 
 B shape_c1(B t, B x) {
-  if (isAtm(x)) thrM("⥊: deshaping non-array");
-  usz ia = a(x)->ia;
-  if (reusable(x)) {
-    decSh(v(x));
-    arr_shVec(a(x), ia);
-    return x;
+  if (isAtm(x)) {
+    unit:
+    if (isF64(x)) {
+      i32 i = (i32)x.f;
+      if (i == x.f) {
+        i32* rp; B r = m_i32arrv(&rp, 1);
+        rp[0] = i;
+        return r;
+      } else {
+        f64* rp; B r = m_f64arrv(&rp, 1);
+        rp[0] = x.f;
+        return r;
+      }
+    }
+    if (isC32(x)) {
+      u32* rp; B r = m_c32arrv(&rp, 1);
+      rp[0] = o2cu(x);
+      return r;
+    }
+    Arr* ra = m_fillarrp(1);
+    arr_shVec(ra, 1);
+    fillarr_setFill(ra, asFill(inc(x)));
+    fillarr_ptr(ra)[0] = x;
+    return taga(ra);
+  } else {
+    usz ia = a(x)->ia;
+    if (ia==1 && TI(x,elType)<el_B) {
+      B n = TI(x,get)(x,0);
+      dec(x);
+      x = n;
+      goto unit;
+    }
+    if (reusable(x)) {
+      decSh(v(x));
+      arr_shVec(a(x), ia);
+      return x;
+    }
+    Arr* r = TI(x,slice)(x, 0);
+    arr_shVec(r, ia);
+    return taga(r);
   }
-  Arr* r = TI(x,slice)(x, 0);
-  arr_shVec(r, ia);
-  return taga(r);
 }
 B shape_c2(B t, B w, B x) {
-  if (isAtm(x)) { dec(x); dec(w); thrM("⥊: Reshaping non-array"); }
-  if (isAtm(w)) return shape_c1(t, x);
-  BS2B wget = TI(w,get);
-  usz wia = a(w)->ia;
-  if (wia>UR_MAX) thrM("⥊: Result rank too large");
-  ur nr = (ur)wia;
-  usz nia = a(x)->ia;
-  B r; Arr* ra;
-  if (reusable(x)) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
-  else { ra = TI(x,slice)(x, 0); r = taga(ra); }
-  usz* sh = arr_shAllocI(ra, nia, nr);
-  if (sh) for (u32 i = 0; i < nr; i++) sh[i] = o2s(wget(w,i));
+  usz xia = isArr(x)? a(x)->ia : 1;
+  usz nia;
+  bool fill = false;
+  ur nr;
+  ShArr* sh;
+  if (isF64(w)) {
+    nia = o2s(w);
+    nr = 1;
+    sh = NULL;
+  } else {
+    if (isAtm(w)) w = m_atomUnit(w);
+    if (rnk(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
+    if (a(w)->ia>UR_MAX) thrM("⥊: Result rank too large");
+    nr = a(w)->ia;
+    sh = nr<=1? NULL : m_shArr(nr);
+    if (TI(w,elType)==el_i32) {
+      i32* wi = i32any_ptr(w);
+      if (nr>1) for (i32 i = 0; i < nr; i++) sh->a[i] = wi[i];
+      i64 tot = 1;
+      for (i32 i = 0; i < nr; i++) {
+        if (wi[i]<0) thrF("⥊: 𝕨 contained %i", wi[i]);
+        tot*= wi[i];
+        if (tot > USZ_MAX) thrM("⥊: Result too large"); // TODO this (& below) doesn't detect overflows for usz==u64
+      }
+      nia = (usz)tot;
+    } else {
+      BS2B getU = TI(w,getU);
+      i32 unkPos = -1;
+      i32 unkInd;
+      i64 tot = 1;
+      for (i32 i = 0; i < nr; i++) {
+        B c = getU(w, i);
+        if (isF64(c)) {
+          usz v = o2s(c);
+          if (sh) sh->a[i] = v;
+          tot*= v;
+          if (tot > USZ_MAX) thrM("⥊: Result too large");
+        } else {
+          if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+          if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
+          unkPos = i;
+          unkInd = ((i32)v(c)->flags) - 1;
+        }
+      }
+      if (unkPos!=-1) {
+        if (unkInd!=52 & unkInd!=6 & unkInd!=30 & unkInd!=25) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (tot==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
+        i64 div = xia/tot;
+        i64 mod = xia%tot;
+        usz item;
+        if (unkInd == 52) {
+          if (mod!=0) thrM("⥊: Shape must be exact when reshaping with ∘");
+          item = div;
+        } else if (unkInd == 6) {
+          item = div;
+        } else if (unkInd == 30) {
+          item = mod? div+1 : div;
+        } else if (unkInd == 25) {
+          item = mod? div+1 : div;
+          fill = true;
+        } else UD;
+        if (sh) sh->a[unkPos] = item;
+        tot*= item;
+        if (tot > USZ_MAX) thrM("⥊: Result too large");
+        nia = tot;
+      } else nia = tot;
+    }
+  }
   dec(w);
-  return r;
+  
+  B xf;
+  if (isAtm(x)) {
+    xf = asFill(x);
+    // goes to unit
+  } else {
+    if (nia <= xia) {
+      B r; Arr* ra;
+      if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
+      else { ra = TI(x,slice)(x, 0); ra->ia = nia; r = taga(ra); }
+      arr_shSetU(ra, nr, sh);
+      return r;
+    } else {
+      xf = getFillQ(x);
+      if (xia<=1) {
+        if (xia==0) {
+          if (xf.u == bi_noFill.u) thrM("⥊: No fill for empty array");
+          dec(x);
+          x = inc(xf);
+        } else {
+          B n = TI(x,get)(x,0);
+          dec(x);
+          x = n;
+        }
+        goto unit;
+      }
+      
+      MAKE_MUT(m, nia); mut_init(m, TI(x,elType));
+      i64 div = nia/xia;
+      i64 mod = nia%xia;
+      for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
+      if (fill) mut_fill(m, div*xia, xf, mod);
+      else      mut_copyG(m, div*xia, x, 0, mod);
+      dec(x);
+      Arr* ra = mut_fp(m);
+      arr_shSetU(ra, nr, sh);
+      return withFill(taga(ra), xf);
+    }
+  }
+  unit:
+  
+  if (isF64(x)) { decR(xf);
+    i32 n = (i32)x.f;
+    if (n == x.f) {
+      i32* rp; Arr* r = m_i32arrp(&rp, nia); arr_shSetU(r, nr, sh);
+      for (u64 i = 0; i < nia; i++) rp[i] = n;
+      return taga(r);
+    } else {
+      f64* rp; Arr* r = m_f64arrp(&rp, nia); arr_shSetU(r, nr, sh);
+      for (u64 i = 0; i < nia; i++) rp[i] = x.f;
+      return taga(r);
+    }
+  }
+  if (isC32(x)) { decR(xf);
+    u32* rp; Arr* r = m_c32arrp(&rp, nia); arr_shSetU(r, nr, sh);
+    u32 c = o2cu(x);
+    for (u64 i = 0; i < nia; i++) rp[i] = c;
+    return taga(r);
+  }
+  Arr* r = m_fillarrp(nia); r->ia=nia; arr_shSetU(r, nr, sh);
+  B* rp = fillarr_ptr(r);
+  if (nia) incBy(x, nia-1);
+  else dec(x);
+  for (u64 i = 0; i < nia; i++) rp[i] = x;
+  fillarr_setFill(r, xf);
+  return taga(r);
 }
 
 extern B rt_pick;

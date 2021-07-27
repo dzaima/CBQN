@@ -22,7 +22,7 @@ Esc←{
   ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩        # Insert \
 }
 
-OStr ← "m_str32(U"""∾Esc∾""")"˙   # A BQN string
+OStr ← "m_str32(U"""∾Esc∾""")"˙  # A BQN string
 OChr ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
 ONum ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾F∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
 OAny ← ≡◶⟨@⊸≤◶ONum‿OChr, OStr, ⊑⟩
