@@ -55,6 +55,9 @@ int main(int argc, char* argv[]) {
   #endif
   bool startREPL = argc==1;
   bool silentREPL = false;
+  #ifdef PERF_TEST
+    silentREPL = true;
+  #endif
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
@@ -171,13 +174,17 @@ int main(int argc, char* argv[]) {
       #endif
       ptr_dec(block);
       
-      #if FORMATTER
-      B resFmt = bqn_fmt(res);
-      printRaw(resFmt); dec(resFmt);
-      putchar('\n');
+      #ifndef PERF_TEST
+        #if FORMATTER
+          B resFmt = bqn_fmt(res);
+          printRaw(resFmt); dec(resFmt);
+          putchar('\n');
+        #else
+          print(res); putchar('\n'); fflush(stdout);
+          dec(res);
+        #endif
       #else
-      print(res); putchar('\n'); fflush(stdout);
-      dec(res);
+        dec(res);
       #endif
       
       #ifdef HEAP_VERIFY
