@@ -35,10 +35,10 @@ B nfn_name(B x) { VTY(x, t_nfn);
   return inc(c(NFnDesc,TI(nfn_list,getU)(nfn_list,c(NFn,x)->id))->name);
 }
 
-void nfn_free(Value* x) { dec(((NFn*)x)->obj); }
+DEF_FREE(nfn) { dec(((NFn*)x)->obj); }
 void nfn_visit(Value* x) { mm_visit(((NFn*)x)->obj); }
 void nfn_print(B x) { printRaw(c(NFnDesc,TI(nfn_list,getU)(nfn_list,c(NFn,x)->id))->name); }
-void nfnDesc_free(Value* x) { err("nfnDesc shouldn't be freed!"); }
+DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(B x) { printf("(native function description)"); }
 
@@ -47,7 +47,8 @@ void nfn_gcFn() {
 }
 void nfn_init() {
   nfn_list = emptyHVec();
-  TIi(t_nfn,free)  = nfn_free;  TIi(t_nfnDesc,free)  = nfnDesc_free;
+  TIi(t_nfn,freeO) = nfn_freeO; TIi(t_nfnDesc,freeO) = nfnDesc_freeO;
+  TIi(t_nfn,freeF) = nfn_freeF; TIi(t_nfnDesc,freeF) = nfnDesc_freeF;
   TIi(t_nfn,visit) = nfn_visit; TIi(t_nfnDesc,visit) = nfnDesc_visit;
   TIi(t_nfn,print) = nfn_print; TIi(t_nfnDesc,print) = nfnDesc_print;
   gc_addFn(nfn_gcFn);

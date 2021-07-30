@@ -17,14 +17,14 @@ static Arr* i32slice_slice(B x, usz s) { Arr* r = m_i32slice(inc(c(Slice,x)->p),
 
 static B i32arr_get  (B x, usz n) { VTY(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
 static B i32slice_get(B x, usz n) { VTY(x,t_i32slice); return m_i32(c(I32Slice,x)->a[n]); }
-static void i32arr_free(Value* x) { decSh(x); }
 static bool i32arr_canStore(B x) { return q_i32(x); }
 
 void i32arr_init() {
   TIi(t_i32arr,get)   = i32arr_get;   TIi(t_i32slice,get)   = i32slice_get;
   TIi(t_i32arr,getU)  = i32arr_get;   TIi(t_i32slice,getU)  = i32slice_get;
   TIi(t_i32arr,slice) = i32arr_slice; TIi(t_i32slice,slice) = i32slice_slice;
-  TIi(t_i32arr,free)  = i32arr_free;  TIi(t_i32slice,free)  =    slice_free;
+  TIi(t_i32arr,freeO) = tyarr_freeO;  TIi(t_i32slice,freeO) =    slice_freeO;
+  TIi(t_i32arr,freeF) = tyarr_freeF;  TIi(t_i32slice,freeF) =    slice_freeF;
   TIi(t_i32arr,visit) = noop_visit;   TIi(t_i32slice,visit) =    slice_visit;
   TIi(t_i32arr,print) =    arr_print; TIi(t_i32slice,print) = arr_print;
   TIi(t_i32arr,isArr) = true;         TIi(t_i32slice,isArr) = true;

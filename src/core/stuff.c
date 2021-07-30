@@ -401,7 +401,10 @@ u64 depth(B x) { // doesn't consume
   }
   return r+1;
 }
-void slice_free(Value* x) { dec(((Slice*)x)->p); decSh(x); }
+void tyarr_freeO(Value* x) { decSh(x); }
+void slice_freeO(Value* x) { dec(((Slice*)x)->p); decSh(x); }
+void tyarr_freeF(Value* x) { tyarr_freeO(x); mm_free(x); }
+void slice_freeF(Value* x) { slice_freeO(x); mm_free(x); }
 void slice_visit(Value* x) { mm_visit(((Slice*)x)->p); }
 void slice_print(B x) { arr_print(x); }
 

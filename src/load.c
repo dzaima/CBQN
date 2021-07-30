@@ -366,7 +366,7 @@ static void freed_visit(Value* x) {
 }
 static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
-static void def_free(Value* x) { }
+DEF_FREE(def) { }
 static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
 static void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
@@ -393,7 +393,8 @@ static B empty_getU(B x, usz n) {
 
 void base_init() { // very first init function
   for (u64 i = 0; i < t_COUNT; i++) {
-    TIi(i,free)  = def_free;
+    TIi(i,freeO)  = def_freeO;
+    TIi(i,freeF)  = def_freeF;
     TIi(i,visit) = def_visit;
     TIi(i,get)   = def_get;
     TIi(i,getU)  = def_getU;
@@ -414,8 +415,8 @@ void base_init() { // very first init function
     TIi(i,m2_uc1) = def_m2_uc1;
     TIi(i,m2_ucw) = def_m2_ucw;
   }
-  TIi(t_empty,free) = empty_free;
-  TIi(t_freed,free) = def_free;
+  TIi(t_empty,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
+  TIi(t_empty,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
   TIi(t_freed,visit) = freed_visit;
   #ifdef DONT_FREE
     TIi(t_empty,get) = empty_get;
@@ -423,7 +424,8 @@ void base_init() { // very first init function
   #endif
   TIi(t_shape,visit) = noop_visit;
   TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
-  TIi(t_funBI,free)  = TIi(t_md1BI,free)  = TIi(t_md2BI,free)  = builtin_free;
+  TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
+  TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
   #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }

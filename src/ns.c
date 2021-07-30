@@ -104,17 +104,17 @@ B ns_nameList(NSDesc* d) {
 
 
 
-void ns_free(Value* x) {
+DEF_FREE(ns) {
   NS* c = (NS*)x;
   ptr_decR(c->desc);
   ptr_decR(c->sc);
 }
-void ns_visit(Value* x) {
+static void ns_visit(Value* x) {
   NS* c = (NS*)x;
   mm_visitP(c->desc);
   mm_visitP(c->sc);
 }
-void ns_print(B x) {
+static void ns_print(B x) {
   putchar('{');
   NSDesc* desc = c(NS,x)->desc;
   Scope* sc = c(NS,x)->sc;
@@ -134,20 +134,15 @@ void ns_print(B x) {
   putchar('}');
 }
 
-void nsDesc_free(Value* x) {
-  decR(((NSDesc*)x)->nameList);
-}
-void nsDesc_visit(Value* x) {
-  mm_visit(((NSDesc*)x)->nameList);
-}
-void nsDesc_print(B x) {
-  printf("(namespace description)");
-}
+DEF_FREE(nsDesc) { decR(((NSDesc*)x)->nameList); }
+static void nsDesc_visit(Value* x) { mm_visit(((NSDesc*)x)->nameList); }
+static void nsDesc_print(B x) { printf("(namespace description)"); }
 
 
 
 void ns_init() {
-  TIi(t_ns,free)  = ns_free;  TIi(t_nsDesc,free)  = nsDesc_free;
+  TIi(t_ns,freeO) = ns_freeO; TIi(t_nsDesc,freeO) = nsDesc_freeO;
+  TIi(t_ns,freeF) = ns_freeF; TIi(t_nsDesc,freeF) = nsDesc_freeF;
   TIi(t_ns,visit) = ns_visit; TIi(t_nsDesc,visit) = nsDesc_visit;
   TIi(t_ns,print) = ns_print; TIi(t_nsDesc,print) = nsDesc_print;
 }

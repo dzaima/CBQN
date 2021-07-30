@@ -104,7 +104,7 @@ static B harr_get   (B x, usz n) { VTY(x,t_harr  ); return inc(c(HArr  ,x)->a[n]
 static B hslice_get (B x, usz n) { VTY(x,t_hslice); return inc(c(HSlice,x)->a[n]); }
 static B harr_getU  (B x, usz n) { VTY(x,t_harr  ); return     c(HArr  ,x)->a[n] ; }
 static B hslice_getU(B x, usz n) { VTY(x,t_hslice); return     c(HSlice,x)->a[n] ; }
-static void harr_free(Value* x) {
+DEF_FREE(harr) {
   decSh(x);
   B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
   usz ia = ((Arr*)x)->ia;
@@ -118,7 +118,7 @@ static bool harr_canStore(B x) { return true; }
 
 
 
-static void harrP_free(Value* x) { assert(x->type==t_harrPartial|x->type==t_freed);
+DEF_FREE(harrP) { assert(x->type==t_harrPartial|x->type==t_freed);
   assert(prnk(x)>1? true : ((Arr*)x)->sh!=&((Arr*)x)->ia);
   B* p   =  ((HArr*)x)->a;
   usz am = *((HArr*)x)->sh;
@@ -149,7 +149,8 @@ void harr_init() {
   TIi(t_harr,get)   = harr_get;   TIi(t_hslice,get)   = hslice_get;   TIi(t_harrPartial,get)   = harrP_get;
   TIi(t_harr,getU)  = harr_getU;  TIi(t_hslice,getU)  = hslice_getU;  TIi(t_harrPartial,getU)  = harrP_get;
   TIi(t_harr,slice) = harr_slice; TIi(t_hslice,slice) = hslice_slice;
-  TIi(t_harr,free)  = harr_free;  TIi(t_hslice,free)  =  slice_free;  TIi(t_harrPartial,free)  = harrP_free;
+  TIi(t_harr,freeO) = harr_freeO; TIi(t_hslice,freeO) =  slice_freeO; TIi(t_harrPartial,freeO) = harrP_freeO;
+  TIi(t_harr,freeF) = harr_freeF; TIi(t_hslice,freeF) =  slice_freeF; TIi(t_harrPartial,freeF) = harrP_freeF;
   TIi(t_harr,visit) = harr_visit; TIi(t_hslice,visit) =  slice_visit; TIi(t_harrPartial,visit) = harrP_visit;
   TIi(t_harr,print) =  arr_print; TIi(t_hslice,print) = arr_print;    TIi(t_harrPartial,print) = harrP_print;
   TIi(t_harr,isArr) = true;       TIi(t_hslice,isArr) = true;

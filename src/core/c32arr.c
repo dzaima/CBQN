@@ -30,14 +30,16 @@ static Arr* c32slice_slice(B x, usz s) { Arr* r = m_c32slice(inc(c(Slice,x)->p),
 
 static B c32arr_get  (B x, usz n) { VTY(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
 static B c32slice_get(B x, usz n) { VTY(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
-static void c32arr_free(Value* x) { decSh(x); }
 static bool c32arr_canStore(B x) { return isC32(x); }
+
+
 
 void c32arr_init() {
   TIi(t_c32arr,get)   = c32arr_get;   TIi(t_c32slice,get)   = c32slice_get;
   TIi(t_c32arr,getU)  = c32arr_get;   TIi(t_c32slice,getU)  = c32slice_get;
   TIi(t_c32arr,slice) = c32arr_slice; TIi(t_c32slice,slice) = c32slice_slice;
-  TIi(t_c32arr,free)  = c32arr_free;  TIi(t_c32slice,free)  =    slice_free;
+  TIi(t_c32arr,freeO) = tyarr_freeO;  TIi(t_c32slice,freeO) =    slice_freeO;
+  TIi(t_c32arr,freeF) = tyarr_freeF;  TIi(t_c32slice,freeF) =    slice_freeF;
   TIi(t_c32arr,visit) = noop_visit;   TIi(t_c32slice,visit) =    slice_visit;
   TIi(t_c32arr,print) =    arr_print; TIi(t_c32slice,print) = arr_print;
   TIi(t_c32arr,isArr) = true;         TIi(t_c32slice,isArr) = true;

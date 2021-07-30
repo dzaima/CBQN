@@ -45,7 +45,7 @@ static B fillarr_get   (B x, usz n) { VTY(x,t_fillarr  ); return inc(c(FillArr  
 static B fillslice_get (B x, usz n) { VTY(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
 static B fillarr_getU  (B x, usz n) { VTY(x,t_fillarr  ); return     c(FillArr  ,x)->a[n] ; }
 static B fillslice_getU(B x, usz n) { VTY(x,t_fillslice); return     c(FillSlice,x)->a[n] ; }
-static void fillarr_free(Value* x) {
+DEF_FREE(fillarr) {
   decSh(x);
   B* p = ((FillArr*)x)->a;
   dec(((FillArr*)x)->fill);
@@ -63,7 +63,8 @@ void fillarr_init() {
   TIi(t_fillarr,get)   = fillarr_get;   TIi(t_fillslice,get)   = fillslice_get;
   TIi(t_fillarr,getU)  = fillarr_getU;  TIi(t_fillslice,getU)  = fillslice_getU;
   TIi(t_fillarr,slice) = fillarr_slice; TIi(t_fillslice,slice) = fillslice_slice;
-  TIi(t_fillarr,free)  = fillarr_free;  TIi(t_fillslice,free)  =     slice_free;
+  TIi(t_fillarr,freeO) = fillarr_freeO; TIi(t_fillslice,freeO) =     slice_freeO;
+  TIi(t_fillarr,freeF) = fillarr_freeF; TIi(t_fillslice,freeF) =     slice_freeF;
   TIi(t_fillarr,visit) = fillarr_visit; TIi(t_fillslice,visit) =     slice_visit;
   TIi(t_fillarr,print) =     arr_print; TIi(t_fillslice,print) = arr_print;
   TIi(t_fillarr,isArr) = true;          TIi(t_fillslice,isArr) = true;

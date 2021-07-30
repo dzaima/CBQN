@@ -346,7 +346,8 @@ typedef struct Slice {
   struct Arr;
   B p;
 } Slice;
-void slice_free(Value* x);
+void tyarr_freeO(Value* x); void tyarr_freeF(Value* x);
+void slice_freeO(Value* x); void slice_freeF(Value* x);
 void slice_visit(Value* x);
 void slice_print(B x);
 
@@ -364,7 +365,7 @@ typedef B (* BBBBB2B)(B, B, B, B, B);
 typedef B (*BBBBBB2B)(B, B, B, B, B, B);
 
 #define FOR_TI(F) \
-  F(V2v, free)   /* expects refc==0, type may be cleared to t_empty for garbage collection */ \
+  F(V2v, freeF)  /* expects refc==0, includes mm_free */ \
   F(BS2B, get)   /* increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen */ \
   F(BS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
   F(BB2B,  m1_d) /* consume all args; (m, f)    */ \
@@ -384,6 +385,7 @@ typedef B (*BBBBBB2B)(B, B, B, B, B, B);
   \
   F(B2v, print) /* doesn't consume */ \
   F(V2v, visit) /* call mm_visit for all referents */ \
+  F(V2v, freeO) /* like freeF, but doesn't call mm_free for GC to be able to clear cycles */ \
   F(B2B, decompose) /* consumes; must return a HArr */ \
   F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
   F(bool, arrD1) /* is always an array with depth 1 */ \
@@ -401,9 +403,10 @@ static void mm_free(Value* x);
 
 // refcount
 static bool reusable(B x) { return v(x)->refc==1; }
+#define DEF_FREE(TY) static inline void TY##_freeO(Value* x); static void TY##_freeF(Value* x) { TY##_freeO(x); mm_free(x); } static inline void TY##_freeO(Value* x)
 static inline void value_free(Value* x) {
-  TIv(x,free)(x);
-  mm_free(x);
+  // TIv(x,freeO)(x); mm_free(x);
+  TIv(x,freeF)(x);
 }
 void value_freeR(Value* x);
 static void dec(B x) {
