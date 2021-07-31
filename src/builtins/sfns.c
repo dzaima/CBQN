@@ -159,7 +159,7 @@ B shape_c2(B t, B w, B x) {
   }
   unit:
   
-  if (isF64(x)) { decR(xf);
+  if (isF64(x)) { decA(xf);
     i32 n = (i32)x.f;
     if (n == x.f) {
       i32* rp; Arr* r = m_i32arrp(&rp, nia); arr_shSetU(r, nr, sh);
@@ -171,7 +171,7 @@ B shape_c2(B t, B w, B x) {
       return taga(r);
     }
   }
-  if (isC32(x)) { decR(xf);
+  if (isC32(x)) { decA(xf);
     u32* rp; Arr* r = m_c32arrp(&rp, nia); arr_shSetU(r, nr, sh);
     u32 c = o2cu(x);
     for (u64 i = 0; i < nia; i++) rp[i] = c;
@@ -536,7 +536,7 @@ B join_c1(B t, B x) {
     if (xia==0) {
       B xf = getFillE(x);
       if (isAtm(xf)) {
-        decR(xf);
+        decA(xf);
         if (!PROPER_FILLS) {
           B xfq = getFillR(x);
           bool no = noFill(xfq);

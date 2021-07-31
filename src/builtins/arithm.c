@@ -54,8 +54,8 @@ B  atan_c1(B t, B x) { if (isF64(x)) return m_f64( atan(x.f)); P1( atan); thrM("
 #undef P1
 
 B lt_c1(B t, B x) { return m_unit(x); }
-B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); decR(x); return r; }
-B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); decR(x); return r; }
+B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); dec(x); return r; }
+B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); dec(x); return r; }
 
 
 static B mathNS;

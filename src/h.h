@@ -421,6 +421,8 @@ static void decR(B x) {
   Value* vx = v(x);
   if(!--vx->refc) value_freeR(vx);
 }
+void decA_rare(B x);
+static void decA(B x) { if (RARE(isVal(x))) decA_rare(x); } // decrement what's likely an atom
 static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;

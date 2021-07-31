@@ -107,7 +107,7 @@ B ns_nameList(NSDesc* d) {
 DEF_FREE(ns) {
   NS* c = (NS*)x;
   ptr_decR(c->desc);
-  ptr_decR(c->sc);
+  ptr_dec(c->sc);
 }
 static void ns_visit(Value* x) {
   NS* c = (NS*)x;

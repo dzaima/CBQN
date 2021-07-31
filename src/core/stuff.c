@@ -24,6 +24,7 @@ NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
   return inc(VALIDATE(f));
 }
 NOINLINE void value_freeR(Value* x) { value_free(x); }
+NOINLINE void decA_rare(B x) { dec(x); }
 void noop_visit(Value* x) { }
 NOINLINE B c1_invalid(B f,      B x) { thrM("This function can't be called monadically"); }
 NOINLINE B c2_invalid(B f, B w, B x) { thrM("This function can't be called dyadically"); }

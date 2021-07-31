@@ -805,9 +805,9 @@ DEF_FREE(block) {
   for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
 DEF_FREE(comp) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); }
-DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
-DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
-DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_decR(c->sc); ptr_decR(c->bl); }
+DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
+DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
+DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(alias) { dec(((FldAlias*)x)->obj); }
 DEF_FREE(bBlks) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
 DEF_FREE(scExt) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) dec(c->vars[i]); }
