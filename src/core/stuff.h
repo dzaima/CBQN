@@ -23,8 +23,7 @@ typedef struct ShArr {
 } ShArr;
 static ShArr* shObj (B x) { return RFLD(a(x)->sh, ShArr, a); }
 static ShArr* shObjP(Value* x) { return RFLD(((Arr*)x)->sh, ShArr, a); }
-void decShR(Value* x);
-static void decSh(Value* x) { if (RARE(prnk(x)>1)) decShR(x); }
+static void decSh(Value* x) { if (RARE(prnk(x)>1)) ptr_dec(shObjP(x));}
 
 // some array stuff
 

@@ -50,11 +50,6 @@ B def_m2_uc1(B t, B o, B f, B g,      B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); 
 B def_m2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
 B def_decompose(B x) { return m_v2(m_i32(isCallable(x)? 0 : -1),x); }
 
-
-void decShR(Value* x) {
-  ptr_dec(shObjP(x));
-}
-
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
