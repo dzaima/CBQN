@@ -24,8 +24,8 @@ B md2D_c1(B t,      B x) { return c(Md2,c(Md2D, t)->m2)->c1(t,    x); }
 B md2D_c2(B t, B w, B x) { return c(Md2,c(Md2D, t)->m2)->c2(t, w, x); }
 B tr2D_c1(B t,      B x) { return c1(c(Atop,t)->g, c1(c(Atop,t)->h,    x)); }
 B tr2D_c2(B t, B w, B x) { return c1(c(Atop,t)->g, c2(c(Atop,t)->h, w, x)); }
-B fork_c1(B t,      B x) { B g=c1(c(Fork,t)->h,         inc(x)); return c2(c(Fork,t)->g, c1(c(Fork,t)->f,    x), g); }
-B fork_c2(B t, B w, B x) { B g=c2(c(Fork,t)->h, inc(w), inc(x)); return c2(c(Fork,t)->g, c2(c(Fork,t)->f, w, x), g); }
+B fork_c1(B t,      B x) { B g=c1(c(Fork,t)->h,         inc(x)); return c2(c(Fork,t)->g, c1i(c(Fork,t)->f,    x), g); }
+B fork_c2(B t, B w, B x) { B g=c2(c(Fork,t)->h, inc(w), inc(x)); return c2(c(Fork,t)->g, c2i(c(Fork,t)->f, w, x), g); }
 B md2H_c1(B d,      B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
 B md2H_c2(B d, B w, B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
 

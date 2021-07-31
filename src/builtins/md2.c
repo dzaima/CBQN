@@ -98,10 +98,10 @@ B repeat_c1(B d,      B x) { REPEAT_T(c1,{}              ); }
 B repeat_c2(B d, B w, B x) { REPEAT_T(c2,dec(w), inc(w), ); }
 #undef REPEAT_T
 
-B before_c1(B d,      B x) { return c2(c(Md2D,d)->g, c1(c(Md2D,d)->f, inc(x)), x); }
-B before_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, c1(c(Md2D,d)->f,     w ), x); }
-B after_c1(B d,      B x) { return c2(c(Md2D,d)->f, x, c1(c(Md2D,d)->g, inc(x))); }
-B after_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w, c1(c(Md2D,d)->g,     x )); }
+B before_c1(B d,      B x) { return c2(c(Md2D,d)->g, c1i(c(Md2D,d)->f, inc(x)), x); }
+B before_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, c1i(c(Md2D,d)->f,     w ), x); }
+B after_c1(B d,      B x) { return c2(c(Md2D,d)->f, x, c1i(c(Md2D,d)->g, inc(x))); }
+B after_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w, c1i(c(Md2D,d)->g,     x )); }
 B atop_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }
 B atop_c2(B d, B w, B x) { return c1(c(Md2D,d)->f, c2(c(Md2D,d)->g, w, x)); }
 B over_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }

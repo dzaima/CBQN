@@ -452,6 +452,19 @@ static B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
   return c2_rare(f, w, x);
 }
+// like c1/c2, but with less overhead on non-functions
+static B c1i(B f, B x) {
+  if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
+  dec(x);
+  if (isMd(f)) thrM("Calling a modifier");
+  return inc(VALIDATE(f));
+}
+static B c2i(B f, B w, B x) {
+  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
+  dec(w); dec(x);
+  if (isMd(f)) thrM("Calling a modifier");
+  return inc(VALIDATE(f));
+}
 
 
 typedef struct Md1 {
