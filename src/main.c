@@ -1,6 +1,7 @@
 #include "core.h"
 #include "vm.h"
 #include "utils/utf.h"
+#include "utils/file.h"
 
 static B replPath;
 static Scope* gsc;
@@ -55,9 +56,6 @@ int main(int argc, char* argv[]) {
   #endif
   bool startREPL = argc==1;
   bool silentREPL = false;
-  #ifdef PERF_TEST
-    silentREPL = true;
-  #endif
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
@@ -117,6 +115,17 @@ int main(int argc, char* argv[]) {
               mm_heapMax = am*1024*1024;
               break;
             }
+            #ifdef PERF_TEST
+            case 'R': { repl_init(); REQARG(R);
+              B path = fromUTF8l(argv[i++]);
+              B lines = file_lines(path);
+              usz ia = a(lines)->ia;
+              BS2B lget = TI(lines,get);
+              for (u64 i = 0; i < ia; i++) {
+                dec(gsc_exec_inline(lget(lines, i), inc(replPath), emptySVec()));
+              }
+            }
+            #endif
             case 'r': { startREPL = true;                    break; }
             case 's': { startREPL = true; silentREPL = true; break; }
           }
@@ -158,7 +167,23 @@ int main(int argc, char* argv[]) {
       if (!silentREPL) printf("   ");
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0 || ln[0]==10) { if(!silentREPL) putchar('\n'); break; }
-      Block* block = bqn_compSc(fromUTF8(ln, strlen(ln)), inc(replPath), emptySVec(), gsc, true);
+      B code;
+      bool output;
+      if (ln[0] == ')') {
+        if (ln[1]=='e'&ln[2]=='x'&ln[3]==' ') {
+          B path = fromUTF8(ln+4, strlen(ln+4)-1);
+          code = file_chars(path);
+          output = false;
+        } else {
+          printf("Unknown REPL command\n");
+          free(ln);
+          continue;
+        }
+      } else {
+        code = fromUTF8(ln, strlen(ln));
+        output = true;
+      }
+      Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
       free(ln);
       
       ptr_dec(gsc->body); ptr_inc(block->bodies[0]);
@@ -174,7 +199,7 @@ int main(int argc, char* argv[]) {
       #endif
       ptr_dec(block);
       
-      #ifndef PERF_TEST
+      if (output) {
         #if FORMATTER
           B resFmt = bqn_fmt(res);
           printRaw(resFmt); dec(resFmt);
@@ -183,9 +208,7 @@ int main(int argc, char* argv[]) {
           print(res); putchar('\n'); fflush(stdout);
           dec(res);
         #endif
-      #else
-        dec(res);
-      #endif
+      } else dec(res);
       
       #ifdef HEAP_VERIFY
         heapVerify();
