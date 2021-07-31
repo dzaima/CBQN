@@ -113,9 +113,9 @@ B withFill(B x, B fill) { // consumes both
   u8 xt = v(x)->type;
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
-    case t_f64arr : case t_f64slice:
-    case t_i32arr : case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
-    case t_c32arr : case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
+    case t_f64arr: case t_f64slice:
+    case t_i32arr: case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
+    case t_c32arr: case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(c(FillArr,c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {
@@ -205,9 +205,25 @@ B withFill(B x, B fill) { // consumes both
   FillArr* r = mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
   arr_shCopy((Arr*)r, x);
   r->fill = fill;
-  B* a = r->a;
-  BS2B xget = TI(x,get);
-  for (usz i = 0; i < ia; i++) a[i] = xget(x,i);
-  dec(x);
-  return taga(r);
+  if (xt==t_harr | xt==t_hslice) {
+    if (xt==t_harr && v(x)->refc==1) {
+      B* xp = harr_ptr(x);
+      B* rp = r->a;
+      memcpy(rp, xp, ia*sizeof(B));
+      decSh(v(x)); mm_free(v(x)); // manually free x so that refcounting is skipped
+    } else {
+      B* xp = hany_ptr(x);
+      B* rp = r->a;
+      memcpy(rp, xp, ia*sizeof(B));
+      for (usz i = 0; i < ia; i++) inc(rp[i]);
+      dec(x);
+    }
+    return taga(r);
+  } else {
+    B* rp = r->a;
+    BS2B xget = TI(x,get);
+    for (usz i = 0; i < ia; i++) rp[i] = xget(x,i);
+    dec(x);
+    return taga(r);
+  }
 }

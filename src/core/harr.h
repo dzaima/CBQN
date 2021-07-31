@@ -90,6 +90,7 @@ static B m_hunit(B x) {
 
 
 static B* harr_ptr(B x) { VTY(x,t_harr); return c(HArr,x)->a; }
+static B* hany_ptr(B x) { return v(x)->type==t_hslice? c(HSlice,x)->a : harr_ptr(x); }
 HArr* toHArr(B x);
 B m_caB(usz ia, B* a);
 
