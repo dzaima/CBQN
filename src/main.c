@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
               for (u64 i = 0; i < ia; i++) {
                 dec(gsc_exec_inline(lget(lines, i), inc(replPath), emptySVec()));
               }
+              break;
             }
             #endif
             case 'r': { startREPL = true;                    break; }
