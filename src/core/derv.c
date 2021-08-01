@@ -31,10 +31,19 @@ B fork_c1(B t, B x) {
     B hr = c1(h, inc(x));
     return c2(c(Fork,t)->g, c(Fun,f)->c1(f,x), hr);
   } else {
-    return c2(c(Fork,t)->g, inc(f), c1(h, x));
+    return c2(c(Fork,t)->g, inc(f), c1(h,x));
   }
 }
-B fork_c2(B t, B w, B x) { B g=c2(c(Fork,t)->h, inc(w), inc(x)); return c2(c(Fork,t)->g, c2i(c(Fork,t)->f, w, x), g); }
+B fork_c2(B t, B w, B x) {
+  B f = c(Fork,t)->f; errMd(f);
+  B h = c(Fork,t)->h;
+  if (isFun(f)) {
+    B hr = c2(h, inc(w), inc(x));
+    return c2(c(Fork,t)->g, c(Fun,f)->c2(f,w,x), hr);
+  } else {
+    return c2(c(Fork,t)->g, inc(f), c2(h,w,x));
+  }
+}
 B md2H_c1(B d,      B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
 B md2H_c2(B d, B w, B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
 
