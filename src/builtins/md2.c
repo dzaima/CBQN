@@ -98,10 +98,11 @@ B repeat_c1(B d,      B x) { REPEAT_T(c1,{}              ); }
 B repeat_c2(B d, B w, B x) { REPEAT_T(c2,dec(w), inc(w), ); }
 #undef REPEAT_T
 
-B before_c1(B d,      B x) { return c2(c(Md2D,d)->g, c1i(c(Md2D,d)->f, inc(x)), x); }
-B before_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, c1i(c(Md2D,d)->f,     w ), x); }
-B after_c1(B d,      B x) { return c2(c(Md2D,d)->f, x, c1i(c(Md2D,d)->g, inc(x))); }
-B after_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w, c1i(c(Md2D,d)->g,     x )); }
+
+B before_c1(B d,      B x) { return c2(c(Md2D,d)->g, c1iX(c(Md2D,d)->f, x), x); }
+B before_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, c1i (c(Md2D,d)->f, w), x); }
+B after_c1(B d,      B x) { return c2(c(Md2D,d)->f, x, c1iX(c(Md2D,d)->g, x)); }
+B after_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w, c1i (c(Md2D,d)->g, x)); }
 B atop_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }
 B atop_c2(B d, B w, B x) { return c1(c(Md2D,d)->f, c2(c(Md2D,d)->g, w, x)); }
 B over_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }
@@ -109,12 +110,12 @@ B over_c2(B d, B w, B x) { B xr=c1(c(Md2D,d)->g, x); return c2(c(Md2D,d)->f, c1(
 
 B cond_c1(B d, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c1(c(Md2D,d)->f, inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+  usz fr = WRAP(o2i64(c1iX(c(Md2D,d)->f, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c1(TI(g,getU)(g, fr), x);
 }
 B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c2(c(Md2D,d)->f, inc(w), inc(x))), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+  usz fr = WRAP(o2i64(c2iWX(c(Md2D,d)->f, w, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c2(TI(g,getU)(g, fr), w, x);
 }
 
