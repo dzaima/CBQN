@@ -344,7 +344,7 @@ static bool q_f64(B x) { return isF64(x) || isI32(x); }
 
 typedef struct Slice {
   struct Arr;
-  B p;
+  Arr* p;
 } Slice;
 void tyarr_freeO(Value* x); void tyarr_freeF(Value* x);
 void slice_freeO(Value* x); void slice_freeF(Value* x);

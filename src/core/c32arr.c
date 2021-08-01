@@ -19,14 +19,14 @@ B m_str32(u32* s) {
   return r;
 }
 
-static Arr* m_c32slice(B p, u32* ptr) {
+static Arr* m_c32slice(Arr* p, u32* ptr) {
   C32Slice* r = mm_alloc(sizeof(C32Slice), t_c32slice);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* c32arr_slice  (B x, usz s) { return   m_c32slice(x                 , c(C32Arr  ,x)->a+s); }
-static Arr* c32slice_slice(B x, usz s) { Arr* r = m_c32slice(inc(c(Slice,x)->p), c(C32Slice,x)->a+s); dec(x); return r; }
+static Arr* c32arr_slice  (B x, usz s) { return m_c32slice(a(x), c(C32Arr,x)->a+s); }
+static Arr* c32slice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_c32slice(p, c(C32Slice,x)->a+s); dec(x); return r; }
 
 static B c32arr_get  (B x, usz n) { VTY(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
 static B c32slice_get(B x, usz n) { VTY(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }

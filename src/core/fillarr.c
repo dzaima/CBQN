@@ -31,15 +31,14 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 
-static Arr* m_fillslice(B p, B* ptr) {
+static Arr* m_fillslice(Arr* p, B* ptr) {
   FillSlice* r = mm_alloc(sizeof(FillSlice), t_fillslice);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-
-static Arr* fillarr_slice  (B x, usz s) { return   m_fillslice(x                 , c(FillArr  ,x)->a+s); }
-static Arr* fillslice_slice(B x, usz s) { Arr* r = m_fillslice(inc(c(Slice,x)->p), c(FillSlice,x)->a+s); dec(x); return r; }
+static Arr* fillarr_slice  (B x, usz s) { return m_fillslice(a(x), c(FillArr,x)->a+s); }
+static Arr* fillslice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s); dec(x); return r; }
 
 static B fillarr_get   (B x, usz n) { VTY(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n]); }
 static B fillslice_get (B x, usz n) { VTY(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
@@ -116,7 +115,7 @@ B withFill(B x, B fill) { // consumes both
     case t_f64arr: case t_f64slice:
     case t_i32arr: case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr: case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
-    case t_fillslice: if (fillEqual(c(FillArr,c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
+    case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {
         dec(c(FillArr, x)->fill);

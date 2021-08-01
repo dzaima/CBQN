@@ -91,14 +91,14 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
 
 
 
-static Arr* m_hslice(B p, B* ptr) {
+static Arr* m_hslice(Arr* p, B* ptr) {
   HSlice* r = mm_alloc(sizeof(HSlice), t_hslice);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* harr_slice  (B x, usz s) { return   m_hslice(x                 , c(HArr  ,x)->a+s); }
-static Arr* hslice_slice(B x, usz s) { Arr* r = m_hslice(inc(c(Slice,x)->p), c(HSlice,x)->a+s); dec(x); return r; }
+static Arr* harr_slice  (B x, usz s) { return m_hslice(a(x), c(HArr,x)->a+s); }
+static Arr* hslice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_hslice(p, c(HSlice,x)->a+s); dec(x); return r; }
 
 static B harr_get   (B x, usz n) { VTY(x,t_harr  ); return inc(c(HArr  ,x)->a[n]); }
 static B hslice_get (B x, usz n) { VTY(x,t_hslice); return inc(c(HSlice,x)->a[n]); }

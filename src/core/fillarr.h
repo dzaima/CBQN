@@ -33,8 +33,8 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
       case el_c32: return m_c32(' ');
       case el_B:;
         u8 t = v(x)->type;
-        if (t==t_fillarr  ) return inc(c(FillArr,x            )->fill);
-        if (t==t_fillslice) return inc(c(FillArr,c(Slice,x)->p)->fill);
+        if (t==t_fillarr  ) return inc(c(FillArr,x             )->fill);
+        if (t==t_fillslice) return inc(((FillArr*)c(Slice,x)->p)->fill);
         return bi_noFill;
     }
   }
