@@ -343,12 +343,11 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
     memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
   }
   usz i = 0;
-  BS2A slice = TI(x,slice);
+  BSS2A slice = TI(x,slice);
   HArr_p r = m_harrs(cam, &i);
   usz p = 0;
   for (; i < cam; i++) {
-    Arr* s = slice(inc(x), p);
-    arr_shSetI(s, csz, cr, csh);
+    Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
     r.a[i] = c1(f, taga(s));
     p+= csz;
   }

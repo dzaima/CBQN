@@ -374,7 +374,7 @@ static B def_identity(B f) { return bi_N; }
 static B def_get(B x, usz n) { return inc(x); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
-static Arr* def_slice(B x, usz s) { thrM("cannot slice non-array!"); }
+static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 
 #ifdef DONT_FREE
 static B empty_get(B x, usz n) {

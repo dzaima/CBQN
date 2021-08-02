@@ -59,8 +59,8 @@ static B getFillE(B x) { // errors if there's no fill
 }
 
 
-static Arr* m_fillarrp(usz ia) { // doesn't set ia
-  return mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
+static Arr* m_fillarrp(usz ia) {
+  return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
 }
 static void fillarr_setFill(Arr* x, B fill) { assert(x->type==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
 static B* fillarr_ptr(Arr* x) { assert(x->type==t_fillarr); return ((FillArr*)x)->a; }
@@ -70,12 +70,12 @@ static B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) {
     HArr_p r = m_harrUp(1);
-    arr_shAllocR((Arr*)r.c, 0);
+    arr_shAlloc((Arr*)r.c, 0);
     r.a[0] = x;
     return r.b;
   }
-  FillArr* r = mm_alloc(fsizeof(FillArr,a,B,1), t_fillarr);
-  arr_shAllocI((Arr*)r, 1, 0);
+  FillArr* r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr, 1);
+  arr_shAlloc((Arr*)r, 0);
   r->fill = xf;
   r->a[0] = x;
   return taga(r);
@@ -86,13 +86,13 @@ static B m_atomUnit(B x) {
     Arr* r;
     if (q_i32(x)) { i32* rp; r = m_i32arrp(&rp, 1); rp[0] = o2iu(x); }
     else          { f64* rp; r = m_f64arrp(&rp, 1); rp[0] = o2fu(x); }
-    arr_shAllocR(r, 0);
+    arr_shAlloc(r, 0);
     return taga(r);
   }
   if (isC32(x)) {
     u32* rp; Arr* r = m_c32arrp(&rp, 1);
     rp[0] = o2cu(x);
-    arr_shAllocR(r,0);
+    arr_shAlloc(r,0);
     return taga(r);
   }
   return m_unit(x);

@@ -25,8 +25,7 @@ B shape_c1(B t, B x) {
       rp[0] = o2cu(x);
       return r;
     }
-    Arr* ra = m_fillarrp(1);
-    arr_shVec(ra, 1);
+    Arr* ra = m_fillarrp(1); arr_shVec(ra);
     fillarr_setFill(ra, asFill(inc(x)));
     fillarr_ptr(ra)[0] = x;
     return taga(ra);
@@ -39,12 +38,10 @@ B shape_c1(B t, B x) {
       goto unit;
     }
     if (reusable(x)) {
-      decSh(v(x));
-      arr_shVec(a(x), ia);
+      decSh(v(x)); arr_shVec(a(x));
       return x;
     }
-    Arr* r = TI(x,slice)(x, 0);
-    arr_shVec(r, ia);
+    Arr* r = TI(x,slice)(x, 0, ia); arr_shVec(r);
     return taga(r);
   }
 }
@@ -127,7 +124,7 @@ B shape_c2(B t, B w, B x) {
     if (nia <= xia) {
       B r; Arr* ra;
       if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
-      else { ra = TI(x,slice)(x, 0); ra->ia = nia; r = taga(ra); }
+      else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
       arr_shSetU(ra, nr, sh);
       return r;
     } else {
@@ -177,7 +174,7 @@ B shape_c2(B t, B w, B x) {
     for (u64 i = 0; i < nia; i++) rp[i] = c;
     return taga(r);
   }
-  Arr* r = m_fillarrp(nia); r->ia=nia; arr_shSetU(r, nr, sh);
+  Arr* r = m_fillarrp(nia); arr_shSetU(r, nr, sh);
   B* rp = fillarr_ptr(r);
   if (nia) incBy(x, nia-1);
   else dec(x);
@@ -214,14 +211,11 @@ B select_c1(B t, B x) {
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
-  Arr* r = TI(x,slice)(inc(x),0);
-  usz* sh = arr_shAllocR(r, xr-1);
   usz ia = 1;
-  for (i32 i = 1; i < xr; i++) {
-    if (sh) sh[i-1] = a(x)->sh[i];
-    ia*= a(x)->sh[i];
-  }
-  r->ia = ia;
+  for (i32 i = 1; i < xr; i++) ia*= a(x)->sh[i];
+  Arr* r = TI(x,slice)(inc(x),0, ia);
+  usz* sh = arr_shAlloc(r, xr-1);
+  if (sh) for (i32 i = 1; i < xr; i++) sh[i-1] = a(x)->sh[i];
   dec(x);
   return taga(r);
 }
@@ -233,8 +227,8 @@ B select_c2(B t, B w, B x) {
     usz csz = arr_csz(x);
     usz cam = a(x)->sh[0];
     usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
-    Arr* r = TI(x,slice)(inc(x), wi*csz);
-    usz* sh = arr_shAllocI(r, csz, xr-1);
+    Arr* r = TI(x,slice)(inc(x), wi*csz, csz);
+    usz* sh = arr_shAlloc(r, xr-1);
     if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
     dec(x);
     return taga(r);
@@ -325,7 +319,7 @@ B select_c2(B t, B w, B x) {
       mut_copyG(r, i*csz, x, csz*(usz)c, csz);
     }
     Arr* ra = mut_fp(r);
-    usz* rsh = arr_shAllocR(ra, rr);
+    usz* rsh = arr_shAlloc(ra, rr);
     if (rsh) {
       memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
       memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
@@ -464,8 +458,7 @@ B slash_c2(B t, B w, B x) {
     i32 wv = o2i(w);
     if (wv<=0) {
       if (wv<0) thrM("/: 𝕨 cannot be negative");
-      Arr* r = TI(x,slice)(x, 0);
-      arr_shVec(r,0);
+      Arr* r = TI(x,slice)(x, 0, 0); arr_shVec(r);
       return taga(r);
     }
     if (TI(x,elType)==el_i32) {
@@ -493,8 +486,7 @@ B slash_c2(B t, B w, B x) {
 
 B slicev(B x, usz s, usz ia) {
   usz xia = a(x)->ia; assert(s+ia <= xia);
-  Arr* r = TI(x,slice)(x, s);
-  arr_shVec(r, ia);
+  Arr* r = TI(x,slice)(x, s, ia); arr_shVec(r);
   return taga(r);
 }
 extern B rt_take, rt_drop;
@@ -551,7 +543,7 @@ B join_c1(B t, B x) {
       if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
       B xff = getFillQ(xf);
       HArr_p r = m_harrUp(0);
-      usz* sh = arr_shAllocR((Arr*)r.c, ir);
+      usz* sh = arr_shAlloc((Arr*)r.c, ir);
       if (sh) {
         sh[0] = 0;
         memcpy(sh+1, a(xf)->sh+1, sizeof(usz)*(ir-1));
@@ -589,7 +581,7 @@ B join_c1(B t, B x) {
     }
     assert(ri==cam*csz);
     Arr* ra = mut_fp(r);
-    usz* sh = arr_shAllocR(ra, ir);
+    usz* sh = arr_shAlloc(ra, ir);
     if (sh) {
       sh[0] = cam;
       memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
@@ -626,7 +618,7 @@ B join_c2(B t, B w, B x) {
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
   Arr* ra = mut_fp(r);
-  usz* sh = arr_shAllocR(ra, c);
+  usz* sh = arr_shAlloc(ra, c);
   if (sh) {
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
@@ -644,8 +636,8 @@ B couple_c1(B t, B x) {
   if (isArr(x)) {
     usz rr = rnk(x);
     usz ia = a(x)->ia;
-    Arr* r = TI(x,slice)(inc(x),0);
-    usz* sh = arr_shAllocI(r, ia, rr+1);
+    Arr* r = TI(x,slice)(inc(x),0, ia);
+    usz* sh = arr_shAlloc(r, rr+1);
     if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
     dec(x);
     return taga(r);
@@ -672,7 +664,7 @@ B couple_c2(B t, B w, B x) {
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
-  usz* sh = arr_shAllocR(ra, wr+1);
+  usz* sh = arr_shAlloc(ra, wr+1);
   if (sh) { sh[0]=2; memcpy(sh+1, a(w)->sh, wr*sizeof(usz)); }
   if (!SFNS_FILLS) { dec(w); dec(x); return taga(ra); }
   B rf = fill_both(w, x);
@@ -772,14 +764,12 @@ B group_c2(B t, B w, B x) {
         len[n]++; // overallocation makes this safe after n<-1 check
       }
       
-      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(r, ria);
+      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0)); arr_shVec(r);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
-      Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0));
-      arr_shVec(rf, 0);
+      Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0)); arr_shVec(rf);
       fillarr_setFill(r, taga(rf));
       if (TI(x,elType)==el_i32) {
         for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
@@ -807,7 +797,7 @@ B group_c2(B t, B w, B x) {
           i32 n = wp[i];
           if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
         }
-        for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
+        for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
       }
       fillarr_setFill(rf, xf);
       dec(w); dec(x); TFREE(lenO); TFREE(pos);
@@ -831,8 +821,7 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) len[o2i64u(wgetU(w, i))]++;
       
-      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-      arr_shVec(r, ria);
+      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0)); arr_shVec(r);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
@@ -843,8 +832,7 @@ B group_c2(B t, B w, B x) {
         c->ia = 0;
         rp[i] = taga(c);
       }
-      Arr* rf = m_fillarrp(0);
-      arr_shVec(rf, 0);
+      Arr* rf = m_fillarrp(0); arr_shVec(rf);
       fillarr_setFill(rf, xf);
       fillarr_setFill(r, taga(rf));
       BS2B xget = TI(x,get);
@@ -852,7 +840,7 @@ B group_c2(B t, B w, B x) {
         i64 n = o2i64u(wgetU(w, i));
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
       }
-      for (usz i = 0; i < ria; i++) { arr_shVec(a(rp[i]), len[i]); }
+      for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
       dec(w); dec(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     }

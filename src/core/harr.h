@@ -24,7 +24,7 @@ NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 
 
 static HArr_p m_harrs(usz ia, usz* ctr) { // writes just ia
-  HArr* r = mm_alloc(fsizeof(HArr,a,B,ia), t_harrPartial);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
   r->ia = ia;
   r->sh = ctr;
   HArr_p rp = harrP_parts(r);
@@ -57,7 +57,7 @@ static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
 static usz* harr_fa(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   gsPop();
-  return arr_shAllocR((Arr*)p.c, r);
+  return arr_shAlloc((Arr*)p.c, r);
 }
 static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
   gsPop();
@@ -65,24 +65,24 @@ static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
 }
 
 static HArr_p m_harrUv(usz ia) {
-  HArr* r = mm_alloc(fsizeof(HArr,a,B,ia), t_harr);
-  arr_shVec((Arr*)r, ia);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
+  arr_shVec((Arr*)r);
   return harrP_parts(r);
 }
 static HArr_p m_harrUc(B x) { assert(isArr(x));
-  HArr* r = mm_alloc(fsizeof(HArr,a,B,a(x)->ia), t_harr);
+  HArr* r = m_arr(fsizeof(HArr,a,B,a(x)->ia), t_harr, a(x)->ia);
   arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
 static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
-  HArr* r = mm_alloc(fsizeof(HArr,a,B,ia), t_harr);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   r->ia = ia;
   return harrP_parts(r);
 }
 
 static B m_hunit(B x) {
   HArr_p r = m_harrUp(1);
-  arr_shAllocR((Arr*)r.c, 0);
+  arr_shAlloc((Arr*)r.c, 0);
   r.a[0] = x;
   return r.b;
 }

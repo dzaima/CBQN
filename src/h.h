@@ -354,7 +354,7 @@ void slice_print(B x);
 
 typedef bool (*  B2b)(B);
 typedef void (*  B2v)(B);
-typedef Arr* (* BS2A)(B, usz);
+typedef Arr* (*BSS2A)(B, usz, usz);
 typedef B (*    BS2B)(B, usz);
 typedef B (*   BSS2B)(B, usz, usz);
 typedef B (*     B2B)(B);
@@ -370,7 +370,7 @@ typedef B (*BBBBBB2B)(B, B, B, B, B, B);
   F(BS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
   F(BB2B,  m1_d) /* consume all args; (m, f)    */ \
   F(BBB2B, m2_d) /* consume all args; (m, f, g) */ \
-  F(BS2A, slice) /* consumes; create slice from given starting position; add ia, rank, shape yourself; may not actually be a Slice object; preserves fill */ \
+  F(BSS2A, slice) /* consumes; create slice from given starting position and length; add shape & rank yourself; may not actually be a Slice object; preserves fill */ \
   F(B2B, identity) /* return identity element of this function; doesn't consume */ \
   \
   F(   BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \

@@ -6,14 +6,14 @@ NOINLINE B m_cai32(usz ia, i32* a) {
   return r;
 }
 
-static Arr* m_i32slice(Arr* p, i32* ptr) {
-  I32Slice* r = mm_alloc(sizeof(I32Slice), t_i32slice);
+static Arr* m_i32slice(Arr* p, i32* ptr, usz ia) {
+  I32Slice* r = m_arr(sizeof(I32Slice), t_i32slice, ia);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* i32arr_slice  (B x, usz s) { return m_i32slice(a(x), c(I32Arr,x)->a+s); }
-static Arr* i32slice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_i32slice(p, c(I32Slice,x)->a+s); dec(x); return r; }
+static Arr* i32arr_slice  (B x, usz s, usz ia) { return m_i32slice(a(x), c(I32Arr,x)->a+s, ia); }
+static Arr* i32slice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_i32slice(p, c(I32Slice,x)->a+s, ia); dec(x); return r; }
 
 static B i32arr_get  (B x, usz n) { VTY(x,t_i32arr  ); return m_i32(c(I32Arr  ,x)->a[n]); }
 static B i32slice_get(B x, usz n) { VTY(x,t_i32slice); return m_i32(c(I32Slice,x)->a[n]); }

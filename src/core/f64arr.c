@@ -6,14 +6,14 @@ NOINLINE B m_caf64(usz sz, f64* a) {
   return r;
 }
 
-static Arr* m_f64slice(Arr* p, f64* ptr) {
-  F64Slice* r = mm_alloc(sizeof(F64Slice), t_f64slice);
+static Arr* m_f64slice(Arr* p, f64* ptr, usz ia) {
+  F64Slice* r = m_arr(sizeof(F64Slice), t_f64slice, ia);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* f64arr_slice  (B x, usz s) { return m_f64slice(a(x), c(F64Arr  ,x)->a+s); }
-static Arr* f64slice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_f64slice(p, c(F64Slice,x)->a+s); dec(x); return r; }
+static Arr* f64arr_slice  (B x, usz s, usz ia) { return m_f64slice(a(x), c(F64Arr  ,x)->a+s, ia); }
+static Arr* f64slice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_f64slice(p, c(F64Slice,x)->a+s, ia); dec(x); return r; }
 
 static B f64arr_get  (B x, usz n) { VTY(x,t_f64arr  ); return m_f64(c(F64Arr  ,x)->a[n]); }
 static B f64slice_get(B x, usz n) { VTY(x,t_f64slice); return m_f64(c(F64Slice,x)->a[n]); }

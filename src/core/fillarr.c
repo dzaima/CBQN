@@ -31,14 +31,14 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 
-static Arr* m_fillslice(Arr* p, B* ptr) {
-  FillSlice* r = mm_alloc(sizeof(FillSlice), t_fillslice);
+static Arr* m_fillslice(Arr* p, B* ptr, usz ia) {
+  FillSlice* r = m_arr(sizeof(FillSlice), t_fillslice, ia);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* fillarr_slice  (B x, usz s) { return m_fillslice(a(x), c(FillArr,x)->a+s); }
-static Arr* fillslice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s); dec(x); return r; }
+static Arr* fillarr_slice  (B x, usz s, usz ia) { return m_fillslice(a(x), c(FillArr,x)->a+s, ia); }
+static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); dec(x); return r; }
 
 static B fillarr_get   (B x, usz n) { VTY(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n]); }
 static B fillslice_get (B x, usz n) { VTY(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
@@ -201,7 +201,7 @@ B withFill(B x, B fill) { // consumes both
     return r;
   }
   base:;
-  FillArr* r = mm_alloc(fsizeof(FillArr,a,B,ia), t_fillarr);
+  FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
   arr_shCopy((Arr*)r, x);
   r->fill = fill;
   if (xt==t_harr | xt==t_hslice) {

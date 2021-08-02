@@ -192,7 +192,7 @@ B variation_c2(B t, B w, B x) {
       else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     if (slice) {
-      Arr* slice = TI(res,slice)(res, 0);
+      Arr* slice = TI(res,slice)(res, 0, a(res)->ia);
       arr_shCopy(slice, res);
       res = taga(slice);
     }

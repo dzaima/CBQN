@@ -180,7 +180,8 @@ static void* nvm_alloc(u64 sz) {
   // if (r==MAP_FAILED) thrM("JIT: Failed to allocate executable memory");
   // return r;
   TmpFile* src = mmX_allocN(fsizeof(TmpFile,a,u8,sz), t_i8arr);
-  arr_shVec((Arr*)src, sz);
+  src->ia = sz;
+  arr_shVec((Arr*)src);
   return src->a;
 }
 void nvm_free(u8* ptr) {

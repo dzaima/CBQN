@@ -58,7 +58,7 @@ B ud_c1(B t, B x) {
   B* rp = fillarr_ptr(r);
   for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
   
-  usz* rsh = arr_shAllocI(r, ria, xia);
+  usz* rsh = arr_shAlloc(r, xia);
   if (rsh) memcpy(rsh, sh, sizeof(usz)*xia);
   
   i32 pos[xia]; B* crp = rp;
@@ -234,7 +234,7 @@ B indexOf_c2(B t, B w, B x) {
       }
       dec(w); dec(x);
       i32* rp; Arr* r = m_i32arrp(&rp, 1);
-      arr_shAllocR(r, 0);
+      arr_shAlloc(r, 0);
       rp[0] = res;
       return taga(r);
     } else if (rnk(x)==1) {

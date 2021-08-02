@@ -19,14 +19,14 @@ B m_str32(u32* s) {
   return r;
 }
 
-static Arr* m_c32slice(Arr* p, u32* ptr) {
-  C32Slice* r = mm_alloc(sizeof(C32Slice), t_c32slice);
+static Arr* m_c32slice(Arr* p, u32* ptr, usz ia) {
+  C32Slice* r = m_arr(sizeof(C32Slice), t_c32slice, ia);
   r->p = p;
   r->a = ptr;
   return (Arr*)r;
 }
-static Arr* c32arr_slice  (B x, usz s) { return m_c32slice(a(x), c(C32Arr,x)->a+s); }
-static Arr* c32slice_slice(B x, usz s) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_c32slice(p, c(C32Slice,x)->a+s); dec(x); return r; }
+static Arr* c32arr_slice  (B x, usz s, usz ia) { return m_c32slice(a(x), c(C32Arr,x)->a+s, ia); }
+static Arr* c32slice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_c32slice(p, c(C32Slice,x)->a+s, ia); dec(x); return r; }
 
 static B c32arr_get  (B x, usz n) { VTY(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
 static B c32slice_get(B x, usz n) { VTY(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
@@ -49,8 +49,7 @@ void c32arr_init() {
   
   u32* tmp; bi_emptyCVec = m_c32arrv(&tmp, 0); gc_add(bi_emptyCVec);
   
-  Arr* emptySVec = m_fillarrp(0);
-  arr_shVec(emptySVec, 0);
+  Arr* emptySVec = m_fillarrp(0); arr_shVec(emptySVec);
   fillarr_setFill(emptySVec, emptyCVec());
   bi_emptySVec = taga(emptySVec); gc_add(bi_emptySVec);
 }

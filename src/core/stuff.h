@@ -29,40 +29,39 @@ static void decSh(Value* x) { if (RARE(prnk(x)>1)) ptr_dec(shObjP(x));}
 
 #define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })
 
+static inline void* m_arr(u64 sz, u8 type, usz ia) {
+  Arr* r = mm_alloc(sz, type);
+  r->ia = ia;
+  return r;
+}
 static ShArr* m_shArr(ur r) {
   assert(r>1);
   return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
-static void arr_shVec(Arr* x, usz ia) {
-  x->ia = ia;
+static void arr_shVec(Arr* x) {
   sprnk(x, 1);
   x->sh = &x->ia;
 }
-static usz* arr_shAllocR(Arr* x, ur r) { // allocates shape, sets rank
+static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2)
   sprnk(x,r);
   if (r>1) return x->sh = m_shArr(r)->a;
   x->sh = &x->ia;
-  return 0;
+  return NULL;
 }
-static usz* arr_shAllocI(Arr* x, usz ia, ur r) { // allocates shape, sets ia,rank
-  x->ia = ia;
-  return arr_shAllocR(x, r);
-}
-static void arr_shSetI(Arr* x, usz ia, ur r, ShArr* sh) {
+static void arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
   sprnk(x,r);
-  x->ia = ia;
   if (r>1) { x->sh = sh->a; ptr_inc(sh); }
   else     { x->sh = &x->ia; }
 }
-static void arr_shSetU(Arr* x, ur r, ShArr* sh) {
+static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
   sprnk(x,r);
   if (r>1) { x->sh = sh->a;  }
   else     { x->sh = &x->ia; }
 }
-static void arr_shCopy(Arr* n, B o) { // copy shape,rank,ia from o to n
+static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   assert(isArr(o));
-  n->ia = a(o)->ia;
+  assert(a(o)->ia==n->ia);
   ur r = sprnk(n,rnk(o));
   if (r<=1) {
     n->sh = &n->ia;
