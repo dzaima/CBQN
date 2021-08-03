@@ -21,10 +21,9 @@ static B m_c32arrc(u32** p, B x) { assert(isArr(x));
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
-static Arr* m_c32arrp(u32** p, usz ia) { // doesn't write shape/rank
+static Arr* m_c32arrp(u32** p, usz ia) {
   C32Arr* r = m_arr(C32A_SZ(ia), t_c32arr, ia);
   *p = r->a;
-  r->ia = ia;
   return (Arr*)r;
 }
 

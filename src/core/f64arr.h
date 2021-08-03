@@ -20,10 +20,9 @@ static B m_f64arrc(f64** p, B x) { assert(isArr(x));
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
-static Arr* m_f64arrp(f64** p, usz ia) { // doesn't write shape/rank
+static Arr* m_f64arrp(f64** p, usz ia) {
   F64Arr* r = m_arr(F64A_SZ(ia), t_f64arr, ia);
   *p = r->a;
-  r->ia = ia;
   return (Arr*)r;
 }
 

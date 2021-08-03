@@ -29,8 +29,7 @@ static void mut_init(Mut* m, u8 n) {
       m->aB = t.c->a;
       return;
   }
-  Arr* a = mm_alloc(sz, ty);
-  a->ia = ia;
+  Arr* a = m_arr(sz, ty, ia);
   m->val = a;
   switch(n) { default: UD; // gcc generates horrible code for this (which should just be two instructions), but that's what gcc does
     case el_i32: m->ai32 = ((I32Arr*)a)->a; break;
@@ -57,7 +56,7 @@ static B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
   dec(x);
   return taga(a);
 }
-static Arr* mut_fp(Mut* m) { assert(m->type!=el_MAX); // has ia set
+static Arr* mut_fp(Mut* m) { assert(m->type!=el_MAX);
   return m->val;
 }
 

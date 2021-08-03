@@ -23,9 +23,8 @@ static inline HArr_p harrP_parts(HArr* p) {
 NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 
 
-static HArr_p m_harrs(usz ia, usz* ctr) { // writes just ia
+static HArr_p m_harrs(usz ia, usz* ctr) {
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
-  r->ia = ia;
   r->sh = ctr;
   HArr_p rp = harrP_parts(r);
   gsAdd(rp.b);
@@ -74,9 +73,8 @@ static HArr_p m_harrUc(B x) { assert(isArr(x));
   arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
-static HArr_p m_harrUp(usz ia) { // doesn't write shape/rank
+static HArr_p m_harrUp(usz ia) {
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
-  r->ia = ia;
   return harrP_parts(r);
 }
 
