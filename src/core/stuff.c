@@ -479,7 +479,7 @@ B bqn_merge(B x) { // consumes
   ur xr = rnk(x);
   if (xia==0) {
     B xf = getFillE(x);
-    if (isAtm(xf)) { dec(x); dec(xf); return x; }
+    if (isAtm(xf)) { dec(xf); return x; }
     i32 xfr = rnk(xf);
     B xff = getFillQ(xf);
     Arr* r = m_fillarrp(0);
