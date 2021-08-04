@@ -2,6 +2,7 @@
 #include "../utils/mut.h"
 #include "../utils/utf.h"
 #include "../utils/talloc.h"
+#include "../utils/builtins.h"
 
 
 NORETURN NOINLINE void err(char* s) {
@@ -425,6 +426,7 @@ char* format_type(u8 u) {
 bool isPureFn(B x) { // doesn't consume
   if (isCallable(x)) {
     if (v(x)->flags) return true;
+    if (v(x)->extra >= pf_type) return false;
     B2B dcf = TI(x,decompose);
     B xd = dcf(inc(x));
     B* xdp = harr_ptr(xd);

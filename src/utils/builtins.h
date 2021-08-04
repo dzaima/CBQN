@@ -6,6 +6,7 @@
 /*     fns.c*/A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") M(fmtF,"•FmtF") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"{𝕨‿𝕩}") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
+/* everything before the definition of •Type is defined to be pure, and everything after is not */ \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
 /*   sysfn.c*/M(repr,"•Repr") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") \
 /*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(delay,"•Delay") M(makeRand,"•MakeRand") M(exit,"•Exit") M(getLine,"•GetLine") \
