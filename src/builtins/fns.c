@@ -85,6 +85,7 @@ B ltack_c2(B t, B w, B x) { dec(x); return w; }
 B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
+B nsFmt(B x);
 #ifdef RT_WRAP
 B rtWrap_unwrap(B x);
 #endif
@@ -103,6 +104,7 @@ B fmtF_c1(B t, B x) {
     if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
     if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
     if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
+    if (ty==t_ns) return nsFmt(x);
     return m_str32(U"(fmtF: not given a runtime primitive)");
   }
   dec(x);

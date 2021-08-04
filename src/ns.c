@@ -1,5 +1,6 @@
 #include "core.h"
 #include "ns.h"
+#include "utils/mut.h"
 
 void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { // consumes nameList
   if (!isArr(varIDs) || !isArr(exported)) thrM("Bad namespace description information");
@@ -132,6 +133,25 @@ static void ns_print(B x) {
     }
   }
   putchar('}');
+}
+B nsFmt(B x) { // consumes
+  B s = emptyCVec();
+  ACHR('{');
+  NSDesc* desc = c(NS,x)->desc;
+  i32 am = desc->varAm;
+  BS2B getNameU = TI(desc->nameList,getU);
+  bool first = true;
+  for (i32 i = 0; i < am; i++) {
+    i32 id = desc->expIDs[i];
+    if (id>=0) {
+      if (first) first=false;
+      else ACHR(U'‿');
+      AFMT("%R", getNameU(desc->nameList, id));
+    }
+  }
+  AU("⇐}");
+  dec(x);
+  return s;
 }
 
 DEF_FREE(nsDesc) { decR(((NSDesc*)x)->nameList); }
