@@ -335,7 +335,7 @@ void load_init() { // very last init function
       #include "gen/formatter"
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
-    B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_fmtF), inc(bi_repr)}));
+    B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_glyph), inc(bi_repr)}));
     BS2B fget = TI(fmtR,get);
     load_fmt  = fget(fmtR, 0); gc_add(load_fmt);
     load_repr = fget(fmtR, 1); gc_add(load_repr);

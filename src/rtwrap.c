@@ -234,19 +234,19 @@ void rtWrap_print() {
   #ifdef RT_PERF
     WFun* cf = lastWF;
     while (cf) {
-      printRaw(c1(bi_fmtF, tag(cf,FUN_TAG)));
+      printRaw(c1(bi_glyph, tag(cf,FUN_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cf->c1a, cf->c1t/1e6, cf->c2a, cf->c2t/1e6);
       cf = cf->prev;
     }
     WMd1* cm1 = lastWM1;
     while (cm1) {
-      printRaw(c1(bi_fmtF, tag(cm1,MD1_TAG)));
+      printRaw(c1(bi_glyph, tag(cm1,MD1_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cm1->c1a, cm1->c1t/1e6, cm1->c2a, cm1->c2t/1e6);
       cm1 = cm1->prev;
     }
     WMd2* cm2 = lastWM2;
     while (cm2) {
-      printRaw(c1(bi_fmtF, tag(cm2,MD2_TAG)));
+      printRaw(c1(bi_glyph, tag(cm2,MD2_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cm2->c1a, cm2->c1t/1e6, cm2->c2a, cm2->c2t/1e6);
       cm2 = cm2->prev;
     }

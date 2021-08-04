@@ -85,33 +85,6 @@ B ltack_c2(B t, B w, B x) { dec(x); return w; }
 B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
-B nsFmt(B x);
-#ifdef RT_WRAP
-B rtWrap_unwrap(B x);
-#endif
-B fmtF_c1(B t, B x) {
-  if (!isVal(x)) return m_str32(U"(fmtF: not given a function)");
-  #ifdef RT_WRAP
-    x = rtWrap_unwrap(x);
-  #endif
-  u8 fl = v(x)->flags;
-  if (fl==0 || fl>rtLen) {
-    u8 ty = v(x)->type;
-    if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
-    if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
-    if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
-    if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
-    if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
-    if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
-    if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
-    if (ty==t_ns) return nsFmt(x);
-    return m_str32(U"(fmtF: not given a runtime primitive)");
-  }
-  dec(x);
-  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
-}
-
-
 B fne_c1(B t, B x) {
   if (isArr(x)) {
     ur xr = rnk(x);

@@ -34,8 +34,30 @@ B primInd_c1(B t, B x) {
   return m_i32(rtLen);
 }
 
+B nsFmt(B x);
+#ifdef RT_WRAP
+B rtWrap_unwrap(B x);
+#endif
 B glyph_c1(B t, B x) {
-  return x;
+  if (!isVal(x)) return m_str32(U"(•Glyph: not given a function)");
+  #ifdef RT_WRAP
+    x = rtWrap_unwrap(x);
+  #endif
+  u8 fl = v(x)->flags;
+  if (fl==0 || fl>rtLen) {
+    u8 ty = v(x)->type;
+    if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
+    if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
+    if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
+    if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
+    if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
+    if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
+    if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
+    if (ty==t_ns) return nsFmt(x);
+    return m_str32(U"(•Glyph: given object with unexpected type)");
+  }
+  dec(x);
+  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
 }
 
 B repr_c1(B t, B x) {
@@ -480,6 +502,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
+    else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, path_dir(inc(comp_currPath)));
