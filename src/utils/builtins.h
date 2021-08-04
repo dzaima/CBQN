@@ -15,6 +15,7 @@
 
 #define FOR_PM1(A,M,D) \
   /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
+/* everything before the definition of •_timed is defined to be pure, and everything after is not */ \
   /*md1.c*/ A(timed,"•_timed")
 
 #define FOR_PM2(A,M,D) \
@@ -36,6 +37,16 @@ enum PrimMd2 { pm2_none,
   FOR_PM2(F,F,F)
   #undef F
 };
+static const i32 firstImpurePFN = pf_type;
+static const i32 firstImpurePM1 = pm1_timed;
+static const i32 firstImpurePM2 = I32_MAX;
+
+static inline bool isImpureBuiltin(B x) {
+  if (isFun(x)) return !v(x)->extra || v(x)->extra>=firstImpurePFN;
+  if (isMd1(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM1;
+  if (isMd2(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM2;
+  return false;
+}
 
 
 #define F(N,X) extern B bi_##N;
