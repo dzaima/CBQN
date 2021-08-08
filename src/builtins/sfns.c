@@ -131,7 +131,7 @@ B shape_c2(B t, B w, B x) {
       xf = getFillQ(x);
       if (xia<=1) {
         if (xia==0) {
-          if (xf.u == bi_noFill.u) thrM("⥊: No fill for empty array");
+          thrM("⥊: Empty 𝕩 and non-empty result");
           dec(x);
           x = inc(xf);
         } else {
@@ -187,6 +187,7 @@ extern B rt_pick;
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (a(x)->ia==0) {
+    thrM("⊑: Argument cannot be empty");
     B r = getFillE(x);
     dec(x);
     return r;
