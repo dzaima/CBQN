@@ -466,6 +466,29 @@ B getLine_c1(B t, B x) {
   return r;
 }
 
+B fromUtf8_c1(B t, B x) {
+  if (!isArr(x)) thrM("•FromUTF8: Argument must be a character or number array");
+  usz ia = a(x)->ia;
+  TALLOC(char, chrs, ia);
+  BS2B xgetU = TI(x,getU);
+  for (u64 i = 0; i < ia; i++) {
+    B c = xgetU(x,i);
+    if (isC32(c)) {
+      u32 v = o2cu(c);
+      if (v>=256) thrF("•FromUTF8: Argument contained a character with codepoint %i", v);
+      chrs[i] = v;
+    } else {
+      i32 v = o2i(c);
+      if (v<=-128 | v>=256) thrF("•FromUTF8: Argument contained %i", v);
+      chrs[i] = v&0xff;
+    }
+  }
+  B r = fromUTF8(chrs, ia);
+  dec(x);
+  TFREE(chrs);
+  return r;
+}
+
 B getInternalNS(void);
 B getMathNS(void);
 
@@ -504,6 +527,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
+    else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, path_dir(inc(comp_currPath)));
