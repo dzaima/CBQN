@@ -166,8 +166,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_;
     for (i32 i = 0; i < bodyAm1; i++) bodyI[i          ] = o2i(b1GetU(b1, i));
     for (i32 i = 0; i < bodyAm2; i++) bodyI[i+bodyAm1+1] = o2i(b2GetU(b2, i));
-    for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
-    for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]>bodyI[i-1]) thrM("VM compiler: Expecte body indices to be sorted");
+    for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]<=bodyI[i-1]) thrM("VM compiler: Expected body indices to be sorted");
+    for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]<=bodyI[i-1]) thrM("VM compiler: Expected body indices to be sorted");
     bodyI[bodyAm1] = bodyI[bodyILen+1] = I32_MAX;
   } else {
     bodyILen = 2;
