@@ -95,8 +95,6 @@ static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
 static B m_v3(B a, B b, B c     ); // consumes all
 static B m_v4(B a, B b, B c, B d); // consumes all
-static B vec_join(B w, B x);
-static B vec_add(B w, B x);
 static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
 
 // string stuff

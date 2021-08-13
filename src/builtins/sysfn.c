@@ -1,8 +1,15 @@
+#include <spawn.h>
+#include <unistd.h>
+#include <poll.h>
+#include <errno.h>
+#include <sys/wait.h>
+
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/file.h"
 #include "../utils/wyhash.h"
 #include "../utils/builtins.h"
+#include "../utils/mut.h"
 #include "../ns.h"
 #include "../nfns.h"
 
@@ -489,6 +496,61 @@ B fromUtf8_c1(B t, B x) {
   return r;
 }
 
+extern char** environ;
+
+B sh_c1(B t, B x) {
+  if (isAtm(x) || rnk(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
+  usz xia = a(x)->ia;
+  if (xia==0) thrM("•SH: 𝕩 must have at least one item");
+  TALLOC(char*, argv, xia+1);
+  BS2B xgetU = TI(x,getU);
+  for (u64 i = 0; i < xia; i++) {
+    B c = xgetU(x, i);
+    if (isAtm(c) || rnk(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
+    u64 len = utf8lenB(c);
+    TALLOC(char, cstr, len+1);
+    toUTF8(c, cstr);
+    cstr[len] = 0;
+    argv[i] = cstr;
+  }
+  argv[xia] = NULL;
+  
+  
+  int p_out[2];
+  int p_err[2];
+  if (pipe(p_out) || pipe(p_err)) thrM("•SH: Failed to create process: Couldn't create pipes");
+  
+  posix_spawn_file_actions_t a; posix_spawn_file_actions_init(&a);
+  posix_spawn_file_actions_addclose(&a, p_out[0]); posix_spawn_file_actions_adddup2(&a, p_out[1], 1); posix_spawn_file_actions_addclose(&a, p_out[1]);
+  posix_spawn_file_actions_addclose(&a, p_err[0]); posix_spawn_file_actions_adddup2(&a, p_err[1], 2); posix_spawn_file_actions_addclose(&a, p_err[1]);
+  
+  pid_t pid;
+  if(posix_spawnp(&pid, argv[0], &a, NULL, argv, environ) != 0) thrF("•SH: Failed to create process: %S", strerror(errno));
+  
+  for (u64 i = 0; i < xia; i++) TFREE(argv[i]);
+  TFREE(argv);
+  close(p_out[1]); B s_out = emptyCVec();
+  close(p_err[1]); B s_err = emptyCVec();
+  
+  const u64 bufsz = 1024;
+  TALLOC(char, buf, bufsz);
+  struct pollfd ps[] = {{.fd=p_out[0], .events=POLLIN}, {.fd=p_err[0], .events=POLLIN}};
+  while (poll(&ps[0], 2, -1) > 0) {
+    if      (ps[0].revents & POLLIN) s_out = vec_join(s_out, fromUTF8(buf, read(p_out[0], &buf[0], bufsz)));
+    else if (ps[1].revents & POLLIN) s_err = vec_join(s_err, fromUTF8(buf, read(p_err[0], &buf[0], bufsz)));
+    else break;
+  }
+  TFREE(buf);
+  
+  int status;
+  waitpid(pid, &status, 0);
+  
+  posix_spawn_file_actions_destroy(&a);
+  dec(x);
+  return m_v3(m_i32(WEXITSTATUS(status)), s_out, s_err);
+}
+
+
 B getInternalNS(void);
 B getMathNS(void);
 
@@ -517,6 +579,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"math")) r.a[i] = getMathNS();
     else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
+    else if (eqStr(c, U"sh")) r.a[i] = inc(bi_sh);
     else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
