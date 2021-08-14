@@ -596,7 +596,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"args")) {
-      if(isNothing(comp_currArgs)) thrM("No arguments present for •args");
+      if(q_N(comp_currArgs)) thrM("No arguments present for •args");
       r.a[i] = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
   }

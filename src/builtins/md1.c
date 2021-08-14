@@ -248,7 +248,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
     dec(x);
     if (isFun(f)) {
       B r = TI(f,identity)(f);
-      if (!isNothing(r)) return inc(r);
+      if (!q_N(r)) return inc(r);
     }
     thrM("´: No identity found");
   }

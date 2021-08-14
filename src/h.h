@@ -1,6 +1,5 @@
 #pragma once
 
-// #define ATOM_I32
 #ifdef DEBUG
   // #define DEBUG_VM
 #endif
@@ -53,6 +52,7 @@
 // #define RT_VERIFY // compare native and runtime versions of primitives
 // #define NO_RT     // whether to completely disable self-hosted runtime loading
 // #define PRECOMP   // execute just precompiled code at src/gen/interp
+// #define ATOM_I32 // not a thing; ignore pls
 
 
 #ifdef __OpenBSD__
@@ -107,6 +107,7 @@
 #define AUTO __auto_type
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
+#define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // value, result type, field name; reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
 #define N64x "%"SCNx64
 #define N64d "%"SCNd64
@@ -123,7 +124,6 @@ typedef u8 ur;
 CTR_FOR(F)
 #undef F
 
-#define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
                                                // .FF0 .111111111110000000000000000000000000000000000000000000000000000 infinity
                                                // .FF8 .111111111111000000000000000000000000000000000000000000000000000 qNaN
                                                // .FF. .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
@@ -148,7 +148,6 @@ void cbqn_init(void);
 
 typedef union B {
   u64 u;
-  i64 s;
   f64 f;
 } B;
 #define b(x) ((B)(x))
@@ -234,6 +233,11 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyIVec() ({ B t = bi_emptyIVec; ptr_inc(v(t)); t; })
 #define emptyCVec() ({ B t = bi_emptyCVec; ptr_inc(v(t)); t; })
 #define emptySVec() ({ B t = bi_emptySVec; ptr_inc(v(t)); t; })
+static void* mm_alloc(usz sz, u8 type);
+static void  mm_free(Value* x);
+static u64   mm_size(Value* x);
+static void  mm_visit(B x);
+static void  mm_visitP(void* x);
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
@@ -263,7 +267,7 @@ NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);
 jmp_buf* prepareCatch(void);
 #if CATCH_ERRORS
-#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); } /*potentially erroring thing*/ popCatch();`
+#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false
 #endif
@@ -370,7 +374,7 @@ typedef B (*BBBBBB2B)(B, B, B, B, B, B);
   F(BS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
   F(BB2B,  m1_d) /* consume all args; (m, f)    */ \
   F(BBB2B, m2_d) /* consume all args; (m, f, g) */ \
-  F(BSS2A, slice) /* consumes; create slice from given starting position and length; add shape & rank yourself; may not actually be a Slice object; preserves fill */ \
+  F(BSS2A, slice) /* consumes; create slice from a starting position and length; add shape & rank yourself; may not actually be a Slice object; preserves fill */ \
   F(B2B, identity) /* return identity element of this function; doesn't consume */ \
   \
   F(   BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \
@@ -398,8 +402,7 @@ typedef B (*BBBBBB2B)(B, B, B, B, B, B);
 #define TI(X,V)  (ti_##V[v(X)->type])
 
 
-static bool isNothing(B b) { return b.u==bi_N.u; }
-static void mm_free(Value* x);
+static bool q_N(B b) { return b.u==bi_N.u; }
 
 // refcount
 static bool reusable(B x) { return v(x)->refc==1; }
@@ -427,7 +430,7 @@ static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
 }
-static B incBy(B x, i64 am) {
+static B incBy(B x, i64 am) { // am mustn't be negative!
   if (isVal(VALIDATE(x))) v(x)->refc+= am;
   return x;
 }

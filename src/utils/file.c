@@ -71,14 +71,14 @@ B file_lines(B path) { // consumes
 
 
 B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
-  assert((isArr(base) || isNothing(base)) && isArr(rel));
+  assert((isArr(base) || q_N(base)) && isArr(rel));
   BS2B rgetU = TI(rel,getU);
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
   for (usz i = 0; i < ria; i++) if (!isC32(rgetU(rel, i))) thrM("Paths must be character vectors");
   if (ria==0) { dec(rel); return inc(base); }
   if (o2cu(rgetU(rel, 0))=='/') return rel;
-  if (isNothing(base)) thrM("Using relative path with no absolute base path known");
+  if (q_N(base)) thrM("Using relative path with no absolute base path known");
   BS2B bgetU = TI(base,getU);
   usz bia = a(base)->ia;
   bool has = bia && o2cu(bgetU(base, bia-1))=='/';
@@ -92,8 +92,8 @@ B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector o
 }
 
 B path_dir(B path) { // consumes; returns directory part of file path with trailing slash, or ·
-  assert(isArr(path) || isNothing(path));
-  if (isNothing(path)) return path;
+  assert(isArr(path) || q_N(path));
+  if (q_N(path)) return path;
   BS2B pgetU = TI(path,getU);
   usz pia = a(path)->ia;
   if (pia==0) thrM("Empty file path");

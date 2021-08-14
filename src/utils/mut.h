@@ -1,5 +1,18 @@
 #pragma once
 
+/* Usage:
+
+Start with MAKE_MUT(name, itemAmount);
+MAKE_MUT allocates the object on the stack, so everything must happen within the scope of it.
+Optionally, call mut_init(name, el_something) with an appropriate ElType
+End with mut_f(v|c|cd|p);
+
+There must be no allocations while a mut object is being built so GC doesn't do bad things.
+mut_pfree must be used to free a partially finished `mut` instance safely (e.g. before throwing an error)
+methods ending with G expect that mut_init has been called with a type that can fit the elements that it'll set
+
+*/
+
 typedef struct Mut {
   u8 type;
   usz ia;

@@ -53,7 +53,7 @@ INS B i_FN1C(B f, B x, u32* bc) { POS_UPD; // TODO figure out a way to instead p
   dec(f); return r;
 }
 INS B i_FN1O(B f, B x, u32* bc) { POS_UPD;
-  B r = isNothing(x)? x : c1(f, x);
+  B r = q_N(x)? x : c1(f, x);
   dec(f); return r;
 }
 INS B i_FN2C(B w, B f, B x, u32* bc) { POS_UPD;
@@ -62,18 +62,18 @@ INS B i_FN2C(B w, B f, B x, u32* bc) { POS_UPD;
 }
 INS B i_FN2O(B w, B f, B x, u32* bc) { POS_UPD;
   B r;
-  if (isNothing(x)) { dec(w); r = x; }
-  else r = isNothing(w)? c1(f, x) : c2(f, w, x);
+  if (q_N(x)) { dec(w); r = x; }
+  else r = q_N(w)? c1(f, x) : c2(f, w, x);
   dec(f);
   return r;
 }
 INS B i_FN1Oi(B x, BB2B fm, u32* bc) { POS_UPD;
-  B r = isNothing(x)? x : fm(b((u64)0), x);
+  B r = q_N(x)? x : fm(b((u64)0), x);
   return r;
 }
 INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
-  if (isNothing(x)) { dec(w); return x; }
-  else return isNothing(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
+  if (q_N(x)) { dec(w); return x; }
+  else return q_N(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
 INS B i_ARR_0() { // TODO combine with ADDI
   return emptyHVec();
@@ -95,7 +95,7 @@ INS B i_OP2D(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
 INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
-INS B i_TR3O(B f,B g, B h         ) {          return isNothing(f)? m_atop(g,h) : m_fork(f,g,h); }
+INS B i_TR3O(B f,B g, B h         ) {          return q_N(f)? m_atop(g,h) : m_fork(f,g,h); }
 INS B i_NOVAR(u32* bc, B* cStack) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
@@ -143,7 +143,7 @@ INS B i_NSPM(B o, u32 l) {
   return tag(a,OBJ_TAG);
 }
 INS B i_CHKV(B x, u32* bc, B* cStack) {
-  if(isNothing(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
+  if(q_N(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
 INS B i_FAIL(u32* bc, B* cStack) {
@@ -268,7 +268,7 @@ static OptRes opt(u32* bc0) {
       }
       case TR3D: case TR3O: { S(f,0) S(g,1) S(h,2)
         if (f.p==-1 | g.p==-1 | h.p==-1) goto defIns;
-        if (isNothing(f.v)) thrM("JIT optimization: didn't expect constant ·");
+        if (q_N(f.v)) thrM("JIT optimization: didn't expect constant ·");
         B d = m_fork(inc(f.v), inc(g.v), inc(h.v));
         cact = 5; RM(f.p); RM(g.p); RM(h.p);
         TSADD(data, d.u);
@@ -563,7 +563,7 @@ Nvm_res m_nvm(Body* body) {
       } break;
       case LOCU: TOPs; { u64 d=*bc++; u64 p=*bc++;
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
-        IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to 
+        IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to bi_optOut
       } break;
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       // case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)

@@ -380,13 +380,13 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   comp->objs = toHArr(objs);
   comp->blockAm = 0;
   B nameList;
-  if (isNothing(tokenInfo)) {
+  if (q_N(tokenInfo)) {
     nameList = bi_emptyHVec;
   } else {
     B t = TI(tokenInfo,getU)(tokenInfo,2);
     nameList = TI(t,getU)(t,0);
   }
-  if (!isNothing(src) && !isNothing(indices)) {
+  if (!q_N(src) && !q_N(indices)) {
     if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
       B ind = TI(indices,getU)(indices,i);
@@ -546,7 +546,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case FN1O: { P(f)P(x)
         GS_UPD;POS_UPD;
-        ADD(isNothing(x)? x : c1(f, x)); dec(f);
+        ADD(q_N(x)? x : c1(f, x)); dec(f);
         break;
       }
       case FN2C: { P(w)P(f)P(x)
@@ -556,8 +556,8 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case FN2O: { P(w)P(f)P(x)
         GS_UPD;POS_UPD;
-        if (isNothing(x)) { dec(w); ADD(x); }
-        else ADD(isNothing(w)? c1(f, x) : c2(f, w, x));
+        if (q_N(x)) { dec(w); ADD(x); }
+        else ADD(q_N(w)? c1(f, x) : c2(f, w, x));
         dec(f);
         break;
       }
@@ -592,7 +592,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       case TR2D: {     P(g)P(h)                 ADD(m_atop(  g,h)); break; }
       case TR3D: { P(f)P(g)P(h)                 ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h)
-        if (isNothing(f)) { ADD(m_atop(g,h)); dec(f); }
+        if (q_N(f)) { ADD(m_atop(g,h)); dec(f); }
         else ADD(m_fork(f,g,h));
         break;
       }
@@ -658,7 +658,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case RETN: goto end;
       case CHKV: {
-        if (isNothing(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
+        if (q_N(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
       }
       case FAIL: thrM("No body matched");
@@ -974,7 +974,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
 
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
-  if (!isNothing(src) && !isNothing(comp->indices)) {
+  if (!q_N(src) && !q_N(comp->indices)) {
     B inds = TI(comp->indices,getU)(comp->indices, 0); usz cs = o2s(TI(inds,getU)(inds,bcPos));
     B inde = TI(comp->indices,getU)(comp->indices, 1); usz ce = o2s(TI(inde,getU)(inde,bcPos))+1;
     // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken

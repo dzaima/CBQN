@@ -23,7 +23,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 // 0 rax V result
 // 1 rcx V arg 3
 // 2 rdx V arg 2
-// 3 rbx  
+// 3 rbx
 // 4 rsp   stack
 // 5 rbp   base
 // 6 rsi V arg 1
