@@ -91,7 +91,7 @@ void printBC(u32* p) {
   for (i64 i = 0; i < am; i++) printf(" %d", p[i]);
   while(p!=n) {
     i32 c = *p++;
-    i32 pow = 10;
+    i64 pow = 10;
     i32 log = 1;
     while (pow<=c) { pow*=10; log++; }
     len+= log+1;
@@ -156,6 +156,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   i32 bodyAm1, bodyAm2, bodyILen;
   if (isArr(bodyObj)) {
     if (a(bodyObj)->ia!=2) thrM("VM compiler: Unexpected body list length");
+    // print(bodyObj); putchar('\n');
     BS2B boGetU = TI(bodyObj,getU);
     B b1 = boGetU(bodyObj,0);
     B b2 = boGetU(bodyObj,1);
@@ -163,11 +164,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     bodyAm1 = a(b1)->ia; BS2B b1GetU = TI(b1,getU);
     bodyAm2 = a(b2)->ia; BS2B b2GetU = TI(b2,getU);
     bodyILen = bodyAm1+bodyAm2;
-    TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_;
-    for (i32 i = 0; i < bodyAm1; i++) bodyI[i          ] = o2i(b1GetU(b1, i));
-    for (i32 i = 0; i < bodyAm2; i++) bodyI[i+bodyAm1+1] = o2i(b2GetU(b2, i));
-    for (i32 i = 1; i < bodyAm1; i++) if (bodyI[i]<=bodyI[i-1]) thrM("VM compiler: Expected body indices to be sorted");
-    for (i32 i = 1; i < bodyAm2; i++) if (bodyI[i]<=bodyI[i-1]) thrM("VM compiler: Expected body indices to be sorted");
+    TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_; i32* bodyI2 = bodyInds_+bodyAm1+1;
+    for (i32 i = 0; i < bodyAm1; i++) bodyI [i] = o2i(b1GetU(b1, i));
+    for (i32 i = 0; i < bodyAm2; i++) bodyI2[i] = o2i(b2GetU(b2, i));
+    for (i32 i = 1; i < bodyAm1; i++) if (bodyI [i]<=bodyI [i-1]) thrM("VM compiler: Expected body indices to be sorted");
+    for (i32 i = 1; i < bodyAm2; i++) if (bodyI2[i]<=bodyI2[i-1]) thrM("VM compiler: Expected body indices to be sorted");
     bodyI[bodyAm1] = bodyI[bodyILen+1] = I32_MAX;
   } else {
     bodyILen = 2;
@@ -177,7 +178,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     bodyAm1 = 1;
     bodyAm2 = 1;
   }
-  
+  // for (int i = 0; i < bodyILen+2; i++) printf("%d ", bodyI[i]); putchar('\n'); printf("things: %d %d\n", bodyAm1, bodyAm2);
   TSALLOC(Block*, usedBlocks, 2); // list of blocks to be referenced by DFND, stored in result->blocks
   TSALLOC(Body*, bodies, 2); // list of bodies of this block
   TSALLOC(i32, newBC, 20); // transformed bytecode
@@ -205,8 +206,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     i32 curr2 = bodyI[pos2];
     i32 currBody = curr1<curr2? curr1 : curr2;
     if (currBody==I32_MAX) break;
+    // printf("step %d %d:  %d %d %d\n", pos1, pos2, curr1, curr2, currBody);
     if (curr1==currBody) { if (index1==-1) index1=TSSIZE(bodies); pos1++; }
     if (curr2==currBody) { if (index2==-1) index2=TSSIZE(bodies); pos2++; }
+    // printf("idxs: %d %d\n", index1, index2);
     
     
     B bodyRepr = TI(allBodies,getU)(allBodies, currBody); if (!isArr(bodyRepr)) thrM("VM compiler: Body array contained non-array");
@@ -343,11 +346,14 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   bl->imm = imm;
   
   bl->bodyCount = bodyCount;
-  if (index1 != 0) {
-    Body* t = bodies[0];
-    bodies[0] = bodies[index1];
-    bodies[index1] = t;
-    index1 = 0;
+  if (index1 != 0) { // this is a _mess_
+    i32 sw0 = 0; i32 sw1 = index1;
+    
+    Body* t = bodies[sw0]; bodies[sw0] = bodies[sw1]; bodies[sw1] = t;
+    index1 = sw0;
+    
+    if      (index2==sw0) index2 = sw1;
+    else if (index2==sw1) index2 = sw0;
   }
   for (i32 i = 0; i < bodyCount; i++) {
     bl->bodies[i] = bodies[i];
