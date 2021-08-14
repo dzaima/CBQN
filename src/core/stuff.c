@@ -163,12 +163,13 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
     if (c!='%') continue;
     if (lp!=p-1) AJOIN(fromUTF8(lp, p-1-lp));
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
-      case 'R': { // TODO proper
+      case 'R': {
         B b = va_arg(a, B);
         if (isNum(b)) {
           AFMT("%f", o2f(b));
         } else { assert(isArr(b) && rnk(b)==1);
-          AJOIN(inc(b));
+          if (TI(b,elType)==el_c32) AJOIN(inc(b));
+          else AJOIN(taga(toC32Arr(inc(b))));
         }
         break;
       }
