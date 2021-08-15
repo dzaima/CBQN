@@ -567,6 +567,9 @@ NOINLINE void printAllocStats() {
 #ifdef DEBUG
   NOINLINE Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
+      #ifdef OBJ_COUNTER
+      printf("Object ID: "N64u"\n", x->uid);
+      #endif
       printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
       print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
       err("");

@@ -531,13 +531,8 @@ B join_c1(B t, B x) {
       B xf = getFillE(x);
       if (isAtm(xf)) {
         decA(xf);
-        if (!PROPER_FILLS) {
-          B xfq = getFillR(x);
-          bool no = noFill(xfq);
-          decR(xfq);
-          if (no) return x;
-        }
         dec(x);
+        if (!PROPER_FILLS) return emptyHVec();
         thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
       }
       dec(x);

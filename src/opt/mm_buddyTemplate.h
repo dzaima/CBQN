@@ -38,7 +38,13 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
     while(s<e) *s++ = tag(NULL, OBJ_TAG).u;
   #endif
   #ifdef OBJ_COUNTER
-  x->uid = currObjCounter++;
+    x->uid = currObjCounter++;
+    #ifdef OBJ_TRACK
+    if (x->uid == OBJ_TRACK) {
+      printf("Tracked object "N64u" created at:\n", (u64)OBJ_TRACK);
+      vm_pstLive();
+    }
+    #endif
   #endif
   return x;
 }

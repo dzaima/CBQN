@@ -23,11 +23,11 @@ c: # custom
 b: gen
 
 single-o3:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie -O3 -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -O3 -o BQN src/opt/single.c -lm
 single-o3g:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie -O3 -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -O3 -g -o BQN src/opt/single.c -lm
 single-debug:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie -DDEBUG -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
 single-c:
 	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -o BQN src/opt/single.c -lm
 

@@ -209,12 +209,8 @@ static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
   else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
 }
 
-static inline bool v_seth(Scope* pscs[], B s, B x) { // consumes both; s cannot contain extended variables
-  if (RARE(!isVar(s))) {
-    bool r = v_sethR(pscs, s, x);
-    dec(s); dec(x);
-    return r;
-  }
-  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, x, false);
+static inline bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables
+  if (RARE(!isVar(s))) return v_sethR(pscs, s, x);
+  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false);
   return true;
 }

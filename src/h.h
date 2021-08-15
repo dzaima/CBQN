@@ -76,14 +76,17 @@
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
 #else
   #undef EACH_FILLS
-  #define EACH_FILLS false
-  #define PROPER_FILLS false
+  #define EACH_FILLS 0
+  #define PROPER_FILLS 0
 #endif
 #if defined(RT_PERF) || defined(RT_VERIFY)
   #define RT_WRAP
   #if defined(RT_PERF) && defined(RT_VERIFY)
     #error "can't have both RT_PERF and RT_VERIFY"
   #endif
+#endif
+#if defined(OBJ_TRACK)
+  #define OBJ_COUNTER 1
 #endif
 
 #define i8    int8_t

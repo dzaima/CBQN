@@ -662,7 +662,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case SETH: { P(s)    P(x) GS_UPD; POS_UPD;
-        bool ok = v_seth(pscs, s, x);
+        bool ok = v_seth(pscs, s, x); dec(x); dec(s);
         if (!ok) thrM("VM: Header fallback NYI");
         break;
       }
