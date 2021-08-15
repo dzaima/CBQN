@@ -125,7 +125,7 @@ INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
   return r;
 }
 INS void i_SETH(B s, B x, Scope** pscs, u32* bc) { POS_UPD;
-  bool ok = v_seth(pscs, s, x);
+  bool ok = v_seth(pscs, s, x); dec(x); dec(s);
   if (!ok) thrM("VM: Header fallback NYI");
 }
 INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
