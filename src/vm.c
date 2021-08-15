@@ -47,8 +47,8 @@ i32 stackDiff(u32* p) {
   switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
     case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case SETH: case RETN: return -1;
-    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return -2;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case RETN: return -1;
+    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: return -2;
     
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
     case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
@@ -420,30 +420,54 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
     B* sp = harr_ptr(s);
     usz ia = a(s)->ia;
     if (isAtm(x) || !eqShape(s, x)) {
-      if (isNsp(x)) {
-        for (u64 i = 0; i < ia; i++) {
-          B c = sp[i];
-          if (isVar(c)) {
-            Scope* sc = pscs[(u16)(c.u>>32)];
-            i32 nameID = sc->body->varIDs[(u32)c.u];
-            v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
-          } else if (isExt(c)) {
-            ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
-            v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm]), upd);
-          } else if (isObj(c)) {
-            assert(v(c)->type == t_fldAlias);
-            Scope* sc = pscs[0];
-            FldAlias* cf = c(FldAlias,c);
-            v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd);
-          } else thrM("Assignment: extracting non-name from namespace");
-        }
-        return;
+      if (!isNsp(x)) thrM("Assignment: Mismatched shape for spread assignment");
+      for (u64 i = 0; i < ia; i++) {
+        B c = sp[i];
+        if (isVar(c)) {
+          Scope* sc = pscs[(u16)(c.u>>32)];
+          i32 nameID = sc->body->varIDs[(u32)c.u];
+          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
+        } else if (isExt(c)) {
+          ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
+          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm]), upd);
+        } else if (isObj(c)) {
+          assert(v(c)->type == t_fldAlias);
+          Scope* sc = pscs[0];
+          FldAlias* cf = c(FldAlias,c);
+          v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd);
+        } else thrM("Assignment: extracting non-name from namespace");
       }
-      thrM("Assignment: Mismatched shape for spread assignment");
+      return;
     }
     BS2B xgetU = TI(x,getU);
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
   }
+}
+NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
+  assert(!isExt(s));
+  VTY(s, t_harr);
+  B* sp = harr_ptr(s);
+  usz ia = a(s)->ia;
+  if (isAtm(x) || !eqShape(s, x)) {
+    if (!isNsp(x)) return false;
+    for (u64 i = 0; i < ia; i++) {
+      B c = sp[i];
+      if (isVar(c)) {
+        Scope* sc = pscs[(u16)(c.u>>32)];
+        i32 nameID = sc->body->varIDs[(u32)c.u];
+        if (!v_seth(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID))) return false;
+      } else if (isObj(c)) {
+        assert(v(c)->type == t_fldAlias);
+        Scope* sc = pscs[0];
+        FldAlias* cf = c(FldAlias,c);
+        if (!v_seth(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p))) return false;
+      } else return false;
+    }
+    return true;
+  }
+  BS2B xgetU = TI(x,getU);
+  for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], xgetU(x,i))) return false;
+  return true;
 }
 
 
@@ -635,6 +659,11 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         B r = c2(f,w,x); dec(f);
         v_set(pscs, s, r, true); dec(s);
         ADD(r);
+        break;
+      }
+      case SETH: { P(s)    P(x) GS_UPD; POS_UPD;
+        bool ok = v_seth(pscs, s, x);
+        if (!ok) thrM("VM: Header fallback NYI");
         break;
       }
       case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;

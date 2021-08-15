@@ -10,7 +10,7 @@
 #elif MM==2
   #include "opt/mm_2buddy.h"
 #else
-  #error bad MM value
+  #error "bad MM value"
 #endif
 
 #include "core/gstack.h"

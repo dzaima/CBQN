@@ -195,6 +195,7 @@ static inline B v_get(Scope* pscs[], B s) { // get value representing s, replaci
 }
 
 NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd); // doesn't consume
+NOINLINE bool v_sethR(Scope* pscs[], B s, B x); // doesn't consume
 static inline void v_setI(Scope* sc, u32 p, B x, bool upd) { // consumes x
   B prev = sc->vars[p];
   if (upd) {
@@ -206,4 +207,14 @@ static inline void v_setI(Scope* sc, u32 p, B x, bool upd) { // consumes x
 static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
   if (RARE(!isVar(s))) v_setR(pscs, s, x, upd);
   else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
+}
+
+static inline bool v_seth(Scope* pscs[], B s, B x) { // consumes both; s cannot contain extended variables
+  if (RARE(!isVar(s))) {
+    bool r = v_sethR(pscs, s, x);
+    dec(s); dec(x);
+    return r;
+  }
+  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, x, false);
+  return true;
 }

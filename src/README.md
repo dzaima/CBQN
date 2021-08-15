@@ -216,5 +216,6 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 ```
 See `#define CATCH` in `src/h.h` for how to catch errors.
 
-Use `assert(predicate)` for checks (for optimized builds they're replaced with `if (!predicate) invoke_undefined_behavior();` so it's still invoked!!).  
+Use `assert(predicate)` for checks (for optimized builds they're replaced with `if (!predicate) invoke_undefined_behavior();` so it's still invoked!!). `UD;` can be used to explicitly invoke undefined behavior (equivalent in behavior to `assert(false);`), which is useful for things like untaken `default` branches in `switch` statements.
+
 There's also `err("message")` that (at least currently) is kept in optimized builds as-is, and always kills the process on being called.

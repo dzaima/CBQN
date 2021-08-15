@@ -7,5 +7,5 @@
 #elif MM==2
   #include "../opt/mm_2buddy.c"
 #else
-  #error bad MM value
+  #error "bad MM value"
 #endif
