@@ -167,6 +167,27 @@ static inline void popEnv() {
   assert(envCurr>=envStart);
   envCurr--;
 }
+FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that tries to also free trivial cycles
+  i32 varAm = sc->varAm;
+  if (sc->refc>1) {
+    i32 innerRef = 1;
+    for (i32 i = 0; i < varAm; i++) {
+      B c = sc->vars[i];
+      if (isVal(c) && v(c)->refc==1) {
+        u8 t = v(c)->type;
+        if      (t==t_fun_block && c(FunBlock,c)->sc==sc) innerRef++;
+        else if (t==t_md1_block && c(Md1Block,c)->sc==sc) innerRef++;
+        else if (t==t_md2_block && c(Md2Block,c)->sc==sc) innerRef++;
+      }
+    }
+    assert(innerRef <= sc->refc);
+    if (innerRef==sc->refc) {
+      value_free((Value*)sc);
+      return;
+    }
+  }
+  ptr_dec(sc);
+}
 void vm_pst(Env* s, Env* e);
 void vm_pstLive(void);
 void vm_printPos(Comp* comp, i32 bcPos, i64 pos);

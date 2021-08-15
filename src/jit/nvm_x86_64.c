@@ -631,7 +631,7 @@ B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume
   // B* sp = gStack;
   B r = ((JITFn*)ptr)(gStack, sc);
   // if (sp!=gStack) thrM("uh oh");
-  
+  scope_dec(sc);
   popEnv();
   return r;
 }

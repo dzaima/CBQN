@@ -712,6 +712,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
   B r = POP;
   GS_UPD;
   popEnv();
+  scope_dec(sc);
   return r;
   #undef L64
   #undef P
@@ -732,29 +733,8 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
   while (i<varAm) sc->vars[i++] = bi_noVar;
   return sc;
 }
-static void scope_dec(Scope* sc) {
-  i32 varAm = sc->varAm;
-  if (sc->refc>1) {
-    i32 innerRef = 1;
-    for (i32 i = 0; i < varAm; i++) {
-      B c = sc->vars[i];
-      if (isVal(c) && v(c)->refc==1) {
-        u8 t = v(c)->type;
-        if      (t==t_fun_block && c(FunBlock,c)->sc==sc) innerRef++;
-        else if (t==t_md1_block && c(Md1Block,c)->sc==sc) innerRef++;
-        else if (t==t_md2_block && c(Md2Block,c)->sc==sc) innerRef++;
-      }
-    }
-    assert(innerRef <= sc->refc);
-    if (innerRef==sc->refc) {
-      value_free((Value*)sc);
-      return;
-    }
-  }
-  ptr_dec(sc);
-}
 
-FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) {
+FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) { // consumes sc, unlike execBlockInline
   #if JIT_START != -1
     if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
     bool jit = true;
@@ -771,14 +751,13 @@ FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) {
   #endif
   return evalBC(block, body, sc);
 }
-B execBlockInline(Block* block, Scope* sc) { return execBodyInlineI(block, block->bodies[0], sc); }
+B execBlockInline(Block* block, Scope* sc) { ptr_inc(sc); return execBodyInlineI(block, block->bodies[0], sc); }
 
 FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   Scope* sc = m_scope(body, psc, varAm, ga, svar);
   B r = execBodyInlineI(block, body, sc);
-  scope_dec(sc);
   return r;
 }
 
