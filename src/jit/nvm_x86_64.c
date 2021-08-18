@@ -140,6 +140,11 @@ INS B i_FLDO(B ns, u32 p, Scope* sc) {
   dec(ns);
   return r;
 }
+INS B i_VFYM(B o) { // TODO this and NSPM allocate and thus can error on OOM
+  VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
+  a->obj = o;
+  return tag(a,OBJ_TAG);
+}
 INS B i_NSPM(B o, u32 l) {
   FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
   a->obj = o;
@@ -530,8 +535,7 @@ Nvm_res m_nvm(Body* body) {
         NORES(1);
       break;
       case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(b(x))); INCV(R_A3); break; } // (u64 v, S)
-      case ADDU: TOPs; IMM(R_RES, L64);
-      break;
+      case ADDU: TOPs; IMM(R_RES, L64); break;
       case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (     B f, B x, u32* bc)
       case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (     B f, B x, u32* bc)
       case FN2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2C); break; // (B w, B f, B x, u32* bc)
@@ -569,13 +573,13 @@ Nvm_res m_nvm(Body* body) {
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to bi_optOut
       } break;
-      case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       // case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)
+      case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
-      case SETN: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
-      case SETU: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETN: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETU: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETM: TOPp; GET(R_A1,1,1) GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
-      case SETH: TOPp;               GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETH); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETH: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETH); break; // (B s,      B x, Scope** pscs, u32* bc)
       // TODO SETNi doesn't really need to update gStack
       case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
@@ -585,10 +589,11 @@ Nvm_res m_nvm(Body* body) {
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
+      case VFYM: TOPp;                  CCALL(i_VFYM); break; // (B)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: if (lGPos) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
-      case RETN: if (lGPos) GS_SET(r_CS); ret=true; break;
-      case FAIL: TOPs; IMM(R_A0,off); INV(1,0,i_FAIL); ret=true; break;
+      case RETN: if (lGPos) GS_SET(r_CS);                                ret=true; break;
+      case FAIL: TOPs; IMM(R_A0,off);                   INV(1,0,i_FAIL); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET

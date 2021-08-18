@@ -202,6 +202,10 @@ typedef struct FldAlias {
   B obj;
   i32 p;
 } FldAlias;
+typedef struct VfyObj {
+  struct Value;
+  B obj;
+} VfyObj;
 
 
 NOINLINE B v_getR(Scope* pscs[], B s); // doesn't consume

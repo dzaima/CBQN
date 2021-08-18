@@ -172,10 +172,10 @@ enum Type {
   /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
   
   /*25*/ t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks,
-  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_hashmap, t_temp, t_nfn, t_nfnDesc,
-  /*38*/ t_freed, t_harrPartial,
+  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_vfyObj, t_hashmap, t_temp, t_nfn, t_nfnDesc,
+  /*39*/ t_freed, t_harrPartial,
   #ifdef RT_WRAP
-  /*40*/ t_funWrap, t_md1Wrap, t_md2Wrap,
+  /*41*/ t_funWrap, t_md1Wrap, t_md2Wrap,
   #endif
   t_COUNT
 };

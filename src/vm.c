@@ -60,8 +60,8 @@ i32 stackConsumed(u32* p) {
   if (*p==ARRO|*p==ARRM) return p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
-    case CHKV: case VFYM: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: return 1;
+    case CHKV: case RETD: return 0;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case VFYM: return 1;
     case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: return 2;
     case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
     
@@ -444,7 +444,8 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
   }
 }
 NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
-  assert(!isExt(s));
+  assert(isVal(s));
+  if (v(s)->type==t_vfyObj) return equal(c(VfyObj,s)->obj,x);
   VTY(s, t_harr);
   B* sp = harr_ptr(s);
   usz ia = a(s)->ia;
@@ -456,7 +457,7 @@ NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
         Scope* sc = pscs[(u16)(c.u>>32)];
         i32 nameID = sc->body->varIDs[(u32)c.u];
         if (!v_seth(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID))) return false;
-      } else if (isObj(c)) {
+      } else if (isObj(c) && v(c)->type==t_fldAlias) {
         assert(v(c)->type == t_fldAlias);
         Scope* sc = pscs[0];
         FldAlias* cf = c(FldAlias,c);
@@ -690,8 +691,14 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         if (q_N(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
       }
+      case VFYM: { P(o)
+        VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
+        a->obj = o;
+        ADD(tag(a,OBJ_TAG));
+        break;
+      }
       case FAIL: thrM("No body matched");
-      // not implemented: VARO VARM VFYM SETH FLDM SYSV
+      // not implemented: VARO VARM FLDM SYSV
       default:
         #ifdef DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
@@ -823,6 +830,7 @@ DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(alias) { dec(((FldAlias*)x)->obj); }
+DEF_FREE(vfymO) { dec(((VfyObj*  )x)->obj); }
 DEF_FREE(bBlks) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
 DEF_FREE(scExt) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) dec(c->vars[i]); }
 
@@ -855,6 +863,7 @@ void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_vi
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void alias_visit(Value* x) { mm_visit(((FldAlias*)x)->obj); }
+void vfymO_visit(Value* x) { mm_visit(((VfyObj*  )x)->obj); }
 void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
 void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) mm_visit(c->vars[i]); }
 
@@ -863,6 +872,7 @@ void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
 void block_print(B x) { printf("(%p: block)",v(x)); }
 void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
 void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
+void vfymO_print(B x) { print(c(FldAlias,x)->obj); }
 void bBlks_print(B x) { printf("(block list)"); }
 void scExt_print(B x) { printf("(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
 
@@ -907,6 +917,7 @@ void comp_init() {
   TIi(t_scopeExt ,freeO) = scExt_freeO; TIi(t_scopeExt ,freeF) = scExt_freeF; TIi(t_scopeExt ,visit) = scExt_visit; TIi(t_scopeExt ,print) = scExt_print;
   TIi(t_blBlocks ,freeO) = bBlks_freeO; TIi(t_blBlocks ,freeF) = bBlks_freeF; TIi(t_blBlocks ,visit) = bBlks_visit; TIi(t_blBlocks ,print) = bBlks_print;
   TIi(t_fldAlias ,freeO) = alias_freeO; TIi(t_fldAlias ,freeF) = alias_freeF; TIi(t_fldAlias ,visit) = alias_visit; TIi(t_fldAlias ,print) = alias_print;
+  TIi(t_vfyObj   ,freeO) = vfymO_freeO; TIi(t_vfyObj   ,freeF) = vfymO_freeF; TIi(t_vfyObj   ,visit) = vfymO_visit; TIi(t_vfyObj   ,print) = vfymO_print;
   TIi(t_fun_block,freeO) = funBl_freeO; TIi(t_fun_block,freeF) = funBl_freeF; TIi(t_fun_block,visit) = funBl_visit; TIi(t_fun_block,print) = funBl_print; TIi(t_fun_block,decompose) = block_decompose;
   TIi(t_md1_block,freeO) = md1Bl_freeO; TIi(t_md1_block,freeF) = md1Bl_freeF; TIi(t_md1_block,visit) = md1Bl_visit; TIi(t_md1_block,print) = md1Bl_print; TIi(t_md1_block,decompose) = block_decompose; TIi(t_md1_block,m1_d)=bl_m1d;
   TIi(t_md2_block,freeO) = md2Bl_freeO; TIi(t_md2_block,freeF) = md2Bl_freeF; TIi(t_md2_block,visit) = md2Bl_visit; TIi(t_md2_block,print) = md2Bl_print; TIi(t_md2_block,decompose) = block_decompose; TIi(t_md2_block,m2_d)=bl_m2d;
