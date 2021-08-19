@@ -149,9 +149,9 @@ static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110............
 
 void cbqn_init(void);
 
-#if __STDC_IEC_559__ == 0
-  #error "IEEE 754 floating point number support is required for CBQN"
-#endif
+// #if __STDC_IEC_559__ == 0 // this has some issues on M1, so disabling for now
+//   #error "IEEE 754 floating point number support is required for CBQN"
+// #endif
 typedef union B {
   u64 u;
   f64 f;
