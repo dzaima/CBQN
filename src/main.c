@@ -49,10 +49,7 @@ int main(int argc, char* argv[]) {
         bqn_exit(0);
       #endif
       bqn_setComp(bqn_exec(srcB, bi_N, bi_N));
-    } else {
-      printf("couldn't read c.bqn\n");
-      exit(1);
-    }
+    } else err("couldn't read c.bqn\n");
   #endif
   bool startREPL = argc==1;
   bool silentREPL = false;

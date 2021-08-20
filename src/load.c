@@ -281,7 +281,7 @@ void load_init() { // very last init function
       #else
         B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
       #endif
-      if (q_N(r)) { printf("· in runtime!\n"); exit(1); }
+      if (q_N(r)) err("· in runtime!\n");
       if (isVal(r)) v(r)->flags|= i+1;
       #ifdef RT_WRAP
         r = rtWrap_wrap(r);
