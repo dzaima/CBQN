@@ -132,7 +132,7 @@ NOINLINE void print(B x) {
   else if (x.u==bi_N.u) printf("·");
   else if (x.u==bi_optOut.u) printf("(value optimized out)");
   else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
-  else if (x.u==bi_badHdr.u) printf("(bad header note)");
+  else if (x.u==bi_okHdr.u) printf("(accepted SETH placeholder)");
   else if (x.u==bi_noFill.u) printf("(no fill placeholder)");
   else printf("(todo tag "N64x")", x.u>>48);
 }

@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include "core.h"
 #include "vm.h"
-#include "jit/nvm.h"
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"
@@ -36,7 +35,7 @@ u32* nextBC(u32* p) {
     case ADDI: case ADDU:
     case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
       off = 3; break;
-    case FN2Oi:
+    case FN2Oi: case SETHi:
       off = 5; break;
     default: UD;
   }
@@ -48,7 +47,7 @@ i32 stackDiff(u32* p) {
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
     case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
     case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case RETN: return -1;
-    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: return -2;
+    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
     
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
     case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
@@ -62,7 +61,7 @@ i32 stackConsumed(u32* p) {
     case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
     case CHKV: case RETD: return 0;
     case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case VFYM: return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: return 2;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: case SETHi:return 2;
     case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
     
     case SETN: return 2; case SETNi: case SETNv: return 1;
@@ -144,7 +143,11 @@ static Body* m_body(i32 vam, i32 pos, u16 maxStack, u16 maxPSC) { // leaves varI
   body->varAm = (u16)vam;
   return body;
 }
-
+typedef struct SETHRequest {
+  u32 off; // offset into bytecode where the two integers must be inserted
+  u32 pos1; // offset into bodyI/bodyMap of what's wanted for monadic
+  u32 pos2; // ↑ for dyadic
+} SETHRequest;
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth) {
   usz blIA = a(block)->ia;
   if (blIA!=3) thrM("VM compiler: Bad block info size");
@@ -179,12 +182,14 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     bodyAm2 = 1;
   }
   // for (int i = 0; i < bodyILen+2; i++) printf("%d ", bodyI[i]); putchar('\n'); printf("things: %d %d\n", bodyAm1, bodyAm2);
-  TSALLOC(Block*, usedBlocks, 2); // list of blocks to be referenced by DFND, stored in result->blocks
-  TSALLOC(Body*, bodies, 2); // list of bodies of this block
   TSALLOC(i32, newBC, 20); // transformed bytecode
   TSALLOC(i32, mapBC, 20); // map of original bytecode to transformed
+  TSALLOC(Block*, usedBlocks, 2); // list of blocks to be referenced by DFND, stored in result->blocks
+  TSALLOC(Body*, bodies, 2); // list of bodies of this block
+  TALLOC(Body*, bodyMap, bodyILen+2); // map from index in bodyI to the corresponding body
+  TSALLOC(SETHRequest, sethReqs, 10); // list of SETHi's to fill out when bodyMap is complete
   
-  i32 pos1 = 0;
+  i32 pos1 = 0; // pos1 and pos2 always stay valid indexes in bodyI because bodyI is padded with -1s
   i32 pos2 = bodyAm1+1;
   i32 index1 = -1;
   i32 index2 = -1;
@@ -200,6 +205,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     body->nsDesc = NULL;
     TSADD(bodies, body);
   }
+  bodyMap[bodyAm1] = bodyMap[bodyILen+1] = NULL;
   
   while (true) {
     i32 curr1 = bodyI[pos1];
@@ -207,8 +213,9 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     i32 currBody = curr1<curr2? curr1 : curr2;
     if (currBody==I32_MAX) break;
     // printf("step %d %d:  %d %d %d\n", pos1, pos2, curr1, curr2, currBody);
-    if (curr1==currBody) { if (index1==-1) index1=TSSIZE(bodies); pos1++; }
-    if (curr2==currBody) { if (index2==-1) index2=TSSIZE(bodies); pos2++; }
+    u64 bodyIdx = TSSIZE(bodies);
+    bool is1 = curr1==currBody; if (is1) { if (index1==-1) index1=bodyIdx; pos1++; }
+    bool is2 = curr2==currBody; if (is2) { if (index2==-1) index2=bodyIdx; pos2++; }
     // printf("idxs: %d %d\n", index1, index2);
     
     
@@ -294,6 +301,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           TSADD(newBC, cpos);
           break;
         }
+        case SETH:
+          TSADD(newBC, SETHi);
+          TSADD(sethReqs, ((SETHRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = pos2}));
+          A64(0); A64(0); // to be filled in by later sethReqs handling
+          break;
         default: {
           u32* ccpy = c;
           while (ccpy!=n) TSADD(newBC, *ccpy++);
@@ -321,7 +333,17 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     }
     
     TSADD(bodies, body);
+    if (is1) bodyMap[pos1-1] = body;
+    if (is2) bodyMap[pos2-1] = body;
   }
+  u64 sethReqAm = TSSIZE(sethReqs);
+  for (u64 i = 0; i < sethReqAm; i++) {
+    SETHRequest r = sethReqs[i];
+    u64 v1 = (u64)bodyMap[r.pos1]; newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
+    u64 v2 = (u64)bodyMap[r.pos2]; newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32;
+  }
+  TSFREE(sethReqs);
+  TFREE(bodyMap);
   TFREE(bodyI);
   
   usz blC = TSSIZE(usedBlocks);
@@ -491,6 +513,7 @@ NOINLINE B v_getR(Scope* pscs[], B s) {
 
 
 
+FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc);
 
 #ifdef DEBUG_VM
 i32 bcDepth=-2;
@@ -662,9 +685,22 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         ADD(r);
         break;
       }
-      case SETH: { P(s)    P(x) GS_UPD; POS_UPD;
+      case SETHi:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) thrM("VM: Header fallback NYI");
+        if (!ok) {
+          Body* body = (Body*)(q_N(sc->vars[2])? v1 : v2);
+          if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
+          
+          GS_UPD;
+          popEnv();
+          
+          i32 ga = blockGivenVars(bl);
+          
+          for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
+          Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
+          scope_dec(sc);
+          return execBodyInlineI(bl, body, nsc);
+        }
         break;
       }
       case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
@@ -697,7 +733,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         ADD(tag(a,OBJ_TAG));
         break;
       }
-      case FAIL: thrM("No body matched");
+      case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
       // not implemented: VARO VARM FLDM SYSV
       default:
         #ifdef DEBUG
@@ -729,7 +765,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
   #undef GS_UPD
 }
 
-Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // doesn't consume
+Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // consumes initVarAm items of initVars
   Scope* sc = mm_alloc(fsizeof(Scope, vars, B, varAm), t_scope);
   sc->body = body; ptr_inc(body);
   sc->psc = psc; if(psc) ptr_inc(psc);
@@ -741,28 +777,12 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
   return sc;
 }
 
-FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) { // consumes sc, unlike execBlockInline
-  #if JIT_START != -1
-    if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
-    bool jit = true;
-    #if JIT_START > 0
-      jit = body->callCount++ >= JIT_START;
-    #endif
-    // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT for blocks starting with `123456⋄`
-    if (jit) {
-      Nvm_res r = m_nvm(body);
-      body->nvm = r.p;
-      body->nvmRefs = r.refs;
-      goto toJIT;
-    }
-  #endif
-  return evalBC(block, body, sc);
-}
 B execBlockInline(Block* block, Scope* sc) { ptr_inc(sc); return execBodyInlineI(block, block->bodies[0], sc); }
 
 FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   u16 varAm = body->varAm;
   assert(varAm>=ga);
+  assert(ga == blockGivenVars(block));
   Scope* sc = m_scope(body, psc, varAm, ga, svar);
   B r = execBodyInlineI(block, body, sc);
   return r;

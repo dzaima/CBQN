@@ -231,7 +231,7 @@ void gc_visitRoots(void);
 // some primitive actions
 static const B bi_N      = b((u64)0x7FF2000000000000ull); // tag(0, TAG_TAG); // make gcc happy
 static const B bi_noVar  = b((u64)0x7FF2000000000001ull); // tag(1, TAG_TAG);
-static const B bi_badHdr = b((u64)0x7FF2000000000002ull); // tag(2, TAG_TAG);
+static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2, TAG_TAG);
 static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3, TAG_TAG);
 static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5, TAG_TAG);
 extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;

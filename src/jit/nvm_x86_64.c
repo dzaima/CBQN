@@ -4,7 +4,7 @@
 #include "../utils/file.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
-#include "nvm.h"
+#include "../vm.h"
 
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
@@ -124,9 +124,18 @@ INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
   v_set(pscs, s, r, true); dec(s);
   return r;
 }
-INS void i_SETH(B s, B x, Scope** pscs, u32* bc) { POS_UPD;
+INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
   bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-  if (!ok) thrM("VM: Header fallback NYI");
+  if (ok) return bi_okHdr;
+  Scope* sc = pscs[0];
+  Body* body = q_N(sc->vars[2])? v1 : v2;
+  if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
+  Block* bl = body->bl;
+  // because of nvm returning semantics, we cannot quick-skip to the next body. TODO maybe we can by moving tail of evalJIT into i_RETN etc and some magic™ here?
+  u64 ga = blockGivenVars(bl);
+  for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
+  Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
+  return execBodyInlineI(bl, body, nsc);
 }
 INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
 INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
@@ -155,8 +164,8 @@ INS B i_CHKV(B x, u32* bc, B* cStack) {
   if(q_N(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
   return x;
 }
-INS B i_FAIL(u32* bc, B* cStack) {
-  POS_UPD; GS_UPD; thrM("No body matched");
+INS B i_FAIL(u32* bc, Scope* sc, B* cStack) {
+  POS_UPD; GS_UPD; thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
 }
 INS B i_RETD(Scope* sc) {
   Body* b = sc->body;
@@ -502,6 +511,7 @@ Nvm_res m_nvm(Body* body) {
   u32* bc = optRes.bc;
   i32 lGPos = 0; // last updated gStack offset
   
+  TSALLOC(u64, retLbls, 1);
   while (true) {
     u32* s = bc;
     u32* n = nextBC(bc);
@@ -576,10 +586,12 @@ Nvm_res m_nvm(Body* body) {
       // case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
-      case SETN: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
-      case SETU: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
-      case SETM: TOPp; GET(R_A1,1,1) GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
-      case SETH: TOPp; GET(R_A1,1,1);               LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETH); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+        if (lGPos!=0) GS_SET(r_CS); lGPos=0; IMM(R_A4,v1); IMM(R_A5,v2);
+        /**/           GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETH); IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); break; }
+      case SETN: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETU: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
+      case SETM: TOPp; GET(R_A1,1,1); GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
       // TODO SETNi doesn't really need to update gStack
       case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
@@ -591,9 +603,9 @@ Nvm_res m_nvm(Body* body) {
       case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
       case VFYM: TOPp;                  CCALL(i_VFYM); break; // (B)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
-      case RETD: if (lGPos) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
-      case RETN: if (lGPos) GS_SET(r_CS);                                ret=true; break;
-      case FAIL: TOPs; IMM(R_A0,off);                   INV(1,0,i_FAIL); ret=true; break;
+      case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
+      case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
+      case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
       default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
     }
     #undef GET
@@ -612,6 +624,11 @@ Nvm_res m_nvm(Body* body) {
     if (ret) break;
   }
   freeOpt(optRes);
+  u64 retLblAm = TSSIZE(retLbls);
+  for (u64 i = 0; i < retLblAm; i++) {
+    u64 l = retLbls[i]; LBL4(l);
+  }
+  TSFREE(retLbls);
   ADDi(R_SP, lsz);
   POP(r_SC);
   POP(r_CS);

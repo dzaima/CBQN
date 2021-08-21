@@ -48,7 +48,8 @@ enum {
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like LOC_
   SETNv, SETUv, SETMv, // SET_i alternatives that also don't return the result
-  FAIL, // no body matched
+  SETHi, // internal version of SETH, with 2×u64 arguments specifying bodies to jump to on fail (or NULL if is last)
+  FAIL, // this body cannot be called monadically/dyadically
   BC_SIZE
 };
 
@@ -127,7 +128,31 @@ Block* bqn_comp(B str, B path, B args);
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
 Block* compile(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src, B path, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
+
+typedef struct Nvm_res { u8* p; B refs; } Nvm_res;
+Nvm_res m_nvm(Body* b);
+void nvm_free(u8* ptr);
+
+B evalJIT(Body* b, Scope* sc, u8* ptr);
+B evalBC(Block* bl, Body* b, Scope* sc);
 B execBlockInline(Block* block, Scope* sc); // doesn't consume; executes bytecode of the monadic body directly in the scope
+FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) { // consumes sc, unlike execBlockInline
+  #if JIT_START != -1
+    if (body->nvm) { toJIT: return evalJIT(body, sc, body->nvm); }
+    bool jit = true;
+    #if JIT_START > 0
+      jit = body->callCount++ >= JIT_START;
+    #endif
+    // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT for blocks starting with `123456⋄`
+    if (jit) {
+      Nvm_res r = m_nvm(body);
+      body->nvm = r.p;
+      body->nvmRefs = r.refs;
+      goto toJIT;
+    }
+  #endif
+  return evalBC(block, body, sc);
+}
 
 u32* nextBC(u32* p);
 i32 stackDiff(u32* p);
@@ -187,6 +212,9 @@ FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that 
     }
   }
   ptr_dec(sc);
+}
+FORCE_INLINE i32 blockGivenVars(Block* bl) {
+  return (bl->imm?0:3) + bl->ty + (bl->ty>0);
 }
 void vm_pst(Env* s, Env* e);
 void vm_pstLive(void);
