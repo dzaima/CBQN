@@ -157,16 +157,31 @@ NOINLINE void printRaw(B x) {
   }
 }
 i32 num_fmt(char buf[30], f64 x) {
+  // for (int i = 0; i < 30; i++) buf[i] = 'a';
   snprintf(buf, 30, "%.16g", x); // should be %.17g to (probably?) never lose precision, but that also makes things ugly
   i32 len = strlen(buf);
   if (buf[0] == 'i') {
-    buf[0] = 0xE2; buf[1] = 0x88; buf[2] = 0x9E; buf[3] = 0;
+    buf[0] = 0xE2; buf[1] = 0x88; buf[2] = 0x9E; buf[3] = 0; len = 3;
   } else if (buf[buf[0]=='-'?1:0] == 'n') {
-    buf[0] = 'N';  buf[1] = 'a';  buf[2] = 'N';  buf[3] = 0;
-  } else if (buf[0] == '-') {
-    memmove(buf+2, buf+1, len+1);
-    buf[0] = 0xC2; buf[1] = 0xAF; // "¯""
-    len+= 1;
+    buf[0] = 'N';  buf[1] = 'a';  buf[2] = 'N';  buf[3] = 0; len = 3;
+  } else {
+    if (buf[0] == '-') {
+      memmove(buf+2, buf+1, len);
+      buf[0] = 0xC2; buf[1] = 0xAF; // "¯""
+      len+= 1;
+    }
+    for (i32 i = 0; i < len; i++) {
+      if (buf[i] == 'e') {
+        if (buf[i+1] == '+') {
+          memcpy(buf+i+1, buf+i+2, len-i-1);
+          len-= 1;
+          break;
+        } else if (buf[i+1] == '-') {
+          memcpy(buf+i+3, buf+i+2, len-i-1);
+          buf[i+1] = 0xC2; buf[i+2] = 0xAF;
+        }
+      }
+    }
   }
   return len;
 }
