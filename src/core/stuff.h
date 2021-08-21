@@ -96,6 +96,8 @@ static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
 
 B m_str8l(char* s);
 B fromUTF8l(char* x);
+i32 num_fmt(char buf[30], f64 x);
+#define NUM_FMT_BUF(N,X) char N[30]; num_fmt(N, X);
 B append_fmt(B s, char* p, ...);
 B make_fmt(char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X

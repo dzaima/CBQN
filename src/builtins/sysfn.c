@@ -68,11 +68,9 @@ B glyph_c1(B t, B x) {
 }
 
 B repr_c1(B t, B x) {
-  #define BL 100
   if (isF64(x)) {
-    char buf[BL];
-    snprintf(buf, BL, "%.14g", x.f);
-    return m_str8(strlen(buf), buf);
+    NUM_FMT_BUF(buf, x.f);
+    return fromUTF8(buf, strlen(buf));
   } else {
     #if FORMATTER
       return bqn_repr(x);

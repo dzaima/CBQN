@@ -107,7 +107,8 @@ NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging p
 
 NOINLINE void print(B x) {
   if (isF64(x)) {
-    printf("%.14g", x.f);
+    NUM_FMT_BUF(buf, x.f);
+    printf("%s", buf);
   } else if (isC32(x)) {
     if ((u32)x.u>=32) { printf("'"); printUTF8((u32)x.u); printf("'"); }
     else if((u32)x.u>15) printf("\\x%x", (u32)x.u);
@@ -139,7 +140,7 @@ NOINLINE void print(B x) {
 
 NOINLINE void printRaw(B x) {
   if (isAtm(x)) {
-    if (isF64(x)) printf("%.14g", x.f);
+    if (isF64(x)) { NUM_FMT_BUF(buf, x.f); printf("%s", buf); }
     else if (isC32(x)) printUTF8((u32)x.u);
     else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
@@ -154,6 +155,20 @@ NOINLINE void printRaw(B x) {
       printUTF8((u32)c.u);
     }
   }
+}
+i32 num_fmt(char buf[30], f64 x) {
+  snprintf(buf, 30, "%.16g", x); // should be %.17g to (probably?) never lose precision, but that also makes things ugly
+  i32 len = strlen(buf);
+  if (buf[0] == 'i') {
+    buf[0] = 0xE2; buf[1] = 0x88; buf[2] = 0x9E; buf[3] = 0;
+  } else if (buf[buf[0]=='-'?1:0] == 'n') {
+    buf[0] = 'N';  buf[1] = 'a';  buf[2] = 'N';  buf[3] = 0;
+  } else if (buf[0] == '-') {
+    memmove(buf+2, buf+1, len+1);
+    buf[0] = 0xC2; buf[1] = 0xAF; // "¯""
+    len+= 1;
+  }
+  return len;
 }
 NOINLINE B do_fmt(B s, char* p, va_list a) {
   char buf[30];
@@ -230,12 +245,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         break;
       }
       case 'f': {
-        f64 f = va_arg(a, f64);
-        if (f<0) {
-          AU("¯");
-          f=-f;
-        }
-        snprintf(buf, 30, "%.14g", f);
+        NUM_FMT_BUF(buf, va_arg(a, f64));
         A8(buf);
         break;
       }
