@@ -437,6 +437,25 @@ B repl_c1(B t, B x) {
   ptr_dec(block);
   return res;
 }
+B repl_c2(B t, B w, B x) {
+  Scope* sc = c(Scope,nfn_objU(t));
+  if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrM("REPL: 𝕨 must be a vector with at most 3 items");
+  usz ia = a(w)->ia;
+  BS2B wget = TI(w,get);
+  B path = ia>0? wget(w,0) : inc(replPath);
+  B file = ia>1? wget(w,1) : emptyCVec();
+  B args = ia>2? wget(w,2) : emptySVec();
+  B fullpath = vec_join(vec_add(path, m_c32('/')), file);
+  Block* block = bqn_compSc(x, fullpath, args, sc, true);
+  
+  ptr_dec(sc->body); ptr_inc(block->bodies[0]);
+  sc->body = block->bodies[0];
+  B res = execBlockInline(block, sc);
+  
+  dec(w);
+  ptr_dec(block);
+  return res;
+}
 
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
@@ -631,7 +650,7 @@ void sysfn_init() {
   fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
   fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
-  makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, c2_invalid);
+  makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
 }
 void sysfnPost_init() {
