@@ -3,7 +3,7 @@
 #include "utils/utf.h"
 #include "utils/file.h"
 
-static B replPath;
+B replPath; // also used by sysfn.c
 static Scope* gsc;
 static bool init = false;
 

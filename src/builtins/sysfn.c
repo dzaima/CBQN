@@ -416,6 +416,27 @@ B makeRand_c1(B t, B x) {
   ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  inc(r)));
   return r;
 }
+extern B replPath; // defined in main.c
+static NFnDesc* makeREPLDesc;
+B makeREPL_c1(B t, B x) {
+  dec(x);
+  Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
+  Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
+  ptr_dec(initBlock);
+  return m_nfn(makeREPLDesc, tag(sc, OBJ_TAG));
+}
+B repl_c1(B t, B x) {
+  Scope* sc = c(Scope,nfn_objU(t));
+  
+  Block* block = bqn_compSc(x, inc(replPath), emptySVec(), sc, true);
+  
+  ptr_dec(sc->body); ptr_inc(block->bodies[0]);
+  sc->body = block->bodies[0];
+  B res = execBlockInline(block, sc);
+  
+  ptr_dec(block);
+  return res;
+}
 
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
@@ -590,6 +611,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
+    else if (eqStr(c, U"makerepl")) r.a[i] = inc(bi_makeREPL);
     else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, path_dir(inc(comp_currPath)));
     else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, path_dir(inc(comp_currPath)));
@@ -609,6 +631,7 @@ void sysfn_init() {
   fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
   fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
+  makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, c2_invalid);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
 }
 void sysfnPost_init() {
