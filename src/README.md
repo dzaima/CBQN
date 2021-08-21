@@ -24,8 +24,22 @@ src/
     internal.c  •internal
   opt/    files which aren't needed for every build configuration
   gen/    generated files
-  core/   things included everywhere
+  jit/    simple JIT compiler for x86-64
   utils/  utilities included as needed
+    builtins.h  definitions of all built-in functions (excluding things defined by means of nfns.c)
+    file.h      file system operations
+    hash.h      hashing things
+    mut.h       copying multiple arrays into a single array
+    talloc.h    temporary allocations (described more below)
+    utf.h       UTF-8 things
+  core/   things included everywhere
+  core.h  file imported everywhere that defines the base BQN model
+  nfns.c  native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
+  load.c  loads the self-hosted compiler, runtime and formatter, initializes CBQN globals
+  main.c  main function & commandline stuff
+  ns.c    namespaces
+  vm.c    virtual machine interpreter
+)
 ```
 
 ## Base
