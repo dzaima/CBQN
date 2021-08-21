@@ -998,7 +998,8 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   else AFMT("at ");
   i64 padEnd = (i64)a(s)->ia;
   i64 padStart = padEnd;
-  while (padStart>0 && o2cu(srcGetU(s,padStart-1))!='\n') padStart--;
+  BS2B sGetU = TI(s,getU);
+  while (padStart>0 && o2cu(sGetU(s,padStart-1))!='\n') padStart--;
   
   Arr* slice = TI(src,slice)(inc(src),srcS, srcE-srcS); arr_shVec(slice);
   AJOIN(taga(slice));

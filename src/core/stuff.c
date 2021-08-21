@@ -591,4 +591,8 @@ NOINLINE void printAllocStats() {
     }
     return x;
   }
+  NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]) {
+    printf("%s:%d: %s: Assertion `%s` failed.\n", file, line, fn, expr);
+    err("");
+  }
 #endif

@@ -207,7 +207,8 @@ typedef struct Arr {
 } Arr;
 
 #ifdef DEBUG
-  #include<assert.h>
+  NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]);
+  #define assert(X) do { if (!(X)) assert_fail(#X, __FILE__, __LINE__, __PRETTY_FUNCTION__); } while (0)
   B VALIDATE(B x);
   Value* VALIDATEP(Value* x);
   #define UD assert(false);
