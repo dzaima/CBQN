@@ -478,12 +478,14 @@ NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
       if (isVar(c)) {
         Scope* sc = pscs[(u16)(c.u>>32)];
         i32 nameID = sc->body->varIDs[(u32)c.u];
-        if (!v_seth(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID))) return false;
+        B g = ns_qgetU(x, sc->body->nsDesc->nameList, nameID);
+        if (q_N(g) || !v_seth(pscs, c, g)) return false;
       } else if (isObj(c) && v(c)->type==t_fldAlias) {
         assert(v(c)->type == t_fldAlias);
         Scope* sc = pscs[0];
         FldAlias* cf = c(FldAlias,c);
-        if (!v_seth(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p))) return false;
+        B g = ns_qgetU(x, sc->body->nsDesc->nameList, cf->p);
+        if (q_N(g) || !v_seth(pscs, cf->obj, g)) return false;
       } else return false;
     }
     return true;

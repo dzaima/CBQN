@@ -58,6 +58,26 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   }
   thrM("No key found");
 }
+B ns_qgetU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns); // TODO somehow merge impl with ns_getU
+  NS* n = c(NS, ns);
+  NSDesc* d = n->desc;
+  i32 dVarAm = d->varAm;
+  assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
+  B dNL = d->nameList;
+  if (cNL.u != dNL.u) {
+    B cName = TI(cNL,getU)(cNL, nameID);
+    BS2B dNLgetU = TI(dNL,getU);
+    for (i32 i = 0; i < dVarAm; i++) {
+      i32 dID = d->expIDs[i];
+      if (dID>=0 && equal(dNLgetU(dNL, dID), cName)) return n->sc->vars[i];
+    }
+  } else {
+    for (i32 i = 0; i < dVarAm; i++) {
+      if (d->expIDs[i]==nameID) return n->sc->vars[i];
+    }
+  }
+  return bi_N;
+}
 B ns_getNU(B ns, B name) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;

@@ -147,6 +147,7 @@ B shape_c2(B t, B w, B x) {
       i64 div = nia/xia;
       i64 mod = nia%xia;
       for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
+      if (fill && mod && noFill(xf)) thrM("⥊: 𝕩 had no fill element");
       if (fill) mut_fill(m, div*xia, xf, mod);
       else      mut_copyG(m, div*xia, x, 0, mod);
       dec(x);
