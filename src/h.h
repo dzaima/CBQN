@@ -337,7 +337,7 @@ static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 
 static i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
-static usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected integer"); return (usz)x.f; }
+static usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected non-negative integer"); return (usz)x.f; }
 static i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
 static u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
 static f64 o2f   (B x) { if (!isNum(x)) thrM("Expected integer"); return x.f; }

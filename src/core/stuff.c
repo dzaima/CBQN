@@ -261,7 +261,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
       }
       case 'f': {
         NUM_FMT_BUF(buf, va_arg(a, f64));
-        A8(buf);
+        AU(buf);
         break;
       }
       case 'c': {
