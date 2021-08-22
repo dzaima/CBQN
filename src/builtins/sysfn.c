@@ -461,8 +461,8 @@ B fchars_c1(B d, B x) {
 }
 B fchars_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
-  B p = inc(path_resolve(nfn_objU(d), w));
-  file_wChars(p, x);
+  B p = path_resolve(nfn_objU(d), w);
+  file_wChars(inc(p), x);
   dec(x);
   return p;
 }
@@ -477,8 +477,8 @@ B fbytes_c1(B d, B x) {
 }
 B fbytes_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
-  B p = inc(path_resolve(nfn_objU(d), w));
-  file_wBytes(p, x);
+  B p = path_resolve(nfn_objU(d), w);
+  file_wBytes(inc(p), x);
   dec(x);
   return p;
 }
@@ -494,12 +494,12 @@ B flines_c2(B d, B w, B x) {
     nl = TI(x,get)(x, i);
     if (!isArr(nl)) thrM("•FLines: Non-array element of 𝕩");
     s = vec_join(s, nl);
-    //if (windows) s = vec_add(s, m_c32('\r'));
+    //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
     s = vec_add(s, m_c32('\n'));
   }
   dec(x);
-  B p = inc(path_resolve(nfn_objU(d), w));
-  file_wChars(p, s);
+  B p = path_resolve(nfn_objU(d), w);
+  file_wChars(inc(p), s);
   dec(s);
   return p;
 }
