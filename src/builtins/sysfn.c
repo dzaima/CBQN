@@ -460,8 +460,11 @@ B fchars_c1(B d, B x) {
   return file_chars(path_resolve(nfn_objU(d), x));
 }
 B fchars_c2(B d, B w, B x) {
-  file_wChars(path_resolve(nfn_objU(d), w), x);
-  return x;
+  if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
+  B p = inc(path_resolve(nfn_objU(d), w));
+  file_wChars(p, x);
+  dec(x);
+  return p;
 }
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
@@ -472,9 +475,33 @@ B fbytes_c1(B d, B x) {
   ptr_dec(tf);
   return r;
 }
+B fbytes_c2(B d, B w, B x) {
+  if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
+  B p = inc(path_resolve(nfn_objU(d), w));
+  file_wBytes(p, x);
+  dec(x);
+  return p;
+}
 static NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
   return file_lines(path_resolve(nfn_objU(d), x));
+}
+B flines_c2(B d, B w, B x) {
+  if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
+  B nl, s = emptyCVec();
+  usz ia = a(x)->ia;
+  for (u64 i = 0; i < ia; i++) {
+    nl = TI(x,get)(x, i);
+    if (!isArr(nl)) thrM("•FLines: Non-array element of 𝕩");
+    s = vec_join(s, nl);
+    //if (windows) s = vec_add(s, m_c32('\r'));
+    s = vec_add(s, m_c32('\n'));
+  }
+  dec(x);
+  B p = inc(path_resolve(nfn_objU(d), w));
+  file_wChars(p, s);
+  dec(s);
+  return p;
 }
 static NFnDesc* importDesc;
 B import_c1(B d,      B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), emptySVec()); }
@@ -645,8 +672,8 @@ B sys_c1(B t, B x) {
 
 void sysfn_init() {
   fCharsDesc = registerNFn(m_str32(U"•FChars"), fchars_c1, fchars_c2);
-  fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, c2_invalid);
-  fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, c2_invalid);
+  fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, flines_c2);
+  fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
