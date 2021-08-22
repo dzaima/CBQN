@@ -192,7 +192,7 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) {
   mut_to(m, nty);
   goto again;
 }
-static void mut_fillG(Mut* m, usz ms, B x, usz l) {
+static void mut_fillG(Mut* m, usz ms, B x, usz l) { // doesn't consume x
   switch(m->type) { default: UD;
     case el_i32: {
       assert(q_i32(x));

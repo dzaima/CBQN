@@ -532,7 +532,7 @@ static u8 fillElType(B x) {
   if (isC32(x)) return el_c32;
   return el_B;
 }
-static u8 selfElType(B x) {
+static u8 selfElType(B x) { // guaranteed to fit fill
   if (isF64(x)) return q_i32(x)? el_i32 : el_f64;
   if (isC32(x)) return el_c32;
   return el_B;

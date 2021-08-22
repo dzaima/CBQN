@@ -158,6 +158,14 @@ B shape_c2(B t, B w, B x) {
   }
   unit:
   
+  if (fill && nia>1) {
+    MAKE_MUT(m, nia); mut_init(m, selfElType(x));
+    mut_setG(m, 0, x);
+    mut_fillG(m, 1, xf, nia-1);
+    Arr* ra = mut_fp(m);
+    arr_shSetU(ra, nr, sh);
+    return withFill(taga(ra), xf);
+  }
   if (isF64(x)) { decA(xf);
     i32 n = (i32)x.f;
     if (n == x.f) {
