@@ -125,6 +125,7 @@ B shape_c2(B t, B w, B x) {
         if (tot > USZ_MAX) thrM("⥊: Result too large");
         nia = tot;
         if (fill) {
+          if (!isArr(x)) x = m_atomUnit(x);
           Arr* a = take_impl(nia, x);
           arr_shVec(a);
           x = taga(a);
@@ -552,21 +553,6 @@ B take_c2(B t, B w, B x) {
     }
     return taga(a);
   }
-  // if (isNum(w) && isArr(x) && rnk(x)==1) {
-  //   i64 v = o2i64(w);
-  //   usz ia = a(x)->ia;
-  //   u64 va = v<0? -v : v;
-  //   if (va>ia) {
-  //     B xf = getFillE(x);
-  //     MAKE_MUT(r, va); mut_init(r, TI(x,elType));
-  //     mut_copyG(r, v<0? va-ia : 0, x, 0, ia);
-  //     mut_fill(r, v<0? 0 : ia, xf, va-ia);
-  //     dec(x); dec(xf);
-  //     return mut_fv(r);
-  //   }
-  //   if (v<0) return slicev(x, ia+v, -v);
-  //   else     return slicev(x, 0,     v);
-  // }
   return c2(rt_take, w, x);
 }
 B drop_c2(B t, B w, B x) {
