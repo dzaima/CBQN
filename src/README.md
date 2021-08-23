@@ -6,6 +6,7 @@ Functions starting with `m_` allocate a new object.
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
+Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (for both modifiers and functions).
 Variables starting with `bi_` are builtins (primitives or special values).  
 Which arguments are consumed usually is described in a comment after the function or its prototype. Otherwise, check the source.  
 
