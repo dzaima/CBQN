@@ -145,6 +145,9 @@ int main(int argc, char* argv[]) {
         args = ap.b;
       }
       dec(bqn_execFile(src, args));
+      #ifdef HEAP_VERIFY
+        heapVerify();
+      #endif
       gc_forceGC();
     }
   }

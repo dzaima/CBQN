@@ -109,6 +109,20 @@ B path_dir(B path) { // consumes; returns directory part of file path with trail
   return r;
 }
 
+B path_abs(B path) {
+  u64 plen = utf8lenB(path);
+  TALLOC(char, p, plen+1);
+  toUTF8(path, p);
+  p[plen] = 0;
+  char* res = realpath(p, NULL);
+  if (res==NULL) thrF("Failed to convert %R to absolute path", path);
+  B r = fromUTF8l(res);
+  free(res);
+  dec(path);
+  TFREE(p);
+  return r;
+}
+
 
 void file_wChars(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");

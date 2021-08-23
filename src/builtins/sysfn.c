@@ -455,6 +455,10 @@ B repl_c2(B t, B w, B x) {
   return res;
 }
 
+static NFnDesc* fileAtDesc;
+B fileAt_c1(B d, B x) {
+  return path_resolve(nfn_objU(d), x);
+}
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
   return file_chars(path_resolve(nfn_objU(d), x));
@@ -626,6 +630,8 @@ B sys_c1(B t, B x) {
   HArr_p r = m_harrs(a(x)->ia, &i);
   BS2B xgetU = TI(x,getU);
   B fileNS = m_f64(0);
+  B path = m_f64(0);
+  #define REQ_PATH ({ if(!path.u) path = path_abs(path_dir(inc(comp_currPath))); path; })
   for (; i < a(x)->ia; i++) {
     B c = xgetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
@@ -633,9 +639,10 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);
     else if (eqStr(c, U"getline")) r.a[i] = inc(bi_getLine);
     else if (eqStr(c, U"file")) {
-      if(fileNS.u==m_f64(0).u) {
-        #define F(X) m_nfn(X##Desc, path_dir(inc(comp_currPath))),
-        B arg =    m_caB(4, (B[]){F(list)F(fBytes)F(fChars)F(fLines)});
+      if(!fileNS.u) {
+        REQ_PATH;
+        #define F(X) m_nfn(X##Desc, inc(path))
+        B arg =    m_caB(6, (B[]){inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines)});
         #undef F
         fileNS = c1(file_nsGen,arg);
       }
@@ -657,27 +664,31 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
     else if (eqStr(c, U"makerepl")) r.a[i] = inc(bi_makeREPL);
     else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
-    else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, path_dir(inc(comp_currPath)));
-    else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, path_dir(inc(comp_currPath)));
-    else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, path_dir(inc(comp_currPath)));
-    else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, path_dir(inc(comp_currPath)));
+    else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
+    else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, inc(REQ_PATH));
     else if (eqStr(c, U"args")) {
       if(q_N(comp_currArgs)) thrM("No arguments present for •args");
       r.a[i] = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
   }
+  #undef REQ_PATH
   dec(fileNS);
+  dec(path);
   return harr_fcd(r, x);
 }
 
 void sysfn_init() {
-  fCharsDesc = registerNFn(m_str32(U"•FChars"), fchars_c1, fchars_c2);
-  fLinesDesc = registerNFn(m_str32(U"•FLines"), flines_c1, flines_c2);
-  fBytesDesc = registerNFn(m_str32(U"•FBytes"), fbytes_c1, fbytes_c2);
+  fCharsDesc = registerNFn(m_str32(U"(file).Chars"), fchars_c1, fchars_c2);
+  fileAtDesc = registerNFn(m_str32(U"(file).At"), fileAt_c1, c2_invalid);
+  fLinesDesc = registerNFn(m_str32(U"(file).Lines"), flines_c1, flines_c2);
+  fBytesDesc = registerNFn(m_str32(U"(file).Bytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
 }
 void sysfnPost_init() {
-  file_nsGen = bqn_exec(m_str32(U"{⟨List,   Bytes,   Chars,   Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);
+  file_nsGen = bqn_exec(m_str32(U"{⟨path,At,List,Bytes,Chars,Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);
 }
