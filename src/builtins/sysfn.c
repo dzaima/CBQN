@@ -642,7 +642,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        B arg =    m_caB(6, (B[]){inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines)});
+        B arg =    m_caB(6, (B[]){q_N(path)? m_c32(0) : inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines)});
         #undef F
         fileNS = c1(file_nsGen,arg);
       }

@@ -76,9 +76,9 @@ B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector o
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
   for (usz i = 0; i < ria; i++) if (!isC32(rgetU(rel, i))) thrM("Paths must be character vectors");
-  if (ria==0) { dec(rel); return inc(base); }
-  if (o2cu(rgetU(rel, 0))=='/') return rel;
+  if (ria>0 && o2cu(rgetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
+  if (ria==0) { dec(rel); return inc(base); }
   BS2B bgetU = TI(base,getU);
   usz bia = a(base)->ia;
   bool has = bia && o2cu(bgetU(base, bia-1))=='/';
@@ -110,6 +110,7 @@ B path_dir(B path) { // consumes; returns directory part of file path with trail
 }
 
 B path_abs(B path) {
+  if (q_N(path)) return path;
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
   toUTF8(path, p);
