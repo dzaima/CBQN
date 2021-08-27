@@ -75,9 +75,17 @@ B repr_c1(B t, B x) {
     #if FORMATTER
       return bqn_repr(x);
     #else
-      thrM("•Repr: Cannot represent non-numbers");
+      thrM("•Repr: Cannot represent non-numbers without FORMATTER defined");
     #endif
   }
+}
+
+B fmt_c1(B t, B x) {
+  #if FORMATTER
+    return bqn_fmt(x);
+  #else
+    thrM("•Fmt isn't supported without FORMATTER defined");
+  #endif
 }
 
 B fill_c1(B t, B x) {
@@ -660,6 +668,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
     else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
+    else if (eqStr(c, U"fmt")) r.a[i] = inc(bi_fmt);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
     else if (eqStr(c, U"makerepl")) r.a[i] = inc(bi_makeREPL);
