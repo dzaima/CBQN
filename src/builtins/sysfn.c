@@ -185,7 +185,11 @@ B casrt_c2(B t, B w, B x) {
 }
 
 B sys_c1(B t, B x);
-B  out_c1(B t, B x) { printRaw(x); putchar('\n'); return x; }
+B  out_c1(B t, B x) {
+  if (isArr(x) && rnk(x)>1) thrF("•Out: Argument cannot have rank %i", rnk(x));
+  printRaw(x); putchar('\n');
+  return x;
+}
 B show_c1(B t, B x) {
   #if FORMATTER
     B fmt = bqn_fmt(inc(x));

@@ -506,7 +506,6 @@ Nvm_res m_nvm(Body* body) {
   #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f); }
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
-  Block** blocks = body->bl->blocks;
   i32 depth = 0;
   u32* bc = optRes.bc;
   i32 lGPos = 0; // last updated gStack offset
@@ -559,8 +558,8 @@ Nvm_res m_nvm(Body* body) {
         if (sz) { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
         else    { TOPs; CCALL(i_ARR_0); } // unused with optimizations
         break;
-      case DFND: TOPs; // (u32* bc, Scope* sc, Block* bl)
-        Block* bl = blocks[*bc++];
+      case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
+        Block* bl = (Block*)L64;
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
         if (fn==0) thrM("JIT: Bad DFND argument");
         GET(R_A3,-1,2);

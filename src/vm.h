@@ -49,6 +49,7 @@ enum {
   SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like LOC_
   SETNv, SETUv, SETMv, // SET_i alternatives that also don't return the result
   SETHi, // internal version of SETH, with 2×u64 arguments specifying bodies to jump to on fail (or NULL if is last)
+  DFND0, DFND1, DFND2, // internal versions of DFND with a specific type, and a u64 argument representing the block pointer
   FAIL, // this body cannot be called monadically/dyadically
   BC_SIZE
 };

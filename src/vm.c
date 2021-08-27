@@ -33,7 +33,8 @@ u32* nextBC(u32* p) {
     case LOCO: case LOCM: case LOCU:
     case EXTO: case EXTM: case EXTU:
     case ADDI: case ADDU:
-    case FN1Ci: case FN1Oi: case FN2Ci: case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
+    case FN1Ci: case FN1Oi: case FN2Ci: case DFND0: case DFND1: case DFND2:
+    case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
       off = 3; break;
     case FN2Oi: case SETHi:
       off = 5; break;
@@ -44,7 +45,8 @@ u32* nextBC(u32* p) {
 i32 stackDiff(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1-p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case DFND0:case DFND1:case DFND2:
+    case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
     case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
     case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case RETN: return -1;
     case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
@@ -58,7 +60,8 @@ i32 stackDiff(u32* p) {
 i32 stackConsumed(u32* p) {
   if (*p==ARRO|*p==ARRM) return p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 0;
+    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM:
+    case EXTU: case SYSV: case ADDI: case ADDU: case DFND0:case DFND1:case DFND2:return 0;
     case CHKV: case RETD: return 0;
     case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case VFYM: return 1;
     case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: case SETHi:return 2;
@@ -278,9 +281,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           if ((u32)id >= a(allBlocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
           if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
           bDone[id] = true;
-          TSADD(newBC, DFND);
-          TSADD(newBC, TSSIZE(usedBlocks));
-          TSADD(usedBlocks, compileBlock(TI(allBlocks,getU)(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1));
+          Block* bl = compileBlock(TI(allBlocks,getU)(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1);
+          TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
+          A64((u64)bl);
+          TSADD(usedBlocks, bl);
           break;
         }
         case LOCO: case LOCM: case LOCU: {
@@ -532,7 +536,6 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     printf("new eval\n");
   #endif
   B* objs = bl->comp->objs->a;
-  Block** blocks = bl->blocks;
   u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
@@ -626,16 +629,19 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         }
         break;
       }
-      case DFND: {
-        GS_UPD;POS_UPD;
-        Block* cbl = blocks[*bc++];
-        switch(cbl->ty) { default: UD;
-          case 0: ADD(m_funBlock(cbl, sc)); break;
-          case 1: ADD(m_md1Block(cbl, sc)); break;
-          case 2: ADD(m_md2Block(cbl, sc)); break;
-        }
-        break;
-      }
+      case DFND0: { GS_UPD;POS_UPD; ADD(m_funBlock((Block*)L64, sc)); break; }
+      case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block((Block*)L64, sc)); break; }
+      case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block((Block*)L64, sc)); break; }
+      // case DFND: {
+      //   GS_UPD;POS_UPD;
+      //   Block* cbl = blocks[*bc++];
+      //   switch(cbl->ty) { default: UD;
+      //     case 0: ADD(m_funBlock(cbl, sc)); break;
+      //     case 1: ADD(m_md1Block(cbl, sc)); break;
+      //     case 2: ADD(m_md2Block(cbl, sc)); break;
+      //   }
+      //   break;
+      // }
       case OP1D: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case OP2D: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
       case OP2H: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }

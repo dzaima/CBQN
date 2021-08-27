@@ -213,9 +213,9 @@ Throw an error with `thrM("some message")` or `thr(some B instance)` or `thrOOM(
 
 A fancier message can be created with `thrF(message, …)` with printf-like (but different!!) varargs (source in `do_fmt`):
 ```
-%i   decimal i32
+%i   decimal i32 (also for i8/i16/ur)
 %l   decimal i64
-%ui  decimal u32
+%ui  decimal u32 (also for u8/u16)
 %ul  decimal u64
 %xi  hex u32
 %xl  hex u64
