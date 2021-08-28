@@ -78,7 +78,7 @@ B ns_qgetU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns); // TODO somehow merge impl 
   }
   return bi_N;
 }
-B ns_getNU(B ns, B name) { VTY(ns, t_ns);
+B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
@@ -88,7 +88,8 @@ B ns_getNU(B ns, B name) { VTY(ns, t_ns);
     i32 dID = d->expIDs[i];
     if (dID>=0 && equal(dNLgetU(dNL, dID), name)) return n->sc->vars[i];
   }
-  thrM("No key found");
+  if (thrEmpty) thrM("No key found");
+  return bi_N;
 }
 void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
   NS* n = c(NS, ns);

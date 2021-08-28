@@ -455,7 +455,7 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
           v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
         } else if (isExt(c)) {
           ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
-          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm]), upd);
+          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd);
         } else if (isObj(c)) {
           assert(v(c)->type == t_fldAlias);
           Scope* sc = pscs[0];

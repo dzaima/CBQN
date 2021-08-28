@@ -427,28 +427,31 @@ B makeRand_c1(B t, B x) {
   return r;
 }
 extern B replPath; // defined in main.c
-static NFnDesc* makeREPLDesc;
-B makeREPL_c1(B t, B x) {
+static NFnDesc* reBQNDesc;
+B reBQN_c1(B t, B x) {
+  if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
+  B replStr = m_str32(U"repl");
+  B repl = ns_getNU(x, replStr, false); dec(replStr);
+  i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
+  if (replVal==3) thrM("•ReBQN: Invalid repl value");
   dec(x);
   Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
-  Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
+  B scVal;
+  if (replVal==0) {
+    scVal = bi_N;
+  } else {
+    Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
+    scVal = tag(sc, OBJ_TAG);
+  }
   ptr_dec(initBlock);
-  return m_nfn(makeREPLDesc, tag(sc, OBJ_TAG));
-}
-B repl_c1(B t, B x) {
-  Scope* sc = c(Scope,nfn_objU(t));
-  
-  Block* block = bqn_compSc(x, inc(replPath), emptySVec(), sc, true);
-  
-  ptr_dec(sc->body); ptr_inc(block->bodies[0]);
-  sc->body = block->bodies[0];
-  B res = execBlockInline(block, sc);
-  
-  ptr_dec(block);
-  return res;
+  return m_nfn(reBQNDesc, m_v2(m_f64(replVal), scVal));
 }
 B repl_c2(B t, B w, B x) {
-  Scope* sc = c(Scope,nfn_objU(t));
+  B o = nfn_objU(t);
+  B* op = harr_ptr(o);
+  i32 replMode = o2iu(op[0]);
+  Scope* sc = c(Scope, op[1]);
+  
   if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrM("REPL: 𝕨 must be a vector with at most 3 items");
   usz ia = a(w)->ia;
   BS2B wget = TI(w,get);
@@ -456,15 +459,23 @@ B repl_c2(B t, B w, B x) {
   B file = ia>1? wget(w,1) : emptyCVec();
   B args = ia>2? wget(w,2) : emptySVec();
   B fullpath = vec_join(vec_add(path, m_c32('/')), file);
-  Block* block = bqn_compSc(x, fullpath, args, sc, true);
-  
-  ptr_dec(sc->body); ptr_inc(block->bodies[0]);
-  sc->body = block->bodies[0];
-  B res = execBlockInline(block, sc);
-  
   dec(w);
-  ptr_dec(block);
+  
+  B res;
+  if (replMode>0) {
+    Block* block = bqn_compSc(x, fullpath, args, sc, replMode==2);
+    ptr_dec(sc->body); ptr_inc(block->bodies[0]);
+    sc->body = block->bodies[0];
+    res = execBlockInline(block, sc);
+    ptr_dec(block);
+  } else {
+    res = bqn_exec(x, fullpath, args);
+  }
+  
   return res;
+}
+B repl_c1(B t, B x) {
+  return repl_c2(t, emptyHVec(), x);
 }
 
 static NFnDesc* fileAtDesc;
@@ -675,7 +686,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"fmt")) r.a[i] = inc(bi_fmt);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
-    else if (eqStr(c, U"makerepl")) r.a[i] = inc(bi_makeREPL);
+    else if (eqStr(c, U"rebqn")) r.a[i] = inc(bi_reBQN);
     else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, inc(REQ_PATH));
@@ -699,7 +710,7 @@ void sysfn_init() {
   fLinesDesc = registerNFn(m_str32(U"(file).Lines"), flines_c1, flines_c2);
   fBytesDesc = registerNFn(m_str32(U"(file).Bytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
-  makeREPLDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
+  reBQNDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
 }
 void sysfnPost_init() {

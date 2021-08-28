@@ -9,7 +9,7 @@
 /* everything before the definition of •Type is defined to be pure, and everything after is not */ \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•groupOrd") \
 /*   sysfn.c*/M(repr,"•Repr") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") M(bqn,"•BQN") M(sh,"•SH") M(fromUtf8,"•FromUTF8") \
-/*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(delay,"•Delay") M(makeRand,"•MakeRand") M(makeREPL,"•MakeREPL") M(exit,"•Exit") M(getLine,"•GetLine") \
+/*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(delay,"•Delay") M(makeRand,"•MakeRand") M(reBQN,"•ReBQN") M(exit,"•Exit") M(getLine,"•GetLine") \
 /*internal.c*/M(itype,"•internal.Type") M(refc,"•internal.Refc") M(squeeze,"•internal.Squeeze") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
 
