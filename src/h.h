@@ -117,9 +117,11 @@
 #define N64u "%"SCNu64
 
 typedef u32 usz;
-typedef u8 ur;
 #define USZ_MAX ((u32)((1LL<<32)-1))
-#define  UR_MAX 255
+// typedef u64 usz;
+// #define USZ_MAX ((u64)(1ULL<<48))
+typedef u8 ur;
+#define UR_MAX 255
 
 #define CTR_FOR(F)
 #define CTR_PRINT(N) if(N) printf(#N ": "N64u"\n", N);

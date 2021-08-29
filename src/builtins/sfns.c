@@ -793,7 +793,7 @@ B group_c2(B t, B w, B x) {
       if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       ria--;
       for (usz i = 0; i < xia; i++) if (wp[i]>ria) ria = wp[i];
-      if (ria>USZ_MAX-1) thrOOM();
+      if (ria > (i64)(USZ_MAX-1)) thrOOM();
       ria++;
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
@@ -854,7 +854,7 @@ B group_c2(B t, B w, B x) {
         if (c>ria) ria = c;
         if (c<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       }
-      if (ria>USZ_MAX-1) thrOOM();
+      if (ria > (i64)(USZ_MAX-1)) thrOOM();
       ria++;
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);

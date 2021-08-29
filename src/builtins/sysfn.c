@@ -110,7 +110,7 @@ B grLen_both(i64 ria, B x) {
     i64 c = o2i64u(xgetU(x, i));
     if (c>ria) ria = c;
   }
-  if (ria>USZ_MAX-1) thrOOM();
+  if (ria > (i64)(USZ_MAX-1)) thrOOM();
   ria++;
   i32* rp; B r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
