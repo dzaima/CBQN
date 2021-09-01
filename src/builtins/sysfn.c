@@ -16,7 +16,6 @@
 B type_c1(B t, B x) {
   i32 r = -1;
        if (isArr(x)) r = 0;
-  else if (isI32(x)) r = 1;
   else if (isF64(x)) r = 1;
   else if (isC32(x)) r = 2;
   else if (isFun(x)) r = 3;

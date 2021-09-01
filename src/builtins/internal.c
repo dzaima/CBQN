@@ -8,7 +8,6 @@ B itype_c1(B t, B x) {
     r = m_str8l(format_type(v(x)->type));
   } else {
     if      (isF64(x)) r = m_str32(U"tagged f64");
-    else if (isI32(x)) r = m_str32(U"tagged i32");
     else if (isC32(x)) r = m_str32(U"tagged c32");
     else if (isTag(x)) r = m_str32(U"tagged tag");
     else if (isVar(x)) r = m_str32(U"tagged var");

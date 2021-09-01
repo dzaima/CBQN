@@ -38,7 +38,7 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
         return bi_noFill;
     }
   }
-  if (isF64(x)|isI32(x)) return m_i32(0);
+  if (isNum(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
   return bi_noFill;
 }

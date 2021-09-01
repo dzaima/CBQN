@@ -113,8 +113,6 @@ NOINLINE void print(B x) {
     if ((u32)x.u>=32) { printf("'"); printUTF8((u32)x.u); printf("'"); }
     else if((u32)x.u>15) printf("\\x%x", (u32)x.u);
     else printf("\\x0%x", (u32)x.u);
-  } else if (isI32(x)) {
-    printf("%d", (i32)x.u);
   } else if (isVal(x)) {
     #ifdef DEBUG
     if (isVal(x) && (v(x)->type==t_freed || v(x)->type==t_empty)) {

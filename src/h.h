@@ -52,7 +52,6 @@
 // #define RT_VERIFY // compare native and runtime versions of primitives
 // #define NO_RT     // whether to completely disable self-hosted runtime loading
 // #define PRECOMP   // execute just precompiled code at src/gen/interp
-// #define ATOM_I32 // not a thing; ignore pls
 
 
 #ifdef __OpenBSD__
@@ -137,7 +136,6 @@ static const u16 C32_TAG = 0b0111111111110001; // 7FF1 0111111111110001.........
 static const u16 TAG_TAG = 0b0111111111110010; // 7FF2 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
 static const u16 VAR_TAG = 0b0111111111110011; // 7FF3 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
 static const u16 EXT_TAG = 0b0111111111110100; // 7FF4 0111111111110100ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn extended variable reference
-static const u16 I32_TAG = 0b0111111111110111; // 7FF7 0111111111110111................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn 32-bit int; unused
 static const u16 MD1_TAG = 0b1111111111110010; // FFF2 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
 static const u16 MD2_TAG = 0b1111111111110011; // FFF3 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
 static const u16 FUN_TAG = 0b1111111111110100; // FFF4 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
@@ -302,11 +300,6 @@ void print_vmStack(void);
 NORETURN NOINLINE void err(char* s);
 
 // tag checks
-#ifdef ATOM_I32
-static inline bool isI32(B x) { return (x.u>>48) == I32_TAG; }
-#else
-static inline bool isI32(B x) { return false; }
-#endif
 static inline bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
 static inline bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
 static inline bool isC32(B x) { return (x.u>>48) == C32_TAG; }
@@ -322,7 +315,7 @@ static inline bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
 // static inline bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
 static inline bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
 static inline bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
-static inline bool isNum(B x) { return isF64(x)|isI32(x); }
+static inline bool isNum(B x) { return isF64(x); }
 
 static inline bool isAtm(B x) { return !isArr(x); }
 static inline bool isCallable(B x) { return isMd(x) | isFun(x); }
@@ -331,11 +324,7 @@ static inline bool noFill(B x) { return x.u == bi_noFill.u; }
 // make objects
 static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
 static B m_c32(u32 n) { return tag(n, C32_TAG); } // TODO check validity?
-#ifdef ATOM_I32
-static B m_i32(i32 n) { return tag(n, I32_TAG); }
-#else
 static B m_i32(i32 n) { return m_f64(n); }
-#endif
 static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 
 static i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
@@ -344,15 +333,15 @@ static i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); retur
 static u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
 static f64 o2f   (B x) { if (!isNum(x)) thrM("Expected integer"); return x.f; }
 static u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
-static i32 o2iu  (B x) { return isI32(x)? (i32)(u32)x.u : (i32)x.f; }
+static i32 o2iu  (B x) { return (i32)x.f; }
 static u32 o2cu  (B x) { return (u32)x.u; }
 static usz o2su  (B x) { return (usz)x.f; }
 static f64 o2fu  (B x) { return      x.f; }
 static i64 o2i64u(B x) { return (i64)x.f; }
 static bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
-static bool q_i32(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i32)x.f); }
-static bool q_i64(B x) { return isI32(x) | (isF64(x) && x.f==(f64)(i64)x.f); }
-static bool q_f64(B x) { return isF64(x) || isI32(x); }
+static bool q_i32(B x) { return isF64(x) && x.f==(f64)(i32)x.f; }
+static bool q_i64(B x) { return isF64(x) && x.f==(f64)(i64)x.f; }
+static bool q_f64(B x) { return isF64(x); }
 
 
 typedef struct Slice {
