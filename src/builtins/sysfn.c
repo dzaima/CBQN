@@ -147,23 +147,17 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
 }
 
 B asrt_c1(B t, B x) {
-  if (isF64(x) && o2fu(x)==1) return x;
+  if (LIKELY(isF64(x) && o2fu(x)==1)) return x;
   if (isF64(x)) thrM("Assertion error");
   thr(x);
 }
 B asrt_c2(B t, B w, B x) {
-  if (isF64(x) && o2fu(x)==1) { dec(w); return x; }
+  if (LIKELY(isF64(x) && o2fu(x)==1)) { dec(w); return x; }
   dec(x);
   thr(w);
 }
-B casrt_c1(B t, B x) {
-  if (isF64(x) && o2fu(x)==1) return x;
-  unwindCompiler();
-  thr(x);
-}
 B casrt_c2(B t, B w, B x) {
-  if (isI32(x) && 1==(u32)x.u) { dec(w); return x; }
-  if (isF64(x) && 1==x.f) { dec(w); return x; }
+  if (LIKELY(isF64(x) && o2fu(x)==1)) { dec(w); return x; }
   unwindCompiler();
   dec(x);
   if (isArr(w) && a(w)->ia==2) {
@@ -178,6 +172,10 @@ B casrt_c2(B t, B w, B x) {
   }
   base:
   thr(w);
+}
+B casrt_c1(B t, B x) {
+  if (LIKELY(isF64(x) && o2fu(x)==1)) return x;
+  casrt_c2(t, inc(x), x); UD;
 }
 
 B sys_c1(B t, B x);
