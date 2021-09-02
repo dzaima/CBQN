@@ -90,16 +90,16 @@ INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); }
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
-INS B i_OP1D(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
-INS B i_OP2D(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
-INS B i_OP2H(B m,     B g         ) {          return m2_h  (m,  g); }
+INS B i_MD1C(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
+INS B i_MD2C(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
+INS B i_MD2R(B m,     B g         ) {          return m2_h  (m,  g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
 INS B i_TR3O(B f,B g, B h         ) {          return q_N(f)? m_atop(g,h) : m_fork(f,g,h); }
 INS B i_NOVAR(u32* bc, B* cStack) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
-// INS B i_LOCU(u32 p, Scope* sc) {
+// INS B i_VARU(u32 p, Scope* sc) {
 //   B* vars = sc->vars;
 //   B r = vars[p];
 //   vars[p] = bi_optOut;
@@ -149,12 +149,12 @@ INS B i_FLDO(B ns, u32 p, Scope* sc) {
   dec(ns);
   return r;
 }
-INS B i_VFYM(B o) { // TODO this and NSPM allocate and thus can error on OOM
+INS B i_VFYM(B o) { // TODO this and ALIM allocate and thus can error on OOM
   VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
   a->obj = o;
   return tag(a,OBJ_TAG);
 }
-INS B i_NSPM(B o, u32 l) {
+INS B i_ALIM(B o, u32 l) {
   FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
   a->obj = o;
   a->p = l;
@@ -234,7 +234,7 @@ static OptRes opt(u32* bc0) {
         TSSIZE(stk)--;
         break;
       }
-      case LOCM: { u32 d = *bc++; u32 p = *bc++;
+      case VARM: { u32 d = *bc++; u32 p = *bc++;
         TSADD(stk,SREF(tag((u64)d<<32 | (u32)p, VAR_TAG), pos));
         break;
       }
@@ -257,7 +257,7 @@ static OptRes opt(u32* bc0) {
         TSADD(data, (u64) c(Fun, f.v)->c2);
         goto defIns;
       }
-      case OP1D: { S(f,0) S(m,1)
+      case MD1C: { S(f,0) S(m,1)
         if (f.p==-1 | m.p==-1) goto defIns;
         B d = m1_d(inc(m.v), inc(f.v));
         cact = 5; RM(f.p); RM(m.p);
@@ -266,7 +266,7 @@ static OptRes opt(u32* bc0) {
         stk[TSSIZE(stk)-1] = SREF(d, pos);
         break;
       }
-      case OP2D: { S(f,0) S(m,1) S(g,2)
+      case MD2C: { S(f,0) S(m,1) S(g,2)
         if (f.p==-1 | m.p==-1 | g.p==-1) goto defIns;
         B d = m2_d(inc(m.v), inc(f.v), inc(g.v));
         cact = 5; RM(f.p); RM(m.p); RM(g.p);
@@ -441,7 +441,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str32(U"asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(OP1D) F(OP2D) F(OP2H) F(TR2D) F(TR3D) F(TR3O) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(NSPM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(MD1C) F(MD2C) F(MD2R) F(TR2D) F(TR3D) F(TR3O) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(ALIM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
     #undef F
     file_wChars(m_str32(U"asm_sed"), s); dec(s);
   }
@@ -525,7 +525,7 @@ Nvm_res m_nvm(Body* body) {
     #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
     #define TOPp MOV(R_A0,R_RES)
     #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
-    #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); }
+    #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); } // TODO return r_SC directly without a pointless mov
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
@@ -565,24 +565,24 @@ Nvm_res m_nvm(Body* body) {
         GET(R_A3,-1,2);
         IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); CCALL(fn);
         break;
-      case OP1D: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_OP1D); break; // (B f,B m,      u32* bc)
-      case OP2D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_OP2D); break; // (B f,B m, B g, u32* bc)
-      case OP2H: TOPp; GET(R_A1,1,0);                               CCALL(i_OP2H); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
+      case MD1C: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_MD1C); break; // (B f,B m,      u32* bc)
+      case MD2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_MD2C); break; // (B f,B m, B g, u32* bc)
+      case MD2R: TOPp; GET(R_A1,1,0);                               CCALL(i_MD2R); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
       case TR2D: TOPp; GET(R_A1,1,0);                               CCALL(i_TR2D); break; // (B g,     B h)
       case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3D); break; // (B f,B g, B h)
       case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3O); break; // (B f,B g, B h)
-      case LOCM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
+      case VARM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
-      case LOCO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
+      case VARO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
         MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
         if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); JNE(lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
       } break;
-      case LOCU: TOPs; { u64 d=*bc++; u64 p=*bc++;
+      case VARU: TOPs; { u64 d=*bc++; u64 p=*bc++;
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to bi_optOut
       } break;
-      // case LOCU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_LOCU); } break; // (u32 p, Scope* sc)
+      // case VARU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_VARU); } break; // (u32 p, Scope* sc)
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
       case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
@@ -599,7 +599,7 @@ Nvm_res m_nvm(Body* body) {
       case SETUv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
-      case NSPM: TOPp; IMM(R_A1,*bc++); CCALL(i_NSPM); break; // (B, u32 l)
+      case ALIM: TOPp; IMM(R_A1,*bc++); CCALL(i_ALIM); break; // (B, u32 l)
       case VFYM: TOPp;                  CCALL(i_VFYM); break; // (B)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)

@@ -11,42 +11,48 @@
 #endif
 
 enum {
-  PUSH =  0, // N; push object from objs[N]
-  VARO =  1, // N; push variable with name strs[N]
-  VARM =  2, // N; push mutable variable with name strs[N]
-  ARRO =  3, // N; create a vector of top N items
-  ARRM =  4, // N; create a mutable vector of top N items
-  FN1C =  5, // monadic function call ⟨…,x,f  ⟩ → F x
-  FN2C =  6, //  dyadic function call ⟨…,x,f,w⟩ → w F x
-  OP1D =  7, // derive 1-modifier to function; ⟨…,  _m,f⟩ → (f _m)
-  OP2D =  8, // derive 2-modifier to function; ⟨…,g,_m,f⟩ → (f _m_ g)
-  TR2D =  9, // derive 2-train aka atop; ⟨…,  g,f⟩ → (f g)
-  TR3D = 10, // derive 3-train aka fork; ⟨…,h,g,f⟩ → (f g h)
-  SETN = 11, // set new; _  ←_; ⟨…,x,  mut⟩ → mut←x
-  SETU = 12, // set upd; _  ↩_; ⟨…,x,  mut⟩ → mut↩x
-  SETM = 13, // set mod; _ F↩_; ⟨…,x,F,mut⟩ → mut F↩x
-  POPS = 14, // pop object from stack
-  DFND = 15, // N; push dfns[N], derived to current scope
-  FN1O = 16, // optional monadic call (FN1C but checks for · at 𝕩)
-  FN2O = 17, // optional  dyadic call (FN2C but checks for · at 𝕩 & 𝕨)
-  CHKV = 18, // throw error if top of stack is ·
-  TR3O = 19, // TR3D but creates an atop if F is ·
-  OP2H = 20, // derive 2-modifier to 1-modifier ⟨…,g,_m_⟩ → (_m_ g)
-  LOCO = 21, // N0,N1; push variable at depth N0 and position N1
-  LOCM = 22, // N0,N1; push mutable variable at depth N0 and position N1
-  VFYM = 23, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
-  SETH = 24, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
-  RETN = 25, // returns top of stack
-  FLDO = 26, // N; get field nameList[N] from ToS
-  FLDM = 27, // N; get mutable field nameList[N] from ToS
-  NSPM = 28, // N; replace ToS with one with a namespace field alias N
-  RETD = 29, // return a namespace of exported items
-  SYSV = 30, // N; get system function N
-  LOCU = 31, // N0,N1; like LOCO but overrides the slot with bi_optOut
-  EXTO, EXTM, EXTU, // alternate versions of LOC_ for extended variables
+  PUSH = 0x00, // N; push object from objs[N]
+  DFND = 0x01, // N; push dfns[N], derived to current scope
+  SYSV = 0x02, // N; get system function N
+  
+  POPS = 0x06, // pop object from stack
+  RETN = 0x07, // returns top of stack
+  RETD = 0x08, // return a namespace of exported items
+  ARRO = 0x0B, // N; create a vector of top N items
+  ARRM = 0x0C, // N; create a mutable vector of top N items
+  
+  FN1C = 0x10, // monadic function call ⟨…,x,f  ⟩ → F x
+  FN2C = 0x11, //  dyadic function call ⟨…,x,f,w⟩ → w F x
+  FN1O = 0x12, // optional monadic call (FN1C but checks for · at 𝕩)
+  FN2O = 0x13, // optional  dyadic call (FN2C but checks for · at 𝕩 & 𝕨)
+  TR2D = 0x14, // derive 2-train aka atop; ⟨…,  g,f⟩ → (f g)
+  TR3D = 0x15, // derive 3-train aka fork; ⟨…,h,g,f⟩ → (f g h)
+  CHKV = 0x16, // throw error if top of stack is ·
+  TR3O = 0x17, // TR3D but creates an atop if F is ·
+  
+  MD1C = 0x1A, // call/derive 1-modifier; ⟨…,  _m,f⟩ → (f _m)
+  MD2C = 0x1B, // call/derive 2-modifier; ⟨…,g,_m,f⟩ → (f _m_ g)
+  MD2L = 0x1C, // derive 2-modifier to 1-modifier with 𝔽 ⟨…,_m_,f⟩ → (f _m_)
+  MD2R = 0x1D, // derive 2-modifier to 1-modifier with 𝔾 ⟨…,g,_m_⟩ → (_m_ g)
+  
+  VARO = 0x20, // N0,N1; push variable at depth N0 and position N1
+  VARM = 0x21, // N0,N1; push mutable variable at depth N0 and position N1
+  VARU = 0x22, // N0,N1; like VARO but overrides the slot with bi_optOut
+  DYNO = 0x26, // N; push variable with name objs[N]
+  DYNM = 0x27, // N; push mutable variable with name objs[N]
+  
+  VFYM = 0x2B, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
+  SETH = 0x2F, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
+  SETN = 0x30, // set new; _  ←_; ⟨…,x,  mut⟩ → mut←x
+  SETU = 0x31, // set upd; _  ↩_; ⟨…,x,  mut⟩ → mut↩x
+  SETM = 0x32, // set mod; _ F↩_; ⟨…,x,F,mut⟩ → mut F↩x
+  FLDO = 0x40, // N; get field nameList[N] from ToS
+  FLDM = 0x41, // N; get mutable field nameList[N] from ToS
+  ALIM = 0x42, // N; replace ToS with one with a namespace field alias N
+  EXTO, EXTM, EXTU, // alternate versions of VAR_ for extended variables
   ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline as 2 u32s, instead of reading from `objs`)
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
-  SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like LOC_
+  SETNi, SETUi, SETMi, // SET_ alternatives that expect the set variable as a depth-position pair like VAR_
   SETNv, SETUv, SETMv, // SET_i alternatives that also don't return the result
   SETHi, // internal version of SETH, with 2×u64 arguments specifying bodies to jump to on fail (or NULL if is last)
   DFND0, DFND1, DFND2, // internal versions of DFND with a specific type, and a u64 argument representing the block pointer

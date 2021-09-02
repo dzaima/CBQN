@@ -10,9 +10,9 @@
   #define UNWIND_COMPILER 1
 #endif
 
-#define FOR_BC(F) F(PUSH) F(VARO) F(VARM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(OP1D) F(OP2D) F(TR2D) \
+#define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(OP2H) F(LOCO) F(LOCM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(NSPM) F(RETD) F(SYSV) F(LOCU) \
+                  F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
                   F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)F(FAIL)
 
@@ -20,17 +20,17 @@ u32* nextBC(u32* p) {
   i32 off;
   switch(*p) {
     case FN1C: case FN2C: case FN1O: case FN2O:
-    case OP1D: case OP2D: case OP2H:
+    case MD1C: case MD2C: case MD2R:
     case TR2D: case TR3D: case TR3O:
     case SETN: case SETU: case SETM: case SETH:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
     case FAIL:
       off = 1; break;
     case PUSH: case DFND: case ARRO: case ARRM:
-    case VARO: case VARM: case FLDO: case FLDM:
-    case SYSV: case NSPM:
+    case DYNO: case DYNM: case FLDO: case FLDM:
+    case SYSV: case ALIM:
       off = 2; break;
-    case LOCO: case LOCM: case LOCU:
+    case VARO: case VARM: case VARU:
     case EXTO: case EXTM: case EXTU:
     case ADDI: case ADDU:
     case FN1Ci: case FN1Oi: case FN2Ci: case DFND0: case DFND1: case DFND2:
@@ -45,11 +45,11 @@ u32* nextBC(u32* p) {
 i32 stackDiff(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1-p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case DFND0:case DFND1:case DFND2:
-    case LOCU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
-    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case NSPM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case POPS: case OP2H: case RETN: return -1;
-    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
+    case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case DFND0:case DFND1:case DFND2:
+    case VARU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
+    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case ALIM: return 0;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case POPS: case MD2R: case RETN: return -1;
+    case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
     
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
     case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
@@ -60,12 +60,12 @@ i32 stackDiff(u32* p) {
 i32 stackConsumed(u32* p) {
   if (*p==ARRO|*p==ARRM) return p[1];
   switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
-    case PUSH: case VARO: case VARM: case DFND: case LOCO: case LOCM: case LOCU: case EXTO: case EXTM:
+    case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case VARU: case EXTO: case EXTM:
     case EXTU: case SYSV: case ADDI: case ADDU: case DFND0:case DFND1:case DFND2:return 0;
     case CHKV: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case NSPM: case RETN: case POPS: case VFYM: return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case OP1D: case TR2D: case OP2H: case SETH: case SETHi:return 2;
-    case OP2D: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case ALIM: case RETN: case POPS: case VFYM: return 1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case MD2R: case SETH: case SETHi:return 2;
+    case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
     
     case SETN: return 2; case SETNi: case SETNv: return 1;
     case SETU: return 2; case SETUi: case SETUv: return 1;
@@ -287,17 +287,17 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           TSADD(usedBlocks, bl);
           break;
         }
-        case LOCO: case LOCM: case LOCU: {
+        case VARO: case VARM: case VARU: {
           i32 ins = c[0];
           i32 cdepth = c[1];
           i32 cpos = c[2];
           if (cdepth+1 > mpsc) mpsc = cdepth+1;
           if (sc && cdepth>=depth) {
             Scope* csc = sc;
-            for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: LOC_ has an out-of-bounds depth");
+            for (i32 i = depth; i < cdepth; i++) if (!(csc = csc->psc)) thrM("VM compiler: VAR_ has an out-of-bounds depth");
             if (cpos >= csc->varAm) {
               cpos-= csc->varAm;
-              ins = ins==LOCO? EXTO : ins==LOCM? EXTM : EXTO;
+              ins = ins==VARO? EXTO : ins==VARM? EXTM : EXTO;
             }
           }
           TSADD(newBC, ins);
@@ -642,9 +642,9 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       //   }
       //   break;
       // }
-      case OP1D: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
-      case OP2D: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
-      case OP2H: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }
+      case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
+      case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
+      case MD2R: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }
       case TR2D: {     P(g)P(h)                 ADD(m_atop(  g,h)); break; }
       case TR3D: { P(f)P(g)P(h)                 ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h)
@@ -652,17 +652,17 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         else ADD(m_fork(f,g,h));
         break;
       }
-      case LOCM: { u32 d = *bc++; u32 p = *bc++;
+      case VARM: { u32 d = *bc++; u32 p = *bc++;
         ADD(tag((u64)d<<32 | (u32)p, VAR_TAG));
         break;
       }
-      case LOCO: { u32 d = *bc++; u32 p = *bc++;
+      case VARO: { u32 d = *bc++; u32 p = *bc++;
         B l = pscs[d]->vars[p];
         if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
         ADD(inc(l));
         break;
       }
-      case LOCU: { u32 d = *bc++; u32 p = *bc++;
+      case VARU: { u32 d = *bc++; u32 p = *bc++;
         B* vars = pscs[d]->vars;
         ADD(vars[p]);
         vars[p] = bi_optOut;
@@ -723,7 +723,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         ADD(m_ns(sc, b->nsDesc));
         goto end;
       }
-      case NSPM: { P(o) u32 l = *bc++;
+      case ALIM: { P(o) u32 l = *bc++;
         FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
         a->obj = o;
         a->p = l;
@@ -742,7 +742,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
-      // not implemented: VARO VARM FLDM SYSV
+      // not implemented: DYNO DYNM FLDM SYSV
       default:
         #ifdef DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
