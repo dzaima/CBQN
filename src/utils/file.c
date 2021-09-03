@@ -71,7 +71,8 @@ B file_lines(B path) { // consumes
 
 
 B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
-  assert((isArr(base) || q_N(base)) && isArr(rel));
+  assert((isArr(base) || q_N(base)));
+  if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
   BS2B rgetU = TI(rel,getU);
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
