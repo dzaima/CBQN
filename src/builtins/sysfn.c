@@ -419,6 +419,16 @@ B makeRand_c1(B t, B x) {
   ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  inc(r)));
   return r;
 }
+static B randNS;
+B getRandNS() {
+  if (randNS.u == 0) {
+    B fn = bqn_exec(m_str32(U"•MakeRand"), emptyCVec(), emptySVec());
+    randNS = c1(fn,m_f64(RANDSEED));
+    gc_add(randNS);
+    dec(fn);
+  }
+  return inc(randNS);
+}
 extern B replPath; // defined in main.c
 static NFnDesc* reBQNDesc;
 B reBQN_c1(B t, B x) {
@@ -679,6 +689,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"fmt")) r.a[i] = inc(bi_fmt);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
+    else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
     else if (eqStr(c, U"rebqn")) r.a[i] = inc(bi_reBQN);
     else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
