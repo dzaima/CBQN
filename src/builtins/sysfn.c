@@ -552,12 +552,14 @@ B monoTime_c1(B t, B x) {
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
   if (sf<0 || sf>1ULL<<63) thrF("•Delay: Bad argument: %f", sf);
-  struct timespec ts;
+  struct timespec ts,ts0;
   u64 s = (u64)sf;
   ts.tv_sec = (u64)sf;
   ts.tv_nsec = (u64)((sf-s)*1e9);
+  clock_gettime(CLOCK_MONOTONIC, &ts0);
   nanosleep(&ts, &ts);
-  return x; // TODO figure out how to return an actually correct thing
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return m_f64(ts.tv_sec-ts0.tv_sec+(ts.tv_nsec-ts0.tv_nsec)*1e-9);
 }
 B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
