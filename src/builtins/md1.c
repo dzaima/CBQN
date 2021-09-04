@@ -323,7 +323,7 @@ B timed_c1(B d, B x) { B f = c(Md1D,d)->f;
   u64 sns = nsTime();
   dec(c1(f, x));
   u64 ens = nsTime();
-  return m_f64((ens-sns)/1e9);
+  return m_f64((ens-sns)*1e-9);
 }
 
 

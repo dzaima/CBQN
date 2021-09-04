@@ -1,11 +1,5 @@
 #include "../core.h"
 
-NOINLINE B m_cai32(usz ia, i32* a) {
-  i32* rp; B r = m_i32arrv(&rp, ia);
-  for (usz i = 0; i < ia; i++) rp[i] = a[i];
-  return r;
-}
-
 static Arr* m_i32slice(Arr* p, i32* ptr, usz ia) {
   I32Slice* r = m_arr(sizeof(I32Slice), t_i32slice, ia);
   r->p = p;
@@ -32,4 +26,10 @@ void i32arr_init() {
   TIi(t_i32arr,elType) = el_i32;      TIi(t_i32slice,elType) = el_i32;
   TIi(t_i32arr,canStore) = i32arr_canStore;
   i32* tmp; bi_emptyIVec = m_i32arrv(&tmp, 0); gc_add(bi_emptyIVec);
+}
+
+NOINLINE B m_cai32(usz ia, i32* a) {
+  i32* rp; B r = m_i32arrv(&rp, ia);
+  for (usz i = 0; i < ia; i++) rp[i] = a[i];
+  return r;
 }

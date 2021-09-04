@@ -1,24 +1,5 @@
 #include "../core.h"
 
-B m_str8(usz sz, char* s) {
-  u32* rp; B r = m_c32arrv(&rp, sz);
-  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
-  return r;
-}
-B m_str8l(char* s) {
-  usz sz = strlen(s);
-  u32* rp; B r = m_c32arrv(&rp, sz);
-  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
-  return r;
-}
-
-B m_str32(u32* s) {
-  usz sz = 0; while(s[sz]) sz++;
-  u32* rp; B r = m_c32arrv(&rp, sz);
-  for (usz i = 0; i < sz; i++) rp[i] = s[i];
-  return r;
-}
-
 static Arr* m_c32slice(Arr* p, u32* ptr, usz ia) {
   C32Slice* r = m_arr(sizeof(C32Slice), t_c32slice, ia);
   r->p = p;
@@ -31,8 +12,6 @@ static Arr* c32slice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p
 static B c32arr_get  (B x, usz n) { VTY(x,t_c32arr  ); return m_c32(c(C32Arr  ,x)->a[n]); }
 static B c32slice_get(B x, usz n) { VTY(x,t_c32slice); return m_c32(c(C32Slice,x)->a[n]); }
 static bool c32arr_canStore(B x) { return isC32(x); }
-
-
 
 void c32arr_init() {
   TIi(t_c32arr,get)   = c32arr_get;   TIi(t_c32slice,get)   = c32slice_get;
@@ -52,4 +31,23 @@ void c32arr_init() {
   Arr* emptySVec = m_fillarrp(0); arr_shVec(emptySVec);
   fillarr_setFill(emptySVec, emptyCVec());
   bi_emptySVec = taga(emptySVec); gc_add(bi_emptySVec);
+}
+
+B m_str8(usz sz, char* s) {
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
+  return r;
+}
+B m_str8l(char* s) {
+  usz sz = strlen(s);
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (u64 i = 0; i < sz; i++) rp[i] = (u32)s[i];
+  return r;
+}
+
+B m_str32(u32* s) {
+  usz sz = 0; while(s[sz]) sz++;
+  u32* rp; B r = m_c32arrv(&rp, sz);
+  for (usz i = 0; i < sz; i++) rp[i] = s[i];
+  return r;
 }

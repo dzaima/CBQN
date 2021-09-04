@@ -27,10 +27,10 @@ static Arr* m_i32arrp(i32** p, usz ia) {
   return (Arr*)r;
 }
 
-B m_cai32(usz ia, i32* a);
-
 static i32* i32arr_ptr(B x) { VTY(x, t_i32arr); return c(I32Arr,x)->a; }
 static i32* i32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_i32arr) return c(I32Arr,x)->a; assert(t==t_i32slice); return c(I32Slice,x)->a; }
+
+B m_cai32(usz ia, i32* a);
 
 static I32Arr* toI32Arr(B x) { // assumes it's possible
   if (v(x)->type==t_i32arr) return c(I32Arr,x);

@@ -551,7 +551,7 @@ B monoTime_c1(B t, B x) {
   dec(x);
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return m_f64(ts.tv_sec + ts.tv_nsec/1e9);
+  return m_f64(ts.tv_sec + ts.tv_nsec*1e-9);
 }
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);

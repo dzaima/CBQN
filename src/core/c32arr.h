@@ -27,13 +27,12 @@ static Arr* m_c32arrp(u32** p, usz ia) {
   return (Arr*)r;
 }
 
-B m_str8(usz sz, char* s);
-B m_str8l(char* s);
-B m_str32(u32* s);
-
 static u32* c32arr_ptr(B x) { VTY(x, t_c32arr); return c(C32Arr,x)->a; }
 static u32* c32any_ptr(B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==t_c32arr) return c(C32Arr,x)->a; assert(t==t_c32slice); return c(C32Slice,x)->a; }
 
+B m_str8(usz sz, char* s);
+B m_str8l(char* s);
+B m_str32(u32* s);
 
 static C32Arr* toC32Arr(B x) {
   if (v(x)->type==t_c32arr) return c(C32Arr,x);
