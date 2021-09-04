@@ -1,7 +1,5 @@
 #include "../core.h"
-#include "../core/i32arr.c"
-#include "../core/c32arr.c"
-#include "../core/f64arr.c"
+#include "../core/tyarr.c"
 #include "../core/harr.c"
 #include "../core/fillarr.c"
 #include "../core/stuff.c"

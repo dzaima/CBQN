@@ -36,9 +36,9 @@
 #define TP(W,X) W##f64##X
 #include "core/tyarrTemplate.h"
 
-#include "core/f64arr.h"
 #include "core/i32arr.h"
 #include "core/c32arr.h"
+#include "core/f64arr.h"
 
 #include "core/fillarr.h"
 #include "core/derv.h"

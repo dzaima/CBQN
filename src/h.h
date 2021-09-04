@@ -345,6 +345,11 @@ static usz o2su  (B x) { return (usz)x.f; }
 static f64 o2fu  (B x) { return      x.f; }
 static i64 o2i64u(B x) { return (i64)x.f; }
 static bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
+static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
+static bool q_c16(B x) { return isC32(x) && ((u32)x.u) == ((u16)x.u); }
+static bool q_c32(B x) { return isC32(x); }
+static bool q_i8 (B x) { return isF64(x) && x.f==(f64)(i8 )x.f; }
+static bool q_i16(B x) { return isF64(x) && x.f==(f64)(i16)x.f; }
 static bool q_i32(B x) { return isF64(x) && x.f==(f64)(i32)x.f; }
 static bool q_i64(B x) { return isF64(x) && x.f==(f64)(i64)x.f; }
 static bool q_f64(B x) { return isF64(x); }

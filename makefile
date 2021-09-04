@@ -81,7 +81,7 @@ builddir: # create the build directory. makefiles are stupid
 	@mkdir -p ${bd}
 
 # build individual object files
-core: builddir ${addprefix ${bd}/, i32arr.o c32arr.o f64arr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o}
+core: builddir ${addprefix ${bd}/, tyarr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o}
 ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
