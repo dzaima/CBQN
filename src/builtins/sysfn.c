@@ -539,6 +539,11 @@ B list_c1(B d, B x) {
   return file_list(path_resolve(nfn_objU(d), x));
 }
 
+B unixTime_c1(B t, B x) {
+  dec(x);
+  B r = m_i32(time(NULL));
+  return r;
+}
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
   if (sf<0 || sf>1ULL<<63) thrF("•Delay: Bad argument: %f", sf);
@@ -680,6 +685,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
+    else if (eqStr(c, U"unixtime")) r.a[i] = inc(bi_unixTime);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
     else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
