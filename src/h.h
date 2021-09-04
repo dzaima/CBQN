@@ -36,6 +36,9 @@
 #ifndef FORMATTER
   #define FORMATTER 1  // use self-hosted formatter for output
 #endif
+#ifndef RANDSEED
+  #define RANDSEED 1   // random seed used to make •rand
+#endif
 
 // #define HEAP_VERIFY  // enable usage of heapVerify()
 // #define ALLOC_STAT   // store basic allocation statistics

@@ -419,6 +419,14 @@ B makeRand_c1(B t, B x) {
   ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  inc(r)));
   return r;
 }
+static B randNS;
+B getRandNS() {
+  if (randNS.u == 0) {
+    randNS = c1(bi_makeRand,m_f64(RANDSEED));
+    gc_add(randNS);
+  }
+  return inc(randNS);
+}
 extern B replPath; // defined in main.c
 static NFnDesc* reBQNDesc;
 B reBQN_c1(B t, B x) {
@@ -531,15 +539,27 @@ B list_c1(B d, B x) {
   return file_list(path_resolve(nfn_objU(d), x));
 }
 
+B unixTime_c1(B t, B x) {
+  dec(x);
+  return m_i32(time(NULL));
+}
+B monoTime_c1(B t, B x) {
+  dec(x);
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return m_i32(ts.tv_sec);
+}
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
   if (sf<0 || sf>1ULL<<63) thrF("•Delay: Bad argument: %f", sf);
-  struct timespec ts;
+  struct timespec ts,ts0;
   u64 s = (u64)sf;
   ts.tv_sec = (u64)sf;
   ts.tv_nsec = (u64)((sf-s)*1e9);
+  clock_gettime(CLOCK_MONOTONIC, &ts0);
   nanosleep(&ts, &ts);
-  return x; // TODO figure out how to return an actually correct thing
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return m_f64(ts.tv_sec-ts0.tv_sec+(ts.tv_nsec-ts0.tv_nsec)*1e-9);
 }
 B exit_c1(B t, B x) {
   bqn_exit(q_i32(x)? o2i(x) : 0);
@@ -672,6 +692,8 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
+    else if (eqStr(c, U"unixtime")) r.a[i] = inc(bi_unixTime);
+    else if (eqStr(c, U"monotime")) r.a[i] = inc(bi_monoTime);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
     else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
@@ -679,6 +701,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"fmt")) r.a[i] = inc(bi_fmt);
     else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
     else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
+    else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
     else if (eqStr(c, U"rebqn")) r.a[i] = inc(bi_reBQN);
     else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
