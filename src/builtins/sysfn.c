@@ -422,10 +422,8 @@ B makeRand_c1(B t, B x) {
 static B randNS;
 B getRandNS() {
   if (randNS.u == 0) {
-    B fn = bqn_exec(m_str32(U"•MakeRand"), emptyCVec(), emptySVec());
-    randNS = c1(fn,m_f64(RANDSEED));
+    randNS = c1(bi_makeRand,m_f64(RANDSEED));
     gc_add(randNS);
-    dec(fn);
   }
   return inc(randNS);
 }
