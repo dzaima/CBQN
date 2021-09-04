@@ -8,7 +8,7 @@ typedef struct I32Slice {
 } I32Slice;
 
 
-#define I32A_SZ(IA) fsizeof(F64Arr,a,i32,IA)
+#define I32A_SZ(IA) fsizeof(I32Arr,a,i32,IA)
 static B m_i32arrv(i32** p, usz ia) {
   I32Arr* r = m_arr(I32A_SZ(ia), t_i32arr, ia);
   arr_shVec((Arr*)r);

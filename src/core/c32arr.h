@@ -8,7 +8,7 @@ typedef struct C32Slice {
 } C32Slice;
 
 
-#define C32A_SZ(IA) fsizeof(F64Arr,a,u32,IA)
+#define C32A_SZ(IA) fsizeof(C32Arr,a,u32,IA)
 static B m_c32arrv(u32** p, usz ia) {
   C32Arr* r = m_arr(C32A_SZ(ia), t_c32arr, ia);
   arr_shVec((Arr*)r);
