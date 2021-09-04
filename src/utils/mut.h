@@ -33,9 +33,9 @@ static void mut_init(Mut* m, u8 n) {
   usz sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
-    case el_i32: ty = t_i32arr; sz = I32A_SZ(ia); break;
-    case el_f64: ty = t_f64arr; sz = F64A_SZ(ia); break;
-    case el_c32: ty = t_c32arr; sz = C32A_SZ(ia); break;
+    case el_i32: ty = t_i32arr; sz = TYARR_SZ(I32,ia); break;
+    case el_f64: ty = t_f64arr; sz = TYARR_SZ(F64,ia); break;
+    case el_c32: ty = t_c32arr; sz = TYARR_SZ(C32,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
       m->val = (Arr*)t.c;
@@ -391,17 +391,17 @@ static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
   if (v(w)->refc==1) {
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
-    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && q_i32(x)) {
+    if (wt==t_i32arr && TYARR_SZ(I32,ria)<wsz && q_i32(x)) {
       a(w)->ia = ria;
       i32arr_ptr(w)[wia] = o2iu(x);
       return true;
     }
-    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && isC32(x)) {
+    if (wt==t_c32arr && TYARR_SZ(C32,ria)<wsz && isC32(x)) {
       a(w)->ia = ria;
       c32arr_ptr(w)[wia] = o2cu(x);
       return true;
     }
-    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && isNum(x)) {
+    if (wt==t_f64arr && TYARR_SZ(F64,ria)<wsz && isNum(x)) {
       a(w)->ia = ria;
       f64arr_ptr(w)[wia] = o2fu(x);
       return true;

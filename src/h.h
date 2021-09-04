@@ -118,6 +118,9 @@
 #define N64d "%"SCNd64
 #define N64u "%"SCNu64
 
+#define JOIN0(A,B) A##B
+#define JOIN(A,B) JOIN0(A,B)
+
 typedef u32 usz;
 #define USZ_MAX ((u32)((1LL<<32)-1))
 // typedef u64 usz;
