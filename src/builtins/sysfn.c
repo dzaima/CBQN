@@ -541,8 +541,13 @@ B list_c1(B d, B x) {
 
 B unixTime_c1(B t, B x) {
   dec(x);
-  B r = m_i32(time(NULL));
-  return r;
+  return m_i32(time(NULL));
+}
+B monoTime_c1(B t, B x) {
+  dec(x);
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return m_i32(ts.tv_sec);
 }
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
@@ -686,6 +691,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
     else if (eqStr(c, U"unixtime")) r.a[i] = inc(bi_unixTime);
+    else if (eqStr(c, U"monotime")) r.a[i] = inc(bi_monoTime);
     else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
     else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
     else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
