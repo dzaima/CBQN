@@ -422,7 +422,11 @@ B makeRand_c1(B t, B x) {
 static B randNS;
 B getRandNS() {
   if (randNS.u == 0) {
-    randNS = c1(bi_makeRand,m_f64(RANDSEED));
+    #if RANDSEED==0
+      randNS = c1(bi_makeRand, m_f64(nsTime()));
+    #else
+      randNS = c1(bi_makeRand, m_f64(RANDSEED));
+    #endif
     gc_add(randNS);
   }
   return inc(randNS);
@@ -541,13 +545,13 @@ B list_c1(B d, B x) {
 
 B unixTime_c1(B t, B x) {
   dec(x);
-  return m_i32(time(NULL));
+  return m_f64(time(NULL));
 }
 B monoTime_c1(B t, B x) {
   dec(x);
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return m_i32(ts.tv_sec);
+  return m_f64(ts.tv_sec + ts.tv_nsec/1e9);
 }
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
