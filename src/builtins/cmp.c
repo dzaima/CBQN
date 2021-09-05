@@ -6,9 +6,9 @@
 
 #define CMP_IMPL(CHR,OP,FC,CF) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
-  if (isC32(w)&isC32(x)) return m_f64(w.u OP x.u); \
-  if (isF64(w)&isC32(x)) return m_f64(FC);         \
-  if (isC32(w)&isF64(x)) return m_f64(CF);         \
+  if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
+  if (isF64(w)&isC32(x)) return m_i32(FC);         \
+  if (isC32(w)&isF64(x)) return m_i32(CF);         \
   bool wa = isArr(w);                              \
   bool xa = isArr(x);                              \
   if (wa|xa && (!wa|!xa || rnk(w)==rnk(x))) {      \
@@ -16,21 +16,21 @@
     u8 we = wa? TI(w,elType) : selfElType(w);      \
     u8 xe = xa? TI(x,elType) : selfElType(x);      \
     if (we==el_i32 && xe==el_i32) {                \
-      i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
+      i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                      \
       if      (!wa) { i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
       else if (!xa) { i32 xv=o2iu(x); i32* wp=i32any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
       else { i32* wp=i32any_ptr(w);   i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
       if(wa) dec(w); if(xa) dec(x); return r;      \
     }                                              \
     if ((we==el_f64||isNum(w)) && (xe==el_f64||isNum(x))) { \
-      i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
+      i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                      \
       if      (!wa) { f64 wv=o2fu(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
       else if (!xa) { f64 xv=o2fu(x); f64* wp=f64any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
       else { f64* wp=f64any_ptr(w);   f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
       if(wa) dec(w); if(xa) dec(x); return r;      \
     }                                              \
     if (we==el_c32 && xe==el_c32) {                \
-      i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                    \
+      i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                      \
       if      (!wa) { u32 wv=o2cu(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
       else if (!xa) { u32 xv=o2cu(x); u32* wp=c32any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
       else { u32* wp=c32any_ptr(w);   u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
@@ -38,12 +38,12 @@
     }                                              \
     if (wa&xa) {                                   \
       if (we==el_f64 && xe==el_i32) {              \
-        i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                         \
+        i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                           \
         f64* wp=f64any_ptr(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; \
         dec(w); dec(x); return r;                  \
       }                                            \
       if (we==el_i32 && xe==el_f64) {              \
-        i32* rp; B r = m_i32arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                         \
+        i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                           \
         i32* wp=i32any_ptr(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; \
         dec(w); dec(x); return r;                  \
       }                                            \
