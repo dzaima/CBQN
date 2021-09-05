@@ -86,50 +86,33 @@ void mut_pfree(Mut* m, usz n);
 
 static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
   again:;
-  u8 nty;
   switch(m->type) { default: UD;
-    case el_MAX:
-      nty = isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B);
-      goto change;
-    
-    case el_i32: {
-      if (!q_i32(x)) { nty = isF64(x)? el_f64 : el_B; goto change; }
-      m->ai32[ms] = o2iu(x);
-      return;
-    }
-    case el_c32: {
-      if (!isC32(x)) { nty = el_B; goto change; }
-      m->ac32[ms] = o2cu(x);
-      return;
-    }
-    case el_f64: {
-      if (!isF64(x)) { nty = el_B; goto change; }
-      m->af64[ms] = o2fu(x);
-      return;
-    }
+    case el_MAX: goto change;
+    case el_i8:  if (!q_i8 (x)) goto change; m->ai8 [ms] = o2iu(x); return;
+    case el_i16: if (!q_i16(x)) goto change; m->ai16[ms] = o2iu(x); return;
+    case el_i32: if (!q_i32(x)) goto change; m->ai32[ms] = o2iu(x); return;
+    case el_c8:  if (!q_c8 (x)) goto change; m->ac8 [ms] = o2cu(x); return;
+    case el_c16: if (!q_c16(x)) goto change; m->ac16[ms] = o2cu(x); return;
+    case el_c32: if (!q_c32(x)) goto change; m->ac32[ms] = o2cu(x); return;
+    case el_f64: if (!q_f64(x)) goto change; m->af64[ms] = o2fu(x); return;
     case el_B: {
       m->aB[ms] = x;
       return;
     }
   }
   change:
-  mut_to(m, nty);
+  mut_to(m, el_or(m->type, selfElType(x)));
   goto again;
 }
 static void mut_setG(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
   switch(m->type) { default: UD;
-    case el_i32: { assert(q_i32(x));
-      m->ai32[ms] = o2iu(x);
-      return;
-    }
-    case el_c32: { assert(isC32(x));
-      m->ac32[ms] = o2cu(x);
-      return;
-    }
-    case el_f64: { assert(isF64(x));
-      m->af64[ms] = o2fu(x);
-      return;
-    }
+    case el_i8 : { assert(q_i8 (x)); m->ai8 [ms] = o2iu(x); return; }
+    case el_i16: { assert(q_i16(x)); m->ai16[ms] = o2iu(x); return; }
+    case el_i32: { assert(q_i32(x)); m->ai32[ms] = o2iu(x); return; }
+    case el_c8 : { assert(q_c8 (x)); m->ac8 [ms] = o2cu(x); return; }
+    case el_c16: { assert(q_c16(x)); m->ac16[ms] = o2cu(x); return; }
+    case el_c32: { assert(q_c32(x)); m->ac32[ms] = o2cu(x); return; }
+    case el_f64: { assert(q_f64(x)); m->af64[ms] = o2fu(x); return; }
     case el_B: {
       m->aB[ms] = x;
       return;
@@ -141,7 +124,11 @@ static void mut_rm(Mut* m, usz ms) { // clears the object at position ms
 }
 static B mut_getU(Mut* m, usz ms) {
   switch(m->type) { default: UD;
+    case el_i8:  return m_i32(m->ai8 [ms]);
+    case el_i16: return m_i32(m->ai16[ms]);
     case el_i32: return m_i32(m->ai32[ms]);
+    case el_c8:  return m_c32(m->ac8 [ms]);
+    case el_c16: return m_c32(m->ac16[ms]);
     case el_c32: return m_c32(m->ac32[ms]);
     case el_f64: return m_f64(m->af64[ms]);
     case el_B:   return m->aB[ms];
