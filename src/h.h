@@ -102,8 +102,8 @@
 #define f64 double
 #define I8_MIN -128
 #define I8_MAX  127
-#define I16_MIN -65536
-#define I16_MAX  65535
+#define I16_MIN -32768
+#define I16_MAX  32767
 #define I32_MIN -2147483648
 #define I32_MAX  2147483647
 #define I64_MIN ((i64)(1ULL<<63))

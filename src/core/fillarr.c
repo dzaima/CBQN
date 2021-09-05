@@ -5,7 +5,7 @@ B asFill(B x) { // consumes
     u8 xe = TI(x,elType);
     usz ia = a(x)->ia;
     if (xe<=el_f64) {
-      i32* rp; B r = m_i32arrc(&rp, x);
+      i8* rp; B r = m_i8arrc(&rp, x);
       for (usz i = 0; i < ia; i++) rp[i] = 0;
       dec(x);
       return r;
@@ -113,6 +113,8 @@ B withFill(B x, B fill) { // consumes both
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
     case t_f64arr: case t_f64slice:
+    case t_i8arr:  case t_i8slice:  if(fill.u == m_i32(0  ).u) return x; break;
+    case t_i16arr: case t_i16slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_i32arr: case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr: case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
