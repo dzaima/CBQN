@@ -15,6 +15,20 @@
     if (wa&xa && !eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
     u8 we = wa? TI(w,elType) : selfElType(w);      \
     u8 xe = xa? TI(x,elType) : selfElType(x);      \
+    if (we==el_i8 && xe==el_i8) {                  \
+      i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia; /* (i8)o2iu safe bc _e==el_i8 */  \
+      if      (!wa) { i8 wv=o2iu(w); i8* xp=i8any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
+      else if (!xa) { i8 xv=o2iu(x); i8* wp=i8any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
+      else { i8* wp=i8any_ptr(w);    i8* xp=i8any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
+      if(wa) dec(w); if(xa) dec(x); return r;      \
+    }                                              \
+    if (we==el_i16 && xe==el_i16) {                \
+      i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                      \
+      if      (!wa) { i16 wv=o2iu(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
+      else if (!xa) { i16 xv=o2iu(x); i16* wp=i16any_ptr(w); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xv;    } \
+      else { i16* wp=i16any_ptr(w);   i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wp[i] OP xp[i]; } \
+      if(wa) dec(w); if(xa) dec(x); return r;      \
+    }                                              \
     if (we==el_i32 && xe==el_i32) {                \
       i8* rp; B r = m_i8arrc(&rp, isArr(x)? x : w); usz ria=a(r)->ia;                                      \
       if      (!wa) { i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++)rp[i]=wv    OP xp[i]; } \
