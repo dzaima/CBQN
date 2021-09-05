@@ -91,7 +91,7 @@ static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
 static B m_v3(B a, B b, B c     ); // consumes all
 static B m_v4(B a, B b, B c, B d); // consumes all
-static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
+static bool isNumEl(u8 elt) { return elt<=el_f64; }
 
 static bool uszMul(usz* c, usz n) {
   return __builtin_mul_overflow(*c, n, c);

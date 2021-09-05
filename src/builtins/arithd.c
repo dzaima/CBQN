@@ -31,7 +31,7 @@
         usz ia = a(x)->ia;                                                   \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
-        if (isNumEl(we)&isNumEl(xe)) {                                       \
+        if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {               \
           f64* rp; B r = m_f64arrc(&rp, x);                                  \
           if (we==el_i32) { B w,x/*shadow*/; i32* wp = i32any_ptr(ow);       \
             if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
@@ -69,8 +69,12 @@
   }
   
   #define PF(N) f64* N##p = f64any_ptr(N);
+  #define PI8(N)  i8*  N##p = i8any_ptr (N);
+  #define PI16(N) i16* N##p = i16any_ptr(N);
   #define PI(N) i32* N##p = i32any_ptr(N);
-  #define RI(A) i32* rp; B r=m_i32arrc(&rp, A);
+  #define RI8(A)  i8*  rp; B r=m_i8arrc (&rp, A);
+  #define RI16(A) i16* rp; B r=m_i16arrc(&rp, A);
+  #define RI32(A) i32* rp; B r=m_i32arrc(&rp, A);
   #define RF(A) f64* rp; B r=m_f64arrc(&rp, A);
   
   #define DOF(EXPR,A,W,X) {        \
@@ -79,19 +83,29 @@
       rp[i] = EXPR;                \
     }                              \
   }
-  #define DOI(EXPR,A,W,X,BASE) {   \
-    RI(A)                          \
-    for (usz i = 0; i < ia; i++) { \
-      i64 wv = W; i64 xv = X;      \
-      i64 rv = EXPR;               \
-      if (RARE(rv!=(i32)rv)) {     \
-        dec(r);                    \
-        goto BASE;                 \
-      }                            \
-      rp[i] = rv;                  \
-    }                              \
-    dec(w); dec(x);                \
-    return r;                      \
+  #define DOI16(EXPR,A,W,X,BASE) { RI16(A)          \
+    for (usz i = 0; i < ia; i++) {                  \
+      i32 wv = W; i32 xv = X; i32 rv = EXPR;        \
+      if (RARE(rv!=(i16)rv)) { dec(r); goto BASE; } \
+      rp[i] = rv;                                   \
+    }                                               \
+    dec(w); dec(x); return r;                       \
+  }
+  #define DOI8(EXPR,A,W,X,BASE) { RI8(A)            \
+    for (usz i = 0; i < ia; i++) {                  \
+      i16 wv = W; i16 xv = X; i16 rv = EXPR;        \
+      if (RARE(rv!=(i8)rv)) { dec(r); goto BASE; }  \
+      rp[i] = rv;                                   \
+    }                                               \
+    dec(w); dec(x); return r;                       \
+  }
+  #define DOI32(EXPR,A,W,X,BASE) { RI32(A)          \
+    for (usz i = 0; i < ia; i++) {                  \
+      i64 wv = W; i64 xv = X; i64 rv = EXPR;        \
+      if (RARE(rv!=(i32)rv)) { dec(r); goto BASE; } \
+      rp[i] = rv;                                   \
+    }                                               \
+    dec(w); dec(x); return r;                       \
   }
   #define GC2i(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
@@ -102,9 +116,9 @@
         usz ia = a(x)->ia;                                           \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
-        if (isNumEl(we)&isNumEl(xe)) {                               \
+        if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
-          if (wei&xei) { PI(w) PI(x) DOI(EXPR,w,wp[i],xp[i],aaB); }  \
+          if (wei&xei) { PI(w) PI(x) DOI32(EXPR,w,wp[i],xp[i],aaB); }\
           aaB:; RF(x)                                                \
           if (wei) { PI(w)                                           \
             if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
@@ -115,16 +129,18 @@
           }                                                          \
           dec(w); dec(x); return f64_maybe_i32(r);                   \
         }                                                            \
+        if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base); } \
+        if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);                 \
-        if (xe==el_i32 && q_i32(w)) { PI(x) i32 wc=o2iu(w); DOI(EXPR,x,wc,xp[i],naB) } naB:;   \
+        if (xe==el_i32 && q_i32(w)) { PI(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],naB) } naB:; \
         if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
         if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                 \
-        if (we==el_i32 && q_i32(x)) { PI(w) i32 xc=o2iu(x); DOI(EXPR,w,wp[i],xc,anB) } anB:;   \
+        if (we==el_i32 && q_i32(x)) { PI(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,anB) } anB:; \
         if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
         if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
       }                                                              \
-      P2(NAME)                                                       \
+      base: P2(NAME)                                                 \
     }                                                                \
     thrM(SYMB ": Unexpected argument types");                        \
   }
