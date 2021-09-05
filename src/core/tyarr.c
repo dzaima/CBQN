@@ -1,7 +1,7 @@
 #include "../core.h"
 
 B m_i8(i8 x) { return m_i32(x); } B m_i16(i16 x) { return m_i32(x); }
-B m_c8(i8 x) { return m_c32(x); } B m_c16(i16 x) { return m_c32(x); }
+B m_c8(u8 x) { return m_c32(x); } B m_c16(u16 x) { return m_c32(x); }
 #define TU I8
 #define TP(W,X) W##i8##X
 #include "tyarrTemplate.c"
@@ -39,8 +39,8 @@ void tyarr_init() {
   i8arr_init(); i16arr_init(); i32arr_init();
   c8arr_init(); c16arr_init(); c32arr_init(); f64arr_init();
   
-  { i32* tmp; bi_emptyIVec = m_i32arrv(&tmp, 0); gc_add(bi_emptyIVec); }
-  { u32* tmp; bi_emptyCVec = m_c32arrv(&tmp, 0); gc_add(bi_emptyCVec); }
+  { i8* tmp; bi_emptyIVec = m_i8arrv(&tmp, 0); gc_add(bi_emptyIVec); }
+  { u8* tmp; bi_emptyCVec = m_c8arrv(&tmp, 0); gc_add(bi_emptyCVec); }
   
   Arr* emptySVec = m_fillarrp(0); arr_shVec(emptySVec);
   fillarr_setFill(emptySVec, emptyCVec());

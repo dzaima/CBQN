@@ -58,9 +58,13 @@ B info_c1(B t, B x) {
   return info_c2(t, m_i32(0), x);
 }
 
-#define FOR_VARIATION(F) F(Ai32) F(Si32) F(Ai32Inc) F(Si32Inc) \
-                         F(Af64) F(Sf64) F(Af64Inc) F(Sf64Inc) \
+#define FOR_VARIATION(F) F(Ai8 ) F(Si8 ) F(Ai8Inc ) F(Si8Inc ) \
+                         F(Ai16) F(Si16) F(Ai16Inc) F(Si16Inc) \
+                         F(Ai32) F(Si32) F(Ai32Inc) F(Si32Inc) \
+                         F(Ac8 ) F(Sc8 ) F(Ac8Inc ) F(Sc8Inc ) \
+                         F(Ac16) F(Sc16) F(Ac16Inc) F(Sc16Inc) \
                          F(Ac32) F(Sc32) F(Ac32Inc) F(Sc32Inc) \
+                         F(Af64) F(Sf64) F(Af64Inc) F(Sf64Inc) \
                          F(Ah)   F(Sh)   F(AhInc)   F(ShInc) \
                          F(Af)   F(Sf)   F(AfInc)   F(SfInc)
 
@@ -87,37 +91,43 @@ B listVariations_c2(B t, B w, B x) {
   u8 xe = TI(x,elType);
   B xf = getFillQ(x);
   bool ah = c_rmFill || noFill(xf);
-  bool ai32=false, af64=false, ac32=false;
+  bool ai8=false, ai16=false, ai32=false, af64=false,
+       ac8=false, ac16=false, ac32=false;
   usz xia = a(x)->ia;
   BS2B xgetU = TI(x,getU);
   if (isNum(xf)) {
-    ai32=af64=true;
-    if (xe!=el_i32) {
-      if (xe==el_f64) { f64* xp = f64any_ptr(x);
-        for (usz i = 0; i < xia; i++) if (xp[i] != (i32)xp[i]) { ai32=false; break; }
-      } else {
-        for (usz i = 0; i < xia; i++) {
-          B c = xgetU(x, i);
-          if (!isNum(c)) { ai32=af64=false; break; }
-          if (!q_i32(c)) ai32=false;
-        }
-      }
-    }
+    f64 min=0, max=0;
+    if (xe==el_i8) { }
+    else if (xe==el_i16) { i16* xp = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
+    else if (xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
+    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(xp[i]!=(i32)xp[i]) max=1e99; } }
+    else for (usz i = 0; i < xia; i++) { B c = xgetU(x, i); if (!isF64(c)) goto noSpec; if (c.f>max) max=c.f; if (c.f<min) min=c.f; }
+    ai8  = min==(i8 )min && max==(i8 )max;
+    ai16 = min==(i16)min && max==(i16)max;
+    ai32 = min==(i32)min && max==(i32)max;
+    af64 = true;
   } else if (isC32(xf)) {
-    ac32=true;
-    if (xe!=el_c32) {
-      for (usz i = 0; i < xia; i++) {
-        B c = xgetU(x, i);
-        if (!isC32(c)) { ac32=false; break; }
-      }
+    u32 max = 0;
+    if (xe!=el_c8) for (usz i = 0; i < xia; i++) {
+      B c = xgetU(x, i);
+      if (!isC32(c)) goto noSpec;
+      if (o2cu(c)>max) max = o2cu(c);
     }
-  } else ai32=af64=false;
+    ac8  = max == (u8 )max;
+    ac16 = max == (u16)max;
+    ac32 = true;
+  }
+  noSpec:;
   B r = emptyHVec();
-  if(ai32) { r=vec_add(r,inc(v_Ai32)); r=vec_add(r,inc(v_Si32)); if(c_incr) {r=vec_add(r,inc(v_Ai32Inc)); r=vec_add(r,inc(v_Si32Inc)); } }
-  if(af64) { r=vec_add(r,inc(v_Af64)); r=vec_add(r,inc(v_Sf64)); if(c_incr) {r=vec_add(r,inc(v_Af64Inc)); r=vec_add(r,inc(v_Sf64Inc)); } }
-  if(ac32) { r=vec_add(r,inc(v_Ac32)); r=vec_add(r,inc(v_Sc32)); if(c_incr) {r=vec_add(r,inc(v_Ac32Inc)); r=vec_add(r,inc(v_Sc32Inc)); } }
-  if(ah)   { r=vec_add(r,inc(v_Ah  )); r=vec_add(r,inc(v_Sh  )); if(c_incr) {r=vec_add(r,inc(v_AhInc  )); r=vec_add(r,inc(v_ShInc  )); } }
-  {          r=vec_add(r,inc(v_Af  )); r=vec_add(r,inc(v_Sf  )); if(c_incr) {r=vec_add(r,inc(v_AfInc  )); r=vec_add(r,inc(v_SfInc  )); } }
+  if(ai8 ) { r=vec_add(r,inc(v_Ai8 ));r=vec_add(r,inc(v_Si8 )); if(c_incr) { r=vec_add(r,inc(v_Ai8Inc ));r=vec_add(r,inc(v_Si8Inc )); } }
+  if(ai16) { r=vec_add(r,inc(v_Ai16));r=vec_add(r,inc(v_Si16)); if(c_incr) { r=vec_add(r,inc(v_Ai16Inc));r=vec_add(r,inc(v_Si16Inc)); } }
+  if(ai32) { r=vec_add(r,inc(v_Ai32));r=vec_add(r,inc(v_Si32)); if(c_incr) { r=vec_add(r,inc(v_Ai32Inc));r=vec_add(r,inc(v_Si32Inc)); } }
+  if(ac8 ) { r=vec_add(r,inc(v_Ac8 ));r=vec_add(r,inc(v_Sc8 )); if(c_incr) { r=vec_add(r,inc(v_Ac8Inc ));r=vec_add(r,inc(v_Sc8Inc )); } }
+  if(ac16) { r=vec_add(r,inc(v_Ac16));r=vec_add(r,inc(v_Sc16)); if(c_incr) { r=vec_add(r,inc(v_Ac16Inc));r=vec_add(r,inc(v_Sc16Inc)); } }
+  if(ac32) { r=vec_add(r,inc(v_Ac32));r=vec_add(r,inc(v_Sc32)); if(c_incr) { r=vec_add(r,inc(v_Ac32Inc));r=vec_add(r,inc(v_Sc32Inc)); } }
+  if(af64) { r=vec_add(r,inc(v_Af64));r=vec_add(r,inc(v_Sf64)); if(c_incr) { r=vec_add(r,inc(v_Af64Inc));r=vec_add(r,inc(v_Sf64Inc)); } }
+  if(ah)   { r=vec_add(r,inc(v_Ah  ));r=vec_add(r,inc(v_Sh  )); if(c_incr) { r=vec_add(r,inc(v_AhInc  ));r=vec_add(r,inc(v_ShInc  )); } }
+  {          r=vec_add(r,inc(v_Af  ));r=vec_add(r,inc(v_Sf  )); if(c_incr) { r=vec_add(r,inc(v_AfInc  ));r=vec_add(r,inc(v_SfInc  )); } }
   dec(x);
   dec(xf);
   return r;
@@ -161,19 +171,19 @@ B variation_c2(B t, B w, B x) {
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
     wp++;
-    if (u32_get(&wp, wpE, U"i32")) {
-      i32* tp; res = m_i32arrc(&tp, x);
-      if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
-      else for (usz i = 0; i < xia; i++) tp[i] = o2i(xgetU(x,i));
-    } else if (u32_get(&wp, wpE, U"f64")) {
+    #define CPT(I) do { I; for (usz i = 0; i < xia; i++) tp[i] = xp[i]; } while(0)
+    #define CPF(F) for (usz i = 0; i < xia; i++) tp[i] = F(xgetU(x,i))
+    if      (u32_get(&wp, wpE, U"i8" )) { i8*  tp; res = m_i8arrc (&tp, x); if (xe==el_i8 ) CPT(i8*  xp=i8any_ptr (x)); else CPF(o2i); }
+    else if (u32_get(&wp, wpE, U"i16")) { i16* tp; res = m_i16arrc(&tp, x); if (xe==el_i16) CPT(i16* xp=i16any_ptr(x)); else CPF(o2i); }
+    else if (u32_get(&wp, wpE, U"i32")) { i32* tp; res = m_i32arrc(&tp, x); if (xe==el_i32) CPT(i32* xp=i32any_ptr(x)); else CPF(o2i); }
+    else if (u32_get(&wp, wpE, U"c8" )) { u8*  tp; res = m_c8arrc (&tp, x); if (xe==el_c8 ) CPT(u8*  xp=c8any_ptr (x)); else CPF(o2c); }
+    else if (u32_get(&wp, wpE, U"c16")) { u16* tp; res = m_c16arrc(&tp, x); if (xe==el_c16) CPT(u16* xp=c16any_ptr(x)); else CPF(o2c); }
+    else if (u32_get(&wp, wpE, U"c32")) { u32* tp; res = m_c32arrc(&tp, x); if (xe==el_c32) CPT(u32* xp=c32any_ptr(x)); else CPF(o2c); }
+    else if (u32_get(&wp, wpE, U"f64")) {
       f64* tp; res = m_f64arrc(&tp, x);
-      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
-      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
+      if      (xe==el_i32) CPT(i32* xp=i32any_ptr(x));
+      else if (xe==el_f64) CPT(f64* xp=f64any_ptr(x));
       else for (usz i = 0; i < xia; i++) tp[i] = o2f(xgetU(x,i));
-    } else if (u32_get(&wp, wpE, U"c32")) {
-      u32* tp; res = m_c32arrc(&tp, x);
-      if (xe==el_c32) { u32* xp=c32any_ptr(x); for (usz i = 0; i < xia; i++) tp[i] = xp[i]; }
-      else for (usz i = 0; i < xia; i++) tp[i] = o2c(xgetU(x,i));
     } else if (u32_get(&wp, wpE, U"h")) {
       HArr_p t = m_harrUc(x);
       if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
