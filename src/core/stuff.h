@@ -93,6 +93,14 @@ static B m_v3(B a, B b, B c     ); // consumes all
 static B m_v4(B a, B b, B c, B d); // consumes all
 static bool isNumEl(u8 elt) { return elt==el_i32 | elt==el_f64; }
 
+static bool uszMul(usz* c, usz n) {
+  return __builtin_mul_overflow(*c, n, c);
+}
+static usz uszMulT(usz a, usz b) {
+  if (uszMul(&a, b)) thrM("Size too large");
+  return a;
+}
+
 // string stuff
 
 B m_str8l(char* s);

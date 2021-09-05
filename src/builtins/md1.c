@@ -46,9 +46,9 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   if (EACH_FILLS) xf = getFillQ(x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  usz wia = a(w)->ia; ur wr = rnk(w);
-  usz xia = a(x)->ia; ur xr = rnk(x);
-  usz ria = wia*xia;  ur rr = wr+xr;
+  ur wr = rnk(w); usz wia = a(w)->ia;
+  ur xr = rnk(x); usz xia = a(x)->ia;
+  ur rr = wr+xr;  usz ria = uszMulT(wia, xia);
   if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   BS2B wgetU = TI(w,getU);

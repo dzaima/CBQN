@@ -60,7 +60,7 @@ B shape_c1(B t, B x) {
 }
 B shape_c2(B t, B w, B x) {
   usz xia = isArr(x)? a(x)->ia : 1;
-  usz nia;
+  usz nia = 1;
   ur nr;
   ShArr* sh;
   if (isF64(w)) {
@@ -76,25 +76,25 @@ B shape_c2(B t, B w, B x) {
     if (TI(w,elType)==el_i32) {
       i32* wi = i32any_ptr(w);
       if (nr>1) for (i32 i = 0; i < nr; i++) sh->a[i] = wi[i];
-      i64 tot = 1;
+      bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
         if (wi[i]<0) thrF("⥊: 𝕨 contained %i", wi[i]);
-        tot*= wi[i];
-        if (tot > USZ_MAX) thrM("⥊: Result too large"); // TODO this (& below) doesn't detect overflows for usz==u64
+        bad|= uszMul(&nia, wi[i]);
+        good|= wi[i]==0;
       }
-      nia = (usz)tot;
+      if (bad && !good) thrM("⥊: 𝕨 too large");
     } else {
       BS2B getU = TI(w,getU);
       i32 unkPos = -1;
       i32 unkInd;
-      i64 tot = 1;
+      bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
         B c = getU(w, i);
         if (isF64(c)) {
           usz v = o2s(c);
           if (sh) sh->a[i] = v;
-          tot*= v;
-          if (tot > USZ_MAX) thrM("⥊: Result too large");
+          bad|= uszMul(&nia, v);
+          good|= v==0;
         } else {
           if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
           if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
@@ -102,11 +102,12 @@ B shape_c2(B t, B w, B x) {
           unkInd = ((i32)v(c)->flags) - 1;
         }
       }
+      if (bad && !good) thrM("⥊: 𝕨 too large");
       if (unkPos!=-1) {
         if (unkInd!=52 & unkInd!=6 & unkInd!=30 & unkInd!=25) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-        if (tot==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
-        i64 div = xia/tot;
-        i64 mod = xia%tot;
+        if (nia==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
+        i64 div = xia/nia;
+        i64 mod = xia%nia;
         usz item;
         bool fill = false;
         if (unkInd == 52) {
@@ -121,9 +122,7 @@ B shape_c2(B t, B w, B x) {
           fill = true;
         } else UD;
         if (sh) sh->a[unkPos] = item;
-        tot*= item;
-        if (tot > USZ_MAX) thrM("⥊: Result too large");
-        nia = tot;
+        nia = uszMulT(nia, item);
         if (fill) {
           if (!isArr(x)) x = m_atomUnit(x);
           Arr* a = take_impl(nia, x);
@@ -131,7 +130,7 @@ B shape_c2(B t, B w, B x) {
           x = taga(a);
           xia = nia;
         }
-      } else nia = tot;
+      }
     }
   }
   dec(w);
