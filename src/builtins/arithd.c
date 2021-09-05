@@ -131,14 +131,18 @@
         }                                                            \
         if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base); } \
         if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
-      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);                 \
-        if (xe==el_i32 && q_i32(w)) { PI(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],naB) } naB:; \
-        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
-        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); } \
-      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                 \
-        if (we==el_i32 && q_i32(x)) { PI(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,anB) } anB:; \
-        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
-        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); } \
+      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);          \
+        if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],na8B ) } na8B :; \
+        if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],na16B) } na16B:; \
+        if (xe==el_i32 && q_i32(w)) { PI  (x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],na32B) } na32B:; \
+        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); }       \
+        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); }       \
+      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                       \
+        if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,an8B ) } an8B :; \
+        if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,an16B) } an16B:; \
+        if (we==el_i32 && q_i32(x)) { PI  (w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,an32B) } an32B:; \
+        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); }       \
+        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); }       \
       }                                                              \
       base: P2(NAME)                                                 \
     }                                                                \
