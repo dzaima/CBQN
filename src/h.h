@@ -114,6 +114,7 @@
 #define FORCE_INLINE __attribute__((always_inline)) static inline
 #define NORETURN     __attribute__((noreturn))
 #define AUTO __auto_type
+#define CLZ(X) __builtin_clzll(X)
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount

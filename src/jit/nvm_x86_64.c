@@ -18,7 +18,7 @@
 EmptyValue* mmX_buckets[64];
 u64 mmX_ctrs[64];
 #define  BSZ(X) (1ull<<(X))
-#define BSZI(X) ((u8)(64-__builtin_clzl((X)-1ull)))
+#define BSZI(X) ((u8)(64-CLZ((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mmX_##X
 #include "../opt/mm_buddyTemplate.h"
@@ -27,7 +27,7 @@ u64 mmX_ctrs[64];
 #define PROT PROT_READ|PROT_WRITE|PROT_EXEC
 #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT
 #include "../opt/mm_buddyTemplate.c"
-static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-__builtin_clzl(sz-1ull), type); }
+static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
 #undef BN
 #undef BSZ
 

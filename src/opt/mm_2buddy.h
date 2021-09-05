@@ -19,7 +19,7 @@ extern EmptyValue* mm_buckets[128];
 #include "mm_buddyTemplate.h"
 
 
-#define LOG2(X) ((u8)(64-__builtin_clzl((X)-1ull)))
+#define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
 static void* mm_alloc(usz sz, u8 type) {
   assert(sz>=16);
   u32 log = LOG2(sz);
