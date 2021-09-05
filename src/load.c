@@ -5,7 +5,7 @@
 #include "utils/file.h"
 #include "utils/builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(fillarr) F(i32arr) F(c32arr) F(f64arr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
@@ -227,7 +227,6 @@ void load_init() { // very last init function
   
   #ifndef NO_RT
     B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
-    
     #ifndef ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else

@@ -18,9 +18,9 @@ typedef struct Mut {
   usz ia;
   Arr* val;
   union {
-    i32* ai32;
+    i8* ai8; i16* ai16; i32* ai32;
+    u8* ac8; u16* ac16; u32* ac32;
     f64* af64;
-    u32* ac32;
     B* aB;
   };
 } Mut;
@@ -33,9 +33,13 @@ static void mut_init(Mut* m, u8 n) {
   usz sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
+    case el_i8:  ty = t_i8arr ; sz = TYARR_SZ(I8, ia); break;
+    case el_i16: ty = t_i16arr; sz = TYARR_SZ(I16,ia); break;
     case el_i32: ty = t_i32arr; sz = TYARR_SZ(I32,ia); break;
-    case el_f64: ty = t_f64arr; sz = TYARR_SZ(F64,ia); break;
+    case el_c8:  ty = t_c8arr ; sz = TYARR_SZ(C8, ia); break;
+    case el_c16: ty = t_c16arr; sz = TYARR_SZ(C16,ia); break;
     case el_c32: ty = t_c32arr; sz = TYARR_SZ(C32,ia); break;
+    case el_f64: ty = t_f64arr; sz = TYARR_SZ(F64,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
       m->val = (Arr*)t.c;
@@ -45,9 +49,9 @@ static void mut_init(Mut* m, u8 n) {
   Arr* a = m_arr(sz, ty, ia);
   m->val = a;
   switch(n) { default: UD; // gcc generates horrible code for this (which should just be two instructions), but that's what gcc does
-    case el_i32: m->ai32 = ((I32Arr*)a)->a; break;
+    case el_i8: m->ai8 = ((I8Arr*)a)->a; break; case el_i16: m->ai16 = ((I16Arr*)a)->a; break; case el_i32: m->ai32 = ((I32Arr*)a)->a; break;
+    case el_c8: m->ac8 = ((C8Arr*)a)->a; break; case el_c16: m->ac16 = ((C16Arr*)a)->a; break; case el_c32: m->ac32 = ((C32Arr*)a)->a; break;
     case el_f64: m->af64 = ((F64Arr*)a)->a; break;
-    case el_c32: m->ac32 = ((C32Arr*)a)->a; break;
   }
 }
 void mut_to(Mut* m, u8 n);
@@ -73,16 +77,9 @@ static Arr* mut_fp(Mut* m) { assert(m->type!=el_MAX);
   return m->val;
 }
 
+extern u8 el_orArr[];
 static u8 el_or(u8 a, u8 b) {
-  #define M(X) if(b==X) return a>X?a:X;
-  switch (a) { default: UD;
-    case el_c32: M(el_c32);            return el_B;
-    case el_i32: M(el_i32); M(el_f64); return el_B;
-    case el_f64: M(el_i32); M(el_f64); return el_B;
-    case el_B:                         return el_B;
-    case el_MAX: return b;
-  }
-  #undef M
+  return el_orArr[a*16 + b];
 }
 
 void mut_pfree(Mut* m, usz n);
@@ -151,70 +148,15 @@ static B mut_getU(Mut* m, usz ms) {
   }
 }
 
-// doesn't consume; fills m[ms…ms+l] with x
-static void mut_fill(Mut* m, usz ms, B x, usz l) {
-  again:;
-  u8 nty;
-  switch(m->type) { default: UD;
-    case el_MAX:
-      nty = isF64(x)? (q_i32(x)? el_i32 : el_f64) : (isC32(x)? el_c32 : el_B);
-      goto change;
-    
-    case el_i32: {
-      if (RARE(!q_i32(x))) { nty = isF64(x)? el_f64 : el_B; goto change; }
-      i32* p = m->ai32+ms;
-      i32 v = o2iu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
-    case el_c32: {
-      if (RARE(!isC32(x))) { nty = el_B; goto change; }
-      u32* p = m->ac32+ms;
-      u32 v = o2cu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
-    case el_f64: {
-      if (RARE(!isF64(x))) { nty = el_B; goto change; }
-      f64* p = m->af64+ms;
-      f64 v = o2fu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
-    case el_B: {
-      B* p = m->aB+ms;
-      for (usz i = 0; i < l; i++) p[i] = x;
-      if (isVal(x)) for (usz i = 0; i < l; i++) inc(x);
-      return;
-    }
-  }
-  change:
-  mut_to(m, nty);
-  goto again;
-}
 static void mut_fillG(Mut* m, usz ms, B x, usz l) { // doesn't consume x
   switch(m->type) { default: UD;
-    case el_i32: {
-      assert(q_i32(x));
-      i32* p = m->ai32+ms;
-      i32 v = o2iu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
-    case el_c32: {
-      assert(isC32(x));
-      u32* p = m->ac32+ms;
-      u32 v = o2cu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
-    case el_f64: {
-      assert(isF64(x));
-      f64* p = m->af64+ms;
-      f64 v = o2fu(x);
-      for (usz i = 0; i < l; i++) p[i] = v;
-      return;
-    }
+    case el_i8:  { assert(q_i8 (x)); i8*  p = m->ai8 +ms; i8  v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_i16: { assert(q_i16(x)); i16* p = m->ai16+ms; i16 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_i32: { assert(q_i32(x)); i32* p = m->ai32+ms; i32 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_c8:  { assert(q_c8 (x)); u8*  p = m->ac8 +ms; u8  v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_c16: { assert(q_c16(x)); u16* p = m->ac16+ms; u16 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_c32: { assert(q_c32(x)); u32* p = m->ac32+ms; u32 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
+    case el_f64: { assert(isF64(x)); f64* p = m->af64+ms; f64 v = o2fu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
     case el_B: {
       B* p = m->aB+ms;
       for (usz i = 0; i < l; i++) p[i] = x;
@@ -224,108 +166,81 @@ static void mut_fillG(Mut* m, usz ms, B x, usz l) { // doesn't consume x
   }
 }
 
+// doesn't consume; fills m[ms…ms+l] with x
+static void mut_fill(Mut* m, usz ms, B x, usz l) {
+  u8 nmt = el_or(m->type, selfElType(x));
+  if (nmt!=m->type) mut_to(m, nmt);
+  mut_fillG(m, ms, x, l);
+}
+
+// mut_copy but x is guaranteed to be a subtype of m
+static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
+  // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, format_type(xt), xs, xs+l); fflush(stdout);
+  u8 xt = v(x)->type;
+  switch(m->type) { default: UD;
+    case el_i8:  { i8*  rp = m->ai8+ms;   i8*  xp = i8any_ptr(x);  for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case el_i16: { i16* rp = m->ai16+ms;
+      switch (xt) { default: UD;
+        case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+      }
+    }
+    case el_i32: { i32* rp = m->ai32+ms;
+      switch (xt) { default: UD;
+        case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+      }
+    }
+    case el_c8:  { u8*  rp = m->ac8+ms;   u8*  xp = c8any_ptr(x);  for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case el_c16: { u16* rp = m->ac16+ms;
+      switch (xt) { default: UD;
+        case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+      }
+    }
+    case el_c32: { u32* rp = m->ac32+ms;
+      switch (xt) { default: UD;
+        case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+      }
+    }
+    case el_f64: {
+      f64* rp = m->af64+ms;
+      switch (xt) { default: UD;
+        case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+        case t_f64arr: case t_f64slice: { f64* xp = f64any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+      }
+    }
+    case el_B: {
+      B* mpo = m->aB+ms;
+      B* xp;
+      if (xt==t_harr) xp = harr_ptr(x);
+      else if (xt==t_hslice) xp = c(HSlice,x)->a;
+      else if (xt==t_fillarr) xp = c(FillArr,x)->a;
+      else {
+        BS2B xget = TIi(xt,get);
+        for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
+        return;
+      }
+      memcpy(mpo, xp+xs, l*sizeof(B*));
+      for (usz i = 0; i < l; i++) inc(mpo[i]);
+      return;
+    }
+  }
+}
+
 // expects x to be an array, each position must be written to precisely once
 // doesn't consume x
-static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { // TODO try harder to not bump type
-  assert(isArr(x));
-  u8 xt = v(x)->type;
-  u8 xe = TIi(xt,elType);
-  // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, format_type(xt), xs, xs+l); fflush(stdout);
-  again:
-  switch(m->type) { default: UD;
-    case el_MAX: goto change;
-    
-    case el_i32: {
-      if (RARE(xt!=t_i32arr & xt!=t_i32slice)) goto change;
-      i32* xp = i32any_ptr(x);
-      memcpy(m->ai32+ms, xp+xs, l*4);
-      return;
-    }
-    case el_c32: {
-      if (RARE(xt!=t_c32arr & xt!=t_c32slice)) goto change;
-      u32* xp = c32any_ptr(x);
-      memcpy(m->ac32+ms, xp+xs, l*4);
-      return;
-    }
-    case el_f64: {
-      f64* xp;
-      if (xt==t_f64arr) xp = f64arr_ptr(x);
-      else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
-      else if (LIKELY(xt==t_i32arr|xt==t_i32slice)) {
-        i32* xp = i32any_ptr(x);
-        f64* rp = m->af64+ms;
-        for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
-        return;
-      }
-      else goto change;
-      memcpy(m->af64+ms, xp+xs, l*8);
-      return;
-    }
-    case el_B: {
-      B* mpo = m->aB+ms;
-      B* xp;
-      if (xt==t_harr) xp = harr_ptr(x);
-      else if (xt==t_hslice) xp = c(HSlice,x)->a;
-      else if (xt==t_fillarr) xp = c(FillArr,x)->a;
-      else {
-        BS2B xget = TIi(xt,get);
-        for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
-        return;
-      }
-      memcpy(mpo, xp+xs, l*sizeof(B*));
-      for (usz i = 0; i < l; i++) inc(mpo[i]);
-      return;
-    }
-  }
-  change:
-  mut_to(m, el_or(m->type, xe));
-  goto again;
+static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
+  u8 nmt = el_or(m->type, TI(x,elType));
+  if (nmt!=m->type) mut_to(m, nmt);
+  mut_copyG(m, ms, x, xs, l);
 }
-static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { // mut_copy but x is guaranteed to be a subtype of m
-  assert(isArr(x));
-  u8 xt = v(x)->type;
-  switch(m->type) { default: UD;
-    case el_i32: {
-      i32* xp = i32any_ptr(x);
-      memcpy(m->ai32+ms, xp+xs, l*4);
-      return;
-    }
-    case el_c32: {
-      u32* xp = c32any_ptr(x);
-      memcpy(m->ac32+ms, xp+xs, l*4);
-      return;
-    }
-    case el_f64: {
-      f64* xp;
-      if (xt==t_f64arr) xp = f64arr_ptr(x);
-      else if (xt==t_f64slice) xp = c(F64Slice,x)->a;
-      else {
-        assert(TIi(xt,elType)==el_i32);
-        i32* xp = i32any_ptr(x);
-        f64* rp = m->af64+ms;
-        for (usz i = 0; i < l; i++) rp[i] = xp[i+xs];
-        return;
-      }
-      memcpy(m->af64+ms, xp+xs, l*8);
-      return;
-    }
-    case el_B: {
-      B* mpo = m->aB+ms;
-      B* xp;
-      if (xt==t_harr) xp = harr_ptr(x);
-      else if (xt==t_hslice) xp = c(HSlice,x)->a;
-      else if (xt==t_fillarr) xp = c(FillArr,x)->a;
-      else {
-        BS2B xget = TIi(xt,get);
-        for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
-        return;
-      }
-      memcpy(mpo, xp+xs, l*sizeof(B*));
-      for (usz i = 0; i < l; i++) inc(mpo[i]);
-      return;
-    }
-  }
-}
+
 
 
 static B vec_join(B w, B x) { // consumes both

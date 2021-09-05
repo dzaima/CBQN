@@ -355,7 +355,7 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   usz ia = a(x)->ia;
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
-  if (we<=el_f64 && xe<=el_f64) { assert(we==el_i32|we==el_f64); assert(xe==el_i32|xe==el_f64);
+  if (((we==el_f64 | we==el_i32) && (xe==el_f64 | xe==el_i32))) {
     if (we==el_i32) { i32* wp = i32any_ptr(w);
       if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
       else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
@@ -439,8 +439,12 @@ char* format_type(u8 u) {
     case t_md2BI:return"builtin md2"; case t_md2_block:return"md2 block";
     case t_fork:return"fork"; case t_atop:return"atop";
     case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
-    case t_harr  :return"harr"  ; case t_i8arr  :return"i8arr"  ; case t_i32arr  :return"i32arr"  ; case t_fillarr  :return"fillarr"  ; case t_c32arr  :return"c32arr"  ; case t_f64arr  :return"f64arr"  ;
-    case t_hslice:return"hslice"; case t_i8slice:return"i8slice"; case t_i32slice:return"i32slice"; case t_fillslice:return"fillslice"; case t_c32slice:return"c32slice"; case t_f64slice:return"f64slice";
+    case t_i8arr  :return"i8arr"  ; case t_i16arr  :return"i16arr"  ; case t_i32arr  :return"i32arr"  ;
+    case t_i8slice:return"i8slice"; case t_i16slice:return"i16slice"; case t_i32slice:return"i32slice";
+    case t_c8arr  :return"c8arr"  ; case t_c16arr  :return"c16arr"  ; case t_c32arr  :return"c32arr"  ;
+    case t_c8slice:return"c8slice"; case t_c16slice:return"c16slice"; case t_c32slice:return"c32slice";
+    case t_harr  :return"harr"  ; case t_fillarr  :return"fillarr"  ; case t_f64arr  :return"f64arr"  ;
+    case t_hslice:return"hslice"; case t_fillslice:return"fillslice"; case t_f64slice:return"f64slice";
     case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope"; case t_scopeExt:return"scope extension"; case t_blBlocks: return "block list";
     case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap"; case t_temp:return"temporary"; case t_nfn:return"nfn"; case t_nfnDesc:return"nfnDesc";
     case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";

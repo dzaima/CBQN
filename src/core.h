@@ -26,8 +26,20 @@
 #define TYARR_SZ(T,IA) fsizeof(T##Arr, a, T##Atom, IA)
 #define TYARR_SZ2(T,IA) TYARR_SZ(T,IA)
 
+#define TU I8
+#define TP(W,X) W##i8##X
+#include "core/tyarrTemplate.h"
+#define TU I16
+#define TP(W,X) W##i16##X
+#include "core/tyarrTemplate.h"
 #define TU I32
 #define TP(W,X) W##i32##X
+#include "core/tyarrTemplate.h"
+#define TU C8
+#define TP(W,X) W##c8##X
+#include "core/tyarrTemplate.h"
+#define TU C16
+#define TP(W,X) W##c16##X
 #include "core/tyarrTemplate.h"
 #define TU C32
 #define TP(W,X) W##c32##X

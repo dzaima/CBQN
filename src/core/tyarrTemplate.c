@@ -17,7 +17,7 @@ static B TP(,arr_get)   (B x, usz n) { VTY(x,T_ARR  ); return TP(m_,) (c(TArr  ,
 static B TP(,slice_get) (B x, usz n) { VTY(x,T_SLICE); return TP(m_,) (c(TSlice,x)->a[n]); }
 static bool TP(,arr_canStore) (B x) { return TP(q_,) (x); }
 
-void TP(,arr_init)() {
+static void TP(,arr_init)() {
   TIi(T_ARR,get)   = TP(,arr_get);   TIi(T_SLICE,get)   = TP(,slice_get);
   TIi(T_ARR,getU)  = TP(,arr_get);   TIi(T_SLICE,getU)  = TP(,slice_get);
   TIi(T_ARR,slice) = TP(,arr_slice); TIi(T_SLICE,slice) = TP(,slice_slice);

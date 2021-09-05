@@ -24,6 +24,6 @@
 #include "../ns.c"
 #include "../nfns.c"
 #include "../rtwrap.c"
+#include "../jit/nvm.c"
 #include "../load.c"
 #include "../main.c"
-#include "../jit/nvm.c"

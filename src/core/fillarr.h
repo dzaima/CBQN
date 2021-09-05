@@ -29,8 +29,8 @@ static bool fillEqual(B w, B x) {
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
     switch(TI(x,elType)) { default: UD;
-      case el_f64: case el_i32: return m_i32(0);
-      case el_c32: return m_c32(' ');
+      case el_i8: case el_i16: case el_i32: case el_f64: return m_i32(0);
+      case el_c8: case el_c16: case el_c32: return m_c32(' ');
       case el_B:;
         u8 t = v(x)->type;
         if (t==t_fillarr  ) return inc(c(FillArr,x             )->fill);

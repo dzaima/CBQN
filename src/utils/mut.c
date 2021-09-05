@@ -42,3 +42,17 @@ NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
   if (m->type==el_B) harr_pfree(taga(m->val), n);
   else mm_free((Value*) m->val);
 }
+
+u8 el_orArr[el_MAX*16 + el_MAX];
+void mutF_init() {
+  for (u8 i = 0; i <= el_MAX; i++) {
+    for (u8 j = 0; j <= el_MAX; j++) {
+      u8 el;
+      if (i==el_MAX|j==el_MAX) el = i>j?j:i;
+      else if (i<=el_f64 && j<=el_f64) el = i>j?i:j;
+      else if (i>=el_c8 && i<=el_c32 && j>=el_c8 && j<=el_c32) el = i>j?i:j;
+      else el = el_B;
+      el_orArr[i*16 + j] = el;
+    }
+  }
+}

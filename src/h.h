@@ -100,6 +100,10 @@
 #define i64  int64_t
 #define u64 uint64_t
 #define f64 double
+#define I8_MAX 127
+#define I16_MAX 65535
+#define I8_MIN (-128)
+#define I16_MIN (-65536)
 #define I32_MAX ((i32)((1LL<<31)-1))
 #define I32_MIN ((i32)(-(1LL<<31)))
 #define I64_MIN ((i64)(1ULL<<63))
@@ -174,8 +178,8 @@ enum Type {
   /* 8*/ t_fork, t_atop,
   /*10*/ t_md1D, t_md2D, t_md2H,
   
-  /*13*/ t_harr  , t_i8arr  , t_i32arr  , t_fillarr  , t_c32arr  , t_f64arr  ,
-  /*19*/ t_hslice, t_i8slice, t_i32slice, t_fillslice, t_c32slice, t_f64slice,
+  /*13*/ t_i8arr  , t_i16arr  , t_i32arr  , t_c8arr  , t_c16arr  , t_c32arr  , t_f64arr  , t_harr  , t_fillarr  ,
+  /*19*/ t_i8slice, t_i16slice, t_i32slice, t_c8slice, t_c16slice, t_c32slice, t_f64slice, t_hslice, t_fillslice,
   
   /*25*/ t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks,
   /*31*/ t_ns, t_nsDesc, t_fldAlias, t_vfyObj, t_hashmap, t_temp, t_nfn, t_nfnDesc,
@@ -187,11 +191,18 @@ enum Type {
 };
 
 enum ElType { // a⌈b shall return the type that can store both, if possible; any x<=el_f64 is an integer type
-  el_i32=0,
-  el_f64=1,
-  el_c32=2,
-  el_B  =3,
-  el_MAX=4 // also used for incomplete in mut.c
+  el_bit=0, // unused; just here for completeness of ElType
+  el_i8 =1,
+  el_i16=2,
+  el_i32=3,
+  el_f64=4,
+  
+  el_c8 =5,
+  el_c16=6,
+  el_c32=7,
+  
+  el_B  =8,
+  el_MAX=9 // also used for incomplete in mut.c
 };
 
 

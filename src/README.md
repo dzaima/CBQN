@@ -80,9 +80,7 @@ Extra functions for converting types:
   o2cu(x)   // B → c32, assumes is valid
   o2fu(x)   // B → f64, assumes is valid
   o2b(x)    // B → bool, throw if impossible
-  q_i32(x)  // query if x is convertible to i32
-  q_i64(x)  // query if x is convertible to i64
-  q_f64(x)  // query if x is convertible to f64 (equivalent to isF64)
+  q_TYPE(x) // query if x is convertible to TYPE (see definitions in h.h)
   q_N(x)    // query if x is · (≡ bi_N)
   noFill(x)    // if x represents undefined fill (returned by getFill*; ≡ bi_noFill)
   tag(x,*_TAG) // pointer → B

@@ -29,13 +29,23 @@ void ud_rec(B** p, usz d, usz r, i32* pos, usz* sh) {
 B ud_c1(B t, B x) {
   if (isAtm(x)) {
     usz xu = o2s(x);
-    if (RARE(xu>=I32_MAX)) {
-      f64* rp; B r = m_f64arrv(&rp, xu);
+    if (LIKELY(xu<=I8_MAX)) {
+      if (RARE(xu==0)) return emptyIVec();
+      i8* rp; B r = m_i8arrv(&rp, xu);
       for (usz i = 0; i < xu; i++) rp[i] = i;
       return r;
     }
-    if (xu==0) return emptyIVec();
-    i32* rp; B r = m_i32arrv(&rp, xu);
+    if (xu<=I16_MAX) {
+      i16* rp; B r = m_i16arrv(&rp, xu);
+      for (usz i = 0; i < xu; i++) rp[i] = i;
+      return r;
+    }
+    if (xu<=I32_MAX) {
+      i32* rp; B r = m_i32arrv(&rp, xu);
+      for (usz i = 0; i < xu; i++) rp[i] = i;
+      return r;
+    }
+    f64* rp; B r = m_f64arrv(&rp, xu);
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
