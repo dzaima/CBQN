@@ -204,17 +204,14 @@ static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
     }
     case el_B: {
       B* mpo = m->aB+ms;
-      B* xp;
-      if (xt==t_harr) xp = harr_ptr(x);
-      else if (xt==t_hslice) xp = c(HSlice,x)->a;
-      else if (xt==t_fillarr) xp = c(FillArr,x)->a;
-      else {
-        BS2B xget = TIi(xt,get);
-        for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
+      B* xp = arr_bptr(x);
+      if (xp!=NULL) {
+        memcpy(mpo, xp+xs, l*sizeof(B*));
+        for (usz i = 0; i < l; i++) inc(mpo[i]);
         return;
       }
-      memcpy(mpo, xp+xs, l*sizeof(B*));
-      for (usz i = 0; i < l; i++) inc(mpo[i]);
+      BS2B xget = TIi(xt,get);
+      for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
       return;
     }
   }
