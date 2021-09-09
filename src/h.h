@@ -108,6 +108,7 @@
 #define I32_MAX  2147483647
 #define I64_MIN ((i64)(1ULL<<63))
 #define CHR_MAX 1114111
+#define U8_MAX  ((u8 )~(u8 )0)
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
 #define NOINLINE     __attribute__((noinline))
@@ -542,7 +543,7 @@ static inline u64 nsTime() {
 
 
 static u8 fillElType(B x) {
-  if (isNum(x)) return el_i32;
+  if (isNum(x)) return el_i32; // TODO move to 8
   if (isC32(x)) return el_c32;
   return el_B;
 }

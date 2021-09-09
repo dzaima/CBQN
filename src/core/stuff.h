@@ -124,7 +124,9 @@ char* format_pm1(u8 u);
 char* format_pm2(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
-B bqn_squeeze(B x); // consumes
+B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
+B num_squeeze(B x); // consumes; 
+B chr_squeeze(B x); // consumes
 B def_getU(B x, usz n);
 B def_fn_uc1(B t, B o,                B x);
 B def_fn_ucw(B t, B o,           B w, B x);

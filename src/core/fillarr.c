@@ -130,48 +130,15 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = a(x)->ia;
   if (isNum(fill)) {
-    B* xp = arr_bptr(x);
-    if (xp==NULL) goto base;
-    usz i = 0;
-    i32 or = 0;
-    for (; i < ia; i++) {
-      if (!q_i32(xp[i])) goto n_i32;
-      i32 c = o2iu(xp[i]);
-      or|= c<0?-c:c; // using or as a heuristical max
-    }
-    if (or<=I8_MAX) {
-      i8* rp; B r = m_i8arrc(&rp, x);
-      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
-      dec(x); return r;
-    } else if (or<=I16_MAX) {
-      i16* rp; B r = m_i16arrc(&rp, x);
-      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
-      dec(x); return r;
-    } else {
-      i32* rp; B r = m_i32arrc(&rp, x);
-      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
-      dec(x); return r;
-    }
-    
-    n_i32:;
-    while (i < ia) if (!isF64(xp[i++])) goto base;
-    
-    f64* rp; B r = m_f64arrc(&rp, x);
-    for (usz i = 0; i < ia; i++) rp[i] = o2f(xp[i]);
-    dec(x); return r;
-    
+    B r = num_squeeze(x);
+    if (TI(r,elType)<=el_f64) return r;
+    x = r;
   } else if (isC32(fill)) {
-    u32* rp; B r = m_c32arrc(&rp, x);
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) {
-      B c = xgetU(x, i);
-      if (!isC32(c)) { dec(r); goto base; }
-      rp[i] = o2c(c);
-    }
-    dec(x);
-    return r;
+    B r = chr_squeeze(x);
+    u8 re = TI(r,elType);
+    if (re>=el_c8 && re<=el_c32) return r;
+    x = r;
   }
-  base:;
   FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
   arr_shCopy((Arr*)r, x);
   r->fill = fill;

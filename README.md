@@ -4,7 +4,7 @@ Build & run (tl;dr: `make; rlwrap ./BQN`):
 2. If wanted, customize settings in `src/h.h`
 3. `make`
     - Options: `make o3` (the default), `make debug` (more presets exist for more specific debugging)
-    - `make CC=gcc` can be used to compile with gcc
+    - `make CC=gcc` can be used to compile with gcc. Otherwise, `clang` is used.
     - Do `make clean` or `make t=[o3|debug|…] clean` beforehand to force recompile
     - `make single-(o3|o3g|debug|c)` compile everything as a single translation unit and thus will compile slower, but allows specifying extra compiler arguments with `make f='…' single-…` and allows the compiler to optimize more
 4. `./BQN` (or `rlwrap ./BQN` for a better REPL; see `./BQN --help` for more options)

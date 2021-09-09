@@ -472,39 +472,83 @@ bool isPureFn(B x) { // doesn't consume
   } else return isNum(x) || isC32(x);
 }
 
-B bqn_squeeze(B x) { // consumes
+B num_squeeze(B x) {
+  usz ia = a(x)->ia;
+  u8 xe = TI(x,elType);
+  assert(xe!=el_bit);
+  
+  if (xe==el_i8) return x;
+  // TODO fast paths for xe<=el_f64
+  usz i = 0;
+  i32 or = 0;
+  
+  B* xp = arr_bptr(x);
+  if (xp!=NULL) {
+    for (; i < ia; i++) {
+      if (!q_i32(xp[i])) goto n_i32;
+      i32 c = o2iu(xp[i]);
+      or|= c<0?-c:c; // using or as a heuristical max
+    }
+    if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
+    else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
+    else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
+    n_i32: while (i<ia) if (!isF64(xp[i++])) return x;
+    f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xp[i]); dec(x); return r;
+  }
+  
+  BS2B xgetU = TI(x,getU);
+  for (; i < ia; i++) {
+    B cr = xgetU(x,i);
+    if (!q_i32(cr)) goto n_i32_2;
+    i32 c = o2iu(cr);
+    or|= c<0?-c:c;
+  }
+  if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
+  else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
+  else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
+  n_i32_2: while (i<ia) if (!isF64(xgetU(x,i++))) return x;
+  f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xgetU(x,i)); dec(x); return r;
+}
+B chr_squeeze(B x) {
+  usz ia = a(x)->ia;
+  u8 xe = TI(x,elType);
+  if (xe==el_c8) return x;
+  // TODO fast paths for xe == el_c8/el_c16/el_c32
+  usz i = 0;
+  i32 or = 0;
+  
+  B* xp = arr_bptr(x);
+  if (xp!=NULL) {
+    for (; i < ia; i++) {
+      if (!isC32(xp[i])) return x;
+      or|= o2cu(xp[i]);
+    }
+    if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
+    else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
+    else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
+  }
+  BS2B xgetU = TI(x,getU);
+  for (; i < ia; i++) {
+    B cr = xgetU(x,i);
+    if (!isC32(cr)) return x;
+    or|= o2cu(cr);
+  }
+  if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
+  else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
+  else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
+}
+B any_squeeze(B x) {
   assert(isArr(x));
   u8 xe = TI(x,elType);
-  if (xe==el_i32 || xe==el_c32) return x;
-  usz ia = a(x)->ia;
-  if (ia==0) return x;
-  if (xe==el_f64) {
-    f64* xp = f64any_ptr(x);
-    for (usz i = 0; i < ia; i++) if (xp[i] != (f64)(i32)xp[i]) return x;
-    return taga(toI32Arr(x));
-  }
-  assert(xe==el_B);
+  assert(xe!=el_bit);
+  if (a(x)->ia==0) return x;
   BS2B xgetU = TI(x,getU);
   B x0 = xgetU(x, 0);
-  if (isNum(x0)) {
-    for (usz i = 0; i < ia; i++) {
-      B c = xgetU(x, i);
-      if (!isNum(c)) return x;
-      if (!q_i32(c)) {
-        for (i++; i < ia; i++) if (!isNum(xgetU(x, i))) return x;
-        return taga(toF64Arr(x));
-      }
-    }
-    return taga(toI32Arr(x));
-  } else if (isC32(x0)) {
-    for (usz i = 1; i < ia; i++) {
-      B c = xgetU(x, i);
-      if (!isC32(c)) return x;
-    }
-    return taga(toC32Arr(x));
-  } else return x;
+  if (isNum(x0)) return num_squeeze(x);
+  else if (isC32(x0)) return chr_squeeze(x);
+  return x;
 }
-B bqn_merge(B x) { // consumes
+B bqn_merge(B x) {
   assert(isArr(x));
   usz xia = a(x)->ia;
   ur xr = rnk(x);

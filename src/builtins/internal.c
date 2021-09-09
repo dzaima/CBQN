@@ -24,7 +24,7 @@ B refc_c1(B t, B x) {
 }
 B squeeze_c1(B t, B x) {
   if (!isArr(x)) return x;
-  return bqn_squeeze(x);
+  return any_squeeze(x);
 }
 B isPure_c1(B t, B x) {
   B r = m_f64(isPureFn(x));

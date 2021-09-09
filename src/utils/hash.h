@@ -12,18 +12,19 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
     return wyhash64(secret[2], x.u);
   }
   inc(x);
-  x = bqn_squeeze(x);
+  x = any_squeeze(x);
   u64 shHash = wyhash(a(x)->sh, rnk(x)*sizeof(usz), 0, secret);
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
   u64 r;
-  if (xe==el_i32) {
-    r = wyhash(i32any_ptr(x), xia*4, shHash, secret);
-  } else if (xe==el_c32) {
-    r = wyhash(c32any_ptr(x), xia*4, shHash, secret);
-  } else if (xe==el_f64) {
-    r = wyhash(f64any_ptr(x), xia*8, shHash, secret);
-  } else {
+  if      (xe==el_i8 ) { r = wyhash(i8any_ptr (x), xia*1, shHash, secret); }
+  else if (xe==el_i16) { r = wyhash(i16any_ptr(x), xia*2, shHash, secret); }
+  else if (xe==el_i32) { r = wyhash(i32any_ptr(x), xia*4, shHash, secret); }
+  else if (xe==el_c8 ) { r = wyhash(c8any_ptr (x), xia*1, shHash, secret); }
+  else if (xe==el_c16) { r = wyhash(c16any_ptr(x), xia*2, shHash, secret); }
+  else if (xe==el_c32) { r = wyhash(c32any_ptr(x), xia*4, shHash, secret); }
+  else if (xe==el_f64) { r = wyhash(f64any_ptr(x), xia*8, shHash, secret); }
+  else {
     assert(xe==el_B);
     TALLOC(u64, data, xia);
     BS2B xgetU = TI(x,getU);
