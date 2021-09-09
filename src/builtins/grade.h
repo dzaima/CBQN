@@ -17,8 +17,26 @@ B GRADE_CAT(c1)(B t, B x) {
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
   if (ia==0) { dec(x); return emptyIVec(); }
   
+  u8 xe = TI(x,elType);
   i32* rp; B r = m_i32arrv(&rp, ia);
-  if (TI(x,elType)==el_i32) {
+  if (xe==el_i8) {
+    i8* xp = i8any_ptr(x);
+    i32 min=-128, range=256;
+    TALLOC(usz, tmp, range+1);
+    for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
+    GRADE_UD(
+      for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
+      for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
+      for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
+    ,
+      for (usz i = 0; i < ia; i++) (tmp-min)[xp[i]]++;
+      for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
+      for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
+    )
+    TFREE(tmp); dec(x);
+    return r;
+  }
+  if (xe==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < ia; i++) {
