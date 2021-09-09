@@ -237,24 +237,14 @@ static B vec_join(B w, B x) { // consumes both
   if (v(w)->refc==1) {
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
-    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && TI(x,elType)==el_i32) {
-      a(w)->ia = ria;
-      memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4);
-      dec(x);
-      return w;
-    }
-    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && TI(x,elType)==el_c32) {
-      a(w)->ia = ria;
-      memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4);
-      dec(x);
-      return w;
-    }
-    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && TI(x,elType)==el_f64) { // TODO handle f64∾i32
-      a(w)->ia = ria;
-      memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8);
-      dec(x);
-      return w;
-    }
+    // TODO f64∾i32, i32∾i8, c32∾c8 etc
+    if (wt==t_i8arr  && fsizeof(I8Arr ,a,i8 ,ria)<wsz && TI(x,elType)==el_i8 ) { a(w)->ia=ria; memcpy(i8arr_ptr (w)+wia, i8any_ptr (x), xia*1); dec(x); return w; }
+    if (wt==t_i16arr && fsizeof(I16Arr,a,i16,ria)<wsz && TI(x,elType)==el_i16) { a(w)->ia=ria; memcpy(i16arr_ptr(w)+wia, i16any_ptr(x), xia*2); dec(x); return w; }
+    if (wt==t_i32arr && fsizeof(I32Arr,a,i32,ria)<wsz && TI(x,elType)==el_i32) { a(w)->ia=ria; memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4); dec(x); return w; }
+    if (wt==t_c8arr  && fsizeof(C8Arr ,a,u8, ria)<wsz && TI(x,elType)==el_c8 ) { a(w)->ia=ria; memcpy(c8arr_ptr (w)+wia, c8any_ptr (x), xia*1); dec(x); return w; }
+    if (wt==t_c16arr && fsizeof(C16Arr,a,u16,ria)<wsz && TI(x,elType)==el_c16) { a(w)->ia=ria; memcpy(c16arr_ptr(w)+wia, c16any_ptr(x), xia*2); dec(x); return w; }
+    if (wt==t_c32arr && fsizeof(C32Arr,a,u32,ria)<wsz && TI(x,elType)==el_c32) { a(w)->ia=ria; memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4); dec(x); return w; }
+    if (wt==t_f64arr && fsizeof(F64Arr,a,f64,ria)<wsz && TI(x,elType)==el_f64) { a(w)->ia=ria; memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8); dec(x); return w; }
     if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
       a(w)->ia = ria;
       B* rp = harr_ptr(w)+wia;
@@ -264,16 +254,15 @@ static B vec_join(B w, B x) { // consumes both
         B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(a(x));
         memcpy(rp, xp, xia*sizeof(B));
         for (usz i = 0; i < xia; i++) inc(rp[i]);
-      } else if (xe==el_i32) {
-        i32* xp = i32any_ptr(x);
-        for (usz i = 0; i < xia; i++) rp[i] = m_i32(xp[i]);
-      } else if (xe==el_c32) {
-        u32* xp = c32any_ptr(x);
-        for (usz i = 0; i < xia; i++) rp[i] = m_c32(xp[i]);
-      } else if (xe==el_f64) {
-        f64* xp = f64any_ptr(x);
-        for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]);
-      } else {
+      }
+      else if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=0; i<xia; i++) rp[i] = m_i32(xp[i]); }
+      else if (xe==el_i16) { i16* xp=i16any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_i32(xp[i]); }
+      else if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_i32(xp[i]); }
+      else if (xe==el_c8 ) { u8*  xp=c8any_ptr (x); for (usz i=0; i<xia; i++) rp[i] = m_c32(xp[i]); }
+      else if (xe==el_c16) { u16* xp=c16any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_c32(xp[i]); }
+      else if (xe==el_c32) { u32* xp=c32any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_c32(xp[i]); }
+      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_f64(xp[i]); }
+      else {
         BS2B xget = TI(x,get);
         for (usz i = 0; i < xia; i++) rp[i] = xget(x, i);
       }
@@ -293,21 +282,13 @@ static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
   if (v(w)->refc==1) {
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
-    if (wt==t_i32arr && TYARR_SZ(I32,ria)<wsz && q_i32(x)) {
-      a(w)->ia = ria;
-      i32arr_ptr(w)[wia] = o2iu(x);
-      return true;
-    }
-    if (wt==t_c32arr && TYARR_SZ(C32,ria)<wsz && isC32(x)) {
-      a(w)->ia = ria;
-      c32arr_ptr(w)[wia] = o2cu(x);
-      return true;
-    }
-    if (wt==t_f64arr && TYARR_SZ(F64,ria)<wsz && isNum(x)) {
-      a(w)->ia = ria;
-      f64arr_ptr(w)[wia] = o2fu(x);
-      return true;
-    }
+    if (wt==t_i8arr  && TYARR_SZ(I8 ,ria)<wsz && q_i8 (x)) { a(w)->ia=ria; i8arr_ptr (w)[wia]=o2iu(x); return true; }
+    if (wt==t_i16arr && TYARR_SZ(I16,ria)<wsz && q_i16(x)) { a(w)->ia=ria; i16arr_ptr(w)[wia]=o2iu(x); return true; }
+    if (wt==t_i32arr && TYARR_SZ(I32,ria)<wsz && q_i32(x)) { a(w)->ia=ria; i32arr_ptr(w)[wia]=o2iu(x); return true; }
+    if (wt==t_c8arr  && TYARR_SZ(C8 ,ria)<wsz && q_c8 (x)) { a(w)->ia=ria; c8arr_ptr (w)[wia]=o2cu(x); return true; }
+    if (wt==t_c16arr && TYARR_SZ(C16,ria)<wsz && q_c16(x)) { a(w)->ia=ria; c16arr_ptr(w)[wia]=o2cu(x); return true; }
+    if (wt==t_c32arr && TYARR_SZ(C32,ria)<wsz && q_c32(x)) { a(w)->ia=ria; c32arr_ptr(w)[wia]=o2cu(x); return true; }
+    if (wt==t_f64arr && TYARR_SZ(F64,ria)<wsz && q_f64(x)) { a(w)->ia=ria; f64arr_ptr(w)[wia]=o2fu(x); return true; }
     if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
       a(w)->ia = ria;
       harr_ptr(w)[wia] = x;
