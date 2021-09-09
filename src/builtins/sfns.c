@@ -137,7 +137,7 @@ B shape_c2(B t, B w, B x) {
   
   B xf;
   if (isAtm(x)) {
-    xf = asFill(x);
+    xf = asFill(inc(x));
     // goes to unit
   } else {
     if (nia <= xia) {
