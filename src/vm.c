@@ -18,7 +18,7 @@
 
 u32* nextBC(u32* p) {
   i32 off;
-  switch(*p) {
+  switch(*p) { default: UD;
     case FN1C: case FN2C: case FN1O: case FN2O:
     case MD1C: case MD2C: case MD2R:
     case TR2D: case TR3D: case TR3O:
@@ -38,7 +38,6 @@ u32* nextBC(u32* p) {
       off = 3; break;
     case FN2Oi: case SETHi:
       off = 5; break;
-    default: UD;
   }
   return p+off;
 }

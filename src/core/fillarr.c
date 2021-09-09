@@ -111,12 +111,8 @@ B withFill(B x, B fill) { // consumes both
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
     case t_f64arr: case t_f64slice:
-    case t_i8arr:  case t_i8slice:  if(fill.u == m_i32(0  ).u) return x; break;
-    case t_i16arr: case t_i16slice: if(fill.u == m_i32(0  ).u) return x; break;
-    case t_i32arr: case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
-    case t_c8arr:  case t_c8slice:  if(fill.u == m_c32(' ').u) return x; break;
-    case t_c16arr: case t_c16slice: if(fill.u == m_c32(' ').u) return x; break;
-    case t_c32arr: case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
+    case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(fill.u == m_i32(0  ).u) return x; break;
+    case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) {
@@ -128,13 +124,11 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = a(x)->ia;
   if (isNum(fill)) {
-    B r = num_squeeze(x);
-    if (elNum(TI(r,elType))) return r;
-    x = r;
+    x = num_squeeze(x);
+    if (elNum(TI(x,elType))) return x;
   } else if (isC32(fill)) {
-    B r = chr_squeeze(x);
-    if (elChr(TI(r,elType))) return r;
-    x = r;
+    x = chr_squeeze(x);
+    if (elChr(TI(x,elType))) return x;
   }
   FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
   arr_shCopy((Arr*)r, x);
@@ -144,7 +138,7 @@ B withFill(B x, B fill) { // consumes both
       B* xp = harr_ptr(x);
       B* rp = r->a;
       memcpy(rp, xp, ia*sizeof(B));
-      decSh(v(x)); mm_free(v(x)); // manually free x so that refcounting is skipped
+      tyarr_freeF(v(x)); // manually free x so that decreasing its refcounts is skipped
     } else {
       B* xp = hany_ptr(x);
       B* rp = r->a;
@@ -152,12 +146,11 @@ B withFill(B x, B fill) { // consumes both
       for (usz i = 0; i < ia; i++) inc(rp[i]);
       dec(x);
     }
-    return taga(r);
   } else {
     B* rp = r->a;
     BS2B xget = TI(x,get);
     for (usz i = 0; i < ia; i++) rp[i] = xget(x,i);
     dec(x);
-    return taga(r);
   }
+  return taga(r);
 }

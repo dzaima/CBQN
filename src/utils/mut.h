@@ -248,11 +248,10 @@ static B vec_join(B w, B x) { // consumes both
     if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
       a(w)->ia = ria;
       B* rp = harr_ptr(w)+wia;
-      u8 xt = v(x)->type;
       u8 xe = TI(x,elType);
-      if (xt==t_harr | xt==t_hslice | xt==t_fillarr) {
-        B* xp = xt==t_harr? harr_ptr(x) : xt==t_hslice? c(HSlice, x)->a : fillarr_ptr(a(x));
-        memcpy(rp, xp, xia*sizeof(B));
+      B* xpB = arr_bptr(x);
+      if (xpB!=NULL) {
+        memcpy(rp, xpB, xia*sizeof(B));
         for (usz i = 0; i < xia; i++) inc(rp[i]);
       }
       else if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=0; i<xia; i++) rp[i] = m_i32(xp[i]); }
@@ -276,7 +275,7 @@ static B vec_join(B w, B x) { // consumes both
   dec(w); dec(x);
   return mut_fv(r);
 }
-static inline bool inplace_add(B w, B x) { // fails if fills wouldn't be correct
+static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails if fills wouldn't be correct
   usz wia = a(w)->ia;
   usz ria = wia+1;
   if (v(w)->refc==1) {
