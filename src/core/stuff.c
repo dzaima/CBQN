@@ -27,8 +27,12 @@ NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
 NOINLINE void value_freeR(Value* x) { value_free(x); }
 NOINLINE void decA_rare(B x) { dec(x); }
 void noop_visit(Value* x) { }
-NOINLINE B c1_invalid(B f,      B x) { thrM("This function can't be called monadically"); }
-NOINLINE B c2_invalid(B f, B w, B x) { thrM("This function can't be called dyadically"); }
+NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
+NOINLINE B c2_bad(B f, B w, B x) { thrM("This function can't be called dyadically"); }
+NOINLINE B m1c1_bad(Md1D* d,      B x) { thrM("This 1-modifier can't be called monadically"); }
+NOINLINE B m1c2_bad(Md1D* d, B w, B x) { thrM("This 1-modifier can't be called dyadically"); }
+NOINLINE B m2c1_bad(Md2D* d,      B x) { thrM("This 2-modifier can't be called monadically"); }
+NOINLINE B m2c2_bad(Md2D* d, B w, B x) { thrM("This 2-modifier can't be called dyadically"); }
 extern B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
   B fn = m2_d(inc(rt_under), inc(f), inc(g));

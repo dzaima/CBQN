@@ -389,6 +389,12 @@ typedef B (*   BBB2B)(B, B, B);
 typedef B (*  BBBB2B)(B, B, B, B);
 typedef B (* BBBBB2B)(B, B, B, B, B);
 typedef B (*BBBBBB2B)(B, B, B, B, B, B);
+typedef struct Md1D Md1D;
+typedef struct Md2D Md2D;
+typedef B (*M1C1)(Md1D*, B);
+typedef B (*M1C2)(Md1D*, B, B);
+typedef B (*M2C1)(Md2D*, B);
+typedef B (*M2C2)(Md2D*, B, B);
 
 #define FOR_TI(F) \
   F(V2v, freeF)  /* expects refc==0, includes mm_free */ \
@@ -513,13 +519,13 @@ static B c2iWX(B f, B w, B x) { // c2 but implicit inc(w);inc(x)
 
 typedef struct Md1 {
   struct Value;
-  BB2B  c1; // f(md1d{this,f},  x); consumes x
-  BBB2B c2; // f(md1d{this,f},w,x); consumes w,x
+  M1C1 c1; // f(md1d{this,f},  x); consumes x
+  M1C2 c2; // f(md1d{this,f},w,x); consumes w,x
 } Md1;
 typedef struct Md2 {
   struct Value;
-  BB2B  c1; // f(md2d{this,f,g},  x); consumes x
-  BBB2B c2; // f(md2d{this,f,g},w,x); consumes w,x
+  M2C1 c1; // f(md2d{this,f,g},  x); consumes x
+  M2C2 c2; // f(md2d{this,f,g},w,x); consumes w,x
 } Md2;
 static B m1_d(B m, B f     );
 static B m2_d(B m, B f, B g);

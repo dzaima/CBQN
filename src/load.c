@@ -42,7 +42,19 @@ u64 mm_heapAlloc;
 #define FM(N,X) B bi_##N; B N##_c1(B t, B x);
 #define FD(N,X) B bi_##N; B N##_c2(B t, B w, B x);
 FOR_PFN(FA,FM,FD)
+#undef FA
+#undef FM
+#undef FD
+#define FA(N,X) B bi_##N; B N##_c1(Md1D* d, B x); B N##_c2(Md1D* d, B w, B x);
+#define FM(N,X) B bi_##N; B N##_c1(Md1D* d, B x);
+#define FD(N,X) B bi_##N; B N##_c2(Md1D* d, B w, B x);
 FOR_PM1(FA,FM,FD)
+#undef FA
+#undef FM
+#undef FD
+#define FA(N,X) B bi_##N; B N##_c1(Md2D*, B x); B N##_c2(Md2D*, B w, B x);
+#define FM(N,X) B bi_##N; B N##_c1(Md2D*, B x);
+#define FD(N,X) B bi_##N; B N##_c2(Md2D*, B w, B x);
 FOR_PM2(FA,FM,FD)
 #undef FA
 #undef FM
@@ -427,25 +439,25 @@ void base_init() { // very first init function
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
-  #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2    ; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FM(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=c2_invalid; f->c1=N##_c1    ; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FD(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2    ; f->c1=c1_invalid; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FM(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=c2_bad; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FD(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=c1_bad; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
   FOR_PFN(FA,FM,FD)
   #undef FA
   #undef FM
   #undef FD
   
-  #define FA(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2    ; m->c1 = N##_c1    ; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
-  #define FM(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = c2_invalid; m->c1 = N##_c1    ; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
-  #define FD(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2    ; m->c1 = c1_invalid; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
+  #define FA(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2; m->c1 = N##_c1; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
+  #define FM(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = c2_bad; m->c1 = N##_c1; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
+  #define FD(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2; m->c1 = c1_bad; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
   FOR_PM1(FA,FM,FD)
   #undef FA
   #undef FM
   #undef FD
   
-  #define FA(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2    ; m->c1 = N##_c1;     m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
-  #define FM(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2    ; m->c1 = c1_invalid; m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
-  #define FD(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = c2_invalid; m->c1 = N##_c1;     m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
+  #define FA(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2  ; m->c1 = N##_c1;   m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
+  #define FM(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2  ; m->c1 = m1c1_bad; m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
+  #define FD(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = m1c2_bad; m->c1 = N##_c1;   m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
   FOR_PM2(FA,FM,FD)
   #undef FA
   #undef FM

@@ -404,7 +404,7 @@ static NOINLINE void rand_init() {
   rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0⋄deal⇐0⋄subset⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
   rand_rangeName  = m_str32(U"range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
   rand_dealName   = m_str32(U"deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str32(U"(rand).Deal"),   rand_deal_c1, rand_deal_c2);
-  rand_subsetName = m_str32(U"subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str32(U"(rand).Subset"),   c1_invalid, rand_subset_c2);
+  rand_subsetName = m_str32(U"subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str32(U"(rand).Subset"),       c1_bad, rand_subset_c2);
   B tmp = c2(rand_ns, m_f64(0), m_f64(0));
   rand_a = ns_pos(tmp, m_str32(U"a"));
   rand_b = ns_pos(tmp, m_str32(U"b"));
@@ -726,12 +726,12 @@ B sys_c1(B t, B x) {
 
 void sysfn_init() {
   fCharsDesc = registerNFn(m_str32(U"(file).Chars"), fchars_c1, fchars_c2);
-  fileAtDesc = registerNFn(m_str32(U"(file).At"), fileAt_c1, c2_invalid);
+  fileAtDesc = registerNFn(m_str32(U"(file).At"), fileAt_c1, c2_bad);
   fLinesDesc = registerNFn(m_str32(U"(file).Lines"), flines_c1, flines_c2);
   fBytesDesc = registerNFn(m_str32(U"(file).Bytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
-  listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_invalid);
+  listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_bad);
 }
 void sysfnPost_init() {
   file_nsGen = bqn_exec(m_str32(U"{⟨path,At,List,Bytes,Chars,Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);

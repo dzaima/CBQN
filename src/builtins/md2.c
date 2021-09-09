@@ -6,37 +6,37 @@ B md2BI_uc1(B t, B o, B f, B g,      B x) { return c(BMd2,t)->uc1(t, o, f, g,   
 B md2BI_ucw(B t, B o, B f, B g, B w, B x) { return c(BMd2,t)->ucw(t, o, f, g, w, x); }
 
 
-B val_c1(B d,      B x) { return c1(c(Md2D,d)->f,   x); }
-B val_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, w,x); }
+B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
+B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
 
 #if CATCH_ERRORS
-B fillBy_c1(B d, B x) {
+B fillBy_c1(Md2D* d, B x) {
   B xf=getFillQ(x);
-  B r = c1(c(Md2D,d)->f, x);
+  B r = c1(d->f, x);
   if(isAtm(r) || noFill(xf)) { dec(xf); return r; }
   if (CATCH) { dec(catchMessage); return r; }
-  B fill = asFill(c1(c(Md2D,d)->g, xf));
+  B fill = asFill(c1(d->g, xf));
   popCatch();
   return withFill(r, fill);
 }
-B fillBy_c2(B d, B w, B x) {
+B fillBy_c2(Md2D* d, B w, B x) {
   B wf=getFillQ(w); B xf=getFillQ(x);
-  B r = c2(c(Md2D,d)->f, w,x);
+  B r = c2(d->f, w,x);
   if(isAtm(r) || noFill(xf)) { dec(xf); dec(wf); return r; }
   if (CATCH) { dec(catchMessage); return r; }
   if (noFill(wf)) wf = inc(bi_asrt);
-  B fill = asFill(c2(c(Md2D,d)->g, wf, xf));
+  B fill = asFill(c2(d->g, wf, xf));
   popCatch();
   return withFill(r, fill);
 }
-B catch_c1(B d,      B x) { if(CATCH) { dec(catchMessage); return c1(c(Md2D,d)->g,   x); }         inc(x); B r = c1(c(Md2D,d)->f,   x); popCatch();         dec(x); return r; }
-B catch_c2(B d, B w, B x) { if(CATCH) { dec(catchMessage); return c2(c(Md2D,d)->g, w,x); } inc(w); inc(x); B r = c2(c(Md2D,d)->f, w,x); popCatch(); dec(w); dec(x); return r; }
+B catch_c1(Md2D* d,      B x) { if(CATCH) { dec(catchMessage); return c1(d->g,   x); }         inc(x); B r = c1(d->f,   x); popCatch();         dec(x); return r; }
+B catch_c2(Md2D* d, B w, B x) { if(CATCH) { dec(catchMessage); return c2(d->g, w,x); } inc(w); inc(x); B r = c2(d->f, w,x); popCatch(); dec(w); dec(x); return r; }
 #else
-B fillBy_c1(B d,      B x) { return c1(c(Md2D,d)->f,   x); }
-B fillBy_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w,x); }
-B catch_c1 (B d,      B x) { return c1(c(Md2D,d)->f,   x); }
-B catch_c2 (B d, B w, B x) { return c2(c(Md2D,d)->f, w,x); }
+B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
+B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
+B catch_c1(Md2D* d,      B x) { return c1(d->f,   x); }
+B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 #endif
 
 extern B rt_undo;
@@ -63,8 +63,8 @@ B repeat_replace(B g, B* q) { // doesn't consume
   }
 }
 #define REPEAT_T(CN, END, ...)                     \
-  B g = CN(c(Md2D,d)->g, __VA_ARGS__ inc(x));      \
-  B f = c(Md2D,d)->f;                              \
+  B g = CN(d->g, __VA_ARGS__ inc(x));              \
+  B f = d->f;                                      \
   if (isNum(g)) {                                  \
     i64 am = o2i64(g);                             \
     if (am>=0) {                                   \
@@ -94,33 +94,33 @@ B repeat_replace(B g, B* q) { // doesn't consume
   END; TFREE(all);                                 \
   return r;
 
-B repeat_c1(B d,      B x) { REPEAT_T(c1,{}              ); }
-B repeat_c2(B d, B w, B x) { REPEAT_T(c2,dec(w), inc(w), ); }
+B repeat_c1(Md2D* d,      B x) { REPEAT_T(c1,{}              ); }
+B repeat_c2(Md2D* d, B w, B x) { REPEAT_T(c2,dec(w), inc(w), ); }
 #undef REPEAT_T
 
 
-B before_c1(B d,      B x) { return c2(c(Md2D,d)->g, c1iX(c(Md2D,d)->f, x), x); }
-B before_c2(B d, B w, B x) { return c2(c(Md2D,d)->g, c1i (c(Md2D,d)->f, w), x); }
-B after_c1(B d,      B x) { return c2(c(Md2D,d)->f, x, c1iX(c(Md2D,d)->g, x)); }
-B after_c2(B d, B w, B x) { return c2(c(Md2D,d)->f, w, c1i (c(Md2D,d)->g, x)); }
-B atop_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }
-B atop_c2(B d, B w, B x) { return c1(c(Md2D,d)->f, c2(c(Md2D,d)->g, w, x)); }
-B over_c1(B d,      B x) { return c1(c(Md2D,d)->f, c1(c(Md2D,d)->g,    x)); }
-B over_c2(B d, B w, B x) { B xr=c1(c(Md2D,d)->g, x); return c2(c(Md2D,d)->f, c1(c(Md2D,d)->g, w), xr); }
+B before_c1(Md2D* d,      B x) { return c2(d->g, c1iX(d->f, x), x); }
+B before_c2(Md2D* d, B w, B x) { return c2(d->g, c1i (d->f, w), x); }
+B after_c1(Md2D* d,      B x) { return c2(d->f, x, c1iX(d->g, x)); }
+B after_c2(Md2D* d, B w, B x) { return c2(d->f, w, c1i (d->g, x)); }
+B atop_c1(Md2D* d,      B x) { return c1(d->f, c1(d->g,    x)); }
+B atop_c2(Md2D* d, B w, B x) { return c1(d->f, c2(d->g, w, x)); }
+B over_c1(Md2D* d,      B x) { return c1(d->f, c1(d->g,    x)); }
+B over_c2(Md2D* d, B w, B x) { B xr=c1(d->g, x); return c2(d->f, c1(d->g, w), xr); }
 
-B cond_c1(B d, B x) { B g=c(Md2D,d)->g;
+B cond_c1(Md2D* d, B x) { B g=d->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c1iX(c(Md2D,d)->f, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+  usz fr = WRAP(o2i64(c1iX(d->f, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c1(TI(g,getU)(g, fr), x);
 }
-B cond_c2(B d, B w, B x) { B g=c(Md2D,d)->g;
+B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c2iWX(c(Md2D,d)->f, w, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+  usz fr = WRAP(o2i64(c2iWX(d->f, w, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
   return c2(TI(g,getU)(g, fr), w, x);
 }
 
 extern B rt_under, bi_before;
-B under_c1(B d, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
+B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   if (!isVal(g)) { // ugh idk
     B fn = m2_d(inc(rt_under), inc(f), inc(g));
     B r = c1(fn, x);
@@ -129,7 +129,7 @@ B under_c1(B d, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
   }
   return TI(g,fn_uc1)(g, f, x);
 }
-B under_c2(B d, B w, B x) { B f=c(Md2D,d)->f; B g=c(Md2D,d)->g;
+B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   if (!isVal(g)) {
     B fn = m2_d(inc(rt_under), inc(f), inc(g));
     B r = c2(fn, w, x);

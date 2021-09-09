@@ -35,12 +35,12 @@ static B homFil2(B f, B r, B wf, B xf) {
   return r;
 }
 
-B tbl_c1(B d, B x) { B f = c(Md1D,d)->f;
+B tbl_c1(Md1D* d, B x) { B f = d->f;
   if (!EACH_FILLS) return eachm(f, x);
   B xf = getFillQ(x);
   return homFil1(f, eachm(f, x), xf);
 }
-B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   B wf, xf;
   if (EACH_FILLS) wf = getFillQ(w);
   if (EACH_FILLS) xf = getFillQ(x);
@@ -73,12 +73,12 @@ B tbl_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return r.b;
 }
 
-B each_c1(B d, B x) { B f = c(Md1D,d)->f;
+B each_c1(Md1D* d, B x) { B f = d->f;
   if (!EACH_FILLS) return eachm(f, x);
   B xf = getFillQ(x);
   return homFil1(f, eachm(f, x), xf);
 }
-B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B each_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS) return eachd(f, w, x);
   B wf = getFillQ(w);
   B xf = getFillQ(x);
@@ -86,7 +86,7 @@ B each_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
 }
 
 
-B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
+B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = rnk(x);
   usz ia = a(x)->ia;
@@ -141,7 +141,7 @@ B scan_c1(B d, B x) { B f = c(Md1D,d)->f;
   }
   return withFill(reuse? x : harr_fcd(r, x), xf);
 }
-B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
   B wf = getFillQ(w);
@@ -202,7 +202,7 @@ B scan_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return withFill(reuse? x : harr_fcd(r, x), wf);
 }
 
-B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
+B fold_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
   if (TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
@@ -268,7 +268,7 @@ B fold_c1(B d, B x) { B f = c(Md1D,d)->f;
   dec(x);
   return c;
 }
-B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
   if (q_i32(w) && TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
@@ -303,14 +303,14 @@ B fold_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   return c;
 }
 
-B const_c1(B d     , B x) {         dec(x); return inc(c(Md1D,d)->f); }
-B const_c2(B d, B w, B x) { dec(w); dec(x); return inc(c(Md1D,d)->f); }
+B const_c1(Md1D* d,      B x) {         dec(x); return inc(d->f); }
+B const_c2(Md1D* d, B w, B x) { dec(w); dec(x); return inc(d->f); }
 
-B swap_c1(B d     , B x) { return c2(c(Md1D,d)->f, inc(x), x); }
-B swap_c2(B d, B w, B x) { return c2(c(Md1D,d)->f,     x , w); }
+B swap_c1(Md1D* d,      B x) { return c2(d->f, inc(x), x); }
+B swap_c2(Md1D* d, B w, B x) { return c2(d->f,     x , w); }
 
 
-B timed_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
   for (i64 i = 0; i < am; i++) inc(x);
   dec(x);
@@ -319,7 +319,7 @@ B timed_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
   u64 ens = nsTime();
   return m_f64((ens-sns)/(1e9*am));
 }
-B timed_c1(B d, B x) { B f = c(Md1D,d)->f;
+B timed_c1(Md1D* d, B x) { B f = d->f;
   u64 sns = nsTime();
   dec(c1(f, x));
   u64 ens = nsTime();
@@ -328,7 +328,7 @@ B timed_c1(B d, B x) { B f = c(Md1D,d)->f;
 
 
 extern B rt_cell;
-B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
+B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
@@ -355,7 +355,7 @@ B cell_c1(B d, B x) { B f = c(Md1D,d)->f;
   dec(x);
   return bqn_merge(harr_fv(r));
 }
-B cell_c2(B d, B w, B x) { B f = c(Md1D,d)->f;
+B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   if ((isAtm(x) || rnk(x)==0) && (isAtm(w) || rnk(w)==0)) {
     B r = c2(f, w, x);
     return isAtm(r)? m_atomUnit(r) : r;

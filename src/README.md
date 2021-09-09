@@ -6,7 +6,7 @@ Functions starting with `m_` allocate a new object.
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
-Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (for both modifiers and functions).  
+Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))
 Variables starting with `bi_` are builtins (primitives or special values).  
 Which arguments are consumed usually is described in a comment after the function or its prototype. Otherwise, check the source.  
 
@@ -129,6 +129,27 @@ Call a BQN function with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be 
 
 Calling a modifier involves deriving it with `m1_d`/`m2_d`, using a regular `c1`/`c2`, and managing the refcounts of everything while at that.
 
+## Builtin implementations
+
+The list of builtin functions is specified in the initial macros of `src/utils/builtins.h`, where `A`/`M`/`D` are used for ambivalent/monadic/dyadic. Once added, `bi_yourName` will be available, and the required of the following functions must be defined somewhere in the source:
+
+```C
+// functions:
+B yourName_c1(B t, B x);
+B yourName_c2(B t, B w, B x);
+// 1-modifiers:
+B yourName_c1(Md1D* d, B x);
+B yourName_c2(Md1D* d, B w, B x);
+// 2-modifiers:
+B yourName_c1(Md2D* d, B x);
+B yourName_c2(Md2D* d, B w, B x);
+```
+
+For functions, in most cases, the `t` parameter (representing `𝕊`/"this") is unused (it _must_ be ignored for functions managed by `builtins.h`), but can be used for objects from `nfns.h` to store state with a function.
+
+For modifiers, the `d` parameter stores the operands and the modifier itself. Use `d->f` for `𝔽`, `d->g` for `𝔾`, `d->m1` for `_𝕣`, `d->m2` for `_𝕣_`, and `tag(d,FUN_TAG)` for `𝕊`.
+
+
 ## Arrays
 
 If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape, `rnk(x)` will give you the rank, and `a(x)->sh` will give you a `usz*` to the full shape.
@@ -203,6 +224,7 @@ if (TI(x,elType)==el_f64) f64* xp = f64any_ptr(x); // ↑
 if (v(x)->type==t_harr) B* xp = harr_ptr(x);
 if (v(x)->type==t_harr || v(x)->type==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
 if (v(x)->type==t_fillarr) B* xp = fillarr_ptr(x);
+B* xp = arr_bptr(x); // will return NULL if the array isn't backed by contiguous B*-s
 ```
 
 ## Errors

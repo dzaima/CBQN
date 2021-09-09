@@ -795,12 +795,12 @@ FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) 
   return r;
 }
 
-B funBl_c1(B t,      B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->bodies[0], b->sc, 3, (B[]){t, x, bi_N                                  }); }
-B funBl_c2(B t, B w, B x) {                    FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->dyBody,    b->sc, 3, (B[]){t, x, w                                     }); }
-B md1Bl_c1(B D,      B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 5, (B[]){D, x, bi_N, inc(d->m1), inc(d->f)           }); }
-B md1Bl_c2(B D, B w, B x) { Md1D* d=c(Md1D,D); Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 5, (B[]){D, x, w   , inc(d->m1), inc(d->f)           }); }
-B md2Bl_c1(B D,      B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){D, x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
-B md2Bl_c2(B D, B w, B x) { Md2D* d=c(Md2D,D); Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){D, x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
+B funBl_c1(B     t,      B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->bodies[0], b->sc, 3, (B[]){t,              x, bi_N                                  }); }
+B funBl_c2(B     t, B w, B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->dyBody,    b->sc, 3, (B[]){t,              x, w                                     }); }
+B md1Bl_c1(Md1D* d,      B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 5, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m1), inc(d->f)           }); }
+B md1Bl_c2(Md1D* d, B w, B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m1), inc(d->f)           }); }
+B md2Bl_c1(Md2D* d,      B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_c2(Md2D* d, B w, B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
   FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);

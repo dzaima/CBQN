@@ -18,10 +18,10 @@ static void md2H_print(B x) { printf("(md2H ");                                p
 static void fork_print(B x) { printf("(fork ");print(c(Fork,x)->f);printf(" ");print(c(Fork,x)->g );printf(" ");print(c(Fork,x)->h);printf(")"); }
 static void atop_print(B x) { printf("(atop ");                                print(c(Atop,x)->g );printf(" ");print(c(Atop,x)->h);printf(")"); }
 
-B md1D_c1(B t,      B x) { return c(Md1,c(Md1D, t)->m1)->c1(t,    x); }
-B md1D_c2(B t, B w, B x) { return c(Md1,c(Md1D, t)->m1)->c2(t, w, x); }
-B md2D_c1(B t,      B x) { return c(Md2,c(Md2D, t)->m2)->c1(t,    x); }
-B md2D_c2(B t, B w, B x) { return c(Md2,c(Md2D, t)->m2)->c2(t, w, x); }
+B md1D_c1(B t,      B x) { Md1D* tc = c(Md1D, t); return c(Md1,tc->m1)->c1(tc,    x); }
+B md1D_c2(B t, B w, B x) { Md1D* tc = c(Md1D, t); return c(Md1,tc->m1)->c2(tc, w, x); }
+B md2D_c1(B t,      B x) { Md2D* tc = c(Md2D, t); return c(Md2,tc->m2)->c1(tc,    x); }
+B md2D_c2(B t, B w, B x) { Md2D* tc = c(Md2D, t); return c(Md2,tc->m2)->c2(tc, w, x); }
 B tr2D_c1(B t,      B x) { return c1(c(Atop,t)->g, c1(c(Atop,t)->h,    x)); }
 B tr2D_c2(B t, B w, B x) { return c1(c(Atop,t)->g, c2(c(Atop,t)->h, w, x)); }
 B fork_c1(B t, B x) {
@@ -44,8 +44,8 @@ B fork_c2(B t, B w, B x) {
     return c2(c(Fork,t)->g, inc(f), c2(h,w,x));
   }
 }
-B md2H_c1(B d,      B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
-B md2H_c2(B d, B w, B x) { Md1D* m=c(Md1D,d); Md2H* t=c(Md2H,m->m1); return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
+B md2H_c1(Md1D* m,      B x) { Md2H* t=c(Md2H,m->m1); return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
+B md2H_c2(Md1D* m, B w, B x) { Md2H* t=c(Md2H,m->m1); return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
 
 static B md1D_decompose(B x) { B r=m_v3(m_i32(4),inc(c(Md1D,x)->f),inc(c(Md1D,x)->m1)                   ); decR(x); return r; }
 static B md2D_decompose(B x) { B r=m_v4(m_i32(5),inc(c(Md2D,x)->f),inc(c(Md2D,x)->m2), inc(c(Md2D,x)->g)); decR(x); return r; }

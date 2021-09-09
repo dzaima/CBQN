@@ -75,7 +75,7 @@ typedef struct BFn {
   BBBB2B ucw;
 } BFn;
 typedef struct BMd2 {
-  struct Md1;
+  struct Md2;
    BBBBB2B uc1;
   BBBBBB2B ucw;
 } BMd2;

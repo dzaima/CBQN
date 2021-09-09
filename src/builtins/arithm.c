@@ -65,7 +65,7 @@ B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); dec(x); return
 static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
-    #define F(X,N) m_nfn(registerNFn(m_str32(U"•math." N), X##_c1, c2_invalid),m_f64(0)),
+    #define F(X,N) m_nfn(registerNFn(m_str32(U"•math." N), X##_c1, c2_bad),m_f64(0)),
     B fn = bqn_exec(m_str32(U"{⟨      Sin,         Cos,         Tan,          Asin,          Acos,          Atan ⟩⇐𝕩}"), emptyCVec(), emptySVec());
     B arg =    m_caB(6, (B[]){F(sin,U"Sin")F(cos,U"Cos")F(tan,U"Tan")F(asin,U"Asin")F(acos,U"Acos")F(atan,U"Atan")});
     #undef F
