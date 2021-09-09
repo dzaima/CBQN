@@ -38,8 +38,8 @@ static inline B arith_recm(BB2B f, B x) {
 
 #define P1(N) { if(isArr(x)) return arith_recm(N##_c1, x); }
 B   add_c1(B t, B x) { return x; }
-GC1i("-", sub,   -v,              v== MAX, -v) // change icond to v==-v to support ¯0
-GC1i("¬", not,   1-v,             v<=-MAX, 1-v) // v<=-I32_MAX
+GC1i("-", sub,   -v,              v== MIN, -v) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
+GC1i("¬", not,   1-v,             v<=-MAX, 1-v)
 GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v)
 GC1i("⌊", floor, floor(v),        0,           v)
 GC1i("⌈", ceil,  ceil(v),         0,           v)
