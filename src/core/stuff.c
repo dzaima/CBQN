@@ -478,21 +478,33 @@ B num_squeeze(B x) {
   assert(xe!=el_bit);
   
   if (xe==el_i8) return x;
-  // TODO fast paths for xe<=el_f64
+  // TODO fast paths for xe<el_f64
   usz i = 0;
-  i32 or = 0;
+  i32 or = 0; // using bitwise or as a heuristical ⌈´|𝕩
+  if (xe==el_f64) {
+    f64* xp = f64any_ptr(x);
+    for (; i < ia; i++) {
+      f64 cf = xp[i];
+      i32 c = (i32)cf;
+      if (c!=cf) return x; // already f64
+      or|= c<0?-c:c;
+    }
+    if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i8 )xp[i]; dec(x); return r; }
+    else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i16)xp[i]; dec(x); return r; }
+    else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i32)xp[i]; dec(x); return r; }
+  }
   
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
     for (; i < ia; i++) {
-      if (!q_i32(xp[i])) goto n_i32;
+      if (!q_i32(xp[i])) goto n_i32_1;
       i32 c = o2iu(xp[i]);
-      or|= c<0?-c:c; // using or as a heuristical max
+      or|= c<0?-c:c;
     }
     if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
     else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
     else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
-    n_i32: while (i<ia) if (!isF64(xp[i++])) return x;
+    n_i32_1: while (i<ia) if (!isF64(xp[i++])) return x;
     f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xp[i]); dec(x); return r;
   }
   
@@ -537,6 +549,7 @@ B chr_squeeze(B x) {
   else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
   else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
 }
+
 B any_squeeze(B x) {
   assert(isArr(x));
   u8 xe = TI(x,elType);
@@ -548,6 +561,7 @@ B any_squeeze(B x) {
   else if (isC32(x0)) return chr_squeeze(x);
   return x;
 }
+
 B bqn_merge(B x) {
   assert(isArr(x));
   usz xia = a(x)->ia;

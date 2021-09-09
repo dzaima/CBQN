@@ -4,24 +4,6 @@
 
 #define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
 #if TYPED_ARITH
-  static B f64_maybe_i32(B x) {
-    f64* xp = f64arr_ptr(x);
-    usz ia = a(x)->ia;
-    if (ia==0) {
-      if (rnk(x)>1) return x;
-      dec(x); return emptyIVec();
-    }
-    if (xp[0] != (i32)xp[0]) return x;
-    i32* rp; B r = m_i32arrc(&rp, x);
-    for (usz i = 0; i < ia; i++) {
-      f64 cf = xp[i];
-      i32 c = (i32)cf;
-      if (cf!=c) { dec(r); return x; }
-      rp[i] = c;
-    }
-    dec(x);
-    return r;
-  }
   #define GC2f(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {         \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
     EXTRA                                                                    \
@@ -40,27 +22,27 @@
             if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
             else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
           }                                                                  \
-          dec(w); dec(x); return f64_maybe_i32(r);                           \
+          dec(w); dec(x); return num_squeeze(r);                             \
         }                                                                    \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia;                     \
         u8 xe = TI(x,elType); f64*rp;                                        \
         if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
-          dec(x); return f64_maybe_i32(r);                                   \
+          dec(x); return num_squeeze(r);                                     \
         }                                                                    \
         if (xe==el_f64) { B r=m_f64arrc(&rp, x); f64*xp=f64any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
-          dec(x); return f64_maybe_i32(r);                                   \
+          dec(x); return num_squeeze(r);                                     \
         }                                                                    \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia;                     \
         u8 we = TI(w,elType); f64*rp;                                        \
         if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
-          dec(w); return f64_maybe_i32(r);                                   \
+          dec(w); return num_squeeze(r);                                     \
         }                                                                    \
         if (we==el_f64) { B r=m_f64arrc(&rp, w); f64*wp=f64any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
-          dec(w); return f64_maybe_i32(r);                                   \
+          dec(w); return num_squeeze(r);                                     \
         }                                                                    \
       }                                                                      \
       P2(NAME)                                                               \
@@ -127,7 +109,7 @@
             if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
             else     { PF(x) DOF(EXPR,w,wp[i],xp[i]) }               \
           }                                                          \
-          dec(w); dec(x); return f64_maybe_i32(r);                   \
+          dec(w); dec(x); return num_squeeze(r);                     \
         }                                                            \
         if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base); } \
         if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
@@ -135,14 +117,14 @@
         if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],na8B ) } na8B :; \
         if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],na16B) } na16B:; \
         if (xe==el_i32 && q_i32(w)) { PI  (x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],na32B) } na32B:; \
-        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); }       \
-        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return f64_maybe_i32(r); }       \
+        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }         \
+        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }         \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                       \
         if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,an8B ) } an8B :; \
         if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,an16B) } an16B:; \
         if (we==el_i32 && q_i32(x)) { PI  (w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,an32B) } an32B:; \
-        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); }       \
-        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return f64_maybe_i32(r); }       \
+        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }         \
+        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }         \
       }                                                              \
       base: P2(NAME)                                                 \
     }                                                                \
