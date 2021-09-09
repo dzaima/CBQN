@@ -73,21 +73,21 @@ B file_lines(B path) { // consumes
 B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert((isArr(base) || q_N(base)));
   if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
-  BS2B rgetU = TI(rel,getU);
+  SGetU(rel)
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
-  for (usz i = 0; i < ria; i++) if (!isC32(rgetU(rel, i))) thrM("Paths must be character vectors");
-  if (ria>0 && o2cu(rgetU(rel, 0))=='/') return rel;
+  for (usz i = 0; i < ria; i++) if (!isC32(GetU(rel, i))) thrM("Paths must be character vectors");
+  if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return inc(base); }
-  BS2B bgetU = TI(base,getU);
+  SGetU(base)
   usz bia = a(base)->ia;
-  bool has = bia && o2cu(bgetU(base, bia-1))=='/';
+  bool has = bia && o2cu(GetU(base, bia-1))=='/';
   u32* rp; B r = m_c32arrv(&rp, bia+ria+(has?0:1));
   usz ri = 0;
-  for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cu(bgetU(base, i));
+  for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cu(GetU(base, i));
   rp[ri++] = '/';
-  for (usz i = 0; i < ria; i++) rp[ri++] = o2cu(rgetU(rel, i));
+  for (usz i = 0; i < ria; i++) rp[ri++] = o2cu(GetU(rel, i));
   dec(rel);
   return r;
 }
@@ -95,12 +95,12 @@ B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector o
 B path_dir(B path) { // consumes; returns directory part of file path with trailing slash, or ·
   assert(isArr(path) || q_N(path));
   if (q_N(path)) return path;
-  BS2B pgetU = TI(path,getU);
+  SGetU(path)
   usz pia = a(path)->ia;
   if (pia==0) thrM("Empty file path");
-  for (usz i = 0; i < pia; i++) if (!isC32(pgetU(path, i))) thrM("Paths must be character vectors");
+  for (usz i = 0; i < pia; i++) if (!isC32(GetU(path, i))) thrM("Paths must be character vectors");
   for (i64 i = (i64)pia-1; i >= 0; i--) {
-    if (o2cu(pgetU(path, i))=='/') {
+    if (o2cu(GetU(path, i))=='/') {
       Arr* r = TI(path,slice)(path, 0, i+1); arr_shVec(r);
       return taga(r);
     }
@@ -143,8 +143,8 @@ void file_wBytes(B path, B x) { // consumes path
   
   u64 len = a(x)->ia;
   TALLOC(char, val, len);
-  BS2B xgetU = TI(x,getU);
-  for (u64 i = 0; i < len; i++) val[i] = o2i(xgetU(x,i));
+  SGetU(x)
+  for (u64 i = 0; i < len; i++) val[i] = o2i(GetU(x,i));
   
   if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
   TFREE(val);

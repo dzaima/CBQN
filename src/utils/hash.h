@@ -27,8 +27,8 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   else {
     assert(xe==el_B);
     TALLOC(u64, data, xia);
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < xia; i++) data[i] = bqn_hash(xgetU(x, i), secret);
+    SGetU(x)
+    for (usz i = 0; i < xia; i++) data[i] = bqn_hash(GetU(x, i), secret);
     r = wyhash(data, xia*8, shHash, secret);
     TFREE(data);
   }

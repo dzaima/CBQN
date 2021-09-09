@@ -103,11 +103,11 @@ _Thread_local B comp_currSrc;
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
-  BS2B xget = TI(x,get);
+  SGet(x)
   usz xia = a(x)->ia;
   if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
-  Block* r = xia==6? compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),xget(x,4),xget(x,5), src, inc(path), sc)
-                   : compile(xget(x,0),xget(x,1),xget(x,2),xget(x,3),bi_N,     bi_N,      src, inc(path), sc);
+  Block* r = xia==6? compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
+                   : compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,     bi_N,      src, inc(path), sc);
   dec(x);
   return r;
 }
@@ -168,7 +168,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     for (u64 i = 0; i < csc->varAm; i++) {
       i32 nameID = csc->body->varIDs[i];
       B nl = csc->body->nsDesc->nameList;
-      vName = vec_add(vName, TI(nl,get)(nl, nameID));
+      vName = vec_add(vName, IGet(nl, nameID));
       vDepth = vec_add(vDepth, m_i32(depth));
     }
     if (csc->ext) for (u64 i = 0; i < csc->ext->varAm; i++) {
@@ -258,39 +258,39 @@ void load_init() { // very last init function
     #endif
   
     B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-    B rtObjRaw = TI(rtRes,get)(rtRes,0);
-    B rtFinish = TI(rtRes,get)(rtRes,1);
+    B rtObjRaw = IGet(rtRes,0);
+    B rtFinish = IGet(rtRes,1);
     dec(rtRes);
     
     if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
     HArr_p runtimeH = m_harrUc(rtObjRaw);
-    BS2B rtObjGet = TI(rtObjRaw,get);
+    SGet(rtObjRaw)
     
-    rt_undo    = rtObjGet(rtObjRaw, 48); gc_add(rt_undo);
-    rt_select  = rtObjGet(rtObjRaw, 35); gc_add(rt_select);
-    rt_slash   = rtObjGet(rtObjRaw, 32); gc_add(rt_slash);
-    rt_join    = rtObjGet(rtObjRaw, 23); gc_add(rt_join);
-    rt_ud      = rtObjGet(rtObjRaw, 27); gc_add(rt_ud);
-    rt_pick    = rtObjGet(rtObjRaw, 36); gc_add(rt_pick);
-    rt_take    = rtObjGet(rtObjRaw, 25); gc_add(rt_take);
-    rt_drop    = rtObjGet(rtObjRaw, 26); gc_add(rt_drop);
-    rt_group   = rtObjGet(rtObjRaw, 41); gc_add(rt_group);
-    rt_under   = rtObjGet(rtObjRaw, 56); gc_add(rt_under);
-    rt_reverse = rtObjGet(rtObjRaw, 30); gc_add(rt_reverse);
-    rt_indexOf = rtObjGet(rtObjRaw, 37); gc_add(rt_indexOf);
-    rt_count   = rtObjGet(rtObjRaw, 38); gc_add(rt_count);
-    rt_memberOf= rtObjGet(rtObjRaw, 39); gc_add(rt_memberOf);
-    rt_find    = rtObjGet(rtObjRaw, 40); gc_add(rt_find);
-    rt_cell    = rtObjGet(rtObjRaw, 45); gc_add(rt_cell);
+    rt_undo    = Get(rtObjRaw, 48); gc_add(rt_undo);
+    rt_select  = Get(rtObjRaw, 35); gc_add(rt_select);
+    rt_slash   = Get(rtObjRaw, 32); gc_add(rt_slash);
+    rt_join    = Get(rtObjRaw, 23); gc_add(rt_join);
+    rt_ud      = Get(rtObjRaw, 27); gc_add(rt_ud);
+    rt_pick    = Get(rtObjRaw, 36); gc_add(rt_pick);
+    rt_take    = Get(rtObjRaw, 25); gc_add(rt_take);
+    rt_drop    = Get(rtObjRaw, 26); gc_add(rt_drop);
+    rt_group   = Get(rtObjRaw, 41); gc_add(rt_group);
+    rt_under   = Get(rtObjRaw, 56); gc_add(rt_under);
+    rt_reverse = Get(rtObjRaw, 30); gc_add(rt_reverse);
+    rt_indexOf = Get(rtObjRaw, 37); gc_add(rt_indexOf);
+    rt_count   = Get(rtObjRaw, 38); gc_add(rt_count);
+    rt_memberOf= Get(rtObjRaw, 39); gc_add(rt_memberOf);
+    rt_find    = Get(rtObjRaw, 40); gc_add(rt_find);
+    rt_cell    = Get(rtObjRaw, 45); gc_add(rt_cell);
     
     for (usz i = 0; i < rtLen; i++) {
       #ifdef RT_WRAP
-      r1Objs[i] = rtObjGet(rtObjRaw, i); gc_add(r1Objs[i]);
+      r1Objs[i] = Get(rtObjRaw, i); gc_add(r1Objs[i]);
       #endif
       #ifdef ALL_R1
-        B r = rtObjGet(rtObjRaw, i);
+        B r = Get(rtObjRaw, i);
       #else
-        B r = rtComplete[i]? inc(fruntime[i]) : rtObjGet(rtObjRaw, i);
+        B r = rtComplete[i]? inc(fruntime[i]) : Get(rtObjRaw, i);
       #endif
       if (q_N(r)) err("· in runtime!\n");
       if (isVal(r)) v(r)->flags|= i+1;
@@ -347,9 +347,9 @@ void load_init() { // very last init function
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_glyph), inc(bi_repr)}));
-    BS2B fget = TI(fmtR,get);
-    load_fmt  = fget(fmtR, 0); gc_add(load_fmt);
-    load_repr = fget(fmtR, 1); gc_add(load_repr);
+    SGet(fmtR)
+    load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
+    load_repr = Get(fmtR, 1); gc_add(load_repr);
     dec(fmtR);
     dec(fmtM);
     #endif
@@ -382,22 +382,23 @@ static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, form
 static void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
-static B def_get(B x, usz n) { return inc(x); }
+static B def_get(Arr* x, usz n) { err("def_get"); }
+static B def_getU(Arr* x, usz n) { err("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 
 #ifdef DONT_FREE
-static B empty_get(B x, usz n) {
-  v(x)->type = v(x)->flags;
-  B r = TI(x,get)(x, n);
-  v(x)->type = t_empty;
+static B empty_get(Arr* x, usz n) {
+  x->type = x->flags;
+  B r = TIv(x,get)(x, n);
+  x->type = t_empty;
   return r;
 }
-static B empty_getU(B x, usz n) {
-  v(x)->type = v(x)->flags;
-  B r = TI(x,getU)(x, n);
-  v(x)->type = t_empty;
+static B empty_getU(Arr* x, usz n) {
+  x->type = x->flags;
+  B r = TIv(x,getU)(x, n);
+  x->type = t_empty;
   return r;
 }
 #endif

@@ -66,8 +66,8 @@ HArr* toHArr(B x) {
   if (v(x)->type==t_harr) return c(HArr,x);
   HArr_p r = m_harrUc(x);
   usz ia = r.c->ia;
-  BS2B xget = TI(x,get);
-  for (usz i = 0; i < ia; i++) r.a[i] = xget(x,i);
+  SGet(x)
+  for (usz i = 0; i < ia; i++) r.a[i] = Get(x,i);
   dec(x);
   return r.c;
 }
@@ -97,10 +97,10 @@ static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
 static Arr* harr_slice  (B x, usz s, usz ia) { return m_hslice(a(x), c(HArr,x)->a+s, ia); }
 static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); dec(x); return r; }
 
-static B harr_get   (B x, usz n) { VTY(x,t_harr  ); return inc(c(HArr  ,x)->a[n]); }
-static B hslice_get (B x, usz n) { VTY(x,t_hslice); return inc(c(HSlice,x)->a[n]); }
-static B harr_getU  (B x, usz n) { VTY(x,t_harr  ); return     c(HArr  ,x)->a[n] ; }
-static B hslice_getU(B x, usz n) { VTY(x,t_hslice); return     c(HSlice,x)->a[n] ; }
+static B harr_get   (Arr* x, usz n) { assert(x->type==t_harr  ); return inc(((HArr*  )x)->a[n]); }
+static B hslice_get (Arr* x, usz n) { assert(x->type==t_hslice); return inc(((HSlice*)x)->a[n]); }
+static B harr_getU  (Arr* x, usz n) { assert(x->type==t_harr  ); return     ((HArr*  )x)->a[n] ; }
+static B hslice_getU(Arr* x, usz n) { assert(x->type==t_hslice); return     ((HSlice*)x)->a[n] ; }
 DEF_FREE(harr) {
   decSh(x);
   B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
@@ -128,7 +128,7 @@ static void harrP_visit(Value* x) { assert(x->type==t_harrPartial);
   usz am = *((HArr*)x)->sh;
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
-static B harrP_get(B x, usz n) { err("getting item from t_harrPartial"); }
+static B harrP_get(Arr* x, usz n) { err("getting item from t_harrPartial"); }
 static void harrP_print(B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;

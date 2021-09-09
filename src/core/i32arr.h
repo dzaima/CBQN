@@ -8,8 +8,8 @@ static I8Arr* toI8Arr(B x) { // assumes it's possible
     i32* fp = i32any_ptr(x);
     for (usz i = 0; i < ia; i++) rp[i] = (i8)fp[i];
   } else {
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) rp[i] = o2iu(xgetU(x,i));
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) rp[i] = o2iu(GetU(x,i));
   }
   dec(x);
   return c(I8Arr,r);
@@ -23,8 +23,8 @@ static I16Arr* toI16Arr(B x) { // assumes it's possible
     f64* fp = f64any_ptr(x);
     for (usz i = 0; i < ia; i++) rp[i] = (i16)fp[i];
   } else {
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) rp[i] = o2iu(xgetU(x,i));
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) rp[i] = o2iu(GetU(x,i));
   }
   dec(x);
   return c(I16Arr,r);
@@ -38,8 +38,8 @@ static I32Arr* toI32Arr(B x) { // assumes it's possible
     f64* fp = f64any_ptr(x);
     for (usz i = 0; i < ia; i++) rp[i] = (i32)fp[i];
   } else {
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) rp[i] = o2iu(xgetU(x,i));
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) rp[i] = o2iu(GetU(x,i));
   }
   dec(x);
   return c(I32Arr,r);

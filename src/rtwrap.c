@@ -86,7 +86,7 @@ struct WMd2 {
 WMd2* lastWM2;
 void wm2_visit(Value* x) { mm_visit(((WMd2*)x)->v); }
 
-B wm1_c1(B d, B x) { B f = c(Md1D,d)->f; B t = c(Md1D,d)->m1;
+B wm1_c1(Md1D* d, B x) { B f = d->f; B t = d->m1;
   u64 pfwt=fwTotal; fwTotal = 0;
   WMd1* c = c(WMd1,t);
   B om = c->v;
@@ -100,7 +100,7 @@ B wm1_c1(B d, B x) { B f = c(Md1D,d)->f; B t = c(Md1D,d)->m1;
   fwTotal = pfwt + e-s + 30;
   return r;
 }
-B wm1_c2(B d, B w, B x) { B f = c(Md1D,d)->f; B t = c(Md1D,d)->m1;
+B wm1_c2(Md1D* d, B w, B x) { B f = d->f; B t = d->m1;
   u64 pfwt=fwTotal; fwTotal = 0;
   WMd1* c = c(WMd1,t);
   B om = c->v;
@@ -115,7 +115,7 @@ B wm1_c2(B d, B w, B x) { B f = c(Md1D,d)->f; B t = c(Md1D,d)->m1;
   return r;
 }
 
-B wm2_c1(B d, B x) { B f = c(Md2D,d)->f; B g = c(Md2D,d)->g; B t = c(Md2D,d)->m2;
+B wm2_c1(Md2D* d, B x) { B f = d->f; B g = d->g; B t = d->m2;
   u64 pfwt=fwTotal; fwTotal = 0;
   WMd1* c = c(WMd1,t);
   B om = c->v;
@@ -129,7 +129,7 @@ B wm2_c1(B d, B x) { B f = c(Md2D,d)->f; B g = c(Md2D,d)->g; B t = c(Md2D,d)->m2
   fwTotal = pfwt + e-s + 30;
   return r;
 }
-B wm2_c2(B d, B w, B x) { B f = c(Md2D,d)->f; B g = c(Md2D,d)->g; B t = c(Md2D,d)->m2;
+B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; B t = d->m2;
   u64 pfwt=fwTotal; fwTotal = 0;
   WMd1* c = c(WMd1,t);
   B om = c->v;

@@ -14,15 +14,15 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
   r->nameList = nameList;
   r->varAm = vam;
-  BS2B getIDU = TI(varIDs,getU);
-  BS2B getOnU = TI(exported,getU);
+  SGetU(varIDs)
+  SGetU(exported)
   for (i32 i = 0; i < off; i++) {
     body->varIDs[i] = -1;
     r   ->expIDs[i] = -1;
   }
   for (usz i = 0; i < ia; i++) {
-    i32 cid = o2i(getIDU(varIDs, i));
-    bool cexp = o2b(getOnU(exported, i));
+    i32 cid = o2i(GetU(varIDs, i));
+    bool cexp = o2b(GetU(exported, i));
     body->varIDs[i+off] = cid;
     r->expIDs[i+off] = cexp? cid : -1;
   }
@@ -45,11 +45,11 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
-    B cName = TI(cNL,getU)(cNL, nameID);
-    BS2B dNLgetU = TI(dNL,getU);
+    B cName = IGetU(cNL, nameID);
+    SGetU(dNL)
     for (i32 i = 0; i < dVarAm; i++) {
       i32 dID = d->expIDs[i];
-      if (dID>=0 && equal(dNLgetU(dNL, dID), cName)) return n->sc->vars[i];
+      if (dID>=0 && equal(GetU(dNL, dID), cName)) return n->sc->vars[i];
     }
   } else {
     for (i32 i = 0; i < dVarAm; i++) {
@@ -65,11 +65,11 @@ B ns_qgetU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns); // TODO somehow merge impl 
   assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
-    B cName = TI(cNL,getU)(cNL, nameID);
-    BS2B dNLgetU = TI(dNL,getU);
+    B cName = IGetU(cNL, nameID);
+    SGetU(dNL)
     for (i32 i = 0; i < dVarAm; i++) {
       i32 dID = d->expIDs[i];
-      if (dID>=0 && equal(dNLgetU(dNL, dID), cName)) return n->sc->vars[i];
+      if (dID>=0 && equal(GetU(dNL, dID), cName)) return n->sc->vars[i];
     }
   } else {
     for (i32 i = 0; i < dVarAm; i++) {
@@ -83,10 +83,10 @@ B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
   B dNL = d->nameList;
-  BS2B dNLgetU = TI(dNL,getU);
+  SGetU(dNL)
   for (i32 i = 0; i < dVarAm; i++) {
     i32 dID = d->expIDs[i];
-    if (dID>=0 && equal(dNLgetU(dNL, dID), name)) return n->sc->vars[i];
+    if (dID>=0 && equal(GetU(dNL, dID), name)) return n->sc->vars[i];
   }
   if (thrEmpty) thrM("No key found");
   return bi_N;
@@ -96,10 +96,10 @@ void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
   B dNL = d->nameList;
-  BS2B dNLgetU = TI(dNL,getU);
+  SGetU(dNL)
   for (i32 i = 0; i < dVarAm; i++) {
     i32 dID = d->expIDs[i];
-    if (dID>=0 && equal(dNLgetU(dNL, dID), name)) {
+    if (dID>=0 && equal(GetU(dNL, dID), name)) {
       dec(n->sc->vars[i]);
       n->sc->vars[i] = val;
       return;
@@ -112,10 +112,10 @@ i32 ns_pos(B ns, B name) { VTY(ns, t_ns);
   Body* b = c(NS, ns)->sc->body;
   B nameList = c(NS, ns)->desc->nameList;
   i32 bVarAm = b->varAm;
-  BS2B nlGetU = TI(nameList,getU);
+  SGetU(nameList)
   for (i32 i = 0; i < bVarAm; i++) {
     i32 id = b->varIDs[i];
-    if (id>=0) if (equal(nlGetU(nameList, id), name)) { dec(name); return i; }
+    if (id>=0) if (equal(GetU(nameList, id), name)) { dec(name); return i; }
   }
   thrM("No key found");
 }
@@ -141,14 +141,14 @@ static void ns_print(B x) {
   NSDesc* desc = c(NS,x)->desc;
   Scope* sc = c(NS,x)->sc;
   i32 am = desc->varAm;
-  BS2B getNameU = TI(desc->nameList,getU);
+  B nl = desc->nameList; SGetU(nl)
   bool first = true;
   for (i32 i = 0; i < am; i++) {
     i32 id = desc->expIDs[i];
     if (id>=0) {
       if (first) first=false;
       else printf(" ⋄ ");
-      printRaw(getNameU(desc->nameList, id));
+      printRaw(GetU(nl, id));
       printf("⇐");
       print(sc->vars[i]);
     }
@@ -160,14 +160,14 @@ B nsFmt(B x) { // consumes
   ACHR('{');
   NSDesc* desc = c(NS,x)->desc;
   i32 am = desc->varAm;
-  BS2B getNameU = TI(desc->nameList,getU);
+  B nl = desc->nameList; SGetU(nl)
   bool first = true;
   for (i32 i = 0; i < am; i++) {
     i32 id = desc->expIDs[i];
     if (id>=0) {
       if (first) first=false;
       else ACHR(U'‿');
-      AFMT("%R", getNameU(desc->nameList, id));
+      AFMT("%R", GetU(nl, id));
     }
   }
   AU("⇐}");

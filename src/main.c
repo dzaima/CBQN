@@ -117,9 +117,9 @@ int main(int argc, char* argv[]) {
               B path = fromUTF8l(argv[i++]);
               B lines = file_lines(path);
               usz ia = a(lines)->ia;
-              BS2B lget = TI(lines,get);
+              SGet(lines)
               for (u64 i = 0; i < ia; i++) {
-                dec(gsc_exec_inline(lget(lines, i), inc(replPath), emptySVec()));
+                dec(gsc_exec_inline(Get(lines, i), inc(replPath), emptySVec()));
               }
               break;
             }

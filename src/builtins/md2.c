@@ -42,9 +42,9 @@ B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 extern B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   if (isArr(g)) {
-    BS2B xgetU = TI(g,getU);
+    SGetU(g)
     usz ia = a(g)->ia;
-    for (usz i = 0; i < ia; i++) repeat_bounds(bound, xgetU(g, i));
+    for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
   } else if (isNum(g)) {
     i64 i = o2i64(g);
     if (i<bound[0]) bound[0] = i;
@@ -53,10 +53,10 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
 }
 B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
-    BS2B ggetU = TI(g,getU);
+    SGetU(g)
     usz ia = a(g)->ia;
     HArr_p r = m_harrUc(g);
-    for (usz i = 0; i < ia; i++) r.a[i] = repeat_replace(ggetU(g,i), q);
+    for (usz i = 0; i < ia; i++) r.a[i] = repeat_replace(GetU(g,i), q);
     return r.b;
   } else {
     return inc(q[o2i64u(g)]);
@@ -111,12 +111,12 @@ B over_c2(Md2D* d, B w, B x) { B xr=c1(d->g, x); return c2(d->f, c1(d->g, w), xr
 B cond_c1(Md2D* d, B x) { B g=d->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
   usz fr = WRAP(o2i64(c1iX(d->f, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c1(TI(g,getU)(g, fr), x);
+  return c1(IGetU(g, fr), x);
 }
 B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
   usz fr = WRAP(o2i64(c2iWX(d->f, w, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c2(TI(g,getU)(g, fr), w, x);
+  return c2(IGetU(g, fr), w, x);
 }
 
 extern B rt_under, bi_before;

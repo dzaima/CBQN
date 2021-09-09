@@ -51,16 +51,16 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   ur rr = wr+xr;  usz ria = uszMulT(wia, xia);
   if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
-  BS2B wgetU = TI(w,getU);
-  BS2B xget = TI(x,get);
+  SGetU(w)
+  SGet(x)
   BBB2B fc2 = c2fn(f);
   
   usz ri = 0;
   HArr_p r = m_harrs(ria, &ri);
   for (usz wi = 0; wi < wia; wi++) {
-    B cw = wgetU(w,wi);
+    B cw = GetU(w,wi);
     for (usz xi = 0; xi < xia; xi++,ri++) {
-      r.a[ri] = fc2(f, inc(cw), xget(x,xi));
+      r.a[ri] = fc2(f, inc(cw), Get(x,xi));
     }
   }
   usz* rsh = harr_fa(r, rr);
@@ -128,16 +128,16 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   bool reuse = v(x)->type==t_harr && reusable(x);
   usz i = 0;
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
-  BS2B xget = reuse? TI(x,getU) : TI(x,get);
+  AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
   BBB2B fc2 = c2fn(f);
   
   if (xr==1) {
-    r.a[i] = xget(x,0); i++;
-    for (i = 1; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), xget(x,i));
+    r.a[i] = xget(xa,0); i++;
+    for (i = 1; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), xget(xa,i));
   } else {
     usz csz = arr_csz(x);
-    for (; i < csz; i++) r.a[i] = xget(x,i);
-    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(x,i));
+    for (; i < csz; i++) r.a[i] = xget(xa,i);
+    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
   }
   return withFill(reuse? x : harr_fcd(r, x), xf);
 }
@@ -182,22 +182,22 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   base:;
   
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
-  BS2B xget = reuse? TI(x,getU) : TI(x,get);
+  AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
   BBB2B fc2 = c2fn(f);
   
   if (isArr(w)) {
-    ur wr = rnk(w); usz* wsh = a(w)->sh; BS2B wget = TI(w,get);
+    ur wr = rnk(w); usz* wsh = a(w)->sh; SGet(w)
     if (wr+1!=xr || !eqShPrefix(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
-    for (; i < csz; i++) r.a[i] = fc2(f, wget(w,i), xget(x,i));
-    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(x,i));
+    for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
+    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
     dec(w);
   } else {
     if (xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
-    B pr = r.a[0] = fc2(f, w, xget(x,0)); i++;
-    for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(x,i));
+    B pr = r.a[0] = fc2(f, w, xget(xa,0)); i++;
+    for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(xa,i));
   }
   return withFill(reuse? x : harr_fcd(r, x), wf);
 }
@@ -254,7 +254,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   }
   base:;
   
-  BS2B xget = TI(x,get);
+  SGet(x)
   BBB2B fc2 = c2fn(f);
   B c;
   if (TI(x,elType)==el_i32) {
@@ -262,8 +262,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     c = m_i32(xp[ia-1]);
     for (usz i = ia-1; i>0; i--) c = fc2(f, m_i32(xp[i-1]), c);
   } else {
-    c = xget(x, ia-1);
-    for (usz i = ia-1; i>0; i--) c = fc2(f, xget(x, i-1), c);
+    c = Get(x, ia-1);
+    for (usz i = ia-1; i>0; i--) c = fc2(f, Get(x, i-1), c);
   }
   dec(x);
   return c;
@@ -296,9 +296,9 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   base:;
   
   B c = w;
-  BS2B xget = TI(x,get);
+  SGet(x)
   BBB2B fc2 = c2fn(f);
-  for (usz i = ia; i>0; i--) c = fc2(f, xget(x, i-1), c);
+  for (usz i = ia; i>0; i--) c = fc2(f, Get(x, i-1), c);
   dec(x);
   return c;
 }

@@ -41,8 +41,8 @@ B and_c1(B t, B x) {
   }
   B xf = getFillQ(x);
   HArr_p r = m_harrUv(xia);
-  BS2B xget = TI(x,get);
-  for (usz i = 0; i < xia; i++) r.a[i] = xget(x,i);
+  SGet(x)
+  for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bA_tim_sort(r.a, xia);
   dec(x);
   return withFill(r.b,xf);
@@ -73,8 +73,8 @@ B or_c1(B t, B x) {
   }
   B xf = getFillQ(x);
   HArr_p r = m_harrUv(xia);
-  BS2B xget = TI(x,get);
-  for (usz i = 0; i < xia; i++) r.a[i] = xget(x,i);
+  SGet(x)
+  for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bD_tim_sort(r.a, xia);
   dec(x);
   return withFill(r.b,xf);

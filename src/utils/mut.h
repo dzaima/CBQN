@@ -210,8 +210,8 @@ static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
         for (usz i = 0; i < l; i++) inc(mpo[i]);
         return;
       }
-      BS2B xget = TIi(xt,get);
-      for (usz i = 0; i < l; i++) mpo[i] = xget(x,i+xs);
+      SGet(x)
+      for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
       return;
     }
   }
@@ -259,8 +259,8 @@ static B vec_join(B w, B x) { // consumes both
       else if (xe==el_c32) { u32* xp=c32any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_c32(xp[i]); }
       else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i=0; i<xia; i++) rp[i] = m_f64(xp[i]); }
       else {
-        BS2B xget = TI(x,get);
-        for (usz i = 0; i < xia; i++) rp[i] = xget(x, i);
+        SGet(x)
+        for (usz i = 0; i < xia; i++) rp[i] = Get(x, i);
       }
       dec(x);
       return w;

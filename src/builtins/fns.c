@@ -49,14 +49,14 @@ B ud_c1(B t, B x) {
     for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   usz xia = a(x)->ia;
   if (rnk(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", rnk(x));
   if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
   usz sh[xia];
   usz ria = 1;
   for (usz i = 0; i < xia; i++) {
-    usz c = o2s(xgetU(x, i));
+    usz c = o2s(GetU(x, i));
     if (c > I32_MAX) thrM("↕: Result too large");
     sh[i] = c;
     if (c*(u64)ria >= U32_MAX) thrM("↕: Result too large");
@@ -170,10 +170,10 @@ B indexOf_c1(B t, B x) {
   //   wyhashmap_t idx[size];
   //   i32 val[size];
   //   for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
-  //   BS2B xget = TI(x,get);
+  //   SGet(x)
   //   i32 ctr = 0;
   //   for (usz i = 0; i < xia; i++) {
-  //     u64 hash = bqn_hash(xget(x,i), wy_secret);
+  //     u64 hash = bqn_hash(Get(x,i), wy_secret);
   //     u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
   //     if (val[p]==-1) val[p] = ctr++;
   //     rp[i] = val[p];
@@ -186,10 +186,10 @@ B indexOf_c1(B t, B x) {
     // u64 s = nsTime();
     i32* rp; B r = m_i32arrv(&rp, xia);
     H_b2i* map = m_b2i(64);
-    BS2B xgetU = TI(x,getU);
+    SGetU(x)
     i32 ctr = 0;
     for (usz i = 0; i < xia; i++) {
-      bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
+      bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
       if (had) rp[i] = map->a[p].val;
       else     rp[i] = map->a[p].val = ctr++;
     }
@@ -204,7 +204,7 @@ B indexOf_c2(B t, B w, B x) {
   if (rnk(w)==1) {
     if (!isArr(x) || rnk(x)==0) {
       usz wia = a(w)->ia;
-      B el = isArr(x)? TI(x,getU)(x,0) : x;
+      B el = isArr(x)? IGetU(x,0) : x;
       i32 res = wia;
       if (TI(w,elType)==el_i32) {
         if (q_i32(el)) {
@@ -215,9 +215,9 @@ B indexOf_c2(B t, B w, B x) {
           }
         }
       } else {
-        BS2B wgetU = TI(w,getU);
+        SGetU(w)
         for (usz i = 0; i < wia; i++) {
-          if (equal(wgetU(w,i), el)) { res = i; break; }
+          if (equal(GetU(w,i), el)) { res = i; break; }
         }
       }
       dec(w); dec(x);
@@ -231,13 +231,13 @@ B indexOf_c2(B t, B w, B x) {
       // TODO O(wia×xia) for small wia
       i32* rp; B r = m_i32arrv(&rp, xia);
       H_b2i* map = m_b2i(64);
-      BS2B xgetU = TI(x,getU);
-      BS2B wgetU = TI(w,getU);
+      SGetU(x)
+      SGetU(w)
       for (usz i = 0; i < wia; i++) {
-        bool had; u64 p = mk_b2i(&map, wgetU(w,i), &had);
+        bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
         if (!had) map->a[p].val = i;
       }
-      for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, xgetU(x,i), wia);
+      for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
       free_b2i(map); dec(w); dec(x);
       return r;
     }
@@ -253,8 +253,8 @@ B memberOf_c1(B t, B x) {
   
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_Sb* set = m_Sb(64);
-  BS2B xgetU = TI(x,getU);
-  for (usz i = 0; i < xia; i++) rp[i] = !ins_Sb(&set, xgetU(x,i));
+  SGetU(x)
+  for (usz i = 0; i < xia; i++) rp[i] = !ins_Sb(&set, GetU(x,i));
   free_Sb(set); dec(x);
   return r;
 }
@@ -265,11 +265,11 @@ B memberOf_c2(B t, B w, B x) {
   // TODO O(wia×xia) for small wia
   H_Sb* set = m_Sb(64);
   bool had;
-  BS2B xgetU = TI(x,getU);
-  BS2B wgetU = TI(w,getU);
-  for (usz i = 0; i < xia; i++) mk_Sb(&set, xgetU(x,i), &had);
+  SGetU(x)
+  SGetU(w)
+  for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
   i32* rp; B r = m_i32arrv(&rp, wia);
-  for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, wgetU(w,i));
+  for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, GetU(w,i));
   free_Sb(set); dec(w);dec(x);
   return r;
 }
@@ -283,9 +283,9 @@ B find_c1(B t, B x) {
   
   B r = emptyHVec();
   H_Sb* set = m_Sb(64);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (usz i = 0; i < xia; i++) {
-    B c = xgetU(x,i);
+    B c = GetU(x,i);
     if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
   }
   free_Sb(set); dec(x);
@@ -302,9 +302,9 @@ B count_c1(B t, B x) {
   usz xia = a(x)->ia;
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_b2i* map = m_b2i(64);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (usz i = 0; i < xia; i++) {
-    bool had; u64 p = mk_b2i(&map, xgetU(x,i), &had);
+    bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
   }
   dec(x); free_b2i(map);

@@ -53,20 +53,20 @@ void printUTF8(u32 c) {
 
 u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all chars
   assert(isArr(x));
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   usz ia = a(x)->ia;
   u64 res = 0;
   for (usz i = 0; i < ia; i++) {
-    u32 c = o2c(xgetU(x,i));
+    u32 c = o2c(GetU(x,i));
     res+= c<128? 1 : c<0x07FF? 2 : c<0xFFFF? 3 : 4;
   }
   return res;
 }
 void toUTF8(B x, char* p) {
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   usz ia = a(x)->ia;
   for (usz i = 0; i < ia; i++) {
-    u32 c = o2cu(xgetU(x,i));
+    u32 c = o2cu(GetU(x,i));
     if (c<128)          { *p++ = c; }
     else if (c<=0x07FF) { *p++ = 0xC0|c>>6 ; *p++ = 0x80|(c    &0x3F); }
     else if (c<=0xFFFF) { *p++ = 0xE0|c>>12; *p++ = 0x80|(c>>6 &0x3F);*p++ = 0x80|(c   &0x3F); }

@@ -17,9 +17,9 @@ B asFill(B x) { // consumes
       return r;
     }
     HArr_p r = m_harrUc(x);
-    BS2B xget = TI(x,get);
+    SGet(x)
     bool noFill = false;
-    for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(xget(x,i))).u == bi_noFill.u) noFill = true;
+    for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(Get(x,i))).u == bi_noFill.u) noFill = true;
     B xf = getFillQ(x);
     dec(x);
     if (noFill) { ptr_dec(r.c); return bi_noFill; }
@@ -40,10 +40,10 @@ static Arr* m_fillslice(Arr* p, B* ptr, usz ia) {
 static Arr* fillarr_slice  (B x, usz s, usz ia) { return m_fillslice(a(x), c(FillArr,x)->a+s, ia); }
 static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); dec(x); return r; }
 
-static B fillarr_get   (B x, usz n) { VTY(x,t_fillarr  ); return inc(c(FillArr  ,x)->a[n]); }
-static B fillslice_get (B x, usz n) { VTY(x,t_fillslice); return inc(c(FillSlice,x)->a[n]); }
-static B fillarr_getU  (B x, usz n) { VTY(x,t_fillarr  ); return     c(FillArr  ,x)->a[n] ; }
-static B fillslice_getU(B x, usz n) { VTY(x,t_fillslice); return     c(FillSlice,x)->a[n] ; }
+static B fillarr_get   (Arr* x, usz n) { assert(x->type==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
+static B fillslice_get (Arr* x, usz n) { assert(x->type==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
+static B fillarr_getU  (Arr* x, usz n) { assert(x->type==t_fillarr  ); return     ((FillArr*  )x)->a[n] ; }
+static B fillslice_getU(Arr* x, usz n) { assert(x->type==t_fillslice); return     ((FillSlice*)x)->a[n] ; }
 DEF_FREE(fillarr) {
   decSh(x);
   B* p = ((FillArr*)x)->a;
@@ -74,9 +74,9 @@ void fillarr_init() {
 
 void validateFill(B x) {
   if (isArr(x)) {
-    BS2B xgetU = TI(x,getU);
+    SGetU(x)
     usz ia = a(x)->ia;
-    for (usz i = 0; i < ia; i++) validateFill(xgetU(x,i));
+    for (usz i = 0; i < ia; i++) validateFill(GetU(x,i));
   } else if (isF64(x)) {
     assert(x.f==0);
   } else if (isC32(x)) {
@@ -94,9 +94,9 @@ NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be array
   if (we!=el_B && xe!=el_B) {
     return elChr(we) == elChr(xe);
   }
-  BS2B xgetU = TI(x,getU);
-  BS2B wgetU = TI(w,getU);
-  for (usz i = 0; i < ia; i++) if(!fillEqual(wgetU(w,i),xgetU(x,i))) return false;
+  SGetU(x)
+  SGetU(w)
+  for (usz i = 0; i < ia; i++) if(!fillEqual(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
 
@@ -148,8 +148,8 @@ B withFill(B x, B fill) { // consumes both
     }
   } else {
     B* rp = r->a;
-    BS2B xget = TI(x,get);
-    for (usz i = 0; i < ia; i++) rp[i] = xget(x,i);
+    SGet(x)
+    for (usz i = 0; i < ia; i++) rp[i] = Get(x,i);
     dec(x);
   }
   return taga(r);

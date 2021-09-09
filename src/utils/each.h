@@ -7,13 +7,13 @@ static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r
 static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least one is array
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = rnk(w); BS2B wget = TI(w,get);
-  ur xr = rnk(x); BS2B xget = TI(x,get);
+  ur wr = rnk(w); SGet(w);
+  ur xr = rnk(x); SGet(x);
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
   if (rM==0) {
-    B r = f(fo, wget(w,0), xget(x,0));
+    B r = f(fo, Get(w,0), Get(x,0));
     dec(w); dec(x);
     return m_hunit(r);
   }
@@ -23,12 +23,12 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
   if (rw|rx && (wr==xr | rm==0)) {
     HArr_p r = harr_parts(rw? w : x);
     usz ria = r.c->ia;
-    if      (wr==0) { B c=wget(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c),   hmv(r,i)); dec(c); }
-    else if (xr==0) { B c=xget(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
+    if      (wr==0) { B c=Get(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c),   hmv(r,i)); dec(c); }
+    else if (xr==0) { B c=Get(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
     else {
       assert(wr==xr);
-      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i),  xget(x,i));
-      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, wget(w,i), hmv(r,i));
+      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i),  Get(x,i));
+      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i));
     }
     dec(rw? x : w);
     return r.b;
@@ -38,14 +38,14 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
   usz ria = a(bo)->ia;
   usz ri = 0;
   HArr_p r = m_harrs(ria, &ri);
-  if (wr==xr)                       for(; ri < ria; ri++) r.a[ri] = f(fo, wget(w,ri), xget(x,ri));
-  else if (wr==0) { B c=wget(w, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, inc(c)    , xget(x,ri)); dec(c); }
-  else if (xr==0) { B c=xget(x, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, wget(w,ri), inc(c)    ); dec(c); }
+  if (wr==xr)                      for(; ri < ria; ri++) r.a[ri] = f(fo, Get(w,ri), Get(x,ri));
+  else if (wr==0) { B c=Get(w, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, inc(c)   , Get(x,ri)); dec(c); }
+  else if (xr==0) { B c=Get(x, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, Get(w,ri), inc(c)    ); dec(c); }
   else if (ria>0) {
     usz min = wg? a(x)->ia : a(w)->ia;
     usz ext = ria / min;
-    if (wg) for (usz i = 0; i < min; i++) { B c=xget(x,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, wget(w,ri), inc(c)); }
-    else    for (usz i = 0; i < min; i++) { B c=wget(w,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, inc(c), xget(x,ri)); }
+    if (wg) for (usz i = 0; i < min; i++) { B c=Get(x,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, Get(w,ri), inc(c)); }
+    else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, inc(c), Get(x,ri)); }
   }
   B rb = harr_fc(r, bo);
   dec(w); dec(x);
@@ -55,9 +55,9 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
 static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   usz ia = a(x)->ia;
   if (ia==0) return x;
-  BS2B xget = TI(x,get);
+  SGet(x);
   usz i = 0;
-  B cr = f(fo, xget(x,0));
+  B cr = f(fo, Get(x,0));
   HArr_p rH;
   if (TI(x,canStore)(cr)) {
     bool reuse = reusable(x);
@@ -129,7 +129,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
   rH = m_harrs(ia, &i);
   fallback:
   rH.a[i++] = cr;
-  for (; i < ia; i++) rH.a[i] = f(fo, xget(x,i));
+  for (; i < ia; i++) rH.a[i] = f(fo, Get(x,i));
   return harr_fcd(rH, x);
 }
 

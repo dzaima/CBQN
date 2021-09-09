@@ -45,7 +45,7 @@ B shape_c1(B t, B x) {
   } else {
     usz ia = a(x)->ia;
     if (ia==1 && TI(x,elType)<el_B) {
-      B n = TI(x,get)(x,0);
+      B n = IGet(x,0);
       dec(x);
       x = n;
       goto unit;
@@ -84,12 +84,12 @@ B shape_c2(B t, B w, B x) {
       }
       if (bad && !good) thrM("⥊: 𝕨 too large");
     } else {
-      BS2B getU = TI(w,getU);
+      SGetU(w)
       i32 unkPos = -1;
       i32 unkInd;
       bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
-        B c = getU(w, i);
+        B c = GetU(w, i);
         if (isF64(c)) {
           usz v = o2s(c);
           if (sh) sh->a[i] = v;
@@ -155,7 +155,7 @@ B shape_c2(B t, B w, B x) {
           // dec(x);
           // x = inc(xf);
         } else {
-          B n = TI(x,get)(x,0);
+          B n = IGet(x,0);
           dec(x);
           x = n;
         }
@@ -211,14 +211,14 @@ B pick_c1(B t, B x) {
     // dec(x);
     // return r;
   }
-  B r = TI(x,get)(x, 0);
+  B r = IGet(x, 0);
   dec(x);
   return r;
 }
 B pick_c2(B t, B w, B x) {
   if (isNum(w) && isArr(x) && rnk(x)==1) {
     usz p = WRAP(o2i64(w), a(x)->ia, thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
-    B r = TI(x,get)(x, p);
+    B r = IGet(x, p);
     dec(x);
     return r;
   }
@@ -254,7 +254,7 @@ B select_c2(B t, B w, B x) {
     return taga(r);
   }
   B xf = getFillQ(x);
-  BS2B xget = TI(x,get);
+  SGet(x)
   usz wia = a(w)->ia;
   
   if (xr==1) {
@@ -303,7 +303,7 @@ B select_c2(B t, B w, B x) {
         HArr_p r = m_harrs(wia, &i);
         for (; i < wia; i++) {
           usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          r.a[i] = xget(x, c);
+          r.a[i] = Get(x, c);
         }
         dec(x);
         return withFill(harr_fcd(r,w),xf);
@@ -311,18 +311,18 @@ B select_c2(B t, B w, B x) {
     } else {
       usz i = 0;
       HArr_p r = m_harrs(wia, &i);
-      BS2B wgetU = TI(w,getU);
+      SGetU(w)
       for (; i < wia; i++) {
-        B cw = wgetU(w, i);
+        B cw = GetU(w, i);
         if (!isNum(cw)) { harr_abandon(r); goto base; }
         usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
-        r.a[i] = xget(x, c);
+        r.a[i] = Get(x, c);
       }
       dec(x);
       return withFill(harr_fcd(r,w),xf);
     }
   } else {
-    BS2B wgetU = TI(w,getU);
+    SGetU(w)
     ur wr = rnk(w);
     i32 rr = wr+xr-1;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
@@ -331,7 +331,7 @@ B select_c2(B t, B w, B x) {
     usz cam = a(x)->sh[0];
     MAKE_MUT(r, wia*csz); mut_init(r, TI(x,elType));
     for (usz i = 0; i < wia; i++) {
-      B cw = wgetU(w, i);
+      B cw = GetU(w, i);
       if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
       f64 c = o2f(cw);
       if (c<0) c+= cam;
@@ -354,10 +354,10 @@ B select_c2(B t, B w, B x) {
 
 static NOINLINE B slash_c1R(B x, u64 s) {
   usz xia = a(x)->ia;
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   f64* rp; B r = m_f64arrv(&rp, s); usz ri = 0;
   for (usz i = 0; i < xia; i++) {
-    usz c = o2s(xgetU(x, i));
+    usz c = o2s(GetU(x, i));
     for (usz j = 0; j < c; j++) rp[ri++] = i;
   }
   dec(x);
@@ -385,9 +385,9 @@ B slash_c1(B t, B x) {
       }
     }
   } else {
-    BS2B xgetU = TI(x,getU);
+    SGetU(x)
     for (u64 i = 0; i < xia; i++) {
-      usz c = o2s(xgetU(x, i));
+      usz c = o2s(GetU(x, i));
       for (u64 j = 0; j < c; j++) *rp++ = i;
     }
   }
@@ -446,11 +446,11 @@ B slash_c2(B t, B w, B x) {
         return r;
       } else {
         HArr_p r = m_harrs(wsum, &ri);
-        BS2B xgetU = TI(x,getU);
+        SGetU(x)
         for (usz i = 0; i < wia; i++) {
           i32 cw = wp[i];
           if (cw==0) continue;
-          B cx = incBy(xgetU(x, i), cw);
+          B cx = incBy(GetU(x, i), cw);
           for (i64 j = 0; j < cw; j++) r.a[ri++] = cx;
         }
         dec(w); dec(x);
@@ -460,12 +460,12 @@ B slash_c2(B t, B w, B x) {
       i64 ria = isum(w);
       if (ria>USZ_MAX) thrOOM();
       HArr_p r = m_harrs(ria, &ri);
-      BS2B wgetU = TI(w,getU);
-      BS2B xgetU = TI(x,getU);
+      SGetU(w)
+      SGetU(x)
       for (usz i = 0; i < wia; i++) {
-        usz c = o2s(wgetU(w, i));
+        usz c = o2s(GetU(w, i));
         if (c) {
-          B cx = incBy(xgetU(x, i), c);
+          B cx = incBy(GetU(x, i), c);
           for (usz j = 0; RARE(j < c); j++) r.a[ri++] = cx;
         }
       }
@@ -492,9 +492,9 @@ B slash_c2(B t, B w, B x) {
     } else {
       B xf = getFillQ(x);
       HArr_p r = m_harrUv(xia*wv);
-      BS2B xgetU = TI(x,getU);
+      SGetU(x)
       for (usz i = 0; i < xia; i++) {
-        B cx = incBy(xgetU(x, i), wv);
+        B cx = incBy(GetU(x, i), wv);
         for (i64 j = 0; j < wv; j++) *r.a++ = cx;
       }
       dec(x);
@@ -590,9 +590,9 @@ B join_c1(B t, B x) {
       dec(xf);
       return withFill(r.b, xff);
     }
-    BS2B xgetU = TI(x,getU);
+    SGetU(x)
     
-    B x0 = xgetU(x,0);
+    B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
     if (isAtm(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
     usz ir = rnk(x0);
@@ -602,7 +602,7 @@ B join_c1(B t, B x) {
     usz csz = arr_csz(x0);
     usz cam = x0sh[0];
     for (usz i = 1; i < xia; i++) {
-      B c = xgetU(x, i);
+      B c = GetU(x, i);
       if (!isArr(c) || rnk(c)!=ir) thrF("∾: All items in argument should have same rank (contained items with ranks %i and %i)", ir, isArr(c)? rnk(c) : 0);
       usz* csh = a(c)->sh;
       if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
@@ -613,7 +613,7 @@ B join_c1(B t, B x) {
     MAKE_MUT(r, cam*csz);
     usz ri = 0;
     for (usz i = 0; i < xia; i++) {
-      B c = xgetU(x, i);
+      B c = GetU(x, i);
       usz cia = a(c)->ia;
       mut_copy(r, ri, c, 0, cia);
       ri+= cia;
@@ -643,8 +643,8 @@ B join_c2(B t, B w, B x) {
   ur c = wr>xr?wr:xr;
   if (c==0) {
     HArr_p r = m_harrUv(2);
-    r.a[0] = TI(w,get)(w,0); dec(w);
-    r.a[1] = TI(x,get)(x,0); dec(x);
+    r.a[0] = IGet(w,0); dec(w);
+    r.a[1] = IGet(x,0); dec(x);
     return qWithFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
@@ -831,10 +831,10 @@ B group_c2(B t, B w, B x) {
           c->ia = 0;
           rp[i] = taga(c);
         }
-        BS2B xget = TI(x,get);
+        SGet(x)
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
-          if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
+          if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
         }
         for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
       }
@@ -842,12 +842,12 @@ B group_c2(B t, B w, B x) {
       dec(w); dec(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     } else {
-      BS2B wgetU = TI(w,getU);
-      i64 ria = wia==xia? 0 : o2i64(wgetU(w, xia));
+      SGetU(w)
+      i64 ria = wia==xia? 0 : o2i64(GetU(w, xia));
       if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       ria--;
       for (usz i = 0; i < xia; i++) {
-        B cw = wgetU(w, i);
+        B cw = GetU(w, i);
         if (!q_i64(cw)) goto base;
         i64 c = o2i64u(cw);
         if (c>ria) ria = c;
@@ -858,7 +858,7 @@ B group_c2(B t, B w, B x) {
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xia; i++) len[o2i64u(wgetU(w, i))]++;
+      for (usz i = 0; i < xia; i++) len[o2i64u(GetU(w, i))]++;
       
       Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0)); arr_shVec(r);
       B* rp = fillarr_ptr(r);
@@ -874,10 +874,10 @@ B group_c2(B t, B w, B x) {
       Arr* rf = m_fillarrp(0); arr_shVec(rf);
       fillarr_setFill(rf, xf);
       fillarr_setFill(r, taga(rf));
-      BS2B xget = TI(x,get);
+      SGet(x)
       for (usz i = 0; i < xia; i++) {
-        i64 n = o2i64u(wgetU(w, i));
-        if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = xget(x, i);
+        i64 n = o2i64u(GetU(w, i));
+        if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
       for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
       dec(w); dec(x); TFREE(lenO); TFREE(pos);
@@ -940,7 +940,7 @@ B pick_uc1(B t, B o, B x) {
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
   B xf = getFillQ(x);
   usz ia = a(x)->ia;
-  B arg = TI(x,get)(x, 0);
+  B arg = IGet(x, 0);
   B rep = c1(o, arg);
   MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
   mut_setG(r, 0, rep);
@@ -953,7 +953,7 @@ B pick_ucw(B t, B o, B w, B x) {
   usz xia = a(x)->ia;
   usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
   B xf = getFillQ(x);
-  B arg = TI(x,get)(x, wi);
+  B arg = IGet(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x,canStore)(rep)) {
     if (TI(x,elType)==el_i32) {
@@ -986,25 +986,25 @@ B pick_ucw(B t, B o, B w, B x) {
 B slash_ucw(B t, B o, B w, B x) {
   if (isAtm(w) || isAtm(x) || rnk(w)!=1 || rnk(x)!=1 || a(w)->ia!=a(x)->ia) return def_fn_ucw(t, o, w, x);
   usz ia = a(x)->ia;
-  BS2B wgetU = TI(w,getU);
-  if (TI(w,elType)!=el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(wgetU(w,i))) return def_fn_ucw(t, o, w, x);
+  SGetU(w)
+  if (TI(w,elType)!=el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = a(arg)->ia;
   B rep = c1(o, arg);
   if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
   MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
-  BS2B xget = TI(x,get);
-  BS2B rgetU = TI(rep,getU);
-  BS2B rget = TI(rep,get);
+  SGet(x)
+  SGetU(rep)
+  SGet(rep)
   usz repI = 0;
   for (usz i = 0; i < ia; i++) {
-    i32 cw = o2iu(wgetU(w, i));
+    i32 cw = o2iu(GetU(w, i));
     if (cw) {
-      B cr = rget(rep,repI);
-      if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(rgetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
+      B cr = Get(rep,repI);
+      if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
       mut_setG(r, i, cr);
       repI+= cw;
-    } else mut_setG(r, i, xget(x,i));
+    } else mut_setG(r, i, Get(x,i));
   }
   dec(w); dec(rep);
   return mut_fcd(r, x);
@@ -1014,8 +1014,8 @@ B select_ucw(B t, B o, B w, B x) {
   if (isAtm(x) || rnk(x)!=1 || isAtm(w) || rnk(w)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = a(x)->ia;
   usz wia = a(w)->ia;
-  BS2B wgetU = TI(w,getU);
-  if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(wgetU(w,i))) return def_fn_ucw(t, o, w, x);
+  SGetU(w)
+  if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = select_c2(t, inc(w), inc(x));
   B rep = c1(o, arg);
   if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != wia) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as a⊏𝕩 (expected ⟨%s⟩, got %H)", wia, rep);
@@ -1044,10 +1044,10 @@ B select_ucw(B t, B o, B w, B x) {
         return x;
       } else if (v(x)->type==t_harr) {
         B* xp = harr_ptr(x);
-        BS2B rget = TI(rep,get);
+        SGet(rep)
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
-          B cr = rget(rep, i);
+          B cr = Get(rep, i);
           EQ(!equal(cr,xp[cw]));
           dec(xp[cw]);
           xp[cw] = cr;
@@ -1058,10 +1058,10 @@ B select_ucw(B t, B o, B w, B x) {
     }
     MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
     mut_copyG(r, 0, x, 0, xia);
-    BS2B rget = TI(rep,get);
+    SGet(rep)
     for (usz i = 0; i < wia; i++) {
       i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
-      B cr = rget(rep, i);
+      B cr = Get(rep, i);
       EQ(!equal(mut_getU(r, cw), cr));
       mut_rm(r, cw);
       mut_setG(r, cw, cr);
@@ -1071,10 +1071,10 @@ B select_ucw(B t, B o, B w, B x) {
   }
   MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
   mut_copyG(r, 0, x, 0, xia);
-  BS2B rget = TI(rep,get);
+  SGet(rep)
   for (usz i = 0; i < wia; i++) {
-    i64 cw = o2i64u(wgetU(w, i)); if (cw<0) cw+= (i64)xia;
-    B cr = rget(rep, i);
+    i64 cw = o2i64u(GetU(w, i)); if (cw<0) cw+= (i64)xia;
+    B cr = Get(rep, i);
     EQ(!equal(mut_getU(r, cw), cr));
     mut_rm(r, cw);
     mut_setG(r, cw, cr);

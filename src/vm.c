@@ -153,25 +153,25 @@ typedef struct SETHRequest {
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth) {
   usz blIA = a(block)->ia;
   if (blIA!=3) thrM("VM compiler: Bad block info size");
-  BS2B blGetU = TI(block,getU);
-  usz  ty  = o2s(blGetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
-  bool imm = o2b(blGetU(block,1));
-  B    bodyObj = blGetU(block,2);
+  SGetU(block)
+  usz  ty  = o2s(GetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
+  bool imm = o2b(GetU(block,1));
+  B    bodyObj = GetU(block,2);
   i32* bodyI;
   i32 bodyAm1, bodyAm2, bodyILen;
   if (isArr(bodyObj)) {
     if (a(bodyObj)->ia!=2) thrM("VM compiler: Unexpected body list length");
     // print(bodyObj); putchar('\n');
-    BS2B boGetU = TI(bodyObj,getU);
-    B b1 = boGetU(bodyObj,0);
-    B b2 = boGetU(bodyObj,1);
+    SGetU(bodyObj)
+    B b1 = GetU(bodyObj,0);
+    B b2 = GetU(bodyObj,1);
     if (!isArr(b1) || !isArr(b2)) thrM("VM compiler: Body list contained non-arrays");
-    bodyAm1 = a(b1)->ia; BS2B b1GetU = TI(b1,getU);
-    bodyAm2 = a(b2)->ia; BS2B b2GetU = TI(b2,getU);
+    bodyAm1 = a(b1)->ia; SGetU(b1)
+    bodyAm2 = a(b2)->ia; SGetU(b2)
     bodyILen = bodyAm1+bodyAm2;
     TALLOC(i32, bodyInds_, bodyILen+2); bodyI = bodyInds_; i32* bodyI2 = bodyInds_+bodyAm1+1;
-    for (i32 i = 0; i < bodyAm1; i++) bodyI [i] = o2i(b1GetU(b1, i));
-    for (i32 i = 0; i < bodyAm2; i++) bodyI2[i] = o2i(b2GetU(b2, i));
+    for (i32 i = 0; i < bodyAm1; i++) bodyI [i] = o2i(GetU(b1, i));
+    for (i32 i = 0; i < bodyAm2; i++) bodyI2[i] = o2i(GetU(b2, i));
     for (i32 i = 1; i < bodyAm1; i++) if (bodyI [i]<=bodyI [i-1]) thrM("VM compiler: Expected body indices to be sorted");
     for (i32 i = 1; i < bodyAm2; i++) if (bodyI2[i]<=bodyI2[i-1]) thrM("VM compiler: Expected body indices to be sorted");
     bodyI[bodyAm1] = bodyI[bodyILen+1] = I32_MAX;
@@ -221,11 +221,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     // printf("idxs: %d %d\n", index1, index2);
     
     
-    B bodyRepr = TI(allBodies,getU)(allBodies, currBody); if (!isArr(bodyRepr)) thrM("VM compiler: Body array contained non-array");
+    B bodyRepr = IGetU(allBodies, currBody); if (!isArr(bodyRepr)) thrM("VM compiler: Body array contained non-array");
     usz boIA = a(bodyRepr)->ia; if (boIA!=2 && boIA!=4) thrM("VM compiler: Body array had invalid length");
-    BS2B biGetU = TI(bodyRepr,getU);
-    usz idx = o2s(biGetU(bodyRepr,0)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
-    usz vam = o2s(biGetU(bodyRepr,1)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no? // oh, some size fields are u16s. but i doubt those change much, or even make things worse
+    SGetU(bodyRepr)
+    usz idx = o2s(GetU(bodyRepr,0)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
+    usz vam = o2s(GetU(bodyRepr,1)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no? // oh, some size fields are u16s. but i doubt those change much, or even make things worse
     
     i32 h = 0; // stack height
     i32 hM = 0; // max stack height
@@ -245,10 +245,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           memcpy(nE->vars+nSZ, oE->vars+oSZ, oSZ*sizeof(B));
           mm_free((Value*)oE);
         }
-        B varIDs = biGetU(bodyRepr,2);
+        B varIDs = GetU(bodyRepr,2);
         for (i32 i = oSZ; i < nSZ; i++) {
           nE->vars[i] = bi_noVar;
-          nE->vars[i+nSZ] = TI(nameList,get)(nameList, o2s(TI(varIDs,getU)(varIDs, regAm+i)));
+          nE->vars[i+nSZ] = IGet(nameList, o2s(IGetU(varIDs, regAm+i)));
         }
         sc->ext = nE;
       }
@@ -280,7 +280,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           if ((u32)id >= a(allBlocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
           if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
           bDone[id] = true;
-          Block* bl = compileBlock(TI(allBlocks,getU)(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1);
+          Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1);
           TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
           A64((u64)bl);
           TSADD(usedBlocks, bl);
@@ -329,7 +329,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     
     Body* body = m_body(vam, bcStart, hM, mpsc);
     if (boIA>2) {
-      m_nsDesc(body, imm, ty, inc(nameList), biGetU(bodyRepr,2), biGetU(bodyRepr,3));
+      m_nsDesc(body, imm, ty, inc(nameList), GetU(bodyRepr,2), GetU(bodyRepr,3));
     } else {
       body->nsDesc = NULL;
       for (u64 i = 0; i < vam; i++) body->varIDs[i] = -1;
@@ -408,21 +408,21 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   if (q_N(tokenInfo)) {
     nameList = bi_emptyHVec;
   } else {
-    B t = TI(tokenInfo,getU)(tokenInfo,2);
-    nameList = TI(t,getU)(t,0);
+    B t = IGetU(tokenInfo,2);
+    nameList = IGetU(t,0);
   }
   if (!q_N(src) && !q_N(indices)) {
     if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
-      B ind = TI(indices,getU)(indices,i);
+      B ind = IGetU(indices,i);
       if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcIA) thrM("VM compiler: Bad indices");
-      BS2B indGetU = TI(ind,getU);
-      for (usz j = 0; j < bcIA; j++) o2i(indGetU(ind,j));
+      SGetU(ind)
+      for (usz j = 0; j < bcIA; j++) o2i(GetU(ind,j));
     }
   }
   TALLOC(bool,bDone,bIA);
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
-  Block* ret = compileBlock(TI(allBlocks,getU)(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0);
+  Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0);
   TFREE(bDone);
   ptr_dec(comp); dec(allBlocks); dec(allBodies); dec(tokenInfo);
   return ret;
@@ -464,8 +464,8 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
       }
       return;
     }
-    BS2B xgetU = TI(x,getU);
-    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], xgetU(x,i), upd);
+    SGetU(x)
+    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd);
   }
 }
 NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
@@ -493,8 +493,8 @@ NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
     }
     return true;
   }
-  BS2B xgetU = TI(x,getU);
-  for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], xgetU(x,i))) return false;
+  SGetU(x)
+  for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], GetU(x,i))) return false;
   return true;
 }
 
@@ -990,23 +990,23 @@ void popCatch() {
 }
 
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
-  BS2B srcGetU = TI(src,getU);
+  SGetU(src)
   usz srcL = a(src)->ia;
   usz srcS = cs;
-  while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
+  while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
   usz srcE = srcS;
-  while (srcE<srcL) { if(o2cu(srcGetU(src, srcE))=='\n') break; srcE++; }
+  while (srcE<srcL) { if(o2cu(GetU(src, srcE))=='\n') break; srcE++; }
   if (ce>srcE) ce = srcE;
   
   i64 ln = 1;
-  for (usz i = 0; i < srcS; i++) if(o2cu(srcGetU(src, i))=='\n') ln++;
+  for (usz i = 0; i < srcS; i++) if(o2cu(GetU(src, i))=='\n') ln++;
   B s = prepend;
-  if (isArr(path) && (a(path)->ia>1 || (a(path)->ia==1 && TI(path,getU)(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
+  if (isArr(path) && (a(path)->ia>1 || (a(path)->ia==1 && IGetU(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
   else AFMT("at ");
   i64 padEnd = (i64)a(s)->ia;
   i64 padStart = padEnd;
-  BS2B sGetU = TI(s,getU);
-  while (padStart>0 && o2cu(sGetU(s,padStart-1))!='\n') padStart--;
+  SGetU(s)
+  while (padStart>0 && o2cu(GetU(s,padStart-1))!='\n') padStart--;
   
   Arr* slice = TI(src,slice)(inc(src),srcS, srcE-srcS); arr_shVec(slice);
   AJOIN(taga(slice));
@@ -1014,7 +1014,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   ce-= srcS;
   ACHR('\n');
   for (i64 i = padStart; i < padEnd; i++) ACHR(' ');
-  for (u64 i = 0; i < cs; i++) ACHR(o2cu(srcGetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
+  for (u64 i = 0; i < cs; i++) ACHR(o2cu(GetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
   for (u64 i = cs; i < ce; i++) ACHR('^');
   return s;
 }
@@ -1022,15 +1022,15 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!q_N(src) && !q_N(comp->indices)) {
-    B inds = TI(comp->indices,getU)(comp->indices, 0); usz cs = o2s(TI(inds,getU)(inds,bcPos));
-    B inde = TI(comp->indices,getU)(comp->indices, 1); usz ce = o2s(TI(inde,getU)(inde,bcPos))+1;
+    B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcPos));
+    B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcPos))+1;
     // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken
     // printf(" inds:%d…%d\n", cs, ce);
     // int start = pos==-1? 0 : printf(N64d": ", pos);
     // usz srcL = a(src)->ia;
-    // BS2B srcGetU = TI(src,getU);
-    // usz srcS = cs;   while (srcS>0 && o2cu(srcGetU(src,srcS-1))!='\n') srcS--;
-    // usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(srcGetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+    // SGetU(src)
+    // usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
+    // usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
     // if (ce>srcE) ce = srcE;
     // cs-= srcS; ce-= srcS;
     // putchar('\n');
@@ -1081,9 +1081,9 @@ void unwindCompiler() {
 
 NOINLINE void printErrMsg(B msg) {
   if (isArr(msg)) {
-    BS2B msgGetU = TI(msg,getU);
+    SGetU(msg)
     usz msgLen = a(msg)->ia;
-    for (usz i = 0; i < msgLen; i++) if (!isC32(msgGetU(msg,i))) goto base;
+    for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
     printRaw(msg);
     return;
   }

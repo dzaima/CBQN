@@ -381,6 +381,7 @@ void slice_print(B x);
 typedef bool (*  B2b)(B);
 typedef void (*  B2v)(B);
 typedef Arr* (*BSS2A)(B, usz, usz);
+typedef B (*    AS2B)(Arr*, usz);
 typedef B (*    BS2B)(B, usz);
 typedef B (*   BSS2B)(B, usz, usz);
 typedef B (*     B2B)(B);
@@ -398,8 +399,8 @@ typedef B (*M2C2)(Md2D*, B, B);
 
 #define FOR_TI(F) \
   F(V2v, freeF)  /* expects refc==0, includes mm_free */ \
-  F(BS2B, get)   /* increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen */ \
-  F(BS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
+  F(AS2B, get)   /* increments result, doesn't consume arg; TODO figure out if this should never allocate, so GC wouldn't happen */ \
+  F(AS2B, getU)  /* like get, but doesn't increment result (mostly equivalent to `B t=get(…); dec(t); t`) */ \
   F(BB2B,  m1_d) /* consume all args; (m, f)    */ \
   F(BBB2B, m2_d) /* consume all args; (m, f, g) */ \
   F(BSS2A, slice) /* consumes; create slice from a starting position and length; add shape & rank yourself; may not actually be a Slice object; preserves fill */ \
@@ -429,6 +430,12 @@ typedef B (*M2C2)(Md2D*, B, B);
 #define TIv(X,V) (ti_##V[(X)->type])
 #define TI(X,V)  (ti_##V[v(X)->type])
 
+#define SGetU(X) Arr* X##_arrU = a(X); AS2B X##_getU = TIv(X##_arrU,getU);
+#define IGetU(X,N) ({ Arr* x_ = a(X); TIv(x_,getU)(x_,N); })
+#define GetU(X,N) X##_getU(X##_arrU,N)
+#define SGet(X) Arr* X##_arr = a(X); AS2B X##_get = TIv(X##_arr,get);
+#define IGet(X,N)({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
+#define Get(X,N) X##_get(X##_arr,N)
 
 static bool q_N(B b) { return b.u==bi_N.u; }
 

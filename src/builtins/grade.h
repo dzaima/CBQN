@@ -73,10 +73,10 @@ B GRADE_CAT(c1)(B t, B x) {
   }
   
   TALLOC(BI32p, tmp, ia);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (usz i = 0; i < ia; i++) {
     tmp[i].v = i;
-    tmp[i].k = xgetU(x,i);
+    tmp[i].k = GetU(x,i);
   }
   CAT(GRADE_CAT(BP),tim_sort)(tmp, ia);
   for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
@@ -118,16 +118,16 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   } else {
-    BS2B wgetU = TI(w,getU);
-    BS2B xgetU = TI(x,getU);
-    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wgetU(w,i), wgetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    SGetU(w)
+    SGetU(x)
+    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if (compare(GetU(w,i), GetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
     
     for (usz i = 0; i < xia; i++) {
-      B c = xgetU(x,i);
+      B c = GetU(x,i);
       usz s = 0, e = wia+1;
       while (e-s > 1) {
         usz m = (s+e) / 2;
-        if (compare(c, wgetU(w,m-1)) GRADE_UD(<,>) 0) e = m;
+        if (compare(c, GetU(w,m-1)) GRADE_UD(<,>) 0) e = m;
         else s = m;
       }
       rp[i] = s;

@@ -32,12 +32,12 @@ B m_nfn(NFnDesc* desc, B obj) {
   return tag(r,FUN_TAG);
 }
 B nfn_name(B x) { VTY(x, t_nfn);
-  return inc(c(NFnDesc,TI(nfn_list,getU)(nfn_list,c(NFn,x)->id))->name);
+  return inc(c(NFnDesc,IGetU(nfn_list,c(NFn,x)->id))->name);
 }
 
 DEF_FREE(nfn) { dec(((NFn*)x)->obj); }
 void nfn_visit(Value* x) { mm_visit(((NFn*)x)->obj); }
-void nfn_print(B x) { printRaw(c(NFnDesc,TI(nfn_list,getU)(nfn_list,c(NFn,x)->id))->name); }
+void nfn_print(B x) { printRaw(c(NFnDesc,IGetU(nfn_list,c(NFn,x)->id))->name); }
 DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(B x) { printf("(native function description)"); }

@@ -104,9 +104,9 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
 
 B grLen_both(i64 ria, B x) {
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64u(xgetU(x, i));
+    i64 c = o2i64u(GetU(x, i));
     if (c>ria) ria = c;
   }
   if (ria > (i64)(USZ_MAX-1)) thrOOM();
@@ -114,7 +114,7 @@ B grLen_both(i64 ria, B x) {
   i32* rp; B r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64u(xgetU(x, i));
+    i64 n = o2i64u(GetU(x, i));
     if (n>=0) rp[n]++;
     assert(n>=-1);
   }
@@ -129,16 +129,16 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz xia = a(x)->ia;
   if (wia==0) { dec(w); dec(x); return emptyIVec(); }
   if (xia==0) { dec(w); return x; }
-  BS2B wgetU = TI(w,getU);
-  BS2B xgetU = TI(x,getU);
+  SGetU(w)
+  SGetU(x)
   TALLOC(usz, tmp, wia);
   tmp[0] = 0;
-  for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(wgetU(w,i-1));
-  usz ria = tmp[wia-1]+o2su(wgetU(w,wia-1));
+  for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(GetU(w,i-1));
+  usz ria = tmp[wia-1]+o2su(GetU(w,wia-1));
   i32* rp; B r = m_i32arrv(&rp, ria);
   if (xia>=I32_MAX) thrM("⊔: Too large");
   for (usz i = 0; i < xia; i++) {
-    i64 c = o2i64(xgetU(x,i));
+    i64 c = o2i64(GetU(x,i));
     if (c>=0) rp[tmp[c]++] = i;
   }
   dec(w); dec(x); TFREE(tmp);
@@ -160,12 +160,12 @@ B casrt_c2(B t, B w, B x) {
   unwindCompiler();
   dec(x);
   if (isArr(w) && a(w)->ia==2) {
-    B w0 = TI(w,getU)(w,0);
+    B w0 = IGetU(w,0);
     if (!isArr(w0) || a(w0)->ia<2) goto base;
-    B s = TI(w,get)(w,1);
-    BS2B w0getU = TI(w0,getU);
+    B s = IGet(w,1);
+    SGetU(w0)
     AFMT("\n");
-    s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(w0getU(w0,0)), o2s(w0getU(w0,1))+1);
+    s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
     dec(w);
     thr(s);
   }
@@ -198,8 +198,8 @@ B bqn_c1(B t, B x) {
   if (isAtm(x) || rnk(x)!=1) thrM("•BQN: Argument must be a character vector");
   if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) if (!isC32(xgetU(x,i))) thrM("•BQN: Argument must be a character vector");
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrM("•BQN: Argument must be a character vector");
   }
   return bqn_exec(x, bi_N, bi_N);
 }
@@ -459,10 +459,10 @@ B repl_c2(B t, B w, B x) {
   
   if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrM("REPL: 𝕨 must be a vector with at most 3 items");
   usz ia = a(w)->ia;
-  BS2B wget = TI(w,get);
-  B path = ia>0? wget(w,0) : inc(replPath);
-  B file = ia>1? wget(w,1) : emptyCVec();
-  B args = ia>2? wget(w,2) : emptySVec();
+  SGet(w)
+  B path = ia>0? Get(w,0) : inc(replPath);
+  B file = ia>1? Get(w,1) : emptyCVec();
+  B args = ia>2? Get(w,2) : emptySVec();
   B fullpath = vec_join(vec_add(path, m_c32('/')), file);
   dec(w);
   
@@ -522,8 +522,9 @@ B flines_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
   B nl, s = emptyCVec();
   usz ia = a(x)->ia;
+  SGet(x)
   for (u64 i = 0; i < ia; i++) {
-    nl = TI(x,get)(x, i);
+    nl = Get(x, i);
     if (!isArr(nl)) thrM("•FLines: Non-array element of 𝕩");
     s = vec_join(s, nl);
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
@@ -586,9 +587,9 @@ B fromUtf8_c1(B t, B x) {
   if (!isArr(x)) thrM("•FromUTF8: Argument must be a character or number array");
   usz ia = a(x)->ia;
   TALLOC(char, chrs, ia);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (u64 i = 0; i < ia; i++) {
-    B c = xgetU(x,i);
+    B c = GetU(x,i);
     if (isC32(c)) {
       u32 v = o2cu(c);
       if (v>=256) thrF("•FromUTF8: Argument contained a character with codepoint %i", v);
@@ -612,9 +613,9 @@ B sh_c1(B t, B x) {
   usz xia = a(x)->ia;
   if (xia==0) thrM("•SH: 𝕩 must have at least one item");
   TALLOC(char*, argv, xia+1);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (u64 i = 0; i < xia; i++) {
-    B c = xgetU(x, i);
+    B c = GetU(x, i);
     if (isAtm(c) || rnk(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
     u64 len = utf8lenB(c);
     TALLOC(char, cstr, len+1);
@@ -668,12 +669,12 @@ B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
   HArr_p r = m_harrs(a(x)->ia, &i);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   B fileNS = m_f64(0);
   B path = m_f64(0);
   #define REQ_PATH ({ if(!path.u) path = path_abs(path_dir(inc(comp_currPath))); path; })
   for (; i < a(x)->ia; i++) {
-    B c = xgetU(x,i);
+    B c = GetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
     else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
     else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);

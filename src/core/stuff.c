@@ -46,7 +46,6 @@ static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
   dec(fn);
   return r;
 }
-B def_getU(B x, usz n) { return x; }
 B def_fn_uc1(B t, B o,                B x) { return rtUnder_c1(o, t,    x); }
 B def_fn_ucw(B t, B o,           B w, B x) { return rtUnder_cw(o, t, w, x); }
 B def_m1_uc1(B t, B o, B f,           B x) { B t2 = m1_d(inc(t),inc(f)       ); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
@@ -76,12 +75,12 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
 
 NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   usz ia = a(x)->ia;
   if (r!=1) {
     if (r==0) {
       printf("<");
-      print(xgetU(x,0));
+      print(GetU(x,0));
       return;
     }
     usz* sh = a(x)->sh;
@@ -92,11 +91,11 @@ NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging p
     printf("⥊");
   } else if (ia>0) {
     for (usz i = 0; i < ia; i++) {
-      B c = xgetU(x,i);
+      B c = GetU(x,i);
       if (!isC32(c) || (u32)c.u=='\n') goto reg;
     }
     printf("\"");
-    for (usz i = 0; i < ia; i++) printUTF8((u32)xgetU(x,i).u); // c32, no need to decrement
+    for (usz i = 0; i < ia; i++) printUTF8((u32)GetU(x,i).u); // c32, no need to decrement
     printf("\"");
     return;
   }
@@ -104,7 +103,7 @@ NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging p
   printf("⟨");
   for (usz i = 0; i < ia; i++) {
     if (i!=0) printf(", ");
-    print(xgetU(x,i));
+    print(GetU(x,i));
   }
   printf("⟩");
 }
@@ -147,9 +146,9 @@ NOINLINE void printRaw(B x) {
     else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x,getU);
+    SGetU(x)
     for (usz i = 0; i < ia; i++) {
-      B c = xgetU(x,i);
+      B c = GetU(x,i);
       #if !CATCH_ERRORS
       if (c.u==0 || noFill(c)) { printf(" "); continue; }
       #endif
@@ -304,15 +303,16 @@ NOINLINE void thrF(char* p, ...) {
   thr(r);
 }
 
+
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 NOINLINE i32 compareR(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
-  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; BS2B wgetU;
-  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; BS2B xgetU;
-  if(wa) { wia=1; wr=0; wsh=NULL; wgetU=def_getU; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); }
-  if(xa) { xia=1; xr=0; xsh=NULL; xgetU=def_getU; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); }
+  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU; Arr* wArr;
+  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU; Arr* xArr;
+  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); wArr = a(w); }
+  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); xArr = a(x); }
   if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
@@ -330,7 +330,7 @@ NOINLINE i32 compareR(B w, B x) {
     rm*= wm<xm? wm : xm;
   }
   for (u64 i = 0; i < (u64)rm; i++) {
-    int c = compare(wgetU(w,i), xgetU(x,i));
+    int c = compare(wa? w : wgetU(wArr,i), xa? x : xgetU(xArr,i));
     if (c!=0) return c;
   }
   return rc;
@@ -375,9 +375,9 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
     for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false;
     return true;
   }
-  BS2B xgetU = TI(x,getU);
-  BS2B wgetU = TI(w,getU);
-  for (usz i = 0; i < ia; i++) if(!equal(wgetU(w,i),xgetU(x,i))) return false;
+  SGetU(x)
+  SGetU(w)
+  for (usz i = 0; i < ia; i++) if(!equal(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
 
@@ -410,9 +410,9 @@ bool eequal(B w, B x) { // doesn't consume
   // if (!feq) return false;
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x,getU);
-  BS2B wgetU = TI(w,getU);
-  for (usz i = 0; i < ia; i++) if(!eequal(wgetU(w,i),xgetU(x,i))) return false;
+  SGetU(x)
+  SGetU(w)
+  for (usz i = 0; i < ia; i++) if(!eequal(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
 
@@ -421,9 +421,9 @@ u64 depth(B x) { // doesn't consume
   if (TI(x,arrD1)) return 1;
   u64 r = 0;
   usz ia = a(x)->ia;
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (usz i = 0; i < ia; i++) {
-    u64 n = depth(xgetU(x,i));
+    u64 n = depth(GetU(x,i));
     if (n>r) r = n;
   }
   return r+1;
@@ -470,8 +470,8 @@ bool isPureFn(B x) { // doesn't consume
     dec(xd); return true;
   } else if (isArr(x)) {
     usz ia = a(x)->ia;
-    BS2B xgetU = TI(x,getU);
-    for (usz i = 0; i < ia; i++) if (!isPureFn(xgetU(x,i))) return false;
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) if (!isPureFn(GetU(x,i))) return false;
     return true;
   } else return isNum(x) || isC32(x);
 }
@@ -512,18 +512,18 @@ B num_squeeze(B x) {
     f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xp[i]); dec(x); return r;
   }
   
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (; i < ia; i++) {
-    B cr = xgetU(x,i);
+    B cr = GetU(x,i);
     if (!q_i32(cr)) goto n_i32_2;
     i32 c = o2iu(cr);
     or|= c<0?-c:c;
   }
-  if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
-  else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
-  else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xgetU(x,i)); dec(x); return r; }
-  n_i32_2: while (i<ia) if (!isF64(xgetU(x,i++))) return x;
-  f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xgetU(x,i)); dec(x); return r;
+  if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
+  else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
+  else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
+  n_i32_2: while (i<ia) if (!isF64(GetU(x,i++))) return x;
+  f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(GetU(x,i)); dec(x); return r;
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -543,15 +543,15 @@ B chr_squeeze(B x) {
     else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
     else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
   }
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   for (; i < ia; i++) {
-    B cr = xgetU(x,i);
+    B cr = GetU(x,i);
     if (!isC32(cr)) return x;
     or|= o2cu(cr);
   }
-  if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
-  else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
-  else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xgetU(x,i)); dec(x); return r; }
+  if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
+  else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
+  else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
 }
 
 B any_squeeze(B x) {
@@ -559,8 +559,8 @@ B any_squeeze(B x) {
   u8 xe = TI(x,elType);
   assert(xe!=el_bit);
   if (a(x)->ia==0) return x;
-  BS2B xgetU = TI(x,getU);
-  B x0 = xgetU(x, 0);
+  SGetU(x)
+  B x0 = GetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);
   return x;
@@ -587,8 +587,8 @@ B bqn_merge(B x) {
     return taga(r);
   }
   
-  BS2B xgetU = TI(x,getU);
-  B x0 = xgetU(x, 0);
+  SGetU(x)
+  B x0 = GetU(x, 0);
   usz* elSh = isArr(x0)? a(x0)->sh : NULL;
   ur elR = isArr(x0)? rnk(x0) : 0;
   usz elIA = isArr(x0)? a(x0)->ia : 1;
@@ -598,7 +598,7 @@ B bqn_merge(B x) {
   MAKE_MUT(r, xia*elIA);
   usz rp = 0;
   for (usz i = 0; i < xia; i++) {
-    B c = xgetU(x, i);
+    B c = GetU(x, i);
     if (isArr(c)? (elR!=rnk(c) || !eqShPrefix(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained %H and %H)", x0, c); }
     if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
     else mut_set(r, rp, c);

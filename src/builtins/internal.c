@@ -78,10 +78,10 @@ B listVariations_c2(B t, B w, B x) {
   
   if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
   usz wia = a(w)->ia;
-  BS2B wgetU = TI(w,getU);
+  SGetU(w)
   bool c_incr=false, c_rmFill=false;
   for (usz i = 0; i < wia; i++) {
-    u32 c = o2c(wgetU(w, i));
+    u32 c = o2c(GetU(w, i));
     if (c=='i') c_incr=true;
     else if (c=='f') c_rmFill=true;
     else thrF("internal.ListVariations: Unknown option '%c' in 𝕨", c);
@@ -94,14 +94,14 @@ B listVariations_c2(B t, B w, B x) {
   bool ai8=false, ai16=false, ai32=false, af64=false,
        ac8=false, ac16=false, ac32=false;
   usz xia = a(x)->ia;
-  BS2B xgetU = TI(x,getU);
+  SGetU(x)
   if (isNum(xf)) {
     f64 min=0, max=0;
     if (xe==el_i8) { }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(xp[i]!=(i32)xp[i]) max=1e99; } }
-    else for (usz i = 0; i < xia; i++) { B c = xgetU(x, i); if (!isF64(c)) goto noSpec; if (c.f>max) max=c.f; if (c.f<min) min=c.f; }
+    else for (usz i = 0; i < xia; i++) { B c = GetU(x, i); if (!isF64(c)) goto noSpec; if (c.f>max) max=c.f; if (c.f<min) min=c.f; }
     ai8  = min==(i8 )min && max==(i8 )max;
     ai16 = min==(i16)min && max==(i16)max;
     ai32 = min==(i32)min && max==(i32)max;
@@ -109,7 +109,7 @@ B listVariations_c2(B t, B w, B x) {
   } else if (isC32(xf)) {
     u32 max = 0;
     if (xe!=el_c8) for (usz i = 0; i < xia; i++) {
-      B c = xgetU(x, i);
+      B c = GetU(x, i);
       if (!isC32(c)) goto noSpec;
       if (o2cu(c)>max) max = o2cu(c);
     }
@@ -161,8 +161,8 @@ B variation_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
   usz xia = a(x)->ia;
   u8 xe = TI(x,elType);
-  BS2B xget = TI(x,get);
-  BS2B xgetU = TI(x,getU);
+  SGet(x)
+  SGetU(x)
   C8Arr* wc = toC8Arr(w);
   u8* wp = wc->a;
   u8* wpE = wp+wc->ia;
@@ -172,7 +172,7 @@ B variation_c2(B t, B w, B x) {
     bool slice = *wp == 'S';
     wp++;
     #define CPT(I) do { I; for (usz i = 0; i < xia; i++) tp[i] = xp[i]; } while(0)
-    #define CPF(F) for (usz i = 0; i < xia; i++) tp[i] = F(xgetU(x,i))
+    #define CPF(F) for (usz i = 0; i < xia; i++) tp[i] = F(GetU(x,i))
     if      (u8_get(&wp, wpE, "i8" )) { i8*  tp; res = m_i8arrc (&tp, x); if (xe==el_i8 ) CPT(i8*  xp=i8any_ptr (x)); else CPF(o2i); }
     else if (u8_get(&wp, wpE, "i16")) { i16* tp; res = m_i16arrc(&tp, x); if (xe==el_i16) CPT(i16* xp=i16any_ptr(x)); else CPF(o2i); }
     else if (u8_get(&wp, wpE, "i32")) { i32* tp; res = m_i32arrc(&tp, x); if (xe==el_i32) CPT(i32* xp=i32any_ptr(x)); else CPF(o2i); }
@@ -183,12 +183,12 @@ B variation_c2(B t, B w, B x) {
       f64* tp; res = m_f64arrc(&tp, x);
       if      (xe==el_i32) CPT(i32* xp=i32any_ptr(x));
       else if (xe==el_f64) CPT(f64* xp=f64any_ptr(x));
-      else for (usz i = 0; i < xia; i++) tp[i] = o2f(xgetU(x,i));
+      else for (usz i = 0; i < xia; i++) tp[i] = o2f(GetU(x,i));
     } else if (u8_get(&wp, wpE, "h")) {
       HArr_p t = m_harrUc(x);
       if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
       else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
-      else for (usz i = 0; i < xia; i++) t.a[i] = xget(x,i);
+      else for (usz i = 0; i < xia; i++) t.a[i] = Get(x,i);
       res = t.b;
     } else if (u8_get(&wp, wpE, "f")) {
       Arr* t = m_fillarrp(xia);
@@ -198,7 +198,7 @@ B variation_c2(B t, B w, B x) {
       B* rp = fillarr_ptr(t);
       if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
       else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
-      else for (usz i = 0; i < xia; i++) rp[i] = xget(x,i);
+      else for (usz i = 0; i < xia; i++) rp[i] = Get(x,i);
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     if (slice) {
       Arr* slice = TI(res,slice)(res, 0, a(res)->ia);
