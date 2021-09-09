@@ -21,9 +21,13 @@ NOINLINE void mut_to(Mut* m, u8 n) {
       }
     #endif
     switch(n) { default: UD;
+      case el_i8:  { I8Arr*  t=toI8Arr (taga(m->val)); m->val=(Arr*)t; m->ai8 =t->a; return; }
+      case el_i16: { I16Arr* t=toI16Arr(taga(m->val)); m->val=(Arr*)t; m->ai16=t->a; return; }
       case el_i32: { I32Arr* t=toI32Arr(taga(m->val)); m->val=(Arr*)t; m->ai32=t->a; return; }
-      case el_f64: { F64Arr* t=toF64Arr(taga(m->val)); m->val=(Arr*)t; m->af64=t->a; return; }
+      case el_c8:  { C8Arr*  t=toC8Arr (taga(m->val)); m->val=(Arr*)t; m->ac8 =t->a; return; }
+      case el_c16: { C16Arr* t=toC16Arr(taga(m->val)); m->val=(Arr*)t; m->ac16=t->a; return; }
       case el_c32: { C32Arr* t=toC32Arr(taga(m->val)); m->val=(Arr*)t; m->ac32=t->a; return; }
+      case el_f64: { F64Arr* t=toF64Arr(taga(m->val)); m->val=(Arr*)t; m->af64=t->a; return; }
       case el_B  : { HArr*   t=toHArr  (taga(m->val)); m->val=(Arr*)t; m->aB  =t->a; return; }
     }
   }
@@ -43,7 +47,7 @@ NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
   else mm_free((Value*) m->val);
 }
 
-u8 el_orArr[el_MAX*16 + el_MAX];
+u8 el_orArr[el_MAX*16 + el_MAX+1];
 void mutF_init() {
   for (u8 i = 0; i <= el_MAX; i++) {
     for (u8 j = 0; j <= el_MAX; j++) {

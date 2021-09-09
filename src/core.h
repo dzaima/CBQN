@@ -59,6 +59,15 @@
   extern B r1Objs[rtLen];
 #endif
 
+static B* arr_bptr(B x) { assert(isArr(x));
+  if (v(x)->type==t_harr) return harr_ptr(x);
+  if (v(x)->type==t_hslice) return c(HSlice,x)->a;
+  if (v(x)->type==t_fillarr) return fillarr_ptr(a(x));
+  if (v(x)->type==t_fillslice) return c(FillSlice,x)->a;
+  return NULL;
+}
+
+
 typedef struct BFn {
   struct Fun;
   B ident;

@@ -116,6 +116,8 @@ B withFill(B x, B fill) { // consumes both
     case t_i8arr:  case t_i8slice:  if(fill.u == m_i32(0  ).u) return x; break;
     case t_i16arr: case t_i16slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_i32arr: case t_i32slice: if(fill.u == m_i32(0  ).u) return x; break;
+    case t_c8arr:  case t_c8slice:  if(fill.u == m_c32(' ').u) return x; break;
+    case t_c16arr: case t_c16slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_c32arr: case t_c32slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
@@ -128,69 +130,36 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = a(x)->ia;
   if (isNum(fill)) {
-    if (xt==t_harr) {
-      B* xp = harr_ptr(x);
-      {
-        i32* rp; B r = m_i32arrc(&rp, x);
-        for (usz i = 0; i < ia; i++) {
-          B c = xp[i];
-          if (!q_i32(c)) { dec(r); goto h_f64; }
-          rp[i] = o2iu(c);
-        }
-        dec(x);
-        return r;
-      }
-      h_f64: {
-        f64* rp; B r = m_f64arrc(&rp, x);
-        for (usz i = 0; i < ia; i++) {
-          B c = xp[i];
-          if (!q_f64(c)) { dec(r); goto base; }
-          rp[i] = o2fu(c);
-        }
-        dec(x);
-        return r;
-      }
-    } else {
-      BS2B xgetU = TI(x,getU);
-      {
-        i32* rp; B r = m_i32arrc(&rp, x);
-        for (usz i = 0; i < ia; i++) {
-          B c = xgetU(x, i);
-          if (!q_i32(c)) { dec(r); goto g_f64; }
-          rp[i] = o2iu(c);
-        }
-        dec(x);
-        return r;
-      }
-      g_f64: {
-        f64* rp; B r = m_f64arrc(&rp, x);
-        for (usz i = 0; i < ia; i++) {
-          B c = xgetU(x, i);
-          if (!q_f64(c)) { dec(r); goto base; }
-          rp[i] = o2fu(c);
-        }
-        dec(x);
-        return r;
-      }
-      
-      // bool ints = true;
-      // for (usz i = 0; i < ia; i++) {
-      //   B c = xgetU(x, i);
-      //   if (!isNum(c)) goto base;
-      //   if (!q_i32(c)) ints = false;
-      // }
-      // if (ints) {
-      //   B r = m_i32arrc(x); i32* rp = i32arr_ptr(r);
-      //   for (usz i = 0; i < ia; i++) rp[i] = o2iu(xgetU(x, i));
-      //   dec(x);
-      //   return r;
-      // } else {
-      //   B r = m_f64arrc(x); f64* rp = f64arr_ptr(r);
-      //   for (usz i = 0; i < ia; i++) rp[i] = o2fu(xgetU(x, i));
-      //   dec(x);
-      //   return r;
-      // }
+    B* xp = arr_bptr(x);
+    if (xp==NULL) goto base;
+    usz i = 0;
+    i32 or = 0;
+    for (; i < ia; i++) {
+      if (!q_i32(xp[i])) goto n_i32;
+      i32 c = o2iu(xp[i]);
+      or|= c<0?-c:c; // using or as a heuristical max
     }
+    if (or<=I8_MAX) {
+      i8* rp; B r = m_i8arrc(&rp, x);
+      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
+      dec(x); return r;
+    } else if (or<=I16_MAX) {
+      i16* rp; B r = m_i16arrc(&rp, x);
+      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
+      dec(x); return r;
+    } else {
+      i32* rp; B r = m_i32arrc(&rp, x);
+      for (usz i = 0; i < ia; i++) rp[i] = o2iu(xp[i]);
+      dec(x); return r;
+    }
+    
+    n_i32:;
+    while (i < ia) if (!isF64(xp[i++])) goto base;
+    
+    f64* rp; B r = m_f64arrc(&rp, x);
+    for (usz i = 0; i < ia; i++) rp[i] = o2f(xp[i]);
+    dec(x); return r;
+    
   } else if (isC32(fill)) {
     u32* rp; B r = m_c32arrc(&rp, x);
     BS2B xgetU = TI(x,getU);
