@@ -4,14 +4,14 @@ B asFill(B x) { // consumes
   if (isArr(x)) {
     u8 xe = TI(x,elType);
     usz ia = a(x)->ia;
-    if (xe<=el_f64) {
+    if (elNum(xe)) {
       i8* rp; B r = m_i8arrc(&rp, x);
       for (usz i = 0; i < ia; i++) rp[i] = 0;
       dec(x);
       return r;
     }
-    if (xe==el_c32) {
-      u32* rp; B r = m_c32arrc(&rp, x);
+    if (elChr(xe)) {
+      u8* rp; B r = m_c8arrc(&rp, x);
       for (usz i = 0; i < ia; i++) rp[i] = ' ';
       dec(x);
       return r;
@@ -92,9 +92,7 @@ NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be array
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we!=el_B && xe!=el_B) {
-    if (we==el_c32 ^ xe==el_c32) return false;
-    assert(we==el_c32 & xe==el_c32  ||  we<=el_f64 & xe<=el_f64);
-    return true;
+    return elChr(we) == elChr(xe);
   }
   BS2B xgetU = TI(x,getU);
   BS2B wgetU = TI(w,getU);
@@ -131,12 +129,11 @@ B withFill(B x, B fill) { // consumes both
   usz ia = a(x)->ia;
   if (isNum(fill)) {
     B r = num_squeeze(x);
-    if (TI(r,elType)<=el_f64) return r;
+    if (elNum(TI(r,elType))) return r;
     x = r;
   } else if (isC32(fill)) {
     B r = chr_squeeze(x);
-    u8 re = TI(r,elType);
-    if (re>=el_c8 && re<=el_c32) return r;
+    if (elChr(TI(r,elType))) return r;
     x = r;
   }
   FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);

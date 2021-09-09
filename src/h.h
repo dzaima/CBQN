@@ -539,16 +539,3 @@ static inline u64 nsTime() {
   clock_gettime(CLOCK_REALTIME, &t);
   return (u64)(t.tv_sec*1000000000ll + t.tv_nsec);
 }
-
-
-
-static u8 fillElType(B x) {
-  if (isNum(x)) return el_i32; // TODO move to 8
-  if (isC32(x)) return el_c32;
-  return el_B;
-}
-static u8 selfElType(B x) { // guaranteed to fit fill
-  if (isF64(x)) return q_i16(x)? (q_i8(x)? el_i8 : el_i16) : (q_i32(x)? el_i32 : el_f64);
-  if (isC32(x)) return el_c32;
-  return el_B;
-}

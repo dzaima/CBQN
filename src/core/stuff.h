@@ -91,7 +91,8 @@ static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
 static B m_v3(B a, B b, B c     ); // consumes all
 static B m_v4(B a, B b, B c, B d); // consumes all
-static bool isNumEl(u8 elt) { return elt<=el_f64; }
+
+// random stuff
 
 static bool uszMul(usz* c, usz n) {
   return __builtin_mul_overflow(*c, n, c);
@@ -99,6 +100,18 @@ static bool uszMul(usz* c, usz n) {
 static usz uszMulT(usz a, usz b) {
   if (uszMul(&a, b)) thrM("Size too large");
   return a;
+}
+
+static u8 selfElType(B x) { // guaranteed to fit fill
+  if (isF64(x)) return q_i16(x)? (q_i8(x)? el_i8 : el_i16) : (q_i32(x)? el_i32 : el_f64);
+  if (isC32(x)) return el_c32;
+  return el_B;
+}
+static bool elChr(u8 x) {
+  return x>=el_c8 && x<=el_c32;
+}
+static bool elNum(u8 x) {
+  return x<=el_f64;
 }
 
 // string stuff
