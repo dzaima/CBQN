@@ -33,7 +33,7 @@ single-c:
 
 
 # compiler setup
-CC = clang
+CC ?= clang
 ifeq ($(CC),gcc)
 CCFLAGS = -Wno-parentheses
 else
