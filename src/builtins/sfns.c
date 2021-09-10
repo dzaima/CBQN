@@ -261,43 +261,21 @@ B select_c2(B t, B w, B x) {
     usz xia = a(x)->ia;
     if (TI(w,elType)==el_i32) {
       i32* wp = i32any_ptr(w);
-      if (TI(x,elType)==el_i32) {
-        i32* rp; B r = m_i32arrc(&rp, w);
-        i32* xp = i32any_ptr(x);
-        for (usz i = 0; i < wia; i++) {
-          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          rp[i] = xp[c];
-        }
-        dec(w); dec(x);
-        return r;
-      } else if (TI(x,elType)==el_f64) {
-        f64* rp; B r = m_f64arrc(&rp, w);
-        f64* xp = f64any_ptr(x);
-        for (usz i = 0; i < wia; i++) {
-          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          rp[i] = xp[c];
-        }
-        dec(w); dec(x);
-        return r;
-      } else if (TI(x,elType)==el_c32) {
-        u32* rp; B r = m_c32arrc(&rp, w);
-        u32* xp = c32any_ptr(x);
-        for (usz i = 0; i < wia; i++) {
-          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          rp[i] = xp[c];
-        }
-        dec(w); dec(x);
-        return r;
-      } else if (v(x)->type==t_harr) {
+      #define BODY for (usz i = 0; i < wia; i++) { rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; } dec(w); dec(x); return r;
+      if      (TI(x,elType)==el_i8 ) { i8*  rp; B r = m_i8arrc (&rp, w); i8*  xp = i8any_ptr (x); BODY }
+      if      (TI(x,elType)==el_i16) { i16* rp; B r = m_i16arrc(&rp, w); i16* xp = i16any_ptr(x); BODY }
+      if      (TI(x,elType)==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); i32* xp = i32any_ptr(x); BODY }
+      else if (TI(x,elType)==el_c8 ) { u8*  rp; B r = m_c8arrc (&rp, w); u8*  xp = c8any_ptr (x); BODY }
+      else if (TI(x,elType)==el_c16) { u16* rp; B r = m_c16arrc(&rp, w); u16* xp = c16any_ptr(x); BODY }
+      else if (TI(x,elType)==el_c32) { u32* rp; B r = m_c32arrc(&rp, w); u32* xp = c32any_ptr(x); BODY }
+      else if (TI(x,elType)==el_f64) { f64* rp; B r = m_f64arrc(&rp, w); f64* xp = f64any_ptr(x); BODY }
+      #undef BODY
+      else if (v(x)->type==t_harr) {
         usz i = 0;
         B* xp = harr_ptr(x);
         HArr_p r = m_harrs(wia, &i);
-        for (; i < wia; i++) {
-          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          r.a[i] = inc(xp[c]);
-        }
-        dec(x);
-        return harr_fcd(r, w);
+        for (; i < wia; i++) r.a[i] = inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]);
+        dec(x); return harr_fcd(r, w);
       } else {
         usz i = 0;
         HArr_p r = m_harrs(wia, &i);
@@ -371,7 +349,21 @@ B slash_c1(B t, B x) {
   usz xia = a(x)->ia;
   if (RARE(xia>=I32_MAX)) return slash_c1R(x, s);
   i32* rp; B r = m_i32arrv(&rp, s);
-  if (TI(x,elType)==el_i32) {
+  u8 xe = TI(x,elType);
+  if (xe==el_i8) {
+    i8* xp = i8any_ptr(x);
+    while (xia>0 && !xp[xia-1]) xia--;
+    for (u64 i = 0; i < xia; i++) {
+      i32 c = xp[i];
+      if (LIKELY(c==0 || c==1)) {
+        *rp = i;
+        rp+= c;
+      } else {
+        if (RARE(c)<0) thrF("/: Argument must consist of natural numbers (contained %i)", c);
+        for (i32 j = 0; j < c; j++) *rp++ = i;
+      }
+    }
+  } else if (xe==el_i32) {
     i32* xp = i32any_ptr(x);
     while (xia>0 && !xp[xia-1]) xia--;
     for (u64 i = 0; i < xia; i++) {
