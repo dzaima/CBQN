@@ -96,7 +96,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   if (xr==1 && xe<=el_f64 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==0) { // +
-      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i32* rp; B r=m_i32arrv(&rp, ia); i16 c=0; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
     }
@@ -106,8 +106,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=I32_MIN; for (usz i=0; i<ia; i++) { if (xp[i]>c)c=xp[i]; rp[i]=c; } dec(x); return r; }
     }
     if (rtid==14) { // ≠
-      f64 x0 = IGetU(x,0).f;
-      if (x0 != (i8)x0) goto base;
+      f64 x0 = IGetU(x,0).f; if (x0 != (i8)x0) goto base;
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=(i8)x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=(i8)x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=(i8)x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
