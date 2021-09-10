@@ -205,45 +205,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
 B fold_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = a(x)->ia;
-  if (TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
-    i32* xp = i32any_ptr(x);
-    if (rtid==0) { // +
-      i64 c = 0;
-      for (usz i = 0; i < ia; i++) if ((c+= xp[i]) > I32_MAX) goto base;
-      dec(x); return m_i32(c);
-    }
-    if (rtid==2 | rtid==10) { // ×/∧
-      i64 c = 1;
-      for (usz i = 0; i < ia; i++) if ((c*= xp[i]) > I32_MAX) goto base;
-      dec(x); return m_i32(c);
-    }
-    if (rtid==6) { // ⌊
-      if (ia==0) return m_f64(1.0/0.0);
-      i32 c = I32_MAX;
-      for (usz i = 0; i < ia; i++) {
-        if (xp[i]<c) c = xp[i];
-      }
-      dec(x); return m_i32(c);
-    }
-    if (rtid==7) { // ⌈
-      if (ia==0) return m_f64(-1.0/0.0);
-      i32 c = I32_MIN;
-      for (usz i = 0; i < ia; i++) {
-        if (xp[i]>c) c = xp[i];
-      }
-      dec(x); return m_i32(c);
-    }
-    if (rtid==11) { // ∨
-      bool any = false;
-      for (usz i = 0; i < ia; i++) {
-        i32 c = xp[i];
-        if (c!=0 && c!=1) goto base;
-        any|= c;
-      }
-      dec(x); return m_i32(any);
-    }
-  }
+  u8 xe = TI(x,elType);
   if (ia==0) {
     dec(x);
     if (isFun(f)) {
@@ -251,6 +213,34 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       if (!q_N(r)) return inc(r);
     }
     thrM("´: No identity found");
+  }
+  if (isFun(f) && v(f)->flags && xe<=el_f64) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==0) { // + 
+      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i64 c=0; for (usz i=0; i<ia; i++) c+=xp[i];                                          dec(x); return m_f64(c); } // won't worry about 64TB array sum float inaccuracy for now
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (__builtin_add_overflow(c,xp[i],&c)) goto base; dec(x); return m_i32(c); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (__builtin_add_overflow(c,xp[i],&c)) goto base; dec(x); return m_i32(c); }
+    }
+    if (rtid==2 | rtid==10) { // ×/∧
+      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i32 c=1; for (usz i=0; i<ia; i++) if (__builtin_mul_overflow(c,xp[i],&c)) goto base; dec(x); return m_f64(c); }
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=1; for (usz i=0; i<ia; i++) if (__builtin_mul_overflow(c,xp[i],&c)) goto base; dec(x); return m_i32(c); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=1; for (usz i=0; i<ia; i++) if (__builtin_mul_overflow(c,xp[i],&c)) goto base; dec(x); return m_i32(c); }
+    }
+    if (rtid==6) { // ⌊
+      if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); i8  c = I8_MAX ; for (usz i = 0; i < ia; i++) if (xp[i]<c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c = I16_MAX; for (usz i = 0; i < ia; i++) if (xp[i]<c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c = I32_MAX; for (usz i = 0; i < ia; i++) if (xp[i]<c) c=xp[i]; dec(x); return m_i32(c); }
+    }
+    if (rtid==7) { // ⌈
+      if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); i8  c = I8_MAX ; for (usz i = 0; i < ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c = I16_MAX; for (usz i = 0; i < ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c = I32_MAX; for (usz i = 0; i < ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+    }
+    if (rtid==11) { // ∨
+      if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); bool q=0; for (usz i = 0; i < ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); bool q=0; for (usz i = 0; i < ia; i++) { i16 c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); bool q=0; for (usz i = 0; i < ia; i++) { i32 c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
+    }
   }
   base:;
   
