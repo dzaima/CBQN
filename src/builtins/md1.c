@@ -134,42 +134,30 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = a(x)->ia;
   B wf = getFillQ(w);
-  bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
-  usz i = 0;
-  if (xr==1 && q_i32(w) && TI(x,elType)==el_i32 && isFun(f) && v(f)->flags) {
+  u8 xe = TI(x,elType);
+  if (xr==1 && q_i32(w) && xe<el_f64 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
-    i32* xp = i32any_ptr(x);
     i32 wv = o2iu(w);
     if (rtid==0) { // +
-      i32* rp; B r = m_i32arrv(&rp, ia);
-      i64 c = wv;
-      for (usz i = 0; i < ia; i++) {
-        rp[i] = c+= xp[i];
-        if (c>I32_MAX) { dec(r); goto base; }
-      }
-      dec(x);
-      return r;
+      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=wv; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i16) { i16* xp=i16any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=wv; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=wv; for (usz i=0; i<ia; i++) { if(__builtin_add_overflow(c,xp[i],&c))goto base; rp[i]=c; } dec(x); return r; }
     }
     if (rtid==7) { // ⌈
-      i32* rp; B r = m_i32arrv(&rp, ia);
-      i32 c = wv;
-      for (usz i = 0; i < ia; i++) {
-        if (xp[i]>c) c = xp[i];
-        rp[i] = c;
-      }
-      dec(x);
-      return r;
+      if (xe==el_i8  && wv==(i8 )wv) { i8*  xp=i8any_ptr (x); i8*  rp; B r=m_i8arrv (&rp, ia); i8  c=wv; for (usz i=0; i<ia; i++) { if (xp[i]>c)c=xp[i]; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i16 && wv==(i16)wv) { i16* xp=i16any_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); i16 c=wv; for (usz i=0; i<ia; i++) { if (xp[i]>c)c=xp[i]; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i32 && wv==(i32)wv) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=wv; for (usz i=0; i<ia; i++) { if (xp[i]>c)c=xp[i]; rp[i]=c; } dec(x); return r; }
     }
     if (rtid==14) { // ≠
-      i32* rp; B r = m_i32arrv(&rp, ia);
-      i32 c = wv;
-      for (usz i = 0; i < ia; i++) rp[i] = c = c!=xp[i];
-      dec(x);
-      return r;
+      if (wv != (i8)wv) goto base;
+      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=wv; for (usz i=0; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i16) { i16* xp=i16any_ptr(x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=wv; for (usz i=0; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
+      if (xe==el_i32) { i32* xp=i32any_ptr(x); i8* rp; B r=m_i8arrv(&rp, ia); i8 c=wv; for (usz i=0; i<ia; i++) { c = c!=xp[i]; rp[i]=c; } dec(x); return r; }
     }
   }
   base:;
-  
+  bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
+  usz i = 0;
   HArr_p r = reuse? harr_parts(x) : m_harrs(a(x)->ia, &i);
   AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
   BBB2B fc2 = c2fn(f);
