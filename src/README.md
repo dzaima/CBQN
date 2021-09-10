@@ -215,8 +215,15 @@ B r = emptySVec(); // an empty string vector
 Retrieving data from arrays:
 ```C
 // generic methods:
-BS2B xget = TI(x,get); // and then (presumably in a loop) call xget(x,i) to get the i-th element of the ravel. This gives owned objects
-BS2B xgetU = TI(x,getU); // returns non-owned objects instead, useful if you're only gonna retrieve atoms or won't keep them around (e.g. only use in `equals` or `hash` or sth)
+SGet(x) // initializes the getter for fast reads; the argument must be a variable name
+B c = Get(x,n); // in a loop, reating the n-th item
+
+SGetU(x)
+B c = GetU(x,n); // alternatively, GetU can be used to not increment the result. Useful for temporary usage of the item
+
+B c = IGet(x,n); // skip the initialize/call separation; don't use in loops
+B c = IGetU(x,n);
+
 // for specific array types:
 if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x)
 if (TI(x,elType)==el_c32) u32* xp = c32any_ptr(x); // ↑
