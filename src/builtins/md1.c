@@ -232,9 +232,9 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=I32_MAX; for (usz i=0; i<ia; i++) if (xp[i]<c) c=xp[i]; dec(x); return m_i32(c); }
     }
     if (rtid==7) { // ⌈
-      if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); i8  c=I8_MAX ; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
-      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c=I16_MAX; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
-      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=I32_MAX; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); i8  c=I8_MIN ; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c=I16_MIN; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
+      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=I32_MIN; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
     }
     if (rtid==11) { // ∨
       if (xe==el_i8 ) { i8 * xp = i8any_ptr (x); bool q=0; for (usz i=0; i<ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
