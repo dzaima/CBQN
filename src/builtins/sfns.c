@@ -249,36 +249,32 @@ B select_c2(B t, B w, B x) {
   
   if (xr==1) {
     usz xia = a(x)->ia;
-    if (TI(w,elType)==el_i32) {
-      i32* wp = i32any_ptr(w);
-      #define BODY for (usz i = 0; i < wia; i++) { rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; } dec(w); dec(x); return r;
-      if      (TI(x,elType)==el_i8 ) { i8*  rp; B r = m_i8arrc (&rp, w); i8*  xp = i8any_ptr (x); BODY }
-      if      (TI(x,elType)==el_i16) { i16* rp; B r = m_i16arrc(&rp, w); i16* xp = i16any_ptr(x); BODY }
-      if      (TI(x,elType)==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); i32* xp = i32any_ptr(x); BODY }
-      else if (TI(x,elType)==el_c8 ) { u8*  rp; B r = m_c8arrc (&rp, w); u8*  xp = c8any_ptr (x); BODY }
-      else if (TI(x,elType)==el_c16) { u16* rp; B r = m_c16arrc(&rp, w); u16* xp = c16any_ptr(x); BODY }
-      else if (TI(x,elType)==el_c32) { u32* rp; B r = m_c32arrc(&rp, w); u32* xp = c32any_ptr(x); BODY }
-      else if (TI(x,elType)==el_f64) { f64* rp; B r = m_f64arrc(&rp, w); f64* xp = f64any_ptr(x); BODY }
-      #undef BODY
-      else if (v(x)->type==t_harr) {
-        usz i = 0;
-        B* xp = harr_ptr(x);
-        HArr_p r = m_harrs(wia, &i);
-        for (; i < wia; i++) r.a[i] = inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]);
-        dec(x); return harr_fcd(r, w);
-      } else {
-        usz i = 0;
-        HArr_p r = m_harrs(wia, &i);
-        for (; i < wia; i++) {
-          usz c = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia));
-          r.a[i] = Get(x, c);
-        }
-        dec(x);
-        return withFill(harr_fcd(r,w),xf);
-      }
-    } else {
-      usz i = 0;
-      HArr_p r = m_harrs(wia, &i);
+    #define CASE(T,E) if (TI(x,elType)==el_##T) { \
+      E* rp; B r = m_##T##arrc(&rp, w);  \
+      E* xp = T##any_ptr(x);             \
+      for (usz i = 0; i < wia; i++) {    \
+        rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; \
+      }                                  \
+      dec(w); dec(x); return r;          \
+    }
+    #define TYPE(W) { \
+      W* wp = W##any_ptr(w); \
+      CASE(i8,i8) CASE(i16,i16) CASE(i32,i32) \
+      CASE(c8,u8) CASE(c16,u16) CASE(c32,u32) CASE(f64,f64) \
+      usz i=0; HArr_p r = m_harrs(wia, &i); \
+      if (v(x)->type==t_harr || v(x)->type==t_hslice) { \
+        B* xp = hany_ptr(x); \
+        for (; i < wia; i++) r.a[i] = inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]); \
+        dec(x); return harr_fcd(r, w); \
+      } \
+      for (; i < wia; i++) r.a[i] = Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))); \
+      dec(x); return withFill(harr_fcd(r,w),xf); \
+    }
+    if (TI(w,elType)==el_i8) TYPE(i8)
+    else if (TI(w,elType)==el_i16) TYPE(i16)
+    else if (TI(w,elType)==el_i32) TYPE(i32)
+    else {
+      usz i=0; HArr_p r = m_harrs(wia, &i);
       SGetU(w)
       for (; i < wia; i++) {
         B cw = GetU(w, i);
@@ -289,6 +285,7 @@ B select_c2(B t, B w, B x) {
       dec(x);
       return withFill(harr_fcd(r,w),xf);
     }
+    #undef CASE
   } else {
     SGetU(w)
     ur wr = rnk(w);
