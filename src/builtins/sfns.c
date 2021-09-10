@@ -397,73 +397,56 @@ B slash_c2(B t, B w, B x) {
     B xf = getFillQ(x);
     
     usz ri = 0;
-    if (TI(w,elType)==el_i32) {
-      i32* wp = i32any_ptr(w);
-      while (wia>0 && !wp[wia-1]) wia--;
-      
-      i64 wsum = 0;
-      u32 or = 0;
-      for (usz i = 0; i < wia; i++) {
-        wsum+= wp[i];
-        or|= (u32)wp[i];
-      }
-      if (or>>31) thrM("/: 𝕨 must consist of natural numbers");
-      
-      if (TI(x,elType)==el_i32) {
-        i32* xp = i32any_ptr(x);
-        i32* rp; B r = m_i32arrv(&rp, wsum);
-        if (or<2) {
-          for (usz i = 0; i < wia; i++) {
-            *rp = xp[i];
-            rp+= wp[i];
-          }
-        } else {
-          for (usz i = 0; i < wia; i++) {
-            i32 cw = wp[i];
-            i32 cx = xp[i];
-            for (i64 j = 0; j < cw; j++) *rp++ = cx;
-          }
-        }
-        dec(w); dec(x);
-        return r;
-      } else if (TI(x,elType)==el_f64) {
-        f64* xp = f64any_ptr(x);
-        f64* rp; B r = m_f64arrv(&rp, wsum);
-        for (usz i = 0; i < wia; i++) {
-          i32 cw = wp[i];
-          f64 cx = xp[i];
-          for (i64 j = 0; j < cw; j++) *rp++ = cx;
-        }
-        dec(w); dec(x);
-        return r;
-      } else {
-        HArr_p r = m_harrs(wsum, &ri);
-        SGetU(x)
-        for (usz i = 0; i < wia; i++) {
-          i32 cw = wp[i];
-          if (cw==0) continue;
-          B cx = incBy(GetU(x, i), cw);
-          for (i64 j = 0; j < cw; j++) r.a[ri++] = cx;
-        }
-        dec(w); dec(x);
-        return withFill(harr_fv(r), xf);
-      }
-    } else {
-      i64 ria = isum(w);
-      if (ria>USZ_MAX) thrOOM();
-      HArr_p r = m_harrs(ria, &ri);
-      SGetU(w)
-      SGetU(x)
-      for (usz i = 0; i < wia; i++) {
-        usz c = o2s(GetU(w, i));
-        if (c) {
-          B cx = incBy(GetU(x, i), c);
-          for (usz j = 0; RARE(j < c); j++) r.a[ri++] = cx;
-        }
-      }
-      dec(w); dec(x);
-      return withFill(harr_fv(r), xf);
+    #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
+      XT* xp = XT##any_ptr(x);                       \
+      XT* rp; B r = m_##XT##arrv(&rp, wsum);         \
+      if (or<2) for (usz i = 0; i < wia; i++) {      \
+        *rp = xp[i];                                 \
+        rp+= wp[i];                                  \
+      } else for (usz i = 0; i < wia; i++) {         \
+        WT cw = wp[i]; XT cx = xp[i];                \
+        for (i64 j = 0; j < cw; j++) *rp++ = cx;     \
+      }                                              \
+      dec(w); dec(x); return r;                      \
     }
+    #define TYPED(WT,SIGN) { \
+      WT* wp = WT##any_ptr(w);           \
+      while (wia>0 && !wp[wia-1]) wia--; \
+      i64 wsum = 0;                      \
+      u32 or = 0;                        \
+      for (usz i = 0; i < wia; i++) {    \
+        wsum+= wp[i];                    \
+        or|= (u32)wp[i];                 \
+      }                                  \
+      if (or>>SIGN) thrM("/: 𝕨 must consist of natural numbers"); \
+      CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
+      HArr_p r = m_harrs(wsum, &ri); SGetU(x)        \
+      for (usz i = 0; i < wia; i++) {                \
+        i32 cw = wp[i]; if (cw==0) continue;         \
+        B cx = incBy(GetU(x, i), cw);                \
+        for (i64 j = 0; j < cw; j++) r.a[ri++] = cx; \
+      }                                              \
+      dec(w); dec(x);                                \
+      return withFill(harr_fv(r), xf);               \
+    }
+    if (TI(w,elType)==el_i8 ) TYPED(i8,7);
+    if (TI(w,elType)==el_i32) TYPED(i32,31);
+    #undef TYPED
+    #undef CASE
+    i64 ria = isum(w);
+    if (ria>USZ_MAX) thrOOM();
+    HArr_p r = m_harrs(ria, &ri);
+    SGetU(w)
+    SGetU(x)
+    for (usz i = 0; i < wia; i++) {
+      usz c = o2s(GetU(w, i));
+      if (c) {
+        B cx = incBy(GetU(x, i), c);
+        for (usz j = 0; RARE(j < c); j++) r.a[ri++] = cx;
+      }
+    }
+    dec(w); dec(x);
+    return withFill(harr_fv(r), xf);
   }
   if (isArr(x) && rnk(x)==1 && q_i32(w)) {
     usz xia = a(x)->ia;
