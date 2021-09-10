@@ -53,7 +53,7 @@
   #define PF(N) f64* N##p = f64any_ptr(N);
   #define PI8(N)  i8*  N##p = i8any_ptr (N);
   #define PI16(N) i16* N##p = i16any_ptr(N);
-  #define PI(N) i32* N##p = i32any_ptr(N);
+  #define PI32(N) i32* N##p = i32any_ptr(N);
   #define RI8(A)  i8*  rp; B r=m_i8arrc (&rp, A);
   #define RI16(A) i16* rp; B r=m_i16arrc(&rp, A);
   #define RI32(A) i32* rp; B r=m_i32arrc(&rp, A);
@@ -100,31 +100,33 @@
         u8 xe = TI(x,elType);                                        \
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
-          if (wei&xei) { PI(w) PI(x) DOI32(EXPR,w,wp[i],xp[i],aaB); }\
+          if (wei&xei) {PI32(w)PI32(x)DOI32(EXPR,w,wp[i],xp[i],aaB);}\
           aaB:; RF(x)                                                \
-          if (wei) { PI(w)                                           \
-            if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
-            else     { PF(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+          if (wei) { PI32(w)                                         \
+            if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
+            else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
           } else { PF(w)                                             \
-            if (xei) { PI(x) DOF(EXPR,w,wp[i],xp[i]) }               \
-            else     { PF(x) DOF(EXPR,w,wp[i],xp[i]) }               \
+            if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
+            else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
           }                                                          \
           dec(w); dec(x); return num_squeeze(r);                     \
         }                                                            \
         if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base); } \
         if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
+        if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base); } \
+        if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base); } \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);          \
         if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],na8B ) } na8B :; \
         if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],na16B) } na16B:; \
-        if (xe==el_i32 && q_i32(w)) { PI  (x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],na32B) } na32B:; \
-        if (xe==el_i32) { RF(x) PI(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }         \
-        if (xe==el_f64) { RF(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }         \
+        if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],na32B) } na32B:; \
+        if (xe==el_i32) { RF(x) PI32(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }       \
+        if (xe==el_f64) { RF(x) PF  (x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }       \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                       \
         if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,an8B ) } an8B :; \
         if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,an16B) } an16B:; \
-        if (we==el_i32 && q_i32(x)) { PI  (w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,an32B) } an32B:; \
-        if (we==el_i32) { RF(w) PI(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }         \
-        if (we==el_f64) { RF(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }         \
+        if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,an32B) } an32B:; \
+        if (we==el_i32) { RF(w) PI32(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }       \
+        if (we==el_f64) { RF(w) PF  (w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }       \
       }                                                              \
       base: P2(NAME)                                                 \
     }                                                                \
