@@ -168,7 +168,7 @@ B result = taga(r);
 // see stuff.h for m_shArr/arr_shSetI/arr_shSetU for ways to batch-assign a single shape object to multiple objects
 
 u32* rp; B r = m_c32arrv(%rp, 10); // 10-char string
-// etc for m_(c32|f64|i32)arr[vcp]
+// etc for m_(i8|i16|i32|c8|c16|c32|f64)arr[vcp]
 
 usz ri=0; HArr_p r = m_harrs(123, &ri); // allocate 123-item arbitrary type array
 // write items with r.a[ri++] or equivalent. Whenever GC could happen, ri must point to after the end of the currently set items
