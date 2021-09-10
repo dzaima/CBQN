@@ -25,25 +25,25 @@ static DIR* dir_open(B path) { // doesn't consume
   return f;
 }
 
-TmpFile* file_bytes(B path) { // consumes
+I8Arr* file_bytes(B path) { // consumes
   FILE* f = file_open(path, "read", "r");
   fseek(f, 0, SEEK_END);
   u64 len = ftell(f);
   fseek(f, 0, SEEK_SET);
-  TmpFile* src = m_arr(fsizeof(TmpFile,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src);
+  I8Arr* src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src);
   if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
   dec(path);
   fclose(f);
   return src;
 }
 B file_chars(B path) { // consumes
-  TmpFile* c = file_bytes(path);
+  I8Arr* c = file_bytes(path);
   B r = fromUTF8((char*)c->a, c->ia);
   ptr_dec(c);
   return r;
 }
 B file_lines(B path) { // consumes
-  TmpFile* tf = file_bytes(path);
+  I8Arr* tf = file_bytes(path);
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   usz lineCount = 0;
   for (usz i = 0; i < ia; i++) {

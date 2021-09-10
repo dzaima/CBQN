@@ -500,9 +500,9 @@ B fchars_c2(B d, B w, B x) {
 }
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
-  TmpFile* tf = file_bytes(path_resolve(nfn_objU(d), x));
+  I8Arr* tf = file_bytes(path_resolve(nfn_objU(d), x));
   usz ia = tf->ia; u8* p = (u8*)tf->a;
-  u32* rp; B r = m_c32arrv(&rp, ia);
+  u8* rp; B r = m_c8arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
   ptr_dec(tf);
   return r;

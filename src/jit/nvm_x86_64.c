@@ -197,13 +197,13 @@ static void* nvm_alloc(u64 sz) {
   // void* r = mmap(NULL, sz, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON|MAP_32BIT, -1, 0);
   // if (r==MAP_FAILED) thrM("JIT: Failed to allocate executable memory");
   // return r;
-  TmpFile* src = mmX_allocN(fsizeof(TmpFile,a,u8,sz), t_i8arr);
+  I8Arr* src = mmX_allocN(fsizeof(I8Arr,a,u8,sz), t_i8arr);
   src->ia = sz;
   arr_shVec((Arr*)src);
   return src->a;
 }
 void nvm_free(u8* ptr) {
-  if (!USE_PERF) mmX_free((Value*)RFLD(ptr, TmpFile, a));
+  if (!USE_PERF) mmX_free((Value*)RFLD(ptr, I8Arr, a));
 }
 
 
