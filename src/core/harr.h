@@ -85,11 +85,11 @@ static B m_hunit(B x) {
   return r.b;
 }
 
-
-
 static B* harr_ptr(B x) { VTY(x,t_harr); return c(HArr,x)->a; }
 static B* hany_ptr(B x) { return v(x)->type==t_hslice? c(HSlice,x)->a : harr_ptr(x); }
-HArr* toHArr(B x);
+
+HArr* cpyHArr(B x);
+static HArr* toHArr(B x) { return v(x)->type==t_harr? c(HArr,x) : cpyHArr(x); }
 B m_caB(usz ia, B* a);
 
 // consumes all

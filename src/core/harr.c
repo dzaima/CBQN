@@ -61,13 +61,22 @@ B toKCells(B x, ur k) {
   return r.b;
 }
 
-
-HArr* toHArr(B x) {
-  if (v(x)->type==t_harr) return c(HArr,x);
+HArr* cpyHArr(B x) {
+  usz ia = a(x)->ia;
   HArr_p r = m_harrUc(x);
-  usz ia = r.c->ia;
-  SGet(x)
-  for (usz i = 0; i < ia; i++) r.a[i] = Get(x,i);
+  u8 xe = TI(x,elType);
+  if      (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
+  else if (xe==el_i16) { i16* xp = i16any_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
+  else if (xe==el_i32) { i32* xp = i32any_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
+  else if (xe==el_f64) { f64* xp = f64any_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
+  else if (xe==el_c8 ) { u8*  xp = c8any_ptr (x); for(usz i=0; i<ia; i++) r.a[i]=m_c32(xp[i]); }
+  else if (xe==el_c16) { u16* xp = c16any_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_c32(xp[i]); }
+  else if (xe==el_c32) { u32* xp = c32any_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_c32(xp[i]); }
+  else {
+    B* xp = arr_bptr(x);
+    if (xp!=NULL) { for (usz i=0; i<ia; i++) r.a[i] = inc(xp[i]); }
+    else { SGet(x)  for (usz i=0; i<ia; i++) r.a[i] = Get(x, i);  }
+  }
   dec(x);
   return r.c;
 }

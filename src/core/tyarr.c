@@ -35,6 +35,53 @@ NOINLINE B m_str32(u32* s) {
   return r;
 }
 
+#define MAKE_ICPY(T,E) T##Arr* cpy##T##Arr(B x) { \
+  usz ia = a(x)->ia;     \
+  E* rp; Arr* r = m_##E##arrp(&rp, ia); \
+  arr_shCopy(r, x);      \
+  u8 xe = TI(x,elType);  \
+  if      (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else if (xe==el_i16) { i16* xp = i16any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else if (xe==el_i32) { i32* xp = i32any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else if (xe==el_f64) { f64* xp = f64any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else {                 \
+    B* xp = arr_bptr(x); \
+    if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2fu(xp[i]    ); } \
+    else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2fu(GetU(x,i)); } \
+  }                      \
+  dec(x);                \
+  return (T##Arr*)r;     \
+}
+
+MAKE_ICPY(I8, i8)
+MAKE_ICPY(I16, i16)
+MAKE_ICPY(I32, i32)
+MAKE_ICPY(F64, f64)
+#undef MAKE_ICPY
+
+#define MAKE_CCPY(T,E)     \
+T##Arr* cpy##T##Arr(B x) { \
+  usz ia = a(x)->ia;       \
+  T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia); \
+  arr_shCopy(r, x);        \
+  u8 xe = TI(x,elType);    \
+  if      (xe==el_c8 ) { u8*  xp = c8any_ptr (x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else if (xe==el_c16) { u16* xp = c16any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else if (xe==el_c32) { u32* xp = c32any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
+  else {                   \
+    B* xp = arr_bptr(x);   \
+    if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2cu(xp[i]    ); } \
+    else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2cu(GetU(x,i)); } \
+  }                        \
+  dec(x);                  \
+  return (T##Arr*)r;       \
+}
+
+MAKE_CCPY(C8, c8)
+MAKE_CCPY(C16, c16)
+MAKE_CCPY(C32, c32)
+#undef MAKE_CCPY
+
 void tyarr_init() {
   i8arr_init(); i16arr_init(); i32arr_init();
   c8arr_init(); c16arr_init(); c32arr_init(); f64arr_init();

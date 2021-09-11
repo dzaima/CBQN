@@ -200,7 +200,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
           AFMT("%f", o2f(b));
         } else { assert(isArr(b) && rnk(b)==1);
           if (TI(b,elType)==el_c32) AJOIN(inc(b));
-          else AJOIN(taga(toC32Arr(inc(b))));
+          else AJOIN(chr_squeeze(inc(b)));
         }
         break;
       }
@@ -654,11 +654,14 @@ NOINLINE void printAllocStats() {
 }
 
 #ifdef DEBUG
+  #ifdef OBJ_COUNTER
+    #define PRINT_ID(X) printf("Object ID: "N64u"\n", (X)->uid)
+  #else
+    #define PRINT_ID(X)
+  #endif
   NOINLINE Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
-      #ifdef OBJ_COUNTER
-      printf("Object ID: "N64u"\n", x->uid);
-      #endif
+      PRINT_ID(x);
       printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
       print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
       err("");
@@ -675,6 +678,7 @@ NOINLINE void printAllocStats() {
     VALIDATEP(v(x));
     if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
       printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
+      PRINT_ID(v(x));
       print(x);
       err("\nk");
     }
