@@ -231,13 +231,13 @@ static B unshare(B x) {
   if (!isArr(x)) return x;
   usz xia = a(x)->ia;
   switch (v(x)->type) {
-    case t_i8arr:  { i8 * rp; B r = m_i8arrc (&rp, x); memcpy(rp, i8arr_ptr (x), xia*1); return r; }
-    case t_i16arr: { i16* rp; B r = m_i16arrc(&rp, x); memcpy(rp, i16arr_ptr(x), xia*2); return r; }
-    case t_i32arr: { i32* rp; B r = m_i32arrc(&rp, x); memcpy(rp, i32arr_ptr(x), xia*4); return r; }
-    case t_c8arr:  { u8 * rp; B r = m_c8arrc (&rp, x); memcpy(rp, c8arr_ptr (x), xia*1); return r; }
-    case t_c16arr: { u16* rp; B r = m_c16arrc(&rp, x); memcpy(rp, c16arr_ptr(x), xia*2); return r; }
-    case t_c32arr: { u32* rp; B r = m_c32arrc(&rp, x); memcpy(rp, c32arr_ptr(x), xia*4); return r; }
-    case t_f64arr: { f64* rp; B r = m_f64arrc(&rp, x); memcpy(rp, f64arr_ptr(x), xia*8); return r; }
+    case t_i8arr:  return taga(cpyI8Arr (inc(x)));
+    case t_i16arr: return taga(cpyI16Arr(inc(x)));
+    case t_i32arr: return taga(cpyI32Arr(inc(x)));
+    case t_c8arr:  return taga(cpyC8Arr (inc(x)));
+    case t_c16arr: return taga(cpyC16Arr(inc(x)));
+    case t_c32arr: return taga(cpyC32Arr(inc(x)));
+    case t_f64arr: return taga(cpyF64Arr(inc(x)));
     case t_harr: {
       HArr_p r = m_harrUc(x);
       B* xp = harr_ptr(x);

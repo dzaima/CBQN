@@ -493,37 +493,41 @@ B num_squeeze(B x) {
       if (c!=cf) return x; // already f64
       or|= c<0?-c:c;
     }
-    if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i8 )xp[i]; dec(x); return r; }
-    else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i16)xp[i]; dec(x); return r; }
-    else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=(i32)xp[i]; dec(x); return r; }
+    goto r_or;
   }
   
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
     for (; i < ia; i++) {
-      if (!q_i32(xp[i])) goto n_i32_1;
+      if (RARE(!q_i32(xp[i]))) {
+        while (i<ia) if (!isF64(xp[i++])) return x;
+        goto r_f64;
+      }
       i32 c = o2iu(xp[i]);
       or|= c<0?-c:c;
     }
-    if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
-    else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
-    else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(xp[i]); dec(x); return r; }
-    n_i32_1: while (i<ia) if (!isF64(xp[i++])) return x;
-    f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(xp[i]); dec(x); return r;
+    goto r_or;
   }
   
   SGetU(x)
   for (; i < ia; i++) {
     B cr = GetU(x,i);
-    if (!q_i32(cr)) goto n_i32_2;
+    if (RARE(!q_i32(cr))) {
+      while (i<ia) if (!isF64(GetU(x,i++))) return x;
+      goto r_f64;
+    }
     i32 c = o2iu(cr);
     or|= c<0?-c:c;
   }
-  if      (or<=I8_MAX ) { i8*  rp; B r = m_i8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
-  else if (or<=I16_MAX) { i16* rp; B r = m_i16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
-  else                  { i32* rp; B r = m_i32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2iu(GetU(x,i)); dec(x); return r; }
-  n_i32_2: while (i<ia) if (!isF64(GetU(x,i++))) return x;
-  f64* rp; B r = m_f64arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2fu(GetU(x,i)); dec(x); return r;
+  r_or:
+  if      (or<=I8_MAX ) goto r_i8;
+  else if (or<=I16_MAX) goto r_i16;
+  else                  goto r_i32;
+  
+  r_i8 : return toI8Any(x);
+  r_i16: return toI16Any(x);
+  r_i32: return toI32Any(x);
+  r_f64: return toF64Any(x);
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -539,19 +543,17 @@ B chr_squeeze(B x) {
       if (!isC32(xp[i])) return x;
       or|= o2cu(xp[i]);
     }
-    if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
-    else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
-    else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(xp[i]); dec(x); return r; }
+  } else {
+    SGetU(x)
+    for (; i < ia; i++) {
+      B cr = GetU(x,i);
+      if (!isC32(cr)) return x;
+      or|= o2cu(cr);
+    }
   }
-  SGetU(x)
-  for (; i < ia; i++) {
-    B cr = GetU(x,i);
-    if (!isC32(cr)) return x;
-    or|= o2cu(cr);
-  }
-  if      (or<=U8_MAX ) { u8*  rp; B r = m_c8arrc (&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
-  else if (or<=U16_MAX) { u16* rp; B r = m_c16arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
-  else                  { u32* rp; B r = m_c32arrc(&rp, x); for (usz i=0;i<ia;i++) rp[i]=o2cu(GetU(x,i)); dec(x); return r; }
+  if      (or<=U8_MAX ) return toC8Any(x);
+  else if (or<=U16_MAX) return toC16Any(x);
+  else                  return toC32Any(x);
 }
 
 B any_squeeze(B x) {
