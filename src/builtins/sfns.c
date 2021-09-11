@@ -994,25 +994,54 @@ B select_ucw(B t, B o, B w, B x) {
     #define EQ(F)
     #define FREE_CHECK
   #endif
-  if (TI(w,elType)==el_i32) {
+  
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  u8 re = TI(rep,elType);
+  
+  if (we==el_i32) {
     i32* wp = i32any_ptr(w);
-    if (reusable(x) && TI(x,elType)==TI(rep,elType)) {
-      if (v(x)->type==t_i32arr) {
-        i32* xp = i32arr_ptr(x);
-        i32* rp = i32any_ptr(rep);
+    if (re<el_f64 && xe<el_f64) {
+      u8 me = xe>re?xe:re;
+      bool re = reusable(x);
+      if (me==el_i32) {
+        I32Arr* xn = re? toI32Arr(x) : cpyI32Arr(x);
+        rep = toI32Any(rep); i32* rp = i32any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia; // already checked
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia; // we're free to assume w is valid
           i32 cr = rp[i];
-          EQ(cr!=xp[cw]);
-          xp[cw] = cr;
+          EQ(cr != xn->a[cw]);
+          xn->a[cw] = cr;
         }
-        dec(w); dec(rep); FREE_CHECK;
-        return x;
-      } else if (v(x)->type==t_harr) {
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else if (me==el_i16) {
+        I16Arr* xn = re? toI16Arr(x) : cpyI16Arr(x);
+        rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
+          i16 cr = rp[i];
+          EQ(cr != xn->a[cw]);
+          xn->a[cw] = cr;
+        }
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else if (me==el_i8) {
+        I8Arr* xn = re? toI8Arr(x) : cpyI8Arr(x);
+        rep = toI8Any(rep); i8* rp = i8any_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
+          i8 cr = rp[i];
+          EQ(cr != xn->a[cw]);
+          xn->a[cw] = cr;
+        }
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else UD;
+    }
+    if (reusable(x) && xe==re) {
+      if (v(x)->type==t_harr) {
         B* xp = harr_ptr(x);
         SGet(rep)
         for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
           B cr = Get(rep, i);
           EQ(!equal(cr,xp[cw]));
           dec(xp[cw]);
@@ -1022,11 +1051,11 @@ B select_ucw(B t, B o, B w, B x) {
         return x;
       }
     }
-    MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
+    MAKE_MUT(r, xia); mut_init(r, el_or(xe, re));
     mut_copyG(r, 0, x, 0, xia);
     SGet(rep)
     for (usz i = 0; i < wia; i++) {
-      i64 cw = wp[i]; if (cw<0) cw+= (i64)xia;
+      i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
       B cr = Get(rep, i);
       EQ(!equal(mut_getU(r, cw), cr));
       mut_rm(r, cw);
@@ -1035,11 +1064,11 @@ B select_ucw(B t, B o, B w, B x) {
     dec(w); dec(rep); FREE_CHECK;
     return mut_fcd(r, x);
   }
-  MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
+  MAKE_MUT(r, xia); mut_init(r, el_or(xe, re));
   mut_copyG(r, 0, x, 0, xia);
   SGet(rep)
   for (usz i = 0; i < wia; i++) {
-    i64 cw = o2i64u(GetU(w, i)); if (cw<0) cw+= (i64)xia;
+    i64 cw = o2i64u(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
     B cr = Get(rep, i);
     EQ(!equal(mut_getU(r, cw), cr));
     mut_rm(r, cw);
