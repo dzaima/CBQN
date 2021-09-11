@@ -29,14 +29,20 @@ B fromUTF8(char* s, i64 len) {
     }
     i8 l = utf8lenb((u8)s[j]);
     if (l==-1) thrM("Invalid UTF-8");
+    // TODO validate unicode or something
     sz++;
     j+= l;
   }
-  u32* rp; B r = m_c32arrv(&rp, sz);
-  u64 p = 0;
-  // TODO verify
-  for (i64 i = 0; i < len; i+= utf8lenb((u8)s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh
-  return r;
+  if (sz==len) {
+    u8* rp; B r = m_c8arrv(&rp, sz);
+    for (i64 i = 0; i < len; i++) rp[i] = s[i];
+    return r;
+  } else {
+    u32* rp; B r = m_c32arrv(&rp, sz);
+    u64 p = 0;
+    for (i64 i = 0; i < len; i+= utf8lenb((u8)s[i])) rp[p++] = utf8_p((u8*)s+i); // may read after end, eh
+    return r;
+  }
 }
 
 B fromUTF8l(char* s) {
