@@ -770,7 +770,14 @@ B group_c2(B t, B w, B x) {
       
       Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0)); arr_shVec(rf);
       fillarr_setFill(r, taga(rf));
-      if (TI(x,elType)==el_i32) {
+      if (TI(x,elType)==el_i8) {
+        for (usz i = 0; i < ria; i++) { i8* t; rp[i] = m_i8arrv(&t, len[i]); }
+        i8* xp = i8any_ptr(x);
+        for (usz i = 0; i < xia; i++) {
+          i32 n = wp[i];
+          if (n>=0) i8arr_ptr(rp[n])[pos[n]++] = xp[i];
+        }
+      } else if (TI(x,elType)==el_i32) {
         for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < xia; i++) {
