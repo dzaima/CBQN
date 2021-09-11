@@ -162,7 +162,6 @@ B variation_c2(B t, B w, B x) {
   usz xia = a(x)->ia;
   u8 xe = TI(x,elType);
   SGet(x)
-  SGetU(x)
   C8Arr* wc = toC8Arr(w);
   u8* wp = wc->a;
   u8* wpE = wp+wc->ia;
@@ -171,26 +170,15 @@ B variation_c2(B t, B w, B x) {
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
     wp++;
-    #define CPT(I) do { I; for (usz i = 0; i < xia; i++) tp[i] = xp[i]; } while(0)
-    #define CPF(F) for (usz i = 0; i < xia; i++) tp[i] = F(GetU(x,i))
-    if      (u8_get(&wp, wpE, "i8" )) { i8*  tp; res = m_i8arrc (&tp, x); if (xe==el_i8 ) CPT(i8*  xp=i8any_ptr (x)); else CPF(o2i); }
-    else if (u8_get(&wp, wpE, "i16")) { i16* tp; res = m_i16arrc(&tp, x); if (xe==el_i16) CPT(i16* xp=i16any_ptr(x)); else CPF(o2i); }
-    else if (u8_get(&wp, wpE, "i32")) { i32* tp; res = m_i32arrc(&tp, x); if (xe==el_i32) CPT(i32* xp=i32any_ptr(x)); else CPF(o2i); }
-    else if (u8_get(&wp, wpE, "c8" )) { u8*  tp; res = m_c8arrc (&tp, x); if (xe==el_c8 ) CPT(u8*  xp=c8any_ptr (x)); else CPF(o2c); }
-    else if (u8_get(&wp, wpE, "c16")) { u16* tp; res = m_c16arrc(&tp, x); if (xe==el_c16) CPT(u16* xp=c16any_ptr(x)); else CPF(o2c); }
-    else if (u8_get(&wp, wpE, "c32")) { u32* tp; res = m_c32arrc(&tp, x); if (xe==el_c32) CPT(u32* xp=c32any_ptr(x)); else CPF(o2c); }
-    else if (u8_get(&wp, wpE, "f64")) {
-      f64* tp; res = m_f64arrc(&tp, x);
-      if      (xe==el_i32) CPT(i32* xp=i32any_ptr(x));
-      else if (xe==el_f64) CPT(f64* xp=f64any_ptr(x));
-      else for (usz i = 0; i < xia; i++) tp[i] = o2f(GetU(x,i));
-    } else if (u8_get(&wp, wpE, "h")) {
-      HArr_p t = m_harrUc(x);
-      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
-      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) t.a[i] = m_f64(xp[i]); }
-      else for (usz i = 0; i < xia; i++) t.a[i] = Get(x,i);
-      res = t.b;
-    } else if (u8_get(&wp, wpE, "f")) {
+    if      (u8_get(&wp, wpE, "i8" )) res = taga(cpyI8Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "i16")) res = taga(cpyI16Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "i32")) res = taga(cpyI32Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "c8" )) res = taga(cpyC8Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "c16")) res = taga(cpyC16Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "c32")) res = taga(cpyC32Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "f64")) res = taga(cpyF64Arr(inc(x)));
+    else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr(inc(x)));
+    else if (u8_get(&wp, wpE, "f")) {
       Arr* t = m_fillarrp(xia);
       res = taga(t);
       fillarr_setFill(t, getFillQ(x));
