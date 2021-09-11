@@ -634,26 +634,24 @@ B join_c2(B t, B w, B x) {
 
 
 B couple_c1(B t, B x) {
-  if (isArr(x)) {
-    usz rr = rnk(x);
-    usz ia = a(x)->ia;
-    Arr* r = TI(x,slice)(inc(x),0, ia);
-    usz* sh = arr_shAlloc(r, rr+1);
-    if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
-    dec(x);
-    return taga(r);
-  }
-  if (q_i32(x)) { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = o2iu(x); return r; }
-  if (isF64(x)) { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = o2fu(x); return r; }
-  if (isC32(x)) { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = o2cu(x); return r; }
-  HArr_p r = m_harrUv(1);
-  r.a[0] = x;
-  return r.b;
+  if (isAtm(x)) return unitV1(x);
+  usz rr = rnk(x);
+  usz ia = a(x)->ia;
+  Arr* r = TI(x,slice)(inc(x),0, ia);
+  usz* sh = arr_shAlloc(r, rr+1);
+  if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
+  dec(x);
+  return taga(r);
 }
 B couple_c2(B t, B w, B x) {
   if (isAtm(w)&isAtm(x)) {
-    if (q_i32(x)&q_i32(w)) { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
-    if (isF64(x)&isF64(w)) { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
+    if (LIKELY(isNum(w)&isNum(x))) {
+      i32 wi=w.f; i32 xi=x.f;
+      if (RARE(wi!=w.f | xi!=x.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
+      else if (wi==(i8 )wi & xi==(i8 )xi) { i8*  rp; B r = m_i8arrv (&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
+      else if (wi==(i16)wi & xi==(i16)xi) { i16* rp; B r = m_i16arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
+      else                                { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
+    }
     if (isC32(x)&isC32(w)) { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=o2cu(w); rp[1]=o2cu(x); return r; }
   }
   if (isAtm(w)) w = m_atomUnit(w);

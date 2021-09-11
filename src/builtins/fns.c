@@ -96,24 +96,20 @@ B rtack_c1(B t,      B x) {         return x; }
 B rtack_c2(B t, B w, B x) { dec(w); return x; }
 
 B fne_c1(B t, B x) {
-  if (isArr(x)) {
-    ur xr = rnk(x);
-    usz* sh = a(x)->sh;
-    for (i32 i = 0; i < xr; i++) if (sh[i]>I32_MAX) {
-      f64* rp; B r = m_f64arrv(&rp, xr);
-      for (i32 j = 0; j < xr; j++) rp[j] = sh[j];
-      dec(x);
-      return r;
-    }
-    i32* rp;
-    B r = m_i32arrv(&rp, xr);
-    for (i32 i = 0; i < xr; i++) rp[i] = sh[i];
-    dec(x);
-    return r;
-  } else {
+  if (isAtm(x)) {
     dec(x);
     return emptyIVec();
   }
+  ur xr = rnk(x);
+  usz* sh = a(x)->sh;
+  usz or = 0;
+  for (i32 i = 0; i < xr; i++) or|= sh[i];
+  B r;
+  if      (or<=I8_MAX ) { i8*  rp; r = m_i8arrv (&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else if (or<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else                  { f64* rp; r = m_f64arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  dec(x); return r;
 }
 B feq_c1(B t, B x) {
   u64 r = depth(x);
@@ -251,7 +247,7 @@ B memberOf_c1(B t, B x) {
   if (rnk(x)!=1) x = toCells(x);
   usz xia = a(x)->ia;
   
-  i32* rp; B r = m_i32arrv(&rp, xia);
+  i8* rp; B r = m_i8arrv(&rp, xia);
   H_Sb* set = m_Sb(64);
   SGetU(x)
   for (usz i = 0; i < xia; i++) rp[i] = !ins_Sb(&set, GetU(x,i));
@@ -268,7 +264,7 @@ B memberOf_c2(B t, B w, B x) {
   SGetU(x)
   SGetU(w)
   for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
-  i32* rp; B r = m_i32arrv(&rp, wia);
+  i8* rp; B r = m_i8arrv(&rp, wia);
   for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, GetU(w,i));
   free_Sb(set); dec(w);dec(x);
   return r;
