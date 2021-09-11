@@ -402,12 +402,12 @@ B rand_subset_c2(B t, B w, B x) {
 
 static NOINLINE void rand_init() {
   rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0⋄deal⇐0⋄subset⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
-  rand_rangeName  = m_str32(U"range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str32(U"(rand).Range"), rand_range_c1, rand_range_c2);
-  rand_dealName   = m_str32(U"deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str32(U"(rand).Deal"),   rand_deal_c1, rand_deal_c2);
-  rand_subsetName = m_str32(U"subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str32(U"(rand).Subset"),       c1_bad, rand_subset_c2);
+  rand_rangeName  = m_str8l("range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str8l("(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_dealName   = m_str8l("deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str8l("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
+  rand_subsetName = m_str8l("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str8l("(rand).Subset"),       c1_bad, rand_subset_c2);
   B tmp = c2(rand_ns, m_f64(0), m_f64(0));
-  rand_a = ns_pos(tmp, m_str32(U"a"));
-  rand_b = ns_pos(tmp, m_str32(U"b"));
+  rand_a = ns_pos(tmp, m_str8l("a"));
+  rand_b = ns_pos(tmp, m_str8l("b"));
   dec(tmp);
 }
 B makeRand_c1(B t, B x) {
@@ -435,12 +435,12 @@ extern B replPath; // defined in main.c
 static NFnDesc* reBQNDesc;
 B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
-  B replStr = m_str32(U"repl");
+  B replStr = m_str8l("repl");
   B repl = ns_getNU(x, replStr, false); dec(replStr);
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
   dec(x);
-  Block* initBlock = bqn_comp(m_str32(U"\"(REPL initializer)\""), inc(replPath), m_f64(0));
+  Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(replPath), m_f64(0));
   B scVal;
   if (replVal==0) {
     scVal = bi_N;
@@ -726,12 +726,12 @@ B sys_c1(B t, B x) {
 }
 
 void sysfn_init() {
-  fCharsDesc = registerNFn(m_str32(U"(file).Chars"), fchars_c1, fchars_c2);
-  fileAtDesc = registerNFn(m_str32(U"(file).At"), fileAt_c1, c2_bad);
-  fLinesDesc = registerNFn(m_str32(U"(file).Lines"), flines_c1, flines_c2);
-  fBytesDesc = registerNFn(m_str32(U"(file).Bytes"), fbytes_c1, fbytes_c2);
+  fCharsDesc = registerNFn(m_str8l("(file).Chars"), fchars_c1, fchars_c2);
+  fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, c2_bad);
+  fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);
+  fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
-  reBQNDesc = registerNFn(m_str32(U"(REPL)"), repl_c1, repl_c2);
+  reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
   listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_bad);
 }
 void sysfnPost_init() {

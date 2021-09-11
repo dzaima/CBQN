@@ -114,7 +114,7 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
 #include "gen/src"
 #if RT_SRC
 Block* load_compImport(B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_str32(U"(precompiled)"), NULL);
+  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_str8l("(precompiled)"), NULL);
 }
 #else
 Block* load_compImport(B bc, B objs, B blocks, B bodies) { // consumes all
