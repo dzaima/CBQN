@@ -861,14 +861,17 @@ B reverse_c1(B t, B x) {
   B xf = getFillQ(x);
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
-  if (rnk(x)==1) {
-    if (xe==el_i32) {
-      i32* xp = i32any_ptr(x);
-      i32* rp; B r = m_i32arrv(&rp, xia);
-      for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1];
-      dec(x);
-      return r;
-    }
+  if (rnk(x)==1 && xe<el_B) {
+    B r; if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8 * rp; r = m_i8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_c8 ) { u8*  xp = c8any_ptr (x); u8 * rp; r = m_c8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_i16) { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_c16) { u16* xp = c16any_ptr(x); u16* rp; r = m_c16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_i32) { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_c32) { u32* xp = c32any_ptr(x); u32* rp; r = m_c32arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else if (xe==el_f64) { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    else UD;
+    dec(x);
+    return r;
   }
   usz csz = arr_csz(x);
   usz cam = a(x)->sh[0];
