@@ -27,7 +27,7 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
     else if (xr==0) { B c=Get(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
     else {
       assert(wr==xr);
-      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i),  Get(x,i));
+      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), Get(x,i));
       else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i));
     }
     dec(rw? x : w);
@@ -76,7 +76,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       B r; i32* rp;
-      if (reuse && v(x)->type==t_i32arr) { r=x; rp = xp; }
+      if (reuse && v(x)->type==t_i32arr) { r=inc(x); rp = xp; }
       else r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
@@ -84,17 +84,17 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         if (!q_i32(cr)) {
           rH = m_harrs(ia, &i);
           for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
-          if (!reuse) dec(r);
+          dec(r);
           goto fallback;
         }
         rp[i] = o2iu(cr);
       }
-      if (!reuse) dec(x);
+      dec(x);
       return r;
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
-      if (reuse && v(x)->type==t_f64arr) { r=x; rp = xp; }
+      if (reuse && v(x)->type==t_f64arr) { r=inc(x); rp = xp; }
       else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
@@ -102,12 +102,12 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         if (!q_f64(cr)) {
           rH = m_harrs(ia, &i);
           for (usz j = 0; j < i; j++) rH.a[j] = m_f64(rp[j]);
-          if (!reuse) dec(r);
+          dec(r);
           goto fallback;
         }
         rp[i] = o2fu(cr);
       }
-      if (!reuse) dec(x);
+      dec(x);
       return r;
     } else if (v(x)->type==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
