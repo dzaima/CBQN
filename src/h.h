@@ -255,10 +255,10 @@ static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2, TAG_TAG);
 static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3, TAG_TAG);
 static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5, TAG_TAG);
 extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
-#define emptyHVec() ({ B t = bi_emptyHVec; ptr_inc(v(t)); t; })
-#define emptyIVec() ({ B t = bi_emptyIVec; ptr_inc(v(t)); t; })
-#define emptyCVec() ({ B t = bi_emptyCVec; ptr_inc(v(t)); t; })
-#define emptySVec() ({ B t = bi_emptySVec; ptr_inc(v(t)); t; })
+#define emptyHVec() incG(bi_emptyHVec)
+#define emptyIVec() incG(bi_emptyIVec)
+#define emptyCVec() incG(bi_emptyCVec)
+#define emptySVec() incG(bi_emptySVec)
 static void* mm_alloc(usz sz, u8 type);
 static void  mm_free(Value* x);
 static u64   mm_size(Value* x);
@@ -463,6 +463,10 @@ void decA_rare(B x);
 static void decA(B x) { if (RARE(isVal(x))) decA_rare(x); } // decrement what's likely an atom
 static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
+  return x;
+}
+static B incG(B x) { // inc for guaranteed heap objects
+  v(VALIDATE(x))->refc++;
   return x;
 }
 static B incBy(B x, i64 am) { // am mustn't be negative!

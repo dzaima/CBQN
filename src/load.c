@@ -107,7 +107,7 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   usz xia = a(x)->ia;
   if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
   Block* r = xia==6? compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
-                   : compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,     bi_N,      src, inc(path), sc);
+                   : compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc);
   dec(x);
   return r;
 }
@@ -146,7 +146,7 @@ NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
-  Block* r = load_compObj(c2(load_comp, inc(load_compArg), inc(str)), str, path, NULL);
+  Block* r = load_compObj(c2(load_comp, incG(load_compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
@@ -178,7 +178,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_v4(inc(load_rtObj), inc(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2(load_comp, m_v4(incG(load_rtObj), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
@@ -303,9 +303,9 @@ void load_init() { // very last init function
     dec(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
-    dec(c1(rtFinish, m_v2(inc(bi_decp), inc(bi_primInd)))); dec(rtFinish);
+    dec(c1(rtFinish, m_v2(incG(bi_decp), incG(bi_primInd)))); dec(rtFinish);
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
-    load_compArg = m_v2(load_rtObj, inc(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    load_compArg = m_v2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
     gc_add(load_compArg);
   #else
     B* runtime = fruntime;
@@ -346,7 +346,7 @@ void load_init() { // very last init function
       #include "gen/formatter"
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
-    B fmtR = c1(fmtM, m_caB(4, (B[]){inc(bi_type), inc(bi_decp), inc(bi_glyph), inc(bi_repr)}));
+    B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
     SGet(fmtR)
     load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
     load_repr = Get(fmtR, 1); gc_add(load_repr);

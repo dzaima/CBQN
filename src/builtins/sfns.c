@@ -637,7 +637,7 @@ B couple_c1(B t, B x) {
   if (isAtm(x)) return unitV1(x);
   usz rr = rnk(x);
   usz ia = a(x)->ia;
-  Arr* r = TI(x,slice)(inc(x),0, ia);
+  Arr* r = TI(x,slice)(incG(x),0, ia);
   usz* sh = arr_shAlloc(r, rr+1);
   if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
   dec(x);

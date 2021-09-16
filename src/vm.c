@@ -582,9 +582,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case ADDI: {
-        B o = b(L64);
-        ptr_inc(v(o));
-        ADD(o);
+        ADD(incG(b(L64)));
         break;
       }
       case ADDU: {

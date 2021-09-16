@@ -25,7 +25,7 @@ B fillBy_c2(Md2D* d, B w, B x) {
   B r = c2(d->f, w,x);
   if(isAtm(r) || noFill(xf)) { dec(xf); dec(wf); return r; }
   if (CATCH) { dec(catchMessage); return r; }
-  if (noFill(wf)) wf = inc(bi_asrt);
+  if (noFill(wf)) wf = incG(bi_asrt);
   B fill = asFill(c2(d->g, wf, xf));
   popCatch();
   return withFill(r, fill);
@@ -81,7 +81,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
   q[0] = inc(x);                                   \
   if (min) {                                       \
     B x2 = inc(x);                                 \
-    B fi = m1_d(inc(rt_undo), inc(f));             \
+    B fi = m1_d(incG(rt_undo), inc(f));            \
     for (i64 i = 0; i < min; i++) q[-1-i] = inc(x2 = CN(fi, __VA_ARGS__ x2)); \
     dec(x2);                                       \
     dec(fi);                                       \
@@ -122,7 +122,7 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
 extern B rt_under, bi_before;
 B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   if (!isVal(g)) { // ugh idk
-    B fn = m2_d(inc(rt_under), inc(f), inc(g));
+    B fn = m2_d(incG(rt_under), inc(f), inc(g));
     B r = c1(fn, x);
     dec(fn);
     return r;
@@ -131,12 +131,12 @@ B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
 }
 B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   if (!isVal(g)) {
-    B fn = m2_d(inc(rt_under), inc(f), inc(g));
+    B fn = m2_d(incG(rt_under), inc(f), inc(g));
     B r = c2(fn, w, x);
     dec(fn);
     return r;
   }
-  B f2 = m2_d(inc(bi_before), c1(g, w), inc(f));
+  B f2 = m2_d(incG(bi_before), c1(g, w), inc(f));
   B r = TI(g,fn_uc1)(g, f2, x);
   dec(f2);
   return r;

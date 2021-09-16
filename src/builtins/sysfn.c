@@ -414,9 +414,9 @@ B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
   if (rand_ns.u==0) rand_init();
   B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
-  ns_set(r, rand_rangeName,   m_nfn(rand_rangeDesc,   inc(r)));
-  ns_set(r, rand_dealName,    m_nfn(rand_dealDesc,    inc(r)));
-  ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  inc(r)));
+  ns_set(r, rand_rangeName,   m_nfn(rand_rangeDesc,   incG(r)));
+  ns_set(r, rand_dealName,    m_nfn(rand_dealDesc,    incG(r)));
+  ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  incG(r)));
   return r;
 }
 static B randNS;
@@ -429,7 +429,7 @@ B getRandNS() {
     #endif
     gc_add(randNS);
   }
-  return inc(randNS);
+  return incG(randNS);
 }
 extern B replPath; // defined in main.c
 static NFnDesc* reBQNDesc;
@@ -675,10 +675,10 @@ B sys_c1(B t, B x) {
   #define REQ_PATH ({ if(!path.u) path = path_abs(path_dir(inc(comp_currPath))); path; })
   for (; i < a(x)->ia; i++) {
     B c = GetU(x,i);
-    if (eqStr(c, U"out")) r.a[i] = inc(bi_out);
-    else if (eqStr(c, U"show")) r.a[i] = inc(bi_show);
-    else if (eqStr(c, U"exit")) r.a[i] = inc(bi_exit);
-    else if (eqStr(c, U"getline")) r.a[i] = inc(bi_getLine);
+    if (eqStr(c, U"out")) r.a[i] = incG(bi_out);
+    else if (eqStr(c, U"show")) r.a[i] = incG(bi_show);
+    else if (eqStr(c, U"exit")) r.a[i] = incG(bi_exit);
+    else if (eqStr(c, U"getline")) r.a[i] = incG(bi_getLine);
     else if (eqStr(c, U"file")) {
       if(!fileNS.u) {
         REQ_PATH;
@@ -691,24 +691,24 @@ B sys_c1(B t, B x) {
     }
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"math")) r.a[i] = getMathNS();
-    else if (eqStr(c, U"type")) r.a[i] = inc(bi_type);
-    else if (eqStr(c, U"sh")) r.a[i] = inc(bi_sh);
-    else if (eqStr(c, U"decompose")) r.a[i] = inc(bi_decp);
-    else if (eqStr(c, U"primind")) r.a[i] = inc(bi_primInd);
-    else if (eqStr(c, U"bqn")) r.a[i] = inc(bi_bqn);
-    else if (eqStr(c, U"cmp")) r.a[i] = inc(bi_cmp);
-    else if (eqStr(c, U"unixtime")) r.a[i] = inc(bi_unixTime);
-    else if (eqStr(c, U"monotime")) r.a[i] = inc(bi_monoTime);
-    else if (eqStr(c, U"timed")) r.a[i] = inc(bi_timed);
-    else if (eqStr(c, U"delay")) r.a[i] = inc(bi_delay);
-    else if (eqStr(c, U"hash")) r.a[i] = inc(bi_hash);
-    else if (eqStr(c, U"repr")) r.a[i] = inc(bi_repr);
-    else if (eqStr(c, U"fmt")) r.a[i] = inc(bi_fmt);
-    else if (eqStr(c, U"glyph")) r.a[i] = inc(bi_glyph);
-    else if (eqStr(c, U"makerand")) r.a[i] = inc(bi_makeRand);
+    else if (eqStr(c, U"type")) r.a[i] = incG(bi_type);
+    else if (eqStr(c, U"sh")) r.a[i] = incG(bi_sh);
+    else if (eqStr(c, U"decompose")) r.a[i] = incG(bi_decp);
+    else if (eqStr(c, U"primind")) r.a[i] = incG(bi_primInd);
+    else if (eqStr(c, U"bqn")) r.a[i] = incG(bi_bqn);
+    else if (eqStr(c, U"cmp")) r.a[i] = incG(bi_cmp);
+    else if (eqStr(c, U"unixtime")) r.a[i] = incG(bi_unixTime);
+    else if (eqStr(c, U"monotime")) r.a[i] = incG(bi_monoTime);
+    else if (eqStr(c, U"timed")) r.a[i] = incG(bi_timed);
+    else if (eqStr(c, U"delay")) r.a[i] = incG(bi_delay);
+    else if (eqStr(c, U"hash")) r.a[i] = incG(bi_hash);
+    else if (eqStr(c, U"repr")) r.a[i] = incG(bi_repr);
+    else if (eqStr(c, U"fmt")) r.a[i] = incG(bi_fmt);
+    else if (eqStr(c, U"glyph")) r.a[i] = incG(bi_glyph);
+    else if (eqStr(c, U"makerand")) r.a[i] = incG(bi_makeRand);
     else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
-    else if (eqStr(c, U"rebqn")) r.a[i] = inc(bi_reBQN);
-    else if (eqStr(c, U"fromutf8")) r.a[i] = inc(bi_fromUtf8);
+    else if (eqStr(c, U"rebqn")) r.a[i] = incG(bi_reBQN);
+    else if (eqStr(c, U"fromutf8")) r.a[i] = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, inc(REQ_PATH));
     else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, inc(REQ_PATH));
