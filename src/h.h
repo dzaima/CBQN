@@ -338,7 +338,8 @@ static inline bool isNum(B x) { return isF64(x); }
 
 static inline bool isAtm(B x) { return !isArr(x); }
 static inline bool isCallable(B x) { return isMd(x) | isFun(x); }
-static inline bool noFill(B x) { return x.u == bi_noFill.u; }
+static inline bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
+
 
 // make objects
 static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
@@ -366,6 +367,8 @@ static bool q_i16(B x) { return isF64(x) && x.f==(f64)(i16)x.f; }
 static bool q_i32(B x) { return isF64(x) && x.f==(f64)(i32)x.f; }
 static bool q_i64(B x) { return isF64(x) && x.f==(f64)(i64)x.f; }
 static bool q_f64(B x) { return isF64(x); }
+static bool q_N  (B x) { return x.u==bi_N.u; } // is ·
+static bool noFill(B x) { return x.u == bi_noFill.u; }
 
 
 typedef struct Slice {
@@ -436,8 +439,6 @@ typedef B (*M2C2)(Md2D*, B, B);
 #define SGet(X) Arr* X##_arr = a(X); AS2B X##_get = TIv(X##_arr,get);
 #define IGet(X,N)({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
 #define Get(X,N) X##_get(X##_arr,N)
-
-static bool q_N(B b) { return b.u==bi_N.u; }
 
 // refcount
 static bool reusable(B x) { return v(x)->refc==1; }

@@ -29,13 +29,13 @@ B type_c1(B t, B x) {
 
 B decp_c1(B t, B x) {
   if (!isVal(x)) return m_v2(m_i32(-1), x);
-  if (v(x)->flags) return m_v2(m_i32(0), x);
+  if (isPrim(x)) return m_v2(m_i32(0), x);
   return TI(x,decompose)(x);
 }
 
 B primInd_c1(B t, B x) {
   if (!isVal(x)) return m_i32(rtLen);
-  if (v(x)->flags) { B r = m_i32(v(x)->flags-1); dec(x); return r; }
+  if (isPrim(x)) { B r = m_i32(v(x)->flags-1); dec(x); return r; }
   dec(x);
   return m_i32(rtLen);
 }
@@ -49,21 +49,21 @@ B glyph_c1(B t, B x) {
   #ifdef RT_WRAP
     x = rtWrap_unwrap(x);
   #endif
-  u8 fl = v(x)->flags;
-  if (fl==0 || fl>rtLen) {
-    u8 ty = v(x)->type;
-    if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
-    if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
-    if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
-    if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
-    if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
-    if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
-    if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
-    if (ty==t_ns) return nsFmt(x);
-    return m_str32(U"(•Glyph: given object with unexpected type)");
+  if (isPrim(x)) {
+    B r = m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[v(x)->flags-1]);
+    dec(x);
+    return r;
   }
-  dec(x);
-  return m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[fl-1]);
+  u8 ty = v(x)->type;
+  if (ty==t_funBI) { B r = fromUTF8l(format_pf (c(Fun,x)->extra)); dec(x); return r; }
+  if (ty==t_md1BI) { B r = fromUTF8l(format_pm1(c(Md1,x)->extra)); dec(x); return r; }
+  if (ty==t_md2BI) { B r = fromUTF8l(format_pm2(c(Md2,x)->extra)); dec(x); return r; }
+  if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
+  if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
+  if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
+  if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
+  if (ty==t_ns) return nsFmt(x);
+  return m_str32(U"(•Glyph: given object with unexpected type)");
 }
 
 B repr_c1(B t, B x) {

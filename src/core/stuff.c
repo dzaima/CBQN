@@ -459,7 +459,7 @@ char* format_type(u8 u) {
 }
 bool isPureFn(B x) { // doesn't consume
   if (isCallable(x)) {
-    if (v(x)->flags) return true;
+    if (isPrim(x)) return true;
     B2B dcf = TI(x,decompose);
     B xd = dcf(inc(x));
     B* xdp = harr_ptr(xd);
