@@ -138,8 +138,10 @@ char* format_pm2(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
-B num_squeeze(B x); // consumes; 
-B chr_squeeze(B x); // consumes
+B num_squeeze(B x); // consumes; accepts any array, but only tries to squeeze numerical values; doesn't check for fl_squoze
+B chr_squeeze(B x); // consumes; accepts any array, but only tries to squeeze character values; doesn't check for fl_squoze
+static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
+static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
 B def_fn_uc1(B t, B o,                B x);
 B def_fn_ucw(B t, B o,           B w, B x);
 B def_m1_uc1(B t, B o, B f,           B x);

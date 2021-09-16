@@ -440,8 +440,19 @@ typedef B (*M2C2)(Md2D*, B, B);
 #define IGet(X,N)({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
 #define Get(X,N) X##_get(X##_arr,N)
 
-// refcount
+
+enum Flags {
+  fl_squoze=1,
+  fl_asc=2, // sorted ascending (non-descending)
+  fl_dsc=4, // sorted descending (non-ascending)
+};
+#define FL_SET(X,F) ({ B x_ = (X); v(x_)->flags|= (F); x_; })
+#define FL_KEEP(X,F) v(X)->flags&= (F)
+#define FL_HAS(X,F) ((v(X)->flags&(F)) != 0)
+
+// refcount stuff
 static bool reusable(B x) { return v(x)->refc==1; }
+#define REUSE(X) ({ B x_ = (X); v(x_)->flags = 0; x_; })
 #define DEF_FREE(TY) static inline void TY##_freeO(Value* x); static void TY##_freeF(Value* x) { TY##_freeO(x); mm_free(x); } static inline void TY##_freeO(Value* x)
 static inline void value_free(Value* x) {
   // TIv(x,freeO)(x); mm_free(x);

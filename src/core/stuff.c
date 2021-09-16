@@ -200,7 +200,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
           AFMT("%f", o2f(b));
         } else { assert(isArr(b) && rnk(b)==1);
           if (TI(b,elType)==el_c32) AJOIN(inc(b));
-          else AJOIN(chr_squeeze(inc(b)));
+          else AJOIN(chr_squeezeChk(inc(b)));
         }
         break;
       }
@@ -481,7 +481,7 @@ B num_squeeze(B x) {
   u8 xe = TI(x,elType);
   assert(xe!=el_bit);
   
-  if (xe==el_i8) return x;
+  if (xe==el_i8) goto r_x;
   // TODO fast paths for xe<el_f64
   usz i = 0;
   i32 or = 0; // using bitwise or as a heuristical ⌈´|𝕩
@@ -490,7 +490,7 @@ B num_squeeze(B x) {
     for (; i < ia; i++) {
       f64 cf = xp[i];
       i32 c = (i32)cf;
-      if (c!=cf) return x; // already f64
+      if (c!=cf) goto r_x; // already f64
       or|= c<0?-c:c;
     }
     goto r_or;
@@ -500,7 +500,7 @@ B num_squeeze(B x) {
   if (xp!=NULL) {
     for (; i < ia; i++) {
       if (RARE(!q_i32(xp[i]))) {
-        while (i<ia) if (!isF64(xp[i++])) return x;
+        while (i<ia) if (!isF64(xp[i++])) goto r_x;
         goto r_f64;
       }
       i32 c = o2iu(xp[i]);
@@ -513,7 +513,7 @@ B num_squeeze(B x) {
   for (; i < ia; i++) {
     B cr = GetU(x,i);
     if (RARE(!q_i32(cr))) {
-      while (i<ia) if (!isF64(GetU(x,i++))) return x;
+      while (i<ia) if (!isF64(GetU(x,i++))) goto r_x;
       goto r_f64;
     }
     i32 c = o2iu(cr);
@@ -524,15 +524,16 @@ B num_squeeze(B x) {
   else if (or<=I16_MAX) goto r_i16;
   else                  goto r_i32;
   
-  r_i8 : return toI8Any(x);
-  r_i16: return toI16Any(x);
-  r_i32: return toI32Any(x);
-  r_f64: return toF64Any(x);
+  r_x  : return FL_SET(x, fl_squoze);
+  r_i8 : return FL_SET(toI8Any (x), fl_squoze);
+  r_i16: return FL_SET(toI16Any(x), fl_squoze);
+  r_i32: return FL_SET(toI32Any(x), fl_squoze);
+  r_f64: return FL_SET(toF64Any(x), fl_squoze);
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
-  if (xe==el_c8) return x;
+  if (xe==el_c8) goto r_x;
   // TODO fast paths for xe == el_c8/el_c16/el_c32
   usz i = 0;
   i32 or = 0;
@@ -540,27 +541,27 @@ B chr_squeeze(B x) {
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
     for (; i < ia; i++) {
-      if (!isC32(xp[i])) return x;
+      if (!isC32(xp[i])) goto r_x;
       or|= o2cu(xp[i]);
     }
   } else {
     SGetU(x)
     for (; i < ia; i++) {
       B cr = GetU(x,i);
-      if (!isC32(cr)) return x;
+      if (!isC32(cr)) goto r_x;
       or|= o2cu(cr);
     }
   }
-  if      (or<=U8_MAX ) return toC8Any(x);
-  else if (or<=U16_MAX) return toC16Any(x);
-  else                  return toC32Any(x);
+  if      (or<=U8_MAX ) return FL_SET(toC8Any(x), fl_squoze);
+  else if (or<=U16_MAX) return FL_SET(toC16Any(x), fl_squoze);
+  else                  return FL_SET(toC32Any(x), fl_squoze);
+  r_x: return FL_SET(x, fl_squoze);
 }
 
 B any_squeeze(B x) {
   assert(isArr(x));
-  u8 xe = TI(x,elType);
-  assert(xe!=el_bit);
-  if (a(x)->ia==0) return x;
+  if (FL_HAS(x,fl_squoze)) return x;
+  if (a(x)->ia==0) return FL_SET(x, fl_squoze);
   SGetU(x)
   B x0 = GetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);

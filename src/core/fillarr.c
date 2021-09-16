@@ -115,7 +115,7 @@ B withFill(B x, B fill) { // consumes both
     case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
-      if (reusable(x)) {
+      if (reusable(x)) { // keeping flags is fine probably
         dec(c(FillArr, x)->fill);
         c(FillArr, x)->fill = fill;
         return x;
@@ -124,10 +124,10 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = a(x)->ia;
   if (isNum(fill)) {
-    x = num_squeeze(x);
+    x = num_squeezeChk(x);
     if (elNum(TI(x,elType))) return x;
   } else if (isC32(fill)) {
-    x = chr_squeeze(x);
+    x = chr_squeezeChk(x);
     if (elChr(TI(x,elType))) return x;
   }
   FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);

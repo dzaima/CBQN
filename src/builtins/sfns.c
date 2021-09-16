@@ -46,7 +46,7 @@ B shape_c1(B t, B x) {
     dec(x);
     return unitV1(n);
   }
-  if (reusable(x)) {
+  if (reusable(x)) { FL_KEEP(x, fl_squoze);
     decSh(v(x)); arr_shVec(a(x));
     return x;
   }
@@ -138,7 +138,7 @@ B shape_c2(B t, B w, B x) {
   } else {
     if (nia <= xia) {
       B r; Arr* ra;
-      if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
+      if (reusable(x) && xia==nia) { r = REUSE(x); decSh(v(x)); ra = (Arr*)v(r); }
       else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
       arr_shSetU(ra, nr, sh);
       return r;
@@ -926,7 +926,7 @@ B pick_ucw(B t, B o, B w, B x) {
   B xf = getFillQ(x);
   B arg = IGet(x, wi);
   B rep = c1(o, arg);
-  if (reusable(x) && TI(x,canStore)(rep)) {
+  if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
     if      (TI(x,elType)==el_i8 ) { i8*  xp = i8any_ptr (x); xp[wi] = o2iu(rep); return x; }
     else if (TI(x,elType)==el_i16) { i16* xp = i16any_ptr(x); xp[wi] = o2iu(rep); return x; }
     else if (TI(x,elType)==el_i32) { i32* xp = i32any_ptr(x); xp[wi] = o2iu(rep); return x; }
@@ -1004,9 +1004,9 @@ B select_ucw(B t, B o, B w, B x) {
     i32* wp = i32any_ptr(w);
     if (re<el_f64 && xe<el_f64) {
       u8 me = xe>re?xe:re;
-      bool re = reusable(x);
+      bool reuse = reusable(x);
       if (me==el_i32) {
-        I32Arr* xn = re? toI32Arr(x) : cpyI32Arr(x);
+        I32Arr* xn = reuse? toI32Arr(REUSE(x)) : cpyI32Arr(x);
         rep = toI32Any(rep); i32* rp = i32any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia; // we're free to assume w is valid
@@ -1016,7 +1016,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i16) {
-        I16Arr* xn = re? toI16Arr(x) : cpyI16Arr(x);
+        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : cpyI16Arr(x);
         rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
@@ -1026,7 +1026,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i8) {
-        I8Arr* xn = re? toI8Arr(x) : cpyI8Arr(x);
+        I8Arr* xn = reuse? toI8Arr(REUSE(x)) : cpyI8Arr(x);
         rep = toI8Any(rep); i8* rp = i8any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
@@ -1039,7 +1039,7 @@ B select_ucw(B t, B o, B w, B x) {
     }
     if (reusable(x) && xe==re) {
       if (v(x)->type==t_harr) {
-        B* xp = harr_ptr(x);
+        B* xp = harr_ptr(REUSE(x));
         SGet(rep)
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;

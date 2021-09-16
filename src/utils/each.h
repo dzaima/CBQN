@@ -21,7 +21,7 @@ static B eachd_fn(BBB2B f, B fo, B w, B x) { // consumes w,x; assumes at least o
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
   bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
   if (rw|rx && (wr==xr | rm==0)) {
-    HArr_p r = harr_parts(rw? w : x);
+    HArr_p r = harr_parts(REUSE(rw? w : x));
     usz ria = r.c->ia;
     if      (wr==0) { B c=Get(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c),   hmv(r,i)); dec(c); }
     else if (xr==0) { B c=Get(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
@@ -66,7 +66,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
       if (reuse) {
         dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return x;
+        return REUSE(x);
       } else {
         rH = m_harrs(ia, &i);
         rH.a[i++] = cr;
@@ -76,7 +76,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       B r; i32* rp;
-      if (reuse && v(x)->type==t_i32arr) { r=inc(x); rp = xp; }
+      if (reuse && v(x)->type==t_i32arr) { r=inc(REUSE(x)); rp = xp; }
       else r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
@@ -94,7 +94,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
-      if (reuse && v(x)->type==t_f64arr) { r=inc(x); rp = xp; }
+      if (reuse && v(x)->type==t_f64arr) { r=inc(REUSE(x)); rp = xp; }
       else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
@@ -116,7 +116,7 @@ static B eachm_fn(BB2B f, B fo, B x) { // consumes x; x must be array
         c(FillArr,x)->fill = bi_noFill;
         dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return x;
+        return REUSE(x);
       } else {
         HArr_p rp = m_harrs(ia, &i);
         rp.a[i++] = cr;
