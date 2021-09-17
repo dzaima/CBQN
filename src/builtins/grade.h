@@ -102,10 +102,15 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
   i32* rp; B r = m_i32arrc(&rp, x);
   
+  u8 fl = GRADE_UD(fl_asc,fl_dsc);
+  
   if (we==el_i32 & xe==el_i32) {
     i32* wi = i32any_ptr(w);
     i32* xi = i32any_ptr(x);
-    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (CHECK_VALID && !FL_HAS(w,fl)) {
+      for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+      FL_SET(w,fl);
+    }
     
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
@@ -120,7 +125,10 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   } else {
     SGetU(w)
     SGetU(x)
-    if (CHECK_VALID) for (i64 i = 0; i < (i64)wia-1; i++) if (compare(GetU(w,i), GetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (CHECK_VALID && !FL_HAS(w,fl)) {
+      for (i64 i = 0; i < (i64)wia-1; i++) if (compare(GetU(w,i), GetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+      FL_SET(w,fl);
+    }
     
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x,i);
