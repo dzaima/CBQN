@@ -200,7 +200,11 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
           AFMT("%f", o2f(b));
         } else { assert(isArr(b) && rnk(b)==1);
           if (TI(b,elType)==el_c32) AJOIN(inc(b));
-          else AJOIN(chr_squeezeChk(inc(b)));
+          else {
+            B sq = chr_squeezeChk(b);
+            if (!elChr(TI(sq,elType))) FL_KEEP(sq, ~fl_squoze);
+            AJOIN(inc(sq));
+          }
         }
         break;
       }
@@ -566,7 +570,7 @@ B any_squeeze(B x) {
   B x0 = GetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);
-  return x;
+  return FL_SET(x, fl_squoze);
 }
 
 B squeeze_deep(B x) {

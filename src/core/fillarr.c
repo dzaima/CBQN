@@ -126,9 +126,11 @@ B withFill(B x, B fill) { // consumes both
   if (isNum(fill)) {
     x = num_squeezeChk(x);
     if (elNum(TI(x,elType))) return x;
+    FL_KEEP(x, ~fl_squoze);
   } else if (isC32(fill)) {
     x = chr_squeezeChk(x);
     if (elChr(TI(x,elType))) return x;
+    FL_KEEP(x, ~fl_squoze);
   }
   FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
   arr_shCopy((Arr*)r, x);
