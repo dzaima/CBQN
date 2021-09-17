@@ -569,6 +569,21 @@ B any_squeeze(B x) {
   return x;
 }
 
+B squeeze_deep(B x) {
+  x = any_squeeze(x);
+  if (TI(x,elType)!=el_B) return x;
+  usz ia = a(x)->ia;
+  usz i=0; HArr_p r = m_harrs(ia,&i);
+  B* xp = arr_bptr(x);
+  if (xp!=NULL) {
+    while (i < ia) { r.a[i] = squeeze_deep(inc(xp[i])); i++; }
+  } else {
+    SGet(x);
+    while (i < ia) { r.a[i] = squeeze_deep(Get(x,i)); i++; }
+  }
+  return any_squeeze(harr_fcd(r, x));
+}
+
 B bqn_merge(B x) {
   assert(isArr(x));
   usz xia = a(x)->ia;
