@@ -123,10 +123,15 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   } else {
-    SGetU(w)
     SGetU(x)
+    B* wp = arr_bptr(w);
+    if (wp==NULL) {
+      HArr* a = toHArr(w);
+      wp = a->a;
+      w = taga(a);
+    }
     if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if (compare(GetU(w,i), GetU(w,i+1)) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+      for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wp[i], wp[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
       FL_SET(w,fl);
     }
     
@@ -135,7 +140,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       usz s = 0, e = wia+1;
       while (e-s > 1) {
         usz m = (s+e) / 2;
-        if (compare(c, GetU(w,m-1)) GRADE_UD(<,>) 0) e = m;
+        if (compare(c, wp[m-1]) GRADE_UD(<,>) 0) e = m;
         else s = m;
       }
       rp[i] = s;
