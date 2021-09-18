@@ -208,12 +208,12 @@ GC2i("¬", not, 1+wv-xv, {
 GC2i("×", mul, wv*xv, {})
 GC2i("∧", and, wv*xv, {})
 GC2i("∨", or , (wv+xv)-(wv*xv), {})
+GC2i("⌊", floor, wv>xv?xv:wv, {}) // optimizer optimizes out the fallback mess
+GC2i("⌈", ceil , wv>xv?wv:xv, {})
 
 GC2f("÷", div  ,           w.f/x.f, {})
 GC2f("⋆", pow  ,     pow(w.f, x.f), {})
 GC2f("√", root , pow(x.f, 1.0/w.f), {})
-GC2f("⌊", floor,    fmin(w.f, x.f), {})
-GC2f("⌈", ceil ,    fmax(w.f, x.f), {})
 GC2f("|", stile,   pfmod(x.f, w.f), {})
 GC2f("⋆⁼",log  , log(x.f)/log(w.f), {})
 
