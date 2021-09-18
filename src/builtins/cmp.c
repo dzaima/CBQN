@@ -6,6 +6,25 @@
 
 #define AL(X) i8* rp; B r = m_i8arrc(&rp, X);
 
+static NOINLINE u8 makeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if failed
+  B s = we<xe?*w:*x;
+  u8 me = we>xe?we:xe;
+  if (elNum(we) & elNum(xe)) {
+    switch(me) { default: UD;
+      case el_i16: s = taga(cpyI16Arr(s)); break;
+      case el_i32: s = taga(cpyI32Arr(s)); break;
+      case el_f64: s = taga(cpyF64Arr(s)); break;
+    }
+  } else if (elChr(we) & elChr(xe)) {
+    switch(me) { default: UD;
+      case el_c16: s = taga(cpyC16Arr(s)); break;
+      case el_c32: s = taga(cpyC32Arr(s)); break;
+    }
+  } else return el_MAX;
+  *(we<xe?w:x) = s;
+  return me;
+}
+
 #define CMP_IMPL(CHR,OP,FC,CF) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
@@ -16,18 +35,22 @@
     if (isArr(x)) { u8 xe = TI(x,elType);          \
       if (xe==el_B) goto end;                      \
       if (rnk(w)==rnk(x)) { if (!eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        if (we==xe) { AL(x) usz ria=a(r)->ia;      \
-          switch(we) { default: UD;                \
-            case el_i8 : { i8*  wp=i8any_ptr (w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_i16: { i16* wp=i16any_ptr(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_i32: { i32* wp=i32any_ptr(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_c8 : { u8*  wp=c8any_ptr (w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_c16: { u16* wp=c16any_ptr(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_c32: { u32* wp=c32any_ptr(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-            case el_f64: { f64* wp=f64any_ptr(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
-          }                          \
-          dec(w);dec(x); return r;   \
+        if (we!=xe) { B tw=w,tx=x;                 \
+          we = makeEq(&tw, &tx, we, xe);           \
+          if (we==el_MAX) goto end;                \
+          w=tw; x=tx;                              \
+        }                                          \
+        AL(x) usz ria=a(r)->ia;                    \
+        switch(we) { default: UD;                  \
+          case el_i8 : { i8*  wp=i8any_ptr (w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_i16: { i16* wp=i16any_ptr(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_i32: { i32* wp=i32any_ptr(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_c8 : { u8*  wp=c8any_ptr (w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_c16: { u16* wp=c16any_ptr(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_c32: { u32* wp=c32any_ptr(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
+          case el_f64: { f64* wp=f64any_ptr(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) rp[i]=wp[i] OP xp[i]; break; } \
         }                            \
+        dec(w);dec(x); return r;     \
       }                              \
     } else { AL(w) usz ria=a(r)->ia; \
       switch(we) { default: UD;      \
