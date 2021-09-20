@@ -104,9 +104,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
   
-  if (we==el_i32 & xe==el_i32) {
-    i32* wi = i32any_ptr(w);
-    i32* xi = i32any_ptr(x);
+  if (we<=el_i32 & xe<=el_i32) {
+    w = toI32Any(w); i32* wi = i32any_ptr(w);
+    x = toI32Any(x); i32* xi = i32any_ptr(x);
     if (CHECK_VALID && !FL_HAS(w,fl)) {
       for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
       FL_SET(w,fl);
