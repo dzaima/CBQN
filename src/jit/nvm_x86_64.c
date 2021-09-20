@@ -305,19 +305,18 @@ static OptRes opt(u32* bc0) {
         break;
       }
       case ARRO: case ARRM: { i32 len = *bc++;
-        bool allNum = len>0; bool allI32 = true;
+        bool allNum = len>0;
         for (i32 i = 0; i < len; i++) { S(c,i);
           if(c.p==-1) goto defIns;
           allNum&= isNum(c.v);
-          allI32&= q_i32(c.v);
         }
         TSSIZE(stk)-= len-1; // huh, doing this beforehand works out nicely
-        B r;
-        if (allNum) {
-          if (allI32) { i32* rp; r = m_i32arrv(&rp, len); for (i32 i = 0; i < len; i++) { S(c,-i); rp[i] = o2iu(c.v); } }
-          else        { f64* rp; r = m_f64arrv(&rp, len); for (i32 i = 0; i < len; i++) { S(c,-i); rp[i] = o2fu(c.v); } }
-        } else        { HArr_p h = m_harrUv(len); r=h.b;  for (i32 i = 0; i < len; i++) { S(c,-i); h.a[i] = inc(c.v); } }
-        for (i32 i = 0; i < len; i++) { S(c,-i); RM(c.p); }
+        HArr_p h = m_harrUv(len);
+        for (i32 i = 0; i < len; i++) { S(c,-i);
+          h.a[i] = inc(c.v);
+          RM(c.p);
+        }
+        B r = allNum? num_squeeze(h.b) : h.b;
         cact = 5;
         TSADD(data, r.u);
         stk[TSSIZE(stk)-1] = SREF(r, pos);
