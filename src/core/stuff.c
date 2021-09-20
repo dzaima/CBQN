@@ -538,9 +538,23 @@ B chr_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
   if (xe==el_c8) goto r_x;
-  // TODO fast paths for xe == el_c8/el_c16/el_c32
   usz i = 0;
   i32 or = 0;
+  if (xe==el_c16) {
+    u16* xp = c16any_ptr(x);
+    for (; i < ia; i++) if (xp[i] != (u8)xp[i]) goto r_x;
+    goto r_c8;
+  }
+  if (xe==el_c32) {
+    u32* xp = c32any_ptr(x);
+    bool c8 = true;
+    for (; i < ia; i++) {
+      if (xp[i] != (u16)xp[i]) goto r_c16;
+      if (xp[i] != (u8 )xp[i]) c8 = false;
+    }
+    if (c8) goto r_c8;
+    else    goto r_c16;
+  }
   
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
@@ -556,9 +570,9 @@ B chr_squeeze(B x) {
       or|= o2cu(cr);
     }
   }
-  if      (or<=U8_MAX ) return FL_SET(toC8Any(x), fl_squoze);
-  else if (or<=U16_MAX) return FL_SET(toC16Any(x), fl_squoze);
-  else                  return FL_SET(toC32Any(x), fl_squoze);
+  if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);
+  else if (or<=U16_MAX) r_c16: return FL_SET(toC16Any(x), fl_squoze);
+  else                         return FL_SET(toC32Any(x), fl_squoze);
   r_x: return FL_SET(x, fl_squoze);
 }
 
