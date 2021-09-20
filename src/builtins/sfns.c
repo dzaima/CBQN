@@ -18,33 +18,51 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
   }
 }
 
-static B unitV1(B x) {
-  if (isF64(x)) {
-    i32 i = (i32)x.f;
-    if (RARE(x.f != i))     { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = x.f; return r; }
-    if      (x.f == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
-    else if (x.f == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
+B m_vec1(B a) {
+  if (isF64(a)) {
+    i32 i = (i32)a.f;
+    if (RARE(a.f != i))     { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
+    if      (a.f == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
+    else if (a.f == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
     else                    { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
   }
-  if (isC32(x)) {
-    u32 c = o2cu(x);
+  if (isC32(a)) {
+    u32 c = o2cu(a);
     if      (LIKELY(c<U8_MAX )) { u8*  rp; B r = m_c8arrv (&rp, 1); rp[0] = c; return r; }
     else if (LIKELY(c<U16_MAX)) { u16* rp; B r = m_c16arrv(&rp, 1); rp[0] = c; return r; }
     else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
   }
   Arr* ra = m_fillarrp(1); arr_shVec(ra);
-  fillarr_setFill(ra, asFill(inc(x)));
-  fillarr_ptr(ra)[0] = x;
+  fillarr_setFill(ra, asFill(inc(a)));
+  fillarr_ptr(ra)[0] = a;
   return taga(ra);
+}
+B m_vec2(B a, B b) {
+  if (isAtm(a)&isAtm(b)) {
+    if (LIKELY(isNum(a)&isNum(b))) {
+      i32 ai=a.f; i32 bi=b.f;
+      if (RARE(ai!=a.f | bi!=b.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(a); rp[1]=o2fu(b); return r; }
+      else if (ai==(i8 )ai & bi==(i8 )bi) { i8*  rp; B r = m_i8arrv (&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
+      else if (ai==(i16)ai & bi==(i16)bi) { i16* rp; B r = m_i16arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
+      else                                { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
+    }
+    if (isC32(b)&isC32(a)) {
+      u32 ac=o2cu(a); u32 bc=o2cu(b);
+      if      (ac==(u8 )ac & bc==(u8 )bc) { u8*  rp; B r = m_c8arrv (&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
+      else if (ac==(u16)ac & bc==(u16)bc) { u16* rp; B r = m_c16arrv(&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
+      else                                { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
+    }
+  }
+  return m_v2(a,b);
 }
 
 B shape_c1(B t, B x) {
-  if (isAtm(x)) return unitV1(x);
+  if (isAtm(x)) return m_vec1(x);
   usz ia = a(x)->ia;
   if (ia==1 && TI(x,elType)<el_B) {
     B n = IGet(x,0);
     dec(x);
-    return unitV1(n);
+    return m_vec1(n);
   }
   if (reusable(x)) { FL_KEEP(x, fl_squoze);
     decSh(v(x)); arr_shVec(a(x));
@@ -635,7 +653,7 @@ B join_c2(B t, B w, B x) {
 
 
 B couple_c1(B t, B x) {
-  if (isAtm(x)) return unitV1(x);
+  if (isAtm(x)) return m_vec1(x);
   usz rr = rnk(x);
   usz ia = a(x)->ia;
   Arr* r = TI(x,slice)(incG(x),0, ia);
@@ -645,16 +663,7 @@ B couple_c1(B t, B x) {
   return taga(r);
 }
 B couple_c2(B t, B w, B x) {
-  if (isAtm(w)&isAtm(x)) {
-    if (LIKELY(isNum(w)&isNum(x))) {
-      i32 wi=w.f; i32 xi=x.f;
-      if (RARE(wi!=w.f | xi!=x.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(w); rp[1]=o2fu(x); return r; }
-      else if (wi==(i8 )wi & xi==(i8 )xi) { i8*  rp; B r = m_i8arrv (&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
-      else if (wi==(i16)wi & xi==(i16)xi) { i16* rp; B r = m_i16arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
-      else                                { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=o2iu(w); rp[1]=o2iu(x); return r; }
-    }
-    if (isC32(x)&isC32(w)) { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=o2cu(w); rp[1]=o2cu(x); return r; }
-  }
+  if (isAtm(w)&isAtm(x)) return m_vec2(w, x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);

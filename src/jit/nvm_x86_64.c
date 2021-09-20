@@ -78,13 +78,16 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
 INS B i_ARR_0() { // TODO combine with ADDI
   return emptyHVec();
 }
+INS B i_ARR_2(B e1, B e0) {
+  return m_vec2(e0,e1);
+}
 INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) if (!isNum(r.a[sz-i-1] = GSP)) allNum = false;
   GS_UPD;
-  if (allNum) return withFill(r.b, m_f64(0));
+  if (allNum) return num_squeeze(r.b);
   return r.b;
 }
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
@@ -536,6 +539,7 @@ Nvm_res m_nvm(Body* body) {
     #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
+    // use GET(R_A1,0,2); as GS_UPD when there's only one argument, and GET(R_A3,-1,2); when there are zero arguments (i think?)
     #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count
     switch (*bc++) {
       case POPS: TOPp;
@@ -551,12 +555,14 @@ Nvm_res m_nvm(Body* body) {
       case FN2O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2O); break; // (B w, B f, B x, u32* bc)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,0,2); CCALL(fn); } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
-      case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, BB2B  fm,           u32* bc)
-      case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B  fm, BBB2B fd, u32* bc)
-      case ARRM: case ARRO:;
+      case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, BB2B fm,           u32* bc)
+      case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B fm, BBB2B fd, u32* bc)
+      case ARRM: case ARRO:; bool o = *(bc-1) == ARRO;
         u32 sz = *bc++;
-        if (sz) { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B, i64 sz, S)
-        else    { TOPs; CCALL(i_ARR_0); } // unused with optimizations
+        if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
+        else if (sz==1 && o) { TOPp; GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
+        else if (sz==2 && o) { TOPp; GET(R_A1,1,1); CCALL(i_ARR_2); } // (B a, B b)
+        else               { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
         break;
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
