@@ -315,7 +315,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
-  // if (f.u == bi_lt.u) return toCells(x); // TODO fix fills
+  if (f.u==bi_lt.u && a(x)->ia!=0) return toCells(x);
   usz cr = rnk(x)-1;
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
