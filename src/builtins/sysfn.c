@@ -1,4 +1,3 @@
-#include <spawn.h>
 #include <unistd.h>
 #include <poll.h>
 #include <errno.h>
@@ -608,6 +607,8 @@ B fromUtf8_c1(B t, B x) {
 
 extern char** environ;
 
+#if __has_include(<spawn.h>)
+#include <spawn.h>
 B sh_c1(B t, B x) {
   if (isAtm(x) || rnk(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
   usz xia = a(x)->ia;
@@ -659,6 +660,11 @@ B sh_c1(B t, B x) {
   dec(x);
   return m_v3(m_i32(WEXITSTATUS(status)), s_out, s_err);
 }
+#else
+B sh_c1(B t, B x) {
+  thrM("•SH: CBQN was built without <spawn.h>");
+}
+#endif
 
 
 B getInternalNS(void);

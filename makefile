@@ -22,14 +22,16 @@ c: # custom
 
 b: gen
 
+PIE = -no-pie
+
 single-o3:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -O3 -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -O3 -o BQN src/opt/single.c -lm
 single-o3g:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -O3 -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -O3 -g -o BQN src/opt/single.c -lm
 single-debug:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
 single-c:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) -no-pie $(f) -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -o BQN src/opt/single.c -lm
 
 
 # compiler setup
@@ -74,7 +76,7 @@ bd = obj/${t}
 
 
 gen: builtins core base jit utils # build the final binary
-	@$(CC) -no-pie -o BQN ${bd}/*.o -lm
+	@$(CC) ${PIE} -o BQN ${bd}/*.o -lm
 	@echo
 
 builddir: # create the build directory. makefiles are stupid
