@@ -806,7 +806,7 @@ B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   r->sc = psc; ptr_inc(psc);
   r->c1 = funBl_c1;
   r->c2 = funBl_c2;
-  return tag(r, FUN_TAG);
+  return tag(r,FUN_TAG);
 }
 B m_md1Block(Block* bl, Scope* psc) {
   Md1Block* r = mm_alloc(sizeof(Md1Block), t_md1_block);
@@ -814,7 +814,7 @@ B m_md1Block(Block* bl, Scope* psc) {
   r->sc = psc; ptr_inc(psc);
   r->c1 = md1Bl_c1;
   r->c2 = md1Bl_c2;
-  return tag(r, MD1_TAG);
+  return tag(r,MD1_TAG);
 }
 B m_md2Block(Block* bl, Scope* psc) {
   Md2Block* r = mm_alloc(sizeof(Md2Block), t_md2_block);
@@ -822,7 +822,7 @@ B m_md2Block(Block* bl, Scope* psc) {
   r->sc = psc; ptr_inc(psc);
   r->c1 = md2Bl_c1;
   r->c2 = md2Bl_c2;
-  return tag(r, MD2_TAG);
+  return tag(r,MD2_TAG);
 }
 
 DEF_FREE(scope) {

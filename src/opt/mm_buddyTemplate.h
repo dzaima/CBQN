@@ -35,7 +35,7 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
     u64* p = (u64*)x;
     u64* s = p + sizeof(Value)/8;
     u64* e = p + BSZ(bucket)/8;
-    while(s<e) *s++ = tag(NULL, OBJ_TAG).u;
+    while(s<e) *s++ = tag(NULL,OBJ_TAG).u;
   #endif
   #ifdef OBJ_COUNTER
     x->uid = currObjCounter++;

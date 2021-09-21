@@ -453,7 +453,7 @@ B reBQN_c1(B t, B x) {
     scVal = bi_N;
   } else {
     Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
-    scVal = tag(sc, OBJ_TAG);
+    scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
   return m_nfn(reBQNDesc, m_v2(m_f64(replVal), scVal));

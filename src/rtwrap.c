@@ -167,7 +167,7 @@ B rtWrap_wrap(B t) {
       r->c1t = 0; r->c1a = 0;
       r->c2t = 0; r->c2a = 0;
     #endif
-    return tag(r, FUN_TAG);
+    return tag(r,FUN_TAG);
   }
   #ifdef RT_PERF
   if (isMd1(t)) {
@@ -181,7 +181,7 @@ B rtWrap_wrap(B t) {
     lastWM1 = r;
     r->c1a = 0; r->c2a = 0;
     r->c1t = 0; r->c2t = 0;
-    return tag(r, MD1_TAG);
+    return tag(r,MD1_TAG);
   }
   if (isMd2(t)) {
     Md2* fc = c(Md2,t);
@@ -195,7 +195,7 @@ B rtWrap_wrap(B t) {
     lastWM2 = r;
     r->c1a = 0; r->c2a = 0;
     r->c1t = 0; r->c2t = 0;
-    return tag(r, MD2_TAG);
+    return tag(r,MD2_TAG);
   }
   #endif
   return t;

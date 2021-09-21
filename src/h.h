@@ -157,7 +157,7 @@ static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppp
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
 #define ftag(X) ((u64)(X) << 48)
 #define tag(V, T) b(((u64)(V)) | ftag(T))
-#define taga(V) tag(V, ARR_TAG)
+#define taga(V) tag(V,ARR_TAG)
 
 void cbqn_init(void);
 
@@ -249,11 +249,11 @@ void gc_forceGC(void); // force a gc; who knows what happens if gc is disabled (
 void gc_visitRoots(void);
 
 // some primitive actions
-static const B bi_N      = b((u64)0x7FF2000000000000ull); // tag(0, TAG_TAG); // make gcc happy
-static const B bi_noVar  = b((u64)0x7FF2000000000001ull); // tag(1, TAG_TAG);
-static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2, TAG_TAG);
-static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3, TAG_TAG);
-static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5, TAG_TAG);
+static const B bi_N      = b((u64)0x7FF2000000000000ull); // tag(0,TAG_TAG); // make gcc happy
+static const B bi_noVar  = b((u64)0x7FF2000000000001ull); // tag(1,TAG_TAG);
+static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2,TAG_TAG);
+static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3,TAG_TAG);
+static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5,TAG_TAG);
 extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyHVec() incG(bi_emptyHVec)
 #define emptyIVec() incG(bi_emptyIVec)
@@ -343,7 +343,7 @@ static inline bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
 
 // make objects
 static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
-static B m_c32(u32 n) { return tag(n, C32_TAG); } // TODO check validity?
+static B m_c32(u32 n) { return tag(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 

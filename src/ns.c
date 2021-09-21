@@ -35,7 +35,7 @@ B m_ns(Scope* sc, NSDesc* desc) { // consumes both
   r->desc = desc;
   r->nameList = r->desc->nameList;
   r->sc = sc;
-  return tag(r, NSP_TAG);
+  return tag(r,NSP_TAG);
 }
 
 B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
