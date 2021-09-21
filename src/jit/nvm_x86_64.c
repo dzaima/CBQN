@@ -517,6 +517,7 @@ Nvm_res m_nvm(Body* body) {
     u32* s = bc;
     u32* n = nextBC(bc);
     u32 bcpos = optRes.offset[s-optRes.bc];
+    u32 bodyOff = origBC - (u32*)body->bl->bc;
     u32* off = origBC + bcpos;
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
@@ -535,7 +536,7 @@ Nvm_res m_nvm(Body* body) {
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
     // #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,pos));
-    #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos]<<1 | 1);
+    #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos + bodyOff]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
     // use GET(R_A1,0,2); as GS_UPD when there's only one argument, and GET(R_A3,-1,2); when there are zero arguments (i think?)
