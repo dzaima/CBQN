@@ -167,7 +167,8 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       if (!silentREPL) printf("   ");
       i64 read = getline(&ln, &gl, stdin);
-      if (read<=0 || ln[0]==0 || ln[0]==10) { if(!silentREPL) putchar('\n'); break; }
+      if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
+      if (ln[0]==10) { free(ln); continue; }
       B code;
       bool output;
       if (ln[0] == ')') {
