@@ -10,6 +10,8 @@ I8Arr* file_bytes(B path); // consumes
 B file_chars(B path); // consumes
 B file_lines(B path); // consumes
 
+I8Arr* stdin_allBytes();
+
 void file_wChars(B path, B x); // consumes path
 void file_wBytes(B path, B x); // consumes path
 

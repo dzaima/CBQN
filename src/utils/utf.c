@@ -49,6 +49,12 @@ B fromUTF8l(char* s) {
   return fromUTF8(s, strlen(s));
 }
 
+B fromUTF8a(I8Arr* a) { // consumes a
+  B r = fromUTF8((char*)a->a, a->ia);
+  ptr_dec(a);
+  return r;
+}
+
 void printUTF8(u32 c) {
   if (c<128) printf("%c", c);
   else if (c<=0x07FF) printf("%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );

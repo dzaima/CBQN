@@ -118,8 +118,6 @@ static bool elNum(u8 x) {
 
 // string stuff
 
-B m_str8l(char* s);
-B fromUTF8l(char* x);
 i32 num_fmt(char buf[30], f64 x);
 #define NUM_FMT_BUF(N,X) char N[30]; num_fmt(N, X);
 B append_fmt(B s, char* p, ...);

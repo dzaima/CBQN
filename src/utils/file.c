@@ -37,10 +37,7 @@ I8Arr* file_bytes(B path) { // consumes
   return src;
 }
 B file_chars(B path) { // consumes
-  I8Arr* c = file_bytes(path);
-  B r = fromUTF8((char*)c->a, c->ia);
-  ptr_dec(c);
-  return r;
+  return fromUTF8a(file_bytes(path));
 }
 B file_lines(B path) { // consumes
   I8Arr* tf = file_bytes(path);
@@ -66,6 +63,21 @@ B file_lines(B path) { // consumes
   }
   ptr_dec(tf);
   return harr_fv(r);
+}
+
+I8Arr* stdin_allBytes() {
+  B r = emptyIVec();
+  u64 SZ = 8192;
+  TALLOC(i8, t, SZ);
+  while(true) {
+    u64 read = fread(t, 1, SZ, stdin);
+    if (read==0) break;
+    i8* ap; B a = m_i8arrv(&ap, read);
+    memcpy(ap, t, read);
+    r = vec_join(r, a);
+  }
+  TFREE(t);
+  return toI8Arr(r);
 }
 
 

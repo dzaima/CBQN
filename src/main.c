@@ -53,11 +53,13 @@ int main(int argc, char* argv[]) {
   #endif
   bool startREPL = argc==1;
   bool silentREPL = false;
+  bool execStdin = false;
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
       char* carg = argv[i];
       if (carg[0]!='-') break;
+      if (carg[1]==0) { execStdin=true; i++; break; }
       i++;
       if (carg[1]=='-') {
         if (!strcmp(carg, "--help")) {
@@ -124,16 +126,17 @@ int main(int argc, char* argv[]) {
               break;
             }
             #endif
-            case 'r': { startREPL = true;                    break; }
-            case 's': { startREPL = true; silentREPL = true; break; }
+            case 'r': { startREPL=true;                  break; }
+            case 's': { startREPL=true; silentREPL=true; break; }
           }
         }
       }
     }
     execFile:
-    if (i!=argc) {
+    if (i!=argc || execStdin) {
       repl_init();
-      B src = fromUTF8l(argv[i++]);
+      B src;
+      if (!execStdin) src = fromUTF8l(argv[i++]);
       B args;
       if (i==argc) {
         args = emptySVec();
@@ -144,7 +147,14 @@ int main(int argc, char* argv[]) {
         }
         args = ap.b;
       }
-      dec(bqn_execFile(src, args));
+      
+      B execRes;
+      if (execStdin) {
+        execRes = gsc_exec_inline(fromUTF8a(stdin_allBytes()), m_str8l("(-)"), args);
+      } else {
+        execRes = bqn_execFile(src, args);
+      }
+      dec(execRes);
       #ifdef HEAP_VERIFY
         heapVerify();
       #endif
