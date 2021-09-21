@@ -525,7 +525,7 @@ i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
-#define BCPOS(B,P) (B->bl->map[(P)-B->bc])
+#define BCPOS(B,P) (B->bl->map[(P)-(u32*)B->bl->bc])
 B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
@@ -1067,6 +1067,8 @@ NOINLINE void vm_pstLive() {
 void unwindEnv(Env* envNew) {
   assert(envNew<=envCurr);
   while (envCurr!=envNew) {
+    // if ((envCurr->pos&1) == 0) printf("unwinding %ld\n", (u32*)envCurr->pos - (u32*)envCurr->sc->body->bl->bc);
+    // else printf("not unwinding %ld", envCurr->pos>>1);
     if ((envCurr->pos&1) == 0) envCurr->pos = (BCPOS(envCurr->sc->body, (u32*)envCurr->pos)<<1) | 1;
     envCurr--;
   }
