@@ -23,23 +23,23 @@ src/
     md2.c       2-modifiers
     sysfn.c     •-definitions
     internal.c  •internal
-  opt/    files which aren't needed for every build configuration
-  gen/    generated files
-  jit/    simple JIT compiler for x86-64
-  utils/  utilities included as needed
-    builtins.h  definitions of all built-in functions (excluding things defined by means of nfns.c)
+  utils/      utilities included as needed
     file.h      file system operations
     hash.h      hashing things
     mut.h       copying multiple arrays into a single array
     talloc.h    temporary allocations (described more below)
     utf.h       UTF-8 things
-  core/   things included everywhere
-  core.h  file imported everywhere that defines the base BQN model
-  nfns.c  native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
-  load.c  loads the self-hosted compiler, runtime and formatter, initializes CBQN globals
-  main.c  main function & commandline stuff
-  ns.c    namespaces
-  vm.c    virtual machine interpreter
+  opt/        files which aren't needed for every build configuration
+  gen/        generated files
+  jit/        simple JIT compiler for x86-64
+  core/       things included everywhere
+  builtins.h  definitions of all built-in functions (excluding things defined by means of nfns.c)
+  core.h      file imported everywhere that defines the base BQN model
+  nfns.c      native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
+  load.c      loads the self-hosted compiler, runtime and formatter, initializes CBQN globals
+  main.c      main function & commandline stuff
+  ns.c        namespaces
+  vm.c        virtual machine interpreter
 )
 ```
 
@@ -125,13 +125,13 @@ All virtual method accesses require that the argument is heap-allocated.
 
 You can get a virtual function of a `B` instance with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
 
-Call a BQN function with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/utils/builtins.h` (and adding the `bi_` prefix).
+Call a BQN function with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h` (and adding the `bi_` prefix).
 
 Calling a modifier involves deriving it with `m1_d`/`m2_d`, using a regular `c1`/`c2`, and managing the refcounts of everything while at that.
 
 ## Builtin implementations
 
-The list of builtin functions is specified in the initial macros of `src/utils/builtins.h`, where `A`/`M`/`D` are used for ambivalent/monadic/dyadic. Once added, `bi_yourName` will be available, and the required of the following functions must be defined somewhere in the source:
+The list of builtin functions is specified in the initial macros of `src/builtins.h`, where `A`/`M`/`D` are used for ambivalent/monadic/dyadic. Once added, `bi_yourName` will be available, and the required of the following functions must be defined somewhere in the source:
 
 ```C
 // functions:

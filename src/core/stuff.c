@@ -2,7 +2,7 @@
 #include "../utils/mut.h"
 #include "../utils/utf.h"
 #include "../utils/talloc.h"
-#include "../utils/builtins.h"
+#include "../builtins.h"
 
 
 NORETURN NOINLINE void err(char* s) {

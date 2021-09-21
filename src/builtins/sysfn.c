@@ -7,8 +7,8 @@
 #include "../utils/hash.h"
 #include "../utils/file.h"
 #include "../utils/wyhash.h"
-#include "../utils/builtins.h"
 #include "../utils/mut.h"
+#include "../builtins.h"
 #include "../ns.h"
 #include "../nfns.h"
 

@@ -1,9 +1,9 @@
 #include "core.h"
-#include "vm.h"
-#include "ns.h"
 #include "utils/mut.h"
 #include "utils/file.h"
-#include "utils/builtins.h"
+#include "vm.h"
+#include "ns.h"
+#include "builtins.h"
 
 #define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost)
 #define F(X) void X##_init(void);

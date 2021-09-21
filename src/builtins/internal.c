@@ -1,6 +1,6 @@
 #include "../core.h"
 #include "../utils/mut.h"
-#include "../utils/builtins.h"
+#include "../builtins.h"
 
 B itype_c1(B t, B x) {
   B r;

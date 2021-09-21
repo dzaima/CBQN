@@ -1,6 +1,6 @@
 #include "../core.h"
-#include "../utils/builtins.h"
 #include "../utils/talloc.h"
+#include "../builtins.h"
 
 B md2BI_uc1(B t, B o, B f, B g,      B x) { return c(BMd2,t)->uc1(t, o, f, g,    x); }
 B md2BI_ucw(B t, B o, B f, B g, B w, B x) { return c(BMd2,t)->ucw(t, o, f, g, w, x); }
