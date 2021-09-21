@@ -78,21 +78,3 @@ typedef struct BMd2 {
    BBBBB2B uc1;
   BBBBBB2B ucw;
 } BMd2;
-
-static i64 isum(B x) { // doesn't consume; may error; TODO error on overflow
-  assert(isArr(x));
-  i64 r = 0;
-  usz xia = a(x)->ia;
-  u8 xe = TI(x,elType);
-  if      (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) r+= p[i]; }
-  else if (xe==el_i16) { i16* p = i16any_ptr(x); for (usz i = 0; i < xia; i++) r+= p[i]; }
-  else if (xe==el_i32) { i32* p = i32any_ptr(x); for (usz i = 0; i < xia; i++) r+= p[i]; }
-  else if (xe==el_f64) {
-    f64* p = f64any_ptr(x);
-    for (usz i = 0; i < xia; i++) { if(p[i]!=(i64)p[i]) thrM("Expected integer"); r+= p[i]; }
-  } else {
-    SGetU(x)
-    for (usz i = 0; i < xia; i++) r+= o2i64(GetU(x,i));
-  }
-  return r;
-}

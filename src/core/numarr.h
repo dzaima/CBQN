@@ -17,3 +17,23 @@ static B toI8Any (B x) { u8 t=v(x)->type; return t==t_i8arr  || t==t_i8slice ? x
 static B toI16Any(B x) { u8 t=v(x)->type; return t==t_i16arr || t==t_i16slice? x : taga(cpyI16Arr(x)); }
 static B toI32Any(B x) { u8 t=v(x)->type; return t==t_i32arr || t==t_i32slice? x : taga(cpyI32Arr(x)); }
 static B toF64Any(B x) { u8 t=v(x)->type; return t==t_f64arr || t==t_f64slice? x : taga(cpyF64Arr(x)); }
+
+
+static i64 isum(B x) { // doesn't consume; may error
+  assert(isArr(x));
+  i64 r = 0;
+  usz xia = a(x)->ia;
+  u8 xe = TI(x,elType);
+  if      (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) r+= p[i]; }
+  else if (xe==el_i16) { i16* p = i16any_ptr(x); for (usz i = 0; i < xia; i++) if (addOn(r,p[i])) goto err; }
+  else if (xe==el_i32) { i32* p = i32any_ptr(x); for (usz i = 0; i < xia; i++) if (addOn(r,p[i])) goto err; }
+  else if (xe==el_f64) {
+    f64* p = f64any_ptr(x);
+    for (usz i = 0; i < xia; i++) { if(p[i]!=(i64)p[i] || addOn(r,(i64)p[i])) goto err; }
+  } else {
+    SGetU(x)
+    for (usz i = 0; i < xia; i++) r+= o2i64(GetU(x,i));
+  }
+  return r;
+  err: thrM("Expected integer");
+}
