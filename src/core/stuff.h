@@ -96,11 +96,11 @@ B m_vec2(B a, B b);
 
 // random stuff
 
-static bool uszMul(usz* c, usz n) {
-  return __builtin_mul_overflow(*c, n, c);
-}
-static usz uszMulT(usz a, usz b) {
-  if (uszMul(&a, b)) thrM("Size too large");
+#define addOn(V,X) ({ AUTO v_ = &(V); __builtin_add_overflow(*v_, X, v_); })
+#define mulOn(V,X) ({ AUTO v_ = &(V); __builtin_mul_overflow(*v_, X, v_); })
+
+static usz uszMul(usz a, usz b) {
+  if (mulOn(a, b)) thrM("Size too large");
   return a;
 }
 

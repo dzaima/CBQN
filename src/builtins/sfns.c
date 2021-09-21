@@ -92,7 +92,7 @@ B shape_c2(B t, B w, B x) {
       bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
         if (wi[i]<0) thrF("⥊: 𝕨 contained %i", wi[i]);
-        bad|= uszMul(&nia, wi[i]);
+        bad|= mulOn(nia, wi[i]);
         good|= wi[i]==0;
       }
       if (bad && !good) thrM("⥊: 𝕨 too large");
@@ -106,7 +106,7 @@ B shape_c2(B t, B w, B x) {
         if (isF64(c)) {
           usz v = o2s(c);
           if (sh) sh->a[i] = v;
-          bad|= uszMul(&nia, v);
+          bad|= mulOn(nia, v);
           good|= v==0;
         } else {
           if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
@@ -136,7 +136,7 @@ B shape_c2(B t, B w, B x) {
           fill = true;
         } else UD;
         if (sh) sh->a[unkPos] = item;
-        nia = uszMulT(nia, item);
+        nia = uszMul(nia, item);
         if (fill) {
           if (!isArr(x)) x = m_atomUnit(x);
           Arr* a = take_impl(nia, x);
