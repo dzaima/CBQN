@@ -25,13 +25,34 @@ static DIR* dir_open(B path) { // doesn't consume
   return f;
 }
 
+
+I8Arr* stream_bytes(FILE* f) {
+  B r = emptyIVec();
+  u64 SZ = 8192;
+  TALLOC(i8, t, SZ);
+  while(true) {
+    u64 read = fread(t, 1, SZ, f);
+    if (read==0) break;
+    i8* ap; B a = m_i8arrv(&ap, read);
+    memcpy(ap, t, read);
+    r = vec_join(r, a);
+  }
+  TFREE(t);
+  return toI8Arr(r);
+}
+
 I8Arr* file_bytes(B path) { // consumes
   FILE* f = file_open(path, "read", "r");
-  fseek(f, 0, SEEK_END);
-  u64 len = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  I8Arr* src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src);
-  if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
+  int seekRes = fseek(f, 0, SEEK_END);
+  I8Arr* src;
+  if (seekRes==-1) {
+    src = stream_bytes(f);
+  } else {
+    i64 len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src);
+    if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
+  }
   dec(path);
   fclose(f);
   return src;
@@ -65,20 +86,6 @@ B file_lines(B path) { // consumes
   return harr_fv(r);
 }
 
-I8Arr* stdin_allBytes() {
-  B r = emptyIVec();
-  u64 SZ = 8192;
-  TALLOC(i8, t, SZ);
-  while(true) {
-    u64 read = fread(t, 1, SZ, stdin);
-    if (read==0) break;
-    i8* ap; B a = m_i8arrv(&ap, read);
-    memcpy(ap, t, read);
-    r = vec_join(r, a);
-  }
-  TFREE(t);
-  return toI8Arr(r);
-}
 
 
 

@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
       
       B execRes;
       if (execStdin) {
-        execRes = gsc_exec_inline(fromUTF8a(stdin_allBytes()), m_str8l("(-)"), args);
+        execRes = gsc_exec_inline(fromUTF8a(stream_bytes(stdin)), m_str8l("(-)"), args);
       } else {
         execRes = bqn_execFile(src, args);
       }
