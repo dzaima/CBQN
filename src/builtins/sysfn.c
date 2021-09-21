@@ -160,15 +160,23 @@ B casrt_c2(B t, B w, B x) {
   dec(x);
   if (isArr(w) && a(w)->ia==2) {
     B w0 = IGetU(w,0);
-    if (!isArr(w0) || a(w0)->ia<2) goto base;
-    B s = IGet(w,1);
-    SGetU(w0)
-    AFMT("\n");
-    s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
-    dec(w);
-    thr(s);
+    if (isNum(w0)) {
+      B s = IGet(w,1);
+      AFMT("\n");
+      usz pos = o2s(w0);
+      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
+      dec(w);
+      thr(s);
+    }
+    if (isArr(w0) && a(w0)->ia==2) {
+      B s = IGet(w,1);
+      SGetU(w0)
+      AFMT("\n");
+      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
+      dec(w);
+      thr(s);
+    }
   }
-  base:
   thr(w);
 }
 B casrt_c1(B t, B x) {
