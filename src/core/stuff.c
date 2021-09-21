@@ -161,9 +161,12 @@ i32 num_fmt(char buf[30], f64 x) {
   // for (int i = 0; i < 30; i++) buf[i] = 'a';
   snprintf(buf, 30, "%.16g", x); // should be %.17g to (probably?) never lose precision, but that also makes things ugly
   i32 len = strlen(buf);
-  if (buf[0] == 'i') {
-    buf[0] = 0xE2; buf[1] = 0x88; buf[2] = 0x9E; buf[3] = 0; len = 3;
-  } else if (buf[buf[0]=='-'?1:0] == 'n') {
+  i32 neg = buf[0]=='-'?1:0;
+  if (buf[neg] == 'i') {
+    i32 o = neg*2;
+    if (neg) { buf[0] = 0xC2; buf[1] = 0xAF; }
+    buf[o] = 0xE2; buf[o+1] = 0x88; buf[o+2] = 0x9E; buf[o+3] = 0; len = o+3;
+  } else if (buf[neg] == 'n') {
     buf[0] = 'N';  buf[1] = 'a';  buf[2] = 'N';  buf[3] = 0; len = 3;
   } else {
     if (buf[0] == '-') {
