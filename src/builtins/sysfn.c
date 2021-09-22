@@ -168,7 +168,7 @@ B casrt_c2(B t, B w, B x) {
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && a(w0)->ia==2) {
+    if (isArr(w0) && a(w0)->ia>=2) {
       B s = IGet(w,1);
       SGetU(w0)
       AFMT("\n");
