@@ -168,10 +168,16 @@ B casrt_c2(B t, B w, B x) {
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && a(w0)->ia>=2) {
-      B s = IGet(w,1);
+    if (isArr(w0) && rnk(w0)==1 && a(w0)->ia>=1) {
+      B s = IGet(w,1); AFMT("\n");
+      usz pos = o2s(IGetU(w0,0));
+      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
+      dec(w);
+      thr(s);
+    }
+    if (isArr(w0) && rnk(w0)==2 && a(w0)->ia>=2) {
+      B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
-      AFMT("\n");
       s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
       dec(w);
       thr(s);
