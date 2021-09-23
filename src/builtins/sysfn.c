@@ -12,6 +12,20 @@
 #include "../ns.h"
 #include "../nfns.h"
 
+
+static bool eqStr(B w, u32* x) {
+  if (isAtm(w) || rnk(w)!=1) return false;
+  SGetU(w)
+  u64 i = 0;
+  while (x[i]) {
+    B c = GetU(w, i);
+    if (!isC32(c) || x[i]!=(u32)c.u) return false;
+    i++;
+  }
+  return i==a(w)->ia;
+}
+
+
 B type_c1(B t, B x) {
   i32 r = -1;
        if (isArr(x)) r = 0;

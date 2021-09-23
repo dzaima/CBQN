@@ -50,7 +50,6 @@
 // #define ALL_R1       // use all of r1.bqn for runtime
 
 // #define LOG_GC    // log GC stats
-// #define TIME      // output runtime of every expression
 // #define RT_PERF   // time runtime primitives
 // #define RT_VERIFY // compare native and runtime versions of primitives
 // #define NO_RT     // whether to completely disable self-hosted runtime loading

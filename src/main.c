@@ -26,31 +26,16 @@ static B gsc_exec_inline(B src, B path, B args) {
   return r;
 }
 
+static bool isCmd(char* s, char** e, const char* cmd) {
+  while (*cmd) {
+    if (*s!=*cmd || *s==0) return false;
+    s++; cmd++;
+  }
+  *e = s;
+  return true;
+}
+
 int main(int argc, char* argv[]) {
-  // expects a copy of mlochbaum/BQN/src/c.bqn to be at the execution directory (with •args replaced with the array in glyphs.bqn)
-  #if defined(COMP_COMP) || defined(COMP_COMP_TIME)
-    repl_init();
-    char* c_src = NULL;
-    u64 c_len;
-    FILE* f = fopen("c.bqn", "rb");
-    if (f) {
-      fseek(f, 0, SEEK_END); c_len = ftell(f);
-      fseek(f, 0, SEEK_SET); c_src = malloc(c_len);
-      if (c_src) fread(c_src, 1, c_len, f);
-      fclose(f);
-    } else {
-      c_src = NULL;
-    }
-    if (c_src) {
-      B srcB = fromUTF8(c_src, c_len);
-      #ifdef COMP_COMP_TIME
-        gc_add(srcB);
-        for (i32 i = 0; i < 100; i++) { dec(bqn_exec(inc(srcB), bi_N, bi_N)); gc_maybeGC(); }
-        bqn_exit(0);
-      #endif
-      bqn_setComp(bqn_exec(srcB, bi_N, bi_N));
-    } else err("couldn't read c.bqn\n");
-  #endif
   bool startREPL = argc==1;
   bool silentREPL = false;
   bool execStdin = false;
@@ -82,7 +67,7 @@ int main(int argc, char* argv[]) {
       } else {
         carg++;
         char c;
-        while ((c=*carg++) != '\0') {
+        while ((c = *carg++)) {
           switch(c) { default: fprintf(stderr, "%s: Unknown option: -%c\n", argv[0], c); exit(1);
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
@@ -142,9 +127,7 @@ int main(int argc, char* argv[]) {
         args = emptySVec();
       } else {
         HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
-        for (i64 j = 0; j < argc-i; j++) {
-          ap.a[j] = fromUTF8l(argv[i+j]);
-        }
+        for (i64 j = 0; j < argc-i; j++) ap.a[j] = fromUTF8l(argv[i+j]);
         args = ap.b;
       }
       
@@ -178,37 +161,69 @@ int main(int argc, char* argv[]) {
       if (!silentREPL) printf("   ");
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
-      if (ln[0]==10) { free(ln); continue; }
+      if (ln[0]==10) { cont: free(ln); continue; }
+      if (ln[read-1]==10) ln[--read] = 0;
       B code;
       bool output;
+      i32 time = 0;
       if (ln[0] == ')') {
-        if (ln[1]=='e'&ln[2]=='x'&ln[3]==' ') {
-          B path = fromUTF8(ln+4, strlen(ln+4)-1);
+        char* cmdS = ln+1;
+        char* cmdE;
+        if (isCmd(cmdS, &cmdE, "ex ")) {
+          B path = fromUTF8l(cmdE);
           code = file_chars(path);
+          output = false;
+        } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
+          code = fromUTF8l(cmdE);
+          time = -1;
+          output = false;
+        } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
+          char* repE = cmdE;
+          i64 am = 0;
+          while (*repE>='0' & *repE<='9') {
+            am = am*10 + (*repE - '0');
+            repE++;
+          }
+          if (repE==cmdE) { printf("time command not given repetition count\n"); goto cont; }
+          if (am==0) { printf("repetition count was zero\n"); goto cont; }
+          code = fromUTF8l(repE);
+          time = am;
           output = false;
         } else {
           printf("Unknown REPL command\n");
-          free(ln);
-          continue;
+          goto cont;
         }
       } else {
-        code = fromUTF8(ln, strlen(ln));
+        code = fromUTF8l(ln);
         output = true;
       }
       Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
-      free(ln);
       
       ptr_dec(gsc->body); ptr_inc(block->bodies[0]);
       gsc->body = block->bodies[0];
       
-      #ifdef TIME
-      u64 sns = nsTime();
-      B res = execBlockInline(block, gsc);
-      u64 ens = nsTime();
-      printf("%fms\n", (ens-sns)/1e6);
-      #else
-      B res = execBlockInline(block, gsc);
-      #endif
+      B res;
+      if (time) {
+        f64 t;
+        if (time==-1) {
+          u64 sns = nsTime();
+          res = execBlockInline(block, gsc);
+          u64 ens = nsTime();
+          t = ens-sns;
+        } else {
+          u64 sns = nsTime();
+          for (i64 i = 0; i < time; i++) dec(execBlockInline(block, gsc));
+          u64 ens = nsTime();
+          t = (ens-sns)*1.0 / time;
+          res = m_c32(0);
+        }
+        if      (t<1e3) printf("%.5gns\n", t);
+        else if (t<1e6) printf("%.4gus\n", t/1e3);
+        else if (t<1e9) printf("%.4gms\n", t/1e6);
+        else            printf("%.5gs\n", t/1e9);
+      } else {
+        res = execBlockInline(block, gsc);
+      }
       ptr_dec(block);
       
       if (output) {
@@ -226,6 +241,7 @@ int main(int argc, char* argv[]) {
         heapVerify();
       #endif
       gc_maybeGC();
+      goto cont;
     }
     popCatch();
   }
