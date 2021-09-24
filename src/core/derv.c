@@ -1,4 +1,5 @@
 #include "../core.h"
+#include "../nfns.h"
 
 DEF_FREE(md1D) { dec(((Md1D*)x)->m1); dec(((Md1D*)x)->f);                     }
 DEF_FREE(md2D) { dec(((Md2D*)x)->m2); dec(((Md2D*)x)->f); dec(((Md2D*)x)->g); }
@@ -61,13 +62,48 @@ static B md2D_uc1(B t, B o, B x) {
   return TI(m,m2_uc1)(m, o, f, g, x);
 }
 
+static B toConstant(B x) { // doesn't consume x
+  if (!isCallable(x)) return inc(x);
+  if (v(x)->type == t_md1D) {
+    Md1D* d = c(Md1D,x);
+    B m1 = d->m1;
+    if (v(m1)->type==t_md1BI && v(m1)->flags==44) return inc(d->f);
+  }
+  return bi_N;
+}
+static NFnDesc* ucwWrapDesc;
+
+static B fork_uc1(B t, B o, B x) {
+  B f = toConstant(c(Fork, t)->f);
+  B g = c(Fork, t)->g;
+  B h = c(Fork, t)->h;
+  if (RARE(q_N(f) | !isFun(g) | !isFun(h))) { dec(f); return def_fn_uc1(t, o, x); } // flags check to not deconstruct builtins
+  B args[] = {g, o, f};
+  B tmp = m_nfn(ucwWrapDesc, tag(args, RAW_TAG));
+  B r = TI(h,fn_uc1)(h,tmp,x);
+  // f is consumed by the eventual ucwWrap call. this hopes that everything is nice and calls o only once, and within the under call, so any under interface must make they can't
+  dec(tmp);
+  return r;
+}
+
+static B ucwWrap_c1(B t, B x) {
+  B* args = c(B, nfn_objU(t));
+  B g = args[0];
+  return TI(g,fn_ucw)(g, args[1], args[2], x);
+}
+
 
 void derv_init() {
   TIi(t_md1D,freeO) = md1D_freeO; TIi(t_md1D,freeF) = md1D_freeF; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
-  TIi(t_md2D,freeO) = md2D_freeO; TIi(t_md2D,freeF) = md2D_freeF; TIi(t_md2D,visit) = md2D_visit; TIi(t_md2D,print) = md2D_print; TIi(t_md2D,decompose) = md2D_decompose; TIi(t_md2D,fn_uc1) = md2D_uc1;
+  TIi(t_md2D,freeO) = md2D_freeO; TIi(t_md2D,freeF) = md2D_freeF; TIi(t_md2D,visit) = md2D_visit; TIi(t_md2D,print) = md2D_print; TIi(t_md2D,decompose) = md2D_decompose;
   TIi(t_md2H,freeO) = md2H_freeO; TIi(t_md2H,freeF) = md2H_freeF; TIi(t_md2H,visit) = md2H_visit; TIi(t_md2H,print) = md2H_print; TIi(t_md2H,decompose) = md2H_decompose;
   TIi(t_fork,freeO) = fork_freeO; TIi(t_fork,freeF) = fork_freeF; TIi(t_fork,visit) = fork_visit; TIi(t_fork,print) = fork_print; TIi(t_fork,decompose) = fork_decompose;
   TIi(t_atop,freeO) = atop_freeO; TIi(t_atop,freeF) = atop_freeF; TIi(t_atop,visit) = atop_visit; TIi(t_atop,print) = atop_print; TIi(t_atop,decompose) = atop_decompose;
   TIi(t_md1BI,m1_d) = m_md1D;
   TIi(t_md2BI,m2_d) = m_md2D;
+  TIi(t_md2D,fn_uc1) = md2D_uc1; // not in post so later init can utilize it
+}
+void dervPost_init() {
+  ucwWrapDesc = registerNFn(m_str8l("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
+  TIi(t_fork,fn_uc1) = fork_uc1;
 }

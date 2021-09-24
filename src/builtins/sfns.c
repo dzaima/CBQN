@@ -71,6 +71,13 @@ B shape_c1(B t, B x) {
   Arr* r = TI(x,slice)(x, 0, ia); arr_shVec(r);
   return taga(r);
 }
+static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes all
+  B r; Arr* ra;
+  if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
+  else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
+  arr_shSetU(ra, nr, sh);
+  return r;
+}
 B shape_c2(B t, B w, B x) {
   usz xia = isArr(x)? a(x)->ia : 1;
   usz nia = 1;
@@ -155,11 +162,7 @@ B shape_c2(B t, B w, B x) {
     // goes to unit
   } else {
     if (nia <= xia) {
-      B r; Arr* ra;
-      if (reusable(x) && xia==nia) { r = REUSE(x); decSh(v(x)); ra = (Arr*)v(r); }
-      else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
-      arr_shSetU(ra, nr, sh);
-      return r;
+      return truncReshape(x, xia, nia, nr, sh);
     } else {
       xf = getFillQ(x);
       if (xia<=1) {
@@ -1008,8 +1011,8 @@ B select_ucw(B t, B o, B w, B x) {
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   u8 re = TI(rep,elType);
-  
-  if (we==el_i32) {
+  if (we<=el_i32) {
+    w = toI32Any(w);
     i32* wp = i32any_ptr(w);
     if (re<el_f64 && xe<el_f64) {
       u8 me = xe>re?xe:re;
@@ -1090,6 +1093,24 @@ B select_ucw(B t, B o, B w, B x) {
   #undef FREE_CHECK
 }
 
+static B shape_uc1_t(B r, usz ia) {
+  if (!isArr(r) || rnk(r)!=1 || a(r)->ia!=ia) thrM("𝔽⌾⥊: 𝔽 changed the shape of the argument");
+  return r;
+}
+B shape_uc1(B t, B o, B x) {
+  if (!isArr(x) || rnk(x)==0) {
+    usz xia = isArr(x)? a(x)->ia : 1;
+    B r = c1(o, shape_c1(t, x));
+    if (isArr(r)) shape_uc1_t(r, xia);
+    return shape_c2(t, emptyIVec(), r);
+  }
+  usz xia = a(x)->ia;
+  if (rnk(x)==1) return shape_uc1_t(c1(o, x), xia);
+  ur xr = rnk(x);
+  ShArr* sh = shObj(x);
+  ptr_inc(sh);
+  return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
+}
 
 void sfns_init() {
   c(BFn,bi_pick)->uc1 = pick_uc1;
@@ -1097,4 +1118,5 @@ void sfns_init() {
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_slash)->ucw = slash_ucw;
   c(BFn,bi_select)->ucw = select_ucw;
+  c(BFn,bi_shape)->uc1 = shape_uc1;
 }
