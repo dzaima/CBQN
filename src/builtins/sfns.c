@@ -1100,9 +1100,7 @@ static B shape_uc1_t(B r, usz ia) {
 B shape_uc1(B t, B o, B x) {
   if (!isArr(x) || rnk(x)==0) {
     usz xia = isArr(x)? a(x)->ia : 1;
-    B r = c1(o, shape_c1(t, x));
-    if (isArr(r)) shape_uc1_t(r, xia);
-    return shape_c2(t, emptyIVec(), r);
+    return shape_c2(t, emptyIVec(), shape_uc1_t(c1(o, shape_c1(t, x)), xia));
   }
   usz xia = a(x)->ia;
   if (rnk(x)==1) return shape_uc1_t(c1(o, x), xia);
