@@ -402,7 +402,9 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   comp->indices = indices;
   comp->src = src;
   comp->path = path;
-  comp->objs = toHArr(objs);
+  HArr* objArr = comp->objs = cpyHArr(objs);
+  usz objAm = objArr->ia;
+  for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
   comp->blockAm = 0;
   B nameList;
   if (q_N(tokenInfo)) {

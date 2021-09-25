@@ -537,7 +537,7 @@ B chr_squeeze(B x) {
     u32* xp = c32any_ptr(x);
     bool c8 = true;
     for (; i < ia; i++) {
-      if (xp[i] != (u16)xp[i]) goto r_c16;
+      if (xp[i] != (u16)xp[i]) goto r_c32;
       if (xp[i] != (u8 )xp[i]) c8 = false;
     }
     if (c8) goto r_c8;
@@ -560,7 +560,7 @@ B chr_squeeze(B x) {
   }
   if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);
   else if (or<=U16_MAX) r_c16: return FL_SET(toC16Any(x), fl_squoze);
-  else                         return FL_SET(toC32Any(x), fl_squoze);
+  else                  r_c32: return FL_SET(toC32Any(x), fl_squoze);
   r_x: return FL_SET(x, fl_squoze);
 }
 
@@ -576,6 +576,7 @@ B any_squeeze(B x) {
 }
 
 B squeeze_deep(B x) {
+  if (!isArr(x)) return x;
   x = any_squeeze(x);
   if (TI(x,elType)!=el_B) return x;
   usz ia = a(x)->ia;
