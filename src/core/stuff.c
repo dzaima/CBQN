@@ -582,13 +582,14 @@ B squeeze_deep(B x) {
   usz ia = a(x)->ia;
   usz i=0; HArr_p r = m_harrs(ia,&i);
   B* xp = arr_bptr(x);
+  B xf = getFillQ(x);
   if (xp!=NULL) {
     while (i < ia) { r.a[i] = squeeze_deep(inc(xp[i])); i++; }
   } else {
     SGet(x);
     while (i < ia) { r.a[i] = squeeze_deep(Get(x,i)); i++; }
   }
-  return any_squeeze(harr_fcd(r, x));
+  return any_squeeze(qWithFill(harr_fcd(r, x), xf));
 }
 
 B bqn_merge(B x) {

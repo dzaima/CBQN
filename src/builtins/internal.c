@@ -26,6 +26,9 @@ B squeeze_c1(B t, B x) {
   if (!isArr(x)) return x;
   return any_squeeze(x);
 }
+B deepSqueeze_c1(B t, B x) {
+  return squeeze_deep(x);
+}
 B isPure_c1(B t, B x) {
   B r = m_f64(isPureFn(x));
   dec(x);
@@ -258,8 +261,8 @@ B getInternalNS() {
     listVariations_def = m_str8l("if");
     gc_addFn(variation_root);
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare⟩⇐𝕩}"), emptyCVec(), emptySVec());
-    B arg =    m_caB(9, (B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)});
+    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare,  DeepSqueeze⟩⇐𝕩}"), emptyCVec(), emptySVec());
+    B arg =    m_caB(10,(B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)});
     #undef F
     internalNS = c1(fn,arg);
     gc_add(internalNS);
