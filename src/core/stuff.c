@@ -302,6 +302,13 @@ NOINLINE B make_fmt(char* p, ...) {
   va_end(a);
   return r;
 }
+NOINLINE void print_fmt(char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B r = do_fmt(emptyCVec(), p, a);
+  va_end(a);
+  printRaw(r);
+}
 NOINLINE void thrF(char* p, ...) {
   va_list a;
   va_start(a, p);
@@ -443,10 +450,18 @@ void slice_visit(Value* x) { mm_visitP(((Slice*)x)->p); }
 void slice_print(B x) { arr_print(x); }
 
 char* type_repr(u8 u) {
-  switch(u) { default: return"(unknown type)";
+  switch(u) { default: return "(unknown type)";
     #define F(X) case t_##X: return #X;
     FOR_TYPE(F)
     #undef F
+  }
+}
+char* eltype_repr(u8 u) {
+  switch(u) { default: return "(bad elType)";
+    case el_bit: return "el_bit"; case el_f64: return "el_f64"; case el_B: return "el_B";
+    case el_i8:  return "el_i8";  case el_c8:  return "el_c8";
+    case el_i16: return "el_i16"; case el_c16: return "el_c16";
+    case el_i32: return "el_i32"; case el_c32: return "el_c32";
   }
 }
 bool isPureFn(B x) { // doesn't consume
@@ -713,5 +728,21 @@ NOINLINE void printAllocStats() {
   NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]) {
     printf("%s:%d: %s: Assertion `%s` failed.\n", file, line, fn, expr);
     err("");
+  }
+#endif
+#if WARN_SLOW==1
+  BBB2B ptr;
+  static void warn_ln(B x) {
+    if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", a(x)->ia, eltype_repr(TI(x,elType)), x);
+    else printf("not array\n");
+  }
+  void warn_slow1(char* s, B x) {
+    if (isArr(x) && a(x)->ia<100) return;
+    printf("slow %s: ", s); warn_ln(x);
+  }
+  void warn_slow2(char* s, B w, B x) {
+    if ((isArr(w)||isArr(x))  &&  (!isArr(x) || a(x)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
+    printf("slow %s:\n  𝕨: ", s); warn_ln(w);
+    printf("  𝕩: "); warn_ln(x);
   }
 #endif

@@ -152,6 +152,7 @@ static B eachd(B f, B w, B x) { // complete w F¨ x without fills
 
 #if CATCH_ERRORS
 static inline B arith_recd(BBB2B f, B w, B x) {
+  SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arith", w, x);
   B fx = getFillQ(x);
   if (noFill(fx)) return eachd_fn(f, bi_N, w, x);
   B fw = getFillQ(w);

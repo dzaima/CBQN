@@ -247,6 +247,17 @@ typedef struct Arr {
   #define VALIDATEP(x) (x)
   #define UD __builtin_unreachable();
 #endif
+#if WARN_SLOW==1
+  void warn_slow1(char* s, B x);
+  void warn_slow2(char* s, B w, B x);
+  #define SLOW1(S, X) warn_slow1(S, X)
+  #define SLOW2(S, W, X) warn_slow2(S, W, X)
+  #define SLOWIF(C) if(C)
+#else
+  #define SLOW1(S, X)
+  #define SLOW2(S, W,X)
+  #define SLOWIF(C)
+#endif
 
 // memory manager
 typedef void (*V2v)(Value*);

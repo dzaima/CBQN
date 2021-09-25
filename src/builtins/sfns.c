@@ -296,6 +296,7 @@ B select_c2(B t, B w, B x) {
     else if (TI(w,elType)==el_i16) TYPE(i16)
     else if (TI(w,elType)==el_i32) TYPE(i32)
     else {
+      SLOW2("𝕨⊏𝕩", w, x);
       usz i=0; HArr_p r = m_harrs(wia, &i);
       SGetU(w)
       for (; i < wia; i++) {
@@ -309,6 +310,7 @@ B select_c2(B t, B w, B x) {
     }
     #undef CASE
   } else {
+    SLOW2("𝕨⊏𝕩", w, x);
     SGetU(w)
     ur wr = rnk(w);
     i32 rr = wr+xr-1;
@@ -339,24 +341,23 @@ B select_c2(B t, B w, B x) {
   return c2(rt_select, w, x);
 }
 
-static NOINLINE B slash_c1R(B x, u64 s) {
-  usz xia = a(x)->ia;
-  SGetU(x)
-  f64* rp; B r = m_f64arrv(&rp, s); usz ri = 0;
-  for (usz i = 0; i < xia; i++) {
-    usz c = o2s(GetU(x, i));
-    for (usz j = 0; j < c; j++) rp[ri++] = i;
-  }
-  dec(x);
-  return r;
-}
 extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(rnk(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   i64 s = isum(x);
   if(s<0) thrM("/: Argument must consist of natural numbers");
   usz xia = a(x)->ia;
-  if (RARE(xia>=I32_MAX)) return slash_c1R(x, s);
+  if (RARE(xia>=I32_MAX)) {
+    usz xia = a(x)->ia;
+    SGetU(x)
+    f64* rp; B r = m_f64arrv(&rp, s); usz ri = 0;
+    for (usz i = 0; i < xia; i++) {
+      usz c = o2s(GetU(x, i));
+      for (usz j = 0; j < c; j++) rp[ri++] = i;
+    }
+    dec(x);
+    return r;
+  }
   i32* rp; B r = m_i32arrv(&rp, s);
   u8 xe = TI(x,elType);
   if (xe==el_i8) {
@@ -386,6 +387,7 @@ B slash_c1(B t, B x) {
       }
     }
   } else {
+    SLOW1("/𝕩", x);
     SGetU(x)
     for (u64 i = 0; i < xia; i++) {
       usz c = o2s(GetU(x, i));
@@ -442,6 +444,7 @@ B slash_c2(B t, B w, B x) {
     if (TI(w,elType)==el_i32) TYPED(i32,31);
     #undef TYPED
     #undef CASE
+    SLOW2("𝕨/𝕩", w, x);
     i64 ria = isum(w);
     if (ria>USZ_MAX) thrOOM();
     HArr_p r = m_harrs(ria, &ri);
@@ -822,6 +825,7 @@ B group_c2(B t, B w, B x) {
       dec(w); dec(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     } else {
+      SLOW2("𝕨⊔𝕩", w, x);
       SGetU(w)
       i64 ria = wia==xia? 0 : o2i64(GetU(w, xia));
       if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
@@ -886,6 +890,7 @@ B reverse_c1(B t, B x) {
     dec(x);
     return r;
   }
+  SLOW1("⌽𝕩", x);
   usz csz = arr_csz(x);
   usz cam = a(x)->sh[0];
   usz rp = 0;
@@ -1003,6 +1008,7 @@ B select_ucw(B t, B o, B w, B x) {
     for (i64 i = 0; i < xia; i++) set[i] = false;
     #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
     #define FREE_CHECK TFREE(set)
+    SLOWIF(xia>100 && wia<xia/10) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
   #else
     #define EQ(F)
     #define FREE_CHECK
@@ -1011,6 +1017,7 @@ B select_ucw(B t, B o, B w, B x) {
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   u8 re = TI(rep,elType);
+  SLOWIF(!reusable(x) && xia>100 && wia<xia/10) SLOW2("⌾(𝕨⊸⊏)𝕩 because not reusable", w, x);
   if (we<=el_i32) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);

@@ -125,6 +125,7 @@ i32 num_fmt(char buf[30], f64 x);
 #define NUM_FMT_BUF(N,X) char N[30]; num_fmt(N, X);
 B append_fmt(B s, char* p, ...);
 B make_fmt(char* p, ...);
+void print_fmt(char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X
 #define AOBJ(X) s = vec_add(s,X) // consumes X
 #define ACHR(X) AOBJ(m_c32(X))
@@ -138,6 +139,7 @@ char* type_repr(u8 u);
 char* pfn_repr(u8 u);
 char* pm1_repr(u8 u);
 char* pm2_repr(u8 u);
+char* eltype_repr(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 
@@ -251,7 +253,6 @@ static inline void onFree(Value* x) {
   #endif
   // x->refc = 0x61616161;
 }
-
 
 extern _Thread_local i64 comp_currEnvPos;
 extern _Thread_local B comp_currPath;
