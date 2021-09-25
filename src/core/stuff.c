@@ -444,24 +444,9 @@ void slice_print(B x) { arr_print(x); }
 
 char* format_type(u8 u) {
   switch(u) { default: return"(unknown type)";
-    case t_empty:return"empty"; case t_shape:return"shape";
-    case t_funBI:return"builtin fun"; case t_fun_block:return"fun block";
-    case t_md1BI:return"builtin md1"; case t_md1_block:return"md1 block";
-    case t_md2BI:return"builtin md2"; case t_md2_block:return"md2 block";
-    case t_fork:return"fork"; case t_atop:return"atop";
-    case t_md1D:return"md1D"; case t_md2D:return"md2D"; case t_md2H:return"md2H";
-    case t_i8arr  :return"i8arr"  ; case t_i16arr  :return"i16arr"  ; case t_i32arr  :return"i32arr"  ;
-    case t_i8slice:return"i8slice"; case t_i16slice:return"i16slice"; case t_i32slice:return"i32slice";
-    case t_c8arr  :return"c8arr"  ; case t_c16arr  :return"c16arr"  ; case t_c32arr  :return"c32arr"  ;
-    case t_c8slice:return"c8slice"; case t_c16slice:return"c16slice"; case t_c32slice:return"c32slice";
-    case t_harr  :return"harr"  ; case t_fillarr  :return"fillarr"  ; case t_f64arr  :return"f64arr"  ;
-    case t_hslice:return"hslice"; case t_fillslice:return"fillslice"; case t_f64slice:return"f64slice";
-    case t_comp:return"comp"; case t_block:return"block"; case t_body:return"body"; case t_scope:return"scope"; case t_scopeExt:return"scope extension"; case t_blBlocks: return "block list";
-    case t_ns:return"ns"; case t_nsDesc:return"nsDesc"; case t_fldAlias:return"alias"; case t_hashmap:return"hashmap"; case t_temp:return"temporary"; case t_nfn:return"nfn"; case t_nfnDesc:return"nfnDesc";
-    case t_freed:return"(freed by GC)"; case t_harrPartial:return"partHarr";
-    #ifdef RT_WRAP
-    case t_funWrap:return"wrapped function"; case t_md1Wrap:return"wrapped 1-modifier"; case t_md2Wrap:return "wrapped 2-modifier";
-    #endif
+    #define F(X) case t_##X: return #X;
+    FOR_TYPE(F)
+    #undef F
   }
 }
 bool isPureFn(B x) { // doesn't consume

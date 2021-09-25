@@ -170,25 +170,35 @@ typedef union B {
 } B;
 #define b(x) ((B)(x))
 
+#ifdef RT_WRAP
+  #define IF_RT_WRAP(X) X
+#else
+  #define IF_RT_WRAP(X)
+#endif
+
+#define FOR_TYPE(F) \
+  /* 0*/ F(empty) \
+  /* 1*/ F(funBI) F(fun_block) \
+  /* 3*/ F(md1BI) F(md1_block) \
+  /* 5*/ F(md2BI) F(md2_block) \
+  /* 7*/ F(shape) /* doesn't get F(visited) shouldn't be unallocated by gc */ \
+  \
+  /* 8*/ F(fork) F(atop) \
+  /*10*/ F(md1D) F(md2D) F(md2H) \
+  \
+  /*13*/ F(harr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(fillarr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
+  /*19*/ F(hslice) F(i8slice) F(i16slice) F(i32slice) F(fillslice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  \
+  /*25*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
+  /*31*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
+  /*38*/ F(freed) F(harrPartial) \
+  \
+  /*40*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+
 enum Type {
-  /* 0*/ t_empty, // empty bucket placeholder
-  /* 1*/ t_funBI, t_fun_block,
-  /* 3*/ t_md1BI, t_md1_block,
-  /* 5*/ t_md2BI, t_md2_block,
-  /* 7*/ t_shape, // doesn't get visited, shouldn't be unallocated by gcWMd1
-  
-  /* 8*/ t_fork, t_atop,
-  /*10*/ t_md1D, t_md2D, t_md2H,
-  
-  /*13*/ t_i8arr  , t_i16arr  , t_i32arr  , t_c8arr  , t_c16arr  , t_c32arr  , t_f64arr  , t_harr  , t_fillarr  ,
-  /*19*/ t_i8slice, t_i16slice, t_i32slice, t_c8slice, t_c16slice, t_c32slice, t_f64slice, t_hslice, t_fillslice,
-  
-  /*25*/ t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks,
-  /*31*/ t_ns, t_nsDesc, t_fldAlias, t_vfyObj, t_hashmap, t_temp, t_nfn, t_nfnDesc,
-  /*39*/ t_freed, t_harrPartial,
-  #ifdef RT_WRAP
-  /*41*/ t_funWrap, t_md1Wrap, t_md2Wrap,
-  #endif
+  #define F(X) t_##X,
+  FOR_TYPE(F)
+  #undef F
   t_COUNT
 };
 
