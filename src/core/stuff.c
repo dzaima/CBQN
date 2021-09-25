@@ -512,9 +512,9 @@ B num_squeeze(B x) {
     or|= c<0?-c:c;
   }
   r_or:
-  if      (or<=I8_MAX ) goto r_i8;
-  else if (or<=I16_MAX) goto r_i16;
-  else                  goto r_i32;
+  if      (or>=0 && or<=I8_MAX ) goto r_i8;
+  else if (or>=0 && or<=I16_MAX) goto r_i16;
+  else                           goto r_i32;
   
   r_x  : return FL_SET(x, fl_squoze);
   r_i8 : return FL_SET(toI8Any (x), fl_squoze);
