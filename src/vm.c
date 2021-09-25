@@ -103,6 +103,13 @@ void printBC(u32* p) {
   len = 6-len;
   while(len-->0) printf(" ");
 }
+void printBCStream(u32* p) {
+  while(true) {
+    printBC(p); putchar(10);
+    if (*p == RETD || *p == RETN) return;
+    p = nextBC(p);
+  }
+}
 
 
 B catchMessage;
