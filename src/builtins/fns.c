@@ -143,7 +143,7 @@ B indexOf_c1(B t, B x) {
       if (c<min) min = c;
       if (c>max) max = c;
     }
-    i64 dst = 1 + max-(i64)min;
+    i64 dst = 1 + (max-(i64)min);
     if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
       i32* rp; B r = m_i32arrv(&rp, xia);
       TALLOC(i32, tmp, dst);

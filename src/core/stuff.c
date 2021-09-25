@@ -476,14 +476,14 @@ B num_squeeze(B x) {
   if (xe==el_i8) goto r_x;
   // TODO fast paths for xe<el_f64
   usz i = 0;
-  i32 or = 0; // using bitwise or as a heuristical ⌈´|𝕩
+  u32 or = 0; // using bitwise or as an approximate ⌈´
   if (xe==el_f64) {
     f64* xp = f64any_ptr(x);
     for (; i < ia; i++) {
       f64 cf = xp[i];
       i32 c = (i32)cf;
       if (c!=cf) goto r_x; // already f64
-      or|= c<0?-c:c;
+      or|= ((u32)c) ^ (u32)(c>>31);
     }
     goto r_or;
   }
@@ -496,7 +496,7 @@ B num_squeeze(B x) {
         goto r_f64;
       }
       i32 c = o2iu(xp[i]);
-      or|= c<0?-c:c;
+      or|= ((u32)c) ^ (u32)(c>>31);
     }
     goto r_or;
   }
@@ -509,12 +509,12 @@ B num_squeeze(B x) {
       goto r_f64;
     }
     i32 c = o2iu(cr);
-    or|= c<0?-c:c;
+    or|= ((u32)c) ^ (u32)(c>>31);
   }
   r_or:
-  if      (or>=0 && or<=I8_MAX ) goto r_i8;
-  else if (or>=0 && or<=I16_MAX) goto r_i16;
-  else                           goto r_i32;
+  if      (or<=(u32)I8_MAX ) goto r_i8;
+  else if (or<=(u32)I16_MAX) goto r_i16;
+  else                       goto r_i32;
   
   r_x  : return FL_SET(x, fl_squoze);
   r_i8 : return FL_SET(toI8Any (x), fl_squoze);
