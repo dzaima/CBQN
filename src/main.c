@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
               break;
             }
             case 'p': { repl_init(); REQARG(p);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-p)"), emptySVec());
-              print(r); dec(r);
+              B r = bqn_fmt(gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-p)"), emptySVec()));
+              printRaw(r); dec(r);
               printf("\n");
               break;
             }
