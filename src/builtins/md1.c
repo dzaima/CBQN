@@ -350,7 +350,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
 
 
 
-static void print_md1BI(B x) { printf("%s", format_pm1(c(Md1,x)->extra)); }
+static void print_md1BI(B x) { printf("%s", pm1_repr(c(Md1,x)->extra)); }
 void md1_init() {
   TIi(t_md1BI,print) = print_md1BI;
 }

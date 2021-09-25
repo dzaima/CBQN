@@ -442,7 +442,7 @@ void slice_freeF(Value* x) { slice_freeO(x); mm_free(x); }
 void slice_visit(Value* x) { mm_visitP(((Slice*)x)->p); }
 void slice_print(B x) { arr_print(x); }
 
-char* format_type(u8 u) {
+char* type_repr(u8 u) {
   switch(u) { default: return"(unknown type)";
     #define F(X) case t_##X: return #X;
     FOR_TYPE(F)
@@ -658,7 +658,7 @@ NOINLINE void printAllocStats() {
     ctr_a[t_harrPartial] = 0;
     printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_a[i]); } printf("\n");
     printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_f[i]); } printf("\n");
-    printf("names←⟨"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf(","); printf("\"%s\"", format_type(i)); } printf("⟩\n");
+    printf("names←⟨"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf(","); printf("\"%s\"", type_repr(i)); } printf("⟩\n");
     u64 leakedCount = 0;
     for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
     printf("leaked object count: "N64u"\n", leakedCount);

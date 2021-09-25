@@ -63,21 +63,21 @@ FOR_PM2(FA,FM,FD)
 #define F(N) u64 N;
 CTR_FOR(F)
 #undef F
-char* format_pf(u8 u) {
+char* pfn_repr(u8 u) {
   switch(u) { default: return "(unknown function)";
     #define F(N,X) case pf_##N: return X;
     FOR_PFN(F,F,F)
     #undef F
   }
 }
-char* format_pm1(u8 u) {
+char* pm1_repr(u8 u) {
   switch(u) { default: return"(unknown 1-modifier)";
     #define F(N,X) case pm1_##N: return X;
     FOR_PM1(F,F,F)
     #undef F
   }
 }
-char* format_pm2(u8 u) {
+char* pm2_repr(u8 u) {
   switch(u) { default: return"(unknown 2-modifier)";
     #define F(N,X) case pm2_##N: return X;
     FOR_PM2(F,F,F)
@@ -378,8 +378,8 @@ static void freed_visit(Value* x) {
 static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
 DEF_FREE(def) { }
-static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, format_type(x->type)); }
-static void def_print(B x) { printf("(%d=%s)", v(x)->type, format_type(v(x)->type)); }
+static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, type_repr(x->type)); }
+static void def_print(B x) { printf("(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
 static B def_get(Arr* x, usz n) { err("def_get"); }

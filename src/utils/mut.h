@@ -162,7 +162,7 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) {
 
 // mut_copy but x is guaranteed to be a subtype of m
 static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
-  // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, format_type(xt), xs, xs+l); fflush(stdout);
+  // printf("mut_%d[%d…%d] ← %s[%d…%d]\n", m->type, ms, ms+l, type_repr(xt), xs, xs+l); fflush(stdout);
   u8 xt = v(x)->type;
   switch(m->type) { default: UD;
     case el_i8:  { i8*  rp = m->ai8+ms;   i8*  xp = i8any_ptr(x);  for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }

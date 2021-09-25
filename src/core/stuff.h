@@ -131,10 +131,10 @@ B make_fmt(char* p, ...);
 
 // function stuff
 
-char* format_type(u8 u);
-char* format_pf(u8 u);
-char* format_pm1(u8 u);
-char* format_pm2(u8 u);
+char* type_repr(u8 u);
+char* pfn_repr(u8 u);
+char* pm1_repr(u8 u);
+char* pm2_repr(u8 u);
 bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 

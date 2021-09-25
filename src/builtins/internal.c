@@ -5,7 +5,7 @@
 B itype_c1(B t, B x) {
   B r;
   if(isVal(x)) {
-    r = m_str8l(format_type(v(x)->type));
+    r = m_str8l(type_repr(v(x)->type));
   } else {
     if      (isF64(x)) r = m_str8l("tagged f64");
     else if (isC32(x)) r = m_str8l("tagged c32");
@@ -45,7 +45,7 @@ B info_c2(B t, B w, B x) {
       AFMT("flags:%i ", xv->flags);
       AFMT("extra:%i ", xv->extra);
     }
-    AFMT("type:%i=%S ", xv->type, format_type(xv->type));
+    AFMT("type:%i=%S ", xv->type, type_repr(xv->type));
     AFMT("alloc:%l", mm_size(xv));
     dec(x);
   } else {
@@ -239,7 +239,7 @@ static B unshare(B x) {
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return taga(r);
     }
-    default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", v(x)->type, format_type((v(x)->type)));
+    default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", v(x)->type, type_repr((v(x)->type)));
   }
 }
 

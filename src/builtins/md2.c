@@ -149,7 +149,7 @@ B before_uc1(B t, B o, B f, B g, B x) {
 
 
 
-static void print_md2BI(B x) { printf("%s", format_pm2(c(Md1,x)->extra)); }
+static void print_md2BI(B x) { printf("%s", pm2_repr(c(Md1,x)->extra)); }
 void md2_init() {
   TIi(t_md2BI,print) = print_md2BI;
   TIi(t_md2BI,m2_uc1) = md2BI_uc1;

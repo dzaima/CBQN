@@ -5,7 +5,7 @@
 #include "../nfns.h"
 
 
-void print_funBI(B x) { printf("%s", format_pf(c(Fun,x)->extra)); }
+void print_funBI(B x) { printf("%s", pfn_repr(c(Fun,x)->extra)); }
 B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
