@@ -118,6 +118,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     }
   }
   base:;
+  SLOW2("𝕎`𝕩", f, x);
   
   bool reuse = v(x)->type==t_harr && reusable(x);
   usz i = 0;
@@ -161,6 +162,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     }
   }
   base:;
+  SLOW3("𝕨 F` 𝕩", w, x, f);
+  
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
   HArr_p r = reuse? harr_parts(REUSE(x)) : m_harrs(a(x)->ia, &i);
@@ -198,7 +201,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   u8 xe = TI(x,elType);
   if (isFun(f) && v(f)->flags && xe<=el_f64) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==0) { // + 
+    if (rtid==0) { // +
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i64 c=0; for (usz i=0; i<ia; i++) c+= xp[i];                    dec(x); return m_f64(c); } // won't worry about 64TB array sum float inaccuracy for now
       if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (addOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (addOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
@@ -227,6 +230,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     }
   }
   base:;
+  SLOW2("𝕎´ 𝕩", f, x);
   
   SGet(x)
   BBB2B fc2 = c2fn(f);
@@ -276,6 +280,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
     }
   }
   base:;
+  SLOW3("𝕨 F´ 𝕩", w, x, f);
   
   B c = w;
   SGet(x)

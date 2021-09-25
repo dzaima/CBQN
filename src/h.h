@@ -250,12 +250,15 @@ typedef struct Arr {
 #if WARN_SLOW==1
   void warn_slow1(char* s, B x);
   void warn_slow2(char* s, B w, B x);
+  void warn_slow3(char* s, B w, B x, B y);
   #define SLOW1(S, X) warn_slow1(S, X)
   #define SLOW2(S, W, X) warn_slow2(S, W, X)
+  #define SLOW3(S, W, X, Y) warn_slow3(S, W, X, Y)
   #define SLOWIF(C) if(C)
 #else
   #define SLOW1(S, X)
-  #define SLOW2(S, W,X)
+  #define SLOW2(S, W, X)
+  #define SLOW3(S, W, X, Y)
   #define SLOWIF(C)
 #endif
 

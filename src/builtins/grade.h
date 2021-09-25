@@ -72,6 +72,7 @@ B GRADE_CAT(c1)(B t, B x) {
     return r;
   }
   
+  SLOW1(GRADE_UD("⍋","⍒")"𝕩", x);
   TALLOC(BI32p, tmp, ia);
   SGetU(x)
   for (usz i = 0; i < ia; i++) {
@@ -124,6 +125,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
   } else {
     SGetU(x)
+    SLOW2("𝕨"GRADE_UD("⍋","⍒")"𝕩", w, x);
     B* wp = arr_bptr(w);
     if (wp==NULL) {
       HArr* a = toHArr(w);

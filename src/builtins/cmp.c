@@ -2,7 +2,10 @@
 #include "../utils/each.h"
 #include <math.h>
 
-#define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
+#define P2(N) { if (isArr(w)|isArr(x)) { \
+    SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("cmp " #N, w, x); \
+    return arith_recd(N##_c2, w, x); \
+}}
 
 #define AL(X) i8* rp; B r = m_i8arrc(&rp, X);
 

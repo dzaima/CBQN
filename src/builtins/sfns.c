@@ -1008,7 +1008,7 @@ B select_ucw(B t, B o, B w, B x) {
     for (i64 i = 0; i < xia; i++) set[i] = false;
     #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
     #define FREE_CHECK TFREE(set)
-    SLOWIF(xia>100 && wia<xia/10) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
+    SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
   #else
     #define EQ(F)
     #define FREE_CHECK
@@ -1017,7 +1017,7 @@ B select_ucw(B t, B o, B w, B x) {
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   u8 re = TI(rep,elType);
-  SLOWIF(!reusable(x) && xia>100 && wia<xia/10) SLOW2("⌾(𝕨⊸⊏)𝕩 because not reusable", w, x);
+  SLOWIF(!reusable(x) && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 because not reusable", w, x);
   if (we<=el_i32) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);

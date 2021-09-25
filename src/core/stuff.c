@@ -734,7 +734,11 @@ NOINLINE void printAllocStats() {
   BBB2B ptr;
   static void warn_ln(B x) {
     if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", a(x)->ia, eltype_repr(TI(x,elType)), x);
-    else printf("not array\n");
+    else {
+      printf("atom: ");
+      printRaw(x = bqn_fmt(inc(x))); dec(x);
+      putchar('\n');
+    }
   }
   void warn_slow1(char* s, B x) {
     if (isArr(x) && a(x)->ia<100) return;
@@ -744,5 +748,11 @@ NOINLINE void printAllocStats() {
     if ((isArr(w)||isArr(x))  &&  (!isArr(x) || a(x)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
     printf("slow %s:\n  𝕨: ", s); warn_ln(w);
     printf("  𝕩: "); warn_ln(x);
+  }
+  void warn_slow3(char* s, B w, B x, B y) {
+    if ((isArr(w)||isArr(x))  &&  (!isArr(x) || a(x)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
+    printf("slow %s:\n  𝕨: ", s); warn_ln(w);
+    printf("  𝕩: "); warn_ln(x);
+    printf("  f: "); warn_ln(y);
   }
 #endif

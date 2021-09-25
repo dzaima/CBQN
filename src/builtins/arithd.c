@@ -2,7 +2,10 @@
 #include "../utils/each.h"
 #include <math.h>
 
-#define P2(N) { if(isArr(w)|isArr(x)) return arith_recd(N##_c2, w, x); }
+#define P2(N) { if(isArr(w)|isArr(x)) { \
+  SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x); \
+  return arith_recd(N##_c2, w, x); \
+}}
 #if TYPED_ARITH
   #define GC2f(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {         \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
