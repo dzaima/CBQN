@@ -1,3 +1,18 @@
+#define C8Atom u8
+#define C16Atom u16
+#define C32Atom u32
+
+#define TU C8
+#define TP(W,X) W##c8##X
+#include "tyarrTemplate.h"
+#define TU C16
+#define TP(W,X) W##c16##X
+#include "tyarrTemplate.h"
+#define TU C32
+#define TP(W,X) W##c32##X
+#include "tyarrTemplate.h"
+
+
 B m_str8(usz sz, char* s);
 B m_str8l(char* s);
 B m_str32(u32* s);

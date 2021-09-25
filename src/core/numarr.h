@@ -1,3 +1,21 @@
+#define I8Atom i8
+#define I16Atom i16
+#define I32Atom i32
+#define F64Atom f64
+
+#define TU I8
+#define TP(W,X) W##i8##X
+#include "tyarrTemplate.h"
+#define TU I16
+#define TP(W,X) W##i16##X
+#include "tyarrTemplate.h"
+#define TU I32
+#define TP(W,X) W##i32##X
+#include "tyarrTemplate.h"
+#define TU F64
+#define TP(W,X) W##f64##X
+#include "tyarrTemplate.h"
+
 B m_cai32(usz ia, i32* a);
 B m_caf64(usz sz, f64* a);
 
