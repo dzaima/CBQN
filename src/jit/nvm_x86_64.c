@@ -127,6 +127,12 @@ INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
   v_set(pscs, s, r, true); dec(s);
   return r;
 }
+INS B i_SETC(B s, B f, Scope** pscs, u32* bc) { POS_UPD;
+  B x = v_get(pscs, s);
+  B r = c1(f,x); dec(f);
+  v_set(pscs, s, r, true); dec(s);
+  return r;
+}
 INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
   bool ok = v_seth(pscs, s, x); dec(x); dec(s);
   if (ok) return bi_okHdr;
@@ -143,9 +149,11 @@ INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
 INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
 INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
 INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, inc(r), true); return r; }
+INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, inc(r), true); return r; }
 INS void i_SETNv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, false); }
 INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true ); }
 INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, r, true); }
+INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, r, true); }
 INS B i_FLDO(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));
@@ -297,7 +305,7 @@ static OptRes opt(u32* bc0) {
         stk[TSSIZE(stk)-1] = SREF(d, pos);
         break;
       }
-      case SETN: case SETU: case SETM: { S(s,0)
+      case SETN: case SETU: case SETM: case SETC: { S(s,0)
         if (!isVar(s.v)) goto defIns;
         cact = 2; RM(s.p);
         TSADD(data, s.v.u);
@@ -356,15 +364,15 @@ static OptRes opt(u32* bc0) {
     u64 psz = TSSIZE(rbc);
     #define A64(X) { u64 a64=(X); TSADD(rbc, (u32)a64); TSADD(rbc, a64>>32); }
     switch (ctype) { default: UD;
-      case 2: { assert(v==SETN|v==SETU|v==SETM);
-        TSADD(rbc, v==SETN? SETNi : v==SETU? SETUi : SETMi);
+      case 2: { assert(v==SETN|v==SETU|v==SETM|v==SETC);
+        TSADD(rbc, v==SETN? SETNi : v==SETU? SETUi : v==SETC? SETCi : SETMi);
         u64 d = data[dpos++];
         TSADD(rbc, (u16)(d>>32));
         TSADD(rbc, (u32)d);
         break;
       }
-      case 7: { assert(v==SETN|v==SETU|v==SETM);
-        TSADD(rbc, v==SETN? SETNv : v==SETU? SETUv : SETMv);
+      case 7: { assert(v==SETN|v==SETU|v==SETM|v==SETC);
+        TSADD(rbc, v==SETN? SETNv : v==SETU? SETUv : v==SETC? SETCv : SETMv);
         u64 d = data[dpos++];
         TSADD(rbc, (u16)(d>>32));
         TSADD(rbc, (u32)d);
@@ -597,13 +605,16 @@ Nvm_res m_nvm(Body* body) {
       case SETN: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETU: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETM: TOPp; GET(R_A1,1,1); GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
+      case SETC: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETC); break; // (B s, B f,      Scope** pscs, u32* bc)
       // TODO SETNi doesn't really need to update gStack
       case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMi);           break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
+      case SETCi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCi);           break; } // (B f,      Scope* sc, u32 p, u32* bc)
       case SETNv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
+      case SETCv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCv); NORES(1); break; } // (B f,      Scope* sc, u32 p, u32* bc)
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
       case ALIM: TOPp; IMM(R_A1,*bc++); CCALL(i_ALIM); break; // (B, u32 l)
       case VFYM: TOPp;                  CCALL(i_VFYM); break; // (B)
@@ -611,7 +622,7 @@ Nvm_res m_nvm(Body* body) {
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
       case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
-      default: thrF("JIT: Unsupported bytecode %i/%S", *s, nameBC(s));
+      default: thrF("JIT: Unsupported bytecode %i/%S", *s, bc_repr(s));
     }
     #undef GET
     #undef GS_SET

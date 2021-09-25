@@ -11,10 +11,10 @@
 #endif
 
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
-                  F(TR3D) F(SETN) F(SETU) F(SETM) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
+                  F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
-                  F(SETNi)F(SETUi)F(SETMi)F(SETNv)F(SETUv)F(SETMv)F(FAIL)
+                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL)
 
 u32* nextBC(u32* p) {
   i32 off;
@@ -22,7 +22,7 @@ u32* nextBC(u32* p) {
     case FN1C: case FN2C: case FN1O: case FN2O:
     case MD1C: case MD2C: case MD2R:
     case TR2D: case TR3D: case TR3O:
-    case SETN: case SETU: case SETM: case SETH:
+    case SETN: case SETU: case SETM: case SETH: case SETC:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
     case FAIL:
       off = 1; break;
@@ -34,7 +34,8 @@ u32* nextBC(u32* p) {
     case EXTO: case EXTM: case EXTU:
     case ADDI: case ADDU:
     case FN1Ci: case FN1Oi: case FN2Ci: case DFND0: case DFND1: case DFND2:
-    case SETNi: case SETUi: case SETMi: case SETNv: case SETUv: case SETMv:
+    case SETNi: case SETUi: case SETMi: case SETCi:
+    case SETNv: case SETUv: case SETMv: case SETCv:
       off = 3; break;
     case FN2Oi: case SETHi:
       off = 5; break;
@@ -52,6 +53,7 @@ i32 stackDiff(u32* p) {
     
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
     case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
+    case SETC: return -1; case SETCi:return  0; case SETCv:return -1;
     case SETM: return -2; case SETMi:return -1; case SETMv:return -2;
     case FAIL: return 0;
   }
@@ -68,6 +70,7 @@ i32 stackConsumed(u32* p) {
     
     case SETN: return 2; case SETNi: case SETNv: return 1;
     case SETU: return 2; case SETUi: case SETUv: return 1;
+    case SETC: return 2; case SETCi: case SETCv: return 1;
     case SETM: return 3; case SETMi: case SETMv: return 2;
     case FAIL: return 0;
   }
@@ -76,7 +79,7 @@ i32 stackAdded(u32* p) {
   if (*p==ARRO|*p==ARRM) return 1;
   return stackDiff(p)+stackConsumed(p);
 }
-char* nameBC(u32* p) {
+char* bc_repr(u32* p) {
   switch(*p) { default: return "(unknown)";
     #define F(X) case X: return #X;
     FOR_BC(F)
@@ -84,7 +87,7 @@ char* nameBC(u32* p) {
   }
 }
 void printBC(u32* p) {
-  printf("%s", nameBC(p));
+  printf("%s", bc_repr(p));
   u32* n = nextBC(p);
   p++;
   i64 am = n-p;
@@ -688,6 +691,13 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
         B w = v_get(pscs, s);
         B r = c2(f,w,x); dec(f);
+        v_set(pscs, s, r, true); dec(s);
+        ADD(r);
+        break;
+      }
+      case SETC: { P(s)P(f) GS_UPD; POS_UPD;
+        B x = v_get(pscs, s);
+        B r = c1(f,x); dec(f);
         v_set(pscs, s, r, true); dec(s);
         ADD(r);
         break;
