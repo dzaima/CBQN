@@ -32,11 +32,11 @@ static inline B arith_recm(BB2B f, B x) {
     for (i64 i = 0; i < sz; i++) { f64 v = xp[i]; rp[i] = FEXPR; }      \
     dec(x); return r;                                                   \
   }                                                                     \
-  base: return arith_recm(NAME##_c1, x);                                \
+  base: SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x);             \
 }
   
 
-#define P1(N) { if(isArr(x)) return arith_recm(N##_c1, x); }
+#define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   add_c1(B t, B x) { return x; }
 GC1i("-", sub,   -v,              v== MIN, -v) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
 GC1i("¬", not,   1-v,             v<=-MAX, 1-v)
