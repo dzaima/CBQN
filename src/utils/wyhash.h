@@ -170,19 +170,7 @@ static inline void make_secret(uint64_t seed, uint64_t *secret){
       for(size_t j=0;j<64;j+=8) secret[i]|=((uint64_t)c[wyrand(&seed)%sizeof(c)])<<j;
       if(secret[i]%2==0){ ok=0; continue; }
       for(size_t j=0;j<i;j++) {
-#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
-        if(__builtin_popcountll(secret[j]^secret[i])!=32){ ok=0; break; }
-#elif defined(_MSC_VER) && defined(_M_X64)
-        if(_mm_popcnt_u64(secret[j]^secret[i])!=32){ ok=0; break; }
-#else
-        //manual popcount
-        uint64_t x = secret[j]^secret[i];
-        x -= (x >> 1) & 0x5555555555555555;
-        x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
-        x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0f;
-        x = (x * 0x0101010101010101) >> 56;
-        if(x!=32){ ok=0; break; }
-#endif
+        if(POPC(secret[j]^secret[i])!=32){ ok=0; break; }
       }
     }while(!ok);
   }

@@ -694,6 +694,13 @@ NOINLINE void printAllocStats() {
   #endif
 }
 
+// for gdb
+Value* g_v(B x) { return v(x); }
+Arr*   g_a(B x) { return a(x); }
+B      g_t (void* x) { return tag(x,OBJ_TAG); }
+B      g_ta(void* x) { return tag(x,ARR_TAG); }
+B      g_tf(void* x) { return tag(x,FUN_TAG); }
+
 #ifdef DEBUG
   #ifdef OBJ_COUNTER
     #define PRINT_ID(X) printf("Object ID: "N64u"\n", (X)->uid)

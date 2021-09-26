@@ -288,7 +288,7 @@ B select_c2(B t, B w, B x) {
         B* xp = hany_ptr(x); \
         for (; i < wia; i++) r.a[i] = inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]); \
         dec(x); return harr_fcd(r, w); \
-      } \
+      } SLOW2("𝕨⊏𝕩", w, x); \
       for (; i < wia; i++) r.a[i] = Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))); \
       dec(x); return withFill(harr_fcd(r,w),xf); \
     }
@@ -431,6 +431,7 @@ B slash_c2(B t, B w, B x) {
       }                                  \
       if (or>>SIGN) thrM("/: 𝕨 must consist of natural numbers"); \
       CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
+      SLOW2("𝕨/𝕩", w, x);                            \
       HArr_p r = m_harrs(wsum, &ri); SGetU(x)        \
       for (usz i = 0; i < wia; i++) {                \
         i32 cw = wp[i]; if (cw==0) continue;         \
@@ -477,6 +478,7 @@ B slash_c2(B t, B w, B x) {
       dec(x);
       return r;
     } else {
+      SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
       HArr_p r = m_harrUv(xia*wv);
       SGetU(x)
@@ -814,6 +816,7 @@ B group_c2(B t, B w, B x) {
           c->ia = 0;
           rp[i] = taga(c);
         }
+        SLOW2("𝕨⊔𝕩", w, x);
         SGet(x)
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];

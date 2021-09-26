@@ -115,6 +115,7 @@
 #define NORETURN     __attribute__((noreturn))
 #define AUTO __auto_type
 #define CLZ(X) __builtin_clzll(X)
+#define POPC(X) __builtin_popcountll(X)
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
@@ -222,9 +223,9 @@ enum ElType { // a⌈b shall return the type that can store both, if possible; a
 typedef struct Value {
   i32 refc;  // plain old reference count
   u8 mmInfo; // bucket size, mark&sweep bits when that's needed
-  u8 flags;  // is sorted/a permutation/whatever in the future, currently primitive index for self-hosted runtime
+  u8 flags;  // self-hosted primitive index for callable, fl_* flags for arrays
   u8 type;   // used by TI, among generally knowing what type of object this is
-  ur extra;  // whatever object-specific stuff. Rank for arrays, id for functions
+  ur extra;  // whatever object-specific stuff. Rank for arrays, internal id for functions
   #ifdef OBJ_COUNTER
   u64 uid;
   #endif
