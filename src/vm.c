@@ -935,13 +935,18 @@ B block_decompose(B x) { return m_v2(m_i32(1), x); }
 B bl_m1d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
 B bl_m2d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
 
+static usz pageSizeV;
+usz getPageSize() {
+  if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
+  return pageSizeV;
+}
 void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
-  usz pageSize = sysconf(_SC_PAGESIZE);
-  u64 sz = (elSize*count + pageSize-1)/pageSize * pageSize;
+  usz ps = getPageSize();
+  u64 sz = (elSize*count + ps-1)/ps * ps;
   assert(sz%elSize == 0);
-  *curr = *start = mmap(NULL, sz+pageSize, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+  *curr = *start = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
   *end = ((char*)*start)+sz;
-  mprotect(*end, pageSize, PROT_NONE); // idk first way i found to force erroring on overflow
+  mprotect(*end, ps, PROT_NONE); // idk first way i found to force erroring on overflow
 }
 void print_vmStack() {
   #ifdef DEBUG_VM

@@ -4,6 +4,7 @@
 #include "../utils/file.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
+#include "../utils/wyhash.h"
 #include "../vm.h"
 
 #ifndef USE_PERF
@@ -24,8 +25,37 @@ u64 mmX_ctrs[64];
 #include "../opt/mm_buddyTemplate.h"
 #define  MMI(X) X
 #define  ALSZ  17
-#define PROT PROT_READ|PROT_WRITE|PROT_EXEC
-#define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT
+
+static u64 nvm_mmap_seed = 0;
+#ifdef __clang__
+#if __clang_major__ < 11 // clang 10 gets stuck in an infinite loop while optimizing this
+__attribute__((optnone))
+#endif
+#endif
+static void* mmap_nvm(u64 sz) {
+  u64 near = (u64)&bqn_exec;
+  u64 MAX_DIST = 1ULL<<30;
+  if (near < MAX_DIST) return mmap(NULL, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_32BIT, -1, 0);
+  u64 ps = getPageSize();
+  
+  i32 attempt = 0;
+  // printf("binary at %p\n", &bqn_exec);
+  while(true) {
+    if (attempt++ > 200) err("Failed to allocate memory for JIT 200 times; stopping trying");
+    u64 randOff = wyrand(&nvm_mmap_seed) & (MAX_DIST>>1)-1;
+    u64 loc = near+randOff & ~(ps-1);
+    // printf("request %d: %p\n", attempt, (void*)loc);
+    
+    void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_FIXED_NOREPLACE, -1, 0);
+    if (c==NULL) continue;
+    
+    i64 dist = (i64)near - (i64)c;
+    if ((dist<0?-dist:dist) < MAX_DIST) return c;
+    munmap(c, sz);
+  }
+}
+
+#define MMAP(SZ) mmap_nvm(sz);
 #include "../opt/mm_buddyTemplate.c"
 static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
 #undef BN
@@ -512,8 +542,7 @@ Nvm_res m_nvm(Body* body) {
     }
   }
   
-  if ((u64)i_RETD > I32_MAX || (u64)&gStack > I32_MAX || (u64)&envEnd > I32_MAX) thrM("JIT: Refusing to run with CBQN code outside of the 32-bit address range");
-  #define CCALL(F) { u64 f=(u64)(F); if(f>I32_MAX)thrM("JIT: Function address too large for call"); CALLi(f); }
+  #define CCALL(F) CALLi((u64)(F))
   u32* origBC = body->bc;
   OptRes optRes = opt(origBC);
   i32 depth = 0;

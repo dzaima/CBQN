@@ -4,11 +4,8 @@
 #define alCap     BN(alCap)
 #define alSize    BN(alSize)
 #define str(X) #X
-#ifndef PROT
-  #define PROT PROT_READ|PROT_WRITE
-#endif
-#ifndef FLAGS
-  #define FLAGS MAP_NORESERVE|MAP_PRIVATE|MAP_ANON
+#ifndef MMAP
+  #define MMAP(SZ) mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0)
 #endif
 
 typedef struct AllocInfo {
@@ -35,7 +32,7 @@ static inline void BN(guaranteeEmpty)(u8 bucket) {
       if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
       mm_heapAlloc+= sz;
       // gc_maybeGC();
-      c = mmap(NULL, sz, PROT, FLAGS, -1, 0);
+      c = MMAP(sz);
       #ifdef USE_VALGRIND
         VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
       #endif
@@ -80,8 +77,7 @@ void BN(forHeap)(V2v f) {
   }
 }
 
-#undef FLAGS
-#undef PROT
+#undef MMAP
 #undef AllocInfo
 #undef buckets
 #undef al

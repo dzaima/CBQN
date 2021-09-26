@@ -500,6 +500,6 @@ ASMI(PUSH, Reg O) { nREX4(O,0); ASM1(0x50+((O)&7)); }
 ASMI(POP , Reg O) { nREX4(O,0); ASM1(0x58+((O)&7)); }
 
 ASMI(CALL, Reg i) { nREX4(i,0); ASM1(0xFF); nA_REG(i,2); }
-ASMI(CALLi, u64 pos) { ASM1(0xE8); if (pos>I32_MAX)err("immediate call outside of 32-bit range!"); ASM4(pos-4); }
+ASMI(CALLi, u64 pos) { ASM1(0xE8); ASM4(pos-4); }
 
 #define IMM(A,B) MOVi(A,(u64)(B))
