@@ -9,7 +9,7 @@ opt←""
 {
   case ← 𝕩∾".bqn"
   tests ← •FLines path∾"/test/cases/"∾case
-  tests/˜↩ (('#'≢⊑)∧0<≠)¨tests
+  tests/˜↩ (("#"≢1⊸↑)∧0<≠)¨tests
   {𝕊: tests/˜↩'!'≠⊑¨tests}⍟⊑ 's'∊opt
   {𝕊: tests/˜↩'!'=⊑¨tests}⍟⊑ 'e'∊opt
   verify ← ⊑'v'∊opt
