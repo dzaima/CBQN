@@ -45,8 +45,11 @@ static void* mmap_nvm(u64 sz) {
     u64 randOff = wyrand(&nvm_mmap_seed) & (MAX_DIST>>1)-1;
     u64 loc = near+randOff & ~(ps-1);
     // printf("request %d: %p\n", attempt, (void*)loc);
-    
-    void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|MAP_FIXED_NOREPLACE, -1, 0);
+    int noreplace = 0;
+    #ifdef MAP_FIXED_NOREPLACE
+      noreplace|= MAP_FIXED_NOREPLACE;
+    #endif
+    void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON|noreplace, -1, 0);
     if (c==NULL) continue;
     
     i64 dist = (i64)near - (i64)c;
