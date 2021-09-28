@@ -41,6 +41,7 @@ enum {
   DYNO = 0x26, // N; push variable with name objs[N]
   DYNM = 0x27, // N; push mutable variable with name objs[N]
   
+  PRED = 0x2A, // pop item, go to next body if 0, continue if 1
   VFYM = 0x2B, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
   SETH = 0x2F, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
   SETN = 0x30, // set new; _  ←_; ⟨…,x,  mut⟩ → mut←x
@@ -55,7 +56,7 @@ enum {
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   SETNi, SETUi, SETMi, SETCi, // SET_ alternatives that expect the set variable as a depth-position pair like VAR_
   SETNv, SETUv, SETMv, SETCv, // SET_i alternatives that also don't return the result
-  SETHi, // internal version of SETH, with 2×u64 arguments specifying bodies to jump to on fail (or NULL if is last)
+  SETHi, PRED1, PRED2, // internal versions of SETH and PRED, with 2×u64 arguments (only 1 for PRED1) specifying bodies to jump to on fail (or NULL if is last)
   DFND0, DFND1, DFND2, // internal versions of DFND with a specific type, and a u64 argument representing the block pointer
   FAIL, // this body cannot be called monadically/dyadically
   BC_SIZE

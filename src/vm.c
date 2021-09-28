@@ -12,7 +12,7 @@
 
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) \
+                  F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) F(PRED1) F(PRED2) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL)
 
@@ -24,7 +24,7 @@ u32* nextBC(u32* p) {
     case TR2D: case TR3D: case TR3O:
     case SETN: case SETU: case SETM: case SETH: case SETC:
     case POPS: case CHKV: case VFYM: case RETN: case RETD:
-    case FAIL:
+    case FAIL: case PRED:
       off = 1; break;
     case PUSH: case DFND: case ARRO: case ARRM:
     case DYNO: case DYNM: case FLDO: case FLDM:
@@ -35,9 +35,9 @@ u32* nextBC(u32* p) {
     case ADDI: case ADDU:
     case FN1Ci: case FN1Oi: case FN2Ci: case DFND0: case DFND1: case DFND2:
     case SETNi: case SETUi: case SETMi: case SETCi:
-    case SETNv: case SETUv: case SETMv: case SETCv:
+    case SETNv: case SETUv: case SETMv: case SETCv: case PRED1:
       off = 3; break;
-    case FN2Oi: case SETHi:
+    case FN2Oi: case SETHi: case PRED2:
       off = 5; break;
   }
   return p+off;
@@ -48,7 +48,7 @@ i32 stackDiff(u32* p) {
     case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case DFND0:case DFND1:case DFND2:
     case VARU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
     case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case ALIM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case POPS: case MD2R: case RETN: return -1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case POPS: case MD2R: case RETN: case PRED: case PRED1: case PRED2: return -1;
     case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
     
     case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
@@ -64,8 +64,8 @@ i32 stackConsumed(u32* p) {
     case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case VARU: case EXTO: case EXTM:
     case EXTU: case SYSV: case ADDI: case ADDU: case DFND0:case DFND1:case DFND2:return 0;
     case CHKV: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case ALIM: case RETN: case POPS: case VFYM: return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case MD2R: case SETH: case SETHi:return 2;
+    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case ALIM: case RETN: case POPS: case PRED: case PRED1: case PRED2: case VFYM: return 1;
+    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case MD2R: case SETH: case SETHi: return 2;
     case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
     
     case SETN: return 2; case SETNi: case SETNv: return 1;
@@ -155,11 +155,11 @@ static Body* m_body(i32 vam, i32 pos, u16 maxStack, u16 maxPSC) { // leaves varI
   body->varAm = (u16)vam;
   return body;
 }
-typedef struct SETHRequest {
+typedef struct NextRequest {
   u32 off; // offset into bytecode where the two integers must be inserted
   u32 pos1; // offset into bodyI/bodyMap of what's wanted for monadic
-  u32 pos2; // ↑ for dyadic
-} SETHRequest;
+  u32 pos2; // ↑ for dyadic; U32_MAX if not wanted
+} NextRequest;
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth) {
   usz blIA = a(block)->ia;
   if (blIA!=3) thrM("VM compiler: Bad block info size");
@@ -170,11 +170,12 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   i32* bodyI;
   i32 bodyAm1, bodyAm2, bodyILen;
   if (isArr(bodyObj)) {
-    if (a(bodyObj)->ia!=2) thrM("VM compiler: Unexpected body list length");
+    usz boia = a(bodyObj)->ia;
+    if (boia!=1 && boia!=2) thrM("VM compiler: Unexpected body list length");
     // print(bodyObj); putchar('\n');
     SGetU(bodyObj)
-    B b1 = GetU(bodyObj,0);
-    B b2 = GetU(bodyObj,1);
+    B b1 =               GetU(bodyObj,0);
+    B b2 = boia==1? b1 : GetU(bodyObj,1);
     if (!isArr(b1) || !isArr(b2)) thrM("VM compiler: Body list contained non-arrays");
     bodyAm1 = a(b1)->ia; SGetU(b1)
     bodyAm2 = a(b2)->ia; SGetU(b2)
@@ -199,7 +200,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   TSALLOC(Block*, usedBlocks, 2); // list of blocks to be referenced by DFND, stored in result->blocks
   TSALLOC(Body*, bodies, 2); // list of bodies of this block
   TALLOC(Body*, bodyMap, bodyILen+2); // map from index in bodyI to the corresponding body
-  TSALLOC(SETHRequest, sethReqs, 10); // list of SETHi's to fill out when bodyMap is complete
+  TSALLOC(NextRequest, bodyReqs, 10); // list of SETH/PRED-s to fill out when bodyMap is complete
   
   i32 pos1 = 0; // pos1 and pos2 always stay valid indexes in bodyI because bodyI is padded with -1s
   i32 pos2 = bodyAm1+1;
@@ -314,10 +315,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           TSADD(newBC, cpos);
           break;
         }
-        case SETH:
-          TSADD(newBC, SETHi);
-          TSADD(sethReqs, ((SETHRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = pos2}));
-          A64(0); A64(0); // to be filled in by later sethReqs handling
+        case SETH: case PRED:
+          if (mpsc<1) mpsc=1; // SETH and PRED may want to have a parent scope pointer
+          TSADD(newBC, *c==SETH? SETHi : imm? PRED1 : PRED2);
+          TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));
+          A64(0); if(!imm)A64(0); // to be filled in by later bodyReqs handling
           break;
         default: {
           u32* ccpy = c;
@@ -349,13 +351,13 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     if (is1) bodyMap[pos1-1] = body;
     if (is2) bodyMap[pos2-1] = body;
   }
-  u64 sethReqAm = TSSIZE(sethReqs);
-  for (u64 i = 0; i < sethReqAm; i++) {
-    SETHRequest r = sethReqs[i];
-    u64 v1 = (u64)bodyMap[r.pos1]; newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
-    u64 v2 = (u64)bodyMap[r.pos2]; newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32;
+  u64 bodyReqAm = TSSIZE(bodyReqs);
+  for (u64 i = 0; i < bodyReqAm; i++) {
+    NextRequest r = bodyReqs[i];
+    /*ugly, but whatever*/ u64 v1 = (u64)bodyMap[r.pos1]; newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
+    if (r.pos2!=U32_MAX) { u64 v2 = (u64)bodyMap[r.pos2]; newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32; }
   }
-  TSFREE(sethReqs);
+  TSFREE(bodyReqs);
   TFREE(bodyMap);
   TFREE(bodyI);
   
@@ -528,9 +530,18 @@ NOINLINE B v_getR(Scope* pscs[], B s) {
   }
 }
 
-
-
-FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc);
+FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
+  if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
+  
+  popEnv();
+  
+  i32 ga = blockGivenVars(bl);
+  
+  for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
+  Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
+  scope_dec(sc);
+  return execBodyInlineI(bl, body, nsc);
+}
 
 #ifdef DEBUG_VM
 i32 bcDepth=-2;
@@ -711,20 +722,15 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case SETHi:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) {
-          Body* body = (Body*)(q_N(sc->vars[2])? v1 : v2);
-          if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
-          
-          GS_UPD;
-          popEnv();
-          
-          i32 ga = blockGivenVars(bl);
-          
-          for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
-          Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
-          scope_dec(sc);
-          return execBodyInlineI(bl, body, nsc);
-        }
+        if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
+        break;
+      }
+      case PRED1:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64;
+        if (!o2b(x)) { GS_UPD; return gotoNextBody(bl, sc, (Body*)v1); }
+        break;
+      }
+      case PRED2:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
+        if (!o2b(x)) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
       case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;

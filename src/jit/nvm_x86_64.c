@@ -166,11 +166,7 @@ INS B i_SETC(B s, B f, Scope** pscs, u32* bc) { POS_UPD;
   v_set(pscs, s, r, true); dec(s);
   return r;
 }
-INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
-  bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-  if (ok) return bi_okHdr;
-  Scope* sc = pscs[0];
-  Body* body = q_N(sc->vars[2])? v1 : v2;
+FORCE_INLINE B gotoNextBodyJIT(Scope* sc, Body* body) {
   if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
   Block* bl = body->bl;
   // because of nvm returning semantics, we cannot quick-skip to the next body. TODO maybe we can by moving tail of evalJIT into i_RETN etc and some magic™ here?
@@ -178,6 +174,19 @@ INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
   for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
   Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
   return execBodyInlineI(bl, body, nsc);
+}
+INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
+  bool ok = v_seth(pscs, s, x); dec(x); dec(s);
+  if (ok) return bi_okHdr;
+  return gotoNextBodyJIT(pscs[0], q_N(pscs[0]->vars[2])? v1 : v2);
+}
+INS B i_PRED1(B x, Scope* sc, u32* bc, Body* v) { POS_UPD;
+  if (o2b(x)) return bi_okHdr;
+  return gotoNextBodyJIT(sc, v);
+}
+INS B i_PRED2(B x, Scope* sc, u32* bc, Body* v1, Body* v2) { POS_UPD;
+  if (o2b(x)) return bi_okHdr;
+  return gotoNextBodyJIT(sc, q_N(sc->vars[2])? v1 : v2);
 }
 INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
 INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
@@ -484,7 +493,7 @@ static u32 readBytes4(u8* d) {
     file_wChars(m_str8l("asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS) F(INC) F(FN1C) F(FN1O) F(FN2C) F(FN2O) F(FN1Oi) F(FN2Oi) F(ARR_0) F(ARR_p) F(DFND_0) F(DFND_1) F(DFND_2) F(MD1C) F(MD2C) F(MD2R) F(TR2D) F(TR3D) F(TR3O) F(EXTO) F(EXTU) F(SETN) F(SETU) F(SETM) F(FLDO) F(ALIM) F(RETD) F(SETNi) F(SETUi) F(SETMi)
+    F(POPS)F(INC)F(FN1C)F(FN1O)F(FN2C)F(FN2O)F(FN1Oi)F(FN2Oi)F(ARR_0)F(ARR_2)F(ARR_p)F(DFND_0)F(DFND_1)F(DFND_2)F(MD1C)F(MD2C)F(MD2R)F(TR2D)F(TR3D)F(TR3O)F(NOVAR)F(EXTO)F(EXTU)F(SETN)F(SETU)F(SETM)F(SETC)F(SETH)F(PRED1)F(PRED2)F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FLDO)F(VFYM)F(ALIM)F(CHKV)F(FAIL)F(RETD)
     #undef F
     file_wChars(m_str8l("asm_sed"), s); dec(s);
   }
@@ -579,7 +588,7 @@ Nvm_res m_nvm(Body* body) {
     #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos + bodyOff]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
     #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
-    // use GET(R_A1,0,2); as GS_UPD when there's only one argument, and GET(R_A3,-1,2); when there are zero arguments (i think?)
+    // use GET(R_A1,0,2); as GS_UPD when there's one argument, and GET(R_A3,-1,2); when there are zero arguments (i think?)
     #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count
     switch (*bc++) {
       case POPS: TOPp;
@@ -631,9 +640,21 @@ Nvm_res m_nvm(Body* body) {
       // case VARU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_VARU); } break; // (u32 p, Scope* sc)
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
-      case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
-        if (lGPos!=0) GS_SET(r_CS); lGPos=0; IMM(R_A4,v1); IMM(R_A5,v2);
-        /**/           GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETH); IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); break; }
+      case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
+        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH); // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l);
+        break;
+      }
+      case PRED1:TOPp; { u64 v1=L64;
+        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); CCALL(i_PRED1); // (B x, Scope** pscs, u32* bc, Body* v)
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); NORES(1);
+        break;
+      }
+      case PRED2:TOPp; { u64 v1=L64; u64 v2=L64;
+        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); IMM(R_A4,v2); CCALL(i_PRED2); // (B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); NORES(1);
+        break;
+      }
       case SETN: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETU: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETU); break; // (B s,      B x, Scope** pscs, u32* bc)
       case SETM: TOPp; GET(R_A1,1,1); GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
