@@ -319,7 +319,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           if (mpsc<1) mpsc=1; // SETH and PRED may want to have a parent scope pointer
           TSADD(newBC, *c==SETH? SETHi : imm? PRED1 : PRED2);
           TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));
-          A64(0); if(!imm)A64(0); // to be filled in by later bodyReqs handling
+          A64(0); if(*c==SETH || !imm)A64(0); // to be filled in by later bodyReqs handling
           break;
         default: {
           u32* ccpy = c;
