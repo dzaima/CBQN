@@ -204,9 +204,9 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         } else { assert(isArr(b) && rnk(b)==1);
           if (TI(b,elType)==el_c32) AJOIN(inc(b));
           else {
-            B sq = chr_squeezeChk(b);
+            B sq = chr_squeezeChk(inc(b));
             if (!elChr(TI(sq,elType))) FL_KEEP(sq, ~fl_squoze);
-            AJOIN(inc(sq));
+            AJOIN(sq);
           }
         }
         break;
