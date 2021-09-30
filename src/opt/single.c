@@ -11,6 +11,7 @@
 #include "../utils/utf.c"
 #include "../utils/file.c"
 #include "../utils/mut.c"
+#include "../utils/each.c"
 #include "../builtins/fns.c"
 #include "../builtins/sfns.c"
 #include "../builtins/sysfn.c"

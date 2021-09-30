@@ -93,7 +93,7 @@ ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-utils: builddir ${addprefix ${bd}/, utf.o hash.o file.o mut.o}
+utils: builddir ${addprefix ${bd}/, utf.o hash.o file.o mut.o each.o}
 ${bd}/%.o: src/utils/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
