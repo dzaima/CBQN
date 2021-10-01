@@ -1094,8 +1094,10 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
   } else {
-    if (pos!=-1) printf(N64d": ", pos);
-    printf("source unknown\n");
+    #ifdef DEBUG
+      if (pos!=-1) printf(N64d": ", pos);
+      printf("source unknown\n");
+    #endif
   }
 }
 
