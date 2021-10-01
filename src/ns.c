@@ -44,7 +44,7 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
   if (nameID<0) thrM("Cannot read key with special name");
-  assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
+  assert((u64)nameID < a(cNL)->ia);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
     B cName = IGetU(cNL, nameID);
@@ -64,7 +64,8 @@ B ns_qgetU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns); // TODO somehow merge impl 
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
-  assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
+  if (nameID<0) return bi_N;
+  assert((u64)nameID < a(cNL)->ia);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
     B cName = IGetU(cNL, nameID);
