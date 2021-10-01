@@ -9,14 +9,15 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   if (ia!=a(exported)->ia) thrM("Bad namespace description information");
   i32 off = (ty==0?0:ty==1?2:3) + (imm?0:3);
   i32 vam = ia+off;
+  i32 actualVam = body->varAm;
   // if (vam != body->varAm) thrM("Bad namespace description information"); // arg remapping makes body->varAm unrelated to named variable count
   
-  NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
+  NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, actualVam), t_nsDesc);
   r->nameList = nameList;
   r->varAm = vam;
   SGetU(varIDs)
   SGetU(exported)
-  for (i32 i = 0; i < off; i++) {
+  for (i32 i = 0; i < actualVam; i++) {
     body->varIDs[i] = -1;
     r   ->expIDs[i] = -1;
   }
@@ -42,6 +43,7 @@ B ns_getU(B ns, B cNL, i32 nameID) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
   i32 dVarAm = d->varAm;
+  if (nameID<0) thrM("Cannot read key with special name");
   assert((u64)nameID < a(cNL)->ia  &&  nameID>=0);
   B dNL = d->nameList;
   if (cNL.u != dNL.u) {
