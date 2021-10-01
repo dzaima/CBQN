@@ -267,19 +267,25 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       }
     }
     i32 bcStart = TSSIZE(newBC);
-    u32* c = bc+idx;
+    u32* c;
     
     bool remapArgs = false;
-    bool argUsed[6] = {0,0,0,0,0,0};
-    while (true) {
-      if (*c==PRED) remapArgs = true;
-      if (*c==VARO | *c==VARM | *c==VARU) if (c[1]==0 && c[2]<argAm) argUsed[c[2]]++;
-      if (*c==RETN | *c==RETD) break;
+    c = bc+idx;
+    while (*c!=RETN & *c!=RETD) {
+      if (*c==PRED) { remapArgs = true; break; }
       c = nextBC(c);
     }
-    if (remapArgs) for (i32 i = 0; i < 6; i++) if (argUsed[i]) {
-      TSADDA(newBC, ((u32[]){ VARO,0,i, VARM,0,vam+i, SETN, POPS }), 8);
-      TSADDA(mapBC, ((u32[]){ 0,0,0,    0,0,0,        0   , 0    }), 8);
+    if (remapArgs) {
+      c = bc+idx;
+      bool argUsed[6] = {0,0,0,0,0,0};
+      while (*c!=RETN & *c!=RETD) {
+      if (*c==VARO | *c==VARM | *c==VARU) if (c[1]==0 && c[2]<argAm) argUsed[c[2]]++;
+        c = nextBC(c);
+      }
+      for (i32 i = 0; i < 6; i++) if (argUsed[i]) {
+        TSADDA(newBC, ((u32[]){ VARO,0,i, VARM,0,vam+i, SETN, POPS }), 8);
+        TSADDA(mapBC, ((u32[]){ 0,0,0,    0,0,0,        0   , 0    }), 8);
+      }
     }
     
     c = bc+idx;
