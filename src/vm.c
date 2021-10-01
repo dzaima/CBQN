@@ -334,7 +334,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
               ins = ins==VARO? EXTO : ins==VARM? EXTM : EXTO;
             }
           }
-          if (remapArgs && cpos<argAm) cpos+= vam;
+          if (remapArgs && cpos<argAm && cdepth==0) cpos+= vam;
           TSADD(newBC, ins);
           TSADD(newBC, cdepth);
           TSADD(newBC, cpos);
