@@ -9,7 +9,7 @@ void m_nsDesc(Body* body, bool imm, u8 ty, B nameList, B varIDs, B exported) { /
   if (ia!=a(exported)->ia) thrM("Bad namespace description information");
   i32 off = (ty==0?0:ty==1?2:3) + (imm?0:3);
   i32 vam = ia+off;
-  if (vam != body->varAm) thrM("Bad namespace description information");
+  // if (vam != body->varAm) thrM("Bad namespace description information"); // arg remapping makes body->varAm unrelated to named variable count
   
   NSDesc* r = mm_alloc(fsizeof(NSDesc, expIDs, i32, vam), t_nsDesc);
   r->nameList = nameList;

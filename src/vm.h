@@ -222,9 +222,8 @@ FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that 
   }
   ptr_dec(sc);
 }
-FORCE_INLINE i32 blockGivenVars(Block* bl) {
-  return (bl->imm?0:3) + bl->ty + (bl->ty>0);
-}
+FORCE_INLINE i32 argCount(u8 ty, bool imm) { return (imm?0:3) + ty + (ty>0); }
+FORCE_INLINE i32 blockGivenVars(Block* bl) { return argCount(bl->ty, bl->imm); }
 void vm_pst(Env* s, Env* e);
 void vm_pstLive(void);
 void vm_printPos(Comp* comp, i32 bcPos, i64 pos);

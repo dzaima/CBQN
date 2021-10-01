@@ -167,6 +167,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   usz  ty  = o2s(GetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
   bool imm = o2b(GetU(block,1));
   B    bodyObj = GetU(block,2);
+  i32 argAm = argCount(ty, imm);
+  
   i32* bodyI;
   i32 bodyAm1, bodyAm2, bodyILen;
   if (isArr(bodyObj)) {
@@ -266,6 +268,21 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     }
     i32 bcStart = TSSIZE(newBC);
     u32* c = bc+idx;
+    
+    bool remapArgs = false;
+    bool argUsed[6] = {0,0,0,0,0,0};
+    while (true) {
+      if (*c==PRED) remapArgs = true;
+      if (*c==VARO | *c==VARM | *c==VARU) if (c[1]==0 && c[2]<argAm) argUsed[c[2]]++;
+      if (*c==RETN | *c==RETD) break;
+      c = nextBC(c);
+    }
+    if (remapArgs) for (i32 i = 0; i < 6; i++) if (argUsed[i]) {
+      TSADDA(newBC, ((u32[]){ VARO,0,i, VARM,0,vam+i, SETN, POPS }), 8);
+      TSADDA(mapBC, ((u32[]){ 0,0,0,    0,0,0,        0   , 0    }), 8);
+    }
+    
+    c = bc+idx;
     while (true) {
       u32* n = nextBC(c);
       if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
@@ -310,6 +327,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
               ins = ins==VARO? EXTO : ins==VARM? EXTM : EXTO;
             }
           }
+          if (remapArgs && cpos<argAm) cpos+= vam;
           TSADD(newBC, ins);
           TSADD(newBC, cdepth);
           TSADD(newBC, cpos);
@@ -339,7 +357,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     
     if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
     
-    Body* body = m_body(vam, bcStart, hM, mpsc);
+    Body* body = m_body(vam+(remapArgs? argAm : 0), bcStart, hM, mpsc);
     if (boIA>2) {
       m_nsDesc(body, imm, ty, inc(nameList), GetU(bodyRepr,2), GetU(bodyRepr,3));
     } else {
