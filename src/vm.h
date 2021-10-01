@@ -163,10 +163,15 @@ FORCE_INLINE B execBodyInlineI(Block* block, Body* body, Scope* sc) { // consume
   return evalBC(block, body, sc);
 }
 
-u32* nextBC(u32* p);
-i32 stackDiff(u32* p);
-i32 stackConsumed(u32* p);
-i32 stackAdded(u32* p);
+extern u32 bL_m[BC_SIZE];
+extern i32 sD_m[BC_SIZE];
+extern i32 sC_m[BC_SIZE];
+extern i32 sA_m[BC_SIZE];
+static u32* nextBC       (u32* p) { return p + bL_m[*p]; }
+static i32  stackAdded   (u32* p) { return sA_m[*p]; }
+static i32  stackDiff    (u32* p) { if (*p==ARRO|*p==ARRM) return 1-p[1]; return sD_m[*p]; }
+static i32  stackConsumed(u32* p) { if (*p==ARRO|*p==ARRM) return   p[1]; return sC_m[*p]; }
+
 char* bc_repr(u32* p);
 
 

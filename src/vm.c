@@ -16,69 +16,11 @@
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL)
 
-u32* nextBC(u32* p) {
-  i32 off;
-  switch(*p) { default: UD;
-    case FN1C: case FN2C: case FN1O: case FN2O:
-    case MD1C: case MD2C: case MD2R:
-    case TR2D: case TR3D: case TR3O:
-    case SETN: case SETU: case SETM: case SETH: case SETC:
-    case POPS: case CHKV: case VFYM: case RETN: case RETD:
-    case FAIL: case PRED:
-      off = 1; break;
-    case PUSH: case DFND: case ARRO: case ARRM:
-    case DYNO: case DYNM: case FLDO: case FLDM:
-    case SYSV: case ALIM:
-      off = 2; break;
-    case VARO: case VARM: case VARU:
-    case EXTO: case EXTM: case EXTU:
-    case ADDI: case ADDU:
-    case FN1Ci: case FN1Oi: case FN2Ci: case DFND0: case DFND1: case DFND2:
-    case SETNi: case SETUi: case SETMi: case SETCi:
-    case SETNv: case SETUv: case SETMv: case SETCv: case PRED1:
-      off = 3; break;
-    case FN2Oi: case SETHi: case PRED2:
-      off = 5; break;
-  }
-  return p+off;
-}
-i32 stackDiff(u32* p) {
-  if (*p==ARRO|*p==ARRM) return 1-p[1];
-  switch(*p) { default: UD; // case ARRO: case ARRM: return 1-p[1];
-    case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case DFND0:case DFND1:case DFND2:
-    case VARU: case EXTO: case EXTM: case EXTU: case SYSV: case ADDI: case ADDU: return 1;
-    case FN1Ci:case FN1Oi:case CHKV: case VFYM: case FLDO: case FLDM: case RETD: case ALIM: return 0;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case POPS: case MD2R: case RETN: case PRED: case PRED1: case PRED2: return -1;
-    case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: case SETH: case SETHi:return -2;
-    
-    case SETN: return -1; case SETNi:return  0; case SETNv:return -1;
-    case SETU: return -1; case SETUi:return  0; case SETUv:return -1;
-    case SETC: return -1; case SETCi:return  0; case SETCv:return -1;
-    case SETM: return -2; case SETMi:return -1; case SETMv:return -2;
-    case FAIL: return 0;
-  }
-}
-i32 stackConsumed(u32* p) {
-  if (*p==ARRO|*p==ARRM) return p[1];
-  switch(*p) { default: UD; // case ARRO: case ARRM: return -p[1];
-    case PUSH: case DYNO: case DYNM: case DFND: case VARO: case VARM: case VARU: case EXTO: case EXTM:
-    case EXTU: case SYSV: case ADDI: case ADDU: case DFND0:case DFND1:case DFND2:return 0;
-    case CHKV: case RETD: return 0;
-    case FN1Ci:case FN1Oi:case FLDO: case FLDM: case ALIM: case RETN: case POPS: case PRED: case PRED1: case PRED2: case VFYM: return 1;
-    case FN2Ci:case FN2Oi:case FN1C: case FN1O: case MD1C: case TR2D: case MD2R: case SETH: case SETHi: return 2;
-    case MD2C: case TR3D: case FN2C: case FN2O: case TR3O: return 3;
-    
-    case SETN: return 2; case SETNi: case SETNv: return 1;
-    case SETU: return 2; case SETUi: case SETUv: return 1;
-    case SETC: return 2; case SETCi: case SETCv: return 1;
-    case SETM: return 3; case SETMi: case SETMv: return 2;
-    case FAIL: return 0;
-  }
-}
-i32 stackAdded(u32* p) {
-  if (*p==ARRO|*p==ARRM) return 1;
-  return stackDiff(p)+stackConsumed(p);
-}
+u32 bL_m[BC_SIZE];
+i32 sD_m[BC_SIZE];
+i32 sC_m[BC_SIZE];
+i32 sA_m[BC_SIZE];
+
 char* bc_repr(u32* p) {
   switch(*p) { default: return "(unknown)";
     #define F(X) case X: return #X;
@@ -1006,6 +948,64 @@ void comp_init() {
   #endif
   allocStack((void**)&envCurr, (void**)&envStart, (void**)&envEnd, sizeof(Env), ENV_SIZE);
   envCurr--;
+  
+  for (i32 i = 0; i < BC_SIZE; i++) bL_m[i] = sD_m[i] = sC_m[i] = sA_m[i] = 1<<29;
+  
+  // bytecode length map
+  bL_m[FN1C]=1; bL_m[FN2C]=1; bL_m[FN1O]=1; bL_m[FN2O]=1;
+  bL_m[MD1C]=1; bL_m[MD2C]=1; bL_m[MD2R]=1;
+  bL_m[TR2D]=1; bL_m[TR3D]=1; bL_m[TR3O]=1;
+  bL_m[SETN]=1; bL_m[SETU]=1; bL_m[SETM]=1; bL_m[SETH]=1; bL_m[SETC]=1;
+  bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
+  bL_m[FAIL]=1; bL_m[PRED]=1;
+  
+  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[ARRO]=2; bL_m[ARRM]=2;
+  bL_m[DYNO]=2; bL_m[DYNM]=2; bL_m[FLDO]=2; bL_m[FLDM]=2;
+  bL_m[SYSV]=2; bL_m[ALIM]=2;
+  
+  bL_m[VARO]=3; bL_m[VARM]=3; bL_m[VARU]=3;
+  bL_m[EXTO]=3; bL_m[EXTM]=3; bL_m[EXTU]=3;
+  bL_m[ADDI]=3; bL_m[ADDU]=3;
+  bL_m[FN1Ci]=3; bL_m[FN1Oi]=3; bL_m[FN2Ci]=3; bL_m[DFND0]=3; bL_m[DFND1]=3; bL_m[DFND2]=3;
+  bL_m[SETNi]=3; bL_m[SETUi]=3; bL_m[SETMi]=3; bL_m[SETCi]=3;
+  bL_m[SETNv]=3; bL_m[SETUv]=3; bL_m[SETMv]=3; bL_m[SETCv]=3; bL_m[PRED1]=3;
+  
+  bL_m[FN2Oi]=5; bL_m[SETHi]=5; bL_m[PRED2]=5;
+  
+  // stack diff map
+  sD_m[PUSH ]= 1; sD_m[DYNO ]= 1; sD_m[DYNM]= 1; sD_m[DFND]= 1; sD_m[VARO]= 1; sD_m[VARM]= 1; sD_m[DFND0]= 1; sD_m[DFND1]=1; sD_m[DFND2]=1;
+  sD_m[VARU ]= 1; sD_m[EXTO ]= 1; sD_m[EXTM]= 1; sD_m[EXTU]= 1; sD_m[SYSV]= 1; sD_m[ADDI]= 1; sD_m[ADDU ]= 1;
+  sD_m[FN1Ci]= 0; sD_m[FN1Oi]= 0; sD_m[CHKV]= 0; sD_m[VFYM]= 0; sD_m[FLDO]= 0; sD_m[FLDM]= 0; sD_m[RETD ]= 0; sD_m[ALIM ]=0;
+  sD_m[FN2Ci]=-1; sD_m[FN2Oi]=-1; sD_m[FN1C]=-1; sD_m[FN1O]=-1; sD_m[MD1C]=-1; sD_m[TR2D]=-1; sD_m[POPS ]=-1; sD_m[MD2R ]=-1; sD_m[RETN]=-1; sD_m[PRED]=-1; sD_m[PRED1]=-1; sD_m[PRED2]=-1;
+  sD_m[MD2C ]=-2; sD_m[TR3D ]=-2; sD_m[FN2C]=-2; sD_m[FN2O]=-2; sD_m[TR3O]=-2; sD_m[SETH]=-2; sD_m[SETHi]=-2;
+  
+  sD_m[SETN]=-1; sD_m[SETNi]= 0; sD_m[SETNv]=-1;
+  sD_m[SETU]=-1; sD_m[SETUi]= 0; sD_m[SETUv]=-1;
+  sD_m[SETC]=-1; sD_m[SETCi]= 0; sD_m[SETCv]=-1;
+  sD_m[SETM]=-2; sD_m[SETMi]=-1; sD_m[SETMv]=-2;
+  
+  sD_m[FAIL]=0;
+  
+  // stack consumed map
+  sC_m[PUSH]=0; sC_m[DYNO]=0; sC_m[DYNM]=0; sC_m[DFND]=0; sC_m[VARO ]=0; sC_m[VARM]=0; sC_m[VARU]=0; sC_m[EXTO]=0; sC_m[EXTM]=0;
+  sC_m[EXTU]=0; sC_m[SYSV]=0; sC_m[ADDI]=0; sC_m[ADDU]=0; sC_m[DFND0]=0;sC_m[DFND1]=0;sC_m[DFND2]=0;
+  
+  sC_m[CHKV ]=0;sC_m[RETD ]=0;
+  sC_m[FN1Ci]=1;sC_m[FN1Oi]=1; sC_m[FLDO]=1; sC_m[FLDM]=1; sC_m[ALIM]=1; sC_m[RETN]=1; sC_m[POPS]=1; sC_m[PRED]=1; sC_m[PRED1]=1; sC_m[PRED2]=1; sC_m[VFYM]=1;
+  sC_m[FN2Ci]=2;sC_m[FN2Oi]=2; sC_m[FN1C]=2; sC_m[FN1O]=2; sC_m[MD1C]=2; sC_m[TR2D]=2; sC_m[MD2R]=2; sC_m[SETH]=2; sC_m[SETHi]=2;
+  sC_m[MD2C ]=3;sC_m[TR3D ]=3; sC_m[FN2C]=3; sC_m[FN2O]=3; sC_m[TR3O]=3;
+  
+  sC_m[SETN]=2; sC_m[SETNi]=1; sC_m[SETNv]=1;
+  sC_m[SETU]=2; sC_m[SETUi]=1; sC_m[SETUv]=1;
+  sC_m[SETC]=2; sC_m[SETCi]=1; sC_m[SETCv]=1;
+  sC_m[SETM]=3; sC_m[SETMi]=2; sC_m[SETMv]=2;
+  
+  sC_m[FAIL]=0;
+  
+  // stack added map
+  for (i32 i = 0; i < BC_SIZE; i++) sA_m[i] = sD_m[i] + sC_m[i];
+  sA_m[ARRO]=1;
+  sA_m[ARRM]=1;
 }
 
 
