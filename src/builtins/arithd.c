@@ -123,7 +123,35 @@
     }                                               \
     dec(w); dec(x); return r;                       \
   }
-  #define GC2i(SYMB, NAME, EXPR, EXTRA, BIT, BX) B NAME##_c2(B t, B w, B x) { \
+  
+  static B bitAA0(B w, B x, usz ia) { UD; }
+  static B bitAN0(B a, B b, usz ia) { UD; }
+  static NOINLINE B bitAA1(B w, B x, usz ia) {
+    u64* rp; B r = m_bitarrc(&rp, x);
+    u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
+    for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]|xp[i];
+    dec(w); dec(x); return r;
+  }
+  static NOINLINE B bitAA2(B w, B x, usz ia) {
+    u64* rp; B r = m_bitarrc(&rp, x);
+    u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
+    for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]&xp[i];
+    dec(w); dec(x); return r;
+  }
+  static NOINLINE B bitAN1(B a, B b, usz ia) {
+    u64* rp; B r = m_bitarrc(&rp, a);
+    u64* ap=bitarr_ptr(a); u64 bv = bitx(b);
+    for (usz i=0; i<BIT_N(ia); i++) rp[i] = ap[i]|bv;
+    dec(a); return r;
+  }
+  static NOINLINE B bitAN2(B a, B b, usz ia) {
+    u64* rp; B r = m_bitarrc(&rp, a);
+    u64* ap=bitarr_ptr(a); u64 bv = bitx(b);
+    for (usz i=0; i<BIT_N(ia); i++) rp[i] = ap[i]&bv;
+    dec(a); return r;
+  }
+  
+  #define GC2i(SYMB, NAME, EXPR, EXTRA, BIT) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
     EXTRA                                                            \
     if (isArr(w)|isArr(x)) {                                         \
@@ -133,11 +161,7 @@
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
         if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {          \
-          if (BIT && (we|xe)==0) { u64* rp; B r = m_bitarrc(&rp, x); \
-            u64* wp = bitarr_ptr(w); u64* xp = bitarr_ptr(x);        \
-            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i] BX xp[i];  \
-            dec(w); dec(x); return r;                                \
-          }                                                          \
+          if (BIT && (we|xe)==0) return bitAA##BIT(w,x,ia);          \
           B wt=w,xt=x;                                               \
           we=xe=iMakeEq(&wt, &xt, we, xe);                           \
           w=wt; x=xt;                                                \
@@ -165,11 +189,8 @@
         if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);          \
         if (xe==el_bit) {                                          \
-          if (BIT && q_fbit(w.f)) { u64* rp; B r=m_bitarrc(&rp,x); \
-            u64 wv = bitx(w); u64* xp = bitarr_ptr(x);             \
-            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wv BX xp[i];   \
-            dec(w); dec(x); return r;                              \
-          } else return bit_sel1Fn(NAME##_c2,w,x,1);               \
+          if (BIT && q_fbit(w.f)) return bitAN##BIT(x,w,ia);       \
+          return bit_sel1Fn(NAME##_c2,w,x,1);                      \
         }                                                          \
         if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],na8B ) } na8B :; \
         if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],na16B) } na16B:; \
@@ -178,11 +199,8 @@
         if (xe==el_f64) { RF(x) PF  (x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }       \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                       \
         if (we==el_bit) {                                          \
-          if (BIT && q_fbit(x.f)) { u64* rp; B r=m_bitarrc(&rp,w); \
-            u64 xv = bitx(x); u64* wp = bitarr_ptr(w);             \
-            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i] BX xv;   \
-            dec(w); dec(x); return r;                              \
-          } else return bit_sel1Fn(NAME##_c2,w,x,0);               \
+          if (BIT && q_fbit(x.f)) return bitAN##BIT(w,x,ia);       \
+           else return bit_sel1Fn(NAME##_c2,w,x,0);                \
         }                                                          \
         if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,an8B ) } an8B :; \
         if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,an16B) } an16B:; \
@@ -231,7 +249,7 @@ GC2i("+", add, wv+xv, {
       return r;
     }
   }
-}, 0, -)
+}, 0)
 GC2i("-", sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
@@ -258,16 +276,16 @@ GC2i("-", sub, wv-xv, {
       }
     }
   }
-}, 0, -)
+}, 0)
 GC2i("¬", not, 1+wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(1+(i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("¬: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
-}, 0, -)
-GC2i("×", mul, wv*xv, {}, 1, &)
-GC2i("∧", and, wv*xv, {}, 1, &)
-GC2i("∨", or , (wv+xv)-(wv*xv), {}, 1, |)
-GC2i("⌊", floor, wv>xv?xv:wv, {}, 1, &) // optimizer optimizes out the fallback mess
-GC2i("⌈", ceil , wv>xv?wv:xv, {}, 1, |)
+}, 0)
+GC2i("×", mul, wv*xv, {}, 2)
+GC2i("∧", and, wv*xv, {}, 2)
+GC2i("∨", or , (wv+xv)-(wv*xv), {}, 1)
+GC2i("⌊", floor, wv>xv?xv:wv, {}, 2) // optimizer optimizes out the fallback mess
+GC2i("⌈", ceil , wv>xv?wv:xv, {}, 1)
 
 GC2f("÷", div  ,           w.f/x.f, {})
 GC2f("⋆", pow  ,     pow(w.f, x.f), {})
