@@ -28,6 +28,9 @@ static inline void bitp_set(u64* arr, u64 n, bool v) {
 static inline bool bitp_get(u64* arr, u64 n) {
   return (arr[n>>6] >> (n&63)) & 1;
 }
+static inline u64 bitp_l0(u64* arr, u64 ia) { // last u64 of the array, with the tail set to 0s
+  return ia&63? arr[ia>>6]&((1ULL<<(ia&63))-1) : 0;
+}
 static inline u64 bitx(B x) { // repeats the boolean across all 64 bits
   return o2bu(x)? ~(u64)0 : 0;
 }
