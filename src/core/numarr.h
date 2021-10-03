@@ -17,7 +17,7 @@
 #include "tyarrTemplate.h"
 
 // bit array stuff
-#define BIT_N(IA) (((IA)+63) >> 6)
+#define BIT_N(IA) (((IA)+63) >> 6) // u64 count needed to store IA bits
 
 static inline void bitp_set(u64* arr, u64 n, bool v) {
   u64 m = ((u64)1)<<(n&63);
