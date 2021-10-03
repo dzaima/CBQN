@@ -21,6 +21,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
       }
     #endif
     switch(n) { default: UD;
+      case el_bit: { BitArr* t=cpyBitArr(taga(m->val)); m->val=(Arr*)t; m->abit=t->a; return; }
       case el_i8:  { I8Arr*  t=cpyI8Arr (taga(m->val)); m->val=(Arr*)t; m->ai8 =t->a; return; }
       case el_i16: { I16Arr* t=cpyI16Arr(taga(m->val)); m->val=(Arr*)t; m->ai16=t->a; return; }
       case el_i32: { I32Arr* t=cpyI32Arr(taga(m->val)); m->val=(Arr*)t; m->ai32=t->a; return; }

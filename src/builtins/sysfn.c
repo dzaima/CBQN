@@ -124,15 +124,27 @@ B grLen_both(i64 ria, B x) {
   }
   if (ria > (i64)(USZ_MAX-1)) thrOOM();
   ria++;
-  i32* rp; B r = m_i32arrv(&rp, ria);
+  B r;
+  {
+    u64* rp; r = m_bitarrv(&rp, ria);
+    for (usz i = 0; i < BIT_N(ria); i++) rp[i] = 0;
+    for (usz i = 0; i < ia; i++) {
+      i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
+      if (n>=0) {
+        if (bitp_get(rp,n)) { dec(r); goto r_i32; }
+        bitp_set(rp,n,1);
+      }
+    }
+    goto r_r;
+  }
+  r_i32:;
+  i32* rp; r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64u(GetU(x, i));
+    i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
     if (n>=0) rp[n]++;
-    assert(n>=-1);
   }
-  dec(x);
-  return r;
+  r_r: dec(x); return r;
 }
 B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes valid arguments
 B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes valid arguments

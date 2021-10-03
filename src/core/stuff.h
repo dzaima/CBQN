@@ -89,6 +89,8 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   return eqShPrefix(wsh, xsh, wr);
 }
 
+B bit_sel(B b, B e0, bool h0, B e1, bool h1); // consumes b; h0/h1 can be true if unknown
+
 
 static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
@@ -108,7 +110,7 @@ static usz uszMul(usz a, usz b) {
 }
 
 static u8 selfElType(B x) { // guaranteed to fit fill
-  if (isF64(x)) return q_i16(x)? (q_i8(x)? el_i8 : el_i16) : (q_i32(x)? el_i32 : el_f64);
+  if (isF64(x)) return q_i8(x)? (q_bit(x)? el_bit : el_i8) : (q_i16(x)? el_i16 : q_i32(x)? el_i32 : el_f64);
   if (isC32(x)) return LIKELY(q_c8(x))? el_c8 : q_c16(x)? el_c16 : el_c32;
   return el_B;
 }

@@ -247,10 +247,10 @@ B memberOf_c1(B t, B x) {
   if (rnk(x)!=1) x = toCells(x);
   usz xia = a(x)->ia;
   
-  i8* rp; B r = m_i8arrv(&rp, xia);
+  u64* rp; B r = m_bitarrv(&rp, xia);
   H_Sb* set = m_Sb(64);
   SGetU(x)
-  for (usz i = 0; i < xia; i++) rp[i] = !ins_Sb(&set, GetU(x,i));
+  for (usz i = 0; i < xia; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
   free_Sb(set); dec(x);
   return r;
 }
@@ -264,8 +264,8 @@ B memberOf_c2(B t, B w, B x) {
   SGetU(x)
   SGetU(w)
   for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
-  i8* rp; B r = m_i8arrv(&rp, wia);
-  for (usz i = 0; i < wia; i++) rp[i] = has_Sb(set, GetU(w,i));
+  u64* rp; B r = m_bitarrv(&rp, wia);
+  for (usz i = 0; i < wia; i++) bitp_set(rp, i, has_Sb(set, GetU(w,i)));
   free_Sb(set); dec(w);dec(x);
   return r;
 }

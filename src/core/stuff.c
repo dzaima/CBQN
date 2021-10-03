@@ -486,19 +486,20 @@ bool isPureFn(B x) { // doesn't consume
 B num_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
-  assert(xe!=el_bit);
-  
-  if (xe==el_i8) goto r_x;
+  if (xe==el_bit) goto r_x;
   // TODO fast paths for xe<el_f64
   usz i = 0;
   u32 or = 0; // using bitwise or as an approximate ⌈´
+  bool neg = false;
   if (xe==el_f64) {
     f64* xp = f64any_ptr(x);
     for (; i < ia; i++) {
       f64 cf = xp[i];
       i32 c = (i32)cf;
       if (c!=cf) goto r_x; // already f64
-      or|= ((u32)c) ^ (u32)(c>>31);
+      i32 sgn = (u32)(c>>31);
+      or|= ((u32)c) ^ sgn;
+      neg|= sgn;
     }
     goto r_or;
   }
@@ -511,7 +512,9 @@ B num_squeeze(B x) {
         goto r_f64;
       }
       i32 c = o2iu(xp[i]);
-      or|= ((u32)c) ^ (u32)(c>>31);
+      i32 sgn = (u32)(c>>31);
+      or|= ((u32)c) ^ sgn;
+      neg|= sgn;
     }
     goto r_or;
   }
@@ -524,14 +527,18 @@ B num_squeeze(B x) {
       goto r_f64;
     }
     i32 c = o2iu(cr);
-    or|= ((u32)c) ^ (u32)(c>>31);
+    i32 sgn = (u32)(c>>31);
+    or|= ((u32)c) ^ sgn;
+    neg|= sgn;
   }
   r_or:
-  if      (or<=(u32)I8_MAX ) goto r_i8;
+  if (!neg && or<=1) goto r_bit;
+  else if (or<=(u32)I8_MAX ) goto r_i8;
   else if (or<=(u32)I16_MAX) goto r_i16;
   else                       goto r_i32;
   
   r_x  : return FL_SET(x, fl_squoze);
+  r_bit: return FL_SET(taga(toBitArr(x)), fl_squoze);
   r_i8 : return FL_SET(toI8Any (x), fl_squoze);
   r_i16: return FL_SET(toI16Any(x), fl_squoze);
   r_i32: return FL_SET(toI32Any(x), fl_squoze);
@@ -582,7 +589,7 @@ B chr_squeeze(B x) {
 B any_squeeze(B x) {
   assert(isArr(x));
   if (FL_HAS(x,fl_squoze)) return x;
-  if (a(x)->ia==0) return FL_SET(x, fl_squoze);
+  if (a(x)->ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
   SGetU(x)
   B x0 = GetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
@@ -700,6 +707,8 @@ Arr*   g_a(B x) { return a(x); }
 B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
+void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
+void   g_pv(void* x) { print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); }
 
 #ifdef DEBUG
   #ifdef OBJ_COUNTER
@@ -749,16 +758,19 @@ B      g_tf(void* x) { return tag(x,FUN_TAG); }
   void warn_slow1(char* s, B x) {
     if (isArr(x) && a(x)->ia<100) return;
     printf("slow %s: ", s); warn_ln(x);
+    fflush(stdout);
   }
   void warn_slow2(char* s, B w, B x) {
     if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
     printf("slow %s:\n  𝕨: ", s); warn_ln(w);
     printf("  𝕩: "); warn_ln(x);
+    fflush(stdout);
   }
   void warn_slow3(char* s, B w, B x, B y) {
     if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
     printf("slow %s:\n  𝕨: ", s); warn_ln(w);
     printf("  𝕩: "); warn_ln(x);
     printf("  f: "); warn_ln(y);
+    fflush(stdout);
   }
 #endif

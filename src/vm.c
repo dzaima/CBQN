@@ -243,11 +243,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           TSADD(newBC, isVal(obj)? ADDI : ADDU);
           A64(obj.u);
           break;
-        case RETN: if(h!=1) thrM("VM compiler: Wrong stack size before RETN");
+        case RETN: if(h!=1) thrM("VM compiler: RETN expected to be called with one item on the stack");
           TSADD(newBC, RETN);
           ret = true;
           break;
-        case RETD: if(h!=1&h!=0) thrM("VM compiler: Wrong stack size before RETD");
+        case RETD: if(h!=1&h!=0) thrM("VM compiler: RETD expected to be called with no more than 1 item on the stack");
           if (h==1) TSADD(newBC, POPS);
           TSADD(newBC, RETD);
           ret = true;
@@ -283,6 +283,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           break;
         }
         case SETH: case PRED:
+          if (*c==PRED && h!=1) thrM("VM compiler: PRED expected to be called with one item on the stack");
           if (mpsc<1) mpsc=1; // SETH and PRED may want to have a parent scope pointer
           TSADD(newBC, *c==SETH? SETHi : imm? PRED1 : PRED2);
           TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));

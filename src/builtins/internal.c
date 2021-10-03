@@ -69,7 +69,8 @@ B info_c1(B t, B x) {
                          F(Ac32) F(Sc32) F(Ac32Inc) F(Sc32Inc) \
                          F(Af64) F(Sf64) F(Af64Inc) F(Sf64Inc) \
                          F(Ah)   F(Sh)   F(AhInc)   F(ShInc) \
-                         F(Af)   F(Sf)   F(AfInc)   F(SfInc)
+                         F(Af)   F(Sf)   F(AfInc)   F(SfInc) \
+                         F(Ab)           F(AbInc)
 
 #define F(X) static B v_##X;
 FOR_VARIATION(F)
@@ -95,19 +96,21 @@ B listVariations_c2(B t, B w, B x) {
   B xf = getFillQ(x);
   bool ah = c_rmFill || noFill(xf);
   bool ai8=false, ai16=false, ai32=false, af64=false,
-       ac8=false, ac16=false, ac32=false;
+       ac8=false, ac16=false, ac32=false, abit=false;
   usz xia = a(x)->ia;
   SGetU(x)
   if (isNum(xf)) {
-    f64 min=0, max=0;
-    if (xe==el_i8) { }
+    i32 min=I32_MAX, max=I32_MIN;
+    if      (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
-    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(xp[i]!=(i32)xp[i]) max=1e99; } }
+    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(xp[i]!=(i32)xp[i]) goto onlyF64; } }
     else for (usz i = 0; i < xia; i++) { B c = GetU(x, i); if (!isF64(c)) goto noSpec; if (c.f>max) max=c.f; if (c.f<min) min=c.f; }
     ai8  = min==(i8 )min && max==(i8 )max;
     ai16 = min==(i16)min && max==(i16)max;
     ai32 = min==(i32)min && max==(i32)max;
+    abit = min>=0 && max<=1;
+    onlyF64:
     af64 = true;
   } else if (isC32(xf)) {
     u32 max = 0;
@@ -122,6 +125,7 @@ B listVariations_c2(B t, B w, B x) {
   }
   noSpec:;
   B r = emptyHVec();
+  if(abit) { r=vec_add(r,inc(v_Ab  ));                          if(c_incr) { r=vec_add(r,inc(v_AbInc  ));                             } }
   if(ai8 ) { r=vec_add(r,inc(v_Ai8 ));r=vec_add(r,inc(v_Si8 )); if(c_incr) { r=vec_add(r,inc(v_Ai8Inc ));r=vec_add(r,inc(v_Si8Inc )); } }
   if(ai16) { r=vec_add(r,inc(v_Ai16));r=vec_add(r,inc(v_Si16)); if(c_incr) { r=vec_add(r,inc(v_Ai16Inc));r=vec_add(r,inc(v_Si16Inc)); } }
   if(ai32) { r=vec_add(r,inc(v_Ai32));r=vec_add(r,inc(v_Si32)); if(c_incr) { r=vec_add(r,inc(v_Ai32Inc));r=vec_add(r,inc(v_Si32Inc)); } }
@@ -173,7 +177,8 @@ B variation_c2(B t, B w, B x) {
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
     wp++;
-    if      (u8_get(&wp, wpE, "i8" )) res = taga(cpyI8Arr(inc(x)));
+    if      (u8_get(&wp, wpE, "b"  )) res = taga(cpyBitArr(inc(x)));
+    else if (u8_get(&wp, wpE, "i8" )) res = taga(cpyI8Arr(inc(x)));
     else if (u8_get(&wp, wpE, "i16")) res = taga(cpyI16Arr(inc(x)));
     else if (u8_get(&wp, wpE, "i32")) res = taga(cpyI32Arr(inc(x)));
     else if (u8_get(&wp, wpE, "c8" )) res = taga(cpyC8Arr(inc(x)));

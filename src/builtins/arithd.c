@@ -62,6 +62,37 @@
   #define RI32(A) i32* rp; B r=m_i32arrc(&rp, A);
   #define RF(A) f64* rp; B r=m_f64arrc(&rp, A);
   
+  static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
+    B s = we<xe?*w:*x;
+    SLOW2("bitarr expansion", *w, *x);
+    switch(we|xe) { default: UD;
+      case el_bit: *w = taga(cpyI8Arr(*w)); *x = taga(cpyI8Arr(*x)); return el_i8;
+      case el_i8:  s = taga(cpyI8Arr (s)); break;
+      case el_i16: s = taga(cpyI16Arr(s)); break;
+      case el_i32: s = taga(cpyI32Arr(s)); break;
+      case el_f64: s = taga(cpyF64Arr(s)); break;
+    }
+    *(we<xe?w:x) = s;
+    return we|xe;
+  }
+  static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
+    B b = bitX? x : w;
+    u64* bp = bitarr_ptr(b);
+    usz ia = a(b)->ia;
+    
+    bool b0 = bp[0]&1;
+    bool both = false;
+    for (usz i = 0; i < ia; i++) if (bitp_get(bp,i) != b0) { both=true; break; }
+    
+    B e0=m_f64(0), e1=m_f64(0); // initialized to have something to decrement later
+    bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
+    bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
+    // non-bitarr arg has been consumed
+    B r = bit_sel(b, e0, h0, e1, h1); // and now the bitarr arg is consumed too
+    dec(e0); dec(e1);
+    return r;
+  }
+  
   #define DOF(EXPR,A,W,X) {        \
     for (usz i = 0; i < ia; i++) { \
       f64 wv = W; f64 xv = X;      \
@@ -92,7 +123,7 @@
     }                                               \
     dec(w); dec(x); return r;                       \
   }
-  #define GC2i(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
+  #define GC2i(SYMB, NAME, EXPR, EXTRA, BIT, BX) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
     EXTRA                                                            \
     if (isArr(w)|isArr(x)) {                                         \
@@ -101,6 +132,16 @@
         usz ia = a(x)->ia;                                           \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
+        if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {          \
+          if (BIT && (we|xe)==0) { u64* rp; B r = m_bitarrc(&rp, x); \
+            u64* wp = bitarr_ptr(w); u64* xp = bitarr_ptr(x);        \
+            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i] BX xp[i];  \
+            dec(w); dec(x); return r;                                \
+          }                                                          \
+          B wt=w,xt=x;                                               \
+          we=xe=iMakeEq(&wt, &xt, we, xe);                           \
+          w=wt; x=xt;                                                \
+        }                                                            \
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
           if (wei&xei) {PI32(w)PI32(x)DOI32(EXPR,w,wp[i],xp[i],aaB);}\
@@ -123,12 +164,26 @@
         if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base); } \
         if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia; u8 xe = TI(x,elType);          \
+        if (xe==el_bit) {                                          \
+          if (BIT && q_fbit(w.f)) { u64* rp; B r=m_bitarrc(&rp,x); \
+            u64 wv = bitx(w); u64* xp = bitarr_ptr(x);             \
+            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wv BX xp[i];   \
+            dec(w); dec(x); return r;                              \
+          } else return bit_sel1Fn(NAME##_c2,w,x,1);               \
+        }                                                          \
         if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],na8B ) } na8B :; \
         if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],na16B) } na16B:; \
         if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],na32B) } na32B:; \
         if (xe==el_i32) { RF(x) PI32(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }       \
         if (xe==el_f64) { RF(x) PF  (x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }       \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia; u8 we = TI(w,elType);                       \
+        if (we==el_bit) {                                          \
+          if (BIT && q_fbit(x.f)) { u64* rp; B r=m_bitarrc(&rp,w); \
+            u64 xv = bitx(x); u64* wp = bitarr_ptr(w);             \
+            for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i] BX xv;   \
+            dec(w); dec(x); return r;                              \
+          } else return bit_sel1Fn(NAME##_c2,w,x,0);               \
+        }                                                          \
         if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,an8B ) } an8B :; \
         if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,an16B) } an16B:; \
         if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,an32B) } an32B:; \
@@ -176,7 +231,7 @@ GC2i("+", add, wv+xv, {
       return r;
     }
   }
-})
+}, 0, -)
 GC2i("-", sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
@@ -203,16 +258,16 @@ GC2i("-", sub, wv-xv, {
       }
     }
   }
-})
+}, 0, -)
 GC2i("¬", not, 1+wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(1+(i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("¬: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
-})
-GC2i("×", mul, wv*xv, {})
-GC2i("∧", and, wv*xv, {})
-GC2i("∨", or , (wv+xv)-(wv*xv), {})
-GC2i("⌊", floor, wv>xv?xv:wv, {}) // optimizer optimizes out the fallback mess
-GC2i("⌈", ceil , wv>xv?wv:xv, {})
+}, 0, -)
+GC2i("×", mul, wv*xv, {}, 1, &)
+GC2i("∧", and, wv*xv, {}, 1, &)
+GC2i("∨", or , (wv+xv)-(wv*xv), {}, 1, |)
+GC2i("⌊", floor, wv>xv?xv:wv, {}, 1, &) // optimizer optimizes out the fallback mess
+GC2i("⌈", ceil , wv>xv?wv:xv, {}, 1, |)
 
 GC2f("÷", div  ,           w.f/x.f, {})
 GC2f("⋆", pow  ,     pow(w.f, x.f), {})

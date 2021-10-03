@@ -188,13 +188,14 @@ typedef union B {
   /*10*/ F(md1D) F(md2D) F(md2H) \
   \
   /*13*/ F(harr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(fillarr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
-  /*19*/ F(hslice) F(i8slice) F(i16slice) F(i32slice) F(fillslice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*22*/ F(hslice) F(i8slice) F(i16slice) F(i32slice) F(fillslice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*31*/ F(bitarr) \
   \
-  /*25*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
-  /*31*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*38*/ F(freed) F(harrPartial) \
+  /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
+  /*38*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
+  /*46*/ F(freed) F(harrPartial) \
   \
-  /*40*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*48*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -203,8 +204,8 @@ enum Type {
   t_COUNT
 };
 
-enum ElType { // a⌈b shall return the type that can store both, if possible; any x<=el_f64 is an integer type
-  el_bit=0, // unused; just here for completeness of ElType
+enum ElType { // a⌈b shall return the type that can store both, if possible
+  el_bit=0,
   el_i8 =1,
   el_i16=2,
   el_i32=3,
@@ -384,6 +385,8 @@ static usz o2su  (B x) { return (usz)x.f; }
 static f64 o2fu  (B x) { return      x.f; }
 static i64 o2i64u(B x) { return (i64)x.f; }
 static bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
+static bool o2bu (B x) { return o2s(x); }
+static bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
 static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
 static bool q_c16(B x) { return isC32(x) && ((u32)x.u) == ((u16)x.u); }
 static bool q_c32(B x) { return isC32(x); }
@@ -394,6 +397,9 @@ static bool q_i64(B x) { return isF64(x) && x.f==(f64)(i64)x.f; }
 static bool q_f64(B x) { return isF64(x); }
 static bool q_N  (B x) { return x.u==bi_N.u; } // is ·
 static bool noFill(B x) { return x.u == bi_noFill.u; }
+static bool q_ibit(i64 x) { return x==0 | x==1; }
+static bool q_ubit(u64 x) { return x==0 | x==1; }
+static bool q_fbit(f64 x) { return x==0 | x==1; }
 
 
 typedef struct Slice {

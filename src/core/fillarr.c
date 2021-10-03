@@ -5,8 +5,8 @@ B asFill(B x) { // consumes
     u8 xe = TI(x,elType);
     usz ia = a(x)->ia;
     if (elNum(xe)) {
-      i8* rp; B r = m_i8arrc(&rp, x);
-      for (usz i = 0; i < ia; i++) rp[i] = 0;
+      u64* rp; B r = m_bitarrc(&rp, x);
+      for (usz i = 0; i < BIT_N(ia); i++) rp[i] = 0;
       dec(x);
       return r;
     }

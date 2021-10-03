@@ -19,7 +19,17 @@ B GRADE_CAT(c1)(B t, B x) {
   
   u8 xe = TI(x,elType);
   i32* rp; B r = m_i32arrv(&rp, ia);
-  if (xe==el_i8) {
+  if (xe==el_bit) {
+    u64* xp = bitarr_ptr(x);
+    u64 sum = bit_sum(xp, ia);
+    u64 r0 = 0;
+    u64 r1 = GRADE_UD(ia-sum, sum);
+    for (usz i = 0; i < ia; i++) {
+      if (bitp_get(xp,i)^GRADE_UD(0,1)) rp[r1++] = i;
+      else                              rp[r0++] = i;
+    }
+    dec(x); return r;
+  } else if (xe==el_i8) {
     i8* xp = i8any_ptr(x);
     i32 min=-128, range=256;
     TALLOC(usz, tmp, range+1);

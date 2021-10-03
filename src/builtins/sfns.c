@@ -21,10 +21,11 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
 B m_vec1(B a) {
   if (isF64(a)) {
     i32 i = (i32)a.f;
-    if (RARE(a.f != i))     { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
-    if      (a.f == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
-    else if (a.f == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
-    else                    { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
+    if (RARE(a.f != i))   { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
+    if      (q_ibit(i))   { u64* rp; B r = m_bitarrv(&rp, 1); rp[0] = i; return r; }
+    if      (i == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
+    else if (i == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
+    else                  { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
   }
   if (isC32(a)) {
     u32 c = o2cu(a);
@@ -42,6 +43,7 @@ B m_vec2(B a, B b) {
     if (LIKELY(isNum(a)&isNum(b))) {
       i32 ai=a.f; i32 bi=b.f;
       if (RARE(ai!=a.f | bi!=b.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(a); rp[1]=o2fu(b); return r; }
+      else if (q_ibit(ai)  &  q_ibit(bi)) { u64* rp; B r = m_bitarrv(&rp, 2); rp[0]=ai | (bi<<1);           return r; }
       else if (ai==(i8 )ai & bi==(i8 )bi) { i8*  rp; B r = m_i8arrv (&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
       else if (ai==(i16)ai & bi==(i16)bi) { i16* rp; B r = m_i16arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
       else                                { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
@@ -271,17 +273,20 @@ B select_c2(B t, B w, B x) {
   
   if (xr==1) {
     usz xia = a(x)->ia;
-    #define CASE(T,E) if (TI(x,elType)==el_##T) { \
+    u8 xe = TI(x,elType);
+    #define CASE(T,E) if (xe==el_##T) {  \
       E* rp; B r = m_##T##arrc(&rp, w);  \
       E* xp = T##any_ptr(x);             \
-      for (usz i = 0; i < wia; i++) {    \
-        rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; \
-      }                                  \
+      for (usz i = 0; i < wia; i++) rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; \
       dec(w); dec(x); return r;          \
     }
-    #define TYPE(W) { \
-      W* wp = W##any_ptr(w); \
-      CASE(i8,i8) CASE(i16,i16) CASE(i32,i32) \
+    #define TYPE(W) { W* wp = W##any_ptr(w);   \
+      if (xe==el_bit) { u64* xp=bitarr_ptr(x); \
+        u64* rp; B r = m_bitarrc(&rp, w);      \
+        for (usz i = 0; i < wia; i++) bitp_set(rp, i, bitp_get(xp, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
+        dec(w); dec(x); return r;              \
+      }                                        \
+      CASE(i8,i8) CASE(i16,i16) CASE(i32,i32)  \
       CASE(c8,u8) CASE(c16,u16) CASE(c32,u32) CASE(f64,f64) \
       usz i=0; HArr_p r = m_harrs(wia, &i); \
       if (v(x)->type==t_harr || v(x)->type==t_hslice) { \
@@ -292,7 +297,13 @@ B select_c2(B t, B w, B x) {
       for (; i < wia; i++) r.a[i] = Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))); \
       dec(x); return withFill(harr_fcd(r,w),xf); \
     }
-    if (TI(w,elType)==el_i8) TYPE(i8)
+    if (TI(w,elType)==el_bit && xia>=2) {
+      SGetU(x)
+      B r = bit_sel(w, GetU(x,0), true, GetU(x,1), true);
+      dec(x);
+      return withFill(r, xf);
+    }
+    else if (TI(w,elType)==el_i8) TYPE(i8)
     else if (TI(w,elType)==el_i16) TYPE(i16)
     else if (TI(w,elType)==el_i32) TYPE(i32)
     else {
@@ -360,7 +371,14 @@ B slash_c1(B t, B x) {
   }
   i32* rp; B r = m_i32arrv(&rp, s);
   u8 xe = TI(x,elType);
-  if (xe==el_i8) {
+  if (xe==el_bit) {
+    u64* xp = bitarr_ptr(x);
+    while (xia>0 && !bitp_get(xp,xia-1)) xia--;
+    for (u64 i = 0; i < xia; i++) {
+      *rp = i;
+      rp+= bitp_get(xp, i);
+    }
+  } else if (xe==el_i8) {
     i8* xp = i8any_ptr(x);
     while (xia>0 && !xp[xia-1]) xia--;
     for (u64 i = 0; i < xia; i++) {
@@ -408,6 +426,37 @@ B slash_c2(B t, B w, B x) {
     B xf = getFillQ(x);
     
     usz ri = 0;
+    if (TI(w,elType)==el_bit) {
+      u64* wp = bitarr_ptr(w);
+      while (wia>0 && !bitp_get(wp,wia-1)) wia--;
+      usz wsum = bit_sum(wp, wia);
+      B r;
+      switch(TI(x,elType)) { default: UD;
+        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+        case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_i32: { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_f64: { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_c8:  { u8*  xp = c8any_ptr (x); u8*  rp; r = m_c8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_c16: { u16* xp = c16any_ptr(x); u16* rp; r = m_c16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_c32: { u32* xp = c32any_ptr(x); u32* rp; r = m_c32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        case el_B:
+          B* xp = arr_bptr(x);
+          if (xp!=NULL) {
+            HArr_p rp = m_harrUv(wsum);
+            for (usz i=0; i<wia; i++) { rp.a[ri] = xp[i]; ri+= bitp_get(wp,i); }
+            for (usz i=0; i<wsum; i++) inc(rp.a[i]);
+            r = withFill(rp.b, xf);
+          } else {
+            SLOW2("𝕨/𝕩", w, x);
+            HArr_p rp = m_harrs(wsum, &ri); SGet(x)
+            for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) rp.a[ri++] = Get(x,i);
+            r = withFill(harr_fv(rp), xf);
+          }
+          break;
+      }
+      dec(w); dec(x); return r;
+    }
     #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
       XT* xp = XT##any_ptr(x);                       \
       XT* rp; B r = m_##XT##arrv(&rp, wsum);         \
@@ -430,6 +479,18 @@ B slash_c2(B t, B w, B x) {
         or|= (u32)wp[i];                 \
       }                                  \
       if (or>>SIGN) thrM("/: 𝕨 must consist of natural numbers"); \
+      if (TI(x,elType)==el_bit) {                  \
+        u64* xp = bitarr_ptr(x); u64 ri=0;         \
+        u64* rp; B r = m_bitarrv(&rp, wsum);       \
+        if (or<2) for (usz i = 0; i < wia; i++) {  \
+          bitp_set(rp, ri, bitp_get(xp,i));        \
+          ri+= wp[i];                              \
+        } else for (usz i = 0; i < wia; i++) {     \
+          WT cw = wp[i]; bool cx = bitp_get(xp,i); \
+          for (i64 j = 0; j < cw; j++) bitp_set(rp, ri++, cx); \
+        }                                          \
+        dec(w); dec(x); return r;                  \
+      }                                            \
       CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
       SLOW2("𝕨/𝕩", w, x);                            \
       HArr_p r = m_harrs(wsum, &ri); SGetU(x)        \
@@ -882,7 +943,8 @@ B reverse_c1(B t, B x) {
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
   if (rnk(x)==1 && xe<el_B) {
-    B r; if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8 * rp; r = m_i8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
+    B r; if (xe==el_bit) { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp, xia); for (usz i = 0; i < xia; i++) bitp_set(rp, i, bitp_get(xp, xia-i-1)); }
+    else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8 * rp; r = m_i8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
     else if (xe==el_c8 ) { u8*  xp = c8any_ptr (x); u8 * rp; r = m_c8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
     else if (xe==el_c16) { u16* xp = c16any_ptr(x); u16* rp; r = m_c16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
@@ -1055,6 +1117,16 @@ B select_ucw(B t, B o, B w, B x) {
           i8 cr = rp[i];
           EQ(cr != xn->a[cw]);
           xn->a[cw] = cr;
+        }
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else if (me==el_bit) {
+        BitArr* xn = reuse? toBitArr(REUSE(x)) : cpyBitArr(x);
+        rep = taga(toBitArr(rep)); u64* rp = bitarr_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
+          bool cr = bitp_get(rp, i);
+          EQ(cr != bitp_get(xn->a,cw));
+          bitp_set(xn->a,cw,cr);
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else UD;

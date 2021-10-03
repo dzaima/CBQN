@@ -29,7 +29,7 @@ static bool fillEqual(B w, B x) {
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
     switch(TI(x,elType)) { default: UD;
-      case el_i8: case el_i16: case el_i32: case el_f64: return m_i32(0);
+      case el_i8: case el_i16: case el_i32: case el_f64: case el_bit: return m_i32(0);
       case el_c8: case el_c16: case el_c32: return m_c32(' ');
       case el_B:;
         u8 t = v(x)->type;
@@ -86,6 +86,7 @@ static B m_atomUnit(B x) {
     Arr* r;
     i32 xi = (i32)x.f;
     if (RARE(xi!=x.f))    { f64* rp; r = m_f64arrp(&rp, 1); rp[0] = x.f; }
+    else if (q_ibit(xi))  { u64* rp; r = m_bitarrp(&rp, 1); rp[0] = bitx(x); }
     else if (xi==(i8 )xi) { i8*  rp; r = m_i8arrp (&rp, 1); rp[0] = xi; }
     else if (xi==(i16)xi) { i16* rp; r = m_i16arrp(&rp, 1); rp[0] = xi; }
     else                  { i32* rp; r = m_i32arrp(&rp, 1); rp[0] = xi; }
