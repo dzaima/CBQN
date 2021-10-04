@@ -49,7 +49,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
     i64 i = o2i64(g);
     if (i<bound[0]) bound[0] = i;
     if (i>bound[1]) bound[1] = i;
-  } else thrM("⍟: 𝔽 contained a non-number atom");
+  } else thrM("⍟: 𝔾 contained a non-number atom");
 }
 B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
