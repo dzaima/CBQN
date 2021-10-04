@@ -440,7 +440,7 @@ B slash_c2(B t, B w, B x) {
         case el_c8:  { u8*  xp = c8any_ptr (x); u8*  rp; r = m_c8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_c16: { u16* xp = c16any_ptr(x); u16* rp; r = m_c16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_c32: { u32* xp = c32any_ptr(x); u32* rp; r = m_c32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-        case el_B:
+        case el_B: {
           B* xp = arr_bptr(x);
           if (xp!=NULL) {
             HArr_p rp = m_harrUv(wsum);
@@ -454,6 +454,7 @@ B slash_c2(B t, B w, B x) {
             r = withFill(harr_fv(rp), xf);
           }
           break;
+        }
       }
       dec(w); dec(x); return r;
     }
