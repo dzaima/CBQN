@@ -281,6 +281,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=wi; for (usz i=0; i<ia; i++) if (addOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
     }
     if (rtid==2 | rtid==10) { // ×/∧
+      if (xe==el_bit) { u64* xp = bitarr_ptr(x); bool r=wi; if (r) { for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; } dec(x); return m_i32(r); }
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i32 c=wi; for (usz i=0; i<ia; i++) if (mulOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
       if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=wi; for (usz i=0; i<ia; i++) if (mulOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=wi; for (usz i=0; i<ia; i++) if (mulOn(c,xp[i]))goto base; dec(x); return m_i32(c); }
@@ -296,7 +297,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=wi; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; dec(x); return m_i32(c); }
     }
     if (rtid==11 && (wi&1)==wi) { // ∨
-      if (xe==el_bit) { u64* xp = bitarr_ptr(x); bool r=0; if (wi) r=1; else for (usz i=0; i<ia; i++) if (bitp_get(xp,i)) { r=1; break; } dec(x); return m_i32(r); }
+      if (xe==el_bit) { u64* xp = bitarr_ptr(x); bool r=wi; if (!r) { for (usz i=0; i<(ia>>6); i++) if(xp[i]){r=1;break;} if(bitp_l0(xp,ia))r=1; } dec(x); return m_i32(r); }
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); bool q=wi; for (usz i=0; i<ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
       if (xe==el_i16) { i16* xp = i16any_ptr(x); bool q=wi; for (usz i=0; i<ia; i++) { i16 c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
       if (xe==el_i32) { i32* xp = i32any_ptr(x); bool q=wi; for (usz i=0; i<ia; i++) { i32 c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } dec(x); return m_i32(q); }
