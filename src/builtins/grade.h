@@ -34,7 +34,7 @@ B GRADE_CAT(c1)(B t, B x) {
     i32 min=-128, range=256;
     TALLOC(usz, tmp, range+1);
     for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
-    GRADE_UD(
+    GRADE_UD( // i8 range-based
       for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
       for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
       for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
@@ -58,7 +58,7 @@ B GRADE_CAT(c1)(B t, B x) {
     if (range/2 < ia) {
       TALLOC(usz, tmp, range+1);
       for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
-      GRADE_UD(
+      GRADE_UD( // i32 range-based
         for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
         for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
         for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;

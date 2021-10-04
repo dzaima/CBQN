@@ -85,6 +85,18 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
+B scan_ne(u64 p, B x, u64 ia) {
+  u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia);
+  for (usz i = 0; i < BIT_N(ia); i++) {
+    u64 c = xp[i];
+    u64 r = c ^ (c<<1);
+    r^= r<< 2; r^= r<< 4; r^= r<<8;
+    r^= r<<16; r^= r<<32; r^=    p;
+    rp[i] = r;
+    p = -(r>>63); // repeat sign bit
+  }
+  dec(x); return r;
+}
 
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
@@ -108,18 +120,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=I32_MIN; for (usz i=0; i<ia; i++) { if (xp[i]>c)c=xp[i]; rp[i]=c; } dec(x); return r; }
     }
     if (rtid==14) { // ≠
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia);
-        u64 p = 0;
-        for (usz i = 0; i < BIT_N(ia); i++) {
-          u64 c = xp[i];
-          u64 r = c ^ (c<<1);
-          r^= r<< 2; r^= r<< 4; r^= r<<8;
-          r^= r<<16; r^= r<<32; r^=    p;
-          rp[i] = r;
-          p = -(r>>63); // repeat sign bit
-        }
-        dec(x); return r;
-      }
+      if (xe==el_bit) return scan_ne(0, x, ia);
       f64 x0 = IGetU(x,0).f; if (x0!=0 && x0!=1) goto base;
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
@@ -172,10 +173,10 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     }
     if (rtid==14) { // ≠
       if (!q_ibit(wv)) goto base; bool c=wv;
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^=bitp_get(xp,i); bitp_set(rp,i,c); } dec(x); return r; }
-      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^=         xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
-      if (xe==el_i16) { i16* xp=i16any_ptr(x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^=         xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
-      if (xe==el_i32) { i32* xp=i32any_ptr(x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^=         xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
+      if (xe==el_bit) return scan_ne(-(u64)wv, x, ia);
+      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
+      if (xe==el_i16) { i16* xp=i16any_ptr(x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
+      if (xe==el_i32) { i32* xp=i32any_ptr(x); u64* rp; B r=m_bitarrv(&rp, ia); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } dec(x); return r; }
     }
   }
   base:;
