@@ -20,7 +20,9 @@
 
 #define FOR_PM2(A,M,D) \
   /*md2.c*/ A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
-  /*md2.c*/ A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾")
+  /*md2.c*/ A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
+/* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
+  /*md2.c*/ A(while,"•_while_")
 
 enum PrimFns { pf_none,
   #define F(N,X) pf_##N,
@@ -39,7 +41,7 @@ enum PrimMd2 { pm2_none,
 };
 static const i32 firstImpurePFN = pf_type;
 static const i32 firstImpurePM1 = pm1_timed;
-static const i32 firstImpurePM2 = I32_MAX;
+static const i32 firstImpurePM2 = pm2_while;
 
 static inline bool isImpureBuiltin(B x) {
   if (isFun(x)) return !v(x)->extra || v(x)->extra>=firstImpurePFN;

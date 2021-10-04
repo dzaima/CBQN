@@ -148,6 +148,16 @@ B before_uc1(B t, B o, B f, B g, B x) {
 }
 
 
+B while_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
+  while (o2b(c1(g,inc(x)))) x = c1(f, x);
+  return x;
+}
+B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
+  while (o2b(c2(g,inc(w),inc(x)))) x = c2(f, inc(w), x);
+  dec(w);
+  return x;
+}
+
 
 static void print_md2BI(B x) { printf("%s", pm2_repr(c(Md1,x)->extra)); }
 void md2_init() {

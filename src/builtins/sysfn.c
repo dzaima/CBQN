@@ -740,6 +740,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"type")) r.a[i] = incG(bi_type);
     else if (eqStr(c, U"sh")) r.a[i] = incG(bi_sh);
     else if (eqStr(c, U"decompose")) r.a[i] = incG(bi_decp);
+    else if (eqStr(c, U"while")) r.a[i] = incG(bi_while);
     else if (eqStr(c, U"primind")) r.a[i] = incG(bi_primInd);
     else if (eqStr(c, U"bqn")) r.a[i] = incG(bi_bqn);
     else if (eqStr(c, U"cmp")) r.a[i] = incG(bi_cmp);
