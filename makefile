@@ -36,7 +36,7 @@ single-c:
 
 # compiler setup
 CC = clang
-ifeq ($(CC),gcc)
+ifneq ($(findstring gcc, $(CC)),)
 CCFLAGS = -Wno-parentheses
 else
 CCFLAGS = -Wno-microsoft-anon-tag
