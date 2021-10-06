@@ -36,7 +36,10 @@ single-c:
 
 # compiler setup
 CC = clang
-ifneq ($(findstring gcc, $(CC)),)
+
+# Detects if we are running GCC instead of Clang
+CC_IS_GCC = $(shell $(CC) --version | head -n1 | grep -m 1 -c "gcc")
+ifeq (${CC_IS_GCC}, 1)
 CCFLAGS = -Wno-parentheses
 else
 CCFLAGS = -Wno-microsoft-anon-tag
