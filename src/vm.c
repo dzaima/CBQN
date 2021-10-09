@@ -80,7 +80,7 @@ void gsPrint() {
   }
 }
 
-static Body* m_body(i32 vam, i32 pos, u16 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
+static Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
   Body* body = mm_alloc(fsizeof(Body,varIDs,i32,vam), t_body);
   
   #if JIT_START != -1
@@ -307,7 +307,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     
     if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
     
-    Body* body = m_body(vam+(remapArgs? argAm : 0), bcStart, hM, mpsc);
+    Body* body = m_body(vam+(remapArgs? argAm : 0), bcStart, (u32)hM, mpsc);
     if (boIA>2) {
       m_nsDesc(body, imm, ty, inc(nameList), GetU(bodyRepr,2), GetU(bodyRepr,3));
     } else {
