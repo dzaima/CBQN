@@ -108,15 +108,33 @@ B atop_c2(Md2D* d, B w, B x) { return c1(d->f, c2(d->g, w, x)); }
 B over_c1(Md2D* d,      B x) { return c1(d->f, c1(d->g,    x)); }
 B over_c2(Md2D* d, B w, B x) { B xr=c1(d->g, x); return c2(d->f, c1(d->g, w), xr); }
 
-B cond_c1(Md2D* d, B x) { B g=d->g;
-  if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c1iX(d->f, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c1(IGetU(g, fr), x);
+B pick_c2(B t, B w, B x);
+
+B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
+  B fr = c1iX(f, x);
+  if (isNum(fr)) {
+    if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
+    usz fri = WRAP(o2i64(fr), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+    return c1(IGetU(g, fri), x);
+  } else {
+    B fn = pick_c2(m_f64(0), fr, inc(g));
+    B r = c1(fn, x);
+    dec(fn);
+    return r;
+  }
 }
 B cond_c2(Md2D* d, B w, B x) { B g=d->g;
-  if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-  usz fr = WRAP(o2i64(c2iWX(d->f, w, x)), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
-  return c2(IGetU(g, fr), w, x);
+  B fr = c2iWX(d->f, w, x);
+  if (isNum(fr)) {
+    if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
+    usz fri = WRAP(o2i64(fr), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+    return c2(IGetU(g, fri), w, x);
+  } else {
+    B fn = pick_c2(m_f64(0), fr, inc(g));
+    B r = c2(fn, w, x);
+    dec(fn);
+    return r;
+  }
 }
 
 extern B rt_under, bi_before;
