@@ -5,7 +5,14 @@
 #include "../builtins.h"
 
 
+bool inErr;
 NORETURN NOINLINE void err(char* s) {
+  if (inErr) {
+    printf("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.\n");
+    exit(1);
+    __builtin_abort();
+  }
+  inErr = true;
   puts(s); fflush(stdout);
   vm_pstLive(); fflush(stdout);
   print_vmStack(); fflush(stdout);

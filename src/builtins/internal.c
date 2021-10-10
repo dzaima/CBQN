@@ -156,7 +156,7 @@ static bool u8_get(u8** cv, u8* cE, const char* x) {
 }
 
 static B variation_refs;
-static void variation_root() {
+static void variation_gcRoot() {
   mm_visit(variation_refs);
   mm_visit(listVariations_def);
   #define F(X) mm_visit(v_##X);
@@ -264,7 +264,7 @@ B getInternalNS() {
     FOR_VARIATION(F)
     #undef F
     listVariations_def = m_str8l("if");
-    gc_addFn(variation_root);
+    gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
     B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare,  DeepSqueeze⟩⇐𝕩}"), emptyCVec(), emptySVec());
     B arg =    m_caB(10,(B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)});

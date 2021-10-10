@@ -42,7 +42,7 @@ DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(B x) { printf("(native function description)"); }
 
-void nfn_gcFn() {
+void nfn_gcRoot() {
   mm_visit(nfn_list);
 }
 void nfn_init() {
@@ -51,5 +51,5 @@ void nfn_init() {
   TIi(t_nfn,freeF) = nfn_freeF; TIi(t_nfnDesc,freeF) = nfnDesc_freeF;
   TIi(t_nfn,visit) = nfn_visit; TIi(t_nfnDesc,visit) = nfnDesc_visit;
   TIi(t_nfn,print) = nfn_print; TIi(t_nfnDesc,print) = nfnDesc_print;
-  gc_addFn(nfn_gcFn);
+  gc_addFn(nfn_gcRoot);
 }
