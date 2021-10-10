@@ -582,7 +582,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case FN1C: { P(f)P(x)
         GS_UPD;POS_UPD;
-        ADD(c1(f, x); dec(f));
+        ADD(c1(f, x)); dec(f);
         break;
       }
       case FN1O: { P(f)P(x)
@@ -592,7 +592,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       }
       case FN2C: { P(w)P(f)P(x)
         GS_UPD;POS_UPD;
-        ADD(c2(f, w, x); dec(f));
+        ADD(c2(f, w, x)); dec(f);
         break;
       }
       case FN2O: { P(w)P(f)P(x)

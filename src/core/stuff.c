@@ -9,8 +9,10 @@ bool inErr;
 NORETURN NOINLINE void err(char* s) {
   if (inErr) {
     printf("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.\n");
+    #ifdef DEBUG
+      __builtin_trap();
+    #endif
     exit(1);
-    __builtin_abort();
   }
   inErr = true;
   puts(s); fflush(stdout);
