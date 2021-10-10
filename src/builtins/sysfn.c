@@ -233,14 +233,37 @@ B show_c1(B t, B x) {
   return x;
 }
 
-B bqn_c1(B t, B x) {
-  if (isAtm(x) || rnk(x)!=1) thrM("•BQN: Argument must be a character vector");
+extern B replPath; // defined in main.c
+static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
+  if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
+  usz ia = a(w)->ia;
+  SGet(w)
+  B path = ia>0? Get(w,0) : inc(replPath);
+  B file = ia>1? Get(w,1) : emptyCVec();
+  B args = ia>2? Get(w,2) : emptySVec();
+  *fullpath = vec_join(vec_add(path, m_c32('/')), file);
+  dec(w);
+  return args;
+}
+
+static void vfyStr(B x, char* name) {
+  if (isAtm(x) || rnk(x)!=1) thrF("%U: Argument must be a character vector", name);
   if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
     usz ia = a(x)->ia;
     SGetU(x)
-    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrM("•BQN: Argument must be a character vector");
+    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: Argument must be a character vector", name);
   }
+}
+B bqn_c1(B t, B x) {
+  vfyStr(x, "•BQN");
   return bqn_exec(x, bi_N, bi_N);
+}
+
+B bqn_c2(B t, B w, B x) {
+  vfyStr(x, "•BQN");
+  B fullpath;
+  B args = args_path(&fullpath, w, "•BQN");
+  return bqn_exec(x, fullpath, args);
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -470,7 +493,6 @@ B getRandNS() {
   }
   return incG(randNS);
 }
-extern B replPath; // defined in main.c
 static NFnDesc* reBQNDesc;
 B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
@@ -491,19 +513,14 @@ B reBQN_c1(B t, B x) {
   return m_nfn(reBQNDesc, m_v2(m_f64(replVal), scVal));
 }
 B repl_c2(B t, B w, B x) {
+  vfyStr(x, "REPL");
   B o = nfn_objU(t);
   B* op = harr_ptr(o);
   i32 replMode = o2iu(op[0]);
   Scope* sc = c(Scope, op[1]);
   
-  if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrM("REPL: 𝕨 must be a vector with at most 3 items");
-  usz ia = a(w)->ia;
-  SGet(w)
-  B path = ia>0? Get(w,0) : inc(replPath);
-  B file = ia>1? Get(w,1) : emptyCVec();
-  B args = ia>2? Get(w,2) : emptySVec();
-  B fullpath = vec_join(vec_add(path, m_c32('/')), file);
-  dec(w);
+  B fullpath;
+  B args = args_path(&fullpath, w, "REPL");
   
   B res;
   if (replMode>0) {
