@@ -233,34 +233,36 @@ B show_c1(B t, B x) {
   return x;
 }
 
+static B vfyStr(B x, char* name, char* arg) {
+  if (isAtm(x) || rnk(x)!=1) thrF("%U: %U must be a character vector", name, arg);
+  if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
+    usz ia = a(x)->ia;
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a character vector", name, arg);
+  }
+  return x;
+}
+
 extern B replPath; // defined in main.c
 static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
   if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = a(w)->ia;
   SGet(w)
-  B path = ia>0? Get(w,0) : inc(replPath);
-  B file = ia>1? Get(w,1) : emptyCVec();
-  B args = ia>2? Get(w,2) : emptySVec();
+  B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(replPath);
+  B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
+  B args = ia>2?        Get(w,2)                  : emptySVec();
   *fullpath = vec_join(vec_add(path, m_c32('/')), file);
   dec(w);
   return args;
 }
 
-static void vfyStr(B x, char* name) {
-  if (isAtm(x) || rnk(x)!=1) thrF("%U: Argument must be a character vector", name);
-  if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
-    usz ia = a(x)->ia;
-    SGetU(x)
-    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: Argument must be a character vector", name);
-  }
-}
 B bqn_c1(B t, B x) {
-  vfyStr(x, "•BQN");
+  vfyStr(x, "•BQN", "𝕩");
   return bqn_exec(x, bi_N, bi_N);
 }
 
 B bqn_c2(B t, B w, B x) {
-  vfyStr(x, "•BQN");
+  vfyStr(x, "•BQN", "𝕩");
   B fullpath;
   B args = args_path(&fullpath, w, "•BQN");
   return bqn_exec(x, fullpath, args);
@@ -513,7 +515,7 @@ B reBQN_c1(B t, B x) {
   return m_nfn(reBQNDesc, m_v2(m_f64(replVal), scVal));
 }
 B repl_c2(B t, B w, B x) {
-  vfyStr(x, "REPL");
+  vfyStr(x, "REPL", "𝕩");
   B o = nfn_objU(t);
   B* op = harr_ptr(o);
   i32 replMode = o2iu(op[0]);
