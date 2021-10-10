@@ -7,8 +7,6 @@ void gc_addFn(vfn f);
 void gc_add(B x);
 
 
-extern u8 gc_tagCurr; // if no gc is running, this is what all objects will have
-extern u8 gc_tagNew;
 #ifdef LOG_GC
 extern u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount;
 #endif
@@ -20,9 +18,8 @@ static void mm_visit(B x) {
   
   if (!isVal(x)) return;
   Value* vx = v(x);
-  u8 p = vx->mmInfo;
-  if ((p&0x80)==gc_tagNew) return;
-  vx->mmInfo = p^0x80;
+  if (vx->mmInfo&0x80) return;
+  vx->mmInfo|= 0x80;
   #ifdef LOG_GC
     gc_visitBytes+= mm_size(vx); gc_visitCount++;
   #endif
@@ -34,9 +31,8 @@ static void mm_visitP(void* xp) {
   #endif
   
   Value* x = (Value*)xp;
-  u8 p = x->mmInfo;
-  if ((p&0x80)==gc_tagNew) return;
-  x->mmInfo = p^0x80;
+  if (x->mmInfo&0x80) return;
+  x->mmInfo|= 0x80;
   #ifdef LOG_GC
     gc_visitBytes+= mm_size(x); gc_visitCount++;
   #endif

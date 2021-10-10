@@ -21,14 +21,12 @@ void gc_add(B x) {
 u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount;
 #endif
 
-u8 gc_tagCurr = 0x80; // if no gc is running, this is what all objects will have
-u8 gc_tagNew  = 0x00;
-void gc_tryFree(Value* v) {
+static void gc_tryFree(Value* v) {
   u8 t = v->type;
   #if defined(DEBUG) && !defined(CATCH_ERRORS)
     if (t==t_freed) err("GC found t_freed\n");
   #endif
-  if (t!=t_empty & (v->mmInfo&0x80)==gc_tagCurr) {
+  if (t!=t_empty && !(v->mmInfo&0x80)) {
     if (t==t_shape) return;
     #ifdef DONT_FREE
       v->flags = t;
@@ -49,8 +47,11 @@ void gc_tryFree(Value* v) {
   }
 }
 
+static void gc_resetTag(Value* x) {
+  x->mmInfo&= 0x7F;
+}
 
-void gc_visitRoots() {
+static void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
   for (u32 i = 0; i < gc_rootObjSz; i++) mm_visit(gc_rootObjs[i]);
 }
@@ -63,10 +64,9 @@ void gc_forceGC() {
       gc_visitCount = 0; gc_freedCount = 0;
       u64 startSize = mm_heapUsed();
     #endif
+    mm_forHeap(gc_resetTag);
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
-    gc_tagNew = gc_tagCurr;
-    gc_tagCurr^= 0x80;
     u64 endSize = mm_heapUsed();
     #ifdef LOG_GC
       fprintf(stderr, "GC kept "N64d"B from "N64d" objects, freed "N64d"B, including directly "N64d"B from "N64d" objects; took %.3fms\n", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);

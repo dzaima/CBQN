@@ -30,7 +30,7 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;
   x->type = type;
-  x->mmInfo = bucket | gc_tagCurr;
+  x->mmInfo = bucket;
   #if defined(DEBUG) && !defined(DONT_FREE)
     u64* p = (u64*)x;
     u64* s = p + sizeof(Value)/8;
