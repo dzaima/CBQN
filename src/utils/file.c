@@ -89,7 +89,7 @@ B file_lines(B path) { // consumes
 
 
 
-B path_resolve(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
+B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert((isArr(base) || q_N(base)));
   if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
   SGetU(rel)

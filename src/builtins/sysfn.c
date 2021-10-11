@@ -543,28 +543,28 @@ B repl_c1(B t, B x) {
 
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
-  return path_resolve(nfn_objU(d), x);
+  return path_rel(nfn_objU(d), x);
 }
 B fileAt_c2(B d, B w, B x) {
   vfyStr(w,"(file).At","𝕨");
-  B r = path_resolve(w, x);
+  B r = path_rel(w, x);
   dec(w);
   return r;
 }
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
-  return file_chars(path_resolve(nfn_objU(d), x));
+  return file_chars(path_rel(nfn_objU(d), x));
 }
 B fchars_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
-  B p = path_resolve(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w);
   file_wChars(inc(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
-  I8Arr* tf = file_bytes(path_resolve(nfn_objU(d), x));
+  I8Arr* tf = file_bytes(path_rel(nfn_objU(d), x));
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   u8* rp; B r = m_c8arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
@@ -573,14 +573,14 @@ B fbytes_c1(B d, B x) {
 }
 B fbytes_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
-  B p = path_resolve(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w);
   file_wBytes(inc(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
-  return file_lines(path_resolve(nfn_objU(d), x));
+  return file_lines(path_rel(nfn_objU(d), x));
 }
 B flines_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
@@ -595,17 +595,17 @@ B flines_c2(B d, B w, B x) {
     s = vec_add(s, m_c32('\n'));
   }
   dec(x);
-  B p = path_resolve(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w);
   file_wChars(inc(p), s);
   dec(s);
   return p;
 }
 static NFnDesc* importDesc;
-B import_c1(B d,      B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), emptySVec()); }
-B import_c2(B d, B w, B x) { return bqn_execFile(path_resolve(nfn_objU(d), x), w); }
+B import_c1(B d,      B x) { return bqn_execFile(path_rel(nfn_objU(d), x), emptySVec()); }
+B import_c2(B d, B w, B x) { return bqn_execFile(path_rel(nfn_objU(d), x), w); }
 static NFnDesc* listDesc;
 B list_c1(B d, B x) {
-  return file_list(path_resolve(nfn_objU(d), x));
+  return file_list(path_rel(nfn_objU(d), x));
 }
 
 B unixTime_c1(B t, B x) {
@@ -743,6 +743,7 @@ B sys_c1(B t, B x) {
   SGetU(x)
   B fileNS = m_f64(0);
   B path = m_f64(0);
+  B wdpath = m_f64(0);
   #define REQ_PATH ({ if(!path.u) path = path_abs(path_dir(inc(comp_currPath))); path; })
   for (; i < a(x)->ia; i++) {
     B c = GetU(x,i);
@@ -759,6 +760,10 @@ B sys_c1(B t, B x) {
         fileNS = c1(file_nsGen,arg);
       }
       r.a[i] = inc(fileNS);
+    }
+    else if (eqStr(c, U"wdpath")) {
+      if (!wdpath.u) wdpath = path_abs(cdPath);
+      r.a[i] = inc(wdpath);
     }
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
     else if (eqStr(c, U"math")) r.a[i] = getMathNS();
@@ -794,6 +799,7 @@ B sys_c1(B t, B x) {
   #undef REQ_PATH
   dec(fileNS);
   dec(path);
+  dec(wdpath);
   return harr_fcd(r, x);
 }
 
