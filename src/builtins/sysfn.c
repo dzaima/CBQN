@@ -762,7 +762,7 @@ B sys_c1(B t, B x) {
       r.a[i] = inc(fileNS);
     }
     else if (eqStr(c, U"wdpath")) {
-      if (!wdpath.u) wdpath = path_abs(cdPath);
+      if (!wdpath.u) wdpath = path_abs(inc(cdPath));
       r.a[i] = inc(wdpath);
     }
     else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
