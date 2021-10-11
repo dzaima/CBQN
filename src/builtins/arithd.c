@@ -213,13 +213,13 @@
     thrM(SYMB ": Unexpected argument types");                        \
   }
 #else // if !TYPED_ARITH
-  #define GC2i(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
+  #define GC2i(SYMB, NAME, EXPR, EXTRA, BIT) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) { f64 wv=w.f; f64 xv=x.f; return m_f64(EXPR); } \
     EXTRA \
     P2(NAME) \
     thrM(SYMB ": Unexpected argument types"); \
   }
-  #define GC2f(NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
+  #define GC2f(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) { \
     if (isF64(w) & isF64(x)) return m_f64(EXPR); \
     EXTRA \
     P2(NAME) \

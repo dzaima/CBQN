@@ -134,6 +134,13 @@ B bqn_fmt(B x) { // consumes
 B bqn_repr(B x) { // consumes
   return c1(load_repr, x);
 }
+#else
+B bqn_fmt(B x) {
+  return x;
+}
+B bqn_repr(B x) {
+  return x;
+}
 #endif
 
 void load_gcFn() {
