@@ -243,12 +243,12 @@ static B vfyStr(B x, char* name, char* arg) {
   return x;
 }
 
-extern B replPath; // defined in main.c
+B cdPath;
 static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
   if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = a(w)->ia;
   SGet(w)
-  B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(replPath);
+  B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(cdPath);
   B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
   B args = ia>2?        Get(w,2)                  : emptySVec();
   *fullpath = vec_join(vec_add(path, m_c32('/')), file);
@@ -503,7 +503,7 @@ B reBQN_c1(B t, B x) {
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
   dec(x);
-  Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(replPath), m_f64(0));
+  Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
   B scVal;
   if (replVal==0) {
     scVal = bi_N;
@@ -544,6 +544,12 @@ B repl_c1(B t, B x) {
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_resolve(nfn_objU(d), x);
+}
+B fileAt_c2(B d, B w, B x) {
+  vfyStr(w,"(file).At","𝕨");
+  B r = path_resolve(w, x);
+  dec(w);
+  return r;
 }
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
@@ -791,9 +797,11 @@ B sys_c1(B t, B x) {
   return harr_fcd(r, x);
 }
 
+B cdPath;
 void sysfn_init() {
+  cdPath = m_str8(1, "."); gc_add(cdPath);
   fCharsDesc = registerNFn(m_str8l("(file).Chars"), fchars_c1, fchars_c2);
-  fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, c2_bad);
+  fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
   fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);
   fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
