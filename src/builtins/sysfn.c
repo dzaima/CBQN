@@ -315,14 +315,14 @@ B rand_range_c2(B t, B w, B x) {
   usz am = 1;
   i64 max = o2i64(x);
   if (isArr(w)) {
-    if (rnk(w) != 1) thrM("(rand).Range: 𝕨 must be a valid shape");
+    if (rnk(w) > 1) thrM("(rand).Range: 𝕨 must be a valid shape");
     SGetU(w);
-    for (u64 i = 0; i < a(w)->ia; i++) {
-      am *= o2s(GetU(w, i));
-    }
+    usz wia = a(w)->ia;
+    for (u64 i = 0; i < wia; i++) mulOn(am, o2s(GetU(w, i)));
   } else {
     am = o2s(w);
   }
+  
   RAND_START;
   Arr* r;
   if (max<1) {
@@ -337,17 +337,17 @@ B rand_range_c2(B t, B w, B x) {
     i32* rp; r = m_i32arrp(&rp, am);
     for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
   }
+
   RAND_END;
   if (isArr(w)) {
     switch (a(w)->ia) {
       case 0: { arr_shAlloc(r, 0); break; }
       case 1: { arr_shVec(r); break; }
       default: {
-        usz* sh = arr_shAlloc(r, a(w)->ia);
+        usz wia = a(w)->ia;
+        usz* sh = arr_shAlloc(r, wia);
         SGetU(w);
-        for (usz i = 0; i < a(w)->ia; i++) {
-          sh[i] = o2s(GetU(w, i));
-        }
+        for (usz i = 0; i < wia; i++) sh[i] = o2su(GetU(w, i));
       }
     }
   } else {
