@@ -1094,6 +1094,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     B s = emptyCVec();
     printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
+    //printBCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #ifdef DEBUG
       if (pos!=-1) printf(N64d": ", pos);

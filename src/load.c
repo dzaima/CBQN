@@ -93,6 +93,7 @@ char* pm2_repr(u8 u) {
 
 B r1Objs[rtLen];
 B rtWrap_wrap(B x); // consumes
+void rtWrap_print(void);
 
 
 _Thread_local i64 comp_currEnvPos;
@@ -322,9 +323,9 @@ void load_init() { // very last init function
   
   
   #ifdef PRECOMP
-    Block* c = load_compObj(
+    Block* c = compile(
       #include "gen/interp"
-      , bi_N, bi_N
+      , bi_N, bi_N, bi_N, bi_N, NULL
     );
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);
@@ -368,7 +369,6 @@ B bqn_execFile(B path, B args) { // consumes both
   return bqn_exec(file_chars(inc(path)), path, args);
 }
 
-void rtWrap_print(void);
 void bqn_exit(i32 code) {
   rtWrap_print();
   CTR_FOR(CTR_PRINT)
