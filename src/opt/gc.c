@@ -51,7 +51,7 @@ static void gc_resetTag(Value* x) {
   x->mmInfo&= 0x7F;
 }
 
-static void gc_visitRoots() {
+void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
   for (u32 i = 0; i < gc_rootObjSz; i++) mm_visit(gc_rootObjs[i]);
 }
