@@ -423,39 +423,17 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define CALLi(POS) {AC1(CALLi,(u64)(POS)); TSADD(b_r, ASM_SIZE-4);} // POS must be 32-bit
 #define RET() {b_o=asm_r(b_o); ASM1(0xC3);}
 
-#define JO(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x70);ASM1(-2);} // -2 comes from the instruction being 2 bytes long and L being defined at the start
-#define JNO(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x71);ASM1(-2);}
-#define JB(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x72);ASM1(-2);}
-#define JAE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x73);ASM1(-2);}
-#define JE(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x74);ASM1(-2);}
-#define JNE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x75);ASM1(-2);}
-#define JBE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x76);ASM1(-2);}
-#define JA(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x77);ASM1(-2);}
-#define JS(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x78);ASM1(-2);}
-#define JNS(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x79);ASM1(-2);}
-#define JP(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7A);ASM1(-2);}
-#define JNP(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7B);ASM1(-2);}
-#define JL(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7C);ASM1(-2);}
-#define JGE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7D);ASM1(-2);}
-#define JLE(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7E);ASM1(-2);}
-#define JG(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x7F);ASM1(-2);}
-#define LBL1(L) { i64 t=(i8)b_o->data[L+1] + ASM_SIZE-(i64)L; if(t!=(i8)t) err("x86-64 codegen: jump too long!"); b_o->data[L+1] = t; }
-#define JO4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x80);ASM4(-6);}
-#define JNO4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x81);ASM4(-6);}
-#define JB4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x82);ASM4(-6);}
-#define JAE4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x83);ASM4(-6);}
-#define JE4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x84);ASM4(-6);}
-#define JNE4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x85);ASM4(-6);}
-#define JBE4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x86);ASM4(-6);}
-#define JA4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x87);ASM4(-6);}
-#define JS4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x88);ASM4(-6);}
-#define JNS4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x89);ASM4(-6);}
-#define JP4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8A);ASM4(-6);}
-#define JNP4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8B);ASM4(-6);}
-#define JL4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8C);ASM4(-6);}
-#define JGE4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8D);ASM4(-6);}
-#define JLE4(L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8E);ASM4(-6);}
-#define JG4(L)  u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1(0x8F);ASM4(-6);}
+static const u8 cO  = 0x0; static const u8 cNO = 0x1;
+static const u8 cB  = 0x2; static const u8 cAE = 0x3;
+static const u8 cE  = 0x4; static const u8 cNE = 0x5;
+static const u8 cBE = 0x6; static const u8 cA  = 0x7;
+static const u8 cS  = 0x8; static const u8 cNS = 0x9;
+static const u8 cP  = 0xA; static const u8 cNP = 0xB;
+static const u8 cL  = 0xC; static const u8 cGE = 0xD;
+static const u8 cLE = 0xE; static const u8 cG  = 0xF;
+#define J1(T, L) u64 L=ASM_SIZE; {b_o=asm_r(b_o);            ASM1((i8)(0x70+(T)));ASM1(-2);} // -2 comes from the instruction being 2 bytes long and L being defined at the start
+#define J4(T, L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1((i8)(0x80+(T)));ASM4(-6);}
+#define LBL1(L) { i64 t=    (i8)b_o->data[L+1]  + ASM_SIZE-(i64)L; if(t!=(i8 )t) err("x86-64 codegen: jump too long!"); b_o->data[L+1] = t; }
 #define LBL4(L) { i64 t=asm_r4(b_o->data+(L+2)) + ASM_SIZE-(i64)L; if(t!=(i32)t) err("x86-64 codegen: jump too long!"); asm_w4(b_o->data+(L+2), t); }
 
 ASMI(ADD, Reg o, Reg i) { nREX8(o,i); ASM1(0x01); nA_REG(o,i); }

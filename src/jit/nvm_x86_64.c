@@ -580,9 +580,9 @@ Nvm_res m_nvm(Body* body) {
     #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); } // TODO return r_SC directly without a pointless mov
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
-      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{J1(cA,lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
     #else
-      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{JA(lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{J1(cA,lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
     // #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,pos));
     #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos + bodyOff]<<1 | 1);
@@ -631,7 +631,7 @@ Nvm_res m_nvm(Body* body) {
       case VARO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
         MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
-        if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); JNE(lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
+        if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); J1(cNE,lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
       } break;
       case VARU: TOPs; { u64 d=*bc++; u64 p=*bc++;
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
@@ -642,17 +642,17 @@ Nvm_res m_nvm(Body* body) {
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
       case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
         GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH); // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
-        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l);
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l);
         break;
       }
       case PRED1:TOPp; { u64 v1=L64;
         GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); CCALL(i_PRED1); // (B x, Scope** pscs, u32* bc, Body* v)
-        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); NORES(1);
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l); NORES(1);
         break;
       }
       case PRED2:TOPp; { u64 v1=L64; u64 v2=L64;
         GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); IMM(R_A4,v2); CCALL(i_PRED2); // (B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
-        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); JNE4(l); TSADD(retLbls, l); NORES(1);
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l); NORES(1);
         break;
       }
       case SETN: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETN); break; // (B s,      B x, Scope** pscs, u32* bc)
