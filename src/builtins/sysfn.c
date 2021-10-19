@@ -340,11 +340,11 @@ B rand_range_c2(B t, B w, B x) {
 
   RAND_END;
   if (isArr(w)) {
-    switch (a(w)->ia) {
+    usz wia = a(w)->ia;
+    switch (wia) {
       case 0: { arr_shAlloc(r, 0); break; }
       case 1: { arr_shVec(r); break; }
       default: {
-        usz wia = a(w)->ia;
         usz* sh = arr_shAlloc(r, wia);
         SGetU(w);
         for (usz i = 0; i < wia; i++) sh[i] = o2su(GetU(w, i));

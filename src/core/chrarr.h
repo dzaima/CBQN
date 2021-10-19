@@ -16,7 +16,6 @@
 B m_str8(usz sz, char* s);
 B m_str8l(char* s);
 B m_str32(u32* s);
-B m_str8l(char* s);
 B fromUTF8l(char* x);
 B fromUTF8a(I8Arr* x);
 

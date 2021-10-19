@@ -1,7 +1,5 @@
 BQN
 c.bqn
 perf.*
-obj/*/*.o
-obj/*/*.d
-obj/*/*.tmp
+obj/
 asm_*
