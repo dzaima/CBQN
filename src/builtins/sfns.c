@@ -11,8 +11,9 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
     MAKE_MUT(r, ria); mut_init(r, TI(x,elType));
     mut_copyG(r, 0, x, 0, xia);
     mut_fill(r, xia, xf, ria-xia);
-    dec(x); dec(xf);
-    return mut_fp(r);
+    dec(x);
+    if (r->type!=el_B) { dec(xf); return mut_fp(r); }
+    return a(withFill(mut_fv(r), xf));
   } else {
     return TI(x,slice)(x,0,ria);
   }

@@ -57,10 +57,10 @@ static void mut_init(Mut* m, u8 n) {
 void mut_to(Mut* m, u8 n);
 
 static B mut_fv(Mut* m) { assert(m->type!=el_MAX);
-  m->val->sh = &m->val->ia;
-  B r = taga(m->val);
-  srnk(r, 1);
-  return r;
+  Arr* a = m->val;
+  a->sh = &a->ia;
+  sprnk(a, 1);
+  return taga(a);
 }
 static B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
   Arr* a = m->val;
