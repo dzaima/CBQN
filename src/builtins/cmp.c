@@ -1,35 +1,16 @@
 #include "../core.h"
 #include "../utils/each.h"
-#include <math.h>
 
 #define P2(N) { if (isArr(w)|isArr(x)) { \
     SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("cmp " #N, w, x); \
     return arith_recd(N##_c2, w, x); \
 }}
-
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia; usz bia = BIT_N(ria);
 
-static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if failed
-  B s = we<xe?*w:*x;
-  u8 me = we>xe?we:xe;
-  if (elNum(we) & elNum(xe)) {
-    switch(me) { default: UD;
-      case el_i8:  s = taga(cpyI8Arr (s)); break;
-      case el_i16: s = taga(cpyI16Arr(s)); break;
-      case el_i32: s = taga(cpyI32Arr(s)); break;
-      case el_f64: s = taga(cpyF64Arr(s)); break;
-    }
-  } else if (elChr(we) & elChr(xe)) {
-    switch(me) { default: UD;
-      case el_c16: s = taga(cpyC16Arr(s)); break;
-      case el_c32: s = taga(cpyC32Arr(s)); break;
-    }
-  } else return el_MAX;
-  *(we<xe?w:x) = s;
-  return me;
-}
-
-#define CMP_IMPL(CHR, OP, FC, CF, BX) \
+#if SINGELI
+#include "../singeli/builtins/cmp.c"
+#else
+#define CMP_IMPL(CHR, NAME, RNAME, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
   if (isF64(w)&isC32(x)) return m_i32(FC);         \
@@ -84,33 +65,56 @@ static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if fail
       dec(r); \
     }         \
   end:;
+#endif
 
-#define CMP(CHR,NAME,OP,FC,CF,BX)  \
-B NAME##_c2(B t, B w, B x) {        \
-  CMP_IMPL(CHR, OP, FC, CF, BX);   \
-  P2(NAME);                         \
-  return m_i32(compare(w, x) OP 0); \
+
+static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if failed
+  B s = we<xe?*w:*x;
+  u8 me = we>xe?we:xe;
+  if (elNum(we) & elNum(xe)) {
+    switch(me) { default: UD;
+      case el_i8:  s = taga(cpyI8Arr (s)); break;
+      case el_i16: s = taga(cpyI16Arr(s)); break;
+      case el_i32: s = taga(cpyI32Arr(s)); break;
+      case el_f64: s = taga(cpyF64Arr(s)); break;
+    }
+  } else if (elChr(we) & elChr(xe)) {
+    switch(me) { default: UD;
+      case el_c16: s = taga(cpyC16Arr(s)); break;
+      case el_c32: s = taga(cpyC32Arr(s)); break;
+    }
+  } else return el_MAX;
+  *(we<xe?w:x) = s;
+  return me;
 }
-CMP("≤", le, <=, 1, 0, ~wv |  xv)
-CMP("≥", ge, >=, 0, 1,  wv | ~xv)
-CMP("<", lt, < , 1, 0, ~wv &  xv)
-CMP(">", gt, > , 0, 1,  wv & ~xv)
+
+#define CMP(CHR,NAME,RNAME,OP,FC,CF,BX) \
+B NAME##_c2(B t, B w, B x) {            \
+  CMP_IMPL(CHR,NAME,RNAME,OP,FC,CF,BX); \
+  P2(NAME);                             \
+  return m_i32(compare(w, x) OP 0);     \
+}
+CMP("≤", le, ge, <=, 1, 0, ~wv |  xv)
+CMP("≥", ge, le, >=, 0, 1,  wv | ~xv)
+CMP("<", lt, gt, < , 1, 0, ~wv &  xv)
+CMP(">", gt, lt, > , 0, 1,  wv & ~xv)
 #undef CMP
 
 B eq_c2(B t, B w, B x) {
-  CMP_IMPL("=", ==, 0, 0, ~wv^xv);
+  CMP_IMPL("=", eq, eq, ==, 0, 0, ~wv^xv);
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
 B ne_c2(B t, B w, B x) {
-  CMP_IMPL("≠", !=, 1, 1, wv^xv);
+  CMP_IMPL("≠", ne, ne, !=, 1, 1, wv^xv);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
+
 
 extern B rt_merge;
 B gt_c1(B t, B x) {

@@ -1,5 +1,6 @@
-BQN
-c.bqn
+/BQN
 perf.*
-obj/
-asm_*
+/obj/
+/asm_*
+/src/singeli/gen
+/Singeli/

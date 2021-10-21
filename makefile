@@ -2,40 +2,55 @@ SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory
 
 o3:
-	@${MAKE} t=o3 b
+	@${MAKE} singeli=0 t=o3         f="-O3" c
 o3g:
-	@${MAKE} t=o3g b
+	@${MAKE} singeli=0 t=o3g        f="-O3 -g" c
 o3n:
-	@${MAKE} t=o3n b
-rtperf:
-	@${MAKE} t=rtperf b
-rtverify:
-	@${MAKE} t=rtverify b
+	@${MAKE} singeli=0 t=o3n        f="-O3 -march=native" c
 debug:
-	@${MAKE} t=debug b
+	@${MAKE} singeli=0 t=debug      f="-g -DDEBUG" c
 debug1:
-	@${MAKE} t=debug1 b
+	@${MAKE} singeli=0 t=debug1     f="-g -DDEBUG" c
+rtperf:
+	@${MAKE} singeli=0 t=rtperf     f="-O3 -DRT_PERF" c
+rtverify:
+	@${MAKE} singeli=0 t=rtverify   f="-DDEBUG -O3 -DRT_VERIFY" c
 heapverify:
-	@${MAKE} t=heapverify b
+	@${MAKE} singeli=0 t=heapverify f="-DDEBUG -g -DHEAP_VERIFY" c
+o3n-singeli:
+	@${MAKE} singeli=1 t=o3n_si     f="-O3 -march=native" c
+debugn-singeli:
+	@${MAKE} singeli=1 t=debugn_si  f="-g -DDEBUG -march=native" c
+debug-singeli:
+	@${MAKE} singeli=1 t=debug_si   f="-g -DDEBUG" c
+
+
+
+bd = obj/${t}
+
 c: # custom
-	@${MAKE} t=${t} FLAGS.${t}="${f}" b
-
-b: gen
-
-PIE = -no-pie
+	@mkdir -p ${bd}
+	@if [ "${singeli}" -eq 1 ]; then \
+		mkdir -p src/singeli/gen;      \
+		${MAKE} gen-singeli;           \
+		echo "post-singeli build:";    \
+	fi
+	@${MAKE} t=${t} FLAGS="${f}" gen
 
 single-o3:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -O3 -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -O3 -o BQN src/opt/single.c -lm
 single-o3g:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -O3 -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -O3 -g -o BQN src/opt/single.c -lm
 single-debug:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
 single-c:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) ${PIE} $(f) -o BQN src/opt/single.c -lm
+	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -o BQN src/opt/single.c -lm
+
 
 
 # compiler setup
 CC = clang
+PIE = -no-pie
 
 # Detects if we are running GCC instead of Clang
 CC_IS_GCC = $(shell $(CC) --version | head -n1 | grep -m 1 -c "gcc")
@@ -44,74 +59,64 @@ CCFLAGS = -Wno-parentheses
 else
 CCFLAGS = -Wno-microsoft-anon-tag
 endif
-CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions ${CCFLAGS} $(FLAGS) -fPIE -MMD -MP -MF
+ifeq (${singeli}, 1)
+	SINGELIFLAGS = '-DSINGELI'
+else
+	singeli = 0
+endif
+CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(FLAGS) $(SINGELIFLAGS) -fPIE -MMD -MP -MF
 
 # `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
 ifeq ($(MAKECMDGOALS),clean)
+ifndef t
 t = *
-else ifeq ($(t),)
-t = o3
+endif
 endif
 
 ifneq (${t},debug1)
-# don't make makefile cry about something idk
-ifeq (${MAKECMDGOALS},b)
-	MAKEFLAGS += -j4
+	ifneq (${J4added},yes)
+		ifeq (${MAKECMDGOALS},gen)
+			MAKEFLAGS+= -j4 J4added=yes
+		endif
+		ifeq (${MAKECMDGOALS},gen-singeli)
+			MAKEFLAGS+= -j4 J4added=yes
+		endif
+	endif
 endif
-endif
 
-
-
-
-# per-type flags
-FLAGS.o3 := -O3
-FLAGS.o3n := -O3 -march=native
-FLAGS.o3g := -O3 -g
-FLAGS.debug := -g -DDEBUG
-FLAGS.debug1 := -g -DDEBUG
-FLAGS.rtperf := -O3 -DRT_PERF
-FLAGS.heapverify := -DDEBUG -g -DHEAP_VERIFY
-FLAGS.rtverify := -DDEBUG -O3 -DRT_VERIFY
-FLAGS = ${FLAGS.${t}}
-bd = obj/${t}
 
 
 
 
 gen: builtins core base jit utils # build the final binary
 	@$(CC) ${PIE} -o BQN ${bd}/*.o -lm
-	@echo
-
-builddir: # create the build directory. makefiles are stupid
-	@mkdir -p ${bd}
+	@echo ${postmsg}
 
 # build individual object files
-core: builddir ${addprefix ${bd}/, tyarr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o}
+core: ${addprefix ${bd}/, tyarr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o}
 ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-base: builddir ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o}
+base: ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o}
 ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-utils: builddir ${addprefix ${bd}/, utf.o hash.o file.o mut.o each.o bits.o}
+utils: ${addprefix ${bd}/, utf.o hash.o file.o mut.o each.o bits.o}
 ${bd}/%.o: src/utils/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-jit: builddir ${addprefix ${bd}/, nvm.o}
+jit: ${addprefix ${bd}/, nvm.o}
 ${bd}/%.o: src/jit/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-builtins: builddir ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o sort.o md1.o md2.o fns.o sysfn.o internal.o}
+builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o sort.o md1.o md2.o fns.o sysfn.o internal.o}
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
-
-
 
 src/gen/customRuntime:
 	@echo "Copying precompiled bytecode from the bytecode branch"
@@ -119,8 +124,39 @@ src/gen/customRuntime:
 	git reset src/gen/{compiler,formatter,runtime0,runtime1,src}
 ${bd}/load.o: src/gen/customRuntime
 
+
+
+# singeli
+.INTERMEDIATE: preSingeliBin
+preSingeliBin:
+	@if [ ! -d Singeli ]; then \
+		echo "Updating Singeli submodule; link custom Singeli to Singeli/ to avoid"; \
+		git submodule update --init; \
+	fi
+	@echo "pre-singeli build:"
+	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='' c
+	@mv BQN obj/presingeli/BQN
+
+
+gen-singeli: ${addprefix src/singeli/gen/, cmp.c}
+	@:
+src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
+	@echo $< | cut -c 17- | sed 's/^/  /'
+	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "${bd}"
+
+
+
+# dependency files
 -include $(bd)/*.d
 
+
+
+clean-singeli:
+	rm -rf src/singeli/gen/
+
+ifeq ($(t), *)
+clean: clean-singeli
+endif
 
 clean:
 	rm -f ${bd}/*.o
