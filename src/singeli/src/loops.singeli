@@ -1,0 +1,15 @@
+def unroll{vars,begin,end,block & match{kind{begin},'number'} & match{kind{end},'number'}} = {
+  def f{i,l & i==l} = 0
+  def f{i,l & i!=l} = {
+    exec{i, vars, block}
+    f{i+1, l}
+  }
+  f{begin,end}
+}
+def for{vars,begin,end,block} = {
+  i:u64 = begin
+  while (i < end) {
+    exec{i, vars, block}
+    i = i+1
+  }
+}

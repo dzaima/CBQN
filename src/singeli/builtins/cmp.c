@@ -16,6 +16,8 @@
 #define avx2_neAS_u16(d,w,x,l) avx2_neAS_i16(d,(i16*)(w),x,l)
 #define avx2_neAS_u32(d,w,x,l) avx2_neAS_i32(d,(i32*)(w),x,l)
 
+#define avx2_ltAA_u1(d,w,x,l) avx2_gtAA_u1(d,x,w,l)
+#define avx2_leAA_u1(d,w,x,l) avx2_geAA_u1(d,x,w,l)
 #define avx2_ltAA_i8(d,w,x,l) avx2_gtAA_i8(d,x,w,l)
 #define avx2_leAA_i8(d,w,x,l) avx2_geAA_i8(d,x,w,l)
 #define avx2_ltAA_i16(d,w,x,l) avx2_gtAA_i16(d,x,w,l)
@@ -31,6 +33,7 @@
 #define avx2_ltAA_f64(d,w,x,l) avx2_gtAA_f64(d,x,w,l)
 #define avx2_leAA_f64(d,w,x,l) avx2_geAA_f64(d,x,w,l)
 
+#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia;
 #define CMP_IMPL(CHR, NAME, RNAME, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
@@ -48,7 +51,7 @@
         }                                          \
         AL(x)                                      \
         switch(we) { default: UD;                  \
-          case el_bit: { u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x); for(usz i=0;i<bia;i++) { u64 wv=wp[i]; u64 xv=xp[i]; rp[i]=BX; } break; } \
+          case el_bit: avx2_##NAME##AA_u1 (rp, bitarr_ptr(w), bitarr_ptr(x), ria); break; \
           case el_i8:  avx2_##NAME##AA_i8 (rp, i8any_ptr (w), i8any_ptr (x), ria); break; \
           case el_i16: avx2_##NAME##AA_i16(rp, i16any_ptr(w), i16any_ptr(x), ria); break; \
           case el_i32: avx2_##NAME##AA_i32(rp, i32any_ptr(w), i32any_ptr(x), ria); break; \
@@ -61,7 +64,7 @@
       }                              \
     } else { AL(w)                   \
       switch(we) { default: UD;      \
-        case el_bit: { if (!q_bit(x)) break; u64 xv=bitx(x); u64* wp=bitarr_ptr(w); for(usz i=0;i<bia;i++) { u64 wv=wp[i]; rp[i]=BX; } dec(w); return r; } \
+        case el_bit: if (!q_bit(x))break; avx2_##NAME##AS_u1 (rp, bitarr_ptr(w), o2bu(x), ria); dec(w); return r; \
         case el_i8:  if (!q_i8 (x))break; avx2_##NAME##AS_i8 (rp, i8any_ptr (w), o2iu(x), ria); dec(w); return r; \
         case el_i16: if (!q_i16(x))break; avx2_##NAME##AS_i16(rp, i16any_ptr(w), o2iu(x), ria); dec(w); return r; \
         case el_i32: if (!q_i32(x))break; avx2_##NAME##AS_i32(rp, i32any_ptr(w), o2iu(x), ria); dec(w); return r; \
@@ -74,7 +77,7 @@
     }                           \
   } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x) \
       switch(xe) { default: UD; \
-        case el_bit: { if (!q_bit(w)) break; u64 wv=bitx(w); u64* xp=bitarr_ptr(x); for(usz i=0;i<bia;i++) { u64 xv=xp[i]; rp[i]=BX; } dec(x); return r; } \
+        case el_bit: if (!q_bit(w))break; avx2_##RNAME##AS_u1 (rp, bitarr_ptr(x), o2bu(w), ria); dec(x); return r; \
         case el_i8:  if (!q_i8 (w))break; avx2_##RNAME##AS_i8 (rp, i8any_ptr (x), o2iu(w), ria); dec(x); return r; \
         case el_i16: if (!q_i16(w))break; avx2_##RNAME##AS_i16(rp, i16any_ptr(x), o2iu(w), ria); dec(x); return r; \
         case el_i32: if (!q_i32(w))break; avx2_##RNAME##AS_i32(rp, i32any_ptr(x), o2iu(w), ria); dec(x); return r; \

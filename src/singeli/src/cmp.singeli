@@ -3,15 +3,8 @@ include 'arch/c'
 def Size = u64
 include './avx2'
 include './bitops'
+include './loops'
 
-def unroll{vars,begin,end,block & match{kind{begin},'number'} & match{kind{end},'number'}} = {
-  def f{i,l & i==l} = 0
-  def f{i,l & i!=l} = {
-    exec{i, vars, block}
-    f{i+1, l}
-  }
-  f{begin,end}
-}
 
 def cdiv{a,b} = (a+b-1)/b
 
@@ -39,21 +32,29 @@ as2bit{VT, unr, op}(dst:*u64, w:*eltype{VT}, x:eltype{VT}, len:Size) : void = {
   any2bit{VT, unr, op, {i}=>load{w,i}, {i}=>vload{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 
+bitAA{op}(dst:*u64, w:*u64, x:*u64, len:Size) : void = {
+  @for (dst,w,x over _ from 0 to cdiv{len,64}) dst = op{w,x}
+}
+bitAS{op}(dst:*u64, w:*u64, x:u64, len:Size) : void = {
+  x = -x
+  @for (dst,w over _ from 0 to cdiv{len,64}) dst = op{w,x}
+}
+
 #'avx2_eqAA_f64'=aa2bit{[4]f64,4,__eq}
 
-'avx2_eqAA_i8'=aa2bit{[32]i8,1,__eq}; 'avx2_eqAA_i16'=aa2bit{[16]i16,1,__eq}; 'avx2_eqAA_i32'=aa2bit{[8]i32,1,__eq}; 'avx2_eqAA_f64'=aa2bit{[4]f64,2,__eq}
-'avx2_neAA_i8'=aa2bit{[32]i8,1,__ne}; 'avx2_neAA_i16'=aa2bit{[16]i16,1,__ne}; 'avx2_neAA_i32'=aa2bit{[8]i32,1,__ne}; 'avx2_neAA_f64'=aa2bit{[4]f64,2,__ne}
-'avx2_gtAA_i8'=aa2bit{[32]i8,1,__gt}; 'avx2_gtAA_i16'=aa2bit{[16]i16,1,__gt}; 'avx2_gtAA_i32'=aa2bit{[8]i32,1,__gt}; 'avx2_gtAA_f64'=aa2bit{[4]f64,2,__gt}
-'avx2_geAA_i8'=aa2bit{[32]i8,1,__ge}; 'avx2_geAA_i16'=aa2bit{[16]i16,1,__ge}; 'avx2_geAA_i32'=aa2bit{[8]i32,1,__ge}; 'avx2_geAA_f64'=aa2bit{[4]f64,2,__ge}
+'avx2_eqAA_i8'=aa2bit{[32]i8,1,__eq}; 'avx2_eqAA_i16'=aa2bit{[16]i16,1,__eq}; 'avx2_eqAA_i32'=aa2bit{[8]i32,1,__eq}; 'avx2_eqAA_u1'=bitAA{{a,b}=>a ^ ~b}; 'avx2_eqAA_f64'=aa2bit{[4]f64,2,__eq}
+'avx2_neAA_i8'=aa2bit{[32]i8,1,__ne}; 'avx2_neAA_i16'=aa2bit{[16]i16,1,__ne}; 'avx2_neAA_i32'=aa2bit{[8]i32,1,__ne}; 'avx2_neAA_u1'=bitAA{{a,b}=>a ^  b}; 'avx2_neAA_f64'=aa2bit{[4]f64,2,__ne}
+'avx2_gtAA_i8'=aa2bit{[32]i8,1,__gt}; 'avx2_gtAA_i16'=aa2bit{[16]i16,1,__gt}; 'avx2_gtAA_i32'=aa2bit{[8]i32,1,__gt}; 'avx2_gtAA_u1'=bitAA{{a,b}=>a & ~b}; 'avx2_gtAA_f64'=aa2bit{[4]f64,2,__gt}
+'avx2_geAA_i8'=aa2bit{[32]i8,1,__ge}; 'avx2_geAA_i16'=aa2bit{[16]i16,1,__ge}; 'avx2_geAA_i32'=aa2bit{[8]i32,1,__ge}; 'avx2_geAA_u1'=bitAA{{a,b}=>a | ~b}; 'avx2_geAA_f64'=aa2bit{[4]f64,2,__ge}
 'avx2_gtAA_u8'=aa2bit{[32]u8,1,__gt}; 'avx2_gtAA_u16'=aa2bit{[16]u16,1,__gt}
 'avx2_geAA_u8'=aa2bit{[32]u8,1,__ge}; 'avx2_geAA_u16'=aa2bit{[16]u16,1,__ge}
 
-'avx2_eqAS_i8'=as2bit{[32]i8,1,__eq}; 'avx2_eqAS_i16'=as2bit{[16]i16,1,__eq}; 'avx2_eqAS_i32'=as2bit{[8]i32,1,__eq}; 'avx2_eqAS_f64'=as2bit{[4]f64,2,__eq}
-'avx2_neAS_i8'=as2bit{[32]i8,1,__ne}; 'avx2_neAS_i16'=as2bit{[16]i16,1,__ne}; 'avx2_neAS_i32'=as2bit{[8]i32,1,__ne}; 'avx2_neAS_f64'=as2bit{[4]f64,2,__ne}
-'avx2_gtAS_i8'=as2bit{[32]i8,1,__gt}; 'avx2_gtAS_i16'=as2bit{[16]i16,1,__gt}; 'avx2_gtAS_i32'=as2bit{[8]i32,1,__gt}; 'avx2_gtAS_f64'=as2bit{[4]f64,2,__gt}
-'avx2_geAS_i8'=as2bit{[32]i8,1,__ge}; 'avx2_geAS_i16'=as2bit{[16]i16,1,__ge}; 'avx2_geAS_i32'=as2bit{[8]i32,1,__ge}; 'avx2_geAS_f64'=as2bit{[4]f64,2,__ge}
-'avx2_ltAS_i8'=as2bit{[32]i8,1,__lt}; 'avx2_ltAS_i16'=as2bit{[16]i16,1,__lt}; 'avx2_ltAS_i32'=as2bit{[8]i32,1,__lt}; 'avx2_ltAS_f64'=as2bit{[4]f64,2,__lt}
-'avx2_leAS_i8'=as2bit{[32]i8,1,__le}; 'avx2_leAS_i16'=as2bit{[16]i16,1,__le}; 'avx2_leAS_i32'=as2bit{[8]i32,1,__le}; 'avx2_leAS_f64'=as2bit{[4]f64,2,__le}
+'avx2_eqAS_i8'=as2bit{[32]i8,1,__eq}; 'avx2_eqAS_i16'=as2bit{[16]i16,1,__eq}; 'avx2_eqAS_i32'=as2bit{[8]i32,1,__eq}; 'avx2_eqAS_u1'=bitAS{{a,b}=>  a ^ ~b}; 'avx2_eqAS_f64'=as2bit{[4]f64,2,__eq}
+'avx2_neAS_i8'=as2bit{[32]i8,1,__ne}; 'avx2_neAS_i16'=as2bit{[16]i16,1,__ne}; 'avx2_neAS_i32'=as2bit{[8]i32,1,__ne}; 'avx2_neAS_u1'=bitAS{{a,b}=>  a ^  b}; 'avx2_neAS_f64'=as2bit{[4]f64,2,__ne}
+'avx2_gtAS_i8'=as2bit{[32]i8,1,__gt}; 'avx2_gtAS_i16'=as2bit{[16]i16,1,__gt}; 'avx2_gtAS_i32'=as2bit{[8]i32,1,__gt}; 'avx2_gtAS_u1'=bitAS{{a,b}=>  a & ~b}; 'avx2_gtAS_f64'=as2bit{[4]f64,2,__gt}
+'avx2_geAS_i8'=as2bit{[32]i8,1,__ge}; 'avx2_geAS_i16'=as2bit{[16]i16,1,__ge}; 'avx2_geAS_i32'=as2bit{[8]i32,1,__ge}; 'avx2_geAS_u1'=bitAS{{a,b}=>  a | ~b}; 'avx2_geAS_f64'=as2bit{[4]f64,2,__ge}
+'avx2_ltAS_i8'=as2bit{[32]i8,1,__lt}; 'avx2_ltAS_i16'=as2bit{[16]i16,1,__lt}; 'avx2_ltAS_i32'=as2bit{[8]i32,1,__lt}; 'avx2_ltAS_u1'=bitAS{{a,b}=> ~a &  b}; 'avx2_ltAS_f64'=as2bit{[4]f64,2,__lt}
+'avx2_leAS_i8'=as2bit{[32]i8,1,__le}; 'avx2_leAS_i16'=as2bit{[16]i16,1,__le}; 'avx2_leAS_i32'=as2bit{[8]i32,1,__le}; 'avx2_leAS_u1'=bitAS{{a,b}=> ~a |  b}; 'avx2_leAS_f64'=as2bit{[4]f64,2,__le}
 'avx2_gtAS_u8'=as2bit{[32]u8,1,__gt}; 'avx2_gtAS_u16'=as2bit{[16]u16,1,__gt}
 'avx2_geAS_u8'=as2bit{[32]u8,1,__ge}; 'avx2_geAS_u16'=as2bit{[16]u16,1,__ge}
 'avx2_ltAS_u8'=as2bit{[32]u8,1,__lt}; 'avx2_ltAS_u16'=as2bit{[16]u16,1,__lt}

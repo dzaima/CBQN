@@ -5,11 +5,11 @@
     SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("cmp " #N, w, x); \
     return arith_recd(N##_c2, w, x); \
 }}
-#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia; usz bia = BIT_N(ria);
 
 #if SINGELI
 #include "../singeli/builtins/cmp.c"
 #else
+#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia; usz bia = BIT_N(ria);
 #define CMP_IMPL(CHR, NAME, RNAME, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
