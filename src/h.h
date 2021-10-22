@@ -187,8 +187,8 @@ typedef union B {
   /* 8*/ F(fork) F(atop) \
   /*10*/ F(md1D) F(md2D) F(md2H) \
   \
-  /*13*/ F(harr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(fillarr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
-  /*22*/ F(hslice) F(i8slice) F(i16slice) F(i32slice) F(fillslice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*13*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*22*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
   /*31*/ F(bitarr) \
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
@@ -203,6 +203,8 @@ enum Type {
   #undef F
   t_COUNT
 };
+#define IS_SLICE(T) ((t)>=t_hslice & (t)<=t_f64slice)
+#define IS_ARR(T) ((t)>=t_harr & (t)<=t_bitarr)
 
 enum ElType { // a⌈b shall return the type that can store both, if possible
   el_bit=0,

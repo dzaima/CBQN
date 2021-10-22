@@ -1,14 +1,20 @@
+#include "../../core.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "../gen/cmp.c"
 #pragma GCC diagnostic pop
 
-#define avx2_eqAA_u8( d,w,x,l) avx2_eqAA_i8 (d,(i8 *)(w),(i8 *)(x),l)
-#define avx2_eqAA_u16(d,w,x,l) avx2_eqAA_i16(d,(i16*)(w),(i16*)(x),l)
-#define avx2_eqAA_u32(d,w,x,l) avx2_eqAA_i32(d,(i32*)(w),(i32*)(x),l)
-#define avx2_neAA_u8( d,w,x,l) avx2_neAA_i8 (d,(i8 *)(w),(i8 *)(x),l)
-#define avx2_neAA_u16(d,w,x,l) avx2_neAA_i16(d,(i16*)(w),(i16*)(x),l)
-#define avx2_neAA_u32(d,w,x,l) avx2_neAA_i32(d,(i32*)(w),(i32*)(x),l)
+#define avx2_eqAA_u8  avx2_eqAA_i8
+#define avx2_eqAA_u16 avx2_eqAA_i16
+#define avx2_eqAA_u32 avx2_eqAA_i32
+#define avx2_neAA_u8  avx2_neAA_i8
+#define avx2_neAA_u16 avx2_neAA_i16
+#define avx2_neAA_u32 avx2_neAA_i32
+
+#define avx2_gtAA_u32 avx2_gtAA_i32
+#define avx2_geAA_u32 avx2_geAA_i32
+
 #define avx2_eqAS_u8( d,w,x,l) avx2_eqAS_i8 (d,(i8 *)(w),x,l)
 #define avx2_eqAS_u16(d,w,x,l) avx2_eqAS_i16(d,(i16*)(w),x,l)
 #define avx2_eqAS_u32(d,w,x,l) avx2_eqAS_i32(d,(i32*)(w),x,l)
@@ -33,8 +39,40 @@
 #define avx2_ltAA_f64(d,w,x,l) avx2_gtAA_f64(d,x,w,l)
 #define avx2_leAA_f64(d,w,x,l) avx2_geAA_f64(d,x,w,l)
 
+typedef void (*CmpFn)(u64*, void*, void*, u64);
+#define CMPFN(A,F,S,T) (CmpFn) A##_##F##S##_##T
+#define FN_LUT(A,F,S) static CmpFn lut_##A##_##F##AA[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)};
+FN_LUT(avx2, eq, AA)
+FN_LUT(avx2, ne, AA)
+FN_LUT(avx2, gt, AA)
+FN_LUT(avx2, ge, AA)
+
+
+static void* tyany_ptr(B x) {
+  u8 t = v(x)->type;
+  if (IS_SLICE(t)) switch (t) { default: UD;
+    case t_i8slice:  return c(I8Slice,x)->a;
+    case t_i16slice: return c(I16Slice,x)->a;
+    case t_i32slice: return c(I32Slice,x)->a;
+    case t_c8slice:  return c(C8Slice,x)->a;
+    case t_c16slice: return c(C16Slice,x)->a;
+    case t_c32slice: return c(C32Slice,x)->a;
+    case t_f64slice: return c(F64Slice,x)->a;
+  }
+  switch (t) { default: UD;
+    case t_bitarr: return c(BitArr,x)->a;
+    case t_i8arr:  return c(I8Arr, x)->a;
+    case t_i16arr: return c(I16Arr,x)->a;
+    case t_i32arr: return c(I32Arr,x)->a;
+    case t_c8arr:  return c(C8Arr, x)->a;
+    case t_c16arr: return c(C16Arr,x)->a;
+    case t_c32arr: return c(C32Arr,x)->a;
+    case t_f64arr: return c(F64Arr,x)->a;
+  }
+}
+
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia;
-#define CMP_IMPL(CHR, NAME, RNAME, OP, FC, CF, BX) \
+#define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
   if (isF64(w)&isC32(x)) return m_i32(FC);         \
@@ -50,16 +88,7 @@
           w=tw; x=tx;                              \
         }                                          \
         AL(x)                                      \
-        switch(we) { default: UD;                  \
-          case el_bit: avx2_##NAME##AA_u1 (rp, bitarr_ptr(w), bitarr_ptr(x), ria); break; \
-          case el_i8:  avx2_##NAME##AA_i8 (rp, i8any_ptr (w), i8any_ptr (x), ria); break; \
-          case el_i16: avx2_##NAME##AA_i16(rp, i16any_ptr(w), i16any_ptr(x), ria); break; \
-          case el_i32: avx2_##NAME##AA_i32(rp, i32any_ptr(w), i32any_ptr(x), ria); break; \
-          case el_f64: avx2_##NAME##AA_f64(rp, f64any_ptr(w), f64any_ptr(x), ria); break; \
-          case el_c8:  avx2_##NAME##AA_u8 (rp, c8any_ptr (w), c8any_ptr (x), ria); break; \
-          case el_c16: avx2_##NAME##AA_u16(rp, c16any_ptr(w), c16any_ptr(x), ria); break; \
-          case el_c32: avx2_##NAME##AA_i32(rp, (i32*)c32any_ptr(w), (i32*)c32any_ptr(x), ria); break; \
-        }                            \
+        lut_avx2_##PNAME##AA[we](rp, tyany_ptr(L), tyany_ptr(R), ria); \
         dec(w);dec(x); return r;     \
       }                              \
     } else { AL(w)                   \

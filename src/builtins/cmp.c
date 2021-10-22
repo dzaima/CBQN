@@ -10,7 +10,7 @@
 #include "../singeli/builtins/cmp.c"
 #else
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia; usz bia = BIT_N(ria);
-#define CMP_IMPL(CHR, NAME, RNAME, OP, FC, CF, BX) \
+#define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
   if (isF64(w)&isC32(x)) return m_i32(FC);         \
@@ -88,27 +88,27 @@ static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if fail
   return me;
 }
 
-#define CMP(CHR,NAME,RNAME,OP,FC,CF,BX) \
+#define CMP(CHR,NAME,RNAME,PNAME,L,R,OP,FC,CF,BX) \
 B NAME##_c2(B t, B w, B x) {            \
-  CMP_IMPL(CHR,NAME,RNAME,OP,FC,CF,BX); \
+  CMP_IMPL(CHR,NAME,RNAME,PNAME,L,R,OP,FC,CF,BX); \
   P2(NAME);                             \
   return m_i32(compare(w, x) OP 0);     \
 }
-CMP("≤", le, ge, <=, 1, 0, ~wv |  xv)
-CMP("≥", ge, le, >=, 0, 1,  wv | ~xv)
-CMP("<", lt, gt, < , 1, 0, ~wv &  xv)
-CMP(">", gt, lt, > , 0, 1,  wv & ~xv)
+CMP("≤", le, ge, ge, x,w, <=, 1, 0, ~wv |  xv)
+CMP("≥", ge, le, ge, w,x, >=, 0, 1,  wv | ~xv)
+CMP("<", lt, gt, gt, x,w, < , 1, 0, ~wv &  xv)
+CMP(">", gt, lt, gt, w,x, > , 0, 1,  wv & ~xv)
 #undef CMP
 
 B eq_c2(B t, B w, B x) {
-  CMP_IMPL("=", eq, eq, ==, 0, 0, ~wv^xv);
+  CMP_IMPL("=", eq, eq, eq, w,x, ==, 0, 0, ~wv^xv);
   P2(eq);
   B r = m_i32(atomEqual(w, x));
   dec(w); dec(x);
   return r;
 }
 B ne_c2(B t, B w, B x) {
-  CMP_IMPL("≠", ne, ne, !=, 1, 1, wv^xv);
+  CMP_IMPL("≠", ne, ne, ne, w,x, !=, 1, 1, wv^xv);
   P2(ne);
   B r = m_i32(!atomEqual(w, x));
   dec(w); dec(x);
