@@ -50,25 +50,7 @@ FN_LUT(avx2, ge, AA)
 
 static void* tyany_ptr(B x) {
   u8 t = v(x)->type;
-  if (IS_SLICE(t)) switch (t) { default: UD;
-    case t_i8slice:  return c(I8Slice,x)->a;
-    case t_i16slice: return c(I16Slice,x)->a;
-    case t_i32slice: return c(I32Slice,x)->a;
-    case t_c8slice:  return c(C8Slice,x)->a;
-    case t_c16slice: return c(C16Slice,x)->a;
-    case t_c32slice: return c(C32Slice,x)->a;
-    case t_f64slice: return c(F64Slice,x)->a;
-  }
-  switch (t) { default: UD;
-    case t_bitarr: return c(BitArr,x)->a;
-    case t_i8arr:  return c(I8Arr, x)->a;
-    case t_i16arr: return c(I16Arr,x)->a;
-    case t_i32arr: return c(I32Arr,x)->a;
-    case t_c8arr:  return c(C8Arr, x)->a;
-    case t_c16arr: return c(C16Arr,x)->a;
-    case t_c32arr: return c(C32Arr,x)->a;
-    case t_f64arr: return c(F64Arr,x)->a;
-  }
+  return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
 }
 
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia;

@@ -23,7 +23,7 @@ static void decSh(Value* x) { if (RARE(prnk(x)>1)) ptr_dec(shObjP(x));}
 
 // some array stuff
 
-#define TYARR_SZ(T,IA) fsizeof(T##Arr, a, T##Atom, IA)
+#define TYARR_SZ(T,IA) fsizeof(TyArr, a, T##Atom, IA)
 #define TYARR_SZ2(T,IA) TYARR_SZ(T,IA)
 
 #define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })

@@ -170,7 +170,7 @@ B variation_c2(B t, B w, B x) {
   u8 xe = TI(x,elType);
   SGet(x)
   C8Arr* wc = toC8Arr(w);
-  u8* wp = wc->a;
+  u8* wp = c8arrv_ptr(wc);
   u8* wpE = wp+wc->ia;
   if (wc->ia==0) thrM("•internal.Variation: Zero-length 𝕨");
   B res;

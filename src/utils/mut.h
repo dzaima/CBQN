@@ -18,9 +18,10 @@ typedef struct Mut {
   usz ia;
   Arr* val;
   union {
+    void* a; B* aB;
     i8* ai8; i16* ai16; i32* ai32;
     u8* ac8; u16* ac16; u32* ac32;
-    f64* af64; u64* abit; B* aB;
+    f64* af64; u64* abit;
   };
 } Mut;
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.type = el_MAX; N##_val.ia = (IA); Mut* N = &N##_val;
@@ -48,11 +49,7 @@ static void mut_init(Mut* m, u8 n) {
   }
   Arr* a = m_arr(sz, ty, ia);
   m->val = a;
-  switch(n) { default: UD; // gcc generates horrible code for this (which should just be two instructions), but that's what gcc does
-    case el_i8: m->ai8 = ((I8Arr*)a)->a; break; case el_i16: m->ai16 = ((I16Arr*)a)->a; break; case el_i32: m->ai32 = ((I32Arr*)a)->a; break;
-    case el_c8: m->ac8 = ((C8Arr*)a)->a; break; case el_c16: m->ac16 = ((C16Arr*)a)->a; break; case el_c32: m->ac32 = ((C32Arr*)a)->a; break;
-    case el_f64: m->af64 = ((F64Arr*)a)->a; break; case el_bit: m->abit = ((BitArr*)a)->a; break;
-  }
+  m->a = ((TyArr*)a)->a;
 }
 void mut_to(Mut* m, u8 n);
 

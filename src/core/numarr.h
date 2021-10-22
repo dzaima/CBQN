@@ -3,6 +3,15 @@
 #define I32Atom i32
 #define F64Atom f64
 
+typedef struct TyArr {
+  struct Arr;
+  char a[];
+} TyArr;
+typedef struct TySlice {
+  struct Slice;
+  void* a;
+} TySlice;
+
 #define TU I8
 #define TP(W,X) W##i8##X
 #include "tyarrTemplate.h"
@@ -15,6 +24,11 @@
 #define TU F64
 #define TP(W,X) W##f64##X
 #include "tyarrTemplate.h"
+#define I8Arr TyArr
+#define I16Arr TyArr
+#define I32Arr TyArr
+#define F64Arr TyArr
+#define BitArr TyArr
 
 // bit array stuff
 #define BIT_N(IA) (((IA)+63) >> 6) // u64 count needed to store IA bits
@@ -39,29 +53,26 @@ static inline u64 bitx(B x) { // repeats the boolean across all 64 bits
 }
 
 // BitArr
-typedef struct BitArr {
-  struct Arr;
-  u64 a[];
-} BitArr;
 #define BITARR_SZ(IA) fsizeof(BitArr, a, u64, BIT_N(IA))
 static B m_bitarrv(u64** p, usz ia) {
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
   arr_shVec((Arr*)r);
-  *p = r->a;
+  *p = (u64*)r->a;
   return taga(r);
 }
 static B m_bitarrc(u64** p, B x) { assert(isArr(x));
   BitArr* r = m_arr(BITARR_SZ(a(x)->ia), t_bitarr, a(x)->ia);
-  *p = r->a;
+  *p = (u64*)r->a;
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
 static Arr* m_bitarrp(u64** p, usz ia) {
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
-  *p = r->a;
+  *p = (u64*)r->a;
   return (Arr*)r;
 }
-static u64* bitarr_ptr(B x) { VTY(x, t_bitarr); return c(BitArr,x)->a; }
+static u64* bitarr_ptr(B x) { VTY(x, t_bitarr); return (u64*)c(BitArr,x)->a; }
+static u64* bitarrv_ptr(TyArr* x) { return (u64*)x->a; }
 
 
 I8Arr*  cpyI8Arr (B x); // consumes

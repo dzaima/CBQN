@@ -1093,42 +1093,46 @@ B select_ucw(B t, B o, B w, B x) {
       bool reuse = reusable(x);
       if (me==el_i32) {
         I32Arr* xn = reuse? toI32Arr(REUSE(x)) : cpyI32Arr(x);
+        i32* xp = i32arrv_ptr(xn);
         rep = toI32Any(rep); i32* rp = i32any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia; // we're free to assume w is valid
           i32 cr = rp[i];
-          EQ(cr != xn->a[cw]);
-          xn->a[cw] = cr;
+          EQ(cr != xp[cw]);
+          xp[cw] = cr;
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i16) {
         I16Arr* xn = reuse? toI16Arr(REUSE(x)) : cpyI16Arr(x);
+        i16* xp = i16arrv_ptr(xn);
         rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
           i16 cr = rp[i];
-          EQ(cr != xn->a[cw]);
-          xn->a[cw] = cr;
+          EQ(cr != xp[cw]);
+          xp[cw] = cr;
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i8) {
         I8Arr* xn = reuse? toI8Arr(REUSE(x)) : cpyI8Arr(x);
+        i8* xp = i8arrv_ptr(xn);
         rep = toI8Any(rep); i8* rp = i8any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
           i8 cr = rp[i];
-          EQ(cr != xn->a[cw]);
-          xn->a[cw] = cr;
+          EQ(cr != xp[cw]);
+          xp[cw] = cr;
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_bit) {
         BitArr* xn = reuse? toBitArr(REUSE(x)) : cpyBitArr(x);
+        u64* xp = bitarrv_ptr(xn);
         rep = taga(toBitArr(rep)); u64* rp = bitarr_ptr(rep);
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
           bool cr = bitp_get(rp, i);
-          EQ(cr != bitp_get(xn->a,cw));
-          bitp_set(xn->a,cw,cr);
+          EQ(cr != bitp_get(xp,cw));
+          bitp_set(xp,cw,cr);
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else UD;

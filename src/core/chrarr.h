@@ -11,6 +11,9 @@
 #define TU C32
 #define TP(W,X) W##c32##X
 #include "tyarrTemplate.h"
+#define C8Arr TyArr
+#define C16Arr TyArr
+#define C32Arr TyArr
 
 
 B m_str8(usz sz, char* s);
