@@ -1,0 +1,20 @@
+def bcall{T, f, x} = emit{T, 'BCALL', f, x}
+def from_B{T, x & T==f64} = bcall{T, 'o2fu', x}
+def from_B{T, x & T<=i32} = bcall{T, 'o2iu', x}
+def from_B{T, x & T<=u32} = bcall{T, 'o2cu', x}
+
+def q_f64{x} = bcall{u1, 'q_f64', x}
+def q_c32{x} = bcall{u1, 'q_c32', x}
+def q_chr{T,x & T==u8 } = bcall{u1, 'q_c8',  x}
+def q_chr{T,x & T==u16} = bcall{u1, 'q_c16', x}
+def q_chr{T,x & T==u32} = bcall{u1, 'q_c32', x}
+
+def cbqn_elType{T & T==u1 } = 0
+def cbqn_elType{T & T==i8 } = 1
+def cbqn_elType{T & T==i16} = 2
+def cbqn_elType{T & T==i32} = 3
+def cbqn_elType{T & T==f64} = 4
+def cbqn_elType{T & T==u8 } = 5
+def cbqn_elType{T & T==u16} = 6
+def cbqn_elType{T & T==u32} = 7
+

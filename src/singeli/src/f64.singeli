@@ -1,0 +1,10 @@
+def ceil{x:f64} = emit{f64, 'ceil', x}
+def floor{x:f64} = emit{f64, 'floor', x}
+
+def NaN = 0.0/0.0
+def isNaN{x:f64} = x!=x
+
+def ftrunc_i32{x:f64} = emit{i32, '', x} # maybe explicitly use _mm_cvtsd_si32
+def ftrunc_i64{x:f64} = emit{i64, '', x}
+
+def interp_f64{x:u64} = emit{f64, 'interp_f64', x}

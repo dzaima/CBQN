@@ -1,52 +1,37 @@
+#include <math.h>
 #include "../../core.h"
+#include "../../builtins.h"
+
+static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
+  u64 x = 0-(u64)v;
+  for (usz i = 0; i < (sz+63)/64; i++) dst[i] = x;
+}
+
+
+#define BCALL(N, X) N(b(X))
+#define interp_f64(X) b(X).f
+#define TMPF(T, N, V) static NOINLINE void def_##N##_##T(u64* dst, u64 len, u64 xu) { if (len) fillBits(dst, len, o2bu(c2(bi_##N, V(0), b(xu)))); }
+TMPF(f,eq,m_f64) TMPF(f,ne,m_f64) TMPF(f,gt,m_f64) TMPF(f,ge,m_f64) TMPF(f,lt,m_f64) TMPF(f,le,m_f64)
+TMPF(c,eq,m_c32) TMPF(c,ne,m_c32) TMPF(c,gt,m_c32) TMPF(c,ge,m_c32) TMPF(c,lt,m_c32) TMPF(c,le,m_c32)
+#undef TMPF
+#define defcmp(T, N, dst, len, x) def_##N##_##T(dst, len, x)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "../gen/cmp.c"
 #pragma GCC diagnostic pop
 
-#define avx2_eqAA_u8  avx2_eqAA_i8
-#define avx2_eqAA_u16 avx2_eqAA_i16
-#define avx2_eqAA_u32 avx2_eqAA_i32
-#define avx2_neAA_u8  avx2_neAA_i8
-#define avx2_neAA_u16 avx2_neAA_i16
-#define avx2_neAA_u32 avx2_neAA_i32
+typedef void (*CmpAAFn)(u64*, void*, void*, u64);
+typedef void (*CmpASFn)(u64*, void*, u64, u64);
+#define CMPFN(A,F,S,T) (Cmp##S##Fn) A##_##F##S##_##T
+#define FN_LUT(A,F,S) static const Cmp##S##Fn lut_##A##_##F##S[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
 
-#define avx2_gtAA_u32 avx2_gtAA_i32
-#define avx2_geAA_u32 avx2_geAA_i32
-
-#define avx2_eqAS_u8( d,w,x,l) avx2_eqAS_i8 (d,(i8 *)(w),x,l)
-#define avx2_eqAS_u16(d,w,x,l) avx2_eqAS_i16(d,(i16*)(w),x,l)
-#define avx2_eqAS_u32(d,w,x,l) avx2_eqAS_i32(d,(i32*)(w),x,l)
-#define avx2_neAS_u8( d,w,x,l) avx2_neAS_i8 (d,(i8 *)(w),x,l)
-#define avx2_neAS_u16(d,w,x,l) avx2_neAS_i16(d,(i16*)(w),x,l)
-#define avx2_neAS_u32(d,w,x,l) avx2_neAS_i32(d,(i32*)(w),x,l)
-
-#define avx2_ltAA_u1(d,w,x,l) avx2_gtAA_u1(d,x,w,l)
-#define avx2_leAA_u1(d,w,x,l) avx2_geAA_u1(d,x,w,l)
-#define avx2_ltAA_i8(d,w,x,l) avx2_gtAA_i8(d,x,w,l)
-#define avx2_leAA_i8(d,w,x,l) avx2_geAA_i8(d,x,w,l)
-#define avx2_ltAA_i16(d,w,x,l) avx2_gtAA_i16(d,x,w,l)
-#define avx2_leAA_i16(d,w,x,l) avx2_geAA_i16(d,x,w,l)
-#define avx2_ltAA_i32(d,w,x,l) avx2_gtAA_i32(d,x,w,l)
-#define avx2_leAA_i32(d,w,x,l) avx2_geAA_i32(d,x,w,l)
-#define avx2_leAA_u8( d,w,x,l) avx2_geAA_u8 (d,x,w,l)
-#define avx2_leAA_u16(d,w,x,l) avx2_geAA_u16(d,x,w,l)
-#define avx2_leAA_u32(d,w,x,l) avx2_geAA_u32(d,x,w,l)
-#define avx2_ltAA_u8( d,w,x,l) avx2_gtAA_u8 (d,x,w,l)
-#define avx2_ltAA_u16(d,w,x,l) avx2_gtAA_u16(d,x,w,l)
-#define avx2_ltAA_u32(d,w,x,l) avx2_gtAA_u32(d,x,w,l)
-#define avx2_ltAA_f64(d,w,x,l) avx2_gtAA_f64(d,x,w,l)
-#define avx2_leAA_f64(d,w,x,l) avx2_geAA_f64(d,x,w,l)
-
-typedef void (*CmpFn)(u64*, void*, void*, u64);
-#define CMPFN(A,F,S,T) (CmpFn) A##_##F##S##_##T
-#define FN_LUT(A,F,S) static CmpFn lut_##A##_##F##AA[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)};
-FN_LUT(avx2, eq, AA)
-FN_LUT(avx2, ne, AA)
-FN_LUT(avx2, gt, AA)
-FN_LUT(avx2, ge, AA)
-
+FN_LUT(avx2, eq, AS); FN_LUT(avx2, eq, AA);
+FN_LUT(avx2, ne, AS); FN_LUT(avx2, ne, AA);
+FN_LUT(avx2, gt, AS); FN_LUT(avx2, gt, AA);
+FN_LUT(avx2, ge, AS); FN_LUT(avx2, ge, AA);
+FN_LUT(avx2, lt, AS);
+FN_LUT(avx2, le, AS);
 
 static void* tyany_ptr(B x) {
   u8 t = v(x)->type;
@@ -74,29 +59,15 @@ static void* tyany_ptr(B x) {
         dec(w);dec(x); return r;     \
       }                              \
     } else { AL(w)                   \
-      switch(we) { default: UD;      \
-        case el_bit: if (!q_bit(x))break; avx2_##NAME##AS_u1 (rp, bitarr_ptr(w), o2bu(x), ria); dec(w); return r; \
-        case el_i8:  if (!q_i8 (x))break; avx2_##NAME##AS_i8 (rp, i8any_ptr (w), o2iu(x), ria); dec(w); return r; \
-        case el_i16: if (!q_i16(x))break; avx2_##NAME##AS_i16(rp, i16any_ptr(w), o2iu(x), ria); dec(w); return r; \
-        case el_i32: if (!q_i32(x))break; avx2_##NAME##AS_i32(rp, i32any_ptr(w), o2iu(x), ria); dec(w); return r; \
-        case el_f64: if (!q_f64(x))break; avx2_##NAME##AS_f64(rp, f64any_ptr(w), o2fu(x), ria); dec(w); return r; \
-        case el_c8:  if (!q_c8 (x))break; avx2_##NAME##AS_u8 (rp, c8any_ptr (w), o2cu(x), ria); dec(w); return r; \
-        case el_c16: if (!q_c16(x))break; avx2_##NAME##AS_u16(rp, c16any_ptr(w), o2cu(x), ria); dec(w); return r; \
-        case el_c32: if (!q_c32(x))break; avx2_##NAME##AS_i32(rp, (i32*)c32any_ptr(w), o2cu(x), ria); dec(w); return r; \
-      }                         \
-      dec(r);                   \
+      /*print(w);printf("@%d "CHR" ",we);print(x);printf(": ");*/ \
+      lut_avx2_##NAME##AS[we](rp, tyany_ptr(w), x.u, ria); \
+      /*print(r);putchar('\n');*/ \
+      dec(w); return r;   \
     }                           \
   } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x) \
-      switch(xe) { default: UD; \
-        case el_bit: if (!q_bit(w))break; avx2_##RNAME##AS_u1 (rp, bitarr_ptr(x), o2bu(w), ria); dec(x); return r; \
-        case el_i8:  if (!q_i8 (w))break; avx2_##RNAME##AS_i8 (rp, i8any_ptr (x), o2iu(w), ria); dec(x); return r; \
-        case el_i16: if (!q_i16(w))break; avx2_##RNAME##AS_i16(rp, i16any_ptr(x), o2iu(w), ria); dec(x); return r; \
-        case el_i32: if (!q_i32(w))break; avx2_##RNAME##AS_i32(rp, i32any_ptr(x), o2iu(w), ria); dec(x); return r; \
-        case el_f64: if (!q_f64(w))break; avx2_##RNAME##AS_f64(rp, f64any_ptr(x), o2fu(w), ria); dec(x); return r; \
-        case el_c8:  if (!q_c8 (w))break; avx2_##RNAME##AS_u8 (rp, c8any_ptr (x), o2cu(w), ria); dec(x); return r; \
-        case el_c16: if (!q_c16(w))break; avx2_##RNAME##AS_u16(rp, c16any_ptr(x), o2cu(w), ria); dec(x); return r; \
-        case el_c32: if (!q_c32(w))break; avx2_##RNAME##AS_i32(rp, (i32*)c32any_ptr(x), o2cu(w), ria); dec(x); return r; \
-      }       \
-      dec(r); \
+      /*print(x);printf(" "CHR" ");print(w);printf("@%d: ", xe);*/ \
+      lut_avx2_##RNAME##AS[xe](rp, tyany_ptr(x), w.u, ria); \
+      /*print(r);putchar('\n');*/ \
+      dec(x); return r;   \
     }         \
   end:;

@@ -1,14 +1,69 @@
-include 'skin/c'
-include 'arch/c'
 def Size = u64
+include './base'
+include './f64'
+include './cbqnDefs'
 include './avx2'
 include './bitops'
-include './loops'
+
+def name{T} = 'unknown'
+def name{T & match{T,__eq}} = 'eq'
+def name{T & match{T,__ne}} = 'ne'
+def name{T & match{T,__gt}} = 'gt'
+def name{T & match{T,__ge}} = 'ge'
+def name{T & match{T,__lt}} = 'lt'
+def name{T & match{T,__le}} = 'le'
 
 
-def cdiv{a,b} = (a+b-1)/b
+def cif{v, G} = { show{'cif argument not known at compile time!'}; G{} }
+def cif{v, G & match{v,0}} = 0
+def cif{v, G & match{v,1}} = G{0}
 
-def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:Size} = {
+def fillbits{dst:*u64, len:(Size), v} = {
+  emit{void, 'fillBits', dst, len, v}
+  return{}
+}
+def defcmp{op, ty, dst, len, x} = {
+  emit{void, 'defcmp', ty, name{op}, dst, len, x}
+  return{}
+}
+
+def pathAS{dst, len, T, op, x & issigned{T}} = {
+  def eqne = match{op,__eq}|match{op,__ne}
+  
+  def XC{f & eqne} = {
+    if (rare{floor{f}!=f}) fillbits{dst, len, op{0,1}} # also includes check for NaN/sNaN
+    ftrunc_i64{f}
+  }
+  def XC{f & match{op,__lt}|match{op,__ge}} = ftrunc_i64{ceil{f}}
+  def XC{f & match{op,__gt}|match{op,__le}} = ftrunc_i64{floor{f}}
+  
+  xf:f64 = interp_f64{x}
+  xi64:i64 = XC{xf}
+  
+  xT:T = cast_i{T, xi64}
+  #emit{void, 'printf', '"%lu\n"', xi64}
+  if (rare{(cast_i{i64, xT}!=xi64) | (xi64==cast_i{i64, cast{u64,1}<<63})}) {
+    cif{~eqne, {_}=>{
+      if (isNaN{xf}) defcmp{op, 'f', dst, len, x}
+    }}
+    fillbits{dst, len, op{0,xf}}
+  }
+  xT
+}
+
+def pathAS{dst, len, T, op, x & T==f64} = {
+  if (rare{~q_f64{x}}) defcmp{op, 'f', dst, len, x} # fillbits{dst, len, op{0,1}}
+  from_B{T,x}
+}
+
+def pathAS{dst, len, T, op, x & isunsigned{T}} = {
+  if (rare{~q_chr{T,x}}) defcmp{op, 'c', dst, len, x} # fillbits{dst, len, op{0,1}}
+  from_B{T,x}
+}
+
+
+
+def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   xi:Size = 0
   ri:Size = 0
   def bam = vcount{VT}*unr
@@ -26,36 +81,59 @@ aa2bit{VT, unr, op}(dst:*u64, w:*eltype{VT}, x:*eltype{VT}, len:Size) : void = {
   any2bit{VT, unr, op, {i}=>load{w,i}, {i}=>vload{wv,i}, {i}=>load{x,i}, {i}=>vload{xv,i}, dst, len}
 }
 
-as2bit{VT, unr, op}(dst:*u64, w:*eltype{VT}, x:eltype{VT}, len:Size) : void = {
+as2bit{VT, unr, op}(dst:*u64, w:*eltype{VT}, x:u64, len:Size) : void = { show{VT,unr,name{op}}
   wv:*VT = cast_vp{VT, w}
-  xv: VT = broadcast{VT, x}
+  xv: VT = broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
   any2bit{VT, unr, op, {i}=>load{w,i}, {i}=>vload{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 
-bitAA{op}(dst:*u64, w:*u64, x:*u64, len:Size) : void = {
-  @for (dst,w,x over _ from 0 to cdiv{len,64}) dst = op{w,x}
+bitAA{bitop}(dst:*u64, w:*u64, x:*u64, len:Size) : void = {
+  @for (dst,w,x over _ from 0 to cdiv{len,64}) dst = bitop{w,x}
 }
+
+not(dst:*u64, x:*u64, len:Size) : void = { @for (dst,x over _ from 0 to cdiv{len,64}) dst = ~x }
+cpy(dst:*u64, x:*u64, len:Size) : void = { @for (dst,x over _ from 0 to cdiv{len,64}) dst =  x }
+
 bitAS{op}(dst:*u64, w:*u64, x:u64, len:Size) : void = {
-  x = -x
-  @for (dst,w over _ from 0 to cdiv{len,64}) dst = op{w,x}
+  show{'bitAS'}
+  xf:f64 = interp_f64{x}
+  if (rare{isNaN{xf}}) {
+    defcmp{op, 'f', dst, len, x}
+    return{}
+  }
+  r0:u1 = op{0,xf}
+  r1:u1 = op{1,xf}
+  if (rare{r0==r1}) {
+    fillbits{dst, len, r0}
+    return{}
+  }
+  if (r0) call{not, dst, w, len}
+  else call{cpy, dst, w, len}
 }
 
-#'avx2_eqAA_f64'=aa2bit{[4]f64,4,__eq}
 
-'avx2_eqAA_i8'=aa2bit{[32]i8,1,__eq}; 'avx2_eqAA_i16'=aa2bit{[16]i16,1,__eq}; 'avx2_eqAA_i32'=aa2bit{[8]i32,1,__eq}; 'avx2_eqAA_u1'=bitAA{{a,b}=>a ^ ~b}; 'avx2_eqAA_f64'=aa2bit{[4]f64,2,__eq}
-'avx2_neAA_i8'=aa2bit{[32]i8,1,__ne}; 'avx2_neAA_i16'=aa2bit{[16]i16,1,__ne}; 'avx2_neAA_i32'=aa2bit{[8]i32,1,__ne}; 'avx2_neAA_u1'=bitAA{{a,b}=>a ^  b}; 'avx2_neAA_f64'=aa2bit{[4]f64,2,__ne}
-'avx2_gtAA_i8'=aa2bit{[32]i8,1,__gt}; 'avx2_gtAA_i16'=aa2bit{[16]i16,1,__gt}; 'avx2_gtAA_i32'=aa2bit{[8]i32,1,__gt}; 'avx2_gtAA_u1'=bitAA{{a,b}=>a & ~b}; 'avx2_gtAA_f64'=aa2bit{[4]f64,2,__gt}
-'avx2_geAA_i8'=aa2bit{[32]i8,1,__ge}; 'avx2_geAA_i16'=aa2bit{[16]i16,1,__ge}; 'avx2_geAA_i32'=aa2bit{[8]i32,1,__ge}; 'avx2_geAA_u1'=bitAA{{a,b}=>a | ~b}; 'avx2_geAA_f64'=aa2bit{[4]f64,2,__ge}
-'avx2_gtAA_u8'=aa2bit{[32]u8,1,__gt}; 'avx2_gtAA_u16'=aa2bit{[16]u16,1,__gt}
-'avx2_geAA_u8'=aa2bit{[32]u8,1,__ge}; 'avx2_geAA_u16'=aa2bit{[16]u16,1,__ge}
+# arr-arr =≠
+'avx2_eqAA_i8','avx2_eqAA_u8'=aa2bit{[32]i8,1,__eq}; 'avx2_eqAA_i16','avx2_eqAA_u16'=aa2bit{[16]i16,1,__eq}; 'avx2_eqAA_i32','avx2_eqAA_u32'=aa2bit{[8]i32,1,__eq}
+'avx2_neAA_i8','avx2_neAA_u8'=aa2bit{[32]i8,1,__ne}; 'avx2_neAA_i16','avx2_neAA_u16'=aa2bit{[16]i16,1,__ne}; 'avx2_neAA_i32','avx2_neAA_u32'=aa2bit{[8]i32,1,__ne}
+'avx2_eqAA_u1'=bitAA{{a,b}=>a ^ ~b}; 'avx2_eqAA_f64'=aa2bit{[4]f64,2,__eq}
+'avx2_neAA_u1'=bitAA{{a,b}=>a ^  b}; 'avx2_neAA_f64'=aa2bit{[4]f64,2,__ne}
+# arr-arr >≥
+'avx2_gtAA_i8'=aa2bit{[32]i8,1,__gt}; 'avx2_gtAA_i16'=aa2bit{[16]i16,1,__gt}; 'avx2_gtAA_i32','avx2_gtAA_u32'=aa2bit{[8]i32,1,__gt}; 'avx2_gtAA_f64'=aa2bit{[4]f64,2,__gt}
+'avx2_geAA_i8'=aa2bit{[32]i8,1,__ge}; 'avx2_geAA_i16'=aa2bit{[16]i16,1,__ge}; 'avx2_geAA_i32','avx2_geAA_u32'=aa2bit{[8]i32,1,__ge}; 'avx2_geAA_f64'=aa2bit{[4]f64,2,__ge}
+'avx2_gtAA_u8'=aa2bit{[32]u8,1,__gt}; 'avx2_gtAA_u16'=aa2bit{[16]u16,1,__gt}; 'avx2_gtAA_u1'=bitAA{{a,b}=>a & ~b}
+'avx2_geAA_u8'=aa2bit{[32]u8,1,__ge}; 'avx2_geAA_u16'=aa2bit{[16]u16,1,__ge}; 'avx2_geAA_u1'=bitAA{{a,b}=>a | ~b}
 
-'avx2_eqAS_i8'=as2bit{[32]i8,1,__eq}; 'avx2_eqAS_i16'=as2bit{[16]i16,1,__eq}; 'avx2_eqAS_i32'=as2bit{[8]i32,1,__eq}; 'avx2_eqAS_u1'=bitAS{{a,b}=>  a ^ ~b}; 'avx2_eqAS_f64'=as2bit{[4]f64,2,__eq}
-'avx2_neAS_i8'=as2bit{[32]i8,1,__ne}; 'avx2_neAS_i16'=as2bit{[16]i16,1,__ne}; 'avx2_neAS_i32'=as2bit{[8]i32,1,__ne}; 'avx2_neAS_u1'=bitAS{{a,b}=>  a ^  b}; 'avx2_neAS_f64'=as2bit{[4]f64,2,__ne}
-'avx2_gtAS_i8'=as2bit{[32]i8,1,__gt}; 'avx2_gtAS_i16'=as2bit{[16]i16,1,__gt}; 'avx2_gtAS_i32'=as2bit{[8]i32,1,__gt}; 'avx2_gtAS_u1'=bitAS{{a,b}=>  a & ~b}; 'avx2_gtAS_f64'=as2bit{[4]f64,2,__gt}
-'avx2_geAS_i8'=as2bit{[32]i8,1,__ge}; 'avx2_geAS_i16'=as2bit{[16]i16,1,__ge}; 'avx2_geAS_i32'=as2bit{[8]i32,1,__ge}; 'avx2_geAS_u1'=bitAS{{a,b}=>  a | ~b}; 'avx2_geAS_f64'=as2bit{[4]f64,2,__ge}
-'avx2_ltAS_i8'=as2bit{[32]i8,1,__lt}; 'avx2_ltAS_i16'=as2bit{[16]i16,1,__lt}; 'avx2_ltAS_i32'=as2bit{[8]i32,1,__lt}; 'avx2_ltAS_u1'=bitAS{{a,b}=> ~a &  b}; 'avx2_ltAS_f64'=as2bit{[4]f64,2,__lt}
-'avx2_leAS_i8'=as2bit{[32]i8,1,__le}; 'avx2_leAS_i16'=as2bit{[16]i16,1,__le}; 'avx2_leAS_i32'=as2bit{[8]i32,1,__le}; 'avx2_leAS_u1'=bitAS{{a,b}=> ~a |  b}; 'avx2_leAS_f64'=as2bit{[4]f64,2,__le}
-'avx2_gtAS_u8'=as2bit{[32]u8,1,__gt}; 'avx2_gtAS_u16'=as2bit{[16]u16,1,__gt}
-'avx2_geAS_u8'=as2bit{[32]u8,1,__ge}; 'avx2_geAS_u16'=as2bit{[16]u16,1,__ge}
-'avx2_ltAS_u8'=as2bit{[32]u8,1,__lt}; 'avx2_ltAS_u16'=as2bit{[16]u16,1,__lt}
-'avx2_leAS_u8'=as2bit{[32]u8,1,__le}; 'avx2_leAS_u16'=as2bit{[16]u16,1,__le}
+# arr-scalar numeric
+'avx2_eqAS_i8'=as2bit{[32]i8,1,__eq}; 'avx2_eqAS_i16'=as2bit{[16]i16,1,__eq}; 'avx2_eqAS_i32'=as2bit{[8]i32,1,__eq}; 'avx2_eqAS_f64'=as2bit{[4]f64,2,__eq}
+'avx2_neAS_i8'=as2bit{[32]i8,1,__ne}; 'avx2_neAS_i16'=as2bit{[16]i16,1,__ne}; 'avx2_neAS_i32'=as2bit{[8]i32,1,__ne}; 'avx2_neAS_f64'=as2bit{[4]f64,2,__ne}
+'avx2_gtAS_i8'=as2bit{[32]i8,1,__gt}; 'avx2_gtAS_i16'=as2bit{[16]i16,1,__gt}; 'avx2_gtAS_i32'=as2bit{[8]i32,1,__gt}; 'avx2_gtAS_f64'=as2bit{[4]f64,2,__gt}
+'avx2_geAS_i8'=as2bit{[32]i8,1,__ge}; 'avx2_geAS_i16'=as2bit{[16]i16,1,__ge}; 'avx2_geAS_i32'=as2bit{[8]i32,1,__ge}; 'avx2_geAS_f64'=as2bit{[4]f64,2,__ge}
+'avx2_ltAS_i8'=as2bit{[32]i8,1,__lt}; 'avx2_ltAS_i16'=as2bit{[16]i16,1,__lt}; 'avx2_ltAS_i32'=as2bit{[8]i32,1,__lt}; 'avx2_ltAS_f64'=as2bit{[4]f64,2,__lt}
+'avx2_leAS_i8'=as2bit{[32]i8,1,__le}; 'avx2_leAS_i16'=as2bit{[16]i16,1,__le}; 'avx2_leAS_i32'=as2bit{[8]i32,1,__le}; 'avx2_leAS_f64'=as2bit{[4]f64,2,__le}
+# arr-scalar character & bit
+'avx2_eqAS_u8'=as2bit{[32]u8,1,__eq}; 'avx2_eqAS_u16'=as2bit{[16]u16,1,__eq}; 'avx2_eqAS_u32'=as2bit{[8]u32,1,__eq}; 'avx2_eqAS_u1'=bitAS{__eq}
+'avx2_neAS_u8'=as2bit{[32]u8,1,__ne}; 'avx2_neAS_u16'=as2bit{[16]u16,1,__ne}; 'avx2_neAS_u32'=as2bit{[8]u32,1,__ne}; 'avx2_neAS_u1'=bitAS{__ne}
+'avx2_gtAS_u8'=as2bit{[32]u8,1,__gt}; 'avx2_gtAS_u16'=as2bit{[16]u16,1,__gt}; 'avx2_gtAS_u32'=as2bit{[8]u32,1,__gt}; 'avx2_gtAS_u1'=bitAS{__gt}
+'avx2_geAS_u8'=as2bit{[32]u8,1,__ge}; 'avx2_geAS_u16'=as2bit{[16]u16,1,__ge}; 'avx2_geAS_u32'=as2bit{[8]u32,1,__ge}; 'avx2_geAS_u1'=bitAS{__ge}
+'avx2_ltAS_u8'=as2bit{[32]u8,1,__lt}; 'avx2_ltAS_u16'=as2bit{[16]u16,1,__lt}; 'avx2_ltAS_u32'=as2bit{[8]u32,1,__lt}; 'avx2_ltAS_u1'=bitAS{__lt}
+'avx2_leAS_u8'=as2bit{[32]u8,1,__le}; 'avx2_leAS_u16'=as2bit{[16]u16,1,__le}; 'avx2_leAS_u32'=as2bit{[8]u32,1,__le}; 'avx2_leAS_u1'=bitAS{__le}

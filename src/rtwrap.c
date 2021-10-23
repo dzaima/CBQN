@@ -23,7 +23,20 @@ B wf_identity(B x) {
   B f = c(WFun,x)->v;
   return inc(TI(f,identity)(f));
 }
-#define CHK(A,B) { if (!eequal(A,B)) { print(f); printf(": failed RT_VERIFY\n"); vm_pstLive(); exit(1); } }
+#ifndef RT_VERIFY_ARGS
+  #define RT_VERIFY_ARGS 1
+#endif
+
+#define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
+  print(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
+  if (RT_VERIFY_ARGS) {  \
+    if(!q_N(W)){printf("𝕨:"); print(W); putchar('\n'); fflush(stdout); } \
+    {           printf("𝕩:"); print(X); putchar('\n'); fflush(stdout); } \
+    {       printf("got:"); print(GOT); putchar('\n'); fflush(stdout); } \
+    {       printf("exp:"); print(EXP); putchar('\n'); fflush(stdout); } \
+  }                      \
+  vm_pstLive(); exit(1); \
+}}
 u64 fwTotal;
 B wf_c1(B t, B x) {
   WFun* c = c(WFun,t);
@@ -38,8 +51,14 @@ B wf_c1(B t, B x) {
     fwTotal+= e-s+20;
   #else
     B exp = c1(c->r1, inc(x));
-    B r = fi(f, x);
-    CHK(exp, r);
+    #if RT_VERIFY_ARGS
+      B r = fi(f, inc(x));
+      CHK(exp, r, bi_N, x);
+      dec(x);
+    #else
+      B r = fi(f, x);
+      CHK(exp, r, bi_N, x);
+    #endif
     dec(exp);
   #endif
   return r;
@@ -57,8 +76,14 @@ B wf_c2(B t, B w, B x) {
     fwTotal+= e-s+20;
   #else
     B exp = c2(c->r1, inc(w), inc(x));
-    B r = fi(f, w, x);
-    CHK(exp, r);
+    #if RT_VERIFY_ARGS
+      B r = fi(f, inc(w), inc(x));
+      CHK(exp, r, w, x);
+      dec(w); dec(x);
+    #else
+      B r = fi(f, w, x);
+      CHK(exp, r, w, x);
+    #endif
     dec(exp);
   #endif
   return r;

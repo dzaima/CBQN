@@ -14,7 +14,7 @@ debug1:
 rtperf:
 	@${MAKE} singeli=0 t=rtperf     f="-O3 -DRT_PERF" c
 rtverify:
-	@${MAKE} singeli=0 t=rtverify   f="-DDEBUG -O3 -DRT_VERIFY" c
+	@${MAKE} singeli=0 t=rtverify   f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" c
 heapverify:
 	@${MAKE} singeli=0 t=heapverify f="-DDEBUG -g -DHEAP_VERIFY" c
 o3n-singeli:
@@ -32,8 +32,7 @@ c: # custom
 	@mkdir -p ${bd}
 	@if [ "${singeli}" -eq 1 ]; then \
 		mkdir -p src/singeli/gen;      \
-		${MAKE} gen-singeli;           \
-		echo "post-singeli build:";    \
+		${MAKE} postmsg="post-singeli build:" gen-singeli; \
 	fi
 	@${MAKE} t=${t} FLAGS="${f}" gen
 
@@ -134,12 +133,12 @@ preSingeliBin:
 		git submodule update --init; \
 	fi
 	@echo "pre-singeli build:"
-	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='' c
+	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='-O1' c
 	@mv BQN obj/presingeli/BQN
 
 
 gen-singeli: ${addprefix src/singeli/gen/, cmp.c}
-	@:
+	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
 	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "${bd}"

@@ -406,7 +406,10 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
 
 bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if (w.u==x.u) return true;
-  if(isNum(w)|isNum(x)) return false;
+  #if EEQUAL_NEGZERO
+    if (isF64(w)&isF64(x)) return w.f==x.f;
+  #endif
+  if(isF64(w)|isF64(x)) return false;
   if (!isVal(w) | !isVal(x)) return false;
   if (v(w)->type!=v(x)->type) return false;
   B2B dcf = TI(w,decompose);

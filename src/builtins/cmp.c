@@ -94,10 +94,10 @@ B NAME##_c2(B t, B w, B x) {            \
   P2(NAME);                             \
   return m_i32(compare(w, x) OP 0);     \
 }
-CMP("≤", le, ge, ge, x,w, <=, 1, 0, ~wv |  xv)
-CMP("≥", ge, le, ge, w,x, >=, 0, 1,  wv | ~xv)
-CMP("<", lt, gt, gt, x,w, < , 1, 0, ~wv &  xv)
-CMP(">", gt, lt, gt, w,x, > , 0, 1,  wv & ~xv)
+CMP("≤", le,ge, ge, x,w, <=, 1, 0, ~wv |  xv)
+CMP("≥", ge,le, ge, w,x, >=, 0, 1,  wv | ~xv)
+CMP("<", lt,gt, gt, x,w, < , 1, 0, ~wv &  xv)
+CMP(">", gt,lt, gt, w,x, > , 0, 1,  wv & ~xv)
 #undef CMP
 
 B eq_c2(B t, B w, B x) {
