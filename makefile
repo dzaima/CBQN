@@ -19,10 +19,10 @@ heapverify:
 	@${MAKE} singeli=0 t=heapverify f="-DDEBUG -g -DHEAP_VERIFY" c
 o3n-singeli:
 	@${MAKE} singeli=1 t=o3n_si     f="-O3 -march=native" c
+o3ng-singeli:
+	@${MAKE} singeli=1 t=o3ng_si    f="-g -O3 -march=native" c
 debugn-singeli:
 	@${MAKE} singeli=1 t=debugn_si  f="-g -DDEBUG -march=native" c
-debug-singeli:
-	@${MAKE} singeli=1 t=debug_si   f="-g -DDEBUG" c
 
 
 

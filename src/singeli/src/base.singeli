@@ -2,6 +2,7 @@ include 'skin/c'
 include 'arch/c'
 def cdiv{a,b} = (a+b-1)/b
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
+def isunsigned{T} = isint{T} & ~issigned{T}
 
 def unroll{vars,begin,end,block & match{kind{begin},'number'} & match{kind{end},'number'}} = {
   def f{i,l & i==l} = 0
@@ -18,3 +19,6 @@ def for{vars,begin,end,block} = {
     i = i+1
   }
 }
+def maxvalue{T & T==u8 } = 0xff
+def maxvalue{T & T==u16} = 0xffff
+def maxvalue{T & T==u32} = 0xffffffff

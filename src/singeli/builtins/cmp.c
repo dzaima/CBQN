@@ -6,15 +6,11 @@ static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   u64 x = 0-(u64)v;
   for (usz i = 0; i < (sz+63)/64; i++) dst[i] = x;
 }
+static NORETURN void cmp_err() { thrM("Invalid comparison"); }
 
 
 #define BCALL(N, X) N(b(X))
 #define interp_f64(X) b(X).f
-#define TMPF(T, N, V) static NOINLINE void def_##N##_##T(u64* dst, u64 len, u64 xu) { if (len) fillBits(dst, len, o2bu(c2(bi_##N, V(0), b(xu)))); }
-TMPF(f,eq,m_f64) TMPF(f,ne,m_f64) TMPF(f,gt,m_f64) TMPF(f,ge,m_f64) TMPF(f,lt,m_f64) TMPF(f,le,m_f64)
-TMPF(c,eq,m_c32) TMPF(c,ne,m_c32) TMPF(c,gt,m_c32) TMPF(c,ge,m_c32) TMPF(c,lt,m_c32) TMPF(c,le,m_c32)
-#undef TMPF
-#define defcmp(T, N, dst, len, x) def_##N##_##T(dst, len, x)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
