@@ -38,8 +38,6 @@ static void* tyany_ptr(B x) {
 #define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
-  if (isF64(w)&isC32(x)) return m_i32(FC);         \
-  if (isC32(w)&isF64(x)) return m_i32(CF);         \
   if (isArr(w)) { u8 we = TI(w,elType);            \
     if (we==el_B) goto end;                        \
     if (isArr(x)) { u8 xe = TI(x,elType);          \
@@ -52,18 +50,14 @@ static void* tyany_ptr(B x) {
         }                                          \
         AL(x)                                      \
         lut_avx2_##PNAME##AA[we](rp, tyany_ptr(L), tyany_ptr(R), ria); \
-        dec(w);dec(x); return r;     \
-      }                              \
-    } else { AL(w)                   \
-      /*print(w);printf("@%d "CHR" ",we);print(x);printf(": ");*/ \
-      lut_avx2_##NAME##AS[we](rp, tyany_ptr(w), x.u, ria); \
-      /*print(r);putchar('\n');*/ \
-      dec(w); return r;   \
-    }                           \
-  } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x) \
-      /*print(x);printf(" "CHR" ");print(w);printf("@%d: ", xe);*/ \
-      lut_avx2_##RNAME##AS[xe](rp, tyany_ptr(x), w.u, ria); \
-      /*print(r);putchar('\n');*/ \
-      dec(x); return r;   \
-    }         \
+        dec(w);dec(x); return r; \
+      }                          \
+    } else {                     \
+      AL(w) lut_avx2_##NAME##AS[we](rp, tyany_ptr(w), x.u, ria); dec(w); return r; \
+    }                            \
+  } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; \
+    AL(x) lut_avx2_##RNAME##AS[xe](rp, tyany_ptr(x), w.u, ria); dec(x); return r; \
+  }                                        \
+  if (isF64(w)&isC32(x)) return m_i32(FC); \
+  if (isC32(w)&isF64(x)) return m_i32(CF); \
   end:;

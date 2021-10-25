@@ -78,6 +78,7 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   ri:Size = 0
   def bam = vcount{VT}*unr
   len:Size = cdiv{len,bam}
+  assert{len!=0}
   while (ri < len) {
     r:u64 = 0
     @unroll (j from 0 to unr) r = r | (cast_i{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
