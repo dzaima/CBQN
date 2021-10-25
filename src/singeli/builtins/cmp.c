@@ -7,7 +7,9 @@ static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   u64 am = (sz+63)/64; assert(am>0);
   for (usz i = 0; i < am; i++) dst[i] = x;
 }
-static NORETURN void cmp_err() { thrM("Invalid comparison"); }
+
+bool please_tail_call_cmp_err = 1;
+static NOINLINE void cmp_err() { if (please_tail_call_cmp_err) thrM("Invalid comparison"); }
 
 
 #define BCALL(N, X) N(b(X))
