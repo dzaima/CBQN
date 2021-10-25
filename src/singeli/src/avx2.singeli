@@ -1,36 +1,3 @@
-# ugh the intrinsics have their own broken type system
-def r_d2i{R, a:T} = emit{R, '_mm256_castpd_si256', a}
-def r_f2i{R, a:T} = emit{R, '_mm256_castps_si256', a}
-def r_i2d{a:T} = emit{[4]f64, '_mm256_castsi256_pd', a}
-def r_f2d{a:T} = emit{[4]f64, '_mm256_castps_pd', a}
-def r_d2f{a:T} = emit{[8]f32, '_mm256_castpd_ps', a}
-def r_i2f{a:T} = emit{[8]f32, '_mm256_castsi256_ps', a}
-# various utilities
-def isunsigned{T} = isint{T} & ~issigned{T}
-def      isintv{T} =      isint{eltype{T}}
-def    isfloatv{T} =    isfloat{eltype{T}}
-def   issignedv{T} =   issigned{eltype{T}}
-def isunsignedv{T} = isunsigned{eltype{T}}
-def w256{T} = width{T}==256
-def isintv{T,w} = isintv{T} & width{eltype{T}}==w
-# load
-def cast_vp{T, a & w256{T}} = emit{*T, '(void*)', a}
-def vload{a:T, n & w256{eltype{T}} & isintv{eltype{T}}} = emit{eltype{T}, '_mm256_loadu_si256', emit{T, 'op +', a, n}}
-def vload{a:T, n & w256{eltype{T}} & isfloatv{eltype{T}}} = r_i2d{vload{cast_vp{[4]u64, a}, n}} # TODO use the proper float load
-
-# ops
-
-# broadcast; TODO restrict v
-def broadcast{T, v & w256{T} & isintv{T,  8}} = emit{T, '_mm256_set1_epi8',  v}
-def broadcast{T, v & w256{T} & isintv{T, 16}} = emit{T, '_mm256_set1_epi16', v}
-def broadcast{T, v & w256{T} & isintv{T, 32}} = emit{T, '_mm256_set1_epi32', v}
-def broadcast{T, v & w256{T} & isintv{T, 64}} = emit{T, '_mm256_set1_epi64x',v}
-def broadcast{T, v & w256{T} & eltype{T}==f64} = emit{T, '_mm256_set1_pd', v}
-
-def __xor{a:T, b:T & w256{T} & isunsignedv{T}} = r_f2i{T, emit{[8]f32, '_mm256_xor_ps', r_i2f{a}, r_i2f{b}}}
-
-def __not{a:T & w256{T} & isunsignedv{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
-
 # min & max
 def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def min{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_min_epu8',  a, b}
 def min{a:T,b:T & T==[16]i16} = emit{T, '_mm256_min_epi16', a, b}; def min{a:T,b:T & T==[16]u16} = emit{T, '_mm256_min_epu16', a, b}
@@ -39,14 +6,6 @@ def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}; def max{a:T,b
 def max{a:T,b:T & T==[16]i16} = emit{T, '_mm256_max_epi16', a, b}; def max{a:T,b:T & T==[16]u16} = emit{T, '_mm256_max_epu16', a, b}
 def max{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_max_epi32', a, b}; def max{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_max_epu32', a, b}
 
-# float comparison
-def fcmpAVX{a,b,n} = r_d2i{[4]u64, emit{[4]f64, '_mm256_cmp_pd', a, b, n}}
-def __eq{a:T,b:T & T==[4]f64} = fcmpAVX{a,b, 0}
-def __ne{a:T,b:T & T==[4]f64} = fcmpAVX{a,b, 4}
-def __gt{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,30}
-def __ge{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,29}
-def __lt{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,17}
-def __le{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,18}
 # signed comparison
 def __eq{a:T,b:T & T==[32]i8 } = emit{[32]u8,  '_mm256_cmpeq_epi8',  a, b}
 def __eq{a:T,b:T & T==[16]i16} = emit{[16]u16, '_mm256_cmpeq_epi16', a, b}
@@ -69,8 +28,6 @@ def __gt{a:T,b:T & w256{T} & isunsignedv{T}} = ~(a<=b)
 def __ne{a:T,b:T & w256{T} & isintv{T}} = ~(b==a)
 
 def getmask{x:[32]u8} = emit{u32, '_mm256_movemask_epi8', x}
-def getmask{x:[8]u32} = emit{u8,  '_mm256_movemask_ps', r_i2f{x}}
-def getmask{x:[4]u64} = emit{u8,  '_mm256_movemask_pd', r_i2d{x}}
 def getmask{x:[16]u16} = {
   msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, broadcast{[16]u16, 0}}}
   (msk&255) | (msk>>8) # TODO try out permute4x64 for fixing up

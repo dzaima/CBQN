@@ -23,3 +23,9 @@ def for{vars,begin,end,block} = {
 def maxvalue{T & T==u8 } = 0xff
 def maxvalue{T & T==u16} = 0xffff
 def maxvalue{T & T==u32} = 0xffffffff
+
+# various utilities
+def      isintv{T} =      isint{eltype{T}}
+def    isfloatv{T} =    isfloat{eltype{T}}
+def   issignedv{T} =   issigned{eltype{T}}
+def isunsignedv{T} = isunsigned{eltype{T}}
