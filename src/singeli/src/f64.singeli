@@ -3,6 +3,7 @@ def floor{x:f64} = emit{f64, 'floor', x}
 
 def NaN = 0.0/0.0
 def isNaN{x:f64} = x!=x
+def qNaN{x:u64} = (x<<1) == (cast{u64, 0x8ff8} << 49)
 
 def ftrunc_i32{x:f64} = emit{i32, '', x} # maybe explicitly use _mm_cvtsd_si32
 def ftrunc_i64{x:f64} = emit{i64, '', x}
