@@ -4,7 +4,8 @@
 
 static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   u64 x = 0-(u64)v;
-  for (usz i = 0; i < (sz+63)/64; i++) dst[i] = x;
+  u64 am = (sz+63)/64; assert(am>0);
+  for (usz i = 0; i < am; i++) dst[i] = x;
 }
 static NORETURN void cmp_err() { thrM("Invalid comparison"); }
 
@@ -34,7 +35,7 @@ static void* tyany_ptr(B x) {
   return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
 }
 
-#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia;
+#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia
 #define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
@@ -48,15 +49,17 @@ static void* tyany_ptr(B x) {
           if (we==el_MAX) goto end;                \
           w=tw; x=tx;                              \
         }                                          \
-        AL(x)                                      \
-        lut_avx2_##PNAME##AA[we](rp, (u8*)tyany_ptr(L), (u8*)tyany_ptr(R), ria); \
+        AL(x);                                      \
+        if (ria) lut_avx2_##PNAME##AA[we](rp, (u8*)tyany_ptr(L), (u8*)tyany_ptr(R), ria); \
         dec(w);dec(x); return r; \
-      }                          \
-    } else {                     \
-      AL(w) lut_avx2_##NAME##AS[we](rp, (u8*)tyany_ptr(w), x.u, ria); dec(w); return r; \
+      } else goto end;           \
     }                            \
-  } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; \
-    AL(x) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); dec(x); return r; \
+    AL(w);                       \
+    if (ria) lut_avx2_##NAME##AS [we](rp, (u8*)tyany_ptr(w), x.u, ria); \
+    dec(w); return r;            \
+  } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x); \
+    if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
+    dec(x); return r;                      \
   }                                        \
   if (isF64(w)&isC32(x)) return m_i32(FC); \
   if (isC32(w)&isF64(x)) return m_i32(CF); \

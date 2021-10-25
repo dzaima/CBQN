@@ -73,9 +73,9 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   xi:Size = 0
   ri:Size = 0
   def bam = vcount{VT}*unr
-  len:Size = cdiv{len,bam}
-  assert{len!=0}
-  while (ri < len) {
+  am:Size = cdiv{len,bam}
+  assert{am>0}
+  while (ri < am) {
     r:u64 = 0
     @unroll (j from 0 to unr) r = r | (cast_i{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
     b_set{bam, dst, ri, r}
@@ -84,14 +84,12 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   }
 }
 aa2bit{VT, unr, op}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  if (len==0) return{}
   wv:= cast_vp{VT, wr}; ws:= cast_p{*eltype{VT}, wr}
   xv:= cast_vp{VT, xr}; xs:= cast_p{*eltype{VT}, xr}
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>vload{wv,i}, {i}=>load{xs,i}, {i}=>vload{xv,i}, dst, len}
 }
 
 as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { show{VT,unr,fmt{op}}
-  if (len==0) return{}
   wv:= cast_vp{VT, wr}; ws:= cast_p{*eltype{VT}, wr}
   xv:= broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>vload{wv,i}, {i}=>x, {i}=>xv, dst, len}
@@ -103,11 +101,10 @@ bitAA{bitop}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
   @for (dst,ws,xs over _ from 0 to cdiv{len,64}) dst = bitop{ws,xs}
 }
 
-not(dst:*u64, x:*u64, len:Size) : void = { @for (dst,x over _ from 0 to cdiv{len,64}) dst = ~x }
-cpy(dst:*u64, x:*u64, len:Size) : void = { @for (dst,x over _ from 0 to cdiv{len,64}) dst =  x }
+not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ from 0 to am) dst = ~x }
+cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ from 0 to am) dst =  x }
 
 bitAS{op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { show{'bitAS'}
-  if (len==0) return{}
   xf:f64 = interp_f64{x}
   r0:u1 = op{0,xf}
   r1:u1 = op{1,xf}
