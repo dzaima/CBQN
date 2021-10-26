@@ -17,6 +17,11 @@ B itype_c1(B t, B x) {
   dec(x);
   return r;
 }
+B elType_c1(B t, B x) {
+  B r = m_i32(isArr(x)? TI(x,elType) : selfElType(x));
+  dec(x);
+  return r;
+}
 B refc_c1(B t, B x) {
   B r = isVal(x)? m_i32(v(x)->refc) : m_str8l("(not heap-allocated)");
   dec(x);
@@ -266,8 +271,8 @@ B getInternalNS() {
     listVariations_def = m_str8l("if");
     gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨ Type,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare,  DeepSqueeze⟩⇐𝕩}"), emptyCVec(), emptySVec());
-    B arg =    m_caB(10,(B[]){F(itype)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)});
+    B fn = bqn_exec(m_str32(U"{⟨ Type,  ElType,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare,  DeepSqueeze⟩⇐𝕩}"), emptyCVec(), emptySVec());
+    B arg =    m_caB(11,(B[]){F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)});
     #undef F
     internalNS = c1(fn,arg);
     gc_add(internalNS);

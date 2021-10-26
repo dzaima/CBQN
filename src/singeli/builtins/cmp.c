@@ -7,6 +7,10 @@ static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   u64 am = (sz+63)/64; assert(am>0);
   for (usz i = 0; i < am; i++) dst[i] = x;
 }
+static NOINLINE void fillBitsDec(u64* dst, u64 sz, bool v, u64 x) {
+  dec(b(x));
+  fillBits(dst, sz, v);
+}
 
 bool please_tail_call_cmp_err = 1;
 static NOINLINE void cmp_err() { if (please_tail_call_cmp_err) thrM("Invalid comparison"); }
@@ -58,11 +62,13 @@ static void* tyany_ptr(B x) {
     }                            \
     AL(w);                       \
     if (ria) lut_avx2_##NAME##AS [we](rp, (u8*)tyany_ptr(w), x.u, ria); \
+    else dec(x);                 \
     dec(w); return r;            \
   } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x); \
     if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
-    dec(x); return r;                      \
-  }                                        \
+    else dec(w);                 \
+    dec(x); return r;            \
+  }                              \
   if (isF64(w)&isC32(x)) return m_i32(FC); \
   if (isC32(w)&isF64(x)) return m_i32(CF); \
   end:;

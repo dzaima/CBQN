@@ -23,6 +23,8 @@ o3ng-singeli:
 	@${MAKE} singeli=1 t=o3ng_si    f="-g -O3 -march=native" c
 debugn-singeli:
 	@${MAKE} singeli=1 t=debugn_si  f="-g -DDEBUG -march=native" c
+heapverifyn-singeli:
+	@${MAKE} singeli=1 t=heapverifyn_si f="-g -DDEBUG -DHEAP_VERIFY -march=native" c
 
 
 
