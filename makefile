@@ -53,12 +53,12 @@ single-c:
 CC = clang
 PIE = -no-pie
 
-# Detects if we are running GCC instead of Clang
-CC_IS_GCC = $(shell $(CC) --version | head -n1 | grep -m 1 -c "gcc")
-ifeq (${CC_IS_GCC}, 1)
-CCFLAGS = -Wno-parentheses
-else
+# test if we are running gcc or clang
+CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
+ifeq (${CC_IS_CLANG}, 1)
 CCFLAGS = -Wno-microsoft-anon-tag
+else
+CCFLAGS = -Wno-parentheses
 endif
 ifeq (${singeli}, 1)
 	SINGELIFLAGS = '-DSINGELI'
