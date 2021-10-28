@@ -7,7 +7,7 @@
 }}
 
 #if SINGELI
-#include "../singeli/builtins/cmp.c"
+#include "../singeli/c/cmp.c"
 #else
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia; usz bia = BIT_N(ria);
 #define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
