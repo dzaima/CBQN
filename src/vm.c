@@ -14,7 +14,8 @@
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) F(PRED1) F(PRED2) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
-                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL)
+                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL) \
+                  F(DFND0)F(DFND1)F(DFND2)
 
 u32 bL_m[BC_SIZE];
 i32 sD_m[BC_SIZE];
@@ -28,26 +29,31 @@ char* bc_repr(u32* p) {
     #undef F
   }
 }
-void printBC(u32* p) {
-  printf("%s", bc_repr(p));
+void printBC(u32* p, i32 w) {
+  char* str = bc_repr(p);
+  printf("%s", str);
   u32* n = nextBC(p);
   p++;
   i64 am = n-p;
-  i32 len = 0;
+  i32 len = strlen(str);
   for (i64 i = 0; i < am; i++) printf(" %d", p[i]);
   while(p!=n) {
     i32 c = *p++;
+    if (c<0) {
+      c = -c;
+      len++;
+    }
     i64 pow = 10;
     i32 log = 1;
     while (pow<=c) { pow*=10; log++; }
     len+= log+1;
   }
-  len = 6-len;
-  while(len-->0) printf(" ");
+  len = w-len;
+  while(len-->0) putchar(' ');
 }
 void printBCStream(u32* p) {
   while(true) {
-    printBC(p); putchar(10);
+    printBC(p, 10); putchar(10);
     if (*p == RETD || *p == RETN) return;
     p = nextBC(p);
   }
@@ -524,6 +530,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     i32 stackNum = bcDepth>>1;
     vmStack[stackNum] = -1;
     printf("new eval\n");
+    B* origStack = gStack;
   #endif
   B* objs = bl->comp->objs->a;
   u32* bc = b->bc;
@@ -539,6 +546,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     #define P(N) B N=POP;
     #define ADD(X) { B tr=X; *(gStack++) = tr; }
     #define PEEK(X) gStack[-(X)]
+    #define STACK_HEIGHT 
     #define GS_UPD
   #else
     B* lgStack = gStack;
@@ -561,8 +569,8 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       i32 bcPos = BCPOS(b,sbc);
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      printBC(sbc); printf("@%d << ", bcPos);
-      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } putchar('\n'); fflush(stdout);
+      printBC(sbc,20); printf("@%d  in: ", bcPos);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf(" ⋄ "); print(origStack[i]); } putchar('\n'); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -742,8 +750,8 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     }
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      printBC(sbc); printf("@"N64d":   ", BCPOS(b, sbc));
-      for (i32 i = 0; i < b->maxStack; i++) { if(i)printf(" ⋄ "); print(gStack[i]); } putchar('\n'); fflush(stdout);
+      printBC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf(" ⋄ "); print(origStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
   end:;
