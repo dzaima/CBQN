@@ -34,19 +34,18 @@ void printBC(u32* p, i32 w) {
   printf("%s", str);
   u32* n = nextBC(p);
   p++;
-  i64 am = n-p;
   i32 len = strlen(str);
-  for (i64 i = 0; i < am; i++) printf(" %d", p[i]);
   while(p!=n) {
-    i32 c = *p++;
-    if (c<0) {
-      c = -c;
-      len++;
+    u32 c = (u32)*p++;
+    char buf[10];
+    i32 clen = 0;
+    while (c) {
+      buf[clen++] = (c&15)>9? 'A'+(c&15)-10 : '0'+(c&15);
+      c>>= 4;
     }
-    i64 pow = 10;
-    i32 log = 1;
-    while (pow<=c) { pow*=10; log++; }
-    len+= log+1;
+    putchar(' ');
+    for (i32 i = 0; i < clen; i++) putchar(buf[clen-i-1]);
+    len+= clen+1;
   }
   len = w-len;
   while(len-->0) putchar(' ');
