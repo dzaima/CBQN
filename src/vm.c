@@ -12,10 +12,10 @@
 
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(MD2R) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) F(PRED1) F(PRED2) \
+                  F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) F(PRED1) F(PRED2) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
-                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FAIL) \
-                  F(DFND0)F(DFND1)F(DFND2)
+                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(SETHi) \
+                  F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
 u32 bL_m[BC_SIZE];
 i32 sD_m[BC_SIZE];

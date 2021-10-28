@@ -317,6 +317,8 @@ void load_init() { // very last init function
     gc_add(load_compArg);
   #else
     B* runtime = fruntime;
+    (void)frtObj;
+    (void)rtComplete;
   #endif
   
   
