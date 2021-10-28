@@ -569,7 +569,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc,20); printf("@%d  in: ", bcPos);
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf(" ⋄ "); print(origStack[i]); } putchar('\n'); fflush(stdout);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -750,7 +750,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       printBC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf(" ⋄ "); print(origStack[i]); } putchar('\n'); fflush(stdout);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
   end:;
