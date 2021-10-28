@@ -56,19 +56,20 @@ PIE = -no-pie
 # test if we are running gcc or clang
 CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
 ifeq (${CC_IS_CLANG}, 1)
-CCFLAGS = -Wno-microsoft-anon-tag
+	CCFLAGS = -Wno-microsoft-anon-tag
 else
-CCFLAGS = -Wno-parentheses
+	CCFLAGS = -Wno-parentheses
 endif
 ifeq (${singeli}, 1)
 	SINGELIFLAGS = '-DSINGELI'
 else
 	singeli = 0
+	SINGELIFLAGS = ''
 endif
-CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(FLAGS) $(SINGELIFLAGS) -fPIE -MMD -MP -MF
+CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(FLAGS) $(SINGELIFLAGS) -MMD -MP -MF
 
 # `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
-ifeq ($(MAKECMDGOALS),clean)
+ifneq (,$(findstring clean,$(MAKECMDGOALS)))
 ifndef t
 t = *
 endif
@@ -154,11 +155,13 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 
 clean-singeli:
 	rm -rf src/singeli/gen/
-
-ifeq ($(t), *)
-clean: clean-singeli
-endif
-
-clean:
+clean-runtime:
+	rm -f src/gen/customRuntime
+clean-build:
 	rm -f ${bd}/*.o
 	rm -f ${bd}/*.d
+ifeq ($(t), *)
+clean: clean-singeli clean-runtime
+endif
+
+clean: clean-build
