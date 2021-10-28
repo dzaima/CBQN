@@ -37,12 +37,12 @@ void printBC(u32* p, i32 w) {
   i32 len = strlen(str);
   while(p!=n) {
     u32 c = (u32)*p++;
-    char buf[10];
+    char buf[8];
     i32 clen = 0;
-    while (c) {
+    do {
       buf[clen++] = (c&15)>9? 'A'+(c&15)-10 : '0'+(c&15);
       c>>= 4;
-    }
+    } while(c);
     putchar(' ');
     for (i32 i = 0; i < clen; i++) putchar(buf[clen-i-1]);
     len+= clen+1;
