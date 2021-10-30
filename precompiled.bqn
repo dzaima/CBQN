@@ -11,12 +11,12 @@ tests ← •FLines path∾"/test/cases/prim.bqn"
 {tests↩𝕩}⍟(×≠) 2↓•args
 
 ('#'≠ ·⊑ ∾⟜"#")◶@‿{
-  '%'⊸∊◶{𝕤
+  (⊑'%'⊸∊)◶{𝕤
     •Out 𝕩
     "src/gen/interp" •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"
     (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"make"‿"f=-DPRECOMP"‿"t=precomp"‿"c"
-    code‿out‿err←•SH"./BQN"
+    code‿out‿err←•SH⟨"./BQN"⟩
     •Out out
-    {𝕤⋄•Out"exit code "∾(⍕code) ⋄ •Out err}⍟(×code) err
+    {𝕤⋄•Out"exit code "∾(•Repr code) ⋄ •Out err}⍟(×code) err
   }‿⊢
 }¨tests

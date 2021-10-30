@@ -758,6 +758,10 @@ B sh_c1(B t, B x) {
   thrM("•SH: CBQN was built without <spawn.h>");
 }
 #endif
+B sh_c2(B t, B w, B x) {
+  dec(w);
+  return sh_c1(t, x);
+}
 
 
 B getInternalNS(void);
