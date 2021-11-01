@@ -740,9 +740,11 @@ B sh_c1(B t, B x) {
   TALLOC(char, buf, bufsz);
   struct pollfd ps[] = {{.fd=p_out[0], .events=POLLIN}, {.fd=p_err[0], .events=POLLIN}};
   while (poll(&ps[0], 2, -1) > 0) {
-    if      (ps[0].revents & POLLIN) s_out = vec_join(s_out, fromUTF8(buf, read(p_out[0], &buf[0], bufsz)));
-    else if (ps[1].revents & POLLIN) s_err = vec_join(s_err, fromUTF8(buf, read(p_err[0], &buf[0], bufsz)));
-    else break;
+    bool stop=true;
+    if (ps[0].revents & POLLIN) while(true) { stop=false; u64 len = read(p_out[0], &buf[0], bufsz); if(len==0)break; s_out = vec_join(s_out, fromUTF8(buf, len)); }
+    if (ps[1].revents & POLLIN) while(true) { stop=false; u64 len = read(p_err[0], &buf[0], bufsz); if(len==0)break; s_err = vec_join(s_err, fromUTF8(buf, len)); }
+    if (ps[0].revents & POLLHUP  &&  ps[1].revents & POLLHUP) break; // idk, made osx work
+    if (stop) break;
   }
   TFREE(buf);
   
