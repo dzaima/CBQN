@@ -2,7 +2,7 @@
 
 NORETURN void bqn_exit(i32 code);
 u64 mm_heapUsed(void);
-void printAllocStats(void);
+void print_allocStats(void);
 void vm_pstLive(void);
 
 

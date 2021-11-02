@@ -319,6 +319,7 @@ void load_init() { // very last init function
     B* runtime = fruntime;
     (void)frtObj;
     (void)rtComplete;
+    (void)runtime;
   #endif
   
   
@@ -338,7 +339,7 @@ void load_init() { // very last init function
     #endif
     rtWrap_print();
     CTR_FOR(CTR_PRINT)
-    printAllocStats();
+    print_allocStats();
     exit(0);
   #else // use compiler
     B prevAsrt = runtime[42];
@@ -374,7 +375,7 @@ B bqn_execFile(B path, B args) { // consumes both
 void bqn_exit(i32 code) {
   rtWrap_print();
   CTR_FOR(CTR_PRINT)
-  printAllocStats();
+  print_allocStats();
   exit(code);
 }
 

@@ -685,7 +685,7 @@ B bqn_merge(B x) {
   #endif
 #endif
 
-NOINLINE void printAllocStats() {
+NOINLINE void print_allocStats() {
   #ifdef ALLOC_STAT
     printf("total ever allocated: "N64u"\n", talloc);
     printf("allocated heap size:  "N64u"\n", mm_heapAlloc);

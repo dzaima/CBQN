@@ -29,7 +29,7 @@ char* bc_repr(u32* p) {
     #undef F
   }
 }
-void printBC(u32* p, i32 w) {
+void print_BC(u32* p, i32 w) {
   char* str = bc_repr(p);
   printf("%s", str);
   u32* n = nextBC(p);
@@ -50,9 +50,9 @@ void printBC(u32* p, i32 w) {
   len = w-len;
   while(len-->0) putchar(' ');
 }
-void printBCStream(u32* p) {
+void print_BCStream(u32* p) {
   while(true) {
-    printBC(p, 10); putchar(10);
+    print_BC(p, 10); putchar(10);
     if (*p == RETD || *p == RETN) return;
     p = nextBC(p);
   }
@@ -70,7 +70,7 @@ B* gStack; // points to after end
 B* gStackStart;
 B* gStackEnd;
 NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
-void gsPrint() {
+void print_gStack() {
   B* c = gStackStart;
   i32 i = 0;
   printf("gStack %p, height "N64d":\n", gStackStart, gStack-gStackStart);
@@ -568,7 +568,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       i32 bcPos = BCPOS(b,sbc);
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      printBC(sbc,20); printf("@%d  in: ", bcPos);
+      print_BC(sbc,20); printf("@%d  in: ", bcPos);
       for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
@@ -749,7 +749,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     }
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      printBC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
+      print_BC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
       for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
@@ -1101,7 +1101,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     B s = emptyCVec();
     printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
-    //printBCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
+    //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #ifdef DEBUG
       if (pos!=-1) printf(N64d": ", pos);
