@@ -64,7 +64,7 @@ ifeq (${singeli}, 1)
 	SINGELIFLAGS = '-DSINGELI'
 else
 	singeli = 0
-	SINGELIFLAGS = ''
+	SINGELIFLAGS =
 endif
 CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(FLAGS) $(SINGELIFLAGS) -MMD -MP -MF
 
