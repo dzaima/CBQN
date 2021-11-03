@@ -39,7 +39,8 @@ B m_vec1(B a) {
   fillarr_ptr(ra)[0] = a;
   return taga(ra);
 }
-B m_vec2(B a, B b) {
+
+FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   if (isAtm(a)&isAtm(b)) {
     if (LIKELY(isNum(a)&isNum(b))) {
       i32 ai=a.f; i32 bi=b.f;
@@ -56,8 +57,28 @@ B m_vec2(B a, B b) {
       else                                { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
     }
   }
+  if (fills) {
+    if (isAtm(a) || isAtm(b)) goto noFills;
+    B af = asFill(inc(a));
+    if (noFill(af)) goto noFills;
+    B bf = asFill(inc(b));
+    if (noFill(bf)) { dec(af); goto noFills; }
+    if (!fillEqual(af,bf)) { dec(bf); dec(af); goto noFills; }
+    dec(bf);
+    Arr* ra = m_fillarrp(2); arr_shVec(ra);
+    fillarr_setFill(ra, af);
+    fillarr_ptr(ra)[0] = a;
+    fillarr_ptr(ra)[1] = b;
+    return taga(ra);
+  }
+  noFills:
   return m_v2(a,b);
 }
+
+B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
+
+B pair_c1(B t,      B x) { return m_v1(x); }
+B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
 
 B shape_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);

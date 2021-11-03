@@ -88,8 +88,6 @@ B ud_c2(B t, B w, B x) {
   return c2(rt_ud, w, x);
 }
 
-B pair_c1(B t,      B x) { return m_v1(   x); }
-B pair_c2(B t, B w, B x) { return m_v2(w, x); }
 B ltack_c1(B t,      B x) {         return x; }
 B ltack_c2(B t, B w, B x) { dec(x); return w; }
 B rtack_c1(B t,      B x) {         return x; }

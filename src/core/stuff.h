@@ -96,8 +96,8 @@ static B m_v1(B a               ); // consumes all
 static B m_v2(B a, B b          ); // consumes all
 static B m_v3(B a, B b, B c     ); // consumes all
 static B m_v4(B a, B b, B c, B d); // consumes all
-B m_vec1(B a);
-B m_vec2(B a, B b);
+B m_vec1(B a);      // complete fills
+B m_vec2(B a, B b); // incomplete fills
 
 // random stuff
 
