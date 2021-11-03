@@ -3,4 +3,4 @@ perf.*
 /obj/
 /asm_*
 /src/singeli/gen
-/Singeli/
+/Singeli

@@ -799,6 +799,10 @@ B md1Bl_c1(Md1D* d,      B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); retu
 B md1Bl_c2(Md1D* d, B w, B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m1), inc(d->f)           }); }
 B md2Bl_c1(Md2D* d,      B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
 B md2Bl_c2(Md2D* d, B w, B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
+
+B md1Bl_d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
+B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
+
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
   FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);
@@ -913,15 +917,12 @@ void md2Bl_print(B x) { printf("{2-modifier block}"); }
 
 B block_decompose(B x) { return m_v2(m_i32(1), x); }
 
-B md1Bl_d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
-B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
-
 static usz pageSizeV;
 usz getPageSize() {
   if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
   return pageSizeV;
 }
-void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
+static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   usz ps = getPageSize();
   u64 sz = (elSize*count + ps-1)/ps * ps;
   assert(sz%elSize == 0);
