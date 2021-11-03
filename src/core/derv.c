@@ -67,7 +67,7 @@ static B toConstant(B x) { // doesn't consume x
   if (v(x)->type == t_md1D) {
     Md1D* d = c(Md1D,x);
     B m1 = d->m1;
-    if (v(m1)->type==t_md1BI && v(m1)->flags==44) return inc(d->f);
+    if (v(m1)->type==t_md1BI && v(m1)->flags==45) return inc(d->f);
   }
   return bi_N;
 }

@@ -224,22 +224,23 @@ void load_init() { // very last init function
   comp_currSrc  = bi_N;
   gc_addFn(load_gcFn);
   B fruntime[] = {
-    /* +-×÷⋆√⌊⌈|¬  */ bi_add    , bi_sub   , bi_mul  , bi_div    , bi_pow      , bi_root  , bi_floor, bi_ceil   , bi_stile , bi_not,
-    /* ∧∨<>≠=≤≥≡≢  */ bi_and    , bi_or    , bi_lt   , bi_gt     , bi_ne       , bi_eq    , bi_le   , bi_ge     , bi_feq   , bi_fne,
-    /* ⊣⊢⥊∾≍↑↓↕«»  */ bi_ltack  , bi_rtack , bi_shape, bi_join   , bi_couple   , bi_take  , bi_drop , bi_ud     , bi_shifta, bi_shiftb,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ bi_reverse, bi_N     , bi_slash, bi_gradeUp, bi_gradeDown, bi_select, bi_pick , bi_indexOf, bi_count , bi_memberOf,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ bi_find   , bi_group , bi_asrt , bi_const  , bi_swap     , bi_cell  , bi_each , bi_tbl    , bi_N     , bi_fold,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ bi_N      , bi_scan  , bi_atop , bi_over   , bi_before   , bi_after , bi_under, bi_val    , bi_cond  , bi_N,
-    /* ⚇⍟⎊         */ bi_N      , bi_repeat, bi_catch
+    /* +-×÷⋆√⌊⌈|¬  */ bi_add    , bi_sub    , bi_mul   , bi_div  , bi_pow    , bi_root     , bi_floor , bi_ceil , bi_stile  , bi_not,
+    /* ∧∨<>≠=≤≥≡≢  */ bi_and    , bi_or     , bi_lt    , bi_gt   , bi_ne     , bi_eq       , bi_le    , bi_ge   , bi_feq    , bi_fne,
+    /* ⊣⊢⥊∾≍⋈↑↓↕«  */ bi_ltack  , bi_rtack  , bi_shape , bi_join , bi_couple , bi_pair     , bi_take  , bi_drop , bi_ud     , bi_shifta,
+    /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ bi_shiftb , bi_reverse, bi_N     , bi_slash, bi_gradeUp, bi_gradeDown, bi_select, bi_pick , bi_indexOf, bi_count,
+    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ bi_memberOf,bi_find   , bi_group , bi_asrt , bi_const  , bi_swap     , bi_cell  , bi_each , bi_tbl    , bi_N,
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ bi_fold    ,bi_N      , bi_scan  , bi_atop , bi_over   , bi_before   , bi_after , bi_under, bi_val    , bi_cond,
+    /* ⎉⚇⍟⎊        */ bi_N       ,bi_N      , bi_repeat, bi_catch
+
   };
   bool rtComplete[] = {
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,1,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⊣⊢⥊∾≍↑↓↕«»  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⌽⍉/⍋⍒⊏⊑⊐⊒∊  */ 1,0,1,1,1,1,1,1,1,1,
-    /* ⍷⊔!˙˜˘¨⌜⁼´  */ 1,1,1,1,1,1,1,1,0,1,
-    /* ˝`∘○⊸⟜⌾⊘◶⎉  */ 0,1,1,1,1,1,1,1,1,0,
-    /* ⚇⍟⎊         */ 0,1,1
+    /* ⊣⊢⥊∾≍⋈↑↓↕«  */ 1,1,1,1,1,0,1,1,1,1,
+    /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ 1,1,0,1,1,1,1,1,1,1,
+    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ 1,1,1,1,1,1,1,1,1,0,
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ 1,0,1,1,1,1,1,1,1,1,
+    /* ⎉⚇⍟⎊        */ 0,0,1,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
   for (u64 i = 0; i < rtLen; i++) inc(fruntime[i]);
@@ -248,7 +249,7 @@ void load_init() { // very last init function
   #ifndef NO_RT
     B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
     #ifndef ALL_R0
-    B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
+    B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
     Block* runtime0_b = load_compImport(
       #include "gen/runtime0"
@@ -274,22 +275,22 @@ void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
-    rt_undo    = Get(rtObjRaw, 48); gc_add(rt_undo);
-    rt_select  = Get(rtObjRaw, 35); gc_add(rt_select);
-    rt_slash   = Get(rtObjRaw, 32); gc_add(rt_slash);
+    rt_undo    = Get(rtObjRaw, 49); gc_add(rt_undo);
+    rt_select  = Get(rtObjRaw, 36); gc_add(rt_select);
+    rt_slash   = Get(rtObjRaw, 33); gc_add(rt_slash);
     rt_join    = Get(rtObjRaw, 23); gc_add(rt_join);
-    rt_ud      = Get(rtObjRaw, 27); gc_add(rt_ud);
-    rt_pick    = Get(rtObjRaw, 36); gc_add(rt_pick);
-    rt_take    = Get(rtObjRaw, 25); gc_add(rt_take);
-    rt_drop    = Get(rtObjRaw, 26); gc_add(rt_drop);
-    rt_group   = Get(rtObjRaw, 41); gc_add(rt_group);
-    rt_under   = Get(rtObjRaw, 56); gc_add(rt_under);
-    rt_reverse = Get(rtObjRaw, 30); gc_add(rt_reverse);
-    rt_indexOf = Get(rtObjRaw, 37); gc_add(rt_indexOf);
-    rt_count   = Get(rtObjRaw, 38); gc_add(rt_count);
-    rt_memberOf= Get(rtObjRaw, 39); gc_add(rt_memberOf);
-    rt_find    = Get(rtObjRaw, 40); gc_add(rt_find);
-    rt_cell    = Get(rtObjRaw, 45); gc_add(rt_cell);
+    rt_ud      = Get(rtObjRaw, 28); gc_add(rt_ud);
+    rt_pick    = Get(rtObjRaw, 37); gc_add(rt_pick);
+    rt_take    = Get(rtObjRaw, 26); gc_add(rt_take);
+    rt_drop    = Get(rtObjRaw, 27); gc_add(rt_drop);
+    rt_group   = Get(rtObjRaw, 42); gc_add(rt_group);
+    rt_under   = Get(rtObjRaw, 57); gc_add(rt_under);
+    rt_reverse = Get(rtObjRaw, 31); gc_add(rt_reverse);
+    rt_indexOf = Get(rtObjRaw, 38); gc_add(rt_indexOf);
+    rt_count   = Get(rtObjRaw, 39); gc_add(rt_count);
+    rt_memberOf= Get(rtObjRaw, 40); gc_add(rt_memberOf);
+    rt_find    = Get(rtObjRaw, 41); gc_add(rt_find);
+    rt_cell    = Get(rtObjRaw, 46); gc_add(rt_cell);
     
     for (usz i = 0; i < rtLen; i++) {
       #ifdef RT_WRAP
@@ -342,12 +343,12 @@ void load_init() { // very last init function
     print_allocStats();
     exit(0);
   #else // use compiler
-    B prevAsrt = runtime[42];
-    runtime[42] = bi_casrt; // horrible but GC is off so it's fiiiiiine
+    B prevAsrt = runtime[43];
+    runtime[43] = bi_casrt; // horrible but GC is off so it's fiiiiiine
     Block* comp_b = load_compImport(
       #include "gen/compiler"
     );
-    runtime[42] = prevAsrt;
+    runtime[43] = prevAsrt;
     load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
     gc_add(load_comp);
     

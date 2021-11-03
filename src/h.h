@@ -71,7 +71,7 @@
   #undef CATCH_ERRORS
 #endif
 
-#define rtLen 63
+#define rtLen 64
 
 #if CATCH_ERRORS
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)

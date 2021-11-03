@@ -38,7 +38,7 @@ _Lo ← {"B"   MakeList 𝔽¨𝕩}
 glyphs ← Import "glyphs.bqn"
 _getComp ← { (4+2×useInd)↑ <∘⊢∾˜ 5↑ (𝕗 Import "c.bqn"){𝔽} }
 useInd ← "-i"≡⊑args ⋄ args↓˜↩useInd
-Comp ← ((<"inc(runtime["∾F∾"])"˙)¨↕62) glyphs _getComp ⊢
+Comp ← ((<"inc(runtime["∾F∾"])"˙)¨↕≠∾glyphs) glyphs _getComp ⊢
 J ← ∾∾⟜(@+10)¨
 
 Fout ← {((≠𝕩)↑⟨Li ⋄ OAny _Lo ⋄ =◶⟨ONum,Li _Lo⟩ _Lo _Lo ⋄ (Li 2⊸↑) _Lo ⋄ Li _Lo ⋄ OStr⟩) {𝕎𝕩}¨ 𝕩}
