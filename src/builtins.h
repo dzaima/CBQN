@@ -25,6 +25,16 @@
 /* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
   /*md2.c*/ A(while,"•_while_")
 
+enum PrimNumbers {
+    /* +-×÷⋆√⌊⌈|¬  */ n_add     , n_sub    , n_mul   , n_div  , n_pow    , n_root     , n_floor , n_ceil , n_stile  , n_not,
+    /* ∧∨<>≠=≤≥≡≢  */ n_and     , n_or     , n_lt    , n_gt   , n_ne     , n_eq       , n_le    , n_ge   , n_feq    , n_fne,
+    /* ⊣⊢⥊∾≍⋈↑↓↕«  */ n_ltack   , n_rtack  , n_shape , n_join , n_couple , n_pair     , n_take  , n_drop , n_ud     , n_shifta,
+    /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ n_shiftb  , n_reverse, n_transp, n_slash, n_gradeUp, n_gradeDown, n_select, n_pick , n_indexOf, n_count,
+    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ n_memberOf, n_find   , n_group , n_asrt , n_const  , n_swap     , n_cell  , n_each , n_tbl    , n_undo,
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_reduce , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
+    /* ⎉⚇⍟⎊        */ n_cells   , n_depth2 , n_repeat, n_catch
+};
+
 enum PrimFns { pf_none,
   #define F(N,X) pf_##N,
   FOR_PFN(F,F,F)

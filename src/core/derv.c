@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../nfns.h"
+#include "../builtins.h"
 
 DEF_FREE(md1D) { dec(((Md1D*)x)->m1); dec(((Md1D*)x)->f);                     }
 DEF_FREE(md2D) { dec(((Md2D*)x)->m2); dec(((Md2D*)x)->f); dec(((Md2D*)x)->g); }
@@ -67,7 +68,7 @@ static B toConstant(B x) { // doesn't consume x
   if (v(x)->type == t_md1D) {
     Md1D* d = c(Md1D,x);
     B m1 = d->m1;
-    if (v(m1)->type==t_md1BI && v(m1)->flags==45) return inc(d->f);
+    if (v(m1)->type==t_md1BI && v(m1)->flags==n_const) return inc(d->f);
   }
   return bi_N;
 }

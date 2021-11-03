@@ -128,20 +128,20 @@ B shape_c2(B t, B w, B x) {
       }
       if (bad && !good) thrM("⥊: 𝕨 too large");
       if (unkPos!=-1) {
-        if (unkInd!=53 & unkInd!=6 & unkInd!=31 & unkInd!=26) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
         if (nia==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
         i64 div = xia/nia;
         i64 mod = xia%nia;
         usz item;
         bool fill = false;
-        if (unkInd == 53) {
+        if (unkInd == n_atop) {
           if (mod!=0) thrM("⥊: Shape must be exact when reshaping with ∘");
           item = div;
-        } else if (unkInd == 6) {
+        } else if (unkInd == n_floor) {
           item = div;
-        } else if (unkInd == 31) {
+        } else if (unkInd == n_reverse) {
           item = mod? div+1 : div;
-        } else if (unkInd == 26) {
+        } else if (unkInd == n_take) {
           item = mod? div+1 : div;
           fill = true;
         } else UD;
