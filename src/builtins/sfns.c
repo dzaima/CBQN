@@ -667,16 +667,16 @@ B join_c1(B t, B x) {
     
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
-    if (isAtm(x0)) thrM("∾: Rank of items must be equal or greater than rank of argument");
+    if (isAtm(x0)) goto base; // thrM("∾: Rank of items must be equal or greater than rank of argument");
     usz ir = rnk(x0);
     usz* x0sh = a(x0)->sh;
-    if (ir==0) thrM("∾: Rank of items must be equal or greater than rank of argument");
+    if (ir==0) goto base; // thrM("∾: Rank of items must be equal or greater than rank of argument");
     
     usz csz = arr_csz(x0);
     usz cam = x0sh[0];
     for (usz i = 1; i < xia; i++) {
       B c = GetU(x, i);
-      if (!isArr(c) || rnk(c)!=ir) thrF("∾: All items in argument should have same rank (contained items with ranks %i and %i)", ir, isArr(c)? rnk(c) : 0);
+      if (!isArr(c) || rnk(c)!=ir) goto base; // thrF("∾: All items in argument should have same rank (contained items with ranks %i and %i)", ir, isArr(c)? rnk(c) : 0);
       usz* csh = a(c)->sh;
       if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       cam+= a(c)->sh[0];
@@ -701,6 +701,7 @@ B join_c1(B t, B x) {
     dec(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   }
+  base:
   return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
