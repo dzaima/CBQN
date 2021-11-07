@@ -124,7 +124,7 @@ INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   return r.b;
 }
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
-INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); }
+INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); } // TODO these only fail on oom, so no need to update pos
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
 INS B i_MD1C(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
 INS B i_MD2C(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
@@ -135,12 +135,6 @@ INS B i_TR3O(B f,B g, B h         ) {          return q_N(f)? m_atop(g,h) : m_fo
 INS B i_NOVAR(u32* bc, B* cStack) {
   POS_UPD; GS_UPD; thrM("Reading variable before its defined");
 }
-// INS B i_VARU(u32 p, Scope* sc) {
-//   B* vars = sc->vars;
-//   B r = vars[p];
-//   vars[p] = bi_optOut;
-//   return r;
-// }
 INS B i_EXTO(u32 p, Scope* sc, u32* bc, B* cStack) {
   B l = sc->ext->vars[p];
   if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
@@ -188,11 +182,11 @@ INS B i_PRED2(B x, Scope* sc, u32* bc, Body* v1, Body* v2) { POS_UPD;
   if (o2b(x)) return bi_okHdr;
   return gotoNextBodyJIT(sc, q_N(sc->vars[2])? v1 : v2);
 }
-INS B i_SETNi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), false); return x; }
+INS B i_SETNi(     B x, Scope* sc, u32 p         ) {          v_setI(sc, p, inc(x), false); return x; }
 INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
 INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, inc(r), true); return r; }
 INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, inc(r), true); return r; }
-INS void i_SETNv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, false); }
+INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, false); }
 INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true ); }
 INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, r, true); }
 INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, r, true); }
@@ -637,7 +631,6 @@ Nvm_res m_nvm(Body* body) {
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         IMM(R_A2, bi_optOut.u); MOV8mro(R_A1, R_A2,p*8+offsetof(Scope,vars)); // set to bi_optOut
       } break;
-      // case VARU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_VARU); } break; // (u32 p, Scope* sc)
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
       case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
@@ -660,11 +653,11 @@ Nvm_res m_nvm(Body* body) {
       case SETM: TOPp; GET(R_A1,1,1); GET(R_A2,2,1); LEAi(R_A3,R_SP,VAR(pscs,0)); IMM(R_A4,off); CCALL(i_SETM); break; // (B s, B f, B x, Scope** pscs, u32* bc)
       case SETC: TOPp; GET(R_A1,1,1);                LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); CCALL(i_SETC); break; // (B s, B f,      Scope** pscs, u32* bc)
       // TODO SETNi doesn't really need to update gStack
-      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETNi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p);                CCALL(i_SETNi);           break; } // (     B x, Scope* sc, u32 p         )
       case SETUi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUi);           break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMi);           break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case SETCi:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCi);           break; } // (B f,      Scope* sc, u32 p, u32* bc)
-      case SETNv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETNv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
+      case SETNv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p);                CCALL(i_SETNv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETUv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case SETCv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCv); NORES(1); break; } // (B f,      Scope* sc, u32 p, u32* bc)
