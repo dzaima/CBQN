@@ -96,10 +96,10 @@ B rtWrap_wrap(B x); // consumes
 void rtWrap_print(void);
 
 
-_Thread_local i64 comp_currEnvPos;
-_Thread_local B comp_currPath;
-_Thread_local B comp_currArgs;
-_Thread_local B comp_currSrc;
+i64 comp_currEnvPos;
+B comp_currPath;
+B comp_currArgs;
+B comp_currSrc;
 
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;

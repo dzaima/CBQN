@@ -256,7 +256,7 @@ static inline void onFree(Value* x) {
   // x->refc = 0x61616161;
 }
 
-extern _Thread_local i64 comp_currEnvPos;
-extern _Thread_local B comp_currPath;
-extern _Thread_local B comp_currArgs;
-extern _Thread_local B comp_currSrc;
+extern i64 comp_currEnvPos;
+extern B comp_currPath;
+extern B comp_currArgs;
+extern B comp_currSrc;
