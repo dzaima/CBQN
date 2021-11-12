@@ -60,81 +60,95 @@ typedef u8 Reg;
 #define R_P3 13 // r13
 #define R_P4 12 // r12
 
+typedef struct AsmStk {
+  u8* s; // actual allocation
+  u8* c; // position for next write
+  u8* e; // position past last writable position
+} AsmStk;
+static AsmStk asm_ins;
+static AsmStk asm_rel;
+static i32 asm_depth = 0;
 
-#define ALLOC_ASM_ARR(N) TStack* b_o = (TStack*)mm_alloc(sizeof(TStack)+(N), t_temp); b_o->size=0; b_o->cap=(N)
-#define ALLOC_ASM(N) ALLOC_ASM_ARR(N); TSALLOC(u32, b_r, 64);
-#define GET_ASM() u8* bin = b_o->data;
-#define AADD(P,N) b_o=asm_add(b_o, P, N)
-#define ASM_SIZE (b_o->size)
-#define FREE_ASM() mm_free((Value*)b_o); TSFREE(b_r);
-#define ASM_WRITE(P,SZ) {              \
-  memcpy(P, bin, SZ);                  \
-  u64 relAm = TSSIZE(b_r);             \
-  for (u64 i = 0; i < relAm; i++) {    \
-    u8* ins = P+b_r[i];                \
-    u32 o = readBytes4(ins);           \
-    u32 n = o-(u32)(u64)ins;           \
-    memcpy(ins, (u8[]){BYTES4(n)}, 4); \
-  }                                    \
-}                                      \
-
-static NOINLINE TStack* asm_reserve(TStack* o) {
-  u64 osz = o->size;
-  u64 ncap = o->cap*2;
-  ALLOC_ASM_ARR(ncap);
-  memcpy(b_o->data, o->data, osz);
-  b_o->size = osz;
-  mm_free((Value*)o);
-  return b_o;
+static NOINLINE void asm_allocBuf(AsmStk* stk, u64 sz) {
+  TAlloc* a = mm_alloc(sizeof(TAlloc) + sz, t_temp);
+  stk->s = a->data;
+  stk->c = a->data;
+  stk->e = a->data + sz;
 }
-static inline TStack* asm_r(TStack* o) {
-  if (o->size+16>o->cap) return asm_reserve(o);
-  return o;
+static NOINLINE void asm_init() {
+  if (asm_depth>0) {
+    gsAdd(tag(asm_ins.c-asm_ins.s, RAW_TAG)); gsAdd(tag(asm_ins.e-asm_ins.s, RAW_TAG)); gsAdd(tag(TOBJ(asm_ins.s), OBJ_TAG));
+    gsAdd(tag(asm_rel.c-asm_rel.s, RAW_TAG)); gsAdd(tag(asm_rel.e-asm_rel.s, RAW_TAG)); gsAdd(tag(TOBJ(asm_rel.s), OBJ_TAG));
+  }
+  asm_depth++;
+  asm_allocBuf(&asm_ins, 64);
+  asm_allocBuf(&asm_rel, 64);
+}
+static NOINLINE void asm_free() {
+  mm_free((Value*) TOBJ(asm_ins.s));
+  mm_free((Value*) TOBJ(asm_rel.s));
+  
+  assert(asm_depth>0);
+  asm_depth--;
+  if (asm_depth>0) { u8* t;
+    t = asm_rel.s = c(TAlloc, gsPop())->data;  asm_rel.e = t + (u64)v(gsPop());  asm_rel.c = t + (u64)v(gsPop());
+    t = asm_ins.s = c(TAlloc, gsPop())->data;  asm_ins.e = t + (u64)v(gsPop());  asm_ins.c = t + (u64)v(gsPop());
+  }
 }
 
+static NOINLINE void asm_bufDbl(AsmStk* stk, u64 nsz) {
+  u8* prevS = stk->s;
+  u64 size = stk->e - prevS;
+  u64 used = stk->c - prevS;
+  while (size < used+nsz) size*= 2;
+  asm_allocBuf(stk, size);
+  stk->c+= used;
+  memcpy(stk->s, prevS, used);
+  mm_free((Value*) TOBJ(prevS));
+}
 
-static inline void asm_1(TStack* o, i8 v) {
-  o->data[o->size++] = v;
+#define ALLOC_ASM(N)
+#define FREE_ASM()
+#define ASM_SIZE (asm_ins.c - asm_ins.s)
+
+
+static inline void asm_w1(u8* data, i8 v) { *data = v; }
+static inline void asm_w4(u8* data, i32 v) { memcpy(data, (i32[]){v}, 4); }
+static inline void asm_w8(u8* data, i64 v) { memcpy(data, (i64[]){v}, 8); }
+static inline i32  asm_r4(u8* data) { i32 v; memcpy(&v, data, 4); return v; }
+
+static inline void asm_r() {
+  if (RARE(asm_ins.c+32 > asm_ins.e)) asm_bufDbl(&asm_ins, 32);
 }
-static inline void asm_4(TStack* o, i32 v) { int size = o->size;
-  // o->data[size+0] = (v    ) & 0xff; o->data[size+1] = (v>> 8) & 0xff;
-  // o->data[size+2] = (v>>16) & 0xff; o->data[size+3] = (v>>24) & 0xff;
-  memcpy(o->data+size, (i32[]){v}, 4); // slightly less UB than an unaligned move
-  o->size = size+4;
+
+static NOINLINE void asm_addRel(u32 v) { // TODO play around with inlining
+  if (RARE(asm_rel.c == asm_rel.e)) asm_bufDbl(&asm_rel, 4);
+  asm_w4(asm_rel.c, v);
+  asm_rel.c+= 4;
 }
-static inline void asm_w4(u8* data, i32 v) {
-  memcpy(data, (i32[]){v}, 4);
+
+
+static NOINLINE void asm_write(u8* P, u64 SZ) {
+  memcpy(P, asm_ins.s, SZ);
+  u64 relAm = (asm_rel.c-asm_rel.s)/4;
+  for (u64 i = 0; i < relAm; i++) {
+    u8* ins = P+asm_r4(asm_rel.s+i*4);
+    u32 o = asm_r4(ins);
+    u32 n = o-(u32)(u64)ins;
+    asm_w4(ins, n);
+  }
 }
-static inline i32 asm_r4(u8* data) {
-  i32 v;
-  memcpy(&v, data, 4);
-  return v;
-}
-static inline void asm_8(TStack* o, i64 v) { int size = o->size;
-  // o->data[size+0] = (u8)(v    ); o->data[size+1] = (u8)(v>> 8); o->data[size+2] = (u8)(v>>16); o->data[size+3] = (u8)(v>>24);
-  // o->data[size+4] = (u8)(v>>32); o->data[size+5] = (u8)(v>>40); o->data[size+6] = (u8)(v>>48); o->data[size+7] = (u8)(v>>56);
-  memcpy(o->data+size, (i64[]){v}, 8);
-  o->size+= 8;
-}
-static inline void asm_a(TStack* o, u64 len, u8 v[]) {
-  memcpy(o->data, v, len);
-  o->size+= len;
-}
-#define ASM1(X) asm_1(b_o,X)
-#define ASM4(X) asm_4(b_o,X)
-#define ASM8(X) asm_8(b_o,X)
-#define ASMA(A) { u8 t[]=A; asm_a(b_o,sizeof(t),t); }
 
 
 
 // Ignore leading 0x40
 // TODO Doesn't drop 0xF2 0x40, etc.
-#define ASM_RAW(A, OP) do { UC aa[] = OP; u8 off=aa[0]==0x40; AADD(aa+off, sizeof(aa)-off); } while(0)
+// #define ASM_RAW(A, OP) do { UC aa[] = OP; u8 off=aa[0]==0x40; AADD(aa+off, sizeof(aa)-off); } while(0)
 
 // Instructions
 #define A_0REG(O,I) ((((I)&7)<<3) + ((O)&7))
 #define A_REG(O,I) (0xC0 + A_0REG(O,I))
-#define REX0(O,I) (((O)>7)+(((I)>7)<<2))
+// #define REX0(O,I) (((O)>7)+(((I)>7)<<2))
 #define REX0_3(O,I,E) (REX0(O,I)+(((E)>7)<<1))
 #define REX8(O,I) (0x48 + REX0(O,I))
 #define REX4(O,I) (0x40 + REX0(O,I))
@@ -195,9 +209,9 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 // #define PUSH(O,I) {REX4(O,0),0x50+((O)&7)}
 // #define POP(O,I)  {REX4(O,0),0x58+((O)&7)}
 
-#define BYTES4(I) ((UC)(I)),((UC)((I)>>8)),((UC)((I)>>16)),((UC)((I)>>24))
-#define BYTES8(I) BYTES4(I) ,((UC)((I)>>32)),((UC)((I)>>40)) \
-                            ,((UC)((I)>>48)),((UC)((I)>>56))
+// #define BYTES4(I) ((UC)(I)),((UC)((I)>>8)),((UC)((I)>>16)),((UC)((I)>>24))
+// #define BYTES8(I) BYTES4(I) ,((UC)((I)>>32)),((UC)((I)>>40)) \
+//                             ,((UC)((I)>>48)),((UC)((I)>>56))
 
 // #define MOV_MR(O,I,OFF) {REX8(O,I),0x89,0x40+A_0REG(O,I),OFF}
 // #define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)} // TODO is broken on (12,14)
@@ -206,8 +220,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 // #define MOV_RI(O,I)     {REX8(O,0),0xB8+((O)&7), BYTES8(I)}
 // #define LEAo1(I,O,OFF)  {REX8(O,I),0x8D,0x40+A_0REG(O,I),OFF}
 
-#define MOV4_MI(O,I,OFF) {REX4(O,0),0xC7,0x40+A_0REG(O,0),OFF,BYTES4(I)}
-#define MOV4_RI(O,I)     {REX4(O,0),0xB8+((O)&7) , BYTES4(I)}
+// #define MOV4_MI(O,I,OFF) {REX4(O,0),0xC7,0x40+A_0REG(O,0),OFF,BYTES4(I)}
+// #define MOV4_RI(O,I)     {REX4(O,0),0xB8+((O)&7) , BYTES4(I)}
 // #define MOV4_MR(O,I,OFF) {REX4(O,I),0x89,0x40+A_0REG(O,I),OFF}
 // #define MOV4_MR0(O,I)    {REX4(O,I),0x89,A_0REG(O,I)}
 // #define MOV4_RM(I,O,OFF) {REX4(O,I),0x8B,0x40+A_0REG(O,I),OFF}
@@ -260,8 +274,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define C_LE  0xE
 #define C_G   0xF
 
-#define JX(O,C)    {0x70+(C),(UC)(O)-2}
-#define J4X(O,C)   {0x0F,0x80+(C),BYTES4((O)-6)}
+// #define JX(O,C)    {0x70+(C),(UC)(O)-2}
+// #define J4X(O,C)   {0x0F,0x80+(C),BYTES4((O)-6)}
 #define SETX(O,C)  {REX1(O,0),0x0F,0x90+(C),A_REG(O,0)}
 #define CMOVX(I,O,C)  {REX8(O,I),0x0F,0x40+(C),A_REG(O,I)}
 
@@ -282,8 +296,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 // #define JLE(O,I) {0x7E,((UC)(O)-2)}
 // #define JG(O,I)  {0x7F,((UC)(O)-2)}
 
-#define JMP(O,I)  {0xEB,((UC)(O)-2)}
-#define JMP4(O,I) {0xE9,BYTES4((O)-5)}
+// #define JMP(O,I)  {0xEB,((UC)(O)-2)}
+// #define JMP4(O,I) {0xE9,BYTES4((O)-5)}
 
 #define SETO(O,I)  {REX1(O,0),0x0F,0x90,A_REG(O,0)}
 #define SETNO(O,I) {REX1(O,0),0x0F,0x91,A_REG(O,0)}
@@ -332,31 +346,17 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 
 
 
-#define ASM(INS, O, I) ASM_RAW(b_o, INS(O, I))
-#define ASM3(INS, O, A, B) ASM_RAW(b_o, INS(O, A, B))
-// #define ADDI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(ADDI1,O,v); else ASM(ADDI4,O,v); } } // I must fit in i32
-// #define SUBI(O, I) { i32 v=(i32)(I); if(v) { if(v==(i8)v) ASM(SUBI1,O,v); else ASM(SUBI4,O,v); } } // I must fit in i32
-// #define IMM(O, I) b_o=imm_impl(b_o, O, (u64)(I));
-// static NOINLINE TStack* imm_impl(TStack* b_o, Reg o, u64 i) {
-//   if(i==0) {
-//     ASM(XOR,o,o);
-//   } else if(i>=0 & i<(1ULL<<32)) {
-//     ASM(MOV4_RI,o,i);
-//   } else {
-//     ASM(MOV_RI,o,i);
-//   }
-//   return b_o;
-// }
+#define ASM1(X) ({ asm_w1(ic, X); ic+= 1; })
+#define ASM4(X) ({ asm_w4(ic, X); ic+= 4; })
+#define ASM8(X) ({ asm_w8(ic, X); ic+= 8; })
+#define ASMS u8* ic=asm_ins.c
+#define ASME asm_ins.c = ic; asm_r()
 
 
 
-// #define nREX0_3(O,I,E) (REX0(O,I)+(((E)>7)<<1))
-// #define nREX8_3(O,I,E) (0x48 + nREX0_3(O,I,E))
-// #define nREX4_3(O,I,E) (0x40 + nREX0_3(O,I,E))
-
-// #define nREX1(O,I) 0x40 , (0x40 + REX0(O,I))
-#define nREX8(O,I) ASM1(0x48 + REX0(O,I))
-#define nREX4(O,I) {u8 t=REX0(O,I); if(t) ASM1(0x40+t); }
+#define nREX0(O,I) (((O)>7)+(((I)>7)<<2))
+#define nREX8(O,I) ASM1(0x48 + nREX0(O,I))
+#define nREX4(O,I) {u8 t=nREX0(O,I); if(t) ASM1(0x40+t); }
 #define CHK4(O) (((O)&7)==4)
 #define CHK5(O) (((O)&7)==5)
 #define CHK45(O) (((O)&7)>>1==2)
@@ -373,10 +373,10 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define nA_0REG(O,I) (((I)&7)<<3) + ((O)&7)
 #define nA_REG(O,I) ASM1(0xC0 + nA_0REG(O,I)) // aka MRM immediate
 
-#define ASMI(N, ...) static NOINLINE void i##N(TStack* b_o, __VA_ARGS__)
-#define  AC1(N,A    ) (i##N(b_o=asm_r(b_o),A    ))
-#define  AC2(N,A,B  ) (i##N(b_o=asm_r(b_o),A,B  ))
-#define  AC3(N,A,B,C) (i##N(b_o=asm_r(b_o),A,B,C))
+#define ASMI(N, ...) static NOINLINE void i##N(__VA_ARGS__)
+#define  AC1(N,A    ) i##N(A    )
+#define  AC2(N,A,B  ) i##N(A,B  )
+#define  AC3(N,A,B,C) i##N(A,B,C)
 
 // meaning of lowercase after basic instr name:
 //   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced, 'p' - offset to rip; if all are 'r' or they don't have other options, they can be omitted
@@ -411,8 +411,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define MOV8mro(I,O,OFF) AC3(MOV8mro,I,O,OFF) // *(u64*)(nullptr + I + OFF) ← O
 #define MOV4rmo(O,I,OFF) AC3(MOV4rmo,O,I,OFF)
 #define MOV4mro(I,O,OFF) AC3(MOV4mro,I,O,OFF)
-#define MOV8pr(POS,I) {AC2(MOV8pr,(u64)(POS),I); TSADD(b_r, ASM_SIZE-4);}
-#define MOV8rp(I,POS) {AC2(MOV8rp,(u64)(POS),I); TSADD(b_r, ASM_SIZE-4);}
+#define MOV8pr(POS,I) { AC2(MOV8pr,(u64)(POS),I); asm_addRel(ASM_SIZE-4); }
+#define MOV8rp(I,POS) { AC2(MOV8rp,(u64)(POS),I); asm_addRel(ASM_SIZE-4); }
 
 #define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
 #define BZHI(O,I,N) AC3(BZHI,O,I,N) // requires __BMI2__
@@ -420,8 +420,8 @@ static inline void asm_a(TStack* o, u64 len, u8 v[]) {
 #define PUSH(O) AC1(PUSH,O)
 #define POP(O) AC1(POP,O)
 #define CALL(I) AC1(CALL,I)
-#define CALLi(POS) {AC1(CALLi,(u64)(POS)); TSADD(b_r, ASM_SIZE-4);} // POS must be 32-bit
-#define RET() {b_o=asm_r(b_o); ASM1(0xC3);}
+#define CALLi(POS) { AC1(CALLi,(u64)(POS)); asm_addRel(ASM_SIZE-4); } // POS must be 32-bit
+#define RET() { ASMS; ASM1(0xC3); ASME; }
 
 static const u8 cO  = 0x0; static const u8 cNO = 0x1;
 static const u8 cB  = 0x2; static const u8 cAE = 0x3;
@@ -431,53 +431,55 @@ static const u8 cS  = 0x8; static const u8 cNS = 0x9;
 static const u8 cP  = 0xA; static const u8 cNP = 0xB;
 static const u8 cL  = 0xC; static const u8 cGE = 0xD;
 static const u8 cLE = 0xE; static const u8 cG  = 0xF;
-#define J1(T, L) u64 L=ASM_SIZE; {b_o=asm_r(b_o);            ASM1((i8)(0x70+(T)));ASM1(-2);} // -2 comes from the instruction being 2 bytes long and L being defined at the start
-#define J4(T, L) u64 L=ASM_SIZE; {b_o=asm_r(b_o); ASM1(0x0f);ASM1((i8)(0x80+(T)));ASM4(-6);}
-#define LBL1(L) { i64 t=    (i8)b_o->data[L+1]  + ASM_SIZE-(i64)L; if(t!=(i8 )t) err("x86-64 codegen: jump too long!"); b_o->data[L+1] = t; }
-#define LBL4(L) { i64 t=asm_r4(b_o->data+(L+2)) + ASM_SIZE-(i64)L; if(t!=(i32)t) err("x86-64 codegen: jump too long!"); asm_w4(b_o->data+(L+2), t); }
+#define J1(T, L) u64 L=ASM_SIZE; { ASMS;            ASM1((i8)(0x70+(T)));ASM1(-2);ASME; } // -2 comes from the instruction being 2 bytes long and L being defined at the start
+#define J4(T, L) u64 L=ASM_SIZE; { ASMS; ASM1(0x0f);ASM1((i8)(0x80+(T)));ASM4(-6);ASME; }
+#define LBL1(L) { i64 t=    (i8)asm_ins.s[L+1]  + ASM_SIZE-(i64)L; if(t!=(i8 )t) err("x86-64 codegen: jump too long!"); asm_ins.s[L+1] = t; }
+#define LBL4(L) { i64 t=asm_r4(asm_ins.s+(L+2)) + ASM_SIZE-(i64)L; if(t!=(i32)t) err("x86-64 codegen: jump too long!"); asm_w4(asm_ins.s+(L+2), t); }
 
-ASMI(ADD, Reg o, Reg i) { nREX8(o,i); ASM1(0x01); nA_REG(o,i); }
-ASMI(SUB, Reg o, Reg i) { nREX8(o,i); ASM1(0x29); nA_REG(o,i); }
-ASMI(XOR, Reg o, Reg i) { nREX8(o,i); ASM1(0x31); nA_REG(o,i); }
-ASMI( OR, Reg o, Reg i) { nREX8(o,i); ASM1(0x09); nA_REG(o,i); }
-ASMI(AND, Reg o, Reg i) { nREX8(o,i); ASM1(0x21); nA_REG(o,i); }
-ASMI(CMP, Reg o, Reg i) { nREX8(o,i); ASM1(0x39); nA_REG(o,i); }
-ASMI(XOR4, Reg o, Reg i) { nREX4(o,i); ASM1(0x31); nA_REG(o,i); }
-ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,0); ASM1(imm); } else { ASM1(0x81); nA_REG(o,0); ASM4(imm); } }
-ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,5); ASM1(imm); } else { ASM1(0x81); nA_REG(o,5); ASM4(imm); } }
-ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; nREX8(o,0); ASM1(0xC1); nA_REG(o,4); ASM1(imm); }
-ASMI(SHRi, Reg o, i8 imm) { if(!imm) return; nREX8(o,0); ASM1(0xC1); nA_REG(o,5); ASM1(imm); }
-ASMI(ADD4mi, Reg o, i32 imm) { nREX4(o,0); ASM1(0x83); nA_REG(o,0); ASM1(imm); }
+ASMI(ADD, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x01); nA_REG(o,i); ASME; }
+ASMI(SUB, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x29); nA_REG(o,i); ASME; }
+ASMI(XOR, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
+ASMI( OR, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x09); nA_REG(o,i); ASME; }
+ASMI(AND, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x21); nA_REG(o,i); ASME; }
+ASMI(CMP, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x39); nA_REG(o,i); ASME; }
+ASMI(XOR4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
+ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,0); ASM1(imm); } else { ASM1(0x81); nA_REG(o,0); ASM4(imm); } ASME; }
+ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,5); ASM1(imm); } else { ASM1(0x81); nA_REG(o,5); ASM4(imm); } ASME; }
+ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; ASMS; nREX8(o,0); ASM1(0xC1); nA_REG(o,4); ASM1(imm); ASME; }
+ASMI(SHRi, Reg o, i8 imm) { if(!imm) return; ASMS; nREX8(o,0); ASM1(0xC1); nA_REG(o,5); ASM1(imm); ASME; }
+ASMI(ADD4mi, Reg o, i32 imm) { ASMS; nREX4(o,0); ASM1(0x83); nA_REG(o,0); ASM1(imm); ASME; }
 
-ASMI(INC4mo, Reg o, i32 off) { nREX4(o,0); ASM1(0xff); MRMo(o,0,off); }
-ASMI(INC8mo, Reg o, i32 off) { nREX8(o,0); ASM1(0xff); MRMo(o,0,off); }
-ASMI(DEC4mo, Reg o, i32 off) { nREX4(o,0); ASM1(0xff); MRMo(o,1,off); }
-ASMI(DEC8mo, Reg o, i32 off) { nREX8(o,0); ASM1(0xff); MRMo(o,1,off); }
+ASMI(INC4mo, Reg o, i32 off) { ASMS; nREX4(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
+ASMI(INC8mo, Reg o, i32 off) { ASMS; nREX8(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
+ASMI(DEC4mo, Reg o, i32 off) { ASMS; nREX4(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
+ASMI(DEC8mo, Reg o, i32 off) { ASMS; nREX8(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
 
 
-ASMI(MOV4, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); nA_REG(o,i); }
-ASMI(MOV , Reg o, Reg i) { nREX8(o,i); ASM1(0x89); nA_REG(o,i); }
+ASMI(MOV4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
+ASMI(MOV , Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
 ASMI(MOVi, Reg o, i64 i) {
-  if (i==0) { iXOR4(b_o,o,o); }
-  else if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
-  else                { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
+  if (i==0) { iXOR4(o,o); return; }
+  ASMS;
+  if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
+  else           { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
+  ASME;
 }
-ASMI(MOVi1l, Reg o, i8 imm) { if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); }
-ASMI(MOV4moi, Reg o, i32 off, i32 imm) { nREX4(o,0); ASM1(0xc7); MRMo(o,0,off); ASM4(imm); }
-ASMI(MOV8mr, Reg o, Reg i) { nREX8(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { nREX8(o,i); ASM1(0x89); MRMo(o,i, off); }
-ASMI(MOV8rm, Reg i, Reg o) { nREX8(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); }
-ASMI(MOV4mr, Reg o, Reg i) { nREX4(o,i); ASM1(0x89); MRM(o,i); }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { nREX4(o,i); ASM1(0x89); MRMo(o,i, off); }
-ASMI(MOV4rm, Reg i, Reg o) { nREX4(o,i); ASM1(0x8B); MRM(o,i); }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); }
-ASMI(MOV8pr, u64 pos, Reg i) { nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); }
-ASMI(MOV8rp, u64 pos, Reg i) { nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); }
+ASMI(MOVi1l, Reg o, i8 imm) { ASMS; if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); ASME; }
+ASMI(MOV4moi, Reg o, i32 off, i32 imm) { ASMS;  nREX4(o,0); ASM1(0xc7); MRMo(o,0,off); ASM4(imm); ASME; }
+ASMI(MOV8mr, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { ASMS; nREX8(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
+ASMI(MOV8rm, Reg i, Reg o) { ASMS; nREX8(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { ASMS; nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
+ASMI(MOV4mr, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { ASMS; nREX4(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
+ASMI(MOV4rm, Reg i, Reg o) { ASMS; nREX4(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { ASMS; nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
+ASMI(MOV8pr, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); ASME; }
+ASMI(MOV8rp, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); ASME; }
 
-ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(b_o,o,i); else { nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); } }
-ASMI(BZHI, Reg o, Reg i, Reg n) { ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); }
+ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(o,i); else { ASMS; nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); ASME; } }
+ASMI(BZHI, Reg o, Reg i, Reg n) { ASMS; ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); ASME; }
 
-ASMI(PUSH, Reg O) { nREX4(O,0); ASM1(0x50+((O)&7)); }
-ASMI(POP , Reg O) { nREX4(O,0); ASM1(0x58+((O)&7)); }
+ASMI(PUSH, Reg O) { ASMS; nREX4(O,0); ASM1(0x50+((O)&7)); ASME; }
+ASMI(POP , Reg O) { ASMS; nREX4(O,0); ASM1(0x58+((O)&7)); ASME; }
 
-ASMI(CALL, Reg i) { nREX4(i,0); ASM1(0xFF); nA_REG(i,2); }
-ASMI(CALLi, u64 pos) { ASM1(0xE8); ASM4(pos-4); }
+ASMI(CALL, Reg i) { ASMS; nREX4(i,0); ASM1(0xFF); nA_REG(i,2); ASME; }
+ASMI(CALLi, u64 pos) { ASMS; ASM1(0xE8); ASM4(pos-4); ASME; }
 
 #define IMM(A,B) MOVi(A,(u64)(B))

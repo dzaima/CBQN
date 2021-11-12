@@ -271,7 +271,7 @@ static OptRes opt(u32* bc0) {
     u8 cact = 0;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
-    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: thrM("optimization: didn't expect already immediate FN__");
+    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: err("optimization: didn't expect already immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
       case POPS: { assert(TSSIZE(actions) > 0);
         u64 asz = TSSIZE(actions);
@@ -333,7 +333,7 @@ static OptRes opt(u32* bc0) {
       }
       case TR3D: case TR3O: { S(f,0) S(g,1) S(h,2)
         if (f.p==-1 | g.p==-1 | h.p==-1) goto defIns;
-        if (q_N(f.v)) thrM("JIT optimization: didn't expect constant ·");
+        if (q_N(f.v)) err("JIT optimization: didn't expect constant ·");
         B d = m_fork(inc(f.v), inc(g.v), inc(h.v));
         cact = 5; RM(f.p); RM(g.p); RM(h.p);
         TSADD(data, d.u);
@@ -458,20 +458,16 @@ void freeOpt(OptRes o) {
   TSFREEP(o.offset);
 }
 
-static u32 readBytes4(u8* d) {
-  return d[0] | d[1]<<8 | d[2]<<16 | d[3]<<24;
-}
-
 #define ASM_TEST 0 // make -j4 debug&&./BQN&&objdump -b binary -m i386 -M x86-64,intel --insn-width=12 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
 #if ASM_TEST
   #undef WRITE_ASM
   #define WRITE_ASM 1
   static void write_asm(u8* p, u64 sz);
   static void asm_test() {
+    asm_init();
     ALLOC_ASM(64);
     for (int i = 0; i < 16; i++) MOV4moi(i, 0, 0xaaaaaaaa);
     for (int i = 0; i < 16; i++) MOV4moi(i, 400, 0xaaaaaaaa);
-    GET_ASM();
     write_asm(bin, ASM_SIZE);
     exit(0);
   }
@@ -518,6 +514,7 @@ Nvm_res m_nvm(Body* body) {
   #if ASM_TEST
     asm_test();
   #endif
+  asm_init();
   ALLOC_ASM(64);
   Reg r_CS  = R_P0;
   Reg r_SC  = R_P1;
@@ -610,7 +607,7 @@ Nvm_res m_nvm(Body* body) {
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
-        if (fn==0) thrM("JIT: Bad DFND argument");
+        if (fn==0) err("JIT: Bad DFND argument");
         GET(R_A3,-1,2);
         IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); CCALL(fn);
         break;
@@ -668,7 +665,7 @@ Nvm_res m_nvm(Body* body) {
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
       case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
-      default: thrF("JIT: Unsupported bytecode %i/%S", *s, bc_repr(s));
+      default: print_fmt("JIT: Unsupported bytecode %i/%S", *s, bc_repr(s)); err("");
     }
     #undef GET
     #undef GS_SET
@@ -681,7 +678,7 @@ Nvm_res m_nvm(Body* body) {
     #undef INV
     #undef SPOS
     #undef L64
-    if (n!=bc) thrM("JIT: Wrong parsing of bytecode");
+    if (n!=bc) err("JIT: Wrong parsing of bytecode");
     depth+= stackDiff(s);
     if (ret) break;
   }
@@ -701,11 +698,11 @@ Nvm_res m_nvm(Body* body) {
   #undef VAR8
   #undef VAR
   #undef ALLOCL
-  GET_ASM();
   u64 sz = ASM_SIZE;
   u8* binEx = nvm_alloc(sz);
-  ASM_WRITE(binEx, sz);
+  asm_write(binEx, sz);
   FREE_ASM();
+  asm_free();
   onJIT(body, binEx, sz);
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
 }
