@@ -77,7 +77,7 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
 
 B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
 
-B pair_c1(B t,      B x) { return m_v1(x); }
+B pair_c1(B t,      B x) { return m_vec1(x); }
 B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
 
 B shape_c1(B t, B x) {

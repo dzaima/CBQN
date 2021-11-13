@@ -121,7 +121,7 @@ static inline void asm_r() {
   if (RARE(asm_ins.c+32 > asm_ins.e)) asm_bufDbl(&asm_ins, 32);
 }
 
-static NOINLINE void asm_addRel(u32 v) { // TODO play around with inlining
+static NOINLINE void asm_addRel(u32 v) {
   if (RARE(asm_rel.c == asm_rel.e)) asm_bufDbl(&asm_rel, 4);
   asm_w4(asm_rel.c, v);
   asm_rel.c+= 4;
