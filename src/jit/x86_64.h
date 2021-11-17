@@ -210,8 +210,7 @@ static NOINLINE void asm_write(u8* P, u64 SZ) {
 // #define POP(O,I)  {REX4(O,0),0x58+((O)&7)}
 
 // #define BYTES4(I) ((UC)(I)),((UC)((I)>>8)),((UC)((I)>>16)),((UC)((I)>>24))
-// #define BYTES8(I) BYTES4(I) ,((UC)((I)>>32)),((UC)((I)>>40)) \
-//                             ,((UC)((I)>>48)),((UC)((I)>>56))
+// #define BYTES8(I) BYTES4(I) ,((UC)((I)>>32)),((UC)((I)>>40)),((UC)((I)>>48)),((UC)((I)>>56))
 
 // #define MOV_MR(O,I,OFF) {REX8(O,I),0x89,0x40+A_0REG(O,I),OFF}
 // #define MOV_MR0(O,I)    {REX8(O,I),0x89,A_0REG(O,I)} // TODO is broken on (12,14)

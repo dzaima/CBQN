@@ -438,21 +438,21 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
         if (isVar(c)) {
           Scope* sc = pscs[(u16)(c.u>>32)];
           i32 nameID = sc->body->varIDs[(u32)c.u];
-          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd);
+          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd, true);
         } else if (isExt(c)) {
           ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
-          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd);
+          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true);
         } else if (isObj(c)) {
           assert(v(c)->type == t_fldAlias);
           Scope* sc = pscs[0];
           FldAlias* cf = c(FldAlias,c);
-          v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd);
+          v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd, true);
         } else thrM("Assignment: extracting non-name from namespace");
       }
       return;
     }
     SGetU(x)
-    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd);
+    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd, true);
   }
 }
 NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
@@ -491,6 +491,7 @@ NOINLINE B v_getR(Scope* pscs[], B s) {
   if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->ext->vars[(u32)s.u];
+    if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
     sc->ext->vars[(u32)s.u] = bi_optOut;
     return r;
   } else {
@@ -498,7 +499,7 @@ NOINLINE B v_getR(Scope* pscs[], B s) {
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);
-    for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i]);
+    for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i], true);
     return r.b;
   }
 }
@@ -679,19 +680,19 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
-      case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false); dec(s); ADD(x); break; }
-      case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true ); dec(s); ADD(x); break; }
+      case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false, true); dec(s); ADD(x); break; }
+      case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true,  true); dec(s); ADD(x); break; }
       case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
-        B w = v_get(pscs, s);
+        B w = v_get(pscs, s, true);
         B r = c2(f,w,x); dec(f);
-        v_set(pscs, s, r, true); dec(s);
+        v_set(pscs, s, r, true, false); dec(s);
         ADD(r);
         break;
       }
       case SETC: { P(s)P(f) GS_UPD; POS_UPD;
-        B x = v_get(pscs, s);
+        B x = v_get(pscs, s, true);
         B r = c1(f,x); dec(f);
-        v_set(pscs, s, r, true); dec(s);
+        v_set(pscs, s, r, true, false); dec(s);
         ADD(r);
         break;
       }

@@ -146,18 +146,18 @@ INS B i_EXTU(u32 p, Scope* sc) {
   vars[p] = bi_optOut;
   return r;
 }
-INS B i_SETN(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, false); dec(s); return x; }
-INS B i_SETU(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, true ); dec(s); return x; }
+INS B i_SETN(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, false, true); dec(s); return x; }
+INS B i_SETU(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, true,  true); dec(s); return x; }
 INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
-  B w = v_get(pscs, s);
+  B w = v_get(pscs, s, true);
   B r = c2(f,w,x); dec(f);
-  v_set(pscs, s, r, true); dec(s);
+  v_set(pscs, s, r, true, false); dec(s);
   return r;
 }
 INS B i_SETC(B s, B f, Scope** pscs, u32* bc) { POS_UPD;
-  B x = v_get(pscs, s);
+  B x = v_get(pscs, s, true);
   B r = c1(f,x); dec(f);
-  v_set(pscs, s, r, true); dec(s);
+  v_set(pscs, s, r, true, false); dec(s);
   return r;
 }
 FORCE_INLINE B gotoNextBodyJIT(Scope* sc, Body* body) {
@@ -182,14 +182,14 @@ INS B i_PRED2(B x, Scope* sc, u32* bc, Body* v1, Body* v2) { POS_UPD;
   if (o2b(x)) return bi_okHdr;
   return gotoNextBodyJIT(sc, q_N(sc->vars[2])? v1 : v2);
 }
-INS B i_SETNi(     B x, Scope* sc, u32 p         ) {          v_setI(sc, p, inc(x), false); return x; }
-INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true ); return x; }
-INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, inc(r), true); return r; }
-INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, inc(r), true); return r; }
-INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, false); }
-INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true ); }
-INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p),x); dec(f); v_setI(sc, p, r, true); }
-INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p)  ); dec(f); v_setI(sc, p, r, true); }
+INS B i_SETNi(     B x, Scope* sc, u32 p         ) {          v_setI(sc, p, inc(x), false, false); return x; }
+INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true,  false); return x; }
+INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, false),x); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
+INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, false)  ); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
+INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, false, false); }
+INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true,  false); }
+INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, false),x); dec(f); v_setI(sc, p, r, true, false); }
+INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, false)  ); dec(f); v_setI(sc, p, r, true, false); }
 INS B i_FLDO(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));

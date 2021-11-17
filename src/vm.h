@@ -251,33 +251,34 @@ typedef struct VfyObj {
 
 
 NOINLINE B v_getR(Scope* pscs[], B s); // doesn't consume
-static inline B v_getI(Scope* sc, u32 p) {
+FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
   B r = sc->vars[p];
+  if (chk && r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
   sc->vars[p] = bi_optOut;
   return r;
 }
-static inline B v_get(Scope* pscs[], B s) { // get value representing s, replacing with bi_optOut; doesn't consume
+FORCE_INLINE B v_get(Scope* pscs[], B s, bool chk) { // get value representing s, replacing with bi_optOut; doesn't consume; if chk is false, content variables _may_ not be checked to be set
   if (RARE(!isVar(s))) return v_getR(pscs, s);
-  return v_getI(pscs[(u16)(s.u>>32)], (u32)s.u);
+  return v_getI(pscs[(u16)(s.u>>32)], (u32)s.u, chk);
 }
 
 NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd); // doesn't consume
 NOINLINE bool v_sethR(Scope* pscs[], B s, B x); // doesn't consume
-static inline void v_setI(Scope* sc, u32 p, B x, bool upd) { // consumes x
-  B prev = sc->vars[p];
+FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consumes x
   if (upd) {
-    if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
+    B prev = sc->vars[p];
+    if (chk && prev.u==bi_noVar.u) thrM("↩: Updating variable that hasn't been set");
     dec(prev);
   }
   sc->vars[p] = x;
 }
-static inline void v_set(Scope* pscs[], B s, B x, bool upd) { // doesn't consume
+FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk) { // doesn't consume; if chk is false, content variables _may_ not be checked to be set
   if (RARE(!isVar(s))) v_setR(pscs, s, x, upd);
-  else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd);
+  else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd, chk);
 }
 
-static inline bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables
+FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables
   if (RARE(!isVar(s))) return v_sethR(pscs, s, x);
-  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false);
+  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false, false);
   return true;
 }
