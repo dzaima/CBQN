@@ -93,8 +93,8 @@ static HArr* toHArr(B x) { return v(x)->type==t_harr? c(HArr,x) : cpyHArr(x); }
 B m_caB(usz ia, B* a);
 
 // consumes all
-static B m_v1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;                                     return r.b; }
-static B m_v2(B a, B b          ) { HArr_p r = m_harrUv(2); r.a[0] = a; r.a[1] = b;                         return r.b; }
-static B m_v3(B a, B b, B c     ) { HArr_p r = m_harrUv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             return r.b; }
-static B m_v4(B a, B b, B c, B d) { HArr_p r = m_harrUv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; return r.b; }
+static B m_hVec1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;                                     return r.b; }
+static B m_hVec2(B a, B b          ) { HArr_p r = m_harrUv(2); r.a[0] = a; r.a[1] = b;                         return r.b; }
+static B m_hVec3(B a, B b, B c     ) { HArr_p r = m_harrUv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             return r.b; }
+static B m_hVec4(B a, B b, B c, B d) { HArr_p r = m_harrUv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; return r.b; }
 

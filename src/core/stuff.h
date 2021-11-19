@@ -92,10 +92,10 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
 B bit_sel(B b, B e0, bool h0, B e1, bool h1); // consumes b; h0/h1 can be true if unknown
 
 
-static B m_v1(B a               ); // consumes all
-static B m_v2(B a, B b          ); // consumes all
-static B m_v3(B a, B b, B c     ); // consumes all
-static B m_v4(B a, B b, B c, B d); // consumes all
+static B m_hVec1(B a               ); // consumes all
+static B m_hVec2(B a, B b          ); // consumes all
+static B m_hVec3(B a, B b, B c     ); // consumes all
+static B m_hVec4(B a, B b, B c, B d); // consumes all
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills
 

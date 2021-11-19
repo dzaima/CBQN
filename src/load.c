@@ -186,7 +186,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_v4(incG(load_rtObj), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2(load_comp, m_hVec4(incG(load_rtObj), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
@@ -208,10 +208,10 @@ void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
 
 
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
-static NOINLINE B m_lvB_1(B a               ) { return m_v1(a); }
-static NOINLINE B m_lvB_2(B a, B b          ) { return m_v2(a,b); }
-static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_v3(a,b,c); }
-static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_v4(a,b,c,d); }
+static NOINLINE B m_lvB_1(B a               ) { return m_hVec1(a); }
+static NOINLINE B m_lvB_2(B a, B b          ) { return m_hVec2(a,b); }
+static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hVec3(a,b,c); }
+static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hVec4(a,b,c,d); }
 static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
 static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
 static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
@@ -312,9 +312,9 @@ void load_init() { // very last init function
     dec(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
-    dec(c1(rtFinish, m_v2(incG(bi_decp), incG(bi_primInd)))); dec(rtFinish);
+    dec(c1(rtFinish, m_hVec2(incG(bi_decp), incG(bi_primInd)))); dec(rtFinish);
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
-    load_compArg = m_v2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
     gc_add(load_compArg);
   #else
     B* runtime = fruntime;

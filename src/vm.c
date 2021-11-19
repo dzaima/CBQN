@@ -913,7 +913,7 @@ void funBl_print(B x) { printf("{function"" block}"); }
 void md1Bl_print(B x) { printf("{1-modifier block}"); }
 void md2Bl_print(B x) { printf("{2-modifier block}"); }
 
-B block_decompose(B x) { return m_v2(m_i32(1), x); }
+B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
 
 static usz pageSizeV;
 usz getPageSize() {

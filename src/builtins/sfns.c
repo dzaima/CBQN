@@ -72,7 +72,7 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
     return taga(ra);
   }
   noFills:
-  return m_v2(a,b);
+  return m_hVec2(a,b);
 }
 
 B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }

@@ -92,9 +92,9 @@ An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The return
 
 A heap-allocated object can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to any pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (see `enum Type` in `src/h.h`), which is used by runtime functions to decide how to interpret an object.
 
-Reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)` (`inc(x)` also returns `x`, so you can use it inline in the consumer). A pointer type has `ptr_inc(x)`/`ptr_dec(x)`. `dec`/`ptr_dec` will return the object to the memory manager if the refcount goes to zero.
+Reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` has `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)`/`ptr_inc(x)` will return the argument, so you can use it inline, and `dec`/`ptr_dec` will return the object to the memory manager if the refcount goes to zero.
 
-Since reference counting is hard, there's `make heapverify` that verifies that code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running:
+Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running:
 ```bash
 #!/usr/bin/env bash
 make   rtverify && echo   'rtverify:' && ./BQN -M 1000 path/to/mlochbaum/BQN/test/this.bqn
@@ -200,10 +200,10 @@ u64 sz = utf8lenB(x); TALLOC(char, buf, sz+1); toUTF8(x, buf); buf[sz]=0; /*use 
 B r = m_unit(x); // equivalent to <𝕩
 B r = m_hunit(x); // like the above, except no fill is set
 B r = m_atomUnit(x); // if x is likely to be an atom, this is a better alternative to m_unit
-B r = m_v1(a); // ⟨a⟩
-B r = m_v2(a,b); // ⟨a,b⟩
-B r = m_v3(a,b,c); // ⟨a,b,c⟩
-B r = m_v4(a,b,c,d); // ⟨a,b,c,d⟩
+B r = m_hVec1(a); // ⟨a⟩
+B r = m_hVec2(a,b); // ⟨a,b⟩
+B r = m_hVec3(a,b,c); // ⟨a,b,c⟩
+B r = m_hVec4(a,b,c,d); // ⟨a,b,c,d⟩
 B r = emptyHVec(); // an empty vector with no fill
 B r = emptyIVec(); // an empty integer vector
 B r = emptyCVec(); // an empty character vector

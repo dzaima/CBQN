@@ -41,8 +41,8 @@ B type_c1(B t, B x) {
 }
 
 B decp_c1(B t, B x) {
-  if (!isVal(x)) return m_v2(m_i32(-1), x);
-  if (isPrim(x)) return m_v2(m_i32(0), x);
+  if (!isVal(x)) return m_hVec2(m_i32(-1), x);
+  if (isPrim(x)) return m_hVec2(m_i32(0), x);
   return TI(x,decompose)(x);
 }
 
@@ -537,7 +537,7 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  return m_nfn(reBQNDesc, m_v2(m_f64(replVal), scVal));
+  return m_nfn(reBQNDesc, m_hVec2(m_f64(replVal), scVal));
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
@@ -753,7 +753,7 @@ B sh_c1(B t, B x) {
   
   posix_spawn_file_actions_destroy(&a);
   dec(x);
-  return m_v3(m_i32(WEXITSTATUS(status)), s_out, s_err);
+  return m_hVec3(m_i32(WEXITSTATUS(status)), s_out, s_err);
 }
 #else
 B sh_c1(B t, B x) {

@@ -62,7 +62,7 @@ B def_m1_ucw(B t, B o, B f,      B w, B x) { B t2 = m1_d(inc(t),inc(f)       ); 
 B def_m2_uc1(B t, B o, B f, B g,      B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
 B def_m2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = m2_d(inc(t),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
 B def_decompose(B x) {
-  return m_v2(m_i32(isCallable(x)? (isImpureBuiltin(x)? 1 : 0) : -1),x);
+  return m_hVec2(m_i32(isCallable(x)? (isImpureBuiltin(x)? 1 : 0) : -1),x);
 }
 
 B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
