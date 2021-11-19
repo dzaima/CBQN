@@ -348,7 +348,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   
   i32 bodyCount = TSSIZE(bodies);
   Block* bl = mm_alloc(fsizeof(Block,bodies,Body*,bodyCount), t_block);
-  bl->comp = comp; ptr_inc(comp);
+  bl->comp = ptr_inc(comp);
   bl->ty = (u8)ty;
   bl->bc = nbc;
   bl->blocks = nBl==NULL? NULL : nBl->a;
@@ -532,7 +532,6 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     printf("new eval\n");
     B* origStack = gStack;
   #endif
-  B* objs = bl->comp->objs->a;
   u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
@@ -577,7 +576,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
     switch(*bc++) {
       case POPS: dec(POP); break;
       case PUSH: {
-        ADD(inc(objs[*bc++]));
+        ADD(inc(bl->comp->objs->a[*bc++]));
         break;
       }
       case ADDI: {
@@ -716,9 +715,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case RETD: {
-        ptr_inc(sc);
-        ptr_inc(b->nsDesc);
-        ADD(m_ns(sc, b->nsDesc));
+        ADD(m_ns(ptr_inc(sc), ptr_inc(b->nsDesc)));
         goto end;
       }
       case ALIM: { P(o) u32 l = *bc++;
@@ -773,8 +770,8 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
 
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // consumes initVarAm items of initVars
   Scope* sc = mm_alloc(fsizeof(Scope, vars, B, varAm), t_scope);
-  sc->body = body; ptr_inc(body);
-  sc->psc = psc; if(psc) ptr_inc(psc);
+  sc->body = ptr_inc(body);
+  sc->psc = psc; if (psc) ptr_inc(psc);
   sc->varAm = varAm;
   sc->ext = NULL;
   i32 i = 0;
@@ -783,7 +780,7 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
   return sc;
 }
 
-B execBlockInline(Block* block, Scope* sc) { ptr_inc(sc); return execBodyInlineI(block, block->bodies[0], sc); }
+B execBlockInline(Block* block, Scope* sc) { return execBodyInlineI(block, block->bodies[0], ptr_inc(sc)); }
 
 FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   u16 varAm = body->varAm;
@@ -807,24 +804,24 @@ B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
   FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);
-  r->bl = bl; ptr_inc(bl);
-  r->sc = psc; ptr_inc(psc);
+  r->bl = ptr_inc(bl);
+  r->sc = ptr_inc(psc);
   r->c1 = funBl_c1;
   r->c2 = funBl_c2;
   return tag(r,FUN_TAG);
 }
 B m_md1Block(Block* bl, Scope* psc) {
   Md1Block* r = mm_alloc(sizeof(Md1Block), t_md1_block);
-  r->bl = bl; ptr_inc(bl);
-  r->sc = psc; ptr_inc(psc);
+  r->bl = ptr_inc(bl);
+  r->sc = ptr_inc(psc);
   r->c1 = md1Bl_c1;
   r->c2 = md1Bl_c2;
   return tag(r,MD1_TAG);
 }
 B m_md2Block(Block* bl, Scope* psc) {
   Md2Block* r = mm_alloc(sizeof(Md2Block), t_md2_block);
-  r->bl = bl; ptr_inc(bl);
-  r->sc = psc; ptr_inc(psc);
+  r->bl = ptr_inc(bl);
+  r->sc = ptr_inc(psc);
   r->c1 = md2Bl_c1;
   r->c2 = md2Bl_c2;
   return tag(r,MD2_TAG);

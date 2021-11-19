@@ -105,7 +105,7 @@ static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
   return (Arr*)r;
 }
 static Arr* harr_slice  (B x, usz s, usz ia) { return m_hslice(a(x), c(HArr,x)->a+s, ia); }
-static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); dec(x); return r; }
+static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); dec(x); return r; }
 
 static B harr_get   (Arr* x, usz n) { assert(x->type==t_harr  ); return inc(((HArr*  )x)->a[n]); }
 static B hslice_get (Arr* x, usz n) { assert(x->type==t_hslice); return inc(((HSlice*)x)->a[n]); }

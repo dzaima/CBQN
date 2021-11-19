@@ -50,7 +50,7 @@ static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape 
 }
 static void arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
   sprnk(x,r);
-  if (r>1) { x->sh = sh->a; ptr_inc(sh); }
+  if (r>1) { x->sh = ptr_inc(sh)->a; }
   else     { x->sh = &x->ia; }
 }
 static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape

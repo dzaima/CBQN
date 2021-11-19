@@ -295,7 +295,6 @@ static void  mm_visitP(void* x);
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
-static void ptr_inc(void* x);
 void printRaw(B x);       // doesn't consume
 void print(B x);          // doesn't consume
 void arr_print(B x);      // doesn't consume
@@ -518,7 +517,7 @@ static B incBy(B x, i64 am) { // am mustn't be negative!
   if (isVal(VALIDATE(x))) v(x)->refc+= am;
   return x;
 }
-static void ptr_inc(void* x) { VALIDATEP((Value*)x)->refc++; }
+#define ptr_inc(X) ({ AUTO x_ = (X); VALIDATEP((Value*)x_)->refc++; x_; })
 
 
 

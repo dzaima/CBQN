@@ -1215,8 +1215,7 @@ B shape_uc1(B t, B o, B x) {
   usz xia = a(x)->ia;
   if (rnk(x)==1) return shape_uc1_t(c1(o, x), xia);
   ur xr = rnk(x);
-  ShArr* sh = shObj(x);
-  ptr_inc(sh);
+  ShArr* sh = ptr_inc(shObj(x));
   return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
 }
 

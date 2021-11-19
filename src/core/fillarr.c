@@ -38,7 +38,7 @@ static Arr* m_fillslice(Arr* p, B* ptr, usz ia) {
   return (Arr*)r;
 }
 static Arr* fillarr_slice  (B x, usz s, usz ia) { return m_fillslice(a(x), c(FillArr,x)->a+s, ia); }
-static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p=c(Slice,x)->p; ptr_inc(p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); dec(x); return r; }
+static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); dec(x); return r; }
 
 static B fillarr_get   (Arr* x, usz n) { assert(x->type==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
 static B fillslice_get (Arr* x, usz n) { assert(x->type==t_fillslice); return inc(((FillSlice*)x)->a[n]); }

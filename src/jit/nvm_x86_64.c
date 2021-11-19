@@ -215,10 +215,7 @@ INS B i_FAIL(u32* bc, Scope* sc, B* cStack) {
   POS_UPD; GS_UPD; thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
 }
 INS B i_RETD(Scope* sc) {
-  Body* b = sc->body;
-  ptr_inc(sc);
-  ptr_inc(b->nsDesc);
-  return m_ns(sc, b->nsDesc);
+  return m_ns(ptr_inc(sc), ptr_inc(sc->body->nsDesc));
 }
 
 #undef INS

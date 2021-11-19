@@ -19,8 +19,8 @@ static void repl_init() {
 
 static B gsc_exec_inline(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
-  ptr_dec(gsc->body); ptr_inc(block->bodies[0]); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
-  gsc->body = block->bodies[0];
+  ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
+  gsc->body = ptr_inc(block->bodies[0]);
   B r = execBlockInline(block, gsc);
   ptr_dec(block);
   return r;
@@ -199,8 +199,8 @@ int main(int argc, char* argv[]) {
       }
       Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
       
-      ptr_dec(gsc->body); ptr_inc(block->bodies[0]);
-      gsc->body = block->bodies[0];
+      ptr_dec(gsc->body);
+      gsc->body = ptr_inc(block->bodies[0]);
       
       B res;
       if (time) {

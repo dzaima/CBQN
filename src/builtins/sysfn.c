@@ -552,8 +552,8 @@ B repl_c2(B t, B w, B x) {
   B res;
   if (replMode>0) {
     Block* block = bqn_compSc(x, fullpath, args, sc, replMode==2);
-    ptr_dec(sc->body); ptr_inc(block->bodies[0]);
-    sc->body = block->bodies[0];
+    ptr_dec(sc->body);
+    sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInline(block, sc);
     ptr_dec(block);
   } else {
