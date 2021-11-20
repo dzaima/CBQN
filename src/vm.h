@@ -206,7 +206,28 @@ static inline void popEnv() {
   assert(envCurr>=envStart);
   envCurr--;
 }
-FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that tries to also free trivial cycles
+FORCE_INLINE i32 argCount(u8 ty, bool imm) { return (imm?0:3) + ty + (ty>0); }
+FORCE_INLINE i32 blockGivenVars(Block* bl) { return argCount(bl->ty, bl->imm); }
+void vm_pst(Env* s, Env* e);
+void vm_pstLive(void);
+void vm_printPos(Comp* comp, i32 bcPos, i64 pos);
+NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce); // consumes prepend
+NOINLINE void printErrMsg(B msg);
+NOINLINE void unwindEnv(Env* envNew); // envNew==envStart-1 for emptying the env stack
+NOINLINE void unwindCompiler(void); // unwind to the env of the invocation of the compiler; UB when not in compiler!
+usz getPageSize();
+
+
+
+DEF_FREE(scope) {
+  Scope* c = (Scope*)x;
+  if (LIKELY(c->psc!=NULL)) ptr_decR(c->psc);
+  if (RARE  (c->ext!=NULL)) ptr_decR(c->ext);
+  ptr_decR(c->body);
+  u16 am = c->varAm;
+  for (u32 i = 0; i < am; i++) dec(c->vars[i]);
+}
+FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that tries to also free trivial cycles. force-inlined!!
   i32 varAm = sc->varAm;
   if (sc->refc>1) {
     i32 innerRef = 1;
@@ -225,18 +246,9 @@ FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that 
       return;
     }
   }
-  ptr_dec(sc);
+  tptr_dec(sc, scope_freeF);
 }
-FORCE_INLINE i32 argCount(u8 ty, bool imm) { return (imm?0:3) + ty + (ty>0); }
-FORCE_INLINE i32 blockGivenVars(Block* bl) { return argCount(bl->ty, bl->imm); }
-void vm_pst(Env* s, Env* e);
-void vm_pstLive(void);
-void vm_printPos(Comp* comp, i32 bcPos, i64 pos);
-NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce); // consumes prepend
-NOINLINE void printErrMsg(B msg);
-NOINLINE void unwindEnv(Env* envNew); // envNew==envStart-1 for emptying the env stack
-NOINLINE void unwindCompiler(void); // unwind to the env of the invocation of the compiler; UB when not in compiler!
-usz getPageSize();
+
 
 
 typedef struct FldAlias {

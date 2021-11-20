@@ -824,14 +824,6 @@ B m_md2Block(Block* bl, Scope* psc) {
   return tag(r,MD2_TAG);
 }
 
-DEF_FREE(scope) {
-  Scope* c = (Scope*)x;
-  if (LIKELY(c->psc!=NULL)) ptr_decR(c->psc);
-  if (RARE  (c->ext!=NULL)) ptr_decR(c->ext);
-  ptr_decR(c->body);
-  u16 am = c->varAm;
-  for (u32 i = 0; i < am; i++) dec(c->vars[i]);
-}
 DEF_FREE(body) {
   Body* c = (Body*)x;
   #if JIT_START!=-1
