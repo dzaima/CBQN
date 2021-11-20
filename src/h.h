@@ -498,6 +498,7 @@ static void dec(B x) {
 }
 static void ptr_dec(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_free(x); }
 static void ptr_decR(void* x) { if(!--VALIDATEP((Value*)x)->refc) value_freeR(x); }
+#define tptr_dec(X, F) ({ Value* x_ = (Value*)(X); if (!--VALIDATEP(x_)->refc) F(x_); })
 static void decR(B x) {
   if (!isVal(VALIDATE(x))) return;
   Value* vx = v(x);
