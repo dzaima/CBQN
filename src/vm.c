@@ -627,16 +627,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       case DFND0: { GS_UPD;POS_UPD; ADD(m_funBlock((Block*)L64, sc)); break; }
       case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block((Block*)L64, sc)); break; }
       case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block((Block*)L64, sc)); break; }
-      // case DFND: {
-      //   GS_UPD;POS_UPD;
-      //   Block* cbl = blocks[*bc++];
-      //   switch(cbl->ty) { default: UD;
-      //     case 0: ADD(m_funBlock(cbl, sc)); break;
-      //     case 1: ADD(m_md1Block(cbl, sc)); break;
-      //     case 2: ADD(m_md2Block(cbl, sc)); break;
-      //   }
-      //   break;
-      // }
+      
       case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
       case MD2R: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }
@@ -647,6 +638,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         else ADD(m_fork(f,g,h));
         break;
       }
+      
       case VARM: { u32 d = *bc++; u32 p = *bc++;
         ADD(tag((u64)d<<32 | (u32)p, VAR_TAG));
         break;
@@ -663,6 +655,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
+      
       case EXTM: { u32 d = *bc++; u32 p = *bc++;
         ADD(tag((u64)d<<32 | (u32)p, EXT_TAG));
         break;
@@ -679,6 +672,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         vars[p] = bi_optOut;
         break;
       }
+      
       case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false, true); dec(s); ADD(x); break; }
       case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true,  true); dec(s); ADD(x); break; }
       case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
@@ -695,6 +689,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         ADD(r);
         break;
       }
+      
       case SETHi:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
         if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
@@ -708,15 +703,12 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         if (!o2b(x)) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
+      
       case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, sc->body->nsDesc->nameList, p)));
         dec(ns);
         break;
-      }
-      case RETD: {
-        ADD(m_ns(ptr_inc(sc), ptr_inc(b->nsDesc)));
-        goto end;
       }
       case ALIM: { P(o) u32 l = *bc++;
         FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
@@ -725,7 +717,6 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         ADD(tag(a,OBJ_TAG));
         break;
       }
-      case RETN: goto end;
       case CHKV: {
         if (q_N(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
@@ -737,7 +728,13 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
-      // not implemented: DYNO DYNM FLDM SYSV
+      
+      case RETD: {
+        ADD(m_ns(ptr_inc(sc), ptr_inc(b->nsDesc)));
+        goto end;
+      }
+      case RETN: goto end;
+      
       default:
         #ifdef DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
