@@ -40,6 +40,7 @@ typedef struct BFn {
   B ident;
    BBB2B uc1;
   BBBB2B ucw;
+  BB2B im;
 } BFn;
 typedef struct BMd2 {
   struct Md2;

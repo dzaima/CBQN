@@ -87,4 +87,5 @@ void arith_init() {
   c(BFn,bi_mul)->ident = c(BFn,bi_div)->ident = c(BFn,bi_and)->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ge)->ident = c(BFn,bi_pow)->ident = c(BFn,bi_not)->ident = m_i32(1);
   c(BFn,bi_floor)->ident = m_f64(1.0/0.0);
   c(BFn,bi_ceil )->ident = m_f64(-1.0/0.0);
+  c(BFn, bi_sub)->im = sub_c1;
 }

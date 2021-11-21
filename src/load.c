@@ -468,9 +468,9 @@ void base_init() { // very first init function
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
-  #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FM(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=c2_bad; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FD(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=c1_bad; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=def_fn_im; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FM(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=c2_bad; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=def_fn_im; gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FD(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=c1_bad; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=def_fn_im; gc_add(bi_##N = tag(f,FUN_TAG)); }
   FOR_PFN(FA,FM,FD)
   #undef FA
   #undef FM
