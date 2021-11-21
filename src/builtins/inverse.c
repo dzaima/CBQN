@@ -24,6 +24,21 @@ B fun_invSwap_c2(B t, B w, B x) {
   return TI(f, fn_iw)(f, w, x);
 }
 
+extern B rt_undo;
+B undo_c1(Md1D* d, B x) { B f = d->f;
+  if (isFun(f)) return TI(f, fn_im)(f, x);
+  B fi = m1_d(incG(rt_undo), inc(f));
+  B r = c1(fi, x);
+  dec(fi);
+  return r;
+}
+B undo_c2(Md1D* d, B w, B x) { B f = d->f;
+  if (isFun(f)) return TI(f, fn_ix)(f, w, x);
+  B fi = m1_d(incG(rt_undo), inc(f));
+  B r = c2(fi, w, x);
+  dec(fi);
+  return r;
+}
 
 B setInvReg_c1 (B t, B x) { rt_invFnReg  = x; return inc(bi_nativeInvReg); }
 B setInvSwap_c1(B t, B x) { rt_invFnSwap = x; return inc(bi_nativeInvSwap); }

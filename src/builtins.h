@@ -16,15 +16,16 @@
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
 
 #define FOR_PM1(A,M,D) \
-  /*md1.c*/ A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
+    /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
+/*inverse.c*/A(undo,"⁼") \
 /* everything before the definition of •_timed is defined to be pure, and everything after is not */ \
-  /*md1.c*/ A(timed,"•_timed")
+    /*md1.c*/A(timed,"•_timed")
 
 #define FOR_PM2(A,M,D) \
-  /*md2.c*/ A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
-  /*md2.c*/ A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
+  /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(fillBy,"•_fillBy_") A(catch,"⎊") \
+  /*md2.c*/A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
 /* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
-  /*md2.c*/ A(while,"•_while_")
+  /*md2.c*/A(while,"•_while_")
 
 enum PrimNumbers {
     /* +-×÷⋆√⌊⌈|¬  */ n_add     , n_sub    , n_mul   , n_div  , n_pow    , n_root     , n_floor , n_ceil , n_stile  , n_not,
