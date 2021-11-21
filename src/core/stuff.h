@@ -154,12 +154,18 @@ B chr_squeeze(B x); // consumes; see note below
 // The functions below can be used as direct replacements of (num|chr)_squeeze if the argument might already be squeezed.
 static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
 static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
+
 B def_fn_uc1(B t, B o,                B x);
 B def_fn_ucw(B t, B o,           B w, B x);
 B def_m1_uc1(B t, B o, B f,           B x);
 B def_m1_ucw(B t, B o, B f,      B w, B x);
 B def_m2_uc1(B t, B o, B f, B g,      B x);
 B def_m2_ucw(B t, B o, B f, B g, B w, B x);
+B def_fn_im(B t,      B x);
+B def_fn_is(B t,      B x);
+B def_fn_iw(B t, B w, B x);
+B def_fn_ix(B t, B w, B x);
+
 B def_decompose(B x);
 void noop_visit(Value* x);
 

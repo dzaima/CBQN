@@ -577,6 +577,98 @@ B slash_c2(B t, B w, B x) {
   return c2(rt_slash, w, x);
 }
 
+
+B slash_im(B t, B x) {
+  if (!isArr(x) || rnk(x)!=1) thrM("/⁼: Argument must be an array");
+  u8 xe = TI(x,elType);
+  usz xia = a(x)->ia;
+  if (xia==0) { dec(x); return emptyIVec(); }
+  switch(xe) {
+    case el_i8: {
+      i8* xp = i8any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
+      bool bitres = true;
+      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
+      usz ria = 1 + (usz)xp[xia-1]; B r;
+      if (bitres) {
+        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
+      } else {
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) rp[xp[i]]++;
+      }
+      dec(x); return r;
+    }
+    case el_i16: {
+      i16* xp = i16any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
+      bool bitres = true;
+      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
+      usz ria = 1 + (usz)xp[xia-1]; B r;
+      if (bitres) {
+        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
+      } else {
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) rp[xp[i]]++;
+      }
+      dec(x); return r;
+    }
+    case el_i32: {
+      i32* xp = i32any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
+      bool bitres = true;
+      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
+      usz ria = 1 + (usz)xp[xia-1]; B r;
+      if (bitres) {
+        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
+      } else {
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) rp[xp[i]]++;
+      }
+      dec(x); return r;
+    }
+    case el_f64: {
+      f64* xp = f64any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
+      bool bitres = true;
+      if (xp[0] != (usz)xp[0]) thrM("/⁼: Argument cannot contain fractional numbers");
+      for (usz i = 1; i < xia; i++) {
+        if (xp[i] != (usz)xp[i]) thrM("/⁼: Argument cannot contain fractional numbers");
+        if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
+      }
+      usz ria = 1 + (usz)xp[xia-1]; B r;
+      if (bitres) {
+        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
+      } else {
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) rp[(usz)xp[i]]++;
+      }
+      dec(x); return r;
+    }
+    default: {
+      SLOW1("/⁼", x);
+      B* xp = arr_bptr(x);
+      if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
+      if(o2i64(xp[0])<0) thrM("/⁼: Argument cannot contain negative numbers");
+      bool bitres = true;
+      i64 prev = 0;
+      for (usz i = 1; i < xia; i++) {
+        i64 c = o2i64(xp[i]);
+        if (prev>=c) { bitres=false; if (prev>c) thrM("/⁼: Argument must be sorted"); }
+        prev = c;
+      }
+      usz ria = prev+1; B r;
+      if (bitres) {
+        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64u(xp[i]), 1);
+      } else {
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
+        for (usz i = 0; i < xia; i++) rp[o2i64u(xp[i])]++;
+      }
+      dec(x); return r;
+    }
+  }
+}
+
 static B slicev(B x, usz s, usz ia) {
   usz xia = a(x)->ia; assert(s+ia <= xia);
   Arr* r = TI(x,slice)(x, s, ia); arr_shVec(r);
@@ -1226,4 +1318,5 @@ void sfns_init() {
   c(BFn,bi_slash)->ucw = slash_ucw;
   c(BFn,bi_select)->ucw = select_ucw;
   c(BFn,bi_shape)->uc1 = shape_uc1;
+  c(BFn,bi_slash)->im = slash_im;
 }
