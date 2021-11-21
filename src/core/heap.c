@@ -36,7 +36,7 @@ void heapVerify() {
   heapVerify_mode=1; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
   if (heap_observed) {
     printf("refc of last: %d\n", heap_observed->refc);
-    heapVerify_mode=2; mm_forHeap(heap_getReferents);
+    // heapVerify_mode=2; mm_forHeap(heap_getReferents);
   }
   heapVerify_mode=-1;
 }

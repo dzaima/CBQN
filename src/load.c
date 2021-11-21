@@ -5,7 +5,7 @@
 #include "ns.h"
 #include "builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(load) F(sysfnPost) F(dervPost)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
@@ -148,6 +148,8 @@ void load_gcFn() {
   mm_visit(comp_currPath);
   mm_visit(comp_currArgs);
   mm_visit(comp_currSrc);
+  mm_visit(rt_invFnReg);
+  mm_visit(rt_invFnSwap);
 }
 NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   B   prevPath   = comp_currPath  ; comp_currPath = path;
@@ -265,11 +267,17 @@ void load_init() { // very last init function
     #ifdef ALL_R0
     dec(r0r);
     #endif
-  
+    
     B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
-    B rtObjRaw = IGet(rtRes,0);
-    B rtFinish = IGet(rtRes,1);
+    SGet(rtRes);
+    B rtObjRaw = Get(rtRes,0);
+    B setPrims = Get(rtRes,1);
+    B setInv = Get(rtRes,2);
     dec(rtRes);
+    dec(c1(setPrims, m_hVec2(incG(bi_decp), incG(bi_primInd)))); dec(setPrims);
+    dec(c2(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); dec(setInv);
+    
+    
     
     if (c(Arr,rtObjRaw)->ia != rtLen) err("incorrectly defined rtLen!");
     HArr_p runtimeH = m_harrUc(rtObjRaw);
@@ -312,7 +320,6 @@ void load_init() { // very last init function
     dec(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
-    dec(c1(rtFinish, m_hVec2(incG(bi_decp), incG(bi_primInd)))); dec(rtFinish);
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
     load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
     gc_add(load_compArg);
@@ -399,6 +406,12 @@ static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 
+B rt_invFnReg, rt_invFnSwap;
+B def_fn_im(B t,      B x) { B fn = c(Fun,rt_invFnReg )->c1(rt_invFnReg,  inc(t)); B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_is(B t,      B x) { B fn = c(Fun,rt_invFnSwap)->c1(rt_invFnSwap, inc(t)); B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_iw(B t, B w, B x) { B fn = c(Fun,rt_invFnSwap)->c1(rt_invFnSwap, inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_ix(B t, B w, B x) { B fn = c(Fun,rt_invFnReg )->c1(rt_invFnReg,  inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+
 #ifdef DONT_FREE
 static B empty_get(Arr* x, usz n) {
   x->type = x->flags;
@@ -437,6 +450,10 @@ void base_init() { // very first init function
     TIi(i,m1_ucw) = def_m1_ucw;
     TIi(i,m2_uc1) = def_m2_uc1;
     TIi(i,m2_ucw) = def_m2_ucw;
+    TIi(i,fn_im) = def_fn_im;
+    TIi(i,fn_is) = def_fn_is;
+    TIi(i,fn_iw) = def_fn_iw;
+    TIi(i,fn_ix) = def_fn_ix;
   }
   TIi(t_empty,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
   TIi(t_empty,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;

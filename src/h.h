@@ -194,8 +194,10 @@ typedef union B {
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
   /*38*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
   /*46*/ F(freed) F(harrPartial) \
+  /*48*/ F(fun_invReg ) F(md1_invReg ) F(md2_invReg ) \
+  /*51*/ F(fun_invSwap) F(md1_invSwap) F(md2_invSwap) \
   \
-  /*48*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*54*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -447,6 +449,10 @@ typedef B (*M2C2)(Md2D*, B, B);
   F( BBBBB2B, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
   F( BBBBB2B, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
   F(BBBBBB2B, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
+  F(    BB2B, fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
+  F(    BB2B, fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
+  F(   BBB2B, fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
+  F(   BBB2B, fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
   \
   F(B2b, canStore) /* doesn't consume */ \
   F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \

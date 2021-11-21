@@ -95,8 +95,14 @@ struct Block {
   i32* map; // pointer in an owned I32Arr
   i32* bc; // pointer in an owned I32Arr
   i32 bodyCount;
-  Body* dyBody; // pointer within bodies; not owned; TODO move to the second item of bodies or something
-  Body* bodies[]; // bodies[0] is the first monadic body (also niladic body)
+  
+  // pointers within bodies, not owned
+  Body* dyBody;
+  Body* invMBody;
+  Body* invXBody;
+  Body* invWBody;
+  // bodies[0] is the first monadic body (also niladic body)
+  Body* bodies[];
 };
 struct Body {
   struct Value;
