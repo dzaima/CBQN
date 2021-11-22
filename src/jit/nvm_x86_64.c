@@ -632,23 +632,23 @@ Nvm_res m_nvm(Body* body) {
       } break;
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
-      case SETH1:TOPp; { u64 v1=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
-        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); CCALL(i_SETH1); // (B s, B x, Scope** pscs, u32* bc, Body* v)
+      case SETH1:TOPp; { u64 v1=L64; // (B s, B x, Scope** pscs, u32* bc, Body* v)
+        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); CCALL(i_SETH1);
         IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l);
         break;
       }
-      case SETH2:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
-        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH2); // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+      case SETH2:TOPp; { u64 v1=L64; u64 v2=L64; // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH2);
         IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l);
         break;
       }
-      case PRED1:TOPp; { u64 v1=L64;
-        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); CCALL(i_PRED1); // (B x, Scope** pscs, u32* bc, Body* v)
+      case PRED1:TOPp; { u64 v1=L64; // (B x, Scope** pscs, u32* bc, Body* v)
+        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); CCALL(i_PRED1);
         IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l); NORES(1);
         break;
       }
-      case PRED2:TOPp; { u64 v1=L64; u64 v2=L64;
-        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); IMM(R_A4,v2); CCALL(i_PRED2); // (B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+      case PRED2:TOPp; { u64 v1=L64; u64 v2=L64; // (B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+        GET(R_A1,0,2); MOV(R_A1,r_SC); IMM(R_A2,off); IMM(R_A3,v1); IMM(R_A4,v2); CCALL(i_PRED2);
         IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l); NORES(1);
         break;
       }
