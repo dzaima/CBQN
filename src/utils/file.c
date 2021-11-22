@@ -163,7 +163,10 @@ void file_wBytes(B path, B x) { // consumes path
   u64 len = a(x)->ia;
   TALLOC(char, val, len);
   SGetU(x)
-  for (u64 i = 0; i < len; i++) val[i] = o2i(GetU(x,i));
+  for (u64 i = 0; i < len; i++) {
+    B c = GetU(x,i);
+    val[i] = isNum(c)? o2iu(c) : o2c(c);
+  }
   
   if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
   TFREE(val);
