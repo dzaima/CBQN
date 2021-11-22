@@ -580,7 +580,7 @@ Nvm_res m_nvm(Body* body) {
     // #define POS_UPD(R1,R2) IMM(R1, off); MOV8mro(r_ENV, R1, offsetof(Env,pos));
     #define POS_UPD(R1,R2) MOV4moi(r_ENV, offsetof(Env,pos), body->bl->map[bcpos + bodyOff]<<1 | 1);
     #define GS_SET(R) MOV8pr(&gStack, R)
-    #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else { MOV8rmo(R, r_CS, p); } }
+    #define GET(R,P,U) { i32 p = SPOSq(-(P)); if (U && lGPos!=p) { Reg t=LEA0(R,r_CS,p,0); GS_SET(t); lGPos=p; if(U!=2) MOV8rm(R,t); } else if (U!=2) { MOV8rmo(R, r_CS, p); } }
     // use GET(R_A1,0,2); as GS_UPD when there's one argument, and GET(R_A3,-1,2); when there are zero arguments (i think?)
     #define NORES(D) if (depth>D) MOV8rm(R_RES, SPOS(R_A3, -D, 0)); // call at end if rax is unset; arg is removed stack item count
     switch (*bc++) {
