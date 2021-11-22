@@ -71,9 +71,9 @@ B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); dec(x); return
 static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
-    #define F(X,N) m_nfn(registerNFn(m_str32(U"•math." N), X##_c1, c2_bad),m_f64(0)),
-    B fn = bqn_exec(m_str32(U"{⟨      Sin,         Cos,         Tan,          Asin,          Acos,          Atan ⟩⇐𝕩}"), emptyCVec(), emptySVec());
-    B arg =    m_caB(6, (B[]){F(sin,U"Sin")F(cos,U"Cos")F(tan,U"Tan")F(asin,U"Asin")F(acos,U"Acos")F(atan,U"Atan")});
+    #define F(X) inc(bi_##X),
+    B fn = bqn_exec(m_str32(U"{⟨Sin,  Cos,  Tan,  Asin,  Acos,  Atan ⟩⇐𝕩}"), emptyCVec(), emptySVec());
+    B arg =    m_caB(6, (B[]){F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)});
     #undef F
     mathNS = c1(fn,arg);
     gc_add(mathNS);
@@ -89,4 +89,10 @@ void arith_init() {
   c(BFn,bi_ceil )->ident = m_f64(-1.0/0.0);
   
   c(BFn,bi_sub)->im = sub_c1;
+  c(BFn,bi_sin)->im = asin_c1;
+  c(BFn,bi_cos)->im = acos_c1;
+  c(BFn,bi_tan)->im = atan_c1;
+  c(BFn,bi_asin)->im = sin_c1;
+  c(BFn,bi_acos)->im = cos_c1;
+  c(BFn,bi_atan)->im = tan_c1;
 }

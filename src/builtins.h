@@ -1,8 +1,8 @@
 #pragma once
 
 #define FOR_PFN(A,M,D) \
-/*   arith.c*/A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(root,"√") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
-/*   arith.c*/A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
+/* arith    */A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(root,"√") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
+/* arith    */A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
 /*     fns.c*/A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"⋈") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
@@ -13,7 +13,8 @@
 /* inverse.c*/M(setInvReg, "(SetInvReg)") M(setInvSwap, "(SetInvSwap)") M(nativeInvReg, "(NativeInvReg)") M(nativeInvSwap, "(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") \
-/*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare")
+/*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
+/*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan")
 
 #define FOR_PM1(A,M,D) \
     /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
