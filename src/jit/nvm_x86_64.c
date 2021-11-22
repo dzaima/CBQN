@@ -169,7 +169,12 @@ FORCE_INLINE B gotoNextBodyJIT(Scope* sc, Body* body) {
   Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
   return execBodyInlineI(bl, body, nsc);
 }
-INS B i_SETH(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
+INS B i_SETH1(B s, B x, Scope** pscs, u32* bc, Body* v1) { POS_UPD;
+  bool ok = v_seth(pscs, s, x); dec(x); dec(s);
+  if (ok) return bi_okHdr;
+  return gotoNextBodyJIT(pscs[0], v1);
+}
+INS B i_SETH2(B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2) { POS_UPD;
   bool ok = v_seth(pscs, s, x); dec(x); dec(s);
   if (ok) return bi_okHdr;
   return gotoNextBodyJIT(pscs[0], q_N(pscs[0]->vars[2])? v1 : v2);
@@ -627,8 +632,13 @@ Nvm_res m_nvm(Body* body) {
       } break;
       case EXTO: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d); IMM(R_A2,off); INV(3,1,i_EXTO); } break; // (u32 p, Scope* sc, u32* bc, S)
       case EXTU: TOPs; { u64 d=*bc++; IMM(R_A0,*bc++); LSC(R_A1,d);                  CCALL(i_EXTU); } break; // (u32 p, Scope* sc)
-      case SETHi:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
-        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH); // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
+      case SETH1:TOPp; { u64 v1=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
+        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); CCALL(i_SETH1); // (B s, B x, Scope** pscs, u32* bc, Body* v)
+        IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l);
+        break;
+      }
+      case SETH2:TOPp; { u64 v1=L64; u64 v2=L64; if (lGPos!=0) GS_SET(r_CS); lGPos=0;
+        GET(R_A1,1,1); LEAi(R_A2,R_SP,VAR(pscs,0)); IMM(R_A3,off); IMM(R_A4,v1); IMM(R_A5,v2); CCALL(i_SETH2); // (B s, B x, Scope** pscs, u32* bc, Body* v1, Body* v2)
         IMM(R_A0, bi_okHdr.u); CMP(R_A0,R_RES); J4(cNE,l); TSADD(retLbls, l);
         break;
       }

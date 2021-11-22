@@ -12,9 +12,9 @@
 
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) F(PRED1) F(PRED2) \
+                  F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
-                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(SETHi) \
+                  F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
 u32 bL_m[BC_SIZE];
@@ -305,9 +305,9 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
           case SETH: case PRED:
             if (*c==PRED && h!=1) thrM("VM compiler: PRED expected to be called with one item on the stack");
             if (mpsc<1) mpsc=1; // SETH and PRED may want to have a parent scope pointer
-            TSADD(newBC, *c==SETH? SETHi : imm? PRED1 : PRED2);
+            TSADD(newBC, *c==SETH? (imm? SETH1 : SETH2) : imm? PRED1 : PRED2);
             TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));
-            A64(0); if(*c==SETH || !imm)A64(0); // to be filled in by later bodyReqs handling
+            A64(0); if(!imm) A64(0); // to be filled in by later bodyReqs handling
             break;
           default: {
             u32* ccpy = c;
@@ -709,7 +709,12 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         break;
       }
       
-      case SETHi:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
+      case SETH1:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64;
+        bool ok = v_seth(pscs, s, x); dec(x); dec(s);
+        if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)v1); }
+        break;
+      }
+      case SETH2:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
         if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
         break;
@@ -992,16 +997,16 @@ void comp_init() {
   bL_m[ADDI]=3; bL_m[ADDU]=3;
   bL_m[FN1Ci]=3; bL_m[FN1Oi]=3; bL_m[FN2Ci]=3; bL_m[DFND0]=3; bL_m[DFND1]=3; bL_m[DFND2]=3;
   bL_m[SETNi]=3; bL_m[SETUi]=3; bL_m[SETMi]=3; bL_m[SETCi]=3;
-  bL_m[SETNv]=3; bL_m[SETUv]=3; bL_m[SETMv]=3; bL_m[SETCv]=3; bL_m[PRED1]=3;
+  bL_m[SETNv]=3; bL_m[SETUv]=3; bL_m[SETMv]=3; bL_m[SETCv]=3; bL_m[PRED1]=3; bL_m[SETH1]=3;
   
-  bL_m[FN2Oi]=5; bL_m[SETHi]=5; bL_m[PRED2]=5;
+  bL_m[FN2Oi]=5; bL_m[SETH2]=5; bL_m[PRED2]=5;
   
   // stack diff map
   sD_m[PUSH ]= 1; sD_m[DYNO ]= 1; sD_m[DYNM]= 1; sD_m[DFND]= 1; sD_m[VARO]= 1; sD_m[VARM]= 1; sD_m[DFND0]= 1; sD_m[DFND1]=1; sD_m[DFND2]=1;
   sD_m[VARU ]= 1; sD_m[EXTO ]= 1; sD_m[EXTM]= 1; sD_m[EXTU]= 1; sD_m[SYSV]= 1; sD_m[ADDI]= 1; sD_m[ADDU ]= 1;
   sD_m[FN1Ci]= 0; sD_m[FN1Oi]= 0; sD_m[CHKV]= 0; sD_m[VFYM]= 0; sD_m[FLDO]= 0; sD_m[FLDM]= 0; sD_m[RETD ]= 0; sD_m[ALIM ]=0;
   sD_m[FN2Ci]=-1; sD_m[FN2Oi]=-1; sD_m[FN1C]=-1; sD_m[FN1O]=-1; sD_m[MD1C]=-1; sD_m[TR2D]=-1; sD_m[POPS ]=-1; sD_m[MD2R ]=-1; sD_m[RETN]=-1; sD_m[PRED]=-1; sD_m[PRED1]=-1; sD_m[PRED2]=-1;
-  sD_m[MD2C ]=-2; sD_m[TR3D ]=-2; sD_m[FN2C]=-2; sD_m[FN2O]=-2; sD_m[TR3O]=-2; sD_m[SETH]=-2; sD_m[SETHi]=-2;
+  sD_m[MD2C ]=-2; sD_m[TR3D ]=-2; sD_m[FN2C]=-2; sD_m[FN2O]=-2; sD_m[TR3O]=-2; sD_m[SETH]=-2; sD_m[SETH1]=-2; sD_m[SETH2]=-2;
   
   sD_m[SETN]=-1; sD_m[SETNi]= 0; sD_m[SETNv]=-1;
   sD_m[SETU]=-1; sD_m[SETUi]= 0; sD_m[SETUv]=-1;
@@ -1016,7 +1021,7 @@ void comp_init() {
   
   sC_m[CHKV ]=0;sC_m[RETD ]=0;
   sC_m[FN1Ci]=1;sC_m[FN1Oi]=1; sC_m[FLDO]=1; sC_m[FLDM]=1; sC_m[ALIM]=1; sC_m[RETN]=1; sC_m[POPS]=1; sC_m[PRED]=1; sC_m[PRED1]=1; sC_m[PRED2]=1; sC_m[VFYM]=1;
-  sC_m[FN2Ci]=2;sC_m[FN2Oi]=2; sC_m[FN1C]=2; sC_m[FN1O]=2; sC_m[MD1C]=2; sC_m[TR2D]=2; sC_m[MD2R]=2; sC_m[SETH]=2; sC_m[SETHi]=2;
+  sC_m[FN2Ci]=2;sC_m[FN2Oi]=2; sC_m[FN1C]=2; sC_m[FN1O]=2; sC_m[MD1C]=2; sC_m[TR2D]=2; sC_m[MD2R]=2; sC_m[SETH]=2; sC_m[SETH1]=2; sC_m[SETH2]=2;
   sC_m[MD2C ]=3;sC_m[TR3D ]=3; sC_m[FN2C]=3; sC_m[FN2O]=3; sC_m[TR3O]=3;
   
   sC_m[SETN]=2; sC_m[SETNi]=1; sC_m[SETNv]=1;
