@@ -35,7 +35,10 @@ B type_c1(B t, B x) {
   else if (isMd1(x)) r = 4;
   else if (isMd2(x)) r = 5;
   else if (isNsp(x)) r = 6;
-  if (RARE(r==-1)) { print(x); err(": getting type"); }
+  if (RARE(r==-1)) {
+    if (x.u == bi_optOut.u) thrM("Reading variable that was optimized out by F↩ after error");
+    print(x); err(": getting type");
+  }
   decR(x);
   return m_i32(r);
 }
