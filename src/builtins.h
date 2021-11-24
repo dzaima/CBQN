@@ -38,6 +38,8 @@ enum PrimNumbers {
     /* ⎉⚇⍟⎊        */ n_cells   , n_depth2 , n_repeat, n_catch
 };
 extern B rt_invFnReg, rt_invFnSwap;
+extern BB2B rt_invFnRegFn;
+extern BB2B rt_invFnSwapFn;
 
 enum PrimFns { pf_none,
   #define F(N,X) pf_##N,

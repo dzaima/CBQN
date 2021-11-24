@@ -819,9 +819,15 @@ B md1Bl_c2(Md1D* d, B w, B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); retu
 B md2Bl_c1(Md2D* d,      B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
 B md2Bl_c2(Md2D* d, B w, B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 
-B funBl_im(B     t,      B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invMBody, b->sc, 3, (B[]){t,              x, bi_N                                  }); }
-B funBl_iw(B     t, B w, B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invWBody, b->sc, 3, (B[]){t,              x, w                                     }); }
-B funBl_ix(B     t, B w, B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invXBody, b->sc, 3, (B[]){t,              x, w                                     }); }
+B funBl_im(B     t,      B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invMBody, b->sc, 3, (B[]){t,              x, bi_N}); }
+B funBl_iw(B     t, B w, B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invWBody, b->sc, 3, (B[]){t,              x, w   }); }
+B funBl_ix(B     t, B w, B x) { FunBlock* b=c(FunBlock, t    ); ptr_inc(b); return execBlock(b->bl, b->bl->invXBody, b->sc, 3, (B[]){t,              x, w   }); }
+B md1Bl_im(Md1D* d,      B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->invMBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m1), inc(d->f)}); }
+B md1Bl_iw(Md1D* d, B w, B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->invWBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m1), inc(d->f)}); }
+B md1Bl_ix(Md1D* d, B w, B x) { Md1Block* b=c(Md1Block, d->m1); ptr_inc(d); return execBlock(b->bl, b->bl->invXBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m1), inc(d->f)}); }
+B md2Bl_im(Md2D* d,      B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->invMBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_iw(Md2D* d, B w, B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->invWBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
+B md2Bl_ix(Md2D* d, B w, B x) { Md2Block* b=c(Md2Block, d->m2); ptr_inc(d); return execBlock(b->bl, b->bl->invXBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(d->m2), inc(d->f), inc(d->g)}); }
 
 B md1Bl_d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D(m,f  ); }
 B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D(m,f,g); }
@@ -968,9 +974,9 @@ void comp_init() {
   TIi(t_md1_block,freeO) = md1Bl_freeO; TIi(t_md1_block,freeF) = md1Bl_freeF; TIi(t_md1_block,visit) = md1Bl_visit; TIi(t_md1_block,print) = md1Bl_print; TIi(t_md1_block,decompose) = block_decompose; TIi(t_md1_block,m1_d)=md1Bl_d;
   TIi(t_md2_block,freeO) = md2Bl_freeO; TIi(t_md2_block,freeF) = md2Bl_freeF; TIi(t_md2_block,visit) = md2Bl_visit; TIi(t_md2_block,print) = md2Bl_print; TIi(t_md2_block,decompose) = block_decompose; TIi(t_md2_block,m2_d)=md2Bl_d;
   
-  TIi(t_fun_block,fn_im) = funBl_im;
-  TIi(t_fun_block,fn_iw) = funBl_iw;
-  TIi(t_fun_block,fn_ix) = funBl_ix;
+  TIi(t_fun_block,fn_im) = funBl_im; TIi(t_md1_block,m1_im) = md1Bl_im; TIi(t_md2_block,m2_im) = md2Bl_im;
+  TIi(t_fun_block,fn_iw) = funBl_iw; TIi(t_md1_block,m1_iw) = md1Bl_iw; TIi(t_md2_block,m2_iw) = md2Bl_iw;
+  TIi(t_fun_block,fn_ix) = funBl_ix; TIi(t_md1_block,m1_ix) = md1Bl_ix; TIi(t_md2_block,m2_ix) = md2Bl_ix;
   
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);

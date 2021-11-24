@@ -93,6 +93,14 @@ static B ucwWrap_c1(B t, B x) {
   return TI(g,fn_ucw)(g, args[1], args[2], x);
 }
 
+// TODO (+ md2D_uc1 and probably more things in the future): remove flags checks when all builtins have at least native wrappers
+static B md1D_im(B t,      B x) { Md1D* d = c(Md1D,t); return isMd1(d->m1) && !d->flags? TI(d->m1,m1_im)(d,    x) : def_fn_im(t,    x); }
+static B md1D_iw(B t, B w, B x) { Md1D* d = c(Md1D,t); return isMd1(d->m1) && !d->flags? TI(d->m1,m1_iw)(d, w, x) : def_fn_iw(t, w, x); }
+static B md1D_ix(B t, B w, B x) { Md1D* d = c(Md1D,t); return isMd1(d->m1) && !d->flags? TI(d->m1,m1_ix)(d, w, x) : def_fn_ix(t, w, x); }
+static B md2D_im(B t,      B x) { Md2D* d = c(Md2D,t); return isMd2(d->m2) && !d->flags? TI(d->m2,m2_im)(d,    x) : def_fn_im(t,    x); }
+static B md2D_iw(B t, B w, B x) { Md2D* d = c(Md2D,t); return isMd2(d->m2) && !d->flags? TI(d->m2,m2_iw)(d, w, x) : def_fn_iw(t, w, x); }
+static B md2D_ix(B t, B w, B x) { Md2D* d = c(Md2D,t); return isMd2(d->m2) && !d->flags? TI(d->m2,m2_ix)(d, w, x) : def_fn_ix(t, w, x); }
+
 
 void derv_init() {
   TIi(t_md1D,freeO) = md1D_freeO; TIi(t_md1D,freeF) = md1D_freeF; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
@@ -103,8 +111,11 @@ void derv_init() {
   TIi(t_md1BI,m1_d) = m_md1D;
   TIi(t_md2BI,m2_d) = m_md2D;
   TIi(t_md2D,fn_uc1) = md2D_uc1; // not in post so later init can utilize it
+  TIi(t_md1D,fn_im) = md1D_im; TIi(t_md2D,fn_im) = md2D_im;
+  TIi(t_md1D,fn_iw) = md1D_iw; TIi(t_md2D,fn_iw) = md2D_iw;
+  TIi(t_md1D,fn_ix) = md1D_ix; TIi(t_md2D,fn_ix) = md2D_ix;
 }
 void dervPost_init() {
   ucwWrapDesc = registerNFn(m_str8l("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
-  TIi(t_fork,fn_uc1) = fork_uc1;
+  TIi(t_fork,fn_uc1) = fork_uc1; // in post probably to make sure it's not used while not fully initialized or something? idk
 }

@@ -449,10 +449,17 @@ typedef B (*M2C2)(Md2D*, B, B);
   F( BBBBB2B, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
   F( BBBBB2B, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
   F(BBBBBB2B, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
-  F(    BB2B, fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
-  F(    BB2B, fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
-  F(   BBB2B, fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
-  F(   BBB2B, fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
+  \
+  F( BB2B, fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
+  F( BB2B, fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
+  F(BBB2B, fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
+  F(BBB2B, fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
+  F( M1C1, m1_im) /* d,  x; 1-modifier monadic inverse;  consumes x   */ \
+  F( M1C2, m1_iw) /* d,w,x; 1-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F( M1C2, m1_ix) /* d,w,x; 1-modifier dyadic 𝕩-inverse; consumes w,x */ \
+  F( M2C1, m2_im) /* d,  x; 2-modifier monadic inverse;  consumes x   */ \
+  F( M2C2, m2_iw) /* d,w,x; 2-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F( M2C2, m2_ix) /* d,w,x; 2-modifier dyadic 𝕩-inverse; consumes w,x */ \
   \
   F(B2b, canStore) /* doesn't consume */ \
   F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \

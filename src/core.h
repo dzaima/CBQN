@@ -43,6 +43,13 @@ typedef struct BFn {
   BB2B im;
   B rtInvReg;
 } BFn;
+typedef struct BMd1 {
+  struct Md1;
+  M1C1 im;
+  M1C2 iw;
+  M1C2 ix;
+} BMd1;
+
 typedef struct BMd2 {
   struct Md2;
    BBBBB2B uc1;

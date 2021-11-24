@@ -3,26 +3,12 @@
 #include "../nfns.h"
 
 
-static NFnDesc* fun_invRegDesc;
-static NFnDesc* fun_invSwapDesc;
-
-B fun_invReg_c1(B t, B x) {
-  B f = nfn_objU(t);
-  return TI(f, fn_im)(f, x);
-}
-B fun_invReg_c2(B t, B w, B x) {
-  B f = nfn_objU(t);
-  return TI(f, fn_ix)(f, w, x);
-}
-
-B fun_invSwap_c1(B t, B x) {
-  B f = nfn_objU(t);
-  return TI(f, fn_is)(f, x);
-}
-B fun_invSwap_c2(B t, B w, B x) {
-  B f = nfn_objU(t);
-  return TI(f, fn_iw)(f, w, x);
-}
+static NFnDesc* fn_invRegDesc;
+static NFnDesc* fn_invSwapDesc;
+B fn_invReg_c1 (B t,      B x) { B f = nfn_objU(t); return TI(f, fn_im)(f,    x); }
+B fn_invReg_c2 (B t, B w, B x) { B f = nfn_objU(t); return TI(f, fn_ix)(f, w, x); }
+B fn_invSwap_c1(B t,      B x) { B f = nfn_objU(t); return TI(f, fn_is)(f,    x); }
+B fn_invSwap_c2(B t, B w, B x) { B f = nfn_objU(t); return TI(f, fn_iw)(f, w, x); }
 
 extern B rt_undo;
 B undo_c1(Md1D* d, B x) { B f = d->f;
@@ -40,18 +26,18 @@ B undo_c2(Md1D* d, B w, B x) { B f = d->f;
   return r;
 }
 
-B setInvReg_c1 (B t, B x) { rt_invFnReg  = x; return inc(bi_nativeInvReg); }
-B setInvSwap_c1(B t, B x) { rt_invFnSwap = x; return inc(bi_nativeInvSwap); }
+B setInvReg_c1 (B t, B x) { rt_invFnReg  = x; rt_invFnRegFn  = c(Fun,x)->c1; return inc(bi_nativeInvReg); }
+B setInvSwap_c1(B t, B x) { rt_invFnSwap = x; rt_invFnSwapFn = c(Fun,x)->c1; return inc(bi_nativeInvSwap); }
 B nativeInvReg_c1(B t, B x) {
-  if (isFun(x)) return m_nfn(fun_invRegDesc, x);
+  if (isFun(x)) return m_nfn(fn_invRegDesc, x);
   return c1(rt_invFnReg, x);
 }
 B nativeInvSwap_c1(B t, B x) {
-  if (isFun(x)) return m_nfn(fun_invSwapDesc, x);
+  if (isFun(x)) return m_nfn(fn_invSwapDesc, x);
   return c1(rt_invFnSwap, x);
 }
 
 void inverse_init() {
-  fun_invRegDesc = registerNFn(m_str8l("(fun_invReg)"), fun_invReg_c1, fun_invReg_c2);
-  fun_invSwapDesc = registerNFn(m_str8l("(fun_invSwap)"), fun_invSwap_c1, fun_invSwap_c2);
+  fn_invRegDesc = registerNFn(m_str8l("(fn_invReg)"), fn_invReg_c1, fn_invReg_c2);
+  fn_invSwapDesc = registerNFn(m_str8l("(fn_invSwap)"), fn_invSwap_c1, fn_invSwap_c2);
 }

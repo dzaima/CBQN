@@ -407,10 +407,18 @@ static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 
 B rt_invFnReg, rt_invFnSwap;
-B def_fn_im(B t,      B x) { B fn = c(Fun,rt_invFnReg )->c1(rt_invFnReg,  inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_is(B t,      B x) { B fn = c(Fun,rt_invFnSwap)->c1(rt_invFnSwap, inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_iw(B t, B w, B x) { B fn = c(Fun,rt_invFnSwap)->c1(rt_invFnSwap, inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
-B def_fn_ix(B t, B w, B x) { B fn = c(Fun,rt_invFnReg )->c1(rt_invFnReg,  inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+BB2B rt_invFnRegFn;
+BB2B rt_invFnSwapFn;
+B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+B def_m1_im(Md1D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
+B def_m1_iw(Md1D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
+B def_m1_ix(Md1D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
+B def_m2_im(Md2D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
+B def_m2_iw(Md2D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
+B def_m2_ix(Md2D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
 
 #ifdef DONT_FREE
 static B empty_get(Arr* x, usz n) {
@@ -439,6 +447,44 @@ static B funBI_imInit(B t, B x) {
   return c1(f, x);
 }
 
+
+
+static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
+  BFn* f = mm_alloc(sizeof(BFn), t_funBI);
+  f->c1 = c1;
+  f->c2 = c2;
+  f->extra = id;
+  f->ident = bi_N;
+  f->uc1 = def_fn_uc1;
+  f->ucw = def_fn_ucw;
+  f->im = funBI_imInit;
+  f->rtInvReg = m_f64(0);
+  B r = tag(f,FUN_TAG); gc_add(r);
+  return r;
+}
+static NOINLINE B m_bm1(M1C1 c1, M1C2 c2, u8 id) {
+  BMd1* m = mm_alloc(sizeof(BMd1), t_md1BI);
+  m->c1 = c1;
+  m->c2 = c2;
+  m->extra = id;
+  m->im = def_m1_im;
+  m->iw = def_m1_iw;
+  m->ix = def_m1_ix;
+  B r = tag(m,MD1_TAG); gc_add(r);
+  return r;
+}
+
+static NOINLINE B m_bm2(M2C1 c1, M2C2 c2, u8 id) {
+  BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI);
+  m->c1 = c1;
+  m->c2 = c2;
+  m->extra = id;
+  m->uc1 = def_m2_uc1;
+  m->ucw = def_m2_ucw;
+  B r = tag(m,MD2_TAG); gc_add(r);
+  return r;
+}
+
 void base_init() { // very first init function
   for (u64 i = 0; i < t_COUNT; i++) {
     TIi(i,freeO)  = def_freeO;
@@ -462,10 +508,10 @@ void base_init() { // very first init function
     TIi(i,m1_ucw) = def_m1_ucw;
     TIi(i,m2_uc1) = def_m2_uc1;
     TIi(i,m2_ucw) = def_m2_ucw;
-    TIi(i,fn_im) = def_fn_im;
+    TIi(i,fn_im) = def_fn_im; TIi(i,m1_im) = def_m1_im; TIi(i,m2_im) = def_m2_im;
     TIi(i,fn_is) = def_fn_is;
-    TIi(i,fn_iw) = def_fn_iw;
-    TIi(i,fn_ix) = def_fn_ix;
+    TIi(i,fn_iw) = def_fn_iw; TIi(i,m1_iw) = def_m1_iw; TIi(i,m2_iw) = def_m2_iw;
+    TIi(i,fn_ix) = def_fn_ix; TIi(i,m1_ix) = def_m1_ix; TIi(i,m2_ix) = def_m2_ix;
   }
   TIi(t_empty,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
   TIi(t_empty,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
@@ -481,25 +527,25 @@ void base_init() { // very first init function
   TIi(t_funBI,visit) = funBI_visit;
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
-  #define FA(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=funBI_imInit; f->rtInvReg=m_f64(0); gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FM(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=c2_bad; f->c1=N##_c1; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=funBI_imInit; f->rtInvReg=m_f64(0); gc_add(bi_##N = tag(f,FUN_TAG)); }
-  #define FD(N,X) { BFn* f = mm_alloc(sizeof(BFn), t_funBI); f->c2=N##_c2; f->c1=c1_bad; f->extra=pf_##N; f->ident=bi_N; f->uc1=def_fn_uc1; f->ucw=def_fn_ucw; f->im=funBI_imInit; f->rtInvReg=m_f64(0); gc_add(bi_##N = tag(f,FUN_TAG)); }
+  #define FA(N,X) bi_##N = m_bfn(N##_c1, N##_c2, pf_##N);
+  #define FM(N,X) bi_##N = m_bfn(N##_c1, c2_bad, pf_##N);
+  #define FD(N,X) bi_##N = m_bfn(c1_bad, N##_c2, pf_##N);
   FOR_PFN(FA,FM,FD)
   #undef FA
   #undef FM
   #undef FD
   
-  #define FA(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2; m->c1 = N##_c1; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
-  #define FM(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = c2_bad; m->c1 = N##_c1; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
-  #define FD(N,X) { Md1* m = mm_alloc(sizeof(Md1), t_md1BI); m->c2 = N##_c2; m->c1 = c1_bad; m->extra=pm1_##N; gc_add(bi_##N = tag(m,MD1_TAG)); }
+  #define FA(N,X) bi_##N = m_bm1(N##_c1, N##_c2, pm1_##N);
+  #define FM(N,X) bi_##N = m_bm1(N##_c1, c2_bad, pm1_##N);
+  #define FD(N,X) bi_##N = m_bm1(c1_bad, N##_c2, pm1_##N);
   FOR_PM1(FA,FM,FD)
   #undef FA
   #undef FM
   #undef FD
   
-  #define FA(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2  ; m->c1 = N##_c1;   m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
-  #define FM(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = N##_c2  ; m->c1 = m1c1_bad; m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
-  #define FD(N,X) { BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI); m->c2 = m1c2_bad; m->c1 = N##_c1;   m->extra=pm2_##N; m->uc1=def_m2_uc1; m->ucw=def_m2_ucw; gc_add(bi_##N = tag(m,MD2_TAG)); }
+  #define FA(N,X) bi_##N = m_bm2(N##_c1,   N##_c2,   pm2_##N);
+  #define FM(N,X) bi_##N = m_bm2(m1c1_bad, N##_c2,   pm2_##N);
+  #define FD(N,X) bi_##N = m_bm2(N##_c1,   m1c2_bad, pm2_##N);
   FOR_PM2(FA,FM,FD)
   #undef FA
   #undef FM
