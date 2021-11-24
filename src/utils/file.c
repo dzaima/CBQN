@@ -87,15 +87,21 @@ B file_lines(B path) { // consumes
 }
 
 
+static NOINLINE void guaranteeStr(B x) { // assumes x is an array
+  if (elChr(TI(x,elType))) return;
+  usz xia = a(x)->ia;
+  SGetU(x)
+  for (usz i = 0; i < xia; i++) if (!isC32(GetU(x, i))) thrM("Paths must be character vectors");
+}
 
 
 B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
-  assert((isArr(base) || q_N(base)));
+  assert(isArr(base) || q_N(base));
   if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
   SGetU(rel)
   usz ria = a(rel)->ia;
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
-  for (usz i = 0; i < ria; i++) if (!isC32(GetU(rel, i))) thrM("Paths must be character vectors");
+  guaranteeStr(rel);
   if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return inc(base); }
@@ -111,13 +117,12 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   return r;
 }
 
-B path_dir(B path) { // consumes; returns directory part of file path with trailing slash, or ·
-  assert(isArr(path) || q_N(path));
-  if (q_N(path)) return path;
+B path_dir(B path) {
+  assert(isArr(path));
   SGetU(path)
   usz pia = a(path)->ia;
   if (pia==0) thrM("Empty file path");
-  for (usz i = 0; i < pia; i++) if (!isC32(GetU(path, i))) thrM("Paths must be character vectors");
+  guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(GetU(path, i))=='/') {
       Arr* r = TI(path,slice)(path, 0, i+1); arr_shVec(r);
@@ -127,6 +132,21 @@ B path_dir(B path) { // consumes; returns directory part of file path with trail
   dec(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = '/';
   return r;
+}
+B path_name(B path) {
+  assert(isArr(path));
+  SGetU(path)
+  usz pia = a(path)->ia;
+  if (pia==0) thrM("Empty file path");
+  guaranteeStr(path);
+  for (i64 i = (i64)pia-1; i >= 0; i--) {
+    if (o2cu(GetU(path, i))=='/') {
+      if (i == pia-1) thrF("File path ended with a slash: '%R'", path);
+      Arr* r = TI(path,slice)(path, i+1, pia - (i+1)); arr_shVec(r);
+      return taga(r);
+    }
+  }
+  return path;
 }
 
 B path_abs(B path) {

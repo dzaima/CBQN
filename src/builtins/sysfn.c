@@ -780,8 +780,10 @@ B sys_c1(B t, B x) {
   SGetU(x)
   B fileNS = m_f64(0);
   B path = m_f64(0);
+  B name = m_f64(0);
   B wdpath = m_f64(0);
-  #define REQ_PATH ({ if(!path.u) path = path_abs(path_dir(inc(comp_currPath))); path; })
+  #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_dir(inc(comp_currPath))); path; })
+  #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
   for (; i < a(x)->ia; i++) {
     B c = GetU(x,i);
     if (eqStr(c, U"out")) r.a[i] = incG(bi_out);
@@ -824,18 +826,23 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"rebqn")) r.a[i] = incG(bi_reBQN);
     else if (eqStr(c, U"fromutf8")) r.a[i] = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
+    else if (eqStr(c, U"name")) r.a[i] = inc(REQ_NAME);
     else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, inc(REQ_PATH));
     else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"args")) {
-      if(q_N(comp_currArgs)) thrM("No arguments present for •args");
+    else if (eqStr(c, U"state")) {
+      if (q_N(comp_currArgs)) thrM("No arguments present for •state");
+      r.a[i] = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
+    } else if (eqStr(c, U"args")) {
+      if (q_N(comp_currArgs)) thrM("No arguments present for •args");
       r.a[i] = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
   }
   #undef REQ_PATH
   dec(fileNS);
   dec(path);
+  dec(name);
   dec(wdpath);
   return harr_fcd(r, x);
 }
