@@ -629,8 +629,35 @@ B flines_c2(B d, B w, B x) {
   return p;
 }
 static NFnDesc* importDesc;
-B import_c1(B d,      B x) { return bqn_execFile(path_rel(nfn_objU(d), x), emptySVec()); }
-B import_c2(B d, B w, B x) { return bqn_execFile(path_rel(nfn_objU(d), x), w); }
+
+
+
+B import_c2(B d, B w, B x) {
+  return bqn_execFile(path_rel(nfn_objU(d), x), w);
+}
+
+i32 prevImportIdx(B path, i32 pos); // defined in fns.c
+static B importKeyList;
+static B importValList;
+B import_c1(B d, B x) {
+  if (importKeyList.u==0) {
+    importKeyList = emptyHVec();
+    importValList = emptyHVec();
+  }
+  B path = path_abs(path_rel(nfn_objU(d), x));
+  i32 prevIdx = prevImportIdx(path, a(importKeyList)->ia);
+  if (prevIdx!=-1) { dec(path); return IGet(importValList, prevIdx); }
+  B r = bqn_execFile(inc(path), emptySVec());
+  importKeyList = vec_add(importKeyList, path);
+  importValList = vec_add(importValList, inc(r));
+  return r;
+}
+static void sys_gcFn() {
+  mm_visit(importKeyList);
+  mm_visit(importValList);
+}
+
+
 static NFnDesc* listDesc;
 B list_c1(B d, B x) {
   return file_list(path_rel(nfn_objU(d), x));
@@ -849,7 +876,7 @@ B sys_c1(B t, B x) {
 
 B cdPath;
 void sysfn_init() {
-  cdPath = m_str8(1, "."); gc_add(cdPath);
+  cdPath = m_str8(1, "."); gc_add(cdPath); gc_addFn(sys_gcFn);
   fCharsDesc = registerNFn(m_str8l("(file).Chars"), fchars_c1, fchars_c2);
   fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
   fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);

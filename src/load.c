@@ -525,6 +525,8 @@ void base_init() { // very first init function
   TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
   TIi(t_funBI,visit) = funBI_visit;
+  TIi(t_hashmap,visit) = noop_visit;
+  
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   
   #define FA(N,X) bi_##N = m_bfn(N##_c1, N##_c2, pf_##N);

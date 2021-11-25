@@ -309,9 +309,19 @@ B count_c2(B t, B w, B x) {
   return c2(rt_count, w, x);
 }
 
+H_b2i* prevImports;
+i32 prevImportIdx(B path, i32 pos) {
+  if (prevImports==NULL) prevImports = m_b2i(16);
+  return swap_b2i(&prevImports, path, pos, -1);
+}
+void fun_gcFn() {
+  if (prevImports!=NULL) mm_visitP(prevImports);
+}
+
 
 
 void fns_init() {
+  gc_addFn(fun_gcFn);
   TIi(t_funBI,print) = print_funBI;
   TIi(t_funBI,identity) = funBI_identity;
   TIi(t_funBI,fn_uc1) = funBI_uc1;
