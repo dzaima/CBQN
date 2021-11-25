@@ -317,6 +317,7 @@ NOINLINE void print_fmt(char* p, ...) {
   B r = do_fmt(emptyCVec(), p, a);
   va_end(a);
   printRaw(r);
+  dec(r);
 }
 NOINLINE void thrF(char* p, ...) {
   va_list a;

@@ -637,7 +637,7 @@ B import_c2(B d, B w, B x) {
 }
 
 i32 prevImportIdx(B path, i32 pos); // defined in fns.c
-static B importKeyList;
+static B importKeyList; // exists for GC roots
 static B importValList;
 B import_c1(B d, B x) {
   if (importKeyList.u==0) {
@@ -645,8 +645,14 @@ B import_c1(B d, B x) {
     importValList = emptyHVec();
   }
   B path = path_abs(path_rel(nfn_objU(d), x));
-  i32 prevIdx = prevImportIdx(path, a(importKeyList)->ia);
-  if (prevIdx!=-1) { dec(path); return IGet(importValList, prevIdx); }
+  i32 prevLen = a(importKeyList)->ia;
+  i32 prevIdx = prevImportIdx(path, prevLen);
+  if (prevIdx!=-1) {
+    // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, prevLen);
+    if (prevIdx>=prevLen) thrF("•Import: cyclic import of \"%R\"", path);
+    dec(path);
+    return IGet(importValList, prevIdx);
+  }
   B r = bqn_execFile(inc(path), emptySVec());
   importKeyList = vec_add(importKeyList, path);
   importValList = vec_add(importValList, inc(r));
@@ -881,9 +887,9 @@ void sysfn_init() {
   fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
   fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);
   fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
+  listDesc   = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
-  listDesc = registerNFn(m_str32(U"•file.List"), list_c1, c2_bad);
 }
 void sysfnPost_init() {
   file_nsGen = bqn_exec(m_str32(U"{⟨path,At,List,Bytes,Chars,Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);

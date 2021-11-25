@@ -2,10 +2,10 @@
 u64 gc_depth = 1;
 
 
-vfn gc_roots[16];
+vfn gc_roots[32];
 u32 gc_rootSz;
 void gc_addFn(vfn f) {
-  if (gc_rootSz>=16) err("Too many GC roots");
+  if (gc_rootSz>=32) err("Too many GC root functions");
   gc_roots[gc_rootSz++] = f;
 }
 

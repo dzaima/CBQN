@@ -312,7 +312,11 @@ B count_c2(B t, B w, B x) {
 H_b2i* prevImports;
 i32 prevImportIdx(B path, i32 pos) {
   if (prevImports==NULL) prevImports = m_b2i(16);
-  return swap_b2i(&prevImports, path, pos, -1);
+  bool had;
+  i32 prev = mk_b2i(&prevImports, path, &had);
+  if (had) return prevImports->a[prev].val;
+  prevImports->a[prev].val = pos;
+  return -1;
 }
 void fun_gcFn() {
   if (prevImports!=NULL) mm_visitP(prevImports);
