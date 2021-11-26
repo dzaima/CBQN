@@ -310,13 +310,17 @@ B count_c2(B t, B w, B x) {
 }
 
 H_b2i* prevImports;
-i32 prevImportIdx(B path, i32 pos) {
+i32 getPrevImport(B path) { // -1 for unset, -2 for unfinished
   if (prevImports==NULL) prevImports = m_b2i(16);
-  bool had;
-  i32 prev = mk_b2i(&prevImports, path, &had);
+  
+  bool had; i32 prev = mk_b2i(&prevImports, path, &had);
   if (had) return prevImports->a[prev].val;
-  prevImports->a[prev].val = pos;
+  prevImports->a[prev].val = -2;
   return -1;
+}
+void setPrevImport(B path, i32 pos) {
+  bool had; i32 prev = mk_b2i(&prevImports, path, &had);
+  prevImports->a[prev].val = pos;
 }
 void fun_gcFn() {
   if (prevImports!=NULL) mm_visitP(prevImports);

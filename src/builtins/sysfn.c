@@ -636,8 +636,11 @@ B import_c2(B d, B w, B x) {
   return bqn_execFile(path_rel(nfn_objU(d), x), w);
 }
 
-i32 prevImportIdx(B path, i32 pos); // defined in fns.c
-static B importKeyList; // exists for GC roots
+// defined in fns.c
+i32 getPrevImport(B path);
+i32 setPrevImport(B path, i32 pos);
+
+static B importKeyList; // exists for GC roots as the hashmap doesn't
 static B importValList;
 B import_c1(B d, B x) {
   if (importKeyList.u==0) {
@@ -645,15 +648,19 @@ B import_c1(B d, B x) {
     importValList = emptyHVec();
   }
   B path = path_abs(path_rel(nfn_objU(d), x));
-  i32 prevLen = a(importKeyList)->ia;
-  i32 prevIdx = prevImportIdx(path, prevLen);
-  if (prevIdx!=-1) {
-    // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, prevLen);
-    if (prevIdx>=prevLen) thrF("•Import: cyclic import of \"%R\"", path);
+  
+  i32 prevIdx = getPrevImport(path);
+  if (prevIdx>=0) {
+    // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, a(importKeyList)->ia);
     dec(path);
     return IGet(importValList, prevIdx);
   }
+  if (prevIdx==-2) thrF("•Import: cyclic import of \"%R\"", path);
   B r = bqn_execFile(inc(path), emptySVec());
+  
+  i32 prevLen = a(importKeyList)->ia;
+  // print_fmt("caching: %R @ %i\n", path, prevLen);
+  setPrevImport(path, prevLen);
   importKeyList = vec_add(importKeyList, path);
   importValList = vec_add(importValList, inc(r));
   return r;
