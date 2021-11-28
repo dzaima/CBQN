@@ -86,7 +86,7 @@ void print_gStack() {
 }
 
 static Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
-  Body* body = mm_alloc(fsizeof(Body,varIDs,i32,vam), t_body);
+  Body* body = mm_alloc(fsizeof(Body, varData, i32, vam*2), t_body);
   
   #if JIT_START != -1
     body->nvm = NULL;
@@ -309,6 +309,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));
             A64(0); if(!imm) A64(0); // to be filled in by later bodyReqs handling
             break;
+          case FLDO: TSADD(newBC, FLDO); TSADD(newBC, str2gid(IGetU(nameList, c[1]))); break;
+          case ALIM: TSADD(newBC, ALIM); TSADD(newBC, str2gid(IGetU(nameList, c[1]))); break;
           default: {
             u32* ccpy = c;
             while (ccpy!=n) TSADD(newBC, *ccpy++);
@@ -327,12 +329,13 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       
       if (mpsc>U16_MAX) thrM("VM compiler: Block too deep");
       
-      Body* body = m_body(vam+(remapArgs? argAm : 0), bcStart, (u32)hM, mpsc);
+      i32 finalVam = vam+(remapArgs? argAm : 0);
+      Body* body = m_body(finalVam, bcStart, (u32)hM, mpsc);
       if (boIA>2) {
-        m_nsDesc(body, imm, ty, inc(nameList), GetU(bodyRepr,2), GetU(bodyRepr,3));
+        m_nsDesc(body, imm, ty, finalVam, nameList, GetU(bodyRepr,2), GetU(bodyRepr,3));
       } else {
         body->nsDesc = NULL;
-        for (u64 i = 0; i < vam; i++) body->varIDs[i] = -1;
+        for (u64 i = 0; i < vam*2; i++) body->varData[i] = -1;
       }
       
       if (is1) { bodyMap[pos1-1] = body; if (firstM) { firstM=false; startBodies[i  ] = body; if(i==0) firstMPos = TSSIZE(bodies); } }
@@ -417,6 +420,8 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
     B t = IGetU(tokenInfo,2);
     nameList = IGetU(t,0);
   }
+  comp->nameList = inc(nameList);
+  
   if (!q_N(src) && !q_N(indices)) {
     if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
@@ -456,16 +461,14 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
         B c = sp[i];
         if (isVar(c)) {
           Scope* sc = pscs[(u16)(c.u>>32)];
-          i32 nameID = sc->body->varIDs[(u32)c.u];
-          v_set(pscs, c, ns_getU(x, sc->body->nsDesc->nameList, nameID), upd, true);
+          v_set(pscs, c, ns_getU(x, pos2gid(sc->body, (u32)c.u)), upd, true);
         } else if (isExt(c)) {
           ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
           v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true);
         } else if (isObj(c)) {
           assert(v(c)->type == t_fldAlias);
-          Scope* sc = pscs[0];
           FldAlias* cf = c(FldAlias,c);
-          v_set(pscs, cf->obj, ns_getU(x, sc->body->nsDesc->nameList, cf->p), upd, true);
+          v_set(pscs, cf->obj, ns_getU(x, cf->p), upd, true);
         } else thrM("Assignment: extracting non-name from namespace");
       }
       return;
@@ -486,14 +489,12 @@ NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
       B c = sp[i];
       if (isVar(c)) {
         Scope* sc = pscs[(u16)(c.u>>32)];
-        i32 nameID = sc->body->varIDs[(u32)c.u];
-        B g = ns_qgetU(x, sc->body->nsDesc->nameList, nameID);
+        B g = ns_qgetU(x, pos2gid(sc->body, (u32)c.u));
         if (q_N(g) || !v_seth(pscs, c, g)) return false;
       } else if (isObj(c) && v(c)->type==t_fldAlias) {
         assert(v(c)->type == t_fldAlias);
-        Scope* sc = pscs[0];
         FldAlias* cf = c(FldAlias,c);
-        B g = ns_qgetU(x, sc->body->nsDesc->nameList, cf->p);
+        B g = ns_qgetU(x, cf->p);
         if (q_N(g) || !v_seth(pscs, cf->obj, g)) return false;
       } else return false;
     }
@@ -730,7 +731,7 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       
       case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
-        ADD(inc(ns_getU(ns, sc->body->nsDesc->nameList, p)));
+        ADD(inc(ns_getU(ns, p)));
         dec(ns);
         break;
       }
@@ -875,7 +876,7 @@ DEF_FREE(block) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
-DEF_FREE(comp) { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); }
+DEF_FREE(comp)  { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
 DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
@@ -908,7 +909,7 @@ void block_visit(Value* x) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) mm_visitP(c->bodies[i]);
 }
-void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }

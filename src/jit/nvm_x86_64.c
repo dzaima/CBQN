@@ -197,7 +197,7 @@ INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_ge
 INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, false)  ); dec(f); v_setI(sc, p, r, true, false); }
 INS B i_FLDO(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
-  B r = inc(ns_getU(ns, sc->body->nsDesc->nameList, p));
+  B r = inc(ns_getU(ns, p));
   dec(ns);
   return r;
 }

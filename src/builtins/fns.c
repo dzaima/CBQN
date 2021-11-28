@@ -309,7 +309,7 @@ B count_c2(B t, B w, B x) {
   return c2(rt_count, w, x);
 }
 
-H_b2i* prevImports;
+static H_b2i* prevImports;
 i32 getPrevImport(B path) { // -1 for unset, -2 for unfinished
   if (prevImports==NULL) prevImports = m_b2i(16);
   
@@ -322,12 +322,38 @@ void setPrevImport(B path, i32 pos) {
   bool had; i32 prev = mk_b2i(&prevImports, path, &had);
   prevImports->a[prev].val = pos;
 }
-void fun_gcFn() {
-  if (prevImports!=NULL) mm_visitP(prevImports);
+
+static H_b2i* globalNames;
+static B globalNameList;
+i32 str2gid(B s) {
+  if (globalNames==NULL) {
+    globalNames = m_b2i(32);
+    globalNameList = emptyHVec();
+  }
+  bool had;
+  u64 p = mk_b2i(&globalNames, s, &had);
+  // if(had) print_fmt("str2gid %R → %i\n", s, globalNames->a[p].val); else print_fmt("str2gid %R → %i!!\n", s, a(globalNameList)->ia);
+  if(had) return globalNames->a[p].val;
+  
+  i32 r = a(globalNameList)->ia;
+  globalNameList = vec_add(globalNameList, inc(s));
+  globalNames->a[p].val = r;
+  return r;
+}
+
+B gid2str(i32 n) {
+  B r = IGetU(globalNameList, n);
+  // print_fmt("gid2str %i → %R", n, r);
+  return r;
 }
 
 
 
+void fun_gcFn() {
+  if (prevImports!=NULL) mm_visitP(prevImports);
+  if (globalNames!=NULL) mm_visitP(globalNames);
+  mm_visit(globalNameList);
+}
 void fns_init() {
   gc_addFn(fun_gcFn);
   TIi(t_funBI,print) = print_funBI;

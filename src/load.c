@@ -175,11 +175,14 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
   i32 depth = repl? -1 : 0;
   Scope* csc = sc;
   while (csc) {
-    for (u64 i = 0; i < csc->varAm; i++) {
-      i32 nameID = csc->body->varIDs[i];
-      B nl = csc->body->nsDesc->nameList;
-      vName = vec_add(vName, IGet(nl, nameID));
-      vDepth = vec_add(vDepth, m_i32(depth));
+    Body* body = csc->body;
+    if (csc->varAm) {
+      B nameList = body->bl->comp->nameList; SGetU(nameList);
+      for (u64 i = 0; i < csc->varAm; i++) {
+        i32 nameID = body->varData[i + body->varAm];
+        vName = vec_add(vName, inc(GetU(nameList, nameID)));
+        vDepth = vec_add(vDepth, m_i32(depth));
+      }
     }
     if (csc->ext) for (u64 i = 0; i < csc->ext->varAm; i++) {
       vName = vec_add(vName, inc(csc->ext->vars[i+csc->ext->varAm]));

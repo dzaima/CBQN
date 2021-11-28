@@ -75,6 +75,7 @@ typedef struct Comp {
   B src;
   B path;
   B indices;
+  B nameList;
   HArr* objs;
   u32 blockAm;
 } Comp;
@@ -121,13 +122,13 @@ struct Body {
   Block* bl; // non-owned pointer to corresponding block
   NSDesc* nsDesc;
   u16 varAm;
-  i32 varIDs[];
+  i32 varData[]; // length varAm*2; first half is a gid per var (or -1 if not calculated yet), second half is indexes into nameList
 };
 
 struct ScopeExt {
   struct Value;
   u16 varAm;
-  B vars[]; // vars has length varAm*2; position varAm and onwards are corresponding names to variables at regular indexes
+  B vars[]; // has length varAm*2; position varAm and onwards are corresponding names to variables at regular indexes
 };
 
 struct Scope {
