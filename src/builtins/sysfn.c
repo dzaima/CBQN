@@ -638,7 +638,7 @@ B import_c2(B d, B w, B x) {
 
 // defined in fns.c
 i32 getPrevImport(B path);
-i32 setPrevImport(B path, i32 pos);
+void setPrevImport(B path, i32 pos);
 
 static B importKeyList; // exists for GC roots as the hashmap doesn't
 static B importValList;

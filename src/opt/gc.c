@@ -9,11 +9,12 @@ void gc_addFn(vfn f) {
   gc_roots[gc_rootSz++] = f;
 }
 
-B gc_rootObjs[256];
+Value* gc_rootObjs[256];
 u32 gc_rootObjSz;
 void gc_add(B x) {
+  assert(isVal(x));
   if (gc_rootObjSz>=256) err("Too many GC root objects");
-  gc_rootObjs[gc_rootObjSz++] = x;
+  gc_rootObjs[gc_rootObjSz++] = v(x);
 }
 
 
@@ -53,7 +54,7 @@ static void gc_resetTag(Value* x) {
 
 void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
-  for (u32 i = 0; i < gc_rootObjSz; i++) mm_visit(gc_rootObjs[i]);
+  for (u32 i = 0; i < gc_rootObjSz; i++) mm_visitP(gc_rootObjs[i]);
 }
 u64 gc_lastAlloc;
 void gc_forceGC() {
