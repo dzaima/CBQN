@@ -12,7 +12,7 @@
 
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
-                  F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(RETD) F(SYSV) F(VARU) F(PRED) \
+                  F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(NOTM) F(RETD) F(SYSV) F(VARU) F(PRED) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
@@ -263,6 +263,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             TSADD(newBC, isVal(obj)? ADDI : ADDU);
             A64(obj.u);
             break;
+          case NOTM:
+            TSADD(newBC, ADDU);
+            A64(bi_N.u);
+            break;
           case RETN: if(h!=1) thrM("VM compiler: RETN expected to be called with one item on the stack");
             TSADD(newBC, RETN);
             ret = true;
@@ -443,16 +447,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 
 
 NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
-  if (isExt(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B prev = sc->ext->vars[(u32)s.u];
-    if (upd) {
-      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
-      dec(prev);
-    } else dec(prev);
-    sc->ext->vars[(u32)s.u] = inc(x);
-  } else {
-    VTY(s, t_harr);
+  if (isArr(s)) { VTY(s, t_harr);
     B* sp = harr_ptr(s);
     usz ia = a(s)->ia;
     if (isAtm(x) || !eqShape(s, x)) {
@@ -475,10 +470,19 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
     }
     SGetU(x)
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd, true);
+  } else if (s.u == bi_N.u) {
+    return;
+  } else { assert(isExt(s));
+    Scope* sc = pscs[(u16)(s.u>>32)];
+    B prev = sc->ext->vars[(u32)s.u];
+    if (upd) {
+      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
+      dec(prev);
+    } else dec(prev);
+    sc->ext->vars[(u32)s.u] = inc(x);
   }
 }
 NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
-  assert(isVal(s));
   if (v(s)->type==t_vfyObj) return equal(c(VfyObj,s)->obj,x);
   VTY(s, t_harr);
   B* sp = harr_ptr(s);
@@ -992,7 +996,7 @@ void comp_init() {
   bL_m[MD1C]=1; bL_m[MD2C]=1; bL_m[MD2R]=1;
   bL_m[TR2D]=1; bL_m[TR3D]=1; bL_m[TR3O]=1;
   bL_m[SETN]=1; bL_m[SETU]=1; bL_m[SETM]=1; bL_m[SETH]=1; bL_m[SETC]=1;
-  bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
+  bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[NOTM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
   bL_m[FAIL]=1; bL_m[PRED]=1;
   
   bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[ARRO]=2; bL_m[ARRM]=2;
@@ -1010,7 +1014,7 @@ void comp_init() {
   
   // stack diff map
   sD_m[PUSH ]= 1; sD_m[DYNO ]= 1; sD_m[DYNM]= 1; sD_m[DFND]= 1; sD_m[VARO]= 1; sD_m[VARM]= 1; sD_m[DFND0]= 1; sD_m[DFND1]=1; sD_m[DFND2]=1;
-  sD_m[VARU ]= 1; sD_m[EXTO ]= 1; sD_m[EXTM]= 1; sD_m[EXTU]= 1; sD_m[SYSV]= 1; sD_m[ADDI]= 1; sD_m[ADDU ]= 1;
+  sD_m[VARU ]= 1; sD_m[EXTO ]= 1; sD_m[EXTM]= 1; sD_m[EXTU]= 1; sD_m[SYSV]= 1; sD_m[ADDI]= 1; sD_m[ADDU ]= 1; sD_m[NOTM ]= 1;
   sD_m[FN1Ci]= 0; sD_m[FN1Oi]= 0; sD_m[CHKV]= 0; sD_m[VFYM]= 0; sD_m[FLDO]= 0; sD_m[FLDM]= 0; sD_m[RETD ]= 0; sD_m[ALIM ]=0;
   sD_m[FN2Ci]=-1; sD_m[FN2Oi]=-1; sD_m[FN1C]=-1; sD_m[FN1O]=-1; sD_m[MD1C]=-1; sD_m[TR2D]=-1; sD_m[POPS ]=-1; sD_m[MD2R ]=-1; sD_m[RETN]=-1; sD_m[PRED]=-1; sD_m[PRED1]=-1; sD_m[PRED2]=-1;
   sD_m[MD2C ]=-2; sD_m[TR3D ]=-2; sD_m[FN2C]=-2; sD_m[FN2O]=-2; sD_m[TR3O]=-2; sD_m[SETH]=-2; sD_m[SETH1]=-2; sD_m[SETH2]=-2;
@@ -1023,7 +1027,7 @@ void comp_init() {
   sD_m[FAIL]=0;
   
   // stack consumed map
-  sC_m[PUSH]=0; sC_m[DYNO]=0; sC_m[DYNM]=0; sC_m[DFND]=0; sC_m[VARO ]=0; sC_m[VARM]=0; sC_m[VARU]=0; sC_m[EXTO]=0; sC_m[EXTM]=0;
+  sC_m[PUSH]=0; sC_m[DYNO]=0; sC_m[DYNM]=0; sC_m[DFND]=0; sC_m[VARO ]=0;sC_m[VARM ]=0;sC_m[NOTM ]=0; sC_m[VARU]=0; sC_m[EXTO]=0; sC_m[EXTM]=0;
   sC_m[EXTU]=0; sC_m[SYSV]=0; sC_m[ADDI]=0; sC_m[ADDU]=0; sC_m[DFND0]=0;sC_m[DFND1]=0;sC_m[DFND2]=0;
   
   sC_m[CHKV ]=0;sC_m[RETD ]=0;

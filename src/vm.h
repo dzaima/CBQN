@@ -43,6 +43,7 @@ enum {
   
   PRED = 0x2A, // pop item, go to next body if 0, continue if 1
   VFYM = 0x2B, // push a mutable version of ToS that fails if set to a non-equal value (for header assignment)
+  NOTM = 0x2C, // push a mutable "·" that ignores whatever it's assigned to and always succeeds
   SETH = 0x2F, // set header; acts like SETN, but it doesn't push to stack, and, instead of erroring in cases it would, it skips to the next body
   SETN = 0x30, // set new; _  ←_; ⟨…,x,  mut⟩ → mut←x
   SETU = 0x31, // set upd; _  ↩_; ⟨…,x,  mut⟩ → mut↩x
@@ -298,7 +299,10 @@ FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk) { // doesn'
 }
 
 FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables
-  if (RARE(!isVar(s))) return v_sethR(pscs, s, x);
-  v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false, false);
-  return true;
+  if (LIKELY(isVar(s))) {
+    v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false, false);
+    return true;
+  }
+  if (s.u == bi_N.u) return true;
+  return v_sethR(pscs, s, x);
 }
