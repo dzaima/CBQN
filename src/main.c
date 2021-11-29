@@ -1,5 +1,6 @@
 #include "core.h"
 #include "vm.h"
+#include "ns.h"
 #include "utils/utf.h"
 #include "utils/file.h"
 
@@ -11,9 +12,10 @@ static void repl_init() {
   if (init) return;
   cbqn_init();
   replPath = m_str8l("."); gc_add(replPath);
-  Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(replPath), m_f64(0));
-  gsc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL); gc_add(tag(gsc,OBJ_TAG));
-  ptr_dec(initBlock);
+  Body* body = m_nnsDesc();
+  B ns = m_nns(body);
+  gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
+  ptr_dec(v(ns));
   init = true;
 }
 
