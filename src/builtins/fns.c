@@ -343,7 +343,7 @@ i32 str2gid(B s) {
 
 B gid2str(i32 n) {
   B r = IGetU(globalNameList, n);
-  // print_fmt("gid2str %i → %R", n, r);
+  // print_fmt("gid2str %i → %R\n", n, r);
   return r;
 }
 

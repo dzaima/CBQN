@@ -1,5 +1,6 @@
 #include "core.h"
 #include "ns.h"
+#include "vm.h"
 #include "utils/mut.h"
 
 void m_nsDesc(Body* body, bool imm, u8 ty, i32 actualVam, B nameList, B varIDs, B exported) { // doesn't consume nameList
@@ -36,15 +37,6 @@ B m_ns(Scope* sc, NSDesc* desc) { // consumes both
   return tag(r,NSP_TAG);
 }
 
-
-i32 pos2gid(Body* body, i32 pos) {
-  i32 gid = body->varData[pos];
-  if (LIKELY(gid!=-1)) return gid;
-  
-  i32 nlIdx = body->varData[pos+body->varAm];
-  if (nlIdx==-1) thrM("Cannot use special variable name as namespace key");
-  return body->varData[pos] = str2gid(IGetU(body->bl->comp->nameList, nlIdx));
-}
 
 
 B ns_getU(B ns, i32 gid) { VTY(ns, t_ns);
@@ -93,21 +85,81 @@ void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
   thrM("No key found");
 }
 
-i32 ns_pos(B ns, B name) { VTY(ns, t_ns);
-  NS* n = c(NS, ns);
-  Body* body = n->sc->body;
+
+
+
+static i32* emptyi32ptr;
+static B emptyi32obj;
+Body* m_nnsDescF(i32 n, char** names) {
+  if (emptyi32ptr==NULL) gc_add(emptyi32obj = m_i32arrv(&emptyi32ptr, 0));
+  incBy(emptyi32obj, 3);
+  
+  usz i = 0;
+  HArr_p nl = m_harrs(n, &i);
+  for (; i < n; i++) nl.a[i] = m_str8l(names[i]);
+  
+  Comp* comp = mm_alloc(sizeof(Comp), t_comp);
+  comp->bc = emptyi32obj;
+  comp->indices = bi_N;
+  comp->src = bi_N;
+  comp->path = bi_N;
+  comp->objs = c(HArr, emptyHVec());
+  comp->blockAm = 0;
+  comp->nameList = harr_fv(nl);
+  
+  Block* bl = mm_alloc(fsizeof(Block,bodies,Body*,0), t_block);
+  bl->ty = 0; bl->imm = true;
+  bl->comp = comp;
+  bl->bc = bl->map = emptyi32ptr;
+  bl->blocks = NULL;
+  bl->bodyCount = 0;
+  gc_add(tag(bl, OBJ_TAG));
+  
+  NSDesc* nd = mm_alloc(fsizeof(NSDesc, expGIDs, i32, n<2?2:n), t_nsDesc);
+  nd->varAm = n;
+  for (i = 0; i < n; i++) nd->expGIDs[i] = str2gid(nl.a[i]);
+  
+  Body* body = m_body(n, 0, 0, 0);
+  body->nsDesc = nd;
+  body->bc = (u32*) emptyi32ptr;
+  body->bl = bl;
+  for (i = 0; i < n; i++) {
+    body->varData[i] = nd->expGIDs[i];
+    body->varData[i+n] = i;
+  }
+  gc_add(tag(body, OBJ_TAG));
+  
+  bl->dyBody = bl->invMBody = bl->invXBody = bl->invWBody = body;
+  return body;
+}
+
+B m_nnsF(Body* desc, i32 n, B* vals) {
+  assert(n == desc->varAm);
+  Scope* sc = m_scope(desc, NULL, n, n, vals);
+  return m_ns(sc, ptr_inc(desc->nsDesc));
+}
+
+i32 nns_pos(Body* body, B name) {
   B nameList = body->bl->comp->nameList; SGetU(nameList);
   
   i32 ia = body->varAm;
   for (i32 i = 0; i < ia; i++) {
     i32 pos = body->varData[i+ia];
-    if (pos>=0 && equal(name, GetU(nameList, pos))) return i;
+    if (pos>=0 && equal(name, GetU(nameList, pos))) { dec(name); return i; }
   }
   thrM("No key found");
 }
 
 
 
+i32 pos2gid(Body* body, i32 pos) {
+  i32 gid = body->varData[pos];
+  if (LIKELY(gid!=-1)) return gid;
+  
+  i32 nlIdx = body->varData[pos+body->varAm];
+  if (nlIdx==-1) thrM("Cannot use special variable name as namespace key");
+  return body->varData[pos] = str2gid(IGetU(body->bl->comp->nameList, nlIdx));
+}
 
 DEF_FREE(ns) {
   NS* c = (NS*)x;

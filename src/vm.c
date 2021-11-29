@@ -85,7 +85,7 @@ void print_gStack() {
   }
 }
 
-static Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
+Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
   Body* body = mm_alloc(fsizeof(Body, varData, i32, vam*2), t_body);
   
   #if JIT_START != -1

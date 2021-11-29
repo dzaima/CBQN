@@ -1,6 +1,7 @@
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
+#include "../ns.h"
 
 B itype_c1(B t, B x) {
   B r;
@@ -271,12 +272,10 @@ B getInternalNS() {
     listVariations_def = m_str8l("if");
     gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨ Type,  ElType,  Refc,  Squeeze,  IsPure,  Info,  ListVariations,  Variation,  ClearRefs,  Unshare,  DeepSqueeze⟩⇐𝕩}"), emptyCVec(), emptySVec());
-    B arg =    m_caB(11,(B[]){F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)});
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze));
     #undef F
-    internalNS = c1(fn,arg);
     gc_add(internalNS);
-    dec(fn);
   }
   return inc(internalNS);
 }

@@ -297,15 +297,14 @@ B hash_c1(B t, B x) {
 
 
 
-static B rand_ns;
-static i32 rand_a, rand_b;
+static Body* rand_ns;
 static B rand_rangeName;   static NFnDesc* rand_rangeDesc;
 static B rand_dealName;    static NFnDesc* rand_dealDesc;
 static B rand_subsetName;  static NFnDesc* rand_subsetDesc;
 #define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
-                   u64 seed = sc->vars[rand_a].u | sc->vars[rand_b].u<<32;
-#define RAND_END sc->vars[rand_a].u = seed>>32; \
-                 sc->vars[rand_a].u = seed&0xFFFFFFFF;
+                   u64 seed = sc->vars[0].u | sc->vars[1].u<<32;
+#define RAND_END sc->vars[0].u = seed>>32; \
+                 sc->vars[1].u = seed&0xFFFFFFFF;
 B rand_range_c1(B t, B x) {
   i64 xv = o2i64(x);
   if (xv<0) thrM("(rand).Range: 𝕩 cannot be negative");
@@ -493,22 +492,19 @@ B rand_subset_c2(B t, B w, B x) {
 }
 
 static NOINLINE void rand_init() {
-  rand_ns = bqn_exec(m_str32(U"{a←𝕨⋄b←𝕩⋄range⇐0⋄deal⇐0⋄subset⇐0}"), emptyCVec(), emptySVec()); gc_add(rand_ns);
+  rand_ns = m_nnsDesc("seed1", "seed2", "range", "deal", "subset");
+  NSDesc* d = rand_ns->nsDesc;
+  d->expGIDs[0] = d->expGIDs[1] = -1;
   rand_rangeName  = m_str8l("range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str8l("(rand).Range"), rand_range_c1, rand_range_c2);
   rand_dealName   = m_str8l("deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str8l("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
   rand_subsetName = m_str8l("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str8l("(rand).Subset"),       c1_bad, rand_subset_c2);
-  B tmp = c2(rand_ns, m_f64(0), m_f64(0));
-  rand_a = ns_pos(tmp, m_str8l("a"));
-  rand_b = ns_pos(tmp, m_str8l("b"));
-  dec(tmp);
 }
 B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
-  if (rand_ns.u==0) rand_init();
-  B r = c2(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF));
-  ns_set(r, rand_rangeName,   m_nfn(rand_rangeDesc,   incG(r)));
-  ns_set(r, rand_dealName,    m_nfn(rand_dealDesc,    incG(r)));
-  ns_set(r, rand_subsetName,  m_nfn(rand_subsetDesc,  incG(r)));
+  if (rand_ns==NULL) rand_init();
+  B r = m_nns(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
+  Scope* sc = c(NS,r)->sc;
+  for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], inc(r));
   return r;
 }
 static B randNS;
@@ -812,7 +808,7 @@ B sh_c2(B t, B w, B x) {
 B getInternalNS(void);
 B getMathNS(void);
 
-static B file_nsGen;
+static Body* file_nsGen;
 B sys_c1(B t, B x) {
   assert(isArr(x));
   usz i = 0;
@@ -834,9 +830,8 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        B arg =    m_caB(6, (B[]){q_N(path)? m_c32(0) : inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines)});
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines));
         #undef F
-        fileNS = c1(file_nsGen,arg);
       }
       r.a[i] = inc(fileNS);
     }
@@ -899,5 +894,5 @@ void sysfn_init() {
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = bqn_exec(m_str32(U"{⟨path,At,List,Bytes,Chars,Lines⟩⇐𝕩}"), emptyCVec(), emptySVec()); gc_add(file_nsGen);
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines");
 }

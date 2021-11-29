@@ -2,6 +2,7 @@
 #include "../utils/each.h"
 #include "../builtins.h"
 #include "../nfns.h"
+#include "../ns.h"
 #include <math.h>
 
 static inline B arith_recm(BB2B f, B x) {
@@ -72,12 +73,10 @@ static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
     #define F(X) inc(bi_##X),
-    B fn = bqn_exec(m_str32(U"{⟨Sin,  Cos,  Tan,  Asin,  Acos,  Atan ⟩⇐𝕩}"), emptyCVec(), emptySVec());
-    B arg =    m_caB(6, (B[]){F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)});
+    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan");
+    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan));
     #undef F
-    mathNS = c1(fn,arg);
     gc_add(mathNS);
-    dec(fn);
   }
   return inc(mathNS);
 }
