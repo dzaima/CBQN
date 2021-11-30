@@ -17,52 +17,60 @@ AllocInfo* al;
 u64 alCap;
 u64 alSize;
 
-static inline void BN(guaranteeEmpty)(u8 bucket) {
-  u8 cb = bucket;
+FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
+  c->mmInfo = MMI(to);
+  #ifdef __clang__
+  #pragma clang loop unroll(disable) // at least n repetitions happen with probability 2^-n, so unrolling is kind of stupid
+  #endif
+  while (from != to) {
+    from--;
+    EmptyValue* b = (EmptyValue*) (BSZ(from) + (u8*)c);
+    b->type = t_empty;
+    b->mmInfo = MMI(from);
+    b->next = buckets[from];
+    buckets[from] = b;
+  }
+  c->next = buckets[from];
+  buckets[from] = c;
+}
+
+static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
+  u64 sz = BSZ(from);
+  if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
+  mm_heapAlloc+= sz;
+  // gc_maybeGC();
+  EmptyValue* c = MMAP(sz);
+  #ifdef USE_VALGRIND
+    VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
+  #endif
+  if (alSize+1>=alCap) {
+    alCap = alCap? alCap*2 : 1024;
+    al = realloc(al, sizeof(AllocInfo)*alCap);
+  }
+  al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
+  if (c==MAP_FAILED) { printf("Failed to allocate memory\n"); exit(1); }
+  c->type = t_empty;
+  c->mmInfo = from;
+  c->next = 0;
+  BN(splitTo)(c, from, to, false);
+  return BN(allocL)(bucket, type);
+}
+
+NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
+  i64 to = bucket&63;
+  i64 from = to;
   EmptyValue* c;
   while (true) {
-    cb++;
-    if (buckets[cb]) {
-      c = buckets[cb];
-      assert((c->mmInfo&63)==cb);
-      buckets[cb] = c->next;
+    from++;
+    if (buckets[from]) {
+      c = buckets[from];
+      assert((c->mmInfo&63)==from);
+      buckets[from] = c->next;
       break;
     }
-    if (cb >= ALSZ) {
-      u64 sz = BSZ(cb);
-      if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
-      mm_heapAlloc+= sz;
-      // gc_maybeGC();
-      c = MMAP(sz);
-      #ifdef USE_VALGRIND
-        VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
-      #endif
-      if (alSize+1>=alCap) {
-        alCap = alCap? alCap*2 : 1024;
-        al = realloc(al, sizeof(AllocInfo)*alCap);
-      }
-      al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
-      if (c==MAP_FAILED) { printf("Failed to allocate memory\n"); exit(1); }
-      c->type = t_empty;
-      c->mmInfo = cb;
-      c->next = 0;
-      break;
-    }
+    if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
   }
-  c->mmInfo = MMI(bucket);
-  while (cb != bucket) {
-    cb--;
-    EmptyValue* b = (EmptyValue*) (BSZ(cb) + (u8*)c);
-    b->type = t_empty;
-    b->mmInfo = MMI(cb);
-    b->next = buckets[cb];
-    buckets[cb] = b;
-  }
-  c->next = buckets[cb];
-  buckets[cb] = c;
-}
-NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
-  BN(guaranteeEmpty)(bucket&63);
+  BN(splitTo)(c, from, to, true);
   return BN(allocL)(bucket, type);
 }
 
