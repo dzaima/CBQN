@@ -42,3 +42,35 @@ void heapVerify() {
 }
 
 #endif
+
+static u64 heap_PICounts[t_COUNT];
+static u64 heap_PISizes[t_COUNT];
+
+void heap_PIFn(Value* v) {
+  heap_PICounts[v->type]++;
+  heap_PISizes[v->type]+= mm_size(v);
+}
+
+void heap_printInfo(bool sizes, bool types) {
+  u64 total = mm_heapAlloc;
+  u64 used = mm_heapUsed();
+  printf("RAM allocated: "N64u"\n", total);
+  printf("heap in use: "N64u"\n", used);
+  #if MM!=0
+    if (sizes) {
+      i32 count = sizeof(mm_ctrs)/8;
+      for (i32 i = 0; i < count; i++) {
+        u64 count = mm_ctrs[i];
+        if (count>0) printf("size %llu: "N64u"\n", i>64? 1ULL<<(i*3) : 1ULL<<i, count);
+      }
+    }
+    if (types) {
+      for (i32 i = 0; i < t_COUNT; i++) heap_PICounts[i] = heap_PISizes[i] = 0;
+      mm_forHeap(heap_PIFn);
+      for (i32 i = 0; i < t_COUNT; i++) {
+        u64 count = heap_PICounts[i];
+        if (count>0) printf("type %d/%s: count "N64u", total size "N64u"\n", i, type_repr(i), count, heap_PISizes[i]);
+      }
+    }
+  #endif
+}

@@ -30,6 +30,7 @@ static B gsc_exec_inline(B src, B path, B args) {
 
 static bool isCmd(char* s, char** e, const char* cmd) {
   while (*cmd) {
+    if (*cmd==' ' && *s==0) { *e = s; return true; }
     if (*s!=*cmd || *s==0) return false;
     s++; cmd++;
   }
@@ -191,6 +192,21 @@ int main(int argc, char* argv[]) {
           code = fromUTF8l(repE);
           time = am;
           output = false;
+        } else if (isCmd(cmdS, &cmdE, "mem ")) {
+          bool sizes = 0;
+          bool types = 0;
+          char c;
+          while ((c=*(cmdE++)) != 0) {
+            if (c=='t') types=1;
+            if (c=='s') sizes=1;
+          }
+          heap_printInfo(sizes, types);
+          goto cont;
+        } else if (isCmd(cmdS, &cmdE, "gc ")) {
+          if (gc_depth!=0) printf("Cannot GC currently\n");
+          else if (ENABLE_GC) gc_forceGC();
+          else printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
+          goto cont;
         } else {
           printf("Unknown REPL command\n");
           goto cont;
