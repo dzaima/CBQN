@@ -492,7 +492,7 @@ enum Flags {
   fl_dsc=4, // sorted descending (non-ascending)
 };
 #define FL_SET(X,F) ({ B x_ = (X); v(x_)->flags|= (F); x_; })
-#define FL_KEEP(X,F) ({ B x_ = (X); v(X)->flags&= (F); x_; })
+#define FL_KEEP(X,F) ({ B x_ = (X); v(x_)->flags&= (F); x_; })
 #define FL_HAS(X,F) ((v(X)->flags&(F)) != 0)
 
 // refcount stuff
