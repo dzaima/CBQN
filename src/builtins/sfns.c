@@ -648,9 +648,9 @@ B slash_im(B t, B x) {
       SLOW1("/⁼", x);
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
-      if(o2i64(xp[0])<0) thrM("/⁼: Argument cannot contain negative numbers");
+      i64 prev = o2i64(xp[0]);
+      if(prev<0) thrM("/⁼: Argument cannot contain negative numbers");
       bool bitres = true;
-      i64 prev = 0;
       for (usz i = 1; i < xia; i++) {
         i64 c = o2i64(xp[i]);
         if (prev>=c) { bitres=false; if (prev>c) thrM("/⁼: Argument must be sorted"); }
