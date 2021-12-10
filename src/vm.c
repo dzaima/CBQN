@@ -73,7 +73,7 @@ NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
 void print_gStack() {
   B* c = gStackStart;
   i32 i = 0;
-  printf("gStack %p, height "N64d":\n", gStackStart, gStack-gStackStart);
+  printf("gStack %p, height "N64d":\n", gStackStart, (i64)(gStack-gStackStart));
   while (c!=gStack) {
     printf("  %d: ", i); fflush(stdout);
     print(*c); fflush(stdout);
