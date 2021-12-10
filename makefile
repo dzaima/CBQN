@@ -25,6 +25,8 @@ debugn-singeli:
 	@${MAKE} singeli=1 t=debugn_si  f="-g -DDEBUG -march=native" c
 heapverifyn-singeli:
 	@${MAKE} singeli=1 t=heapverifyn_si f="-g -DDEBUG -DHEAP_VERIFY -march=native" c
+rtverifyn-singeli:
+	@${MAKE} singeli=1 t=rtverifyn_si f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" c
 
 
 

@@ -49,6 +49,11 @@
 // #define ALL_R0       // use all of r0.bqn for runtime_0
 // #define ALL_R1       // use all of r1.bqn for runtime
 
+// #define JIT_START 2  // number of calls for when to start JITting (x86_64-only); default is 2, defined in vm.h
+// -1: never JIT
+//  0: JIT everything
+// >0: JIT after n non-JIT invocations; max ¯1+2⋆16
+
 // #define LOG_GC    // log GC stats
 // #define RT_PERF   // time runtime primitives
 // #define RT_VERIFY // compare native and runtime versions of primitives
