@@ -26,7 +26,7 @@ B gid2str(i32 n); // returns unowned object
 
 
 #define m_nnsDesc(...) ({ char* names_[] = {__VA_ARGS__}; m_nnsDescF(sizeof(names_)/sizeof(char*), names_); })
-#define m_nns(desc, ...) ({ B vals_[] = {__VA_ARGS__}; m_nnsF(desc, sizeof(vals_)/sizeof(char*), vals_); })
+#define m_nns(desc, ...) ({ B vals_[] = {__VA_ARGS__}; m_nnsF(desc, sizeof(vals_)/sizeof(B), vals_); })
 
 Body* m_nnsDescF(i32 n, char** names); // adds the result as a permanent GC root
 B m_nnsF(Body* desc, i32 n, B* vals);
