@@ -232,7 +232,7 @@ static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
       B* mpo = m->aB+ms;
       B* xp = arr_bptr(x);
       if (xp!=NULL) {
-        memcpy(mpo, xp+xs, l*sizeof(B*));
+        memcpy(mpo, xp+xs, l*sizeof(B));
         for (usz i = 0; i < l; i++) inc(mpo[i]);
         return;
       }
