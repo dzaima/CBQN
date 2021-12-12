@@ -4,6 +4,7 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
+bool please_tail_call_err = true;
 
 bool inErr;
 NORETURN NOINLINE void err(char* s) {

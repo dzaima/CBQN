@@ -12,8 +12,8 @@ static NOINLINE void fillBitsDec(u64* dst, u64 sz, bool v, u64 x) {
   fillBits(dst, sz, v);
 }
 
-bool please_tail_call_cmp_err = 1;
-static NOINLINE void cmp_err() { if (please_tail_call_cmp_err) thrM("Invalid comparison"); }
+extern bool please_tail_call_err;
+static NOINLINE void cmp_err() { if (please_tail_call_err) thrM("Invalid comparison"); }
 
 
 #define BCALL(N, X) N(b(X))
