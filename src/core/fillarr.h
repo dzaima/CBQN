@@ -65,6 +65,12 @@ static Arr* m_fillarrp(usz ia) {
 static void fillarr_setFill(Arr* x, B fill) { assert(x->type==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
 static B* fillarr_ptr(Arr* x) { assert(x->type==t_fillarr); return ((FillArr*)x)->a; }
 
+static B m_emptyFVec(B f) { // consumes f
+  Arr* r = m_fillarrp(0);
+  fillarr_setFill(r, f);
+  arr_shVec(r);
+  return taga(r);
+}
 
 static B m_unit(B x) {
   B xf = asFill(inc(x));

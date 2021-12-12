@@ -437,6 +437,9 @@ B slash_c1(B t, B x) {
   dec(x);
   return r;
 }
+#ifdef __BMI2__
+#include <immintrin.h>
+#endif
 B slash_c2(B t, B w, B x) {
   if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
@@ -452,9 +455,31 @@ B slash_c2(B t, B w, B x) {
       u64* wp = bitarr_ptr(w);
       while (wia>0 && !bitp_get(wp,wia-1)) wia--;
       usz wsum = bit_sum(wp, wia);
+      if (wsum==0) { dec(w); dec(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
       B r;
       switch(TI(x,elType)) { default: UD;
+        #ifdef __BMI2__
+        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
+          u64 cw = 0; // current word
+          u64 ro = 0; // offset in word where next bit should be written; never 64
+          for (usz i=0; i<BIT_N(wia); i++) {
+            u64 wv = wp[i];
+            u64 v = _pext_u64(xp[i], wv);
+            u64 c = POPC(wv);
+            cw|= v<<ro;
+            u64 ro2 = ro+c;
+            if (ro2>=64) {
+              *(rp++) = cw;
+              cw = ro? v>>(64-ro) : 0;
+            }
+            ro = ro2&63;
+          }
+          if (ro) *rp = cw;
+          break;
+        }
+        #else
         case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+        #endif
         case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_i32: { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
