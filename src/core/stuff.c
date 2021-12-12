@@ -722,6 +722,7 @@ B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
 void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
 void   g_pv(void* x) { print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); }
+void   g_pst() { vm_pstLive(); }
 
 #ifdef DEBUG
   #ifdef OBJ_COUNTER
