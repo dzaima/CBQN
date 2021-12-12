@@ -1196,14 +1196,14 @@ B slash_ucw(B t, B o, B w, B x) {
 }
 
 B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || rnk(x)!=1 || isAtm(w) || rnk(w)!=1) return def_fn_ucw(t, o, w, x);
+  if (isAtm(x) || rnk(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
   usz xia = a(x)->ia;
   usz wia = a(w)->ia;
   SGetU(w)
   if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = select_c2(t, inc(w), inc(x));
   B rep = c1(o, arg);
-  if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != wia) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as a⊏𝕩 (expected ⟨%s⟩, got %H)", wia, rep);
+  if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as 'a' (expected ⟨%H⟩, got %H)", w, rep);
   #if CHECK_VALID
     TALLOC(bool, set, xia);
     for (i64 i = 0; i < xia; i++) set[i] = false;
