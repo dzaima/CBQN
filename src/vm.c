@@ -1193,7 +1193,8 @@ NOINLINE void printErrMsg(B msg) {
 NOINLINE NORETURN void thr(B msg) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
-  if (cf>cfStart) {
+  
+  if (cf>cfStart) { // something wants to catch errors
     catchMessage = msg;
     cf--;
     
@@ -1207,17 +1208,18 @@ NOINLINE NORETURN void thr(B msg) {
     if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
     cf = cfStart+cf->cfDepth;
     longjmp(cf->jmp, 1);
+  } else { // uncaught error
+    assert(cf==cfStart);
+    printf("Error: "); printErrMsg(msg); putchar('\n'); fflush(stdout);
+    Env* envEnd = envCurr+1;
+    unwindEnv(envStart-1);
+    vm_pst(envCurr+1, envEnd);
+    #ifdef DEBUG
+    __builtin_trap();
+    #else
+    exit(1);
+    #endif
   }
-  assert(cf==cfStart);
-  printf("Error: "); printErrMsg(msg); putchar('\n'); fflush(stdout);
-  Env* envEnd = envCurr+1;
-  unwindEnv(envStart-1);
-  vm_pst(envCurr+1, envEnd);
-  #ifdef DEBUG
-  __builtin_trap();
-  #else
-  exit(1);
-  #endif
 }
 
 NOINLINE NORETURN void thrM(char* s) {

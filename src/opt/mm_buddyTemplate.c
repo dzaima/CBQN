@@ -36,7 +36,10 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
-  if (mm_heapAlloc+sz >= mm_heapMax) { printf("Heap size limit reached\n"); exit(1); }
+  if (mm_heapAlloc+sz >= mm_heapMax) {
+    if (sz>100000) thrM("Heap size limit reached"); // if allocating a large thing, it should be possible to recover
+    printf("Heap size limit reached\n"); abort();
+  }
   mm_heapAlloc+= sz;
   // gc_maybeGC();
   EmptyValue* c = MMAP(sz);
