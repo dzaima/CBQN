@@ -585,11 +585,12 @@ B slash_im(B t, B x) {
   if (xia==0) { dec(x); return emptyIVec(); }
   switch(xe) {
     case el_i8: {
-      i8* xp = i8any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
-      bool bitres = true;
-      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
-      usz ria = 1 + (usz)xp[xia-1]; B r;
-      if (bitres) {
+      i8* xp = i8any_ptr(x);
+      usz i,j; B r; i8 max=-1;
+      for (i = 0; i < xia; i++) { i8 c=xp[i]; if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { i8 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      usz ria = max+1;
+      if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
@@ -599,11 +600,12 @@ B slash_im(B t, B x) {
       dec(x); return r;
     }
     case el_i16: {
-      i16* xp = i16any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
-      bool bitres = true;
-      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
-      usz ria = 1 + (usz)xp[xia-1]; B r;
-      if (bitres) {
+      i16* xp = i16any_ptr(x);
+      usz i,j; B r; i16 max=-1;
+      for (i = 0; i < xia; i++) { i16 c=xp[i]; if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { i16 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      usz ria = max+1;
+      if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
@@ -613,11 +615,12 @@ B slash_im(B t, B x) {
       dec(x); return r;
     }
     case el_i32: {
-      i32* xp = i32any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
-      bool bitres = true;
-      for (usz i = 1; i < xia; i++) if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
-      usz ria = 1 + (usz)xp[xia-1]; B r;
-      if (bitres) {
+      i32* xp = i32any_ptr(x);
+      usz i,j; B r; i32 max=-1;
+      for (i = 0; i < xia; i++) { i32 c=xp[i]; if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { i32 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      usz ria = max+1;
+      if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
@@ -627,15 +630,12 @@ B slash_im(B t, B x) {
       dec(x); return r;
     }
     case el_f64: {
-      f64* xp = f64any_ptr(x); if(xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");
-      bool bitres = true;
-      if (xp[0] != (usz)xp[0]) thrM("/⁼: Argument cannot contain fractional numbers");
-      for (usz i = 1; i < xia; i++) {
-        if (xp[i] != (usz)xp[i]) thrM("/⁼: Argument cannot contain fractional numbers");
-        if (xp[i-1]>=xp[i]) { bitres=false; if (xp[i-1]>xp[i]) thrM("/⁼: Argument must be sorted"); }
-      }
-      usz ria = 1 + (usz)xp[xia-1]; B r;
-      if (bitres) {
+      f64* xp = f64any_ptr(x);
+      usz i,j; B r; f64 max=-1;
+      for (i = 0; i < xia; i++) { f64 c=xp[i]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { f64 c=xp[j]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      usz ria = max+1; if (ria==0) thrOOM();
+      if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
@@ -648,16 +648,11 @@ B slash_im(B t, B x) {
       SLOW1("/⁼", x);
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
-      i64 prev = o2i64(xp[0]);
-      if(prev<0) thrM("/⁼: Argument cannot contain negative numbers");
-      bool bitres = true;
-      for (usz i = 1; i < xia; i++) {
-        i64 c = o2i64(xp[i]);
-        if (prev>=c) { bitres=false; if (prev>c) thrM("/⁼: Argument must be sorted"); }
-        prev = c;
-      }
-      usz ria = prev+1; B r;
-      if (bitres) {
+      usz i,j; B r; i64 max=-1;
+      for (i = 0; i < xia; i++) { usz c=o2s(xp[i]); if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { usz c=o2s(xp[j]); if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      usz ria = max+1; if (ria==0) thrOOM();
+      if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64u(xp[i]), 1);
       } else {
