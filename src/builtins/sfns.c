@@ -251,14 +251,70 @@ B pick_c1(B t, B x) {
   dec(x);
   return r;
 }
+
+static B recPick(B w, B x) { // doesn't consume
+  assert(isArr(w) && isArr(x));
+  usz ia = a(w)->ia;
+  ur xr = rnk(x);
+  usz* xsh = a(x)->sh;
+  switch(TI(w,elType)) { default: UD;
+    case el_i8:  { i8*  wp = i8any_ptr (w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i16: { i16* wp = i16any_ptr(w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i32: { i32* wp = i32any_ptr(w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_c8: case el_c16: case el_c32: case el_bit:
+    case el_B: {
+      if (ia==0) {
+        if (xr!=0) thrM("⊑: Empty array in 𝕨 must correspond to unit in 𝕩");
+        return IGet(x,0);
+      }
+      SGetU(w)
+      if (isNum(GetU(w,0))) {
+        if (ia!=xr) goto wrr;
+        usz c=0;
+        for (usz i = 0; i < ia; i++) {
+          B cw = GetU(w,i);
+          if (!isNum(cw)) thrM("⊑: 𝕨 contained list with mixed-type elements");
+          c = c*xsh[i] + WRAP(o2i64(cw), xsh[i], goto oob);
+        }
+        return IGet(x,c);
+      } else {
+        usz i = 0;
+        HArr_p r = m_harrs(ia, &i);
+        for(; i<ia; i++) {
+          B c = GetU(w, i);
+          if (isAtm(c)) thrM("⊑: 𝕨 contained list with mixed-type elements");
+          r.a[i] = recPick(c, x);
+        }
+        return harr_fc(r, w);
+      }
+    }
+  }
+  #undef PICK
+  
+  wrr:
+    SGetU(w)
+    for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("⊑: 𝕨 contained list with mixed-type elements");
+    thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x);
+  oob:
+    thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
+}
+
 B pick_c2(B t, B w, B x) {
-  if (isNum(w) && isArr(x) && rnk(x)==1) {
+  if (RARE(isAtm(x))) {
+    if (isAtm(w) || rnk(w)!=1 || a(w)->ia!=0) return c2(rt_pick, w, x); // ugh this is such a lame case that'd need a whole another recursive fn to implement
+    dec(w);
+    return x;
+  }
+  if (isNum(w)) {
+    if (rnk(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
     usz p = WRAP(o2i64(w), a(x)->ia, thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
     B r = IGet(x, p);
     dec(x);
     return r;
   }
-  return c2(rt_pick, w, x);
+  B r = recPick(w, x);
+  dec(w); dec(x);
+  return r;
 }
 
 extern B rt_select;
@@ -1222,7 +1278,7 @@ B select_ucw(B t, B o, B w, B x) {
   if (we<=el_i32) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);
-    if (re<el_f64 && xe<el_f64) {
+    if (re<=el_f64 && xe<=el_f64) {
       u8 me = xe>re?xe:re;
       bool reuse = reusable(x);
       if (me==el_i32) {
@@ -1232,17 +1288,6 @@ B select_ucw(B t, B o, B w, B x) {
         for (usz i = 0; i < wia; i++) {
           i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia; // we're free to assume w is valid
           i32 cr = rp[i];
-          EQ(cr != xp[cw]);
-          xp[cw] = cr;
-        }
-        dec(w); dec(rep); FREE_CHECK; return taga(xn);
-      } else if (me==el_i16) {
-        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : cpyI16Arr(x);
-        i16* xp = i16arrv_ptr(xn);
-        rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          i16 cr = rp[i];
           EQ(cr != xp[cw]);
           xp[cw] = cr;
         }
@@ -1258,6 +1303,17 @@ B select_ucw(B t, B o, B w, B x) {
           xp[cw] = cr;
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else if (me==el_i16) {
+        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : cpyI16Arr(x);
+        i16* xp = i16arrv_ptr(xn);
+        rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
+          i16 cr = rp[i];
+          EQ(cr != xp[cw]);
+          xp[cw] = cr;
+        }
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_bit) {
         BitArr* xn = reuse? toBitArr(REUSE(x)) : cpyBitArr(x);
         u64* xp = bitarrv_ptr(xn);
@@ -1267,6 +1323,17 @@ B select_ucw(B t, B o, B w, B x) {
           bool cr = bitp_get(rp, i);
           EQ(cr != bitp_get(xp,cw));
           bitp_set(xp,cw,cr);
+        }
+        dec(w); dec(rep); FREE_CHECK; return taga(xn);
+      } else if (me==el_f64) {
+        F64Arr* xn = reuse? toF64Arr(REUSE(x)) : cpyF64Arr(x);
+        f64* xp = f64arrv_ptr(xn);
+        rep = toF64Any(rep); f64* rp = f64any_ptr(rep);
+        for (usz i = 0; i < wia; i++) {
+          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
+          f64 cr = rp[i];
+          EQ(cr != xp[cw]);
+          xp[cw] = cr;
         }
         dec(w); dec(rep); FREE_CHECK; return taga(xn);
       } else UD;

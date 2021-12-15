@@ -199,6 +199,16 @@ i32 num_fmt(char buf[30], f64 x) {
   }
   return len;
 }
+
+static B appendRaw(B s, B x) { assert(isArr(x) && rnk(x)==1); // consumes x
+  if (TI(x,elType)==el_c32) AJOIN(x);
+  else {
+    B sq = chr_squeezeChk(x);
+    if (!elChr(TI(sq,elType))) FL_KEEP(sq, ~fl_squoze);
+    AJOIN(sq);
+  }
+  return s;
+}
 NOINLINE B do_fmt(B s, char* p, va_list a) {
   char buf[30];
   char c;
@@ -209,16 +219,13 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
       case 'R': {
         B b = va_arg(a, B);
-        if (isNum(b)) {
-          AFMT("%f", o2f(b));
-        } else { assert(isArr(b) && rnk(b)==1);
-          if (TI(b,elType)==el_c32) AJOIN(inc(b));
-          else {
-            B sq = chr_squeezeChk(inc(b));
-            if (!elChr(TI(sq,elType))) FL_KEEP(sq, ~fl_squoze);
-            AJOIN(sq);
-          }
-        }
+        if (isNum(b)) AFMT("%f", o2f(b));
+        else s = appendRaw(s, inc(b));
+        break;
+      }
+      case 'B': {
+        B b = va_arg(a, B);
+        s = appendRaw(s, bqn_fmt(inc(b)));
         break;
       }
       case 'H': {
