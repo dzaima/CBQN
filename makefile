@@ -58,7 +58,7 @@ PIE = -no-pie
 # test if we are running gcc or clang
 CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
 ifeq (${CC_IS_CLANG}, 1)
-	CCFLAGS = -Wno-microsoft-anon-tag
+	CCFLAGS = -Wno-microsoft-anon-tag -Wno-bitwise-instead-of-logical -Wno-unknown-warning-option
 else
 	CCFLAGS = -Wno-parentheses
 endif
