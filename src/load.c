@@ -211,7 +211,39 @@ void init_comp(B* set, B prim) { // doesn't consume
     set[0] = inc(load_comp);
     set[1] = inc(load_rtObj);
   } else {
-    thrM("•ReBQN: primitives⇐ unimplemented");
+    if (!isArr(prim)||rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
+    usz pia = a(prim)->ia;
+    usz np[3] = {0}; // number of functions, 1-modifiers, and 2-modifiers
+    SGetU(prim);
+    for (usz i = 0; i < pia; i++) { // check and count
+      B p = GetU(prim, i);
+      if (!isArr(p)||rnk(p)!=1||a(p)->ia!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
+      if (!isC32(IGet(p, 0))) thrM("•ReBQN 𝕩.primitives: Glyphs must be characters");
+      B v = IGetU(p, 1);
+      i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      if (t==3) thrM("•ReBQN 𝕩.primitives: Primitives must be operations");
+      np[t] += 1;
+    }
+    HArr_p r = m_harrUv(3);
+    u32* gl[3];
+    usz sum = 0;
+    for (usz i = 0; i < 3; i++) {
+      usz l = np[i];
+      r.a[i] = m_c32arrv(gl+i, l);
+      np[i] = sum;
+      sum += l;
+    }
+    HArr_p prh = m_harrUv(pia);
+    B *rt = prh.a;
+    for (usz i = 0; i < pia; i++) {
+      B gv = GetU(prim, i);
+      B v = IGet(gv, 1);
+      i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      *(gl[t]++) = o2cu(IGet(gv, 0));
+      rt[np[t]++] = v;
+    }
+    set[1] = prh.b;
+    set[0] = c1(load_compgen, r.b);
   }
 }
 
@@ -222,7 +254,7 @@ B bqn_exec(B str, B path, B args) { // consumes all
   return res;
 }
 B rebqn_exec(B str, B path, B args, B comp, B rt) { // consumes str,path,args
-  B rtsys = m_hVec2(rt, incG(bi_sys));
+  B rtsys = m_hVec2(inc(rt), incG(bi_sys));
   Block* block = bqn_compc(str, path, args, comp, rtsys);
   dec(rtsys);
   B res = m_funBlock(block, 0);
@@ -383,8 +415,8 @@ void load_init() { // very last init function
     );
     runtime[n_asrt] = prevAsrt;
     B glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
-    load_compgen = m_funBlock(comp_b, 0);
-    load_comp = c1(load_compgen, glyphs); ptr_dec(comp_b);
+    load_compgen = m_funBlock(comp_b, 0); ptr_dec(comp_b);
+    load_comp = c1(load_compgen, glyphs);
     gc_add(load_compgen); gc_add(load_comp);
     
     

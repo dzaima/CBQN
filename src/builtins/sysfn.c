@@ -527,7 +527,6 @@ B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
   B repl = ns_getNUf(x, m_str8l("repl"));
   B prim = ns_getNUf(x, m_str8l("primitives"));
-  dec(x);
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
   Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
@@ -541,6 +540,7 @@ B reBQN_c1(B t, B x) {
   ptr_dec(initBlock);
   B dat = m_hVec4(m_f64(replVal), scVal, bi_N, bi_N);
   init_comp(harr_ptr(dat)+2, prim);
+  dec(x);
   return m_nfn(reBQNDesc, dat);
 }
 B repl_c2(B t, B w, B x) {
