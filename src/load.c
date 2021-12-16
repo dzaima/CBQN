@@ -100,6 +100,7 @@ i64 comp_currEnvPos;
 B comp_currPath;
 B comp_currArgs;
 B comp_currSrc;
+B comp_currRe;
 
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
@@ -127,6 +128,7 @@ B load_comp;
 B load_compgen;
 B load_rtObj;
 B load_compArg;
+B load_glyphs;
 
 #if FORMATTER
 B load_fmt, load_repr;
@@ -149,6 +151,7 @@ void load_gcFn() {
   mm_visit(comp_currPath);
   mm_visit(comp_currArgs);
   mm_visit(comp_currSrc);
+  mm_visit(comp_currRe);
   mm_visit(rt_invFnReg);
   mm_visit(rt_invFnSwap);
 }
@@ -206,10 +209,23 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
   return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl);
 }
+
+B bqn_exec(B str, B path, B args) { // consumes all
+  Block* block = bqn_comp(str, path, args);
+  B res = m_funBlock(block, 0);
+  ptr_dec(block);
+  return res;
+}
+void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
+  load_comp = comp;
+  gc_add(load_comp);
+}
+
 void init_comp(B* set, B prim) { // doesn't consume
   if (q_N(prim)) {
     set[0] = inc(load_comp);
     set[1] = inc(load_rtObj);
+    set[2] = inc(load_glyphs);
   } else {
     if (!isArr(prim)||rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = a(prim)->ia;
@@ -243,29 +259,55 @@ void init_comp(B* set, B prim) { // doesn't consume
       rt[np[t]++] = v;
     }
     set[1] = prh.b;
+    set[2] = inc(r.b);
     set[0] = c1(load_compgen, r.b);
   }
 }
+B getPrimitives(void) {
+  B g, r;
+  if (q_N(comp_currRe)) {
+    g = load_glyphs; r = load_rtObj;
+  } else {
+    B* o = harr_ptr(comp_currRe); g = o[4]; r = o[3];
+  }
+  B* pr = harr_ptr(r);
+  B* gg = harr_ptr(g);
+  HArr_p ph = m_harrUv(a(r)->ia); B* p = ph.a;
+  for (usz gi = 0; gi < 3; gi++) {
+    usz l = a(gg[gi])->ia;
+    u32 *gp = c32arr_ptr(gg[gi]);
+    for (usz i = 0; i < l; i++) {
+      p[i] = m_hVec2(m_c32(gp[i]), inc(pr[i]));
+    }
+    p += l; pr += l;
+  }
+  return ph.b;
+}
 
-B bqn_exec(B str, B path, B args) { // consumes all
-  Block* block = bqn_comp(str, path, args);
-  B res = m_funBlock(block, 0);
-  ptr_dec(block);
+B rebqn_exec(B str, B path, B args, B o) {
+  B prevRe = comp_currRe; comp_currRe = inc(o);
+  B* op = harr_ptr(o);
+  i32 replMode = o2iu(op[0]);
+  Scope* sc = c(Scope, op[1]);
+  B res;
+  if (replMode>0) {
+    Block* block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2);
+    comp_currRe = prevRe;
+    ptr_dec(sc->body);
+    sc->body = ptr_inc(block->bodies[0]);
+    res = execBlockInline(block, sc);
+    ptr_dec(block);
+  } else {
+    B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
+    Block* block = bqn_compc(str, path, args, op[2], rtsys);
+    dec(rtsys);
+    comp_currRe = prevRe;
+    res = m_funBlock(block, 0);
+    ptr_dec(block);
+  }
+  dec(o);
   return res;
 }
-B rebqn_exec(B str, B path, B args, B comp, B rt) { // consumes str,path,args
-  B rtsys = m_hVec2(inc(rt), incG(bi_sys));
-  Block* block = bqn_compc(str, path, args, comp, rtsys);
-  dec(rtsys);
-  B res = m_funBlock(block, 0);
-  ptr_dec(block);
-  return res;
-}
-void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
-  load_comp = comp;
-  gc_add(load_comp);
-}
-
 
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
 static NOINLINE B m_lvB_1(B a               ) { return m_hVec1(a); }
@@ -282,6 +324,7 @@ void load_init() { // very last init function
   comp_currPath = bi_N;
   comp_currArgs = bi_N;
   comp_currSrc  = bi_N;
+  comp_currRe   = bi_N;
   gc_addFn(load_gcFn);
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add     , bi_sub    , bi_mul   , bi_div  , bi_pow    , bi_root     , bi_floor , bi_ceil , bi_stile  , bi_not,
@@ -414,10 +457,10 @@ void load_init() { // very last init function
       #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
-    B glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    load_glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     load_compgen = m_funBlock(comp_b, 0); ptr_dec(comp_b);
-    load_comp = c1(load_compgen, glyphs);
-    gc_add(load_compgen); gc_add(load_comp);
+    load_comp = c1(load_compgen, inc(load_glyphs));
+    gc_add(load_compgen); gc_add(load_comp); gc_add(load_glyphs);
     
     
     #if FORMATTER

@@ -538,33 +538,17 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  B dat = m_hVec4(m_f64(replVal), scVal, bi_N, bi_N);
-  init_comp(harr_ptr(dat)+2, prim);
+  HArr_p d = m_harrUv(5); d.a[0] = m_f64(replVal); d.a[1] = scVal;
+  d.a[2]=d.a[3]=d.a[4]=bi_N;
+  init_comp(d.a+2, prim);
   dec(x);
-  return m_nfn(reBQNDesc, dat);
+  return m_nfn(reBQNDesc, d.b);
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
-  B o = nfn_objU(t);
-  B* op = harr_ptr(o);
-  i32 replMode = o2iu(op[0]);
-  Scope* sc = c(Scope, op[1]);
-  
   B fullpath;
   B args = args_path(&fullpath, w, "REPL");
-  
-  B res;
-  if (replMode>0) {
-    Block* block = bqn_compScc(x, fullpath, args, sc, op[2], op[3], replMode==2);
-    ptr_dec(sc->body);
-    sc->body = ptr_inc(block->bodies[0]);
-    res = execBlockInline(block, sc);
-    ptr_dec(block);
-  } else {
-    res = rebqn_exec(x, fullpath, args, op[2], op[3]);
-  }
-  
-  return res;
+  return rebqn_exec(x, fullpath, args, nfn_objU(t));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
@@ -812,6 +796,7 @@ B sh_c2(B t, B w, B x) {
 
 B getInternalNS(void);
 B getMathNS(void);
+B getPrimitives(void);
 
 static Body* file_nsGen;
 B sys_c1(B t, B x) {
@@ -864,6 +849,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"makerand")) r.a[i] = incG(bi_makeRand);
     else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
     else if (eqStr(c, U"rebqn")) r.a[i] = incG(bi_reBQN);
+    else if (eqStr(c, U"primitives")) r.a[i] = getPrimitives();
     else if (eqStr(c, U"fromutf8")) r.a[i] = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
     else if (eqStr(c, U"name")) r.a[i] = inc(REQ_NAME);
