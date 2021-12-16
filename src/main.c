@@ -203,9 +203,12 @@ int main(int argc, char* argv[]) {
           heap_printInfo(sizes, types);
           goto cont;
         } else if (isCmd(cmdS, &cmdE, "gc ")) {
-          if (gc_depth!=0) printf("Cannot GC currently\n");
-          else if (ENABLE_GC) gc_forceGC();
-          else printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
+          #if ENABLE_GC
+            if (gc_depth!=0) printf("Cannot GC currently\n");
+            else gc_forceGC();
+          #else
+            printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
+          #endif
           goto cont;
         } else {
           printf("Unknown REPL command\n");

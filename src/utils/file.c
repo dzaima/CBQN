@@ -79,7 +79,7 @@ B file_lines(B path) { // consumes
     usz spos = pos;
     while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
     r.a[i++] = fromUTF8((char*)p+spos, pos-spos);
-    if (p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
+    if (pos<ia && p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
     else pos++;
   }
   ptr_dec(tf);

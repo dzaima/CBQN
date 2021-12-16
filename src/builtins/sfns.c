@@ -437,8 +437,8 @@ B select_c2(B t, B w, B x) {
 extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(rnk(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
-  i64 s = isum(x);
-  if(s<0) thrM("/: Argument must consist of natural numbers");
+  u64 s = usum(x);
+  if (s>=USZ_MAX) thrOOM();
   usz xia = a(x)->ia;
   if (RARE(xia>=I32_MAX)) {
     usz xia = a(x)->ia;
@@ -469,7 +469,6 @@ B slash_c1(B t, B x) {
         *rp = i;
         rp+= c;
       } else {
-        if (RARE(c)<0) thrF("/: Argument must consist of natural numbers (contained %i)", c);
         for (i32 j = 0; j < c; j++) *rp++ = i;
       }
     }
@@ -482,7 +481,6 @@ B slash_c1(B t, B x) {
         *rp = i;
         rp+= c;
       } else {
-        if (RARE(c)<0) thrF("/: Argument must consist of natural numbers (contained %i)", c);
         for (i32 j = 0; j < c; j++) *rp++ = i;
       }
     }
@@ -615,8 +613,8 @@ B slash_c2(B t, B w, B x) {
     #undef TYPED
     #undef CASE
     SLOW2("𝕨/𝕩", w, x);
-    i64 ria = isum(w);
-    if (ria>USZ_MAX) thrOOM();
+    u64 ria = usum(w);
+    if (ria>=USZ_MAX) thrOOM();
     HArr_p r = m_harrs(ria, &ri);
     SGetU(w)
     SGetU(x)

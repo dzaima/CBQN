@@ -104,22 +104,33 @@ static i64 bit_sum(u64* x, u64 am) {
   return r;
 }
 
-static i64 isum(B x) { // doesn't consume; may error
+static u64 usum(B x) { // doesn't consume; may error
   assert(isArr(x));
-  i64 r = 0;
+  u64 r = 0;
   usz xia = a(x)->ia;
   u8 xe = TI(x,elType);
   if      (xe==el_bit) return bit_sum(bitarr_ptr(x), xia);
-  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) r+= p[i]; }
-  else if (xe==el_i16) { i16* p = i16any_ptr(x); for (usz i = 0; i < xia; i++) if (addOn(r,p[i])) goto err; }
-  else if (xe==el_i32) { i32* p = i32any_ptr(x); for (usz i = 0; i < xia; i++) if (addOn(r,p[i])) goto err; }
+  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; r+= p[i]; } }
+  else if (xe==el_i16) { i16* p = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; if (addOn(r,p[i])) goto overflow; } }
+  else if (xe==el_i32) { i32* p = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; if (addOn(r,p[i])) goto overflow; } }
   else if (xe==el_f64) {
     f64* p = f64any_ptr(x);
-    for (usz i = 0; i < xia; i++) { if(p[i]!=(i64)p[i] || addOn(r,(i64)p[i])) goto err; }
+    for (usz i = 0; i < xia; i++) {
+      f64 c = p[i];
+      u64 ci = (u64)c;
+      if (c!=ci) thrM("Expected integer");
+      if (ci<0) goto neg;
+      if (addOn(r,ci)) goto overflow;
+    }
   } else {
     SGetU(x)
-    for (usz i = 0; i < xia; i++) r+= o2i64(GetU(x,i));
+    for (usz i = 0; i < xia; i++) {
+      u64 c = o2u64(GetU(x,i));
+      if (c<0) thrM("Didn't expect negative integer");
+      if (addOn(r,c)) goto overflow;
+    }
   }
   return r;
-  err: thrM("Expected integer");
+  overflow: thrM("Sum too big");
+  neg: thrM("Didn't expect negative integer");
 }

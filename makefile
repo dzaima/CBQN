@@ -93,7 +93,7 @@ endif
 
 
 gen: builtins core base jit utils # build the final binary
-	@$(CC) ${PIE} -o BQN ${bd}/*.o -lm
+	@$(CC) ${lf} ${PIE} -o BQN ${bd}/*.o -lm
 	@echo ${postmsg}
 
 # build individual object files
