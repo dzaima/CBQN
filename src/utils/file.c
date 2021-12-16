@@ -60,7 +60,7 @@ I8Arr* file_bytes(B path) { // consumes
 B file_chars(B path) { // consumes
   return fromUTF8a(file_bytes(path));
 }
-B file_lines(B path) { // consumes
+B file_lines(B path) { // consumes; TODO rewrite this, it's horrible
   I8Arr* tf = file_bytes(path);
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   usz lineCount = 0;
@@ -202,6 +202,7 @@ B file_list(B path) {
     char* name = c->d_name;
     if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_add(res, m_str8l(name));
   }
+  closedir(d);
   dec(path);
   return res;
 }
