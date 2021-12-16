@@ -142,10 +142,12 @@ struct Scope {
 };
 
 Block* bqn_comp(B str, B path, B args);
-Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl);
+Block* bqn_compSc (B str, B path, B args, Scope* sc, bool repl);
+Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl);
 Block* compile(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src, B path, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
 Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varIDs and nsDesc uninitialized
+void init_comp(B* set, B prim);
 
 typedef struct Nvm_res { u8* p; B refs; } Nvm_res;
 Nvm_res m_nvm(Body* b);

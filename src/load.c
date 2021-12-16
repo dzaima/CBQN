@@ -164,7 +164,7 @@ NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currEnvPos = prevEnvPos;
   return r;
 }
-NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
+Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
@@ -191,13 +191,24 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_hVec4(incG(load_rtObj), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2(comp, m_hVec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
   comp_currSrc    = prevSrc;
   comp_currEnvPos = prevEnvPos;
   return r;
+}
+NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
+  return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl);
+}
+void init_comp(B* set, B prim) { // doesn't consume
+  if (q_N(prim)) {
+    set[0] = inc(load_comp);
+    set[1] = inc(load_rtObj);
+  } else {
+    thrM("•ReBQN: primitives⇐ unimplemented");
+  }
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all

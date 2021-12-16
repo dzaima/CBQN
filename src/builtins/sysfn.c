@@ -520,13 +520,16 @@ B getRandNS() {
   return incG(randNS);
 }
 static NFnDesc* reBQNDesc;
+static B ns_getNUf(B ns, B field) {
+  B r = ns_getNU(ns, field, false); dec(field); return r;
+}
 B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
-  B replStr = m_str8l("repl");
-  B repl = ns_getNU(x, replStr, false); dec(replStr);
+  B repl = ns_getNUf(x, m_str8l("repl"));
+  B prim = ns_getNUf(x, m_str8l("primitives"));
+  dec(x);
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
-  dec(x);
   Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
   B scVal;
   if (replVal==0) {
@@ -536,7 +539,9 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  return m_nfn(reBQNDesc, m_hVec2(m_f64(replVal), scVal));
+  B dat = m_hVec4(m_f64(replVal), scVal, bi_N, bi_N);
+  init_comp(harr_ptr(dat)+2, prim);
+  return m_nfn(reBQNDesc, dat);
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
@@ -550,7 +555,7 @@ B repl_c2(B t, B w, B x) {
   
   B res;
   if (replMode>0) {
-    Block* block = bqn_compSc(x, fullpath, args, sc, replMode==2);
+    Block* block = bqn_compScc(x, fullpath, args, sc, op[2], op[3], replMode==2);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInline(block, sc);
