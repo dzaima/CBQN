@@ -124,6 +124,7 @@ Block* load_compImport(B bc, B objs, B blocks, B bodies) { // consumes all
 #endif
 
 B load_comp;
+B load_compgen;
 B load_rtObj;
 B load_compArg;
 
@@ -151,18 +152,21 @@ void load_gcFn() {
   mm_visit(rt_invFnReg);
   mm_visit(rt_invFnSwap);
 }
-NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
+static Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
-  Block* r = load_compObj(c2(load_comp, incG(load_compArg), inc(str)), str, path, NULL);
+  Block* r = load_compObj(c2(comp, incG(compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
   comp_currSrc    = prevSrc;
   comp_currEnvPos = prevEnvPos;
   return r;
+}
+NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
+  return bqn_compc(str, path, args, load_comp, load_compArg);
 }
 Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
@@ -213,6 +217,14 @@ void init_comp(B* set, B prim) { // doesn't consume
 
 B bqn_exec(B str, B path, B args) { // consumes all
   Block* block = bqn_comp(str, path, args);
+  B res = m_funBlock(block, 0);
+  ptr_dec(block);
+  return res;
+}
+B rebqn_exec(B str, B path, B args, B comp, B rt) { // consumes str,path,args
+  B rtsys = m_hVec2(rt, incG(bi_sys));
+  Block* block = bqn_compc(str, path, args, comp, rtsys);
+  dec(rtsys);
   B res = m_funBlock(block, 0);
   ptr_dec(block);
   return res;
@@ -371,8 +383,9 @@ void load_init() { // very last init function
     );
     runtime[n_asrt] = prevAsrt;
     B glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
-    load_comp = c1(m_funBlock(comp_b, 0), glyphs); ptr_dec(comp_b);
-    gc_add(load_comp);
+    load_compgen = m_funBlock(comp_b, 0);
+    load_comp = c1(load_compgen, glyphs); ptr_dec(comp_b);
+    gc_add(load_compgen); gc_add(load_comp);
     
     
     #if FORMATTER

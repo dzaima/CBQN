@@ -148,6 +148,7 @@ Block* compile(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src,
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
 Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varIDs and nsDesc uninitialized
 void init_comp(B* set, B prim);
+B rebqn_exec(B str, B path, B args, B comp, B rt);
 
 typedef struct Nvm_res { u8* p; B refs; } Nvm_res;
 Nvm_res m_nvm(Body* b);

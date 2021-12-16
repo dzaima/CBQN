@@ -561,7 +561,7 @@ B repl_c2(B t, B w, B x) {
     res = execBlockInline(block, sc);
     ptr_dec(block);
   } else {
-    res = bqn_exec(x, fullpath, args);
+    res = rebqn_exec(x, fullpath, args, op[2], op[3]);
   }
   
   return res;
