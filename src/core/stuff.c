@@ -670,7 +670,7 @@ B bqn_merge(B x) {
     B c = GetU(x, i);
     if (isArr(c)? (elR!=rnk(c) || !eqShPrefix(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained %H and %H)", x0, c); }
     if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
-    else mut_set(r, rp, c);
+    else mut_set(r, rp, inc(c));
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
     rp+= elIA;
   }
