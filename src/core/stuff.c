@@ -225,7 +225,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
       }
       case 'B': {
         B b = va_arg(a, B);
-        s = appendRaw(s, bqn_fmt(inc(b)));
+        s = appendRaw(s, bqn_repr(inc(b)));
         break;
       }
       case 'H': {

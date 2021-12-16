@@ -252,15 +252,20 @@ B pick_c1(B t, B x) {
   return r;
 }
 
+static NOINLINE void checkNumeric(B w) {
+  SGetU(w)
+  usz ia = a(w)->ia;
+  for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("⊑: 𝕨 contained list with mixed-type elements");
+}
 static B recPick(B w, B x) { // doesn't consume
   assert(isArr(w) && isArr(x));
   usz ia = a(w)->ia;
   ur xr = rnk(x);
   usz* xsh = a(x)->sh;
   switch(TI(w,elType)) { default: UD;
-    case el_i8:  { i8*  wp = i8any_ptr (w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
-    case el_i16: { i16* wp = i16any_ptr(w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
-    case el_i32: { i32* wp = i32any_ptr(w); if (ia!=xr)goto wrr; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i8:  { i8*  wp = i8any_ptr (w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i16: { i16* wp = i16any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i32: { i32* wp = i32any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
     case el_c8: case el_c16: case el_c32: case el_bit:
     case el_B: {
       if (ia==0) {
@@ -269,7 +274,8 @@ static B recPick(B w, B x) { // doesn't consume
       }
       SGetU(w)
       if (isNum(GetU(w,0))) {
-        if (ia!=xr) goto wrr;
+        if(rnk(w)!=1) goto wrr;
+        if (ia!=xr) goto wrl;
         usz c=0;
         for (usz i = 0; i < ia; i++) {
           B cw = GetU(w,i);
@@ -291,12 +297,9 @@ static B recPick(B w, B x) { // doesn't consume
   }
   #undef PICK
   
-  wrr:
-    SGetU(w)
-    for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("⊑: 𝕨 contained list with mixed-type elements");
-    thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x);
-  oob:
-    thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
+  wrr: checkNumeric(w); thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element: %B)", w); // wrong index rank
+  wrl: checkNumeric(w); thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x); // wrong index length
+  oob: checkNumeric(w); thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
 }
 
 B pick_c2(B t, B w, B x) {
@@ -312,6 +315,7 @@ B pick_c2(B t, B w, B x) {
     dec(x);
     return r;
   }
+  if (!isArr(w)) thrM("⊑: 𝕨 must be a numeric array");
   B r = recPick(w, x);
   dec(w); dec(x);
   return r;
