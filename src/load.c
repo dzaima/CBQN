@@ -356,10 +356,11 @@ void load_init() { // very last init function
     B prevAsrt = runtime[n_asrt];
     runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
     Block* comp_b = load_compImport(
-      #include "gen/compiler"
+      #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
-    load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
+    B glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    load_comp = c1(m_funBlock(comp_b, 0), glyphs); ptr_dec(comp_b);
     gc_add(load_comp);
     
     

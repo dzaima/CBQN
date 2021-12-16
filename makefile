@@ -124,9 +124,9 @@ ${bd}/%.o: src/builtins/%.c
 
 src/gen/customRuntime:
 	@echo "Copying precompiled bytecode from the bytecode branch"
-	git checkout remotes/origin/bytecode src/gen/{compiler,formatter,runtime0,runtime1,src}
-	git reset src/gen/{compiler,formatter,runtime0,runtime1,src}
-${bd}/load.o: src/gen/customRuntime
+	git checkout remotes/origin/bytecode src/gen/{compiles,formatter,runtime0,runtime1,src}
+	git reset src/gen/{compiles,formatter,runtime0,runtime1,src}
+${bd}/load.o: src/gen/compiles
 
 
 
