@@ -36,23 +36,22 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
   
   B bo = wg? w : x;
   usz ria = a(bo)->ia;
-  usz ri = 0;
-  HArr_p r = m_harrs(ria, &ri);
-  if (wr==xr)                      for(; ri < ria; ri++) r.a[ri] = f(fo, Get(w,ri), Get(x,ri));
-  else if (wr==0) { B c=Get(w, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, inc(c)   , Get(x,ri)); dec(c); }
-  else if (xr==0) { B c=Get(x, 0); for(; ri < ria; ri++) r.a[ri] = f(fo, Get(w,ri), inc(c)    ); dec(c); }
+  M_HARR(r, ria)
+  if (wr==xr)                      for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri)));
+  else if (wr==0) { B c=Get(w, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, inc(c)   , Get(x,ri))); dec(c); }
+  else if (xr==0) { B c=Get(x, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), inc(c)   )); dec(c); }
   else if (ria>0) {
     usz min = wg? a(x)->ia : a(w)->ia;
     usz ext = ria / min;
-    if (wg) for (usz i = 0; i < min; i++) { B c=Get(x,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, Get(w,ri), inc(c)); }
-    else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++,ri++) r.a[ri] = f(fo, inc(c), Get(x,ri)); }
+    if (wg) for (usz i = 0; i < min; i++) { B c=Get(x,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, Get(w,HARR_I(r)), inc(c))); }
+    else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, inc(c), Get(x,HARR_I(r)))); }
   }
-  B rb = harr_fc(r, bo);
+  B rb = HARR_FC(r, bo);
   dec(w); dec(x);
   return rb;
 }
 
-B eachm_fn(BB2B f, B fo, B x) {
+B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still has refcounting errors
   usz ia = a(x)->ia;
   if (ia==0) return x;
   SGet(x);
@@ -68,10 +67,10 @@ B eachm_fn(BB2B f, B fo, B x) {
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
         return REUSE(x);
       } else {
-        rH = m_harrs(ia, &i);
-        rH.a[i++] = cr;
-        for (; i < ia; i++) rH.a[i] = f(fo, inc(xp[i]));
-        return harr_fcd(rH, x);
+        M_HARR(rHc, ia)
+        HARR_ADD(rHc, i, cr);
+        for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
+        return HARR_FCD(rHc, x);
       }
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
@@ -82,7 +81,7 @@ B eachm_fn(BB2B f, B fo, B x) {
       for (; i < ia; i++) {
         cr = f(fo, m_i32(xp[i]));
         if (!q_i32(cr)) {
-          rH = m_harrs(ia, &i);
+          rH = m_harr0c(x);
           for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
           dec(r);
           goto fallback;
@@ -100,7 +99,7 @@ B eachm_fn(BB2B f, B fo, B x) {
       for (; i < ia; i++) {
         cr = f(fo, m_f64(xp[i]));
         if (!q_f64(cr)) {
-          rH = m_harrs(ia, &i);
+          rH = m_harr0c(x);
           for (usz j = 0; j < i; j++) rH.a[j] = m_f64(rp[j]);
           dec(r);
           goto fallback;
@@ -118,17 +117,18 @@ B eachm_fn(BB2B f, B fo, B x) {
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
         return REUSE(x);
       } else {
-        HArr_p rp = m_harrs(ia, &i);
-        rp.a[i++] = cr;
-        for (; i < ia; i++) rp.a[i] = f(fo, inc(xp[i]));
-        return harr_fcd(rp, x);
+        M_HARR(rHc, ia)
+        HARR_ADD(rHc, i, cr);
+        for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
+        return HARR_FCD(rHc, x);
       }
     } else
-    rH = m_harrs(ia, &i);
+    rH = m_harr0c(x);
   } else
-  rH = m_harrs(ia, &i);
+  rH = m_harr0c(x);
   fallback:
   rH.a[i++] = cr;
   for (; i < ia; i++) rH.a[i] = f(fo, Get(x,i));
-  return harr_fcd(rH, x);
+  dec(x);
+  return rH.b;
 }

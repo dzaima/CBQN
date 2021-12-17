@@ -129,9 +129,9 @@ int main(int argc, char* argv[]) {
       if (i==argc) {
         args = emptySVec();
       } else {
-        HArr_p ap = m_harrUv(argc-i); // eh whatever, erroring will exit anyways
-        for (i64 j = 0; j < argc-i; j++) ap.a[j] = fromUTF8l(argv[i+j]);
-        args = ap.b;
+        M_HARR(ap, argc-i)
+        for (usz j = 0; j < argc-i; j++) HARR_ADD(ap, j, fromUTF8l(argv[i+j]));
+        args = HARR_FV(ap);
       }
       
       B execRes;

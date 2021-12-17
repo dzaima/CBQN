@@ -623,16 +623,16 @@ B squeeze_deep(B x) {
   x = any_squeeze(x);
   if (TI(x,elType)!=el_B) return x;
   usz ia = a(x)->ia;
-  usz i=0; HArr_p r = m_harrs(ia,&i);
+  M_HARR(r, ia)
   B* xp = arr_bptr(x);
   B xf = getFillQ(x);
   if (xp!=NULL) {
-    while (i < ia) { r.a[i] = squeeze_deep(inc(xp[i])); i++; }
+    for (usz i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(inc(xp[i]))); }
   } else {
     SGet(x);
-    while (i < ia) { r.a[i] = squeeze_deep(Get(x,i)); i++; }
+    for (usz i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(Get(x,i))); }
   }
-  return any_squeeze(qWithFill(harr_fcd(r, x), xf));
+  return any_squeeze(qWithFill(HARR_FCD(r, x), xf));
 }
 
 B bqn_merge(B x) {

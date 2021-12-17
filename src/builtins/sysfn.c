@@ -801,21 +801,20 @@ B getPrimitives(void);
 static Body* file_nsGen;
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  usz i = 0;
-  HArr_p r = m_harrs(a(x)->ia, &i);
-  SGetU(x)
+  M_HARR(r, a(x)->ia) SGetU(x)
   B fileNS = m_f64(0);
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
   #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_dir(inc(comp_currPath))); path; })
   #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
-  for (; i < a(x)->ia; i++) {
+  for (usz i = 0; i < a(x)->ia; i++) {
     B c = GetU(x,i);
-    if (eqStr(c, U"out")) r.a[i] = incG(bi_out);
-    else if (eqStr(c, U"show")) r.a[i] = incG(bi_show);
-    else if (eqStr(c, U"exit")) r.a[i] = incG(bi_exit);
-    else if (eqStr(c, U"getline")) r.a[i] = incG(bi_getLine);
+    B cr;
+    if (eqStr(c, U"out")) cr = incG(bi_out);
+    else if (eqStr(c, U"show")) cr = incG(bi_show);
+    else if (eqStr(c, U"exit")) cr = incG(bi_exit);
+    else if (eqStr(c, U"getline")) cr = incG(bi_getLine);
     else if (eqStr(c, U"file")) {
       if(!fileNS.u) {
         REQ_PATH;
@@ -823,54 +822,55 @@ B sys_c1(B t, B x) {
         fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines));
         #undef F
       }
-      r.a[i] = inc(fileNS);
+      cr = inc(fileNS);
     }
     else if (eqStr(c, U"wdpath")) {
       if (!wdpath.u) wdpath = path_abs(inc(cdPath));
-      r.a[i] = inc(wdpath);
+      cr = inc(wdpath);
     }
-    else if (eqStr(c, U"internal")) r.a[i] = getInternalNS();
-    else if (eqStr(c, U"math")) r.a[i] = getMathNS();
-    else if (eqStr(c, U"type")) r.a[i] = incG(bi_type);
-    else if (eqStr(c, U"sh")) r.a[i] = incG(bi_sh);
-    else if (eqStr(c, U"decompose")) r.a[i] = incG(bi_decp);
-    else if (eqStr(c, U"while")) r.a[i] = incG(bi_while);
-    else if (eqStr(c, U"primind")) r.a[i] = incG(bi_primInd);
-    else if (eqStr(c, U"bqn")) r.a[i] = incG(bi_bqn);
-    else if (eqStr(c, U"cmp")) r.a[i] = incG(bi_cmp);
-    else if (eqStr(c, U"unixtime")) r.a[i] = incG(bi_unixTime);
-    else if (eqStr(c, U"monotime")) r.a[i] = incG(bi_monoTime);
-    else if (eqStr(c, U"timed")) r.a[i] = incG(bi_timed);
-    else if (eqStr(c, U"delay")) r.a[i] = incG(bi_delay);
-    else if (eqStr(c, U"hash")) r.a[i] = incG(bi_hash);
-    else if (eqStr(c, U"repr")) r.a[i] = incG(bi_repr);
-    else if (eqStr(c, U"fmt")) r.a[i] = incG(bi_fmt);
-    else if (eqStr(c, U"glyph")) r.a[i] = incG(bi_glyph);
-    else if (eqStr(c, U"makerand")) r.a[i] = incG(bi_makeRand);
-    else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
-    else if (eqStr(c, U"rebqn")) r.a[i] = incG(bi_reBQN);
-    else if (eqStr(c, U"primitives")) r.a[i] = getPrimitives();
-    else if (eqStr(c, U"fromutf8")) r.a[i] = incG(bi_fromUtf8);
-    else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
-    else if (eqStr(c, U"name")) r.a[i] = inc(REQ_NAME);
-    else if (eqStr(c, U"fchars")) r.a[i] = m_nfn(fCharsDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"fbytes")) r.a[i] = m_nfn(fBytesDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"flines")) r.a[i] = m_nfn(fLinesDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"import")) r.a[i] = m_nfn(importDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"internal")) cr = getInternalNS();
+    else if (eqStr(c, U"math")) cr = getMathNS();
+    else if (eqStr(c, U"type")) cr = incG(bi_type);
+    else if (eqStr(c, U"sh")) cr = incG(bi_sh);
+    else if (eqStr(c, U"decompose")) cr = incG(bi_decp);
+    else if (eqStr(c, U"while")) cr = incG(bi_while);
+    else if (eqStr(c, U"primind")) cr = incG(bi_primInd);
+    else if (eqStr(c, U"bqn")) cr = incG(bi_bqn);
+    else if (eqStr(c, U"cmp")) cr = incG(bi_cmp);
+    else if (eqStr(c, U"unixtime")) cr = incG(bi_unixTime);
+    else if (eqStr(c, U"monotime")) cr = incG(bi_monoTime);
+    else if (eqStr(c, U"timed")) cr = incG(bi_timed);
+    else if (eqStr(c, U"delay")) cr = incG(bi_delay);
+    else if (eqStr(c, U"hash")) cr = incG(bi_hash);
+    else if (eqStr(c, U"repr")) cr = incG(bi_repr);
+    else if (eqStr(c, U"fmt")) cr = incG(bi_fmt);
+    else if (eqStr(c, U"glyph")) cr = incG(bi_glyph);
+    else if (eqStr(c, U"makerand")) cr = incG(bi_makeRand);
+    else if (eqStr(c, U"rand")) cr = getRandNS();
+    else if (eqStr(c, U"rebqn")) cr = incG(bi_reBQN);
+    else if (eqStr(c, U"primitives")) cr = getPrimitives();
+    else if (eqStr(c, U"fromutf8")) cr = incG(bi_fromUtf8);
+    else if (eqStr(c, U"path")) cr = inc(REQ_PATH);
+    else if (eqStr(c, U"name")) cr = inc(REQ_NAME);
+    else if (eqStr(c, U"fchars")) cr = m_nfn(fCharsDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"fbytes")) cr = m_nfn(fBytesDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"flines")) cr = m_nfn(fLinesDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
     else if (eqStr(c, U"state")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •state");
-      r.a[i] = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
+      cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
     } else if (eqStr(c, U"args")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •args");
-      r.a[i] = inc(comp_currArgs);
+      cr = inc(comp_currArgs);
     } else { dec(x); thrF("Unknown system function •%R", c); }
+    HARR_ADD(r, i, cr);
   }
   #undef REQ_PATH
   dec(fileNS);
   dec(path);
   dec(name);
   dec(wdpath);
-  return harr_fcd(r, x);
+  return HARR_FCD(r, x);
 }
 
 B cdPath;

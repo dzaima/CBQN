@@ -55,9 +55,9 @@ B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
     SGetU(g)
     usz ia = a(g)->ia;
-    HArr_p r = m_harrUc(g);
-    for (usz i = 0; i < ia; i++) r.a[i] = repeat_replace(GetU(g,i), q);
-    return r.b;
+    M_HARR(r, ia);
+    for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
+    return HARR_FC(r, g);
   } else {
     return inc(q[o2i64u(g)]);
   }

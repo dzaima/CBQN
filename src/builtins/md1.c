@@ -55,22 +55,21 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   SGet(x)
   BBB2B fc2 = c2fn(f);
   
-  usz ri = 0;
-  HArr_p r = m_harrs(ria, &ri);
+  M_HARR(r, ria)
   for (usz wi = 0; wi < wia; wi++) {
     B cw = GetU(w,wi);
-    for (usz xi = 0; xi < xia; xi++,ri++) {
-      r.a[ri] = fc2(f, inc(cw), Get(x,xi));
+    for (usz xi = 0; xi < xia; xi++) {
+      HARR_ADDA(r, fc2(f, inc(cw), Get(x,xi)));
     }
   }
-  usz* rsh = harr_fa(r, rr);
+  usz* rsh = HARR_FA(r, rr);
   if (rsh) {
     memcpy(rsh   , a(w)->sh, wr*sizeof(usz));
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
   }
   dec(w); dec(x);
-  if (EACH_FILLS) return homFil2(f, r.b, wf, xf);
-  return r.b;
+  if (EACH_FILLS) return homFil2(f, HARR_O(r).b, wf, xf);
+  return HARR_O(r).b;
 }
 
 B each_c1(Md1D* d, B x) { B f = d->f;
@@ -137,20 +136,21 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   SLOW2("𝕎` 𝕩", f, x);
   
   bool reuse = v(x)->type==t_harr && reusable(x);
-  usz i = 0;
-  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harrs(a(x)->ia, &i);
+  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
   AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
   BBB2B fc2 = c2fn(f);
   
   if (xr==1) {
-    r.a[i] = xget(xa,0); i++;
-    for (i = 1; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), xget(xa,i));
+    r.a[0] = xget(xa,0);
+    for (usz i=1; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), xget(xa,i));
   } else {
     usz csz = arr_csz(x);
-    for (; i < csz; i++) r.a[i] = xget(xa,i);
-    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
+    usz i = 0;
+    for (; i<csz; i++) r.a[i] = xget(xa,i);
+    for (; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
   }
-  return withFill(reuse? x : harr_fcd(r, x), xf);
+  if (!reuse) dec(x);
+  return withFill(r.b, xf);
 }
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
@@ -184,7 +184,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   
   bool reuse = (v(x)->type==t_harr && reusable(x)) | !ia;
   usz i = 0;
-  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harrs(a(x)->ia, &i);
+  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
   AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
   BBB2B fc2 = c2fn(f);
   
@@ -202,7 +202,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     B pr = r.a[0] = fc2(f, w, xget(xa,0)); i++;
     for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(xa,i));
   }
-  return withFill(reuse? x : harr_fcd(r, x), wf);
+  if (!reuse) dec(x);
+  return withFill(r.b, wf);
 }
 
 B fold_c1(Md1D* d, B x) { B f = d->f;
@@ -353,18 +354,17 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     csh = m_shArr(cr);
     memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
   }
-  usz i = 0;
   BSS2A slice = TI(x,slice);
-  HArr_p r = m_harrs(cam, &i);
+  M_HARR(r, cam);
   usz p = 0;
-  for (; i < cam; i++) {
+  for (usz i = 0; i < cam; i++) {
     Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
-    r.a[i] = c1(f, taga(s));
+    HARR_ADD(r, i, c1(f, taga(s)));
     p+= csz;
   }
   if (cr>1) ptr_dec(csh);
   dec(x);
-  return bqn_merge(harr_fv(r));
+  return bqn_merge(HARR_FV(r));
 }
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   if ((isAtm(x) || rnk(x)==0) && (isAtm(w) || rnk(w)==0)) {

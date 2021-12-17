@@ -232,37 +232,34 @@ void init_comp(B* set, B prim) {
       if (!isArr(p) || rnk(p)!=1 || a(p)->ia!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
       if (!isC32(IGet(p, 0))) thrM("•ReBQN 𝕩.primitives: Glyphs must be characters");
       B v = IGetU(p, 1);
-      i32 t = isFun(v)? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      i32 t = isFun(v)? 0 : isMd1(v)? 1 : isMd2(v)? 2 : 3;
       if (t==3) thrM("•ReBQN 𝕩.primitives: Primitives must be operations");
       np[t]+= 1;
     }
     
-    usz i = 0;
-    HArr_p r = m_harrs(3, &i);
+    M_HARR(r, 3)
     u32* gl[3];
     usz sum = 0;
-    for (; i < 3; i++) {
+    for (usz i = 0; i < 3; i++) {
       usz l = np[i];
-      r.a[i] = m_c32arrv(gl+i, l);
+      HARR_ADD(r, i, m_c32arrv(gl+i, l));
       np[i] = sum;
       sum+= l;
     }
-    harr_fv(r);
+    B rb = HARR_FV(r);
     
-    i = 0;
-    HArr_p prh = m_harrs(pia, &i);
-    B* rt = prh.a;
-    for (; i < pia; i++) {
+    HArr_p prh = m_harr0v(pia);
+    for (usz i = 0; i < pia; i++) {
       B gv = GetU(prim, i);
       B v = IGet(gv, 1);
-      i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      i32 t = isFun(v)? 0 : isMd1(v)? 1 : isMd2(v)? 2 : 3;
       *(gl[t]++) = o2cu(IGet(gv, 0));
-      rt[np[t]++] = v;
+      prh.a[np[t]++] = v;
     }
     
-    set[1] = harr_fv(prh);
-    set[2] = inc(r.b);
-    set[0] = c1(load_compgen, r.b);
+    set[1] = prh.b;
+    set[2] = inc(rb);
+    set[0] = c1(load_compgen, rb);
   }
 }
 B getPrimitives() {
@@ -274,18 +271,16 @@ B getPrimitives() {
   }
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
-  usz pi = 0;
-  HArr_p ph = m_harrs(a(r)->ia, &pi);
+  M_HARR(ph, a(r)->ia);
   for (usz gi = 0; gi < 3; gi++) {
     usz l = a(gg[gi])->ia;
     u32* gp = c32arr_ptr(gg[gi]);
     for (usz i = 0; i < l; i++) {
-      ph.a[pi] = m_hVec2(m_c32(gp[i]), inc(pr[i]));
-      pi++;
+      HARR_ADDA(ph, m_hVec2(m_c32(gp[i]), inc(pr[i])));
     }
     pr+= l;
   }
-  return harr_fv(ph);
+  return HARR_FV(ph);
 }
 
 B rebqn_exec(B str, B path, B args, B o) {

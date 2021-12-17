@@ -192,7 +192,7 @@ B shape_c2(B t, B w, B x) {
       if (xia<=1) {
         if (RARE(xia==0)) {
           thrM("⥊: Empty 𝕩 and non-empty result");
-          // if (xf.u == bi_noFill.u) thrM("⥊: No fill for empty array");
+          // if (noFill(xf)) thrM("⥊: No fill for empty array");
           // dec(x);
           // x = inc(xf);
         } else {
@@ -284,14 +284,13 @@ static B recPick(B w, B x) { // doesn't consume
         }
         return IGet(x,c);
       } else {
-        usz i = 0;
-        HArr_p r = m_harrs(ia, &i);
-        for(; i<ia; i++) {
+        M_HARR(r, ia);
+        for(usz i=0; i<ia; i++) {
           B c = GetU(w, i);
           if (isAtm(c)) thrM("⊑: 𝕨 contained list with mixed-type elements");
-          r.a[i] = recPick(c, x);
+          HARR_ADD(r, i, recPick(c, x));
         }
-        return harr_fc(r, w);
+        return HARR_FC(r, w);
       }
     }
   }
@@ -370,14 +369,14 @@ B select_c2(B t, B w, B x) {
       }                                        \
       CASE(i8,i8) CASE(i16,i16) CASE(i32,i32)  \
       CASE(c8,u8) CASE(c16,u16) CASE(c32,u32) CASE(f64,f64) \
-      usz i=0; HArr_p r = m_harrs(wia, &i); \
+      M_HARR(r, wia); \
       if (v(x)->type==t_harr || v(x)->type==t_hslice) { \
         B* xp = hany_ptr(x); \
-        for (; i < wia; i++) r.a[i] = inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]); \
-        dec(x); return harr_fcd(r, w); \
+        for (usz i=0; i < wia; i++) HARR_ADD(r, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))])); \
+        dec(x); return HARR_FCD(r, w); \
       } SLOW2("𝕨⊏𝕩", w, x); \
-      for (; i < wia; i++) r.a[i] = Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))); \
-      dec(x); return withFill(harr_fcd(r,w),xf); \
+      for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
+      dec(x); return withFill(HARR_FCD(r,w),xf); \
     }
     if (TI(w,elType)==el_bit && xia>=2) {
       SGetU(x)
@@ -390,16 +389,16 @@ B select_c2(B t, B w, B x) {
     else if (TI(w,elType)==el_i32) TYPE(i32)
     else {
       SLOW2("𝕨⊏𝕩", w, x);
-      usz i=0; HArr_p r = m_harrs(wia, &i);
+      M_HARR(r, wia)
       SGetU(w)
-      for (; i < wia; i++) {
+      for (usz i = 0; i < wia; i++) {
         B cw = GetU(w, i);
-        if (!isNum(cw)) { harr_abandon(r); goto base; }
+        if (!isNum(cw)) { HARR_ABANDON(r); goto base; }
         usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
-        r.a[i] = Get(x, c);
+        HARR_ADD(r, i, Get(x, c));
       }
       dec(x);
-      return withFill(harr_fcd(r,w),xf);
+      return withFill(HARR_FCD(r,w),xf);
     }
     #undef CASE
   } else {
@@ -554,9 +553,9 @@ B slash_c2(B t, B w, B x) {
             r = withFill(rp.b, xf);
           } else {
             SLOW2("𝕨/𝕩", w, x);
-            HArr_p rp = m_harrs(wsum, &ri); SGet(x)
-            for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) rp.a[ri++] = Get(x,i);
-            r = withFill(harr_fv(rp), xf);
+            M_HARR(rp, wsum) SGet(x)
+            for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) HARR_ADDA(rp, Get(x,i));
+            r = withFill(HARR_FV(rp), xf);
           }
           break;
         }
@@ -598,15 +597,15 @@ B slash_c2(B t, B w, B x) {
         dec(w); dec(x); return r;                  \
       }                                            \
       CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
-      SLOW2("𝕨/𝕩", w, x);                            \
-      HArr_p r = m_harrs(wsum, &ri); SGetU(x)        \
-      for (usz i = 0; i < wia; i++) {                \
-        i32 cw = wp[i]; if (cw==0) continue;         \
-        B cx = incBy(GetU(x, i), cw);                \
-        for (i64 j = 0; j < cw; j++) r.a[ri++] = cx; \
-      }                                              \
-      dec(w); dec(x);                                \
-      return withFill(harr_fv(r), xf);               \
+      SLOW2("𝕨/𝕩", w, x);                    \
+      M_HARR(r, wsum) SGetU(x)               \
+      for (usz i = 0; i < wia; i++) {        \
+        i32 cw = wp[i]; if (cw==0) continue; \
+        B cx = incBy(GetU(x, i), cw);        \
+        for (i64 j = 0; j < cw; j++) HARR_ADDA(r, cx);\
+      }                                      \
+      dec(w); dec(x);                        \
+      return withFill(HARR_FV(r), xf);       \
     }
     if (TI(w,elType)==el_i8 ) TYPED(i8,7);
     if (TI(w,elType)==el_i32) TYPED(i32,31);
@@ -615,18 +614,16 @@ B slash_c2(B t, B w, B x) {
     SLOW2("𝕨/𝕩", w, x);
     u64 ria = usum(w);
     if (ria>=USZ_MAX) thrOOM();
-    HArr_p r = m_harrs(ria, &ri);
-    SGetU(w)
-    SGetU(x)
+    M_HARR(r, ria) SGetU(w) SGetU(x)
     for (usz i = 0; i < wia; i++) {
       usz c = o2s(GetU(w, i));
       if (c) {
         B cx = incBy(GetU(x, i), c);
-        for (usz j = 0; RARE(j < c); j++) r.a[ri++] = cx;
+        for (usz j = 0; RARE(j < c); j++) HARR_ADDA(r, cx);
       }
     }
     dec(w); dec(x);
-    return withFill(harr_fv(r), xf);
+    return withFill(HARR_FV(r), xf);
   }
   if (isArr(x) && rnk(x)==1 && q_i32(w)) {
     usz xia = a(x)->ia;

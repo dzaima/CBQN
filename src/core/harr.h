@@ -23,47 +23,62 @@ static inline HArr_p harrP_parts(HArr* p) {
 NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 
 
-static HArr_p m_harrs(usz ia, usz* ctr) {
+#define M_HARR(N, IA) usz N##_len = (IA); HArr_p N##_v = m_harr_impl(N##_len); usz* N##_ia = &N##_v.c->ia; usz N##_i = 0;
+#define HARR_ADD(N, I, V) ({ B v_ = (V); usz i_ = (I); assert(N##_i==i_); N##_v.a[i_] = v_; *N##_ia = i_+1; N##_i++; v_; })
+#define HARR_ADDA(N, V)   ({ B v_ = (V); N##_v.a[N##_i] = v_; *N##_ia = ++N##_i; v_; })
+#define HARR_O(N) N##_v
+#define HARR_I(N) N##_i
+static HArr_p m_harr_impl(usz ia) {
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
-  r->sh = ctr;
+  r->ia = 0;
+  // don't need to initialize r->sh or rank at all i guess
   HArr_p rp = harrP_parts(r);
   gsAdd(rp.b);
   return rp;
 }
-static B harr_fv(HArr_p p) { VTY(p.b, t_harrPartial);
-  assert(p.c->ia == *p.c->sh);
+
+#define HARR_FV(N) ({ assert(N##_v.c->ia == N##_len); harr_fv_impl(N##_v); })
+#define HARR_FC(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fc_impl(N##_v, X); })
+#define HARR_FCD(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fcd_impl(N##_v, X); })
+#define HARR_FA(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fa_impl(N##_v, R); })
+#define HARR_ABANDON(N) harr_abandon_impl(N##_v)
+static B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   p.c->sh = &p.c->ia;
   srnk(p.b, 1);
   gsPop();
   return p.b;
 }
-static B harr_fc(HArr_p p, B x) { VTY(p.b, t_harrPartial);
-  assert(p.c->ia == *p.c->sh);
+static B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
   gsPop();
   return p.b;
 }
-static B harr_fcd(HArr_p p, B x) { VTY(p.b, t_harrPartial);
-  assert(p.c->ia == *p.c->sh);
+static B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
   dec(x);
   gsPop();
   return p.b;
 }
-static usz* harr_fa(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
+static usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   gsPop();
   return arr_shAlloc((Arr*)p.c, r);
 }
-static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
+static void harr_abandon_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   gsPop();
+  p.c->sh = &p.c->ia; // TODO more direct freeing
+  sprnk(p.c, 1);
   value_free((Value*)p.c);
 }
 
 // unsafe-ish things - don't allocate/GC anything before having written to all items
+
+#define m_harr0v(N) ({ usz n_ = (N); HArr_p r_ = m_harrUv(n_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
+#define m_harr0c(X) ({ B x_ = (X); usz n_ = a(x_)->ia; HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
+#define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
 static HArr_p m_harrUv(usz ia) {
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   arr_shVec((Arr*)r);

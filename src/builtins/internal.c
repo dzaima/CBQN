@@ -241,10 +241,10 @@ static B unshare(B x) {
     case t_c32arr: return taga(cpyC32Arr(inc(x)));
     case t_f64arr: return taga(cpyF64Arr(inc(x)));
     case t_harr: {
-      HArr_p r = m_harrUc(x);
       B* xp = harr_ptr(x);
-      for (usz i = 0; i < xia; i++) r.a[i] = unshare(xp[i]);
-      return r.b;
+      M_HARR(r, xia)
+      for (usz i = 0; i < xia; i++) HARR_ADD(r, i, unshare(xp[i]));
+      return HARR_FC(r, x);
     }
     case t_fillarr: {
       Arr* r = m_fillarrp(xia); arr_shCopy(r, x);

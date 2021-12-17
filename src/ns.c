@@ -94,9 +94,8 @@ Body* m_nnsDescF(i32 n, char** names) {
   if (emptyi32ptr==NULL) gc_add(emptyi32obj = m_i32arrv(&emptyi32ptr, 0));
   incBy(emptyi32obj, 3);
   
-  usz i = 0;
-  HArr_p nl = m_harrs(n, &i);
-  for (; i < n; i++) nl.a[i] = m_str8l(names[i]);
+  M_HARR(nl, n)
+  for (usz i = 0; i < n; i++) HARR_ADD(nl, i, m_str8l(names[i]));
   
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   comp->bc = emptyi32obj;
@@ -105,7 +104,7 @@ Body* m_nnsDescF(i32 n, char** names) {
   comp->path = bi_N;
   comp->objs = c(HArr, emptyHVec());
   comp->blockAm = 0;
-  comp->nameList = harr_fv(nl);
+  comp->nameList = HARR_FV(nl);
   
   Block* bl = mm_alloc(fsizeof(Block,bodies,Body*,0), t_block);
   bl->ty = 0; bl->imm = true;
@@ -117,13 +116,13 @@ Body* m_nnsDescF(i32 n, char** names) {
   
   NSDesc* nd = mm_alloc(fsizeof(NSDesc, expGIDs, i32, n<2?2:n), t_nsDesc);
   nd->varAm = n;
-  for (i = 0; i < n; i++) nd->expGIDs[i] = str2gid(nl.a[i]);
+  for (usz i = 0; i < n; i++) nd->expGIDs[i] = str2gid(HARR_O(nl).a[i]);
   
   Body* body = m_body(n, 0, 0, 0);
   body->nsDesc = nd;
   body->bc = (u32*) emptyi32ptr;
   body->bl = bl;
-  for (i = 0; i < n; i++) {
+  for (usz i = 0; i < n; i++) {
     body->varData[i] = nd->expGIDs[i];
     body->varData[i+n] = i;
   }

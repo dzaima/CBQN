@@ -16,14 +16,13 @@ B asFill(B x) { // consumes
       dec(x);
       return r;
     }
-    HArr_p r = m_harrUc(x);
+    M_HARR(r, a(x)->ia)
     SGet(x)
-    bool noFill = false;
-    for (usz i = 0; i < ia; i++) if ((r.a[i]=asFill(Get(x,i))).u == bi_noFill.u) noFill = true;
+    for (usz i = 0; i < ia; i++) {
+      if (noFill(HARR_ADD(r, i, asFill(Get(x,i))))) { HARR_ABANDON(r); dec(x); return bi_noFill; }
+    }
     B xf = getFillQ(x);
-    dec(x);
-    if (noFill) { ptr_dec(r.c); return bi_noFill; }
-    return withFill(r.b, xf);
+    return withFill(HARR_FCD(r, x), xf);
   }
   if (isF64(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');

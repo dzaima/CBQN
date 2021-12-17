@@ -72,18 +72,17 @@ B file_lines(B path) { // consumes; TODO rewrite this, it's horrible
     }
   }
   if (ia && (p[ia-1]!='\n' && p[ia-1]!='\r')) lineCount++;
-  usz i = 0;
-  HArr_p r = m_harrs(lineCount, &i);
+  M_HARR(r, lineCount)
   usz pos = 0;
-  while (i < lineCount) {
+  for (usz i = 0; i < lineCount; i++) {
     usz spos = pos;
     while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
-    r.a[i++] = fromUTF8((char*)p+spos, pos-spos);
+    HARR_ADD(r, i, fromUTF8((char*)p+spos, pos-spos));
     if (pos<ia && p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
     else pos++;
   }
   ptr_dec(tf);
-  return harr_fv(r);
+  return HARR_FV(r);
 }
 
 

@@ -170,16 +170,25 @@ B result = taga(r);
 u32* rp; B r = m_c32arrv(%rp, 10); // 10-char string
 // etc for m_(i8|i16|i32|c8|c16|c32|f64)arr[vcp]
 
-usz ri=0; HArr_p r = m_harrs(123, &ri); // allocate 123-item arbitrary type array
-// write items with r.a[ri++] or equivalent. Whenever GC could happen, ri must point to after the end of the currently set items
-// then do one of these to finish the array:
-B result = harr_fv(r); // sets shape to a vector
-B result = harr_fc(r, x); // copies the shape of x, doesn't consume x
-B result = harr_fcd(r, x); // copies the shape of x and consumes it
-usz* sh = harr_fa(r, 4); // allocate shape for a rank 4 array. To get the result `B` object, just do r.b
-// If at any point you want to free the object before finishing it, use harr_abandon(r)
 
-// If you're sure GC cannot happen before all items in the array are set, you can use: (U means "unsafe")
+// arbitrary object arrays:
+// initialized with all elements being 0.0s, which you can replace with `r.a[i]=val`, and get the result with `r.b`; simple, but may not be optimal
+HArr_p r = m_harr0v(10); // new 10-item vector
+HArr_p r = m_harr0c(10, x); // new 10-item array with the same shape as x
+HArr_p r = m_harr0p(10); // new 10-item array without any set shape. Use the arr_shWhatever(r.c, …)
+
+// safe known size array creation without preinitialization:
+M_HARR(r, 123) // allocate a 123-item arbitrary object array
+HARR_ADD(r, i, val); // write val to the next position in the array. The 'i' variable is just a hint, all calls must be consecutive either way
+HARR_ADDA(r, val); // the above but without needing the useless 'i' parameter
+// then do one of these to get the finished object:
+B result = HARR_FV(r); // sets shape to a vector
+B result = HARR_FC(r, x); // copies the shape of x, doesn't consume x
+B result = HARR_FCD(r, x); // copies the shape of x and consumes it
+usz* sh = HARR_FA(r, 4); // allocate shape for a rank 4 array. To get the result `B` object, do HARR_O(r).b later
+// If at any point you want to free the object before finishing it, do HARR_ABANDON(r)
+
+// If you're sure GC cannot happen (that includes no allocating) before all items in the array are set, you can use:
 HArr_p r = m_harrUv(10); // 10-item vector
 HArr_p r = m_harrUc(10, x); // 10-item array with the same shape as x
 HArr_p r = m_harrUp(10); // 10-item array without any set shape. Use the arr_shWhatever(r.c, …)
