@@ -520,13 +520,15 @@ B getRandNS() {
   return incG(randNS);
 }
 static NFnDesc* reBQNDesc;
+static B ns_getNUf(B ns, B field) {
+  B r = ns_getNU(ns, field, false); dec(field); return r;
+}
 B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
-  B replStr = m_str8l("repl");
-  B repl = ns_getNU(x, replStr, false); dec(replStr);
+  B repl = ns_getNUf(x, m_str8l("repl"));
+  B prim = ns_getNUf(x, m_str8l("primitives"));
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
-  dec(x);
   Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
   B scVal;
   if (replVal==0) {
@@ -536,30 +538,17 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  return m_nfn(reBQNDesc, m_hVec2(m_f64(replVal), scVal));
+  HArr_p d = m_harrUv(5); d.a[0] = m_f64(replVal); d.a[1] = scVal;
+  d.a[2]=d.a[3]=d.a[4]=bi_N;
+  init_comp(d.a+2, prim);
+  dec(x);
+  return m_nfn(reBQNDesc, d.b);
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
-  B o = nfn_objU(t);
-  B* op = harr_ptr(o);
-  i32 replMode = o2iu(op[0]);
-  Scope* sc = c(Scope, op[1]);
-  
   B fullpath;
   B args = args_path(&fullpath, w, "REPL");
-  
-  B res;
-  if (replMode>0) {
-    Block* block = bqn_compSc(x, fullpath, args, sc, replMode==2);
-    ptr_dec(sc->body);
-    sc->body = ptr_inc(block->bodies[0]);
-    res = execBlockInline(block, sc);
-    ptr_dec(block);
-  } else {
-    res = bqn_exec(x, fullpath, args);
-  }
-  
-  return res;
+  return rebqn_exec(x, fullpath, args, nfn_objU(t));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
@@ -807,6 +796,7 @@ B sh_c2(B t, B w, B x) {
 
 B getInternalNS(void);
 B getMathNS(void);
+B getPrimitives(void);
 
 static Body* file_nsGen;
 B sys_c1(B t, B x) {
@@ -859,6 +849,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"makerand")) r.a[i] = incG(bi_makeRand);
     else if (eqStr(c, U"rand")) r.a[i] = getRandNS();
     else if (eqStr(c, U"rebqn")) r.a[i] = incG(bi_reBQN);
+    else if (eqStr(c, U"primitives")) r.a[i] = getPrimitives();
     else if (eqStr(c, U"fromutf8")) r.a[i] = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) r.a[i] = inc(REQ_PATH);
     else if (eqStr(c, U"name")) r.a[i] = inc(REQ_NAME);

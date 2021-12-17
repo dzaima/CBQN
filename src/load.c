@@ -100,6 +100,7 @@ i64 comp_currEnvPos;
 B comp_currPath;
 B comp_currArgs;
 B comp_currSrc;
+B comp_currRe;
 
 B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell;
@@ -124,8 +125,10 @@ Block* load_compImport(B bc, B objs, B blocks, B bodies) { // consumes all
 #endif
 
 B load_comp;
+B load_compgen;
 B load_rtObj;
 B load_compArg;
+B load_glyphs;
 
 #if FORMATTER
 B load_fmt, load_repr;
@@ -148,15 +151,16 @@ void load_gcFn() {
   mm_visit(comp_currPath);
   mm_visit(comp_currArgs);
   mm_visit(comp_currSrc);
+  mm_visit(comp_currRe);
   mm_visit(rt_invFnReg);
   mm_visit(rt_invFnSwap);
 }
-NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
+static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
-  Block* r = load_compObj(c2(load_comp, incG(load_compArg), inc(str)), str, path, NULL);
+  Block* r = load_compObj(c2(comp, incG(compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
@@ -164,7 +168,10 @@ NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
   comp_currEnvPos = prevEnvPos;
   return r;
 }
-NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
+Block* bqn_comp(B str, B path, B args) { // consumes all
+  return bqn_compc(str, path, args, load_comp, load_compArg);
+}
+Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
@@ -191,13 +198,16 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(load_comp, m_hVec4(incG(load_rtObj), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2(comp, m_hVec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   comp_currPath   = prevPath;
   comp_currArgs   = prevArgs;
   comp_currSrc    = prevSrc;
   comp_currEnvPos = prevEnvPos;
   return r;
+}
+NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
+  return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -206,11 +216,102 @@ B bqn_exec(B str, B path, B args) { // consumes all
   ptr_dec(block);
   return res;
 }
-void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
-  load_comp = comp;
-  gc_add(load_comp);
+
+void init_comp(B* set, B prim) {
+  if (q_N(prim)) {
+    set[0] = inc(load_comp);
+    set[1] = inc(load_rtObj);
+    set[2] = inc(load_glyphs);
+  } else {
+    if (!isArr(prim) || rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
+    usz pia = a(prim)->ia;
+    usz np[3] = {0}; // number of functions, 1-modifiers, and 2-modifiers
+    SGetU(prim);
+    for (usz i = 0; i < pia; i++) { // check and count
+      B p = GetU(prim, i);
+      if (!isArr(p) || rnk(p)!=1 || a(p)->ia!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
+      if (!isC32(IGet(p, 0))) thrM("•ReBQN 𝕩.primitives: Glyphs must be characters");
+      B v = IGetU(p, 1);
+      i32 t = isFun(v)? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      if (t==3) thrM("•ReBQN 𝕩.primitives: Primitives must be operations");
+      np[t]+= 1;
+    }
+    
+    usz i = 0;
+    HArr_p r = m_harrs(3, &i);
+    u32* gl[3];
+    usz sum = 0;
+    for (; i < 3; i++) {
+      usz l = np[i];
+      r.a[i] = m_c32arrv(gl+i, l);
+      np[i] = sum;
+      sum+= l;
+    }
+    harr_fv(r);
+    
+    i = 0;
+    HArr_p prh = m_harrs(pia, &i);
+    B* rt = prh.a;
+    for (; i < pia; i++) {
+      B gv = GetU(prim, i);
+      B v = IGet(gv, 1);
+      i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      *(gl[t]++) = o2cu(IGet(gv, 0));
+      rt[np[t]++] = v;
+    }
+    
+    set[1] = harr_fv(prh);
+    set[2] = inc(r.b);
+    set[0] = c1(load_compgen, r.b);
+  }
+}
+B getPrimitives() {
+  B g, r;
+  if (q_N(comp_currRe)) {
+    g = load_glyphs; r = load_rtObj;
+  } else {
+    B* o = harr_ptr(comp_currRe); g = o[4]; r = o[3];
+  }
+  B* pr = harr_ptr(r);
+  B* gg = harr_ptr(g);
+  usz pi = 0;
+  HArr_p ph = m_harrs(a(r)->ia, &pi);
+  for (usz gi = 0; gi < 3; gi++) {
+    usz l = a(gg[gi])->ia;
+    u32* gp = c32arr_ptr(gg[gi]);
+    for (usz i = 0; i < l; i++) {
+      ph.a[pi] = m_hVec2(m_c32(gp[i]), inc(pr[i]));
+      pi++;
+    }
+    pr+= l;
+  }
+  return harr_fv(ph);
 }
 
+B rebqn_exec(B str, B path, B args, B o) {
+  B prevRe = comp_currRe; comp_currRe = inc(o);
+  B* op = harr_ptr(o);
+  i32 replMode = o2iu(op[0]);
+  Scope* sc = c(Scope, op[1]);
+  B res;
+  if (replMode>0) {
+    Block* block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2);
+    comp_currRe = prevRe;
+    ptr_dec(sc->body);
+    sc->body = ptr_inc(block->bodies[0]);
+    res = execBlockInline(block, sc);
+    ptr_dec(block);
+  } else {
+    B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
+    Block* block = bqn_compc(str, path, args, op[2], rtsys);
+    dec(rtsys);
+    comp_currRe = prevRe;
+    res = m_funBlock(block, 0);
+    ptr_dec(block);
+  }
+  dec(o);
+  return res;
+}
 
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
 static NOINLINE B m_lvB_1(B a               ) { return m_hVec1(a); }
@@ -227,6 +328,7 @@ void load_init() { // very last init function
   comp_currPath = bi_N;
   comp_currArgs = bi_N;
   comp_currSrc  = bi_N;
+  comp_currRe   = bi_N;
   gc_addFn(load_gcFn);
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add     , bi_sub    , bi_mul   , bi_div  , bi_pow    , bi_root     , bi_floor , bi_ceil , bi_stile  , bi_not,
@@ -356,11 +458,13 @@ void load_init() { // very last init function
     B prevAsrt = runtime[n_asrt];
     runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
     Block* comp_b = load_compImport(
-      #include "gen/compiler"
+      #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
-    load_comp = m_funBlock(comp_b, 0); ptr_dec(comp_b);
-    gc_add(load_comp);
+    load_glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    load_compgen = m_funBlock(comp_b, 0); ptr_dec(comp_b);
+    load_comp = c1(load_compgen, inc(load_glyphs));
+    gc_add(load_compgen); gc_add(load_comp); gc_add(load_glyphs);
     
     
     #if FORMATTER
