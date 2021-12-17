@@ -63,6 +63,7 @@ static void harr_abandon(HArr_p p) { VTY(p.b, t_harrPartial);
   value_free((Value*)p.c);
 }
 
+// unsafe-ish things - don't allocate/GC anything before having written to all items
 static HArr_p m_harrUv(usz ia) {
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   arr_shVec((Arr*)r);

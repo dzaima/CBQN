@@ -155,7 +155,7 @@ void load_gcFn() {
   mm_visit(rt_invFnReg);
   mm_visit(rt_invFnSwap);
 }
-static Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
+static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   B   prevPath   = comp_currPath  ; comp_currPath = path;
   B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
@@ -168,7 +168,7 @@ static Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes 
   comp_currEnvPos = prevEnvPos;
   return r;
 }
-NOINLINE Block* bqn_comp(B str, B path, B args) { // consumes all
+Block* bqn_comp(B str, B path, B args) { // consumes all
   return bqn_compc(str, path, args, load_comp, load_compArg);
 }
 Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
@@ -216,54 +216,56 @@ B bqn_exec(B str, B path, B args) { // consumes all
   ptr_dec(block);
   return res;
 }
-void bqn_setComp(B comp) { // consumes; doesn't unload old comp, but whatever
-  load_comp = comp;
-  gc_add(load_comp);
-}
 
-void init_comp(B* set, B prim) { // doesn't consume
+void init_comp(B* set, B prim) {
   if (q_N(prim)) {
     set[0] = inc(load_comp);
     set[1] = inc(load_rtObj);
     set[2] = inc(load_glyphs);
   } else {
-    if (!isArr(prim)||rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
+    if (!isArr(prim) || rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = a(prim)->ia;
     usz np[3] = {0}; // number of functions, 1-modifiers, and 2-modifiers
     SGetU(prim);
     for (usz i = 0; i < pia; i++) { // check and count
       B p = GetU(prim, i);
-      if (!isArr(p)||rnk(p)!=1||a(p)->ia!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
+      if (!isArr(p) || rnk(p)!=1 || a(p)->ia!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
       if (!isC32(IGet(p, 0))) thrM("•ReBQN 𝕩.primitives: Glyphs must be characters");
       B v = IGetU(p, 1);
-      i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
+      i32 t = isFun(v)? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
       if (t==3) thrM("•ReBQN 𝕩.primitives: Primitives must be operations");
-      np[t] += 1;
+      np[t]+= 1;
     }
-    HArr_p r = m_harrUv(3);
+    
+    usz i = 0;
+    HArr_p r = m_harrs(3, &i);
     u32* gl[3];
     usz sum = 0;
-    for (usz i = 0; i < 3; i++) {
+    for (; i < 3; i++) {
       usz l = np[i];
       r.a[i] = m_c32arrv(gl+i, l);
       np[i] = sum;
-      sum += l;
+      sum+= l;
     }
-    HArr_p prh = m_harrUv(pia);
-    B *rt = prh.a;
-    for (usz i = 0; i < pia; i++) {
+    harr_fv(r);
+    
+    i = 0;
+    HArr_p prh = m_harrs(pia, &i);
+    B* rt = prh.a;
+    for (; i < pia; i++) {
       B gv = GetU(prim, i);
       B v = IGet(gv, 1);
       i32 t = isFun(v) ? 0 : isMd1(v) ? 1 : isMd2(v) ? 2 : 3;
       *(gl[t]++) = o2cu(IGet(gv, 0));
       rt[np[t]++] = v;
     }
-    set[1] = prh.b;
+    
+    set[1] = harr_fv(prh);
     set[2] = inc(r.b);
     set[0] = c1(load_compgen, r.b);
   }
 }
-B getPrimitives(void) {
+B getPrimitives() {
   B g, r;
   if (q_N(comp_currRe)) {
     g = load_glyphs; r = load_rtObj;
@@ -272,16 +274,18 @@ B getPrimitives(void) {
   }
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
-  HArr_p ph = m_harrUv(a(r)->ia); B* p = ph.a;
+  usz pi = 0;
+  HArr_p ph = m_harrs(a(r)->ia, &pi);
   for (usz gi = 0; gi < 3; gi++) {
     usz l = a(gg[gi])->ia;
-    u32 *gp = c32arr_ptr(gg[gi]);
+    u32* gp = c32arr_ptr(gg[gi]);
     for (usz i = 0; i < l; i++) {
-      p[i] = m_hVec2(m_c32(gp[i]), inc(pr[i]));
+      ph.a[pi] = m_hVec2(m_c32(gp[i]), inc(pr[i]));
+      pi++;
     }
-    p += l; pr += l;
+    pr+= l;
   }
-  return ph.b;
+  return harr_fv(ph);
 }
 
 B rebqn_exec(B str, B path, B args, B o) {
