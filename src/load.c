@@ -184,7 +184,7 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
   while (csc) {
     B vars = listVars(csc);
     usz am = a(vars)->ia;
-    vName = vec_join(vName, vars); // TODO this completely-non-performance-sensitive piece of code is 1.7% of the binary size
+    vName = vec_join(vName, vars);
     for (usz i = 0; i < am; i++) vDepth = vec_add(vDepth, m_i32(depth));
     csc = csc->psc;
     depth++;
