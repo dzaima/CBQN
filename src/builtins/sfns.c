@@ -890,7 +890,7 @@ B join_c2(B t, B w, B x) {
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   if (c==1) {
-    B r = vec_join(w, x);
+    B r = vec_join_inline(w, x);
     if (rnk(r)==0) srnk(r,1);
     return qWithFill(r, f);
   }

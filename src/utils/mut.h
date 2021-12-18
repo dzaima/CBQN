@@ -252,8 +252,8 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
 }
 
 
-
-static B vec_join(B w, B x) { // consumes both
+B vec_join(B w, B x); // consumes both
+FORCE_INLINE B vec_join_inline(B w, B x) {
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
   usz ria = wia+xia;

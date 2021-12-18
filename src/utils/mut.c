@@ -61,3 +61,8 @@ void mutF_init() {
     }
   }
 }
+
+
+B vec_join(B w, B x) {
+  return vec_join_inline(w, x);
+}
