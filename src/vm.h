@@ -148,6 +148,7 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
 Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varIDs and nsDesc uninitialized
 void init_comp(B* set, B prim); // doesn't consume; writes into first 3 elements of set
 B rebqn_exec(B str, B path, B args, B o); // consumes str,path,args
+B listVars(Scope* sc); // doesn't consume; returns bi_N if not accessable
 
 typedef struct Nvm_res { u8* p; B refs; } Nvm_res;
 Nvm_res m_nvm(Body* b);

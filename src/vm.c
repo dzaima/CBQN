@@ -85,6 +85,28 @@ void print_gStack() {
   }
 }
 
+B listVars(Scope* sc) {
+  Body* b = sc->body;
+  if (b==NULL) return bi_N;
+  
+  B r = emptyHVec();
+  usz am0 = sc->varAm;
+  if (am0) {
+    B nameList = b->bl->comp->nameList; SGetU(nameList);
+    i32* varData = b->varData; usz bam = b->varAm;
+    for (u64 i = 0; i < am0; i++) {
+      i32 nameID = varData[i + bam];
+      r = vec_add(r, inc(GetU(nameList, nameID)));
+    }
+  }
+  if (sc->ext) {
+    ScopeExt* scExt = sc->ext; usz am = scExt->varAm; B* vars = scExt->vars;
+    for (u64 i = 0; i < am; i++) r = vec_add(r, inc(vars[i+am]));
+  }
+  return r;
+}
+
+
 Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
   Body* body = mm_alloc(fsizeof(Body, varData, i32, vam*2), t_body);
   

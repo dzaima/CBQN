@@ -202,6 +202,20 @@ int main(int argc, char* argv[]) {
           }
           heap_printInfo(sizes, types);
           goto cont;
+        } else if (isCmd(cmdS, &cmdE, "vars")) {
+          B r = listVars(gsc);
+          if (q_N(r)) {
+            printf("Couldn't list variables\n");
+          } else {
+            usz ia = a(r)->ia;
+            B* rp = harr_ptr(r);
+            for (usz i = 0; i < ia; i++) {
+              if (i!=0) printf(", ");
+              printRaw(rp[i]);
+            }
+            putchar('\n');
+          }
+          goto cont;
         } else if (isCmd(cmdS, &cmdE, "gc ")) {
           #if ENABLE_GC
             if (gc_depth!=0) printf("Cannot GC currently\n");
