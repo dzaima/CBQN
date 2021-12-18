@@ -487,7 +487,7 @@ typedef B (*M2C2)(Md2D*, B, B);
 #define IGetU(X,N) ({ Arr* x_ = a(X); TIv(x_,getU)(x_,N); })
 #define GetU(X,N) X##_getU(X##_arrU,N)
 #define SGet(X) Arr* X##_arr = a(X); AS2B X##_get = TIv(X##_arr,get);
-#define IGet(X,N)({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
+#define IGet(X,N) ({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
 #define Get(X,N) X##_get(X##_arr,N)
 
 

@@ -1,7 +1,6 @@
-def Size = u64
 include './base'
-include './f64'
 include './cbqnDefs'
+include './f64'
 include './avx'
 include './avx2'
 include './bitops'
@@ -31,15 +30,15 @@ def eqne{op} = match{op,__eq}|match{op,__ne}
 def pathAS{dst, len, T, op, x & issigned{T}} = {
   def R{f & eqne{op}} = {
     if (rare{floor{f}!=f}) fillbits{dst, len, op{0,1}, x} # also includes check for NaN/sNaN
-    ftrunc_i64{f}
+    ftrunc{i64,f}
   }
-  def R{f & match{op,__lt}|match{op,__ge}} = ftrunc_i64{ceil{f}}
-  def R{f & match{op,__gt}|match{op,__le}} = ftrunc_i64{floor{f}}
+  def R{f & match{op,__lt}|match{op,__ge}} = ftrunc{i64,ceil{f}}
+  def R{f & match{op,__gt}|match{op,__le}} = ftrunc{i64,floor{f}}
   
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}
-  xT:T = cast_i{T, xi64}
-  if (rare{(cast_i{i64, xT}!=xi64)}) {
+  xT:T = trunc{T, xi64}
+  if (rare{ext{i64, xT}!=xi64}) {
     cif{~eqne{op}, {_}=>{ # NaN was already checked for ≠/=
       if (isNaN{xf}) { call{cmpIX, dst, len, x, op{0,1}}; return{}; }
     }}
@@ -63,7 +62,7 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
   }
   xc32:u32 = from_B{u32,x}
   if (xc32 > maxvalue{T}) fillbits{dst, len, op{0,1}}
-  cast_i{T, xc32}
+  trunc{T, xc32}
 }
 
 
@@ -76,27 +75,27 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   assert{am>0}
   while (ri < am) {
     r:u64 = 0
-    @unroll (j from 0 to unr) r = r | (cast_i{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
+    @unroll (j from 0 to unr) r = r | (ext{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
     b_set{bam, dst, ri, r}
     xi = xi+unr
     ri = ri+1
   }
 }
 aa2bit{VT, unr, op}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  wv:= cast_vp{VT, wr}; ws:= cast_p{*eltype{VT}, wr}
-  xv:= cast_vp{VT, xr}; xs:= cast_p{*eltype{VT}, xr}
-  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>vload{wv,i}, {i}=>load{xs,i}, {i}=>vload{xv,i}, dst, len}
+  wv:= cast_vp{VT, wr}; ws:= cast_p{eltype{VT}, wr}
+  xv:= cast_vp{VT, xr}; xs:= cast_p{eltype{VT}, xr}
+  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>load{xs,i}, {i}=>load{xv,i}, dst, len}
 }
 
 as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{VT,unr,fmt{op}}
-  wv:= cast_vp{VT, wr}; ws:= cast_p{*eltype{VT}, wr}
+  wv:= cast_vp{VT, wr}; ws:= cast_p{eltype{VT}, wr}
   xv:= broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
-  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>vload{wv,i}, {i}=>x, {i}=>xv, dst, len}
+  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 
 bitAA{bitop}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  ws:= cast_p{*u64, wr}
-  xs:= cast_p{*u64, xr}
+  ws:= cast_p{u64, wr}
+  xs:= cast_p{u64, xr}
   @for (dst,ws,xs over _ from 0 to cdiv{len,64}) dst = bitop{ws,xs}
 }
 
@@ -115,8 +114,8 @@ bitAS{op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{'bitAS'}
     fillbits{dst, len, r0}
     return{}
   }
-  if (r0) call{not, dst, cast_p{*u64,wr}, len}
-  else call{cpy, dst, cast_p{*u64,wr}, len}
+  if (r0) call{not, dst, cast_p{u64,wr}, len}
+  else call{cpy, dst, cast_p{u64,wr}, len}
 }
 
 

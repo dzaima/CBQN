@@ -14,7 +14,10 @@ tests ← •FLines path∾"/test/cases/prim.bqn"
   (⊑'%'⊸∊)◶{𝕤
     •Out 𝕩
     "src/gen/interp" •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"
-    (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH"make"‿"f=-DPRECOMP"‿"t=precomp"‿"c"
+    # make ← "make"‿"singeli=1"‿"t=precomp_si"‿"f=-DPRECOMP -march=native"‿"c"
+    # make ← "make"‿"t=precomp_32"‿"f=-DPRECOMP -m32"‿"lf=-m32"‿"c"
+    make ← "make"‿"f=-DPRECOMP"‿"t=precomp"‿"c"
+    (×⊑)◶@‿{𝕤⋄•Out "############ Failed to compile! ############" ⋄ •Out¨1↓𝕩}{env⇐<"PATH="∾envP}•SH make
     code‿out‿err←•SH⟨"./BQN"⟩
     •Out out
     {𝕤⋄•Out"exit code "∾(•Repr code) ⋄ •Out err}⍟(×code) err

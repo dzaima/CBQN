@@ -1,3 +1,4 @@
+def Size = u64
 def bcall{T, f, x} = emit{T, 'BCALL', f, x}
 def from_B{T, x & T==f64} = bcall{T, 'o2fu', x}
 def from_B{T, x & T<=i32 &   issigned{T}} = bcall{T, 'o2iu', x}

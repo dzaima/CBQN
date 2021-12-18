@@ -5,29 +5,46 @@ def r_i2d{a:T} = emit{[4]f64, '_mm256_castsi256_pd', a}
 def r_f2d{a:T} = emit{[4]f64, '_mm256_castps_pd', a}
 def r_d2f{a:T} = emit{[8]f32, '_mm256_castpd_ps', a}
 def r_i2f{a:T} = emit{[8]f32, '_mm256_castsi256_ps', a}
+
 # various utilities
 def isunsigned{T} = isint{T} & ~issigned{T}
 def      isintv{T} =      isint{eltype{T}}
+def      isf64v{T} =       f64==eltype{T}
 def    isfloatv{T} =    isfloat{eltype{T}}
 def   issignedv{T} =   issigned{eltype{T}}
 def isunsignedv{T} = isunsigned{eltype{T}}
 def w256{T} = width{T}==256
 def isintv{T,w} = isintv{T} & width{eltype{T}}==w
-# load
-def cast_vp{T, a & w256{T}} = emit{*T, '(void*)', a}
-def vload{a:T, n & w256{eltype{T}} & isintv{eltype{T}}} = emit{eltype{T}, '_mm256_loadu_si256', emit{T, 'op +', a, n}}
-def vload{a:T, n & w256{eltype{T}} & isfloatv{eltype{T}}} = r_i2d{vload{cast_vp{[4]u64, a}, n}} # TODO use the proper float load
+
+def cast_vp{T, x & w256{T}} = emit{*T, '(void*)', x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isintv{R}} = r_d2i{R, x}
+def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isf64v{R}} = r_i2d{x}
+def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isintv{R}} = emit{R, '', x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isf64v{R}} = emit{R, '', x}
+def ty_vu{T & w256{T} &   issignedv{T}} = [vcount{T}](ty_iu{eltype{T}})
+def ty_vs{T & w256{T} & isunsignedv{T}} = [vcount{T}](ty_is{eltype{T}})
+def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
+
+# load & store
+def load {a:T, n & w256{eltype{T}} & isintv{eltype{T}}} = emit{eltype{T}, '_mm256_loadu_si256',          emit{T, 'op +', a, n}}
+def loada{a:T, n & w256{eltype{T}} & isintv{eltype{T}}} = emit{eltype{T}, '_mm256_load_si256',           emit{T, 'op +', a, n}}
+def load {a:T, n & w256{eltype{T}} & isf64v{eltype{T}}} = emit{eltype{T}, '_mm256_loadu_pd', cast_p{f64, emit{T, 'op +', a, n}}}
+def loada{a:T, n & w256{eltype{T}} & isf64v{eltype{T}}} = emit{eltype{T}, '_mm256_load_pd',  cast_p{f64, emit{T, 'op +', a, n}}}
+def store {a:T, n, v & w256{eltype{T}} & isintv{eltype{T}}} = emit{void, '_mm256_storeu_si256',          emit{T, 'op +', a, n}, v}
+def storea{a:T, n, v & w256{eltype{T}} & isintv{eltype{T}}} = emit{void, '_mm256_store_si256',           emit{T, 'op +', a, n}, v}
+def store {a:T, n, v & w256{eltype{T}} & isf64v{eltype{T}}} = emit{void, '_mm256_storeu_pd', cast_p{f64, emit{T, 'op +', a, n}}, v}
+def storea{a:T, n, v & w256{eltype{T}} & isf64v{eltype{T}}} = emit{void, '_mm256_store_pd',  cast_p{f64, emit{T, 'op +', a, n}}, v}
 
 # broadcast; TODO restrict v
-def broadcast{T, v & w256{T} & isintv{T,  8}} = emit{T, '_mm256_set1_epi8',  v}
-def broadcast{T, v & w256{T} & isintv{T, 16}} = emit{T, '_mm256_set1_epi16', v}
-def broadcast{T, v & w256{T} & isintv{T, 32}} = emit{T, '_mm256_set1_epi32', v}
-def broadcast{T, v & w256{T} & isintv{T, 64}} = emit{T, '_mm256_set1_epi64x',v}
+def broadcast{T, v & w256{T} & isintv{T,  8}} = emit{T, '_mm256_set1_epi8',  ext{eltype{T},v}}
+def broadcast{T, v & w256{T} & isintv{T, 16}} = emit{T, '_mm256_set1_epi16', ext{eltype{T},v}}
+def broadcast{T, v & w256{T} & isintv{T, 32}} = emit{T, '_mm256_set1_epi32', ext{eltype{T},v}}
+def broadcast{T, v & w256{T} & isintv{T, 64}} = emit{T, '_mm256_set1_epi64x',ext{eltype{T},v}}
 def broadcast{T, v & w256{T} & eltype{T}==f64} = emit{T, '_mm256_set1_pd', v}
 
-def __xor{a:T, b:T & w256{T} & isunsignedv{T}} = r_f2i{T, emit{[8]f32, '_mm256_xor_ps', r_i2f{a}, r_i2f{b}}}
-def __and{a:T, b:T & w256{T} & isunsignedv{T}} = r_f2i{T, emit{[8]f32, '_mm256_and_ps', r_i2f{a}, r_i2f{b}}}
-def __or {a:T, b:T & w256{T} & isunsignedv{T}} = r_f2i{T, emit{[8]f32, '_mm256_or_ps',  r_i2f{a}, r_i2f{b}}}
+def __xor{a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_xor_ps', r_i2f{a}, r_i2f{b}}}
+def __and{a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_and_ps', r_i2f{a}, r_i2f{b}}}
+def __or {a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_or_ps',  r_i2f{a}, r_i2f{b}}}
 
 def __not{a:T & w256{T} & isunsignedv{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
 
@@ -40,5 +57,11 @@ def __ge{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,29}
 def __lt{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,17}
 def __le{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,18}
 
-def getmask{x:[8]u32} = emit{u8,  '_mm256_movemask_ps', r_i2f{x}}
-def getmask{x:[4]u64} = emit{u8,  '_mm256_movemask_pd', r_i2d{x}}
+# minimal f32 things
+def abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, r_i2f{broadcast{[8]u32, 0x7FFFFFFF}}}
+
+
+def getmask{x:T & w256{T} & 32==width{eltype{T}}} = emit{u8, '_mm256_movemask_ps', r_i2f{x}}
+def getmask{x:T & w256{T} & 64==width{eltype{T}}} = emit{u8, '_mm256_movemask_pd', r_i2d{x}}
+def any{x:T & w256{T} & isintv{T}} = getmask{x}!=0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
+def anyneg{x:T & w256{T} & issignedv{T}} = getmask{x}!=0

@@ -1,0 +1,123 @@
+include './base'
+include './f64'
+include './cbqnDefs'
+include './avx'
+include './avx2'
+include './bitops'
+
+
+def rootty{T & match{typekind{T},'primitive'}} = T
+def rootty{T & match{typekind{T},'vector'}} = eltype{T}
+
+# TODO more to some more headerlike file
+def ty_dbl{T &  i8==T} = i16
+def ty_dbl{T & i16==T} = i32
+def ty_dbl{T & i32==T} = i64
+def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
+def dcast_i{x} = ext{ty_dbl{type{x}}, x}
+
+# + & -
+def arithChk1{F, w:T, x:T, r:T & match{F,__add}} = anyneg{(w^r) & (x^r)}
+def arithChk1{F, w:T, x:T, r:T & match{F,__sub}} = anyneg{(w^x) & (w^r)}
+def arithChk1{F, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{__adds{w,x}!=r}
+def arithChk1{F, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{__subs{w,x}!=r}
+
+def arithChk2{F, w:T, x:T, i & issigned{rootty{T}}} = {
+  r:= F{w,x}
+  tup{r, arithChk1{F, w, x, r}}
+}
+
+# ×/∧
+def arithChk2{F, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
+  r:= F{dcast_i{w}, dcast_i{x}}
+  tup{r, r!=ext{type{r}, trunc{T, r}}}
+}
+
+def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
+  rl:= __mul  {w,x}
+  rh:= __mulhi{w,x}
+  tup{rl, any{rh != rl>>15}}
+}
+def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
+  def wp = unpackQ{w, cast_v{T,broadcast{T,0}>w}}
+  def xp = unpackQ{x, cast_v{T,broadcast{T,0}>x}}
+  def rp = each{__mul, wp, xp}
+  def bad = each{{v}=>(v<<8)>>8 != v, rp}
+  tup{packQ{rp}, any{tupsel{0,bad}|tupsel{1,bad}}}
+}
+def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
+  max:= broadcast{[8]u32, 0x4efffffe}
+  def cf32{x} = emit{[8]u32, '_mm256_cvtepi32_ps', x}
+  f32mul:= emit{[8]f32, '_mm256_mul_ps', cf32{w}, cf32{x}}
+  tup{w*x, any{emit{[8]u32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}
+  # TODO fallback to the below if the above fails
+  # def wp = unpackQ{w, broadcast{T, 0}}
+  # def xp = unpackQ{x, broadcast{T, 0}}
+  # def rp = each{__mul32, wp, xp}
+  # def T2 = ty_dbl{T}
+  # def bad = each{{v}=>{
+  #   ((cast_v{T2,v} + broadcast{T2,0x80000000}) ^ broadcast{T2, cast{i64,1}<<63}) > broadcast{T2, cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}}
+  # }, rp}
+  # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}}
+}
+
+
+# f64
+def arithChk3{F, w:T, x:T, i} = {
+  def r2 = arithChk2{F, w, x, i}
+  if (rare{tupsel{1,r2}}) return{i}
+  tupsel{0,r2}
+}
+
+def arithChk3{F, w:T, x:T, i & f64==rootty{T}} = F{w,x}
+
+def arithAA{VT, F, w, x, r, len} = {
+  def bam = vcount{VT}
+  def vv = len/bam
+  @forv{VT} (w,x,r over i from 0 to vv) r = arithChk3{F, w, x, i*bam}
+  @for (w,x,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
+  len
+}
+def arithAS{VT, F, w, x, r, len} = {
+  def bam = vcount{VT}
+  def vv = len/bam
+  xv:= broadcast{VT, x}
+  @forv{VT} (w,r over i from 0 to vv) r = arithChk3{F, w, xv, i*bam}
+  @for (w,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
+  len
+}
+def arithSA{VT, F, w, x, r, len} = {
+  def bam = vcount{VT}
+  def vv = len/bam
+  wv:= broadcast{VT, w}
+  @forv{VT} (x,r over i from 0 to vv) r = arithChk3{F, wv, x, i*bam}
+  @for (x,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
+  len
+}
+
+
+# cast a guaranteed float to a more specific type; return{0} if not possible
+def cast_fB{T, x:(u64) & f64==T} = from_B{f64, x}
+def cast_fB{T, x:(u64) & issigned{T} & T<i64} = {
+  f:f64 = from_B{f64, x}
+  r:T = ftrunc{T, f}
+  if (rare{f!=fext{r}}) return{cast{Size,0}}
+  r
+}
+
+arithAA{F,VT}(w: *u8, x: *u8, r: *u8, len: Size) : Size = { def c{x}=cast_p{eltype{VT}, x}; arithAA{VT, F, c{w}, c{x}, c{r}, len} }
+arithAS{F,VT}(w: *u8, x: u64, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithAS{VT, F, cast_p {T, w}, cast_fB{T, x}, cast_p{T, r}, len} }
+arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithSA{VT, F, cast_fB{T, w}, cast_p {T, x}, cast_p{T, r}, len} }
+
+'avx2_addAA_i8'  = arithAA{__add,[32]i8 }; 'avx2_addAS_i8'  = arithAS{__add,[32]i8 }; 'avx2_addSA_i8'  = arithSA{__add,[32]i8 }
+'avx2_addAA_i16' = arithAA{__add,[16]i16}; 'avx2_addAS_i16' = arithAS{__add,[16]i16}; 'avx2_addSA_i16' = arithSA{__add,[16]i16}
+'avx2_addAA_i32' = arithAA{__add,[ 8]i32}; 'avx2_addAS_i32' = arithAS{__add,[ 8]i32}; 'avx2_addSA_i32' = arithSA{__add,[ 8]i32}
+'avx2_addAA_f64' = arithAA{__add,[ 4]f64}; 'avx2_addAS_f64' = arithAS{__add,[ 4]f64}; 'avx2_addSA_f64' = arithSA{__add,[ 4]f64}
+'avx2_subAA_i8'  = arithAA{__sub,[32]i8 }; 'avx2_subAS_i8'  = arithAS{__sub,[32]i8 }; 'avx2_subSA_i8'  = arithSA{__sub,[32]i8 }
+'avx2_subAA_i16' = arithAA{__sub,[16]i16}; 'avx2_subAS_i16' = arithAS{__sub,[16]i16}; 'avx2_subSA_i16' = arithSA{__sub,[16]i16}
+'avx2_subAA_i32' = arithAA{__sub,[ 8]i32}; 'avx2_subAS_i32' = arithAS{__sub,[ 8]i32}; 'avx2_subSA_i32' = arithSA{__sub,[ 8]i32}
+'avx2_subAA_f64' = arithAA{__sub,[ 4]f64}; 'avx2_subAS_f64' = arithAS{__sub,[ 4]f64}; 'avx2_subSA_f64' = arithSA{__sub,[ 4]f64}
+'avx2_mulAA_i8'  = arithAA{__mul,[32]i8 }; 'avx2_mulAS_i8'  = arithAS{__mul,[32]i8 }; 'avx2_mulSA_i8'  = arithSA{__mul,[32]i8 }
+'avx2_mulAA_i16' = arithAA{__mul,[16]i16}; 'avx2_mulAS_i16' = arithAS{__mul,[16]i16}; 'avx2_mulSA_i16' = arithSA{__mul,[16]i16}
+'avx2_mulAA_i32' = arithAA{__mul,[ 8]i32}; 'avx2_mulAS_i32' = arithAS{__mul,[ 8]i32}; 'avx2_mulSA_i32' = arithSA{__mul,[ 8]i32}
+'avx2_mulAA_f64' = arithAA{__mul,[ 4]f64}; 'avx2_mulAS_f64' = arithAS{__mul,[ 4]f64}; 'avx2_mulSA_f64' = arithSA{__mul,[ 4]f64}
