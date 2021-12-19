@@ -4,6 +4,12 @@
 
 extern u64 wy_secret[4];
 
+static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
+  if (ia&63) {
+    u64* xp = bitarr_ptr(x);
+    xp[ia>>6]&= (1ULL<<(ia&63)) - 1;
+  }
+}
 static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   if (isAtm(x)) {
     if (q_f64(x)) return wyhash64(secret[0], x.u);
@@ -17,7 +23,8 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
   u64 r;
-  if      (xe==el_i8 ) { r = wyhash(i8any_ptr (x), xia*1, shHash, secret); }
+  if      (xe==el_bit) { bcl(x,xia); r = wyhash(bitarr_ptr(x), BIT_N(xia), shHash, secret); }
+  else if (xe==el_i8 ) { r = wyhash(i8any_ptr (x), xia*1, shHash, secret); }
   else if (xe==el_i16) { r = wyhash(i16any_ptr(x), xia*2, shHash, secret); }
   else if (xe==el_i32) { r = wyhash(i32any_ptr(x), xia*4, shHash, secret); }
   else if (xe==el_c8 ) { r = wyhash(c8any_ptr (x), xia*1, shHash, secret); }

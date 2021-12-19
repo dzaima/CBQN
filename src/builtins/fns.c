@@ -223,7 +223,7 @@ B indexOf_c2(B t, B w, B x) {
     } else if (rnk(x)==1) {
       usz wia = a(w)->ia;
       usz xia = a(x)->ia;
-      // TODO O(wia×xia) for small wia
+      // TODO O(wia×xia) for small wia or xia
       i32* rp; B r = m_i32arrv(&rp, xia);
       H_b2i* map = m_b2i(64);
       SGetU(x)
@@ -257,7 +257,7 @@ B memberOf_c2(B t, B w, B x) {
   if (!isArr(w) || rnk(w)!=1 || !isArr(x) || rnk(x)!=1) return c2(rt_memberOf, w, x);
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  // TODO O(wia×xia) for small wia
+  // TODO O(wia×xia) for small wia or xia
   H_Sb* set = m_Sb(64);
   bool had;
   SGetU(x)
