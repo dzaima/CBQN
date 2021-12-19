@@ -507,22 +507,27 @@ bool isPureFn(B x) { // doesn't consume
 B num_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
-  if (xe==el_bit) goto r_x;
-  // TODO fast paths for xe<el_f64
   usz i = 0;
   u32 or = 0; // using bitwise or as an approximate ⌈´
   bool neg = false;
-  if (xe==el_f64) {
-    f64* xp = f64any_ptr(x);
-    for (; i < ia; i++) {
-      f64 cf = xp[i];
-      i32 c = (i32)cf;
-      if (c!=cf) goto r_x; // already f64
-      i32 sgn = (u32)(c>>31);
-      or|= ((u32)c) ^ sgn;
-      neg|= sgn;
+  switch (xe) { default: UD;
+    case el_bit: goto r_x;
+    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
+    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
+    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
+    case el_f64: {
+      f64* xp = f64any_ptr(x);
+      for (; i < ia; i++) {
+        f64 cf = xp[i];
+        i32 c = (i32)cf;
+        if (c!=cf) goto r_x; // already f64
+        i32 sgn = (u32)(c>>31);
+        or|= ((u32)c) ^ sgn;
+        neg|= sgn;
+      }
+      goto r_or;
     }
-    goto r_or;
+    case el_B: case el_c8: case el_c16: case el_c32:; /*fallthrough*/
   }
   
   B* xp = arr_bptr(x);
