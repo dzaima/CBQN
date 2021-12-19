@@ -352,7 +352,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   ShArr* csh;
   if (cr>1) {
     csh = m_shArr(cr);
-    memcpy(csh->a, a(x)->sh+1, sizeof(usz)*cr);
+    memcpy(csh->a, a(x)->sh+1, cr*sizeof(usz));
   }
   BSS2A slice = TI(x,slice);
   M_HARR(r, cam);

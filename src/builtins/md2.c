@@ -1,3 +1,4 @@
+#include <math.h>
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../builtins.h"
@@ -176,6 +177,80 @@ B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   return x;
 }
 
+B m1c(B t, B f, B g, B x) { // consumes x
+  B fn = m2_d(inc(t), inc(f), inc(g));
+  B r = c1(fn, x);
+  dec(fn);
+  return r;
+}
+B m2c(B t, B f, B g, B w, B x) { // consumes w,x
+  B fn = m2_d(inc(t), inc(f), inc(g));
+  B r = c2(fn, w, x);
+  dec(fn);
+  return r;
+}
+
+B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
+  f64 kf;
+  bool gf = isFun(g);
+  if (RARE(gf)) g = c1(g, inc(x));
+  if (LIKELY(isNum(g))) {
+    kf = o2fu(g);
+  } else if (isArr(g)) {
+    usz gia = a(g)->ia;
+    if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
+    SGetU(g)
+    if (!elNum(TI(g,elType))) for (i32 i = 0; i < gia; i++) o2f(GetU(g,i));
+    kf = GetU(g, gia==2).f;
+  } else thrM("⎉: Invalid 𝔾 result");
+  if (gf) dec(g);
+  i32 k = kf;
+  
+  if (isAtm(x) || rnk(x)==0) {
+    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
+    B r = c1(f, x);
+    return isAtm(r)? m_atomUnit(r) : r;
+  }
+  i32 xr = rnk(x);
+  usz* xsh = a(x)->sh;
+  if (k!=kf) {
+    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
+    k = kf>0? 0 : xr;
+  } else {
+    k = k<0? (k+xr<0? xr : xr-(k+xr)) : (k>xr? 0 : xr-k);
+  }
+  if (Q_BI(f,lt) && a(x)->ia!=0 && rnk(x)>1) return toKCells(x, k);
+  
+  usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
+  usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
+  ur cr = xr-k;
+  ShArr* csh;
+  if (cr>1) {
+    csh = m_shArr(cr);
+    memcpy(csh->a, xsh+k, cr*sizeof(usz));
+  }
+  
+  
+  BSS2A slice = TI(x,slice);
+  M_HARR(r, cam);
+  usz p = 0;
+  for (usz i = 0; i < cam; i++) {
+    Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
+    HARR_ADD(r, i, c1(f, taga(s)));
+    p+= csz;
+  }
+  
+  if (cr>1) ptr_dec(csh);
+  usz* rsh = HARR_FA(r, k);
+  if (k>1) memcpy(rsh, xsh, k*sizeof(usz));
+  
+  dec(x);
+  return bqn_merge(HARR_O(r).b);
+}
+extern B rt_rank;
+B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
+  return m2c(rt_rank, f, g, w, x);
+}
 
 static void print_md2BI(B x) { printf("%s", pm2_repr(c(Md1,x)->extra)); }
 void md2_init() {
