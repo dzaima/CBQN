@@ -1180,6 +1180,46 @@ B reverse_uc1(B t, B o, B x) {
   return reverse_c1(t, c1(o, reverse_c1(t, x)));
 }
 
+extern B rt_transp;
+B transp_c1(B t, B x) {
+  if (RARE(isAtm(x))) return m_atomUnit(x);
+  if (rnk(x)==1) return x;
+  if (rnk(x)==2) {
+    usz ia = a(x)->ia;
+    usz h = a(x)->sh[0];
+    usz w = a(x)->sh[1];
+    Arr* r;
+    switch(TI(x,elType)) { default: UD;
+      case el_i8:  { i8*  xp=i8any_ptr (x); i8*  rp; r=m_i8arrp (&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_i16: { i16* xp=i16any_ptr(x); i16* rp; r=m_i16arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_i32: { i32* xp=i32any_ptr(x); i32* rp; r=m_i32arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_c8:  { u8*  xp=c8any_ptr (x); u8*  rp; r=m_c8arrp (&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_c16: { u16* xp=c16any_ptr(x); u16* rp; r=m_c16arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_c32: { u32* xp=c32any_ptr(x); u32* rp; r=m_c32arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[y*w+x]; break; }
+      case el_B: case el_bit: { // can't be bothered to implement a bitarr transpose
+        B* xp = arr_bptr(x);
+        B xf = getFillR(x);
+        if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; } // TODO extract this to an inline function
+        
+        HArr_p p = m_harrUp(ia);
+        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[y*w+x]);
+        
+        usz* rsh = arr_shAlloc((Arr*)p.c, 2);
+        rsh[0] = w; rsh[1] = h;
+        dec(x); return qWithFill(p.b, xf);
+      }
+    }
+    usz* rsh = arr_shAlloc(r, 2);
+    rsh[0] = w; rsh[1] = h;
+    dec(x); return taga(r);
+  }
+  return c1(rt_transp, x);
+}
+B transp_c2(B t, B w, B x) {
+  return c2(rt_transp, w, x);
+}
+
+
 B pick_uc1(B t, B o, B x) {
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
   B xf = getFillQ(x);

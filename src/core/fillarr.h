@@ -72,7 +72,7 @@ static B m_emptyFVec(B f) { // consumes f
   return taga(r);
 }
 
-static B m_unit(B x) {
+static B m_unit(B x) { // consumes
   B xf = asFill(inc(x));
   if (noFill(xf)) {
     HArr_p r = m_harrUp(1);
@@ -87,7 +87,7 @@ static B m_unit(B x) {
   return taga(r);
 }
 
-static B m_atomUnit(B x) {
+static B m_atomUnit(B x) { // consumes
   if (isNum(x)) {
     Arr* r;
     i32 xi = (i32)x.f;
