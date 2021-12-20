@@ -1201,6 +1201,7 @@ B transp_c1(B t, B x) {
     case el_c8:  { u8*  xp=c8any_ptr (x); u8*  rp; r=m_c8arrp (&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_c16: { u16* xp=c16any_ptr(x); u16* rp; r=m_c16arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_c32: { u32* xp=c32any_ptr(x); u32* rp; r=m_c32arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+    case el_f64: { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_B: case el_bit: { // can't be bothered to implement a bitarr transpose
       B* xp = arr_bptr(x);
       B xf = getFillR(x);
