@@ -292,9 +292,11 @@ FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consume
   if (upd) {
     B prev = sc->vars[p];
     if (chk && prev.u==bi_noVar.u) thrM("↩: Updating variable that hasn't been set");
+    sc->vars[p] = x;
     dec(prev);
+  } else {
+    sc->vars[p] = x;
   }
-  sc->vars[p] = x;
 }
 FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk) { // doesn't consume; if chk is false, content variables _may_ not be checked to be set
   if (RARE(!isVar(s))) v_setR(pscs, s, x, upd);
