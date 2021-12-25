@@ -120,7 +120,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     x = toI32Any(x); i32* xi = i32any_ptr(x);
     if (CHECK_VALID && !FL_HAS(w,fl)) {
       for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w,fl);
+      FL_SET(w, fl);
     }
     
     for (usz i = 0; i < xia; i++) {
@@ -144,7 +144,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     if (CHECK_VALID && !FL_HAS(w,fl)) {
       for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wp[i], wp[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w,fl);
+      FL_SET(w, fl);
     }
     
     for (usz i = 0; i < xia; i++) {

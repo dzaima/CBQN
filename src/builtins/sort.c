@@ -37,7 +37,7 @@ B and_c1(B t, B x) {
     memcpy(rp, xp, xia*4);
     iA_tim_sort(rp, xia);
     dec(x);
-    return r;
+    return FL_SET(r, fl_asc);
   }
   B xf = getFillQ(x);
   HArr_p r = m_harrUv(xia);
@@ -45,7 +45,7 @@ B and_c1(B t, B x) {
   for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bA_tim_sort(r.a, xia);
   dec(x);
-  return withFill(r.b,xf);
+  return FL_SET(withFill(r.b,xf), fl_asc);
 }
 
 
@@ -69,7 +69,7 @@ B or_c1(B t, B x) {
     memcpy(rp, xp, xia*4);
     iD_tim_sort(rp, xia);
     dec(x);
-    return r;
+    return FL_SET(r, fl_dsc);
   }
   B xf = getFillQ(x);
   HArr_p r = m_harrUv(xia);
@@ -77,5 +77,5 @@ B or_c1(B t, B x) {
   for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bD_tim_sort(r.a, xia);
   dec(x);
-  return withFill(r.b,xf);
+  return FL_SET(withFill(r.b,xf), fl_dsc);
 }
