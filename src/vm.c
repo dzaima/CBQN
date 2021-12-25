@@ -133,7 +133,7 @@ typedef struct NextRequest {
   u32 pos2; // ↑ for dyadic; U32_MAX if not wanted
 } NextRequest;
 
-Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth) {
+Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos) {
   usz blIA = a(block)->ia;
   if (blIA!=3) thrM("VM compiler: Bad block info size");
   SGetU(block)
@@ -149,7 +149,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   
   // failed match body
   TSADD(newBC, FAIL);
-  TSADD(mapBC, 0);
+  TSADD(mapBC, myPos);
   Body* failBody = m_body(6, 0, 1, 0);
   failBody->nsDesc = NULL;
   TSADD(bodies, failBody);
@@ -303,7 +303,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             if ((u32)id >= a(allBlocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
             if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
             bDone[id] = true;
-            Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1);
+            Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc);
             TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
             A64((u64)bl);
             TSADD(usedBlocks, bl);
@@ -459,7 +459,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   }
   TALLOC(bool,bDone,bIA);
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
-  Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0);
+  Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0);
   TFREE(bDone);
   ptr_dec(comp); dec(allBlocks); dec(allBodies); dec(tokenInfo);
   return ret;
@@ -738,20 +738,20 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
       
       case SETH1:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)v1); }
+        if (!ok) { return gotoNextBody(bl, sc, (Body*)v1); }
         break;
       }
       case SETH2:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
+        if (!ok) { return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
       case PRED1:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64;
-        if (!o2b(x)) { GS_UPD; return gotoNextBody(bl, sc, (Body*)v1); }
+        if (!o2b(x)) { return gotoNextBody(bl, sc, (Body*)v1); }
         break;
       }
       case PRED2:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
-        if (!o2b(x)) { GS_UPD; return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
+        if (!o2b(x)) { return gotoNextBody(bl, sc, (Body*)(q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
       

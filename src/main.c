@@ -218,8 +218,29 @@ int main(int argc, char* argv[]) {
           goto cont;
         } else if (isCmd(cmdS, &cmdE, "gc ")) {
           #if ENABLE_GC
-            if (gc_depth!=0) printf("Cannot GC currently\n");
-            else gc_forceGC();
+            if (0==*cmdE) {
+              if (gc_depth!=0) {
+                printf("GC is disabled, but forcibly GCing anyway\n");
+                gc_enable();
+                gc_forceGC();
+                gc_disable();
+              } else {
+                gc_forceGC();
+              }
+            } else if (strcmp(cmdE,"on")==0) {
+              if (gc_depth==0) printf("GC already on\n");
+              else if (gc_depth>1) printf("GC cannot be enabled\n");
+              else {
+                gc_enable();
+                printf("GC enabled\n");
+              }
+            } else if (strcmp(cmdE,"off")==0) {
+              if (gc_depth>0) printf("GC already off\n");
+              else {
+                gc_disable();
+                printf("GC disabled\n");
+              }
+            } else printf("Unknown GC command\n");
           #else
             printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
           #endif
