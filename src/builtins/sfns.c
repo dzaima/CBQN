@@ -23,8 +23,8 @@ B m_vec1(B a) {
   if (isF64(a)) {
     i32 i = (i32)a.f;
     if (RARE(a.f != i))   { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
-    if      (q_ibit(i))   { u64* rp; B r = m_bitarrv(&rp, 1); rp[0] = i; return r; }
-    if      (i == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
+    else if (q_ibit(i))   { u64* rp; B r = m_bitarrv(&rp, 1); rp[0] = i; return r; }
+    else if (i == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
     else if (i == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
     else                  { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
   }
