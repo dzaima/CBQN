@@ -3,6 +3,7 @@
 #ifdef RT_PERF
 #include "builtins.h"
 #endif
+#include "utils/time.h"
 
 #ifdef RT_WRAP
 typedef struct WFun WFun;

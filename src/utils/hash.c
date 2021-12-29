@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "hash.h"
+#include "time.h"
 
 u64 wy_secret[4];
 

@@ -3,6 +3,7 @@
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/file.h"
+#include "utils/time.h"
 
 static B replPath;
 static Scope* gsc;

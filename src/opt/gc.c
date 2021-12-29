@@ -1,4 +1,9 @@
 #include "gc.h"
+
+#ifdef LOG_GC
+#include "../utils/time.h"
+#endif
+
 u64 gc_depth = 1;
 
 
