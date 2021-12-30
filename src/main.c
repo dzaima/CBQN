@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
               dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-e)"), emptySVec()));
               break;
             }
+            case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
               B r = bqn_fmt(gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-p)"), emptySVec()));
               printRaw(r); dec(r);
