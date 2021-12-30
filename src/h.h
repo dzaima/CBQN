@@ -419,6 +419,10 @@ void slice_freeO(Value* x); void slice_freeF(Value* x);
 void slice_visit(Value* x);
 void slice_print(B x);
 
+typedef struct Md1 Md1;
+typedef struct Md2 Md2;
+typedef struct Md1D Md1D;
+typedef struct Md2D Md2D;
 
 typedef bool (*  B2b)(B);
 typedef void (*  B2v)(B);
@@ -430,14 +434,16 @@ typedef B (*     B2B)(B);
 typedef B (*    BB2B)(B, B);
 typedef B (*   BBB2B)(B, B, B);
 typedef B (*  BBBB2B)(B, B, B, B);
-typedef B (* BBBBB2B)(B, B, B, B, B);
-typedef B (*BBBBBB2B)(B, B, B, B, B, B);
-typedef struct Md1D Md1D;
-typedef struct Md2D Md2D;
-typedef B (*M1C1)(Md1D*, B);
-typedef B (*M1C2)(Md1D*, B, B);
-typedef B (*M2C1)(Md2D*, B);
-typedef B (*M2C2)(Md2D*, B, B);
+
+typedef B (*M1C3)(Md1*, B, B, B);
+typedef B (*M1C4)(Md1*, B, B, B, B);
+typedef B (*M2C4)(Md2*, B, B, B, B);
+typedef B (*M2C5)(Md2*, B, B, B, B, B);
+
+typedef B (*D1C1)(Md1D*, B);
+typedef B (*D1C2)(Md1D*, B, B);
+typedef B (*D2C1)(Md2D*, B);
+typedef B (*D2C2)(Md2D*, B, B);
 
 #define FOR_TI(F) \
   F(V2v, freeF)  /* expects refc==0, includes mm_free */ \
@@ -450,21 +456,21 @@ typedef B (*M2C2)(Md2D*, B, B);
   \
   F(   BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \
   F(  BBBB2B, fn_ucw) /* t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x */ \
-  F(  BBBB2B, m1_uc1) /* t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x   */ \
-  F( BBBBB2B, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
-  F( BBBBB2B, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
-  F(BBBBBB2B, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
+  F(M1C3, m1_uc1) /* t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x   */ \
+  F(M1C4, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
+  F(M2C4, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
+  F(M2C5, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
   \
   F( BB2B, fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
   F( BB2B, fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
   F(BBB2B, fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
   F(BBB2B, fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
-  F( M1C1, m1_im) /* d,  x; 1-modifier monadic inverse;  consumes x   */ \
-  F( M1C2, m1_iw) /* d,w,x; 1-modifier dyadic 𝕨-inverse; consumes w,x */ \
-  F( M1C2, m1_ix) /* d,w,x; 1-modifier dyadic 𝕩-inverse; consumes w,x */ \
-  F( M2C1, m2_im) /* d,  x; 2-modifier monadic inverse;  consumes x   */ \
-  F( M2C2, m2_iw) /* d,w,x; 2-modifier dyadic 𝕨-inverse; consumes w,x */ \
-  F( M2C2, m2_ix) /* d,w,x; 2-modifier dyadic 𝕩-inverse; consumes w,x */ \
+  F( D1C1, m1_im) /* d,  x; 1-modifier monadic inverse;  consumes x   */ \
+  F( D1C2, m1_iw) /* d,w,x; 1-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F( D1C2, m1_ix) /* d,w,x; 1-modifier dyadic 𝕩-inverse; consumes w,x */ \
+  F( D2C1, m2_im) /* d,  x; 2-modifier monadic inverse;  consumes x   */ \
+  F( D2C2, m2_iw) /* d,w,x; 2-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F( D2C2, m2_ix) /* d,w,x; 2-modifier dyadic 𝕩-inverse; consumes w,x */ \
   \
   F(B2b, canStore) /* doesn't consume */ \
   F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \
@@ -591,22 +597,22 @@ static B c2iWX(B f, B w, B x) { // c2 but implicit inc(w);inc(x)
 }
 
 
-typedef struct Md1 {
+struct Md1 {
   struct Value;
-  M1C1 c1; // f(md1d{this,f},  x); consumes x
-  M1C2 c2; // f(md1d{this,f},w,x); consumes w,x
-} Md1;
-typedef struct Md2 {
+  D1C1 c1; // f(md1d{this,f},  x); consumes x
+  D1C2 c2; // f(md1d{this,f},w,x); consumes w,x
+};
+struct Md2 {
   struct Value;
-  M2C1 c1; // f(md2d{this,f,g},  x); consumes x
-  M2C2 c2; // f(md2d{this,f,g},w,x); consumes w,x
-} Md2;
+  D2C1 c1; // f(md2d{this,f,g},  x); consumes x
+  D2C2 c2; // f(md2d{this,f,g},w,x); consumes w,x
+};
 static B m1_d(B m, B f     );
 static B m2_d(B m, B f, B g);
 static B m2_h(B m,      B g);
-static B m_md1D(B m, B f     );
-static B m_md2D(B m, B f, B g);
-static B m_md2H(B m,      B g);
+static B m_md1D(Md1* m, B f     );
+static B m_md2D(Md2* m, B f, B g);
+static B m_md2H(Md2* m,      B g);
 static B m_fork(B f, B g, B h);
 static B m_atop(     B g, B h);
 

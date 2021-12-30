@@ -3,8 +3,8 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
-B md2BI_uc1(B t, B o, B f, B g,      B x) { return c(BMd2,t)->uc1(t, o, f, g,    x); }
-B md2BI_ucw(B t, B o, B f, B g, B w, B x) { return c(BMd2,t)->ucw(t, o, f, g, w, x); }
+B md2BI_uc1(Md2* t, B o, B f, B g,      B x) { return ((BMd2*)t)->uc1(t, o, f, g,    x); }
+B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g, w, x); }
 
 
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
@@ -161,7 +161,7 @@ B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   return r;
 }
 
-B before_uc1(B t, B o, B f, B g, B x) {
+B before_uc1(Md2* t, B o, B f, B g, B x) {
   if (!isFun(g)) return def_m2_uc1(t, o, f, g, x);
   return TI(g,fn_ucw)(g, o, inc(f), x);
 }

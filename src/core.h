@@ -45,13 +45,13 @@ typedef struct BFn {
 } BFn;
 typedef struct BMd1 {
   struct Md1;
-  M1C1 im;
-  M1C2 iw;
-  M1C2 ix;
+  D1C1 im;
+  D1C2 iw;
+  D1C2 ix;
 } BMd1;
 
 typedef struct BMd2 {
   struct Md2;
-   BBBBB2B uc1;
-  BBBBBB2B ucw;
+  M2C4 uc1;
+  M2C5 ucw;
 } BMd2;

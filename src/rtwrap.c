@@ -232,17 +232,19 @@ B rtWrap_unwrap(B x) {
 }
 
 
-B wfn_uc1(B t, B o,                B x) { B t2 = c(WFun,t)->v; return TI(t2,fn_uc1)(t2, o,          x); }
-B wfn_ucw(B t, B o,           B w, B x) { B t2 = c(WFun,t)->v; return TI(t2,fn_ucw)(t2, o,       w, x); }
-B wm1_uc1(B t, B o, B f,           B x) { B t2 = c(WMd1,t)->v; return TI(t2,m1_uc1)(t2, o, f,       x); }
-B wm1_ucw(B t, B o, B f,      B w, B x) { B t2 = c(WMd1,t)->v; return TI(t2,m1_ucw)(t2, o, f,    w, x); }
-B wm2_uc1(B t, B o, B f, B g,      B x) { B t2 = c(WMd2,t)->v; return TI(t2,m2_uc1)(t2, o, f, g,    x); }
-B wm2_ucw(B t, B o, B f, B g, B w, B x) { B t2 = c(WMd2,t)->v; return TI(t2,m2_ucw)(t2, o, f, g, w, x); }
+B wfn_uc1(B t,    B o,                B x) { B t2 =  c(WFun,t)->v; return TI(t2,fn_uc1)(      t2,  o,          x); }
+B wfn_ucw(B t,    B o,           B w, B x) { B t2 =  c(WFun,t)->v; return TI(t2,fn_ucw)(      t2,  o,       w, x); }
+B wm1_uc1(Md1* t, B o, B f,           B x) { B t2 = ((WMd1*)t)->v; return TI(t2,m1_uc1)(c(Md1,t2), o, f,       x); }
+B wm1_ucw(Md1* t, B o, B f,      B w, B x) { B t2 = ((WMd1*)t)->v; return TI(t2,m1_ucw)(c(Md1,t2), o, f,    w, x); }
+B wm2_uc1(Md2* t, B o, B f, B g,      B x) { B t2 = ((WMd2*)t)->v; return TI(t2,m2_uc1)(c(Md2,t2), o, f, g,    x); }
+B wm2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = ((WMd2*)t)->v; return TI(t2,m2_ucw)(c(Md2,t2), o, f, g, w, x); }
 
+static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
+static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 void rtWrap_init() {
   TIi(t_funWrap,visit) =  wf_visit; TIi(t_funWrap,identity) = wf_identity;
-  TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,m1_d) = m_md1D;
-  TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,m2_d) = m_md2D;
+  TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,m1_d) = m1BI_d;
+  TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,m2_d) = m2BI_d;
   TIi(t_funWrap,fn_uc1) = wfn_uc1;
   TIi(t_funWrap,fn_ucw) = wfn_ucw;
   TIi(t_md1Wrap,m1_uc1) = wm1_uc1;

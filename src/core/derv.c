@@ -46,8 +46,8 @@ B fork_c2(B t, B w, B x) {
     return c2(c(Fork,t)->g, inc(f), c2(h,w,x));
   }
 }
-B md2H_c1(Md1D* m,      B x) { Md2H* t=(Md2H*) m->m1; return md2D_c1(m_md2D(tag(t->m2,MD2_TAG), m->f, t->g),    x); }
-B md2H_c2(Md1D* m, B w, B x) { Md2H* t=(Md2H*) m->m1; return md2D_c2(m_md2D(tag(t->m2,MD2_TAG), m->f, t->g), w, x); }
+B md2H_c1(Md1D* m,      B x) { Md2H* t=(Md2H*) m->m1; return md2D_c1(m_md2D(t->m2, m->f, t->g),    x); }
+B md2H_c2(Md1D* m, B w, B x) { Md2H* t=(Md2H*) m->m1; return md2D_c2(m_md2D(t->m2, m->f, t->g), w, x); }
 
 static B md1D_decompose(B x) { B r=m_hVec3(m_i32(4),inc(c(Md1D,x)->f),tag(ptr_inc(c(Md1D,x)->m1),MD1_TAG)                   ); decR(x); return r; }
 static B md2D_decompose(B x) { B r=m_hVec4(m_i32(5),inc(c(Md2D,x)->f),tag(ptr_inc(c(Md2D,x)->m2),MD2_TAG), inc(c(Md2D,x)->g)); decR(x); return r; }
@@ -59,7 +59,7 @@ static B md2D_uc1(B t, B o, B x) {
   Md2* m = c(Md2D, t)->m2;
   B f = c(Md2D, t)->f;
   B g = c(Md2D, t)->g;
-  return TIv(m,m2_uc1)(tag(m,MD2_TAG), o, f, g, x);
+  return TIv(m,m2_uc1)(m, o, f, g, x);
 }
 
 static B toConstant(B x) { // doesn't consume x
@@ -98,7 +98,8 @@ static B md1D_ix(B t, B w, B x) { Md1D* d = c(Md1D,t); return TIv(d->m1,m1_ix)(d
 static B md2D_im(B t,      B x) { Md2D* d = c(Md2D,t); return TIv(d->m2,m2_im)(d,    x); }
 static B md2D_iw(B t, B w, B x) { Md2D* d = c(Md2D,t); return TIv(d->m2,m2_iw)(d, w, x); }
 static B md2D_ix(B t, B w, B x) { Md2D* d = c(Md2D,t); return TIv(d->m2,m2_ix)(d, w, x); }
-
+static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
+static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 
 void derv_init() {
   TIi(t_md1D,freeO) = md1D_freeO; TIi(t_md1D,freeF) = md1D_freeF; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
@@ -106,8 +107,8 @@ void derv_init() {
   TIi(t_md2H,freeO) = md2H_freeO; TIi(t_md2H,freeF) = md2H_freeF; TIi(t_md2H,visit) = md2H_visit; TIi(t_md2H,print) = md2H_print; TIi(t_md2H,decompose) = md2H_decompose;
   TIi(t_fork,freeO) = fork_freeO; TIi(t_fork,freeF) = fork_freeF; TIi(t_fork,visit) = fork_visit; TIi(t_fork,print) = fork_print; TIi(t_fork,decompose) = fork_decompose;
   TIi(t_atop,freeO) = atop_freeO; TIi(t_atop,freeF) = atop_freeF; TIi(t_atop,visit) = atop_visit; TIi(t_atop,print) = atop_print; TIi(t_atop,decompose) = atop_decompose;
-  TIi(t_md1BI,m1_d) = m_md1D;
-  TIi(t_md2BI,m2_d) = m_md2D;
+  TIi(t_md1BI,m1_d) = m1BI_d;
+  TIi(t_md2BI,m2_d) = m2BI_d;
   TIi(t_md2D,fn_uc1) = md2D_uc1; // not in post so later init can utilize it
   TIi(t_md1D,fn_im) = md1D_im; TIi(t_md2D,fn_im) = md2D_im;
   TIi(t_md1D,fn_iw) = md1D_iw; TIi(t_md2D,fn_iw) = md2D_iw;

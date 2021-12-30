@@ -157,10 +157,10 @@ static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeez
 
 B def_fn_uc1(B t, B o,                B x);
 B def_fn_ucw(B t, B o,           B w, B x);
-B def_m1_uc1(B t, B o, B f,           B x);
-B def_m1_ucw(B t, B o, B f,      B w, B x);
-B def_m2_uc1(B t, B o, B f, B g,      B x);
-B def_m2_ucw(B t, B o, B f, B g, B w, B x);
+B def_m1_uc1(Md1* t, B o, B f,           B x);
+B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
+B def_m2_uc1(Md2* t, B o, B f, B g,      B x);
+B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x);
 B def_fn_im(B t,      B x);
 B def_fn_is(B t,      B x);
 B def_fn_iw(B t, B w, B x);

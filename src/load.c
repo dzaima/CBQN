@@ -559,7 +559,7 @@ static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
   B r = tag(f,FUN_TAG); gc_add(r);
   return r;
 }
-static NOINLINE B m_bm1(M1C1 c1, M1C2 c2, u8 id) {
+static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 id) {
   BMd1* m = mm_alloc(sizeof(BMd1), t_md1BI);
   m->c1 = c1;
   m->c2 = c2;
@@ -571,7 +571,7 @@ static NOINLINE B m_bm1(M1C1 c1, M1C2 c2, u8 id) {
   return r;
 }
 
-static NOINLINE B m_bm2(M2C1 c1, M2C2 c2, u8 id) {
+static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 id) {
   BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI);
   m->c1 = c1;
   m->c2 = c2;
