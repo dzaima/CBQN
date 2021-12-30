@@ -177,13 +177,13 @@ B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   return x;
 }
 
-B m1c(B t, B f, B g, B x) { // consumes x
+static B m2c1(B t, B f, B g, B x) { // consumes x
   B fn = m2_d(inc(t), inc(f), inc(g));
   B r = c1(fn, x);
   dec(fn);
   return r;
 }
-B m2c(B t, B f, B g, B w, B x) { // consumes w,x
+static B m2c2(B t, B f, B g, B w, B x) { // consumes w,x
   B fn = m2_d(inc(t), inc(f), inc(g));
   B r = c2(fn, w, x);
   dec(fn);
@@ -249,8 +249,16 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
 }
 extern B rt_rank;
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
-  return m2c(rt_rank, f, g, w, x);
+  return m2c2(rt_rank, f, g, w, x);
 }
+
+
+
+
+extern B rt_depth;
+B depth_c1(Md2D* d,      B x) { return m2c1(rt_depth, d->f, d->g, x); }
+B depth_c2(Md2D* d, B w, B x) { return m2c2(rt_depth, d->f, d->g, w, x); }
+
 
 static void print_md2BI(B x) { printf("%s", pm2_repr(c(Md1,x)->extra)); }
 void md2_init() {

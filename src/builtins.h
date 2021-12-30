@@ -18,13 +18,13 @@
 /*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan")
 
 #define FOR_PM1(A,M,D) \
-    /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") \
+    /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \
 /*inverse.c*/A(undo,"⁼") \
 /* everything before the definition of •_timed is defined to be pure, and everything after is not */ \
     /*md1.c*/A(timed,"•_timed")
 
 #define FOR_PM2(A,M,D) \
-  /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(rank,"⎉") A(fillBy,"•_fillBy_") A(catch,"⎊") \
+  /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(rank,"⎉") A(depth,"⚇") A(fillBy,"•_fillBy_") A(catch,"⎊") \
   /*md2.c*/A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
 /* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
   /*md2.c*/A(while,"•_while_")
@@ -35,8 +35,8 @@ enum PrimNumbers {
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ n_ltack   , n_rtack  , n_shape , n_join , n_couple , n_pair     , n_take  , n_drop , n_ud     , n_shifta,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ n_shiftb  , n_reverse, n_transp, n_slash, n_gradeUp, n_gradeDown, n_select, n_pick , n_indexOf, n_count,
     /* ∊⍷⊔!˙˜˘¨⌜⁼  */ n_memberOf, n_find   , n_group , n_asrt , n_const  , n_swap     , n_cell  , n_each , n_tbl    , n_undo,
-    /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_reduce , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
-    /* ⎉⚇⍟⎊        */ n_rank    , n_depth2 , n_repeat, n_catch
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_insert , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
+    /* ⎉⚇⍟⎊        */ n_rank    , n_depth  , n_repeat, n_catch
 };
 extern B rt_invFnReg, rt_invFnSwap;
 extern BB2B rt_invFnRegFn;

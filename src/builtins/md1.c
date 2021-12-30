@@ -340,6 +340,20 @@ B timed_c1(Md1D* d, B x) { B f = d->f;
 }
 
 
+static B m1c1(B t, B f, B x) { // consumes x
+  B fn = m1_d(inc(t), inc(f));
+  B r = c1(fn, x);
+  dec(fn);
+  return r;
+}
+static B m1c2(B t, B f, B w, B x) { // consumes w,x
+  B fn = m1_d(inc(t), inc(f));
+  B r = c2(fn, w, x);
+  dec(fn);
+  return r;
+}
+
+
 extern B rt_cell;
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) {
@@ -372,12 +386,12 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     B r = c2(f, w, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
-  B fn = m1_d(inc(rt_cell), inc(f)); // TODO
-  B r = c2(fn, w, x);
-  dec(fn);
-  return r;
+  return m1c2(rt_cell, f, w, x);
 }
 
+extern B rt_insert;
+B insert_c1(Md1D* d,      B x) { return m1c1(rt_insert, d->f,    x); }
+B insert_c2(Md1D* d, B w, B x) { return m1c2(rt_insert, d->f, w, x); }
 
 
 static void print_md1BI(B x) { printf("%s", pm1_repr(c(Md1,x)->extra)); }

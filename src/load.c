@@ -102,7 +102,7 @@ B comp_currArgs;
 B comp_currSrc;
 B comp_currRe;
 
-B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick,rt_take, rt_drop,
+B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell, rt_rank, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
@@ -322,8 +322,8 @@ void load_init() { // very last init function
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ bi_ltack   , bi_rtack  , bi_shape , bi_join , bi_couple , bi_pair     , bi_take  , bi_drop , bi_ud     , bi_shifta,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ bi_shiftb  , bi_reverse, bi_transp, bi_slash, bi_gradeUp, bi_gradeDown, bi_select, bi_pick , bi_indexOf, bi_count,
     /* ∊⍷⊔!˙˜˘¨⌜⁼  */ bi_memberOf, bi_find   , bi_group , bi_asrt , bi_const  , bi_swap     , bi_cell  , bi_each , bi_tbl    , bi_undo,
-    /* ´˝`∘○⊸⟜⌾⊘◶  */ bi_fold    , bi_N      , bi_scan  , bi_atop , bi_over   , bi_before   , bi_after , bi_under, bi_val    , bi_cond,
-    /* ⎉⚇⍟⎊        */ bi_rank   , bi_N      , bi_repeat, bi_catch
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ bi_fold    , bi_insert , bi_scan  , bi_atop , bi_over   , bi_before   , bi_after , bi_under, bi_val    , bi_cond,
+    /* ⎉⚇⍟⎊        */ bi_rank    , bi_depth  , bi_repeat, bi_catch
 
   };
   bool rtComplete[] = {
@@ -332,8 +332,8 @@ void load_init() { // very last init function
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ 1,1,1,1,1,1,1,1,1,1,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ 1,1,1,1,1,1,1,1,1,1,
     /* ∊⍷⊔!˙˜˘¨⌜⁼  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ´˝`∘○⊸⟜⌾⊘◶  */ 1,0,1,1,1,1,1,1,1,1,
-    /* ⎉⚇⍟⎊        */ 1,0,1,1
+    /* ´˝`∘○⊸⟜⌾⊘◶  */ 1,1,1,1,1,1,1,1,1,1,
+    /* ⎉⚇⍟⎊        */ 1,1,1,1
   };
   assert(sizeof(fruntime)/sizeof(B) == rtLen);
   for (u64 i = 0; i < rtLen; i++) inc(fruntime[i]);
@@ -392,6 +392,8 @@ void load_init() { // very last init function
     rt_cell    = Get(rtObjRaw, n_cell    ); gc_add(rt_cell);
     rt_rank    = Get(rtObjRaw, n_rank    ); gc_add(rt_rank);
     rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
+    rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);
+    rt_insert  = Get(rtObjRaw, n_insert  ); gc_add(rt_insert);
     
     for (usz i = 0; i < rtLen; i++) {
       #ifdef RT_WRAP
