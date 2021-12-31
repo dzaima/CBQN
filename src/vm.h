@@ -247,9 +247,9 @@ FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that 
       B c = sc->vars[i];
       if (isVal(c) && v(c)->refc==1) {
         u8 t = v(c)->type;
-        if      (t==t_fun_block && c(FunBlock,c)->sc==sc) innerRef++;
-        else if (t==t_md1_block && c(Md1Block,c)->sc==sc) innerRef++;
-        else if (t==t_md2_block && c(Md2Block,c)->sc==sc) innerRef++;
+        if      (t==t_funBl && c(FunBlock,c)->sc==sc) innerRef++;
+        else if (t==t_md1Bl && c(Md1Block,c)->sc==sc) innerRef++;
+        else if (t==t_md2Bl && c(Md2Block,c)->sc==sc) innerRef++;
       }
     }
     assert(innerRef <= sc->refc);

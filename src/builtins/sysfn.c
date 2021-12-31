@@ -76,9 +76,9 @@ B glyph_c1(B t, B x) {
   if (ty==t_md1BI) { B r = fromUTF8l(pm1_repr(c(Md1,x)->extra)); dec(x); return r; }
   if (ty==t_md2BI) { B r = fromUTF8l(pm2_repr(c(Md2,x)->extra)); dec(x); return r; }
   if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
-  if (ty==t_fun_block) { dec(x); return m_str8l("(function block)"); }
-  if (ty==t_md1_block) { dec(x); return m_str8l("(1-modifier block)"); }
-  if (ty==t_md2_block) { dec(x); return m_str8l("(2-modifier block)"); }
+  if (ty==t_funBl) { dec(x); return m_str8l("(function block)"); }
+  if (ty==t_md1Bl) { dec(x); return m_str8l("(1-modifier block)"); }
+  if (ty==t_md2Bl) { dec(x); return m_str8l("(2-modifier block)"); }
   if (ty==t_ns) return nsFmt(x);
   return m_str32(U"(•Glyph: given object with unexpected type)");
 }

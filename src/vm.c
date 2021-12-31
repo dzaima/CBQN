@@ -861,7 +861,7 @@ B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)
 
 B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
-  FunBlock* r = mm_alloc(sizeof(FunBlock), t_fun_block);
+  FunBlock* r = mm_alloc(sizeof(FunBlock), t_funBl);
   r->bl = ptr_inc(bl);
   r->sc = ptr_inc(psc);
   r->c1 = funBl_c1;
@@ -869,7 +869,7 @@ B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
   return tag(r,FUN_TAG);
 }
 B m_md1Block(Block* bl, Scope* psc) {
-  Md1Block* r = mm_alloc(sizeof(Md1Block), t_md1_block);
+  Md1Block* r = mm_alloc(sizeof(Md1Block), t_md1Bl);
   r->bl = ptr_inc(bl);
   r->sc = ptr_inc(psc);
   r->c1 = md1Bl_c1;
@@ -877,7 +877,7 @@ B m_md1Block(Block* bl, Scope* psc) {
   return tag(r,MD1_TAG);
 }
 B m_md2Block(Block* bl, Scope* psc) {
-  Md2Block* r = mm_alloc(sizeof(Md2Block), t_md2_block);
+  Md2Block* r = mm_alloc(sizeof(Md2Block), t_md2Bl);
   r->bl = ptr_inc(bl);
   r->sc = ptr_inc(psc);
   r->c1 = md2Bl_c1;
@@ -989,21 +989,21 @@ void print_vmStack() {
 
 
 void comp_init() {
-  TIi(t_comp     ,freeO) =  comp_freeO; TIi(t_comp     ,freeF) =  comp_freeF; TIi(t_comp     ,visit) = comp_visit;  TIi(t_comp     ,print) =  comp_print;
-  TIi(t_body     ,freeO) =  body_freeO; TIi(t_body     ,freeF) =  body_freeF; TIi(t_body     ,visit) = body_visit;  TIi(t_body     ,print) =  body_print;
-  TIi(t_block    ,freeO) = block_freeO; TIi(t_block    ,freeF) = block_freeF; TIi(t_block    ,visit) = block_visit; TIi(t_block    ,print) = block_print;
-  TIi(t_scope    ,freeO) = scope_freeO; TIi(t_scope    ,freeF) = scope_freeF; TIi(t_scope    ,visit) = scope_visit; TIi(t_scope    ,print) = scope_print;
-  TIi(t_scopeExt ,freeO) = scExt_freeO; TIi(t_scopeExt ,freeF) = scExt_freeF; TIi(t_scopeExt ,visit) = scExt_visit; TIi(t_scopeExt ,print) = scExt_print;
-  TIi(t_blBlocks ,freeO) = bBlks_freeO; TIi(t_blBlocks ,freeF) = bBlks_freeF; TIi(t_blBlocks ,visit) = bBlks_visit; TIi(t_blBlocks ,print) = bBlks_print;
-  TIi(t_fldAlias ,freeO) = alias_freeO; TIi(t_fldAlias ,freeF) = alias_freeF; TIi(t_fldAlias ,visit) = alias_visit; TIi(t_fldAlias ,print) = alias_print;
-  TIi(t_vfyObj   ,freeO) = vfymO_freeO; TIi(t_vfyObj   ,freeF) = vfymO_freeF; TIi(t_vfyObj   ,visit) = vfymO_visit; TIi(t_vfyObj   ,print) = vfymO_print;
-  TIi(t_fun_block,freeO) = funBl_freeO; TIi(t_fun_block,freeF) = funBl_freeF; TIi(t_fun_block,visit) = funBl_visit; TIi(t_fun_block,print) = funBl_print; TIi(t_fun_block,decompose) = block_decompose;
-  TIi(t_md1_block,freeO) = md1Bl_freeO; TIi(t_md1_block,freeF) = md1Bl_freeF; TIi(t_md1_block,visit) = md1Bl_visit; TIi(t_md1_block,print) = md1Bl_print; TIi(t_md1_block,decompose) = block_decompose; TIi(t_md1_block,m1_d)=md1Bl_d;
-  TIi(t_md2_block,freeO) = md2Bl_freeO; TIi(t_md2_block,freeF) = md2Bl_freeF; TIi(t_md2_block,visit) = md2Bl_visit; TIi(t_md2_block,print) = md2Bl_print; TIi(t_md2_block,decompose) = block_decompose; TIi(t_md2_block,m2_d)=md2Bl_d;
+  TIi(t_comp     ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
+  TIi(t_body     ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
+  TIi(t_block    ,freeO) = block_freeO; TIi(t_block   ,freeF) = block_freeF; TIi(t_block   ,visit) = block_visit; TIi(t_block   ,print) = block_print;
+  TIi(t_scope    ,freeO) = scope_freeO; TIi(t_scope   ,freeF) = scope_freeF; TIi(t_scope   ,visit) = scope_visit; TIi(t_scope   ,print) = scope_print;
+  TIi(t_scopeExt ,freeO) = scExt_freeO; TIi(t_scopeExt,freeF) = scExt_freeF; TIi(t_scopeExt,visit) = scExt_visit; TIi(t_scopeExt,print) = scExt_print;
+  TIi(t_blBlocks ,freeO) = bBlks_freeO; TIi(t_blBlocks,freeF) = bBlks_freeF; TIi(t_blBlocks,visit) = bBlks_visit; TIi(t_blBlocks,print) = bBlks_print;
+  TIi(t_fldAlias ,freeO) = alias_freeO; TIi(t_fldAlias,freeF) = alias_freeF; TIi(t_fldAlias,visit) = alias_visit; TIi(t_fldAlias,print) = alias_print;
+  TIi(t_vfyObj   ,freeO) = vfymO_freeO; TIi(t_vfyObj  ,freeF) = vfymO_freeF; TIi(t_vfyObj  ,visit) = vfymO_visit; TIi(t_vfyObj  ,print) = vfymO_print;
+  TIi(t_funBl    ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print; TIi(t_funBl,decompose) = block_decompose;
+  TIi(t_md1Bl    ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
+  TIi(t_md2Bl    ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
   
-  TIi(t_fun_block,fn_im) = funBl_im; TIi(t_md1_block,m1_im) = md1Bl_im; TIi(t_md2_block,m2_im) = md2Bl_im;
-  TIi(t_fun_block,fn_iw) = funBl_iw; TIi(t_md1_block,m1_iw) = md1Bl_iw; TIi(t_md2_block,m2_iw) = md2Bl_iw;
-  TIi(t_fun_block,fn_ix) = funBl_ix; TIi(t_md1_block,m1_ix) = md1Bl_ix; TIi(t_md2_block,m2_ix) = md2Bl_ix;
+  TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;
+  TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
+  TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
   
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);

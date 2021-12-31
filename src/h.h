@@ -184,9 +184,9 @@ typedef union B {
 
 #define FOR_TYPE(F) \
   /* 0*/ F(empty) \
-  /* 1*/ F(funBI) F(fun_block) \
-  /* 3*/ F(md1BI) F(md1_block) \
-  /* 5*/ F(md2BI) F(md2_block) \
+  /* 1*/ F(funBI) F(funBl) \
+  /* 3*/ F(md1BI) F(md1Bl) \
+  /* 5*/ F(md2BI) F(md2Bl) \
   /* 7*/ F(shape) /* doesn't get F(visited) shouldn't be unallocated by gc */ \
   \
   /* 8*/ F(fork) F(atop) \
