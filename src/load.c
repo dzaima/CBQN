@@ -92,7 +92,7 @@ char* pm2_repr(u8 u) {
 #undef F
 
 B r1Objs[rtLen];
-B rtWrap_wrap(B x); // consumes
+B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
 
@@ -326,7 +326,7 @@ void load_init() { // very last init function
     /* ⎉⚇⍟⎊        */ bi_rank    , bi_depth  , bi_repeat, bi_catch
 
   };
-  bool rtComplete[] = {
+  bool rtComplete[] = { // if you unset any of these, also define WRAP_NNBI
     /* +-×÷⋆√⌊⌈|¬  */ 1,1,1,1,1,1,1,1,1,1,
     /* ∧∨<>≠=≤≥≡≢  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ 1,1,1,1,1,1,1,1,1,1,
@@ -400,14 +400,19 @@ void load_init() { // very last init function
       r1Objs[i] = Get(rtObjRaw, i); gc_add(r1Objs[i]);
       #endif
       #ifdef ALL_R1
+        bool nnbi = true;
         B r = Get(rtObjRaw, i);
       #else
-        B r = rtComplete[i]? inc(fruntime[i]) : Get(rtObjRaw, i);
+        bool nnbi = !rtComplete[i];
+        #if !defined(WRAP_NNBI)
+        if (nnbi) err("Refusing to load non-native builtin into runtime without -DWRAP_NNBI");
+        #endif
+        B r = nnbi? Get(rtObjRaw, i) : inc(fruntime[i]);
       #endif
       if (q_N(r)) err("· in runtime!\n");
       if (isVal(r)) v(r)->flags|= i+1;
-      #ifdef RT_WRAP
-        r = rtWrap_wrap(r);
+      #if defined(RT_WRAP) || defined(WRAP_NNBI)
+        r = rtWrap_wrap(r, nnbi);
         if (isVal(r)) v(r)->flags|= i+1;
       #endif
       runtimeH.a[i] = r;

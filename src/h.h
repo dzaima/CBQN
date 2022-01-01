@@ -85,8 +85,13 @@
   #define EACH_FILLS 0
   #define PROPER_FILLS 0
 #endif
+
+#if defined(ALL_R0) || defined (ALL_R1)
+  #define WRAP_NNBI 1
+#endif
+
 #if defined(RT_PERF) || defined(RT_VERIFY)
-  #define RT_WRAP
+  #define RT_WRAP 1
   #if defined(RT_PERF) && defined(RT_VERIFY)
     #error "can't have both RT_PERF and RT_VERIFY"
   #endif
@@ -176,10 +181,10 @@ typedef union B {
 } B;
 #define b(x) ((B)(x))
 
-#ifdef RT_WRAP
-  #define IF_RT_WRAP(X) X
+#if defined(RT_WRAP) || defined(WRAP_NNBI)
+  #define IF_WRAP(X) X
 #else
-  #define IF_RT_WRAP(X)
+  #define IF_WRAP(X)
 #endif
 
 #define FOR_TYPE(F) \
@@ -202,7 +207,7 @@ typedef union B {
   /*48*/ F(fun_invReg ) F(md1_invReg ) F(md2_invReg ) \
   /*51*/ F(fun_invSwap) F(md1_invSwap) F(md2_invSwap) \
   \
-  /*54*/ IF_RT_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*54*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,

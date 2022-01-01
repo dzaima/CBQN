@@ -1,57 +1,90 @@
 #include "core.h"
 #include "vm.h"
-#ifdef RT_PERF
+#if RT_PERF
 #include "builtins.h"
 #endif
 #include "utils/time.h"
 
-#ifdef RT_WRAP
+#if defined(RT_WRAP) || defined(WRAP_NNBI)
+
+
 typedef struct WFun WFun;
+typedef struct WMd1 WMd1;
+typedef struct WMd2 WMd2;
 struct WFun {
   struct Fun;
   B v;
   WFun* prev;
-  #ifdef RT_PERF
+  #if RT_PERF
     u64 c1t, c2t;
     u32 c1a, c2a;
-  #else
+  #elif RT_VERIFY
     B r1;
   #endif
 };
+struct WMd1 {
+  struct Md1;
+  u64 c1t, c2t;
+  u32 c1a, c2a;
+  B v;
+  WMd1* prev;
+};
+struct WMd2 {
+  struct Md2;
+  u64 c1t, c2t;
+  u32 c1a, c2a;
+  B v;
+  WMd2* prev;
+};
+
+
 WFun* lastWF;
-void wf_visit(Value* x) { mm_visit(((WFun*)x)->v); }
-B wf_identity(B x) {
+WMd1* lastWM1;
+WMd2* lastWM2;
+void wfn_visit(Value* x) { mm_visit(((WFun*)x)->v); }
+void wm1_visit(Value* x) { mm_visit(((WMd1*)x)->v); }
+void wm2_visit(Value* x) { mm_visit(((WMd2*)x)->v); }
+
+B wfn_identity(B x) {
   B f = c(WFun,x)->v;
   return inc(TI(f,identity)(f));
 }
+
+
+// rtverify
 #ifndef RT_VERIFY_ARGS
   #define RT_VERIFY_ARGS 1
 #endif
+#if RT_VERIFY
+  B info_c1(B t, B x);
+  #define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
+    print(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
+    if (RT_VERIFY_ARGS) {  \
+      if(!q_N(W)){printf("𝕨:"); print(W); printf(" / "); printRaw(info_c1(bi_N, inc(W))); putchar('\n'); fflush(stdout); } \
+      {           printf("𝕩:"); print(X); printf(" / "); printRaw(info_c1(bi_N, inc(X))); putchar('\n'); fflush(stdout); } \
+      {       printf("got:"); print(GOT); printf(" / "); printRaw(info_c1(bi_N, inc(GOT))); putchar('\n'); fflush(stdout); } \
+      {       printf("exp:"); print(EXP); printf(" / "); printRaw(info_c1(bi_N, inc(EXP))); putchar('\n'); fflush(stdout); } \
+    }                      \
+    vm_pstLive(); exit(1); \
+  }}
+#endif
 
-B info_c1(B t, B x);
-#define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
-  print(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
-  if (RT_VERIFY_ARGS) {  \
-    if(!q_N(W)){printf("𝕨:"); print(W); printf(" / "); printRaw(info_c1(bi_N, inc(W))); putchar('\n'); fflush(stdout); } \
-    {           printf("𝕩:"); print(X); printf(" / "); printRaw(info_c1(bi_N, inc(X))); putchar('\n'); fflush(stdout); } \
-    {       printf("got:"); print(GOT); printf(" / "); printRaw(info_c1(bi_N, inc(GOT))); putchar('\n'); fflush(stdout); } \
-    {       printf("exp:"); print(EXP); printf(" / "); printRaw(info_c1(bi_N, inc(EXP))); putchar('\n'); fflush(stdout); } \
-  }                      \
-  vm_pstLive(); exit(1); \
-}}
+// rtperf
 u64 fwTotal;
-B wf_c1(B t, B x) {
+
+
+B wfn_c1(B t, B x) {
   WFun* c = c(WFun,t);
   B f = c->v;
   BB2B fi = c(Fun,f)->c1;
-  #ifdef RT_PERF
+  #if RT_PERF
     u64 s = nsTime();
     B r = fi(f, x);
     u64 e = nsTime();
     c->c1a++;
     c->c1t+= e-s;
     fwTotal+= e-s+20;
-  #else
+  #elif RT_VERIFY
     B exp = c1(c->r1, inc(x));
     #if RT_VERIFY_ARGS
       B r = fi(f, inc(x));
@@ -62,21 +95,23 @@ B wf_c1(B t, B x) {
       CHK(exp, r, bi_N, x);
     #endif
     dec(exp);
+  #else
+    B r = fi(f, inc(x));
   #endif
   return r;
 }
-B wf_c2(B t, B w, B x) {
+B wfn_c2(B t, B w, B x) {
   WFun* c = c(WFun,t);
   B f = c->v;
   BBB2B fi = c(Fun,f)->c2;
-  #ifdef RT_PERF
+  #if RT_PERF
     u64 s = nsTime();
     B r = fi(f, w, x);
     u64 e = nsTime();
     c->c2a++;
     c->c2t+= e-s;
     fwTotal+= e-s+20;
-  #else
+  #elif RT_VERIFY
     B exp = c2(c->r1, inc(w), inc(x));
     #if RT_VERIFY_ARGS
       B r = fi(f, inc(w), inc(x));
@@ -87,83 +122,80 @@ B wf_c2(B t, B w, B x) {
       CHK(exp, r, w, x);
     #endif
     dec(exp);
+  #else
+    B r = fi(f, w, x);
   #endif
   return r;
 }
 #undef CHK
 
-typedef struct WMd1 WMd1;
-struct WMd1 {
-  struct Md1;
-  u64 c1t, c2t;
-  u32 c1a, c2a;
-  B v;
-  WMd1* prev;
-};
-WMd1* lastWM1;
-void wm1_visit(Value* x) { mm_visit(((WMd1*)x)->v); }
-typedef struct WMd2 WMd2;
-struct WMd2 {
-  struct Md2;
-  u64 c1t, c2t;
-  u32 c1a, c2a;
-  B v;
-  WMd2* prev;
-};
-WMd2* lastWM2;
-void wm2_visit(Value* x) { mm_visit(((WMd2*)x)->v); }
-
 B wm1_c1(Md1D* d, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
-  u64 pfwt=fwTotal; fwTotal = 0;
+  #if RT_PERF
+    u64 pfwt=fwTotal; fwTotal = 0;
+    u64 s = nsTime();
+  #endif
   B om = t->v;
-  u64 s = nsTime();
   B fn = m1_d(inc(om), inc(f));
   B r = c1(fn, x);
-  u64 e = nsTime();
   dec(fn);
-  t->c1a++;
-  t->c1t+= e-s - fwTotal;
-  fwTotal = pfwt + e-s + 30;
+  #if RT_PERF
+    u64 e = nsTime();
+    t->c1a++;
+    t->c1t+= e-s - fwTotal;
+    fwTotal = pfwt + e-s + 30;
+  #endif
   return r;
 }
 B wm1_c2(Md1D* d, B w, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
-  u64 pfwt=fwTotal; fwTotal = 0;
+  #if RT_PERF
+    u64 pfwt=fwTotal; fwTotal = 0;
+    u64 s = nsTime();
+  #endif
   B om = t->v;
-  u64 s = nsTime();
   B fn = m1_d(inc(om), inc(f));
   B r = c2(fn, w, x);
-  u64 e = nsTime();
   dec(fn);
-  t->c2a++;
-  t->c2t+= e-s - fwTotal;
-  fwTotal = pfwt + e-s + 30;
+  #if RT_PERF
+    u64 e = nsTime();
+    t->c2a++;
+    t->c2t+= e-s - fwTotal;
+    fwTotal = pfwt + e-s + 30;
+  #endif
   return r;
 }
 
 B wm2_c1(Md2D* d, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
-  u64 pfwt=fwTotal; fwTotal = 0;
+  #if RT_PERF
+    u64 pfwt=fwTotal; fwTotal = 0;
+    u64 s = nsTime();
+  #endif
   B om = t->v;
-  u64 s = nsTime();
   B fn = m2_d(inc(om), inc(f), inc(g));
   B r = c1(fn, x);
-  u64 e = nsTime();
   dec(fn);
-  t->c1a++;
-  t->c1t+= e-s - fwTotal;
-  fwTotal = pfwt + e-s + 30;
+  #if RT_PERF
+    u64 e = nsTime();
+    t->c1a++;
+    t->c1t+= e-s - fwTotal;
+    fwTotal = pfwt + e-s + 30;
+  #endif
   return r;
 }
 B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
-  u64 pfwt=fwTotal; fwTotal = 0;
+  #if RT_PERF
+    u64 pfwt=fwTotal; fwTotal = 0;
+    u64 s = nsTime();
+  #endif
   B om = t->v;
-  u64 s = nsTime();
   B fn = m2_d(inc(om), inc(f), inc(g));
   B r = c2(fn, w, x);
-  u64 e = nsTime();
   dec(fn);
-  t->c2a++;
-  t->c2t+= e-s - fwTotal;
-  fwTotal = pfwt + e-s + 30;
+  #if RT_PERF
+    u64 e = nsTime();
+    t->c2a++;
+    t->c2t+= e-s - fwTotal;
+    fwTotal = pfwt + e-s + 30;
+  #endif
   return r;
 }
 
@@ -171,55 +203,58 @@ B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
 
 
 
-B rtWrap_wrap(B t) {
+B rtWrap_wrap(B t, bool nnbi) {
+  #if !defined(RT_WRAP)
+    if (!nnbi) return t;
+  #endif
   if (isFun(t)) {
-    #ifdef RT_VERIFY
+    #if RT_VERIFY
       if(v(t)->flags==0) return t;
     #endif
     WFun* r = mm_alloc(sizeof(WFun), t_funWrap);
     r->extra = v(t)->extra;
     r->flags = v(t)->flags;
-    r->c1 = wf_c1;
-    r->c2 = wf_c2;
+    r->c1 = wfn_c1;
+    r->c2 = wfn_c2;
     r->v = t;
     r->prev = lastWF;
     lastWF = r;
-    #ifdef RT_VERIFY
+    #if RT_VERIFY
       r->r1 = r1Objs[v(t)->flags-1];
-    #else
+    #elif RT_PERF
       r->c1t = 0; r->c1a = 0;
       r->c2t = 0; r->c2a = 0;
     #endif
     return tag(r,FUN_TAG);
   }
-  #ifdef RT_PERF
-  if (isMd1(t)) {
-    WMd1* r = mm_alloc(sizeof(WMd1), t_md1Wrap);
-    r->extra = v(t)->extra;
-    r->flags = v(t)->flags;
-    r->c1 = wm1_c1;
-    r->c2 = wm1_c2;
-    r->v = t;
-    r->prev = lastWM1;
-    lastWM1 = r;
-    r->c1a = 0; r->c2a = 0;
-    r->c1t = 0; r->c2t = 0;
-    return tag(r,MD1_TAG);
-  }
-  if (isMd2(t)) {
-    Md2* fc = c(Md2,t);
-    WMd2* r = mm_alloc(sizeof(WMd2), t_md2Wrap);
-    r->c1 = wm2_c1;
-    r->c2 = wm2_c2;
-    r->extra = fc->extra;
-    r->flags = fc->flags;
-    r->v = t;
-    r->prev = lastWM2;
-    lastWM2 = r;
-    r->c1a = 0; r->c2a = 0;
-    r->c1t = 0; r->c2t = 0;
-    return tag(r,MD2_TAG);
-  }
+  #if RT_PERF || WRAP_NNBI
+    if (isMd1(t)) {
+      WMd1* r = mm_alloc(sizeof(WMd1), t_md1Wrap);
+      r->extra = v(t)->extra;
+      r->flags = v(t)->flags;
+      r->c1 = wm1_c1;
+      r->c2 = wm1_c2;
+      r->v = t;
+      r->prev = lastWM1;
+      lastWM1 = r;
+      r->c1a = 0; r->c2a = 0;
+      r->c1t = 0; r->c2t = 0;
+      return tag(r,MD1_TAG);
+    }
+    if (isMd2(t)) {
+      Md2* fc = c(Md2,t);
+      WMd2* r = mm_alloc(sizeof(WMd2), t_md2Wrap);
+      r->c1 = wm2_c1;
+      r->c2 = wm2_c2;
+      r->extra = fc->extra;
+      r->flags = fc->flags;
+      r->v = t;
+      r->prev = lastWM2;
+      lastWM2 = r;
+      r->c1a = 0; r->c2a = 0;
+      r->c1t = 0; r->c2t = 0;
+      return tag(r,MD2_TAG);
+    }
   #endif
   return t;
 }
@@ -242,7 +277,7 @@ B wm2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = ((WMd2*)t)->v; return TI(t2,
 static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
 static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 void rtWrap_init() {
-  TIi(t_funWrap,visit) =  wf_visit; TIi(t_funWrap,identity) = wf_identity;
+  TIi(t_funWrap,visit) = wfn_visit; TIi(t_funWrap,identity) = wfn_identity;
   TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,m1_d) = m1BI_d;
   TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,m2_d) = m2BI_d;
   TIi(t_funWrap,fn_uc1) = wfn_uc1;
@@ -256,7 +291,7 @@ void rtWrap_init() {
 void rtWrap_init() { }
 #endif
 void rtWrap_print() {
-  #ifdef RT_PERF
+  #if RT_PERF
     WFun* cf = lastWF;
     while (cf) {
       printRaw(c1(bi_glyph, tag(cf,FUN_TAG)));
