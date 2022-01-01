@@ -3,15 +3,6 @@
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
 NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] = ~0ULL; return r; }
 
-NOINLINE B bit_negate(B x) { // consumes
-  u64* xp = bitarr_ptr(x);
-  u64* rp; B r = m_bitarrc(&rp, x);
-  usz ia = BIT_N(a(x)->ia);
-  for (usz i = 0; i < ia; i++) rp[i] = ~xp[i];
-  dec(x);
-  return r;
-}
-
 NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
   u8 t0 = selfElType(e0);
   u8 t1 = selfElType(e1);

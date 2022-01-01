@@ -5,10 +5,10 @@ B asFill(B x) { // consumes
     u8 xe = TI(x,elType);
     usz ia = a(x)->ia;
     if (elNum(xe)) {
-      u64* rp; B r = m_bitarrc(&rp, x);
-      for (usz i = 0; i < BIT_N(ia); i++) rp[i] = 0;
+      Arr* r = allZeroes(ia);
+      arr_shCopy(r, x);
       dec(x);
-      return r;
+      return taga(r);
     }
     if (elChr(xe)) {
       u8* rp; B r = m_c8arrc(&rp, x);

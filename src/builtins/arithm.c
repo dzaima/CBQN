@@ -11,6 +11,15 @@ static inline B arith_recm(BB2B f, B x) {
   return withFill(r, fx);
 }
 
+B bit_negate(B x) { // consumes
+  u64* xp = bitarr_ptr(x);
+  u64* rp; B r = m_bitarrc(&rp, x);
+  usz ia = BIT_N(a(x)->ia);
+  for (usz i = 0; i < ia; i++) rp[i] = ~xp[i];
+  dec(x);
+  return r;
+}
+
 #define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,BX) B NAME##_c1(B t, B x) {     \
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
   if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
@@ -37,21 +46,18 @@ static inline B arith_recm(BB2B f, B x) {
 }
   
 
-#define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   add_c1(B t, B x) { return x; }
+
 GC1i("-", sub,   -v,              v== MIN, -v,      {}) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
 GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,{})
 GC1i("⌊", floor, floor(v),        0,           v,   {})
 GC1i("⌈", ceil,  ceil(v),         0,           v,   {})
 GC1i("×", mul,   v==0?0:v>0?1:-1, 0,           v==0?0:v>0?1:-1,{})
 GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     {
-  if(xe==el_bit) {
-    u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrc(&rp,x);
-    for (u64 i = 0; i < BIT_N(sz); i++) rp[i] = ~xp[i];
-    dec(x); return r;
-  }
+  if(xe==el_bit) return bit_negate(x);
 })
 
+#define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
 B  root_c1(B t, B x) { if (isF64(x)) return m_f64( sqrt(x.f)); P1( root); thrM("√: Getting root of non-number"); }

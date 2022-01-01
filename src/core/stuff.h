@@ -90,7 +90,9 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
 }
 
 B bit_sel(B b, B e0, bool h0, B e1, bool h1); // consumes b; h0/h1 represent whether the corresponding element _might_ be in the result (can be true if unknown)
-
+Arr* allZeroes(usz ia);
+Arr* allOnes(usz ia);
+B bit_negate(B x); // consumes
 
 static B m_hVec1(B a               ); // consumes all
 static B m_hVec2(B a, B b          ); // consumes all
