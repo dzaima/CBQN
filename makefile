@@ -1,6 +1,7 @@
 SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory
 
+# various configurations
 o3:
 	@${MAKE} singeli=0 t=o3         f="-O3" c
 o3g:
@@ -30,27 +31,6 @@ rtverifyn-singeli:
 
 
 
-bd = obj/${t}
-
-c: # custom
-	@mkdir -p ${bd}
-	@if [ "${singeli}" -eq 1 ]; then \
-		mkdir -p src/singeli/gen;      \
-		${MAKE} postmsg="post-singeli build:" gen-singeli; \
-	fi
-	@${MAKE} t=${t} FLAGS="${f}" gen
-
-single-o3:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -O3 -o BQN src/opt/single.c -lm
-single-o3g:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -O3 -g -o BQN src/opt/single.c -lm
-single-debug:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -DDEBUG -g -o BQN src/opt/single.c -lm
-single-c:
-	$(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(PIE) $(f) -o BQN src/opt/single.c -lm
-
-
-
 # compiler setup
 CC = clang
 PIE = -no-pie
@@ -58,9 +38,9 @@ PIE = -no-pie
 # test if we are running gcc or clang
 CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
 ifeq (${CC_IS_CLANG}, 1)
-	CCFLAGS = -Wno-microsoft-anon-tag -Wno-bitwise-instead-of-logical -Wno-unknown-warning-option
+	NOWARN = -Wno-microsoft-anon-tag -Wno-bitwise-instead-of-logical -Wno-unknown-warning-option
 else
-	CCFLAGS = -Wno-parentheses
+	NOWARN = -Wno-parentheses
 endif
 ifeq (${singeli}, 1)
 	SINGELIFLAGS = '-DSINGELI'
@@ -68,14 +48,9 @@ else
 	singeli = 0
 	SINGELIFLAGS =
 endif
-CMD = $(CC) -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(FLAGS) $(SINGELIFLAGS) -MMD -MP -MF
 
-# `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
-ifneq (,$(findstring clean,$(MAKECMDGOALS)))
-ifndef t
-t = *
-endif
-endif
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(SINGELIFLAGS) $(NOWARN) $(f)
+CMD = $(CC) $(ALL_CC_FLAGS) -MMD -MP -MF
 
 ifneq (${t},debug1)
 	ifneq (${J4added},yes)
@@ -90,10 +65,31 @@ endif
 
 
 
+# actual build
+bd = obj/${t}
+c: # custom
+	@mkdir -p ${bd}
+	@if [ "${singeli}" -eq 1 ]; then \
+		mkdir -p src/singeli/gen;      \
+		${MAKE} postmsg="post-singeli build:" gen-singeli; \
+	fi
+	@${MAKE} gen
+
+single-o3:
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o BQN src/opt/single.c -lm
+single-o3g:
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o BQN src/opt/single.c -lm
+single-debug:
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o BQN src/opt/single.c -lm
+single-c:
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o BQN src/opt/single.c -lm
+
+
+
 
 
 gen: builtins core base jit utils # build the final binary
-	@$(CC) ${lf} ${PIE} -o BQN ${bd}/*.o -lm
+	@$(CC) ${LDFLAGS} ${PIE} -o BQN ${bd}/*.o -lm
 	@echo ${postmsg}
 
 # build individual object files
@@ -155,6 +151,14 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 
 
 
+# `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
+ifneq (,$(findstring clean,$(MAKECMDGOALS)))
+ifndef t
+t = *
+clean: clean-singeli clean-runtime
+endif
+endif
+
 clean-singeli:
 	rm -rf src/singeli/gen/
 clean-runtime:
@@ -162,8 +166,5 @@ clean-runtime:
 clean-build:
 	rm -f ${bd}/*.o
 	rm -f ${bd}/*.d
-ifeq ($(t), *)
-clean: clean-singeli clean-runtime
-endif
 
 clean: clean-build
