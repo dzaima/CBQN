@@ -142,7 +142,7 @@ B wm1_c1(Md1D* d, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
     u64 e = nsTime();
     t->c1a++;
     t->c1t+= e-s - fwTotal;
-    fwTotal = pfwt + e-s + 30;
+    fwTotal = pfwt + e-s;
   #endif
   return r;
 }
@@ -159,7 +159,7 @@ B wm1_c2(Md1D* d, B w, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
     u64 e = nsTime();
     t->c2a++;
     t->c2t+= e-s - fwTotal;
-    fwTotal = pfwt + e-s + 30;
+    fwTotal = pfwt + e-s;
   #endif
   return r;
 }
@@ -177,7 +177,7 @@ B wm2_c1(Md2D* d, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
     u64 e = nsTime();
     t->c1a++;
     t->c1t+= e-s - fwTotal;
-    fwTotal = pfwt + e-s + 30;
+    fwTotal = pfwt + e-s;
   #endif
   return r;
 }
@@ -194,7 +194,7 @@ B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
     u64 e = nsTime();
     t->c2a++;
     t->c2t+= e-s - fwTotal;
-    fwTotal = pfwt + e-s + 30;
+    fwTotal = pfwt + e-s;
   #endif
   return r;
 }
