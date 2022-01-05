@@ -102,7 +102,7 @@ B comp_currArgs;
 B comp_currSrc;
 B comp_currRe;
 
-B rt_merge, rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
+B rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell, rt_rank, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)

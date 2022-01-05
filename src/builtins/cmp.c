@@ -116,7 +116,6 @@ B ne_c2(B t, B w, B x) {
 }
 
 
-extern B rt_merge;
 B gt_c1(B t, B x) {
   if (isAtm(x)) return x;
   return bqn_merge(x);
