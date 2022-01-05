@@ -207,10 +207,11 @@ NORETURN B m1c1_bad(Md1D* d,      B x);
 NORETURN B m1c2_bad(Md1D* d, B w, B x);
 NORETURN B m2c1_bad(Md2D* d,      B x);
 NORETURN B m2c2_bad(Md2D* d, B w, B x);
-static B md_c1(B t,      B x) { thrM("Cannot call a modifier"); }
-static B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }
-static B arr_c1(B t,      B x) { return inc(t); }
-static B arr_c2(B t, B w, B x) { return inc(t); }
+
+B md_c1(B t,      B x);
+B md_c2(B t, B w, B x);
+B arr_c1(B t,      B x);
+B arr_c2(B t, B w, B x);
 static BB2B c1fn(B f) {
   if (isFun(f)) return c(Fun,f)->c1;
   if (isMd(f)) return md_c1;

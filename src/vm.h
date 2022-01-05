@@ -1,4 +1,5 @@
 #pragma once
+#include <sys/mman.h>
 
 
 #if (defined(__x86_64) || defined(__amd64__)) && defined(MAP_32BIT) && MM!=0

@@ -70,7 +70,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#include <stdarg.h>
 #include <setjmp.h>
 #ifdef HEAP_VERIFY
   #undef CATCH_ERRORS

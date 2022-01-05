@@ -1,6 +1,8 @@
 #define T_ARR TP(t_,arr)
 #define T_SLICE TP(t_,slice)
 #define TEl JOIN(TU,Atom)
+typedef TyArr JOIN(TU,Arr);
+typedef TP(,) JOIN(TU,Atom);
 
 static B TP(m_,arrv) (TEl** p, usz ia) {
   TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, ia);

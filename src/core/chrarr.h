@@ -1,6 +1,6 @@
-#define C8Atom u8
-#define C16Atom u16
-#define C32Atom u32
+#define c8 u8
+#define c16 u16
+#define c32 u32
 
 #define TU C8
 #define TP(W,X) W##c8##X
@@ -11,9 +11,10 @@
 #define TU C32
 #define TP(W,X) W##c32##X
 #include "tyarrTemplate.h"
-#define C8Arr TyArr
-#define C16Arr TyArr
-#define C32Arr TyArr
+
+#undef c8 // still not sure if i want these
+#undef c16
+#undef c32
 
 
 B m_str8(usz sz, char* s);

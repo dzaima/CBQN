@@ -38,7 +38,6 @@ enum PrimNumbers {
     /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_insert , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
     /* ⎉⚇⍟⎊        */ n_rank    , n_depth  , n_repeat, n_catch
 };
-extern B rt_invFnReg, rt_invFnSwap;
 extern BB2B rt_invFnRegFn;
 extern BB2B rt_invFnSwapFn;
 
@@ -75,9 +74,10 @@ static inline bool isImpureBuiltin(B x) {
   return false;
 }
 
-
-#define F(N,X) extern B bi_##N;
+extern B
+#define F(N,X) bi_##N,
 FOR_PFN(F,F,F)
 FOR_PM1(F,F,F)
 FOR_PM2(F,F,F)
 #undef F
+rt_invFnReg, rt_invFnSwap;

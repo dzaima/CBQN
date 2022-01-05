@@ -1,5 +1,4 @@
 #include "gc.h"
-#include <sys/mman.h>
 
 typedef struct EmptyValue EmptyValue;
 struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else can be garbage

@@ -1,8 +1,3 @@
-#define I8Atom i8
-#define I16Atom i16
-#define I32Atom i32
-#define F64Atom f64
-
 typedef struct TyArr {
   struct Arr;
   char a[];
@@ -24,11 +19,7 @@ typedef struct TySlice {
 #define TU F64
 #define TP(W,X) W##f64##X
 #include "tyarrTemplate.h"
-#define I8Arr TyArr
-#define I16Arr TyArr
-#define I32Arr TyArr
-#define F64Arr TyArr
-#define BitArr TyArr
+typedef TyArr BitArr;
 
 // bit array stuff
 #define BIT_N(IA) (((IA)+63) >> 6) // u64 count needed to store IA bits

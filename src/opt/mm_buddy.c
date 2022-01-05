@@ -1,3 +1,4 @@
+#include <sys/mman.h>
 #include "gc.c"
 
 #ifdef OBJ_COUNTER
