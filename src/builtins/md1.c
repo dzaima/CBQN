@@ -2,6 +2,7 @@
 #include "../utils/each.h"
 #include "../utils/file.h"
 #include "../utils/time.h"
+#include "../utils/mut.h"
 #include "../builtins.h"
 
 
@@ -353,6 +354,23 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   return r;
 }
 
+#define S_SLICES(X)                    \
+  BSS2A X##_slc = TI(X,slice);         \
+  usz X##_csz = 1;                     \
+  usz X##_cr = rnk(X)-1;               \
+  ShArr* X##_csh;                      \
+  if (X##_cr>1) {                      \
+    X##_csh = m_shArr(X##_cr);         \
+    for (usz i = 0; i < X##_cr; i++) { \
+      usz v = a(X)->sh[i+1];           \
+      X##_csz*= v;                     \
+      X##_csh->a[i] = v;               \
+    }                                  \
+  } else if (X##_cr!=0) X##_csz*= a(X)->sh[1];
+
+#define SLICE(X, S) ({ Arr* r_ = X##_slc(inc(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); r_; })
+
+#define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); dec(X);
 
 extern B rt_cell;
 B cell_c1(Md1D* d, B x) { B f = d->f;
@@ -360,33 +378,83 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
+  
   if (Q_BI(f,lt) && a(x)->ia!=0 && rnk(x)>1) return toCells(x);
-  usz cr = rnk(x)-1;
+  
   usz cam = a(x)->sh[0];
-  usz csz = arr_csz(x);
-  ShArr* csh;
-  if (cr>1) {
-    csh = m_shArr(cr);
-    memcpy(csh->a, a(x)->sh+1, cr*sizeof(usz));
+  if (cam==0) {
+    if (!isPureFn(f) || !CATCH_ERRORS) { dec(x); return emptyHVec(); }
+    
+    B xf = getFillQ(x);
+    if (noFill(xf)) xf = m_f64(0);
+    
+    usz csz = 1;
+    ur cr = rnk(x)-1;
+    for (usz i=0; i<cr; i++) if (mulOn(csz, a(x)->sh[i+1])) thrF("˘: Empty argument too large (%H ≡ ≢𝕩)", x);
+    MAKE_MUT(fc, csz);
+    mut_fill(fc, 0, xf, csz); dec(xf);
+    Arr* ca = mut_fp(fc);
+    usz* csh = arr_shAlloc(ca, cr);
+    if (cr>1) memcpy(csh, a(x)->sh+1, cr*sizeof(usz));
+    dec(x);
+    
+    if (CATCH) return emptyHVec();
+    B rc = c1(f, taga(ca));
+    popCatch();
+    
+    u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
+    if (rr>UR_MAX) thrM("˘: Result rank too large");
+    B rf = getFillQ(rc);
+    Arr* r = m_fillarrp(0);
+    fillarr_setFill(r, rf);
+    usz* rsh = arr_shAlloc(r, rr);
+    if (rr>1) {
+      rsh[0] = 0;
+      memcpy(rsh+1, a(rc)->sh, (rr-1)*sizeof(usz));
+    }
+    dec(rc);
+    return taga(r);
   }
-  BSS2A slice = TI(x,slice);
+  S_SLICES(x)
   M_HARR(r, cam);
-  usz p = 0;
-  for (usz i = 0; i < cam; i++) {
-    Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
-    HARR_ADD(r, i, c1(f, taga(s)));
-    p+= csz;
-  }
-  if (cr>1) ptr_dec(csh);
-  dec(x);
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, taga(SLICE(x, p))));
+  E_SLICES(x)
+
   return bqn_merge(HARR_FV(r));
 }
+
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
-  if ((isAtm(x) || rnk(x)==0) && (isAtm(w) || rnk(w)==0)) {
-    B r = c2(f, w, x);
-    return isAtm(r)? m_atomUnit(r) : r;
+  bool wr = isAtm(w)? 0 : rnk(w);
+  bool xr = isAtm(x)? 0 : rnk(x);
+  B r;
+  if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
+  if (wr==0) {
+    usz cam = a(x)->sh[0]; if (cam==0) goto zero;
+    S_SLICES(x)
+    M_HARR(r, cam);
+    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, taga(SLICE(x, p))));
+    E_SLICES(x) dec(w);
+    r = HARR_FV(r);
+  } else if (xr==0) {
+    usz cam = a(w)->sh[0]; if (cam==0) goto zero;
+    S_SLICES(w)
+    M_HARR(r, cam);
+    for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, taga(SLICE(w, p)), x));
+    E_SLICES(w) dec(x);
+    r = HARR_FV(r);
+  } else {
+    usz cam = a(w)->sh[0];
+    if (cam==0) goto zero;
+    if (cam != a(x)->sh[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    S_SLICES(w) S_SLICES(x)
+    M_HARR(r, cam);
+    for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, taga(SLICE(w, wp)), taga(SLICE(x, xp))));
+    E_SLICES(w) E_SLICES(x)
+    r = HARR_FV(r);
   }
-  return m1c2(rt_cell, f, w, x);
+  return bqn_merge(r);
+  
+  zero: return m1c2(rt_cell, f, w, x); // waaaaay too complicated to handle
 }
 
 extern B rt_insert;
