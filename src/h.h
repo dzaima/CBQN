@@ -73,6 +73,7 @@
 #include <setjmp.h>
 #ifdef HEAP_VERIFY
   #undef CATCH_ERRORS
+  #define CATCH_ERRORS 0
 #endif
 
 #define rtLen 64
@@ -579,22 +580,22 @@ static B c2i(B f, B w, B x) {
   dec(w); dec(x); errMd(f);
   return inc(f);
 }
-static B c1iX(B f, B x) { // c1 but implicit inc(x)
+static B c1iX(B f, B x) { // c1 with inc(x)
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, inc(x)));
   errMd(f);
   return inc(f);
 }
-static B c2iX(B f, B w, B x) { // c2 but implicit inc(x)
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, inc(w), x));
+static B c2iX(B f, B w, B x) { // c2 with inc(x)
+  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, inc(x)));
   dec(w); errMd(f);
   return inc(f);
 }
-static B c2iW(B f, B w, B x) { // c2 but implicit inc(w)
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, inc(x)));
+static B c2iW(B f, B w, B x) { // c2 with inc(w)
+  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, inc(w), x));
   dec(x); errMd(f);
   return inc(f);
 }
-static B c2iWX(B f, B w, B x) { // c2 but implicit inc(w);inc(x)
+static B c2iWX(B f, B w, B x) { // c2 with inc(w), inc(x)
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, inc(w), inc(x)));
   errMd(f);
   return inc(f);

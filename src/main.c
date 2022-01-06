@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
       if (ln[0]==10) { cont: free(ln); continue; }
       if (ln[read-1]==10) ln[--read] = 0;
       B code;
-      bool output;
+      int output; // 0-no; 1-formatter; 2-internal
       i32 time = 0;
       if (ln[0] == ')') {
         char* cmdS = ln+1;
@@ -177,11 +177,11 @@ int main(int argc, char* argv[]) {
         if (isCmd(cmdS, &cmdE, "ex ")) {
           B path = fromUTF8l(cmdE);
           code = file_chars(path);
-          output = false;
+          output = 0;
         } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
           code = fromUTF8l(cmdE);
           time = -1;
-          output = false;
+          output = 0;
         } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
           char* repE = cmdE;
           i64 am = 0;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
           if (am==0) { printf("repetition count was zero\n"); goto cont; }
           code = fromUTF8l(repE);
           time = am;
-          output = false;
+          output = 0;
         } else if (isCmd(cmdS, &cmdE, "mem ")) {
           bool sizes = 0;
           bool types = 0;
@@ -247,13 +247,16 @@ int main(int argc, char* argv[]) {
             printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
           #endif
           goto cont;
+        } else if (isCmd(cmdS, &cmdE, "internalPrint ")) {
+          code = fromUTF8l(cmdE);
+          output = 2;
         } else {
           printf("Unknown REPL command\n");
           goto cont;
         }
       } else {
         code = fromUTF8l(ln);
-        output = true;
+        output = 1;
       }
       Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
       
@@ -285,14 +288,14 @@ int main(int argc, char* argv[]) {
       ptr_dec(block);
       
       if (output) {
-        #if FORMATTER
+        if (output!=2 && FORMATTER) {
           B resFmt = bqn_fmt(res);
           printRaw(resFmt); dec(resFmt);
           putchar('\n');
-        #else
+        } else {
           print(res); putchar('\n'); fflush(stdout);
           dec(res);
-        #endif
+        }
       } else dec(res);
       
       #ifdef HEAP_VERIFY

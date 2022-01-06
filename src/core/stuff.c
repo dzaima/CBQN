@@ -761,7 +761,12 @@ void   g_pst() { vm_pstLive(); }
     if (TIv(x,isArr)) {
       Arr* a = (Arr*)x;
       if (prnk(x)<=1) assert(a->sh == &a->ia);
-      else VALIDATE(tag(shObjP(x),OBJ_TAG));
+      else {
+        u64 p = 1;
+        for (usz i=0; i < prnk(x); i++) p*= a->sh[i];
+        assert(p == a->ia);
+        VALIDATE(tag(shObjP(x),OBJ_TAG));
+      }
     }
     return x;
   }
