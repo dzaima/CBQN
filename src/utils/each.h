@@ -28,7 +28,7 @@ static inline B arith_recd(BBB2B f, B w, B x) {
   B fw = getFillQ(w);
   B r = eachd_fn(f, bi_N, w, x);
   if (noFill(fw)) return r;
-  if (CATCH) { dec(catchMessage); return r; }
+  if (CATCH) { freeThrown(); return r; }
   B fr = f(bi_N, fw, fx);
   popCatch();
   return withFill(r, asFill(fr));

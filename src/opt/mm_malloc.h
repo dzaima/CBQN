@@ -26,9 +26,9 @@ static void mm_visitP(void* x) { }
 
 void gc_add(B x);
 void gc_addFn(vfn f);
-void gc_maybeGC();
-void gc_forceGC();
-void gc_visitRoots();
+void gc_maybeGC(void);
+void gc_forceGC(void);
+void gc_visitRoots(void);
 void mm_forHeap(V2v f);
 
 static u64  mm_round(usz x) { return x; }

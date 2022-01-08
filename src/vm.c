@@ -59,7 +59,7 @@ void print_BCStream(u32* p) {
 }
 
 
-B catchMessage;
+B thrownMsg;
 u64 envPrevHeight;
 
 Env* envCurr; // pointer to current environment; included to make for simpler current position updating
@@ -1217,7 +1217,7 @@ NOINLINE NORETURN void thr(B msg) {
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
   
   if (cf>cfStart) { // something wants to catch errors
-    catchMessage = msg;
+    thrownMsg = msg;
     cf--;
     
     B* gStackNew = gStackStart + cf->gsDepth;
@@ -1242,6 +1242,11 @@ NOINLINE NORETURN void thr(B msg) {
     exit(1);
     #endif
   }
+}
+
+NOINLINE void freeThrown() {
+  dec(thrownMsg);
+  thrownMsg = bi_N;
 }
 
 NOINLINE NORETURN void thrM(char* s) {

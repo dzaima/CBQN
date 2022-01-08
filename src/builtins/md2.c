@@ -11,12 +11,30 @@ B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
 
+typedef struct CustomObj {
+  struct Value;
+  V2v visit;
+  V2v freeO;
+} CustomObj;
+void* customObj(u64 size, V2v visit, V2v freeO) {
+  CustomObj* r = mm_alloc(size, t_customObj);
+  r->visit = visit;
+  r->freeO = freeO;
+  return r;
+}
+void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
+void customObj_freeO(Value* v) { ((CustomObj*)v)->freeO(v); }
+void customObj_freeF(Value* v) { ((CustomObj*)v)->freeO(v); mm_free(v); }
+
+
 #if CATCH_ERRORS
+extern B lastErrMsg; // sysfn.c
+
 B fillBy_c1(Md2D* d, B x) {
   B xf=getFillQ(x);
   B r = c1(d->f, x);
   if(isAtm(r) || noFill(xf)) { dec(xf); return r; }
-  if (CATCH) { dec(catchMessage); return r; }
+  if (CATCH) { freeThrown(); return r; }
   B fill = asFill(c1(d->g, xf));
   popCatch();
   return withFill(r, fill);
@@ -25,14 +43,29 @@ B fillBy_c2(Md2D* d, B w, B x) {
   B wf=getFillQ(w); B xf=getFillQ(x);
   B r = c2(d->f, w,x);
   if(isAtm(r) || noFill(xf)) { dec(xf); dec(wf); return r; }
-  if (CATCH) { dec(catchMessage); return r; }
+  if (CATCH) { freeThrown(); return r; }
   if (noFill(wf)) wf = incG(bi_asrt);
   B fill = asFill(c2(d->g, wf, xf));
   popCatch();
   return withFill(r, fill);
 }
-B catch_c1(Md2D* d,      B x) { if(CATCH) { dec(catchMessage); return c1(d->g,   x); }         inc(x); B r = c1(d->f,   x); popCatch();         dec(x); return r; }
-B catch_c2(Md2D* d, B w, B x) { if(CATCH) { dec(catchMessage); return c2(d->g, w,x); } inc(w); inc(x); B r = c2(d->f, w,x); popCatch(); dec(w); dec(x); return r; }
+
+typedef struct ReObj {
+  struct CustomObj;
+  B msg;
+} ReObj;
+void re_visit(Value* v) { mm_visit(((ReObj*)v)->msg); }
+void re_freeO(Value* v) { dec(lastErrMsg); lastErrMsg = ((ReObj*)v)->msg; }
+void pushRe() {
+  ReObj* o = customObj(sizeof(ReObj), re_visit, re_freeO);
+  o->msg = lastErrMsg;
+  gsAdd(tag(o,OBJ_TAG));
+  
+  lastErrMsg = inc(thrownMsg);
+  freeThrown();
+}
+B catch_c1(Md2D* d,      B x) { if(CATCH) { pushRe(); B r = c1(d->g,   x); dec(gsPop()); return r; }         inc(x); B r = c1(d->f,   x); popCatch();         dec(x); return r; }
+B catch_c2(Md2D* d, B w, B x) { if(CATCH) { pushRe(); B r = c2(d->g, w,x); dec(gsPop()); return r; } inc(w); inc(x); B r = c2(d->f, w,x); popCatch(); dec(w); dec(x); return r; }
 #else
 B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
@@ -265,5 +298,8 @@ void md2_init() {
   TIi(t_md2BI,print) = print_md2BI;
   TIi(t_md2BI,m2_uc1) = md2BI_uc1;
   TIi(t_md2BI,m2_ucw) = md2BI_ucw;
+  TIi(t_customObj,freeO) = customObj_freeO;
+  TIi(t_customObj,freeF) = customObj_freeF;
+  TIi(t_customObj,visit) = customObj_visit;
   c(BMd2,bi_before)->uc1 = before_uc1;
 }

@@ -203,11 +203,11 @@ typedef union B {
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
   /*38*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*46*/ F(freed) F(harrPartial) \
-  /*48*/ F(fun_invReg ) F(md1_invReg ) F(md2_invReg ) \
-  /*51*/ F(fun_invSwap) F(md1_invSwap) F(md2_invSwap) \
+  /*46*/ F(freed) F(harrPartial) F(customObj) \
+  /*49*/ F(fun_invReg ) F(md1_invReg ) F(md2_invReg ) \
+  /*52*/ F(fun_invSwap) F(md1_invSwap) F(md2_invSwap) \
   \
-  /*54*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*55*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -332,12 +332,13 @@ NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);
 jmp_buf* prepareCatch(void);
 #if CATCH_ERRORS
-#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ dec(catchMessage); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
+#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ freeThrown(); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false
 #endif
 void popCatch(void);
-extern B catchMessage;
+extern B thrownMsg;
+void freeThrown(void);
 
 
 

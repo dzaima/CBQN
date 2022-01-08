@@ -13,7 +13,7 @@ static B homFil1(B f, B r, B xf) {
     if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return toI32Any(r); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
     if (f.u==bi_fne.u) { dec(xf); return withFill(r, m_harrUv(0).b); }
     if (!noFill(xf)) {
-      if (CATCH) { dec(catchMessage); return r; }
+      if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c1(f, xf));
       popCatch();
       return withFill(r, rf);
@@ -27,7 +27,7 @@ static B homFil2(B f, B r, B wf, B xf) {
   if (isPureFn(f)) {
     if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return toI32Any(r); }
     if (!noFill(wf) && !noFill(xf)) {
-      if (CATCH) { dec(catchMessage); return r; }
+      if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c2(f, wf, xf));
       popCatch();
       return withFill(r, rf);

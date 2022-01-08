@@ -555,6 +555,17 @@ B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
 }
 
+#if CATCH_ERRORS
+B lastErrMsg;
+B currentError_c1(B t, B x) {
+  dec(x);
+  if (q_N(lastErrMsg)) thrM("•CurrentError: Not currently within any ⎊");
+  return inc(lastErrMsg);
+}
+#else
+B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
+#endif
+
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x);
@@ -654,6 +665,10 @@ B import_c1(B d, B x) {
 static void sys_gcFn() {
   mm_visit(importKeyList);
   mm_visit(importValList);
+  mm_visit(thrownMsg);
+  #if CATCH_ERRORS
+  mm_visit(lastErrMsg);
+  #endif
 }
 
 
@@ -857,6 +872,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"fbytes")) cr = m_nfn(fBytesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"flines")) cr = m_nfn(fLinesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
+    else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
     else if (eqStr(c, U"state")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •state");
       cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
@@ -876,6 +892,9 @@ B sys_c1(B t, B x) {
 
 B cdPath;
 void sysfn_init() {
+  #if CATCH_ERRORS
+  lastErrMsg = bi_N;
+  #endif
   cdPath = m_str8(1, "."); gc_add(cdPath); gc_addFn(sys_gcFn);
   fCharsDesc = registerNFn(m_str8l("(file).Chars"), fchars_c1, fchars_c2);
   fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
