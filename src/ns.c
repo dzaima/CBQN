@@ -121,7 +121,7 @@ Body* m_nnsDescF(i32 n, char** names) {
   Body* body = m_body(n, 0, 0, 0);
   body->nsDesc = nd;
   body->bc = (u32*) emptyi32ptr;
-  body->bl = bl;
+  body->bl = ptr_inc(bl);
   for (usz i = 0; i < n; i++) {
     body->varData[i] = nd->expGIDs[i];
     body->varData[i+n] = i;

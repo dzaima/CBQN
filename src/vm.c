@@ -417,7 +417,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   for (i32 i = 0; i < bodyCount; i++) {
     bl->bodies[i] = bodies[i];
     bodies[i]->bc = (u32*)nbc + bodies[i]->bcTmp;
-    bodies[i]->bl = bl;
+    bodies[i]->bl = ptr_inc(bl);
   }
   TSFREE(bodies);
   return bl;
@@ -892,6 +892,7 @@ DEF_FREE(body) {
     dec(c->nvmRefs);
   #endif
   if(c->nsDesc) ptr_decR(c->nsDesc);
+  if(c->bl) ptr_decR(c->bl);
 }
 DEF_FREE(block) {
   Block* c = (Block*)x;
@@ -924,6 +925,7 @@ void body_visit(Value* x) {
   #if JIT_START != -1
     mm_visit(c->nvmRefs);
   #endif
+  if(c->bl) mm_visitP(c->bl);
   if(c->nsDesc) mm_visitP(c->nsDesc);
 }
 void block_visit(Value* x) {
