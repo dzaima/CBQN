@@ -41,7 +41,7 @@ static HArr_p m_harr_impl(usz ia) {
 #define HARR_FC(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fc_impl(N##_v, X); })
 #define HARR_FCD(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fcd_impl(N##_v, X); })
 #define HARR_FA(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fa_impl(N##_v, R); })
-#define HARR_ABANDON(N) harr_abandon_impl(N##_v)
+#define HARR_ABANDON(N) harr_abandon_impl(N##_v.c)
 static B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   p.c->sh = &p.c->ia;
@@ -67,12 +67,7 @@ static usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   gsPop();
   return arr_shAlloc((Arr*)p.c, r);
 }
-static void harr_abandon_impl(HArr_p p) { VTY(p.b, t_harrPartial);
-  gsPop();
-  p.c->sh = &p.c->ia; // TODO more direct freeing
-  sprnk(p.c, 1);
-  value_free((Value*)p.c);
-}
+void harr_abandon_impl(HArr* p);
 
 // unsafe-ish things - don't allocate/GC anything before having written to all items
 
