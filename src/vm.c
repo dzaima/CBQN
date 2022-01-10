@@ -22,15 +22,15 @@ i32 sD_m[BC_SIZE];
 i32 sC_m[BC_SIZE];
 i32 sA_m[BC_SIZE];
 
-char* bc_repr(u32* p) {
-  switch(*p) { default: return "(unknown)";
+char* bc_repr(u32 p) {
+  switch(p) { default: return "(unknown)";
     #define F(X) case X: return #X;
     FOR_BC(F)
     #undef F
   }
 }
 void print_BC(u32* p, i32 w) {
-  char* str = bc_repr(p);
+  char* str = bc_repr(*p);
   printf("%s", str);
   u32* n = nextBC(p);
   p++;

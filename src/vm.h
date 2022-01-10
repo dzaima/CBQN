@@ -185,7 +185,7 @@ static i32  stackAdded   (u32* p) { return sA_m[*p]; }
 static i32  stackDiff    (u32* p) { if (*p==ARRO|*p==ARRM) return 1-p[1]; return sD_m[*p]; }
 static i32  stackConsumed(u32* p) { if (*p==ARRO|*p==ARRM) return   p[1]; return sC_m[*p]; }
 
-char* bc_repr(u32* p);
+char* bc_repr(u32 p);
 
 
 typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;

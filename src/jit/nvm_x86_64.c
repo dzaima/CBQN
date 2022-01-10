@@ -673,7 +673,7 @@ Nvm_res m_nvm(Body* body) {
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
       case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
-      default: print_fmt("JIT: Unsupported bytecode %i/%S", *s, bc_repr(s)); err("");
+      default: print_fmt("JIT: Unsupported bytecode %i/%S", *s, bc_repr(*s)); err("");
     }
     #undef GET
     #undef GS_SET
