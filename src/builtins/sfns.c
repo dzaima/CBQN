@@ -729,9 +729,10 @@ B slash_im(B t, B x) {
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
       usz i,j; B r; i64 max=-1;
-      for (i = 0; i < xia; i++) { usz c=o2s(xp[i]); if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { usz c=o2s(xp[j]); if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
-      usz ria = max+1; if (ria==0) thrOOM();
+      for (i = 0; i < xia; i++) { i64 c=o2i64(xp[i]); if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { i64 c=o2i64(xp[j]); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      if (max > USZ_MAX-1) thrOOM();
+      usz ria = max+1;
       if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64u(xp[i]), 1);
