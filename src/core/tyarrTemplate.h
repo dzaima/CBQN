@@ -5,18 +5,22 @@ typedef TyArr JOIN(TU,Arr);
 typedef TP(,) JOIN(TU,Atom);
 
 static B TP(m_,arrv) (TEl** p, usz ia) {
+  CHECK_IA(ia, sizeof(TEl));
   TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, ia);
   arr_shVec((Arr*)r);
   *p = (TEl*)r->a;
   return taga(r);
 }
 static B TP(m_,arrc) (TEl** p, B x) { assert(isArr(x));
-  TyArr* r = m_arr(TYARR_SZ2(TU,a(x)->ia), T_ARR, a(x)->ia);
+  usz ia = a(x)->ia;
+  CHECK_IA(ia, sizeof(TEl));
+  TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, a(x)->ia);
   *p = (TEl*)r->a;
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
 static Arr* TP(m_,arrp) (TEl** p, usz ia) {
+  CHECK_IA(ia, sizeof(TEl));
   TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, ia);
   *p = (TEl*)r->a;
   return (Arr*)r;

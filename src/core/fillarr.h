@@ -60,6 +60,7 @@ static B getFillE(B x) { // errors if there's no fill
 
 
 static Arr* m_fillarrp(usz ia) {
+  CHECK_IA(ia, sizeof(B));
   return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
 }
 static void fillarr_setFill(Arr* x, B fill) { assert(x->type==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill

@@ -29,6 +29,7 @@ NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 #define HARR_O(N) N##_v
 #define HARR_I(N) N##_i
 static HArr_p m_harr_impl(usz ia) {
+  CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
   r->ia = 0;
   // don't need to initialize r->sh or rank at all i guess
@@ -75,16 +76,20 @@ void harr_abandon_impl(HArr* p);
 #define m_harr0c(X) ({ B x_ = (X); usz n_ = a(x_)->ia; HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
 #define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
 static HArr_p m_harrUv(usz ia) {
+  CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   arr_shVec((Arr*)r);
   return harrP_parts(r);
 }
 static HArr_p m_harrUc(B x) { assert(isArr(x));
-  HArr* r = m_arr(fsizeof(HArr,a,B,a(x)->ia), t_harr, a(x)->ia);
+  usz ia = a(x)->ia;
+  CHECK_IA(ia, sizeof(B));
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
 static HArr_p m_harrUp(usz ia) {
+  CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
   return harrP_parts(r);
 }

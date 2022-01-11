@@ -137,10 +137,19 @@ typedef double   f64;
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)
 
-typedef u32 usz;
-#define USZ_MAX ((u32)((1LL<<32)-1))
-// typedef u64 usz;
-// #define USZ_MAX ((u64)(1ULL<<48))
+#if USZ_64
+  typedef u64 usz;
+  #define USZ_MAX ((u64)(1ULL<<48))
+  #define CHECK_IA(IA,W) if(IA>USZ_MAX) thrOOM()
+#else
+  typedef u32 usz;
+  #define USZ_MAX ((u32)((1LL<<32)-1))
+  #define CHECK_IA(IA,W) if (IA > ((1LL<<31)/W - 1000)) thrOOM()
+#endif
+#if UNSAFE_SIZES
+  #undef CHECK_IA
+  #define CHECK_IA(IA,W)
+#endif
 typedef u8 ur;
 #define UR_MAX 255
 
