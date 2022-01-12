@@ -41,11 +41,11 @@ def __shr{a:T,b & w256{T} & i16==eltype{T}} = emit{T, '_mm256_srai_epi16', a, b}
 def __shr{a:T,b & w256{T} & i32==eltype{T}} = emit{T, '_mm256_srai_epi32', a, b}
 # no 64-bit arithmetic shift :/
 
-# questionable pack/unpack
+# questionable pack
 def unpackQ{a:[32]i8,  b:[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
 def unpackQ{a:[16]i16, b:[16]i16} = { tup{emit{[ 8]i32, '_mm256_unpacklo_epi16', a, b}, emit{[ 8]i32, '_mm256_unpackhi_epi16', a, b}}}
 def unpackQ{a:[ 8]i32, b:[ 8]i32} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi32', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi32', a, b}}}
-# saturate the argument
+# inverse of questionable pack; these saturate the argument
 def packQ{a:T,b:T & T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}
 def packQ{a:T,b:T & T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
 def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
@@ -53,17 +53,8 @@ def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
 def packQQ{a:T,b:T & T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
 def packQQ{a} = packQQ{tupsel{0,a}, tupsel{1,a}}
 
+
 # arith
-def __adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}
-def __adds{a:T,b:T & T==[16]u16} = emit{T, '_mm256_adds_epu16', a, b}
-def __adds{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_adds_epi8',  a, b}
-def __adds{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_adds_epu8',  a, b}
-
-def __subs{a:T,b:T & T==[16]i16} = emit{T, '_mm256_subs_epi16', a, b}
-def __subs{a:T,b:T & T==[16]u16} = emit{T, '_mm256_subs_epu16', a, b}
-def __subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}
-def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
-
 def __add{a:T,b:T & w256{T} & isintv{T} &  8==width{eltype{T}}} = emit{T, '_mm256_add_epi8', a, b}
 def __add{a:T,b:T & w256{T} & isintv{T} & 16==width{eltype{T}}} = emit{T, '_mm256_add_epi16', a, b}
 def __add{a:T,b:T & w256{T} & isintv{T} & 32==width{eltype{T}}} = emit{T, '_mm256_add_epi32', a, b}
@@ -80,6 +71,20 @@ def __mul  {a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
 def __mul  {a:T,b:T & [ 8]u32==T} = emit{T, '_mm256_mullo_epu32', a, b}
 def __mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of the arguments
 
+# saturating add/sub
+def __adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}
+def __adds{a:T,b:T & T==[16]u16} = emit{T, '_mm256_adds_epu16', a, b}
+def __adds{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_adds_epi8',  a, b}
+def __adds{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_adds_epu8',  a, b}
+
+def __subs{a:T,b:T & T==[16]i16} = emit{T, '_mm256_subs_epi16', a, b}
+def __subs{a:T,b:T & T==[16]u16} = emit{T, '_mm256_subs_epu16', a, b}
+def __subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}
+def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
+
+
+
+# mask stuff
 def getmask{x:T & w256{T} & 8==width{eltype{T}}} = emit{u32, '_mm256_movemask_epi8', x}
 def getmask{x:T & w256{T} & 16==width{eltype{T}}} = {
   msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, broadcast{[16]u16, 0}}}

@@ -9,6 +9,7 @@ def r_i2f{a:T} = emit{[8]f32, '_mm256_castsi256_ps', a}
 # various utilities
 def isunsigned{T} = isint{T} & ~issigned{T}
 def      isintv{T} =      isint{eltype{T}}
+def      isf32v{T} =       f32==eltype{T}
 def      isf64v{T} =       f64==eltype{T}
 def    isfloatv{T} =    isfloat{eltype{T}}
 def   issignedv{T} =   issigned{eltype{T}}
@@ -35,12 +36,20 @@ def storea{a:T, n, v & w256{eltype{T}} & isintv{eltype{T}}} = emit{void, '_mm256
 def store {a:T, n, v & w256{eltype{T}} & isf64v{eltype{T}}} = emit{void, '_mm256_storeu_pd', cast_p{f64, emit{T, 'op +', a, n}}, v}
 def storea{a:T, n, v & w256{eltype{T}} & isf64v{eltype{T}}} = emit{void, '_mm256_store_pd',  cast_p{f64, emit{T, 'op +', a, n}}, v}
 
-# broadcast; TODO restrict v
+# broadcast
 def broadcast{T, v & w256{T} & isintv{T,  8}} = emit{T, '_mm256_set1_epi8',  ext{eltype{T},v}}
 def broadcast{T, v & w256{T} & isintv{T, 16}} = emit{T, '_mm256_set1_epi16', ext{eltype{T},v}}
 def broadcast{T, v & w256{T} & isintv{T, 32}} = emit{T, '_mm256_set1_epi32', ext{eltype{T},v}}
 def broadcast{T, v & w256{T} & isintv{T, 64}} = emit{T, '_mm256_set1_epi64x',ext{eltype{T},v}}
 def broadcast{T, v & w256{T} & eltype{T}==f64} = emit{T, '_mm256_set1_pd', v}
+def broadcast{T, v & w256{T} & eltype{T}==f32} = emit{T, '_mm256_set1_ps', v}
+
+def make{T,a,b,c,d & T==[4]f64} = emit{T,'_mm256_set_pd',d,c,b,a}
+def make{T,a,b,c,d,e,f,g,h & T==[8]f32} = emit{T,'_mm256_set_ps',h,g,f,e,d,c,b,a}
+def make{T,a,b,c,d & T==[4]i64} = emit{T,'_mm256_set_epi64x',ext{i64,d},ext{i64,c},ext{i64,b},ext{i64,a}}
+def make{T,a,b,c,d,e,f,g,h & T==[8]i32} = emit{T,'_mm256_set_epi32',ext{i32,h},ext{i32,g},ext{i32,f},ext{i32,e},ext{i32,d},ext{i32,c},ext{i32,b},ext{i32,a}}
+def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p & T==[16]i16} = emit{T,'_mm256_set_epi16', ext{i16,p},ext{i16,o},ext{i16,n},ext{i16,m},ext{i16,l},ext{i16,k},ext{i16,j},ext{i16,i},ext{i16,h},ext{i16,g},ext{i16,f},ext{i16,e},ext{i16,d},ext{i16,c},ext{i16,b},ext{i16,a}}
+def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P & T==[32]i8} = emit{T,'_mm256_set_epi8', ext{i8,P},ext{i8,O},ext{i8,N},ext{i8,M},ext{i8,L},ext{i8,K},ext{i8,J},ext{i8,I},ext{i8,H},ext{i8,G},ext{i8,F},ext{i8,E},ext{i8,D},ext{i8,C},ext{i8,B},ext{i8,A}, ext{i8,p},ext{i8,o},ext{i8,n},ext{i8,m},ext{i8,l},ext{i8,k},ext{i8,j},ext{i8,i},ext{i8,h},ext{i8,g},ext{i8,f},ext{i8,e},ext{i8,d},ext{i8,c},ext{i8,b},ext{i8,a}}
 
 def __xor{a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_xor_ps', r_i2f{a}, r_i2f{b}}}
 def __and{a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_and_ps', r_i2f{a}, r_i2f{b}}}
@@ -48,17 +57,38 @@ def __or {a:T, b:T & w256{T} & isintv{T}} = r_f2i{T, emit{[8]f32, '_mm256_or_ps'
 
 def __not{a:T & w256{T} & isunsignedv{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
 
-# float comparison
-def fcmpAVX{a,b,n} = r_d2i{[4]u64, emit{[4]f64, '_mm256_cmp_pd', a, b, n}}
-def __eq{a:T,b:T & T==[4]f64} = fcmpAVX{a,b, 0}
-def __ne{a:T,b:T & T==[4]f64} = fcmpAVX{a,b, 4}
-def __gt{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,30}
-def __ge{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,29}
-def __lt{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,17}
-def __le{a:T,b:T & T==[4]f64} = fcmpAVX{a,b,18}
+# f64 comparison
+def f64cmpAVX{a,b,n} = r_d2i{[4]u64, emit{[4]f64, '_mm256_cmp_pd', a, b, n}}
+def __eq{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 0}
+def __ne{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 4}
+def __gt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,30}
+def __ge{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,29}
+def __lt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,17}
+def __le{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,18}
 
-# minimal f32 things
-def abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, r_i2f{broadcast{[8]u32, 0x7FFFFFFF}}}
+# f32 arith
+def __add{a:T,b:T & T==[8]f32} = emit{T, '_mm256_add_ps', a, b}
+def __sub{a:T,b:T & T==[8]f32} = emit{T, '_mm256_sub_ps', a, b}
+def __mul{a:T,b:T & T==[8]f32} = emit{T, '_mm256_mul_ps', a, b}
+def __div{a:T,b:T & T==[8]f32} = emit{T, '_mm256_div_ps', a, b}
+def   max{a:T,b:T & T==[8]f32} = emit{T, '_mm256_max_ps', a, b}
+def   min{a:T,b:T & T==[8]f32} = emit{T, '_mm256_min_ps', a, b}
+def  sqrt{a:T,b:T & T==[8]f32} = emit{T, '_mm256_sqrt_ps', a, b}
+def   abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, r_i2f{broadcast{[8]u32, 0x7FFFFFFF}}}
+def floor{a:[8]f32} = emit{[8]f32, '_mm256_floor_ps', a}
+def  ceil{a:[8]f32} = emit{[8]f32, '_mm256_ceil_ps', a}
+
+# f64 arith
+def __add{a:T,b:T & T==[4]f64} = emit{T, '_mm256_add_pd', a, b}
+def __sub{a:T,b:T & T==[4]f64} = emit{T, '_mm256_sub_pd', a, b}
+def __mul{a:T,b:T & T==[4]f64} = emit{T, '_mm256_mul_pd', a, b}
+def __div{a:T,b:T & T==[4]f64} = emit{T, '_mm256_div_pd', a, b}
+def   max{a:T,b:T & T==[4]f64} = emit{T, '_mm256_max_pd', a, b}
+def   min{a:T,b:T & T==[4]f64} = emit{T, '_mm256_min_pd', a, b}
+def  sqrt{a:T,b:T & T==[4]f64} = emit{T, '_mm256_sqrt_pd', a, b}
+def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, r_i2d{broadcast{[4]u64, (cast{u64,1}<<63)-1}}}
+def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
+def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 
 def getmask{x:T & w256{T} & 32==width{eltype{T}}} = emit{u8, '_mm256_movemask_ps', r_i2f{x}}
