@@ -236,9 +236,9 @@ static f64 pfmod(f64 a, f64 b) {
     u8 t = v(x)->type;
     return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
   }
-  #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) goto BASE; dec(w);dec(x);return r;
-  #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) goto BASE; dec(w);dec(x);return r;
-  #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) goto BASE; dec(w);dec(x);return r;
+  #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
+  #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
+  #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
   #define SI_SA(NAME, EXPR) \
   void* xp = tyany_ptr(x);  \
   switch(xe) { default: UD; \
