@@ -988,7 +988,7 @@ void print_vmStack() {
   #endif
 }
 
-
+B oomMessage;
 
 void comp_init() {
   TIi(t_comp     ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
@@ -1006,6 +1006,8 @@ void comp_init() {
   TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
+  
+  oomMessage = m_str8l("Out of memory"); gc_add(oomMessage);
   
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
@@ -1254,4 +1256,4 @@ NOINLINE void freeThrown() {
 NOINLINE NORETURN void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }
-NOINLINE NORETURN void thrOOM() { thrM("Out of memory"); }
+NOINLINE NORETURN void thrOOM() { thr(inc(oomMessage)); }
