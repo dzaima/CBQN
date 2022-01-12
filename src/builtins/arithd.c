@@ -170,25 +170,23 @@
         }                                                            \
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
-          if (wei&xei) {PI32(w)PI32(x)SI_AA(NAME,i32,base) DOI32(EXPR,w,wp[i],xp[i],aaB);}\
-          aaB:; Rf64(x)                                              \
+          if (wei&xei) { PI32(w)PI32(x)SI_AA(NAME,i32,rcf64) DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
+          if (!wei&!xei) {PF(w)PF(x) { SI_AA(NAME,f64,base) } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) dec(w);dec(x);return r; } \
+          rcf64:; Rf64(x)                                            \
           if (wei) { PI32(w)                                         \
             if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
             else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
-          } else { PF(w)                                             \
-            if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
-            else     { PF  (x) SI_AA(NAME,f64,base) DOF(EXPR,w,wp[i],xp[i]) }\
-          }                                                          \
+          } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
           dec(w); dec(x); return num_squeeze(r);                     \
         }                                                            \
-        if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) SI_AA(NAME, i8,base) DOI8 (EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) SI_AA(NAME,i16,base) DOI16(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base); } \
-        if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base); } \
+        if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) SI_AA(NAME, i8,base) DOI8 (EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) SI_AA(NAME,i16,base) DOI16(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base) } \
+        if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
       } \
       else if (isF64(w)&isArr(x)) { usz ia=a(x)->ia; u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
       else if (isF64(x)&isArr(w)) { usz ia=a(w)->ia; u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
