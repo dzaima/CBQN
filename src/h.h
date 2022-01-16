@@ -368,26 +368,26 @@ void print_vmStack(void);
 NORETURN NOINLINE void err(char* s);
 
 // tag checks
-static inline bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
-static inline bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
-static inline bool isC32(B x) { return (x.u>>48) == C32_TAG; }
-static inline bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
-static inline bool isExt(B x) { return (x.u>>48) == EXT_TAG; }
-static inline bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
-static inline bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
-static inline bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
-static inline bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
-static inline bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
-static inline bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
-// static inline bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
-// static inline bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
-static inline bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
-static inline bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
-static inline bool isNum(B x) { return isF64(x); }
+FORCE_INLINE bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
+FORCE_INLINE bool isArr(B x) { return (x.u>>48) == ARR_TAG; }
+FORCE_INLINE bool isC32(B x) { return (x.u>>48) == C32_TAG; }
+FORCE_INLINE bool isVar(B x) { return (x.u>>48) == VAR_TAG; }
+FORCE_INLINE bool isExt(B x) { return (x.u>>48) == EXT_TAG; }
+FORCE_INLINE bool isTag(B x) { return (x.u>>48) == TAG_TAG; }
+FORCE_INLINE bool isMd1(B x) { return (x.u>>48) == MD1_TAG; }
+FORCE_INLINE bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
+FORCE_INLINE bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
+FORCE_INLINE bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
+FORCE_INLINE bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
+// FORCE_INLINE bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
+// FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
+FORCE_INLINE bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
+FORCE_INLINE bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
+FORCE_INLINE bool isNum(B x) { return isF64(x); }
 
-static inline bool isAtm(B x) { return !isArr(x); }
-static inline bool isCallable(B x) { return isMd(x) | isFun(x); }
-static inline bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
+FORCE_INLINE bool isAtm(B x) { return !isArr(x); }
+FORCE_INLINE bool isCallable(B x) { return isMd(x) | isFun(x); }
+FORCE_INLINE bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
 
 
 // make objects
