@@ -36,13 +36,11 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
-  if (mm_heapAlloc+sz >= mm_heapMax) {
-    if (sz>100000) thrOOM(); // if allocating a large thing, it may be possible to recover
-    printf("Heap size limit reached\n"); abort();
-  }
+  if (mm_heapAlloc+sz >= mm_heapMax) thrOOM();
   mm_heapAlloc+= sz;
   // gc_maybeGC();
   EmptyValue* c = MMAP(sz);
+  if (c==MAP_FAILED) thrOOM();
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
   #endif
@@ -51,7 +49,6 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     al = realloc(al, sizeof(AllocInfo)*alCap);
   }
   al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
-  if (c==MAP_FAILED) { printf("Failed to allocate memory\n"); exit(1); }
   c->type = t_empty;
   c->mmInfo = from;
   c->next = 0;

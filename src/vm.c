@@ -1145,20 +1145,25 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcPos))+1;
     // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken
     // printf(" inds:%d…%d\n", cs, ce);
-    // int start = pos==-1? 0 : printf(N64d": ", pos);
-    // usz srcL = a(src)->ia;
-    // SGetU(src)
-    // usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
-    // usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
-    // if (ce>srcE) ce = srcE;
-    // cs-= srcS; ce-= srcS;
-    // putchar('\n');
-    // for (i32 i = 0; i < cs+start; i++) putchar(' ');
-    // for (i32 i = cs; i < ce; i++) putchar('^');
-    // putchar('\n');
+    if (CATCH) { // want to try really hard to print errors
+      freeThrown();
+      int start = printf("at ");
+      usz srcL = a(src)->ia;
+      SGetU(src)
+      usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
+      usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+      if (ce>srcE) ce = srcE;
+      cs-= srcS; ce-= srcS;
+      putchar('\n');
+      for (i32 i = 0; i < cs+start; i++) putchar(' ');
+      for (i32 i = cs; i < ce; i++) putchar('^');
+      putchar('\n');
+      return;
+    }
     B s = emptyCVec();
     printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
     putchar('\n');
+    popCatch();
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #ifdef DEBUG

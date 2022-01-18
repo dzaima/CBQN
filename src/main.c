@@ -204,6 +204,29 @@ int main(int argc, char* argv[]) {
           }
           heap_printInfo(sizes, types);
           goto cont;
+        } else if (isCmd(cmdS, &cmdE, "erase ")) {
+          char* name = cmdE;
+          i64 len = strlen(name);
+          ScopeExt* e = gsc->ext;
+          if (e!=NULL) {
+            i32 am = e->varAm;
+            for (i32 i = 0; i < am; i++) {
+              B c = e->vars[i+am];
+              if (a(c)->ia != len) continue;
+              SGetU(c)
+              bool ok = true;
+              for (i32 j = 0; j < len; j++) ok&= o2cu(GetU(c, j))==name[j];
+              if (ok) {
+                B val = e->vars[i];
+                e->vars[i] = bi_noVar;
+                dec(val);
+                if (!gc_depth) gc_forceGC();
+                goto cont;
+              }
+            }
+          }
+          printf("No such variable found\n");
+          goto cont;
         } else if (isCmd(cmdS, &cmdE, "vars")) {
           B r = listVars(gsc);
           if (q_N(r)) {

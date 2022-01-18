@@ -47,10 +47,14 @@ static void gc_tryFree(Value* v) {
     v->type = t_freed;
     ptr_inc(v); // required as otherwise the object may free itself while not done reading its own fields
     TIi(t,freeO)(v);
-    ptr_dec(v);
+    tptr_dec(v, mm_free);
     // Object may not be immediately freed if it's not a part of a cycle, but instead a descendant of one.
     // It will be freed when the cycle is freed, and the t_freed type ensures it doesn't double-free itself
   }
+}
+
+static void gc_freeFreed(Value* v) {
+  if (v->type==t_freed) mm_free(v);
 }
 
 static void gc_resetTag(Value* x) {
@@ -73,6 +77,7 @@ void gc_forceGC() {
     mm_forHeap(gc_resetTag);
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
+    mm_forHeap(gc_freeFreed);
     u64 endSize = mm_heapUsed();
     #ifdef LOG_GC
       fprintf(stderr, "GC kept "N64d"B from "N64d" objects, freed "N64d"B, including directly "N64d"B from "N64d" objects; took %.3fms\n", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount, (nsTime()-start)/1e6);
