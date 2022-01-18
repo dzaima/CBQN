@@ -521,13 +521,10 @@ B getRandNS() {
   return incG(randNS);
 }
 static NFnDesc* reBQNDesc;
-static B ns_getNUf(B ns, B field) {
-  B r = ns_getNU(ns, field, false); dec(field); return r;
-}
 B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
-  B repl = ns_getNUf(x, m_str8l("repl"));
-  B prim = ns_getNUf(x, m_str8l("primitives"));
+  B repl = ns_getC(x, "repl");
+  B prim = ns_getC(x, "primitives");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
   Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
@@ -746,7 +743,24 @@ extern char** environ;
 
 #if __has_include(<spawn.h>)
 #include <spawn.h>
-B sh_c1(B t, B x) {
+#include <fcntl.h>
+void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
+
+// #define shDbg printf
+#define shDbg(...) 
+
+B sh_c2(B t, B w, B x) {
+  
+  // parse options
+  B inObj = bi_N;
+  if (!q_N(w)) {
+    if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
+    inObj = ns_getC(w, "stdin");
+    if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
+  }
+  u64 iLen = q_N(inObj)? 0 : utf8lenB(inObj);
+  
+  // allocate args
   if (isAtm(x) || rnk(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
   usz xia = a(x)->ia;
   if (xia==0) thrM("•SH: 𝕩 must have at least one item");
@@ -763,50 +777,83 @@ B sh_c1(B t, B x) {
   }
   argv[xia] = NULL;
   
-  
+  // create pipes
+  int p_in[2];
   int p_out[2];
   int p_err[2];
-  if (pipe(p_out) || pipe(p_err)) thrM("•SH: Failed to create process: Couldn't create pipes");
+  if (pipe(p_in) || pipe(p_out) || pipe(p_err)) thrM("•SH: Failed to create process: Couldn't create pipes"); // TODO these pipes will easily leak
+  shDbg("pipes: %d %d %d %d %d %d\n", p_in[0], p_in[1], p_out[0], p_out[1], p_err[0], p_err[1]);
+  fcntl(p_in[1], F_SETFL, O_NONBLOCK); // make our side of pipes never block because we're working on multiple
+  fcntl(p_out[0], F_SETFL, O_NONBLOCK);
+  fcntl(p_err[0], F_SETFL, O_NONBLOCK);
   
   posix_spawn_file_actions_t a; posix_spawn_file_actions_init(&a);
-  posix_spawn_file_actions_addclose(&a, p_out[0]); posix_spawn_file_actions_adddup2(&a, p_out[1], 1); posix_spawn_file_actions_addclose(&a, p_out[1]);
-  posix_spawn_file_actions_addclose(&a, p_err[0]); posix_spawn_file_actions_adddup2(&a, p_err[1], 2); posix_spawn_file_actions_addclose(&a, p_err[1]);
+  // bind the other ends of pipes to the ones in the new process, and close the originals afterwards
+  posix_spawn_file_actions_adddup2(&a, p_in [0],  STDIN_FILENO); posix_spawn_file_actions_addclose(&a, p_in [0]); posix_spawn_file_actions_addclose(&a, p_in [1]);
+  posix_spawn_file_actions_adddup2(&a, p_out[1], STDOUT_FILENO); posix_spawn_file_actions_addclose(&a, p_out[0]); posix_spawn_file_actions_addclose(&a, p_out[1]);
+  posix_spawn_file_actions_adddup2(&a, p_err[1], STDERR_FILENO); posix_spawn_file_actions_addclose(&a, p_err[0]); posix_spawn_file_actions_addclose(&a, p_err[1]);
   
+  // spawn the actual process
   pid_t pid;
   if(posix_spawnp(&pid, argv[0], &a, NULL, argv, environ) != 0) thrF("•SH: Failed to create process: %S", strerror(errno));
+  posix_spawn_file_actions_destroy(&a); // used now
+  shClose(p_in[0]); // close the useless pipes on this side
+  shClose(p_out[1]);
+  shClose(p_err[1]);
   
+  // free args
   for (u64 i = 0; i < xia; i++) TFREE(argv[i]);
   TFREE(argv);
-  close(p_out[1]); B s_out = emptyCVec();
-  close(p_err[1]); B s_err = emptyCVec();
   
+  // allocate stdin
+  u64 iOff = 0;
+  TALLOC(char, iBuf, iLen);
+  if (iLen>0) toUTF8(inObj, iBuf);
+  bool iDone = false;
+  // allocate output buffer
+  B s_out = emptyCVec();
+  B s_err = emptyCVec();
+  
+  // polling mess
   const u64 bufsz = 1024;
-  TALLOC(char, buf, bufsz);
-  struct pollfd ps[] = {{.fd=p_out[0], .events=POLLIN}, {.fd=p_err[0], .events=POLLIN}};
-  while (poll(&ps[0], 2, -1) > 0) {
-    bool stop=true;
-    if (ps[0].revents & POLLIN) while(true) { stop=false; u64 len = read(p_out[0], &buf[0], bufsz); if(len==0)break; s_out = vec_join(s_out, fromUTF8(buf, len)); }
-    if (ps[1].revents & POLLIN) while(true) { stop=false; u64 len = read(p_err[0], &buf[0], bufsz); if(len==0)break; s_err = vec_join(s_err, fromUTF8(buf, len)); }
-    if (ps[0].revents & POLLHUP  &&  ps[1].revents & POLLHUP) break; // idk, made osx work
-    if (stop) break;
+  TALLOC(char, oBuf, bufsz);
+  struct pollfd ps[] = {{.fd=p_out[0], .events=POLLIN}, {.fd=p_err[0], .events=POLLIN}, {.fd=p_in[1], .events=POLLOUT}};
+  while (poll(&ps[0], iDone? 2 : 3, -1) > 0) {
+    shDbg("next poll; revents: out:%d err:%d in:%d\n", ps[0].revents, ps[1].revents, ps[2].revents);
+    if (ps[0].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0)break; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
+    if (ps[1].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0)break; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
+     if (!iDone && ps[2].revents & POLLOUT) {
+      shDbg("writing "N64u"\n", iLen-iOff);
+      ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
+      shDbg("written %zd/"N64u"\n", ww, iLen-iOff);
+      if (ww >= 0) {
+        iOff+= ww;
+        if (iOff==iLen) { iDone=true; shClose(p_in[1]); TFREE(iBuf); shDbg("writing done\n"); }
+      }
+    }
+    if (ps[0].revents & POLLHUP  &&  ps[1].revents & POLLHUP) { shDbg("HUP end\n"); break; }
   }
-  TFREE(buf);
+  
+  // free output buffer
+  TFREE(oBuf);
+  // free our ends of pipes
+  if (!iDone) { shClose(p_in[1]); TFREE(iBuf); shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
+  shClose(p_out[0]);
+  shClose(p_err[0]);
   
   int status;
   waitpid(pid, &status, 0);
   
-  posix_spawn_file_actions_destroy(&a);
-  dec(x);
+  dec(w); dec(x);
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_out, s_err);
 }
 #else
-B sh_c1(B t, B x) {
+B sh_c2(B t, B w, B x) {
   thrM("•SH: CBQN was built without <spawn.h>");
 }
 #endif
-B sh_c2(B t, B w, B x) {
-  dec(w);
-  return sh_c1(t, x);
+B sh_c1(B t, B x) {
+  return sh_c2(t, bi_N, x);
 }
 
 

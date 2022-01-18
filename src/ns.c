@@ -67,6 +67,12 @@ B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
   if (thrEmpty) thrM("No key found");
   return bi_N;
 }
+B ns_getC(B ns, char* name) {
+  B field = m_str8l(name);
+  B r = ns_getNU(ns, field, false);
+  dec(field);
+  return r;
+}
 
 void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
