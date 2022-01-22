@@ -479,7 +479,21 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   E_SLICES(x)
   return r;
 }
-B insert_c2(Md1D* d, B w, B x) { return m1c2(rt_insert, d->f, w, x); }
+B insert_c2(Md1D* d, B w, B x) { B f = d->f;
+  if (isAtm(x) || rnk(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  usz xia = a(x)->ia;
+  B r = w;
+  if (xia!=0) {
+    S_SLICES(x)
+    usz p = xia;
+    while(p!=0) {
+      p-= x_csz;
+      r = c2(f, SLICE(x, p), r);
+    }
+    E_SLICES(x)
+  }
+  return r;
+}
 
 #pragma GCC diagnostic pop
 
