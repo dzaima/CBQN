@@ -368,10 +368,16 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
     }                                  \
   } else if (X##_cr!=0) X##_csz*= a(X)->sh[1];
 
-#define SLICE(X, S) ({ Arr* r_ = X##_slc(inc(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); r_; })
+#define SLICE(X, S) ({ Arr* r_ = X##_slc(inc(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
 
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); dec(X);
 
+#pragma GCC diagnostic push
+#ifdef __clang__
+  #pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+  // no gcc case because gcc is gcc and does gcc things instead of doing what it's asked to do
+#endif
+  
 extern B rt_cell;
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) {
@@ -417,7 +423,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   }
   S_SLICES(x)
   M_HARR(r, cam);
-  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, taga(SLICE(x, p))));
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
   E_SLICES(x)
 
   return bqn_merge(HARR_FV(r));
@@ -432,14 +438,14 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     usz cam = a(x)->sh[0]; if (cam==0) goto zero;
     S_SLICES(x)
     M_HARR(r, cam);
-    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, taga(SLICE(x, p))));
+    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
     E_SLICES(x) dec(w);
     r = HARR_FV(r);
   } else if (xr==0) {
     usz cam = a(w)->sh[0]; if (cam==0) goto zero;
     S_SLICES(w)
     M_HARR(r, cam);
-    for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, taga(SLICE(w, p)), x));
+    for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, SLICE(w, p), x));
     E_SLICES(w) dec(x);
     r = HARR_FV(r);
   } else {
@@ -448,7 +454,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     if (cam != a(x)->sh[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     S_SLICES(w) S_SLICES(x)
     M_HARR(r, cam);
-    for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, taga(SLICE(w, wp)), taga(SLICE(x, xp))));
+    for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, SLICE(w, wp), SLICE(x, xp)));
     E_SLICES(w) E_SLICES(x)
     r = HARR_FV(r);
   }
@@ -458,9 +464,24 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
 }
 
 extern B rt_insert;
-B insert_c1(Md1D* d,      B x) { return m1c1(rt_insert, d->f,    x); }
+B insert_c1(Md1D* d, B x) { B f = d->f;
+  if (isAtm(x) || rnk(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  usz xia = a(x)->ia;
+  if (xia==0) return m1c1(rt_insert, f, x);
+  
+  S_SLICES(x)
+  usz p = xia-x_csz;
+  B r = SLICE(x, p);
+  while(p!=0) {
+    p-= x_csz;
+    r = c2(f, SLICE(x, p), r);
+  }
+  E_SLICES(x)
+  return r;
+}
 B insert_c2(Md1D* d, B w, B x) { return m1c2(rt_insert, d->f, w, x); }
 
+#pragma GCC diagnostic pop
 
 static void print_md1BI(B x) { printf("%s", pm1_repr(c(Md1,x)->extra)); }
 void md1_init() {
