@@ -74,6 +74,10 @@ static inline bool isImpureBuiltin(B x) {
   return false;
 }
 
+// these assume x is a function
+static inline bool isPervasiveDy (B x) { return (u8)(v(x)->flags-1) <= n_ge; }
+static inline bool isPervasiveMon(B x) { return (u8)(v(x)->flags-1) <= n_stile; }
+
 extern B
 #define F(N,X) bi_##N,
 FOR_PFN(F,F,F)

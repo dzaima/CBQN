@@ -42,6 +42,9 @@ B tbl_c1(Md1D* d, B x) { B f = d->f;
   B xf = getFillQ(x);
   return homFil1(f, eachm(f, x), xf);
 }
+
+B slash_c2(B f, B w, B x);
+B shape_c2(B f, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   B wf, xf;
   if (EACH_FILLS) wf = getFillQ(w);
@@ -53,25 +56,42 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   ur rr = wr+xr;  usz ria = uszMul(wia, xia);
   if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
-  SGetU(w)
-  SGet(x)
-  BBB2B fc2 = c2fn(f);
+  B r;
+  usz* rsh;
   
-  M_HARR(r, ria)
-  for (usz wi = 0; wi < wia; wi++) {
-    B cw = GetU(w,wi);
-    for (usz xi = 0; xi < xia; xi++) {
-      HARR_ADDA(r, fc2(f, inc(cw), Get(x,xi)));
+  if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
+    BBB2B fc2 = c(Fun,f)->c2;
+    if (TI(x,arrD1) && xia<80 && wia>130) {
+      Arr* wd = TI(w,slice)(inc(w), 0, wia);
+      arr_shVec(wd);
+      r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), inc(x)));
+    } else {
+      SGet(w)
+      M_HARR(r, wia)
+      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), inc(x)));
+      r = bqn_merge(HARR_FV(r));
     }
+    if (rnk(r)>1) ptr_dec(shObj(r));
+    rsh = arr_shAlloc(a(r), rr);
+  } else {
+    BBB2B fc2 = c2fn(f);
+    SGetU(w) SGet(x)
+    
+    M_HARR(r, ria)
+    for (usz wi = 0; wi < wia; wi++) {
+      B cw = GetU(w,wi);
+      for (usz xi = 0; xi < xia; xi++) HARR_ADDA(r, fc2(f, inc(cw), Get(x,xi)));
+    }
+    rsh = HARR_FA(r, rr);
+    r = HARR_O(r).b;
   }
-  usz* rsh = HARR_FA(r, rr);
   if (rsh) {
     memcpy(rsh   , a(w)->sh, wr*sizeof(usz));
     memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
   }
   dec(w); dec(x);
-  if (EACH_FILLS) return homFil2(f, HARR_O(r).b, wf, xf);
-  return HARR_O(r).b;
+  if (EACH_FILLS) return homFil2(f, r, wf, xf);
+  return r;
 }
 
 B each_c1(Md1D* d, B x) { B f = d->f;
@@ -326,7 +346,7 @@ B swap_c2(Md1D* d, B w, B x) { return c2(d->f,     x , w); }
 
 B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
-  for (i64 i = 0; i < am; i++) inc(x);
+  incBy(x, am);
   dec(x);
   u64 sns = nsTime();
   for (i64 i = 0; i < am; i++) dec(c1(f, x));
