@@ -68,7 +68,6 @@ def __sub{a:T,b:T & w256{T} & isintv{T} & 64==width{eltype{T}}} = emit{T, '_mm25
 def __mul  {a:T,b:T & [16]i16==T} = emit{T, '_mm256_mullo_epi16', a, b}
 def __mulhi{a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
 def __mul  {a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
-def __mul  {a:T,b:T & [ 8]u32==T} = emit{T, '_mm256_mullo_epu32', a, b}
 def __mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of the arguments
 
 # saturating add/sub

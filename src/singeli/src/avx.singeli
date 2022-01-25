@@ -18,10 +18,13 @@ def w256{T} = width{T}==256
 def isintv{T,w} = isintv{T} & (width{eltype{T}}==w)
 
 def cast_vp{T, x & w256{T}} = emit{*T, '(void*)', x}
-def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isintv{R}} = r_d2i{R, x}
-def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isf64v{R}} = r_i2d{x}
 def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isintv{R}} = emit{R, '', x}
-def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isf64v{R}} = emit{R, '', x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isintv{R}} = r_d2i{R, x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf32v{S} & isintv{R}} = r_f2i{R, x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf64v{S} & isf32v{R}} = r_d2f{x}
+def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isf32v{R}} = r_i2f{x}
+def cast_v{R, x:S & w256{R} & w256{S} & isf32v{S} & isf64v{R}} = r_f2d{x}
+def cast_v{R, x:S & w256{R} & w256{S} & isintv{S} & isf64v{R}} = r_i2d{x}
 def ty_vu{T & w256{T} &   issignedv{T}} = [vcount{T}](ty_iu{eltype{T}})
 def ty_vs{T & w256{T} & isunsignedv{T}} = [vcount{T}](ty_is{eltype{T}})
 def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
