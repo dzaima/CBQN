@@ -242,24 +242,24 @@ DEF_FREE(scope) {
 }
 FORCE_INLINE void scope_dec(Scope* sc) { // version of ptr_dec for scopes, that tries to also free trivial cycles. force-inlined!!
   i32 varAm = sc->varAm;
-  if (sc->refc>1) {
-    i32 innerRef = 1;
-    for (i32 i = 0; i < varAm; i++) {
-      B c = sc->vars[i];
-      if (isVal(c) && v(c)->refc==1) {
-        u8 t = v(c)->type;
-        if      (t==t_funBl && c(FunBlock,c)->sc==sc) innerRef++;
-        else if (t==t_md1Bl && c(Md1Block,c)->sc==sc) innerRef++;
-        else if (t==t_md2Bl && c(Md2Block,c)->sc==sc) innerRef++;
-      }
-    }
-    assert(innerRef <= sc->refc);
-    if (innerRef==sc->refc) {
-      value_free((Value*)sc);
-      return;
+  if (LIKELY(sc->refc==1)) goto free;
+  i32 innerRef = 1;
+  for (i32 i = 0; i < varAm; i++) {
+    B c = sc->vars[i];
+    if (isVal(c) && v(c)->refc==1) {
+      u8 t = v(c)->type;
+      if      (t==t_funBl && c(FunBlock,c)->sc==sc) innerRef++;
+      else if (t==t_md1Bl && c(Md1Block,c)->sc==sc) innerRef++;
+      else if (t==t_md2Bl && c(Md2Block,c)->sc==sc) innerRef++;
     }
   }
-  tptr_dec(sc, scope_freeF);
+  assert(innerRef <= sc->refc);
+  if (innerRef==sc->refc) goto free;
+  sc->refc--; // refc>0 guaranteed by previous refc!=1 result
+  return;
+  
+  free:
+  scope_freeF((Value*) sc);
 }
 
 
