@@ -10,6 +10,9 @@
   #undef JIT_START
   #define JIT_START -1
 #endif
+#ifndef EXT_ONLY_GLOBAL
+  #define EXT_ONLY_GLOBAL 1
+#endif
 
 enum {
   PUSH = 0x00, // N; push object from objs[N]
@@ -235,7 +238,10 @@ usz getPageSize(void);
 DEF_FREE(scope) {
   Scope* c = (Scope*)x;
   if (LIKELY(c->psc!=NULL)) ptr_decR(c->psc);
-  if (RARE  (c->ext!=NULL)) ptr_decR(c->ext);
+  #if EXT_ONLY_GLOBAL
+  else
+  #endif
+  if (RARE(c->ext!=NULL)) ptr_decR(c->ext);
   ptr_decR(c->body);
   u16 am = c->varAm;
   for (u32 i = 0; i < am; i++) dec(c->vars[i]);
