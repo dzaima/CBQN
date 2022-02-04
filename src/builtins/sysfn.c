@@ -856,48 +856,56 @@ B sh_c1(B t, B x) {
   return sh_c2(t, bi_N, x);
 }
 
-typedef struct CastType { usz s; u8 t; } CastType;
-CastType getCastType(B e) {
-  B s; u8 t;
+typedef struct CastType { usz s; bool c; } CastType;
+static bool isCharType(u8 t) {
+  return t==t_c8arr   || t==t_c16arr   || t==t_c32arr
+      || t==t_c8slice || t==t_c16slice || t==t_c32slice;
+}
+static CastType getCastType(B e, B v) {
+  usz s; bool c;
   if (isNum(e)) {
-    s = e;
-    t = '?';
+    s = o2s(e);
+    c = q_N(v) ? 0 : isCharType(v(v)->type);
   } else {
     if (!isArr(e) || rnk(e)!=1 || a(e)->ia!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e);
-    s = GetU(e,0);
-    u32 c = o2c(GetU(e,1));
-    if (!(c=='i'||c=='u'||c=='f'||c=='c')) thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufc\"");
-    t = (u8)c;
+    s = o2s(GetU(e,0));
+    u32 t = o2c(GetU(e,1));
+    c = t=='c';
+    if (c||t=='n'); // n for generic number
+    else if (t=='f') { if (s!=64) thrM("•bit._cast: type f only supports width 64"); }
+    else if (t=='i') { if (s<8||s>32) thrM("•bit._cast: unsupported integer width"); }
+    else if (t=='u') { if (     s>32) thrM("•bit._cast: unsupported integer width"); }
+    else thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufnc\"");
   }
-  return (CastType) { o2s(s), t };
+  return (CastType) { s, c };
 }
-B convert(CastType t, B x) {
+static B convert(CastType t, B x) {
   switch (t.s) {
     case  1: return taga(toBitArr(x));
-    case  8: return t.t=='c' ? toC8Any (x) : toI8Any (x);
-    case 16: return t.t=='c' ? toC16Any(x) : toI16Any(x);
-    case 32: return t.t=='c' ? toC32Any(x) : toI32Any(x);
+    case  8: return t.c ? toC8Any (x) : toI8Any (x);
+    case 16: return t.c ? toC16Any(x) : toI16Any(x);
+    case 32: return t.c ? toC32Any(x) : toI32Any(x);
     case 64: return toF64Any(x);
     default: thrM("•bit._cast: unsupported input width");
   }
 }
-TyArr* copy(CastType t, B x) {
+static TyArr* copy(CastType t, B x) {
   switch (t.s) {
     case  1: return cpyBitArr(x);
-    case  8: return t.t=='c' ? cpyC8Arr (x) : cpyI8Arr (x);
-    case 16: return t.t=='c' ? cpyC16Arr(x) : cpyI16Arr(x);
-    case 32: return t.t=='c' ? cpyC32Arr(x) : cpyI32Arr(x);
+    case  8: return t.c ? cpyC8Arr (x) : cpyI8Arr (x);
+    case 16: return t.c ? cpyC16Arr(x) : cpyI16Arr(x);
+    case 32: return t.c ? cpyC32Arr(x) : cpyI32Arr(x);
     case 64: return cpyF64Arr(x);
     default: thrM("•bit._cast: unsupported input width");
   }
 }
-u8 typeOfCast(CastType t) {
+static u8 typeOfCast(CastType t) {
   switch (t.s) {
     case  1: return t_bitarr;
-    case  8: return t.t=='c' ? t_c8arr  : t_i8arr ;
-    case 16: return t.t=='c' ? t_c16arr : t_i16arr;
-    case 32: return t.t=='c' ? t_c32arr : t_i32arr;
+    case  8: return t.c ? t_c8arr  : t_i8arr ;
+    case 16: return t.c ? t_c16arr : t_i16arr;
+    case 32: return t.c ? t_c32arr : t_i32arr;
     case 64: return t_f64arr;
     default: thrM("•bit._cast: unsupported result width");
   }
@@ -905,8 +913,8 @@ u8 typeOfCast(CastType t) {
 B bitcast_c1(Md1D* d, B x) { B f = d->f;
   if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f);
-  CastType xt = getCastType(GetU(f,0));
-  CastType zt = getCastType(GetU(f,1));
+  CastType xt = getCastType(GetU(f,0), x);
+  CastType zt = getCastType(GetU(f,1), bi_N);
   ur xr;
   if (!isArr(x) || (xr=rnk(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   usz* sh = a(x)->sh;
