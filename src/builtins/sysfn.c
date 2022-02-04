@@ -856,6 +856,82 @@ B sh_c1(B t, B x) {
   return sh_c2(t, bi_N, x);
 }
 
+typedef struct CastType { usz s; u8 t; } CastType;
+CastType getCastType(B e) {
+  B s; u8 t;
+  if (isNum(e)) {
+    s = e;
+    t = '?';
+  } else {
+    if (!isArr(e) || rnk(e)!=1 || a(e)->ia!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
+    SGetU(e);
+    s = GetU(e,0);
+    u32 c = o2c(GetU(e,1));
+    if (!(c=='i'||c=='u'||c=='f'||c=='c')) thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufc\"");
+    t = (u8)c;
+  }
+  return (CastType) { o2s(s), t };
+}
+TyArr* convert(CastType t, B x) {
+  switch (t.s) {
+    case  1: return toBitArr(x);
+    case  8: return t.t=='c' ? toC8Arr (x) : toI8Arr (x);
+    case 16: return t.t=='c' ? toC16Arr(x) : toI16Arr(x);
+    case 32: return t.t=='c' ? toC32Arr(x) : toI32Arr(x);
+    case 64: return toF64Arr(x);
+    default: thrM("•bit._cast: unsupported result width");
+  }
+}
+u8 typeOfCast(CastType t) {
+  switch (t.s) {
+    case  1: return t_bitarr;
+    case  8: return t.t=='c' ? t_c8arr  : t_i8arr ;
+    case 16: return t.t=='c' ? t_c16arr : t_i16arr;
+    case 32: return t.t=='c' ? t_c32arr : t_i32arr;
+    case 64: return t_f64arr;
+    default: thrM("•bit._cast: unsupported result width");
+  }
+}
+B bitcast_c1(Md1D* d, B x) { B f = d->f;
+  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  SGetU(f);
+  CastType xt = getCastType(GetU(f,0));
+  CastType zt = getCastType(GetU(f,1));
+  ur xr;
+  if (!isArr(x) || (xr=rnk(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
+  usz* sh = a(x)->sh;
+  usz s=xt.s*sh[xr-1], zl=s/zt.s;
+  if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
+  // Convert to input type
+  B r = taga(convert(xt, x));
+  // Cast to output type
+  v(r)->type = typeOfCast(zt);
+  // Adjust shape
+  if (xr<=1) {
+    a(r)->sh[xr-1]=zl;
+  } else {
+    if (shObj(r)->refc>1) {
+      usz* zsh = arr_shAlloc(a(r), xr);
+      memcpy(zsh, sh, (xr-1)*sizeof(usz));
+      sh = zsh;
+    }
+    sh[xr-1]=zl;
+    usz ia=zl; for (usz i=0;i<xr-1;i++)ia*=sh[i]; a(r)->ia=ia;
+  }
+  return r;
+}
+static B bitNS;
+B getBitNS() {
+  if (bitNS.u == 0) {
+    #define F(X) inc(bi_bit##X),
+    Body* d = m_nnsDesc("cast");
+    bitNS = m_nns(d,   F(cast));
+    #undef F
+    gc_add(bitNS);
+  }
+  return inc(bitNS);
+}
+
 
 B getInternalNS(void);
 B getMathNS(void);
@@ -893,6 +969,7 @@ B sys_c1(B t, B x) {
     }
     else if (eqStr(c, U"internal")) cr = getInternalNS();
     else if (eqStr(c, U"math")) cr = getMathNS();
+    else if (eqStr(c, U"bit")) cr = getBitNS();
     else if (eqStr(c, U"type")) cr = incG(bi_type);
     else if (eqStr(c, U"sh")) cr = incG(bi_sh);
     else if (eqStr(c, U"decompose")) cr = incG(bi_decp);
