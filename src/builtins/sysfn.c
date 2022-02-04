@@ -872,14 +872,14 @@ CastType getCastType(B e) {
   }
   return (CastType) { o2s(s), t };
 }
-TyArr* convert(CastType t, B x) {
+B convert(CastType t, B x) {
   switch (t.s) {
-    case  1: return toBitArr(x);
-    case  8: return t.t=='c' ? toC8Arr (x) : toI8Arr (x);
-    case 16: return t.t=='c' ? toC16Arr(x) : toI16Arr(x);
-    case 32: return t.t=='c' ? toC32Arr(x) : toI32Arr(x);
-    case 64: return toF64Arr(x);
-    default: thrM("•bit._cast: unsupported result width");
+    case  1: return taga(toBitArr(x));
+    case  8: return t.t=='c' ? toC8Any (x) : toI8Any (x);
+    case 16: return t.t=='c' ? toC16Any(x) : toI16Any(x);
+    case 32: return t.t=='c' ? toC32Any(x) : toI32Any(x);
+    case 64: return toF64Any(x);
+    default: thrM("•bit._cast: unsupported input width");
   }
 }
 u8 typeOfCast(CastType t) {
@@ -903,14 +903,21 @@ B bitcast_c1(Md1D* d, B x) { B f = d->f;
   usz s=xt.s*sh[xr-1], zl=s/zt.s;
   if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
   // Convert to input type
-  B r = taga(convert(xt, x));
+  B r = convert(xt, x);
+  if (v(r)->refc!=1) {
+    r = taga(TI(r,slice)(r, 0, a(r)->ia));
+    sprnk(v(r),xr);
+  }
   // Cast to output type
-  v(r)->type = typeOfCast(zt);
+  u8 rt = typeOfCast(zt); if (IS_SLICE(v(r)->type)) rt = TO_SLICE(rt);
+  v(r)->type = rt;
   // Adjust shape
   if (xr<=1) {
-    a(r)->sh[xr-1]=zl;
+    Arr* a = a(r);
+    a->ia = zl;
+    a->sh = &a->ia;
   } else {
-    if (shObj(r)->refc>1) {
+    if (shObj(x)->refc>1) {
       usz* zsh = arr_shAlloc(a(r), xr);
       memcpy(zsh, sh, (xr-1)*sizeof(usz));
       sh = zsh;
