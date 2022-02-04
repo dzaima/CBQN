@@ -882,6 +882,16 @@ B convert(CastType t, B x) {
     default: thrM("•bit._cast: unsupported input width");
   }
 }
+TyArr* copy(CastType t, B x) {
+  switch (t.s) {
+    case  1: return cpyBitArr(x);
+    case  8: return t.t=='c' ? cpyC8Arr (x) : cpyI8Arr (x);
+    case 16: return t.t=='c' ? cpyC16Arr(x) : cpyI16Arr(x);
+    case 32: return t.t=='c' ? cpyC32Arr(x) : cpyI32Arr(x);
+    case 64: return cpyF64Arr(x);
+    default: thrM("•bit._cast: unsupported input width");
+  }
+}
 u8 typeOfCast(CastType t) {
   switch (t.s) {
     case  1: return t_bitarr;
@@ -904,13 +914,15 @@ B bitcast_c1(Md1D* d, B x) { B f = d->f;
   if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
   // Convert to input type
   B r = convert(xt, x);
-  if (v(r)->refc!=1) {
+  u8 rt = typeOfCast(zt);
+  if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(v(r)->type))) {
+    r = taga(copy(xt, r));
+  } else if (v(r)->refc!=1) {
     r = taga(TI(r,slice)(r, 0, a(r)->ia));
     sprnk(v(r),xr);
   }
   // Cast to output type
-  u8 rt = typeOfCast(zt); if (IS_SLICE(v(r)->type)) rt = TO_SLICE(rt);
-  v(r)->type = rt;
+  v(r)->type = IS_SLICE(v(r)->type) ? TO_SLICE(rt) : rt;
   // Adjust shape
   if (xr<=1) {
     Arr* a = a(r);
