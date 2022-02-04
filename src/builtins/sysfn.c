@@ -872,10 +872,11 @@ static CastType getCastType(B e, B v) {
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
     c = t=='c';
-    if (c||t=='n'); // n for generic number
-    else if (t=='f') { if (s!=64) thrM("•bit._cast: type f only supports width 64"); }
+    if (t=='n'); // generic number
+    else if (c     ) { if (s<8||s>32) thrM("•bit._cast: unsupported character width"); }
     else if (t=='i') { if (s<8||s>32) thrM("•bit._cast: unsupported integer width"); }
     else if (t=='u') { if (     s>32) thrM("•bit._cast: unsupported integer width"); }
+    else if (t=='f') { if (s!=64) thrM("•bit._cast: type f only supports width 64"); }
     else thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufnc\"");
   }
   return (CastType) { s, c };
