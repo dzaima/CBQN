@@ -224,8 +224,8 @@ enum Type {
   #undef F
   t_COUNT
 };
-#define IS_SLICE(T) ((t)>=t_hslice & (t)<=t_f64slice)
-#define IS_ARR(T) ((t)>=t_harr & (t)<=t_bitarr)
+#define IS_SLICE(T) ((T)>=t_hslice & (T)<=t_f64slice)
+#define IS_ARR(T) ((T)>=t_harr & (T)<=t_bitarr)
 
 enum ElType { // a⌈b shall return the type that can store both, if possible
   el_bit=0,
