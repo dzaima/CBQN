@@ -47,23 +47,23 @@ src/
 
 `B` represents any BQN object. Some are heap-allocated, some are not.
 ```C
-Type checks (all are safe to execute on any B instance):
-  test       tag       instance description
-  isVal(x)   [many]    any heap-allocated object
-  isFun(x)   FUN_TAG   a function    (guaranteed heap-allocated)
-  isMd1(x)   MD1_TAG   a 1-modifier  (guaranteed heap-allocated)
-  isMd2(x)   MD2_TAG   a 2-modifier  (guaranteed heap-allocated)
-  isMd (x)   [many]    any modifier  (guaranteed heap-allocated)
-  isCallable(x) [many] isFun|isMd    (guaranteed heap-allocated)
-  isArr(x)   ARR_TAG   an array type (guaranteed heap-allocated)
-  isAtm(x)   [many]    !isArr(x)     can be either heap-allocated or tagged
-  isChr(x)   C32_TAG   a character   (never heap-allocated)
-  isF64(x)   F64_TAG   a number      (never heap-allocated)
-  isNsp(x)   NSP_TAG   a namespace   (guaranteed heap-allocated)
-  isObj(x)   OBJ_TAG   internal      (guaranteed heap allocated)
+Type checks (all are safe to execute on any B object):
+  test           tag    description     heap-allocated
+  isVal(x)      [many]  heap-allocated  yes
+  isFun(x)     FUN_TAG  a function      yes
+  isMd1(x)     MD1_TAG  a 1-modifier    yes
+  isMd2(x)     MD2_TAG  a 2-modifier    yes
+  isMd (x)      [many]  any modifier    yes
+  isCallable(x) [many]  isFun|isMd      yes
+  isArr(x)     ARR_TAG  an array type   yes
+  isAtm(x)      [many]  !isArr(x)       depends
+  isChr(x)     C32_TAG  a character     no
+  isF64(x)     F64_TAG  a number        no
+  isNsp(x)     NSP_TAG  a namespace     yes
+  isObj(x)     OBJ_TAG  internal        yes
   and then there are some extra types for variables for the VM & whatever; see h.h *_TAG definitions
 
-Extra functions for converting types:
+Functions for converting/using basic types:
   m_f64(x)  // f64 → B
   m_c32(x)  // codepoint → B
   m_i32(x)  // i32 → B
@@ -88,11 +88,14 @@ Extra functions for converting types:
 See src/h.h for more basic functions
 ```
 
-An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object is a `Value*`, but should be used as some subtype. `mm_free` can be used to force-free an object regardless of its reference count.
 
-A heap-allocated object can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to any pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (see `enum Type` in `src/h.h`), which is used by runtime functions to decide how to interpret an object.
+All heap-allocated objects have a type - `t_i32arr`, `t_f64slice`, `t_funBl`, `t_temp`, etc. Full list is at `#define FOR_TYPE` in `src/h.h`.
 
-Reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` has `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)`/`ptr_inc(x)` will return the argument, so you can use it inline, and `dec`/`ptr_dec` will return the object to the memory manager if the refcount goes to zero.
+An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
+
+A heap-allocated object of type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object.
+
+The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)`/`ptr_inc(x)` will return the argument, so you can use it inline, and `dec`/`ptr_dec` will return the object to the memory manager if the refcount as a result goes to zero.
 
 Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running:
 ```bash
@@ -123,9 +126,9 @@ TSFREE(stack); // free the stack
 
 All virtual method accesses require that the argument is heap-allocated.
 
-You can get a virtual function of a `B` instance with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
+You can get a virtual function of a `B` object with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
 
-Call a BQN function with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h` (and adding the `bi_` prefix).
+Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h` (and adding the `bi_` prefix).
 
 Calling a modifier involves deriving it with `m1_d`/`m2_d`, using a regular `c1`/`c2`, and managing the refcounts of everything while at that.
 
@@ -149,10 +152,26 @@ For functions, in most cases, the `t` parameter (representing `𝕊`/"this") is 
 
 For modifiers, the `d` parameter stores the operands and the modifier itself. Use `d->f` for `𝔽`, `d->g` for `𝔾`, `d->m1` for `_𝕣`, `d->m2` for `_𝕣_`, and `tag(d,FUN_TAG)` for `𝕊`.
 
+## Inverses
+
+```C
+// im - monadic inverse
+// ix - 𝕩-inverse - w⊸𝔽⁼ 𝕩 aka 𝕨 F⁼ 𝕩
+// iw - 𝕨-inverse - 𝔽⟜x⁼ w
+// the calls for these must be in some `whatever_init()` function, and apply only to builtins specified in builtins.h
+c(BFn,bi_someFunction)->im = someFunction_im; // set the monadic inverse; someFunction_im has the signature of a regular monadic call implementation
+c(BFn,bi_someFunction)->ix = someFunction_ix; // etc
+c(BFn,bi_someFunction)->iw = someFunction_iw;
+c(BMd1,bi_some1mod)->ix = some1mod_ix;
+c(BMd2,bi_some2mod)->im = some2mod_im; // you get the idea
+// for new types, the appropriate virtual functions (fn_im/fn_is/fn_iw/fn_ix/m1_im/m1_iw/m1_ix/m2_im/m2_iw/m2_ix) can be set
+```
 
 ## Arrays
 
-If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape, `rnk(x)` will give you the rank, and `a(x)->sh` will give you a `usz*` to the full shape.
+If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (`prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
+
+The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field. Otherwise, it'll point inside a `t_shape` object.
 
 Allocating an array:
 ```C
@@ -241,11 +260,20 @@ if (v(x)->type==t_harr) B* xp = harr_ptr(x);
 if (v(x)->type==t_harr || v(x)->type==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
 if (v(x)->type==t_fillarr) B* xp = fillarr_ptr(x);
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by contiguous B*-s
+
+// functions to convert arrays to a specific type array: (all consume their argument)
+I8Arr* a = toI8Arr(x); // convert x to an I8Arr instance (returns the argument if it already is)
+I8Arr* a = cpyI8Arr(x); // get an I8Arr with reference count 1 with the same items
+B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
+// same logic applies for:
+// toBitArr/toI8Arr/toI16Arr/toI32Arr/toF64Arr/toC8Arr/toC16Arr/toC32Arr/toHArr
+// cpyBitArr/cpyI8Arr/cpyI16Arr/cpyI32Arr/cpyF64Arr/cpyC8Arr/cpyC16Arr/cpyC32Arr/cpyHArr
+// toI8Any/toI16Any/toI32Any/toF64Any/toC8Any/toC16Any/toC32Any
 ```
 
 ## Errors
 
-Throw an error with `thrM("some message")` or `thr(some B instance)` or `thrOOM()`. What to do with active references at the time of the error is TBD when GC is actually completed, but you can just not worry about that for now.
+Throw an error with `thrM("some message")` or `thr(some B object)` or `thrOOM()`. What to do with active references at the time of the error is TBD when GC is actually completed, but you can just not worry about that for now.
 
 A fancier message can be created with `thrF(message, …)` with printf-like (but different!!) varargs (source in `do_fmt`):
 ```
@@ -261,8 +289,9 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %c   char
 %S   char* C-string consisting of ASCII
 %U   char* of UTF-8 data
-%R   a B instance of a string or number
-%H   the shape of a B instance
+%R   a B object of a number or string (string is printed without quotes or escaping)
+%H   the shape of a B object
+%B   a B object, formatted by •Repr (be very very careful to not give a potentially large object, which'd lead to unreadably long messages!)
 %%   "%"
 ```
 See `#define CATCH` in `src/h.h` for how to catch errors.
