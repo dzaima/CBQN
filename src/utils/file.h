@@ -17,3 +17,4 @@ void file_wChars(B path, B x); // consumes path
 void file_wBytes(B path, B x); // consumes path
 
 B file_list(B path); // consumes
+char file_type(B path); // consumes

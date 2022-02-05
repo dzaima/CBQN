@@ -4,13 +4,21 @@
 #include "mut.h"
 #include "talloc.h"
 
-FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
+char* toCStr(B path) {
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
   toUTF8(path, p);
   p[plen] = 0;
-  FILE* f = fopen(p, mode);
+  return p;
+}
+void freeCStr(char* p) {
   TFREE(p);
+}
+
+FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
+  char* p = toCStr(path);
+  FILE* f = fopen(p, mode);
+  freeCStr(p);
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
   return f;
 }
@@ -204,4 +212,23 @@ B file_list(B path) {
   closedir(d);
   dec(path);
   return res;
+}
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+char file_type(B path) {
+  char* p = toCStr(path);
+  struct stat path_stat;
+  stat(p, &path_stat);
+  freeCStr(p);
+  i64 mode = path_stat.st_mode;
+  if (S_ISREG (mode)) return 'f';
+  if (S_ISDIR (mode)) return 'd';
+  if (S_ISLNK (mode)) return 'l';
+  if (S_ISFIFO(mode)) return 'p';
+  if (S_ISSOCK(mode)) return 's';
+  if (S_ISBLK (mode)) return 'b';
+  if (S_ISCHR (mode)) return 'c';
+  thrM("Unexpected file type");
 }

@@ -669,9 +669,19 @@ static void sys_gcFn() {
 }
 
 
-static NFnDesc* listDesc;
+static NFnDesc* fTypeDesc;
+static NFnDesc* fListDesc;
 B list_c1(B d, B x) {
   return file_list(path_rel(nfn_objU(d), x));
+}
+
+B ftype_c1(B d, B x) {
+  return m_c32(file_type(path_rel(nfn_objU(d), x)));
+}
+
+B fName_c1(B t, B x) {
+  if (!isArr(x) || rnk(x)!=1) thrM("•file.Name: Argument must be a character vector");
+  return path_name(x);
 }
 
 B unixTime_c1(B t, B x) {
@@ -996,7 +1006,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(list), F(fBytes), F(fChars), F(fLines));
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), inc(bi_fName));
         #undef F
       }
       cr = inc(fileNS);
@@ -1062,11 +1072,12 @@ void sysfn_init() {
   fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
   fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);
   fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
-  listDesc   = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
+  fListDesc  = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
+  fTypeDesc  = registerNFn(m_str8l("(file).Type"), ftype_c1, c2_bad);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","name");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }

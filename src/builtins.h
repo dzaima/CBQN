@@ -11,6 +11,7 @@
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•GroupOrd") \
 /*   sysfn.c*/M(repr,"•Repr") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") A(bqn,"•BQN") A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(currentError,"•CurrentError") \
 /*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime") M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(reBQN,"•ReBQN") M(exit,"•Exit") M(getLine,"•GetLine") \
+/*   sysfn.c*/M(fName,"•file.Name") \
 /* inverse.c*/M(setInvReg, "(SetInvReg)") M(setInvSwap, "(SetInvSwap)") M(nativeInvReg, "(NativeInvReg)") M(nativeInvSwap, "(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") \
