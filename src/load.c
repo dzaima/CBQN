@@ -639,17 +639,17 @@ void base_init() { // very first init function
   #undef FM
   #undef FD
   
-  #define FA(N,X) bi_##N = m_bm1(N##_c1, N##_c2, pm1_##N);
-  #define FM(N,X) bi_##N = m_bm1(N##_c1, c2_bad, pm1_##N);
-  #define FD(N,X) bi_##N = m_bm1(c1_bad, N##_c2, pm1_##N);
+  #define FA(N,X) bi_##N = m_bm1(N##_c1,   N##_c2,   pm1_##N);
+  #define FM(N,X) bi_##N = m_bm1(N##_c1,   m1c2_bad, pm1_##N);
+  #define FD(N,X) bi_##N = m_bm1(m1c1_bad, N##_c2,   pm1_##N);
   FOR_PM1(FA,FM,FD)
   #undef FA
   #undef FM
   #undef FD
   
   #define FA(N,X) bi_##N = m_bm2(N##_c1,   N##_c2,   pm2_##N);
-  #define FM(N,X) bi_##N = m_bm2(m1c1_bad, N##_c2,   pm2_##N);
-  #define FD(N,X) bi_##N = m_bm2(N##_c1,   m1c2_bad, pm2_##N);
+  #define FM(N,X) bi_##N = m_bm2(m2c1_bad, N##_c2,   pm2_##N);
+  #define FD(N,X) bi_##N = m_bm2(N##_c1,   m2c2_bad, pm2_##N);
   FOR_PM2(FA,FM,FD)
   #undef FA
   #undef FM

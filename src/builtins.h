@@ -21,7 +21,8 @@
     /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \
 /*inverse.c*/A(undo,"⁼") \
 /* everything before the definition of •_timed is defined to be pure, and everything after is not */ \
-    /*md1.c*/A(timed,"•_timed")
+    /*md1.c*/A(timed,"•_timed") \
+    /*bit.c*/M(bitcast,"•bit._cast")
 
 #define FOR_PM2(A,M,D) \
   /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(rank,"⎉") A(depth,"⚇") A(fillBy,"•_fillBy_") A(catch,"⎊") \
