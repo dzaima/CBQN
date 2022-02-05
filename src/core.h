@@ -52,6 +52,9 @@ typedef struct BMd1 {
 
 typedef struct BMd2 {
   struct Md2;
+  D2C1 im;
+  D2C2 iw;
+  D2C2 ix;
   M2C4 uc1;
   M2C5 ucw;
 } BMd2;

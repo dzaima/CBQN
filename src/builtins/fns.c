@@ -5,14 +5,6 @@
 #include "../nfns.h"
 
 
-void print_funBI(B x) { printf("%s", pfn_repr(c(Fun,x)->extra)); }
-B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
-B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
-B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
-B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
-
-
-
 
 void ud_rec(B** p, usz d, usz r, i32* pos, usz* sh) {
   if (d==r) {
@@ -354,6 +346,14 @@ void fun_gcFn() {
   if (globalNames!=NULL) mm_visitP(globalNames);
   mm_visit(globalNameList);
 }
+
+
+
+static void print_funBI(B x) { printf("%s", pfn_repr(c(Fun,x)->extra)); }
+static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
+static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
+static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
+static B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 void fns_init() {
   gc_addFn(fun_gcFn);
   TIi(t_funBI,print) = print_funBI;

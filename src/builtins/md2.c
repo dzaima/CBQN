@@ -294,10 +294,16 @@ B depth_c2(Md2D* d, B w, B x) { return m2c2(rt_depth, d->f, d->g, w, x); }
 
 
 static void print_md2BI(B x) { printf("%s", pm2_repr(c(Md1,x)->extra)); }
+static B md2BI_im(Md2D* d,      B x) { return ((BMd2*)d->m2)->im(d,    x); }
+static B md2BI_iw(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->iw(d, w, x); }
+static B md2BI_ix(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->ix(d, w, x); }
 void md2_init() {
   TIi(t_md2BI,print) = print_md2BI;
   TIi(t_md2BI,m2_uc1) = md2BI_uc1;
   TIi(t_md2BI,m2_ucw) = md2BI_ucw;
+  TIi(t_md2BI,m2_im) = md2BI_im;
+  TIi(t_md2BI,m2_iw) = md2BI_iw;
+  TIi(t_md2BI,m2_ix) = md2BI_ix;
   TIi(t_customObj,freeO) = customObj_freeO;
   TIi(t_customObj,freeF) = customObj_freeF;
   TIi(t_customObj,visit) = customObj_visit;

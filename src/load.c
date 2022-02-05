@@ -581,6 +581,9 @@ static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 id) {
   m->c1 = c1;
   m->c2 = c2;
   m->extra = id;
+  m->im = def_m2_im;
+  m->iw = def_m2_iw;
+  m->ix = def_m2_ix;
   m->uc1 = def_m2_uc1;
   m->ucw = def_m2_ucw;
   B r = tag(m,MD2_TAG); gc_add(r);

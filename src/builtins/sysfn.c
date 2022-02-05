@@ -868,7 +868,7 @@ static CastType getCastType(B e, B v) {
     c = q_N(v) ? 0 : isCharType(v(v)->type);
   } else {
     if (!isArr(e) || rnk(e)!=1 || a(e)->ia!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
-    SGetU(e);
+    SGetU(e)
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
     c = t=='c';
@@ -911,11 +911,9 @@ static u8 typeOfCast(CastType t) {
     default: thrM("•bit._cast: unsupported result width");
   }
 }
-B bitcast_c1(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
-  SGetU(f);
-  CastType xt = getCastType(GetU(f,0), x);
-  CastType zt = getCastType(GetU(f,1), bi_N);
+B bitcast_impl(B el0, B el1, B x) {
+  CastType xt = getCastType(el0, x);
+  CastType zt = getCastType(el1, bi_N);
   ur xr;
   if (!isArr(x) || (xr=rnk(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   usz* sh = a(x)->sh;
@@ -947,6 +945,18 @@ B bitcast_c1(Md1D* d, B x) { B f = d->f;
     usz ia=zl; for (usz i=0;i<xr-1;i++)ia*=sh[i]; a(r)->ia=ia;
   }
   return r;
+}
+
+B bitcast_c1(Md1D* d, B x) { B f = d->f;
+  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  SGetU(f)
+  return bitcast_impl(GetU(f,0), GetU(f,1), x);
+}
+
+B bitcast_im(Md1D* d, B x) { B f = d->f;
+  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  SGetU(f)
+  return bitcast_impl(GetU(f,1), GetU(f,0), x);
 }
 static B bitNS;
 B getBitNS() {
@@ -1058,4 +1068,5 @@ void sysfn_init() {
 }
 void sysfnPost_init() {
   file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines");
+  c(BMd1,bi_bitcast)->im = bitcast_im;
 }
