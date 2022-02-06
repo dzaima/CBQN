@@ -1284,24 +1284,43 @@ B slash_ucw(B t, B o, B w, B x) {
   if (isAtm(w) || isAtm(x) || rnk(w)!=1 || rnk(x)!=1 || a(w)->ia!=a(x)->ia) return def_fn_ucw(t, o, w, x);
   usz ia = a(x)->ia;
   SGetU(w)
-  if (TI(w,elType)!=el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
+  if (TI(w,elType)>el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = a(arg)->ia;
   B rep = c1(o, arg);
   if (isAtm(rep) || rnk(rep)!=1 || a(rep)->ia != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
   MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
   SGet(x)
-  SGetU(rep)
   SGet(rep)
   usz repI = 0;
-  for (usz i = 0; i < ia; i++) {
-    i32 cw = o2iu(GetU(w, i));
-    if (cw) {
-      B cr = Get(rep,repI);
-      if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
-      mut_setG(r, i, cr);
-      repI+= cw;
-    } else mut_setG(r, i, Get(x,i));
+  if (a(w)->type == t_bitarr) {
+    u64* d = bitarr_ptr(w);
+    if (TI(x,elType)<=el_i32 && TI(rep,elType)<=el_i32) {
+      if (r->type!=el_i32) mut_to(r, el_i32);
+      i32* rp = r->ai32;
+      x   = toI32Any(x);   i32* xp = i32any_ptr(x);
+      rep = toI32Any(rep); i32* np = i32any_ptr(rep);
+      for (usz i = 0; i < ia; i++) {
+        bool v = bitp_get(d, i);
+        i32 nc = np[repI];
+        i32 xc = xp[i];
+        rp[i] = v? nc : xc;
+        repI+= v;
+      }
+    } else {
+      for (usz i = 0; i < ia; i++) mut_setG(r, i, bitp_get(d, i)? Get(rep,repI++) : Get(x,i));
+    }
+  } else {
+    SGetU(rep)
+    for (usz i = 0; i < ia; i++) {
+      i32 cw = o2iu(GetU(w, i));
+      if (cw) {
+        B cr = Get(rep,repI);
+        if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
+        mut_setG(r, i, cr);
+        repI+= cw;
+      } else mut_setG(r, i, Get(x,i));
+    }
   }
   dec(w); dec(rep);
   return mut_fcd(r, x);
