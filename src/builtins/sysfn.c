@@ -858,13 +858,49 @@ B sh_c2(B t, B w, B x) {
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_out, s_err);
 }
 #else
-B sh_c2(B t, B w, B x) {
-  thrM("•SH: CBQN was built without <spawn.h>");
-}
+B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was built without <spawn.h>"); }
 #endif
-B sh_c1(B t, B x) {
-  return sh_c2(t, bi_N, x);
+B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
+
+
+
+#if __has_include(<termios.h>)
+#include<termios.h>
+#include <fcntl.h>
+B tFlush_c1(B t, B x) {
+  fflush(stdout);
+  fflush(stderr);
+  return x;
 }
+B tRaw_c1(B t, B x) {
+  struct termios term;
+  tcgetattr(STDIN_FILENO, &term);
+  if (o2b(x)) term.c_lflag&= ~(ICANON | ECHO);
+  else term.c_lflag|= ICANON | ECHO;
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
+  return x;
+}
+B tCharB_c1(B t, B x) {
+  dec(x);
+  int n = fgetc(stdin);
+  return n>=0? m_c32(n) : m_f64(0);
+}
+B tCharN_c1(B t, B x) {
+  dec(x);
+  fcntl(0, F_SETFL, O_NONBLOCK);
+  int n = fgetc(stdin);
+  fcntl(0, F_SETFL, 0);
+  return n>=0? m_c32(n) : m_f64(0);
+}
+#else
+NORETURN B noTerm() { thrM("•term not available"); }
+B tFlush_c1(B t, B x) { noTerm(); }
+B tRaw_c1(B t, B x) { noTerm(); }
+B tCharB_c1(B t, B x) { noTerm(); }
+B tCharN_c1(B t, B x) { noTerm(); }
+#endif
+
+
 
 typedef struct CastType { usz s; bool c; } CastType;
 static bool isCharType(u8 t) {
@@ -981,6 +1017,18 @@ B getBitNS() {
 }
 
 
+static B termNS;
+B getTermNS() {
+  if (termNS.u == 0) {
+    #define F(X) inc(bi_##X),
+    Body* d = m_nnsDesc("flush", "raw", "charb", "charn");
+    termNS =  m_nns(d,F(tFlush)F(tRaw)F(tCharB)F(tCharN));
+    #undef F
+    gc_add(termNS);
+  }
+  return inc(termNS);
+}
+
 B getInternalNS(void);
 B getMathNS(void);
 B getPrimitives(void);
@@ -1015,6 +1063,7 @@ B sys_c1(B t, B x) {
       if (!wdpath.u) wdpath = path_abs(inc(cdPath));
       cr = inc(wdpath);
     }
+    else if (eqStr(c, U"term")) cr = getTermNS();
     else if (eqStr(c, U"internal")) cr = getInternalNS();
     else if (eqStr(c, U"math")) cr = getMathNS();
     else if (eqStr(c, U"bit")) cr = getBitNS();

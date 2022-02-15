@@ -408,7 +408,7 @@ static u32 o2cu  (B x) { return (u32)x.u; }
 static usz o2su  (B x) { return (usz)x.f; }
 static f64 o2fu  (B x) { return      x.f; }
 static i64 o2i64u(B x) { return (i64)x.f; }
-static bool o2b  (B x) { usz t=o2s(x); if(t!=0&t!=1)thrM("Expected boolean"); return t; }
+static bool o2b  (B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return t; }
 static bool o2bu (B x) { return o2s(x); }
 static bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
 static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
