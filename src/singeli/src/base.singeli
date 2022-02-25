@@ -2,10 +2,11 @@ include 'skin/c'
 include 'arch/c'
 
 # TODO move these to a more base file
+def knum{x} = match{'number',kind{x}}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def ext  {T, x:U & isint{T} & isint{U} & T>=U} = emit{T, '', x}
-def trunc{T, x & match{'number',kind{x}}} = cast{T, x}
-def ext  {T, x & match{'number',kind{x}}} = cast{T, x}
+def trunc{T, x & knum{x}} = cast{T, x}
+def ext  {T, x & knum{x}} = cast{T, x}
 
 def cdiv{a,b} = (a+b-1)/b
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
@@ -20,7 +21,7 @@ def ty_iu{T & T==i16} = u16; def ty_is{T & T==i16} = u16
 def ty_iu{T & T==i32} = u32; def ty_is{T & T==i32} = u32
 def ty_iu{T & T==i64} = u64; def ty_is{T & T==i64} = u64
 
-def unroll{vars,begin,end,block & match{kind{begin},'number'} & match{kind{end},'number'}} = {
+def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
   def f{i,l & i!=l} = {
     exec{i, vars, block}
