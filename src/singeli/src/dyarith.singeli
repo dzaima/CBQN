@@ -46,10 +46,10 @@ def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   tup{packQ{rp}, any{tupsel{0,bad}|tupsel{1,bad}}}
 }
 def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
-  max:= broadcast{[8]u32, 0x4efffffe}
+  max:= cast_v{[8]f32, broadcast{[8]u32, 0x4efffffe}}
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, any{emit{[8]u32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}
+  tup{w*x, any{cast_v{[8]u32, emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}
   # TODO fallback to the below if the above fails
   # def wp = unpackQ{w, broadcast{T, 0}}
   # def xp = unpackQ{x, broadcast{T, 0}}

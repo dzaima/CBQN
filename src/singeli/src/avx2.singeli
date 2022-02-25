@@ -31,15 +31,21 @@ def __gt{a:T,b:T & w256u{T}} = ~(a<=b)
 def __ne{a:T,b:T & w256i{T}} = ~(b==a)
 
 # shift
-def __shl{a:T,b & w256i{T, 16}} = emit{T, '_mm256_slli_epi16', a, b}
-def __shl{a:T,b & w256i{T, 32}} = emit{T, '_mm256_slli_epi32', a, b}
-def __shl{a:T,b & w256i{T, 64}} = emit{T, '_mm256_slli_epi64', a, b}
-def __shr{a:T,b & w256u{T, 16}} = emit{T, '_mm256_srli_epi16', a, b}
-def __shr{a:T,b & w256u{T, 32}} = emit{T, '_mm256_srli_epi32', a, b}
-def __shr{a:T,b & w256u{T, 64}} = emit{T, '_mm256_srli_epi64', a, b}
-def __shr{a:T,b & w256s{T, 16}} = emit{T, '_mm256_srai_epi16', a, b}
-def __shr{a:T,b & w256s{T, 32}} = emit{T, '_mm256_srai_epi32', a, b}
+def __shl{a:T,b & w256i{T, 16} & knum{b}} = emit{T, '_mm256_slli_epi16', a, b}
+def __shl{a:T,b & w256i{T, 32} & knum{b}} = emit{T, '_mm256_slli_epi32', a, b}
+def __shl{a:T,b & w256i{T, 64} & knum{b}} = emit{T, '_mm256_slli_epi64', a, b}
+def __shr{a:T,b & w256u{T, 16} & knum{b}} = emit{T, '_mm256_srli_epi16', a, b}
+def __shr{a:T,b & w256u{T, 32} & knum{b}} = emit{T, '_mm256_srli_epi32', a, b}
+def __shr{a:T,b & w256u{T, 64} & knum{b}} = emit{T, '_mm256_srli_epi64', a, b}
+def __shr{a:T,b & w256s{T, 16} & knum{b}} = emit{T, '_mm256_srai_epi16', a, b}
+def __shr{a:T,b & w256s{T, 32} & knum{b}} = emit{T, '_mm256_srai_epi32', a, b}
 # no 64-bit arithmetic shift :/
+def __shl{a:T,b:S & w256i{T, 32} & w256i{S, 32}} = emit{T, '_mm256_sllv_epi32', a, b}
+def __shl{a:T,b:S & w256i{T, 64} & w256i{S, 64}} = emit{T, '_mm256_sllv_epi64', a, b}
+def __shr{a:T,b:S & w256u{T, 32} & w256i{S, 32}} = emit{T, '_mm256_srlv_epi32', a, b}
+def __shr{a:T,b:S & w256u{T, 64} & w256i{S, 64}} = emit{T, '_mm256_srlv_epi64', a, b}
+def __shr{a:T,b:S & w256s{T, 32} & w256i{S, 32}} = emit{T, '_mm256_srav_epi32', a, b}
+# still no 64-bit arithmetic shift :/
 
 # questionable pack
 def unpackQ{a:[32]i8,  b:[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
@@ -55,20 +61,29 @@ def packQQ{a} = packQQ{tupsel{0,a}, tupsel{1,a}}
 
 
 # arith
-def __add{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_add_epi8', a, b}
+def __mul  {a:T,b:T & [16]i16==T} = emit{T, '_mm256_mullo_epi16', a, b}
+def __mulhi{a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
+def __mulhi{a:T,b:T & [16]u16==T} = emit{T, '_mm256_mulhi_epu16', a, b}
+def __mul  {a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
+def __mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
+def __mul32{a:T,b:T & [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
+
+def abs {a:[32]i8 } = emit{[32]i8 , '_mm256_abs_epi8',  a}
+def abs {a:[16]i16} = emit{[16]i16, '_mm256_abs_epi16', a}
+def abs {a:[ 8]i32} = emit{[ 8]i32, '_mm256_abs_epi32', a}
+def absu{a:[32]i8 } = emit{[32]u8 , '_mm256_abs_epi8',  a}
+def absu{a:[16]i16} = emit{[16]u16, '_mm256_abs_epi16', a}
+def absu{a:[ 8]i32} = emit{[ 8]u32, '_mm256_abs_epi32', a}
+
+def __add{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_add_epi8',  a, b}
 def __add{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_add_epi16', a, b}
 def __add{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_add_epi32', a, b}
 def __add{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_add_epi64', a, b}
 
-def __sub{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_sub_epi8', a, b}
+def __sub{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_sub_epi8',  a, b}
 def __sub{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_sub_epi16', a, b}
 def __sub{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_sub_epi32', a, b}
 def __sub{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_sub_epi64', a, b}
-
-def __mul  {a:T,b:T & [16]i16==T} = emit{T, '_mm256_mullo_epi16', a, b}
-def __mulhi{a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
-def __mul  {a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
-def __mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of the arguments
 
 # saturating add/sub
 def __adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}
@@ -82,6 +97,22 @@ def __subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}
 def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
 
 
+# structural operations
+def shl{S==[16]u8, x:T, n & w256{T}} = cast_v{T, emit{T, '_mm256_bslli_epi128', x, n}}
+def shr{S==[16]u8, x:T, n & w256{T}} = cast_v{T, emit{T, '_mm256_bsrli_epi128', x, n}}
+
+def blend{I==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}}
+def blend{I==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}}
+def blend{I==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}}
+
+def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
+def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}
+
+def sel{x:T, i:[8]i32 & w256{T,32}} = cast_v{T, emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}}
+def sel{x:T, i:[32]i8 & w256{T, 8}} = cast_v{T, emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}}
+
+def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
+def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}
 
 # mask stuff
 def getmask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
