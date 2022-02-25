@@ -479,7 +479,7 @@ void load_init() { // very last init function
 }
 
 B bqn_execFile(B path, B args) { // consumes both
-  return bqn_exec(file_chars(inc(path)), path, args);
+  return bqn_exec(path_chars(inc(path)), path, args);
 }
 
 void bqn_exit(i32 code) {

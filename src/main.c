@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
             #ifdef PERF_TEST
             case 'R': { repl_init(); REQARG(R);
               B path = fromUTF8l(argv[i++]);
-              B lines = file_lines(path);
+              B lines = path_lines(path);
               usz ia = a(lines)->ia;
               SGet(lines)
               for (u64 i = 0; i < ia; i++) {
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
         char* cmdE;
         if (isCmd(cmdS, &cmdE, "ex ")) {
           B path = fromUTF8l(cmdE);
-          code = file_chars(path);
+          code = path_chars(path);
           output = 0;
         } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
           code = fromUTF8l(cmdE);

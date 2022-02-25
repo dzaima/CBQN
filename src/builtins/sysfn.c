@@ -575,18 +575,18 @@ B fileAt_c2(B d, B w, B x) {
 }
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
-  return file_chars(path_rel(nfn_objU(d), x));
+  return path_chars(path_rel(nfn_objU(d), x));
 }
 B fchars_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
   B p = path_rel(nfn_objU(d), w);
-  file_wChars(inc(p), x);
+  path_wChars(inc(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
-  I8Arr* tf = file_bytes(path_rel(nfn_objU(d), x));
+  I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x));
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   u8* rp; B r = m_c8arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
@@ -596,13 +596,13 @@ B fbytes_c1(B d, B x) {
 B fbytes_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
   B p = path_rel(nfn_objU(d), w);
-  file_wBytes(inc(p), x);
+  path_wBytes(inc(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
-  return file_lines(path_rel(nfn_objU(d), x));
+  return path_lines(path_rel(nfn_objU(d), x));
 }
 B flines_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
@@ -618,7 +618,7 @@ B flines_c2(B d, B w, B x) {
   }
   dec(x);
   B p = path_rel(nfn_objU(d), w);
-  file_wChars(inc(p), s);
+  path_wChars(inc(p), s);
   dec(s);
   return p;
 }
@@ -672,11 +672,11 @@ static void sys_gcFn() {
 static NFnDesc* fTypeDesc;
 static NFnDesc* fListDesc;
 B list_c1(B d, B x) {
-  return file_list(path_rel(nfn_objU(d), x));
+  return path_list(path_rel(nfn_objU(d), x));
 }
 
 B ftype_c1(B d, B x) {
-  return m_c32(file_type(path_rel(nfn_objU(d), x)));
+  return m_c32(path_type(path_rel(nfn_objU(d), x)));
 }
 
 B fName_c1(B t, B x) {
@@ -867,11 +867,6 @@ B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 #if __has_include(<termios.h>)
 #include<termios.h>
 #include <fcntl.h>
-B tFlush_c1(B t, B x) {
-  fflush(stdout);
-  fflush(stderr);
-  return x;
-}
 B tRaw_c1(B t, B x) {
   struct termios term;
   tcgetattr(STDIN_FILENO, &term);
@@ -879,11 +874,6 @@ B tRaw_c1(B t, B x) {
   else term.c_lflag|= ICANON | ECHO;
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
   return x;
-}
-B tCharB_c1(B t, B x) {
-  dec(x);
-  int n = fgetc(stdin);
-  return n>=0? m_c32(n) : m_f64(0);
 }
 B tCharN_c1(B t, B x) {
   dec(x);
@@ -893,12 +883,40 @@ B tCharN_c1(B t, B x) {
   return n>=0? m_c32(n) : m_f64(0);
 }
 #else
-NORETURN B noTerm() { thrM("•term not available"); }
-B tFlush_c1(B t, B x) { noTerm(); }
-B tRaw_c1(B t, B x) { noTerm(); }
-B tCharB_c1(B t, B x) { noTerm(); }
-B tCharN_c1(B t, B x) { noTerm(); }
+B tRaw_c1(B t, B x) { thrM("•term.Raw not available"); }
+B tCharN_c1(B t, B x) { thrM("•term.CharN not available"); }
 #endif
+
+B tCharB_c1(B t, B x) {
+  dec(x);
+  int n = fgetc(stdin);
+  return n>=0? m_c32(n) : m_f64(0);
+}
+B tFlush_c1(B t, B x) {
+  fflush(stdout);
+  fflush(stderr);
+  return x;
+}
+B tOutRaw_c1(B t, B x) {
+  file_wBytes(stdout, bi_N, x);
+  return x;
+}
+B tErrRaw_c1(B t, B x) {
+  file_wBytes(stdout, bi_N, x);
+  return x;
+}
+
+static B termNS;
+B getTermNS() {
+  if (termNS.u == 0) {
+    #define F(X) inc(bi_##X),
+    Body* d = m_nnsDesc("flush", "raw", "charb", "charn", "outraw", "errraw");
+    termNS =  m_nns(d,F(tFlush)F(tRaw)F(tCharB)F(tCharN)F(tOutRaw)F(tErrRaw));
+    #undef F
+    gc_add(termNS);
+  }
+  return inc(termNS);
+}
 
 
 
@@ -1014,19 +1032,6 @@ B getBitNS() {
     gc_add(bitNS);
   }
   return inc(bitNS);
-}
-
-
-static B termNS;
-B getTermNS() {
-  if (termNS.u == 0) {
-    #define F(X) inc(bi_##X),
-    Body* d = m_nnsDesc("flush", "raw", "charb", "charn");
-    termNS =  m_nns(d,F(tFlush)F(tRaw)F(tCharB)F(tCharN));
-    #undef F
-    gc_add(termNS);
-  }
-  return inc(termNS);
 }
 
 B getInternalNS(void);

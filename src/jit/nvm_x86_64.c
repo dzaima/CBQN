@@ -480,15 +480,15 @@ void freeOpt(OptRes o) {
   static void write_asm(u8* p, u64 sz) {
     i32* rp; B r = m_i32arrv(&rp, sz);
     for (u64 i = 0; i < sz; i++) rp[i] = p[i];
-    file_wBytes(m_str8l("asm_bin"), r); dec(r);
+    path_wBytes(m_str8l("asm_bin"), r); dec(r);
     char off[20]; snprintf(off, 20, "%p", p);
     B o = m_str8l(off);
-    file_wChars(m_str8l("asm_off"), o); dec(o);
+    path_wChars(m_str8l("asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
     F(POPS)F(INC)F(FN1C)F(FN1O)F(FN2C)F(FN2O)F(FN1Oi)F(FN2Oi)F(ARR_0)F(ARR_2)F(ARR_p)F(DFND_0)F(DFND_1)F(DFND_2)F(MD1C)F(MD2C)F(MD2R)F(TR2D)F(TR3D)F(TR3O)F(NOVAR)F(EXTO)F(EXTU)F(SETN)F(SETU)F(SETM)F(SETC)F(SETH1)F(SETH2)F(PRED1)F(PRED2)F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FLDO)F(VFYM)F(ALIM)F(CHKV)F(FAIL)F(RETD)
     #undef F
-    file_wChars(m_str8l("asm_sed"), s); dec(s);
+    path_wChars(m_str8l("asm_sed"), s); dec(s);
   }
 #endif
 

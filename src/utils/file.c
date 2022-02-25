@@ -49,7 +49,7 @@ I8Arr* stream_bytes(FILE* f) {
   return toI8Arr(r);
 }
 
-I8Arr* file_bytes(B path) { // consumes
+I8Arr* path_bytes(B path) { // consumes
   FILE* f = file_open(path, "read", "r");
   int seekRes = fseek(f, 0, SEEK_END);
   I8Arr* src;
@@ -65,11 +65,11 @@ I8Arr* file_bytes(B path) { // consumes
   fclose(f);
   return src;
 }
-B file_chars(B path) { // consumes
-  return fromUTF8a(file_bytes(path));
+B path_chars(B path) { // consumes
+  return fromUTF8a(path_bytes(path));
 }
-B file_lines(B path) { // consumes; TODO rewrite this, it's horrible
-  I8Arr* tf = file_bytes(path);
+B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
+  I8Arr* tf = path_bytes(path);
   usz ia = tf->ia; u8* p = (u8*)tf->a;
   usz lineCount = 0;
   for (usz i = 0; i < ia; i++) {
@@ -172,7 +172,7 @@ B path_abs(B path) {
 }
 
 
-void file_wChars(B path, B x) { // consumes path
+void path_wChars(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
   
   u64 len = utf8lenB(x);
@@ -184,9 +184,7 @@ void file_wChars(B path, B x) { // consumes path
   dec(path);
   fclose(f);
 }
-void file_wBytes(B path, B x) { // consumes path
-  FILE* f = file_open(path, "write to", "w");
-  
+void file_wBytes(FILE* f, B name, B x) {
   u64 len = a(x)->ia;
   TALLOC(char, val, len);
   SGetU(x)
@@ -195,13 +193,19 @@ void file_wBytes(B path, B x) { // consumes path
     val[i] = isNum(c)? o2iu(c) : o2c(c);
   }
   
-  if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
+  if (fwrite(val, 1, len, f) != len) {
+    if (q_N(name)) thrM("Error writing to file");
+    else thrF("Error writing to file \"%R\"", name);
+  }
   TFREE(val);
-  dec(path);
+}
+void path_wBytes(B path, B x) { // consumes path
+  FILE* f = file_open(path, "write to", "w");
+  file_wBytes(f, path, x);
   fclose(f);
 }
 
-B file_list(B path) {
+B path_list(B path) {
   DIR* d = dir_open(path);
   struct dirent *c;
   B res = emptySVec();
@@ -217,7 +221,7 @@ B file_list(B path) {
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char file_type(B path) {
+char path_type(B path) {
   char* p = toCStr(path);
   struct stat path_stat;
   stat(p, &path_stat);
