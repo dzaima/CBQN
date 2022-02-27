@@ -16,40 +16,54 @@ def ty_dbl{T & i32==T} = i64
 def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
 def dcast_i{x} = ext{ty_dbl{type{x}}, x}
 
-# + & -
-def arithChk1{F, w:T, x:T, r:T & match{F,__add}} = anyneg{(w^r) & (x^r)}
-def arithChk1{F, w:T, x:T, r:T & match{F,__sub}} = anyneg{(w^x) & (w^r)}
-def arithChk1{F, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{__adds{w,x}!=r}
-def arithChk1{F, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{__subs{w,x}!=r}
+# get mask of first n items; n>0 & n<vcount{T}
+def genmask{T,n & w256{T, 8}} = load{cast_p{[32]i8,  emit{*i8,  '', 'mask8' } + (n^31)}, 0}
+def genmask{T,n & w256{T,16}} = load{cast_p{[16]i16, emit{*i16, '', 'mask16'} + (n^15)}, 0}
+def genmask{T,n & w256{T,32}} = load{cast_p{[ 8]i32, emit{*i32, '', 'mask32'} + (n^7)}, 0}
+def genmask{T,n & w256{T,64}} = load{cast_p{[ 4]i64, emit{*i64, '', 'mask64'} + (n^3)}, 0}
 
-def arithChk2{F, w:T, x:T, i & issigned{rootty{T}}} = {
+def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
+def maskstoreF{p, m, n, x:T} = store{p, n, blendf{load{p,n}, x, m}}
+
+
+# + & -
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub}} = anyneg{M{(w^x) & (w^r)}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{M{__adds{w,x}!=r}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{M{__subs{w,x}!=r}}
+
+def arithChk2{F, M, w:T, x:T, i & issigned{rootty{T}}} = {
   r:= F{w,x}
-  tup{r, arithChk1{F, w, x, r}}
+  tup{r, arithChk1{F, M, w, x, r}}
 }
 
 # ×/∧
-def arithChk2{F, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
+def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
   r:= F{dcast_i{w}, dcast_i{x}}
   tup{r, r!=ext{type{r}, trunc{T, r}}}
 }
 
-def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
+def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
   rl:= __mul  {w,x}
   rh:= __mulhi{w,x}
-  tup{rl, any{rh != rl>>15}}
+  tup{rl, any{M{rh != rl>>15}}}
 }
-def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
+def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   def wp = unpackQ{w, cast_v{T,broadcast{T,0}>w}}
   def xp = unpackQ{x, cast_v{T,broadcast{T,0}>x}}
   def rp = each{__mul, wp, xp}
-  def bad = each{{v}=>(v<<8)>>8 != v, rp}
-  tup{packQ{rp}, any{tupsel{0,bad}|tupsel{1,bad}}}
+  def bad = each{{v}=>cast_v{[16]i16,(v<<8)>>8 != v}, rp}
+  if (M{0}) { # masked check
+    tup{packQ{rp}, any{M{packQ{bad}}}}
+  } else { # unmasked check; can do check in a simpler way
+    tup{packQ{rp}, any{tupsel{0,bad}|tupsel{1,bad}}}
+  }
 }
-def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
+def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
   max:= cast_v{[8]f32, broadcast{[8]u32, 0x4efffffe}}
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, any{cast_v{[8]u32, emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}
+  tup{w*x, any{M{cast_v{[8]u32, emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}}
   # TODO fallback to the below if the above fails
   # def wp = unpackQ{w, broadcast{T, 0}}
   # def xp = unpackQ{x, broadcast{T, 0}}
@@ -58,41 +72,44 @@ def arithChk2{F, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
   # def bad = each{{v}=>{
   #   ((cast_v{T2,v} + broadcast{T2,0x80000000}) ^ broadcast{T2, cast{i64,1}<<63}) > broadcast{T2, cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}}
   # }, rp}
-  # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}}
+  # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}} TODO use M
 }
 
 
 # f64
-def arithChk3{F, w:T, x:T, i} = {
-  def r2 = arithChk2{F, w, x, i}
+def arithChk3{F, M, w:T, x:T, i} = {
+  def r2 = arithChk2{F, M, w, x, i}
   if (rare{tupsel{1,r2}}) return{i}
   tupsel{0,r2}
 }
 
-def arithChk3{F, w:T, x:T, i & f64==rootty{T}} = F{w,x}
+def arithChk3{F, M, w:T, x:T, i & f64==rootty{T}} = F{w,x}
+
+def arithAny{VT, F, W, X, r, len} = {
+  def bam = vcount{VT}
+  def vv = len/bam
+  @forv{VT} (r over i from 0 to vv) r = arithChk3{F, {x}=>x, W{i}, X{i}, i*bam}
+  left:= len&(bam-1)
+  if (left!=0) {
+    m:= genmask{VT, left}
+    def mask{x:X} = x&cast_v{X,m}
+    def mask{x==0} = 1
+    rv:= arithChk3{F, mask, W{vv}, X{vv}, vv*bam}
+    maskstoreF{cast_p{VT,r}, m, vv, rv}
+  }
+  len
+}
 
 def arithAA{VT, F, w, x, r, len} = {
-  def bam = vcount{VT}
-  def vv = len/bam
-  @forv{VT} (w,x,r over i from 0 to vv) r = arithChk3{F, w, x, i*bam}
-  @for (w,x,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
-  len
+  arithAny{VT, F, {i}=>load{cast_p{VT,w}, i}, {i}=>load{cast_p{VT,x}, i}, r, len}
 }
 def arithAS{VT, F, w, x, r, len} = {
-  def bam = vcount{VT}
-  def vv = len/bam
   xv:= broadcast{VT, x}
-  @forv{VT} (w,r over i from 0 to vv) r = arithChk3{F, w, xv, i*bam}
-  @for (w,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
-  len
+  arithAny{VT, F, {i}=>load{cast_p{VT,w}, i}, {i}=>xv, r, len}
 }
 def arithSA{VT, F, w, x, r, len} = {
-  def bam = vcount{VT}
-  def vv = len/bam
   wv:= broadcast{VT, w}
-  @forv{VT} (x,r over i from 0 to vv) r = arithChk3{F, wv, x, i*bam}
-  @for (x,r over i from vv*bam to len) r = arithChk3{F, w, x, i}
-  len
+  arithAny{VT, F, {i}=>wv, {i}=>load{cast_p{VT,x}, i}, r, len}
 }
 
 

@@ -220,7 +220,9 @@ int main(int argc, char* argv[]) {
                 B val = e->vars[i];
                 e->vars[i] = bi_noVar;
                 dec(val);
-                if (!gc_depth) gc_forceGC();
+                #if ENABLE_GC
+                  if (!gc_depth) gc_forceGC();
+                #endif
                 goto cont;
               }
             }

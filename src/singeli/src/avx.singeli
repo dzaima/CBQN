@@ -20,7 +20,6 @@ def cast_vp{T, x & w256{T}} = emit{*T, '(void*)', x}
 def cast_v{R, x:S & w256i{R   } & w256{S}} = emit{R, '(__m256i)', x}
 def cast_v{R, x:S & w256f{R,32} & w256{S}} = emit{R, '(__m256)',  x}
 def cast_v{R, x:S & w256f{R,64} & w256{S}} = emit{R, '(__m256d)', x}
-
 def v2i{x:T & w256{T}} = cast_v{[32]u8, x} # for compact casting for the annoying intrinsic type system
 def v2f{x:T & w256{T}} = cast_v{[8]f32, x}
 def v2d{x:T & w256{T}} = cast_v{[4]f64, x}
@@ -30,14 +29,14 @@ def ty_vs{T & w256u{T}} = [vcount{T}](ty_is{eltype{T}})
 def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
 
 # load & store
-def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',          emit{T, 'op +', a, n}}
-def loada{a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_load_si256',           emit{T, 'op +', a, n}}
-def load {a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_loadu_pd', cast_p{f64, emit{T, 'op +', a, n}}}
-def loada{a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_load_pd',  cast_p{f64, emit{T, 'op +', a, n}}}
-def store {a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_storeu_si256',          emit{T, 'op +', a, n}, v}
-def storea{a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_store_si256',           emit{T, 'op +', a, n}, v}
-def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', cast_p{f64, emit{T, 'op +', a, n}}, v}
-def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  cast_p{f64, emit{T, 'op +', a, n}}, v}
+def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',          a+n}
+def loada{a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_load_si256',           a+n}
+def load {a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_loadu_pd', cast_p{f64, a+n}}
+def loada{a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_load_pd',  cast_p{f64, a+n}}
+def store {a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_storeu_si256',          a+n, v}
+def storea{a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_store_si256',           a+n, v}
+def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', cast_p{f64, a+n}, v}
+def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  cast_p{f64, a+n}, v}
 
 # broadcast
 def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  ext{eltype{T},v}}
@@ -54,9 +53,9 @@ def make{T==[8]i32,a,b,c,d,e,f,g,h} = emit{T,'_mm256_set_epi32',ext{i32,h},ext{i
 def make{T==[16]i16,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p} = emit{T,'_mm256_set_epi16', ext{i16,p},ext{i16,o},ext{i16,n},ext{i16,m},ext{i16,l},ext{i16,k},ext{i16,j},ext{i16,i},ext{i16,h},ext{i16,g},ext{i16,f},ext{i16,e},ext{i16,d},ext{i16,c},ext{i16,b},ext{i16,a}}
 def make{T==[32]i8,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P} = emit{T,'_mm256_set_epi8', ext{i8,P},ext{i8,O},ext{i8,N},ext{i8,M},ext{i8,L},ext{i8,K},ext{i8,J},ext{i8,I},ext{i8,H},ext{i8,G},ext{i8,F},ext{i8,E},ext{i8,D},ext{i8,C},ext{i8,B},ext{i8,A}, ext{i8,p},ext{i8,o},ext{i8,n},ext{i8,m},ext{i8,l},ext{i8,k},ext{i8,j},ext{i8,i},ext{i8,h},ext{i8,g},ext{i8,f},ext{i8,e},ext{i8,d},ext{i8,c},ext{i8,b},ext{i8,a}}
 
-def __xor{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_xor_ps', cast_v{[8]f32, a}, cast_v{[8]f32, b}}}
-def __and{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_and_ps', cast_v{[8]f32, a}, cast_v{[8]f32, b}}}
-def __or {a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_or_ps',  cast_v{[8]f32, a}, cast_v{[8]f32, b}}}
+def __xor{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b}}}
+def __and{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}}
+def __or {a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}}
 
 def __not{a:T & w256u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
 
@@ -77,7 +76,7 @@ def __div{a:T,b:T & T==[8]f32} = emit{T, '_mm256_div_ps', a, b}
 def   max{a:T,b:T & T==[8]f32} = emit{T, '_mm256_max_ps', a, b}
 def   min{a:T,b:T & T==[8]f32} = emit{T, '_mm256_min_ps', a, b}
 def  sqrt{a:T,b:T & T==[8]f32} = emit{T, '_mm256_sqrt_ps', a, b}
-def   abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, cast_v{[8]f32, broadcast{[8]u32, 0x7FFFFFFF}}}
+def   abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, v2f{broadcast{[8]u32, 0x7FFFFFFF}}}
 def floor{a:[8]f32} = emit{[8]f32, '_mm256_floor_ps', a}
 def  ceil{a:[8]f32} = emit{[8]f32, '_mm256_ceil_ps', a}
 
@@ -89,7 +88,7 @@ def __div{a:T,b:T & T==[4]f64} = emit{T, '_mm256_div_pd', a, b}
 def   max{a:T,b:T & T==[4]f64} = emit{T, '_mm256_max_pd', a, b}
 def   min{a:T,b:T & T==[4]f64} = emit{T, '_mm256_min_pd', a, b}
 def  sqrt{a:T,b:T & T==[4]f64} = emit{T, '_mm256_sqrt_pd', a, b}
-def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, cast_v{[4]f64, broadcast{[4]u64, (cast{u64,1}<<63)-1}}}
+def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, v2d{broadcast{[4]u64, (cast{u64,1}<<63)-1}}}
 def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
@@ -104,11 +103,11 @@ def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
 # mixed-width operations
-def half{x:[8]i32, i & knum{i}} = emit{[4]i32, '_mm256_extracti128_si256', x, i}
-def pair{a:[4]i32,b:[4]i32} = emit{[8]i32, '_mm256_setr_m128i', a, b}
+def half{x:T, i & w256{T} & knum{i}} = cast_v{[vcount{T}/2](eltype{T}), emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}}
+def pair{a:T,b:T & width{T}==128} = cast_v{T, emit{[8]i32, '_mm256_setr_m128i', a, b}}
 
 # mask stuff
-def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', cast_v{[8]f32, x}}
-def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', cast_v{[4]f64, x}}
+def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
+def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
 def any{x:T & w256i{T}} = getmask{x}!=0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
 def anyneg{x:T & w256s{T}} = getmask{x}!=0

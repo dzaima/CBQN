@@ -1,0 +1,22 @@
+def wgen128{F} = {
+  def r{T} = 0
+  def r{T & width{T}==128} = F{eltype{T}}
+  def r{T,w} = 0
+  def r{T,w & width{T}==128} = F{eltype{T}} & (width{eltype{T}}==w)
+  r
+}
+def w128{T} = width{T}==128
+def w128{T, w} = 0
+def w128{T, w & width{T}==128 & width{eltype{T}}==w} = 1
+def w128i = wgen128{{T} => isint{T}}
+def w128s = wgen128{{T} => isint{T} &   issigned{T}}
+def w128u = wgen128{{T} => isint{T} & isunsigned{T}}
+def w128f = wgen128{{T} => isfloat{T}}
+
+def cast_v{T, x:S & match{show{T},show{type{x}}}} = x
+def cast_v{R, x:S & w128i{R   } & w128{S}} = emit{R, '(__m128i)', x}
+def cast_v{R, x:S & w128f{R,32} & w128{S}} = emit{R, '(__m128)',  x}
+def cast_v{R, x:S & w128f{R,64} & w128{S}} = emit{R, '(__m128d)', x}
+def v2i{x:T & w128{T}} = cast_v{[16]u8, x} # for compact casting for the annoying intrinsic type system
+def v2f{x:T & w128{T}} = cast_v{[4]f32, x}
+def v2d{x:T & w128{T}} = cast_v{[2]f64, x}

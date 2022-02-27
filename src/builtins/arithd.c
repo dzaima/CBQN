@@ -6,6 +6,11 @@
 #define BCALL(N, X) N(b(X))
 #define interp_f64(X) b(X).f
 
+static i8 mask8[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static i16 mask16[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static i32 mask32[] = {-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0};
+static i64 mask64[] = {-1,-1,-1,0,0,0};
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "../singeli/gen/dyarith.c"
