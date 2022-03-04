@@ -197,12 +197,14 @@ int main(int argc, char* argv[]) {
         } else if (isCmd(cmdS, &cmdE, "mem ")) {
           bool sizes = 0;
           bool types = 0;
+          bool freed = 0;
           char c;
           while ((c=*(cmdE++)) != 0) {
             if (c=='t') types=1;
             if (c=='s') sizes=1;
+            if (c=='f') freed=1;
           }
-          heap_printInfo(sizes, types);
+          heap_printInfo(sizes, types, freed);
           goto cont;
         } else if (isCmd(cmdS, &cmdE, "erase ")) {
           char* name = cmdE;

@@ -85,6 +85,17 @@ void BN(forHeap)(V2v f) {
     }
   }
 }
+void BN(forFreedHeap)(V2v f) {
+  for (u64 i = 0; i < alSize; i++) {
+    AllocInfo ci = al[i];
+    Value* s = ci.p;
+    Value* e = (Value*)(ci.sz + (u8*)ci.p);
+    while (s!=e) {
+      if (s->type==t_empty) f(s);
+      s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
+    }
+  }
+}
 
 #undef MMAP
 #undef AllocInfo

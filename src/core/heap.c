@@ -51,17 +51,25 @@ void heap_PIFn(Value* v) {
   heap_PISizes[v->type]+= mm_size(v);
 }
 
-void heap_printInfo(bool sizes, bool types) {
+static u64 heap_PIFreed[128];
+void heap_PIFreedFn(Value* v) {
+  heap_PIFreed[v->mmInfo&127]++;
+}
+
+void mm_forFreedHeap(V2v f);
+void heap_printInfo(bool sizes, bool types, bool freed) {
   u64 total = mm_heapAlloc;
   u64 used = mm_heapUsed();
   printf("RAM allocated: "N64u"\n", total);
   printf("heap in use: "N64u"\n", used);
   #if MM!=0
     if (sizes) {
-      i32 count = sizeof(mm_ctrs)/8;
-      for (i32 i = 0; i < count; i++) {
-        u64 count = mm_ctrs[i];
-        if (count>0) printf("size %llu: "N64u"\n", i>64? 1ULL<<(i*3) : 1ULL<<i, count);
+      for (i32 i = 2; i < 64; i++) {
+        for (i32 j = 0; j < MM; j++) {
+          i32 o = i-j;
+          u64 count = mm_ctrs[o + j*64];
+          if (count>0) printf("size %llu: "N64u"\n", (1ULL<<o)*(j?3:1), count);
+        }
       }
     }
     if (types) {
@@ -70,6 +78,17 @@ void heap_printInfo(bool sizes, bool types) {
       for (i32 i = 0; i < t_COUNT; i++) {
         u64 count = heap_PICounts[i];
         if (count>0) printf("type %d/%s: count "N64u", total size "N64u"\n", i, type_repr(i), count, heap_PISizes[i]);
+      }
+    }
+    if (freed) {
+      for (i32 i = 0; i < MM*64; i++) heap_PIFreed[i] = 0;
+      mm_forFreedHeap(heap_PIFreedFn);
+      for (i32 i = 2; i < 64; i++) {
+        for (i32 j = 0; j < MM; j++) {
+          i32 o = i-j;
+          u64 count = heap_PIFreed[o + j*64];
+          if (count>0) printf("freed size %llu: "N64u"\n", (1ULL<<o)*(j?3:1), count);
+        }
       }
     }
   #endif

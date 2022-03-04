@@ -35,6 +35,10 @@ void mm_forHeap(V2v f) {
   b1_forHeap(f);
   b3_forHeap(f);
 }
+void mm_forFreedHeap(V2v f) {
+  b1_forFreedHeap(f);
+  b3_forFreedHeap(f);
+}
 
 u64 mm_heapUsed() {
   u64 r = 0;
