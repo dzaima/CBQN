@@ -45,10 +45,13 @@ src/
 
 ## Base
 
-`B` represents any BQN object. Some are heap-allocated, some are not.
+`B` represents any BQN object. It's a 64-bit NaN-boxed value; some of the NaN-boxed values, determined by the top 16 bits, are heap-allocated (i.e. low 48 bits are a `Value*`), some aren't:
 ```C
 Type checks (all are safe to execute on any B object):
   test           tag    description     heap-allocated
+  isF64(x)     F64_TAG  a number        no
+  isChr(x)     C32_TAG  a character     no
+  isAtm(x)      [many]  !isArr(x)       depends
   isVal(x)      [many]  heap-allocated  yes
   isFun(x)     FUN_TAG  a function      yes
   isMd1(x)     MD1_TAG  a 1-modifier    yes
@@ -56,12 +59,9 @@ Type checks (all are safe to execute on any B object):
   isMd (x)      [many]  any modifier    yes
   isCallable(x) [many]  isFun|isMd      yes
   isArr(x)     ARR_TAG  an array type   yes
-  isAtm(x)      [many]  !isArr(x)       depends
-  isChr(x)     C32_TAG  a character     no
-  isF64(x)     F64_TAG  a number        no
   isNsp(x)     NSP_TAG  a namespace     yes
   isObj(x)     OBJ_TAG  internal        yes
-  and then there are some extra types for variables for the VM & whatever; see h.h *_TAG definitions
+  and then there are some extra types for variable slot references for the VM & whatever; see h.h *_TAG definitions
 
 Functions for converting/using basic types:
   m_f64(x)  // f64 → B
@@ -85,17 +85,17 @@ Functions for converting/using basic types:
   noFill(x)    // if x represents undefined fill (returned by getFill*; ≡ bi_noFill)
   tag(x,*_TAG) // pointer → B
 
-See src/h.h for more basic functions
+See src/h.h for more basics
 ```
 
 
 All heap-allocated objects have a type - `t_i32arr`, `t_f64slice`, `t_funBl`, `t_temp`, etc. Full list is at `#define FOR_TYPE` in `src/h.h`.
 
-An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
+An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
 
-A heap-allocated object of type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object.
+A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object. Note that the type is separate from the tag used for NaN-boxing.
 
-The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)`/`ptr_inc(x)` will return the argument, so you can use it inline, and `dec`/`ptr_dec` will return the object to the memory manager if the refcount as a result goes to zero.
+The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will return the object to the memory manager if the refcount as a result goes to zero.
 
 Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running:
 ```bash
@@ -128,7 +128,7 @@ All virtual method accesses require that the argument is heap-allocated.
 
 You can get a virtual function of a `B` object with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
 
-Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h` (and adding the `bi_` prefix).
+Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h`, adding the `bi_` prefix, and invoking it with `c1`/`c2`. Note that these functions consume `w` and `x`, but leave the refcout of `f` untouched. (usually, which arguments are consumed is specified in a comment after either the function definition or prototype)
 
 Calling a modifier involves deriving it with `m1_d`/`m2_d`, using a regular `c1`/`c2`, and managing the refcounts of everything while at that.
 
@@ -152,6 +152,8 @@ For functions, in most cases, the `t` parameter (representing `𝕊`/"this") is 
 
 For modifiers, the `d` parameter stores the operands and the modifier itself. Use `d->f` for `𝔽`, `d->g` for `𝔾`, `d->m1` for `_𝕣`, `d->m2` for `_𝕣_`, and `tag(d,FUN_TAG)` for `𝕊`.
 
+The implementation should consume the `w`/`x` arguments, but not `t`/`d`.
+
 ## Inverses
 
 ```C
@@ -169,7 +171,7 @@ c(BMd2,bi_some2mod)->im = some2mod_im; // you get the idea
 
 ## Arrays
 
-If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (`prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
+If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (use `prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
 
 The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field. Otherwise, it'll point inside a `t_shape` object.
 
