@@ -96,6 +96,7 @@ B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
 
+// comp_currEnvPos/comp_currPath/comp_currArgs/comp_currSrc are only valid while evaluating through bqn_comp*; comp_currRe is valid at all times
 i64 comp_currEnvPos;
 B comp_currPath;
 B comp_currArgs;
@@ -275,7 +276,10 @@ B getPrimitives() {
 }
 
 B rebqn_exec(B str, B path, B args, B o) {
-  B prevRe = comp_currRe; comp_currRe = inc(o);
+  B prevRe = comp_currRe;
+  if (CATCH) { comp_currRe = prevRe; rethrow(); }
+  comp_currRe = inc(o);
+  
   B* op = harr_ptr(o);
   i32 replMode = o2iu(op[0]);
   Scope* sc = c(Scope, op[1]);
@@ -296,6 +300,8 @@ B rebqn_exec(B str, B path, B args, B o) {
     ptr_dec(block);
   }
   dec(o);
+  
+  popCatch();
   return res;
 }
 

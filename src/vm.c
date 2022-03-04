@@ -1221,18 +1221,17 @@ NOINLINE void printErrMsg(B msg) {
 }
 
 
-NOINLINE NORETURN void thr(B msg) {
+NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
   
   if (cf>cfStart) { // something wants to catch errors
-    thrownMsg = msg;
     cf--;
     
     B* gStackNew = gStackStart + cf->gsDepth;
     assert(gStackNew<=gStack);
     while (gStack!=gStackNew) dec(*--gStack);
-    envPrevHeight = envCurr-envStart + 1;
+    if (!rethrow) envPrevHeight = envCurr-envStart + 1;
     unwindEnv(envStart + cf->envDepth - 1);
     
     
@@ -1241,7 +1240,7 @@ NOINLINE NORETURN void thr(B msg) {
     longjmp(cf->jmp, 1);
   } else { // uncaught error
     assert(cf==cfStart);
-    printf("Error: "); printErrMsg(msg); putchar('\n'); fflush(stdout);
+    printf("Error: "); printErrMsg(thrownMsg); putchar('\n'); fflush(stdout);
     Env* envEnd = envCurr+1;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
@@ -1251,6 +1250,14 @@ NOINLINE NORETURN void thr(B msg) {
     exit(1);
     #endif
   }
+}
+
+NOINLINE NORETURN void thr(B msg) {
+  thrownMsg = msg;
+  throwImpl(false);
+}
+NOINLINE NORETURN void rethrow() {
+  throwImpl(true);
 }
 
 NOINLINE void freeThrown() {
