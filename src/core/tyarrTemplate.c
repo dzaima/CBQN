@@ -22,7 +22,7 @@ static void TP(,arr_init)() {
   TIi(T_ARR,freeO) = tyarr_freeO;    TIi(T_SLICE,freeO) =     slice_freeO;
   TIi(T_ARR,freeF) = tyarr_freeF;    TIi(T_SLICE,freeF) =     slice_freeF;
   TIi(T_ARR,visit) = noop_visit;     TIi(T_SLICE,visit) =     slice_visit;
-  TIi(T_ARR,print) =    arr_print;   TIi(T_SLICE,print) = arr_print;
+  TIi(T_ARR,print) = farr_print;     TIi(T_SLICE,print) = farr_print;
   TIi(T_ARR,isArr) = true;           TIi(T_SLICE,isArr) = true;
   TIi(T_ARR,arrD1) = true;           TIi(T_SLICE,arrD1) = true;
   TIi(T_ARR,elType) = TP(el_,);      TIi(T_SLICE,elType) = TP(el_,);

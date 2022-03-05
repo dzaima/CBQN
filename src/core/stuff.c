@@ -91,76 +91,77 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   return n;
 }
 
-NOINLINE void arr_print(B x) { // should accept refc=0 arguments for debugging purposes
+void fprint(FILE* f, B x);
+void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   SGetU(x)
   usz ia = a(x)->ia;
   if (r!=1) {
     if (r==0) {
-      printf("<");
-      print(GetU(x,0));
+      fprintf(f, "<");
+      fprint(f, GetU(x,0));
       return;
     }
     usz* sh = a(x)->sh;
     for (i32 i = 0; i < r; i++) {
-      if(i==0)printf(N64d,(u64)sh[i]);
-      else printf("‿"N64d,(u64)sh[i]);
+      if(i==0)fprintf(f, N64d,(u64)sh[i]);
+      else fprintf(f, "‿"N64d,(u64)sh[i]);
     }
-    printf("⥊");
+    fprintf(f, "⥊");
   } else if (ia>0) {
     for (usz i = 0; i < ia; i++) {
       B c = GetU(x,i);
       if (!isC32(c) || (u32)c.u=='\n') goto reg;
     }
-    printf("\"");
-    for (usz i = 0; i < ia; i++) printUTF8((u32)GetU(x,i).u); // c32, no need to decrement
-    printf("\"");
+    fprintf(f, "\"");
+    for (usz i = 0; i < ia; i++) fprintUTF8(f, (u32)GetU(x,i).u); // c32, no need to decrement
+    fprintf(f, "\"");
     return;
   }
   reg:;
-  printf("⟨");
+  fprintf(f, "⟨");
   for (usz i = 0; i < ia; i++) {
-    if (i!=0) printf(", ");
-    print(GetU(x,i));
+    if (i!=0) fprintf(f, ", ");
+    fprint(f, GetU(x,i));
   }
-  printf("⟩");
+  fprintf(f, "⟩");
 }
 
-NOINLINE void print(B x) {
+void fprint(FILE* f, B x) {
   if (isF64(x)) {
     NUM_FMT_BUF(buf, x.f);
-    printf("%s", buf);
+    fprintf(f, "%s", buf);
   } else if (isC32(x)) {
-    if ((u32)x.u>=32) { printf("'"); printUTF8((u32)x.u); printf("'"); }
-    else if((u32)x.u>15) printf("\\x%x", (u32)x.u);
-    else printf("\\x0%x", (u32)x.u);
+    if ((u32)x.u>=32) { fprintf(f, "'"); printUTF8((u32)x.u); fprintf(f, "'"); }
+    else if((u32)x.u>15) fprintf(f, "\\x%x", (u32)x.u);
+    else fprintf(f, "\\x0%x", (u32)x.u);
   } else if (isVal(x)) {
     #ifdef DEBUG
     if (isVal(x) && (v(x)->type==t_freed || v(x)->type==t_empty)) {
       u8 t = v(x)->type;
       v(x)->type = v(x)->flags;
-      printf(t==t_freed?"FREED:":"EMPTY:");
-      TI(x,print)(x);
+      fprintf(f, t==t_freed?"FREED:":"EMPTY:");
+      TI(x,print)(f, x);
       v(x)->type = t;
       return;
     }
     #endif
-    TI(x,print)(x);
+    TI(x,print)(f, x);
   }
-  else if (isVar(x)) printf("(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
-  else if (isExt(x)) printf("(extvar d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
-  else if (x.u==bi_N.u) printf("·");
-  else if (x.u==bi_optOut.u) printf("(value optimized out)");
-  else if (x.u==bi_noVar.u) printf("(unset variable placeholder)");
-  else if (x.u==bi_okHdr.u) printf("(accepted SETH placeholder)");
-  else if (x.u==bi_noFill.u) printf("(no fill placeholder)");
-  else printf("(todo tag "N64x")", x.u>>48);
+  else if (isVar(x)) fprintf(f, "(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
+  else if (isExt(x)) fprintf(f, "(extvar d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
+  else if (x.u==bi_N.u) fprintf(f, "·");
+  else if (x.u==bi_optOut.u) fprintf(f, "(value optimized out)");
+  else if (x.u==bi_noVar.u) fprintf(f, "(unset variable placeholder)");
+  else if (x.u==bi_okHdr.u) fprintf(f, "(accepted SETH placeholder)");
+  else if (x.u==bi_noFill.u) fprintf(f, "(no fill placeholder)");
+  else fprintf(f, "(todo tag "N64x")", x.u>>48);
 }
 
-NOINLINE void printRaw(B x) {
+NOINLINE void fprintRaw(FILE* f, B x) {
   if (isAtm(x)) {
-    if (isF64(x)) { NUM_FMT_BUF(buf, x.f); printf("%s", buf); }
-    else if (isC32(x)) printUTF8((u32)x.u);
+    if (isF64(x)) { NUM_FMT_BUF(buf, x.f); fprintf(f, "%s", buf); }
+    else if (isC32(x)) fprintUTF8(f, (u32)x.u);
     else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
   } else {
     usz ia = a(x)->ia;
@@ -168,13 +169,24 @@ NOINLINE void printRaw(B x) {
     for (usz i = 0; i < ia; i++) {
       B c = GetU(x,i);
       #if !CATCH_ERRORS
-      if (c.u==0 || noFill(c)) { printf(" "); continue; }
+      if (c.u==0 || noFill(c)) { fprintf(f, " "); continue; }
       #endif
       if (!isC32(c)) thrM("bad printRaw argument: expected all character items");
-      printUTF8((u32)c.u);
+      fprintUTF8(f, (u32)c.u);
     }
   }
 }
+
+NOINLINE void printRaw(B x) {
+  fprintRaw(stdout, x);
+}
+NOINLINE void arr_print(B x) {
+  farr_print(stdout, x);
+}
+NOINLINE void print(B x) {
+  fprint(stdout, x);
+}
+
 i32 num_fmt(char buf[30], f64 x) {
   // for (int i = 0; i < 30; i++) buf[i] = 'a';
   snprintf(buf, 30, "%.16g", x); // should be %.17g to (probably?) never lose precision, but that also makes things ugly

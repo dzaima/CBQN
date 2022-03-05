@@ -317,8 +317,11 @@ static void  mm_visitP(void* x);
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
-void printRaw(B x);       // doesn't consume
+void fprint    (FILE* f, B x); // doesn't consume
+void fprintRaw (FILE* f, B x); // doesn't consume
+void farr_print(FILE* f, B x); // doesn't consume
 void print(B x);          // doesn't consume
+void printRaw(B x);       // doesn't consume
 void arr_print(B x);      // doesn't consume
 bool equal(B w, B x);     // doesn't consume
 bool eequal(B w, B x);    // doesn't consume
@@ -443,6 +446,7 @@ typedef struct Md2D Md2D;
 
 typedef bool (*  B2b)(B);
 typedef void (*  B2v)(B);
+typedef void (* FB2v)(FILE*, B);
 typedef Arr* (*BSS2A)(B, usz, usz);
 typedef B (*    AS2B)(Arr*, usz);
 typedef B (*    BS2B)(B, usz);
@@ -492,7 +496,7 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(B2b, canStore) /* doesn't consume */ \
   F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \
   \
-  F(B2v, print) /* doesn't consume */ \
+  F(FB2v, print) /* doesn't consume */ \
   F(V2v, visit) /* call mm_visit for all referents */ \
   F(V2v, freeO) /* like freeF, but doesn't call mm_free for GC to be able to clear cycles */ \
   F(B2B, decompose) /* consumes; must return a HArr */ \

@@ -139,17 +139,17 @@ static void harrP_visit(Value* x) { assert(x->type == t_harrPartial);
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
 static B harrP_get(Arr* x, usz n) { err("getting item from t_harrPartial"); }
-static void harrP_print(B x) {
+static void harrP_print(FILE* f, B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;
   usz ia = a(x)->ia;
-  printf("(partial HArr "N64d"/"N64d": ⟨", (u64)am, (u64)ia);
+  fprintf(f, "(partial HArr "N64d"/"N64d": ⟨", (u64)am, (u64)ia);
   for (usz i = 0; i < ia; i++) {
-    if (i) printf(", ");
-    if (i>=am) printf("?");
-    else print(p[i]);
+    if (i) fprintf(f, ", ");
+    if (i>=am) fprintf(f, "?");
+    else fprint(f, p[i]);
   }
-  printf("⟩)");
+  fprintf(f, "⟩)");
 }
 
 void harr_init() {
@@ -159,7 +159,7 @@ void harr_init() {
   TIi(t_harr,freeO) = harr_freeO; TIi(t_hslice,freeO) =  slice_freeO; TIi(t_harrPartial,freeO) = harrP_freeO;
   TIi(t_harr,freeF) = harr_freeF; TIi(t_hslice,freeF) =  slice_freeF; TIi(t_harrPartial,freeF) = harrP_freeF;
   TIi(t_harr,visit) = harr_visit; TIi(t_hslice,visit) =  slice_visit; TIi(t_harrPartial,visit) = harrP_visit;
-  TIi(t_harr,print) =  arr_print; TIi(t_hslice,print) = arr_print;    TIi(t_harrPartial,print) = harrP_print;
+  TIi(t_harr,print) = farr_print; TIi(t_hslice,print) = farr_print;   TIi(t_harrPartial,print) = harrP_print;
   TIi(t_harr,isArr) = true;       TIi(t_hslice,isArr) = true;
   TIi(t_harr,canStore) = harr_canStore;
   bi_emptyHVec = m_harrUv(0).b; gc_add(bi_emptyHVec);

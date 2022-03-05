@@ -124,7 +124,7 @@ static void bitarr_init() {
   TIi(t_bitarr,freeO) =  tyarr_freeO;
   TIi(t_bitarr,freeF) =  tyarr_freeF;
   TIi(t_bitarr,visit) =   noop_visit;
-  TIi(t_bitarr,print) =    arr_print;
+  TIi(t_bitarr,print) =   farr_print;
   TIi(t_bitarr,isArr) = true;
   TIi(t_bitarr,arrD1) = true;
   TIi(t_bitarr,elType) = el_bit;

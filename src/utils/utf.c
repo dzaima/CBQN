@@ -61,6 +61,12 @@ void printUTF8(u32 c) {
   else if (c<=0xFFFF) printf("%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
   else                printf("%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
 }
+void fprintUTF8(FILE* f, u32 c) {
+  if (c<128) fprintf(f, "%c", c);
+  else if (c<=0x07FF) fprintf(f, "%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );
+  else if (c<=0xFFFF) fprintf(f, "%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
+  else                fprintf(f, "%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
+}
 
 
 u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all chars

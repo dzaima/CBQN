@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
   if (startREPL) {
     repl_init();
     while (CATCH) {
-      printf("Error: "); printErrMsg(thrownMsg); putchar('\n');
+      fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n', stderr);
       vm_pst(envCurr+1, envStart+envPrevHeight);
       freeThrown();
       #ifdef HEAP_VERIFY

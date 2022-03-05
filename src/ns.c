@@ -176,8 +176,8 @@ static void ns_visit(Value* x) {
   mm_visitP(c->desc);
   mm_visitP(c->sc);
 }
-static void ns_print(B x) {
-  putchar('{');
+static void ns_print(FILE* f, B x) {
+  fputc('{', f);
   NSDesc* desc = c(NS,x)->desc;
   Scope* sc = c(NS,x)->sc;
   i32 am = desc->varAm;
@@ -186,13 +186,13 @@ static void ns_print(B x) {
     i32 id = desc->expGIDs[i];
     if (id>=0) {
       if (first) first=false;
-      else printf(" ⋄ ");
-      printRaw(gid2str(id));
-      printf("⇐");
-      print(sc->vars[i]);
+      else fprintf(f," ⋄ ");
+      fprintRaw(f, gid2str(id));
+      fprintf(f, "⇐");
+      fprint(f, sc->vars[i]);
     }
   }
-  putchar('}');
+  fputc('}', f);
 }
 B nsFmt(B x) { // consumes
   B s = emptyCVec();
@@ -213,7 +213,7 @@ B nsFmt(B x) { // consumes
   return s;
 }
 
-static void nsDesc_print(B x) { printf("(namespace description)"); }
+static void nsDesc_print(FILE* f, B x) { fprintf(f, "(namespace description)"); }
 
 
 

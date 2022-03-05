@@ -505,7 +505,7 @@ static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
 DEF_FREE(def) { }
 static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, type_repr(x->type)); }
-static void def_print(B x) { printf("(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
+static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
 static B def_get(Arr* x, usz n) { err("def_get"); }

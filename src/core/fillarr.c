@@ -64,7 +64,7 @@ void fillarr_init() {
   TIi(t_fillarr,freeO) = fillarr_freeO; TIi(t_fillslice,freeO) =     slice_freeO;
   TIi(t_fillarr,freeF) = fillarr_freeF; TIi(t_fillslice,freeF) =     slice_freeF;
   TIi(t_fillarr,visit) = fillarr_visit; TIi(t_fillslice,visit) =     slice_visit;
-  TIi(t_fillarr,print) =     arr_print; TIi(t_fillslice,print) = arr_print;
+  TIi(t_fillarr,print) =    farr_print; TIi(t_fillslice,print) = farr_print;
   TIi(t_fillarr,isArr) = true;          TIi(t_fillslice,isArr) = true;
   TIi(t_fillarr,canStore) = fillarr_canStore;
 }

@@ -946,24 +946,24 @@ void vfymO_visit(Value* x) { mm_visit(((VfyObj*  )x)->obj); }
 void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
 void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) mm_visit(c->vars[i]); }
 
-void comp_print (B x) { printf("(%p: comp)",v(x)); }
-void body_print (B x) { printf("(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
-void block_print(B x) { printf("(%p: block)",v(x)); }
-void scope_print(B x) { printf("(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){printf(" ");print(sc->vars[i]);}printf(")"); }
-void alias_print(B x) { printf("(alias %d of ", c(FldAlias,x)->p); print(c(FldAlias,x)->obj); printf(")"); }
-void vfymO_print(B x) { print(c(FldAlias,x)->obj); }
-void bBlks_print(B x) { printf("(block list)"); }
-void scExt_print(B x) { printf("(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
+void comp_print (FILE* f, B x) { fprintf(f,"(%p: comp)",v(x)); }
+void body_print (FILE* f, B x) { fprintf(f,"(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
+void block_print(FILE* f, B x) { fprintf(f,"(%p: block)",v(x)); }
+void scope_print(FILE* f, B x) { fprintf(f,"(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){fprintf(f," ");fprint(f,sc->vars[i]);}fprintf(f,")"); }
+void alias_print(FILE* f, B x) { fprintf(f,"(alias %d of ", c(FldAlias,x)->p); fprint(f,c(FldAlias,x)->obj); fprintf(f,")"); }
+void vfymO_print(FILE* f, B x) { fprint(f,c(FldAlias,x)->obj); }
+void bBlks_print(FILE* f, B x) { fprintf(f,"(block list)"); }
+void scExt_print(FILE* f, B x) { fprintf(f,"(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
 
-// void funBl_print(B x) { printf("(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
-// void md1Bl_print(B x) { printf("(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
-// void md2Bl_print(B x) { printf("(%p: 2-modifier block bl=%p sc=%p)",v(x),c(Md2Block,x)->bl,c(Md2Block,x)->sc); }
-// void funBl_print(B x) { printf("(function"" block @%d)",c(FunBlock,x)->bl->body->map[0]); }
-// void md1Bl_print(B x) { printf("(1-modifier block @%d)",c(Md1Block,x)->bl->body->map[0]); }
-// void md2Bl_print(B x) { printf("(2-modifier block @%d)",c(Md2Block,x)->bl->body->map[0]); }
-void funBl_print(B x) { printf("{function"" block}"); }
-void md1Bl_print(B x) { printf("{1-modifier block}"); }
-void md2Bl_print(B x) { printf("{2-modifier block}"); }
+// void funBl_print(FILE* f, B x) { fprintf(f,"(%p: function"" block bl=%p sc=%p)",v(x),c(FunBlock,x)->bl,c(FunBlock,x)->sc); }
+// void md1Bl_print(FILE* f, B x) { fprintf(f,"(%p: 1-modifier block bl=%p sc=%p)",v(x),c(Md1Block,x)->bl,c(Md1Block,x)->sc); }
+// void md2Bl_print(FILE* f, B x) { fprintf(f,"(%p: 2-modifier block bl=%p sc=%p)",v(x),c(Md2Block,x)->bl,c(Md2Block,x)->sc); }
+// void funBl_print(FILE* f, B x) { fprintf(f,"(function"" block @%d)",c(FunBlock,x)->bl->body->map[0]); }
+// void md1Bl_print(FILE* f, B x) { fprintf(f,"(1-modifier block @%d)",c(Md1Block,x)->bl->body->map[0]); }
+// void md2Bl_print(FILE* f, B x) { fprintf(f,"(2-modifier block @%d)",c(Md2Block,x)->bl->body->map[0]); }
+void funBl_print(FILE* f, B x) { fprintf(f,"{function"" block}"); }
+void md1Bl_print(FILE* f, B x) { fprintf(f,"{1-modifier block}"); }
+void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 
 B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
 
@@ -1147,28 +1147,28 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     // printf(" inds:%d…%d\n", cs, ce);
     if (CATCH) { // want to try really hard to print errors
       freeThrown();
-      int start = printf("at ");
+      int start = fprintf(stderr, "at ");
       usz srcL = a(src)->ia;
       SGetU(src)
       usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
       usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
       if (ce>srcE) ce = srcE;
       cs-= srcS; ce-= srcS;
-      putchar('\n');
-      for (i32 i = 0; i < cs+start; i++) putchar(' ');
-      for (i32 i = cs; i < ce; i++) putchar('^');
-      putchar('\n');
+      fputc('\n', stderr);
+      for (i32 i = 0; i < cs+start; i++) fputc(' ', stderr);
+      for (i32 i = cs; i < ce; i++) fputc('^', stderr);
+      fputc('\n', stderr);
       return;
     }
     B s = emptyCVec();
-    printRaw(vm_fmtPoint(src, s, comp->path, cs, ce));
-    putchar('\n');
+    fprintRaw(stderr, vm_fmtPoint(src, s, comp->path, cs, ce));
+    fputc('\n', stderr);
     popCatch();
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #ifdef DEBUG
-      if (pos!=-1) printf(N64d": ", pos);
-      printf("source unknown\n");
+      if (pos!=-1) fprintf(stderr, N64d": ", pos);
+      fprintf(stderr, "source unknown\n");
     #endif
   }
 }
@@ -1180,7 +1180,7 @@ NOINLINE void vm_pst(Env* s, Env* e) { // e not included
   while (i>=0) {
     Env* c = s+i;
     if (l>30 && i==l-10) {
-      printf("("N64d" entries omitted)\n", l-20);
+      fprintf(stderr, "("N64d" entries omitted)\n", l-20);
       i = 10;
     }
     Comp* comp = c->sc->body->bl->comp;
@@ -1213,11 +1213,11 @@ NOINLINE void printErrMsg(B msg) {
     SGetU(msg)
     usz msgLen = a(msg)->ia;
     for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
-    printRaw(msg);
+    fprintRaw(stderr,msg);
     return;
   }
   base:
-  print(msg);
+  fprint(stderr, msg);
 }
 
 
@@ -1240,7 +1240,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     longjmp(cf->jmp, 1);
   } else { // uncaught error
     assert(cf==cfStart);
-    printf("Error: "); printErrMsg(thrownMsg); putchar('\n'); fflush(stdout);
+    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n',stderr); fflush(stderr);
     Env* envEnd = envCurr+1;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
