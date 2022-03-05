@@ -997,8 +997,9 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(v(r)->type))) {
     r = taga(copy(xt, r));
   } else if (v(r)->refc!=1) {
+    B pr = r;
     r = taga(TI(r,slice)(r, 0, a(r)->ia));
-    sprnk(v(r),xr);
+    arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   }
   // Cast to output type
   v(r)->type = IS_SLICE(v(r)->type) ? TO_SLICE(rt) : rt;
@@ -1008,7 +1009,8 @@ B bitcast_impl(B el0, B el1, B x) {
     a->ia = zl;
     a->sh = &a->ia;
   } else {
-    if (shObj(x)->refc>1) {
+    if (shObj(r)->refc>1) {
+      shObj(r)->refc--; // won't go to zero as refc>1; preparation for being overwritten by new shape
       usz* zsh = arr_shAlloc(a(r), xr);
       memcpy(zsh, sh, (xr-1)*sizeof(usz));
       sh = zsh;
