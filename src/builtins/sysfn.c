@@ -831,15 +831,16 @@ B sh_c2(B t, B w, B x) {
   
   pollfd ps[3];
   i32 plen = 0;
-  ps[plen++] = (pollfd){.fd=p_err[0], .events=POLLIN};
-  ps[plen++] = (pollfd){.fd=p_out[0], .events=POLLIN};
-  ps[plen++] = (pollfd){.fd=p_in[1], .events=POLLOUT};
+  i32 err_i, out_i, in_i;
+  ps[err_i = plen++] = (pollfd){.fd=p_err[0], .events=POLLIN};
+  ps[out_i = plen++] = (pollfd){.fd=p_out[0], .events=POLLIN};
+  ps[in_i  = plen++] = (pollfd){.fd=p_in[1], .events=POLLOUT};
   
   while (poll(&ps[0], plen - iDone, -1) > 0) {
     shDbg("next poll; revents: out:%d err:%d in:%d\n", ps[0].revents, ps[1].revents, ps[2].revents);
-    if (ps[0].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0)break; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
-    if (ps[1].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0)break; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
-     if (!iDone && ps[2].revents & POLLOUT) {
+    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0)break; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
+    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0)break; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
+     if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
       shDbg("written %zd/"N64u"\n", ww, iLen-iOff);
@@ -848,7 +849,7 @@ B sh_c2(B t, B w, B x) {
         if (iOff==iLen) { iDone=true; shClose(p_in[1]); TFREE(iBuf); shDbg("writing done\n"); }
       }
     }
-    if (ps[0].revents & POLLHUP  &&  ps[1].revents & POLLHUP) { shDbg("HUP end\n"); break; }
+    if (ps[out_i].revents & POLLHUP  &&  ps[err_i].revents & POLLHUP) { shDbg("HUP end\n"); break; }
   }
   
   // free output buffer
