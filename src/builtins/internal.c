@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../utils/mut.h"
+#include "../utils/file.h"
 #include "../builtins.h"
 #include "../ns.h"
 
@@ -257,6 +258,11 @@ static B unshare(B x) {
   }
 }
 
+B heapDump_c1(B t, B x) {
+  cbqn_heapDump();
+  return m_c32(0);
+}
+
 B unshare_c1(B t, B x) {
   if (!isArr(x)) thrM("•internal.Unshare: Argument must be an array");
   B r = unshare(x);
@@ -272,8 +278,8 @@ B getInternalNS() {
     listVariations_def = m_str8l("if");
     gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)F(heapDump));
     #undef F
     gc_add(internalNS);
   }

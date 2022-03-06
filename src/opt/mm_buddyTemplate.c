@@ -1,3 +1,4 @@
+#include "../utils/file.h"
 #define AllocInfo BN(AllocInfo)
 #define buckets   BN(buckets)
 #define al        BN(al)
@@ -94,6 +95,16 @@ void BN(forFreedHeap)(V2v f) {
       if (s->type==t_empty) f(s);
       s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
     }
+  }
+}
+
+void BN(dumpHeap)(FILE* f) {
+  for (u64 i = 0; i < alSize; i++) {
+    AllocInfo ci = al[i];
+    u64 addrI = (u64) ci.p;
+    u8 size[8]; for (i32 i = 0; i < 8; i++) size[i] = (ci.sz>>(8*i)) & 0xff; fwrite(&size, 1, 8, f);
+    u8 addr[8]; for (i32 i = 0; i < 8; i++) addr[i] = (addrI>>(8*i)) & 0xff; fwrite(&addr, 1, 8, f);
+    fwrite(ci.p, 1, ci.sz, f);
   }
 }
 

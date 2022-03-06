@@ -9,3 +9,4 @@ void gc_forceGC() { }
 void gc_visitRoots() { }
 void mm_forHeap(V2v f) { }
 u64 mm_heapUsed() { return 123; } // idk
+void mm_dumpHeap(FILE* f) { }

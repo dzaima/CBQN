@@ -32,6 +32,7 @@ static u64 mm_size(Value* x) {
   return BSZ(x->mmInfo&63);
 }
 void mm_forHeap(V2v f);
+void mm_dumpHeap(FILE* f);
 
 #undef LOG2
 #undef BN

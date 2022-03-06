@@ -236,3 +236,37 @@ char path_type(B path) {
   if (S_ISCHR (mode)) return 'c';
   thrM("Unexpected file type");
 }
+void cbqn_heapDump() {
+  char* name = "CBQNHeapDump";
+  FILE* f = fopen(name, "w");
+  if (f==NULL) {
+    fprintf(stderr, "Failed to dump heap - could not open file for writing\n");
+    return;
+  }
+  // fwrite(&size, 8, 1, f);
+  u8 t8 = 0;
+  fwrite(&t8, 1, 1, f); // version
+  
+  // sizeof(ur), sizeof(usz)
+  u8  urW[4]; for (i32 i = 0; i < 4; i++)  urW[i] = (sizeof(ur )>>(8*i)) & 0xff; fwrite( &urW, 1, 4, f);
+  u8 uszW[4]; for (i32 i = 0; i < 4; i++) uszW[i] = (sizeof(usz)>>(8*i)) & 0xff; fwrite(&uszW, 1, 4, f);
+  
+  // t_names
+  #define F(X) { t8=t_##X; fwrite(&t8, 1, 1, f); char* s = #X; fwrite(s, 1, strlen(s)+1, f); }
+  FOR_TYPE(F)
+  #undef F
+  t8 = 255; fwrite(&t8, 1, 1, f); // end of t_names
+  
+  t8 = 12; fwrite(&t8, 1, 1, f); // number of tag names
+  u8 t16a[2];
+  #define F(X) { \
+    t16a[0] = X##_TAG&0xff; t16a[1] = (X##_TAG>>8)&0xff; fwrite(&t16a, 1, 2, f); \
+    char* s = #X"_TAG"; fwrite(s, 1, strlen(s)+1, f); \
+  }
+  F(C32)F(TAG)F(VAR)F(EXT)F(RAW)F(MD1)F(MD2)F(FUN)F(NSP)F(OBJ)F(ARR)F(VAL)
+  #undef F
+  
+  mm_dumpHeap(f);
+  fprintf(stderr, "Heap dumped to \"%s\"\n", name);
+  fclose(f);
+}

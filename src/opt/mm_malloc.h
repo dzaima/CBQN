@@ -30,6 +30,7 @@ void gc_maybeGC(void);
 void gc_forceGC(void);
 void gc_visitRoots(void);
 void mm_forHeap(V2v f);
+void mm_dumpHeap(FILE* f);
 
 static u64  mm_round(usz x) { return x; }
 static u64  mm_size(Value* x) { return malloc_usable_size(x); }
