@@ -4,7 +4,6 @@
 #define al        BN(al)
 #define alCap     BN(alCap)
 #define alSize    BN(alSize)
-#define str(X) #X
 #ifndef MMAP
   usz getPageSize();
   #define MMAP(SZ) mmap(NULL, (SZ)+getPageSize(), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0)
@@ -98,12 +97,23 @@ void BN(forFreedHeap)(V2v f) {
   }
 }
 
+#define str0(X) #X
+#define str1(X) str0(X)
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
     u64 addrI = (u64) ci.p;
-    u8 size[8]; for (i32 i = 0; i < 8; i++) size[i] = (ci.sz>>(8*i)) & 0xff; fwrite(&size, 1, 8, f);
-    u8 addr[8]; for (i32 i = 0; i < 8; i++) addr[i] = (addrI>>(8*i)) & 0xff; fwrite(&addr, 1, 8, f);
+    char* prefix = str1(BN());
+    u64 vals[3];
+    vals[0] = ci.sz;
+    vals[1] = addrI;
+    vals[2] = strlen(prefix)-1;
+    for (i32 i = 0; i < 3; i++) {
+      u8 buf[8];
+      for (i32 j = 0; j < 8; j++) buf[j] = (vals[i]>>(8*j)) & 0xff;
+      fwrite(&buf, 1, 8, f);
+    }
+    fwrite(prefix, 1, vals[2], f);
     fwrite(ci.p, 1, ci.sz, f);
   }
 }

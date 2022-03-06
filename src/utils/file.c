@@ -236,6 +236,7 @@ char path_type(B path) {
   if (S_ISCHR (mode)) return 'c';
   thrM("Unexpected file type");
 }
+void mmX_dumpHeap();
 void cbqn_heapDump() {
   char* name = "CBQNHeapDump";
   FILE* f = fopen(name, "w");
@@ -267,6 +268,7 @@ void cbqn_heapDump() {
   #undef F
   
   mm_dumpHeap(f);
+  mmX_dumpHeap(f);
   fprintf(stderr, "Heap dumped to \"%s\"\n", name);
   fclose(f);
 }
