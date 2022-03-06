@@ -984,10 +984,11 @@ static u8 typeOfCast(CastType t) {
   }
 }
 B bitcast_impl(B el0, B el1, B x) {
-  CastType xt = getCastType(el0, x);
-  CastType zt = getCastType(el1, bi_N);
   ur xr;
   if (!isArr(x) || (xr=rnk(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
+  
+  CastType xt = getCastType(el0, x);
+  CastType zt = getCastType(el1, bi_N);
   usz* sh = a(x)->sh;
   usz s=xt.s*sh[xr-1], zl=s/zt.s;
   if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
