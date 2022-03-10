@@ -282,17 +282,17 @@ B hash_c2(B t, B w, B x) {
   u64 secret[4]; make_secret(o2i64(w), secret);
   u64 rv = bqn_hash(x, secret);
   dec(x);
-  i32* rp; B r = m_i32arrv(&rp, 4);
-  rp[0] = (u16)(rv>>48); rp[1] = (u16)(rv>>32);
-  rp[2] = (u16)(rv>>16); rp[3] = (u16)(rv    );
+  i32* rp; B r = m_i32arrv(&rp, 2);
+  rp[0] = (u32)(rv>>32);
+  rp[1] = (u32)(rv    );
   return r;
 }
 B hash_c1(B t, B x) {
   u64 rv = bqn_hash(x, wy_secret);
   dec(x);
-  i32* rp; B r = m_i32arrv(&rp, 4);
-  rp[0] = (u16)(rv>>48); rp[1] = (u16)(rv>>32);
-  rp[2] = (u16)(rv>>16); rp[3] = (u16)(rv    );
+  i32* rp; B r = m_i32arrv(&rp, 2);
+  rp[0] = (u32)(rv>>32);
+  rp[1] = (u32)(rv    );
   return r;
 }
 
