@@ -875,7 +875,7 @@ B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 #if __has_include(<termios.h>)
 #include<termios.h>
 #include <fcntl.h>
-B tRaw_c1(B t, B x) {
+B tRawMode_c1(B t, B x) {
   struct termios term;
   tcgetattr(STDIN_FILENO, &term);
   if (o2b(x)) term.c_lflag&= ~(ICANON | ECHO);
@@ -918,8 +918,8 @@ static B termNS;
 B getTermNS() {
   if (termNS.u == 0) {
     #define F(X) inc(bi_##X),
-    Body* d = m_nnsDesc("flush", "raw", "charb", "charn", "outraw", "errraw");
-    termNS =  m_nns(d,F(tFlush)F(tRaw)F(tCharB)F(tCharN)F(tOutRaw)F(tErrRaw));
+    Body* d = m_nnsDesc("flush", "rawmode", "charb", "charn", "outraw", "errraw");
+    termNS =  m_nns(d,F(tFlush)F(tRawMode)F(tCharB)F(tCharN)F(tOutRaw)F(tErrRaw));
     #undef F
     gc_add(termNS);
   }
