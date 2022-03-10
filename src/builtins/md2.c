@@ -201,11 +201,15 @@ B before_uc1(Md2* t, B o, B f, B g, B x) {
 
 
 B while_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
-  while (o2b(c1(g,inc(x)))) x = c1(f, x);
+  BB2B ff = c1fn(f);
+  BB2B gf = c1fn(g);
+  while (o2b(gf(g,inc(x)))) x = ff(f, x);
   return x;
 }
 B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
-  while (o2b(c2(g,inc(w),inc(x)))) x = c2(f, inc(w), x);
+  BBB2B ff = c2fn(f);
+  BBB2B gf = c2fn(g);
+  while (o2b(gf(g,inc(w),inc(x)))) x = ff(f, inc(w), x);
   dec(w);
   return x;
 }
