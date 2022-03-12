@@ -12,7 +12,7 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
     mut_copyG(r, 0, x, 0, xia);
     mut_fill(r, xia, xf, ria-xia);
     dec(x);
-    if (r->type!=el_B) { dec(xf); return mut_fp(r); }
+    if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); }
     return a(withFill(mut_fv(r), xf));
   } else {
     return TI(x,slice)(x,0,ria);
@@ -1296,7 +1296,7 @@ B slash_ucw(B t, B o, B w, B x) {
   if (a(w)->type == t_bitarr) {
     u64* d = bitarr_ptr(w);
     if (TI(x,elType)<=el_i32 && TI(rep,elType)<=el_i32) {
-      if (r->type!=el_i32) mut_to(r, el_i32);
+      if (r->fns->elType!=el_i32) mut_to(r, el_i32);
       i32* rp = r->ai32;
       x   = toI32Any(x);   i32* xp = i32any_ptr(x);
       rep = toI32Any(rep); i32* np = i32any_ptr(rep);

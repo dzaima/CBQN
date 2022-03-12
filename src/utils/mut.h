@@ -12,9 +12,27 @@ mut_pfree must be used to free a partially finished `mut` instance safely (e.g. 
 methods ending with G expect that mut_init has been called with a type that can fit the elements that it'll set
 
 */
+typedef struct Mut Mut;
+typedef struct MutFns MutFns;
+typedef void (*MSB2v)(Mut*, usz, B);
+typedef void (*MSBS2v)(Mut*, usz, B, usz);
+typedef void (*MSBSS2v)(Mut*, usz, B, usz, usz);
+typedef B (*MS2B)(Mut*, usz);
+struct MutFns {
+  u8 elType;
+  u8 valType;
+  MSB2v m_set;
+  MSB2v m_setG;
+  MS2B m_getU;
+  MSBS2v m_fill;
+  MSBS2v m_fillG;
+  MSBSS2v m_copy;
+  MSBSS2v m_copyG;
+};
+extern MutFns mutFns[el_MAX+1];
 
-typedef struct Mut {
-  u8 type;
+struct Mut {
+  MutFns* fns;
   usz ia;
   Arr* val;
   union {
@@ -23,54 +41,53 @@ typedef struct Mut {
     u8* ac8; u16* ac16; u32* ac32;
     f64* af64; u64* abit;
   };
-} Mut;
-#define MAKE_MUT(N, IA) Mut N##_val; N##_val.type = el_MAX; N##_val.ia = (IA); Mut* N = &N##_val;
+};
+#define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
 
 static void mut_init(Mut* m, u8 n) {
-  m->type = n;
+  m->fns = &mutFns[n];
   usz ia = m->ia;
-  u8 ty;
   usz sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
-    case el_bit: ty = t_bitarr; sz = BITARR_SZ(   ia); break;
-    case el_i8:  ty = t_i8arr ; sz = TYARR_SZ(I8, ia); break;
-    case el_i16: ty = t_i16arr; sz = TYARR_SZ(I16,ia); break;
-    case el_i32: ty = t_i32arr; sz = TYARR_SZ(I32,ia); break;
-    case el_c8:  ty = t_c8arr ; sz = TYARR_SZ(C8, ia); break;
-    case el_c16: ty = t_c16arr; sz = TYARR_SZ(C16,ia); break;
-    case el_c32: ty = t_c32arr; sz = TYARR_SZ(C32,ia); break;
-    case el_f64: ty = t_f64arr; sz = TYARR_SZ(F64,ia); break;
+    case el_bit: sz = BITARR_SZ(   ia); break;
+    case el_i8:  sz = TYARR_SZ(I8, ia); break;
+    case el_i16: sz = TYARR_SZ(I16,ia); break;
+    case el_i32: sz = TYARR_SZ(I32,ia); break;
+    case el_c8:  sz = TYARR_SZ(C8, ia); break;
+    case el_c16: sz = TYARR_SZ(C16,ia); break;
+    case el_c32: sz = TYARR_SZ(C32,ia); break;
+    case el_f64: sz = TYARR_SZ(F64,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
       m->val = (Arr*)t.c;
       m->aB = t.c->a;
       return;
   }
-  Arr* a = m_arr(sz, ty, ia);
+  Arr* a = m_arr(sz, m->fns->valType, ia);
   m->val = a;
   m->a = ((TyArr*)a)->a;
 }
 void mut_to(Mut* m, u8 n);
 
-static B mut_fv(Mut* m) { assert(m->type!=el_MAX);
+static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   Arr* a = m->val;
   a->sh = &a->ia;
   sprnk(a, 1);
   return taga(a);
 }
-static B mut_fc(Mut* m, B x) { assert(m->type!=el_MAX);
+static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
   Arr* a = m->val;
   arr_shCopy(a, x);
   return taga(a);
 }
-static B mut_fcd(Mut* m, B x) { assert(m->type!=el_MAX);
+static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
   Arr* a = m->val;
   arr_shCopy(a, x);
   dec(x);
   return taga(a);
 }
-static Arr* mut_fp(Mut* m) { assert(m->type!=el_MAX);
+static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
   return m->val;
 }
 
@@ -81,85 +98,39 @@ static u8 el_or(u8 a, u8 b) {
 
 void mut_pfree(Mut* m, usz n);
 
-static void mut_set(Mut* m, usz ms, B x) { // consumes x; sets m[ms] to x
-  again:;
-  switch(m->type) { default: UD;
-    case el_MAX: goto change;
-    case el_bit: if (!q_bit(x)) goto change; bitp_set(m->abit, ms, o2bu(x)); return;
-    case el_i8:  if (!q_i8 (x)) goto change; m->ai8 [ms] = o2iu(x); return;
-    case el_i16: if (!q_i16(x)) goto change; m->ai16[ms] = o2iu(x); return;
-    case el_i32: if (!q_i32(x)) goto change; m->ai32[ms] = o2iu(x); return;
-    case el_c8:  if (!q_c8 (x)) goto change; m->ac8 [ms] = o2cu(x); return;
-    case el_c16: if (!q_c16(x)) goto change; m->ac16[ms] = o2cu(x); return;
-    case el_c32: if (!q_c32(x)) goto change; m->ac32[ms] = o2cu(x); return;
-    case el_f64: if (!q_f64(x)) goto change; m->af64[ms] = o2fu(x); return;
-    case el_B: {
-      m->aB[ms] = x;
-      return;
-    }
-  }
-  change:
-  mut_to(m, el_or(m->type, selfElType(x)));
-  goto again;
-}
-static void mut_setG(Mut* m, usz ms, B x) { // consumes; sets m[ms] to x, assumes the current type can store it
-  switch(m->type) { default: UD;
-    case el_bit: { assert(q_bit(x)); bitp_set(m->abit, ms, o2bu(x)); return; }
-    case el_i8 : { assert(q_i8 (x)); m->ai8 [ms] = o2iu(x); return; }
-    case el_i16: { assert(q_i16(x)); m->ai16[ms] = o2iu(x); return; }
-    case el_i32: { assert(q_i32(x)); m->ai32[ms] = o2iu(x); return; }
-    case el_c8 : { assert(q_c8 (x)); m->ac8 [ms] = o2cu(x); return; }
-    case el_c16: { assert(q_c16(x)); m->ac16[ms] = o2cu(x); return; }
-    case el_c32: { assert(q_c32(x)); m->ac32[ms] = o2cu(x); return; }
-    case el_f64: { assert(q_f64(x)); m->af64[ms] = o2fu(x); return; }
-    case el_B: {
-      m->aB[ms] = x;
-      return;
-    }
-  }
-}
-static void mut_rm(Mut* m, usz ms) { // clears the object at position ms
-  if (m->type == el_B) dec(m->aB[ms]);
-}
-static B mut_getU(Mut* m, usz ms) {
-  switch(m->type) { default: UD;
-    case el_bit: return m_i32(bitp_get(m->abit, ms));
-    case el_i8:  return m_i32(m->ai8 [ms]);
-    case el_i16: return m_i32(m->ai16[ms]);
-    case el_i32: return m_i32(m->ai32[ms]);
-    case el_c8:  return m_c32(m->ac8 [ms]);
-    case el_c16: return m_c32(m->ac16[ms]);
-    case el_c32: return m_c32(m->ac32[ms]);
-    case el_f64: return m_f64(m->af64[ms]);
-    case el_B:   return m->aB[ms];
-  }
-}
+// do N = OBJ; F, while asserting that OBJ won't change during F
+#define CONST_OP(N, OBJ, F) ({          \
+  __auto_type N = OBJ;                  \
+  F;                                    \
+  if (N!=OBJ) __builtin_unreachable();  \
+})
 
-static void mut_fillG(Mut* m, usz ms, B x, usz l) { // doesn't consume x
-  switch(m->type) { default: UD;
-    case el_bit: { assert(q_bit(x)); u64* p = m->abit;   bool v = o2bu(x); for (usz i = 0; i < l; i++) bitp_set(p, ms+i, v); return; }
-    case el_i8:  { assert(q_i8 (x)); i8*  p = m->ai8 +ms; i8  v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_i16: { assert(q_i16(x)); i16* p = m->ai16+ms; i16 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_i32: { assert(q_i32(x)); i32* p = m->ai32+ms; i32 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_c8:  { assert(q_c8 (x)); u8*  p = m->ac8 +ms; u8  v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_c16: { assert(q_c16(x)); u16* p = m->ac16+ms; u16 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_c32: { assert(q_c32(x)); u32* p = m->ac32+ms; u32 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_f64: { assert(isF64(x)); f64* p = m->af64+ms; f64 v = o2fu(x); for (usz i = 0; i < l; i++) p[i] = v; return; }
-    case el_B: {
-      B* p = m->aB+ms;
-      for (usz i = 0; i < l; i++) p[i] = x;
-      if (isVal(x)) for (usz i = 0; i < l; i++) inc(x);
-      return;
-    }
-  }
-}
+#define MUTG(NAME, ...) CONST_OP(f, m->fns->m_##NAME##G, f(__VA_ARGS__))
+
+// consumes x; sets m[ms] to x
+static void mut_set(Mut* m, usz ms, B x) { m->fns->m_set(m, ms, x); }
+
+
+// clears the object (decrements its refcount) at position ms
+static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(m->aB[ms]); }
+
+// gets object at position ms, without increasing refcount
+static B mut_getU(Mut* m, usz ms) { return m->fns->m_getU(m, ms); }
+
 
 // doesn't consume; fills m[ms…ms+l] with x
-static void mut_fill(Mut* m, usz ms, B x, usz l) {
-  u8 nmt = el_or(m->type, selfElType(x));
-  if (nmt!=m->type) mut_to(m, nmt);
-  mut_fillG(m, ms, x, l);
-}
+static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); }
+
+// expects x to be an array, each position must be written to precisely once
+// doesn't consume x
+static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
+
+// mut_set but assumes the type of x already fits in m
+static void mut_setG(Mut* m, usz ms, B x) { MUTG(set, m, ms, x); }
+// mut_fill but assumes the type of x already fits in m
+static void mut_fillG(Mut* m, usz ms, B x, usz l) { MUTG(fill, m, ms, x, l); }
+// mut_copy but assumes the type of x already fits in m
+static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { MUTG(copy, m, ms, x, xs, l); }
 
 static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) { // TODO rewrite this whole thing to be all fancy
   u64 i = rs;
@@ -177,18 +148,6 @@ static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) { // TODO rewrite thi
   }
   for (; i<re; i++) bitp_set(r, i, bitp_get(x, i+d));
 }
-
-// mut_copy but x is guaranteed to be a subtype of m
-void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l);
-
-// expects x to be an array, each position must be written to precisely once
-// doesn't consume x
-static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x));
-  u8 nmt = el_or(m->type, TI(x,elType));
-  if (nmt!=m->type) mut_to(m, nmt);
-  mut_copyG(m, ms, x, xs, l);
-}
-
 
 B vec_join(B w, B x); // consumes both
 FORCE_INLINE B vec_join_inline(B w, B x) {
