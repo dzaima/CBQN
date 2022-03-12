@@ -154,15 +154,19 @@ DEF_COPY(c32, { u32* rp = m->ac32+ms;
 DEF_E(void, copy, MAX, false, x, (Mut* m, usz ms, B x, usz xs, usz l), ms, x, xs, l) { err("m_copyG_MAX"); }
 DEF_G(void, copy, B,             (Mut* m, usz ms, B x, usz xs, usz l)) { 
   B* mpo = m->aB+ms;
-  B* xp = arr_bptr(x);
-  if (xp!=NULL) {
-    memcpy(mpo, xp+xs, l*sizeof(B));
-    for (usz i = 0; i < l; i++) inc(mpo[i]);
-    return;
+  switch(v(x)->type) {
+    case t_harr: case t_hslice: case t_fillarr: case t_fillslice:
+      memcpy(mpo, arr_bptr(x)+xs, l*sizeof(B));
+      for (usz i = 0; i < l; i++) inc(mpo[i]);
+      return;
+    case t_f64arr: case t_f64slice:
+      memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
+      return;
+    default:
+      SGet(x)
+      for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
+      return;
   }
-  SGet(x)
-  for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
-  return;
 }
 
 static B m_getU_MAX(Mut* m, usz ms) { err("m_setG_MAX"); }
