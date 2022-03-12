@@ -8,10 +8,10 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
   usz xia = a(x)->ia;
   if (ria>xia) {
     B xf = getFillE(x);
-    MAKE_MUT(r, ria); mut_init(r, TI(x,elType));
+    MAKE_MUT(r, ria); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
     MUTG_INIT(r);
     mut_copyG(r, 0, x, 0, xia);
-    mut_fill(r, xia, xf, ria-xia);
+    mut_fillG(r, xia, xf, ria-xia);
     dec(x);
     if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); }
     return a(withFill(mut_fv(r), xf));
@@ -777,9 +777,9 @@ B take_c2(B t, B w, B x) {
       usz xia = a(x)->ia;
       if (t>xia) {
         B xf = getFillE(x);
-        MAKE_MUT(r, t); mut_init(r, TI(x,elType));
-        mut_fill(r, 0, xf, t-xia); // TODO use G variant
+        MAKE_MUT(r, t); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
         MUTG_INIT(r);
+        mut_fillG(r, 0, xf, t-xia);
         mut_copyG(r, t-xia, x, 0, xia);
         dec(x); dec(xf);
         a = mut_fp(r);
@@ -963,10 +963,10 @@ B shiftb_c1(B t, B x) {
   B xf = getFillE(x);
   usz csz = arr_csz(x);
   
-  MAKE_MUT(r, ia); mut_init(r, TI(x,elType));
+  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
   MUTG_INIT(r);
   mut_copyG(r, csz, x, 0, ia-csz);
-  mut_fill(r, 0, xf, csz);
+  mut_fillG(r, 0, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shiftb_c2(B t, B w, B x) {
@@ -991,10 +991,10 @@ B shifta_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
-  MAKE_MUT(r, ia); mut_init(r, TI(x,elType));
+  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
   MUTG_INIT(r);
   mut_copyG(r, 0, x, csz, ia-csz);
-  mut_fill(r, ia-csz, xf, csz); // TODO use G variant (also »)
+  mut_fillG(r, ia-csz, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shifta_c2(B t, B w, B x) {
