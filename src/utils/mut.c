@@ -37,6 +37,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
 NOINLINE B vec_addR(B w, B x) {
   usz wia = a(w)->ia;
   MAKE_MUT(r, wia+1); mut_init(r, el_or(TI(w,elType), selfElType(x)));
+  MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
   mut_setG(r, wia, x);
   dec(w);

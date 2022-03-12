@@ -98,15 +98,6 @@ static u8 el_or(u8 a, u8 b) {
 
 void mut_pfree(Mut* m, usz n);
 
-// do N = OBJ; F, while asserting that OBJ won't change during F
-#define CONST_OP(N, OBJ, F) ({          \
-  __auto_type N = OBJ;                  \
-  F;                                    \
-  if (N!=OBJ) __builtin_unreachable();  \
-})
-
-#define MUTG(NAME, ...) CONST_OP(f, m->fns->m_##NAME##G, f(__VA_ARGS__))
-
 // consumes x; sets m[ms] to x
 static void mut_set(Mut* m, usz ms, B x) { m->fns->m_set(m, ms, x); }
 
@@ -117,20 +108,23 @@ static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(m->aB[ms]);
 // gets object at position ms, without increasing refcount
 static B mut_getU(Mut* m, usz ms) { return m->fns->m_getU(m, ms); }
 
-
 // doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); }
 
 // expects x to be an array, each position must be written to precisely once
-// doesn't consume x
+// doesn't consume
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
 
-// mut_set but assumes the type of x already fits in m
-static void mut_setG(Mut* m, usz ms, B x) { MUTG(set, m, ms, x); }
-// mut_fill but assumes the type of x already fits in m
-static void mut_fillG(Mut* m, usz ms, B x, usz l) { MUTG(fill, m, ms, x, l); }
-// mut_copy but assumes the type of x already fits in m
-static void mut_copyG(Mut* m, usz ms, B x, usz xs, usz l) { MUTG(copy, m, ms, x, xs, l); }
+
+#define MUTG_INIT(N) MutFns N##_mutfns = *N->fns
+// // mut_set but assumes the type of x already fits in m
+#define mut_setG(N, ms, x) N##_mutfns.m_setG(N, ms, x)
+// // mut_fill but assumes the type of x already fits in m
+#define mut_fillG(N, ms, x, l) N##_mutfns.m_fillG(N, ms, x, l)
+// // mut_copy but assumes the type of x already fits in m
+#define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N, ms, x, xs, l)
+
+
 
 static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) { // TODO rewrite this whole thing to be all fancy
   u64 i = rs;
@@ -191,6 +185,7 @@ FORCE_INLINE B vec_join_inline(B w, B x) {
     }
   }
   MAKE_MUT(r, ria); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
+  MUTG_INIT(r);
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
   dec(w); dec(x);
