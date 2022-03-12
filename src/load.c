@@ -531,12 +531,14 @@ B def_m2_ix(Md2D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
 #ifdef DONT_FREE
 static B empty_get(Arr* x, usz n) {
   x->type = x->flags;
+  if (x->type==t_empty) err("getting from empty without old type data");
   B r = TIv(x,get)(x, n);
   x->type = t_empty;
   return r;
 }
 static B empty_getU(Arr* x, usz n) {
   x->type = x->flags;
+  if (x->type==t_empty) err("getting from empty without old type data");
   B r = TIv(x,getU)(x, n);
   x->type = t_empty;
   return r;

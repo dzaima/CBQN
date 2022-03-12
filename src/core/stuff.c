@@ -636,8 +636,7 @@ B any_squeeze(B x) {
   assert(isArr(x));
   if (FL_HAS(x,fl_squoze)) return x;
   if (a(x)->ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
-  SGetU(x)
-  B x0 = GetU(x, 0);
+  B x0 = IGetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);
   return FL_SET(x, fl_squoze);
@@ -748,13 +747,16 @@ NOINLINE void print_allocStats() {
 }
 
 // for gdb
+B info_c2(B, B, B);
 Value* g_v(B x) { return v(x); }
 Arr*   g_a(B x) { return a(x); }
 B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
 void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
+void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); print(r); dec(r); putchar(10); fflush(stdout); }
 void   g_pv(void* x) { print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); }
+void   g_iv(void* x) { B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); print(r); dec(r); putchar(10); fflush(stdout); }
 void   g_pst() { vm_pstLive(); }
 
 #ifdef DEBUG
