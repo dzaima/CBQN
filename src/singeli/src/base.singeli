@@ -14,8 +14,14 @@ def isunsigned{T} = isint{T} & ~issigned{T}
 def assert{x:u1} = emit{void, 'si_assert', x}
 
 def cast_p{T, x} = emit{*T, '(void*)', x}
+
+def anyNum{x} = knum{x}
+def anyNum{x & match{'constant',kind{x}}} = 1
+def anyNum{x:T} = match{'primitive',typekind{T}}
+
 def anyInt{x} = knum{x}
 def anyInt{x & match{'register',kind{x}} | match{'constant',kind{x}}} = isint{x}
+
 def __add{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
 def __sub{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
 
