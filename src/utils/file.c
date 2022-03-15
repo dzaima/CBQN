@@ -224,8 +224,11 @@ B path_list(B path) {
 char path_type(B path) {
   char* p = toCStr(path);
   struct stat path_stat;
-  stat(p, &path_stat);
+  int r = stat(p, &path_stat);
   freeCStr(p);
+  dec(path);
+  
+  if (r==-1) return 0;
   i64 mode = path_stat.st_mode;
   if (S_ISREG (mode)) return 'f';
   if (S_ISDIR (mode)) return 'd';

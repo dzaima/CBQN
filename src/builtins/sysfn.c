@@ -676,7 +676,9 @@ B list_c1(B d, B x) {
 }
 
 B ftype_c1(B d, B x) {
-  return m_c32(path_type(path_rel(nfn_objU(d), x)));
+  char ty = path_type(path_rel(nfn_objU(d), x));
+  if (ty==0) thrM("•file.Type: Error while accessing file");
+  return m_c32(ty);
 }
 
 B fName_c1(B t, B x) {
