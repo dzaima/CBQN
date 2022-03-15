@@ -670,6 +670,7 @@ static void sys_gcFn() {
 
 
 static NFnDesc* fTypeDesc;
+static NFnDesc* fExistsDesc;
 static NFnDesc* fListDesc;
 B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x));
@@ -679,6 +680,10 @@ B ftype_c1(B d, B x) {
   char ty = path_type(path_rel(nfn_objU(d), x));
   if (ty==0) thrM("•file.Type: Error while accessing file");
   return m_c32(ty);
+}
+B fexists_c1(B d, B x) {
+  char ty = path_type(path_rel(nfn_objU(d), x));
+  return m_f64(ty!=0);
 }
 
 B fName_c1(B t, B x) {
@@ -1072,7 +1077,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), inc(bi_fName));
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName));
         #undef F
       }
       cr = inc(fileNS);
@@ -1141,10 +1146,11 @@ void sysfn_init() {
   fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
   fListDesc  = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
   fTypeDesc  = registerNFn(m_str8l("(file).Type"), ftype_c1, c2_bad);
+  fExistsDesc = registerNFn(m_str8l("(file).Exists"), fexists_c1, c2_bad);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","name");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }
