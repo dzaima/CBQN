@@ -163,10 +163,11 @@ DEF_G(void, copy, B,             (Mut* m, usz ms, B x, usz xs, usz l)) {
     case t_f64arr: case t_f64slice:
       memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
       return;
-    default:
+    default: {
       SGet(x)
       for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
       return;
+    }
   }
 }
 
