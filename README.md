@@ -1,5 +1,7 @@
 # A [BQN](https://github.com/mlochbaum/BQN) implementation in C
 
+[CBQN-specific documentation](docs/README.md) • [source code overview](src/README.md)
+
 ## Running
 
 1. `make`
