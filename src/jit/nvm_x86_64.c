@@ -604,7 +604,7 @@ Nvm_res m_nvm(Body* body) {
         u32 sz = *bc++;
         if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
         else if (sz==1 && o) { TOPp; GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
-        else if (sz==2 && o) { TOPp; GET(R_A1,1,1); CCALL(i_ARR_2); } // (B a, B b)
+        else if (sz==2 && o) { TOPp; GET(R_A1,1,1); CCALL(i_ARR_2); } // (B a, B b); TODO swap m_vec2 args here instead of calling a function
         else               { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
         break;
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)

@@ -124,7 +124,7 @@ def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x
 
 # mixed-width operations
 def half{x:T, i & w256{T} & knum{i}} = cast_v{[vcount{T}/2](eltype{T}), emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}}
-def pair{a:T,b:T & width{T}==128} = cast_v{T, emit{[8]i32, '_mm256_setr_m128i', a, b}}
+def pair{a:T,b:T & width{T}==128} = cast_v{[vcount{T}*2](eltype{T}), emit{[8]i32, '_mm256_setr_m128i', a, b}}
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
 # mask stuff
