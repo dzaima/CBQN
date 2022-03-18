@@ -11,7 +11,7 @@ o3n:
 debug:
 	@${MAKE} singeli=0 t=debug      f="-g -DDEBUG" c
 debug1:
-	@${MAKE} singeli=0 t=debug1     f="-g -DDEBUG" c
+	@${MAKE} singeli=0 t=debug1     f="-g -DDEBUG" manualJobs=1 c
 rtperf:
 	@${MAKE} singeli=0 t=rtperf     f="-O3 -DRT_PERF" c
 rtverify:
@@ -52,14 +52,12 @@ endif
 ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(SINGELIFLAGS) $(NOWARN) $(f)
 CMD = $(CC) $(ALL_CC_FLAGS) -MMD -MP -MF
 
-ifneq (${t},debug1)
-	ifneq (${J4added},yes)
-		ifeq (${MAKECMDGOALS},gen)
-			MAKEFLAGS+= -j4 J4added=yes
-		endif
-		ifeq (${MAKECMDGOALS},gen-singeli)
-			MAKEFLAGS+= -j4 J4added=yes
-		endif
+ifneq (${manualJobs},1)
+	ifeq (${MAKECMDGOALS},gen)
+		MAKEFLAGS+= -j4 manualJobs=1
+	endif
+	ifeq (${MAKECMDGOALS},gen-singeli)
+		MAKEFLAGS+= -j4 manualJobs=1
 	endif
 endif
 
