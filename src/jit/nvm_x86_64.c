@@ -112,9 +112,6 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
 INS B i_ARR_0() { // TODO combine with ADDI
   return emptyHVec();
 }
-INS B i_ARR_2(B e1, B e0) {
-  return m_vec2(e0,e1);
-}
 INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
@@ -569,7 +566,8 @@ Nvm_res m_nvm(Body* body) {
     #define SPOSq(N) (maxi32(0, depth+(N)-1) * sizeof(B))
     #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if Q==0, then might not write and instead return another register which will have the wanted value
     #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
-    #define TOPp MOV(R_A0,R_RES)
+    #define TOPpR(R) MOV(R,R_RES)
+    #define TOPp TOPpR(R_A0)
     #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
     #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); } // TODO return r_SC directly without a pointless mov
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
@@ -603,8 +601,8 @@ Nvm_res m_nvm(Body* body) {
       case ARRM: case ARRO:; bool o = *(bc-1) == ARRO;
         u32 sz = *bc++;
         if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
-        else if (sz==1 && o) { TOPp; GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
-        else if (sz==2 && o) { TOPp; GET(R_A1,1,1); CCALL(i_ARR_2); } // (B a, B b); TODO swap m_vec2 args here instead of calling a function
+        else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
+        else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(m_vec2); } // (B a, B b)
         else               { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
         break;
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
