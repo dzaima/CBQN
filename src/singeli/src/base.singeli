@@ -39,6 +39,14 @@ def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   }
   f{begin,end}
 }
+def collect{vars,begin,end,block & knum{begin} & knum{end}} = {
+  def f{i,l & i==l} = tup{}
+  def f{i,l & i!=l} = {
+    def r = exec{i, vars, block}
+    merge{tup{r}, f{i+1, l}}
+  }
+  f{begin,end}
+}
 def for{vars,begin,end,block} = {
   i:u64 = begin
   while (i < end) {

@@ -603,7 +603,7 @@ Nvm_res m_nvm(Body* body) {
         if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
         else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
         else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(m_vec2); } // (B a, B b)
-        else               { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
+        else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
         break;
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
