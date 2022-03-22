@@ -917,7 +917,7 @@ B tOutRaw_c1(B t, B x) {
   return x;
 }
 B tErrRaw_c1(B t, B x) {
-  file_wBytes(stdout, bi_N, x);
+  file_wBytes(stderr, bi_N, x);
   return x;
 }
 
