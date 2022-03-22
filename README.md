@@ -7,6 +7,7 @@
 1. `make`
     - `make CC=gcc` if you don't have clang installed
     - `make PIE=""` on ARM CPUs (incl. Android & M1)
+    - `gmake` on BSDs
     - `make clean` if anything goes bad and you want a clean slate
 2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL
 
