@@ -147,7 +147,11 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 # dependency files
 -include $(bd)/*.d
 
+install:
+	cp -f BQN /usr/local/bin/bqn
 
+uninstall:
+	rm -f /usr/local/bin/bqn
 
 # `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
 ifneq (,$(findstring clean,$(MAKECMDGOALS)))
