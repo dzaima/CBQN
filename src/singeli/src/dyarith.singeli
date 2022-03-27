@@ -15,6 +15,7 @@ def ty_dbl{T & i16==T} = i32
 def ty_dbl{T & i32==T} = i64
 def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
 def dcast_i{x} = ext{ty_dbl{type{x}}, x}
+def to_el{E, x:T} = cast_v{[width{T}/width{E}]E, x}
 
 # get mask of first n items; n>0 & n<vcount{T}
 def genmask{T,n & w256{T, 8}} = load{cast_p{[32]i8,  emit{*i8,  '', 'mask8' } + (n^31)}, 0}
@@ -29,8 +30,8 @@ def maskstoreF{p, m, n, x:T} = store{p, n, blendf{load{p,n}, x, m}}
 # + & -
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub}} = anyneg{M{(w^x) & (w^r)}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{M{__adds{w,x}!=r}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{M{__subs{w,x}!=r}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{M{to_el{i8, __adds{w,x}} != to_el{i8, r}}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{M{to_el{i8, __subs{w,x}} != to_el{i8, r}}}
 
 def arithChk2{F, M, w:T, x:T, i & issigned{rootty{T}}} = {
   r:= F{w,x}
