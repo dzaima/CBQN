@@ -26,12 +26,14 @@ def genmask{T,n & w256{T,64}} = load{cast_p{[ 4]i64, emit{*i64, '', 'mask64'} + 
 def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
 def maskstoreF{p, m, n, x:T} = store{p, n, blendf{load{p,n}, x, m}}
 
+def anyne{x:T, y:T, M & M{0}==0} = ~all{x==y}
+def anyne{x:T, y:T, M & M{0}==1} =  any{M{x!=y}}
 
 # + & -
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub}} = anyneg{M{(w^x) & (w^r)}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = any{M{to_el{i8, __adds{w,x}} != to_el{i8, r}}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = any{M{to_el{i8, __subs{w,x}} != to_el{i8, r}}}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = anyne{__adds{w,x}, r, M}
+def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = anyne{__subs{w,x}, r, M}
 
 def arithChk2{F, M, w:T, x:T, i & issigned{rootty{T}}} = {
   r:= F{w,x}
@@ -47,7 +49,7 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'
 def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
   rl:= __mul  {w,x}
   rh:= __mulhi{w,x}
-  tup{rl, any{M{rh != rl>>15}}}
+  tup{rl, anyne{rh, rl>>15, M}}
 }
 def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   def wp = unpackQ{w, cast_v{T,broadcast{T,0}>w}}

@@ -134,4 +134,5 @@ def getmask{x:T & w256{T, 16}} = {
   (msk&255) | (msk>>8) # TODO try out permute4x64 for fixing up
 }
 def any{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}}!=0
+def all{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}} == (1<<32)-1
 def anyneg{x:T & w256s{T, 16}} = getmask{cast_v{[32]u8, cast_v{[16]i16,x} < broadcast{[16]i16, 0}}}!=0

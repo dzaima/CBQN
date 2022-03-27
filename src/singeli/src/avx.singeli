@@ -130,5 +130,6 @@ def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 # mask stuff
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
-def any{x:T & w256i{T}} = getmask{x}!=0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
+def any{x:T & w256i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
+def all{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
 def anyneg{x:T & w256s{T}} = getmask{x}!=0
