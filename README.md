@@ -15,8 +15,8 @@
 ## Configuration options
 
 - `some-other-bqn-implementation ./genRuntime path/to/mlochbaum/BQN` can be used to avoid pulling precompiled bytecode with git from `remotes/origin/bytecode`.  
-  This creates the dummy file `src/gen/customRuntime` and will disable automated bytecode retrieval whenever it's updated.  
-  `make clean-runtime` (which is included in `make clean`) can be used to reset to the default state.
+  This creates the dummy file `src/gen/customRuntime`, which will disable automated bytecode retrieval, leading to the bytecode going out-of-sync whenever it needs updating.  
+  `make clean-runtime` (which is included in `make clean`) can be used to reset this to the default state.
 - Different build types:
     - `make o3` - `-O3`, the default build
     - `make o3n` - `-O3 -march=native`

@@ -1,0 +1,49 @@
+include './base'
+
+def pdep{x:u64, m:u64} = emit{u64, '_pdep_u64', x, m}
+def pdep{x:u32, m:u32} = emit{u32, '_pdep_u32', x, m}
+def pext{x:u64, m:u64} = emit{u64, '_pext_u64', x, m}
+def pext{x:u32, m:u32} = emit{u32, '_pext_u32', x, m}
+def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
+def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
+
+def compi{r, w, x, m, e} = {
+  pc:= popc{w}
+  store{reinterpret{*u64, r}, 0, pext{x, pdep{promote{u64, w}, cast{u64,m}}*e}}
+  r+= pc
+}
+
+comp8(w:*u64, x:*i8, r:*i8, l:u64) : void = {
+  @for(w in reinterpret{*u8,w}, x in reinterpret{*u64,x} over i to cdiv{l,8}) {
+    compi{r, w, x, 0x0101010101010101, 255}
+  }
+}
+'comp8'=comp8
+
+# comp16(w:*u64, x:*i16, r:*i16, l:u64) : void = {
+#   xv:= reinterpret{*u64, x}
+#   @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {
+#     def step{w} = {
+#       # compi{r, w, load{xv,0}, 0x0001000100010001, 0xffff}
+#       # xv+= 1
+#     }
+#     step{w&15}
+#     step{w>>4}
+#   }
+# }
+# 'comp16'=comp16
+
+comp16(w:*u64, x:*i16, r:*i16, l:u64) : void = {
+  xv:= reinterpret{*u64, x}
+  @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {
+    def step{w} = {
+      pc:= popc{w}
+      store{reinterpret{*u64,r}, 0, pext{load{xv,0}, load{emit{*u64,'','c16lut'}, w}}}
+      r+= pc
+      xv+= 1
+    }
+    step{w&15}
+    step{w>>4}
+  }
+}
+'comp16'=comp16

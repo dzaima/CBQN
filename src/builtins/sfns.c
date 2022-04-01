@@ -498,8 +498,17 @@ B slash_c1(B t, B x) {
   return r;
 }
 #ifdef __BMI2__
-#include <immintrin.h>
+  #include <immintrin.h>
+  u64 c16lut[] = {0x0000000000000000, 0x000000000000ffff, 0x00000000ffff0000, 0x00000000ffffffff, 0x0000ffff00000000, 0x0000ffff0000ffff, 0x0000ffffffff0000, 0x0000ffffffffffff, 0xffff000000000000, 0xffff00000000ffff, 0xffff0000ffff0000, 0xffff0000ffffffff, 0xffffffff00000000, 0xffffffff0000ffff, 0xffffffffffff0000, 0xffffffffffffffff};
+  
+  #if SINGELI
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-variable"
+    #include "../singeli/gen/slash.c"
+    #pragma GCC diagnostic pop
+  #endif
 #endif
+
 B slash_c2(B t, B w, B x) {
   if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
     usz wia = a(w)->ia;
@@ -518,6 +527,7 @@ B slash_c2(B t, B w, B x) {
       if (wsum==0) { dec(w); dec(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
       B r;
       switch(TI(x,elType)) { default: UD;
+        
         #ifdef __BMI2__
         case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
           u64 cw = 0; // current word
@@ -540,8 +550,15 @@ B slash_c2(B t, B w, B x) {
         #else
         case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
         #endif
+        
+        #if SINGELI && defined(__BMI2__)
+        case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp, wsum+8);  a(r)->ia-= 8;  comp8 (wp, xp, rp, wia); break; }
+        case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, wsum+16); a(r)->ia-= 16; comp16(wp, xp, rp, wia); break; }
+        #else
         case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        #endif
+        
         case el_i32: { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_f64: { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_c8:  { u8*  xp = c8any_ptr (x); u8*  rp; r = m_c8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
