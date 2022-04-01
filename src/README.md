@@ -301,3 +301,21 @@ See `#define CATCH` in `src/h.h` for how to catch errors.
 Use `assert(predicate)` for checks (for optimized builds they're replaced with `if (!predicate) invoke_undefined_behavior();` so it's still invoked!!). `UD;` can be used to explicitly invoke undefined behavior (equivalent in behavior to `assert(false);`), which is useful for things like untaken `default` branches in `switch` statements.
 
 There's also `err("message")` that (at least currently) is kept in optimized builds as-is, and always kills the process on being called.
+
+## GDB
+
+A couple functions for usage in GDB are defined:
+
+```C
+void g_pst()         // print a CBQN stacktrace; might not work if paused in the middle of stackframe manipulation, but it tries
+void g_p(B x)        // print x
+void g_i(B x)        // print •internal.Info x
+void g_pv(Value* x)  // g_p but for an untagged value
+void g_iv(Value* x)  // g_i but for an untagged value
+Value* g_v(B x)      // untag a value
+Arr*   g_a(B x)      // untag a value to Arr*
+B      g_t (void* x) // tag pointer with OBJ_TAG
+B      g_ta(void* x) // tag pointer with ARR_TAG
+B      g_tf(void* x) // tag pointer with FUN_TAG
+// invoke with "p g_p(whatever)"; for g_pst, you may need to do "p (void)g_pst()" in non-debug builds
+```
