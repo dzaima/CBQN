@@ -20,3 +20,17 @@ def cast_v{R, x:S & w128f{R,64} & w128{S}} = emit{R, '(__m128d)', x}
 def v2i{x:T & w128{T}} = cast_v{[16]u8, x} # for compact casting for the annoying intrinsic type system
 def v2f{x:T & w128{T}} = cast_v{[4]f32, x}
 def v2d{x:T & w128{T}} = cast_v{[2]f64, x}
+
+# load & store
+def load {a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_loadu_si128',          a+n}
+def loada{a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_load_si128',           a+n}
+def load {a:T, n & w128f{eltype{T},64}} = emit{eltype{T}, '_mm_loadu_pd', cast_p{f64, a+n}}
+def loada{a:T, n & w128f{eltype{T},64}} = emit{eltype{T}, '_mm_load_pd',  cast_p{f64, a+n}}
+def load {a:T, n & w128f{eltype{T},32}} = emit{eltype{T}, '_mm_loadu_ps', cast_p{f32, a+n}}
+def loada{a:T, n & w128f{eltype{T},32}} = emit{eltype{T}, '_mm_load_ps',  cast_p{f32, a+n}}
+def store {a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_storeu_si128',          a+n, v}
+def storea{a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_store_si128',           a+n, v}
+def store {a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_storeu_pd', cast_p{f64, a+n}, v}
+def storea{a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_store_pd',  cast_p{f64, a+n}, v}
+def store {a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_storeu_ps', cast_p{f32, a+n}, v}
+def storea{a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_store_ps',  cast_p{f32, a+n}, v}
