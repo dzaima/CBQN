@@ -531,15 +531,14 @@ B slash_c2(B t, B w, B x) {
     
     usz ri = 0;
     if (TI(w,elType)==el_bit) {
-      u64* wp = bitarr_ptr(w);
-      while (wia>0 && !bitp_get(wp,wia-1)) wia--;
-      usz wsum = bit_sum(wp, wia);
-      if (wsum==0) { dec(w); dec(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
       B r;
-      switch(TI(x,elType)) { default: UD;
-        
-        #ifdef __BMI2__
-        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
+      u64* wp = bitarr_ptr(w);
+      u8 xe = TI(x,elType);
+      #ifdef __BMI2__
+      usz wsum = bit_sum(wp, wia);
+      switch(xe) {
+        case el_bit: {
+          u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
           u64 cw = 0; // current word
           u64 ro = 0; // offset in word where next bit should be written; never 64
           for (usz i=0; i<BIT_N(wia); i++) {
@@ -555,18 +554,28 @@ B slash_c2(B t, B w, B x) {
             ro = ro2&63;
           }
           if (ro) *rp = cw;
-          break;
+          goto bit_ret;
         }
-        #else
-        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+        #if SINGELI
+        case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp, wsum+8);  a(r)->ia-= 8;  bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
+        case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, wsum+16); a(r)->ia-= 16; bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
         #endif
+      }
+      #endif
+      
+      while (wia>0 && !bitp_get(wp,wia-1)) wia--;
+      #ifndef __BMI2__
+      usz wsum = bit_sum(wp, wia);
+      #endif
+      if (wsum==0) { dec(w); dec(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
+      switch(xe) { default: UD;
         
-        #if SINGELI && defined(__BMI2__)
-        case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp, wsum+8);  a(r)->ia-= 8;  bmipopc_2slash8 (wp, xp, rp, wia); break; }
-        case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, wsum+16); a(r)->ia-= 16; bmipopc_2slash16(wp, xp, rp, wia); break; }
-        #else
+        #if !SINGELI
         case el_i8:  { i8*  xp = i8any_ptr (x); i8*  rp; r = m_i8arrv (&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
         case el_i16: { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+        #ifndef __BMI2__
+        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+        #endif
         #endif
         
         case el_i32: { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
@@ -590,6 +599,9 @@ B slash_c2(B t, B w, B x) {
           break;
         }
       }
+      #if __BMI2__
+      bit_ret:;
+      #endif
       dec(w); dec(x); return r;
     }
     #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
