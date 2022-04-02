@@ -234,6 +234,7 @@ static B unshare(B x) {
   if (!isArr(x)) return x;
   usz xia = a(x)->ia;
   switch (v(x)->type) {
+    case t_bitarr: return taga(cpyBitArr(inc(x)));
     case t_i8arr:  return taga(cpyI8Arr (inc(x)));
     case t_i16arr: return taga(cpyI16Arr(inc(x)));
     case t_i32arr: return taga(cpyI32Arr(inc(x)));
@@ -258,7 +259,15 @@ static B unshare(B x) {
   }
 }
 
-B internalTemp_c1(B t, B x) { return x; }
+      
+
+B internalTemp_c1(B t, B x) {
+  #ifdef TEST_BITCPY
+  SGetU(x)
+  bit_cpy(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
+  #endif
+  return x;
+}
 B internalTemp_c2(B t, B w, B x) { dec(w); return x; }
 
 B heapDump_c1(B t, B x) {

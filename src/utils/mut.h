@@ -126,21 +126,40 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->
 
 
 
-static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) { // TODO rewrite this whole thing to be all fancy
-  u64 i = rs;
+static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   u64 re = rs+(u64)l;
   i64 d = (i64)xs-(i64)rs;
-  if (l>128) {
-    for (; i<re && (i&63)!=0; i++) bitp_set(r, i, bitp_get(x, i+d));
-    u64 ti = i>>6;
-    u64 ei = (re>>6) - 2;
-    i64 dp = d>>6;
-    u64 df = ((u64)d)&63u;
-    if (df==0) for (; ti<ei; ti++) r[ti] =  x[ti+dp];
-    else       for (; ti<ei; ti++) r[ti] = (x[ti+dp] >> df) | (x[ti+dp+1] << (64-df));
-    i = ti<<6;
+  
+  u64 ti = rs>>6;
+  u64 ei = re>>6;
+  
+  i64 dp = d>>6;
+  u64 df = ((u64)d)&63u;
+  #define RDF0 x[ti+dp]
+  #define RDFp ((x[ti+dp] >> df) | (x[ti+dp+1] << (64-df)))
+  #define READ (df==0? RDF0 : RDFp)
+  if (ti!=ei) {
+    if (rs&63) {
+      u64 m = (1ULL << (rs&63))-1;
+      r[ti] = (READ & ~m)  |  (r[ti] & m);
+      ti++;
+    }
+    
+    if (df==0) for (; ti<ei; ti++) r[ti] = RDF0;
+    else       for (; ti<ei; ti++) r[ti] = RDFp;
+    
+    if (re&63) {
+      u64 m = (1ULL << (re&63))-1;
+      r[ti] = (READ & m)  |  (r[ti] & ~m);
+    }
+  } else if (rs!=re) {
+    assert(re!=0); // otherwise rs and re would be in different items, hitting the earlier ti!=ei; re!=0 is required for the mask to work
+    u64 m = ((1ULL << (rs&63))-1) ^ ((1ULL << (re&63))-1);
+    r[ti] = (READ & m)  |  (r[ti] & ~m);
   }
-  for (; i<re; i++) bitp_set(r, i, bitp_get(x, i+d));
+  #undef READ
+  #undef RDFp
+  #undef RDF0
 }
 
 B vec_join(B w, B x); // consumes both

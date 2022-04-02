@@ -1,6 +1,6 @@
 ⟨ListVariations, ClearRefs, Variation, Squeeze, Info⟩ ← •internal
 u ← •UnixTime@
-# u ↩ 1648896733
+# u ↩ 123
 
 r ← •MakeRand •Show u
 
@@ -40,7 +40,7 @@ Do ← { 𝕊:
     exp ← v = p⊑a
     b ← Squeeze v⌾(p⊸⊑) a
     (⊢◶exp‿{𝕊:∧´a=b} at=4) TestVars a‿b
-  }⍟100 @
+  }∘@⍟100 @
 }
 
 @∘Do⍟1000 @
