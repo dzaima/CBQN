@@ -57,7 +57,7 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
       def bulk = 4
       f0:= broadcast{T, 0.0}
       f1:= broadcast{T, 1.0}
-      maskedLoop{4, l, {i, M} => {
+      maskedLoop{bulk, l, {i, M} => {
         cw:= load{cast_p{u8,w}, i>>1} >> cast_i{u8, 4*(i&1)}
         cx:= load{cast_p{T, x}, i}
         wu:= blend{f0, f1, broadcast{[4]u64, cw} << make{[4]u64,63,62,61,60}}
@@ -93,7 +93,7 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
   1
 }
 
-'avx2_equal_1_1'    = equal{u1, u1} # todo maybe unify with 8_8 and make the non-bit diagonal shift by 3
+'avx2_equal_1_1'    = equal{u1, u1}
 'avx2_equal_1_8'    = equal{u1, u8}
 'avx2_equal_1_16'   = equal{u1, u16}
 'avx2_equal_1_32'   = equal{u1, u32}
