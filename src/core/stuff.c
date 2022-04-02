@@ -402,6 +402,41 @@ NOINLINE bool atomEqualR(B w, B x) {
                       { dec(wd);dec(xd); return false; }
                         dec(wd);dec(xd); return true;
 }
+
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/equal.c"
+  #pragma GCC diagnostic pop
+  
+  typedef bool (*EqFn)(u8* a, u8* b, u64 l, u64 data);
+  bool notEq(u8* a, u8* b, u64 l, u64 data) { return false; }
+  
+  #define F(X) avx2_equal_##X
+  EqFn eqFns[] = {
+    F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
+    F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
+    F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,
+    F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,
+    F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F(f64_f64), notEq,    notEq,     notEq,
+    notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),
+    notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32),
+    notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),
+  };
+  #undef F
+  static const u8 n = 99;
+  u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
+    0,0,0,0,0,n,n,n,
+    1,0,0,0,0,n,n,n,
+    1,1,1,0,0,n,n,n,
+    1,1,1,2,0,n,n,n,
+    1,1,1,1,0,n,n,n,
+    n,n,n,n,n,0,0,0,
+    n,n,n,n,n,1,1,0,
+    n,n,n,n,n,1,1,2,
+  };
+#endif
+
 NOINLINE bool equal(B w, B x) { // doesn't consume
   bool wa = isAtm(w);
   bool xa = isAtm(x);
@@ -409,24 +444,36 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   if (wa) return atomEqual(w, x);
   if (!eqShape(w,x)) return false;
   usz ia = a(x)->ia;
+  if (ia==0) return true;
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
-  if (((we==el_f64 | we==el_i32) && (xe==el_f64 | xe==el_i32))) {
-    if (we==el_i32) { i32* wp = i32any_ptr(w);
-      if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-      else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-    } else { f64* wp = f64any_ptr(w);
-      if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-      else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
+  
+  #if SINGELI
+    if (we<=el_c32 && xe<=el_c32) {
+      u8* wp = tyany_ptr(w);
+      u8* xp = tyany_ptr(x);
+      u64 idx = we*8 + xe;
+      return eqFns[idx](wp, xp, ia, eqFnData[idx]);
     }
-    return true;
-  }
-  if (we==el_c32 && xe==el_c32) {
-    u32* wp = c32any_ptr(w);
-    u32* xp = c32any_ptr(x);
-    for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false;
-    return true;
-  }
+  #else
+    if (((we==el_f64 | we==el_i32) && (xe==el_f64 | xe==el_i32))) {
+      if (we==el_i32) { i32* wp = i32any_ptr(w);
+        if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
+        else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
+      } else { f64* wp = f64any_ptr(w);
+        if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
+        else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
+      }
+      return true;
+    }
+    if (we==el_c32 && xe==el_c32) {
+      u32* wp = c32any_ptr(w);
+      u32* xp = c32any_ptr(x);
+      for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false;
+      return true;
+    }
+  #endif
+  SLOW2("equal", w, x);
   SGetU(x)
   SGetU(w)
   for (usz i = 0; i < ia; i++) if(!equal(GetU(w,i),GetU(x,i))) return false;

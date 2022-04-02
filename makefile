@@ -136,7 +136,7 @@ preSingeliBin:
 	@mv BQN obj/presingeli/BQN
 
 
-gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c}
+gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c equal.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'

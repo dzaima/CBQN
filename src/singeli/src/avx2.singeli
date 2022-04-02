@@ -109,14 +109,12 @@ def blend{I==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[16]i16, 
 def blend{I==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}}
 def blend{I==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}}
 
-# blends by sign bit; no 16-bit case
-def blend{a:T, b:T, m:M & w256{T} & w256i{M, 8}} = cast_v{T, emit{[32]i8, '_mm256_blendv_epi8', v2i{a}, v2i{b}, v2i{m}}}
-def blend{a:T, b:T, m:M & w256{T} & w256i{M,32}} = cast_v{T, emit{[8]f32, '_mm256_blendv_ps',   v2f{a}, v2f{b}, v2f{m}}}
-def blend{a:T, b:T, m:M & w256{T} & w256i{M,64}} = cast_v{T, emit{[4]f64, '_mm256_blendv_pd',   v2d{a}, v2d{b}, v2d{m}}}
+# blend by sign bit; still no 16-bit case
+def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = cast_v{T, emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}}
 
 # assumes all bits are the same in each mask item
 def blendf = blend
-def blendf{a:T, b:T, m:M & w256{T} & w256i{M,16}} = blend{a, b, cast_v{[32]i8,m}}
+def blendf{f:T, t:T, m:M & w256{T} & w256i{M,16}} = blend{f, t, cast_v{[32]i8,m}}
 
 def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
 def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}

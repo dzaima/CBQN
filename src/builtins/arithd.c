@@ -6,11 +6,6 @@
 #define BCALL(N, X) N(b(X))
 #define interp_f64(X) b(X).f
 
-static i8 mask8[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-static i16 mask16[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-static i32 mask32[] = {-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0};
-static i64 mask64[] = {-1,-1,-1,0,0,0};
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "../singeli/gen/dyarith.c"
@@ -235,10 +230,6 @@ static f64 pfmod(f64 a, f64 b) {
   if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }
 
 #if SINGELI
-  static void* tyany_ptr(B x) { // TODO extract to some header file
-    u8 t = v(x)->type;
-    return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
-  }
   #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
   #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
   #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;

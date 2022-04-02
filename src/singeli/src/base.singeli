@@ -26,10 +26,14 @@ def __add{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a,
 def __sub{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
 
 
-def ty_iu{T & T==i8 } = u8;  def ty_is{T & T==i8 } = u8
-def ty_iu{T & T==i16} = u16; def ty_is{T & T==i16} = u16
-def ty_iu{T & T==i32} = u32; def ty_is{T & T==i32} = u32
-def ty_iu{T & T==i64} = u64; def ty_is{T & T==i64} = u64
+def ty_u{T==i8 } = u8;  def ty_u{w== 8} = u8
+def ty_u{T==i16} = u16; def ty_u{w==16} = u16
+def ty_u{T==i32} = u32; def ty_u{w==32} = u32
+def ty_u{T==i64} = u64; def ty_u{w==64} = u64
+def ty_s{T==u8 } = i8;  def ty_s{w== 8} = i8
+def ty_s{T==u16} = i16; def ty_s{w==16} = i16
+def ty_s{T==u32} = i32; def ty_s{w==32} = i32
+def ty_s{T==u64} = i64; def ty_s{w==64} = i64
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
@@ -71,10 +75,14 @@ def      isintv{T} =      isint{eltype{T}}
 def    isfloatv{T} =    isfloat{eltype{T}}
 def   issignedv{T} =   issigned{eltype{T}}
 def isunsignedv{T} = isunsigned{eltype{T}}
-def isvec{T} = match{typekind{T},'vector'}
+def istype{T} = match{kind{T},'type'}
+def isvec{T} = 0
+def isvec{T & istype{T}} = match{typekind{T},'vector'}
 
 
 # non-vector variants of vector defs
 def broadcast{T, v & match{typekind{T},'primitive'}} = v
 def any{v:T & match{typekind{T},'primitive'}} = v
 def anyneg{v:T & match{typekind{T},'primitive'}} = v<0
+def iota{n & knum{n}} = @collect(i to n) i
+def broadcast{n, v & knum{n}} = @collect(n) v

@@ -1,15 +1,18 @@
 # various utilities
 
+def w256{T} = 0
+def w256{T & isvec{T}} = width{T}==256
+
 def wgen256{F} = {
   def r{T} = 0
-  def r{T & width{T}==256} = F{eltype{T}}
+  def r{T & w256{T}} = F{eltype{T}}
   def r{T,w} = 0
-  def r{T,w & width{T}==256} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T,w & w256{T}} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T & ~isvec{T}} = 0
   r
 }
-def w256{T} = width{T}==256
-def w256{T, w} = 0
-def w256{T, w & width{T}==256 & width{eltype{T}}==w} = 1
+def w256{T,w} = 0
+def w256{T,w & w256{T}} = width{eltype{T}}==w
 def w256i = wgen256{{T} => isint{T}}
 def w256s = wgen256{{T} => isint{T} &   issigned{T}}
 def w256u = wgen256{{T} => isint{T} & isunsigned{T}}
@@ -24,8 +27,9 @@ def v2i{x:T & w256{T}} = cast_v{[32]u8, x} # for compact casting for the annoyin
 def v2f{x:T & w256{T}} = cast_v{[8]f32, x}
 def v2d{x:T & w256{T}} = cast_v{[4]f64, x}
 
-def ty_vu{T & w256s{T}} = [vcount{T}](ty_iu{eltype{T}})
-def ty_vs{T & w256u{T}} = [vcount{T}](ty_is{eltype{T}})
+def ty_vu{T & w256s{T}} = [vcount{T}](ty_u{eltype{T}})
+def ty_vs{T & w256u{T}} = [vcount{T}](ty_s{eltype{T}})
+def to_el{E, x:T} = cast_v{[width{T}/width{E}]E, x}
 def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
 
 # load & store
@@ -122,6 +126,10 @@ def insert{x:T, i, v & w256i{T,16} & knum{i}} = emit{T, '_mm256_insert_epi16', x
 def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x, v, i}
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
+# blend by sign bit
+def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = cast_v{T, emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}}
+def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = cast_v{T, emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}}
+
 # mixed-width operations
 def half{x:T, i & w256{T} & knum{i}} = cast_v{[vcount{T}/2](eltype{T}), emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}}
 def pair{a:T,b:T & width{T}==128} = cast_v{[vcount{T}*2](eltype{T}), emit{[8]i32, '_mm256_setr_m128i', a, b}}
@@ -130,6 +138,7 @@ def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 # mask stuff
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
+def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 def any{x:T & w256i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
 def all{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
 def anyneg{x:T & w256s{T}} = getmask{x}!=0

@@ -36,11 +36,6 @@ FN_LUT(avx2, ge, AS); FN_LUT(avx2, ge, AA);
 FN_LUT(avx2, lt, AS);
 FN_LUT(avx2, le, AS);
 
-static void* tyany_ptr(B x) {
-  u8 t = v(x)->type;
-  return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
-}
-
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia
 #define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \

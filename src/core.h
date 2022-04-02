@@ -33,6 +33,10 @@ static B* arr_bptr(B x) { assert(isArr(x));
   if (v(x)->type==t_fillslice) return c(FillSlice,x)->a;
   return NULL;
 }
+static void* tyany_ptr(B x) {
+  u8 t = v(x)->type;
+  return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
+}
 
 
 typedef struct BFn {

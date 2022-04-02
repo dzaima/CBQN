@@ -4,6 +4,7 @@ include './cbqnDefs'
 include './avx'
 include './avx2'
 include './bitops'
+include './mask'
 
 
 def rootty{T & match{typekind{T},'primitive'}} = T
@@ -15,19 +16,9 @@ def ty_dbl{T & i16==T} = i32
 def ty_dbl{T & i32==T} = i64
 def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
 def dcast_i{x} = ext{ty_dbl{type{x}}, x}
-def to_el{E, x:T} = cast_v{[width{T}/width{E}]E, x}
-
-# get mask of first n items; n>0 & n<vcount{T}
-def genmask{T,n & w256{T, 8}} = load{cast_p{[32]i8,  emit{*i8,  '', 'mask8' } + (n^31)}, 0}
-def genmask{T,n & w256{T,16}} = load{cast_p{[16]i16, emit{*i16, '', 'mask16'} + (n^15)}, 0}
-def genmask{T,n & w256{T,32}} = load{cast_p{[ 8]i32, emit{*i32, '', 'mask32'} + (n^7)}, 0}
-def genmask{T,n & w256{T,64}} = load{cast_p{[ 4]i64, emit{*i64, '', 'mask64'} + (n^3)}, 0}
 
 def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
 def maskstoreF{p, m, n, x:T} = store{p, n, blendf{load{p,n}, x, m}}
-
-def anyne{x:T, y:T, M & M{0}==0} = ~all{x==y}
-def anyne{x:T, y:T, M & M{0}==1} =  any{M{x!=y}}
 
 # + & -
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
@@ -94,10 +85,10 @@ def arithAny{VT, F, W, X, r, len} = {
   @forv{VT} (r over i from 0 to vv) r = arithChk3{F, {x}=>x, W{i}, X{i}, i*bam}
   left:= len&(bam-1)
   if (left!=0) {
-    m:= genmask{VT, left}
+    m:= maskOf{VT, left}
     def mask{x:X} = x&cast_v{X,m}
     def mask{x==0} = 1
-    rv:= arithChk3{F, mask, W{vv}, X{vv}, vv*bam}
+    rv:= arithChk3{F, maskAfter{left}, W{vv}, X{vv}, vv*bam}
     maskstoreF{cast_p{VT,r}, m, vv, rv}
   }
   len
