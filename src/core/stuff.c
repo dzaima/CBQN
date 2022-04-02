@@ -437,13 +437,23 @@ NOINLINE bool atomEqualR(B w, B x) {
   };
 #endif
 
+NOINLINE bool equalSlow(B w, B x, usz ia);
 NOINLINE bool equal(B w, B x) { // doesn't consume
   bool wa = isAtm(w);
   bool xa = isAtm(x);
   if (wa!=xa) return false;
   if (wa) return atomEqual(w, x);
-  if (!eqShape(w,x)) return false;
+  ur wr = rnk(w);
+  ur xr = rnk(x);
+  if (wr!=xr) return false;
   usz ia = a(x)->ia;
+  if (LIKELY(wr==1)) {
+    if (ia != a(w)->ia) return false;
+  } else {
+    usz* wsh = a(w)->sh;
+    usz* xsh = a(x)->sh;
+    if (wsh!=xsh) for (usz i = 0; i < wr; i++) if (wsh[i]!=xsh[i]) return false;
+  }
   if (ia==0) return true;
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
@@ -473,6 +483,9 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
       return true;
     }
   #endif
+  return equalSlow(w, x, ia);
+}
+bool equalSlow(B w, B x, usz ia) {
   SLOW2("equal", w, x);
   SGetU(x)
   SGetU(w)
