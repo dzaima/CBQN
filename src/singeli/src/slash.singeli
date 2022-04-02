@@ -15,11 +15,19 @@ def comp8{w:*u64, X, r:*i8, l:u64} = {
   }
 }
 
+def tab{n,l} = {
+  def m=n-1; def t=tab{m,l}
+  def k = (1<<l - 1) << (m*l)
+  merge{t, k+t}
+}
+def tab{n==0,l} = tup{0}
+c16lut:*u64 = tab{4,16}
+
 def comp16{w:*u64, X, r:*i16, l:u64} = {
   @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {
     def step{w} = {
       pc:= popc{w}
-      store{reinterpret{*u64,r}, 0, pext{promote{u64,X{}}, load{emit{*u64,'','c16lut'}, w}}}
+      store{reinterpret{*u64,r}, 0, pext{promote{u64,X{}}, load{c16lut, w}}}
       r+= pc
     }
     step{w&15}

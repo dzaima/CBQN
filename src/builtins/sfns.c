@@ -439,8 +439,6 @@ B select_c2(B t, B w, B x) {
 
 #ifdef __BMI2__
   #include <immintrin.h>
-  u64 c16lut[] = {0x0000000000000000, 0x000000000000ffff, 0x00000000ffff0000, 0x00000000ffffffff, 0x0000ffff00000000, 0x0000ffff0000ffff, 0x0000ffffffff0000, 0x0000ffffffffffff, 0xffff000000000000, 0xffff00000000ffff, 0xffff0000ffff0000, 0xffff0000ffffffff, 0xffffffff00000000, 0xffffffff0000ffff, 0xffffffffffff0000, 0xffffffffffffffff};
-  
   #if SINGELI
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"
