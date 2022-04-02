@@ -258,6 +258,9 @@ static B unshare(B x) {
   }
 }
 
+B internalTemp_c1(B t, B x) { return x; }
+B internalTemp_c2(B t, B w, B x) { dec(w); return x; }
+
 B heapDump_c1(B t, B x) {
   cbqn_heapDump();
   return m_c32(0);
@@ -278,8 +281,8 @@ B getInternalNS() {
     listVariations_def = m_str8l("if");
     gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)F(heapDump));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump","temp");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)F(heapDump)F(internalTemp));
     #undef F
     gc_add(internalNS);
   }
