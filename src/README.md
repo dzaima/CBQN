@@ -97,12 +97,7 @@ A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to 
 
 The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will return the object to the memory manager if the refcount as a result goes to zero.
 
-Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running:
-```bash
-#!/usr/bin/env bash
-make   rtverify && echo   'rtverify:' && ./BQN -M 1000 path/to/mlochbaum/BQN/test/this.bqn
-make heapverify && echo 'heapverify:' && ./BQN -M 1000 path/to/mlochbaum/BQN/test/this.bqn -noerr bytecode header identity literal namespace prim simple syntax token under undo
-```
+Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running `test/mainCfgs.sh path/to/mlochbaum/BQN`, which'll run a couple primary configurations, including said `heapverify`.
 
 Temporary allocations can be made with `utils/talloc.h`:
 ```C
