@@ -221,7 +221,7 @@ B casrt_c1(B t, B x) {
 }
 
 B sys_c1(B t, B x);
-B  out_c1(B t, B x) {
+B out_c1(B t, B x) {
   if (isArr(x) && rnk(x)>1) thrF("•Out: Argument cannot have rank %i", rnk(x));
   printRaw(x); putchar('\n');
   return x;
@@ -239,7 +239,7 @@ B show_c1(B t, B x) {
 
 static B vfyStr(B x, char* name, char* arg) {
   if (isAtm(x) || rnk(x)!=1) thrF("%U: %U must be a character vector", name, arg);
-  if (a(x)->type!=t_c32arr && a(x)->type!=t_c32slice) {
+  if (!elChr(TI(x,elType))) {
     usz ia = a(x)->ia;
     SGetU(x)
     for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a character vector", name, arg);
