@@ -156,6 +156,13 @@ DEF_E(void, copy, MAX, false, x, (Mut* m, usz ms, B x, usz xs, usz l), ms, x, xs
 DEF_G(void, copy, B,             (Mut* m, usz ms, B x, usz xs, usz l)) { 
   B* mpo = m->aB+ms;
   switch(v(x)->type) {
+    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(bitp_get(xp, xs+i)); return; }
+    case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
+    case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
+    case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
+    case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); for (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
+    case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
+    case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_harr: case t_hslice: case t_fillarr: case t_fillslice:
       memcpy(mpo, arr_bptr(x)+xs, l*sizeof(B));
       for (usz i = 0; i < l; i++) inc(mpo[i]);
@@ -164,6 +171,7 @@ DEF_G(void, copy, B,             (Mut* m, usz ms, B x, usz xs, usz l)) {
       memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
       return;
     default: {
+      SLOW1("copyG", x);
       SGet(x)
       for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
       return;
