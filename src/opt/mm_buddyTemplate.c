@@ -116,6 +116,7 @@ void BN(dumpHeap)(FILE* f) {
     fwrite(prefix, 1, vals[2], f);
     fwrite(ci.p, 1, ci.sz, f);
   }
+  fflush(f);
 }
 
 #undef MMAP
