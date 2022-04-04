@@ -589,21 +589,19 @@ B num_squeeze(B x) {
   u8 xe = TI(x,elType);
   usz i = 0;
   u32 or = 0; // using bitwise or as an approximate ⌈´
-  bool neg = false;
   switch (xe) { default: UD;
     case el_bit: goto r_x;
-    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
-    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
-    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; i32 sgn = (u32)(c>>31); or|= ((u32)c) ^ sgn; neg|= sgn; } goto r_or; }
+    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
+    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
+    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
     case el_f64: {
       f64* xp = f64any_ptr(x);
       for (; i < ia; i++) {
         f64 cf = xp[i];
         i32 c = (i32)cf;
         if (c!=cf) goto r_x; // already f64
-        i32 sgn = (u32)(c>>31);
-        or|= ((u32)c) ^ sgn;
-        neg|= sgn;
+        c&= ~1;
+        or|= ((u32)c) ^ (u32)(c>>31);
       }
       goto r_or;
     }
@@ -617,10 +615,8 @@ B num_squeeze(B x) {
         while (i<ia) if (!isF64(xp[i++])) goto r_x;
         goto r_f64;
       }
-      i32 c = o2iu(xp[i]);
-      i32 sgn = (u32)(c>>31);
-      or|= ((u32)c) ^ sgn;
-      neg|= sgn;
+      i32 c = o2iu(xp[i]) & ~1;
+      or|= ((u32)c) ^ (u32)(c>>31);
     }
     goto r_or;
   }
@@ -635,10 +631,9 @@ B num_squeeze(B x) {
     i32 c = o2iu(cr);
     i32 sgn = (u32)(c>>31);
     or|= ((u32)c) ^ sgn;
-    neg|= sgn;
   }
   r_or:
-  if (!neg && or<=1) goto r_bit;
+  if (or==0) goto r_bit;
   else if (or<=(u32)I8_MAX ) goto r_i8;
   else if (or<=(u32)I16_MAX) goto r_i16;
   else                       goto r_i32;
