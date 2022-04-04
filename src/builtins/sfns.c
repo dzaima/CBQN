@@ -268,6 +268,8 @@ static B recPick(B w, B x) { // doesn't consume
     case el_i8:  { i8*  wp = i8any_ptr (w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
     case el_i16: { i16* wp = i16any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
     case el_i32: { i32* wp = i32any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_f64: { f64* wp = f64any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { i64 ws = (i64)wp[i]; if (wp[i]!=ws) thrM(ws==I64_MIN? "⊑: 𝕨 contained value too large" : "⊑: 𝕨 contained a non-integer");
+                                                                                                                                c = c*xsh[i] + WRAP(ws,    xsh[i], goto oob); }; return IGet(x,c); }
     case el_c8: case el_c16: case el_c32: case el_bit:
     case el_B: {
       if (ia==0) {
