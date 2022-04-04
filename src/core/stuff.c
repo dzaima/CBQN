@@ -608,17 +608,16 @@ B num_squeeze(B x) {
   u32 or = 0; // using bitwise or as an approximate ⌈´
   switch (xe) { default: UD;
     case el_bit: goto r_x;
-    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
-    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
-    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]&~1; or|= ((u32)c) ^ (u32)(c>>31); } goto r_or; }
+    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
+    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
+    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
     case el_f64: {
       f64* xp = f64any_ptr(x);
       for (; i < ia; i++) {
         f64 cf = xp[i];
         i32 c = (i32)cf;
         if (c!=cf) goto r_x; // already f64
-        c&= ~1;
-        or|= ((u32)c) ^ (u32)(c>>31);
+        or|= ((u32)c & ~1) ^ (u32)(c>>31);
       }
       goto r_or;
     }
@@ -632,8 +631,8 @@ B num_squeeze(B x) {
         while (i<ia) if (!isF64(xp[i++])) goto r_x;
         goto r_f64;
       }
-      i32 c = o2iu(xp[i]) & ~1;
-      or|= ((u32)c) ^ (u32)(c>>31);
+      i32 c = o2iu(xp[i]);
+      or|= ((u32)c & ~1) ^ (u32)(c>>31);
     }
     goto r_or;
   }
@@ -646,8 +645,7 @@ B num_squeeze(B x) {
       goto r_f64;
     }
     i32 c = o2iu(cr);
-    i32 sgn = (u32)(c>>31);
-    or|= ((u32)c) ^ sgn;
+    or|= ((u32)c & ~1) ^ (u32)(c>>31);
   }
   r_or:
   if (or==0) goto r_bit;

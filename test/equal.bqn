@@ -1,3 +1,4 @@
+# make o3n-singeli && ./BQN test/equal.bqn
 ⟨ListVariations, ClearRefs, Variation, Squeeze, Info⟩ ← •internal
 u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123
