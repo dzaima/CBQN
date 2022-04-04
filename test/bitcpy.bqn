@@ -1,5 +1,6 @@
+# make t=bitcpyTest f='-O3 -march=native -DTEST_BITCPY' singeli=1 c && ./BQN test/bitcpy.bqn
 ⟨Temp, Type, Unshare, Squeeze, Info⟩ ← •internal
-u ← •UnixTime@
+u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123
 
 r ← •MakeRand •Show u
@@ -38,4 +39,4 @@ Do ← { 𝕊:
   ! a ≡ aT
 }
 
-@∘Do⍟(⊑(•BQN¨•args)∾500) @
+@∘Do⍟(⊑(•BQN¨•args)∾2000) @
