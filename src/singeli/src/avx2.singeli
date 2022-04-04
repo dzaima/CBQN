@@ -119,8 +119,8 @@ def blendf{f:T, t:T, m:M & w256{T} & w256i{M,16}} = blend{f, t, cast_v{[32]i8,m}
 def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
 def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}
 
-def sel{x:T, i:[8]i32 & w256{T,32}} = cast_v{T, emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}}
-# def sel{x:T, i:[32]i8 & w256{T, 8}} = cast_v{T, emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}} # this is per-lane so not generic
+def sel{I, x:T, i:[8]i32 & w256{I,32}} = cast_v{T, emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}}
+def sel{I, x:T, i:[32]i8 & w128{I, 8}} = cast_v{T, emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}}
 
 def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
 def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}

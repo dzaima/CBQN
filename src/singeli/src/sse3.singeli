@@ -1,13 +1,16 @@
+def w128{T} = 0
+def w128{T & isvec{T}} = width{T}==128
+
 def wgen128{F} = {
   def r{T} = 0
-  def r{T & width{T}==128} = F{eltype{T}}
+  def r{T & w128{T}} = F{eltype{T}}
   def r{T,w} = 0
-  def r{T,w & width{T}==128} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T,w & w128{T}} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T & ~isvec{T}} = 0
   r
 }
-def w128{T} = width{T}==128
-def w128{T, w} = 0
-def w128{T, w & width{T}==128 & width{eltype{T}}==w} = 1
+def w128{T,w} = 0
+def w128{T,w & w128{T}} = width{eltype{T}}==w
 def w128i = wgen128{{T} => isint{T}}
 def w128s = wgen128{{T} => isint{T} &   issigned{T}}
 def w128u = wgen128{{T} => isint{T} & isunsigned{T}}
