@@ -524,6 +524,23 @@ bool eequal(B w, B x) { // doesn't consume
   // dec(wf); dec(xf);
   // if (!feq) return false;
   if (!eqShape(w,x)) return false;
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  if (we==el_f64 && xe==el_f64) {
+    usz ia = a(x)->ia;
+    f64* wp = f64any_ptr(w);
+    f64* xp = f64any_ptr(x);
+    u64 r = 1;
+    for (usz i = 0; i < ia; i++) {
+      #if EEQUAL_NEGZERO
+      r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
+      #else
+      r&= ((u64*)wp)[i] == ((u64*)xp)[i];
+      #endif
+    }
+    return r;
+  }
+  if (we!=el_B && xe!=el_B) return equal(w, x);
   usz ia = a(x)->ia;
   SGetU(x)
   SGetU(w)
