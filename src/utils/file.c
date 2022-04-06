@@ -239,7 +239,7 @@ char path_type(B path) {
   if (S_ISCHR (mode)) return 'c';
   thrM("Unexpected file type");
 }
-void mmX_dumpHeap();
+void mmX_dumpHeap(FILE* f);
 void cbqn_heapDump() {
   char* name = "CBQNHeapDump";
   FILE* f = fopen(name, "w");
