@@ -31,7 +31,7 @@ rtverifyn-singeli:
 wasi-o3:
 	@${MAKE} singeli=0 t=wasi_o3    f="-DWASM -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" LDFLAGS="-lwasi-emulated-mman --target=wasm32-wasi" LD_LIBS= PIE= c
 emcc-o3:
-	@${MAKE} singeli=0 t=emcc_o3    f='-DWASM -O3' CC=emcc c
+	@${MAKE} singeli=0 t=emcc_o3    f='-DWASM -DEMCC -O3' LDFLAGS='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine -s EXPORTED_RUNTIME_METHODS=ccall,cwrap' CC=emcc c
 
 
 # compiler setup
