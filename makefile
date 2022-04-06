@@ -29,13 +29,14 @@ heapverifyn-singeli:
 rtverifyn-singeli:
 	@${MAKE} singeli=1 t=rtverifyn_si f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" c
 wasi-o3:
-	@${MAKE} singeli=0 t=wasm_o3    f="-DWASM -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" LDFLAGS="-lwasi-emulated-mman --target=wasm32-wasi" LD_LIBS= PIE= c
+	@${MAKE} singeli=0 t=wasi_o3    f="-DWASM -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" LDFLAGS="-lwasi-emulated-mman --target=wasm32-wasi" LD_LIBS= PIE= c
 
 
 # compiler setup
 CC = clang
 PIE = -no-pie
 LD_LIBS = -lm
+OUTPUT = BQN
 
 # test if we are running gcc or clang
 CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
@@ -76,20 +77,20 @@ c: # custom
 	@${MAKE} gen
 
 single-o3:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o BQN src/opt/single.c $(LD_LIBS)
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
 single-o3g:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o BQN src/opt/single.c $(LD_LIBS)
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
 single-debug:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o BQN src/opt/single.c $(LD_LIBS)
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
 single-c:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o BQN src/opt/single.c $(LD_LIBS)
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
 
 
 
 
 
 gen: builtins core base jit utils # build the final binary
-	@$(CC) ${CCFLAGS} ${LDFLAGS} ${PIE} -o BQN ${bd}/*.o $(LD_LIBS)
+	@$(CC) ${CCFLAGS} ${LDFLAGS} ${PIE} -o ${OUTPUT} ${bd}/*.o $(LD_LIBS)
 	@echo ${postmsg}
 
 # build individual object files
