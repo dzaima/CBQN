@@ -39,8 +39,12 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   if (mm_heapAlloc+sz >= mm_heapMax) thrOOM();
   mm_heapAlloc+= sz;
   // gc_maybeGC();
-  EmptyValue* c = MMAP(sz);
-  if (c==MAP_FAILED) thrOOM();
+  #if WASI
+    EmptyValue* c = calloc(sz+getPageSize(), 1);
+  #else
+    EmptyValue* c = MMAP(sz);
+    if (c==MAP_FAILED) thrOOM();
+  #endif
   #ifdef USE_VALGRIND
     VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
   #endif
