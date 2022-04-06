@@ -899,7 +899,7 @@ B tCharN_c1(B t, B x) {
   return n>=0? m_c32(n) : m_f64(0);
 }
 #else
-B tRaw_c1(B t, B x) { thrM("•term.Raw not available"); }
+B tRawMode_c1(B t, B x) { thrM("•term.RawMode not available"); }
 B tCharN_c1(B t, B x) { thrM("•term.CharN not available"); }
 #endif
 
