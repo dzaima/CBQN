@@ -339,7 +339,10 @@ int main(int argc, char* argv[]) {
   if (startREPL) {
     repl_init();
     while (true) {
-      if (!silentREPL) printf("   ");
+      if (!silentREPL) {
+        printf("   ");
+        fflush(stdout);
+      }
       char* ln = NULL;
       size_t gl = 0;
       i64 read = getline(&ln, &gl, stdin);

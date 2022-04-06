@@ -977,7 +977,7 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   u64 sz = (elSize*count + ps-1)/ps * ps;
   assert(sz%elSize == 0);
   #if NO_MMAP
-  void* mem = malloc(sz+ps);
+  void* mem = calloc(sz+ps, 1);
   #else
   void* mem = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
   if (*curr == MAP_FAILED) err("Failed to allocate stack");
