@@ -34,6 +34,7 @@ rtverifyn-singeli:
 # compiler setup
 CC = clang
 PIE = -no-pie
+LD_LIBS = -lm
 
 # test if we are running gcc or clang
 CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
@@ -74,20 +75,20 @@ c: # custom
 	@${MAKE} gen
 
 single-o3:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o BQN src/opt/single.c -lm
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o BQN src/opt/single.c $(LD_LIBS)
 single-o3g:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o BQN src/opt/single.c -lm
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o BQN src/opt/single.c $(LD_LIBS)
 single-debug:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o BQN src/opt/single.c -lm
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o BQN src/opt/single.c $(LD_LIBS)
 single-c:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o BQN src/opt/single.c -lm
+	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o BQN src/opt/single.c $(LD_LIBS)
 
 
 
 
 
 gen: builtins core base jit utils # build the final binary
-	@$(CC) ${LDFLAGS} ${PIE} -o BQN ${bd}/*.o -lm
+	@$(CC) ${CCFLAGS} ${LDFLAGS} ${PIE} -o BQN ${bd}/*.o $(LD_LIBS)
 	@echo ${postmsg}
 
 # build individual object files
