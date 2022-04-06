@@ -758,7 +758,7 @@ B fromUtf8_c1(B t, B x) {
 
 extern char** environ;
 
-#if __has_include(<spawn.h>) && __has_include(<sys/wait.h>)
+#if __has_include(<spawn.h>) && __has_include(<sys/wait.h>) && !WASM
 #include <spawn.h>
 #include <fcntl.h>
 #include <sys/wait.h>
