@@ -1076,9 +1076,10 @@ void comp_init() {
 
 
 
-
 typedef struct CatchFrame {
-  jmp_buf jmp;
+  #if CATCH_ERRORS
+    jmp_buf jmp;
+  #endif
   u64 gsDepth;
   u64 envDepth;
   u64 cfDepth;
@@ -1087,6 +1088,7 @@ CatchFrame* cf; // points to after end
 CatchFrame* cfStart;
 CatchFrame* cfEnd;
 
+#if CATCH_ERRORS
 jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch();
   if (cf==cfEnd) {
     u64 n = cfEnd-cfStart;
@@ -1101,6 +1103,8 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   cf->envDepth = (envCurr+1)-envStart;
   return &(cf++)->jmp;
 }
+#endif
+
 void popCatch() {
   #if CATCH_ERRORS
     assert(cf>cfStart);
@@ -1225,6 +1229,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
   
+#if CATCH_ERRORS
   if (cf>cfStart) { // something wants to catch errors
     cf--;
     
@@ -1239,6 +1244,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     cf = cfStart+cf->cfDepth;
     longjmp(cf->jmp, 1);
   } else { // uncaught error
+#endif
     assert(cf==cfStart);
     fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n',stderr); fflush(stderr);
     Env* envEnd = envCurr+1;
@@ -1249,7 +1255,9 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     #else
     exit(1);
     #endif
+#if CATCH_ERRORS
   }
+#endif
 }
 
 NOINLINE NORETURN void thr(B msg) {

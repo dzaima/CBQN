@@ -70,7 +70,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#if CATCH_ERRORS
 #include <setjmp.h>
+#endif
 #ifdef HEAP_VERIFY
   #undef CATCH_ERRORS
   #define CATCH_ERRORS 0
@@ -342,8 +344,8 @@ NOINLINE NORETURN void rethrow();
 NOINLINE NORETURN void thrM(char* s);
 NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);
-jmp_buf* prepareCatch(void);
 #if CATCH_ERRORS
+jmp_buf* prepareCatch(void);
 #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ freeThrown(); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
 #else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
 #define CATCH false

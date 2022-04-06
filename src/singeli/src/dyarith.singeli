@@ -1,6 +1,7 @@
 include './base'
 include './f64'
 include './cbqnDefs'
+include './sse3'
 include './avx'
 include './avx2'
 include './bitops'
@@ -59,6 +60,7 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = 
   f32mul:= cf32{w} * cf32{x}
   tup{w*x, any{M{cast_v{[8]u32, emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}}
   # TODO fallback to the below if the above fails
+  # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = unpackQ{w, broadcast{T, 0}}
   # def xp = unpackQ{x, broadcast{T, 0}}
   # def rp = each{__mul32, wp, xp}

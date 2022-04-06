@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <poll.h>
 #include <errno.h>
-#include <sys/wait.h>
+
 
 #include "../core.h"
 #include "../utils/hash.h"
@@ -758,9 +758,10 @@ B fromUtf8_c1(B t, B x) {
 
 extern char** environ;
 
-#if __has_include(<spawn.h>)
+#if __has_include(<spawn.h>) && __has_include(<sys/wait.h>)
 #include <spawn.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 typedef struct pollfd pollfd;
 void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
 
