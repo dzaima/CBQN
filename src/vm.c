@@ -1144,6 +1144,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   return s;
 }
 
+extern bool cbqn_initialized;
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!q_N(src) && !q_N(comp->indices)) {
@@ -1151,25 +1152,33 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcPos))+1;
     // printf("  bcPos=%d\n", bcPos);       // in case the pretty error generator is broken
     // printf(" inds:%d…%d\n", cs, ce);
-    if (CATCH) { // want to try really hard to print errors
-      freeThrown();
-      int start = fprintf(stderr, "at ");
-      usz srcL = a(src)->ia;
-      SGetU(src)
-      usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
-      usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
-      if (ce>srcE) ce = srcE;
-      cs-= srcS; ce-= srcS;
-      fputc('\n', stderr);
-      for (i32 i = 0; i < cs+start; i++) fputc(' ', stderr);
-      for (i32 i = cs; i < ce; i++) fputc('^', stderr);
-      fputc('\n', stderr);
-      return;
-    }
+    
+    
+    // want to try really hard to print errors
+    if (!cbqn_initialized) goto native_print;
+    if (CATCH) goto native_print;
+    
     B s = emptyCVec();
     fprintRaw(stderr, vm_fmtPoint(src, s, comp->path, cs, ce));
     fputc('\n', stderr);
     popCatch();
+    return;
+    
+native_print:
+    freeThrown();
+    int start = fprintf(stderr, "at ");
+    usz srcL = a(src)->ia;
+    SGetU(src)
+    usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
+    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+    if (ce>srcE) ce = srcE;
+    cs-= srcS; ce-= srcS;
+    fputc('\n', stderr);
+    for (i32 i = 0; i < cs+start; i++) fputc(' ', stderr);
+    for (i32 i = cs; i < ce; i++) fputc('^', stderr);
+    fputc('\n', stderr);
+    return;
+    
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #ifdef DEBUG
@@ -1278,4 +1287,7 @@ NOINLINE void freeThrown() {
 NOINLINE NORETURN void thrM(char* s) {
   thr(fromUTF8(s, strlen(s)));
 }
-NOINLINE NORETURN void thrOOM() { thr(inc(oomMessage)); }
+NOINLINE NORETURN void thrOOM() {
+  if (oomMessage.u==0) err("out-of-memory encountered before out-of-memory error message object was initialized");
+  thr(inc(oomMessage));
+}

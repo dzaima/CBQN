@@ -667,9 +667,11 @@ void base_init() { // very first init function
   #undef FD
 }
 
+bool cbqn_initialized;
 void cbqn_init() {
   #define F(X) X##_init();
    FOR_INIT(F)
   #undef F
+   cbqn_initialized = true;
 }
 #undef FOR_INIT
