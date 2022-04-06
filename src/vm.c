@@ -978,7 +978,9 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   assert(sz%elSize == 0);
   *curr = *start = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
   *end = ((char*)*start)+sz;
+  #if !WASM
   mprotect(*end, ps, PROT_NONE); // idk first way i found to force erroring on overflow
+  #endif
 }
 void print_vmStack() {
   #ifdef DEBUG_VM

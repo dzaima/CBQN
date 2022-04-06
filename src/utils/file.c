@@ -157,6 +157,9 @@ B path_name(B path) {
 }
 
 B path_abs(B path) {
+  #if WASM
+  return path; // lazy
+  #else
   if (q_N(path)) return path;
   u64 plen = utf8lenB(path);
   TALLOC(char, p, plen+1);
@@ -169,6 +172,7 @@ B path_abs(B path) {
   dec(path);
   TFREE(p);
   return r;
+  #endif
 }
 
 
