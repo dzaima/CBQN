@@ -28,7 +28,8 @@ heapverifyn-singeli:
 	@${MAKE} singeli=1 t=heapverifyn_si f="-g -DDEBUG -DHEAP_VERIFY -march=native" c
 rtverifyn-singeli:
 	@${MAKE} singeli=1 t=rtverifyn_si f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" c
-
+wasi-o3:
+	@${MAKE} singeli=0 t=wasm_o3    f="-DWASM -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" LDFLAGS="-lwasi-emulated-mman --target=wasm32-wasi" LD_LIBS= PIE= c
 
 
 # compiler setup
