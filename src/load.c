@@ -447,7 +447,7 @@ void load_init() { // very last init function
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);
     printf("\n");
-    decG(interp);
+    dec(interp);
     #ifdef HEAP_VERIFY
       heapVerify();
     #endif
