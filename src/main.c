@@ -231,7 +231,7 @@ void cbqn_evalSrc(char* src, i64 len) {
   Scope* sc = ptr_inc(c(NS, ns)->sc);
   ptr_dec(v(ns));
   
-  B code = fromUTF8l(src);
+  B code = fromUTF8(src, len);
   Block* block = bqn_compSc(code, inc(replPath), emptySVec(), sc, true);
   
   ptr_dec(sc->body);
