@@ -15,14 +15,14 @@ B undo_c1(Md1D* d, B x) { B f = d->f;
   if (isFun(f)) return TI(f, fn_im)(f, x);
   B fi = m1_d(incG(rt_undo), inc(f));
   B r = c1(fi, x);
-  dec(fi);
+  decG(fi);
   return r;
 }
 B undo_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isFun(f)) return TI(f, fn_ix)(f, w, x);
   B fi = m1_d(incG(rt_undo), inc(f));
   B r = c2(fi, w, x);
-  dec(fi);
+  decG(fi);
   return r;
 }
 

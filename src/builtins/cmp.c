@@ -35,35 +35,35 @@
           case el_c16: { u16* wp=c16any_ptr(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xp[i]); break; } \
           case el_c32: { u32* wp=c32any_ptr(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xp[i]); break; } \
           case el_f64: { f64* wp=f64any_ptr(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xp[i]); break; } \
-        }                            \
-        dec(w);dec(x); return r;     \
-      }                              \
-    } else { AL(w)                   \
-      switch(we) { default: UD;      \
-        case el_bit: { if (!q_bit(x)) break; u64 xv=bitx(x); u64* wp=bitarr_ptr(w); for(usz i=0;i<bia;i++) { u64 wv=wp[i]; rp[i]=BX; } dec(w); return r; } \
-        case el_i8:  { if (!q_i8 (x)) break; i8  xv=o2iu(x); i8*  wp=i8any_ptr (w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_i16: { if (!q_i16(x)) break; i16 xv=o2iu(x); i16* wp=i16any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_i32: { if (!q_i32(x)) break; i32 xv=o2iu(x); i32* wp=i32any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_c8:  { if (!q_c8 (x)) break; u8  xv=o2cu(x); u8*  wp=c8any_ptr (w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_c16: { if (!q_c16(x)) break; u16 xv=o2cu(x); u16* wp=c16any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_c32: { if (!q_c32(x)) break; u32 xv=o2cu(x); u32* wp=c32any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
-        case el_f64: { if (!q_f64(x)) break; f64 xv=o2fu(x); f64* wp=f64any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); dec(w); return r; } \
+        }                          \
+        decG(w);decG(x); return r; \
+      }                            \
+    } else { AL(w)                 \
+      switch(we) { default: UD;    \
+        case el_bit: { if (!q_bit(x)) break; u64 xv=bitx(x); u64* wp=bitarr_ptr(w); for(usz i=0;i<bia;i++) { u64 wv=wp[i]; rp[i]=BX; } decG(w); return r; } \
+        case el_i8:  { if (!q_i8 (x)) break; i8  xv=o2iu(x); i8*  wp=i8any_ptr (w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_i16: { if (!q_i16(x)) break; i16 xv=o2iu(x); i16* wp=i16any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_i32: { if (!q_i32(x)) break; i32 xv=o2iu(x); i32* wp=i32any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_c8:  { if (!q_c8 (x)) break; u8  xv=o2cu(x); u8*  wp=c8any_ptr (w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_c16: { if (!q_c16(x)) break; u16 xv=o2cu(x); u16* wp=c16any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_c32: { if (!q_c32(x)) break; u32 xv=o2cu(x); u32* wp=c32any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
+        case el_f64: { if (!q_f64(x)) break; f64 xv=o2fu(x); f64* wp=f64any_ptr(w); for(usz i=0;i<ria;i++) bitp_set(rp,i,wp[i] OP xv); decG(w); return r; } \
       }                         \
-      dec(r);                   \
+      decG(r);                  \
     }                           \
   } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x) \
       switch(xe) { default: UD; \
-        case el_bit: { if (!q_bit(w)) break; u64 wv=bitx(w); u64* xp=bitarr_ptr(x); for(usz i=0;i<bia;i++) { u64 xv=xp[i]; rp[i]=BX; } dec(x); return r; } \
-        case el_i8:  { if (!q_i8 (w)) break; i8  wv=o2iu(w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_i16: { if (!q_i16(w)) break; i16 wv=o2iu(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_i32: { if (!q_i32(w)) break; i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_c8:  { if (!q_c8 (w)) break; u8  wv=o2cu(w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_c16: { if (!q_c16(w)) break; u16 wv=o2cu(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_c32: { if (!q_c32(w)) break; u32 wv=o2cu(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-        case el_f64: { if (!q_f64(w)) break; f64 wv=o2fu(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); dec(x); return r; } \
-      }       \
-      dec(r); \
-    }         \
+        case el_bit: { if (!q_bit(w)) break; u64 wv=bitx(w); u64* xp=bitarr_ptr(x); for(usz i=0;i<bia;i++) { u64 xv=xp[i]; rp[i]=BX; } decG(x); return r; } \
+        case el_i8:  { if (!q_i8 (w)) break; i8  wv=o2iu(w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_i16: { if (!q_i16(w)) break; i16 wv=o2iu(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_i32: { if (!q_i32(w)) break; i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_c8:  { if (!q_c8 (w)) break; u8  wv=o2cu(w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_c16: { if (!q_c16(w)) break; u16 wv=o2cu(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_c32: { if (!q_c32(w)) break; u32 wv=o2cu(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+        case el_f64: { if (!q_f64(w)) break; f64 wv=o2fu(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+      }        \
+      decG(r); \
+    }          \
   end:;
 #endif
 
