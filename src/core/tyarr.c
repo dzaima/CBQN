@@ -51,7 +51,7 @@ NOINLINE B m_str32(u32* s) {
     if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2fu(xp[i]    ); } \
     else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2fu(GetU(x,i)); } \
   }                      \
-  dec(x);                \
+  decG(x);               \
   return (T##Arr*)r;     \
 }
 
@@ -75,7 +75,7 @@ T##Arr* cpy##T##Arr(B x) { \
     if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2cu(xp[i]    ); } \
     else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2cu(GetU(x,i)); } \
   }                        \
-  dec(x);                  \
+  decG(x);                 \
   return (T##Arr*)r;       \
 }
 
@@ -103,7 +103,7 @@ BitArr* cpyBitArr(B x) {
     if (xp!=NULL) { for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(xp[i]    )); }
     else { SGetU(x) for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(GetU(x,i))); }
   }
-  dec(x);
+  decG(x);
   return (BitArr*)r;
 }
 

@@ -57,7 +57,7 @@ B info_c2(B t, B w, B x) {
     }
     AFMT("type:%i=%S ", xv->type, type_repr(xv->type));
     AFMT("alloc:%l", mm_size(xv));
-    dec(x);
+    decG(x);
   } else {
     AFMT("%xl: ", x.u);
     A8("not heap-allocated");
@@ -97,7 +97,7 @@ B listVariations_c2(B t, B w, B x) {
     else if (c=='f') c_rmFill=true;
     else thrF("internal.ListVariations: Unknown option '%c' in 𝕨", c);
   }
-  dec(w);
+  decG(w);
   
   u8 xe = TI(x,elType);
   B xf = getFillQ(x);
@@ -142,7 +142,7 @@ B listVariations_c2(B t, B w, B x) {
   if(af64) { r=vec_add(r,inc(v_Af64));r=vec_add(r,inc(v_Sf64)); if(c_incr) { r=vec_add(r,inc(v_Af64Inc));r=vec_add(r,inc(v_Sf64Inc)); } }
   if(ah)   { r=vec_add(r,inc(v_Ah  ));r=vec_add(r,inc(v_Sh  )); if(c_incr) { r=vec_add(r,inc(v_AhInc  ));r=vec_add(r,inc(v_ShInc  )); } }
   {          r=vec_add(r,inc(v_Af  ));r=vec_add(r,inc(v_Sf  )); if(c_incr) { r=vec_add(r,inc(v_AfInc  ));r=vec_add(r,inc(v_SfInc  )); } }
-  dec(x);
+  decG(x);
   dec(xf);
   return r;
 }
@@ -216,7 +216,7 @@ B variation_c2(B t, B w, B x) {
     }
     if (wp!=wpE) thrM("•internal.Variation: Bad 𝕨");
   } else thrM("•internal.Variation: Bad start of 𝕨");
-  dec(x);
+  decG(x);
   ptr_dec(wc);
   return res;
 }

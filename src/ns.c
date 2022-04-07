@@ -70,7 +70,7 @@ B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
 B ns_getC(B ns, char* name) {
   B field = m_str8l(name);
   B r = ns_getNU(ns, field, false);
-  dec(field);
+  decG(field);
   return r;
 }
 
@@ -209,7 +209,7 @@ B nsFmt(B x) { // consumes
     }
   }
   AU("⇐}");
-  dec(x);
+  decG(x);
   return s;
 }
 

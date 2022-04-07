@@ -16,7 +16,7 @@ B bit_negate(B x) { // consumes
   u64* rp; B r = m_bitarrc(&rp, x);
   usz ia = BIT_N(a(x)->ia);
   for (usz i = 0; i < ia; i++) rp[i] = ~xp[i];
-  dec(x);
+  decG(x);
   return r;
 }
 
@@ -25,22 +25,22 @@ B bit_negate(B x) { // consumes
   if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
   u8 xe = TI(x,elType);                                                 \
   i64 sz = a(x)->ia; BX                                                 \
-  if (xe==el_i8) { i8 MAX=I8_MAX; i8 MIN=I8_MIN; i8* xp=i8any_ptr(x); i8* rp; B r=m_i8arrc(&rp,x); \
-    for (i64 i = 0; i < sz; i++) { i8 v = xp[i]; if (RARE(IBAD)) { dec(r); goto base; } rp[i] = IEXPR; } \
-    dec(x); (void)MIN;(void)MAX; return r; \
-  }                   \
+  if (xe==el_i8) { i8 MAX=I8_MAX; i8 MIN=I8_MIN; i8* xp=i8any_ptr(x); i8* rp; B r=m_i8arrc(&rp,x);        \
+    for (i64 i = 0; i < sz; i++) { i8 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; } \
+    decG(x); (void)MIN;(void)MAX; return r;                             \
+  }                                                                     \
   if (xe==el_i16) { i16 MAX=I16_MAX; i16 MIN=I16_MIN; i16* xp=i16any_ptr(x); i16* rp; B r=m_i16arrc(&rp,x); \
-    for (i64 i = 0; i < sz; i++) { i16 v = xp[i]; if (RARE(IBAD)) { dec(r); goto base; } rp[i] = IEXPR; } \
-    dec(x); (void)MIN;(void)MAX; return r; \
-  }                   \
+    for (i64 i = 0; i < sz; i++) { i16 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; }  \
+    decG(x); (void)MIN;(void)MAX; return r;                             \
+  }                                                                     \
   if (xe==el_i32) { i32 MAX=I32_MAX; i32 MIN=I32_MIN; i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrc(&rp,x); \
-    for (i64 i = 0; i < sz; i++) { i32 v = xp[i]; if (RARE(IBAD)) { dec(r); goto base; } rp[i] = IEXPR; } \
-    dec(x); (void)MIN;(void)MAX; return r; \
-  }                   \
+    for (i64 i = 0; i < sz; i++) { i32 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; }  \
+    decG(x); (void)MIN;(void)MAX; return r;                             \
+  }                                                                     \
   if (xe==el_f64) { f64* xp = f64any_ptr(x);                            \
     f64* rp; B r = m_f64arrc(&rp, x);                                   \
     for (i64 i = 0; i < sz; i++) { f64 v = xp[i]; rp[i] = FEXPR; }      \
-    dec(x); return r;                                                   \
+    decG(x); return r;                                                  \
   }                                                                     \
   base: SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x);             \
 }
@@ -71,8 +71,8 @@ B  atan_c1(B t, B x) { if (isF64(x)) return m_f64( atan(x.f)); P1( atan); thrM("
 #undef P1
 
 B lt_c1(B t, B x) { return m_atomUnit(x); }
-B eq_c1(B t, B x) { B r = m_i32(isArr(x)? rnk(x) : 0); dec(x); return r; }
-B ne_c1(B t, B x) { B r = m_f64(isArr(x)&&rnk(x)? *a(x)->sh : 1); dec(x); return r; }
+B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(rnk(x)                  ); decG(x); return r; }
+B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(rnk(x)==0? 1 : *a(x)->sh); decG(x); return r; }
 
 
 static B mathNS;

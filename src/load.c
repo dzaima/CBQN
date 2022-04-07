@@ -111,7 +111,7 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
   Block* r = xia==6? compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
                    : compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc);
-  dec(x);
+  decG(x);
   return r;
 }
 #include "gen/src"
@@ -294,12 +294,12 @@ B rebqn_exec(B str, B path, B args, B o) {
   } else {
     B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
     Block* block = bqn_compc(str, path, args, op[2], rtsys);
-    dec(rtsys);
+    decG(rtsys);
     comp_currRe = prevRe;
     res = m_funBlock(block, 0);
     ptr_dec(block);
   }
-  dec(o);
+  decG(o);
   
   popCatch();
   return res;
@@ -371,8 +371,8 @@ void load_init() { // very last init function
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
     dec(rtRes);
-    dec(c1(setPrims, m_hVec2(incG(bi_decp), incG(bi_primInd)))); dec(setPrims);
-    dec(c2(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); dec(setInv);
+    dec(c1(setPrims, m_hVec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
+    dec(c2(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
     
     
@@ -423,7 +423,7 @@ void load_init() { // very last init function
       #endif
       runtimeH.a[i] = r;
     }
-    dec(rtObjRaw);
+    decG(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
@@ -447,7 +447,7 @@ void load_init() { // very last init function
     B interp = m_funBlock(c, 0); ptr_dec(c);
     print(interp);
     printf("\n");
-    dec(interp);
+    decG(interp);
     #ifdef HEAP_VERIFY
       heapVerify();
     #endif
@@ -474,11 +474,11 @@ void load_init() { // very last init function
     );
     B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
+    decG(fmtM);
     SGet(fmtR)
     load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
     load_repr = Get(fmtR, 1); gc_add(load_repr);
-    dec(fmtR);
-    dec(fmtM);
+    decG(fmtR);
     #endif
     gc_enable();
   #endif // PRECOMP

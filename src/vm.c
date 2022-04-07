@@ -461,7 +461,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
   Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0);
   TFREE(bDone);
-  ptr_dec(comp); dec(allBlocks); dec(allBodies); dec(tokenInfo);
+  ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo);
   return ret;
 }
 

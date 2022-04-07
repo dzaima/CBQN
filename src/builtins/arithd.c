@@ -35,27 +35,27 @@
             if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
             else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
           }                                                                  \
-          dec(w); dec(x); return num_squeeze(r);                             \
+          decG(w); decG(x); return num_squeeze(r);                           \
         }                                                                    \
       } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia;                     \
         u8 xe = TI(x,elType); f64*rp;                                        \
         if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
-          dec(x); return num_squeeze(r);                                     \
+          decG(x); return num_squeeze(r);                                    \
         }                                                                    \
         if (xe==el_f64) { B r=m_f64arrc(&rp, x); f64*xp=f64any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
-          dec(x); return num_squeeze(r);                                     \
+          decG(x); return num_squeeze(r);                                    \
         }                                                                    \
       } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia;                     \
         u8 we = TI(w,elType); f64*rp;                                        \
         if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
-          dec(w); return num_squeeze(r);                                     \
+          decG(w); return num_squeeze(r);                                    \
         }                                                                    \
         if (we==el_f64) { B r=m_f64arrc(&rp, w); f64*wp=f64any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
-          dec(w); return num_squeeze(r);                                     \
+          decG(w); return num_squeeze(r);                                    \
         }                                                                    \
       }                                                                      \
       P2(NAME)                                                               \
@@ -109,29 +109,29 @@
       rp[i] = EXPR;                \
     }                              \
   }
-  #define DOI16(EXPR,A,W,X,BASE) { Ri16(A)          \
-    for (usz i = 0; i < ia; i++) {                  \
-      i32 wv = W; i32 xv = X; i32 rv = EXPR;        \
-      if (RARE(rv!=(i16)rv)) { dec(r); goto BASE; } \
-      rp[i] = rv;                                   \
-    }                                               \
-    dec(w); dec(x); return r;                       \
+  #define DOI16(EXPR,A,W,X,BASE) { Ri16(A)           \
+    for (usz i = 0; i < ia; i++) {                   \
+      i32 wv = W; i32 xv = X; i32 rv = EXPR;         \
+      if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } \
+      rp[i] = rv;                                    \
+    }                                                \
+    dec(w); dec(x); return r;                        \
   }
   #define DOI8(EXPR,A,W,X,BASE) { Ri8(A)            \
     for (usz i = 0; i < ia; i++) {                  \
       i16 wv = W; i16 xv = X; i16 rv = EXPR;        \
-      if (RARE(rv!=(i8)rv)) { dec(r); goto BASE; }  \
+      if (RARE(rv!=(i8)rv)) { decG(r); goto BASE; } \
       rp[i] = rv;                                   \
     }                                               \
     dec(w); dec(x); return r;                       \
   }
-  #define DOI32(EXPR,A,W,X,BASE) { Ri32(A)          \
-    for (usz i = 0; i < ia; i++) {                  \
-      i64 wv = W; i64 xv = X; i64 rv = EXPR;        \
-      if (RARE(rv!=(i32)rv)) { dec(r); goto BASE; } \
-      rp[i] = rv;                                   \
-    }                                               \
-    dec(w); dec(x); return r;                       \
+  #define DOI32(EXPR,A,W,X,BASE) { Ri32(A)           \
+    for (usz i = 0; i < ia; i++) {                   \
+      i64 wv = W; i64 xv = X; i64 rv = EXPR;         \
+      if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } \
+      rp[i] = rv;                                    \
+    }                                                \
+    dec(w); dec(x); return r;                        \
   }
   
   static B bitAA0(B w, B x, usz ia) { UD; }
@@ -139,13 +139,13 @@
     u64* rp; B r = m_bitarrc(&rp, x);
     u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
     for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]|xp[i];
-    dec(w); dec(x); return r;
+    decG(w); decG(x); return r;
   }
   static NOINLINE B bitAA2(B w, B x, usz ia) {
     u64* rp; B r = m_bitarrc(&rp, x);
     u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
     for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]&xp[i];
-    dec(w); dec(x); return r;
+    decG(w); decG(x); return r;
   }
   
   #define GC2i(SYMB, NAME, EXPR, EXTRA1, EXTRA2, BIT, SI_AA, DO_AS, DO_SA) \
@@ -171,13 +171,13 @@
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
           bool wei = we==el_i32; bool xei = xe==el_i32;              \
           if (wei&xei) { PI32(w)PI32(x)SI_AA(NAME,i32,rcf64) DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
-          if (!wei&!xei) {PF(w)PF(x) { SI_AA(NAME,f64,base) } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) dec(w);dec(x);return r; } \
+          if (!wei&!xei) {PF(w)PF(x) { SI_AA(NAME,f64,base) } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
           rcf64:; Rf64(x)                                            \
           if (wei) { PI32(w)                                         \
             if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
             else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
           } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
-          dec(w); dec(x); return num_squeeze(r);                     \
+          decG(w); decG(x); return num_squeeze(r);                     \
         }                                                            \
         if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) SI_AA(NAME, i8,base) DOI8 (EXPR,w,wp[i],xp[i],base) } \
         if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) SI_AA(NAME,i16,base) DOI16(EXPR,w,wp[i],xp[i],base) } \
@@ -221,18 +221,18 @@ static f64 pfmod(f64 a, f64 b) {
   if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
   if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],sa16B) } sa16B:; \
   if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],sa32B) } sa32B:; \
-  if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) dec(x); return num_squeeze(r); }
+  if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) decG(x); return num_squeeze(r); }
 #define REG_AS(NAME, EXPR) \
   if (we==el_bit) return bit_sel1Fn(NAME##_c2,w,x,0); \
   if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,as8B ) } as8B :; \
   if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,as16B) } as16B:; \
   if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
-  if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) dec(w); return num_squeeze(r); }
+  if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) decG(w); return num_squeeze(r); }
 
 #if SINGELI
-  #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
-  #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
-  #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { dec(r); goto BASE; } dec(w);dec(x);return r;
+  #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } decG(w);decG(x);return r;
+  #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } dec (w);decG(x);return r;
+  #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } decG(w);dec (x);return r;
   #define SI_SA(NAME, EXPR) \
   void* xp = tyany_ptr(x);  \
   switch(xe) { default: UD; \
@@ -272,7 +272,7 @@ GC2i("+", add, wv+xv, {
         rp[i] = (u32)(xp[i]+(i32)wv);
         if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
       }
-      dec(x);
+      decG(x);
       return r;
     }
   }
@@ -288,7 +288,7 @@ GC2i("-", sub, wv-xv, {
       u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
       i32* rp; B r = m_i32arrc(&rp, w);
       for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
-      dec(w);
+      decG(w);
       return r;
     }
     if (isArr(x) && eqShape(w, x)) {
@@ -300,7 +300,7 @@ GC2i("-", sub, wv-xv, {
           rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
           if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
         }
-        dec(w); dec(x);
+        decG(w); decG(x);
         return r;
       }
     }

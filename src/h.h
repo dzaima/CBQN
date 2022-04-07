@@ -556,6 +556,9 @@ static B inc(B x) {
   return x;
 }
 static void decG(B x) {
+  #if DEBUG
+  assert(isVal(x));
+  #endif
   Value* vx = v(x);
   if(!--vx->refc) value_free(vx);
 }

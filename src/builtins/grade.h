@@ -15,7 +15,7 @@ B GRADE_CAT(c1)(B t, B x) {
   if (rnk(x)>1) x = toCells(x);
   usz ia = a(x)->ia;
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
-  if (ia==0) { dec(x); return emptyIVec(); }
+  if (ia==0) { decG(x); return emptyIVec(); }
   
   u8 xe = TI(x,elType);
   i32* rp; B r = m_i32arrv(&rp, ia);
@@ -28,7 +28,7 @@ B GRADE_CAT(c1)(B t, B x) {
       if (bitp_get(xp,i)^GRADE_UD(0,1)) rp[r1++] = i;
       else                              rp[r0++] = i;
     }
-    dec(x); return r;
+    decG(x); return r;
   } else if (xe==el_i8) {
     i8* xp = i8any_ptr(x);
     i32 min=-128, range=256;
@@ -43,7 +43,7 @@ B GRADE_CAT(c1)(B t, B x) {
       for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
       for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
     )
-    TFREE(tmp); dec(x);
+    TFREE(tmp); decG(x);
     return r;
   }
   if (xe==el_i32) {
@@ -67,7 +67,7 @@ B GRADE_CAT(c1)(B t, B x) {
         for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
         for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
       )
-      TFREE(tmp); dec(x);
+      TFREE(tmp); decG(x);
       return r;
     }
     
@@ -78,7 +78,7 @@ B GRADE_CAT(c1)(B t, B x) {
     }
     CAT(GRADE_CAT(IP),tim_sort)(tmp, ia);
     for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
-    TFREE(tmp); dec(x);
+    TFREE(tmp); decG(x);
     return r;
   }
   
@@ -91,7 +91,7 @@ B GRADE_CAT(c1)(B t, B x) {
   }
   CAT(GRADE_CAT(BP),tim_sort)(tmp, ia);
   for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
-  TFREE(tmp); dec(x);
+  TFREE(tmp); decG(x);
   return r;
 }
 B GRADE_CAT(c2)(B t, B w, B x) {
@@ -158,7 +158,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   }
-  dec(w);dec(x);
+  decG(w);decG(x);
   return r;
 }
 #undef GRADE_CAT

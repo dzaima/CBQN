@@ -55,7 +55,7 @@ B ud_c1(B t, B x) {
     if (c*(u64)ria >= U32_MAX) thrM("↕: Result too large");
     ria*= c;
   }
-  dec(x);
+  decG(x);
   
   Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
   B* rp = fillarr_ptr(r);
@@ -100,7 +100,7 @@ B fne_c1(B t, B x) {
   else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
   else if (or<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
   else                  { f64* rp; r = m_f64arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
-  dec(x); return r;
+  decG(x); return r;
 }
 B feq_c1(B t, B x) {
   u64 r = depth(x);
@@ -125,7 +125,7 @@ extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = a(x)->ia;
-  if (xia==0) { dec(x); return emptyIVec(); }
+  if (xia==0) { decG(x); return emptyIVec(); }
   if (rnk(x)==1 && TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
@@ -146,7 +146,7 @@ B indexOf_c1(B t, B x) {
         if (tc[c]==I32_MIN) tc[c] = ctr++;
         rp[i] = tc[c];
       }
-      dec(x); TFREE(tmp);
+      decG(x); TFREE(tmp);
       return r;
     }
   }
@@ -180,7 +180,7 @@ B indexOf_c1(B t, B x) {
       if (had) rp[i] = map->a[p].val;
       else     rp[i] = map->a[p].val = ctr++;
     }
-    free_b2i(map); dec(x);
+    free_b2i(map); decG(x);
     // u64 e = nsTime(); q1+= e-s;
     return r;
   }
@@ -207,7 +207,7 @@ B indexOf_c2(B t, B w, B x) {
           if (equal(GetU(w,i), el)) { res = i; break; }
         }
       }
-      dec(w); dec(x);
+      decG(w); dec(x);
       i32* rp; Arr* r = m_i32arrp(&rp, 1);
       arr_shAlloc(r, 0);
       rp[0] = res;
@@ -225,7 +225,7 @@ B indexOf_c2(B t, B w, B x) {
         if (!had) map->a[p].val = i;
       }
       for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
-      free_b2i(map); dec(w); dec(x);
+      free_b2i(map); decG(w); decG(x);
       return r;
     }
   }
@@ -242,7 +242,7 @@ B memberOf_c1(B t, B x) {
   H_Sb* set = m_Sb(64);
   SGetU(x)
   for (usz i = 0; i < xia; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
-  free_Sb(set); dec(x);
+  free_Sb(set); decG(x);
   return r;
 }
 B memberOf_c2(B t, B w, B x) {
@@ -257,7 +257,7 @@ B memberOf_c2(B t, B w, B x) {
   for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
   u64* rp; B r = m_bitarrv(&rp, wia);
   for (usz i = 0; i < wia; i++) bitp_set(rp, i, has_Sb(set, GetU(w,i)));
-  free_Sb(set); dec(w);dec(x);
+  free_Sb(set); decG(w);decG(x);
   return r;
 }
 
@@ -275,7 +275,7 @@ B find_c1(B t, B x) {
     B c = GetU(x,i);
     if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
   }
-  free_Sb(set); dec(x);
+  free_Sb(set); decG(x);
   return withFill(r, xf);
 }
 B find_c2(B t, B w, B x) {
@@ -294,7 +294,7 @@ B count_c1(B t, B x) {
     bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
   }
-  dec(x); free_b2i(map);
+  decG(x); free_b2i(map);
   return r;
 }
 B count_c2(B t, B w, B x) {
