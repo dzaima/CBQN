@@ -555,6 +555,10 @@ static B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
 }
+static void decG(B x) {
+  Value* vx = v(x);
+  if(!--vx->refc) value_free(vx);
+}
 static B incG(B x) { // inc for guaranteed heap objects
   v(VALIDATE(x))->refc++;
   return x;
