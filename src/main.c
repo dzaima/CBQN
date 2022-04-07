@@ -209,7 +209,7 @@ void cbqn_runLine0(char* ln, i64 read) {
   gc_maybeGC();
 }
 
-void cbqn_runLine(char* ln, i64 read) {
+void cbqn_runLine(char* ln, i64 len) {
   if(CATCH) {
     fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n', stderr);
     vm_pst(envCurr+1, envStart+envPrevHeight);
@@ -220,9 +220,31 @@ void cbqn_runLine(char* ln, i64 read) {
     gc_maybeGC();
     return;
   }
-  cbqn_runLine0(ln, read);
+  cbqn_runLine0(ln, len);
   popCatch();
 }
+
+#if WASM
+void cbqn_evalSrc(char* src, i64 len) {
+  Body* body = m_nnsDesc();
+  B ns = m_nns(body);
+  Scope* sc = ptr_inc(c(NS, ns)->sc);
+  ptr_dec(v(ns));
+  
+  B code = fromUTF8l(src);
+  Block* block = bqn_compSc(code, inc(replPath), emptySVec(), sc, true);
+  
+  ptr_dec(sc->body);
+  sc->body = ptr_inc(block->bodies[0]);
+  B res = execBlockInline(block, sc);
+  ptr_dec(block);
+  ptr_dec(sc);
+  B resFmt = bqn_fmt(res);
+  
+  printRaw(resFmt); dec(resFmt);
+  putchar('\n');
+}
+#endif
 
 #if EMCC
 int main() {
@@ -230,6 +252,7 @@ int main() {
 }
 #else
 int main(int argc, char* argv[]) {
+  repl_init();
   bool startREPL = argc==1;
   bool silentREPL = false;
   bool execStdin = false;
