@@ -1,6 +1,7 @@
 include './base'
 include './cbqnDefs'
 include './f64'
+include './sse3'
 include './avx'
 include './avx2'
 include './bitops'
