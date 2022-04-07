@@ -36,7 +36,7 @@ B and_c1(B t, B x) {
     i32* rp; B r = m_i32arrv(&rp, xia);
     memcpy(rp, xp, xia*4);
     iA_tim_sort(rp, xia);
-    dec(x);
+    decG(x);
     return FL_SET(r, fl_asc);
   }
   B xf = getFillQ(x);
@@ -44,7 +44,7 @@ B and_c1(B t, B x) {
   SGet(x)
   for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bA_tim_sort(r.a, xia);
-  dec(x);
+  decG(x);
   return FL_SET(withFill(r.b,xf), fl_asc);
 }
 
@@ -68,7 +68,7 @@ B or_c1(B t, B x) {
     i32* rp; B r = m_i32arrv(&rp, xia);
     memcpy(rp, xp, xia*4);
     iD_tim_sort(rp, xia);
-    dec(x);
+    decG(x);
     return FL_SET(r, fl_dsc);
   }
   B xf = getFillQ(x);
@@ -76,6 +76,6 @@ B or_c1(B t, B x) {
   SGet(x)
   for (usz i = 0; i < xia; i++) r.a[i] = Get(x,i);
   bD_tim_sort(r.a, xia);
-  dec(x);
+  decG(x);
   return FL_SET(withFill(r.b,xf), fl_dsc);
 }

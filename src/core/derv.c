@@ -82,7 +82,7 @@ static B fork_uc1(B t, B o, B x) {
   B tmp = m_nfn(ucwWrapDesc, tag(args, RAW_TAG));
   B r = TI(h,fn_uc1)(h,tmp,x);
   // f is consumed by the eventual ucwWrap call. this hopes that everything is nice and calls o only once, and within the under call, so any under interface must make sure they can't
-  dec(tmp);
+  decG(tmp);
   return r;
 }
 

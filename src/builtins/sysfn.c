@@ -68,17 +68,17 @@ B glyph_c1(B t, B x) {
   #endif
   if (isPrim(x)) {
     B r = m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[v(x)->flags-1]);
-    dec(x);
+    decG(x);
     return r;
   }
   u8 ty = v(x)->type;
-  if (ty==t_funBI) { B r = fromUTF8l(pfn_repr(c(Fun,x)->extra)); dec(x); return r; }
-  if (ty==t_md1BI) { B r = fromUTF8l(pm1_repr(c(Md1,x)->extra)); dec(x); return r; }
-  if (ty==t_md2BI) { B r = fromUTF8l(pm2_repr(c(Md2,x)->extra)); dec(x); return r; }
-  if (ty==t_nfn) { B r = nfn_name(x); dec(x); return r; }
-  if (ty==t_funBl) { dec(x); return m_str8l("(function block)"); }
-  if (ty==t_md1Bl) { dec(x); return m_str8l("(1-modifier block)"); }
-  if (ty==t_md2Bl) { dec(x); return m_str8l("(2-modifier block)"); }
+  if (ty==t_funBI) { B r = fromUTF8l(pfn_repr(c(Fun,x)->extra)); decG(x); return r; }
+  if (ty==t_md1BI) { B r = fromUTF8l(pm1_repr(c(Md1,x)->extra)); decG(x); return r; }
+  if (ty==t_md2BI) { B r = fromUTF8l(pm2_repr(c(Md2,x)->extra)); decG(x); return r; }
+  if (ty==t_nfn) { B r = nfn_name(x); decG(x); return r; }
+  if (ty==t_funBl) { decG(x); return m_str8l("(function block)"); }
+  if (ty==t_md1Bl) { decG(x); return m_str8l("(1-modifier block)"); }
+  if (ty==t_md2Bl) { decG(x); return m_str8l("(2-modifier block)"); }
   if (ty==t_ns) return nsFmt(x);
   return m_str32(U"(•Glyph: given object with unexpected type)");
 }
@@ -135,7 +135,7 @@ B grLen_both(i64 ria, B x) {
     for (usz i = 0; i < ia; i++) {
       i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
       if (n>=0) {
-        if (bitp_get(rp,n)) { dec(r); goto r_i32; }
+        if (bitp_get(rp,n)) { decG(r); goto r_i32; }
         bitp_set(rp,n,1);
       }
     }
@@ -148,7 +148,7 @@ B grLen_both(i64 ria, B x) {
     i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
     if (n>=0) rp[n]++;
   }
-  r_r: dec(x); return r;
+  r_r: decG(x); return r;
 }
 B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes valid arguments
 B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes valid arguments
@@ -156,8 +156,8 @@ B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes vali
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = a(w)->ia;
   usz xia = a(x)->ia;
-  if (wia==0) { dec(w); dec(x); return emptyIVec(); }
-  if (xia==0) { dec(w); return x; }
+  if (wia==0) { decG(w); decG(x); return emptyIVec(); }
+  if (xia==0) { decG(w); return x; }
   SGetU(w)
   SGetU(x)
   TALLOC(usz, tmp, wia);
@@ -170,7 +170,7 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
     i64 c = o2i64(GetU(x,i));
     if (c>=0) rp[tmp[c]++] = i;
   }
-  dec(w); dec(x); TFREE(tmp);
+  decG(w); decG(x); TFREE(tmp);
   return r;
 }
 
@@ -256,7 +256,7 @@ static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, 
   B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
   B args = ia>2?        Get(w,2)                  : emptySVec();
   *fullpath = vec_join(vec_add(path, m_c32('/')), file);
-  dec(w);
+  decG(w);
   return args;
 }
 
@@ -539,7 +539,7 @@ B reBQN_c1(B t, B x) {
   HArr_p d = m_harrUv(5); d.a[0] = m_f64(replVal); d.a[1] = scVal;
   d.a[2]=d.a[3]=d.a[4]=bi_N;
   init_comp(d.a+2, prim);
-  dec(x);
+  decG(x);
   return m_nfn(reBQNDesc, d.b);
 }
 B repl_c2(B t, B w, B x) {
@@ -619,7 +619,7 @@ B flines_c2(B d, B w, B x) {
   dec(x);
   B p = path_rel(nfn_objU(d), w);
   path_wChars(inc(p), s);
-  dec(s);
+  decG(s);
   return p;
 }
 static NFnDesc* importDesc;
@@ -751,7 +751,7 @@ B fromUtf8_c1(B t, B x) {
     }
   }
   B r = fromUTF8(chrs, ia);
-  dec(x);
+  decG(x);
   TFREE(chrs);
   return r;
 }

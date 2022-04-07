@@ -7,19 +7,19 @@ B asFill(B x) { // consumes
     if (elNum(xe)) {
       Arr* r = allZeroes(ia);
       arr_shCopy(r, x);
-      dec(x);
+      decG(x);
       return taga(r);
     }
     if (elChr(xe)) {
       u8* rp; B r = m_c8arrc(&rp, x);
       for (usz i = 0; i < ia; i++) rp[i] = ' ';
-      dec(x);
+      decG(x);
       return r;
     }
     M_HARR(r, a(x)->ia)
     SGet(x)
     for (usz i = 0; i < ia; i++) {
-      if (noFill(HARR_ADD(r, i, asFill(Get(x,i))))) { HARR_ABANDON(r); dec(x); return bi_noFill; }
+      if (noFill(HARR_ADD(r, i, asFill(Get(x,i))))) { HARR_ABANDON(r); decG(x); return bi_noFill; }
     }
     B xf = getFillQ(x);
     return withFill(HARR_FCD(r, x), xf);
@@ -37,7 +37,7 @@ static Arr* m_fillslice(Arr* p, B* ptr, usz ia) {
   return (Arr*)r;
 }
 static Arr* fillarr_slice  (B x, usz s, usz ia) { return m_fillslice(a(x), c(FillArr,x)->a+s, ia); }
-static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); dec(x); return r; }
+static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); decG(x); return r; }
 
 static B fillarr_get   (Arr* x, usz n) { assert(x->type==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
 static B fillslice_get (Arr* x, usz n) { assert(x->type==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
@@ -145,13 +145,13 @@ B withFill(B x, B fill) { // consumes both
       B* rp = r->a;
       memcpy(rp, xp, ia*sizeof(B));
       for (usz i = 0; i < ia; i++) inc(rp[i]);
-      dec(x);
+      decG(x);
     }
   } else {
     B* rp = r->a;
     SGet(x)
     for (usz i = 0; i < ia; i++) rp[i] = Get(x,i);
-    dec(x);
+    decG(x);
   }
   return taga(r);
 }

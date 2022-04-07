@@ -55,21 +55,21 @@ extern B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
   B fn = m2_d(inc(rt_under), inc(f), inc(g));
   B r = c1(fn, x);
-  dec(fn);
+  decG(fn);
   return r;
 }
 static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
   B fn = m2_d(inc(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
   B r = c1(fn, x);
-  dec(fn);
+  decG(fn);
   return r;
 }
 B def_fn_uc1(B t, B o,                B x) { return rtUnder_c1(o, t,    x); }
 B def_fn_ucw(B t, B o,           B w, B x) { return rtUnder_cw(o, t, w, x); }
-B def_m1_uc1(Md1* t, B o, B f,           B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_TAG),inc(f)       ); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
-B def_m1_ucw(Md1* t, B o, B f,      B w, B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_TAG),inc(f)       ); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
-B def_m2_uc1(Md2* t, B o, B f, B g,      B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); dec(t2); return r; }
-B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); dec(t2); return r; }
+B def_m1_uc1(Md1* t, B o, B f,           B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_TAG),inc(f)       ); B r = rtUnder_c1(o, t2,    x); decG(t2); return r; }
+B def_m1_ucw(Md1* t, B o, B f,      B w, B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_TAG),inc(f)       ); B r = rtUnder_cw(o, t2, w, x); decG(t2); return r; }
+B def_m2_uc1(Md2* t, B o, B f, B g,      B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); decG(t2); return r; }
+B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); decG(t2); return r; }
 B def_decompose(B x) {
   return m_hVec2(m_i32(isCallable(x)? (isImpureBuiltin(x)? 1 : 0) : -1),x);
 }
@@ -345,7 +345,7 @@ NOINLINE void print_fmt(char* p, ...) {
   B r = do_fmt(emptyCVec(), p, a);
   va_end(a);
   printRaw(r);
-  dec(r);
+  decG(r);
 }
 NOINLINE void thrF(char* p, ...) {
   va_list a;
@@ -395,12 +395,12 @@ NOINLINE bool atomEqualR(B w, B x) {
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
-  if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
+  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
   usz wia = a(wd)->ia;
-  if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
+  if (wia!=a(xd)->ia) { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
-                      { dec(wd);dec(xd); return false; }
-                        dec(wd);dec(xd); return true;
+                      { decG(wd);decG(xd); return false; }
+                        decG(wd);decG(xd); return true;
 }
 
 #if SINGELI
@@ -505,12 +505,12 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
-  if (o2i(wdp[0])<=1) { dec(wd);dec(xd); return false; }
+  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
   usz wia = a(wd)->ia;
-  if (wia!=a(xd)->ia) { dec(wd);dec(xd); return false; }
+  if (wia!=a(xd)->ia) { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
-                      { dec(wd);dec(xd); return false; }
-                        dec(wd);dec(xd); return true;
+                      { decG(wd);decG(xd); return false; }
+                        decG(wd);dec(xd); return true;
 }
 bool eequal(B w, B x) { // doesn't consume
   if (w.u==x.u) return true;
@@ -589,10 +589,10 @@ bool isPureFn(B x) { // doesn't consume
     B xd = dcf(inc(x));
     B* xdp = harr_ptr(xd);
     i32 t = o2iu(xdp[0]);
-    if (t<2) { dec(xd); return t==0; }
+    if (t<2) { decG(xd); return t==0; }
     usz xdia = a(xd)->ia;
-    for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { dec(xd); return false; }
-    dec(xd); return true;
+    for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { decG(xd); return false; }
+    decG(xd); return true;
   } else if (isArr(x)) {
     usz ia = a(x)->ia;
     SGetU(x)
@@ -746,7 +746,7 @@ B bqn_merge(B x) {
       memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
       if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));
     }
-    dec(x); dec(xf);
+    decG(x); dec(xf);
     return taga(r);
   }
   
@@ -774,7 +774,7 @@ B bqn_merge(B x) {
     memcpy         (rsh   , a(x)->sh, xr *sizeof(usz));
     if (elSh)memcpy(rsh+xr, elSh,     elR*sizeof(usz));
   }
-  dec(x);
+  decG(x);
   return withFill(taga(ra),fill);
 }
 

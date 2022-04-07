@@ -14,7 +14,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
   ur rm = wg? xr : wr;
   if (rM==0) {
     B r = f(fo, Get(w,0), Get(x,0));
-    dec(w); dec(x);
+    decG(w); decG(x);
     return m_hunit(r);
   }
   if (rm && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
@@ -30,7 +30,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
       if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), Get(x,i));
       else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i));
     }
-    dec(rw? x : w);
+    decG(rw? x : w);
     return r.b;
   }
   
@@ -47,7 +47,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
     else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, inc(c), Get(x,HARR_I(r)))); }
   }
   B rb = HARR_FC(r, bo);
-  dec(w); dec(x);
+  decG(w); decG(x);
   return rb;
 }
 
@@ -83,12 +83,12 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
         if (!q_i32(cr)) {
           rH = m_harr0c(x);
           for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
-          dec(r);
+          decG(r);
           goto fallback;
         }
         rp[i] = o2iu(cr);
       }
-      dec(x);
+      decG(x);
       return r;
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
@@ -101,12 +101,12 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
         if (!q_f64(cr)) {
           rH = m_harr0c(x);
           for (usz j = 0; j < i; j++) rH.a[j] = m_f64(rp[j]);
-          dec(r);
+          decG(r);
           goto fallback;
         }
         rp[i] = o2fu(cr);
       }
-      dec(x);
+      decG(x);
       return r;
     } else if (v(x)->type==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
@@ -129,6 +129,6 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
   fallback:
   rH.a[i++] = cr;
   for (; i < ia; i++) rH.a[i] = f(fo, Get(x,i));
-  dec(x);
+  decG(x);
   return rH.b;
 }

@@ -27,12 +27,12 @@ NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
     else if (tM==el_i16) { i16* rp; r=m_i16arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
     else if (tM==el_i32) { i32* rp; r=m_i32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
     else                              { f64* rp; r=m_f64arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? f1 : f0; }
-    dec(b); return r;
+    decG(b); return r;
   } else if (elChr(t0) && elChr(t1)) { B r; u32 u0 = o2cu(e0); u32 u1 = o2cu(e1);
     if      (t0<=el_c8  & t1<=el_c8 ) { u8*  rp; r=m_c8arrc (&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
     else if (t0<=el_c16 & t1<=el_c16) { u16* rp; r=m_c16arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
     else                              { u32* rp; r=m_c32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
-    dec(b); return r;
+    decG(b); return r;
   }
   HArr_p r = m_harrUc(b);
   SLOW3("bit_sel", e0, e1, b);
@@ -42,5 +42,5 @@ NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
   u64 c0 = ia-c1;
   incBy(e0,c0);
   incBy(e1,c1);
-  dec(b); return r.b;
+  decG(b); return r.b;
 }

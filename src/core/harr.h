@@ -59,7 +59,7 @@ static B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
 static B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
-  dec(x);
+  decG(x);
   gsPop();
   return p.b;
 }

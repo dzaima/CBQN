@@ -84,7 +84,7 @@ static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
 static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
   Arr* a = m->val;
   arr_shCopy(a, x);
-  dec(x);
+  decG(x);
   return taga(a);
 }
 static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
@@ -171,14 +171,14 @@ FORCE_INLINE B vec_join_inline(B w, B x) {
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
     // TODO f64∾i32, i32∾i8, c32∾c8 etc
-    if (wt==t_bitarr && BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) { a(w)->ia=ria; bit_cpy(bitarr_ptr(w),wia,bitarr_ptr(x),0,xia);  dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_i8arr  && TYARR_SZ(I8, ria)<wsz && TI(x,elType)==el_i8 ) { a(w)->ia=ria; memcpy(i8arr_ptr (w)+wia, i8any_ptr (x), xia*1); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_i16arr && TYARR_SZ(I16,ria)<wsz && TI(x,elType)==el_i16) { a(w)->ia=ria; memcpy(i16arr_ptr(w)+wia, i16any_ptr(x), xia*2); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_i32arr && TYARR_SZ(I32,ria)<wsz && TI(x,elType)==el_i32) { a(w)->ia=ria; memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_c8arr  && TYARR_SZ(C8, ria)<wsz && TI(x,elType)==el_c8 ) { a(w)->ia=ria; memcpy(c8arr_ptr (w)+wia, c8any_ptr (x), xia*1); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_c16arr && TYARR_SZ(C16,ria)<wsz && TI(x,elType)==el_c16) { a(w)->ia=ria; memcpy(c16arr_ptr(w)+wia, c16any_ptr(x), xia*2); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_c32arr && TYARR_SZ(C32,ria)<wsz && TI(x,elType)==el_c32) { a(w)->ia=ria; memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4); dec(x); return FL_KEEP(w,fl_squoze); }
-    if (wt==t_f64arr && TYARR_SZ(F64,ria)<wsz && TI(x,elType)==el_f64) { a(w)->ia=ria; memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8); dec(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_bitarr && BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) { a(w)->ia=ria; bit_cpy(bitarr_ptr(w),wia,bitarr_ptr(x),0,xia);  decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_i8arr  && TYARR_SZ(I8, ria)<wsz && TI(x,elType)==el_i8 ) { a(w)->ia=ria; memcpy(i8arr_ptr (w)+wia, i8any_ptr (x), xia*1); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_i16arr && TYARR_SZ(I16,ria)<wsz && TI(x,elType)==el_i16) { a(w)->ia=ria; memcpy(i16arr_ptr(w)+wia, i16any_ptr(x), xia*2); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_i32arr && TYARR_SZ(I32,ria)<wsz && TI(x,elType)==el_i32) { a(w)->ia=ria; memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_c8arr  && TYARR_SZ(C8, ria)<wsz && TI(x,elType)==el_c8 ) { a(w)->ia=ria; memcpy(c8arr_ptr (w)+wia, c8any_ptr (x), xia*1); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_c16arr && TYARR_SZ(C16,ria)<wsz && TI(x,elType)==el_c16) { a(w)->ia=ria; memcpy(c16arr_ptr(w)+wia, c16any_ptr(x), xia*2); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_c32arr && TYARR_SZ(C32,ria)<wsz && TI(x,elType)==el_c32) { a(w)->ia=ria; memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4); decG(x); return FL_KEEP(w,fl_squoze); }
+    if (wt==t_f64arr && TYARR_SZ(F64,ria)<wsz && TI(x,elType)==el_f64) { a(w)->ia=ria; memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8); decG(x); return FL_KEEP(w,fl_squoze); }
     if (wt==t_harr && fsizeof(HArr,a,B,ria)<wsz) {
       a(w)->ia = ria;
       B* rp = harr_ptr(w)+wia;
@@ -199,7 +199,7 @@ FORCE_INLINE B vec_join_inline(B w, B x) {
         SGet(x)
         for (usz i = 0; i < xia; i++) rp[i] = Get(x, i);
       }
-      dec(x);
+      decG(x);
       return FL_KEEP(w,fl_squoze); // keeping fl_squoze as appending items can't make the smallest item smaller
     }
   }
@@ -207,7 +207,7 @@ FORCE_INLINE B vec_join_inline(B w, B x) {
   MUTG_INIT(r);
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
-  dec(w); dec(x);
+  decG(w); decG(x);
   return mut_fv(r);
 }
 static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails if fills wouldn't be correct

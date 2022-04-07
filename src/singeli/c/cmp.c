@@ -50,20 +50,20 @@ FN_LUT(avx2, le, AS);
           if (we==el_MAX) goto end;                \
           w=tw; x=tx;                              \
         }                                          \
-        AL(x);                                      \
+        AL(x);                                     \
         if (ria) lut_avx2_##PNAME##AA[we](rp, (u8*)tyany_ptr(L), (u8*)tyany_ptr(R), ria); \
-        dec(w);dec(x); return r; \
-      } else goto end;           \
-    }                            \
-    AL(w);                       \
+        decG(w);decG(x); return r; \
+      } else goto end;             \
+    }                              \
+    AL(w);                         \
     if (ria) lut_avx2_##NAME##AS [we](rp, (u8*)tyany_ptr(w), x.u, ria); \
-    else dec(x);                 \
-    dec(w); return r;            \
+    else dec(x);                   \
+    decG(w); return r;             \
   } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x); \
     if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
-    else dec(w);                 \
-    dec(x); return r;            \
-  }                              \
+    else dec(w);                   \
+    decG(x); return r;             \
+  }                                \
   if (isF64(w)&isC32(x)) return m_i32(FC); \
   if (isC32(w)&isF64(x)) return m_i32(CF); \
   end:;

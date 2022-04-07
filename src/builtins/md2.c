@@ -217,13 +217,13 @@ B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
 static B m2c1(B t, B f, B g, B x) { // consumes x
   B fn = m2_d(inc(t), inc(f), inc(g));
   B r = c1(fn, x);
-  dec(fn);
+  decG(fn);
   return r;
 }
 static B m2c2(B t, B f, B g, B w, B x) { // consumes w,x
   B fn = m2_d(inc(t), inc(f), inc(g));
   B r = c2(fn, w, x);
-  dec(fn);
+  decG(fn);
   return r;
 }
 
@@ -281,7 +281,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   usz* rsh = HARR_FA(r, k);
   if (k>1) memcpy(rsh, xsh, k*sizeof(usz));
   
-  dec(x);
+  decG(x);
   return bqn_merge(HARR_O(r).b);
 }
 extern B rt_rank;
