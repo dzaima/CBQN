@@ -53,6 +53,9 @@ void cbqn_runLine0(char* ln, i64 read) {
       B path = fromUTF8l(cmdE);
       code = path_chars(path);
       output = 0;
+    } else if (isCmd(cmdS, &cmdE, "r ")) {
+      code = fromUTF8l(cmdE);
+      output = 0;
     } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
       code = fromUTF8l(cmdE);
       time = -1;

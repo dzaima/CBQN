@@ -6,6 +6,10 @@ These are commands usable from a CBQN REPL that, for one reason or another, aren
 
 Execute the contents of the file as if it were REPL input (but allowing multiline definitions). Not a system function because modifying the list of global variables during execution is not allowed.
 
+## `)r expr`
+
+Execute the expression, but don't print its result.
+
 ## `)t expr` / `)time expr` / `)t:n expr` / `)time:n expr`
 
 Time the argument expression. `n` specifies the number of times to repeat. Exists to allow not escaping quotes and less overhead for timing very fast & small expressions.
