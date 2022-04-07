@@ -204,7 +204,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
 
 B bqn_exec(B str, B path, B args) { // consumes all
   Block* block = bqn_comp(str, path, args);
-  B res = m_funBlock(block, 0);
+  B res = evalFunBlock(block, 0);
   ptr_dec(block);
   return res;
 }
@@ -296,7 +296,7 @@ B rebqn_exec(B str, B path, B args, B o) {
     Block* block = bqn_compc(str, path, args, op[2], rtsys);
     decG(rtsys);
     comp_currRe = prevRe;
-    res = m_funBlock(block, 0);
+    res = evalFunBlock(block, 0);
     ptr_dec(block);
   }
   decG(o);
@@ -353,7 +353,7 @@ void load_init() { // very last init function
     Block* runtime0_b = load_compImport(
       #include "gen/runtime0"
     );
-    B r0r = m_funBlock(runtime0_b, 0); ptr_dec(runtime0_b);
+    B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
     B* runtime_0 = toHArr(r0r)->a;
     #endif
     
@@ -365,7 +365,7 @@ void load_init() { // very last init function
     dec(r0r);
     #endif
     
-    B rtRes = m_funBlock(runtime_b, 0); ptr_dec(runtime_b);
+    B rtRes = evalFunBlock(runtime_b, 0); ptr_dec(runtime_b);
     SGet(rtRes);
     B rtObjRaw = Get(rtRes,0);
     B setPrims = Get(rtRes,1);
@@ -444,7 +444,7 @@ void load_init() { // very last init function
       #include "gen/interp"
       , bi_N, bi_N, bi_N, bi_N, NULL
     );
-    B interp = m_funBlock(c, 0); ptr_dec(c);
+    B interp = evalFunBlock(c, 0); ptr_dec(c);
     print(interp);
     printf("\n");
     dec(interp);
@@ -463,7 +463,7 @@ void load_init() { // very last init function
     );
     runtime[n_asrt] = prevAsrt;
     load_glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
-    load_compgen = m_funBlock(comp_b, 0); ptr_dec(comp_b);
+    load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
     load_comp = c1(load_compgen, inc(load_glyphs));
     gc_add(load_compgen); gc_add(load_comp); gc_add(load_glyphs);
     
@@ -472,7 +472,7 @@ void load_init() { // very last init function
     Block* fmt_b = load_compImport(
       #include "gen/formatter"
     );
-    B fmtM = m_funBlock(fmt_b, 0); ptr_dec(fmt_b);
+    B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
     decG(fmtM);
     SGet(fmtR)

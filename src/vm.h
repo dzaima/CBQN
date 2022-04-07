@@ -195,7 +195,7 @@ typedef struct FunBlock { struct Fun; Scope* sc; Block* bl; } FunBlock;
 typedef struct Md1Block { struct Md1; Scope* sc; Block* bl; } Md1Block;
 typedef struct Md2Block { struct Md2; Scope* sc; Block* bl; } Md2Block;
 // all don't consume anything
-B m_funBlock(Block* bl, Scope* psc); // may return evaluated result, whatever
+B evalFunBlock(Block* bl, Scope* psc); // may return evaluated result, so not named m_funBlock
 B m_md1Block(Block* bl, Scope* psc);
 B m_md2Block(Block* bl, Scope* psc);
 

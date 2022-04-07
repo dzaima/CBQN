@@ -121,7 +121,7 @@ INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   if (allNum) return num_squeeze(r.b);
   return r.b;
 }
-INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_funBlock(bl, sc); }
+INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return evalFunBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); } // TODO these only fail on oom, so no need to update pos
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
 INS B i_MD1C(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }

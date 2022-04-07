@@ -670,9 +670,9 @@ B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
         }
         break;
       }
-      case DFND0: { GS_UPD;POS_UPD; ADD(m_funBlock((Block*)L64, sc)); break; }
-      case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block((Block*)L64, sc)); break; }
-      case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block((Block*)L64, sc)); break; }
+      case DFND0: { GS_UPD;POS_UPD; ADD(evalFunBlock((Block*)L64, sc)); break; }
+      case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block  ((Block*)L64, sc)); break; }
+      case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block  ((Block*)L64, sc)); break; }
       
       case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
@@ -859,7 +859,7 @@ B md2Bl_ix(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return
 B md1Bl_d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D((Md1*)c,f  ); }
 B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D((Md2*)c,f,g); }
 
-B m_funBlock(Block* bl, Scope* psc) { // doesn't consume anything
+B evalFunBlock(Block* bl, Scope* psc) { // doesn't consume anything
   if (bl->imm) return execBlock(bl, bl->bodies[0], psc, 0, NULL);
   FunBlock* r = mm_alloc(sizeof(FunBlock), t_funBl);
   r->bl = ptr_inc(bl);
