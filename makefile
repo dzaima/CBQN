@@ -137,8 +137,7 @@ preSingeliBin:
 		git submodule update --init; \
 	fi
 	@echo "pre-singeli build:"
-	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='-O1' c
-	@mv BQN obj/presingeli/BQN
+	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='-O1' OUTPUT=obj/presingeli/BQN c
 
 
 gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c equal.c}
