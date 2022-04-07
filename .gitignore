@@ -1,4 +1,7 @@
 /BQN
+/BQN.html
+/BQN.js
+/BQN.wasm
 perf.*
 /obj/
 /asm_*
