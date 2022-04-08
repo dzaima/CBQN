@@ -224,23 +224,12 @@ void cbqn_runLine(char* ln, i64 len) {
   popCatch();
 }
 
-#if WASM
+#ifndef WASM
 void cbqn_evalSrc(char* src, i64 len) {
-  Body* body = m_nnsDesc();
-  B ns = m_nns(body);
-  Scope* sc = ptr_inc(c(NS, ns)->sc);
-  ptr_dec(v(ns));
-  
   B code = fromUTF8(src, len);
-  Block* block = bqn_compSc(code, inc(replPath), emptySVec(), sc, true);
+  B res = bqn_exec(code, bi_N, bi_N);
   
-  ptr_dec(sc->body);
-  sc->body = ptr_inc(block->bodies[0]);
-  B res = execBlockInline(block, sc);
-  ptr_dec(block);
-  ptr_dec(sc);
   B resFmt = bqn_fmt(res);
-  
   printRaw(resFmt); dec(resFmt);
   putchar('\n');
 }
