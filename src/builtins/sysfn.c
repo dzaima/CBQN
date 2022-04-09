@@ -672,6 +672,7 @@ static void sys_gcFn() {
 static NFnDesc* fTypeDesc;
 static NFnDesc* fExistsDesc;
 static NFnDesc* fListDesc;
+static NFnDesc* fMapBytesDesc;
 B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x));
 }
@@ -689,6 +690,10 @@ B fexists_c1(B d, B x) {
 B fName_c1(B t, B x) {
   if (!isArr(x) || rnk(x)!=1) thrM("•file.Name: Argument must be a character vector");
   return path_name(x);
+}
+
+B mapBytes_c1(B d, B x) {
+  return mmap_file(path_rel(nfn_objU(d), x));
 }
 
 B unixTime_c1(B t, B x) {
@@ -874,7 +879,7 @@ B sh_c2(B t, B w, B x) {
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_out, s_err);
 }
 #else
-B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was built without <spawn.h>"); }
+B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 
@@ -1078,7 +1083,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName));
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName), F(fMapBytes));
         #undef F
       }
       cr = inc(fileNS);
@@ -1147,11 +1152,12 @@ void sysfn_init() {
   fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
   fListDesc  = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
   fTypeDesc  = registerNFn(m_str8l("(file).Type"), ftype_c1, c2_bad);
+  fMapBytesDesc = registerNFn(m_str8l("(file).MapBytes"), mapBytes_c1, c2_bad);
   fExistsDesc = registerNFn(m_str8l("(file).Exists"), fexists_c1, c2_bad);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mmap");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }

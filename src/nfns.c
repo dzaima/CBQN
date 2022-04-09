@@ -3,13 +3,6 @@
 #include "nfns.h"
 #include "utils/mut.h"
 
-struct NFnDesc {
-  struct Value;
-  u32 id;
-  B name;
-  BB2B c1;
-  BBB2B c2;
-};
 static u32 nfn_curr;
 static B nfn_list;
 

@@ -10,23 +10,6 @@ B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
-
-typedef struct CustomObj {
-  struct Value;
-  V2v visit;
-  V2v freeO;
-} CustomObj;
-void* customObj(u64 size, V2v visit, V2v freeO) {
-  CustomObj* r = mm_alloc(size, t_customObj);
-  r->visit = visit;
-  r->freeO = freeO;
-  return r;
-}
-void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
-void customObj_freeO(Value* v) { ((CustomObj*)v)->freeO(v); }
-void customObj_freeF(Value* v) { ((CustomObj*)v)->freeO(v); mm_free(v); }
-
-
 #if CATCH_ERRORS
 extern B lastErrMsg; // sysfn.c
 
@@ -308,8 +291,5 @@ void md2_init() {
   TIi(t_md2BI,m2_im) = md2BI_im;
   TIi(t_md2BI,m2_iw) = md2BI_iw;
   TIi(t_md2BI,m2_ix) = md2BI_ix;
-  TIi(t_customObj,freeO) = customObj_freeO;
-  TIi(t_customObj,freeF) = customObj_freeF;
-  TIi(t_customObj,visit) = customObj_visit;
   c(BMd2,bi_before)->uc1 = before_uc1;
 }

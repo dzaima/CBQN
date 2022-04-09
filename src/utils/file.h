@@ -13,6 +13,8 @@ B path_lines(B path); // consumes
 
 I8Arr* stream_bytes(FILE* f);
 
+B mmap_file(B path); // consumes
+
 void path_wChars(B path, B x); // consumes path
 void path_wBytes(B path, B x); // consumes path
 void file_wBytes(FILE* file, B name, B x); // consumes x

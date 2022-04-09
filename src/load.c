@@ -5,7 +5,7 @@
 #include "ns.h"
 #include "builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(mmap)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
@@ -558,6 +558,16 @@ static B funBI_imInit(B t, B x) {
 }
 
 
+void* customObj(u64 size, V2v visit, V2v freeO) {
+  CustomObj* r = mm_alloc(size, t_customObj);
+  r->visit = visit;
+  r->freeO = freeO;
+  return r;
+}
+void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
+void customObj_freeO(Value* v) { ((CustomObj*)v)->freeO(v); }
+void customObj_freeF(Value* v) { ((CustomObj*)v)->freeO(v); mm_free(v); }
+
 
 static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
   BFn* f = mm_alloc(sizeof(BFn), t_funBI);
@@ -639,6 +649,9 @@ void base_init() { // very first init function
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
   TIi(t_funBI,visit) = funBI_visit;
   TIi(t_hashmap,visit) = noop_visit;
+  TIi(t_customObj,freeO) = customObj_freeO;
+  TIi(t_customObj,freeF) = customObj_freeF;
+  TIi(t_customObj,visit) = customObj_visit;
   
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   

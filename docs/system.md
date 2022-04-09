@@ -14,7 +14,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
-| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Name` |
+| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Name`; has extensions |
 | `•FChars`     | |
 | `•FBytes`     | |
 | `•FLines`     | |
@@ -22,7 +22,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Show`       | |
 | `•Repr`       | |
 | `•Fmt`        | |
-| `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN` |
+| `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
 | `•SH`         | Left argument can be `{stdin⇐"input"}` |
 | `•Type`       | |
 | `•Glyph`      | |
@@ -36,11 +36,15 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•rand`       | seeds with system time (can be hard-coded by setting the C macro `RANDSEED`), same algorithm as `•MakeRand` |
 | `•bit`        | Fields: `_cast`; casting an sNaN bit pattern to a float is undefined behavior |
 
-# CBQN-specific system functions
+# CBQN-specific system functions and extensions
+
+## `•file.MapBytes`
+
+`mmap`s file at path `𝕩` as an 8-bit signed integer array; Use `•bit._cast` to interpret as other types, and `↓`/`↑` to select only a part of the file.
 
 ## `•term`
 
-Besides the previously mentioned supported things, `•term.OutRaw` and `•term.ErrRaw` output the given bytes directly to the specific stream, without any trailing newline. May be removed once a proper interface for stream I/O has been made.
+`•term.OutRaw` and `•term.ErrRaw` output the given bytes directly to the specific stream, without any trailing newline. May be removed once a proper interface for stream I/O has been made.
 
 ## `•_while_`
 

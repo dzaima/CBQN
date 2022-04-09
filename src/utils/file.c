@@ -3,17 +3,8 @@
 #include "file.h"
 #include "mut.h"
 #include "talloc.h"
+#include "cstr.h"
 
-char* toCStr(B path) {
-  u64 plen = utf8lenB(path);
-  TALLOC(char, p, plen+1);
-  toUTF8(path, p);
-  p[plen] = 0;
-  return p;
-}
-void freeCStr(char* p) {
-  TFREE(p);
-}
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   char* p = toCStr(path);
@@ -221,6 +212,83 @@ B path_list(B path) {
   dec(path);
   return res;
 }
+
+#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<errno.h>) && __has_include(<unistd.h>) && !WASM
+
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+
+typedef struct MmapHolder {
+  struct Arr;
+  int fd;
+  u64 size;
+  u8* a;
+} MmapHolder;
+
+void mmapH_visit(Value* v) { }
+DEF_FREE(mmapH) {
+  MmapHolder* p = (MmapHolder*)x;
+  if (munmap(p->a, p->size)) thrF("Failed to unmap: %S", strerror(errno));
+  if (close(p->fd)) thrF("Failed to close file: %S", strerror(errno));
+}
+
+B info_c1(B,B);
+static Arr* mmapH_slice(B x, usz s, usz ia) {
+  TySlice* r = m_arr(sizeof(TySlice), t_i8slice, ia);
+  r->a = c(MmapHolder,x)->a + s;
+  r->p = a(x);
+  return (Arr*)r;
+}
+
+B mmap_file(B path) {
+  char* p = toCStr(path);
+  dec(path);
+  int fd = open(p, 0);
+  freeCStr(p);
+  u64 len = lseek(fd, 0, SEEK_END);
+  if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
+  
+  u8* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0); // TODO count in heap usage
+  if (data==MAP_FAILED) {
+    close(fd);
+    thrM("failed to mmap file");
+  }
+  
+  MmapHolder* holder = m_arr(sizeof(MmapHolder), t_mmapH, len);
+  holder->fd = fd;
+  holder->a = data;
+  holder->size = len;
+  arr_shVec((Arr*)holder);
+  
+  Arr* r = mmapH_slice(taga(holder), 0, len);
+  arr_shVec(r);
+  return taga(r);
+}
+
+B mmapH_get(Arr* a, usz pos) { thrM("Reading mmapH directly"); }
+
+void mmap_init() {
+  TIi(t_mmapH,get)   = mmapH_get;
+  TIi(t_mmapH,getU)  = mmapH_get;
+  TIi(t_mmapH,slice) = mmapH_slice;
+  TIi(t_mmapH,freeO) = mmapH_freeO;
+  TIi(t_mmapH,freeF) = mmapH_freeF;
+  TIi(t_mmapH,visit) = noop_visit;
+  TIi(t_mmapH,print) = farr_print;
+  TIi(t_mmapH,isArr) = true;
+  TIi(t_mmapH,arrD1) = true;
+  TIi(t_mmapH,elType) = el_i8;
+  // use default canStore
+}
+#else
+B mmap_file(B path) {
+  thrM("CBQN was compiled without mmap");
+}
+void mmap_init() { }
+#endif
+
 
 #include <sys/types.h>
 #include <sys/stat.h>

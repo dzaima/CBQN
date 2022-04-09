@@ -214,7 +214,7 @@ typedef union B {
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
   /*38*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*46*/ F(freed) F(harrPartial) F(customObj) \
+  /*46*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
   \
   /*49*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 

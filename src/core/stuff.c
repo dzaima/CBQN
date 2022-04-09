@@ -861,7 +861,7 @@ void   g_pst(void) { vm_pstLive(); }
       printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
       PRINT_ID(v(x));
       print(x);
-      err("\nk");
+      err("\n");
     }
     return x;
   }

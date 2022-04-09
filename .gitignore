@@ -8,4 +8,5 @@ perf.*
 /asm_*
 /src/singeli/gen
 /Singeli
+/local/
 CBQNHeapDump

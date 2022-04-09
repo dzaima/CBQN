@@ -10,6 +10,13 @@ void vm_pstLive(void);
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
+typedef struct CustomObj {
+  struct Value;
+  V2v visit;
+  V2v freeO;
+} CustomObj;
+void* customObj(u64 size, V2v visit, V2v freeO);
+
 // shape mess
 
 typedef struct ShArr {
