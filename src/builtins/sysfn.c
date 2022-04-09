@@ -919,10 +919,12 @@ B tFlush_c1(B t, B x) {
   return x;
 }
 B tOutRaw_c1(B t, B x) {
+  if (isAtm(x)) thrM("•term.OutRaw: 𝕩 must be an array");
   file_wBytes(stdout, bi_N, x);
   return x;
 }
 B tErrRaw_c1(B t, B x) {
+  if (isAtm(x)) thrM("•term.ErrRaw: 𝕩 must be an array");
   file_wBytes(stderr, bi_N, x);
   return x;
 }
@@ -1005,7 +1007,7 @@ B bitcast_impl(B el0, B el1, B x) {
   usz* sh = a(x)->sh;
   u64 s=xt.s*(u64)sh[xr-1], zl=s/zt.s;
   if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
-  if (s>=USZ_MAX) thrM("•bit._cast: output too large");
+  if (zl>=USZ_MAX) thrM("•bit._cast: output too large");
   // Convert to input type
   B r = convert(xt, x);
   u8 rt = typeOfCast(zt);
