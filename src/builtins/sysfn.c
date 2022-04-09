@@ -1158,6 +1158,6 @@ void sysfn_init() {
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mmap");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mapbytes");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }
