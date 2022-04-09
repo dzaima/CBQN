@@ -17,7 +17,7 @@ B mmap_file(B path); // consumes
 
 void path_wChars(B path, B x); // consumes path
 void path_wBytes(B path, B x); // consumes path
-void file_wBytes(FILE* file, B name, B x); // consumes x
+void file_wBytes(FILE* file, B name, B x); // doesn't consume
 
 B path_list(B path); // consumes
 char path_type(B path); // consumes

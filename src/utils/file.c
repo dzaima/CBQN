@@ -181,23 +181,36 @@ void path_wChars(B path, B x) { // consumes path
 }
 void file_wBytes(FILE* f, B name, B x) {
   u64 len = a(x)->ia;
-  TALLOC(char, val, len);
-  SGetU(x)
-  for (u64 i = 0; i < len; i++) {
-    B c = GetU(x,i);
-    val[i] = isNum(c)? o2iu(c) : o2c(c);
+  
+  bool newBuf = false;
+  char* buf;
+  
+  u8 el = TI(x,elType);
+  if (el==el_i8 || el==el_c8) {
+    buf = tyany_ptr(x);
+  } else {
+    TALLOC(char, val, len);
+    buf = val;
+    newBuf = true;
+    SGetU(x)
+    for (u64 i = 0; i < len; i++) {
+      B c = GetU(x,i);
+      buf[i] = isNum(c)? o2iu(c) : o2c(c);
+    }
   }
   
-  if (fwrite(val, 1, len, f) != len) {
+  if (fwrite(buf, 1, len, f) != len) {
     if (q_N(name)) thrM("Error writing to file");
     else thrF("Error writing to file \"%R\"", name);
   }
-  TFREE(val);
+  
+  if (newBuf) TFREE(buf);
 }
 void path_wBytes(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
   file_wBytes(f, path, x);
   fclose(f);
+  dec(path);
 }
 
 B path_list(B path) {
