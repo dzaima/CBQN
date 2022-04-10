@@ -15,6 +15,7 @@
 #include "../utils/bits.c"
 #include "../builtins/fns.c"
 #include "../builtins/sfns.c"
+#include "../builtins/select.c"
 #include "../builtins/sysfn.c"
 #include "../builtins/sort.c"
 #include "../builtins/arithm.c"

@@ -116,7 +116,7 @@ ${bd}/%.o: src/jit/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
 
-builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o sort.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
+builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o select.o sort.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CMD) $@.d -o $@ -c $<
