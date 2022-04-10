@@ -249,7 +249,7 @@ DEF_FREE(mmapH) {
 
 B info_c1(B,B);
 static Arr* mmapH_slice(B x, usz s, usz ia) {
-  TySlice* r = m_arr(sizeof(TySlice), t_i8slice, ia);
+  TySlice* r = m_arr(sizeof(TySlice), t_c8slice, ia);
   r->a = c(MmapHolder,x)->a + s;
   r->p = a(x);
   return (Arr*)r;
@@ -260,8 +260,8 @@ B mmap_file(B path) {
   dec(path);
   int fd = open(p, 0);
   freeCStr(p);
-  u64 len = lseek(fd, 0, SEEK_END);
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
+  u64 len = lseek(fd, 0, SEEK_END);
   
   u8* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0); // TODO count in heap usage
   if (data==MAP_FAILED) {
@@ -292,7 +292,7 @@ void mmap_init() {
   TIi(t_mmapH,print) = farr_print;
   TIi(t_mmapH,isArr) = true;
   TIi(t_mmapH,arrD1) = true;
-  TIi(t_mmapH,elType) = el_i8;
+  TIi(t_mmapH,elType) = el_c8;
   // use default canStore
 }
 #else

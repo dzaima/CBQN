@@ -14,7 +14,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
-| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Name`; has extensions |
+| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Name`, `MapBytes` |
 | `•FChars`     | |
 | `•FBytes`     | |
 | `•FLines`     | |
@@ -37,10 +37,6 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•bit`        | Fields: `_cast`; casting an sNaN bit pattern to a float is undefined behavior |
 
 # CBQN-specific system functions and extensions
-
-## `•file.MapBytes`
-
-`mmap`s file at path `𝕩` as an 8-bit signed integer array; Use `•bit._cast` to interpret as other types, and `↓`/`↑` to select only a part of the file.
 
 ## `•term`
 
