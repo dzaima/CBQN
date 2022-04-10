@@ -172,6 +172,7 @@ static void variation_gcRoot() {
 }
 
 B variation_c2(B t, B w, B x) {
+  if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
   usz xia = a(x)->ia;
   u8 xe = TI(x,elType);
