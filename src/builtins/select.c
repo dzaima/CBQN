@@ -4,7 +4,6 @@
 #include "../builtins.h"
 
 // #if SINGELI
-//   #include <immintrin.h>
 //   #pragma GCC diagnostic push
 //   #pragma GCC diagnostic ignored "-Wunused-variable"
 //   #include "../singeli/gen/select.c"
