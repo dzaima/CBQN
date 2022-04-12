@@ -37,3 +37,95 @@ def store {a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_storeu_pd', cast_p
 def storea{a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_store_pd',  cast_p{f64, a+n}, v}
 def store {a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_storeu_ps', cast_p{f32, a+n}, v}
 def storea{a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_store_ps',  cast_p{f32, a+n}, v}
+
+# broadcast
+def broadcast{T, v & w128i{T,  8}} = emit{T, '_mm_set1_epi8',  ext{eltype{T},v}}
+def broadcast{T, v & w128i{T, 16}} = emit{T, '_mm_set1_epi16', ext{eltype{T},v}}
+def broadcast{T, v & w128i{T, 32}} = emit{T, '_mm_set1_epi32', ext{eltype{T},v}}
+def broadcast{T, v & w128i{T, 64}} = emit{T, '_mm_set1_epi64x',ext{eltype{T},v}}
+def broadcast{T, v & w128f{T, 64}} = emit{T, '_mm_set1_pd', v}
+def broadcast{T, v & w128f{T, 32}} = emit{T, '_mm_set1_ps', v}
+
+
+
+
+# signed comparison
+def __eq{a:T,b:T & T==[16]i8 } = emit{[16]u8,  '_mm_cmpeq_epi8',  a, b}
+def __eq{a:T,b:T & T==[ 8]i16} = emit{[ 8]u16, '_mm_cmpeq_epi16', a, b}
+def __eq{a:T,b:T & T==[ 4]i32} = emit{[ 4]u32, '_mm_cmpeq_epi32', a, b}
+def __gt{a:T,b:T & T==[16]i8 } = emit{[16]u8,  '_mm_cmpgt_epi8',  a, b}
+def __gt{a:T,b:T & T==[ 8]i16} = emit{[ 8]u16, '_mm_cmpgt_epi16', a, b}
+def __gt{a:T,b:T & T==[ 4]i32} = emit{[ 4]u32, '_mm_cmpgt_epi32', a, b}
+def __lt{a:T,b:T & w128s{T}} = b>a
+def __ge{a:T,b:T & w128s{T}} = ~(b>a)
+def __le{a:T,b:T & w128s{T}} = ~(a>b)
+# unsigned comparison
+def __eq{a:T,b:T & T==[16]u8 } = emit{[16]u8,  '_mm_cmpeq_epi8',  a, b}
+def __eq{a:T,b:T & T==[ 8]u16} = emit{[ 8]u16, '_mm_cmpeq_epi16', a, b}
+def __eq{a:T,b:T & T==[ 4]u32} = emit{[ 4]u32, '_mm_cmpeq_epi32', a, b}
+def __le{a:T,b:T & w128u{T}} = a==min{a,b}
+def __ge{a:T,b:T & w128u{T}} = a==max{a,b}
+def __lt{a:T,b:T & w128u{T}} = ~(a>=b)
+def __gt{a:T,b:T & w128u{T}} = ~(a<=b)
+# rest of comparison
+def __ne{a:T,b:T & w128i{T}} = ~(b==a)
+
+
+def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
+def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
+
+# mask stuff
+def getmask{x:T & w128{T, 8}} = emit{u32, '_mm_movemask_epi8', x}
+def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, broadcast{[8]u16, 0}}}
+def getmask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
+def getmask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
+def any{x:T & w128i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
+def all{x:T & w128i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
+def anyneg{x:T & w128s{T}} = getmask{x}!=0
+def any{x:T & w128i{T, 16}} = getmask{cast_v{[32]u8,x}}!=0
+def all{x:T & w128i{T, 16}} = getmask{cast_v{[32]u8,x}} == (1<<32)-1
+def anyneg{x:T & w128s{T, 16}} = getmask{cast_v{[32]u8, cast_v{[16]i16,x} < broadcast{[16]i16, 0}}}!=0
+
+# the lone SSE2 extract
+def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}
+
+# debug stuff
+def printGen{x, s, n} = apply{emit, merge{tup{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}}, each{{c}=>extract{x,c}, iota{n}}}}
+def print{x:T & isvec{T}} = printGen{x, merge{'%', tern{width{eltype{T}}==64, 'l', ''}, tern{issigned{x}, 'd', 'u'}}, vcount{T}}
+
+### SSE4.1; TODO either move to own file or rename this file
+
+# rest of extract
+def extract{x:T, i & w128i{T, 8} & knum{i}} = emit{eltype{T}, '_mm_extract_epi8',  x, i}
+def extract{x:T, i & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_extract_epi32', x, i}
+def extract{x:T, i & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_extract_epi64', x, i}
+
+# conversion
+def cvt{F==i8,  T==[8]i16, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi16', a}
+def cvt{F==i8,  T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi32', a}
+def cvt{F==i16, T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi16_epi32', a}
+
+# mask stuff
+def andIsZero{x:T, y:T & w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
+
+# blend by sign bit; no 16-bit case
+def blend{f:T, t:T, m:M & w128{T} & w128i{M,32}} = cast_v{T, emit{[4]f32, '_mm_blendv_ps', v2f{f}, v2f{t}, v2f{m}}}
+def blend{f:T, t:T, m:M & w128{T} & w128i{M,64}} = cast_v{T, emit{[2]f64, '_mm_blendv_pd', v2d{f}, v2d{t}, v2d{m}}}
+def blend{f:T, t:T, m:M & w128{T} & w128i{M, 8}} = cast_v{T, emit{[16]i8, '_mm_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}}
+
+# assumes all bits are the same in each mask item
+def blendF{f:T, t:T, m:M & w128{T} & w128{M} & width{eltype{M}}!=16} = blend{f, t, m}
+def blendF{f:T, t:T, m:M & w128{T} & w128{M,16}} = blend{f, t, cast_v{[16]i8,m}}
+
+def min{a:T,b:T & T==[16]i8 } = emit{T, '_mm_min_epi8',  a, b}; def max{a:T,b:T & T==[16]i8 } = emit{T, '_mm_max_epi8',  a, b}
+def min{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_min_epi32', a, b}; def max{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_max_epi32', a, b}
+def min{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_min_epu16', a, b}; def max{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_max_epu16', a, b}
+def min{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_min_epu32', a, b}; def max{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_max_epu32', a, b}
+
+def __eq{a:T,b:T & T==[ 2]i64} = emit{[ 2]u64, '_mm_cmpeq_epi64', a, b}
+def __eq{a:T,b:T & T==[ 2]u64} = emit{[ 2]u64, '_mm_cmpeq_epi64', a, b}
+
+
+
+# SSE4.2
+def __gt{a:T,b:T & T==[ 2]i64} = emit{[ 2]u64, '_mm_cmpgt_epi64', a, b}

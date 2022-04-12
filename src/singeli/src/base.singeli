@@ -1,5 +1,6 @@
 include 'skin/c'
 include 'arch/c'
+oper infix right ~~ reinterpret 55
 
 # TODO move these to a more base file
 def knum{x} = match{'number',kind{x}}
@@ -22,8 +23,14 @@ def anyNum{x:T} = match{'primitive',typekind{T}}
 def anyInt{x} = knum{x}
 def anyInt{x & match{'register',kind{x}} | match{'constant',kind{x}}} = isint{x}
 
+
 def __add{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
 def __sub{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
+
+def tern{c, T, F & anyInt{c}} = {
+  if(c) T
+  else F
+}
 
 
 def ty_u{T==i8 } = u8;  def ty_u{w== 8} = u8
@@ -34,6 +41,11 @@ def ty_s{T==u8 } = i8;  def ty_s{w== 8} = i8
 def ty_s{T==u16} = i16; def ty_s{w==16} = i16
 def ty_s{T==u32} = i32; def ty_s{w==32} = i32
 def ty_s{T==u64} = i64; def ty_s{w==64} = i64
+
+def ty_vu{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
+def ty_vs{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
+def ty_vs{x:T} = ty_vs{T}~~x
+def ty_vu{x:T} = ty_vu{T}~~x
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
@@ -86,3 +98,10 @@ def any{v:T & match{typekind{T},'primitive'}} = v
 def anyneg{v:T & match{typekind{T},'primitive'}} = v<0
 def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
+
+
+# debug stuff
+def print{x & match{kind{x},'symbol'}} = emit{void, 'printf', '"%s"', merge{'"', x, '"'}}
+def print{x & anyNum{x}} = emit{void, 'printf', '"%d"', x}
+def print{x:T & anyNum{x} & width{T}==64} = emit{void, 'printf', '"%ld"', x}
+def println{x} = { print{x}; print{'\n'} }

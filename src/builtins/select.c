@@ -3,6 +3,13 @@
 #include "../utils/mut.h"
 #include "../builtins.h"
 
+// #include <immintrin.h>
+// #if SINGELI
+//   #pragma GCC diagnostic push
+//   #pragma GCC diagnostic ignored "-Wunused-variable"
+//   #include "../singeli/gen/select.c"
+//   #pragma GCC diagnostic pop
+// #endif
 
 extern B rt_select;
 B select_c1(B t, B x) {
@@ -37,9 +44,34 @@ B select_c2(B t, B w, B x) {
   usz wia = a(w)->ia;
   
   if (xr==1) {
+    if (wia==0) {
+      decG(x);
+      B r;
+      if (isVal(xf)) {
+        Arr* ra = m_fillarrp(0);
+        arr_shCopy(ra, w);
+        fillarr_setFill(ra, xf);
+        r = taga(ra);
+      } else if (rnk(w)==1) {
+        r = isNum(xf)? emptyIVec() : emptyCVec();
+      } else {
+        Arr* ra = m_arr(sizeof(TyArr), isNum(xf)? t_i8arr : t_c8arr, 0);
+        arr_shCopy(ra, w);
+        r = taga(ra);
+      }
+      decG(w);
+      return r;
+    }
     usz xia = a(x)->ia;
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
+    #if SINGELI
+      // if (we==el_i8  && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 ((u8*)i8any_ptr (w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+      // if (we==el_i16 && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i16_32((u8*)i16any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; B r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 ((u8*)i32any_ptr(w), (u8*)i8any_ptr (x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+      // if (we==el_i32 && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i32_32((u8*)i32any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+      // if (we==el_i32 && xe==el_f64) { f64* rp; B r = m_f64arrc(&rp, w); if (!avx2_select_i32_64((u8*)i32any_ptr(w), (u8*)f64any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+    #endif
     #define CASE(T,E) if (xe==el_##T) {  \
       E* rp; B r = m_##T##arrc(&rp, w);  \
       E* xp = T##any_ptr(x);             \

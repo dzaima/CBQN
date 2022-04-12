@@ -1,16 +1,19 @@
 # get mask of first n items; n>0 & n<vcount{T}
 
-def maskInit{T} = {
- def n = 256/width{T} - 1
- merge{broadcast{n, -1}, broadcast{n, 0}}
+def maskInit{w, T} = {
+  def n = w/width{T} - 1
+  merge{broadcast{n, -1}, broadcast{n, 0}}
 }
-mask256_8 :*i8  = maskInit{i8}
-mask256_16:*i16 = maskInit{i16}
-mask256_32:*i32 = maskInit{i32}
-mask256_64:*i64 = maskInit{i64}
-mask256_1:*u8 = apply{merge, each{{x} => {
-  merge{broadcast{31, 255}, (1<<x)-1, broadcast{32, 0}}
-}, iota{8}}}
+def maskInit1{w} = {
+  apply{merge, each{{x} => {
+    merge{broadcast{w/8-1, 255}, (1<<x)-1, broadcast{w/8, 0}}
+  }, iota{8}}}
+}
+mask256_8 :*i8  = maskInit{256,i8 }; mask128_8 :*i8  = maskInit{128,i8 }
+mask256_16:*i16 = maskInit{256,i16}; mask128_16:*i16 = maskInit{128,i16}
+mask256_32:*i32 = maskInit{256,i32}; mask128_32:*i32 = maskInit{128,i32}
+mask256_64:*i64 = maskInit{256,i64}; mask128_64:*i64 = maskInit{128,i64}
+mask256_1 :*u8  = maskInit1{256};    mask128_1 :*u8  = maskInit1{128}
 
 
 def maskOf{T,n & w256{T, 8}} = load{cast_p{[32]u8,  mask256_8  + (n^31)}, 0}
@@ -18,6 +21,12 @@ def maskOf{T,n & w256{T,16}} = load{cast_p{[16]u16, mask256_16 + (n^15)}, 0}
 def maskOf{T,n & w256{T,32}} = load{cast_p{[ 8]u32, mask256_32 + (n^7)}, 0}
 def maskOf{T,n & w256{T,64}} = load{cast_p{[ 4]u64, mask256_64 + (n^3)}, 0}
 def maskOfBit{T,n & w256{T}} = load{cast_p{[32]u8,  mask256_1  + (n>>3)^31 + 64*(n&7)}, 0}
+
+def maskOf{T,n & w128{T, 8}} = load{cast_p{[16]u8,  mask128_8  + (n^15)}, 0}
+def maskOf{T,n & w128{T,16}} = load{cast_p{[ 8]u16, mask128_16 + (n^7)}, 0}
+def maskOf{T,n & w128{T,32}} = load{cast_p{[ 4]u32, mask128_32 + (n^3)}, 0}
+def maskOf{T,n & w128{T,64}} = load{cast_p{[ 2]u64, mask128_64 + (n^1)}, 0}
+def maskOfBit{T,n & w128{T}} = load{cast_p{[16]u8,  mask128_1  + (n>>3)^15 + 32*(n&7)}, 0}
 
 def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~all{x==y}
 def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  any{M{x!=y}}
@@ -31,5 +40,7 @@ def maskAfter{n} = {
   def mask{x:X & isvec{X}} = x&cast_v{X,maskOf{X,n}}
   def mask{x:X & anyInt{x}} = x & ((1<<n) - 1)
   def mask{x:X, mode=='all bits zeroes'} = andIsZero{x, cast_v{X,maskOfBit{X,n}}}
+  def mask{X, mode=='to sign bits'} = maskOf{X,n}
+  def mask{mode=='count'} = n
   def mask{x==0} = 1
 }

@@ -27,9 +27,8 @@ def v2i{x:T & w256{T}} = cast_v{[32]u8, x} # for compact casting for the annoyin
 def v2f{x:T & w256{T}} = cast_v{[8]f32, x}
 def v2d{x:T & w256{T}} = cast_v{[4]f64, x}
 
-def ty_vu{T & w256s{T}} = [vcount{T}](ty_u{eltype{T}})
-def ty_vs{T & w256u{T}} = [vcount{T}](ty_s{eltype{T}})
-def to_el{E, x:T} = cast_v{[width{T}/width{E}]E, x}
+def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
+def to_el{E, x:T} = cast_v{to_el{E,T}, x}
 def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
 
 # load & store
@@ -108,8 +107,7 @@ def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
-def cvt_f2i{x:[8]f32} = emit{[8]i32, '_mm256_cvtps_epi32', x}
-def cvt_i2f{x:[8]i32} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
+def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
 
 
 # structural operations

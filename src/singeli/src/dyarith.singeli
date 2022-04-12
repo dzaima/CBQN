@@ -18,9 +18,6 @@ def ty_dbl{T & i32==T} = i64
 def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
 def dcast_i{x} = ext{ty_dbl{type{x}}, x}
 
-def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
-def maskstoreF{p, m, n, x:T} = store{p, n, blendf{load{p,n}, x, m}}
-
 # + & -
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub}} = anyneg{M{(w^x) & (w^r)}}

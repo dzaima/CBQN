@@ -6,28 +6,6 @@ include './avx'
 include './avx2'
 include './mask'
 
-def cvt{F==i8,  T==[8]i16, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi16', a}
-def cvt{F==i8,  T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi32', a}
-def cvt{F==i16, T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi16_epi32', a}
-
-
-def cvt{F==u8,  T==[16]u16, a:A & w128i{A}} = emit{T, '_mm256_cvtepu8_epi16', a}
-def cvt{F==u8,  T==[8]u32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepu8_epi32', a}
-def cvt{F==u16, T==[8]u32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepu16_epi32', a}
-
-def cvt{F==i8,  T==[16]i16, a:A & w128i{A}} = emit{T, '_mm256_cvtepi8_epi16', a}
-def cvt{F==i8,  T==[8]i32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi8_epi32', a}
-def cvt{F==i16, T==[8]i32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi16_epi32', a}
-
-def cvt{F     , T==[4]f64,  a:A & w128i{A}} = cvt{i32, T, cvt{F, [4]i32, a}}
-def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
-
-def cvt{F,      T,          a & eltype{T}==F} = reinterpret{T, a}
-
-def cif{C, T, F} = {
-  if(C) T
-  else F
-}
 def swap{w,x} = {
   t:= w
   w = x
@@ -84,7 +62,7 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
     def fac = width{X}/width{W}
     
     maskedLoop{bulk, l, {i, M} => {
-      cw:= load{cast_p{ww{cif{fac==1, 256, 128}, u8}, w + i*32/fac}, 0}
+      cw:= load{cast_p{ww{tern{fac==1, 256, 128}, u8}, w + i*32/fac}, 0}
       cx:= load{cast_p{ww{256, X}, x}, i}
       cwc:= cvt{W, ww{256, X}, cw}
       if (anyne{cwc,cx,M}) return{0}

@@ -2,13 +2,17 @@
 def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', cast_p{i32, a+n}, m, v}
 def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    cast_p{f64, a+n}, m, v}
 
+# maskstore with all cases defined, at the cost of not being a single instruction
+def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
+def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
+
 # min & max
-def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def min{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_min_epu8',  a, b}
-def min{a:T,b:T & T==[16]i16} = emit{T, '_mm256_min_epi16', a, b}; def min{a:T,b:T & T==[16]u16} = emit{T, '_mm256_min_epu16', a, b}
-def min{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_min_epi32', a, b}; def min{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_min_epu32', a, b}
-def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}; def max{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_max_epu8',  a, b}
-def max{a:T,b:T & T==[16]i16} = emit{T, '_mm256_max_epi16', a, b}; def max{a:T,b:T & T==[16]u16} = emit{T, '_mm256_max_epu16', a, b}
-def max{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_max_epi32', a, b}; def max{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_max_epu32', a, b}
+def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}
+def min{a:T,b:T & T==[16]i16} = emit{T, '_mm256_min_epi16', a, b}; def max{a:T,b:T & T==[16]i16} = emit{T, '_mm256_max_epi16', a, b}
+def min{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_min_epi32', a, b}; def max{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_max_epi32', a, b}
+def min{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_min_epu8',  a, b}; def max{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_max_epu8',  a, b}
+def min{a:T,b:T & T==[16]u16} = emit{T, '_mm256_min_epu16', a, b}; def max{a:T,b:T & T==[16]u16} = emit{T, '_mm256_max_epu16', a, b}
+def min{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_min_epu32', a, b}; def max{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_max_epu32', a, b}
 
 # signed comparison
 def __eq{a:T,b:T & T==[32]i8 } = emit{[32]u8,  '_mm256_cmpeq_epi8',  a, b}
@@ -58,6 +62,8 @@ def unpackQ{a:[ 8]i32, b:[ 8]i32} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi32',
 # inverse of questionable pack; these saturate the argument
 def packQ{a:T,b:T & T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}
 def packQ{a:T,b:T & T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
+def packQ{a:T,b:T & T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
+def packQ{a:T,b:T & T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
 # super questionable pack - takes assumes high halves are zero
 def packQQ{a:T,b:T & T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
@@ -113,8 +119,8 @@ def blend{I==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 4]f64, 
 def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = cast_v{T, emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}}
 
 # assumes all bits are the same in each mask item
-def blendf = blend
-def blendf{f:T, t:T, m:M & w256{T} & w256i{M,16}} = blend{f, t, cast_v{[32]i8,m}}
+def blendF{f:T, t:T, m:M & w256{T} & w256{M} & width{eltype{M}}!=16} = blend{f, t, m}
+def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, cast_v{[32]i8,m}}
 
 def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
 def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}
@@ -129,8 +135,32 @@ def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_ep
 def getmask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
 def getmask{x:T & w256{T, 16}} = {
   msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, broadcast{[16]u16, 0}}}
-  (msk&255) | (msk>>8) # TODO try out permute4x64 for fixing up
+  (msk&255) | (msk>>8)
 }
 def any{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}}!=0
 def all{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}} == (1<<32)-1
 def anyneg{x:T & w256s{T, 16}} = getmask{cast_v{[32]u8, cast_v{[16]i16,x} < broadcast{[16]i16, 0}}}!=0
+
+# conversion
+# convert packed elements of type F to a result T
+def cvt{F==u8,  T==[16]u16, a:A & w128i{A}} = emit{T, '_mm256_cvtepu8_epi16', a}
+def cvt{F==u8,  T==[8]u32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepu8_epi32', a}
+def cvt{F==u16, T==[8]u32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepu16_epi32', a}
+
+def cvt{F==i8,  T==[16]i16, a:A & w128i{A}} = emit{T, '_mm256_cvtepi8_epi16', a}
+def cvt{F==i8,  T==[8]i32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi8_epi32', a}
+def cvt{F==i16, T==[8]i32,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi16_epi32', a}
+def cvt{F     , T==[4]f64,  a:A & w128i{A} & F!=i32} = cvt{i32, T, cvt{F, [4]i32, a}}
+
+def cvt{F,      T,          a:A & eltype{T}==F} = T~~a
+
+# undo cvt; assumes elements of X fit in T, otherwise may be saturated; but keeps the width of x, with trailing elements undefined
+def ucvt{T, x:X & w256i{X,32} & width{T}==8} = {
+  a:= packQ{x, x}
+  b:= packQ{a, a}
+  to_el{T, sel{[8]u32, b, make{[8]i32, 0,4,0,4,0,4,0,4}}}
+}
+def ucvt{T, x:X & w256i{X,32} & width{T}==16} = {
+  to_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
+}
+def ucvt{T, x:X & w256{X} & width{T}==width{eltype{X}}} = to_el{T, x}
