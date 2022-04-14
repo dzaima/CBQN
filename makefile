@@ -144,12 +144,15 @@ gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c equal.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "${bd}"
+	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "obj/presingeli/"
 
 
 
 # dependency files
 -include $(bd)/*.d
+ifeq (${singeli}, 1)
+-include obj/presingeli/*.d
+endif
 
 install:
 	cp -f BQN /usr/local/bin/bqn
