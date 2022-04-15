@@ -124,6 +124,7 @@ def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, cast_v{[32]i8,m}}
 
 def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
 def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}
+def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T~~emit{[4]f64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
 
 def sel{I, x:T, i:[8]i32 & w256{I,32}} = cast_v{T, emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}}
 def sel{I, x:T, i:[32]i8 & w128{I, 8}} = cast_v{T, emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}}

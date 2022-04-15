@@ -121,6 +121,7 @@ struct Body {
   union { u32* bc; i32 bcTmp; }; // pointer in bl->bc; bcTmp to make ubsan happy (god dammit C)
   u32 maxStack;
   u16 maxPSC;
+  bool exists;
 #if JIT_START != -1
   B nvmRefs;
 #endif

@@ -119,6 +119,7 @@ Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and 
   #endif
   body->bcTmp = pos;
   body->maxStack = maxStack;
+  body->exists = true;
   body->maxPSC = maxPSC;
   body->bl = NULL;
   body->varAm = (u16)vam;
@@ -152,6 +153,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   TSADD(mapBC, myPos);
   Body* failBody = m_body(6, 0, 1, 0);
   failBody->nsDesc = NULL;
+  failBody->exists = false;
   TSADD(bodies, failBody);
   i32 failBodyI = 0;
   Body* startBodies[6] = {failBody,failBody,failBody,failBody,failBody,failBody};
@@ -846,15 +848,19 @@ B md1Bl_c2(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; ptr_inc(d); return
 B md2Bl_c1(Md2D* d,      B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
 B md2Bl_c2(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
 
-B funBl_im(B     t,      B x) { FunBlock* b=c(FunBlock, t);   ptr_inc(b); return execBlock(b->bl, b->bl->invMBody, b->sc, 3, (B[]){t,              x, bi_N}); }
-B funBl_iw(B     t, B w, B x) { FunBlock* b=c(FunBlock, t);   ptr_inc(b); return execBlock(b->bl, b->bl->invWBody, b->sc, 3, (B[]){t,              x, w   }); }
-B funBl_ix(B     t, B w, B x) { FunBlock* b=c(FunBlock, t);   ptr_inc(b); return execBlock(b->bl, b->bl->invXBody, b->sc, 3, (B[]){t,              x, w   }); }
-B md1Bl_im(Md1D* d,      B x) { Md1Block* b=(Md1Block*)d->m1; ptr_inc(d); return execBlock(b->bl, b->bl->invMBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, bi_N, inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
-B md1Bl_iw(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; ptr_inc(d); return execBlock(b->bl, b->bl->invWBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
-B md1Bl_ix(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; ptr_inc(d); return execBlock(b->bl, b->bl->invXBody, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
-B md2Bl_im(Md2D* d,      B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->invMBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
-B md2Bl_iw(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->invWBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
-B md2Bl_ix(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->invXBody, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
+NORETURN NOINLINE static void noInv(Body* bo, Scope* psc, i8 type, i8 inv) {
+  pushEnv(m_scope(bo, psc, 0, 0, (B[]){}), bo->bc);
+  thrF("No %U undo header found for this%U block", inv==0? "monadic" : inv==1? "dyadic F˜⁼" : "dyadic F⁼", type==0? "" : type==1? " 1-modifier" : " 2-modifier");
+}
+B funBl_im(B     t,      B x) { FunBlock* b=c(FunBlock, t);   Body* bo=b->bl->invMBody; if (!bo->exists) noInv(bo,b->sc,0,0); ptr_inc(b); return execBlock(b->bl, bo, b->sc, 3, (B[]){t,              x, bi_N}); }
+B funBl_iw(B     t, B w, B x) { FunBlock* b=c(FunBlock, t);   Body* bo=b->bl->invWBody; if (!bo->exists) noInv(bo,b->sc,0,1); ptr_inc(b); return execBlock(b->bl, bo, b->sc, 3, (B[]){t,              x, w   }); }
+B funBl_ix(B     t, B w, B x) { FunBlock* b=c(FunBlock, t);   Body* bo=b->bl->invXBody; if (!bo->exists) noInv(bo,b->sc,0,2); ptr_inc(b); return execBlock(b->bl, bo, b->sc, 3, (B[]){t,              x, w   }); }
+B md1Bl_im(Md1D* d,      B x) { Md1Block* b=(Md1Block*)d->m1; Body* bo=b->bl->invMBody; if (!bo->exists) noInv(bo,b->sc,1,0); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 5, (B[]){tag(d,FUN_TAG), x, bi_N, inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
+B md1Bl_iw(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; Body* bo=b->bl->invWBody; if (!bo->exists) noInv(bo,b->sc,1,1); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
+B md1Bl_ix(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; Body* bo=b->bl->invXBody; if (!bo->exists) noInv(bo,b->sc,1,2); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 5, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m1,MD1_TAG)), inc(d->f)}); }
+B md2Bl_im(Md2D* d,      B x) { Md2Block* b=(Md2Block*)d->m2; Body* bo=b->bl->invMBody; if (!bo->exists) noInv(bo,b->sc,2,0); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
+B md2Bl_iw(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; Body* bo=b->bl->invWBody; if (!bo->exists) noInv(bo,b->sc,2,1); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
+B md2Bl_ix(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; Body* bo=b->bl->invXBody; if (!bo->exists) noInv(bo,b->sc,2,2); ptr_inc(d); return execBlock(b->bl, bo, b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , inc(tag(d->m2,MD2_TAG)), inc(d->f), inc(d->g)}); }
 
 B md1Bl_d(B m, B f     ) { Md1Block* c = c(Md1Block,m); Block* bl=c(Md1Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md1Block, m)->sc, 2, (B[]){m, f   }) : m_md1D((Md1*)c,f  ); }
 B md2Bl_d(B m, B f, B g) { Md2Block* c = c(Md2Block,m); Block* bl=c(Md2Block, m)->bl; return c->bl->imm? execBlock(bl, bl->bodies[0], c(Md2Block, m)->sc, 3, (B[]){m, f, g}) : m_md2D((Md2*)c,f,g); }
