@@ -1143,7 +1143,6 @@ B sys_c1(B t, B x) {
   return HARR_FCD(r, x);
 }
 
-B cdPath;
 void sysfn_init() {
   #if CATCH_ERRORS
   lastErrMsg = bi_N;
