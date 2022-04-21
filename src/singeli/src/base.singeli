@@ -112,6 +112,6 @@ def broadcast{n, v & knum{n}} = @collect(n) v
 
 # debug stuff
 def print{x & match{kind{x},'symbol'}} = emit{void, 'printf', '"%s"', merge{'"', x, '"'}}
-def print{x & anyNum{x}} = emit{void, 'printf', '"%d"', x}
-def print{x:T & anyNum{x} & width{T}==64} = emit{void, 'printf', '"%ld"', x}
+def print{x & anyNum{x}} = emit{void, 'printf', tern{issigned{x}, '"%d"', '"%u"'}, x}
+def print{x:T & anyNum{x} & width{T}==64} = emit{void, 'printf', tern{issigned{x}, '"%ld"', '"%lu"'}, x}
 def println{x} = { print{x}; print{'\n'} }
