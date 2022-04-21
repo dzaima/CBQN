@@ -1,10 +1,9 @@
-include '/home/dzaima/D/cbqn/src/singeli/src/base'
-# def Size = u64
-include '/home/dzaima/D/cbqn/src/singeli/src/sse3'
-include '/home/dzaima/D/cbqn/src/singeli/src/avx'
-include '/home/dzaima/D/cbqn/src/singeli/src/avx2'
-include '/home/dzaima/D/cbqn/src/singeli/src/bmi2'
-include '/home/dzaima/D/cbqn/src/singeli/src/mask'
+include './base'
+include './sse3'
+include './avx'
+include './avx2'
+include './bmi2'
+include './mask'
 
 avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
   rv:= *[8]u32~~r
