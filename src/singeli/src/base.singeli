@@ -1,5 +1,6 @@
 include 'skin/c'
 include 'arch/c'
+def Size = u64
 oper infix right ~~ reinterpret 55
 
 # TODO move these to a more base file
@@ -16,8 +17,8 @@ def cdiv{a,b} = (a+b-1)/b
 def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
 def lb{n==1} = 0
 
-# get the n least significant bits
-def lsbs{x, n} = x - (x>>n << n)
+def tail{n,x} = x - (x>>n << n) # get the n least significant bits
+def bit {k,x} = tail{1,x>>k} << k # get the k-th bit
 
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def isunsigned{T} = isint{T} & ~issigned{T}
@@ -50,6 +51,9 @@ def ty_s{T==u8 } = i8;  def ty_s{w== 8} = i8
 def ty_s{T==u16} = i16; def ty_s{w==16} = i16
 def ty_s{T==u32} = i32; def ty_s{w==32} = i32
 def ty_s{T==u64} = i64; def ty_s{w==64} = i64
+
+def ty_u{T==f64} = u64; def ty_u{T==f32} = u32;
+def ty_s{T==f64} = i64; def ty_s{T==f32} = i32;
 
 def ty_vu{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
 def ty_vs{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
@@ -111,7 +115,7 @@ def broadcast{n, v & knum{n}} = @collect(n) v
 
 
 # debug stuff
-def print{x & match{kind{x},'symbol'}} = emit{void, 'printf', '"%s"', merge{'"', x, '"'}}
-def print{x & anyNum{x}} = emit{void, 'printf', tern{issigned{x}, '"%d"', '"%u"'}, x}
-def print{x:T & anyNum{x} & width{T}==64} = emit{void, 'printf', tern{issigned{x}, '"%ld"', '"%lu"'}, x}
-def println{x} = { print{x}; print{'\n'} }
+def print{x & match{kind{x},'symbol'}} = { emit{void, 'printf', '"%s"', merge{'"', x, '"'}}; x }
+def print{x & anyNum{x}} = { emit{void, 'printf', tern{issigned{x}, '"%d"', '"%u"'}, x}; x }
+def print{x:T & anyNum{x} & width{T}==64} = { emit{void, 'printf', tern{issigned{x}, '"%ld"', '"%lu"'}, x}; x }
+def println{x} = { print{x}; print{'\n'}; x }

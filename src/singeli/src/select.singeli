@@ -5,14 +5,6 @@ include './avx'
 include './avx2'
 include './mask'
 
-def maskedLoop{bulk, l, step} = {
-  m:u64 = l/bulk
-  @for (i from 0 to m) step{i, maskNone}
-  
-  left:= l & (bulk-1)
-  if (left!=0) step{m, maskAfter{left}}
-}
-
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 
 def minBulk{w, A, B & width{A}< width{B}} = w/width{B}
@@ -31,29 +23,6 @@ def gather{def:T, b:B, idx:[4]i32, M & w256{T,64}} = {
 }
 
 
-# (sign/zero)-extend n'th batch to T
-def loadx{ptr:P, n, T} = {
-  def rpos = ptr + n*vcount{T}
-  def E0 = eltype{P}
-  
-  if (width{eltype{T}} == width{E0}) load{cast_p{T, rpos}, 0}
-  else cvt{E0, T, load{cast_p{[16]u8, rpos}, 0}}
-}
-
-# store low packed elements of x to P
-def storeL{ptr:P, w, x:T & width{eltype{P}} == width{eltype{T}}} = store{*T~~ptr, 0, x}
-def storeL{ptr:P, w, x:T & w256{T} & w==64} = store{*u64~~ptr, 0, extract{[4]u64~~x, 0}}
-
-# store extended data x to n'th batch in ptr
-def storex{ptr:P, n, x:T, M} = {
-  def rpos = ptr + n*vcount{T}
-  def E0 = eltype{P}
-  xu:= ucvt{eltype{P}, x}
-  def TF = to_el{E0, T}
-  if (M{0}) maskstoreF{cast_p{TF, rpos}, M{TF, 'to sign bits'}, 0, xu}
-  else storeL{rpos, vcount{T}*width{E0}, xu}
-}
-
 select{rw, TI, TD}(w0:*u8, x0:*u8, r0:*u8, wl:u64, xl:u64) : u1 = {
   def TIE = i32
   def TDE = tern{width{TD}<32, u32, TD}
@@ -67,13 +36,13 @@ select{rw, TI, TD}(w0:*u8, x0:*u8, r0:*u8, wl:u64, xl:u64) : u1 = {
   r:=cast_p{TD,r0}
   
   maskedLoop{bulk, wl, {i, M} => {
-    cw0:= loadx{w, i, TIF}
+    cw0:= loadBatch{w, i, TIF}
     cw1:= cw0+xlf
     cw:= blendF{cw0, cw1, cw0<broadcast{TIF, 0}} # TODO this is utilizing clang optimizing out the comparison
     if (any{M{ty_vu{cw} >= ty_vu{xlf}}}) return{0}
     got:= gather{broadcast{TDF,0}, x, cw, M}
     if (TDE!=TD) got&= broadcast{TDF, (1<<width{TD})-1}
-    storex{r, i, got, M}
+    storeBatch{r, i, got, M}
   }}
   1
 }

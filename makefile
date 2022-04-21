@@ -140,7 +140,7 @@ preSingeliBin:
 	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='-O1' OUTPUT=obj/presingeli/BQN c
 
 
-gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c equal.c scan.c}
+gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c slash.c equal.c scan.c expand.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'

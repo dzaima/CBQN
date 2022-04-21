@@ -36,12 +36,22 @@ NOINLINE B m_str32(u32* s) {
   return r;
 }
 
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/expand.c"
+  #pragma GCC diagnostic pop
+  #define BIT_ICPY(E) avx2_expand_1_##E(xp, rp, ia);
+#else
+  #define BIT_ICPY(E) for(usz i=0; i<ia; i++) rp[i]=bitp_get(xp,i);
+#endif
+
 #define MAKE_ICPY(T,E) T##Arr* cpy##T##Arr(B x) { \
   usz ia = a(x)->ia;     \
   E* rp; Arr* r = m_##E##arrp(&rp, ia); \
   arr_shCopy(r, x);      \
   u8 xe = TI(x,elType);  \
-  if      (xe==el_bit) { u64* xp = bitarr_ptr(x); for(usz i=0; i<ia; i++) rp[i]=bitp_get(xp,i); } \
+  if      (xe==el_bit) { u64* xp = bitarr_ptr(x); BIT_ICPY(E) } \
   else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
   else if (xe==el_i16) { i16* xp = i16any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
   else if (xe==el_i32) { i32* xp = i32any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \

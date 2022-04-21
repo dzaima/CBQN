@@ -4,6 +4,9 @@ def b_get{x:*u64, n:(Size)} = {
   ((load{x,n>>6}>>(n&63)) & 1) != 0
 }
 
+def b_getBatch{sz, x:*u64, n:(Size) & sz==4} = (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4}) & 15
+def b_getBatch{sz, x:*u64, n:(Size) & sz>=8} = load{*ty_u{sz}~~x, n}
+
 def b_set{x:*u64, n:(Size), v:u1} = {
   m:u64 = cast{u64,1}<<(n&63)
   p:u64 = load{x,n>>6}
@@ -11,7 +14,7 @@ def b_set{x:*u64, n:(Size), v:u1} = {
   else   store{x,n>>6,p & ~m}
 }
 
-def b_set{sz, x:*u64, n:(Size), v} = { vc:u64 = ext{u64,v}
+def b_setBatch{sz, x:*u64, n:(Size), v} = { vc:u64 = ext{u64,v}
   am:u64 = 64/sz;
   w:u64 = load{x,n/am}
   sh:u64 = (n&(am-1)) * sz
@@ -20,7 +23,7 @@ def b_set{sz, x:*u64, n:(Size), v} = { vc:u64 = ext{u64,v}
   store{x, n/am, w}
 }
 
-def b_set{sz, x:*u64, n:(Size), v & sz==4} = {
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
   x8:= cast_p{u8, x}
   
   #w:u64 = cast_i{u64, load{x8,n/2}}
@@ -39,7 +42,7 @@ def b_set{sz, x:*u64, n:(Size), v & sz==4} = {
   
   store{x8, n/2, cast_i{u8,w}}
 }
-def b_set{sz, x:*u64, n:(Size), v & sz== 8} = store{cast_p{u8,  x}, n, cast_i{u8, v}}
-def b_set{sz, x:*u64, n:(Size), v & sz==16} = store{cast_p{u16, x}, n, cast_i{u16,v}}
-def b_set{sz, x:*u64, n:(Size), v & sz==32} = store{cast_p{u32, x}, n, cast_i{u32,v}}
-def b_set{sz, x:*u64, n:(Size), v & sz==64} = store{x,              n, cast_i{u64,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz== 8} = store{cast_p{u8,  x}, n, cast_i{u8, v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==16} = store{cast_p{u16, x}, n, cast_i{u16,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==32} = store{cast_p{u32, x}, n, cast_i{u32,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==64} = store{x,              n, cast_i{u64,v}}

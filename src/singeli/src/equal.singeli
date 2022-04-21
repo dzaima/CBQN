@@ -12,14 +12,6 @@ def swap{w,x} = {
   x = t
 }
 
-def maskedLoop{bulk, l, step} = {
-  m:u64 = l/bulk
-  @for (i from 0 to m) step{i, maskNone}
-  
-  left:= l & (bulk-1)
-  if (left!=0) step{m, maskAfter{left}}
-}
-
 equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
   def bulk = 256 / width{X}
   if (W!=X) if (d!=0) swap{w,x}

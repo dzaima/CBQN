@@ -1,0 +1,40 @@
+include './base'
+include './sse3'
+include './avx'
+include './avx2'
+include './mask'
+include './bitops'
+
+
+
+def bitspread{T==[32]u8, a:u32} = {
+  def idxs = iota{32}
+  b:= broadcast{[8]u32, a}
+  c:= [32]u8~~b
+  d:= sel{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
+  e:= make{[32]u8, 1<<tail{3, idxs}}
+  e == (d&e)
+}
+def bitspread{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
+  b:= make{T, 1<<iota{vcount{T}}}
+  b == (b & broadcast{T, a})
+}
+
+
+
+bitexpand{T}(xp: *u64, rp:*eltype{T}, l:u64) : void = {
+  def bulk = vcount{T}
+  def TU = ty_vu{T}
+  
+  maskedLoop{vcount{T}, l, {i, M} => {
+    x:= b_getBatch{bulk, xp, i} # TODO unroll f64 by two to make b_getBatch not sad
+    y:= bitspread{TU, x}
+    r:= y & TU~~broadcast{T, 1}
+    storeBatch{rp, i, T~~r, M}
+  }}
+}
+
+'avx2_expand_1_i8'  = bitexpand{[32]i8}
+'avx2_expand_1_i16' = bitexpand{[16]i16}
+'avx2_expand_1_i32' = bitexpand{[ 8]i32}
+'avx2_expand_1_f64' = bitexpand{[ 4]f64}
