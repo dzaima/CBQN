@@ -1,11 +1,3 @@
-# maskstore
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', *i32 ~~ (a+n), m, v}
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64 ~~ (a+n), m, v}
-
-# maskstore with all cases defined, at the cost of not being a single instruction
-def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
-def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
-
 # min & max
 def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}
 def min{a:T,b:T & T==[16]i16} = emit{T, '_mm256_min_epi16', a, b}; def max{a:T,b:T & T==[16]i16} = emit{T, '_mm256_max_epi16', a, b}
@@ -65,7 +57,7 @@ def packQ{a:T,b:T & T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
 def packQ{a:T,b:T & T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
 def packQ{a:T,b:T & T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
-# super questionable pack - takes assumes high halves are zero
+# super questionable pack - assumes high halves are zero
 def packQQ{a:T,b:T & T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
 def packQQ{a} = packQQ{tupsel{0,a}, tupsel{1,a}}
 
@@ -108,6 +100,13 @@ def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
 
 
 # structural operations
+def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', *i32 ~~ (a+n), m, v}
+def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64 ~~ (a+n), m, v}
+
+# maskstore with all cases defined, at the cost of not being a single instruction
+def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
+def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
+
 def shl{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
 def shr{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
 
@@ -132,6 +131,7 @@ def sel{I, x:T, i:[32]i8 & w128{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8'
 def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
 def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}
 
+
 # mask stuff
 def getmask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
 def getmask{x:T & w256{T, 16}} = {
@@ -141,6 +141,7 @@ def getmask{x:T & w256{T, 16}} = {
 def any{x:T & w256i{T, 16}} = getmask{[32]u8~~x}!=0
 def all{x:T & w256i{T, 16}} = getmask{[32]u8~~x} == (1<<32)-1
 def anyneg{x:T & w256s{T, 16}} = getmask{[32]u8 ~~ ([16]i16~~x < broadcast{[16]i16, 0})}!=0
+
 
 # conversion
 # convert packed elements of type F to a result T

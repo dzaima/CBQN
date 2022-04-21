@@ -6,7 +6,6 @@ include './mask'
 include './bitops'
 
 
-
 def bitspread{T==[32]u8, a:u32} = {
   def idxs = iota{32}
   b:= broadcast{[8]u32, a}
@@ -21,10 +20,9 @@ def bitspread{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
 }
 
 
-
 bitexpand{T}(xp: *u64, rp:*eltype{T}, l:u64) : void = {
   def bulk = vcount{T}
-  def TU = ty_vu{T}
+  def TU = ty_u{T}
   
   maskedLoop{vcount{T}, l, {i, M} => {
     x:= b_getBatch{bulk, xp, i} # TODO unroll f64 by two to make b_getBatch not sad

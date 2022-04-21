@@ -39,7 +39,7 @@ select{rw, TI, TD}(w0:*u8, x0:*u8, r0:*u8, wl:u64, xl:u64) : u1 = {
     cw0:= loadBatch{w, i, TIF}
     cw1:= cw0+xlf
     cw:= blendF{cw0, cw1, cw0<broadcast{TIF, 0}} # TODO this is utilizing clang optimizing out the comparison
-    if (any{M{ty_vu{cw} >= ty_vu{xlf}}}) return{0}
+    if (any{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
     got:= gather{broadcast{TDF,0}, x, cw, M}
     if (TDE!=TD) got&= broadcast{TDF, (1<<width{TD})-1}
     storeBatch{r, i, got, M}

@@ -11,12 +11,15 @@ include './mask'
 def rootty{T & match{typekind{T},'primitive'}} = T
 def rootty{T & match{typekind{T},'vector'}} = eltype{T}
 
-# TODO more to some more headerlike file
-def ty_dbl{T &  i8==T} = i16
-def ty_dbl{T & i16==T} = i32
-def ty_dbl{T & i32==T} = i64
-def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
-def dcast_i{x} = ext{ty_dbl{type{x}}, x}
+
+# old scalar code
+# def ty_dbl{T & isprim{T}} = apply{tern{issigned{T}, ty_s, ty_u}, tup{width{T}*2}}
+# def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
+# def dcast_i{x:T} = promote{ty_dbl{T}, x}
+# def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
+#   r:= F{dcast_i{w}, dcast_i{x}}
+#   tup{r, r!=promote{type{r}, trunc{T, r}}}
+# }
 
 # + & -
 def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
@@ -30,10 +33,6 @@ def arithChk2{F, M, w:T, x:T, i & issigned{rootty{T}}} = {
 }
 
 # ×/∧
-def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
-  r:= F{dcast_i{w}, dcast_i{x}}
-  tup{r, r!=ext{type{r}, trunc{T, r}}}
-}
 
 def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
   rl:= __mul  {w,x}
@@ -55,17 +54,17 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = 
   max:= [8]f32 ~~ broadcast{[8]u32, 0x4efffffe}
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, any{M{[8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}
+  tup{w*x, any{M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = unpackQ{w, broadcast{T, 0}}
   # def xp = unpackQ{x, broadcast{T, 0}}
   # def rp = each{__mul32, wp, xp}
-  # def T2 = ty_dbl{T}
-  # def bad = each{{v}=>{
+  # def T2 = to_el{i64, T}
+  # def bad = each{{v} => {
   #   (((T2~~v) + broadcast{T2,0x80000000}) ^ broadcast{T2, cast{i64,1}<<63}) > broadcast{T2, cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}}
   # }, rp}
-  # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}} TODO use M
+  # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}} this doesn't use M
 }
 
 

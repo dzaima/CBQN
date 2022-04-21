@@ -20,6 +20,7 @@ def v2i{x:T & w128{T}} = [16]u8 ~~ x # for compact casting for the annoying intr
 def v2f{x:T & w128{T}} = [4]f32 ~~ x
 def v2d{x:T & w128{T}} = [2]f64 ~~ x
 
+
 # load & store
 def load {a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_loadu_si128',       a+n}
 def loada{a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_load_si128',        a+n}
@@ -35,15 +36,12 @@ def store {a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_storeu_ps', *f32 ~
 def storea{a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_store_ps',  *f32 ~~ (a+n), v}
 
 # broadcast
-def broadcast{T, v & w128i{T,  8}} = emit{T, '_mm_set1_epi8',  ext{eltype{T},v}}
-def broadcast{T, v & w128i{T, 16}} = emit{T, '_mm_set1_epi16', ext{eltype{T},v}}
-def broadcast{T, v & w128i{T, 32}} = emit{T, '_mm_set1_epi32', ext{eltype{T},v}}
-def broadcast{T, v & w128i{T, 64}} = emit{T, '_mm_set1_epi64x',ext{eltype{T},v}}
+def broadcast{T, v & w128i{T,  8}} = emit{T, '_mm_set1_epi8',  promote{eltype{T},v}}
+def broadcast{T, v & w128i{T, 16}} = emit{T, '_mm_set1_epi16', promote{eltype{T},v}}
+def broadcast{T, v & w128i{T, 32}} = emit{T, '_mm_set1_epi32', promote{eltype{T},v}}
+def broadcast{T, v & w128i{T, 64}} = emit{T, '_mm_set1_epi64x',promote{eltype{T},v}}
 def broadcast{T, v & w128f{T, 64}} = emit{T, '_mm_set1_pd', v}
 def broadcast{T, v & w128f{T, 32}} = emit{T, '_mm_set1_ps', v}
-
-
-
 
 # signed comparison
 def __eq{a:T,b:T & T==[16]i8 } = emit{[16]u8,  '_mm_cmpeq_epi8',  a, b}
@@ -66,9 +64,9 @@ def __gt{a:T,b:T & w128u{T}} = ~(a<=b)
 # rest of comparison
 def __ne{a:T,b:T & w128i{T}} = ~(b==a)
 
-
 def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
 def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
+
 
 # mask stuff
 def getmask{x:T & w128{T, 8}} = emit{u32, '_mm_movemask_epi8', x}
@@ -88,6 +86,8 @@ def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16
 # debug stuff
 def printGen{x, s, n} = apply{emit, merge{tup{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}}, each{{c}=>extract{x,c}, iota{n}}}}
 def print{x:T & isvec{T}} = printGen{x, merge{'%', tern{width{eltype{T}}==64, 'l', ''}, tern{issigned{x}, 'd', 'u'}}, vcount{T}}
+
+
 
 ### SSE4.1; TODO either move to own file or rename this file
 

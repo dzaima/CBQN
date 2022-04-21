@@ -18,14 +18,10 @@ def w256s = wgen256{{T} => isint{T} &   issigned{T}}
 def w256u = wgen256{{T} => isint{T} & isunsigned{T}}
 def w256f = wgen256{{T} => isfloat{T}}
 
-
 def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intrinsic type system
 def v2f{x:T & w256{T}} = [8]f32 ~~ x
 def v2d{x:T & w256{T}} = [4]f64 ~~ x
 
-def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
-def to_el{E, x:T} = to_el{E,T} ~~ x
-def forv{T & w256{T}} = forc{{v} => *T ~~ v}
 
 # load & store
 def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
@@ -42,17 +38,17 @@ def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f3
 def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
 
 # broadcast
-def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  ext{eltype{T},v}}
-def broadcast{T, v & w256i{T, 16}} = emit{T, '_mm256_set1_epi16', ext{eltype{T},v}}
-def broadcast{T, v & w256i{T, 32}} = emit{T, '_mm256_set1_epi32', ext{eltype{T},v}}
-def broadcast{T, v & w256i{T, 64}} = emit{T, '_mm256_set1_epi64x',ext{eltype{T},v}}
+def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  promote{eltype{T},v}}
+def broadcast{T, v & w256i{T, 16}} = emit{T, '_mm256_set1_epi16', promote{eltype{T},v}}
+def broadcast{T, v & w256i{T, 32}} = emit{T, '_mm256_set1_epi32', promote{eltype{T},v}}
+def broadcast{T, v & w256i{T, 64}} = emit{T, '_mm256_set1_epi64x',promote{eltype{T},v}}
 def broadcast{T, v & w256f{T, 64}} = emit{T, '_mm256_set1_pd', v}
 def broadcast{T, v & w256f{T, 32}} = emit{T, '_mm256_set1_ps', v}
 
 def make{T==[4]f64,a,b,c,d} = emit{T,'_mm256_setr_pd',a,b,c,d}
 def make{T==[8]f32,a,b,c,d,e,f,g,h} = emit{T,'_mm256_setr_ps',a,b,c,d,e,f,g,h}
 
-def makeGen{T,s,x} = apply{emit, merge{tup{T,s}, each{{c}=>ext{eltype{T},c}, x}}}
+def makeGen{T,s,x} = apply{emit, merge{tup{T,s}, each{{c}=>promote{eltype{T},c}, x}}}
 def make{T,a,b,c,d & w256i{T,64}} = makeGen{T, '_mm256_setr_epi64x', tup{a,b,c,d}}
 def make{T,a,b,c,d,e,f,g,h & w256i{T,32}} = makeGen{T, '_mm256_setr_epi32', tup{a,b,c,d,e,f,g,h}}
 def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p & w256i{T,16}} = makeGen{T, '_mm256_setr_epi16', tup{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p}}
@@ -70,14 +66,15 @@ def __or {a:T, b:T & w256i{T}} = T ~~ emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{
 
 def __not{a:T & w256u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
 
-# f64 comparison
+# float comparison
+def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
 def f64cmpAVX{a,b,n} = [4]u64 ~~ emit{[4]f64, '_mm256_cmp_pd', a, b, n}
-def __eq{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 0}
-def __ne{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 4}
-def __gt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,30}
-def __ge{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,29}
-def __lt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,17}
-def __le{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,18}
+def __eq{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b, 0}; def __eq{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 0}
+def __ne{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b, 4}; def __ne{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 4}
+def __gt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,30}; def __gt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,30}
+def __ge{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,29}; def __ge{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,29}
+def __lt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,17}; def __lt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,17}
+def __le{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,18}; def __le{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,18}
 
 # f32 arith
 def __add{a:T,b:T & T==[8]f32} = emit{T, '_mm256_add_ps', a, b}

@@ -15,6 +15,7 @@ def swap{w,x} = {
 equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
   def bulk = 256 / width{X}
   if (W!=X) if (d!=0) swap{w,x}
+  
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       maskedLoop{256, l, {i, M} => {

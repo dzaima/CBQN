@@ -6,15 +6,6 @@ include './avx'
 include './avx2'
 include './bitops'
 
-def fmt{T} = 'unknown'
-def fmt{T&match{T,__eq}}='='; def fmt{T&match{T,__ne}}='≠'
-def fmt{T&match{T,__gt}}='>'; def fmt{T&match{T,__ge}}='≥'
-def fmt{T&match{T,__lt}}='<'; def fmt{T&match{T,__le}}='≤'
-
-
-def cif{v, G} = { show{'cif argument not known at compile time!'}; G{} }
-def cif{v, G & match{v,0}} = 0
-def cif{v, G & match{v,1}} = G{0}
 
 def fillbits{dst:*u64, len:(Size), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
 def fillbits{dst:*u64, len:(Size), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
@@ -39,10 +30,10 @@ def pathAS{dst, len, T, op, x & issigned{T}} = {
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}
   xT:T = trunc{T, xi64}
-  if (rare{ext{i64, xT}!=xi64}) {
-    cif{~eqne{op}, {_}=>{ # NaN was already checked for ≠/=
+  if (rare{promote{i64, xT}!=xi64}) {
+    if(~eqne{op}) { # NaN was already checked for ≠/=
       if (isNaN{xf}) { call{cmpIX, dst, len, x, op{0,1}}; return{}; }
-    }}
+    }
     fillbits{dst, len, op{0,xf}}
   }
   xT
@@ -50,7 +41,7 @@ def pathAS{dst, len, T, op, x & issigned{T}} = {
 
 def pathAS{dst, len, T, op, x & T==f64} = {
   if (rare{~q_f64{x}}) {
-    cif{~eqne{op}, {_}=>{ if(~q_chr{x}) cmp_err{x}; }}
+    if (~eqne{op}) if (~q_chr{x}) cmp_err{x};
     fillbits{dst, len, op{0,1}, x}
   }
   from_B{T,x}
@@ -58,7 +49,7 @@ def pathAS{dst, len, T, op, x & T==f64} = {
 
 def pathAS{dst, len, T, op, x & isunsigned{T}} = {
   if (rare{~q_chr{x}}) {
-    cif{~eqne{op}, {_}=>{ if(~q_f64{x}) cmp_err{x}; }}
+    if (~eqne{op}) if (~q_f64{x}) cmp_err{x};
     fillbits{dst, len, op{1,0}, x}
   }
   xc32:u32 = from_B{u32,x}
@@ -71,37 +62,35 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
 def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   xi:Size = 0
   ri:Size = 0
-  def bam = vcount{VT}*unr
-  am:Size = cdiv{len,bam}
+  def bulk = vcount{VT}*unr
+  am:Size = cdiv{len,bulk}
   assert{am>0}
   while (ri < am) {
     r:u64 = 0
-    @unroll (j from 0 to unr) r = r | (ext{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
-    b_setBatch{bam, dst, ri, r}
+    @unroll (j to unr) r = r | (promote{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT}))
+    b_setBatch{bulk, dst, ri, r}
     xi = xi+unr
     ri = ri+1
   }
 }
 aa2bit{VT, unr, op}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  wv:= *VT ~~ wr; ws:= *eltype{VT} ~~ wr
-  xv:= *VT ~~ xr; xs:= *eltype{VT} ~~ xr
+  wv:= *VT~~wr; ws:= *eltype{VT}~~wr
+  xv:= *VT~~xr; xs:= *eltype{VT}~~xr
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>load{xs,i}, {i}=>load{xv,i}, dst, len}
 }
 
-as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{VT,unr,fmt{op}}
+as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 
 bitAA{bitop}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  ws:= *u64~~wr
-  xs:= *u64~~xr
-  @for (dst,ws,xs over _ from 0 to cdiv{len,64}) dst = bitop{ws,xs}
+  @for (dst, w in *u64~~wr, x in *u64~~xr over _ to cdiv{len,64}) dst = bitop{w,x}
 }
 
-not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ from 0 to am) dst = ~x }
-cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ from 0 to am) dst =  x }
+not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ to am) dst = ~x }
+cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ to am) dst =  x }
 
 bitAS{op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{'bitAS'}
   xf:f64 = interp_f64{x}

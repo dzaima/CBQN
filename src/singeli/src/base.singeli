@@ -1,17 +1,11 @@
 include 'skin/c'
 include 'arch/c'
-def Size = u64
+
 oper infix right ~~ reinterpret 55
-
+def Size = u64
 def load{x} = *x
-# TODO move these to a more base file
-def knum{x} = match{'number',kind{x}}
-def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
-def ext  {T, x:U & isint{T} & isint{U} & T>=U} = emit{T, '', x}
-def trunc{T, x & knum{x}} = cast{T, x}
-def ext  {T, x & knum{x}} = cast{T, x}
 
-# basic ceiling divide
+# ceiling divide
 def cdiv{a,b} = (a+b-1)/b
 
 # base-2 log of a constant power of two
@@ -22,21 +16,31 @@ def tail{n,x} = x - (x>>n << n) # get the n least significant bits
 def bit {k,x} = tail{1,x>>k} << k # get the k-th bit
 
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
-def isunsigned{T} = isint{T} & ~issigned{T}
 def assert{x:u1} = emit{void, 'si_assert', x}
 
-def cast_p{T, x} = emit{*T, '(void*)', x}
 
-def anyNum{x} = knum{x}
-def anyNum{x & match{'constant',kind{x}}} = 1
-def anyNum{x:T} = match{'primitive',typekind{T}}
+# various checks
+def knum{x}    = match{kind{x},'number'}
+def isreg{x}   = match{kind{x},'register'}
+def isconst{x} = match{kind{x},'constant'}
+def istype{x}  = match{kind{x},'type'}
+def istup{x}   = match{kind{x},'tuple'}
 
-def anyInt{x} = knum{x}
-def anyInt{x & match{'register',kind{x}} | match{'constant',kind{x}}} = isint{x}
+def isunsigned{T} = isint{T} & ~issigned{T}
+
+def isvec {T} = 0; def isvec {T & istype{T}} = match{typekind{T},'vector'}
+def isprim{T} = 0; def isprim{T & istype{T}} = match{typekind{T},'primitive'}
 
 
-def __add{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
-def __sub{a:T,b & match{'pointer',typekind{T}} & anyInt{b}} = emit{T, 'op +', a, b}
+def anyNum{x} = isconst{x} | knum{x}
+def anyNum{x:T} = isprim{T}
+
+def anyInt{x} = 0
+def anyInt{x & knum{x}} = (x>>0) == x
+def anyInt{x & isreg{x}|isconst{x}} = isint{x}
+
+def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
+def trunc{T, x & knum{x}} = cast{T, x}
 
 def tern{c, T, F & anyInt{c}} = {
   if(c) T
@@ -44,22 +48,21 @@ def tern{c, T, F & anyInt{c}} = {
 }
 
 
-def ty_u{T==i8 } = u8;  def ty_u{w== 8} = u8
-def ty_u{T==i16} = u16; def ty_u{w==16} = u16
-def ty_u{T==i32} = u32; def ty_u{w==32} = u32
-def ty_u{T==i64} = u64; def ty_u{w==64} = u64
-def ty_s{T==u8 } = i8;  def ty_s{w== 8} = i8
-def ty_s{T==u16} = i16; def ty_s{w==16} = i16
-def ty_s{T==u32} = i32; def ty_s{w==32} = i32
-def ty_s{T==u64} = i64; def ty_s{w==64} = i64
+def ty_s{w== 8} = i8;  def ty_u{w== 8} = u8
+def ty_s{w==16} = i16; def ty_u{w==16} = u16
+def ty_s{w==32} = i32; def ty_u{w==32} = u32
+def ty_s{w==64} = i64; def ty_u{w==64} = u64
 
-def ty_u{T==f64} = u64; def ty_u{T==f32} = u32;
-def ty_s{T==f64} = i64; def ty_s{T==f32} = i32;
+def ty_u{T & isprim{T}} = ty_u{width{T}}
+def ty_s{T & isprim{T}} = ty_s{width{T}}
 
-def ty_vu{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
-def ty_vs{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
-def ty_vs{x:T} = ty_vs{T}~~x
-def ty_vu{x:T} = ty_vu{T}~~x
+def ty_u{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
+def ty_s{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
+def ty_u{x:T & isvec{T}} = ty_u{T}~~x
+def ty_s{x:T & isvec{T}} = ty_s{T}~~x
+
+def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
+def to_el{E, x:T} = to_el{E,T} ~~ x
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
@@ -84,30 +87,12 @@ def for{vars,begin,end,block} = {
     i = i+1
   }
 }
-def forc{F} {vars,begin,end,block} = {
-  i:u64 = begin
-  while (i < end) {
-    exec{i, each{F, vars}, block}
-    i = i+1
-  }
-}
 
 def maxvalue{T & T==u8 } = 0xff
 def maxvalue{T & T==u16} = 0xffff
 def maxvalue{T & T==u32} = 0xffffffff
 
-# various utilities
-def      isintv{T} =      isint{eltype{T}}
-def    isfloatv{T} =    isfloat{eltype{T}}
-def   issignedv{T} =   issigned{eltype{T}}
-def isunsignedv{T} = isunsigned{eltype{T}}
-def istype{T} = match{kind{T},'type'}
-def istup{T} = match{kind{T},'tuple'}
-def isvec{T} = 0
-def isvec{T & istype{T}} = match{typekind{T},'vector'}
-
-
-# non-vector variants of vector defs
+# tuple operations
 def broadcast{T, v & match{typekind{T},'primitive'}} = v
 def any{v:T & match{typekind{T},'primitive'}} = v
 def anyneg{v:T & match{typekind{T},'primitive'}} = v<0

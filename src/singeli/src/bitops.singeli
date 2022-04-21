@@ -14,7 +14,8 @@ def b_set{x:*u64, n:(Size), v:u1} = {
   else   store{x,n>>6,p & ~m}
 }
 
-def b_setBatch{sz, x:*u64, n:(Size), v} = { vc:u64 = ext{u64,v}
+def b_setBatch{sz, x:*u64, n:(Size), v} = {
+  vc:u64 = promote{u64,v}
   am:u64 = 64/sz;
   w:u64 = load{x,n/am}
   sh:u64 = (n&(am-1)) * sz

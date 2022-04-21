@@ -13,6 +13,7 @@ avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
   def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
   def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, broadcast{T, 0}}
+  
   def step{x:u32, i, store1} = {
     b:= broadcast{[8]u32, x} >> make{[8]u32, 4*tail{1, iota{8}}}
     s:= sel8{[32]u8~~b, ii32>>3 + bit{2}}
@@ -25,7 +26,7 @@ avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
     def out{v, k} = each{out, widen{v}, 2*k+iota{2}}
     def out{v0:[8]i32, k} = {
       v := [8]u32~~v0 + c
-      if (tail{1,k}) c = sel{[8]u32, v, make{[8]i32, each{{i}=>7,iota{8}}}}
+      if (tail{1,k}) c = sel{[8]u32, v, make{[8]i32, broadcast{8, 7}}}
       store1{rv, j+k, v}
     }
     out{[32]i8~~d, 0}
