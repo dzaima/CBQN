@@ -32,7 +32,7 @@ def comp16{w:*u64, X, r:*i16, l:u64} = {
 
 slash2{F, T}(w:*u64, x:*T, r:*T, l:u64) : void = {
   xv:= reinterpret{*u64, x}
-  F{w, {} => {c:=load{xv,0}; xv+=1; c}, r, l}
+  F{w, {} => {c:= *xv; xv+=1; c}, r, l}
 }
 
 slash1{F, T, iota, add}(w:*u64, r:*T, l:u64) : void = {

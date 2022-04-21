@@ -24,7 +24,7 @@ def b_setBatch{sz, x:*u64, n:(Size), v} = { vc:u64 = ext{u64,v}
 }
 
 def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
-  x8:= cast_p{u8, x}
+  x8:= *u8 ~~ x
   
   #w:u64 = cast_i{u64, load{x8,n/2}}
   #sh:u64 = (n&1) * 4
@@ -42,7 +42,7 @@ def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
   
   store{x8, n/2, cast_i{u8,w}}
 }
-def b_setBatch{sz, x:*u64, n:(Size), v & sz== 8} = store{cast_p{u8,  x}, n, cast_i{u8, v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==16} = store{cast_p{u16, x}, n, cast_i{u16,v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==32} = store{cast_p{u32, x}, n, cast_i{u32,v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==64} = store{x,              n, cast_i{u64,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz== 8} = store{*u8  ~~ x, n, cast_i{u8, v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==16} = store{*u16 ~~ x, n, cast_i{u16,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==32} = store{*u32 ~~ x, n, cast_i{u32,v}}
+def b_setBatch{sz, x:*u64, n:(Size), v & sz==64} = store{        x, n, cast_i{u64,v}}

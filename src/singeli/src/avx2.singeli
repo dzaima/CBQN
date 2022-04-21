@@ -1,6 +1,6 @@
 # maskstore
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', cast_p{i32, a+n}, m, v}
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    cast_p{f64, a+n}, m, v}
+def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', *i32 ~~ (a+n), m, v}
+def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64 ~~ (a+n), m, v}
 
 # maskstore with all cases defined, at the cost of not being a single instruction
 def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
@@ -108,26 +108,26 @@ def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
 
 
 # structural operations
-def shl{S==[16]u8, x:T, n & w256{T}} = cast_v{T, emit{T, '_mm256_bslli_epi128', x, n}}
-def shr{S==[16]u8, x:T, n & w256{T}} = cast_v{T, emit{T, '_mm256_bsrli_epi128', x, n}}
+def shl{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
+def shr{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
 
-def blend{I==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}}
-def blend{I==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}}
-def blend{I==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = cast_v{T, emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}}
+def blend{I==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}
+def blend{I==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}
+def blend{I==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}
 
 # blend by sign bit; still no 16-bit case
-def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = cast_v{T, emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}}
+def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
 
 # assumes all bits are the same in each mask item
 def blendF{f:T, t:T, m:M & w256{T} & w256{M} & width{eltype{M}}!=16} = blend{f, t, m}
-def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, cast_v{[32]i8,m}}
+def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, [32]i8 ~~ m}
 
-def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}}
-def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = cast_v{T, emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}}
-def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T~~emit{[4]i64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
+def shuf{I==[4]u32, x:T, n & w256{T} & knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
+def shuf{I==[4]u64, x:T, n & w256{T} & knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}
+def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T ~~ emit{[4]i64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
 
-def sel{I, x:T, i:[8]i32 & w256{I,32}} = cast_v{T, emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}}
-def sel{I, x:T, i:[32]i8 & w128{I, 8}} = cast_v{T, emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}}
+def sel{I, x:T, i:[8]i32 & w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
+def sel{I, x:T, i:[32]i8 & w128{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
 
 def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
 def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}
@@ -138,9 +138,9 @@ def getmask{x:T & w256{T, 16}} = {
   msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, broadcast{[16]u16, 0}}}
   (msk&255) | (msk>>8)
 }
-def any{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}}!=0
-def all{x:T & w256i{T, 16}} = getmask{cast_v{[32]u8,x}} == (1<<32)-1
-def anyneg{x:T & w256s{T, 16}} = getmask{cast_v{[32]u8, cast_v{[16]i16,x} < broadcast{[16]i16, 0}}}!=0
+def any{x:T & w256i{T, 16}} = getmask{[32]u8~~x}!=0
+def all{x:T & w256i{T, 16}} = getmask{[32]u8~~x} == (1<<32)-1
+def anyneg{x:T & w256s{T, 16}} = getmask{[32]u8 ~~ ([16]i16~~x < broadcast{[16]i16, 0})}!=0
 
 # conversion
 # convert packed elements of type F to a result T

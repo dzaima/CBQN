@@ -8,9 +8,7 @@ avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
   rv:= *[8]u32~~r
   xv:= *u32~~x
   c:= broadcast{[8]u32, 0}
-
-  def tail{k,i} = i - i>>k<<k  # Last k bits of i
-  def bit {k,i} = tail{1,i>>k}<<k
+  
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
   def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}

@@ -18,8 +18,8 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       maskedLoop{256, l, {i, M} => {
-        cw:= load{cast_p{[32]u8, w}, i}
-        cx:= load{cast_p{[32]u8, x}, i}
+        cw:= load{*[32]u8 ~~ w, i}
+        cx:= load{*[32]u8 ~~ x, i}
         if (anyneBit{cw,cx,M}) return{0}
       }}
     } else if (X==f64) { # bitarr ≡ f64arr
@@ -28,21 +28,21 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
       f0:= broadcast{T, 0.0}
       f1:= broadcast{T, 1.0}
       maskedLoop{bulk, l, {i, M} => {
-        cw:= load{cast_p{u8,w}, i>>1} >> cast_i{u8, 4*(i&1)}
-        cx:= load{cast_p{T, x}, i}
+        cw:= load{*u8 ~~ w, i>>1} >> cast_i{u8, 4*(i&1)}
+        cx:= load{*T  ~~ x, i}
         wu:= blend{f0, f1, broadcast{[4]u64, cw} << make{[4]u64,63,62,61,60}}
         if (anyne{wu, cx, M}) return{0}
       }}
     } else { # bitarr ≡ i8/i16/i32arr
       def T = [256/width{X}]X
       def sh{c} = c << (width{X}-1)
-      def sh{c & X==u8} = cast_v{T, to_el{u16,c}<<7}
+      def sh{c & X==u8} = T ~~ (to_el{u16,c}<<7)
       
       # TODO compare with doing the comparison in vector registers
       badBits:= broadcast{T, ~cast{X,1}}
       maskedLoop{bulk, l, {i, M} => {
-        cw:= load{cast_p{ty_u{bulk}, w}, i}
-        cx:= load{cast_p{T,x}, i}
+        cw:= load{*ty_u{bulk} ~~ w, i}
+        cx:= load{*T ~~ x, i}
         if (~andIsZero{M{cx}, badBits}) return{0}
         if (anyne{promote{u64,getmask{sh{cx}}}, promote{u64,cw}, M}) return{0}
       }}
@@ -54,8 +54,8 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
     def fac = width{X}/width{W}
     
     maskedLoop{bulk, l, {i, M} => {
-      cw:= load{cast_p{ww{tern{fac==1, 256, 128}, u8}, w + i*32/fac}, 0}
-      cx:= load{cast_p{ww{256, X}, x}, i}
+      cw:= load{*ww{tern{fac==1, 256, 128}, u8} ~~ (w + i*32/fac)}
+      cx:= load{*ww{256, X} ~~ x, i}
       cwc:= cvt{W, ww{256, X}, cw}
       if (anyne{cwc,cx,M}) return{0}
     }}

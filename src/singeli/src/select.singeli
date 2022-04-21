@@ -14,12 +14,12 @@ def minBulk{w, A, B & width{A}>=width{B}} = w/width{A}
 # b:B - pointer to data to index; if width{B}<width{eltype{T}}, padding bytes are garbage read after wanted position
 # idx - actual (unscaled) index list
 def gather{def:T, b:B, idx:[8]i32, M & w256{T,32}} = {
-  if (M{0}) cast_v{T, emit{[8]i32, '_mm256_mask_i32gather_epi32', def, cast_p{i32,b}, idx, M{T,'to sign bits'}, width{eltype{B}}/8}}
-  else      cast_v{T, emit{[8]i32, '_mm256_i32gather_epi32',           cast_p{i32,b}, idx,                      width{eltype{B}}/8}}
+  if (M{0}) T ~~ emit{[8]i32, '_mm256_mask_i32gather_epi32', def, *i32~~b, idx, M{T,'to sign bits'}, width{eltype{B}}/8}
+  else      T ~~ emit{[8]i32, '_mm256_i32gather_epi32',           *i32~~b, idx,                      width{eltype{B}}/8}
 }
 def gather{def:T, b:B, idx:[4]i32, M & w256{T,64}} = {
-  if (M{0}) cast_v{T, emit{[4]i64, '_mm256_mask_i32gather_epi64', def, cast_p{i64,b}, idx, M{T,'to sign bits'}, width{eltype{B}}/8}}
-  else      cast_v{T, emit{[4]i64, '_mm256_i32gather_epi64',           cast_p{i64,b}, idx,                      width{eltype{B}}/8}}
+  if (M{0}) T ~~ emit{[4]i64, '_mm256_mask_i32gather_epi64', def, *i64~~b, idx, M{T,'to sign bits'}, width{eltype{B}}/8}
+  else      T ~~ emit{[4]i64, '_mm256_i32gather_epi64',           *i64~~b, idx,                      width{eltype{B}}/8}
 }
 
 
@@ -31,9 +31,9 @@ select{rw, TI, TD}(w0:*u8, x0:*u8, r0:*u8, wl:u64, xl:u64) : u1 = {
   def TDF = [bulk]TDE
   def xlf = broadcast{TIF, cast_i{eltype{TIF}, xl}}
   
-  w:=cast_p{TI,w0}
-  x:=cast_p{TD,x0}
-  r:=cast_p{TD,r0}
+  w:= *TI ~~ w0
+  x:= *TD ~~ x0
+  r:= *TD ~~ r0
   
   maskedLoop{bulk, wl, {i, M} => {
     cw0:= loadBatch{w, i, TIF}

@@ -16,17 +16,17 @@ mask256_64:*i64 = maskInit{256,i64}; mask128_64:*i64 = maskInit{128,i64}
 mask256_1 :*u8  = maskInit1{256};    mask128_1 :*u8  = maskInit1{128}
 
 
-def maskOf{T,n & w256{T, 8}} = load{cast_p{[32]u8,  mask256_8  + (n^31)}, 0}
-def maskOf{T,n & w256{T,16}} = load{cast_p{[16]u16, mask256_16 + (n^15)}, 0}
-def maskOf{T,n & w256{T,32}} = load{cast_p{[ 8]u32, mask256_32 + (n^7)}, 0}
-def maskOf{T,n & w256{T,64}} = load{cast_p{[ 4]u64, mask256_64 + (n^3)}, 0}
-def maskOfBit{T,n & w256{T}} = load{cast_p{[32]u8,  mask256_1  + (n>>3)^31 + 64*(n&7)}, 0}
+def maskOf{T,n & w256{T, 8}} = load{*[32]u8  ~~ (mask256_8  + (n^31))}
+def maskOf{T,n & w256{T,16}} = load{*[16]u16 ~~ (mask256_16 + (n^15))}
+def maskOf{T,n & w256{T,32}} = load{*[ 8]u32 ~~ (mask256_32 + (n^7))}
+def maskOf{T,n & w256{T,64}} = load{*[ 4]u64 ~~ (mask256_64 + (n^3))}
+def maskOfBit{T,n & w256{T}} = load{*[32]u8  ~~ (mask256_1  + (n>>3)^31 + 64*(n&7))}
 
-def maskOf{T,n & w128{T, 8}} = load{cast_p{[16]u8,  mask128_8  + (n^15)}, 0}
-def maskOf{T,n & w128{T,16}} = load{cast_p{[ 8]u16, mask128_16 + (n^7)}, 0}
-def maskOf{T,n & w128{T,32}} = load{cast_p{[ 4]u32, mask128_32 + (n^3)}, 0}
-def maskOf{T,n & w128{T,64}} = load{cast_p{[ 2]u64, mask128_64 + (n^1)}, 0}
-def maskOfBit{T,n & w128{T}} = load{cast_p{[16]u8,  mask128_1  + (n>>3)^15 + 32*(n&7)}, 0}
+def maskOf{T,n & w128{T, 8}} = load{*[16]u8  ~~ (mask128_8  + (n^15))}
+def maskOf{T,n & w128{T,16}} = load{*[ 8]u16 ~~ (mask128_16 + (n^7))}
+def maskOf{T,n & w128{T,32}} = load{*[ 4]u32 ~~ (mask128_32 + (n^3))}
+def maskOf{T,n & w128{T,64}} = load{*[ 2]u64 ~~ (mask128_64 + (n^1))}
+def maskOfBit{T,n & w128{T}} = load{*[16]u8  ~~ (mask128_1  + (n>>3)^15 + 32*(n&7))}
 
 def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~all{x==y}
 def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  any{M{x!=y}}
@@ -37,9 +37,9 @@ def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 def maskNone{x} = x
 def maskNone{x, mode=='all bits zeroes'} = andIsZero{x, x}
 def maskAfter{n} = {
-  def mask{x:X & isvec{X}} = x&cast_v{X,maskOf{X,n}}
+  def mask{x:X & isvec{X}} = x & (X~~maskOf{X,n})
   def mask{x:X & anyInt{x}} = x & ((1<<n) - 1)
-  def mask{x:X, mode=='all bits zeroes'} = andIsZero{x, cast_v{X,maskOfBit{X,n}}}
+  def mask{x:X, mode=='all bits zeroes'} = andIsZero{x, X~~maskOfBit{X,n}}
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
   def mask{mode=='count'} = n
   def mask{x==0} = 1
@@ -57,7 +57,7 @@ def storeBatch{ptr:P, n, x:T, M} = {
   def E0 = eltype{P}
   xu:= ucvt{E0, x}
   def TF = to_el{E0, T}
-  if (M{0}) maskstoreF{cast_p{TF, rpos}, M{TF, 'to sign bits'}, 0, xu}
+  if (M{0}) maskstoreF{*TF~~rpos, M{TF, 'to sign bits'}, 0, xu}
   else storeLow{rpos, vcount{T}*width{E0}, xu}
 }
 
@@ -66,8 +66,8 @@ def loadBatch{ptr:P, n, T} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
   
-  if (width{eltype{T}} == width{E0}) load{cast_p{T, rpos}, 0}
-  else cvt{E0, T, load{cast_p{[16]u8, rpos}, 0}}
+  if (width{eltype{T}} == width{E0}) load{*T ~~ rpos}
+  else cvt{E0, T, load{*[16]u8 ~~ rpos}}
 }
 
 def maskedLoop{bulk, l, step} = {

@@ -83,20 +83,20 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   }
 }
 aa2bit{VT, unr, op}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  wv:= cast_vp{VT, wr}; ws:= cast_p{eltype{VT}, wr}
-  xv:= cast_vp{VT, xr}; xs:= cast_p{eltype{VT}, xr}
+  wv:= *VT ~~ wr; ws:= *eltype{VT} ~~ wr
+  xv:= *VT ~~ xr; xs:= *eltype{VT} ~~ xr
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>load{xs,i}, {i}=>load{xv,i}, dst, len}
 }
 
 as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{VT,unr,fmt{op}}
-  wv:= cast_vp{VT, wr}; ws:= cast_p{eltype{VT}, wr}
+  wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 
 bitAA{bitop}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  ws:= cast_p{u64, wr}
-  xs:= cast_p{u64, xr}
+  ws:= *u64~~wr
+  xs:= *u64~~xr
   @for (dst,ws,xs over _ from 0 to cdiv{len,64}) dst = bitop{ws,xs}
 }
 
@@ -115,8 +115,8 @@ bitAS{op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{'bitAS'}
     fillbits{dst, len, r0}
     return{}
   }
-  if (r0) call{not, dst, cast_p{u64,wr}, len}
-  else call{cpy, dst, cast_p{u64,wr}, len}
+  if (r0) call{not, dst, *u64~~wr, len}
+  else    call{cpy, dst, *u64~~wr, len}
 }
 
 

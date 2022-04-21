@@ -41,10 +41,10 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = 
   tup{rl, anyne{rh, rl>>15, M}}
 }
 def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
-  def wp = unpackQ{w, cast_v{T,broadcast{T,0}>w}}
-  def xp = unpackQ{x, cast_v{T,broadcast{T,0}>x}}
+  def wp = unpackQ{w, T ~~ (broadcast{T,0}>w)}
+  def xp = unpackQ{x, T ~~ (broadcast{T,0}>x)}
   def rp = each{__mul, wp, xp}
-  def bad = each{{v}=>cast_v{[16]i16,(v<<8)>>8 != v}, rp}
+  def bad = each{{v} => [16]i16 ~~ ((v<<8)>>8 != v), rp}
   if (M{0}) { # masked check
     tup{packQ{rp}, any{M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
@@ -52,10 +52,10 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   }
 }
 def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
-  max:= cast_v{[8]f32, broadcast{[8]u32, 0x4efffffe}}
+  max:= [8]f32 ~~ broadcast{[8]u32, 0x4efffffe}
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, any{M{cast_v{[8]u32, emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}}
+  tup{w*x, any{M{[8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', abs{f32mul}, max, 29}}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = unpackQ{w, broadcast{T, 0}}
@@ -63,7 +63,7 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = 
   # def rp = each{__mul32, wp, xp}
   # def T2 = ty_dbl{T}
   # def bad = each{{v}=>{
-  #   ((cast_v{T2,v} + broadcast{T2,0x80000000}) ^ broadcast{T2, cast{i64,1}<<63}) > broadcast{T2, cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}}
+  #   (((T2~~v) + broadcast{T2,0x80000000}) ^ broadcast{T2, cast{i64,1}<<63}) > broadcast{T2, cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}}
   # }, rp}
   # tup{packQQ{each{{v} => v&broadcast{T2, 0xFFFFFFFF}, rp}}, any{tupsel{0,bad}|tupsel{1,bad}}} TODO use M
 }
@@ -88,15 +88,15 @@ def arithAny{VT, F, W, X, r, len} = {
 }
 
 def arithAA{VT, F, w, x, r, len} = {
-  arithAny{VT, F, {i}=>load{cast_p{VT,w}, i}, {i}=>load{cast_p{VT,x}, i}, r, len}
+  arithAny{VT, F, {i}=>load{*VT~~w, i}, {i}=>load{*VT~~x, i}, r, len}
 }
 def arithAS{VT, F, w, x, r, len} = {
   xv:= broadcast{VT, x}
-  arithAny{VT, F, {i}=>load{cast_p{VT,w}, i}, {i}=>xv, r, len}
+  arithAny{VT, F, {i}=>load{*VT~~w, i}, {i}=>xv, r, len}
 }
 def arithSA{VT, F, w, x, r, len} = {
   wv:= broadcast{VT, w}
-  arithAny{VT, F, {i}=>wv, {i}=>load{cast_p{VT,x}, i}, r, len}
+  arithAny{VT, F, {i}=>wv, {i}=>load{*VT~~x, i}, r, len}
 }
 
 
@@ -109,9 +109,9 @@ def cast_fB{T, x:(u64) & issigned{T} & T<i64} = {
   r
 }
 
-arithAA{F,VT}(w: *u8, x: *u8, r: *u8, len: Size) : Size = { def c{x}=cast_p{eltype{VT}, x}; arithAA{VT, F, c{w}, c{x}, c{r}, len} }
-arithAS{F,VT}(w: *u8, x: u64, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithAS{VT, F, cast_p {T, w}, cast_fB{T, x}, cast_p{T, r}, len} }
-arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithSA{VT, F, cast_fB{T, w}, cast_p {T, x}, cast_p{T, r}, len} }
+arithAA{F,VT}(w: *u8, x: *u8, r: *u8, len: Size) : Size = { def c{x} = *eltype{VT} ~~ x; arithAA{VT, F, c{w}, c{x}, c{r}, len} }
+arithAS{F,VT}(w: *u8, x: u64, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithAS{VT, F, *T ~~ w,       cast_fB{T, x}, *T~~r, len} }
+arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithSA{VT, F, cast_fB{T, w}, *T ~~ x,       *T~~r, len} }
 
 'avx2_addAA_i8'  = arithAA{__add,[32]i8 }; 'avx2_addAS_i8'  = arithAS{__add,[32]i8 }; 'avx2_addSA_i8'  = arithSA{__add,[32]i8 }
 'avx2_addAA_i16' = arithAA{__add,[16]i16}; 'avx2_addAS_i16' = arithAS{__add,[16]i16}; 'avx2_addSA_i16' = arithSA{__add,[16]i16}

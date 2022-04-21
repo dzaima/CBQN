@@ -19,31 +19,27 @@ def w256u = wgen256{{T} => isint{T} & isunsigned{T}}
 def w256f = wgen256{{T} => isfloat{T}}
 
 
-def cast_vp{T, x & w256{T}} = emit{*T, '(void*)', x}
-def cast_v{R, x:S & w256i{R   } & w256{S}} = emit{R, '(__m256i)', x}
-def cast_v{R, x:S & w256f{R,32} & w256{S}} = emit{R, '(__m256)',  x}
-def cast_v{R, x:S & w256f{R,64} & w256{S}} = emit{R, '(__m256d)', x}
-def v2i{x:T & w256{T}} = cast_v{[32]u8, x} # for compact casting for the annoying intrinsic type system
-def v2f{x:T & w256{T}} = cast_v{[8]f32, x}
-def v2d{x:T & w256{T}} = cast_v{[4]f64, x}
+def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intrinsic type system
+def v2f{x:T & w256{T}} = [8]f32 ~~ x
+def v2d{x:T & w256{T}} = [4]f64 ~~ x
 
 def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
-def to_el{E, x:T} = cast_v{to_el{E,T}, x}
-def forv{T & w256{T}} = forc{{v}=>cast_vp{T,v}}
+def to_el{E, x:T} = to_el{E,T} ~~ x
+def forv{T & w256{T}} = forc{{v} => *T ~~ v}
 
 # load & store
-def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',          a+n}
-def loada{a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_load_si256',           a+n}
-def load {a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_loadu_pd', cast_p{f64, a+n}}
-def loada{a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_load_pd',  cast_p{f64, a+n}}
-def load {a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_loadu_ps', cast_p{f32, a+n}}
-def loada{a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_load_ps',  cast_p{f32, a+n}}
-def store {a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_storeu_si256',          a+n, v}
-def storea{a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_store_si256',           a+n, v}
-def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', cast_p{f64, a+n}, v}
-def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  cast_p{f64, a+n}, v}
-def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', cast_p{f32, a+n}, v}
-def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  cast_p{f32, a+n}, v}
+def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
+def loada{a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_load_si256',        a+n}
+def load {a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_loadu_pd', *f64 ~~ (a+n)}
+def loada{a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_load_pd',  *f64 ~~ (a+n)}
+def load {a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_loadu_ps', *f32 ~~ (a+n)}
+def loada{a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_load_ps',  *f32 ~~ (a+n)}
+def store {a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_storeu_si256',       a+n,  v}
+def storea{a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_store_si256',        a+n,  v}
+def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', *f64 ~~ (a+n), v}
+def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  *f64 ~~ (a+n), v}
+def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f32 ~~ (a+n), v}
+def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
 
 # broadcast
 def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  ext{eltype{T},v}}
@@ -68,14 +64,14 @@ def iota{T & w256{T,32}} = make{T,0,1,2,3,4,5,6,7}
 def iota{T & w256{T,16}} = make{T,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 def iota{T & w256{T,8}} = make{T,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
 
-def __xor{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b}}}
-def __and{a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}}
-def __or {a:T, b:T & w256i{T}} = cast_v{T, emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}}
+def __xor{a:T, b:T & w256i{T}} = T ~~ emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b}}
+def __and{a:T, b:T & w256i{T}} = T ~~ emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}
+def __or {a:T, b:T & w256i{T}} = T ~~ emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}
 
 def __not{a:T & w256u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
 
 # f64 comparison
-def f64cmpAVX{a,b,n} = cast_v{[4]u64, emit{[4]f64, '_mm256_cmp_pd', a, b, n}}
+def f64cmpAVX{a,b,n} = [4]u64 ~~ emit{[4]f64, '_mm256_cmp_pd', a, b, n}
 def __eq{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 0}
 def __ne{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 4}
 def __gt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,30}
@@ -126,12 +122,12 @@ def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
 # blend by sign bit
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = cast_v{T, emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}}
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = cast_v{T, emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}}
+def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
+def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 
 # mixed-width operations
-def half{x:T, i & w256{T} & knum{i}} = cast_v{[vcount{T}/2](eltype{T}), emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}}
-def pair{a:T,b:T & width{T}==128} = cast_v{[vcount{T}*2](eltype{T}), emit{[8]i32, '_mm256_setr_m128i', a, b}}
+def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
+def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
 # mask stuff

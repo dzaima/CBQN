@@ -3,6 +3,7 @@ include 'arch/c'
 def Size = u64
 oper infix right ~~ reinterpret 55
 
+def load{x} = *x
 # TODO move these to a more base file
 def knum{x} = match{'number',kind{x}}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
