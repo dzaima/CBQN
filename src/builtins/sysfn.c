@@ -227,13 +227,15 @@ B out_c1(B t, B x) {
   return x;
 }
 B show_c1(B t, B x) {
-  #if FORMATTER
-    B fmt = bqn_fmt(inc(x));
-    printRaw(fmt); dec(fmt);
-  #else
-    print(x);
+  #ifndef NO_SHOW
+    #if FORMATTER
+      B fmt = bqn_fmt(inc(x));
+      printRaw(fmt); dec(fmt);
+    #else
+      print(x);
+    #endif
+    putchar('\n');
   #endif
-  putchar('\n');
   return x;
 }
 
