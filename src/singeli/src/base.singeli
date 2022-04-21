@@ -9,7 +9,16 @@ def ext  {T, x:U & isint{T} & isint{U} & T>=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 def ext  {T, x & knum{x}} = cast{T, x}
 
+# basic ceiling divide
 def cdiv{a,b} = (a+b-1)/b
+
+# base-2 log of a constant power of two
+def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
+def lb{n==1} = 0
+
+# get the n least significant bits
+def lsbs{x, n} = x - (x>>n << n)
+
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def isunsigned{T} = isint{T} & ~issigned{T}
 def assert{x:u1} = emit{void, 'si_assert', x}
@@ -88,6 +97,7 @@ def    isfloatv{T} =    isfloat{eltype{T}}
 def   issignedv{T} =   issigned{eltype{T}}
 def isunsignedv{T} = isunsigned{eltype{T}}
 def istype{T} = match{kind{T},'type'}
+def istup{T} = match{kind{T},'tuple'}
 def isvec{T} = 0
 def isvec{T & istype{T}} = match{typekind{T},'vector'}
 

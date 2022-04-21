@@ -1,0 +1,36 @@
+include '/home/dzaima/D/cbqn/src/singeli/src/base'
+# def Size = u64
+include '/home/dzaima/D/cbqn/src/singeli/src/sse3'
+include '/home/dzaima/D/cbqn/src/singeli/src/avx'
+include '/home/dzaima/D/cbqn/src/singeli/src/avx2'
+include '/home/dzaima/D/cbqn/src/singeli/src/bmi2'
+include '/home/dzaima/D/cbqn/src/singeli/src/mask'
+
+avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
+  rv:= *[8]u32~~r
+  xv:= *u8~~x
+  
+  def step{x} = {
+    m:u32 = 2b0001_0001_0001_0001_0001_0001_0001_0001
+    a:= pdep{promote{u32,x},m}
+    d:= a*m # b:= a + a<<16; c:= b + b<<8; d:= c + c<<4
+    e:= broadcast{[8]u32, d}
+    f:= e >> make{[8]u32, iota{8}*4}
+    tup{f & broadcast{[8]u32, 0xf}, d, e}
+  }
+  
+  c:= broadcast{[8]u32, 0}
+  e:= l/8
+  @for(x in xv, r in rv over _ to e) {
+    def sr = step{x}
+    r = tupsel{0, sr}+c
+    # c+= broadcast{[8]u32, popc{x}}
+    # c+= broadcast{[8]u32, tupsel{1, sr}>>28}
+    c+= tupsel{2, sr}>>28
+  }
+  if (e*8 != l) {
+    r:= c+tupsel{0, step{load{xv, e}}}
+    maskstoreF{rv, maskOf{[8]i32, l - e*8}, e, r}
+  }
+}
+'avx2_bcs32' = avx2_bcs32

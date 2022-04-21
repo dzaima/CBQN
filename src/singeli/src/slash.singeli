@@ -1,11 +1,6 @@
 include './base'
+include './bmi2'
 
-def pdep{x:u64, m:u64} = emit{u64, '_pdep_u64', x, m}
-def pdep{x:u32, m:u32} = emit{u32, '_pdep_u32', x, m}
-def pext{x:u64, m:u64} = emit{u64, '_pext_u64', x, m}
-def pext{x:u32, m:u32} = emit{u32, '_pext_u32', x, m}
-def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
-def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
 
 def comp8{w:*u64, X, r:*i8, l:u64} = {
   @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {

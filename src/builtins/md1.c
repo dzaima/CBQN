@@ -119,6 +119,14 @@ B scan_ne(u64 p, B x, u64 ia) {
   decG(x); return r;
 }
 
+
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/scan.c"
+  #pragma GCC diagnostic pop
+#endif
+
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = rnk(x);
@@ -129,8 +137,13 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   if (xr==1 && xe<=el_f64 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_add) { // +
-      if (ia<I32_MAX) \
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i);          rp[i]=c; } decG(x); return r; }
+      if (xe==el_bit && ia<I32_MAX) { u64* xp=bitarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); 
+      #if SINGELI
+        avx2_bcs32(xp, rp, ia);
+      #else
+        i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; }
+      #endif
+      decG(x); return r; }
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(addOn(c,xp[i]))goto base; rp[i]=c; } decG(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(addOn(c,xp[i]))goto base; rp[i]=c; } decG(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(addOn(c,xp[i]))goto base; rp[i]=c; } decG(x); return r; }

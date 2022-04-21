@@ -61,6 +61,7 @@ def make{T,a,b,c,d & w256i{T}} = makeGen{T, '_mm256_setr_epi64x', tup{a,b,c,d}}
 def make{T,a,b,c,d,e,f,g,h & w256i{T}} = makeGen{T, '_mm256_setr_epi32', tup{a,b,c,d,e,f,g,h}}
 def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p & w256i{T}} = makeGen{T, '_mm256_setr_epi16', tup{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p}}
 def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P & w256i{T}} = makeGen{T, '_mm256_setr_epi8', tup{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P}}
+def make{T,x & w256{T} & istup{x}} = apply{make, merge{tup{T}, x}}
 
 def iota{T & w256{T,64}} = make{T,0,1,2,3}
 def iota{T & w256{T,32}} = make{T,0,1,2,3,4,5,6,7}
