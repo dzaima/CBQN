@@ -3,8 +3,8 @@ def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, 
 def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    cast_p{f64, a+n}, m, v}
 
 # maskstore with all cases defined, at the cost of not being a single instruction
-def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
 def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
+def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
 
 # min & max
 def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}
