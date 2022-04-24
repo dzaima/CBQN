@@ -459,7 +459,7 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   u8 xe = TI(x,elType);
   
   #if SINGELI
-    if (we<=el_c32 && xe<=el_c32) {
+    if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
       u8* wp = tyany_ptr(w);
       u8* xp = tyany_ptr(x);
       u64 idx = we*8 + xe;

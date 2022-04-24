@@ -47,9 +47,22 @@ def maskAfter{n} = {
 
 
 
-# store low packed elements of x to P; TODO the w parameter isn't doing much?
-def storeLow{ptr:P, w, x:T & width{eltype{P}} == width{eltype{T}}} = store{*T~~ptr, 0, x}
-def storeLow{ptr:P, w, x:T & w256{T} & w==64} = store{*u64~~ptr, 0, extract{[4]u64~~x, 0}}
+# store low packed elements of x to P
+def storeLow{ptr:P, w, x:T & width{T}==w} = store{*T~~ptr, 0, x}
+def storeLow{ptr:P, w, x:T & w256{T} & w==128} = store{*[128/width{eltype{T}}](eltype{T})~~ptr, 0, half{x, 0}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==64} = emit{void, '_mm_storeu_si64', ptr, v2i{half{x, 0}}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==32} = emit{void, '_mm_storeu_si32', ptr, v2i{half{x, 0}}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==16} = emit{void, '_mm_storeu_si16', ptr, v2i{half{x, 0}}}
+
+def loadLow{ptr:P, w & w128{eltype{P}} & w==128} = eltype{P} ~~ load{*[16]u8 ~~ ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
+
+def loadLow{ptr:P, w & w256{eltype{P}} & w<256} = undefPromote{eltype{P}, loadLow{*[16]u8 ~~ ptr, w}}
+def loadLow{ptr:P, w & width{eltype{P}} == w} = load{*eltype{P} ~~ ptr}
+
+def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/width{eltype{P}})), w}
 
 # store vcount{T} items into the n'th batch of ptr elements, compressing the items if needed; masked by M
 def storeBatch{ptr:P, n, x:T, M} = {
@@ -66,11 +79,10 @@ def loadBatch{ptr:P, n, T} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
   
-  if (width{eltype{T}} == width{E0}) load{*T ~~ rpos}
-  else cvt{E0, T, load{*[16]u8 ~~ rpos}}
+  cvt{E0, T, loadLow{*to_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
 }
 
-def maskedLoop{bulk, l, step} = {
+def maskedLoop{bulk, l, step} = { # TODO version assuming l!=0
   m:u64 = l/bulk
   @for (i to m) step{i, maskNone}
   

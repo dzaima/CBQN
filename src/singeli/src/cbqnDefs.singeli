@@ -9,6 +9,18 @@ def q_chr{T,x & T==u8 } = bcall{u1, 'q_c8',  x}
 def q_chr{T,x & T==u16} = bcall{u1, 'q_c16', x}
 def q_chr{T,x & T==u32} = bcall{u1, 'q_c32', x}
 
+def cbqn_c32Tag{} = emit{u64, '', 'C32_TAG'}
+def cbqn_tagTag{} = emit{u64, '', 'TAG_TAG'}
+def cbqn_varTag{} = emit{u64, '', 'VAR_TAG'}
+def cbqn_extTag{} = emit{u64, '', 'EXT_TAG'}
+def cbqn_rawTag{} = emit{u64, '', 'RAW_TAG'}
+def cbqn_md1Tag{} = emit{u64, '', 'MD1_TAG'}
+def cbqn_md2Tag{} = emit{u64, '', 'MD2_TAG'}
+def cbqn_funTag{} = emit{u64, '', 'FUN_TAG'}
+def cbqn_nspTag{} = emit{u64, '', 'NSP_TAG'}
+def cbqn_objTag{} = emit{u64, '', 'OBJ_TAG'}
+def cbqn_arrTag{} = emit{u64, '', 'ARR_TAG'}
+
 def cbqn_elType{T & T==u1 } = 0
 def cbqn_elType{T & T==i8 } = 1
 def cbqn_elType{T & T==i16} = 2

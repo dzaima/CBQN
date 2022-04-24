@@ -5,8 +5,6 @@ include './avx'
 include './avx2'
 include './mask'
 
-def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
-
 def minBulk{w, A, B & width{A}< width{B}} = w/width{B}
 def minBulk{w, A, B & width{A}>=width{B}} = w/width{A}
 

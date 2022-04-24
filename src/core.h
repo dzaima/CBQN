@@ -33,6 +33,13 @@ static B* arr_bptr(B x) { assert(isArr(x));
   if (v(x)->type==t_fillslice) return c(FillSlice,x)->a;
   return NULL;
 }
+static B* arrV_bptr(Arr* x) {
+  if (x->type==t_harr) return ((HArr*)x)->a;
+  if (x->type==t_fillarr) return fillarr_ptr(x);
+  if (x->type==t_hslice) return ((HSlice*)x)->a;
+  if (x->type==t_fillslice) return ((FillSlice*)x)->a;
+  return NULL;
+}
 static void* tyany_ptr(B x) {
   u8 t = v(x)->type;
   return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;

@@ -55,7 +55,8 @@ equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
     def fac = width{X}/width{W}
     
     maskedLoop{bulk, l, {i, M} => {
-      cw:= load{*ww{tern{fac==1, 256, 128}, u8} ~~ (w + i*32/fac)}
+      # TODO update this to modern mask stuff
+      cw:= load{*ww{tern{fac==1, 256, 128}, W} ~~ (w + i*32/fac)}
       cx:= load{*ww{256, X} ~~ x, i}
       cwc:= cvt{W, ww{256, X}, cw}
       if (anyne{cwc,cx,M}) return{0}

@@ -85,7 +85,7 @@ def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16
 
 # debug stuff
 def printGen{x, s, n} = apply{emit, merge{tup{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}}, each{{c}=>extract{x,c}, iota{n}}}}
-def print{x:T & isvec{T}} = printGen{x, merge{'%', tern{width{eltype{T}}==64, 'l', ''}, tern{issigned{x}, 'd', 'u'}}, vcount{T}}
+def print{x:T & isvec{T}} = printGen{x, printfType{eltype{T}}, vcount{T}}
 
 
 
@@ -97,6 +97,7 @@ def extract{x:T, i & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_extract_epi32
 def extract{x:T, i & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_extract_epi64', x, i}
 
 # conversion
+def cvt{F,      T,         a:A & eltype{T}==F} = T~~a
 def cvt{F==i8,  T==[8]i16, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi16', a}
 def cvt{F==i8,  T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi32', a}
 def cvt{F==i16, T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi16_epi32', a}

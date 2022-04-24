@@ -22,6 +22,8 @@ def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intr
 def v2f{x:T & w256{T}} = [8]f32 ~~ x
 def v2d{x:T & w256{T}} = [4]f64 ~~ x
 
+def undefPromote{T, x:X & w128{X} & w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
+def undefPromote{T, x:X & width{T}==width{X}} = T~~x
 
 # load & store
 def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
@@ -101,8 +103,12 @@ def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
-def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
+def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
+def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
+def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
+def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
+def cvt{F, T, a:A & w256{A} & width{F}<width{eltype{T}}} = cvt{F, T, half{a, 0}}
 
 # structural operations
 def extract{x:T, i & w256i{T,32} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi32', x, i}
@@ -121,11 +127,6 @@ def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x
 # blend by sign bit
 def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
 def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
-
-# mixed-width operations
-def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
-def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
-def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
 # mask stuff
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
