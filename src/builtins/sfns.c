@@ -83,6 +83,7 @@ B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
 
 B shape_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
+  if (rnk(x)==1) return x;
   usz ia = a(x)->ia;
   if (ia==1 && TI(x,elType)<el_B) {
     B n = IGet(x,0);
