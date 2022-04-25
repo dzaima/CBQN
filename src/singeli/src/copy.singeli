@@ -63,11 +63,11 @@ copy{vw, X, R}(x: *u8, r: *u8, l:u64, xRaw: *u8) : void = {
   } else if (R==u1) {
     # show{'R==u1', X, R}
     def XU = ty_u{XV}
-    maskedLoop{bulk, l, {i, M} => {
+    @forNZ (i to cdiv{l,vcount{XV}}) {
       v:= loadBatch{xp, i, XV}
       r:= getmask{(XU~~v) == XU~~broadcast{XV,1}}
       b_setBatch{vcount{XV}, rp, i, r} # TODO something more special for f64
-    }}
+    }
   } else if (width{X}<=width{R}) {
     # show{'w{X}<=w{R}', X, R}
     maskedLoop{bulk, l, {i, M} => {

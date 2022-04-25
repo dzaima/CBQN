@@ -93,6 +93,14 @@ def for{vars,begin,end,block} = {
     i = i+1
   }
 }
+def forNZ{vars,begin,end,block} = {
+  i:u64 = begin
+  assert{i!=end}
+  while (i < end) {
+    exec{i, vars, block}
+    i = i+1
+  }
+}
 
 def maxvalue{T & T==u8 } = 0xff
 def maxvalue{T & T==u16} = 0xffff
