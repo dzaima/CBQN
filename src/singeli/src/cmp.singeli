@@ -86,11 +86,11 @@ as2bit{VT, unr, op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = {
 }
 
 bitAA{bitop}(dst:*u64, wr:*u8, xr:*u8, len:Size) : void = {
-  @for (dst, w in *u64~~wr, x in *u64~~xr over _ to cdiv{len,64}) dst = bitop{w,x}
+  @forNZ (dst, w in *u64~~wr, x in *u64~~xr over _ to cdiv{len,64}) dst = bitop{w,x}
 }
 
-not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ to am) dst = ~x }
-cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; assert{am>0}; @for (dst,x over _ to am) dst =  x }
+not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; @forNZ (dst,x over _ to am) dst = ~x }
+cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; @forNZ (dst,x over _ to am) dst =  x }
 
 bitAS{op}(dst:*u64, wr:*u8, x:u64, len:Size) : void = { # show{'bitAS'}
   xf:f64 = interp_f64{x}
