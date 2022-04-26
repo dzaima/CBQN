@@ -10,6 +10,7 @@
     - `gmake` on BSDs
     - `make clean` if anything goes bad and you want a clean slate
     - `make [...]; sudo make install` to install into `/usr/local/bin/bqn`; `sudo make uninstall` to uninstall
+    - If you want to use custom build types but your system doesn't have `shasum`/`sha256sum`, add `force_build_dir=some_identifier`. That identifier will be used to decide on the directory for incremental build object files.
 2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL
 
 ## Configuration options
@@ -25,12 +26,12 @@
     - `make debug1` - debug build without parallel compilation. Useful if everything errors, and you don't want error messages of multiple threads to be written at the same time.
     - `make heapverify` - verify that refcounting is done correctly
     - `make o3n-singeli` - a Singeli build, currently only for x86-64 CPUs supporting AVX2
-    - `make t=some_custom_type f='-O3 -DSOME_MACRO=whatever -some_other_cc_flag' c` - custom build  
-      Macros that you may want to define are listed in `src/h.h`.  
-      The `some_custom_type` is used as the key for caching/incremental compilation, so make sure to `make t=some_custom_type clean` if you want to change the flags without changing the `t=` value!!
+    - `make c` - a build with no flags, for manual customizing
     - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Slower for optimized builds, but may allow some more optimizations
-    - ... and more; see `makefile`
-- A specific build type can be cleaned with `make t=some_type clean`
+- For any of the above (especially `make c`), you can add extra flags with `f=...` (and linker flags with `lf=...`), e.g.  
+  `make f='-O3 -DSOME_MACRO=whatever -some_other_cc_flag' c`  
+  Macros that you may want to define are listed in `src/h.h`.  
+- A specific build type can be cleaned by adding `clean=1` to the make argument list. Similarly, adding `builddir=1` will give you the build directory.
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - Test precompiled expression: `some-other-bqn-impl ./precompiled.bqn path/to/mlochbaum/BQN "$PATH" '2+2'`
 - [Some implementation docs](https://github.com/dzaima/CBQN/tree/master/src#readme)

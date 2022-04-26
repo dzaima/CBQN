@@ -1,125 +1,176 @@
 SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory
+# note: do not manually define any i_… arguments, or incremental compiling will not work properly!
 
 # various configurations
 o3:
-	@${MAKE} singeli=0 t=o3         f="-O3" c
+	@${MAKE} i_singeli=0 i_t=o3         i_f="-O3" run_incremental_0
 o3g:
-	@${MAKE} singeli=0 t=o3g        f="-O3 -g" c
+	@${MAKE} i_singeli=0 i_t=o3g        i_f="-O3 -g" run_incremental_0
 o3n:
-	@${MAKE} singeli=0 t=o3n        f="-O3 -march=native" c
+	@${MAKE} i_singeli=0 i_t=o3n        i_f="-O3 -march=native" run_incremental_0
 debug:
-	@${MAKE} singeli=0 t=debug      f="-g -DDEBUG" c
+	@${MAKE} i_singeli=0 i_t=debug      i_f="-g -DDEBUG" run_incremental_0
 debug1:
-	@${MAKE} singeli=0 t=debug1     f="-g -DDEBUG" manualJobs=1 c
+	@${MAKE} i_singeli=0 i_t=debug1     i_f="-g -DDEBUG" manualJobs=1 run_incremental_0
 rtperf:
-	@${MAKE} singeli=0 t=rtperf     f="-O3 -DRT_PERF" c
+	@${MAKE} i_singeli=0 i_t=rtperf     i_f="-O3 -DRT_PERF" run_incremental_0
 rtverify:
-	@${MAKE} singeli=0 t=rtverify   f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" c
+	@${MAKE} i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" run_incremental_0
 heapverify:
-	@${MAKE} singeli=0 t=heapverify f="-DDEBUG -g -DHEAP_VERIFY" c
+	@${MAKE} i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
 o3n-singeli:
-	@${MAKE} singeli=1 t=o3n_si     f="-O3 -march=native" c
+	@${MAKE} i_singeli=1 i_t=o3n_si     i_f="-O3 -march=native" run_incremental_0
 o3ng-singeli:
-	@${MAKE} singeli=1 t=o3ng_si    f="-g -O3 -march=native" c
+	@${MAKE} i_singeli=1 i_t=o3ng_si    i_f="-g -O3 -march=native" run_incremental_0
 debugn-singeli:
-	@${MAKE} singeli=1 t=debugn_si  f="-g -DDEBUG -march=native" c
+	@${MAKE} i_singeli=1 i_t=debugn_si  i_f="-g -DDEBUG -march=native" run_incremental_0
 heapverifyn-singeli:
-	@${MAKE} singeli=1 t=heapverifyn_si f="-g -DDEBUG -DHEAP_VERIFY -march=native" c
+	@${MAKE} i_singeli=1 i_t=heapverifyn_si i_f="-g -DDEBUG -DHEAP_VERIFY -march=native" run_incremental_0
 rtverifyn-singeli:
-	@${MAKE} singeli=1 t=rtverifyn_si f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" c
+	@${MAKE} i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
 wasi-o3:
-	@${MAKE} singeli=0 t=wasi_o3    OUTPUT=BQN.wasm f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" LDFLAGS="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" LD_LIBS= PIE= c
+	@${MAKE} i_singeli=0 i_t=wasi_o3 OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LD_LIBS= i_PIE= run_incremental_0
 emcc-o3:
-	@${MAKE} singeli=0 t=emcc_o3    CC=emcc OUTPUT=BQN.js f='-DWASM -DEMCC -O3' LDFLAGS='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' c
-
+	@${MAKE} i_singeli=0 i_t=emcc_o3 OUTPUT=BQN.js CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' run_incremental_0
+c:
+	@${MAKE} custom=1 run_incremental_0
 
 # compiler setup
-CC = clang
-PIE = -no-pie
-LD_LIBS = -lm
+i_CC = clang
+i_PIE = -no-pie
+i_LD_LIBS = -lm
 OUTPUT = BQN
 
-# test if we are running gcc or clang
-CC_IS_CLANG = $(shell $(CC) --version | head -n1 | grep -m 1 -c "clang")
+ifeq ($(origin CC),command line)
+	i_CC = $(CC)
+	custom = 1
+endif
+ifeq ($(origin PIE),command line)
+	i_PIE = $(PIE)
+	custom = 1
+endif
+ifeq ($(origin LD_LIBS),command line)
+	i_LD_LIBS = $(LD_LIBS)
+	custom = 1
+endif
+ifeq ($(origin singeli),command line)
+	i_singeli = $(singeli)
+	custom = 1
+endif
+ifeq ($(origin f),command line)
+	custom = 1
+endif
+ifeq ($(origin lf),command line)
+	custom = 1
+endif
+ifeq ($(origin CCFLAGS),command line)
+	custom = 1
+endif
+ifeq ($(origin LDFLAGS),command line)
+	custom = 1
+endif
+
+CC_IS_CLANG = $(shell $(i_CC) --version | head -n1 | grep -m 1 -c "clang")
 ifeq (${CC_IS_CLANG}, 1)
 	NOWARN = -Wno-microsoft-anon-tag -Wno-bitwise-instead-of-logical -Wno-unknown-warning-option
 else
 	NOWARN = -Wno-parentheses
 endif
-ifeq (${singeli}, 1)
+
+ifeq (${i_singeli}, 1)
 	SINGELIFLAGS = '-DSINGELI'
 else
-	singeli = 0
+	i_singeli = 0
 	SINGELIFLAGS =
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(SINGELIFLAGS) $(NOWARN) $(f)
-CMD = $(CC) $(ALL_CC_FLAGS) -MMD -MP -MF
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(f) $(i_f) $(SINGELIFLAGS) $(NOWARN)
+ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LD_LIBS)
 
 ifneq (${manualJobs},1)
-	ifeq (${MAKECMDGOALS},gen)
+	ifeq (${MAKECMDGOALS},run_incremental_1)
 		MAKEFLAGS+= -j4 manualJobs=1
 	endif
-	ifeq (${MAKECMDGOALS},gen-singeli)
+	ifeq (${MAKECMDGOALS},build_singeli)
 		MAKEFLAGS+= -j4 manualJobs=1
 	endif
 endif
 
+builddir:
+ifeq ($(force_build_dir),)
+	@printf 'obj/'
+ifeq ($(custom),)
+	@echo "def_$(i_t)"
+else
+	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
+	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
+	printf "%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+endif
+else
+	@printf "%s" "$(force_build_dir)"
+endif
 
+
+# simple non-incremental builds
+single-o3:
+	$(i_CC) $(ALL_CC_FLAGS) -O3 -o ${OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-o3g:
+	$(i_CC) $(ALL_CC_FLAGS) -O3 -g -o ${OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-debug:
+	$(i_CC) $(ALL_CC_FLAGS) -DDEBUG -g -o ${OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-c:
+	$(i_CC) $(ALL_CC_FLAGS) -o ${OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 
 # actual build
-bd = obj/${t}
-c: # custom
-	@mkdir -p ${bd}
-	@if [ "${singeli}" -eq 1 ]; then \
-		mkdir -p src/singeli/gen;      \
-		${MAKE} postmsg="post-singeli build:" gen-singeli; \
-	fi
-	@${MAKE} gen
+run_incremental_0:
+ifeq ($(origin clean),command line)
+	@export bd=$$(${MAKE} builddir); \
+	${MAKE} clean-specific bd="$$bd"
+else ifeq ($(origin builddir),command line)
+	@export bd=$$(${MAKE} builddir); \
+	echo "$$bd"
+else
+ifeq ($(i_singeli), 1)
+	@mkdir -p src/singeli/gen
+	@${MAKE} postmsg="post-singeli build:" build_singeli
+endif
 
-single-o3:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
-single-o3g:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -O3 -g -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
-single-debug:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -DDEBUG -g -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
-single-c:
-	$(CC) $(ALL_CC_FLAGS) $(LDFLAGS) $(PIE) -o ${OUTPUT} src/opt/single.c $(LD_LIBS)
+	@export bd=$$(${MAKE} builddir); \
+	mkdir -p "$$bd";                 \
+	${MAKE} run_incremental_1 bd="$$bd"
+endif
 
-
-
-
-
-gen: builtins core base jit utils # build the final binary
-	@$(CC) ${CCFLAGS} ${LDFLAGS} ${PIE} -o ${OUTPUT} ${bd}/*.o $(LD_LIBS)
+run_incremental_1: builtins core base jit utils # build the final binary
+	@$(i_CC) ${CCFLAGS} -o ${OUTPUT} ${bd}/*.o $(ALL_LD_FLAGS)
 	@echo ${postmsg}
 
+CC_INC = $(i_CC) $(ALL_CC_FLAGS) -MMD -MP -MF
 # build individual object files
 core: ${addprefix ${bd}/, tyarr.o harr.o fillarr.o stuff.o derv.o mm.o heap.o}
 ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
-	@$(CMD) $@.d -o $@ -c $<
+	@$(CC_INC) $@.d -o $@ -c $<
 
 base: ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o}
 ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
-	@$(CMD) $@.d -o $@ -c $<
+	@$(CC_INC) $@.d -o $@ -c $<
 
 utils: ${addprefix ${bd}/, utf.o hash.o file.o mut.o each.o bits.o}
 ${bd}/%.o: src/utils/%.c
 	@echo $< | cut -c 5-
-	@$(CMD) $@.d -o $@ -c $<
+	@$(CC_INC) $@.d -o $@ -c $<
 
 jit: ${addprefix ${bd}/, nvm.o}
 ${bd}/%.o: src/jit/%.c
 	@echo $< | cut -c 5-
-	@$(CMD) $@.d -o $@ -c $<
+	@$(CC_INC) $@.d -o $@ -c $<
 
 builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o select.o sort.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
-	@$(CMD) $@.d -o $@ -c $<
+	@$(CC_INC) $@.d -o $@ -c $<
 
 src/gen/customRuntime:
 	@echo "Copying precompiled bytecode from the bytecode branch"
@@ -137,10 +188,10 @@ preSingeliBin:
 		git submodule update --init; \
 	fi
 	@echo "pre-singeli build:"
-	@${MAKE} singeli=0 postmsg="singeli sources:" t=presingeli f='-O1 -DPRE_SINGELI' OUTPUT=obj/presingeli/BQN c
+	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' OUTPUT=obj/presingeli/BQN c
 
 
-gen-singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c scan.c slash.c}
+build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c scan.c slash.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
@@ -150,7 +201,7 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 
 # dependency files
 -include $(bd)/*.d
-ifeq (${singeli}, 1)
+ifeq (${i_singeli}, 1)
 -include obj/presingeli/*.d
 endif
 
@@ -160,20 +211,17 @@ install:
 uninstall:
 	rm -f /usr/local/bin/bqn
 
-# `if` to allow `make clean` alone to clean everything, but `make t=debug clean` to just clean obj/debug
-ifneq (,$(findstring clean,$(MAKECMDGOALS)))
-ifndef t
-t = *
-clean: clean-singeli clean-runtime
-endif
-endif
-
 clean-singeli:
 	rm -rf src/singeli/gen/
+	@${MAKE} clean-specific bd=obj/presingeli
 clean-runtime:
 	rm -f src/gen/customRuntime
 clean-build:
-	rm -f ${bd}/*.o
-	rm -f ${bd}/*.d
+	rm -f obj/*/*.o
+	rm -f obj/*/*.d
+clean-specific:
+	rm -f $(bd)/*.o
+	rm -f $(bd)/*.d
+	
 
-clean: clean-build
+clean: clean-build clean-runtime clean-singeli
