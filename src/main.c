@@ -224,7 +224,7 @@ void cbqn_runLine(char* ln, i64 len) {
   popCatch();
 }
 
-#ifndef WASM
+#if WASM
 void cbqn_evalSrc(char* src, i64 len) {
   B code = fromUTF8(src, len);
   B res = bqn_exec(code, bi_N, bi_N);
