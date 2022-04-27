@@ -562,7 +562,7 @@ FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
   Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
   scope_dec(sc);
-  return execBodyInlineI(bl, body, nsc);
+  return execBodyInlineI(body, nsc, bl);
 }
 
 #ifdef DEBUG_VM
@@ -571,7 +571,7 @@ i32* vmStack;
 i32 bcCtr = 0;
 #endif
 #define BCPOS(B,P) (B->bl->map[(P)-(u32*)B->bl->bc])
-B evalBC(Block* bl, Body* b, Scope* sc) { // doesn't consume
+B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   #ifdef DEBUG_VM
     bcDepth+= 2;
     if (!vmStack) vmStack = malloc(400);
@@ -830,14 +830,22 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
   return sc;
 }
 
-B execBlockInline(Block* block, Scope* sc) { return execBodyInlineI(block, block->bodies[0], ptr_inc(sc)); }
+B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], ptr_inc(sc), block); }
+B mnvmExecBodyInline(Body* body, Scope* sc) {
+  Nvm_res r = m_nvm(body);
+  body->nvm = r.p;
+  body->nvmRefs = r.refs;
+  return evalJIT(body, sc, body->nvm);
+}
+
+
 
 FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   assert(ga == blockGivenVars(block));
   Scope* sc = m_scope(body, psc, varAm, ga, svar);
-  B r = execBodyInlineI(block, body, sc);
+  B r = execBodyInlineI(body, sc, block);
   return r;
 }
 
