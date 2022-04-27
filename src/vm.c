@@ -830,7 +830,7 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
   return sc;
 }
 
-B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], ptr_inc(sc), block); }
+B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], sc, block); }
 B mnvmExecBodyInline(Body* body, Scope* sc) {
   Nvm_res r = m_nvm(body);
   body->nvm = r.p;
