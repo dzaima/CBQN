@@ -772,7 +772,7 @@ extern char** environ;
 typedef struct pollfd pollfd;
 void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
 
-// #define shDbg printf
+// #define shDbg(...) printf(__VA_ARGS__); fflush(stdout)
 #define shDbg(...) 
 
 B sh_c2(B t, B w, B x) {
@@ -853,8 +853,9 @@ B sh_c2(B t, B w, B x) {
   
   while (poll(&ps[0], plen - iDone, -1) > 0) {
     shDbg("next poll; revents: out:%d err:%d in:%d\n", ps[0].revents, ps[1].revents, ps[2].revents);
-    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0)break; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
-    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0)break; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
+    bool any = false;
+    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
+    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
      if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
@@ -862,8 +863,14 @@ B sh_c2(B t, B w, B x) {
       if (ww >= 0) {
         iOff+= ww;
         if (iOff==iLen) { iDone=true; shClose(p_in[1]); TFREE(iBuf); shDbg("writing done\n"); }
+        any = true;
       }
     }
+    #ifdef __CYGWIN__
+    if (!any) { shDbg("no events despite poll returning; end\n"); break; }
+    #else
+    (void)any;
+    #endif
     if (ps[out_i].revents & POLLHUP  &&  ps[err_i].revents & POLLHUP) { shDbg("HUP end\n"); break; }
   }
   
