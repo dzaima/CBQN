@@ -167,7 +167,9 @@ static B execBlockInline(Block* block, Scope* sc) { // doesn't consume; executes
   return execBlockInlineImpl(block->bodies[0], ptr_inc(sc), block);
 }
 
+#if JIT_START != -1
 NOINLINE B mnvmExecBodyInline(Body* body, Scope* sc);
+#endif
 FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc, Block* block) { // consumes sc, unlike execBlockInline
   #if JIT_START != -1
     if (LIKELY(body->nvm != NULL)) return evalJIT(body, sc, body->nvm);

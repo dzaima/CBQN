@@ -831,12 +831,15 @@ Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { 
 }
 
 B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], sc, block); }
+
+#if JIT_START != -1
 B mnvmExecBodyInline(Body* body, Scope* sc) {
   Nvm_res r = m_nvm(body);
   body->nvm = r.p;
   body->nvmRefs = r.refs;
   return evalJIT(body, sc, body->nvm);
 }
+#endif
 
 
 
