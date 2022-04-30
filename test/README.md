@@ -11,4 +11,5 @@ test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations
 ./BQN test/copy.bqn // fuzz-test creating new arrays with elements copied from another
 ./BQN test/bitcpy.bqn // fuzz-test bit_cpy; requires a CBQN build with -DTEST_BITCPY
 ./BQN test/squeeze.bqn // fuzz-test squeezing; requires a CBQN build with -DEEQUAL_NEGZERO
+./BQN test/random.bqn // various random tests
 ```

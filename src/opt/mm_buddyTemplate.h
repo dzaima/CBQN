@@ -31,7 +31,12 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   x->refc = 1;
   x->type = type;
   x->mmInfo = bucket;
-  #if defined(DEBUG) && !defined(DONT_FREE)
+  #if defined(SET_HEAP)
+    u8* p = (u8*)x;
+    u8* s = p + sizeof(Value);
+    u8* e = p + BSZ(bucket);
+    memset(s, SET_HEAP, e-s);
+  #elif defined(DEBUG) && !defined(DONT_FREE)
     u64* p = (u64*)x;
     u64* s = p + sizeof(Value)/8;
     u64* e = p + BSZ(bucket)/8;

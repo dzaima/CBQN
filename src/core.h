@@ -1,4 +1,5 @@
 #pragma once
+
 #include "h.h"
 #include "core/stuff.h"
 #include "core/heap.h"
@@ -21,29 +22,11 @@
 #include "core/fillarr.h"
 
 #include "core/derv.h"
+#include "core/arrFns.h"
 
 #ifdef RT_VERIFY
   extern B r1Objs[rtLen];
 #endif
-
-static B* arr_bptr(B x) { assert(isArr(x));
-  if (v(x)->type==t_harr) return harr_ptr(x);
-  if (v(x)->type==t_fillarr) return fillarr_ptr(a(x));
-  if (v(x)->type==t_hslice) return c(HSlice,x)->a;
-  if (v(x)->type==t_fillslice) return c(FillSlice,x)->a;
-  return NULL;
-}
-static B* arrV_bptr(Arr* x) {
-  if (x->type==t_harr) return ((HArr*)x)->a;
-  if (x->type==t_fillarr) return fillarr_ptr(x);
-  if (x->type==t_hslice) return ((HSlice*)x)->a;
-  if (x->type==t_fillslice) return ((FillSlice*)x)->a;
-  return NULL;
-}
-static void* tyany_ptr(B x) {
-  u8 t = v(x)->type;
-  return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
-}
 
 
 typedef struct BFn {
