@@ -41,11 +41,11 @@ B select_c2(B t, B w, B x) {
   B xf = getFillQ(x);
   SGet(x)
   usz wia = a(w)->ia;
+  B r;
   
   if (xr==1) {
     if (wia==0) {
       decG(x);
-      B r;
       if (isVal(xf)) {
         Arr* ra = m_fillarrp(0);
         arr_shCopy(ra, w);
@@ -65,38 +65,43 @@ B select_c2(B t, B w, B x) {
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
-      // if (we==el_i8  && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 ((u8*)i8any_ptr (w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
-      // if (we==el_i16 && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i16_32((u8*)i16any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
-      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; B r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 ((u8*)i32any_ptr(w), (u8*)i8any_ptr (x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
-      // if (we==el_i32 && xe==el_i32) { i32* rp; B r = m_i32arrc(&rp, w); if (!avx2_select_i32_32((u8*)i32any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
-      // if (we==el_i32 && xe==el_f64) { f64* rp; B r = m_f64arrc(&rp, w); if (!avx2_select_i32_64((u8*)i32any_ptr(w), (u8*)f64any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); decG(w); decG(x); return r; }
+      // if (we==el_i8  && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 ((u8*)i8any_ptr (w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i16 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i16_32((u8*)i16any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 ((u8*)i32any_ptr(w), (u8*)i8any_ptr (x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32((u8*)i32any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64((u8*)i32any_ptr(w), (u8*)f64any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
     #endif
-    #define CASE(T,E) if (xe==el_##T) {  \
-      E* rp; B r = m_##T##arrc(&rp, w);  \
-      E* xp = T##any_ptr(x);             \
+    #define CASE(E,TY) { \
+      E* rp = m_tyarrc(&r, sizeof(E), w, TY); \
+      E* xp = tyany_ptr(x);                   \
       for (usz i = 0; i < wia; i++) rp[i] = xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; \
-      decG(w); decG(x); return r;        \
+      goto dec_ret;                           \
     }
-    #define TYPE(W) { W* wp = W##any_ptr(w);   \
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x); \
-        u64* rp; B r = m_bitarrc(&rp, w);      \
-        for (usz i = 0; i < wia; i++) bitp_set(rp, i, bitp_get(xp, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
-        decG(w); decG(x); return r;            \
-      }                                        \
-      CASE(i8,i8) CASE(i16,i16) CASE(i32,i32)  \
-      CASE(c8,u8) CASE(c16,u16) CASE(c32,u32) CASE(f64,f64) \
+    #define TYPE(W) { W* wp = W##any_ptr(w);  \
+      switch(xe) { default: UD;               \
+        case el_bit: { u64* xp=bitarr_ptr(x); \
+          u64* rp; r = m_bitarrc(&rp, w);   \
+          for (usz i = 0; i < wia; i++) bitp_set(rp, i, bitp_get(xp, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
+          goto dec_ret;                       \
+        }                                     \
+        case el_i8: case el_c8: CASE(u8 ,el2t(xe)) \
+        case el_i16:case el_c16:CASE(u16,el2t(xe)) \
+        case el_i32:case el_c32:CASE(u32,el2t(xe)) \
+        case el_f64:            CASE(f64,t_f64arr) \
+        case el_B:; \
+      }              \
       M_HARR(r, wia); \
       if (v(x)->type==t_harr || v(x)->type==t_hslice) { \
-        B* xp = hany_ptr(x);             \
+        B* xp = hany_ptr(x);                      \
         for (usz i=0; i < wia; i++) HARR_ADD(r, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))])); \
-        decG(x); return HARR_FCD(r, w);  \
-      } SLOW2("𝕨⊏𝕩", w, x);              \
+        decG(x); return HARR_FCD(r, w);           \
+      } SLOW2("𝕨⊏𝕩", w, x);                       \
       for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
       decG(x); return withFill(HARR_FCD(r,w),xf); \
     }
     if (we==el_bit && xia>=2) {
       SGetU(x)
-      B r = bit_sel(w, GetU(x,0), true, GetU(x,1), true);
+      r = bit_sel(w, GetU(x,0), true, GetU(x,1), true);
       decG(x);
       return withFill(r, xf);
     }
@@ -145,9 +150,12 @@ B select_c2(B t, B w, B x) {
     decG(w); decG(x);
     return withFill(taga(ra),xf);
   }
-  base:
+  base:;
   dec(xf);
   return c2(rt_select, w, x);
+  
+  dec_ret:;
+  decG(w); decG(x); return r;
 }
 
 
