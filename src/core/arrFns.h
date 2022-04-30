@@ -14,6 +14,7 @@ static B* arrV_bptr(Arr* x) {
   if (x->type==t_fillslice) return ((FillSlice*)x)->a;
   return NULL;
 }
+static void* tyarr_ptr(B x) { return c(TyArr,x)->a; }
 static void* tyany_ptr(B x) {
   u8 t = v(x)->type;
   return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;

@@ -975,26 +975,20 @@ B group_c2(B t, B w, B x) {
       
       Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0)); arr_shVec(rf);
       fillarr_setFill(r, taga(rf));
-      if (TI(x,elType)==el_i8) {
-        for (usz i = 0; i < ria; i++) { i8* t; rp[i] = m_i8arrv(&t, len[i]); }
-        i8* xp = i8any_ptr(x);
+      u8 xe = TI(x,elType);
+      if (xe==el_i8 || xe==el_c8) {
+        for (usz i = 0; i < ria; i++) m_tyarrv(rp+i, 1, len[i], el2t(xe));
+        u8* xp = tyany_ptr(x);
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
-          if (n>=0) i8arr_ptr(rp[n])[pos[n]++] = xp[i];
+          if (n>=0) ((u8*)tyarr_ptr(rp[n]))[pos[n]++] = xp[i];
         }
-      } else if (TI(x,elType)==el_i32) {
-        for (usz i = 0; i < ria; i++) { i32* t; rp[i] = m_i32arrv(&t, len[i]); }
-        i32* xp = i32any_ptr(x);
+      } else if (xe==el_i32 || xe==el_c32) {
+        for (usz i = 0; i < ria; i++) m_tyarrv(rp+i, 4, len[i], el2t(xe));
+        u32* xp = tyany_ptr(x);
         for (usz i = 0; i < xia; i++) {
           i32 n = wp[i];
-          if (n>=0) i32arr_ptr(rp[n])[pos[n]++] = xp[i];
-        }
-      } else if (TI(x,elType)==el_c32) {
-        for (usz i = 0; i < ria; i++) { u32* t; rp[i] = m_c32arrv(&t, len[i]); }
-        u32* xp = c32any_ptr(x);
-        for (usz i = 0; i < xia; i++) {
-          i32 n = wp[i];
-          if (n>=0) c32arr_ptr(rp[n])[pos[n]++] = xp[i];
+          if (n>=0) ((u32*)tyarr_ptr(rp[n]))[pos[n]++] = xp[i];
         }
       } else {
         for (usz i = 0; i < ria; i++) {
