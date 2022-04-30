@@ -445,8 +445,8 @@ B slash_c2(B t, B w, B x) {
           goto bit_ret;
         }
         #if SINGELI
-        case el_c8: case el_i8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
-        case el_c16:case el_i16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
+        case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
+        case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
         #endif
       }
       #endif
@@ -1068,16 +1068,22 @@ B reverse_c1(B t, B x) {
   B xf = getFillQ(x);
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
-  if (rnk(x)==1 && xe<el_B) {
-    B r; if (xe==el_bit) { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp, xia); for (usz i = 0; i < xia; i++) bitp_set(rp, i, bitp_get(xp, xia-i-1)); }
-    else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8 * rp; r = m_i8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_c8 ) { u8*  xp = c8any_ptr (x); u8 * rp; r = m_c8arrv (&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_i16) { i16* xp = i16any_ptr(x); i16* rp; r = m_i16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_c16) { u16* xp = c16any_ptr(x); u16* rp; r = m_c16arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_i32) { i32* xp = i32any_ptr(x); i32* rp; r = m_i32arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_c32) { u32* xp = c32any_ptr(x); u32* rp; r = m_c32arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else if (xe==el_f64) { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; }
-    else UD;
+  if (rnk(x)==1) {
+    B r;
+    switch(xe) { default: UD;
+      case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp, xia); for (usz i = 0; i < xia; i++) bitp_set(rp, i, bitp_get(xp, xia-i-1)); break; }
+      case el_i8: case el_c8:  { u8*  xp = tyany_ptr(x); u8*  rp = m_tyarrv(&r, 1, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
+      case el_i16:case el_c16: { u16* xp = tyany_ptr(x); u16* rp = m_tyarrv(&r, 2, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
+      case el_i32:case el_c32: { u32* xp = tyany_ptr(x); u32* rp = m_tyarrv(&r, 4, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
+      case el_f64:             { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
+      case el_B: {
+        HArr_p rp = m_harrUc(x); r = rp.b;
+        B* xp = arr_bptr(x);
+        if (xp!=NULL)  for (usz i = 0; i < xia; i++) rp.a[i] = inc(xp[xia-i-1]);
+        else { SGet(x) for (usz i = 0; i < xia; i++) rp.a[i] = Get(x, xia-i-1); }
+        break;
+      }
+    }
     decG(x);
     return r;
   }
@@ -1131,14 +1137,12 @@ B transp_c1(B t, B x) {
   
   Arr* r;
   usz xi = 0;
-  switch(TI(x,elType)) { default: UD;
-    case el_i8:  { i8*  xp=i8any_ptr (x); i8*  rp; r=m_i8arrp (&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_i16: { i16* xp=i16any_ptr(x); i16* rp; r=m_i16arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_i32: { i32* xp=i32any_ptr(x); i32* rp; r=m_i32arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_c8:  { u8*  xp=c8any_ptr (x); u8*  rp; r=m_c8arrp (&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_c16: { u16* xp=c16any_ptr(x); u16* rp; r=m_c16arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_c32: { u32* xp=c32any_ptr(x); u32* rp; r=m_c32arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_f64: { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+  u8 xe = TI(x,elType);
+  switch(xe) { default: UD;
+    case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+    case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+    case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_B: case el_bit: { // can't be bothered to implement a bitarr transpose
       B* xp = arr_bptr(x);
       B xf = getFillR(x);

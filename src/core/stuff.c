@@ -162,7 +162,7 @@ NOINLINE void fprintRaw(FILE* f, B x) {
   if (isAtm(x)) {
     if (isF64(x)) { NUM_FMT_BUF(buf, x.f); fprintf(f, "%s", buf); }
     else if (isC32(x)) fprintUTF8(f, (u32)x.u);
-    else thrM("bad printRaw argument: atom arguments should be either numerical or characters");
+    else thrM("•Out: Unexpected argument type");
   } else {
     usz ia = a(x)->ia;
     SGetU(x)
@@ -171,7 +171,7 @@ NOINLINE void fprintRaw(FILE* f, B x) {
       #if !CATCH_ERRORS
       if (c.u==0 || noFill(c)) { fprintf(f, " "); continue; }
       #endif
-      if (!isC32(c)) thrM("bad printRaw argument: expected all character items");
+      if (!isC32(c)) thrM("•Out: Unexpected element in argument");
       fprintUTF8(f, (u32)c.u);
     }
   }
