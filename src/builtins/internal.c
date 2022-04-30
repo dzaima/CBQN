@@ -175,8 +175,6 @@ B variation_c2(B t, B w, B x) {
   if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
   usz xia = a(x)->ia;
-  u8 xe = TI(x,elType);
-  SGet(x)
   C8Arr* wc = toC8Arr(w);
   u8* wp = c8arrv_ptr(wc);
   u8* wpE = wp+wc->ia;
@@ -196,19 +194,29 @@ B variation_c2(B t, B w, B x) {
     else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr(inc(x)));
     else if (u8_get(&wp, wpE, "f")) {
       Arr* t = m_fillarrp(xia);
-      res = taga(t);
       fillarr_setFill(t, getFillQ(x));
       arr_shCopy(t, x);
+      HArr* h = NULL;
+      
+      B* xp = arr_bptr(x);
+      if (xp==NULL) {
+        h = cpyHArr(inc(x));
+        xp = h->a;
+      }
+      
       B* rp = fillarr_ptr(t);
-      if      (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
-      else if (xe==el_f64) { f64* xp=f64any_ptr(x); for (usz i = 0; i < xia; i++) rp[i] = m_f64(xp[i]); }
-      else for (usz i = 0; i < xia; i++) rp[i] = Get(x,i);
+      for (usz i = 0; i < xia; i++) rp[i] = inc(xp[i]);
+      if (h) ptr_dec(h);
+      
+      res = taga(t);
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
+    
     if (slice) {
       Arr* slice = TI(res,slice)(res, 0, a(res)->ia);
       arr_shCopy(slice, res);
       res = taga(slice);
     }
+    
     if (u8_get(&wp, wpE, "Inc")) {
       if (!variation_refs.u) {
         variation_refs = emptyHVec();
