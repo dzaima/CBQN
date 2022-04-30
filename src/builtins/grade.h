@@ -46,8 +46,8 @@ B GRADE_CAT(c1)(B t, B x) {
     TFREE(tmp); decG(x);
     return r;
   }
-  if (xe==el_i32) {
-    i32* xp = i32any_ptr(x);
+  if (xe==el_i32 || xe==el_c32) { // safe to use the same comparison for i32 & c32 as c32 is 0≤x≤1114111
+    i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < ia; i++) {
       i32 c = xp[i];
