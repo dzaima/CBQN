@@ -1059,9 +1059,9 @@ B group_c2(B t, B w, B x) {
 extern B rt_reverse;
 B reverse_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⌽: Argument cannot be a unit");
-  B xf = getFillQ(x);
-  u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
+  if (xia==0) return x;
+  u8 xe = TI(x,elType);
   if (rnk(x)==1) {
     B r;
     switch(xe) { default: UD;
@@ -1071,16 +1071,20 @@ B reverse_c1(B t, B x) {
       case el_i32:case el_c32: { u32* xp = tyany_ptr(x); u32* rp = m_tyarrv(&r, 4, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
       case el_f64:             { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
       case el_B: {
-        HArr_p rp = m_harrUc(x); r = rp.b;
+        HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
         if (xp!=NULL)  for (usz i = 0; i < xia; i++) rp.a[i] = inc(xp[xia-i-1]);
         else { SGet(x) for (usz i = 0; i < xia; i++) rp.a[i] = Get(x, xia-i-1); }
-        break;
+        r = rp.b;
+        B xf = getFillQ(x);
+        decG(x);
+        return withFill(r, xf);
       }
     }
     decG(x);
     return r;
   }
+  B xf = getFillQ(x);
   SLOW1("⌽𝕩", x);
   usz csz = arr_csz(x);
   usz cam = a(x)->sh[0];
