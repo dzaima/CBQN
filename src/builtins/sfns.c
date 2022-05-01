@@ -950,8 +950,9 @@ B group_c2(B t, B w, B x) {
     usz wia = a(w)->ia;
     usz xia = a(x)->ia;
     if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
-    
-    if (TI(w,elType)==el_i32) {
+    u8 we = TI(w,elType);
+    if (we<=el_i32) {
+      if (we!=el_i32) w = taga(cpyI32Arr(w));
       i32* wp = i32any_ptr(w);
       i64 ria = wia==xia? 0 : wp[xia];
       if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
