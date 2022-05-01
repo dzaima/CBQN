@@ -590,7 +590,7 @@ B slash_im(B t, B x) {
   u8 xe = TI(x,elType);
   usz xia = a(x)->ia;
   if (xia==0) { decG(x); return emptyIVec(); }
-  switch(xe) {
+  switch(xe) { default: UD;
     case el_i8: {
       i8* xp = i8any_ptr(x);
       usz i,j; B r; i8 max=-1;
@@ -651,7 +651,7 @@ B slash_im(B t, B x) {
       }
       decG(x); return r;
     }
-    default: {
+    case el_bit: case el_c8: case el_c16: case el_c32: case el_B: {
       SLOW1("/⁼", x);
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }

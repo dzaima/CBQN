@@ -50,14 +50,11 @@ static void mut_init(Mut* m, u8 n) {
   usz sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
-    case el_bit: sz = BITARR_SZ(   ia); break;
-    case el_i8:  sz = TYARR_SZ(I8, ia); break;
-    case el_i16: sz = TYARR_SZ(I16,ia); break;
-    case el_i32: sz = TYARR_SZ(I32,ia); break;
-    case el_c8:  sz = TYARR_SZ(C8, ia); break;
-    case el_c16: sz = TYARR_SZ(C16,ia); break;
-    case el_c32: sz = TYARR_SZ(C32,ia); break;
-    case el_f64: sz = TYARR_SZ(F64,ia); break;
+    case el_bit:              sz = BITARR_SZ(   ia); break;
+    case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
+    case el_i16: case el_c16: sz = TYARR_SZ(I16,ia); break;
+    case el_i32: case el_c32: sz = TYARR_SZ(I32,ia); break;
+    case el_f64:              sz = TYARR_SZ(F64,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
       m->val = (Arr*)t.c;
