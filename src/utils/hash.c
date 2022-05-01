@@ -2,6 +2,48 @@
 #include "hash.h"
 #include "time.h"
 
+NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation of atom & arr probably won't be worth it when there are actually sane typed array hashing things
+  usz xia = a(x)->ia;
+  if (xia==0) return ~secret[3]; // otherwise squeeze will care about fills
+  x = any_squeeze(inc(x));
+  u8 xr = rnk(x);
+  u8 xe = TI(x,elType);
+  u64 shHash;
+  if (xr<=1) shHash = wyhash64(xia, xe);
+  else shHash = wyhash(a(x)->sh, xr*sizeof(usz), xe, secret);
+  bool isTemp = false;
+  void* data;
+  u64 bytes;
+  switch(xe) { default: UD;
+    case el_bit: bcl(x,xia); data = bitarr_ptr(x); bytes = BIT_N(xia); break;
+    case el_i8:  case el_c8:  data =  tyany_ptr(x); bytes = xia*1; break;
+    case el_i16: case el_c16: data =  tyany_ptr(x); bytes = xia*2; break;
+    case el_i32: case el_c32: data =  tyany_ptr(x); bytes = xia*4; break;
+    case el_f64:              data = f64any_ptr(x); bytes = xia*8; break;
+    case el_B:;
+      TALLOC(u64, dataTmp, xia);
+      isTemp = true;
+      SGetU(x)
+      for (usz i = 0; i < xia; i++) dataTmp[i] = bqn_hash(GetU(x, i), secret);
+      data = dataTmp;
+      bytes = xia*sizeof(B);
+      break;
+  }
+  u64 r = wyhash(data, bytes, shHash, secret);
+  if (isTemp) TFREE(data);
+  dec(x);
+  return r;
+}
+
+NOINLINE u64 bqn_hash(B x, const u64 secret[4]) {
+  if (isArr(x)) return bqn_hashArr(x, secret);
+  if (q_f64(x)) return wyhash64(secret[0], x.u);
+  if (isC32(x)) return wyhash64(secret[1], x.u);
+  assert(isVal(x));
+  return wyhash64(secret[2], x.u);
+}
+
+
 u64 wy_secret[4];
 
 void hash_init() {
