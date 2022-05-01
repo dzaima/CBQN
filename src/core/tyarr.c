@@ -2,11 +2,16 @@
 #include "../utils/mut.h"
 
 u8 elType2type[] = {
-  [el_bit] = t_bitarr,
   [el_i8 ] = t_i8arr, [el_c8 ] = t_c8arr,
   [el_i16] = t_i16arr,[el_c16] = t_c16arr,
   [el_i32] = t_i32arr,[el_c32] = t_c32arr,
-  [el_f64] = t_f64arr
+  [el_bit] = t_bitarr,[el_f64] = t_f64arr
+};
+u8 elTypeWidth[] = {
+  [el_i8 ] = 1, [el_c8 ] = 1,
+  [el_i16] = 2, [el_c16] = 2,
+  [el_i32] = 4, [el_c32] = 4,
+  [el_bit] = 0, [el_f64] = 8
 };
 
 B m_i8(i8 x) { return m_i32(x); } B m_i16(i16 x) { return m_i32(x); }

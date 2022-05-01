@@ -36,3 +36,5 @@ static void* m_tyarrcO(B*    rp, usz w, B x, u8 type, usz over) M_TYARR(+over, a
 
 extern u8 elType2type[];
 #define el2t(X) elType2type[X] // TODO maybe reorganize array types such that this can just be addition?
+extern u8 elTypeWidth[];
+#define elWidth(X) elTypeWidth[X]
