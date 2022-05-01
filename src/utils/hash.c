@@ -35,11 +35,6 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
   return r;
 }
 
-NOINLINE u64 bqn_hash(B x, const u64 secret[4]) {
-  if (isArr(x)) return bqn_hashArr(x, secret);
-  return wyhash64(secret[0], x.u);
-}
-
 
 u64 wy_secret[4];
 

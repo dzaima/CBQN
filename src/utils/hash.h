@@ -11,7 +11,11 @@ static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
   }
 }
 
-u64 bqn_hash(B x, const u64 secret[4]); // doesn't consume
+u64 bqn_hashArr(B x, const u64 secret[4]);
+static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
+  if (isArr(x)) return bqn_hashArr(x, secret);
+  return wyhash64(secret[0], x.u);
+}
 
 static u64 bqn_hashP(B x, const u64 secret[4]) { // bqn_hash but never zero
   u64 r = bqn_hash(x, secret);
