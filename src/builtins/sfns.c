@@ -1122,9 +1122,6 @@ B reverse_c2(B t, B w, B x) {
   return withFill(mut_fcd(r, x), xf);
 }
 
-B reverse_uc1(B t, B o, B x) {
-  return reverse_c1(t, c1(o, reverse_c1(t, x)));
-}
 
 extern B rt_transp;
 B transp_c1(B t, B x) {
@@ -1175,9 +1172,7 @@ B transp_c1(B t, B x) {
   }
   decG(x); return taga(r);
 }
-B transp_c2(B t, B w, B x) {
-  return c2(rt_transp, w, x);
-}
+B transp_c2(B t, B w, B x) { return c2(rt_transp, w, x); }
 
 
 B pick_uc1(B t, B o, B x) {
@@ -1292,6 +1287,9 @@ B shape_uc1(B t, B o, B x) {
 
 B select_ucw(B t, B o, B w, B x);
 
+B  transp_uc1(B t, B o, B x) { return  transp_c1(t, c1(o,  transp_c1(t, x))); }
+B reverse_uc1(B t, B o, B x) { return reverse_c1(t, c1(o, reverse_c1(t, x))); }
+
 void sfns_init() {
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_reverse)->uc1 = reverse_uc1;
@@ -1299,5 +1297,6 @@ void sfns_init() {
   c(BFn,bi_slash)->ucw = slash_ucw;
   c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
   c(BFn,bi_shape)->uc1 = shape_uc1;
+  c(BFn,bi_transp)->uc1 = transp_uc1;
   c(BFn,bi_slash)->im = slash_im;
 }
