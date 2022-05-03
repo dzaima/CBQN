@@ -8,15 +8,15 @@ include './bitops'
 include './mask'
 
 
-def rootty{T & match{typekind{T},'primitive'}} = T
-def rootty{T & match{typekind{T},'vector'}} = eltype{T}
+def rootty{T & isprim{T}} = T
+def rootty{T & isvec{T}} = eltype{T}
 
 
 # old scalar code
 # def ty_dbl{T & isprim{T}} = apply{tern{issigned{T}, ty_s, ty_u}, tup{width{T}*2}}
 # def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
 # def dcast_i{x:T} = promote{ty_dbl{T}, x}
-# def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & match{typekind{T},'primitive'}} = {
+# def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isprim{T}} = {
 #   r:= F{dcast_i{w}, dcast_i{x}}
 #   tup{r, r!=promote{type{r}, trunc{T, r}}}
 # }

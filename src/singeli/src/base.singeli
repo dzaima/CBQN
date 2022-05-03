@@ -1,7 +1,7 @@
 include 'skin/c'
 include 'arch/c'
 
-oper infix right ~~ reinterpret 55
+oper ~~ reinterpret infix right 55
 def Size = u64
 def load{x} = *x
 
@@ -107,9 +107,9 @@ def maxvalue{T & T==u16} = 0xffff
 def maxvalue{T & T==u32} = 0xffffffff
 
 # tuple operations
-def broadcast{T, v & match{typekind{T},'primitive'}} = v
-def any{v:T & match{typekind{T},'primitive'}} = v
-def anyneg{v:T & match{typekind{T},'primitive'}} = v<0
+def broadcast{T, v & isprim{T}} = v
+def any{v:T & isprim{T}} = v
+def anyneg{v:T & isprim{T}} = v<0
 def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
 

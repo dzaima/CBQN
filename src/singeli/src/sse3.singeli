@@ -1,7 +1,7 @@
 def w128{T} = 0
 def w128{T & isvec{T}} = width{T}==128
 
-def wgen128{F} = {
+local def wgen128{F} = {
   def r{T} = 0
   def r{T & w128{T}} = F{eltype{T}}
   def r{T,w} = 0
@@ -99,7 +99,7 @@ def anyneg{x:T & w128s{T, 16}} = getmask{[32]u8 ~~ (([16]i16~~x) < broadcast{[16
 def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}
 
 # debug stuff
-def printGen{x, s, n} = apply{emit, merge{tup{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}}, each{{c}=>extract{x,c}, iota{n}}}}
+local def printGen{x, s, n} = apply{emit, merge{tup{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}}, each{{c}=>extract{x,c}, iota{n}}}}
 def print{x:T & isvec{T}} = printGen{x, printfType{eltype{T}}, vcount{T}}
 
 

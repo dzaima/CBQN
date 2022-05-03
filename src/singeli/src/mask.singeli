@@ -1,10 +1,10 @@
 # get mask of first n items; n>0 & n<vcount{T}
 
-def maskInit{w, T} = {
+local def maskInit{w, T} = {
   def n = w/width{T} - 1
   merge{broadcast{n, -1}, broadcast{n, 0}}
 }
-def maskInit1{w} = {
+local def maskInit1{w} = {
   apply{merge, each{{x} => {
     merge{broadcast{w/8-1, 255}, (1<<x)-1, broadcast{w/8, 0}}
   }, iota{8}}}
