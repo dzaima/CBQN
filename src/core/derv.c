@@ -101,6 +101,15 @@ static B md2D_ix(B t, B w, B x) { Md2D* d = c(Md2D,t); return TIv(d->m2,m2_ix)(d
 static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
 static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 
+static B md1D_identity(B t) {
+  Md1D* d = c(Md1D, t);
+  if (d->m1==c(Md1,bi_tbl)) {
+    B i = TI(d->f,identity)(d->f);
+    return q_N(i)? i : m_atomUnit(i);
+  }
+  return bi_N;
+}
+
 void derv_init() {
   TIi(t_md1D,freeO) = md1D_freeO; TIi(t_md1D,freeF) = md1D_freeF; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
   TIi(t_md2D,freeO) = md2D_freeO; TIi(t_md2D,freeF) = md2D_freeF; TIi(t_md2D,visit) = md2D_visit; TIi(t_md2D,print) = md2D_print; TIi(t_md2D,decompose) = md2D_decompose;
@@ -113,6 +122,7 @@ void derv_init() {
   TIi(t_md1D,fn_im) = md1D_im; TIi(t_md2D,fn_im) = md2D_im;
   TIi(t_md1D,fn_iw) = md1D_iw; TIi(t_md2D,fn_iw) = md2D_iw;
   TIi(t_md1D,fn_ix) = md1D_ix; TIi(t_md2D,fn_ix) = md2D_ix;
+  TIi(t_md1D,identity) = md1D_identity;
 }
 void dervPost_init() {
   ucwWrapDesc = registerNFn(m_str8l("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
