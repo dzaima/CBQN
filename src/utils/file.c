@@ -302,9 +302,16 @@ B mmap_file(B path) {
 void mmap_init() { }
 #endif
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
+
+bool dir_create(B path) {
+  char* p = toCStr(path);
+  bool r = mkdir(p, S_IRWXU) == 0;
+  freeCStr(p);
+  dec(path);
+  return r;
+}
 
 char path_type(B path) {
   char* p = toCStr(path);
