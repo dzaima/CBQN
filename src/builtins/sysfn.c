@@ -680,7 +680,8 @@ B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x));
 }
 B createdir_c1(B d, B x) {
-  if (dir_create(path_rel(nfn_objU(d), x))) return m_i32(1);
+  B p = path_rel(nfn_objU(d), x);
+  if (dir_create(p)) return p;
   thrM("(file).CreateDir: Failed to create directory");
 }
 

@@ -309,7 +309,6 @@ bool dir_create(B path) {
   char* p = toCStr(path);
   bool r = mkdir(p, S_IRWXU) == 0;
   freeCStr(p);
-  dec(path);
   return r;
 }
 
