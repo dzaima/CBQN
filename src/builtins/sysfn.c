@@ -257,7 +257,7 @@ static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, 
   B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(cdPath);
   B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
   B args = ia>2?        Get(w,2)                  : emptySVec();
-  *fullpath = vec_join(vec_add(path, m_c32('/')), file);
+  *fullpath = vec_join(vec_addN(path, m_c32('/')), file);
   decG(w);
   return args;
 }
@@ -616,7 +616,7 @@ B flines_c2(B d, B w, B x) {
     if (!isArr(nl)) thrM("•FLines: Non-array element of 𝕩");
     s = vec_join(s, nl);
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
-    s = vec_add(s, m_c32('\n'));
+    s = vec_addN(s, m_c32('\n'));
   }
   dec(x);
   B p = path_rel(nfn_objU(d), w);
@@ -657,8 +657,8 @@ B import_c1(B d, B x) {
   i32 prevLen = a(importKeyList)->ia;
   // print_fmt("caching: %R @ %i\n", path, prevLen);
   setPrevImport(path, prevLen);
-  importKeyList = vec_add(importKeyList, path);
-  importValList = vec_add(importValList, inc(r));
+  importKeyList = vec_addN(importKeyList, path);
+  importValList = vec_addN(importValList, inc(r));
   return r;
 }
 static void sys_gcFn() {

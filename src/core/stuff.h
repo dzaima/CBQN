@@ -139,7 +139,7 @@ B append_fmt(B s, char* p, ...);
 B make_fmt(char* p, ...);
 void print_fmt(char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X
-#define AOBJ(X) s = vec_add(s,X) // consumes X
+#define AOBJ(X) s = vec_addN(s,X) // consumes X
 #define ACHR(X) AOBJ(m_c32(X))
 #define A8(X) AJOIN(m_str8l(X))
 #define AU(X) AJOIN(fromUTF8l(X))

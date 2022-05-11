@@ -13,7 +13,7 @@ NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2) {
   r->c1 = c1;
   r->c2 = c2;
   r->name = name;
-  nfn_list = vec_add(nfn_list, tag(r,OBJ_TAG));
+  nfn_list = vec_addN(nfn_list, tag(r,OBJ_TAG));
   return r;
 }
 B m_nfn(NFnDesc* desc, B obj) {

@@ -186,7 +186,7 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
     B vars = listVars(csc);
     usz am = a(vars)->ia;
     vName = vec_join(vName, vars);
-    for (usz i = 0; i < am; i++) vDepth = vec_add(vDepth, m_i32(depth));
+    for (usz i = 0; i < am; i++) vDepth = vec_addN(vDepth, m_i32(depth));
     csc = csc->psc;
     depth++;
   }

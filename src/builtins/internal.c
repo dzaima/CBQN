@@ -132,16 +132,16 @@ B listVariations_c2(B t, B w, B x) {
   }
   noSpec:;
   B r = emptyHVec();
-  if(abit) { r=vec_add(r,inc(v_Ab  ));                          if(c_incr) { r=vec_add(r,inc(v_AbInc  ));                             } }
-  if(ai8 ) { r=vec_add(r,inc(v_Ai8 ));r=vec_add(r,inc(v_Si8 )); if(c_incr) { r=vec_add(r,inc(v_Ai8Inc ));r=vec_add(r,inc(v_Si8Inc )); } }
-  if(ai16) { r=vec_add(r,inc(v_Ai16));r=vec_add(r,inc(v_Si16)); if(c_incr) { r=vec_add(r,inc(v_Ai16Inc));r=vec_add(r,inc(v_Si16Inc)); } }
-  if(ai32) { r=vec_add(r,inc(v_Ai32));r=vec_add(r,inc(v_Si32)); if(c_incr) { r=vec_add(r,inc(v_Ai32Inc));r=vec_add(r,inc(v_Si32Inc)); } }
-  if(ac8 ) { r=vec_add(r,inc(v_Ac8 ));r=vec_add(r,inc(v_Sc8 )); if(c_incr) { r=vec_add(r,inc(v_Ac8Inc ));r=vec_add(r,inc(v_Sc8Inc )); } }
-  if(ac16) { r=vec_add(r,inc(v_Ac16));r=vec_add(r,inc(v_Sc16)); if(c_incr) { r=vec_add(r,inc(v_Ac16Inc));r=vec_add(r,inc(v_Sc16Inc)); } }
-  if(ac32) { r=vec_add(r,inc(v_Ac32));r=vec_add(r,inc(v_Sc32)); if(c_incr) { r=vec_add(r,inc(v_Ac32Inc));r=vec_add(r,inc(v_Sc32Inc)); } }
-  if(af64) { r=vec_add(r,inc(v_Af64));r=vec_add(r,inc(v_Sf64)); if(c_incr) { r=vec_add(r,inc(v_Af64Inc));r=vec_add(r,inc(v_Sf64Inc)); } }
-  if(ah)   { r=vec_add(r,inc(v_Ah  ));r=vec_add(r,inc(v_Sh  )); if(c_incr) { r=vec_add(r,inc(v_AhInc  ));r=vec_add(r,inc(v_ShInc  )); } }
-  {          r=vec_add(r,inc(v_Af  ));r=vec_add(r,inc(v_Sf  )); if(c_incr) { r=vec_add(r,inc(v_AfInc  ));r=vec_add(r,inc(v_SfInc  )); } }
+  if(abit) { r=vec_addN(r,inc(v_Ab  ));                          if(c_incr) { r=vec_addN(r,inc(v_AbInc  ));                             } }
+  if(ai8 ) { r=vec_addN(r,inc(v_Ai8 ));r=vec_addN(r,inc(v_Si8 )); if(c_incr) { r=vec_addN(r,inc(v_Ai8Inc ));r=vec_addN(r,inc(v_Si8Inc )); } }
+  if(ai16) { r=vec_addN(r,inc(v_Ai16));r=vec_addN(r,inc(v_Si16)); if(c_incr) { r=vec_addN(r,inc(v_Ai16Inc));r=vec_addN(r,inc(v_Si16Inc)); } }
+  if(ai32) { r=vec_addN(r,inc(v_Ai32));r=vec_addN(r,inc(v_Si32)); if(c_incr) { r=vec_addN(r,inc(v_Ai32Inc));r=vec_addN(r,inc(v_Si32Inc)); } }
+  if(ac8 ) { r=vec_addN(r,inc(v_Ac8 ));r=vec_addN(r,inc(v_Sc8 )); if(c_incr) { r=vec_addN(r,inc(v_Ac8Inc ));r=vec_addN(r,inc(v_Sc8Inc )); } }
+  if(ac16) { r=vec_addN(r,inc(v_Ac16));r=vec_addN(r,inc(v_Sc16)); if(c_incr) { r=vec_addN(r,inc(v_Ac16Inc));r=vec_addN(r,inc(v_Sc16Inc)); } }
+  if(ac32) { r=vec_addN(r,inc(v_Ac32));r=vec_addN(r,inc(v_Sc32)); if(c_incr) { r=vec_addN(r,inc(v_Ac32Inc));r=vec_addN(r,inc(v_Sc32Inc)); } }
+  if(af64) { r=vec_addN(r,inc(v_Af64));r=vec_addN(r,inc(v_Sf64)); if(c_incr) { r=vec_addN(r,inc(v_Af64Inc));r=vec_addN(r,inc(v_Sf64Inc)); } }
+  if(ah)   { r=vec_addN(r,inc(v_Ah  ));r=vec_addN(r,inc(v_Sh  )); if(c_incr) { r=vec_addN(r,inc(v_AhInc  ));r=vec_addN(r,inc(v_ShInc  )); } }
+  {          r=vec_addN(r,inc(v_Af  ));r=vec_addN(r,inc(v_Sf  )); if(c_incr) { r=vec_addN(r,inc(v_AfInc  ));r=vec_addN(r,inc(v_SfInc  )); } }
   decG(x);
   dec(xf);
   return r;
@@ -221,7 +221,7 @@ B variation_c2(B t, B w, B x) {
       if (!variation_refs.u) {
         variation_refs = emptyHVec();
       }
-      variation_refs = vec_add(variation_refs, inc(res));
+      variation_refs = vec_addN(variation_refs, inc(res));
     }
     if (wp!=wpE) thrM("•internal.Variation: Bad 𝕨");
   } else thrM("•internal.Variation: Bad start of 𝕨");

@@ -234,3 +234,4 @@ static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
   return vec_addR(w, x);
 }
+B vec_addN(B w, B x); // vec_add but not inlined

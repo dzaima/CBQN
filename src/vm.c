@@ -96,12 +96,12 @@ B listVars(Scope* sc) {
     i32* varData = b->varData; usz bam = b->varAm;
     for (u64 i = 0; i < am0; i++) {
       i32 nameID = varData[i + bam];
-      r = vec_add(r, inc(GetU(nameList, nameID)));
+      r = vec_addN(r, inc(GetU(nameList, nameID)));
     }
   }
   if (sc->ext) {
     ScopeExt* scExt = sc->ext; usz am = scExt->varAm; B* vars = scExt->vars;
-    for (u64 i = 0; i < am; i++) r = vec_add(r, inc(vars[i+am]));
+    for (u64 i = 0; i < am; i++) r = vec_addN(r, inc(vars[i+am]));
   }
   return r;
 }

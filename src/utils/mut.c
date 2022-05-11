@@ -43,6 +43,9 @@ NOINLINE B vec_addR(B w, B x) {
   dec(w);
   return mut_fv(r);
 }
+NOINLINE B vec_addN(B w, B x) {
+  return vec_add(w, x);
+}
 
 NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
   if (m->fns->elType==el_B) harr_pfree(taga(m->val), n);

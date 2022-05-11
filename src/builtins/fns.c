@@ -328,7 +328,7 @@ i32 str2gid(B s) {
   if(had) return globalNames->a[p].val;
   
   i32 r = a(globalNameList)->ia;
-  globalNameList = vec_add(globalNameList, inc(s));
+  globalNameList = vec_addN(globalNameList, inc(s));
   globalNames->a[p].val = r;
   return r;
 }

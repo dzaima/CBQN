@@ -427,7 +427,7 @@ static OptRes opt(u32* bc0) {
         u64 on = data[dpos++]; B ob = b(on);
         TSADD(rbc, isVal(ob)? ADDI : ADDU);
         A64(on);
-        if (isVal(ob)) refs = vec_add(refs, ob);
+        if (isVal(ob)) refs = vec_addN(refs, ob);
         break;
       case 6:
         dec(b(data[dpos++]));
