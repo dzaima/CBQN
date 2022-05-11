@@ -563,8 +563,7 @@ B libffiFn_c1(B t, B x) { return libffiFn_c2(t, bi_N, x); }
 
 
 
-
-B loadffi_c2(B t, B w, B x) {
+B ffiload_c2(B t, B w, B x) {
   usz xia = a(x)->ia;
   if (xia<2) thrM("FFI: Function specification must have at least two items");
   usz argn = xia-2;
@@ -580,6 +579,7 @@ B loadffi_c2(B t, B w, B x) {
   
   char* ws = toCStr(w);
   void* dl = dlopen(ws, RTLD_NOW);
+  
   freeCStr(ws);
   dec(w);
   if (dl==NULL) thrF("Failed to load: %S", dlerror());
@@ -593,7 +593,9 @@ B loadffi_c2(B t, B w, B x) {
   #if FFI==1
     return m_ffiFn(foreignFnDesc, bi_N, directFn_c1, directFn_c2, sym, sym);
   #else
-    TAlloc* argsRaw = ARBOBJ(argn*sizeof(ffi_type*));
+    u64 sz = argn*sizeof(ffi_type*);
+    if (sz<16) sz = 16;
+    TAlloc* argsRaw = ARBOBJ(sz);
     ffi_type** argsRawArr = (ffi_type**)argsRaw->data;
     for (usz i = 0; i < argn; i++) argsRawArr[i] = &args[i+1].t;
     // for (usz i = 0; i < argn; i++) {
@@ -637,5 +639,5 @@ void ffi_init() {
 
 #else
 void ffi_init() { }
-B loadffi_c2(B t, B w, B x) { thrM("CBQN was compiled without FFI"); }
+B ffiload_c2(B t, B w, B x) { thrM("CBQN was compiled without FFI"); }
 #endif

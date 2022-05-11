@@ -1142,7 +1142,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
     else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
     #if FFI
-    else if (eqStr(c, U"loadffi")) cr = inc(bi_loadffi);
+    else if (eqStr(c, U"loadffi")) cr = inc(bi_ffiload);
     #endif
     else if (eqStr(c, U"state")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •state");
