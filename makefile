@@ -37,32 +37,48 @@ c:
 	@${MAKE} custom=1 run_incremental_0
 
 # compiler setup
-i_CC = clang
-i_PIE = -no-pie
-i_LD_LIBS = -lm
-OUTPUT = BQN
+i_CC := clang
+i_PIE := -no-pie
+i_LD_LIBS := -lm
+i_FFI := 2
+i_singeli := 0
+OUTPUT := BQN
 
 ifeq ($(origin CC),command line)
-	i_CC = $(CC)
-	custom = 1
-endif
-ifeq ($(origin PIE),command line)
-	i_PIE = $(PIE)
-	custom = 1
-endif
-ifeq ($(origin LD_LIBS),command line)
-	i_LD_LIBS = $(LD_LIBS)
+	i_CC := $(CC)
 	custom = 1
 endif
 ifeq ($(origin singeli),command line)
-	i_singeli = $(singeli)
+	i_singeli := $(singeli)
+	custom = 1
+endif
+ifeq ($(origin FFI),command line)
+	i_FFI := $(FFI)
+	custom = 1
+endif
+ifneq ($(i_FFI),0)
+	i_LD_LIBS += -ldl -rdynamic
+endif
+ifeq ($(i_FFI),2)
+	i_LD_LIBS += -lffi
+endif
+ifeq ($(origin LD_LIBS),command line)
+	i_LD_LIBS := $(LD_LIBS)
+	custom = 1
+endif
+ifeq ($(origin PIE),command line)
+	i_PIE := $(PIE)
 	custom = 1
 endif
 ifeq ($(origin f),command line)
 	custom = 1
+else
+	f:=
 endif
 ifeq ($(origin lf),command line)
 	custom = 1
+else
+	lf:=
 endif
 ifeq ($(origin CCFLAGS),command line)
 	custom = 1
@@ -78,14 +94,7 @@ else
 	NOWARN = -Wno-parentheses
 endif
 
-ifeq (${i_singeli}, 1)
-	SINGELIFLAGS = '-DSINGELI'
-else
-	i_singeli = 0
-	SINGELIFLAGS =
-endif
-
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(f) $(i_f) $(SINGELIFLAGS) $(NOWARN)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LD_LIBS)
 
 ifneq (${manualJobs},1)
@@ -152,7 +161,7 @@ ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-base: ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o}
+base: ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o ffi.o}
 ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<

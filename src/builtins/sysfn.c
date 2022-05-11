@@ -239,7 +239,7 @@ B show_c1(B t, B x) {
   return x;
 }
 
-static B vfyStr(B x, char* name, char* arg) {
+B vfyStr(B x, char* name, char* arg) {
   if (isAtm(x) || rnk(x)!=1) thrF("%U: %U must be a character vector", name, arg);
   if (!elChr(TI(x,elType))) {
     usz ia = a(x)->ia;
@@ -1141,6 +1141,9 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"flines")) cr = m_nfn(fLinesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
     else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
+    #if FFI
+    else if (eqStr(c, U"loadffi")) cr = inc(bi_loadffi);
+    #endif
     else if (eqStr(c, U"state")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •state");
       cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
