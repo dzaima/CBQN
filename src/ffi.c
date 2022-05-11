@@ -276,9 +276,10 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.ex
       BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_ptr, 1);
       rp[0] = ffi_parseTypeStr(&c, true);
       mut|= rp[0].extra2;
+      parseRepr = rp[0].extra;
+      
       rp[0].extra = c0=='&';
       rt = ffi_type_pointer;
-      parseRepr = rp[0].extra;
       break;
   }
   if (parseRepr && *c==':') {
