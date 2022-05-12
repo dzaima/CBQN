@@ -57,7 +57,7 @@ ifeq ($(origin FFI),command line)
 	custom = 1
 endif
 ifneq ($(i_FFI),0)
-	i_LD_LIBS += -ldl -rdynamic
+	i_LD_LIBS += -ldl -Wl,--dynamic-list=include/syms
 endif
 ifeq ($(i_FFI),2)
 	i_LD_LIBS += -lffi
