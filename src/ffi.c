@@ -6,6 +6,10 @@
 #include "utils/cstr.h"
 #include "nfns.h"
 #include <dlfcn.h>
+#if FFI==2
+#include <ffi.h>
+#include "utils/mut.h"
+#endif
 
 // base interface defs for when GC stuff needs to be added in
 static B getB(BQNV v) {
@@ -169,15 +173,11 @@ DEF_FREE(ffiFn) { dec(((BoundFn*)x)->obj); }
 
 
 
-
-
-#if FFI==2
-
-#include <ffi.h>
-#include "utils/mut.h"
 typedef struct BQNFFIEnt {
   B o;
+#if FFI==2
   ffi_type t;
+#endif
   u8 extra;
   u8 extra2;
 } BQNFFIEnt;
@@ -187,6 +187,14 @@ typedef struct BQNFFIType {
   usz ia;
   BQNFFIEnt a[];
 } BQNFFIType;
+
+B vfyStr(B x, char* name, char* arg);
+static void printFFIType(FILE* f, B x) {
+  if (isC32(x)) fprintf(f, "%d", o2cu(x));
+  else fprint(f, x);
+}
+
+#if FFI==2
 
 enum ScalarTy {
   sty_void, sty_a,
@@ -210,11 +218,6 @@ enum CompoundTy {
   cty_ptr,
   cty_repr
 };
-
-static void printFFIType(FILE* f, B x) {
-  if (isC32(x)) fprintf(f, "%d", o2cu(x));
-  else fprint(f, x);
-}
 
 static B m_bqnFFIType(BQNFFIEnt** rp, u8 ty, usz ia) {
   BQNFFIType* r = mm_alloc(fsizeof(BQNFFIType, a, BQNFFIEnt, ia), t_ffiType);
@@ -297,8 +300,6 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.ex
   *src = c;
   return (BQNFFIEnt){.t=rt, .o=ro, .extra=subParseRepr, .extra2=mut};
 }
-
-B vfyStr(B x, char* name, char* arg);
 
 BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument side & other global decorators; .extra=side, .extra2=contains mutation
   vfyStr(arg, "FFI", "type");
@@ -558,6 +559,12 @@ B libffiFn_c2(B t, B w, B x) {
 }
 B libffiFn_c1(B t, B x) { return libffiFn_c2(t, bi_N, x); }
 
+#else
+
+BQNFFIEnt ffi_parseType(B arg, bool forRes) {
+  if (!isArr(arg) || a(arg)->ia!=1 || IGetU(arg,0).u!=m_c32('a').u) thrM("FFI: Only \"a\" arguments & return value supported with compile flag FFI=1");
+  return (BQNFFIEnt){};
+}
 #endif
 
 
@@ -573,9 +580,14 @@ B ffiload_c2(B t, B w, B x) {
   
   BQNFFIEnt tRes = ffi_parseType(GetU(x,0), true);
   
-  BQNFFIEnt* args; B argObj = m_bqnFFIType(&args, 255, argn+1);
-  args[0] = tRes;
-  for (usz i = 0; i < argn; i++) args[i+1] = ffi_parseType(GetU(x,i+2), false);
+  #if FFI==2
+    BQNFFIEnt* args; B argObj = m_bqnFFIType(&args, 255, argn+1);
+    args[0] = tRes;
+    for (usz i = 0; i < argn; i++) args[i+1] = ffi_parseType(GetU(x,i+2), false);
+  #else
+    for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
+    (void)tRes;
+  #endif
   
   char* ws = toCStr(w);
   void* dl = dlopen(ws, RTLD_NOW);
