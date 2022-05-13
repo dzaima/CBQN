@@ -15,6 +15,7 @@ I8Arr* stream_bytes(FILE* f);
 
 B mmap_file(B path); // consumes
 bool dir_create(B path); // doesn't consume
+bool path_rename(B old_path, B new_path); // consumes only old_path
 
 void path_wChars(B path, B x); // consumes path
 void path_wBytes(B path, B x); // consumes path

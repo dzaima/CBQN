@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <unistd.h>
 #include "../core.h"
 #include "file.h"
 #include "mut.h"
@@ -310,6 +311,17 @@ bool dir_create(B path) {
   bool r = mkdir(p, S_IRWXU) == 0;
   freeCStr(p);
   return r;
+}
+
+bool path_rename(B old_path, B new_path) {
+  char* old = toCStr(old_path);
+  char* new = toCStr(new_path);
+  // TODO Fix race condition, e.g., with renameat2 on Linux, etc.
+  bool ok = access(new, F_OK) != 0 && rename(old, new) == 0;
+  freeCStr(new);
+  freeCStr(old);
+  dec(old_path);
+  return ok;
 }
 
 char path_type(B path) {
