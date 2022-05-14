@@ -324,6 +324,14 @@ bool path_rename(B old_path, B new_path) {
   return ok;
 }
 
+bool path_remove(B path) {
+  char* p = toCStr(path);
+  bool ok = unlink(p) == 0;
+  freeCStr(p);
+  dec(path);
+  return ok;
+}
+
 char path_type(B path) {
   char* p = toCStr(path);
   struct stat path_stat;
