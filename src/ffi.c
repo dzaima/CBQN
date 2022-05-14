@@ -82,8 +82,7 @@ BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
 static usz calcIA(size_t rank, size_t* shape) {
   if (rank>UR_MAX) thrM("Rank too large");
   usz r = 1;
-  NOUNROLL
-  for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
+  NOUNROLL for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
   return r;
 }
 static void copyBData(B* r, BQNV* data, usz ia) {
