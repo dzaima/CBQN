@@ -122,6 +122,9 @@ typedef struct BoundFn {
   struct NFn;
   void* w_c1;
   void* w_c2;
+  #if FFI==2
+    i32 mutCount;
+  #endif
 } BoundFn;
 NFnDesc* boundFnDesc;
 NFnDesc* foreignFnDesc;
@@ -178,8 +181,11 @@ typedef struct BQNFFIEnt {
 #if FFI==2
   ffi_type t;
 #endif
-  u8 extra;
-  u8 extra2;
+  //      generic    ffi_parseType ffi_parseTypeStr  cty_ptr
+  union { u8 extra;  u8 onW;       u8 canRetype;     u8 mutPtr; };
+  union { u8 extra2; u8 mutates;   /*mutates*/                  };
+  union { u8 extra3; u8 wholeArg;                               };
+  union { u8 extra4; u8 resSingle;                              };
 } BQNFFIEnt;
 typedef struct BQNFFIType {
   struct Value;
@@ -239,12 +245,12 @@ static u32 readUInt(u32** p) {
   *p = c;
   return r;
 }
-BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.extra: whether should parse a :abc; res.extra2: whether has any mutation
+BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
   u32* c = *src;
   u32 c0 = *c++;
   ffi_type rt;
   B ro;
-  bool parseRepr=false, subParseRepr=false, mut=false;
+  bool parseRepr=false, canRetype=false, mut=false;
   switch (c0) {
     default:
       thrM("FFI: Error parsing type");
@@ -266,7 +272,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.ex
         ro = m_c32(scty);
       }
       parseRepr = !inPtr;
-      subParseRepr = inPtr;
+      canRetype = inPtr;
       break;
     
     case 'a':
@@ -278,10 +284,10 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.ex
       if (c0=='&') mut = true;
       BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_ptr, 1);
       rp[0] = ffi_parseTypeStr(&c, true);
-      mut|= rp[0].extra2;
-      parseRepr = rp[0].extra;
+      mut|= rp[0].mutates;
+      parseRepr = rp[0].canRetype;
       
-      rp[0].extra = c0=='&';
+      rp[0].mutPtr = c0=='&';
       rt = ffi_type_pointer;
       break;
   }
@@ -298,34 +304,48 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type; res.ex
     rp[0] = (BQNFFIEnt){.o=roP, .t=rt, .extra=t, .extra2=63-CLZ(n)};
   }
   *src = c;
-  return (BQNFFIEnt){.t=rt, .o=ro, .extra=subParseRepr, .extra2=mut};
+  return (BQNFFIEnt){.t=rt, .o=ro, .canRetype=canRetype, .extra2=mut};
 }
 
-BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument side & other global decorators; .extra=side, .extra2=contains mutation
+BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument side & other global decorators
   vfyStr(arg, "FFI", "type");
   usz ia = a(arg)->ia;
   if (ia==0) {
     if (!forRes) thrM("FFI: Argument type empty");
-    return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void)};
+    return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=false};
   }
+  
   MAKE_MUT(tmp, ia+1); mut_init(tmp, el_c32); MUTG_INIT(tmp);
   mut_copyG(tmp, 0, arg, 0, ia);
   mut_setG(tmp, ia, m_c32(0));
   u32* xp = tmp->ac32;
   u32* xpN = xp + ia;
   
-  u8 side;
-  if      (*xp == U'𝕩') side = 2;
-  else if (*xp == U'𝕨') side = 1;
-  else                  side = 0;
-  if (forRes && side) thrM("FFI: Argument side cannot be specified for the result");
-  if (side) xp++;
-  
-  BQNFFIEnt t = ffi_parseTypeStr(&xp, false);
-  // print(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
-  if (xp!=xpN) thrM("FFI: Bad type descriptor");
-  t.extra = side;
-  // keep extra2 as "contains mutation"
+  BQNFFIEnt t;
+  if (xp[0]=='&' && xp[1]=='\0') {
+    t = (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=true};
+  } else {
+    u8 side = 0;
+    bool whole = false;
+    while (true) {
+      if      (*xp == U'𝕩') { if (side) thrM("FFI: Multiple occurrences of argument side specified"); side = 1; }
+      else if (*xp == U'𝕨') { if (side) thrM("FFI: Multiple occurrences of argument side specified"); side = 2; }
+      else if (*xp == U'>') { if (whole) thrM("FFI: Multiple occurrences of '>'"); whole = true; }
+      else break;
+      xp++;
+    }
+    if (forRes && side) thrM("FFI: Argument side cannot be specified for the result");
+    if (side) side--;
+    else side = 0;
+    
+    t = ffi_parseTypeStr(&xp, false);
+    // print(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
+    if (xp!=xpN) thrM("FFI: Bad type descriptor");
+    t.onW = side;
+    // keep .mutates
+    t.wholeArg = whole;
+    t.resSingle = false;
+  }
   mut_pfree(tmp, 0);
   return t;
 }
@@ -396,7 +416,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
       B cG;
       if (!isArr(c)) thrF("FFI: Expected array corresponding to *%S", sty_names[o2cu(e)]);
       usz ia = a(c)->ia;
-      bool mut = t->a[0].extra;
+      bool mut = t->a[0].mutPtr;
       switch(o2cu(e)) { default: thrF("FFI: Unimplemented pointer to %S", sty_names[o2cu(e)]);
         case sty_i8:  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
         case sty_i16: cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
@@ -433,7 +453,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
         assert(t2->ty==cty_ptr && isC32(ore)); // we shouldn't be generating anything else
         inc(c);
         B cG;
-        bool mut = t->a[0].extra;
+        bool mut = t->a[0].mutPtr;
         if (mut) {
           Arr* cGp;
           switch(wre) { default: UD;
@@ -453,15 +473,15 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
   return pos;
 }
 
-B buildObj(BQNFFIEnt ent, B c, bool anyMut, B* objs, usz* objPos) {
+B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
   if (isC32(ent.o)) return m_f64(0); // scalar
   BQNFFIType* t = c(BQNFFIType, ent.o);
   if (t->ty==cty_ptr) { // *any / &any
     B e = t->a[0].o;
     B f = objs[(*objPos)++];
-    bool mut = t->a[0].extra;
+    bool mut = t->a[0].mutPtr;
     if (mut) {
-      usz ia = a(c)->ia;
+      usz ia = a(f)->ia;
       switch(o2cu(e)) { default: UD;
         case sty_i8: case sty_i16: case sty_i32: case sty_f64: return inc(f);
         case sty_u8:  { u8*  tp=tyarr_ptr(f); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return r; }
@@ -475,7 +495,7 @@ B buildObj(BQNFFIEnt ent, B c, bool anyMut, B* objs, usz* objPos) {
     if (isC32(o2)) return m_f64(0); // scalar:any
     // *scalar:any / &scalar:any
     B f = objs[(*objPos)++];
-    bool mut = t->a[0].extra;
+    bool mut = t->a[0].mutPtr;
     if (!mut) return m_f64(0);
     return inc(f);
   } else thrM("FFI: Unimplemented type");
@@ -496,13 +516,19 @@ B libffiFn_c2(B t, B w, B x) {
   ffiTmpAA(argn * sizeof(u32));
   #define argOffs ((u32*)ffiTmpS)
   
-  SGetU(x)
+  u32 flags = (u64)c->w_c1;
+  
+  Arr* wa; AS2B wf;
+  Arr* xa; AS2B xf;
+  if (flags&1) { wa=a(w); wf=TIv(wa,getU); }
+  if (flags&2) { xa=a(x); xf=TIv(xa,getU); }
+  i32 idxs[2] = {0,0};
+  
   BQNFFIEnt* ents = c(BQNFFIType,argObj)->a;
-  usz mutArgs = 0;
   for (usz i = 0; i < argn; i++) {
-    bool mut = ents[i+1].extra2;
-    argOffs[i] = genObj(ents[i+1], GetU(x,i), mut);
-    mutArgs+= mut;
+    BQNFFIEnt e = ents[i+1];
+    B o = e.wholeArg? (e.onW? w : x) : (e.onW? wf : xf)(e.onW?wa:xa, idxs[e.onW]++);
+    argOffs[i] = genObj(e, o, e.extra2);
   }
   
   u32 resPos;
@@ -542,16 +568,26 @@ B libffiFn_c2(B t, B w, B x) {
   } else UD;
   mm_free((Value*)ffiTmpObj);
   
+  i32 mutArgs = c->mutCount;
   if (mutArgs) {
     usz objPos = 0;
-    M_HARR(ra, mutArgs+(resVoid? 0 : 1));
-    if (!resVoid) HARR_ADDA(ra, r);
-    for (usz i = 0; i < argn; i++) {
-      bool mut = ents[i+1].extra2;
-      B c = buildObj(ents[i+1], GetU(x,i), mut, harr_ptr(ffiObjs), &objPos);
-      if (mut) HARR_ADDA(ra, c);
+    bool resSingle = flags&4;
+    if (resSingle) {
+      for (usz i = 0; i < argn; i++) {
+        BQNFFIEnt e = ents[i+1];
+        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
+        if (e.mutates) r = c;
+      }
+    } else {
+      M_HARR(ra, mutArgs+(resVoid? 0 : 1));
+      if (!resVoid) HARR_ADDA(ra, r);
+      for (usz i = 0; i < argn; i++) {
+        BQNFFIEnt e = ents[i+1];
+        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
+        if (e.mutates) HARR_ADDA(ra, c);
+      }
+      r = HARR_FV(ra);
     }
-    r = HARR_FV(ra);
   }
   
   dec(w); dec(x); dec(ffiObjs);
@@ -583,11 +619,21 @@ B ffiload_c2(B t, B w, B x) {
   #if FFI==2
     BQNFFIEnt* args; B argObj = m_bqnFFIType(&args, 255, argn+1);
     args[0] = tRes;
-    for (usz i = 0; i < argn; i++) args[i+1] = ffi_parseType(GetU(x,i+2), false);
+    bool one [2]={0,0};
+    bool many[2]={0,0};
+    i32 mutCount = 0;
+    for (usz i = 0; i < argn; i++) {
+      BQNFFIEnt e = args[i+1] = ffi_parseType(GetU(x,i+2), false);
+      (e.wholeArg? one : many)[e.extra] = true;
+      if (e.mutates) mutCount++;
+    }
+    if (one[0] && many[0]) thrM("FFI: Multiple arguments for 𝕩 specified, but one has '>'");
+    if (one[1] && many[1]) thrM("FFI: Multiple arguments for 𝕨 specified, but one has '>'");
   #else
     for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
     (void)tRes;
   #endif
+  if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated variables", mutCount);
   
   char* ws = toCStr(w);
   void* dl = dlopen(ws, RTLD_NOW);
@@ -618,7 +664,10 @@ B ffiload_c2(B t, B w, B x) {
     ffi_status s = ffi_prep_cif((ffi_cif*)cif->data, FFI_DEFAULT_ABI, argn, &args[0].t, argsRawArr);
     if (s!=FFI_OK) thrM("FFI: Error preparing call interface");
     // mm_free(argsRaw)
-    return m_ffiFn(foreignFnDesc, m_hVec3(argObj, tag(cif, OBJ_TAG), tag(argsRaw, OBJ_TAG)), libffiFn_c1, libffiFn_c2, NULL, sym);
+    u32 flags = many[1] | many[0]<<1 | tRes.resSingle<<2;
+    B r = m_ffiFn(foreignFnDesc, m_hVec3(argObj, tag(cif, OBJ_TAG), tag(argsRaw, OBJ_TAG)), libffiFn_c1, libffiFn_c2, (void*)(u64)flags, sym);
+    c(BoundFn,r)->mutCount = mutCount;
+    return r;
   #endif
 }
 
