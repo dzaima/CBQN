@@ -5,6 +5,7 @@
 #include "utils/utf.h"
 #include "utils/cstr.h"
 #include "nfns.h"
+#include "utils/file.h"
 #include <dlfcn.h>
 #if FFI==2
 #include <ffi.h>
@@ -634,6 +635,7 @@ B ffiload_c2(B t, B w, B x) {
   #endif
   if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated variables", mutCount);
   
+  w = path_rel(nfn_objU(t), w);
   char* ws = toCStr(w);
   void* dl = dlopen(ws, RTLD_NOW);
   

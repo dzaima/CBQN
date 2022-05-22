@@ -1081,6 +1081,10 @@ B getMathNS(void);
 B getPrimitives(void);
 
 static Body* file_nsGen;
+
+NFnDesc* ffiloadDesc;
+B ffiload_c2(B t, B w, B x);
+
 B sys_c1(B t, B x) {
   assert(isArr(x));
   M_HARR(r, a(x)->ia) SGetU(x)
@@ -1140,10 +1144,10 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"fbytes")) cr = m_nfn(fBytesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"flines")) cr = m_nfn(fLinesDesc, inc(REQ_PATH));
     else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
     #if FFI
-    else if (eqStr(c, U"loadffi")) cr = inc(bi_ffiload);
+    else if (eqStr(c, U"ffi")) cr = m_nfn(ffiloadDesc, inc(REQ_PATH));
     #endif
+    else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
     else if (eqStr(c, U"state")) {
       if (q_N(comp_currArgs)) thrM("No arguments present for •state");
       cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
@@ -1177,6 +1181,7 @@ void sysfn_init() {
   fExistsDesc = registerNFn(m_str8l("(file).Exists"), fexists_c1, c2_bad);
   importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
   reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
+  ffiloadDesc = registerNFn(m_str32(U"•FFI"), c1_bad, ffiload_c2);
 }
 void sysfnPost_init() {
   file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mapbytes","createdir");

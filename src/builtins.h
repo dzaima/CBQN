@@ -12,7 +12,6 @@
 /*   sysfn.c*/M(repr,"•Repr") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") A(bqn,"•BQN") A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(currentError,"•CurrentError") \
 /*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime") M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(reBQN,"•ReBQN") M(exit,"•Exit") M(getLine,"•GetLine") \
 /*   sysfn.c*/M(fName,"•file.Name") \
-/*     ffi.c*/D(ffiload,"•FFI") \
 /*   sysfn.c*/M(tRawMode,"•term.RawMode") M(tFlush,"•term.Flush") M(tCharB,"•term.CharB") M(tCharN,"•term.CharN") M(tOutRaw,"•term.OutRaw") M(tErrRaw,"•term.ErrRaw") \
 /* inverse.c*/M(setInvReg, "(SetInvReg)") M(setInvSwap, "(SetInvSwap)") M(nativeInvReg, "(NativeInvReg)") M(nativeInvSwap, "(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") M(heapDump,"•internal.HeapDump") \
