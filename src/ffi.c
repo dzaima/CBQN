@@ -556,12 +556,11 @@ B libffiFn_c2(B t, B w, B x) {
     switch(o2cu(ents[0].o)) { default: thrM("FFI: Unimplemented type");
       case sty_void: r = m_c32(0); resVoid = true; break;
       case sty_a:   r = getB(*(BQNV*)res); break;
-      case sty_i8:  r = m_i32(sizeof(ffi_arg )>sizeof( i8)? ( i8)*(ffi_arg *)res : *( i8*)res); break;
-      case sty_i16: r = m_i32(sizeof(ffi_arg )>sizeof(i16)? (i16)*(ffi_arg *)res : *(i16*)res); break;
-      case sty_i32: r = m_i32(sizeof(ffi_arg )>sizeof(i32)? (i32)*(ffi_arg *)res : *(i32*)res); break;
-      case sty_u8:  r = m_i32(sizeof(ffi_sarg)>sizeof( u8)? ( u8)*(ffi_sarg*)res : *( u8*)res); break;
-      case sty_u16: r = m_i32(sizeof(ffi_sarg)>sizeof(u16)? (u16)*(ffi_sarg*)res : *(u16*)res); break;
-      case sty_u32: r = m_f64(sizeof(ffi_sarg)>sizeof(u32)? (u32)*(ffi_sarg*)res : *(u32*)res); break;
+      case sty_i8:  r = m_i32(*( i8*)res); break;  case sty_u8:  r = m_i32(*( u8*)res); break;
+      case sty_i16: r = m_i32(*(i16*)res); break;  case sty_u16: r = m_i32(*(u16*)res); break;
+      case sty_i32: r = m_i32(*(i32*)res); break;  case sty_u32: r = m_f64(*(u32*)res); break;
+      case sty_i64: { i64 v = *(i64*)res; if ((v<0?-v:v)>(1ULL<<53)) thrM("FFI: \"i64\" result absolute value greater than 2⋆53"); r = m_f64(v); break; }
+      case sty_u64: { u64 v = *(u64*)res; if (        v >(1ULL<<53)) thrM("FFI: \"u64\" result greater than 2⋆53");                r = m_f64(v); break; }
       case sty_f32: r = m_f64(*(float* )res); break;
       case sty_f64: r = m_f64(*(double*)res); break;
     }
