@@ -388,6 +388,8 @@ static B toW(u8 tre, u8 wre, B x) {
   }
 }
 
+FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
+
 usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
   // printFFIType(stdout,ent.o); printf(" = "); print(c); printf("\n");
   usz pos;
@@ -398,12 +400,14 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
     f64 f = c.f;
     switch(t) { default: thrF("FFI: Unimplemented scalar type %S", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
-      case sty_u8:  *( u8*)ptr = f; break;
-      case sty_i8:  *( i8*)ptr = f; break;
-      case sty_u16: *(u16*)ptr = f; break;
-      case sty_i16: *(i16*)ptr = f; break;
-      case sty_u32: *(u32*)ptr = f; break;
-      case sty_i32: *(i32*)ptr = f; break;
+      case sty_u8:  if(f!=( u8)f) thrM("FFI: u8 argument not exact" ); *( u8*)ptr = f; break;
+      case sty_i8:  if(f!=( i8)f) thrM("FFI: i8 argument not exact" ); *( i8*)ptr = f; break;
+      case sty_u16: if(f!=(u16)f) thrM("FFI: u16 argument not exact"); *(u16*)ptr = f; break;
+      case sty_i16: if(f!=(i16)f) thrM("FFI: i16 argument not exact"); *(i16*)ptr = f; break;
+      case sty_u32: if(f!=(u32)f) thrM("FFI: u32 argument not exact"); *(u32*)ptr = f; break;
+      case sty_i32: if(f!=(i32)f) thrM("FFI: i32 argument not exact"); *(i32*)ptr = f; break;
+      case sty_u64: if(f!=(u64)f) thrM("FFI: u64 argument not exact"); if (       (u64)f  >= 1ULL<<53) thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = f; break;
+      case sty_i64: if(f!=(i64)f) thrM("FFI: i64 argument not exact"); if (i64abs((i64)f) >= 1ULL<<53) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = f; break;
       case sty_f32: *(float* )ptr = f; break;
       case sty_f64: *(double*)ptr = f; break;
     }
@@ -560,8 +564,8 @@ B libffiFn_c2(B t, B w, B x) {
       case sty_i8:  r = m_i32(*( i8*)res); break;  case sty_u8:  r = m_i32(*( u8*)res); break;
       case sty_i16: r = m_i32(*(i16*)res); break;  case sty_u16: r = m_i32(*(u16*)res); break;
       case sty_i32: r = m_i32(*(i32*)res); break;  case sty_u32: r = m_f64(*(u32*)res); break;
-      case sty_i64: { i64 v = *(i64*)res; if ((v<0?-v:v)>(1ULL<<53)) thrM("FFI: \"i64\" result absolute value greater than 2⋆53"); r = m_f64(v); break; }
-      case sty_u64: { u64 v = *(u64*)res; if (        v >(1ULL<<53)) thrM("FFI: \"u64\" result greater than 2⋆53");                r = m_f64(v); break; }
+      case sty_i64: { i64 v = *(i64*)res; if (i64abs(v)>=(1ULL<<53)) thrM("FFI: i64 result absolute value ≥ 2⋆53"); r = m_f64(v); break; }
+      case sty_u64: { u64 v = *(u64*)res; if (       v >=(1ULL<<53)) thrM("FFI: u64 result ≥ 2⋆53");                r = m_f64(v); break; }
       case sty_f32: r = m_f64(*(float* )res); break;
       case sty_f64: r = m_f64(*(double*)res); break;
     }
