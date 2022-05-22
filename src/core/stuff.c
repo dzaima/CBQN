@@ -10,17 +10,17 @@ bool please_tail_call_err = true;
 bool inErr;
 NORETURN NOINLINE void err(char* s) {
   if (inErr) {
-    printf("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.\n");
+    fputs("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
     #ifdef DEBUG
       __builtin_trap();
     #endif
     exit(1);
   }
   inErr = true;
-  puts(s); fflush(stdout);
-  vm_pstLive(); fflush(stdout);
-  print_vmStack(); fflush(stdout);
-  puts("CBQN interpreter entered unexpected state, exiting.");
+  fputs(s, stderr); fflush(stderr);
+  vm_pstLive(); fflush(stderr); fflush(stdout);
+  print_vmStack(); fflush(stderr);
+  fputs("CBQN interpreter entered unexpected state, exiting.", stderr);
   #ifdef DEBUG
     __builtin_trap();
   #endif
@@ -132,7 +132,7 @@ void fprint(FILE* f, B x) {
     NUM_FMT_BUF(buf, x.f);
     fprintf(f, "%s", buf);
   } else if (isC32(x)) {
-    if ((u32)x.u>=32) { fprintf(f, "'"); printUTF8((u32)x.u); fprintf(f, "'"); }
+    if ((u32)x.u>=32) { fprintf(f, "'"); fprintUTF8(f, (u32)x.u); fprintf(f, "'"); }
     else if((u32)x.u>15) fprintf(f, "\\x%x", (u32)x.u);
     else fprintf(f, "\\x0%x", (u32)x.u);
   } else if (isVal(x)) {
@@ -236,7 +236,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
   while (*p != 0) { c = *p++;
     if (c!='%') continue;
     if (lp!=p-1) AJOIN(fromUTF8(lp, p-1-lp));
-    switch(c = *p++) { default: printf("Unknown format character '%c'", c); UD;
+    switch(c = *p++) { default: printf("Unknown format character '%c'", c); err(""); UD;
       case 'R': {
         B b = va_arg(a, B);
         if (isNum(b)) AFMT("%f", o2f(b));
@@ -831,15 +831,15 @@ void   g_pst(void) { vm_pstLive(); }
 
 #ifdef DEBUG
   #ifdef OBJ_COUNTER
-    #define PRINT_ID(X) printf("Object ID: "N64u"\n", (X)->uid)
+    #define PRINT_ID(X) fprintf(stderr, "Object ID: "N64u"\n", (X)->uid)
   #else
     #define PRINT_ID(X)
   #endif
   NOINLINE Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       PRINT_ID(x);
-      printf("bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stdout);
-      print(tag(x,OBJ_TAG)); putchar('\n'); fflush(stdout);
+      fprintf(stderr, "bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stderr);
+      fprint(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
       err("");
     }
     if (TIv(x,isArr)) {
@@ -858,15 +858,15 @@ void   g_pst(void) { vm_pstLive(); }
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
     if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
-      printf("bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
+      fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
       PRINT_ID(v(x));
-      print(x);
+      fprint(stderr, x);
       err("\n");
     }
     return x;
   }
   NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]) {
-    printf("%s:%d: %s: Assertion `%s` failed.\n", file, line, fn, expr);
+    fprintf(stderr, "%s:%d: %s: Assertion `%s` failed.\n", file, line, fn, expr);
     err("");
   }
 #endif
@@ -874,27 +874,27 @@ void   g_pst(void) { vm_pstLive(); }
   static void warn_ln(B x) {
     if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", a(x)->ia, eltype_repr(TI(x,elType)), x);
     else {
-      printf("atom: ");
-      printRaw(x = bqn_fmt(inc(x))); dec(x);
-      putchar('\n');
+      fprintf(stderr, "atom: ");
+      fprintRaw(stderr, x = bqn_fmt(inc(x))); dec(x);
+      fputc('\n', stderr);
     }
   }
   void warn_slow1(char* s, B x) {
     if (isArr(x) && a(x)->ia<100) return;
-    printf("slow %s: ", s); warn_ln(x);
-    fflush(stdout);
+    fprintf(stderr, "slow %s: ", s); warn_ln(x);
+    fflush(stderr);
   }
   void warn_slow2(char* s, B w, B x) {
     if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
-    printf("slow %s:\n  𝕨: ", s); warn_ln(w);
-    printf("  𝕩: "); warn_ln(x);
-    fflush(stdout);
+    fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
+    fprintf(stderr, "  𝕩: "); warn_ln(x);
+    fflush(stderr);
   }
   void warn_slow3(char* s, B w, B x, B y) {
     if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
-    printf("slow %s:\n  𝕨: ", s); warn_ln(w);
-    printf("  𝕩: "); warn_ln(x);
-    printf("  f: "); warn_ln(y);
-    fflush(stdout);
+    fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
+    fprintf(stderr, "  𝕩: "); warn_ln(x);
+    fprintf(stderr, "  f: "); warn_ln(y);
+    fflush(stderr);
   }
 #endif
