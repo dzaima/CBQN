@@ -286,7 +286,8 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
       myWidth = sizeof(void*);
       if (c0=='*' && (0==*c || ':'==*c)) {
         ro = m_c32(sty_ptr);
-        parseRepr = true;
+        parseRepr = !inPtr;
+        canRetype = inPtr;
       } else {
         if (c0=='&') mut = true;
         BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_ptr, 1);
@@ -437,7 +438,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
     if (t->ty==cty_ptr) { // *any / &any
       pos = ffiTmpAA(sizeof(void*));
       B e = t->a[0].o;
-      if (!isC32(e)) thrM("FFI: Nested pointers unimplemented");
+      if (!isC32(e)) thrM("FFI: Complex pointer elements NYI");
       inc(c);
       B cG;
       if (!isArr(c)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cu(e)]);
