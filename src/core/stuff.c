@@ -17,10 +17,10 @@ NORETURN NOINLINE void err(char* s) {
     exit(1);
   }
   inErr = true;
-  fputs(s, stderr); fflush(stderr);
+  fputs(s, stderr); fputc('\n', stderr); fflush(stderr);
   vm_pstLive(); fflush(stderr); fflush(stdout);
   print_vmStack(); fflush(stderr);
-  fputs("CBQN interpreter entered unexpected state, exiting.", stderr);
+  fputs("CBQN interpreter entered unexpected state, exiting.\n", stderr);
   #ifdef DEBUG
     __builtin_trap();
   #endif
