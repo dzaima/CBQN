@@ -22,7 +22,7 @@ static BQNV makeX(B x) {
 void bqn_free(BQNV v) {
   dec(getB(v));
 }
-static void freeTagged (BQNV v) { }
+static void freeTagged(BQNV v) { }
 #define DIRECT_BQNV 1
 
 double   bqn_toF64 (BQNV v) { double   r = o2fu(getB(v)); freeTagged(v); return r; }
@@ -444,7 +444,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
       if (!isArr(c)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cu(e)]);
       usz ia = a(c)->ia;
       bool mut = t->a[0].mutPtr;
-      switch(o2cu(e)) { default: thrF("FFI: Unimplemented pointer to \"%S\"", sty_names[o2cu(e)]);
+      switch(o2cu(e)) { default: thrF("FFI: \"*%S\" argument type NYI", sty_names[o2cu(e)]);
         case sty_i8:  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
         case sty_i16: cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
         case sty_i32: cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
