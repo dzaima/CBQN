@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "../../src/ffi.h"
+#include "../../include/bqnffi.h"
 
 void do_nothing() { }
 
