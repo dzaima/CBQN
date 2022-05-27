@@ -5,7 +5,7 @@
 #include "ns.h"
 #include "builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(mmap)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
@@ -652,6 +652,7 @@ void base_init() { // very first init function
   TIi(t_customObj,freeO) = customObj_freeO;
   TIi(t_customObj,freeF) = customObj_freeF;
   TIi(t_customObj,visit) = customObj_visit;
+  TIi(t_arbObj,visit) = noop_visit;
   
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
   

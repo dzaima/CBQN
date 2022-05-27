@@ -29,7 +29,10 @@ typedef struct TStack {
 #define TSFREE(N) mm_free((Value*)N##_o);
 #define TSUPD(N,AM) { N##_o = ts_e(N##_o, N##_e, AM); N = (void*)N##_o->data; }
 #define TSADD(N,X) { if (N##_o->size==N##_o->cap) TSUPD(N, 1); N[N##_o->size++] = X; }
-#define TSADDA(N,P,AM) { u64 n=AM; if(N##_o->size+n>N##_o->cap) TSUPD(N, n); memcpy(N+N##_o->size,P,n*N##_e); N##_o->size+= n; }
+#define TSADDA(N,P,AM) { u64 n_=(AM); if(N##_o->size+n_>N##_o->cap) TSUPD(N, n_); memcpy(N+N##_o->size,P,n_*N##_e); N##_o->size+= n_; }
+#define TSADDAU(N,AM) { u64 n_=(AM); if(N##_o->size+n_>N##_o->cap) TSUPD(N, n_); N##_o->size+= n_; }
 #define TSFREEP(N) mm_free((void*)RFLD(N, TStack, data));
 #define TSSIZE(N) (N##_o->size)
 TStack* ts_e(TStack* o, u32 elsz, u64 am);
+
+#define ARBOBJ(SZ) (TAlloc*)mm_alloc(sizeof(TAlloc)+(SZ), t_arbObj)

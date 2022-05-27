@@ -10,3 +10,6 @@ perf.*
 /Singeli
 /local/
 CBQNHeapDump
+/test/ffi/ffiTest.o
+/test/ffi/test.got
+/test/ffi/lib.so

@@ -24,3 +24,4 @@ make f='-DNO_RT -DPRECOMP'    c && ./BQN        || exit
 make f='-DLOG_GC'             c && ./BQN -p 2+2 || exit
 make f='-DWRITE_ASM'          c && ./BQN -p 2+2 || exit
 make f='-DUSE_PERF'           c && ./BQN -p 2+2 || exit
+make f='-DUSZ_64'             c && ./BQN -p 2+2 || exit

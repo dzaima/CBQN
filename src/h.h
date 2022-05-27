@@ -39,6 +39,9 @@
 #ifndef RANDSEED
   #define RANDSEED 0   // random seed used to make •rand (0 for using time)
 #endif
+#ifndef FFI
+  #define FFI 2
+#endif
 
 // #define HEAP_VERIFY  // enable usage of heapVerify()
 // #define ALLOC_STAT   // store basic allocation statistics
@@ -135,6 +138,13 @@ typedef double   f64;
 #define N64x "%"SCNx64
 #define N64d "%"SCNd64
 #define N64u "%"SCNu64
+#if __clang__
+  #define NOUNROLL _Pragma("clang loop unroll(disable)") _Pragma("clang loop vectorize(disable)")
+#elif __GNUC__
+  #define NOUNROLL _Pragma("GCC unroll 1")
+#else
+  #define NOUNROLL
+#endif
 
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)
@@ -212,11 +222,11 @@ typedef union B {
   /*22*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
   /*31*/ F(bitarr) \
   \
-  /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) \
-  /*38*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*46*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
+  /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
+  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
+  /*48*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
   \
-  /*49*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*51*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,

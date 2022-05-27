@@ -19,10 +19,7 @@ u64 alSize;
 
 FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   c->mmInfo = MMI(to);
-  #ifdef __clang__
-  #pragma clang loop unroll(disable) // at least n repetitions happen with probability 2^-n, so unrolling is kind of stupid
-  #endif
-  while (from != to) {
+  NOUNROLL while (from != to) {
     from--;
     EmptyValue* b = (EmptyValue*) (BSZ(from) + (u8*)c);
     b->type = t_empty;
