@@ -5,7 +5,14 @@ f ↩ "lib.so" •FFI ""‿"do_nothing" ⋄ •Show F ⟨⟩
 
 Section "# ""a"""
 f ↩ "lib.so" •FFI "a"‿"timesTen"‿"a" ⋄ •Show F ⟨↕10⟩
-bind ← "lib.so" •FFI "a"‿"bind_add"‿">a" ⋄ g ← Bind 4 ⋄ •Show G 123
+f ↩ "lib.so" •FFI "a"‿"readAtoms"‿"a"‿"a" ⋄ •Show F ⟨÷5 ⋄ '𝕨'⟩
+f ↩ "lib.so" •FFI "a"‿"readTyped"‿">a" ⋄ •Show F (10×↕7) + (4⥊<↕10)∾3⥊<@+↕10
+f ↩ "lib.so" •FFI "a"‿"getShape"‿">a" ⋄ •Show F¨ {0⥊˜⌽⍟𝕩↕𝕩}¨ ↕5
+f ↩ "lib.so" •FFI "a"‿"evalBQN"‿">a" ⋄ •Show F "↕5"
+f ↩ "lib.so" •FFI "a"‿"makeArrays" ⋄ •Out∘•Repr¨ F ⟨⟩
+f ↩ "lib.so" •FFI "i32"‿"directAccess"‿">a" ⋄ •Show F "Ai32"•internal.Variation ↕10
+bind ← "lib.so" •FFI "a"‿"bindAdd"‿">a" ⋄ g ← Bind 4 ⋄ •Show G 123
+
 
 Section "# print args"
 f ↩ "lib.so" •FFI ""‿"printArgs"‿"i8"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64" ⋄ •Show F ¯123‿¯12323‿¯212312312‿250‿50000‿3123456789‿π∾÷3

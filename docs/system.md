@@ -8,6 +8,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•ReBQN`      | Supported options: `repl`, `primitives` |
 | `•primitives` | |
 | `•Import`     | |
+| `•FFI`        | see [FFI](#ffi) |
 | `•state`      | |
 | `•args`       | |
 | `•path`       | |
@@ -102,3 +103,9 @@ Namespace of various internal functions. May change at any time.
 | `•internal.Unshare`        | Get a unique, reference count 1 version of the argument; recursively unshares array items, doesn't touch namespaces |
 | `•internal.EEqual`         | exactly equal (NaN equals NaN); 0 and ¯0 aren't equal, but can be made so with the C compile-time flag `-DEEQUAL_NEGZERO` |
 | `•internal.Temp`           | place to test new features or temporarily expose some internal function |
+
+# FFI
+
+Currently, there is no support for structs, nested pointers, or constant-length arrays, aka the only supported types are scalars (e.g. `i8`, `u64`, `*`), pointers to those (e.g. `*i8`, `&u64`), and conversions of either of those (e.g. `u64:i32`, `**:c8`).
+
+Additionally, the `a` type maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
