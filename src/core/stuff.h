@@ -78,7 +78,8 @@ static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   }
 }
 static void shcpy(usz* dst, usz* src, size_t len) {
-  memcpy(dst, src, len*sizeof(usz));
+  // memcpy(dst, src, len*sizeof(usz));
+  NOUNROLL for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
 static usz arr_csz(B x) {
