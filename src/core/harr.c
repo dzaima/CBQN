@@ -8,8 +8,8 @@ B toCells(B x) {
   usz cam = a(x)->sh[0];
   usz csz = arr_csz(x);
   BSS2A slice = TI(x,slice);
-  usz p = 0;
   M_HARR(r, cam)
+  usz p = 0;
   if (rnk(x)==2) {
     for (usz i = 0; i < cam; i++) {
       Arr* s = slice(inc(x), p, csz); arr_shVec(s);
@@ -20,7 +20,7 @@ B toCells(B x) {
     usz cr = rnk(x)-1;
     ShArr* csh = m_shArr(cr);
     usz* xsh = a(x)->sh;
-    for (u64 i = 0; i < cr; i++) csh->a[i] = xsh[i+1];
+    shcpy(csh->a, xsh+1, cr);
     for (usz i = 0; i < cam; i++) {
       Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
       HARR_ADD(r, i, taga(s));
@@ -41,12 +41,12 @@ B toKCells(B x, ur k) {
   ShArr* csh;
   if (cr>1) {
     csh = m_shArr(cr);
-    for (i32 i = 0; i < cr; i++) csh->a[i] = xsh[i+k];
+    shcpy(csh->a, xsh+k, cr);
   }
   
-  usz p = 0;
-  M_HARR(r, cam)
   BSS2A slice = TI(x,slice);
+  M_HARR(r, cam);
+  usz p = 0;
   for (usz i = 0; i < cam; i++) {
     Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
     HARR_ADD(r, i, taga(s));
@@ -54,7 +54,7 @@ B toKCells(B x, ur k) {
   }
   if (cr>1) ptr_dec(csh);
   usz* rsh = HARR_FA(r, k);
-  if (rsh) for (i32 i = 0; i < k; i++) rsh[i] = xsh[i];
+  if (rsh) shcpy(rsh, xsh, k);
   decG(x);
   return HARR_O(r).b;
 }
