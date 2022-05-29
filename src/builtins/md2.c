@@ -210,31 +210,38 @@ static B m2c2(B t, B f, B g, B w, B x) { // consumes w,x
   return r;
 }
 
+static usz check_rank_vec(B g) {
+  if (!isArr(g)) thrM("⎉: Invalid 𝔾 result");
+  usz gia = a(g)->ia;
+  if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
+  SGetU(g)
+  if (TI(g,elType)>=el_f64) for (i32 i = 0; i < gia; i++) {
+    f64 e = o2f(GetU(g,i));
+    if (floor(e)!=e) thrM("⎉: 𝕘 was a fractional number");
+  }
+  return gia;
+}
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
   bool gf = isFun(g);
   if (RARE(gf)) g = c1(g, inc(x));
   if (LIKELY(isNum(g))) {
     kf = o2fu(g);
-  } else if (isArr(g)) {
-    usz gia = a(g)->ia;
-    if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
-    SGetU(g)
-    if (!elNum(TI(g,elType))) for (i32 i = 0; i < gia; i++) o2f(GetU(g,i));
-    kf = GetU(g, gia==2).f;
-  } else thrM("⎉: Invalid 𝔾 result");
+    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
+  } else {
+    usz gia = check_rank_vec(g);
+    SGetU(g); kf = GetU(g, gia==2).f;
+  }
   if (gf) dec(g);
   i32 k = kf;
   
   if (isAtm(x) || rnk(x)==0) {
-    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
   i32 xr = rnk(x);
   usz* xsh = a(x)->sh;
   if (k!=kf) {
-    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
     k = kf>0? 0 : xr;
   } else {
     k = k<0? (k+xr<0? xr : xr-(k+xr)) : (k>xr? 0 : xr-k);
