@@ -17,7 +17,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
     decG(w); decG(x);
     return m_hunit(r);
   }
-  if (rm && !eqShPrefix(a(w)->sh, a(x)->sh, rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+  if (rm && !eqShPart(a(w)->sh, a(x)->sh, rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
   bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
   if (rw|rx && (wr==xr | rm==0)) {

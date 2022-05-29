@@ -1281,7 +1281,7 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
   usz* repsh = a(rep)->sh;
-  if (rnk(rep)==0 || !eqShPrefix(repsh+1, a(x)->sh+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
+  if (rnk(rep)==0 || !eqShPart(repsh+1, a(x)->sh+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
   
   MAKE_MUT(r, xia);
   mut_init(r, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);

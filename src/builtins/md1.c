@@ -225,7 +225,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   
   if (isArr(w)) {
     ur wr = rnk(w); usz* wsh = a(w)->sh; SGet(w)
-    if (wr+1!=xr || !eqShPrefix(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    if (wr+1!=xr || !eqShPart(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
     for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));

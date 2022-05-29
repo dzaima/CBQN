@@ -86,10 +86,10 @@ static usz arr_csz(B x) {
   if (xr<=1) return 1;
   usz* sh = a(x)->sh;
   usz r = 1;
-  for (i32 i = 1; i < xr; i++) r*= sh[i];
+  NOUNROLL for (i32 i = 1; i < xr; i++) r*= sh[i];
   return r;
 }
-static bool eqShPrefix(usz* w, usz* x, ur len) {
+static bool eqShPart(usz* w, usz* x, usz len) {
   return memcmp(w, x, len*sizeof(usz))==0;
 }
 static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
@@ -97,7 +97,7 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   ur xr = rnk(x); usz* xsh = a(x)->sh;
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
-  return eqShPrefix(wsh, xsh, wr);
+  return eqShPart(wsh, xsh, wr);
 }
 
 B bit_sel(B b, B e0, bool h0, B e1, bool h1); // consumes b; h0/h1 represent whether the corresponding element _might_ be in the result (can be true if unknown)

@@ -762,7 +762,7 @@ B bqn_merge(B x) {
   usz rp = 0;
   for (usz i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isArr(c)? (elR!=rnk(c) || !eqShPrefix(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
+    if (isArr(c)? (elR!=rnk(c) || !eqShPart(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
     if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
     else mut_set(r, rp, inc(c));
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
