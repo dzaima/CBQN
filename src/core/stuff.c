@@ -846,9 +846,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
       Arr* a = (Arr*)x;
       if (prnk(x)<=1) assert(a->sh == &a->ia);
       else {
-        u64 shProduct = 1;
-        for (usz i=0; i < prnk(x); i++) shProduct*= a->sh[i];
-        assert(shProduct == a->ia);
+        assert(shProd(a->sh, 0, prnk(x)) == a->ia);
         VALIDATE(tag(shObjP(x),OBJ_TAG));
       }
     }

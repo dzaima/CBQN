@@ -35,8 +35,8 @@ B toKCells(B x, ur k) {
   assert(isArr(x) && k<=rnk(x) && k>=0);
   ur xr = rnk(x); usz* xsh = a(x)->sh;
   ur cr = xr-k;
-  usz cam = 1; for (i32 i = 0; i < k ; i++) cam*= xsh[i];
-  usz csz = 1; for (i32 i = k; i < xr; i++) csz*= xsh[i];
+  usz cam = shProd(xsh, 0, k);
+  usz csz = shProd(xsh, k, xr);
   
   ShArr* csh;
   if (cr>1) {

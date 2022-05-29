@@ -1063,7 +1063,7 @@ B bitcast_impl(B el0, B el1, B x) {
       sh = zsh;
     }
     sh[xr-1]=zl;
-    usz ia=zl; for (usz i=0;i<xr-1;i++)ia*=sh[i]; a(r)->ia=ia;
+    a(r)->ia = zl*shProd(sh, 0, xr-1);
   }
   return r;
 }

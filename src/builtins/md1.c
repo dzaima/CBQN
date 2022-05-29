@@ -388,18 +388,18 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   return r;
 }
 
-#define S_SLICES(X)                    \
-  BSS2A X##_slc = TI(X,slice);         \
-  usz X##_csz = 1;                     \
-  usz X##_cr = rnk(X)-1;               \
-  ShArr* X##_csh;                      \
-  if (X##_cr>1) {                      \
-    X##_csh = m_shArr(X##_cr);         \
-    for (usz i = 0; i < X##_cr; i++) { \
-      usz v = a(X)->sh[i+1];           \
-      X##_csz*= v;                     \
-      X##_csh->a[i] = v;               \
-    }                                  \
+#define S_SLICES(X)            \
+  BSS2A X##_slc = TI(X,slice); \
+  usz X##_csz = 1;             \
+  usz X##_cr = rnk(X)-1;       \
+  ShArr* X##_csh;              \
+  if (X##_cr>1) {              \
+    X##_csh = m_shArr(X##_cr); \
+    NOUNROLL for (usz i = 0; i < X##_cr; i++) { \
+      usz v = a(X)->sh[i+1];   \
+      X##_csz*= v;             \
+      X##_csh->a[i] = v;       \
+    }                          \
   } else if (X##_cr!=0) X##_csz*= a(X)->sh[1];
 
 #define SLICE(X, S) ({ Arr* r_ = X##_slc(inc(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
