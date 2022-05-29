@@ -350,7 +350,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
 
     usz cam = 1; for (usz i =  0; i <  k; i++) {
       usz wl = wsh[i], xl = xsh[i];
-      if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %s axes)", w, x, k);
+      if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", w, x, k);
       cam*= wsh[i];
     }
     usz ext = shProd(zsh,  k, zk);
