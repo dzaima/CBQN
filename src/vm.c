@@ -1232,7 +1232,7 @@ NOINLINE void vm_pstLive() {
 }
 
 
-#if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP
+#if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP && !WASM
 #include <sys/time.h>
 #include <signal.h>
 #define PROFILE_BUFFER (1ULL<<29)
