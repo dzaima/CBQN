@@ -743,8 +743,8 @@ B bqn_merge(B x) {
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
     usz* rsh = arr_shAlloc(r, xr+xfr);
     if (rsh) {
-      memcpy       (rsh   , a(x)->sh,  xr *sizeof(usz));
-      if(xfr)memcpy(rsh+xr, a(xf)->sh, xfr*sizeof(usz));
+      shcpy       (rsh   , a(x )->sh, xr);
+      if(xfr)shcpy(rsh+xr, a(xf)->sh, xfr);
     }
     decG(x); dec(xf);
     return taga(r);
@@ -771,8 +771,8 @@ B bqn_merge(B x) {
   Arr* ra = mut_fp(r);
   usz* rsh = arr_shAlloc(ra, xr+elR);
   if (rsh) {
-    memcpy         (rsh   , a(x)->sh, xr *sizeof(usz));
-    if (elSh)memcpy(rsh+xr, elSh,     elR*sizeof(usz));
+    shcpy         (rsh   , a(x)->sh, xr);
+    if (elSh)shcpy(rsh+xr, elSh,     elR);
   }
   decG(x);
   return withFill(taga(ra),fill);

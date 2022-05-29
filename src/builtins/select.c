@@ -34,7 +34,7 @@ B select_c2(B t, B w, B x) {
     usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
     Arr* r = TI(x,slice)(incG(x), wi*csz, csz);
     usz* sh = arr_shAlloc(r, xr-1);
-    if (sh) memcpy(sh, a(x)->sh+1, (xr-1)*sizeof(usz));
+    if (sh) shcpy(sh, a(x)->sh+1, xr-1);
     decG(x);
     return taga(r);
   }
@@ -144,8 +144,8 @@ B select_c2(B t, B w, B x) {
     Arr* ra = mut_fp(r);
     usz* rsh = arr_shAlloc(ra, rr);
     if (rsh) {
-      memcpy(rsh   , a(w)->sh  ,  wr   *sizeof(usz));
-      memcpy(rsh+wr, a(x)->sh+1, (xr-1)*sizeof(usz));
+      shcpy(rsh   , a(w)->sh  , wr  );
+      shcpy(rsh+wr, a(x)->sh+1, xr-1);
     }
     decG(w); decG(x);
     return withFill(taga(ra),xf);

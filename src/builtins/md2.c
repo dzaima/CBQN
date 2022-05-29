@@ -247,7 +247,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   ShArr* csh;
   if (cr>1) {
     csh = m_shArr(cr);
-    memcpy(csh->a, xsh+k, cr*sizeof(usz));
+    shcpy(csh->a, xsh+k, cr);
   }
   
   
@@ -262,7 +262,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   
   if (cr>1) ptr_dec(csh);
   usz* rsh = HARR_FA(r, k);
-  if (k>1) memcpy(rsh, xsh, k*sizeof(usz));
+  if (k>1) shcpy(rsh, xsh, k);
   
   decG(x);
   return bqn_merge(HARR_O(r).b);

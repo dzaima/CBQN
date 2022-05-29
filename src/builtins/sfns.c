@@ -754,7 +754,7 @@ B join_c1(B t, B x) {
       usz* sh = arr_shAlloc((Arr*)r.c, ir);
       if (sh) {
         sh[0] = 0;
-        memcpy(sh+1, a(xf)->sh+1, sizeof(usz)*(ir-1));
+        shcpy(sh+1, a(xf)->sh+1, ir-1);
       }
       dec(xf);
       return withFill(r.b, xff);
@@ -792,7 +792,7 @@ B join_c1(B t, B x) {
     usz* sh = arr_shAlloc(ra, ir);
     if (sh) {
       sh[0] = cam;
-      memcpy(sh+1, x0sh+1, sizeof(usz)*(ir-1));
+      shcpy(sh+1, x0sh+1, ir-1);
     }
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
@@ -848,7 +848,7 @@ B couple_c1(B t, B x) {
   usz ia = a(x)->ia;
   Arr* r = TI(x,slice)(incG(x),0, ia);
   usz* sh = arr_shAlloc(r, rr+1);
-  if (sh) { sh[0] = 1; memcpy(sh+1, a(x)->sh, rr*sizeof(usz)); }
+  if (sh) { sh[0] = 1; shcpy(sh+1, a(x)->sh, rr); }
   decG(x);
   return taga(r);
 }
@@ -865,7 +865,7 @@ B couple_c2(B t, B w, B x) {
   mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
   usz* sh = arr_shAlloc(ra, wr+1);
-  if (sh) { sh[0]=2; memcpy(sh+1, a(w)->sh, wr*sizeof(usz)); }
+  if (sh) { sh[0]=2; shcpy(sh+1, a(w)->sh, wr); }
   if (!SFNS_FILLS) { decG(w); decG(x); return taga(ra); }
   B rf = fill_both(w, x);
   decG(w); decG(x);
@@ -1156,7 +1156,7 @@ B transp_c1(B t, B x) {
         rsh[0] = w;
         rsh[1] = h;
       } else {
-        memcpy(rsh, xsh+1, (xr-1)*sizeof(usz));
+        shcpy(rsh, xsh+1, xr-1);
         rsh[xr-1] = h;
       }
       decG(x); return qWithFill(p.b, xf);
@@ -1167,7 +1167,7 @@ B transp_c1(B t, B x) {
     rsh[0] = w;
     rsh[1] = h;
   } else {
-    memcpy(rsh, xsh+1, (xr-1)*sizeof(usz));
+    shcpy(rsh, xsh+1, xr-1);
     rsh[xr-1] = h;
   }
   decG(x); return taga(r);

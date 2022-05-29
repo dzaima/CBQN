@@ -86,8 +86,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     r = HARR_O(r).b;
   }
   if (rsh) {
-    memcpy(rsh   , a(w)->sh, wr*sizeof(usz));
-    memcpy(rsh+wr, a(x)->sh, xr*sizeof(usz));
+    shcpy(rsh   , a(w)->sh, wr);
+    shcpy(rsh+wr, a(x)->sh, xr);
   }
   decG(w); decG(x);
   if (EACH_FILLS) return homFil2(f, r, wf, xf);
@@ -435,7 +435,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     mut_fill(fc, 0, xf, csz); dec(xf);
     Arr* ca = mut_fp(fc);
     usz* csh = arr_shAlloc(ca, cr);
-    if (cr>1) memcpy(csh, a(x)->sh+1, cr*sizeof(usz));
+    if (cr>1) shcpy(csh, a(x)->sh+1, cr);
     decG(x);
     
     if (CATCH) return emptyHVec();
@@ -450,7 +450,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     usz* rsh = arr_shAlloc(r, rr);
     if (rr>1) {
       rsh[0] = 0;
-      memcpy(rsh+1, a(rc)->sh, (rr-1)*sizeof(usz));
+      shcpy(rsh+1, a(rc)->sh, rr-1);
     }
     dec(rc);
     return taga(r);

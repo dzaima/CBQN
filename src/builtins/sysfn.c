@@ -1059,7 +1059,7 @@ B bitcast_impl(B el0, B el1, B x) {
     if (shObj(r)->refc>1) {
       shObj(r)->refc--; // won't go to zero as refc>1; preparation for being overwritten by new shape
       usz* zsh = arr_shAlloc(a(r), xr);
-      memcpy(zsh, sh, (xr-1)*sizeof(usz));
+      shcpy(zsh, sh, xr-1);
       sh = zsh;
     }
     sh[xr-1]=zl;
