@@ -273,7 +273,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   return bqn_merge(HARR_O(r).b);
 }
 extern B rt_rank;
-B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
+B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
   bool gf = isFun(g);
   if (RARE(gf)) g = c2(g, inc(w), inc(x));
@@ -289,16 +289,18 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
   ur wr = isAtm(w) ? 0 : rnk(w); ur wc = cell_rank(wr, wf);
   ur xr = isAtm(x) ? 0 : rnk(x); ur xc = cell_rank(xr, xf);
 
+  B r;
   if (wr == wc) {
-    if (gf) dec(g);
     if (xr == xc) {
-      B r = c2(f, w, x);
+      if (gf) dec(g);
+      r = c2(f, w, x);
       return isAtm(r)? m_atomUnit(r) : r;
     } else {
       i32 k = xr - xc;
       usz* xsh = a(x)->sh;
       usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
       usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
+      if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
       ShArr* csh;
       if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
 
@@ -315,15 +317,14 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
       usz* rsh = HARR_FA(r, k);
       if (k>1) shcpy(rsh, xsh, k);
 
-      dec(w); decG(x);
-      return bqn_merge(HARR_O(r).b);
+      dec(w); decG(x); r = HARR_O(r).b;
     }
   } else if (xr == xc) {
-    if (gf) dec(g);
     i32 k = wr - wc;
     usz* wsh = a(w)->sh;
     usz cam = 1; for (usz i = 0; i <  k; i++) cam*= wsh[i];
     usz csz = 1; for (usz i = k; i < wr; i++) csz*= wsh[i];
+    if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
     ShArr* csh;
     if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
 
@@ -340,11 +341,65 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
     usz* rsh = HARR_FA(r, k);
     if (k>1) shcpy(rsh, wsh, k);
 
-    decG(w); dec(x);
-    return bqn_merge(HARR_O(r).b);
+    decG(w); dec(x); r = HARR_O(r).b;
   } else {
-    return m2c2(rt_rank, f, g, w, x);
+    i32 wk = wr - wc; usz* wsh = a(w)->sh;
+    i32 xk = xr - xc; usz* xsh = a(x)->sh;
+    i32 k=wk, zk=xk; if (k>zk) { i32 t=k; k=zk; zk=t; }
+    usz* zsh = wk>xk? wsh : xsh;
+
+    usz cam = 1; for (usz i =  0; i <  k; i++) {
+      usz wl = wsh[i], xl = xsh[i];
+      if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %s axes)", w, x, k);
+      cam*= wsh[i];
+    }
+    usz ext = 1; for (usz i =  k; i < zk; i++) ext*= zsh[i];
+    usz wsz = 1; for (usz i = wk; i < wr; i++) wsz*= wsh[i];
+    usz xsz = 1; for (usz i = xk; i < xr; i++) xsz*= xsh[i];
+    cam *= ext;
+    if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
+
+    ShArr* wcs; if (wc>1) { wcs=m_shArr(wc); shcpy(wcs->a, wsh+wk, wc); }
+    ShArr* xcs; if (xc>1) { xcs=m_shArr(xc); shcpy(xcs->a, xsh+xk, xc); }
+
+    BSS2A wslice = TI(w,slice);
+    BSS2A xslice = TI(x,slice);
+    M_HARR(r, cam);
+    usz wp = 0, xp = 0;
+    #define CELL(wx) \
+      Arr* wx##s = wx##slice(inc(wx), wx##p, wx##sz); \
+      arr_shSetI(wx##s, wx##c, wx##cs); \
+      wx##p+= wx##sz
+    #define F(W,X) HARR_ADD(r, i, c2(f, W, X))
+    if (ext == 1) {
+      for (usz i = 0; i < cam; i++) {
+        CELL(w); CELL(x); F(taga(ws), taga(xs));
+      }
+    } else if (wk < xk) {
+      for (usz i = 0; i < cam; ) {
+        CELL(w); B wb=taga(ws);
+        for (usz e = i+ext; i < e; i++) { CELL(x); F(inc(wb), taga(xs)); }
+        dec(wb);
+      }
+    } else {
+      for (usz i = 0; i < cam; ) {
+        CELL(x); B xb=taga(xs);
+        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), inc(xb)); }
+        dec(xb);
+      }
+    }
+    #undef CELL
+    #undef F
+
+    if (wc>1) ptr_dec(wcs);
+    if (xc>1) ptr_dec(xcs);
+    usz* rsh = HARR_FA(r, zk);
+    if (zk>1) shcpy(rsh, zsh, zk);
+
+    decG(w); decG(x); r = HARR_O(r).b;
   }
+  if (gf) dec(g);
+  return bqn_merge(r);
 }
 
 
