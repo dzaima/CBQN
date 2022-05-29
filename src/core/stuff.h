@@ -90,7 +90,9 @@ static usz arr_csz(B x) {
   return r;
 }
 static bool eqShPart(usz* w, usz* x, usz len) {
-  return memcmp(w, x, len*sizeof(usz))==0;
+  // return memcmp(w, x, len*sizeof(usz))==0;
+  NOUNROLL for (i32 i = 0; i < len; i++) if (w[i]!=x[i]) return false;
+  return true;
 }
 static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   ur wr = rnk(w); usz* wsh = a(w)->sh;
