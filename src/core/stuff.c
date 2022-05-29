@@ -827,7 +827,7 @@ void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
 void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); print(r); dec(r); putchar(10); fflush(stdout); }
 void   g_pv(void* x) { print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); }
 void   g_iv(void* x) { B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); print(r); dec(r); putchar(10); fflush(stdout); }
-void   g_pst(void) { vm_pstLive(); }
+void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #ifdef DEBUG
   #ifdef OBJ_COUNTER

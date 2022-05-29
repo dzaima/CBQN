@@ -218,9 +218,10 @@ extern Env* envEnd;
 extern u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
 static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr+1==envEnd) thrM("Stack overflow");
-  envCurr++;
-  envCurr->sc = sc;
-  envCurr->pos = (u64)bc;
+  Env* e = envCurr+1;
+  e->sc = sc;
+  e->pos = (u64)bc;
+  envCurr = e;
 }
 static inline void popEnv() {
   assert(envCurr>=envStart);
