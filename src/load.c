@@ -121,7 +121,7 @@ Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B s
 }
 #else
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
-  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, bi_N, NULL);
+  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_str8l(name), NULL);
 }
 #endif
 

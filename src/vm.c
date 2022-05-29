@@ -1235,7 +1235,7 @@ NOINLINE void vm_pstLive() {
 #if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP && !WASM
 #include <sys/time.h>
 #include <signal.h>
-#define PROFILE_BUFFER (1ULL<<29)
+#define PROFILE_BUFFER (1ULL<<25)
 
 typedef struct Profiler_ent {
   Comp* comp;
@@ -1330,22 +1330,24 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
     usz bcPos = c->bcPos;
     Comp* comp = c->comp;
     B path = comp->path;
-    if (!q_N(path) && !q_N(comp->src)) {
-      i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
-      if (idx == compCount) {
-        compList = vec_addN(compList, tag(comp, OBJ_TAG));
-        i32* rp;
-        usz ia = a(comp->src)->ia;
-        mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
-        for (i32 i = 0; i < ia; i++) rp[i] = 0;
-        compCount++;
-      }
-      B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcPos));
-      // B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcPos));
-      i32* cMap = i32arr_ptr(IGetU(mapList, idx));
-      // for (usz i = cs; i <= ce; i++) cMap[i]++;
-      cMap[cs]++;
+    i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
+    if (idx == compCount) {
+      compList = vec_addN(compList, tag(comp, OBJ_TAG));
+      i32* rp;
+      usz ia = q_N(comp->src)? 1 : a(comp->src)->ia;
+      mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
+      for (i32 i = 0; i < ia; i++) rp[i] = 0;
+      compCount++;
     }
+    usz cs;
+    if (q_N(comp->src)) cs = 0;
+    else {
+      B inds = IGetU(comp->indices, 0); cs = o2s(IGetU(inds,bcPos));
+      // B inde = IGetU(comp->indices, 1); ce = o2s(IGetU(inde,bcPos));
+    }
+    i32* cMap = i32arr_ptr(IGetU(mapList, idx));
+    // for (usz i = cs; i <= ce; i++) cMap[i]++;
+    cMap[cs]++;
     c++;
   }
   profiler_freeMap(map);
@@ -1364,9 +1366,16 @@ void profiler_displayResults() {
   SGetU(compList) SGetU(mapList)
   for (usz i = 0; i < compCount; i++) {
     Comp* c = c(Comp, GetU(compList, i));
-    i32* m = i32arr_ptr(GetU(mapList, i));
-    if (!q_N(c->src)) {
-      if (q_N(c->path)) printf("unknown:");
+    B mapObj = GetU(mapList, i);
+    i32* m = i32arr_ptr(mapObj);
+    if (q_N(c->src)) {
+      if (q_N(c->path)) printf("(anonymous)");
+      else printRaw(c->path);
+      u64 sum = 0;
+      usz ia = a(mapObj)->ia; for (usz i = 0; i < ia; i++) sum+= m[i];
+      printf(": "N64d" samples\n", sum);
+    } else {
+      if (q_N(c->path)) printf("(anonymous)");
       else printRaw(c->path);
       printf(":\n");
       B src = c->src;
@@ -1378,7 +1387,7 @@ void profiler_displayResults() {
         u32 c = o2cu(GetU(src, i));
         curr+= m[i];
         if (c=='\n' || i==sia-1) {
-          Arr* sl = TI(src,slice)(inc(src), pi, i-pi); arr_shVec(sl);
+          Arr* sl = TI(src,slice)(inc(src), pi, i-pi+(c=='\n'?0:1)); arr_shVec(sl);
           if (curr==0) printf("      │");
           else printf("%6d│", curr);
           printRaw(taga(sl));
