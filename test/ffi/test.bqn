@@ -4,6 +4,7 @@ Section ← {•Out 𝕩∾˜@+10}
 f ↩ "lib.so" •FFI ""‿"do_nothing" ⋄ •Show F ⟨⟩
 
 Section "# ""a"""
+f ↩ "lib.so" •FFI "i32"‿"getType"‿">a" ⋄ •Show F¨ ⟨⟨⟩, 1, '𝕩', +, ¨, ∘, {⇐}⟩
 f ↩ "lib.so" •FFI "a"‿"timesTen"‿"a" ⋄ •Show F ⟨↕10⟩
 f ↩ "lib.so" •FFI "a"‿"readAtoms"‿"a"‿"a" ⋄ •Show F ⟨÷5 ⋄ '𝕨'⟩
 f ↩ "lib.so" •FFI "a"‿"readTyped"‿">a" ⋄ •Show F (10×↕7) + (4⥊<↕10)∾3⥊<@+↕10

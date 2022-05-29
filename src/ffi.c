@@ -30,6 +30,11 @@ uint32_t bqn_toChar(BQNV v) { uint32_t r = o2cu(getB(v)); freeTagged(v); return 
 double   bqn_readF64 (BQNV v) { return o2fu(getB(v)); }
 uint32_t bqn_readChar(BQNV v) { return o2cu(getB(v)); }
 
+B type_c1(B t, B x);
+int bqn_type(BQNV v) {
+  return o2i(type_c1(bi_N, inc(getB(v))));
+}
+
 BQNV bqn_call1(BQNV f, BQNV x) {
   return makeX(c1(getB(f), inc(getB(x))));
 }
@@ -159,7 +164,7 @@ const static u8 typeMap[] = {
   [el_i32] = elt_i32, [el_c32] = elt_c32,
   [el_f64] = elt_f64,
 };
-BQNElType bqn_directType(BQNV a) {
+BQNElType bqn_directArrType(BQNV a) {
   B b = getB(a);
   if (!isArr(b)) return elt_unk;
   return typeMap[TI(b,elType)];

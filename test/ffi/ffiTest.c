@@ -4,6 +4,12 @@
 
 void do_nothing() { }
 
+int32_t getType(BQNV v) {
+  int32_t i = bqn_type(v);
+  bqn_free(v);
+  return i;
+}
+
 BQNV timesTen(BQNV v) {
   size_t len = bqn_bound(v);
   int32_t* buf = malloc(len*4);
@@ -93,7 +99,7 @@ BQNV makeArrays() {
 }
 
 int32_t directAccess(BQNV x) {
-  BQNElType e = bqn_directType(x);
+  BQNElType e = bqn_directArrType(x);
   uint32_t res = 0;
   if (e==elt_i32) {
     size_t bound = bqn_bound(x);

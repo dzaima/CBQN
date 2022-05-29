@@ -4,6 +4,7 @@
   bqn_toChar;
   bqn_readF64;
   bqn_readChar;
+  bqn_type;
   bqn_call1;
   bqn_call2;
   bqn_eval;
@@ -41,7 +42,7 @@
   bqn_makeUTF8Str;
   bqn_makeBoundFn1;
   bqn_makeBoundFn2;
-  bqn_directType;
+  bqn_directArrType;
   bqn_directI8;
   bqn_directI16;
   bqn_directI32;
