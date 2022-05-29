@@ -1286,7 +1286,7 @@ static bool setTimer(i64 us) {
 }
 
 void* profiler_makeMap();
-i32 profiler_index(void* mapRaw, B comp);
+i32 profiler_index(void** mapRaw, B comp);
 void profiler_freeMap(void* mapRaw);
 
 bool profiler_alloc() {

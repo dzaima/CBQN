@@ -350,14 +350,14 @@ void load_init() { // very last init function
     #ifndef ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-    Block* runtime0_b = load_compImport("r0.bqn",
+    Block* runtime0_b = load_compImport("(self-hosted runtime0)",
       #include "gen/runtime0"
     );
     B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
     B* runtime_0 = toHArr(r0r)->a;
     #endif
     
-    Block* runtime_b = load_compImport("r1.bqn",
+    Block* runtime_b = load_compImport("(self-hosted runtime1)",
       #include "gen/runtime1"
     );
     
@@ -458,7 +458,7 @@ void load_init() { // very last init function
   #else // use compiler
     B prevAsrt = runtime[n_asrt];
     runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
-    Block* comp_b = load_compImport("c.bqn",
+    Block* comp_b = load_compImport("(compiler)",
       #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
@@ -469,7 +469,7 @@ void load_init() { // very last init function
     
     
     #if FORMATTER
-    Block* fmt_b = load_compImport("f.bqn",
+    Block* fmt_b = load_compImport("(formatter)",
       #include "gen/formatter"
     );
     B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
