@@ -1268,6 +1268,55 @@ B slash_ucw(B t, B o, B w, B x) {
   return mut_fcd(r, x);
 }
 
+static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
+  usz xia = a(x)->ia;
+  usz csz = arr_csz(x);
+  usz tk = csz*am; // taken element count
+  usz lv = xia-tk; // elements left alone
+  
+  Arr* arg = TI(x,slice)(inc(x), wi<0? lv : 0, tk);
+  usz* ash = arr_shAlloc(arg, xr);
+  if (ash) { ash[0] = am; shcpy(ash+1, a(x)->sh+1, xr-1); }
+  
+  B rep = c1(o, taga(arg));
+  if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
+  usz* repsh = a(rep)->sh;
+  if (rnk(rep)==0 || !eqShPrefix(repsh+1, a(x)->sh+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
+  
+  MAKE_MUT(r, xia);
+  mut_init(r, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
+  if (wi<0) {
+    mut_copyG(r, 0, x, 0, lv);
+    mut_copyG(r, lv, rep, 0, tk);
+  } else {
+    mut_copyG(r, 0, rep, 0, tk);
+    mut_copyG(r, tk, x, tk, lv);
+  }
+  
+  dec(rep);
+  return mut_fcd(r, x);
+}
+
+B take_ucw(B t, B o, B w, B x) {
+  if (!isF64(w)) return def_fn_ucw(t, o, w, x);
+  i64 wi = o2i64(w);
+  u64 am = wi<0? -wi : wi;
+  if (isAtm(x)) x = m_vec1(x);
+  ur xr = rnk(x); if (xr==0) xr = 1;
+  if (am>a(x)->sh[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ 𝕨, %H ≡ ≢𝕩)", wi, x);
+  return takedrop_ucw(wi, o, am, x, xr);
+}
+
+B drop_ucw(B t, B o, B w, B x) {
+  if (!isF64(w)) return def_fn_ucw(t, o, w, x);
+  i64 wi = o2i64(w);
+  u64 am = wi<0? -wi : wi;
+  if (isAtm(x)) x = m_vec1(x);
+  ur xr = rnk(x); if (xr==0) xr = 1;
+  usz cam = a(x)->sh[0];
+  if (am>cam) am = cam;
+  return takedrop_ucw(-wi, o, cam-am, x, xr);
+}
 
 static B shape_uc1_t(B r, usz ia) {
   if (!isArr(r) || rnk(r)!=1 || a(r)->ia!=ia) thrM("𝔽⌾⥊: 𝔽 changed the shape of the argument");
@@ -1298,5 +1347,7 @@ void sfns_init() {
   c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
   c(BFn,bi_shape)->uc1 = shape_uc1;
   c(BFn,bi_transp)->uc1 = transp_uc1;
+  c(BFn,bi_take)->ucw = take_ucw;
+  c(BFn,bi_drop)->ucw = drop_ucw;
   c(BFn,bi_slash)->im = slash_im;
 }
