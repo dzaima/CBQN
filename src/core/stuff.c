@@ -150,7 +150,7 @@ void fprint(FILE* f, B x) {
   }
   else if (isVar(x)) fprintf(f, "(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
   else if (isExt(x)) fprintf(f, "(extvar d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
-  else if (x.u==bi_N.u) fprintf(f, "·");
+  else if (x.u==bi_N.u) fprintf(f, "(native ·)");
   else if (x.u==bi_optOut.u) fprintf(f, "(value optimized out)");
   else if (x.u==bi_noVar.u) fprintf(f, "(unset variable placeholder)");
   else if (x.u==bi_okHdr.u) fprintf(f, "(accepted SETH placeholder)");

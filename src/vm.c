@@ -996,7 +996,7 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   #if NO_MMAP
   void* mem = calloc(sz+ps, 1);
   #else
-  void* mem = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0);
+  void* mem = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (*curr == MAP_FAILED) err("Failed to allocate stack");
   #endif
   *curr = *start = mem;
@@ -1230,6 +1230,180 @@ NOINLINE void vm_pst(Env* s, Env* e) { // e not included
 NOINLINE void vm_pstLive() {
   vm_pst(envStart, envCurr+1);
 }
+
+
+#if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP
+#include <sys/time.h>
+#include <signal.h>
+#define PROFILE_BUFFER (1ULL<<29)
+
+typedef struct Profiler_ent {
+  Comp* comp;
+  usz bcPos;
+} Profiler_ent;
+Profiler_ent* profiler_buf_s;
+Profiler_ent* profiler_buf_c;
+Profiler_ent* profiler_buf_e;
+bool profile_buf_full;
+void profiler_sigHandler(int x) {
+  Profiler_ent* bn = profiler_buf_c+1;
+  if (RARE(bn>=profiler_buf_e)) {
+    profile_buf_full = true;
+    return;
+  }
+  
+  if (envCurr<envStart) return;
+  Env e = *envCurr;
+  Comp* comp = e.sc->body->bl->comp;
+  i32 bcPos = e.pos&1? ((u32)e.pos)>>1 : BCPOS(e.sc->body, (u32*)e.pos);
+  
+  *profiler_buf_c = (Profiler_ent){.comp = ptr_inc(comp), .bcPos = bcPos};
+  profiler_buf_c = bn;
+}
+
+
+
+static bool setHandler(bool b) {
+  struct sigaction act = {};
+  act.sa_handler = b? profiler_sigHandler : SIG_DFL;
+  if (sigaction(SIGALRM/*SIGPROF*/, &act, NULL)) {
+    printf("Failed to set profiling signal handler\n");
+    return false;
+  }
+  return true;
+}
+static bool setTimer(i64 us) {
+  struct itimerval timer;
+  timer.it_value.tv_sec=0;
+  timer.it_value.tv_usec=us;
+  timer.it_interval.tv_sec=0;
+  timer.it_interval.tv_usec=us;
+  if (setitimer(ITIMER_REAL/*ITIMER_PROF*/, &timer, NULL)) {
+    printf("Failed to start sampling timer\n");
+    return false;
+  }
+  return true;
+}
+
+void* profiler_makeMap();
+i32 profiler_index(void* mapRaw, B comp);
+void profiler_freeMap(void* mapRaw);
+
+bool profiler_alloc() {
+  profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  if (profiler_buf_s == MAP_FAILED) {
+    fprintf(stderr, "Failed to allocate profiler buffer\n");
+    return false;
+  }
+  profiler_buf_e = profiler_buf_s+PROFILE_BUFFER;
+  profile_buf_full = false;
+  return true;
+}
+void profiler_free() {
+  munmap(profiler_buf_s, PROFILE_BUFFER);
+}
+
+bool profiler_active;
+bool profiler_start(i64 hz) {
+  i64 us = 999999/hz;
+  profiler_active = true;
+  return setHandler(true) && setTimer(us);
+}
+bool profiler_stop() {
+  if (!profiler_active) return false;
+  profiler_active = false;
+  if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the start of profiling will be shown.\n");
+  return setTimer(0) && setHandler(false);
+}
+
+
+
+usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
+  Profiler_ent* c = profiler_buf_s;
+  
+  B compList = emptyHVec();
+  B mapList = emptyHVec();
+  usz compCount = 0;
+  void* map = profiler_makeMap();
+  
+  while (c!=profiler_buf_c) {
+    usz bcPos = c->bcPos;
+    Comp* comp = c->comp;
+    B path = comp->path;
+    if (!q_N(path) && !q_N(comp->src)) {
+      i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
+      if (idx == compCount) {
+        compList = vec_addN(compList, tag(comp, OBJ_TAG));
+        i32* rp;
+        usz ia = a(comp->src)->ia;
+        mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
+        for (i32 i = 0; i < ia; i++) rp[i] = 0;
+        compCount++;
+      }
+      B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcPos));
+      // B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcPos));
+      i32* cMap = i32arr_ptr(IGetU(mapList, idx));
+      // for (usz i = cs; i <= ce; i++) cMap[i]++;
+      cMap[cs]++;
+    }
+    c++;
+  }
+  profiler_freeMap(map);
+  
+  *compListRes = compList;
+  *mapListRes = mapList;
+  return compCount;
+}
+
+void profiler_displayResults() {
+  printf("Got "N64u" samples\n", (u64)(profiler_buf_c-profiler_buf_s));
+  
+  B compList, mapList;
+  usz compCount = profiler_getResults(&compList, &mapList, true);
+  
+  SGetU(compList) SGetU(mapList)
+  for (usz i = 0; i < compCount; i++) {
+    Comp* c = c(Comp, GetU(compList, i));
+    i32* m = i32arr_ptr(GetU(mapList, i));
+    if (!q_N(c->src)) {
+      if (q_N(c->path)) printf("unknown:");
+      else printRaw(c->path);
+      printf(":\n");
+      B src = c->src;
+      SGetU(src)
+      usz sia = a(src)->ia;
+      usz pi = 0;
+      i32 curr = 0;
+      for (usz i = 0; i < sia; i++) {
+        u32 c = o2cu(GetU(src, i));
+        curr+= m[i];
+        if (c=='\n' || i==sia-1) {
+          Arr* sl = TI(src,slice)(inc(src), pi, i-pi); arr_shVec(sl);
+          if (curr==0) printf("      │");
+          else printf("%6d│", curr);
+          printRaw(taga(sl));
+          printf("\n");
+          ptr_dec(sl);
+          curr = 0;
+          pi = i+1;
+        }
+      }
+    }
+  }
+  dec(compList);
+  dec(mapList);
+}
+#else
+bool profiler_alloc() {
+  printf("Profiler not supported\n");
+  return false;
+}
+bool profiler_start(i64 hz) { return false; }
+bool profiler_stop() { return false; }
+void profiler_free() { thrM("Profiler not supported"); }
+usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) { thrM("Profiler not supported"); }
+void profiler_displayResults() { thrM("Profiler not supported"); }
+#endif
 
 void unwindEnv(Env* envNew) {
   assert(envNew<=envCurr);

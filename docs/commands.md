@@ -10,6 +10,10 @@ Execute the contents of the file as if it were REPL input (but allowing multilin
 
 Execute the expression, but don't print its result.
 
+## `)profile expr` / `)profile@frequency expr`
+
+Profile the expression at the given sampling frequency, or 5000 samples/second by default
+
 ## `)t expr` / `)time expr` / `)t:n expr` / `)time:n expr`
 
 Time the argument expression. `n` specifies the number of times to repeat. Exists to allow not escaping quotes and less overhead for timing very fast & small expressions.

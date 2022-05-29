@@ -339,6 +339,22 @@ B gid2str(i32 n) {
   return r;
 }
 
+void* profiler_makeMap() {
+  return m_b2i(64);
+}
+i32 profiler_index(void** mapRaw, B comp) {
+  H_b2i* map = *(H_b2i**)mapRaw;
+  i32 r;
+  bool had; u64 p = mk_b2i(&map, comp, &had);
+  if (had) r = map->a[p].val;
+  else     r = map->a[p].val = map->pop-1;
+  *(H_b2i**)mapRaw = map;
+  return r;
+}
+void profiler_freeMap(void* mapRaw) {
+  free_b2i((H_b2i*)mapRaw);
+}
+
 
 
 void fun_gcFn() {

@@ -6,7 +6,7 @@
 #define alSize    BN(alSize)
 #ifndef MMAP
   usz getPageSize();
-  #define MMAP(SZ) mmap(NULL, (SZ)+getPageSize(), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANON, -1, 0)
+  #define MMAP(SZ) mmap(NULL, (SZ)+getPageSize(), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
 #endif
 
 typedef struct AllocInfo {

@@ -116,11 +116,11 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
 }
 #include "gen/src"
 #if RT_SRC
-Block* load_compImport(B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_str8l("(precompiled)"), NULL);
+Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
+  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_str8l(name), NULL);
 }
 #else
-Block* load_compImport(B bc, B objs, B blocks, B bodies) { // consumes all
+Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
   return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, bi_N, NULL);
 }
 #endif
@@ -350,14 +350,14 @@ void load_init() { // very last init function
     #ifndef ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-    Block* runtime0_b = load_compImport(
+    Block* runtime0_b = load_compImport("r0.bqn",
       #include "gen/runtime0"
     );
     B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
     B* runtime_0 = toHArr(r0r)->a;
     #endif
     
-    Block* runtime_b = load_compImport(
+    Block* runtime_b = load_compImport("r1.bqn",
       #include "gen/runtime1"
     );
     
@@ -458,7 +458,7 @@ void load_init() { // very last init function
   #else // use compiler
     B prevAsrt = runtime[n_asrt];
     runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
-    Block* comp_b = load_compImport(
+    Block* comp_b = load_compImport("c.bqn",
       #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
@@ -469,7 +469,7 @@ void load_init() { // very last init function
     
     
     #if FORMATTER
-    Block* fmt_b = load_compImport(
+    Block* fmt_b = load_compImport("f.bqn",
       #include "gen/formatter"
     );
     B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);

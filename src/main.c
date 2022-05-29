@@ -38,7 +38,22 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   *e = s;
   return true;
 }
+bool profiler_alloc(void);
+bool profiler_start(i64 hz);
+bool profiler_stop(void);
+void profiler_free(void);
+void profiler_displayResults(void);
 
+i64 readInt(char** p) {
+  char* c = *p;
+  i64 am = 0;
+  while (*c>='0' & *c<='9') {
+    am = am*10 + (*c - '0');
+    c++;
+  }
+  *p = c;
+  return am;
+}
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==10) return;
   if (ln[read-1]==10) ln[--read] = 0;
@@ -46,6 +61,7 @@ void cbqn_runLine0(char* ln, i64 read) {
   B code;
   int output; // 0-no; 1-formatter; 2-internal
   i32 time = 0;
+  i64 profile = -1;
   if (ln[0] == ')') {
     char* cmdS = ln+1;
     char* cmdE;
@@ -60,13 +76,16 @@ void cbqn_runLine0(char* ln, i64 read) {
       code = fromUTF8l(cmdE);
       time = -1;
       output = 0;
+    } else if (isCmd(cmdS, &cmdE, "profile ") || isCmd(cmdS, &cmdE, "profile@")) {
+      char* cpos = cmdE;
+      profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
+      if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
+      if (profile>999999) { printf("Cannot profile with >999999hz frequency\n"); return; }
+      code = fromUTF8l(cmdE);
+      output = 0;
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
-      i64 am = 0;
-      while (*repE>='0' & *repE<='9') {
-        am = am*10 + (*repE - '0');
-        repE++;
-      }
+      i64 am = readInt(&repE);
       if (repE==cmdE) { printf("time command not given repetition count\n"); return; }
       if (am==0) { printf("repetition count was zero\n"); return; }
       code = fromUTF8l(repE);
@@ -187,9 +206,16 @@ void cbqn_runLine0(char* ln, i64 read) {
     else if (t<1e6) printf("%.4gus\n", t/1e3);
     else if (t<1e9) printf("%.4gms\n", t/1e6);
     else            printf("%.5gs\n", t/1e9);
-  } else {
-    res = execBlockInline(block, gsc);
-  }
+  } else if (profile>0) {
+    if (CATCH) { profiler_stop(); profiler_free(); rethrow(); }
+    if (profiler_alloc() && profiler_start(profile)) {
+      res = execBlockInline(block, gsc);
+      profiler_stop();
+      profiler_displayResults();
+      profiler_free();
+    }
+    popCatch();
+  } else res = execBlockInline(block, gsc);
   ptr_dec(block);
   
   if (output) {
