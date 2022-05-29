@@ -82,13 +82,15 @@ static void shcpy(usz* dst, usz* src, size_t len) {
   NOUNROLL for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
+static usz shProd(usz* sh, usz s, usz e) {
+  usz r = 1;
+  NOUNROLL for (i32 i = s; i < e; i++) r*= sh[i];
+  return r;
+}
 static usz arr_csz(B x) {
   ur xr = rnk(x);
   if (xr<=1) return 1;
-  usz* sh = a(x)->sh;
-  usz r = 1;
-  NOUNROLL for (i32 i = 1; i < xr; i++) r*= sh[i];
-  return r;
+  return shProd(a(x)->sh, 1, xr);
 }
 static bool eqShPart(usz* w, usz* x, usz len) {
   // return memcmp(w, x, len*sizeof(usz))==0;

@@ -247,8 +247,8 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   if (Q_BI(f,lt) && a(x)->ia!=0 && rnk(x)>1) return toKCells(x, k);
   
   usz* xsh = a(x)->sh;
-  usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
-  usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
+  usz cam = shProd(xsh, 0, k);
+  usz csz = shProd(xsh, k, xr);
   ShArr* csh;
   if (cr>1) {
     csh = m_shArr(cr);
@@ -298,8 +298,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     } else {
       i32 k = xr - xc;
       usz* xsh = a(x)->sh;
-      usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
-      usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
+      usz cam = shProd(xsh, 0, k);
+      usz csz = shProd(xsh, k, xr);
       if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
       ShArr* csh;
       if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
@@ -322,8 +322,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   } else if (xr == xc) {
     i32 k = wr - wc;
     usz* wsh = a(w)->sh;
-    usz cam = 1; for (usz i = 0; i <  k; i++) cam*= wsh[i];
-    usz csz = 1; for (usz i = k; i < wr; i++) csz*= wsh[i];
+    usz cam = shProd(wsh, 0, k);
+    usz csz = shProd(wsh, k, wr);
     if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
     ShArr* csh;
     if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
@@ -353,9 +353,9 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %s axes)", w, x, k);
       cam*= wsh[i];
     }
-    usz ext = 1; for (usz i =  k; i < zk; i++) ext*= zsh[i];
-    usz wsz = 1; for (usz i = wk; i < wr; i++) wsz*= wsh[i];
-    usz xsz = 1; for (usz i = xk; i < xr; i++) xsz*= xsh[i];
+    usz ext = shProd(zsh,  k, zk);
+    usz wsz = shProd(wsh, wk, wr);
+    usz xsz = shProd(xsh, xk, xr);
     cam *= ext;
     if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
 
