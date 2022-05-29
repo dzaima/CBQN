@@ -210,47 +210,45 @@ static B m2c2(B t, B f, B g, B w, B x) { // consumes w,x
   return r;
 }
 
+static f64 req_whole(f64 f) {
+  if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");
+  return f;
+}
 static usz check_rank_vec(B g) {
   if (!isArr(g)) thrM("⎉: Invalid 𝔾 result");
   usz gia = a(g)->ia;
   if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
   SGetU(g)
-  if (TI(g,elType)>=el_f64) for (i32 i = 0; i < gia; i++) {
-    f64 e = o2f(GetU(g,i));
-    if (floor(e)!=e) thrM("⎉: 𝕘 was a fractional number");
-  }
+  if (TI(g,elType)>=el_f64) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
   return gia;
+}
+static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
+  return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
 }
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
   bool gf = isFun(g);
   if (RARE(gf)) g = c1(g, inc(x));
   if (LIKELY(isNum(g))) {
-    kf = o2fu(g);
-    if (floor(kf)!=kf) thrM("⎉: 𝕘 was a fractional number");
+    kf = req_whole(o2fu(g));
   } else {
     usz gia = check_rank_vec(g);
     SGetU(g); kf = GetU(g, gia==2).f;
   }
   if (gf) dec(g);
-  i32 k = kf;
   
   if (isAtm(x) || rnk(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
   i32 xr = rnk(x);
-  usz* xsh = a(x)->sh;
-  if (k!=kf) {
-    k = kf>0? 0 : xr;
-  } else {
-    k = k<0? (k+xr<0? xr : xr-(k+xr)) : (k>xr? 0 : xr-k);
-  }
+  ur cr = cell_rank(xr, kf);
+  i32 k = xr - cr;
   if (Q_BI(f,lt) && a(x)->ia!=0 && rnk(x)>1) return toKCells(x, k);
   
+  usz* xsh = a(x)->sh;
   usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
   usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
-  ur cr = xr-k;
   ShArr* csh;
   if (cr>1) {
     csh = m_shArr(cr);
@@ -276,7 +274,77 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
 }
 extern B rt_rank;
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; // TODO
-  return m2c2(rt_rank, f, g, w, x);
+  f64 wf, xf;
+  bool gf = isFun(g);
+  if (RARE(gf)) g = c2(g, inc(w), inc(x));
+  if (LIKELY(isNum(g))) {
+    wf = xf = req_whole(o2fu(g));
+  } else {
+    usz gia = check_rank_vec(g);
+    SGetU(g);
+    wf = GetU(g, gia<2?0:gia-2).f;
+    xf = GetU(g, gia-1).f;
+  }
+
+  ur wr = isAtm(w) ? 0 : rnk(w); ur wc = cell_rank(wr, wf);
+  ur xr = isAtm(x) ? 0 : rnk(x); ur xc = cell_rank(xr, xf);
+
+  if (wr == wc) {
+    if (gf) dec(g);
+    if (xr == xc) {
+      B r = c2(f, w, x);
+      return isAtm(r)? m_atomUnit(r) : r;
+    } else {
+      i32 k = xr - xc;
+      usz* xsh = a(x)->sh;
+      usz cam = 1; for (usz i = 0; i <  k; i++) cam*= xsh[i];
+      usz csz = 1; for (usz i = k; i < xr; i++) csz*= xsh[i];
+      ShArr* csh;
+      if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
+
+      BSS2A slice = TI(x,slice);
+      M_HARR(r, cam);
+      usz p = 0;
+      for (usz i = 0; i < cam; i++) {
+        Arr* s = slice(inc(x), p, csz); arr_shSetI(s, xc, csh);
+        HARR_ADD(r, i, c2(f, inc(w), taga(s)));
+        p+= csz;
+      }
+
+      if (xc>1) ptr_dec(csh);
+      usz* rsh = HARR_FA(r, k);
+      if (k>1) shcpy(rsh, xsh, k);
+
+      dec(w); decG(x);
+      return bqn_merge(HARR_O(r).b);
+    }
+  } else if (xr == xc) {
+    if (gf) dec(g);
+    i32 k = wr - wc;
+    usz* wsh = a(w)->sh;
+    usz cam = 1; for (usz i = 0; i <  k; i++) cam*= wsh[i];
+    usz csz = 1; for (usz i = k; i < wr; i++) csz*= wsh[i];
+    ShArr* csh;
+    if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
+
+    BSS2A slice = TI(w,slice);
+    M_HARR(r, cam);
+    usz p = 0;
+    for (usz i = 0; i < cam; i++) {
+      Arr* s = slice(inc(w), p, csz); arr_shSetI(s, wc, csh);
+      HARR_ADD(r, i, c2(f, taga(s), inc(x)));
+      p+= csz;
+    }
+
+    if (wc>1) ptr_dec(csh);
+    usz* rsh = HARR_FA(r, k);
+    if (k>1) shcpy(rsh, wsh, k);
+
+    decG(w); dec(x);
+    return bqn_merge(HARR_O(r).b);
+  } else {
+    return m2c2(rt_rank, f, g, w, x);
+  }
 }
 
 
