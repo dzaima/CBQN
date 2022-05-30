@@ -716,7 +716,7 @@ B take_c2(B t, B w, B x) {
     } else {
       usz* rsh = arr_shAlloc(a, xr); // xr>1, don't have to worry about 0
       rsh[0] = wv<0?-wv:wv;
-      for (i32 i = 1; i < xr; i++) rsh[i] = xsh[i];
+      shcpy(rsh+1, xsh+1, xr-1);
       ptr_dec(shObjS(xsh));
     }
     return taga(a);

@@ -19,7 +19,7 @@ B select_c1(B t, B x) {
   usz ia = shProd(a(x)->sh, 1, xr);
   Arr* r = TI(x,slice)(inc(x), 0, ia);
   usz* sh = arr_shAlloc(r, xr-1);
-  if (sh) for (i32 i = 1; i < xr; i++) sh[i-1] = a(x)->sh[i];
+  if (sh) shcpy(sh, a(x)->sh+1, xr-1);
   decG(x);
   return taga(r);
 }
