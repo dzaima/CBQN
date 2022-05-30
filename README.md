@@ -7,6 +7,7 @@
 1. `make`
     - `make CC=gcc` if you don't have clang installed
     - `make PIE=""` on ARM CPUs (incl. Android & M1)
+    - `make FFI=0` if your system doesn't have libffi (i.e. an error about missing `<ffi.h>` appears)
     - `gmake` on BSDs
     - `make clean` if anything goes bad and you want a clean slate
     - `make [...]; sudo make install` to install into `/usr/local/bin/bqn`; `sudo make uninstall` to uninstall
