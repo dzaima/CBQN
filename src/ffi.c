@@ -676,6 +676,7 @@ B ffiload_c2(B t, B w, B x) {
     if (one[0] && many[0]) thrM("FFI: Multiple arguments for 𝕩 specified, but one has '>'");
     if (one[1] && many[1]) thrM("FFI: Multiple arguments for 𝕨 specified, but one has '>'");
   #else
+    i32 mutCount = 0;
     for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
     (void)tRes;
   #endif
