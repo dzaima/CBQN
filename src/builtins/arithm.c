@@ -71,8 +71,8 @@ B  atan_c1(B t, B x) { if (isF64(x)) return m_f64( atan(x.f)); P1( atan); thrM("
 #undef P1
 
 B lt_c1(B t, B x) { return m_atomUnit(x); }
-B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(rnk(x)                  ); decG(x); return r; }
-B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(rnk(x)==0? 1 : *a(x)->sh); decG(x); return r; }
+B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(rnk(x)   ); decG(x); return r; }
+B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(*a(x)->sh); decG(x); return r; }
 
 
 static B mathNS;
