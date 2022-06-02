@@ -53,13 +53,13 @@ NOINLINE B arr_c2(B t, B w, B x) { return inc(t); }
 
 extern B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
-  B fn = m2_d(inc(rt_under), inc(f), inc(g));
+  B fn = m2_d(incG(rt_under), inc(f), inc(g));
   B r = c1(fn, x);
   decG(fn);
   return r;
 }
 static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
-  B fn = m2_d(inc(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
+  B fn = m2_d(incG(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
   B r = c1(fn, x);
   decG(fn);
   return r;

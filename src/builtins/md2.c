@@ -156,23 +156,11 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
 
 extern B rt_under, bi_before;
 B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
-  if (!isVal(g)) { // ugh idk
-    B fn = m2_d(incG(rt_under), inc(f), inc(g));
-    B r = c1(fn, x);
-    dec(fn);
-    return r;
-  }
-  return TI(g,fn_uc1)(g, f, x);
+  return (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f, x);
 }
 B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
-  if (!isVal(g)) {
-    B fn = m2_d(incG(rt_under), inc(f), inc(g));
-    B r = c2(fn, w, x);
-    dec(fn);
-    return r;
-  }
   B f2 = m2_d(incG(bi_before), c1(g, w), inc(f));
-  B r = TI(g,fn_uc1)(g, f2, x);
+  B r = (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f2, x);
   dec(f2);
   return r;
 }
