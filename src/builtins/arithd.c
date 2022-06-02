@@ -149,12 +149,12 @@
   }
   
   #define GC2i(SYMB, NAME, EXPR, EXTRA1, EXTRA2, BIT, SI_AA, DO_AS, DO_SA) \
-  static NOINLINE B NAME##_c2_arr(B t, B w, B x);                    \
+  NOINLINE B NAME##_c2_arr(B t, B w, B x);                           \
   B NAME##_c2(B t, B w, B x) {                                       \
     if (isF64(w) & isF64(x)) {f64 wv=w.f,xv=x.f;return m_f64(EXPR);} \
     EXTRA1  return NAME##_c2_arr(t,w,x);                             \
   }                                                                  \
-  static B NAME##_c2_arr(B t, B w, B x) {                            \
+  NOINLINE B NAME##_c2_arr(B t, B w, B x) {                          \
     EXTRA2                                                           \
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
@@ -177,7 +177,7 @@
             if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
             else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
           } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
-          decG(w); decG(x); return num_squeeze(r);                     \
+          decG(w); decG(x); return num_squeeze(r);                   \
         }                                                            \
         if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) SI_AA(NAME, i8,base) DOI8 (EXPR,w,wp[i],xp[i],base) } \
         if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) SI_AA(NAME,i16,base) DOI16(EXPR,w,wp[i],xp[i],base) } \
