@@ -269,7 +269,7 @@ void cbqn_evalSrc(char* src, i64 len) {
 int main() {
   repl_init();
 }
-#else
+#elif !CBQN_SHARED
 int main(int argc, char* argv[]) {
   repl_init();
   bool startREPL = argc==1;

@@ -12,4 +12,7 @@ perf.*
 CBQNHeapDump
 /test/ffi/ffiTest.o
 /test/ffi/test.got
+/test/ffi/shared.got
+/test/ffi/sharedTest
 /test/ffi/lib.so
+libcbqn.so
