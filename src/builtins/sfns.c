@@ -996,8 +996,9 @@ B group_c2(B t, B w, B x) {
         case el_bit: case el_B: {
           for (usz i = 0; i < ria; i++) {
             Arr* c = m_fillarrp(len[i]);
-            fillarr_setFill(c, inc(xf));
             c->ia = 0;
+            fillarr_setFill(c, inc(xf));
+            arr_shVec(c);
             rp[i] = taga(c);
           }
           SLOW2("𝕨⊔𝕩", w, x);
@@ -1006,7 +1007,7 @@ B group_c2(B t, B w, B x) {
             i32 n = wp[i];
             if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
           }
-          for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
+          for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i];
           break;
         }
       }
@@ -1040,8 +1041,9 @@ B group_c2(B t, B w, B x) {
       
       for (usz i = 0; i < ria; i++) {
         Arr* c = m_fillarrp(len[i]);
-        fillarr_setFill(c, inc(xf));
         c->ia = 0;
+        fillarr_setFill(c, inc(xf));
+        arr_shVec(c);
         rp[i] = taga(c);
       }
       Arr* rf = m_fillarrp(0); arr_shVec(rf);
@@ -1052,7 +1054,7 @@ B group_c2(B t, B w, B x) {
         i64 n = o2i64u(GetU(w, i));
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
-      for (usz i = 0; i < ria; i++) { a(rp[i])->ia = len[i]; arr_shVec(a(rp[i])); }
+      for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i];
       decG(w); decG(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     }
