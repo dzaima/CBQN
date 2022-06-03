@@ -613,10 +613,10 @@ Nvm_res m_nvm(Body* body) {
         break;
       case MD1C: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_MD1C); break; // (B f,B m,      u32* bc)
       case MD2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_MD2C); break; // (B f,B m, B g, u32* bc)
-      case MD2R: TOPp; GET(R_A1,1,0);                               CCALL(i_MD2R); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
-      case TR2D: TOPp; GET(R_A1,1,0);                               CCALL(i_TR2D); break; // (B g,     B h)
-      case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3D); break; // (B f,B g, B h)
-      case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,0);                CCALL(i_TR3O); break; // (B f,B g, B h)
+      case MD2R: TOPp; GET(R_A1,1,1);                               CCALL(i_MD2R); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
+      case TR2D: TOPp; GET(R_A1,1,1);                               CCALL(i_TR2D); break; // (B g,     B h)
+      case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3D); break; // (B f,B g, B h)
+      case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3O); break; // (B f,B g, B h)
       case VARM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
       case VARO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
@@ -648,8 +648,8 @@ Nvm_res m_nvm(Body* body) {
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case SETCv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCv); NORES(1); break; } // (B f,      Scope* sc, u32 p, u32* bc)
       case FLDO: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDO); break; // (B, u32 p, Scope* sc)
-      case ALIM: TOPp; IMM(R_A1,*bc++); CCALL(i_ALIM); break; // (B, u32 l)
-      case VFYM: TOPp;                  CCALL(i_VFYM); break; // (B)
+      case ALIM: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); CCALL(i_ALIM); break; // (B, u32 l)
+      case VFYM: TOPp; GET(R_A1,0,2);   CCALL(i_VFYM); break; // (B)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;

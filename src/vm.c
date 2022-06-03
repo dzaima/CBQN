@@ -679,10 +679,10 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       
       case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
-      case MD2R: {     P(m)P(g)                 ADD(m2_h  (m,  g)); break; }
-      case TR2D: {     P(g)P(h)                 ADD(m_atop(  g,h)); break; }
-      case TR3D: { P(f)P(g)P(h)                 ADD(m_fork(f,g,h)); break; }
-      case TR3O: { P(f)P(g)P(h)
+      case MD2R: {     P(m)P(g) GS_UPD;         ADD(m2_h  (m,  g)); break; }
+      case TR2D: {     P(g)P(h) GS_UPD;         ADD(m_atop(  g,h)); break; }
+      case TR3D: { P(f)P(g)P(h) GS_UPD;         ADD(m_fork(f,g,h)); break; }
+      case TR3O: { P(f)P(g)P(h) GS_UPD;
         if (q_N(f)) { ADD(m_atop(g,h)); dec(f); }
         else ADD(m_fork(f,g,h));
         break;
@@ -764,7 +764,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         dec(ns);
         break;
       }
-      case ALIM: { P(o) u32 l = *bc++;
+      case ALIM: { P(o) GS_UPD; u32 l = *bc++;
         FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
         a->obj = o;
         a->p = l;
@@ -775,7 +775,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         if (q_N(PEEK(1))) { GS_UPD; POS_UPD; thrM("Unexpected Nothing (·)"); }
         break;
       }
-      case VFYM: { P(o)
+      case VFYM: { P(o) GS_UPD;
         VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
         a->obj = o;
         ADD(tag(a,OBJ_TAG));
@@ -783,7 +783,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
       
-      case RETD: {
+      case RETD: { GS_UPD;
         ADD(m_ns(ptr_inc(sc), ptr_inc(b->nsDesc)));
         goto end;
       }
