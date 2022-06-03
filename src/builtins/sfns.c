@@ -36,8 +36,9 @@ B m_vec1(B a) {
     else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
   }
   Arr* ra = m_fillarrp(1); arr_shVec(ra);
-  fillarr_setFill(ra, asFill(inc(a)));
   fillarr_ptr(ra)[0] = a;
+  fillarr_setFill(ra, m_f64(0));
+  fillarr_setFill(ra, asFill(inc(a)));
   return taga(ra);
 }
 
