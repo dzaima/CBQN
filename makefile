@@ -50,7 +50,10 @@ OUTPUT := BQN
 
 ifeq ($(i_SHARED),1)
 	i_PIE := -shared
-	SHARED_CCFLAGS := -fPIC -DCBQN_SHARED
+	SHARED_CCFLAGS := -DCBQN_SHARED
+	ifneq ($(no_fPIC),1)
+		SHARED_CCFLAGS += -fPIC
+	endif
 else
 	SHARED_CCFLAGS :=
 endif
