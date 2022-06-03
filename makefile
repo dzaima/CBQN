@@ -30,13 +30,13 @@ heapverifyn-singeli:
 rtverifyn-singeli:
 	@${MAKE} i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
 wasi-o3:
-	@${MAKE} i_singeli=0 i_t=wasi_o3 OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LD_LIBS= i_PIE= i_FFI=0 run_incremental_0
+	@${MAKE} i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LD_LIBS= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
-	@${MAKE} i_singeli=0 i_t=emcc_o3 OUTPUT=BQN.js CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
+	@${MAKE} i_singeli=0 i_t=emcc_o3 i_OUTPUT=BQN.js CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
 shared-o3:
-	@${MAKE} OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
+	@${MAKE} i_OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
 shared-c:
-	@${MAKE} OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
+	@${MAKE} i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 c:
 	@${MAKE} custom=1 run_incremental_0
 
@@ -46,8 +46,11 @@ i_PIE := -no-pie
 i_LD_LIBS := -lm
 i_FFI := 2
 i_singeli := 0
-OUTPUT := BQN
+i_OUTPUT := BQN
 
+ifneq ($(origin OUTPUT),command line)
+	OUTPUT := $(i_OUTPUT)
+endif
 ifeq ($(i_SHARED),1)
 	i_PIE := -shared
 	SHARED_CCFLAGS := -DCBQN_SHARED
