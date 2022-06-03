@@ -5,6 +5,7 @@
 #include "utils/utf.h"
 #include "utils/talloc.h"
 #include "utils/mut.h"
+#include "utils/interrupt.h"
 
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
   #define UNWIND_COMPILER 1
@@ -843,10 +844,9 @@ B mnvmExecBodyInline(Body* body, Scope* sc) {
 
 
 
-#if __has_include(<signal.h>) && REPL_INTERRUPT
-volatile int cbqn_interrupted;
+#if REPL_INTERRUPT
 #include <signal.h>
-bool cbqn_takeInterrupts(bool b);
+volatile int cbqn_interrupted;
 static void interrupt_sigHandler(int x) {
   if (cbqn_interrupted) abort(); // shouldn't happen
   cbqn_takeInterrupts(false);
@@ -863,10 +863,8 @@ NOINLINE NORETURN void cbqn_onInterrupt() {
   cbqn_interrupted = 0;
   thrM("interrupted");
 }
-#define CHECK_INTERRUPT ({ if (cbqn_interrupted) cbqn_onInterrupt(); })
 #else
 bool cbqn_takeInterrupts(bool b) { return false; }
-#define CHECK_INTERRUPT
 #endif
 
 

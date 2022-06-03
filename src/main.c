@@ -4,6 +4,7 @@
 #include "utils/utf.h"
 #include "utils/file.h"
 #include "utils/time.h"
+#include "utils/interrupt.h"
 
 static B replPath;
 static Scope* gsc;
