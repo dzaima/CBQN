@@ -1,4 +1,5 @@
 #include "../utils/file.h"
+#include "../utils/interrupt.h"
 #define AllocInfo BN(AllocInfo)
 #define buckets   BN(buckets)
 #define al        BN(al)
@@ -34,6 +35,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
   if (mm_heapAlloc+sz >= mm_heapMax) thrOOM();
+  CHECK_INTERRUPT;
   mm_heapAlloc+= sz;
   // gc_maybeGC();
   #if NO_MMAP
