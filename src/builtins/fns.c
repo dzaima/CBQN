@@ -306,7 +306,7 @@ i32 getPrevImport(B path) { // -1 for unset, -2 for unfinished
   if (prevImports==NULL) prevImports = m_b2i(16);
   
   bool had; i32 prev = mk_b2i(&prevImports, path, &had);
-  if (had) return prevImports->a[prev].val;
+  if (had && prevImports->a[prev].val!=-1) return prevImports->a[prev].val;
   prevImports->a[prev].val = -2;
   return -1;
 }

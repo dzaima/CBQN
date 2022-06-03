@@ -652,13 +652,21 @@ B import_c1(B d, B x) {
     return IGet(importValList, prevIdx);
   }
   if (prevIdx==-2) thrF("•Import: cyclic import of \"%R\"", path);
+  if (CATCH) {
+    setPrevImport(path, -1);
+    rethrow();
+  }
+  
+  i32 prevLen = a(importValList)->ia;
+  importKeyList = vec_addN(importKeyList, path);
+  importValList = vec_addN(importValList, bi_N);
+  
   B r = bqn_execFile(inc(path), emptySVec());
   
-  i32 prevLen = a(importKeyList)->ia;
-  // print_fmt("caching: %R @ %i\n", path, prevLen);
+  harr_ptr(importValList)[prevLen] = inc(r);
   setPrevImport(path, prevLen);
-  importKeyList = vec_addN(importKeyList, path);
-  importValList = vec_addN(importValList, inc(r));
+  popCatch();
+  
   return r;
 }
 static void sys_gcFn() {
