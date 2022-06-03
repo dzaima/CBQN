@@ -30,6 +30,10 @@ uint32_t bqn_toChar(BQNV v) { uint32_t r = o2cu(getB(v)); freeTagged(v); return 
 double   bqn_readF64 (BQNV v) { return o2fu(getB(v)); }
 uint32_t bqn_readChar(BQNV v) { return o2cu(getB(v)); }
 
+void bqn_init() {
+  cbqn_init();
+}
+
 B type_c1(B t, B x);
 int bqn_type(BQNV v) {
   return o2i(type_c1(bi_N, inc(getB(v))));

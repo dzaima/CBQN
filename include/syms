@@ -1,4 +1,5 @@
 {
+  bqn_init;
   bqn_free;
   bqn_toF64;
   bqn_toChar;

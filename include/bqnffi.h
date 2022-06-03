@@ -8,6 +8,8 @@ typedef uint64_t BQNV;
 extern "C" {
 #endif
 
+void bqn_init(void);
+
 void bqn_free(BQNV v);
 
 double   bqn_toF64 (BQNV v); // includes bqn_free(v)
