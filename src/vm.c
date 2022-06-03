@@ -108,7 +108,7 @@ B listVars(Scope* sc) {
 }
 
 
-Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and nsDesc uninitialized
+Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) {
   Body* body = mm_alloc(fsizeof(Body, varData, i32, vam*2), t_body);
   
   #if JIT_START != -1
@@ -124,6 +124,7 @@ Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC) { // leaves varIDs and 
   body->maxPSC = maxPSC;
   body->bl = NULL;
   body->varAm = (u16)vam;
+  body->nsDesc = NULL;
   return body;
 }
 
@@ -363,7 +364,6 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       if (boIA>2) {
         m_nsDesc(body, imm, ty, finalVam, nameList, GetU(bodyRepr,2), GetU(bodyRepr,3));
       } else {
-        body->nsDesc = NULL;
         for (u64 i = 0; i < vam*2; i++) body->varData[i] = -1;
       }
       

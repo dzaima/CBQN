@@ -150,7 +150,7 @@ Block* bqn_comp(B str, B path, B args); // consumes all
 Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl); // consumes str,path,args
 Block* compile(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src, B path, Scope* sc);
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
-Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varIDs and nsDesc uninitialized
+Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varData uninitialized
 void init_comp(B* set, B prim); // doesn't consume; writes into first 3 elements of set
 B rebqn_exec(B str, B path, B args, B o); // consumes str,path,args
 B listVars(Scope* sc); // doesn't consume; returns bi_N if not accessable
