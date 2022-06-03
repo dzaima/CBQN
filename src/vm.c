@@ -1219,7 +1219,7 @@ native_print:
     usz srcL = a(src)->ia;
     SGetU(src)
     usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
-    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; printUTF8(chr); srcE++; }
+    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; fprintUTF8(stderr, chr); srcE++; }
     if (ce>srcE) ce = srcE;
     cs-= srcS; ce-= srcS;
     fputc('\n', stderr);
