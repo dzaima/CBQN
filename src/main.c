@@ -237,6 +237,7 @@ void cbqn_runLine0(char* ln, i64 read) {
 
 void cbqn_runLine(char* ln, i64 len) {
   if(CATCH) {
+    cbqn_takeInterrupts(false);
     fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n', stderr);
     vm_pst(envCurr+1, envStart+envPrevHeight);
     freeThrown();
@@ -246,7 +247,9 @@ void cbqn_runLine(char* ln, i64 len) {
     gc_maybeGC();
     return;
   }
+  cbqn_takeInterrupts(true);
   cbqn_runLine0(ln, len);
+  cbqn_takeInterrupts(false);
   popCatch();
 }
 

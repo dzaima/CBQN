@@ -843,7 +843,35 @@ B mnvmExecBodyInline(Body* body, Scope* sc) {
 
 
 
+#if __has_include(<signal.h>) && REPL_INTERRUPT
+volatile int cbqn_interrupted;
+#include <signal.h>
+bool cbqn_takeInterrupts(bool b);
+static void interrupt_sigHandler(int x) {
+  if (cbqn_interrupted) abort(); // shouldn't happen
+  cbqn_takeInterrupts(false);
+  cbqn_interrupted = 1;
+}
+bool cbqn_takeInterrupts(bool b) { // returns if succeeded
+  if (!b) cbqn_interrupted = 0; // can be left dangling if nothing caught it
+  struct sigaction act = {};
+  act.sa_handler = b? interrupt_sigHandler : SIG_DFL;
+  return sigaction(SIGINT, &act, NULL) == 0;
+}
+
+NOINLINE NORETURN void cbqn_onInterrupt() {
+  cbqn_interrupted = 0;
+  thrM("interrupted");
+}
+#define CHECK_INTERRUPT ({ if (cbqn_interrupted) cbqn_onInterrupt(); })
+#else
+bool cbqn_takeInterrupts(bool b) { return false; }
+#define CHECK_INTERRUPT
+#endif
+
+
 FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) { // consumes svar contents
+  CHECK_INTERRUPT;
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   assert(ga == blockGivenVars(block));
@@ -1261,9 +1289,7 @@ void profiler_sigHandler(int x) {
   profiler_buf_c = bn;
 }
 
-
-
-static bool setHandler(bool b) {
+static bool setProfHandler(bool b) {
   struct sigaction act = {};
   act.sa_handler = b? profiler_sigHandler : SIG_DFL;
   if (sigaction(SIGALRM/*SIGPROF*/, &act, NULL)) {
@@ -1272,7 +1298,7 @@ static bool setHandler(bool b) {
   }
   return true;
 }
-static bool setTimer(i64 us) {
+static bool setProfTimer(i64 us) {
   struct itimerval timer;
   timer.it_value.tv_sec=0;
   timer.it_value.tv_usec=us;
@@ -1307,13 +1333,13 @@ bool profiler_active;
 bool profiler_start(i64 hz) {
   i64 us = 999999/hz;
   profiler_active = true;
-  return setHandler(true) && setTimer(us);
+  return setProfHandler(true) && setProfTimer(us);
 }
 bool profiler_stop() {
   if (!profiler_active) return false;
   profiler_active = false;
   if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the start of profiling will be shown.\n");
-  return setTimer(0) && setHandler(false);
+  return setProfTimer(0) && setProfHandler(false);
 }
 
 
