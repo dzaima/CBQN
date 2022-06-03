@@ -13,4 +13,8 @@ test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations
 ./BQN test/squeeze.bqn // fuzz-test squeezing; requires a CBQN build with -DEEQUAL_NEGZERO
 ./BQN test/random.bqn // various random tests
 make -C test/ffi // test FFI functionality
+
+legacy utilities:
+  test/readTests.bqn // read mlochbaum/BQN tests in various formats
+  test/precompiled.bqn // run a precompiled expression 
 ```
