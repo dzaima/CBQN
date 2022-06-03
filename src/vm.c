@@ -440,7 +440,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   comp->path = path;
   B nameList;
   if (q_N(tokenInfo)) {
-    nameList = bi_emptyHVec;
+    nameList = inc(bi_emptyHVec);
   } else {
     B t = IGetU(tokenInfo,2);
     nameList = IGet(t,0);
