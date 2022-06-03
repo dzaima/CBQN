@@ -65,7 +65,7 @@ typedef struct AsmStk {
   u8* c; // position for next write
   u8* e; // position past last writable position
 } AsmStk;
-static AsmStk asm_ins;
+static AsmStk asm_ins; // TODO add as root
 static AsmStk asm_rel;
 static i32 asm_depth = 0;
 
@@ -75,11 +75,23 @@ static NOINLINE void asm_allocBuf(AsmStk* stk, u64 sz) {
   stk->c = a->data;
   stk->e = a->data + sz;
 }
+typedef struct AsmRestorer {
+  struct CustomObj;
+  i32 depth;
+  AsmStk ins, rel;
+} AsmRestorer;
+static void asmRestorer_free(Value* v) {
+  asm_depth = ((AsmRestorer*)v)->depth;
+  asm_ins   = ((AsmRestorer*)v)->ins;
+  asm_rel   = ((AsmRestorer*)v)->rel;
+}
 static NOINLINE void asm_init() {
-  if (asm_depth>0) {
-    gsAdd(tag(asm_ins.c-asm_ins.s, RAW_TAG)); gsAdd(tag(asm_ins.e-asm_ins.s, RAW_TAG)); gsAdd(tag(TOBJ(asm_ins.s), OBJ_TAG));
-    gsAdd(tag(asm_rel.c-asm_rel.s, RAW_TAG)); gsAdd(tag(asm_rel.e-asm_rel.s, RAW_TAG)); gsAdd(tag(TOBJ(asm_rel.s), OBJ_TAG));
-  }
+  AsmRestorer* r = customObj(sizeof(AsmRestorer), noop_visit, asmRestorer_free);
+  r->depth = asm_depth;
+  r->ins = asm_ins;
+  r->rel = asm_rel;
+  gsAdd(tag(r, OBJ_TAG));
+  
   asm_depth++;
   asm_allocBuf(&asm_ins, 64);
   asm_allocBuf(&asm_rel, 64);
@@ -89,11 +101,9 @@ static NOINLINE void asm_free() {
   mm_free((Value*) TOBJ(asm_rel.s));
   
   assert(asm_depth>0);
-  asm_depth--;
-  if (asm_depth>0) { u8* t;
-    t = asm_rel.s = c(TAlloc, gsPop())->data;  asm_rel.e = t + (u64)v(gsPop());  asm_rel.c = t + (u64)v(gsPop());
-    t = asm_ins.s = c(TAlloc, gsPop())->data;  asm_ins.e = t + (u64)v(gsPop());  asm_ins.c = t + (u64)v(gsPop());
-  }
+  B v = gsPop();
+  assert(v(v)->type==t_customObj);
+  decG(v);
 }
 
 static NOINLINE void asm_bufDbl(AsmStk* stk, u64 nsz) {
@@ -107,8 +117,6 @@ static NOINLINE void asm_bufDbl(AsmStk* stk, u64 nsz) {
   mm_free((Value*) TOBJ(prevS));
 }
 
-#define ALLOC_ASM(N)
-#define FREE_ASM()
 #define ASM_SIZE (asm_ins.c - asm_ins.s)
 
 

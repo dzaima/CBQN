@@ -515,7 +515,6 @@ Nvm_res m_nvm(Body* body) {
     asm_test();
   #endif
   asm_init();
-  ALLOC_ASM(64);
   Reg r_CS  = R_P0;
   Reg r_SC  = R_P1;
   Reg r_ENV = R_P2;
@@ -691,7 +690,6 @@ Nvm_res m_nvm(Body* body) {
   u64 sz = ASM_SIZE;
   u8* binEx = nvm_alloc(sz);
   asm_write(binEx, sz);
-  FREE_ASM();
   asm_free();
   onJIT(body, binEx, sz);
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
