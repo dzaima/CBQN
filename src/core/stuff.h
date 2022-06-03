@@ -51,8 +51,12 @@ static void arr_shVec(Arr* x) {
   x->sh = &x->ia;
 }
 static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2)
+  if (r>1) {
+    usz* sh = x->sh = m_shArr(r)->a;
+    sprnk(x,r); // is m_shArr OOMs, rank is gonna stay the 0 from the initial write in allocL, which is "safe"
+    return sh;
+  }
   sprnk(x,r);
-  if (r>1) return x->sh = m_shArr(r)->a;
   x->sh = &x->ia;
   return NULL;
 }
