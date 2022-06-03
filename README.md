@@ -37,7 +37,6 @@
   Macros that you may want to define are listed in `src/h.h`.  
 - A specific build type can be cleaned by adding `clean=1` to the make argument list. Similarly, adding `builddir=1` will give you the build directory.
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
-- Test precompiled expression: `some-other-bqn-impl ./precompiled.bqn path/to/mlochbaum/BQN "$PATH" '2+2'`
 - [Some implementation docs](https://github.com/dzaima/CBQN/tree/master/src#readme)
 
 ## License
