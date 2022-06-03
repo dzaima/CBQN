@@ -71,7 +71,10 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), inc(x)));
       r = bqn_merge(HARR_FV(r));
     }
-    if (rnk(r)>1) ptr_dec(shObj(r));
+    if (rnk(r)>1) {
+      srnk(r, 0); // otherwise the following arr_shAlloc failing will result in r->sh dangling
+      ptr_dec(shObj(r));
+    }
     rsh = arr_shAlloc(a(r), rr);
   } else {
     BBB2B fc2 = c2fn(f);
