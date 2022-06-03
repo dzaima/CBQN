@@ -156,27 +156,31 @@ void load_gcFn() {
   mm_visit(rt_invFnReg);
   mm_visit(rt_invFnSwap);
 }
+#define POP_COMP ({ \
+  comp_currPath   = prevPath; \
+  comp_currArgs   = prevArgs; \
+  comp_currSrc    = prevSrc;  \
+  comp_currEnvPos = prevEnvPos; })
+
+#define PUSH_COMP \
+  B   prevPath   = comp_currPath  ; comp_currPath = path; \
+  B   prevArgs   = comp_currArgs  ; comp_currArgs = args; \
+  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;  \
+  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart; \
+  if (CATCH) { POP_COMP; rethrow(); }
+
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
-  B   prevPath   = comp_currPath  ; comp_currPath = path;
-  B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
-  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
-  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
+  PUSH_COMP;
   Block* r = load_compObj(c2(comp, incG(compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
-  comp_currPath   = prevPath;
-  comp_currArgs   = prevArgs;
-  comp_currSrc    = prevSrc;
-  comp_currEnvPos = prevEnvPos;
+  POP_COMP; popCatch();
   return r;
 }
 Block* bqn_comp(B str, B path, B args) { // consumes all
   return bqn_compc(str, path, args, load_comp, load_compArg);
 }
 Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
-  B   prevPath   = comp_currPath  ; comp_currPath = path;
-  B   prevArgs   = comp_currArgs  ; comp_currArgs = args;
-  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;
-  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart;
+  PUSH_COMP;
   B vName = emptyHVec();
   B vDepth = emptyIVec();
   if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
@@ -192,10 +196,7 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
   }
   Block* r = load_compObj(c2(comp, m_hVec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
-  comp_currPath   = prevPath;
-  comp_currArgs   = prevArgs;
-  comp_currSrc    = prevSrc;
-  comp_currEnvPos = prevEnvPos;
+  POP_COMP; popCatch();
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
