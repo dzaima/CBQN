@@ -81,7 +81,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
       if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
       if (profile>999999) { printf("Cannot profile with >999999hz frequency\n"); return; }
-      code = fromUTF8l(cmdE);
+      code = fromUTF8l(cpos);
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
