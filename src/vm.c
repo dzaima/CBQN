@@ -438,18 +438,21 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   comp->indices = indices;
   comp->src = src;
   comp->path = path;
-  HArr* objArr = comp->objs = cpyHArr(objs);
-  usz objAm = objArr->ia;
-  for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
-  comp->blockAm = 0;
   B nameList;
   if (q_N(tokenInfo)) {
     nameList = bi_emptyHVec;
   } else {
     B t = IGetU(tokenInfo,2);
-    nameList = IGetU(t,0);
+    nameList = IGet(t,0);
   }
-  comp->nameList = inc(nameList);
+  comp->nameList = nameList;
+  comp->blockAm = 0;
+  comp->objs = NULL;
+  // and now finally it's safe to allocate stuff
+  HArr* objArr = cpyHArr(objs);
+  comp->objs = objArr;
+  usz objAm = objArr->ia;
+  for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
   
   if (!q_N(src) && !q_N(indices)) {
     if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
@@ -946,7 +949,7 @@ DEF_FREE(block) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
-DEF_FREE(comp)  { Comp*     c = (Comp    *)x; ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
+DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
 DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }

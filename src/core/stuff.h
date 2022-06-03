@@ -164,7 +164,7 @@ bool isPureFn(B x); // doesn't consume
 B bqn_merge(B x); // consumes
 
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
-B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed
+B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
 B num_squeeze(B x); // consumes; see note below
 B chr_squeeze(B x); // consumes; see note below
 // Note that num_squeeze & chr_squeeze don't check for fl_squoze, and unconditionally set it. Thus, don't call it on an array if it could be squeezable by the opposite method.
