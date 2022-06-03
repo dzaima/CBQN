@@ -254,7 +254,16 @@ static BBB2B c2fn(B f) {
     extern u32** actrs;
   #endif
 #endif
-static inline void onAlloc(usz sz, u8 type) {
+
+#ifdef OOM_TEST
+  extern i64 oomTestLeft;
+  NOINLINE NORETURN void thrOOMTest(void);
+#endif
+
+FORCE_INLINE void onAlloc(usz sz, u8 type) {
+  #ifdef OOM_TEST
+    if (--oomTestLeft==0) thrOOMTest();
+  #endif
   #ifdef ALLOC_STAT
     if (!ctr_a) {
       #ifdef ALLOC_SIZES
@@ -272,7 +281,7 @@ static inline void onAlloc(usz sz, u8 type) {
     talloc+= sz;
   #endif
 }
-static inline void onFree(Value* x) {
+FORCE_INLINE void onFree(Value* x) {
   #ifdef ALLOC_STAT
     ctr_f[x->type]++;
   #endif

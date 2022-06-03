@@ -10,7 +10,7 @@ B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
-#if CATCH_ERRORS
+#if CATCH_ERRORS && !BI_CATCH_DISABLED
 extern B lastErrMsg; // sysfn.c
 
 B fillBy_c1(Md2D* d, B x) {
