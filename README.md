@@ -9,6 +9,7 @@
     - `make PIE=""` on ARM CPUs (incl. Android & M1)
     - `make FFI=0` if your system doesn't have libffi (i.e. an error about missing `<ffi.h>` appears)
     - `gmake` on BSDs
+    - For Windows, CBQN works in WSL, and [WinBQN](https://github.com/actalley/WinBQN) provides Cygwin/Msys2 builds.
     - `make clean` if anything goes bad and you want a clean slate
     - `make [...]; sudo make install` to install into `/usr/local/bin/bqn`; `sudo make uninstall` to uninstall
     - If you want to use custom build types but your system doesn't have `shasum`/`sha256sum`, add `force_build_dir=some_identifier`. That identifier will be used to decide on the directory for incremental build object files.
@@ -27,7 +28,9 @@
     - `make debug1` - debug build without parallel compilation. Useful if everything errors, and you don't want error messages of multiple threads to be written at the same time.
     - `make heapverify` - verify that refcounting is done correctly
     - `make o3n-singeli` - a Singeli build, currently only for x86-64 CPUs supporting AVX2
+    - `make shared-o3` - produce the shared library `libcbqn.so`
     - `make c` - a build with no flags, for manual customizing
+    - `make shared-c` - like `make c` but for a shared library
     - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Slower for optimized builds, but may allow some more optimizations
 - For any of the above (especially `make c`), you can add extra flags with `f=...` (and linker flags with `lf=...`), e.g.  
   `make f='-O3 -DSOME_MACRO=whatever -some_other_cc_flag' c`  
