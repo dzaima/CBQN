@@ -871,7 +871,10 @@ B sh_c2(B t, B w, B x) {
   
   // polling mess
   const u64 bufsz = 1024;
-  TALLOC(char, oBuf, bufsz);
+  // TALLOC(char, oBuf, bufsz);
+  u8* oBuf;
+  B oBufObj = m_c8arrv(&oBuf, bufsz);
+  usz* oBufIA = &a(oBufObj)->ia;
   
   pollfd ps[3];
   i32 plen = 0;
@@ -883,8 +886,8 @@ B sh_c2(B t, B w, B x) {
   while (poll(&ps[0], plen - iDone, -1) > 0) {
     shDbg("next poll; revents: out:%d err:%d in:%d\n", ps[0].revents, ps[1].revents, ps[2].revents);
     bool any = false;
-    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; s_out = vec_join(s_out, fromUTF8(oBuf, len)); }
-    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; s_err = vec_join(s_err, fromUTF8(oBuf, len)); }
+    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_out = vec_join(s_out, inc(oBufObj)); }
+    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_err = vec_join(s_err, inc(oBufObj)); }
      if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
@@ -904,7 +907,8 @@ B sh_c2(B t, B w, B x) {
   }
   
   // free output buffer
-  TFREE(oBuf);
+  assert(reusable(oBufObj));
+  mm_free(v(oBufObj));
   // free our ends of pipes
   if (!iDone) { shClose(p_in[1]); TFREE(iBuf); shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
   shClose(p_out[0]);
@@ -914,7 +918,11 @@ B sh_c2(B t, B w, B x) {
   waitpid(pid, &status, 0);
   
   dec(w); dec(x);
-  return m_hVec3(m_i32(WEXITSTATUS(status)), s_out, s_err);
+  B s_outRaw = toC8Any(s_out);
+  B s_errRaw = toC8Any(s_err);
+  B s_outObj = fromUTF8((char*)c8any_ptr(s_outRaw), a(s_outRaw)->ia); dec(s_outRaw);
+  B s_errObj = fromUTF8((char*)c8any_ptr(s_errRaw), a(s_errRaw)->ia); dec(s_errRaw);
+  return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else
 B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
