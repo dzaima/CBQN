@@ -44,6 +44,7 @@ bool profiler_start(i64 hz);
 bool profiler_stop(void);
 void profiler_free(void);
 void profiler_displayResults(void);
+void clearImportCache(void);
 
 i64 readInt(char** p) {
   char* c = *p;
@@ -128,6 +129,9 @@ void cbqn_runLine0(char* ln, i64 read) {
         }
       }
       printf("No such variable found\n");
+      return;
+    } else if (isCmd(cmdS, &cmdE, "clearImportCache ")) {
+      clearImportCache();
       return;
     } else if (isCmd(cmdS, &cmdE, "vars")) {
       B r = listVars(gsc);

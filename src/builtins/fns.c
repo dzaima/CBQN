@@ -314,6 +314,10 @@ void setPrevImport(B path, i32 pos) {
   bool had; i32 prev = mk_b2i(&prevImports, path, &had);
   prevImports->a[prev].val = pos;
 }
+void clearImportCacheMap() {
+  if (prevImports!=NULL) free_b2i(prevImports);
+  prevImports = NULL;
+}
 
 static H_b2i* globalNames;
 static B globalNameList;

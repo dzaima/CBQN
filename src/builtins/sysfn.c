@@ -635,6 +635,7 @@ B import_c2(B d, B w, B x) {
 // defined in fns.c
 i32 getPrevImport(B path);
 void setPrevImport(B path, i32 pos);
+void clearImportCacheMap(void);
 
 static B importKeyList; // exists for GC roots as the hashmap doesn't
 static B importValList;
@@ -676,6 +677,13 @@ static void sys_gcFn() {
   #if CATCH_ERRORS
   mm_visit(lastErrMsg);
   #endif
+}
+void clearImportCache() {
+  if (importKeyList.u!=0) {
+    dec(importKeyList); importKeyList = m_f64(0);
+    dec(importValList); importValList = m_f64(0);
+  }
+  clearImportCacheMap();
 }
 
 
