@@ -49,7 +49,7 @@ BQNV bqn_call2(BQNV f, BQNV w, BQNV x) {
 BQNV bqn_eval(BQNV src) {
   return makeX(bqn_exec(inc(getB(src)), bi_N, bi_N));
 }
-BQNV bqn_evalCStr(char* str) {
+BQNV bqn_evalCStr(const char* str) {
   return makeX(bqn_exec(fromUTF8l(str), bi_N, bi_N));
 }
 

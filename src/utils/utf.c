@@ -19,7 +19,7 @@ static u32 utf8_p(u8* p) {
   }
 }
 
-B fromUTF8(char* s, i64 len) {
+B fromUTF8(const char* s, i64 len) {
   u64 sz = 0;
   i64 j = 0;
   while (true) {
@@ -45,7 +45,7 @@ B fromUTF8(char* s, i64 len) {
   }
 }
 
-B fromUTF8l(char* s) {
+B fromUTF8l(const char* s) {
   return fromUTF8(s, strlen(s));
 }
 

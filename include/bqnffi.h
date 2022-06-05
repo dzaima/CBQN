@@ -25,7 +25,7 @@ BQNV bqn_call2(BQNV f, BQNV w, BQNV x);
 
 // evaluate BQN code in a fresh environment
 BQNV bqn_eval(BQNV src);
-BQNV bqn_evalCStr(char* str); // evaluates the null-terminated UTF8-encoded str; equal to `BQNV s = bqn_makeUTF8Str(str, strlen(str)); result = bqn_eval(s); bqn_free(s);`
+BQNV bqn_evalCStr(const char* str); // evaluates the null-terminated UTF8-encoded str; equal to `BQNV s = bqn_makeUTF8Str(str, strlen(str)); result = bqn_eval(s); bqn_free(s);`
 
 
 // read array data
