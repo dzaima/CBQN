@@ -48,24 +48,24 @@ void bqn_readObjArr(BQNV a, BQNV*     buf);
 // create objects
 BQNV bqn_makeF64(double d);
 BQNV bqn_makeChar(uint32_t c);
-BQNV bqn_makeI8Arr (size_t rank, size_t* shape, int8_t*   data);
-BQNV bqn_makeI16Arr(size_t rank, size_t* shape, int16_t*  data);
-BQNV bqn_makeI32Arr(size_t rank, size_t* shape, int32_t*  data);
-BQNV bqn_makeF64Arr(size_t rank, size_t* shape, double*   data);
-BQNV bqn_makeC8Arr (size_t rank, size_t* shape, uint8_t*  data);
-BQNV bqn_makeC16Arr(size_t rank, size_t* shape, uint16_t* data);
-BQNV bqn_makeC32Arr(size_t rank, size_t* shape, uint32_t* data);
-BQNV bqn_makeObjArr(size_t rank, size_t* shape, BQNV*     data); // frees the taken elements of data
+BQNV bqn_makeI8Arr (size_t rank, const size_t* shape, const int8_t*   data);
+BQNV bqn_makeI16Arr(size_t rank, const size_t* shape, const int16_t*  data);
+BQNV bqn_makeI32Arr(size_t rank, const size_t* shape, const int32_t*  data);
+BQNV bqn_makeF64Arr(size_t rank, const size_t* shape, const double*   data);
+BQNV bqn_makeC8Arr (size_t rank, const size_t* shape, const uint8_t*  data);
+BQNV bqn_makeC16Arr(size_t rank, const size_t* shape, const uint16_t* data);
+BQNV bqn_makeC32Arr(size_t rank, const size_t* shape, const uint32_t* data);
+BQNV bqn_makeObjArr(size_t rank, const size_t* shape, const BQNV*     data); // frees the taken elements of data
 
-BQNV bqn_makeI8Vec (size_t len, int8_t*   data);
-BQNV bqn_makeI16Vec(size_t len, int16_t*  data);
-BQNV bqn_makeI32Vec(size_t len, int32_t*  data);
-BQNV bqn_makeF64Vec(size_t len, double*   data);
-BQNV bqn_makeC8Vec (size_t len, uint8_t*  data);
-BQNV bqn_makeC16Vec(size_t len, uint16_t* data);
-BQNV bqn_makeC32Vec(size_t len, uint32_t* data);
-BQNV bqn_makeObjVec(size_t len, BQNV*     data); // frees the taken elements of data
-BQNV bqn_makeUTF8Str(size_t len, char* str);
+BQNV bqn_makeI8Vec (size_t len, const int8_t*   data);
+BQNV bqn_makeI16Vec(size_t len, const int16_t*  data);
+BQNV bqn_makeI32Vec(size_t len, const int32_t*  data);
+BQNV bqn_makeF64Vec(size_t len, const double*   data);
+BQNV bqn_makeC8Vec (size_t len, const uint8_t*  data);
+BQNV bqn_makeC16Vec(size_t len, const uint16_t* data);
+BQNV bqn_makeC32Vec(size_t len, const uint32_t* data);
+BQNV bqn_makeObjVec(size_t len, const BQNV*     data); // frees the taken elements of data
+BQNV bqn_makeUTF8Str(size_t len, const char* str); // len is the number of chars in str; result item count will be lower if str contains non-ASCII characters
 
 typedef BQNV (*bqn_boundFn1)(BQNV obj, BQNV x);
 typedef BQNV (*bqn_boundFn2)(BQNV obj, BQNV w, BQNV x);

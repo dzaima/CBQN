@@ -89,13 +89,13 @@ BQNV bqn_makeF64(double d) { return makeX(m_f64(d)); }
 BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
 
 
-static usz calcIA(size_t rank, size_t* shape) {
+static usz calcIA(size_t rank, const size_t* shape) {
   if (rank>UR_MAX) thrM("Rank too large");
   usz r = 1;
   NOUNROLL for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
   return r;
 }
-static void copyBData(B* r, BQNV* data, usz ia) {
+static void copyBData(B* r, const BQNV* data, usz ia) {
   for (size_t i = 0; i < ia; i++) {
     BQNV c = data[i];
     #if DIRECT_BQNV
@@ -106,27 +106,27 @@ static void copyBData(B* r, BQNV* data, usz ia) {
     #endif
   }
 }
-#define CPYSH(R) usz* sh = arr_shAlloc(R, r0); \
+#define CPYSH(R) usz* sh = arr_shAlloc((Arr*)(R), r0); \
   if (sh) NOUNROLL for (size_t i = 0; RARE(i < r0); i++) sh[i] = sh0[i];
 
-BQNV bqn_makeI8Arr (size_t r0, size_t* sh0, i8*   data) { usz ia=calcIA(r0,sh0); i8*  rp; Arr* r = m_i8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
-BQNV bqn_makeI16Arr(size_t r0, size_t* sh0, i16*  data) { usz ia=calcIA(r0,sh0); i16* rp; Arr* r = m_i16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
-BQNV bqn_makeI32Arr(size_t r0, size_t* sh0, i32*  data) { usz ia=calcIA(r0,sh0); i32* rp; Arr* r = m_i32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
-BQNV bqn_makeF64Arr(size_t r0, size_t* sh0, f64*  data) { usz ia=calcIA(r0,sh0); f64* rp; Arr* r = m_f64arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*8); return makeX(taga(r)); }
-BQNV bqn_makeC8Arr (size_t r0, size_t* sh0, u8*   data) { usz ia=calcIA(r0,sh0); u8*  rp; Arr* r = m_c8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
-BQNV bqn_makeC16Arr(size_t r0, size_t* sh0, u16*  data) { usz ia=calcIA(r0,sh0); u16* rp; Arr* r = m_c16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
-BQNV bqn_makeC32Arr(size_t r0, size_t* sh0, u32*  data) { usz ia=calcIA(r0,sh0); u32* rp; Arr* r = m_c32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
-BQNV bqn_makeObjArr(size_t r0, size_t* sh0, BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); CPYSH((Arr*)r.c); copyBData(r.a,data,ia); return makeX(r.b); }
+BQNV bqn_makeI8Arr (size_t r0, const size_t* sh0, const i8*   data) { usz ia=calcIA(r0,sh0); i8*  rp; Arr* r = m_i8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
+BQNV bqn_makeI16Arr(size_t r0, const size_t* sh0, const i16*  data) { usz ia=calcIA(r0,sh0); i16* rp; Arr* r = m_i16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
+BQNV bqn_makeI32Arr(size_t r0, const size_t* sh0, const i32*  data) { usz ia=calcIA(r0,sh0); i32* rp; Arr* r = m_i32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
+BQNV bqn_makeF64Arr(size_t r0, const size_t* sh0, const f64*  data) { usz ia=calcIA(r0,sh0); f64* rp; Arr* r = m_f64arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*8); return makeX(taga(r)); }
+BQNV bqn_makeC8Arr (size_t r0, const size_t* sh0, const u8*   data) { usz ia=calcIA(r0,sh0); u8*  rp; Arr* r = m_c8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
+BQNV bqn_makeC16Arr(size_t r0, const size_t* sh0, const u16*  data) { usz ia=calcIA(r0,sh0); u16* rp; Arr* r = m_c16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
+BQNV bqn_makeC32Arr(size_t r0, const size_t* sh0, const u32*  data) { usz ia=calcIA(r0,sh0); u32* rp; Arr* r = m_c32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
+BQNV bqn_makeObjArr(size_t r0, const size_t* sh0, const BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); CPYSH(r.c);       copyBData(r.a,data,ia  ); return makeX(r.b); }
 
-BQNV bqn_makeI8Vec (size_t len, i8*   data) { i8*  rp; B r = m_i8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
-BQNV bqn_makeI16Vec(size_t len, i16*  data) { i16* rp; B r = m_i16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
-BQNV bqn_makeI32Vec(size_t len, i32*  data) { i32* rp; B r = m_i32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
-BQNV bqn_makeF64Vec(size_t len, f64*  data) { f64* rp; B r = m_f64arrv(&rp,len); memcpy(rp,data,len*8); return makeX(r); }
-BQNV bqn_makeC8Vec (size_t len, u8*   data) { u8*  rp; B r = m_c8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
-BQNV bqn_makeC16Vec(size_t len, u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
-BQNV bqn_makeC32Vec(size_t len, u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
-BQNV bqn_makeObjVec(size_t len, BQNV* data) { HArr_p r = m_harrUv(len);      copyBData(r.a,data,len  ); return makeX(r.b); }
-BQNV bqn_makeUTF8Str(size_t len, char* str) { return makeX(fromUTF8(str, len)); }
+BQNV bqn_makeI8Vec (size_t len, const i8*   data) { i8*  rp; B r = m_i8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
+BQNV bqn_makeI16Vec(size_t len, const i16*  data) { i16* rp; B r = m_i16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
+BQNV bqn_makeI32Vec(size_t len, const i32*  data) { i32* rp; B r = m_i32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
+BQNV bqn_makeF64Vec(size_t len, const f64*  data) { f64* rp; B r = m_f64arrv(&rp,len); memcpy(rp,data,len*8); return makeX(r); }
+BQNV bqn_makeC8Vec (size_t len, const u8*   data) { u8*  rp; B r = m_c8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
+BQNV bqn_makeC16Vec(size_t len, const u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
+BQNV bqn_makeC32Vec(size_t len, const u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
+BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len);      copyBData(r.a,data,len  ); return makeX(r.b); }
+BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(fromUTF8(str, len)); }
 
 typedef struct BoundFn {
   struct NFn;
