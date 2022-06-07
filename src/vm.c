@@ -1211,7 +1211,9 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     if (CATCH) goto native_print;
     
     B s = emptyCVec();
-    fprintRaw(stderr, vm_fmtPoint(src, s, comp->path, cs, ce));
+    B msg = vm_fmtPoint(src, s, comp->path, cs, ce);
+    fprintRaw(stderr, msg);
+    dec(msg);
     fputc('\n', stderr);
     popCatch();
     return;
