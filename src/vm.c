@@ -556,6 +556,40 @@ NOINLINE B v_getR(Scope* pscs[], B s) {
   }
 }
 
+FORCE_INLINE Scope* m_scopeI(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars, bool smallInit) { // consumes initVarAm items of initVars
+  Scope* sc = mm_alloc(fsizeof(Scope, vars, B, varAm), t_scope);
+  sc->body = ptr_inc(body);
+  sc->psc = psc; if (psc) ptr_inc(psc);
+  sc->varAm = varAm;
+  sc->ext = NULL;
+  i32 i = 0;
+  if (smallInit) {
+    switch(initVarAm) { default: UD;
+      case 6: sc->vars[5] = initVars[5];
+      case 5: sc->vars[4] = initVars[4];
+      case 4: sc->vars[3] = initVars[3];
+      case 3: sc->vars[2] = initVars[2];
+      case 2: sc->vars[1] = initVars[1];
+      case 1: sc->vars[0] = initVars[0];
+      case 0:;
+    }
+    i = initVarAm;
+  } else {
+    NOUNROLL while (i<initVarAm) { sc->vars[i] = initVars[i]; i++; }
+  }
+  
+  // some bit of manual unrolling, but not too much
+  u32 left = varAm-i;
+  if (left==1) sc->vars[i] = bi_noVar;
+  else if (left>=2) {
+    B* vars = sc->vars+i;
+    NOUNROLL for (u32 i = 0; i < (left>>1); i++) { *(vars++) = bi_noVar; *(vars++) = bi_noVar; }
+    if (left&1) *vars = bi_noVar;
+  }
+  
+  return sc;
+}
+
 FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
   
@@ -564,7 +598,7 @@ FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   i32 ga = blockGivenVars(bl);
   
   for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
-  Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
+  Scope* nsc = m_scopeI(body, sc->psc, body->varAm, ga, sc->vars, true);
   scope_dec(sc);
   return execBodyInlineI(body, nsc, bl);
 }
@@ -822,16 +856,8 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   #undef GS_UPD
 }
 
-Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // consumes initVarAm items of initVars
-  Scope* sc = mm_alloc(fsizeof(Scope, vars, B, varAm), t_scope);
-  sc->body = ptr_inc(body);
-  sc->psc = psc; if (psc) ptr_inc(psc);
-  sc->varAm = varAm;
-  sc->ext = NULL;
-  i32 i = 0;
-  while (i<initVarAm) { sc->vars[i] = initVars[i]; i++; }
-  while (i<varAm) sc->vars[i++] = bi_noVar;
-  return sc;
+NOINLINE Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars) { // consumes initVarAm items of initVars
+  return m_scopeI(body, psc, varAm, initVarAm, initVars, false);
 }
 
 B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], sc, block); }
@@ -876,7 +902,7 @@ FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) 
   u16 varAm = body->varAm;
   assert(varAm>=ga);
   assert(ga == blockGivenVars(block));
-  Scope* sc = m_scope(body, psc, varAm, ga, svar);
+  Scope* sc = m_scopeI(body, psc, varAm, ga, svar, true);
   B r = execBodyInlineI(body, sc, block);
   return r;
 }
