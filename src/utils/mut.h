@@ -14,20 +14,17 @@ Methods ending with G expect that mut_init has been called with a type that can 
 */
 typedef struct Mut Mut;
 typedef struct MutFns MutFns;
-typedef void (*MSB2v)(Mut*, usz, B);
-typedef void (*MSBS2v)(Mut*, usz, B, usz);
-typedef void (*MSBSS2v)(Mut*, usz, B, usz, usz);
-typedef B (*MS2B)(Mut*, usz);
+typedef void (*M_CopyF)(void*, usz, B, usz, usz);
+typedef void (*M_FillF)(void*, usz, B, usz);
+typedef void (*M_SetF)(void*, usz, B);
+typedef B (*M_GetF)(Mut*, usz);
 struct MutFns {
   u8 elType;
   u8 valType;
-  MSB2v m_set;
-  MSB2v m_setG;
-  MS2B m_getU;
-  MSBS2v m_fill;
-  MSBS2v m_fillG;
-  MSBSS2v m_copy;
-  MSBSS2v m_copyG;
+  M_CopyF m_copy, m_copyG;
+  M_FillF m_fill, m_fillG;
+  M_SetF  m_set,  m_setG;
+  M_GetF m_getU;
 };
 extern MutFns mutFns[el_MAX+1];
 
@@ -113,13 +110,13 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); 
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
 
 
-#define MUTG_INIT(N) MutFns N##_mutfns = *N->fns
+#define MUTG_INIT(N) MutFns N##_mutfns = *N->fns; void* N##_mutarr = N->a
 // // mut_set but assumes the type of x already fits in m
-#define mut_setG(N, ms, x) N##_mutfns.m_setG(N, ms, x)
+#define mut_setG(N, ms, x) N##_mutfns.m_setG(N##_mutarr, ms, x)
 // // mut_fill but assumes the type of x already fits in m
-#define mut_fillG(N, ms, x, l) N##_mutfns.m_fillG(N, ms, x, l)
+#define mut_fillG(N, ms, x, l) N##_mutfns.m_fillG(N##_mutarr, ms, x, l)
 // // mut_copy but assumes the type of x already fits in m
-#define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N, ms, x, xs, l)
+#define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N##_mutarr, ms, x, xs, l)
 
 
 
