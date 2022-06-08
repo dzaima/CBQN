@@ -24,4 +24,4 @@ void file_wBytes(FILE* file, B name, B x); // doesn't consume
 
 B path_list(B path); // consumes
 char path_type(B path); // consumes
-void cbqn_heapDump();
+void cbqn_heapDump(void);

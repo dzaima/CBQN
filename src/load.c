@@ -488,6 +488,9 @@ B bqn_execFile(B path, B args) { // consumes both
 }
 
 void bqn_exit(i32 code) {
+  #ifdef DUMP_ON_EXIT
+    cbqn_heapDump();
+  #endif
   rtWrap_print();
   CTR_FOR(CTR_PRINT)
   print_allocStats();

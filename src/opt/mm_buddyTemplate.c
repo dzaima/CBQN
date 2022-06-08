@@ -102,21 +102,15 @@ void BN(forFreedHeap)(V2v f) {
 
 #define str0(X) #X
 #define str1(X) str0(X)
+void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
     u64 addrI = (u64) ci.p;
+    writeNum(f, ci.sz, 8);
+    writeNum(f, addrI, 8);
     char* prefix = str1(BN());
-    u64 vals[3];
-    vals[0] = ci.sz;
-    vals[1] = addrI;
-    vals[2] = strlen(prefix)-1;
-    for (i32 i = 0; i < 3; i++) {
-      u8 buf[8];
-      for (i32 j = 0; j < 8; j++) buf[j] = (vals[i]>>(8*j)) & 0xff;
-      fwrite(&buf, 1, 8, f);
-    }
-    fwrite(prefix, 1, vals[2], f);
+    fwrite(prefix, 1, strlen(prefix)+1, f);
     fwrite(ci.p, 1, ci.sz, f);
   }
   fflush(f);

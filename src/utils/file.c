@@ -351,6 +351,11 @@ char path_type(B path) {
   thrM("Unexpected file type");
 }
 void mmX_dumpHeap(FILE* f);
+void writeNum(FILE* f, u64 v, i32 len) {
+  u8 buf[8];
+  for (i32 i = 0; i < len; i++) buf[i] = (v>>(8*i)) & 0xff;
+  fwrite(buf, 1, len, f);
+}
 void cbqn_heapDump() {
   char* name = "CBQNHeapDump";
   FILE* f = fopen(name, "w");
@@ -359,12 +364,13 @@ void cbqn_heapDump() {
     return;
   }
   // fwrite(&size, 8, 1, f);
-  u8 t8 = 0;
+  u8 t8 = 1;
   fwrite(&t8, 1, 1, f); // version
+  fwrite("CBQN", 1, 5, f);
   
-  // sizeof(ur), sizeof(usz)
-  u8  urW[4]; for (i32 i = 0; i < 4; i++)  urW[i] = (sizeof(ur )>>(8*i)) & 0xff; fwrite( &urW, 1, 4, f);
-  u8 uszW[4]; for (i32 i = 0; i < 4; i++) uszW[i] = (sizeof(usz)>>(8*i)) & 0xff; fwrite(&uszW, 1, 4, f);
+  writeNum(f, sizeof(ur ), 4);
+  writeNum(f, sizeof(usz), 4);
+  writeNum(f, getpid(), 8);
   
   // t_names
   #define F(X) { t8=t_##X; fwrite(&t8, 1, 1, f); char* s = #X; fwrite(s, 1, strlen(s)+1, f); }
