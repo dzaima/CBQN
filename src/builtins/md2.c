@@ -213,6 +213,7 @@ static usz check_rank_vec(B g) {
 static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
   return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
 }
+extern B rt_rank;
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
   bool gf = isFun(g);
@@ -236,6 +237,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   
   usz* xsh = a(x)->sh;
   usz cam = shProd(xsh, 0, k);
+  if (cam == 0) { return m2c1(rt_rank, f, g, x); } // TODO
   usz csz = shProd(xsh, k, xr);
   ShArr* csh;
   if (cr>1) {
@@ -260,7 +262,6 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   decG(x);
   return bqn_merge(HARR_O(r).b);
 }
-extern B rt_rank;
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
   bool gf = isFun(g);
