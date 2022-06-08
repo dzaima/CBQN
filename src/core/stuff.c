@@ -27,16 +27,16 @@ NORETURN NOINLINE void err(char* s) {
   exit(1);
 }
 
-NOINLINE B c1_rare(B f, B x) { dec(x);
+NOINLINE B c1N(B f, B x) { dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-NOINLINE B c2_rare(B f, B w, B x) { dec(w); dec(x);
+NOINLINE B c2N(B f, B w, B x) { dec(w); dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-NOINLINE void value_freeR(Value* x) { value_free(x); }
-NOINLINE void decA_rare(B x) { dec(x); }
+NOINLINE void value_freeN(Value* x) { value_free(x); }
+NOINLINE void decA_N(B x) { dec(x); }
 void noop_visit(Value* x) { }
 NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
 NOINLINE B c2_bad(B f, B w, B x) { thrM("This function can't be called dyadically"); }

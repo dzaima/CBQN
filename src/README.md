@@ -5,6 +5,8 @@
 Functions starting with `m_` allocate a new object.  
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
+Functions ending with `N` are not inlined.  
+Functions ending with `P` take a pointer argument.  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))
 Variables starting with `bi_` are builtins (primitives or special values).  
