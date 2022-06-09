@@ -219,7 +219,7 @@ B to_fill_cell_k(B x, ur k, char* err) { // consumes x
   B xf = getFillQ(x);
   if (noFill(xf)) xf = m_f64(0);
   ur cr = rnk(x)-k;
-  usz *sh = a(x)->sh+k;
+  usz* sh = a(x)->sh+k;
   usz csz = 1;
   for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
   MAKE_MUT(fc, csz);

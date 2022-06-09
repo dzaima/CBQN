@@ -104,7 +104,7 @@ B comp_currSrc;
 B comp_currRe;
 
 B rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
-  rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_cell, rt_rank, rt_transp;
+  rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_rank, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = a(x)->ia;
@@ -396,7 +396,6 @@ void load_init() { // very last init function
     rt_count   = Get(rtObjRaw, n_count   ); gc_add(rt_count);
     rt_memberOf= Get(rtObjRaw, n_memberOf); gc_add(rt_memberOf);
     rt_find    = Get(rtObjRaw, n_find    ); gc_add(rt_find);
-    rt_cell    = Get(rtObjRaw, n_cell    ); gc_add(rt_cell);
     rt_rank    = Get(rtObjRaw, n_rank    ); gc_add(rt_rank);
     rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
     rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);

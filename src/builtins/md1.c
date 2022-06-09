@@ -416,10 +416,10 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
 #endif
 
 extern B to_fill_cell_k(B x, ur k, char* err); // from md2.c
-static B to_fill_cell(B x) { // consumes x
+static B to_fill_cell_1(B x) { // consumes x
   return to_fill_cell_k(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
 }
-static B merge_fill_result(B rc) {
+static B merge_fill_result_1(B rc) {
   u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
   if (rr>UR_MAX) thrM("˘: Result rank too large");
   B rf = getFillQ(rc);
@@ -435,12 +435,12 @@ static B merge_fill_result(B rc) {
 }
 B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
-  if (wr) w = to_fill_cell(w);
-  if (xr) x = to_fill_cell(x);
+  if (wr) w = to_fill_cell_1(w);
+  if (xr) x = to_fill_cell_1(x);
   if (CATCH) return emptyHVec();
   B rc = c2(f, w, x);
   popCatch();
-  return merge_fill_result(rc);
+  return merge_fill_result_1(rc);
 }
 
 B cell_c1(Md1D* d, B x) { B f = d->f;
@@ -454,11 +454,11 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   usz cam = a(x)->sh[0];
   if (cam==0) {
     if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); return emptyHVec(); }
-    B cf = to_fill_cell(x);
+    B cf = to_fill_cell_1(x);
     if (CATCH) return emptyHVec();
     B rc = c1(f, cf);
     popCatch();
-    return merge_fill_result(rc);
+    return merge_fill_result_1(rc);
   }
   S_SLICES(x)
   M_HARR(r, cam);
