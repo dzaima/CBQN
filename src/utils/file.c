@@ -123,10 +123,7 @@ B path_dir(B path) {
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
-    if (o2cu(GetU(path, i))=='/') {
-      Arr* r = TI(path,slice)(path, 0, i+1); arr_shVec(r);
-      return taga(r);
-    }
+    if (o2cu(GetU(path, i))=='/') return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
   dec(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = '/';
@@ -141,8 +138,7 @@ B path_name(B path) {
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(GetU(path, i))=='/') {
       if (i == pia-1) thrF("File path ended with a slash: '%R'", path);
-      Arr* r = TI(path,slice)(path, i+1, pia - (i+1)); arr_shVec(r);
-      return taga(r);
+      return taga(arr_shVec(TI(path,slice)(path, i+1, pia - (i+1))));
     }
   }
   return path;
@@ -275,10 +271,7 @@ B mmap_file(B path) {
   holder->a = data;
   holder->size = len;
   arr_shVec((Arr*)holder);
-  
-  Arr* r = mmapH_slice(taga(holder), 0, len);
-  arr_shVec(r);
-  return taga(r);
+  return taga(arr_shVec(mmapH_slice(taga(holder), 0, len)));
 }
 
 B mmapH_get(Arr* a, usz pos) { thrM("Reading mmapH directly"); }

@@ -1211,8 +1211,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   SGetU(s)
   while (padStart>0 && o2cu(GetU(s,padStart-1))!='\n') padStart--;
   
-  Arr* slice = TI(src,slice)(inc(src),srcS, srcE-srcS); arr_shVec(slice);
-  AJOIN(taga(slice));
+  AJOIN(taga(arr_shVec(TI(src,slice)(inc(src),srcS, srcE-srcS))));
   cs-= srcS;
   ce-= srcS;
   ACHR('\n');
@@ -1442,7 +1441,7 @@ void profiler_displayResults() {
         u32 c = o2cu(GetU(src, i));
         curr+= m[i];
         if (c=='\n' || i==sia-1) {
-          Arr* sl = TI(src,slice)(inc(src), pi, i-pi+(c=='\n'?0:1)); arr_shVec(sl);
+          Arr* sl = arr_shVec(TI(src,slice)(inc(src), pi, i-pi+(c=='\n'?0:1)));
           if (curr==0) printf("      │");
           else printf("%6d│", curr);
           printRaw(taga(sl));

@@ -12,8 +12,7 @@ B toCells(B x) {
   usz p = 0;
   if (rnk(x)==2) {
     for (usz i = 0; i < cam; i++) {
-      Arr* s = slice(inc(x), p, csz); arr_shVec(s);
-      HARR_ADD(r, i, taga(s));
+      HARR_ADD(r, i, taga(arr_shVec(slice(inc(x), p, csz))));
       p+= csz;
     }
   } else {

@@ -46,9 +46,10 @@ static ShArr* m_shArr(ur r) {
   return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
-static void arr_shVec(Arr* x) {
+static Arr* arr_shVec(Arr* x) {
   sprnk(x, 1);
   x->sh = &x->ia;
+  return x;
 }
 static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2)
   if (r>1) {

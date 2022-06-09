@@ -35,7 +35,7 @@ B m_vec1(B a) {
     else if (LIKELY(c<U16_MAX)) { u16* rp; B r = m_c16arrv(&rp, 1); rp[0] = c; return r; }
     else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
   }
-  Arr* ra = m_fillarrp(1); arr_shVec(ra);
+  Arr* ra = arr_shVec(m_fillarrp(1));
   fillarr_ptr(ra)[0] = a;
   fillarr_setFill(ra, m_f64(0));
   fillarr_setFill(ra, asFill(inc(a)));
@@ -67,7 +67,7 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
     if (noFill(bf)) { dec(af); goto noFills; }
     if (!fillEqual(af,bf)) { dec(bf); dec(af); goto noFills; }
     dec(bf);
-    Arr* ra = m_fillarrp(2); arr_shVec(ra);
+    Arr* ra = arr_shVec(m_fillarrp(2));
     fillarr_setFill(ra, af);
     fillarr_ptr(ra)[0] = a;
     fillarr_ptr(ra)[1] = b;
@@ -95,8 +95,7 @@ B shape_c1(B t, B x) {
     decSh(v(x)); arr_shVec(a(x));
     return x;
   }
-  Arr* r = TI(x,slice)(x, 0, ia); arr_shVec(r);
-  return taga(r);
+  return taga(arr_shVec(TI(x,slice)(x, 0, ia)));
 }
 static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes all
   B r; Arr* ra;
@@ -173,9 +172,7 @@ B shape_c2(B t, B w, B x) {
         nia = uszMul(nia, item);
         if (fill) {
           if (!isArr(x)) x = m_atomUnit(x);
-          Arr* a = take_impl(nia, x);
-          arr_shVec(a);
-          x = taga(a);
+          x = taga(arr_shVec(take_impl(nia, x)));
           xia = nia;
         }
       }
@@ -558,8 +555,7 @@ B slash_c2(B t, B w, B x) {
     i32 wv = o2i(w);
     if (wv<=0) {
       if (wv<0) thrM("/: 𝕨 cannot be negative");
-      Arr* r = TI(x,slice)(x, 0, 0); arr_shVec(r);
-      return taga(r);
+      return taga(arr_shVec(TI(x,slice)(x, 0, 0)));
     }
     if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
@@ -675,9 +671,9 @@ B slash_im(B t, B x) {
 
 static B slicev(B x, usz s, usz ia) {
   usz xia = a(x)->ia; assert(s+ia <= xia);
-  Arr* r = TI(x,slice)(x, s, ia); arr_shVec(r);
-  return taga(r);
+  return taga(arr_shVec(TI(x,slice)(x, s, ia)));
 }
+
 extern B rt_take, rt_drop;
 B take_c1(B t, B x) { return c1(rt_take, x); }
 B drop_c1(B t, B x) { return c1(rt_drop, x); }
@@ -970,12 +966,12 @@ B group_c2(B t, B w, B x) {
         len[n]++; // overallocation makes this safe after n<-1 check
       }
       
-      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0)); arr_shVec(r);
+      Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
       
-      Arr* rf = m_fillarrp(0); fillarr_setFill(rf, m_f64(0)); arr_shVec(rf);
+      Arr* rf = arr_shVec(m_fillarrp(0)); fillarr_setFill(rf, m_f64(0));
       fillarr_setFill(r, taga(rf));
       u8 xe = TI(x,elType);
       switch (xe) { default: UD;
@@ -1035,7 +1031,7 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xia; i++) len[o2i64u(GetU(w, i))]++;
       
-      Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0)); arr_shVec(r);
+      Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);

@@ -577,6 +577,7 @@ static inline B incBy(B x, i64 am) { // you most likely don't want am to be nega
   if (isVal(VALIDATE(x))) v(x)->refc+= am;
   return x;
 }
+static inline B incByG(B x, i64 am) { v(x)->refc+= am; return x; }
 #define ptr_inc(X) ({ AUTO x_ = (X); VALIDATEP((Value*)x_)->refc++; x_; })
 
 

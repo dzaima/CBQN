@@ -62,8 +62,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
     BBB2B fc2 = c(Fun,f)->c2;
     if (TI(x,arrD1) && xia<80 && wia>130) {
-      Arr* wd = TI(w,slice)(inc(w), 0, wia);
-      arr_shVec(wd);
+      Arr* wd = arr_shVec(TI(w,slice)(inc(w), 0, wia));
       r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), inc(x)));
     } else {
       SGet(w)
