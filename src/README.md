@@ -9,7 +9,7 @@ Functions ending with `N` are non-inlined versions of another one.
 Functions ending with `F` are rarely invoked fallback parts of a function.  
 Functions ending with `P` take a pointer argument.  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
-Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))
+Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))  
 Variables starting with `bi_` are builtins (primitives or special values).  
 Which arguments are consumed usually is described in a comment after the function or its prototype. Otherwise, check the source.  
 
