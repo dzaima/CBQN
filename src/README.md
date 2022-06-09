@@ -5,7 +5,8 @@
 Functions starting with `m_` allocate a new object.  
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
-Functions ending with `N` are not inlined.  
+Functions ending with `N` are non-inlined versions of another one.  
+Functions ending with `F` are rarely invoked fallback parts of a function.  
 Functions ending with `P` take a pointer argument.  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))
@@ -35,6 +36,7 @@ src/
   gen/        generated files
   jit/        simple JIT compiler for x86-64
   core/       things included everywhere
+  h.h         core CBQN definitions
   builtins.h  definitions of all built-in functions (excluding things defined by means of nfns.c)
   core.h      file imported everywhere that defines the base BQN model
   nfns.c      native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
@@ -44,6 +46,17 @@ src/
   vm.c        virtual machine interpreter
 )
 ```
+
+### Random example functions
+
+* `c1`, `c2` in `h.h` - correspondingly monadically or dyadically invoke a function
+* `evalBC` in `vm.c` - VM bytecode interpreter
+* `slash_c2` in `builtins/sfns.c` - implementation of `𝕨/𝕩`
+* `GC2i` & `GC2f` invocations in `builtins/arithd.c` - dyadic pervasive builtins
+* See `load.c` `fruntime` items for more builtins (remove leading `bi_` & append `_c1`/`_c2` to get the implementation function)
+* `load_init` in `load.c` - loads the BQN runtime & compiler
+* `bqn_comp` in `load.c` - execute BQN code from a string
+* `BN(allocL)` in `opt/mm_buddyTemplate.h` - fast path of buddy memory allocator; invoked from `opt/mm_buddy.h`
 
 ## Base
 

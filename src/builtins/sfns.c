@@ -1135,7 +1135,7 @@ B transp_c1(B t, B x) {
   usz ia = a(x)->ia;
   usz* xsh = a(x)->sh;
   usz h = xsh[0];
-  usz w = xsh[1] * shProd(a(x)->sh, 2, xr);
+  usz w = xsh[1] * shProd(xsh, 2, xr);
   
   Arr* r;
   usz xi = 0;

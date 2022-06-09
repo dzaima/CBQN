@@ -286,7 +286,7 @@ typedef struct VfyObj {
 } VfyObj;
 
 
-NOINLINE B v_getR(Scope* pscs[], B s); // doesn't consume
+NOINLINE B v_getF(Scope* pscs[], B s); // doesn't consume
 FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
   B r = sc->vars[p];
   if (chk && r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
@@ -294,12 +294,12 @@ FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
   return r;
 }
 FORCE_INLINE B v_get(Scope* pscs[], B s, bool chk) { // get value representing s, replacing with bi_optOut; doesn't consume; if chk is false, content variables _may_ not be checked to be set
-  if (RARE(!isVar(s))) return v_getR(pscs, s);
+  if (RARE(!isVar(s))) return v_getF(pscs, s);
   return v_getI(pscs[(u16)(s.u>>32)], (u32)s.u, chk);
 }
 
-NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd); // doesn't consume
-NOINLINE bool v_sethR(Scope* pscs[], B s, B x); // doesn't consume
+NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd); // doesn't consume
+NOINLINE bool v_sethF(Scope* pscs[], B s, B x); // doesn't consume
 FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consumes x
   if (upd) {
     B prev = sc->vars[p];
@@ -311,7 +311,7 @@ FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consume
   }
 }
 FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk) { // doesn't consume; if chk is false, content variables _may_ not be checked to be set
-  if (RARE(!isVar(s))) v_setR(pscs, s, x, upd);
+  if (RARE(!isVar(s))) v_setF(pscs, s, x, upd);
   else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd, chk);
 }
 
@@ -321,5 +321,5 @@ FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot
     return true;
   }
   if (s.u == bi_N.u) return true;
-  return v_sethR(pscs, s, x);
+  return v_sethF(pscs, s, x);
 }

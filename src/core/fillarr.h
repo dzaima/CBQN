@@ -18,11 +18,11 @@ static B qWithFill(B x, B fill) { // consumes both
   return withFill(x, fill);
 }
 
-NOINLINE bool fillEqualR(B w, B x);
+NOINLINE bool fillEqualF(B w, B x);
 static bool fillEqual(B w, B x) {
   if (w.u==x.u) return true;
   if (isAtm(w)|isAtm(x)) return false;
-  return fillEqualR(w, x);
+  return fillEqualF(w, x);
 }
 
 

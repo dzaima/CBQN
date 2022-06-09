@@ -27,16 +27,16 @@ NORETURN NOINLINE void err(char* s) {
   exit(1);
 }
 
-NOINLINE B c1N(B f, B x) { dec(x);
+NOINLINE B c1F(B f, B x) { dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-NOINLINE B c2N(B f, B w, B x) { dec(w); dec(x);
+NOINLINE B c2F(B f, B w, B x) { dec(w); dec(x);
   if (isMd(f)) thrM("Calling a modifier");
   return inc(VALIDATE(f));
 }
-NOINLINE void value_freeN(Value* x) { value_free(x); }
-NOINLINE void decA_N(B x) { dec(x); }
+NOINLINE void value_freeF(Value* x) { value_free(x); }
+NOINLINE void decA_F(B x) { dec(x); }
 void noop_visit(Value* x) { }
 NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
 NOINLINE B c2_bad(B f, B w, B x) { thrM("This function can't be called dyadically"); }
@@ -357,7 +357,7 @@ NOINLINE void thrF(char* p, ...) {
 
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
-NOINLINE i32 compareR(B w, B x) {
+NOINLINE i32 compareF(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
@@ -389,7 +389,7 @@ NOINLINE i32 compareR(B w, B x) {
 }
 #undef CMP
 
-NOINLINE bool atomEqualR(B w, B x) {
+NOINLINE bool atomEqualF(B w, B x) {
   if (v(w)->type!=v(x)->type) return false;
   B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;

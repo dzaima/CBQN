@@ -474,7 +474,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 
 
 
-NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
+NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   if (isArr(s)) { VTY(s, t_harr);
     B* sp = harr_ptr(s);
     usz ia = a(s)->ia;
@@ -510,7 +510,7 @@ NOINLINE void v_setR(Scope* pscs[], B s, B x, bool upd) {
     sc->ext->vars[(u32)s.u] = inc(x);
   }
 }
-NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
+NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
   if (v(s)->type==t_vfyObj) return equal(c(VfyObj,s)->obj,x);
   VTY(s, t_harr);
   B* sp = harr_ptr(s);
@@ -539,7 +539,7 @@ NOINLINE bool v_sethR(Scope* pscs[], B s, B x) {
 
 
 
-NOINLINE B v_getR(Scope* pscs[], B s) {
+NOINLINE B v_getF(Scope* pscs[], B s) {
   if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
     B r = sc->ext->vars[(u32)s.u];

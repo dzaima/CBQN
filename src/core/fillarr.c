@@ -83,7 +83,7 @@ void validateFill(B x) {
   }
 }
 
-NOINLINE bool fillEqualR(B w, B x) { // doesn't consume; both args must be arrays
+NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be arrays
   if (!eqShape(w, x)) return false;
   usz ia = a(w)->ia;
   if (ia==0) return true;

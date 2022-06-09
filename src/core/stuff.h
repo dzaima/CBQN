@@ -192,20 +192,20 @@ B def_decompose(B x);
 void noop_visit(Value* x);
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
-NOINLINE i32 compareR(B w, B x);
+NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
   if (isNum(w) & isNum(x)) return CMP(o2fu(w), o2fu(x));
   if (isC32(w) & isC32(x)) return CMP(o2cu(w), o2cu(x));
-  return compareR(w, x);
+  return compareF(w, x);
 }
 #undef CMP
 
-NOINLINE bool atomEqualR(B w, B x);
+NOINLINE bool atomEqualF(B w, B x);
 static bool atomEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if(isF64(w)&isF64(x)) return w.f==x.f;
   if (w.u==x.u) return true;
   if (!isVal(w) | !isVal(x)) return false;
-  return atomEqualR(w, x);
+  return atomEqualF(w, x);
 }
 
 

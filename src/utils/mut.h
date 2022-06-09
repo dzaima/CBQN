@@ -231,9 +231,9 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
   }
   return false;
 }
-B vec_add_new(B w, B x);
+B vec_addF(B w, B x);
+B vec_addN(B w, B x); // vec_add but not inlined
 static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
-  return vec_add_new(w, x);
+  return vec_addF(w, x);
 }
-B vec_addN(B w, B x); // vec_add but not inlined

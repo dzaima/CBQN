@@ -34,7 +34,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
   }
 }
 
-NOINLINE B vec_add_new(B w, B x) {
+NOINLINE B vec_addF(B w, B x) {
   usz wia = a(w)->ia;
   MAKE_MUT(r, wia+1); mut_init(r, el_or(TI(w,elType), selfElType(x)));
   MUTG_INIT(r);
