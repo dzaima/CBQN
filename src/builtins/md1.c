@@ -415,20 +415,9 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   // no gcc case because gcc is gcc and does gcc things instead of doing what it's asked to do
 #endif
 
+extern B to_fill_cell_k(B x, ur k, char* err); // from md2.c
 static B to_fill_cell(B x) { // consumes x
-  B xf = getFillQ(x);
-  if (noFill(xf)) xf = m_f64(0);
-  ur cr = rnk(x)-1;
-  usz *sh = a(x)->sh+1;
-  usz csz = 1;
-  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF("˘: Empty argument too large (%H ≡ ≢𝕩)", x);
-  MAKE_MUT(fc, csz);
-  mut_fill(fc, 0, xf, csz); dec(xf);
-  Arr* ca = mut_fp(fc);
-  usz* csh = arr_shAlloc(ca, cr);
-  if (cr>1) shcpy(csh, sh, cr);
-  decG(x);
-  return taga(ca);
+  return to_fill_cell_k(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
 }
 static B merge_fill_result(B rc) {
   u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
