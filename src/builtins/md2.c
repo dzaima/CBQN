@@ -1,6 +1,7 @@
 #include <math.h>
 #include "../core.h"
 #include "../utils/talloc.h"
+#include "../utils/mut.h"
 #include "../builtins.h"
 
 B md2BI_uc1(Md2* t, B o, B f, B g,      B x) { return ((BMd2*)t)->uc1(t, o, f, g,    x); }
@@ -213,6 +214,64 @@ static usz check_rank_vec(B g) {
 static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
   return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
 }
+
+B to_fill_cell_k(B x, ur k, char* err) { // consumes x
+  B xf = getFillQ(x);
+  if (noFill(xf)) xf = m_f64(0);
+  ur cr = rnk(x)-k;
+  usz* sh = a(x)->sh+k;
+  usz csz = 1;
+  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
+  MAKE_MUT(fc, csz);
+  mut_fill(fc, 0, xf, csz); dec(xf);
+  Arr* ca = mut_fp(fc);
+  usz* csh = arr_shAlloc(ca, cr);
+  if (cr>1) shcpy(csh, sh, cr);
+  decG(x);
+  return taga(ca);
+}
+static B to_fill_cell(B x, ur k) {
+  return to_fill_cell_k(x, k, "⎉: Empty argument too large (%H ≡ ≢𝕩)");
+}
+static B merge_fill_result(B rc, ur k, usz* sh) {
+  u64 rr = k; if (isArr(rc)) rr += rnk(rc);
+  if (rr>UR_MAX) thrM("⎉: Result rank too large");
+  B rf = getFillQ(rc);
+  Arr* r = m_fillarrp(0);
+  fillarr_setFill(r, rf);
+  usz* rsh = arr_shAlloc(r, rr);
+  shcpy(rsh, sh, k);
+  shcpy(rsh+k, a(rc)->sh, rr-k);
+  dec(rc);
+  return taga(r);
+}
+static B empty_frame(usz* xsh, ur k) {
+  HArr_p f = m_harrUp(0);
+  Arr *a = (Arr*)f.c;
+  if (k <= 1) arr_shVec(a); else shcpy(arr_shAlloc(a,k), xsh, k);
+  return f.b;
+}
+static B rank2_empty(B f, B w, ur wk, B x, ur xk) {
+  B fa = wk>xk?w:x;
+  ur k = wk>xk?wk:xk;
+  usz* sh = a(fa)->sh;
+  usz s0=0; ShArr* s=NULL; ur sho=rnk(fa)>1;
+  if (!sho) { s0=sh[0]; sh=&s0; } else { s=ptr_inc(shObj(fa)); }
+  if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); goto empty; }
+  B r;
+  if (wk) w = to_fill_cell(w, wk);
+  if (xk) x = to_fill_cell(x, xk);
+  if (CATCH) { empty:
+    r = empty_frame(sh, k);
+  } else {
+    B rc = c2(f, w, x);
+    popCatch();
+    r = merge_fill_result(rc, k, sh);
+  }
+  if (sho) ptr_dec(s);
+  return r;
+}
+
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
   bool gf = isFun(g);
@@ -236,6 +295,22 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   
   usz* xsh = a(x)->sh;
   usz cam = shProd(xsh, 0, k);
+  if (cam == 0) {
+    usz s0=0; ShArr* s=NULL;
+    if (xr<=1) { s0=xsh[0]; xsh=&s0; } else { s=ptr_inc(shObj(x)); }
+    if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); goto empty; }
+    B cf = to_fill_cell(x, k);
+    B r;
+    if (CATCH) { empty:
+      r = empty_frame(xsh, k);
+    } else {
+      B rc = c1(f, cf);
+      popCatch();
+      r = merge_fill_result(rc, k, xsh);
+    }
+    if (xr>1) ptr_dec(s);
+    return r;
+  }
   usz csz = shProd(xsh, k, xr);
   ShArr* csh;
   if (cr>1) {
@@ -260,7 +335,6 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   decG(x);
   return bqn_merge(HARR_O(r).b);
 }
-extern B rt_rank;
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
   bool gf = isFun(g);
@@ -287,8 +361,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       i32 k = xr - xc;
       usz* xsh = a(x)->sh;
       usz cam = shProd(xsh, 0, k);
+      if (cam == 0) return rank2_empty(f, w, 0, x, k);
       usz csz = shProd(xsh, k, xr);
-      if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
       ShArr* csh;
       if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
 
@@ -311,8 +385,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     i32 k = wr - wc;
     usz* wsh = a(w)->sh;
     usz cam = shProd(wsh, 0, k);
+    if (cam == 0) return rank2_empty(f, w, k, x, 0);
     usz csz = shProd(wsh, k, wr);
-    if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
     ShArr* csh;
     if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
 
@@ -342,10 +416,10 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       cam*= wsh[i];
     }
     usz ext = shProd(zsh,  k, zk);
+    cam *= ext;
+    if (cam == 0) return rank2_empty(f, w, wk, x, xk);
     usz wsz = shProd(wsh, wk, wr);
     usz xsz = shProd(xsh, xk, xr);
-    cam *= ext;
-    if (cam == 0) { return m2c2(rt_rank, f, g, w, x); } // TODO
 
     ShArr* wcs; if (wc>1) { wcs=m_shArr(wc); shcpy(wcs->a, wsh+wk, wc); }
     ShArr* xcs; if (xc>1) { xcs=m_shArr(xc); shcpy(xcs->a, xsh+xk, xc); }

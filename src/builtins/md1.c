@@ -414,8 +414,35 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   #pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
   // no gcc case because gcc is gcc and does gcc things instead of doing what it's asked to do
 #endif
-  
-extern B rt_cell;
+
+extern B to_fill_cell_k(B x, ur k, char* err); // from md2.c
+static B to_fill_cell_1(B x) { // consumes x
+  return to_fill_cell_k(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
+}
+static B merge_fill_result_1(B rc) {
+  u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
+  if (rr>UR_MAX) thrM("˘: Result rank too large");
+  B rf = getFillQ(rc);
+  Arr* r = m_fillarrp(0);
+  fillarr_setFill(r, rf);
+  usz* rsh = arr_shAlloc(r, rr);
+  if (rr>1) {
+    rsh[0] = 0;
+    shcpy(rsh+1, a(rc)->sh, rr-1);
+  }
+  dec(rc);
+  return taga(r);
+}
+B cell2_empty(B f, B w, B x, ur wr, ur xr) {
+  if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
+  if (wr) w = to_fill_cell_1(w);
+  if (xr) x = to_fill_cell_1(x);
+  if (CATCH) return emptyHVec();
+  B rc = c2(f, w, x);
+  popCatch();
+  return merge_fill_result_1(rc);
+}
+
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) {
     B r = c1(f, x);
@@ -427,36 +454,11 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   usz cam = a(x)->sh[0];
   if (cam==0) {
     if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); return emptyHVec(); }
-    
-    B xf = getFillQ(x);
-    if (noFill(xf)) xf = m_f64(0);
-    
-    usz csz = 1;
-    ur cr = rnk(x)-1;
-    for (usz i=0; i<cr; i++) if (mulOn(csz, a(x)->sh[i+1])) thrF("˘: Empty argument too large (%H ≡ ≢𝕩)", x);
-    MAKE_MUT(fc, csz);
-    mut_fill(fc, 0, xf, csz); dec(xf);
-    Arr* ca = mut_fp(fc);
-    usz* csh = arr_shAlloc(ca, cr);
-    if (cr>1) shcpy(csh, a(x)->sh+1, cr);
-    decG(x);
-    
+    B cf = to_fill_cell_1(x);
     if (CATCH) return emptyHVec();
-    B rc = c1(f, taga(ca));
+    B rc = c1(f, cf);
     popCatch();
-    
-    u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
-    if (rr>UR_MAX) thrM("˘: Result rank too large");
-    B rf = getFillQ(rc);
-    Arr* r = m_fillarrp(0);
-    fillarr_setFill(r, rf);
-    usz* rsh = arr_shAlloc(r, rr);
-    if (rr>1) {
-      rsh[0] = 0;
-      shcpy(rsh+1, a(rc)->sh, rr-1);
-    }
-    dec(rc);
-    return taga(r);
+    return merge_fill_result_1(rc);
   }
   S_SLICES(x)
   M_HARR(r, cam);
@@ -472,14 +474,16 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   B r;
   if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
   if (wr==0) {
-    usz cam = a(x)->sh[0]; if (cam==0) goto zero;
+    usz cam = a(x)->sh[0];
+    if (cam==0) return cell2_empty(f, w, x, wr, xr);
     S_SLICES(x)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
     E_SLICES(x) dec(w);
     r = HARR_FV(r);
   } else if (xr==0) {
-    usz cam = a(w)->sh[0]; if (cam==0) goto zero;
+    usz cam = a(w)->sh[0];
+    if (cam==0) return cell2_empty(f, w, x, wr, xr);
     S_SLICES(w)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, SLICE(w, p), x));
@@ -487,7 +491,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     r = HARR_FV(r);
   } else {
     usz cam = a(w)->sh[0];
-    if (cam==0) goto zero;
+    if (cam==0) return cell2_empty(f, w, x, wr, xr);
     if (cam != a(x)->sh[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     S_SLICES(w) S_SLICES(x)
     M_HARR(r, cam);
@@ -496,8 +500,6 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     r = HARR_FV(r);
   }
   return bqn_merge(r);
-  
-  zero: return m1c2(rt_cell, f, w, x); // waaaaay too complicated to handle
 }
 
 extern B rt_insert;
