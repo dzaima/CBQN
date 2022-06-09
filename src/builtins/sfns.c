@@ -674,9 +674,40 @@ static B slicev(B x, usz s, usz ia) {
   return taga(arr_shVec(TI(x,slice)(x, s, ia)));
 }
 
+FORCE_INLINE B affixes(B x, i32 post) {
+  if (!isArr(x) || rnk(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
+  ur xr = rnk(x);
+  usz* xsh = a(x)->sh;
+  u64 cam = *xsh;
+  u64 ria = cam+1;
+  M_HARR(r, ria);
+  BSS2A slice = TI(x,slice);
+  if (xr==1) {
+    incByG(x, cam);
+    for (usz i = 0; i < ria; i++) HARR_ADD(r, i, taga(arr_shVec(slice(x, post?i:0, post?cam-i:i))));
+  } else {
+    incByG(x, cam+1);
+    assert(xr>=2);
+    usz csz = arr_csz(x);
+    usz* csh = xsh+1;
+    for (usz i = 0; i < ria; i++) {
+      usz len = post? cam-i : i;
+      Arr* c = slice(x, post? i*csz : 0, len*csz);
+      usz* sh = arr_shAlloc(c, xr);
+      *(sh++) = len;
+      shcpy(sh, csh, xr-1);
+      HARR_ADD(r, i, taga(c));
+    }
+    dec(x);
+  }
+  B rf = inc(HARR_O(r).a[post? cam : 0]);
+  return withFill(HARR_FV(r), rf);
+}
+
+B take_c1(B t, B x) { return affixes(x, 0); }
+B drop_c1(B t, B x) { return affixes(x, 1); }
+
 extern B rt_take, rt_drop;
-B take_c1(B t, B x) { return c1(rt_take, x); }
-B drop_c1(B t, B x) { return c1(rt_drop, x); }
 B take_c2(B t, B w, B x) {
   if (isNum(w)) {
     if (!isArr(x)) x = m_atomUnit(x);
