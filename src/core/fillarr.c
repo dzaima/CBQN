@@ -30,14 +30,15 @@ B asFill(B x) { // consumes
   return bi_noFill;
 }
 
-static Arr* m_fillslice(Arr* p, B* ptr, usz ia) {
+static Arr* m_fillslice(Arr* p, B* ptr, usz ia, B fill) {
   FillSlice* r = m_arr(sizeof(FillSlice), t_fillslice, ia);
   r->p = p;
   r->a = ptr;
+  r->fill = fill;
   return (Arr*)r;
 }
-static Arr* fillarr_slice  (B x, usz s, usz ia) { return m_fillslice(a(x), c(FillArr,x)->a+s, ia); }
-static Arr* fillslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_fillslice(p, c(FillSlice,x)->a+s, ia); decG(x); return r; }
+static Arr* fillarr_slice  (B x, usz s, usz ia) { FillArr*   a=c(FillArr  ,x); return m_fillslice((Arr*)a,       a->a+s, ia, inc(a->fill)); }
+static Arr* fillslice_slice(B x, usz s, usz ia) { FillSlice* a=c(FillSlice,x); Arr* r=m_fillslice(ptr_inc(a->p), a->a+s, ia, inc(a->fill)); decG(x); return r; }
 
 static B fillarr_get   (Arr* x, usz n) { assert(x->type==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
 static B fillslice_get (Arr* x, usz n) { assert(x->type==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
@@ -57,13 +58,18 @@ static void fillarr_visit(Value* x) { assert(x->type == t_fillarr);
 }
 static bool fillarr_canStore(B x) { return true; }
 
+
+static void fillslice_visit(Value* x) { FillSlice* s=(void*)x; mm_visitP(s->p); mm_visit(s->fill); }
+static void fillslice_freeO(Value* x) { FillSlice* s=(void*)x; ptr_dec(s->p); dec(s->fill); decSh(x); }
+static void fillslice_freeF(Value* x) { fillslice_freeO(x); mm_free(x); }
+
 void fillarr_init() {
   TIi(t_fillarr,get)   = fillarr_get;   TIi(t_fillslice,get)   = fillslice_get;
   TIi(t_fillarr,getU)  = fillarr_getU;  TIi(t_fillslice,getU)  = fillslice_getU;
   TIi(t_fillarr,slice) = fillarr_slice; TIi(t_fillslice,slice) = fillslice_slice;
-  TIi(t_fillarr,freeO) = fillarr_freeO; TIi(t_fillslice,freeO) =     slice_freeO;
-  TIi(t_fillarr,freeF) = fillarr_freeF; TIi(t_fillslice,freeF) =     slice_freeF;
-  TIi(t_fillarr,visit) = fillarr_visit; TIi(t_fillslice,visit) =     slice_visit;
+  TIi(t_fillarr,freeO) = fillarr_freeO; TIi(t_fillslice,freeO) = fillslice_freeO;
+  TIi(t_fillarr,freeF) = fillarr_freeF; TIi(t_fillslice,freeF) = fillslice_freeF;
+  TIi(t_fillarr,visit) = fillarr_visit; TIi(t_fillslice,visit) = fillslice_visit;
   TIi(t_fillarr,print) =    farr_print; TIi(t_fillslice,print) = farr_print;
   TIi(t_fillarr,isArr) = true;          TIi(t_fillslice,isArr) = true;
   TIi(t_fillarr,canStore) = fillarr_canStore;
@@ -113,7 +119,7 @@ B withFill(B x, B fill) { // consumes both
     case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(((FillArr*)c(Slice,x)->p)->fill, fill)) { dec(fill); return x; } break;
-    case t_fillarr: if (fillEqual(c(FillArr,x)->fill, fill)) { dec(fill); return x; }
+    case t_fillarr:   if (fillEqual(         c(FillArr,x)    ->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) { // keeping flags is fine probably
         dec(c(FillArr, x)->fill);
         c(FillArr, x)->fill = fill;
@@ -122,36 +128,33 @@ B withFill(B x, B fill) { // consumes both
       break;
   }
   usz ia = a(x)->ia;
-  if (isNum(fill)) {
-    x = num_squeezeChk(x);
-    if (elNum(TI(x,elType))) return x;
-    FL_KEEP(x, ~fl_squoze);
-  } else if (isC32(fill)) {
-    x = chr_squeezeChk(x);
-    if (elChr(TI(x,elType))) return x;
-    FL_KEEP(x, ~fl_squoze);
-  }
-  FillArr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
-  arr_shCopy((Arr*)r, x);
-  r->fill = fill;
-  if (xt==t_harr | xt==t_hslice) {
-    if (xt==t_harr && v(x)->refc==1) {
-      B* xp = harr_ptr(x);
-      B* rp = r->a;
-      memcpy(rp, xp, ia*sizeof(B));
-      tyarr_freeF(v(x)); // manually free x so that decreasing its refcounts is skipped
-    } else {
-      B* xp = hany_ptr(x);
-      B* rp = r->a;
-      memcpy(rp, xp, ia*sizeof(B));
-      for (usz i = 0; i < ia; i++) inc(rp[i]);
-      decG(x);
+  if (!FL_HAS(x,fl_squoze)) {
+    if (isNum(fill)) {
+      x = num_squeeze(x);
+      if (elNum(TI(x,elType))) return x;
+      FL_KEEP(x, ~fl_squoze);
+    } else if (isC32(fill)) {
+      x = chr_squeeze(x);
+      if (elChr(TI(x,elType))) return x;
+      FL_KEEP(x, ~fl_squoze);
     }
-  } else {
-    B* rp = r->a;
-    SGet(x)
-    for (usz i = 0; i < ia; i++) rp[i] = Get(x,i);
-    decG(x);
   }
+  Arr* r;
+  B* xbp = arr_bptr(x);
+  if (xbp!=NULL) {
+    Arr* xa = a(x);
+    if (IS_SLICE(xa->type)) xa = ptr_inc(((Slice*)xa)->p);
+    else ptr_inc(xa);
+    r = m_fillslice(xa, xbp, ia, fill);
+  } else {
+    FillArr* rf = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
+    rf->fill = fill;
+    
+    B* rp = rf->a; SGet(x)
+    for (usz i = 0; i < ia; i++) rp[i] = Get(x,i);
+    r = (Arr*)rf;
+  }
+  arr_shCopy(r, x);
+  decG(x);
   return taga(r);
 }

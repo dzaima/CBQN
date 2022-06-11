@@ -823,10 +823,11 @@ Arr*   g_a(B x) { return a(x); }
 B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
+bool ignore_bad_tag;
 void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
 void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); print(r); dec(r); putchar(10); fflush(stdout); }
-void   g_pv(void* x) { print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); }
-void   g_iv(void* x) { B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); print(r); dec(r); putchar(10); fflush(stdout); }
+void   g_pv(void* x) { ignore_bad_tag=true; print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); ignore_bad_tag=false; }
+void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); print(r); dec(r); putchar(10); fflush(stdout); ignore_bad_tag=false; }
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #ifdef DEBUG
@@ -855,7 +856,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   NOINLINE B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
-    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial) {
+    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial && !ignore_bad_tag) {
       fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, (void*)x.u);
       PRINT_ID(v(x));
       fprint(stderr, x);
