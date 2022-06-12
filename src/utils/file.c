@@ -363,7 +363,11 @@ void cbqn_heapDump() {
   
   writeNum(f, sizeof(ur ), 4);
   writeNum(f, sizeof(usz), 4);
-  writeNum(f, getpid(), 8);
+  #if WASM
+    writeNum(f, (u64)~0ULL, 8);
+  #else
+    writeNum(f, getpid(), 8);
+  #endif
   
   // t_names
   #define F(X) { t8=t_##X; fwrite(&t8, 1, 1, f); char* s = #X; fwrite(s, 1, strlen(s)+1, f); }
