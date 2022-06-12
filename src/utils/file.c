@@ -223,7 +223,7 @@ B path_list(B path) {
   return res;
 }
 
-#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<errno.h>) && __has_include(<unistd.h>) && !WASM
+#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<errno.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP
 
 #include <sys/mman.h>
 #include <fcntl.h>

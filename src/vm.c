@@ -1056,7 +1056,7 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   #endif
   *curr = *start = mem;
   *end = ((char*)*start)+sz;
-  #if !WASM
+  #if !WASM && !NO_MMAP
   mprotect(*end, ps, PROT_NONE); // idk first way i found to force erroring on overflow
   #endif
 }
