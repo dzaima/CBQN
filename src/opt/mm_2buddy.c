@@ -1,4 +1,6 @@
+#if !NO_MMAP
 #include <sys/mman.h>
+#endif
 #include "gc.c"
 
 #ifdef OBJ_COUNTER

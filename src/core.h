@@ -6,6 +6,8 @@
 
 #if MM==0
   #include "opt/mm_malloc.h"
+  #undef ENABLE_GC
+  #define ENABLE_GC 0
 #elif MM==1
   #include "opt/mm_buddy.h"
 #elif MM==2

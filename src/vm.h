@@ -1,6 +1,7 @@
 #pragma once
+#if !NO_MMAP
 #include <sys/mman.h>
-
+#endif
 
 #if (defined(__x86_64) || defined(__amd64__)) && (__APPLE__ || __MACH__ || __linux__ || __FreeBSD__ || __unix || __unix__) && defined(MAP_32BIT) && MM!=0
   #ifndef JIT_START
