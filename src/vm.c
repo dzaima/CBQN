@@ -475,14 +475,14 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 
 FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   B o = c(WrappedObj,s)->obj;
-  if (!isArr(x) || rnk(x)==0) thrF("[…]%S𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
+  if (!isArr(x) || rnk(x)==0) thrF("[…]%U𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
   
   B* op = harr_ptr(o);
   usz oia = a(o)->ia;
   
   if (a(x)->sh[0] != oia) {
     if (hdr) return false;
-    else thrF("[…]%S𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
+    else thrF("[…]%U𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
   }
   
   if (rnk(x)==1) {
