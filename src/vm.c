@@ -581,6 +581,9 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
     sc->ext->vars[(u32)s.u] = bi_optOut;
     return r;
+  } else if (isObj(s)) {
+    assert(v(s)->type == t_arrMerge);
+    return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj));
   } else {
     VTY(s, t_harr);
     usz ia = a(s)->ia;
