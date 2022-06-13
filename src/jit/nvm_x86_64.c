@@ -109,10 +109,10 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
   if (q_N(x)) { dec(w); return x; }
   else return q_N(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
-INS B i_ARR_0() { // TODO combine with ADDI
+INS B i_LST_0() { // TODO combine with ADDI
   return emptyHVec();
 }
-INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
+INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
@@ -364,7 +364,7 @@ static OptRes opt(u32* bc0) {
         TSSIZE(stk)-= SETM==*sbc? 2 : 1;
         break;
       }
-      case ARRO: case ARRM: { i32 len = *bc++;
+      case LSTO: case LSTM: { i32 len = *bc++;
         bool allNum = len>0;
         for (i32 i = 0; i < len; i++) { S(c,i);
           if(c.p==-1) goto defIns;
@@ -499,7 +499,7 @@ void freeOpt(OptRes o) {
     path_wChars(m_str8l("asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
-    F(POPS)F(INC)F(FN1C)F(FN1O)F(FN2C)F(FN2O)F(FN1Oi)F(FN2Oi)F(ARR_0)F(ARR_p)F(DFND_0)F(DFND_1)F(DFND_2)F(MD1C)F(MD2C)F(MD2R)F(TR2D)F(TR3D)F(TR3O)F(NOVAR)F(EXTO)F(EXTU)F(SETN)F(SETU)F(SETM)F(SETC)F(SETH1)F(SETH2)F(PRED1)F(PRED2)F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FLDO)F(VFYM)F(ALIM)F(CHKV)F(FAIL)F(RETD)
+    F(POPS)F(INC)F(FN1C)F(FN1O)F(FN2C)F(FN2O)F(FN1Oi)F(FN2Oi)F(LST_0)F(LST_p)F(ARMM)F(ARMO)F(DFND_0)F(DFND_1)F(DFND_2)F(MD1C)F(MD2C)F(MD2R)F(TR2D)F(TR3D)F(TR3O)F(NOVAR)F(EXTO)F(EXTU)F(SETN)F(SETU)F(SETM)F(SETC)F(SETH1)F(SETH2)F(PRED1)F(PRED2)F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FLDO)F(VFYM)F(ALIM)F(CHKV)F(FAIL)F(RETD)
     #undef F
     path_wChars(m_str8l("asm_sed"), s); dec(s);
   }
@@ -613,12 +613,12 @@ Nvm_res m_nvm(Body* body) {
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
       case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, BB2B fm,           u32* bc)
       case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B fm, BBB2B fd, u32* bc)
-      case ARRM: case ARRO:; { bool o = *(bc-1) == ARRO;
+      case LSTM: case LSTO:; { bool o = *(bc-1) == LSTO;
         u32 sz = *bc++;
-        if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
+        if      (sz==0     ) { TOPs; CCALL(i_LST_0); } // unused with optimizations
         else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
         else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(m_vec2); } // (B a, B b)
-        else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
+        else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_LST_p); } // (B a, i64 sz, S)
       } break;
       case ARMO: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMO); break; }
       case ARMM: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMM); break; }

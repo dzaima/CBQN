@@ -11,7 +11,7 @@
   #define UNWIND_COMPILER 1
 #endif
 
-#define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(ARMO) F(ARMM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
+#define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(LSTO) F(LSTM) F(ARMO) F(ARMM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(NOTM) F(RETD) F(SYSV) F(VARU) F(PRED) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
@@ -730,7 +730,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         dec(f);
         break;
       }
-      case ARRO: case ARRM: {
+      case LSTO: case LSTM: {
         u32 sz = *bc++;
         if (sz==0) {
           ADD(emptyHVec());
@@ -1160,7 +1160,7 @@ void comp_init() {
   bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[NOTM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
   bL_m[FAIL]=1; bL_m[PRED]=1;
   
-  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[ARRO]=2; bL_m[ARRM]=2; bL_m[ARMO]=2; bL_m[ARMM]=2;
+  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[LSTO]=2; bL_m[LSTM]=2; bL_m[ARMO]=2; bL_m[ARMM]=2;
   bL_m[DYNO]=2; bL_m[DYNM]=2; bL_m[FLDO]=2; bL_m[FLDM]=2;
   bL_m[SYSV]=2; bL_m[ALIM]=2;
   
@@ -1205,8 +1205,8 @@ void comp_init() {
   
   // stack added map
   for (i32 i = 0; i < BC_SIZE; i++) sA_m[i] = sD_m[i] + sC_m[i];
-  sA_m[ARRO]=1; sA_m[ARMO]=1;
-  sA_m[ARRM]=1; sA_m[ARMM]=1;
+  sA_m[LSTO]=1; sA_m[ARMO]=1;
+  sA_m[LSTM]=1; sA_m[ARMM]=1;
 }
 
 

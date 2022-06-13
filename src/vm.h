@@ -23,8 +23,8 @@ enum {
   POPS = 0x06, // pop object from stack
   RETN = 0x07, // returns top of stack
   RETD = 0x08, // return a namespace of exported items
-  ARRO = 0x0B, // N; create a vector of top N items
-  ARRM = 0x0C, // N; create a mutable vector of top N items
+  LSTO = 0x0B, // N; create a vector of top N items
+  LSTM = 0x0C, // N; create a mutable vector of top N items
   ARMO = 0x0D, // push `>ToS`
   ARMM = 0x0E, // push a mutable version of `>ToS` that unpacks cells of what its assigned to
   
@@ -193,8 +193,8 @@ extern i32 sC_m[BC_SIZE];
 extern i32 sA_m[BC_SIZE];
 static u32* nextBC       (u32* p) { return p + bL_m[*p]; }
 static i32  stackAdded   (u32* p) { return sA_m[*p]; }
-static i32  stackDiff    (u32* p) { if (*p==ARRO|*p==ARRM|*p==ARMO|*p==ARMM) return 1-p[1]; return sD_m[*p]; }
-static i32  stackConsumed(u32* p) { if (*p==ARRO|*p==ARRM|*p==ARMO|*p==ARMM) return   p[1]; return sC_m[*p]; }
+static i32  stackDiff    (u32* p) { if (*p==LSTO|*p==LSTM|*p==ARMO|*p==ARMM) return 1-p[1]; return sD_m[*p]; }
+static i32  stackConsumed(u32* p) { if (*p==LSTO|*p==LSTM|*p==ARMO|*p==ARMM) return   p[1]; return sC_m[*p]; }
 
 char* bc_repr(u32 p);
 
