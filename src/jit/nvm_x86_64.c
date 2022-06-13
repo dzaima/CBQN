@@ -121,6 +121,22 @@ INS B i_ARR_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   if (allNum) return num_squeeze(r.b);
   return r.b;
 }
+INS B i_ARMO(B el0, i64 sz, B* cStack) { assert(sz>0);
+  HArr_p r = m_harrUv(sz);
+  r.a[sz-1] = el0;
+  for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
+  GS_UPD;
+  return bqn_merge(r.b);
+}
+INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
+  HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
+  r.a[sz-1] = el0;
+  for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
+  GS_UPD;
+  WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
+  a->obj = r.b;
+  return tag(a,OBJ_TAG);
+}
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return evalFunBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); } // TODO these only fail on oom, so no need to update pos
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
@@ -200,7 +216,7 @@ INS B i_FLDO(B ns, u32 p, Scope* sc) {
   return r;
 }
 INS B i_VFYM(B o) { // TODO this and ALIM allocate and thus can error on OOM
-  VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
+  WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_vfyObj);
   a->obj = o;
   return tag(a,OBJ_TAG);
 }
@@ -597,13 +613,15 @@ Nvm_res m_nvm(Body* body) {
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
       case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, BB2B fm,           u32* bc)
       case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B fm, BBB2B fd, u32* bc)
-      case ARRM: case ARRO:; bool o = *(bc-1) == ARRO;
+      case ARRM: case ARRO:; { bool o = *(bc-1) == ARRO;
         u32 sz = *bc++;
         if      (sz==0     ) { TOPs; CCALL(i_ARR_0); } // unused with optimizations
         else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
         else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(m_vec2); } // (B a, B b)
         else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARR_p); } // (B a, i64 sz, S)
-        break;
+      } break;
+      case ARMO: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMO); break; }
+      case ARMM: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMM); break; }
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
@@ -654,7 +672,7 @@ Nvm_res m_nvm(Body* body) {
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
       case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
-      default: print_fmt("JIT: Unsupported bytecode %i/%S", *s, bc_repr(*s)); err("");
+      default: print_fmt("JIT: Unsupported bytecode %i/%S\n", *s, bc_repr(*s)); err("");
     }
     #undef GET
     #undef GS_SET

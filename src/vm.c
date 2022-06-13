@@ -11,7 +11,7 @@
   #define UNWIND_COMPILER 1
 #endif
 
-#define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
+#define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(ARRO) F(ARRM) F(ARMO) F(ARMM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(NOTM) F(RETD) F(SYSV) F(VARU) F(PRED) \
                   F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
@@ -473,6 +473,38 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 
 
 
+FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
+  B o = c(WrappedObj,s)->obj;
+  if (!isArr(x) || rnk(x)==0) thrF("[…]%S𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
+  
+  B* op = harr_ptr(o);
+  usz oia = a(o)->ia;
+  
+  if (a(x)->sh[0] != oia) {
+    if (hdr) return false;
+    else thrF("[…]%S𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
+  }
+  
+  if (rnk(x)==1) {
+    SGet(x)
+    for (usz i = 0; i < oia; i++) {
+      B cx = m_unit(Get(x,i));
+      if (!hdr) v_set (pscs, op[i], cx, upd, true);
+      else if (!v_seth(pscs, op[i], cx)) { dec(cx); return false; }
+      dec(cx);
+    }
+    return true;
+  } else {
+    B cells = toCells(inc(x));
+    B* xp = harr_ptr(cells);
+    for (usz i = 0; i < oia; i++) {
+      if (!hdr) v_set (pscs, op[i], xp[i], upd, true);
+      else if (!v_seth(pscs, op[i], xp[i])) { dec(cells); return false; }
+    }
+    dec(cells);
+    return true;
+  }
+}
 
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   if (isArr(s)) { VTY(s, t_harr);
@@ -500,6 +532,8 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd, true);
   } else if (s.u == bi_N.u) {
     return;
+  } else if (isObj(s)) {
+    v_merge(pscs, s, x, upd, false);
   } else { assert(isExt(s));
     Scope* sc = pscs[(u16)(s.u>>32)];
     B prev = sc->ext->vars[(u32)s.u];
@@ -511,7 +545,8 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   }
 }
 NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
-  if (v(s)->type==t_vfyObj) return equal(c(VfyObj,s)->obj,x);
+  if (v(s)->type==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
+  if (v(s)->type==t_arrMerge) return v_merge(pscs, s, x, false, true);
   VTY(s, t_harr);
   B* sp = harr_ptr(s);
   usz ia = a(s)->ia;
@@ -813,12 +848,30 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case VFYM: { P(o) GS_UPD;
-        VfyObj* a = mm_alloc(sizeof(VfyObj), t_vfyObj);
+        WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_vfyObj);
         a->obj = o;
         ADD(tag(a,OBJ_TAG));
         break;
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
+      case ARMO: {
+        u32 sz = *bc++;
+        assert(sz>0);
+        HArr_p r = m_harrUv(sz);
+        for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
+        ADD(bqn_merge(r.b));
+        break;
+      }
+      case ARMM: {
+        u32 sz = *bc++;
+        assert(sz>0);
+        HArr_p r = m_harrUv(sz);
+        for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
+        WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
+        a->obj = r.b;
+        ADD(tag(a,OBJ_TAG));
+        break;
+      }
       
       case RETD: { GS_UPD;
         ADD(m_ns(ptr_inc(sc), ptr_inc(b->nsDesc)));
@@ -979,8 +1032,8 @@ DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->obj
 DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
-DEF_FREE(alias) { dec(((FldAlias*)x)->obj); }
-DEF_FREE(vfymO) { dec(((VfyObj*  )x)->obj); }
+DEF_FREE(alias) { dec(((FldAlias*  )x)->obj); }
+DEF_FREE(wrobj) { dec(((WrappedObj*)x)->obj); }
 DEF_FREE(bBlks) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) ptr_dec(c->a[i]); }
 DEF_FREE(scExt) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) dec(c->vars[i]); }
 
@@ -1013,8 +1066,8 @@ void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
-void alias_visit(Value* x) { mm_visit(((FldAlias*)x)->obj); }
-void vfymO_visit(Value* x) { mm_visit(((VfyObj*  )x)->obj); }
+void alias_visit(Value* x) { mm_visit(((FldAlias*  )x)->obj); }
+void wrobj_visit(Value* x) { mm_visit(((WrappedObj*)x)->obj); }
 void bBlks_visit(Value* x) { BlBlocks* c = (BlBlocks*)x; u16 am = c->am; for (i32 i = 0; i < am; i++) mm_visitP(c->a[i]); }
 void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; for (i32 i = 0; i < am; i++) mm_visit(c->vars[i]); }
 
@@ -1024,6 +1077,7 @@ void block_print(FILE* f, B x) { fprintf(f,"(%p: block)",v(x)); }
 void scope_print(FILE* f, B x) { fprintf(f,"(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){fprintf(f," ");fprint(f,sc->vars[i]);}fprintf(f,")"); }
 void alias_print(FILE* f, B x) { fprintf(f,"(alias %d of ", c(FldAlias,x)->p); fprint(f,c(FldAlias,x)->obj); fprintf(f,")"); }
 void vfymO_print(FILE* f, B x) { fprint(f,c(FldAlias,x)->obj); }
+void marrO_print(FILE* f, B x) { fprintf(f,"["); fprint(f,c(FldAlias,x)->obj); fprintf(f,"]"); }
 void bBlks_print(FILE* f, B x) { fprintf(f,"(block list)"); }
 void scExt_print(FILE* f, B x) { fprintf(f,"(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
 
@@ -1071,17 +1125,18 @@ void print_vmStack() {
 B oomMessage;
 
 void comp_init() {
-  TIi(t_comp     ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
-  TIi(t_body     ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
-  TIi(t_block    ,freeO) = block_freeO; TIi(t_block   ,freeF) = block_freeF; TIi(t_block   ,visit) = block_visit; TIi(t_block   ,print) = block_print;
-  TIi(t_scope    ,freeO) = scope_freeO; TIi(t_scope   ,freeF) = scope_freeF; TIi(t_scope   ,visit) = scope_visit; TIi(t_scope   ,print) = scope_print;
-  TIi(t_scopeExt ,freeO) = scExt_freeO; TIi(t_scopeExt,freeF) = scExt_freeF; TIi(t_scopeExt,visit) = scExt_visit; TIi(t_scopeExt,print) = scExt_print;
-  TIi(t_blBlocks ,freeO) = bBlks_freeO; TIi(t_blBlocks,freeF) = bBlks_freeF; TIi(t_blBlocks,visit) = bBlks_visit; TIi(t_blBlocks,print) = bBlks_print;
-  TIi(t_fldAlias ,freeO) = alias_freeO; TIi(t_fldAlias,freeF) = alias_freeF; TIi(t_fldAlias,visit) = alias_visit; TIi(t_fldAlias,print) = alias_print;
-  TIi(t_vfyObj   ,freeO) = vfymO_freeO; TIi(t_vfyObj  ,freeF) = vfymO_freeF; TIi(t_vfyObj  ,visit) = vfymO_visit; TIi(t_vfyObj  ,print) = vfymO_print;
-  TIi(t_funBl    ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print; TIi(t_funBl,decompose) = block_decompose;
-  TIi(t_md1Bl    ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
-  TIi(t_md2Bl    ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
+  TIi(t_comp    ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
+  TIi(t_body    ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
+  TIi(t_block   ,freeO) = block_freeO; TIi(t_block   ,freeF) = block_freeF; TIi(t_block   ,visit) = block_visit; TIi(t_block   ,print) = block_print;
+  TIi(t_scope   ,freeO) = scope_freeO; TIi(t_scope   ,freeF) = scope_freeF; TIi(t_scope   ,visit) = scope_visit; TIi(t_scope   ,print) = scope_print;
+  TIi(t_scopeExt,freeO) = scExt_freeO; TIi(t_scopeExt,freeF) = scExt_freeF; TIi(t_scopeExt,visit) = scExt_visit; TIi(t_scopeExt,print) = scExt_print;
+  TIi(t_blBlocks,freeO) = bBlks_freeO; TIi(t_blBlocks,freeF) = bBlks_freeF; TIi(t_blBlocks,visit) = bBlks_visit; TIi(t_blBlocks,print) = bBlks_print;
+  TIi(t_fldAlias,freeO) = alias_freeO; TIi(t_fldAlias,freeF) = alias_freeF; TIi(t_fldAlias,visit) = alias_visit; TIi(t_fldAlias,print) = alias_print;
+  TIi(t_vfyObj  ,freeO) = wrobj_freeO; TIi(t_vfyObj  ,freeF) = wrobj_freeF; TIi(t_vfyObj  ,visit) = wrobj_visit; TIi(t_vfyObj  ,print) = vfymO_print;
+  TIi(t_arrMerge,freeO) = wrobj_freeO; TIi(t_arrMerge,freeF) = wrobj_freeF; TIi(t_arrMerge,visit) = wrobj_visit; TIi(t_arrMerge,print) = marrO_print;
+  TIi(t_funBl   ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print; TIi(t_funBl,decompose) = block_decompose;
+  TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
+  TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
   
   TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
@@ -1105,7 +1160,7 @@ void comp_init() {
   bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[NOTM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
   bL_m[FAIL]=1; bL_m[PRED]=1;
   
-  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[ARRO]=2; bL_m[ARRM]=2;
+  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[ARRO]=2; bL_m[ARRM]=2; bL_m[ARMO]=2; bL_m[ARMM]=2;
   bL_m[DYNO]=2; bL_m[DYNM]=2; bL_m[FLDO]=2; bL_m[FLDM]=2;
   bL_m[SYSV]=2; bL_m[ALIM]=2;
   
@@ -1150,8 +1205,8 @@ void comp_init() {
   
   // stack added map
   for (i32 i = 0; i < BC_SIZE; i++) sA_m[i] = sD_m[i] + sC_m[i];
-  sA_m[ARRO]=1;
-  sA_m[ARRM]=1;
+  sA_m[ARRO]=1; sA_m[ARMO]=1;
+  sA_m[ARRM]=1; sA_m[ARMM]=1;
 }
 
 

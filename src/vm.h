@@ -25,6 +25,8 @@ enum {
   RETD = 0x08, // return a namespace of exported items
   ARRO = 0x0B, // N; create a vector of top N items
   ARRM = 0x0C, // N; create a mutable vector of top N items
+  ARMO = 0x0D, // push `>ToS`
+  ARMM = 0x0E, // push a mutable version of `>ToS` that unpacks cells of what its assigned to
   
   FN1C = 0x10, // monadic function call ⟨…,x,f  ⟩ → F x
   FN2C = 0x11, //  dyadic function call ⟨…,x,f,w⟩ → w F x
@@ -57,6 +59,7 @@ enum {
   FLDO = 0x40, // N; get field nameList[N] from ToS
   FLDM = 0x41, // N; get mutable field nameList[N] from ToS
   ALIM = 0x42, // N; replace ToS with one with a namespace field alias N
+  
   EXTO, EXTM, EXTU, // alternate versions of VAR_ for extended variables
   ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline as 2 u32s, instead of reading from `objs`)
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
@@ -190,8 +193,8 @@ extern i32 sC_m[BC_SIZE];
 extern i32 sA_m[BC_SIZE];
 static u32* nextBC       (u32* p) { return p + bL_m[*p]; }
 static i32  stackAdded   (u32* p) { return sA_m[*p]; }
-static i32  stackDiff    (u32* p) { if (*p==ARRO|*p==ARRM) return 1-p[1]; return sD_m[*p]; }
-static i32  stackConsumed(u32* p) { if (*p==ARRO|*p==ARRM) return   p[1]; return sC_m[*p]; }
+static i32  stackDiff    (u32* p) { if (*p==ARRO|*p==ARRM|*p==ARMO|*p==ARMM) return 1-p[1]; return sD_m[*p]; }
+static i32  stackConsumed(u32* p) { if (*p==ARRO|*p==ARRM|*p==ARMO|*p==ARMM) return   p[1]; return sC_m[*p]; }
 
 char* bc_repr(u32 p);
 
@@ -281,10 +284,10 @@ typedef struct FldAlias {
   B obj;
   i32 p;
 } FldAlias;
-typedef struct VfyObj {
+typedef struct WrappedObj {
   struct Value;
   B obj;
-} VfyObj;
+} WrappedObj;
 
 
 NOINLINE B v_getF(Scope* pscs[], B s); // doesn't consume
