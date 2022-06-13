@@ -545,52 +545,55 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   }
 }
 NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
-  if (v(s)->type==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
-  if (v(s)->type==t_arrMerge) return v_merge(pscs, s, x, false, true);
-  VTY(s, t_harr);
-  B* sp = harr_ptr(s);
-  usz ia = a(s)->ia;
-  if (isAtm(x) || !eqShape(s, x)) {
-    if (!isNsp(x)) return false;
-    for (u64 i = 0; i < ia; i++) {
-      B c = sp[i];
-      if (isVar(c)) {
-        Scope* sc = pscs[(u16)(c.u>>32)];
-        B g = ns_qgetU(x, pos2gid(sc->body, (u32)c.u));
-        if (q_N(g) || !v_seth(pscs, c, g)) return false;
-      } else if (isObj(c) && v(c)->type==t_fldAlias) {
-        assert(v(c)->type == t_fldAlias);
-        FldAlias* cf = c(FldAlias,c);
-        B g = ns_qgetU(x, cf->p);
-        if (q_N(g) || !v_seth(pscs, cf->obj, g)) return false;
-      } else return false;
+  if (isArr(s)) {
+    VTY(s, t_harr);
+    B* sp = harr_ptr(s);
+    usz ia = a(s)->ia;
+    if (isAtm(x) || !eqShape(s, x)) {
+      if (!isNsp(x)) return false;
+      for (u64 i = 0; i < ia; i++) {
+        B c = sp[i];
+        if (isVar(c)) {
+          Scope* sc = pscs[(u16)(c.u>>32)];
+          B g = ns_qgetU(x, pos2gid(sc->body, (u32)c.u));
+          if (q_N(g) || !v_seth(pscs, c, g)) return false;
+        } else if (isObj(c) && v(c)->type==t_fldAlias) {
+          assert(v(c)->type == t_fldAlias);
+          FldAlias* cf = c(FldAlias,c);
+          B g = ns_qgetU(x, cf->p);
+          if (q_N(g) || !v_seth(pscs, cf->obj, g)) return false;
+        } else return false;
+      }
+      return true;
     }
+    SGetU(x)
+    for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], GetU(x,i))) return false;
     return true;
   }
-  SGetU(x)
-  for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], GetU(x,i))) return false;
-  return true;
+  if (v(s)->type==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
+  assert(v(s)->type==t_arrMerge);
+  return v_merge(pscs, s, x, false, true);
 }
 
 
 
 NOINLINE B v_getF(Scope* pscs[], B s) {
-  if (isExt(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B r = sc->ext->vars[(u32)s.u];
-    if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
-    sc->ext->vars[(u32)s.u] = bi_optOut;
-    return r;
-  } else if (isObj(s)) {
-    assert(v(s)->type == t_arrMerge);
-    return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj));
-  } else {
+  if (isArr(s)) {
     VTY(s, t_harr);
     usz ia = a(s)->ia;
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);
     for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i], true);
     return r.b;
+  } else if (isExt(s)) {
+    Scope* sc = pscs[(u16)(s.u>>32)];
+    B r = sc->ext->vars[(u32)s.u];
+    if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
+    sc->ext->vars[(u32)s.u] = bi_optOut;
+    return r;
+  } else {
+    assert(isObj(s) && v(s)->type==t_arrMerge);
+    return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj));
   }
 }
 
