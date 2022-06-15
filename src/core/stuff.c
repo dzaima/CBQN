@@ -235,7 +235,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
   char* lp = p;
   while (*p != 0) { c = *p++;
     if (c!='%') continue;
-    if (lp!=p-1) AJOIN(fromUTF8(lp, p-1-lp));
+    if (lp!=p-1) AJOIN(utf8Decode(lp, p-1-lp));
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); err(""); UD;
       case 'R': {
         B b = va_arg(a, B);
@@ -322,7 +322,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
     }
     lp = p;
   }
-  if (lp!=p) AJOIN(fromUTF8(lp, p-lp));
+  if (lp!=p) AJOIN(utf8Decode(lp, p-lp));
   return s;
 }
 NOINLINE B append_fmt(B s, char* p, ...) {

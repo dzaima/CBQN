@@ -50,7 +50,7 @@ BQNV bqn_eval(BQNV src) {
   return makeX(bqn_exec(inc(getB(src)), bi_N, bi_N));
 }
 BQNV bqn_evalCStr(const char* str) {
-  return makeX(bqn_exec(fromUTF8l(str), bi_N, bi_N));
+  return makeX(bqn_exec(utf8Decode0(str), bi_N, bi_N));
 }
 
 
@@ -126,7 +126,7 @@ BQNV bqn_makeC8Vec (size_t len, const u8*   data) { u8*  rp; B r = m_c8arrv (&rp
 BQNV bqn_makeC16Vec(size_t len, const u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
 BQNV bqn_makeC32Vec(size_t len, const u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
 BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len);      copyBData(r.a,data,len  ); return makeX(r.b); }
-BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(fromUTF8(str, len)); }
+BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(utf8Decode(str, len)); }
 
 typedef struct BoundFn {
   struct NFn;
@@ -742,8 +742,8 @@ void ffiType_print(FILE* f, B x) {
 }
 
 void ffi_init() {
-  boundFnDesc   = registerNFn(m_str8l("(foreign function)"), boundFn_c1, boundFn_c2);
-  foreignFnDesc = registerNFn(m_str8l("(foreign function)"), directFn_c1, directFn_c2);
+  boundFnDesc   = registerNFn(m_ascii0("(foreign function)"), boundFn_c1, boundFn_c2);
+  foreignFnDesc = registerNFn(m_ascii0("(foreign function)"), directFn_c1, directFn_c2);
   TIi(t_ffiType,freeO) = ffiType_freeO;
   TIi(t_ffiType,freeF) = ffiType_freeF;
   TIi(t_ffiType,visit) = ffiType_visit;

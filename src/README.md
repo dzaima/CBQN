@@ -227,11 +227,11 @@ HArr_p r = m_harrUp(10); // 10-item array without any set shape. Use the arr_shW
 // you can use withFill to add a fill element to a created array (or manually create a fillarr, see src/core/fillarr.h)
 
 B r = m_str32(U"⟨1⋄2⋄3⟩"); // a constant string with unicode chars
-B r = m_str8(5, "hello"); // an ASCII string with specified length
-B r = m_str8l("hello"); // an ASCII string, read until null byte
+B r = m_ascii("hello", 5); // an ASCII string with specified length
+B r = m_ascii0("hello"); // ↑ but read as null-terminated
 #include "utils/utf.h"
-B r = fromUTF8l("⟨1⋄2⋄3⟩") // parse UTF-8 from a char*
-B r = fromUTF8("⟨1⋄2⋄3⟩", 17) // ↑ but with a specified length
+B r = utf8Decode("⟨1⋄2⋄3⟩", 17) // decode UTF-8 from a char*
+B r = utf8Decode0("⟨1⋄2⋄3⟩") // ↑ but read as null-terminated
 u64 sz = utf8lenB(x); TALLOC(char, buf, sz+1); toUTF8(x, buf); buf[sz]=0; /*use buf as a C-string*/ TFREE(buf);
 
 // src/utils/mut.h provides a way to build an array by copying parts of other arrays

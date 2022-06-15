@@ -1152,7 +1152,7 @@ void comp_init() {
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
   
-  oomMessage = m_str8l("Out of memory"); gc_add(oomMessage);
+  oomMessage = m_ascii0("Out of memory"); gc_add(oomMessage);
   
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
@@ -1610,7 +1610,7 @@ NOINLINE void freeThrown() {
 }
 
 NOINLINE NORETURN void thrM(char* s) {
-  thr(fromUTF8(s, strlen(s)));
+  thr(utf8Decode(s, strlen(s)));
 }
 NOINLINE NORETURN void thrOOM() {
   if (oomMessage.u==0) err("out-of-memory encountered before out-of-memory error message object was initialized");

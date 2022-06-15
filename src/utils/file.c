@@ -58,7 +58,7 @@ I8Arr* path_bytes(B path) { // consumes
   return src;
 }
 B path_chars(B path) { // consumes
-  return fromUTF8a(path_bytes(path));
+  return utf8DecodeA(path_bytes(path));
 }
 B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
   I8Arr* tf = path_bytes(path);
@@ -77,7 +77,7 @@ B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
   for (usz i = 0; i < lineCount; i++) {
     usz spos = pos;
     while(pos<ia && p[pos]!='\n' && p[pos]!='\r') pos++;
-    HARR_ADD(r, i, fromUTF8((char*)p+spos, pos-spos));
+    HARR_ADD(r, i, utf8Decode((char*)p+spos, pos-spos));
     if (pos<ia && p[pos]=='\r' && pos+1<ia && p[pos+1]=='\n') pos+= 2;
     else pos++;
   }
@@ -155,7 +155,7 @@ B path_abs(B path) {
   p[plen] = 0;
   char* res = realpath(p, NULL);
   if (res==NULL) thrF("Failed to convert %R to absolute path", path);
-  B r = fromUTF8l(res);
+  B r = utf8Decode0(res);
   free(res);
   dec(path);
   TFREE(p);
@@ -216,7 +216,7 @@ B path_list(B path) {
   B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
     char* name = c->d_name;
-    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, m_str8l(name));
+    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, m_ascii0(name));
   }
   closedir(d);
   dec(path);

@@ -68,7 +68,7 @@ B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
   return bi_N;
 }
 B ns_getC(B ns, char* name) {
-  B field = m_str8l(name);
+  B field = m_ascii0(name);
   B r = ns_getNU(ns, field, false);
   decG(field);
   return r;
@@ -101,7 +101,7 @@ Body* m_nnsDescF(i32 n, char** names) {
   incBy(emptyi32obj, 3);
   
   M_HARR(nl, n)
-  for (usz i = 0; i < n; i++) HARR_ADD(nl, i, m_str8l(names[i]));
+  for (usz i = 0; i < n; i++) HARR_ADD(nl, i, m_ascii0(names[i]));
   
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   comp->bc = emptyi32obj;

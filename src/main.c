@@ -13,7 +13,7 @@ static bool init = false;
 static void repl_init() {
   if (init) return;
   cbqn_init();
-  replPath = m_str8l("."); gc_add(replPath);
+  replPath = m_ascii0("."); gc_add(replPath);
   Body* body = m_nnsDesc();
   B ns = m_nns(body);
   gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
@@ -68,14 +68,14 @@ void cbqn_runLine0(char* ln, i64 read) {
     char* cmdS = ln+1;
     char* cmdE;
     if (isCmd(cmdS, &cmdE, "ex ")) {
-      B path = fromUTF8l(cmdE);
+      B path = utf8Decode0(cmdE);
       code = path_chars(path);
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "r ")) {
-      code = fromUTF8l(cmdE);
+      code = utf8Decode0(cmdE);
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
-      code = fromUTF8l(cmdE);
+      code = utf8Decode0(cmdE);
       time = -1;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "profile ") || isCmd(cmdS, &cmdE, "profile@")) {
@@ -83,14 +83,14 @@ void cbqn_runLine0(char* ln, i64 read) {
       profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
       if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
       if (profile>999999) { printf("Cannot profile with >999999hz frequency\n"); return; }
-      code = fromUTF8l(cpos);
+      code = utf8Decode0(cpos);
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
       i64 am = readInt(&repE);
       if (repE==cmdE) { printf("time command not given repetition count\n"); return; }
       if (am==0) { printf("repetition count was zero\n"); return; }
-      code = fromUTF8l(repE);
+      code = utf8Decode0(repE);
       time = am;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
@@ -177,14 +177,14 @@ void cbqn_runLine0(char* ln, i64 read) {
       #endif
       return;
     } else if (isCmd(cmdS, &cmdE, "internalPrint ")) {
-      code = fromUTF8l(cmdE);
+      code = utf8Decode0(cmdE);
       output = 2;
     } else {
       printf("Unknown REPL command\n");
       return;
     }
   } else {
-    code = fromUTF8l(ln);
+    code = utf8Decode0(ln);
     output = 1;
   }
   Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
@@ -260,7 +260,7 @@ void cbqn_runLine(char* ln, i64 len) {
 
 #if WASM
 void cbqn_evalSrc(char* src, i64 len) {
-  B code = fromUTF8(src, len);
+  B code = utf8Decode(src, len);
   B res = bqn_exec(code, bi_N, bi_N);
   
   B resFmt = bqn_fmt(res);
@@ -312,18 +312,18 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-e)"), emptySVec()));
+              dec(gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-e)"), emptySVec()));
               break;
             }
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
-              B r = bqn_fmt(gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-p)"), emptySVec()));
+              B r = bqn_fmt(gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-p)"), emptySVec()));
               printRaw(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inline(fromUTF8l(argv[i++]), m_str8l("(-o)"), emptySVec());
+              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-o)"), emptySVec());
               printRaw(r); dec(r);
               printf("\n");
               break;
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
             }
             #ifdef PERF_TEST
             case 'R': { repl_init(); REQARG(R);
-              B path = fromUTF8l(argv[i++]);
+              B path = utf8Decode0(argv[i++]);
               B lines = path_lines(path);
               usz ia = a(lines)->ia;
               SGet(lines)
@@ -362,19 +362,19 @@ int main(int argc, char* argv[]) {
     if (i!=argc || execStdin) {
       repl_init();
       B src;
-      if (!execStdin) src = fromUTF8l(argv[i++]);
+      if (!execStdin) src = utf8Decode0(argv[i++]);
       B args;
       if (i==argc) {
         args = emptySVec();
       } else {
         M_HARR(ap, argc-i)
-        for (usz j = 0; j < argc-i; j++) HARR_ADD(ap, j, fromUTF8l(argv[i+j]));
+        for (usz j = 0; j < argc-i; j++) HARR_ADD(ap, j, utf8Decode0(argv[i+j]));
         args = HARR_FV(ap);
       }
       
       B execRes;
       if (execStdin) {
-        execRes = gsc_exec_inline(fromUTF8a(stream_bytes(stdin)), m_str8l("(-)"), args);
+        execRes = gsc_exec_inline(utf8DecodeA(stream_bytes(stdin)), m_ascii0("(-)"), args);
       } else {
         execRes = bqn_execFile(src, args);
       }

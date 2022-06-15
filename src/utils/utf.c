@@ -19,7 +19,7 @@ static u32 utf8_p(u8* p) {
   }
 }
 
-B fromUTF8(const char* s, i64 len) {
+B utf8Decode(const char* s, i64 len) {
   u64 sz = 0;
   i64 j = 0;
   while (true) {
@@ -45,12 +45,12 @@ B fromUTF8(const char* s, i64 len) {
   }
 }
 
-B fromUTF8l(const char* s) {
-  return fromUTF8(s, strlen(s));
+B utf8Decode0(const char* s) {
+  return utf8Decode(s, strlen(s));
 }
 
-B fromUTF8a(I8Arr* a) { // consumes a
-  B r = fromUTF8((char*)a->a, a->ia);
+B utf8DecodeA(I8Arr* a) { // consumes a
+  B r = utf8Decode((char*)a->a, a->ia);
   ptr_dec(a);
   return r;
 }

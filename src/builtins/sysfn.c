@@ -72,13 +72,13 @@ B glyph_c1(B t, B x) {
     return r;
   }
   u8 ty = v(x)->type;
-  if (ty==t_funBI) { B r = fromUTF8l(pfn_repr(c(Fun,x)->extra)); decG(x); return r; }
-  if (ty==t_md1BI) { B r = fromUTF8l(pm1_repr(c(Md1,x)->extra)); decG(x); return r; }
-  if (ty==t_md2BI) { B r = fromUTF8l(pm2_repr(c(Md2,x)->extra)); decG(x); return r; }
+  if (ty==t_funBI) { B r = utf8Decode0(pfn_repr(c(Fun,x)->extra)); decG(x); return r; }
+  if (ty==t_md1BI) { B r = utf8Decode0(pm1_repr(c(Md1,x)->extra)); decG(x); return r; }
+  if (ty==t_md2BI) { B r = utf8Decode0(pm2_repr(c(Md2,x)->extra)); decG(x); return r; }
   if (ty==t_nfn) { B r = nfn_name(x); decG(x); return r; }
-  if (ty==t_funBl) { decG(x); return m_str8l("(function block)"); }
-  if (ty==t_md1Bl) { decG(x); return m_str8l("(1-modifier block)"); }
-  if (ty==t_md2Bl) { decG(x); return m_str8l("(2-modifier block)"); }
+  if (ty==t_funBl) { decG(x); return m_ascii0("(function block)"); }
+  if (ty==t_md1Bl) { decG(x); return m_ascii0("(1-modifier block)"); }
+  if (ty==t_md2Bl) { decG(x); return m_ascii0("(2-modifier block)"); }
   if (ty==t_ns) return nsFmt(x);
   return m_str32(U"(•Glyph: given object with unexpected type)");
 }
@@ -86,7 +86,7 @@ B glyph_c1(B t, B x) {
 B repr_c1(B t, B x) {
   if (isF64(x)) {
     NUM_FMT_BUF(buf, x.f);
-    return fromUTF8(buf, strlen(buf));
+    return utf8Decode(buf, strlen(buf));
   } else {
     #if FORMATTER
       return bqn_repr(x);
@@ -498,9 +498,9 @@ static NOINLINE void rand_init() {
   rand_ns = m_nnsDesc("seed1", "seed2", "range", "deal", "subset");
   NSDesc* d = rand_ns->nsDesc;
   d->expGIDs[0] = d->expGIDs[1] = -1;
-  rand_rangeName  = m_str8l("range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_str8l("(rand).Range"), rand_range_c1, rand_range_c2);
-  rand_dealName   = m_str8l("deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_str8l("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
-  rand_subsetName = m_str8l("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_str8l("(rand).Subset"),       c1_bad, rand_subset_c2);
+  rand_rangeName  = m_ascii0("range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_ascii0("(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_dealName   = m_ascii0("deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_ascii0("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
+  rand_subsetName = m_ascii0("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_ascii0("(rand).Subset"),       c1_bad, rand_subset_c2);
 }
 B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand: 𝕩 must be a number");
@@ -529,7 +529,7 @@ B reBQN_c1(B t, B x) {
   B prim = ns_getC(x, "primitives");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
-  Block* initBlock = bqn_comp(m_str8l("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
+  Block* initBlock = bqn_comp(m_ascii0("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
   B scVal;
   if (replVal==0) {
     scVal = bi_N;
@@ -772,7 +772,7 @@ B getLine_c1(B t, B x) {
     if (ln) free(ln);
     return m_c32(0);
   }
-  B r = fromUTF8(ln, strlen(ln)-1);
+  B r = utf8Decode(ln, strlen(ln)-1);
   free(ln);
   return r;
 }
@@ -794,7 +794,7 @@ B fromUtf8_c1(B t, B x) {
       chrs[i] = v&0xff;
     }
   }
-  B r = fromUTF8(chrs, ia);
+  B r = utf8Decode(chrs, ia);
   decG(x);
   TFREE(chrs);
   return r;
@@ -928,8 +928,8 @@ B sh_c2(B t, B w, B x) {
   dec(w); dec(x);
   B s_outRaw = toC8Any(s_out);
   B s_errRaw = toC8Any(s_err);
-  B s_outObj = fromUTF8((char*)c8any_ptr(s_outRaw), a(s_outRaw)->ia); dec(s_outRaw);
-  B s_errObj = fromUTF8((char*)c8any_ptr(s_errRaw), a(s_errRaw)->ia); dec(s_errRaw);
+  B s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), a(s_outRaw)->ia); dec(s_outRaw);
+  B s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), a(s_errRaw)->ia); dec(s_errRaw);
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else
@@ -1176,7 +1176,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"rand")) cr = getRandNS();
     else if (eqStr(c, U"rebqn")) cr = incG(bi_reBQN);
     else if (eqStr(c, U"primitives")) cr = getPrimitives();
-    else if (eqStr(c, U"fromutf8")) cr = incG(bi_fromUtf8);
+    else if (eqStr(c, U"utf8Decode")) cr = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) cr = inc(REQ_PATH);
     else if (eqStr(c, U"name")) cr = inc(REQ_NAME);
     else if (eqStr(c, U"fchars")) cr = m_nfn(fCharsDesc, inc(REQ_PATH));
@@ -1208,21 +1208,21 @@ void sysfn_init() {
   #if CATCH_ERRORS
   lastErrMsg = bi_N;
   #endif
-  cdPath = m_str8(1, "."); gc_add(cdPath); gc_addFn(sys_gcFn);
-  fCharsDesc = registerNFn(m_str8l("(file).Chars"), fchars_c1, fchars_c2);
-  fileAtDesc = registerNFn(m_str8l("(file).At"), fileAt_c1, fileAt_c2);
-  fLinesDesc = registerNFn(m_str8l("(file).Lines"), flines_c1, flines_c2);
-  fBytesDesc = registerNFn(m_str8l("(file).Bytes"), fbytes_c1, fbytes_c2);
-  fListDesc  = registerNFn(m_str8l("(file).List"), list_c1, c2_bad);
-  fTypeDesc  = registerNFn(m_str8l("(file).Type"), ftype_c1, c2_bad);
-  createdirDesc  = registerNFn(m_str8l("(file).CreateDir"), createdir_c1, c2_bad);
-  renameDesc  = registerNFn(m_str8l("(file).Rename"), c1_bad, rename_c2);
-  removeDesc  = registerNFn(m_str8l("(file).Remove"), remove_c1, c2_bad);
-  fMapBytesDesc = registerNFn(m_str8l("(file).MapBytes"), mapBytes_c1, c2_bad);
-  fExistsDesc = registerNFn(m_str8l("(file).Exists"), fexists_c1, c2_bad);
-  importDesc = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
-  reBQNDesc = registerNFn(m_str8l("(REPL)"), repl_c1, repl_c2);
-  ffiloadDesc = registerNFn(m_str32(U"•FFI"), c1_bad, ffiload_c2);
+  cdPath = m_ascii(".", 1); gc_add(cdPath); gc_addFn(sys_gcFn);
+  fCharsDesc   = registerNFn(m_ascii0("(file).Chars"), fchars_c1, fchars_c2);
+  fileAtDesc   = registerNFn(m_ascii0("(file).At"), fileAt_c1, fileAt_c2);
+  fLinesDesc   = registerNFn(m_ascii0("(file).Lines"), flines_c1, flines_c2);
+  fBytesDesc   = registerNFn(m_ascii0("(file).Bytes"), fbytes_c1, fbytes_c2);
+  fListDesc    = registerNFn(m_ascii0("(file).List"), list_c1, c2_bad);
+  fTypeDesc    = registerNFn(m_ascii0("(file).Type"), ftype_c1, c2_bad);
+  createdirDesc= registerNFn(m_ascii0("(file).CreateDir"), createdir_c1, c2_bad);
+  renameDesc   = registerNFn(m_ascii0("(file).Rename"), c1_bad, rename_c2);
+  removeDesc   = registerNFn(m_ascii0("(file).Remove"), remove_c1, c2_bad);
+  fMapBytesDesc= registerNFn(m_ascii0("(file).MapBytes"), mapBytes_c1, c2_bad);
+  fExistsDesc  = registerNFn(m_ascii0("(file).Exists"), fexists_c1, c2_bad);
+  reBQNDesc    = registerNFn(m_ascii0("(REPL)"), repl_c1, repl_c2);
+  importDesc   = registerNFn(m_str32(U"•Import"), import_c1, import_c2);
+  ffiloadDesc  = registerNFn(m_str32(U"•FFI"), c1_bad, ffiload_c2);
 }
 void sysfnPost_init() {
   file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mapbytes","createdir","rename","remove");

@@ -1,8 +1,5 @@
 #pragma once
 
-B fromUTF8(const char* s, i64 len);
-B fromUTF8l(const char* s);
-
 void printUTF8(u32 c);
 void fprintUTF8(FILE* f, u32 c);
 

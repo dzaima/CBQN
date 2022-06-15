@@ -7,14 +7,14 @@
 B itype_c1(B t, B x) {
   B r;
   if(isVal(x)) {
-    r = m_str8l(type_repr(v(x)->type));
+    r = m_ascii0(type_repr(v(x)->type));
   } else {
-    if      (isF64(x)) r = m_str8l("tagged f64");
-    else if (isC32(x)) r = m_str8l("tagged c32");
-    else if (isTag(x)) r = m_str8l("tagged tag");
-    else if (isVar(x)) r = m_str8l("tagged var");
-    else if (isExt(x)) r = m_str8l("tagged extvar");
-    else               r = m_str8l("tagged unknown");
+    if      (isF64(x)) r = m_ascii0("tagged f64");
+    else if (isC32(x)) r = m_ascii0("tagged c32");
+    else if (isTag(x)) r = m_ascii0("tagged tag");
+    else if (isVar(x)) r = m_ascii0("tagged var");
+    else if (isExt(x)) r = m_ascii0("tagged extvar");
+    else               r = m_ascii0("tagged unknown");
   }
   dec(x);
   return r;
@@ -25,7 +25,7 @@ B elType_c1(B t, B x) {
   return r;
 }
 B refc_c1(B t, B x) {
-  B r = isVal(x)? m_i32(v(x)->refc) : m_str8l("(not heap-allocated)");
+  B r = isVal(x)? m_i32(v(x)->refc) : m_ascii0("(not heap-allocated)");
   dec(x);
   return r;
 }
@@ -300,10 +300,10 @@ B unshare_c1(B t, B x) {
 static B internalNS;
 B getInternalNS() {
   if (internalNS.u == 0) {
-    #define F(X) v_##X = m_str8l(#X);
+    #define F(X) v_##X = m_ascii0(#X);
     FOR_VARIATION(F)
     #undef F
-    listVariations_def = m_str8l("if");
+    listVariations_def = m_ascii0("if");
     gc_addFn(variation_gcRoot);
     #define F(X) inc(bi_##X),
     Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump","eequal","temp");

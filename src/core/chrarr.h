@@ -17,11 +17,12 @@
 #undef c32
 
 
-B m_str8(usz sz, char* s);
-B m_str8l(char* s);
 B m_str32(u32* s);
-B fromUTF8l(const char* x);
-B fromUTF8a(I8Arr* x);
+B m_ascii0(char* s);
+B m_ascii(char* s, i64 sz);
+B utf8Decode0(const char* x);
+B utf8Decode(const char* x, i64 sz);
+B utf8DecodeA(I8Arr* x);
 
 C8Arr*  cpyC8Arr (B x); // consumes
 C16Arr* cpyC16Arr(B x); // consumes
