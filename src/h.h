@@ -346,6 +346,7 @@ B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't 
 
 B bqn_exec(B str, B path, B args); // consumes all
 B bqn_execFile(B path, B args); // consumes
+B bqn_explain(B str, B path); // consumes str
 B bqn_fmt(B x); // consumes
 B bqn_repr(B x); // consumes
 
