@@ -136,6 +136,8 @@ typedef struct NextRequest {
   u32 pos2; // ↑ for dyadic; U32_MAX if not wanted
 } NextRequest;
 
+static B emptyARMM;
+
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos) {
   usz blIA = a(block)->ia;
   if (blIA!=3) thrM("VM compiler: Bad block info size");
@@ -284,6 +286,16 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
         bool ret = false;
         #define A64(X) { u64 a64=(X); TSADD(newBC, (u32)a64); TSADD(newBC, a64>>32); }
         switch (*c) {
+          case ARMM: { u32 len = c[1];
+            if (0 == len) {
+              TSADD(newBC, ADDI);
+              A64(emptyARMM.u);
+            } else {
+              TSADD(newBC, ARMM);
+              TSADD(newBC, len);
+            }
+            break;
+          }
           case PUSH:;
             B obj = comp->objs->a[c[1]];
             TSADD(newBC, isVal(obj)? ADDI : ADDU);
@@ -485,8 +497,8 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
     if (hdr) return false;
     else thrF("[…]%U𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
   }
-  
-  if (rnk(x)==1) {
+  if (oia == 0) { /*no need to do anything*/ }
+  else if (rnk(x)==1) {
     SGet(x)
     for (usz i = 0; i < oia; i++) {
       B cx = m_unit(Get(x,i));
@@ -494,7 +506,6 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
       else if (!v_seth(pscs, op[i], cx)) { dec(cx); return false; }
       dec(cx);
     }
-    return true;
   } else {
     B cells = toCells(inc(x));
     B* xp = harr_ptr(cells);
@@ -503,8 +514,8 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
       else if (!v_seth(pscs, op[i], xp[i])) { dec(cells); return false; }
     }
     dec(cells);
-    return true;
   }
+  return true;
 }
 
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
@@ -1153,6 +1164,11 @@ void comp_init() {
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
   
   oomMessage = m_ascii0("Out of memory"); gc_add(oomMessage);
+  WrappedObj* arm0 = mm_alloc(sizeof(WrappedObj), t_arrMerge);
+  arm0->obj = emptyHVec();
+  emptyARMM = tag(arm0, OBJ_TAG);
+  gc_add(emptyARMM);
+  
   
   #ifndef GS_REALLOC
     allocStack((void**)&gStack, (void**)&gStackStart, (void**)&gStackEnd, sizeof(B), GS_SIZE);
