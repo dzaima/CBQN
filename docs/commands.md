@@ -32,6 +32,10 @@ Erase the specified variable name.
 
 Not a system function because it only clears the variables value (previous code `↩`ing it will still be able to), and to allow it to be executed even when the VM is completely out of memory such that it can't even parse REPL input BQN.
 
+## `)escaped "escaped expr"`
+
+Parse `\`-escapes and execute as REPL input. Primarily for external tools to be able to execute multiline input.
+
 ## `)mem`
 
 Get statistics on memory usage.

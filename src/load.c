@@ -506,7 +506,7 @@ static void freed_visit(Value* x) {
 static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
 static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
 DEF_FREE(def) { }
-static void def_visit(Value* x) { printf("(no visit for %d=%s)\n", x->type, type_repr(x->type)); }
+static void def_visit(Value* x) { err("undefined visit for object\n"); }
 static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
@@ -646,6 +646,7 @@ void base_init() { // very first init function
     TIi(t_empty,getU) = empty_getU;
   #endif
   TIi(t_shape,visit) = noop_visit;
+  TIi(t_temp,visit) = noop_visit;
   TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;

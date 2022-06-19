@@ -2,6 +2,7 @@
 #include "vm.h"
 #include "ns.h"
 #include "utils/utf.h"
+#include "utils/talloc.h"
 #include "utils/file.h"
 #include "utils/time.h"
 #include "utils/interrupt.h"
@@ -46,6 +47,15 @@ void profiler_free(void);
 void profiler_displayResults(void);
 void clearImportCache(void);
 
+static B escape_parser;
+B simple_unescape(B x) {
+  if (RARE(escape_parser.u==0)) {
+    escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N, bi_N);
+    gc_add(escape_parser);
+  }
+  return c1(escape_parser, x);
+}
+
 i64 readInt(char** p) {
   char* c = *p;
   i64 am = 0;
@@ -58,7 +68,6 @@ i64 readInt(char** p) {
 }
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==10) return;
-  if (ln[read-1]==10) ln[--read] = 0;
   
   B code;
   int output; // 0-no; 1-formatter; 2-internal
@@ -74,6 +83,16 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "r ")) {
       code = utf8Decode0(cmdE);
       output = 0;
+    } else if (isCmd(cmdS, &cmdE, "escaped ")) {
+      B u = simple_unescape(utf8Decode0(cmdE));
+      u64 len = utf8lenB(u);
+      TALLOC(char, ascii, len+1);
+      toUTF8(u, ascii);
+      dec(u);
+      ascii[len] = '\0';
+      cbqn_runLine0(ascii, len+1);
+      TFREE(ascii);
+      return;
     } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
       code = utf8Decode0(cmdE);
       time = -1;
@@ -234,10 +253,6 @@ void cbqn_runLine0(char* ln, i64 read) {
     }
   } else dec(res);
   
-  #ifdef HEAP_VERIFY
-    heapVerify();
-  #endif
-  gc_maybeGC();
 }
 
 void cbqn_runLine(char* ln, i64 len) {
@@ -254,6 +269,10 @@ void cbqn_runLine(char* ln, i64 len) {
   }
   cbqn_takeInterrupts(true);
   cbqn_runLine0(ln, len);
+  #ifdef HEAP_VERIFY
+    heapVerify();
+  #endif
+  gc_maybeGC();
   cbqn_takeInterrupts(false);
   popCatch();
 }
@@ -396,6 +415,7 @@ int main(int argc, char* argv[]) {
       size_t gl = 0;
       i64 read = getline(&ln, &gl, stdin);
       if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
+      if (ln[read-1]==10) ln[--read] = 0;
       cbqn_runLine(ln, read);
       free(ln);
     }
