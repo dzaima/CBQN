@@ -12,7 +12,7 @@ test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations
 ./BQN test/bitcpy.bqn // fuzz-test bit_cpy; requires a CBQN build with -DTEST_BITCPY
 ./BQN test/squeeze.bqn // fuzz-test squeezing; requires a CBQN build with -DEEQUAL_NEGZERO
 ./BQN test/random.bqn // various random tests
-make -C test/ffi // test FFI functionality
+make -C test/ffi // test FFI functionality; expects both regular and shared library CBQN builds to already exist
 
 legacy utilities:
   test/readTests.bqn // read mlochbaum/BQN tests in various formats

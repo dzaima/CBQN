@@ -23,6 +23,7 @@ void ns_set(B ns, B name, B val); // consumes val
 
 i32 pos2gid(Body* body, i32 pos); // converts a variable position to a gid; errors on special name variables
 i32 str2gid(B s); // doesn't consume
+i32 str2gidQ(B s); // doesn't consume
 B gid2str(i32 n); // returns unowned object
 
 

@@ -337,6 +337,11 @@ i32 str2gid(B s) {
   return r;
 }
 
+i32 str2gidQ(B s) { // if the name doesn't exist yet, return -1
+  if (globalNames==NULL) return -1; // if there are no names, there certainly won't be the queried one
+  return getD_b2i(globalNames, s, -1);
+}
+
 B gid2str(i32 n) {
   B r = IGetU(globalNameList, n);
   // print_fmt("gid2str %i → %R\n", n, r);

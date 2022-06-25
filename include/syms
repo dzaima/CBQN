@@ -22,6 +22,8 @@
   bqn_readC16Arr;
   bqn_readC32Arr;
   bqn_readObjArr;
+  bqn_hasField;
+  bqn_getField;
   bqn_makeF64;
   bqn_makeChar;
   bqn_makeI8Arr;

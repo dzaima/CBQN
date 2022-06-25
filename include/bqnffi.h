@@ -44,6 +44,8 @@ void bqn_readC16Arr(BQNV a, uint16_t* buf);
 void bqn_readC32Arr(BQNV a, uint32_t* buf);
 void bqn_readObjArr(BQNV a, BQNV*     buf);
 
+bool bqn_hasField(BQNV ns, BQNV name); // test if the namespace has the wanted field (name must be all lowercase with no underscores)
+BQNV bqn_getField(BQNV ns, BQNV name); // return the value of the field with the name. Assumes the field does exist.
 
 // create objects
 BQNV bqn_makeF64(double d);

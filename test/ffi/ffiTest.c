@@ -51,6 +51,19 @@ BQNV readTyped(BQNV x) {
   return bqn_makeF64(res);
 }
 
+BQNV getField(BQNV ns, BQNV name, BQNV def) {
+  BQNV res;
+  if (bqn_hasField(ns, name)) {
+    res = bqn_getField(ns, name);
+    bqn_free(def);
+  } else {
+    res = def;
+  }
+  bqn_free(ns);
+  bqn_free(name);
+  return res;
+}
+
 BQNV getShape(BQNV x) {
   size_t n = bqn_rank(x);
   size_t sh[n];

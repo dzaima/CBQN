@@ -60,11 +60,12 @@ B ns_qgetU(B ns, i32 gid) { VTY(ns, t_ns);
 B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
   NSDesc* d = n->desc;
-  i32 gid = str2gid(name);
-  
-  i32 ia = d->varAm;
-  for (i32 i = 0; i < ia; i++) if (d->expGIDs[i]==gid) return n->sc->vars[i];
-  if (thrEmpty) thrM("No key found");
+  i32 gid = str2gidQ(name);
+  if (gid!=-1) {
+    i32 ia = d->varAm;
+    for (i32 i = 0; i < ia; i++) if (d->expGIDs[i]==gid) return n->sc->vars[i];
+  }
+  if (thrEmpty) thrF("No field named %B found", name);
   return bi_N;
 }
 B ns_getC(B ns, char* name) {

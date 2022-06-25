@@ -14,6 +14,9 @@ f ↩ "lib.so" •FFI "a"‿"makeArrays" ⋄ •Out∘•Repr¨ F ⟨⟩
 f ↩ "lib.so" •FFI "i32"‿"directAccess"‿">a" ⋄ •Show F "Ai32"•internal.Variation ↕10
 bind ← "lib.so" •FFI "a"‿"bindAdd"‿">a" ⋄ g ← Bind 4 ⋄ •Show G 123
 
+Section "# namespaces"
+f ↩ "lib.so" •FFI "a"‿"getField"‿">𝕨a"‿"a"‿"a" ⋄ •Show {ab⇐1‿2 ⋄ cd⇐3‿4} F ⟨"ab" ⋄ "default"⟩
+f ↩ "lib.so" •FFI "a"‿"getField"‿">𝕨a"‿"a"‿"a" ⋄ •Show {ab⇐1‿2 ⋄ cd⇐3‿4} F ⟨"ef" ⋄ "default"⟩
 
 Section "# print args"
 f ↩ "lib.so" •FFI ""‿"printArgs"‿"i8"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64" ⋄ •Show F ¯123‿¯12323‿¯212312312‿250‿50000‿3123456789‿π∾÷3

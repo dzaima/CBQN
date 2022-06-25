@@ -10,6 +10,7 @@
 #if FFI==2
 #include <ffi.h>
 #include "utils/mut.h"
+#include "ns.h"
 #endif
 
 // base interface defs for when GC stuff needs to be added in
@@ -84,6 +85,12 @@ void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
   }
 }
 
+bool bqn_hasField(BQNV ns, BQNV name) {
+  return !q_N(ns_getNU(getB(ns), getB(name), false));
+}
+BQNV bqn_getField(BQNV ns, BQNV name) {
+  return makeX(inc(ns_getNU(getB(ns), getB(name), true)));
+}
 
 BQNV bqn_makeF64(double d) { return makeX(m_f64(d)); }
 BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
