@@ -18,6 +18,10 @@ Clear the cache of monadic `•Import` calls, resulting in re-evaluating the sou
 
 Time the argument expression. `n` specifies the number of times to repeat. Exists to allow not escaping quotes and less overhead for timing very fast & small expressions.
 
+## `)explain expr` / `)e expr`
+
+Display a syntax breakdown of the expression
+
 ## `)profile expr` / `)profile@frequency expr`
 
 Profile the expression at the given sampling frequency, or 5000 samples/second by default

@@ -170,15 +170,6 @@ void load_gcFn() {
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart; \
   if (CATCH) { POP_COMP; rethrow(); }
 
-B bqn_explain(B str, B path) {
-  B args = bi_N;
-  PUSH_COMP;
-  B c = c2(load_comp, incG(load_compArg), inc(str));
-  POP_COMP;
-  B ret = c2(load_explain, c, str);
-  return ret;
-}
-
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   PUSH_COMP;
   Block* r = load_compObj(c2(comp, incG(compArg), inc(str)), str, path, NULL);
@@ -489,12 +480,7 @@ void load_init() { // very last init function
     load_repr = Get(fmtR, 1); gc_add(load_repr);
     decG(fmtR);
     #endif
-    Block* expl_b = load_compImport("(explain)",
-      #include "gen/explain"
-    );
-    load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);
-    gc_add(load_explain);
-
+    
     gc_enable();
   #endif // PRECOMP
 }
@@ -512,6 +498,29 @@ void bqn_exit(i32 code) {
   print_allocStats();
   exit(code);
 }
+
+B bqn_explain(B str, B path) {
+  #if NO_EXPLAIN
+    thrM("Explainer not included in this CBQN build");
+  #else
+    if (load_explain.u==0) {
+      B* runtime = harr_ptr(load_rtObj);
+      Block* expl_b = load_compImport("(explain)",
+        #include "gen/explain"
+      );
+      load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);
+      gc_add(load_explain);
+    }
+    
+    B args = bi_N;
+    PUSH_COMP;
+    B c = c2(load_comp, incG(load_compArg), inc(str));
+    POP_COMP;
+    B ret = c2(load_explain, c, str);
+    return ret;
+  #endif
+}
+
 
 
 static void freed_visit(Value* x) {
