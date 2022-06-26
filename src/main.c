@@ -198,6 +198,16 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "internalPrint ")) {
       code = utf8Decode0(cmdE);
       output = 2;
+    } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
+      B expl = bqn_explain(utf8Decode0(cmdE), replPath);
+      HArr* expla = toHArr(expl);
+      usz ia=expla->ia;
+      for(usz i=0; i<ia; i++) {
+          printRaw(expla->a[i]);
+          putchar('\n');
+      }
+      dec(expl);
+      return;
     } else {
       printf("Unknown REPL command\n");
       return;

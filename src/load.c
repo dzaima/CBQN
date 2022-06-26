@@ -130,6 +130,7 @@ B load_compgen;
 B load_rtObj;
 B load_compArg;
 B load_glyphs;
+B load_explain;
 
 #if FORMATTER
 B load_fmt, load_repr;
@@ -168,6 +169,15 @@ void load_gcFn() {
   B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;  \
   i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart; \
   if (CATCH) { POP_COMP; rethrow(); }
+
+B bqn_explain(B str, B path) {
+  B args = bi_N;
+  PUSH_COMP;
+  B c = c2(load_comp, incG(load_compArg), inc(str));
+  POP_COMP;
+  B ret = c2(load_explain, c, str);
+  return ret;
+}
 
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   PUSH_COMP;
@@ -479,6 +489,12 @@ void load_init() { // very last init function
     load_repr = Get(fmtR, 1); gc_add(load_repr);
     decG(fmtR);
     #endif
+    Block* expl_b = load_compImport("(explain)",
+      #include "gen/explain"
+    );
+    load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);
+    gc_add(load_explain);
+
     gc_enable();
   #endif // PRECOMP
 }
