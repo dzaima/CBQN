@@ -180,7 +180,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       code = utf8Decode0(cmdE);
       output = 2;
     } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
-      B expl = bqn_explain(utf8Decode0(cmdE), inc(replPath));
+      B expl = bqn_explain(utf8Decode0(cmdE), replPath);
       HArr* expla = toHArr(expl);
       usz ia=expla->ia;
       for(usz i=0; i<ia; i++) {
