@@ -216,7 +216,7 @@ void cbqn_runLine0(char* ln, i64 read) {
     code = utf8Decode0(ln);
     output = 1;
   }
-  Block* block = bqn_compSc(code, inc(replPath), emptySVec(), gsc, true);
+  Block* block = bqn_compSc(code, incG(replPath), emptySVec(), gsc, true);
   
   ptr_dec(gsc->body);
   gsc->body = ptr_inc(block->bodies[0]);
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
               usz ia = a(lines)->ia;
               SGet(lines)
               for (u64 i = 0; i < ia; i++) {
-                dec(gsc_exec_inline(Get(lines, i), inc(replPath), emptySVec()));
+                dec(gsc_exec_inline(Get(lines, i), incG(replPath), emptySVec()));
               }
               break;
             }

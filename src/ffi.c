@@ -67,13 +67,13 @@ BQNV bqn_pick(BQNV a, size_t pos) {
 }
 
 // TODO copy directly with some mut.h thing
-void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (inc(getB(a))); memcpy(buf, i8any_ptr (c), a(c)->ia * 1); dec(c); }
-void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(inc(getB(a))); memcpy(buf, i16any_ptr(c), a(c)->ia * 2); dec(c); }
-void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(inc(getB(a))); memcpy(buf, i32any_ptr(c), a(c)->ia * 4); dec(c); }
-void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(inc(getB(a))); memcpy(buf, f64any_ptr(c), a(c)->ia * 8); dec(c); }
-void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (inc(getB(a))); memcpy(buf, c8any_ptr (c), a(c)->ia * 1); dec(c); }
-void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(inc(getB(a))); memcpy(buf, c16any_ptr(c), a(c)->ia * 2); dec(c); }
-void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(inc(getB(a))); memcpy(buf, c32any_ptr(c), a(c)->ia * 4); dec(c); }
+void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (incG(getB(a))); memcpy(buf, i8any_ptr (c), a(c)->ia * 1); dec(c); }
+void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(incG(getB(a))); memcpy(buf, i16any_ptr(c), a(c)->ia * 2); dec(c); }
+void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(incG(getB(a))); memcpy(buf, i32any_ptr(c), a(c)->ia * 4); dec(c); }
+void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(incG(getB(a))); memcpy(buf, f64any_ptr(c), a(c)->ia * 8); dec(c); }
+void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (incG(getB(a))); memcpy(buf, c8any_ptr (c), a(c)->ia * 1); dec(c); }
+void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); memcpy(buf, c16any_ptr(c), a(c)->ia * 2); dec(c); }
+void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), a(c)->ia * 4); dec(c); }
 void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
   usz ia = a(b)->ia;
   B* p = arr_bptr(b);

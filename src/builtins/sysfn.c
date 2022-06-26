@@ -507,7 +507,7 @@ B makeRand_c1(B t, B x) {
   if (rand_ns==NULL) rand_init();
   B r = m_nns(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
   Scope* sc = c(NS,r)->sc;
-  for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], inc(r));
+  for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], incG(r));
   return r;
 }
 static B randNS;
@@ -582,7 +582,7 @@ B fchars_c1(B d, B x) {
 B fchars_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
   B p = path_rel(nfn_objU(d), w);
-  path_wChars(inc(p), x);
+  path_wChars(incG(p), x);
   dec(x);
   return p;
 }
@@ -598,7 +598,7 @@ B fbytes_c1(B d, B x) {
 B fbytes_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
   B p = path_rel(nfn_objU(d), w);
-  path_wBytes(inc(p), x);
+  path_wBytes(incG(p), x);
   dec(x);
   return p;
 }
@@ -620,7 +620,7 @@ B flines_c2(B d, B w, B x) {
   }
   dec(x);
   B p = path_rel(nfn_objU(d), w);
-  path_wChars(inc(p), s);
+  path_wChars(incG(p), s);
   decG(s);
   return p;
 }
@@ -662,7 +662,7 @@ B import_c1(B d, B x) {
   importKeyList = vec_addN(importKeyList, path);
   importValList = vec_addN(importValList, bi_N);
   
-  B r = bqn_execFile(inc(path), emptySVec());
+  B r = bqn_execFile(incG(path), emptySVec());
   
   harr_ptr(importValList)[prevLen] = inc(r);
   setPrevImport(path, prevLen);
@@ -894,8 +894,8 @@ B sh_c2(B t, B w, B x) {
   while (poll(&ps[0], plen - iDone, -1) > 0) {
     shDbg("next poll; revents: out:%d err:%d in:%d\n", ps[0].revents, ps[1].revents, ps[2].revents);
     bool any = false;
-    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_out = vec_join(s_out, inc(oBufObj)); }
-    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_err = vec_join(s_err, inc(oBufObj)); }
+    if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_out = vec_join(s_out, incG(oBufObj)); }
+    if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_err = vec_join(s_err, incG(oBufObj)); }
      if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
@@ -986,13 +986,13 @@ B tErrRaw_c1(B t, B x) {
 static B termNS;
 B getTermNS() {
   if (termNS.u == 0) {
-    #define F(X) inc(bi_##X),
+    #define F(X) incG(bi_##X),
     Body* d = m_nnsDesc("flush", "rawmode", "charb", "charn", "outraw", "errraw");
     termNS =  m_nns(d,F(tFlush)F(tRawMode)F(tCharB)F(tCharN)F(tOutRaw)F(tErrRaw));
     #undef F
     gc_add(termNS);
   }
-  return inc(termNS);
+  return incG(termNS);
 }
 
 
@@ -1106,13 +1106,13 @@ B bitcast_im(Md1D* d, B x) { B f = d->f;
 static B bitNS;
 B getBitNS() {
   if (bitNS.u == 0) {
-    #define F(X) inc(bi_bit##X),
+    #define F(X) incG(bi_bit##X),
     Body* d = m_nnsDesc("cast");
     bitNS = m_nns(d,   F(cast));
     #undef F
     gc_add(bitNS);
   }
-  return inc(bitNS);
+  return incG(bitNS);
 }
 
 B getInternalNS(void);
@@ -1147,7 +1147,7 @@ B sys_c1(B t, B x) {
         fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName), F(fMapBytes), F(createdir), F(rename), F(remove));
         #undef F
       }
-      cr = inc(fileNS);
+      cr = incG(fileNS);
     }
     else if (eqStr(c, U"wdpath")) {
       if (!wdpath.u) wdpath = path_abs(inc(cdPath));

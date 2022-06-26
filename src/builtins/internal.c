@@ -132,22 +132,22 @@ B listVariations_c2(B t, B w, B x) {
   }
   noSpec:;
   B r = emptyHVec();
-  if(abit) { r=vec_addN(r,inc(v_Ab  ));                          if(c_incr) { r=vec_addN(r,inc(v_AbInc  ));                             } }
-  if(ai8 ) { r=vec_addN(r,inc(v_Ai8 ));r=vec_addN(r,inc(v_Si8 )); if(c_incr) { r=vec_addN(r,inc(v_Ai8Inc ));r=vec_addN(r,inc(v_Si8Inc )); } }
-  if(ai16) { r=vec_addN(r,inc(v_Ai16));r=vec_addN(r,inc(v_Si16)); if(c_incr) { r=vec_addN(r,inc(v_Ai16Inc));r=vec_addN(r,inc(v_Si16Inc)); } }
-  if(ai32) { r=vec_addN(r,inc(v_Ai32));r=vec_addN(r,inc(v_Si32)); if(c_incr) { r=vec_addN(r,inc(v_Ai32Inc));r=vec_addN(r,inc(v_Si32Inc)); } }
-  if(ac8 ) { r=vec_addN(r,inc(v_Ac8 ));r=vec_addN(r,inc(v_Sc8 )); if(c_incr) { r=vec_addN(r,inc(v_Ac8Inc ));r=vec_addN(r,inc(v_Sc8Inc )); } }
-  if(ac16) { r=vec_addN(r,inc(v_Ac16));r=vec_addN(r,inc(v_Sc16)); if(c_incr) { r=vec_addN(r,inc(v_Ac16Inc));r=vec_addN(r,inc(v_Sc16Inc)); } }
-  if(ac32) { r=vec_addN(r,inc(v_Ac32));r=vec_addN(r,inc(v_Sc32)); if(c_incr) { r=vec_addN(r,inc(v_Ac32Inc));r=vec_addN(r,inc(v_Sc32Inc)); } }
-  if(af64) { r=vec_addN(r,inc(v_Af64));r=vec_addN(r,inc(v_Sf64)); if(c_incr) { r=vec_addN(r,inc(v_Af64Inc));r=vec_addN(r,inc(v_Sf64Inc)); } }
-  if(ah)   { r=vec_addN(r,inc(v_Ah  ));r=vec_addN(r,inc(v_Sh  )); if(c_incr) { r=vec_addN(r,inc(v_AhInc  ));r=vec_addN(r,inc(v_ShInc  )); } }
-  {          r=vec_addN(r,inc(v_Af  ));r=vec_addN(r,inc(v_Sf  )); if(c_incr) { r=vec_addN(r,inc(v_AfInc  ));r=vec_addN(r,inc(v_SfInc  )); } }
+  if(abit) { r=vec_addN(r,incG(v_Ab  ));                            if(c_incr) { r=vec_addN(r,incG(v_AbInc  ));                               } }
+  if(ai8 ) { r=vec_addN(r,incG(v_Ai8 ));r=vec_addN(r,incG(v_Si8 )); if(c_incr) { r=vec_addN(r,incG(v_Ai8Inc ));r=vec_addN(r,incG(v_Si8Inc )); } }
+  if(ai16) { r=vec_addN(r,incG(v_Ai16));r=vec_addN(r,incG(v_Si16)); if(c_incr) { r=vec_addN(r,incG(v_Ai16Inc));r=vec_addN(r,incG(v_Si16Inc)); } }
+  if(ai32) { r=vec_addN(r,incG(v_Ai32));r=vec_addN(r,incG(v_Si32)); if(c_incr) { r=vec_addN(r,incG(v_Ai32Inc));r=vec_addN(r,incG(v_Si32Inc)); } }
+  if(ac8 ) { r=vec_addN(r,incG(v_Ac8 ));r=vec_addN(r,incG(v_Sc8 )); if(c_incr) { r=vec_addN(r,incG(v_Ac8Inc ));r=vec_addN(r,incG(v_Sc8Inc )); } }
+  if(ac16) { r=vec_addN(r,incG(v_Ac16));r=vec_addN(r,incG(v_Sc16)); if(c_incr) { r=vec_addN(r,incG(v_Ac16Inc));r=vec_addN(r,incG(v_Sc16Inc)); } }
+  if(ac32) { r=vec_addN(r,incG(v_Ac32));r=vec_addN(r,incG(v_Sc32)); if(c_incr) { r=vec_addN(r,incG(v_Ac32Inc));r=vec_addN(r,incG(v_Sc32Inc)); } }
+  if(af64) { r=vec_addN(r,incG(v_Af64));r=vec_addN(r,incG(v_Sf64)); if(c_incr) { r=vec_addN(r,incG(v_Af64Inc));r=vec_addN(r,incG(v_Sf64Inc)); } }
+  if(ah)   { r=vec_addN(r,incG(v_Ah  ));r=vec_addN(r,incG(v_Sh  )); if(c_incr) { r=vec_addN(r,incG(v_AhInc  ));r=vec_addN(r,incG(v_ShInc  )); } }
+  {          r=vec_addN(r,incG(v_Af  ));r=vec_addN(r,incG(v_Sf  )); if(c_incr) { r=vec_addN(r,incG(v_AfInc  ));r=vec_addN(r,incG(v_SfInc  )); } }
   decG(x);
   dec(xf);
   return r;
 }
 B listVariations_c1(B t, B x) {
-  return listVariations_c2(t, inc(listVariations_def), x);
+  return listVariations_c2(t, incG(listVariations_def), x);
 }
 static bool u8_get(u8** cv, u8* cE, const char* x) {
   u8* c = *cv;
@@ -183,15 +183,15 @@ B variation_c2(B t, B w, B x) {
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
     wp++;
-    if      (u8_get(&wp, wpE, "b"  )) res = taga(cpyBitArr(inc(x)));
-    else if (u8_get(&wp, wpE, "i8" )) res = taga(cpyI8Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "i16")) res = taga(cpyI16Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "i32")) res = taga(cpyI32Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "c8" )) res = taga(cpyC8Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "c16")) res = taga(cpyC16Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "c32")) res = taga(cpyC32Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "f64")) res = taga(cpyF64Arr(inc(x)));
-    else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr(inc(x)));
+    if      (u8_get(&wp, wpE, "b"  )) res = taga(cpyBitArr(incG(x)));
+    else if (u8_get(&wp, wpE, "i8" )) res = taga(cpyI8Arr (incG(x)));
+    else if (u8_get(&wp, wpE, "i16")) res = taga(cpyI16Arr(incG(x)));
+    else if (u8_get(&wp, wpE, "i32")) res = taga(cpyI32Arr(incG(x)));
+    else if (u8_get(&wp, wpE, "c8" )) res = taga(cpyC8Arr (incG(x)));
+    else if (u8_get(&wp, wpE, "c16")) res = taga(cpyC16Arr(incG(x)));
+    else if (u8_get(&wp, wpE, "c32")) res = taga(cpyC32Arr(incG(x)));
+    else if (u8_get(&wp, wpE, "f64")) res = taga(cpyF64Arr(incG(x)));
+    else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr  (incG(x)));
     else if (u8_get(&wp, wpE, "f")) {
       Arr* t = m_fillarrp(xia);
       fillarr_setFill(t, getFillQ(x));
@@ -200,7 +200,7 @@ B variation_c2(B t, B w, B x) {
       
       B* xp = arr_bptr(x);
       if (xp==NULL) {
-        h = cpyHArr(inc(x));
+        h = cpyHArr(incG(x));
         xp = h->a;
       }
       
@@ -221,7 +221,7 @@ B variation_c2(B t, B w, B x) {
       if (!variation_refs.u) {
         variation_refs = emptyHVec();
       }
-      variation_refs = vec_addN(variation_refs, inc(res));
+      variation_refs = vec_addN(variation_refs, incG(res));
     }
     if (wp!=wpE) thrM("•internal.Variation: Bad 𝕨");
   } else thrM("•internal.Variation: Bad start of 𝕨");
@@ -305,11 +305,11 @@ B getInternalNS() {
     #undef F
     listVariations_def = m_ascii0("if");
     gc_addFn(variation_gcRoot);
-    #define F(X) inc(bi_##X),
+    #define F(X) incG(bi_##X),
     Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump","eequal","temp");
     internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalTemp));
     #undef F
     gc_add(internalNS);
   }
-  return inc(internalNS);
+  return incG(internalNS);
 }

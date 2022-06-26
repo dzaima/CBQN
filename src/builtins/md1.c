@@ -62,12 +62,12 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
     BBB2B fc2 = c(Fun,f)->c2;
     if (TI(x,arrD1) && xia<80 && wia>130) {
-      Arr* wd = arr_shVec(TI(w,slice)(inc(w), 0, wia));
-      r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), inc(x)));
+      Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
+      r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), incG(x)));
     } else {
       SGet(w)
       M_HARR(r, wia)
-      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), inc(x)));
+      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), incG(x)));
       r = bqn_merge(HARR_FV(r));
     }
     if (rnk(r)>1) {
@@ -404,7 +404,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
     }                          \
   } else if (X##_cr!=0) X##_csz*= a(X)->sh[1];
 
-#define SLICE(X, S) ({ Arr* r_ = X##_slc(inc(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
+#define SLICE(X, S) ({ Arr* r_ = X##_slc(incG(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
 
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
 

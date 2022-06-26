@@ -135,7 +135,7 @@ B wm1_c1(Md1D* d, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
     u64 s = nsTime();
   #endif
   B om = t->v;
-  B fn = m1_d(inc(om), inc(f));
+  B fn = m1_d(incG(om), inc(f));
   B r = c1(fn, x);
   dec(fn);
   #if RT_PERF
@@ -152,7 +152,7 @@ B wm1_c2(Md1D* d, B w, B x) { B f = d->f; WMd1* t = (WMd1*)d->m1;
     u64 s = nsTime();
   #endif
   B om = t->v;
-  B fn = m1_d(inc(om), inc(f));
+  B fn = m1_d(incG(om), inc(f));
   B r = c2(fn, w, x);
   dec(fn);
   #if RT_PERF
@@ -170,7 +170,7 @@ B wm2_c1(Md2D* d, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
     u64 s = nsTime();
   #endif
   B om = t->v;
-  B fn = m2_d(inc(om), inc(f), inc(g));
+  B fn = m2_d(incG(om), inc(f), inc(g));
   B r = c1(fn, x);
   dec(fn);
   #if RT_PERF
@@ -187,7 +187,7 @@ B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
     u64 s = nsTime();
   #endif
   B om = t->v;
-  B fn = m2_d(inc(om), inc(f), inc(g));
+  B fn = m2_d(incG(om), inc(f), inc(g));
   B r = c2(fn, w, x);
   dec(fn);
   #if RT_PERF

@@ -75,7 +75,7 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       B r; i32* rp;
-      if (reuse && v(x)->type==t_i32arr) { r=inc(REUSE(x)); rp = xp; }
+      if (reuse && v(x)->type==t_i32arr) { r=incG(REUSE(x)); rp = xp; }
       else r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
@@ -93,7 +93,7 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
-      if (reuse && v(x)->type==t_f64arr) { r=inc(REUSE(x)); rp = xp; }
+      if (reuse && v(x)->type==t_f64arr) { r=incG(REUSE(x)); rp = xp; }
       else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {

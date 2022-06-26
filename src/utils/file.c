@@ -103,7 +103,7 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   guaranteeStr(rel);
   if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
-  if (ria==0) { dec(rel); return inc(base); }
+  if (ria==0) { dec(rel); return incG(base); }
   SGetU(base)
   usz bia = a(base)->ia;
   bool has = bia && o2cu(GetU(base, bia-1))=='/';

@@ -571,6 +571,7 @@ static inline void decG(B x) {
   if(!--vx->refc) value_free(vx);
 }
 static inline B incG(B x) { // inc for guaranteed heap-allocated objects
+  assert(isVal(x));
   v(VALIDATE(x))->refc++;
   return x;
 }

@@ -59,7 +59,7 @@ static B rtUnder_c1(B f, B g, B x) { // consumes x
   return r;
 }
 static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
-  B fn = m2_d(incG(rt_under), inc(f), m2_d(inc(bi_before), w, inc(g)));
+  B fn = m2_d(incG(rt_under), inc(f), m2_d(incG(bi_before), w, inc(g)));
   B r = c1(fn, x);
   decG(fn);
   return r;

@@ -25,7 +25,7 @@ B m_nfn(NFnDesc* desc, B obj) {
   return tag(r,FUN_TAG);
 }
 B nfn_name(B x) { VTY(x, t_nfn);
-  return inc(c(NFnDesc,IGetU(nfn_list,c(NFn,x)->id))->name);
+  return incG(c(NFnDesc,IGetU(nfn_list,c(NFn,x)->id))->name);
 }
 
 DEF_FREE(nfn) { dec(((NFn*)x)->obj); }

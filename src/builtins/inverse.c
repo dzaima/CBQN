@@ -26,8 +26,8 @@ B undo_c2(Md1D* d, B w, B x) { B f = d->f;
   return r;
 }
 
-B setInvReg_c1 (B t, B x) { rt_invFnReg  = x; rt_invFnRegFn  = c(Fun,x)->c1; return inc(bi_nativeInvReg); }
-B setInvSwap_c1(B t, B x) { rt_invFnSwap = x; rt_invFnSwapFn = c(Fun,x)->c1; return inc(bi_nativeInvSwap); }
+B setInvReg_c1 (B t, B x) { rt_invFnReg  = x; rt_invFnRegFn  = c(Fun,x)->c1; return incG(bi_nativeInvReg); }
+B setInvSwap_c1(B t, B x) { rt_invFnSwap = x; rt_invFnSwapFn = c(Fun,x)->c1; return incG(bi_nativeInvSwap); }
 B nativeInvReg_c1(B t, B x) {
   if (isFun(x)) return m_nfn(fn_invRegDesc, x);
   return c1(rt_invFnReg, x);

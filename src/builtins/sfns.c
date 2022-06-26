@@ -61,9 +61,9 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   }
   if (fills) {
     if (isAtm(a) || isAtm(b)) goto noFills;
-    B af = asFill(inc(a));
+    B af = asFill(incG(a));
     if (noFill(af)) goto noFills;
-    B bf = asFill(inc(b));
+    B bf = asFill(incG(b));
     if (noFill(bf)) { dec(af); goto noFills; }
     if (!fillEqual(af,bf)) { dec(bf); dec(af); goto noFills; }
     dec(bf);
@@ -701,7 +701,7 @@ FORCE_INLINE B affixes(B x, i32 post) {
     }
     dec(x);
   }
-  B rf = inc(HARR_O(r).a[post? cam : 0]);
+  B rf = incG(HARR_O(r).a[post? cam : 0]);
   return withFill(HARR_FV(r), rf);
 }
 
@@ -1304,7 +1304,7 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
   usz tk = csz*am; // taken element count
   usz lv = xia-tk; // elements left alone
   
-  Arr* arg = TI(x,slice)(inc(x), wi<0? lv : 0, tk);
+  Arr* arg = TI(x,slice)(incG(x), wi<0? lv : 0, tk);
   usz* ash = arr_shAlloc(arg, xr);
   if (ash) { ash[0] = am; shcpy(ash+1, a(x)->sh+1, xr-1); }
   

@@ -17,7 +17,7 @@ B select_c1(B t, B x) {
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (a(x)->sh[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
   usz ia = shProd(a(x)->sh, 1, xr);
-  Arr* r = TI(x,slice)(inc(x), 0, ia);
+  Arr* r = TI(x,slice)(incG(x), 0, ia);
   usz* sh = arr_shAlloc(r, xr-1);
   if (sh) shcpy(sh, a(x)->sh+1, xr-1);
   decG(x);
