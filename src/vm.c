@@ -646,6 +646,23 @@ FORCE_INLINE Scope* m_scopeI(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B
   return sc;
 }
 
+NOINLINE void scope_decF(Scope* sc) {
+  i32 varAm = sc->varAm;
+  i32 innerRef = 1;
+  for (i32 i = 0; i < varAm; i++) {
+    B c = sc->vars[i];
+    if (isVal(c) && v(c)->refc==1) {
+      u8 t = v(c)->type;
+      if      (t==t_funBl && c(FunBlock,c)->sc==sc) innerRef++;
+      else if (t==t_md1Bl && c(Md1Block,c)->sc==sc) innerRef++;
+      else if (t==t_md2Bl && c(Md2Block,c)->sc==sc) innerRef++;
+    }
+  }
+  assert(innerRef <= sc->refc);
+  if (innerRef==sc->refc) scope_freeF((Value*) sc);
+  else sc->refc--; // refc>0 guaranteed by refc!=1 from scope_dec
+}
+
 FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   if (body==NULL) thrF("No header matched argument%S", q_N(sc->vars[2])?"":"s");
   
