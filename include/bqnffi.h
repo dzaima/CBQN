@@ -80,8 +80,8 @@ BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj);
 // direct (zero copy) array item access
 typedef enum { elt_unk, elt_i8, elt_i16, elt_i32, elt_f64, elt_c8, elt_c16, elt_c32 } BQNElType; // note that more types may be added in the future
 BQNElType bqn_directArrType(BQNV a);
-// can only use the functions below if bqn_elType returns the corresponding type
-// a valid implementation of bqn_elType would be to always return elt_unk, thus disallowing the use of direct access entirely
+// can only use the functions below if bqn_directArrType returns the corresponding type
+// a valid implementation of bqn_directArrType would be to always return elt_unk, thus disallowing the use of direct access entirely
 int8_t*   bqn_directI8 (BQNV a);
 int16_t*  bqn_directI16(BQNV a);
 int32_t*  bqn_directI32(BQNV a);
