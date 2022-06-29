@@ -25,6 +25,7 @@
 #include "../builtins/md2.c"
 #include "../builtins/internal.c"
 #include "../builtins/inverse.c"
+#include "../builtins/squeeze.c"
 #include "../vm.c"
 #include "../ns.c"
 #include "../nfns.c"
