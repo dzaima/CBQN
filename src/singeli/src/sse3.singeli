@@ -58,6 +58,12 @@ def iota{T & w128{T,32}} = make{T,0,1,2,3}
 def iota{T & w128{T,16}} = make{T,0,1,2,3,4,5,6,7}
 def iota{T & w128{T,8}} = make{T,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 
+# bit arith
+def __xor{a:T, b:T & w128i{T}} = T ~~ emit{[4]f32, '_mm_xor_ps', v2f{a}, v2f{b}}
+def __and{a:T, b:T & w128i{T}} = T ~~ emit{[4]f32, '_mm_and_ps', v2f{a}, v2f{b}}
+def __or {a:T, b:T & w128i{T}} = T ~~ emit{[4]f32, '_mm_or_ps',  v2f{a}, v2f{b}}
+def __not{a:T & w128u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
+
 # signed comparison
 def __eq{a:T,b:T & T==[16]i8 } = emit{[16]u8,  '_mm_cmpeq_epi8',  a, b}
 def __eq{a:T,b:T & T==[ 8]i16} = emit{[ 8]u16, '_mm_cmpeq_epi16', a, b}
@@ -79,8 +85,36 @@ def __gt{a:T,b:T & w128u{T}} = ~(a<=b)
 # rest of comparison
 def __ne{a:T,b:T & w128i{T}} = ~(b==a)
 
+
+# shift
+def __shl{a:T,b & w128i{T, 16} & knum{b}} = emit{T, '_mm_slli_epi16', a, b}
+def __shl{a:T,b & w128i{T, 32} & knum{b}} = emit{T, '_mm_slli_epi32', a, b}
+def __shl{a:T,b & w128i{T, 64} & knum{b}} = emit{T, '_mm_slli_epi64', a, b}
+def __shr{a:T,b & w128u{T, 16} & knum{b}} = emit{T, '_mm_srli_epi16', a, b}
+def __shr{a:T,b & w128u{T, 32} & knum{b}} = emit{T, '_mm_srli_epi32', a, b}
+def __shr{a:T,b & w128u{T, 64} & knum{b}} = emit{T, '_mm_srli_epi64', a, b}
+def __shr{a:T,b & w128s{T, 16} & knum{b}} = emit{T, '_mm_srai_epi16', a, b}
+def __shr{a:T,b & w128s{T, 32} & knum{b}} = emit{T, '_mm_srai_epi32', a, b}
+# no 64-bit arithmetic shift :/
+
 def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
 def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
+
+
+# shuffle stuff
+def shuf{I==[4]u32, x:T, n & w128{T} & knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
+def sel{I, x:T, i:[16]i8 & w128{T} & w128{I, 8}} = T ~~ emit{[16]u8, '_mm_shuffle_epi8', v2i{x}, i}
+
+# arith
+def __add{a:T,b:T & w128i{T,  8}} = emit{T, '_mm_add_epi8',  a, b}
+def __add{a:T,b:T & w128i{T, 16}} = emit{T, '_mm_add_epi16', a, b}
+def __add{a:T,b:T & w128i{T, 32}} = emit{T, '_mm_add_epi32', a, b}
+def __add{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_add_epi64', a, b}
+
+def __sub{a:T,b:T & w128i{T,  8}} = emit{T, '_mm_sub_epi8',  a, b}
+def __sub{a:T,b:T & w128i{T, 16}} = emit{T, '_mm_sub_epi16', a, b}
+def __sub{a:T,b:T & w128i{T, 32}} = emit{T, '_mm_sub_epi32', a, b}
+def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
 
 
 # mask stuff

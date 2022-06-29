@@ -102,9 +102,10 @@ def forNZ{vars,begin,end,block} = {
   }
 }
 
-def maxvalue{T & T==u8 } = 0xff
-def maxvalue{T & T==u16} = 0xffff
-def maxvalue{T & T==u32} = 0xffffffff
+def minvalue{T & isunsigned{T}} = 0
+def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
+def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
+def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # tuple operations
 def broadcast{T, v & isprim{T}} = v

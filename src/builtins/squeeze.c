@@ -1,5 +1,14 @@
 #include "../core.h"
 
+// #undef SINGELI
+
+#if SINGELI
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#include "../singeli/gen/squeeze.c"
+#pragma GCC diagnostic pop
+#endif
+
 FORCE_INLINE B num_squeeze_choose(B x, u32 or) {
   if (or==0) goto r_bit;
   else if (or<=(u32)I8_MAX ) goto r_i8;
@@ -30,44 +39,61 @@ B num_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
   
+  #if !SINGELI
   usz i = 0;
+  #endif
   
   u32 or = 0; // using bitwise or as an approximate ⌈´
   switch (xe) { default: UD;
     case el_bit: goto r_x;
-    case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c; } goto r_orI8; }
-    case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
-    case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
-    case el_f64: {
-      f64* xp = f64any_ptr(x);
-      for (; i < ia; i++) {
-        f64 cf = xp[i];
-        i32 c = (i32)cf;
-        if (c!=cf) goto r_x; // already f64
-        or|= ((u32)c & ~1) ^ (u32)(c>>31);
+    #if SINGELI
+      case el_i8:  { or = avx2_squeeze_i8 ((u8*)i8any_ptr (x), ia); goto r_orI8; }
+      case el_i16: { or = avx2_squeeze_i16((u8*)i16any_ptr(x), ia); goto r_or; }
+      case el_i32: { or = avx2_squeeze_i32((u8*)i32any_ptr(x), ia); goto r_or; }
+      case el_f64: { or = avx2_squeeze_f64((u8*)f64any_ptr(x), ia); goto r_orF64; }
+    #else
+      case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c; } goto r_orI8; }
+      case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
+      case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
+      case el_f64: {
+        f64* xp = f64any_ptr(x);
+        for (; i < ia; i++) {
+          f64 cf = xp[i];
+          i32 c = (i32)cf;
+          if (c!=cf) goto r_x; // already f64
+          or|= ((u32)c & ~1) ^ (u32)(c>>31);
+        }
+        goto r_or;
       }
-      goto r_or;
-    }
+    #endif
     case el_B: case el_c8: case el_c16: case el_c32:; /*fallthrough*/
   }
   
   B* xp = arr_bptr(x);
   if (xp==NULL) return num_squeezeF(x, ia);
-  for (; i < ia; i++) {
-    if (RARE(!q_i32(xp[i]))) {
-      while (i<ia) if (!isF64(xp[i++])) goto r_x;
-      goto r_f64;
+  
+  #if SINGELI
+    or = avx2_squeeze_B((u8*)xp, ia);
+    if (or==0xfffffffe) goto r_f64;
+    goto r_orF64;
+    r_orF64: if (or==0xffffffff) goto r_x; else goto r_or;
+  #else
+    for (; i < ia; i++) {
+      if (RARE(!q_i32(xp[i]))) {
+        while (i<ia) if (!isF64(xp[i++])) goto r_x;
+        goto r_f64;
+      }
+      i32 c = o2iu(xp[i]);
+      or|= ((u32)c & ~1) ^ (u32)(c>>31);
     }
-    i32 c = o2iu(xp[i]);
-    or|= ((u32)c & ~1) ^ (u32)(c>>31);
-  }
-  goto r_or;
+    goto r_or;
+  #endif
   
   r_or   : return num_squeeze_choose(x, or);
   r_x    : return FL_SET(x, fl_squoze);
   r_f64  : return FL_SET(toF64Any(x), fl_squoze);
-  r_orI8 : if (or>=2) goto r_x; else goto r_i8;
-  r_i8   : return FL_SET(toI8Any (x), fl_squoze);
+  r_orI8 : if (or>=2) goto r_x; else goto r_bit;
+  r_bit  : return FL_SET(taga(toBitArr(x)), fl_squoze);
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
