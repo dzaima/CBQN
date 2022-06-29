@@ -20,6 +20,18 @@ def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
 def assert{x:u1} = emit{void, 'si_assert', x}
 
+
+
+def tern{c, T, F & anyInt{c}} = {
+  if(c) T
+  else F
+}
+def tern{c, t:T, f:T & anyInt{c}} = {
+  res:T = f
+  if (c) res = t
+  res
+}
+
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
 
@@ -47,12 +59,6 @@ def anyInt{x & isreg{x}|isconst{x}} = isint{x}
 
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
-
-def tern{c, T, F & anyInt{c}} = {
-  if(c) T
-  else F
-}
-
 
 def ty_s{w== 8} = i8;  def ty_u{w== 8} = u8
 def ty_s{w==16} = i16; def ty_u{w==16} = u16

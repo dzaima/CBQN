@@ -3,23 +3,25 @@ include './sse3'
 include './avx'
 include './avx2'
 include './mask'
+include './cbqnDefs'
 include 'util/tup'
 
 def preserve_negative_zero = 0
 
-def inRangeLen{x:T, start, count & issigned{eltype{T}}} = {
-  def TU = ty_u{T}
-  (TU~~(x-broadcast{T,start})) < broadcast{TU,count}
+def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = {
+  def TU = ty_u{TS}
+  TU~~(x-broadcast{TS,start}) < broadcast{TU,count}
 }
-def inRangeLen{x:T, start, count & isunsigned{eltype{T}}} = {
-  def TS = ty_s{T}
-  def h = 1 << (width{eltype{T}}-1)
-  (TS~~x)-broadcast{TS,start-h} < broadcast{TS,count-h}
+def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
+  def TS = ty_s{TU}
+  def h = 1 << (width{eltype{TU}}-1)
+  TS~~(x-broadcast{TU,start-h})  <  broadcast{TS,count-h}
 }
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
 def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start}
 
 def isSNaN{x:T & isunsigned{eltype{T}}} = inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}
+def q_chr{x:T & isvec{T} & eltype{T}==u64} = inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}
 
 def fold{F, x:T} = {
   show{'WARNING: using fallback fold'}
@@ -39,52 +41,76 @@ def fold{F, x:T & w128{T}} = {
 }
 def fold{F, x:T & w256{T}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
-squeeze{vw, X0}(x0:*u8, len:Size) : u32 = {
-  def X = tern{X0==u64, f64, X0}
+squeeze{vw, X, CHR, B}(x0:*u8, len:Size) : u32 = {
   def bulk = vw / width{X}
   def XV = [bulk]X
   def E = tern{X==f64, u32, ty_u{X}}
   def EV = [bulk]E
+  show{XV, EV, CHR, B}
   xp:= *X~~x0
   r1:= broadcast{EV, 0}
-  if (X==i8) {
+  if (CHR) {
+    def hw = width{E}/2
     maskedLoop{bulk, len, {i, M} => {
-      v0:= loadBatch{xp, i, XV}
-      if (anyne{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
+      c:= EV~~loadBatch{xp, i, XV}
+      if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
+      if (B) {
+        if (any{M{~q_chr{c}}}) return{3}
+      } else {
+        if (anyne{broadcast{EV, (1<<hw-1)<<hw} & c, broadcast{EV,0}, M}) return{lb{hw}-2}
+      }
     }}
+    r2:= cast_i{u32, fold{|, r1}}
+    if (X>u32 and r2>=65536) return{2}
+    if (X>u16 and r2>=256) return{1}
     0
   } else {
-    maskedLoop{bulk, len, {i, M} => {
-      v0:= loadBatch{xp, i, XV}
-      def toint{x:T & isint{eltype{T}}} = x
-      def toint{flt:T & X==f64} = {
-        int:= cvt2{i32, flt}
-        
-        def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
-        
-        if (anyne{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
-          if (X0==f64) return{0xffff_ffff}
-          
-          maskedLoop{bulk, i, len, {i, M} => {
-            def XU = [bulk]u64
-            v:= XU ~~ loadBatch{xp, i, XV}
-            if (any{M{isSNaN{v}}}) return{0xffff_ffff} # is any not even a float
-          }}
-          return{0xffff_fffe}
+    if (X==i8) {
+      maskedLoop{bulk, len, {i, M} => {
+        v0:= loadBatch{xp, i, XV}
+        if (anyne{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
+      }}
+      0
+    } else {
+      maskedLoop{bulk, len, {i, M} => {
+        v0:= loadBatch{xp, i, XV}
+        if (isunsigned{X}) {
+          r1|= EV~~v0
+        } else {
+          def toint{x:T & isint{eltype{T}}} = x
+          def toint{flt:T & X==f64} = {
+            int:= cvt2{i32, flt}
+            
+            def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
+            
+            if (anyne{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
+              if (~B) return{0xffff_ffff} # f64arr→f64arr
+              
+              maskedLoop{bulk, i, len, {i, M} => {
+                def XU = [bulk]u64
+                v:= XU ~~ loadBatch{xp, i, XV}
+                if (any{M{isSNaN{v}}}) return{0xffff_ffff} # is any not even a float
+              }}
+              return{0xffff_fffe}
+            }
+            int
+          }
+          v1:= toint{v0}
+          r1|= M{(broadcast{EV, ~E~~1} & EV~~v1) ^ EV~~(v1 >> (width{X}-1))}
         }
-        int
-      }
-      v1:= toint{v0}
-      r1|= M{(broadcast{EV, ~E~~1} & EV~~v1) ^ EV~~(v1 >> (width{X}-1))}
-    }}
-    promote{u32, fold{|, r1}}
+      }}
+      
+      promote{u32, fold{|, r1}}
+    }
   }
 }
 
-'avx2_squeeze_i8'  = squeeze{256, i8 }
-'avx2_squeeze_i16' = squeeze{256, i16}
-'avx2_squeeze_i32' = squeeze{256, i32}
-'avx2_squeeze_f64' = squeeze{256, f64}
-'avx2_squeeze_B'   = squeeze{256, u64}
-#'avx2_squeeze_u16' = squeeze{256, u16}
-#'avx2_squeeze_u32' = squeeze{256, u32}
+'avx2_squeeze_i8'  = squeeze{256, i8,  0, 0}
+'avx2_squeeze_i16' = squeeze{256, i16, 0, 0}
+'avx2_squeeze_i32' = squeeze{256, i32, 0, 0}
+'avx2_squeeze_f64' = squeeze{256, f64, 0, 0}
+'avx2_squeeze_numB'= squeeze{256, f64, 0, 1}
+
+'avx2_squeeze_c16' = squeeze{256, u16, 1, 0}
+'avx2_squeeze_c32' = squeeze{256, u32, 1, 0}
+'avx2_squeeze_chrB'= squeeze{256, u64, 1, 1}

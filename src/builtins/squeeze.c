@@ -73,7 +73,7 @@ B num_squeeze(B x) {
   if (xp==NULL) return num_squeezeF(x, ia);
   
   #if SINGELI
-    or = avx2_squeeze_B((u8*)xp, ia);
+    or = avx2_squeeze_numB((u8*)xp, ia);
     if (or==0xfffffffe) goto r_f64;
     goto r_orF64;
     r_orF64: if (or==0xffffffff) goto r_x; else goto r_or;
@@ -98,31 +98,48 @@ B num_squeeze(B x) {
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
   u8 xe = TI(x,elType);
-  if (xe==el_c8) goto r_x;
   usz i = 0;
   i32 or = 0;
-  if (xe==el_c16) {
-    u16* xp = c16any_ptr(x);
-    for (; i < ia; i++) if (xp[i] != (u8)xp[i]) goto r_x;
-    goto r_c8;
-  }
-  if (xe==el_c32) {
-    u32* xp = c32any_ptr(x);
-    bool c8 = true;
-    for (; i < ia; i++) {
-      if (xp[i] != (u16)xp[i]) goto r_c32;
-      if (xp[i] != (u8 )xp[i]) c8 = false;
+  switch(xe) { default: UD;
+    case el_c8: goto r_x;
+    #if SINGELI
+    case el_c16: { u32 t = avx2_squeeze_c16((u8*)c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
+    case el_c32: { u32 t = avx2_squeeze_c32((u8*)c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
+    #else
+    case el_c16: {
+      u16* xp = c16any_ptr(x);
+      for (; i < ia; i++) if (xp[i] != (u8)xp[i]) goto r_x;
+      goto r_c8;
     }
-    if (c8) goto r_c8;
-    else    goto r_c16;
+    case el_c32: {
+      u32* xp = c32any_ptr(x);
+      bool c8 = true;
+      for (; i < ia; i++) {
+        if (xp[i] != (u16)xp[i]) goto r_x;
+        if (xp[i] != (u8 )xp[i]) c8 = false;
+      }
+      if (c8) goto r_c8;
+      else    goto r_c16;
+    }
+    #endif
+    case el_bit: case el_i8: case el_i16: case el_i32: case el_f64: case el_B:; /*fallthrough*/
   }
   
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
+    #if SINGELI
+    u32 t = avx2_squeeze_chrB((u8*)xp, ia);
+    if      (t==0) goto r_c8;
+    else if (t==1) goto r_c16;
+    else if (t==2) goto r_c32;
+    else if (t==3) goto r_x;
+    else UD;
+    #else
     for (; i < ia; i++) {
       if (!isC32(xp[i])) goto r_x;
       or|= o2cu(xp[i]);
     }
+    #endif
   } else {
     SGetU(x)
     for (; i < ia; i++) {
@@ -133,8 +150,8 @@ B chr_squeeze(B x) {
   }
   if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);
   else if (or<=U16_MAX) r_c16: return FL_SET(toC16Any(x), fl_squoze);
-  else                  r_c32: return FL_SET(toC32Any(x), fl_squoze);
-  r_x: return FL_SET(x, fl_squoze);
+  else goto r_c32;      r_c32: return FL_SET(toC32Any(x), fl_squoze);
+  /*when known typed:*/ r_x:   return FL_SET(x, fl_squoze);
 }
 
 B any_squeeze(B x) {
