@@ -11,6 +11,7 @@ f ↩ "lib.so" •FFI "a"‿"readTyped"‿">a" ⋄ •Show F (10×↕7) + (4⥊<
 f ↩ "lib.so" •FFI "a"‿"getShape"‿">a" ⋄ •Show F¨ {0⥊˜⌽⍟𝕩↕𝕩}¨ ↕5
 f ↩ "lib.so" •FFI "a"‿"evalBQN"‿">a" ⋄ •Show F "↕5"
 f ↩ "lib.so" •FFI "a"‿"makeArrays" ⋄ •Out∘•Repr¨ F ⟨⟩
+f ↩ "lib.so" •FFI "a"‿"makeThree"‿">a" ⋄ •Show F "foo"
 f ↩ "lib.so" •FFI "i32"‿"directAccess"‿">a" ⋄ •Show F "Ai32"•internal.Variation ↕10
 bind ← "lib.so" •FFI "a"‿"bindAdd"‿">a" ⋄ g ← Bind 4 ⋄ •Show G 123
 

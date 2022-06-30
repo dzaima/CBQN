@@ -20,10 +20,16 @@ static B getB(BQNV v) {
 static BQNV makeX(B x) {
   return x.u;
 }
+
 void bqn_free(BQNV v) {
   dec(getB(v));
 }
+BQNV bqn_copy(BQNV v) {
+  return makeX(inc(getB(v)));
+}
+
 static void freeTagged(BQNV v) { }
+
 #define DIRECT_BQNV 1
 
 double   bqn_toF64 (BQNV v) { double   r = o2fu(getB(v)); freeTagged(v); return r; }

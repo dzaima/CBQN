@@ -111,6 +111,10 @@ BQNV makeArrays() {
   return bqn_makeObjVec(16, res);
 }
 
+BQNV makeThree(BQNV x) {
+  return bqn_makeObjVec(3, (BQNV[]){bqn_copy(x), bqn_copy(x), x});
+}
+
 int32_t directAccess(BQNV x) {
   BQNElType e = bqn_directArrType(x);
   uint32_t res = 0;

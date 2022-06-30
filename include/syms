@@ -1,6 +1,7 @@
 {
   bqn_init;
   bqn_free;
+  bqn_copy;
   bqn_toF64;
   bqn_toChar;
   bqn_readF64;
