@@ -9,31 +9,23 @@
 #pragma GCC diagnostic pop
 #endif
 
-FORCE_INLINE B num_squeeze_choose(B x, u32 or) {
-  if (or==0) goto r_bit;
-  else if (or<=(u32)I8_MAX ) goto r_i8;
-  else if (or<=(u32)I16_MAX) goto r_i16;
-  else                       goto r_i32;
-  
-  r_bit: return FL_SET(taga(toBitArr(x)), fl_squoze);
-  r_i8 : return FL_SET(toI8Any (x), fl_squoze);
-  r_i16: return FL_SET(toI16Any(x), fl_squoze);
-  r_i32: return FL_SET(toI32Any(x), fl_squoze);
-}
 NOINLINE B num_squeezeF(B x, usz ia) {
   u32 or = 0;
-  usz i = 0;
   SGetU(x)
-  for (; i < ia; i++) {
+  for (usz i = 0; i < ia; i++) {
     B cr = GetU(x,i);
     if (RARE(!q_i32(cr))) {
       while (i<ia) if (!isF64(GetU(x,i++))) return FL_SET(x, fl_squoze);
-      return FL_SET(toF64Any(x), fl_squoze);
+      return FL_SET(taga(cpyF64Arr(x)), fl_squoze);
     }
     i32 c = o2iu(cr);
     or|= ((u32)c & ~1) ^ (u32)(c>>31);
   }
-  return num_squeeze_choose(x, or);
+  
+  if      (or==0)            return FL_SET(taga(cpyBitArr(x)), fl_squoze);
+  else if (or<=(u32)I8_MAX ) return FL_SET(taga(cpyI8Arr (x)), fl_squoze);
+  else if (or<=(u32)I16_MAX) return FL_SET(taga(cpyI16Arr(x)), fl_squoze);
+  else                       return FL_SET(taga(cpyI32Arr(x)), fl_squoze);
 }
 B num_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -47,14 +39,14 @@ B num_squeeze(B x) {
   switch (xe) { default: UD;
     case el_bit: goto r_x;
     #if SINGELI
-      case el_i8:  { or = avx2_squeeze_i8 ((u8*)i8any_ptr (x), ia); goto r_orI8; }
-      case el_i16: { or = avx2_squeeze_i16((u8*)i16any_ptr(x), ia); goto r_or; }
-      case el_i32: { or = avx2_squeeze_i32((u8*)i32any_ptr(x), ia); goto r_or; }
-      case el_f64: { or = avx2_squeeze_f64((u8*)f64any_ptr(x), ia); goto r_orF64; }
+      case el_i8:  { or = avx2_squeeze_i8 ((u8*)i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
+      case el_i16: { or = avx2_squeeze_i16((u8*)i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
+      case el_i32: { or = avx2_squeeze_i32((u8*)i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
+      case el_f64: { or = avx2_squeeze_f64((u8*)f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
     #else
-      case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c; } goto r_orI8; }
-      case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
-      case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } goto r_or; }
+      case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c;                        } if(or>      1) goto r_x; goto mostBit; }
+      case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or> I8_MAX) goto r_x; goto mostI8; }
+      case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or>I16_MAX) goto r_x; goto mostI16; }
       case el_f64: {
         f64* xp = f64any_ptr(x);
         for (; i < ia; i++) {
@@ -63,7 +55,7 @@ B num_squeeze(B x) {
           if (c!=cf) goto r_x; // already f64
           or|= ((u32)c & ~1) ^ (u32)(c>>31);
         }
-        goto r_or;
+        goto mostI32;
       }
     #endif
     case el_B: case el_c8: case el_c16: case el_c32:; /*fallthrough*/
@@ -74,9 +66,9 @@ B num_squeeze(B x) {
   
   #if SINGELI
     or = avx2_squeeze_numB((u8*)xp, ia);
-    if (or==0xfffffffe) goto r_f64;
-    goto r_orF64;
-    r_orF64: if (or==0xffffffff) goto r_x; else goto r_or;
+    if (-2==(i32)or) goto r_x;
+    if (-1==(i32)or) goto r_f64;
+    goto mostI32;
   #else
     for (; i < ia; i++) {
       if (RARE(!q_i32(xp[i]))) {
@@ -86,14 +78,20 @@ B num_squeeze(B x) {
       i32 c = o2iu(xp[i]);
       or|= ((u32)c & ~1) ^ (u32)(c>>31);
     }
-    goto r_or;
+    goto mostI32;
   #endif
   
-  r_or   : return num_squeeze_choose(x, or);
-  r_x    : return FL_SET(x, fl_squoze);
-  r_f64  : return FL_SET(toF64Any(x), fl_squoze);
-  r_orI8 : if (or>=2) goto r_x; else goto r_bit;
-  r_bit  : return FL_SET(taga(toBitArr(x)), fl_squoze);
+  mostI32: if(or>I16_MAX  ) goto r_i32;
+  mostI16: if(or>I8_MAX   ) goto r_i16;
+  mostI8:  if(or>0        ) goto r_i8;
+  mostBit: goto r_bit;
+  
+  r_x:   return FL_SET(               x,   fl_squoze);
+  r_f64: return FL_SET(taga(cpyF64Arr(x)), fl_squoze);
+  r_i32: return FL_SET(taga(cpyI32Arr(x)), fl_squoze);
+  r_i16: return FL_SET(taga(cpyI16Arr(x)), fl_squoze);
+  r_i8:  return FL_SET(taga(cpyI8Arr (x)), fl_squoze);
+  r_bit: return FL_SET(taga(cpyBitArr(x)), fl_squoze);
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
