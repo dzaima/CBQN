@@ -1205,7 +1205,7 @@ B transp_c1(B t, B x) {
 B transp_c2(B t, B w, B x) { return c2(rt_transp, w, x); }
 
 
-B pick_uc1(B t, B o, B x) {
+B pick_uc1(B t, B o, B x) { // TODO do in-place like pick_ucw; maybe just call it?
   if (isAtm(x) || a(x)->ia==0) return def_fn_uc1(t, o, x);
   B xf = getFillQ(x);
   usz ia = a(x)->ia;
@@ -1222,7 +1222,6 @@ B pick_ucw(B t, B o, B w, B x) {
   if (isArr(w) || isAtm(x) || rnk(x)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = a(x)->ia;
   usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
-  B xf = getFillQ(x);
   B arg = IGet(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
@@ -1247,6 +1246,7 @@ B pick_ucw(B t, B o, B w, B x) {
   mut_setG(r, wi, rep);
   mut_copyG(r, 0, x, 0, wi);
   mut_copyG(r, wi+1, x, wi+1, xia-wi-1);
+  B xf = getFillQ(x);
   return qWithFill(mut_fcd(r, x), xf);
 }
 
