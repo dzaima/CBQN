@@ -15,17 +15,17 @@ NOINLINE B num_squeezeF(B x, usz ia) {
   for (usz i = 0; i < ia; i++) {
     B cr = GetU(x,i);
     if (RARE(!q_i32(cr))) {
-      while (i<ia) if (!isF64(GetU(x,i++))) return FL_SET(x, fl_squoze);
-      return FL_SET(taga(cpyF64Arr(x)), fl_squoze);
+      while (i<ia) if (!isF64(GetU(x,i++))) return x;
+      return taga(cpyF64Arr(x));
     }
     i32 c = o2iu(cr);
     or|= ((u32)c & ~1) ^ (u32)(c>>31);
   }
   
-  if      (or==0)            return FL_SET(taga(cpyBitArr(x)), fl_squoze);
-  else if (or<=(u32)I8_MAX ) return FL_SET(taga(cpyI8Arr (x)), fl_squoze);
-  else if (or<=(u32)I16_MAX) return FL_SET(taga(cpyI16Arr(x)), fl_squoze);
-  else                       return FL_SET(taga(cpyI32Arr(x)), fl_squoze);
+  if      (or==0)            return taga(cpyBitArr(x));
+  else if (or<=(u32)I8_MAX ) return taga(cpyI8Arr (x));
+  else if (or<=(u32)I16_MAX) return taga(cpyI16Arr(x));
+  else                       return taga(cpyI32Arr(x));
 }
 B num_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -62,7 +62,7 @@ B num_squeeze(B x) {
   }
   
   B* xp = arr_bptr(x);
-  if (xp==NULL) return num_squeezeF(x, ia);
+  if (xp==NULL) goto r_f;
   
   #if SINGELI
     or = avx2_squeeze_numB((u8*)xp, ia);
@@ -86,12 +86,15 @@ B num_squeeze(B x) {
   mostI8:  if(or>0        ) goto r_i8;
   mostBit: goto r_bit;
   
-  r_x:   return FL_SET(               x,   fl_squoze);
-  r_f64: return FL_SET(taga(cpyF64Arr(x)), fl_squoze);
-  r_i32: return FL_SET(taga(cpyI32Arr(x)), fl_squoze);
-  r_i16: return FL_SET(taga(cpyI16Arr(x)), fl_squoze);
-  r_i8:  return FL_SET(taga(cpyI8Arr (x)), fl_squoze);
-  r_bit: return FL_SET(taga(cpyBitArr(x)), fl_squoze);
+  B res;
+  r_f:   res = num_squeezeF(x,ia); goto retn;
+  r_x:   res =                x;   goto retn;
+  r_f64: res = taga(cpyF64Arr(x)); goto retn;
+  r_i32: res = taga(cpyI32Arr(x)); goto retn;
+  r_i16: res = taga(cpyI16Arr(x)); goto retn;
+  r_i8:  res = taga(cpyI8Arr (x)); goto retn;
+  r_bit: res = taga(cpyBitArr(x)); goto retn;
+  retn: return FL_SET(res, fl_squoze);
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
