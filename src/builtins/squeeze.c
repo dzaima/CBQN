@@ -12,20 +12,25 @@
 NOINLINE B num_squeezeF(B x, usz ia) {
   u32 or = 0;
   SGetU(x)
+  Arr* a;
   for (usz i = 0; i < ia; i++) {
     B cr = GetU(x,i);
     if (RARE(!q_i32(cr))) {
-      while (i<ia) if (!isF64(GetU(x,i++))) return x;
-      return taga(cpyF64Arr(x));
+      while (i<ia) if (!isF64(GetU(x,i++))) return FL_SET(x, fl_squoze);
+      a = (Arr*) cpyF64Arr(x);
+      goto retn;
     }
     i32 c = o2iu(cr);
     or|= ((u32)c & ~1) ^ (u32)(c>>31);
   }
+  a = or==0?          (Arr*)cpyBitArr(x)
+  : or<=(u32)I8_MAX?  (Arr*)cpyI8Arr (x)
+  : or<=(u32)I16_MAX? (Arr*)cpyI16Arr(x)
+  :                   (Arr*)cpyI32Arr(x);
   
-  if      (or==0)            return taga(cpyBitArr(x));
-  else if (or<=(u32)I8_MAX ) return taga(cpyI8Arr (x));
-  else if (or<=(u32)I16_MAX) return taga(cpyI16Arr(x));
-  else                       return taga(cpyI32Arr(x));
+  retn:
+  FLV_SET(a, fl_squoze);
+  return taga(a);
 }
 B num_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -86,15 +91,20 @@ B num_squeeze(B x) {
   mostI8:  if(or>0        ) goto r_i8;
   mostBit: goto r_bit;
   
-  B res;
-  r_f:   res = num_squeezeF(x,ia); goto retn;
-  r_x:   res =                x;   goto retn;
-  r_f64: res = taga(cpyF64Arr(x)); goto retn;
-  r_i32: res = taga(cpyI32Arr(x)); goto retn;
-  r_i16: res = taga(cpyI16Arr(x)); goto retn;
-  r_i8:  res = taga(cpyI8Arr (x)); goto retn;
-  r_bit: res = taga(cpyBitArr(x)); goto retn;
-  retn: return FL_SET(res, fl_squoze);
+  B rb; Arr* ra;
+  r_f:   return num_squeezeF(x, ia); // rb = num_squeezeF(x,ia); goto retn;
+  r_x:   ra = a(x);   rb = x;     goto retn;
+  r_f64: ra = (Arr*)cpyF64Arr(x); goto tag;
+  r_i32: ra = (Arr*)cpyI32Arr(x); goto tag;
+  r_i16: ra = (Arr*)cpyI16Arr(x); goto tag;
+  r_i8:  ra = (Arr*)cpyI8Arr (x); goto tag;
+  r_bit: ra = (Arr*)cpyBitArr(x); goto tag;
+  
+  tag:
+  rb = taga(ra);
+  retn:
+  FLV_SET(ra, fl_squoze);
+  return rb;
 }
 B chr_squeeze(B x) {
   usz ia = a(x)->ia;
@@ -151,7 +161,7 @@ B chr_squeeze(B x) {
   }
   if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);
   else if (or<=U16_MAX) r_c16: return FL_SET(toC16Any(x), fl_squoze);
-  else goto r_c32;      r_c32: return FL_SET(toC32Any(x), fl_squoze);
+  else { goto r_c32; }  r_c32: return FL_SET(toC32Any(x), fl_squoze);
   /*when known typed:*/ r_x:   return FL_SET(x, fl_squoze);
 }
 
