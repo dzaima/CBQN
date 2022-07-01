@@ -95,13 +95,13 @@ BQNElType bqn_directArrType(BQNV a);
 // Mutating the result, or using it after `a` is freed, results in undefined behavior.
 // Doing other FFI invocations between a direct access request and the last read from the result is currently allowed in CBQN,
 // but that may not be true for an implementation which has a compacting garbage collector.
-int8_t*   bqn_directI8 (BQNV a);
-int16_t*  bqn_directI16(BQNV a);
-int32_t*  bqn_directI32(BQNV a);
-double*   bqn_directF64(BQNV a);
-uint8_t*  bqn_directC8 (BQNV a);
-uint16_t* bqn_directC16(BQNV a);
-uint32_t* bqn_directC32(BQNV a);
+const int8_t*   bqn_directI8 (BQNV a);
+const int16_t*  bqn_directI16(BQNV a);
+const int32_t*  bqn_directI32(BQNV a);
+const double*   bqn_directF64(BQNV a);
+const uint8_t*  bqn_directC8 (BQNV a);
+const uint16_t* bqn_directC16(BQNV a);
+const uint32_t* bqn_directC32(BQNV a);
 
 #ifdef __cplusplus
 }

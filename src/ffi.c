@@ -186,13 +186,13 @@ BQNElType bqn_directArrType(BQNV a) {
   if (!isArr(b)) return elt_unk;
   return typeMap[TI(b,elType)];
 }
-i8*  bqn_directI8 (BQNV a) { return i8any_ptr (getB(a)); }
-i16* bqn_directI16(BQNV a) { return i16any_ptr(getB(a)); }
-i32* bqn_directI32(BQNV a) { return i32any_ptr(getB(a)); }
-f64* bqn_directF64(BQNV a) { return f64any_ptr(getB(a)); }
-u8*  bqn_directC8 (BQNV a) { return c8any_ptr (getB(a)); }
-u16* bqn_directC16(BQNV a) { return c16any_ptr(getB(a)); }
-u32* bqn_directC32(BQNV a) { return c32any_ptr(getB(a)); }
+const i8*  bqn_directI8 (BQNV a) { return i8any_ptr (getB(a)); }
+const i16* bqn_directI16(BQNV a) { return i16any_ptr(getB(a)); }
+const i32* bqn_directI32(BQNV a) { return i32any_ptr(getB(a)); }
+const f64* bqn_directF64(BQNV a) { return f64any_ptr(getB(a)); }
+const u8*  bqn_directC8 (BQNV a) { return c8any_ptr (getB(a)); }
+const u16* bqn_directC16(BQNV a) { return c16any_ptr(getB(a)); }
+const u32* bqn_directC32(BQNV a) { return c32any_ptr(getB(a)); }
 
 void ffiFn_visit(Value* v) { mm_visit(((BoundFn*)v)->obj); }
 DEF_FREE(ffiFn) { dec(((BoundFn*)x)->obj); }
