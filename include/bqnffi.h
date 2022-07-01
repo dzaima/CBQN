@@ -14,7 +14,7 @@ extern "C" {
 void bqn_init(void);
 
 void bqn_free(BQNV v);
-BQNV bqn_copy(BQNV v); // create a new BQNV which can be freed separately from `v`
+BQNV bqn_copy(BQNV v); // create a BQNV equivalent in value to `v`, which can be freed separately from `v`
 
 double   bqn_toF64 (BQNV v); // includes bqn_free(v)
 uint32_t bqn_toChar(BQNV v); // includes bqn_free(v)
@@ -84,11 +84,17 @@ BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj);
 BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj);
 
 
+
 // Direct (zero copy) array item access
 typedef enum { elt_unk, elt_i8, elt_i16, elt_i32, elt_f64, elt_c8, elt_c16, elt_c32 } BQNElType; // note that more types may be added in the future
+
 BQNElType bqn_directArrType(BQNV a);
-// The functions below can only be used if if bqn_directArrType returns the exact equivalent type
-// A valid implementation of bqn_directArrType would be to always return elt_unk, thus disallowing the use of direct access entirely
+// A valid implementation of bqn_directArrType would be to always return elt_unk, thus disallowing the use of direct access entirely.
+
+// The functions below can only be used if if bqn_directArrType returns the exact equivalent type.
+// Mutating the result, or using it after `a` is freed, results in undefined behavior.
+// Doing other FFI invocations between a direct access request and the last read from the result is currently allowed in CBQN,
+// but that may not be true for an implementation which has a compacting garbage collector.
 int8_t*   bqn_directI8 (BQNV a);
 int16_t*  bqn_directI16(BQNV a);
 int32_t*  bqn_directI32(BQNV a);
