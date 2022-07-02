@@ -29,7 +29,7 @@ u64 mmX_ctrs[64];
 
 static u64 nvm_mmap_seed = 0;
 #ifdef __clang__
-#if __clang_major__ < 11 // clang 10 gets stuck in an infinite loop while optimizing this
+#if __clang_major__ <= 12 // old clang versions get stuck in an infinite loop while optimizing this
 __attribute__((optnone))
 #endif
 #endif
