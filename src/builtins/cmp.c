@@ -69,7 +69,8 @@
 
 
 static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if failed
-  B s = we<xe?*w:*x;
+  B* p = we<xe?w:x;
+  B s = *p;
   u8 me = we>xe?we:xe;
   if (elNum(we) & elNum(xe)) {
     switch(me) { default: UD;
@@ -84,7 +85,7 @@ static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if fail
       case el_c32: s = taga(cpyC32Arr(s)); break;
     }
   } else return el_MAX;
-  *(we<xe?w:x) = s;
+  *p = s;
   return me;
 }
 

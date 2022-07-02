@@ -73,7 +73,8 @@
   #define Rf64(A) f64* rp; B r=m_f64arrc(&rp, A);
   
   static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
-    B s = we<xe?*w:*x;
+    B* p = we<xe?w:x;
+    B s = *p;
     SLOW2("bitarr expansion", *w, *x);
     switch(we|xe) { default: UD;
       case el_bit: *w = taga(cpyI8Arr(*w)); *x = taga(cpyI8Arr(*x)); return el_i8;
@@ -82,7 +83,7 @@
       case el_i32: s = taga(cpyI32Arr(s)); break;
       case el_f64: s = taga(cpyF64Arr(s)); break;
     }
-    *(we<xe?w:x) = s;
+    *p = s;
     return we|xe;
   }
   static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
