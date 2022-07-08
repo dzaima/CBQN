@@ -1176,7 +1176,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"rand")) cr = getRandNS();
     else if (eqStr(c, U"rebqn")) cr = incG(bi_reBQN);
     else if (eqStr(c, U"primitives")) cr = getPrimitives();
-    else if (eqStr(c, U"utf8Decode")) cr = incG(bi_fromUtf8);
+    else if (eqStr(c, U"fromutf8")) cr = incG(bi_fromUtf8);
     else if (eqStr(c, U"path")) cr = inc(REQ_PATH);
     else if (eqStr(c, U"name")) cr = inc(REQ_NAME);
     else if (eqStr(c, U"fchars")) cr = m_nfn(fCharsDesc, inc(REQ_PATH));
