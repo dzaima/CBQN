@@ -120,7 +120,7 @@ int32_t directAccess(BQNV x) {
   uint32_t res = 0;
   if (e==elt_i32) {
     size_t bound = bqn_bound(x);
-    int32_t* els = bqn_directI32(x);
+    const int32_t* els = bqn_directI32(x);
     for (size_t i = 0; i < bound; i++) res = res*31 + (uint32_t)els[i];
   } else {
     printf("not elt_i32!\n");

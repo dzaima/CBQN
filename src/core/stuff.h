@@ -26,7 +26,8 @@ typedef struct ShArr {
 static ShArr* shObjS(usz* x) { return RFLD(x, ShArr, a); }
 static ShArr* shObj (B x) { return RFLD(a(x)->sh, ShArr, a); }
 static ShArr* shObjP(Value* x) { return RFLD(((Arr*)x)->sh, ShArr, a); }
-static void decSh(Value* x) { if (RARE(prnk(x)>1)) tptr_dec(shObjP(x), mm_free); }
+static void decShObj(ShArr* x) { tptr_dec(x, mm_free); }
+static void decSh(Value* x) { if (RARE(prnk(x)>1)) decShObj(shObjP(x)); }
 
 // some array stuff
 
@@ -51,10 +52,11 @@ static Arr* arr_shVec(Arr* x) {
   x->sh = &x->ia;
   return x;
 }
-static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2)
+static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2); assumes x has rank≤1 (which will be the case for new allocations)
+  assert(prnk(x)<=1);
   if (r>1) {
-    usz* sh = x->sh = m_shArr(r)->a;
-    sprnk(x,r); // is m_shArr OOMs, rank is gonna stay the 0 from the initial write in allocL, which is "safe"
+    usz* sh = x->sh = m_shArr(r)->a; // if m_shArr fails, the assumed rank≤1 guarantees the uninitialized x->sh won't break
+    sprnk(x,r);
     return sh;
   }
   sprnk(x,r);

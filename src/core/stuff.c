@@ -248,10 +248,19 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         s = appendRaw(s, bqn_repr(inc(b)));
         break;
       }
+      case '2':
       case 'H': {
-        B o = va_arg(a, B);
-        ur r = isArr(o)? rnk(o) : 0;
-        usz* sh = isArr(o)? a(o)->sh : NULL;
+        ur r;
+        usz* sh;
+        if (c=='2') {
+          if ('H' != *p++) err("Invalid format string: expected H after %2");
+          r = va_arg(a, int);
+          sh = va_arg(a, usz*);
+        } else {
+          B o = va_arg(a, B);
+          r = isArr(o)? rnk(o) : 0;
+          sh = isArr(o)? a(o)->sh : NULL;
+        }
         if (r==0) AU("⟨⟩");
         else if (r==1) AFMT("⟨%s⟩", sh[0]);
         else {

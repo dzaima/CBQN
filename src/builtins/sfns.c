@@ -836,9 +836,9 @@ B join_c2(B t, B w, B x) {
     if (wr==1 && inplace_add(w, x)) return w;
     x = m_atomUnit(x);
   }
-  usz wia = a(w)->ia; usz* wsh = a(w)->sh;
-  usz xia = a(x)->ia; usz* xsh = a(x)->sh; ur xr = rnk(x);
+  ur xr = rnk(x);
   B f = fill_both(w, x);
+  
   ur c = wr>xr?wr:xr;
   if (c==0) {
     HArr_p r = m_harrUv(2);
@@ -847,27 +847,47 @@ B join_c2(B t, B w, B x) {
     return qWithFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  
+  bool reusedW;
+  B r = arr_join_inline(w, x, false, &reusedW);
   if (c==1) {
-    B r = vec_join_inline(w, x);
     if (rnk(r)==0) srnk(r,1);
-    return qWithFill(r, f);
-  }
-  MAKE_MUT(r, wia+xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
-  MUTG_INIT(r);
-  mut_copyG(r, 0,   w, 0, wia);
-  mut_copyG(r, wia, x, 0, xia);
-  Arr* ra = mut_fp(r);
-  usz* sh = arr_shAlloc(ra, c);
-  if (sh) {
+  } else {
+    assert(c>1);
+    ur rnk0 = rnk(r);
+    ShArr* sh0 = shObj(r);
+    usz wia;
+    usz* wsh;
+    if (wr==1 && reusedW) {
+      wia = a(w)->ia-a(x)->ia;
+      wsh = &wia;
+    } else {
+      wsh = a(w)->sh; // when wr>1, shape object won't be disturbed by arr_join_inline
+    }
+    usz* xsh = a(x)->sh;
+    srnk(r, 0); // otherwise shape allocation failing may break things
+    usz* rsh = arr_shAlloc(a(r), c);
+    #if PRINT_JOIN_REUSE
+    printf(reusedW? "reuse:1;" : "reuse:0;");
+    #endif
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
-      if (wsh[i+wr-c] != s) { mut_pfree(r, wia+xia); thrF("∾: Lengths not matchable (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); }
-      sh[i] = s;
+      if (RARE(wsh[i+wr-c] != s)) {
+        B msg = make_fmt("∾: Lengths not matchable (%2H ≡ ≢𝕨, %H ≡ ≢𝕩)", wr, wsh, x);
+        if (rnk0>1) decShObj(sh0);
+        mm_free((Value*)shObjS(rsh));
+        arr_shVec(a(r));
+        thr(msg);
+      }
+      rsh[i] = s;
     }
-    sh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
+    rsh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
+    if (rnk0>1) decShObj(sh0);
   }
-  decG(w); decG(x);
-  return qWithFill(taga(ra), f);
+  
+  decG(x);
+  if (!reusedW) decG(w);
+  return qWithFill(r, f);
 }
 
 

@@ -54,7 +54,8 @@ NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
 
 
 B vec_join(B w, B x) {
-  return vec_join_inline(w, x);
+  bool unused;
+  return arr_join_inline(w, x, true, &unused);
 }
 
 
