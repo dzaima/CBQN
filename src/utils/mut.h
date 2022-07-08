@@ -169,16 +169,15 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
     u8 wt = v(w)->type;
     // TODO f64∾i32, i32∾i8, c32∾c8 etc
     switch (wt) {
-      case t_bitarr: if (BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) { a(w)->ia=ria; bit_cpy(bitarr_ptr(w),wia,bitarr_ptr(x),0,xia);  goto rw; } break;
-      case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && TI(x,elType)==el_i8 ) { a(w)->ia=ria; memcpy(i8arr_ptr (w)+wia, i8any_ptr (x), xia*1); goto rw; } break;
-      case t_i16arr: if (TYARR_SZ(I16,ria)<wsz && TI(x,elType)==el_i16) { a(w)->ia=ria; memcpy(i16arr_ptr(w)+wia, i16any_ptr(x), xia*2); goto rw; } break;
-      case t_i32arr: if (TYARR_SZ(I32,ria)<wsz && TI(x,elType)==el_i32) { a(w)->ia=ria; memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4); goto rw; } break;
-      case t_c8arr:  if (TYARR_SZ(C8, ria)<wsz && TI(x,elType)==el_c8 ) { a(w)->ia=ria; memcpy(c8arr_ptr (w)+wia, c8any_ptr (x), xia*1); goto rw; } break;
-      case t_c16arr: if (TYARR_SZ(C16,ria)<wsz && TI(x,elType)==el_c16) { a(w)->ia=ria; memcpy(c16arr_ptr(w)+wia, c16any_ptr(x), xia*2); goto rw; } break;
-      case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && TI(x,elType)==el_c32) { a(w)->ia=ria; memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4); goto rw; } break;
-      case t_f64arr: if (TYARR_SZ(F64,ria)<wsz && TI(x,elType)==el_f64) { a(w)->ia=ria; memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8); goto rw; } break;
+      case t_bitarr: if (BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) { bit_cpy(bitarr_ptr(w),wia,bitarr_ptr(x),0,xia);  goto rw; } break;
+      case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && TI(x,elType)==el_i8 ) { memcpy(i8arr_ptr (w)+wia, i8any_ptr (x), xia*1); goto rw; } break;
+      case t_i16arr: if (TYARR_SZ(I16,ria)<wsz && TI(x,elType)==el_i16) { memcpy(i16arr_ptr(w)+wia, i16any_ptr(x), xia*2); goto rw; } break;
+      case t_i32arr: if (TYARR_SZ(I32,ria)<wsz && TI(x,elType)==el_i32) { memcpy(i32arr_ptr(w)+wia, i32any_ptr(x), xia*4); goto rw; } break;
+      case t_c8arr:  if (TYARR_SZ(C8, ria)<wsz && TI(x,elType)==el_c8 ) { memcpy(c8arr_ptr (w)+wia, c8any_ptr (x), xia*1); goto rw; } break;
+      case t_c16arr: if (TYARR_SZ(C16,ria)<wsz && TI(x,elType)==el_c16) { memcpy(c16arr_ptr(w)+wia, c16any_ptr(x), xia*2); goto rw; } break;
+      case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && TI(x,elType)==el_c32) { memcpy(c32arr_ptr(w)+wia, c32any_ptr(x), xia*4); goto rw; } break;
+      case t_f64arr: if (TYARR_SZ(F64,ria)<wsz && TI(x,elType)==el_f64) { memcpy(f64arr_ptr(w)+wia, f64any_ptr(x), xia*8); goto rw; } break;
       case t_harr: if (fsizeof(HArr,a,B,ria)<wsz) {
-        a(w)->ia = ria;
         B* rp = harr_ptr(w)+wia;
         B* xpB = arr_bptr(x);
         if (xpB!=NULL) {
@@ -212,6 +211,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
   rw:
   if (consume) decG(x);
   *reusedW = true;
+  a(w)->ia = ria;
   return FL_KEEP(w,fl_squoze); // keeping fl_squoze as appending items can't make the smallest item smaller
 }
 
@@ -222,22 +222,24 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
     u64 wsz = mm_size(v(w));
     u8 wt = v(w)->type;
     switch (wt) {
-      case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; bitp_set(bitarr_ptr(w),wia,o2bu(x)); return true; } break;
-      case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && q_i8 (x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; i8arr_ptr (w)[wia]=o2iu(x); return true; } break;
-      case t_i16arr: if (TYARR_SZ(I16,ria)<wsz && q_i16(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; i16arr_ptr(w)[wia]=o2iu(x); return true; } break;
-      case t_i32arr: if (TYARR_SZ(I32,ria)<wsz && q_i32(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; i32arr_ptr(w)[wia]=o2iu(x); return true; } break;
-      case t_c8arr:  if (TYARR_SZ(C8, ria)<wsz && q_c8 (x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; c8arr_ptr (w)[wia]=o2cu(x); return true; } break;
-      case t_c16arr: if (TYARR_SZ(C16,ria)<wsz && q_c16(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; c16arr_ptr(w)[wia]=o2cu(x); return true; } break;
-      case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && q_c32(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; c32arr_ptr(w)[wia]=o2cu(x); return true; } break;
-      case t_f64arr: if (TYARR_SZ(F64,ria)<wsz && q_f64(x)) { a(FL_KEEP(w,fl_squoze))->ia=ria; f64arr_ptr(w)[wia]=o2fu(x); return true; } break;
+      case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { bitp_set(bitarr_ptr(w),wia,o2bu(x)); goto ok; } break;
+      case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && q_i8 (x)) { i8arr_ptr (w)[wia]=o2iu(x); goto ok; } break;
+      case t_i16arr: if (TYARR_SZ(I16,ria)<wsz && q_i16(x)) { i16arr_ptr(w)[wia]=o2iu(x); goto ok; } break;
+      case t_i32arr: if (TYARR_SZ(I32,ria)<wsz && q_i32(x)) { i32arr_ptr(w)[wia]=o2iu(x); goto ok; } break;
+      case t_c8arr:  if (TYARR_SZ(C8, ria)<wsz && q_c8 (x)) { c8arr_ptr (w)[wia]=o2cu(x); goto ok; } break;
+      case t_c16arr: if (TYARR_SZ(C16,ria)<wsz && q_c16(x)) { c16arr_ptr(w)[wia]=o2cu(x); goto ok; } break;
+      case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && q_c32(x)) { c32arr_ptr(w)[wia]=o2cu(x); goto ok; } break;
+      case t_f64arr: if (TYARR_SZ(F64,ria)<wsz && q_f64(x)) { f64arr_ptr(w)[wia]=o2fu(x); goto ok; } break;
       case t_harr: if (fsizeof(HArr,a,B,ria)<wsz) {
-        a(FL_KEEP(w,fl_squoze))->ia = ria;
         harr_ptr(w)[wia] = x;
-        return true;
+        goto ok;
       } break;
     }
   }
   return false;
+  ok:
+  a(FL_KEEP(w,fl_squoze))->ia = ria;
+  return true;
 }
 B vec_addF(B w, B x);
 B vec_addN(B w, B x); // vec_add but not inlined
