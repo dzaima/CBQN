@@ -30,4 +30,9 @@ u64 vg_rand(u64 x); // randomize undefined bits in x, and return the value with 
 
 void vg_printDefined_u64(char* name, u64 x);
 void vg_printDump_p(char* name, void* data, u64 len);
-#define vg_printDump_v(X) ({ AUTO x_ = (X); vg_printDump_p(#X, &x_, sizeof(x_)); })
+#define vg_printDump_v(X) ({ AUTO x_ = (X); vg_printDump_p(#X, &x_, sizeof(x_)); x_; })
+
+static void vg_def_p(void* data, u64 len) { VALGRIND_MAKE_MEM_DEFINED(data, len); }
+static void vg_undef_p(void* data, u64 len) { VALGRIND_MAKE_MEM_UNDEFINED(data, len); }
+#define vg_def_v(X)   ({ AUTO x_ = (X); vg_def_p  (&x_, sizeof(x_)); x_; })
+#define vg_undef_v(X) ({ AUTO x_ = (X); vg_undef_p(&x_, sizeof(x_)); x_; })

@@ -220,6 +220,11 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
   static void pst(char* msg) {
     VALGRIND_PRINTF_BACKTRACE("%s", msg);
   }
+#else
+  #define vg_def_p(X, L)
+  #define vg_undef_p(X, L)
+  #define vg_def_v(X) (X)
+  #define vg_undef_v(X) (X)
 #endif
 
 // call stuff

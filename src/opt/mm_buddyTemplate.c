@@ -26,9 +26,11 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
     b->type = t_empty;
     b->mmInfo = MMI(from);
     b->next = buckets[from];
+    vg_undef_p(b, sizeof(EmptyValue));
     buckets[from] = b;
   }
   c->next = buckets[from];
+  vg_undef_p(c, sizeof(EmptyValue));
   buckets[from] = c;
 }
 
@@ -44,9 +46,6 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     EmptyValue* c = MMAP(sz);
     if (c==MAP_FAILED) thrOOM();
   #endif
-  #ifdef USE_VALGRIND
-    VALGRIND_MAKE_MEM_UNDEFINED(c, sz);
-  #endif
   if (alSize+1>=alCap) {
     alCap = alCap? alCap*2 : 1024;
     al = realloc(al, sizeof(AllocInfo)*alCap);
@@ -55,6 +54,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   c->type = t_empty;
   c->mmInfo = from;
   c->next = 0;
+  vg_undef_p(c, sz);
   BN(splitTo)(c, from, to, false);
   return BN(allocL)(bucket, type);
 }
@@ -67,8 +67,8 @@ NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
     from++;
     if (buckets[from]) {
       c = buckets[from];
-      assert((c->mmInfo&63)==from);
-      buckets[from] = c->next;
+      assert((vg_def_v(c->mmInfo)&63)==from);
+      buckets[from] = vg_def_v(c->next);
       break;
     }
     if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
@@ -83,8 +83,8 @@ void BN(forHeap)(V2v f) {
     Value* s = ci.p;
     Value* e = (Value*)(ci.sz + (u8*)ci.p);
     while (s!=e) {
-      if (s->type!=t_empty) f(s);
-      s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
+      if (vg_def_v(s->type)!=t_empty) f(s);
+      s = (Value*)(BSZ(vg_def_v(s->mmInfo)&63) + (u8*)s);
     }
   }
 }
@@ -94,8 +94,8 @@ void BN(forFreedHeap)(V2v f) {
     Value* s = ci.p;
     Value* e = (Value*)(ci.sz + (u8*)ci.p);
     while (s!=e) {
-      if (s->type==t_empty) f(s);
-      s = (Value*)(BSZ(s->mmInfo&63) + (u8*)s);
+      if (vg_def_v(s->type)==t_empty) f(s);
+      s = (Value*)(BSZ(vg_def_v(s->mmInfo)&63) + (u8*)s);
     }
   }
 }

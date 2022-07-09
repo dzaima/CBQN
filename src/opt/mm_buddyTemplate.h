@@ -1,11 +1,6 @@
 #define buckets BN(buckets)
 static void BN(free)(Value* x) {
   onFree(x);
-  #ifdef USE_VALGRIND
-    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(x->mmInfo&127));
-    VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
-    VALGRIND_MAKE_MEM_DEFINED(&x->type, 1);
-  #endif
   #ifdef DONT_FREE
     if (x->type!=t_freed) x->flags = x->type;
   #else
@@ -15,17 +10,14 @@ static void BN(free)(Value* x) {
     buckets[b] = (EmptyValue*)x;
   #endif
   x->type = t_empty;
+  vg_undef_p(x, BSZ(x->mmInfo&127));
 }
 
 NOINLINE void* BN(allocS)(i64 bucket, u8 type);
 static   void* BN(allocL)(i64 bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
   if (RARE(x==NULL)) return BN(allocS)(bucket, type);
-  buckets[bucket] = x->next;
-  #ifdef USE_VALGRIND
-    VALGRIND_MAKE_MEM_UNDEFINED(x, BSZ(bucket));
-    VALGRIND_MAKE_MEM_DEFINED(&x->mmInfo, 1);
-  #endif
+  buckets[bucket] = vg_def_v(x->next);
   BN(ctrs)[bucket]++;
   x->flags = x->extra = x->type = x->mmInfo = 0;
   x->refc = 1;
