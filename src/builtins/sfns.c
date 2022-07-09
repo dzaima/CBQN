@@ -393,13 +393,12 @@ B pick_c2(B t, B w, B x) {
       #endif
       return r;
     }
-    u64 vgRand64(u64 range);
     NOINLINE u64 rand_popc64(u64 x) {
       u64 def = vg_getDefined_u64(x);
       if (def==~0ULL) return POPC(x);
       i32 min = POPC(x & def);
       i32 diff = POPC(~def);
-      i32 res = min + vgRand64(diff);
+      i32 res = min + vgRand64Range(diff);
       #if DBG_VG_SLASH
         printf("popc:\n");
         vg_printDefined_u64("x", x);

@@ -729,6 +729,11 @@ NOINLINE void print_allocStats() {
     for (i32 i = 63; i >= 0; i--) printBitDef(xv>>i, d>>i);
     printf("\n");
   }
+  u64 vg_rand(u64 x) { // randomize undefined bits in x, and return a value with all bits defined
+    u64 d = vg_getDefined_u64(x);
+    if (~d == 0) return x;
+    return (x & d)  |  (vgRand64() & ~d);
+  }
 #endif
 
 // for gdb

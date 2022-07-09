@@ -129,6 +129,10 @@ B scan_ne(u64 p, B x, u64 ia) {
   #pragma GCC diagnostic pop
 #endif
 
+#if !USE_VALGRIND
+static u64 vg_rand(u64 x) { return x; }
+#endif
+
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = rnk(x);
@@ -163,7 +167,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp=i32any_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
     }
     if (rtid==n_or) { // ∨
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); usz i=0; while(i<n) if (xp[i]!=0) { rp[i] = -(xp[i]&-xp[i]); i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0; decG(x); return r; }
+      if (xe==el_bit) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); usz i=0; while(i<n) if (vg_rand(xp[i])!=0) { rp[i] = -(xp[i]&-xp[i]); i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0; decG(x); return r; }
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=0; for (usz i=0; i<ia; i++) { if ((xp[i]&1)!=xp[i])goto base; c|=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=0; for (usz i=0; i<ia; i++) { if ((xp[i]&1)!=xp[i])goto base; c|=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=0; for (usz i=0; i<ia; i++) { if ((xp[i]&1)!=xp[i])goto base; c|=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }

@@ -23,6 +23,11 @@ static u64 vg_def_u64(u64 x) {
 static u64 vg_withBit_u64(u64 r, i32 i, bool val) {
   return (r & ~(1ULL<<i)) | ((u64)val)<<i;
 }
+
+u64 vgRand64Range(u64 range);
+u64 vgRand64(void);
+u64 vg_rand(u64 x); // randomize undefined bits in x, and return the value with all bits defined
+
 void vg_printDefined_u64(char* name, u64 x);
 void vg_printDump_p(char* name, void* data, u64 len);
 #define vg_printDump_v(X) ({ AUTO x_ = (X); vg_printDump_p(#X, &x_, sizeof(x_)); })

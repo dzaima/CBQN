@@ -496,8 +496,11 @@ B rand_subset_c2(B t, B w, B x) {
 
 #if USE_VALGRIND
 u64 vgRandSeed;
-u64 vgRand64(u64 range) {
+u64 vgRand64Range(u64 range) {
   return wy2u0k(wyrand(&vgRandSeed), range);
+}
+u64 vgRand64() {
+  return wyrand(&vgRandSeed);
 }
 #endif
 
