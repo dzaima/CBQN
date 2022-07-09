@@ -1,11 +1,13 @@
 include './base'
 include './bmi2'
 
+def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
+def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 def comp8{w:*u64, X, r:*i8, l:u64} = {
-  @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {
+  @for(w in *u8~~w over i to cdiv{l,8}) {
     pc:= popc{w}
-    store{reinterpret{*u64,r}, 0, pext{promote{u64,X{}}, pdep{promote{u64, w}, cast{u64,0x0101010101010101}}*255}}
+    storeu{*u64~~r, 0, pext{promote{u64,X{}}, pdep{promote{u64, w}, cast{u64,0x0101010101010101}}*255}}
     r+= pc
   }
 }
@@ -19,10 +21,10 @@ def tab{n==0,l} = tup{0}
 c16lut:*u64 = tab{4,16}
 
 def comp16{w:*u64, X, r:*i16, l:u64} = {
-  @for(w in reinterpret{*u8,w} over i to cdiv{l,8}) {
+  @for(w in *u8~~w over i to cdiv{l,8}) {
     def step{w} = {
       pc:= popc{w}
-      store{reinterpret{*u64,r}, 0, pext{promote{u64,X{}}, load{c16lut, w}}} # TODO don't use unaligned store to make valgrind/ubsan happy
+      storeu{*u64~~r, 0, pext{promote{u64,X{}}, load{c16lut, w}}}
       r+= pc
     }
     step{w&15}
@@ -31,8 +33,8 @@ def comp16{w:*u64, X, r:*i16, l:u64} = {
 }
 
 slash2{F, T}(w:*u64, x:*T, r:*T, l:u64) : void = {
-  xv:= reinterpret{*u64, x}
-  F{w, {} => {c:= *xv; xv+= 1; c}, r, l}
+  xv:= *u64~~x
+  F{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l}
 }
 
 slash1{F, T, iota, add}(w:*u64, r:*T, l:u64) : void = {

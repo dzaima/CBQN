@@ -326,6 +326,8 @@ B pick_c2(B t, B w, B x) {
 
 #ifdef __BMI2__
   #include <immintrin.h>
+  void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
+  u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #if SINGELI
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"

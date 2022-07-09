@@ -127,11 +127,11 @@ static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   u64 ti = rs>>6;
   u64 ei = re>>6;
   
-  i64 dp = d>>6;
+  u64 dp = (u64)(d>>6);
   u64 df = ((u64)d)&63u;
-  #define RDF0 x[ti+dp]
-  #define RDFp ((x[ti+dp] >> df) | (x[ti+dp+1] << (64-df)))
-  #define READ (df==0? RDF0 : RDFp)
+  #define RDFo(N) *(x + (i64)(ti+dp+N))
+  #define RDFp ((RDFo(0) >> df) | (RDFo(1) << (64-df)))
+  #define READ (df==0? RDFo(0) : RDFp)
   if (ti!=ei) {
     if (rs&63) {
       u64 m = (1ULL << (rs&63))-1;
@@ -139,7 +139,7 @@ static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
       ti++;
     }
     
-    if (df==0) for (; ti<ei; ti++) r[ti] = RDF0;
+    if (df==0) for (; ti<ei; ti++) r[ti] = RDFo(0);
     else       for (; ti<ei; ti++) r[ti] = RDFp;
     
     if (re&63) {
@@ -153,7 +153,7 @@ static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   }
   #undef READ
   #undef RDFp
-  #undef RDF0
+  #undef RDFo
 }
 
 B vec_join(B w, B x); // consumes both
