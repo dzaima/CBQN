@@ -697,6 +697,40 @@ NOINLINE void print_allocStats() {
   #endif
 }
 
+
+#if USE_VALGRIND
+  static void printBitDef(u8 val, u8 def) {
+    printf("%s", def&1? val&1?"1":"0" : val&1?"¹":"⁰");
+  }
+  void vg_printDump_p(char* name, void* data, u64 len) {
+    u8 vbits[len];
+    int r = VALGRIND_GET_VBITS(data, vbits, len);
+    
+    printf("%s:\n", name);
+    if (r!=1) printf("(failed to get vbits)\n");
+    
+    for (u64 i = 0; i < len; i++) {
+      if (i!=0) printf(i&7? " " : "\n");
+      u8 cv = ~vbits[i];
+      u8 cd = ((u8*)data)[i];
+      VALGRIND_SET_VBITS(&cd, &(u8[]){0}, 1);
+      for (i32 j = 7; j >= 0; j--) {
+        printBitDef(cd>>j, cv>>j);
+      }
+    }
+    putchar('\n');
+  }
+  void vg_printDefined_u64(char* name, u64 x) {
+    printf("%s: ", name);
+    u64 d = vg_getDefined_u64(x);
+    u64 xv = x;
+    VALGRIND_MAKE_MEM_DEFINED(&xv, 8);
+    
+    for (i32 i = 63; i >= 0; i--) printBitDef(xv>>i, d>>i);
+    printf("\n");
+  }
+#endif
+
 // for gdb
 B info_c2(B, B, B);
 Value* g_v(B x) { return v(x); }

@@ -4,3 +4,6 @@ def pext{x:u64, m:u64} = emit{u64, '_pext_u64', x, m}
 def pext{x:u32, m:u32} = emit{u32, '_pext_u32', x, m}
 def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
 def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
+
+def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
+def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}

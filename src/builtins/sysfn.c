@@ -494,7 +494,17 @@ B rand_subset_c2(B t, B w, B x) {
   return r;
 }
 
+#if USE_VALGRIND
+u64 vgRandSeed;
+u64 vgRand64(u64 range) {
+  return wy2u0k(wyrand(&vgRandSeed), range);
+}
+#endif
+
 static NOINLINE void rand_init() {
+  #if USE_VALGRIND
+    vgRandSeed = nsTime();
+  #endif
   rand_ns = m_nnsDesc("seed1", "seed2", "range", "deal", "subset");
   NSDesc* d = rand_ns->nsDesc;
   d->expGIDs[0] = d->expGIDs[1] = -1;

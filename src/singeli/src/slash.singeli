@@ -20,11 +20,13 @@ def tab{n,l} = {
 def tab{n==0,l} = tup{0}
 c16lut:*u64 = tab{4,16}
 
+def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_load64', p, i}
+
 def comp16{w:*u64, X, r:*i16, l:u64} = {
   @for(w in *u8~~w over i to cdiv{l,8}) {
     def step{w} = {
-      pc:= popc{w}
-      storeu{*u64~~r, 0, pext{promote{u64,X{}}, load{c16lut, w}}}
+      pc:= popcRand{w}
+      storeu{*u64~~r, 0, pext{promote{u64,X{}}, vgLoad{c16lut, w}}}
       r+= pc
     }
     step{w&15}

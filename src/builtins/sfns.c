@@ -326,6 +326,96 @@ B pick_c2(B t, B w, B x) {
 
 #ifdef __BMI2__
   #include <immintrin.h>
+  
+  #if USE_VALGRIND
+    #define DBG_VG_SLASH 0
+    u64 loadMask(u64* p, u64 unk, u64 exp, u64 i, u64 pos) {
+      // #if DBG_VG_SLASH
+      //   if (pos==0) printf("index %2ld, got %016lx\n", i, p[i]);
+      // #endif
+      if (pos==0) return ~(p[i]^exp);
+      u64 res =          loadMask(p, unk, exp, i,     pos<<1);
+      if (unk&pos) res&= loadMask(p, unk, exp, i|pos, pos<<1);
+      return res;
+    }
+    NOINLINE u64 vg_load64(u64* p, u64 i) {
+      u64 unk = ~vg_getDefined_u64(i);
+      u64 res = p[vg_withDefined_u64(i, ~0ULL)]; // result value will always be the proper indexing operation
+      
+      i32 undefCount = POPC(unk);
+      if (undefCount>0) {
+        if (undefCount>8) err("too many unknown bits in index of vg_load64");
+        res = vg_withDefined_u64(res, loadMask(p, unk, res, i & ~unk, 1));
+      }
+      #if DBG_VG_SLASH
+        vg_printDefined_u64("idx", i);
+        vg_printDefined_u64("res", res);
+      #endif
+      return res;
+    }
+    NOINLINE u64 vg_pext_u64(u64 src, u64 mask) {
+      u64 maskD = vg_getDefined_u64(mask);
+      u64 r = vg_undef_u64(0);
+      i32 ri = 0;
+      u64 undefMask = 0;
+      for (i32 i = 0; i < 64; i++) {
+        u64 c = 1ull<<i;
+        if (!(maskD&c) && undefMask==0) undefMask = (~0ULL)<<ri;
+        if (vg_def_u64(mask&c)) r = vg_withBit_u64(r, ri++, (c&src)!=0);
+      }
+      while (ri<64) r = vg_withBit_u64(r, ri++, 0);
+      r = vg_withDefined_u64(r, vg_getDefined_u64(r) & ~undefMask);
+      #if DBG_VG_SLASH
+        printf("pext:\n");
+        vg_printDefined_u64("src", src);
+        vg_printDefined_u64("msk", mask);
+        vg_printDefined_u64("res", r);
+      vg_printDefined_u64("exp", _pext_u64(src, mask));
+      #endif
+      return r;
+    }
+    NOINLINE u64 vg_pdep_u64(u64 src, u64 mask) {
+      if (0 != ~vg_getDefined_u64(mask)) err("pdep impl assumes mask is defined everywhere");
+      u64 c = src;
+      u64 r = 0;
+      for (i32 i = 0; i < 64; i++) {
+        if ((mask>>i)&1) {
+          r|= (c&1) << i;
+          c>>= 1;
+        }
+      }
+      #if DBG_VG_SLASH
+        printf("pdep:\n");
+        vg_printDefined_u64("src", src);
+        vg_printDefined_u64("msk", mask);
+        vg_printDefined_u64("res", r);
+        vg_printDefined_u64("exp", _pdep_u64(src, mask));
+      #endif
+      return r;
+    }
+    u64 vgRand64(u64 range);
+    NOINLINE u64 rand_popc64(u64 x) {
+      u64 def = vg_getDefined_u64(x);
+      if (def==~0ULL) return POPC(x);
+      i32 min = POPC(x & def);
+      i32 diff = POPC(~def);
+      i32 res = min + vgRand64(diff);
+      #if DBG_VG_SLASH
+        printf("popc:\n");
+        vg_printDefined_u64("x", x);
+        printf("popc in %d-%d; res: %d\n", min, min+diff, res);
+      #endif
+      return res;
+    }
+    #define _pext_u32 vg_pext_u64
+    #define _pext_u64 vg_pext_u64
+    #define _pdep_u32 vg_pdep_u64
+    #define _pdep_u64 vg_pdep_u64
+  #else
+    #define vg_load64(p, i) p[i]
+    #define rand_popc64(X) POPC(X)
+  #endif
+  
   void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
   u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #if SINGELI
@@ -433,7 +523,7 @@ B slash_c2(B t, B w, B x) {
           for (usz i=0; i<BIT_N(wia); i++) {
             u64 wv = wp[i];
             u64 v = _pext_u64(xp[i], wv);
-            u64 c = POPC(wv);
+            u64 c = rand_popc64(wv);
             cw|= v<<ro;
             u64 ro2 = ro+c;
             if (ro2>=64) {
