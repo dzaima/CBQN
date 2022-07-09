@@ -215,8 +215,8 @@ static bool atomEqual(B w, B x) { // doesn't consume (not that that matters real
 
 
 #ifdef USE_VALGRIND
+  #include "../utils/valgrind.h"
   #include <valgrind/valgrind.h>
-  #include <valgrind/memcheck.h>
   static void pst(char* msg) {
     VALGRIND_PRINTF_BACKTRACE("%s", msg);
   }

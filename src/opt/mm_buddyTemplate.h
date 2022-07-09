@@ -1,7 +1,3 @@
-#ifdef USE_VALGRIND
-  #include "../utils/valgrind.h"
-#endif
-
 #define buckets BN(buckets)
 static void BN(free)(Value* x) {
   onFree(x);
