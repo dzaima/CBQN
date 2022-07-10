@@ -771,6 +771,9 @@ NOINLINE void print_allocStats() {
     }
     return x;
   }
+  void g_def(void* data, u64 len) {
+    vg_printDump_p(NULL, data, len);
+  }
 #endif
 
 // for gdb
