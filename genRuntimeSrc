@@ -9,4 +9,5 @@ CC ← {𝕨 •FChars ⟨1,path,"-i",𝕩⟩ •Import "cc.bqn"}
  "src/gen/runtime0"CC"r0"
  "src/gen/runtime1"CC"r1"
 "src/gen/formatter"CC"f"
+"src/gen/explain"CC"eu"
 "src/gen/customRuntime"•FChars""
