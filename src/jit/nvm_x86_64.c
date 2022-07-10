@@ -517,6 +517,9 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
     // printf("JIT %d:\n", perfid);
     // vm_printPos(body->comp, bcPos, -1);
     fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
+    #if PERF_MAP_FLUSH
+      fflush(perf_map);
+    #endif
   #endif
   #if WRITE_ASM
     write_asm(binEx, sz);
