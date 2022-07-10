@@ -363,14 +363,14 @@ B pick_c2(B t, B w, B x) {
         if (!(maskD&c) && undefMask==0) undefMask = (~0ULL)<<ri;
         if (vg_def_u64(mask&c)) r = vg_withBit_u64(r, ri++, (c&src)!=0);
       }
-      while (ri<64) r = vg_withBit_u64(r, ri++, 0);
+      if (ri<64) r = r & (1ULL<<ri)-1;
       r = vg_withDefined_u64(r, vg_getDefined_u64(r) & ~undefMask);
       #if DBG_VG_SLASH
         printf("pext:\n");
         vg_printDefined_u64("src", src);
         vg_printDefined_u64("msk", mask);
         vg_printDefined_u64("res", r);
-      vg_printDefined_u64("exp", _pext_u64(src, mask));
+        vg_printDefined_u64("exp", _pext_u64(src, mask));
       #endif
       return r;
     }

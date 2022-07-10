@@ -278,9 +278,9 @@ typedef struct Arr {
   Value* VALIDATEP(Value* x);
   #define UD assert(false);
 #else
-  #define assert(x) {if (!(x)) __builtin_unreachable();}
-  #define VALIDATE(x) (x)
-  #define VALIDATEP(x) (x)
+  #define assert(X) {if (!(X)) __builtin_unreachable();}
+  #define VALIDATE(X) (X)
+  #define VALIDATEP(X) (X)
   #define UD __builtin_unreachable();
 #endif
 #if WARN_SLOW==1
@@ -593,15 +593,21 @@ typedef struct Fun {
   BBB2B c2;
 } Fun;
 
+#if USE_VALGRIND
+  B vg_validateResult(B x);
+  #define VRES(X) vg_validateResult(X)
+#else
+  #define VRES(X) X
+#endif
 
 B c1F(B f, B x);
 B c2F(B f, B w, B x);
 static B c1(B f, B x) { // BQN-call f monadically; consumes x
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
+  if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c1(f, x)));
   return c1F(f, x);
 }
 static B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
+  if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c2(f, w, x)));
   return c2F(f, w, x);
 }
 static void errMd(B x) { if(RARE(isMd(x))) thrM("Calling a modifier"); }

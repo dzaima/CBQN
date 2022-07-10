@@ -706,7 +706,7 @@ NOINLINE void print_allocStats() {
     u8 vbits[len];
     int r = VALGRIND_GET_VBITS(data, vbits, len);
     
-    printf("%s:\n", name);
+    if(name!=NULL) printf("%s:\n", name);
     if (r!=1) printf("(failed to get vbits)\n");
     
     for (u64 i = 0; i < len; i++) {
@@ -721,7 +721,7 @@ NOINLINE void print_allocStats() {
     putchar('\n');
   }
   void vg_printDefined_u64(char* name, u64 x) {
-    printf("%s: ", name);
+    if(name!=NULL) printf("%s: ", name);
     u64 d = vg_getDefined_u64(x);
     u64 xv = x;
     VALGRIND_MAKE_MEM_DEFINED(&xv, 8);
@@ -733,6 +733,43 @@ NOINLINE void print_allocStats() {
     u64 d = vg_getDefined_u64(x);
     if (~d == 0) return x;
     return (x & d)  |  (vgRand64() & ~d);
+  }
+  B vg_validateResult(B x) {
+    if (!isArr(x)) return x;
+    void* data;
+    u64 len;
+    u8 xe = TI(x,elType);
+    u64 ia = a(x)->ia;
+    if (xe!=el_B) {
+      data = tyany_ptr(x);
+      if (xe==el_bit) {
+        i32 left = ia&63;
+        len = (ia>>6)*8;
+        if (left) {
+          u64 last = ((u64*)data)[len/8];
+          u64 exp = (1ULL<<left) - 1;
+          u64 got = vg_getDefined_u64(last);
+          if ((got&exp) != exp) {
+            printf("Expected %d defined trailing bits, got:\n", left);
+            vg_printDefined_u64(NULL, last);
+            err("");
+          }
+        }
+      } else {
+        len = elWidth(xe) * ia;
+      }
+    } else {
+      B* xp = arr_bptr(x);
+      if (xp==NULL) return x; // can't check unknown type array
+      data = xp;
+      len = sizeof(B) * ia;
+    }
+    if (VALGRIND_CHECK_MEM_IS_DEFINED(data, len)) {
+      printf("Expected "N64d" defined bytes, got:\n", len);
+      vg_printDump_p(NULL, data, len);
+      err("");
+    }
+    return x;
   }
 #endif
 
