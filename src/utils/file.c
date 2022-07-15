@@ -104,9 +104,10 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return incG(base); }
-  SGetU(base)
   usz bia = a(base)->ia;
-  bool has = bia && o2cu(GetU(base, bia-1))=='/';
+  if (bia==0) return rel;
+  SGetU(base)
+  bool has = o2cu(GetU(base, bia-1))=='/';
   u32* rp; B r = m_c32arrv(&rp, bia+ria+(has?0:1));
   usz ri = 0;
   for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cu(GetU(base, i));
