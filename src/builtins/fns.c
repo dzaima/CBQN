@@ -212,11 +212,11 @@ B indexOf_c2(B t, B w, B x) {
       arr_shAlloc(r, 0);
       rp[0] = res;
       return taga(r);
-    } else if (rnk(x)==1) {
+    } else {
       usz wia = a(w)->ia;
       usz xia = a(x)->ia;
       // TODO O(wia×xia) for small wia or xia
-      i32* rp; B r = m_i32arrv(&rp, xia);
+      i32* rp; B r = m_i32arrc(&rp, x);
       H_b2i* map = m_b2i(64);
       SGetU(x)
       SGetU(w)
