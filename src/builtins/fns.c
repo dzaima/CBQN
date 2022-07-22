@@ -226,7 +226,7 @@ B indexOf_c2(B t, B w, B x) {
       }
       for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
       free_b2i(map); decG(w); decG(x);
-      return r;
+      return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
     }
   }
   return c2(rt_indexOf, w, x);
