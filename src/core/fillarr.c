@@ -115,7 +115,7 @@ B withFill(B x, B fill) { // consumes both
   u8 xt = v(x)->type;
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
-    case t_f64arr: case t_f64slice:
+    case t_f64arr: case t_f64slice: case t_bitarr:
     case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(fill.u == m_i32(0  ).u) return x; break;
     case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(fill.u == m_c32(' ').u) return x; break;
     case t_fillslice: if (fillEqual(c(FillSlice,x)->fill, fill)) { dec(fill); return x; } break;
