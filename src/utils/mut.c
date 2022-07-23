@@ -213,34 +213,35 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
   
   #define COPY_FN(X,R) avx2_copy_##X##_##R
-  #define MAKE_CPY(MAKE, GET, WR, XRP, H2T, T, ...) \
-  static copy_fn copy##T##Fns[10];                  \
+  #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, T, ...) \
+  static copy_fn copy##T##Fns[10];                \
   static void cpy##T##Arr_B(u8* xp, u8* rp, u64 ia, u8* xRaw) { \
-    Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa);   \
-    if (bxp!=NULL && sizeof(B)==sizeof(f64)) {      \
-      H2T;                                          \
-    } else { AS2B fn = TIv(xa,GET);                 \
-      for (usz i=0; i<ia; i++) WR(fn(xa,i));        \
-    }                                               \
-  }                                                 \
-  static copy_fn copy##T##Fns[] = __VA_ARGS__; \
+    Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
+    if (bxp!=NULL && sizeof(B)==sizeof(f64)) {    \
+      H2T;                                        \
+    } else { AS2B fn = TIv(xa,GET);               \
+      for (usz i=0; i<ia; i++) WR(fn(xa,i));      \
+    }                                             \
+  }                                               \
+  static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
   T##Arr* cpy##T##Arr(B x) { \
     usz ia = a(x)->ia;       \
     MAKE; arr_shCopy(r, x);  \
     if (ia>0) {              \
       copy##T##Fns[TI(x,elType)](tyany_ptr(x), (u8*)(XRP), ia, (u8*)a(x)); \
     }                        \
-    decG(x);                 \
+    if (TY) ptr_decT(a(x));  \
+    else decG(x);            \
     return (T##Arr*)r;       \
   }
   #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bu(V))
   #define H2T_COPY(T) copy##T##Fns[el_MAX]((u8*)bxp, rp, ia, xRaw)
-  #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(T), T, __VA_ARGS__)
+  #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(1, T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(T), T, __VA_ARGS__)
   #define MAKE_CCPY(T,E) MAKE_TYCPY(T, E, o2cu, {badCopy,     badCopy,      badCopy,       badCopy,       badCopy,       COPY_FN(c8,E),COPY_FN(c16,E),COPY_FN(c32,E),cpy##T##Arr_B,COPY_FN(B,E)})
   #define MAKE_ICPY(T,E) MAKE_TYCPY(T, E, o2fu, {COPY_FN(1,E),COPY_FN(i8,E),COPY_FN(i16,E),COPY_FN(i32,E),COPY_FN(f64,E),badCopy,      badCopy,       badCopy,       cpy##T##Arr_B,COPY_FN(f64,E)})
-  MAKE_CPY(HArr_p p = m_harrUp(ia); Arr* r = (Arr*)p.c, get, ((B*)rp)[i] =, p.a, for (usz i=0; i<ia; i++) ((B*)rp)[i] = inc(bxp[i]),
+  MAKE_CPY(0, HArr_p p = m_harrUp(ia); Arr* r = (Arr*)p.c, get, ((B*)rp)[i] =, p.a, for (usz i=0; i<ia; i++) ((B*)rp)[i] = inc(bxp[i]),
                                     H,          {COPY_FN(1,B),COPY_FN(i8,B),COPY_FN(i16,B),COPY_FN(i32,B),COPY_FN(f64,B),COPY_FN(c8,B),COPY_FN(c16,B),COPY_FN(c32,B),cpyHArr_B,    COPY_FN(f64,B)})
-  MAKE_CPY(u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(Bit),
+  MAKE_CPY(1, u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(Bit),
                                   Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
 
 #else
@@ -259,7 +260,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2fu(xp[i]    ); } \
       else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2fu(GetU(x,i)); } \
     }                      \
-    decG(x);               \
+    ptr_decT(a(x));        \
     return (T##Arr*)r;     \
   }
 
@@ -277,7 +278,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2cu(xp[i]    ); } \
       else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2cu(GetU(x,i)); } \
     }                        \
-    decG(x);                 \
+    ptr_decT(a(x));          \
     return (T##Arr*)r;       \
   }
 
@@ -298,7 +299,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (xp!=NULL) { for (usz i=0; i<ia; i++) r.a[i] = inc(xp[i]); }
       else { SGet(x)  for (usz i=0; i<ia; i++) r.a[i] = Get(x, i);  }
     }
-    dec(x);
+    decG(x);
     return r.c;
   }
   BitArr* cpyBitArr(B x) {
@@ -316,7 +317,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (xp!=NULL) { for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(xp[i]    )); }
       else { SGetU(x) for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(GetU(x,i))); }
     }
-    decG(x);
+    ptr_decT(a(x));
     return (BitArr*)r;
   }
 

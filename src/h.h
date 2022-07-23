@@ -510,6 +510,7 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(FB2v, print) /* doesn't consume */ \
   F(V2v, visit) /* call mm_visit for all referents */ \
   F(V2v, freeO) /* like freeF, but doesn't call mm_free for GC to be able to clear cycles */ \
+  F(V2v, freeT) /* freeF, but assumes this is an array which consists of non-heap-allocated elements */ \
   F(B2B, decompose) /* consumes; must return a HArr */ \
   F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
   F(bool, arrD1) /* is always an array with depth 1 */ \
@@ -572,6 +573,10 @@ static inline void decG(B x) {
   #endif
   Value* vx = v(x);
   if(!--vx->refc) value_free(vx);
+}
+FORCE_INLINE void ptr_decT(Arr* x) { // assumes argument is an array and consists of non-heap-allocated elements
+  if (x->refc==1) TIv(x,freeT)((Value*) x);
+  else x->refc--;
 }
 static inline B incG(B x) { // inc for guaranteed heap-allocated objects
   assert(isVal(x));

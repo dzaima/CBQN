@@ -130,15 +130,29 @@ static void harrP_print(FILE* f, B x) {
   fprintf(f, "⟩)");
 }
 
+#if DEBUG
+  static void harr_freeT(Value* x) {
+    B* p = ((HArr*)x)->a;
+    usz ia = ((Arr*)x)->ia;
+    for (usz i = 0; i < ia; i++) assert(!isVal(p[i]));
+    tyarr_freeF(x);
+  }
+#endif
+
 void harr_init() {
-  TIi(t_harr,get)   = harr_get;   TIi(t_hslice,get)   = hslice_get;   TIi(t_harrPartial,get)   = harrP_get;
-  TIi(t_harr,getU)  = harr_getU;  TIi(t_hslice,getU)  = hslice_getU;  TIi(t_harrPartial,getU)  = harrP_get;
-  TIi(t_harr,slice) = harr_slice; TIi(t_hslice,slice) = hslice_slice;
-  TIi(t_harr,freeO) = harr_freeO; TIi(t_hslice,freeO) =  slice_freeO; TIi(t_harrPartial,freeO) = harrP_freeO;
-  TIi(t_harr,freeF) = harr_freeF; TIi(t_hslice,freeF) =  slice_freeF; TIi(t_harrPartial,freeF) = harrP_freeF;
-  TIi(t_harr,visit) = harr_visit; TIi(t_hslice,visit) =  slice_visit; TIi(t_harrPartial,visit) = harrP_visit;
-  TIi(t_harr,print) = farr_print; TIi(t_hslice,print) = farr_print;   TIi(t_harrPartial,print) = harrP_print;
-  TIi(t_harr,isArr) = true;       TIi(t_hslice,isArr) = true;
+  TIi(t_harr,get)   = harr_get;    TIi(t_hslice,get)   = hslice_get;   TIi(t_harrPartial,get)   = harrP_get;
+  TIi(t_harr,getU)  = harr_getU;   TIi(t_hslice,getU)  = hslice_getU;  TIi(t_harrPartial,getU)  = harrP_get;
+  TIi(t_harr,slice) = harr_slice;  TIi(t_hslice,slice) = hslice_slice;
+  TIi(t_harr,freeO) = harr_freeO;  TIi(t_hslice,freeO) =  slice_freeO; TIi(t_harrPartial,freeO) = harrP_freeO;
+  TIi(t_harr,freeF) = harr_freeF;  TIi(t_hslice,freeF) =  slice_freeF; TIi(t_harrPartial,freeF) = harrP_freeF;
+  #if DEBUG
+  TIi(t_harr,freeT) = harr_freeT;
+  #else
+  TIi(t_harr,freeT) = tyarr_freeF;
+  #endif
+  TIi(t_harr,visit) = harr_visit;  TIi(t_hslice,visit) =  slice_visit; TIi(t_harrPartial,visit) = harrP_visit;
+  TIi(t_harr,print) = farr_print;  TIi(t_hslice,print) = farr_print;   TIi(t_harrPartial,print) = harrP_print;
+  TIi(t_harr,isArr) = true;        TIi(t_hslice,isArr) = true;
   TIi(t_harr,canStore) = harr_canStore;
   bi_emptyHVec = m_harrUv(0).b; gc_add(bi_emptyHVec);
 }

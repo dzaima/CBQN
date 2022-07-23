@@ -5,7 +5,7 @@
 #include "ns.h"
 #include "builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap) F(typesFinished)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F
@@ -595,6 +595,9 @@ void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
 void customObj_freeO(Value* v) { ((CustomObj*)v)->freeO(v); }
 void customObj_freeF(Value* v) { ((CustomObj*)v)->freeO(v); mm_free(v); }
 
+void def_fallbackTriv(Value* v) { // used while vtables aren't yet fully loaded; should become completely unused after typesFinished_init
+  TIv(v,freeF)(v);
+}
 
 static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
   BFn* f = mm_alloc(sizeof(BFn), t_funBI);
@@ -638,6 +641,7 @@ static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 id) {
 void base_init() { // very first init function
   for (u64 i = 0; i < t_COUNT; i++) {
     TIi(i,freeO)  = def_freeO;
+    TIi(i,freeT)  = def_fallbackTriv;
     TIi(i,freeF)  = def_freeF;
     TIi(i,visit) = def_visit;
     TIi(i,get)   = def_get;
@@ -707,6 +711,11 @@ void base_init() { // very first init function
   #undef FA
   #undef FM
   #undef FD
+}
+void typesFinished_init() {
+  for (u64 i = 0; i < t_COUNT; i++) {
+    if (TIi(i,freeT) == def_fallbackTriv) TIi(i,freeT) = TIi(i,freeF);
+  }
 }
 
 bool cbqn_initialized;
