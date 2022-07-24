@@ -362,8 +362,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
         #undef A64
         usz nlen = TSSIZE(newBC)-TSSIZE(mapBC);
         for (usz i = 0; i < nlen; i++) TSADD(mapBC, c-bc);
+        if (h-stackConsumed(c)<0) thrM("VM compiler: Stack size goes negative");
         h+= stackDiff(c);
-        if (h<0) thrM("VM compiler: Stack size goes negative");
         if (h>hM) hM = h;
         if (ret) break;
         c = n;
