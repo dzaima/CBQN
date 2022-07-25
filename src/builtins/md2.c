@@ -242,8 +242,10 @@ static B merge_fill_result(B rc, ur k, usz* sh) {
   Arr* r = m_fillarrp(0);
   fillarr_setFill(r, rf);
   usz* rsh = arr_shAlloc(r, rr);
-  shcpy(rsh, sh, k);
-  shcpy(rsh+k, a(rc)->sh, rr-k);
+  if (rr>1) {
+    shcpy(rsh, sh, k);
+    shcpy(rsh+k, a(rc)->sh, rr-k);
+  }
   dec(rc);
   return taga(r);
 }
