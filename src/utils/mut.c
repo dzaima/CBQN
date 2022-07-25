@@ -215,13 +215,15 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   #define COPY_FN(X,R) avx2_copy_##X##_##R
   #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, T, ...) \
   static copy_fn copy##T##Fns[10];                \
+  NOINLINE void cpy##T##Arr_BF(u8* xp, u8* rp, u64 ia, Arr* xa) { \
+    AS2B fn = TIv(xa,GET);                 \
+    for (usz i=0; i<ia; i++) WR(fn(xa,i)); \
+  } \
   static void cpy##T##Arr_B(u8* xp, u8* rp, u64 ia, u8* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
     if (bxp!=NULL && sizeof(B)==sizeof(f64)) {    \
       H2T;                                        \
-    } else { AS2B fn = TIv(xa,GET);               \
-      for (usz i=0; i<ia; i++) WR(fn(xa,i));      \
-    }                                             \
+    } else cpy##T##Arr_BF(xp, rp, ia, xa);        \
   }                                               \
   static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
   T##Arr* cpy##T##Arr(B x) { \
