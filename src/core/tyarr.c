@@ -13,6 +13,13 @@ u8 elTypeWidth[] = {
   [el_i32] = 4, [el_c32] = 4,
   [el_bit] = 0, [el_f64] = 8
 };
+u8 arrTypeWidthLog[] = {
+  [t_bitarr]=99,
+  [t_i8arr ]=0, [t_i8slice ]=0, [t_c8arr ]=0, [t_c8slice ]=0,
+  [t_i16arr]=1, [t_i16slice]=1, [t_c16arr]=1, [t_c16slice]=1,
+  [t_i32arr]=2, [t_i32slice]=2, [t_c32arr]=2, [t_c32slice]=2,
+  [t_f64arr]=3, [t_f64slice]=3
+};
 
 B m_i8(i8 x) { return m_i32(x); } B m_i16(i16 x) { return m_i32(x); }
 B m_c8(u8 x) { return m_c32(x); } B m_c16(u16 x) { return m_c32(x); }

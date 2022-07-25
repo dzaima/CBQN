@@ -14,9 +14,9 @@ static B* arrV_bptr(Arr* x) {
   if (x->type==t_fillslice) return ((FillSlice*)x)->a;
   return NULL;
 }
-static void* tyarr_ptr(B x) { return c(TyArr,x)->a; }
-static void* tyslice_ptr(B x) { return c(TySlice,x)->a; }
-static void* tyany_ptr(B x) {
+static void* tyarr_ptr(B x) { assert(IS_ARR(v(x)->type)); return c(TyArr,x)->a; }
+static void* tyslice_ptr(B x) { assert(IS_SLICE(v(x)->type)); return c(TySlice,x)->a; }
+static void* tyany_ptr(B x) { assert(IS_ARR(v(x)->type) || IS_SLICE(v(x)->type));
   u8 t = v(x)->type;
   return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
 }
@@ -39,3 +39,5 @@ extern u8 elType2type[];
 #define el2t(X) elType2type[X] // TODO maybe reorganize array types such that this can just be addition?
 extern u8 elTypeWidth[];
 #define elWidth(X) elTypeWidth[X]
+extern u8 arrTypeWidthLog[];
+#define arrTypeWidthLog(X) arrTypeWidthLog[X]

@@ -64,7 +64,7 @@ B vec_join(B w, B x) {
 #define CHK_S(REQ,X,N,...) CHK(REQ, el_or(m->fns->elType, selfElType(X)), N, __VA_ARGS__)
 
 
-#define DEF(RT, N, TY, INIT, CHK, EL, ARGS, ...) \
+#define DEF0(RT, N, TY, INIT, CHK, EL, ARGS, ...) \
   static RT m_##N##G_##TY ARGS;            \
   static RT m_##N##_##TY ARGS { INIT       \
     Mut* m = a;                            \
@@ -74,7 +74,10 @@ B vec_join(B w, B x) {
     } else {                               \
       m_##N##G_##TY(m->a, __VA_ARGS__);    \
     }                                      \
-  }                                        \
+  }
+
+#define DEF(RT, N, TY, INIT, CHK, EL, ARGS, ...) \
+  DEF0(RT, N, TY, INIT, CHK, EL, ARGS, __VA_ARGS__) \
   static RT m_##N##G_##TY ARGS
 
 #define DEF_S( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, selfElType(X), ARGS, __VA_ARGS__)
@@ -113,7 +116,14 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
   return;
 }
 
-#define DEF_COPY(TY, BODY) DEF(void, copy, TY, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##TY);, ne==el_##TY, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=v(x)->type; (void)xt; BODY }
+
+#if SINGELI
+  #define DEF_COPY(TY, BODY) DEF0(void, copy, TY, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##TY);, ne==el_##TY, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
+#else
+  #define DEF_COPY(TY, BODY)  DEF(void, copy, TY, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##TY);, ne==el_##TY, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=v(x)->type; (void)xt; BODY }
+#endif
+
+
 DEF_COPY(bit, { bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l); return; })
 DEF_COPY(i8 , { i8*  rp = ms+(i8*)a;
   switch (xt) { default: UD;
@@ -245,7 +255,37 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
                                     H,          {COPY_FN(1,B),COPY_FN(i8,B),COPY_FN(i16,B),COPY_FN(i32,B),COPY_FN(f64,B),COPY_FN(c8,B),COPY_FN(c16,B),COPY_FN(c32,B),cpyHArr_B,    COPY_FN(f64,B)})
   MAKE_CPY(1, u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(Bit),
                                   Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
-
+  
+  
+  static copy_fn tcopy_i8Fns [] = {[t_bitarr]=avx2_copy_1_i8,  [t_i8arr]=avx2_copy_i8_i8 ,[t_i8slice]=avx2_copy_i8_i8};
+  static copy_fn tcopy_i16Fns[] = {[t_bitarr]=avx2_copy_1_i16, [t_i8arr]=avx2_copy_i8_i16,[t_i8slice]=avx2_copy_i8_i16, [t_i16arr]=avx2_copy_i16_i16,[t_i16slice]=avx2_copy_i16_i16};
+  static copy_fn tcopy_i32Fns[] = {[t_bitarr]=avx2_copy_1_i32, [t_i8arr]=avx2_copy_i8_i32,[t_i8slice]=avx2_copy_i8_i32, [t_i16arr]=avx2_copy_i16_i32,[t_i16slice]=avx2_copy_i16_i32, [t_i32arr]=avx2_copy_i32_i32,[t_i32slice]=avx2_copy_i32_i32};
+  static copy_fn tcopy_f64Fns[] = {[t_bitarr]=avx2_copy_1_f64, [t_i8arr]=avx2_copy_i8_f64,[t_i8slice]=avx2_copy_i8_f64, [t_i16arr]=avx2_copy_i16_f64,[t_i16slice]=avx2_copy_i16_f64, [t_i32arr]=avx2_copy_i32_f64,[t_i32slice]=avx2_copy_i32_f64, [t_f64arr]=avx2_copy_f64_f64,[t_f64slice]=avx2_copy_f64_f64};
+  static copy_fn tcopy_c8Fns [] = {[t_c8arr]=avx2_copy_c8_c8 ,[t_c8slice]=avx2_copy_c8_c8};
+  static copy_fn tcopy_c16Fns[] = {[t_c8arr]=avx2_copy_c8_c16,[t_c8slice]=avx2_copy_c8_c16, [t_c16arr]=avx2_copy_c16_c16,[t_c16slice]=avx2_copy_c16_c16};
+  static copy_fn tcopy_c32Fns[] = {[t_c8arr]=avx2_copy_c8_c32,[t_c8slice]=avx2_copy_c8_c32, [t_c16arr]=avx2_copy_c16_c32,[t_c16slice]=avx2_copy_c16_c32, [t_c32arr]=avx2_copy_c32_c32,[t_c32slice]=avx2_copy_c32_c32};
+  
+  #define TCOPY_FN(T, N) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
+    if (l==0) return; \
+    u8* xp = tyany_ptr(x); \
+    T* rp = ms + (T*)a; \
+    u8 xt = v(x)->type; \
+    if (xt==t_bitarr) { \
+      for (usz i = 0; i < l; i++) rp[i] = bitp_get((u64*)xp, xs+i); \
+    } else { \
+      tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, (u8*)rp, l, (u8*)a(x)); \
+    } \
+  }
+  TCOPY_FN(i8,i8)
+  TCOPY_FN(i16,i16)
+  TCOPY_FN(i32,i32)
+  TCOPY_FN(u8,c8)
+  TCOPY_FN(u16,c16)
+  TCOPY_FN(u32,c32)
+  TCOPY_FN(f64,f64)
+  static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
+    bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l);
+  }
 #else
   #define MAKE_ICPY(T,E) T##Arr* cpy##T##Arr(B x) { \
     usz ia = a(x)->ia;     \
