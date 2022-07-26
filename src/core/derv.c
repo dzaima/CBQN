@@ -72,12 +72,13 @@ static B toConstant(B x) { // doesn't consume x
   return bi_N;
 }
 static NFnDesc* ucwWrapDesc;
+static NFnDesc* uc1WrapDesc;
 
 static B fork_uc1(B t, B o, B x) {
   B f = toConstant(c(Fork, t)->f);
   B g = c(Fork, t)->g;
   B h = c(Fork, t)->h;
-  if (RARE(q_N(f) | !isFun(g) | !isFun(h))) { dec(f); return def_fn_uc1(t, o, x); } // flags check to not deconstruct builtins
+  if (RARE(q_N(f) | !isFun(g) | !isFun(h))) { dec(f); return def_fn_uc1(t, o, x); }
   B args[] = {g, o, f};
   B tmp = m_nfn(ucwWrapDesc, tag(args, RAW_TAG));
   B r = TI(h,fn_uc1)(h,tmp,x);
@@ -85,11 +86,33 @@ static B fork_uc1(B t, B o, B x) {
   decG(tmp);
   return r;
 }
-
 static B ucwWrap_c1(B t, B x) {
   B* args = c(B, nfn_objU(t));
   B g = args[0];
   return TI(g,fn_ucw)(g, args[1], args[2], x);
+}
+
+NOINLINE B atop_uc1_impl(B x, B o, B g, B h) {
+  B args[] = {g, o};
+  B tmp = m_nfn(uc1WrapDesc, tag(args, RAW_TAG));
+  B r = TI(h,fn_uc1)(h,tmp,x);
+  decG(tmp);
+  return r;
+}
+static B atopM2_uc1(Md2* t, B o, B g, B h, B x) {
+  if (RARE(!isFun(g) | !isFun(h))) return def_m2_uc1(t, g, h, o, x);
+  return atop_uc1_impl(x, o, g, h);
+}
+static B atop_uc1(B t, B o, B x) {
+  B g = c(Atop, t)->g;
+  B h = c(Atop, t)->h;
+  if (RARE(!isFun(g) | !isFun(h))) return def_fn_uc1(t, o, x);
+  return atop_uc1_impl(x, o, g, h);
+}
+static B uc1Wrap_c1(B t, B x) {
+  B* args = c(B, nfn_objU(t));
+  B g = args[0];
+  return TI(g,fn_uc1)(g, args[1], x);
 }
 
 static B md1D_im(B t,      B x) { Md1D* d = c(Md1D,t); return TIv(d->m1,m1_im)(d,    x); }
@@ -126,5 +149,8 @@ void derv_init() {
 }
 void dervPost_init() {
   ucwWrapDesc = registerNFn(m_ascii0("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
+  uc1WrapDesc = registerNFn(m_ascii0("(temporary function for ⌾)"), uc1Wrap_c1, c2_bad);
   TIi(t_fork,fn_uc1) = fork_uc1; // in post probably to make sure it's not used while not fully initialized or something? idk
+  TIi(t_atop,fn_uc1) = atop_uc1;
+  c(BMd2,bi_atop)->uc1 = atopM2_uc1;
 }
