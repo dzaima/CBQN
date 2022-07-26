@@ -1520,16 +1520,19 @@ void profiler_displayResults() {
     Comp* c = c(Comp, GetU(compList, i));
     B mapObj = GetU(mapList, i);
     i32* m = i32arr_ptr(mapObj);
+    
+    u64 sum = 0;
+    usz ia = a(mapObj)->ia;
+    for (usz i = 0; i < ia; i++) sum+= m[i];
+    
     if (q_N(c->src)) {
       if (q_N(c->path)) printf("(anonymous)");
       else printRaw(c->path);
-      u64 sum = 0;
-      usz ia = a(mapObj)->ia; for (usz i = 0; i < ia; i++) sum+= m[i];
       printf(": "N64d" samples\n", sum);
     } else {
       if (q_N(c->path)) printf("(anonymous)");
       else printRaw(c->path);
-      printf(":\n");
+      printf(": "N64d" samples:\n", sum);
       B src = c->src;
       SGetU(src)
       usz sia = a(src)->ia;
