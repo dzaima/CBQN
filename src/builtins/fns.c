@@ -232,6 +232,8 @@ B indexOf_c2(B t, B w, B x) {
   return c2(rt_indexOf, w, x);
 }
 
+B enclosed_0;
+B enclosed_1;
 extern B rt_memberOf;
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("∊: Argument cannot have rank 0");
@@ -246,18 +248,47 @@ B memberOf_c1(B t, B x) {
   return r;
 }
 B memberOf_c2(B t, B w, B x) {
-  if (!isArr(w) || rnk(w)!=1 || !isArr(x) || rnk(x)!=1) return c2(rt_memberOf, w, x);
-  usz wia = a(w)->ia;
-  usz xia = a(x)->ia;
-  // TODO O(wia×xia) for small wia or xia
-  H_Sb* set = m_Sb(64);
-  bool had;
-  SGetU(x)
-  SGetU(w)
-  for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
-  u64* rp; B r = m_bitarrv(&rp, wia);
-  for (usz i = 0; i < wia; i++) bitp_set(rp, i, has_Sb(set, GetU(w,i)));
-  free_Sb(set); decG(w);decG(x);
+  if (isAtm(x) || rnk(x)!=1) goto bad;
+  if (isAtm(w)) goto single;
+  ur wr = rnk(w);
+  if (wr==0) {
+    B w0 = IGet(w, 0);
+    dec(w);
+    w = w0;
+    goto single;
+  }
+  if (wr==1) goto many;
+  goto bad;
+  
+  bad: return c2(rt_memberOf, w, x);
+  
+  B r;
+  single: {
+    usz xia = a(x)->ia;
+    SGetU(x)
+    for (usz i = 0; i < xia; i++) if (equal(GetU(x, i), w)) { r = inc(enclosed_1); goto dec_wx; }
+    r = inc(enclosed_0);
+    dec_wx:; dec(w);
+    goto dec_x;
+  }
+  
+  
+  many: {
+    usz xia = a(x)->ia;
+    usz wia = a(w)->ia;
+    // TODO O(wia×xia) for small wia or xia
+    H_Sb* set = m_Sb(64);
+    SGetU(x) SGetU(w)
+    bool had;
+    for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
+    u64* rp; r = m_bitarrv(&rp, wia);
+    for (usz i = 0; i < wia; i++) bitp_set(rp, i, has_Sb(set, GetU(w,i)));
+    free_Sb(set); decG(w);
+    goto dec_x;
+  }
+  
+  dec_x:;
+  decG(x);
   return r;
 }
 
@@ -369,6 +400,8 @@ void profiler_freeMap(void* mapRaw) {
 void fun_gcFn() {
   if (prevImports!=NULL) mm_visitP(prevImports);
   if (globalNames!=NULL) mm_visitP(globalNames);
+  mm_visit(enclosed_0);
+  mm_visit(enclosed_1);
   mm_visit(globalNameList);
 }
 
@@ -386,4 +419,6 @@ void fns_init() {
   TIi(t_funBI,fn_uc1) = funBI_uc1;
   TIi(t_funBI,fn_ucw) = funBI_ucw;
   TIi(t_funBI,fn_im) = funBI_im;
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p= 0;    enclosed_0=taga(a); }
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p=~0ULL; enclosed_1=taga(a); }
 }
