@@ -927,10 +927,14 @@ B join_c1(B t, B x) {
     usz ri = 0;
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x, i);
-      if (isAtm(c)) goto base;
-      usz cia = a(c)->ia;
-      mut_copy(r, ri, c, 0, cia);
-      ri+= cia;
+      if (isArr(c)) {
+        usz cia = a(c)->ia;
+        mut_copy(r, ri, c, 0, cia);
+        ri+= cia;
+      } else {
+        mut_set(r, ri, inc(c));
+        ri++;
+      }
     }
     assert(ri==cam*csz);
     Arr* ra = mut_fp(r);
@@ -942,7 +946,6 @@ B join_c1(B t, B x) {
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   }
-  base:
   return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
