@@ -856,31 +856,35 @@ B drop_c2(B t, B w, B x) {
 extern B rt_join;
 B join_c1(B t, B x) {
   if (isAtm(x)) thrM("∾: Argument must be an array");
-  if (rnk(x)==1) {
-    usz xia = a(x)->ia;
-    if (xia==0) {
-      B xf = getFillE(x);
-      if (isAtm(xf)) {
-        decA(xf);
-        decG(x);
-        if (!PROPER_FILLS) return emptyHVec();
-        thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
-      }
-      decG(x);
-      ur ir = rnk(xf);
-      if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
-      B xff = getFillQ(xf);
-      HArr_p r = m_harrUp(0);
-      usz* sh = arr_shAlloc((Arr*)r.c, ir);
-      if (sh) {
-        sh[0] = 0;
-        shcpy(sh+1, a(xf)->sh+1, ir-1);
-      }
-      dec(xf);
-      return withFill(r.b, xff);
+
+  ur xr = rnk(x);
+  usz xia = a(x)->ia;
+  if (xia==0) {
+    B xf = getFillE(x);
+    if (isAtm(xf)) {
+      decA(xf); decG(x);
+      if (!PROPER_FILLS && xr==1) return emptyHVec();
+      thrM("∾: Empty array 𝕩 cannot have an atom fill element");
     }
+    ur ir = rnk(xf);
+    if (ir<xr) thrF("∾: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
+    B xff = getFillQ(xf);
+    HArr_p r = m_harrUp(0);
+    usz* sh = arr_shAlloc((Arr*)r.c, ir);
+    if (sh) {
+      sh[0] = 0;
+      usz* fsh = a(xf)->sh;
+      if (xr>1) {
+        usz* xsh = a(x)->sh;
+        for (usz i = 0; i < xr; i++) sh[i] = xsh[i]*fsh[i];
+      }
+      shcpy(sh+xr, fsh+xr, ir-xr);
+    }
+    dec(xf); decG(x);
+    return withFill(r.b, xff);
+
+  } else if (xr==1) {
     SGetU(x)
-    
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
     ur r0 = isAtm(x0) ? 0 : rnk(x0); // Minimum element rank seen
@@ -945,8 +949,11 @@ B join_c1(B t, B x) {
     }
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
+  } else if (xr==0) {
+    return bqn_merge(x);
+  } else {
+    return c1(rt_join, x);
   }
-  return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
   if (isAtm(w)) w = m_atomUnit(w);
