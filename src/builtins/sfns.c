@@ -887,12 +887,12 @@ B join_c1(B t, B x) {
     SGetU(x)
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
-    ur r0 = isAtm(x0) ? 0 : rnk(x0); // Minimum element rank seen
-    ur r1 = r0;      // Maximum
-    ur rr = r0;      // Result rank, or minimum possible so far
+    ur rm = isAtm(x0) ? 0 : rnk(x0); // Maximum element rank seen
+    ur rr = rm;      // Result rank, or minimum possible so far
+    ur rd = 0;       // Difference of max and min lengths (0 or 1)
     usz* esh = NULL;
     usz cam = 1;     // Result length
-    if (r0) {
+    if (rm) {
       esh = a(x0)->sh;
       cam = esh[0];
     } else {
@@ -903,28 +903,26 @@ B join_c1(B t, B x) {
       B c = GetU(x, i);
       ur cr = isAtm(c) ? 0 : rnk(c);
       if (cr == 0) {
-        if (r1 > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", r0, r1);
-        r0=0; cam++;
+        if (rm > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
+        rd=1; cam++;
       } else {
         usz* csh = a(c)->sh;
-        if (cr != r0) {
-          if (cr > r1) r1 = cr; else r0 = cr;
-          if (r1-r0 > 2) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", r0, r1);
-        }
-        if (cr < rr) {
-          csh--; cam++;
-        } else {
-          if (cr>rr) { // Previous elements were cells
+        ur cd = rm - cr;
+        if (RARE(cd > rd)) {
+          if ((ur)(cd+1-rd) > 2-rd) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
+          if (cr > rr) { // Previous elements were cells
             if (cam != i*esh[0]) thrM("∾: Item trailing shapes must be equal");
-            esh--; rr++; cam = i;
+            esh--; rr=cr; cam=i;
           }
-          cam+= csh[0];
+          rm = cr>rm ? cr : rm;
+          rd = 1;
         }
+        if (cr < rm) { csh--; cam++; } else { cam+=csh[0]; }
         for (usz j = 1; j < cr; j++) if (csh[j]!=esh[j]) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       }
       if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
     }
-    if (r1==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
+    if (rm==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
     
     usz csz = shProd(esh, 1, rr);
     MAKE_MUT(r, cam*csz);
