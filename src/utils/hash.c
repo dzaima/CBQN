@@ -15,7 +15,7 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
   void* data;
   u64 bytes;
   switch(xe) { default: UD;
-    case el_bit: bcl(x,xia); data = bitarr_ptr(x); bytes = BIT_N(xia); break;
+    case el_bit: bcl(x,xia);  data = bitarr_ptr(x); bytes = (xia+7)>>3; break;
     case el_i8:  case el_c8:  data =  tyany_ptr(x); bytes = xia*1; break;
     case el_i16: case el_c16: data =  tyany_ptr(x); bytes = xia*2; break;
     case el_i32: case el_c32: data =  tyany_ptr(x); bytes = xia*4; break;
