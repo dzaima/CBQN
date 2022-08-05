@@ -15,7 +15,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
   if (rM==0) {
     B r = f(fo, Get(w,0), Get(x,0));
     decG(w); decG(x);
-    return m_hunit(r);
+    return m_unit(r);
   }
   if (rm && !eqShPart(a(w)->sh, a(x)->sh, rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
@@ -31,7 +31,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
       else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i));
     }
     decG(rw? x : w);
-    return r.b;
+    return any_squeeze(r.b);
   }
   
   B bo = wg? w : x;
@@ -48,7 +48,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
   }
   B rb = HARR_FC(r, bo);
   decG(w); decG(x);
-  return rb;
+  return any_squeeze(rb);
 }
 
 B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still has refcounting errors
@@ -65,12 +65,12 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
       if (reuse) {
         dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return REUSE(x);
+        return any_squeeze(REUSE(x));
       } else {
         M_HARR(rHc, ia)
         HARR_ADD(rHc, i, cr);
         for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
-        return HARR_FCD(rHc, x);
+        return any_squeeze(HARR_FCD(rHc, x));
       }
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
@@ -89,7 +89,7 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
         rp[i] = o2iu(cr);
       }
       decG(x);
-      return r;
+      return num_squeeze(r);
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
@@ -107,7 +107,7 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
         rp[i] = o2fu(cr);
       }
       decG(x);
-      return r;
+      return num_squeeze(r);
     } else if (v(x)->type==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
       if (reuse) {
@@ -115,12 +115,12 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
         c(FillArr,x)->fill = bi_noFill;
         dec(xp[i]); xp[i++] = cr;
         for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return REUSE(x);
+        return any_squeeze(REUSE(x));
       } else {
         M_HARR(rHc, ia)
         HARR_ADD(rHc, i, cr);
         for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
-        return HARR_FCD(rHc, x);
+        return any_squeeze(HARR_FCD(rHc, x));
       }
     } else
     rH = m_harr0c(x);
@@ -130,5 +130,5 @@ B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still 
   rH.a[i++] = cr;
   for (; i < ia; i++) rH.a[i] = f(fo, Get(x,i));
   decG(x);
-  return rH.b;
+  return any_squeeze(rH.b);
 }
