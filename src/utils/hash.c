@@ -29,6 +29,7 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
       bytes = xia*sizeof(B);
       break;
   }
+  assert(bytes!=0);
   u64 r = wyhash(data, bytes, shHash, secret);
   if (isTemp) TFREE(data);
   dec(x);

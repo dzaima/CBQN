@@ -113,28 +113,39 @@ static inline uint64_t _wyr4(const uint8_t *p) {
   return (((v >> 24) & 0xff)| ((v >>  8) & 0xff00)| ((v <<  8) & 0xff0000)| ((v << 24) & 0xff000000));
 }
 #endif
-static inline uint64_t _wyr3(const uint8_t *p, size_t k) { return (((uint64_t)p[0])<<16)|(((uint64_t)p[k>>1])<<8)|p[k-1];}
-//wyhash main function
+
+#ifdef __BMI2__
+#include <x86intrin.h>
+#endif
+
+//wyhash main function; assumes len>0 and that it can read past the end of the input
 FORCE_INLINE uint64_t wyhash(const void *key, size_t len, uint64_t seed, const uint64_t *secret){
-  const uint8_t *p=(const uint8_t *)key; seed^=*secret; uint64_t  a,  b;
-  if(_likely_(len<=16)){
-    if(_likely_(len>=4)){ a=(_wyr4(p)<<32)|_wyr4(p+((len>>3)<<2)); b=(_wyr4(p+len-4)<<32)|_wyr4(p+len-4-((len>>3)<<2)); }
-    else if(_likely_(len>0)){ a=_wyr3(p,len); b=0;}
-    else a=b=0;
-  }
-  else{
+  const uint8_t *p = (const uint8_t *)key; seed^=*secret; uint64_t a, b;
+  if (_likely_(len<=16)) {
+    #ifdef __BMI2__
+      if (len>8) { a = _wyr8(p); b = _bzhi_u64(_wyr8(p+8), (len-8)*8); }
+      else       { a = 0;        b = _bzhi_u64(_wyr8(p  ),  len   *8); }
+    #else
+      if (len==16) { a = _wyr8(p); b = _wyr8(p+8); }
+      else {
+        if (len>=8) { a = _wyr8(p); p+= 8; }
+        else a = 0;
+        b = _wyr8(p) & (((uint64_t)1)<<((8*len)&63))-1;
+      }
+    #endif
+  } else {
     size_t i=len;
-    if(_unlikely_(i>48)){
+    if (_unlikely_(i>48)){
       uint64_t see1=seed, see2=seed;
-      do{
+      do {
         seed=_wymix(_wyr8(p)^secret[1],_wyr8(p+8)^seed);
         see1=_wymix(_wyr8(p+16)^secret[2],_wyr8(p+24)^see1);
         see2=_wymix(_wyr8(p+32)^secret[3],_wyr8(p+40)^see2);
         p+=48; i-=48;
-      }while(_likely_(i>48));
+      } while (_likely_(i>48));
       seed^=see1^see2;
     }
-    while(_unlikely_(i>16)){  seed=_wymix(_wyr8(p)^secret[1],_wyr8(p+8)^seed);  i-=16; p+=16;  }
+    while (_unlikely_(i>16)) { seed=_wymix(_wyr8(p)^secret[1],_wyr8(p+8)^seed);  i-=16; p+=16;  }
     a=_wyr8(p+i-16);  b=_wyr8(p+i-8);
   }
   return _wymix(secret[1]^len,_wymix(a^secret[1],b^seed));
