@@ -853,72 +853,236 @@ B drop_c2(B t, B w, B x) {
   return c2(rt_drop, w, x);
 }
 
-extern B rt_join;
 B join_c1(B t, B x) {
   if (isAtm(x)) thrM("∾: Argument must be an array");
-  if (rnk(x)==1) {
-    usz xia = a(x)->ia;
-    if (xia==0) {
-      B xf = getFillE(x);
-      if (isAtm(xf)) {
-        decA(xf);
-        decG(x);
-        if (!PROPER_FILLS) return emptyHVec();
-        thrM("∾: Empty vector 𝕩 cannot have an atom fill element");
-      }
-      decG(x);
-      ur ir = rnk(xf);
-      if (ir==0) thrM("∾: Empty vector 𝕩 cannot have a unit fill element");
-      B xff = getFillQ(xf);
-      HArr_p r = m_harrUp(0);
-      usz* sh = arr_shAlloc((Arr*)r.c, ir);
-      if (sh) {
-        sh[0] = 0;
-        shcpy(sh+1, a(xf)->sh+1, ir-1);
-      }
-      dec(xf);
-      return withFill(r.b, xff);
+
+  ur xr = rnk(x);
+  usz xia = a(x)->ia;
+  if (xia==0) {
+    B xf = getFillE(x);
+    if (isAtm(xf)) {
+      decA(xf); decG(x);
+      if (!PROPER_FILLS && xr==1) return emptyHVec();
+      thrM("∾: Empty array 𝕩 cannot have an atom fill element");
     }
+    ur ir = rnk(xf);
+    if (ir<xr) thrF("∾: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
+    B xff = getFillQ(xf);
+    HArr_p r = m_harrUp(0);
+    usz* sh = arr_shAlloc((Arr*)r.c, ir);
+    if (sh) {
+      sh[0] = 0;
+      usz* fsh = a(xf)->sh;
+      if (xr>1) {
+        usz* xsh = a(x)->sh;
+        for (usz i = 0; i < xr; i++) sh[i] = xsh[i]*fsh[i];
+      }
+      shcpy(sh+xr, fsh+xr, ir-xr);
+    }
+    dec(xf); decG(x);
+    return withFill(r.b, xff);
+
+  } else if (xr==1) {
     SGetU(x)
-    
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
-    if (isAtm(x0)) goto base; // thrM("∾: Rank of items must be equal or greater than rank of argument");
-    usz ir = rnk(x0);
-    usz* x0sh = a(x0)->sh;
-    if (ir==0) goto base; // thrM("∾: Rank of items must be equal or greater than rank of argument");
-    
-    usz csz = arr_csz(x0);
-    usz cam = x0sh[0];
+    ur rm = isAtm(x0) ? 0 : rnk(x0); // Maximum element rank seen
+    ur rr = rm;      // Result rank, or minimum possible so far
+    ur rd = 0;       // Difference of max and min lengths (0 or 1)
+    usz* esh = NULL;
+    usz cam = 1;     // Result length
+    if (rm) {
+      esh = a(x0)->sh;
+      cam = *esh++;
+    } else {
+      rr++;
+    }
+
     for (usz i = 1; i < xia; i++) {
       B c = GetU(x, i);
-      if (!isArr(c) || rnk(c)!=ir) goto base; // thrF("∾: All items in argument should have same rank (contained items with ranks %i and %i)", ir, isArr(c)? rnk(c) : 0);
-      usz* csh = a(c)->sh;
-      if (ir>1) for (usz j = 1; j < ir; j++) if (csh[j]!=x0sh[j]) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
-      cam+= a(c)->sh[0];
+      ur cr = isAtm(c) ? 0 : rnk(c);
+      if (cr == 0) {
+        if (rm > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
+        rd=rm; cam++;
+      } else {
+        usz* csh = a(c)->sh;
+        ur cd = rm - cr;
+        if (RARE(cd > rd)) {
+          if ((ur)(cd+1-rd) > 2-rd) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
+          if (cr > rr) { // Previous elements were cells
+            esh--;
+            if (cam != i * *esh) thrM("∾: Item trailing shapes must be equal");
+            rr=cr; cam=i;
+          }
+          rm = cr>rm ? cr : rm;
+          rd = 1;
+        }
+        cam += cr < rm ? 1 : *csh++;
+        if (!eqShPart(csh, esh, cr-1)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
+      }
       if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
     }
+    if (rm==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
     
+    usz csz = shProd(esh, 0, rr-1);
     MAKE_MUT(r, cam*csz);
     usz ri = 0;
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x, i);
-      usz cia = a(c)->ia;
-      mut_copy(r, ri, c, 0, cia);
-      ri+= cia;
+      if (isArr(c)) {
+        usz cia = a(c)->ia;
+        mut_copy(r, ri, c, 0, cia);
+        ri+= cia;
+      } else {
+        mut_set(r, ri, inc(c));
+        ri++;
+      }
     }
     assert(ri==cam*csz);
     Arr* ra = mut_fp(r);
-    usz* sh = arr_shAlloc(ra, ir);
+    usz* sh = arr_shAlloc(ra, rr);
     if (sh) {
       sh[0] = cam;
-      shcpy(sh+1, x0sh+1, ir-1);
+      shcpy(sh+1, esh, rr-1);
     }
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
+  } else if (xr==0) {
+    return bqn_merge(x);
+  } else {
+    SGetU(x)
+    B x0 = GetU(x,0);
+    B rf; if(SFNS_FILLS) rf = getFillQ(x0);
+    ur r0 = isAtm(x0) ? 0 : rnk(x0);
+
+    usz xia = a(x)->ia;
+    usz* xsh = a(x)->sh;
+    usz tlen = 4*xr+2*r0; for (usz a=0; a<xr; a++) tlen+=xsh[a];
+    ShArr* sto = m_shArr(tlen); usz* st = sto->a;              // Temp buffer
+    st[xr-1]=1; for (ur a=xr; a-->1; ) st[a-1] = st[a]*xsh[a]; // Stride
+    usz* tsh0 = st+xr; usz* tsh = tsh0+xr+r0;                  // Test shapes
+    // Length buffer i is lp+lp[i]
+    usz* lp = tsh+xr+r0; lp[0]=xr; for (usz a=1; a<xr; a++) lp[a] = lp[a-1]+xsh[a-1];
+
+    // Expand checked region from the root ⊑𝕩 along each axis in order,
+    // so that a non-root element is checked when the axis of the first
+    // nonzero in its index is reached.
+    ur tr = r0; // Number of root axes remaining
+    for (ur a = 0; a < xr; a++) {
+      // Check the axis starting at the root, getting axis lengths
+      usz n = xsh[a];
+      usz *ll = lp+lp[a];
+      if (n == 1) {
+        if (!tr) thrM("∾: Ranks of argument items too small");
+        st[a] = ll[0] = a(x0)->sh[r0-tr];
+        tr--; continue;
+      }
+      usz step = st[a];
+      ll[0] = r0;
+      for (usz i=1; i<n; i++) {
+        B c = GetU(x, i*step);
+        ll[i] = LIKELY(isArr(c)) ? rnk(c) : 0;
+      }
+      usz r1s=r0; for (usz i=1; i<n; i++) if (ll[i]>r1s) r1s=ll[i];
+      ur r1 = r1s;
+      ur a0 = r1==r0;  // Root has axis a
+      if (tr < a0) thrM("∾: Ranks of argument items too small");
+      for (usz i=0; i<n; i++) {
+        ur rd = r1 - ll[i];
+        if (rd) {
+          if (rd>1) thrF("∾: Item ranks along an axis can differ by at most one (contained ranks %i and %i along axis %i)", ll[i], r1, a);
+          ll[i] = -1;
+        } else {
+          B c = GetU(x, i*step);
+          ll[i] = a(c)->sh[r0-tr];
+        }
+      }
+
+      // Check shapes
+      for (usz j=0; j<xia; j+=n*step) {
+        B base = GetU(x, j);
+        ur r = isAtm(base) ? 0 : rnk(base);
+        ur r1 = r+1-a0;
+        ur lr = 0;
+        if (r) {
+          usz* sh=a(base)->sh;
+          lr = r - tr;
+          shcpy(tsh,sh,r); shcpy(tsh0,sh,r);
+          if (!a0) shcpy(tsh +lr+1, tsh +lr  , tr  );
+          else     shcpy(tsh0+lr  , tsh0+lr+1, tr-1);
+        }
+        for (usz i=1; i<n; i++) {
+          B c = GetU(x, j+i*step);
+          bool rd = ll[i]==-1;
+          tsh[lr] = ll[i];
+          ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=rnk(c); sh=a(c)->sh; }
+          if (cr != r1-rd) thrF("∾: Incompatible item ranks", base, c);
+          if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
+          if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
+        }
+      }
+      tr -= a0;
+
+      // Transform to lengths by changing -1 to 1, and get total
+      usz len = 0;
+      for (usz i=0; i<n; i++) {
+        len += ll[i] &= 1 | -(usz)(ll[i]!=-1);
+      }
+      st[a] = len;
+    }
+
+    // Move the data
+    usz* csh = tr ? a(x0)->sh + r0-tr : NULL;  // Trailing shape
+    usz csz = shProd(csh, 0, tr);
+    MAKE_MUT(r, shProd(st, 0, xr)*csz);
+    // Element index and effective shape, updated progressively
+    usz *ei =tsh;  for (usz i=0; i<xr; i++) ei [i]=0;
+    usz ri = 0;
+    usz *ll = lp+lp[xr-1];
+    for (usz i = 0;;) {
+      B e = GetU(x, i);
+      usz l = ll[ei[xr-1]] * csz;
+      if (RARE(isAtm(e))) {
+        assert(l==1);
+        mut_set(r, ri, inc(e));
+      } else {
+        usz eia = a(e)->ia;
+        if (eia) {
+          usz rj = ri;
+          usz *ii=tsh0; for (usz k=0; k<xr-1; k++) ii[k]=0;
+          usz str0 = st[xr-1]*csz;
+          for (usz j=0;;) {
+            mut_copy(r, rj, e, j, l);
+            j+=l; if (j==eia) break;
+            usz str = str0;
+            rj += str;
+            for (usz a = xr-2; RARE(++ii[a] == lp[lp[a]+ei[a]]); a--) {
+              rj -= ii[a]*str;
+              ii[a] = 0;
+              str *= st[a];
+              rj += str;
+            }
+          }
+        }
+      }
+      if (++i == xia) break;
+      ri += l;
+      usz str = csz;
+      for (usz a = xr-1; RARE(++ei[a] == xsh[a]); ) {
+        ei[a] = 0;
+        str *= st[a];
+        a--;
+        ri += (lp[lp[a]+ei[a]]-1) * str;
+      }
+    }
+    Arr* ra = mut_fp(r);
+    usz* sh = arr_shAlloc(ra, xr+tr);
+    shcpy(sh   , st , xr);
+    shcpy(sh+xr, csh, tr);
+    decShObj(sto);
+    decG(x);
+    return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   }
-  base:
-  return c1(rt_join, x);
 }
 B join_c2(B t, B w, B x) {
   if (isAtm(w)) w = m_atomUnit(w);
