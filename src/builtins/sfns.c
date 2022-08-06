@@ -958,7 +958,7 @@ B join_c1(B t, B x) {
     usz xia = a(x)->ia;
     usz* xsh = a(x)->sh;
     usz tlen = 4*xr+2*r0; for (usz a=0; a<xr; a++) tlen+=xsh[a];
-    ShArr* sto = m_shArr(tlen); usz* st = sto->a;              // Temp buffer
+    TALLOC(usz, st, tlen);                                     // Temp buffer
     st[xr-1]=1; for (ur a=xr; a-->1; ) st[a-1] = st[a]*xsh[a]; // Stride
     usz* tsh0 = st+xr; usz* tsh = tsh0+xr+r0;                  // Test shapes
     // Length buffer i is lp+lp[i]
@@ -1079,7 +1079,7 @@ B join_c1(B t, B x) {
     usz* sh = arr_shAlloc(ra, xr+tr);
     shcpy(sh   , st , xr);
     shcpy(sh+xr, csh, tr);
-    decShObj(sto);
+    TFREE(st);
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   }
