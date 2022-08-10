@@ -188,7 +188,9 @@ static const u16 OBJ_TAG = 0b1111111111110110; // FFF6 1111111111110110ppppppppp
 static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else here is an atom)
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
 #define ftag(X) ((u64)(X) << 48)
-#define tag(V, T) b(((u64)(V)) | ftag(T))
+#define ptr2u64(X) ((u64)(uintptr_t)(X))
+#define tagu64(V, T) b((u64)(V) | ftag(T))
+#define tag(V, T) b(ptr2u64(V) | ftag(T))
 #define taga(V) tag(V,ARR_TAG)
 
 void cbqn_init(void);
@@ -408,7 +410,7 @@ FORCE_INLINE bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
 
 // make objects
 static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
-static B m_c32(u32 n) { return tag(n,C32_TAG); } // TODO check validity?
+static B m_c32(u32 n) { return tagu64(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 

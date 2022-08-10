@@ -298,7 +298,7 @@ static OptRes opt(u32* bc0) {
         break;
       }
       case VARM: { u32 d = *bc++; u32 p = *bc++;
-        TSADD(stk,SREF(tag((u64)d<<32 | (u32)p, VAR_TAG), pos));
+        TSADD(stk,SREF(tagu64((u64)d<<32 | (u32)p, VAR_TAG), pos));
         break;
       }
       case FN1C: case FN1O: { S(f,0)
@@ -638,8 +638,8 @@ Nvm_res m_nvm(Body* body) {
       case TR2D: TOPp; GET(R_A1,1,1);                               CCALL(i_TR2D); break; // (B g,     B h)
       case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3D); break; // (B f,B g, B h)
       case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3O); break; // (B f,B g, B h)
-      case VARM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
-      case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tag((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
+      case VARM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tagu64((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
+      case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tagu64((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
       case VARO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
         MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed

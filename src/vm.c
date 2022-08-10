@@ -321,7 +321,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             bDone[id] = true;
             Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc);
             TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
-            A64((u64)bl);
+            A64(ptr2u64(bl));
             TSADD(usedBlocks, bl);
             break;
           }
@@ -386,8 +386,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     u64 bodyReqAm = TSSIZE(bodyReqs);
     for (u64 i = 0; i < bodyReqAm; i++) {
       NextRequest r = bodyReqs[i];
-      /*ugly, but whatever*/ u64 v1 = (u64)bodyMap[r.pos1]; newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
-      if (r.pos2!=U32_MAX) { u64 v2 = (u64)bodyMap[r.pos2]; newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32; }
+      /*ugly, but whatever*/ u64 v1 = ptr2u64(bodyMap[r.pos1]); newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
+      if (r.pos2!=U32_MAX) { u64 v2 = ptr2u64(bodyMap[r.pos2]); newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32; }
     }
     TSFREE(bodyReqs);
     TFREE(bodyMap);
@@ -716,7 +716,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   #endif
   #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
-    #define POS_UPD envCurr->pos = (u64)(bc-1);
+    #define POS_UPD envCurr->pos = ptr2u64(bc-1);
   #else
     #define POS_UPD
   #endif
@@ -799,7 +799,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       
       case VARM: { u32 d = *bc++; u32 p = *bc++;
-        ADD(tag((u64)d<<32 | (u32)p, VAR_TAG));
+        ADD(tagu64((u64)d<<32 | (u32)p, VAR_TAG));
         break;
       }
       case VARO: { u32 d = *bc++; u32 p = *bc++;
@@ -816,7 +816,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       
       case EXTM: { u32 d = *bc++; u32 p = *bc++;
-        ADD(tag((u64)d<<32 | (u32)p, EXT_TAG));
+        ADD(tagu64((u64)d<<32 | (u32)p, EXT_TAG));
         break;
       }
       case EXTO: { u32 d = *bc++; u32 p = *bc++;

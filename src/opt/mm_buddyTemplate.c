@@ -106,7 +106,7 @@ void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
-    u64 addrI = (u64) ci.p;
+    u64 addrI = ptr2u64(ci.p);
     writeNum(f, ci.sz, 8);
     writeNum(f, addrI, 8);
     char* prefix = str1(BN());
