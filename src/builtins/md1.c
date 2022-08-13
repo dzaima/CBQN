@@ -158,7 +158,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
         i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; }
       #endif
       decG(x); return r; }
-      if (rtid==n_or  |               rtid==n_ceil ) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); usz i=0; while(i<n) if (vg_rand(xp[i])!=0) { rp[i] = -(xp[i]&-xp[i]); i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0; decG(x); return r; }
+      if (rtid==n_or  |               rtid==n_ceil ) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
+      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { u64* xp=bitarr_ptr(x); u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
       if (rtid==n_ne) return scan_ne(0, x, ia);
       goto base;
     }
@@ -214,8 +215,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     i32 wv = o2iu(w);
     if (xe==el_bit) {
       if (rtid==n_add) { u64* xp=bitarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i64 c=wv; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i);          rp[i]=c; } decG(x); return r; }
-      if (!q_ibit(wv)) goto base;
-      if (rtid==n_ne) return scan_ne(-(u64)wv, x, ia);
+      if (rtid==n_ne) return scan_ne(-(u64)(q_ibit(wv)?wv:1&~*bitarr_ptr(x)), x, ia);
       goto base;
     }
     if (rtid==n_add) { // +
