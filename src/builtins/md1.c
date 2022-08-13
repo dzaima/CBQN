@@ -557,6 +557,9 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = a(x)->ia;
   if (xia==0) return m1c1(rt_insert, f, x);
+  if (rnk(x)==1 && isFun(f) && isPervasiveDy(f)) {
+    return m_atomUnit(fold_c1(d, x));
+  }
   
   S_SLICES(x)
   usz p = xia-x_csz;
