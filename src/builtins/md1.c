@@ -121,6 +121,14 @@ B scan_ne(u64 p, B x, u64 ia) {
   decG(x); return r;
 }
 
+static i64 bit_diff(u64* x, u64 am) {
+  i64 r = 0;
+  u64 a = 0xAAAAAAAAAAAAAAAA;
+  for (u64 i = 0; i < (am>>6); i++) r+= POPC(x[i]^a);
+  if (am&63) r+= POPC((x[am>>6]^a)<<(64-am & 63));
+  return r - (i64)(am/2);
+}
+
 
 #if SINGELI
   #pragma GCC diagnostic push
@@ -269,7 +277,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   if (isFun(f) && v(f)->flags && xe<=el_f64) {
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
-      if (rtid==n_add) { B r = m_f64(bit_sum(bitarr_ptr(x), ia)); decG(x); return r; }
+      if (rtid==n_add) { B r = m_f64(bit_sum (bitarr_ptr(x), ia)); decG(x); return r; }
+      if (rtid==n_sub) { B r = m_f64(bit_diff(bitarr_ptr(x), ia)); decG(x); return r; }
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) { u64* xp = bitarr_ptr(x); bool r=1; for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; decG(x); return m_i32(r); }
       if (rtid==n_or  |               rtid==n_ceil ) { u64* xp = bitarr_ptr(x); bool r=0; for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; decG(x); return m_i32(r); }
       goto base;
@@ -327,7 +336,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
     i32 wi = o2iu(w);
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
-      if (rtid==n_add) { B r = m_f64(wi + bit_sum(bitarr_ptr(x), ia)); decG(x); return r; }
+      if (rtid==n_add) { B r = m_f64(wi            + bit_sum (bitarr_ptr(x), ia)); decG(x); return r; }
+      if (rtid==n_sub) { B r = m_f64((ia&1?-wi:wi) + bit_diff(bitarr_ptr(x), ia)); decG(x); return r; }
       if (wi!=(wi&1)) goto base;
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) { u64* xp = bitarr_ptr(x); bool r=wi; if ( r) { for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; } decG(x); return m_i32(r); }
       if (rtid==n_or  |               rtid==n_ceil ) { u64* xp = bitarr_ptr(x); bool r=wi; if (!r) { for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; } decG(x); return m_i32(r); }
