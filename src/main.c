@@ -67,7 +67,7 @@ i64 readInt(char** p) {
   return am;
 }
 void cbqn_runLine0(char* ln, i64 read) {
-  if (ln[0]==10) return;
+  if (ln[0]==0 || read==0) return;
   
   B code;
   int output; // 0-no; 1-formatter; 2-internal
