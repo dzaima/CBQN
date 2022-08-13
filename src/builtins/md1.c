@@ -121,6 +121,12 @@ B scan_ne(u64 p, u64* xp, u64 ia) {
   return r;
 }
 
+static bool fold_ne(u64* x, u64 am) {
+  u64 r = 0;
+  for (u64 i = 0; i < (am>>6); i++) r^= x[i];
+  if (am&63) r^= x[am>>6]<<(64-am & 63);
+  return POPC(r) & 1;
+}
 static i64 bit_diff(u64* x, u64 am) {
   i64 r = 0;
   u64 a = 0xAAAAAAAAAAAAAAAA;
@@ -284,6 +290,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       if (rtid==n_sub) { B r = m_f64(bit_diff(xp, ia)); decG(x); return r; }
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) { bool r=1; for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; decG(x); return m_i32(r); }
       if (rtid==n_or  |               rtid==n_ceil ) { bool r=0; for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; decG(x); return m_i32(r); }
+      if (rtid==n_ne) { bool r=fold_ne(xp, ia)          ; decG(x); return m_i32(r); }
+      if (rtid==n_eq) { bool r=fold_ne(xp, ia) ^ (1&~ia); decG(x); return m_i32(r); }
       goto base;
     }
     if (rtid==n_add) { // +
@@ -345,6 +353,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       if (wi!=(wi&1)) goto base;
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) { bool r=wi; if ( r) { for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; } decG(x); return m_i32(r); }
       if (rtid==n_or  |               rtid==n_ceil ) { bool r=wi; if (!r) { for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; } decG(x); return m_i32(r); }
+      if (rtid==n_ne) { bool r=wi^fold_ne(xp, ia)         ; decG(x); return m_i32(r); }
+      if (rtid==n_eq) { bool r=wi^fold_ne(xp, ia) ^ (1&ia); decG(x); return m_i32(r); }
       goto base;
     }
     if (rtid==n_add) { // + 
