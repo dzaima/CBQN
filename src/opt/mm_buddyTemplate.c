@@ -56,6 +56,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   c->next = 0;
   vg_undef_p(c, sz);
   BN(splitTo)(c, from, to, false);
+  assert(buckets[bucket]!=NULL);
   return BN(allocL)(bucket, type);
 }
 
@@ -74,6 +75,7 @@ NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
     if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
   }
   BN(splitTo)(c, from, to, true);
+  assert(buckets[bucket]!=NULL);
   return BN(allocL)(bucket, type);
 }
 
