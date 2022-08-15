@@ -18,10 +18,6 @@
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
-u32 bL_m[BC_SIZE];
-i32 sD_m[BC_SIZE];
-i32 sC_m[BC_SIZE];
-i32 sA_m[BC_SIZE];
 
 char* bc_repr(u32 p) {
   switch(p) { default: return "(unknown)";
@@ -1162,6 +1158,60 @@ void print_vmStack() {
 
 B oomMessage;
 
+
+u32 bL_m[BC_SIZE] = { // bytecode length map
+  [FN1C]=1, [FN2C]=1, [FN1O]=1, [FN2O]=1,
+  [MD1C]=1, [MD2C]=1, [MD2R]=1,
+  [TR2D]=1, [TR3D]=1, [TR3O]=1,
+  [SETN]=1, [SETU]=1, [SETM]=1, [SETH]=1, [SETC]=1,
+  [POPS]=1, [CHKV]=1, [VFYM]=1, [NOTM]=1, [RETN]=1, [RETD]=1,
+  [FAIL]=1, [PRED]=1,
+  
+  [PUSH]=2, [DFND]=2, [LSTO]=2, [LSTM]=2, [ARMO]=2, [ARMM]=2,
+  [DYNO]=2, [DYNM]=2, [FLDO]=2, [FLDM]=2,
+  [SYSV]=2, [ALIM]=2,
+  
+  [VARO]=3, [VARM]=3, [VARU]=3,
+  [EXTO]=3, [EXTM]=3, [EXTU]=3,
+  [ADDI]=3, [ADDU]=3,
+  [FN1Ci]=3, [FN1Oi]=3, [FN2Ci]=3, [DFND0]=3, [DFND1]=3, [DFND2]=3,
+  [SETNi]=3, [SETUi]=3, [SETMi]=3, [SETCi]=3,
+  [SETNv]=3, [SETUv]=3, [SETMv]=3, [SETCv]=3, [PRED1]=3, [SETH1]=3,
+  
+  [FN2Oi]=5, [SETH2]=5, [PRED2]=5,
+};
+i32 sD_m[BC_SIZE] = { // stack diff map
+  [PUSH ]= 1, [DYNO ]= 1, [DYNM]= 1, [DFND]= 1, [VARO]= 1, [VARM]= 1, [DFND0]= 1, [DFND1]=1, [DFND2]=1,
+  [VARU ]= 1, [EXTO ]= 1, [EXTM]= 1, [EXTU]= 1, [SYSV]= 1, [ADDI]= 1, [ADDU ]= 1, [NOTM ]= 1,
+  [FN1Ci]= 0, [FN1Oi]= 0, [CHKV]= 0, [VFYM]= 0, [FLDO]= 0, [FLDM]= 0, [RETD ]= 0, [ALIM ]=0,
+  [FN2Ci]=-1, [FN2Oi]=-1, [FN1C]=-1, [FN1O]=-1, [MD1C]=-1, [TR2D]=-1, [POPS ]=-1, [MD2R ]=-1, [RETN]=-1, [PRED]=-1, [PRED1]=-1, [PRED2]=-1,
+  [MD2C ]=-2, [TR3D ]=-2, [FN2C]=-2, [FN2O]=-2, [TR3O]=-2, [SETH]=-2, [SETH1]=-2, [SETH2]=-2,
+  
+  [SETN]=-1, [SETNi]= 0, [SETNv]=-1,
+  [SETU]=-1, [SETUi]= 0, [SETUv]=-1,
+  [SETC]=-1, [SETCi]= 0, [SETCv]=-1,
+  [SETM]=-2, [SETMi]=-1, [SETMv]=-2,
+  
+  [FAIL]=0
+};
+i32 sC_m[BC_SIZE] = { // stack consumed map
+  [PUSH]=0, [DYNO]=0, [DYNM]=0, [DFND]=0, [VARO ]=0,[VARM ]=0,[NOTM ]=0, [VARU]=0, [EXTO]=0, [EXTM]=0,
+  [EXTU]=0, [SYSV]=0, [ADDI]=0, [ADDU]=0, [DFND0]=0,[DFND1]=0,[DFND2]=0,
+  
+  [CHKV ]=0,[RETD ]=0,
+  [FN1Ci]=1,[FN1Oi]=1, [FLDO]=1, [FLDM]=1, [ALIM]=1, [RETN]=1, [POPS]=1, [PRED]=1, [PRED1]=1, [PRED2]=1, [VFYM]=1,
+  [FN2Ci]=2,[FN2Oi]=2, [FN1C]=2, [FN1O]=2, [MD1C]=2, [TR2D]=2, [MD2R]=2, [SETH]=2, [SETH1]=2, [SETH2]=2,
+  [MD2C ]=3,[TR3D ]=3, [FN2C]=3, [FN2O]=3, [TR3O]=3,
+  
+  [SETN]=2, [SETNi]=1, [SETNv]=1,
+  [SETU]=2, [SETUi]=1, [SETUv]=1,
+  [SETC]=2, [SETCi]=1, [SETCv]=1,
+  [SETM]=3, [SETMi]=2, [SETMv]=2,
+  
+  [FAIL]=0
+};
+i32 sA_m[BC_SIZE]; // stack added map
+
 void comp_init() {
   TIi(t_comp    ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
   TIi(t_body    ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
@@ -1193,60 +1243,6 @@ void comp_init() {
   allocStack((void**)&envCurr, (void**)&envStart, (void**)&envEnd, sizeof(Env), ENV_SIZE);
   envCurr--;
   
-  for (i32 i = 0; i < BC_SIZE; i++) bL_m[i] = sD_m[i] = sC_m[i] = sA_m[i] = 1<<29;
-  
-  // bytecode length map
-  bL_m[FN1C]=1; bL_m[FN2C]=1; bL_m[FN1O]=1; bL_m[FN2O]=1;
-  bL_m[MD1C]=1; bL_m[MD2C]=1; bL_m[MD2R]=1;
-  bL_m[TR2D]=1; bL_m[TR3D]=1; bL_m[TR3O]=1;
-  bL_m[SETN]=1; bL_m[SETU]=1; bL_m[SETM]=1; bL_m[SETH]=1; bL_m[SETC]=1;
-  bL_m[POPS]=1; bL_m[CHKV]=1; bL_m[VFYM]=1; bL_m[NOTM]=1; bL_m[RETN]=1; bL_m[RETD]=1;
-  bL_m[FAIL]=1; bL_m[PRED]=1;
-  
-  bL_m[PUSH]=2; bL_m[DFND]=2; bL_m[LSTO]=2; bL_m[LSTM]=2; bL_m[ARMO]=2; bL_m[ARMM]=2;
-  bL_m[DYNO]=2; bL_m[DYNM]=2; bL_m[FLDO]=2; bL_m[FLDM]=2;
-  bL_m[SYSV]=2; bL_m[ALIM]=2;
-  
-  bL_m[VARO]=3; bL_m[VARM]=3; bL_m[VARU]=3;
-  bL_m[EXTO]=3; bL_m[EXTM]=3; bL_m[EXTU]=3;
-  bL_m[ADDI]=3; bL_m[ADDU]=3;
-  bL_m[FN1Ci]=3; bL_m[FN1Oi]=3; bL_m[FN2Ci]=3; bL_m[DFND0]=3; bL_m[DFND1]=3; bL_m[DFND2]=3;
-  bL_m[SETNi]=3; bL_m[SETUi]=3; bL_m[SETMi]=3; bL_m[SETCi]=3;
-  bL_m[SETNv]=3; bL_m[SETUv]=3; bL_m[SETMv]=3; bL_m[SETCv]=3; bL_m[PRED1]=3; bL_m[SETH1]=3;
-  
-  bL_m[FN2Oi]=5; bL_m[SETH2]=5; bL_m[PRED2]=5;
-  
-  // stack diff map
-  sD_m[PUSH ]= 1; sD_m[DYNO ]= 1; sD_m[DYNM]= 1; sD_m[DFND]= 1; sD_m[VARO]= 1; sD_m[VARM]= 1; sD_m[DFND0]= 1; sD_m[DFND1]=1; sD_m[DFND2]=1;
-  sD_m[VARU ]= 1; sD_m[EXTO ]= 1; sD_m[EXTM]= 1; sD_m[EXTU]= 1; sD_m[SYSV]= 1; sD_m[ADDI]= 1; sD_m[ADDU ]= 1; sD_m[NOTM ]= 1;
-  sD_m[FN1Ci]= 0; sD_m[FN1Oi]= 0; sD_m[CHKV]= 0; sD_m[VFYM]= 0; sD_m[FLDO]= 0; sD_m[FLDM]= 0; sD_m[RETD ]= 0; sD_m[ALIM ]=0;
-  sD_m[FN2Ci]=-1; sD_m[FN2Oi]=-1; sD_m[FN1C]=-1; sD_m[FN1O]=-1; sD_m[MD1C]=-1; sD_m[TR2D]=-1; sD_m[POPS ]=-1; sD_m[MD2R ]=-1; sD_m[RETN]=-1; sD_m[PRED]=-1; sD_m[PRED1]=-1; sD_m[PRED2]=-1;
-  sD_m[MD2C ]=-2; sD_m[TR3D ]=-2; sD_m[FN2C]=-2; sD_m[FN2O]=-2; sD_m[TR3O]=-2; sD_m[SETH]=-2; sD_m[SETH1]=-2; sD_m[SETH2]=-2;
-  
-  sD_m[SETN]=-1; sD_m[SETNi]= 0; sD_m[SETNv]=-1;
-  sD_m[SETU]=-1; sD_m[SETUi]= 0; sD_m[SETUv]=-1;
-  sD_m[SETC]=-1; sD_m[SETCi]= 0; sD_m[SETCv]=-1;
-  sD_m[SETM]=-2; sD_m[SETMi]=-1; sD_m[SETMv]=-2;
-  
-  sD_m[FAIL]=0;
-  
-  // stack consumed map
-  sC_m[PUSH]=0; sC_m[DYNO]=0; sC_m[DYNM]=0; sC_m[DFND]=0; sC_m[VARO ]=0;sC_m[VARM ]=0;sC_m[NOTM ]=0; sC_m[VARU]=0; sC_m[EXTO]=0; sC_m[EXTM]=0;
-  sC_m[EXTU]=0; sC_m[SYSV]=0; sC_m[ADDI]=0; sC_m[ADDU]=0; sC_m[DFND0]=0;sC_m[DFND1]=0;sC_m[DFND2]=0;
-  
-  sC_m[CHKV ]=0;sC_m[RETD ]=0;
-  sC_m[FN1Ci]=1;sC_m[FN1Oi]=1; sC_m[FLDO]=1; sC_m[FLDM]=1; sC_m[ALIM]=1; sC_m[RETN]=1; sC_m[POPS]=1; sC_m[PRED]=1; sC_m[PRED1]=1; sC_m[PRED2]=1; sC_m[VFYM]=1;
-  sC_m[FN2Ci]=2;sC_m[FN2Oi]=2; sC_m[FN1C]=2; sC_m[FN1O]=2; sC_m[MD1C]=2; sC_m[TR2D]=2; sC_m[MD2R]=2; sC_m[SETH]=2; sC_m[SETH1]=2; sC_m[SETH2]=2;
-  sC_m[MD2C ]=3;sC_m[TR3D ]=3; sC_m[FN2C]=3; sC_m[FN2O]=3; sC_m[TR3O]=3;
-  
-  sC_m[SETN]=2; sC_m[SETNi]=1; sC_m[SETNv]=1;
-  sC_m[SETU]=2; sC_m[SETUi]=1; sC_m[SETUv]=1;
-  sC_m[SETC]=2; sC_m[SETCi]=1; sC_m[SETCv]=1;
-  sC_m[SETM]=3; sC_m[SETMi]=2; sC_m[SETMv]=2;
-  
-  sC_m[FAIL]=0;
-  
-  // stack added map
   for (i32 i = 0; i < BC_SIZE; i++) sA_m[i] = sD_m[i] + sC_m[i];
   sA_m[LSTO]=1; sA_m[ARMO]=1;
   sA_m[LSTM]=1; sA_m[ARMM]=1;
