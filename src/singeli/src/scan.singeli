@@ -4,6 +4,59 @@ include './avx'
 include './avx2'
 include './mask'
 
+def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
+def sel8{v, t & istup{t} & tuplen{t}==16} = sel8{v, merge{t,t}}
+
+def base{b,l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+b*base{b,slice{l,1}} }
+def shuf{T, v, n & istup{n}} = shuf{T, v, base{4,n}}
+
+# Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
+avx2_scan_idem{T, op, id}(x:*T, r:*T, len:u64) : void = {
+  def w = width{T}
+
+  # Within each lane, scan using shifts by powers of 2. First k elements
+  # when shifting by k don't need to change, so leave them alone.
+  def shift{k,l} = merge{iota{k},iota{l-k}}
+  def c8 {k, a} = op{a, shuf{[4]u32, a, shift{k,4}}}
+  def c32{k, a} = (if (w<=8*k) op{a, sel8{a, shift{k,16}}}; else a)
+  # Fill last 4 bytes with last element, in each lane
+  def spread{a} = {
+    def b = w/8
+    if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}}; else a
+  }
+  # Prefix op on entire AVX register
+  def pre{a} = {
+    b:= c8{2, c8{1, c32{2, c32{1, a}}}}
+    # After lanewise scan, broadcast end of lane 0 to entire lane 1
+    op{b, sel{[8]i32, spread{b}, make{[8]i32, 3*(3<iota{8})}}}
+  }
+
+  def step = 256/w
+  def V = [step]T
+  p:= broadcast{V, id}
+  xv:= *V ~~ x
+  rv:= *V ~~ r
+  e:= len/step
+  @for (xv, rv over e) {
+    n:= op{pre{xv}, p}
+    p = sel{[8]i32, spread{n}, broadcast{[8]i32, 7}}
+    rv = n
+  }
+  q:= len & (step-1)
+  if (q) maskstoreF{rv, maskOf{V, q}, e, op{pre{load{xv,e}}, p}}
+}
+def avx2_scan_idem{T, op} = {
+  def m = 1 << (width{T}-1)
+  avx2_scan_idem{T, op, (if (match{op,min}) m-1; else -m)}
+}
+'avx2_scan_min8'  = avx2_scan_idem{i8 , min}
+'avx2_scan_max8'  = avx2_scan_idem{i8 , max}
+'avx2_scan_min16' = avx2_scan_idem{i16, min}
+'avx2_scan_max16' = avx2_scan_idem{i16, max}
+'avx2_scan_min32' = avx2_scan_idem{i32, min}
+'avx2_scan_max32' = avx2_scan_idem{i32, max}
+
+# Boolean cumulative sum
 avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
   rv:= *[8]u32~~r
   xv:= *u32~~x
@@ -11,7 +64,6 @@ avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
-  def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
   def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, broadcast{T, 0}}
   
   def step{x:u32, i, store1} = {
