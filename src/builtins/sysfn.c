@@ -334,7 +334,7 @@ B rand_range_c2(B t, B w, B x) {
     if (max!=0) thrM("(rand).Range: 𝕩 cannot be negative");
     f64* rp; r = m_f64arrp(&rp, am);
     NOUNROLL for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
-  } else if (max > I32_MAX) {
+  } else if (max > (1ULL<<31)) {
     if (max >= 1LL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");
     f64* rp; r = m_f64arrp(&rp, am);
     NOUNROLL for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
