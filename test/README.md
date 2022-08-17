@@ -14,6 +14,7 @@ test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations
 ./BQN test/squeezeValid.bqn // fuzz-test squeezing giving a correct result; requires a CBQN build with -DEEQUAL_NEGZERO
 ./BQN test/squeezeExact.bqn // fuzz-test squeezing giving the exact smallest result; requires a CBQN build with -DEEQUAL_NEGZERO
 ./BQN test/various.bqn // tests for various small things
+./BQN test/random.bqn // test (•MakeRand n).Range
 make -C test/ffi // test FFI functionality; expects both regular and shared library CBQN builds to already exist
 
 legacy utilities:

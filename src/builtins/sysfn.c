@@ -339,8 +339,33 @@ B rand_range_c2(B t, B w, B x) {
     f64* rp; r = m_f64arrp(&rp, am);
     for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
   } else {
-    i32* rp; r = m_i32arrp(&rp, am);
-    for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
+    u8 t; usz u64am;
+    
+    if (max>128) {
+      if (max>32768)   { u64am = (am+ 1)>>1; t=t_i32arr; }
+      else             { u64am = (am+ 3)>>2; t=t_i16arr; }
+    } else if (max!=2) { u64am = (am+ 7)>>3; t=t_i8arr;  }
+    else               { u64am = (am+63)>>6; t=t_bitarr; }
+    
+    assert((u64am<<3) >= (t==t_bitarr? BIT_N(am)<<3 : am<<arrTypeWidthLog(t)));
+    r = m_arr(offsetof(TyArr,a) + (u64am<<3), t, am);
+    void* rp = ((TyArr*)r)->a;
+    if (max & (max-1)) { // not power of two
+      if      (t==t_i32arr) for (usz i = 0; i < am; i++) ((i32*)rp)[i] = wy2u0k(wyrand(&seed), max);
+      else if (t==t_i16arr) for (usz i = 0; i < am; i++) ((i16*)rp)[i] = wy2u0k(wyrand(&seed), max);
+      else if (t==t_i8arr)  for (usz i = 0; i < am; i++) (( i8*)rp)[i] = wy2u0k(wyrand(&seed), max);
+      else UD; // bitarr will be max==2, i.e. a power of two
+    } else {
+      u64 mask;
+      if (t==t_bitarr) { mask = ~0L; goto end; }
+      mask = max-1;
+      mask|= mask<<32;
+      if (t==t_i32arr) goto end; mask|= mask<<16;
+      if (t==t_i16arr) goto end; mask|= mask<<8;
+      
+      end:
+      for (usz i = 0; i < u64am; i++) ((u64*)rp)[i] = wyrand(&seed) & mask;
+    }
   }
 
   RAND_END;
