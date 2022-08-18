@@ -4,7 +4,7 @@
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
 
-B eachd_fn(BBB2B f, B fo, B w, B x) {
+B eachd_fn(B fo, B w, B x, BBB2B f) {
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
   ur wr = rnk(w); SGet(w);
@@ -51,7 +51,7 @@ B eachd_fn(BBB2B f, B fo, B w, B x) {
   return any_squeeze(rb);
 }
 
-B eachm_fn(BB2B f, B fo, B x) { // TODO definitely rewrite this. Probably still has refcounting errors
+B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still has refcounting errors
   usz ia = a(x)->ia;
   if (ia==0) return x;
   SGet(x);

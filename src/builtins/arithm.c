@@ -7,7 +7,7 @@
 
 static inline B arith_recm(BB2B f, B x) {
   B fx = getFillQ(x);
-  B r = eachm_fn(f, bi_N, x);
+  B r = eachm_fn(bi_N, x, f);
   return withFill(r, fx);
 }
 
