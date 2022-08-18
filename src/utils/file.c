@@ -217,7 +217,7 @@ B path_list(B path) {
   B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
     char* name = c->d_name;
-    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, m_ascii0(name));
+    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, m_c8vec_0(name));
   }
   closedir(d);
   dec(path);

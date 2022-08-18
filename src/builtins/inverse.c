@@ -38,6 +38,6 @@ B nativeInvSwap_c1(B t, B x) {
 }
 
 void inverse_init() {
-  fn_invRegDesc = registerNFn(m_ascii0("(fn_invReg)"), fn_invReg_c1, fn_invReg_c2);
-  fn_invSwapDesc = registerNFn(m_ascii0("(fn_invSwap)"), fn_invSwap_c1, fn_invSwap_c2);
+  fn_invRegDesc = registerNFn(m_c8vec_0("(fn_invReg)"), fn_invReg_c1, fn_invReg_c2);
+  fn_invSwapDesc = registerNFn(m_c8vec_0("(fn_invSwap)"), fn_invSwap_c1, fn_invSwap_c2);
 }

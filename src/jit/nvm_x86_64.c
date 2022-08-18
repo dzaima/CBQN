@@ -493,22 +493,22 @@ void freeOpt(OptRes o) {
   static void write_asm(u8* p, u64 sz) {
     i32* rp; B r = m_i32arrv(&rp, sz);
     for (u64 i = 0; i < sz; i++) rp[i] = p[i];
-    path_wBytes(m_ascii0("asm_bin"), r); dec(r);
+    path_wBytes(m_c8vec_0("asm_bin"), r); dec(r);
     char off[20]; snprintf(off, 20, "%p", p);
-    B o = m_ascii0(off);
-    path_wChars(m_ascii0("asm_off"), o); dec(o);
+    B o = m_c8vec_0(off);
+    path_wChars(m_c8vec_0("asm_off"), o); dec(o);
     B s = emptyCVec();
     #define F(X) AFMT("s/%p$/%p   # i_" #X "/;", i_##X, i_##X);
     F(POPS)F(INC)F(FN1C)F(FN1O)F(FN2C)F(FN2O)F(FN1Oi)F(FN2Oi)F(LST_0)F(LST_p)F(ARMM)F(ARMO)F(DFND_0)F(DFND_1)F(DFND_2)F(MD1C)F(MD2C)F(MD2R)F(TR2D)F(TR3D)F(TR3O)F(NOVAR)F(EXTO)F(EXTU)F(SETN)F(SETU)F(SETM)F(SETC)F(SETH1)F(SETH2)F(PRED1)F(PRED2)F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(FLDO)F(VFYM)F(ALIM)F(CHKV)F(FAIL)F(RETD)
     #undef F
-    path_wChars(m_ascii0("asm_sed"), s); dec(s);
+    path_wChars(m_c8vec_0("asm_sed"), s); dec(s);
   }
 #endif
 
 static void onJIT(Body* body, u8* binEx, u64 sz) {
   #if USE_PERF
     if (!perf_map) {
-      B s = m_ascii0("/tmp/perf-"); AFMT("%l.map", getpid());
+      B s = m_c8vec_0("/tmp/perf-"); AFMT("%l.map", getpid());
       perf_map = file_open(s, "open", "wa");
       print(s); printf(": map\n");
       dec(s);

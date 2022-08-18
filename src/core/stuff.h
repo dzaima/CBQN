@@ -156,7 +156,7 @@ void print_fmt(char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X
 #define AOBJ(X) s = vec_addN(s,X) // consumes X
 #define ACHR(X) AOBJ(m_c32(X))
-#define A8(X) AJOIN(m_ascii0(X))
+#define A8(X) AJOIN(m_c8vec_0(X))
 #define AU(X) AJOIN(utf8Decode0(X))
 #define AFMT(...) s = append_fmt(s, __VA_ARGS__)
 

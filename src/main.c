@@ -14,7 +14,7 @@ static bool init = false;
 static void repl_init() {
   if (init) return;
   cbqn_init();
-  replPath = m_ascii0("."); gc_add(replPath);
+  replPath = m_c8vec_0("."); gc_add(replPath);
   Body* body = m_nnsDesc();
   B ns = m_nns(body);
   gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
@@ -341,18 +341,18 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-e)"), emptySVec()));
+              dec(gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-e)"), emptySVec()));
               break;
             }
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
-              B r = bqn_fmt(gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-p)"), emptySVec()));
+              B r = bqn_fmt(gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec()));
               printRaw(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_ascii0("(-o)"), emptySVec());
+              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-o)"), emptySVec());
               printRaw(r); dec(r);
               printf("\n");
               break;
@@ -403,7 +403,7 @@ int main(int argc, char* argv[]) {
       
       B execRes;
       if (execStdin) {
-        execRes = gsc_exec_inline(utf8DecodeA(stream_bytes(stdin)), m_ascii0("(-)"), args);
+        execRes = gsc_exec_inline(utf8DecodeA(stream_bytes(stdin)), m_c8vec_0("(-)"), args);
       } else {
         execRes = bqn_execFile(src, args);
       }

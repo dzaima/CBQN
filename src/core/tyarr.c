@@ -45,16 +45,13 @@ B m_c8(u8 x) { return m_c32(x); } B m_c16(u16 x) { return m_c32(x); }
 #define TP(W,X) W##f64##X
 #include "tyarrTemplate.c"
 
-NOINLINE B m_caf64(usz sz,  f64* a) { f64* rp; B r = m_f64arrv(&rp, sz); for (usz i = 0; i < sz; i++) rp[i] = a[i]; return r; }
-NOINLINE B m_cai32(usz sz,  i32* a) { i32* rp; B r = m_i32arrv(&rp, sz); for (usz i = 0; i < sz; i++) rp[i] = a[i]; return r; }
-NOINLINE B m_ascii(char* s, i64 sz) { u8*  rp; B r = m_c8arrv (&rp, sz); for (u64 i = 0; i < sz; i++) rp[i] = s[i]; return r; }
-NOINLINE B m_ascii0(char* s) { return m_ascii(s, strlen(s)); }
-NOINLINE B m_str32(u32* s) {
-  usz sz = 0; while(s[sz]) sz++;
-  u32* rp; B r = m_c32arrv(&rp, sz);
-  for (usz i = 0; i < sz; i++) rp[i] = s[i];
-  return r;
-}
+NOINLINE B m_caf64(usz sz,  f64* a) { f64* rp; B r = m_f64arrv(&rp, sz); memcpy(rp, a, sz*sizeof( f64)); return r; }
+NOINLINE B m_cai32(usz sz,  i32* a) { i32* rp; B r = m_i32arrv(&rp, sz); memcpy(rp, a, sz*sizeof( i32)); return r; }
+NOINLINE B m_c8vec(char* a, i64 sz) { u8*  rp; B r = m_c8arrv (&rp, sz); memcpy(rp, a, sz*sizeof(char)); return r; }
+NOINLINE B m_c32vec(u32* s, i64 sz) { u32* rp; B r = m_c32arrv(&rp, sz); memcpy(rp, s, sz*sizeof( u32)); return r; }
+NOINLINE B m_c8vec_0(char* s) { return m_c8vec(s, strlen(s)); }
+NOINLINE B m_c32vec_0(u32* s) { usz sz=0; while(s[sz]) sz++; return m_c32vec(s, sz); }
+
 
 static Arr* bitarr_slice(B x, usz s, usz ia) {
   u64* rp; Arr* r = m_bitarrp(&rp, ia);

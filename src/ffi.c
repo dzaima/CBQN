@@ -758,8 +758,8 @@ void ffiType_print(FILE* f, B x) {
 }
 
 void ffi_init() {
-  boundFnDesc   = registerNFn(m_ascii0("(foreign function)"), boundFn_c1, boundFn_c2);
-  foreignFnDesc = registerNFn(m_ascii0("(foreign function)"), directFn_c1, directFn_c2);
+  boundFnDesc   = registerNFn(m_c8vec_0("(foreign function)"), boundFn_c1, boundFn_c2);
+  foreignFnDesc = registerNFn(m_c8vec_0("(foreign function)"), directFn_c1, directFn_c2);
   TIi(t_ffiType,freeO) = ffiType_freeO;
   TIi(t_ffiType,freeF) = ffiType_freeF;
   TIi(t_ffiType,visit) = ffiType_visit;

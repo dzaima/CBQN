@@ -114,14 +114,15 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   decG(x);
   return r;
 }
+
 #include "gen/src"
 #if RT_SRC
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_ascii0(name), NULL);
+  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
 }
 #else
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
-  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_ascii0(name), NULL);
+  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL);
 }
 #endif
 
@@ -462,7 +463,7 @@ void load_init() { // very last init function
       #include "gen/compiles"
     );
     runtime[n_asrt] = prevAsrt;
-    load_glyphs = m_hVec3(m_str32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_str32(U"˙˜˘¨⌜⁼´˝`"), m_str32(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    load_glyphs = m_hVec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
     load_comp = c1(load_compgen, inc(load_glyphs));
     gc_add(load_compgen); gc_add(load_comp); gc_add(load_glyphs);

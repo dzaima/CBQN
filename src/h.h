@@ -344,7 +344,6 @@ B    withFill(B x, B f);  // consumes both
 
 static B m_unit (B x); // consumes
 static B m_hunit(B x); // consumes
-B m_str32(u32* s); // meant to be used as m_str32(U"{𝕨‿𝕩}"), so doesn't free for you
 
 B bqn_exec(B str, B path, B args); // consumes all
 B bqn_execFile(B path, B args); // consumes

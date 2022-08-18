@@ -17,9 +17,11 @@
 #undef c32
 
 
-B m_str32(u32* s);
-B m_ascii0(char* s);
-B m_ascii(char* s, i64 sz);
+B m_c32vec_0(u32* s);
+B m_c32vec(u32* s, i64 sz);
+B m_c8vec_0(char* s);
+B m_c8vec(char* s, i64 sz);
+
 B utf8Decode0(const char* x);
 B utf8Decode(const char* x, i64 sz);
 B utf8DecodeA(I8Arr* x);
