@@ -22,7 +22,8 @@ Esc←{
   ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩        # Insert \
 }
 
-OStr ← "m_c32vec_0(U"""∾Esc∾""")"˙  # A BQN string
+U32Len ← (≠ - ·+´ ≥⟜55296 ∧ ≤⟜56319)-⟜@ # for dzaima/BQN; shouldn't break things in proper BQN impls, as surrogate values don't map to valid codepoints
+OStr ← {∾⟨"m_c32vec","(U""",Esc𝕩,""",",•Repr U32Len 𝕩,")"⟩} # A BQN string
 OChr ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
 ONum ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾F∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
 OAny ← ≡◶⟨@⊸≤◶ONum‿OChr, OStr, ⊑⟩
