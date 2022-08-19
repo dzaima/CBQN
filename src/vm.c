@@ -482,7 +482,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 
 
 FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
-  assert(v(s)->type == t_arrMerge);
+  assert(TY(s) == t_arrMerge);
   B o = c(WrappedObj,s)->obj;
   if (!isArr(x) || rnk(x)==0) thrF("[…]%U𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
   
@@ -529,7 +529,7 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
           ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
           v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true);
         } else if (isObj(c)) {
-          assert(v(c)->type == t_fldAlias);
+          assert(TY(c) == t_fldAlias);
           FldAlias* cf = c(FldAlias,c);
           v_set(pscs, cf->obj, ns_getU(x, cf->p), upd, true);
         } else thrM("Assignment: extracting non-name from namespace");
@@ -541,8 +541,8 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   } else if (s.u == bi_N.u) {
     return;
   } else if (isObj(s)) {
-    if      (v(s)->type == t_arrMerge) v_merge(pscs, s, x, upd, false);
-    else if (v(s)->type == t_fldAlias) thrF("Assignment: Cannot assign non-namespace to a list containing aliases"); // v_set(pscs, c(FldAlias, s)->obj, x, upd, true);
+    if      (TY(s) == t_arrMerge) v_merge(pscs, s, x, upd, false);
+    else if (TY(s) == t_fldAlias) thrF("Assignment: Cannot assign non-namespace to a list containing aliases"); // v_set(pscs, c(FldAlias, s)->obj, x, upd, true);
     else UD;
   } else if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
@@ -567,8 +567,7 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
           Scope* sc = pscs[(u16)(c.u>>32)];
           B g = ns_qgetU(x, pos2gid(sc->body, (u32)c.u));
           if (q_N(g) || !v_seth(pscs, c, g)) return false;
-        } else if (isObj(c) && v(c)->type==t_fldAlias) {
-          assert(v(c)->type == t_fldAlias);
+        } else if (isObj(c) && TY(c)==t_fldAlias) {
           FldAlias* cf = c(FldAlias,c);
           B g = ns_qgetU(x, cf->p);
           if (q_N(g) || !v_seth(pscs, cf->obj, g)) return false;
@@ -580,9 +579,9 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
     for (u64 i = 0; i < ia; i++) if (!v_seth(pscs, sp[i], GetU(x,i))) return false;
     return true;
   }
-  if (v(s)->type==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
-  if (v(s)->type==t_arrMerge) return v_merge(pscs, s, x, false, true);
-  if (v(s)->type==t_fldAlias) return false; // return v_seth(pscs, c(FldAlias, s)->obj, x);
+  if (TY(s)==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
+  if (TY(s)==t_arrMerge) return v_merge(pscs, s, x, false, true);
+  if (TY(s)==t_fldAlias) return false; // return v_seth(pscs, c(FldAlias, s)->obj, x);
   UD;
 }
 
@@ -603,7 +602,7 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     sc->ext->vars[(u32)s.u] = bi_optOut;
     return r;
   } else {
-    assert(isObj(s) && v(s)->type==t_arrMerge);
+    assert(isObj(s) && TY(s)==t_arrMerge);
     return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj));
   }
 }
@@ -648,7 +647,7 @@ NOINLINE void scope_decF(Scope* sc) {
   for (i32 i = 0; i < varAm; i++) {
     B c = sc->vars[i];
     if (isVal(c) && v(c)->refc==1) {
-      u8 t = v(c)->type;
+      u8 t = TY(c);
       if      (t==t_funBl && c(FunBlock,c)->sc==sc) innerRef++;
       else if (t==t_md1Bl && c(Md1Block,c)->sc==sc) innerRef++;
       else if (t==t_md2Bl && c(Md2Block,c)->sc==sc) innerRef++;

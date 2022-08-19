@@ -7,7 +7,7 @@
 B itype_c1(B t, B x) {
   B r;
   if(isVal(x)) {
-    r = m_c8vec_0(type_repr(v(x)->type));
+    r = m_c8vec_0(type_repr(TY(x)));
   } else {
     if      (isF64(x)) r = m_c8vec_0("tagged f64");
     else if (isC32(x)) r = m_c8vec_0("tagged c32");
@@ -55,7 +55,7 @@ B info_c2(B t, B w, B x) {
       AFMT("flags:%i ", xv->flags);
       AFMT("extra:%i ", xv->extra);
     }
-    AFMT("type:%i=%S ", xv->type, type_repr(xv->type));
+    AFMT("type:%i=%S ", PTY(xv), type_repr(PTY(xv)));
     AFMT("alloc:%l", mm_size(xv));
     decG(x);
   } else {
@@ -243,7 +243,7 @@ B clearRefs_c1(B t, B x) {
 static B unshare(B x) {
   if (!isArr(x)) return x;
   usz xia = IA(x);
-  switch (v(x)->type) {
+  switch (TY(x)) {
     case t_bitarr: return taga(cpyBitArr(inc(x)));
     case t_i8arr:  return taga(cpyI8Arr (inc(x)));
     case t_i16arr: return taga(cpyI16Arr(inc(x)));
@@ -265,7 +265,7 @@ static B unshare(B x) {
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return taga(r);
     }
-    default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", v(x)->type, type_repr((v(x)->type)));
+    default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", TY(x), type_repr(TY(x)));
   }
 }
 

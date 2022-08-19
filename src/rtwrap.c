@@ -260,9 +260,9 @@ B rtWrap_wrap(B t, bool nnbi) {
 }
 B rtWrap_unwrap(B x) {
   if (!isVal(x)) return x;
-  if (v(x)->type==t_funWrap) { B r = c(WFun,x)->v; dec(x); return r; }
-  if (v(x)->type==t_md1Wrap) { B r = c(WMd1,x)->v; dec(x); return r; }
-  if (v(x)->type==t_md2Wrap) { B r = c(WMd2,x)->v; dec(x); return r; }
+  if (TY(x)==t_funWrap) { B r = c(WFun,x)->v; dec(x); return r; }
+  if (TY(x)==t_md1Wrap) { B r = c(WMd1,x)->v; dec(x); return r; }
+  if (TY(x)==t_md2Wrap) { B r = c(WMd2,x)->v; dec(x); return r; }
   return x;
 }
 

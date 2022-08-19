@@ -24,11 +24,11 @@ static void nfn_lateInit(NFn* fn, NFnDesc* desc) {
   fn->id = desc->id;
 }
 static B nfn_objU(B t) {
-  assert(isVal(t) && v(t)->type == t_nfn);
+  assert(isVal(t) && TY(t) == t_nfn);
   return c(NFn,t)->obj;
 }
 static i32 nfn_data(B t) {
-  assert(isVal(t) && v(t)->type == t_nfn);
+  assert(isVal(t) && TY(t) == t_nfn);
   return c(NFn,t)->data;
 }
 static B nfn_swapObj(B t, B n) { // consumes n, returns old value

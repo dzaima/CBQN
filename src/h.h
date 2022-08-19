@@ -379,8 +379,10 @@ void freeThrown(void);
 #define PIA(X) ((X)->ia)
 #define SH(X) (a(X)->sh)
 #define PSH(X) ((X)->sh)
+#define TY(X) (v(X)->type)
+#define PTY(X) ((X)->type)
 
-#define VTY(X,T) assert(isVal(X) && v(X)->type==(T))
+#define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 
 void print_vmStack(void);
 #ifdef DEBUG
@@ -525,8 +527,8 @@ typedef B (*D2C2)(Md2D*, B, B);
   FOR_TI(F)
 #undef F
 #define TIi(X,V) (ti_##V[X])
-#define TIv(X,V) (ti_##V[(X)->type])
-#define TI(X,V)  (ti_##V[v(X)->type])
+#define TIv(X,V) (ti_##V[PTY(X)])
+#define TI(X,V)  (ti_##V[ TY(X)])
 
 #define SGetU(X) Arr* X##_arrU = a(X); AS2B X##_getU = TIv(X##_arrU,getU);
 #define IGetU(X,N) ({ Arr* x_ = a(X); TIv(x_,getU)(x_,N); })
