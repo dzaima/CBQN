@@ -92,7 +92,7 @@ B fne_c1(B t, B x) {
     return emptyIVec();
   }
   ur xr = rnk(x);
-  usz* sh = a(x)->sh;
+  usz* sh = SH(x);
   usz or = 0;
   for (i32 i = 0; i < xr; i++) or|= sh[i];
   B r;

@@ -5,7 +5,7 @@
 
 B toCells(B x) {
   assert(isArr(x) && rnk(x)>1);
-  usz cam = a(x)->sh[0];
+  usz cam = SH(x)[0];
   usz csz = arr_csz(x);
   BSS2A slice = TI(x,slice);
   M_HARR(r, cam)
@@ -18,7 +18,7 @@ B toCells(B x) {
   } else {
     usz cr = rnk(x)-1;
     ShArr* csh = m_shArr(cr);
-    usz* xsh = a(x)->sh;
+    usz* xsh = SH(x);
     shcpy(csh->a, xsh+1, cr);
     for (usz i = 0; i < cam; i++) {
       Arr* s = slice(incG(x), p, csz); arr_shSetI(s, cr, csh);
@@ -32,7 +32,7 @@ B toCells(B x) {
 }
 B toKCells(B x, ur k) {
   assert(isArr(x) && k<=rnk(x) && k>=0);
-  ur xr = rnk(x); usz* xsh = a(x)->sh;
+  ur xr = rnk(x); usz* xsh = SH(x);
   ur cr = xr-k;
   usz cam = shProd(xsh, 0, k);
   usz csz = shProd(xsh, k, xr);
@@ -119,7 +119,7 @@ static void harrP_visit(Value* x) { assert(x->type == t_harrPartial);
 static B harrP_get(Arr* x, usz n) { err("getting item from t_harrPartial"); }
 static void harrP_print(FILE* f, B x) {
   B* p = c(HArr,x)->a;
-  usz am = *c(HArr,x)->sh;
+  usz am = *SH(x);
   usz ia = IA(x);
   fprintf(f, "(partial HArr "N64d"/"N64d": ⟨", (u64)am, (u64)ia);
   for (usz i = 0; i < ia; i++) {

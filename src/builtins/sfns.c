@@ -263,7 +263,7 @@ static B recPick(B w, B x) { // doesn't consume
   assert(isArr(w) && isArr(x));
   usz ia = IA(w);
   ur xr = rnk(x);
-  usz* xsh = a(x)->sh;
+  usz* xsh = SH(x);
   switch(TI(w,elType)) { default: UD;
     case el_i8:  { i8*  wp = i8any_ptr (w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
     case el_i16: { i16* wp = i16any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
@@ -769,7 +769,7 @@ static B slicev(B x, usz s, usz ia) {
 FORCE_INLINE B affixes(B x, i32 post) {
   if (!isArr(x) || rnk(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
   ur xr = rnk(x);
-  usz* xsh = a(x)->sh;
+  usz* xsh = SH(x);
   u64 cam = *xsh;
   u64 ria = cam+1;
   M_HARR(r, ria);
@@ -809,7 +809,7 @@ B take_c2(B t, B w, B x) {
     usz* xsh;
     if (xr>1) {
       csz = arr_csz(x);
-      xsh = a(x)->sh;
+      xsh = SH(x);
       ptr_inc(shObjS(xsh)); // we'll look at it at the end and dec there
     }
     i64 t = wv*csz; // TODO error on overflow somehow
@@ -872,9 +872,9 @@ B join_c1(B t, B x) {
     usz* sh = arr_shAlloc((Arr*)r.c, ir);
     if (sh) {
       sh[0] = 0;
-      usz* fsh = a(xf)->sh;
+      usz* fsh = SH(xf);
       if (xr>1) {
-        usz* xsh = a(x)->sh;
+        usz* xsh = SH(x);
         for (usz i = 0; i < xr; i++) sh[i] = xsh[i]*fsh[i];
       }
       shcpy(sh+xr, fsh+xr, ir-xr);
@@ -892,7 +892,7 @@ B join_c1(B t, B x) {
     usz* esh = NULL;
     usz cam = 1;     // Result length
     if (rm) {
-      esh = a(x0)->sh;
+      esh = SH(x0);
       cam = *esh++;
     } else {
       rr++;
@@ -905,7 +905,7 @@ B join_c1(B t, B x) {
         if (rm > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
         rd=rm; cam++;
       } else {
-        usz* csh = a(c)->sh;
+        usz* csh = SH(c);
         ur cd = rm - cr;
         if (RARE(cd > rd)) {
           if ((ur)(cd+1-rd) > 2-rd) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
@@ -956,7 +956,7 @@ B join_c1(B t, B x) {
     ur r0 = isAtm(x0) ? 0 : rnk(x0);
 
     usz xia = IA(x);
-    usz* xsh = a(x)->sh;
+    usz* xsh = SH(x);
     usz tlen = 4*xr+2*r0; for (usz a=0; a<xr; a++) tlen+=xsh[a];
     TALLOC(usz, st, tlen);                                     // Temp buffer
     st[xr-1]=1; for (ur a=xr; a-->1; ) st[a-1] = st[a]*xsh[a]; // Stride
@@ -974,7 +974,7 @@ B join_c1(B t, B x) {
       usz *ll = lp+lp[a];
       if (n == 1) {
         if (!tr) thrM("∾: Ranks of argument items too small");
-        st[a] = ll[0] = a(x0)->sh[r0-tr];
+        st[a] = ll[0] = SH(x0)[r0-tr];
         tr--; continue;
       }
       usz step = st[a];
@@ -994,7 +994,7 @@ B join_c1(B t, B x) {
           ll[i] = -1;
         } else {
           B c = GetU(x, i*step);
-          ll[i] = a(c)->sh[r0-tr];
+          ll[i] = SH(c)[r0-tr];
         }
       }
 
@@ -1005,7 +1005,7 @@ B join_c1(B t, B x) {
         ur r1 = r+1-a0;
         ur lr = 0;
         if (r) {
-          usz* sh=a(base)->sh;
+          usz* sh=SH(base);
           lr = r - tr;
           shcpy(tsh,sh,r); shcpy(tsh0,sh,r);
           if (!a0) shcpy(tsh +lr+1, tsh +lr  , tr  );
@@ -1015,7 +1015,7 @@ B join_c1(B t, B x) {
           B c = GetU(x, j+i*step);
           bool rd = ll[i]==-1;
           tsh[lr] = ll[i];
-          ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=rnk(c); sh=a(c)->sh; }
+          ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=rnk(c); sh=SH(c); }
           if (cr != r1-rd) thrF("∾: Incompatible item ranks", base, c);
           if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
           if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
@@ -1032,7 +1032,7 @@ B join_c1(B t, B x) {
     }
 
     // Move the data
-    usz* csh = tr ? a(x0)->sh + r0-tr : NULL;  // Trailing shape
+    usz* csh = tr ? SH(x0) + r0-tr : NULL;  // Trailing shape
     usz csz = shProd(csh, 0, tr);
     MAKE_MUT(r, shProd(st, 0, xr)*csz);
     // Element index and effective shape, updated progressively
@@ -1117,9 +1117,9 @@ B join_c2(B t, B w, B x) {
       wia = IA(w)-IA(x);
       wsh = &wia;
     } else {
-      wsh = a(w)->sh; // when wr>1, shape object won't be disturbed by arr_join_inline
+      wsh = SH(w); // when wr>1, shape object won't be disturbed by arr_join_inline
     }
-    usz* xsh = a(x)->sh;
+    usz* xsh = SH(x);
     srnk(r, 0); // otherwise shape allocation failing may break things
     usz* rsh = arr_shAlloc(a(r), c);
     #if PRINT_JOIN_REUSE
@@ -1152,7 +1152,7 @@ B couple_c1(B t, B x) {
   usz ia = IA(x);
   Arr* r = TI(x,slice)(incG(x),0, ia);
   usz* sh = arr_shAlloc(r, rr+1);
-  if (sh) { sh[0] = 1; shcpy(sh+1, a(x)->sh, rr); }
+  if (sh) { sh[0] = 1; shcpy(sh+1, SH(x), rr); }
   decG(x);
   return taga(r);
 }
@@ -1169,7 +1169,7 @@ B couple_c2(B t, B w, B x) {
   mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
   usz* sh = arr_shAlloc(ra, wr+1);
-  if (sh) { sh[0]=2; shcpy(sh+1, a(w)->sh, wr); }
+  if (sh) { sh[0]=2; shcpy(sh+1, SH(w), wr); }
   if (!SFNS_FILLS) { decG(w); decG(x); return taga(ra); }
   B rf = fill_both(w, x);
   decG(w); decG(x);
@@ -1178,8 +1178,8 @@ B couple_c2(B t, B w, B x) {
 
 
 static inline void shift_check(B w, B x) {
-  ur wr = rnk(w); usz* wsh = a(w)->sh;
-  ur xr = rnk(x); usz* xsh = a(x)->sh;
+  ur wr = rnk(w); usz* wsh = SH(w);
+  ur xr = rnk(x); usz* xsh = SH(x);
   if (wr+1!=xr & wr!=xr) thrF("shift: =𝕨 must be =𝕩 or ¯1+=𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrF("shift: Lengths not matchable (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
 }
@@ -1398,7 +1398,7 @@ B reverse_c1(B t, B x) {
   B xf = getFillQ(x);
   SLOW1("⌽𝕩", x);
   usz csz = arr_csz(x);
-  usz cam = a(x)->sh[0];
+  usz cam = SH(x)[0];
   usz rp = 0;
   usz ip = xia;
   MAKE_MUT(r, xia); mut_init(r, xe);
@@ -1416,7 +1416,7 @@ B reverse_c2(B t, B w, B x) {
   usz xia = IA(x);
   if (xia==0) return x;
   B xf = getFillQ(x);
-  usz cam = a(x)->sh[0];
+  usz cam = SH(x)[0];
   usz csz = arr_csz(x);
   i64 am = o2i64(w);
   if ((u64)am >= (u64)cam) { am%= (i64)cam; if(am<0) am+= cam; }
@@ -1436,7 +1436,7 @@ B transp_c1(B t, B x) {
   if (xr<=1) return x;
   
   usz ia = IA(x);
-  usz* xsh = a(x)->sh;
+  usz* xsh = SH(x);
   usz h = xsh[0];
   usz w = xsh[1] * shProd(xsh, 2, xr);
   
@@ -1581,12 +1581,12 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
   
   Arr* arg = TI(x,slice)(incG(x), wi<0? lv : 0, tk);
   usz* ash = arr_shAlloc(arg, xr);
-  if (ash) { ash[0] = am; shcpy(ash+1, a(x)->sh+1, xr-1); }
+  if (ash) { ash[0] = am; shcpy(ash+1, SH(x)+1, xr-1); }
   
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
-  usz* repsh = a(rep)->sh;
-  if (rnk(rep)==0 || !eqShPart(repsh+1, a(x)->sh+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
+  usz* repsh = SH(rep);
+  if (rnk(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
   
   MAKE_MUT(r, xia);
   mut_init(r, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
@@ -1608,7 +1608,7 @@ B take_ucw(B t, B o, B w, B x) {
   u64 am = wi<0? -wi : wi;
   if (isAtm(x)) x = m_vec1(x);
   ur xr = rnk(x); if (xr==0) xr = 1;
-  if (am>a(x)->sh[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ 𝕨, %H ≡ ≢𝕩)", wi, x);
+  if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ 𝕨, %H ≡ ≢𝕩)", wi, x);
   return takedrop_ucw(wi, o, am, x, xr);
 }
 
@@ -1618,7 +1618,7 @@ B drop_ucw(B t, B o, B w, B x) {
   u64 am = wi<0? -wi : wi;
   if (isAtm(x)) x = m_vec1(x);
   ur xr = rnk(x); if (xr==0) xr = 1;
-  usz cam = a(x)->sh[0];
+  usz cam = SH(x)[0];
   if (am>cam) am = cam;
   return takedrop_ucw(-wi, o, cam-am, x, xr);
 }

@@ -88,8 +88,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     r = HARR_O(r).b;
   }
   if (rsh) {
-    shcpy(rsh   , a(w)->sh, wr);
-    shcpy(rsh+wr, a(x)->sh, xr);
+    shcpy(rsh   , SH(w), wr);
+    shcpy(rsh+wr, SH(x), xr);
   }
   decG(w); decG(x);
   if (EACH_FILLS) return homFil2(f, r, wf, xf);
@@ -231,7 +231,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
 }
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
-  ur xr = rnk(x); usz* xsh = a(x)->sh; usz ia = IA(x);
+  ur xr = rnk(x); usz* xsh = SH(x); usz ia = IA(x);
   B wf = getFillQ(w);
   u8 xe = TI(x,elType);
   if (xr==1 && q_i32(w) && xe<el_f64 && isFun(f) && v(f)->flags) {
@@ -275,7 +275,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   BBB2B fc2 = c2fn(f);
   
   if (isArr(w)) {
-    ur wr = rnk(w); usz* wsh = a(w)->sh; SGet(w)
+    ur wr = rnk(w); usz* wsh = SH(w); SGet(w)
     if (wr+1!=xr || !eqShPart(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
@@ -461,11 +461,11 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   if (X##_cr>1) {              \
     X##_csh = m_shArr(X##_cr); \
     NOUNROLL for (usz i = 0; i < X##_cr; i++) { \
-      usz v = a(X)->sh[i+1];   \
+      usz v = SH(X)[i+1];   \
       X##_csz*= v;             \
       X##_csh->a[i] = v;       \
     }                          \
-  } else if (X##_cr!=0) X##_csz*= a(X)->sh[1];
+  } else if (X##_cr!=0) X##_csz*= SH(X)[1];
 
 #define SLICE(X, S) ({ Arr* r_ = X##_slc(incG(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
 
@@ -490,7 +490,7 @@ static B merge_fill_result_1(B rc) {
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     rsh[0] = 0;
-    shcpy(rsh+1, a(rc)->sh, rr-1);
+    shcpy(rsh+1, SH(rc), rr-1);
   }
   dec(rc);
   return taga(r);
@@ -513,7 +513,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   
   if (Q_BI(f,lt) && IA(x)!=0 && rnk(x)>1) return toCells(x);
   
-  usz cam = a(x)->sh[0];
+  usz cam = SH(x)[0];
   if (cam==0) {
     if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); return emptyHVec(); }
     B cf = to_fill_cell_1(x);
@@ -536,7 +536,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   B r;
   if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
   if (wr==0) {
-    usz cam = a(x)->sh[0];
+    usz cam = SH(x)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
     S_SLICES(x)
     M_HARR(r, cam);
@@ -544,7 +544,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     E_SLICES(x) dec(w);
     r = HARR_FV(r);
   } else if (xr==0) {
-    usz cam = a(w)->sh[0];
+    usz cam = SH(w)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
     S_SLICES(w)
     M_HARR(r, cam);
@@ -552,9 +552,9 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     E_SLICES(w) dec(x);
     r = HARR_FV(r);
   } else {
-    usz cam = a(w)->sh[0];
+    usz cam = SH(w)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
-    if (cam != a(x)->sh[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    if (cam != SH(x)[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     S_SLICES(w) S_SLICES(x)
     M_HARR(r, cam);
     for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, SLICE(w, wp), SLICE(x, xp)));

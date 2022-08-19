@@ -102,7 +102,7 @@ void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging 
       fprint(f, GetU(x,0));
       return;
     }
-    usz* sh = a(x)->sh;
+    usz* sh = SH(x);
     for (i32 i = 0; i < r; i++) {
       if(i==0)fprintf(f, N64d,(u64)sh[i]);
       else fprintf(f, "‿"N64d,(u64)sh[i]);
@@ -259,7 +259,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         } else {
           B o = va_arg(a, B);
           r = isArr(o)? rnk(o) : 0;
-          sh = isArr(o)? a(o)->sh : NULL;
+          sh = isArr(o)? SH(o) : NULL;
         }
         if (r==0) AU("⟨⟩");
         else if (r==1) AFMT("⟨%s⟩", sh[0]);
@@ -372,8 +372,8 @@ NOINLINE i32 compareF(B w, B x) {
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
   bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU; Arr* wArr;
   bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU; Arr* xArr;
-  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); wArr = a(w); }
-  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); xArr = a(x); }
+  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=rnk(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
+  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=rnk(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
   if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
@@ -459,8 +459,8 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   if (LIKELY(wr==1)) {
     if (ia != IA(w)) return false;
   } else {
-    usz* wsh = a(w)->sh;
-    usz* xsh = a(x)->sh;
+    usz* wsh = SH(w);
+    usz* xsh = SH(x);
     if (wsh!=xsh) for (usz i = 0; i < wr; i++) if (wsh[i]!=xsh[i]) return false;
   }
   if (ia==0) return true;
@@ -624,8 +624,8 @@ B bqn_merge(B x) {
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
     usz* rsh = arr_shAlloc(r, xr+xfr);
     if (rsh) {
-      shcpy       (rsh   , a(x )->sh, xr);
-      if(xfr)shcpy(rsh+xr, a(xf)->sh, xfr);
+      shcpy       (rsh   , SH(x),  xr);
+      if(xfr)shcpy(rsh+xr, SH(xf), xfr);
     }
     decG(x); dec(xf);
     return taga(r);
@@ -633,7 +633,7 @@ B bqn_merge(B x) {
   
   SGetU(x)
   B x0 = GetU(x, 0);
-  usz* elSh = isArr(x0)? a(x0)->sh : NULL;
+  usz* elSh = isArr(x0)? SH(x0) : NULL;
   ur elR = isArr(x0)? rnk(x0) : 0;
   usz elIA = isArr(x0)? IA(x0) : 1;
   B fill = getFillQ(x0);
@@ -643,7 +643,7 @@ B bqn_merge(B x) {
   usz rp = 0;
   for (usz i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isArr(c)? (elR!=rnk(c) || !eqShPart(elSh, a(c)->sh, elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
+    if (isArr(c)? (elR!=rnk(c) || !eqShPart(elSh, SH(c), elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
     if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
     else mut_set(r, rp, inc(c));
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
@@ -652,7 +652,7 @@ B bqn_merge(B x) {
   Arr* ra = mut_fp(r);
   usz* rsh = arr_shAlloc(ra, xr+elR);
   if (rsh) {
-    shcpy         (rsh   , a(x)->sh, xr);
+    shcpy         (rsh   , SH(x), xr);
     if (elSh)shcpy(rsh+xr, elSh,     elR);
   }
   decG(x);
@@ -807,7 +807,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
       Arr* a = (Arr*)x;
       if (prnk(x)<=1) assert(a->sh == &a->ia);
       else {
-        assert(shProd(a->sh, 0, prnk(x)) == a->ia);
+        assert(shProd(PSH(a), 0, prnk(x)) == a->ia);
         VALIDATE(tag(shObjP(x),OBJ_TAG));
       }
     }

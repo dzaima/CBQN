@@ -15,11 +15,11 @@ B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
   ur xr = rnk(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
-  if (a(x)->sh[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
-  usz ia = shProd(a(x)->sh, 1, xr);
+  if (SH(x)[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
+  usz ia = shProd(SH(x), 1, xr);
   Arr* r = TI(x,slice)(incG(x), 0, ia);
   usz* sh = arr_shAlloc(r, xr-1);
-  if (sh) shcpy(sh, a(x)->sh+1, xr-1);
+  if (sh) shcpy(sh, SH(x)+1, xr-1);
   decG(x);
   return taga(r);
 }
@@ -29,11 +29,11 @@ B select_c2(B t, B w, B x) {
   if (isAtm(w)) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz csz = arr_csz(x);
-    usz cam = a(x)->sh[0];
+    usz cam = SH(x)[0];
     usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
     Arr* r = TI(x,slice)(incG(x), wi*csz, csz);
     usz* sh = arr_shAlloc(r, xr-1);
-    if (sh) shcpy(sh, a(x)->sh+1, xr-1);
+    if (sh) shcpy(sh, SH(x)+1, xr-1);
     decG(x);
     return taga(r);
   }
@@ -131,7 +131,7 @@ B select_c2(B t, B w, B x) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     usz csz = arr_csz(x);
-    usz cam = a(x)->sh[0];
+    usz cam = SH(x)[0];
     MAKE_MUT(r, wia*csz); mut_init(r, TI(x,elType));
     MUTG_INIT(r);
     for (usz i = 0; i < wia; i++) {
@@ -145,8 +145,8 @@ B select_c2(B t, B w, B x) {
     Arr* ra = mut_fp(r);
     usz* rsh = arr_shAlloc(ra, rr);
     if (rsh) {
-      shcpy(rsh   , a(w)->sh  , wr  );
-      shcpy(rsh+wr, a(x)->sh+1, xr-1);
+      shcpy(rsh   , SH(w)  , wr  );
+      shcpy(rsh+wr, SH(x)+1, xr-1);
     }
     decG(w); decG(x);
     return withFill(taga(ra),xf);

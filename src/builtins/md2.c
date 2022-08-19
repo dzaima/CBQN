@@ -221,7 +221,7 @@ B to_fill_cell_k(B x, ur k, char* err) { // consumes x
   B xf = getFillQ(x);
   if (noFill(xf)) xf = m_f64(0);
   ur cr = rnk(x)-k;
-  usz* sh = a(x)->sh+k;
+  usz* sh = SH(x)+k;
   usz csz = 1;
   for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
   MAKE_MUT(fc, csz);
@@ -244,7 +244,7 @@ static B merge_fill_result(B rc, ur k, usz* sh) {
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     shcpy(rsh, sh, k);
-    shcpy(rsh+k, a(rc)->sh, rr-k);
+    shcpy(rsh+k, SH(rc), rr-k);
   }
   dec(rc);
   return taga(r);
@@ -258,7 +258,7 @@ static B empty_frame(usz* xsh, ur k) {
 static B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
-  usz* sh = a(fa)->sh;
+  usz* sh = SH(fa);
   usz s0=0; ShArr* s=NULL; ur sho=rnk(fa)>1;
   if (!sho) { s0=sh[0]; sh=&s0; } else { s=ptr_inc(shObj(fa)); }
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); goto empty; }
@@ -297,7 +297,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   i32 k = xr - cr;
   if (Q_BI(f,lt) && IA(x)!=0 && rnk(x)>1) return toKCells(x, k);
   
-  usz* xsh = a(x)->sh;
+  usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k);
   if (cam == 0) {
     usz s0=0; ShArr* s=NULL;
@@ -363,7 +363,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       return isAtm(r)? m_atomUnit(r) : r;
     } else {
       i32 k = xr - xc;
-      usz* xsh = a(x)->sh;
+      usz* xsh = SH(x);
       usz cam = shProd(xsh, 0, k);
       if (cam == 0) return rank2_empty(f, w, 0, x, k);
       usz csz = shProd(xsh, k, xr);
@@ -387,7 +387,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     }
   } else if (xr == xc) {
     i32 k = wr - wc;
-    usz* wsh = a(w)->sh;
+    usz* wsh = SH(w);
     usz cam = shProd(wsh, 0, k);
     if (cam == 0) return rank2_empty(f, w, k, x, 0);
     usz csz = shProd(wsh, k, wr);
@@ -409,8 +409,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
 
     decG(w); dec(x); r = HARR_O(r).b;
   } else {
-    i32 wk = wr - wc; usz* wsh = a(w)->sh;
-    i32 xk = xr - xc; usz* xsh = a(x)->sh;
+    i32 wk = wr - wc; usz* wsh = SH(w);
+    i32 xk = xr - xc; usz* xsh = SH(x);
     i32 k=wk, zk=xk; if (k>zk) { i32 t=k; k=zk; zk=t; }
     usz* zsh = wk>xk? wsh : xsh;
 

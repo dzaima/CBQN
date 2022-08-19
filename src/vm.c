@@ -489,7 +489,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   B* op = harr_ptr(o);
   usz oia = IA(o);
   
-  if (a(x)->sh[0] != oia) {
+  if (SH(x)[0] != oia) {
     if (hdr) return false;
     else thrF("[…]%U𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
   }

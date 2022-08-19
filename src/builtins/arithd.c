@@ -22,7 +22,7 @@
     EXTRA                                                                    \
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
-        if (!eqShPart(a(w)->sh, a(x)->sh, rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+        if (!eqShPart(SH(w), SH(x), rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = IA(x);                                                   \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
@@ -159,7 +159,7 @@
     EXTRA2                                                           \
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
-        if (!eqShPart(a(w)->sh, a(x)->sh, rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+        if (!eqShPart(SH(w), SH(x), rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = IA(x);                                           \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \

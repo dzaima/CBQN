@@ -24,8 +24,8 @@ typedef struct ShArr {
   usz a[];
 } ShArr;
 static ShArr* shObjS(usz* x) { return RFLD(x, ShArr, a); }
-static ShArr* shObj (B x) { return RFLD(a(x)->sh, ShArr, a); }
-static ShArr* shObjP(Value* x) { return RFLD(((Arr*)x)->sh, ShArr, a); }
+static ShArr* shObj (B x) { return RFLD(SH(x), ShArr, a); }
+static ShArr* shObjP(Value* x) { return RFLD(PSH((Arr*)x), ShArr, a); }
 static void decShObj(ShArr* x) { tptr_dec(x, mm_free); }
 static void decSh(Value* x) { if (RARE(prnk(x)>1)) decShObj(shObjP(x)); }
 
@@ -81,7 +81,7 @@ static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
     n->sh = &n->ia;
   } else {
     ptr_inc(shObj(o));
-    n->sh = a(o)->sh;
+    n->sh = SH(o);
   }
 }
 static void shcpy(usz* dst, usz* src, size_t len) {
@@ -97,7 +97,7 @@ static usz shProd(usz* sh, usz s, usz e) {
 static usz arr_csz(B x) {
   ur xr = rnk(x);
   if (xr<=1) return 1;
-  return shProd(a(x)->sh, 1, xr);
+  return shProd(SH(x), 1, xr);
 }
 static bool eqShPart(usz* w, usz* x, usz len) {
   // return memcmp(w, x, len*sizeof(usz))==0;
@@ -105,8 +105,8 @@ static bool eqShPart(usz* w, usz* x, usz len) {
   return true;
 }
 static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
-  ur wr = rnk(w); usz* wsh = a(w)->sh;
-  ur xr = rnk(x); usz* xsh = a(x)->sh;
+  ur wr = rnk(w); usz* wsh = SH(w);
+  ur xr = rnk(x); usz* xsh = SH(x);
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
   return eqShPart(wsh, xsh, wr);

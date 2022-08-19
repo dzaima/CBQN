@@ -68,7 +68,7 @@ size_t bqn_bound(BQNV a) { return IA(getB(a)); }
 size_t bqn_rank(BQNV a) { return rnk(getB(a)); }
 void bqn_shape(BQNV a, size_t* buf) { B b = getB(a);
   ur r = rnk(b);
-  usz* sh = a(b)->sh;
+  usz* sh = SH(b);
   for (usz i = 0; i < r; i++) buf[i] = sh[i];
 }
 BQNV bqn_pick(BQNV a, size_t pos) {

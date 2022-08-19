@@ -1096,7 +1096,7 @@ B bitcast_impl(B el0, B el1, B x) {
   
   CastType xt = getCastType(el0, x);
   CastType zt = getCastType(el1, bi_N);
-  usz* sh = a(x)->sh;
+  usz* sh = SH(x);
   u64 s=xt.s*(u64)sh[xr-1], zl=s/zt.s;
   if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
   if (zl>=USZ_MAX) thrM("•bit._cast: output too large");
