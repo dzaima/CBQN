@@ -7,9 +7,9 @@ B eachm_fn(B fo, B x, BB2B f); // consumes x; x must be array
 static B eachm(B f, B x) { // complete F¨ x without fills; consumes x
   if (isAtm(x)) return m_hunit(c1(f, x));
   if (isFun(f)) return eachm_fn(f, x, c(Fun,f)->c1);
-  if (isMd(f)) if (isAtm(x) || a(x)->ia) { decR(x); thrM("Calling a modifier"); }
+  if (isMd(f)) if (isAtm(x) || IA(x)) { decR(x); thrM("Calling a modifier"); }
   
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   MAKE_MUT(r, ia);
   mut_fill(r, 0, f, ia);
   return mut_fcd(r, x);

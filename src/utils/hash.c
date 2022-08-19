@@ -3,7 +3,7 @@
 #include "time.h"
 
 NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation of atom & arr probably won't be worth it when there are actually sane typed array hashing things
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   if (xia==0) return ~secret[3]; // otherwise squeeze will care about fills
   x = any_squeeze(incG(x));
   u8 xr = rnk(x);

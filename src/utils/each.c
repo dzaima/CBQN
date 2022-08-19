@@ -35,13 +35,13 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
   }
   
   B bo = wg? w : x;
-  usz ria = a(bo)->ia;
+  usz ria = IA(bo);
   M_HARR(r, ria)
   if (wr==xr)                      for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri)));
   else if (wr==0) { B c=Get(w, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, inc(c)   , Get(x,ri))); dec(c); }
   else if (xr==0) { B c=Get(x, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), inc(c)   )); dec(c); }
   else if (ria>0) {
-    usz min = wg? a(x)->ia : a(w)->ia;
+    usz min = wg? IA(x) : IA(w);
     usz ext = ria / min;
     if (wg) for (usz i = 0; i < min; i++) { B c=Get(x,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, Get(w,HARR_I(r)), inc(c))); }
     else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, inc(c), Get(x,HARR_I(r)))); }
@@ -52,7 +52,7 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
 }
 
 B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still has refcounting errors
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   if (ia==0) return x;
   SGet(x);
   usz i = 0;

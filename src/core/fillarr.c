@@ -3,7 +3,7 @@
 B asFill(B x) { // consumes
   if (isArr(x)) {
     u8 xe = TI(x,elType);
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     if (elNum(xe)) {
       Arr* r = allZeroes(ia);
       arr_shCopy(r, x);
@@ -16,7 +16,7 @@ B asFill(B x) { // consumes
       decG(x);
       return r;
     }
-    M_HARR(r, a(x)->ia)
+    M_HARR(r, IA(x))
     SGet(x)
     for (usz i = 0; i < ia; i++) {
       if (noFill(HARR_ADD(r, i, asFill(Get(x,i))))) { HARR_ABANDON(r); decG(x); return bi_noFill; }
@@ -48,11 +48,11 @@ DEF_FREE(fillarr) {
   decSh(x);
   B* p = ((FillArr*)x)->a;
   dec(((FillArr*)x)->fill);
-  usz ia = ((Arr*)x)->ia;
+  usz ia = PIA((Arr*)x);
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 static void fillarr_visit(Value* x) { assert(x->type == t_fillarr);
-  usz ia = ((Arr*)x)->ia; B* p = ((FillArr*)x)->a;
+  usz ia = PIA((Arr*)x); B* p = ((FillArr*)x)->a;
   mm_visit(((FillArr*)x)->fill);
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
@@ -82,7 +82,7 @@ void fillarr_init() {
 void validateFill(B x) {
   if (isArr(x)) {
     SGetU(x)
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     for (usz i = 0; i < ia; i++) validateFill(GetU(x,i));
   } else if (isF64(x)) {
     assert(x.f==0);
@@ -93,7 +93,7 @@ void validateFill(B x) {
 
 NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be arrays
   if (!eqShape(w, x)) return false;
-  usz ia = a(w)->ia;
+  usz ia = IA(w);
   if (ia==0) return true;
   
   u8 we = TI(w,elType);
@@ -129,7 +129,7 @@ B withFill(B x, B fill) { // consumes both
       }
       break;
   }
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   if (!FL_HAS(x,fl_squoze)) {
     if (isNum(fill)) {
       x = num_squeeze(x);

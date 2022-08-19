@@ -13,7 +13,7 @@
 B GRADE_CAT(c1)(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
   if (rnk(x)>1) x = toCells(x);
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
   if (ia==0) { decG(x); return emptyIVec(); }
   
@@ -107,8 +107,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     w = toCells(w);       xr = 1;
   }
   
-  u8 we = TI(w,elType); usz wia = a(w)->ia;
-  u8 xe = TI(x,elType); usz xia = a(x)->ia;
+  u8 we = TI(w,elType); usz wia = IA(w);
+  u8 xe = TI(x,elType); usz xia = IA(x);
   
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
   i32* rp; B r = m_i32arrc(&rp, x);

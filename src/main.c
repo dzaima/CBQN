@@ -132,7 +132,7 @@ void cbqn_runLine0(char* ln, i64 read) {
         i32 am = e->varAm;
         for (i32 i = 0; i < am; i++) {
           B c = e->vars[i+am];
-          if (a(c)->ia != len) continue;
+          if (IA(c) != len) continue;
           SGetU(c)
           bool ok = true;
           for (i32 j = 0; j < len; j++) ok&= o2cu(GetU(c, j))==name[j];
@@ -157,7 +157,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       if (q_N(r)) {
         printf("Couldn't list variables\n");
       } else {
-        usz ia = a(r)->ia;
+        usz ia = IA(r);
         B* rp = harr_ptr(r);
         for (usz i = 0; i < ia; i++) {
           if (i!=0) printf(", ");
@@ -201,7 +201,7 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
       B expl = bqn_explain(utf8Decode0(cmdE), replPath);
       HArr* expla = toHArr(expl);
-      usz ia=expla->ia;
+      usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
           printRaw(expla->a[i]);
           putchar('\n');
@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) {
             case 'R': { repl_init(); REQARG(R);
               B path = utf8Decode0(argv[i++]);
               B lines = path_lines(path);
-              usz ia = a(lines)->ia;
+              usz ia = IA(lines);
               SGet(lines)
               for (u64 i = 0; i < ia; i++) {
                 dec(gsc_exec_inline(Get(lines, i), incG(replPath), emptySVec()));

@@ -90,11 +90,11 @@ static B hslice_getU(Arr* x, usz n) { assert(x->type==t_hslice); return     ((HS
 DEF_FREE(harr) {
   decSh(x);
   B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
-  usz ia = ((Arr*)x)->ia;
+  usz ia = PIA((Arr*)x);
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 static void harr_visit(Value* x) {
-  usz ia = ((Arr*)x)->ia; B* p = ((HArr*)x)->a;
+  usz ia = PIA((Arr*)x); B* p = ((HArr*)x)->a;
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 static bool harr_canStore(B x) { return true; }
@@ -103,7 +103,7 @@ static bool harr_canStore(B x) { return true; }
 
 DEF_FREE(harrP) { assert(x->type==t_harrPartial|x->type==t_freed);
   B* p   = ((HArr*)x)->a;
-  usz am = ((HArr*)x)->ia;
+  usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) dec(p[i]);
 }
 void harr_abandon_impl(HArr* p) { assert(p->type == t_harrPartial);
@@ -113,14 +113,14 @@ void harr_abandon_impl(HArr* p) { assert(p->type == t_harrPartial);
 }
 static void harrP_visit(Value* x) { assert(x->type == t_harrPartial);
   B* p   = ((HArr*)x)->a;
-  usz am = ((HArr*)x)->ia;
+  usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
 static B harrP_get(Arr* x, usz n) { err("getting item from t_harrPartial"); }
 static void harrP_print(FILE* f, B x) {
   B* p = c(HArr,x)->a;
   usz am = *c(HArr,x)->sh;
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   fprintf(f, "(partial HArr "N64d"/"N64d": ⟨", (u64)am, (u64)ia);
   for (usz i = 0; i < ia; i++) {
     if (i) fprintf(f, ", ");
@@ -133,7 +133,7 @@ static void harrP_print(FILE* f, B x) {
 #if DEBUG
   static void harr_freeT(Value* x) {
     B* p = ((HArr*)x)->a;
-    usz ia = ((Arr*)x)->ia;
+    usz ia = PIA((Arr*)x);
     for (usz i = 0; i < ia; i++) assert(!isVal(p[i]));
     tyarr_freeF(x);
   }

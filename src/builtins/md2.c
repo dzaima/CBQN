@@ -61,7 +61,7 @@ extern B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   if (isArr(g)) {
     SGetU(g)
-    usz ia = a(g)->ia;
+    usz ia = IA(g);
     for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
   } else if (isNum(g)) {
     i64 i = o2i64(g);
@@ -72,7 +72,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
 B repeat_replace(B g, B* q) { // doesn't consume
   if (isArr(g)) {
     SGetU(g)
-    usz ia = a(g)->ia;
+    usz ia = IA(g);
     M_HARR(r, ia);
     for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
     return HARR_FC(r, g);
@@ -134,7 +134,7 @@ B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   B fr = c1iX(f, x);
   if (isNum(fr)) {
     if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-    usz fri = WRAP(o2i64(fr), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+    usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c1(IGetU(g, fri), x);
   } else {
     B fn = pick_c2(m_f64(0), fr, inc(g));
@@ -147,7 +147,7 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   B fr = c2iWX(d->f, w, x);
   if (isNum(fr)) {
     if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
-    usz fri = WRAP(o2i64(fr), a(g)->ia, thrM("◶: 𝔽 out of bounds of 𝕘"));
+    usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c2(IGetU(g, fri), w, x);
   } else {
     B fn = pick_c2(m_f64(0), fr, inc(g));
@@ -207,7 +207,7 @@ static f64 req_whole(f64 f) {
 }
 static usz check_rank_vec(B g) {
   if (!isArr(g)) thrM("⎉: Invalid 𝔾 result");
-  usz gia = a(g)->ia;
+  usz gia = IA(g);
   if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
   SGetU(g)
   if (TI(g,elType)>=el_f64) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
@@ -295,7 +295,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   i32 xr = rnk(x);
   ur cr = cell_rank(xr, kf);
   i32 k = xr - cr;
-  if (Q_BI(f,lt) && a(x)->ia!=0 && rnk(x)>1) return toKCells(x, k);
+  if (Q_BI(f,lt) && IA(x)!=0 && rnk(x)>1) return toKCells(x, k);
   
   usz* xsh = a(x)->sh;
   usz cam = shProd(xsh, 0, k);

@@ -36,18 +36,18 @@ static void* m_tyarrp (Arr** rp, usz w, usz ia, u8 type          ) M_TYARR(0,   
 static void* m_tyarrpO(Arr** rp, usz w, usz ia, u8 type, usz over) M_TYARR(0,+over, , r, )
 static void* m_tyarrv (B*    rp, usz w, usz ia, u8 type          ) M_TYARR(0,     , arr_shVec((Arr*)r);, taga(r), )
 static void* m_tyarrvO(B*    rp, usz w, usz ia, u8 type, usz over) M_TYARR(0,+over, arr_shVec((Arr*)r);, taga(r), )
-static void* m_tyarrc (B*    rp, usz w, B x,    u8 type          ) M_TYARR(0,     , arr_shCopy((Arr*)r,x);, taga(r), usz ia = a(x)->ia;)
-static void* m_tyarrcO(B*    rp, usz w, B x,    u8 type, usz over) M_TYARR(0,+over, arr_shCopy((Arr*)r,x);, taga(r), usz ia = a(x)->ia;)
+static void* m_tyarrc (B*    rp, usz w, B x,    u8 type          ) M_TYARR(0,     , arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
+static void* m_tyarrcO(B*    rp, usz w, B x,    u8 type, usz over) M_TYARR(0,+over, arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
 
 // width in log2(bytes)
 static void* m_tyarrlp(Arr** rp, usz w, usz ia, u8 type) M_TYARR(1, , , r, )
 static void* m_tyarrlv(B*    rp, usz w, usz ia, u8 type) M_TYARR(1, , arr_shVec((Arr*)r);, taga(r), )
-static void* m_tyarrlc(B*    rp, usz w, B x,    u8 type) M_TYARR(1, , arr_shCopy((Arr*)r,x);, taga(r), usz ia = a(x)->ia;)
+static void* m_tyarrlc(B*    rp, usz w, B x,    u8 type) M_TYARR(1, , arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
 
 // width in log2(bits)
 static void* m_tyarrlbp(Arr** rp, usz w, usz ia, u8 type) M_TYARR(2, , , r, )
 static void* m_tyarrlbv(B*    rp, usz w, usz ia, u8 type) M_TYARR(2, , arr_shVec((Arr*)r);, taga(r), )
-static void* m_tyarrlbc(B*    rp, usz w, B x,    u8 type) M_TYARR(2, , arr_shCopy((Arr*)r,x);, taga(r), usz ia = a(x)->ia;)
+static void* m_tyarrlbc(B*    rp, usz w, B x,    u8 type) M_TYARR(2, , arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
 
 extern u8 elType2type[];
 #define el2t(X) elType2type[X] // TODO maybe reorganize array types such that this can just be addition?

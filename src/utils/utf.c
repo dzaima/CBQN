@@ -50,7 +50,7 @@ B utf8Decode0(const char* s) {
 }
 
 B utf8DecodeA(I8Arr* a) { // consumes a
-  B r = utf8Decode((char*)a->a, a->ia);
+  B r = utf8Decode((char*)a->a, PIA(a));
   ptr_dec(a);
   return r;
 }
@@ -72,7 +72,7 @@ void fprintUTF8(FILE* f, u32 c) {
 u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all chars
   assert(isArr(x));
   SGetU(x)
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   u64 res = 0;
   for (usz i = 0; i < ia; i++) {
     u32 c = o2c(GetU(x,i));
@@ -82,7 +82,7 @@ u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all 
 }
 void toUTF8(B x, char* p) {
   SGetU(x)
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   for (usz i = 0; i < ia; i++) {
     u32 c = o2cu(GetU(x,i));
     if (c<128)          { *p++ = c; }

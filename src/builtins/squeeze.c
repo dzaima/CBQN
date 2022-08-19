@@ -33,7 +33,7 @@ NOINLINE B num_squeezeF(B x, usz ia) {
   return taga(a);
 }
 B num_squeeze(B x) {
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   u8 xe = TI(x,elType);
   
   #if !SINGELI
@@ -107,7 +107,7 @@ B num_squeeze(B x) {
   return rb;
 }
 B chr_squeeze(B x) {
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   u8 xe = TI(x,elType);
   usz i = 0;
   i32 or = 0;
@@ -168,7 +168,7 @@ B chr_squeeze(B x) {
 B any_squeeze(B x) {
   assert(isArr(x));
   if (FL_HAS(x,fl_squoze)) return x;
-  if (a(x)->ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
+  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
   B x0 = IGetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);
@@ -179,7 +179,7 @@ B squeeze_deep(B x) {
   if (!isArr(x)) return x;
   x = any_squeeze(x);
   if (TI(x,elType)!=el_B) return x;
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   M_HARR(r, ia)
   B* xp = arr_bptr(x);
   B xf = getFillQ(x);

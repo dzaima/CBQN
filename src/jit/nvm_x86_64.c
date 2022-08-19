@@ -465,7 +465,7 @@ static OptRes opt(u32* bc0) {
   bc = bc0; pos = 0;
   TSFREE(data);
   TSFREE(actions);
-  if (a(refs)->ia==0) { dec(refs); refs=m_f64(0); }
+  if (IA(refs)==0) { dec(refs); refs=m_f64(0); }
   return (OptRes){.bc = rbc, .offset = roff, .refs = refs};
 }
 #undef SREF

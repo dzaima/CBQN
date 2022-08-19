@@ -375,6 +375,8 @@ void freeThrown(void);
 #define sprnk(X,R) (X->extra=(R))
 #define  rnk(X  )  prnk(v(X))
 #define srnk(X,R) sprnk(v(X),R)
+#define IA(X) (a(X)->ia)
+#define PIA(X) ((X)->ia)
 #define VTY(X,T) assert(isVal(X) && v(X)->type==(T))
 
 void print_vmStack(void);

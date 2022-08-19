@@ -6,8 +6,8 @@
 void m_nsDesc(Body* body, bool imm, u8 ty, i32 actualVam, B nameList, B varIDs, B exported) { // doesn't consume nameList
   if (!isArr(varIDs) || !isArr(exported)) thrM("Bad namespace description information");
   
-  usz ia = a(varIDs)->ia;
-  if (ia!=a(exported)->ia) thrM("Bad namespace description information");
+  usz ia = IA(varIDs);
+  if (ia!=IA(exported)) thrM("Bad namespace description information");
   i32 off = (ty==0?0:ty==1?2:3) + (imm?0:3);
   i32 vam = ia+off;
   

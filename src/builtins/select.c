@@ -39,7 +39,7 @@ B select_c2(B t, B w, B x) {
   }
   B xf = getFillQ(x);
   SGet(x)
-  usz wia = a(w)->ia;
+  usz wia = IA(w);
   B r;
   
   if (xr==1) {
@@ -62,7 +62,7 @@ B select_c2(B t, B w, B x) {
       decG(w);
       return r;
     }
-    usz xia = a(x)->ia;
+    usz xia = IA(x);
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
@@ -164,8 +164,8 @@ B select_c2(B t, B w, B x) {
 
 B select_ucw(B t, B o, B w, B x) {
   if (isAtm(x) || rnk(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
-  usz xia = a(x)->ia;
-  usz wia = a(w)->ia;
+  usz xia = IA(x);
+  usz wia = IA(w);
   SGetU(w)
   if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = select_c2(t, inc(w), inc(x));

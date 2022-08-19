@@ -135,7 +135,7 @@ typedef struct NextRequest {
 static B emptyARMM;
 
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos) {
-  usz blIA = a(block)->ia;
+  usz blIA = IA(block);
   if (blIA!=3) thrM("VM compiler: Bad block info size");
   SGetU(block)
   usz  ty  = o2s(GetU(block,0)); if (ty>2) thrM("VM compiler: Bad type");
@@ -159,7 +159,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   Body* startBodies[6] = {failBody,failBody,failBody,failBody,failBody,failBody};
   
   bool boArr = isArr(bodyObj);
-  i32 boCount = boArr? a(bodyObj)->ia : 1;
+  i32 boCount = boArr? IA(bodyObj) : 1;
   if (boCount<1 || boCount>5) thrM("VM compiler: Unexpected body list length");
   // if (boArr) { print(bodyObj); putchar('\n'); }
   i32 firstMPos = failBodyI;
@@ -180,8 +180,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
         b2 = i+1<boCount? GetU(bodyObj, i+1) : bi_emptyHVec;
       }
       if (!isArr(b1) || !isArr(b2)) thrM("VM compiler: Body list contained non-arrays");
-      mCount = a(b1)->ia; SGetU(b1)
-      dCount = a(b2)->ia; SGetU(b2)
+      mCount = IA(b1); SGetU(b1)
+      dCount = IA(b2); SGetU(b2)
       mapLen = mCount+dCount;
       TALLOC(i32, bodyPs_, mapLen+2); bodyPs = bodyPs_;
       i32* bodyM = bodyPs;
@@ -221,7 +221,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       
       
       B bodyRepr = IGetU(allBodies, currBody); if (!isArr(bodyRepr)) thrM("VM compiler: Body array contained non-array");
-      usz boIA = a(bodyRepr)->ia; if (boIA!=2 && boIA!=4) thrM("VM compiler: Body array had invalid length");
+      usz boIA = IA(bodyRepr); if (boIA!=2 && boIA!=4) thrM("VM compiler: Body array had invalid length");
       SGetU(bodyRepr)
       usz idx = o2s(GetU(bodyRepr,0)); if (idx>=bcIA) thrM("VM compiler: Bytecode index out of bounds");
       usz vam = o2s(GetU(bodyRepr,1)); if (vam!=(u16)vam) thrM("VM compiler: >2⋆16 variables not supported"); // TODO any reason for this? 2⋆32 vars should just work, no? // oh, some size fields are u16s. but i doubt those change much, or even make things worse
@@ -312,7 +312,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             break;
           case DFND: {
             u32 id = c[1];
-            if ((u32)id >= a(allBlocks)->ia) thrM("VM compiler: DFND index out-of-bounds");
+            if ((u32)id >= IA(allBlocks)) thrM("VM compiler: DFND index out-of-bounds");
             if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
             bDone[id] = true;
             Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc);
@@ -437,10 +437,10 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
 NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc) {
-  usz bIA = a(allBlocks)->ia;
+  usz bIA = IA(allBlocks);
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
-  usz bcIA = bca->ia;
+  usz bcIA = PIA(bca);
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   comp->bc = taga(bca);
   comp->indices = indices;
@@ -459,14 +459,14 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   // and now finally it's safe to allocate stuff
   HArr* objArr = cpyHArr(objs);
   comp->objs = objArr;
-  usz objAm = objArr->ia;
+  usz objAm = PIA(objArr);
   for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
   
   if (!q_N(src) && !q_N(indices)) {
-    if (isAtm(indices) || rnk(indices)!=1 || a(indices)->ia!=2) thrM("VM compiler: Bad indices");
+    if (isAtm(indices) || rnk(indices)!=1 || IA(indices)!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
       B ind = IGetU(indices,i);
-      if (isAtm(ind) || rnk(ind)!=1 || a(ind)->ia!=bcIA) thrM("VM compiler: Bad indices");
+      if (isAtm(ind) || rnk(ind)!=1 || IA(ind)!=bcIA) thrM("VM compiler: Bad indices");
       SGetU(ind)
       for (usz j = 0; j < bcIA; j++) o2i(GetU(ind,j));
     }
@@ -487,7 +487,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   if (!isArr(x) || rnk(x)==0) thrF("[…]%U𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
   
   B* op = harr_ptr(o);
-  usz oia = a(o)->ia;
+  usz oia = IA(o);
   
   if (a(x)->sh[0] != oia) {
     if (hdr) return false;
@@ -517,7 +517,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   if (isArr(s)) { VTY(s, t_harr);
     B* sp = harr_ptr(s);
-    usz ia = a(s)->ia;
+    usz ia = IA(s);
     if (isAtm(x) || !eqShape(s, x)) {
       if (!isNsp(x)) thrM("Assignment: Mismatched shape for spread assignment");
       for (u64 i = 0; i < ia; i++) {
@@ -558,7 +558,7 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
   if (isArr(s)) {
     VTY(s, t_harr);
     B* sp = harr_ptr(s);
-    usz ia = a(s)->ia;
+    usz ia = IA(s);
     if (isAtm(x) || !eqShape(s, x)) {
       if (!isNsp(x)) return false;
       for (u64 i = 0; i < ia; i++) {
@@ -591,7 +591,7 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
 NOINLINE B v_getF(Scope* pscs[], B s) {
   if (isArr(s)) {
     VTY(s, t_harr);
-    usz ia = a(s)->ia;
+    usz ia = IA(s);
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);
     for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i], true);
@@ -1288,7 +1288,7 @@ void popCatch() {
 
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
   SGetU(src)
-  usz srcL = a(src)->ia;
+  usz srcL = IA(src);
   usz srcS = cs;
   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
   usz srcE = srcS;
@@ -1298,9 +1298,9 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 ln = 1;
   for (usz i = 0; i < srcS; i++) if(o2cu(GetU(src, i))=='\n') ln++;
   B s = prepend;
-  if (isArr(path) && (a(path)->ia>1 || (a(path)->ia==1 && IGetU(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
+  if (isArr(path) && (IA(path)>1 || (IA(path)==1 && IGetU(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
   else AFMT("at ");
-  i64 padEnd = (i64)a(s)->ia;
+  i64 padEnd = (i64)IA(s);
   i64 padStart = padEnd;
   SGetU(s)
   while (padStart>0 && o2cu(GetU(s,padStart-1))!='\n') padStart--;
@@ -1340,7 +1340,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
 native_print:
     freeThrown();
     int start = fprintf(stderr, "at ");
-    usz srcL = a(src)->ia;
+    usz srcL = IA(src);
     SGetU(src)
     usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
     usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; fprintUTF8(stderr, chr); srcE++; }
@@ -1482,7 +1482,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
     if (idx == compCount) {
       compList = vec_addN(compList, tag(comp, OBJ_TAG));
       i32* rp;
-      usz ia = q_N(comp->src)? 1 : a(comp->src)->ia;
+      usz ia = q_N(comp->src)? 1 : IA(comp->src);
       mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
       for (i32 i = 0; i < ia; i++) rp[i] = 0;
       compCount++;
@@ -1518,7 +1518,7 @@ void profiler_displayResults() {
     i32* m = i32arr_ptr(mapObj);
     
     u64 sum = 0;
-    usz ia = a(mapObj)->ia;
+    usz ia = IA(mapObj);
     for (usz i = 0; i < ia; i++) sum+= m[i];
     
     if (q_N(c->src)) {
@@ -1531,7 +1531,7 @@ void profiler_displayResults() {
       printf(": "N64d" samples:\n", sum);
       B src = c->src;
       SGetU(src)
-      usz sia = a(src)->ia;
+      usz sia = IA(src);
       usz pi = 0;
       i32 curr = 0;
       for (usz i = 0; i < sia; i++) {
@@ -1583,7 +1583,7 @@ void unwindCompiler() {
 NOINLINE void printErrMsg(B msg) {
   if (isArr(msg)) {
     SGetU(msg)
-    usz msgLen = a(msg)->ia;
+    usz msgLen = IA(msg);
     for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
     fprintRaw(stderr,msg);
     return;

@@ -52,7 +52,7 @@ static B m_bitarrv(u64** p, usz ia) {
   return taga(r);
 }
 static B m_bitarrc(u64** p, B x) { assert(isArr(x));
-  BitArr* r = m_arr(BITARR_SZ(a(x)->ia), t_bitarr, a(x)->ia);
+  BitArr* r = m_arr(BITARR_SZ(IA(x)), t_bitarr, IA(x));
   *p = (u64*)r->a;
   arr_shCopy((Arr*)r, x);
   return taga(r);
@@ -98,7 +98,7 @@ static i64 bit_sum(u64* x, u64 am) {
 static u64 usum(B x) { // doesn't consume; may error
   assert(isArr(x));
   u64 r = 0;
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   u8 xe = TI(x,elType);
   if      (xe==el_bit) return bit_sum(bitarr_ptr(x), xia);
   else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; r+= p[i]; } }

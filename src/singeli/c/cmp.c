@@ -36,7 +36,7 @@ FN_LUT(avx2, ge, AS); FN_LUT(avx2, ge, AA);
 FN_LUT(avx2, lt, AS);
 FN_LUT(avx2, le, AS);
 
-#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=a(r)->ia
+#define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=IA(r)
 #define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
   if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
   if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \

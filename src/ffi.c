@@ -64,7 +64,7 @@ BQNV bqn_evalCStr(const char* str) {
 }
 
 
-size_t bqn_bound(BQNV a) { return a(getB(a))->ia; }
+size_t bqn_bound(BQNV a) { return IA(getB(a)); }
 size_t bqn_rank(BQNV a) { return rnk(getB(a)); }
 void bqn_shape(BQNV a, size_t* buf) { B b = getB(a);
   ur r = rnk(b);
@@ -76,15 +76,15 @@ BQNV bqn_pick(BQNV a, size_t pos) {
 }
 
 // TODO copy directly with some mut.h thing
-void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (incG(getB(a))); memcpy(buf, i8any_ptr (c), a(c)->ia * 1); dec(c); }
-void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(incG(getB(a))); memcpy(buf, i16any_ptr(c), a(c)->ia * 2); dec(c); }
-void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(incG(getB(a))); memcpy(buf, i32any_ptr(c), a(c)->ia * 4); dec(c); }
-void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(incG(getB(a))); memcpy(buf, f64any_ptr(c), a(c)->ia * 8); dec(c); }
-void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (incG(getB(a))); memcpy(buf, c8any_ptr (c), a(c)->ia * 1); dec(c); }
-void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); memcpy(buf, c16any_ptr(c), a(c)->ia * 2); dec(c); }
-void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), a(c)->ia * 4); dec(c); }
+void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (incG(getB(a))); memcpy(buf, i8any_ptr (c), IA(c) * 1); dec(c); }
+void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(incG(getB(a))); memcpy(buf, i16any_ptr(c), IA(c) * 2); dec(c); }
+void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(incG(getB(a))); memcpy(buf, i32any_ptr(c), IA(c) * 4); dec(c); }
+void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(incG(getB(a))); memcpy(buf, f64any_ptr(c), IA(c) * 8); dec(c); }
+void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (incG(getB(a))); memcpy(buf, c8any_ptr (c), IA(c) * 1); dec(c); }
+void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); memcpy(buf, c16any_ptr(c), IA(c) * 2); dec(c); }
+void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), IA(c) * 4); dec(c); }
 void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
-  usz ia = a(b)->ia;
+  usz ia = IA(b);
   B* p = arr_bptr(b);
   if (p!=NULL) {
     for (usz i = 0; i < ia; i++) buf[i] = makeX(inc(p[i]));
@@ -346,7 +346,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
 
 BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument side & other global decorators
   vfyStr(arg, "FFI", "type");
-  usz ia = a(arg)->ia;
+  usz ia = IA(arg);
   if (ia==0) {
     if (!forRes) thrM("FFI: Argument type empty");
     return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=false};
@@ -467,7 +467,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
       inc(c);
       B cG;
       if (!isArr(c)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cu(e)]);
-      usz ia = a(c)->ia;
+      usz ia = IA(c);
       bool mut = t->a[0].mutPtr;
       switch(o2cu(e)) { default: thrF("FFI: \"*%S\" argument type NYI", sty_names[o2cu(e)]);
         case sty_i8:  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
@@ -491,7 +491,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut) {
         u8 et = o2cu(o2);
         u8 etw = sty_w[et]*8;
         if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], reT, 1<<reW);
-        if (a(c)->ia != etw>>reW) thrM("FFI: Bad input array length");
+        if (IA(c) != etw>>reW) thrM("FFI: Bad input array length");
         B cG = toW(reT, reW, inc(c));
         memcpy(ffiTmpS+pos, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
@@ -531,7 +531,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     B f = objs[(*objPos)++];
     bool mut = t->a[0].mutPtr;
     if (mut) {
-      usz ia = a(f)->ia;
+      usz ia = IA(f);
       switch(o2cu(e)) { default: UD;
         case sty_i8: case sty_i16: case sty_i32: case sty_f64: return inc(f);
         case sty_u8:  { u8*   tp=tyarr_ptr(f); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return r; }
@@ -664,7 +664,7 @@ B libffiFn_c1(B t, B x) { return libffiFn_c2(t, bi_N, x); }
 #else
 
 BQNFFIEnt ffi_parseType(B arg, bool forRes) {
-  if (!isArr(arg) || a(arg)->ia!=1 || IGetU(arg,0).u!=m_c32('a').u) thrM("FFI: Only \"a\" arguments & return value supported with compile flag FFI=1");
+  if (!isArr(arg) || IA(arg)!=1 || IGetU(arg,0).u!=m_c32('a').u) thrM("FFI: Only \"a\" arguments & return value supported with compile flag FFI=1");
   return (BQNFFIEnt){};
 }
 #endif
@@ -673,7 +673,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) {
 
 
 B ffiload_c2(B t, B w, B x) {
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   if (xia<2) thrM("FFI: Function specification must have at least two items");
   usz argn = xia-2;
   SGetU(x)
@@ -740,17 +740,17 @@ B ffiload_c2(B t, B w, B x) {
 }
 
 DEF_FREE(ffiType) {
-  usz ia = ((BQNFFIType*)x)->ia;
+  usz ia = PIA((BQNFFIType*)x);
   for (usz i = 0; i < ia; i++) dec(((BQNFFIType*)x)->a[i].o);
 }
 void ffiType_visit(Value* x) {
-  usz ia = ((BQNFFIType*)x)->ia;
+  usz ia = PIA((BQNFFIType*)x);
   for (usz i = 0; i < ia; i++) mm_visit(((BQNFFIType*)x)->a[i].o);
 }
 void ffiType_print(FILE* f, B x) {
   BQNFFIType* t = c(BQNFFIType,x);
   fprintf(f, "cty_%d⟨", t->ty);
-  for (usz i=0, ia=t->ia; i<ia; i++) {
+  for (usz i=0, ia=PIA(t); i<ia; i++) {
     if (i) fprintf(f, ", ");
     printFFIType(f, t->a[i].o);
   }

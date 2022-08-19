@@ -23,7 +23,7 @@ static bool eqStr(B w, u32* x) {
     if (!isC32(c) || x[i]!=(u32)c.u) return false;
     i++;
   }
-  return i==a(w)->ia;
+  return i==IA(w);
 }
 
 
@@ -120,7 +120,7 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
 }
 
 B grLen_both(i64 ria, B x) {
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   SGetU(x)
   for (usz i = 0; i < ia; i++) {
     i64 c = o2i64u(GetU(x, i));
@@ -154,8 +154,8 @@ B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes vali
 B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes valid arguments
 
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
-  usz wia = a(w)->ia;
-  usz xia = a(x)->ia;
+  usz wia = IA(w);
+  usz xia = IA(x);
   if (wia==0) { decG(w); decG(x); return emptyIVec(); }
   if (xia==0) { decG(w); return x; }
   SGetU(w)
@@ -188,7 +188,7 @@ B casrt_c2(B t, B w, B x) {
   if (LIKELY(isF64(x) && o2fu(x)==1)) { dec(w); return x; }
   unwindCompiler();
   dec(x);
-  if (isArr(w) && a(w)->ia==2) {
+  if (isArr(w) && IA(w)==2) {
     B w0 = IGetU(w,0);
     if (isNum(w0)) {
       B s = IGet(w,1);
@@ -198,14 +198,14 @@ B casrt_c2(B t, B w, B x) {
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && rnk(w0)==1 && a(w0)->ia>=1) {
+    if (isArr(w0) && rnk(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
       usz pos = o2s(IGetU(w0,0));
       s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && rnk(w0)==2 && a(w0)->ia>=2) {
+    if (isArr(w0) && rnk(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
       s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
@@ -242,7 +242,7 @@ B show_c1(B t, B x) {
 B vfyStr(B x, char* name, char* arg) {
   if (isAtm(x) || rnk(x)!=1) thrF("%U: %U must be a character vector", name, arg);
   if (!elChr(TI(x,elType))) {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     SGetU(x)
     for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a character vector", name, arg);
   }
@@ -251,8 +251,8 @@ B vfyStr(B x, char* name, char* arg) {
 
 B cdPath;
 static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
-  if (!isArr(w) || rnk(w)!=1 || a(w)->ia>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
-  usz ia = a(w)->ia;
+  if (!isArr(w) || rnk(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
+  usz ia = IA(w);
   SGet(w)
   B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(cdPath);
   B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
@@ -322,7 +322,7 @@ B rand_range_c2(B t, B w, B x) {
   if (isArr(w)) {
     if (rnk(w) > 1) thrM("(rand).Range: 𝕨 must be a valid shape");
     SGetU(w);
-    usz wia = a(w)->ia;
+    usz wia = IA(w);
     for (u64 i = 0; i < wia; i++) mulOn(am, o2s(GetU(w, i)));
   } else {
     am = o2s(w);
@@ -370,7 +370,7 @@ B rand_range_c2(B t, B w, B x) {
 
   RAND_END;
   if (isArr(w)) {
-    usz wia = a(w)->ia;
+    usz wia = IA(w);
     switch (wia) {
       case 0: { arr_shAlloc(r, 0); break; }
       case 1: { arr_shVec(r); break; }
@@ -627,7 +627,7 @@ B fchars_c2(B d, B w, B x) {
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
   I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x));
-  usz ia = tf->ia; u8* p = (u8*)tf->a;
+  usz ia = PIA(tf); u8* p = (u8*)tf->a;
   u8* rp; B r = m_c8arrv(&rp, ia);
   for (i64 i = 0; i < ia; i++) rp[i] = p[i];
   ptr_dec(tf);
@@ -647,7 +647,7 @@ B flines_c1(B d, B x) {
 B flines_c2(B d, B w, B x) {
   if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
   B nl, s = emptyCVec();
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   SGet(x)
   for (u64 i = 0; i < ia; i++) {
     nl = Get(x, i);
@@ -686,7 +686,7 @@ B import_c1(B d, B x) {
   
   i32 prevIdx = getPrevImport(path);
   if (prevIdx>=0) {
-    // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, a(importKeyList)->ia);
+    // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, IA(importKeyList));
     dec(path);
     return IGet(importValList, prevIdx);
   }
@@ -696,7 +696,7 @@ B import_c1(B d, B x) {
     rethrow();
   }
   
-  i32 prevLen = a(importValList)->ia;
+  i32 prevLen = IA(importValList);
   importKeyList = vec_addN(importKeyList, path);
   importValList = vec_addN(importValList, bi_N);
   
@@ -817,7 +817,7 @@ B getLine_c1(B t, B x) {
 
 B fromUtf8_c1(B t, B x) {
   if (!isArr(x)) thrM("•FromUTF8: Argument must be a character or number array");
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   TALLOC(char, chrs, ia);
   SGetU(x)
   for (u64 i = 0; i < ia; i++) {
@@ -863,7 +863,7 @@ B sh_c2(B t, B w, B x) {
   
   // allocate args
   if (isAtm(x) || rnk(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   if (xia==0) thrM("•SH: 𝕩 must have at least one item");
   TALLOC(char*, argv, xia+1);
   SGetU(x)
@@ -966,8 +966,8 @@ B sh_c2(B t, B w, B x) {
   dec(w); dec(x);
   B s_outRaw = toC8Any(s_out);
   B s_errRaw = toC8Any(s_err);
-  B s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), a(s_outRaw)->ia); dec(s_outRaw);
-  B s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), a(s_errRaw)->ia); dec(s_errRaw);
+  B s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
+  B s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else
@@ -1046,7 +1046,7 @@ static CastType getCastType(B e, B v) {
     s = o2s(e);
     c = q_N(v) ? 0 : isCharType(v(v)->type);
   } else {
-    if (!isArr(e) || rnk(e)!=1 || a(e)->ia!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
+    if (!isArr(e) || rnk(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e)
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
@@ -1107,7 +1107,7 @@ B bitcast_impl(B el0, B el1, B x) {
     r = taga(copy(xt, r));
   } else if (v(r)->refc!=1) {
     B pr = r;
-    r = taga(TI(r,slice)(r, 0, a(r)->ia));
+    r = taga(TI(r,slice)(r, 0, IA(r)));
     arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   }
   // Cast to output type
@@ -1131,13 +1131,13 @@ B bitcast_impl(B el0, B el1, B x) {
 }
 
 B bitcast_c1(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || rnk(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,0), GetU(f,1), x);
 }
 
 B bitcast_im(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || rnk(f)!=1 || a(f)->ia!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || rnk(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,1), GetU(f,0), x);
 }
@@ -1164,14 +1164,14 @@ B ffiload_c2(B t, B w, B x);
 
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  M_HARR(r, a(x)->ia) SGetU(x)
+  M_HARR(r, IA(x)) SGetU(x)
   B fileNS = m_f64(0);
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
   #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_dir(inc(comp_currPath))); path; })
   #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
-  for (usz i = 0; i < a(x)->ia; i++) {
+  for (usz i = 0; i < IA(x); i++) {
     B c = GetU(x,i);
     B cr;
     if (eqStr(c, U"out")) cr = incG(bi_out);

@@ -43,7 +43,7 @@ struct Mut {
 
 static void mut_init(Mut* m, u8 n) {
   m->fns = &mutFns[n];
-  usz ia = m->ia;
+  usz ia = PIA(m);
   usz sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
@@ -161,8 +161,8 @@ B vec_join(B w, B x); // consumes both
 // if `consume==true`, consumes w,x and expects both args to be vectors
 // else, doesn't consume x, and decrements refcount of w iif *reusedW (won't free because the result will be w)
 FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
-  usz wia = a(w)->ia;
-  usz xia = a(x)->ia;
+  usz wia = IA(w);
+  usz xia = IA(x);
   usz ria = wia+xia;
   if (reusable(w)) {
     u64 wsz = mm_size(v(w));
@@ -216,7 +216,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
 }
 
 static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails if fills wouldn't be correct
-  usz wia = a(w)->ia;
+  usz wia = IA(w);
   usz ria = wia+1;
   if (reusable(w)) {
     u64 wsz = mm_size(v(w));

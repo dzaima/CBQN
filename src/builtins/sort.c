@@ -30,7 +30,7 @@ typedef struct I32I32p { i32 k; i32 v; } I32I32p;
 B and_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("∧: Argument cannot have rank 0");
   if (rnk(x)!=1) return bqn_merge(and_c1(t, toCells(x)));
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   u8 xe = TI(x,elType);
   if (xe<=el_i32) {
     if (xe!=el_i32) x = taga(cpyI32Arr(x));
@@ -64,7 +64,7 @@ B and_c1(B t, B x) {
 B or_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("∨: Argument cannot have rank 0");
   if (rnk(x)!=1) return bqn_merge(or_c1(t, toCells(x)));
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   u8 xe = TI(x,elType);
   if (xe<=el_i32) {
     if (xe!=el_i32) x = taga(cpyI32Arr(x));

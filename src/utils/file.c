@@ -88,7 +88,7 @@ B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
 
 static NOINLINE void guaranteeStr(B x) { // assumes x is an array
   if (elChr(TI(x,elType))) return;
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   SGetU(x)
   for (usz i = 0; i < xia; i++) if (!isC32(GetU(x, i))) thrM("Paths must be character vectors");
 }
@@ -98,13 +98,13 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   assert(isArr(base) || q_N(base));
   if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
   SGetU(rel)
-  usz ria = a(rel)->ia;
+  usz ria = IA(rel);
   if (rnk(rel)!=1) thrM("Paths must be character vectors");
   guaranteeStr(rel);
   if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return incG(base); }
-  usz bia = a(base)->ia;
+  usz bia = IA(base);
   if (bia==0) return rel;
   SGetU(base)
   bool has = o2cu(GetU(base, bia-1))=='/';
@@ -120,7 +120,7 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
 B path_dir(B path) {
   assert(isArr(path));
   SGetU(path)
-  usz pia = a(path)->ia;
+  usz pia = IA(path);
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
@@ -133,7 +133,7 @@ B path_dir(B path) {
 B path_name(B path) {
   assert(isArr(path));
   SGetU(path)
-  usz pia = a(path)->ia;
+  usz pia = IA(path);
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
@@ -178,7 +178,7 @@ void path_wChars(B path, B x) { // consumes path
   fclose(f);
 }
 void file_wBytes(FILE* f, B name, B x) {
-  u64 len = a(x)->ia;
+  u64 len = IA(x);
   
   bool newBuf = false;
   char* buf;

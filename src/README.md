@@ -181,7 +181,7 @@ c(BMd2,bi_some2mod)->im = some2mod_im; // you get the idea
 
 ## Arrays
 
-If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `a(x)->ia` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (use `prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
+If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `IA(x)` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (use `prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
 
 The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field. Otherwise, it'll point inside a `t_shape` object.
 

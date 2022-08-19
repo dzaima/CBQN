@@ -23,7 +23,7 @@
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                             \
         if (!eqShPart(a(w)->sh, a(x)->sh, rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        usz ia = a(x)->ia;                                                   \
+        usz ia = IA(x);                                                   \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {               \
@@ -37,7 +37,7 @@
           }                                                                  \
           decG(w); decG(x); return num_squeeze(r);                           \
         }                                                                    \
-      } else if (isF64(w)&isArr(x)) { usz ia = a(x)->ia;                     \
+      } else if (isF64(w)&isArr(x)) { usz ia = IA(x);                     \
         u8 xe = TI(x,elType); f64*rp;                                        \
         if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
@@ -47,7 +47,7 @@
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
           decG(x); return num_squeeze(r);                                    \
         }                                                                    \
-      } else if (isF64(x)&isArr(w)) { usz ia = a(w)->ia;                     \
+      } else if (isF64(x)&isArr(w)) { usz ia = IA(w);                     \
         u8 we = TI(w,elType); f64*rp;                                        \
         if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
@@ -89,7 +89,7 @@
   static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
     B b = bitX? x : w;
     u64* bp = bitarr_ptr(b);
-    usz ia = a(b)->ia;
+    usz ia = IA(b);
     
     bool b0 = ia? bp[0]&1 : 0;
     bool both = false;
@@ -160,7 +160,7 @@
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && rnk(w)==rnk(x)) {                     \
         if (!eqShPart(a(w)->sh, a(x)->sh, rnk(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        usz ia = a(x)->ia;                                           \
+        usz ia = IA(x);                                           \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
         if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {          \
@@ -189,8 +189,8 @@
         if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base) } \
         if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
       } \
-      else if (isF64(w)&isArr(x)) { usz ia=a(x)->ia; u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
-      else if (isF64(x)&isArr(w)) { usz ia=a(w)->ia; u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
+      else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
+      else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
       base: P2(NAME)                          \
     }                                         \
     thrM(SYMB ": Unexpected argument types"); \
@@ -267,7 +267,7 @@ GC2i("+", add, wv+xv, {
   if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
     if (TI(x,elType) == el_i32) {
       u32 wv = o2cu(w);
-      i32* xp = i32any_ptr(x); usz xia = a(x)->ia;
+      i32* xp = i32any_ptr(x); usz xia = IA(x);
       u32* rp; B r = m_c32arrc(&rp, x);
       for (usz i = 0; i < xia; i++) {
         rp[i] = (u32)(xp[i]+(i32)wv);
@@ -286,14 +286,14 @@ GC2i("-", sub, wv-xv, {
   if (isArr(w) && TI(w,elType)==el_c32) {
     if (isC32(x)) {
       i32 xv = (i32)o2cu(x);
-      u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
+      u32* wp = c32any_ptr(w); usz wia = IA(w);
       i32* rp; B r = m_i32arrc(&rp, w);
       for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
       decG(w);
       return r;
     }
     if (isArr(x) && eqShape(w, x)) {
-      u32* wp = c32any_ptr(w); usz wia = a(w)->ia;
+      u32* wp = c32any_ptr(w); usz wia = IA(w);
       if (TI(x,elType)==el_i32) {
         u32* rp; B r = m_c32arrc(&rp, w);
         i32* xp = i32any_ptr(x);

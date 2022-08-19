@@ -35,7 +35,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
 }
 
 NOINLINE B vec_addF(B w, B x) {
-  usz wia = a(w)->ia;
+  usz wia = IA(w);
   MAKE_MUT(r, wia+1); mut_init(r, el_or(TI(w,elType), selfElType(x)));
   MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
@@ -237,7 +237,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }                                               \
   static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
   T##Arr* cpy##T##Arr(B x) { \
-    usz ia = a(x)->ia;       \
+    usz ia = IA(x);       \
     MAKE; arr_shCopy(r, x);  \
     if (ia>0) {              \
       copy##T##Fns[TI(x,elType)](tyany_ptr(x), (u8*)(XRP), ia, (u8*)a(x)); \
@@ -288,7 +288,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
 #else
   #define MAKE_ICPY(T,E) T##Arr* cpy##T##Arr(B x) { \
-    usz ia = a(x)->ia;     \
+    usz ia = IA(x);     \
     E* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);      \
     u8 xe = TI(x,elType);  \
@@ -308,7 +308,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 
   #define MAKE_CCPY(T,E)     \
   T##Arr* cpy##T##Arr(B x) { \
-    usz ia = a(x)->ia;       \
+    usz ia = IA(x);       \
     T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);        \
     u8 xe = TI(x,elType);    \
@@ -325,7 +325,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
 
   HArr* cpyHArr(B x) {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     HArr_p r = m_harrUc(x);
     u8 xe = TI(x,elType);
     if      (xe==el_bit) { u64* xp = bitarr_ptr(x); for(usz i=0; i<ia; i++) r.a[i]=m_f64(bitp_get(xp, i)); }
@@ -345,7 +345,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     return r.c;
   }
   BitArr* cpyBitArr(B x) {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     u64* rp; Arr* r = m_bitarrp(&rp, ia);
     arr_shCopy(r, x);
     u8 xe = TI(x,elType);

@@ -12,9 +12,9 @@ static B TP(m_,arrv) (TEl** p, usz ia) {
   return taga(r);
 }
 static B TP(m_,arrc) (TEl** p, B x) { assert(isArr(x));
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   CHECK_IA(ia, sizeof(TEl));
-  TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, a(x)->ia);
+  TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, IA(x));
   *p = (TEl*)r->a;
   arr_shCopy((Arr*)r, x);
   return taga(r);

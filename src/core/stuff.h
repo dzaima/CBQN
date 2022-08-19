@@ -75,7 +75,7 @@ static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
 }
 static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   assert(isArr(o));
-  assert(a(o)->ia==n->ia);
+  assert(IA(o)==n->ia);
   ur r = sprnk(n,rnk(o));
   if (r<=1) {
     n->sh = &n->ia;

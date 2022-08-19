@@ -43,7 +43,7 @@ B ud_c1(B t, B x) {
     return r;
   }
   SGetU(x)
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   if (rnk(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", rnk(x));
   if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
   usz sh[xia];
@@ -124,7 +124,7 @@ B fne_c2(B t, B w, B x) {
 extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
   if (rnk(x)==1 && TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
@@ -190,7 +190,7 @@ B indexOf_c2(B t, B w, B x) {
   if (!isArr(w) || rnk(w)==0) thrM("⊐: 𝕨 must have rank at least 1");
   if (rnk(w)==1) {
     if (!isArr(x) || rnk(x)==0) {
-      usz wia = a(w)->ia;
+      usz wia = IA(w);
       B el = isArr(x)? IGetU(x,0) : x;
       i32 res = wia;
       if (TI(w,elType)==el_i32) {
@@ -213,8 +213,8 @@ B indexOf_c2(B t, B w, B x) {
       rp[0] = res;
       return taga(r);
     } else {
-      usz wia = a(w)->ia;
-      usz xia = a(x)->ia;
+      usz wia = IA(w);
+      usz xia = IA(x);
       // TODO O(wia×xia) for small wia or xia
       i32* rp; B r = m_i32arrc(&rp, x);
       H_b2i* map = m_b2i(64);
@@ -238,7 +238,7 @@ extern B rt_memberOf;
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("∊: Argument cannot have rank 0");
   if (rnk(x)!=1) x = toCells(x);
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   
   u64* rp; B r = m_bitarrv(&rp, xia);
   H_Sb* set = m_Sb(64);
@@ -264,7 +264,7 @@ B memberOf_c2(B t, B w, B x) {
   
   B r;
   single: {
-    usz xia = a(x)->ia;
+    usz xia = IA(x);
     SGetU(x)
     for (usz i = 0; i < xia; i++) if (equal(GetU(x, i), w)) { r = inc(enclosed_1); goto dec_wx; }
     r = inc(enclosed_0);
@@ -274,8 +274,8 @@ B memberOf_c2(B t, B w, B x) {
   
   
   many: {
-    usz xia = a(x)->ia;
-    usz wia = a(w)->ia;
+    usz xia = IA(x);
+    usz wia = IA(w);
     // TODO O(wia×xia) for small wia or xia
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
@@ -295,7 +295,7 @@ B memberOf_c2(B t, B w, B x) {
 extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⍷: Argument cannot have rank 0");
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   B xf = getFillQ(x);
   if (rnk(x)!=1) return c1(rt_find, x);
   
@@ -317,7 +317,7 @@ extern B rt_count;
 B count_c1(B t, B x) {
   if (isAtm(x) || rnk(x)==0) thrM("⊒: Argument cannot have rank 0");
   if (rnk(x)>1) x = toCells(x);
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_b2i* map = m_b2i(64);
   SGetU(x)
@@ -359,10 +359,10 @@ i32 str2gid(B s) {
   }
   bool had;
   u64 p = mk_b2i(&globalNames, s, &had);
-  // if(had) print_fmt("str2gid %R → %i\n", s, globalNames->a[p].val); else print_fmt("str2gid %R → %i!!\n", s, a(globalNameList)->ia);
+  // if(had) print_fmt("str2gid %R → %i\n", s, globalNames->a[p].val); else print_fmt("str2gid %R → %i!!\n", s, IA(globalNameList));
   if(had) return globalNames->a[p].val;
   
-  i32 r = a(globalNameList)->ia;
+  i32 r = IA(globalNameList);
   globalNameList = vec_addN(globalNameList, inc(s));
   globalNames->a[p].val = r;
   return r;

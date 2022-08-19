@@ -9,7 +9,7 @@ NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
   if (!h0) t0=t1; // TODO just do separate impls for !h0 and !h1
   if (!h1) t1=t0;
   u64* bp = bitarr_ptr(b);
-  usz ia = a(b)->ia;
+  usz ia = IA(b);
   if (elNum(t0) && elNum(t1)) { B r;
     f64 f0 = o2fu(e0); i32 i0 = f0;
     f64 f1 = o2fu(e1); i32 i1 = f1;

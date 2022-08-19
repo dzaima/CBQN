@@ -95,7 +95,7 @@ void fprint(FILE* f, B x);
 void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
   ur r = rnk(x);
   SGetU(x)
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   if (r!=1) {
     if (r==0) {
       fprintf(f, "<");
@@ -164,7 +164,7 @@ NOINLINE void fprintRaw(FILE* f, B x) {
     else if (isC32(x)) fprintUTF8(f, (u32)x.u);
     else thrM("•Out: Unexpected argument type");
   } else {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     SGetU(x)
     for (usz i = 0; i < ia; i++) {
       B c = GetU(x,i);
@@ -372,8 +372,8 @@ NOINLINE i32 compareF(B w, B x) {
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
   bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU; Arr* wArr;
   bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU; Arr* xArr;
-  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=a(w)->ia; wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); wArr = a(w); }
-  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=a(x)->ia; xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); xArr = a(x); }
+  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=rnk(w); wsh=a(w)->sh; wgetU=TI(w,getU); wArr = a(w); }
+  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=rnk(x); xsh=a(x)->sh; xgetU=TI(x,getU); xArr = a(x); }
   if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
@@ -405,8 +405,8 @@ NOINLINE bool atomEqualF(B w, B x) {
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
-  usz wia = a(wd)->ia;
-  if (wia!=a(xd)->ia) { decG(wd);decG(xd); return false; }
+  usz wia = IA(wd);
+  if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
                       { decG(wd);decG(xd); return false; }
                         decG(wd);decG(xd); return true;
@@ -455,9 +455,9 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   ur wr = rnk(w);
   ur xr = rnk(x);
   if (wr!=xr) return false;
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   if (LIKELY(wr==1)) {
-    if (ia != a(w)->ia) return false;
+    if (ia != IA(w)) return false;
   } else {
     usz* wsh = a(w)->sh;
     usz* xsh = a(x)->sh;
@@ -515,8 +515,8 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
-  usz wia = a(wd)->ia;
-  if (wia!=a(xd)->ia) { decG(wd);decG(xd); return false; }
+  usz wia = IA(wd);
+  if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
                       { decG(wd);decG(xd); return false; }
                         decG(wd);dec(xd); return true;
@@ -536,7 +536,7 @@ bool eequal(B w, B x) { // doesn't consume
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we==el_f64 && xe==el_f64) {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     f64* wp = f64any_ptr(w);
     f64* xp = f64any_ptr(x);
     u64 r = 1;
@@ -550,7 +550,7 @@ bool eequal(B w, B x) { // doesn't consume
     return r;
   }
   if (we!=el_B && xe!=el_B) return equal(w, x);
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   SGetU(x)
   SGetU(w)
   for (usz i = 0; i < ia; i++) if(!eequal(GetU(w,i),GetU(x,i))) return false;
@@ -561,7 +561,7 @@ u64 depth(B x) { // doesn't consume
   if (isAtm(x)) return 0;
   if (TI(x,arrD1)) return 1;
   u64 r = 0;
-  usz ia = a(x)->ia;
+  usz ia = IA(x);
   SGetU(x)
   for (usz i = 0; i < ia; i++) {
     u64 n = depth(GetU(x,i));
@@ -599,11 +599,11 @@ bool isPureFn(B x) { // doesn't consume
     B* xdp = harr_ptr(xd);
     i32 t = o2iu(xdp[0]);
     if (t<2) { decG(xd); return t==0; }
-    usz xdia = a(xd)->ia;
+    usz xdia = IA(xd);
     for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { decG(xd); return false; }
     decG(xd); return true;
   } else if (isArr(x)) {
-    usz ia = a(x)->ia;
+    usz ia = IA(x);
     SGetU(x)
     for (usz i = 0; i < ia; i++) if (!isPureFn(GetU(x,i))) return false;
     return true;
@@ -612,7 +612,7 @@ bool isPureFn(B x) { // doesn't consume
 
 B bqn_merge(B x) {
   assert(isArr(x));
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   ur xr = rnk(x);
   if (xia==0) {
     B xf = getFillE(x);
@@ -635,7 +635,7 @@ B bqn_merge(B x) {
   B x0 = GetU(x, 0);
   usz* elSh = isArr(x0)? a(x0)->sh : NULL;
   ur elR = isArr(x0)? rnk(x0) : 0;
-  usz elIA = isArr(x0)? a(x0)->ia : 1;
+  usz elIA = isArr(x0)? IA(x0) : 1;
   B fill = getFillQ(x0);
   if (xr+elR > UR_MAX) thrM(">: Result rank too large");
   
@@ -739,7 +739,7 @@ NOINLINE void print_allocStats() {
     void* data;
     u64 len;
     u8 xe = TI(x,elType);
-    u64 ia = a(x)->ia;
+    u64 ia = IA(x);
     if (xe!=el_B) {
       data = tyany_ptr(x);
       if (xe==el_bit) {
@@ -831,7 +831,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 #endif
 #if WARN_SLOW==1
   static void warn_ln(B x) {
-    if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", a(x)->ia, eltype_repr(TI(x,elType)), x);
+    if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
       fprintf(stderr, "atom: ");
       fprintRaw(stderr, x = bqn_fmt(inc(x))); dec(x);
@@ -839,18 +839,18 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     }
   }
   void warn_slow1(char* s, B x) {
-    if (isArr(x) && a(x)->ia<100) return;
+    if (isArr(x) && IA(x)<100) return;
     fprintf(stderr, "slow %s: ", s); warn_ln(x);
     fflush(stderr);
   }
   void warn_slow2(char* s, B w, B x) {
-    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
+    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
     fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
     fprintf(stderr, "  𝕩: "); warn_ln(x);
     fflush(stderr);
   }
   void warn_slow3(char* s, B w, B x, B y) {
-    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || a(w)->ia<50)  &&  (!isArr(x) || a(x)->ia<50)) return;
+    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
     fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
     fprintf(stderr, "  𝕩: "); warn_ln(x);
     fprintf(stderr, "  f: "); warn_ln(y);

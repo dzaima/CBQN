@@ -88,7 +88,7 @@ B listVariations_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
   
   if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
-  usz wia = a(w)->ia;
+  usz wia = IA(w);
   SGetU(w)
   bool c_incr=false, c_rmFill=false;
   for (usz i = 0; i < wia; i++) {
@@ -104,7 +104,7 @@ B listVariations_c2(B t, B w, B x) {
   bool ah = c_rmFill || noFill(xf);
   bool ai8=false, ai16=false, ai32=false, af64=false,
        ac8=false, ac16=false, ac32=false, abit=false;
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   SGetU(x)
   if (isNum(xf)) {
     i32 min=I32_MAX, max=I32_MIN;
@@ -174,11 +174,11 @@ static void variation_gcRoot() {
 B variation_c2(B t, B w, B x) {
   if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   C8Arr* wc = toC8Arr(w);
   u8* wp = c8arrv_ptr(wc);
-  u8* wpE = wp+wc->ia;
-  if (wc->ia==0) thrM("•internal.Variation: Zero-length 𝕨");
+  u8* wpE = wp+PIA(wc);
+  if (PIA(wc)==0) thrM("•internal.Variation: Zero-length 𝕨");
   B res;
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
@@ -212,7 +212,7 @@ B variation_c2(B t, B w, B x) {
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     
     if (slice) {
-      Arr* slice = TI(res,slice)(inc(res), 0, a(res)->ia);
+      Arr* slice = TI(res,slice)(inc(res), 0, IA(res));
       arr_shCopy(slice, res);
       dec(res);
       res = taga(slice);
@@ -234,7 +234,7 @@ B variation_c2(B t, B w, B x) {
 B clearRefs_c1(B t, B x) {
   dec(x);
   if (!isArr(variation_refs)) return m_f64(0);
-  usz res = a(variation_refs)->ia;
+  usz res = IA(variation_refs);
   dec(variation_refs);
   variation_refs = m_f64(0);
   return m_f64(res);
@@ -242,7 +242,7 @@ B clearRefs_c1(B t, B x) {
 
 static B unshare(B x) {
   if (!isArr(x)) return x;
-  usz xia = a(x)->ia;
+  usz xia = IA(x);
   switch (v(x)->type) {
     case t_bitarr: return taga(cpyBitArr(inc(x)));
     case t_i8arr:  return taga(cpyI8Arr (inc(x)));
