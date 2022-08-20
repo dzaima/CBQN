@@ -108,7 +108,9 @@ All heap-allocated objects have a type - `t_i32arr`, `t_f64slice`, `t_funBl`, `t
 
 An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
 
-A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`. `v(x)->type` stores the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object. Note that the type is separate from the tag used for NaN-boxing.
+A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`.
+
+`TY(x)` / `PTY(x)` givs you the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object. Note that the type is separate from the tag used for NaN-boxing.
 
 The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will return the object to the memory manager if the refcount as a result goes to zero.
 
@@ -181,9 +183,17 @@ c(BMd2,bi_some2mod)->im = some2mod_im; // you get the idea
 
 ## Arrays
 
-If you know that `x` is an array (e.g. by testing `isArr(x)` beforehand), `IA(x)` will give you the product of the shape (aka total element count), `rnk(x)` will give you the rank (use `prnk(x)` for an untagged pointer object), and `a(x)->sh` will give you a `usz*` to the full shape.
+There exist various macros to view the main metadata of an array:
 
-The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field. Otherwise, it'll point inside a `t_shape` object.
+| operation                          | `B x;`    | `Value* x` / `Arr* x` / etc   | result type   |
+|------------------------------------|-----------|-------------------------------|---------------|
+| get shape                          | `SH(x)`   | `PSH(x)`                      | `usz*`        |
+| get item amount (product of shape) | `IA(x)`   | `PIA(x)`                      | `usz`         |
+| get rank                           | `RNK(x)`  | `PRNK(x)`                     | `ur`          |
+| set rank                           | `SRNK(x)` | `SPRNK(x)`                    | `N/A`         |
+
+
+The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field (the one read by `IA(x)`). Otherwise, it'll point inside a `t_shape` object (`ShArr*`'s `a` field).
 
 Allocating an array:
 ```C
@@ -269,9 +279,9 @@ B c = IGetU(x,n);
 if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x)
 if (TI(x,elType)==el_c32) u32* xp = c32any_ptr(x); // ↑
 if (TI(x,elType)==el_f64) f64* xp = f64any_ptr(x); // ↑
-if (v(x)->type==t_harr) B* xp = harr_ptr(x);
-if (v(x)->type==t_harr || v(x)->type==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
-if (v(x)->type==t_fillarr) B* xp = fillarr_ptr(x);
+if (TY(x)==t_harr) B* xp = harr_ptr(x);
+if (TY(x)==t_harr || TY(x)==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
+if (TY(x)==t_fillarr) B* xp = fillarr_ptr(x);
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by contiguous B*-s
 
 // functions to convert arrays to a specific type array: (all consume their argument)

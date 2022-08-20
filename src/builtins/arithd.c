@@ -23,7 +23,7 @@
     if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                             \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        usz ia = IA(x);                                                   \
+        usz ia = IA(x);                                                      \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
         if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {               \
@@ -37,7 +37,7 @@
           }                                                                  \
           decG(w); decG(x); return num_squeeze(r);                           \
         }                                                                    \
-      } else if (isF64(w)&isArr(x)) { usz ia = IA(x);                     \
+      } else if (isF64(w)&isArr(x)) { usz ia = IA(x);                        \
         u8 xe = TI(x,elType); f64*rp;                                        \
         if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
@@ -47,7 +47,7 @@
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
           decG(x); return num_squeeze(r);                                    \
         }                                                                    \
-      } else if (isF64(x)&isArr(w)) { usz ia = IA(w);                     \
+      } else if (isF64(x)&isArr(w)) { usz ia = IA(w);                        \
         u8 we = TI(w,elType); f64*rp;                                        \
         if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
@@ -160,7 +160,7 @@
     if (isArr(w)|isArr(x)) {                                         \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                     \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        usz ia = IA(x);                                           \
+        usz ia = IA(x);                                              \
         u8 we = TI(w,elType);                                        \
         u8 xe = TI(x,elType);                                        \
         if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {          \

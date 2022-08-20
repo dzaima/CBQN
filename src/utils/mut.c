@@ -237,7 +237,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }                                               \
   static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
   T##Arr* cpy##T##Arr(B x) { \
-    usz ia = IA(x);       \
+    usz ia = IA(x);          \
     MAKE; arr_shCopy(r, x);  \
     if (ia>0) {              \
       copy##T##Fns[TI(x,elType)](tyany_ptr(x), (u8*)(XRP), ia, (u8*)a(x)); \
@@ -288,7 +288,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
 #else
   #define MAKE_ICPY(T,E) T##Arr* cpy##T##Arr(B x) { \
-    usz ia = IA(x);     \
+    usz ia = IA(x);        \
     E* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);      \
     u8 xe = TI(x,elType);  \
@@ -308,7 +308,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 
   #define MAKE_CCPY(T,E)     \
   T##Arr* cpy##T##Arr(B x) { \
-    usz ia = IA(x);       \
+    usz ia = IA(x);          \
     T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);        \
     u8 xe = TI(x,elType);    \

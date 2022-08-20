@@ -24,7 +24,7 @@ B bit_negate(B x) { // consumes
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
   if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
   u8 xe = TI(x,elType);                                                 \
-  i64 sz = IA(x); BX                                                 \
+  i64 sz = IA(x); BX                                                    \
   if (xe==el_i8) { i8 MAX=I8_MAX; i8 MIN=I8_MIN; i8* xp=i8any_ptr(x); i8* rp; B r=m_i8arrc(&rp,x);        \
     for (i64 i = 0; i < sz; i++) { i8 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; } \
     decG(x); (void)MIN;(void)MAX; return r;                             \
