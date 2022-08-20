@@ -463,10 +463,10 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
   
   if (!q_N(src) && !q_N(indices)) {
-    if (isAtm(indices) || rnk(indices)!=1 || IA(indices)!=2) thrM("VM compiler: Bad indices");
+    if (isAtm(indices) || RNK(indices)!=1 || IA(indices)!=2) thrM("VM compiler: Bad indices");
     for (i32 i = 0; i < 2; i++) {
       B ind = IGetU(indices,i);
-      if (isAtm(ind) || rnk(ind)!=1 || IA(ind)!=bcIA) thrM("VM compiler: Bad indices");
+      if (isAtm(ind) || RNK(ind)!=1 || IA(ind)!=bcIA) thrM("VM compiler: Bad indices");
       SGetU(ind)
       for (usz j = 0; j < bcIA; j++) o2i(GetU(ind,j));
     }
@@ -484,7 +484,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
 FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   assert(TY(s) == t_arrMerge);
   B o = c(WrappedObj,s)->obj;
-  if (!isArr(x) || rnk(x)==0) thrF("[…]%U𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
+  if (!isArr(x) || RNK(x)==0) thrF("[…]%U𝕩: 𝕩 cannot have rank 0", upd? "↩" : "←");
   
   B* op = harr_ptr(o);
   usz oia = IA(o);
@@ -494,7 +494,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
     else thrF("[…]%U𝕩: Target length & leading axis of 𝕩 didn't match", upd? "↩" : "←");
   }
   if (oia == 0) { /*no need to do anything*/ }
-  else if (rnk(x)==1) {
+  else if (RNK(x)==1) {
     SGet(x)
     for (usz i = 0; i < oia; i++) {
       B cx = m_unit(Get(x,i));

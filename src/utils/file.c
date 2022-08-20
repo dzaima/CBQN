@@ -96,10 +96,10 @@ static NOINLINE void guaranteeStr(B x) { // assumes x is an array
 
 B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert(isArr(base) || q_N(base));
-  if (!isArr(rel) || rnk(rel)!=1) thrM("Paths must be character vectors");
+  if (!isArr(rel) || RNK(rel)!=1) thrM("Paths must be character vectors");
   SGetU(rel)
   usz ria = IA(rel);
-  if (rnk(rel)!=1) thrM("Paths must be character vectors");
+  if (RNK(rel)!=1) thrM("Paths must be character vectors");
   guaranteeStr(rel);
   if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");

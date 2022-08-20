@@ -27,7 +27,7 @@ static ShArr* shObjS(usz* x) { return RFLD(x, ShArr, a); }
 static ShArr* shObj (B x) { return RFLD(SH(x), ShArr, a); }
 static ShArr* shObjP(Value* x) { return RFLD(PSH((Arr*)x), ShArr, a); }
 static void decShObj(ShArr* x) { tptr_dec(x, mm_free); }
-static void decSh(Value* x) { if (RARE(prnk(x)>1)) decShObj(shObjP(x)); }
+static void decSh(Value* x) { if (RARE(PRNK(x)>1)) decShObj(shObjP(x)); }
 
 // some array stuff
 
@@ -48,35 +48,35 @@ static ShArr* m_shArr(ur r) {
 }
 
 static Arr* arr_shVec(Arr* x) {
-  sprnk(x, 1);
+  SPRNK(x, 1);
   x->sh = &x->ia;
   return x;
 }
 static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2); assumes x has rank≤1 (which will be the case for new allocations)
-  assert(prnk(x)<=1);
+  assert(PRNK(x)<=1);
   if (r>1) {
     usz* sh = x->sh = m_shArr(r)->a; // if m_shArr fails, the assumed rank≤1 guarantees the uninitialized x->sh won't break
-    sprnk(x,r);
+    SPRNK(x,r);
     return sh;
   }
-  sprnk(x,r);
+  SPRNK(x,r);
   x->sh = &x->ia;
   return NULL;
 }
 static void arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
-  sprnk(x,r);
+  SPRNK(x,r);
   if (r>1) { x->sh = ptr_inc(sh)->a; }
   else     { x->sh = &x->ia; }
 }
 static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
-  sprnk(x,r);
+  SPRNK(x,r);
   if (r>1) { x->sh = sh->a;  }
   else     { x->sh = &x->ia; }
 }
 static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   assert(isArr(o));
   assert(IA(o)==n->ia);
-  ur r = sprnk(n,rnk(o));
+  ur r = SPRNK(n,RNK(o));
   if (r<=1) {
     n->sh = &n->ia;
   } else {
@@ -95,7 +95,7 @@ static usz shProd(usz* sh, usz s, usz e) {
   return r;
 }
 static usz arr_csz(B x) {
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   if (xr<=1) return 1;
   return shProd(SH(x), 1, xr);
 }
@@ -105,8 +105,8 @@ static bool eqShPart(usz* w, usz* x, usz len) {
   return true;
 }
 static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
-  ur wr = rnk(w); usz* wsh = SH(w);
-  ur xr = rnk(x); usz* xsh = SH(x);
+  ur wr = RNK(w); usz* wsh = SH(w);
+  ur xr = RNK(x); usz* xsh = SH(x);
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
   return eqShPart(wsh, xsh, wr);

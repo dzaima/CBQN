@@ -93,7 +93,7 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
 
 void fprint(FILE* f, B x);
 void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
-  ur r = rnk(x);
+  ur r = RNK(x);
   SGetU(x)
   usz ia = IA(x);
   if (r!=1) {
@@ -220,7 +220,7 @@ i32 num_fmt(char buf[30], f64 x) {
   return len;
 }
 
-static B appendRaw(B s, B x) { assert(isArr(x) && rnk(x)==1); // consumes x
+static B appendRaw(B s, B x) { assert(isArr(x) && RNK(x)==1); // consumes x
   if (TI(x,elType)==el_c32) AJOIN(x);
   else {
     B sq = chr_squeezeChk(x);
@@ -258,7 +258,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
           sh = va_arg(a, usz*);
         } else {
           B o = va_arg(a, B);
-          r = isArr(o)? rnk(o) : 0;
+          r = isArr(o)? RNK(o) : 0;
           sh = isArr(o)? SH(o) : NULL;
         }
         if (r==0) AU("⟨⟩");
@@ -372,8 +372,8 @@ NOINLINE i32 compareF(B w, B x) {
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
   bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU; Arr* wArr;
   bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU; Arr* xArr;
-  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=rnk(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
-  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=rnk(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
+  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=RNK(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
+  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=RNK(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
   if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
@@ -452,8 +452,8 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   bool xa = isAtm(x);
   if (wa!=xa) return false;
   if (wa) return atomEqual(w, x);
-  ur wr = rnk(w);
-  ur xr = rnk(x);
+  ur wr = RNK(w);
+  ur xr = RNK(x);
   if (wr!=xr) return false;
   usz ia = IA(x);
   if (LIKELY(wr==1)) {
@@ -613,11 +613,11 @@ bool isPureFn(B x) { // doesn't consume
 B bqn_merge(B x) {
   assert(isArr(x));
   usz xia = IA(x);
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   if (xia==0) {
     B xf = getFillE(x);
     if (isAtm(xf)) { dec(xf); return x; }
-    i32 xfr = rnk(xf);
+    i32 xfr = RNK(xf);
     B xff = getFillQ(xf);
     Arr* r = m_fillarrp(0);
     fillarr_setFill(r, xff);
@@ -634,7 +634,7 @@ B bqn_merge(B x) {
   SGetU(x)
   B x0 = GetU(x, 0);
   usz* elSh = isArr(x0)? SH(x0) : NULL;
-  ur elR = isArr(x0)? rnk(x0) : 0;
+  ur elR = isArr(x0)? RNK(x0) : 0;
   usz elIA = isArr(x0)? IA(x0) : 1;
   B fill = getFillQ(x0);
   if (xr+elR > UR_MAX) thrM(">: Result rank too large");
@@ -643,7 +643,7 @@ B bqn_merge(B x) {
   usz rp = 0;
   for (usz i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isArr(c)? (elR!=rnk(c) || !eqShPart(elSh, SH(c), elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
+    if (isArr(c)? (elR!=RNK(c) || !eqShPart(elSh, SH(c), elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
     if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
     else mut_set(r, rp, inc(c));
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
@@ -805,9 +805,9 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     }
     if (TIv(x,isArr)) {
       Arr* a = (Arr*)x;
-      if (prnk(x)<=1) assert(a->sh == &a->ia);
+      if (PRNK(x)<=1) assert(a->sh == &a->ia);
       else {
-        assert(shProd(PSH(a), 0, prnk(x)) == a->ia);
+        assert(shProd(PSH(a), 0, PRNK(x)) == a->ia);
         VALIDATE(tag(shObjP(x),OBJ_TAG));
       }
     }

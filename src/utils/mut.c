@@ -8,7 +8,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
     mut_init(m, n);
   } else {
     m->fns = &mutFns[n];
-    sprnk(m->val, 1);
+    SPRNK(m->val, 1);
     m->val->sh = &m->val->ia;
     #ifdef USE_VALGRIND
       VALGRIND_MAKE_MEM_DEFINED(m->val, mm_size((Value*)m->val)); // it's incomplete, but it's a typed array so garbage is acceptable

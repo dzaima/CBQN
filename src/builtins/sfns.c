@@ -84,7 +84,7 @@ B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
 
 B shape_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
-  if (rnk(x)==1) return x;
+  if (RNK(x)==1) return x;
   usz ia = IA(x);
   if (ia==1 && TI(x,elType)<el_B) {
     B n = IGet(x,0);
@@ -115,7 +115,7 @@ B shape_c2(B t, B w, B x) {
     sh = NULL;
   } else {
     if (isAtm(w)) w = m_atomUnit(w);
-    if (rnk(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
+    if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
     if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
     nr = IA(w);
     sh = nr<=1? NULL : m_shArr(nr);
@@ -262,13 +262,13 @@ static NOINLINE void checkNumeric(B w) {
 static B recPick(B w, B x) { // doesn't consume
   assert(isArr(w) && isArr(x));
   usz ia = IA(w);
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   usz* xsh = SH(x);
   switch(TI(w,elType)) { default: UD;
-    case el_i8:  { i8*  wp = i8any_ptr (w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
-    case el_i16: { i16* wp = i16any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
-    case el_i32: { i32* wp = i32any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
-    case el_f64: { f64* wp = f64any_ptr(w); if(rnk(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { i64 ws = (i64)wp[i]; if (wp[i]!=ws) thrM(ws==I64_MIN? "⊑: 𝕨 contained value too large" : "⊑: 𝕨 contained a non-integer");
+    case el_i8:  { i8*  wp = i8any_ptr (w); if(RNK(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i16: { i16* wp = i16any_ptr(w); if(RNK(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_i32: { i32* wp = i32any_ptr(w); if(RNK(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { c = c*xsh[i] + WRAP(wp[i], xsh[i], goto oob); }; return IGet(x,c); }
+    case el_f64: { f64* wp = f64any_ptr(w); if(RNK(w)!=1)goto wrr; if (ia!=xr)goto wrl; usz c=0; for (usz i = 0; i < ia; i++) { i64 ws = (i64)wp[i]; if (wp[i]!=ws) thrM(ws==I64_MIN? "⊑: 𝕨 contained value too large" : "⊑: 𝕨 contained a non-integer");
                                                                                                                                 c = c*xsh[i] + WRAP(ws,    xsh[i], goto oob); }; return IGet(x,c); }
     case el_c8: case el_c16: case el_c32: case el_bit:
     case el_B: {
@@ -278,7 +278,7 @@ static B recPick(B w, B x) { // doesn't consume
       }
       SGetU(w)
       if (isNum(GetU(w,0))) {
-        if(rnk(w)!=1) goto wrr;
+        if(RNK(w)!=1) goto wrr;
         if (ia!=xr) goto wrl;
         usz c=0;
         for (usz i = 0; i < ia; i++) {
@@ -307,12 +307,12 @@ static B recPick(B w, B x) { // doesn't consume
 
 B pick_c2(B t, B w, B x) {
   if (RARE(isAtm(x))) {
-    if (isAtm(w) || rnk(w)!=1 || IA(w)!=0) return c2(rt_pick, w, x); // ugh this is such a lame case that'd need a whole another recursive fn to implement
+    if (isAtm(w) || RNK(w)!=1 || IA(w)!=0) return c2(rt_pick, w, x); // ugh this is such a lame case that'd need a whole another recursive fn to implement
     dec(w);
     return x;
   }
   if (isNum(w)) {
-    if (rnk(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
+    if (RNK(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
     usz p = WRAP(o2i64(w), IA(x), thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
     B r = IGet(x, p);
     decG(x);
@@ -427,7 +427,7 @@ B pick_c2(B t, B w, B x) {
 
 extern B rt_slash;
 B slash_c1(B t, B x) {
-  if (RARE(isAtm(x)) || RARE(rnk(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
+  if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   u64 s = usum(x);
   if (s>=USZ_MAX) thrOOM();
   usz xia = IA(x);
@@ -498,7 +498,7 @@ B slash_c1(B t, B x) {
 }
 
 B slash_c2(B t, B w, B x) {
-  if (isArr(x) && rnk(x)==1 && isArr(w) && rnk(w)==1 && depth(w)==1) {
+  if (isArr(x) && RNK(x)==1 && isArr(w) && RNK(w)==1 && depth(w)==1) {
     usz wia = IA(w);
     usz xia = IA(x);
     if (RARE(wia!=xia)) {
@@ -642,7 +642,7 @@ B slash_c2(B t, B w, B x) {
     decG(w); decG(x);
     return withFill(HARR_FV(r), xf);
   }
-  if (isArr(x) && rnk(x)==1 && q_i32(w)) {
+  if (isArr(x) && RNK(x)==1 && q_i32(w)) {
     usz xia = IA(x);
     i32 wv = o2i(w);
     if (wv<=0) {
@@ -675,7 +675,7 @@ B slash_c2(B t, B w, B x) {
 
 
 B slash_im(B t, B x) {
-  if (!isArr(x) || rnk(x)!=1) thrM("/⁼: Argument must be an array");
+  if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be an array");
   u8 xe = TI(x,elType);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
@@ -767,8 +767,8 @@ static B slicev(B x, usz s, usz ia) {
 }
 
 FORCE_INLINE B affixes(B x, i32 post) {
-  if (!isArr(x) || rnk(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
-  ur xr = rnk(x);
+  if (!isArr(x) || RNK(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
+  ur xr = RNK(x);
   usz* xsh = SH(x);
   u64 cam = *xsh;
   u64 ria = cam+1;
@@ -804,7 +804,7 @@ B take_c2(B t, B w, B x) {
   if (isNum(w)) {
     if (!isArr(x)) x = m_atomUnit(x);
     i64 wv = o2i64(w);
-    ur xr = rnk(x);
+    ur xr = RNK(x);
     usz csz = 1;
     usz* xsh;
     if (xr>1) {
@@ -844,7 +844,7 @@ B take_c2(B t, B w, B x) {
   return c2(rt_take, w, x);
 }
 B drop_c2(B t, B w, B x) {
-  if (isNum(w) && isArr(x) && rnk(x)==1) {
+  if (isNum(w) && isArr(x) && RNK(x)==1) {
     i64 v = o2i64(w);
     usz ia = IA(x);
     if (v<0) return -v>ia? slicev(x, 0, 0) : slicev(x, 0, v+ia);
@@ -856,7 +856,7 @@ B drop_c2(B t, B w, B x) {
 B join_c1(B t, B x) {
   if (isAtm(x)) thrM("∾: Argument must be an array");
 
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   usz xia = IA(x);
   if (xia==0) {
     B xf = getFillE(x);
@@ -865,7 +865,7 @@ B join_c1(B t, B x) {
       if (!PROPER_FILLS && xr==1) return emptyHVec();
       thrM("∾: Empty array 𝕩 cannot have an atom fill element");
     }
-    ur ir = rnk(xf);
+    ur ir = RNK(xf);
     if (ir<xr) thrF("∾: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
     B xff = getFillQ(xf);
     HArr_p r = m_harrUp(0);
@@ -886,7 +886,7 @@ B join_c1(B t, B x) {
     SGetU(x)
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
-    ur rm = isAtm(x0) ? 0 : rnk(x0); // Maximum element rank seen
+    ur rm = isAtm(x0) ? 0 : RNK(x0); // Maximum element rank seen
     ur rr = rm;      // Result rank, or minimum possible so far
     ur rd = 0;       // Difference of max and min lengths (0 or 1)
     usz* esh = NULL;
@@ -900,7 +900,7 @@ B join_c1(B t, B x) {
 
     for (usz i = 1; i < xia; i++) {
       B c = GetU(x, i);
-      ur cr = isAtm(c) ? 0 : rnk(c);
+      ur cr = isAtm(c) ? 0 : RNK(c);
       if (cr == 0) {
         if (rm > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
         rd=rm; cam++;
@@ -953,7 +953,7 @@ B join_c1(B t, B x) {
     SGetU(x)
     B x0 = GetU(x,0);
     B rf; if(SFNS_FILLS) rf = getFillQ(x0);
-    ur r0 = isAtm(x0) ? 0 : rnk(x0);
+    ur r0 = isAtm(x0) ? 0 : RNK(x0);
 
     usz xia = IA(x);
     usz* xsh = SH(x);
@@ -981,7 +981,7 @@ B join_c1(B t, B x) {
       ll[0] = r0;
       for (usz i=1; i<n; i++) {
         B c = GetU(x, i*step);
-        ll[i] = LIKELY(isArr(c)) ? rnk(c) : 0;
+        ll[i] = LIKELY(isArr(c)) ? RNK(c) : 0;
       }
       usz r1s=r0; for (usz i=1; i<n; i++) if (ll[i]>r1s) r1s=ll[i];
       ur r1 = r1s;
@@ -1001,7 +1001,7 @@ B join_c1(B t, B x) {
       // Check shapes
       for (usz j=0; j<xia; j+=n*step) {
         B base = GetU(x, j);
-        ur r = isAtm(base) ? 0 : rnk(base);
+        ur r = isAtm(base) ? 0 : RNK(base);
         ur r1 = r+1-a0;
         ur lr = 0;
         if (r) {
@@ -1015,7 +1015,7 @@ B join_c1(B t, B x) {
           B c = GetU(x, j+i*step);
           bool rd = ll[i]==-1;
           tsh[lr] = ll[i];
-          ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=rnk(c); sh=SH(c); }
+          ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=RNK(c); sh=SH(c); }
           if (cr != r1-rd) thrF("∾: Incompatible item ranks", base, c);
           if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
           if (SFNS_FILLS && !noFill(rf)) rf = fill_or(rf, getFillQ(c));
@@ -1086,12 +1086,12 @@ B join_c1(B t, B x) {
 }
 B join_c2(B t, B w, B x) {
   if (isAtm(w)) w = m_atomUnit(w);
-  ur wr = rnk(w);
+  ur wr = RNK(w);
   if (isAtm(x)) {
     if (wr==1 && inplace_add(w, x)) return w;
     x = m_atomUnit(x);
   }
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   B f = fill_both(w, x);
   
   ur c = wr>xr?wr:xr;
@@ -1106,10 +1106,10 @@ B join_c2(B t, B w, B x) {
   bool reusedW;
   B r = arr_join_inline(w, x, false, &reusedW);
   if (c==1) {
-    if (rnk(r)==0) srnk(r,1);
+    if (RNK(r)==0) SRNK(r,1);
   } else {
     assert(c>1);
-    ur rnk0 = rnk(r);
+    ur rnk0 = RNK(r);
     ShArr* sh0 = shObj(r);
     usz wia;
     usz* wsh;
@@ -1120,7 +1120,7 @@ B join_c2(B t, B w, B x) {
       wsh = SH(w); // when wr>1, shape object won't be disturbed by arr_join_inline
     }
     usz* xsh = SH(x);
-    srnk(r, 0); // otherwise shape allocation failing may break things
+    SRNK(r, 0); // otherwise shape allocation failing may break things
     usz* rsh = arr_shAlloc(a(r), c);
     #if PRINT_JOIN_REUSE
     printf(reusedW? "reuse:1;" : "reuse:0;");
@@ -1148,7 +1148,7 @@ B join_c2(B t, B w, B x) {
 
 B couple_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
-  usz rr = rnk(x);
+  usz rr = RNK(x);
   usz ia = IA(x);
   Arr* r = TI(x,slice)(incG(x),0, ia);
   usz* sh = arr_shAlloc(r, rr+1);
@@ -1162,7 +1162,7 @@ B couple_c2(B t, B w, B x) {
   if (isAtm(x)) x = m_atomUnit(x);
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = IA(w);
-  ur wr = rnk(w);
+  ur wr = RNK(w);
   MAKE_MUT(r, ia*2); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   MUTG_INIT(r);
   mut_copyG(r, 0,  w, 0, ia);
@@ -1178,14 +1178,14 @@ B couple_c2(B t, B w, B x) {
 
 
 static inline void shift_check(B w, B x) {
-  ur wr = rnk(w); usz* wsh = SH(w);
-  ur xr = rnk(x); usz* xsh = SH(x);
+  ur wr = RNK(w); usz* wsh = SH(w);
+  ur xr = RNK(x); usz* xsh = SH(x);
   if (wr+1!=xr & wr!=xr) thrF("shift: =𝕨 must be =𝕩 or ¯1+=𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   for (i32 i = 1; i < xr; i++) if (wsh[i+wr-xr] != xsh[i]) thrF("shift: Lengths not matchable (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
 }
 
 B shiftb_c1(B t, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM("»: Argument cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("»: Argument cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
   B xf = getFillE(x);
@@ -1198,7 +1198,7 @@ B shiftb_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shiftb_c2(B t, B w, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM("»: 𝕩 cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("»: 𝕩 cannot be a scalar");
   if (isAtm(w)) w = m_atomUnit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
@@ -1214,7 +1214,7 @@ B shiftb_c2(B t, B w, B x) {
 }
 
 B shifta_c1(B t, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM("«: Argument cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("«: Argument cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
   B xf = getFillE(x);
@@ -1226,7 +1226,7 @@ B shifta_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shifta_c2(B t, B w, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM("«: 𝕩 cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("«: 𝕩 cannot be a scalar");
   if (isAtm(w)) w = m_atomUnit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
@@ -1250,7 +1250,7 @@ B group_c1(B t, B x) {
   return c1(rt_group, x);
 }
 B group_c2(B t, B w, B x) {
-  if (isArr(w)&isArr(x) && rnk(w)==1 && rnk(x)==1 && depth(w)==1) {
+  if (isArr(w)&isArr(x) && RNK(w)==1 && RNK(x)==1 && depth(w)==1) {
     usz wia = IA(w);
     usz xia = IA(x);
     if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
@@ -1369,11 +1369,11 @@ B group_c2(B t, B w, B x) {
 
 extern B rt_reverse;
 B reverse_c1(B t, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM("⌽: Argument cannot be a unit");
+  if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
   usz xia = IA(x);
   if (xia==0) return x;
   u8 xe = TI(x,elType);
-  if (rnk(x)==1) {
+  if (RNK(x)==1) {
     B r;
     switch(xe) { default: UD;
       case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp, xia); for (usz i = 0; i < xia; i++) bitp_set(rp, i, bitp_get(xp, xia-i-1)); break; }
@@ -1412,7 +1412,7 @@ B reverse_c1(B t, B x) {
 }
 B reverse_c2(B t, B w, B x) {
   if (isArr(w)) return c2(rt_reverse, w, x);
-  if (isAtm(x) || rnk(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
+  if (isAtm(x) || RNK(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
   usz xia = IA(x);
   if (xia==0) return x;
   B xf = getFillQ(x);
@@ -1432,7 +1432,7 @@ B reverse_c2(B t, B w, B x) {
 extern B rt_transp;
 B transp_c1(B t, B x) {
   if (RARE(isAtm(x))) return m_atomUnit(x);
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   if (xr<=1) return x;
   
   usz ia = IA(x);
@@ -1494,7 +1494,7 @@ B pick_uc1(B t, B o, B x) { // TODO do in-place like pick_ucw; maybe just call i
 }
 
 B pick_ucw(B t, B o, B w, B x) {
-  if (isArr(w) || isAtm(x) || rnk(x)!=1) return def_fn_ucw(t, o, w, x);
+  if (isArr(w) || isAtm(x) || RNK(x)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = IA(x);
   usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
   B arg = IGet(x, wi);
@@ -1526,14 +1526,14 @@ B pick_ucw(B t, B o, B w, B x) {
 }
 
 B slash_ucw(B t, B o, B w, B x) {
-  if (isAtm(w) || isAtm(x) || rnk(w)!=1 || rnk(x)!=1 || IA(w)!=IA(x)) return def_fn_ucw(t, o, w, x);
+  if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) return def_fn_ucw(t, o, w, x);
   usz ia = IA(x);
   SGetU(w)
   if (TI(w,elType)>el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = IA(arg);
   B rep = c1(o, arg);
-  if (isAtm(rep) || rnk(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
+  if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
   MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
   SGet(x)
   SGet(rep)
@@ -1586,7 +1586,7 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
   usz* repsh = SH(rep);
-  if (rnk(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
+  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
   
   MAKE_MUT(r, xia);
   mut_init(r, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
@@ -1607,7 +1607,7 @@ B take_ucw(B t, B o, B w, B x) {
   i64 wi = o2i64(w);
   u64 am = wi<0? -wi : wi;
   if (isAtm(x)) x = m_vec1(x);
-  ur xr = rnk(x); if (xr==0) xr = 1;
+  ur xr = RNK(x); if (xr==0) xr = 1;
   if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ 𝕨, %H ≡ ≢𝕩)", wi, x);
   return takedrop_ucw(wi, o, am, x, xr);
 }
@@ -1617,24 +1617,24 @@ B drop_ucw(B t, B o, B w, B x) {
   i64 wi = o2i64(w);
   u64 am = wi<0? -wi : wi;
   if (isAtm(x)) x = m_vec1(x);
-  ur xr = rnk(x); if (xr==0) xr = 1;
+  ur xr = RNK(x); if (xr==0) xr = 1;
   usz cam = SH(x)[0];
   if (am>cam) am = cam;
   return takedrop_ucw(-wi, o, cam-am, x, xr);
 }
 
 static B shape_uc1_t(B r, usz ia) {
-  if (!isArr(r) || rnk(r)!=1 || IA(r)!=ia) thrM("𝔽⌾⥊: 𝔽 changed the shape of the argument");
+  if (!isArr(r) || RNK(r)!=1 || IA(r)!=ia) thrM("𝔽⌾⥊: 𝔽 changed the shape of the argument");
   return r;
 }
 B shape_uc1(B t, B o, B x) {
-  if (!isArr(x) || rnk(x)==0) {
+  if (!isArr(x) || RNK(x)==0) {
     usz xia = isArr(x)? IA(x) : 1;
     return shape_c2(t, emptyIVec(), shape_uc1_t(c1(o, shape_c1(t, x)), xia));
   }
   usz xia = IA(x);
-  if (rnk(x)==1) return shape_uc1_t(c1(o, x), xia);
-  ur xr = rnk(x);
+  if (RNK(x)==1) return shape_uc1_t(c1(o, x), xia);
+  ur xr = RNK(x);
   ShArr* sh = ptr_inc(shObj(x));
   return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
 }
@@ -1645,7 +1645,7 @@ B  transp_uc1(B t, B o, B x) { return  transp_c1(t, c1(o,  transp_c1(t, x))); }
 B reverse_uc1(B t, B o, B x) { return reverse_c1(t, c1(o, reverse_c1(t, x))); }
 
 NOINLINE B enclose_im(B t, B x) {
-  if (isAtm(x) || rnk(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
+  if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
   B r = IGet(x, 0);
   dec(x);
   return r;

@@ -87,7 +87,7 @@ static B listVariations_def;
 B listVariations_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
   
-  if (!isArr(w) || rnk(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
+  if (!isArr(w) || RNK(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
   usz wia = IA(w);
   SGetU(w)
   bool c_incr=false, c_rmFill=false;

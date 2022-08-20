@@ -7,8 +7,8 @@ static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r
 B eachd_fn(B fo, B w, B x, BBB2B f) {
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = rnk(w); SGet(w);
-  ur xr = rnk(x); SGet(x);
+  ur wr = RNK(w); SGet(w);
+  ur xr = RNK(x); SGet(x);
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;

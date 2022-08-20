@@ -218,13 +218,13 @@ void init_comp(B* set, B prim) {
     set[1] = inc(load_rtObj);
     set[2] = inc(load_glyphs);
   } else {
-    if (!isArr(prim) || rnk(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
+    if (!isArr(prim) || RNK(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = IA(prim);
     usz np[3] = {0}; // number of functions, 1-modifiers, and 2-modifiers
     SGetU(prim);
     for (usz i = 0; i < pia; i++) { // check and count
       B p = GetU(prim, i);
-      if (!isArr(p) || rnk(p)!=1 || IA(p)!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
+      if (!isArr(p) || RNK(p)!=1 || IA(p)!=2) thrM("•ReBQN: 𝕩.primitives must consist of glyph-primitive pairs");
       if (!isC32(IGet(p, 0))) thrM("•ReBQN 𝕩.primitives: Glyphs must be characters");
       B v = IGetU(p, 1);
       i32 t = isFun(v)? 0 : isMd1(v)? 1 : isMd2(v)? 2 : 3;

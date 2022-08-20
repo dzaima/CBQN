@@ -133,7 +133,7 @@ B pick_c2(B t, B w, B x);
 B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   B fr = c1iX(f, x);
   if (isNum(fr)) {
-    if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
+    if (isAtm(g)||RNK(g)!=1) thrM("◶: 𝕘 must have rank 1");
     usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c1(IGetU(g, fri), x);
   } else {
@@ -146,7 +146,7 @@ B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
 B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   B fr = c2iWX(d->f, w, x);
   if (isNum(fr)) {
-    if (isAtm(g)||rnk(g)!=1) thrM("◶: 𝕘 must have rank 1");
+    if (isAtm(g)||RNK(g)!=1) thrM("◶: 𝕘 must have rank 1");
     usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c2(IGetU(g, fri), w, x);
   } else {
@@ -220,7 +220,7 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
 B to_fill_cell_k(B x, ur k, char* err) { // consumes x
   B xf = getFillQ(x);
   if (noFill(xf)) xf = m_f64(0);
-  ur cr = rnk(x)-k;
+  ur cr = RNK(x)-k;
   usz* sh = SH(x)+k;
   usz csz = 1;
   for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
@@ -236,7 +236,7 @@ static B to_fill_cell(B x, ur k) {
   return to_fill_cell_k(x, k, "⎉: Empty argument too large (%H ≡ ≢𝕩)");
 }
 static B merge_fill_result(B rc, ur k, usz* sh) {
-  u64 rr = k; if (isArr(rc)) rr += rnk(rc);
+  u64 rr = k; if (isArr(rc)) rr += RNK(rc);
   if (rr>UR_MAX) thrM("⎉: Result rank too large");
   B rf = getFillQ(rc);
   Arr* r = m_fillarrp(0);
@@ -259,7 +259,7 @@ static B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
   usz* sh = SH(fa);
-  usz s0=0; ShArr* s=NULL; ur sho=rnk(fa)>1;
+  usz s0=0; ShArr* s=NULL; ur sho=RNK(fa)>1;
   if (!sho) { s0=sh[0]; sh=&s0; } else { s=ptr_inc(shObj(fa)); }
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); goto empty; }
   B r;
@@ -288,14 +288,14 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   }
   if (gf) dec(g);
   
-  if (isAtm(x) || rnk(x)==0) {
+  if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
-  i32 xr = rnk(x);
+  i32 xr = RNK(x);
   ur cr = cell_rank(xr, kf);
   i32 k = xr - cr;
-  if (Q_BI(f,lt) && IA(x)!=0 && rnk(x)>1) return toKCells(x, k);
+  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toKCells(x, k);
   
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k);
@@ -352,8 +352,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     xf = GetU(g, gia-1).f;
   }
 
-  ur wr = isAtm(w) ? 0 : rnk(w); ur wc = cell_rank(wr, wf);
-  ur xr = isAtm(x) ? 0 : rnk(x); ur xc = cell_rank(xr, xf);
+  ur wr = isAtm(w) ? 0 : RNK(w); ur wc = cell_rank(wr, wf);
+  ur xr = isAtm(x) ? 0 : RNK(x); ur xc = cell_rank(xr, xf);
 
   B r;
   if (wr == wc) {

@@ -4,19 +4,19 @@
 
 
 B toCells(B x) {
-  assert(isArr(x) && rnk(x)>1);
+  assert(isArr(x) && RNK(x)>1);
   usz cam = SH(x)[0];
   usz csz = arr_csz(x);
   BSS2A slice = TI(x,slice);
   M_HARR(r, cam)
   usz p = 0;
-  if (rnk(x)==2) {
+  if (RNK(x)==2) {
     for (usz i = 0; i < cam; i++) {
       HARR_ADD(r, i, taga(arr_shVec(slice(incG(x), p, csz))));
       p+= csz;
     }
   } else {
-    usz cr = rnk(x)-1;
+    usz cr = RNK(x)-1;
     ShArr* csh = m_shArr(cr);
     usz* xsh = SH(x);
     shcpy(csh->a, xsh+1, cr);
@@ -31,8 +31,8 @@ B toCells(B x) {
   return HARR_FV(r);
 }
 B toKCells(B x, ur k) {
-  assert(isArr(x) && k<=rnk(x) && k>=0);
-  ur xr = rnk(x); usz* xsh = SH(x);
+  assert(isArr(x) && k<=RNK(x) && k>=0);
+  ur xr = RNK(x); usz* xsh = SH(x);
   ur cr = xr-k;
   usz cam = shProd(xsh, 0, k);
   usz csz = shProd(xsh, k, xr);
@@ -68,7 +68,7 @@ NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
   assert(v(x)->type==t_harr);
   B* p = harr_ptr(x);
   for (usz i = 0; i < am; i++) dec(p[i]);
-  if (rnk(x)>1) ptr_dec(shObj(x));
+  if (RNK(x)>1) ptr_dec(shObj(x));
   mm_free(v(x));
 }
 

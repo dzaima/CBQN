@@ -11,8 +11,8 @@
 #include "sortTemplate.h"
 
 B GRADE_CAT(c1)(B t, B x) {
-  if (isAtm(x) || rnk(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
-  if (rnk(x)>1) x = toCells(x);
+  if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
+  if (RNK(x)>1) x = toCells(x);
   usz ia = IA(x);
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
   if (ia==0) { decG(x); return emptyIVec(); }
@@ -95,10 +95,10 @@ B GRADE_CAT(c1)(B t, B x) {
   return r;
 }
 B GRADE_CAT(c2)(B t, B w, B x) {
-  if (isAtm(w) || rnk(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
+  if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = rnk(w);
-  ur xr = rnk(x);
+  ur wr = RNK(w);
+  ur xr = RNK(x);
   
   if (wr > 1) {
     if (wr > xr+1) thrM(GRADE_CHR": =𝕨 cannot be greater than =𝕩");

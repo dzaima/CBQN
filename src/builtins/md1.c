@@ -51,8 +51,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   if (EACH_FILLS) xf = getFillQ(x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = rnk(w); usz wia = IA(w);
-  ur xr = rnk(x); usz xia = IA(x);
+  ur wr = RNK(w); usz wia = IA(w);
+  ur xr = RNK(x); usz xia = IA(x);
   ur rr = wr+xr;  usz ria = uszMul(wia, xia);
   if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
@@ -70,8 +70,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), incG(x)));
       r = bqn_merge(HARR_FV(r));
     } else goto generic;
-    if (rnk(r)>1) {
-      srnk(r, 0); // otherwise the following arr_shAlloc failing will result in r->sh dangling
+    if (RNK(r)>1) {
+      SRNK(r, 0); // otherwise the following arr_shAlloc failing will result in r->sh dangling
       ptr_dec(shObj(r));
     }
     rsh = arr_shAlloc(a(r), rr);
@@ -148,8 +148,8 @@ static u64 vg_rand(u64 x) { return x; }
 #endif
 
 B scan_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)==0) thrM("`: Argument cannot have rank 0");
-  ur xr = rnk(x);
+  if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
+  ur xr = RNK(x);
   usz ia = IA(x);
   if (ia==0) return x;
   B xf = getFillQ(x);
@@ -230,8 +230,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   return withFill(r.b, xf);
 }
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)==0) thrM("`: 𝕩 cannot have rank 0");
-  ur xr = rnk(x); usz* xsh = SH(x); usz ia = IA(x);
+  if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
+  ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
   B wf = getFillQ(w);
   u8 xe = TI(x,elType);
   if (xr==1 && q_i32(w) && xe<el_f64 && isFun(f) && v(f)->flags) {
@@ -275,7 +275,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   BBB2B fc2 = c2fn(f);
   
   if (isArr(w)) {
-    ur wr = rnk(w); usz* wsh = SH(w); SGet(w)
+    ur wr = RNK(w); usz* wsh = SH(w); SGet(w)
     if (wr+1!=xr || !eqShPart(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia==0) return x;
     usz csz = arr_csz(x);
@@ -293,7 +293,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
 }
 
 B fold_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (ia==0) {
     decG(x);
@@ -362,7 +362,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   return c;
 }
 B fold_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   u8 xe = TI(x,elType);
   if (q_i32(w) && isFun(f) && v(f)->flags && xe<el_f64) {
@@ -456,7 +456,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
 #define S_SLICES(X)            \
   BSS2A X##_slc = TI(X,slice); \
   usz X##_csz = 1;             \
-  usz X##_cr = rnk(X)-1;       \
+  usz X##_cr = RNK(X)-1;       \
   ShArr* X##_csh;              \
   if (X##_cr>1) {              \
     X##_csh = m_shArr(X##_cr); \
@@ -482,7 +482,7 @@ static B to_fill_cell_1(B x) { // consumes x
   return to_fill_cell_k(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
 }
 static B merge_fill_result_1(B rc) {
-  u64 rr = isArr(rc)? rnk(rc)+1ULL : 1;
+  u64 rr = isArr(rc)? RNK(rc)+1ULL : 1;
   if (rr>UR_MAX) thrM("˘: Result rank too large");
   B rf = getFillQ(rc);
   Arr* r = m_fillarrp(0);
@@ -506,12 +506,12 @@ B cell2_empty(B f, B w, B x, ur wr, ur xr) {
 }
 
 B cell_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)==0) {
+  if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
   
-  if (Q_BI(f,lt) && IA(x)!=0 && rnk(x)>1) return toCells(x);
+  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toCells(x);
   
   usz cam = SH(x)[0];
   if (cam==0) {
@@ -531,8 +531,8 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
 }
 
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
-  bool wr = isAtm(w)? 0 : rnk(w);
-  bool xr = isAtm(x)? 0 : rnk(x);
+  bool wr = isAtm(w)? 0 : RNK(w);
+  bool xr = isAtm(x)? 0 : RNK(x);
   B r;
   if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
   if (wr==0) {
@@ -566,10 +566,10 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
 
 extern B rt_insert;
 B insert_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   if (xia==0) return m1c1(rt_insert, f, x);
-  if (rnk(x)==1 && isFun(f) && isPervasiveDy(f)) {
+  if (RNK(x)==1 && isFun(f) && isPervasiveDy(f)) {
     return m_atomUnit(fold_c1(d, x));
   }
   
@@ -584,7 +584,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   return r;
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || rnk(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   B r = w;
   if (xia!=0) {

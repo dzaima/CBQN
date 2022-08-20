@@ -371,16 +371,18 @@ void freeThrown(void);
 #define c(T,X) ((T*)((X).u&0xFFFFFFFFFFFFull))
 #define v(X) c(Value, X)
 #define a(X) c(Arr  , X)
-#define  prnk(X  ) (X->extra)
-#define sprnk(X,R) (X->extra=(R))
-#define  rnk(X  )  prnk(v(X))
-#define srnk(X,R) sprnk(v(X),R)
-#define IA(X) (a(X)->ia)
-#define PIA(X) ((X)->ia)
-#define SH(X) (a(X)->sh)
-#define PSH(X) ((X)->sh)
-#define TY(X) (v(X)->type)
-#define PTY(X) ((X)->type)
+
+#define SPRNK(X,R) (X->extra=(R))
+#define SRNK(X,R) SPRNK(v(X),R)
+
+#define PRNK(X) ((X)->extra)
+#define PIA(X)  ((X)->ia)
+#define PSH(X)  ((X)->sh)
+#define PTY(X)  ((X)->type)
+#define IA(X)  PIA(a(X))
+#define SH(X)  PSH(a(X))
+#define TY(X)  PTY(v(X))
+#define RNK(X) PRNK(v(X))
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 

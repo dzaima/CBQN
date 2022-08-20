@@ -15,7 +15,7 @@
 
 
 static bool eqStr(B w, u32* x) {
-  if (isAtm(w) || rnk(w)!=1) return false;
+  if (isAtm(w) || RNK(w)!=1) return false;
   SGetU(w)
   u64 i = 0;
   while (x[i]) {
@@ -198,14 +198,14 @@ B casrt_c2(B t, B w, B x) {
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && rnk(w0)==1 && IA(w0)>=1) {
+    if (isArr(w0) && RNK(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
       usz pos = o2s(IGetU(w0,0));
       s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
       dec(w);
       thr(s);
     }
-    if (isArr(w0) && rnk(w0)==2 && IA(w0)>=2) {
+    if (isArr(w0) && RNK(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
       s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
@@ -222,7 +222,7 @@ B casrt_c1(B t, B x) {
 
 B sys_c1(B t, B x);
 B out_c1(B t, B x) {
-  if (isArr(x) && rnk(x)>1) thrF("•Out: Argument cannot have rank %i", rnk(x));
+  if (isArr(x) && RNK(x)>1) thrF("•Out: Argument cannot have rank %i", RNK(x));
   printRaw(x); putchar('\n');
   return x;
 }
@@ -240,7 +240,7 @@ B show_c1(B t, B x) {
 }
 
 B vfyStr(B x, char* name, char* arg) {
-  if (isAtm(x) || rnk(x)!=1) thrF("%U: %U must be a character vector", name, arg);
+  if (isAtm(x) || RNK(x)!=1) thrF("%U: %U must be a character vector", name, arg);
   if (!elChr(TI(x,elType))) {
     usz ia = IA(x);
     SGetU(x)
@@ -251,7 +251,7 @@ B vfyStr(B x, char* name, char* arg) {
 
 B cdPath;
 static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
-  if (!isArr(w) || rnk(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
+  if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w);
   SGet(w)
   B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(cdPath);
@@ -320,7 +320,7 @@ B rand_range_c2(B t, B w, B x) {
   usz am = 1;
   i64 max = o2i64(x);
   if (isArr(w)) {
-    if (rnk(w) > 1) thrM("(rand).Range: 𝕨 must be a valid shape");
+    if (RNK(w) > 1) thrM("(rand).Range: 𝕨 must be a valid shape");
     SGetU(w);
     usz wia = IA(w);
     for (u64 i = 0; i < wia; i++) mulOn(am, o2s(GetU(w, i)));
@@ -765,7 +765,7 @@ B fexists_c1(B d, B x) {
 }
 
 B fName_c1(B t, B x) {
-  if (!isArr(x) || rnk(x)!=1) thrM("•file.Name: Argument must be a character vector");
+  if (!isArr(x) || RNK(x)!=1) thrM("•file.Name: Argument must be a character vector");
   return path_name(x);
 }
 
@@ -862,14 +862,14 @@ B sh_c2(B t, B w, B x) {
   u64 iLen = q_N(inObj)? 0 : utf8lenB(inObj);
   
   // allocate args
-  if (isAtm(x) || rnk(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
+  if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
   usz xia = IA(x);
   if (xia==0) thrM("•SH: 𝕩 must have at least one item");
   TALLOC(char*, argv, xia+1);
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || rnk(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
     u64 len = utf8lenB(c);
     TALLOC(char, cstr, len+1);
     toUTF8(c, cstr);
@@ -1046,7 +1046,7 @@ static CastType getCastType(B e, B v) {
     s = o2s(e);
     c = q_N(v) ? 0 : isCharType(v(v)->type);
   } else {
-    if (!isArr(e) || rnk(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
+    if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e)
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
@@ -1092,7 +1092,7 @@ static u8 typeOfCast(CastType t) {
 }
 B bitcast_impl(B el0, B el1, B x) {
   ur xr;
-  if (!isArr(x) || (xr=rnk(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
+  if (!isArr(x) || (xr=RNK(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   
   CastType xt = getCastType(el0, x);
   CastType zt = getCastType(el1, bi_N);
@@ -1131,13 +1131,13 @@ B bitcast_impl(B el0, B el1, B x) {
 }
 
 B bitcast_c1(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || rnk(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,0), GetU(f,1), x);
 }
 
 B bitcast_im(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || rnk(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,1), GetU(f,0), x);
 }

@@ -67,7 +67,7 @@ void mut_to(Mut* m, u8 n);
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   Arr* a = m->val;
   a->sh = &a->ia;
-  sprnk(a, 1);
+  SPRNK(a, 1);
   return taga(a);
 }
 static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX);

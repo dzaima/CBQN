@@ -13,7 +13,7 @@
 extern B rt_select;
 B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   if (xr==0) thrM("⊏: Argument cannot be rank 0");
   if (SH(x)[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
   usz ia = shProd(SH(x), 1, xr);
@@ -25,7 +25,7 @@ B select_c1(B t, B x) {
 }
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
-  ur xr = rnk(x);
+  ur xr = RNK(x);
   if (isAtm(w)) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz csz = arr_csz(x);
@@ -45,7 +45,7 @@ B select_c2(B t, B w, B x) {
   if (xr==1) {
     if (wia==0) {
       decG(x);
-      if (rnk(w)==1) {
+      if (RNK(w)==1) {
         if (isNum(xf)) { r = emptyIVec(); goto ret; }
         if (isC32(xf)) { r = emptyCVec(); goto ret; }
       }
@@ -126,7 +126,7 @@ B select_c2(B t, B w, B x) {
   } else {
     SLOW2("𝕨⊏𝕩", w, x);
     SGetU(w)
-    ur wr = rnk(w);
+    ur wr = RNK(w);
     i32 rr = wr+xr-1;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
@@ -163,7 +163,7 @@ B select_c2(B t, B w, B x) {
 
 
 B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || rnk(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
+  if (isAtm(x) || RNK(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
   usz xia = IA(x);
   usz wia = IA(w);
   SGetU(w)

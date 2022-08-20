@@ -6,7 +6,7 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
   usz xia = IA(x);
   if (xia==0) return ~secret[3]; // otherwise squeeze will care about fills
   x = any_squeeze(incG(x));
-  u8 xr = rnk(x);
+  u8 xr = RNK(x);
   u8 xe = TI(x,elType);
   u64 shHash;
   if (xr<=1) shHash = wyhash64(xia, xe);

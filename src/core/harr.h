@@ -46,7 +46,7 @@ static HArr_p m_harr_impl(usz ia) {
 static B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   p.c->sh = &p.c->ia;
-  srnk(p.b, 1);
+  SRNK(p.b, 1);
   gsPop();
   return p.b;
 }

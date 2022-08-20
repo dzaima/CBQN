@@ -19,7 +19,7 @@
     if (we==el_B) goto end;                        \
     if (isArr(x)) { u8 xe = TI(x,elType);          \
       if (xe==el_B) goto end;                      \
-      if (rnk(w)==rnk(x)) { if (!eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+      if (RNK(w)==RNK(x)) { if (!eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         if (we!=xe) { B tw=w,tx=x;                 \
           we = aMakeEq(&tw, &tx, we, xe);          \
           if (we==el_MAX) goto end;                \
