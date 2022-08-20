@@ -45,18 +45,20 @@ B select_c2(B t, B w, B x) {
   if (xr==1) {
     if (wia==0) {
       decG(x);
-      if (isVal(xf)) {
-        Arr* ra = m_fillarrp(0);
-        arr_shCopy(ra, w);
-        fillarr_setFill(ra, xf);
-        r = taga(ra);
-      } else if (rnk(w)==1) {
-        r = isNum(xf)? emptyIVec() : emptyCVec();
-      } else {
-        Arr* ra = m_arr(sizeof(TyArr), isNum(xf)? t_i8arr : t_c8arr, 0);
-        arr_shCopy(ra, w);
-        r = taga(ra);
+      if (rnk(w)==1) {
+        if (isNum(xf)) { r = emptyIVec(); goto ret; }
+        if (isC32(xf)) { r = emptyCVec(); goto ret; }
       }
+      Arr* ra;
+      if (isNum(xf) || isC32(xf)) {
+        ra = m_arr(sizeof(TyArr), isNum(xf)? t_i8arr : t_c8arr, 0);
+      } else {
+        ra = m_fillarrp(0);
+        fillarr_setFill(ra, xf);
+      }
+      arr_shCopy(ra, w);
+      r = taga(ra);
+      ret:
       decG(w);
       return r;
     }
