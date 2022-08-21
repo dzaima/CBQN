@@ -103,7 +103,7 @@ B comp_currArgs;
 B comp_currSrc;
 B comp_currRe;
 
-B rt_undo, rt_select, rt_slash, rt_join, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
+B rt_undo, rt_select, rt_slash, rt_ud, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
@@ -386,7 +386,6 @@ void load_init() { // very last init function
     rt_undo    = Get(rtObjRaw, n_undo    ); gc_add(rt_undo);
     rt_select  = Get(rtObjRaw, n_select  ); gc_add(rt_select);
     rt_slash   = Get(rtObjRaw, n_slash   ); gc_add(rt_slash);
-    rt_join    = Get(rtObjRaw, n_join    ); gc_add(rt_join);
     rt_ud      = Get(rtObjRaw, n_ud      ); gc_add(rt_ud);
     rt_pick    = Get(rtObjRaw, n_pick    ); gc_add(rt_pick);
     rt_take    = Get(rtObjRaw, n_take    ); gc_add(rt_take);
