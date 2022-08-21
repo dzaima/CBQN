@@ -161,7 +161,17 @@ B withFill(B x, B fill) { // consumes both
   return taga(r);
 }
 
-B m_atomUnit(B x) {
+
+NOINLINE B m_unit(B x) {
+  B xf = asFill(inc(x));
+  if (noFill(xf)) return m_hunit(x);
+  FillArr* r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr, 1);
+  arr_shAlloc((Arr*)r, 0);
+  r->fill = xf;
+  r->a[0] = x;
+  return taga(r);
+}
+NOINLINE B m_atomUnit(B x) {
   u64 data; assert(sizeof(f64)<=8);
   u8 t;
   if (isNum(x)) {

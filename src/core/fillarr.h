@@ -73,21 +73,7 @@ static B m_emptyFVec(B f) { // consumes f
   return taga(r);
 }
 
-static B m_unit(B x) { // consumes
-  B xf = asFill(inc(x));
-  if (noFill(xf)) {
-    HArr_p r = m_harrUp(1);
-    arr_shAlloc((Arr*)r.c, 0);
-    r.a[0] = x;
-    return r.b;
-  }
-  FillArr* r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr, 1);
-  arr_shAlloc((Arr*)r, 0);
-  r->fill = xf;
-  r->a[0] = x;
-  return taga(r);
-}
-
+B m_unit(B x); // consumes
 B m_atomUnit(B x); // consumes
 
 static B fill_or(B wf, B xf) { // consumes
