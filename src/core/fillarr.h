@@ -88,29 +88,7 @@ static B m_unit(B x) { // consumes
   return taga(r);
 }
 
-static B m_atomUnit(B x) { // consumes
-  if (isNum(x)) {
-    Arr* r;
-    i32 xi = (i32)x.f;
-    if (RARE(xi!=x.f))    { f64* rp; r = m_f64arrp(&rp, 1); rp[0] = x.f; }
-    else if (q_ibit(xi))  { u64* rp; r = m_bitarrp(&rp, 1); rp[0] = bitx(x); }
-    else if (xi==(i8 )xi) { i8*  rp; r = m_i8arrp (&rp, 1); rp[0] = xi; }
-    else if (xi==(i16)xi) { i16* rp; r = m_i16arrp(&rp, 1); rp[0] = xi; }
-    else                  { i32* rp; r = m_i32arrp(&rp, 1); rp[0] = xi; }
-    arr_shAlloc(r, 0);
-    return taga(r);
-  }
-  if (isC32(x)) {
-    Arr* r;
-    u32 xi = o2cu(x);
-    if      (xi==(i8 )xi) { u8*  rp; r = m_c8arrp (&rp, 1); rp[0] = xi; }
-    else if (xi==(i16)xi) { u16* rp; r = m_c16arrp(&rp, 1); rp[0] = xi; }
-    else                  { u32* rp; r = m_c32arrp(&rp, 1); rp[0] = xi; }
-    arr_shAlloc(r,0);
-    return taga(r);
-  }
-  return m_unit(x);
-}
+B m_atomUnit(B x); // consumes
 
 static B fill_or(B wf, B xf) { // consumes
   if (fillEqual(wf, xf)) {
