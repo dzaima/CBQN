@@ -72,6 +72,11 @@ f ↩ "lib.so" •FFI ⟨"u64:i8","pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Sho
 f ↩ "lib.so" •FFI ⟨"u64:i8","pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Show @+3 F "000000001234560011122100abacabad"-@
 f ↩ "lib.so" •FFI ⟨"u64",   "pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Show   1 F "000000001234560011122100"-'0'
 
+Section "# self-ffi"
+•term.Flush@
+f ↩ @ •FFI ⟨"i32", "putchar", ">i32"⟩ ⋄ F¨ 10∾˜"text"-@
+•term.Flush@
+f ↩ @ •FFI ⟨"a", "bqn_makeChar", ">u64"⟩ ⋄ •Show F 120169
 
 # erroring:
 

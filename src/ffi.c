@@ -702,11 +702,14 @@ B ffiload_c2(B t, B w, B x) {
   #endif
   if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated variables", mutCount);
   
-  w = path_rel(nfn_objU(t), w);
-  char* ws = toCStr(w);
+  char* ws = NULL;
+  if (w.u != m_c32(0).u) {
+    w = path_rel(nfn_objU(t), w);
+    ws = toCStr(w);
+  }
   void* dl = dlopen(ws, RTLD_NOW);
   
-  freeCStr(ws);
+  if (ws) freeCStr(ws);
   dec(w);
   if (dl==NULL) thrF("Failed to load: %S", dlerror());
   
