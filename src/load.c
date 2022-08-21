@@ -387,7 +387,6 @@ void load_init() { // very last init function
     rt_select  = Get(rtObjRaw, n_select  ); gc_add(rt_select);
     rt_slash   = Get(rtObjRaw, n_slash   ); gc_add(rt_slash);
     rt_ud      = Get(rtObjRaw, n_ud      ); gc_add(rt_ud);
-    rt_pick    = Get(rtObjRaw, n_pick    ); gc_add(rt_pick);
     rt_take    = Get(rtObjRaw, n_take    ); gc_add(rt_take);
     rt_drop    = Get(rtObjRaw, n_drop    ); gc_add(rt_drop);
     rt_group   = Get(rtObjRaw, n_group   ); gc_add(rt_group);

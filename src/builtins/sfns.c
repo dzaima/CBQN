@@ -240,7 +240,6 @@ B shape_c2(B t, B w, B x) {
   return taga(r);
 }
 
-extern B rt_pick;
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (RARE(IA(x)==0)) {
@@ -307,9 +306,8 @@ static B recPick(B w, B x) { // doesn't consume
 
 B pick_c2(B t, B w, B x) {
   if (RARE(isAtm(x))) {
-    if (isAtm(w) || RNK(w)!=1 || IA(w)!=0) return c2(rt_pick, w, x); // ugh this is such a lame case that'd need a whole another recursive fn to implement
-    dec(w);
-    return x;
+    if (isArr(w) && RNK(w)==1 && IA(w)==0) { dec(w); return x; }
+    x = m_atomUnit(x);
   }
   if (isNum(w)) {
     if (RNK(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
