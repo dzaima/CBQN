@@ -31,10 +31,10 @@ C16Arr* cpyC16Arr(B x); // consumes
 C32Arr* cpyC32Arr(B x); // consumes
 
 // all consume x
-static C8Arr*  toC8Arr (B x) { return v(x)->type==t_c8arr ? c(C8Arr, x) : cpyC8Arr (x); }
-static C16Arr* toC16Arr(B x) { return v(x)->type==t_c16arr? c(C16Arr,x) : cpyC16Arr(x); }
-static C32Arr* toC32Arr(B x) { return v(x)->type==t_c32arr? c(C32Arr,x) : cpyC32Arr(x); }
+static C8Arr*  toC8Arr (B x) { return TY(x)==t_c8arr ? c(C8Arr, x) : cpyC8Arr (x); }
+static C16Arr* toC16Arr(B x) { return TY(x)==t_c16arr? c(C16Arr,x) : cpyC16Arr(x); }
+static C32Arr* toC32Arr(B x) { return TY(x)==t_c32arr? c(C32Arr,x) : cpyC32Arr(x); }
 
-static B toC8Any (B x) { u8 t=v(x)->type; return t==t_c8arr  || t==t_c8slice ? x : taga(cpyC8Arr (x)); }
-static B toC16Any(B x) { u8 t=v(x)->type; return t==t_c16arr || t==t_c16slice? x : taga(cpyC16Arr(x)); }
-static B toC32Any(B x) { u8 t=v(x)->type; return t==t_c32arr || t==t_c32slice? x : taga(cpyC32Arr(x)); }
+static B toC8Any (B x) { u8 t=TY(x); return t==t_c8arr  || t==t_c8slice ? x : taga(cpyC8Arr (x)); }
+static B toC16Any(B x) { u8 t=TY(x); return t==t_c16arr || t==t_c16slice? x : taga(cpyC16Arr(x)); }
+static B toC32Any(B x) { u8 t=TY(x); return t==t_c32arr || t==t_c32slice? x : taga(cpyC32Arr(x)); }

@@ -40,10 +40,10 @@ static Arr* m_fillslice(Arr* p, B* ptr, usz ia, B fill) {
 static Arr* fillarr_slice  (B x, usz s, usz ia) { FillArr*   a=c(FillArr  ,x); return m_fillslice((Arr*)a,       a->a+s, ia, inc(a->fill)); }
 static Arr* fillslice_slice(B x, usz s, usz ia) { FillSlice* a=c(FillSlice,x); Arr* r=m_fillslice(ptr_inc(a->p), a->a+s, ia, inc(a->fill)); decG(x); return r; }
 
-static B fillarr_get   (Arr* x, usz n) { assert(x->type==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
-static B fillslice_get (Arr* x, usz n) { assert(x->type==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
-static B fillarr_getU  (Arr* x, usz n) { assert(x->type==t_fillarr  ); return     ((FillArr*  )x)->a[n] ; }
-static B fillslice_getU(Arr* x, usz n) { assert(x->type==t_fillslice); return     ((FillSlice*)x)->a[n] ; }
+static B fillarr_get   (Arr* x, usz n) { assert(PTY(x)==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
+static B fillslice_get (Arr* x, usz n) { assert(PTY(x)==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
+static B fillarr_getU  (Arr* x, usz n) { assert(PTY(x)==t_fillarr  ); return     ((FillArr*  )x)->a[n] ; }
+static B fillslice_getU(Arr* x, usz n) { assert(PTY(x)==t_fillslice); return     ((FillSlice*)x)->a[n] ; }
 DEF_FREE(fillarr) {
   decSh(x);
   B* p = ((FillArr*)x)->a;
@@ -51,7 +51,7 @@ DEF_FREE(fillarr) {
   usz ia = PIA((Arr*)x);
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
-static void fillarr_visit(Value* x) { assert(x->type == t_fillarr);
+static void fillarr_visit(Value* x) { assert(PTY(x) == t_fillarr);
   usz ia = PIA((Arr*)x); B* p = ((FillArr*)x)->a;
   mm_visit(((FillArr*)x)->fill);
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
@@ -114,7 +114,7 @@ B withFill(B x, B fill) { // consumes both
   #ifdef DEBUG
   validateFill(fill);
   #endif
-  u8 xt = v(x)->type;
+  u8 xt = TY(x);
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
     case t_f64arr: case t_f64slice: case t_bitarr:
@@ -145,7 +145,7 @@ B withFill(B x, B fill) { // consumes both
   B* xbp = arr_bptr(x);
   if (xbp!=NULL) {
     Arr* xa = a(x);
-    if (IS_SLICE(xa->type)) xa = ptr_inc(((Slice*)xa)->p);
+    if (IS_SLICE(PTY(xa))) xa = ptr_inc(((Slice*)xa)->p);
     else ptr_inc(xa);
     r = m_fillslice(xa, xbp, ia, fill);
   } else {

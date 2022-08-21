@@ -64,10 +64,10 @@ static B md2D_uc1(B t, B o, B x) {
 
 static B toConstant(B x) { // doesn't consume x
   if (!isCallable(x)) return inc(x);
-  if (v(x)->type == t_md1D) {
+  if (TY(x) == t_md1D) {
     Md1D* d = c(Md1D,x);
     Md1* m1 = d->m1;
-    if (m1->type==t_md1BI && m1->flags==n_const) return inc(d->f);
+    if (PTY(m1)==t_md1BI && m1->flags==n_const) return inc(d->f);
   }
   return bi_N;
 }

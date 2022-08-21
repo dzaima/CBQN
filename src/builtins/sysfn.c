@@ -71,7 +71,7 @@ B glyph_c1(B t, B x) {
     decG(x);
     return r;
   }
-  u8 ty = v(x)->type;
+  u8 ty = TY(x);
   if (ty==t_funBI) { B r = utf8Decode0(pfn_repr(c(Fun,x)->extra)); decG(x); return r; }
   if (ty==t_md1BI) { B r = utf8Decode0(pm1_repr(c(Md1,x)->extra)); decG(x); return r; }
   if (ty==t_md2BI) { B r = utf8Decode0(pm2_repr(c(Md2,x)->extra)); decG(x); return r; }
@@ -1044,7 +1044,7 @@ static CastType getCastType(B e, B v) {
   usz s; bool c;
   if (isNum(e)) {
     s = o2s(e);
-    c = q_N(v) ? 0 : isCharType(v(v)->type);
+    c = q_N(v) ? 0 : isCharType(TY(v));
   } else {
     if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e)
@@ -1103,7 +1103,7 @@ B bitcast_impl(B el0, B el1, B x) {
   // Convert to input type
   B r = convert(xt, x);
   u8 rt = typeOfCast(zt);
-  if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(v(r)->type))) {
+  if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(TY(r)))) {
     r = taga(copy(xt, r));
   } else if (v(r)->refc!=1) {
     B pr = r;

@@ -166,7 +166,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
   usz ria = wia+xia;
   if (reusable(w)) {
     u64 wsz = mm_size(v(w));
-    u8 wt = v(w)->type;
+    u8 wt = TY(w);
     // TODO f64∾i32, i32∾i8, c32∾c8 etc
     switch (wt) {
       case t_bitarr: if (BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) { bit_cpy(bitarr_ptr(w),wia,bitarr_ptr(x),0,xia);  goto rw; } break;
@@ -220,7 +220,7 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
   usz ria = wia+1;
   if (reusable(w)) {
     u64 wsz = mm_size(v(w));
-    u8 wt = v(w)->type;
+    u8 wt = TY(w);
     switch (wt) {
       case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { bitp_set(bitarr_ptr(w),wia,o2bu(x)); goto ok; } break;
       case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && q_i8 (x)) { i8arr_ptr (w)[wia]=o2iu(x); goto ok; } break;

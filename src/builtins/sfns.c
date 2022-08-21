@@ -1502,12 +1502,12 @@ B pick_ucw(B t, B o, B w, B x) {
     else if (TI(x,elType)==el_i16) { i16* xp = i16any_ptr(x); xp[wi] = o2iu(rep); return x; }
     else if (TI(x,elType)==el_i32) { i32* xp = i32any_ptr(x); xp[wi] = o2iu(rep); return x; }
     else if (TI(x,elType)==el_f64) { f64* xp = f64any_ptr(x); xp[wi] = o2fu(rep); return x; }
-    else if (v(x)->type==t_harr) {
+    else if (TY(x)==t_harr) {
       B* xp = harr_ptr(x);
       dec(xp[wi]);
       xp[wi] = rep;
       return x;
-    } else if (v(x)->type==t_fillarr) {
+    } else if (TY(x)==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
       dec(xp[wi]);
       xp[wi] = rep;
@@ -1536,7 +1536,7 @@ B slash_ucw(B t, B o, B w, B x) {
   SGet(x)
   SGet(rep)
   usz repI = 0;
-  if (a(w)->type == t_bitarr) {
+  if (TY(w) == t_bitarr) {
     u64* d = bitarr_ptr(w);
     if (TI(x,elType)<=el_i32 && TI(rep,elType)<=el_i32) {
       if (r->fns->elType!=el_i32) mut_to(r, el_i32);

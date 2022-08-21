@@ -92,7 +92,7 @@ B select_c2(B t, B w, B x) {
         case el_B:; \
       }              \
       M_HARR(r, wia); \
-      if (v(x)->type==t_harr || v(x)->type==t_hslice) { \
+      if (TY(x)==t_harr || TY(x)==t_hslice) {     \
         B* xp = hany_ptr(x);                      \
         for (usz i=0; i < wia; i++) HARR_ADD(r, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))])); \
         decG(x); return HARR_FCD(r, w);           \
@@ -250,7 +250,7 @@ B select_ucw(B t, B o, B w, B x) {
       } else UD;
     }
     if (reusable(x) && xe==re) {
-      if (v(x)->type==t_harr) {
+      if (TY(x)==t_harr) {
         B* xp = harr_ptr(REUSE(x));
         SGet(rep)
         for (usz i = 0; i < wia; i++) {

@@ -18,8 +18,8 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
     return m_unit(r);
   }
   if (rm && !eqShPart(SH(w), SH(x), rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-  bool rw = rM==wr && ((v(w)->type==t_harr) & reusable(w)); // v(…) is safe as rank>0
-  bool rx = rM==xr && ((v(x)->type==t_harr) & reusable(x));
+  bool rw = rM==wr && ((TY(w)==t_harr) & reusable(w)); // v(…) is safe as rank>0
+  bool rx = rM==xr && ((TY(x)==t_harr) & reusable(x));
   if (rw|rx && (wr==xr | rm==0)) {
     HArr_p r = harr_parts(REUSE(rw? w : x));
     usz ria = r.c->ia;
@@ -60,7 +60,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
   HArr_p rH;
   if (TI(x,canStore)(cr)) {
     bool reuse = reusable(x);
-    if (v(x)->type==t_harr) {
+    if (TY(x)==t_harr) {
       B* xp = harr_ptr(x);
       if (reuse) {
         dec(xp[i]); xp[i++] = cr;
@@ -75,7 +75,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
     } else if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
       B r; i32* rp;
-      if (reuse && v(x)->type==t_i32arr) { r=incG(REUSE(x)); rp = xp; }
+      if (reuse && TY(x)==t_i32arr) { r=incG(REUSE(x)); rp = xp; }
       else r = m_i32arrc(&rp, x);
       rp[i++] = o2iu(cr);
       for (; i < ia; i++) {
@@ -93,7 +93,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
     } else if (TI(x,elType)==el_f64) {
       f64* xp = f64any_ptr(x);
       B r; f64* rp;
-      if (reuse && v(x)->type==t_f64arr) { r=incG(REUSE(x)); rp = xp; }
+      if (reuse && TY(x)==t_f64arr) { r=incG(REUSE(x)); rp = xp; }
       else       r = m_f64arrc(&rp, x);
       rp[i++] = o2fu(cr);
       for (; i < ia; i++) {
@@ -108,7 +108,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
       }
       decG(x);
       return num_squeeze(r);
-    } else if (v(x)->type==t_fillarr) {
+    } else if (TY(x)==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
       if (reuse) {
         dec(c(FillArr,x)->fill);

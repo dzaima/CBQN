@@ -137,8 +137,8 @@ void fprint(FILE* f, B x) {
     else fprintf(f, "\\x0%x", (u32)x.u);
   } else if (isVal(x)) {
     #ifdef DEBUG
-    if (isVal(x) && (v(x)->type==t_freed || v(x)->type==t_empty)) {
-      u8 t = v(x)->type;
+    if (isVal(x) && (TY(x)==t_freed || TY(x)==t_empty)) {
+      u8 t = TY(x);
       v(x)->type = v(x)->flags;
       fprintf(f, t==t_freed?"FREED:":"EMPTY:");
       TI(x,print)(f, x);
@@ -399,7 +399,7 @@ NOINLINE i32 compareF(B w, B x) {
 #undef CMP
 
 NOINLINE bool atomEqualF(B w, B x) {
-  if (v(w)->type!=v(x)->type) return false;
+  if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
@@ -509,7 +509,7 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   #endif
   if(isF64(w)|isF64(x)) return false;
   if (!isVal(w) | !isVal(x)) return false;
-  if (v(w)->type!=v(x)->type) return false;
+  if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
   B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);

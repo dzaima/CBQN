@@ -118,9 +118,9 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 
 
 #if SINGELI
-  #define DEF_COPY(TY, BODY) DEF0(void, copy, TY, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##TY);, ne==el_##TY, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
+  #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
-  #define DEF_COPY(TY, BODY)  DEF(void, copy, TY, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##TY);, ne==el_##TY, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=v(x)->type; (void)xt; BODY }
+  #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
 #endif
 
 
@@ -177,7 +177,7 @@ NOINLINE void m_copyG_B_generic(void* a, B* mpo, B x, usz xs, usz l) {
 }
 DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { 
   B* mpo = ms+(B*)a;
-  switch(v(x)->type) {
+  switch(TY(x)) {
     case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(bitp_get(xp, xs+i)); return; }
     case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
     case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
@@ -269,7 +269,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     if (l==0) return; \
     u8* xp = tyany_ptr(x); \
     T* rp = ms + (T*)a; \
-    u8 xt = v(x)->type; \
+    u8 xt = TY(x);      \
     if (xt==t_bitarr) { \
       for (usz i = 0; i < l; i++) rp[i] = bitp_get((u64*)xp, xs+i); \
     } else { \

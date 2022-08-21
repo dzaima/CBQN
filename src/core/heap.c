@@ -46,9 +46,9 @@ void heapVerify() {
 static u64 heap_PICounts[t_COUNT];
 static u64 heap_PISizes[t_COUNT];
 
-void heap_PIFn(Value* v) {
-  heap_PICounts[v->type]++;
-  heap_PISizes[v->type]+= mm_size(v);
+NOINLINE void heap_PIFn(Value* v) {
+  heap_PICounts[PTY(v)]++;
+  heap_PISizes[PTY(v)]+= mm_size(v);
 }
 
 static u64 heap_PIFreed[128];

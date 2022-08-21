@@ -28,7 +28,7 @@ static Arr* TP(m_,arrp) (TEl** p, usz ia) {
 static TEl* TP(,arrv_ptr) (TyArr* x) { return (TEl*)x->a; }
 
 static TEl* TP(,arr_ptr) (B x) { VTY(x, T_ARR); return (TEl*)c(TyArr,x)->a; }
-static TEl* TP(,any_ptr) (B x) { assert(isArr(x)); u8 t=v(x)->type; if(t==T_ARR) return (TEl*)c(TyArr,x)->a; assert(t==T_SLICE); return (TEl*)c(TySlice,x)->a; }
+static TEl* TP(,any_ptr) (B x) { assert(isArr(x)); u8 t=TY(x); if(t==T_ARR) return (TEl*)c(TyArr,x)->a; assert(t==T_SLICE); return (TEl*)c(TySlice,x)->a; }
 
 #undef TEl
 #undef TU

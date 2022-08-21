@@ -60,7 +60,7 @@ static Arr* bitarr_slice(B x, usz s, usz ia) {
   return r;
 }
 
-static B bitarr_get(Arr* x, usz n) { assert(x->type==t_bitarr); return bitp_get((u64*)((BitArr*)x)->a, n)? m_f64(1) : m_f64(0); }
+static B bitarr_get(Arr* x, usz n) { assert(PTY(x)==t_bitarr); return bitp_get((u64*)((BitArr*)x)->a, n)? m_f64(1) : m_f64(0); }
 static bool bitarr_canStore(B x) { return q_bit(x); }
 
 static void bitarr_init() {

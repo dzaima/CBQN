@@ -102,7 +102,7 @@ static NOINLINE void asm_free() {
   
   assert(asm_depth>0);
   B v = gsPop();
-  assert(v(v)->type==t_customObj);
+  assert(TY(v)==t_customObj);
   decG(v);
 }
 

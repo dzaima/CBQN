@@ -33,7 +33,7 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
       case el_i8: case el_i16: case el_i32: case el_f64: case el_bit: return m_i32(0);
       case el_c8: case el_c16: case el_c32: return m_c32(' ');
       case el_B:;
-        u8 t = v(x)->type;
+        u8 t = TY(x);
         if (t==t_fillarr  ) return inc(c(FillArr,  x)->fill);
         if (t==t_fillslice) return inc(c(FillSlice,x)->fill);
         return bi_noFill;
@@ -64,8 +64,8 @@ static Arr* m_fillarrp(usz ia) {
   CHECK_IA(ia, sizeof(B));
   return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
 }
-static void fillarr_setFill(Arr* x, B fill) { assert(x->type==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
-static B* fillarr_ptr(Arr* x) { assert(x->type==t_fillarr); return ((FillArr*)x)->a; }
+static void fillarr_setFill(Arr* x, B fill) { assert(PTY(x)==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
+static B* fillarr_ptr(Arr* x) { assert(PTY(x)==t_fillarr); return ((FillArr*)x)->a; }
 
 static B m_emptyFVec(B f) { // consumes f
   Arr* r = arr_shVec(m_fillarrp(0));

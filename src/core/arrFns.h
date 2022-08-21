@@ -1,23 +1,23 @@
 #pragma once
 
 static B* arr_bptr(B x) { assert(isArr(x));
-  if (v(x)->type==t_harr) return harr_ptr(x);
-  if (v(x)->type==t_fillarr) return fillarr_ptr(a(x));
-  if (v(x)->type==t_hslice) return c(HSlice,x)->a;
-  if (v(x)->type==t_fillslice) return c(FillSlice,x)->a;
+  if (TY(x)==t_harr) return harr_ptr(x);
+  if (TY(x)==t_fillarr) return fillarr_ptr(a(x));
+  if (TY(x)==t_hslice) return c(HSlice,x)->a;
+  if (TY(x)==t_fillslice) return c(FillSlice,x)->a;
   return NULL;
 }
 static B* arrV_bptr(Arr* x) {
-  if (x->type==t_harr) return ((HArr*)x)->a;
-  if (x->type==t_fillarr) return fillarr_ptr(x);
-  if (x->type==t_hslice) return ((HSlice*)x)->a;
-  if (x->type==t_fillslice) return ((FillSlice*)x)->a;
+  if (PTY(x)==t_harr) return ((HArr*)x)->a;
+  if (PTY(x)==t_fillarr) return fillarr_ptr(x);
+  if (PTY(x)==t_hslice) return ((HSlice*)x)->a;
+  if (PTY(x)==t_fillslice) return ((FillSlice*)x)->a;
   return NULL;
 }
-static void* tyarr_ptr(B x) { assert(IS_ARR(v(x)->type)); return c(TyArr,x)->a; }
-static void* tyslice_ptr(B x) { assert(IS_SLICE(v(x)->type)); return c(TySlice,x)->a; }
-static void* tyany_ptr(B x) { assert(IS_ARR(v(x)->type) || IS_SLICE(v(x)->type));
-  u8 t = v(x)->type;
+static void* tyarr_ptr(B x) { assert(IS_ARR(TY(x))); return c(TyArr,x)->a; }
+static void* tyslice_ptr(B x) { assert(IS_SLICE(TY(x))); return c(TySlice,x)->a; }
+static void* tyany_ptr(B x) { assert(IS_ARR(TY(x)) || IS_SLICE(TY(x)));
+  u8 t = TY(x);
   return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
 }
 

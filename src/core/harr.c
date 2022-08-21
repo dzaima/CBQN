@@ -65,7 +65,7 @@ NOINLINE B m_caB(usz ia, B* a) {
 }
 
 NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
-  assert(v(x)->type==t_harr);
+  assert(TY(x)==t_harr);
   B* p = harr_ptr(x);
   for (usz i = 0; i < am; i++) dec(p[i]);
   if (RNK(x)>1) ptr_dec(shObj(x));
@@ -83,10 +83,10 @@ static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
 static Arr* harr_slice  (B x, usz s, usz ia) { return m_hslice(a(x), c(HArr,x)->a+s, ia); }
 static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); decG(x); return r; }
 
-static B harr_get   (Arr* x, usz n) { assert(x->type==t_harr  ); return inc(((HArr*  )x)->a[n]); }
-static B hslice_get (Arr* x, usz n) { assert(x->type==t_hslice); return inc(((HSlice*)x)->a[n]); }
-static B harr_getU  (Arr* x, usz n) { assert(x->type==t_harr  ); return     ((HArr*  )x)->a[n] ; }
-static B hslice_getU(Arr* x, usz n) { assert(x->type==t_hslice); return     ((HSlice*)x)->a[n] ; }
+static B harr_get   (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return inc(((HArr*  )x)->a[n]); }
+static B hslice_get (Arr* x, usz n) { assert(PTY(x)==t_hslice); return inc(((HSlice*)x)->a[n]); }
+static B harr_getU  (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return     ((HArr*  )x)->a[n] ; }
+static B hslice_getU(Arr* x, usz n) { assert(PTY(x)==t_hslice); return     ((HSlice*)x)->a[n] ; }
 DEF_FREE(harr) {
   decSh(x);
   B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
@@ -101,17 +101,17 @@ static bool harr_canStore(B x) { return true; }
 
 
 
-DEF_FREE(harrP) { assert(x->type==t_harrPartial|x->type==t_freed);
+DEF_FREE(harrP) { assert(PTY(x)==t_harrPartial|PTY(x)==t_freed);
   B* p   = ((HArr*)x)->a;
   usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) dec(p[i]);
 }
-void harr_abandon_impl(HArr* p) { assert(p->type == t_harrPartial);
+void harr_abandon_impl(HArr* p) { assert(PTY(p) == t_harrPartial);
   gsPop();
   harrP_freeO((Value*) p);
   mm_free((Value*) p);
 }
-static void harrP_visit(Value* x) { assert(x->type == t_harrPartial);
+static void harrP_visit(Value* x) { assert(PTY(x) == t_harrPartial);
   B* p   = ((HArr*)x)->a;
   usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) mm_visit(p[i]);

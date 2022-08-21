@@ -302,19 +302,19 @@ static OptRes opt(u32* bc0) {
         break;
       }
       case FN1C: case FN1O: { S(f,0)
-        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        if (!isFun(f.v) || TY(f.v)!=t_funBI) goto defIns;
         RM(f.p); cact = 3;
         TSADD(data, (u64) c(Fun, f.v)->c1);
         goto defIns;
       }
       case FN2C: { S(f,1)
-        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        if (!isFun(f.v) || TY(f.v)!=t_funBI) goto defIns;
         cact = 3; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c2);
         goto defIns;
       }
       case FN2O: { S(f,1)
-        if (!isFun(f.v) || v(f.v)->type!=t_funBI) goto defIns;
+        if (!isFun(f.v) || TY(f.v)!=t_funBI) goto defIns;
         cact = 4; RM(f.p);
         TSADD(data, (u64) c(Fun, f.v)->c1);
         TSADD(data, (u64) c(Fun, f.v)->c2);
