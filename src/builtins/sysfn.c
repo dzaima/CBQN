@@ -768,6 +768,10 @@ B fName_c1(B t, B x) {
   if (!isArr(x) || RNK(x)!=1) thrM("•file.Name: Argument must be a character vector");
   return path_name(x);
 }
+B fParent_c1(B t, B x) {
+  if (!isArr(x) || RNK(x)!=1) thrM("•file.Parent: Argument must be a character vector");
+  return path_parent(x);
+}
 
 B mapBytes_c1(B d, B x) {
   return mmap_file(path_rel(nfn_objU(d), x));
@@ -1169,7 +1173,7 @@ B sys_c1(B t, B x) {
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
-  #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_dir(inc(comp_currPath))); path; })
+  #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_parent(inc(comp_currPath))); path; })
   #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
   for (usz i = 0; i < IA(x); i++) {
     B c = GetU(x,i);
@@ -1182,7 +1186,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName), F(fMapBytes), F(createdir), F(rename), F(remove));
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
         #undef F
       }
       cr = incG(fileNS);
@@ -1263,6 +1267,6 @@ void sysfn_init() {
   ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","mapbytes","createdir","rename","remove");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","parent","mapbytes","createdir","rename","remove");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }

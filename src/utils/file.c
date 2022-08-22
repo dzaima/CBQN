@@ -117,15 +117,16 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   return r;
 }
 
-B path_dir(B path) {
+B path_parent(B path) {
   assert(isArr(path));
   SGetU(path)
   usz pia = IA(path);
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
-  for (i64 i = (i64)pia-1; i >= 0; i--) {
+  for (i64 i = (i64)pia-2; i >= 0; i--) {
     if (o2cu(GetU(path, i))=='/') return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
+  if (o2cu(GetU(path, 0))=='/') return path;
   dec(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = '/';
   return r;
