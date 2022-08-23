@@ -689,7 +689,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   u32* bc = b->bc;
   pushEnv(sc, bc);
   gsReserve(b->maxStack);
-  Scope* pscs[b->maxPSC];
+  Scope* pscs[b->maxPSC]; // -fsanitize=undefined complains when this is 0. ¯\_(ツ)_/¯
   if (b->maxPSC) {
     pscs[0] = sc;
     for (i32 i = 1; i < b->maxPSC; i++) pscs[i] = pscs[i-1]->psc;

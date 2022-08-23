@@ -15,7 +15,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
-| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `MapBytes`, `CreateDir`, `Rename`, `Remove` |
+| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `Parent`, `MapBytes`, `CreateDir`, `Rename`, `Remove` |
 | `•FChars`     | |
 | `•FBytes`     | |
 | `•FLines`     | |
@@ -37,7 +37,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•rand`       | seeds with system time (can be hard-coded by setting the C macro `RANDSEED`), same algorithm as `•MakeRand` |
 | `•bit`        | Fields: `_cast`; casting an sNaN bit pattern to a float is undefined behavior |
 
-# CBQN-specific system functions and extensions
+# CBQN-specific system values and extensions
 
 ## `•term`
 
