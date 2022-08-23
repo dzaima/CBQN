@@ -13,6 +13,10 @@ B path_lines(B path); // consumes
 
 I8Arr* stream_bytes(FILE* f);
 
+typedef struct { char* data; bool alloc; } CharBuf;
+CharBuf get_chars(B x); // convert x to character data; expects x isn't freed before free_chars call. May error.
+void free_chars(CharBuf b); // free the result of the above
+
 B mmap_file(B path); // consumes
 bool dir_create(B path); // doesn't consume
 bool path_rename(B old_path, B new_path); // consumes only old_path

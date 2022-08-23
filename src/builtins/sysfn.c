@@ -858,12 +858,15 @@ B sh_c2(B t, B w, B x) {
   
   // parse options
   B inObj = bi_N;
+  bool raw = false;
   if (!q_N(w)) {
     if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
     inObj = ns_getC(w, "stdin");
     if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
+    B rawObj = ns_getC(w, "raw");
+    if (!q_N(rawObj)) raw = o2b(rawObj);
   }
-  u64 iLen = q_N(inObj)? 0 : utf8lenB(inObj);
+  u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
   
   // allocate args
   if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
@@ -912,8 +915,20 @@ B sh_c2(B t, B w, B x) {
   
   // allocate stdin
   u64 iOff = 0;
-  TALLOC(char, iBuf, iLen);
-  if (iLen>0) toUTF8(inObj, iBuf);
+  char* iBuf;
+  CharBuf iBufRaw;
+  if (iLen>0) {
+    if (raw) {
+      iBufRaw = get_chars(inObj);
+      iBuf = iBufRaw.data;
+    } else {
+      TALLOC(char, iBufT, iLen);
+      toUTF8(inObj, iBufT);
+      iBuf = iBufT;
+    }
+  } else iBuf = NULL;
+  #define FREE_INPUT do { if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); } } while(0)
+  
   bool iDone = false;
   // allocate output buffer
   B s_out = emptyCVec();
@@ -944,7 +959,7 @@ B sh_c2(B t, B w, B x) {
       shDbg("written %zd/"N64u"\n", ww, iLen-iOff);
       if (ww >= 0) {
         iOff+= ww;
-        if (iOff==iLen) { iDone=true; shClose(p_in[1]); TFREE(iBuf); shDbg("writing done\n"); }
+        if (iOff==iLen) { iDone=true; shClose(p_in[1]); FREE_INPUT; shDbg("writing done\n"); }
         any = true;
       }
     }
@@ -960,7 +975,7 @@ B sh_c2(B t, B w, B x) {
   assert(reusable(oBufObj));
   mm_free(v(oBufObj));
   // free our ends of pipes
-  if (!iDone) { shClose(p_in[1]); TFREE(iBuf); shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
+  if (!iDone) { shClose(p_in[1]); FREE_INPUT; shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
   shClose(p_out[0]);
   shClose(p_err[0]);
   
@@ -970,8 +985,15 @@ B sh_c2(B t, B w, B x) {
   dec(w); dec(x);
   B s_outRaw = toC8Any(s_out);
   B s_errRaw = toC8Any(s_err);
-  B s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
-  B s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
+  B s_outObj;
+  B s_errObj;
+  if (raw) {
+    s_outObj = s_outRaw;
+    s_errObj = s_errRaw;
+  } else {
+    s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
+    s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
+  }
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else

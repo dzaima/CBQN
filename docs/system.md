@@ -24,7 +24,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Repr`       | |
 | `•Fmt`        | |
 | `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
-| `•SH`         | Left argument can be `{stdin⇐"input"}` |
+| `•SH`         | Left argument can be a namespace; `stdin⇐"input"` in it passes stdin, `raw⇐1` takes stdin & returns stdout/stderr as raw bytes represented as characters. These extensions may be changed/removed if different interfaces are standardized. |
 | `•Type`       | |
 | `•Glyph`      | |
 | `•Decompose`  | |
@@ -106,6 +106,6 @@ Namespace of various internal functions. May change at any time.
 
 # FFI
 
-Currently, there is no support for structs, nested pointers, or constant-length arrays, aka the only supported types are scalars (e.g. `i8`, `u64`, `*`), pointers to those (e.g. `*i8`, `&u64`), and conversions of either of those (e.g. `u64:i32`, `**:c8`).
+Currently, there is no support for structs, nested pointers, or constant-length arrays, aka the only supported types are scalars (e.g. `i8`, `u64`), pointers to those (e.g. `*i8`, `&u64`), and conversions of either those or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `**:c8`).
 
-Additionally, the `a` type maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
+The `a` type maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).

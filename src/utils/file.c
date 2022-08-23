@@ -165,6 +165,29 @@ B path_abs(B path) {
   #endif
 }
 
+CharBuf get_chars(B x) {
+  char* buf;
+  bool alloc;
+  u64 len = IA(x);
+  u8 el = TI(x,elType);
+  if (el==el_i8 || el==el_c8) {
+    buf = tyany_ptr(x);
+    alloc = false;
+  } else {
+    TALLOC(char, val, len);
+    buf = val;
+    alloc = true;
+    SGetU(x)
+    for (u64 i = 0; i < len; i++) {
+      B c = GetU(x,i);
+      buf[i] = isNum(c)? o2iu(c) : o2c(c);
+    }
+  }
+  return (CharBuf){.data=buf, .alloc=alloc};
+}
+void free_chars(CharBuf b) {
+  if (b.alloc) TFREE(b.data);
+}
 
 void path_wChars(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");
@@ -181,29 +204,14 @@ void path_wChars(B path, B x) { // consumes path
 void file_wBytes(FILE* f, B name, B x) {
   u64 len = IA(x);
   
-  bool newBuf = false;
-  char* buf;
+  CharBuf buf = get_chars(x);
   
-  u8 el = TI(x,elType);
-  if (el==el_i8 || el==el_c8) {
-    buf = tyany_ptr(x);
-  } else {
-    TALLOC(char, val, len);
-    buf = val;
-    newBuf = true;
-    SGetU(x)
-    for (u64 i = 0; i < len; i++) {
-      B c = GetU(x,i);
-      buf[i] = isNum(c)? o2iu(c) : o2c(c);
-    }
-  }
-  
-  if (fwrite(buf, 1, len, f) != len) {
+  if (fwrite(buf.data, 1, len, f) != len) {
     if (q_N(name)) thrM("Error writing to file");
     else thrF("Error writing to file \"%R\"", name);
   }
   
-  if (newBuf) TFREE(buf);
+  free_chars(buf);
 }
 void path_wBytes(B path, B x) { // consumes path
   FILE* f = file_open(path, "write to", "w");

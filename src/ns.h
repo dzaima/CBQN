@@ -18,7 +18,7 @@ B m_ns(Scope* sc, NSDesc* desc); // consumes both
 B ns_getU(B ns, i32 gid); // doesn't consume, doesn't increment result
 B ns_qgetU(B ns, i32 gid); // ns_getU but return bi_N on fail
 B ns_getNU(B ns, B name, bool thrEmpty); // doesn't consume anything, doesn't increment result; returns bi_N if doesn't exist and !thrEmpty
-B ns_getC(B ns, char* name); // get namespace field by C string; returns bi_N if doesn't exist
+B ns_getC(B ns, char* name); // get namespace field by C string; returns bi_N if doesn't exist, otherwise doesn't increment result like ns_getU
 void ns_set(B ns, B name, B val); // consumes val
 
 i32 pos2gid(Body* body, i32 pos); // converts a variable position to a gid; errors on special name variables
