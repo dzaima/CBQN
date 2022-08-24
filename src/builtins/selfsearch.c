@@ -5,13 +5,13 @@
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
+  usz n = *SH(x);
+  if (n==0) { decG(x); return emptyIVec(); }
   if (RNK(x)>1) x = toCells(x);
-  usz xia = IA(x);
-  if (xia==0) { decG(x); return emptyIVec(); }
   u8 xe = TI(x,elType);
 
   #define LOOKUP(T) \
-    usz tn = 1<<T, n = xia;                                            \
+    usz tn = 1<<T;                                                     \
     u##T* xp = (u##T*)i##T##any_ptr(x);                                \
     i8* rp; B r = m_i8arrv(&rp, n);                                    \
     TALLOC(u8, tab, tn);                                               \
@@ -19,13 +19,12 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n;  i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; } \
     decG(x); TFREE(tab);                                               \
     return num_squeeze(r)
-  if (xia>=16 && xe==el_i8) { LOOKUP(8); }
-  if (xia>=256 && xe==el_i16) { LOOKUP(16); }
+  if (n>=16 && xe==el_i8) { LOOKUP(8); }
+  if (n>=256 && xe==el_i16) { LOOKUP(16); }
   #undef LOOKUP
   // Radix-assisted lookup
-  if (xia>=256 && xe==el_i32) {
+  if (n>=256 && xe==el_i32) {
     usz rx = 256, tn = 1<<16; // Radix; table length
-    usz n = xia;
     u32* v0 = (u32*)i32any_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
 
@@ -71,23 +70,23 @@ B memberOf_c1(B t, B x) {
     return num_squeeze(r);
   }
   
-  u64* rp; B r = m_bitarrv(&rp, xia);
+  u64* rp; B r = m_bitarrv(&rp, n);
   H_Sb* set = m_Sb(64);
   SGetU(x)
-  for (usz i = 0; i < xia; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
+  for (usz i = 0; i < n; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
   free_Sb(set); decG(x);
   return r;
 }
 
 B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
+  usz n = *SH(x);
+  if (n==0) { decG(x); return emptyIVec(); }
   if (RNK(x)>1) x = toCells(x);
-  usz xia = IA(x);
-  if (xia==0) { decG(x); return emptyIVec(); }
   u8 xe = TI(x,elType);
 
   #define LOOKUP(T) \
-    usz tn = 1<<T, n = xia;                      \
+    usz tn = 1<<T;                               \
     u##T* xp = (u##T*)i##T##any_ptr(x);          \
     i32* rp; B r = m_i32arrv(&rp, n);            \
     TALLOC(i32, tab, tn);                        \
@@ -95,14 +94,14 @@ B count_c1(B t, B x) {
     for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++; \
     decG(x); TFREE(tab);                         \
     return r
-  if (xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
-  if (xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
+  if (n>=16 && xe==el_i8 && n<=(usz)I32_MAX+1) { LOOKUP(8); }
+  if (n>=256 && xe==el_i16 && n<=(usz)I32_MAX+1) { LOOKUP(16); }
   #undef LOOKUP
 
-  i32* rp; B r = m_i32arrv(&rp, xia);
+  i32* rp; B r = m_i32arrv(&rp, n);
   H_b2i* map = m_b2i(64);
   SGetU(x)
-  for (usz i = 0; i < xia; i++) {
+  for (usz i = 0; i < n; i++) {
     bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
   }
@@ -113,13 +112,13 @@ B count_c1(B t, B x) {
 extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
+  usz n = *SH(x);
+  if (n==0) { decG(x); return emptyIVec(); }
   if (RNK(x)>1) x = toCells(x);
-  usz xia = IA(x);
-  if (xia==0) { decG(x); return emptyIVec(); }
   u8 xe = TI(x,elType);
 
   #define LOOKUP(T) \
-    usz tn = 1<<T, n = xia;                      \
+    usz tn = 1<<T;                               \
     u##T* xp = (u##T*)i##T##any_ptr(x);          \
     i32* rp; B r = m_i32arrv(&rp, n);            \
     TALLOC(i32, tab, tn);                        \
@@ -131,26 +130,26 @@ B indexOf_c1(B t, B x) {
     }                                            \
     decG(x); TFREE(tab);                         \
     return r
-  if (xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
-  if (xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
+  if (n>=16 && xe==el_i8 && n<=(usz)I32_MAX+1) { LOOKUP(8); }
+  if (n>=256 && xe==el_i16 && n<=(usz)I32_MAX+1) { LOOKUP(16); }
   #undef LOOKUP
 
   if (xe==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
-    for (usz i = 0; i < xia; i++) {
+    for (usz i = 0; i < n; i++) {
       i32 c = xp[i];
       if (c<min) min = c;
       if (c>max) max = c;
     }
     i64 dst = 1 + (max-(i64)min);
-    if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
-      i32* rp; B r = m_i32arrv(&rp, xia);
+    if ((dst<n*5 || dst<50) && min!=I32_MIN) {
+      i32* rp; B r = m_i32arrv(&rp, n);
       TALLOC(i32, tmp, dst);
       for (i64 i = 0; i < dst; i++) tmp[i] = I32_MIN;
       i32* tc = tmp-min;
       i32 ctr = 0;
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < n; i++) {
         i32 c = xp[i];
         if (tc[c]==I32_MIN) tc[c] = ctr++;
         rp[i] = tc[c];
@@ -160,14 +159,14 @@ B indexOf_c1(B t, B x) {
     }
   }
   // // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
-  // i32* rp; B r = m_i32arrv(&rp, xia);
-  // u64 size = xia*2;
+  // i32* rp; B r = m_i32arrv(&rp, n);
+  // u64 size = n*2;
   // wyhashmap_t idx[size];
   // i32 val[size];
   // for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
   // SGet(x)
   // i32 ctr = 0;
-  // for (usz i = 0; i < xia; i++) {
+  // for (usz i = 0; i < n; i++) {
   //   u64 hash = bqn_hash(Get(x,i), wy_secret);
   //   u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
   //   if (val[p]==-1) val[p] = ctr++;
@@ -175,11 +174,11 @@ B indexOf_c1(B t, B x) {
   // }
   // dec(x);
   // return r;
-  i32* rp; B r = m_i32arrv(&rp, xia);
+  i32* rp; B r = m_i32arrv(&rp, n);
   H_b2i* map = m_b2i(64);
   SGetU(x)
   i32 ctr = 0;
-  for (usz i = 0; i < xia; i++) {
+  for (usz i = 0; i < n; i++) {
     bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
     if (had) rp[i] = map->a[p].val;
     else     rp[i] = map->a[p].val = ctr++;
@@ -191,15 +190,15 @@ B indexOf_c1(B t, B x) {
 extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
+  usz n = *SH(x);
+  if (n<=1) return x;
   if (RNK(x)>1) return c1(rt_find, x);
-  usz xia = IA(x);
-  if (xia<=1) return x;
   B xf = getFillQ(x);
   
   B r = emptyHVec();
   H_Sb* set = m_Sb(64);
   SGetU(x)
-  for (usz i = 0; i < xia; i++) {
+  for (usz i = 0; i < n; i++) {
     B c = GetU(x,i);
     if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
   }
