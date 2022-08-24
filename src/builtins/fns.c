@@ -126,7 +126,26 @@ B indexOf_c1(B t, B x) {
   if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
-  if (RNK(x)==1 && TI(x,elType)==el_i32) {
+
+  u8 xe = TI(x,elType);
+  #define LOOKUP(T) \
+    usz tn = 1<<T, n = xia;                      \
+    u##T* xp = (u##T*)i##T##any_ptr(x);          \
+    i32* rp; B r = m_i32arrv(&rp, n);            \
+    TALLOC(i32, tab, tn);                        \
+    for (usz j=0; j<tn; j++) tab[j]=n;           \
+    i32 u=0;                                     \
+    for (usz i=0; i<n;  i++) {                   \
+      u##T j=xp[i]; i32 t=tab[j];                \
+      if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;  \
+    }                                            \
+    decG(x); TFREE(tab);                         \
+    return r
+  if (RNK(x)==1 && xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
+  if (RNK(x)==1 && xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
+  #undef LOOKUP
+
+  if (RNK(x)==1 && xe==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < xia; i++) {
@@ -239,9 +258,22 @@ B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   if (RNK(x)!=1) x = toCells(x);
   usz xia = IA(x);
+  u8 xe = TI(x,elType);
 
+  #define LOOKUP(T) \
+    usz tn = 1<<T, n = xia;                                            \
+    u##T* xp = (u##T*)i##T##any_ptr(x);                                \
+    i8* rp; B r = m_i8arrv(&rp, n);                                    \
+    TALLOC(u8, tab, tn);                                               \
+    for (usz j=0; j<tn; j++) tab[j]=1;                                 \
+    for (usz i=0; i<n;  i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; } \
+    decG(x); TFREE(tab);                                                        \
+    return num_squeeze(r)
+  if (xia>=16 && xe==el_i8) { LOOKUP(8); }
+  if (xia>=256 && xe==el_i16) { LOOKUP(16); }
+  #undef LOOKUP
   // Radix-assisted lookup
-  if (xia>=256 && TI(x,elType)==el_i32) {
+  if (xia>=256 && xe==el_i32) {
     usz rx = 256, tn = 1<<16; // Radix; table length
     usz n = xia;
     u32* v0 = (u32*)i32any_ptr(x);
@@ -367,6 +399,21 @@ B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
   if (RNK(x)>1) x = toCells(x);
   usz xia = IA(x);
+  u8 xe = TI(x,elType);
+
+  #define LOOKUP(T) \
+    usz tn = 1<<T, n = xia;                      \
+    u##T* xp = (u##T*)i##T##any_ptr(x);          \
+    i32* rp; B r = m_i32arrv(&rp, n);            \
+    TALLOC(i32, tab, tn);                        \
+    for (usz j=0; j<tn; j++) tab[j]=0;           \
+    for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++; \
+    decG(x); TFREE(tab);                                                        \
+    return r
+  if (xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
+  if (xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
+  #undef LOOKUP
+
   i32* rp; B r = m_i32arrv(&rp, xia);
   H_b2i* map = m_b2i(64);
   SGetU(x)
