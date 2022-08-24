@@ -10,6 +10,15 @@ B memberOf_c1(B t, B x) {
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
 
+  #define BRUTE(T) \
+      i##T* xp = i##T##any_ptr(x);                                     \
+      u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
+      for (usz i=1; i<n; i++) {                                        \
+        bool c=1; i##T xi=xp[i];                                       \
+        for (usz j=0; j<i; j++) c &= xi!=xp[j];                        \
+        bitp_set(rp, i, c);                                            \
+      }                                                                \
+      decG(x); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                                     \
     u##T* xp = (u##T*)i##T##any_ptr(x);                                \
@@ -19,10 +28,44 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n;  i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; } \
     decG(x); TFREE(tab);                                               \
     return num_squeeze(r)
-  if (n>=16 && xe==el_i8) { LOOKUP(8); }
-  if (n>=256 && xe==el_i16) { LOOKUP(16); }
+  if (xe==el_i8) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
+  if (xe==el_i16) {
+    if (n<16) { BRUTE(16); }
+    if (n>=256) { LOOKUP(16); }
+    // Radix-assisted lookup
+    usz rx = 256, tn = 256; // Radix; table length
+    u16* v0 = (u16*)i16any_ptr(x);
+    i8* r0; B r = m_i8arrv(&r0, n);
+    TALLOC(u8, alloc, 4*n+(tn+rx));
+    u8  *c0 = alloc;
+    u8  *k0 = c0+rx;
+    u16 *v1 = (u16*)(k0+n);
+    u8  *r1 = (u8*)(v1+n);
+    u8  *tab= r1+n;
+    // Count keys
+    for (usz j=0; j<rx; j++) c0[j] = 0;
+    for (usz i=0; i<n;  i++) c0[(u8)(v0[i]>>8)]++;
+    // Exclusive prefix sum
+    usz s=0; for (usz j=0; j<rx; j++) { usz p=s; s+=c0[j]; c0[j]=p; }
+    // Radix move
+    for (usz i=0; i<n; i++) { u16 v=v0[i]; u8 k=k0[i]=(u8)(v>>8); usz c=c0[k]++; v1[c]=v; }
+    // Table lookup
+    for (usz j=0; j<tn; j++) tab[j]=1;
+    u8 t0=v1[0]>>8;
+    for (usz i=0, e=0; i<n; i++) {
+      u16 v=v1[i]; u8 tv=v>>8;
+      if (tv!=t0) { for (; e<i; e++) tab[(u8)v1[e]]=1; t0=tv; }
+      usz j=(u8)v; r1[i]=tab[j]; tab[j]=0;
+    }
+    // Radix unmove
+    memmove(c0+1, c0, rx-1); c0[0]=0;
+    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
+    decG(x); TFREE(alloc);
+    return num_squeeze(r);
+  }
   #undef LOOKUP
   // Radix-assisted lookup
+  if (n<=32 && xe==el_i32) { BRUTE(32); }
   if (n>=256 && xe==el_i32) {
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)i32any_ptr(x);
@@ -69,6 +112,7 @@ B memberOf_c1(B t, B x) {
     decG(x); TFREE(alloc);
     return num_squeeze(r);
   }
+  #undef BRUTE
   
   u64* rp; B r = m_bitarrv(&rp, n);
   H_Sb* set = m_Sb(64);
@@ -93,7 +137,7 @@ B count_c1(B t, B x) {
     for (usz j=0; j<tn; j++) tab[j]=0;           \
     for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++; \
     decG(x); TFREE(tab);                         \
-    return r
+    return num_squeeze(r)
   if (n>=16 && xe==el_i8 && n<=(usz)I32_MAX+1) { LOOKUP(8); }
   if (n>=256 && xe==el_i16 && n<=(usz)I32_MAX+1) { LOOKUP(16); }
   #undef LOOKUP
@@ -129,7 +173,7 @@ B indexOf_c1(B t, B x) {
       if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;  \
     }                                            \
     decG(x); TFREE(tab);                         \
-    return r
+    return num_squeeze(r)
   if (n>=16 && xe==el_i8 && n<=(usz)I32_MAX+1) { LOOKUP(8); }
   if (n>=256 && xe==el_i16 && n<=(usz)I32_MAX+1) { LOOKUP(16); }
   #undef LOOKUP
