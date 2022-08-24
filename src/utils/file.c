@@ -139,7 +139,7 @@ B path_name(B path) {
   guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (o2cu(GetU(path, i))=='/') {
-      if (i == pia-1) thrF("File path ended with a slash: '%R'", path);
+      if (i == pia-1) thrF("File path ended with a slash: \"%R\"", path);
       return taga(arr_shVec(TI(path,slice)(path, i+1, pia - (i+1))));
     }
   }
@@ -301,7 +301,7 @@ void mmap_init() {
 }
 #else
 B mmap_file(B path) {
-  thrM("CBQN was compiled without mmap");
+  thrM("CBQN was compiled without •file.MapBytes support");
 }
 void mmap_init() { }
 #endif
@@ -335,15 +335,20 @@ bool path_remove(B path) {
   return ok;
 }
 
-char path_type(B path) {
+int path_stat(struct stat* s, B path) { // doesn't consume; get stat of s; errors if path isn't string; returns non-zero on failure
   char* p = toCStr(path);
-  struct stat path_stat;
-  int r = stat(p, &path_stat);
+  int r = stat(p, s);
   freeCStr(p);
+  return r;
+}
+
+char path_type(B path) {
+  struct stat s;
+  int r = path_stat(&s, path);
   dec(path);
   
   if (r==-1) return 0;
-  i64 mode = path_stat.st_mode;
+  i64 mode = s.st_mode;
   if (S_ISREG (mode)) return 'f';
   if (S_ISDIR (mode)) return 'd';
   if (S_ISLNK (mode)) return 'l';
@@ -353,6 +358,21 @@ char path_type(B path) {
   if (S_ISCHR (mode)) return 'c';
   thrM("Unexpected file type");
 }
+
+B get_timespec(struct timespec ts) {
+  return m_f64(ts.tv_sec + ts.tv_nsec*1e-9);
+}
+B path_info(B path, i32 mode) {
+  struct stat s;
+  int r = path_stat(&s, path);
+  if (r==-1) thrF("Failed to access file \"%R\": %S", path, strerror(errno));
+  dec(path);
+  if (mode==0) return get_timespec(s.st_ctim);
+  if (mode==1) return get_timespec(s.st_atim);
+  if (mode==2) return get_timespec(s.st_mtim);
+  thrM("Unknown path_info mode");
+}
+
 void mmX_dumpHeap(FILE* f);
 void writeNum(FILE* f, u64 v, i32 len) {
   u8 buf[8];

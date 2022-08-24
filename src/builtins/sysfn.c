@@ -726,6 +726,9 @@ void clearImportCache() {
 
 
 static NFnDesc* fTypeDesc;
+static NFnDesc* fCreatedDesc;
+static NFnDesc* fAccessedDesc;
+static NFnDesc* fModifiedDesc;
 static NFnDesc* fExistsDesc;
 static NFnDesc* fListDesc;
 static NFnDesc* fMapBytesDesc;
@@ -759,6 +762,11 @@ B ftype_c1(B d, B x) {
   if (ty==0) thrM("•file.Type: Error while accessing file");
   return m_c32(ty);
 }
+
+B fcreated_c1 (B d, B x) { return path_info(path_rel(nfn_objU(d), x), 0); }
+B faccessed_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x), 1); }
+B fmodified_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x), 2); }
+
 B fexists_c1(B d, B x) {
   char ty = path_type(path_rel(nfn_objU(d), x));
   return m_f64(ty!=0);
@@ -1208,7 +1216,7 @@ B sys_c1(B t, B x) {
       if(!fileNS.u) {
         REQ_PATH;
         #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
+        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
         #undef F
       }
       cr = incG(fileNS);
@@ -1241,6 +1249,7 @@ B sys_c1(B t, B x) {
     else if (eqStr(c, U"rebqn")) cr = incG(bi_reBQN);
     else if (eqStr(c, U"primitives")) cr = getPrimitives();
     else if (eqStr(c, U"fromutf8")) cr = incG(bi_fromUtf8);
+    else if (eqStr(c, U"toutf8")) cr = incG(bi_toUtf8);
     else if (eqStr(c, U"path")) cr = inc(REQ_PATH);
     else if (eqStr(c, U"name")) cr = inc(REQ_NAME);
     else if (eqStr(c, U"fchars")) cr = m_nfn(fCharsDesc, inc(REQ_PATH));
@@ -1279,6 +1288,9 @@ void sysfn_init() {
   fBytesDesc   = registerNFn(m_c8vec_0("(file).Bytes"), fbytes_c1, fbytes_c2);
   fListDesc    = registerNFn(m_c8vec_0("(file).List"), list_c1, c2_bad);
   fTypeDesc    = registerNFn(m_c8vec_0("(file).Type"), ftype_c1, c2_bad);
+  fCreatedDesc = registerNFn(m_c8vec_0("(file).Created"),  fcreated_c1, c2_bad);
+  fModifiedDesc= registerNFn(m_c8vec_0("(file).Modified"), fmodified_c1, c2_bad);
+  fAccessedDesc= registerNFn(m_c8vec_0("(file).Accessed"), faccessed_c1, c2_bad);
   createdirDesc= registerNFn(m_c8vec_0("(file).CreateDir"), createdir_c1, c2_bad);
   renameDesc   = registerNFn(m_c8vec_0("(file).Rename"), c1_bad, rename_c2);
   removeDesc   = registerNFn(m_c8vec_0("(file).Remove"), remove_c1, c2_bad);
@@ -1289,6 +1301,6 @@ void sysfn_init() {
   ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","exists","name","parent","mapbytes","createdir","rename","remove");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","exists","name","parent","mapbytes","createdir","rename","remove");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }
