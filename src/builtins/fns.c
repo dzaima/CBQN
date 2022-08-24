@@ -239,6 +239,55 @@ B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   if (RNK(x)!=1) x = toCells(x);
   usz xia = IA(x);
+
+  // Radix-assisted lookup
+  if (xia>=256 && TI(x,elType)==el_i32) {
+    usz rx = 256, tn = 1<<16; // Radix; table length
+    usz n = xia;
+    u32* v0 = (u32*)i32any_ptr(x);
+    i8* r0; B r = m_i8arrv(&r0, n);
+
+    TALLOC(u8, alloc, 9*n+(tn+2*rx*sizeof(usz)));
+    // Allocations                    count radix hash deradix
+    usz *c0 = (usz*)(alloc);   // rx    X-----------------X
+    usz *c1 = (usz*)(c0+rx);   // rx    X-----------------X
+    u8  *k0 = (u8 *)(c1+rx);   //  n    X-----------------X
+    u8  *k1 = (u8 *)(k0+n);    //            --/----------X
+    u32 *v1 = (u32*)(k1);      //  n         X-X
+    u32 *v2 = (u32*)(v1+n);    //  n           X----------X
+    u8  *r2 = (u8 *)(k1+n);
+    u8  *r1 = (u8 *)(r2+n);
+    u8  *tab= (u8 *)(v2+n);    // tn
+
+    // Count keys
+    for (usz j=0; j<2*rx; j++) c0[j] = 0;
+    for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
+    // Exclusive prefix sum
+    usz s0=0, s1=0;
+    for (usz j=0; j<rx; j++) {
+      usz p0 = s0,  p1 = s1;
+      s0 += c0[j];  s1 += c1[j];
+      c0[j] = p0;   c1[j] = p1;
+    }
+    // Radix moves
+    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
+    for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
+    // Table lookup
+    for (usz j=0; j<tn; j++) tab[j]=1;
+    u32 t0=v2[0]>>16; usz e=0;
+    for (usz i=0; i<n; i++) {
+      u32 v=v2[i], tv=v>>16;
+      // Clear table when top bytes change
+      if (RARE(tv!=t0)) { for (; e<i; e++) tab[(u16)v2[e]]=1; t0=tv; }
+      u32 j=(u16)v; r2[i]=tab[j]; tab[j]=0;
+    }
+    // Radix unmoves
+    memmove(c0+1, c0, (2*rx-1)*sizeof(usz)); c0[0]=c1[0]=0;
+    for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
+    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
+    decG(x); TFREE(alloc);
+    return num_squeeze(r);
+  }
   
   u64* rp; B r = m_bitarrv(&rp, xia);
   H_Sb* set = m_Sb(64);
