@@ -5,8 +5,9 @@
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
-  if (RNK(x)!=1) x = toCells(x);
+  if (RNK(x)>1) x = toCells(x);
   usz xia = IA(x);
+  if (xia==0) { decG(x); return emptyIVec(); }
   u8 xe = TI(x,elType);
 
   #define LOOKUP(T) \
@@ -16,7 +17,7 @@ B memberOf_c1(B t, B x) {
     TALLOC(u8, tab, tn);                                               \
     for (usz j=0; j<tn; j++) tab[j]=1;                                 \
     for (usz i=0; i<n;  i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; } \
-    decG(x); TFREE(tab);                                                        \
+    decG(x); TFREE(tab);                                               \
     return num_squeeze(r)
   if (xia>=16 && xe==el_i8) { LOOKUP(8); }
   if (xia>=256 && xe==el_i16) { LOOKUP(16); }
@@ -82,6 +83,7 @@ B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
   if (RNK(x)>1) x = toCells(x);
   usz xia = IA(x);
+  if (xia==0) { decG(x); return emptyIVec(); }
   u8 xe = TI(x,elType);
 
   #define LOOKUP(T) \
@@ -91,7 +93,7 @@ B count_c1(B t, B x) {
     TALLOC(i32, tab, tn);                        \
     for (usz j=0; j<tn; j++) tab[j]=0;           \
     for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++; \
-    decG(x); TFREE(tab);                                                        \
+    decG(x); TFREE(tab);                         \
     return r
   if (xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
   if (xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
@@ -110,11 +112,12 @@ B count_c1(B t, B x) {
 
 extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
-  if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
+  if (RNK(x)>1) x = toCells(x);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
-
   u8 xe = TI(x,elType);
+
   #define LOOKUP(T) \
     usz tn = 1<<T, n = xia;                      \
     u##T* xp = (u##T*)i##T##any_ptr(x);          \
@@ -128,11 +131,11 @@ B indexOf_c1(B t, B x) {
     }                                            \
     decG(x); TFREE(tab);                         \
     return r
-  if (RNK(x)==1 && xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
-  if (RNK(x)==1 && xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
+  if (xia>=16 && xe==el_i8 && xia<=(usz)I32_MAX+1) { LOOKUP(8); }
+  if (xia>=256 && xe==el_i16 && xia<=(usz)I32_MAX+1) { LOOKUP(16); }
   #undef LOOKUP
 
-  if (RNK(x)==1 && xe==el_i32) {
+  if (xe==el_i32) {
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < xia; i++) {
@@ -156,49 +159,42 @@ B indexOf_c1(B t, B x) {
       return r;
     }
   }
-  // if (RNK(x)==1) { // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
-  //   // u64 s = nsTime();
-  //   i32* rp; B r = m_i32arrv(&rp, xia);
-  //   u64 size = xia*2;
-  //   wyhashmap_t idx[size];
-  //   i32 val[size];
-  //   for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
-  //   SGet(x)
-  //   i32 ctr = 0;
-  //   for (usz i = 0; i < xia; i++) {
-  //     u64 hash = bqn_hash(Get(x,i), wy_secret);
-  //     u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
-  //     if (val[p]==-1) val[p] = ctr++;
-  //     rp[i] = val[p];
-  //   }
-  //   dec(x);
-  //   // u64 e = nsTime(); q1+= e-s;
-  //   return r;
+  // // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
+  // i32* rp; B r = m_i32arrv(&rp, xia);
+  // u64 size = xia*2;
+  // wyhashmap_t idx[size];
+  // i32 val[size];
+  // for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
+  // SGet(x)
+  // i32 ctr = 0;
+  // for (usz i = 0; i < xia; i++) {
+  //   u64 hash = bqn_hash(Get(x,i), wy_secret);
+  //   u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
+  //   if (val[p]==-1) val[p] = ctr++;
+  //   rp[i] = val[p];
   // }
-  if (RNK(x)==1) {
-    // u64 s = nsTime();
-    i32* rp; B r = m_i32arrv(&rp, xia);
-    H_b2i* map = m_b2i(64);
-    SGetU(x)
-    i32 ctr = 0;
-    for (usz i = 0; i < xia; i++) {
-      bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
-      if (had) rp[i] = map->a[p].val;
-      else     rp[i] = map->a[p].val = ctr++;
-    }
-    free_b2i(map); decG(x);
-    // u64 e = nsTime(); q1+= e-s;
-    return r;
+  // dec(x);
+  // return r;
+  i32* rp; B r = m_i32arrv(&rp, xia);
+  H_b2i* map = m_b2i(64);
+  SGetU(x)
+  i32 ctr = 0;
+  for (usz i = 0; i < xia; i++) {
+    bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
+    if (had) rp[i] = map->a[p].val;
+    else     rp[i] = map->a[p].val = ctr++;
   }
-  return c1(rt_indexOf, x);
+  free_b2i(map); decG(x);
+  return r;
 }
 
 extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
+  if (RNK(x)>1) return c1(rt_find, x);
   usz xia = IA(x);
+  if (xia<=1) return x;
   B xf = getFillQ(x);
-  if (RNK(x)!=1) return c1(rt_find, x);
   
   B r = emptyHVec();
   H_Sb* set = m_Sb(64);
