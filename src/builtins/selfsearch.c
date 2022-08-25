@@ -32,14 +32,14 @@ B memberOf_c1(B t, B x) {
   if (xe==el_i8) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
   if (xe==el_i16) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-  // Radix-assisted lookup
-  if (n<=32 && xe==el_i32) { BRUTE(32); }
-  if (n>=256 && xe==el_i32) {
+  if (xe==el_i32) {
+    if (n<=32) { BRUTE(32); }
+    // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)i32any_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
 
-    TALLOC(u8, alloc, 9*n+(tn+2*rx*sizeof(usz)));
+    TALLOC(u8, alloc, 9*n+(1+tn+2*rx*sizeof(usz)));
     // Allocations                    count radix hash deradix
     usz *c0 = (usz*)(alloc);   // rx    X-----------------X
     usz *c1 = (usz*)(c0+rx);   // rx    X-----------------X
@@ -49,7 +49,7 @@ B memberOf_c1(B t, B x) {
     u32 *v2 = (u32*)(v1+n);    //  n           X----------X
     u8  *r2 = (u8 *)(k1+n);
     u8  *r1 = (u8 *)(r2+n);
-    u8  *tab= (u8 *)(v2+n);    // tn
+    u8  *tab= (u8 *)(v2+n+1);  // tn
 
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
@@ -65,13 +65,10 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
     for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
     // Table lookup
-    for (usz j=0; j<tn; j++) tab[j]=1;
-    u32 t0=v2[0]>>16; usz e=0;
-    for (usz i=0; i<n; i++) {
-      u32 v=v2[i], tv=v>>16;
-      // Clear table when top bytes change
-      if (RARE(tv!=t0)) { for (; e<i; e++) tab[(u16)v2[e]]=1; t0=tv; }
-      u32 j=(u16)v; r2[i]=tab[j]; tab[j]=0;
+    u32 tv=v2[0]>>16; v2[n]=~v2[n-1];
+    for (usz l=0, i=0; l<n; ) {
+      for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=1; }
+      for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]=0; }
     }
     // Radix unmoves
     memmove(c0+1, c0, (2*rx-1)*sizeof(usz)); c0[0]=c1[0]=0;
