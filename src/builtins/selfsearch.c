@@ -193,7 +193,7 @@ B indexOf_c1(B t, B x) {
         for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);       \
         rp[i]=s; u+=u==s;                                      \
       }                                                        \
-      decG(x); return r;
+      decG(x); TFREE(uniq); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
     u##T* xp = (u##T*)i##T##any_ptr(x);                        \
