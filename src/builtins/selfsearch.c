@@ -39,18 +39,18 @@ B memberOf_c1(B t, B x) {
     u32* v0 = (u32*)i32any_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
     
-    TALLOC(u8, alloc, 9*n+(4+tn+2*rx*sizeof(usz)));
+    TALLOC(u8, alloc, 7*n+(4+(tn>2*n?tn:2*n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
-    // Allocations                len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc);    // rx   [+++................]     c0   rx  #
-    usz *c1 = (usz*)(c0+rx);    // rx    [++................]     c1   rx   #
-    u8  *k0 = (u8 *)(c1+rx);    //  n        [+.............]     k0    n    ##
-    u8  *k1 = (u8 *)(k0+n);     //  n         [+............]     k1    n      ##
-    u32 *v1 = (u32*)(k1);       //  n        [+-]                 v1  4*n      ########
-    u32 *v2 = (u32*)(k1+4*n);   //  n         [+.......]          v2  4*n              ########
-    u8  *r2 = (u8 *)(k1+  n);   //  n              [+.....]       r2    n        ##
-    u8  *r1 = (u8 *)(k1+2*n);   //  n                   [+..]     r1    n          ##
-    u8  *tab= (u8 *)(k1+8*n+1); // tn              [+]            tab  tn                       #####
+    // Allocations               len  count radix hash deradix     bytes  layout:
+    usz *c0 = (usz*)(alloc+1); // rx   [+++................]     c0   rx  #
+    usz *c1 = (usz*)(c0+rx);   // rx    [++................]     c1   rx   #
+    u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]     k0    n    ##
+    u32 *v2 = (u32*)(k0+n);    //  n+1       [+.......]          v2  4*n+4    ########
+    u8  *k1 = (u8 *)(v2+n+1);  //  n         [+............]     k1    n              ##
+    u32 *v1 = (u32*)(k1);      //  n        [+-]                 v1  4*n              ########
+    u8  *r2 = (u8 *)(k1+  n);  //  n              [+.....]       r2    n                ##
+    u8  *r1 = (u8 *)(k1+2*n);  //  n                   [+..]     r1    n                  ##
+    u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                  #####
     
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
@@ -72,7 +72,7 @@ B memberOf_c1(B t, B x) {
       for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]=0; }
     }
     // Radix unmoves
-    memmove(c0+1, c0, (2*rx-1)*sizeof(usz)); c0[0]=c1[0]=0;
+    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
     for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
     for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
     decG(x); TFREE(alloc);
@@ -125,19 +125,19 @@ B count_c1(B t, B x) {
     u32* v0 = (u32*)i32any_ptr(x);
     i32* r0; B r = m_i32arrv(&r0, n);
     
-    TALLOC(u8, alloc, 10*n+(4+4*tn+2*rx*sizeof(usz)));
+    TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
     
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc);   // rx   [+++................]    c0    rx  #
+    usz *c0 = (usz*)(alloc+1); // rx   [+++................]    c0    rx  #
     usz *c1 = (usz*)(c0+rx);   // rx    [++................]    c1    rx   #
     u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]    k0     n    ##
     u8  *k1 = (u8 *)(k0+n);    //  n         [+............]    k1     n      ##
-    u32 *v1 = (u32*)(k1+n);    //  n        [+..]               v1   4*n        ########
-    u32 *v2 = (u32*)(v1+n);    //  n         [+....-]           v2   4*n                ########
-    u32 *r2 = (u32*)v2;        //  n              [+.....]      r2   4*n                ########
-    u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n        ########
-    u32 *tab= (u32*)(v2+n+1);  // tn              [+]           tab 4*tn                         ###########
+    u32 *v2 = (u32*)(k1+n);    //  n+1       [+....-]           v2   4*n        ########
+    u32 *v1 = (u32*)(v2+n+1);  //  n        [+..]               v1   4*n                ########
+    u32 *r2 = (u32*)v2;        //  n              [+.....]      r2   4*n        ########
+    u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n                ########
+    u32 *tab= (u32*)v1;        // tn              [+]           tab 4*tn                ###########
     
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
@@ -159,7 +159,7 @@ B count_c1(B t, B x) {
       for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]++; }
     }
     // Radix unmoves
-    memmove(c0+1, c0, (2*rx-1)*sizeof(usz)); c0[0]=c1[0]=0;
+    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
     for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
     for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
     decG(x); TFREE(alloc);
