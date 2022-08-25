@@ -39,7 +39,7 @@ B memberOf_c1(B t, B x) {
     u32* v0 = (u32*)i32any_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
     
-    TALLOC(u8, alloc, 7*n+(4+(tn>2*n?tn:2*n)+(2*rx+1)*sizeof(usz)));
+    TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
     usz *c0 = (usz*)(alloc+1); // rx   [+++................]     c0   rx  #
@@ -48,9 +48,9 @@ B memberOf_c1(B t, B x) {
     u32 *v2 = (u32*)(k0+n);    //  n+1       [+.......]          v2  4*n+4    ########
     u8  *k1 = (u8 *)(v2+n+1);  //  n         [+............]     k1    n              ##
     u32 *v1 = (u32*)(k1);      //  n        [+-]                 v1  4*n              ########
-    u8  *r2 = (u8 *)(k1+  n);  //  n              [+.....]       r2    n                ##
-    u8  *r1 = (u8 *)(k1+2*n);  //  n                   [+..]     r1    n                  ##
-    u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                  #####
+    u8  *r2 = (u8 *)(v2);      //  n              [+.....]       r2    n      ##
+    u8  *r1 = (u8 *)(k1+n);    //  n                   [+..]     r1    n                ##
+    u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
     
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
