@@ -42,7 +42,7 @@ B memberOf_c1(B t, B x) {
     TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc+1); // rx   [+++................]     c0   rx  #
+    usz *c0 = (usz*)(alloc)+1; // rx   [+++................]     c0   rx  #
     usz *c1 = (usz*)(c0+rx);   // rx    [++................]     c1   rx   #
     u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]     k0    n    ##
     u32 *v2 = (u32*)(k0+n);    //  n+1       [+.......]          v2  4*n+4    ########
@@ -129,7 +129,7 @@ B count_c1(B t, B x) {
     
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc+1); // rx   [+++................]    c0    rx  #
+    usz *c0 = (usz*)(alloc)+1; // rx   [+++................]    c0    rx  #
     usz *c1 = (usz*)(c0+rx);   // rx    [++................]    c1    rx   #
     u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]    k0     n    ##
     u8  *k1 = (u8 *)(k0+n);    //  n         [+............]    k1     n      ##
