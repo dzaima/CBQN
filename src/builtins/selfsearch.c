@@ -255,21 +255,11 @@ B indexOf_c1(B t, B x) {
   return r;
 }
 
+B slash_c2(B t, B w, B x);
 extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
-  if (RNK(x)>1) return c1(rt_find, x);
-  B xf = getFillQ(x);
-  
-  B r = emptyHVec();
-  H_Sb* set = m_Sb(64);
-  SGetU(x)
-  for (usz i = 0; i < n; i++) {
-    B c = GetU(x,i);
-    if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
-  }
-  free_Sb(set); decG(x);
-  return withFill(r, xf);
+  return slash_c2(m_f64(0), memberOf_c1(m_f64(0), inc(x)), x);
 }
