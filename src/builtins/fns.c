@@ -122,70 +122,6 @@ B fne_c2(B t, B w, B x) {
 
 
 extern B rt_indexOf;
-B indexOf_c1(B t, B x) {
-  if (isAtm(x)) thrM("⊐: 𝕩 cannot have rank 0");
-  usz xia = IA(x);
-  if (xia==0) { decG(x); return emptyIVec(); }
-  if (RNK(x)==1 && TI(x,elType)==el_i32) {
-    i32* xp = i32any_ptr(x);
-    i32 min=I32_MAX, max=I32_MIN;
-    for (usz i = 0; i < xia; i++) {
-      i32 c = xp[i];
-      if (c<min) min = c;
-      if (c>max) max = c;
-    }
-    i64 dst = 1 + (max-(i64)min);
-    if ((dst<xia*5 || dst<50) && min!=I32_MIN) {
-      i32* rp; B r = m_i32arrv(&rp, xia);
-      TALLOC(i32, tmp, dst);
-      for (i64 i = 0; i < dst; i++) tmp[i] = I32_MIN;
-      i32* tc = tmp-min;
-      i32 ctr = 0;
-      for (usz i = 0; i < xia; i++) {
-        i32 c = xp[i];
-        if (tc[c]==I32_MIN) tc[c] = ctr++;
-        rp[i] = tc[c];
-      }
-      decG(x); TFREE(tmp);
-      return r;
-    }
-  }
-  // if (RNK(x)==1) { // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
-  //   // u64 s = nsTime();
-  //   i32* rp; B r = m_i32arrv(&rp, xia);
-  //   u64 size = xia*2;
-  //   wyhashmap_t idx[size];
-  //   i32 val[size];
-  //   for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
-  //   SGet(x)
-  //   i32 ctr = 0;
-  //   for (usz i = 0; i < xia; i++) {
-  //     u64 hash = bqn_hash(Get(x,i), wy_secret);
-  //     u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
-  //     if (val[p]==-1) val[p] = ctr++;
-  //     rp[i] = val[p];
-  //   }
-  //   dec(x);
-  //   // u64 e = nsTime(); q1+= e-s;
-  //   return r;
-  // }
-  if (RNK(x)==1) {
-    // u64 s = nsTime();
-    i32* rp; B r = m_i32arrv(&rp, xia);
-    H_b2i* map = m_b2i(64);
-    SGetU(x)
-    i32 ctr = 0;
-    for (usz i = 0; i < xia; i++) {
-      bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
-      if (had) rp[i] = map->a[p].val;
-      else     rp[i] = map->a[p].val = ctr++;
-    }
-    free_b2i(map); decG(x);
-    // u64 e = nsTime(); q1+= e-s;
-    return r;
-  }
-  return c1(rt_indexOf, x);
-}
 B indexOf_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)==0) thrM("⊐: 𝕨 must have rank at least 1");
   if (RNK(w)==1) {
@@ -235,18 +171,6 @@ B indexOf_c2(B t, B w, B x) {
 B enclosed_0;
 B enclosed_1;
 extern B rt_memberOf;
-B memberOf_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
-  if (RNK(x)!=1) x = toCells(x);
-  usz xia = IA(x);
-  
-  u64* rp; B r = m_bitarrv(&rp, xia);
-  H_Sb* set = m_Sb(64);
-  SGetU(x)
-  for (usz i = 0; i < xia; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
-  free_Sb(set); decG(x);
-  return r;
-}
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) goto bad;
   if (isAtm(w)) goto single;
@@ -293,41 +217,11 @@ B memberOf_c2(B t, B w, B x) {
 }
 
 extern B rt_find;
-B find_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
-  usz xia = IA(x);
-  B xf = getFillQ(x);
-  if (RNK(x)!=1) return c1(rt_find, x);
-  
-  B r = emptyHVec();
-  H_Sb* set = m_Sb(64);
-  SGetU(x)
-  for (usz i = 0; i < xia; i++) {
-    B c = GetU(x,i);
-    if (!ins_Sb(&set, c)) r = vec_add(r, inc(c));
-  }
-  free_Sb(set); decG(x);
-  return withFill(r, xf);
-}
 B find_c2(B t, B w, B x) {
   return c2(rt_find, w, x);
 }
 
 extern B rt_count;
-B count_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
-  if (RNK(x)>1) x = toCells(x);
-  usz xia = IA(x);
-  i32* rp; B r = m_i32arrv(&rp, xia);
-  H_b2i* map = m_b2i(64);
-  SGetU(x)
-  for (usz i = 0; i < xia; i++) {
-    bool had; u64 p = mk_b2i(&map, GetU(x,i), &had);
-    rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
-  }
-  decG(x); free_b2i(map);
-  return r;
-}
 B count_c2(B t, B w, B x) {
   return c2(rt_count, w, x);
 }

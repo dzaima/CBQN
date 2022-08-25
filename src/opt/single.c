@@ -18,6 +18,7 @@
 #include "../builtins/select.c"
 #include "../builtins/sysfn.c"
 #include "../builtins/sort.c"
+#include "../builtins/selfsearch.c"
 #include "../builtins/arithm.c"
 #include "../builtins/arithd.c"
 #include "../builtins/cmp.c"
