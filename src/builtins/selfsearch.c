@@ -9,7 +9,7 @@ B memberOf_c1(B t, B x) {
   if (n==0) { decG(x); return emptyIVec(); }
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
-
+  
   #define BRUTE(T) \
       i##T* xp = i##T##any_ptr(x);                                     \
       u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
@@ -38,19 +38,20 @@ B memberOf_c1(B t, B x) {
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)i32any_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
-
+    
     TALLOC(u8, alloc, 9*n+(4+tn+2*rx*sizeof(usz)));
-    // Allocations                    count radix hash deradix
-    usz *c0 = (usz*)(alloc);   // rx    X-----------------X
-    usz *c1 = (usz*)(c0+rx);   // rx    X-----------------X
-    u8  *k0 = (u8 *)(c1+rx);   //  n    X-----------------X
-    u8  *k1 = (u8 *)(k0+n);    //            --/----------X
-    u32 *v1 = (u32*)(k1);      //  n         X-X
-    u32 *v2 = (u32*)(v1+n);    //  n           X----------X
-    u8  *r2 = (u8 *)(k1+n);
-    u8  *r1 = (u8 *)(r2+n);
-    u8  *tab= (u8 *)(v2+n+1);  // tn
-
+    //                                         timeline
+    // Allocations                len  count radix hash deradix     bytes  layout:
+    usz *c0 = (usz*)(alloc);    // rx   [+++................]     c0   rx  #
+    usz *c1 = (usz*)(c0+rx);    // rx    [++................]     c1   rx   #
+    u8  *k0 = (u8 *)(c1+rx);    //  n        [+.............]     k0    n    ##
+    u8  *k1 = (u8 *)(k0+n);     //  n         [+............]     k1    n      ##
+    u32 *v1 = (u32*)(k1);       //  n        [+-]                 v1  4*n      ########
+    u32 *v2 = (u32*)(k1+4*n);   //  n         [+.......]          v2  4*n              ########
+    u8  *r2 = (u8 *)(k1+  n);   //  n              [+.....]       r2    n        ##
+    u8  *r1 = (u8 *)(k1+2*n);   //  n                   [+..]     r1    n          ##
+    u8  *tab= (u8 *)(k1+8*n+1); // tn              [+]            tab  tn                       #####
+    
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
     for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
@@ -94,7 +95,7 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
-
+  
   #define BRUTE(T) \
       i##T* xp = i##T##any_ptr(x);                             \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
@@ -123,19 +124,21 @@ B count_c1(B t, B x) {
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)i32any_ptr(x);
     i32* r0; B r = m_i32arrv(&r0, n);
-
+    
     TALLOC(u8, alloc, 10*n+(4+4*tn+2*rx*sizeof(usz)));
-    // Allocations                    count radix hash deradix
-    usz *c0 = (usz*)(alloc);   // rx    X-----------------X
-    usz *c1 = (usz*)(c0+rx);   // rx    X-----------------X
-    u8  *k0 = (u8 *)(c1+rx);   //  n    X-----------------X
-    u8  *k1 = (u8 *)(k0+n);    //            --/----------X
-    u32 *v1 = (u32*)(k1+n);    //  n         X-X
-    u32 *v2 = (u32*)(v1+n);    //  n           X----------X
-    u32 *r2 = (u32*)v2;
-    u32 *r1 = (u32*)v1;
-    u32 *tab= (u32*)(v2+n+1);  // tn
-
+    
+    //                                         timeline
+    // Allocations               len  count radix hash deradix     bytes  layout:
+    usz *c0 = (usz*)(alloc);   // rx   [+++................]    c0    rx  #
+    usz *c1 = (usz*)(c0+rx);   // rx    [++................]    c1    rx   #
+    u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]    k0     n    ##
+    u8  *k1 = (u8 *)(k0+n);    //  n         [+............]    k1     n      ##
+    u32 *v1 = (u32*)(k1+n);    //  n        [+..]               v1   4*n        ########
+    u32 *v2 = (u32*)(v1+n);    //  n         [+....-]           v2   4*n                ########
+    u32 *r2 = (u32*)v2;        //  n              [+.....]      r2   4*n                ########
+    u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n        ########
+    u32 *tab= (u32*)(v2+n+1);  // tn              [+]           tab 4*tn                         ###########
+    
     // Count keys
     for (usz j=0; j<2*rx; j++) c0[j] = 0;
     for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
@@ -163,7 +166,7 @@ B count_c1(B t, B x) {
     return num_squeeze(r);
   }
   #undef BRUTE
-
+  
   i32* rp; B r = m_i32arrv(&rp, n);
   H_b2i* map = m_b2i(64);
   SGetU(x)
@@ -183,7 +186,7 @@ B indexOf_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
-
+  
   #define BRUTE(T) \
       i##T* xp = i##T##any_ptr(x);                             \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
@@ -211,7 +214,7 @@ B indexOf_c1(B t, B x) {
   if (xe==el_i8) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (xe==el_i16) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-
+  
   if (xe==el_i32) {
     if (n<32) { BRUTE(32); }
     i32* xp = i32any_ptr(x);
@@ -238,22 +241,7 @@ B indexOf_c1(B t, B x) {
     }
   }
   #undef BRUTE
-  // // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
-  // i32* rp; B r = m_i32arrv(&rp, n);
-  // u64 size = n*2;
-  // wyhashmap_t idx[size];
-  // i32 val[size];
-  // for (i64 i = 0; i < size; i++) { idx[i] = 0; val[i] = -1; }
-  // SGet(x)
-  // i32 ctr = 0;
-  // for (usz i = 0; i < n; i++) {
-  //   u64 hash = bqn_hash(Get(x,i), wy_secret);
-  //   u64 p = wyhashmap(idx, size, &hash, 8, true, wy_secret);
-  //   if (val[p]==-1) val[p] = ctr++;
-  //   rp[i] = val[p];
-  // }
-  // dec(x);
-  // return r;
+  
   i32* rp; B r = m_i32arrv(&rp, n);
   H_b2i* map = m_b2i(64);
   SGetU(x)
