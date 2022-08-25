@@ -91,6 +91,7 @@ B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n==0) { decG(x); return emptyIVec(); }
+  if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
 
@@ -113,10 +114,8 @@ B count_c1(B t, B x) {
     for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++;               \
     decG(x); TFREE(tab);                                       \
     return num_squeeze(r)
-  if (n<=(usz)I32_MAX+1) {
-    if (xe==el_i8) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
-    if (xe==el_i16) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
-  }
+  if (xe==el_i8) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
+  if (xe==el_i16) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   if (xe==el_i32) {
     if (n<=32) { BRUTE(32); }
@@ -181,27 +180,40 @@ B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
   usz n = *SH(x);
   if (n==0) { decG(x); return emptyIVec(); }
+  if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
 
+  #define BRUTE(T) \
+      i##T* xp = i##T##any_ptr(x);                             \
+      i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
+      TALLOC(i##T, uniq, n); uniq[0]=xp[0];                    \
+      for (usz i=1, u=1; i<n; i++) {                           \
+        bool c=1; usz s=0; i##T xi=uniq[u]=xp[i];              \
+        for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);       \
+        rp[i]=s; u+=u==s;                                      \
+      }                                                        \
+      decG(x); return r;
   #define LOOKUP(T) \
-    usz tn = 1<<T;                               \
-    u##T* xp = (u##T*)i##T##any_ptr(x);          \
-    i32* rp; B r = m_i32arrv(&rp, n);            \
-    TALLOC(i32, tab, tn);                        \
-    for (usz j=0; j<tn; j++) tab[j]=n;           \
-    i32 u=0;                                     \
-    for (usz i=0; i<n;  i++) {                   \
-      u##T j=xp[i]; i32 t=tab[j];                \
-      if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;  \
-    }                                            \
-    decG(x); TFREE(tab);                         \
+    usz tn = 1<<T;                                             \
+    u##T* xp = (u##T*)i##T##any_ptr(x);                        \
+    i32* rp; B r = m_i32arrv(&rp, n);                          \
+    TALLOC(i32, tab, tn);                                      \
+    if (T>8 && n<tn/16) for (usz i=0; i<n;  i++) tab[xp[i]]=n; \
+    else                for (usz j=0; j<tn; j++) tab[j]=n;     \
+    i32 u=0;                                                   \
+    for (usz i=0; i<n;  i++) {                                 \
+      u##T j=xp[i]; i32 t=tab[j];                              \
+      if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;                \
+    }                                                          \
+    decG(x); TFREE(tab);                                       \
     return num_squeeze(r)
-  if (n>=16 && xe==el_i8 && n<=(usz)I32_MAX+1) { LOOKUP(8); }
-  if (n>=256 && xe==el_i16 && n<=(usz)I32_MAX+1) { LOOKUP(16); }
+  if (xe==el_i8) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
+  if (xe==el_i16) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
 
   if (xe==el_i32) {
+    if (n<32) { BRUTE(32); }
     i32* xp = i32any_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < n; i++) {
@@ -225,6 +237,7 @@ B indexOf_c1(B t, B x) {
       return r;
     }
   }
+  #undef BRUTE
   // // relies on equal hashes implying equal objects, which has like a 2⋆¯64 chance of being false per item
   // i32* rp; B r = m_i32arrv(&rp, n);
   // u64 size = n*2;
