@@ -360,9 +360,11 @@ char path_type(B path) {
 }
 
 
+static B get_timespec(struct timespec ts) { return m_f64(ts.tv_sec + ts.tv_nsec*1e-9); }
 #if (_POSIX_C_SOURCE >= 200809L) && defined(st_mtime)
-  B get_timespec(struct timespec ts) { return m_f64(ts.tv_sec + ts.tv_nsec*1e-9); }
   #define GET_TIME(C) get_timespec(s.st_##C##tim);
+#elif defined(__APPLE__)
+  #define GET_TIME(C) get_timespec(s.st_##C##timespec);
 #else
   #define GET_TIME(C) m_f64(s.st_##C##time);
 #endif
