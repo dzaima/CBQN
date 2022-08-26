@@ -359,17 +359,22 @@ char path_type(B path) {
   thrM("Unexpected file type");
 }
 
-B get_timespec(struct timespec ts) {
-  return m_f64(ts.tv_sec + ts.tv_nsec*1e-9);
-}
+
+#if (_POSIX_C_SOURCE >= 200809L) && defined(st_mtime)
+  B get_timespec(struct timespec ts) { return m_f64(ts.tv_sec + ts.tv_nsec*1e-9); }
+  #define GET_TIME(C) get_timespec(s.st_##C##tim);
+#else
+  #define GET_TIME(C) m_f64(s.st_##C##time);
+#endif
+
 B path_info(B path, i32 mode) {
   struct stat s;
   int r = path_stat(&s, path);
   if (r==-1) thrF("Failed to access file \"%R\": %S", path, strerror(errno));
   dec(path);
-  if (mode==0) return get_timespec(s.st_ctim);
-  if (mode==1) return get_timespec(s.st_atim);
-  if (mode==2) return get_timespec(s.st_mtim);
+  if (mode==0) return GET_TIME(c);
+  if (mode==1) return GET_TIME(a);
+  if (mode==2) return GET_TIME(m);
   if (mode==3) return m_f64(s.st_size);
   thrM("Unknown path_info mode");
 }
