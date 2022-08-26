@@ -226,7 +226,7 @@ B path_list(B path) {
   B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
     char* name = c->d_name;
-    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, m_c8vec_0(name));
+    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, utf8Decode(name, strlen(name)));
   }
   closedir(d);
   dec(path);
@@ -370,6 +370,7 @@ B path_info(B path, i32 mode) {
   if (mode==0) return get_timespec(s.st_ctim);
   if (mode==1) return get_timespec(s.st_atim);
   if (mode==2) return get_timespec(s.st_mtim);
+  if (mode==3) return m_f64(s.st_size);
   thrM("Unknown path_info mode");
 }
 

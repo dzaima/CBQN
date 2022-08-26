@@ -15,7 +15,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
-| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `Parent`, `MapBytes`, `CreateDir`, `Rename`, `Remove`, `Created`, `Modified`, `Accessed` |
+| `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `Parent`, `MapBytes`, `CreateDir`, `Rename`, `Remove`, `Created`, `Modified`, `Accessed`, `Size` |
 | `•FChars`     | |
 | `•FBytes`     | |
 | `•FLines`     | |
