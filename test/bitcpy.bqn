@@ -1,5 +1,5 @@
 # make f='-O3 -march=native -DTEST_BITCPY' singeli=1 c && ./BQN test/bitcpy.bqn
-⟨Temp, Type, Unshare, Squeeze, Info⟩ ← •internal
+⟨Temp, Type, Unshare, Squeeze, Info, Variation⟩ ← •internal
 u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123
 
@@ -8,12 +8,12 @@ r ← •MakeRand •Show u
 
 Do ← { 𝕊:
   al ← 1+r.Range 500
-  aT ← al r.Range 2
-  a ← Squeeze aT
+  a ← al r.Range 2
+  aT ← "Ai32" Variation a
   ! a ≡ aT
-  ! "i32arr" ≡ Type aT
   ! "bitarr" ≡ Type a
-  b ← Squeeze al r.Range 2
+  b ← al r.Range 2
+  ! "bitarr" ≡ Type b
   { 𝕊:
     bl ← r.Range 1+al
     as ← r.Range 1+al-bl
