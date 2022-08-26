@@ -9,7 +9,7 @@
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /* everything before the definition of •Type is defined to be pure, and everything after is not */ \
 /*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") D(grOrd,"•GroupOrd") \
-/*   sysfn.c*/M(repr,"•Repr") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") A(bqn,"•BQN") A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(currentError,"•CurrentError") \
+/*   sysfn.c*/M(repr,"•Repr") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") A(bqn,"•BQN") A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(toUtf8,"•ToUTF8") M(currentError,"•CurrentError") \
 /*   sysfn.c*/D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime") M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(reBQN,"•ReBQN") M(exit,"•Exit") M(getLine,"•GetLine") \
 /*   sysfn.c*/M(fName,"•file.Name") M(fParent,"•file.Parent") \
 /*   sysfn.c*/M(tRawMode,"•term.RawMode") M(tFlush,"•term.Flush") M(tCharB,"•term.CharB") M(tCharN,"•term.CharN") M(tOutRaw,"•term.OutRaw") M(tErrRaw,"•term.ErrRaw") \

@@ -59,7 +59,7 @@ Get the hash of `𝕩`.
 
 Monadically, use the global secret value which will differ between CBQN sessions.
 
-Dyadically, use the integer left argument as the secret. Will be the same between multiple CBQN sessions, but may change between versions.
+Dyadically, use the integer left argument as the seed. Will be the same between multiple CBQN sessions, but may change between CBQN versions.
 
 ## `•PrimInd`
 
@@ -75,7 +75,13 @@ Compare arguments. Equal to `((⊑⍋-⍒)⋈)`.
 
 Convert the argument UTF-8 byte array (or character array consisting of codepoints 0-255) to a string.
 
-May be removed in the future.
+May be removed or renamed in the future.
+
+## `•ToUTF8`
+
+Convert the argument character list to a UTF-8-encoded byte array, represented as a list of characters with codepoints 0-255.
+
+May be removed or renamed in the future.
 
 ## `•CurrentError`
 

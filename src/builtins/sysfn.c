@@ -850,6 +850,15 @@ B fromUtf8_c1(B t, B x) {
   return r;
 }
 
+B toUtf8_c1(B t, B x) {
+  if (!isArr(x)) thrM("•ToUTF8: Argument must be a character or number array");
+  u64 len = utf8lenB(x);
+  u8* rp; B r = m_c8arrv(&rp, len);
+  toUTF8(x, (char*)rp);
+  dec(x);
+  return r;
+}
+
 extern char** environ;
 
 #if __has_include(<spawn.h>) && __has_include(<sys/wait.h>) && !WASM
