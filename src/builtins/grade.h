@@ -129,7 +129,18 @@ B SORT_C1(B t, B x) {
   if (n <= 1) return x;
   u8 xe = TI(x,elType);
   B r;
-  if (xe==el_i8) {
+  if (xe==el_bit) {
+    u64* xp = bitarr_ptr(x);
+    u64* rp; r = m_bitarrv(&rp, n);
+    usz sum = bit_sum(xp, n);
+    u64 n0 = GRADE_UD(n-sum, sum);
+    u64 ones = -1ull;
+    u64 v0 = GRADE_UD(0, ones);
+    usz i=0, e=(n+63)/64;
+    for (; i<n0/64; i++) rp[i]=v0;
+    if (i<e) rp[i++]=v0^(ones<<(n0%64));
+    for (; i<e; i++) rp[i]=~v0;
+  } else if (xe==el_i8) {
     i8* xp = i8any_ptr(x);
     i8* rp; r = m_i8arrv(&rp, n);
     if (n<16) {
