@@ -14,6 +14,14 @@
 #define SORT_TYPE i32
 #include "sortTemplate.h"
 
+#define FOR(I,MAX) SORT_UD(for (usz I=0; I<MAX; I++), for (usz I=MAX; I--; ))
+
+#define PRE_UD(K,SL,SRE) \
+  u64 p##K=s##K; s##K+=cw##K[j]; \
+  s##K+=s##K SL 8; s##K+=s##K SL 16; s##K+=s##K SL 32; \
+  cw##K[j] = p##K|(s##K SL 8); s##K SRE 56
+#define PRE64(K) SORT_UD(PRE_UD(K,<<,>>=), PRE_UD(K,>>,<<=))
+
 #define INSERTION_SORT(T) \
   rp[0] = xp[0];                                             \
   for (usz i=0; i<n; i++) {                                  \
@@ -38,8 +46,7 @@
     )                                                        \
     for (usz i=1; i<n; i++) rp[i]+=rp[i-1];                  \
   } else { /* Branchy */                                     \
-    SORT_UD(for (usz j=0; j<C; j++), for (usz j=C; j-->0; )) \
-      for (usz c=c0[j]; c--; ) *rp++ = j-C/2;                \
+    FOR(j,C) for (usz c=c0[j]; c--; ) *rp++ = j-C/2;         \
   }                                                          \
   TFREE(c0)
 
@@ -55,30 +62,50 @@ B SORT_C1(B t, B x) {
     i8* rp; r = m_i8arrv(&rp, n);
     if (n<16) {
       INSERTION_SORT(i8);
-    } else if (n<=256) {
-      // Radix/bucket sort
+    } else if (n<=256) { // Radix/bucket sort
       TALLOC(u8, c0, 256); u8 *c0o=c0+128; // Offset for signedness
       for (usz j=0; j<256; j++) c0[j]=0;
       for (usz i=0; i<n; i++) c0o[xp[i]]++;
       u64 s=0; u64 *cw=(u64*)c0;
-      SORT_UD(
-        for (usz j=0; j<256/8; j++) {
-          u64 p=s; s+=cw[j]; s+=s<<8; s+=s<<16; s+=s<<32;
-          cw[j] = p|(s<<8); s>>=56;
-        }
-      ,
-        for (usz j=256/8; j--; ) {
-          u64 p=s; s+=cw[j]; s+=s>>8; s+=s>>16; s+=s>>32;
-          cw[j] = p|(s>>8); s<<=56;
-        }
-      )
+      FOR(j, 256/8) { PRE64(); } // Prefix sum
       for (usz i=0; i<n; i++) { i8 xi=xp[i]; u8 c=c0o[xi]++; rp[c]=xi; }
       TFREE(c0);
     } else {
       COUNTING_SORT(i8);
     }
-  } else if (xe<=el_i32) {
-    if (xe!=el_i32) x = taga(cpyI32Arr(x));
+  } else if (xe==el_i16) {
+    i16* xp = i16any_ptr(x); usz n=xia;
+    i16* rp; r = m_i16arrv(&rp, n);
+    if (n < 24) {
+      INSERTION_SORT(i16);
+    } else if (n <= 256) { // Radix sort, 1-byte counts
+      #define RADIX2(T, PRE_SUM) \
+        TALLOC(u8, alloc, 2*256*sizeof(T) + n*2);                                \
+        T *c0=(T*)alloc; T *c1=c0+256; T *c1o=c1+128;                            \
+        for (usz j=0; j<2*256; j++) c0[j]=0;                                     \
+        for (usz i=0; i<n; i++) { i16 v=xp[i]; c0[(u8)v]++; c1o[(i8)(v>>8)]++; } \
+        PRE_SUM;                                                                 \
+        i16 *r0 = (i16*)(c0+2*256);                                              \
+        for (usz i=0; i<n; i++) { i16 v=xp[i]; T c=c0 [(u8)v     ]++; r0[c]=v; } \
+        for (usz i=0; i<n; i++) { i16 v=r0[i]; T c=c1o[(i8)(v>>8)]++; rp[c]=v; } \
+        TFREE(alloc)
+      RADIX2(u8,
+        u64 s0=0; u64 s1=0; u64 *cw0=(u64*)c0; u64 *cw1=(u64*)c1;
+        FOR(j, 256/8) { PRE64(0); PRE64(1); }
+      );
+    } else if (n < 1<<15) { // Radix sort
+      RADIX2(u32,
+        u32 s0=0; u32 s1=0;
+        FOR(j, 256) {
+          u32 p0=s0; s0+=c0[j]; c0[j]=p0;
+          u32 p1=s1; s1+=c1[j]; c1[j]=p1;
+        }
+      );
+      #undef RADIX2
+    } else {
+      COUNTING_SORT(i16);
+    }
+  } else if (xe==el_i32) {
     i32* xp = i32any_ptr(x);
     i32* rp; r = m_i32arrv(&rp, xia);
     memcpy(rp, xp, xia*4);
@@ -98,6 +125,9 @@ B SORT_C1(B t, B x) {
 #undef LT
 #undef TIM_B
 #undef TIM_I
+#undef FOR
+#undef PRE_UD
+#undef PRE64
 #undef INSERTION_SORT
 #undef COUNTING_SORT
 #undef SORT_UD
