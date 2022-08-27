@@ -22,12 +22,6 @@
 #define FOR(I,MAX) GRADE_UD(for (usz I=0; I<MAX; I++), \
                             for (usz I=MAX; I--; ))
 
-#define PRE_UD(K,SL,SRE) \
-  u64 p##K=s##K; s##K+=((u64*)c##K)[j];                \
-  s##K+=s##K SL 8; s##K+=s##K SL 16; s##K+=s##K SL 32; \
-  ((u64*)c##K)[j] = p##K|(s##K SL 8); s##K SRE 56
-#define PRE64(K) GRADE_UD(PRE_UD(K,<<,>>=), PRE_UD(K,>>,<<=))
-
 #define INSERTION_SORT(T) \
   rp[0] = xp[0];                                             \
   for (usz i=0; i<n; i++) {                                  \
@@ -56,6 +50,77 @@
   }                                                          \
   TFREE(c0)
 
+// Radix sorting
+#define PRE(T,K) usz p##K=s##K; s##K+=c##K[j]; c##K[j]=p##K
+// 8-bit prefix sum by SWAR
+#define PRE_UD(K,SL,SRE) \
+  u64 p##K=s##K; s##K+=((u64*)c##K)[j];                \
+  s##K+=s##K SL 8; s##K+=s##K SL 16; s##K+=s##K SL 32; \
+  ((u64*)c##K)[j] = p##K|(s##K SL 8); s##K SRE 56
+#define PRE64(K) GRADE_UD(PRE_UD(K,<<,>>=), PRE_UD(K,>>,<<=))
+
+#define CHOOSE_SG_SORT(S,G) S
+#define CHOOSE_SG_GRADE(S,G) G
+
+#define RADIX_SORT_i8(T, TYP) \
+  TALLOC(T, c0, 256); T *c0o=c0+128;       \
+  for (usz j=0; j<256; j++) c0[j]=0;       \
+  for (usz i=0; i<n; i++) c0o[xp[i]]++;    \
+  RADIX_SUM_1_##T                          \
+  for (usz i=0; i<n; i++) { i8 xi=xp[i];   \
+    rp[c0o[xi]++]=CHOOSE_SG_##TYP(xi,i); } \
+  TFREE(c0)
+#define RADIX_SUM_1_u8   { u64 s0=0; FOR(j, 256/8) { PRE64(0); } }
+#define RADIX_SUM_1_usz  { usz s0=0; FOR(j,256) { PRE(usz,0); } }
+
+#define RADIX_SORT_i16(T, TYP, I) \
+  TALLOC(u8, alloc, 2*256*sizeof(T) + n*(2 + CHOOSE_SG_##TYP(0,sizeof(I)))); \
+  T *c0=(T*)alloc; T *c1=c0+256; T *c1o=c1+128;                              \
+  for (usz j=0; j<2*256; j++) c0[j]=0;                                       \
+  for (usz i=0; i<n; i++) { i16 v=xp[i]; c0[(u8)v]++; c1o[(i8)(v>>8)]++; }   \
+  RADIX_SUM_2_##T;                                                           \
+  i16 *r0 = (i16*)(c0+2*256);                                                \
+  CHOOSE_SG_##TYP(                                                           \
+  for (usz i=0; i<n; i++) { i16 v=xp[i]; r0[c0 [(u8)v     ]++]=v; }          \
+  for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=v; }          \
+  ,                                                                          \
+  I *g0 = (i32*)(r0+n);                                                      \
+  for (usz i=0; i<n; i++) { i16 v=xp[i]; T c=c0[(u8)v     ]++; r0[c]=v; g0[c]=i; } \
+  for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=g0[i]; }      \
+  )                                                                          \
+  TFREE(alloc)
+#define RADIX_SUM_2_u8  u64 s0=0, s1=0; FOR(j,256/8) { PRE64(0); PRE64(1); }
+#define RADIX_SUM_2(T)  T s0=0, s1=0; FOR(j,256) { PRE(T,0); PRE(T,1); }
+#define RADIX_SUM_2_usz RADIX_SUM_2(usz)
+#define RADIX_SUM_2_u32 RADIX_SUM_2(u32)
+
+#define RADIX_SORT_i32(T, TYP, I) \
+  TALLOC(u8, alloc, 4*256*sizeof(T) + n*(4 + CHOOSE_SG_##TYP(0,4+sizeof(I)))); \
+  T *c0=(T*)alloc, *c1=c0+256, *c2=c1+256, *c3=c2+256, *c3o=c3+128;          \
+  for (usz j=0; j<4*256; j++) c0[j]=0;                                       \
+  for (usz i=0; i<n; i++) { i32 v=xp[i];                                     \
+    c0 [(u8)v      ]++; c1 [(u8)(v>> 8)]++;                                  \
+    c2 [(u8)(v>>16)]++; c3o[(i8)(v>>24)]++; }                                \
+  RADIX_SUM_4_##T;                                                           \
+  i32 *r0 = (i32*)(c0+4*256);                                                \
+  CHOOSE_SG_##TYP(                                                           \
+  for (usz i=0; i<n; i++) { i32 v=xp[i]; T c=c0 [(u8)v      ]++; r0[c]=v; }  \
+  for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c1 [(u8)(v>> 8)]++; rp[c]=v; }  \
+  for (usz i=0; i<n; i++) { i32 v=rp[i]; T c=c2 [(u8)(v>>16)]++; r0[c]=v; }  \
+  for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c3o[(i8)(v>>24)]++; rp[c]=v; }  \
+  ,                                                                          \
+  i32 *r1 = r0+n; I *g0 = (i32*)(r1+n);                                      \
+  for (usz i=0; i<n; i++) { i32 v=xp[i]; T c=c0 [(u8)v      ]++; r0[c]=v; g0[c]=i;     } \
+  for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c1 [(u8)(v>> 8)]++; r1[c]=v; rp[c]=g0[i]; } \
+  for (usz i=0; i<n; i++) { i32 v=r1[i]; T c=c2 [(u8)(v>>16)]++; r0[c]=v; g0[c]=rp[i]; } \
+  for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c3o[(i8)(v>>24)]++;          rp[c]=g0[i]; } \
+  )                                                                          \
+  TFREE(alloc)
+#define RADIX_SUM_4_u8  u64 s0=0, s1=0, s2=0, s3=0; FOR(j, 256/8) { PRE64(0); PRE64(1); PRE64(2); PRE64(3); }
+#define RADIX_SUM_4(T)  T s0=0, s1=0, s2=0, s3=0; FOR(j, 256) { PRE(u32,0); PRE(u32,1); PRE(u32,2); PRE(u32,3); }
+#define RADIX_SUM_4_usz RADIX_SUM_4(usz)
+#define RADIX_SUM_4_u32 RADIX_SUM_4(u32)
+
 #define SORT_C1 CAT(GRADE_UD(and,or),c1)
 B SORT_C1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
@@ -69,13 +134,8 @@ B SORT_C1(B t, B x) {
     i8* rp; r = m_i8arrv(&rp, n);
     if (n<16) {
       INSERTION_SORT(i8);
-    } else if (n<256) { // Radix/bucket sort
-      TALLOC(u8, c0, 256); u8 *c0o=c0+128; // Offset for signedness
-      for (usz j=0; j<256; j++) c0[j]=0;
-      for (usz i=0; i<n; i++) c0o[xp[i]]++;
-      u64 s0=0; FOR(j, 256/8) { PRE64(0); } // Prefix sum
-      for (usz i=0; i<n; i++) { i8 xi=xp[i]; u8 c=c0o[xi]++; rp[c]=xi; }
-      TFREE(c0);
+    } else if (n<256) {
+      RADIX_SORT_i8(u8, SORT);
     } else {
       COUNTING_SORT(i8);
     }
@@ -84,30 +144,10 @@ B SORT_C1(B t, B x) {
     i16* rp; r = m_i16arrv(&rp, n);
     if (n < 24) {
       INSERTION_SORT(i16);
-    } else if (n < 256) { // Radix sort, 1-byte counts
-      #define RADIX2(T, PRE_SUM) \
-        TALLOC(u8, alloc, 2*256*sizeof(T) + n*2);                                \
-        T *c0=(T*)alloc; T *c1=c0+256; T *c1o=c1+128;                            \
-        for (usz j=0; j<2*256; j++) c0[j]=0;                                     \
-        for (usz i=0; i<n; i++) { i16 v=xp[i]; c0[(u8)v]++; c1o[(i8)(v>>8)]++; } \
-        PRE_SUM;                                                                 \
-        i16 *r0 = (i16*)(c0+2*256);                                              \
-        for (usz i=0; i<n; i++) { i16 v=xp[i]; T c=c0 [(u8)v     ]++; r0[c]=v; } \
-        for (usz i=0; i<n; i++) { i16 v=r0[i]; T c=c1o[(i8)(v>>8)]++; rp[c]=v; } \
-        TFREE(alloc)
-      RADIX2(u8,
-        u64 s0=0; u64 s1=0;
-        FOR(j, 256/8) { PRE64(0); PRE64(1); }
-      );
-    } else if (n < 1<<15) { // Radix sort
-      RADIX2(u32,
-        u32 s0=0; u32 s1=0;
-        FOR(j, 256) {
-          u32 p0=s0; s0+=c0[j]; c0[j]=p0;
-          u32 p1=s1; s1+=c1[j]; c1[j]=p1;
-        }
-      );
-      #undef RADIX2
+    } else if (n < 256) {
+      RADIX_SORT_i16(u8, SORT,);
+    } else if (n < 1<<15) {
+      RADIX_SORT_i16(u32, SORT,);
     } else {
       COUNTING_SORT(i16);
     }
@@ -117,35 +157,9 @@ B SORT_C1(B t, B x) {
     if (n < 40) {
       INSERTION_SORT(i32);
     } else if (n < 256) {
-      #define RADIX4(T, PRE_SUM) \
-        TALLOC(u8, alloc, 4*256*sizeof(T) + n*4);                                 \
-        T *c0=(T*)alloc, *c1=c0+256, *c2=c1+256, *c3=c2+256, *c3o=c3+128;         \
-        for (usz j=0; j<4*256; j++) c0[j]=0;                                      \
-        for (usz i=0; i<n; i++) { i32 v=xp[i];                                    \
-          c0 [(u8)v      ]++; c1 [(u8)(v>> 8)]++;                                 \
-          c2 [(u8)(v>>16)]++; c3o[(i8)(v>>24)]++; }                               \
-        PRE_SUM;                                                                  \
-        i32 *r0 = (i32*)(c0+4*256);                                               \
-        for (usz i=0; i<n; i++) { i32 v=xp[i]; T c=c0 [(u8)v      ]++; r0[c]=v; } \
-        for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c1 [(u8)(v>> 8)]++; rp[c]=v; } \
-        for (usz i=0; i<n; i++) { i32 v=rp[i]; T c=c2 [(u8)(v>>16)]++; r0[c]=v; } \
-        for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c3o[(i8)(v>>24)]++; rp[c]=v; } \
-        TFREE(alloc)
-      RADIX4(u8,
-        u64 s0=0; u64 s1=0; u64 s2=0; u64 s3=0;
-        FOR(j, 256/8) { PRE64(0); PRE64(1); PRE64(2); PRE64(3); }
-      );
+      RADIX_SORT_i32(u8, SORT,);
     } else {
-      RADIX4(usz,
-        usz s0=0; usz s1=0; usz s2=0; usz s3=0;
-        FOR(j, 256) {
-          u32 p0=s0; s0+=c0[j]; c0[j]=p0;
-          u32 p1=s1; s1+=c1[j]; c1[j]=p1;
-          u32 p2=s2; s2+=c2[j]; c2[j]=p2;
-          u32 p3=s3; s3+=c3[j]; c3[j]=p3;
-        }
-      );
-      #undef RADIX4
+      RADIX_SORT_i32(u32, SORT,);
     }
   } else {
     B xf = getFillQ(x);
@@ -183,22 +197,14 @@ B GRADE_CAT(c1)(B t, B x) {
       else                              rp[r0++] = i;
     }
     decG(x); return r;
-  } else if (xe==el_i8) {
-    i8* xp = i8any_ptr(x);
-    i32 min=-128, range=256;
-    TALLOC(usz, tmp, range+1);
-    for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
-    GRADE_UD( // i8 range-based
-      for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
-      for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
-      for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
-    ,
-      for (usz i = 0; i < ia; i++) (tmp-min)[xp[i]]++;
-      for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
-      for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
-    )
-    TFREE(tmp); decG(x);
-    return r;
+  } else if (xe==el_i8 && ia>8) {
+    i8* xp = i8any_ptr(x); usz n=ia;
+    RADIX_SORT_i8(usz, GRADE);
+    decG(x); return r;
+  } else if (xe==el_i16 && ia>16) {
+    i16* xp = i16any_ptr(x); usz n = ia;
+    RADIX_SORT_i16(usz, GRADE, i32);
+    decG(x); return r;
   }
   if (xe==el_i32 || xe==el_c32) { // safe to use the same comparison for i32 & c32 as c32 is 0≤x≤1114111
     i32* xp = tyany_ptr(x);
@@ -223,6 +229,11 @@ B GRADE_CAT(c1)(B t, B x) {
       )
       TFREE(tmp); decG(x);
       return r;
+    }
+    if (ia > 40) {
+      usz n=ia;
+      RADIX_SORT_i32(usz, GRADE, i32);
+      decG(x); return r;
     }
     
     TALLOC(I32I32p, tmp, ia);
@@ -321,8 +332,24 @@ B GRADE_CAT(c2)(B t, B w, B x) {
 
 #undef LT
 #undef FOR
+#undef PRE
 #undef PRE_UD
 #undef PRE64
+#undef CHOOSE_SG_SORT
+#undef CHOOSE_SG_GRADE
+#undef RADIX_SORT_i8
+#undef RADIX_SUM_1_u8
+#undef RADIX_SUM_1_usz
+#undef RADIX_SORT_i16
+#undef RADIX_SUM_2_u8
+#undef RADIX_SUM_2
+#undef RADIX_SUM_2_usz
+#undef RADIX_SUM_2_u32
+#undef RADIX_SORT_i32
+#undef RADIX_SUM_4_u8
+#undef RADIX_SUM_4
+#undef RADIX_SUM_4_usz
+#undef RADIX_SUM_4_u32
 #undef GRADE_CAT
 #undef GRADE_NEG
 #undef GRADE_UD
