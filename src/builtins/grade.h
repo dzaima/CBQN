@@ -69,7 +69,7 @@ B SORT_C1(B t, B x) {
     i8* rp; r = m_i8arrv(&rp, n);
     if (n<16) {
       INSERTION_SORT(i8);
-    } else if (n<=256) { // Radix/bucket sort
+    } else if (n<256) { // Radix/bucket sort
       TALLOC(u8, c0, 256); u8 *c0o=c0+128; // Offset for signedness
       for (usz j=0; j<256; j++) c0[j]=0;
       for (usz i=0; i<n; i++) c0o[xp[i]]++;
@@ -84,7 +84,7 @@ B SORT_C1(B t, B x) {
     i16* rp; r = m_i16arrv(&rp, n);
     if (n < 24) {
       INSERTION_SORT(i16);
-    } else if (n <= 256) { // Radix sort, 1-byte counts
+    } else if (n < 256) { // Radix sort, 1-byte counts
       #define RADIX2(T, PRE_SUM) \
         TALLOC(u8, alloc, 2*256*sizeof(T) + n*2);                                \
         T *c0=(T*)alloc; T *c1=c0+256; T *c1o=c1+128;                            \
@@ -116,7 +116,7 @@ B SORT_C1(B t, B x) {
     i32* rp; r = m_i32arrv(&rp, n);
     if (n < 40) {
       INSERTION_SORT(i32);
-    } else if (n <= 256) {
+    } else if (n < 256) {
       #define RADIX4(T, PRE_SUM) \
         TALLOC(u8, alloc, 4*256*sizeof(T) + n*4);                                 \
         T *c0=(T*)alloc, *c1=c0+256, *c2=c1+256, *c3=c2+256, *c3o=c3+128;         \
