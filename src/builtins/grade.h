@@ -293,9 +293,24 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
   
-  if (we<=el_i32 & xe<=el_i32) {
-    w = toI32Any(w); i32* wi = i32any_ptr(w);
-    x = toI32Any(x); i32* xi = i32any_ptr(x);
+  if (LIKELY(we<el_B & xe<el_B)) {
+    if (elNum(we)) { // number
+      if (elNum(xe)) {
+        if (we==el_f64 | xe==el_f64) goto gen;
+        w=toI32Any(w); x=toI32Any(x);
+      } else {
+        for (u64 i=0; i<xia; i++) rp[i]=wia; goto done;
+      }
+    } else { // character
+      if (elNum(xe)) {
+        Arr* ra=allZeroes(xia); arr_shVec(ra);
+        decG(r); r=taga(ra); goto done;
+      } else {
+        w=toC32Any(w); x=toC32Any(x);
+      }
+    }
+    i32* wi = tyany_ptr(w);
+    i32* xi = tyany_ptr(x);
     if (CHECK_VALID && !FL_HAS(w,fl)) {
       for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
       FL_SET(w, fl);
@@ -303,15 +318,12 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
-      usz s = 0, e = wia+1;
-      while (e-s > 1) {
-        usz m = (s+(i64)e)/2;
-        if (c LT wi[m-1]) e = m;
-        else s = m;
-      }
-      rp[i] = s;
+      i32 *s = wi-1;
+      for (usz l = wia+1, h; (h=l/2)>0; l-=h) s += h * !(c LT s[h]);
+      rp[i] = s - (wi-1);
     }
   } else {
+gen:
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = arr_bptr(w);
@@ -336,6 +348,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   }
+done:
   decG(w);decG(x);
   return r;
 }
