@@ -285,7 +285,9 @@ B internalTemp_c1(B t, B x) {
   #endif
   return x;
 }
+#if !SINGELI
 B internalTemp_c2(B t, B w, B x) { dec(w); return x; }
+#endif
 
 B heapDump_c1(B t, B x) {
   cbqn_heapDump();

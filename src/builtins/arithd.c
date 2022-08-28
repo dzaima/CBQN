@@ -2,14 +2,18 @@
 #include "../utils/each.h"
 #include <math.h>
 
+static f64 pfmod(f64 a, f64 b) {
+  f64 r = fmod(a, b);
+  if (a<0 != b<0 && r!=0) r+= b;
+  return r;
+}
+
 #if SINGELI
+
 #define BCALL(N, X) N(b(X))
 #define interp_f64(X) b(X).f
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#include "../singeli/gen/dyarith.c"
-#pragma GCC diagnostic pop
+#include "../singeli/c/arithd2Impl.c"
 #endif
 
 #define P2(N) { if(isArr(w)|isArr(x)) { \
@@ -158,39 +162,40 @@
   NOINLINE B NAME##_c2_arr(B t, B w, B x) {                          \
     EXTRA2                                                           \
     if (isArr(w)|isArr(x)) {                                         \
-      if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                     \
-        if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        usz ia = IA(x);                                              \
-        u8 we = TI(w,elType);                                        \
-        u8 xe = TI(x,elType);                                        \
-        if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {          \
-          if (BIT && (we|xe)==0) return bitAA##BIT(w,x,ia);          \
-          B wt=w,xt=x;                                               \
-          we=xe=iMakeEq(&wt, &xt, we, xe);                           \
-          w=wt; x=xt;                                                \
-        }                                                            \
-        if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {       \
-          bool wei = we==el_i32; bool xei = xe==el_i32;              \
-          if (wei&xei) { PI32(w)PI32(x)SI_AA(NAME,i32,rcf64) DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
-          if (!wei&!xei) {PF(w)PF(x) { SI_AA(NAME,f64,base) } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
-          rcf64:; Rf64(x)                                            \
-          if (wei) { PI32(w)                                         \
-            if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
-            else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }             \
-          } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }             \
-          decG(w); decG(x); return num_squeeze(r);                   \
-        }                                                            \
-        if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) SI_AA(NAME, i8,base) DOI8 (EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) SI_AA(NAME,i16,base) DOI16(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base) } \
-        if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
-      } \
-      else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
-      else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
+      if (isArr(w)&isArr(x)) { SI_AA(NAME)                           \
+        if (RNK(w)==RNK(x)) {                                        \
+          if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+          usz ia = IA(x);                                            \
+          u8 we = TI(w,elType);                                      \
+          u8 xe = TI(x,elType);                                      \
+          if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {        \
+            if (BIT && (we|xe)==0) return bitAA##BIT(w,x,ia);        \
+            B wt=w,xt=x;                                             \
+            we=xe=iMakeEq(&wt, &xt, we, xe);                         \
+            w=wt; x=xt;                                              \
+          }                                                          \
+          if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {     \
+            bool wei = we==el_i32; bool xei = xe==el_i32;            \
+            if (wei&xei) { PI32(w)PI32(x)DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
+            if (!wei&!xei) {PF(w)PF(x) { } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
+            rcf64:; Rf64(x)                                          \
+            if (wei) { PI32(w)                                       \
+              if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
+              else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }           \
+            } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
+            decG(w); decG(x); return num_squeeze(r);                 \
+          }                                                          \
+          if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base) } \
+          if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
+        } \
+      } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
+      else   if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
       base: P2(NAME)                          \
     }                                         \
     thrM(SYMB ": Unexpected argument types"); \
@@ -210,13 +215,6 @@
   }
 #endif // TYPED_ARITH
 
-static f64 pfmod(f64 a, f64 b) {
-  f64 r = fmod(a, b);
-  if (a<0 != b<0 && r!=0) r+= b;
-  return r;
-}
-
-#define NO_SI_AA(N,S,BASE)
 #define REG_SA(NAME, EXPR) \
   if (xe==el_bit) return bit_sel1Fn(NAME##_c2,w,x,1); \
   if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
@@ -230,8 +228,9 @@ static f64 pfmod(f64 a, f64 b) {
   if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
   if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) decG(w); return num_squeeze(r); }
 
+
+#define NO_SI_AA(N)
 #if SINGELI
-  #define SI_AA(N,S,BASE) R##S(x); usz rlen=avx2_##N##AA##_##S((void*)wp, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } decG(w);decG(x);return r;
   #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } dec (w);decG(x);return r;
   #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } decG(w);dec (x);return r;
   #define SI_SA(NAME, EXPR) \
@@ -254,6 +253,8 @@ static f64 pfmod(f64 a, f64 b) {
       case el_f64: { SI_AS_I(NAME,f64,x,asBad) } \
       case el_c8: case el_c16: case el_c32: case el_B:; /*fallthrough*/ \
     } asBad:;
+  #define SI_AA(N) return do_dyArith(&N##DyTable, w, x);
+  // #define SI_AA NO_SI_AA
 #else
   #define SI_AA NO_SI_AA
   #define SI_AS REG_AS
@@ -313,10 +314,10 @@ GC2i("¬", not, 1+wv-xv, {
   if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
 }, {}, 0, NO_SI_AA, REG_AS, REG_SA)
 GC2i("×", mul, wv*xv, {}, {}, 2, SI_AA, SI_AS, SI_SA)
-GC2i("∧", and, wv*xv, {}, {}, 2, NO_SI_AA, REG_AS, REG_SA)
-GC2i("∨", or , (wv+xv)-(wv*xv), {}, {}, 1, NO_SI_AA, REG_AS, REG_SA)
-GC2i("⌊", floor, wv>xv?xv:wv, {}, {}, 2, NO_SI_AA, REG_AS, REG_SA) // optimizer optimizes out the fallback mess
-GC2i("⌈", ceil , wv>xv?wv:xv, {}, {}, 1, NO_SI_AA, REG_AS, REG_SA)
+GC2i("∧", and, wv*xv, {}, {}, 2, SI_AA, REG_AS, REG_SA)
+GC2i("∨", or , (wv+xv)-(wv*xv), {}, {}, 1, SI_AA, REG_AS, REG_SA)
+GC2i("⌊", floor, wv>xv?xv:wv, {}, {}, 2, SI_AA, REG_AS, REG_SA) // optimizer optimizes out the fallback mess
+GC2i("⌈", ceil , wv>xv?wv:xv, {}, {}, 1, SI_AA, REG_AS, REG_SA)
 
 GC2f("÷", div  ,           w.f/x.f, {})
 GC2f("⋆", pow  ,     pow(w.f, x.f), {})

@@ -112,15 +112,15 @@ arithAA{F,VT}(w: *u8, x: *u8, r: *u8, len: Size) : Size = { def c{x} = *eltype{V
 arithAS{F,VT}(w: *u8, x: u64, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithAS{VT, F, *T ~~ w,       cast_fB{T, x}, *T~~r, len} }
 arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithSA{VT, F, cast_fB{T, w}, *T ~~ x,       *T~~r, len} }
 
-'avx2_addAA_i8'  = arithAA{__add,[32]i8 }; 'avx2_addAS_i8'  = arithAS{__add,[32]i8 }; 'avx2_addSA_i8'  = arithSA{__add,[32]i8 }
-'avx2_addAA_i16' = arithAA{__add,[16]i16}; 'avx2_addAS_i16' = arithAS{__add,[16]i16}; 'avx2_addSA_i16' = arithSA{__add,[16]i16}
-'avx2_addAA_i32' = arithAA{__add,[ 8]i32}; 'avx2_addAS_i32' = arithAS{__add,[ 8]i32}; 'avx2_addSA_i32' = arithSA{__add,[ 8]i32}
-'avx2_addAA_f64' = arithAA{__add,[ 4]f64}; 'avx2_addAS_f64' = arithAS{__add,[ 4]f64}; 'avx2_addSA_f64' = arithSA{__add,[ 4]f64}
-'avx2_subAA_i8'  = arithAA{__sub,[32]i8 }; 'avx2_subAS_i8'  = arithAS{__sub,[32]i8 }; 'avx2_subSA_i8'  = arithSA{__sub,[32]i8 }
-'avx2_subAA_i16' = arithAA{__sub,[16]i16}; 'avx2_subAS_i16' = arithAS{__sub,[16]i16}; 'avx2_subSA_i16' = arithSA{__sub,[16]i16}
-'avx2_subAA_i32' = arithAA{__sub,[ 8]i32}; 'avx2_subAS_i32' = arithAS{__sub,[ 8]i32}; 'avx2_subSA_i32' = arithSA{__sub,[ 8]i32}
-'avx2_subAA_f64' = arithAA{__sub,[ 4]f64}; 'avx2_subAS_f64' = arithAS{__sub,[ 4]f64}; 'avx2_subSA_f64' = arithSA{__sub,[ 4]f64}
-'avx2_mulAA_i8'  = arithAA{__mul,[32]i8 }; 'avx2_mulAS_i8'  = arithAS{__mul,[32]i8 }; 'avx2_mulSA_i8'  = arithSA{__mul,[32]i8 }
-'avx2_mulAA_i16' = arithAA{__mul,[16]i16}; 'avx2_mulAS_i16' = arithAS{__mul,[16]i16}; 'avx2_mulSA_i16' = arithSA{__mul,[16]i16}
-'avx2_mulAA_i32' = arithAA{__mul,[ 8]i32}; 'avx2_mulAS_i32' = arithAS{__mul,[ 8]i32}; 'avx2_mulSA_i32' = arithSA{__mul,[ 8]i32}
-'avx2_mulAA_f64' = arithAA{__mul,[ 4]f64}; 'avx2_mulAS_f64' = arithAS{__mul,[ 4]f64}; 'avx2_mulSA_f64' = arithSA{__mul,[ 4]f64}
+'avx2_addAS_i8'  = arithAS{__add,[32]i8 }; 'avx2_addSA_i8'  = arithSA{__add,[32]i8 }
+'avx2_addAS_i16' = arithAS{__add,[16]i16}; 'avx2_addSA_i16' = arithSA{__add,[16]i16}
+'avx2_addAS_i32' = arithAS{__add,[ 8]i32}; 'avx2_addSA_i32' = arithSA{__add,[ 8]i32}
+'avx2_addAS_f64' = arithAS{__add,[ 4]f64}; 'avx2_addSA_f64' = arithSA{__add,[ 4]f64}
+'avx2_subAS_i8'  = arithAS{__sub,[32]i8 }; 'avx2_subSA_i8'  = arithSA{__sub,[32]i8 }
+'avx2_subAS_i16' = arithAS{__sub,[16]i16}; 'avx2_subSA_i16' = arithSA{__sub,[16]i16}
+'avx2_subAS_i32' = arithAS{__sub,[ 8]i32}; 'avx2_subSA_i32' = arithSA{__sub,[ 8]i32}
+'avx2_subAS_f64' = arithAS{__sub,[ 4]f64}; 'avx2_subSA_f64' = arithSA{__sub,[ 4]f64}
+'avx2_mulAS_i8'  = arithAS{__mul,[32]i8 }; 'avx2_mulSA_i8'  = arithSA{__mul,[32]i8 }
+'avx2_mulAS_i16' = arithAS{__mul,[16]i16}; 'avx2_mulSA_i16' = arithSA{__mul,[16]i16}
+'avx2_mulAS_i32' = arithAS{__mul,[ 8]i32}; 'avx2_mulSA_i32' = arithSA{__mul,[ 8]i32}
+'avx2_mulAS_f64' = arithAS{__mul,[ 4]f64}; 'avx2_mulSA_f64' = arithSA{__mul,[ 4]f64}

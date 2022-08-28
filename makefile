@@ -216,11 +216,26 @@ preSingeliBin:
 	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
 
 
-build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c slash.c}
+build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith2.c copy.c equal.c squeeze.c scan.c slash.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
 	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "obj/presingeli/"
+
+ifeq (${i_singeli}, 1)
+# arithmetic singeli generator
+src/builtins/arithd2.c: src/singeli/c/dyarith2.c
+src/singeli/c/dyarith2.c: src/singeli/gen/dyarithTables.c
+src/singeli/src/dyarith2.singeli: src/singeli/gen/dyarithDefs.singeli
+
+src/singeli/gen/dyarithDefs.singeli: genArithTables
+src/singeli/gen/dyarithTables.c: genArithTables
+
+.INTERMEDIATE: genArithTables
+genArithTables: src/singeli/src/genArithTables.bqn preSingeliBin
+	@echo "  generating dyarithDefs.singeli & dyarithTables.c"
+	@obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/dyarithDefs.singeli" "$$PWD/src/singeli/gen/dyarithTables.c"
+endif
 
 
 
