@@ -318,13 +318,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
-      usz s = 0, e = wia+1;
-      while (e-s > 1) {
-        usz m = (s+(i64)e)/2;
-        if (c LT wi[m-1]) e = m;
-        else s = m;
-      }
-      rp[i] = s;
+      i32 *s = wi-1;
+      for (usz l = wia+1, h; (h=l/2)>0; l-=h) s += h * !(c LT s[h]);
+      rp[i] = s - (wi-1);
     }
   } else {
 gen:
