@@ -294,15 +294,15 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
   
   if (LIKELY(we<el_B & xe<el_B)) {
-    if (we<el_c8) { // number
-      if (xe<el_c8) {
-        if (we>el_i32 | xe>el_i32) goto gen;
+    if (elNum(we)) { // number
+      if (elNum(xe)) {
+        if (we==el_f64 | xe==el_f64) goto gen;
         w=toI32Any(w); x=toI32Any(x);
       } else {
         for (u64 i=0; i<xia; i++) rp[i]=wia; goto done;
       }
     } else { // character
-      if (xe<el_c8) {
+      if (elNum(xe)) {
         Arr* ra=allZeroes(xia); arr_shVec(ra);
         decG(r); r=taga(ra); goto done;
       } else {
