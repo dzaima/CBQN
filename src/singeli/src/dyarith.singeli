@@ -30,14 +30,14 @@ def bqn_or{a, b} = (a+b)-(a*b)
 
 
 # + & -
-def arithChk1{F==__add, M, w:T, x:T, r:T & issigned{rootty{T}}} = anyneg{M{(w^r) & (x^r)}}
-def arithChk1{F==__sub, M, w:T, x:T, r:T & issigned{rootty{T}}} = anyneg{M{(w^x) & (w^r)}}
+def arithChk1{F==__add, M, w:T, x:T, r:T} = anyneg{M{(w^r) & (x^r)}}
+def arithChk1{F==__sub, M, w:T, x:T, r:T} = anyneg{M{(w^x) & (w^r)}}
 def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__adds{w,x}, r, M}
 def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__subs{w,x}, r, M}
 
 
 
-def arithChk2{F, M, w:T, x:T & (match{F,__add} | match{F,__sub})} = {
+def arithChk2{F, M, w:T, x:T & issigned{rootty{T}} & (match{F,__add} | match{F,__sub})} = {
   r:= F{w,x}
   tup{r, arithChk1{F, M, w, x, r}}
 }
@@ -78,7 +78,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
 
 
 
-def runner{u, F} = {
+def runner{u, R, F} = {
   def c = ~u
   
   def run{F, OO, M, w, x} = { show{'todo', fmt_op{F}, c, w, x}; emit{void,'__builtin_abort'}; w }
@@ -91,9 +91,13 @@ def runner{u, F} = {
   
   def run{F, OO, M, w, x & u} = F{w, x} # trivial base implementation
   
+  def toggleTop{x:X} = x ^ broadcast{X, 1<<(width{eltype{X}}-1)}
+  def run{F==__sub, OO, M, w:VU, x:VU & isunsigned{eltype{VU}}} = { # 'b'-'a'
+    def VS = ty_s{VU}
+    run{F, OO, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
+  }
   def run{F, OO, M, w:VU, x:VS & isunsigned{eltype{VU}} & issigned{eltype{VS}}} = { # 'a'+3, 'a'-3
-    top:= broadcast{VU, 1<<(width{eltype{VU}}-1)}
-    top ^ VU~~run{F, OO, M, VS~~(w^top), x}
+    toggleTop{VU~~run{F, OO, M, VS~~toggleTop{w}, x}}
   }
   # def run{F==__add, OO, M, w:VS, x:VU & issigned{eltype{VS}} & isunsigned{eltype{VU}}} = run{F, OO, M, x, w} # 3+'a' → 'a'+3
   run
@@ -103,7 +107,7 @@ def runner{u, F} = {
 # old atom F array & array F atom
 def arithAny{VT, F, W, X, r, len} = {
   def bulk = vcount{VT}
-  def run = runner{eltype{VT}==f64, F}
+  def run = runner{eltype{VT}==f64, eltype{VT}, F}
   maskedLoop{bulk, len, {i, M} => storeBatch{r, i, run{F, {} => return{i}, M, W{i}, X{i}}, M}}
   len
 }
@@ -151,7 +155,7 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
     def overflow = tern{mode==1, {i}=>return{i}, tern{mode==2, {i}=>return{1}, 0}}
     def TY = [bulk]R
     
-    def run = runner{match{overflow, 0}, F}
+    def run = runner{match{overflow, 0}, R, F}
     
     maskedLoop{bulk, len, {i, M} => {
       cw:= loadBatch{*W~~w, i, ty_sc{W, TY}}
