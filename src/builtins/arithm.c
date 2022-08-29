@@ -20,7 +20,7 @@ B bit_negate(B x) { // consumes
   return r;
 }
 
-#define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,BX) B NAME##_c1(B t, B x) {     \
+#define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,BX,SQF) B NAME##_c1(B t, B x) { \
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
   if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
   u8 xe = TI(x,elType);                                                 \
@@ -40,7 +40,7 @@ B bit_negate(B x) { // consumes
   if (xe==el_f64) { f64* xp = f64any_ptr(x);                            \
     f64* rp; B r = m_f64arrc(&rp, x);                                   \
     for (i64 i = 0; i < sz; i++) { f64 v = xp[i]; rp[i] = FEXPR; }      \
-    decG(x); return r;                                                  \
+    decG(x); return SQF? num_squeeze(r) : r;                            \
   }                                                                     \
   base: SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x);             \
 }
@@ -48,14 +48,14 @@ B bit_negate(B x) { // consumes
 
 B   add_c1(B t, B x) { return x; }
 
-GC1i("-", sub,   -v,              v== MIN, -v,      {}) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
-GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,{})
-GC1i("⌊", floor, floor(v),        0,           v,   {})
-GC1i("⌈", ceil,  ceil(v),         0,           v,   {})
-GC1i("×", mul,   v==0?0:v>0?1:-1, 0,           v==0?0:v>0?1:-1,{})
+GC1i("-", sub,   -v,              v== MIN, -v,      {}, 0) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
+GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,{}, 0)
+GC1i("⌊", floor, floor(v),        0,           v,   {}, 1)
+GC1i("⌈", ceil,  ceil(v),         0,           v,   {}, 1)
+GC1i("×", mul,   v==0?0:v>0?1:-1, 0,           v==0?0:v>0?1:-1,{}, 1)
 GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     {
   if(xe==el_bit) return bit_negate(x);
-})
+}, 0)
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
