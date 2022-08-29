@@ -254,18 +254,19 @@ static f64 pfmod(f64 a, f64 b) {
       case el_c8: case el_c16: case el_c32: case el_B:; /*fallthrough*/ \
     } asBad:;
   #define SI_AA(N) return do_dyArith(&N##DyTable, w, x);
-  // #define SI_AA NO_SI_AA
+  #define IFN_SINGELI(X)
 #else
   #define SI_AA NO_SI_AA
   #define SI_AS REG_AS
   #define SI_SA REG_SA
+  #define IFN_SINGELI(X) X
 #endif
 
 GC2i("+", add, wv+xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
   if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
 },{
-  if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
+  IFN_SINGELI(if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
     if (TI(x,elType) == el_i32) {
       u32 wv = o2cu(w);
       i32* xp = i32any_ptr(x); usz xia = IA(x);
@@ -277,14 +278,14 @@ GC2i("+", add, wv+xv, {
       decG(x);
       return r;
     }
-  }
+  })
 }, 0, SI_AA, SI_AS, SI_SA)
 
 GC2i("-", sub, wv-xv, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 },{
-  if (isArr(w) && TI(w,elType)==el_c32) {
+  IFN_SINGELI(if (isArr(w) && TI(w,elType)==el_c32) {
     if (isC32(x)) {
       i32 xv = (i32)o2cu(x);
       u32* wp = c32any_ptr(w); usz wia = IA(w);
@@ -306,7 +307,7 @@ GC2i("-", sub, wv-xv, {
         return r;
       }
     }
-  }
+  })
 }, 0, SI_AA, SI_AS, SI_SA)
 
 GC2i("¬", not, 1+wv-xv, {
