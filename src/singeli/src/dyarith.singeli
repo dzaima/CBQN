@@ -8,38 +8,42 @@ include './bitops'
 include './mask'
 
 
+
+def fmt_op{X== __add}= '__add'
+def fmt_op{X== __sub}= '__sub'
+def fmt_op{X== __mul}= '__mul'
+def fmt_op{X== __div}= '__div'
+def fmt_op{X==  __or}= '__or'
+def fmt_op{X== __and}= '__and'
+def fmt_op{X==bqn_or}= 'bqn_or'
+def fmt_op{X==   min}= 'min'
+def fmt_op{X==   max}= 'max'
+
 def rootty{T & isprim{T}} = T
 def rootty{T & isvec{T}} = eltype{T}
 
+def ty_sc{O, R} = R # keep floats as-is
+def ty_sc{O, R & issigned{O} & isunsigned{rootty{R}}} = ty_s{R}
+def ty_sc{O, R & isunsigned{O} & issigned{rootty{R}}} = ty_u{R}
 
-# old scalar code
-# def ty_dbl{T & isprim{T}} = apply{tern{issigned{T}, ty_s, ty_u}, tup{width{T}*2}}
-# def ty_dbl{T & isvec{T}} = [vcount{T}/2](ty_dbl{eltype{T}})
-# def dcast_i{x:T} = promote{ty_dbl{T}, x}
-# def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isprim{T}} = {
-#   r:= F{dcast_i{w}, dcast_i{x}}
-#   tup{r, r!=promote{type{r}, trunc{T, r}}}
-# }
+def bqn_or{a, b} = (a+b)-(a*b)
+
 
 # + & -
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__add}} = anyneg{M{(w^r) & (x^r)}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub}} = anyneg{M{(w^x) & (w^r)}}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__add} & isvec{T} & width{eltype{T}}<=16} = anyne{__adds{w,x}, r, M}
-def arithChk1{F, M, w:T, x:T, r:T & match{F,__sub} & isvec{T} & width{eltype{T}}<=16} = anyne{__subs{w,x}, r, M}
+def arithChk1{F==__add, M, w:T, x:T, r:T & issigned{rootty{T}}} = anyneg{M{(w^r) & (x^r)}}
+def arithChk1{F==__sub, M, w:T, x:T, r:T & issigned{rootty{T}}} = anyneg{M{(w^x) & (w^r)}}
+def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__adds{w,x}, r, M}
+def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__subs{w,x}, r, M}
 
-def arithChk2{F, M, w:T, x:T, i & issigned{rootty{T}}} = {
+
+
+def arithChk2{F, M, w:T, x:T & (match{F,__add} | match{F,__sub})} = {
   r:= F{w,x}
   tup{r, arithChk1{F, M, w, x, r}}
 }
 
-# ×/∧
-
-def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
-  rl:= __mul  {w,x}
-  rh:= __mulhi{w,x}
-  tup{rl, anyne{rh, rl>>15, M}}
-}
-def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
+# ×
+def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   def wp = unpackQ{w, T ~~ (broadcast{T,0}>w)}
   def xp = unpackQ{x, T ~~ (broadcast{T,0}>x)}
   def rp = each{__mul, wp, xp}
@@ -50,7 +54,12 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
     tup{packQ{rp}, any{tupsel{0,bad}|tupsel{1,bad}}}
   }
 }
-def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
+def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
+  rl:= __mul  {w,x}
+  rh:= __mulhi{w,x}
+  tup{rl, anyne{rh, rl>>15, M}}
+}
+def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
   max:= [8]f32 ~~ broadcast{[8]u32, 0x4efffffe}
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
@@ -68,37 +77,36 @@ def arithChk2{F, M, w:T, x:T, i & match{F,__mul} & isvec{T} & i32==eltype{T}} = 
 }
 
 
-# f64
-def arithChk3{F, M, w:T, x:T, i} = {
-  def r2 = arithChk2{F, M, w, x, i}
-  if (rare{tupsel{1,r2}}) return{i}
-  tupsel{0,r2}
+
+def runner{u, F} = {
+  def c = ~u
+  
+  def run{F, OO, M, w, x} = { show{'todo', fmt_op{F}, c, w, x}; emit{void,'__builtin_abort'}; w }
+  
+  def run{F, OO, M, w:T, x:T & c} = {
+    def r2 = arithChk2{F, M, w, x}
+    if (rare{tupsel{1,r2}}) OO{}
+    tupsel{0,r2}
+  }
+  
+  def run{F, OO, M, w, x & u} = F{w, x} # trivial base implementation
+  
+  def run{F, OO, M, w:VU, x:VS & isunsigned{eltype{VU}} & issigned{eltype{VS}}} = { # 'a'+3, 'a'-3
+    top:= broadcast{VU, 1<<(width{eltype{VU}}-1)}
+    top ^ VU~~run{F, OO, M, VS~~(w^top), x}
+  }
+  # def run{F==__add, OO, M, w:VS, x:VU & issigned{eltype{VS}} & isunsigned{eltype{VU}}} = run{F, OO, M, x, w} # 3+'a' → 'a'+3
+  run
 }
 
-def arithChk3{F, M, w:T, x:T, i & f64==rootty{T}} = F{w,x}
 
+# old atom F array & array F atom
 def arithAny{VT, F, W, X, r, len} = {
   def bulk = vcount{VT}
-  maskedLoop{bulk, len, {i, M} => {
-    rv:= arithChk3{F, M, W{i}, X{i}, i*bulk}
-    storeBatch{r, i, rv, M}
-  }}
+  def run = runner{eltype{VT}==f64, F}
+  maskedLoop{bulk, len, {i, M} => storeBatch{r, i, run{F, {} => return{i}, M, W{i}, X{i}}, M}}
   len
 }
-
-def arithAA{VT, F, w, x, r, len} = {
-  arithAny{VT, F, {i}=>load{*VT~~w, i}, {i}=>load{*VT~~x, i}, r, len}
-}
-def arithAS{VT, F, w, x, r, len} = {
-  xv:= broadcast{VT, x}
-  arithAny{VT, F, {i}=>load{*VT~~w, i}, {i}=>xv, r, len}
-}
-def arithSA{VT, F, w, x, r, len} = {
-  wv:= broadcast{VT, w}
-  arithAny{VT, F, {i}=>wv, {i}=>load{*VT~~x, i}, r, len}
-}
-
-
 # cast a guaranteed float to a more specific type; return{0} if not possible
 def cast_fB{T, x:(u64) & f64==T} = from_B{f64, x}
 def cast_fB{T, x:(u64) & issigned{T} & T<i64} = {
@@ -107,8 +115,8 @@ def cast_fB{T, x:(u64) & issigned{T} & T<i64} = {
   if (rare{f!=fext{r}}) return{cast{Size,0}}
   r
 }
-
-arithAA{F,VT}(w: *u8, x: *u8, r: *u8, len: Size) : Size = { def c{x} = *eltype{VT} ~~ x; arithAA{VT, F, c{w}, c{x}, c{r}, len} }
+def arithAS{VT, F, w, x, r, len} = { xv:= broadcast{VT, x}; arithAny{VT, F, {i}=>load{*VT~~w, i}, {i}=>xv, r, len} }
+def arithSA{VT, F, w, x, r, len} = { wv:= broadcast{VT, w}; arithAny{VT, F, {i}=>wv, {i}=>load{*VT~~x, i}, r, len} }
 arithAS{F,VT}(w: *u8, x: u64, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithAS{VT, F, *T ~~ w,       cast_fB{T, x}, *T~~r, len} }
 arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; arithSA{VT, F, cast_fB{T, w}, *T ~~ x,       *T~~r, len} }
 
@@ -124,3 +132,48 @@ arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; ar
 'avx2_mulAS_i16' = arithAS{__mul,[16]i16}; 'avx2_mulSA_i16' = arithSA{__mul,[16]i16}
 'avx2_mulAS_i32' = arithAS{__mul,[ 8]i32}; 'avx2_mulSA_i32' = arithSA{__mul,[ 8]i32}
 'avx2_mulAS_f64' = arithAS{__mul,[ 4]f64}; 'avx2_mulSA_f64' = arithSA{__mul,[ 4]f64}
+
+
+
+# new array F atom
+def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
+  # show{fmt_op{F}, mode, W, X, R}
+  if (R==u1) {
+    def bulk = vw/64;
+    def TY = [bulk]u64
+    maskedLoop{bulk, cdiv{len, 64}, {i, M} => {
+      cw:= loadBatch{*u64~~w, i, TY}
+      cx:= loadBatch{*u64~~x, i, TY}
+      storeBatch{*u64~~r, i, F{cw, cx}, M}
+    }}
+  } else {
+    def bulk = vw / max{max{width{W}, width{X}}, width{R}}
+    def overflow = tern{mode==1, {i}=>return{i}, tern{mode==2, {i}=>return{1}, 0}}
+    def TY = [bulk]R
+    
+    def run = runner{match{overflow, 0}, F}
+    
+    maskedLoop{bulk, len, {i, M} => {
+      cw:= loadBatch{*W~~w, i, ty_sc{W, TY}}
+      cx:= loadBatch{*X~~x, i, ty_sc{X, TY}}
+      storeBatch{*R~~r, i, TY~~run{F, {} => overflow{i}, M, cw, cx}, M}
+    }}
+  }
+}
+
+arithAAc{vw, mode, F, W, X, R}(r:*u8, w:*u8, x:*u8, len:u64) : u64 = {
+  arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
+  if (mode==1) len
+  else 0
+}
+arithAAu{vw, mode, F, W, X, R}(r:*u8, w:*u8, x:*u8, len:u64) : void = {
+  arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
+}
+
+def arithAA{mode, F, W, X, R} = {
+  def vw = 256
+  if (mode==1 or mode==2) arithAAc{vw, mode, F, W, X, R}
+  else arithAAu{vw, mode, F, W, X, R}
+}
+
+include './../gen/arDefs'

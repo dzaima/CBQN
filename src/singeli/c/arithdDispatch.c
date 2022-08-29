@@ -165,7 +165,7 @@ NOINLINE B do_dyArith(DyTable* table, B w, B x) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
-#include "../gen/dyarith2.c"
+#include "../gen/dyarith.c"
 #pragma GCC diagnostic pop
 
 static void  rootAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = pow(((f64*)x)[i], 1.0/((f64*)w)[i]); }

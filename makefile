@@ -216,7 +216,7 @@ preSingeliBin:
 	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
 
 
-build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith2.c copy.c equal.c squeeze.c scan.c slash.c}
+build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c slash.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
@@ -224,9 +224,9 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 
 ifeq (${i_singeli}, 1)
 # arithmetic singeli generator
-src/builtins/arithd2.c: src/singeli/c/dyarith2.c
-src/singeli/c/dyarith2.c: src/singeli/gen/arTables.c
-src/singeli/src/dyarith2.singeli: src/singeli/gen/arDefs.singeli
+src/builtins/arithd2.c: src/singeli/c/dyarith.c
+src/singeli/c/dyarith.c: src/singeli/gen/arTables.c
+src/singeli/src/dyarith.singeli: src/singeli/gen/arDefs.singeli
 
 src/singeli/gen/arDefs.singeli: genArithTables
 src/singeli/gen/arTables.c: genArithTables
