@@ -86,7 +86,9 @@ Make ← {𝕊ns:
     uncheckedMap ← typeMap⊏tmNoNext
     currTypes ↩ ¯1‿¯1¨⌾(uncheckedMap/○⥊⊢) newTypes # remove unchecked operations from next pass
     
-    (T prevTypes‿newTypes‿typeMap‿updMap‿swap) { p‿n‿t‿e‿s𝕊𝕩:
+    swap ↩ 0¨ prevSwap←swap
+    
+    (T prevTypes‿newTypes‿typeMap‿updMap‿prevSwap) { p‿n‿t‿e‿s𝕊𝕩:
       call ← (t⊑tmLit)∾"_call_"
       m←≠´p‿n
       Type ← {𝕊: 3⊑n⊑map}
