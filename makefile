@@ -225,16 +225,16 @@ src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 ifeq (${i_singeli}, 1)
 # arithmetic singeli generator
 src/builtins/arithd2.c: src/singeli/c/dyarith2.c
-src/singeli/c/dyarith2.c: src/singeli/gen/dyarithTables.c
-src/singeli/src/dyarith2.singeli: src/singeli/gen/dyarithDefs.singeli
+src/singeli/c/dyarith2.c: src/singeli/gen/arTables.c
+src/singeli/src/dyarith2.singeli: src/singeli/gen/arDefs.singeli
 
-src/singeli/gen/dyarithDefs.singeli: genArithTables
-src/singeli/gen/dyarithTables.c: genArithTables
+src/singeli/gen/arDefs.singeli: genArithTables
+src/singeli/gen/arTables.c: genArithTables
 
 .INTERMEDIATE: genArithTables
 genArithTables: src/singeli/src/genArithTables.bqn preSingeliBin
-	@echo "  generating dyarithDefs.singeli & dyarithTables.c"
-	@obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/dyarithDefs.singeli" "$$PWD/src/singeli/gen/dyarithTables.c"
+	@echo "  generating arDefs.singeli & arTables.c"
+	@obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/arDefs.singeli" "$$PWD/src/singeli/gen/arTables.c"
 endif
 
 

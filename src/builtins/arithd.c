@@ -13,7 +13,7 @@ static f64 pfmod(f64 a, f64 b) {
 #define BCALL(N, X) N(b(X))
 #define interp_f64(X) b(X).f
 
-#include "../singeli/c/arithd2Impl.c"
+#include "../singeli/c/arithdDispatch.c"
 #endif
 
 #define P2(N) { if(isArr(w)|isArr(x)) { \

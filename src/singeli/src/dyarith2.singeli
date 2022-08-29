@@ -131,4 +131,4 @@ def arithAA{mode, F, W, X, R} = {
   else arithAAu{vw, mode, F, W, X, R}
 }
 
-include './../gen/dyarithDefs'
+include './../gen/arDefs'

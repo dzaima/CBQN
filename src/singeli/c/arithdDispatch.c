@@ -173,7 +173,7 @@ static void   powAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0;
 static void stileAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
 static void   logAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
 
-#include "../gen/dyarithTables.c"
+#include "../gen/arTables.c"
 
 
 B internalTemp_c2(B t, B w, B x) {
