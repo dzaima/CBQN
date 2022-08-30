@@ -242,6 +242,8 @@ B indexOf_c2(B t, B w, B x) {
 B enclosed_0;
 B enclosed_1;
 extern B rt_memberOf;
+extern B eq_c2(B,B,B);
+extern B or_c2(B,B,B);
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) goto bad;
   if (isAtm(w)) goto single;
@@ -269,8 +271,15 @@ B memberOf_c2(B t, B w, B x) {
   
   
   many: {
-    usz xia = IA(x);
-    usz wia = IA(w);
+    u8 we = TI(w,elType); usz wia = IA(w);
+    u8 xe = TI(x,elType); usz xia = IA(x);
+    if (xia<=16 && wia>16 && we<el_B && xe<el_B) {
+      SGetU(x);
+      Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba);
+      for (usz i=0; i<xia; i++) r = or_c2(m_f64(0), r, eq_c2(m_f64(0), inc(w), GetU(x,i)));
+      decG(w);
+      goto dec_x;
+    }
     // TODO O(wia×xia) for small wia or xia
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
