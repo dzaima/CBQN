@@ -227,7 +227,7 @@ B GRADE_CAT(c1)(B t, B x) {
       if (c<min) min=c;
       if (c>max) max=c;
     }
-    i64 range = max - (i64)min + 1;
+    u64 range = max - (i64)min + 1;
     if (range/2 < ia) {
       // First try to invert it as a permutation
       if (range==ia && sum==(i32)((i64)ia*(min+max)/2)) {
@@ -236,18 +236,12 @@ B GRADE_CAT(c1)(B t, B x) {
         bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
         if (done) { decG(x); return r; }
       }
-      TALLOC(usz, tmp, range+1);
-      for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
-      GRADE_UD( // i32 range-based
-        for (usz i = 0; i < ia; i++) (tmp-min+1)[xp[i]]++;
-        for (i64 i = 1; i < range; i++) tmp[i]+= tmp[i-1];
-        for (usz i = 0; i < ia; i++) rp[(tmp-min)[xp[i]]++] = i;
-      ,
-        for (usz i = 0; i < ia; i++) (tmp-min)[xp[i]]++;
-        for (i64 i = range-2; i >= 0; i--) tmp[i]+= tmp[i+1];
-        for (usz i = 0; i < ia; i++) rp[(tmp-min+1)[xp[i]]++] = i;
-      )
-      TFREE(tmp); decG(x);
+      TALLOC(usz, c0, range); usz *c0o=c0-min;
+      for (usz i = 0; i < range; i++) c0[i] = 0;
+      for (usz i = 0; i < ia; i++) c0o[xp[i]]++;
+      usz s=0; FOR (i, range) { usz p=s; s+=c0[i]; c0[i]=p; }
+      for (usz i = 0; i < ia; i++) rp[c0o[xp[i]]++] = i;
+      TFREE(c0); decG(x);
       return r;
     }
     if (ia > 40) {
