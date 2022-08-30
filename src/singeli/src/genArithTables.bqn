@@ -137,6 +137,7 @@ Make ← {𝕊ns:
 
 
 # TODO unify sub u‿c32‿c32‿i32 and c‿i32‿i32‿i32?
+# TODO when there's singeli div/sqrt, use scalar for like 1-2 tail elements
 
 { # definitions
   # ⟨mode, w, x, r⟩

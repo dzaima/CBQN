@@ -139,7 +139,7 @@ arithSA{F,VT}(w: u64, x: *u8, r: *u8, len: Size) : Size = { def T=eltype{VT}; ar
 
 
 
-# new array F atom
+# new array F array
 def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   # show{fmt_op{F}, mode, W, X, R}
   if (R==u1) {
