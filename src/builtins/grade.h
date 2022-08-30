@@ -220,13 +220,22 @@ B GRADE_CAT(c1)(B t, B x) {
   if (xe==el_i32 || xe==el_c32) { // safe to use the same comparison for i32 & c32 as c32 is 0≤x≤1114111
     i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
+    i32 sum=0;
     for (usz i = 0; i < ia; i++) {
       i32 c = xp[i];
+      sum += c;
       if (c<min) min=c;
       if (c>max) max=c;
     }
     i64 range = max - (i64)min + 1;
     if (range/2 < ia) {
+      // First try to invert it as a permutation
+      if (range==ia && sum==(i32)((i64)ia*(min+max)/2)) {
+        for (usz i = 0; i < ia; i++) rp[i]=ia;
+        for (usz i = 0; i < ia; i++) { i32 v=xp[i]; GRADE_UD(rp[v-min],rp[max-v])=i; }
+        bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
+        if (done) { decG(x); return r; }
+      }
       TALLOC(usz, tmp, range+1);
       for (i64 i = 0; i < range+1; i++) tmp[i] = 0;
       GRADE_UD( // i32 range-based
