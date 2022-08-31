@@ -443,10 +443,26 @@ B slash_c1(B t, B x) {
   B r;
   u8 xe = TI(x,elType);
   #if SINGELI && defined(__BMI2__)
-  if (xia<=32768 && xe==el_bit) {
+  if (xe==el_bit) {
     u64* xp = bitarr_ptr(x);
-    if (xia<=128) { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
-    else          { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
+    if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
+    else if (xia<=32768) { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
+    else {
+      usz b = 1<<12;
+      i32* rp; r = m_i32arrv(&rp, s);
+      TALLOC(i16, buf, b);
+      i32* rq=rp; usz i=0;
+      for (; i+b<xia; i+=b) {
+        bmipopc_1slash16(xp, buf, b);
+        usz bs = bit_sum(xp, b);
+        for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
+        rq+= bs;
+        xp+= b/64;
+      }
+      bmipopc_1slash16(xp, buf, xia-i);
+      for (usz j=0, bs=s-(rq-rp); j<bs; j++) rq[j] = i+buf[j];
+      TFREE(buf);
+    }
   } else
   #endif
   {
