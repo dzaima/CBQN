@@ -9,9 +9,10 @@ B memberOf_c1(B t, B x) {
   if (n==0) { decG(x); return emptyIVec(); }
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
+  if (elChr(xe)) xe -= el_c8-el_i8;
   
   #define BRUTE(T) \
-      i##T* xp = i##T##any_ptr(x);                                     \
+      i##T* xp = tyany_ptr(x);                                         \
       u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
       for (usz i=1; i<n; i++) {                                        \
         bool c=1; i##T xi=xp[i];                                       \
@@ -21,7 +22,7 @@ B memberOf_c1(B t, B x) {
       decG(x); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                                     \
-    u##T* xp = (u##T*)i##T##any_ptr(x);                                \
+    u##T* xp = (u##T*)tyany_ptr(x);                                    \
     i8* rp; B r = m_i8arrv(&rp, n);                                    \
     TALLOC(u8, tab, tn);                                               \
     if (T>8 && n<tn/64) for (usz i=0; i<n;  i++) tab[xp[i]]=1;         \
@@ -36,7 +37,7 @@ B memberOf_c1(B t, B x) {
     if (n<=32) { BRUTE(32); }
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
-    u32* v0 = (u32*)i32any_ptr(x);
+    u32* v0 = (u32*)tyany_ptr(x);
     i8* r0; B r = m_i8arrv(&r0, n);
     
     TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
@@ -95,9 +96,10 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
+  if (elChr(xe)) xe -= el_c8-el_i8;
   
   #define BRUTE(T) \
-      i##T* xp = i##T##any_ptr(x);                             \
+      i##T* xp = tyany_ptr(x);                                 \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
       for (usz i=1; i<n; i++) {                                \
         usz c=0; i##T xi=xp[i];                                \
@@ -107,7 +109,7 @@ B count_c1(B t, B x) {
       decG(x); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
-    u##T* xp = (u##T*)i##T##any_ptr(x);                        \
+    u##T* xp = (u##T*)tyany_ptr(x);                            \
     i32* rp; B r = m_i32arrv(&rp, n);                          \
     TALLOC(i32, tab, tn);                                      \
     if (T>8 && n<tn/16) for (usz i=0; i<n;  i++) tab[xp[i]]=0; \
@@ -122,7 +124,7 @@ B count_c1(B t, B x) {
     if (n<=32) { BRUTE(32); }
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
-    u32* v0 = (u32*)i32any_ptr(x);
+    u32* v0 = (u32*)tyany_ptr(x);
     i32* r0; B r = m_i32arrv(&r0, n);
     
     TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
@@ -186,9 +188,10 @@ B indexOf_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   if (RNK(x)>1) x = toCells(x);
   u8 xe = TI(x,elType);
+  if (elChr(xe)) xe -= el_c8-el_i8;
   
   #define BRUTE(T) \
-      i##T* xp = i##T##any_ptr(x);                             \
+      i##T* xp = tyany_ptr(x);                                 \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
       TALLOC(i##T, uniq, n); uniq[0]=xp[0];                    \
       for (usz i=1, u=1; i<n; i++) {                           \
@@ -199,7 +202,7 @@ B indexOf_c1(B t, B x) {
       decG(x); TFREE(uniq); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
-    u##T* xp = (u##T*)i##T##any_ptr(x);                        \
+    u##T* xp = (u##T*)tyany_ptr(x);                            \
     i32* rp; B r = m_i32arrv(&rp, n);                          \
     TALLOC(i32, tab, tn);                                      \
     if (T>8 && n<tn/16) for (usz i=0; i<n;  i++) tab[xp[i]]=n; \
@@ -217,7 +220,7 @@ B indexOf_c1(B t, B x) {
   
   if (xe==el_i32) {
     if (n<32) { BRUTE(32); }
-    i32* xp = i32any_ptr(x);
+    i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < n; i++) {
       i32 c = xp[i];

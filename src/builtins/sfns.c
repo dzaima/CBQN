@@ -443,10 +443,26 @@ B slash_c1(B t, B x) {
   B r;
   u8 xe = TI(x,elType);
   #if SINGELI && defined(__BMI2__)
-  if (xia<=32768 && xe==el_bit) {
+  if (xe==el_bit) {
     u64* xp = bitarr_ptr(x);
-    if (xia<=128) { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
-    else          { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
+    if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
+    else if (xia<=32768) { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
+    else {
+      usz b = 1<<12;
+      i32* rp; r = m_i32arrv(&rp, s);
+      TALLOC(i16, buf, b);
+      i32* rq=rp; usz i=0;
+      for (; i+b<xia; i+=b) {
+        bmipopc_1slash16(xp, buf, b);
+        usz bs = bit_sum(xp, b);
+        for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
+        rq+= bs;
+        xp+= b/64;
+      }
+      bmipopc_1slash16(xp, buf, xia-i);
+      for (usz j=0, bs=s-(rq-rp); j<bs; j++) rq[j] = i+buf[j];
+      TFREE(buf);
+    }
   } else
   #endif
   {
@@ -535,6 +551,24 @@ B slash_c2(B t, B w, B x) {
         #if SINGELI
         case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
         case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
+        case el_i32:case el_c32: {
+          i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe));
+          usz b = 1<<7;
+          TALLOC(i8, buf, b);
+          i32* rq=rp; i32* end=xp+xia-b;
+          while (xp < end) {
+            bmipopc_1slash8(wp, buf, b);
+            usz bs = bit_sum(wp, b);
+            for (usz j=0; j<bs; j++) rq[j] = xp[buf[j]];
+            rq+= bs;
+            wp+= b/64;
+            xp+= b;
+          }
+          bmipopc_1slash8(wp, buf, (end+b)-xp);
+          for (usz j=0, bs=wsum-(rq-rp); j<bs; j++) rq[j] = xp[buf[j]];
+          TFREE(buf);
+          goto bit_ret;
+        }
         #endif
       }
       #endif

@@ -76,9 +76,80 @@ B ud_c1(B t, B x) {
   return taga(r);
 }
 
-extern B rt_ud;
 B ud_c2(B t, B w, B x) {
-  return c2(rt_ud, w, x);
+  usz wia=1;
+  if (isArr(w)) {
+    if (RNK(w)>1) thrM("↕: 𝕨 must have rank at most 1");
+    wia = IA(w);
+    if (wia==0) { decG(w); return x; }
+  }
+  ur xr;
+  if (isAtm(x) || (xr=RNK(x))<wia) thrM("↕: Length of 𝕨 must be at most rank of 𝕩");
+  if (xr+wia > UR_MAX) thrM("↕: Result rank too large");
+  ur wr = wia;
+  ur rr = xr + wr;
+  ShArr* sh = m_shArr(rr);
+  usz* rsh = sh->a;
+  usz* wsh = rsh + wr;
+  if (isAtm(w)) {
+    wsh[0] = o2s(w);
+  } else {
+    SGetU(w)
+    for (usz i=0; i<wr; i++) wsh[i] = o2s(GetU(w, i));
+    decG(w);
+  }
+
+  usz* xsh = SH(x);
+  bool empty = IA(x)==0;
+  for (usz i=0; i<wr; i++) {
+    usz l = xsh[i] + 1;
+    usz m = wsh[i];
+    if (l<m) thrM("↕: Window length 𝕨 must be at most axis length plus one");
+    empty|= m==0 | m==l;
+    rsh[i] = l - m;
+  }
+  for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
+
+  if (empty) {
+    Arr* ra = m_fillarrp(0);
+    arr_shSetU(ra, rr, sh);
+    fillarr_setFill(ra, getFillQ(x));
+    decG(x);
+    return taga(ra);
+  }
+  ur fr=2*wr; // Frame rank in result
+  usz cia=1; // Cell length
+  for (usz i=fr; i<rr; i++) if (mulOn(cia, rsh[i])) thrM("↕: result shape too large");
+  usz ria=cia;
+  for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("↕: result shape too large");
+  B xf = getFillQ(x);
+  TALLOC(usz, ri, fr-1);
+  MAKE_MUT(r, ria); mut_init(r, TI(x,elType));
+  MUTG_INIT(r);
+  usz k = cia*rsh[fr-1];
+  if (wr==1) {
+    for (usz i=0, j=0; i<ria; i+=k, j+=cia) mut_copyG(r, i, x, j, k);
+  } else {
+    for (usz i=0; i<fr-1; i++) ri[i]=0;
+    for (usz i=0, j=0;;) {
+      mut_copyG(r, i, x, j, k);
+      usz str = cia*xsh[xr-1];
+      i += k;
+      if (i == ria) break;
+      j += str;
+      for (usz a=fr-2, b=xr-2; RARE(++ri[a] == rsh[a]); ) {
+        ri[a] = 0;
+        j -= rsh[a] * str;
+        str *= xsh[b]; if (!b) { str=cia; b=xr; }
+        a--; b--;
+        j += str;
+      }
+    }
+  }
+  decG(x); TFREE(ri);
+  Arr* ra = mut_fp(r);
+  arr_shSetU(ra, rr, sh);
+  return withFill(taga(ra), xf);
 }
 
 B ltack_c1(B t,      B x) {         return x; }
@@ -171,6 +242,8 @@ B indexOf_c2(B t, B w, B x) {
 B enclosed_0;
 B enclosed_1;
 extern B rt_memberOf;
+extern B eq_c2(B,B,B);
+extern B or_c2(B,B,B);
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) goto bad;
   if (isAtm(w)) goto single;
@@ -198,8 +271,15 @@ B memberOf_c2(B t, B w, B x) {
   
   
   many: {
-    usz xia = IA(x);
-    usz wia = IA(w);
+    u8 we = TI(w,elType); usz wia = IA(w);
+    u8 xe = TI(x,elType); usz xia = IA(x);
+    if (xia<=16 && wia>16 && we<el_B && xe<el_B) {
+      SGetU(x);
+      Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba);
+      for (usz i=0; i<xia; i++) r = or_c2(m_f64(0), r, eq_c2(m_f64(0), inc(w), GetU(x,i)));
+      decG(w);
+      goto dec_x;
+    }
     // TODO O(wia×xia) for small wia or xia
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
