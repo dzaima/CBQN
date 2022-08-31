@@ -551,6 +551,24 @@ B slash_c2(B t, B w, B x) {
         #if SINGELI
         case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
         case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
+        case el_i32:case el_c32: {
+          i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe));
+          usz b = 1<<7;
+          TALLOC(i8, buf, b);
+          i32* rq=rp; i32* end=xp+xia-b;
+          while (xp < end) {
+            bmipopc_1slash8(wp, buf, b);
+            usz bs = bit_sum(wp, b);
+            for (usz j=0; j<bs; j++) rq[j] = xp[buf[j]];
+            rq+= bs;
+            wp+= b/64;
+            xp+= b;
+          }
+          bmipopc_1slash8(wp, buf, (end+b)-xp);
+          for (usz j=0, bs=wsum-(rq-rp); j<bs; j++) rq[j] = xp[buf[j]];
+          TFREE(buf);
+          goto bit_ret;
+        }
         #endif
       }
       #endif
