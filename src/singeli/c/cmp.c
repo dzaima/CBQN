@@ -35,35 +35,49 @@ FN_LUT(avx2, gt, AS); FN_LUT(avx2, gt, AA);
 FN_LUT(avx2, ge, AS); FN_LUT(avx2, ge, AA);
 FN_LUT(avx2, lt, AS);
 FN_LUT(avx2, le, AS);
+#undef FN_LUT
+
 
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=IA(r)
-#define CMP_IMPL(CHR, NAME, RNAME, PNAME, L, R, OP, FC, CF, BX) \
-  if (isF64(w)&isF64(x)) return m_i32(w.f OP x.f); \
-  if (isC32(w)&isC32(x)) return m_i32(w.u OP x.u); \
-  if (isArr(w)) { u8 we = TI(w,elType);            \
-    if (we==el_B) goto end;                        \
-    if (isArr(x)) { u8 xe = TI(x,elType);          \
-      if (xe==el_B) goto end;                      \
-      if (RNK(w)==RNK(x)) { if (!eqShape(w, x)) thrF(CHR": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-        if (we!=xe) { B tw=w,tx=x;                 \
-          we = aMakeEq(&tw, &tx, we, xe);          \
-          if (we==el_MAX) goto end;                \
-          w=tw; x=tx;                              \
-        }                                          \
-        AL(x);                                     \
-        if (ria) lut_avx2_##PNAME##AA[we](rp, (u8*)tyany_ptr(L), (u8*)tyany_ptr(R), ria); \
-        decG(w);decG(x); return r; \
-      } else goto end;             \
-    }                              \
-    AL(w);                         \
-    if (ria) lut_avx2_##NAME##AS [we](rp, (u8*)tyany_ptr(w), x.u, ria); \
-    else dec(x);                   \
-    decG(w); return r;             \
-  } else if (isArr(x)) { u8 xe = TI(x,elType); if (xe==el_B) goto end; AL(x); \
-    if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
-    else dec(w);                   \
-    decG(x); return r;             \
-  }                                \
-  if (isF64(w)&isC32(x)) return m_i32(FC); \
-  if (isC32(w)&isF64(x)) return m_i32(CF); \
-  end:;
+#define CMP_AA(CN, CR, NAME, PRE) NOINLINE B NAME##_AA(i32 swapped, B w, B x) { PRE \
+  u8 xe = TI(x, elType); if (xe==el_B) goto bad; \
+  u8 we = TI(w, elType); if (we==el_B) goto bad; \
+  if (RNK(w)==RNK(x)) { if (!eqShape(w, x)) thrF("%U: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", swapped?CR:CN, swapped?x:w, swapped?w:x); \
+    if (we!=xe) { B tw=w,tx=x;           \
+      we = aMakeEq(&tw, &tx, we, xe);    \
+      if (we==el_MAX) goto bad;          \
+      w=tw; x=tx;                        \
+    }                                    \
+    AL(x);                               \
+    if (ria) lut_avx2_##NAME##AA[we](rp, (u8*)tyany_ptr(w), (u8*)tyany_ptr(x), ria); \
+    decG(w);decG(x); return r;           \
+  }                                      \
+  bad: return NAME##_rec(swapped, w, x); \
+}
+CMP_AA("≥", "≤", ge, )
+CMP_AA(">", "<", gt, )
+CMP_AA("=", "?", eq, swapped=0;)
+CMP_AA("≠", "?", ne, swapped=0;)
+#define le_AA(T, W, X) ge_AA(!T, X, W)
+#define lt_AA(T, W, X) gt_AA(!T, X, W)
+#undef CMP_AA
+
+
+
+
+#define CMP_SA(NAME, RNAME, PRE) B NAME##_SA(i32 swapped, B w, B x) { PRE \
+  u8 xe = TI(x, elType); if (xe==el_B) goto bad; \
+  AL(x);                                 \
+  if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
+  else dec(w);                           \
+  decG(x); return r;                     \
+  bad: return NAME##_rec(swapped, w, x); \
+}
+CMP_SA(eq, eq, swapped=0;)
+CMP_SA(ne, ne, swapped=0;)
+CMP_SA(le, ge, )
+CMP_SA(ge, le, )
+CMP_SA(lt, gt, )
+CMP_SA(gt, lt, )
+#undef CMP_SA
+#undef AL
