@@ -461,7 +461,7 @@ B rand_deal_c2(B t, B w, B x) {
   return r;
 }
 
-B ud_c1(B t, B w);
+B ud_c1(B t, B x);
 B rand_subset_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
