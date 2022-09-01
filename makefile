@@ -1,5 +1,5 @@
 SHELL = /usr/bin/env bash
-MAKEFLAGS+= --no-print-directory
+MAKEFLAGS+= --no-print-directory --no-builtin-rules
 # note: do not manually define any i_… arguments, or incremental compiling will not work properly!
 
 # various configurations
@@ -167,9 +167,14 @@ endif
 	${MAKE} run_incremental_1 bd="$$bd"
 endif
 
-run_incremental_1: builtins core base jit utils # build the final binary
-	@$(i_CC) ${CCFLAGS} -o ${OUTPUT} ${bd}/*.o $(ALL_LD_FLAGS)
+run_incremental_1: ${bd}/BQN
+ifneq (${bd}/BQN,${OUTPUT})
+	@cp -f ${bd}/BQN ${OUTPUT}
+endif
 	@echo ${postmsg}
+
+${bd}/BQN: builtins core base jit utils # build the final binary
+	@$(i_CC) ${CCFLAGS} -o ${bd}/BQN ${bd}/*.o $(ALL_LD_FLAGS)
 
 CC_INC = $(i_CC) $(ALL_CC_FLAGS) -MMD -MP -MF
 # build individual object files
@@ -197,6 +202,8 @@ builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o squeeze.o select.o 
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
+
+.INTERMEDIATE: core base utils jit builtins
 
 src/gen/customRuntime:
 	@echo "Copying precompiled bytecode from the bytecode branch"
