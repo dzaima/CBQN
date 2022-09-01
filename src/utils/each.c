@@ -122,9 +122,9 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
         for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
         return any_squeeze(HARR_FCD(rHc, x));
       }
-    } else
-    rH = m_harr0c(x);
-  } else
+    } else goto m_fallback;
+  } else goto m_fallback;
+  m_fallback:
   rH = m_harr0c(x);
   fallback:
   rH.a[i++] = cr;
@@ -132,3 +132,17 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
   decG(x);
   return any_squeeze(rH.b);
 }
+
+#if CATCH_ERRORS
+B arith_recd(BBB2B f, B w, B x) {
+  B fx = getFillQ(x);
+  if (noFill(fx)) return eachd_fn(bi_N, w, x, f);
+  B fw = getFillQ(w);
+  B r = eachd_fn(bi_N, w, x, f);
+  if (noFill(fw)) { dec(fx); return r; }
+  if (CATCH) { freeThrown(); return r; }
+  B fr = f(bi_N, fw, fx);
+  popCatch();
+  return withFill(r, asFill(fr));
+}
+#endif

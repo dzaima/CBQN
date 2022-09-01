@@ -178,8 +178,8 @@ static f64 pfmod(f64 a, f64 b) {
           }                                                          \
           if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {     \
             bool wei = we==el_i32; bool xei = xe==el_i32;            \
-            if (wei&xei) { PI32(w)PI32(x)DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
-            if (!wei&!xei) {PF(w)PF(x) { } Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
+            if (wei&xei) { PI32(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
+            if (!wei&!xei) { PF(w) PF(x) Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
             rcf64:; Rf64(x)                                          \
             if (wei) { PI32(w)                                       \
               if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
