@@ -24,40 +24,42 @@ static f64 pfmod(f64 a, f64 b) {
   #define GC2f(SYMB, NAME, EXPR, EXTRA) B NAME##_c2(B t, B w, B x) {         \
     if (isF64(w) & isF64(x)) return m_f64(EXPR);                             \
     EXTRA                                                                    \
-    if (isArr(w)|isArr(x)) { B ow=w; B ox=x;                                 \
+    if (isArr(w)|isArr(x)) {                                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                             \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = IA(x);                                                      \
         u8 we = TI(w,elType);                                                \
         u8 xe = TI(x,elType);                                                \
-        if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {               \
+        if (elNum(we) && elNum(xe)) {                                        \
+          if (we<el_i32) { w=taga(cpyI32Arr(w)); we=el_i32; } void* wp = tyany_ptr(w); \
+          if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp = tyany_ptr(x); \
           f64* rp; B r = m_f64arrc(&rp, x);                                  \
-          if (we==el_i32) { B w,x/*shadow*/; i32* wp = i32any_ptr(ow);       \
-            if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
-            else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
-          } else {          B w,x/*shadow*/; f64* wp = f64any_ptr(ow);       \
-            if (xe==el_i32) { i32* xp = i32any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
-            else            { f64* xp = f64any_ptr(ox); for (usz i = 0; i < ia; i++) {w.f=wp[i];x.f=xp[i];rp[i]=EXPR;} } \
+          if (we==el_i32) { B w,x /*shadow*/;                                \
+            if (xe==el_i32) { for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
+            else            { for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
+          } else {          B w,x /*shadow*/;                                \
+            if (xe==el_i32) { for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
+            else            { for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
           }                                                                  \
           decG(w); decG(x); return num_squeeze(r);                           \
         }                                                                    \
       } else if (isF64(w)&isArr(x)) { usz ia = IA(x);                        \
         u8 xe = TI(x,elType); f64*rp;                                        \
-        if (xe==el_i32) { B r=m_f64arrc(&rp, x); i32*xp=i32any_ptr(x);       \
+        if (elInt(xe)) { B r=m_f64arrc(&rp, x); i32* xp=i32any_ptr(x = toI32Any(x)); \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
           decG(x); return num_squeeze(r);                                    \
         }                                                                    \
-        if (xe==el_f64) { B r=m_f64arrc(&rp, x); f64*xp=f64any_ptr(x);       \
+        if (xe==el_f64) { B r=m_f64arrc(&rp, x); f64* xp=f64any_ptr(x);      \
           for (usz i = 0; i < ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} \
           decG(x); return num_squeeze(r);                                    \
         }                                                                    \
       } else if (isF64(x)&isArr(w)) { usz ia = IA(w);                        \
         u8 we = TI(w,elType); f64*rp;                                        \
-        if (we==el_i32) { B r=m_f64arrc(&rp, w); i32*wp=i32any_ptr(w);       \
+        if (elInt(we)) { B r=m_f64arrc(&rp, w); i32* wp=i32any_ptr(w = toI32Any(w)); \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
           decG(w); return num_squeeze(r);                                    \
         }                                                                    \
-        if (we==el_f64) { B r=m_f64arrc(&rp, w); f64*wp=f64any_ptr(w);       \
+        if (we==el_f64) { B r=m_f64arrc(&rp, w); f64* wp=f64any_ptr(w);      \
           for (usz i = 0; i < ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} \
           decG(w); return num_squeeze(r);                                    \
         }                                                                    \
