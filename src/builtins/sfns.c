@@ -1287,7 +1287,7 @@ B group_c2(B t, B w, B x) {
     usz xia = IA(x);
     if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
     u8 we = TI(w,elType);
-    if (we<=el_i32) {
+    if (elInt(we)) {
       if (we!=el_i32) w = taga(cpyI32Arr(w));
       i32* wp = i32any_ptr(w);
       i64 ria = wia==xia? 0 : wp[xia];
@@ -1561,7 +1561,7 @@ B slash_ucw(B t, B o, B w, B x) {
   if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) return def_fn_ucw(t, o, w, x);
   usz ia = IA(x);
   SGetU(w)
-  if (TI(w,elType)>el_i32) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
+  if (!elInt(TI(w,elType))) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = IA(arg);
   B rep = c1(o, arg);
@@ -1572,7 +1572,7 @@ B slash_ucw(B t, B o, B w, B x) {
   usz repI = 0;
   if (TY(w) == t_bitarr) {
     u64* d = bitarr_ptr(w);
-    if (TI(x,elType)<=el_i32 && TI(rep,elType)<=el_i32) {
+    if (elInt(TI(x,elType)) && elInt(TI(rep,elType))) {
       if (r->fns->elType!=el_i32) mut_to(r, el_i32);
       i32* rp = r->ai32;
       x   = toI32Any(x);   i32* xp = i32any_ptr(x);

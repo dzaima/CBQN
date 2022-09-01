@@ -210,7 +210,7 @@ static usz check_rank_vec(B g) {
   usz gia = IA(g);
   if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
   SGetU(g)
-  if (TI(g,elType)>=el_f64) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
+  if (!elInt(TI(g,elType))) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
   return gia;
 }
 static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r

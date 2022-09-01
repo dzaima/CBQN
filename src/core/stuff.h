@@ -145,6 +145,9 @@ static bool elChr(u8 x) {
 static bool elNum(u8 x) {
   return x<=el_f64;
 }
+static bool elInt(u8 x) {
+  return x<=el_i32;
+}
 
 // string stuff
 

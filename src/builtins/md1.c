@@ -234,7 +234,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
   B wf = getFillQ(w);
   u8 xe = TI(x,elType);
-  if (xr==1 && q_i32(w) && xe<el_f64 && isFun(f) && v(f)->flags) {
+  if (xr==1 && q_i32(w) && elInt(xe) && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     i32 wv = o2iu(w);
     if (xe==el_bit) {
@@ -365,7 +365,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   u8 xe = TI(x,elType);
-  if (q_i32(w) && isFun(f) && v(f)->flags && xe<el_f64) {
+  if (q_i32(w) && isFun(f) && v(f)->flags && elInt(xe)) {
     i32 wi = o2iu(w);
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {

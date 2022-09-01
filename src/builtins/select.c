@@ -186,10 +186,10 @@ B select_ucw(B t, B o, B w, B x) {
   u8 xe = TI(x,elType);
   u8 re = TI(rep,elType);
   SLOWIF(!reusable(x) && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 because not reusable", w, x);
-  if (we<=el_i32) {
+  if (elInt(we)) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);
-    if (re<=el_f64 && xe<=el_f64) {
+    if (elNum(re) && elNum(xe)) {
       u8 me = xe>re?xe:re;
       bool reuse = reusable(x);
       if (me==el_i32) {

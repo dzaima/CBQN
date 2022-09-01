@@ -299,7 +299,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
-        if (we==el_f64 | xe==el_f64) goto gen;
+        if (!elInt(we) | !elInt(xe)) goto gen;
         w=toI32Any(w); x=toI32Any(x);
       } else {
         for (u64 i=0; i<xia; i++) rp[i]=wia; goto done;
