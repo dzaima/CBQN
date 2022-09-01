@@ -46,7 +46,13 @@ B bit_negate(B x) { // consumes
 }
   
 
-B   add_c1(B t, B x) { return x; }
+B add_c1(B t, B x) {
+  if (isF64(x)) return x;
+  if (!isArr(x)) thrM("+: Argument must consist of numbers");
+  if (elNum(TI(x,elType))) return x;
+  dec(eachm_fn(m_f64(0), inc(x), add_c1));
+  return x;
+}
 
 GC1i("-", sub,   -v,              v== MIN, -v,      {}, 0) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
 GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,{}, 0)
