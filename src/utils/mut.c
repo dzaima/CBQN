@@ -393,6 +393,8 @@ static B m_getU_c32(Mut* m, usz ms) { return m_c32(m->ac32[ms]); }
 static B m_getU_f64(Mut* m, usz ms) { return m_f64(m->af64[ms]); }
 static B m_getU_B  (Mut* m, usz ms) { return m->aB[ms]; }
 
+M_CopyF copyFns[el_MAX];
+
 MutFns mutFns[el_MAX+1];
 u8 el_orArr[el_MAX*16 + el_MAX+1];
 void mutF_init() {
@@ -422,4 +424,5 @@ void mutF_init() {
   mutFns[el_f64].elType = el_f64; mutFns[el_f64].valType = t_f64arr;
   mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;
   mutFns[el_MAX].elType = el_MAX; mutFns[el_MAX].valType = t_COUNT;
+  for (u8 i = 0; i < el_MAX; i++) copyFns[i] = mutFns[i].m_copyG;
 }
