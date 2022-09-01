@@ -158,6 +158,7 @@ else ifeq ($(origin builddir),command line)
 else
 ifeq ($(i_singeli), 1)
 	@mkdir -p src/singeli/gen
+	@mkdir -p obj/singeli
 	@${MAKE} postmsg="post-singeli build:" build_singeli
 endif
 
@@ -220,13 +221,13 @@ build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c sque
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "obj/presingeli/"
+	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "obj/singeli/"
 
 ifeq (${i_singeli}, 1)
-# arithmetic singeli generator
+# arithmetic table generator
 src/builtins/arithd2.c: src/singeli/c/dyarith.c
-src/singeli/c/dyarith.c: src/singeli/gen/arTables.c
-src/singeli/src/dyarith.singeli: src/singeli/gen/arDefs.singeli
+src/singeli/src/builtins/arithd.c: src/singeli/gen/arTables.c
+src/singeli/gen/dyarith.c: src/singeli/gen/arDefs.singeli genArithTables
 
 src/singeli/gen/arDefs.singeli: genArithTables
 src/singeli/gen/arTables.c: genArithTables
@@ -242,7 +243,7 @@ endif
 # dependency files
 -include $(bd)/*.d
 ifeq (${i_singeli}, 1)
--include obj/presingeli/*.d
+-include obj/singeli/*.d
 endif
 
 install:
@@ -253,6 +254,7 @@ uninstall:
 
 clean-singeli:
 	rm -rf src/singeli/gen/
+	rm -rf obj/singeli/
 	@${MAKE} clean-specific bd=obj/presingeli
 clean-runtime:
 	rm -f src/gen/customRuntime
@@ -262,6 +264,8 @@ clean-build:
 clean-specific:
 	rm -f $(bd)/*.o
 	rm -f $(bd)/*.d
+	rm -f $(bd)/BQN
+	rmdir $(bd); true
 	
 
 clean: clean-build clean-runtime clean-singeli
