@@ -48,7 +48,7 @@ typedef struct FnInfoAA {
   u8 width; // width in bytes; unused for u_call_bit
 } FnInfoAA;
 typedef struct EntAA {
-  FnInfoAA a, b;
+  FnInfoAA bundles[2];
 } EntAA;
 
 typedef struct DyTableAA {
@@ -64,15 +64,17 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
   ur xr = RNK(x);
   if (wr!=xr || !eqShPart(SH(w), SH(x), wr)) goto rec;
   
+  B r, t;
   usz ia = IA(w);
+  
   EntAA* e = &table->entsAA[we*8 + xe];
   newEnt:
   
-  FnInfoAA* fn = &e->a;
+  FnInfoAA* fn = &e->bundles[0];
   newFn:
+  
   u8 ex = fn->ex1;
   newEx:
-  B r, t;
   #if ARITH_DEBUG
   printf("opcode %d / %s\n", ex, execAA_repr(ex));
   #endif
@@ -96,7 +98,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
       u64 got = fn->cFn(m_tyarrlc(&r, fn->width, x, fn->type), tyany_ptr(w), tyany_ptr(x), ia);
       if (got==ia) goto decG_ret;
       decG(r);
-      fn = &e->b;
+      fn++;
       goto newFn;
     }
     case u_call_rbyte: {
