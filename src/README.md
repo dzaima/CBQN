@@ -2,12 +2,12 @@
 
 ## Conventions
 
-Functions starting with `m_` allocate a new object.  
+Functions starting with `m_` create a new object (some NaN-boxed, some heap-allocated).  
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
-Functions ending with `N` are non-inlined versions of another one.  
-Functions ending with `F` are rarely invoked fallback parts of a function.  
-Functions ending with `P` take a pointer argument.  
+Functions ending with `N` are non-inlined versions of another function.  
+Functions ending with `F` are infrequently needed fallback parts of a function.  
+Functions ending with `P` (or sometimes containing `p` or `P`) take a pointer argument (as opposed to a (NaN-boxed) `B`).  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))  
 Variables starting with `bi_` are builtins (primitives or special values).  

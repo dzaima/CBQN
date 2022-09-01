@@ -19,11 +19,12 @@ void ud_rec(B** p, usz d, usz r, i32* pos, usz* sh) {
     }
   }
 }
+static Arr* bitUD[3];
 B ud_c1(B t, B x) {
   if (isAtm(x)) {
     usz xu = o2s(x);
     if (LIKELY(xu<=I8_MAX)) {
-      if (RARE(xu==0)) return emptyIVec();
+      if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
       i8* rp; B r = m_i8arrv(&rp, xu);
       for (usz i = 0; i < xu; i++) rp[i] = i;
       return r;
@@ -377,6 +378,7 @@ void fun_gcFn() {
   mm_visit(enclosed_0);
   mm_visit(enclosed_1);
   mm_visit(globalNameList);
+  for (i32 i = 0; i < 3; i++) mm_visitP(bitUD[i]);
 }
 
 
@@ -395,4 +397,7 @@ void fns_init() {
   TIi(t_funBI,fn_im) = funBI_im;
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p= 0;    enclosed_0=taga(a); }
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p=~0ULL; enclosed_1=taga(a); }
+  bitUD[0] = a(emptyIVec());
+  { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a); }
+  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); }
 }
