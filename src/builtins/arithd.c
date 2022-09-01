@@ -255,7 +255,7 @@ static f64 pfmod(f64 a, f64 b) {
       case el_f64: { SI_AS_I(NAME,f64,x,asBad) } \
       case el_c8: case el_c16: case el_c32: case el_B:; /*fallthrough*/ \
     } asBad:;
-  #define SI_AA(N) return do_dyArith(&N##DyTable, w, x);
+  #define SI_AA(N) return dyArith_AA(&N##DyTableAA, w, x);
   #define IFN_SINGELI(X)
 #else
   #define SI_AA NO_SI_AA

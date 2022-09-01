@@ -107,7 +107,7 @@ Make ← {𝕊ns:
   
   cSrc∾↩ ∾⟨
     "B ", cbqn, "_c2(B,B,B);", nl
-    "static DyTable ", cbqn,"DyTable = {", nl
+    "static DyTableAA ", cbqn,"DyTableAA = {", nl
     "  .entsAA = {", nl
     ∾{ ⟨instrs, we‿xe⟩:
       {
