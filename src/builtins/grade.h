@@ -174,11 +174,9 @@ B SORT_C1(B t, B x) {
     }
   } else {
     B xf = getFillQ(x);
-    HArr_p ra = m_harrUv(n);
-    SGet(x)
-    for (usz i = 0; i < n; i++) ra.a[i] = Get(x,i);
-    CAT(GRADE_UD(bA,bD),tim_sort)(ra.a, n);
-    r = withFill(ra.b,xf);
+    HArr* r0 = cpyHArr(inc(x));
+    CAT(GRADE_UD(bA,bD),tim_sort)(r0->a, n);
+    r = withFill(taga(r0), xf);
   }
   decG(x);
   return FL_SET(r, CAT(fl,GRADE_UD(asc,dsc)));
