@@ -461,19 +461,19 @@ B rand_deal_c2(B t, B w, B x) {
   return r;
 }
 
+B ud_c1(B t, B w);
 B rand_subset_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
   if (RARE(wi<0)) thrM("(rand).Subset: 𝕨 cannot be negative");
   if (RARE(xi<0)) thrM("(rand).Subset: 𝕩 cannot be negative");
   if (RARE(wi>xi)) thrM("(rand).Subset: 𝕨 cannot exceed 𝕩");
-  if (wi==0) return emptyIVec();
-  B r;
-  if (wi==xi) { // Only one complete subset; will hang without this
-    i32* rp; r = m_i32arrv(&rp, wi);
-    for (i64 i = 0; i < wi; i++) rp[i] = i;
-    return r;
+  if (wi==xi) {
+    if (wi==0) return emptyIVec();
+    return ud_c1(t, x); // Only one complete subset; will hang without this
   }
+  
+  B r;
   RAND_START;
   if (wi > xi/8) {
     // Bit set (as bytes)
@@ -516,7 +516,7 @@ B rand_subset_c2(B t, B w, B x) {
     TFREE(hash);
   }
   RAND_END;
-  return r;
+  return xi<=128? taga(cpyI8Arr(r)) : xi<=32768? taga(cpyI16Arr(r)) : r;
 }
 
 #if USE_VALGRIND
