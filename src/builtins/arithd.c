@@ -24,8 +24,8 @@ B floor_c2(B, B, B);
 #include "../singeli/c/arithdDispatch.c"
 #endif
 
-#define P2(N) { if(isArr(w)|isArr(x)) { \
-  SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x); \
+#define ARITH_SLOW SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
+#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW; \
   return arith_recd(N##_c2, w, x); \
 }}
 #if !TYPED_ARITH
@@ -101,6 +101,10 @@ B floor_c2(B, B, B);
   #define Ri16(A) i16* rp; B r=m_i16arrc(&rp, A);
   #define Ri32(A) i32* rp; B r=m_i32arrc(&rp, A);
   #define Rf64(A) f64* rp; B r=m_f64arrc(&rp, A);
+  #define DOF(EXPR,A,W,X) { for (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
+  #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
+  #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
+  #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
   #define GC2f(SYMB, NAME, EXPR) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) {                                      \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
@@ -140,12 +144,14 @@ B floor_c2(B, B, B);
   #undef GC2f
   
 
-  #if 0 // SINGELI
-    // TODO
+  #if SINGELI
+    #define AR_DISPATCH(NAME) FORCE_INLINE B NAME##_AA(B t, B w, B x) { return dyArith_AA(&NAME##DyTableAA, w, x); }
+    AR_DISPATCH(add) AR_DISPATCH(floor)
+    AR_DISPATCH(sub) AR_DISPATCH(or)
+    AR_DISPATCH(mul) AR_DISPATCH(ceil)
+    AR_DISPATCH(and)
+    #undef AR_DISPATCH
   #else
-    #define AR_I_TO_ARR(NAME) return NAME##_c2_arr(t, w, x);
-    #define AR_F_TO_ARR(NAME) return NAME##_c2_arr(t, w, x);
-    
     static B bitAA0(B w, B x, usz ia) { UD; }
     static NOINLINE B bitAA1(B w, B x, usz ia) {
       u64* rp; B r = m_bitarrc(&rp, x);
@@ -160,122 +166,141 @@ B floor_c2(B, B, B);
       decG(w); decG(x); return r;
     }
     
-    static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
-      B b = bitX? x : w;
-      u64* bp = bitarr_ptr(b);
-      usz ia = IA(b);
-      
-      bool b0 = ia? bp[0]&1 : 0;
-      bool both = false;
-      for (usz i = 0; i < ia; i++) if (bitp_get(bp,i) != b0) { both=true; break; }
-      
-      B e0=m_f64(0), e1=m_f64(0); // initialized to have something to decrement later
-      bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
-      bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
-      // non-bitarr arg has been consumed
-      B r = bit_sel(b, e0, h0, e1, h1); // and now the bitarr arg is consumed too
-      dec(e0); dec(e1);
+    #define AR_I_AA(CHR, NAME, EXPR, BIT, EXTRA) NOINLINE B NAME##_AA(B t, B w, B x) { \
+      if (RNK(w)!=RNK(x)) goto bad;                              \
+      if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+      usz ia = IA(x);                                            \
+      u8 we = TI(w,elType);                                      \
+      u8 xe = TI(x,elType);                                      \
+      if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {        \
+        if (BIT && (we|xe)==0) return bitAA##BIT(w,x,ia);        \
+        B wt=w,xt=x;                                             \
+        we=xe=iMakeEq(&wt, &xt, we, xe);                         \
+        w=wt; x=xt;                                              \
+      }                                                          \
+      if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {     \
+        bool wei = we==el_i32; bool xei = xe==el_i32;            \
+        if (wei&xei) { PI32(w) PI32(x)     DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
+        if (!wei&!xei) { PF(w) PF(x) Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
+        rcf64:; Rf64(x)                                          \
+        if (wei) { PI32(w)                                       \
+          if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
+          else     { PF(x)   DOF(EXPR,w,wp[i],xp[i]) }           \
+        } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
+        decG(w); decG(x); return num_squeeze(r);                 \
+      }                                                          \
+      EXTRA                                                      \
+      if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
+      if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
+      bad: ARITH_SLOW; return arith_recd(NAME##_c2, w, x); \
+    }
+    AR_I_AA("×", mul, wv*xv, 2, {})
+    AR_I_AA("∧", and, wv*xv, 2, {})
+    AR_I_AA("∨", or , (wv+xv)-(wv*xv), 1, {})
+    AR_I_AA("⌊", floor, wv>xv?xv:wv, 2, {})
+    AR_I_AA("⌈", ceil , wv>xv?wv:xv, 1, {})
+    AR_I_AA("+", add, wv+xv, 0, {})
+    AR_I_AA("-", sub, wv-xv, 0, {
+      IFN_SINGELI(if (we==el_c32 && xe==el_i32) {
+        u32* wp = c32any_ptr(w); usz wia = IA(w);
+        u32* rp; B r = m_c32arrc(&rp, w);
+        i32* xp = i32any_ptr(x);
+        for (usz i = 0; i < wia; i++) {
+          rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
+          if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
+        }
+        decG(w); decG(x);
+        return r;
+      })
+    })
+    #undef AR_I_AA
+  #endif // !SINGELI
+  
+  
+  
+  #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
+    u8 we=TI(w,elType); EXTRA                         \
+    if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }  \
+    ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
+  }
+  
+  #define AR_I_SA(CHR, NAME, EXPR, DO_SA, EXTRA) NOINLINE B NAME##_SA(B t, B w, B x) { \
+    u8 xe=TI(x,elType); EXTRA                         \
+    if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }  \
+    ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
+  }
+  
+  static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
+    B b = bitX? x : w;
+    u64* bp = bitarr_ptr(b);
+    usz ia = IA(b);
+    
+    bool b0 = ia? bp[0]&1 : 0;
+    bool both = false;
+    for (usz i = 0; i < ia; i++) if (bitp_get(bp,i) != b0) { both=true; break; }
+    
+    B e0=m_f64(0), e1=m_f64(0); // initialized to have something to decrement later
+    bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
+    bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
+    // non-bitarr arg has been consumed
+    B r = bit_sel(b, e0, h0, e1, h1); // and now the bitarr arg is consumed too
+    dec(e0); dec(e1);
+    return r;
+  }
+  
+  AR_I_SA("-", sub, wv-xv, SI_SA, {})
+  AR_I_SA("×", mul, wv*xv, SI_SA, {})
+  AR_I_SA("∧", and, wv*xv, REG_SA, {})
+  AR_I_SA("∨", or , (wv+xv)-(wv*xv), REG_SA, {})
+  AR_I_SA("⌊", floor, wv>xv?xv:wv, REG_SA, {})
+  AR_I_SA("⌈", ceil , wv>xv?wv:xv, REG_SA, {})
+  AR_I_SA("+", add, wv+xv, SI_SA, {
+    if (isC32(w) && xe==el_i32) {
+      u32 wv = o2cu(w);
+      i32* xp = i32any_ptr(x); usz xia = IA(x);
+      u32* rp; B r = m_c32arrc(&rp, x);
+      for (usz i = 0; i < xia; i++) {
+        rp[i] = (u32)(xp[i]+(i32)wv);
+        if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
+      }
+      decG(x);
       return r;
     }
-    
-    #define DOF(EXPR,A,W,X) { for (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
-    #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
-    #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
-    #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
-    
-    #define GC2i(SYMB, NAME, EXPR, EXTRA2, BIT, SI_AA, DO_AS, DO_SA)   \
-    NOINLINE B NAME##_c2_arr(B t, B w, B x) {                          \
-      EXTRA2                                                           \
-      if (isArr(w)|isArr(x)) {                                         \
-        if (isArr(w)&isArr(x)) { SI_AA(NAME)                           \
-          if (RNK(w)==RNK(x)) {                                        \
-            if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-            usz ia = IA(x);                                            \
-            u8 we = TI(w,elType);                                      \
-            u8 xe = TI(x,elType);                                      \
-            if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {        \
-              if (BIT && (we|xe)==0) return bitAA##BIT(w,x,ia);        \
-              B wt=w,xt=x;                                             \
-              we=xe=iMakeEq(&wt, &xt, we, xe);                         \
-              w=wt; x=xt;                                              \
-            }                                                          \
-            if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {     \
-              bool wei = we==el_i32; bool xei = xe==el_i32;            \
-              if (wei&xei) { PI32(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
-              if (!wei&!xei) { PF(w) PF(x) Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
-              rcf64:; Rf64(x)                                          \
-              if (wei) { PI32(w)                                       \
-                if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
-                else     { PF  (x) DOF(EXPR,w,wp[i],xp[i]) }           \
-              } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
-              decG(w); decG(x); return num_squeeze(r);                 \
-            }                                                          \
-            if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i16 & xe==el_i16) { PI16(w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i8  & xe==el_i32) { PI8 (w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i32 & xe==el_i8 ) { PI32(w) PI8 (x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i16 & xe==el_i32) { PI16(w) PI32(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],base) } \
-            if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],base) } \
-          } \
-        } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); DO_SA(NAME,EXPR) } \
-        else   if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); DO_AS(NAME,EXPR) } \
-        base: P2(NAME)                          \
-      }                                         \
-      thrM(SYMB ": Unexpected argument types"); \
+  })
+  #undef AR_I_SA
+  
+  
+  AR_I_AS("-", sub, wv-xv, SI_AS, {
+    if (we==el_c32 && isC32(x)) {
+      i32 xv = (i32)o2cu(x);
+      u32* wp = c32any_ptr(w); usz wia = IA(w);
+      i32* rp; B r = m_i32arrc(&rp, w);
+      for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
+      decG(w);
+      return r;
     }
-    
-    GC2i("+", add, wv+xv, {
-      IFN_SINGELI(if (isArr(w)&isC32(x) || isC32(w)&isArr(x)) { if (isArr(w)) { B t=w;w=x;x=t; }
-        if (TI(x,elType) == el_i32) {
-          u32 wv = o2cu(w);
-          i32* xp = i32any_ptr(x); usz xia = IA(x);
-          u32* rp; B r = m_c32arrc(&rp, x);
-          for (usz i = 0; i < xia; i++) {
-            rp[i] = (u32)(xp[i]+(i32)wv);
-            if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
-          }
-          decG(x);
-          return r;
-        }
-      })
-    }, 0, SI_AA, SI_AS, SI_SA)
-
-    GC2i("-", sub, wv-xv, {
-      IFN_SINGELI(if (isArr(w) && TI(w,elType)==el_c32) {
-        if (isC32(x)) {
-          i32 xv = (i32)o2cu(x);
-          u32* wp = c32any_ptr(w); usz wia = IA(w);
-          i32* rp; B r = m_i32arrc(&rp, w);
-          for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
-          decG(w);
-          return r;
-        }
-        if (isArr(x) && eqShape(w, x)) {
-          u32* wp = c32any_ptr(w); usz wia = IA(w);
-          if (TI(x,elType)==el_i32) {
-            u32* rp; B r = m_c32arrc(&rp, w);
-            i32* xp = i32any_ptr(x);
-            for (usz i = 0; i < wia; i++) {
-              rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
-              if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
-            }
-            decG(w); decG(x);
-            return r;
-          }
-        }
-      })
-    }, 0, SI_AA, SI_AS, SI_SA)
-
-    GC2i("¬", not, 1+wv-xv, {}, 0, NO_SI_AA, REG_AS, REG_SA)
-    GC2i("×", mul, wv*xv, {}, 2, SI_AA, SI_AS, SI_SA)
-    GC2i("∧", and, wv*xv, {}, 2, SI_AA, REG_AS, REG_SA)
-    GC2i("∨", or , (wv+xv)-(wv*xv), {}, 1, SI_AA, REG_AS, REG_SA)
-    GC2i("⌊", floor, wv>xv?xv:wv, {}, 2, SI_AA, REG_AS, REG_SA) // optimizer optimizes out the fallback mess
-    GC2i("⌈", ceil , wv>xv?wv:xv, {}, 1, SI_AA, REG_AS, REG_SA)
-    #undef GC2i
-  #endif // !SINGELI
+  })
+  #define add_AS(T, W, X) add_SA(T, X, W)
+  #define mul_AS(T, W, X) mul_SA(T, X, W)
+  #define and_AS(T, W, X) and_SA(T, X, W)
+  #define or_AS(T, W, X) or_SA(T, X, W)
+  #define floor_AS(T, W, X) floor_SA(T, X, W)
+  #define ceil_AS(T, W, X) ceil_SA(T, X, W)
+  #undef AR_I_AS
+  
+  #define AR_F_TO_ARR(NAME) return NAME##_c2_arr(t, w, x);
+  #define AR_I_TO_ARR(NAME) \
+    if (isArr(x)) {                                  \
+      if (isArr(w)) return NAME##_AA(t, w, x);       \
+      else return NAME##_SA(t, w, x);                \
+    } else if (isArr(w)) return NAME##_AS(t, w, x);
+  
 #endif // TYPED_ARITH
 
 #define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
@@ -298,16 +323,15 @@ AR_I_SCALAR("-", sub, w.f-x.f, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
-AR_I_SCALAR("¬", not, 1+w.f-x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(1+(i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("¬: Invalid character"); return m_c32((u32)r); }
-  if (isC32(w) & isC32(x)) return m_f64(1 + (i32)(u32)w.u - (i32)(u32)x.u);
-})
 AR_I_SCALAR("×", mul, w.f*x.f, {})
 AR_I_SCALAR("∧", and, w.f*x.f, {})
 AR_I_SCALAR("∨", or , (w.f+x.f)-(w.f*x.f), {})
 AR_I_SCALAR("⌊", floor, w.f>x.f?x.f:w.f, {})
 AR_I_SCALAR("⌈", ceil , w.f>x.f?w.f:x.f, {})
 #undef AR_I_SCALAR
+B not_c2(B t, B w, B x) {
+  return add_c2(m_f64(1), m_f64(1), sub_c2(t, w, x));
+}
 
 AR_F_SCALAR("÷", div  ,           w.f/x.f)
 AR_F_SCALAR("⋆", pow  ,     pow(w.f, x.f))
