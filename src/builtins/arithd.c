@@ -46,24 +46,37 @@ B floor_c2(B, B, B);
     *p = s;
     return we|xe;
   }
+  
+  #define PF(N)   f64* N##p = f64any_ptr(N);
+  #define PI8(N)  i8*  N##p = i8any_ptr (N);
+  #define PI16(N) i16* N##p = i16any_ptr(N);
+  #define PI32(N) i32* N##p = i32any_ptr(N);
+  #define Ri8(A)  i8*  rp; r=m_i8arrc (&rp, A);
+  #define Ri16(A) i16* rp; r=m_i16arrc(&rp, A);
+  #define Ri32(A) i32* rp; r=m_i32arrc(&rp, A);
+  #define Rf64(A) f64* rp; r=m_f64arrc(&rp, A);
+  #define DOF(EXPR,A,W,X) { for (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
+  #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
+  #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
+  #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define REG_SA(NAME, EXPR) \
     if (xe==el_bit) return bit_sel1Fn(NAME##_c2,w,x,1); \
     if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
     if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],sa16B) } sa16B:; \
     if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],sa32B) } sa32B:; \
-    if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) decG(x); return num_squeeze(r); }
+    if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) goto dec_ret; }
   #define REG_AS(NAME, EXPR) \
     if (we==el_bit) return bit_sel1Fn(NAME##_c2,w,x,0); \
     if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,as8B ) } as8B :; \
     if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,as16B) } as16B:; \
     if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
-    if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) decG(w); return num_squeeze(r); }
+    if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) goto dec_ret; }
 
 
   #define NO_SI_AA(N)
   #if SINGELI
-    #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } dec (w);decG(x);return r;
-    #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } decG(w);dec (x);return r;
+    #define SI_SA_I(N,S,W,BASE) R##S(x); usz rlen=avx2_##N##SA##_##S((W).u, (void*)xp, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } goto dec_ret;
+    #define SI_AS_I(N,S,X,BASE) R##S(w); usz rlen=avx2_##N##AS##_##S((void*)wp, (X).u, (void*)rp, ia); if(RARE(rlen!=ia)) { decG(r); goto BASE; } goto dec_ret;
     #define SI_SA(NAME, EXPR) \
     void* xp = tyany_ptr(x);  \
     switch(xe) { default: UD; \
@@ -93,20 +106,8 @@ B floor_c2(B, B, B);
     #define IFN_SINGELI(X) X
   #endif
   
-  #define PF(N)   f64* N##p = f64any_ptr(N);
-  #define PI8(N)  i8*  N##p = i8any_ptr (N);
-  #define PI16(N) i16* N##p = i16any_ptr(N);
-  #define PI32(N) i32* N##p = i32any_ptr(N);
-  #define Ri8(A)  i8*  rp; B r=m_i8arrc (&rp, A);
-  #define Ri16(A) i16* rp; B r=m_i16arrc(&rp, A);
-  #define Ri32(A) i32* rp; B r=m_i32arrc(&rp, A);
-  #define Rf64(A) f64* rp; B r=m_f64arrc(&rp, A);
-  #define DOF(EXPR,A,W,X) { for (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
-  #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
-  #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
-  #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } dec(w); dec(x); return r; }
   #define GC2f(SYMB, NAME, EXPR) B NAME##_c2_arr(B t, B w, B x) { \
-    if (isArr(w)|isArr(x)) {                                      \
+    if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = IA(x);                                           \
@@ -169,7 +170,7 @@ B floor_c2(B, B, B);
     #define AR_I_AA(CHR, NAME, EXPR, BIT, EXTRA) NOINLINE B NAME##_AA(B t, B w, B x) { \
       if (RNK(w)!=RNK(x)) goto bad;                              \
       if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
-      usz ia = IA(x);                                            \
+      usz ia = IA(x); B r;                                       \
       u8 we = TI(w,elType);                                      \
       u8 xe = TI(x,elType);                                      \
       if ((we==el_bit | xe==el_bit) && (we|xe)<=el_f64) {        \
@@ -181,7 +182,7 @@ B floor_c2(B, B, B);
       if ((we==el_i32|we==el_f64)&(xe==el_i32|xe==el_f64)) {     \
         bool wei = we==el_i32; bool xei = xe==el_i32;            \
         if (wei&xei) { PI32(w) PI32(x)     DOI32(EXPR,w,wp[i],xp[i],rcf64) } \
-        if (!wei&!xei) { PF(w) PF(x) Rf64(x) DOF(EXPR,w,wp[i],xp[i]) decG(w);decG(x);return r; } \
+        if (!wei&!xei) { PF(w) PF(x) Rf64(x) DOF(EXPR,w,wp[i],xp[i]) goto dec_ret; } \
         rcf64:; Rf64(x)                                          \
         if (wei) { PI32(w)                                       \
           if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
@@ -199,6 +200,7 @@ B floor_c2(B, B, B);
       if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
       if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
       bad: ARITH_SLOW; return arith_recd(NAME##_c2, w, x); \
+      dec_ret: decG(w); decG(x); return r; \
     }
     AR_I_AA("×", mul, wv*xv, 2, {})
     AR_I_AA("∧", and, wv*xv, 2, {})
@@ -209,14 +211,13 @@ B floor_c2(B, B, B);
     AR_I_AA("-", sub, wv-xv, 0, {
       IFN_SINGELI(if (we==el_c32 && xe==el_i32) {
         u32* wp = c32any_ptr(w); usz wia = IA(w);
-        u32* rp; B r = m_c32arrc(&rp, w);
+        u32* rp; r = m_c32arrc(&rp, w);
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
           if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
         }
-        decG(w); decG(x);
-        return r;
+        goto dec_ret;
       })
     })
     #undef AR_I_AA
@@ -225,15 +226,17 @@ B floor_c2(B, B, B);
   
   
   #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
-    u8 we=TI(w,elType); EXTRA                         \
+    B r; u8 we=TI(w,elType); EXTRA                    \
     if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }  \
     ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
+    dec_ret: decG(w); return r;                       \
   }
   
   #define AR_I_SA(CHR, NAME, EXPR, DO_SA, EXTRA) NOINLINE B NAME##_SA(B t, B w, B x) { \
-    u8 xe=TI(x,elType); EXTRA                         \
+    B r; u8 xe=TI(x,elType); EXTRA                    \
     if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }  \
     ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
+    dec_ret: decG(x); return r;                       \
   }
   
   static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
@@ -264,13 +267,12 @@ B floor_c2(B, B, B);
     if (isC32(w) && xe==el_i32) {
       u32 wv = o2cu(w);
       i32* xp = i32any_ptr(x); usz xia = IA(x);
-      u32* rp; B r = m_c32arrc(&rp, x);
+      u32* rp; r = m_c32arrc(&rp, x);
       for (usz i = 0; i < xia; i++) {
         rp[i] = (u32)(xp[i]+(i32)wv);
         if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
       }
-      decG(x);
-      return r;
+      goto dec_ret;
     }
   })
   #undef AR_I_SA
@@ -280,10 +282,9 @@ B floor_c2(B, B, B);
     if (we==el_c32 && isC32(x)) {
       i32 xv = (i32)o2cu(x);
       u32* wp = c32any_ptr(w); usz wia = IA(w);
-      i32* rp; B r = m_i32arrc(&rp, w);
+      i32* rp; r = m_i32arrc(&rp, w);
       for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
-      decG(w);
-      return r;
+      goto dec_ret;
     }
   })
   #define add_AS(T, W, X) add_SA(T, X, W)
