@@ -147,6 +147,7 @@ B shape_c2(B t, B w, B x) {
           unkPos = i;
           if (!isPrim(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
           unkInd = ((i32)v(c)->flags) - 1;
+          good|= xia==0 | unkInd==n_floor;
         }
       }
       if (bad && !good) thrM("⥊: 𝕨 too large");
