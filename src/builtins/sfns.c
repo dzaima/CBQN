@@ -720,38 +720,39 @@ B slash_im(B t, B x) {
       decG(x); return num_squeeze(r);
     }
 #define CASE_SMALL(N) \
-    case el_i##N: {                                                                               \
-      i##N* xp = i##N##any_ptr(x);                                                                \
-      usz m=1<<N;                                                                                 \
-      B r;                                                                                        \
-      if (xia < m/2) {                                                                            \
-        usz a=1; u##N max=xp[0];                                                                  \
-        if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");                        \
-        if (xia < m/2) {                                                                          \
-          a=1; while (a<xia && xp[a]>xp[a-1]) a++;                                                \
-          max=xp[a-1];                                                                            \
-          if (a==xia) { /* Sorted unique argument */                                              \
-            usz ria = max + 1;                                                                    \
-            u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;           \
-            for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                                     \
-            decG(x); return r;                                                                    \
-          }                                                                                       \
-        }                                                                                         \
-        for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }                             \
-        if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");                    \
-        usz ria = max+1;                                                                          \
-        i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;                  \
-        for (usz i = 0; i < xia; i++) rp[xp[i]]++;                                                \
-      } else {                                                                                    \
-        TALLOC(usz, t, m); usz* th = t+m/2;                                                       \
-        for (usz j=0; j<m  ; j++) t[j]=0;                                                         \
-        for (usz i=0; i<xia; i++) th[xp[i]]++;                                                    \
-        for (usz j=0; j<m/2; j++) if (t[j]) thrM("/⁼: Argument cannot contain negative numbers"); \
-        usz ria=0; for (usz s=0; s<xia; ria++) s+=th[ria];                                        \
-        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=th[i];                  \
-        TFREE(t);                                                                                 \
-      }                                                                                           \
-      decG(x); return num_squeeze(r);                                                             \
+    case el_i##N: {                                                              \
+      i##N* xp = i##N##any_ptr(x);                                               \
+      usz m=1<<N;                                                                \
+      B r;                                                                       \
+      if (xia < m/2) {                                                           \
+        usz a=1; u##N max=xp[0];                                                 \
+        if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
+        if (xia < m/2) {                                                         \
+          a=1; while (a<xia && xp[a]>xp[a-1]) a++;                               \
+          max=xp[a-1];                                                           \
+          if (a==xia) { /* Sorted unique argument */                             \
+            usz ria = max + 1;                                                   \
+            u64* rp; r = m_bitarrv(&rp, ria);                                    \
+            for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                            \
+            for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                    \
+            decG(x); return r;                                                   \
+          }                                                                      \
+        }                                                                        \
+        for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
+        if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
+        usz ria = max+1;                                                         \
+        i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+        for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
+      } else {                                                                   \
+        TALLOC(usz, t, m);                                                       \
+        for (usz j=0; j<m/2; j++) t[j]=0;                                        \
+        for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
+        t[m/2]=xia; usz ria=0; for (usz s=0; s<xia; ria++) s+=t[ria];            \
+        if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
+        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
+        TFREE(t);                                                                \
+      }                                                                          \
+      decG(x); return num_squeeze(r);                                            \
     }
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
