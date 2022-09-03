@@ -468,10 +468,8 @@ B rand_subset_c2(B t, B w, B x) {
   if (RARE(wi<0)) thrM("(rand).Subset: 𝕨 cannot be negative");
   if (RARE(xi<0)) thrM("(rand).Subset: 𝕩 cannot be negative");
   if (RARE(wi>xi)) thrM("(rand).Subset: 𝕨 cannot exceed 𝕩");
-  if (wi==xi) {
-    if (wi==0) return emptyIVec();
-    return ud_c1(t, x); // Only one complete subset; will hang without this
-  }
+  if (wi==0) return emptyIVec();
+  if (wi==xi) return ud_c1(t, x); // Only one complete subset; will hang without this
   
   B r;
   RAND_START;
