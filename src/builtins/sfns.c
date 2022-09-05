@@ -748,7 +748,7 @@ B slash_im(B t, B x) {
         TALLOC(usz, t, m);                                                       \
         for (usz j=0; j<m/2; j++) t[j]=0;                                        \
         for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
-        t[m/2]=xia; usz ria=0; for (usz s=0; s<xia; ria++) s+=t[ria];            \
+        t[m/2]=xia; usz ria=0; for (u64 s=0; s<xia; ria++) s+=t[ria];            \
         if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
         TFREE(t);                                                                \

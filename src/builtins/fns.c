@@ -82,7 +82,7 @@ B ud_c2(B t, B w, B x) {
   if (isArr(w)) {
     if (RNK(w)>1) thrM("↕: 𝕨 must have rank at most 1");
     wia = IA(w);
-    if (wia==0) { decG(w); return x; }
+    if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
   }
   ur xr;
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("↕: Length of 𝕨 must be at most rank of 𝕩");
