@@ -130,8 +130,6 @@ Make ← {𝕊ns:
   ⟩
   
   # array-scalar / scalar-array
-  ty0 ← tyName
-  ty1 ← ⟨@, "i16","i32","f64",@,    "c16","c32",@⟩
   tyi ← ⟨@,  "i8","i16","i32","f64", "i8","i16","i32"⟩
   tyc ← ⟨@,  "c8","c16","c32",@,     "c8","c16","c32"⟩
   isc ← ⟨0, 0,    0,    0,    0,     1,   1,    1⟩
@@ -154,13 +152,13 @@ Make ← {𝕊ns:
         ∾{ 𝕊 num:
           onlyFirst ← ns.overflowEq⊑ ⟨1, ¬num⊑canOverflow⟩
           f1‿f2 ← 1‿2 {
-            𝕩≢@? @≢𝕩⊑ty1?
+            𝕩≢@?
             charArr ← num⊑isc
             ¬ (charAtm∧¬num⊑canOverflow) ∨ (onlyFirst ∧ 𝕨=2) ∨ (¬hasChrArr)∧charArr?
             currRes ← charAtm‿charArr⊑resChr
             currRes≢@?
-            tw←num⊑charAtm⊑tyi‿tyc ⋄ tx←num⊑tyName ⋄ tr←num⊑currRes⊑tyi‿tyc
-            tw≢@? tx≢@? tr≢@?
+            tw←num⊑charAtm⊑tyi‿tyc ⋄ tx←num⊑tyName ⋄ tr←𝕩⊑currRes⊑tyi‿tyc
+            tr≢@?
             siName ← ∾⟨id, argarr, 𝕨⊑"?ce", ∾'_'⊸∾¨ tw‿tx‿tr⟩
             𝕨 { 𝕊:
               siSrc∾↩ ∾⟨"'", siName, "'=arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, 1⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, '}', nl⟩
