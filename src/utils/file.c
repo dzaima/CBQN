@@ -1,5 +1,6 @@
 #include <dirent.h>
 #include <unistd.h>
+#include <errno.h>
 #include "../core.h"
 #include "file.h"
 #include "mut.h"
@@ -233,11 +234,10 @@ B path_list(B path) {
   return res;
 }
 
-#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<errno.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP
+#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP
 
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <unistd.h>
 
 typedef struct MmapHolder {
