@@ -1,6 +1,4 @@
 debug ← 0=≠•args
-•term.OutRaw⍟debug ∾⟨@+27 ⋄ "[H" ⋄ @+27 ⋄ "[2J" ⋄ @+27 ⋄ "[3J"⟩
-•Out⍟(3×debug) 200⥊'-'
 impls‿tables ← 2↑•args
 
 T ← =⊸{<⎉𝕨⍉⍟𝕨>𝕩}
@@ -17,14 +15,7 @@ tmLit ← "uceue"
 
 tyWidth ← 99‿0‿1‿2‿3‿0‿1‿2 # in log2(bytes)
 tyName ← "bit"‿"i8"‿"i16"‿"i32"‿"f64"‿"c8"‿"c16"‿"c32"
-tySiType ← "u1"‿"i8"‿"i16"‿"i32"‿"f64"‿"u8"‿"u16"‿"u32"
-
-ShowTbl ← {
-  # 𝕩 ↩ {∧´⥊𝕩≡¨@? @; 𝕩/˜𝕩≢¨@}¨ 𝕩
-  𝕩 ≍˘⍟=¨ ↩
-  •Show 𝕩
-  #•Out •Repr 𝕩
-}⍟debug
+tySiName ← "u1"‿"i8"‿"i16"‿"i32"‿"f64"‿"u8"‿"u16"‿"u32"
 
 mdNone ← 0
 mdExact ← 1
@@ -33,21 +24,26 @@ mdBit2i8 ← 3
 mdF64Chr ← 4
 mdSqF64 ← 5
 
-singeliFns ← ⟨⟩
-GetSingeli ← { tm‿w‿x‿r‿id‿si:
+singeliAAFns ← ⟨⟩
+GetSingeliAA ← { tm‿w‿x‿r‿id‿si:
   {
     r≡@? @;
     name ← ∾⟨id, "AA", tm⊑tmLit, "_", w⊑tyName, "_", x⊑tyName, "_", r⊑tyName⟩
-    singeliFns∾↩ <name‿w‿x‿r‿tm‿si
+    singeliAAFns∾↩ <name‿w‿x‿r‿tm‿si
     name
   }
 }
 
+singeliASFns ← ⟨⟩
+
 nl←@+10
 cSrc ← ""
+siSrc ← ""
+
 Make ← {𝕊ns:
   cbqn‿repr‿id‿si‿commutative ← ns
   
+  # array-array
   aaA‿aaB ← {4≡≠𝕩?𝕩∾id‿si; 𝕩}¨¨ ns.aa_a‿ns.aa_b # add ID and singeli fn to entries that don't have it explicit
   
   currTypes ← ↕8‿8
@@ -94,16 +90,16 @@ Make ← {𝕊ns:
       Type ← {𝕊: 3⊑n⊑map}
       ⊢◶⟨
         @ # mdNone
-        {𝕊: ⟨GetSingeli e, t, Type@, call∾(bit=3⊑n⊑map)⊑"rbyte"‿"bit", s, @⟩} # mdExact
-        {𝕊: ⟨GetSingeli e, t, Type@, call∾(bit=3⊑n⊑map)⊑"rbyte"‿"bit", s, ((s≠m)/"wx")∾tyName⊑˜⊑m/n⟩} # mdCast
-        {𝕊: ⟨GetSingeli e, t, Type@, call∾"wxi8", s, @⟩} # mdBit2i8
+        {𝕊: ⟨GetSingeliAA e, t, Type@, call∾(bit=3⊑n⊑map)⊑"rbyte"‿"bit", s, @⟩} # mdExact
+        {𝕊: ⟨GetSingeliAA e, t, Type@, call∾(bit=3⊑n⊑map)⊑"rbyte"‿"bit", s, ((s≠m)/"wx")∾tyName⊑˜⊑m/n⟩} # mdCast
+        {𝕊: ⟨GetSingeliAA e, t, Type@, call∾"wxi8", s, @⟩} # mdBit2i8
         {𝕊: ⟨@,            t, @,     "e_call_sqx", s, @⟩} # mdF64Chr
-        {𝕊: ⟨GetSingeli e, t, Type@, call∾"wxf64sq", s, @⟩} # mdSqF64
+        {𝕊: ⟨GetSingeliAA e, t, Type@, call∾"wxf64sq", s, @⟩} # mdSqF64
       ⟩ 𝕩
     }¨ res
   }¨ aaA‿aaB
   
-  # ShowTbl ∾´¨ instrs
+  {•Show ≍˘¨𝕩}⍟debug instrs
   
   cSrc∾↩ ∾⟨
     "B ", cbqn, "_c2(B,B,B);", nl
@@ -132,6 +128,62 @@ Make ← {𝕊ns:
     "  .repr = """, repr, """", nl
     "};", nl
   ⟩
+  
+  # array-scalar / scalar-array
+  ty0 ← tyName
+  ty1 ← ⟨@, "i16","i32","f64",@,    "c16","c32",@⟩
+  tyi ← ⟨@,  "i8","i16","i32","f64", "i8","i16","i32"⟩
+  tyc ← ⟨@,  "c8","c16","c32",@,     "c8","c16","c32"⟩
+  isc ← ⟨0, 0,    0,    0,    0,     1,   1,    1⟩
+  { 𝕊 swap‿get:
+    choices ← ns.sa
+    hadChrArr ← 0
+    {
+      0≡≠𝕩? @;
+      charAtm ← 'c' ≡ ⊑⊑𝕩
+      hasNumArr  ← ⊑'i' ∊ 1⊑¨𝕩
+      hasChrArr ← ⊑'c' ∊ 1⊑¨𝕩
+      resChr ← {(2⊑¨𝕩)⌾((2↑¨𝕩)⊸⊑) 2‿2⥊@} 'c'=𝕩
+      argarr ← ⌽⍟swap "SA"
+      canOverflow ← "f64"⊸≢¨ tyName
+      
+      cSrc∾↩ ∾⟨
+        "static DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
+        "  .ents = {", nl
+        "    {.bitsel=", hasNumArr◶⟨"bad", {𝕊:id∾swap/"R"}⟩ @, "_forBitsel", charAtm⊑"NC", "N_SA},", nl
+        ∾{ 𝕊 num:
+          onlyFirst ← ns.overflowEq⊑ ⟨1, ¬num⊑canOverflow⟩
+          f1‿f2 ← 1‿2 {
+            𝕩≢@? @≢𝕩⊑ty1?
+            charArr ← num⊑isc
+            ¬ (charAtm∧¬num⊑canOverflow) ∨ (onlyFirst ∧ 𝕨=2) ∨ (¬hasChrArr)∧charArr?
+            currRes ← charAtm‿charArr⊑resChr
+            currRes≢@?
+            tw←num⊑charAtm⊑tyi‿tyc ⋄ tx←num⊑tyName ⋄ tr←num⊑currRes⊑tyi‿tyc
+            tw≢@? tx≢@? tr≢@?
+            siName ← ∾⟨id, argarr, 𝕨⊑"?ce", ∾'_'⊸∾¨ tw‿tx‿tr⟩
+            𝕨 { 𝕊:
+              siSrc∾↩ ∾⟨"'", siName, "'=arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, 1⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, '}', nl⟩
+              singeliASFns∾↩ <siName
+            }⍟⊢ ¬⊑(<siName)∊singeliASFns
+            siName;
+            "failAtomArr"∾'0'+𝕨
+          }¨ ⟨num⊑@‿1‿2‿3‿4‿5‿6‿7,
+              num⊑@‿2‿3‿4‿@‿6‿7‿@⟩
+          ∾⟨"    {.f1=",f1,", .f2=",f2,"},", nl⟩
+        }¨ 1+↕7
+        "  },", nl
+        "  .chrAtom = ", hadChrArr◶"NULL"‿{𝕊: ∾⟨"&",cbqn,"DyTable", ⌽⍟swap "CA"⟩} @, ",", nl
+        "  .mainFn = ", cbqn, "_c2", swap/"R", ",", nl
+        "  .repr = """, repr, """", nl
+        "};", nl
+      ⟩
+      
+      hadChrArr∨↩ charAtm
+    }¨ 2↑(("ci"⊐⊑¨)⊔⊢) ⌽⍟swap⌾(2⊸↑)¨ choices
+  }¨ (2-commutative)↑ ⟨0‿{𝕩.sa} ⋄ 1‿{𝕩.as}⟩
+  
+  siSrc∾↩ nl
 }
 
 
@@ -150,52 +202,57 @@ Make ← {𝕊ns:
     commutative⇐1 ⋄ repr⇐"+" ⋄ cbqn⇐"add" ⋄ si⇐"__add" ⋄ id⇐"add"
     aa_a ⇐ c_numDiag∾⟨c‿i8‿c8‿c8,  c‿i16‿c16‿c16, e‿i32‿c32‿c32, xsq‿c8‿f64‿@, xsq‿c16‿f64‿@, xsq‿c32‿f64‿@⟩∾⟨c‿i8‿i16‿i16, c‿i8‿i32‿i32, c‿i16‿i32‿i32⟩
     aa_b ⇐ w_numDiag∾⟨e‿i8‿c8‿c16, e‿i16‿c16‿c32⟩
+    sa⇐"iii"‿"icc"‿"cic" ⋄ overflowEq⇐1
   }
   Make {
     commutative⇐0 ⋄ repr⇐"-" ⋄ cbqn⇐"sub" ⋄ si⇐"__sub" ⋄ id⇐"sub"
     aa_a ⇐ c_numDiag∾⟨c‿c8‿c8‿i8,  c‿c16‿c16‿i16, u‿c32‿c32‿i32⟩∾⟨c‿c8‿i8‿c8,  c‿c16‿i16‿c16, e‿c32‿i32‿c32⟩∾⟨xsq‿c8‿f64‿@, xsq‿c16‿f64‿@, xsq‿c32‿f64‿@⟩
     aa_b ⇐ w_numDiag∾⟨u‿c8‿c8‿i16, u‿c16‿c16‿i32⟩               ∾⟨e‿c8‿i8‿c16, e‿c16‿i16‿c32⟩
+    sa⇐"iii"‿"cic"‿"cci" ⋄ overflowEq⇐1
   }
   Make¨ { repr‿cbqn:
     commutative⇐1 ⋄ repr‿cbqn⇐ ⋄ si⇐"__mul" ⋄ id⇐"mul"
     aa_a ⇐ bitand∾c_numDiag # ∾⟨u‿bit‿i8‿i8, u‿bit‿i16‿i16, u‿bit‿i32‿i32, u‿bit‿f64‿f64⟩
     aa_b ⇐ w_numDiag        # TODO readd ↑
+    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐1
   }¨ ⟨"×"‿"mul", "∧"‿"and"⟩
   Make {
     commutative⇐1 ⋄ repr⇐"∨" ⋄ cbqn⇐"or" ⋄ si⇐"bqn_or" ⋄ id⇐"or"
     aa_a ⇐ bitor∾⟨rsq‿f64‿f64‿f64⟩ # TODO maybe new instr to squeeze arguments & try to go bitarr-bitarr
     aa_b ⇐ ⟨⟩                      # and maybe use that for ∧ but not ×
+    sa⇐⟨⟩ ⋄ overflowEq⇐1
   }
   Make {
     commutative⇐1 ⋄ repr⇐"⌊" ⋄ cbqn⇐"floor" ⋄ si⇐"min" ⋄ id⇐"min"
     aa_a ⇐ bitand∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
+    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐0
   }
   Make {
     commutative⇐1 ⋄ repr⇐"⌈" ⋄ cbqn⇐"ceil" ⋄ si⇐"max" ⋄ id⇐"max"
     aa_a ⇐ bitor∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
+    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐0
   }
   # Make¨ { repr‿cbqn‿si:
   #   commutative⇐0 ⋄ repr‿cbqn‿si⇐ ⋄ id⇐cbqn
   #   aa_a ⇐ ⟨rsq‿f64‿f64‿f64⟩ ⋄ aa_b ⇐ ⟨⟩
+  #   sa⇐"i" ⋄ as⇐"i" ⋄ overflowEq⇐1
   # }¨ ⟨"÷"‿"div"‿"__div", "√"‿"root"‿@, "|"‿"stile"‿@, "⋆"‿"pow"‿@, "⋆⁼"‿"log"‿@⟩
 }
 
-siSrc ← ""
 GenSingeli ← { 𝕊name‿w‿x‿r‿tm‿si:
   si≢@?
-    siSrc ∾↩ ∾⟨"'", name, "'=arithAA{", '0'+tm, ',', si, ',', w⊑tySiType, ',', x⊑tySiType, ',', r⊑tySiType, '}', nl⟩;
+    siSrc ∾↩ ∾⟨"'", name, "'=arithAA{", '0'+tm, ',', si, ',', w⊑tySiName, ',', x⊑tySiName, ',', r⊑tySiName, '}', nl⟩;
   # else
     @
 }
 
-GenSingeli¨ ⍷singeliFns
+GenSingeli¨ ⍷singeliAAFns
 
 ⊢◶{𝕊:
   impls •FChars siSrc
   tables •FChars cSrc
 }‿{𝕊:
-  # •Out cSrc
+  •Out cSrc
   •Out siSrc
   1
 } debug
-

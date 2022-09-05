@@ -52,7 +52,7 @@ typedef struct EntAA {
 } EntAA;
 
 typedef struct DyTableAA {
-  EntAA entsAA[8*8]; // one for each instruction
+  EntAA entsAA[el_B*el_B]; // one for each instruction
   BBB2B mainFn;
   char* repr;
 } DyTableAA;
@@ -130,7 +130,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     }
     case e_call_sqx: {
       assert(TI(x,elType)==el_f64);
-      x = num_squeeze(x);
+      x = num_squeezeChk(x);
       u8 xe = TI(x,elType);
       if (xe==el_f64) goto rec;
       e = &table->entsAA[TI(w,elType)*8 + xe];
@@ -147,6 +147,135 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
 }
 
 
+typedef struct DyTableSA DyTableSA;
+typedef bool (*ForBitsel)(DyTableSA*, B w, B* r);
+typedef u64 (*AtomArrFnC)(u8* r, u64 w, u8* x, u64 len);
+typedef B (*DyArithChrFn)(DyTableSA*, B, B, usz, u8);
+
+typedef struct {
+  //      >=el_i8        el_bit
+  union { AtomArrFnC f1; ForBitsel bitsel; };
+  union { AtomArrFnC f2; };
+} EntSA;
+
+
+struct DyTableSA {
+  EntSA ents[el_B];
+  BBB2B mainFn;
+  char* repr;
+  DyTableSA* chrAtom;
+};
+
+bool bad_forBitselNN_SA(DyTableSA* table, B w, B* r) { return false; }
+#define bad_forBitselCN_SA bad_forBitselNN_SA
+
+B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(table->mainFn, w, x); }
+#define bad_chrAtomAS bad_chrAtomSA
+
+u64 failAtomArr1(u8* r, u64 w, u8* x, u64 len) { return 0; }
+u64 failAtomArr2(u8* r, u64 w, u8* x, u64 len) { return 1; }
+
+u8 nextType[] = {
+  [t_i8arr ] = t_i16arr, [t_c8arr ] = t_c16arr,
+  [t_i16arr] = t_i32arr, [t_c16arr] = t_c32arr,
+  [t_i32arr] = t_f64arr, [t_c32arr] = t_empty,
+  [t_f64arr] = t_empty,
+};
+
+B dyArith_SA(DyTableSA* table, B w, B x) {
+  usz ia = IA(x);
+  u8 xe = TI(x,elType);
+  
+  u8 width, type; // when one argument is a number, both + and - have character array result iif the other argument is a character array; therefore result type doesn't need a lookup
+  u64 wa;
+  
+  EntSA* e;
+  
+  if (!isF64(w)) {
+    if (!isC32(w)) goto rec;
+    DyTableSA* t2 = table->chrAtom;
+    if (t2==NULL) goto rec;
+    table = t2;
+    
+    
+    wa = o2cu(w);
+    newXEc:
+    switch(xe) { default: UD;
+      case el_bit: goto bitsel;
+      case el_i8:  if (wa==( u8)wa) { e=&table->ents[el_i8 ]; width=0; type=t_c8arr;  goto f1; } else goto cwiden_i8;
+      case el_i16: if (wa==(u16)wa) { e=&table->ents[el_i16]; width=1; type=t_c16arr; goto f1; } else goto cwiden_i16;
+      case el_i32:                    e=&table->ents[el_i32]; width=2; type=t_c32arr; goto f1;
+      case el_f64: x=num_squeezeChk(x); xe=TI(x,elType); if (xe!=el_f64) goto newXEc; else goto rec;
+      case el_c8:  if (wa==( u8)wa) { e=&table->ents[el_c8 ]; width=0; type=t_i8arr;  goto f1; } goto cwiden_c8; // TODO check for & use unsigned w
+      case el_c16: if (wa==(u16)wa) { e=&table->ents[el_c16]; width=1; type=t_i16arr; goto f1; } goto cwiden_c16;
+      case el_c32:                    e=&table->ents[el_c32]; width=2; type=t_i32arr; goto f1;
+      case el_B: goto rec;
+    }
+    
+    cwiden_i8:  if (q_c16(w)) { type=t_c16arr; goto cpy_i16; }
+    cwiden_i16:               { type=t_c32arr; goto cpy_i32; }
+    
+    cwiden_c8:  if (q_c16(w)) { type=t_i16arr; goto cpy_c16; }
+    cwiden_c16:               { type=t_i32arr; goto cpy_c32; }
+    goto rec;
+  }
+  
+  switch(xe) { default: UD;
+    case el_bit: goto bitsel;
+    case el_i8:  if (q_i8 (w)) { e=&table->ents[el_i8 ]; width=0; type=t_i8arr;  goto wint; } goto iwiden_i8;
+    case el_i16: if (q_i16(w)) { e=&table->ents[el_i16]; width=1; type=t_i16arr; goto wint; } goto iwiden_i16;
+    case el_i32: if (q_i32(w)) { e=&table->ents[el_i32]; width=2; type=t_i32arr; goto wint; } goto iwiden_i32;
+    case el_f64:                 e=&table->ents[el_f64]; width=3; type=t_f64arr; goto wf64;
+    case el_c8:  if (q_i8 (w)) { e=&table->ents[el_c8 ]; width=0; type=t_c8arr;  goto wint; } goto iwiden_c8;
+    case el_c16: if (q_i16(w)) { e=&table->ents[el_c16]; width=1; type=t_c16arr; goto wint; } goto iwiden_c16;
+    case el_c32: if (q_i32(w)) { e=&table->ents[el_c32]; width=2; type=t_c32arr; goto wint; } goto rec;
+    case el_B: goto rec;
+  }
+  
+  wint: wa=(u32)o2iu(w); goto f1;
+  wf64: wa=w.u; goto f1;
+  
+  iwiden_i8:  if (q_i16(w)) { wa=(u32)o2iu(w); type=t_i16arr; goto cpy_i16; }
+  iwiden_i16: if (q_i32(w)) { wa=(u32)o2iu(w); type=t_i32arr; goto cpy_i32; }
+  iwiden_i32:               { wa=w.u;          type=t_f64arr; goto cpy_f64; }
+  
+  iwiden_c8:  if (q_i16(w)) { wa=(u32)o2iu(w); type=t_c16arr; goto cpy_c16; }
+  iwiden_c16: if (q_i32(w)) { wa=(u32)o2iu(w); type=t_c32arr; goto cpy_c32; }
+  goto rec;
+  
+  // TODO reuse the copied array for the result; maybe even alternate copy & operation to stay in cache
+  cpy_c16: x = taga(cpyC16Arr(x)); width=1; e=&table->ents[el_c16]; goto f1;
+  cpy_c32: x = taga(cpyC32Arr(x)); width=2; e=&table->ents[el_c32]; goto f1;
+  
+  cpy_i16: x = taga(cpyI16Arr(x)); width=1; e=&table->ents[el_i16]; goto f1;
+  cpy_i32: x = taga(cpyI32Arr(x)); width=2; e=&table->ents[el_i32]; goto f1;
+  cpy_f64: x = taga(cpyF64Arr(x)); width=3; e=&table->ents[el_f64]; goto f1;
+  
+  AtomArrFnC fn; B r;
+  f1: fn = e->f1;
+  u64 got = fn(m_tyarrlc(&r, width, x, type), wa, tyany_ptr(x), ia);
+  if (got==ia) goto decG_ret;
+  decG(r);
+  
+  type = nextType[type];
+  if (type==t_empty) goto rec;
+  fn = e->f2;
+  if (fn(m_tyarrlc(&r, width+1, x, type), wa, tyany_ptr(x), ia)==0) goto decG_ret;
+  decG(r);
+  goto rec;
+  
+  
+  decG_ret: decG(x); return r;
+  
+  rec: return arith_recd(table->mainFn, w, x);
+  
+  bitsel: {
+    B opts[2];
+    if (!table->ents[el_bit].bitsel(table, w, opts)) goto rec;
+    return bit_sel(x, opts[0], 1, opts[1], 1);
+  }
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "../gen/dyarith.c"
@@ -156,5 +285,37 @@ static void  rootAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0;
 static void   powAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =     pow(((f64*)w)[i], ((f64*)x)[i]); }
 static void stileAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
 static void   logAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
+
+#define BI_C2(N, W, X) ({ B w_ = (W); N##_c2(w_, w_, X); })
+// bool sub_forBitselCN_SA (DyTableSA* table, B w, B* r) { u32 v=o2cu(w); r[0] = m_c32(v-0); r[1] = m_c32(v-1); if (v==0) BI_C2(sub, w, m_f64(1)); return true; }
+bool add_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f+0); r[1] = m_f64(f+1); return true; }
+bool sub_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f-0); r[1] = m_f64(f-1); return true; }
+bool subR_forBitselNN_SA(DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(0-f); r[1] = m_f64(1-f); return true; }
+bool mul_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f*0); r[1] = m_f64(f*1); return true; }
+bool min_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f<=0?f:0); r[1] = m_f64(f<=1?f:1); return true; }
+bool max_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f>=0?f:0); r[1] = m_f64(f>=1?f:1); return true; }
+
+bool add_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cu(w); if(wc+1<=CHR_MAX) return false; r[0] = m_c32(wc); r[1] = m_c32(wc+1); return true; }
+bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cu(w); if(wc  !=0      ) return false; r[0] = m_c32(wc); r[1] = m_c32(wc-1); return true; }
+
+B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
+
+static NOINLINE B or_SA(B t, B w, B x) {
+  if (!isF64(w)) return arith_recd(or_c2, w, x);
+  if (LIKELY(TI(x,elType)==el_bit)) {
+    bitsel:
+    return bit_sel(x, BI_C2(or, w, m_f64(0)), 1, BI_C2(or, w, m_f64(1)), 1);
+  }
+  x = num_squeezeChk(x);
+  if (TI(x,elType)==el_bit) goto bitsel;
+  
+  f64* rp;
+  B r = m_f64arrc(&rp, x);
+  usz ia = a(x)->ia;
+  x = toF64Any(x);
+  orSAc_f64_f64_f64((u8*)rp, w.u, tyany_ptr(x), ia);
+  decG(x);
+  return r;
+}
 
 #include "../gen/arTables.c"

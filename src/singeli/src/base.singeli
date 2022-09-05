@@ -21,22 +21,6 @@ def assert{x & x==1} = 1
 def assert{x:u1} = emit{void, 'si_assert', x}
 
 
-
-def tern{c, T, F & anyInt{c}} = {
-  if(c) T
-  else F
-}
-def tern{c, t:T, f:T & anyInt{c}} = {
-  res:T = f
-  if (c) res = t
-  res
-}
-
-def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
-def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
-
-
-
 # various checks
 def knum{x}    = match{kind{x},'number'}
 def isreg{x}   = match{kind{x},'register'}
@@ -112,6 +96,21 @@ def minvalue{T & isunsigned{T}} = 0
 def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
 def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
+
+
+def tern{c, T, F & anyInt{c}} = {
+  if(c) T
+  else F
+}
+def tern{c, t:T, f:T & anyInt{c}} = {
+  res:T = f
+  if (c) res = t
+  res
+}
+
+def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
+def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
+
 
 # tuple operations
 def broadcast{T, v & isprim{T}} = v
