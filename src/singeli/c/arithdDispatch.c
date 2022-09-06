@@ -212,11 +212,11 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
       case el_B: goto rec;
     }
     
-    cwiden_i8:  if (q_c16(w)) { type=t_c16arr; goto cpy_i16; }
-    cwiden_i16:               { type=t_c32arr; goto cpy_i32; }
+    cwiden_i8:  if (wa==(u16)wa) { type=t_c16arr; goto cpy_i16; }
+    cwiden_i16:                  { type=t_c32arr; goto cpy_i32; }
     
-    cwiden_c8:  if (q_c16(w)) { type=t_i16arr; goto cpy_c16; }
-    cwiden_c16:               { type=t_i32arr; goto cpy_c32; }
+    cwiden_c8:  if (wa==(u16)wa) { type=t_i16arr; goto cpy_c16; }
+    cwiden_c16:                  { type=t_i32arr; goto cpy_c32; }
     goto rec;
   }
   
