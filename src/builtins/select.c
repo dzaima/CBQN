@@ -63,6 +63,7 @@ B select_c2(B t, B w, B x) {
       return r;
     }
     usz xia = IA(x);
+    if (xia==0) thrM("⊏: Indexing out-of-bounds (0≡≠𝕩)");
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
@@ -100,7 +101,12 @@ B select_c2(B t, B w, B x) {
       for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
       decG(x); return withFill(HARR_FCD(r,w),xf); \
     }
-    if (we==el_bit && xia>=2) {
+    if (we==el_bit) {
+      if (xia<2) {
+        u64* wp=bitarr_ptr(w);
+        usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
+        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xia);
+      }
       SGetU(x)
       r = bit_sel(w, GetU(x,0), true, GetU(x,1), true);
       decG(x);
