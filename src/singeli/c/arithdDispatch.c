@@ -286,8 +286,6 @@ static void   powAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0;
 static void stileAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
 static void   logAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
 
-#define BI_C2(N, W, X) ({ B w_ = (W); N##_c2(w_, w_, X); })
-// bool sub_forBitselCN_SA (DyTableSA* table, B w, B* r) { u32 v=o2cu(w); r[0] = m_c32(v-0); r[1] = m_c32(v-1); if (v==0) BI_C2(sub, w, m_f64(1)); return true; }
 bool add_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f+0); r[1] = m_f64(f+1); return true; }
 bool sub_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f-0); r[1] = m_f64(f-1); return true; }
 bool subR_forBitselNN_SA(DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(0-f); r[1] = m_f64(1-f); return true; }
@@ -304,7 +302,8 @@ static NOINLINE B or_SA(B t, B w, B x) {
   if (!isF64(w)) return arith_recd(or_c2, w, x);
   if (LIKELY(TI(x,elType)==el_bit)) {
     bitsel:
-    return bit_sel(x, BI_C2(or, w, m_f64(0)), 1, BI_C2(or, w, m_f64(1)), 1);
+    f64 wf = o2fu(w);
+    return bit_sel(x, m_f64(bqn_or(wf, 0)), 1, m_f64(bqn_or(wf, 1)), 1);
   }
   x = num_squeezeChk(x);
   if (TI(x,elType)==el_bit) goto bitsel;
