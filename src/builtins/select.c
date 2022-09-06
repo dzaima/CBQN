@@ -121,6 +121,9 @@ B select_c2(B t, B w, B x) {
       for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
       decG(x); return withFill(HARR_FCD(r,w),xf); \
     }
+    if (xe==el_bit && wia>=256 && wia/4>=xia && we!=el_bit) {
+      return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
+    }
     if (we==el_bit) {
       if (xia<2) {
         u64* wp=bitarr_ptr(w);
