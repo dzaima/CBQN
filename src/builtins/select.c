@@ -104,7 +104,7 @@ B select_c2(B t, B w, B x) {
             W* ip=wp; usz off=xia;                      \
             if (max>=0) { off=0; if (RARE(min<0)) {     \
               if (!wt) wt=TALLOCP(W,i1-i0); ip=wt-i0;   \
-              for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+(xia&-(e<0)); } \
+              for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xia & (W)-(e<0)); } \
             } }                                         \
             switch(xw) { default:UD; CASE(1,u8); CASE(2,u16); CASE(4,u32); CASE(8,f64); } \
           }                                             \
