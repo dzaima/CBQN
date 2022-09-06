@@ -133,17 +133,19 @@ Make ← {𝕊ns:
   tyi ← ⟨@,  "i8","i16","i32","f64", "i8","i16","i32"⟩
   tyc ← ⟨@,  "c8","c16","c32",@,     "c8","c16","c32"⟩
   isc ← ⟨0, 0,    0,    0,    0,     1,   1,    1⟩
-  { 𝕊 swap‿get:
-    choices ← ns.sa
+  { 𝕊 swap:
+    choices ← ⌽⍟swap⌾(2⊸↑)¨ ns.sa
     hadChrArr ← 0
+    ResMap ← {{(2⊑¨𝕩)⌾((2↑¨𝕩)⊸⊑) 2‿2⥊@} 'c'=𝕩}
     {
       0≡≠𝕩? @;
       charAtm ← 'c' ≡ ⊑⊑𝕩
       hasNumArr  ← ⊑'i' ∊ 1⊑¨𝕩
       hasChrArr ← ⊑'c' ∊ 1⊑¨𝕩
-      resChr ← {(2⊑¨𝕩)⌾((2↑¨𝕩)⊸⊑) 2‿2⥊@} 'c'=𝕩
+      resChr ← ResMap 𝕩
       argarr ← ⌽⍟swap "SA"
       canOverflow ← "f64"⊸≢¨ tyName
+      P ← {∾⟨"{",𝕨,",",𝕩,"}"⟩}´
       
       cSrc∾↩ ∾⟨
         "static DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
@@ -173,13 +175,14 @@ Make ← {𝕊ns:
         "  },", nl
         "  .chrAtom = ", hadChrArr◶"NULL"‿{𝕊: ∾⟨"&",cbqn,"DyTable", ⌽⍟swap "CA"⟩} @, ",", nl
         "  .mainFn = ", cbqn, "_c2", swap/"R", ",", nl
+        "  .fill = ", P P¨ <˘ '0'+@‿0‿1⊐ResMap choices, ",", nl
         "  .repr = """, repr, """", nl
         "};", nl
       ⟩
       
       hadChrArr∨↩ charAtm
-    }¨ 2↑(("ci"⊐⊑¨)⊔⊢) ⌽⍟swap⌾(2⊸↑)¨ choices
-  }¨ (2-commutative)↑ ⟨0‿{𝕩.sa} ⋄ 1‿{𝕩.as}⟩
+    }¨ 2↑(("ci"⊐⊑¨)⊔⊢) choices
+  }¨ ↕2-commutative
   
   siSrc∾↩ nl
 }

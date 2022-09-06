@@ -156,6 +156,7 @@ def arithAA{mode, F, W, X, R} = {
 # mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed
 arithSAf{vw, mode, F, swap, W, X, R}(r:*u8, w:u64, x:*u8, len:u64) : u64 = {
   # show{fmt_op{F}, swap, mode, W, X, R}
+  assert{len>0}
   def bulk = vw / max{width{W}, width{R}}
   def TY = [bulk]R
   def overflow = tern{mode==1, {i}=>return{1}, {i}=>return{i}}

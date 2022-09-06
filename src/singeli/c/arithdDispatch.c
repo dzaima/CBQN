@@ -163,6 +163,7 @@ struct DyTableSA {
   EntSA ents[el_B];
   BBB2B mainFn;
   char* repr;
+  u8 fill[2][2]; // 0:none 1:int 2:char
   DyTableSA* chrAtom;
 };
 
@@ -186,10 +187,46 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
   usz ia = IA(x);
   u8 xe = TI(x,elType);
   
-  u8 width, type; // when one argument is a number, both + and - have character array result iif the other argument is a character array; therefore result type doesn't need a lookup
+  u8 width, type; // the currently supported character functions (+ and -) have the result type be character when left xor right is character, so it can be hard-coded
   u64 wa;
   
   EntSA* e;
+  
+  if (ia==0) {
+    u8 fillVal;
+    bool charX;
+    if (xe!=el_B) {
+      charX = elChr(xe);
+    } else {
+      B xf = getFillQ(x);
+      if (isNum(xf)) charX=0;
+      else if (isC32(xf)) charX=1;
+      else if (noFill(xf)) { fillVal=0; goto fillSel; }
+      else { dec(xf); goto rec; } // whatever
+    }
+    bool charW;
+    if (isNum(w)) charW=0;
+    else if (isC32(w)) charW=1;
+    else goto rec;
+    
+    fillVal = table->fill[charW][charX];
+    fillSel:
+    if (RNK(x)==1) {
+      decG(x);
+      if (fillVal==1) return emptyIVec();
+      if (fillVal==0) return emptyHVec();
+      assert(fillVal==2);
+      return emptyCVec();
+    } else {
+      Arr* r;
+      if (fillVal==1) {         u64* rp; r = m_bitarrp(&rp, 0); }
+      else if (fillVal==0) {      r = (Arr*) m_harrUp(0).c; }
+      else { assert(fillVal==2); u8* rp; r = m_c8arrp (&rp, 0); }
+      arr_shCopy(r, x);
+      decG(x);
+      return taga(r);
+    }
+  }
   
   if (!isF64(w)) {
     if (!isC32(w)) goto rec;
