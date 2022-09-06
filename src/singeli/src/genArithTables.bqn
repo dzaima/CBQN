@@ -213,8 +213,8 @@ Make ← {𝕊ns:
   }
   Make¨ { repr‿cbqn:
     commutative⇐1 ⋄ repr‿cbqn⇐ ⋄ si⇐"__mul" ⋄ id⇐"mul"
-    aa_a ⇐ bitand∾c_numDiag # ∾⟨u‿bit‿i8‿i8, u‿bit‿i16‿i16, u‿bit‿i32‿i32, u‿bit‿f64‿f64⟩
-    aa_b ⇐ w_numDiag        # TODO readd ↑
+    aa_a ⇐ bitand∾c_numDiag∾⟨u‿bit‿i8‿i8, u‿bit‿i16‿i16, u‿bit‿i32‿i32⟩ # no u‿bit‿f64‿f64 because 0×∞ etc
+    aa_b ⇐ w_numDiag
     sa⇐⟨"iii"⟩ ⋄ overflowEq⇐1
   }¨ ⟨"×"‿"mul", "∧"‿"and"⟩
   Make {

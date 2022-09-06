@@ -25,6 +25,10 @@ def rootty{T & isvec{T}} = eltype{T}
 def is_s{X} = issigned{rootty{X}}
 def is_u{X} = isunsigned{rootty{X}}
 
+def loadBatchBit{T, x:*u64, n:(Size)} = {
+  spreadBits{T, b_getBatch{vcount{T}, x, n}}
+}
+
 def ty_sc{O, R} = R # keep floats as-is
 def ty_sc{O, R & is_s{O} & is_u{R}} = ty_s{R}
 def ty_sc{O, R & is_u{O} & is_s{R}} = ty_u{R}
@@ -122,6 +126,16 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
       cw:= loadBatch{*u64~~w, i, TY}
       cx:= loadBatch{*u64~~x, i, TY}
       storeBatch{*u64~~r, i, F{cw, cx}, M}
+    }}
+  } else if (match{F,__mul} and W!=u1 and X==u1 and W==R) { # 0‿1‿1‿1‿1‿0‿1‿1×3‿1‿4‿1‿5‿9‿2‿6
+    def bulk = vw / width{W}
+    def TU = ty_u{R}
+    def TV = [bulk]TU
+    
+    maskedLoop{bulk, len, {i, M} => {
+      cw:= loadBatch{*TU~~w, i, TV}
+      cx:= loadBatchBit{TV, *u64~~x, i}
+      storeBatch{*TU~~r, i, cw&cx, M}
     }}
   } else {
     def bulk = vw / max{max{width{W}, width{X}}, width{R}}

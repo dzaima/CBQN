@@ -6,20 +6,6 @@ include './mask'
 include './cbqnDefs'
 include './bitops'
 
-
-def spreadBits{T==[32]u8, a:u32} = {
-  def idxs = iota{32}
-  b:= broadcast{[8]u32, a}
-  c:= [32]u8~~b
-  d:= sel{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
-  e:= make{[32]u8, 1<<tail{3, idxs}}
-  e == (d&e)
-}
-def spreadBits{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
-  b:= make{T, 1<<iota{vcount{T}}}
-  b == (b & broadcast{T, a})
-}
-
 def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
   def bulk = vcount{T}
   def TU = ty_u{T}

@@ -47,3 +47,16 @@ def b_setBatch{sz, x:*u64, n:(Size), v & sz== 8} = store{*u8  ~~ x, n, cast_i{u8
 def b_setBatch{sz, x:*u64, n:(Size), v & sz==16} = store{*u16 ~~ x, n, cast_i{u16,v}}
 def b_setBatch{sz, x:*u64, n:(Size), v & sz==32} = store{*u32 ~~ x, n, cast_i{u32,v}}
 def b_setBatch{sz, x:*u64, n:(Size), v & sz==64} = store{        x, n, cast_i{u64,v}}
+
+def spreadBits{T==[32]u8, a:u32} = {
+  def idxs = iota{32}
+  b:= broadcast{[8]u32, a}
+  c:= [32]u8~~b
+  d:= sel{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
+  e:= make{[32]u8, 1<<tail{3, idxs}}
+  e == (d&e)
+}
+def spreadBits{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
+  b:= make{T, 1<<iota{vcount{T}}}
+  b == (b & broadcast{T, a})
+}
