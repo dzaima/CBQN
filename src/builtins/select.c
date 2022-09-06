@@ -82,8 +82,15 @@ B select_c2(B t, B w, B x) {
     #define TYPE(W) { W* wp = W##any_ptr(w);  \
       switch(xe) { default: UD;               \
         case el_bit: { u64* xp=bitarr_ptr(x); \
-          u64* rp; r = m_bitarrc(&rp, w);   \
-          for (usz i = 0; i < wia; i++) bitp_set(rp, i, bitp_get(xp, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
+          u64* rp; r = m_bitarrc(&rp, w);     \
+          u64 b=0;                            \
+          for (usz i = wia; ; ) {             \
+            i--;                              \
+            usz n = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)); \
+            b <<= 1;                          \
+            b |= (-(xp[n/64] & (1ull<<(n%64)))) >> 63;    \
+            if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
+          } \
           goto dec_ret;                       \
         }                                     \
         case el_i8: case el_c8: CASE(u8 ,el2t(xe)) \
