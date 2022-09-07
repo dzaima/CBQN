@@ -419,10 +419,31 @@ static B m_c32(u32 n) { return tagu64(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
 
-static i32 o2i   (B x) { if (x.f!=(f64)(i32)x.f) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
-static usz o2s   (B x) { if (x.f!=(f64)(usz)x.f) thrM("Expected non-negative integer"); return (usz)x.f; }
-static i64 o2i64 (B x) { if (x.f!=(f64)(i64)x.f) thrM("Expected integer"); return (i64)x.f; }
-static u64 o2u64 (B x) { if (x.f!=(f64)(u64)x.f) thrM("Expected integer"); return (u64)x.f; }
+static bool o2b  (B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return t; }
+static bool o2bu (B x) { return (x.u<<1) != 0; }
+static bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
+static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
+static bool q_c16(B x) { return isC32(x) && ((u32)x.u) == ((u16)x.u); }
+static bool q_c32(B x) { return isC32(x); }
+static bool q_f64(B x) { return isF64(x); }
+
+// two integer casts for i8 & i16 because clang on armv8 otherwise skips the sign extending step
+FORCE_INLINE bool q_fi8 (f64 x) { return x==(f64)(i8 )(i32)x; }  static bool q_i8 (B x) { return q_fi8 (x.f); }
+FORCE_INLINE bool q_fi16(f64 x) { return x==(f64)(i16)(i32)x; }  static bool q_i16(B x) { return q_fi16(x.f); }
+FORCE_INLINE bool q_fi32(f64 x) { return x==(f64)(i32)     x; }  static bool q_i32(B x) { return q_fi32(x.f); }
+FORCE_INLINE bool q_fi64(f64 x) { return x==(f64)(i64)     x; }  static bool q_i64(B x) { return q_fi64(x.f); }
+FORCE_INLINE bool q_fu64(f64 x) { return x==(f64)(u64)     x; }  static bool q_u64(B x) { return q_fu64(x.f); }
+FORCE_INLINE bool q_fusz(f64 x) { return x==(f64)(usz)     x; }  static bool q_usz(B x) { return q_fusz(x.f); }
+static bool q_ibit(i64 x) { return x==0 | x==1; }
+static bool q_ubit(u64 x) { return x==0 | x==1; }
+static bool q_fbit(f64 x) { return x==0 | x==1; }
+
+static bool q_N   (B x) { return x.u==bi_N.u; } // is ·
+static bool noFill(B x) { return x.u==bi_noFill.u; }
+static i32 o2i   (B x) { if (!q_i32(x)) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
+static usz o2s   (B x) { if (!q_usz(x)) thrM("Expected non-negative integer"); return (usz)x.f; }
+static i64 o2i64 (B x) { if (!q_i64(x)) thrM("Expected integer"); return (i64)x.f; }
+static u64 o2u64 (B x) { if (!q_u64(x)) thrM("Expected integer"); return (u64)x.f; }
 static f64 o2f   (B x) { if (!isNum(x)) thrM("Expected number"); return x.f; }
 static u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
 static i32 o2iu  (B x) { return (i32)x.f; }
@@ -430,22 +451,6 @@ static u32 o2cu  (B x) { return (u32)x.u; }
 static usz o2su  (B x) { return (usz)x.f; }
 static f64 o2fu  (B x) { return      x.f; }
 static i64 o2i64u(B x) { return (i64)x.f; }
-static bool o2b  (B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return t; }
-static bool o2bu (B x) { return (x.u<<1) != 0; }
-static bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
-static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
-static bool q_c16(B x) { return isC32(x) && ((u32)x.u) == ((u16)x.u); }
-static bool q_c32(B x) { return isC32(x); }
-static bool q_i8 (B x) { return isF64(x) && x.f==(f64)(i8 )(i32)x.f; } // useless i32 casts because armv8+clang otherwise skips the sign extending step
-static bool q_i16(B x) { return isF64(x) && x.f==(f64)(i16)(i32)x.f; }
-static bool q_i32(B x) { return isF64(x) && x.f==(f64)(i32)     x.f; }
-static bool q_i64(B x) { return isF64(x) && x.f==(f64)(i64)     x.f; }
-static bool q_f64(B x) { return isF64(x); }
-static bool q_N  (B x) { return x.u==bi_N.u; } // is ·
-static bool noFill(B x) { return x.u == bi_noFill.u; }
-static bool q_ibit(i64 x) { return x==0 | x==1; }
-static bool q_ubit(u64 x) { return x==0 | x==1; }
-static bool q_fbit(f64 x) { return x==0 | x==1; }
 
 
 typedef struct Slice {
