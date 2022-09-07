@@ -125,13 +125,18 @@ B select_c2(B t, B w, B x) {
       return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
     }
     if (we==el_bit) {
+      SGetU(x)
+      B x0 = GetU(x, 0);
+      B x1;
       if (xia<2) {
         u64* wp=bitarr_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
         if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xia);
+        x1 = x0;
+      } else {
+        x1 = GetU(x,1);
       }
-      SGetU(x)
-      r = bit_sel(w, GetU(x,0), true, GetU(x,1), true);
+      r = bit_sel(w, x0, true, x1, true);
       decG(x);
       return withFill(r, xf);
     }
