@@ -10,6 +10,7 @@ Functions ending with `F` are infrequently needed fallback parts of a function.
 Functions ending with `P` (or sometimes containing `p` or `P`) take a pointer argument (as opposed to a (NaN-boxed) `B`).  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))  
+Functions ending with `G` can only be called with some guarantee (e.g. argument is heap-allocated, or fits in some type, etc).  
 Variables starting with `bi_` are builtins (primitives or special values).  
 Which arguments are consumed usually is described in a comment after the function or its prototype. Otherwise, check the source.  
 
@@ -126,6 +127,7 @@ Temporary allocations can be made with `utils/talloc.h`:
 ```C
 #include "utils/talloc.h"
 TALLOC(char, buf, 123); // allocate char* buf with 123 elements
+char* buf = TALLOCP(char, 123); // alternative syntax, useful if buf is declared elsewhere
 // buf is now a regular char* and can be stored/passed around as needed
 TREALLOC(buf, 456); // extend buf
 TFREE(buf); // free buf
