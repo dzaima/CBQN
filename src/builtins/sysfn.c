@@ -939,9 +939,8 @@ B sh_c2(B t, B w, B x) {
       iBufRaw = get_chars(inObj);
       iBuf = iBufRaw.data;
     } else {
-      TALLOC(char, iBufT, iLen);
-      toUTF8(inObj, iBufT);
-      iBuf = iBufT;
+      iBuf = TALLOCP(char, iLen);
+      toUTF8(inObj, iBuf);
     }
   } else iBuf = NULL;
   #define FREE_INPUT do { if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); } } while(0)
@@ -953,7 +952,6 @@ B sh_c2(B t, B w, B x) {
   
   // polling mess
   const u64 bufsz = 1024;
-  // TALLOC(char, oBuf, bufsz);
   u8* oBuf;
   B oBufObj = m_c8arrv(&oBuf, bufsz);
   usz* oBufIA = &a(oBufObj)->ia;

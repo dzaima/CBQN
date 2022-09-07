@@ -21,11 +21,10 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
     case el_i32: case el_c32: data =  tyany_ptr(x); bytes = xia*4; break;
     case el_f64:              data = f64any_ptr(x); bytes = xia*8; break;
     case el_B:;
-      TALLOC(u64, dataTmp, xia);
+      data = TALLOCP(u64, xia);
       isTemp = true;
       SGetU(x)
-      for (usz i = 0; i < xia; i++) dataTmp[i] = bqn_hash(GetU(x, i), secret);
-      data = dataTmp;
+      for (usz i = 0; i < xia; i++) ((u64*)data)[i] = bqn_hash(GetU(x, i), secret);
       bytes = xia*sizeof(B);
       break;
   }

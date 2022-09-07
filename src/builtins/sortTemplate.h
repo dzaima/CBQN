@@ -261,8 +261,7 @@ typedef struct {
 
 static void TIM_SORT_RESIZE(TEMP_STORAGE_T *store, const size_t new_size) {
   if (store->storage == NULL) {
-    TALLOC(SORT_TYPE, tempstore, new_size);
-    store->storage = tempstore;
+    store->storage = TALLOCP(SORT_TYPE, new_size);
   } else if (store->alloc < new_size) {
     store->storage = (SORT_TYPE *)TREALLOC(store->storage, new_size * sizeof(SORT_TYPE));
   } else return;

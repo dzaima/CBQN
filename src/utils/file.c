@@ -175,8 +175,7 @@ CharBuf get_chars(B x) {
     buf = tyany_ptr(x);
     alloc = false;
   } else {
-    TALLOC(char, val, len);
-    buf = val;
+    buf = TALLOCP(char, len);
     alloc = true;
     SGetU(x)
     for (u64 i = 0; i < len; i++) {

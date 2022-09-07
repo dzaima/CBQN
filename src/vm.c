@@ -183,7 +183,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       mCount = IA(b1); SGetU(b1)
       dCount = IA(b2); SGetU(b2)
       mapLen = mCount+dCount;
-      TALLOC(i32, bodyPs_, mapLen+2); bodyPs = bodyPs_;
+      bodyPs = TALLOCP(i32, mapLen+2);
       i32* bodyM = bodyPs;
       i32* bodyD = bodyPs + mCount+1;
       for (i32 i = 0; i < mCount; i++) bodyM[i] = o2i(GetU(b1, i));
@@ -193,7 +193,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       bodyM[mCount] = bodyD[dCount] = I32_MAX;
     } else {
       mapLen = 2;
-      TALLOC(i32, bodyPs_, mapLen+2); bodyPs = bodyPs_;
+      bodyPs = TALLOCP(i32, mapLen+2);
       bodyPs[0] = bodyPs[2] = o2i(bodyObj);
       bodyPs[1] = bodyPs[3] = I32_MAX;
       mCount = dCount = 1;
