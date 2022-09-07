@@ -597,7 +597,7 @@ bool isPureFn(B x) { // doesn't consume
     B2B dcf = TI(x,decompose);
     B xd = dcf(inc(x));
     B* xdp = harr_ptr(xd);
-    i32 t = o2iu(xdp[0]);
+    i32 t = o2iG(xdp[0]);
     if (t<2) { decG(xd); return t==0; }
     usz xdia = IA(xd);
     for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { decG(xd); return false; }

@@ -30,7 +30,7 @@ B m_vec1(B a) {
     else                  { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
   }
   if (isC32(a)) {
-    u32 c = o2cu(a);
+    u32 c = o2cG(a);
     if      (LIKELY(c<U8_MAX )) { u8*  rp; B r = m_c8arrv (&rp, 1); rp[0] = c; return r; }
     else if (LIKELY(c<U16_MAX)) { u16* rp; B r = m_c16arrv(&rp, 1); rp[0] = c; return r; }
     else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
@@ -46,14 +46,14 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   if (isAtm(a)&isAtm(b)) {
     if (LIKELY(isNum(a)&isNum(b))) {
       i32 ai=a.f; i32 bi=b.f;
-      if (RARE(ai!=a.f | bi!=b.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fu(a); rp[1]=o2fu(b); return r; }
+      if (RARE(ai!=a.f | bi!=b.f))        { f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fG(a); rp[1]=o2fG(b); return r; }
       else if (q_ibit(ai)  &  q_ibit(bi)) { u64* rp; B r = m_bitarrv(&rp, 2); rp[0]=ai | (bi<<1);           return r; }
       else if (ai==(i8 )ai & bi==(i8 )bi) { i8*  rp; B r = m_i8arrv (&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
       else if (ai==(i16)ai & bi==(i16)bi) { i16* rp; B r = m_i16arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
       else                                { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=ai;      rp[1]=bi;      return r; }
     }
     if (isC32(b)&isC32(a)) {
-      u32 ac=o2cu(a); u32 bc=o2cu(b);
+      u32 ac=o2cG(a); u32 bc=o2cG(b);
       if      (ac==(u8 )ac & bc==(u8 )bc) { u8*  rp; B r = m_c8arrv (&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
       else if (ac==(u16)ac & bc==(u16)bc) { u16* rp; B r = m_c16arrv(&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
       else                                { u32* rp; B r = m_c32arrv(&rp, 2); rp[0]=ac; rp[1]=bc; return r; }
@@ -228,7 +228,7 @@ B shape_c2(B t, B w, B x) {
   }
   if (isC32(x)) { decA(xf);
     u32* rp; Arr* r = m_c32arrp(&rp, nia); arr_shSetU(r, nr, sh);
-    u32 c = o2cu(x);
+    u32 c = o2cG(x);
     for (u64 i = 0; i < nia; i++) rp[i] = c;
     return taga(r);
   }
@@ -798,10 +798,10 @@ B slash_im(B t, B x) {
       usz ria = max+1;
       if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64u(xp[i]), 1);
+        for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64G(xp[i]), 1);
       } else {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) rp[o2i64u(xp[i])]++;
+        for (usz i = 0; i < xia; i++) rp[o2i64G(xp[i])]++;
       }
       decG(x); return r;
     }
@@ -1374,7 +1374,7 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < xia; i++) {
         B cw = GetU(w, i);
         if (!q_i64(cw)) goto base;
-        i64 c = o2i64u(cw);
+        i64 c = o2i64G(cw);
         if (c>ria) ria = c;
         if (c<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       }
@@ -1383,7 +1383,7 @@ B group_c2(B t, B w, B x) {
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xia; i++) len[o2i64u(GetU(w, i))]++;
+      for (usz i = 0; i < xia; i++) len[o2i64G(GetU(w, i))]++;
       
       Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
@@ -1402,7 +1402,7 @@ B group_c2(B t, B w, B x) {
       fillarr_setFill(r, taga(rf));
       SGet(x)
       for (usz i = 0; i < xia; i++) {
-        i64 n = o2i64u(GetU(w, i));
+        i64 n = o2i64G(GetU(w, i));
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
       for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i];
@@ -1547,10 +1547,10 @@ B pick_ucw(B t, B o, B w, B x) {
   B arg = IGet(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
-    if      (TI(x,elType)==el_i8 ) { i8*  xp = i8any_ptr (x); xp[wi] = o2iu(rep); return x; }
-    else if (TI(x,elType)==el_i16) { i16* xp = i16any_ptr(x); xp[wi] = o2iu(rep); return x; }
-    else if (TI(x,elType)==el_i32) { i32* xp = i32any_ptr(x); xp[wi] = o2iu(rep); return x; }
-    else if (TI(x,elType)==el_f64) { f64* xp = f64any_ptr(x); xp[wi] = o2fu(rep); return x; }
+    if      (TI(x,elType)==el_i8 ) { i8*  xp = i8any_ptr (x); xp[wi] = o2iG(rep); return x; }
+    else if (TI(x,elType)==el_i16) { i16* xp = i16any_ptr(x); xp[wi] = o2iG(rep); return x; }
+    else if (TI(x,elType)==el_i32) { i32* xp = i32any_ptr(x); xp[wi] = o2iG(rep); return x; }
+    else if (TI(x,elType)==el_f64) { f64* xp = f64any_ptr(x); xp[wi] = o2fG(rep); return x; }
     else if (TY(x)==t_harr) {
       B* xp = harr_ptr(x);
       dec(xp[wi]);
@@ -1607,7 +1607,7 @@ B slash_ucw(B t, B o, B w, B x) {
     SGetU(rep)
     MUTG_INIT(r);
     for (usz i = 0; i < ia; i++) {
-      i32 cw = o2iu(GetU(w, i));
+      i32 cw = o2iG(GetU(w, i));
       if (cw) {
         B cr = Get(rep,repI);
         if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }

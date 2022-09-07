@@ -200,8 +200,8 @@ void noop_visit(Value* x);
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x; 0==compare(NaN,NaN)
-  if (isNum(w) & isNum(x)) return CMP(o2fu(w), o2fu(x));
-  if (isC32(w) & isC32(x)) return CMP(o2cu(w), o2cu(x));
+  if (isNum(w) & isNum(x)) return CMP(o2fG(w), o2fG(x));
+  if (isC32(w) & isC32(x)) return CMP(o2cG(w), o2cG(x));
   return compareF(w, x);
 }
 #undef CMP

@@ -20,7 +20,7 @@ NOINLINE B num_squeezeF(B x, usz ia) {
       a = (Arr*) cpyF64Arr(x);
       goto retn;
     }
-    i32 c = o2iu(cr);
+    i32 c = o2iG(cr);
     or|= ((u32)c & ~1) ^ (u32)(c>>31);
   }
   a = or==0?          (Arr*)cpyBitArr(x)
@@ -80,7 +80,7 @@ B num_squeeze(B x) {
         while (i<ia) if (!isF64(xp[i++])) goto r_x;
         goto r_f64;
       }
-      i32 c = o2iu(xp[i]);
+      i32 c = o2iG(xp[i]);
       or|= ((u32)c & ~1) ^ (u32)(c>>31);
     }
     goto mostI32;
@@ -148,7 +148,7 @@ B chr_squeeze(B x) {
     #else
     for (; i < ia; i++) {
       if (!isC32(xp[i])) goto r_x;
-      or|= o2cu(xp[i]);
+      or|= o2cG(xp[i]);
     }
     #endif
   } else {
@@ -156,7 +156,7 @@ B chr_squeeze(B x) {
     for (; i < ia; i++) {
       B cr = GetU(x,i);
       if (!isC32(cr)) goto r_x;
-      or|= o2cu(cr);
+      or|= o2cG(cr);
     }
   }
   if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);

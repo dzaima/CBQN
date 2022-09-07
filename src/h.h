@@ -417,40 +417,32 @@ FORCE_INLINE bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
 static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
 static B m_c32(u32 n) { return tagu64(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
-static B m_usz(usz n) { return n<I32_MAX? m_i32((i32)n) : m_f64(n); }
-
-static bool o2b  (B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return t; }
-static bool o2bu (B x) { return (x.u<<1) != 0; }
-static bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
-static bool q_c8 (B x) { return isC32(x) && ((u32)x.u) == ((u8 )x.u); }
-static bool q_c16(B x) { return isC32(x) && ((u32)x.u) == ((u16)x.u); }
-static bool q_c32(B x) { return isC32(x); }
-static bool q_f64(B x) { return isF64(x); }
+static B m_usz(usz n) { return m_f64(n); }
 
 // two integer casts for i8 & i16 because clang on armv8 otherwise skips the sign extending step
-FORCE_INLINE bool q_fi8 (f64 x) { return x==(f64)(i8 )(i32)x; }  static bool q_i8 (B x) { return q_fi8 (x.f); }
-FORCE_INLINE bool q_fi16(f64 x) { return x==(f64)(i16)(i32)x; }  static bool q_i16(B x) { return q_fi16(x.f); }
-FORCE_INLINE bool q_fi32(f64 x) { return x==(f64)(i32)     x; }  static bool q_i32(B x) { return q_fi32(x.f); }
-FORCE_INLINE bool q_fi64(f64 x) { return x==(f64)(i64)     x; }  static bool q_i64(B x) { return q_fi64(x.f); }
-FORCE_INLINE bool q_fu64(f64 x) { return x==(f64)(u64)     x; }  static bool q_u64(B x) { return q_fu64(x.f); }
-FORCE_INLINE bool q_fusz(f64 x) { return x==(f64)(usz)     x; }  static bool q_usz(B x) { return q_fusz(x.f); }
-static bool q_ibit(i64 x) { return x==0 | x==1; }
-static bool q_ubit(u64 x) { return x==0 | x==1; }
-static bool q_fbit(f64 x) { return x==0 | x==1; }
+FORCE_INLINE bool q_fbit(f64 x) { return x==0 | x==1; }          FORCE_INLINE bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
+FORCE_INLINE bool q_fi8 (f64 x) { return x==(f64)(i8 )(i32)x; }  FORCE_INLINE bool q_i8 (B x) { return q_fi8 (x.f); }
+FORCE_INLINE bool q_fi16(f64 x) { return x==(f64)(i16)(i32)x; }  FORCE_INLINE bool q_i16(B x) { return q_fi16(x.f); }
+FORCE_INLINE bool q_fi32(f64 x) { return x==(f64)(i32)     x; }  FORCE_INLINE bool q_i32(B x) { return q_fi32(x.f); }
+FORCE_INLINE bool q_fi64(f64 x) { return x==(f64)(i64)     x; }  FORCE_INLINE bool q_i64(B x) { return q_fi64(x.f); }
+FORCE_INLINE bool q_fu64(f64 x) { return x==(f64)(u64)     x; }  FORCE_INLINE bool q_u64(B x) { return q_fu64(x.f); }
+FORCE_INLINE bool q_fusz(f64 x) { return x==(f64)(usz)     x; }  FORCE_INLINE bool q_usz(B x) { return q_fusz(x.f); }
+/*no need for a q_ff64*/                                         FORCE_INLINE bool q_f64(B x) { return isF64(x); }
+FORCE_INLINE bool q_ibit(i64 x) { return x==0 | x==1; }
+FORCE_INLINE bool q_ubit(u64 x) { return x==0 | x==1; }
+FORCE_INLINE bool q_c8 (B x) { return x.u>>8  == ((u64)C32_TAG)<<40; }
+FORCE_INLINE bool q_c16(B x) { return x.u>>16 == ((u64)C32_TAG)<<32; }
+FORCE_INLINE bool q_c32(B x) { return isC32(x); }
+FORCE_INLINE bool q_N   (B x) { return x.u==bi_N.u; } // is ·
+FORCE_INLINE bool noFill(B x) { return x.u==bi_noFill.u; }
 
-static bool q_N   (B x) { return x.u==bi_N.u; } // is ·
-static bool noFill(B x) { return x.u==bi_noFill.u; }
-static i32 o2i   (B x) { if (!q_i32(x)) thrM("Expected integer"); return (i32)x.f; } // i have no clue whether these consume or not, but it doesn't matter
-static usz o2s   (B x) { if (!q_usz(x)) thrM("Expected non-negative integer"); return (usz)x.f; }
-static i64 o2i64 (B x) { if (!q_i64(x)) thrM("Expected integer"); return (i64)x.f; }
-static u64 o2u64 (B x) { if (!q_u64(x)) thrM("Expected integer"); return (u64)x.f; }
-static f64 o2f   (B x) { if (!isNum(x)) thrM("Expected number"); return x.f; }
-static u32 o2c   (B x) { if (!isC32(x)) thrM("Expected character"); return (u32)x.u; }
-static i32 o2iu  (B x) { return (i32)x.f; }
-static u32 o2cu  (B x) { return (u32)x.u; }
-static usz o2su  (B x) { return (usz)x.f; }
-static f64 o2fu  (B x) { return      x.f; }
-static i64 o2i64u(B x) { return (i64)x.f; }
+FORCE_INLINE bool  o2bG(B x) { return(x.u<<1)!=0;}  FORCE_INLINE bool  o2b(B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return o2bG(x); }
+FORCE_INLINE i32   o2iG(B x) { return (i32)x.f; }   FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) thrM("Expected integer");              return o2iG(x); }
+FORCE_INLINE u32   o2cG(B x) { return (u32)x.u; }   FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character");            return o2cG(x); }
+FORCE_INLINE usz   o2sG(B x) { return (usz)x.f; }   FORCE_INLINE usz   o2s(B x) { if (!q_usz(x)) thrM("Expected non-negative integer"); return o2sG(x); }
+FORCE_INLINE f64   o2fG(B x) { return      x.f; }   FORCE_INLINE f64   o2f(B x) { if (!isNum(x)) thrM("Expected number");               return o2fG(x); }
+FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }   FORCE_INLINE i64 o2i64(B x) { if (!q_i64(x)) thrM("Expected integer");              return o2i64G(x); }
+FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }   FORCE_INLINE u64 o2u64(B x) { if (!q_u64(x)) thrM("Expected integer");              return o2u64G(x); }
 
 
 typedef struct Slice {

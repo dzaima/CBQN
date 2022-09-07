@@ -248,7 +248,7 @@ void init_comp(B* set, B prim) {
       B gv = GetU(prim, i);
       B v = IGet(gv, 1);
       i32 t = isFun(v)? 0 : isMd1(v)? 1 : isMd2(v)? 2 : 3;
-      *(gl[t]++) = o2cu(IGet(gv, 0));
+      *(gl[t]++) = o2cG(IGet(gv, 0));
       prh.a[np[t]++] = v;
     }
     
@@ -284,7 +284,7 @@ B rebqn_exec(B str, B path, B args, B o) {
   comp_currRe = inc(o);
   
   B* op = harr_ptr(o);
-  i32 replMode = o2iu(op[0]);
+  i32 replMode = o2iG(op[0]);
   Scope* sc = c(Scope, op[1]);
   B res;
   if (replMode>0) {

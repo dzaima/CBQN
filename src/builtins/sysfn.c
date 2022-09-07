@@ -123,7 +123,7 @@ B grLen_both(i64 ria, B x) {
   usz ia = IA(x);
   SGetU(x)
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64u(GetU(x, i));
+    i64 c = o2i64G(GetU(x, i));
     if (c>ria) ria = c;
   }
   if (ria > (i64)(USZ_MAX-1)) thrOOM();
@@ -133,7 +133,7 @@ B grLen_both(i64 ria, B x) {
     u64* rp; r = m_bitarrv(&rp, ria);
     for (usz i = 0; i < BIT_N(ria); i++) rp[i] = 0;
     for (usz i = 0; i < ia; i++) {
-      i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
+      i64 n = o2i64G(GetU(x, i)); assert(n>=-1);
       if (n>=0) {
         if (bitp_get(rp,n)) { decG(r); goto r_i32; }
         bitp_set(rp,n,1);
@@ -145,13 +145,13 @@ B grLen_both(i64 ria, B x) {
   i32* rp; r = m_i32arrv(&rp, ria);
   for (usz i = 0; i < ria; i++) rp[i] = 0;
   for (usz i = 0; i < ia; i++) {
-    i64 n = o2i64u(GetU(x, i)); assert(n>=-1);
+    i64 n = o2i64G(GetU(x, i)); assert(n>=-1);
     if (n>=0) rp[n]++;
   }
   r_r: decG(x); return r;
 }
 B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes valid arguments
-B grLen_c2(B t, B w, B x) { return grLen_both(o2i64u(w)-1, x); } // assumes valid arguments
+B grLen_c2(B t, B w, B x) { return grLen_both(o2i64G(w)-1, x); } // assumes valid arguments
 
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = IA(w);
@@ -162,8 +162,8 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   SGetU(x)
   TALLOC(usz, tmp, wia);
   tmp[0] = 0;
-  for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2su(GetU(w,i-1));
-  usz ria = tmp[wia-1]+o2su(GetU(w,wia-1));
+  for (usz i = 1; i < wia; i++) tmp[i] = tmp[i-1]+o2sG(GetU(w,i-1));
+  usz ria = tmp[wia-1]+o2sG(GetU(w,wia-1));
   i32* rp; B r = m_i32arrv(&rp, ria);
   if (xia>=I32_MAX) thrM("⊔: Too large");
   for (usz i = 0; i < xia; i++) {
@@ -175,17 +175,17 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
 }
 
 B asrt_c1(B t, B x) {
-  if (LIKELY(isF64(x) && o2fu(x)==1)) return x;
+  if (LIKELY(isF64(x) && o2fG(x)==1)) return x;
   if (isF64(x)) thrM("Assertion error");
   thr(x);
 }
 B asrt_c2(B t, B w, B x) {
-  if (LIKELY(isF64(x) && o2fu(x)==1)) { dec(w); return x; }
+  if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
   dec(x);
   thr(w);
 }
 B casrt_c2(B t, B w, B x) {
-  if (LIKELY(isF64(x) && o2fu(x)==1)) { dec(w); return x; }
+  if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
   unwindCompiler();
   dec(x);
   if (isArr(w) && IA(w)==2) {
@@ -216,7 +216,7 @@ B casrt_c2(B t, B w, B x) {
   thr(w);
 }
 B casrt_c1(B t, B x) {
-  if (LIKELY(isF64(x) && o2fu(x)==1)) return x;
+  if (LIKELY(isF64(x) && o2fG(x)==1)) return x;
   casrt_c2(t, inc(x), x); UD;
 }
 
@@ -377,7 +377,7 @@ B rand_range_c2(B t, B w, B x) {
       default: {
         usz* sh = arr_shAlloc(r, wia);
         SGetU(w);
-        for (usz i = 0; i < wia; i++) sh[i] = o2su(GetU(w, i));
+        for (usz i = 0; i < wia; i++) sh[i] = o2sG(GetU(w, i));
       }
     }
   } else {
@@ -835,7 +835,7 @@ B fromUtf8_c1(B t, B x) {
   for (u64 i = 0; i < ia; i++) {
     B c = GetU(x,i);
     if (isC32(c)) {
-      u32 v = o2cu(c);
+      u32 v = o2cG(c);
       if (v>=256) thrF("•FromUTF8: Argument contained a character with codepoint %i", v);
       chrs[i] = v;
     } else {

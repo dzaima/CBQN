@@ -1289,27 +1289,27 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   SGetU(src)
   usz srcL = IA(src);
   usz srcS = cs;
-  while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
+  while (srcS>0 && o2cG(GetU(src,srcS-1))!='\n') srcS--;
   usz srcE = srcS;
-  while (srcE<srcL) { if(o2cu(GetU(src, srcE))=='\n') break; srcE++; }
+  while (srcE<srcL) { if(o2cG(GetU(src, srcE))=='\n') break; srcE++; }
   if (ce>srcE) ce = srcE;
   
   i64 ln = 1;
-  for (usz i = 0; i < srcS; i++) if(o2cu(GetU(src, i))=='\n') ln++;
+  for (usz i = 0; i < srcS; i++) if(o2cG(GetU(src, i))=='\n') ln++;
   B s = prepend;
   if (isArr(path) && (IA(path)>1 || (IA(path)==1 && IGetU(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
   else AFMT("at ");
   i64 padEnd = (i64)IA(s);
   i64 padStart = padEnd;
   SGetU(s)
-  while (padStart>0 && o2cu(GetU(s,padStart-1))!='\n') padStart--;
+  while (padStart>0 && o2cG(GetU(s,padStart-1))!='\n') padStart--;
   
   AJOIN(taga(arr_shVec(TI(src,slice)(incG(src),srcS, srcE-srcS))));
   cs-= srcS;
   ce-= srcS;
   ACHR('\n');
   for (i64 i = padStart; i < padEnd; i++) ACHR(' ');
-  for (u64 i = 0; i < cs; i++) ACHR(o2cu(GetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
+  for (u64 i = 0; i < cs; i++) ACHR(o2cG(GetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
   for (u64 i = cs; i < ce; i++) ACHR('^');
   return s;
 }
@@ -1341,8 +1341,8 @@ native_print:
     int start = fprintf(stderr, "at ");
     usz srcL = IA(src);
     SGetU(src)
-    usz srcS = cs;   while (srcS>0 && o2cu(GetU(src,srcS-1))!='\n') srcS--;
-    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cu(GetU(src, srcE)); if(chr=='\n')break; fprintUTF8(stderr, chr); srcE++; }
+    usz srcS = cs;   while (srcS>0 && o2cG(GetU(src,srcS-1))!='\n') srcS--;
+    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintUTF8(stderr, chr); srcE++; }
     if (ce>srcE) ce = srcE;
     cs-= srcS; ce-= srcS;
     fputc('\n', stderr);
@@ -1534,7 +1534,7 @@ void profiler_displayResults() {
       usz pi = 0;
       i32 curr = 0;
       for (usz i = 0; i < sia; i++) {
-        u32 c = o2cu(GetU(src, i));
+        u32 c = o2cG(GetU(src, i));
         curr+= m[i];
         if (c=='\n' || i==sia-1) {
           Arr* sl = arr_shVec(TI(src,slice)(incG(src), pi, i-pi+(c=='\n'?0:1)));

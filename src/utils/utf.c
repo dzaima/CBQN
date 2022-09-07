@@ -84,7 +84,7 @@ void toUTF8(B x, char* p) {
   SGetU(x)
   usz ia = IA(x);
   for (usz i = 0; i < ia; i++) {
-    u32 c = o2cu(GetU(x,i));
+    u32 c = o2cG(GetU(x,i));
     if (c<128)          { *p++ = c; }
     else if (c<=0x07FF) { *p++ = 0xC0|c>>6 ; *p++ = 0x80|(c    &0x3F); }
     else if (c<=0xFFFF) { *p++ = 0xE0|c>>12; *p++ = 0x80|(c>>6 &0x3F);*p++ = 0x80|(c   &0x3F); }

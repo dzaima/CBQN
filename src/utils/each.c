@@ -77,7 +77,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
       B r; i32* rp;
       if (reuse && TY(x)==t_i32arr) { r=incG(REUSE(x)); rp = xp; }
       else r = m_i32arrc(&rp, x);
-      rp[i++] = o2iu(cr);
+      rp[i++] = o2iG(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_i32(xp[i]));
         if (!q_i32(cr)) {
@@ -86,7 +86,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
           decG(r);
           goto fallback;
         }
-        rp[i] = o2iu(cr);
+        rp[i] = o2iG(cr);
       }
       decG(x);
       return num_squeeze(r);
@@ -95,7 +95,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
       B r; f64* rp;
       if (reuse && TY(x)==t_f64arr) { r=incG(REUSE(x)); rp = xp; }
       else       r = m_f64arrc(&rp, x);
-      rp[i++] = o2fu(cr);
+      rp[i++] = o2fG(cr);
       for (; i < ia; i++) {
         cr = f(fo, m_f64(xp[i]));
         if (!q_f64(cr)) {
@@ -104,7 +104,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
           decG(r);
           goto fallback;
         }
-        rp[i] = o2fu(cr);
+        rp[i] = o2fG(cr);
       }
       decG(x);
       return num_squeeze(r);

@@ -236,7 +236,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   u8 xe = TI(x,elType);
   if (xr==1 && q_i32(w) && elInt(xe) && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
-    i32 wv = o2iu(w);
+    i32 wv = o2iG(w);
     if (xe==el_bit) {
       u64* xp=bitarr_ptr(x);
       if (rtid==n_add) { i32* rp; B r=m_i32arrv(&rp, ia); i64 c=wv; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; } decG(x); return r; }
@@ -366,7 +366,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   usz ia = IA(x);
   u8 xe = TI(x,elType);
   if (q_i32(w) && isFun(f) && v(f)->flags && elInt(xe)) {
-    i32 wi = o2iu(w);
+    i32 wi = o2iG(w);
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);

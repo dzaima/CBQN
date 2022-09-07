@@ -77,7 +77,7 @@ B repeat_replace(B g, B* q) { // doesn't consume
     for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
     return HARR_FC(r, g);
   } else {
-    return inc(q[o2i64u(g)]);
+    return inc(q[o2i64G(g)]);
   }
 }
 #define REPEAT_T(CN, END, ...)                     \
@@ -281,7 +281,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   bool gf = isFun(g);
   if (RARE(gf)) g = c1(g, inc(x));
   if (LIKELY(isNum(g))) {
-    kf = req_whole(o2fu(g));
+    kf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);
     SGetU(g); kf = GetU(g, gia==2).f;
@@ -344,7 +344,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   bool gf = isFun(g);
   if (RARE(gf)) g = c2(g, inc(w), inc(x));
   if (LIKELY(isNum(g))) {
-    wf = xf = req_whole(o2fu(g));
+    wf = xf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);
     SGetU(g);

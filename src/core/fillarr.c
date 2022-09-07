@@ -182,7 +182,7 @@ NOINLINE B m_atomUnit(B x) {
     else if (xi==(i16)xi) { i16 v=xi;      memcpy(&data, &v, sizeof(v)); t=t_i16arr; }
     else                  { i32 v=xi;      memcpy(&data, &v, sizeof(v)); t=t_i32arr; }
   } else if (isC32(x)) {
-    u32 xi = o2cu(x);
+    u32 xi = o2cG(x);
     if      (xi==(u8 )xi) { u8  v=xi; memcpy(&data, &v, sizeof(v)); t=t_c8arr; }
     else if (xi==(u16)xi) { u16 v=xi; memcpy(&data, &v, sizeof(v)); t=t_c16arr; }
     else                  { u32 v=xi; memcpy(&data, &v, sizeof(v)); t=t_c32arr; }

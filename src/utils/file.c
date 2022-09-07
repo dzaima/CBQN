@@ -102,18 +102,18 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   usz ria = IA(rel);
   if (RNK(rel)!=1) thrM("Paths must be character vectors");
   guaranteeStr(rel);
-  if (ria>0 && o2cu(GetU(rel, 0))=='/') return rel;
+  if (ria>0 && o2cG(GetU(rel, 0))=='/') return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return incG(base); }
   usz bia = IA(base);
   if (bia==0) return rel;
   SGetU(base)
-  bool has = o2cu(GetU(base, bia-1))=='/';
+  bool has = o2cG(GetU(base, bia-1))=='/';
   u32* rp; B r = m_c32arrv(&rp, bia+ria+(has?0:1));
   usz ri = 0;
-  for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cu(GetU(base, i));
+  for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cG(GetU(base, i));
   rp[ri++] = '/';
-  for (usz i = 0; i < ria; i++) rp[ri++] = o2cu(GetU(rel, i));
+  for (usz i = 0; i < ria; i++) rp[ri++] = o2cG(GetU(rel, i));
   dec(rel);
   return r;
 }
@@ -125,9 +125,9 @@ B path_parent(B path) {
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
   for (i64 i = (i64)pia-2; i >= 0; i--) {
-    if (o2cu(GetU(path, i))=='/') return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
+    if (o2cG(GetU(path, i))=='/') return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
-  if (o2cu(GetU(path, 0))=='/') return path;
+  if (o2cG(GetU(path, 0))=='/') return path;
   dec(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = '/';
   return r;
@@ -139,7 +139,7 @@ B path_name(B path) {
   if (pia==0) thrM("Empty file path");
   guaranteeStr(path);
   for (i64 i = (i64)pia-1; i >= 0; i--) {
-    if (o2cu(GetU(path, i))=='/') {
+    if (o2cG(GetU(path, i))=='/') {
       if (i == pia-1) thrF("File path ended with a slash: \"%R\"", path);
       return taga(arr_shVec(TI(path,slice)(path, i+1, pia - (i+1))));
     }
@@ -180,7 +180,7 @@ CharBuf get_chars(B x) {
     SGetU(x)
     for (u64 i = 0; i < len; i++) {
       B c = GetU(x,i);
-      buf[i] = isNum(c)? o2iu(c) : o2c(c);
+      buf[i] = isNum(c)? o2iG(c) : o2c(c);
     }
   }
   return (CharBuf){.data=buf, .alloc=alloc};

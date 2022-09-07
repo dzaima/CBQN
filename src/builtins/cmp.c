@@ -80,13 +80,13 @@ CMP_AA("≠", "?", ne, !=,  wv^xv, swapped=0;)
   u8 xe = TI(x, elType); if (xe==el_B) goto bad; AL(x) \
   switch(xe) { default: UD; \
     case el_bit: { if (!q_bit(w)) break; u64 wv=bitx(w); u64* xp=bitarr_ptr(x); for(usz i=0;i<bia;i++) { u64 xv=xp[i]; rp[i]=BX; } decG(x); return r; } \
-    case el_i8:  { if (!q_i8 (w)) break; i8  wv=o2iu(w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_i16: { if (!q_i16(w)) break; i16 wv=o2iu(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_i32: { if (!q_i32(w)) break; i32 wv=o2iu(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_c8:  { if (!q_c8 (w)) break; u8  wv=o2cu(w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_c16: { if (!q_c16(w)) break; u16 wv=o2cu(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_c32: { if (!q_c32(w)) break; u32 wv=o2cu(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
-    case el_f64: { if (!q_f64(w)) break; f64 wv=o2fu(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_i8:  { if (!q_i8 (w)) break; i8  wv=o2iG(w); i8*  xp=i8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_i16: { if (!q_i16(w)) break; i16 wv=o2iG(w); i16* xp=i16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_i32: { if (!q_i32(w)) break; i32 wv=o2iG(w); i32* xp=i32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_c8:  { if (!q_c8 (w)) break; u8  wv=o2cG(w); u8*  xp=c8any_ptr (x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_c16: { if (!q_c16(w)) break; u16 wv=o2cG(w); u16* xp=c16any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_c32: { if (!q_c32(w)) break; u32 wv=o2cG(w); u32* xp=c32any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
+    case el_f64: { if (!q_f64(w)) break; f64 wv=o2fG(w); f64* xp=f64any_ptr(x); for(usz i=0;i<ria;i++) bitp_set(rp,i,wv OP xp[i]); decG(x); return r; } \
   }        \
   decG(r); \
   bad: return NAME##_rec(swapped, w, x); \

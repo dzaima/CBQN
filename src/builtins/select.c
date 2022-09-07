@@ -316,7 +316,7 @@ B select_ucw(B t, B o, B w, B x) {
   mut_copyG(r, 0, x, 0, xia);
   SGet(rep)
   for (usz i = 0; i < wia; i++) {
-    i64 cw = o2i64u(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
+    i64 cw = o2i64G(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
     B cr = Get(rep, i);
     EQ(!equal(mut_getU(r, cw), cr));
     mut_rm(r, cw);

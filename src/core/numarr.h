@@ -40,7 +40,7 @@ static inline u64 bitp_l1(u64* arr, u64 ia) { // last u64 of the array, with the
   return ia&63? arr[ia>>6]|~((1ULL<<(ia&63))-1) : ~0ULL;
 }
 static inline u64 bitx(B x) { // repeats the boolean across all 64 bits
-  return o2bu(x)? ~(u64)0 : 0;
+  return o2bG(x)? ~(u64)0 : 0;
 }
 
 // BitArr

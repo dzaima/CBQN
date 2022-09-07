@@ -124,15 +124,15 @@ B floor_c2(B, B, B);
     
     #define REG_SA(NAME, EXPR) \
       if (xe==el_bit) return bit_sel1Fn(NAME##_c2,w,x,1); \
-      if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iu(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
-      if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iu(w); DOI16(EXPR,x,wc,xp[i],sa16B) } sa16B:; \
-      if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iu(w); DOI32(EXPR,x,wc,xp[i],sa32B) } sa32B:; \
+      if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iG(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
+      if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iG(w); DOI16(EXPR,x,wc,xp[i],sa16B) } sa16B:; \
+      if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iG(w); DOI32(EXPR,x,wc,xp[i],sa32B) } sa32B:; \
       if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) goto dec_ret; }
     #define REG_AS(NAME, EXPR) \
       if (we==el_bit) return bit_sel1Fn(NAME##_c2,w,x,0); \
-      if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iu(x); DOI8 (EXPR,w,wp[i],xc,as8B ) } as8B :; \
-      if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iu(x); DOI16(EXPR,w,wp[i],xc,as16B) } as16B:; \
-      if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iu(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
+      if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iG(x); DOI8 (EXPR,w,wp[i],xc,as8B ) } as8B :; \
+      if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iG(x); DOI16(EXPR,w,wp[i],xc,as16B) } as16B:; \
+      if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iG(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
       if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) goto dec_ret; }
     
     static B bitAA0(B w, B x, usz ia) { UD; }
@@ -243,7 +243,7 @@ B floor_c2(B, B, B);
     AR_I_SA("⌈", ceil , wv>xv?wv:xv, REG_SA, {})
     AR_I_SA("+", add, wv+xv, SI_SA, {
       if (isC32(w) && xe==el_i32) {
-        u32 wv = o2cu(w);
+        u32 wv = o2cG(w);
         i32* xp = i32any_ptr(x); usz xia = IA(x);
         u32* rp; r = m_c32arrc(&rp, x);
         for (usz i = 0; i < xia; i++) {
@@ -258,7 +258,7 @@ B floor_c2(B, B, B);
     
     AR_I_AS("-", sub, wv-xv, SI_AS, {
       if (we==el_c32 && isC32(x)) {
-        i32 xv = (i32)o2cu(x);
+        i32 xv = (i32)o2cG(x);
         u32* wp = c32any_ptr(w); usz wia = IA(w);
         i32* rp; r = m_i32arrc(&rp, w);
         for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
@@ -297,11 +297,11 @@ B floor_c2(B, B, B);
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cu(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
-  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cu(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
+  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
 });
 AR_I_SCALAR("-", sub, w.f-x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cu(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
 AR_I_SCALAR("×", mul, w.f*x.f, {})

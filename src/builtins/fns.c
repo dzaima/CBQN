@@ -204,7 +204,7 @@ B indexOf_c2(B t, B w, B x) {
       if (TI(w,elType)==el_i32) {
         if (q_i32(el)) {
           i32* wp = i32any_ptr(w);
-          i32 v = o2iu(el);
+          i32 v = o2iG(el);
           for (usz i = 0; i < wia; i++) {
             if (wp[i] == v) { res = i; break; }
           }

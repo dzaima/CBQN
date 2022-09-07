@@ -135,7 +135,7 @@ void cbqn_runLine0(char* ln, i64 read) {
           if (IA(c) != len) continue;
           SGetU(c)
           bool ok = true;
-          for (i32 j = 0; j < len; j++) ok&= o2cu(GetU(c, j))==name[j];
+          for (i32 j = 0; j < len; j++) ok&= o2cG(GetU(c, j))==name[j];
           if (ok) {
             B val = e->vars[i];
             e->vars[i] = bi_noVar;

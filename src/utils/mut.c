@@ -90,25 +90,25 @@ B vec_join(B w, B x) {
   static RT m_##N##G_##TY ARGS
 
 DEF_S(void, set, MAX, false,    x, (void* a, usz ms, B x), ms, x) { err("m_setG_MAX"); }
-DEF_S(void, set, bit, q_bit(x), x, (void* a, usz ms, B x), ms, x) { bitp_set((u64*)a, ms, o2bu(x)); }
-DEF_S(void, set, i8,  q_i8 (x), x, (void* a, usz ms, B x), ms, x) { (( i8*)a)[ms] = o2iu(x); }
-DEF_S(void, set, i16, q_i16(x), x, (void* a, usz ms, B x), ms, x) { ((i16*)a)[ms] = o2iu(x); }
-DEF_S(void, set, i32, q_i32(x), x, (void* a, usz ms, B x), ms, x) { ((i32*)a)[ms] = o2iu(x); }
-DEF_S(void, set, c8,  q_c8 (x), x, (void* a, usz ms, B x), ms, x) { (( u8*)a)[ms] = o2cu(x); }
-DEF_S(void, set, c16, q_c16(x), x, (void* a, usz ms, B x), ms, x) { ((u16*)a)[ms] = o2cu(x); }
-DEF_S(void, set, c32, q_c32(x), x, (void* a, usz ms, B x), ms, x) { ((u32*)a)[ms] = o2cu(x); }
-DEF_S(void, set, f64, q_f64(x), x, (void* a, usz ms, B x), ms, x) { ((f64*)a)[ms] = o2fu(x); }
+DEF_S(void, set, bit, q_bit(x), x, (void* a, usz ms, B x), ms, x) { bitp_set((u64*)a, ms, o2bG(x)); }
+DEF_S(void, set, i8,  q_i8 (x), x, (void* a, usz ms, B x), ms, x) { (( i8*)a)[ms] = o2iG(x); }
+DEF_S(void, set, i16, q_i16(x), x, (void* a, usz ms, B x), ms, x) { ((i16*)a)[ms] = o2iG(x); }
+DEF_S(void, set, i32, q_i32(x), x, (void* a, usz ms, B x), ms, x) { ((i32*)a)[ms] = o2iG(x); }
+DEF_S(void, set, c8,  q_c8 (x), x, (void* a, usz ms, B x), ms, x) { (( u8*)a)[ms] = o2cG(x); }
+DEF_S(void, set, c16, q_c16(x), x, (void* a, usz ms, B x), ms, x) { ((u16*)a)[ms] = o2cG(x); }
+DEF_S(void, set, c32, q_c32(x), x, (void* a, usz ms, B x), ms, x) { ((u32*)a)[ms] = o2cG(x); }
+DEF_S(void, set, f64, q_f64(x), x, (void* a, usz ms, B x), ms, x) { ((f64*)a)[ms] = o2fG(x); }
 DEF_G(void, set, B,                (void* a, usz ms, B x), ms, x) { ((  B*)a)[ms] = x; }
 
 DEF_S(void, fill, MAX, false,    x, (void* a, usz ms, B x, usz l), ms, x, l) { err("m_fillG_MAX"); }
-DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p =    (u64*)a;bool v = o2bu(x); for (usz i = 0; i < l; i++) bitp_set(p, ms+i, v); }
-DEF_S(void, fill, i8 , q_i8 (x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i8*  p = ms+( i8*)a; i8  v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, i16, q_i16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i16* p = ms+(i16*)a; i16 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, i32, q_i32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i32* p = ms+(i32*)a; i32 v = o2iu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, c8 , q_c8 (x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u8*  p = ms+( u8*)a; u8  v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, c16, q_c16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u16* p = ms+(u16*)a; u16 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, c32, q_c32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u32* p = ms+(u32*)a; u32 v = o2cu(x); for (usz i = 0; i < l; i++) p[i] = v; }
-DEF_S(void, fill, f64, isF64(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { f64* p = ms+(f64*)a; f64 v = o2fu(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p =    (u64*)a;bool v = o2bG(x); for (usz i = 0; i < l; i++) bitp_set(p, ms+i, v); }
+DEF_S(void, fill, i8 , q_i8 (x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i8*  p = ms+( i8*)a; i8  v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, i16, q_i16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i16* p = ms+(i16*)a; i16 v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, i32, q_i32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i32* p = ms+(i32*)a; i32 v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, c8 , q_c8 (x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u8*  p = ms+( u8*)a; u8  v = o2cG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, c16, q_c16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u16* p = ms+(u16*)a; u16 v = o2cG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, c32, q_c32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u32* p = ms+(u32*)a; u32 v = o2cG(x); for (usz i = 0; i < l; i++) p[i] = v; }
+DEF_S(void, fill, f64, isF64(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { f64* p = ms+(f64*)a; f64 v = o2fG(x); for (usz i = 0; i < l; i++) p[i] = v; }
 DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
   B* p = ms + (B*)a;
   for (usz i = 0; i < l; i++) p[i] = x;
@@ -246,11 +246,11 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     else decG(x);            \
     return (T##Arr*)r;       \
   }
-  #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bu(V))
+  #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bG(V))
   #define H2T_COPY(T) copy##T##Fns[el_MAX]((u8*)bxp, rp, ia, xRaw)
   #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(1, T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(T), T, __VA_ARGS__)
-  #define MAKE_CCPY(T,E) MAKE_TYCPY(T, E, o2cu, {badCopy,     badCopy,      badCopy,       badCopy,       badCopy,       COPY_FN(c8,E),COPY_FN(c16,E),COPY_FN(c32,E),cpy##T##Arr_B,COPY_FN(B,E)})
-  #define MAKE_ICPY(T,E) MAKE_TYCPY(T, E, o2fu, {COPY_FN(1,E),COPY_FN(i8,E),COPY_FN(i16,E),COPY_FN(i32,E),COPY_FN(f64,E),badCopy,      badCopy,       badCopy,       cpy##T##Arr_B,COPY_FN(f64,E)})
+  #define MAKE_CCPY(T,E) MAKE_TYCPY(T, E, o2cG, {badCopy,     badCopy,      badCopy,       badCopy,       badCopy,       COPY_FN(c8,E),COPY_FN(c16,E),COPY_FN(c32,E),cpy##T##Arr_B,COPY_FN(B,E)})
+  #define MAKE_ICPY(T,E) MAKE_TYCPY(T, E, o2fG, {COPY_FN(1,E),COPY_FN(i8,E),COPY_FN(i16,E),COPY_FN(i32,E),COPY_FN(f64,E),badCopy,      badCopy,       badCopy,       cpy##T##Arr_B,COPY_FN(f64,E)})
   MAKE_CPY(0, HArr_p p = m_harrUp(ia); Arr* r = (Arr*)p.c, get, ((B*)rp)[i] =, p.a, for (usz i=0; i<ia; i++) ((B*)rp)[i] = inc(bxp[i]),
                                     H,          {COPY_FN(1,B),COPY_FN(i8,B),COPY_FN(i16,B),COPY_FN(i32,B),COPY_FN(f64,B),COPY_FN(c8,B),COPY_FN(c16,B),COPY_FN(c32,B),cpyHArr_B,    COPY_FN(f64,B)})
   MAKE_CPY(1, u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(Bit),
@@ -299,8 +299,8 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     else if (xe==el_f64) { f64* xp = f64any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
     else {                 \
       B* xp = arr_bptr(x); \
-      if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2fu(xp[i]    ); } \
-      else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2fu(GetU(x,i)); } \
+      if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2fG(xp[i]    ); } \
+      else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2fG(GetU(x,i)); } \
     }                      \
     ptr_decT(a(x));        \
     return (T##Arr*)r;     \
@@ -317,8 +317,8 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     else if (xe==el_c32) { u32* xp = c32any_ptr(x); for(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
     else {                   \
       B* xp = arr_bptr(x);   \
-      if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2cu(xp[i]    ); } \
-      else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2cu(GetU(x,i)); } \
+      if (xp!=NULL) { for (usz i=0; i<ia; i++) rp[i]=o2cG(xp[i]    ); } \
+      else { SGetU(x) for (usz i=0; i<ia; i++) rp[i]=o2cG(GetU(x,i)); } \
     }                        \
     ptr_decT(a(x));          \
     return (T##Arr*)r;       \
@@ -356,8 +356,8 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     else if (xe==el_f64) { f64* xp = f64any_ptr(x); for(usz i=0; i<ia; i++) bitp_set(rp,i,xp[i]); }
     else {
       B* xp = arr_bptr(x);
-      if (xp!=NULL) { for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(xp[i]    )); }
-      else { SGetU(x) for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fu(GetU(x,i))); }
+      if (xp!=NULL) { for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fG(xp[i]    )); }
+      else { SGetU(x) for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fG(GetU(x,i))); }
     }
     ptr_decT(a(x));
     return (BitArr*)r;

@@ -235,7 +235,7 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
     table = t2;
     
     
-    wa = o2cu(w);
+    wa = o2cG(w);
     newXEc:
     switch(xe) { default: UD;
       case el_bit: goto bitsel;
@@ -269,15 +269,15 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
     case el_B: goto rec;
   }
   
-  wint: wa=(u32)o2iu(w); goto f1;
+  wint: wa=(u32)o2iG(w); goto f1;
   wf64: wa=w.u; goto f1;
   
-  iwiden_i8:  if (q_i16(w)) { wa=(u32)o2iu(w); type=t_i16arr; goto cpy_i16; }
-  iwiden_i16: if (q_i32(w)) { wa=(u32)o2iu(w); type=t_i32arr; goto cpy_i32; }
+  iwiden_i8:  if (q_i16(w)) { wa=(u32)o2iG(w); type=t_i16arr; goto cpy_i16; }
+  iwiden_i16: if (q_i32(w)) { wa=(u32)o2iG(w); type=t_i32arr; goto cpy_i32; }
   iwiden_i32:               { wa=w.u;          type=t_f64arr; goto cpy_f64; }
   
-  iwiden_c8:  if (q_i16(w)) { wa=(u32)o2iu(w); type=t_c16arr; goto cpy_c16; }
-  iwiden_c16: if (q_i32(w)) { wa=(u32)o2iu(w); type=t_c32arr; goto cpy_c32; }
+  iwiden_c8:  if (q_i16(w)) { wa=(u32)o2iG(w); type=t_c16arr; goto cpy_c16; }
+  iwiden_c16: if (q_i32(w)) { wa=(u32)o2iG(w); type=t_c32arr; goto cpy_c32; }
   goto rec;
   
   // TODO reuse the copied array for the result; maybe even alternate copy & operation to stay in cache
@@ -323,15 +323,15 @@ static void   powAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0;
 static void stileAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
 static void   logAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
 
-bool add_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f+0); r[1] = m_f64(f+1); return true; }
-bool sub_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f-0); r[1] = m_f64(f-1); return true; }
-bool subR_forBitselNN_SA(DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(0-f); r[1] = m_f64(1-f); return true; }
-bool mul_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f*0); r[1] = m_f64(f*1); return true; }
-bool min_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f<=0?f:0); r[1] = m_f64(f<=1?f:1); return true; }
-bool max_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fu(w); r[0] = m_f64(f>=0?f:0); r[1] = m_f64(f>=1?f:1); return true; }
+bool add_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f+0); r[1] = m_f64(f+1); return true; }
+bool sub_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f-0); r[1] = m_f64(f-1); return true; }
+bool subR_forBitselNN_SA(DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(0-f); r[1] = m_f64(1-f); return true; }
+bool mul_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f*0); r[1] = m_f64(f*1); return true; }
+bool min_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f<=0?f:0); r[1] = m_f64(f<=1?f:1); return true; }
+bool max_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f>=0?f:0); r[1] = m_f64(f>=1?f:1); return true; }
 
-bool add_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cu(w); if(wc+1<=CHR_MAX) return false; r[0] = m_c32(wc); r[1] = m_c32(wc+1); return true; }
-bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cu(w); if(wc  !=0      ) return false; r[0] = m_c32(wc); r[1] = m_c32(wc-1); return true; }
+bool add_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc+1<=CHR_MAX) return false; r[0] = m_c32(wc); r[1] = m_c32(wc+1); return true; }
+bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc  !=0      ) return false; r[0] = m_c32(wc); r[1] = m_c32(wc-1); return true; }
 
 B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 
@@ -339,7 +339,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
   if (!isF64(w)) return arith_recd(or_c2, w, x);
   if (LIKELY(TI(x,elType)==el_bit)) {
     bitsel:
-    f64 wf = o2fu(w);
+    f64 wf = o2fG(w);
     return bit_sel(x, m_f64(bqn_or(wf, 0)), 1, m_f64(bqn_or(wf, 1)), 1);
   }
   x = num_squeezeChk(x);

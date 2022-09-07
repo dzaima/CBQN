@@ -124,7 +124,7 @@ B listVariations_c2(B t, B w, B x) {
     if (xe!=el_c8) for (usz i = 0; i < xia; i++) {
       B c = GetU(x, i);
       if (!isC32(c)) goto noSpec;
-      if (o2cu(c)>max) max = o2cu(c);
+      if (o2cG(c)>max) max = o2cG(c);
     }
     ac8  = max == (u8 )max;
     ac16 = max == (u16)max;

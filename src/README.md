@@ -83,19 +83,25 @@ Functions for converting/using basic types:
   m_c32(x)  // codepoint → B
   m_i32(x)  // i32 → B
   m_usz(x)  // usz → B
-  o2i(x)    // B → i32, throw if impossible
-  o2i64(x)  // B → i64, throw if impossible
-  o2u64(x)  // B → u64, throw if impossible
-  o2s(x)    // B → usz, throw if impossible
-  o2c(x)    // B → c32, throw if impossible
-  o2f(x)    // B → f64, throw if impossible
-  o2iu(x)   // B → i32, assumes is valid (u ≡ unchecked)
-  o2i64u(x) // B → i64, assumes is valid
-  o2su(x)   // B → usz, assumes is valid
-  o2cu(x)   // B → c32, assumes is valid
-  o2fu(x)   // B → f64, assumes is valid
-  o2b(x)    // B → bool, throw if impossible
-  q_TYPE(x) // query if x is convertible to TYPE (see definitions in h.h)
+  
+  // convert B to a basic type (first one errors on invalid, second assumes the conversion is doable losslessly):
+  o2b(x)   o2bG(x)   // bool
+  o2i(x)   o2iG(x)   // i32
+  o2c(x)   o2cG(x)   // c32
+  o2s(x)   o2sG(x)   // usz
+  o2f(x)   o2fG(x)   // f64
+  o2i64(x) o2i64G(x) // i64
+  o2u64(x) o2u64G(x) // u64
+  
+  // test if f64 or B fit in a specified type:
+  q_fbit(x) q_bit(x)
+  q_fi8(x)  q_i8(x)
+  q_fi16(x) q_i16(x)
+  q_fi32(x) q_i32(x)
+  q_fi64(x) q_i64(x)
+  q_fu64(x) q_u64(x)
+  q_fusz(x) q_usz(x)
+  
   q_N(x)    // query if x is · (≡ bi_N)
   noFill(x)    // if x represents undefined fill (returned by getFill*; ≡ bi_noFill)
   tag(x,*_TAG) // pointer → B

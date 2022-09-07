@@ -11,8 +11,8 @@ NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
   u64* bp = bitarr_ptr(b);
   usz ia = IA(b);
   if (elNum(t0) && elNum(t1)) { B r;
-    f64 f0 = o2fu(e0); i32 i0 = f0;
-    f64 f1 = o2fu(e1); i32 i1 = f1;
+    f64 f0 = o2fG(e0); i32 i0 = f0;
+    f64 f1 = o2fG(e1); i32 i1 = f1;
     u8 tM = t0>t1? t0 : t1;
     if (tM==el_bit) {
       if (i0) {
@@ -28,7 +28,7 @@ NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
     else if (tM==el_i32) { i32* rp; r=m_i32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
     else                              { f64* rp; r=m_f64arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? f1 : f0; }
     decG(b); return r;
-  } else if (elChr(t0) && elChr(t1)) { B r; u32 u0 = o2cu(e0); u32 u1 = o2cu(e1);
+  } else if (elChr(t0) && elChr(t1)) { B r; u32 u0 = o2cG(e0); u32 u1 = o2cG(e1);
     if      (t0<=el_c8  & t1<=el_c8 ) { u8*  rp; r=m_c8arrc (&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
     else if (t0<=el_c16 & t1<=el_c16) { u16* rp; r=m_c16arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
     else                              { u32* rp; r=m_c32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
