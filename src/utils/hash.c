@@ -1,4 +1,5 @@
 #include "../core.h"
+#define HASH_C 1
 #include "hash.h"
 #include "time.h"
 

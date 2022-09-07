@@ -106,7 +106,11 @@ static inline void N(qins) (Map* m, u64 h1, HT h2 IFKEY(, KT k) IFVAL(, VT v)) {
     if (p++==mask) p = 0;
   }
 }
-static NOINLINE void N(dbl) (Map** m) {
+
+NOINLINE void N(dbl) (Map** m);
+
+#if HASH_C
+NOINLINE void N(dbl) (Map** m) {
   Map* pm = *m;
   u64 psz = pm->sz;
   Map* nm = N(m)(psz*2);
@@ -117,6 +121,7 @@ static NOINLINE void N(dbl) (Map** m) {
   mm_free((Value*)pm);
   *m = nm;
 }
+#endif
 
 
 static inline u64 N(mk) (Map** mp, KT k, bool* had) {
