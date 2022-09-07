@@ -172,10 +172,8 @@ B select_c2(B t, B w, B x) {
     for (usz i = 0; i < wia; i++) {
       B cw = GetU(w, i);
       if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
-      i64 c = o2i64(cw);
-      if (c<0) c+= cam;
-      if ((usz)c >= cam) { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); }
-      mut_copyG(r, i*csz, x, csz*(usz)c, csz);
+      usz c = WRAP(o2i64(cw), cam, { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); });
+      mut_copyG(r, i*csz, x, csz*c, csz);
     }
     Arr* ra = mut_fp(r);
     usz* rsh = arr_shAlloc(ra, rr);
