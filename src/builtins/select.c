@@ -63,7 +63,7 @@ B select_c2(B t, B w, B x) {
       return r;
     }
     usz xia = IA(x);
-    if (xia==0) thrM("⊏: Indexing out-of-bounds (0≡≠𝕩)");
+    if (xia==0) goto base; // can't just error immediately because depth 2 𝕨
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
