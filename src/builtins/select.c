@@ -159,6 +159,10 @@ B select_c2(B t, B w, B x) {
     #undef CASE
     #undef CASEW
   } else {
+    if (!elNum(TI(w,elType))) { // 𝕨 could be depth 2, in which case allocating the buffer isn't acceptable even temporarily
+      w = num_squeezeChk(w);
+      if (!elNum(TI(w,elType))) goto base;
+    }
     SLOW2("𝕨⊏𝕩", w, x);
     SGetU(w)
     ur wr = RNK(w);
@@ -170,8 +174,7 @@ B select_c2(B t, B w, B x) {
     MAKE_MUT(r, wia*csz); mut_init(r, TI(x,elType));
     MUTG_INIT(r);
     for (usz i = 0; i < wia; i++) {
-      B cw = GetU(w, i);
-      if (!isNum(cw)) { mut_pfree(r, i*csz); goto base; }
+      B cw = GetU(w, i); // assumed number from previous squeeze
       usz c = WRAP(o2i64(cw), cam, { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); });
       mut_copyG(r, i*csz, x, csz*c, csz);
     }
