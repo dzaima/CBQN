@@ -112,7 +112,7 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   return eqShPart(wsh, xsh, wr);
 }
 
-B bit_sel(B b, B e0, bool h0, B e1, bool h1); // consumes b; h0/h1 represent whether the corresponding element _might_ be in the result (can be true if unknown)
+B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);
 B bit_negate(B x); // consumes

@@ -3,44 +3,69 @@
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
 NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] = ~0ULL; return r; }
 
-NOINLINE B bit_sel(B b, B e0, bool h0, B e1, bool h1) {
+NOINLINE B bit_sel(B b, B e0, B e1) {
   u8 t0 = selfElType(e0);
-  u8 t1 = selfElType(e1);
-  if (!h0) t0=t1; // TODO just do separate impls for !h0 and !h1
-  if (!h1) t1=t0;
   u64* bp = bitarr_ptr(b);
   usz ia = IA(b);
-  if (elNum(t0) && elNum(t1)) { B r;
-    f64 f0 = o2fG(e0); i32 i0 = f0;
-    f64 f1 = o2fG(e1); i32 i1 = f1;
-    u8 tM = t0>t1? t0 : t1;
-    if (tM==el_bit) {
-      if (i0) {
-        if (i1) { Arr* a = allOnes(ia); arr_shCopy(a, b); r = taga(a); }
-        else return bit_negate(b);
-      } else {
-        if (i1) return b;
-        else { Arr* a = allZeroes(ia); arr_shCopy(a, b); r = taga(a); }
+  B r;
+  {
+    u8 type, width;
+    u32 e0i, e1i;
+    f64 e0f, e1f;
+    if (elNum(t0) && isF64(e1)) {
+      f64 f0 = o2fG(e0);
+      f64 f1 = o2fG(e1);
+      switch (t0) { default: UD;
+        case el_bit: if (f1==0||f1==1) goto t_bit;
+        case el_i8:  if (q_fi8(f1)) goto t_i8; if (q_fi16(f1)) goto t_i16; if (q_fi32(f1)) goto t_i32; goto t_f64; // not using fallthrough to allow deduplicating float→int conversion
+        case el_i16:                           if (q_fi16(f1)) goto t_i16; if (q_fi32(f1)) goto t_i32; goto t_f64;
+        case el_i32:                                                       if (q_fi32(f1)) goto t_i32; goto t_f64;
+        case el_f64: goto t_f64;
       }
+      t_bit:
+        if (f0) {
+          if (f1) { Arr* a = allOnes(ia); arr_shCopy(a, b); r = taga(a); goto dec_ret; }
+          else return bit_negate(b);
+        } else {
+          if (f1) return b;
+          else { Arr* a = allZeroes(ia); arr_shCopy(a, b); r = taga(a); goto dec_ret; }
+        }
+      t_i8:  type=t_i8arr;  width=0; e0i=( u8)( i8)f0; e1i=( u8)( i8)f1; goto sel;
+      t_i16: type=t_i16arr; width=1; e0i=(u16)(i16)f0; e1i=(u16)(i16)f1; goto sel;
+      t_i32: type=t_i32arr; width=2; e0i=(u32)(i32)f0; e1i=(u32)(i32)f1; goto sel;
+      t_f64: type=t_f64arr; width=3; e0f=          f0; e1f=          f1; goto sel;
+      
+    } else if (elChr(t0) && isC32(e1)) {
+      u32 u0 = o2cG(e0); u32 u1 = o2cG(e1);
+      switch(t0) { default: UD;
+        case el_c8:  if (u1==( u8)u1) { type=t_c8arr;  width=0; e0i=u0; e1i=u1; goto sel; } // else fallthrough
+        case el_c16: if (u1==(u16)u1) { type=t_c16arr; width=1; e0i=u0; e1i=u1; goto sel; } // else fallthrough
+        case el_c32:                  { type=t_c32arr; width=2; e0i=u0; e1i=u1; goto sel; }
+      }
+    } else goto slow;
+    
+    sel:
+    void* rp = m_tyarrlc(&r, width, b, type);
+    switch(width) {
+      case 0: for (usz i=0; i<ia; i++) (( u8*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+      case 1: for (usz i=0; i<ia; i++) ((u16*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+      case 2: for (usz i=0; i<ia; i++) ((u32*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+      case 3: for (usz i=0; i<ia; i++) ((f64*)rp)[i] = bitp_get(bp,i)? e1f : e0f; break;
     }
-    else if (tM==el_i8 ) { i8*  rp; r=m_i8arrc (&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
-    else if (tM==el_i16) { i16* rp; r=m_i16arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
-    else if (tM==el_i32) { i32* rp; r=m_i32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? i1 : i0; }
-    else                              { f64* rp; r=m_f64arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? f1 : f0; }
-    decG(b); return r;
-  } else if (elChr(t0) && elChr(t1)) { B r; u32 u0 = o2cG(e0); u32 u1 = o2cG(e1);
-    if      (t0<=el_c8  & t1<=el_c8 ) { u8*  rp; r=m_c8arrc (&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
-    else if (t0<=el_c16 & t1<=el_c16) { u16* rp; r=m_c16arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
-    else                              { u32* rp; r=m_c32arrc(&rp, b); for (usz i = 0; i < ia; i++) rp[i] = bitp_get(bp,i)? u1 : u0; }
-    decG(b); return r;
+    goto dec_ret;
   }
-  HArr_p r = m_harrUc(b);
+  
+  slow:;
+  HArr_p ra = m_harrUc(b);
   SLOW3("bit_sel", e0, e1, b);
-  for (usz i = 0; i < ia; i++) r.a[i] = bitp_get(bp,i)? e1 : e0;
+  for (usz i = 0; i < ia; i++) ra.a[i] = bitp_get(bp,i)? e1 : e0;
   
   u64 c1 = bit_sum(bp, ia);
   u64 c0 = ia-c1;
   incBy(e0,c0);
   incBy(e1,c1);
-  decG(b); return r.b;
+  r = ra.b;
+  
+  dec_ret:
+  decG(b); return r;
 }

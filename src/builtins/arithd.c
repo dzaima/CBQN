@@ -230,7 +230,7 @@ B floor_c2(B, B, B);
       bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
       bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
       // non-bitarr arg has been consumed
-      B r = bit_sel(b, e0, h0, e1, h1); // and now the bitarr arg is consumed too
+      B r = bit_sel(b, e0, e1); // and now the bitarr arg is consumed too
       dec(e0); dec(e1);
       return r;
     }

@@ -136,7 +136,7 @@ B select_c2(B t, B w, B x) {
       } else {
         x1 = GetU(x,1);
       }
-      r = bit_sel(w, x0, true, x1, true);
+      r = bit_sel(w, x0, x1);
       decG(x);
       return withFill(r, xf);
     }

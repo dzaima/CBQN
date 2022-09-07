@@ -309,7 +309,7 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
   bitsel: {
     B opts[2];
     if (!table->ents[el_bit].bitsel(table, w, opts)) goto rec;
-    return bit_sel(x, opts[0], 1, opts[1], 1);
+    return bit_sel(x, opts[0], opts[1]);
   }
 }
 
@@ -340,7 +340,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
   if (LIKELY(TI(x,elType)==el_bit)) {
     bitsel:
     f64 wf = o2fG(w);
-    return bit_sel(x, m_f64(bqn_or(wf, 0)), 1, m_f64(bqn_or(wf, 1)), 1);
+    return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }
   x = num_squeezeChk(x);
   if (TI(x,elType)==el_bit) goto bitsel;
