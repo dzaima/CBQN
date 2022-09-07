@@ -5,7 +5,8 @@ typedef struct TAlloc {
   u8 data[];
 } TAlloc;
 #define TOFF offsetof(TAlloc, data)
-#define TALLOC(T,N,AM) T* N = (T*) ((TAlloc*)mm_alloc(TOFF + (AM)*sizeof(T) + 8, t_temp))->data; // +8 so mm is happy
+#define TALLOCP(T,AM) ((T*) ((TAlloc*)mm_alloc(TOFF + (AM)*sizeof(T) + 8, t_temp))->data) // +8 so mm is happy
+#define TALLOC(T,N,AM) T* N = TALLOCP(T,AM);
 #define TOBJ(N) (void*)((u8*)(N) - TOFF)
 #define TFREE(N) mm_free((Value*)TOBJ(N));
 #define TREALLOC(N, AM) talloc_realloc(TOBJ(N), AM)
