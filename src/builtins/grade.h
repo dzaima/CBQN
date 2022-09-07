@@ -300,7 +300,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         if (!elInt(we) | !elInt(xe)) goto gen;
         w=toI32Any(w); x=toI32Any(x);
       } else {
-        for (u64 i=0; i<xia; i++) rp[i]=wia; goto done;
+        for (u64 i=0; i<xia; i++) rp[i]=wia;
+        goto done;
       }
     } else { // character
       if (elNum(xe)) {
