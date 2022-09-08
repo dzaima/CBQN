@@ -1293,9 +1293,6 @@ B shifta_c2(B t, B w, B x) {
 }
 
 extern B rt_group;
-B group_c1(B t, B x) {
-  return c1(rt_group, x);
-}
 B group_c2(B t, B w, B x) {
   if (isArr(w)&isArr(x) && RNK(w)==1 && RNK(x)==1 && depth(w)==1) {
     usz wia = IA(w);
@@ -1412,6 +1409,15 @@ B group_c2(B t, B w, B x) {
   }
   base:
   return c2(rt_group, w, x);
+}
+B ud_c1(B, B);
+B group_c1(B t, B x) {
+  if (isArr(x) && RNK(x)==1 && TI(x,arrD1)) {
+    usz ia = IA(x);
+    B range = ud_c1(t, m_f64(ia));
+    return group_c2(m_f64(0), x, range);
+  }
+  return c1(rt_group, x);
 }
 
 extern B rt_reverse;
