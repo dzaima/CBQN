@@ -10,8 +10,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
   B r;
   {
     u8 type, width;
-    u32 e0i, e1i;
-    f64 e0f, e1f;
+    u64 e0i, e1i;
     if (elNum(t0) && isF64(e1)) {
       f64 f0 = o2fG(e0);
       f64 f1 = o2fG(e1);
@@ -33,7 +32,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
       t_i8:  type=t_i8arr;  width=0; e0i=( u8)( i8)f0; e1i=( u8)( i8)f1; goto sel;
       t_i16: type=t_i16arr; width=1; e0i=(u16)(i16)f0; e1i=(u16)(i16)f1; goto sel;
       t_i32: type=t_i32arr; width=2; e0i=(u32)(i32)f0; e1i=(u32)(i32)f1; goto sel;
-      t_f64: type=t_f64arr; width=3; e0f=          f0; e1f=          f1; goto sel;
+      t_f64: type=t_f64arr; width=3; e0i=     b(f0).u; e1i=     b(f1).u; goto sel;
       
     } else if (elChr(t0) && isC32(e1)) {
       u32 u0 = o2cG(e0); u32 u1 = o2cG(e1);
@@ -50,7 +49,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
       case 0: for (usz i=0; i<ia; i++) (( u8*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
       case 1: for (usz i=0; i<ia; i++) ((u16*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
       case 2: for (usz i=0; i<ia; i++) ((u32*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-      case 3: for (usz i=0; i<ia; i++) ((f64*)rp)[i] = bitp_get(bp,i)? e1f : e0f; break;
+      case 3: for (usz i=0; i<ia; i++) ((u64*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
     }
     goto dec_ret;
   }
