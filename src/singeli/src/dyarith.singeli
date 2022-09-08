@@ -25,10 +25,6 @@ def rootty{T & isvec{T}} = eltype{T}
 def is_s{X} = issigned{rootty{X}}
 def is_u{X} = isunsigned{rootty{X}}
 
-def loadBatchBit{T, x:*u64, n:(Size)} = {
-  spreadBits{T, b_getBatch{vcount{T}, x, n}}
-}
-
 def ty_sc{O, R} = R # keep floats as-is
 def ty_sc{O, R & is_s{O} & is_u{R}} = ty_s{R}
 def ty_sc{O, R & is_u{O} & is_s{R}} = ty_u{R}

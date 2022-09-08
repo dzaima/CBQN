@@ -60,3 +60,7 @@ def spreadBits{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
   b:= make{T, 1<<iota{vcount{T}}}
   b == (b & broadcast{T, a})
 }
+
+def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element being either all 0s or 1s
+  spreadBits{T, b_getBatch{vcount{T}, x, n}}
+}

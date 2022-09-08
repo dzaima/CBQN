@@ -11,9 +11,8 @@ def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
   def TU = ty_u{T}
   
   maskedLoop{bulk, l, {i, M} => {
-    x:= b_getBatch{bulk, xp, i} # TODO unroll f64 by two to make b_getBatch not sad
-    y:= spreadBits{TU, x}
-    r:= y & TU~~broadcast{T, 1}
+    x:= loadBatchBit{TU, xp, i}
+    r:= x & TU~~broadcast{T, 1}
     storeBatch{rp, i, T~~r, M}
   }}
 }

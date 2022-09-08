@@ -1,5 +1,20 @@
 #include "../core.h"
 
+
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/bits.c"
+  #pragma GCC diagnostic pop
+  typedef void (*BitselFn)(u8*, u64*, u64, u64, u64);
+  static BitselFn bitselFns[] = {
+    [0]=avx2_bitsel_8,
+    [1]=avx2_bitsel_16,
+    [2]=avx2_bitsel_32,
+    [3]=avx2_bitsel_64,
+  };
+#endif
+
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
 NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] = ~0ULL; return r; }
 
@@ -45,12 +60,16 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
     
     sel:
     void* rp = m_tyarrlc(&r, width, b, type);
-    switch(width) {
-      case 0: for (usz i=0; i<ia; i++) (( u8*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-      case 1: for (usz i=0; i<ia; i++) ((u16*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-      case 2: for (usz i=0; i<ia; i++) ((u32*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-      case 3: for (usz i=0; i<ia; i++) ((u64*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-    }
+    #if SINGELI
+      bitselFns[width](rp, bp, e0i, e1i, ia);
+    #else
+      switch(width) {
+        case 0: for (usz i=0; i<ia; i++) (( u8*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+        case 1: for (usz i=0; i<ia; i++) ((u16*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+        case 2: for (usz i=0; i<ia; i++) ((u32*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+        case 3: for (usz i=0; i<ia; i++) ((u64*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
+      }
+    #endif
     goto dec_ret;
   }
   
