@@ -498,15 +498,18 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
     SGet(x)
     for (usz i = 0; i < oia; i++) {
       B cx = m_unit(Get(x,i));
-      if (!hdr) v_set (pscs, op[i], cx, upd, true);
-      else if (!v_seth(pscs, op[i], cx)) { dec(cx); return false; }
-      dec(cx);
+      if (!hdr) v_set(pscs, op[i], cx, upd, true, false, true);
+      else {
+        bool ok = v_seth(pscs, op[i], cx);
+        dec(cx);
+        if (!ok) return false;
+      }
     }
   } else {
     B cells = toCells(incG(x));
     B* xp = harr_ptr(cells);
     for (usz i = 0; i < oia; i++) {
-      if (!hdr) v_set (pscs, op[i], xp[i], upd, true);
+      if (!hdr) v_set (pscs, op[i], xp[i], upd, true, false, false);
       else if (!v_seth(pscs, op[i], xp[i])) { dec(cells); return false; }
     }
     dec(cells);
@@ -524,25 +527,25 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
         B c = sp[i];
         if (isVar(c)) {
           Scope* sc = pscs[(u16)(c.u>>32)];
-          v_set(pscs, c, ns_getU(x, pos2gid(sc->body, (u32)c.u)), upd, true);
+          v_set(pscs, c, ns_getU(x, pos2gid(sc->body, (u32)c.u)), upd, true, false, false);
         } else if (isExt(c)) {
           ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
-          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true);
+          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true, false, false);
         } else if (isObj(c)) {
           assert(TY(c) == t_fldAlias);
           FldAlias* cf = c(FldAlias,c);
-          v_set(pscs, cf->obj, ns_getU(x, cf->p), upd, true);
+          v_set(pscs, cf->obj, ns_getU(x, cf->p), upd, true, false, false);
         } else thrM("Assignment: extracting non-name from namespace");
       }
       return;
     }
-    SGetU(x)
-    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], GetU(x,i), upd, true);
+    SGet(x)
+    for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], Get(x,i), upd, true, false, true);
   } else if (s.u == bi_N.u) {
     return;
   } else if (isObj(s)) {
     if      (TY(s) == t_arrMerge) v_merge(pscs, s, x, upd, false);
-    else if (TY(s) == t_fldAlias) thrF("Assignment: Cannot assign non-namespace to a list containing aliases"); // v_set(pscs, c(FldAlias, s)->obj, x, upd, true);
+    else if (TY(s) == t_fldAlias) thrF("Assignment: Cannot assign non-namespace to a list containing aliases");
     else UD;
   } else if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
@@ -581,7 +584,7 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
   }
   if (TY(s)==t_vfyObj) return equal(c(WrappedObj,s)->obj,x);
   if (TY(s)==t_arrMerge) return v_merge(pscs, s, x, false, true);
-  if (TY(s)==t_fldAlias) return false; // return v_seth(pscs, c(FldAlias, s)->obj, x);
+  if (TY(s)==t_fldAlias) return false;
   UD;
 }
 
@@ -827,19 +830,19 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       
-      case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false, true); dec(s); ADD(x); break; }
-      case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true,  true); dec(s); ADD(x); break; }
+      case SETN: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, false, true, true, false); ADD(x); break; }
+      case SETU: { P(s)    P(x) GS_UPD; POS_UPD; v_set(pscs, s, x, true,  true, true, false); ADD(x); break; }
       case SETM: { P(s)P(f)P(x) GS_UPD; POS_UPD;
         B w = v_get(pscs, s, true);
         B r = c2(f,w,x); dec(f);
-        v_set(pscs, s, r, true, false); dec(s);
+        v_set(pscs, s, r, true, false, true, false);
         ADD(r);
         break;
       }
       case SETC: { P(s)P(f) GS_UPD; POS_UPD;
         B x = v_get(pscs, s, true);
         B r = c1(f,x); dec(f);
-        v_set(pscs, s, r, true, false); dec(s);
+        v_set(pscs, s, r, true, false, true, false);
         ADD(r);
         break;
       }

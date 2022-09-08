@@ -66,7 +66,7 @@ enum {
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   SETNi, SETUi, SETMi, SETCi, // SET_ alternatives that expect the set variable as a depth-position pair like VAR_
   SETNv, SETUv, SETMv, SETCv, // SET_i alternatives that also don't return the result
-  SETH1, SETH2, PRED1, PRED2, // internal versions of SETH and PRED, with 2×u64 arguments (only 1 for PRED1) specifying bodies to jump to on fail (or NULL if is last)
+  SETH1, SETH2, PRED1, PRED2, // versions of SETH and PRED with 2×u64 arguments (only 1 for PRED1) specifying bodies to jump to on fail (or NULL if is last)
   DFND0, DFND1, DFND2, // internal versions of DFND with a specific type, and a u64 argument representing the block pointer
   FAIL, // this body cannot be called monadically/dyadically
   BC_SIZE
@@ -299,9 +299,14 @@ FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consume
     sc->vars[p] = x;
   }
 }
-FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk) { // doesn't consume; if chk is false, content variables _may_ not be checked to be set
-  if (RARE(!isVar(s))) v_setF(pscs, s, x, upd);
-  else v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), upd, chk);
+FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk, bool consumeS, bool consumeX) { // if chk is false, content variables _may_ not be checked to be set
+  if (LIKELY(isVar(s))) {
+    v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, consumeX? x : inc(x), upd, chk);
+  } else {
+    v_setF(pscs, s, x, upd);
+    if (consumeX) dec(x);
+    if (consumeS) dec(s);
+  }
 }
 
 FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables

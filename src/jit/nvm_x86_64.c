@@ -160,18 +160,18 @@ INS B i_EXTU(u32 p, Scope* sc) {
   vars[p] = bi_optOut;
   return r;
 }
-INS B i_SETN(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, false, true); dec(s); return x; }
-INS B i_SETU(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, true,  true); dec(s); return x; }
+INS B i_SETN(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, false, true, true, false); return x; }
+INS B i_SETU(B s,      B x, Scope** pscs, u32* bc) { POS_UPD; v_set(pscs, s, x, true,  true, true, false); return x; }
 INS B i_SETM(B s, B f, B x, Scope** pscs, u32* bc) { POS_UPD;
   B w = v_get(pscs, s, true);
   B r = c2(f,w,x); dec(f);
-  v_set(pscs, s, r, true, false); dec(s);
+  v_set(pscs, s, r, true, false, true, false);
   return r;
 }
 INS B i_SETC(B s, B f, Scope** pscs, u32* bc) { POS_UPD;
   B x = v_get(pscs, s, true);
   B r = c1(f,x); dec(f);
-  v_set(pscs, s, r, true, false); dec(s);
+  v_set(pscs, s, r, true, false, true, false);
   return r;
 }
 FORCE_INLINE B gotoNextBodyJIT(Scope* sc, Body* body) {
