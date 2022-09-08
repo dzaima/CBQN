@@ -58,7 +58,7 @@ def spreadBits{T==[32]u8, a:u32} = {
 }
 def spreadBits{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
   b:= make{T, 1<<iota{vcount{T}}}
-  b == (b & broadcast{T, a})
+  b == (b & T~~broadcast{to_el{type{a}, T}, a}) # not just broadcast{T, a} so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
 def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element being either all 0s or 1s
