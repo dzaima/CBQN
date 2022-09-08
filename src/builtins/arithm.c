@@ -63,10 +63,32 @@ GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     {
   if(xe==el_bit) return bit_negate(x);
 }, 0)
 
+#define GC1f(N, F, MSG) B N##_c1(B t, B x) {         \
+  if (isF64(x)) { f64 xv=o2fG(x); return m_f64(F); } \
+  if (isArr(x)) {                           \
+    u8 xe = TI(x,elType);                   \
+    if (elNum(xe)) {                        \
+      if (xe!=el_f64) x=taga(cpyF64Arr(x)); \
+      u64 ia = IA(x);                       \
+      f64* xp = f64any_ptr(x);              \
+      f64* rp; B r = m_f64arrc(&rp, x);     \
+      for (i64 i = 0; i < ia; i++) {        \
+        f64 xv=xp[i]; rp[i] = (F);          \
+      }                                     \
+      decG(x); return r;                    \
+    }                                       \
+    SLOW1("arithm " #N, x);                 \
+    return arith_recm(N##_c1, x);           \
+  }                                         \
+  thrM(MSG);                                \
+}
+
+GC1f( div, 1/xv,     "÷: Getting reciprocal of non-number")
+GC1f(root, sqrt(xv), "√: Getting square root of non-number")
+#undef GC1f
+
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
-B   div_c1(B t, B x) { if (isF64(x)) return m_f64(    1/x.f ); P1(  div); thrM("÷: Getting reciprocal of non-number"); }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
-B  root_c1(B t, B x) { if (isF64(x)) return m_f64( sqrt(x.f)); P1( root); thrM("√: Getting root of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
 B   sin_c1(B t, B x) { if (isF64(x)) return m_f64(  sin(x.f)); P1(  sin); thrM("•math.Sin: Argument contained non-number"); }
 B   cos_c1(B t, B x) { if (isF64(x)) return m_f64(  cos(x.f)); P1(  cos); thrM("•math.Cos: Argument contained non-number"); }

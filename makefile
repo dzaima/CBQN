@@ -110,7 +110,7 @@ else
 	NOWARN = -Wno-parentheses
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LD_LIBS)
 
 ifneq (${manualJobs},1)
