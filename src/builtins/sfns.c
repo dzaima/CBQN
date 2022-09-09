@@ -1303,16 +1303,18 @@ B group_c2(B t, B w, B x) {
     if (elInt(we)) {
       if (we==el_bit) w = taga(cpyI8Arr(w));
       i64 ria = 0;
-      bool bad = false;
+      bool bad = false, sort = true;
       usz neg = 0;
       void *wp0 = tyany_ptr(w);
       #define CASE(T) case el_##T: { \
-        T max = -1;                                       \
+        T max = -1, prev = -1;                            \
         for (usz i = 0; i < xia; i++) {                   \
           T n = ((T*)wp0)[i];                             \
           if (n>max) max = n;                             \
           bad |= n < -1;                                  \
           neg += n == -1;                                 \
+          sort &= prev <= n;                              \
+          prev = n;                                       \
         }                                                 \
         if (wia>xia) { ria=((T*)wp0)[xia]; bad|=ria<-1; } \
         i64 m=(i64)max+1; if (m>ria) ria=m;               \
@@ -1326,6 +1328,7 @@ B group_c2(B t, B w, B x) {
         B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
         w = slash_c2(m_f64(0), inc(m), w);
         x = slash_c2(m_f64(0), m, x); xia = IA(x);
+        neg = 0;
       }
       if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w));
       i32* wp = i32any_ptr(w);
@@ -1347,9 +1350,25 @@ B group_c2(B t, B w, B x) {
         case el_i16: case el_c16:
         case el_i32: case el_c32: case el_f64: {
           u8 width = elWidth(xe);
-          for (usz i = 0; i < ria; i++) m_tyarrv(rp+i, width, len[i], el2t(xe));
           void* xp = tyany_ptr(x);
+          B z = taga(rf);
+          u8 xt = el2t(xe);
+          if (sort) {
+            for (usz j=0, i=neg*width; j<ria; j++) {
+              usz l = len[j];
+              if (!l) { rp[j]=inc(z); continue; }
+              m_tyarrv(rp+j, width, l, xt);
+              usz lw = l*width;
+              memcpy(tyarr_ptr(rp[j]), (u8*)xp+i, lw);
+              i += lw;
+            }
+            break;
+          }
           
+          for (usz j = 0; j < ria; j++) {
+            usz l=len[j];
+            if (!l) rp[j]=inc(z); else m_tyarrv(rp+j, width, l, xt);
+          }
           switch(width) { default: UD;
             case 1: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u8* )tyarr_ptr(rp[n]))[pos[n]++] = ((u8* )xp)[i]; } break;
             case 2: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u16*)tyarr_ptr(rp[n]))[pos[n]++] = ((u16*)xp)[i]; } break;
