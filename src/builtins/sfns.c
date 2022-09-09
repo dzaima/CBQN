@@ -1301,26 +1301,34 @@ B group_c2(B t, B w, B x) {
     if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
     u8 we = TI(w,elType);
     if (elInt(we)) {
-      if (we!=el_i32) w = taga(cpyI32Arr(w));
-      i32* wp = i32any_ptr(w);
-      i64 ria = wia==xia? 0 : wp[xia];
-      bool bad = ria < -1; usz neg=0;
-      ria--;
-      for (usz i = 0; i < xia; i++) {
-        i32 n = wp[i];
-        if (n>ria) ria = n;
-        bad |= n < -1;
-        neg += n == -1;
-      }
+      if (we==el_bit) w = taga(cpyI8Arr(w));
+      i64 ria = 0;
+      bool bad = false;
+      usz neg = 0;
+      void *wp0 = tyany_ptr(w);
+      #define CASE(T) case el_##T: { \
+        T max = -1;                                       \
+        for (usz i = 0; i < xia; i++) {                   \
+          T n = ((T*)wp0)[i];                             \
+          if (n>max) max = n;                             \
+          bad |= n < -1;                                  \
+          neg += n == -1;                                 \
+        }                                                 \
+        if (wia>xia) { ria=((T*)wp0)[xia]; bad|=ria<-1; } \
+        i64 m=(i64)max+1; if (m>ria) ria=m;               \
+        break; }
+      switch (we) { default:UD; case el_bit: CASE(i8) CASE(i16) CASE(i32) }
+      #undef CASE
       if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
-      if (ria > (i64)(USZ_MAX-1)) thrOOM();
+      if (ria > (i64)(USZ_MAX)) thrOOM();
       if (xia>32 && neg>xia/4+xia/8) {
         if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
         B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
-        w = slash_c2(m_f64(0), inc(m), w); if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w)); wp = i32any_ptr(w);
+        w = slash_c2(m_f64(0), inc(m), w);
         x = slash_c2(m_f64(0), m, x); xia = IA(x);
       }
-      ria++;
+      if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w));
+      i32* wp = i32any_ptr(w);
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
