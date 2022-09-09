@@ -1292,6 +1292,7 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
+extern B ne_c2(B, B, B);
 extern B rt_group;
 B group_c2(B t, B w, B x) {
   if (isArr(w)&isArr(x) && RNK(w)==1 && RNK(x)==1 && depth(w)==1) {
@@ -1303,19 +1304,27 @@ B group_c2(B t, B w, B x) {
       if (we!=el_i32) w = taga(cpyI32Arr(w));
       i32* wp = i32any_ptr(w);
       i64 ria = wia==xia? 0 : wp[xia];
-      if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+      bool bad = ria < -1; usz neg=0;
       ria--;
-      for (usz i = 0; i < xia; i++) if (wp[i]>ria) ria = wp[i];
+      for (usz i = 0; i < xia; i++) {
+        i32 n = wp[i];
+        if (n>ria) ria = n;
+        bad |= n < -1;
+        neg += n == -1;
+      }
+      if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       if (ria > (i64)(USZ_MAX-1)) thrOOM();
+      if (xia>32 && neg>xia/4+xia/8) {
+        if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
+        B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
+        w = slash_c2(m_f64(0), inc(m), w); if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w)); wp = i32any_ptr(w);
+        x = slash_c2(m_f64(0), m, x); xia = IA(x);
+      }
       ria++;
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xia; i++) {
-        i32 n = wp[i];
-        if (n<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
-        len[n]++; // overallocation makes this safe after n<-1 check
-      }
+      for (usz i = 0; i < xia; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
       
       Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
