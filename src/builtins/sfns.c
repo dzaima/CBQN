@@ -429,6 +429,7 @@ B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   u64 s = usum(x);
   if (s>=USZ_MAX) thrOOM();
+  if (s==0) { decG(x); return emptyIVec(); }
   usz xia = IA(x);
   if (RARE(xia>=I32_MAX)) {
     usz xia = IA(x);
@@ -471,9 +472,11 @@ B slash_c1(B t, B x) {
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
       while (xia>0 && !bitp_get(xp,xia-1)) xia--;
-      for (u64 i = 0; i < xia; i++) {
-        *rp = i;
-        rp+= bitp_get(xp, i);
+      u8* x8 = (u8*)xp;
+      u8 q=xia%8; if (q) x8[xia/8] &= (1<<q)-1;
+      for (usz i=0; i<(xia+7)/8; i++) {
+        u8 v = x8[i];
+        for (usz k=0; k<8; k++) { *rp=8*i+k; rp+= v&1; v>>=1; }
       }
     } else if (xe==el_i8) {
       i8* xp = i8any_ptr(x);
