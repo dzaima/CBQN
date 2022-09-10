@@ -444,9 +444,23 @@ B slash_c1(B t, B x) {
   }
   B r;
   u8 xe = TI(x,elType);
-  #if SINGELI && defined(__BMI2__)
   if (xe==el_bit) {
     u64* xp = bitarr_ptr(x);
+    // Sparse method with CTZ
+    #if SINGELI && defined(__BMI2__)
+    if (xia>128 && s < xia/8+(xia<=32768?xia/4:0)) {
+    #else
+    if (xia<=128 || s < xia/2+(xia<=32768?xia/4:0)) {
+    #endif
+      usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
+      #define WHERE(T) \
+        T* rp; r = m_##T##arrv(&rp, s); \
+        for (usz i=0, j=0; j<s; i++) \
+          for (u64 v=xp[i]; v; v&=v-1) rp[j++] = i*64 + CTZ(v);
+      if (xia<=32768) { WHERE(i16) } else { WHERE(i32) }
+      #undef WHERE
+    } else
+    #if SINGELI && defined(__BMI2__)
     if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
     else if (xia<=32768) { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
     else {
@@ -465,12 +479,9 @@ B slash_c1(B t, B x) {
       for (usz j=0, bs=s-(rq-rp); j<bs; j++) rq[j] = i+buf[j];
       TFREE(buf);
     }
-  } else
-  #endif
-  {
-    i32* rp; r = m_i32arrv(&rp, s);
-    if (xe==el_bit) {
-      u64* xp = bitarr_ptr(x);
+    #else
+    {
+      i32* rp; r = m_i32arrv(&rp, s);
       while (xia>0 && !bitp_get(xp,xia-1)) xia--;
       u8* x8 = (u8*)xp;
       u8 q=xia%8; if (q) x8[xia/8] &= (1<<q)-1;
@@ -478,7 +489,11 @@ B slash_c1(B t, B x) {
         u8 v = x8[i];
         for (usz k=0; k<8; k++) { *rp=8*i+k; rp+= v&1; v>>=1; }
       }
-    } else if (xe==el_i8) {
+    }
+    #endif
+  } else {
+    i32* rp; r = m_i32arrv(&rp, s);
+    if (xe==el_i8) {
       i8* xp = i8any_ptr(x);
       while (xia>0 && !xp[xia-1]) xia--;
       for (u64 i = 0; i < xia; i++) {

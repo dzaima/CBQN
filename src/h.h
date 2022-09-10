@@ -130,6 +130,7 @@ typedef double   f64;
 #define NORETURN     __attribute__((noreturn))
 #define AUTO __auto_type
 #define CLZ(X) __builtin_clzll(X)
+#define CTZ(X) __builtin_ctzll(X)
 #define POPC(X) __builtin_popcountll(X)
 #define LIKELY(X) __builtin_expect(X,1)
 #define RARE(X) __builtin_expect(X,0)
