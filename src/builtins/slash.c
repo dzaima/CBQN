@@ -104,6 +104,11 @@
   #endif
 #endif
 
+#define WHERE_SPARSE(X,R,S) do { \
+    for (usz i=0, j=0; j<S; i++) \
+      for (u64 v=X[i]; v; v&=v-1) R[j++] = i*64 + CTZ(v); \
+  } while (0)
+
 extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
@@ -128,30 +133,48 @@ B slash_c1(B t, B x) {
     u64* xp = bitarr_ptr(x);
     // Sparse method with CTZ
     #if SINGELI && defined(__BMI2__)
-    if (xia>128 && s < xia/8+(xia<=32768?xia/4:0)) {
+    if (xia>128 && xia<=32768 && s < xia/16) {
     #else
     if (xia<=128 || s < xia/2+(xia<=32768?xia/4:0)) {
     #endif
       usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
-      #define WHERE(T) \
-        T* rp; r = m_##T##arrv(&rp, s); \
-        for (usz i=0, j=0; j<s; i++) \
-          for (u64 v=xp[i]; v; v&=v-1) rp[j++] = i*64 + CTZ(v);
-      if (xia<=32768) { WHERE(i16) } else { WHERE(i32) }
+      #define WHERE(T) T* rp; r=m_##T##arrv(&rp,s); WHERE_SPARSE(xp,rp,s);
+      if (0&&xia<=32768) { WHERE(i16) } else { WHERE(i32) }
       #undef WHERE
     } else
     #if SINGELI && defined(__BMI2__)
     if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
     else if (xia<=32768) { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
     else {
-      usz b = 1<<12;
+      usz b = 1<<11;
       i32* rp; r = m_i32arrv(&rp, s);
       TALLOC(i16, buf, b);
       i32* rq=rp; usz i=0;
       for (; i+b<xia; i+=b) {
-        bmipopc_1slash16(xp, buf, b);
-        usz bs = bit_sum(xp, b);
-        for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
+        usz bs = bit_sum(xp,b);
+        if (bs >= b/8+b/16) {
+          bmipopc_1slash16(xp, buf, b);
+          for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
+        } else if (bs >= b/256) {
+          for (usz j=0; j<bs; j++) rq[j]=0;
+          u32 top = 1<<24;
+          for (usz i=0, j=0; i<b/64; i++) {
+            u64 u=xp[i], p;
+            p=(u32)u&(top-1); rq[j]+=(2*top)|p; j+=POPC(p); u>>=24;
+            p=(u32)u&(top-1); rq[j]+=(3*top)|p; j+=POPC(p); u>>=24;
+            p=(u32)u        ; rq[j]+=(3*top)|p; j+=POPC(p);
+          }
+          u64 t=((u64)i<<21)-2*top;
+          for (usz j=0; j<bs; j++) {
+            t += (u32)rq[j];
+            rq[j] = 8*(t>>24) + CTZ((u32)t);
+            t &= t-1;
+          }
+        } else {
+          for (usz ii=i/64, j=0; j<bs; ii++) {
+            for (u64 v=xp[ii-i/64]; RARE(v); v&=v-1) rq[j++] = ii*64 + CTZ(v);
+          }
+        }
         rq+= bs;
         xp+= b/64;
       }
