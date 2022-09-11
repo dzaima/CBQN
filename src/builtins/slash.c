@@ -104,9 +104,18 @@
   #endif
 #endif
 
+// Dense Where, still significantly worse than SIMD
+// Assumes modifiable DST
+#define WHERE_DENSE(SRC, DST, LEN, OFF) do { \
+    for (usz ii=0; ii<(LEN+7)/8; ii++) {                            \
+      u8 v = ((u8*)SRC)[ii];                                        \
+      for (usz k=0; k<8; k++) { *DST=OFF+8*ii+k; DST+=v&1; v>>=1; } \
+    }                                                               \
+  } while (0)
+
 // Sparse Where with branching
 #define WHERE_SPARSE(X,R,S,I0,COND) do { \
-    for (usz ii=I0, j=0; j<S; ii++) \
+    for (usz ii=I0, j=0; j<S; ii++)                                 \
       for (u64 v=(X)[ii]; COND(v); v&=v-1) R[j++] = ii*64 + CTZ(v); \
   } while (0)
 
@@ -126,15 +135,17 @@ static usz bsp_fill(u64* src, u32* buf, usz len) {
   }
   return j;
 }
+#define BSP_WRITE(BUF, DST, SUM, OFF, CLEAR) \
+  u64 t=((u64)OFF<<21)-2*bsp_top;     \
+  for (usz j=0; j<SUM; j++) {         \
+    t += BUF[j]; CLEAR                \
+    DST[j] = 8*(t>>24) + CTZ((u32)t); \
+    t &= t-1;                         \
+  }
 static void bsp_block_u32(u64* src, u32* dst, usz len, usz sum, usz off) {
   for (usz j=0; j<sum; j++) dst[j]=0;
   bsp_fill(src, dst, len);
-  u64 t=((u64)off<<21)-2*bsp_top;
-  for (usz j=0; j<sum; j++) {
-    t += dst[j];
-    dst[j] = 8*(t>>24) + CTZ((u32)t);
-    t &= t-1;
-  }
+  BSP_WRITE(dst, dst, sum, off,);
 }
 static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
   usz b = bsp_max;
@@ -144,13 +155,7 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
   for (usz i=0; i<len; i+=b) {
     if (b > len-i) b = len-i;
     usz bs = bsp_fill(src+i/64, buf, b);
-    u64 t=((u64)i<<21)-2*bsp_top;
-    for (usz j=0; j<bs; j++) {
-      t += buf[j]; buf[j] = 0;
-      dst[j] = 8*(t>>24) + CTZ((u32)t);
-      t &= t-1;
-    }
-    buf[bs] = 0;
+    BSP_WRITE(buf, dst, bs, i, buf[j]=0;); buf[bs]=0;
     dst+= bs;
   }
   TFREE(buf);
@@ -176,10 +181,7 @@ static B where(B x, usz xia, u64 s) {
     #else
     if (s >= xia/4+xia/8) {
       i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 2);
-      for (usz i=0; i<(xia+7)/8; i++) {
-        u8 v = ((u8*)xp)[i];
-        for (usz k=0; k<8; k++) { *rp=8*i+k; rp+=v&1; v>>=1; }
-      }
+      WHERE_DENSE(xp, rp, xia, 0);
     }
     #endif
     else {
@@ -214,11 +216,7 @@ static B where(B x, usz xia, u64 s) {
       }
       #else
       if (bs >= b/2) {
-        i32* rs=rq;
-        for (usz ii=0; ii<(b+7)/8; ii++) {
-          u8 v = ((u8*)xp)[ii];
-          for (usz k=0; k<8; k++) { *rs=i+8*ii+k; rs+=v&1; v>>=1; }
-        }
+        i32* rs=rq; WHERE_DENSE(xp, rs, b, i);
       }
       #endif
       else if (bs >= b/256) {
