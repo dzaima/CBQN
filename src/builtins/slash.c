@@ -264,9 +264,17 @@ static B where(B x, usz xia, u64 s) {
 static B compress(B w, B x, usz wia, B xf) {
   B r;
   u64* wp = bitarr_ptr(w);
+  u64 we = 0;
+  usz ie = wia/64;
+  usz q=wia%64; if (q) we = wp[ie] &= ((u64)1<<q) - 1;
+  while (!we) {
+    if (RARE(ie==0)) { return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
+    we = wp[--ie];
+  }
+  wia = 64*(ie+1) - CLZ(we);
+  usz wsum = bit_sum(wp, wia);
   u8 xe = TI(x,elType);
   #ifdef __BMI2__
-  usz wsum = bit_sum(wp, wia);
   switch(xe) {
     case el_bit: {
       u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
@@ -294,11 +302,6 @@ static B compress(B w, B x, usz wia, B xf) {
   }
   #endif
   
-  while (wia>0 && !bitp_get(wp,wia-1)) wia--;
-  #ifndef __BMI2__
-  usz wsum = bit_sum(wp, wia);
-  #endif
-  if (wsum==0) { return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
   switch(xe) { default: UD;
     
     #if !SINGELI
