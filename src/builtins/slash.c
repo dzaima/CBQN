@@ -262,8 +262,6 @@ static B where(B x, usz xia, u64 s) {
 }
 
 static B compress(B w, B x, usz wia, B xf) {
-  usz xia = wia;
-  usz ri = 0;
   B r;
   u64* wp = bitarr_ptr(w);
   u8 xe = TI(x,elType);
@@ -292,24 +290,6 @@ static B compress(B w, B x, usz wia, B xf) {
     #if SINGELI
     case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); return r; }
     case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); return r; }
-    case el_i32:case el_c32: {
-      i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe));
-      usz b = 1<<7;
-      TALLOC(i8, buf, b);
-      i32* rq=rp; i32* end=xp+xia-b;
-      while (xp < end) {
-        bmipopc_1slash8(wp, buf, b);
-        usz bs = bit_sum(wp, b);
-        for (usz j=0; j<bs; j++) rq[j] = xp[buf[j]];
-        rq+= bs;
-        wp+= b/64;
-        xp+= b;
-      }
-      bmipopc_1slash8(wp, buf, (end+b)-xp);
-      for (usz j=0, bs=wsum-(rq-rp); j<bs; j++) rq[j] = xp[buf[j]];
-      TFREE(buf);
-      return r;
-    }
     #endif
   }
   #endif
@@ -325,19 +305,31 @@ static B compress(B w, B x, usz wia, B xf) {
     case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
     case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
     #ifndef __BMI2__
-    case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+    case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
     #endif
     #endif
-    
-    case el_i32:case el_c32: { i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-    case el_f64: { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+
+    #define COMPRESS_BLOCK(T) \
+      usz b = bsp_max; TALLOC(i16, buf, b);          \
+      T* rp0=rp;                                     \
+      for (usz i=0; i<wia; i+=b) {                   \
+        usz bs;                                      \
+        if (b>wia-i) { b=wia-i; bs=wsum-(rp-rp0); }  \
+        else { bs=bit_sum(wp,b); }                   \
+        where_block_u16(wp, (u16*)buf, b, bs);       \
+        for (usz j=0; j<bs; j++) rp[j] = xp[buf[j]]; \
+        rp+= bs; wp+= b/64; xp+= b;                  \
+      }                                              \
+      TFREE(buf)
+    case el_i32:case el_c32: { i32* xp= tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); COMPRESS_BLOCK(i32); break; }
+    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum);     COMPRESS_BLOCK(f64); break; }
     case el_B: {
       B* xp = arr_bptr(x);
       if (xp!=NULL) {
-        HArr_p rp = m_harrUv(wsum);
-        for (usz i=0; i<wia; i++) { rp.a[ri] = xp[i]; ri+= bitp_get(wp,i); }
-        for (usz i=0; i<wsum; i++) inc(rp.a[i]);
-        r = withFill(rp.b, xf);
+        HArr_p rh = m_harrUv(wsum);
+        B *rp = rh.a; COMPRESS_BLOCK(B);
+        for (usz i=0; i<wsum; i++) inc(rh.a[i]);
+        r = withFill(rh.b, xf);
       } else {
         SLOW2("𝕨/𝕩", w, x);
         M_HARR(rp, wsum) SGet(x)
@@ -346,6 +338,7 @@ static B compress(B w, B x, usz wia, B xf) {
       }
       break;
     }
+    #undef COMPRESS_BLOCK
   }
   return r;
 }
