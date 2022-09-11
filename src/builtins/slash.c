@@ -214,9 +214,9 @@ static B where(B x, usz xia, u64 s) {
       }
       #else
       if (bs >= b/2) {
+        i32* rs=rq;
         for (usz ii=0; ii<(b+7)/8; ii++) {
           u8 v = ((u8*)xp)[ii];
-          i32* rs=rq;
           for (usz k=0; k<8; k++) { *rs=i+8*ii+k; rs+=v&1; v>>=1; }
         }
       }
