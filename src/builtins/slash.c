@@ -131,34 +131,40 @@ B slash_c1(B t, B x) {
   u8 xe = TI(x,elType);
   if (xe==el_bit) {
     u64* xp = bitarr_ptr(x);
-    // Sparse method with CTZ
-    #if SINGELI && defined(__BMI2__)
-    if (xia>128 && xia<=32768 && s < xia/16) {
-    #else
-    if (xia<=128 || s < xia/2+(xia<=32768?xia/4:0)) {
-    #endif
+    if (xia > 32768) {
       usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
-      #define WHERE(T) T* rp; r=m_##T##arrv(&rp,s); WHERE_SPARSE(xp,rp,s);
-      if (0&&xia<=32768) { WHERE(i16) } else { WHERE(i32) }
-      #undef WHERE
-    } else
-    #if SINGELI && defined(__BMI2__)
-    if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
-    else if (xia<=32768) { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
-    else {
-      usz b = 1<<11;
+      #if SINGELI && defined(__BMI2__)
       i32* rp; r = m_i32arrv(&rp, s);
+      #else
+      i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
+      #endif
+      usz b = 1<<11; // Maximum allowed for branchless sparse method
       TALLOC(i16, buf, b);
       i32* rq=rp; usz i=0;
-      for (; i+b<xia; i+=b) {
-        usz bs = bit_sum(xp,b);
+      for (; i<xia; i+=b) {
+        usz bs;
+        if (b>xia-i) {
+          b = xia-i;
+          bs = s-(rq-rp);
+        } else {
+          bs = bit_sum(xp,b);
+        }
+        #if SINGELI && defined(__BMI2__)
         if (bs >= b/8+b/16) {
           bmipopc_1slash16(xp, buf, b);
           for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
-        } else if (bs >= b/256) {
+        #else
+        if (bs >= b/2) {
+          for (usz ii=0; ii<(b+7)/8; ii++) {
+            u8 v = ((u8*)xp)[ii];
+            i32* rs=rq;
+            for (usz k=0; k<8; k++) { *rs=i+8*ii+k; rs+=v&1; v>>=1; }
+          }
+        #endif
+        } else if (bs >= b/256) { // Branchless sparse
           for (usz j=0; j<bs; j++) rq[j]=0;
           u32 top = 1<<24;
-          for (usz i=0, j=0; i<b/64; i++) {
+          for (usz i=0, j=0; i<(b+63)/64; i++) {
             u64 u=xp[i], p;
             p=(u32)u&(top-1); rq[j]+=(2*top)|p; j+=POPC(p); u>>=24;
             p=(u32)u&(top-1); rq[j]+=(3*top)|p; j+=POPC(p); u>>=24;
@@ -170,7 +176,7 @@ B slash_c1(B t, B x) {
             rq[j] = 8*(t>>24) + CTZ((u32)t);
             t &= t-1;
           }
-        } else {
+        } else { // Branched very sparse
           for (usz ii=i/64, j=0; j<bs; ii++) {
             for (u64 v=xp[ii-i/64]; RARE(v); v&=v-1) rq[j++] = ii*64 + CTZ(v);
           }
@@ -178,14 +184,25 @@ B slash_c1(B t, B x) {
         rq+= bs;
         xp+= b/64;
       }
-      bmipopc_1slash16(xp, buf, xia-i);
-      for (usz j=0, bs=s-(rq-rp); j<bs; j++) rq[j] = i+buf[j];
       TFREE(buf);
-    }
+    } else
+    // Sparse method with CTZ
+    #if SINGELI && defined(__BMI2__)
+    if (xia>128 && s < xia/16) {
+    #else
+    if (xia<=128 || s < xia/2) {
+    #endif
+      usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
+      #define WHERE(T) T* rp; r=m_##T##arrv(&rp,s); WHERE_SPARSE(xp,rp,s);
+      if (0&&xia<=32768) { WHERE(i16) } else { WHERE(i32) }
+      #undef WHERE
+    } else
+    #if SINGELI && defined(__BMI2__)
+    if (xia<=128)        { i8*  rp = m_tyarrvO(&r, 1, s, t_i8arr ,  8); bmipopc_1slash8 (xp, rp, xia); }
+    else                 { i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16); bmipopc_1slash16(xp, rp, xia); }
     #else
     {
-      i32* rp; r = m_i32arrv(&rp, s);
-      while (xia>0 && !bitp_get(xp,xia-1)) xia--;
+      i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
       u8* x8 = (u8*)xp;
       u8 q=xia%8; if (q) x8[xia/8] &= (1<<q)-1;
       for (usz i=0; i<(xia+7)/8; i++) {
