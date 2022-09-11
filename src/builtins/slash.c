@@ -104,10 +104,57 @@
   #endif
 #endif
 
-#define WHERE_SPARSE(X,R,S) do { \
-    for (usz i=0, j=0; j<S; i++) \
-      for (u64 v=X[i]; v; v&=v-1) R[j++] = i*64 + CTZ(v); \
+// Sparse Where with branching
+#define WHERE_SPARSE(X,R,S,I0,COND) do { \
+    for (usz ii=I0, j=0; j<S; ii++) \
+      for (u64 v=(X)[ii]; COND(v); v&=v-1) R[j++] = ii*64 + CTZ(v); \
   } while (0)
+
+// Branchless sparse Where (bsp)
+// Works on a buffer of 1<<11 32-bit values
+static const usz bsp_max  = 1<<11;
+static const u32 bsp_top  = 1<<24;
+static const u32 bsp_mask = bsp_top - 1;
+static usz bsp_fill(u64* src, u32* buf, usz len) {
+  assert(len <= 1<<11);
+  usz j = 0;
+  for (usz i=0; i<(len+63)/64; i++) {
+    u64 u=src[i]; u32 p;
+    p=u&bsp_mask; buf[j]+=(2*bsp_top)|p; j+=POPC(p); u>>=24;
+    p=u&bsp_mask; buf[j]+=(3*bsp_top)|p; j+=POPC(p); u>>=24;
+    p=u         ; buf[j]+=(3*bsp_top)|p; j+=POPC(p);
+  }
+  return j;
+}
+static void bsp_block_u32(u64* src, u32* dst, usz len, usz sum, usz off) {
+  for (usz j=0; j<sum; j++) dst[j]=0;
+  bsp_fill(src, dst, len);
+  u64 t=((u64)off<<21)-2*bsp_top;
+  for (usz j=0; j<sum; j++) {
+    t += dst[j];
+    dst[j] = 8*(t>>24) + CTZ((u32)t);
+    t &= t-1;
+  }
+}
+static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
+  usz b = bsp_max;
+  usz bufsize = b<sum? b : sum;
+  TALLOC(u32, buf, bufsize);
+  for (usz j=0; j<bufsize; j++) buf[j]=0;
+  for (usz i=0; i<len; i+=b) {
+    if (b > len-i) b = len-i;
+    usz bs = bsp_fill(src+i/64, buf, b);
+    u64 t=((u64)i<<21)-2*bsp_top;
+    for (usz j=0; j<bs; j++) {
+      t += buf[j]; buf[j] = 0;
+      dst[j] = 8*(t>>24) + CTZ((u32)t);
+      t &= t-1;
+    }
+    buf[bs] = 0;
+    dst+= bs;
+  }
+  TFREE(buf);
+}
 
 static B where(B x, usz xia, u64 s) {
   B r;
@@ -118,16 +165,16 @@ static B where(B x, usz xia, u64 s) {
     i8* rp = m_tyarrvO(&r, 1, s, t_i8arr, 8);
     bmipopc_1slash8(xp, rp, xia);
     #else
-    i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s);
+    i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
     #if SINGELI && defined(__BMI2__)
-    if (s >= xia/16) {
+    if (s >= xia/8) {
       i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16);
       bmipopc_1slash16(xp, rp, xia);
     }
     #else
-    if (s >= xia/2) {
+    if (s >= xia/4+xia/8) {
       i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 2);
       for (usz i=0; i<(xia+7)/8; i++) {
         u8 v = ((u8*)xp)[i];
@@ -136,7 +183,12 @@ static B where(B x, usz xia, u64 s) {
     }
     #endif
     else {
-      i16* rp; r=m_i16arrv(&rp,s); WHERE_SPARSE(xp,rp,s);
+      i16* rp; r=m_i16arrv(&rp,s);
+      if (s >= xia/128) {
+        bsp_u16(xp, (u16*)rp, xia, s);
+      } else {
+        WHERE_SPARSE(xp, rp, s, 0, RARE);
+      }
     }
   } else {
     assert(xia <= (usz)I32_MAX+1);
@@ -145,10 +197,9 @@ static B where(B x, usz xia, u64 s) {
     #else
     i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
     #endif
-    usz b = 1<<11; // Maximum allowed for branchless sparse method
-    TALLOC(i16, buf, b);
-    i32* rq=rp; usz i=0;
-    for (; i<xia; i+=b) {
+    usz b = bsp_max; TALLOC(i16, buf, b);
+    i32* rq = rp;
+    for (usz i=0; i<xia; i+=b) {
       usz bs;
       if (b>xia-i) {
         b = xia-i;
@@ -170,25 +221,10 @@ static B where(B x, usz xia, u64 s) {
         }
       }
       #endif
-      else if (bs >= b/256) { // Branchless sparse
-        for (usz j=0; j<bs; j++) rq[j]=0;
-        u32 top = 1<<24;
-        for (usz i=0, j=0; i<(b+63)/64; i++) {
-          u64 u=xp[i], p;
-          p=(u32)u&(top-1); rq[j]+=(2*top)|p; j+=POPC(p); u>>=24;
-          p=(u32)u&(top-1); rq[j]+=(3*top)|p; j+=POPC(p); u>>=24;
-          p=(u32)u        ; rq[j]+=(3*top)|p; j+=POPC(p);
-        }
-        u64 t=((u64)i<<21)-2*top;
-        for (usz j=0; j<bs; j++) {
-          t += (u32)rq[j];
-          rq[j] = 8*(t>>24) + CTZ((u32)t);
-          t &= t-1;
-        }
-      } else { // Branched very sparse
-        for (usz ii=i/64, j=0; j<bs; ii++) {
-          for (u64 v=xp[ii-i/64]; RARE(v); v&=v-1) rq[j++] = ii*64 + CTZ(v);
-        }
+      else if (bs >= b/256) {
+        bsp_block_u32(xp, (u32*)rq, b, bs, i);
+      } else {
+        WHERE_SPARSE(xp-i/64, rq, bs, i/64, RARE);
       }
       rq+= bs;
       xp+= b/64;
