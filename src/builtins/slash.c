@@ -261,6 +261,95 @@ static B where(B x, usz xia, u64 s) {
   return r;
 }
 
+static B compress(B w, B x, usz wia, B xf) {
+  usz xia = wia;
+  usz ri = 0;
+  B r;
+  u64* wp = bitarr_ptr(w);
+  u8 xe = TI(x,elType);
+  #ifdef __BMI2__
+  usz wsum = bit_sum(wp, wia);
+  switch(xe) {
+    case el_bit: {
+      u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
+      u64 cw = 0; // current word
+      u64 ro = 0; // offset in word where next bit should be written; never 64
+      for (usz i=0; i<BIT_N(wia); i++) {
+        u64 wv = wp[i];
+        u64 v = _pext_u64(xp[i], wv);
+        u64 c = rand_popc64(wv);
+        cw|= v<<ro;
+        u64 ro2 = ro+c;
+        if (ro2>=64) {
+          *(rp++) = cw;
+          cw = ro? v>>(64-ro) : 0;
+        }
+        ro = ro2&63;
+      }
+      if (ro) *rp = cw;
+      return r;
+    }
+    #if SINGELI
+    case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); return r; }
+    case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); return r; }
+    case el_i32:case el_c32: {
+      i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe));
+      usz b = 1<<7;
+      TALLOC(i8, buf, b);
+      i32* rq=rp; i32* end=xp+xia-b;
+      while (xp < end) {
+        bmipopc_1slash8(wp, buf, b);
+        usz bs = bit_sum(wp, b);
+        for (usz j=0; j<bs; j++) rq[j] = xp[buf[j]];
+        rq+= bs;
+        wp+= b/64;
+        xp+= b;
+      }
+      bmipopc_1slash8(wp, buf, (end+b)-xp);
+      for (usz j=0, bs=wsum-(rq-rp); j<bs; j++) rq[j] = xp[buf[j]];
+      TFREE(buf);
+      return r;
+    }
+    #endif
+  }
+  #endif
+  
+  while (wia>0 && !bitp_get(wp,wia-1)) wia--;
+  #ifndef __BMI2__
+  usz wsum = bit_sum(wp, wia);
+  #endif
+  if (wsum==0) { return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
+  switch(xe) { default: UD;
+    
+    #if !SINGELI
+    case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+    case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+    #ifndef __BMI2__
+    case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
+    #endif
+    #endif
+    
+    case el_i32:case el_c32: { i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+    case el_f64: { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
+    case el_B: {
+      B* xp = arr_bptr(x);
+      if (xp!=NULL) {
+        HArr_p rp = m_harrUv(wsum);
+        for (usz i=0; i<wia; i++) { rp.a[ri] = xp[i]; ri+= bitp_get(wp,i); }
+        for (usz i=0; i<wsum; i++) inc(rp.a[i]);
+        r = withFill(rp.b, xf);
+      } else {
+        SLOW2("𝕨/𝕩", w, x);
+        M_HARR(rp, wsum) SGet(x)
+        for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) HARR_ADDA(rp, Get(x,i));
+        r = withFill(HARR_FV(rp), xf);
+      }
+      break;
+    }
+  }
+  return r;
+}
+
 extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
@@ -328,94 +417,8 @@ B slash_c2(B t, B w, B x) {
     }
     B xf = getFillQ(x);
     
-    usz ri = 0;
     if (TI(w,elType)==el_bit) {
-      B r;
-      u64* wp = bitarr_ptr(w);
-      u8 xe = TI(x,elType);
-      #ifdef __BMI2__
-      usz wsum = bit_sum(wp, wia);
-      switch(xe) {
-        case el_bit: {
-          u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
-          u64 cw = 0; // current word
-          u64 ro = 0; // offset in word where next bit should be written; never 64
-          for (usz i=0; i<BIT_N(wia); i++) {
-            u64 wv = wp[i];
-            u64 v = _pext_u64(xp[i], wv);
-            u64 c = rand_popc64(wv);
-            cw|= v<<ro;
-            u64 ro2 = ro+c;
-            if (ro2>=64) {
-              *(rp++) = cw;
-              cw = ro? v>>(64-ro) : 0;
-            }
-            ro = ro2&63;
-          }
-          if (ro) *rp = cw;
-          goto bit_ret;
-        }
-        #if SINGELI
-        case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); goto bit_ret; }
-        case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); goto bit_ret; }
-        case el_i32:case el_c32: {
-          i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe));
-          usz b = 1<<7;
-          TALLOC(i8, buf, b);
-          i32* rq=rp; i32* end=xp+xia-b;
-          while (xp < end) {
-            bmipopc_1slash8(wp, buf, b);
-            usz bs = bit_sum(wp, b);
-            for (usz j=0; j<bs; j++) rq[j] = xp[buf[j]];
-            rq+= bs;
-            wp+= b/64;
-            xp+= b;
-          }
-          bmipopc_1slash8(wp, buf, (end+b)-xp);
-          for (usz j=0, bs=wsum-(rq-rp); j<bs; j++) rq[j] = xp[buf[j]];
-          TFREE(buf);
-          goto bit_ret;
-        }
-        #endif
-      }
-      #endif
-      
-      while (wia>0 && !bitp_get(wp,wia-1)) wia--;
-      #ifndef __BMI2__
-      usz wsum = bit_sum(wp, wia);
-      #endif
-      if (wsum==0) { decG(w); decG(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
-      switch(xe) { default: UD;
-        
-        #if !SINGELI
-        case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-        case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-        #ifndef __BMI2__
-        case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
-        #endif
-        #endif
-        
-        case el_i32:case el_c32: { i32* xp=tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-        case el_f64: { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-        case el_B: {
-          B* xp = arr_bptr(x);
-          if (xp!=NULL) {
-            HArr_p rp = m_harrUv(wsum);
-            for (usz i=0; i<wia; i++) { rp.a[ri] = xp[i]; ri+= bitp_get(wp,i); }
-            for (usz i=0; i<wsum; i++) inc(rp.a[i]);
-            r = withFill(rp.b, xf);
-          } else {
-            SLOW2("𝕨/𝕩", w, x);
-            M_HARR(rp, wsum) SGet(x)
-            for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) HARR_ADDA(rp, Get(x,i));
-            r = withFill(HARR_FV(rp), xf);
-          }
-          break;
-        }
-      }
-      #if __BMI2__
-      bit_ret:;
-      #endif
+      B r = compress(w, x, wia, xf);
       decG(w); decG(x); return r;
     }
     #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
