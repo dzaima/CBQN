@@ -161,6 +161,23 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
   TFREE(buf);
 }
 
+static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
+  assert(len <= bsp_max);
+  #if SINGELI && defined(__BMI2__)
+  if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len);
+  #else
+  if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
+  #endif
+  else if (sum >= len/128) {
+    u32* buf = (u32*)dst; assert(sum*2 <= len);
+    for (usz j=0; j<sum; j++) buf[j]=0;
+    bsp_fill(src, buf, len);
+    BSP_WRITE(buf, dst, sum, 0,);
+  } else {
+    WHERE_SPARSE(src, dst, sum, 0, RARE);
+  }
+}
+
 static B where(B x, usz xia, u64 s) {
   B r;
   u64* xp = bitarr_ptr(x);
@@ -192,8 +209,7 @@ static B where(B x, usz xia, u64 s) {
         WHERE_SPARSE(xp, rp, s, 0, RARE);
       }
     }
-  } else {
-    assert(xia <= (usz)I32_MAX+1);
+  } else if (xia <= (usz)I32_MAX+1) {
     #if SINGELI && defined(__BMI2__)
     i32* rp; r = m_i32arrv(&rp, s);
     #else
@@ -228,6 +244,19 @@ static B where(B x, usz xia, u64 s) {
       xp+= b/64;
     }
     TFREE(buf);
+  } else {
+    f64* rp; r = m_f64arrv(&rp, s);
+    usz b = bsp_max; TALLOC(u16, buf, b);
+    f64* rp0 = rp;
+    for (usz i=0; i<xia; i+=b) {
+      usz bs;
+      if (b>xia-i) { b=xia-i; bs=s-(rp-rp0); } else { bs=bit_sum(xp,b); }
+      where_block_u16(xp, buf, b, bs);
+      for (usz j=0; j<bs; j++) rp[j] = i+buf[j];
+      rp+= bs;
+      xp+= b/64;
+    }
+    TFREE(buf);
   }
   return r;
 }
@@ -239,21 +268,17 @@ B slash_c1(B t, B x) {
   if (s>=USZ_MAX) thrOOM();
   if (s==0) { decG(x); return emptyIVec(); }
   usz xia = IA(x);
-  if (RARE(xia>=I32_MAX)) {
-    usz xia = IA(x);
-    SGetU(x)
-    f64* rp; B r = m_f64arrv(&rp, s); usz ri = 0;
-    for (usz i = 0; i < xia; i++) {
-      usz c = o2s(GetU(x, i));
-      for (usz j = 0; j < c; j++) rp[ri++] = i;
-    }
-    decG(x);
-    return r;
-  }
   B r;
   u8 xe = TI(x,elType);
   if (xe==el_bit) {
     r = where(x, xia, s);
+  } else if (RARE(xia>=I32_MAX)) {
+    SGetU(x)
+    f64* rp; r = m_f64arrv(&rp, s); usz ri = 0;
+    for (usz i = 0; i < xia; i++) {
+      usz c = o2s(GetU(x, i));
+      for (usz j = 0; j < c; j++) rp[ri++] = i;
+    }
   } else {
     i32* rp; r = m_i32arrv(&rp, s);
     if (xe==el_i8) {
