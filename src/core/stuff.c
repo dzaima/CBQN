@@ -348,6 +348,14 @@ NOINLINE B make_fmt(char* p, ...) {
   va_end(a);
   return r;
 }
+NOINLINE void fprint_fmt(FILE* f, char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B r = do_fmt(emptyCVec(), p, a);
+  va_end(a);
+  fprintRaw(f, r);
+  decG(r);
+}
 NOINLINE void print_fmt(char* p, ...) {
   va_list a;
   va_start(a, p);
@@ -831,7 +839,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 #endif
 #if WARN_SLOW==1
   static void warn_ln(B x) {
-    if (isArr(x)) print_fmt("%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
+    if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
       fprintf(stderr, "atom: ");
       fprintRaw(stderr, x = bqn_fmt(inc(x))); dec(x);

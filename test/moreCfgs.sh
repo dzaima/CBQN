@@ -9,6 +9,7 @@ make heapverify   && ./BQN -p 2+2               || exit
 make rtverify     && ./BQN -p 2+2               || exit
 make rtperf       && ./BQN -p 2+2 | head -2     || exit
 make f='-DDEBUG -DDEBUG_VM'   c && ./BQN -p 2+2 | tail -2 || exit
+make f='-DWARN_SLOW'          c && ./BQN -p 2+2 2> /dev/null || exit
 make f='-DMM=0 -DENABLE_GC=0' c && ./BQN -p 2+2 || exit
 make f='-DMM=1'               c && ./BQN -p 2+2 || exit
 make f='-DMM=2'               c && ./BQN -p 2+2 || exit
@@ -27,7 +28,6 @@ make f='-DLOG_GC'             c && ./BQN -p 2+2 || exit
 make f='-DWRITE_ASM'          c && ./BQN -p 2+2 || exit
 make f='-DUSE_PERF'           c && ./BQN -p 2+2 || exit
 make f='-DUSZ_64'             c && ./BQN -p 2+2 || exit
-make f='-DWARN_SLOW'          c && ./BQN -p 2+2 || exit
 make f='-DREPL_INTERRUPT=0'   c && ./BQN -p 2+2 || exit
 make f='-DREPL_INTERRUPT=1'   c && ./BQN -p 2+2 || exit
 make FFI=0                    c && ./BQN -p 2+2 || exit

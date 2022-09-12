@@ -156,6 +156,7 @@ i32 num_fmt(char buf[30], f64 x);
 B append_fmt(B s, char* p, ...);
 B make_fmt(char* p, ...);
 void print_fmt(char* p, ...);
+void fprint_fmt(FILE* f, char* p, ...);
 #define AJOIN(X) s = vec_join(s,X) // consumes X
 #define AOBJ(X) s = vec_addN(s,X) // consumes X
 #define ACHR(X) AOBJ(m_c32(X))
