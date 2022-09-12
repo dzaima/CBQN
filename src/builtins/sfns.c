@@ -254,10 +254,14 @@ B pick_c1(B t, B x) {
   return r;
 }
 
-static NOINLINE void checkNumeric(B w) {
+static NOINLINE void checkIndexList(B w, ur xr) {
   SGetU(w)
   usz ia = IA(w);
   for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("⊑: 𝕨 contained list with mixed-type elements");
+  if (ia>xr+xr+10) {
+    if (RNK(w)!=1) thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element in 𝕨 has shape %H)", w);
+    thrF("⊑: Leaf array in 𝕨 too large (has shape %H)", w);
+  }
 }
 static B recPick(B w, B x) { // doesn't consume
   assert(isArr(w) && isArr(x));
@@ -300,9 +304,9 @@ static B recPick(B w, B x) { // doesn't consume
   }
   #undef PICK
   
-  wrr: checkNumeric(w); thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element: %B)", w); // wrong index rank
-  wrl: checkNumeric(w); thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x); // wrong index length
-  oob: checkNumeric(w); thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
+  wrr: checkIndexList(w, xr); thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element: %B)", w); // wrong index rank
+  wrl: checkIndexList(w, xr); thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x); // wrong index length
+  oob: checkIndexList(w, xr); thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
 }
 
 B pick_c2(B t, B w, B x) {
