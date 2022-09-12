@@ -1321,7 +1321,6 @@ B enclose_uc1(B t, B o, B x) {
   return enclose_im(t, c1(o, m_atomUnit(x)));
 }
 
-extern B slash_im(B, B); // TODO move to slash.c
 void sfns_init() {
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_reverse)->uc1 = reverse_uc1;
@@ -1333,7 +1332,6 @@ void sfns_init() {
   c(BFn,bi_transp)->im = transp_im;
   c(BFn,bi_take)->ucw = take_ucw;
   c(BFn,bi_drop)->ucw = drop_ucw;
-  c(BFn,bi_slash)->im = slash_im;
   c(BFn,bi_lt)->im = enclose_im;
   c(BFn,bi_lt)->uc1 = enclose_uc1;
 }

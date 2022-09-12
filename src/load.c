@@ -5,7 +5,7 @@
 #include "ns.h"
 #include "builtins.h"
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap) F(typesFinished)
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap) F(typesFinished)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
 #undef F

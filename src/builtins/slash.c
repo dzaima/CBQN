@@ -616,3 +616,7 @@ B slash_im(B t, B x) {
     }
   }
 }
+
+void slash_init() {
+  c(BFn,bi_slash)->im = slash_im;
+}
