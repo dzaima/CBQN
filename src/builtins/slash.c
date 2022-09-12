@@ -270,8 +270,10 @@ static B compress(B w, B x, usz wia, B xf) {
     if (RARE(ie==0)) { return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
     we = wp[--ie];
   }
+  usz wia0 = wia;
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
+  if (wsum == wia0) { dec(xf); return inc(x); }
 
   B r;
   u8 xe = TI(x,elType);
