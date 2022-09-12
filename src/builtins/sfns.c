@@ -1104,11 +1104,12 @@ B transp_c1(B t, B x) {
   usz xi = 0;
   u8 xe = TI(x,elType);
   switch(xe) { default: UD;
+    case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; // fallthough; lazy; TODO squeeze
     case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
     case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_B: case el_bit: { // can't be bothered to implement a bitarr transpose
+    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+    case el_B: { // can't be bothered to implement a bitarr transpose
       B* xp = arr_bptr(x);
       B xf = getFillR(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; } // TODO extract this to an inline function
@@ -1138,6 +1139,12 @@ B transp_c1(B t, B x) {
   decG(x); return taga(r);
 }
 B transp_c2(B t, B w, B x) { return c2(rt_transp, w, x); }
+
+B transp_im(B t, B x) {
+  if (isAtm(x)) thrM("⍉⁼: 𝕩 must not be an atom");
+  if (RNK(x)<=2) return transp_c1(t, x);
+  return def_fn_im(bi_transp, x);
+}
 
 
 B pick_uc1(B t, B o, B x) { // TODO do in-place like pick_ucw; maybe just call it?
@@ -1301,7 +1308,7 @@ B shape_uc1(B t, B o, B x) {
 
 B select_ucw(B t, B o, B w, B x);
 
-B  transp_uc1(B t, B o, B x) { return  transp_c1(t, c1(o,  transp_c1(t, x))); }
+B  transp_uc1(B t, B o, B x) { return  transp_im(t, c1(o,  transp_c1(t, x))); }
 B reverse_uc1(B t, B o, B x) { return reverse_c1(t, c1(o, reverse_c1(t, x))); }
 
 NOINLINE B enclose_im(B t, B x) {
@@ -1323,6 +1330,7 @@ void sfns_init() {
   c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
   c(BFn,bi_shape)->uc1 = shape_uc1;
   c(BFn,bi_transp)->uc1 = transp_uc1;
+  c(BFn,bi_transp)->im = transp_im;
   c(BFn,bi_take)->ucw = take_ucw;
   c(BFn,bi_drop)->ucw = drop_ucw;
   c(BFn,bi_slash)->im = slash_im;
