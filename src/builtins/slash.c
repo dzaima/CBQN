@@ -262,7 +262,6 @@ static B where(B x, usz xia, u64 s) {
 }
 
 static B compress(B w, B x, usz wia, B xf) {
-  B r;
   u64* wp = bitarr_ptr(w);
   u64 we = 0;
   usz ie = wia/64;
@@ -273,11 +272,14 @@ static B compress(B w, B x, usz wia, B xf) {
   }
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
+
+  B r;
   u8 xe = TI(x,elType);
-  #ifdef __BMI2__
-  switch(xe) {
+  switch(xe) { default: UD;
     case el_bit: {
-      u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
+      u64* xp = bitarr_ptr(x); u64* rp;
+      #if SINGELI && defined(__BMI2__)
+      r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
       for (usz i=0; i<BIT_N(wia); i++) {
@@ -293,25 +295,12 @@ static B compress(B w, B x, usz wia, B xf) {
         ro = ro2&63;
       }
       if (ro) *rp = cw;
-      return r;
+      #else
+      r = m_bitarrv(&rp,wsum);
+      for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); }
+      #endif
+      break;
     }
-    #if SINGELI
-    case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia); return r; }
-    case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia); return r; }
-    #endif
-  }
-  #endif
-  
-  switch(xe) { default: UD;
-    
-    #if !SINGELI
-    case el_i8: case el_c8:  { i8*  xp=tyany_ptr(x); i8*  rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-    case el_i16:case el_c16: { i16* xp=tyany_ptr(x); i16* rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); } break; }
-    #ifndef __BMI2__
-    case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp,wsum); for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); } break; }
-    #endif
-    #endif
-
     #define COMPRESS_BLOCK(T) \
       usz b = bsp_max; TALLOC(i16, buf, b);          \
       T* rp0=rp;                                     \
@@ -324,6 +313,19 @@ static B compress(B w, B x, usz wia, B xf) {
         rp+= bs; wp+= b/64; xp+= b;                  \
       }                                              \
       TFREE(buf)
+    #define WITH_SPARSE(W, CUTOFF, DENSE) { \
+      i##W *xp=tyany_ptr(x), *rp;           \
+      if (wsum>=wia/CUTOFF) { DENSE; }      \
+      else { rp=m_tyarrv(&r,W/8,wsum,el2t(xe)); COMPRESS_BLOCK(i##W); } \
+      break; }
+    #if SINGELI
+    case el_i8: case el_c8:  WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia))
+    case el_i16:case el_c16: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia))
+    #else
+    case el_i8: case el_c8:  WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
+    case el_i16:case el_c16: WITH_SPARSE(16,  2, rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
+    #endif
+    #undef WITH_SPARSE
     case el_i32:case el_c32: { i32* xp= tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); COMPRESS_BLOCK(i32); break; }
     case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum);     COMPRESS_BLOCK(f64); break; }
     case el_B: {
