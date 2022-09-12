@@ -132,8 +132,8 @@ typedef double   f64;
 #define CLZ(X) __builtin_clzll(X)
 #define CTZ(X) __builtin_ctzll(X)
 #define POPC(X) __builtin_popcountll(X)
-#define LIKELY(X) __builtin_expect(X,1)
-#define RARE(X) __builtin_expect(X,0)
+#define LIKELY(X) __builtin_expect((X)!=0,1)
+#define RARE(X) __builtin_expect((X)!=0,0)
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // value, result type, field name; reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
 #define N64x "%"SCNx64

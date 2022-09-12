@@ -115,8 +115,8 @@
 
 // Sparse Where with branching
 #define WHERE_SPARSE(X,R,S,I0,COND) do { \
-    for (usz ii=I0, j=0; j<S; ii++)                                 \
-      for (u64 v=(X)[ii]; COND(v); v&=v-1) R[j++] = ii*64 + CTZ(v); \
+    for (usz ii=I0, j=0; j<S; ii++)                                    \
+      for (u64 v=(X)[ii]; COND(v!=0); v&=v-1) R[j++] = ii*64 + CTZ(v); \
   } while (0)
 
 // Branchless sparse Where (bsp)
