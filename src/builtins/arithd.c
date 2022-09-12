@@ -26,8 +26,8 @@ B floor_c2(B, B, B);
 #include "../singeli/c/arithdDispatch.c"
 #endif
 
-#define ARITH_SLOW SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
-#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW; \
+#define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
+#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); \
   return arith_recd(N##_c2, w, x); \
 }}
 #if !TYPED_ARITH
@@ -181,7 +181,7 @@ B floor_c2(B, B, B);
       if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
       if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
       if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
-      bad: ARITH_SLOW; return arith_recd(NAME##_c2, w, x); \
+      bad: ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x);  \
       dec_ret: decG(w); decG(x); return r; \
     }
     AR_I_AA("×", mul, wv*xv, 2, {})
@@ -204,17 +204,17 @@ B floor_c2(B, B, B);
     })
     #undef AR_I_AA
     #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
-      B r; u8 we=TI(w,elType); EXTRA                    \
-      if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }  \
-      ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
-      dec_ret: decG(w); return r;                       \
+      B r; u8 we=TI(w,elType); EXTRA                       \
+      if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }     \
+      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x); \
+      dec_ret: decG(w); return r;                          \
     }
     
     #define AR_I_SA(CHR, NAME, EXPR, DO_SA, EXTRA) NOINLINE B NAME##_SA(B t, B w, B x) { \
-      B r; u8 xe=TI(x,elType); EXTRA                    \
-      if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }  \
-      ARITH_SLOW; return arith_recd(NAME##_c2, w, x);   \
-      dec_ret: decG(x); return r;                       \
+      B r; u8 xe=TI(x,elType); EXTRA                       \
+      if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }     \
+      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x); \
+      dec_ret: decG(x); return r;                          \
     }
     
     static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both

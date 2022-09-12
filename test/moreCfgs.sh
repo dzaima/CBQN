@@ -27,6 +27,7 @@ make f='-DLOG_GC'             c && ./BQN -p 2+2 || exit
 make f='-DWRITE_ASM'          c && ./BQN -p 2+2 || exit
 make f='-DUSE_PERF'           c && ./BQN -p 2+2 || exit
 make f='-DUSZ_64'             c && ./BQN -p 2+2 || exit
+make f='-DWARN_SLOW'          c && ./BQN -p 2+2 || exit
 make f='-DREPL_INTERRUPT=0'   c && ./BQN -p 2+2 || exit
 make f='-DREPL_INTERRUPT=1'   c && ./BQN -p 2+2 || exit
 make FFI=0                    c && ./BQN -p 2+2 || exit
