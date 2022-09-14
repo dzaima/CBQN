@@ -57,6 +57,7 @@ extern u8 arrTypeWidthLog[];
 #define arrTypeWidthLog(X) arrTypeWidthLog[X]
 extern u8 arrTypeBitsLog[];
 #define arrTypeBitsLog(X) arrTypeBitsLog[X]
+#define arrNewType(X) el2t(ti_elType[X])
 
 // Log of width in bits: max of 7, and also return 7 if not power of 2
 static u8 cellWidthLog(B x) {

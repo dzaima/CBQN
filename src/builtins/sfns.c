@@ -1030,22 +1030,24 @@ B group_c1(B t, B x) {
 extern B rt_reverse;
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
-  usz xia = IA(x);
-  if (xia==0) return x;
-  u8 xe = TI(x,elType);
-  if (RNK(x)==1) {
+  usz n = *SH(x);
+  if (n==0) return x;
+  u8 xl = cellWidthLog(x);
+  u8 xt = arrNewType(TY(x));
+  if (xl <= 6 && (xl >=3 || xl == 0)) {
+    void* xv = tyany_ptr(x);
     B r;
-    switch(xe) { default: UD;
-      case el_bit: { u64* xp = bitarr_ptr(x); u64* rp; r = m_bitarrv(&rp, xia); for (usz i = 0; i < xia; i++) bitp_set(rp, i, bitp_get(xp, xia-i-1)); break; }
-      case el_i8: case el_c8:  { u8*  xp = tyany_ptr(x); u8*  rp = m_tyarrv(&r, 1, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
-      case el_i16:case el_c16: { u16* xp = tyany_ptr(x); u16* rp = m_tyarrv(&r, 2, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
-      case el_i32:case el_c32: { u32* xp = tyany_ptr(x); u32* rp = m_tyarrv(&r, 4, xia, el2t(xe)); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
-      case el_f64:             { f64* xp = f64any_ptr(x); f64* rp; r = m_f64arrv(&rp, xia); for (usz i = 0; i < xia; i++) rp[i] = xp[xia-i-1]; break; }
-      case el_B: {
+    switch(xl) { default: UD; break;
+      case 0:                         { u64* xp = xv; u64* rp; r = m_bitarrc(&rp, x); for (usz i = 0; i < n; i++) bitp_set(rp, i, bitp_get(xp, n-i-1)); break; }
+      case 3:                         { u8*  xp = xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
+      case 4:                         { u16* xp = xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
+      case 5:                         { u32* xp = xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
+      case 6: if (TI(x,elType)!=el_B) { u64* xp = xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
+      else {
         HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
-        if (xp!=NULL)  for (usz i = 0; i < xia; i++) rp.a[i] = inc(xp[xia-i-1]);
-        else { SGet(x) for (usz i = 0; i < xia; i++) rp.a[i] = Get(x, xia-i-1); }
+        if (xp!=NULL)  for (usz i = 0; i < n; i++) rp.a[i] = inc(xp[n-i-1]);
+        else { SGet(x) for (usz i = 0; i < n; i++) rp.a[i] = Get(x, n-i-1); }
         r = rp.b;
         B xf = getFillQ(x);
         decG(x);
@@ -1060,8 +1062,8 @@ B reverse_c1(B t, B x) {
   usz csz = arr_csz(x);
   usz cam = SH(x)[0];
   usz rp = 0;
-  usz ip = xia;
-  MAKE_MUT(r, xia); mut_init(r, xe);
+  usz ip = IA(x);
+  MAKE_MUT(r, ip); mut_init(r, TI(x,elType));
   MUTG_INIT(r);
   for (usz i = 0; i < cam; i++) {
     ip-= csz;
