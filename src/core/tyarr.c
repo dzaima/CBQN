@@ -20,6 +20,14 @@ u8 arrTypeWidthLog[] = {
   [t_i32arr]=2, [t_i32slice]=2, [t_c32arr]=2, [t_c32slice]=2,
   [t_f64arr]=3, [t_f64slice]=3
 };
+u8 arrTypeBitsLog[] = {
+  [t_bitarr]=0,
+  [t_i8arr ]=3, [t_i8slice ]=3, [t_c8arr ]=3, [t_c8slice ]=3,
+  [t_i16arr]=4, [t_i16slice]=4, [t_c16arr]=4, [t_c16slice]=4,
+  [t_i32arr]=5, [t_i32slice]=5, [t_c32arr]=5, [t_c32slice]=5,
+  [t_f64arr]=6, [t_f64slice]=6,
+  [t_harr  ]=6, [t_hslice  ]=6, [t_fillarr]=6,[t_fillslice]=6
+};
 
 B m_i8(i8 x) { return m_i32(x); } B m_i16(i16 x) { return m_i32(x); }
 B m_c8(u8 x) { return m_c32(x); } B m_c16(u16 x) { return m_c32(x); }
