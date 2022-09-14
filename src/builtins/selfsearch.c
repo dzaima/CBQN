@@ -6,7 +6,7 @@
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   usz n = *SH(x);
-  if (n==0) { decG(x); return emptyIVec(); }
+  if (n<=1) { decG(x); return n ? taga(arr_shVec(allOnes(1))) : emptyIVec(); }
   
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
@@ -92,7 +92,7 @@ B memberOf_c1(B t, B x) {
 B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
   usz n = *SH(x);
-  if (n==0) { decG(x); return emptyIVec(); }
+  if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
@@ -184,7 +184,7 @@ extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
   usz n = *SH(x);
-  if (n==0) { decG(x); return emptyIVec(); }
+  if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
