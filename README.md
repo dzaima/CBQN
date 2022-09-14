@@ -11,7 +11,7 @@
     - `gmake` on BSDs
     - For Windows, CBQN works in WSL, and [WinBQN](https://github.com/actalley/WinBQN) provides Cygwin/Msys2 builds.
     - `make clean` if anything goes bad and you want a clean slate
-    - `make [...]; sudo make install` to install into `/usr/local/bin/bqn`; `sudo make uninstall` to uninstall
+    - `make [...]; sudo make install` to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
     - If you want to use custom build types but your system doesn't have `shasum`/`sha256sum`, add `force_build_dir=some_identifier`. That identifier will be used to decide on the directory for incremental build object files.
 2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL
 

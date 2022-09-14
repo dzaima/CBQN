@@ -253,11 +253,13 @@ ifeq (${i_singeli}, 1)
 -include obj/singeli/*.d
 endif
 
+DESTDIR =
+PREFIX = /usr/local
 install:
-	cp -f BQN /usr/local/bin/bqn
+	cp -f BQN "$(DESTDIR)$(PREFIX)/bin/bqn"
 
 uninstall:
-	rm -f /usr/local/bin/bqn
+	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
 
 clean-singeli:
 	rm -rf src/singeli/gen/
