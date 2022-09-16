@@ -261,24 +261,25 @@ static B where(B x, usz xia, u64 s) {
   return r;
 }
 
-static B compress(B w, B x, usz wia, B xf) {
+static B compress(B w, B x, usz wia) {
   u64* wp = bitarr_ptr(w);
   u64 we = 0;
   usz ie = wia/64;
   usz q=wia%64; if (q) we = wp[ie] &= ((u64)1<<q) - 1;
   while (!we) {
-    if (RARE(ie==0)) { return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
+    if (RARE(ie==0)) { B xf = getFillQ(x); return q_N(xf)? emptyHVec() : isF64(xf)? emptyIVec() : isC32(xf)? emptyCVec() : m_emptyFVec(xf); }
     we = wp[--ie];
   }
   usz wia0 = wia;
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
-  if (wsum == wia0) { dec(xf); return inc(x); }
+  if (wsum == wia0) return inc(x);
 
   B r;
-  u8 xe = TI(x,elType);
-  switch(xe) { default: UD;
-    case el_bit: {
+  u8 xl = arrTypeBitsLog(TY(x));
+  u8 xt = arrNewType(TY(x));
+  switch(xl) { default: UD;
+    case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
       #if SINGELI && defined(__BMI2__)
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
@@ -318,19 +319,20 @@ static B compress(B w, B x, usz wia, B xf) {
     #define WITH_SPARSE(W, CUTOFF, DENSE) { \
       i##W *xp=tyany_ptr(x), *rp;           \
       if (wsum>=wia/CUTOFF) { DENSE; }      \
-      else { rp=m_tyarrv(&r,W/8,wsum,el2t(xe)); COMPRESS_BLOCK(i##W); } \
+      else { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); } \
       break; }
     #if SINGELI
-    case el_i8: case el_c8:  WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,el2t(xe),  8); bmipopc_2slash8 (wp, xp, rp, wia))
-    case el_i16:case el_c16: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,el2t(xe), 16); bmipopc_2slash16(wp, xp, rp, wia))
+    case 3: WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,xt,  8); bmipopc_2slash8 (wp, xp, rp, wia))
+    case 4: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,xt, 16); bmipopc_2slash16(wp, xp, rp, wia))
     #else
-    case el_i8: case el_c8:  WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
-    case el_i16:case el_c16: WITH_SPARSE(16,  2, rp=m_tyarrv(&r,2,wsum,el2t(xe)); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
+    case 3: WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
+    case 4: WITH_SPARSE(16,  2, rp=m_tyarrv(&r,2,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
     #endif
     #undef WITH_SPARSE
-    case el_i32:case el_c32: { i32* xp= tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,el2t(xe)); COMPRESS_BLOCK(i32); break; }
-    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum);     COMPRESS_BLOCK(f64); break; }
-    case el_B: {
+    case 5: { i32* xp= tyany_ptr(x); i32* rp=m_tyarrv(&r,4,wsum,xt); COMPRESS_BLOCK(i32); break; }
+    case 6: if (TI(x,elType)!=el_B) { f64* xp=f64any_ptr(x); f64* rp; r = m_f64arrv(&rp,wsum); COMPRESS_BLOCK(f64); break; }
+    else {
+      B xf = getFillQ(x);
       B* xp = arr_bptr(x);
       if (xp!=NULL) {
         HArr_p rh = m_harrUv(wsum);
@@ -415,12 +417,12 @@ B slash_c2(B t, B w, B x) {
       if (wia==0) { decG(w); return x; }
       thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
     }
-    B xf = getFillQ(x);
     
     if (TI(w,elType)==el_bit) {
-      B r = compress(w, x, wia, xf);
+      B r = compress(w, x, wia);
       decG(w); decG(x); return r;
     }
+    B xf = getFillQ(x);
     #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
       XT* xp = XT##any_ptr(x);                       \
       XT* rp; B r = m_##XT##arrv(&rp, wsum);         \
