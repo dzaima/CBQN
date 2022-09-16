@@ -617,6 +617,55 @@ B slash_im(B t, B x) {
   }
 }
 
+B slash_ucw(B t, B o, B w, B x) {
+  if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) return def_fn_ucw(t, o, w, x);
+  usz ia = IA(x);
+  SGetU(w)
+  if (!elInt(TI(w,elType))) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
+  B arg = slash_c2(t, inc(w), inc(x));
+  usz argIA = IA(arg);
+  B rep = c1(o, arg);
+  if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
+  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
+  SGet(x)
+  SGet(rep)
+  usz repI = 0;
+  if (TY(w) == t_bitarr) {
+    u64* d = bitarr_ptr(w);
+    if (elInt(TI(x,elType)) && elInt(TI(rep,elType))) {
+      if (r->fns->elType!=el_i32) mut_to(r, el_i32);
+      i32* rp = r->ai32;
+      x   = toI32Any(x);   i32* xp = i32any_ptr(x);
+      rep = toI32Any(rep); i32* np = i32any_ptr(rep);
+      for (usz i = 0; i < ia; i++) {
+        bool v = bitp_get(d, i);
+        i32 nc = np[repI];
+        i32 xc = xp[i];
+        rp[i] = v? nc : xc;
+        repI+= v;
+      }
+    } else {
+      MUTG_INIT(r);
+      for (usz i = 0; i < ia; i++) mut_setG(r, i, bitp_get(d, i)? Get(rep,repI++) : Get(x,i));
+    }
+  } else {
+    SGetU(rep)
+    MUTG_INIT(r);
+    for (usz i = 0; i < ia; i++) {
+      i32 cw = o2iG(GetU(w, i));
+      if (cw) {
+        B cr = Get(rep,repI);
+        if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
+        mut_setG(r, i, cr);
+        repI+= cw;
+      } else mut_setG(r, i, Get(x,i));
+    }
+  }
+  decG(w); decG(rep);
+  return mut_fcd(r, x);
+}
+
 void slash_init() {
   c(BFn,bi_slash)->im = slash_im;
+  c(BFn,bi_slash)->ucw = slash_ucw;
 }
