@@ -374,13 +374,19 @@ B slash_c1(B t, B x) {
     i32* rp; r = m_i32arrv(&rp, s);
     if (xe==el_i8) {
       i8* xp = i8any_ptr(x);
-      while (xia>0 && !xp[xia-1]) xia--;
-      for (u64 i = 0; i < xia; i++) {
-        i32 c = xp[i];
-        if (LIKELY(c==0 || c==1)) {
-          *rp = i;
-          rp+= c;
-        } else {
+      if (s/16 <= xia) {
+        usz b = 1<<10;
+        for (usz k=0, j=0, js=0, ij=xp[0]; ; ) {
+          usz e = b<s-k? k+b : s;
+          for (usz i=k; i<e; i++) rp[i]=0;
+          while (ij<e) { rp[ij]++; ij+=xp[++j]; }
+          for (usz i=k; i<e; i++) js=rp[i]+=js;
+          if (e==s) break; k=e;
+        }
+      } else {
+        while (xia>0 && !xp[xia-1]) xia--;
+        for (u64 i = 0; i < xia; i++) {
+          i32 c = xp[i];
           for (i32 j = 0; j < c; j++) *rp++ = i;
         }
       }
