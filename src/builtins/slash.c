@@ -424,74 +424,116 @@ B slash_c2(B t, B w, B x) {
       if (wia==0) { decG(w); return x; }
       thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xia);
     }
-    
-    if (TI(w,elType)==el_bit) {
+
+    u8 we = TI(w,elType);
+    if (we > el_i32) { w = any_squeeze(w); we = TI(w,elType); }
+    if (we==el_bit) {
+      wbool:
       B r = compress(w, x, wia);
       decG(w); decG(x); return r;
     }
-    B xf = getFillQ(x);
-    #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
-      XT* xp = XT##any_ptr(x);                       \
-      XT* rp; B r = m_##XT##arrv(&rp, wsum);         \
-      if (or<2) for (usz i = 0; i < wia; i++) {      \
-        *rp = xp[i];                                 \
-        rp+= wp[i];                                  \
-      } else for (usz i = 0; i < wia; i++) {         \
-        WT cw = wp[i]; XT cx = xp[i];                \
-        for (i64 j = 0; j < cw; j++) *rp++ = cx;     \
-      }                                              \
-      decG(w); decG(x); return r;                    \
+    u64 s = usum(w);
+    if (we!=el_bit && s<=wia) {
+      w = num_squeeze(w); we = TI(w,elType);
+      if (we==el_bit) goto wbool;
     }
-    #define TYPED(WT,SIGN) { \
-      WT* wp = WT##any_ptr(w);           \
-      while (wia>0 && !wp[wia-1]) wia--; \
-      i64 wsum = 0;                      \
-      u32 or = 0;                        \
-      for (usz i = 0; i < wia; i++) {    \
-        wsum+= wp[i];                    \
-        or|= (u32)wp[i];                 \
-      }                                  \
-      if (or>>SIGN) thrM("/: 𝕨 must consist of natural numbers"); \
-      if (TI(x,elType)==el_bit) {                  \
-        u64* xp = bitarr_ptr(x); u64 ri=0;         \
-        u64* rp; B r = m_bitarrv(&rp, wsum);       \
-        if (or<2) for (usz i = 0; i < wia; i++) {  \
-          bitp_set(rp, ri, bitp_get(xp,i));        \
-          ri+= wp[i];                              \
-        } else for (usz i = 0; i < wia; i++) {     \
-          WT cw = wp[i]; bool cx = bitp_get(xp,i); \
-          for (i64 j = 0; j < cw; j++) bitp_set(rp, ri++, cx); \
-        }                                          \
-        decG(w); decG(x); return r;                \
-      }                                            \
-      CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
-      SLOW2("𝕨/𝕩", w, x);                    \
-      M_HARR(r, wsum) SGetU(x)               \
-      for (usz i = 0; i < wia; i++) {        \
-        i32 cw = wp[i]; if (cw==0) continue; \
-        B cx = incBy(GetU(x, i), cw);        \
-        for (i64 j = 0; j < cw; j++) HARR_ADDA(r, cx);\
-      }                                      \
-      decG(w); decG(x);                      \
-      return withFill(HARR_FV(r), xf);       \
-    }
-    if (TI(w,elType)==el_i8 ) TYPED(i8,7);
-    if (TI(w,elType)==el_i32) TYPED(i32,31);
-    #undef TYPED
-    #undef CASE
-    SLOW2("𝕨/𝕩", w, x);
-    u64 ria = usum(w);
-    if (ria>=USZ_MAX) thrOOM();
-    M_HARR(r, ria) SGetU(w) SGetU(x)
-    for (usz i = 0; i < wia; i++) {
-      usz c = o2s(GetU(w, i));
-      if (c) {
-        B cx = incBy(GetU(x, i), c);
-        for (usz j = 0; RARE(j < c); j++) HARR_ADDA(r, cx);
+    B r;
+    u8 xe = TI(x,elType);
+    if (RARE(we>el_i32 || xe==el_B)) { // Slow case
+      SLOW2("𝕨/𝕩", w, x);
+      B xf = getFillQ(x);
+      u64 ria = usum(w);
+      if (ria>=USZ_MAX) thrOOM();
+      M_HARR(r, ria) SGetU(w) SGetU(x)
+      for (usz i = 0; i < wia; i++) {
+        usz c = o2s(GetU(w, i));
+        if (c) {
+          B cx = incBy(GetU(x, i), c);
+          for (usz j = 0; RARE(j < c); j++) HARR_ADDA(r, cx);
+        }
+      }
+      decG(w); decG(x);
+      return withFill(HARR_FV(r), xf);
+    } else if (xe == el_bit) {
+      u64* xp = bitarr_ptr(x);
+      u64* rp; r = m_bitarrv(&rp, s);
+      if (s/256 <= wia) {
+        #define SPARSE_REP(T) \
+          T* wp = T##any_ptr(w);                               \
+          usz b = 1<<12;                                       \
+          u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
+          for (usz k=0, j=0, ij=wp[0]; ; ) {                   \
+            usz e = b<s-k? k+b : s;                            \
+            usz eb = (e-1)/64+1;                               \
+            for (usz i=k/64; i<eb; i++) rp[i]=0;               \
+            while (ij<e) {                                     \
+              xx>>=1; j++; if (j%64==0) { u64 v=xp[j/64]; xx=v^(v<<1)^xs; xs=v>>63; } \
+              rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=wp[j];        \
+            }                                                  \
+            for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
+            if (e==s) break; k=e;                              \
+          }
+        if      (we == el_i8 ) { SPARSE_REP(i8 ); }
+        else if (we == el_i16) { SPARSE_REP(i16); }
+        else                   { SPARSE_REP(i32); }
+        #undef SPARSE_REP
+      } else {
+        if (we < el_i32) w = taga(cpyI32Arr(w));
+        i32* wp = i32any_ptr(w);
+        u64 ri=0, rc=0, xc=0; usz j=0;
+        for (usz i = 0; i < wia; i++) {
+          u64 v = -(u64)bitp_get(xp,i);
+          rc ^= (v^xc) << (ri%64);
+          xc = v;
+          ri += wp[i]; usz e = ri/64;
+          if (j < e) {
+            rp[j++] = rc;
+            while (j < e) rp[j++] = v;
+            rc = v;
+          }
+        }
+        if (ri%64) rp[j] = rc;
+      }
+    } else {
+      u8 xt = TY(x);
+      u8 xl = arrTypeBitsLog(xt)-3;
+      void* rv = m_tyarrv(&r, 1<<xl, s, arrNewType(xt));
+      void* xv = tyany_ptr(x);
+      if (s/32 <= wia) { // Sparse case: use both types
+        #define CASE(L,XT) case L: { \
+          XT* xp = xv; XT* rp = rv;               \
+          usz b = 1<<10;                          \
+          XT js=xp[0], px=js;                     \
+          for (usz k=0, j=0, ij=wp[0]; ; ) {      \
+            usz e = b<s-k? k+b : s;               \
+            for (usz i=k; i<e; i++) rp[i]=0;      \
+            while (ij<e) { j++; XT sx=px; rp[ij]^=sx^(px=xp[j]); ij+=wp[j]; } \
+            for (usz i=k; i<e; i++) js=rp[i]^=js; \
+            if (e==s) break; k=e;                 \
+          } break; }
+        #define SPARSE_REP(WT) \
+          WT* wp = WT##any_ptr(w);                \
+          switch (xl) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+        if      (we == el_i8 ) { SPARSE_REP(i8 ); }
+        else if (we == el_i16) { SPARSE_REP(i16); }
+        else                   { SPARSE_REP(i32); }
+        #undef SPARSE_REP
+        #undef CASE
+      } else { // Dense case: only type of x matters
+        #define CASE(L,T) case L: { \
+          T* xp = xv; T* rp = rv;                    \
+          for (usz i = 0; i < wia; i++) {            \
+            i32 cw = wp[i]; T cx = xp[i];            \
+            for (i64 j = 0; j < cw; j++) *rp++ = cx; \
+          } break; }
+        if (we < el_i32) w = taga(cpyI32Arr(w));
+        i32* wp = i32any_ptr(w);
+        while (wia>0 && !wp[wia-1]) wia--;
+        switch (xl) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+        #undef CASE
       }
     }
-    decG(w); decG(x);
-    return withFill(HARR_FV(r), xf);
+    decG(w); decG(x); return r;
   }
   if (isArr(x) && RNK(x)==1 && q_i32(w)) {
     usz xia = IA(x);
