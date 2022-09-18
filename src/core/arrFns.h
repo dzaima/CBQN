@@ -65,7 +65,6 @@ static u8 cellWidthLog(B x) {
   u8 lw = arrTypeBitsLog(TY(x));
   if (LIKELY(RNK(x)==1)) return lw;
   usz csz = arr_csz(x);
-  if (csz & (csz-1)) return 7; // Not power of 2
-  lw += CTZ(csz);
-  return lw<7? lw : 7;
+  if (csz & (csz-1)) return 7;    // Not power of 2
+  return lw + CTZ(csz | 128>>lw); // Max of 7; also handle csz==0
 }
