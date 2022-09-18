@@ -34,9 +34,7 @@ B utf8Decode(const char* s, i64 len) {
     j+= l;
   }
   if (sz==len) {
-    u8* rp; B r = m_c8arrv(&rp, sz);
-    for (i64 i = 0; i < len; i++) rp[i] = s[i];
-    return r;
+    return m_c8vec((char*)s, len);
   } else {
     u32* rp; B r = m_c32arrv(&rp, sz);
     u64 p = 0;

@@ -565,9 +565,7 @@ bool eequal(B w, B x) { // doesn't consume
   return true;
 }
 
-u64 depth(B x) { // doesn't consume
-  if (isAtm(x)) return 0;
-  if (TI(x,arrD1)) return 1;
+usz depthF(B x) { // doesn't consume
   u64 r = 0;
   usz ia = IA(x);
   SGetU(x)

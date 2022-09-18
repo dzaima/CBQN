@@ -338,7 +338,6 @@ void printRaw(B x);       // doesn't consume
 void arr_print(B x);      // doesn't consume
 bool equal(B w, B x);     // doesn't consume
 bool eequal(B w, B x);    // doesn't consume
-u64  depth(B x);          // doesn't consume
 B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
