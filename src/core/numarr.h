@@ -101,9 +101,9 @@ static u64 usum(B x) { // doesn't consume; may error
   usz xia = IA(x);
   u8 xe = TI(x,elType);
   if      (xe==el_bit) return bit_sum(bitarr_ptr(x), xia);
-  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; r+= p[i]; } }
-  else if (xe==el_i16) { i16* p = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; if (addOn(r,p[i])) goto overflow; } }
-  else if (xe==el_i32) { i32* p = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (RARE(p[i]<0)) goto neg; if (addOn(r,p[i])) goto overflow; } }
+  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); i8  m=0; for (usz i = 0; i < xia; ) { usz b=1<< 8; i16 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u16)s)) goto overflow; } }
+  else if (xe==el_i16) { i16* p = i16any_ptr(x); i16 m=0; for (usz i = 0; i < xia; ) { usz b=1<<16; i32 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u32)s)) goto overflow; } }
+  else if (xe==el_i32) { i32* p = i32any_ptr(x); i32 m=0; for (usz i = 0; i < xia; i++) { m|=p[i]; if (addOn(r,p[i])) goto overflow; } if (m<0) goto neg; }
   else if (xe==el_f64) {
     f64* p = f64any_ptr(x);
     for (usz i = 0; i < xia; i++) {
