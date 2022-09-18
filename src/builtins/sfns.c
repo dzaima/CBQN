@@ -1167,16 +1167,17 @@ B pick_ucw(B t, B o, B w, B x) {
   B arg = IGet(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
-    if      (TI(x,elType)==el_i8 ) { i8*  xp = i8any_ptr (x); xp[wi] = o2iG(rep); return x; }
-    else if (TI(x,elType)==el_i16) { i16* xp = i16any_ptr(x); xp[wi] = o2iG(rep); return x; }
-    else if (TI(x,elType)==el_i32) { i32* xp = i32any_ptr(x); xp[wi] = o2iG(rep); return x; }
-    else if (TI(x,elType)==el_f64) { f64* xp = f64any_ptr(x); xp[wi] = o2fG(rep); return x; }
-    else if (TY(x)==t_harr) {
+    u8 xt = TY(x);
+    if      (xt==t_i8arr ) { i8*  xp = i8any_ptr (x); xp[wi] = o2iG(rep); return x; }
+    else if (xt==t_i16arr) { i16* xp = i16any_ptr(x); xp[wi] = o2iG(rep); return x; }
+    else if (xt==t_i32arr) { i32* xp = i32any_ptr(x); xp[wi] = o2iG(rep); return x; }
+    else if (xt==t_f64arr) { f64* xp = f64any_ptr(x); xp[wi] = o2fG(rep); return x; }
+    else if (xt==t_harr) {
       B* xp = harr_ptr(x);
       dec(xp[wi]);
       xp[wi] = rep;
       return x;
-    } else if (TY(x)==t_fillarr) {
+    } else if (xt==t_fillarr) {
       B* xp = fillarr_ptr(a(x));
       dec(xp[wi]);
       xp[wi] = rep;
