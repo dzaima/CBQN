@@ -1164,6 +1164,27 @@ B pick_ucw(B t, B o, B w, B x) {
   if (isArr(w) || isAtm(x) || RNK(x)!=1) return def_fn_ucw(t, o, w, x);
   usz xia = IA(x);
   usz wi = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
+  if (TI(x,elType)==el_B) {
+    B* xp;
+    if (TY(x)==t_harr || TY(x)==t_hslice) {
+      if (!(TY(x)==t_harr && reusable(x))) x = taga(cpyHArr(x));
+      xp = harr_ptr(x);
+    } else if (TY(x)==t_fillarr && reusable(x)) {
+      xp = fillarr_ptr(a(x));
+    } else {
+      Arr* x2 = m_fillarrp(xia);
+      fillarr_setFill(x2, getFillQ(x));
+      xp = fillarr_ptr(x2);
+      COPY_TO(xp, el_B, 0, x, 0, xia);
+      arr_shCopy(x2, x);
+      dec(x);
+      x = taga(x2);
+    }
+    B c = xp[wi];
+    xp[wi] = m_f64(0);
+    xp[wi] = c1(o, c);
+    return x;
+  }
   B arg = IGet(x, wi);
   B rep = c1(o, arg);
   if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
@@ -1172,17 +1193,9 @@ B pick_ucw(B t, B o, B w, B x) {
     else if (xt==t_i16arr) { i16* xp = i16any_ptr(x); xp[wi] = o2iG(rep); return x; }
     else if (xt==t_i32arr) { i32* xp = i32any_ptr(x); xp[wi] = o2iG(rep); return x; }
     else if (xt==t_f64arr) { f64* xp = f64any_ptr(x); xp[wi] = o2fG(rep); return x; }
-    else if (xt==t_harr) {
-      B* xp = harr_ptr(x);
-      dec(xp[wi]);
-      xp[wi] = rep;
-      return x;
-    } else if (xt==t_fillarr) {
-      B* xp = fillarr_ptr(a(x));
-      dec(xp[wi]);
-      xp[wi] = rep;
-      return x;
-    }
+    else if (xt==t_c8arr ) { u8*  xp = c8any_ptr (x); xp[wi] = o2cG(rep); return x; }
+    else if (xt==t_c16arr) { u16* xp = c16any_ptr(x); xp[wi] = o2cG(rep); return x; }
+    else if (xt==t_c32arr) { u32* xp = c32any_ptr(x); xp[wi] = o2cG(rep); return x; }
   }
   MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
   MUTG_INIT(r);
