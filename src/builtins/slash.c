@@ -417,57 +417,61 @@ B slash_c2(B t, B w, B x) {
     }
     B xf = getFillQ(x);
     
+    B r;
     if (TI(w,elType)==el_bit) {
-      B r = compress(w, x, wia, xf);
+      compress:
+      r = compress(w, x, wia, xf);
+      decWX_ret:
       decG(w); decG(x); return r;
+      
+      to_compress:
+      wia = xia;
+      w = taga(cpyBitArr(w));
+      goto compress;
     }
     #define CASE(WT,XT) if (TI(x,elType)==el_##XT) { \
       XT* xp = XT##any_ptr(x);                       \
-      XT* rp; B r = m_##XT##arrv(&rp, wsum);         \
-      if (or<2) for (usz i = 0; i < wia; i++) {      \
-        *rp = xp[i];                                 \
-        rp+= wp[i];                                  \
-      } else for (usz i = 0; i < wia; i++) {         \
+      XT* rp; r = m_##XT##arrv(&rp, wsum);           \
+      for (usz i = 0; i < wia; i++) {                \
         WT cw = wp[i]; XT cx = xp[i];                \
         for (i64 j = 0; j < cw; j++) *rp++ = cx;     \
       }                                              \
-      decG(w); decG(x); return r;                    \
+      goto decWX_ret;                                \
     }
-    #define TYPED(WT,SIGN) { \
+    
+    #define TYPED(WT,WTU,SIGN) {         \
       WT* wp = WT##any_ptr(w);           \
       while (wia>0 && !wp[wia-1]) wia--; \
       i64 wsum = 0;                      \
-      u32 or = 0;                        \
+      WTU or = 0;                        \
       for (usz i = 0; i < wia; i++) {    \
         wsum+= wp[i];                    \
-        or|= (u32)wp[i];                 \
+        or|= (WTU)wp[i];                 \
       }                                  \
-      if (or>>SIGN) thrM("/: 𝕨 must consist of natural numbers"); \
-      if (TI(x,elType)==el_bit) {                  \
-        u64* xp = bitarr_ptr(x); u64 ri=0;         \
-        u64* rp; B r = m_bitarrv(&rp, wsum);       \
-        if (or<2) for (usz i = 0; i < wia; i++) {  \
-          bitp_set(rp, ri, bitp_get(xp,i));        \
-          ri+= wp[i];                              \
-        } else for (usz i = 0; i < wia; i++) {     \
-          WT cw = wp[i]; bool cx = bitp_get(xp,i); \
+      if (RARE(or>>SIGN)) thrM("/: 𝕨 must consist of natural numbers"); \
+      if (RARE(or<2)) goto to_compress;                  \
+      if (TI(x,elType)==el_bit) {                        \
+        u64* xp = bitarr_ptr(x); u64 ri=0;               \
+        u64* rp; r = m_bitarrv(&rp, wsum);               \
+        for (usz i = 0; i < wia; i++) {                  \
+          WT cw = wp[i]; bool cx = bitp_get(xp,i);       \
           for (i64 j = 0; j < cw; j++) bitp_set(rp, ri++, cx); \
-        }                                          \
-        decG(w); decG(x); return r;                \
-      }                                            \
+        }                                                \
+        decG(w); decG(x); return r;                      \
+      }                                                  \
       CASE(WT,i8) CASE(WT,i16) CASE(WT,i32) CASE(WT,f64) \
-      SLOW2("𝕨/𝕩", w, x);                    \
-      M_HARR(r, wsum) SGetU(x)               \
-      for (usz i = 0; i < wia; i++) {        \
-        i32 cw = wp[i]; if (cw==0) continue; \
-        B cx = incBy(GetU(x, i), cw);        \
-        for (i64 j = 0; j < cw; j++) HARR_ADDA(r, cx);\
-      }                                      \
-      decG(w); decG(x);                      \
-      return withFill(HARR_FV(r), xf);       \
+      SLOW2("𝕨/𝕩", w, x);                                \
+      M_HARR(r0, wsum) SGetU(x)                          \
+      for (usz i = 0; i < wia; i++) {                    \
+        i32 cw = wp[i]; if (cw==0) continue;             \
+        B cx = incBy(GetU(x, i), cw);                    \
+        for (i64 j = 0; j < cw; j++) HARR_ADDA(r0, cx);  \
+      }                                                  \
+      r = withFill(HARR_FV(r0), xf); goto decWX_ret;     \
     }
-    if (TI(w,elType)==el_i8 ) TYPED(i8,7);
-    if (TI(w,elType)==el_i32) TYPED(i32,31);
+    
+    if (TI(w,elType)==el_i8 ) TYPED(i8,u8,7);
+    if (TI(w,elType)==el_i32) TYPED(i32,u32,31);
     #undef TYPED
     #undef CASE
     SLOW2("𝕨/𝕩", w, x);
