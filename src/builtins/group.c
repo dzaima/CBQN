@@ -141,15 +141,19 @@ B group_c2(B t, B w, B x) {
         u8 xk = xl - 3;
         if (notB && !bits && sort) {
           void* xp = tyany_ptr(x);
-          u64 i=neg*width; for (usz j=0; j<ria; j++) {
-            usz l = len[j];
-            if (!l) { rp[j]=inc(z); continue; }
-            if (xr==1) m_tyarrv(rp+j, width, l, xt);
-            else       rp[j] = m_shChangeLen(xt, xr, xsh, l, width, csz);
-            u64 lw = l*width;
-            memcpy(tyarr_ptr(rp[j]), (u8*)xp+i, lw);
-            i += lw;
-          }
+          u64 i=neg*width;
+          #define GROUP_SORT(ALLOC) \
+            for (usz j=0; j<ria; j++) {                \
+              usz l = len[j];                          \
+              if (!l) { rp[j]=inc(z); continue; }      \
+              ALLOC;                                   \
+              u64 lw = l*width;                        \
+              memcpy(tyarr_ptr(rp[j]), (u8*)xp+i, lw); \
+              i += lw;                                 \
+            }
+          if (xr==1) GROUP_SORT(m_tyarrv(rp+j, width, l, xt))
+          else       GROUP_SORT(rp[j] = m_shChangeLen(xt, xr, xsh, l, width, csz))
+          #undef GROUP_SORT
         } else if (notB && xk <= 3) {
           void* xp = tyany_ptr(x);
           allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
