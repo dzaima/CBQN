@@ -215,6 +215,12 @@ static bool atomEqual(B w, B x) { // doesn't consume
   return atomEqualF(w, x);
 }
 
+NOINLINE usz depthF(B x);
+static usz depth(B x) { // doesn't consume
+  if (isAtm(x)) return 0;
+  if (TI(x,arrD1)) return 1;
+  return depthF(x);
+}
 
 
 
