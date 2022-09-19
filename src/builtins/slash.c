@@ -194,18 +194,15 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
   if (xl>0 || csz%8==0) { // Full bytes
     u64 width = xl==0 ? csz/8 : csz << (xl-3);
     u8* xp; u8* rp;
-    bool is_B = TI(x,elType) == el_B;
+    bool is_B = TI(x,elType) == el_B; HArr_p rh;
     if (!is_B) {
       xp = tyany_ptr(x);
       rp = m_tyarrv(&r,width,wsum,xt);
     } else {
-      B xf = getFillQ(x);
       xp = (u8*)arr_bptr(x);
       usz ria = wsum*csz;
       if (xp != NULL) {
-        HArr_p rh = m_harrUv(ria);
-        r = withFill(rh.b, xf);
-        IA(r) = wsum; // Shape-setting code at end of compress expects this
+        rh = m_harrUv(ria);
         rp = (u8*)rh.a;
       } else {
         SLOW2("𝕨/𝕩", w, x);
@@ -213,13 +210,17 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
         for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
           for (usz j = 0; j < csz; j++) HARR_ADDA(rp, Get(x,i*csz+j));
         }
-        return withFill(HARR_FV(rp), xf);
+        return withFill(HARR_FV(rp), getFillQ(x));
       }
     }
     #define MEM_CPY(R,RI,X,XI,L) memcpy(R+RI, X+XI, L)
     COMPRESS_GROUP(MEM_CPY)
     #undef MEM_CPY
-    if (is_B) for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
+    if (is_B) {
+      for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
+      r = withFill(rh.b, getFillQ(x));
+      IA(r) = wsum; // Shape-setting code at end of compress expects this
+    }
   } else { // Bits
     usz width = csz;
     u64* xp = tyany_ptr(x);
@@ -495,7 +496,6 @@ B slash_c2(B t, B w, B x) {
     if (we > el_i32) { w = any_squeeze(w); we = TI(w,elType); }
     if (we==el_bit) {
       wbool:
-      if (xl > 6 && TI(x,elType) == el_B) goto base; // TODO: fix bugs, enable
       B r = compress(w, x, wia, xl, xt);
       decG(w); decG(x); return r;
     }
