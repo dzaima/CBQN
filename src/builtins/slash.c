@@ -178,6 +178,57 @@ static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   }
 }
 
+static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
+  B r;
+  usz csz = arr_csz(x);
+  u8 xl = arrTypeBitsLog(TY(x));
+  #define COMPRESS_GROUP(CPY) \
+    u64 ri = 0;                                                               \
+    u64 wv = wp[0]; usz i = 0, wn = (wia-1)/64+1;                             \
+    for (u64 e=wsum*width; ri < e; ) {                                        \
+      while (wv==      0) wv=wp[++i];         usz i0=64*i+CTZ( wv); wv|=wv-1; \
+      while (wv==-(u64)1) wv=++i<wn?wp[i]:0;  usz i1=64*i+CTZ(~wv); wv&=wv+1; \
+      u64 l = (i1-i0) * width;                                                \
+      CPY(rp, ri, xp, i0*width, l); ri += l;                                  \
+    }
+  if (xl>0 || csz%8==0) { // Full bytes
+    u64 width = xl==0 ? csz/8 : csz << (xl-3);
+    u8* xp; u8* rp;
+    bool is_B = TI(x,elType) == el_B;
+    if (!is_B) {
+      xp = tyany_ptr(x);
+      rp = m_tyarrv(&r,width,wsum,xt);
+    } else {
+      B xf = getFillQ(x);
+      xp = (u8*)arr_bptr(x);
+      usz ria = wsum*csz;
+      if (xp != NULL) {
+        HArr_p rh = m_harrUv(ria);
+        r = withFill(rh.b, xf);
+        IA(r) = wsum; // Shape-setting code at end of compress expects this
+        rp = (u8*)rh.a;
+      } else {
+        SLOW2("𝕨/𝕩", w, x);
+        M_HARR(rp, ria) SGet(x)
+        for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
+          for (usz j = 0; j < csz; j++) HARR_ADDA(rp, Get(x,i*csz+j));
+        }
+        return withFill(HARR_FV(rp), xf);
+      }
+    }
+    #define MEM_CPY(R,RI,X,XI,L) memcpy(R+RI, X+XI, L)
+    COMPRESS_GROUP(MEM_CPY)
+    #undef MEM_CPY
+    if (is_B) for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
+  } else { // Bits
+    usz width = csz;
+    u64* xp = tyany_ptr(x);
+    u64* rp; r = m_bitarrv(&rp,wsum*width); IA(r) = wsum;
+    COMPRESS_GROUP(bit_cpy)
+  }
+  return r;
+}
+
 static B where(B x, usz xia, u64 s) {
   B r;
   u64* xp = bitarr_ptr(x);
@@ -282,7 +333,8 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   if (wsum == wia0) return inc(x);
 
   B r;
-  switch(xl) { default: UD;
+  switch(xl) {
+    default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
       #if SINGELI && defined(__BMI2__)
@@ -438,15 +490,16 @@ B slash_c2(B t, B w, B x) {
 
     u8 xl = cellWidthLog(x);
     u8 xt = arrNewType(TY(x));
-    if (xl > 6 || (xl < 3 && xl != 0)) goto base;
 
     u8 we = TI(w,elType);
     if (we > el_i32) { w = any_squeeze(w); we = TI(w,elType); }
     if (we==el_bit) {
       wbool:
+      if (xl > 6 && TI(x,elType) == el_B) goto base; // TODO: fix bugs, enable
       B r = compress(w, x, wia, xl, xt);
       decG(w); decG(x); return r;
     }
+    if (xl > 6 || (xl < 3 && xl != 0)) goto base;
     u64 s = usum(w);
     if (we!=el_bit && s<=wia) {
       w = num_squeeze(w); we = TI(w,elType);
