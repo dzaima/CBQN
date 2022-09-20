@@ -62,25 +62,25 @@ B group_c2(B t, B w, B x) {
       #undef CASE
       if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
       if (ria > (i64)(USZ_MAX)) thrOOM();
-
+      
       Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
       B xf = getFillQ(x);
-
+      
       Arr* rf = m_fillarrp(0); if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
       fillarr_setFill(rf, m_f64(0));
       B z = taga(rf);
       fillarr_setFill(r, z);
-
-      TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
+      
       // Both cases needed to make sure wia>0 for ip[wia-1] below
-      if (ria==0) goto intvec_ret;
+      if (ria==0) goto setfill_dec_ret;
       if (neg==xia) {
         for (usz i = 0; i < ria; i++) rp[i] = inc(z);
-        goto intvec_ret;
+        goto setfill_dec_ret;
       }
-
+      TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
+      
       bool notB = TI(x,elType) != el_B;
       u8 xt = arrNewType(TY(x));
       u8 xl = arrTypeBitsLog(TY(x));
@@ -90,7 +90,7 @@ B group_c2(B t, B w, B x) {
       if (RARE(xr>1)) {
         width *= csz = arr_csz(x);
         xl += CTZ(csz);
-        if (bits && xl>=3) { bits=1; width>>=3; }
+        if (bits && xl>=3) { bits=0; width>>=3; }
         if ((csz & (csz-1)) || xl>7) xl = 7;
       }
       if (xia>64 && notB && !bits && change<(xia*width)/32) {
@@ -106,7 +106,7 @@ B group_c2(B t, B w, B x) {
         if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
         if (TI(w  ,elType)!=el_i32) w   = taga(cpyI32Arr(w  ));
         wia = IA(ind);
-
+        
         i32* ip = i32any_ptr(ind);
         i32* wp = i32any_ptr(w);
         usz i0 = ip[0];
@@ -114,9 +114,9 @@ B group_c2(B t, B w, B x) {
         ip[wia-1] = xia-ip[wia-1];
         for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
         for (usz i = 0; i < wia; i++) len[wp[i]]+=ip[i];
-
+        
         void* xp = tyany_ptr(x);
-
+        
         allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
         for (u64 i=0, k=i0*width; i<wia; i++) {
           u64 k0 = k;
@@ -138,7 +138,7 @@ B group_c2(B t, B w, B x) {
         i32* wp = i32any_ptr(w);
         for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
         for (usz i = 0; i < xia; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
-
+        
         u8 xk = xl - 3;
         if (notB && !bits && sort) {
           void* xp = tyany_ptr(x);
@@ -162,7 +162,7 @@ B group_c2(B t, B w, B x) {
             case 0: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u8* )tyarr_ptr(rp[n]))[pos[n]++] = ((u8* )xp)[i]; } break;
             case 1: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u16*)tyarr_ptr(rp[n]))[pos[n]++] = ((u16*)xp)[i]; } break;
             case 2: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u32*)tyarr_ptr(rp[n]))[pos[n]++] = ((u32*)xp)[i]; } break;
-            case 3: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((f64*)tyarr_ptr(rp[n]))[pos[n]++] = ((f64*)xp)[i]; } break;
+            case 3: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u64*)tyarr_ptr(rp[n]))[pos[n]++] = ((u64*)xp)[i]; } break;
           }
         } else {
           for (usz i = 0; i < ria; i++) {
@@ -192,9 +192,10 @@ B group_c2(B t, B w, B x) {
           for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i]*csz;
         }
       }
-      intvec_ret:
+      TFREE(pos);
+      setfill_dec_ret:
       fillarr_setFill(rf, xf);
-      decG(w); decG(x); TFREE(pos);
+      decG(w); decG(x);
       return taga(r);
     } else if (xr==1) {
       SLOW2("𝕨⊔𝕩", w, x);

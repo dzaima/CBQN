@@ -347,7 +347,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
   if (wsum == wia0) return inc(x);
-
+  
   B r;
   switch(xl) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
@@ -404,27 +404,27 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     #undef WITH_SPARSE
     #define BLOCK_OR_GROUPED(T) \
       if (wsum>=wia/8 && groups_lt(wp,wia, wia/16)) r = compress_grouped(wp, x, wia, wsum, xt); \
-      else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); break; } \
-      break;
-    case 5: BLOCK_OR_GROUPED(i32)
-    case 6: if (TI(x,elType)!=el_B) { BLOCK_OR_GROUPED(u64) }
-    #undef BLOCK_OR_GROUPED
-    else {
-      B xf = getFillQ(x);
-      B* xp = arr_bptr(x);
-      if (xp!=NULL) {
-        HArr_p rh = m_harrUv(wsum);
-        B *rp = rh.a; COMPRESS_BLOCK(B);
-        for (usz i=0; i<wsum; i++) inc(rh.a[i]);
-        r = withFill(rh.b, xf);
-      } else {
-        SLOW2("𝕨/𝕩", w, x);
-        M_HARR(rp, wsum) SGet(x)
-        for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) HARR_ADDA(rp, Get(x,i));
-        r = withFill(HARR_FV(rp), xf);
+      else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); }
+    case 5: BLOCK_OR_GROUPED(i32) break;
+    case 6:
+      if (TI(x,elType)!=el_B) { BLOCK_OR_GROUPED(u64) }
+      else {
+        B xf = getFillQ(x);
+        B* xp = arr_bptr(x);
+        if (xp!=NULL) {
+          HArr_p rh = m_harrUv(wsum);
+          B *rp = rh.a; COMPRESS_BLOCK(B);
+          for (usz i=0; i<wsum; i++) inc(rh.a[i]);
+          r = withFill(rh.b, xf);
+        } else {
+          SLOW2("𝕨/𝕩", w, x);
+          M_HARR(rp, wsum) SGet(x)
+          for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) HARR_ADDA(rp, Get(x,i));
+          r = withFill(HARR_FV(rp), xf);
+        }
       }
       break;
-    }
+    #undef BLOCK_OR_GROUPED
     #undef COMPRESS_BLOCK
   }
   ur xr = RNK(x);
@@ -510,10 +510,10 @@ B slash_c2(B t, B w, B x) {
     ur xr = RNK(x);
     usz xlen = *SH(x);
     if (RARE(wia!=xlen)) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
-
+    
     u8 xl = cellWidthLog(x);
     u8 xt = arrNewType(TY(x));
-
+    
     u8 we = TI(w,elType);
     if (!elInt(we)) {
       w=any_squeeze(w); we=TI(w,elType);
@@ -559,7 +559,7 @@ B slash_c2(B t, B w, B x) {
       sh[0] = s;
       shcpy(sh+1, SH(x)+1, xr-1);
     }
-
+    
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); SH(r) = rsh; }
