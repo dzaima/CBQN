@@ -30,8 +30,9 @@ static void allocGroups(B* rp, usz ria, B z, u8 xt, ur xr, usz* xsh, i32* len, u
 
 extern B rt_group;
 B group_c2(B t, B w, B x) {
+  if (!isArr(x)) thrM("⊔: 𝕩 must be an array");
   ur xr = RNK(x);
-  if (isArr(w)&isArr(x) && RNK(w)==1 && xr>=1 && depth(w)==1) {
+  if (isArr(w) && RNK(w)==1 && xr>=1 && depth(w)==1) {
     usz wia = IA(w);
     usz* xsh = SH(x);
     usz xia = *xsh;
