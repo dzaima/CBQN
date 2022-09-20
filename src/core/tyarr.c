@@ -13,6 +13,12 @@ u8 elTypeWidth[] = {
   [el_i32] = 4, [el_c32] = 4,
   [el_bit] = 0, [el_f64] = 8
 };
+u8 elTypeWidthLogBits[] = {
+  [el_i8 ] = 3, [el_c8 ] = 3,
+  [el_i16] = 4, [el_c16] = 4,
+  [el_i32] = 5, [el_c32] = 5,
+  [el_bit] = 0, [el_f64] = 6
+};
 u8 arrTypeWidthLog[] = {
   [t_bitarr]=99,
   [t_i8arr ]=0, [t_i8slice ]=0, [t_c8arr ]=0, [t_c8slice ]=0,

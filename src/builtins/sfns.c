@@ -874,6 +874,9 @@ B reverse_c2(B t, B w, B x) {
   return withFill(mut_fcd(r, x), xf);
 }
 
+#ifdef __BMI2__
+#include <immintrin.h>
+#endif
 
 extern B rt_transp;
 B transp_c1(B t, B x) {
@@ -889,29 +892,62 @@ B transp_c1(B t, B x) {
   Arr* r;
   usz xi = 0;
   u8 xe = TI(x,elType);
-  switch(xe) { default: UD;
-    case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; // fallthough; lazy; TODO squeeze
-    case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-    case el_B: { // can't be bothered to implement a bitarr transpose
-      B* xp = arr_bptr(x);
-      B xf = getFillR(x);
-      if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; } // TODO extract this to an inline function
-      
-      HArr_p p = m_harrUp(ia);
-      for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[xi++]);
-      
-      usz* rsh = arr_shAlloc((Arr*)p.c, xr);
-      if (xr==2) {
-        rsh[0] = w;
-        rsh[1] = h;
-      } else {
-        shcpy(rsh, xsh+1, xr-1);
-        rsh[xr-1] = h;
+  if (h==2) {
+    if (xe==el_B) {
+      B* xp = arr_bptr(x); if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
+      B* x0 = xp; B* x1 = x0+w;
+      HArr_p rp = m_harrUp(ia);
+      for (usz i=0; i<w; i++) { rp.a[i*2] = inc(x0[i]); rp.a[i*2+1] = inc(x1[i]); }
+      r = (Arr*) rp.c;
+    } else {
+      #ifndef __BMI2__
+      if (xe==el_bit) { x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; }
+      void* rp = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
+      #else
+      void* rp = m_tyarrlbp(&r,elWidthLogBits(xe),ia,el2t(xe));
+      #endif
+      void* xp = tyany_ptr(x);
+      switch(xe) { default: UD;
+        #ifdef __BMI2__
+        case el_bit:
+          u32* x0 = xp;
+          Arr* x1o = TI(x,slice)(inc(x),w,w);
+          u32* x1 = (u32*) ((TyArr*)x1o)->a;
+          for (usz i=0; i<BIT_N(ia); i++) ((u64*)rp)[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+          mm_free((Value*)x1o);
+          break;
+        #endif
+        case el_i8: case el_c8:  { u8*  x0=xp; u8*  x1=x0+w; for (usz i=0; i<w; i++) { ((u8* )rp)[i*2] = x0[i]; ((u8* )rp)[i*2+1] = x1[i]; } } break;
+        case el_i16:case el_c16: { u16* x0=xp; u16* x1=x0+w; for (usz i=0; i<w; i++) { ((u16*)rp)[i*2] = x0[i]; ((u16*)rp)[i*2+1] = x1[i]; } } break;
+        case el_i32:case el_c32: { u32* x0=xp; u32* x1=x0+w; for (usz i=0; i<w; i++) { ((u32*)rp)[i*2] = x0[i]; ((u32*)rp)[i*2+1] = x1[i]; } } break;
+        case el_f64:             { u64* x0=xp; u64* x1=x0+w; for (usz i=0; i<w; i++) { ((u64*)rp)[i*2] = x0[i]; ((u64*)rp)[i*2+1] = x1[i]; } } break;
       }
-      decG(x); return qWithFill(p.b, xf);
+    }
+  } else {
+    switch(xe) { default: UD;
+      case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; // fallthough; lazy; TODO squeeze
+      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_B: { // can't be bothered to implement a bitarr transpose
+        B* xp = arr_bptr(x);
+        B xf = getFillR(x);
+        if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; } // TODO extract this to an inline function
+        
+        HArr_p p = m_harrUp(ia);
+        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[xi++]); // TODO inc afterwards, but don't when there's a method of freeing a HArr without freeing its elements
+        
+        usz* rsh = arr_shAlloc((Arr*)p.c, xr);
+        if (xr==2) {
+          rsh[0] = w;
+          rsh[1] = h;
+        } else {
+          shcpy(rsh, xsh+1, xr-1);
+          rsh[xr-1] = h;
+        }
+        decG(x); return qWithFill(p.b, xf);
+      }
     }
   }
   usz* rsh = arr_shAlloc(r, xr);
