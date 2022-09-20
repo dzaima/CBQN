@@ -775,10 +775,16 @@ B slash_im(B t, B x) {
 }
 
 B slash_ucw(B t, B o, B w, B x) {
-  if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) return def_fn_ucw(t, o, w, x);
+  if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) {
+    base:
+    return def_fn_ucw(t, o, w, x);
+  }
   usz ia = IA(x);
   SGetU(w)
-  if (!elInt(TI(w,elType))) for (usz i = 0; i < ia; i++) if (!q_i32(GetU(w,i))) return def_fn_ucw(t, o, w, x);
+  if (TY(w) != t_bitarr) {
+    w = num_squeezeChk(w);
+    if (!elInt(TI(w,elType))) goto base;
+  }
   B arg = slash_c2(t, inc(w), inc(x));
   usz argIA = IA(arg);
   B rep = c1(o, arg);
