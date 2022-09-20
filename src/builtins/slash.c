@@ -183,13 +183,13 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
   usz csz = arr_csz(x);
   u8 xl = arrTypeBitsLog(TY(x));
   #define COMPRESS_GROUP(CPY) \
-    u64 ri = 0;                                                               \
-    u64 wv = wp[0]; usz i = 0, wn = (wia-1)/64+1;                             \
-    for (u64 e=wsum*width; ri < e; ) {                                        \
-      while (wv==      0) wv=wp[++i];         usz i0=64*i+CTZ( wv); wv|=wv-1; \
-      while (wv==-(u64)1) wv=++i<wn?wp[i]:0;  usz i1=64*i+CTZ(~wv); wv&=wv+1; \
-      u64 l = (i1-i0) * width;                                                \
-      CPY(rp, ri, xp, i0*width, l); ri += l;                                  \
+    u64 ri = 0;                                                                  \
+    u64 wv = wp[0]; usz i = 0, wn = (wia-1)/64+1;                                \
+    for (u64 e=wsum*width; ri < e; ) {                                           \
+      while (wv==      0) { wv=wp[++i];        } usz i0=64*i+CTZ( wv); wv|=wv-1; \
+      while (wv==-(u64)1) { wv=++i<wn?wp[i]:0; } usz i1=64*i+CTZ(~wv); wv&=wv+1; \
+      u64 l = (i1-i0) * width;                                                   \
+      CPY(rp, ri, xp, i0*width, l); ri += l;                                     \
     }
   if (xl>0 || csz%8==0) { // Full bytes
     u64 width = xl==0 ? csz/8 : csz << (xl-3);
@@ -474,7 +474,7 @@ B slash_c1(B t, B x) {
           for (usz i=k; i<e; i++) rp[i]=0;        \
           while (ij<e) { rp[ij]++; ij+=xp[++j]; } \
           for (usz i=k; i<e; i++) js=rp[i]+=js;   \
-          if (e==s) break; k=e;                   \
+          if (e==s) {break;}  k=e;                \
         }
       i32* rp; r = m_i32arrv(&rp, s);
       if      (xe == el_i8 ) { SPARSE_IND(i8 ); }
@@ -502,6 +502,7 @@ B slash_c1(B t, B x) {
 }
 
 B slash_c2(B t, B w, B x) {
+  B r;
   if (isArr(w) && RNK(w)==1 && depth(w)==1) {
     usz wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
@@ -514,38 +515,43 @@ B slash_c2(B t, B w, B x) {
     u8 xt = arrNewType(TY(x));
 
     u8 we = TI(w,elType);
-    if (we > el_i32) { w = any_squeeze(w); we = TI(w,elType); }
+    if (!elInt(we)) {
+      w=any_squeeze(w); we=TI(w,elType);
+      if (!elInt(we)) goto slow;
+    }
     if (we==el_bit) {
       wbool:
-      B r = compress(w, x, wia, xl, xt);
-      decG(w); decG(x); return r;
+      r = compress(w, x, wia, xl, xt);
+      goto decWX_ret;
     }
-    if (xl > 6 || (xl < 3 && xl != 0)) goto base;
+    if (xl>6 || (xl<3 && xl!=0)) goto base;
     u64 s = usum(w);
-    if (we!=el_bit && s<=wia) {
-      w = num_squeeze(w); we = TI(w,elType);
+    if (s<=wia) {
+      w=num_squeezeChk(w); we=TI(w,elType);
       if (we==el_bit) goto wbool;
     }
-
-    if (RARE(we>el_i32 || TI(x,elType)==el_B)) { // Slow case
+    
+    if (RARE(TI(x,elType)==el_B)) { // Slow case
+      slow:
       if (xr > 1) goto base;
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
-      u64 ria = usum(w);
-      if (ria>=USZ_MAX) thrOOM();
-      M_HARR(r, ria) SGetU(w) SGetU(x)
+      MAKE_MUT(r0, s) mut_init(r0, el_B); MUTG_INIT(r0);
+      SGetU(w) SGetU(x)
+      usz ri = 0;
       for (usz i = 0; i < wia; i++) {
         usz c = o2s(GetU(w, i));
         if (c) {
-          B cx = incBy(GetU(x, i), c);
-          for (usz j = 0; RARE(j < c); j++) HARR_ADDA(r, cx);
+          mut_fillG(r0, ri, GetU(x, i), c);
+          ri+= c;
         }
       }
-      decG(w); decG(x);
-      return withFill(HARR_FV(r), xf);
+      r = withFill(mut_fv(r0), xf);
+      decWX_ret: decG(w);
+      decX_ret: decG(x);
+      return r;
     }
-
-    B r;
+    
     // Make shape if needed; all cases below use it
     usz* rsh = NULL;
     if (xr > 1) {
@@ -571,11 +577,11 @@ B slash_c2(B t, B w, B x) {
               rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=wp[j];        \
             }                                                  \
             for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
-            if (e==s) break; k=e;                              \
+            if (e==s) {break;} k=e;                            \
           }
-        if      (we == el_i8 ) { SPARSE_REP(i8 ); }
-        else if (we == el_i16) { SPARSE_REP(i16); }
-        else                   { SPARSE_REP(i32); }
+        if      (we==el_i8 ) { SPARSE_REP(i8 ); }
+        else if (we==el_i16) { SPARSE_REP(i16); }
+        else                 { SPARSE_REP(i32); }
         #undef SPARSE_REP
       } else {
         if (we < el_i32) w = taga(cpyI32Arr(w));
@@ -609,7 +615,7 @@ B slash_c2(B t, B w, B x) {
             for (usz i=k; i<e; i++) rp[i]=0;      \
             while (ij<e) { j++; XT sx=px; rp[ij]^=sx^(px=xp[j]); ij+=wp[j]; } \
             for (usz i=k; i<e; i++) js=rp[i]^=js; \
-            if (e==s) break; k=e;                 \
+            if (e==s) {break;} k=e;               \
           } break; }
         #define SPARSE_REP(WT) \
           WT* wp = WT##any_ptr(w);                \
@@ -633,7 +639,7 @@ B slash_c2(B t, B w, B x) {
         #undef CASE
       }
     }
-    decG(w); decG(x); return r;
+    goto decWX_ret;
   }
   if (isArr(x) && RNK(x)==1 && q_i32(w)) {
     usz xia = IA(x);
@@ -644,23 +650,22 @@ B slash_c2(B t, B w, B x) {
     }
     if (TI(x,elType)==el_i32) {
       i32* xp = i32any_ptr(x);
-      i32* rp; B r = m_i32arrv(&rp, xia*wv);
+      i32* rp; r = m_i32arrv(&rp, xia*wv);
       for (usz i = 0; i < xia; i++) {
         for (i64 j = 0; j < wv; j++) *rp++ = xp[i];
       }
-      decG(x);
-      return r;
+      goto decX_ret;
     } else {
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
-      HArr_p r = m_harrUv(xia*wv);
+      HArr_p r0 = m_harrUv(xia*wv);
       SGetU(x)
       for (usz i = 0; i < xia; i++) {
         B cx = incBy(GetU(x, i), wv);
-        for (i64 j = 0; j < wv; j++) *r.a++ = cx;
+        for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
       }
-      decG(x);
-      return withFill(r.b, xf);
+      r = withFill(r0.b, xf);
+      goto decX_ret;
     }
   }
   base:
