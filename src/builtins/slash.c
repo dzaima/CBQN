@@ -446,7 +446,7 @@ B slash_c1(B t, B x) {
   usz xia = IA(x);
   B r;
   u8 xe = TI(x,elType);
-  if (xe!=el_bit && s<=xia) { x = num_squeeze(x); xe = TI(x,elType); }
+  if (xe!=el_bit && s<=xia) { x = num_squeezeChk(x); xe = TI(x,elType); }
   if (xe==el_bit) {
     r = where(x, xia, s);
   } else if (RARE(xia > (usz)I32_MAX+1)) {
@@ -684,7 +684,7 @@ B slash_im(B t, B x) {
       usz ria = 1 + (sum>0);
       f64* rp; B r = m_f64arrv(&rp, ria);
       rp[sum>0] = sum; rp[0] = xia - sum;
-      decG(x); return num_squeeze(r);
+      decG(x); return num_squeezeChk(r);
     }
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
@@ -719,7 +719,7 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
         TFREE(t);                                                                \
       }                                                                          \
-      decG(x); return num_squeeze(r);                                            \
+      decG(x); return num_squeezeChk(r);                                            \
     }
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
