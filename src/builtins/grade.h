@@ -35,16 +35,13 @@
   TALLOC(usz, c0, C); usz *c0o=c0+C/2;                       \
   for (usz j=0; j<C; j++) c0[j]=0;                           \
   for (usz i=0; i<n; i++) c0o[xp[i]]++;                      \
-  if (n <= C*8) { /* Sum-based */                            \
-    for (usz i=1; i<n; i++) rp[i]=0;                         \
-    GRADE_UD(                                                \
-      rp[0]=-C/2;  usz e=C-1; while (c0[e]==0) e--;          \
-      for (usz j=0  , i=0; j<e; j++) { i+=c0[j]; rp[i]++; }  \
-    ,                                                        \
-      rp[0]=C/2-1; usz e=0;   while (c0[e]==0) e++;          \
-      for (usz j=C-1, i=0; j>e; j--) { i+=c0[j]; rp[i]--; }  \
-    )                                                        \
-    for (usz i=1; i<n; i++) rp[i]+=rp[i-1];                  \
+  if (n/16 <= C) { /* Sum-based */                           \
+    for (usz i=0; i<n; i++) rp[i]=0;                         \
+    usz j=GRADE_UD(0,C-1), i;                                \
+    while ((i=c0[j])==0) GRADE_UD(j++,j--);                  \
+    usz js = j - C/2;                                        \
+    while (i<n) { rp[i]++; i+=c0[GRADE_UD(++j,--j)]; }       \
+    for (usz i=0; i<n; i++) js=rp[i]+=js;                    \
   } else { /* Branchy */                                     \
     FOR(j,C) for (usz c=c0[j]; c--; ) *rp++ = j-C/2;         \
   }                                                          \

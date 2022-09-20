@@ -17,6 +17,7 @@
 #include "../builtins/sfns.c"
 #include "../builtins/select.c"
 #include "../builtins/slash.c"
+#include "../builtins/group.c"
 #include "../builtins/sysfn.c"
 #include "../builtins/sort.c"
 #include "../builtins/selfsearch.c"

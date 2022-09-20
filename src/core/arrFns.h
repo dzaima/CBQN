@@ -55,3 +55,16 @@ extern u8 elTypeWidth[];
 #define elWidth(X) elTypeWidth[X]
 extern u8 arrTypeWidthLog[];
 #define arrTypeWidthLog(X) arrTypeWidthLog[X]
+extern u8 arrTypeBitsLog[];
+#define arrTypeBitsLog(X) arrTypeBitsLog[X]
+#define arrNewType(X) el2t(TIi(X,elType))
+
+// Log of width in bits: max of 7, and also return 7 if not power of 2
+static u8 cellWidthLog(B x) {
+  assert(isArr(x) && RNK(x)>=1);
+  u8 lw = arrTypeBitsLog(TY(x));
+  if (LIKELY(RNK(x)==1)) return lw;
+  usz csz = arr_csz(x);
+  if (csz & (csz-1)) return 7;    // Not power of 2
+  return lw + CTZ(csz | 128>>lw); // Max of 7; also handle csz==0
+}
