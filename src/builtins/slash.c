@@ -104,6 +104,16 @@
   #endif
 #endif
 
+#if SINGELI
+extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
+extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
+extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
+#define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
+#define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
+#else
+#define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
+#endif
+
 // Dense Where, still significantly worse than SIMD
 // Assumes modifiable DST
 #define WHERE_DENSE(SRC, DST, LEN, OFF) do { \
@@ -473,10 +483,10 @@ B slash_c1(B t, B x) {
           usz e = b<s-k? k+b : s;                 \
           for (usz i=k; i<e; i++) rp[i]=0;        \
           while (ij<e) { rp[ij]++; ij+=xp[++j]; } \
-          for (usz i=k; i<e; i++) js=rp[i]+=js;   \
+          PLUS_SCAN(u32)                          \
           if (e==s) {break;}  k=e;                \
         }
-      i32* rp; r = m_i32arrv(&rp, s);
+      u32* rp; r = m_i32arrv((i32**)&rp, s);
       if      (xe == el_i8 ) { SPARSE_IND(i8 ); }
       else if (xe == el_i16) { SPARSE_IND(i16); }
       else                   { SPARSE_IND(i32); }
@@ -605,7 +615,7 @@ B slash_c2(B t, B w, B x) {
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); PSH(ra) = rsh; PIA(ra) = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
-      if (s/32 <= wia) { // Sparse case: use both types
+      if (s/64 <= wia) { // Sparse case: use both types
         #define CASE(L,XT) case L: { \
           XT* xp = xv; XT* rp = rv;               \
           usz b = 1<<10;                          \
@@ -613,8 +623,8 @@ B slash_c2(B t, B w, B x) {
           for (usz k=0, j=0, ij=wp[0]; ; ) {      \
             usz e = b<s-k? k+b : s;               \
             for (usz i=k; i<e; i++) rp[i]=0;      \
-            while (ij<e) { j++; XT sx=px; rp[ij]^=sx^(px=xp[j]); ij+=wp[j]; } \
-            for (usz i=k; i<e; i++) js=rp[i]^=js; \
+            while (ij<e) { j++; XT sx=px; rp[ij]+=(px=xp[j])-sx; ij+=wp[j]; } \
+            PLUS_SCAN(XT)                         \
             if (e==s) {break;} k=e;               \
           } break; }
         #define SPARSE_REP(WT) \
