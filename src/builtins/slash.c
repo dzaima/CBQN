@@ -110,6 +110,7 @@ extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v
 extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
 #define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
+extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
 #else
 #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
@@ -475,7 +476,20 @@ B slash_c1(B t, B x) {
       for (u64 j = 0; j < c; j++) *rp++ = i;
     }
   } else {
-    if (s/16 <= xia) { // Sparse case: type of x matters
+    if (s/32 <= xia) { // Sparse case: type of x matters
+      #if SINGELI
+      #define SPARSE_IND(T) \
+        T* xp = T##any_ptr(x);                    \
+        usz b = 1<<10;                            \
+        for (usz k=0, j=0, ij=xp[0]; ; ) {        \
+          usz e = b<s-k? k+b : s;                 \
+          for (usz i=k; i<e; i++) rp[i]=0;        \
+          rp[k]=j;                                \
+          while (ij<e) { rp[ij]=++j; ij+=xp[j]; } \
+          avx2_scan_max32(rp+k,rp+k,e-k);         \
+          if (e==s) {break;}  k=e;                \
+        }
+      #else
       #define SPARSE_IND(T) \
         T* xp = T##any_ptr(x);                    \
         usz b = 1<<10;                            \
@@ -483,10 +497,11 @@ B slash_c1(B t, B x) {
           usz e = b<s-k? k+b : s;                 \
           for (usz i=k; i<e; i++) rp[i]=0;        \
           while (ij<e) { rp[ij]++; ij+=xp[++j]; } \
-          PLUS_SCAN(u32)                          \
+          PLUS_SCAN(i32)                          \
           if (e==s) {break;}  k=e;                \
         }
-      u32* rp; r = m_i32arrv((i32**)&rp, s);
+      #endif
+      i32* rp; r = m_i32arrv(&rp, s);
       if      (xe == el_i8 ) { SPARSE_IND(i8 ); }
       else if (xe == el_i16) { SPARSE_IND(i16); }
       else                   { SPARSE_IND(i32); }

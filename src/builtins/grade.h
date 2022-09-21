@@ -30,21 +30,47 @@
     rp[j] = xi;                                              \
   }
 
+#if SINGELI
+extern void (*const avx2_scan_max8)(int8_t* v0,int8_t* v1,uint64_t v2);
+extern void (*const avx2_scan_min8)(int8_t* v0,int8_t* v1,uint64_t v2);
+extern void (*const avx2_scan_max16)(int16_t* v0,int16_t* v1,uint64_t v2);
+extern void (*const avx2_scan_min16)(int16_t* v0,int16_t* v1,uint64_t v2);
+#define COUNT_THRESHOLD 32
+#define WRITE_SPARSE_i8 \
+  for (usz i=0; i<n; i++) rp[i]=j;                       \
+  while (ij<n) { rp[ij]=GRADE_UD(++j,--j); ij+=c0o[j]; } \
+  GRADE_UD(avx2_scan_max8,avx2_scan_min8)(rp,rp,n);
+#define WRITE_SPARSE_i16 \
+  usz b = 1<<10;                                              \
+  for (usz k=0; ; ) {                                         \
+    usz e = b<n-k? k+b : n;                                   \
+    for (usz i=k; i<e; i++) rp[i]=j;                          \
+    while (ij<e) { rp[ij]=GRADE_UD(++j,--j); ij+=c0o[j]; }    \
+    GRADE_UD(avx2_scan_max16,avx2_scan_min16)(rp+k,rp+k,e-k); \
+    if (e==n) {break;}  k=e;                                  \
+  }
+#define WRITE_SPARSE(T) WRITE_SPARSE_##T
+#else
+#define COUNT_THRESHOLD 16
+#define WRITE_SPARSE(T) \
+  for (usz i=0; i<n; i++) rp[i]=0;                       \
+  usz js = j;                                            \
+  while (ij<n) { rp[ij]GRADE_UD(++,--); ij+=c0o[GRADE_UD(++j,--j)]; } \
+  for (usz i=0; i<n; i++) js=rp[i]+=js;
+#endif
+
 #define COUNTING_SORT(T) \
-  usz C=1<<(8*sizeof(T));                                    \
-  TALLOC(usz, c0, C); usz *c0o=c0+C/2;                       \
-  for (usz j=0; j<C; j++) c0[j]=0;                           \
-  for (usz i=0; i<n; i++) c0o[xp[i]]++;                      \
-  if (n/16 <= C) { /* Sum-based */                           \
-    for (usz i=0; i<n; i++) rp[i]=0;                         \
-    usz j=GRADE_UD(0,C-1), i;                                \
-    while ((i=c0[j])==0) GRADE_UD(j++,j--);                  \
-    usz js = j - C/2;                                        \
-    while (i<n) { rp[i]++; i+=c0[GRADE_UD(++j,--j)]; }       \
-    for (usz i=0; i<n; i++) js=rp[i]+=js;                    \
-  } else { /* Branchy */                                     \
-    FOR(j,C) for (usz c=c0[j]; c--; ) *rp++ = j-C/2;         \
-  }                                                          \
+  usz C=1<<(8*sizeof(T));                              \
+  TALLOC(usz, c0, C); usz *c0o=c0+C/2;                 \
+  for (usz j=0; j<C; j++) c0[j]=0;                     \
+  for (usz i=0; i<n; i++) c0o[xp[i]]++;                \
+  if (n/(COUNT_THRESHOLD*sizeof(T)) <= C) { /* Scan-based */ \
+    T j=GRADE_UD(-C/2,C/2-1);                          \
+    usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
+    WRITE_SPARSE(T)                                    \
+  } else { /* Branchy */                               \
+    FOR(j,C) for (usz c=c0[j]; c--; ) *rp++ = j-C/2;   \
+  }                                                    \
   TFREE(c0)
 
 // Radix sorting
@@ -181,6 +207,10 @@ B SORT_C1(B t, B x) {
 #undef SORT_C1
 #undef INSERTION_SORT
 #undef COUNTING_SORT
+#if SINGELI
+#undef WRITE_SPARSE_i8
+#undef WRITE_SPARSE_i16
+#endif
 
 
 #define GRADE_CHR GRADE_UD("⍋","⍒")
