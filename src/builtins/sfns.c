@@ -827,10 +827,10 @@ B reverse_c1(B t, B x) {
   u8 xt = arrNewType(TY(x));
   if (xl<=6 && (xl>=3 || xl==0)) {
     void* xv = tyany_ptr(x);
-    Arr* r;
+    B r;
     switch(xl) { default: UD; break;
       case 0: {
-        u64* rp; r = m_bitarrp(&rp, n);
+        u64* rp; r = m_bitarrc(&rp, x);
         u64* xp=xv; usz g = BIT_N(n); usz e = g-1;
         for (usz i = 0; i < g; i++) rp[i] = bit_reverse(xp[e-i]);
         if (n&63) {
@@ -840,23 +840,23 @@ B reverse_c1(B t, B x) {
         }
         break;
       }
-      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrp(&r, 1, n, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 4:                         { u16* xp=xv; u16* rp = m_tyarrp(&r, 2, n, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 5:                         { u32* xp=xv; u32* rp = m_tyarrp(&r, 4, n, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrp(&r, 8, n, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
       else {
         HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
         if (xp!=NULL)  for (usz i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
         else { SGet(x) for (usz i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
+        r = rp.b;
         B xf = getFillQ(x);
         decG(x);
-        return withFill(rp.b, xf);
+        return withFill(r, xf);
       }
     }
-    arr_shCopy(r, x);
     decG(x);
-    return taga(r);
+    return r;
   }
   B xf = getFillQ(x);
   SLOW1("⌽𝕩", x);
