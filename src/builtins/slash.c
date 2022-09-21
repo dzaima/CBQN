@@ -654,18 +654,31 @@ B slash_c2(B t, B w, B x) {
   if (isArr(x) && RNK(x)==1 && q_i32(w)) {
     usz xia = IA(x);
     i32 wv = o2i(w);
-    if (wv<=0) {
+    if (wv<=1) {
       if (wv<0) thrM("/: 𝕨 cannot be negative");
-      return taga(arr_shVec(TI(x,slice)(x, 0, 0)));
+      return wv ? x : taga(arr_shVec(TI(x,slice)(x, 0, 0)));
     }
-    if (TI(x,elType)==el_i32) {
-      i32* xp = i32any_ptr(x);
-      i32* rp; r = m_i32arrv(&rp, xia*wv);
-      for (usz i = 0; i < xia; i++) {
-        for (i64 j = 0; j < wv; j++) *rp++ = xp[i];
-      }
+    u8 xe = TI(x,elType);
+    #define CONST_REP(T) \
+      usz s = xia*wv;                                                 \
+      T* xp = tyany_ptr(x);                                           \
+      T* rp = m_tyarrv(&r, elWidth(xe), s, el2t(xe));                 \
+      usz b = 1<<10;                                                  \
+      T js=xp[0], px=js;                                              \
+      for (usz k=0, j=0, ij=wv; ; ) {                                 \
+        usz e = b<s-k? k+b : s;                                       \
+        for (usz i=k; i<e; i++) rp[i]=0;                              \
+        while (ij<e) { j++; T sx=px; rp[ij]+=(px=xp[j])-sx; ij+=wv; } \
+        PLUS_SCAN(T)                                                  \
+        if (e==s) {break;} k=e;                                       \
+      }                                                               \
       goto decX_ret;
-    } else {
+    if      (xe==el_i8 ) { CONST_REP(u8 ) }
+    else if (xe==el_i16) { CONST_REP(u16) }
+    else if (xe==el_i32) { CONST_REP(u32) }
+    else if (xe==el_f64) { CONST_REP(u64) }
+    #undef CONST_REP
+    else {
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
       HArr_p r0 = m_harrUv(xia*wv);
