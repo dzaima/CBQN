@@ -811,6 +811,13 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
+static u64 bit_reverse(u64 x) {
+  u64 c = __builtin_bswap64(x);
+  c = (c&0x0f0f0f0f0f0f0f0f)<<4 | (c&0xf0f0f0f0f0f0f0f0)>>4;
+  c = (c&0x3333333333333333)<<2 | (c&0xcccccccccccccccc)>>2;
+  c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
+  return c;
+}
 extern B rt_reverse;
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
@@ -822,16 +829,26 @@ B reverse_c1(B t, B x) {
     void* xv = tyany_ptr(x);
     B r;
     switch(xl) { default: UD; break;
-      case 0:                         { u64* xp = xv; u64* rp; r = m_bitarrc(&rp, x); for (usz i = 0; i < n; i++) bitp_set(rp, i, bitp_get(xp, n-i-1)); break; }
-      case 3:                         { u8*  xp = xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
-      case 4:                         { u16* xp = xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
-      case 5:                         { u32* xp = xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
-      case 6: if (TI(x,elType)!=el_B) { u64* xp = xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (usz i = 0; i < n; i++) rp[i] = xp[n-i-1]; break; }
+      case 0: {
+        u64* rp; r = m_bitarrc(&rp, x);
+        u64* xp=xv; usz g = BIT_N(n); usz e = g-1;
+        for (usz i = 0; i < g; i++) rp[i] = bit_reverse(xp[e-i]);
+        if (n&63) {
+          u64 sh=(-n)&63;
+          for (usz i=0; i<e; i++) rp[i]=rp[i]>>sh|rp[i+1]<<(64-sh);
+          rp[e]>>=sh;
+        }
+        break;
+      }
+      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
       else {
         HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
-        if (xp!=NULL)  for (usz i = 0; i < n; i++) rp.a[i] = inc(xp[n-i-1]);
-        else { SGet(x) for (usz i = 0; i < n; i++) rp.a[i] = Get(x, n-i-1); }
+        if (xp!=NULL)  for (usz i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
+        else { SGet(x) for (usz i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
         r = rp.b;
         B xf = getFillQ(x);
         decG(x);
