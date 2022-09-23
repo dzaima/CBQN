@@ -527,17 +527,29 @@ B slash_c1(B t, B x) {
 }
 
 B slash_c2(B t, B w, B x) {
-  B r;
-  if (isArr(w) && RNK(w)==1 && depth(w)==1) {
-    usz wia = IA(w);
+  i32 wv = -1;
+  usz wia;
+  if (isArr(w)) {
+    if (depth(w)>1) goto base;
+    ur wr = RNK(w);
+    if (wr>1) thrF("/: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
+    if (wr<1) { B v=IGet(w, 0); decG(w); w=v; goto atom; }
+    wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
-    if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
-    ur xr = RNK(x);
-    usz xlen = *SH(x);
+  } else {
+    atom:
+    if (!q_i32(w)) goto base;
+    wv = o2i(w);
+  }
+  if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
+  ur xr = RNK(x);
+  usz xlen = *SH(x);
+  u8 xl = cellWidthLog(x);
+  u8 xt = arrNewType(TY(x));
+  
+  B r;
+  if (wv < 0) { // Array w
     if (RARE(wia!=xlen)) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
-    
-    u8 xl = cellWidthLog(x);
-    u8 xt = arrNewType(TY(x));
     
     u8 we = TI(w,elType);
     if (!elInt(we)) {
@@ -580,9 +592,9 @@ B slash_c2(B t, B w, B x) {
     // Make shape if needed; all cases below use it
     usz* rsh = NULL;
     if (xr > 1) {
-      usz* sh = rsh = m_shArr(xr)->a;
-      sh[0] = s;
-      shcpy(sh+1, SH(x)+1, xr-1);
+      rsh = m_shArr(xr)->a;
+      rsh[0] = s;
+      shcpy(rsh+1, SH(x)+1, xr-1);
     }
     
     if (xl == 0) {
@@ -665,19 +677,37 @@ B slash_c2(B t, B w, B x) {
       }
     }
     goto decWX_ret;
-  }
-  if (isArr(x) && RNK(x)==1 && q_i32(w)) {
-    usz xia = IA(x);
-    i32 wv = o2i(w);
-    if (wv<=1) {
-      if (wv<0) thrM("/: 𝕨 cannot be negative");
+  } else {
+    if (wv <= 1) {
+      if (wv < 0) thrM("/: 𝕨 cannot be negative");
       return wv ? x : taga(arr_shVec(TI(x,slice)(x, 0, 0)));
     }
-    u8 xe = TI(x,elType);
-    #define CONST_REP(T) \
-      usz s = xia*wv;                                                 \
-      T* xp = tyany_ptr(x);                                           \
-      T* rp = m_tyarrv(&r, elWidth(xe), s, el2t(xe));                 \
+    if (xlen == 0) return x;
+    usz s = xlen * wv;
+    if (xl>6 || xl<3 || TI(x,elType)==el_B) {
+      if (xr != 1) goto base;
+      SLOW2("𝕨/𝕩", w, x);
+      B xf = getFillQ(x);
+      HArr_p r0 = m_harrUv(s);
+      SGetU(x)
+      for (usz i = 0; i < xlen; i++) {
+        B cx = incBy(GetU(x, i), wv);
+        for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
+      }
+      r = withFill(r0.b, xf);
+      goto decX_ret;
+    }
+    u8 xk = xl-3;
+    void* rv = m_tyarrv(&r, 1<<xk, s, xt);
+    if (xr > 1) {
+      usz* rsh = m_shArr(xr)->a;
+      rsh[0] = s;
+      shcpy(rsh+1, SH(x)+1, xr-1);
+      Arr* ra=a(r); SPRNK(ra,xr); PSH(ra)=rsh; PIA(ra)=s*arr_csz(x);
+    }
+    void* xv = tyany_ptr(x);
+    #define CONST_REP(T) { \
+      T* xp = xv; T* rp = rv;                                         \
       usz b = 1<<10;                                                  \
       T js=xp[0], px=js;                                              \
       for (usz k=0, j=0, ij=wv; ; ) {                                 \
@@ -686,25 +716,14 @@ B slash_c2(B t, B w, B x) {
         while (ij<e) { j++; T sx=px; rp[ij]+=(px=xp[j])-sx; ij+=wv; } \
         PLUS_SCAN(T)                                                  \
         if (e==s) {break;} k=e;                                       \
-      }                                                               \
-      goto decX_ret;
-    if      (xe==el_i8 ) { CONST_REP(u8 ) }
-    else if (xe==el_i16) { CONST_REP(u16) }
-    else if (xe==el_i32) { CONST_REP(u32) }
-    else if (xe==el_f64) { CONST_REP(u64) }
-    #undef CONST_REP
-    else {
-      SLOW2("𝕨/𝕩", w, x);
-      B xf = getFillQ(x);
-      HArr_p r0 = m_harrUv(xia*wv);
-      SGetU(x)
-      for (usz i = 0; i < xia; i++) {
-        B cx = incBy(GetU(x, i), wv);
-        for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
-      }
-      r = withFill(r0.b, xf);
-      goto decX_ret;
+      } goto decX_ret; }
+    switch (xk) { default: UD;
+      case 0: CONST_REP(u8 )
+      case 1: CONST_REP(u16)
+      case 2: CONST_REP(u32)
+      case 3: CONST_REP(u64)
     }
+    #undef CONST_REP
   }
   base:
   return c2(rt_slash, w, x);
