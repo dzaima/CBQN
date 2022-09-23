@@ -448,6 +448,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   return r;
 }
 
+// Replicate using plus/max/xor-scan
 #define SCAN_CORE(WV, UPD, SET, SCAN) \
   usz b = 1<<10;                          \
   for (usz k=0, j=0, ij=WV; ; ) {         \
@@ -471,6 +472,37 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   T* xp = xv; T* rp = rv;                 \
   T js=xp[0], px=js;                      \
   SUM_CORE(T, WV, T sx=px, (px=xp[j])-sx)
+
+#define BOOL_REP_XOR_SCAN(WV) \
+  usz b = 1<<12;                                       \
+  u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
+  for (usz k=0, j=0, ij=WV; ; ) {                      \
+    usz e = b<s-k? k+b : s;                            \
+    usz eb = (e-1)/64+1;                               \
+    for (usz i=k/64; i<eb; i++) rp[i]=0;               \
+    while (ij<e) {                                     \
+      xx>>=1; j++; if (j%64==0) { u64 v=xp[j/64]; xx=v^(v<<1)^xs; xs=v>>63; } \
+      rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=WV;           \
+    }                                                  \
+    for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
+    if (e==s) {break;} k=e;                            \
+  }
+
+// Basic boolean loop with overwriting
+#define BOOL_REP_OVER(WV, LEN) \
+  u64 ri=0, rc=0, xc=0; usz j=0;  \
+  for (usz i = 0; i < LEN; i++) { \
+    u64 v = -(u64)bitp_get(xp,i); \
+    rc ^= (v^xc) << (ri%64);      \
+    xc = v;                       \
+    ri += WV; usz e = ri/64;      \
+    if (j < e) {                  \
+      rp[j++] = rc;               \
+      while (j < e) rp[j++] = v;  \
+      rc = v;                     \
+    }                             \
+  }                               \
+  if (ri%64) rp[j] = rc;
 
 extern B rt_slash;
 B slash_c1(B t, B x) {
@@ -602,21 +634,7 @@ B slash_c2(B t, B w, B x) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); SH(r) = rsh; }
       if (s/256 <= wia) {
-        #define SPARSE_REP(T) \
-          T* wp = T##any_ptr(w);                               \
-          usz b = 1<<12;                                       \
-          u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
-          for (usz k=0, j=0, ij=wp[0]; ; ) {                   \
-            usz e = b<s-k? k+b : s;                            \
-            usz eb = (e-1)/64+1;                               \
-            for (usz i=k/64; i<eb; i++) rp[i]=0;               \
-            while (ij<e) {                                     \
-              xx>>=1; j++; if (j%64==0) { u64 v=xp[j/64]; xx=v^(v<<1)^xs; xs=v>>63; } \
-              rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=wp[j];        \
-            }                                                  \
-            for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
-            if (e==s) {break;} k=e;                            \
-          }
+        #define SPARSE_REP(T) T* wp=T##any_ptr(w); BOOL_REP_XOR_SCAN(wp[j])
         if      (we==el_i8 ) { SPARSE_REP(i8 ); }
         else if (we==el_i16) { SPARSE_REP(i16); }
         else                 { SPARSE_REP(i32); }
@@ -624,19 +642,7 @@ B slash_c2(B t, B w, B x) {
       } else {
         if (we < el_i32) w = taga(cpyI32Arr(w));
         i32* wp = i32any_ptr(w);
-        u64 ri=0, rc=0, xc=0; usz j=0;
-        for (usz i = 0; i < wia; i++) {
-          u64 v = -(u64)bitp_get(xp,i);
-          rc ^= (v^xc) << (ri%64);
-          xc = v;
-          ri += wp[i]; usz e = ri/64;
-          if (j < e) {
-            rp[j++] = rc;
-            while (j < e) rp[j++] = v;
-            rc = v;
-          }
-        }
-        if (ri%64) rp[j] = rc;
+        BOOL_REP_OVER(wp[i], wia)
       }
     } else {
       u8 xk = xl-3;
@@ -675,7 +681,7 @@ B slash_c2(B t, B w, B x) {
     }
     if (xlen == 0) return x;
     usz s = xlen * wv;
-    if (xl>6 || xl<3 || TI(x,elType)==el_B) {
+    if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
       if (xr != 1) goto base;
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
@@ -688,18 +694,27 @@ B slash_c2(B t, B w, B x) {
       r = withFill(r0.b, xf);
       goto decX_ret;
     }
-    u8 xk = xl-3;
-    void* rv = m_tyarrv(&r, 1<<xk, s, xt);
+    if (xl == 0) {
+      u64* xp = bitarr_ptr(x);
+      u64* rp; r = m_bitarrv(&rp, s);
+      if (wv <= 128) { BOOL_REP_XOR_SCAN(wv) }
+      else           { BOOL_REP_OVER(wv, xlen) }
+      goto decX_ret;
+    } else {
+      u8 xk = xl-3;
+      void* rv = m_tyarrv(&r, 1<<xk, s, xt);
+      void* xv = tyany_ptr(x);
+      #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
+      switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+      #undef CASE
+    }
     if (xr > 1) {
       usz* rsh = m_shArr(xr)->a;
       rsh[0] = s;
       shcpy(rsh+1, SH(x)+1, xr-1);
       Arr* ra=a(r); SPRNK(ra,xr); PSH(ra)=rsh; PIA(ra)=s*arr_csz(x);
     }
-    void* xv = tyany_ptr(x);
-    #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) goto decX_ret; }
-    switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
-    #undef CASE
+    goto decX_ret;
   }
   base:
   return c2(rt_slash, w, x);
