@@ -633,7 +633,7 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); SH(r) = rsh; }
-      if (s/256 <= wia) {
+      if (s/1024 <= wia) {
         #define SPARSE_REP(T) T* wp=T##any_ptr(w); BOOL_REP_XOR_SCAN(wp[j])
         if      (we==el_i8 ) { SPARSE_REP(i8 ); }
         else if (we==el_i16) { SPARSE_REP(i16); }
@@ -649,7 +649,7 @@ B slash_c2(B t, B w, B x) {
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); PSH(ra) = rsh; PIA(ra) = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
-      if (s/64 <= wia) { // Sparse case: use both types
+      if ((xk<3? s/64 : s/32) <= wia) { // Sparse case: use both types
         #define CASE(L,XT) case L: { REP_BY_SCAN(XT, wp[j]) break; }
         #define SPARSE_REP(WT) \
           WT* wp = WT##any_ptr(w);                \
@@ -697,7 +697,7 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
-      if (wv <= 128) { BOOL_REP_XOR_SCAN(wv) }
+      if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
       else           { BOOL_REP_OVER(wv, xlen) }
       goto decX_ret;
     } else {
