@@ -293,15 +293,14 @@ B shape_c2(B t, B w, B x) {
       if      (c==(u8 )c) { u8* rp; r = m_c8arrp(&rp,nia); memset(rp, c, nia); }
       else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001) }
       else                { FILL(c32,u32,c*0x0000000100000001) }
-    #undef FILL
     } else {
-      B xf = asFill(inc(x));
+      incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
       r = m_fillarrp(nia);
-      if (nia) incBy(x, nia-1);
-      else dec(x);
-      fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
-      fillarr_setFill(r, xf);
+      if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
+      else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
+      fillarr_setFill(r, asFill(x));
     }
+    #undef FILL
   }
   arr_shSetU(r,nr,sh);
   return taga(r);
