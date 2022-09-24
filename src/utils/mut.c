@@ -101,7 +101,23 @@ DEF_S(void, set, f64, q_f64(x), x, (void* a, usz ms, B x), ms, x) { ((f64*)a)[ms
 DEF_G(void, set, B,                (void* a, usz ms, B x), ms, x) { ((  B*)a)[ms] = x; }
 
 DEF_S(void, fill, MAX, false,    x, (void* a, usz ms, B x, usz l), ms, x, l) { err("m_fillG_MAX"); }
-DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p =    (u64*)a;bool v = o2bG(x); for (usz i = 0; i < l; i++) bitp_set(p, ms+i, v); }
+DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p =    (u64*)a; bool v = o2bG(x);
+  usz me = ms+l;
+  if (ms>>6 == me>>6) {
+    u64 m = ((1ULL<<(me&63)) - (1ULL<<(ms&63)));
+    if (v) p[ms>>6]|=  m;
+    else   p[ms>>6]&= ~m;
+  } else {
+    u64 vx = bitx(x);
+    u64 m0 = (1ULL<<(ms&63)) - 1;
+    if (v) p[ms>>6]|= ~m0;
+    else   p[ms>>6]&=  m0;
+    for (usz i = (ms>>6)+1; i < (me>>6); i++) p[i] = vx;
+    u64 m1 = (1ULL<<(me&63)) - 1;
+    if (v) p[me>>6]|=  m1;
+    else   p[me>>6]&= ~m1;
+  }
+}
 DEF_S(void, fill, i8 , q_i8 (x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i8*  p = ms+( i8*)a; i8  v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
 DEF_S(void, fill, i16, q_i16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i16* p = ms+(i16*)a; i16 v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
 DEF_S(void, fill, i32, q_i32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { i32* p = ms+(i32*)a; i32 v = o2iG(x); for (usz i = 0; i < l; i++) p[i] = v; }
@@ -396,6 +412,7 @@ static B m_getU_f64(Mut* m, usz ms) { return m_f64(m->af64[ms]); }
 static B m_getU_B  (Mut* m, usz ms) { return m->aB[ms]; }
 
 M_CopyF copyFns[el_MAX];
+M_FillF fillFns[el_MAX];
 
 MutFns mutFns[el_MAX+1];
 u8 el_orArr[el_MAX*16 + el_MAX+1];
@@ -427,4 +444,5 @@ void mutF_init() {
   mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;
   mutFns[el_MAX].elType = el_MAX; mutFns[el_MAX].valType = t_COUNT;
   for (u8 i = 0; i < el_MAX; i++) copyFns[i] = mutFns[i].m_copyG;
+  for (u8 i = 0; i < el_MAX; i++) fillFns[i] = mutFns[i].m_fillG;
 }

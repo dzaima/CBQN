@@ -10,6 +10,7 @@ test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations
 ./BQN test/equal.bqn // fuzz-test 𝕨≡𝕩
 ./BQN test/copy.bqn // fuzz-test creating new arrays with elements copied from another
 ./BQN test/bitcpy.bqn // fuzz-test bit_cpy; requires a CBQN build with -DTEST_BITCPY
+./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill); requires a CBQN build with -DTEST_MUT
 ./BQN test/hash.bqn // fuzz-test hashing
 ./BQN test/squeezeValid.bqn // fuzz-test squeezing giving a correct result; requires a CBQN build with -DEEQUAL_NEGZERO
 ./BQN test/squeezeExact.bqn // fuzz-test squeezing giving the exact smallest result; requires a CBQN build with -DEEQUAL_NEGZERO
