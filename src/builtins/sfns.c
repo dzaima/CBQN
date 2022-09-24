@@ -104,6 +104,13 @@ static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes all
   arr_shSetU(ra, nr, sh);
   return r;
 }
+static void fill_words(void* rp, u64 v, u64 bytes) {
+  usz wds = bytes/8;
+  usz ext = bytes%8;
+  u64* p = rp;
+  for (usz i=0; i<wds; i++) p[i] = v;
+  if (ext) memcpy(p+wds, &v, ext);
+}
 B shape_c2(B t, B w, B x) {
   usz xia = isArr(x)? IA(x) : 1;
   usz nia = 1;
@@ -181,63 +188,121 @@ B shape_c2(B t, B w, B x) {
     decG(w);
   }
   
-  B xf;
-  if (isAtm(x)) {
-    xf = asFill(inc(x));
-    // goes to unit
-  } else {
+  Arr* r;
+  if (isArr(x)) {
     if (nia <= xia) {
       return truncReshape(x, xia, nia, nr, sh);
     } else {
-      xf = getFillQ(x);
-      if (xia<=1) {
-        if (RARE(xia==0)) {
-          thrM("⥊: Empty 𝕩 and non-empty result");
-          // if (noFill(xf)) thrM("⥊: No fill for empty array");
-          // dec(x);
-          // x = inc(xf);
-        } else {
-          B n = IGet(x,0);
-          decG(x);
-          x = n;
-        }
+      if (xia <= 1) {
+        if (RARE(xia == 0)) thrM("⥊: Empty 𝕩 and non-empty result");
+        B n = IGet(x,0);
+        decG(x);
+        x = n;
         goto unit;
       }
+      if (xia <= nia/2) x = any_squeeze(x);
       
-      MAKE_MUT(m, nia); mut_init(m, TI(x,elType));
-      MUTG_INIT(m);
-      i64 div = nia/xia;
-      i64 mod = nia%xia;
-      for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
-      mut_copyG(m, div*xia, x, 0, mod);
+      u8 xl = arrTypeBitsLog(TY(x));
+      u8 xt = arrNewType(TY(x));
+      u8* rp;
+      u64 bi, bf; // Bytes present, bytes wanted
+      if (xl == 0) { // Bits
+        u64* rq; r = m_bitarrp(&rq, nia);
+        rp = (u8*)rq;
+        usz nw = BIT_N(nia);
+        u64* xp = bitarr_ptr(x);
+        u64 b = xia;
+        if (b % 8) {
+          if (b < 64) {
+            // Need to avoid calling bit_cpy with arguments <64 bits apart
+            u64 v = xp[0] & (~(u64)0 >> (64-b));
+            do { v |= v<<b; b*=2; } while (b%8 && b<64);
+            rq[0] = v;
+            if (b>64 && nia>64) rq[1] = v>>(64-b/2);
+          } else {
+            memcpy(rq, xp, (b+7)/8);
+          }
+          for (; b%8; b*=2) {
+            if (b>nw*32) {
+              if (b<nia) bit_cpy(rq, b, rq, 0, nia-b);
+              b = 64*nw; // Ensure bi>=bf since bf is rounded up
+              break;
+            }
+            bit_cpy(rq, b, rq, 0, b);
+          }
+        } else {
+          memcpy(rp, xp, b/8);
+        }
+        bi = b/8;
+        bf = 8*nw;
+        if (bi == 1) { memset(rp, rp[0], bf); bi=bf; }
+      } else {
+        if (TI(x,elType) == el_B) {
+          B xf = getFillQ(x);
+          MAKE_MUT(m, nia); mut_init(m, el_B);
+          MUTG_INIT(m);
+          i64 div = nia/xia;
+          i64 mod = nia%xia;
+          for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
+          mut_copyG(m, div*xia, x, 0, mod);
+          decG(x);
+          Arr* ra = mut_fp(m);
+          arr_shSetU(ra, nr, sh);
+          return withFill(taga(ra), xf);
+        }
+        u8 xk = xl - 3;
+        rp = m_tyarrp(&r, 1<<xk, nia, xt);
+        bi = (u64)xia<<xk;
+        bf = (u64)nia<<xk;
+        memcpy(rp, tyany_ptr(x), bi);
+      }
       decG(x);
-      Arr* ra = mut_fp(m);
-      arr_shSetU(ra, nr, sh);
-      return withFill(taga(ra), xf);
+      if (bi<=8 && !(bi & (bi-1))) {
+        // Divisor of 8: write words
+        usz b = bi*8;
+        u64 v = *(u64*)rp & (~(u64)0 >> (64-b));
+        while (b<64) { v |= v<<b; b*=2; }
+        fill_words(rp, v, bf);
+      } else {
+        // Double up to length l, then copy in blocks
+        u64 l = 1<<15; if (l>bf) l=bf;
+        for (; bi<=l/2; bi+=bi) memcpy(rp+bi, rp, bi);
+        u64 e=bi; for (; e+bi<=bf; e+=bi) memcpy(rp+e, rp, bi);
+        if (e<bf) memcpy(rp+e, rp, bf-e);
+      }
     }
+  } else {
+    unit:
+    #define FILL(E,T,V) T* rp; r = m_##E##arrp(&rp,nia); fill_words(rp, V, (u64)nia*sizeof(T));
+    if (isF64(x)) {
+      i32 n = (i32)x.f;
+      if (RARE(n!=x.f)) {
+        FILL(f64,f64,x.u)
+      } else if (n==(i8)n) { // memset can be faster than writing words
+        u8 b = n;
+        i8* rp; u64 nb = nia;
+        if (b <= 1)    { r = m_bitarrp((u64**)&rp,nia); nb = 8*BIT_N(nia); b=-b; }
+        else           { r = m_i8arrp (       &rp,nia); }
+        memset(rp, b, nb);
+      } else {
+        if(n==(i16)n)  { FILL(i16,i16,(u16)n*0x0001000100010001) }
+        else           { FILL(i32,i32,(u32)n*0x0000000100000001) }
+      }
+    } else if (isC32(x)) {
+      u32 c = o2cG(x);
+      if      (c==(u8 )c) { u8* rp; r = m_c8arrp(&rp,nia); memset(rp, c, nia); }
+      else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001) }
+      else                { FILL(c32,u32,c*0x0000000100000001) }
+    } else {
+      incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
+      r = m_fillarrp(nia);
+      if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
+      else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
+      fillarr_setFill(r, asFill(x));
+    }
+    #undef FILL
   }
-  
-  unit:
-  if (isF64(x)) { decA(xf);
-    i32 n = (i32)x.f;
-    if (RARE(n!=x.f))  { f64* rp; Arr* r = m_f64arrp(&rp,nia); arr_shSetU(r,nr,sh); for (u64 i=0; i<nia; i++) rp[i]=x.f; return taga(r); }
-    else if(n==(n&1))  { Arr* r=n?allOnes(nia):allZeroes(nia); arr_shSetU(r,nr,sh); return taga(r); }
-    else if(n==(i8 )n) { i8*  rp; Arr* r = m_i8arrp (&rp,nia); arr_shSetU(r,nr,sh); for (u64 i=0; i<nia; i++) rp[i]=n  ; return taga(r); }
-    else if(n==(i16)n) { i16* rp; Arr* r = m_i16arrp(&rp,nia); arr_shSetU(r,nr,sh); for (u64 i=0; i<nia; i++) rp[i]=n  ; return taga(r); }
-    else               { i32* rp; Arr* r = m_i32arrp(&rp,nia); arr_shSetU(r,nr,sh); for (u64 i=0; i<nia; i++) rp[i]=n  ; return taga(r); }
-  }
-  if (isC32(x)) { decA(xf);
-    u32* rp; Arr* r = m_c32arrp(&rp, nia); arr_shSetU(r, nr, sh);
-    u32 c = o2cG(x);
-    for (u64 i = 0; i < nia; i++) rp[i] = c;
-    return taga(r);
-  }
-  Arr* r = m_fillarrp(nia); arr_shSetU(r, nr, sh);
-  B* rp = fillarr_ptr(r);
-  if (nia) incBy(x, nia-1);
-  else dec(x);
-  for (u64 i = 0; i < nia; i++) rp[i] = x;
-  fillarr_setFill(r, xf);
+  arr_shSetU(r,nr,sh);
   return taga(r);
 }
 

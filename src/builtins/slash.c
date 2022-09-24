@@ -104,6 +104,17 @@
   #endif
 #endif
 
+#if SINGELI
+extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
+extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
+extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
+#define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
+#define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
+extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
+#else
+#define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
+#endif
+
 // Dense Where, still significantly worse than SIMD
 // Assumes modifiable DST
 #define WHERE_DENSE(SRC, DST, LEN, OFF) do { \
@@ -437,6 +448,62 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   return r;
 }
 
+// Replicate using plus/max/xor-scan
+#define SCAN_CORE(WV, UPD, SET, SCAN) \
+  usz b = 1<<10;                          \
+  for (usz k=0, j=0, ij=WV; ; ) {         \
+    usz e = b<s-k? k+b : s;               \
+    SET; for (usz i=k; i<e; i++) rp[i]=0; \
+    while (ij<e) { j++; UPD; ij+=WV; }    \
+    SCAN;                                 \
+    if (e==s) {break;}  k=e;              \
+  }
+#define SUM_CORE(T, WV, PREP, INC) \
+  SCAN_CORE(WV, PREP; rp[ij]+=INC, , PLUS_SCAN(T))
+
+#if SINGELI
+  #define IND_BY_SCAN \
+    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, avx2_scan_max32(rp+k,rp+k,e-k))
+#else
+  #define IND_BY_SCAN usz js=0; SUM_CORE(i32, xp[j], , 1)
+#endif
+
+#define REP_BY_SCAN(T, WV) \
+  T* xp = xv; T* rp = rv;                 \
+  T js=xp[0], px=js;                      \
+  SUM_CORE(T, WV, T sx=px, (px=xp[j])-sx)
+
+#define BOOL_REP_XOR_SCAN(WV) \
+  usz b = 1<<12;                                       \
+  u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
+  for (usz k=0, j=0, ij=WV; ; ) {                      \
+    usz e = b<s-k? k+b : s;                            \
+    usz eb = (e-1)/64+1;                               \
+    for (usz i=k/64; i<eb; i++) rp[i]=0;               \
+    while (ij<e) {                                     \
+      xx>>=1; j++; if (j%64==0) { u64 v=xp[j/64]; xx=v^(v<<1)^xs; xs=v>>63; } \
+      rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=WV;           \
+    }                                                  \
+    for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
+    if (e==s) {break;} k=e;                            \
+  }
+
+// Basic boolean loop with overwriting
+#define BOOL_REP_OVER(WV, LEN) \
+  u64 ri=0, rc=0, xc=0; usz j=0;  \
+  for (usz i = 0; i < LEN; i++) { \
+    u64 v = -(u64)bitp_get(xp,i); \
+    rc ^= (v^xc) << (ri%64);      \
+    xc = v;                       \
+    ri += WV; usz e = ri/64;      \
+    if (j < e) {                  \
+      rp[j++] = rc;               \
+      while (j < e) rp[j++] = v;  \
+      rc = v;                     \
+    }                             \
+  }                               \
+  if (ri%64) rp[j] = rc;
+
 extern B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
@@ -465,17 +532,8 @@ B slash_c1(B t, B x) {
       for (u64 j = 0; j < c; j++) *rp++ = i;
     }
   } else {
-    if (s/16 <= xia) { // Sparse case: type of x matters
-      #define SPARSE_IND(T) \
-        T* xp = T##any_ptr(x);                    \
-        usz b = 1<<10;                            \
-        for (usz k=0, j=0, js=0, ij=xp[0]; ; ) {  \
-          usz e = b<s-k? k+b : s;                 \
-          for (usz i=k; i<e; i++) rp[i]=0;        \
-          while (ij<e) { rp[ij]++; ij+=xp[++j]; } \
-          for (usz i=k; i<e; i++) js=rp[i]+=js;   \
-          if (e==s) {break;}  k=e;                \
-        }
+    if (s/32 <= xia) { // Sparse case: type of x matters
+      #define SPARSE_IND(T) T* xp = T##any_ptr(x); IND_BY_SCAN
       i32* rp; r = m_i32arrv(&rp, s);
       if      (xe == el_i8 ) { SPARSE_IND(i8 ); }
       else if (xe == el_i16) { SPARSE_IND(i16); }
@@ -502,17 +560,29 @@ B slash_c1(B t, B x) {
 }
 
 B slash_c2(B t, B w, B x) {
-  B r;
-  if (isArr(w) && RNK(w)==1 && depth(w)==1) {
-    usz wia = IA(w);
+  i32 wv = -1;
+  usz wia;
+  if (isArr(w)) {
+    if (depth(w)>1) goto base;
+    ur wr = RNK(w);
+    if (wr>1) thrF("/: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
+    if (wr<1) { B v=IGet(w, 0); decG(w); w=v; goto atom; }
+    wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
-    if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
-    ur xr = RNK(x);
-    usz xlen = *SH(x);
+  } else {
+    atom:
+    if (!q_i32(w)) goto base;
+    wv = o2i(w);
+  }
+  if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
+  ur xr = RNK(x);
+  usz xlen = *SH(x);
+  u8 xl = cellWidthLog(x);
+  u8 xt = arrNewType(TY(x));
+  
+  B r;
+  if (wv < 0) { // Array w
     if (RARE(wia!=xlen)) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
-    
-    u8 xl = cellWidthLog(x);
-    u8 xt = arrNewType(TY(x));
     
     u8 we = TI(w,elType);
     if (!elInt(we)) {
@@ -555,30 +625,16 @@ B slash_c2(B t, B w, B x) {
     // Make shape if needed; all cases below use it
     usz* rsh = NULL;
     if (xr > 1) {
-      usz* sh = rsh = m_shArr(xr)->a;
-      sh[0] = s;
-      shcpy(sh+1, SH(x)+1, xr-1);
+      rsh = m_shArr(xr)->a;
+      rsh[0] = s;
+      shcpy(rsh+1, SH(x)+1, xr-1);
     }
     
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); SH(r) = rsh; }
-      if (s/256 <= wia) {
-        #define SPARSE_REP(T) \
-          T* wp = T##any_ptr(w);                               \
-          usz b = 1<<12;                                       \
-          u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
-          for (usz k=0, j=0, ij=wp[0]; ; ) {                   \
-            usz e = b<s-k? k+b : s;                            \
-            usz eb = (e-1)/64+1;                               \
-            for (usz i=k/64; i<eb; i++) rp[i]=0;               \
-            while (ij<e) {                                     \
-              xx>>=1; j++; if (j%64==0) { u64 v=xp[j/64]; xx=v^(v<<1)^xs; xs=v>>63; } \
-              rp[ij/64]^=(-(xx&1))<<(ij%64); ij+=wp[j];        \
-            }                                                  \
-            for (usz i=k/64; i<eb; i++) js=-((rp[i]^=js)>>63); \
-            if (e==s) {break;} k=e;                            \
-          }
+      if (s/1024 <= wia) {
+        #define SPARSE_REP(T) T* wp=T##any_ptr(w); BOOL_REP_XOR_SCAN(wp[j])
         if      (we==el_i8 ) { SPARSE_REP(i8 ); }
         else if (we==el_i16) { SPARSE_REP(i16); }
         else                 { SPARSE_REP(i32); }
@@ -586,37 +642,15 @@ B slash_c2(B t, B w, B x) {
       } else {
         if (we < el_i32) w = taga(cpyI32Arr(w));
         i32* wp = i32any_ptr(w);
-        u64 ri=0, rc=0, xc=0; usz j=0;
-        for (usz i = 0; i < wia; i++) {
-          u64 v = -(u64)bitp_get(xp,i);
-          rc ^= (v^xc) << (ri%64);
-          xc = v;
-          ri += wp[i]; usz e = ri/64;
-          if (j < e) {
-            rp[j++] = rc;
-            while (j < e) rp[j++] = v;
-            rc = v;
-          }
-        }
-        if (ri%64) rp[j] = rc;
+        BOOL_REP_OVER(wp[i], wia)
       }
     } else {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); PSH(ra) = rsh; PIA(ra) = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
-      if (s/32 <= wia) { // Sparse case: use both types
-        #define CASE(L,XT) case L: { \
-          XT* xp = xv; XT* rp = rv;               \
-          usz b = 1<<10;                          \
-          XT js=xp[0], px=js;                     \
-          for (usz k=0, j=0, ij=wp[0]; ; ) {      \
-            usz e = b<s-k? k+b : s;               \
-            for (usz i=k; i<e; i++) rp[i]=0;      \
-            while (ij<e) { j++; XT sx=px; rp[ij]^=sx^(px=xp[j]); ij+=wp[j]; } \
-            for (usz i=k; i<e; i++) js=rp[i]^=js; \
-            if (e==s) {break;} k=e;               \
-          } break; }
+      if ((xk<3? s/64 : s/32) <= wia) { // Sparse case: use both types
+        #define CASE(L,XT) case L: { REP_BY_SCAN(XT, wp[j]) break; }
         #define SPARSE_REP(WT) \
           WT* wp = WT##any_ptr(w);                \
           switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
@@ -640,33 +674,47 @@ B slash_c2(B t, B w, B x) {
       }
     }
     goto decWX_ret;
-  }
-  if (isArr(x) && RNK(x)==1 && q_i32(w)) {
-    usz xia = IA(x);
-    i32 wv = o2i(w);
-    if (wv<=0) {
-      if (wv<0) thrM("/: 𝕨 cannot be negative");
-      return taga(arr_shVec(TI(x,slice)(x, 0, 0)));
+  } else {
+    if (wv <= 1) {
+      if (wv < 0) thrM("/: 𝕨 cannot be negative");
+      return wv ? x : taga(arr_shVec(TI(x,slice)(x, 0, 0)));
     }
-    if (TI(x,elType)==el_i32) {
-      i32* xp = i32any_ptr(x);
-      i32* rp; r = m_i32arrv(&rp, xia*wv);
-      for (usz i = 0; i < xia; i++) {
-        for (i64 j = 0; j < wv; j++) *rp++ = xp[i];
-      }
-      goto decX_ret;
-    } else {
+    if (xlen == 0) return x;
+    usz s = xlen * wv;
+    if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
+      if (xr != 1) goto base;
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
-      HArr_p r0 = m_harrUv(xia*wv);
+      HArr_p r0 = m_harrUv(s);
       SGetU(x)
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < xlen; i++) {
         B cx = incBy(GetU(x, i), wv);
         for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
       }
       r = withFill(r0.b, xf);
       goto decX_ret;
     }
+    if (xl == 0) {
+      u64* xp = bitarr_ptr(x);
+      u64* rp; r = m_bitarrv(&rp, s);
+      if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
+      else           { BOOL_REP_OVER(wv, xlen) }
+      goto decX_ret;
+    } else {
+      u8 xk = xl-3;
+      void* rv = m_tyarrv(&r, 1<<xk, s, xt);
+      void* xv = tyany_ptr(x);
+      #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
+      switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+      #undef CASE
+    }
+    if (xr > 1) {
+      usz* rsh = m_shArr(xr)->a;
+      rsh[0] = s;
+      shcpy(rsh+1, SH(x)+1, xr-1);
+      Arr* ra=a(r); SPRNK(ra,xr); PSH(ra)=rsh; PIA(ra)=s*arr_csz(x);
+    }
+    goto decX_ret;
   }
   base:
   return c2(rt_slash, w, x);
