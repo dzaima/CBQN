@@ -339,6 +339,24 @@ static bool groups_lt(u64* wp, usz len, usz max) {
   return 1;
 }
 
+static NOINLINE B zeroCells(B x) { // doesn't consume
+  u8 xe = TI(x,elType);
+  B r; ur xr = RNK(x);
+  if (xr==1) {
+    if (xe==el_B) { B xf = getFillR(x); r = noFill(xf)? emptyHVec() : m_emptyFVec(xf); }
+    else r = elNum(xe)? emptyIVec() : emptyCVec();
+  } else {
+    Arr* ra;
+    if (xe==el_B) { B xf = getFillR(x); if (noFill(xf)) ra = (Arr*)m_harrUp(0).c; else { ra = m_fillarrp(0); fillarr_setFill(ra, xf); } }
+    else m_tyarrp(&ra, 1, 0, elNum(xe)? t_bitarr : t_c8arr);
+    usz* rsh = arr_shAlloc(ra, xr);
+    shcpy(rsh+1, SH(x)+1, xr-1);
+    rsh[0] = 0;
+    r = taga(ra);
+  }
+  return r;
+}
+
 extern B take_c2(B, B, B);
 static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   u64* wp = bitarr_ptr(w);
@@ -346,12 +364,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   usz ie = wia/64;
   usz q=wia%64; if (q) we = wp[ie] &= ((u64)1<<q) - 1;
   while (!we) {
-    if (RARE(ie==0)) {
-      if (RNK(x)>1) return take_c2(m_f64(0), m_f64(0), inc(x));
-      u8 xe = TI(x,elType);
-      if (xe != el_B) return elNum(xe)? emptyIVec() : emptyCVec();
-      B xf = getFillQ(x); return q_N(xf)? emptyHVec() : m_emptyFVec(xf);
-    }
+    if (RARE(ie==0)) return zeroCells(x);
     we = wp[--ie];
   }
   usz wia0 = wia;
@@ -450,13 +463,14 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
 
 // Replicate using plus/max/xor-scan
 #define SCAN_CORE(WV, UPD, SET, SCAN) \
-  usz b = 1<<10;                          \
-  for (usz k=0, j=0, ij=WV; ; ) {         \
-    usz e = b<s-k? k+b : s;               \
-    SET; for (usz i=k; i<e; i++) rp[i]=0; \
-    while (ij<e) { j++; UPD; ij+=WV; }    \
-    SCAN;                                 \
-    if (e==s) {break;}  k=e;              \
+  usz b = 1<<10;                       \
+  for (usz k=0, j=0, ij=WV; ; ) {      \
+    usz e = b<s-k? k+b : s;            \
+    for (usz i=k; i<e; i++) rp[i]=0;   \
+    SET;                               \
+    while (ij<e) { j++; UPD; ij+=WV; } \
+    SCAN;                              \
+    if (e==s) {break;}  k=e;           \
   }
 #define SUM_CORE(T, WV, PREP, INC) \
   SCAN_CORE(WV, PREP; rp[ij]+=INC, , PLUS_SCAN(T))
@@ -572,7 +586,8 @@ B slash_c2(B t, B w, B x) {
   } else {
     atom:
     if (!q_i32(w)) goto base;
-    wv = o2i(w);
+    wv = o2iG(w);
+    if (wv < 0) thrM("/: 𝕨 cannot be negative");
   }
   if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
   ur xr = RNK(x);
@@ -676,8 +691,9 @@ B slash_c2(B t, B w, B x) {
     goto decWX_ret;
   } else {
     if (wv <= 1) {
-      if (wv < 0) thrM("/: 𝕨 cannot be negative");
-      return wv ? x : taga(arr_shVec(TI(x,slice)(x, 0, 0)));
+      if (wv || xlen==0) return x;
+      r = zeroCells(x);
+      goto decX_ret;
     }
     if (xlen == 0) return x;
     usz s = xlen * wv;
