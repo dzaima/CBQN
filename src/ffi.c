@@ -108,7 +108,7 @@ BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
 static usz calcIA(size_t rank, const size_t* shape) {
   if (rank>UR_MAX) thrM("Rank too large");
   usz r = 1;
-  NOUNROLL for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
+  PLAINLOOP for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
   return r;
 }
 static void copyBData(B* r, const BQNV* data, usz ia) {
@@ -123,7 +123,7 @@ static void copyBData(B* r, const BQNV* data, usz ia) {
   }
 }
 #define CPYSH(R) usz* sh = arr_shAlloc((Arr*)(R), r0); \
-  if (sh) NOUNROLL for (size_t i = 0; RARE(i < r0); i++) sh[i] = sh0[i];
+  if (sh) PLAINLOOP for (size_t i = 0; RARE(i < r0); i++) sh[i] = sh0[i];
 
 BQNV bqn_makeI8Arr (size_t r0, const size_t* sh0, const i8*   data) { usz ia=calcIA(r0,sh0); i8*  rp; Arr* r = m_i8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
 BQNV bqn_makeI16Arr(size_t r0, const size_t* sh0, const i16*  data) { usz ia=calcIA(r0,sh0); i16* rp; Arr* r = m_i16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }

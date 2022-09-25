@@ -20,7 +20,7 @@ u64 alSize;
 
 FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   c->mmInfo = MMI(to);
-  NOUNROLL while (from != to) {
+  PLAINLOOP while (from != to) {
     from--;
     EmptyValue* b = (EmptyValue*) (BSZ(from) + (u8*)c);
     b->type = t_empty;

@@ -140,12 +140,16 @@ typedef double   f64;
 #define N64d "%"SCNd64
 #define N64u "%"SCNu64
 #if __clang__
-  #define NOUNROLL _Pragma("clang loop unroll(disable)") _Pragma("clang loop vectorize(disable)")
+  #define NOUNROLL _Pragma("clang loop unroll(disable)")
+  #define NOVECTORIZE _Pragma("clang loop vectorize(disable)")
 #elif __GNUC__
   #define NOUNROLL _Pragma("GCC unroll 1")
+  #define NOVECTORIZE
 #else
   #define NOUNROLL
+  #define NOVECTORIZE
 #endif
+#define PLAINLOOP NOUNROLL NOVECTORIZE
 
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)

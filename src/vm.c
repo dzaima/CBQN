@@ -629,7 +629,7 @@ FORCE_INLINE Scope* m_scopeI(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B
     }
     i = initVarAm;
   } else {
-    NOUNROLL while (i<initVarAm) { sc->vars[i] = initVars[i]; i++; }
+    PLAINLOOP while (i<initVarAm) { sc->vars[i] = initVars[i]; i++; }
   }
   
   // some bit of manual unrolling, but not too much
@@ -637,7 +637,7 @@ FORCE_INLINE Scope* m_scopeI(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B
   if (left==1) sc->vars[i] = bi_noVar;
   else if (left>=2) {
     B* vars = sc->vars+i;
-    NOUNROLL for (u32 i = 0; i < (left>>1); i++) { *(vars++) = bi_noVar; *(vars++) = bi_noVar; }
+    PLAINLOOP for (u32 i = 0; i < (left>>1); i++) { *(vars++) = bi_noVar; *(vars++) = bi_noVar; }
     if (left&1) *vars = bi_noVar;
   }
   

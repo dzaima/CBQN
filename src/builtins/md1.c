@@ -460,7 +460,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   ShArr* X##_csh;              \
   if (X##_cr>1) {              \
     X##_csh = m_shArr(X##_cr); \
-    NOUNROLL for (usz i = 0; i < X##_cr; i++) { \
+    PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
       usz v = SH(X)[i+1];   \
       X##_csz*= v;             \
       X##_csh->a[i] = v;       \

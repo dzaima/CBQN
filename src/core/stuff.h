@@ -86,12 +86,12 @@ static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
 }
 static void shcpy(usz* dst, usz* src, size_t len) {
   // memcpy(dst, src, len*sizeof(usz));
-  NOUNROLL for (size_t i = 0; i < len; i++) dst[i] = src[i];
+  PLAINLOOP for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
 static usz shProd(usz* sh, usz s, usz e) {
   usz r = 1;
-  NOUNROLL for (i32 i = s; i < e; i++) r*= sh[i];
+  PLAINLOOP for (i32 i = s; i < e; i++) r*= sh[i];
   return r;
 }
 static usz arr_csz(B x) {
@@ -101,7 +101,7 @@ static usz arr_csz(B x) {
 }
 static bool eqShPart(usz* w, usz* x, usz len) {
   // return memcmp(w, x, len*sizeof(usz))==0;
-  NOUNROLL for (i32 i = 0; i < len; i++) if (w[i]!=x[i]) return false;
+  PLAINLOOP for (i32 i = 0; i < len; i++) if (w[i]!=x[i]) return false;
   return true;
 }
 static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
