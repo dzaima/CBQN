@@ -6,18 +6,23 @@
 
 
 
-void ud_rec(B** p, usz d, usz r, i32* pos, usz* sh) {
-  if (d==r) {
-    i32* rp;
-    *(*p)++ = m_i32arrv(&rp, r);
-    memcpy(rp, pos, 4*r);
+static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
+  usz cl = sh[d];
+  if (d+1==r) {
+    
+    for (usz i = 0; i < cl; i++) {
+      i32* p1; *p = m_i32arrv(&p1, r);
+      NOUNROLL for (usz i = 0; i < d; i++) p1[i] = pos[i];
+      p1[d] = i;
+      p++;
+    }
   } else {
-    usz c = sh[d];
-    for (usz i = 0; i < c; i++) {
+    for (usz i = 0; i < cl; i++) {
       pos[d] = i;
-      ud_rec(p, d+1, r, pos, sh);
+      p = ud_rec(p, d+1, r, pos, sh);
     }
   }
+  return p;
 }
 static Arr* bitUD[3];
 B ud_c1(B t, B x) {
@@ -47,26 +52,26 @@ B ud_c1(B t, B x) {
   usz xia = IA(x);
   if (RNK(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", RNK(x));
   if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
-  usz sh[xia];
+  if (xia==0) { decG(x); return m_unit(emptyIVec()); }
+  usz sh[xia]; // stack allocation of rank items
+  i32 pos[xia];
   usz ria = 1;
-  for (usz i = 0; i < xia; i++) {
+  for (usz i = xia; i--; ) {
     usz c = o2s(GetU(x, i));
     if (c > I32_MAX) thrM("↕: Result too large");
     sh[i] = c;
-    if (c*(u64)ria >= U32_MAX) thrM("↕: Result too large");
-    ria*= c;
+    if (mulOn(ria, c)) thrM("↕: Result too large");
   }
   decG(x);
   
   Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
   B* rp = fillarr_ptr(r);
-  for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
+  FILL_TO(rp, el_B, 0, m_f64(0), ria); // don't have r in undefined state if allocation errors
+  
+  ud_rec(rp, 0, xia, pos, sh);
   
   usz* rsh = arr_shAlloc(r, xia);
   if (rsh) shcpy(rsh, sh, xia);
-  
-  i32 pos[xia]; B* crp = rp;
-  ud_rec(&crp, 0, xia, pos, sh);
   
   if (ria) fillarr_setFill(r, inc(rp[0]));
   else {
