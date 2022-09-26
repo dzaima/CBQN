@@ -1,5 +1,6 @@
 include 'skin/c'
 include 'arch/c'
+include 'util/kind'
 
 oper ~~ reinterpret infix right 55
 def Size = u64
@@ -12,8 +13,8 @@ def cdiv{a,b} = (a+b-1)/b
 def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
 def lb{n==1} = 0
 
-def tail{n,x} = x - (x>>n << n) # get the n least significant bits
-def bit {k,x} = tail{1,x>>k} << k # get the k-th bit
+def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
+def bit {k,x} = x &  (1<<k)      # get the k-th bit
 
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
@@ -22,11 +23,10 @@ def assert{x:u1} = emit{void, 'si_assert', x}
 
 
 # various checks
-def knum{x}    = match{kind{x},'number'}
-def isreg{x}   = match{kind{x},'register'}
-def isconst{x} = match{kind{x},'constant'}
-def istype{x}  = match{kind{x},'type'}
-def istup{x}   = match{kind{x},'tuple'}
+def isreg   = kreg
+def isconst = kcon
+def istype  = ktyp
+def istup   = ktup
 
 def isunsigned{T} = isint{T} & ~issigned{T}
 
@@ -44,10 +44,8 @@ def anyInt{x & isreg{x}|isconst{x}} = isint{x}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 
-def ty_s{w== 8} = i8;  def ty_u{w== 8} = u8
-def ty_s{w==16} = i16; def ty_u{w==16} = u16
-def ty_s{w==32} = i32; def ty_u{w==32} = u32
-def ty_s{w==64} = i64; def ty_u{w==64} = u64
+def ty_s{w} = primtype{'i', w}
+def ty_u{w} = primtype{'u', w}
 
 def ty_u{T & isprim{T}} = ty_u{width{T}}
 def ty_s{T & isprim{T}} = ty_s{width{T}}
