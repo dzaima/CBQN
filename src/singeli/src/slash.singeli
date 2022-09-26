@@ -85,14 +85,8 @@ def get_rep_iter{V==[4]u64, wv} = {
   def sh = each{base4, get_shufs{step, wv}}
   {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
 }
-
-rep_const{T, wv}(x:*void, r:*void, n:u64) : void = {
-  def step = 256/width{T}
-  def V = [step]T
-  xv := *V~~x
-  rv := *V~~r
+def rep_const_shuffle{V, step, wv, xv:*V, rv:*V, n:u64} = {
   def onreps = get_rep_iter{V, wv}
-
   nv := n / step
   j:u64 = 0
   def write{v} = { store{rv, j, v}; ++j }
@@ -112,12 +106,63 @@ rep_const{T, wv}(x:*void, r:*void, n:u64) : void = {
     if (q) maskstoreF{rv, maskOf{V, q}, e, s}
   }
 }
+
+rep_const_broadcast{T, V}(wv:u64, x:*T, r:*T, n:u64) : void = {
+  kv := cdiv{wv, vcount{V}}
+  @for (x over n) {
+    v := broadcast{V, x}
+    @for (j to kv) store{*V~~r, j, v}
+    r += wv
+    store{*V~~r, -1, v}
+  }
+}
+rep_const_broadcast{T, V, kv}(wv:u64, x:*T, r:*T, n:u64) : void = {
+  @for (x over n) {
+    v := broadcast{V, x}
+    @unroll (j to kv) store{*V~~r, j, v}
+    r += wv
+    store{*V~~r, -1, v}
+  }
+}
+rep_const_broadcast{T, V, kv==0}(wv:u64, x:*T, r:*T, n:u64) : void = {
+  @for (x over n-1) {
+    store{*V~~r, 0, broadcast{V, x}}
+    r += wv
+  }
+  maskstoreF{*V~~r, maskOf{V, wv}, 0, broadcast{V, load{x,n-1}}}
+}
+
+rep_const{T, wv}(x:*void, r:*void, n:u64) : void = {
+  def step = 256/width{T}
+  def V = [step]T
+  if ((step>=16 and wv==17) or wv <= max{step/2, 6}) {
+    rep_const_shuffle{V, step, wv, *V~~x, *V~~r, n}
+  } else {
+    def kv = (wv - wv%step) / step
+    rep_const_broadcast{T, V, kv}(wv, *T~~x, *T~~r, n)
+  }
+}
+
+# 1+˝∨`⌾⌽(2+↕6)(0=|⌜)8+↕25
+def makefact{divisor, range} = {
+  def t = table{{a,b}=>0==b%a, divisor, range}
+  fold{+, 1, reverse{scan{|, reverse{t}}}}
+}
+factors:*u8 = makefact{2+iota{6}, 8+iota{25+32}}
 rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
   assert{wv>=2}
-  @unroll (k from 2 to 8) {
-    if (wv==k) return{rep_const{T, k}(x, r, n)}
+  if (wv*width{T} > 8*256 or wv > 64) return{rep_const_broadcast{T,[256/width{T}]T}(wv,x,r,n)}
+  def pr = tup{2,3,4,5,6,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61}
+  def try{k} = { if (wv==k) return{rep_const{T, k}(x, r, n)} }
+  each{try, pr}
+  k := u32~~wv
+  fa := promote{u32, load{factors,k-8}}
+  if (fa > 1) {
+    fi := promote{u64, k / fa}
+    def t = *T~~r + (promote{u64,k}-fi)*n
+    rep_const{T}(fi,x,t,n)
+    rep_const{T}(fa,t,r,fi*n)
   }
-  def rc = rep_const{T}
 }
 
 'rep_u8'  = rep_const{i8 }; 'rep_u16' = rep_const{i16}

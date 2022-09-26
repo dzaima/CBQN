@@ -717,24 +717,14 @@ B slash_c2(B t, B w, B x) {
       else           { BOOL_REP_OVER(wv, xlen) }
       goto decX_ret;
     } else {
-      #if SINGELI
-      static const u8 factors[] = {4, 3, 5, 1, 6, 1, 7, 5, 4, 1, 6, 1, 5, 7, 2, 1, 6, 5, 2, 3, 7, 1, 6, 1, 4};
-      u8 fa;
-      if (xlen>=12 && wv>=8 && wv<32 && (fa=factors[wv-8])>1) {
-        return slash_c2(m_f64(0), m_f64(fa), slash_c2(m_f64(0), m_f64(wv/fa), x));
-      }
-      #endif
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
       #if SINGELI
-      if (wv<=7) {
-        #define CASE(L,T) case L: rep_##T(wv, xv, rv, xlen); break;
-        switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
-        #undef CASE
-      } else
-      #endif
+      #define CASE(L,T) case L: rep_##T(wv, xv, rv, xlen); break;
+      #else
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
+      #endif
       switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
       #undef CASE
     }
