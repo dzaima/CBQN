@@ -49,3 +49,76 @@ slash1{F, T, iota, add}(w:*u64, r:*T, l:u64) : void = {
 'bmipopc_2slash16' = slash2{comp16, i16}
 'bmipopc_1slash8' = slash1{comp8, i8, 0x0706050403020100, 0x0808080808080808}
 'bmipopc_1slash16' = slash1{comp16, i16, 0x0003000200010000, 0x0004000400040004}
+
+include './sse3'
+include './avx'
+include './avx2'
+include './mask'
+include 'util/tup'
+
+def get_shufs{step, wv} = split{step, replicate{wv, iota{step}}}
+def get_rep_iter{V, wv} = {
+  def step = vcount{V}
+  def ie = 32 / step # index expansion
+  def tosel{s} = make{[32]i8, join{table{+, ie*s, iota{ie}}}}
+  def sh = each{tosel, get_shufs{step, wv}}
+  def h = wv >> 1
+  {x, gen} => {
+    def fs{v, s} = gen{sel{[16]i8, v, s}}
+    a := shuf{[4]u64, x, 4b1010}; each{bind{fs,a}, slice{sh,0,h}}
+    fs{x, tupsel{h, sh}}
+    b := shuf{[4]u64, x, 4b3232}; each{bind{fs,b}, slice{sh,-h}}
+  }
+}
+def get_rep_iter{V, wv & wv%2 == 0} = {
+  def r2 = get_rep_iter{V, 2}
+  def rk = get_rep_iter{V, wv/2}
+  {x, gen} => rk{x, {a}=>r2{a,gen}}
+}
+def get_rep_iter{V, wv==2}{x, gen} = {
+  def s = shuf{[4]u64, x, 4b3120}
+  each{{q}=>gen{V~~q}, unpackQ{s, s}}
+}
+def get_rep_iter{V==[4]u64, wv} = {
+  def step = 4
+  def base4{l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+4*base4{slice{l,1}} }
+  def sh = each{base4, get_shufs{step, wv}}
+  {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
+}
+
+rep_const{T, wv}(x:*void, r:*void, n:u64) : void = {
+  def step = 256/width{T}
+  def V = [step]T
+  xv := *V~~x
+  rv := *V~~r
+  def onreps = get_rep_iter{V, wv}
+
+  nv := n / step
+  j:u64 = 0
+  def write{v} = { store{rv, j, v}; ++j }
+  @for (xv over nv) onreps{xv, write}
+  if (nv*step < n) {
+    nr := n * wv
+    e := nr / step
+    s := broadcast{V, 0}
+    def end = makelabel{}
+    onreps{load{xv,nv}, {v} => {
+      s = v
+      if (j == e) goto{end}
+      write{s}
+    }}
+    setlabel{end}
+    q := nr & (step-1)
+    if (q) maskstoreF{rv, maskOf{V, q}, e, s}
+  }
+}
+rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
+  assert{wv>=2}
+  @unroll (k from 2 to 8) {
+    if (wv==k) return{rep_const{T, k}(x, r, n)}
+  }
+  def rc = rep_const{T}
+}
+
+'rep_u8'  = rep_const{i8 }; 'rep_u16' = rep_const{i16}
+'rep_u32' = rep_const{i32}; 'rep_u64' = rep_const{u64}

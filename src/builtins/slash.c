@@ -720,6 +720,13 @@ B slash_c2(B t, B w, B x) {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
+      #if SINGELI
+      if (wv<=7) {
+        #define CASE(L,T) case L: rep_##T(wv, xv, rv, xlen); break;
+        switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+        #undef CASE
+      } else
+      #endif
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
       switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
       #undef CASE
