@@ -132,11 +132,11 @@ extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
 
 // Branchless sparse Where (bsp)
 // Works on a buffer of 1<<11 32-bit values
-static const usz bsp_max  = 1<<11;
+static const usz bsp_max  = (1<<11) - 64;
 static const u32 bsp_top  = 1<<24;
 static const u32 bsp_mask = bsp_top - 1;
 static usz bsp_fill(u64* src, u32* buf, usz len) {
-  assert(len <= 1<<11);
+  assert(len < 1<<11);
   usz j = 0;
   for (usz i=0; i<(len+63)/64; i++) {
     u64 u=src[i]; u32 p;
