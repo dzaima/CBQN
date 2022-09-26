@@ -717,6 +717,13 @@ B slash_c2(B t, B w, B x) {
       else           { BOOL_REP_OVER(wv, xlen) }
       goto decX_ret;
     } else {
+      #if SINGELI
+      static const u8 factors[] = {4, 3, 5, 1, 6, 1, 7, 5, 4, 1, 6, 1, 5, 7, 2, 1, 6, 5, 2, 3, 7, 1, 6, 1, 4};
+      u8 fa;
+      if (xlen>=12 && wv>=8 && wv<32 && (fa=factors[wv-8])>1) {
+        return slash_c2(m_f64(0), m_f64(fa), slash_c2(m_f64(0), m_f64(wv/fa), x));
+      }
+      #endif
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
