@@ -55,13 +55,13 @@ include './avx'
 include './avx2'
 include './mask'
 include 'util/tup'
+def idiv{a,b} = (a-a%b)/b
 
 def get_shufs{step, wv} = split{step, replicate{wv, iota{step}}}
+def expandsel{ex}{s} = make{[32]i8, join{table{+, ex*s, iota{ex}}}}
 def get_rep_iter{V, wv} = {
   def step = vcount{V}
-  def ie = 32 / step # index expansion
-  def tosel{s} = make{[32]i8, join{table{+, ie*s, iota{ie}}}}
-  def sh = each{tosel, get_shufs{step, wv}}
+  def sh = each{expandsel{32 / step}, get_shufs{step, wv}}
   def h = wv >> 1
   {x, gen} => {
     def fs{v, s} = gen{sel{[16]i8, v, s}}
@@ -106,16 +106,39 @@ def rep_const_shuffle{V, step, wv, xv:*V, rv:*V, n:u64} = {
     if (q) maskstoreF{rv, maskOf{V, q}, e, s}
   }
 }
-
-rep_const_broadcast{T, V}(wv:u64, x:*T, r:*T, n:u64) : void = {
-  kv := cdiv{wv, vcount{V}}
-  @for (x over n) {
-    v := broadcast{V, x}
-    @for (j to kv) store{*V~~r, j, v}
-    r += wv
-    store{*V~~r, -1, v}
+rep_const_sub{T, V}(wv:u64, x:*T, r:*T, n:u64, sh0:[32]i8, sh1:[32]i8, sh2:[32]i8, sh3:[32]i8) : void = {
+  def sh = tup{sh0,sh1,sh2,sh3}
+  def h = 4
+  def step = vcount{V}
+  def hs = idiv{h*step, wv}  # Actual step size
+  re := r + n*wv - h*step
+  i:u64 = 0
+  while (r <= re) {
+    a := shuf{[4]u64, load{*V~~(x+i),0}, 4b1010}
+    @unroll (j to h) store{*V~~r, j, sel{[16]i8, a, tupsel{j,sh}}}
+    i += hs
+    r += hs*wv
   }
+  re += (h-1)*step
+  a := shuf{[4]u64, load{*V~~(x+i),0}, 4b1010}
+  s := broadcast{V, 0}
+  def end = makelabel{}
+  @unroll (j to h) {
+    s = sel{[16]i8, a, tupsel{j,sh}}
+    if (r > re) goto{end}
+    store{*V~~r, 0, s}
+    r += step
+  }
+  setlabel{end}
+  q := (re+step) - r
+  if (q) maskstoreF{*V~~r, maskOf{V, q}, 0, s}
 }
+def rep_const_shuffle{V, step, wv, xv:*V, rv:*V, n:u64 & wv >= 11} = {
+  def T = eltype{V}
+  def sh = each{expandsel{32/step}, slice{get_shufs{step, wv}, 0, 4}}
+  apply{bind{call, rep_const_sub{T, V}, wv, *T~~xv, *T~~rv, n}, sh}
+}
+
 rep_const_broadcast{T, V, kv}(wv:u64, x:*T, r:*T, n:u64) : void = {
   @for (x over n) {
     v := broadcast{V, x}
@@ -131,14 +154,29 @@ rep_const_broadcast{T, V, kv==0}(wv:u64, x:*T, r:*T, n:u64) : void = {
   }
   maskstoreF{*V~~r, maskOf{V, wv}, 0, broadcast{V, load{x,n-1}}}
 }
+rep_const_broadcast{T, V}(wv:u64, x:*T, r:*T, n:u64) : void = {
+  kv := wv / vcount{V}
+  if (kv < 4) {
+    @unroll (k from 0 to 4) {
+      if (kv == k) rep_const_broadcast{T, V, k}(wv, x, r, n)
+    }
+  } else {
+    @for (x over n) {
+      v := broadcast{V, x}
+      @for (j to kv) store{*V~~r, j, v}
+      r += wv
+      store{*V~~r, -1, v}
+    }
+  }
+}
 
-rep_const{T, wv}(x:*void, r:*void, n:u64) : void = {
+def rep_const{T, wv, x, r, n} = {
   def step = 256/width{T}
   def V = [step]T
-  if ((step>=16 and wv==17) or wv <= max{step/2, 6}) {
+  if (wv <= max{2*step, 6}) {
     rep_const_shuffle{V, step, wv, *V~~x, *V~~r, n}
   } else {
-    def kv = (wv - wv%step) / step
+    def kv = idiv{wv, step}
     rep_const_broadcast{T, V, kv}(wv, *T~~x, *T~~r, n)
   }
 }
@@ -148,21 +186,30 @@ def makefact{divisor, range} = {
   def t = table{{a,b}=>0==b%a, divisor, range}
   fold{+, 1, reverse{scan{|, reverse{t}}}}
 }
-factors:*u8 = makefact{2+iota{6}, 8+iota{25+32}}
+def basic_rep = 2+iota{6}
+def fact_size = 128
+def fact_inds = slice{iota{fact_size},8}
+def fact_tab = makefact{basic_rep, fact_inds}
+factors:*u8 = fact_tab
 rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
   assert{wv>=2}
-  if (wv*width{T} > 8*256 or wv > 64) return{rep_const_broadcast{T,[256/width{T}]T}(wv,x,r,n)}
-  def pr = tup{2,3,4,5,6,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61}
-  def try{k} = { if (wv==k) return{rep_const{T, k}(x, r, n)} }
-  each{try, pr}
-  k := u32~~wv
-  fa := promote{u32, load{factors,k-8}}
-  if (fa > 1) {
-    fi := promote{u64, k / fa}
-    def t = *T~~r + (promote{u64,k}-fi)*n
-    rep_const{T}(fi,x,t,n)
-    rep_const{T}(fa,t,r,fi*n)
+  if (wv>=8 and wv<=fact_size) {
+    k := u32~~wv
+    fa := promote{u32, load{factors,k-8}}
+    if (fa > 1) {
+      fi := promote{u64, k / fa}
+      def t = *T~~r + (promote{u64,k}-fi)*n
+      rep_const{T}(fi,x,t,n)
+      rep_const{T}(fa,t,r,fi*n)
+      return{}
+    }
   }
+  def vn = 256/width{T}
+  def max_special = min{4*vn, 64}
+  if (wv > max_special) return{rep_const_broadcast{T,[vn]T}(wv,x,r,n)}
+  def pr = merge{basic_rep, replicate{(fact_inds<=max_special)&(fact_tab==1), fact_inds}}
+  def try{k} = { if (wv==k) return{rep_const{T, k, x, r, n}} }
+  each{try, pr}
 }
 
 'rep_u8'  = rep_const{i8 }; 'rep_u16' = rep_const{i16}
