@@ -9,7 +9,7 @@
 #include <dlfcn.h>
 #if FFI==2
 #if !__has_include(<ffi.h>)
-#error "<ffi.h> not found. Either install libffi into $PATH, or add 'FFI=0' as a make argument to disable FFI"
+#error "<ffi.h> not found. Either install libffi, or add 'FFI=0' as a make argument to disable •FFI"
 #endif
 #include <ffi.h>
 #include "utils/mut.h"
