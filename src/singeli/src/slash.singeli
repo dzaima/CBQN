@@ -173,29 +173,18 @@ rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   if (q) maskstoreF{*V~~r, maskOf{V, q}, 0, s}
 }
 
-rep_const_broadcast{T, V, kv}(wv:u64, x:*T, r:*T, n:u64) : void = {
+def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
+  assert{kv > 0}
+  def V = [256/width{T}]T
   @for (x over n) {
     v := broadcast{V, x}
-    @unroll (j to kv) store{*V~~r, j, v}
+    @loop (j to kv) store{*V~~r, j, v}
     r += wv
     store{*V~~r, -1, v}
   }
 }
-rep_const_broadcast{T, V, kv==0}(wv:u64, x:*T, r:*T, n:u64) : void = {
-  @for (x over n-1) {
-    store{*V~~r, 0, broadcast{V, x}}
-    r += wv
-  }
-  maskstoreF{*V~~r, maskOf{V, wv}, 0, broadcast{V, load{x,n-1}}}
-}
-rep_const_broadcast{T, V}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = {
-  @for (x over n) {
-    v := broadcast{V, x}
-    @for (j to kv) store{*V~~r, j, v}
-    r += wv
-    store{*V~~r, -1, v}
-  }
-}
+rep_const_broadcast{T, kv    }(wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, unroll, wv, x, r, n}
+rep_const_broadcast{T}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, for   , wv, x, r, n}
 
 rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
   assert{wv>=2}
@@ -236,9 +225,9 @@ rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
   } else {
     kv := wv / vn
     @unroll (k from (max_shuffle/vn) to 4) {
-      if (kv == k) return{rep_const_broadcast{T, V, k}(wv, x, r, n)}
+      if (kv == k) return{rep_const_broadcast{T, k}(wv, x, r, n)}
     }
-    rep_const_broadcast{T, V}(kv, wv, x, r, n)
+    rep_const_broadcast{T}(kv, wv, x, r, n)
   }
 }
 
