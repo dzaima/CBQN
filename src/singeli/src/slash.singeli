@@ -181,30 +181,12 @@ rep_const_broadcast{T, V, kv==0}(wv:u64, x:*T, r:*T, n:u64) : void = {
   }
   maskstoreF{*V~~r, maskOf{V, wv}, 0, broadcast{V, load{x,n-1}}}
 }
-rep_const_broadcast{T, V}(wv:u64, x:*T, r:*T, n:u64) : void = {
-  kv := wv / vcount{V}
-  if (kv < 4) {
-    @unroll (k from 0 to 4) {
-      if (kv == k) rep_const_broadcast{T, V, k}(wv, x, r, n)
-    }
-  } else {
-    @for (x over n) {
-      v := broadcast{V, x}
-      @for (j to kv) store{*V~~r, j, v}
-      r += wv
-      store{*V~~r, -1, v}
-    }
-  }
-}
-
-def rep_const{T, wv, x, r, n} = {
-  def step = 256/width{T}
-  def V = [step]T
-  if (wv <= max{2*step, 6}) {
-    rep_const_shuffle{V, wv, *V~~x, *V~~r, n}
-  } else {
-    def kv = (wv-wv%step) / step
-    rep_const_broadcast{T, V, kv}(wv, *T~~x, *T~~r, n)
+rep_const_broadcast{T, V}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = {
+  @for (x over n) {
+    v := broadcast{V, x}
+    @for (j to kv) store{*V~~r, j, v}
+    r += wv
+    store{*V~~r, -1, v}
   }
 }
 
@@ -232,11 +214,19 @@ rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
     }
   }
   def vn = 256/width{T}
-  def max_special = min{4*vn, 64}
-  if (wv > max_special) return{rep_const_broadcast{T,[vn]T}(wv,x,r,n)}
-  def pr = merge{basic_rep, replicate{(fact_inds<=max_special)&(fact_tab==1), fact_inds}}
-  def try{k} = { if (wv==k) return{rep_const{T, k, x, r, n}} }
-  each{try, pr}
+  def V = [vn]T
+  def max_shuffle = min{2*vn, 64}
+  if (wv <= max_shuffle) {
+    def pr = merge{basic_rep, replicate{(fact_inds<=max_shuffle)&(fact_tab==1), fact_inds}}
+    def try{k} = { if (wv==k) return{rep_const_shuffle{V, k, *V~~x, *V~~r, n}} }
+    each{try, pr}
+  } else {
+    kv := wv / vn
+    @unroll (k from (max_shuffle/vn) to 4) {
+      if (kv == k) return{rep_const_broadcast{T, V, k}(wv, x, r, n)}
+    }
+    rep_const_broadcast{T, V}(kv, wv, x, r, n)
+  }
 }
 
 'rep_u8'  = rep_const{i8 }; 'rep_u16' = rep_const{i16}
