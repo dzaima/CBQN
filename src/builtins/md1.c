@@ -61,7 +61,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   
   BBB2B fc2 = c2fn(f);
   if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
-    if (TI(x,arrD1) && xia<80 && wia>130) {
+    if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), incG(x)));
     } else if (xia>7) {
