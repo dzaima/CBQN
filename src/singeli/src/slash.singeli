@@ -57,14 +57,19 @@ include './mask'
 include 'util/tup'
 def incl{a,b} = slice{iota{b+1},a}
 
-def get_shufs{step, wv} = split{step, replicate{wv, iota{step}}}
-def get_shuf_data{wv, elbytes} = {
-  def expand{ex}{s} = join{table{+, ex*s, iota{ex}}}
-  each{expand{elbytes}, get_shufs{32 / elbytes, wv}}
+def get_shufs{step, wv, len} = {
+  def i = iota{len*step}
+  split{step, (i - i%wv)/wv}
 }
+def get_shuf_data{wv, elbytes, len} = {
+  def expand{ex}{s} = join{table{+, ex*s, iota{ex}}}
+  def expand{ex==1}{s} = s
+  each{expand{elbytes}, get_shufs{32 / elbytes, wv, len}}
+}
+def get_shuf_data{wv, b} = get_shuf_data{wv, b, wv}
 def get_shuf_Vs{V, wv, len} = {
-  def s = get_shuf_data{wv, width{eltype{V}}/8}
-  each{bind{make,[32]i8}, slice{s,0,len}}
+  def eb = width{eltype{V}}/8
+  each{bind{make,[32]i8}, get_shuf_data{wv, eb, len}}
 }
 def rep_iter_from_sh{sh} = {
   def l = tuplen{sh}
@@ -84,7 +89,7 @@ def get_rep_iter{V, wv==2}{x, gen} = {
 def get_rep_iter{V==[4]u64, wv} = {
   def step = 4
   def base4{l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+4*base4{slice{l,1}} }
-  def sh = each{base4, get_shufs{step, wv}}
+  def sh = each{base4, get_shufs{step, wv, wv}}
   {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
 }
 def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = {
