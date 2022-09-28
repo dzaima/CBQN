@@ -720,7 +720,7 @@ B slash_c2(B t, B w, B x) {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
-      #if SINGELI
+      #if SINGELI && defined(__BMI2__)
       #define CASE(L,T) case L: rep_##T(wv, xv, rv, xlen); break;
       #else
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
