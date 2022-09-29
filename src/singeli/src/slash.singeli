@@ -72,12 +72,8 @@ def get_shufs{step, wv, len} = {
   def i = iota{len*step}
   split{step, (i - i%wv)/wv}
 }
-def get_shuf_data{wv, elbytes, len} = {
-  def expand{ex}{s} = join{table{+, ex*s, iota{ex}}}
-  def expand{ex==1}{s} = s
-  each{expand{elbytes}, get_shufs{32 / elbytes, wv, len}}
-}
-def get_shuf_data{wv, b} = get_shuf_data{wv, b, wv}
+def get_shuf_data{wv, len} = get_shufs{32, wv, len}
+def get_shuf_data{wv} = get_shuf_data{wv, wv}
 def rep_iter_from_sh{sh} = {
   def l = tuplen{sh}
   def h = l >> 1
@@ -98,6 +94,24 @@ def get_rep_iter{V==[4]u64, wv} = {
   def sh = each{base4, get_shufs{step, wv, wv}}
   {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
 }
+def read_shuf_vecs{l, elbytes:u64, shp:*[32]i8} = {
+  def double{x} = {
+    s:=shuf{[4]u64, x, 4b3120}; s+=s
+    each{bind{~~,[32]i8},unpackQ{s, s+broadcast{type{s},1}}}
+  }
+  def doubles{n,tup} = slice{join{each{double,tup}}, 0, n}
+  def sh = each{{v}=>{r:=v}, copy{l, broadcast{[32]i8, 0}}}
+  def tlen{e} = (l+(-l)%e)/e  # Length for e bytes, rounded up
+  def set{i} = { tupsel{i,sh} = each{bind{load,shp},i} }
+  def ext{e} = {
+    def m = tlen{2*e}; def n = tlen{e}  # m<n
+    if (elbytes<=e) set{slice{iota{n},m}}
+    else slice{sh,0,n} = doubles{n,slice{sh,0,m}}
+  }
+  set{iota{tlen{4}}}; ext{2}; ext{1}
+  sh
+}
+
 def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = {
   def step = vcount{V}
   nv := n / step
@@ -123,29 +137,23 @@ def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:u64} = rep_const_shuffle{V, wv, get
 
 def rcsh_vals = incl{3, 7}
 rcsh_offs:*u8 = shiftright{0, scan{+,rcsh_vals}}
-def rcsh_table = table{get_shuf_data, rcsh_vals, tup{1,2,4}}
-rcsh_data:*i8 = join{join{join{rcsh_table}}}
-rcsh_sub{wv}(x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
+rcsh_data:*i8 = join{join{each{get_shuf_data, rcsh_vals}}}
+rcsh_sub{wv}(elbytes:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
   def V = [32]i8
-  def st = each{bind{load,sh}, iota{wv}}
+  def st = read_shuf_vecs{wv, elbytes, sh}
   rep_const_shuffle{V, wv, rep_iter_from_sh{st}, *V~~x, *V~~r, n}
 }
-rep_const_shuffle_full(wv:i32, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
-  def try{k} = { if (wv==k) rcsh_sub{k}(x, r, n, sh) }
+rep_const_shuffle_full(wv:i32, eb:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
+  def try{k} = { if (wv==k) rcsh_sub{k}(eb, x, r, n, sh) }
   each{try, rcsh_vals}
 }
 
 def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
-rcsh4_dat:*i8 = join{join{each{{wv}=>get_shuf_data{wv, 1, 4}, rcsh4_dom}}}
+rcsh4_dat:*i8 = join{join{each{{wv}=>get_shuf_data{wv, 4}, rcsh4_dom}}}
 rchs4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
-  shp := *[32]i8~~rcsh4_dat + 4*load{rchs4_lkup,wv}
-  def double{x} = { s:=shuf{[4]u64, x, 4b3120}; s+=s; each{bind{~~,[32]i8},unpackQ{s, s+broadcast{type{s},1}}} }
-  sh0 := load{shp, 0}; sh1:=sh0; sh2:=sh0; sh3:=sh0
-  if (elbytes<=2) sh1=load{shp,1}; else tup{sh0,sh1}=double{sh0};
-  if (elbytes<=1) tup{sh2,sh3}=each{bind{load,shp},tup{2,3}};
-  else { t:=sh1; tup{sh0,sh1}=double{sh0}; tup{sh2,sh3}=double{t} }
-  def h = 4; def sh = tup{sh0,sh1,sh2,sh3}
+  def h = 4
+  def sh = read_shuf_vecs{h, elbytes, *[32]i8~~rcsh4_dat + 4*load{rchs4_lkup,wv}}
   def V = [32]i8
   def step = vcount{V}     # Bytes written
   def wvb = wv * elbytes
@@ -212,9 +220,8 @@ rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
       specialize{2}
       if (wv <= tupsel{-1,rcsh_vals}) {
         ri := wv - tupsel{0,rcsh_vals}
-        def ti = elbytes-1 - (elbytes==4)
-        shp:= *[32]i8~~rcsh_data + load{rcsh_offs,ri}*3 + ti*wv
-        rep_const_shuffle_full(wv, x, r, n*elbytes, shp)
+        shp:= *[32]i8~~rcsh_data + load{rcsh_offs,ri}
+        rep_const_shuffle_full(wv, elbytes, x, r, n*elbytes, shp)
       } else {
         rep_const_shuffle_partial4(wv, elbytes, x, r, n)
       }
