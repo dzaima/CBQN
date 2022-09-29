@@ -713,6 +713,34 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
+      #if __BMI2__
+      if (wv <= 52) {
+        u64 m = (u64)-1 / (((u64)1<<wv)-1); // TODO table lookup
+        u64 xw = 0;
+        if (m & 1) {  // Power of two
+          for (usz i=-1, j=0; j<BIT_N(s); j++) {
+            xw >>= (64/wv);
+            if ((j&(wv-1))==0) xw = xp[++i];
+            u64 rw = _pdep_u64(xw, m);
+            rp[j] = (rw<<wv)-rw;
+          }
+        } else {
+          usz d = POPC(m); // == 64/wv
+          usz q = CTZ(m);  // == 64%wv
+          m = m<<(wv-q) | 1;
+          u64 mt = (u64)1<<(d+1);  // Bit d+1 may be needed, isn't pdep-ed
+          usz tsh = d*wv-(d+1);
+          for (usz xi=0, o=0, j=0; j<BIT_N(s); j++) {
+            xw = *(u64*)((u8*)xp+xi/8) >> (xi%8);
+            u64 ex = (xw&mt)<<tsh;
+            u64 rw = _pdep_u64(xw, m);
+            rp[j] = ((rw-ex)<<(wv-o))-(rw>>o|(xw&1));
+            o += q;
+            bool oo = o>=wv; xi+=d+oo; o-=wv&-oo;
+          }
+        }
+      } else
+      #endif
       if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
       else           { BOOL_REP_OVER(wv, xlen) }
       goto decX_ret;
