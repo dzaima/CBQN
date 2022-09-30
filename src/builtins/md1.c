@@ -109,7 +109,10 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
 }
 
 #if SINGELI
-extern void (*const clmul_scan_ne)(uint64_t v0,uint64_t* v1,uint64_t* v2,uint64_t v3);
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/neq.c"
+  #pragma GCC diagnostic pop
 #endif
 B scan_ne(u64 p, u64* xp, u64 ia) {
   u64* rp; B r=m_bitarrv(&rp,ia);

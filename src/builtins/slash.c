@@ -105,19 +105,19 @@
 #endif
 
 #if SINGELI
-extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
-extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
-extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
-#define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
-#define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
-extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
-// From constrep.c
-extern void (*const constrep_u8)(int32_t v0,void* v1,void* v2,uint64_t v3);
-extern void (*const constrep_u16)(int32_t v0,void* v1,void* v2,uint64_t v3);
-extern void (*const constrep_u32)(int32_t v0,void* v1,void* v2,uint64_t v3);
-extern void (*const constrep_u64)(int32_t v0,void* v1,void* v2,uint64_t v3);
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/constrep.c"
+  #pragma GCC diagnostic pop
+
+  extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
+  extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
+  extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
+  #define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
+  #define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
+  extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
 #else
-#define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
+  #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
 
 // Dense Where, still significantly worse than SIMD
