@@ -198,7 +198,7 @@ ${bd}/%.o: src/jit/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o squeeze.o select.o slash.o group.o sort.o selfsearch.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
+builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o squeeze.o select.o slash.o constrep.o group.o sort.o selfsearch.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
@@ -224,7 +224,7 @@ preSingeliBin:
 	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
 
 
-build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c slash.c bits.c}
+build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c slash.c constrep.c bits.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'

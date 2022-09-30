@@ -111,6 +111,11 @@ extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v
 #define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
 extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
+// From constrep.c
+extern void (*const constrep_u8)(int32_t v0,void* v1,void* v2,uint64_t v3);
+extern void (*const constrep_u16)(int32_t v0,void* v1,void* v2,uint64_t v3);
+extern void (*const constrep_u32)(int32_t v0,void* v1,void* v2,uint64_t v3);
+extern void (*const constrep_u64)(int32_t v0,void* v1,void* v2,uint64_t v3);
 #else
 #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
@@ -748,8 +753,8 @@ B slash_c2(B t, B w, B x) {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
-      #if SINGELI && defined(__BMI2__)
-      #define CASE(L,T) case L: rep_##T(wv, xv, rv, xlen); break;
+      #if SINGELI
+      #define CASE(L,T) case L: constrep_##T(wv, xv, rv, xlen); break;
       #else
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
       #endif
