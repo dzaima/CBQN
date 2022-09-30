@@ -108,8 +108,14 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
+#if SINGELI
+extern void (*const clmul_scan_ne)(uint64_t v0,uint64_t* v1,uint64_t* v2,uint64_t v3);
+#endif
 B scan_ne(u64 p, u64* xp, u64 ia) {
   u64* rp; B r=m_bitarrv(&rp,ia);
+#if SINGELI
+  clmul_scan_ne(p, xp, rp, BIT_N(ia));
+#else
   for (usz i = 0; i < BIT_N(ia); i++) {
     u64 c = xp[i];
     u64 r = c ^ (c<<1);
@@ -118,6 +124,7 @@ B scan_ne(u64 p, u64* xp, u64 ia) {
     rp[i] = r;
     p = -(r>>63); // repeat sign bit
   }
+#endif
   return r;
 }
 
