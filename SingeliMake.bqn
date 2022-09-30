@@ -9,9 +9,10 @@ srcfile ← •file.At srcfileR
 resfile ← •file.At resfileR
 tmpfile ← (•file.At buildDir) •file.At filename∾".d.orig"
 depfile ← (•file.At buildDir) •file.At filename∾".d"
+prefix  ← "si_"∾ (∧`'.'⊸≠)⊸/ •file.Name srcfile
 
 # invoke singeli, which creates the result file
-(⟨"-d" ⋄ tmpfile ⋄ "-o" ⋄ resfile ⋄ srcfile⟩) •Import siDir •file.At "singeli"
+(⟨"-d" ⋄ tmpfile ⋄ "-o" ⋄ resfile ⋄ "-n" ⋄ prefix ⋄ srcfile⟩) •Import siDir •file.At "singeli"
 
 # output dependency file
 deps ← siDir⊸•file.At¨ •file.Lines tmpfile

@@ -19,7 +19,7 @@ def bit {k,x} = x &  (1<<k)      # get the k-th bit
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
-def assert{x:u1} = emit{void, 'si_assert', x}
+def assert{x:u1} = { if (not x) emit{void, '__builtin_unreachable'} }
 
 
 # various checks
