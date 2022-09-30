@@ -108,7 +108,7 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
-#if SINGELI
+#if SINGELI && __PCLMUL__
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wunused-variable"
   #include "../singeli/gen/neq.c"
@@ -116,7 +116,7 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
 #endif
 B scan_ne(u64 p, u64* xp, u64 ia) {
   u64* rp; B r=m_bitarrv(&rp,ia);
-#if SINGELI
+#if SINGELI && __PCLMUL__
   clmul_scan_ne(p, xp, rp, BIT_N(ia));
 #else
   for (usz i = 0; i < BIT_N(ia); i++) {
