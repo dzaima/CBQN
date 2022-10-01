@@ -29,6 +29,6 @@ clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   }
 }
 clmul_scan_ne_bit(init:u64, x:*u64, r:*u64, ia:u64) : void = {
-  clmul_scan_ne_any(x, r, init, ia, -(u64~~1))
+  clmul_scan_ne_any(*void~~x, *void~~r, init, ia, -(u64~~1))
 }
 'clmul_scan_ne' = clmul_scan_ne_bit

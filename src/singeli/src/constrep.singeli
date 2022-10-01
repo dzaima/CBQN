@@ -126,7 +126,7 @@ rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   if (q) maskstoreF{*V~~r, maskOf{V, q}, 0, s}
 }
 
-rep_const_shuffle_any(wv:i32, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
+rep_const_shuffle_any(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   if (wv > tupsel{-1,rcsh_vals}) {
     return{rep_const_shuffle_partial4(wv, elbytes, x, r, n)}
   }
@@ -150,14 +150,13 @@ def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
 rep_const_broadcast{T, kv    }(wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, unroll, wv, x, r, n}
 rep_const_broadcast{T}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, for   , wv, x, r, n}
 
-rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
+rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   assert{wv>=2}
   if (wv>=8 and wv<=fact_size) {
-    k := u32~~wv
-    fa := promote{u32, load{factors,k-8}}
+    fa := promote{u64, load{factors,wv-8}}
     if (fa > 1) {
-      fi := promote{u64, k / fa}
-      def t = *T~~r + (promote{u64,k}-fi)*n
+      fi := wv / fa
+      def t = *void~~(*T~~r + (promote{u64,wv}-fi)*n)
       rep_const{T}(fi,x,t,n)
       rep_const{T}(fa,t,r,fi*n)
       return{}
@@ -172,13 +171,13 @@ rep_const{T}(wv:i32, x:*void, r:*void, n:u64) : void = {
       if (wv==k) return{rep_const_shuffle{V, k, *V~~x, *V~~r, n}}
     }
     specialize{2}
-    rep_const_shuffle_any(wv, wT/8, x, r, n)
+    rep_const_shuffle_any(wv, wT/8, *i8~~x, *i8~~r, n)
   } else {
     kv := wv / vn
     @unroll (k from (max_shuffle/vn) to 4) {
-      if (kv == k) return{rep_const_broadcast{T, k}(wv, x, r, n)}
+      if (kv == k) return{rep_const_broadcast{T, k}(wv, *T~~x, *T~~r, n)}
     }
-    rep_const_broadcast{T}(kv, wv, x, r, n)
+    rep_const_broadcast{T}(kv, wv, *T~~x, *T~~r, n)
   }
 }
 
