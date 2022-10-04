@@ -722,15 +722,15 @@ B slash_c2(B t, B w, B x) {
       if (wv <= 52) {
         u64 m = (u64)-1 / (((u64)1<<wv)-1); // TODO table lookup
         u64 xw = 0;
+        usz d = POPC(m); // == 64/wv
         if (m & 1) {  // Power of two
           for (usz i=-1, j=0; j<BIT_N(s); j++) {
-            xw >>= (64/wv);
+            xw >>= d;
             if ((j&(wv-1))==0) xw = xp[++i];
             u64 rw = _pdep_u64(xw, m);
             rp[j] = (rw<<wv)-rw;
           }
         } else {
-          usz d = POPC(m); // == 64/wv
           usz q = CTZ(m);  // == 64%wv
           m = m<<(wv-q) | 1;
           u64 mt = (u64)1<<(d+1);  // Bit d+1 may be needed, isn't pdep-ed
