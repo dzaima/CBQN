@@ -61,7 +61,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   
   BBB2B fc2 = c2fn(f);
   if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
-    if (TI(x,arrD1) && xia<80 && wia>130) {
+    if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), incG(x)));
     } else if (xia>7) {
@@ -108,8 +108,17 @@ B each_c2(Md1D* d, B w, B x) { B f = d->f;
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 
+#if SINGELI && __PCLMUL__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/neq.c"
+  #pragma GCC diagnostic pop
+#endif
 B scan_ne(u64 p, u64* xp, u64 ia) {
   u64* rp; B r=m_bitarrv(&rp,ia);
+#if SINGELI && __PCLMUL__
+  clmul_scan_ne(p, xp, rp, BIT_N(ia));
+#else
   for (usz i = 0; i < BIT_N(ia); i++) {
     u64 c = xp[i];
     u64 r = c ^ (c<<1);
@@ -118,6 +127,7 @@ B scan_ne(u64 p, u64* xp, u64 ia) {
     rp[i] = r;
     p = -(r>>63); // repeat sign bit
   }
+#endif
   return r;
 }
 

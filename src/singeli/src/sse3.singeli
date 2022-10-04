@@ -97,6 +97,9 @@ def __shr{a:T,b & w128s{T, 16} & knum{b}} = emit{T, '_mm_srai_epi16', a, b}
 def __shr{a:T,b & w128s{T, 32} & knum{b}} = emit{T, '_mm_srai_epi32', a, b}
 # no 64-bit arithmetic shift :/
 
+def shl{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bslli_si128', x, n}
+def shr{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
+
 def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
 def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
 

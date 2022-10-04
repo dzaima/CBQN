@@ -1,0 +1,185 @@
+include './base'
+include './sse3'
+include './avx'
+include './avx2'
+include './mask'
+include 'util/tup'
+def incl{a,b} = slice{iota{b+1},a}
+
+# 1+˝∨`⌾⌽0=div|⌜range
+def makefact{divisor, range} = {
+  def t = table{{a,b}=>0==b%a, divisor, range}
+  fold{+, 1, reverse{scan{|, reverse{t}}}}
+}
+def basic_rep = incl{2, 7}
+def fact_size = 128
+def fact_inds = slice{iota{fact_size},8}
+def fact_tab = makefact{basic_rep, fact_inds}
+factors:*u8 = fact_tab
+
+def get_shufs{step, wv, len} = {
+  def i = iota{len*step}
+  split{step, (i - i%wv)/wv}
+}
+def get_shuf_data{wv, len} = get_shufs{32, wv, len}
+def get_shuf_data{wv} = get_shuf_data{wv, wv}
+def rep_iter_from_sh{sh} = {
+  def l = tuplen{sh}
+  def h = l >> 1
+  {x, gen} => {
+    def fs{v, s} = gen{sel{[16]i8, v, s}}
+    a := shuf{[4]u64, x, 4b1010}; each{bind{fs,a}, slice{sh,0,h}}
+    if (l%2) fs{x, tupsel{h, sh}}
+    b := shuf{[4]u64, x, 4b3232}; each{bind{fs,b}, slice{sh,-h}}
+  }
+}
+def get_rep_iter{V, wv==2}{x, gen} = {
+  def s = shuf{[4]u64, x, 4b3120}
+  each{{q}=>gen{V~~q}, unpackQ{s, s}}
+}
+def get_rep_iter{V==[4]u64, wv} = {
+  def step = 4
+  def base4{l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+4*base4{slice{l,1}} }
+  def sh = each{base4, get_shufs{step, wv, wv}}
+  {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
+}
+def read_shuf_vecs{l, elbytes:u64, shp:*[32]i8} = {
+  def double{x} = {
+    s:=shuf{[4]u64, x, 4b3120}; s+=s
+    each{bind{~~,[32]i8},unpackQ{s, s+broadcast{type{s},1}}}
+  }
+  def doubles{n,tup} = slice{join{each{double,tup}}, 0, n}
+  def sh = each{{v}=>{r:=v}, copy{l, broadcast{[32]i8, 0}}}
+  def tlen{e} = (l+(-l)%e)/e  # Length for e bytes, rounded up
+  def set{i} = { tupsel{i,sh} = each{bind{load,shp},i} }
+  def ext{e} = {
+    def m = tlen{2*e}; def n = tlen{e}  # m<n
+    if (elbytes<=e) set{slice{iota{n},m}}
+    else slice{sh,0,n} = doubles{n,slice{sh,0,m}}
+  }
+  set{iota{tlen{8}}}; ext{4}; ext{2}; ext{1}
+  sh
+}
+
+def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = {
+  def step = vcount{V}
+  nv := n / step
+  j:u64 = 0
+  def write{v} = { store{rv, j, v}; ++j }
+  @for (xv over nv) onreps{xv, write}
+  if (nv*step < n) {
+    nr := n * wv
+    e := nr / step
+    s := broadcast{V, 0}
+    def end = makelabel{}
+    onreps{load{xv,nv}, {v} => {
+      s = v
+      if (j == e) goto{end}
+      write{s}
+    }}
+    setlabel{end}
+    q := nr & (step-1)
+    if (q) maskstoreF{rv, maskOf{V, q}, e, s}
+  }
+}
+def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:u64} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
+
+def rcsh_vals = slice{basic_rep, 1} # Handle 2 specially
+rcsh_offs:*u8 = shiftright{0, scan{+,rcsh_vals}}
+rcsh_data:*i8 = join{join{each{get_shuf_data, rcsh_vals}}}
+rcsh_sub{wv}(elbytes:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
+  def V = [32]i8
+  def st = read_shuf_vecs{wv, elbytes, sh}
+  rep_const_shuffle{V, wv, rep_iter_from_sh{st}, *V~~x, *V~~r, n}
+}
+
+def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
+rcsh4_dat:*i8 = join{join{each{{wv}=>get_shuf_data{wv, 4}, rcsh4_dom}}}
+rchs4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
+rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
+  def h = 4
+  def sh = read_shuf_vecs{h, elbytes, *[32]i8~~rcsh4_dat + 4*load{rchs4_lkup,wv}}
+  def V = [32]i8
+  def step = vcount{V}     # Bytes written
+  def wvb = wv * elbytes
+  def hs = (h*step) / wvb  # Actual step size in argument elements
+  re := r + n*wvb - h*step
+  i:u64 = 0
+  while (r <= re) {
+    a := shuf{[4]u64, load{*V~~(x+i),0}, 4b1010}
+    @unroll (j to h) store{*V~~r, j, sel{[16]i8, a, tupsel{j,sh}}}
+    i += hs*elbytes
+    r += hs*wvb
+  }
+  re += (h-1)*step
+  a := shuf{[4]u64, load{*V~~(x+i),0}, 4b1010}
+  s := broadcast{V, 0}
+  def end = makelabel{}
+  @unroll (j to h) {
+    s = sel{[16]i8, a, tupsel{j,sh}}
+    if (r > re) goto{end}
+    store{*V~~r, 0, s}
+    r += step
+  }
+  setlabel{end}
+  q := (re+step) - r
+  if (q) maskstoreF{*V~~r, maskOf{V, q}, 0, s}
+}
+
+rep_const_shuffle_any(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
+  if (wv > tupsel{-1,rcsh_vals}) {
+    return{rep_const_shuffle_partial4(wv, elbytes, x, r, n)}
+  }
+  n *= elbytes
+  ri := wv - tupsel{0,rcsh_vals}
+  sh := *[32]i8~~rcsh_data + load{rcsh_offs,ri}
+  def try{k} = { if (wv==k) rcsh_sub{k}(elbytes, x, r, n, sh) }
+  each{try, rcsh_vals}
+}
+
+def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
+  assert{kv > 0}
+  def V = [256/width{T}]T
+  @for (x over n) {
+    v := broadcast{V, x}
+    @loop (j to kv) store{*V~~r, j, v}
+    r += wv
+    store{*V~~r, -1, v}
+  }
+}
+rep_const_broadcast{T, kv    }(wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, unroll, wv, x, r, n}
+rep_const_broadcast{T}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, for   , wv, x, r, n}
+
+rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
+  assert{wv>=2}
+  if (wv>=8 and wv<=fact_size) {
+    fa := promote{u64, load{factors,wv-8}}
+    if (fa > 1) {
+      fi := wv / fa
+      def t = *void~~(*T~~r + (promote{u64,wv}-fi)*n)
+      rep_const{T}(fi,x,t,n)
+      rep_const{T}(fa,t,r,fi*n)
+      return{}
+    }
+  }
+  def wT = width{T}
+  def vn = 256/wT
+  def V = [vn]T
+  def max_shuffle = 2*vn
+  if (wv <= max_shuffle) {
+    def specialize{k} = {
+      if (wv==k) return{rep_const_shuffle{V, k, *V~~x, *V~~r, n}}
+    }
+    specialize{2}
+    rep_const_shuffle_any(wv, wT/8, *i8~~x, *i8~~r, n)
+  } else {
+    kv := wv / vn
+    @unroll (k from (max_shuffle/vn) to 4) {
+      if (kv == k) return{rep_const_broadcast{T, k}(wv, *T~~x, *T~~r, n)}
+    }
+    rep_const_broadcast{T}(kv, wv, *T~~x, *T~~r, n)
+  }
+}
+
+'constrep_u8'  = rep_const{i8 }; 'constrep_u16' = rep_const{i16}
+'constrep_u32' = rep_const{i32}; 'constrep_u64' = rep_const{u64}
