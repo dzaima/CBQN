@@ -368,8 +368,8 @@ extern B thrownMsg;
 void freeThrown(void);
 
 
-
-#define c(T,X) ((T*)((X).u&0xFFFFFFFFFFFFull))
+#define TOPTR(T,X) ((T*)(uintptr_t)(X))
+#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
 #define v(X) c(Value, X)
 #define a(X) c(Arr  , X)
 
