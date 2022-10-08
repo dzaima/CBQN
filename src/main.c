@@ -7,6 +7,11 @@
 #include "utils/time.h"
 #include "utils/interrupt.h"
 
+
+#if __GNUC__ && __i386__ && !__clang__
+  #warning "CBQN is known to miscompile on GCC for 32-bit x86 builds; using clang instead is suggested"
+#endif
+
 static B replPath;
 static Scope* gsc;
 static bool init = false;
