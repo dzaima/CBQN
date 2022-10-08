@@ -112,6 +112,11 @@ Namespace of various internal functions. May change at any time.
 
 # FFI
 
-Currently, there is no support for structs, nested pointers, or constant-length arrays, aka the only supported types are scalars (e.g. `i8`, `u64`), pointers to those (e.g. `*i8`, `&u64`), and conversions of either those or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `**:c8`).
+Currently, there is no support for nested pointers or constant-length arrays, and limited support of structs.
 
-The `a` type maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
+That is, the supported types are:
+- scalars (e.g. `i8`, `u64`);
+- pointers to scalars (e.g. `*i8`, `&u64`);
+- conversions of either scalars, pointers to scalars, or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `*:i8`, `**:c8`);
+- structs of any of the above (except `&`-pointers) or other structs (e.g. `{*i8,*{*u32:i8,u64:i32}}`), except structs that are within `&` themselves cannot contain any pointers other than converted opaque pointers (e.g. `*{*i32,u64}`, `&{*:i32,u64}`, and `&{i32,u64}` are fine, but `&{*i32,u64}` is not);
+- the `a` type, which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
