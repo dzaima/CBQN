@@ -190,7 +190,43 @@ uint64_t pick_u64(uint64_t* arr, int idx) {
 }
 
 
+typedef struct {
+  uint8_t u8v;
+  int32_t i32v;
+  int16_t u16v;
+  uint64_t u64v;
+  double f64v;
+} S1;
 
+int16_t thirdMember(S1 s) {
+  return s.u16v;
+}
+
+S1 incMembers(S1 s) {
+  s.u8v++;
+  s.u16v++;
+  s.i32v++;
+  s.u64v++;
+  s.f64v++;
+  return s;
+}
+
+typedef struct {
+  S1 a, b;
+} S2;
+
+S1 printAndInc(S1 s) {
+  s = incMembers(s);
+  printf("%u %d %d %lx %.17g\n", s.u8v, s.i32v, s.u16v, s.u64v, s.f64v);
+  return s;
+}
+
+void incMany(S2* list, uint64_t count) {
+  for (uint64_t i = 0; i < count; i++) {
+    list[i].a = printAndInc(list[i].a);
+    list[i].b = printAndInc(printAndInc(list[i].b));
+  }
+}
 
 int plusone(int x) {
   return x + 1;

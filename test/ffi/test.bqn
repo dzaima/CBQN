@@ -72,6 +72,12 @@ f ↩ "lib.so" •FFI ⟨"u64:i8","pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Sho
 f ↩ "lib.so" •FFI ⟨"u64:i8","pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Show @+3 F "000000001234560011122100abacabad"-@
 f ↩ "lib.so" •FFI ⟨"u64",   "pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Show   1 F "000000001234560011122100"-'0'
 
+Section "# structs"
+s1 ← "{u8,i32,i16,u64:u16,f64}" ⋄ s2 ← ∾"{"‿s1‿","‿s1‿"}"
+f ↩ "lib.so" •FFI ⟨"i16", "thirdMember", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩
+f ↩ "lib.so" •FFI ⟨s1, "incMembers", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩
+f ↩ "lib.so" •FFI ⟨"&", "incMany", "&"∾s2, "u64"⟩ ⋄ •Show¨ F ⟨0‿3‿6+3⥊<0‿1+2⥊<⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩, 3⟩
+
 Section "# self-ffi"
 •term.Flush@
 f ↩ @ •FFI ⟨"i32", "putchar", ">i32"⟩ ⋄ F¨ 10∾˜"text"-@
