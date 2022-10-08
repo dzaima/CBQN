@@ -7,7 +7,7 @@ testShared: buildShared
 	@diff --color -su shared.expected shared.got
 	
 buildShared:
-	$(CC) sharedTest.c -o sharedTest -L../.. -lcbqn
+	$(CC) -g sharedTest.c -o sharedTest -L../.. -lcbqn
 
 
 

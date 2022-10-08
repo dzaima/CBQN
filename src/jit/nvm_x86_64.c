@@ -389,7 +389,7 @@ static OptRes opt(u32* bc0) {
       default: defIns:;
         TSSIZE(stk)-= stackConsumed(sbc);
         i32 added = stackAdded(sbc);
-        for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1))
+        for (i32 i = 0; i < added; i++) TSADD(stk, SREF(bi_optOut, -1));
     }
     #undef S
     #undef L64

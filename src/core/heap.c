@@ -8,9 +8,9 @@ Value* heap_curr;
 void heapVerify_checkFn(Value* v) {
   if (v->refc!=0) {
     #ifdef OBJ_COUNTER
-      printf("delta %d for %s, uid "N64d": ", v->refc, type_repr(v->type), v->uid);
+      printf("delta %d for %s @ %p, uid "N64d": ", v->refc, type_repr(v->type), v, v->uid);
     #else
-      printf("delta %d for %s: ", (i32)v->refc, type_repr(v->type));
+      printf("delta %d for %s @ %p: ", (i32)v->refc, type_repr(v->type), v);
     #endif
     heap_observed = v;
     print(tag(v,OBJ_TAG)); putchar('\n');

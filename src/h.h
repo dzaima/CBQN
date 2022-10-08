@@ -125,6 +125,7 @@ typedef double   f64;
 #define U8_MAX  ((u8 )~(u8 )0)
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
+#define U64_MAX ((u64)~(u64)0)
 #define NOINLINE     __attribute__((noinline))
 #define FORCE_INLINE __attribute__((always_inline)) static inline
 #define NORETURN     __attribute__((noreturn))
