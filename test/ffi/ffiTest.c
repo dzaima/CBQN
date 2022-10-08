@@ -228,6 +228,25 @@ void incMany(S2* list, uint64_t count) {
   }
 }
 
+typedef struct {
+  uint32_t* arr;
+  uint64_t sz;
+} U32Arr;
+
+uint32_t arrayOp(U32Arr a) {
+  uint32_t r = 0;
+  for (uint64_t i = 0; i < a.sz; i++) {
+    r+= a.arr[i];
+    a.arr[i]++;
+  }
+  return r;
+}
+uint32_t arrayRefOp(U32Arr* a) {
+  uint32_t res = arrayOp(*a);
+  a->arr++;
+  return res;
+}
+
 int plusone(int x) {
   return x + 1;
 }

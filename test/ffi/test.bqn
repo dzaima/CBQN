@@ -78,6 +78,12 @@ f ↩ "lib.so" •FFI ⟨"i16", "thirdMember", ">"∾s1⟩ ⋄ •Show F ⟨200,
 f ↩ "lib.so" •FFI ⟨s1, "incMembers", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩
 f ↩ "lib.so" •FFI ⟨"&", "incMany", "&"∾s2, "u64"⟩ ⋄ •Show¨ F ⟨0‿3‿6+3⥊<0‿1+2⥊<⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩, 3⟩
 
+{
+  calloc ← @•FFI"*:i32"‿"calloc"‿"u64"‿"u64" ⋄ mem ← Calloc 3‿4
+  f ← "lib.so" •FFI "i32"‿"arrayRefOp"‿">&{*:i32,u64}"
+  {𝕊: ⟨sum, ⟨arr‿sz⟩⟩ ← F ⟨mem‿3⟩ ⋄ •Show sum ∾ arr-mem}¨ ↕2
+}
+
 Section "# self-ffi"
 •term.Flush@
 f ↩ @ •FFI ⟨"i32", "putchar", ">i32"⟩ ⋄ F¨ 10∾˜"text"-@
