@@ -221,7 +221,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
         rh = m_harrUv(ria);
         rp = (u8*)rh.a;
       } else {
-        SLOW2("𝕨/𝕩", w, x);
+        SLOW2("𝕨/𝕩", taga(RFLD(wp,TyArr,a)), x);
         M_HARR(rp, ria) SGet(x)
         for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
           for (usz j = 0; j < csz; j++) HARR_ADDA(rp, Get(x,i*csz+j));
