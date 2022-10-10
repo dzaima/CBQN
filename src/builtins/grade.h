@@ -371,7 +371,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s - (wi-1);
     }
   } else {
-gen:
+    gen:;
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = arr_bptr(w);

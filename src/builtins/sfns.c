@@ -991,7 +991,7 @@ B transp_c1(B t, B x) {
       void* xp = tyany_ptr(x);
       switch(xe) { default: UD;
         #ifdef __BMI2__
-        case el_bit:
+        case el_bit:;
           u32* x0 = xp;
           Arr* x1o = TI(x,slice)(inc(x),w,w);
           u32* x1 = (u32*) ((TyArr*)x1o)->a;

@@ -68,10 +68,10 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
   usz ia = IA(w);
   
   EntAA* e = &table->entsAA[we*8 + xe];
-  newEnt:
+  newEnt:;
   
   FnInfoAA* fn = &e->bundles[0];
-  newFn:
+  newFn:;
   
   u8 ex = fn->ex1;
   newEx:
@@ -94,7 +94,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     case swap: t=w; w=x; x=t; goto do_ex2;
     do_ex2: ex = fn->ex2; goto newEx;
     
-    case c_call_rbyte: { c_call_rbyte:
+    case c_call_rbyte: { c_call_rbyte:;
       u64 got = fn->cFn(m_tyarrlc(&r, fn->width, x, fn->type), tyany_ptr(w), tyany_ptr(x), ia);
       if (got==ia) goto decG_ret;
       decG(r);
@@ -338,7 +338,7 @@ B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 static NOINLINE B or_SA(B t, B w, B x) {
   if (!isF64(w)) return arith_recd(or_c2, w, x);
   if (LIKELY(TI(x,elType)==el_bit)) {
-    bitsel:
+    bitsel:;
     f64 wf = o2fG(w);
     return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }

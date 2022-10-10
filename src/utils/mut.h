@@ -188,7 +188,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
     case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && TI(x,elType)<=el_c32 && TI(x,elType)>=el_c8) goto yes; break;
     case t_harr: if (fsizeof(HArr,a,B,ria)<wsz) { rp = harr_ptr(w); goto yes; } break;
   }
-  no: // failed to reuse
+  no:; // failed to reuse
   MAKE_MUT(r, ria); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
   MUTG_INIT(r);
   mut_copyG(r, 0,   w, 0, wia);

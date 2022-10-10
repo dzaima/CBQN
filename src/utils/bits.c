@@ -58,7 +58,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
       }
     } else goto slow;
     
-    sel:
+    sel:;
     void* rp = m_tyarrlc(&r, width, b, type);
     #if SINGELI
       bitselFns[width](rp, bp, e0i, e1i, ia);

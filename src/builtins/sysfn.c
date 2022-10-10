@@ -363,7 +363,7 @@ B rand_range_c2(B t, B w, B x) {
       if (t==t_i32arr) { goto end; } mask|= mask<<16;
       if (t==t_i16arr) { goto end; } mask|= mask<<8;
       
-      end:
+      end:;
       PLAINLOOP for (usz i = 0; i < u64am; i++) ((u64*)rp)[i] = wyrand(&seed) & mask;
     }
   }
