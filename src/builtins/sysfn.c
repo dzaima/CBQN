@@ -1131,44 +1131,48 @@ static u8 typeOfCast(CastType t) {
     default: thrM("•bit._cast: unsupported result width");
   }
 }
+static B set_bit_result(B r, u8 rt, ur rr, usz rl, usz *sh) {
+  // Cast to output type
+  v(r)->type = IS_SLICE(v(r)->type) ? TO_SLICE(rt) : rt;
+  // Adjust shape
+  Arr* a = a(r);
+  if (rr<=1) {
+    a->ia = rl;
+    a->sh = &a->ia;
+  } else {
+    if (shObj(r)->refc>1) {
+      shObj(r)->refc--; // won't go to zero as refc>1; preparation for being overwritten by new shape
+      usz* rsh = a->sh = m_shArr(rr)->a;
+      shcpy(rsh, sh, rr-1);
+      sh = rsh;
+      SPRNK(a, rr);
+    }
+    sh[rr-1] = rl;
+    a->ia = rl * shProd(sh, 0, rr-1);
+  }
+  return r;
+}
+
 B bitcast_impl(B el0, B el1, B x) {
   ur xr;
   if (!isArr(x) || (xr=RNK(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   
-  CastType xt = getCastType(el0, x);
-  CastType zt = getCastType(el1, bi_N);
+  CastType xct = getCastType(el0, x);
+  CastType rct = getCastType(el1, bi_N);
   usz* sh = SH(x);
-  u64 s=xt.s*(u64)sh[xr-1], zl=s/zt.s;
-  if (zl*zt.s != s) thrM("•bit._cast: incompatible lengths");
-  if (zl>=USZ_MAX) thrM("•bit._cast: output too large");
-  // Convert to input type
-  B r = convert(xt, x);
-  u8 rt = typeOfCast(zt);
+  u64 s=xct.s*(u64)sh[xr-1], rl=s/rct.s;
+  if (rl*rct.s != s) thrM("•bit._cast: incompatible lengths");
+  if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
+  B r = convert(xct, x);
+  u8 rt = typeOfCast(rct);
   if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(TY(r)))) {
-    r = taga(copy(xt, r));
+    r = taga(copy(xct, r));
   } else if (v(r)->refc!=1) {
     B pr = r;
     r = taga(TI(r,slice)(r, 0, IA(r)));
     arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   }
-  // Cast to output type
-  v(r)->type = IS_SLICE(v(r)->type) ? TO_SLICE(rt) : rt;
-  // Adjust shape
-  if (xr<=1) {
-    Arr* a = a(r);
-    a->ia = zl;
-    a->sh = &a->ia;
-  } else {
-    if (shObj(r)->refc>1) {
-      shObj(r)->refc--; // won't go to zero as refc>1; preparation for being overwritten by new shape
-      usz* zsh = arr_shAlloc(a(r), xr);
-      shcpy(zsh, sh, xr-1);
-      sh = zsh;
-    }
-    sh[xr-1]=zl;
-    a(r)->ia = zl*shProd(sh, 0, xr-1);
-  }
-  return r;
+  return set_bit_result(r, rt, xr, rl, sh);
 }
 
 B bitcast_c1(Md1D* d, B x) { B f = d->f;
@@ -1176,18 +1180,83 @@ B bitcast_c1(Md1D* d, B x) { B f = d->f;
   SGetU(f)
   return bitcast_impl(GetU(f,0), GetU(f,1), x);
 }
-
 B bitcast_im(Md1D* d, B x) { B f = d->f;
   if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,1), GetU(f,0), x);
 }
+
+static usz req2(usz s, char* name) {
+  if (s & (s-1)) thrF("•bit._%U: sizes in 𝕗 must be powers of 2 (contained %s)", name, s);
+  return s;
+}
+
+enum BitOp1 { op_not, op_neg };
+B bitop1(B f, B x, enum BitOp1 op, char* name) {
+  usz ow, rw, xw; // Operation width, result width, x width
+  if (isAtm(f)) {
+    ow = rw = xw = req2(o2s(f), name);
+  } else {
+    if (RNK(f)>1) thrF("•bit._%U: 𝕗 must have rank at most 1 (%i≡≠𝕗)", name, RNK(f));
+    usz ia = IA(f);
+    if (ia<1 || ia>3) thrF("•bit._%U: 𝕗 must contain between 1 and 3 numbers (%s≡≠𝕗)", name, ia);
+    SGetU(f)
+    usz t[3];
+    for (usz i=0 ; i<ia; i++) t[i] = req2(o2s(GetU(f, i)), name);
+    for (usz i=ia; i<3 ; i++) t[i] = t[ia-1];
+    ow = t[0]; rw = t[1]; xw = t[2];
+  }
+  
+  ur xr;
+  if (!isArr(x) || (xr=RNK(x))<1) thrF("•bit._%U: 𝕩 must have rank at least 1", name);
+  
+  usz* sh = SH(x);
+  usz rws = CTZ(rw);
+  usz xws = CTZ(xw);
+  u64 n = IA(x) << xws;
+  u64 s = (u64)sh[xr-1] << xws;
+  u64 rl = s >> rws;
+  if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: incompatible lengths", name);
+  if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
+  
+  x = convert((CastType){ xw, 0 }, x);
+  u8 rt = typeOfCast((CastType){ rw, 0 });
+  u64* xp = tyany_ptr(x);
+  B r; u64* rp;
+  if (v(x)->refc!=1 || (rt==t_bitarr && IS_SLICE(TY(x)))) {
+    Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
+    arr_shCopy(ra, x);
+    r = taga(ra); rp = tyany_ptr(r);
+  } else {
+    r = inc(x); rp = xp;
+  }
+  switch (op) { default: UD;
+    case op_not: {
+      usz l = n/64; for (usz i=0; i<l; i++) rp[i] = ~xp[i];
+      usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^~xp[l]);
+    } break;
+    case op_neg: switch (ow) {
+      default: thrF("•bit._%U: unhandled width %s", name, ow);
+      #define CASE(W) case W: \
+        for (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
+        break;
+      CASE(8) CASE(16) CASE(32) CASE(64)
+      #undef CASE
+    } break;
+  }
+  set_bit_result(r, rt, xr, rl, sh);
+  decG(x);
+  return r;
+}
+B bitnot_c1(Md1D* d, B x) { return bitop1(d->f, x, op_not, "not"); }
+B bitneg_c1(Md1D* d, B x) { return bitop1(d->f, x, op_neg, "neg"); }
+
 static B bitNS;
 B getBitNS() {
   if (bitNS.u == 0) {
     #define F(X) incG(bi_bit##X),
-    Body* d = m_nnsDesc("cast");
-    bitNS = m_nns(d,   F(cast));
+    Body* d = m_nnsDesc("cast","not","neg");
+    bitNS = m_nns(d,   F(cast)F(not)F(neg));
     #undef F
     gc_add(bitNS);
   }
