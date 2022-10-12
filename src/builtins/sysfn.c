@@ -1232,13 +1232,13 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   }
   switch (op) { default: UD;
     case op_not: {
-      usz l = n/64; for (usz i=0; i<l; i++) rp[i] = ~xp[i];
+      usz l = n/64; NOUNROLL for (usz i=0; i<l; i++) rp[i] = ~xp[i];
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^~xp[l]);
     } break;
     case op_neg: switch (ow) {
       default: thrF("•bit._%U: unhandled width %s", name, ow);
       #define CASE(W) case W: \
-        for (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
+        NOUNROLL for (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
         break;
       CASE(8) CASE(16) CASE(32) CASE(64)
       #undef CASE
@@ -1294,13 +1294,13 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   u64* rp = tyany_ptr(r);
   switch (op) { default: UD;
     #define OP(O,P) case op_##O: { \
-      usz l = n/64; for (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];      \
+      usz l = n/64; NOUNROLL for (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];      \
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wp[l] P xp[l])); \
       } break;
     OP(and,&) OP(or,|) OP(xor,^)
     #undef OP
     #define CASE(W, Q, P) case W: \
-      for (usz i=0; i<n/W; i++)                           \
+      NOUNROLL for (usz i=0; i<n/W; i++)                  \
         ((Q##W*)rp)[i] = ((Q##W*)wp)[i] P ((Q##W*)xp)[i]; \
       break;
     #define OP(O,Q,P) case op_##O: \
