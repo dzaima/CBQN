@@ -1187,7 +1187,8 @@ B bitcast_im(Md1D* d, B x) { B f = d->f;
 }
 
 static usz req2(usz s, char* name) {
-  if (s & (s-1)) thrF("•bit._%U: sizes in 𝕗 must be powers of 2 (contained %s)", name, s);
+  usz top = 1ull << (8*sizeof(usz)-1); // Prevent 0 from passing
+  if ((top|s) & (s-1)) thrF("•bit._%U: sizes in 𝕗 must be powers of 2 (contained %s)", name, s);
   return s;
 }
 
