@@ -1220,7 +1220,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  x = convert((CastType){ xw, 0 }, x);
+  x = convert((CastType){ xw, isCharType(TY(x)) }, x);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
@@ -1295,8 +1295,8 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   if ((t & (ow-1)) || (rl<<rws != t)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  w = convert((CastType){ ww, 0 }, w);
-  x = convert((CastType){ xw, 0 }, x);
+  w = convert((CastType){ ww, isCharType(TY(w)) }, w);
+  x = convert((CastType){ xw, isCharType(TY(x)) }, x);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
   arr_shCopy(ra, x);
