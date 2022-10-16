@@ -217,10 +217,11 @@ typedef struct BQNFFIEnt {
     struct { u8 wholeArg; u8 resSingle; }; // ffi_parseType
     u16 offset; // cty_struct
   };
+  u16 staticOffset; // only at the top level; offset into allocation
 } BQNFFIEnt;
 typedef struct BQNFFIType {
   struct Value;
-  union { u16 structSize; };
+  union { u16 structSize; u16 staticAllocTotal; };
   u8 ty;
   usz ia;
   BQNFFIEnt a[];
@@ -428,29 +429,10 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
   return t;
 }
 
-TAlloc* ffiTmpObj;
-u8* ffiTmpS;
-u8* ffiTmpC;
-u8* ffiTmpE;
-static NOINLINE usz ffiTmpX(usz n) {
-  usz psz = ffiTmpC-ffiTmpS;
-  TAlloc* na = mm_alloc(sizeof(TAlloc)+psz+n, t_temp);
-  memcpy(na->data, ffiTmpS, psz);
-  
-  ffiTmpS = na->data;
-  ffiTmpC = ffiTmpS + psz;
-  ffiTmpE = (u8*)na + mm_size((Value*) na);
-  if (ffiTmpObj) mm_free((Value*)ffiTmpObj);
-  ffiTmpObj = na;
-  return psz;
-}
-static NOINLINE usz ffiTmpAA(usz n) {
+static usz ffiTmpAlign(usz n) {
   u64 align = _Alignof(max_align_t);
   n = (n+align-1) & ~(align-1);
-  if (ffiTmpC+n > ffiTmpE) return ffiTmpX(n);
-  usz r = ffiTmpC-ffiTmpS;
-  ffiTmpC+= n;
-  return r;
+  return n;
 }
 
 static B ffiObjs;
@@ -478,13 +460,10 @@ static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
 
-usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
+void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,ent.o); printf(" = "); print(c); printf("\n");
-  usz pos;
-  #define ALLOC(N) if (ptr==NULL) { pos=ffiTmpAA(N); ptr=ffiTmpS+pos; } // TODO make top-level pos statically allocated so that there's no need for the conditionals
-  if (isC32(ent.o)) { // scalar
-    u32 t = o2cG(ent.o);
-    ALLOC(t==0? sizeof(BQNV) : 8);
+  if (isC32(o)) { // scalar
+    u32 t = o2cG(o);
     f64 f = c.f;
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
@@ -501,9 +480,8 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
       case sty_f64: *(double*)ptr = f; break;
     }
   } else {
-    BQNFFIType* t = c(BQNFFIType, ent.o);
+    BQNFFIType* t = c(BQNFFIType, o);
     if (t->ty==cty_ptr) { // *any / &any
-      ALLOC(sizeof(void*));
       
       B e = t->a[0].o;
       if (isC32(e)) { // *num / &num
@@ -538,7 +516,7 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
         void* dataStruct = dataAll+sizeof(usz);
         *((usz*)dataAll) = ia;
         SGetU(c)
-        for (usz i = 0; i < ia; i++) genObj(t->a[0], GetU(c, i), anyMut, dataStruct + elSz*i);
+        for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), anyMut, dataStruct + elSz*i);
         *(void**)ptr = dataStruct;
         ffiObjs = vec_addN(ffiObjs, tag(TOBJ(dataAll), OBJ_TAG));
       }
@@ -547,7 +525,6 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
       u8 reT = t->a[0].reType;
       u8 reW = t->a[0].reWidth;
       if (isC32(o2)) { // scalar:any
-        ALLOC(8);
         u8 et = o2cG(o2);
         u8 etw = sty_w[et]*8;
         if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], reT, 1<<reW);
@@ -556,7 +533,6 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
       } else { // *scalar:any / &scalar:any
-        ALLOC(sizeof(void*));
         if (!isArr(c)) thrM("FFI: Expected array corresponding to a pointer");
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
@@ -579,17 +555,15 @@ usz genObj(BQNFFIEnt ent, B c, bool anyMut, void* ptr) {
         ffiObjs = vec_addN(ffiObjs, cG);
       }
     } else if (t->ty==cty_struct) {
-      ALLOC(t->structSize);
       if (!isArr(c)) thrM("FFI: Expected array corresponding to a struct");
       if (IA(c)!=t->ia-1) thrM("FFI: Incorrect list length corresponding to a struct");
       SGetU(c)
       for (usz i = 0; i < t->ia-1; i++) {
         BQNFFIEnt e = t->a[i];
-        genObj(e, GetU(c, i), anyMut, e.offset + (u8*)ptr);
+        genObj(e.o, GetU(c, i), anyMut, e.offset + (u8*)ptr);
       }
     } else thrM("FFI: Unimplemented type");
   }
-  return pos;
 }
 
 B readAny(BQNFFIEnt e, u8* ptr);
@@ -686,21 +660,12 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
 }
 
 B libffiFn_c2(B t, B w, B x) {
-  BoundFn* c = c(BoundFn,t);
-  B argObj = c(HArr,c->obj)->a[0];
-  B cifObj = c(HArr,c->obj)->a[1];
-  ffi_cif* cif = (void*) c(TAlloc,cifObj)->data;
-  void* sym = c->w_c2;
-  
-  usz argn = cif->nargs;
-  ffiTmpS = ffiTmpC = ffiTmpE = NULL;
-  ffiTmpObj = NULL;
   ffiObjs = emptyHVec();
-  ffiTmpX(128);
-  ffiTmpAA(argn * sizeof(u32));
-  #define argOffs ((u32*)ffiTmpS)
   
-  u32 flags = (u64)c->w_c1;
+  BoundFn* bf = c(BoundFn,t);
+  B argObj = c(HArr,bf->obj)->a[0];
+  
+  u32 flags = (u64)bf->w_c1;
   
   Arr* wa; AS2B wf;
   Arr* xa; AS2B xf;
@@ -708,53 +673,37 @@ B libffiFn_c2(B t, B w, B x) {
   if (flags&2) { xa=a(x); xf=TIv(xa,getU); }
   i32 idxs[2] = {0,0};
   
+  u8* tmpAlloc = TALLOCP(u8, c(BQNFFIType,argObj)->staticAllocTotal);
+  void** argPtrs = (void**) tmpAlloc;
+  
+  B cifObj = c(HArr,bf->obj)->a[1];
+  ffi_cif* cif = (void*) c(TAlloc,cifObj)->data;
+  usz argn = cif->nargs;
+  
   BQNFFIEnt* ents = c(BQNFFIType,argObj)->a;
   for (usz i = 0; i < argn; i++) {
     BQNFFIEnt e = ents[i+1];
     B o = e.wholeArg? (e.onW? w : x) : (e.onW? wf : xf)(e.onW?wa:xa, idxs[e.onW]++);
-    argOffs[i] = genObj(e, o, e.extra2, NULL);
+    genObj(e.o, o, e.extra2, tmpAlloc + e.staticOffset);
   }
   
-  bool simpleRes = isC32(ents[0].o);
-  u32 resCType;
-  usz resSize;
-  if (simpleRes) {
-    resCType = o2cG(ents[0].o);
-  } else {
-    BQNFFIType* t = c(BQNFFIType, ents[0].o);
-    if (t->ty == cty_repr) {
-      B o2 = t->a[0].o;
-      if (!isC32(o2)) thrM("FFI: Unimplemented result type");
-      resCType = o2cG(o2);
-    } else if (t->ty == cty_struct) {
-      resSize = t->structSize;
-      goto resSize_alreadySet;
-    } else {
-      thrM("FFI: Unimplemented result type");
-    }
-  }
+  for (usz i = 0; i < argn; i++) argPtrs[i] = tmpAlloc + ents[i+1].staticOffset;
+  void* res = tmpAlloc + ents[0].staticOffset;
   
-  resSize = resCType==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
-  
-  resSize_alreadySet:;
-  usz resPos = ffiTmpAA(resSize);
-  
-  void** argPtrs = (void**) (ffiTmpS + ffiTmpAA(argn*sizeof(void*))); // must be the very last alloc to be able to store pointers
-  for (usz i = 0; i < argn; i++) argPtrs[i] = ffiTmpS + argOffs[i];
-  void* res = ffiTmpS + resPos;
-  
-  // for (usz i = 0; i < ffiTmpC-ffiTmpS; i++) { // simple hexdump of ffiTmp
-  //   if (!(i&15)) printf("%s%p  ", i?"\n":"", (void*)(ffiTmpS+i));
+  // for (usz i = 0; i < c(BQNFFIType,argObj)->staticAllocTotal; i++) { // simple hexdump of the allocation
+  //   if (!(i&15)) printf("%s%p  ", i?"\n":"", (void*)(tmpAlloc+i));
   //   else if (!(i&3)) printf(" ");
-  //   printf("%x%x ", ffiTmpS[i]>>4, ffiTmpS[i]&15);
+  //   printf("%x%x ", tmpAlloc[i]>>4, tmpAlloc[i]&15);
   // }
   // printf("\n");
   
+  void* sym = bf->w_c2;
   ffi_call(cif, sym, res, argPtrs);
   
   B r;
   bool resVoid = false;
-  if (simpleRes) {
+  if (isC32(ents[0].o)) {
+    u32 resCType = o2cG(ents[0].o);
     r = readSimple(resCType, res);
     resVoid = resCType==sty_void;
   } else {
@@ -765,9 +714,9 @@ B libffiFn_c2(B t, B w, B x) {
       r = readStruct(c(BQNFFIType, ents[0].o), res);
     }
   }
-  mm_free((Value*)ffiTmpObj);
+  TFREE(tmpAlloc);
   
-  i32 mutArgs = c->mutCount;
+  i32 mutArgs = bf->mutCount;
   if (mutArgs) {
     usz objPos = 0;
     bool resSingle = flags&4;
@@ -804,6 +753,9 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) {
 
 
 
+static u64 atomSize(B chr) {
+  return o2cG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
+}
 
 B ffiload_c2(B t, B w, B x) {
   usz xia = IA(x);
@@ -813,7 +765,28 @@ B ffiload_c2(B t, B w, B x) {
   B name = GetU(x,1);
   vfyStr(name, "FFI", "type");
   
+  u64 staticAlloc = ffiTmpAlign(argn * sizeof(void*)); // initial alloc is the argument pointer list
+  #define STATIC_ALLOC(O, SZ) ({ (O).staticOffset = staticAlloc; staticAlloc+= ffiTmpAlign(SZ); })
+  
   BQNFFIEnt tRes = ffi_parseType(GetU(x,0), true);
+  {
+    B atomType;
+    usz size;
+    if (isC32(tRes.o)) { atomType = tRes.o; goto calcRes; }
+    
+    BQNFFIType* t = c(BQNFFIType, tRes.o);
+    if (t->ty == cty_repr) {
+      B o2 = t->a[0].o;
+      if (!isC32(o2)) thrM("FFI: Unimplemented result type");
+      atomType = o2;
+      goto calcRes;
+    }
+    if (t->ty == cty_struct) { size = t->structSize; goto allocRes; }
+    thrM("FFI: Unimplemented result type");
+    
+    calcRes:; size = atomSize(atomType);
+    allocRes:; STATIC_ALLOC(tRes, size);
+  }
   
   #if FFI==2
     BQNFFIEnt* args; B argObj = m_bqnFFIType(&args, 255, argn+1);
@@ -822,10 +795,32 @@ B ffiload_c2(B t, B w, B x) {
     bool many[2]={0,0};
     i32 mutCount = 0;
     for (usz i = 0; i < argn; i++) {
-      BQNFFIEnt e = args[i+1] = ffi_parseType(GetU(x,i+2), false);
+      BQNFFIEnt e = ffi_parseType(GetU(x,i+2), false);
+      
+      u16 size;
+      if (isC32(e.o)) { // scalar
+        size = atomSize(e.o);
+      } else {
+        BQNFFIType* t = c(BQNFFIType, e.o);
+        if (t->ty==cty_ptr) size = sizeof(void*); // *any / &any
+        else if (t->ty==cty_struct) size = t->structSize; // {...}
+        else if (t->ty==cty_repr) { // any:any
+          B o2 = t->a[0].o;
+          if (isC32(o2)) size = atomSize(o2);
+          else {
+            if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
+            size = sizeof(void*);
+          }
+        } else thrM("FFI: Unimplemented type");
+      }
+      STATIC_ALLOC(e, size);
+      
+      args[i+1] = e;
       (e.wholeArg? one : many)[e.extra] = true;
       if (e.mutates) mutCount++;
     }
+    if (staticAlloc > U16_MAX-64) thrM("FFI: Static argument size too large");
+    c(BQNFFIType,argObj)->staticAllocTotal = ffiTmpAlign(staticAlloc);
     if (one[0] && many[0]) thrM("FFI: Multiple arguments for 𝕩 specified, but one has '>'");
     if (one[1] && many[1]) thrM("FFI: Multiple arguments for 𝕨 specified, but one has '>'");
   #else
@@ -833,7 +828,7 @@ B ffiload_c2(B t, B w, B x) {
     for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
     (void)tRes;
   #endif
-  if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated variables", mutCount);
+  if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated values", mutCount);
   
   char* ws = NULL;
   if (w.u != m_c32(0).u) {
