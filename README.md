@@ -8,7 +8,7 @@
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - `make CC=gcc` if clang isn't installed
     - `make PIE=""` on ARM CPUs (incl. Android & M1)
-    - `make FFI=0` if your system doesn't have libffi
+    - `make FFI=0` if your system doesn't have libffi (see [macOS](#macos) for FFI support on macOS)
     - Use `gmake` on BSD
     - `make clean` if anything breaks and you want a clean build slate
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
@@ -38,6 +38,17 @@
 - A specific build type can be cleaned by adding `clean=1` to the make argument list. Similarly, adding `builddir=1` will give you the build directory.
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - [Some implementation docs](https://github.com/dzaima/CBQN/tree/master/src#readme)
+
+## macOS
+
+To use FFI in macOS, libffi must be installed, and manually added to `C_INCLUDE_PATH` and `LIBRARY_PATH`. In addition, the `NO_DYNAMIC_LIST=1` make argument is needed, so the full command might, depending on where libffi is installed, look like one of these:
+
+```sh
+C_INCLUDE_PATH=/opt/homebrew/opt/libffi/include:$C_INCLUDE_PATH LIBRARY_PATH=/opt/homebrew/opt/libffi/lib:$LIBRARY_PATH make PIE="" NO_DYNAMIC_LIST=1
+C_INCLUDE_PATH=/usr/local/opt/libffi/include:$C_INCLUDE_PATH LIBRARY_PATH=/usr/local/opt/libffi/lib:$LIBRARY_PATH make PIE="" NO_DYNAMIC_LIST=1
+```
+
+Further configuration (different build type, compiler options, etc) can still be done by adding more make arguments.
 
 ## License
 
