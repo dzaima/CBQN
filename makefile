@@ -269,7 +269,7 @@ endif
 
 DESTDIR =
 PREFIX = /usr/local
-install:
+install: uninstall
 	cp -f BQN "$(DESTDIR)$(PREFIX)/bin/bqn"
 
 uninstall:
