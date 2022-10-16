@@ -24,7 +24,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Repr`       | |
 | `•Fmt`        | |
 | `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
-| `•SH`         | Left argument can be a namespace; `stdin⇐"input"` in it passes stdin, `raw⇐1` takes stdin & returns stdout/stderr as raw bytes represented as characters. These extensions may be changed/removed if different interfaces are standardized. |
+| `•SH`         | See [•SH](#sh) |
 | `•Type`       | |
 | `•Glyph`      | |
 | `•Decompose`  | |
@@ -120,3 +120,22 @@ That is, the supported types are:
 - conversions of either scalars, pointers to scalars, or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `*:i8`, `**:c8`);
 - structs of any of the above (except `&`-pointers) or other structs (e.g. `{*i8,*{*u32:i8,u64:i32}}`), except structs that are within `&` themselves cannot contain any pointers other than converted opaque pointers (e.g. `*{*i32,u64}`, `&{*:i32,u64}`, and `&{i32,u64}` are fine, but `&{*i32,u64}` is not);
 - the `a` type, which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
+
+# •SH
+
+The left argument can be a namespace, providing additional options.
+
+Accepted fields:
+
+- `stdin⇐"abcd"` passes in stdin to the program; by default, it will be UTF-8 encoded.
+- `raw⇐1` will make stdout/stderr return raw bytes (represented as characters with codepoints 0 to 255), and, if given, interpret stdin as such too.
+
+```bqn
+   ¯1↓1⊑{stdin⇐@+20‿100‿200‿250,raw⇐1} •SH ⟨"xxd"⟩
+"00000000: 1464 c8fa                                .d.."
+   @-˜ 1⊑{raw⇐1} •SH ⟨"printf", "\x00\x80\xff\xfe\xee"⟩
+⟨ 0 128 255 254 238 ⟩
+```
+
+
+These `•SH` extensions may change in the future if a different interface is standardized.
