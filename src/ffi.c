@@ -393,6 +393,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     if (!forRes) thrM("FFI: Argument type empty");
     return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=false};
   }
+  arg = chr_squeezeChk(inc(arg));
   
   MAKE_MUT(tmp, ia+1); mut_init(tmp, el_c32); MUTG_INIT(tmp);
   mut_copyG(tmp, 0, arg, 0, ia);
@@ -426,6 +427,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     t.resSingle = false;
   }
   mut_pfree(tmp, 0);
+  decG(arg);
   return t;
 }
 
