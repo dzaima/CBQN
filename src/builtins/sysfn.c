@@ -1374,90 +1374,149 @@ B getPrimitives(void);
 
 static Body* file_nsGen;
 
+
+#define FOR_DEFAULT_SYSVALS(F) \
+  F("out", •Out, bi_out) \
+  F("show", •Show, bi_show) \
+  F("exit", •Exit, bi_exit) \
+  F("getline", •GetLine, bi_getLine) \
+  F("type", •Type, bi_type) \
+  F("sh", •SH, bi_sh) \
+  F("decompose", •Decompose, bi_decp) \
+  F("while", •_while_, bi_while) \
+  F("primind", •PrimInd, bi_primInd) \
+  F("bqn", •BQN, bi_bqn) \
+  F("cmp", •Cmp, bi_cmp) \
+  F("unixtime", •UnixTime, bi_unixTime) \
+  F("monotime", •MonoTime, bi_monoTime) \
+  F("timed", •_timed, bi_timed) \
+  F("delay", •Delay, bi_delay) \
+  F("hash", •Hash, bi_hash) \
+  F("repr", •Repr, bi_repr) \
+  F("fmt", •Fmt, bi_fmt) \
+  F("glyph", •Glyph, bi_glyph) \
+  F("makerand", •MakeRand, bi_makeRand) \
+  F("rebqn", •ReBQN, bi_reBQN) \
+  F("fromutf8", •FromUTF8, bi_fromUtf8) \
+  F("currenterror", •CurrentError, bi_currentError) \
+  F("math", •math, tag(0,VAR_TAG)) \
+  F("rand", •rand, tag(1,VAR_TAG)) \
+  F("term", •term, tag(2,VAR_TAG)) \
+  F("bit", •bit, tag(3,VAR_TAG)) \
+  F("primitives", •primitives, tag(4,VAR_TAG)) \
+  F("internal", •internal, tag(5,VAR_TAG)) \
+  F("fchars", •FChars, tag(6,VAR_TAG)) \
+  F("fbytes", •FBytes, tag(7,VAR_TAG)) \
+  F("flines", •FLines, tag(8,VAR_TAG)) \
+  F("import", •Import, tag(9,VAR_TAG)) \
+  F("ffi", •FFI, tag(10,VAR_TAG)) \
+  F("name", •name, tag(11,VAR_TAG)) \
+  F("path", •path, tag(12,VAR_TAG)) \
+  F("wdpath", •wdpath, tag(13,VAR_TAG)) \
+  F("file", •file, tag(14,VAR_TAG)) \
+  F("state", •state, tag(15,VAR_TAG)) \
+  F("args", •args, tag(16,VAR_TAG))
+
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
+B indexOf_c2(B t, B w, B x);
+
+B dsv_obj;
 
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  M_HARR(r, IA(x)) SGetU(x)
+  B sysvals = dsv_obj;
+  SGetU(sysvals)
+  B curr_ns = GetU(sysvals,0);
+  B curr_vs = GetU(sysvals,1); SGetU(curr_vs)
+  B idxs = indexOf_c2(m_f64(0), incG(curr_ns), incG(x)); SGetU(idxs)
+  
   B fileNS = m_f64(0);
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
   #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_parent(inc(comp_currPath))); path; })
   #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
+  
+  M_HARR(r, IA(x))
   for (usz i = 0; i < IA(x); i++) {
-    B c = GetU(x,i);
+    i32 ci = o2iG(GetU(idxs,i));
+    if (ci>=IA(curr_vs)) thrF("Unknown system function •%R", IGetU(x,i));
+    B c = GetU(curr_vs,ci);
     B cr;
-    if (eqStr(c, U"out")) cr = incG(bi_out);
-    else if (eqStr(c, U"show")) cr = incG(bi_show);
-    else if (eqStr(c, U"exit")) cr = incG(bi_exit);
-    else if (eqStr(c, U"getline")) cr = incG(bi_getLine);
-    else if (eqStr(c, U"file")) {
-      if(!fileNS.u) {
-        REQ_PATH;
-        #define F(X) m_nfn(X##Desc, inc(path))
-        fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
-        #undef F
+    if (!isVar(c)) {
+      cr = inc(c);
+    } else switch ((u32)c.u) { default: thrM("Bad dynamically-loaded system value");
+      case 0: cr = getMathNS(); break; // •math
+      case 1: cr = getRandNS(); break; // •rand
+      case 2: cr = getTermNS(); break; // •term
+      case 3: cr = getBitNS(); break; // •bit
+      case 4: cr = getPrimitives(); break; // •primitives
+      case 5: cr = getInternalNS(); break; // •internal
+      case 6: cr = m_nfn(fCharsDesc, inc(REQ_PATH)); break; // •FChars
+      case 7: cr = m_nfn(fBytesDesc, inc(REQ_PATH)); break; // •FBytes
+      case 8: cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
+      case 9: cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
+      case 10: cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
+      case 11: cr = inc(REQ_NAME); break; // •name
+      case 12: cr = inc(REQ_PATH); break; // •path
+      case 13: { // •wdpath
+        if (!wdpath.u) wdpath = path_abs(inc(cdPath));
+        cr = inc(wdpath);
+        break;
       }
-      cr = incG(fileNS);
+      case 14: { // •file
+        if(!fileNS.u) {
+          REQ_PATH;
+          #define F(X) m_nfn(X##Desc, inc(path))
+          fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
+          #undef F
+        }
+        cr = incG(fileNS);
+        break;
+      }
+      case 15: { // •state
+        if (q_N(comp_currArgs)) thrM("No arguments present for •state");
+        cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
+        break;
+      }
+      case 16: { // •args
+        if (q_N(comp_currArgs)) thrM("No arguments present for •args");
+        cr = inc(comp_currArgs);
+        break;
+      }
     }
-    else if (eqStr(c, U"wdpath")) {
-      if (!wdpath.u) wdpath = path_abs(inc(cdPath));
-      cr = inc(wdpath);
-    }
-    else if (eqStr(c, U"term")) cr = getTermNS();
-    else if (eqStr(c, U"internal")) cr = getInternalNS();
-    else if (eqStr(c, U"math")) cr = getMathNS();
-    else if (eqStr(c, U"bit")) cr = getBitNS();
-    else if (eqStr(c, U"type")) cr = incG(bi_type);
-    else if (eqStr(c, U"sh")) cr = incG(bi_sh);
-    else if (eqStr(c, U"decompose")) cr = incG(bi_decp);
-    else if (eqStr(c, U"while")) cr = incG(bi_while);
-    else if (eqStr(c, U"primind")) cr = incG(bi_primInd);
-    else if (eqStr(c, U"bqn")) cr = incG(bi_bqn);
-    else if (eqStr(c, U"cmp")) cr = incG(bi_cmp);
-    else if (eqStr(c, U"unixtime")) cr = incG(bi_unixTime);
-    else if (eqStr(c, U"monotime")) cr = incG(bi_monoTime);
-    else if (eqStr(c, U"timed")) cr = incG(bi_timed);
-    else if (eqStr(c, U"delay")) cr = incG(bi_delay);
-    else if (eqStr(c, U"hash")) cr = incG(bi_hash);
-    else if (eqStr(c, U"repr")) cr = incG(bi_repr);
-    else if (eqStr(c, U"fmt")) cr = incG(bi_fmt);
-    else if (eqStr(c, U"glyph")) cr = incG(bi_glyph);
-    else if (eqStr(c, U"makerand")) cr = incG(bi_makeRand);
-    else if (eqStr(c, U"rand")) cr = getRandNS();
-    else if (eqStr(c, U"rebqn")) cr = incG(bi_reBQN);
-    else if (eqStr(c, U"primitives")) cr = getPrimitives();
-    else if (eqStr(c, U"fromutf8")) cr = incG(bi_fromUtf8);
-    else if (eqStr(c, U"path")) cr = inc(REQ_PATH);
-    else if (eqStr(c, U"name")) cr = inc(REQ_NAME);
-    else if (eqStr(c, U"fchars")) cr = m_nfn(fCharsDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"fbytes")) cr = m_nfn(fBytesDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"flines")) cr = m_nfn(fLinesDesc, inc(REQ_PATH));
-    else if (eqStr(c, U"import")) cr = m_nfn(importDesc, inc(REQ_PATH));
-    #if FFI
-    else if (eqStr(c, U"ffi")) cr = m_nfn(ffiloadDesc, inc(REQ_PATH));
-    #endif
-    else if (eqStr(c, U"currenterror")) cr = inc(bi_currentError);
-    else if (eqStr(c, U"state")) {
-      if (q_N(comp_currArgs)) thrM("No arguments present for •state");
-      cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
-    } else if (eqStr(c, U"args")) {
-      if (q_N(comp_currArgs)) thrM("No arguments present for •args");
-      cr = inc(comp_currArgs);
-    } else { dec(x); thrF("Unknown system function •%R", c); }
     HARR_ADD(r, i, cr);
   }
   #undef REQ_PATH
+  #undef REQ_NAME
   dec(fileNS);
   dec(path);
   dec(name);
   dec(wdpath);
+  decG(idxs);
   return HARR_FCD(r, x);
 }
 
+
+static char* strs[] = {
+  #define F(L,N,B) L,
+  FOR_DEFAULT_SYSVALS(F)
+  #undef F
+};
+
 void sysfn_init() {
+  usz dsv_num = sizeof(strs)/sizeof(char*);
+  usz i = 0;
+  HArr_p dsv_vs = m_harrUv(dsv_num);
+  #define F(L,N,B) dsv_vs.a[i] = inc(B); i++;
+  FOR_DEFAULT_SYSVALS(F)
+  #undef F
+  HArr_p dsv_ns = m_harrUv(dsv_num);
+  for (usz i = 0; i < dsv_num; i++) dsv_ns.a[i] = m_c8vec_0(strs[i]);
+  dsv_obj = m_hVec2(dsv_ns.b, dsv_vs.b);
+  gc_add(dsv_obj);
+  
   #if CATCH_ERRORS
   lastErrMsg = bi_N;
   #endif
