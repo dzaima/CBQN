@@ -27,6 +27,175 @@ static NOINLINE void repl_init() {
   init = true;
 }
 
+
+#if USE_REPLXX
+  #include <replxx.h>
+  #include <errno.h>
+  #include "utils/mut.h"
+  #include "utils/cstr.h"
+  i8 theme0[12][3] = { // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
+    [ 0] = {-1,-1,-1}, // default
+    [ 1] = {-1,-1,11}, // comments
+    [ 2] = {4,1,1},    // numbers
+    [ 3] = {1,2,5},    // strings
+    [ 4] = {-1,-1,-1}, // value names
+    [ 5] = {1,4,1},    // functions
+    [ 6] = {5,1,4},    // 1-modifiers
+    [ 7] = {5,4,2},    // 2-modifiers
+    [ 8] = {5,4,0},    // assignment (←↩→⇐), statement separators (,⋄)
+    [ 9] = {4,3,5},    // ⟨⟩, [] ·, @, ‿
+    [10] = {3,2,4},    // {}
+    [11] = {5,0,0},    // error
+  };
+  ReplxxColor theme0_built[12];
+  
+  static ReplxxColor* theme_replxx = theme0_built;
+  NOINLINE void build_theme(ReplxxColor* res, i8 data[12][3]) {
+    for (int i = 0; i < 12; i++) {
+      i8 v0 = data[i][0];
+      i8 v1 = data[i][1];
+      i8 v2 = data[i][2];
+      res[i] = v0>=0? replxx_color_rgb666(v0,v1,v2) : v2>=0? replxx_color_grayscale(v2) : REPLXX_COLOR_DEFAULT;
+    }
+  }
+  static void cbqn_init_replxx() {
+    build_theme(theme0_built, theme0);
+  }
+  
+  NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
+    for (int i = s; i < e; i++) cols[i] = col;
+  }
+  static bool chr_nl(u32 c) { return c==10 || c==13; }
+  static bool chr_dig(u32 c) { return c>='0' && c<='9'; }
+  static bool chr_low(u32 c) { return c>='a' && c<='z'; }
+  static bool chr_upp(u32 c) { return c>='A' && c<='Z'; }
+  static u32 chr_to_low(u32 c) { return c-'A'+'a'; }
+  static u32 chr_to_upp(u32 c) { return c-'a'+'A'; }
+  static bool chr_num0(u32 c) { return chr_dig(c) || c==U'¯' || c==U'π' || c==U'∞'; }
+  static bool chr_name0(u32 c) { return chr_low(c) || chr_upp(c) || c=='_'; }
+  static bool chr_nameM(u32 c) { return chr_name0(c) || chr_num0(c); }
+  static u32* chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»";
+  static u32* chrs_m1 = U"`˜˘¨⁼⌜´˝˙";
+  static u32* chrs_m2 = U"∘⊸⟜○⌾⎉⚇⍟⊘◶⎊";
+  static u32* chrs_lit = U"⟨⟩[]·@‿";
+  static u32* chrs_dmd = U"←↩,⋄→⇐";
+  static u32* chrs_blk = U"{}𝕨𝕩𝔽𝔾𝕎𝕏𝕗𝕘𝕣ℝ𝕤𝕊:?;";
+  NOINLINE bool chr_in(u32 val, u32* chrs) {
+    while(*chrs) if (val == *(chrs++)) return true;
+    return false;
+  }
+  
+  void highlighter_replxx(const char* input, ReplxxColor* colors, int size, void* data) {
+    B charObj = utf8Decode0(input);
+    if (IA(charObj) != size) goto end; // don't want to kill the REPL if this happens, but gotta do _something_
+    
+    charObj = toC32Any(vec_addN(charObj, m_c32(0)));
+    u32* chars = c32any_ptr(charObj);
+    
+    u32* badPrefix = U")escaped"; // )escaped has its own parsing setup, highlighting that would be very misleading
+    for (usz i = 0; i < 8; i++) if (chars[i]!=badPrefix[i]) goto not_bad_prefix;
+    goto end;
+    not_bad_prefix:;
+    
+    ReplxxColor* theme = theme_replxx;
+    #define SKIP(V) ({ u32 c; while(true) { c=chars[i]; if (c==0 || !(V)) break; i++; } }) // skips to first character that doesn't match V, or to the final null byte
+    #define FILL(T) ({ assert(i<=size); fill_color(colors, i0, i, theme[T]); })
+    #define SET1(T) ({ assert(i<=size); colors[i0] = theme[T]; })
+    #define SKIP1 ({ if (i+1<=size) i++; })
+    int i = 0;
+    while (i < size) {
+      int i0 = i;
+      u32 c0 = chars[i++];
+      bool sys = c0==U'•' && i<size;
+      if (sys) c0 = chars[i++];
+      
+      if (!sys && c0=='_' && chars[i0+1]==U'𝕣') { bool m2 = chars[i0+2]=='_'; i+= m2?2:1; FILL(m2? 7 : 6); }
+      else if (sys || chr_name0(c0)) {
+        if (!chr_name0(c0)) { i--; SET1(11); }
+        else { SKIP(chr_nameM(c));  FILL(c0=='_'? (i0+(sys?2:1)==i? 11 : chars[i-1]=='_'? 7 : 6)  :  (chr_upp(c0)? 5 : 4)); }
+      }
+      else if (c0=='#') { SKIP(!chr_nl(c));  FILL(1); }
+      else if (c0=='"') { SKIP(c!='"'); SKIP1;  FILL(3); }
+      else if (c0=='\'') { bool ok = i+2<=size && chars[i+1]=='\''; if(ok) i+=2;  FILL(ok? 3 : 11); }
+      else if (chr_num0(c0)) { SKIP(chr_num0(c) || c=='e' || c=='E' || c=='_');  FILL(2); }
+      else if (chr_in(c0, chrs_fn)) SET1(5); else if (chr_in(c0, chrs_lit)) SET1(9);
+      else if (chr_in(c0, chrs_m1)) SET1(6); else if (chr_in(c0, chrs_dmd)) SET1(8);
+      else if (chr_in(c0, chrs_m2)) SET1(7); else if (chr_in(c0, chrs_blk)) SET1(10);
+      else SET1(0);
+    }
+    end:
+    dec(charObj);
+  }
+  
+  NOINLINE void completion_impl(const char* inp, void* res, bool hint, int* dist) {
+    B vars = listVars(gsc);
+    if (q_N(vars)) return;
+    
+    B inpB = toC32Any(utf8Decode0(inp));
+    u32* chars = c32any_ptr(inpB);
+    u32* we = chars+IA(inpB);
+    u32* ws = we;
+    while (ws>chars && chr_nameM(*(ws-1))) ws--;
+    
+    usz wl = *dist = we-ws;
+    if (wl>0) {
+      usz wo = ws-chars;
+      B norm = emptyCVec();
+      bool hasLower = false;
+      bool hasUpper = false;
+      for (usz i = 0; i < wl; i++) {
+        u32 c = ws[i]; if (c=='_') continue;
+        if (chr_low(c)) hasLower = true;
+        bool upp = chr_upp(c);
+        if (IA(norm)) hasUpper|= upp;
+        if (upp) c = chr_to_low(c);
+        norm = vec_addN(norm, m_c32(c));
+      }
+      usz normLen = IA(norm);
+      if (normLen>0) {
+        usz via=IA(vars); SGetU(vars)
+        for (usz i = 0; i < via; i++) {
+          B var = GetU(vars,i);
+          usz vlen = IA(var);
+          if (vlen<=normLen) continue;
+          B cSlc = taga(arr_shVec(TI(var,slice)(incG(var), 0, normLen)));
+          if (equal(norm, cSlc)) {
+            usz ext = vlen-normLen;
+            u32* rp; B r = m_c32arrv(&rp, wl + ext);
+            COPY_TO(rp, el_c32, 0, inpB, wo, wl);
+            if (hasLower || !hasUpper) {
+              COPY_TO(rp, el_c32, wl, var, normLen, ext);
+            } else {
+              SGetU(var)
+              for (usz i = 0; i < ext; i++) {
+                u32 cc=o2cG(GetU(var,i+normLen));
+                rp[wl+i] = chr_low(cc)? chr_to_upp(cc) : cc;
+              }
+            }
+            char* str = toCStr(r);
+            if (hint) replxx_add_hint(res, str);
+            else replxx_add_completion(res, str);
+            freeCStr(str);
+            decG(r);
+          }
+          decG(cSlc);
+        }
+      }
+      decG(norm);
+    }
+    
+    dec(inpB);
+    dec(vars);
+  }
+  void complete_replxx(const char* inp, replxx_completions* res, int* dist, void* data) {
+    completion_impl(inp, res, false, dist);
+  }
+  void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
+    completion_impl(inp, res, true, dist);
+  }
+#endif
+
+
 static NOINLINE B gsc_exec_inline(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
@@ -427,18 +596,53 @@ int main(int argc, char* argv[]) {
   }
   if (startREPL) {
     repl_init();
-    while (true) {
-      if (!silentREPL) {
-        printf("   ");
-        fflush(stdout);
+    #if USE_REPLXX
+    if (!silentREPL) {
+      cbqn_init_replxx();
+      Replxx* replxx = replxx_init();
+      
+      char* history_dir = getenv("HOME");
+      if (!history_dir) history_dir = ".";
+      B p1 = utf8Decode0(history_dir);
+      B p2 = path_rel(p1, m_c8vec_0(".cbqn_repl_history"));
+      dec(p1);
+      char* histfile = toCStr(p2);
+      dec(p2);
+      gc_add(tag(TOBJ(histfile), OBJ_TAG));
+      replxx_history_load(replxx, histfile);
+      
+      replxx_set_ignore_case(replxx, true);
+      replxx_set_highlighter_callback(replxx, highlighter_replxx, NULL);
+      replxx_set_hint_callback(replxx, hint_replxx, NULL);
+      replxx_set_completion_callback(replxx, complete_replxx, NULL);
+      
+      while(true) {
+        const char* ln = replxx_input(replxx, "   ");
+        if (ln==NULL) {
+          if (errno==0) printf("\n");
+          break;
+        }
+        cbqn_runLine((char*)ln, strlen(ln));
+        replxx_history_add(replxx, ln);
+        replxx_history_save(replxx, histfile);
       }
-      char* ln = NULL;
-      size_t gl = 0;
-      i64 read = getline(&ln, &gl, stdin);
-      if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
-      if (ln[read-1]==10) ln[--read] = 0;
-      cbqn_runLine(ln, read);
-      free(ln);
+    }
+    else
+    #endif
+    {
+      while (true) {
+        if (!silentREPL) {
+          printf("   ");
+          fflush(stdout);
+        }
+        char* ln = NULL;
+        size_t gl = 0;
+        i64 read = getline(&ln, &gl, stdin);
+        if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
+        if (ln[read-1]==10) ln[--read] = 0;
+        cbqn_runLine(ln, read);
+        free(ln);
+      }
     }
   }
   #ifdef HEAP_VERIFY

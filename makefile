@@ -113,6 +113,11 @@ endif
 ifeq ($(origin LDFLAGS),command line)
 	custom = 1
 endif
+ifeq ($(REPLXX),1)
+	custom = 1
+endif
+
+i_LD = $(i_CC)
 
 CC_IS_CLANG = $(shell $(i_CC) --version | head -n1 | grep -m 1 -c "clang")
 ifeq (${CC_IS_CLANG}, 1)
@@ -141,7 +146,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -188,7 +193,7 @@ endif
 	@echo ${postmsg}
 
 ${bd}/BQN: builtins core base jit utils # build the final binary
-	@$(i_CC) ${CCFLAGS} -o ${bd}/BQN ${bd}/*.o $(ALL_LD_FLAGS)
+	@$(i_LD) ${CCFLAGS} -o ${bd}/BQN ${bd}/*.o $(ALL_LD_FLAGS)
 
 CC_INC = $(i_CC) $(ALL_CC_FLAGS) -MMD -MP -MF
 # build individual object files
@@ -257,6 +262,28 @@ src/singeli/gen/arTables.c: genArithTables
 genArithTables: src/singeli/src/genArithTables.bqn preSingeliBin
 	@echo "  generating arDefs.singeli & arTables.c"
 	@obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/arDefs.singeli" "$$PWD/src/singeli/gen/arTables.c"
+endif
+
+
+
+# replxx
+ifeq ($(REPLXX),1)
+i_CXX := c++
+ifeq ($(origin CXX),command line)
+	i_CXX := $(CXX)
+endif
+i_LD = $(i_CXX)
+REPLXX_FLAGS = -Os
+
+ALL_CC_FLAGS += -DUSE_REPLXX -Ireplxx/include
+
+CXX_INC = $(i_CXX) $(CCFLAGS) $(REPLXX_FLAGS) -DREPLXX_STATIC=1 -Ireplxx/include -MMD -MP -MF
+replxx_obj: ${addprefix ${bd}/, ConvertUTF.cpp.o wcwidth.cpp.o conversion.cxx.o escape.cxx.o history.cxx.o prompt.cxx.o replxx.cxx.o replxx_impl.cxx.o terminal.cxx.o util.cxx.o windows.cxx.o}
+${bd}/%.o: replxx/src/%
+	@echo $<
+	@$(CXX_INC) $@.d -o $@ -c $<
+
+${bd}/BQN: replxx_obj
 endif
 
 
