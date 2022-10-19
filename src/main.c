@@ -58,9 +58,8 @@ static NOINLINE void repl_init() {
       res[i] = v0>=0? replxx_color_rgb666(v0,v1,v2) : v2>=0? replxx_color_grayscale(v2) : REPLXX_COLOR_DEFAULT;
     }
   }
-  static void cbqn_init_replxx() {
-    build_theme(theme0_built, theme0);
-  }
+  extern u32* dsv_text[];
+  static B sysvalNames, sysvalNamesNorm;
   
   NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
     for (int i = s; i < e; i++) cols[i] = col;
@@ -126,51 +125,83 @@ static NOINLINE void repl_init() {
     end:
     dec(charObj);
   }
-  
+  B allNsFields(void);
+  B str_norm(u32* chars, usz len, bool* upper) {
+    B norm = emptyCVec();
+    bool hadLetter = false;
+    bool hasLower = false;
+    bool hasUpper = false;
+    for (usz i = 0; i < len; i++) {
+      u32 c = chars[i]; if (c=='_') continue;
+      bool low = chr_low(c);
+      bool upp = chr_upp(c);
+      if (low) hasLower = true;
+      if (hadLetter) hasUpper|= upp;
+      if (upp) c = chr_to_low(c);
+      hadLetter = upp | low;
+      norm = vec_addN(norm, m_c32(c));
+    }
+    *upper = !hasLower && hasUpper;
+    return norm;
+  }
+  NOINLINE B vec_slice(B x, usz s, usz e) {
+    return taga(arr_shVec(TI(x,slice)(incG(x), s, e)));
+  }
+  NOINLINE u32* rskip_name(u32* start, u32* c) {
+    while (c>start && chr_nameM(*(c-1))) c--;
+    return c;
+  }
   NOINLINE void completion_impl(const char* inp, void* res, bool hint, int* dist) {
-    B vars = listVars(gsc);
-    if (q_N(vars)) return;
-    
     B inpB = toC32Any(utf8Decode0(inp));
     u32* chars = c32any_ptr(inpB);
     u32* we = chars+IA(inpB);
-    u32* ws = we;
-    while (ws>chars && chr_nameM(*(ws-1))) ws--;
+    u32* ws = rskip_name(chars, we);
+    bool sysval = ws>chars && U'•' == *(ws-1);
+    bool nsField = ws>chars && '.' == *(ws-1);
+    if (nsField) {
+      u32* ws2 = rskip_name(chars, ws-1);
+      if (ws2>chars && U'•' == *(ws2-1)) { ws=ws2; sysval=true; nsField=false; }
+    }
+    if (sysval) ws--;
     
     usz wl = *dist = we-ws;
     if (wl>0) {
       usz wo = ws-chars;
-      B norm = emptyCVec();
-      bool hasLower = false;
-      bool hasUpper = false;
-      for (usz i = 0; i < wl; i++) {
-        u32 c = ws[i]; if (c=='_') continue;
-        if (chr_low(c)) hasLower = true;
-        bool upp = chr_upp(c);
-        if (IA(norm)) hasUpper|= upp;
-        if (upp) c = chr_to_low(c);
-        norm = vec_addN(norm, m_c32(c));
-      }
+      bool doUpper;
+      B norm = str_norm(ws, wl, &doUpper);
+      B reg = sysval? vec_slice(inpB, wo, wl) : bi_N;
       usz normLen = IA(norm);
       if (normLen>0) {
+        B vars = sysval? incG(sysvalNames) : nsField? allNsFields() : listVars(gsc);
+        if (q_N(vars)) goto noVars;
         usz via=IA(vars); SGetU(vars)
         for (usz i = 0; i < via; i++) {
-          B var = GetU(vars,i);
-          usz vlen = IA(var);
-          if (vlen<=normLen) continue;
-          B cSlc = taga(arr_shVec(TI(var,slice)(incG(var), 0, normLen)));
-          if (equal(norm, cSlc)) {
-            usz ext = vlen-normLen;
+          i32 matchState=0; B match=bi_N; usz matchLen=0, skip=0;
+          for (usz j = 0; j < (sysval? 2 : 1); j++) {
+            match = j? harr_ptr(sysvalNamesNorm)[i] : GetU(vars,i);
+            bool doNorm = sysval? j : true;
+            matchLen = IA(match);
+            usz wlen = doNorm? normLen : wl;
+            if (wlen>=matchLen) continue;
+            B slc = vec_slice(match, 0, wlen);
+            bool matched = equal(slc, doNorm? norm : reg);
+            decG(slc);
+            if (matched) { matchState=doNorm?1:2; skip=wlen; break; }
+          }
+          
+          if (matchState) {
+            usz ext = matchLen-skip;
+            assert(ext<100);
             u32* rp; B r = m_c32arrv(&rp, wl + ext);
             COPY_TO(rp, el_c32, 0, inpB, wo, wl);
-            if (hasLower || !hasUpper) {
-              COPY_TO(rp, el_c32, wl, var, normLen, ext);
-            } else {
-              SGetU(var)
+            if (doUpper && matchState!=2) {
+              SGetU(match)
               for (usz i = 0; i < ext; i++) {
-                u32 cc=o2cG(GetU(var,i+normLen));
+                u32 cc=o2cG(GetU(match,i+skip));
                 rp[wl+i] = chr_low(cc)? chr_to_upp(cc) : cc;
               }
+            } else {
+              COPY_TO(rp, el_c32, wl, match, skip, ext);
             }
             char* str = toCStr(r);
             if (hint) replxx_add_hint(res, str);
@@ -178,20 +209,35 @@ static NOINLINE void repl_init() {
             freeCStr(str);
             decG(r);
           }
-          decG(cSlc);
         }
+        decG(vars);
+        noVars:;
       }
       decG(norm);
+      if (sysval) decG(reg);
     }
     
     dec(inpB);
-    dec(vars);
   }
   void complete_replxx(const char* inp, replxx_completions* res, int* dist, void* data) {
     completion_impl(inp, res, false, dist);
   }
   void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
     completion_impl(inp, res, true, dist);
+  }
+  
+  static void cbqn_init_replxx() {
+    build_theme(theme0_built, theme0);
+    sysvalNames = emptyHVec();
+    sysvalNamesNorm = emptyHVec();
+    u32** c = dsv_text;
+    while (*c) { bool unused;
+      B str = m_c32vec_0(*(c++));
+      sysvalNames = vec_addN(sysvalNames, str);
+      sysvalNamesNorm = vec_addN(sysvalNamesNorm, str_norm(c32any_ptr(str), IA(str), &unused));
+    }
+    gc_add(sysvalNames);
+    gc_add(sysvalNamesNorm);
   }
 #endif
 

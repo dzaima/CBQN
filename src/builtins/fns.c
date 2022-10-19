@@ -223,7 +223,7 @@ void clearImportCacheMap() {
 }
 
 static H_b2i* globalNames;
-static B globalNameList;
+B globalNameList;
 i32 str2gid(B s) {
   if (globalNames==NULL) {
     globalNames = m_b2i(32);
@@ -249,6 +249,9 @@ B gid2str(i32 n) {
   B r = IGetU(globalNameList, n);
   // print_fmt("gid2str %i → %R\n", n, r);
   return r;
+}
+B allNsFields() {
+  return globalNames==NULL? bi_N : incG(globalNameList);
 }
 
 void* profiler_makeMap() {
