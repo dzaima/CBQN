@@ -1374,6 +1374,11 @@ B getPrimitives(void);
 
 static Body* file_nsGen;
 
+#if FFI
+#define OPT_FFI(F) F("ffi", U"•FFI", tag(10,VAR_TAG))
+#else
+#define OPT_FFI(F)
+#endif
 
 #define FOR_DEFAULT_SYSVALS(F) \
   F("out", U"•Out", bi_out) \
@@ -1409,7 +1414,7 @@ static Body* file_nsGen;
   F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
   F("flines", U"•FLines", tag(8,VAR_TAG)) \
   F("import", U"•Import", tag(9,VAR_TAG)) \
-  F("ffi", U"•FFI", tag(10,VAR_TAG)) \
+  OPT_FFI(F) \
   F("name", U"•name", tag(11,VAR_TAG)) \
   F("path", U"•path", tag(12,VAR_TAG)) \
   F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
