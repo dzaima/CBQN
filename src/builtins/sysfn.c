@@ -1415,7 +1415,8 @@ static Body* file_nsGen;
   F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
   F("file", U"•file", tag(14,VAR_TAG)) \
   F("state", U"•state", tag(15,VAR_TAG)) \
-  F("args", U"•args", tag(16,VAR_TAG))
+  F("args", U"•args", tag(16,VAR_TAG)) \
+  F("listsys", U"•listsys", tag(17,VAR_TAG))
 
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
@@ -1511,6 +1512,7 @@ B sys_c1(B t, B x) {
         cr = inc(comp_currArgs);
         break;
       }
+      case 17: cr = incG(curr_ns);
     }
     HARR_ADD(r, i, cr);
   }
