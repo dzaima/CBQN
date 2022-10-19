@@ -101,7 +101,7 @@ i64 comp_currEnvPos;
 B comp_currPath;
 B comp_currArgs;
 B comp_currSrc;
-B comp_currRe;
+B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
 
 B rt_undo, rt_select, rt_slash, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
   rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_transp;
@@ -212,7 +212,9 @@ B bqn_exec(B str, B path, B args) { // consumes all
   return res;
 }
 
-void init_comp(B* set, B prim) {
+extern B dsv_ns, dsv_vs;
+B str_all, str_none;
+void init_comp(B* set, B prim, B sys) {
   if (q_N(prim)) {
     set[0] = inc(load_comp);
     set[1] = inc(load_rtObj);
@@ -256,14 +258,36 @@ void init_comp(B* set, B prim) {
     set[2] = inc(rb);
     set[0] = c1(load_compgen, rb);
   }
+  if (q_N(sys)) {
+    all_sys:
+    set[3] = inc(dsv_ns);
+    set[4] = inc(dsv_vs);
+  } else {
+    if (!isArr(sys) || RNK(sys)!=1) thrM("•ReBQN: 𝕩.system must be a list");
+    if (str_all.u==0) { gc_add(str_all = m_c8vec("all",3)); gc_add(str_none = m_c8vec("none",4)); }
+    if (equal(sys, str_all)) goto all_sys;
+    if (equal(sys, str_none)) {
+      set[3] = set[4] = emptyHVec();
+    } else {
+      usz ia = IA(sys); SGetU(sys)
+      M_HARR(r1, ia);
+      M_HARR(r2, ia);
+      for (usz i = 0; i < ia; i++) {
+        B c = GetU(sys,i);
+        if (!isArr(c) || RNK(c)!=1 || IA(c)!=2) thrM("•ReBQN: 𝕩.system must be either \"all\", \"none\", or a list of pairs");
+        SGet(c)
+        HARR_ADD(r1, i, Get(c,0));
+        HARR_ADD(r2, i, Get(c,1));
+      }
+      set[3] = HARR_FV(r1);
+      set[4] = HARR_FV(r2);
+    }
+  }
 }
 B getPrimitives() {
   B g, r;
-  if (q_N(comp_currRe)) {
-    g = load_glyphs; r = load_rtObj;
-  } else {
-    B* o = harr_ptr(comp_currRe); g = o[4]; r = o[3];
-  }
+  if (q_N(comp_currRe)) { g=load_glyphs; r=load_rtObj; }
+  else { B* o = harr_ptr(comp_currRe); g=o[4]; r=o[3]; }
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
   M_HARR(ph, IA(r));
@@ -278,6 +302,12 @@ B getPrimitives() {
   return HARR_FV(ph);
 }
 
+extern B dsv_ns, dsv_vs;
+void getSysvals(B* res) {
+  if (q_N(comp_currRe)) { res[0]=dsv_ns; res[1]=dsv_vs; }
+  else { B* o=harr_ptr(comp_currRe); res[0]=o[5]; res[1]=o[6]; }
+}
+
 B rebqn_exec(B str, B path, B args, B o) {
   B prevRe = comp_currRe;
   if (CATCH) { comp_currRe = prevRe; rethrow(); }
@@ -287,21 +317,21 @@ B rebqn_exec(B str, B path, B args, B o) {
   i32 replMode = o2iG(op[0]);
   Scope* sc = c(Scope, op[1]);
   B res;
+  Block* block;
   if (replMode>0) {
-    Block* block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2);
+    block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2);
     comp_currRe = prevRe;
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInline(block, sc);
-    ptr_dec(block);
   } else {
     B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
-    Block* block = bqn_compc(str, path, args, op[2], rtsys);
+    block = bqn_compc(str, path, args, op[2], rtsys);
     decG(rtsys);
     comp_currRe = prevRe;
     res = evalFunBlock(block, 0);
-    ptr_dec(block);
   }
+  ptr_dec(block);
   decG(o);
   
   popCatch();

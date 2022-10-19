@@ -5,7 +5,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | function      | notes |
 |---------------|-------|
 | `•BQN`        | |
-| `•ReBQN`      | Supported options: `repl`, `primitives` |
+| `•ReBQN`      | Supported options: `repl`; `primitives`; `system` that's not `"safe"` |
 | `•primitives` | |
 | `•Import`     | |
 | `•FFI`        | see [FFI](#ffi) |

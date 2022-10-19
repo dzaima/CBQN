@@ -563,6 +563,7 @@ B reBQN_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
   B prim = ns_getC(x, "primitives");
+  B sys = ns_getC(x, "system");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
   Block* initBlock = bqn_comp(m_c8vec_0("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
@@ -574,9 +575,9 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  HArr_p d = m_harrUv(5); d.a[0] = m_f64(replVal); d.a[1] = scVal;
-  d.a[2]=d.a[3]=d.a[4]=bi_N;
-  init_comp(d.a+2, prim);
+  HArr_p d = m_harrUv(7); d.a[0] = m_f64(replVal); d.a[1] = scVal;
+  for (usz i=2; i<7; i++) d.a[i] = bi_N;
+  init_comp(d.a+2, prim, sys);
   decG(x);
   return m_nfn(reBQNDesc, d.b);
 }
@@ -1371,6 +1372,7 @@ B getBitNS() {
 B getInternalNS(void);
 B getMathNS(void);
 B getPrimitives(void);
+void getSysvals(B* res);
 
 static Body* file_nsGen;
 
@@ -1451,14 +1453,12 @@ static void initFileNS() {
   ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
 
-B dsv_obj;
 
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  B sysvals = dsv_obj;
-  SGetU(sysvals)
-  B curr_ns = GetU(sysvals,0);
-  B curr_vs = GetU(sysvals,1); SGetU(curr_vs)
+  B tmp[2]; getSysvals(tmp);
+  B curr_ns = tmp[0];
+  B curr_vs = tmp[1]; SGetU(curr_vs)
   B idxs = indexOf_c2(m_f64(0), incG(curr_ns), incG(x)); SGetU(idxs)
   
   B fileNS = m_f64(0);
@@ -1537,17 +1537,16 @@ static char* dsv_strs[] = {
   #undef F
 };
 
+B dsv_ns, dsv_vs;
 void sysfn_init() {
   usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
   usz i = 0;
-  HArr_p dsv_vs = m_harrUv(dsv_num);
-  #define F(L,N,B) dsv_vs.a[i] = inc(B); i++;
+  HArr_p dsv_ns0 = m_harrUv(dsv_num); dsv_ns=dsv_ns0.b; gc_add(dsv_ns);
+  for (usz i = 0; i < dsv_num; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
+  HArr_p dsv_vs0 = m_harrUv(dsv_num); dsv_vs=dsv_vs0.b; gc_add(dsv_vs);
+  #define F(L,N,B) dsv_vs0.a[i] = inc(B); i++;
   FOR_DEFAULT_SYSVALS(F)
   #undef F
-  HArr_p dsv_ns = m_harrUv(dsv_num);
-  for (usz i = 0; i < dsv_num; i++) dsv_ns.a[i] = m_c8vec_0(dsv_strs[i]);
-  dsv_obj = m_hVec2(dsv_ns.b, dsv_vs.b);
-  gc_add(dsv_obj);
   
   #if CATCH_ERRORS
   lastErrMsg = bi_N;
