@@ -1376,50 +1376,75 @@ static Body* file_nsGen;
 
 
 #define FOR_DEFAULT_SYSVALS(F) \
-  F("out", •Out, bi_out) \
-  F("show", •Show, bi_show) \
-  F("exit", •Exit, bi_exit) \
-  F("getline", •GetLine, bi_getLine) \
-  F("type", •Type, bi_type) \
-  F("sh", •SH, bi_sh) \
-  F("decompose", •Decompose, bi_decp) \
-  F("while", •_while_, bi_while) \
-  F("primind", •PrimInd, bi_primInd) \
-  F("bqn", •BQN, bi_bqn) \
-  F("cmp", •Cmp, bi_cmp) \
-  F("unixtime", •UnixTime, bi_unixTime) \
-  F("monotime", •MonoTime, bi_monoTime) \
-  F("timed", •_timed, bi_timed) \
-  F("delay", •Delay, bi_delay) \
-  F("hash", •Hash, bi_hash) \
-  F("repr", •Repr, bi_repr) \
-  F("fmt", •Fmt, bi_fmt) \
-  F("glyph", •Glyph, bi_glyph) \
-  F("makerand", •MakeRand, bi_makeRand) \
-  F("rebqn", •ReBQN, bi_reBQN) \
-  F("fromutf8", •FromUTF8, bi_fromUtf8) \
-  F("currenterror", •CurrentError, bi_currentError) \
-  F("math", •math, tag(0,VAR_TAG)) \
-  F("rand", •rand, tag(1,VAR_TAG)) \
-  F("term", •term, tag(2,VAR_TAG)) \
-  F("bit", •bit, tag(3,VAR_TAG)) \
-  F("primitives", •primitives, tag(4,VAR_TAG)) \
-  F("internal", •internal, tag(5,VAR_TAG)) \
-  F("fchars", •FChars, tag(6,VAR_TAG)) \
-  F("fbytes", •FBytes, tag(7,VAR_TAG)) \
-  F("flines", •FLines, tag(8,VAR_TAG)) \
-  F("import", •Import, tag(9,VAR_TAG)) \
-  F("ffi", •FFI, tag(10,VAR_TAG)) \
-  F("name", •name, tag(11,VAR_TAG)) \
-  F("path", •path, tag(12,VAR_TAG)) \
-  F("wdpath", •wdpath, tag(13,VAR_TAG)) \
-  F("file", •file, tag(14,VAR_TAG)) \
-  F("state", •state, tag(15,VAR_TAG)) \
-  F("args", •args, tag(16,VAR_TAG))
+  F("out", U"•Out", bi_out) \
+  F("show", U"•Show", bi_show) \
+  F("exit", U"•Exit", bi_exit) \
+  F("getline", U"•GetLine", bi_getLine) \
+  F("type", U"•Type", bi_type) \
+  F("sh", U"•SH", bi_sh) \
+  F("decompose", U"•Decompose", bi_decp) \
+  F("while", U"•_while_", bi_while) \
+  F("primind", U"•PrimInd", bi_primInd) \
+  F("bqn", U"•BQN", bi_bqn) \
+  F("cmp", U"•Cmp", bi_cmp) \
+  F("unixtime", U"•UnixTime", bi_unixTime) \
+  F("monotime", U"•MonoTime", bi_monoTime) \
+  F("timed", U"•_timed", bi_timed) \
+  F("delay", U"•Delay", bi_delay) \
+  F("hash", U"•Hash", bi_hash) \
+  F("repr", U"•Repr", bi_repr) \
+  F("fmt", U"•Fmt", bi_fmt) \
+  F("glyph", U"•Glyph", bi_glyph) \
+  F("makerand", U"•MakeRand", bi_makeRand) \
+  F("rebqn", U"•ReBQN", bi_reBQN) \
+  F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
+  F("currenterror", U"•CurrentError", bi_currentError) \
+  F("math", U"•math", tag(0,VAR_TAG)) \
+  F("rand", U"•rand", tag(1,VAR_TAG)) \
+  F("term", U"•term", tag(2,VAR_TAG)) \
+  F("bit", U"•bit", tag(3,VAR_TAG)) \
+  F("primitives", U"•primitives", tag(4,VAR_TAG)) \
+  F("internal", U"•internal", tag(5,VAR_TAG)) \
+  F("fchars", U"•FChars", tag(6,VAR_TAG)) \
+  F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
+  F("flines", U"•FLines", tag(8,VAR_TAG)) \
+  F("import", U"•Import", tag(9,VAR_TAG)) \
+  F("ffi", U"•FFI", tag(10,VAR_TAG)) \
+  F("name", U"•name", tag(11,VAR_TAG)) \
+  F("path", U"•path", tag(12,VAR_TAG)) \
+  F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
+  F("file", U"•file", tag(14,VAR_TAG)) \
+  F("state", U"•state", tag(15,VAR_TAG)) \
+  F("args", U"•args", tag(16,VAR_TAG))
 
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
 B indexOf_c2(B t, B w, B x);
+bool fileInit;
+
+static void initFileNS() {
+  if (fileInit) return;
+  fileInit = true;
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","size","exists","name","parent","mapbytes","createdir","rename","remove");
+  fCharsDesc   = registerNFn(m_c8vec_0("(file).Chars"), fchars_c1, fchars_c2);
+  fileAtDesc   = registerNFn(m_c8vec_0("(file).At"), fileAt_c1, fileAt_c2);
+  fLinesDesc   = registerNFn(m_c8vec_0("(file).Lines"), flines_c1, flines_c2);
+  fBytesDesc   = registerNFn(m_c8vec_0("(file).Bytes"), fbytes_c1, fbytes_c2);
+  fListDesc    = registerNFn(m_c8vec_0("(file).List"), list_c1, c2_bad);
+  fTypeDesc    = registerNFn(m_c8vec_0("(file).Type"), ftype_c1, c2_bad);
+  fCreatedDesc = registerNFn(m_c8vec_0("(file).Created"),  fcreated_c1, c2_bad);
+  fModifiedDesc= registerNFn(m_c8vec_0("(file).Modified"), fmodified_c1, c2_bad);
+  fAccessedDesc= registerNFn(m_c8vec_0("(file).Accessed"), faccessed_c1, c2_bad);
+  fSizeDesc    = registerNFn(m_c8vec_0("(file).Size"), fsize_c1, c2_bad);
+  createdirDesc= registerNFn(m_c8vec_0("(file).CreateDir"), createdir_c1, c2_bad);
+  renameDesc   = registerNFn(m_c8vec_0("(file).Rename"), c1_bad, rename_c2);
+  removeDesc   = registerNFn(m_c8vec_0("(file).Remove"), remove_c1, c2_bad);
+  fMapBytesDesc= registerNFn(m_c8vec_0("(file).MapBytes"), mapBytes_c1, c2_bad);
+  fExistsDesc  = registerNFn(m_c8vec_0("(file).Exists"), fexists_c1, c2_bad);
+  reBQNDesc    = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
+  importDesc   = registerNFn(m_c32vec_0(U"•Import"), import_c1, import_c2);
+  ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
+}
 
 B dsv_obj;
 
@@ -1453,11 +1478,11 @@ B sys_c1(B t, B x) {
       case 3: cr = getBitNS(); break; // •bit
       case 4: cr = getPrimitives(); break; // •primitives
       case 5: cr = getInternalNS(); break; // •internal
-      case 6: cr = m_nfn(fCharsDesc, inc(REQ_PATH)); break; // •FChars
-      case 7: cr = m_nfn(fBytesDesc, inc(REQ_PATH)); break; // •FBytes
-      case 8: cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
-      case 9: cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
-      case 10: cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
+      case 6: initFileNS(); cr = m_nfn(fCharsDesc, inc(REQ_PATH)); break; // •FChars
+      case 7: initFileNS(); cr = m_nfn(fBytesDesc, inc(REQ_PATH)); break; // •FBytes
+      case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
+      case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
+      case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
       case 11: cr = inc(REQ_NAME); break; // •name
       case 12: cr = inc(REQ_PATH); break; // •path
       case 13: { // •wdpath
@@ -1467,6 +1492,7 @@ B sys_c1(B t, B x) {
       }
       case 14: { // •file
         if(!fileNS.u) {
+          initFileNS(); 
           REQ_PATH;
           #define F(X) m_nfn(X##Desc, inc(path))
           fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
@@ -1499,21 +1525,21 @@ B sys_c1(B t, B x) {
 }
 
 
-static char* strs[] = {
+static char* dsv_strs[] = {
   #define F(L,N,B) L,
   FOR_DEFAULT_SYSVALS(F)
   #undef F
 };
 
 void sysfn_init() {
-  usz dsv_num = sizeof(strs)/sizeof(char*);
+  usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
   usz i = 0;
   HArr_p dsv_vs = m_harrUv(dsv_num);
   #define F(L,N,B) dsv_vs.a[i] = inc(B); i++;
   FOR_DEFAULT_SYSVALS(F)
   #undef F
   HArr_p dsv_ns = m_harrUv(dsv_num);
-  for (usz i = 0; i < dsv_num; i++) dsv_ns.a[i] = m_c8vec_0(strs[i]);
+  for (usz i = 0; i < dsv_num; i++) dsv_ns.a[i] = m_c8vec_0(dsv_strs[i]);
   dsv_obj = m_hVec2(dsv_ns.b, dsv_vs.b);
   gc_add(dsv_obj);
   
@@ -1521,26 +1547,7 @@ void sysfn_init() {
   lastErrMsg = bi_N;
   #endif
   cdPath = m_c8vec(".", 1); gc_add(cdPath); gc_addFn(sys_gcFn);
-  fCharsDesc   = registerNFn(m_c8vec_0("(file).Chars"), fchars_c1, fchars_c2);
-  fileAtDesc   = registerNFn(m_c8vec_0("(file).At"), fileAt_c1, fileAt_c2);
-  fLinesDesc   = registerNFn(m_c8vec_0("(file).Lines"), flines_c1, flines_c2);
-  fBytesDesc   = registerNFn(m_c8vec_0("(file).Bytes"), fbytes_c1, fbytes_c2);
-  fListDesc    = registerNFn(m_c8vec_0("(file).List"), list_c1, c2_bad);
-  fTypeDesc    = registerNFn(m_c8vec_0("(file).Type"), ftype_c1, c2_bad);
-  fCreatedDesc = registerNFn(m_c8vec_0("(file).Created"),  fcreated_c1, c2_bad);
-  fModifiedDesc= registerNFn(m_c8vec_0("(file).Modified"), fmodified_c1, c2_bad);
-  fAccessedDesc= registerNFn(m_c8vec_0("(file).Accessed"), faccessed_c1, c2_bad);
-  fSizeDesc    = registerNFn(m_c8vec_0("(file).Size"), fsize_c1, c2_bad);
-  createdirDesc= registerNFn(m_c8vec_0("(file).CreateDir"), createdir_c1, c2_bad);
-  renameDesc   = registerNFn(m_c8vec_0("(file).Rename"), c1_bad, rename_c2);
-  removeDesc   = registerNFn(m_c8vec_0("(file).Remove"), remove_c1, c2_bad);
-  fMapBytesDesc= registerNFn(m_c8vec_0("(file).MapBytes"), mapBytes_c1, c2_bad);
-  fExistsDesc  = registerNFn(m_c8vec_0("(file).Exists"), fexists_c1, c2_bad);
-  reBQNDesc    = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
-  importDesc   = registerNFn(m_c32vec_0(U"•Import"), import_c1, import_c2);
-  ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
 void sysfnPost_init() {
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","size","exists","name","parent","mapbytes","createdir","rename","remove");
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }
