@@ -1594,6 +1594,7 @@ NOINLINE void printErrMsg(B msg) {
 }
 
 
+void before_exit(void);
 NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
@@ -1619,6 +1620,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     Env* envEnd = envStart+envPrevHeight;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
+    before_exit();
     #ifdef DEBUG
     __builtin_trap();
     #else

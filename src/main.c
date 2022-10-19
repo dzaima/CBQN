@@ -226,6 +226,16 @@ static NOINLINE void repl_init() {
     completion_impl(inp, res, true, dist);
   }
   
+  static Replxx* global_replxx;
+  static char* global_histfile;
+  void before_exit() {
+    if (global_replxx!=NULL && global_histfile!=NULL) {
+      replxx_history_save(global_replxx, global_histfile);
+      replxx_end(global_replxx);
+      global_replxx = NULL;
+    }
+  }
+  
   static void cbqn_init_replxx() {
     build_theme(theme0_built, theme0);
     sysvalNames = emptyHVec();
@@ -239,6 +249,8 @@ static NOINLINE void repl_init() {
     gc_add(sysvalNames);
     gc_add(sysvalNamesNorm);
   }
+#else
+  void before_exit() { }
 #endif
 
 
@@ -656,6 +668,8 @@ int main(int argc, char* argv[]) {
       dec(p2);
       gc_add(tag(TOBJ(histfile), OBJ_TAG));
       replxx_history_load(replxx, histfile);
+      global_replxx = replxx;
+      global_histfile = histfile;
       
       replxx_set_ignore_case(replxx, true);
       replxx_set_highlighter_callback(replxx, highlighter_replxx, NULL);
@@ -668,8 +682,8 @@ int main(int argc, char* argv[]) {
           if (errno==0) printf("\n");
           break;
         }
-        cbqn_runLine((char*)ln, strlen(ln));
         replxx_history_add(replxx, ln);
+        cbqn_runLine((char*)ln, strlen(ln));
         replxx_history_save(replxx, histfile);
       }
     }

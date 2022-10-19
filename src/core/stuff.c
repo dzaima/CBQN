@@ -7,6 +7,7 @@
 
 bool please_tail_call_err = true;
 
+void before_exit(void);
 bool inErr;
 NORETURN NOINLINE void err(char* s) {
   if (inErr) {
@@ -21,6 +22,7 @@ NORETURN NOINLINE void err(char* s) {
   vm_pstLive(); fflush(stderr); fflush(stdout);
   print_vmStack(); fflush(stderr);
   fputs("CBQN interpreter entered unexpected state, exiting.\n", stderr);
+  before_exit();
   #ifdef DEBUG
     __builtin_trap();
   #endif
