@@ -1447,7 +1447,6 @@ static void initFileNS() {
   removeDesc   = registerNFn(m_c8vec_0("(file).Remove"), remove_c1, c2_bad);
   fMapBytesDesc= registerNFn(m_c8vec_0("(file).MapBytes"), mapBytes_c1, c2_bad);
   fExistsDesc  = registerNFn(m_c8vec_0("(file).Exists"), fexists_c1, c2_bad);
-  reBQNDesc    = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
   importDesc   = registerNFn(m_c32vec_0(U"•Import"), import_c1, import_c2);
   ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
@@ -1554,6 +1553,7 @@ void sysfn_init() {
   lastErrMsg = bi_N;
   #endif
   cdPath = m_c8vec(".", 1); gc_add(cdPath); gc_addFn(sys_gcFn);
+  reBQNDesc = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
   c(BMd1,bi_bitcast)->im = bitcast_im;
