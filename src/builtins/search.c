@@ -101,6 +101,28 @@ B memberOf_c2(B t, B w, B x) {
     }
     #undef WEQ
     // TODO O(wia×xia) for small wia
+    if (xia+wia>20 && we<=el_i16 && xe<=el_i16 && we!=el_bit) {
+      usz xt = 1<<(8*elWidth(xe)); // Range of x writes
+      usz wt = 1<<(8*elWidth(we)); // Range of w lookups
+      usz t = xt>wt? xt : wt;      // Table allocation width
+      void* wp = tyany_ptr(w);
+      void* xp = tyany_ptr(x);
+      usz m=wia, n=xia;
+      i8* rp; B r = m_i8arrv(&rp, m);
+      TALLOC(u8, tab0, t); u8* tab = tab0 + t/2;
+      // Initialize
+      if (we==el_i16 && m<wt/64) { for (usz i=0; i<m; i++) tab[((i16*)wp)[i]]=0; }
+      else { for (i64 i=0; i<wt; i++) tab[i-wt/2]=0; }
+      // Set
+      if (xe==el_i8) { for (usz i=0; i<n; i++) tab[((i8 *)xp)[i]]=1; }
+      else           { for (usz i=0; i<n; i++) tab[((i16*)xp)[i]]=1; }
+      decG(x);
+      // Lookup
+      if (we==el_i8) { for (usz i=0; i<m; i++) rp[i]=tab[((i8 *)wp)[i]]; }
+      else           { for (usz i=0; i<m; i++) rp[i]=tab[((i16*)wp)[i]]; }
+      decG(w); TFREE(tab0);
+      return num_squeeze(r);
+    }
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
     bool had;
