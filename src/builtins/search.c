@@ -84,14 +84,23 @@ B memberOf_c2(B t, B w, B x) {
   many: {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
+    if (xia == 0) { Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba); decG(w); goto dec_x; }
+    #define WEQ(V) eq_c2(m_f64(0), inc(w), V)
+    if (xe==el_bit) {
+      u64* xp = bitarr_ptr(x);
+      u64 x0 = 1 & xp[0];
+      r = WEQ(m_usz(x0));
+      if (bit_has(xp, xia, !x0)) r = or_c2(m_f64(0), r, WEQ(m_usz(!x0)));
+      decG(w); goto dec_x;
+    }
     if (xia<=16 && wia>16 && we<el_B && xe<el_B) {
       SGetU(x);
-      Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba);
-      for (usz i=0; i<xia; i++) r = or_c2(m_f64(0), r, eq_c2(m_f64(0), inc(w), GetU(x,i)));
-      decG(w);
-      goto dec_x;
+      r = WEQ(GetU(x,0));
+      for (usz i=1; i<xia; i++) r = or_c2(m_f64(0), r, WEQ(GetU(x,i)));
+      decG(w); goto dec_x;
     }
-    // TODO O(wia×xia) for small wia or xia
+    #undef WEQ
+    // TODO O(wia×xia) for small wia
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
     bool had;

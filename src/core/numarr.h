@@ -42,6 +42,12 @@ static inline u64 bitp_l1(u64* arr, u64 ia) { // last u64 of the array, with the
 static inline u64 bitx(B x) { // repeats the boolean across all 64 bits
   return o2bG(x)? ~(u64)0 : 0;
 }
+static inline bool bit_has(u64* arr, u64 ia, bool v) {
+  u64 w = ~-(u64)v;
+  u64 e = ia/64, q = ia%64;
+  for (usz i=0; i<e; i++) if (arr[i]^w) return 1;
+  return q && ((arr[e]^w) & ((1ULL<<q)-1));
+}
 
 // BitArr
 #define BITARR_SZ(IA) fsizeof(BitArr, a, u64, BIT_N(IA))
