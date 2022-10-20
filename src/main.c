@@ -121,6 +121,7 @@ static NOINLINE void repl_init() {
       else if (chr_in(c0, chrs_m1)) SET1(6); else if (chr_in(c0, chrs_dmd)) SET1(8);
       else if (chr_in(c0, chrs_m2)) SET1(7); else if (chr_in(c0, chrs_blk)) SET1(10);
       else SET1(0);
+      if (i<=i0) break; // in case the above code fails to progress forward, at least don't get in an infinite loop
     }
     end:
     dec(charObj);
@@ -441,8 +442,8 @@ void cbqn_runLine0(char* ln, i64 read) {
       HArr* expla = toHArr(expl);
       usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
-          printRaw(expla->a[i]);
-          putchar('\n');
+        printRaw(expla->a[i]);
+        putchar('\n');
       }
       dec(expl);
       return;
@@ -675,6 +676,7 @@ int main(int argc, char* argv[]) {
       replxx_set_highlighter_callback(replxx, highlighter_replxx, NULL);
       replxx_set_hint_callback(replxx, hint_replxx, NULL);
       replxx_set_completion_callback(replxx, complete_replxx, NULL);
+      replxx_enable_bracketed_paste(replxx);
       
       while(true) {
         const char* ln = replxx_input(replxx, "   ");
