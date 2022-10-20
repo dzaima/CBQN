@@ -212,7 +212,7 @@ ${bd}/%.o: src/jit/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o squeeze.o select.o slash.o group.o sort.o selfsearch.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
+builtins: ${addprefix ${bd}/, arithm.o arithd.o cmp.o sfns.o squeeze.o select.o slash.o group.o sort.o search.o selfsearch.o md1.o md2.o fns.o sysfn.o internal.o inverse.o}
 ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
