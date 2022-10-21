@@ -73,9 +73,9 @@ B select_c2(B t, B w, B x) {
       // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32((u8*)i32any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
       // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64((u8*)i32any_ptr(w), (u8*)f64any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
     #endif
-    #define CASE(S,E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S,E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
-    #define TYPE(W) { W* wp = W##any_ptr(w);  \
+    #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
+    #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
       if (xe==el_bit) { u64* xp=bitarr_ptr(x);          \
         u64* rp; r = m_bitarrc(&rp, w);                 \
         u64 b=0;                                        \
@@ -103,6 +103,7 @@ B select_c2(B t, B w, B x) {
             if (max>=(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xia); \
             W* ip=wp; usz off=xia;                      \
             if (max>=0) { off=0; if (RARE(min<0)) {     \
+              if (RARE(xia > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free(v(r)); return select_c2(m_f64(0), w, x); } \
               if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0; \
               for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xia & (W)-(e<0)); } \
             } }                                         \
@@ -140,9 +141,9 @@ B select_c2(B t, B w, B x) {
       decG(x);
       return withFill(r, xf);
     }
-    else if (we==el_i8) TYPE(i8)
-    else if (we==el_i16) TYPE(i16)
-    else if (we==el_i32) TYPE(i32)
+    else if (we==el_i8) TYPE(i8,cpyI16Arr)
+    else if (we==el_i16) TYPE(i16,cpyI32Arr)
+    else if (we==el_i32) TYPE(i32,cpyF64Arr)
     else {
       SLOW2("𝕨⊏𝕩", w, x);
       M_HARR(r, wia)
