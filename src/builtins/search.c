@@ -4,26 +4,31 @@
 #include "../utils/talloc.h"
 
 #define TABLE(IN, FOR, TY, INIT, SET) \
-  usz it = 1<<(8*elWidth(IN##e));  /* Range of writes        */           \
-  usz ft = 1<<(8*elWidth(FOR##e)); /* Range of lookups       */           \
-  usz t = it>ft? it : ft;          /* Table allocation width */           \
-  TY* rp; B r = m_##TY##arrc(&rp, FOR);                                   \
-  TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                              \
-  usz m=IN##ia, n=FOR##ia;                                                \
-  void* ip = tyany_ptr(IN);                                               \
-  void* fp = tyany_ptr(FOR);                                              \
-  /* Initialize */                                                        \
-  if (FOR##e==el_i16 && n<ft/64)                                          \
-       { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }               \
-  else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=INIT; }                     \
-  /* Set */                                                               \
-  if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }   \
-  else              { for (usz i=m; i--;    ) tab[((i16*)ip)[i]]=SET; }   \
-  decG(IN);                                                               \
-  /* Lookup */                                                            \
-  if (FOR##e==el_i8){ for (usz i=0; i<n; i++) rp[i]=tab[((i8 *)fp)[i]]; } \
-  else              { for (usz i=0; i<n; i++) rp[i]=tab[((i16*)fp)[i]]; } \
-  decG(FOR); TFREE(tab0);
+  usz it = 1<<(1<<elWidthLogBits(IN##e));  /* Range of writes        */     \
+  usz ft = 1<<(1<<elWidthLogBits(FOR##e)); /* Range of lookups       */     \
+  usz t = it>ft? it : ft;                  /* Table allocation width */     \
+  TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                                \
+  usz m=IN##ia, n=FOR##ia;                                                  \
+  void* ip = tyany_ptr(IN);                                                 \
+  void* fp = tyany_ptr(FOR);                                                \
+  /* Initialize */                                                          \
+  if (FOR##e==el_i16 && n<ft/64)                                            \
+       { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                 \
+  else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; }  \
+  /* Set */                                                                 \
+  if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }     \
+  else              { for (usz i=m; i--;    ) tab[((i16*)ip)[i]]=SET; }     \
+  decG(IN);                                                                 \
+  /* Lookup */                                                              \
+  if (FOR##e==el_bit) {                                                     \
+    r = bit_sel(FOR, m_i32(tab[0]), m_i32(tab[1]));                         \
+  } else {                                                                  \
+    TY* rp; r = m_##TY##arrc(&rp, FOR);                                     \
+    if (FOR##e==el_i8){ for (usz i=0; i<n; i++) rp[i]=tab[((i8 *)fp)[i]]; } \
+    else              { for (usz i=0; i<n; i++) rp[i]=tab[((i16*)fp)[i]]; } \
+    decG(FOR);                                                              \
+  }                                                                         \
+  TFREE(tab0);
 
 extern B rt_indexOf;
 B indexOf_c2(B t, B w, B x) {
@@ -56,7 +61,8 @@ B indexOf_c2(B t, B w, B x) {
       u8 we = TI(w,elType); usz wia = IA(w);
       u8 xe = TI(x,elType); usz xia = IA(x);
       // TODO O(wia×xia) for small wia or xia
-      if (xia+wia>20 && we<=el_i16 && xe<=el_i16 && we!=el_bit && xe!=el_bit) {
+      if (xia+wia>20 && we<=el_i16 && xe<=el_i16 && we!=el_bit) {
+        B r;
         TABLE(w, x, i32, wia, i)
         return r;
       }
@@ -127,7 +133,8 @@ B memberOf_c2(B t, B w, B x) {
     }
     #undef WEQ
     // TODO O(wia×xia) for small wia
-    if (xia+wia>20 && we<=el_i16 && xe<=el_i16 && we!=el_bit) {
+    if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+      B r;
       TABLE(x, w, i8, 0, 1)
       return num_squeeze(r);
     }
