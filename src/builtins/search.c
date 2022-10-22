@@ -168,6 +168,31 @@ B memberOf_c2(B t, B w, B x) {
 
 extern B rt_count;
 B count_c2(B t, B w, B x) {
+  if (!isArr(w) || RNK(w)==0) thrM("⊒: 𝕨 must have rank at least 1");
+  if (RNK(w)==1) {
+    if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
+    usz wia = IA(w);
+    usz xia = IA(x);
+    i32* rp; B r = m_i32arrc(&rp, x);
+    TALLOC(usz, wnext, wia+1);
+    H_b2i* map = m_b2i(64);
+    SGetU(x)
+    SGetU(w)
+    wnext[wia] = wia;
+    for (usz i = wia; i--; ) {
+      bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
+      wnext[i] = had ? map->a[p].val : wia;
+      map->a[p].val = i;
+    }
+    for (usz i = 0; i < xia; i++) {
+      bool had; u64 p = getQ_b2i(map, GetU(x,i), &had);
+      usz j = wia;
+      if (had) { j = map->a[p].val; map->a[p].val = wnext[j]; }
+      rp[i] = j;
+    }
+    TFREE(wnext); free_b2i(map); decG(w); decG(x);
+    return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
+  }
   return c2(rt_count, w, x);
 }
 
