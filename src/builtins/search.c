@@ -3,6 +3,14 @@
 #include "../utils/mut.h"
 #include "../utils/talloc.h"
 
+#define C2(F,X,W) F##_c2(m_f64(0),X,W)
+#define C2i(F, W, X) C2(F, m_i32(W), X)
+extern B eq_c2(B,B,B);
+extern B ne_c2(B,B,B);
+extern B or_c2(B,B,B);
+extern B sub_c2(B,B,B);
+extern B mul_c2(B,B,B);
+
 #define TABLE(IN, FOR, TY, INIT, SET) \
   usz it = 1<<(1<<elWidthLogBits(IN##e));  /* Range of writes        */     \
   usz ft = 1<<(1<<elWidthLogBits(FOR##e)); /* Range of lookups       */     \
@@ -60,8 +68,15 @@ B indexOf_c2(B t, B w, B x) {
     } else {
       u8 we = TI(w,elType); usz wia = IA(w);
       u8 xe = TI(x,elType); usz xia = IA(x);
+      if (we==el_bit) {
+        u64* wp = bitarr_ptr(w);
+        u64 w0 = 1 & wp[0];
+        u64 i = bit_find(wp, wia, !w0); decG(w);
+        B r =                         C2i(mul, wia  , C2i(ne,  w0, inc(x)));
+        return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
+      }
       // TODO O(wia×xia) for small wia or xia
-      if (xia+wia>20 && we<=el_i16 && xe<=el_i16 && we!=el_bit) {
+      if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
         B r;
         TABLE(w, x, i32, wia, i)
         return r;
@@ -85,8 +100,6 @@ B indexOf_c2(B t, B w, B x) {
 B enclosed_0;
 B enclosed_1;
 extern B rt_memberOf;
-extern B eq_c2(B,B,B);
-extern B or_c2(B,B,B);
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) goto bad;
   if (isAtm(w)) goto single;
@@ -117,18 +130,18 @@ B memberOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (xia == 0) { Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba); decG(w); goto dec_x; }
-    #define WEQ(V) eq_c2(m_f64(0), inc(w), V)
+    #define WEQ(V) C2(eq, inc(w), V)
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
       u64 x0 = 1 & xp[0];
       r = WEQ(m_usz(x0));
-      if (bit_has(xp, xia, !x0)) r = or_c2(m_f64(0), r, WEQ(m_usz(!x0)));
+      if (bit_has(xp, xia, !x0)) r = C2(or, r, WEQ(m_usz(!x0)));
       decG(w); goto dec_x;
     }
     if (xia<=16 && wia>16 && we<el_B && xe<el_B) {
       SGetU(x);
       r = WEQ(GetU(x,0));
-      for (usz i=1; i<xia; i++) r = or_c2(m_f64(0), r, WEQ(GetU(x,i)));
+      for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
       decG(w); goto dec_x;
     }
     #undef WEQ
