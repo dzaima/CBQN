@@ -11,10 +11,12 @@ extern B or_c2(B,B,B);
 extern B sub_c2(B,B,B);
 extern B mul_c2(B,B,B);
 
+static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
+
 #define TABLE(IN, FOR, TY, INIT, SET) \
-  usz it = 1<<(1<<elWidthLogBits(IN##e));  /* Range of writes        */     \
-  usz ft = 1<<(1<<elWidthLogBits(FOR##e)); /* Range of lookups       */     \
-  usz t = it>ft? it : ft;                  /* Table allocation width */     \
+  usz it = elRange(IN##e);   /* Range of writes        */                   \
+  usz ft = elRange(FOR##e);  /* Range of lookups       */                   \
+  usz t = it>ft? it : ft;    /* Table allocation width */                   \
   TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                                \
   usz m=IN##ia, n=FOR##ia;                                                  \
   void* ip = tyany_ptr(IN);                                                 \
@@ -169,16 +171,40 @@ B memberOf_c2(B t, B w, B x) {
 extern B rt_count;
 B count_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)==0) thrM("⊒: 𝕨 must have rank at least 1");
-  if (RNK(w)==1) {
-    if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
-    usz wia = IA(w);
-    usz xia = IA(x);
-    i32* rp; B r = m_i32arrc(&rp, x);
-    TALLOC(usz, wnext, wia+1);
+  if (RNK(w)!=1) return c2(rt_count, w, x);
+  if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
+  u8 we = TI(w,elType); usz wia = IA(w);
+  u8 xe = TI(x,elType); usz xia = IA(x);
+  i32* rp; B r = m_i32arrc(&rp, x);
+  TALLOC(usz, wnext, wia+1);
+  wnext[wia] = wia;
+  if (we<=el_i16 && xe<=el_i16) {
+    if (we==el_bit) { w = toI8Any(w); we = TI(w,elType); }
+    if (xe==el_bit) { x = toI8Any(x); xe = TI(x,elType); }
+    usz it = elRange(we);    // Range of writes
+    usz ft = elRange(xe);    // Range of lookups
+    usz t = it>ft? it : ft;  // Table allocation width
+    TALLOC(i32, tab0, t); i32* tab = tab0 + t/2;
+    usz m=wia, n=xia;
+    void* ip = tyany_ptr(w);
+    void* fp = tyany_ptr(x);
+    // Initialize
+    if (xe==el_i16 && n<ft/(64/sizeof(i32)))
+         { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=wia; }
+    else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=wia; }
+    // Set
+    #define SET(T) for (usz i=m; i--; ) { i32* p=tab+((T*)ip)[i]; wnext[i]=*p; *p=i; }
+    if (we==el_i8) { SET(i8) } else { SET(i16) }
+    #undef SET
+    // Lookup
+    #define GET(T) for (usz i=0; i<n; i++) { i32* p=tab+((T*)fp)[i]; *p=wnext[rp[i]=*p]; }
+    if (xe==el_i8) { GET(i8) } else { GET(i16) }
+    #undef GET
+    TFREE(tab0);
+  } else {
     H_b2i* map = m_b2i(64);
     SGetU(x)
     SGetU(w)
-    wnext[wia] = wia;
     for (usz i = wia; i--; ) {
       bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
       wnext[i] = had ? map->a[p].val : wia;
@@ -190,10 +216,10 @@ B count_c2(B t, B w, B x) {
       if (had) { j = map->a[p].val; map->a[p].val = wnext[j]; }
       rp[i] = j;
     }
-    TFREE(wnext); free_b2i(map); decG(w); decG(x);
-    return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
+    free_b2i(map);
   }
-  return c2(rt_count, w, x);
+  TFREE(wnext); decG(w); decG(x);
+  return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
 
