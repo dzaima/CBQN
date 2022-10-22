@@ -1409,6 +1409,7 @@ static Body* file_nsGen;
   F("makerand", U"•MakeRand", bi_makeRand) \
   F("rebqn", U"•ReBQN", bi_reBQN) \
   F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
+  F("toutf8", U"•ToUTF8", bi_toUtf8) \
   F("currenterror", U"•CurrentError", bi_currentError) \
   F("math", U"•math", tag(0,VAR_TAG)) \
   F("rand", U"•rand", tag(1,VAR_TAG)) \
@@ -1546,13 +1547,14 @@ u32* dsv_text[] = {
   #define F(L,N,B) N,
   FOR_DEFAULT_SYSVALS(F)
   #undef F
+  U"•bit._add",U"•bit._and",U"•bit._cast",U"•bit._mul",U"•bit._neg",U"•bit._not",U"•bit._or",U"•bit._sub",U"•bit._xor",
+  
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
   U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
-  
   U"•math.Acos",U"•math.Asin",U"•math.Atan",U"•math.Cos",U"•math.Sin",U"•math.Tan",
-  
+  U"•rand.Deal",U"•rand.Range",U"•rand.Subset",
   U"•term.CharB",U"•term.CharN",U"•term.ErrRaw",U"•term.Flush",U"•term.OutRaw",U"•term.RawMode",
   NULL
 };
