@@ -6,6 +6,32 @@
 B not_c1(B t, B x);
 B shape_c1(B t, B x);
 
+#define RADIX_LOOKUP_i32(INIT, SETTAB) \
+  /* Count keys */                                                                          \
+  for (usz j=0; j<2*rx; j++) c0[j] = 0;                                                     \
+  for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }            \
+  /* Exclusive prefix sum */                                                                \
+  usz s0=0, s1=0;                                                                           \
+  for (usz j=0; j<rx; j++) {                                                                \
+    usz p0 = s0,  p1 = s1;                                                                  \
+    s0 += c0[j];  s1 += c1[j];                                                              \
+    c0[j] = p0;   c1[j] = p1;                                                               \
+  }                                                                                         \
+  /* Radix moves */                                                                         \
+  for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }  \
+  for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }  \
+  /* Table lookup */                                                                        \
+  u32 tv=v2[0]>>16; v2[n]=~v2[n-1];                                                         \
+  for (usz l=0, i=0; l<n; ) {                                                               \
+    for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=INIT; } \
+    for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]SETTAB; }                      \
+  }                                                                                         \
+  /* Radix unmoves */                                                                       \
+  *--c0 = *--c1 = 0; /* Move back one to account for increments in radix step */            \
+  for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }                                        \
+  for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }                                        \
+  decG(x); TFREE(alloc);
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   usz n = *SH(x);
@@ -61,31 +87,8 @@ B memberOf_c1(B t, B x) {
     u8  *r2 = (u8 *)(v2);      //  n              [+.....]       r2    n      ##
     u8  *r1 = (u8 *)(k1+n);    //  n                   [+..]     r1    n                ##
     u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
-    
-    // Count keys
-    for (usz j=0; j<2*rx; j++) c0[j] = 0;
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
-    // Exclusive prefix sum
-    usz s0=0, s1=0;
-    for (usz j=0; j<rx; j++) {
-      usz p0 = s0,  p1 = s1;
-      s0 += c0[j];  s1 += c1[j];
-      c0[j] = p0;   c1[j] = p1;
-    }
-    // Radix moves
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
-    for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
-    // Table lookup
-    u32 tv=v2[0]>>16; v2[n]=~v2[n-1];
-    for (usz l=0, i=0; l<n; ) {
-      for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=1; }
-      for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]=0; }
-    }
-    // Radix unmoves
-    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
-    for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
-    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
-    decG(x); TFREE(alloc);
+   
+    RADIX_LOOKUP_i32(1, =0)
     return num_squeeze(r);
   }
   #undef BRUTE
@@ -138,7 +141,6 @@ B count_c1(B t, B x) {
     i32* r0; B r = m_i32arrv(&r0, n);
     
     TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
-    
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
     usz *c0 = (usz*)(alloc)+1; // rx   [+++................]    c0    rx  #
@@ -151,30 +153,7 @@ B count_c1(B t, B x) {
     u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n                ########
     u32 *tab= (u32*)v1;        // tn              [+]           tab 4*tn                ###########
     
-    // Count keys
-    for (usz j=0; j<2*rx; j++) c0[j] = 0;
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
-    // Exclusive prefix sum
-    usz s0=0, s1=0;
-    for (usz j=0; j<rx; j++) {
-      usz p0 = s0,  p1 = s1;
-      s0 += c0[j];  s1 += c1[j];
-      c0[j] = p0;   c1[j] = p1;
-    }
-    // Radix moves
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
-    for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
-    // Table lookup
-    u32 tv=v2[0]>>16; v2[n]=~v2[n-1];
-    for (usz l=0, i=0; l<n; ) {
-      for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=0; }
-      for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]++; }
-    }
-    // Radix unmoves
-    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
-    for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
-    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
-    decG(x); TFREE(alloc);
+    RADIX_LOOKUP_i32(0, ++)
     return num_squeeze(r);
   }
   #undef BRUTE
