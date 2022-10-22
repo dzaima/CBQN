@@ -3,6 +3,9 @@
 #include "../utils/mut.h"
 #include "../utils/talloc.h"
 
+B not_c1(B t, B x);
+B shape_c1(B t, B x);
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   usz n = *SH(x);
@@ -10,6 +13,13 @@ B memberOf_c1(B t, B x) {
   
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
+  if (lw == 0) {
+    usz i = bit_find(xv, n, 1 &~ *(u64*)xv); decG(x);
+    B r = taga(arr_shVec(allZeroes(n)));
+    u64* rp = tyany_ptr(r);
+    rp[0]=1; if (i<n) bitp_set(rp, i, 1);
+    return r;
+  }
   #define BRUTE(T) \
       i##T* xp = xv;                                                   \
       u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
@@ -96,6 +106,7 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
+  if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
       i##T* xp = xv;                                           \
@@ -189,6 +200,10 @@ B indexOf_c1(B t, B x) {
   
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
+  if (lw == 0) {
+    B r = 1&*(u64*)xv ? not_c1(m_f64(0), x) : x;
+    return shape_c1(m_f64(0), r);
+  }
   #define BRUTE(T) \
       i##T* xp = xv;                                           \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
