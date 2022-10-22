@@ -20,7 +20,7 @@ extern B mul_c2(B,B,B);
   void* ip = tyany_ptr(IN);                                                 \
   void* fp = tyany_ptr(FOR);                                                \
   /* Initialize */                                                          \
-  if (FOR##e==el_i16 && n<ft/64)                                            \
+  if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                               \
        { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                 \
   else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; }  \
   /* Set */                                                                 \
