@@ -74,7 +74,8 @@ B indexOf_c2(B t, B w, B x) {
         u64* wp = bitarr_ptr(w);
         u64 w0 = 1 & wp[0];
         u64 i = bit_find(wp, wia, !w0); decG(w);
-        B r =                         C2i(mul, wia  , C2i(ne,  w0, inc(x)));
+        if (i!=wia) inc(x);
+        B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
         return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
       }
       // TODO O(wia×xia) for small wia or xia
