@@ -6,17 +6,14 @@
 B not_c1(B t, B x);
 B shape_c1(B t, B x);
 
+#include "radix.h"
 #define RADIX_LOOKUP_i32(INIT, SETTAB) \
   /* Count keys */                                                                          \
   for (usz j=0; j<2*rx; j++) c0[j] = 0;                                                     \
-  for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }            \
-  /* Exclusive prefix sum */                                                                \
-  usz s0=0, s1=0;                                                                           \
-  for (usz j=0; j<rx; j++) {                                                                \
-    usz p0 = s0,  p1 = s1;                                                                  \
-    s0 += c0[j];  s1 += c1[j];                                                              \
-    c0[j] = p0;   c1[j] = p1;                                                               \
-  }                                                                                         \
+  c1[0] = -n;                                                                               \
+  for (usz i=0; i<n; i++) { u32 v=v0[i]; (c0+1)[(u8)(v>>24)]++; (c1+1)[(u8)(v>>16)]++; }    \
+  /* Inclusive prefix sum; note c offsets above */                                          \
+  RADIX_SUM_2_u32;                                                                          \
   /* Radix moves */                                                                         \
   for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }  \
   for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }  \
