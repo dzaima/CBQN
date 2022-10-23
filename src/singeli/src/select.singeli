@@ -21,7 +21,7 @@ def gather{def:T, b:B, idx:[4]i32, M & w256{T,64}} = {
 }
 
 
-select{rw, TI, TD}(w0:*u8, x0:*u8, r0:*u8, wl:u64, xl:u64) : u1 = {
+select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   def TIE = i32
   def TDE = tern{width{TD}<32, u32, TD}
   def bulk = minBulk{rw,TIE,TDE}

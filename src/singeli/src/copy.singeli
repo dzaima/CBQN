@@ -18,7 +18,7 @@ def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
 }
 
 
-copy{vw, X, R}(x: *u8, r: *u8, l:u64, xRaw: *u8) : void = {
+copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   assert{l!=0}
   
   def bulk = vw/max{width{X}, width{R}}

@@ -20,7 +20,7 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   }}
 }
 
-bitsel_i{VL,T}(r:*u8, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
+bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
   bitsel{VL, T, *T~~r, bits, trunc{T,e0}, trunc{T,e1}, len}
 }
 

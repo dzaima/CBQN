@@ -24,8 +24,8 @@ static NOINLINE void cmp_err() { if (please_tail_call_err) thrM("Invalid compari
 #include "../gen/cmp.c"
 #pragma GCC diagnostic pop
 
-typedef void (*CmpAAFn)(u64*, u8*, u8*, u64);
-typedef void (*CmpASFn)(u64*, u8*, u64, u64);
+typedef void (*CmpAAFn)(u64*, void*, void*, u64);
+typedef void (*CmpASFn)(u64*, void*, u64, u64);
 #define CMPFN(A,F,S,T) A##_##F##S##_##T
 #define FN_LUT(A,F,S) static const Cmp##S##Fn lut_##A##_##F##S[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
 
@@ -49,7 +49,7 @@ FN_LUT(avx2, le, AS);
       w=tw; x=tx;                        \
     }                                    \
     AL(x);                               \
-    if (ria) lut_avx2_##NAME##AA[we](rp, (u8*)tyany_ptr(w), (u8*)tyany_ptr(x), ria); \
+    if (ria) lut_avx2_##NAME##AA[we](rp, tyany_ptr(w), tyany_ptr(x), ria); \
     decG(w);decG(x); return r;           \
   }                                      \
   bad: return NAME##_rec(swapped, w, x); \
@@ -68,7 +68,7 @@ CMP_AA("≠", "?", ne, swapped=0;)
 #define CMP_SA(NAME, RNAME, PRE) B NAME##_SA(i32 swapped, B w, B x) { PRE \
   u8 xe = TI(x, elType); if (xe==el_B) goto bad; \
   AL(x);                                 \
-  if (ria) lut_avx2_##RNAME##AS[xe](rp, (u8*)tyany_ptr(x), w.u, ria); \
+  if (ria) lut_avx2_##RNAME##AS[xe](rp, tyany_ptr(x), w.u, ria); \
   else dec(w);                           \
   decG(x); return r;                     \
   bad: return NAME##_rec(swapped, w, x); \

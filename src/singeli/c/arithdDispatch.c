@@ -3,8 +3,8 @@
 #include <math.h>
 // #define ARITH_DEBUG 1
 
-typedef u64 (*CheckedFn)(u8* r, u8* w, u8* x, u64 len);
-typedef void (*UncheckedFn)(u8* r, u8* w, u8* x, u64 len);
+typedef u64 (*CheckedFn)(void* r, void* w, void* x, u64 len);
+typedef void (*UncheckedFn)(void* r, void* w, void* x, u64 len);
 #define FOR_ExecAA(F) \
   F(fail) /* first to allow zero-initialization to be fail implicitly */ \
   F(swap) /* swap 𝕨 and 𝕩, then run ex2 */ \
@@ -112,13 +112,13 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     }
     case u_call_bit: {
       u64* rp; r = m_bitarrc(&rp, x);
-      fn->uFn((u8*)rp, tyany_ptr(w), tyany_ptr(x), ia);
+      fn->uFn(rp, tyany_ptr(w), tyany_ptr(x), ia);
       goto decG_ret;
     }
     
     case u_call_wxf64sq: {
       f64* rp; r = m_f64arrc(&rp, x);
-      fn->uFn((u8*)rp, tyany_ptr(w = toF64Any(w)), tyany_ptr(x = toF64Any(x)), ia);
+      fn->uFn(rp, tyany_ptr(w = toF64Any(w)), tyany_ptr(x = toF64Any(x)), ia);
       r = num_squeeze(r);
       goto decG_ret;
     }
@@ -149,7 +149,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
 
 typedef struct DyTableSA DyTableSA;
 typedef bool (*ForBitsel)(DyTableSA*, B w, B* r);
-typedef u64 (*AtomArrFnC)(u8* r, u64 w, u8* x, u64 len);
+typedef u64 (*AtomArrFnC)(void* r, u64 w, void* x, u64 len);
 typedef B (*DyArithChrFn)(DyTableSA*, B, B, usz, u8);
 
 typedef struct {
@@ -173,8 +173,8 @@ bool bad_forBitselNN_SA(DyTableSA* table, B w, B* r) { return false; }
 B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(table->mainFn, w, x); }
 #define bad_chrAtomAS bad_chrAtomSA
 
-u64 failAtomArr1(u8* r, u64 w, u8* x, u64 len) { return 0; }
-u64 failAtomArr2(u8* r, u64 w, u8* x, u64 len) { return 1; }
+u64 failAtomArr1(void* r, u64 w, void* x, u64 len) { return 0; }
+u64 failAtomArr2(void* r, u64 w, void* x, u64 len) { return 1; }
 
 u8 nextType[] = {
   [t_i8arr ] = t_i16arr, [t_c8arr ] = t_c16arr,
@@ -318,10 +318,10 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
 #include "../gen/dyarith.c"
 #pragma GCC diagnostic pop
 
-static void  rootAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = pow(((f64*)x)[i], 1.0/((f64*)w)[i]); }
-static void   powAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =     pow(((f64*)w)[i], ((f64*)x)[i]); }
-static void stileAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
-static void   logAAu_f64_f64_f64(u8* r, u8* w, u8* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
+static void  rootAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = pow(((f64*)x)[i], 1.0/((f64*)w)[i]); }
+static void   powAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =     pow(((f64*)w)[i], ((f64*)x)[i]); }
+static void stileAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =   pfmod(((f64*)x)[i], ((f64*)w)[i]); }
+static void   logAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = log(((f64*)x)[i])/log(((f64*)w)[i]); }
 
 bool add_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f+0); r[1] = m_f64(f+1); return true; }
 bool sub_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f-0); r[1] = m_f64(f-1); return true; }
@@ -349,7 +349,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
   B r = m_f64arrc(&rp, x);
   usz ia = a(x)->ia;
   x = toF64Any(x);
-  orSAc_f64_f64_f64((u8*)rp, w.u, tyany_ptr(x), ia);
+  orSAc_f64_f64_f64(rp, w.u, tyany_ptr(x), ia);
   decG(x);
   return r;
 }

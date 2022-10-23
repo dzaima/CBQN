@@ -12,7 +12,7 @@ def swap{w,x} = {
   x = t
 }
 
-equal{W, X}(w:*u8, x:*u8, l:u64, d:u64) : u1 = {
+equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   def bulk = 256 / width{X}
   if (W!=X) if (d!=0) swap{w,x}
   

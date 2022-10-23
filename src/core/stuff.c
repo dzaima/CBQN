@@ -426,8 +426,8 @@ NOINLINE bool atomEqualF(B w, B x) {
   #include "../singeli/gen/equal.c"
   #pragma GCC diagnostic pop
   
-  typedef bool (*EqFn)(u8* a, u8* b, u64 l, u64 data);
-  bool notEq(u8* a, u8* b, u64 l, u64 data) { return false; }
+  typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
+  bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
   
   #define F(X) avx2_equal_##X
   EqFn eqFns[] = {
@@ -477,10 +477,8 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   
   #if SINGELI
     if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
-      u8* wp = tyany_ptr(w);
-      u8* xp = tyany_ptr(x);
       u64 idx = we*8 + xe;
-      return eqFns[idx](wp, xp, ia, eqFnData[idx]);
+      return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
     }
   #else
     if (((we==el_f64 | we==el_i32) && (xe==el_f64 | xe==el_i32))) {

@@ -67,11 +67,11 @@ B select_c2(B t, B w, B x) {
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
-      // if (we==el_i8  && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 ((u8*)i8any_ptr (w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i16 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i16_32((u8*)i16any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 ((u8*)i32any_ptr(w), (u8*)i8any_ptr (x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32((u8*)i32any_ptr(w), (u8*)i32any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64((u8*)i32any_ptr(w), (u8*)f64any_ptr(x), (u8*)rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i8  && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 (i8any_ptr (w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i16 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i16_32(i16any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 (i32any_ptr(w), i8any_ptr (x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32(i32any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64(i32any_ptr(w), f64any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
     #endif
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
     #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break

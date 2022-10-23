@@ -6,7 +6,7 @@
   #pragma GCC diagnostic ignored "-Wunused-variable"
   #include "../singeli/gen/bits.c"
   #pragma GCC diagnostic pop
-  typedef void (*BitselFn)(u8*, u64*, u64, u64, u64);
+  typedef void (*BitselFn)(void*, u64*, u64, u64, u64);
   static BitselFn bitselFns[] = {
     [0]=avx2_bitsel_8,
     [1]=avx2_bitsel_16,

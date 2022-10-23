@@ -148,12 +148,12 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   }
 }
 
-arithAAc{vw, mode, F, W, X, R}(r:*u8, w:*u8, x:*u8, len:u64) : u64 = {
+arithAAc{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : u64 = {
   arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
   if (mode==1) len
   else 0
 }
-arithAAu{vw, mode, F, W, X, R}(r:*u8, w:*u8, x:*u8, len:u64) : void = {
+arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
   arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
 }
 
@@ -164,7 +164,7 @@ def arithAA{mode, F, W, X, R} = {
 }
 
 # mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed
-arithSAf{vw, mode, F, swap, W, X, R}(r:*u8, w:u64, x:*u8, len:u64) : u64 = {
+arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   # show{fmt_op{F}, swap, mode, W, X, R}
   assert{len>0}
   def bulk = vw / max{width{W}, width{R}}

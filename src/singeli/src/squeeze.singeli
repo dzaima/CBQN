@@ -41,7 +41,7 @@ def fold{F, x:T & w128{T}} = {
 }
 def fold{F, x:T & w256{T}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
-squeeze{vw, X, CHR, B}(x0:*u8, len:Size) : u32 = {
+squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def bulk = vw / width{X}
   def XV = [bulk]X
   def E = tern{X==f64, u32, ty_u{X}}
