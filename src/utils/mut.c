@@ -101,7 +101,7 @@ DEF_S(void, set, f64, q_f64(x), x, (void* a, usz ms, B x), ms, x) { ((f64*)a)[ms
 DEF_G(void, set, B,                (void* a, usz ms, B x), ms, x) { ((  B*)a)[ms] = x; }
 
 DEF_S(void, fill, MAX, false,    x, (void* a, usz ms, B x, usz l), ms, x, l) { err("m_fillG_MAX"); }
-DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p =    (u64*)a; bool v = o2bG(x);
+DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p = (u64*)a; bool v = o2bG(x);
   usz me = ms+l;
   if (ms>>6 == me>>6) {
     u64 m = ((1ULL<<(me&63)) - (1ULL<<(ms&63)));
