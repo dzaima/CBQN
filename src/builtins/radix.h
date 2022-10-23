@@ -13,12 +13,14 @@
 extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
 extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
 #define RADIX_SUM_1_u8   avx2_scan_pluswrap_u8 (c0,c0,  256,0);
+#define RADIX_SUM_1_u32  avx2_scan_pluswrap_u32(c0,c0,  256,0);
 #define RADIX_SUM_2_u8   avx2_scan_pluswrap_u8 (c0,c0,2*256,0);
 #define RADIX_SUM_2_u32  avx2_scan_pluswrap_u32(c0,c0,2*256,0);
 #define RADIX_SUM_4_u8   avx2_scan_pluswrap_u8 (c0,c0,4*256,0);
 #define RADIX_SUM_4_u32  avx2_scan_pluswrap_u32(c0,c0,4*256,0);
 #else
 #define RADIX_SUM_1_u8   RDX_SUM_1(u8)
+#define RADIX_SUM_1_u32  RDX_SUM_1(u32)
 #define RADIX_SUM_2_u8   RDX_SUM_2(u8)
 #define RADIX_SUM_2_u32  RDX_SUM_2(u32)
 #define RADIX_SUM_4_u8   RDX_SUM_4(u8)
@@ -34,3 +36,5 @@ extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v
 #define RADIX_SUM_2_usz  RDX_SUM_2(usz)
 #define RADIX_SUM_4_usz  RDX_SUM_4(usz)
 #endif
+
+u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n); // selfsearch.c
