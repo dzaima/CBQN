@@ -8,6 +8,7 @@
 extern B eq_c2(B,B,B);
 extern B ne_c2(B,B,B);
 extern B or_c2(B,B,B);
+extern B add_c2(B,B,B);
 extern B sub_c2(B,B,B);
 extern B mul_c2(B,B,B);
 
@@ -70,6 +71,7 @@ B indexOf_c2(B t, B w, B x) {
     } else {
       u8 we = TI(w,elType); usz wia = IA(w);
       u8 xe = TI(x,elType); usz xia = IA(x);
+      if (wia == 0) { decG(w); decG(x); return taga(arr_shVec(allZeroes(xia))); }
       if (we==el_bit) {
         u64* wp = bitarr_ptr(w);
         u64 w0 = 1 & wp[0];
@@ -78,7 +80,15 @@ B indexOf_c2(B t, B w, B x) {
         B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
         return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
       }
-      // TODO O(wia×xia) for small wia or xia
+      if (wia<=(we<=el_i16?4:16) && xia>16 && we<el_B && xe<el_B) {
+        SGetU(w);
+        #define XEQ(I) C2(ne, GetU(w,I), inc(x))
+        B r = XEQ(wia-1);
+        for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
+        #undef XEQ
+        decG(w); decG(x); return r;
+      }
+      // TODO O(wia×xia) for small xia
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
         B r;
         TABLE(w, x, i32, wia, i)
@@ -132,7 +142,7 @@ B memberOf_c2(B t, B w, B x) {
   many: {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
-    if (xia == 0) { Arr* ba=allZeroes(wia); arr_shVec(ba); r=taga(ba); decG(w); goto dec_x; }
+    if (xia == 0) { r=taga(arr_shVec(allZeroes(wia))); decG(w); goto dec_x; }
     #define WEQ(V) C2(eq, inc(w), V)
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
@@ -141,7 +151,7 @@ B memberOf_c2(B t, B w, B x) {
       if (bit_has(xp, xia, !x0)) r = C2(or, r, WEQ(m_usz(!x0)));
       decG(w); goto dec_x;
     }
-    if (xia<=16 && wia>16 && we<el_B && xe<el_B) {
+    if (xia<=(xe==el_i16?8:16) && wia>16 && we<el_B && xe<el_B) {
       SGetU(x);
       r = WEQ(GetU(x,0));
       for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
