@@ -2,12 +2,10 @@
 
 // Radix sorting utilities
 // These are leaky macros and assume counts are c0, c1,...
-// which must be adjacent in memory
+// which must be adjacent in memory. Search functions will also need
+// #define GRADE_UD(U,D) U
+// to do the appropriate sums for an ascending radix sort.
 
-#ifndef GRADE_UD
-  // Search functions need this: they always sort up
-  #define GRADE_UD(U,D) U
-#endif
 #define RDX_PRE(K) s##K=c##K[j]+=s##K
 #define RDX_SUM_1(T)                                  T s0=0;                   for(usz j=0;j<256;j++) { RDX_PRE(0); }
 #define RDX_SUM_2(T)  GRADE_UD(c1[0]=0;,)             T s0=0, s1=0;             for(usz j=0;j<256;j++) { RDX_PRE(0); RDX_PRE(1); }

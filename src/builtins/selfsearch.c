@@ -6,6 +6,7 @@
 B not_c1(B t, B x);
 B shape_c1(B t, B x);
 
+#define GRADE_UD(U,D) U
 #include "radix.h"
 u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   usz rx = 256;
@@ -19,6 +20,7 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   if ((c0+1)[(u8)(v>>16)] < n) {           RADIX_SUM_1_u32; return 1; }
   return 0;
 }
+#undef GRADE_UD
 #define RADIX_LOOKUP_32(INIT, SETTAB) \
   u8 bytes = radix_offsets_2_u32(c0, v0, n);                                                    \
   usz tim = tn/(64/sizeof(*tab)); /* sparse table init max */                                   \
