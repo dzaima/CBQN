@@ -74,6 +74,7 @@ extern void (*const avx2_scan_min16)(int16_t* v0,int16_t* v1,uint64_t v2);
   TFREE(c0)
 
 // Radix sorting
+#include "radix.h"
 #define INC(P,I) GRADE_UD((P+1)[I]++,P[I]--)
 #define ROFF GRADE_UD(1,0) // Radix offset
 
@@ -81,7 +82,7 @@ extern void (*const avx2_scan_min16)(int16_t* v0,int16_t* v1,uint64_t v2);
 #define CHOOSE_SG_GRADE(S,G) G
 
 #define RADIX_SORT_i8(T, TYP) \
-  TALLOC(T, c0, 256+ROFF); T* c0o=c0+128;    \
+  TALLOC(T, c0, 256+ROFF); T* c0o=c0+128;  \
   for (usz j=0; j<256; j++) c0[j]=0;       \
   GRADE_UD(,c0[0]=n;)                      \
   for (usz i=0; i<n; i++) INC(c0o,xp[i]);  \
@@ -131,37 +132,6 @@ extern void (*const avx2_scan_min16)(int16_t* v0,int16_t* v1,uint64_t v2);
   for (usz i=0; i<n; i++) { i32 v=r0[i]; T c=c3o[(i8)(v>>24)]++;          rp[c]=g0[i]; } \
   )                                                                          \
   TFREE(alloc)
-
-#define PRE(K) s##K=c##K[j]+=s##K
-#define RADIX_SUM_1(T)                                  T s0=0;                   for(usz j=0;j<256;j++) { PRE(0); }
-#define RADIX_SUM_2(T)  GRADE_UD(c1[0]=0;,)             T s0=0, s1=0;             for(usz j=0;j<256;j++) { PRE(0); PRE(1); }
-#define RADIX_SUM_4(T)  GRADE_UD(c1[0]=c2[0]=c3[0]=0;,) T s0=0, s1=0, s2=0, s3=0; for(usz j=0;j<256;j++) { PRE(0); PRE(1); PRE(2); PRE(3); }
-
-#if SINGELI
-extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
-extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
-#define RADIX_SUM_1_u8   avx2_scan_pluswrap_u8 (c0,c0,  256,0);
-#define RADIX_SUM_2_u8   avx2_scan_pluswrap_u8 (c0,c0,2*256,0);
-#define RADIX_SUM_2_u32  avx2_scan_pluswrap_u32(c0,c0,2*256,0);
-#define RADIX_SUM_4_u8   avx2_scan_pluswrap_u8 (c0,c0,4*256,0);
-#define RADIX_SUM_4_u32  avx2_scan_pluswrap_u32(c0,c0,4*256,0);
-#else
-#define RADIX_SUM_1_u8   RADIX_SUM_1(u8)
-#define RADIX_SUM_2_u8   RADIX_SUM_2(u8)
-#define RADIX_SUM_2_u32  RADIX_SUM_2(u32)
-#define RADIX_SUM_4_u8   RADIX_SUM_4(u8)
-#define RADIX_SUM_4_u32  RADIX_SUM_4(u32)
-#endif
-
-#if SINGELI && !USZ_64
-#define RADIX_SUM_1_usz  avx2_scan_pluswrap_u32(c0,c0,  256,0);
-#define RADIX_SUM_2_usz  avx2_scan_pluswrap_u32(c0,c0,2*256,0);
-#define RADIX_SUM_4_usz  avx2_scan_pluswrap_u32(c0,c0,4*256,0);
-#else
-#define RADIX_SUM_1_usz  RADIX_SUM_1(usz)
-#define RADIX_SUM_2_usz  RADIX_SUM_2(usz)
-#define RADIX_SUM_4_usz  RADIX_SUM_4(usz)
-#endif
 
 #define SORT_C1 CAT(GRADE_UD(and,or),c1)
 B SORT_C1(B t, B x) {
@@ -413,17 +383,6 @@ done:
 #undef RADIX_SORT_i8
 #undef RADIX_SORT_i16
 #undef RADIX_SORT_i32
-#undef RADIX_SUM_1
-#undef RADIX_SUM_2
-#undef RADIX_SUM_4
-#undef RADIX_SUM_1_u8
-#undef RADIX_SUM_1_usz
-#undef RADIX_SUM_2_u8
-#undef RADIX_SUM_2_usz
-#undef RADIX_SUM_2_u32
-#undef RADIX_SUM_4_u8
-#undef RADIX_SUM_4_usz
-#undef RADIX_SUM_4_u32
 #undef GRADE_CAT
 #undef GRADE_NEG
 #undef GRADE_UD

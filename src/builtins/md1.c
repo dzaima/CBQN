@@ -320,8 +320,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       u64* xp = bitarr_ptr(x);
       if (rtid==n_add) { B r = m_f64(bit_sum (xp, ia)); decG(x); return r; }
       if (rtid==n_sub) { B r = m_f64(bit_diff(xp, ia)); decG(x); return r; }
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { bool r=1; for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; decG(x); return m_i32(r); }
-      if (rtid==n_or  |               rtid==n_ceil ) { bool r=0; for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; decG(x); return m_i32(r); }
+      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { B r = m_i32(!bit_has(xp, ia, 0)); decG(x); return r; }
+      if (rtid==n_or  |               rtid==n_ceil ) { B r = m_i32( bit_has(xp, ia, 1)); decG(x); return r; }
       if (rtid==n_ne) { bool r=fold_ne(xp, ia)          ; decG(x); return m_i32(r); }
       if (rtid==n_eq) { bool r=fold_ne(xp, ia) ^ (1&~ia); decG(x); return m_i32(r); }
       goto base;
@@ -383,8 +383,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       if (rtid==n_add) { B r = m_f64(wi            + bit_sum (xp, ia)); decG(x); return r; }
       if (rtid==n_sub) { B r = m_f64((ia&1?-wi:wi) + bit_diff(xp, ia)); decG(x); return r; }
       if (wi!=(wi&1)) goto base;
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { bool r=wi; if ( r) { for (usz i=0; i<(ia>>6); i++) if (~xp[i]){r=0;break;} if(~bitp_l1(xp,ia))r=0; } decG(x); return m_i32(r); }
-      if (rtid==n_or  |               rtid==n_ceil ) { bool r=wi; if (!r) { for (usz i=0; i<(ia>>6); i++) if ( xp[i]){r=1;break;} if( bitp_l0(xp,ia))r=1; } decG(x); return m_i32(r); }
+      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { B r = m_i32(wi && !bit_has(xp, ia, 0)); decG(x); return r; }
+      if (rtid==n_or  |               rtid==n_ceil ) { B r = m_i32(wi ||  bit_has(xp, ia, 1)); decG(x); return r; }
       if (rtid==n_ne) { bool r=wi^fold_ne(xp, ia)         ; decG(x); return m_i32(r); }
       if (rtid==n_eq) { bool r=wi^fold_ne(xp, ia) ^ (1&ia); decG(x); return m_i32(r); }
       goto base;

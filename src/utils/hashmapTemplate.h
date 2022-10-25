@@ -88,6 +88,10 @@ static inline bool N(has) (Map* m, KT k) {
     u64 p = N(find)(m, k, h1, h2, &has);
     return has? m->a[p].val : def;
   }
+  static inline u64 N(getQ) (Map* m, KT k, bool* had) {
+    u64 h1 = H1(k); u64 h2 = H2(k, h1);
+    return N(find)(m, k, h1, h2, had);
+  }
 #endif
 
 

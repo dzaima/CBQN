@@ -20,6 +20,7 @@
 #include "../builtins/group.c"
 #include "../builtins/sysfn.c"
 #include "../builtins/sort.c"
+#include "../builtins/search.c"
 #include "../builtins/selfsearch.c"
 #include "../builtins/arithm.c"
 #include "../builtins/arithd.c"

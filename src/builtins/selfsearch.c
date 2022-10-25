@@ -3,6 +3,58 @@
 #include "../utils/mut.h"
 #include "../utils/talloc.h"
 
+B not_c1(B t, B x);
+B shape_c1(B t, B x);
+
+#define GRADE_UD(U,D) U
+#include "radix.h"
+u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
+  usz rx = 256;
+  usz* c1 = c0 + rx;
+  // Count keys
+  for (usz j=0; j<2*rx+1; j++) c0[j] = 0;
+  for (usz i=0; i<n; i++) { u32 v=v0[i]; (c0+1)[(u8)(v>>16)]++; (c1+1)[(u8)(v>>24)]++; }
+  u32 v=v0[0];
+  // Inclusive prefix sum; note c offsets above
+  if ((c1+1)[(u8)(v>>24)] < n) { c1[0]-=n; RADIX_SUM_2_u32; return 2; }
+  if ((c0+1)[(u8)(v>>16)] < n) {           RADIX_SUM_1_u32; return 1; }
+  return 0;
+}
+#undef GRADE_UD
+#define RADIX_LOOKUP_32(INIT, SETTAB) \
+  u8 bytes = radix_offsets_2_u32(c0, v0, n);                                                    \
+  usz tim = tn/(64/sizeof(*tab)); /* sparse table init max */                                   \
+  if (bytes==0) {                                                                               \
+    if (n<tim) for (usz i=0; i< n; i++) tab[(u16)v0[i]]=INIT;                                   \
+    else       for (usz j=0; j<tn; j++) tab[j]=INIT;                                            \
+    for (usz i=0; i<n; i++) { u32 j=(u16)v0[i]; r0[i]=tab[j]; tab[j]SETTAB; }                   \
+  } else {                                                                                      \
+    if (bytes==1) { v1=v2; r1=r2; }                                                             \
+    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>16); usz c=c0[k]++; v1[c]=v; }    \
+    if (bytes==1) {                                                                             \
+      /* Table lookup, getting radix boundaries from c0 */                                      \
+      for (usz i=0; i<n; ) {                                                                    \
+        usz l=c0[(u8)(v1[i]>>16)];                                                              \
+        if (l-i < tim) for (usz ii=i; ii<l; ii++) tab[(u16)v1[ii]]=INIT;                        \
+        else           for (usz  j=0; j<tn;  j++) tab[j]=INIT;                                  \
+        for (; i<l; i++) { u32 j=(u16)v1[i]; r1[i]=tab[j]; tab[j]SETTAB; }                      \
+      }                                                                                         \
+    } else {                                                                                    \
+      /* Radix move */                                                                          \
+      for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>24); usz c=c1[k]++; v2[c]=v; }  \
+      /* Table lookup */                                                                        \
+      u32 tv=v2[0]>>16; v2[n]=~v2[n-1];                                                         \
+      for (usz l=0, i=0; l<n; ) {                                                               \
+        for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=INIT; } \
+        for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]SETTAB; }                      \
+      }                                                                                         \
+      /* Radix unmove; back up c0 to account for increments in radix step  */                   \
+      *--c1=0; for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }                               \
+    }                                                                                           \
+    *--c0=0; for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }                                 \
+  }                                                                                             \
+  decG(x); TFREE(alloc);
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   usz n = *SH(x);
@@ -10,6 +62,13 @@ B memberOf_c1(B t, B x) {
   
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
+  if (lw == 0) {
+    usz i = bit_find(xv, n, 1 &~ *(u64*)xv); decG(x);
+    B r = taga(arr_shVec(allZeroes(n)));
+    u64* rp = tyany_ptr(r);
+    rp[0]=1; if (i<n) bitp_set(rp, i, 1);
+    return r;
+  }
   #define BRUTE(T) \
       i##T* xp = xv;                                                   \
       u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
@@ -51,31 +110,8 @@ B memberOf_c1(B t, B x) {
     u8  *r2 = (u8 *)(v2);      //  n              [+.....]       r2    n      ##
     u8  *r1 = (u8 *)(k1+n);    //  n                   [+..]     r1    n                ##
     u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
-    
-    // Count keys
-    for (usz j=0; j<2*rx; j++) c0[j] = 0;
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
-    // Exclusive prefix sum
-    usz s0=0, s1=0;
-    for (usz j=0; j<rx; j++) {
-      usz p0 = s0,  p1 = s1;
-      s0 += c0[j];  s1 += c1[j];
-      c0[j] = p0;   c1[j] = p1;
-    }
-    // Radix moves
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
-    for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
-    // Table lookup
-    u32 tv=v2[0]>>16; v2[n]=~v2[n-1];
-    for (usz l=0, i=0; l<n; ) {
-      for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=1; }
-      for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]; tab[j]=0; }
-    }
-    // Radix unmoves
-    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
-    for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
-    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
-    decG(x); TFREE(alloc);
+   
+    RADIX_LOOKUP_32(1, =0)
     return num_squeeze(r);
   }
   #undef BRUTE
@@ -96,6 +132,7 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
+  if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
       i##T* xp = xv;                                           \
@@ -127,7 +164,6 @@ B count_c1(B t, B x) {
     i32* r0; B r = m_i32arrv(&r0, n);
     
     TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
-    
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
     usz *c0 = (usz*)(alloc)+1; // rx   [+++................]    c0    rx  #
@@ -140,30 +176,7 @@ B count_c1(B t, B x) {
     u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n                ########
     u32 *tab= (u32*)v1;        // tn              [+]           tab 4*tn                ###########
     
-    // Count keys
-    for (usz j=0; j<2*rx; j++) c0[j] = 0;
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; c0[(u8)(v>>24)]++; c1[(u8)(v>>16)]++; }
-    // Exclusive prefix sum
-    usz s0=0, s1=0;
-    for (usz j=0; j<rx; j++) {
-      usz p0 = s0,  p1 = s1;
-      s0 += c0[j];  s1 += c1[j];
-      c0[j] = p0;   c1[j] = p1;
-    }
-    // Radix moves
-    for (usz i=0; i<n; i++) { u32 v=v0[i]; u8 k=k0[i]=(u8)(v>>24); usz c=c0[k]++; v1[c]=v; }
-    for (usz i=0; i<n; i++) { u32 v=v1[i]; u8 k=k1[i]=(u8)(v>>16); usz c=c1[k]++; v2[c]=v; }
-    // Table lookup
-    u32 tv=v2[0]>>16; v2[n]=~v2[n-1];
-    for (usz l=0, i=0; l<n; ) {
-      for (;    ; l++) { u32 v=v2[l], t0=tv; tv=v>>16; if (tv!=t0) break; tab[(u16)v]=0; }
-      for (; i<l; i++) { u32 j=(u16)v2[i]; r2[i]=tab[j]++; }
-    }
-    // Radix unmoves
-    *--c0 = *--c1 = 0; // Move back one to account for increments in radix step
-    for (usz i=0; i<n; i++) { r1[i]=r2[c1[k1[i]]++]; }
-    for (usz i=0; i<n; i++) { r0[i]=r1[c0[k0[i]]++]; }
-    decG(x); TFREE(alloc);
+    RADIX_LOOKUP_32(0, ++)
     return num_squeeze(r);
   }
   #undef BRUTE
@@ -189,6 +202,10 @@ B indexOf_c1(B t, B x) {
   
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
+  if (lw == 0) {
+    B r = 1&*(u64*)xv ? not_c1(m_f64(0), x) : x;
+    return shape_c1(m_f64(0), r);
+  }
   #define BRUTE(T) \
       i##T* xp = xv;                                           \
       i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
