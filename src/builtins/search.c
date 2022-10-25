@@ -76,19 +76,18 @@ B indexOf_c2(B t, B w, B x) {
         u64* wp = bitarr_ptr(w);
         u64 w0 = 1 & wp[0];
         u64 i = bit_find(wp, wia, !w0); decG(w);
-        if (i!=wia) inc(x);
+        if (i!=wia) incG(x);
         B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
         return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
       }
       if (wia<=(we<=el_i16?4:16) && xia>16 && we<el_B && xe<el_B) {
         SGetU(w);
-        #define XEQ(I) C2(ne, GetU(w,I), inc(x))
+        #define XEQ(I) C2(ne, GetU(w,I), incG(x))
         B r = XEQ(wia-1);
         for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
         #undef XEQ
         decG(w); decG(x); return r;
       }
-      // TODO O(wia×xia) for small xia
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
         B r;
         TABLE(w, x, i32, wia, i)
@@ -132,8 +131,8 @@ B memberOf_c2(B t, B w, B x) {
   single: {
     usz xia = IA(x);
     SGetU(x)
-    for (usz i = 0; i < xia; i++) if (equal(GetU(x, i), w)) { r = inc(enclosed_1); goto dec_wx; }
-    r = inc(enclosed_0);
+    for (usz i = 0; i < xia; i++) if (equal(GetU(x, i), w)) { r = incG(enclosed_1); goto dec_wx; }
+    r = incG(enclosed_0);
     dec_wx:; dec(w);
     goto dec_x;
   }
@@ -143,7 +142,7 @@ B memberOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (xia == 0) { r=taga(arr_shVec(allZeroes(wia))); decG(w); goto dec_x; }
-    #define WEQ(V) C2(eq, inc(w), V)
+    #define WEQ(V) C2(eq, incG(w), V)
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
       u64 x0 = 1 & xp[0];
