@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../utils/talloc.h"
+#include "../utils/calls.h"
 #include "../builtins.h"
 
 extern B ud_c1(B, B);
@@ -95,10 +96,15 @@ B group_c2(B t, B w, B x) {
       if (xia>64 && notB && !bits && change<(xia*width)/32) {
         #define C1(F,X  ) F##_c1(m_f64(0),X  )
         #define C2(F,X,W) F##_c2(m_f64(0),X,W)
-        if (wia>xia) w = C2(take, m_f64(xia), w);
-        B c = C2(ne, C2(drop, m_f64(-1), inc(w)),
-                     C2(drop, m_f64( 1), inc(w)));
-        B ind = C1(slash, C2(join, m_f64(-1!=IGetU(w,0).f), c));
+        
+        u64* mp; B m = m_bitarrv(&mp, xia);
+        u8* wp0 = tyany_ptr(w);
+        we = TI(w,elType);
+        u8 wew = elWidth(we);
+        CMP_AA_IMM(ne, we, mp, wp0-wew, wp0, xia);
+        bitp_set(mp, 0, -1!=o2fG(IGetU(w,0)));
+        
+        B ind = C1(slash, m);
         w = C2(select, inc(ind), w);
         #undef C1
         #undef C2
