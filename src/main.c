@@ -31,7 +31,7 @@ static NOINLINE void repl_init() {
 #if USE_REPLXX
   #include <replxx.h>
   #include <errno.h>
-  #include "utils/mut.h"
+  #include "utils/calls.h"
   #include "utils/cstr.h"
   i8 theme0[12][3] = { // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
     [ 0] = {-1,-1,-1}, // default
@@ -73,12 +73,12 @@ static NOINLINE void repl_init() {
   static bool chr_num0(u32 c) { return chr_dig(c) || c==U'¯' || c==U'π' || c==U'∞'; }
   static bool chr_name0(u32 c) { return chr_low(c) || chr_upp(c) || c=='_'; }
   static bool chr_nameM(u32 c) { return chr_name0(c) || chr_num0(c); }
-  static u32* chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»";
+  static u32* chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»𝔽𝔾𝕎𝕏𝕊";
   static u32* chrs_m1 = U"`˜˘¨⁼⌜´˝˙";
   static u32* chrs_m2 = U"∘⊸⟜○⌾⎉⚇⍟⊘◶⎊";
   static u32* chrs_lit = U"⟨⟩[]·@‿";
   static u32* chrs_dmd = U"←↩,⋄→⇐";
-  static u32* chrs_blk = U"{}𝕨𝕩𝔽𝔾𝕎𝕏𝕗𝕘𝕣ℝ𝕤𝕊:?;";
+  static u32* chrs_blk = U"{}𝕨𝕩𝕗𝕘𝕣𝕤:?;";
   NOINLINE bool chr_in(u32 val, u32* chrs) {
     while(*chrs) if (val == *(chrs++)) return true;
     return false;
