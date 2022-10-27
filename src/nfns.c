@@ -1,7 +1,6 @@
 #include "core.h"
 #include "h.h"
 #include "nfns.h"
-#include "utils/mut.h"
 
 static u32 nfn_curr;
 static B nfn_list;

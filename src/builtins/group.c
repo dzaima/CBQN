@@ -1,6 +1,5 @@
 #include "../core.h"
 #include "../utils/talloc.h"
-#include "../utils/mut.h"
 #include "../builtins.h"
 
 extern B ud_c1(B, B);

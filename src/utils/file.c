@@ -3,7 +3,6 @@
 #include <errno.h>
 #include "../core.h"
 #include "file.h"
-#include "mut.h"
 #include "talloc.h"
 #include "cstr.h"
 

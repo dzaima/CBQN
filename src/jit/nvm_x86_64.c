@@ -4,7 +4,6 @@
 #include "../ns.h"
 #include "../utils/file.h"
 #include "../utils/talloc.h"
-#include "../utils/mut.h"
 #include "../utils/wyhash.h"
 #include "../vm.h"
 

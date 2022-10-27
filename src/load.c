@@ -1,5 +1,4 @@
 #include "core.h"
-#include "utils/mut.h"
 #include "utils/file.h"
 #include "vm.h"
 #include "ns.h"

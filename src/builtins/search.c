@@ -1,6 +1,5 @@
 #include "../core.h"
 #include "../utils/hash.h"
-#include "../utils/mut.h"
 #include "../utils/talloc.h"
 
 #define C2(F,X,W) F##_c2(m_f64(0),X,W)

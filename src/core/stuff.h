@@ -151,6 +151,8 @@ static bool elInt(u8 x) {
 
 // string stuff
 
+B vec_addN(B w, B x); // consumes both; fills may be wrong
+B vec_join(B w, B x); // consumes both
 i32 num_fmt(char buf[30], f64 x);
 #define NUM_FMT_BUF(N,X) char N[30]; num_fmt(N, X);
 B append_fmt(B s, char* p, ...);

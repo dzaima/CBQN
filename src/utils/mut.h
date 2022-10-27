@@ -1,4 +1,5 @@
 #pragma once
+#include "calls.h"
 
 /* Usage:
 
@@ -14,8 +15,6 @@ Methods ending with G expect that mut_init has been called with a type that can 
 */
 typedef struct Mut Mut;
 typedef struct MutFns MutFns;
-typedef void (*M_CopyF)(void*, usz, B, usz, usz);
-typedef void (*M_FillF)(void*, usz, B, usz);
 typedef void (*M_SetF)(void*, usz, B);
 typedef B (*M_GetF)(Mut*, usz);
 struct MutFns {
@@ -156,14 +155,7 @@ static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   #undef RDFo
 }
 
-B vec_join(B w, B x); // consumes both
 
-
-extern M_CopyF copyFns[el_MAX];
-#define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
-
-extern M_FillF fillFns[el_MAX];
-#define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
 
 // if `consume==true`, consumes w,x and expects both args to be vectors
 // else, doesn't consume x, and decrements refcount of w iif *reusedW (won't free because the result will be w)
@@ -232,7 +224,6 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
   return true;
 }
 B vec_addF(B w, B x);
-B vec_addN(B w, B x); // vec_add but not inlined
 static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
   return vec_addF(w, x);

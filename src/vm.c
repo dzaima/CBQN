@@ -4,7 +4,6 @@
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"
-#include "utils/mut.h"
 #include "utils/interrupt.h"
 
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
@@ -1599,6 +1598,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
   
+  if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if CATCH_ERRORS
   if (cf>cfStart) { // something wants to catch errors
     cf--;
@@ -1606,7 +1606,6 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     B* gStackNew = gStackStart + cf->gsDepth;
     assert(gStackNew<=gStack);
     while (gStack!=gStackNew) dec(*--gStack);
-    if (!rethrow) envPrevHeight = envCurr-envStart + 1;
     unwindEnv(envStart + cf->envDepth - 1);
     
     
@@ -1617,7 +1616,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
 #endif
     assert(cf==cfStart);
     fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n',stderr); fflush(stderr);
-    Env* envEnd = envCurr+1;
+    Env* envEnd = envStart+envPrevHeight;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
     #ifdef DEBUG

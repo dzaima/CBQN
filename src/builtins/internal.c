@@ -1,5 +1,4 @@
 #include "../core.h"
-#include "../utils/mut.h"
 #include "../utils/file.h"
 #include "../builtins.h"
 #include "../ns.h"
@@ -276,8 +275,10 @@ B eequal_c2(B t, B w, B x) {
   dec(w); dec(x);
   return m_i32(r);
 }
-      
 
+#ifdef TEST_BITCPY
+  #include "../utils/mut.h"
+#endif
 B internalTemp_c1(B t, B x) {
   #ifdef TEST_BITCPY
   SGetU(x)
@@ -286,6 +287,9 @@ B internalTemp_c1(B t, B x) {
   return x;
 }
 
+#ifdef TEST_MUT
+  #include "../utils/calls.h"
+#endif
 B internalTemp_c2(B t, B w, B x) {
   #ifdef TEST_MUT
   SGetU(x)
