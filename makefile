@@ -240,7 +240,7 @@ preSingeliBin:
 		git submodule update --init; \
 	fi
 	@echo "pre-singeli build:"
-	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
+	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
 
 
 build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c neq.c slash.c constrep.c bits.c}
