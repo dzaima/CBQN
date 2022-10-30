@@ -4,6 +4,7 @@
 
 B not_c1(B t, B x);
 B shape_c1(B t, B x);
+B slash_c2(B t, B w, B x);
 
 #define GRADE_UD(U,D) U
 #include "radix.h"
@@ -192,7 +193,6 @@ B count_c1(B t, B x) {
   return r;
 }
 
-extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
   usz n = *SH(x);
@@ -215,6 +215,13 @@ B indexOf_c1(B t, B x) {
         rp[i]=s; u+=u==s;                                      \
       }                                                        \
       decG(x); TFREE(uniq); return r;
+  #define DOTAB(T) \
+    i32 u=0;                                                   \
+    for (usz i=0; i<n; i++) {                                  \
+      T j=xp[i]; i32 t=tab[j];                                 \
+      if (t==n) tab[j]=u++;                                    \
+      rp[i]=tab[j];                                            \
+    }
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
     u##T* xp = (u##T*)xv;                                      \
@@ -222,11 +229,7 @@ B indexOf_c1(B t, B x) {
     TALLOC(i32, tab, tn);                                      \
     if (T>8 && n<tn/16) for (usz i=0; i<n;  i++) tab[xp[i]]=n; \
     else                for (usz j=0; j<tn; j++) tab[j]=n;     \
-    i32 u=0;                                                   \
-    for (usz i=0; i<n;  i++) {                                 \
-      u##T j=xp[i]; i32 t=tab[j];                              \
-      if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;                \
-    }                                                          \
+    DOTAB(u##T)                                                \
     decG(x); TFREE(tab);                                       \
     return num_squeeze(r)
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
@@ -243,22 +246,17 @@ B indexOf_c1(B t, B x) {
       if (c>max) max = c;
     }
     i64 dst = 1 + (max-(i64)min);
-    if ((dst<n*5 || dst<50) && min!=I32_MIN) {
+    if (dst<n*5 || dst<50) {
       i32* rp; B r = m_i32arrv(&rp, n);
-      TALLOC(i32, tmp, dst);
-      for (i64 i = 0; i < dst; i++) tmp[i] = I32_MIN;
-      i32* tc = tmp-min;
-      i32 ctr = 0;
-      for (usz i = 0; i < n; i++) {
-        i32 c = xp[i];
-        if (tc[c]==I32_MIN) tc[c] = ctr++;
-        rp[i] = tc[c];
-      }
+      TALLOC(i32, tmp, dst); i32* tab = tmp-min;
+      for (i64 i = 0; i < dst; i++) tmp[i] = n;
+      DOTAB(i32)
       decG(x); TFREE(tmp);
       return r;
     }
   }
   #undef BRUTE
+  #undef DOTAB
   
   if (RNK(x)>1) x = toCells(x);
   i32* rp; B r = m_i32arrv(&rp, n);
@@ -274,8 +272,6 @@ B indexOf_c1(B t, B x) {
   return r;
 }
 
-B slash_c2(B t, B w, B x);
-extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
