@@ -104,11 +104,62 @@ B memberOf_c1(B t, B x) {
   if (lw == 4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   if (lw == 5) {
-    if (n<=32) { BRUTE(32); }
+    if (n<=12) { BRUTE(32); }
+
+    // Resizable hash table, fall back to radix lookup
+    u32* xp = (u32*)xv;
+    i8* rp; B r = m_i8arrv(&rp, n);
+    usz log = 64 - CLZ(n);
+    usz msl = (64 - CLZ(n+n/2)) + 1; if (msl>18) msl=18;
+    usz sh = 32 - (msl<14? msl : 14); // Shift to fit to table
+    usz sz = 1 << (32 - sh); // Initial size
+    usz msz = 1 << msl;      // Max sz
+    usz b = 64;  // Block size
+    // Resize or abort if more than 1/2^thresh collisions/element
+    #define THRESH sz==msz? 1 : sz>=(1<<13)? 2 : 3
+    usz thresh = THRESH;
+    // Filling e slots past the end requires e*(e+1)/2 collisions, so
+    // n entries with 1/2 each can fill <sqrt(n/4)
+    usz ext = n<=b? n : b + (1 << ((log-2)/2));
+    TALLOC(u32, hash0, msz+ext); u32* hash = hash0 + msz-sz;
+    u32 x0 = hash32(xp[0]); rp[0] = 1;
+    for (u64 i = 0; i < sz+ext; i++) hash[i] = x0;
+    usz cc = 0; // Collision counter
+    usz i=1; while (1) {
+      usz e = n-i>b? i+b : n;
+      for (; i < e; i++) {
+        u32 h = hash32(xp[i]); u32 j0 = h>>sh, j = j0; u32 k;
+        while (k=hash[j], k!=h & k!=x0) j++;
+        cc += j-j0;
+        hash[j] = h;
+        rp[i] = k != h;
+      }
+      if (i == n) break;
+      if (cc >= e>>thresh) {
+        if (sz == msz) break; // Abort
+        // Resize hash
+        usz m = 1 + (sz < msz/4);
+        sh -= m;
+        usz dif = sz; sz <<= m; dif = sz-dif;
+        hash -= dif;
+        usz j = 0;
+        for (; j < dif; j++) hash[j] = x0;
+        for (; j < sz + ext; j++) {
+          u32 h = hash[j]; if (h==x0) continue; hash[j] = x0;
+          u32 k = h>>sh; while (hash[k]!=x0) k++;
+          hash[k] = h;
+        }
+        thresh = THRESH;
+      }
+    }
+    #undef THRESH
+    TFREE(hash0);
+    if (i==n) { decG(x); return taga(cpyBitArr(r)); }
+
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)xv;
-    i8* r0; B r = m_i8arrv(&r0, n);
+    i8* r0 = rp;
     
     TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
@@ -124,7 +175,7 @@ B memberOf_c1(B t, B x) {
     u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
    
     RADIX_LOOKUP_32(1, =0)
-    return num_squeeze(r);
+    return taga(cpyBitArr(r));
   }
   #undef BRUTE
   
