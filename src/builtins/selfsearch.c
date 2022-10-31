@@ -6,6 +6,18 @@ B not_c1(B t, B x);
 B shape_c1(B t, B x);
 B slash_c2(B t, B w, B x);
 
+#if defined(__SSE4_2__)
+static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
+#else
+// Murmur3
+static inline u32 hash32(u32 x) {
+  x ^= x >> 16; x *= 0x85ebca6b;
+  x ^= x >> 13; x *= 0xc2b2ae35;
+  x ^= x >> 16;
+  return x;
+}
+#endif
+
 #define GRADE_UD(U,D) U
 #include "radix.h"
 u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
@@ -237,7 +249,9 @@ B indexOf_c1(B t, B x) {
   #undef LOOKUP
   
   if (lw==5) {
-    if (n<32) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
+    B r;
+    i32* rp; r = m_i32arrv(&rp, n);
     i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < n; i++) {
@@ -247,13 +261,29 @@ B indexOf_c1(B t, B x) {
     }
     i64 dst = 1 + (max-(i64)min);
     if (dst<n*5 || dst<50) {
-      i32* rp; B r = m_i32arrv(&rp, n);
       TALLOC(i32, tmp, dst); i32* tab = tmp-min;
       for (i64 i = 0; i < dst; i++) tmp[i] = n;
       DOTAB(i32)
-      decG(x); TFREE(tmp);
-      return r;
+      TFREE(tmp);
+    } else {
+      u64 sz = 2ull << (64 - CLZ(n+n/2));
+      TALLOC(u32, hash, 2*sz); u32* val = hash + sz;
+      u32 mask = sz-1;
+      u32 x0 = hash32(xp[0]), h0 = x0&mask; rp[0] = 0;
+      for (usz j=h0, e=sz<h0+n?sz:h0+n; j<e; j++) val[j] = 0;
+      if (h0+n>sz) for (usz j=0; j<h0+n-sz; j++) val[j] = 0;
+      for (u64 i = 0; i < sz; i++) hash[i] = x0;
+      u32 ctr = 1;
+      for (usz i = 1; i < n; i++) {
+        u32 h = hash32(xp[i]); u32 j = h; u32 k;
+        while (j&=mask, k=hash[j], k!=h & k!=x0) j++;
+        if (k != h) { val[j] = ctr++; hash[j] = h; }
+        rp[i] = val[j];
+      }
+      TFREE(hash);
     }
+    decG(x);
+    return r;
   }
   #undef BRUTE
   #undef DOTAB
