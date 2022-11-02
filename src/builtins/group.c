@@ -206,7 +206,10 @@ B group_c2(B t, B w, B x) {
       SLOW2("𝕨⊔𝕩", w, x);
       SGetU(w)
       i64 ria = wia==xia? 0 : o2i64(GetU(w, xia));
-      if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+      if (ria<0) {
+        if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+        ria = 0;
+      }
       ria--;
       for (usz i = 0; i < xia; i++) {
         B cw = GetU(w, i);
