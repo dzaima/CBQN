@@ -51,7 +51,7 @@ CMP_REC(ne, ne, swapped=0;)
 typedef void (*CmpAAFn)(u64*, void*, void*, u64);
 typedef void (*CmpASFn)(u64*, void*, u64, u64);
 #define CMPFN(A,F,S,T) A##_##F##S##_##T
-#define FN_LUT(B,A,F,S) static const Cmp##S##Fn B##_##F##S[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
+#define FN_LUT(B,A,F,S) const Cmp##S##Fn B##_##F##S[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
 
 #if SINGELI
   #include "../singeli/c/cmp.c"

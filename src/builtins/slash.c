@@ -362,6 +362,24 @@ static NOINLINE B zeroCells(B x) { // doesn't consume
   return r;
 }
 
+typedef void (*CmpASFn)(u64*, void*, u64, u64);
+extern const CmpASFn cmp_fns_neAS[];
+void filter_ne_i32(i32* rp, i32* xp, usz len, usz sum, i32 val) {
+  usz b = bsp_max; TALLOC(i16, buf, b + b/16);
+  u64* wp = (u64*)(buf + b);
+  i32* rp0=rp;
+  CmpASFn cmp = cmp_fns_neAS[el_i32]; B c = m_i32(val);
+  for (usz i=0; i<len; i+=b) {
+    bool last = b>len-i; if (last) b=len-i;
+    cmp(wp, xp, c.u, b);
+    usz bs = last? sum-(rp-rp0) : bit_sum(wp,b);
+    where_block_u16(wp, (u16*)buf, b, bs);
+    for (usz j=0; j<bs; j++) rp[j] = xp[buf[j]];
+    rp+= bs; xp+= b;
+  }
+  TFREE(buf)
+}
+
 extern B take_c2(B, B, B);
 static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   u64* wp = bitarr_ptr(w);
