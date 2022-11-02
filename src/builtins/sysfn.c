@@ -461,6 +461,9 @@ B rand_deal_c2(B t, B w, B x) {
 }
 
 B ud_c1(B t, B x);
+B slash_c1(B t, B x);
+extern void filter_ne_i32(i32* dst, i32* src, usz len, usz sum, i32 val); // slash.c
+
 B rand_subset_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
@@ -474,7 +477,7 @@ B rand_subset_c2(B t, B w, B x) {
   RAND_START;
   if (wi > xi/8) {
     // Bit set (as bytes)
-    TALLOC(u8, set, xi);
+    i8* set; B s = m_i8arrv(&set, xi);
     bool invert = wi > xi/2;
     i32 wn = invert ? xi-wi : wi;
     for (i64 i = 0; i < xi; i++) set[i] = 0;
@@ -483,10 +486,9 @@ B rand_subset_c2(B t, B w, B x) {
       if (set[j]) j=i;
       set[j] = 1;
     }
-    i32* rp; r = m_i32arrv(&rp, wi);
-    if (!invert) { for (i64 i = 0; i < xi; i++) if ( set[i]) *rp++=i; }
-    else         { for (i64 i = 0; i < xi; i++) if (!set[i]) *rp++=i; }
-    TFREE(set);
+    s = taga(cpyBitArr(s));
+    if (invert) s = bit_negate(s);
+    return slash_c1(t, s);
   } else {
     // Sorted "hash" set
     u64 sh = 0;
@@ -509,11 +511,12 @@ B rand_subset_c2(B t, B w, B x) {
       }
     }
     i32* rp; r = m_i32arrv(&rp, wi);
-    for (u64 i = 0; i < sz; i++) if (hash[i]!=xi) *rp++=hash[i];
+    filter_ne_i32(rp, hash, sz, wi, xi);
     TFREE(hash);
+    r = xi<=128? taga(cpyI8Arr(r)) : xi<=32768? taga(cpyI16Arr(r)) : r;
   }
   RAND_END;
-  return xi<=128? taga(cpyI8Arr(r)) : xi<=32768? taga(cpyI16Arr(r)) : r;
+  return r;
 }
 
 #if USE_VALGRIND
