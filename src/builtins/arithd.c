@@ -120,7 +120,11 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
       if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
       u8 elw = elWidth(xe);
       u32 mask0 = (u32)wi32;
-      if (mask0 > (1 << (elw*8-1))) goto bad_sa; // negative numbers in 𝕩 mess with this
+      if (mask0 > (1 << (elw*8-1))) {
+        if      (mask0 > 32768) { x=taga(cpyI32Arr(x)); xe=el_i32; elw=4; }
+        else if (mask0 >   128) { x=taga(cpyI16Arr(x)); xe=el_i16; elw=2; }
+        else UD;
+      }
       u64 mask = (mask0-1)*repeatNum[xe];
       usz bytes = IA(x)*elw;
       u8* rp = m_tyarrc(&r, elw, x, el2t(xe));
@@ -130,7 +134,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
       if (wi32<256) return taga(cpyI8Arr(r)); // these won't widen, as the code doesn't even get to here if 𝕨 > max possible in 𝕩
       if (wi32<65536) return taga(cpyI16Arr(r));
       return r;
-    } bad_sa:;
+    }
   )
   #undef GC2f
   
