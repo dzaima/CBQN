@@ -128,7 +128,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
       decG(x);
       if (wi32==2) return taga(cpyBitArr(r));
       if (wi32<256) return taga(cpyI8Arr(r)); // these won't widen, as the code doesn't even get to here if 𝕨 > max possible in 𝕩
-      if (wi32<32768) return taga(cpyI16Arr(r));
+      if (wi32<65536) return taga(cpyI16Arr(r));
       return r;
     } bad_sa:;
   )
