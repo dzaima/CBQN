@@ -100,8 +100,7 @@ B group_c2(B t, B w, B x) {
         u64* mp; B m = m_bitarrv(&mp, xia);
         u8* wp0 = tyany_ptr(w);
         we = TI(w,elType);
-        u8 wew = elWidth(we);
-        CMP_AA_IMM(ne, we, mp, wp0-wew, wp0, xia);
+        CMP_AA_IMM(ne, we, mp, wp0-elWidth(we), wp0, xia);
         bitp_set(mp, 0, -1!=o2fG(IGetU(w,0)));
         
         B ind = C1(slash, m);

@@ -18,12 +18,23 @@ B or_c2 (B, B, B);  B log_c2(B, B, B);
 B floor_c2(B, B, B);
 
 
+typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
+
 #if SINGELI
-
-#define BCALL(N, X) N(b(X))
-#define interp_f64(X) b(X).f
-
-#include "../singeli/c/arithdDispatch.c"
+  #define BCALL(N, X) N(b(X))
+  #define interp_f64(X) b(X).f
+  #include "../singeli/c/arithdDispatch.c"
+  static AndBytesFn andBytes_fn = avx2_andBytes;
+#else
+  static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
+    u64* x64 = (u64*)x; usz i;
+    for (i = 0; i < numBytes/8; i++) ((u64*)r)[i] = x64[i] & repeatedMask;
+    if (i*8 != numBytes) {
+      u64 v = x64[i]&repeatedMask;
+      for (usz j = 0; j < (numBytes&7); j++) r[i*8 + j] = v>>(j*8);
+    }
+  }
+  static AndBytesFn andBytes_fn = base_andBytes;
 #endif
 
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
@@ -62,7 +73,7 @@ B floor_c2(B, B, B);
   #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   
-  #define GC2f(SYMB, NAME, EXPR) B NAME##_c2_arr(B t, B w, B x) { \
+  #define GC2f(SYMB, NAME, EXPR, INT_SA) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
@@ -83,21 +94,44 @@ B floor_c2(B, B, B);
           decG(w); decG(x); return num_squeeze(r);                \
         }                                                         \
       } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
-        if (elInt(xe)) {  Rf64(x); x=toI32Any(x); PI32(x) for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
-        if (xe==el_f64) { Rf64(x);                PF(x)   for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (elInt(xe)){INT_SA Rf64(x); x=toI32Any(x); PI32(x) for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (xe==el_f64) { Rf64(x);                    PF(x)   for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); \
-        if (elInt(we)) {  Rf64(w); w=toI32Any(w); PI32(w) for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
-        if (we==el_f64) { Rf64(w);                PF(w)   for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (elInt(we)){       Rf64(w); w=toI32Any(w); PI32(w) for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (we==el_f64) { Rf64(w);                    PF(w)   for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
     thrM(SYMB ": Unexpected argument types");                     \
   }
-  GC2f("÷", div  ,           w.f/x.f)
-  GC2f("⋆", pow  ,     pow(w.f, x.f))
-  GC2f("√", root , pow(x.f, 1.0/w.f))
-  GC2f("|", stile,   pfmod(x.f, w.f))
-  GC2f("⋆⁼",log  , log(x.f)/log(w.f))
+  GC2f("÷", div  ,           w.f/x.f, )
+  GC2f("√", root , pow(x.f, 1.0/w.f), )
+  GC2f("⋆", pow  ,     pow(w.f, x.f), )
+  GC2f("⋆⁼",log  , log(x.f)/log(w.f), )
+  static u64 repeatNum[] = {
+    [el_i8 ] = 0x0101010101010101ULL,
+    [el_i16] = 0x0001000100010001ULL,
+    [el_i32] = 0x0000000100000001ULL,
+  };
+  GC2f("|", stile,   pfmod(x.f, w.f),
+    f64 wf64 = o2fG(w); i32 wi32 = wf64;
+    if (wf64==(f64)wi32 && wi32>0 && (wi32&(wi32-1))==0) {
+      if (wi32==1) { Arr* ra=allZeroes(IA(x)); arr_shCopy(ra, x); r = taga(ra); decG(x); return r; }
+      if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
+      u8 elw = elWidth(xe);
+      u32 mask0 = (u32)wi32;
+      if (mask0 > (1 << (elw*8-1))) goto bad_sa; // negative numbers in 𝕩 mess with this
+      u64 mask = (mask0-1)*repeatNum[xe];
+      usz bytes = IA(x)*elw;
+      u8* rp = m_tyarrc(&r, elw, x, el2t(xe));
+      andBytes_fn(rp, tyany_ptr(x), mask, bytes);
+      decG(x);
+      if (wi32==2) return taga(cpyBitArr(r));
+      if (wi32<256) return taga(cpyI8Arr(r)); // these won't widen, as the code doesn't even get to here if 𝕨 > max possible in 𝕩
+      if (wi32<32768) return taga(cpyI16Arr(r));
+      return r;
+    } bad_sa:;
+  )
   #undef GC2f
   
 
@@ -290,11 +324,6 @@ B floor_c2(B, B, B);
   AR_I_TO_ARR(NAME) \
   thrM(CHR ": Unexpected argument types"); \
 }
-#define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
-  if (isF64(w) & isF64(x)) return m_f64(EXPR); \
-  AR_F_TO_ARR(NAME) \
-  thrM(CHR ": Unexpected argument types"); \
-}
 
 AR_I_SCALAR("+", add, w.f+x.f, {
   if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
@@ -314,6 +343,11 @@ B not_c2(B t, B w, B x) {
   return add_c2(m_f64(1), m_f64(1), sub_c2(t, w, x));
 }
 
+#define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
+  if (isF64(w) & isF64(x)) return m_f64(EXPR); \
+  AR_F_TO_ARR(NAME) \
+  thrM(CHR ": Unexpected argument types"); \
+}
 AR_F_SCALAR("÷", div  ,           w.f/x.f)
 AR_F_SCALAR("⋆", pow  ,     pow(w.f, x.f))
 AR_F_SCALAR("√", root , pow(x.f, 1.0/w.f))

@@ -58,6 +58,25 @@ Group ← {𝕊:
   1
 }¨ ↕
 
+Mod ← {𝕊:
+  modOptions ← ⟨∞,¯∞,0÷0⟩ ∾ ∾⟜- 2⋆↕34
+  {𝕊:
+    n ← R 2⋆4+R 6
+    w ← R∘≠⊸⊑ modOptions
+    x ← -⍟(R 2) (2⋆R 34) + (↕n)-R n
+    got ← w|x
+    exp ← w|"Ah"V x
+    ¬exp EEQ got?
+    •Out "𝕨: "∾•Repr w
+    •Out "𝕩: "∾(•Repr x)∾" / "∾I x
+    •Out "exp: "∾•Repr exp
+    •Out "got: "∾•Repr got
+    •Exit 1
+    ;@
+  }¨ ↕𝕩
+}
+
+•Show "powerOfTwo | arr" ⋄ Mod 100000
 •Show "∨`bitarr" ⋄   OrScanBitarr 100000
 •Show "+`bitarr" ⋄ PlusScanBitarr 100000
 

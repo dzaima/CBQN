@@ -187,5 +187,17 @@ arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
 
 def arithSA{mode, F, swap, W, X, R} = arithSAf{256, mode, F, swap, W, X, R}
 
+andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
+  assert{vw>=64}
+  def bulk = vw / width{u8}
+  def T8 = [bulk]u8
+  def T64 = [bulk/8]u64
+  maskFull:= T8~~broadcast{T64, maskU64}
+  maskedLoop{bulk, len, {i, M} => {
+    storeBatch{r, i, loadBatch{x, i, T8} & maskFull, M}
+  }}
+}
+
+'avx2_andBytes'=andBytes{256}
 'orSAc_f64_f64_f64'=arithSA{2,bqn_or,0,f64,f64,f64}
 include './../gen/arDefs'
