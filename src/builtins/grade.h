@@ -286,19 +286,10 @@ B GRADE_CAT(c1)(B t, B x) {
   if (elChr(xe)) { x = taga(cpyC32Arr(x)); goto el32; }
   
   SLOW1(GRADE_CHR"𝕩", x);
-  TALLOC(BI32p, tmp, ia);
-  SGetU(x)
-  for (usz i = 0; i < ia; i++) {
-    tmp[i].v = i;
-    tmp[i].k = GetU(x,i);
-  }
-  CAT(GRADE_CAT(BP),tim_sort)(tmp, ia);
-  for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
-  TFREE(tmp);
+  generic_grade(x, ia, r, rp, CAT(GRADE_CAT(BP),tim_sort));
   goto decG_sq;
   
   decG_sq:;
-  
   if (ia<=(I8_MAX+1)) r = taga(cpyI8Arr(r));
   else if (ia<=(I16_MAX+1)) r = taga(cpyI16Arr(r));
   decG(x);
