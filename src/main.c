@@ -762,6 +762,8 @@ int main(int argc, char* argv[]) {
       replxx_enable_bracketed_paste(replxx);
       replxx_bind_key(replxx, '\\', backslash_replxx, NULL);
       replxx_set_modify_callback(replxx, modified_replxx, NULL);
+      replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('N'), "history_next");
+      replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
       
       while(true) {
         const char* ln = replxx_input(replxx, "   ");
