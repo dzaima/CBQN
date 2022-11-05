@@ -33,6 +33,9 @@ static NOINLINE void repl_init() {
   #include <errno.h>
   #include "utils/calls.h"
   #include "utils/cstr.h"
+  static Replxx* global_replxx;
+  static char* global_histfile;
+  
   i8 theme0[12][3] = { // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
     [ 0] = {-1,-1,-1}, // default
     [ 1] = {-1,-1,11}, // comments
@@ -145,8 +148,8 @@ static NOINLINE void repl_init() {
     *upper = !hasLower && hasUpper;
     return norm;
   }
-  NOINLINE B vec_slice(B x, usz s, usz e) {
-    return taga(arr_shVec(TI(x,slice)(incG(x), s, e)));
+  NOINLINE B vec_slice(B x, usz s, usz len) {
+    return taga(arr_shVec(TI(x,slice)(incG(x), s, len)));
   }
   NOINLINE u32* rskip_name(u32* start, u32* c) {
     while (c>start && chr_nameM(*(c-1))) c--;
@@ -226,9 +229,83 @@ static NOINLINE void repl_init() {
   void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
     completion_impl(inp, res, true, dist);
   }
+  static NOINLINE char* malloc_B(B x) {
+    u64 len1 = utf8lenB(x);
+    char* s1 = malloc(len1+1);
+    toUTF8(x, s1);
+    s1[len1] = '\0';
+    return s1;
+  }
+  static NOINLINE void getState(B* s, u64* pos) {
+    ReplxxState st;
+    replxx_get_state(global_replxx, &st);
+    *s = utf8Decode0(st.text);
+    *pos = st.cursorPosition;
+  }
+  static NOINLINE ReplxxState insertChar(u32 p, bool replace) { // free with free(result.text); not using TALLOC because modify callback wants to free() the result :|
+    B s0; u64 pos;
+    getState(&s0, &pos);
+    if (pos==0) replace = false;
+    
+    B s = vec_slice(s0, 0, pos-(replace? 1 : 0));
+    ACHR(p);
+    AJOIN(vec_slice(s0, pos, IA(s0)-pos));
+    decG(s0);
+    char* s1 = malloc_B(s);
+    decG(s);
+    
+    return (ReplxxState){.text = s1, .cursorPosition = replace? pos : pos+1};
+  }
+  static B b_pv;
+  static int b_pp;
+  static bool inBackslash() { return b_pv.u!=0; }
+  static void stopBackslash() { decG(b_pv); b_pv.u = 0; }
+  ReplxxActionResult backslash_replxx(int code, void* data) {
+    if (inBackslash()) {
+      ReplxxState st = insertChar('\\', false);
+      replxx_set_state(global_replxx, &st);
+      free((char*) st.text);
+      stopBackslash();
+    } else {
+      ReplxxState st;
+      replxx_get_state(global_replxx, &st);
+      b_pv = utf8Decode0(st.text);
+      b_pp = st.cursorPosition;
+    }
+    return REPLXX_ACTION_RESULT_CONTINUE;
+  }
+  static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
+    B ac = vec_slice(a, as, l);
+    B bc = vec_slice(b, bs, l);
+    bool r = equal(ac, bc);
+    decG(ac); decG(bc);
+    return r;
+  }
   
-  static Replxx* global_replxx;
-  static char* global_histfile;
+  B indexOf_c2(B, B, B);
+  B pick_c1(B, B);
+  
+  static B b_key, b_val;
+  void modified_replxx(char** s_res, int* p_res, void* userData) {
+    if (!inBackslash()) return;
+    
+    B s; u64 pos;
+    getState(&s, &pos);
+    if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop;
+    if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
+    if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
+    usz mapPos = o2i(pick_c1(m_f64(0), indexOf_c2(m_f64(0), incG(b_key), IGet(s,pos-1))));
+    if (mapPos==IA(b_key)) goto stop;
+    
+    ReplxxState st = insertChar(o2c(IGetU(b_val, mapPos)), true); // st.text will be free()'d by replxx
+    *s_res = (char*) st.text;
+    *p_res = st.cursorPosition;
+    
+    stop: decG(s);
+    stopBackslash();
+  }
+  
+  
   void before_exit() {
     if (global_replxx!=NULL && global_histfile!=NULL) {
       replxx_history_save(global_replxx, global_histfile);
@@ -237,8 +314,13 @@ static NOINLINE void repl_init() {
     }
   }
   
+  static void replxx_gcFn() {
+    mm_visit(b_pv);
+  }
   static void cbqn_init_replxx() {
     build_theme(theme0_built, theme0);
+    gc_add(b_key = m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
+    gc_add(b_val = m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
     sysvalNames = emptyHVec();
     sysvalNamesNorm = emptyHVec();
     u32** c = dsv_text;
@@ -249,6 +331,7 @@ static NOINLINE void repl_init() {
     }
     gc_add(sysvalNames);
     gc_add(sysvalNamesNorm);
+    gc_addFn(replxx_gcFn);
   }
 #else
   void before_exit() { }
@@ -677,6 +760,8 @@ int main(int argc, char* argv[]) {
       replxx_set_hint_callback(replxx, hint_replxx, NULL);
       replxx_set_completion_callback(replxx, complete_replxx, NULL);
       replxx_enable_bracketed_paste(replxx);
+      replxx_bind_key(replxx, '\\', backslash_replxx, NULL);
+      replxx_set_modify_callback(replxx, modified_replxx, NULL);
       
       while(true) {
         const char* ln = replxx_input(replxx, "   ");
