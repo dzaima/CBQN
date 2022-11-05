@@ -241,6 +241,7 @@ B GRADE_CAT(c1)(B t, B x) {
     goto decG_sq;
   }
   if (xe==el_i32 || xe==el_c32) { // safe to use the same comparison for i32 & c32 as c32 is 0≤x≤1114111
+    el32:;
     i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     i32 sum=0;
@@ -282,6 +283,7 @@ B GRADE_CAT(c1)(B t, B x) {
     TFREE(tmp);
     goto decG_sq;
   }
+  if (elChr(xe)) { x = taga(cpyC32Arr(x)); goto el32; }
   
   SLOW1(GRADE_CHR"𝕩", x);
   TALLOC(BI32p, tmp, ia);
