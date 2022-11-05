@@ -55,8 +55,18 @@ CMP_REC(ne, ne, swapped=0;)
 #if SINGELI
   #include "../singeli/c/cmp.c"
 #else
+  #define BASE_CMP_LOOP(OP, W, X) \
+    for (usz j = 0; j < (l+7)>>3; j++) { \
+      u8 c = 0;                          \
+      for (usz k = 0; k < 8; k++) {      \
+        usz i = j*8+k;                   \
+        c|= ((W) OP (X))<<k;             \
+      }                                  \
+      ((u8*)r)[j] = c;                   \
+    }
+  
   #define CMP_AA0(N, T, BODY) void base_##N##AA##_##T(u64* r, void* w, void* x, u64 l) { BODY }
-  #define CMP_AA1(N, T, OP) CMP_AA0(N, T, for (usz i=0; i<l; i++) bitp_set(r, i, ((T*)w)[i] OP ((T*)x)[i]);)
+  #define CMP_AA1(N, T, OP) CMP_AA0(N, T, BASE_CMP_LOOP(OP, ((T*)w)[i], ((T*)x)[i]))
   #define CMP_AA_F(N, OP, BX) \
     CMP_AA0(N, u1, ({usz bia = BIT_N(l); for (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i], xv=((u64*)x)[i]; ((u64*)r)[i] = BX; }});) \
     CMP_AA1(N, i8, OP) CMP_AA1(N, i16, OP) CMP_AA1(N, i32, OP) CMP_AA1(N, f64, OP) \
@@ -91,7 +101,7 @@ CMP_REC(ne, ne, swapped=0;)
     else SLOW(N, T);            \
   }
   
-  #define CMP_SA1(N, T, Q, C, SLOW, OP) CMP_SA0(N, T, Q, SLOW, ({T xv = C(x); for (usz i=0; i<l; i++) bitp_set(r, i, ((T*)w)[i] OP xv);}))
+  #define CMP_SA1(N, T, Q, C, SLOW, OP) CMP_SA0(N, T, Q, SLOW, ({ T xv = C(x); BASE_CMP_LOOP(OP, ((T*)w)[i], xv) }))
   #define CMP_SA_F(N, OP, SLOW, BX) \
     CMP_SA0(N, u1, bit, SLOW, ({usz bia = BIT_N(l); u64 xv=bitx(x); for (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i]; ((u64*)r)[i] = BX; }})) \
     CMP_SA1(N,i8,i8,o2iG,SLOW,OP) CMP_SA1(N,i16,i16,o2iG,SLOW,OP) CMP_SA1(N,i32,i32,o2iG,SLOW,OP) CMP_SA1(N,f64,f64,o2fG,SLOW,OP) \
