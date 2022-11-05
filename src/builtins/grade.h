@@ -203,12 +203,21 @@ B SORT_C1(B t, B x) {
 
 
 #define GRADE_CHR GRADE_UD("⍋","⍒")
+extern Arr* bitUD[3]; // from fns.c
+extern B bit2x[2];
 B GRADE_CAT(c1)(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
   if (RNK(x)>1) x = toCells(x);
   usz ia = IA(x);
   if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
-  if (ia==0) { decG(x); return emptyIVec(); }
+  if (ia<=2) {
+    B r;
+    if (ia==2) { SGetU(x); r = incG(bit2x[!(compare(GetU(x,0), GetU(x,1)) GRADE_UD(<=,>=) 0)]); }
+    else if (ia==1) r = taga(ptr_inc(bitUD[1]));
+    else r = emptyIVec();
+    decG(x);
+    return r;
+  }
   
   u8 xe = TI(x,elType);
   i32* rp; B r = m_i32arrv(&rp, ia);
@@ -221,15 +230,15 @@ B GRADE_CAT(c1)(B t, B x) {
       if (bitp_get(xp,i)^GRADE_UD(0,1)) rp[r1++] = i;
       else                              rp[r0++] = i;
     }
-    decG(x); return r;
+    goto decG_sq;
   } else if (xe==el_i8 && ia>8) {
     i8* xp = i8any_ptr(x); usz n=ia;
     RADIX_SORT_i8(usz, GRADE);
-    decG(x); return r;
+    goto decG_sq;
   } else if (xe==el_i16 && ia>16) {
     i16* xp = i16any_ptr(x); usz n = ia;
     RADIX_SORT_i16(usz, GRADE, i32);
-    decG(x); return r;
+    goto decG_sq;
   }
   if (xe==el_i32 || xe==el_c32) { // safe to use the same comparison for i32 & c32 as c32 is 0≤x≤1114111
     i32* xp = tyany_ptr(x);
@@ -248,20 +257,19 @@ B GRADE_CAT(c1)(B t, B x) {
         for (usz i = 0; i < ia; i++) rp[i]=ia;
         for (usz i = 0; i < ia; i++) { i32 v=xp[i]; GRADE_UD(rp[v-min],rp[max-v])=i; }
         bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
-        if (done) { decG(x); return r; }
+        if (done) goto decG_sq;
       }
       TALLOC(usz, c0, range); usz *c0o=c0-min;
       for (usz i = 0; i < range; i++) c0[i] = 0;
       for (usz i = 0; i < ia; i++) c0o[xp[i]]++;
       usz s=0; FOR (i, range) { usz p=s; s+=c0[i]; c0[i]=p; }
       for (usz i = 0; i < ia; i++) rp[c0o[xp[i]]++] = i;
-      TFREE(c0); decG(x);
-      return r;
+      TFREE(c0); goto decG_sq;
     }
     if (ia > 40) {
       usz n=ia;
       RADIX_SORT_i32(usz, GRADE, i32);
-      decG(x); return r;
+      goto decG_sq;
     }
     
     TALLOC(I32I32p, tmp, ia);
@@ -271,8 +279,8 @@ B GRADE_CAT(c1)(B t, B x) {
     }
     CAT(GRADE_CAT(IP),tim_sort)(tmp, ia);
     for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
-    TFREE(tmp); decG(x);
-    return r;
+    TFREE(tmp);
+    goto decG_sq;
   }
   
   SLOW1(GRADE_CHR"𝕩", x);
@@ -284,7 +292,14 @@ B GRADE_CAT(c1)(B t, B x) {
   }
   CAT(GRADE_CAT(BP),tim_sort)(tmp, ia);
   for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
-  TFREE(tmp); decG(x);
+  TFREE(tmp);
+  goto decG_sq;
+  
+  decG_sq:;
+  
+  if (ia<=(I8_MAX+1)) r = taga(cpyI8Arr(r));
+  else if (ia<=(I16_MAX+1)) r = taga(cpyI16Arr(r));
+  decG(x);
   return r;
 }
 

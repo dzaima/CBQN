@@ -24,7 +24,8 @@ static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
   }
   return p;
 }
-static Arr* bitUD[3];
+Arr* bitUD[3];
+B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
 B ud_c1(B t, B x) {
   if (isAtm(x)) {
     usz xu = o2s(x);
@@ -273,6 +274,7 @@ void fun_gcFn() {
   if (globalNames!=NULL) mm_visitP(globalNames);
   mm_visit(globalNameList);
   for (i32 i = 0; i < 3; i++) mm_visitP(bitUD[i]);
+  mm_visit(bit2x[1]); // bit2x[0] visited by ↑
 }
 
 
@@ -291,5 +293,6 @@ void fns_init() {
   TIi(t_funBI,fn_im) = funBI_im;
   bitUD[0] = a(emptyIVec());
   { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a); }
-  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); }
+  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; }
+  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,0,1);                  bit2x[1] = a; }
 }
