@@ -110,17 +110,17 @@ B memberOf_c1(B t, B x) {
     u32* xp = (u32*)xv;
     i8* rp; B r = m_i8arrv(&rp, n);
     usz log = 64 - CLZ(n);
-    usz msl = (64 - CLZ(n+n/2)) + 1; if (msl>18) msl=18;
-    usz sh = 32 - (msl<14? msl : 14); // Shift to fit to table
+    usz msl = (64 - CLZ(n+n/2)) + 1; if (msl>20) msl=20;
+    usz sh = 32 - (msl<14? msl : 12+(msl&1)); // Shift to fit to table
     usz sz = 1 << (32 - sh); // Initial size
     usz msz = 1 << msl;      // Max sz
     usz b = 64;  // Block size
     // Resize or abort if more than 1/2^thresh collisions/element
-    #define THRESH sz==msz? 1 : sz>=(1<<13)? 2 : 3
+    #define THRESH sz==msz? 1 : sz>=(1<<15)? 3 : 5
     usz thresh = THRESH;
     // Filling e slots past the end requires e*(e+1)/2 collisions, so
-    // n entries with 1/2 each can fill <sqrt(n/4)
-    usz ext = n<=b? n : b + (1 << ((log-2)/2));
+    // n entries with 1/2 each can fill <sqrt(n)
+    usz ext = n<=b? n : b + (1 << (log/2));
     TALLOC(u32, hash0, msz+ext); u32* hash = hash0 + msz-sz;
     u32 x0 = hash32(xp[0]); rp[0] = 1;
     for (u64 i = 0; i < sz+ext; i++) hash[i] = x0;
@@ -135,20 +135,26 @@ B memberOf_c1(B t, B x) {
         rp[i] = k != h;
       }
       if (i == n) break;
-      if (cc >= e>>thresh) {
-        if (sz == msz) break; // Abort
-        // Resize hash
-        usz m = 1 + (sz < msz/4);
-        sh -= m;
-        usz dif = sz; sz <<= m; dif = sz-dif;
+      i64 dc = (i64)cc - (i>>thresh);
+      if (dc >= 0) {
+        if (sz == msz || (i < n/2 && sz >= 1<<18)) break; // Abort
+        // Avoid resizing if close to the end
+        if (cc<n/2 && (n-i)*dc < (i*((i64)n+i))>>(5+log-(32-sh))) continue;
+        // Resize hash, factor of 4
+        usz m = 2;
+        usz dif = sz*((1<<m)-1);
+        sh -= m; sz <<= m;
         hash -= dif;
         usz j = 0;
+        cc = 0;
         for (; j < dif; j++) hash[j] = x0;
         for (; j < sz + ext; j++) {
           u32 h = hash[j]; if (h==x0) continue; hash[j] = x0;
-          u32 k = h>>sh; while (hash[k]!=x0) k++;
+          u32 k0 = h>>sh, k = k0; while (hash[k]!=x0) k++;
+          cc += k-k0;
           hash[k] = h;
         }
+        if (cc >= n/2) break;
         thresh = THRESH;
       }
     }
