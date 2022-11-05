@@ -743,7 +743,8 @@ int main(int argc, char* argv[]) {
       cbqn_init_replxx();
       Replxx* replxx = replxx_init();
       
-      char* history_dir = getenv("HOME");
+      char* history_dir = getenv("XDG_DATA_HOME");
+      if (!history_dir) history_dir = getenv("HOME");
       if (!history_dir) history_dir = ".";
       B p1 = utf8Decode0(history_dir);
       B p2 = path_rel(p1, m_c8vec_0(".cbqn_repl_history"));
