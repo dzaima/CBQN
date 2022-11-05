@@ -229,32 +229,40 @@ static NOINLINE void repl_init() {
   void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
     completion_impl(inp, res, true, dist);
   }
-  static NOINLINE char* malloc_B(B x) {
+  static NOINLINE char* malloc_B(B x) { // toCStr but allocated by malloc
     u64 len1 = utf8lenB(x);
     char* s1 = malloc(len1+1);
     toUTF8(x, s1);
     s1[len1] = '\0';
     return s1;
   }
-  static NOINLINE void getState(B* s, u64* pos) {
+  typedef struct {
+    B s; u64 pos;
+  } TmpState;
+  
+  static NOINLINE TmpState getState() {
     ReplxxState st;
     replxx_get_state(global_replxx, &st);
-    *s = utf8Decode0(st.text);
-    *pos = st.cursorPosition;
+    return (TmpState){.s = utf8Decode0(st.text), .pos = st.cursorPosition};
   }
-  static NOINLINE ReplxxState insertChar(u32 p, bool replace) { // free with free(result.text); not using TALLOC because modify callback wants to free() the result :|
-    B s0; u64 pos;
-    getState(&s0, &pos);
+  static NOINLINE void setState(TmpState s) {
+    char* r = malloc_B(s.s);
+    ReplxxState st = (ReplxxState){.text = r, .cursorPosition = s.pos};
+    replxx_set_state(global_replxx, &st);
+    free(r);
+  }
+  static NOINLINE TmpState insertChar(u32 p, bool replace) {
+    TmpState t = getState();
+    u64 pos = t.pos;
+    B s0 = t.s;
     if (pos==0) replace = false;
     
     B s = vec_slice(s0, 0, pos-(replace? 1 : 0));
     ACHR(p);
     AJOIN(vec_slice(s0, pos, IA(s0)-pos));
     decG(s0);
-    char* s1 = malloc_B(s);
-    decG(s);
     
-    return (ReplxxState){.text = s1, .cursorPosition = replace? pos : pos+1};
+    return (TmpState){.s = s, .pos = replace? pos : pos+1};
   }
   static B b_pv;
   static int b_pp;
@@ -262,9 +270,7 @@ static NOINLINE void repl_init() {
   static void stopBackslash() { decG(b_pv); b_pv.u = 0; }
   ReplxxActionResult backslash_replxx(int code, void* data) {
     if (inBackslash()) {
-      ReplxxState st = insertChar('\\', false);
-      replxx_set_state(global_replxx, &st);
-      free((char*) st.text);
+      setState(insertChar('\\', false));
       stopBackslash();
     } else {
       ReplxxState st;
@@ -289,17 +295,18 @@ static NOINLINE void repl_init() {
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!inBackslash()) return;
     
-    B s; u64 pos;
-    getState(&s, &pos);
+    TmpState t = getState();
+    B s = t.s;
+    u64 pos = t.pos;
     if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop;
     if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
     if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
     usz mapPos = o2i(pick_c1(m_f64(0), indexOf_c2(m_f64(0), incG(b_key), IGet(s,pos-1))));
     if (mapPos==IA(b_key)) goto stop;
     
-    ReplxxState st = insertChar(o2c(IGetU(b_val, mapPos)), true); // st.text will be free()'d by replxx
-    *s_res = (char*) st.text;
-    *p_res = st.cursorPosition;
+    TmpState t2 = insertChar(o2c(IGetU(b_val, mapPos)), true);
+    *s_res = malloc_B(t2.s); // will be free()'d by replxx
+    *p_res = t2.pos;
     
     stop: decG(s);
     stopBackslash();
