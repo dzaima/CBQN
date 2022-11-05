@@ -107,8 +107,8 @@ static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
     #define F(X) inc(bi_##X),
-    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan");
-    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan));
+    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2");
+    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2));
     #undef F
     gc_add(mathNS);
   }
