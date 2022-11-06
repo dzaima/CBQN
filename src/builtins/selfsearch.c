@@ -91,7 +91,7 @@ static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[
 static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
 
 // Resizing hash table, with fallback
-#define SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, AUXSIZE, AUXINIT, AUXEXTEND, AUXCLEAR, AUXMOVE) \
+#define SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, AUXSIZE, AUXINIT, AUXEXTEND, AUXMOVE) \
   usz log = 64 - CLZ(n);                                                 \
   usz msl = (64 - CLZ(n+n/2)) + 1; if (RAD && msl>20) msl=20;            \
   usz sh = W - (msl<14? msl : 12+(msl&1)); /* Shift to fit to table */   \
@@ -133,7 +133,7 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
       memset##W(hash, x0, dif);                                          \
       AUXEXTEND                                                          \
       for (j = dif; j < sz + ext; j++) {                                 \
-        T h = hash[j]; if (h==x0) continue; hash[j] = x0; AUXCLEAR       \
+        T h = hash[j]; if (h==x0) continue; hash[j] = x0;                \
         T k0 = h>>sh, k = k0; while (hash[k]!=x0) k++;                   \
         cc += k-k0;                                                      \
         hash[k] = h; AUXMOVE                                             \
@@ -185,9 +185,9 @@ B memberOf_c1(B t, B x) {
   #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
     T, W, RAD, STOP,                                    \
     1, taga(cpyBitArr(r)), hash[j]=h; rp[i]=k!=h;,      \
-    1, THRESH, 0,,,,)
+    1, THRESH, 0,,,)
   if (lw == 5) {
-    if (n<=12) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
     i8* rp; B r = m_i8arrv(&rp, n);
     HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<15)? 3 : 5)
 
@@ -213,7 +213,7 @@ B memberOf_c1(B t, B x) {
     return taga(cpyBitArr(r));
   }
   if (lw == 6 && canCompare64_norm(x, n)) {
-    if (n<=20) { BRUTE(64); }
+    if (n<20) { BRUTE(64); }
     i8* rp; B r = m_i8arrv(&rp, n);
     HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
     decG(r); // Fall through
@@ -351,11 +351,10 @@ B indexOf_c1(B t, B x) {
     u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
     memset32(val, 0, sz+ext);                              \
     u32 ctr = 1; ,                                         \
-    /* AUXEXTEND */                                        \
-    val -= dif; memset32(val, 0, dif); ,                   \
-    /*AUXCLEAR*/val[j] = 0;, /*AUXMOVE*/val[k] = val[j];)
+    /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
+    /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
   if (lw==5) {
-    if (n<16) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
     B r;
     i32* rp; r = m_i32arrv(&rp, n);
     i32* xp = tyany_ptr(x);
@@ -378,7 +377,7 @@ B indexOf_c1(B t, B x) {
     decG(r); // Fall through
   }
   if (lw==6 && canCompare64_norm(x, n)) {
-    if (n<12) { BRUTE(64); }
+    if (n<16) { BRUTE(64); }
     i32* rp; B r = m_i32arrv(&rp, n);
     u64* xp = tyany_ptr(x);
     HASHTAB(u64, 64, sz==msz? 0 : sz>=(1<<17)? 1 : sz>=(1<<13)? 4 : 6)
