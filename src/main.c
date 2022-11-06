@@ -16,7 +16,7 @@ static B replPath;
 static Scope* gsc;
 static bool init = false;
 
-static void repl_init() {
+static NOINLINE void repl_init() {
   if (init) return;
   cbqn_init();
   replPath = m_c8vec_0("."); gc_add(replPath);
@@ -27,7 +27,7 @@ static void repl_init() {
   init = true;
 }
 
-static B gsc_exec_inline(B src, B path, B args) {
+static NOINLINE B gsc_exec_inline(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
   gsc->body = ptr_inc(block->bodies[0]);
@@ -36,15 +36,21 @@ static B gsc_exec_inline(B src, B path, B args) {
   return r;
 }
 
-static bool isCmd(char* s, char** e, const char* cmd) {
+typedef struct { bool r; char* e; } IsCmdTmp;
+static NOINLINE IsCmdTmp isCmd0(char* s, const char* cmd) {
   while (*cmd) {
-    if (*cmd==' ' && *s==0) { *e = s; return true; }
-    if (*s!=*cmd || *s==0) return false;
+    if (*cmd==' ' && *s==0) return (IsCmdTmp){.r=true, .e=s};
+    if (*s!=*cmd || *s==0) return (IsCmdTmp){.r=false, .e=s};
     s++; cmd++;
   }
-  *e = s;
-  return true;
+  return (IsCmdTmp){.r=true, .e=s};
 }
+static bool isCmd(char* s, char** e, const char* cmd) {
+  IsCmdTmp t = isCmd0(s, cmd);
+  *e = t.e;
+  return t.r;
+}
+
 bool profiler_alloc(void);
 bool profiler_start(i64 hz);
 bool profiler_stop(void);
@@ -53,7 +59,7 @@ void profiler_displayResults(void);
 void clearImportCache(void);
 
 static B escape_parser;
-B simple_unescape(B x) {
+static B simple_unescape(B x) {
   if (RARE(escape_parser.u==0)) {
     escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N, bi_N);
     gc_add(escape_parser);
@@ -61,7 +67,7 @@ B simple_unescape(B x) {
   return c1(escape_parser, x);
 }
 
-i64 readInt(char** p) {
+static NOINLINE i64 readInt(char** p) {
   char* c = *p;
   i64 am = 0;
   while (*c>='0' & *c<='9') {
