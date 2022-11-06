@@ -87,6 +87,9 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   }                                                                                             \
   decG(x); TFREE(alloc);
 
+static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+
 // Resizing hash table, with fallback
 #define SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, AUXSIZE, AUXINIT, AUXEXTEND, AUXCLEAR, AUXMOVE) \
   usz log = 64 - CLZ(n);                                                 \
@@ -103,7 +106,7 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   TALLOC(u8, halloc, (msz+ext)*(sizeof(T)+AUXSIZE));                     \
   T* hash = (T*)halloc + msz-sz;                                         \
   T x0 = hash##W(xp[0]); rp[0] = RES0;                                   \
-  for (usz i = 0; i < sz+ext; i++) hash[i] = x0;                         \
+  memset##W(hash, x0, sz+ext);                                           \
   AUXINIT                                                                \
   usz cc = 0; /* Collision counter */                                    \
   usz i=1; while (1) {                                                   \
@@ -127,9 +130,9 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
       hash -= dif;                                                       \
       usz j = 0;                                                         \
       cc = 0;                                                            \
-      for (; j < dif; j++) hash[j] = x0;                                 \
+      memset##W(hash, x0, dif);                                          \
       AUXEXTEND                                                          \
-      for (; j < sz + ext; j++) {                                        \
+      for (j = dif; j < sz + ext; j++) {                                 \
         T h = hash[j]; if (h==x0) continue; hash[j] = x0; AUXCLEAR       \
         T k0 = h>>sh, k = k0; while (hash[k]!=x0) k++;                   \
         cc += k-k0;                                                      \
@@ -342,13 +345,13 @@ B indexOf_c1(B t, B x) {
     /* RESWRITE */                                         \
     if (k!=h) { val[j]=ctr++; hash[j]=h; } rp[i]=val[j]; , \
     /*THRESHMUL*/2, THRESH,                                \
-    /*AUXSIZE*/sizeof(usz),                                \
+    /*AUXSIZE*/sizeof(u32),                                \
     /* AUXINIT */                                          \
-    usz* val = (usz*)(hash+sz+ext) + msz-sz;               \
-    for (usz i = 0; i < sz+ext; i++) val[i] = 0;           \
-    usz ctr = 1; ,                                         \
+    u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
+    memset32(val, 0, sz+ext);                              \
+    u32 ctr = 1; ,                                         \
     /* AUXEXTEND */                                        \
-    val -= dif; for (j = 0; j < dif; j++) val[j] = 0; ,    \
+    val -= dif; memset32(val, 0, dif); ,                   \
     /*AUXCLEAR*/val[j] = 0;, /*AUXMOVE*/val[k] = val[j];)
   if (lw==5) {
     if (n<12) { BRUTE(32); }
