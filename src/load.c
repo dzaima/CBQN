@@ -149,14 +149,6 @@ B bqn_repr(B x) {
 }
 #endif
 
-void load_gcFn() {
-  mm_visit(comp_currPath);
-  mm_visit(comp_currArgs);
-  mm_visit(comp_currSrc);
-  mm_visit(comp_currRe);
-  mm_visit(rt_invFnReg);
-  mm_visit(rt_invFnSwap);
-}
 #define POP_COMP ({ \
   comp_currPath   = prevPath; \
   comp_currArgs   = prevArgs; \
@@ -353,7 +345,12 @@ void load_init() { // very last init function
   comp_currArgs = bi_N;
   comp_currSrc  = bi_N;
   comp_currRe   = bi_N;
-  gc_addFn(load_gcFn);
+  gc_add_ref(&comp_currPath);
+  gc_add_ref(&comp_currArgs);
+  gc_add_ref(&comp_currSrc);
+  gc_add_ref(&comp_currRe);
+  gc_add_ref(&rt_invFnReg);
+  gc_add_ref(&rt_invFnSwap);
   B fruntime[] = {
     /* +-×÷⋆√⌊⌈|¬  */ bi_add     , bi_sub    , bi_mul   , bi_div  , bi_pow    , bi_root     , bi_floor , bi_ceil , bi_stile  , bi_not,
     /* ∧∨<>≠=≤≥≡≢  */ bi_and     , bi_or     , bi_lt    , bi_gt   , bi_ne     , bi_eq       , bi_le    , bi_ge   , bi_feq    , bi_fne,

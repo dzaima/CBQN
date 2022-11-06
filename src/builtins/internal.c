@@ -162,14 +162,6 @@ static bool u8_get(u8** cv, u8* cE, const char* x) {
 }
 
 static B variation_refs;
-static void variation_gcRoot() {
-  mm_visit(variation_refs);
-  mm_visit(listVariations_def);
-  #define F(X) mm_visit(v_##X);
-  FOR_VARIATION(F)
-  #undef F
-}
-
 B variation_c2(B t, B w, B x) {
   if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
@@ -316,7 +308,13 @@ B getInternalNS() {
     FOR_VARIATION(F)
     #undef F
     listVariations_def = m_c8vec_0("if");
-    gc_addFn(variation_gcRoot);
+    
+    gc_add(listVariations_def);
+    gc_add_ref(&variation_refs);
+    #define F(X) gc_add_ref(&v_##X); // 38 refs
+    FOR_VARIATION(F)
+    #undef F
+    
     #define F(X) incG(bi_##X),
     Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs","unshare","deepsqueeze","heapdump","eequal","temp");
     internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalTemp));

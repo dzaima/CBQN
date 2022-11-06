@@ -232,13 +232,7 @@ B count_c2(B t, B w, B x) {
 }
 
 
-void search_gcFn() {
-  mm_visit(enclosed_0);
-  mm_visit(enclosed_1);
-}
-
 void search_init() {
-  gc_addFn(search_gcFn);
-  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p= 0;    enclosed_0=taga(a); }
-  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p=~0ULL; enclosed_1=taga(a); }
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p= 0;    gc_add(enclosed_0=taga(a)); }
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAlloc(a,0); *p=~0ULL; gc_add(enclosed_1=taga(a)); }
 }

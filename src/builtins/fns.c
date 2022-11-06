@@ -272,13 +272,7 @@ void profiler_freeMap(void* mapRaw) {
 void fun_gcFn() {
   if (prevImports!=NULL) mm_visitP(prevImports);
   if (globalNames!=NULL) mm_visitP(globalNames);
-  mm_visit(globalNameList);
-  for (i32 i = 0; i < 3; i++) mm_visitP(bitUD[i]);
-  mm_visit(bit2x[1]); // bit2x[0] visited by ↑
 }
-
-
-
 static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extra)); }
 static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
@@ -286,13 +280,15 @@ static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
 static B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 void fns_init() {
   gc_addFn(fun_gcFn);
+  gc_add_ref(&globalNameList);
+  
   TIi(t_funBI,print) = print_funBI;
   TIi(t_funBI,identity) = funBI_identity;
   TIi(t_funBI,fn_uc1) = funBI_uc1;
   TIi(t_funBI,fn_ucw) = funBI_ucw;
   TIi(t_funBI,fn_im) = funBI_im;
-  bitUD[0] = a(emptyIVec());
-  { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a); }
-  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; }
-  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,0,1);                  bit2x[1] = a; }
+  bitUD[0] = a(bi_emptyIVec); // don't increment as it's already gc_add-ed
+  { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a);               gc_add(a); }
+  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; gc_add(a); }
+  { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,0,1);                  bit2x[1] = a; gc_add(a); }
 }

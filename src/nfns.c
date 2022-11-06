@@ -34,14 +34,11 @@ DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(FILE* f, B x) { fprintf(f, "(native function description)"); }
 
-void nfn_gcRoot() {
-  mm_visit(nfn_list);
-}
 void nfn_init() {
   nfn_list = emptyHVec();
   TIi(t_nfn,freeO) = nfn_freeO; TIi(t_nfnDesc,freeO) = nfnDesc_freeO;
   TIi(t_nfn,freeF) = nfn_freeF; TIi(t_nfnDesc,freeF) = nfnDesc_freeF;
   TIi(t_nfn,visit) = nfn_visit; TIi(t_nfnDesc,visit) = nfnDesc_visit;
   TIi(t_nfn,print) = nfn_print; TIi(t_nfnDesc,print) = nfnDesc_print;
-  gc_addFn(nfn_gcRoot);
+  gc_add_ref(&nfn_list);
 }

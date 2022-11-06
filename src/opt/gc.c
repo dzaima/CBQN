@@ -7,10 +7,10 @@
 u64 gc_depth = 1;
 
 
-vfn gc_roots[32];
+vfn gc_roots[8];
 u32 gc_rootSz;
 void gc_addFn(vfn f) {
-  if (gc_rootSz>=32) err("Too many GC root functions");
+  if (gc_rootSz>=8) err("Too many GC root functions");
   gc_roots[gc_rootSz++] = f;
 }
 
@@ -20,6 +20,12 @@ void gc_add(B x) {
   assert(isVal(x));
   if (gc_rootObjSz>=256) err("Too many GC root objects");
   gc_rootObjs[gc_rootObjSz++] = v(x);
+}
+
+B* gc_rootBRefs[64]; u32 gc_rootBRefsSz;
+void gc_add_ref(B* x) {
+  if (gc_rootBRefsSz>=64) err("Too many GC root B refs");
+  gc_rootBRefs[gc_rootBRefsSz++] = x;
 }
 
 
@@ -64,6 +70,7 @@ static void gc_resetTag(Value* x) {
 void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
   for (u32 i = 0; i < gc_rootObjSz; i++) mm_visitP(gc_rootObjs[i]);
+  for (u32 i = 0; i < gc_rootBRefsSz; i++) mm_visit(*gc_rootBRefs[i]);
 }
 u64 gc_lastAlloc;
 void gc_forceGC() {

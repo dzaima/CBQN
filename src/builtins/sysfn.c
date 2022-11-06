@@ -709,14 +709,6 @@ B import_c1(B d, B x) {
   
   return r;
 }
-static void sys_gcFn() {
-  mm_visit(importKeyList);
-  mm_visit(importValList);
-  mm_visit(thrownMsg);
-  #if CATCH_ERRORS
-  mm_visit(lastErrMsg);
-  #endif
-}
 void clearImportCache() {
   if (importKeyList.u!=0) {
     dec(importKeyList); importKeyList = m_f64(0);
@@ -1552,8 +1544,14 @@ void sysfn_init() {
   
   #if CATCH_ERRORS
   lastErrMsg = bi_N;
+  gc_add_ref(&lastErrMsg);
   #endif
-  cdPath = m_c8vec(".", 1); gc_add(cdPath); gc_addFn(sys_gcFn);
+  cdPath = m_c8vec(".", 1); gc_add(cdPath);
+  
+  gc_add_ref(&importKeyList);
+  gc_add_ref(&importValList);
+  gc_add_ref(&thrownMsg);
+  
   reBQNDesc = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init() {
