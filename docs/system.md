@@ -32,7 +32,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•MonoTime`   | up to nanosecond level precision, depending on system support |
 | `•Delay`      | |
 | `•_timed`     | |
-| `•math`       | Fields: `Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan`; `⁼` supported |
+| `•math`       | Fields: `Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan`, `Atan2`; `⁼` supported |
 | `•MakeRand`   | uses wyhash, **not** cryptographically secure; Result fields: `Range`, `Deal`, `Subset` |
 | `•rand`       | seeds with system time (can be hard-coded by setting the C macro `RANDSEED`), same algorithm as `•MakeRand` |
 | `•bit`        | Fields: `_cast`; casting an sNaN bit pattern to a float is undefined behavior |
