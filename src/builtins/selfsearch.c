@@ -144,6 +144,15 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
   }                                                                      \
   TFREE(halloc);                                                         \
   if (i==n) { decG(x); return RESULT; }
+#define SELFHASHTAB_VAL(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, INIT) \
+  SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, \
+    /*AUXSIZE*/sizeof(u32),                                \
+    /* AUXINIT */                                          \
+    u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
+    memset32(val, 0, sz+ext);                              \
+    INIT ,                                                 \
+    /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
+    /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
@@ -261,12 +270,22 @@ B count_c1(B t, B x) {
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
+  #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB_VAL( \
+    T, W, RAD, STOP,                                       \
+    /*RES0*/0, /*RESULT*/r,                                \
+    /* RESWRITE */                                         \
+    bool e0=h==x0; rp[i]=val[j]+(ctr0&-(u32)e0);           \
+    hash[j]=h; val[j]+=!e0; ctr0+=e0; ,                    \
+    /*THRESHMUL*/1, THRESH,                                \
+    /*INIT*/u32 ctr0 = 1;)
   if (lw==5) {
-    if (n<=32) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
+    i32* rp; B r = m_i32arrv(&rp, n);
+    HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<14)? 3 : 5)
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)xv;
-    i32* r0; B r = m_i32arrv(&r0, n);
+    i32* r0 = rp;
     
     TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
@@ -284,6 +303,13 @@ B count_c1(B t, B x) {
     RADIX_LOOKUP_32(0, ++)
     return num_squeeze(r);
   }
+  if (lw == 6 && canCompare64_norm(x, n)) {
+    if (n<20) { BRUTE(64); }
+    i32* rp; B r = m_i32arrv(&rp, n);
+    HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
+    decG(r); // Fall through
+  }
+  #undef HASHTAB
   #undef BRUTE
   
   if (RNK(x)>1) x = toCells(x);
@@ -341,18 +367,12 @@ B indexOf_c1(B t, B x) {
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   
-  #define HASHTAB(T, W, THRESH) SELFHASHTAB(T, W, 0, 2*n, \
+  #define HASHTAB(T, W, THRESH) SELFHASHTAB_VAL(T, W, 0, 2*n, \
     /*RES0*/0, /*RESULT*/r,                                \
     /* RESWRITE */                                         \
     if (k!=h) { val[j]=ctr++; hash[j]=h; } rp[i]=val[j]; , \
     /*THRESHMUL*/2, THRESH,                                \
-    /*AUXSIZE*/sizeof(u32),                                \
-    /* AUXINIT */                                          \
-    u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
-    memset32(val, 0, sz+ext);                              \
-    u32 ctr = 1; ,                                         \
-    /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
-    /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
+    /*INIT*/u32 ctr = 1;)
   if (lw==5) {
     if (n<12) { BRUTE(32); }
     B r;
