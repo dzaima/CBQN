@@ -16,3 +16,7 @@ CBQNHeapDump
 /test/ffi/sharedTest
 /test/ffi/lib.so
 libcbqn.so
+
+# clangd
+compile_commands.json
+/.cache/

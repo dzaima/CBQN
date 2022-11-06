@@ -122,7 +122,9 @@ CMP_REC(ne, ne, swapped=0;)
   FN_LUT(cmp_fns, base, lt, AS);
   FN_LUT(cmp_fns, base, le, AS);
 #endif
+#if !CLANGD
 #undef FN_LUT
+#endif
 
 
 
