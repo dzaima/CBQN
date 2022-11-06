@@ -380,11 +380,23 @@ B path_info(B path, i32 mode) {
 }
 
 void mmX_dumpHeap(FILE* f);
-void writeNum(FILE* f, u64 v, i32 len) {
+NOINLINE void writeNum(FILE* f, u64 v, i32 len) {
   u8 buf[8];
   for (i32 i = 0; i < len; i++) buf[i] = (v>>(8*i)) & 0xff;
   fwrite(buf, 1, len, f);
 }
+static char* types_str[] = {
+  #define F(X) #X,
+  FOR_TYPE(F)
+  #undef F
+  NULL
+};
+static u8 types_val[] = {
+  #define F(X) t_##X,
+  FOR_TYPE(F)
+  #undef F
+};
+
 void cbqn_heapDump() {
   char* name = "CBQNHeapDump";
   FILE* f = fopen(name, "w");
@@ -405,10 +417,12 @@ void cbqn_heapDump() {
     writeNum(f, getpid(), 8);
   #endif
   
-  // t_names
-  #define F(X) { t8=t_##X; fwrite(&t8, 1, 1, f); char* s = #X; fwrite(s, 1, strlen(s)+1, f); }
-  FOR_TYPE(F)
-  #undef F
+  { // t_names
+    for (i32 i = 0; types_str[i]; i++) {
+      t8=types_val[i]; fwrite(&t8, 1, 1, f);
+      char* s = types_str[i]; fwrite(s, 1, strlen(s)+1, f);
+    }
+  }
   t8 = 255; fwrite(&t8, 1, 1, f); // end of t_names
   
   t8 = 12; fwrite(&t8, 1, 1, f); // number of tag names
