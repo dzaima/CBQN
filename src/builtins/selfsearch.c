@@ -160,14 +160,15 @@ B memberOf_c1(B t, B x) {
     return r;
   }
   #define BRUTE(T) \
-      i##T* xp = xv;                                                   \
-      u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
-      for (usz i=1; i<n; i++) {                                        \
-        bool c=1; i##T xi=xp[i];                                       \
-        for (usz j=0; j<i; j++) c &= xi!=xp[j];                        \
-        bitp_set(rp, i, c);                                            \
-      }                                                                \
-      decG(x); return r;
+    i##T* xp = xv;                                                     \
+    u64 rv = 1;                                                        \
+    for (usz i=1; i<n; i++) {                                          \
+      bool c=1; i##T xi=xp[i];                                         \
+      PLAINLOOP for (usz j=0; j<i; j++) c &= xi!=xp[j];                \
+      rv |= c<<i;                                                      \
+    }                                                                  \
+    decG(x); u64* rp; B r = m_bitarrv(&rp, n); rp[0] = rv;             \
+    return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                                     \
     u##T* xp = (u##T*)xv;                                              \
@@ -239,14 +240,14 @@ B count_c1(B t, B x) {
   if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
-      i##T* xp = xv;                                           \
-      i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
-      for (usz i=1; i<n; i++) {                                \
-        usz c=0; i##T xi=xp[i];                                \
-        for (usz j=0; j<i; j++) c += xi==xp[j];                \
-        rp[i] = c;                                             \
-      }                                                        \
-      decG(x); return r;
+    i##T* xp = xv;                                             \
+    i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                   \
+    for (usz i=1; i<n; i++) {                                  \
+      usz c=0; i##T xi=xp[i];                                  \
+      PLAINLOOP for (usz j=0; j<i; j++) c += xi==xp[j];        \
+      rp[i] = c;                                               \
+    }                                                          \
+    decG(x); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
     u##T* xp = (u##T*)xv;                                      \
@@ -310,15 +311,15 @@ B indexOf_c1(B t, B x) {
     return shape_c1(m_f64(0), r);
   }
   #define BRUTE(T) \
-      i##T* xp = xv;                                           \
-      i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
-      TALLOC(i##T, uniq, n); uniq[0]=xp[0];                    \
-      for (usz i=1, u=1; i<n; i++) {                           \
-        bool c=1; usz s=0; i##T xi=uniq[u]=xp[i];              \
-        for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);       \
-        rp[i]=s; u+=u==s;                                      \
-      }                                                        \
-      decG(x); TFREE(uniq); return r;
+    i##T* xp = xv;                                             \
+    i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                   \
+    TALLOC(i##T, uniq, n); uniq[0]=xp[0];                      \
+    for (usz i=1, u=1; i<n; i++) {                             \
+      bool c=1; usz s=0; i##T xi=uniq[u]=xp[i];                \
+      for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);         \
+      rp[i]=s; u+=u==s;                                        \
+    }                                                          \
+    decG(x); TFREE(uniq); return r;
   #define DOTAB(T) \
     i32 u=0;                                                   \
     for (usz i=0; i<n; i++) {                                  \
@@ -354,7 +355,7 @@ B indexOf_c1(B t, B x) {
     val -= dif; memset32(val, 0, dif); ,                   \
     /*AUXCLEAR*/val[j] = 0;, /*AUXMOVE*/val[k] = val[j];)
   if (lw==5) {
-    if (n<12) { BRUTE(32); }
+    if (n<16) { BRUTE(32); }
     B r;
     i32* rp; r = m_i32arrv(&rp, n);
     i32* xp = tyany_ptr(x);
