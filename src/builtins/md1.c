@@ -156,6 +156,8 @@ static i64 bit_diff(u64* x, u64 am) {
 static u64 vg_rand(u64 x) { return x; }
 #endif
 
+B slash_c1(B f, B x);
+
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = RNK(x);
@@ -167,15 +169,35 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
       u64* xp=bitarr_ptr(x);
-      if (rtid==n_add && ia<I32_MAX) { i32* rp; B r=m_i32arrv(&rp, ia); 
-      #if SINGELI
-        avx2_bcs32(xp, rp, ia);
-      #else
-        i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; }
-      #endif
-      decG(x); return r; }
-      if (rtid==n_or  |               rtid==n_ceil ) { u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
+      if (rtid==n_add) {
+        u64 xs = bit_sum(xp, ia);
+        if (xs>I32_MAX) goto base;
+        if (xs<=1) { if (xs==0) return x; goto bit_or; }
+        if (xs < ia/128) {
+          B ones = slash_c1(m_f64(0), x);
+          u8 re = xs<=I8_MAX? el_i8 : xs<=I16_MAX? el_i16 : el_i32;
+          MAKE_MUT(r0, ia) mut_init(r0, re); MUTG_INIT(r0);
+          SGetU(ones)
+          usz ri = 0;
+          for (usz i = 0; i < xs; i++) {
+            usz e = o2s(GetU(ones, i));
+            mut_fillG(r0, ri, m_i32(i), e-ri);
+            ri = e;
+          }
+          if (ri<ia) mut_fillG(r0, ri, m_i32(xs), ia-ri);
+          decG(ones);
+          return mut_fv(r0);
+        }
+        i32* rp; B r=m_i32arrv(&rp, ia); 
+        #if SINGELI
+          avx2_bcs32(xp, rp, ia);
+        #else
+          i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; }
+        #endif
+        decG(x); return r;
+      }
+      if (rtid==n_or  |               rtid==n_ceil ) { bit_or: u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
+      if (rtid==n_and | rtid==n_mul | rtid==n_floor) {         u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
       if (rtid==n_ne) { B r=scan_ne(0, xp, ia); decG(x); return r; }
       goto base;
     }
