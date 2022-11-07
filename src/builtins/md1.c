@@ -169,15 +169,16 @@ B scan_bit_sum(B x, u64* xp, u64 ia, u64 xs) { // consumes x
     return mut_fv(r0);
   }
   B r;
+  void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
   #if SINGELI
-    i32* rp; r=m_i32arrv(&rp, ia); 
-    avx2_bcs32(xp, rp, ia);
+    #define SUM(W,T) avx2_bcs##W(xp, rp, ia);
   #else
-    void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
-    #define CASE(T) case el_##T: { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } } break;
-    switch (re) { default:UD; CASE(i8) CASE(i16) CASE(i32) }
-    #undef CASE
+    #define SUM(W,T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
   #endif
+  #define CASE(W) case el_i##W: SUM(W, i##W) break;
+  switch (re) { default:UD; CASE(8) CASE(16) CASE(32) }
+  #undef CASE
+  #undef SUM
   decG(x); return r;
 }
 
