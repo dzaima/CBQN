@@ -86,28 +86,38 @@ avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
 'avx2_scan_pluswrap_u32' = avx2_scan_assoc_0{u32, +}
 
 # Boolean cumulative sum
-avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
-  rv:= *[8]u32~~r
+avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
+  def U = ty_u{T}
+  def w = width{T}
+  def vl= 256 / w
+  def V = [vl]U
+  rv:= *V~~r
   xv:= *u32~~x
-  c:= broadcast{[8]u32, 0}
+  c:= broadcast{V, 0}
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
   def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, broadcast{T, 0}}
   
-  def step{x:u32, i, store1} = {
+  def sumlanes{x:u32} = {
     b:= broadcast{[8]u32, x} >> make{[8]u32, 4*tail{1, iota{8}}}
     s:= sel8{[32]u8~~b, ii32>>3 + bit{2}}
     p:= s & make{[32]u8, (1<<(1+tail{2})) - 1}  # Prefixes
     d:= sel{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
     d+= sel8{d, bit{2}*(1+bit{3}>>2)-1}
-    d+= sel8{d, bit{3}-1}
-   #d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 4b1100}
-    j:= 4*i
+    d + sel8{d, bit{3}-1}
+  }
+  def step{x:u32, i, store1} = {
+    d:= sumlanes{x}
+    if (w==8) d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 4b1100}
+    j:= (w/8)*i
     def out{v, k} = each{out, widen{v}, 2*k+iota{2}}
-    def out{v0:[8]i32, k} = {
-      v := [8]u32~~v0 + c
-      if (tail{1,k}) c = sel{[8]u32, v, make{[8]i32, broadcast{8, 7}}}
+    def out{v0:[vl]T, k} = {
+      v := V~~v0 + c
+      # Update carry at the lane boundary
+      if (w!=32 or tail{1,k}) {
+        c = sel{[8]u32, spread{v}, make{[8]i32, broadcast{8, 7}}}
+      }
       store1{rv, j+k, v}
     }
     out{[32]i8~~d, 0}
@@ -120,15 +130,17 @@ avx2_bcs32(x:*u64, r:*i32, l:u64) : void = {
 
   if (e*32 != l) {
     def st{p, j, v} = {
-      j8 := 8*j
-      if (j8+8 <= l) {
+      jv := vl*j
+      if (jv+vl <= l) {
         store{p, j, v}
       } else {
-        if (j8 < l) maskstoreF{rv, maskOf{[8]i32, l - j8}, j, v}
+        if (jv < l) maskstoreF{rv, maskOf{V, l - jv}, j, v}
         return{}
       }
     }
     step{load{xv, e}, e, st}
   }
 }
-'avx2_bcs32' = avx2_bcs32
+'avx2_bcs8'  = avx2_bcs{i8}
+'avx2_bcs16' = avx2_bcs{i16}
+'avx2_bcs32' = avx2_bcs{i32}

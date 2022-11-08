@@ -151,6 +151,36 @@ static i64 bit_diff(u64* x, u64 am) {
   #include "../singeli/gen/scan.c"
   #pragma GCC diagnostic pop
 #endif
+B slash_c1(B f, B x);
+B scan_bit_sum(B x, u64* xp, u64 ia, u64 xs) { // consumes x
+  u8 re = xs<=I8_MAX? el_i8 : xs<=I16_MAX? el_i16 : el_i32;
+  if (xs < ia/128) {
+    B ones = slash_c1(m_f64(0), x);
+    MAKE_MUT(r0, ia) mut_init(r0, re); MUTG_INIT(r0);
+    SGetU(ones)
+    usz ri = 0;
+    for (usz i = 0; i < xs; i++) {
+      usz e = o2s(GetU(ones, i));
+      mut_fillG(r0, ri, m_i32(i), e-ri);
+      ri = e;
+    }
+    if (ri<ia) mut_fillG(r0, ri, m_i32(xs), ia-ri);
+    decG(ones);
+    return mut_fv(r0);
+  }
+  B r;
+  void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
+  #if SINGELI
+    #define SUM(W,T) avx2_bcs##W(xp, rp, ia);
+  #else
+    #define SUM(W,T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
+  #endif
+  #define CASE(W) case el_i##W: SUM(W, i##W) break;
+  switch (re) { default:UD; CASE(8) CASE(16) CASE(32) }
+  #undef CASE
+  #undef SUM
+  decG(x); return r;
+}
 
 #if !USE_VALGRIND
 static u64 vg_rand(u64 x) { return x; }
@@ -167,15 +197,14 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
       u64* xp=bitarr_ptr(x);
-      if (rtid==n_add && ia<I32_MAX) { i32* rp; B r=m_i32arrv(&rp, ia); 
-      #if SINGELI
-        avx2_bcs32(xp, rp, ia);
-      #else
-        i32 c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); rp[i]=c; }
-      #endif
-      decG(x); return r; }
-      if (rtid==n_or  |               rtid==n_ceil ) { u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
+      if (rtid==n_add) {
+        u64 xs = bit_sum(xp, ia);
+        if (xs>I32_MAX) goto base;
+        if (xs<=1) { if (xs==0) return x; goto bit_or; }
+        return FL_SET(scan_bit_sum(x, xp, ia, xs), fl_asc|fl_squoze);
+      }
+      if (rtid==n_or  |               rtid==n_ceil ) { bit_or:; u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
+      if (rtid==n_and | rtid==n_mul | rtid==n_floor) {          u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
       if (rtid==n_ne) { B r=scan_ne(0, xp, ia); decG(x); return r; }
       goto base;
     }
