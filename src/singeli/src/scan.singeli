@@ -87,7 +87,7 @@ avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
 
 # Boolean cumulative sum
 avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
-  def U = primtype{'u',width{T}}
+  def U = ty_u{T}
   def w = width{T}
   def vl= 256 / w
   def V = [vl]U
