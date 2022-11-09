@@ -230,9 +230,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
         return withFill(HARR_FV(rp), getFillQ(x));
       }
     }
-    #define MEM_CPY(R,RI,X,XI,L) memcpy(R+RI, X+XI, L)
     COMPRESS_GROUP(MEM_CPY)
-    #undef MEM_CPY
     if (is_B) {
       for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
       r = withFill(rh.b, getFillQ(x));

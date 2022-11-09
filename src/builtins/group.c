@@ -2,6 +2,7 @@
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
 #include "../builtins.h"
+#include "../utils/mut.h"
 
 extern B ud_c1(B, B);
 extern B ne_c2(B, B, B);
@@ -9,8 +10,6 @@ extern B slash_c1(B, B);
 extern B slash_c2(B, B, B);
 extern B select_c2(B, B, B);
 extern B take_c2(B, B, B);
-extern B drop_c2(B, B, B);
-extern B join_c2(B, B, B);
 
 static Arr* arr_shChangeLen(Arr* a, ur r, usz* xsh, usz len) {
   assert(r > 1);
@@ -26,6 +25,11 @@ static B m_shChangeLen(u8 xt, ur xr, usz* xsh, usz l, usz cw, usz csz) {
 static void allocGroups(B* rp, usz ria, B z, u8 xt, ur xr, usz* xsh, i32* len, usz width, usz csz) {
   if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; if (!l) rp[j] = inc(z); else m_tyarrv(rp+j, width, l, xt); }
   else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : m_shChangeLen(xt, xr, xsh, l, width, csz); }
+}
+static Arr* m_bitarr_nop(usz ia) { return m_arr(BITARR_SZ(ia), t_bitarr, ia); }
+static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, i32* len, usz width) {
+  if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : taga(arr_shVec(m_bitarr_nop(l))); }
+  else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)); }
 }
 
 extern B rt_group;
@@ -93,7 +97,7 @@ B group_c2(B t, B w, B x) {
         if (bits && xl>=3) { bits=0; width>>=3; }
         if ((csz & (csz-1)) || xl>7) xl = 7;
       }
-      if (xia>64 && notB && !bits && change<(xia*width)/32) {
+      if (xia>64 && notB && change<(xia*width)/32) {
         #define C1(F,X  ) F##_c1(m_f64(0),X  )
         #define C2(F,X,W) F##_c2(m_f64(0),X,W)
         
@@ -121,14 +125,22 @@ B group_c2(B t, B w, B x) {
         
         void* xp = tyany_ptr(x);
         
-        allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
-        for (u64 i=0, k=i0*width; i<wia; i++) {
-          u64 k0 = k;
-          u64 l = ip[i]*width; k += l;
-          i32 n = wp[i]; if (n<0) continue;
-          memcpy((u8*)tyarr_ptr(rp[n])+pos[n], (u8*)xp+k0, l);
-          pos[n] += l;
+        #define GROUP_CHUNKED(CPY) \
+          for (u64 i=0, k=i0*width; i<wia; i++) {     \
+            u64 k0 = k;                               \
+            u64 l = ip[i]*width; k += l;              \
+            i32 n = wp[i]; if (n<0) continue;         \
+            CPY(tyarr_ptr(rp[n]), pos[n], xp, k0, l); \
+            pos[n] += l;                              \
+          }
+        if (!bits) {
+          allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
+          GROUP_CHUNKED(MEM_CPY)
+        } else {
+          allocBitGroups(rp, ria, z, xr, xsh, len, width);
+          GROUP_CHUNKED(bit_cpy)
         }
+        #undef GROUP_CHUNKED
         decG(ind);
       } else {
         if (xia>32 && neg>xia/4+xia/8) {
@@ -144,20 +156,25 @@ B group_c2(B t, B w, B x) {
         for (usz i = 0; i < xia; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
         
         u8 xk = xl - 3;
-        if (notB && !bits && sort) {
+        if (notB && sort) {
           void* xp = tyany_ptr(x);
           u64 i=neg*width;
-          #define GROUP_SORT(ALLOC) \
-            for (usz j=0; j<ria; j++) {                \
-              usz l = len[j];                          \
-              if (!l) { rp[j]=inc(z); continue; }      \
-              ALLOC;                                   \
-              u64 lw = l*width;                        \
-              memcpy(tyarr_ptr(rp[j]), (u8*)xp+i, lw); \
-              i += lw;                                 \
+          #define GROUP_SORT(CPY, ALLOC) \
+            for (usz j=0; j<ria; j++) {            \
+              usz l = len[j];                      \
+              if (!l) { rp[j]=inc(z); continue; }  \
+              ALLOC;                               \
+              u64 lw = l*width;                    \
+              CPY(tyarr_ptr(rp[j]), 0, xp, i, lw); \
+              i += lw;                             \
             }
-          if (xr==1) GROUP_SORT(m_tyarrv(rp+j, width, l, xt))
-          else       GROUP_SORT(rp[j] = m_shChangeLen(xt, xr, xsh, l, width, csz))
+          if (!bits) {
+            if (xr==1) GROUP_SORT(MEM_CPY, m_tyarrv(rp+j, width, l, xt))
+            else       GROUP_SORT(MEM_CPY, rp[j] = m_shChangeLen(xt, xr, xsh, l, width, csz))
+          } else {
+            if (xr==1) GROUP_SORT(bit_cpy, rp[j] = taga(arr_shVec(m_bitarr_nop(l))))
+            else       GROUP_SORT(bit_cpy, rp[j] = taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)))
+          }
           #undef GROUP_SORT
         } else if (notB && xk <= 3) {
           void* xp = tyany_ptr(x);
