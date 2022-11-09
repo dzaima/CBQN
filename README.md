@@ -8,7 +8,7 @@
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - `make CC=gcc` if clang isn't installed
     - `make PIE=""` on ARM CPUs (incl. Android & M1)
-    - `make FFI=0` if your system doesn't have libffi (see [macOS](#macos) for FFI support on macOS)
+    - `make FFI=0` if your system doesn't have `libffi 3.3` (see [macOS](#macos) for FFI support on macOS)
     - Use `gmake` on BSD
     - `make clean` if anything breaks and you want a clean build slate
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
