@@ -206,6 +206,17 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (rtid==n_or  |               rtid==n_ceil ) { bit_or:; u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]= 0  ; decG(x); return r; }
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) {          u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia); u64 xi; usz i=0; while(i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL; decG(x); return r; }
       if (rtid==n_ne) { B r=scan_ne(0, xp, ia); decG(x); return r; }
+      if (rtid==n_lt) {
+        u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
+        u64 m10 = 0x5555555555555555;
+        u64 p = 0;
+        for (usz i=0; i<n; i++) {
+          u64 x = xp[i];
+          u64 c  = (m10 & ~(x<<1)) & ~(p>>63);
+          rp[i] = p = x & (m10 ^ (x + c));
+        }
+        decG(x); return r;
+      }
       goto base;
     }
     if (rtid==n_add) { // +
