@@ -4,9 +4,9 @@
 
 // Group: native code for rank-1 𝕨 only, optimizations for integers
 // SHOULD squeeze 𝕨
-// SHOULD handle boolean 𝕨 with replicate
-// COULD handle small-range 𝕨 with equals-replicate
 // All statistics computed in the initial pass that finds ⌈´𝕨
+// If 𝕨 is boolean, compute from 𝕨¬⊸/𝕩 and 𝕨/𝕩
+// COULD handle small-range 𝕨 with equals-replicate
 // If +´»⊸≠𝕨 is small, process in chunks as a separate case
 // If +´𝕨<¯1 is large, filter out ¯1s.
 //   COULD recompute statistics, may have enabled chunked or sorted code
@@ -16,6 +16,7 @@
 //   Converts 𝕨 to i32, COULD handle smaller types
 //   CPU-sized cells handled quickly, 1-bit with bitp_get/set
 //   SHOULD use memcpy and bit_cpy for other sizes
+//   TRIED separating neg>0 and neg==0 loops, no effect
 
 #include "../core.h"
 #include "../utils/talloc.h"
@@ -24,6 +25,7 @@
 #include "../utils/mut.h"
 
 extern B ud_c1(B, B);
+extern B not_c1(B, B);
 extern B ne_c2(B, B, B);
 extern B slash_c1(B, B);
 extern B slash_c2(B, B, B);
@@ -53,7 +55,6 @@ static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, i32* len, usz w
 
 // Integer list w
 static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
-  if (we==el_bit) w = taga(cpyI8Arr(w));
   i64 ria = 0;
   bool bad = false, sort = true;
   usz neg = 0, change = 0;
@@ -72,7 +73,11 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
     if (wia>xia) { ria=((T*)wp0)[xia]; bad|=ria<-1; } \
     i64 m=(i64)max+1; if (m>ria) ria=m;               \
     break; }
-  switch (we) { default:UD; case el_bit: CASE(i8) CASE(i16) CASE(i32) }
+  switch (we) { default:UD;
+    CASE(i8) CASE(i16) CASE(i32)
+    // Boolean w is special-cased before we would check sort or change
+    case el_bit: ria = xia? 1+bit_has(wp0,xia,1) : wia? bitp_get(wp0,0) : 0; break;
+  }
   #undef CASE
   if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
   if (ria > (i64)(USZ_MAX)) thrOOM();
@@ -87,8 +92,19 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   B z = taga(rf);
   fillarr_setFill(r, z);
   
-  // Both cases needed to make sure wia>0 for ip[wia-1] below
-  if (ria==0) goto setfill_dec_ret;
+  if (ria <= 1) {
+    if (ria == 0) goto setfill_dec_ret; // Needed so wia>0
+    if (neg == 0) { rp[0]=inc(x); goto setfill_dec_ret; }
+  }
+  if (we==el_bit) {
+    assert(ria == 2);
+    fillarr_setFill(rf, xf);
+    if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
+    rp[1] = slash_c2(m_f64(0), inc(w), inc(x));
+    rp[0] = slash_c2(m_f64(0), not_c1(m_f64(0), w), x);
+    return taga(r);
+  }
+  // Needed to make sure wia>0 for ip[wia-1] below
   if (neg==xia) {
     for (usz i = 0; i < ria; i++) rp[i] = inc(z);
     goto setfill_dec_ret;
