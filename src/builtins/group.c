@@ -13,8 +13,8 @@
 // If ∧´1↓»⊸<𝕨, that is, ∧⊸≡𝕨, each result array is a slice of 𝕩
 //   COULD use slice types; seems dangerous--when will they be freed?
 // Remaining cases copy cells from 𝕩 individually
-//   CPU-sized cells handled quickly
-//   SHOULD use bit ops for 1-bit cells
+//   Converts 𝕨 to i32, COULD handle smaller types
+//   CPU-sized cells handled quickly, 1-bit with bitp_get/set
 //   SHOULD use memcpy and bit_cpy for other sizes
 
 #include "../core.h"
@@ -158,7 +158,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   }
   
   // Many ¯1s: filter out, then continue
-  if (xia>32 && neg>xia/4+xia/8) {
+  if (xia>32 && neg>(bits?0:xia/4)+xia/8) {
     if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
     B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
     w = slash_c2(m_f64(0), inc(m), w);
@@ -199,6 +199,13 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
       case 1: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u16*)tyarr_ptr(rp[n]))[pos[n]++] = ((u16*)xp)[i]; } break;
       case 2: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u32*)tyarr_ptr(rp[n]))[pos[n]++] = ((u32*)xp)[i]; } break;
       case 3: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u64*)tyarr_ptr(rp[n]))[pos[n]++] = ((u64*)xp)[i]; } break;
+    }
+  } else if (xl == 0) { // 1-bit cells
+    u64* xp = bitarr_ptr(x);
+    allocBitGroups(rp, ria, z, xr, xsh, len, width);
+    for (usz i = 0; i < xia; i++) {
+      bool b = bitp_get(xp,i); i32 n = wp[i];
+      if (n>=0) bitp_set(bitarr_ptr(rp[n]), pos[n]++, b);
     }
   } else { // Generic case
     for (usz i = 0; i < ria; i++) {
