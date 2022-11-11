@@ -13,7 +13,7 @@
 // Adaptivity based on 𝕨 statistics
 //   None for 8-bit Where, too short
 //   COULD try per-block adaptivity for 16-bit Compress
-//   Sparse if +´𝕨 is small, branchless or branching if very small
+//   Sparse if +´𝕨 is small, branchless unless it's very small
 //     Chosen per-argument for 8, 16 and per-block for larger
 //     Careful when benchmarking, branch predictor has a long memory
 //   Grouped if +´»⊸≠𝕨 is small, always branching
@@ -27,7 +27,7 @@
 //   COULD specialize on result type
 // Sparse Replicate
 //   ≠` for booleans, +` for CPU types
-//   TRIED ≠` generally, slightly worse
+//   TRIED ≠` for CPU types; no better, and clmul would be worse
 // COULD consolidate refcount updates for nested 𝕩
 
 // Replicate by constant
@@ -37,6 +37,18 @@
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
 
 // SHOULD do something for odd cell widths in Replicate
+
+// Indices inverse (/⁼), a lot like Group
+// COULD always give a squeezed result, sometimes expensive
+// SHOULD sort large-range 𝕩 to find minimum result type
+// Boolean 𝕩: just count 1s
+// Long i8 and i16 𝕩: count into zeroed buffer before anything else
+//   Only zero positive part; if total is too small there were negatives
+//   Cutoff is set so short 𝕩 gives a result of the same type
+// Scan for strictly ascending 𝕩
+//   COULD vectorize with find-compare
+//   COULD find descending too
+// Unsigned maximum for integers to avoid a separate negative check
 
 #include "../core.h"
 #include "../utils/mut.h"
@@ -834,32 +846,29 @@ B slash_im(B t, B x) {
   u8 xe = TI(x,elType);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
+  B r;
   switch(xe) { default: UD;
     case el_bit: {
       usz sum = bit_sum(bitarr_ptr(x), xia);
       usz ria = 1 + (sum>0);
-      f64* rp; B r = m_f64arrv(&rp, ria);
+      f64* rp; r = m_f64arrv(&rp, ria);
       rp[sum>0] = sum; rp[0] = xia - sum;
-      decG(x); return num_squeezeChk(r);
+      r = num_squeeze(r); break;
     }
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
-      B r;                                                                       \
       if (xia < m/2) {                                                           \
-        usz a=1; u##N max=xp[0];                                                 \
         if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
-        if (xia < m/2) {                                                         \
-          a=1; while (a<xia && xp[a]>xp[a-1]) a++;                               \
-          max=xp[a-1];                                                           \
-          if (a==xia) { /* Sorted unique argument */                             \
-            usz ria = max + 1;                                                   \
-            u64* rp; r = m_bitarrv(&rp, ria);                                    \
-            for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                            \
-            for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                    \
-            decG(x); return r;                                                   \
-          }                                                                      \
+        usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
+        u##N max=xp[a-1];                                                        \
+        if (a==xia) { /* Sorted unique argument */                               \
+          usz ria = max + 1;                                                     \
+          u64* rp; r = m_bitarrv(&rp, ria);                                      \
+          for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                              \
+          for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                      \
+          break;                                                                 \
         }                                                                        \
         for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
         if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
@@ -875,13 +884,13 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
         TFREE(t);                                                                \
       }                                                                          \
-      decG(x); return num_squeezeChk(r);                                            \
+      r = num_squeeze(r); break;                                                 \
     }
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
     case el_i32: {
       i32* xp = i32any_ptr(x);
-      usz i,j; B r; i32 max=-1;
+      usz i,j; i32 max=-1;
       for (i = 0; i < xia; i++) { i32 c=xp[i]; if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { i32 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       usz ria = max+1;
@@ -892,11 +901,11 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[xp[i]]++;
       }
-      decG(x); return r;
+      break;
     }
     case el_f64: {
       f64* xp = f64any_ptr(x);
-      usz i,j; B r; f64 max=-1;
+      usz i,j; f64 max=-1;
       for (i = 0; i < xia; i++) { f64 c=xp[i]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { f64 c=xp[j]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       usz ria = max+1; if (ria==0) thrOOM();
@@ -907,13 +916,13 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[(usz)xp[i]]++;
       }
-      decG(x); return r;
+      break;
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
       SLOW1("/⁼", x);
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
-      usz i,j; B r; i64 max=-1;
+      usz i,j; i64 max=-1;
       for (i = 0; i < xia; i++) { i64 c=o2i64(xp[i]); if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { i64 c=o2i64(xp[j]); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       if (max > USZ_MAX-1) thrOOM();
@@ -925,9 +934,10 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[o2i64G(xp[i])]++;
       }
-      decG(x); return r;
+      break;
     }
   }
+  decG(x); return r;
 }
 
 B slash_ucw(B t, B o, B w, B x) {
