@@ -1,3 +1,43 @@
+// Indices and Replicate (/)
+// In the notes 𝕨 might indicate 𝕩 for Indices too
+
+// Boolean 𝕨 (Where/Compress) general case based on result type width
+// COULD use AVX-512
+// Size 1: pext, or bit-at-a-time
+//   SHOULD emulate pext if unavailable
+//   COULD return boolean result from Where
+// Size 8, 16: pdep/pext, or branchless
+//   SHOULD try vector lookup-shuffle if unavailable or old AMD
+// Size 32, 64: 16-bit indices from where_block_u16
+// Other sizes: always used grouped code
+// Adaptivity based on 𝕨 statistics
+//   None for 8-bit Where, too short
+//   COULD try per-block adaptivity for 16-bit Compress
+//   Sparse if +´𝕨 is small, branchless or branching if very small
+//     Chosen per-argument for 8, 16 and per-block for larger
+//     Careful when benchmarking, branch predictor has a long memory
+//   Grouped if +´»⊸≠𝕨 is small, always branching
+//     Chosen per-argument with a threshold that gives up early
+//     SHOULD implement grouped Where
+
+// Arbitrary 𝕨 is slower, squeezes if (+´<≠)𝕨 to avoid this
+// Dense cases (large +´𝕨) use obvious loop, expand 𝕨 to i32
+//   Boolean Replicate overwrites to avoid trailing boundary
+// Sparse Indices uses ⌈` with Singeli and +` otherwise, i32 output only
+//   COULD specialize on result type
+// Sparse Replicate
+//   ≠` for booleans, +` for CPU types
+//   TRIED ≠` generally, slightly worse
+// COULD consolidate refcount updates for nested 𝕩
+
+// Replicate by constant
+// Boolean uses pdep, ≠`, or overwriting
+//   SHOULD make a shift/mask replacement for pdep
+// Others use +`, or lots of Singeli
+//   Fixed shuffles, factorization, partial shuffles, self-overlapping
+
+// SHOULD do something for odd cell widths in Replicate
+
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
