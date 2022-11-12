@@ -107,7 +107,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   }
   // Needed to make sure wia>0 for ip[wia-1] below
   if (neg==xia) {
-    for (usz i = 0; i < ria; i++) rp[i] = inc(z);
+    FILL_TO(rp, el_B, 0, z, ria);
     goto dec_ret;
   }
   TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
