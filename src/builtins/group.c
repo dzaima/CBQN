@@ -54,29 +54,29 @@ static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, i32* len, usz w
 }
 
 // Integer list w
-static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
+static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   i64 ria = 0;
   bool bad = false, sort = true;
   usz neg = 0, change = 0;
   void *wp0 = tyany_ptr(w);
   #define CASE(T) case el_##T: { \
-    T max = -1, prev = -1;                            \
-    for (usz i = 0; i < xia; i++) {                   \
-      T n = ((T*)wp0)[i];                             \
-      if (n>max) max = n;                             \
-      bad |= n < -1;                                  \
-      neg += n == -1;                                 \
-      sort &= prev <= n;                              \
-      change += prev != n;                            \
-      prev = n;                                       \
-    }                                                 \
-    if (wia>xia) { ria=((T*)wp0)[xia]; bad|=ria<-1; } \
-    i64 m=(i64)max+1; if (m>ria) ria=m;               \
+    T max = -1, prev = -1;                          \
+    for (usz i = 0; i < xn; i++) {                  \
+      T n = ((T*)wp0)[i];                           \
+      if (n>max) max = n;                           \
+      bad |= n < -1;                                \
+      neg += n == -1;                               \
+      sort &= prev <= n;                            \
+      change += prev != n;                          \
+      prev = n;                                     \
+    }                                               \
+    if (wia>xn) { ria=((T*)wp0)[xn]; bad|=ria<-1; } \
+    i64 m=(i64)max+1; if (m>ria) ria=m;             \
     break; }
   switch (we) { default:UD;
     CASE(i8) CASE(i16) CASE(i32)
     // Boolean w is special-cased before we would check sort or change
-    case el_bit: ria = xia? 1+bit_has(wp0,xia,1) : wia? bitp_get(wp0,0) : 0; break;
+    case el_bit: ria = xn? 1+bit_has(wp0,xn,1) : wia? bitp_get(wp0,0) : 0; break;
   }
   #undef CASE
   if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
@@ -100,13 +100,13 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   }
   if (we==el_bit) {
     assert(ria == 2);
-    if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
+    if (wia>xn) w = take_c2(m_f64(0), m_f64(xn), w);
     rp[1] = slash_c2(m_f64(0), inc(w), inc(x));
     rp[0] = slash_c2(m_f64(0), not_c1(m_f64(0), w), x);
     return taga(r);
   }
   // Needed to make sure wia>0 for ip[wia-1] below
-  if (neg==xia) {
+  if (neg==xn) {
     FILL_TO(rp, el_B, 0, z, ria);
     goto dec_ret;
   }
@@ -127,14 +127,14 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   }
   
   // Few changes in 𝕨: move in chunks
-  if (xia>64 && notB && change<(xia*width)/32) {
+  if (xn>64 && notB && change<(xn*width)/32) {
     #define C1(F,X  ) F##_c1(m_f64(0),X  )
     #define C2(F,X,W) F##_c2(m_f64(0),X,W)
     
-    u64* mp; B m = m_bitarrv(&mp, xia);
+    u64* mp; B m = m_bitarrv(&mp, xn);
     u8* wp0 = tyany_ptr(w);
     we = TI(w,elType);
-    CMP_AA_IMM(ne, we, mp, wp0-elWidth(we), wp0, xia);
+    CMP_AA_IMM(ne, we, mp, wp0-elWidth(we), wp0, xn);
     bitp_set(mp, 0, -1!=o2fG(IGetU(w,0)));
     
     B ind = C1(slash, m);
@@ -149,7 +149,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
     i32* wp = i32any_ptr(w);
     usz i0 = ip[0];
     for (usz i=0; i<wia-1; i++) ip[i] = ip[i+1]-ip[i];
-    ip[wia-1] = xia-ip[wia-1];
+    ip[wia-1] = xn-ip[wia-1];
     for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
     for (usz i = 0; i < wia; i++) len[wp[i]]+=ip[i];
     
@@ -178,17 +178,17 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   }
   
   // Many ¯1s: filter out, then continue
-  if (xia>32 && neg>(bits?0:xia/4)+xia/8) {
-    if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
+  if (xn>32 && neg>(bits?0:xn/4)+xn/8) {
+    if (wia>xn) w = take_c2(m_f64(0), m_f64(xn), w);
     B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
     w = slash_c2(m_f64(0), inc(m), w);
-    x = slash_c2(m_f64(0), m, x); xia = IA(x);
+    x = slash_c2(m_f64(0), m, x); xn = *SH(x);
     neg = 0;
   }
   if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w));
   i32* wp = i32any_ptr(w);
   for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-  for (usz i = 0; i < xia; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
+  for (usz i = 0; i < xn; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
   
   u8 xk = xl - 3;
   if (notB && csz==0) { // Empty cells, no movement needed
@@ -217,15 +217,15 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
     void* xp = tyany_ptr(x);
     allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
     switch(xk) { default: UD;
-      case 0: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u8* )tyarr_ptr(rp[n]))[pos[n]++] = ((u8* )xp)[i]; } break;
-      case 1: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u16*)tyarr_ptr(rp[n]))[pos[n]++] = ((u16*)xp)[i]; } break;
-      case 2: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u32*)tyarr_ptr(rp[n]))[pos[n]++] = ((u32*)xp)[i]; } break;
-      case 3: for (usz i = 0; i < xia; i++) { i32 n = wp[i]; if (n>=0) ((u64*)tyarr_ptr(rp[n]))[pos[n]++] = ((u64*)xp)[i]; } break;
+      case 0: for (usz i = 0; i < xn; i++) { i32 n = wp[i]; if (n>=0) ((u8* )tyarr_ptr(rp[n]))[pos[n]++] = ((u8* )xp)[i]; } break;
+      case 1: for (usz i = 0; i < xn; i++) { i32 n = wp[i]; if (n>=0) ((u16*)tyarr_ptr(rp[n]))[pos[n]++] = ((u16*)xp)[i]; } break;
+      case 2: for (usz i = 0; i < xn; i++) { i32 n = wp[i]; if (n>=0) ((u32*)tyarr_ptr(rp[n]))[pos[n]++] = ((u32*)xp)[i]; } break;
+      case 3: for (usz i = 0; i < xn; i++) { i32 n = wp[i]; if (n>=0) ((u64*)tyarr_ptr(rp[n]))[pos[n]++] = ((u64*)xp)[i]; } break;
     }
   } else if (xl == 0) { // 1-bit cells
     u64* xp = bitarr_ptr(x);
     allocBitGroups(rp, ria, z, xr, xsh, len, width);
-    for (usz i = 0; i < xia; i++) {
+    for (usz i = 0; i < xn; i++) {
       bool b = bitp_get(xp,i); i32 n = wp[i];
       if (n>=0) bitp_set(bitarr_ptr(rp[n]), pos[n]++, b);
     }
@@ -242,12 +242,12 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
     SLOW2("𝕨⊔𝕩", w, x);
     SGet(x)
     if (csz == 1) {
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < xn; i++) {
         i32 n = wp[i];
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
     } else {
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < xn; i++) {
         i32 n = wp[i];
         if (n<0) continue;
         usz p = (pos[n]++)*csz;
@@ -272,21 +272,21 @@ B group_c2(B t, B w, B x) {
   if (isArr(w) && RNK(w)==1 && xr>=1 && depth(w)==1) {
     usz wia = IA(w);
     usz* xsh = SH(x);
-    usz xia = *xsh;
-    if (wia-xia > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xia);
+    usz xn = *xsh;
+    if (wia-xn > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xn);
     u8 we = TI(w,elType);
     if (elInt(we)) {
-      return group_simple(w, x, xr, wia, xia, xsh, we);
+      return group_simple(w, x, xr, wia, xn, xsh, we);
     } else if (xr==1) {
       SLOW2("𝕨⊔𝕩", w, x);
       SGetU(w)
-      i64 ria = wia==xia? 0 : o2i64(GetU(w, xia));
+      i64 ria = wia==xn? 0 : o2i64(GetU(w, xn));
       if (ria<0) {
         if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
         ria = 0;
       }
       ria--;
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < xn; i++) {
         B cw = GetU(w, i);
         if (!q_i64(cw)) goto base;
         i64 c = o2i64G(cw);
@@ -298,7 +298,7 @@ B group_c2(B t, B w, B x) {
       TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
       TALLOC(i32, pos, ria);
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xia; i++) len[o2i64G(GetU(w, i))]++;
+      for (usz i = 0; i < xn; i++) len[o2i64G(GetU(w, i))]++;
       
       Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
       B* rp = fillarr_ptr(r);
@@ -316,7 +316,7 @@ B group_c2(B t, B w, B x) {
       fillarr_setFill(rf, xf);
       fillarr_setFill(r, taga(rf));
       SGet(x)
-      for (usz i = 0; i < xia; i++) {
+      for (usz i = 0; i < xn; i++) {
         i64 n = o2i64G(GetU(w, i));
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
