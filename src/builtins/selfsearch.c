@@ -28,11 +28,12 @@ static bool canCompare64_norm(B x, usz n) {
   u8 e = TI(x,elType);
   if (e == el_B) return 0;
   if (e == el_f64) {
-    f64* p = f64any_ptr(x);
+    f64* pf = f64any_ptr(x);
+    u64* pu = (u64*)pf;
     for (usz i = 0; i < n; i++) {
-      f64 v = p[i];
-      if (v!=v) return 0;
-      if (v==0) p[i]=0;
+      f64 f = pf[i];
+      if (f!=f) return 0;
+      if (pu[i] == m_f64(-0.0).u) return 0;
     }
   }
   return 1;
@@ -156,7 +157,7 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allOnes(1))) : emptyIVec(); }
   
   u8 lw = cellWidthLog(x);
@@ -241,7 +242,7 @@ B memberOf_c1(B t, B x) {
 
 B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
@@ -326,7 +327,7 @@ B count_c1(B t, B x) {
 
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   
