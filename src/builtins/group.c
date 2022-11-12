@@ -122,7 +122,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
     width *= csz = arr_csz(x);
     xl += CTZ(csz);
     if (bits && xl>=3) { bits=0; width>>=3; }
-    if ((csz & (csz-1)) || xl>7) xl = 7;
+    if ((csz & (csz-1)) || !csz || xl>7) xl = 7;
   }
   
   // Few changes in 𝕨: move in chunks
