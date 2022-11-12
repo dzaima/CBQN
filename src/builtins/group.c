@@ -85,20 +85,21 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
   B* rp = fillarr_ptr(r);
   for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
-  B xf = getFillQ(x);
   
-  Arr* rf = m_fillarrp(0); if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
-  fillarr_setFill(rf, m_f64(0));
+  B xf = getFillQ(x);
+  Arr* rf = m_fillarrp(0); fillarr_setFill(rf, xf);
+  if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
+  
   B z = taga(rf);
   fillarr_setFill(r, z);
   
   if (ria <= 1) {
-    if (ria == 0) goto setfill_dec_ret; // Needed so wia>0
-    if (neg == 0) { rp[0]=inc(x); goto setfill_dec_ret; }
+    if (ria == 0) goto dec_ret; // Needed so wia>0
+    if (neg == 0) { rp[0]=inc(x); goto dec_ret; }
+    // else, ¯1‿n ⊔ ⟨v⟩
   }
   if (we==el_bit) {
     assert(ria == 2);
-    fillarr_setFill(rf, xf);
     if (wia>xia) w = take_c2(m_f64(0), m_f64(xia), w);
     rp[1] = slash_c2(m_f64(0), inc(w), inc(x));
     rp[0] = slash_c2(m_f64(0), not_c1(m_f64(0), w), x);
@@ -107,7 +108,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   // Needed to make sure wia>0 for ip[wia-1] below
   if (neg==xia) {
     for (usz i = 0; i < ria; i++) rp[i] = inc(z);
-    goto setfill_dec_ret;
+    goto dec_ret;
   }
   TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
   
@@ -253,8 +254,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   
   done:
   TFREE(pos);
-  setfill_dec_ret:
-  fillarr_setFill(rf, xf);
+  dec_ret:
   decG(w); decG(x);
   return taga(r);
 }
