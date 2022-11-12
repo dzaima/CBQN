@@ -96,7 +96,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   if (ria <= 1) {
     if (ria == 0) goto dec_ret; // Needed so wia>0
     if (neg == 0) { rp[0]=inc(x); goto dec_ret; }
-    // else, ¯1‿n ⊔ ⟨v⟩
+    // else, 𝕨 is a mix of 0 and ¯1 (and maybe trailing 1)
   }
   if (we==el_bit) {
     assert(ria == 2);
@@ -120,9 +120,10 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   usz csz = 1;
   if (RARE(xr>1)) {
     width *= csz = arr_csz(x);
-    xl += CTZ(csz);
+    usz cs = csz | (csz==0);
+    xl += CTZ(cs);
     if (bits && xl>=3) { bits=0; width>>=3; }
-    if ((csz & (csz-1)) || !csz || xl>7) xl = 7;
+    if ((cs & (cs-1)) || xl>7) xl = 7;
   }
   
   // Few changes in 𝕨: move in chunks
@@ -162,7 +163,9 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
         CPY(tyarr_ptr(rp[n]), pos[n], xp, k0, l); \
         pos[n] += l;                              \
       }
-    if (!bits) {
+    if (csz==0) {
+      allocBitGroups(rp, ria, z, xr, xsh, len, width);
+    } if (!bits) {
       allocGroups(rp, ria, z, xt, xr, xsh, len, width, csz);
       GROUP_CHUNKED(MEM_CPY)
     } else {
@@ -188,7 +191,9 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
   for (usz i = 0; i < xia; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
   
   u8 xk = xl - 3;
-  if (notB && sort) { // Sorted 𝕨, that is, partition 𝕩
+  if (notB && csz==0) { // Empty cells, no movement needed
+    allocBitGroups(rp, ria, z, xr, xsh, len, width);
+  } else if (notB && sort) { // Sorted 𝕨, that is, partition 𝕩
     void* xp = tyany_ptr(x);
     u64 i=neg*width;
     #define GROUP_SORT(CPY, ALLOC) \
@@ -233,6 +238,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xia, usz* xsh, u8 we) {
       if (xr==1) arr_shVec(c); else arr_shChangeLen(c, xr, xsh, l);
       rp[i] = taga(c);
     }
+    if (csz==0) goto done;
     SLOW2("𝕨⊔𝕩", w, x);
     SGet(x)
     if (csz == 1) {
