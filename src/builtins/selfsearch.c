@@ -4,6 +4,40 @@
 
 B not_c1(B t, B x);
 B shape_c1(B t, B x);
+B slash_c2(B t, B w, B x);
+
+#if defined(__SSE4_2__)
+static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
+#else
+// Murmur3
+static inline u32 hash32(u32 x) {
+  x ^= x >> 16; x *= 0x85ebca6b;
+  x ^= x >> 13; x *= 0xc2b2ae35;
+  x ^= x >> 16;
+  return x;
+}
+#endif
+static inline u64 hash64(u64 x) {
+  x ^= x >> 33; x *= 0xff51afd7ed558ccd;
+  x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53;
+  x ^= x >> 33;
+  return x;
+}
+
+static bool canCompare64_norm(B x, usz n) {
+  u8 e = TI(x,elType);
+  if (e == el_B) return 0;
+  if (e == el_f64) {
+    f64* pf = f64any_ptr(x);
+    u64* pu = (u64*)pf;
+    for (usz i = 0; i < n; i++) {
+      f64 f = pf[i];
+      if (f!=f) return 0;
+      if (pu[i] == m_f64(-0.0).u) return 0;
+    }
+  }
+  return 1;
+}
 
 #define GRADE_UD(U,D) U
 #include "radix.h"
@@ -54,9 +88,76 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   }                                                                                             \
   decG(x); TFREE(alloc);
 
+static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+
+// Resizing hash table, with fallback
+#define SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, AUXSIZE, AUXINIT, AUXEXTEND, AUXMOVE) \
+  usz log = 64 - CLZ(n);                                                 \
+  usz msl = (64 - CLZ(n+n/2)) + 1; if (RAD && msl>20) msl=20;            \
+  usz sh = W - (msl<14? msl : 12+(msl&1)); /* Shift to fit to table */   \
+  usz sz = 1 << (W - sh); /* Initial size */                             \
+  usz msz = 1ull << msl;  /* Max sz       */                             \
+  usz b = 64;  /* Block size */                                          \
+  /* Resize or abort if more than 1/2^thresh collisions/element */       \
+  usz thresh = THRESH;                                                   \
+  /* Filling e slots past the end requires e*(e+1)/2 collisions, so */   \
+  /* n entries with <2 each can fill <sqrt(4*n) */                       \
+  usz ext = n<=b? n : b + (1ull << (log/2 + 1));                         \
+  TALLOC(u8, halloc, (msz+ext)*(sizeof(T)+AUXSIZE));                     \
+  T* hash = (T*)halloc + msz-sz;                                         \
+  T x0 = hash##W(xp[0]); rp[0] = RES0;                                   \
+  memset##W(hash, x0, sz+ext);                                           \
+  AUXINIT                                                                \
+  usz cc = 0; /* Collision counter */                                    \
+  usz i=1; while (1) {                                                   \
+    usz e = n-i>b? i+b : n;                                              \
+    for (; i < e; i++) {                                                 \
+      T h = hash##W(xp[i]); T j0 = h>>sh, j = j0; T k;                   \
+      while (k=hash[j], k!=h & k!=x0) j++;                               \
+      cc += j-j0;                                                        \
+      RESWRITE                                                           \
+    }                                                                    \
+    if (i == n) break;                                                   \
+    i64 dc = (i64)cc - ((THRESHMUL*i)>>thresh);                          \
+    if (dc >= 0) {                                                       \
+      if (sz == msz || (RAD && i < n/2 && sz >= 1<<18)) break; /*Abort*/ \
+      /* Avoid resizing if close to the end */                           \
+      if (cc<STOP && (n-i)*dc < (i*((i64)n+i))>>(5+log-(W-sh))) continue;\
+      /* Resize hash, factor of 4 */                                     \
+      usz m = 2;                                                         \
+      usz dif = sz*((1<<m)-1);                                           \
+      sh -= m; sz <<= m;                                                 \
+      hash -= dif;                                                       \
+      usz j = 0;                                                         \
+      cc = 0;                                                            \
+      memset##W(hash, x0, dif);                                          \
+      AUXEXTEND                                                          \
+      for (j = dif; j < sz + ext; j++) {                                 \
+        T h = hash[j]; if (h==x0) continue; hash[j] = x0;                \
+        T k0 = h>>sh, k = k0; while (hash[k]!=x0) k++;                   \
+        cc += k-k0;                                                      \
+        hash[k] = h; AUXMOVE                                             \
+      }                                                                  \
+      if (cc >= STOP) break;                                             \
+      thresh = THRESH;                                                   \
+    }                                                                    \
+  }                                                                      \
+  TFREE(halloc);                                                         \
+  if (i==n) { decG(x); return RESULT; }
+#define SELFHASHTAB_VAL(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, INIT) \
+  SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, \
+    /*AUXSIZE*/sizeof(u32),                                \
+    /* AUXINIT */                                          \
+    u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
+    memset32(val, 0, sz+ext);                              \
+    INIT ,                                                 \
+    /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
+    /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allOnes(1))) : emptyIVec(); }
   
   u8 lw = cellWidthLog(x);
@@ -69,14 +170,15 @@ B memberOf_c1(B t, B x) {
     return r;
   }
   #define BRUTE(T) \
-      i##T* xp = xv;                                                   \
-      u64* rp; B r = m_bitarrv(&rp, n); bitp_set(rp, 0, 1);            \
-      for (usz i=1; i<n; i++) {                                        \
-        bool c=1; i##T xi=xp[i];                                       \
-        for (usz j=0; j<i; j++) c &= xi!=xp[j];                        \
-        bitp_set(rp, i, c);                                            \
-      }                                                                \
-      decG(x); return r;
+    i##T* xp = xv;                                                     \
+    u64 rv = 1;                                                        \
+    for (usz i=1; i<n; i++) {                                          \
+      bool c=1; i##T xi=xp[i];                                         \
+      PLAINLOOP for (usz j=0; j<i; j++) c &= xi!=xp[j];                \
+      rv |= c<<i;                                                      \
+    }                                                                  \
+    decG(x); u64* rp; B r = m_bitarrv(&rp, n); rp[0] = rv;             \
+    return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                                     \
     u##T* xp = (u##T*)xv;                                              \
@@ -90,12 +192,19 @@ B memberOf_c1(B t, B x) {
   if (lw == 3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw == 4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
+  #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
+    T, W, RAD, STOP,                                    \
+    1, taga(cpyBitArr(r)), hash[j]=h; rp[i]=k!=h;,      \
+    1, THRESH, 0,,,)
   if (lw == 5) {
-    if (n<=32) { BRUTE(32); }
-    // Radix-assisted lookup
+    if (n<12) { BRUTE(32); }
+    i8* rp; B r = m_i8arrv(&rp, n);
+    HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<15)? 3 : 5)
+
+    // Radix-assisted lookup when hash table gives up
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)xv;
-    i8* r0; B r = m_i8arrv(&r0, n);
+    i8* r0 = rp;
     
     TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
@@ -111,8 +220,15 @@ B memberOf_c1(B t, B x) {
     u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
    
     RADIX_LOOKUP_32(1, =0)
-    return num_squeeze(r);
+    return taga(cpyBitArr(r));
   }
+  if (lw == 6 && canCompare64_norm(x, n)) {
+    if (n<20) { BRUTE(64); }
+    i8* rp; B r = m_i8arrv(&rp, n);
+    HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
+    decG(r); // Fall through
+  }
+  #undef HASHTAB
   #undef BRUTE
   
   if (RNK(x)>1) x = toCells(x);
@@ -126,7 +242,7 @@ B memberOf_c1(B t, B x) {
 
 B count_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
@@ -134,14 +250,14 @@ B count_c1(B t, B x) {
   if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
-      i##T* xp = xv;                                           \
-      i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
-      for (usz i=1; i<n; i++) {                                \
-        usz c=0; i##T xi=xp[i];                                \
-        for (usz j=0; j<i; j++) c += xi==xp[j];                \
-        rp[i] = c;                                             \
-      }                                                        \
-      decG(x); return r;
+    i##T* xp = xv;                                             \
+    i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                   \
+    for (usz i=1; i<n; i++) {                                  \
+      usz c=0; i##T xi=xp[i];                                  \
+      PLAINLOOP for (usz j=0; j<i; j++) c += xi==xp[j];        \
+      rp[i] = c;                                               \
+    }                                                          \
+    decG(x); return r;
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
     u##T* xp = (u##T*)xv;                                      \
@@ -155,12 +271,22 @@ B count_c1(B t, B x) {
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
+  #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB_VAL( \
+    T, W, RAD, STOP,                                       \
+    /*RES0*/0, /*RESULT*/r,                                \
+    /* RESWRITE */                                         \
+    bool e0=h==x0; rp[i]=val[j]+(ctr0&-(u32)e0);           \
+    hash[j]=h; val[j]+=!e0; ctr0+=e0; ,                    \
+    /*THRESHMUL*/1, THRESH,                                \
+    /*INIT*/u32 ctr0 = 1;)
   if (lw==5) {
-    if (n<=32) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
+    i32* rp; B r = m_i32arrv(&rp, n);
+    HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<14)? 3 : 5)
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)xv;
-    i32* r0; B r = m_i32arrv(&r0, n);
+    i32* r0 = rp;
     
     TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
     //                                         timeline
@@ -178,6 +304,13 @@ B count_c1(B t, B x) {
     RADIX_LOOKUP_32(0, ++)
     return num_squeeze(r);
   }
+  if (lw == 6 && canCompare64_norm(x, n)) {
+    if (n<20) { BRUTE(64); }
+    i32* rp; B r = m_i32arrv(&rp, n);
+    HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
+    decG(r); // Fall through
+  }
+  #undef HASHTAB
   #undef BRUTE
   
   if (RNK(x)>1) x = toCells(x);
@@ -192,10 +325,9 @@ B count_c1(B t, B x) {
   return r;
 }
 
-extern B rt_indexOf;
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
-  usz n = *SH(x);
+  u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   
@@ -206,15 +338,22 @@ B indexOf_c1(B t, B x) {
     return shape_c1(m_f64(0), r);
   }
   #define BRUTE(T) \
-      i##T* xp = xv;                                           \
-      i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                 \
-      TALLOC(i##T, uniq, n); uniq[0]=xp[0];                    \
-      for (usz i=1, u=1; i<n; i++) {                           \
-        bool c=1; usz s=0; i##T xi=uniq[u]=xp[i];              \
-        for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);       \
-        rp[i]=s; u+=u==s;                                      \
-      }                                                        \
-      decG(x); TFREE(uniq); return r;
+    i##T* xp = xv;                                             \
+    i8* rp; B r = m_i8arrv(&rp, n); rp[0]=0;                   \
+    TALLOC(i##T, uniq, n); uniq[0]=xp[0];                      \
+    for (usz i=1, u=1; i<n; i++) {                             \
+      bool c=1; usz s=0; i##T xi=uniq[u]=xp[i];                \
+      for (usz j=0; j<u; j++) s += (c &= xi!=uniq[j]);         \
+      rp[i]=s; u+=u==s;                                        \
+    }                                                          \
+    decG(x); TFREE(uniq); return r;
+  #define DOTAB(T) \
+    i32 u=0;                                                   \
+    for (usz i=0; i<n; i++) {                                  \
+      T j=xp[i]; i32 t=tab[j];                                 \
+      if (t==n) tab[j]=u++;                                    \
+      rp[i]=tab[j];                                            \
+    }
   #define LOOKUP(T) \
     usz tn = 1<<T;                                             \
     u##T* xp = (u##T*)xv;                                      \
@@ -222,19 +361,23 @@ B indexOf_c1(B t, B x) {
     TALLOC(i32, tab, tn);                                      \
     if (T>8 && n<tn/16) for (usz i=0; i<n;  i++) tab[xp[i]]=n; \
     else                for (usz j=0; j<tn; j++) tab[j]=n;     \
-    i32 u=0;                                                   \
-    for (usz i=0; i<n;  i++) {                                 \
-      u##T j=xp[i]; i32 t=tab[j];                              \
-      if (t==n) rp[i]=tab[j]=u++; else rp[i]=t;                \
-    }                                                          \
+    DOTAB(u##T)                                                \
     decG(x); TFREE(tab);                                       \
     return num_squeeze(r)
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   
+  #define HASHTAB(T, W, THRESH) SELFHASHTAB_VAL(T, W, 0, 2*n, \
+    /*RES0*/0, /*RESULT*/r,                                \
+    /* RESWRITE */                                         \
+    if (k!=h) { val[j]=ctr++; hash[j]=h; } rp[i]=val[j]; , \
+    /*THRESHMUL*/2, THRESH,                                \
+    /*INIT*/u32 ctr = 1;)
   if (lw==5) {
-    if (n<32) { BRUTE(32); }
+    if (n<12) { BRUTE(32); }
+    B r;
+    i32* rp; r = m_i32arrv(&rp, n);
     i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < n; i++) {
@@ -243,22 +386,27 @@ B indexOf_c1(B t, B x) {
       if (c>max) max = c;
     }
     i64 dst = 1 + (max-(i64)min);
-    if ((dst<n*5 || dst<50) && min!=I32_MIN) {
-      i32* rp; B r = m_i32arrv(&rp, n);
-      TALLOC(i32, tmp, dst);
-      for (i64 i = 0; i < dst; i++) tmp[i] = I32_MIN;
-      i32* tc = tmp-min;
-      i32 ctr = 0;
-      for (usz i = 0; i < n; i++) {
-        i32 c = xp[i];
-        if (tc[c]==I32_MIN) tc[c] = ctr++;
-        rp[i] = tc[c];
-      }
-      decG(x); TFREE(tmp);
+    if (dst<n*5 || dst<50) {
+      TALLOC(i32, tmp, dst); i32* tab = tmp-min;
+      for (i64 i = 0; i < dst; i++) tmp[i] = n;
+      DOTAB(i32)
+      TFREE(tmp);
+      decG(x);
       return r;
     }
+    HASHTAB(u32, 32, sz==msz? 0 : sz>=(1<<18)? 1 : sz>=(1<<14)? 4 : 6)
+    decG(r); // Fall through
   }
+  if (lw==6 && canCompare64_norm(x, n)) {
+    if (n<16) { BRUTE(64); }
+    i32* rp; B r = m_i32arrv(&rp, n);
+    u64* xp = tyany_ptr(x);
+    HASHTAB(u64, 64, sz==msz? 0 : sz>=(1<<17)? 1 : sz>=(1<<13)? 4 : 6)
+    decG(r); // Fall through
+  }
+  #undef HASHTAB
   #undef BRUTE
+  #undef DOTAB
   
   if (RNK(x)>1) x = toCells(x);
   i32* rp; B r = m_i32arrv(&rp, n);
@@ -274,8 +422,6 @@ B indexOf_c1(B t, B x) {
   return r;
 }
 
-B slash_c2(B t, B w, B x);
-extern B rt_find;
 B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
