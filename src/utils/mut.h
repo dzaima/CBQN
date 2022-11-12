@@ -118,6 +118,8 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->
 #define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N##_mutarr, ms, x, xs, l)
 
 
+// Companion to bit_cpy when uniform syntax is wanted
+#define MEM_CPY(R,RI,X,XI,L) memcpy((u8*)(R)+(RI), (u8*)(X)+(XI), (L))
 
 static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   u64 re = rs+(u64)l;
