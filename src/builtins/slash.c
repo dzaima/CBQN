@@ -444,12 +444,27 @@ B grade_bool(B x, usz xia, bool up) {
     if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
     #undef BMI_GRADE
     decG(notx);
+  } else if (xia <= 1ull<<31) {
+    i32* rp0; r = m_i32arrv(&rp0, xia);
+    i32* rp1 = rp0 + l0;
+    if (!up) { i32* t=rp1; rp1=rp0; rp0=t; }
+    usz b = 256; TALLOC(u8, buf, b+b/8);
+    u64* xp1 = xp;
+    u64* xp0 = (u64*)(buf + b);
+    for (usz i=0; i<xia; i+=b) {
+      if (b>xia-i) b=xia-i;
+      for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
+      usz s0=bit_sum(xp0,b); bmipopc_1slash8(xp0, (i8*)buf, b); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b-s0;           bmipopc_1slash8(xp1, (i8*)buf, b); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      xp1+= b/64;
+    }
+    TFREE(buf);
   }
   #else
   if      (xia <= 128)      { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15)    { BRANCHLESS_GRADE(i16) }
-  #endif
   else if (xia <= 1ull<<31) { BRANCHLESS_GRADE(i32) }
+  #endif
   else                      { BRANCHLESS_GRADE(f64) }
   #undef BRANCHLESS_GRADE
   #undef BG_LOOP
