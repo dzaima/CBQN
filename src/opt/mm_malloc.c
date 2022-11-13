@@ -8,6 +8,7 @@
 
 void gc_add(B x) { }
 void gc_addFn(vfn f) { }
+void gc_add_ref(B* x) { }
 void gc_maybeGC() { }
 void gc_forceGC() { }
 void gc_visitRoots() { }
