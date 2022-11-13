@@ -202,16 +202,17 @@ B SORT_C1(B t, B x) {
 #endif
 
 
-#define GRADE_CHR GRADE_UD("⍋","⍒")
 extern Arr* bitUD[3]; // from fns.c
 extern B bit2x[2];
+extern B grade_bool(B x, usz ia, bool up); // slash.c
+
+#define GRADE_CHR GRADE_UD("⍋","⍒")
 B GRADE_CAT(c1)(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
   if (RNK(x)>1) x = toCells(x);
   usz ia = IA(x);
-  if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
+  B r;
   if (ia<=2) {
-    B r;
     if (ia==2) { SGetU(x); r = incG(bit2x[!(compare(GetU(x,0), GetU(x,1)) GRADE_UD(<=,>=) 0)]); }
     else if (ia==1) r = taga(ptr_inc(bitUD[1]));
     else r = emptyIVec();
@@ -220,18 +221,10 @@ B GRADE_CAT(c1)(B t, B x) {
   }
   
   u8 xe = TI(x,elType);
-  i32* rp; B r = m_i32arrv(&rp, ia);
-  if (xe==el_bit) {
-    u64* xp = bitarr_ptr(x);
-    u64 sum = bit_sum(xp, ia);
-    u64 r0 = 0;
-    u64 r1 = GRADE_UD(ia-sum, sum);
-    for (usz i = 0; i < ia; i++) {
-      if (bitp_get(xp,i)^GRADE_UD(0,1)) rp[r1++] = i;
-      else                              rp[r0++] = i;
-    }
-    goto decG_sq;
-  } else if (xe==el_i8 && ia>8) {
+  if (xe==el_bit) return grade_bool(x, ia, GRADE_UD(1,0));
+  if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
+  i32* rp; r = m_i32arrv(&rp, ia);
+  if (xe==el_i8 && ia>8) {
     i8* xp = i8any_ptr(x); usz n=ia;
     RADIX_SORT_i8(usz, GRADE);
     goto decG_sq;

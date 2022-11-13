@@ -413,6 +413,49 @@ static NOINLINE B zeroCells(B x) { // doesn't consume
   return r;
 }
 
+B not_c1(B t, B x);
+B grade_bool(B x, usz xia, bool up) {
+  #define BRANCHLESS_GRADE(T) \
+    T* rp; r = m_##T##arrv(&rp, xia);  \
+    u64 r0 = 0;                        \
+    u64 r1 = l0;                       \
+    if (up) BG_LOOP(!) else BG_LOOP()
+  #define BG_LOOP(OP) \
+    for (usz i = 0; i < xia; i++) {    \
+      bool b = OP bitp_get(xp,i);      \
+      rp[b?r0:r1-r0] = i;              \
+      r0+=b; r1++;                     \
+    }
+  B r;
+  u64* xp = bitarr_ptr(x);
+  u64 sum = bit_sum(xp, xia);
+  u64 l0 = up? xia-sum : sum; // Length of first set of indices
+  #if SINGELI && defined(__BMI2__)
+  if (xia < 16) { BRANCHLESS_GRADE(i8) }
+  else if (xia <= 1<<15) {
+    B notx = not_c1(m_f64(0), inc(x));
+    u64* xp0 = bitarr_ptr(notx);
+    u64* xp1 = xp;
+    if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
+    #define BMI_GRADE(W) \
+      i##W* rp = m_tyarrvO(&r, W/8, xia, t_i##W##arr, W); \
+      bmipopc_1slash##W(xp0, rp   , xia);                 \
+      bmipopc_1slash##W(xp1, rp+l0, xia);
+    if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
+    #undef BMI_GRADE
+    decG(notx);
+  }
+  #else
+  if      (xia <= 128)      { BRANCHLESS_GRADE(i8) }
+  else if (xia <= 1<<15)    { BRANCHLESS_GRADE(i16) }
+  #endif
+  else if (xia <= 1ull<<31) { BRANCHLESS_GRADE(i32) }
+  else                      { BRANCHLESS_GRADE(f64) }
+  #undef BRANCHLESS_GRADE
+  #undef BG_LOOP
+  decG(x); return r;
+}
+
 void filter_ne_i32(i32* rp, i32* xp, usz len, usz sum, i32 val) {
   usz b = bsp_max; TALLOC(i16, buf, b + b/16);
   u64* wp = (u64*)(buf + b);
