@@ -463,7 +463,7 @@ FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
 
 void genObj(B o, B c, bool anyMut, void* ptr) {
-  // printFFIType(stdout,ent.o); printf(" = "); print(c); printf("\n");
+  // printFFIType(stdout,o); printf(" = "); print(c); printf("\n");
   if (isC32(o)) { // scalar
     u32 t = o2cG(o);
     f64 f = c.f;
