@@ -19,7 +19,7 @@ extern EmptyValue* mm_buckets[128];
 
 
 #define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
-static void* mm_alloc(usz sz, u8 type) {
+static void* mm_alloc(u64 sz, u8 type) {
   assert(sz>=16);
   u32 log = LOG2(sz);
   u32 logm2 = log-2;

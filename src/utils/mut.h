@@ -43,7 +43,7 @@ struct Mut {
 static void mut_init(Mut* m, u8 n) {
   m->fns = &mutFns[n];
   usz ia = PIA(m);
-  usz sz;
+  u64 sz;
   // hack around inlining of the allocator too many times
   switch(n) { default: UD;
     case el_bit:              sz = BITARR_SZ(   ia); break;

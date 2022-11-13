@@ -327,7 +327,7 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyIVec() incG(bi_emptyIVec)
 #define emptyCVec() incG(bi_emptyCVec)
 #define emptySVec() incG(bi_emptySVec)
-static void* mm_alloc(usz sz, u8 type);
+static void* mm_alloc(u64 sz, u8 type);
 static void  mm_free(Value* x);
 static u64   mm_size(Value* x);
 static void  mm_visit(B x);
