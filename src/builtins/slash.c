@@ -39,16 +39,16 @@
 // SHOULD do something for odd cell widths in Replicate
 
 // Indices inverse (/⁼), a lot like Group
-// COULD always give a squeezed result, sometimes expensive
-// SHOULD sort large-range 𝕩 to find minimum result type
+// Always gives a squeezed result for integer 𝕩
 // Boolean 𝕩: just count 1s
 // Long i8 and i16 𝕩: count into zeroed buffer before anything else
 //   Only zero positive part; if total is too small there were negatives
 //   Cutoff is set so short 𝕩 gives a result of the same type
 // Scan for strictly ascending 𝕩
 //   COULD vectorize with find-compare
-//   COULD find descending too
 // Unsigned maximum for integers to avoid a separate negative check
+// If (≠÷⌈´)𝕩 is small, find result type with a sparse u8 table
+//   COULD use a u16 table for i32 𝕩 to detect i16 result
 
 #include "../core.h"
 #include "../utils/mut.h"
@@ -913,26 +913,45 @@ B slash_im(B t, B x) {
       rp[sum>0] = sum; rp[0] = xia - sum;
       r = num_squeeze(r); break;
     }
+#define IIND_INT(N) \
+    if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
+    usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
+    u##N max=xp[a-1];                                                        \
+    if (a<xia) {                                                             \
+      for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }          \
+      if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers"); \
+      usz ria = max + 1;                                                     \
+      if (xia < ria/8) {                                                     \
+        u8 maxcount = 0;                                                     \
+        TALLOC(u8, tab, ria);                                                \
+        for (usz i=0; i<xia; i++)           tab[xp[i]]=0;                    \
+        for (usz i=0; i<xia; i++) maxcount|=tab[xp[i]]++;                    \
+        TFREE(tab);                                                          \
+        if (maxcount==0) a=xia;                                              \
+        else if (N>=16 && maxcount<127) {                                    \
+          i8* rp; r = m_i8arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+          for (usz i = 0; i < xia; i++) rp[xp[i]]++;                         \
+          break;                                                             \
+        }                                                                    \
+      }                                                                      \
+    }                                                                        \
+    if (a==xia) { /* Unique argument */                                      \
+      usz ria = max + 1;                                                     \
+      u64* rp; r = m_bitarrv(&rp, ria);                                      \
+      for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                              \
+      for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                      \
+      break;                                                                 \
+    }                                                                        \
+    usz ria = (usz)max + 1;                                                  \
+    i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+    for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
+    r = num_squeeze(r);                      
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
       if (xia < m/2) {                                                           \
-        if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
-        usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
-        u##N max=xp[a-1];                                                        \
-        if (a==xia) { /* Sorted unique argument */                               \
-          usz ria = max + 1;                                                     \
-          u64* rp; r = m_bitarrv(&rp, ria);                                      \
-          for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                              \
-          for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                      \
-          break;                                                                 \
-        }                                                                        \
-        for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
-        if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
-        usz ria = max+1;                                                         \
-        i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
-        for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
+        IIND_INT(N)                                                              \
       } else {                                                                   \
         TALLOC(usz, t, m);                                                       \
         for (usz j=0; j<m/2; j++) t[j]=0;                                        \
@@ -941,26 +960,14 @@ B slash_im(B t, B x) {
         if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
         TFREE(t);                                                                \
+        r = num_squeeze(r);                                                      \
       }                                                                          \
-      r = num_squeeze(r); break;                                                 \
+      break;                                                                     \
     }
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
-    case el_i32: {
-      i32* xp = i32any_ptr(x);
-      usz i,j; i32 max=-1;
-      for (i = 0; i < xia; i++) { i32 c=xp[i]; if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { i32 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
-      usz ria = max+1;
-      if (i==xia) {
-        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
-      } else {
-        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) rp[xp[i]]++;
-      }
-      break;
-    }
+    case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32) r = num_squeeze(r); break; }
+#undef IIND_INT
     case el_f64: {
       f64* xp = f64any_ptr(x);
       usz i,j; f64 max=-1;
