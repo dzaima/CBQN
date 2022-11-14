@@ -1,3 +1,55 @@
+// Indices and Replicate (/)
+// In the notes 𝕨 might indicate 𝕩 for Indices too
+
+// Boolean 𝕨 (Where/Compress) general case based on result type width
+// COULD use AVX-512
+// Size 1: pext, or bit-at-a-time
+//   SHOULD emulate pext if unavailable
+//   COULD return boolean result from Where
+// Size 8, 16: pdep/pext, or branchless
+//   SHOULD try vector lookup-shuffle if unavailable or old AMD
+// Size 32, 64: 16-bit indices from where_block_u16
+// Other sizes: always used grouped code
+// Adaptivity based on 𝕨 statistics
+//   None for 8-bit Where, too short
+//   COULD try per-block adaptivity for 16-bit Compress
+//   Sparse if +´𝕨 is small, branchless unless it's very small
+//     Chosen per-argument for 8, 16 and per-block for larger
+//     Careful when benchmarking, branch predictor has a long memory
+//   Grouped if +´»⊸≠𝕨 is small, always branching
+//     Chosen per-argument with a threshold that gives up early
+//     SHOULD implement grouped Where
+
+// Arbitrary 𝕨 is slower, squeezes if (+´<≠)𝕨 to avoid this
+// Dense cases (large +´𝕨) use obvious loop, expand 𝕨 to i32
+//   Boolean Replicate overwrites to avoid trailing boundary
+// Sparse Indices uses ⌈` with Singeli and +` otherwise, i32 output only
+//   COULD specialize on result type
+// Sparse Replicate
+//   ≠` for booleans, +` for CPU types
+//   TRIED ≠` for CPU types; no better, and clmul would be worse
+// COULD consolidate refcount updates for nested 𝕩
+
+// Replicate by constant
+// Boolean uses pdep, ≠`, or overwriting
+//   SHOULD make a shift/mask replacement for pdep
+// Others use +`, or lots of Singeli
+//   Fixed shuffles, factorization, partial shuffles, self-overlapping
+
+// SHOULD do something for odd cell widths in Replicate
+
+// Indices inverse (/⁼), a lot like Group
+// Always gives a squeezed result for integer 𝕩
+// Boolean 𝕩: just count 1s
+// Long i8 and i16 𝕩: count into zeroed buffer before anything else
+//   Only zero positive part; if total is too small there were negatives
+//   Cutoff is set so short 𝕩 gives a result of the same type
+// Scan for strictly ascending 𝕩
+//   COULD vectorize with find-compare
+// Unsigned maximum for integers to avoid a separate negative check
+// If (≠÷⌈´)𝕩 is small, find result type with a sparse u8 table
+//   COULD use a u16 table for i32 𝕩 to detect i16 result
+
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
@@ -359,6 +411,64 @@ static NOINLINE B zeroCells(B x) { // doesn't consume
     r = taga(ra);
   }
   return r;
+}
+
+B not_c1(B t, B x);
+B grade_bool(B x, usz xia, bool up) {
+  #define BRANCHLESS_GRADE(T) \
+    T* rp; r = m_##T##arrv(&rp, xia);  \
+    u64 r0 = 0;                        \
+    u64 r1 = l0;                       \
+    if (up) BG_LOOP(!) else BG_LOOP()
+  #define BG_LOOP(OP) \
+    for (usz i = 0; i < xia; i++) {    \
+      bool b = OP bitp_get(xp,i);      \
+      rp[b?r0:r1-r0] = i;              \
+      r0+=b; r1++;                     \
+    }
+  B r;
+  u64* xp = bitarr_ptr(x);
+  u64 sum = bit_sum(xp, xia);
+  u64 l0 = up? xia-sum : sum; // Length of first set of indices
+  #if SINGELI && defined(__BMI2__)
+  if (xia < 16) { BRANCHLESS_GRADE(i8) }
+  else if (xia <= 1<<15) {
+    B notx = not_c1(m_f64(0), inc(x));
+    u64* xp0 = bitarr_ptr(notx);
+    u64* xp1 = xp;
+    if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
+    #define BMI_GRADE(W) \
+      i##W* rp = m_tyarrvO(&r, W/8, xia, t_i##W##arr, W); \
+      bmipopc_1slash##W(xp0, rp   , xia);                 \
+      bmipopc_1slash##W(xp1, rp+l0, xia);
+    if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
+    #undef BMI_GRADE
+    decG(notx);
+  } else if (xia <= 1ull<<31) {
+    i32* rp0; r = m_i32arrv(&rp0, xia);
+    i32* rp1 = rp0 + l0;
+    if (!up) { i32* t=rp1; rp1=rp0; rp0=t; }
+    usz b = 256; TALLOC(u8, buf, b);
+    u64 xp0[4]; // 4 ≡ b/64
+    u64* xp1 = xp;
+    for (usz i=0; i<xia; i+=b) {
+      for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
+      usz b2 = b>xia-i? xia-i : b;
+      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      xp1+= b2/64;
+    }
+    TFREE(buf);
+  }
+  #else
+  if      (xia <= 128)      { BRANCHLESS_GRADE(i8) }
+  else if (xia <= 1<<15)    { BRANCHLESS_GRADE(i16) }
+  else if (xia <= 1ull<<31) { BRANCHLESS_GRADE(i32) }
+  #endif
+  else                      { BRANCHLESS_GRADE(f64) }
+  #undef BRANCHLESS_GRADE
+  #undef BG_LOOP
+  decG(x); return r;
 }
 
 void filter_ne_i32(i32* rp, i32* xp, usz len, usz sum, i32 val) {
@@ -794,38 +904,54 @@ B slash_im(B t, B x) {
   u8 xe = TI(x,elType);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
+  B r;
   switch(xe) { default: UD;
     case el_bit: {
       usz sum = bit_sum(bitarr_ptr(x), xia);
       usz ria = 1 + (sum>0);
-      f64* rp; B r = m_f64arrv(&rp, ria);
+      f64* rp; r = m_f64arrv(&rp, ria);
       rp[sum>0] = sum; rp[0] = xia - sum;
-      decG(x); return num_squeezeChk(r);
+      r = num_squeeze(r); break;
     }
+#define IIND_INT(N) \
+    if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
+    usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
+    u##N max=xp[a-1];                                                        \
+    if (a<xia) {                                                             \
+      for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }          \
+      if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers"); \
+      usz ria = max + 1;                                                     \
+      if (xia < ria/8) {                                                     \
+        u8 maxcount = 0;                                                     \
+        TALLOC(u8, tab, ria);                                                \
+        for (usz i=0; i<xia; i++)           tab[xp[i]]=0;                    \
+        for (usz i=0; i<xia; i++) maxcount|=tab[xp[i]]++;                    \
+        TFREE(tab);                                                          \
+        if (maxcount==0) a=xia;                                              \
+        else if (N>=16 && maxcount<127) {                                    \
+          i8* rp; r = m_i8arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+          for (usz i = 0; i < xia; i++) rp[xp[i]]++;                         \
+          break;                                                             \
+        }                                                                    \
+      }                                                                      \
+    }                                                                        \
+    if (a==xia) { /* Unique argument */                                      \
+      usz ria = max + 1;                                                     \
+      u64* rp; r = m_bitarrv(&rp, ria);                                      \
+      for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                              \
+      for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                      \
+      break;                                                                 \
+    }                                                                        \
+    usz ria = (usz)max + 1;                                                  \
+    i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+    for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
+    r = num_squeeze(r);                      
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
-      B r;                                                                       \
       if (xia < m/2) {                                                           \
-        usz a=1; u##N max=xp[0];                                                 \
-        if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
-        if (xia < m/2) {                                                         \
-          a=1; while (a<xia && xp[a]>xp[a-1]) a++;                               \
-          max=xp[a-1];                                                           \
-          if (a==xia) { /* Sorted unique argument */                             \
-            usz ria = max + 1;                                                   \
-            u64* rp; r = m_bitarrv(&rp, ria);                                    \
-            for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;                            \
-            for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                    \
-            decG(x); return r;                                                   \
-          }                                                                      \
-        }                                                                        \
-        for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
-        if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
-        usz ria = max+1;                                                         \
-        i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
-        for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
+        IIND_INT(N)                                                              \
       } else {                                                                   \
         TALLOC(usz, t, m);                                                       \
         for (usz j=0; j<m/2; j++) t[j]=0;                                        \
@@ -834,29 +960,17 @@ B slash_im(B t, B x) {
         if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
         TFREE(t);                                                                \
+        r = num_squeeze(r);                                                      \
       }                                                                          \
-      decG(x); return num_squeezeChk(r);                                            \
+      break;                                                                     \
     }
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
-    case el_i32: {
-      i32* xp = i32any_ptr(x);
-      usz i,j; B r; i32 max=-1;
-      for (i = 0; i < xia; i++) { i32 c=xp[i]; if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { i32 c=xp[j]; max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
-      usz ria = max+1;
-      if (i==xia) {
-        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
-      } else {
-        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) rp[xp[i]]++;
-      }
-      decG(x); return r;
-    }
+    case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32) r = num_squeeze(r); break; }
+#undef IIND_INT
     case el_f64: {
       f64* xp = f64any_ptr(x);
-      usz i,j; B r; f64 max=-1;
+      usz i,j; f64 max=-1;
       for (i = 0; i < xia; i++) { f64 c=xp[i]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { f64 c=xp[j]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       usz ria = max+1; if (ria==0) thrOOM();
@@ -867,13 +981,13 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[(usz)xp[i]]++;
       }
-      decG(x); return r;
+      break;
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
       SLOW1("/⁼", x);
       B* xp = arr_bptr(x);
       if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
-      usz i,j; B r; i64 max=-1;
+      usz i,j; i64 max=-1;
       for (i = 0; i < xia; i++) { i64 c=o2i64(xp[i]); if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { i64 c=o2i64(xp[j]); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       if (max > USZ_MAX-1) thrOOM();
@@ -885,9 +999,10 @@ B slash_im(B t, B x) {
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[o2i64G(xp[i])]++;
       }
-      decG(x); return r;
+      break;
     }
   }
+  decG(x); return r;
 }
 
 B slash_ucw(B t, B o, B w, B x) {
