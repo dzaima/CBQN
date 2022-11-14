@@ -1,3 +1,7 @@
+#if ALLOC_NOINLINE
+  #define ALLOC_IMPL 1
+#endif
+
 #include "../core.h"
 
 #if MM==0

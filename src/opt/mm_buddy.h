@@ -19,11 +19,14 @@ extern EmptyValue* mm_buckets[64];
 
 
 #define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
-static void* mm_alloc(u64 sz, u8 type) {
+
+#if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_ALWAYS
+ALLOC_FN void* mm_alloc(u64 sz, u8 type) {
   assert(sz>=16);
   onAlloc(sz, type);
   return mm_allocL(LOG2(sz), type);
 }
+#endif
 
 static u64 mm_round(usz sz) {
   return BSZ(LOG2(sz));

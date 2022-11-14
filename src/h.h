@@ -104,6 +104,14 @@
 #if defined(OBJ_TRACK)
   #define OBJ_COUNTER 1
 #endif
+#if ALLOC_STAT
+  #define ALLOC_NOINLINE
+#endif
+#if ALLOC_NOINLINE
+  #define ALLOC_FN
+#else
+  #define ALLOC_FN static
+#endif
 
 typedef   int8_t i8;
 typedef  uint8_t u8;
@@ -327,8 +335,8 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyIVec() incG(bi_emptyIVec)
 #define emptyCVec() incG(bi_emptyCVec)
 #define emptySVec() incG(bi_emptySVec)
-static void* mm_alloc(u64 sz, u8 type);
-static void  mm_free(Value* x);
+ALLOC_FN void* mm_alloc(u64 sz, u8 type);
+ALLOC_FN void  mm_free(Value* x);
 static u64   mm_size(Value* x);
 static void  mm_visit(B x);
 static void  mm_visitP(void* x);

@@ -1,5 +1,7 @@
 #define buckets BN(buckets)
-static void BN(free)(Value* x) {
+
+#if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_ALWAYS
+ALLOC_FN void BN(free)(Value* x) {
   onFree(x);
   #ifdef DONT_FREE
     if (x->type!=t_freed) x->flags = x->type;
@@ -45,4 +47,5 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   #endif
   return x;
 }
+#endif
 #undef buckets
