@@ -448,15 +448,15 @@ B grade_bool(B x, usz xia, bool up) {
     i32* rp0; r = m_i32arrv(&rp0, xia);
     i32* rp1 = rp0 + l0;
     if (!up) { i32* t=rp1; rp1=rp0; rp0=t; }
-    usz b = 256; TALLOC(u8, buf, b+b/8);
+    usz b = 256; TALLOC(u8, buf, b);
+    u64 xp0[4]; // 4 ≡ b/64
     u64* xp1 = xp;
-    u64* xp0 = (u64*)(buf + b);
     for (usz i=0; i<xia; i+=b) {
-      if (b>xia-i) b=xia-i;
-      NOUNROLL for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
-      usz s0=bit_sum(xp0,b); bmipopc_1slash8(xp0, (i8*)buf, b); NOUNROLL for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
-      usz s1=b-s0;           bmipopc_1slash8(xp1, (i8*)buf, b); NOUNROLL for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
-      xp1+= b/64;
+      for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
+      usz b2 = b>xia-i? xia-i : b;
+      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      xp1+= b2/64;
     }
     TFREE(buf);
   }
