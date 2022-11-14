@@ -453,9 +453,9 @@ B grade_bool(B x, usz xia, bool up) {
     u64* xp0 = (u64*)(buf + b);
     for (usz i=0; i<xia; i+=b) {
       if (b>xia-i) b=xia-i;
-      for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
-      usz s0=bit_sum(xp0,b); bmipopc_1slash8(xp0, (i8*)buf, b); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
-      usz s1=b-s0;           bmipopc_1slash8(xp1, (i8*)buf, b); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      NOUNROLL for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
+      usz s0=bit_sum(xp0,b); bmipopc_1slash8(xp0, (i8*)buf, b); NOUNROLL for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b-s0;           bmipopc_1slash8(xp1, (i8*)buf, b); NOUNROLL for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
       xp1+= b/64;
     }
     TFREE(buf);
