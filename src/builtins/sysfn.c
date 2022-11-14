@@ -5,6 +5,7 @@
 
 #include "../core.h"
 #include "../utils/hash.h"
+#include "../utils/calls.h"
 #include "../utils/file.h"
 #include "../utils/wyhash.h"
 #include "../utils/time.h"
@@ -1228,7 +1229,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   }
   switch (op) { default: UD;
     case op_not: {
-      usz l = n/64; NOUNROLL for (usz i=0; i<l; i++) rp[i] = ~xp[i];
+      usz l = n/64; bit_negatePtr(rp, xp, l);
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^~xp[l]);
     } break;
     case op_neg: switch (ow) {

@@ -11,11 +11,13 @@ static inline B arith_recm(BB2B f, B x) {
   return withFill(r, fx);
 }
 
+void bit_negatePtr(u64* rp, u64* xp, usz count) {
+  for (usz i = 0; i < count; i++) rp[i] = ~xp[i];
+}
 B bit_negate(B x) { // consumes
   u64* xp = bitarr_ptr(x);
   u64* rp; B r = m_bitarrc(&rp, x);
-  usz ia = BIT_N(IA(x));
-  for (usz i = 0; i < ia; i++) rp[i] = ~xp[i];
+  bit_negatePtr(rp, xp, BIT_N(IA(x)));
   decG(x);
   return r;
 }

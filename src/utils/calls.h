@@ -27,3 +27,5 @@ CMP_DEF(le, AS);
 
 #define CMP_AA_IMM(FN, ELT, WHERE, WP, XP, LEN) CMP_AA_CALL(CMP_AA_FN(FN, ELT), WHERE, WP, XP, LEN)
 #define CMP_AS_IMM(FN, ELT, WHERE, WP, X,  LEN) CMP_AS_CALL(CMP_AS_FN(FN, ELT), WHERE, WP, X, LEN)
+
+void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s
