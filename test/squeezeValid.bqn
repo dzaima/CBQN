@@ -21,7 +21,7 @@ Do ← { 𝕊:
   
   F ← { 𝕊:
     p ← {r.Range 2? r.Range l; (¯1+l-⊢)⍟(r.Range 2) r.Range (2⋆r.Range 10)⌊l}
-    b ← 𝕩⌾(p⊸⊑) a
+    b ← 𝕩˙⌾(p⊸⊑) a
     ! b EEqual Squeeze b # won't be acceptable with in-place squeezing, but that doesn't exist yet
   }
   
