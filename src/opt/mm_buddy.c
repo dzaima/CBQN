@@ -63,7 +63,7 @@ void verifyEnd(void* ptr, u64 sz, u64 start, u64 end) {
   if (end+64>sz) { printf("Bad used range: "N64u".."N64u", allocation size "N64u"\n", start, end, sz); exit(1); }
 }
 void tailVerifyReinit(void* ptr, u64 filled, u64 end) {
-  if(filled<=8) { printf("Bad reinit start: "N64u".."N64u"\n", filled, end); exit(1); }
+  if(filled>end || filled<=8) { printf("Bad reinit arguments: "N64u".."N64u"\n", filled, end); exit(1); }
   verifyEnd(ptr, mm_size(ptr), filled, end);
   tailVerifyInit(ptr, filled, end, mm_size(ptr));
 }
@@ -78,9 +78,9 @@ NOINLINE void dumpByte(bool exp, bool has, void* ptr, u64 o) {
   printf("%02x", v);
   if (col) printf("\x1b[0m");
 }
-NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u64 allocFilled, u64 allocTotal) {
+NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u64 allocFilled, u64 allocTotal, u64 ia) {
   printf("Corrupted tail @ %p + "N64d", checked length %d\n", ptr, off, len);
-  printf("Allocation filled with "N64d" bytes, total space "N64d"\n", allocFilled, allocTotal);
+  printf("Allocation filled with "N64d" bytes, total allocation "N64d", IA=="N64d"\n", allocFilled, allocTotal, ia);
   printf("Expected: x=%016"SCNx64" / u="N64u"\nGot:      x=%016"SCNx64" / u="N64u"\n\n", exp, exp, got, got);
   fflush(stdout); fflush(stderr);
   
@@ -98,19 +98,19 @@ NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u
   __builtin_trap();
 }
 void tailVerifyFree(void* ptr) {
-  u64 filled; Arr* xa = ptr;
+  u64 filled; u64 ia; Arr* xa = ptr;
   switch(PTY(xa)) { default: return;
-    case t_bitarr: filled = BITARR_SZ(PIA(xa)); break;
-    case t_i8arr:  filled = TYARR_SZ(I8,  PIA(xa)); break;
-    case t_i16arr: filled = TYARR_SZ(I16, PIA(xa)); break;
-    case t_i32arr: filled = TYARR_SZ(I32, PIA(xa)); break;
-    case t_f64arr: filled = TYARR_SZ(F64, PIA(xa)); break;
-    case t_harr:    filled = fsizeof(HArr,a,B,PIA(xa)); break;
-    case t_fillarr: filled = fsizeof(FillArr,a,B,PIA(xa)); break;
+    case t_bitarr: filled = BITARR_SZ(ia=PIA(xa)); break;
+    case t_i8arr:  filled = TYARR_SZ(I8,  ia=PIA(xa)); break;
+    case t_i16arr: filled = TYARR_SZ(I16, ia=PIA(xa)); break;
+    case t_i32arr: filled = TYARR_SZ(I32, ia=PIA(xa)); break;
+    case t_f64arr: filled = TYARR_SZ(F64, ia=PIA(xa)); break;
+    case t_harr:    filled = fsizeof(HArr,a,B,ia=PIA(xa)); break;
+    case t_fillarr: filled = fsizeof(FillArr,a,B,ia=PIA(xa)); break;
   }
   u64 end = mm_size(ptr);
   verifyEnd(ptr, end, 8, filled);
-  #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end)
+  #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end, ia)
   ITER_TAIL(F)
   #undef F
 }

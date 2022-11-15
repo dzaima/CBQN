@@ -347,8 +347,10 @@ B rand_range_c2(B t, B w, B x) {
     } else if (max!=2) { u64am = (am+ 7)>>3; t=t_i8arr;  }
     else               { u64am = (am+63)>>6; t=t_bitarr; }
     
-    assert((u64am<<3) >= (t==t_bitarr? BIT_N(am)<<3 : am<<arrTypeWidthLog(t)));
-    r = m_arr(offsetof(TyArr,a) + (u64am<<3), t, am);
+    u64 aExact = t==t_bitarr? BIT_N(am)<<3 : am<<arrTypeWidthLog(t);
+    u64 aFilled = u64am<<3;
+    assert(aFilled >= aExact);
+    r = m_arr(offsetof(TyArr,a) + aFilled, t, am);
     void* rp = ((TyArr*)r)->a;
     if (max & (max-1)) { // not power of two
       if      (t==t_i32arr) PLAINLOOP for (usz i = 0; i < am; i++) ((i32*)rp)[i] = wy2u0k(wyrand(&seed), max);
@@ -366,6 +368,7 @@ B rand_range_c2(B t, B w, B x) {
       end:;
       PLAINLOOP for (usz i = 0; i < u64am; i++) ((u64*)rp)[i] = wyrand(&seed) & mask;
     }
+    REINIT_TAIL(r, offsetof(TyArr,a) + aExact, offsetof(TyArr,a) + aFilled);
   }
 
   RAND_END;
@@ -1167,6 +1170,12 @@ B bitcast_impl(B el0, B el1, B x) {
     B pr = r;
     r = taga(TI(r,slice)(r, 0, IA(r)));
     arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
+  } else {
+    #if VERIFY_TAIL
+      if (xct.s==1 && rct.s!=1) {
+        REINIT_TAIL(a(r), offsetof(TyArr,a)+IA(r)/8, offsetof(TyArr,a) + (BIT_N(IA(r))<<3));
+      }
+    #endif
   }
   return set_bit_result(r, rt, xr, rl, sh);
 }
