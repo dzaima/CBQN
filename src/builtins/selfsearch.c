@@ -304,10 +304,9 @@ B count_c1(B t, B x) {
   if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
   if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
     B c = shift_ne(x, n, lw, 1);
-    B i = ud_c1(m_f64(0), m_f64(n));
-    Md1D d; d.f = bi_ceil;
-    B m = scan_c1(&d, mul_c2(m_f64(0), c, inc(i)));
-    return sub_c2(m_f64(0), i, m);
+    B i = C1(ud, m_f64(n));
+    B m = M1C1(scan, ceil, C2(mul, c, inc(i)));
+    return C2(sub, i, m);
   }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
@@ -395,13 +394,11 @@ B indexOf_c1(B t, B x) {
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
   if (lw == 0) {
-    B r = 1&*(u64*)xv ? not_c1(m_f64(0), x) : x;
-    return shape_c1(m_f64(0), r);
+    B r = 1&*(u64*)xv ? C1(not, x) : x;
+    return C1(shape, r);
   }
   if (use_sorted(x, lw) && n>8) {
-    B r = shift_ne(x, n, lw, 0);
-    Md1D d; d.f = bi_add;
-    return scan_c1(&d, r);
+    return M1C1(scan, add, shift_ne(x, n, lw, 0));
   }
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
@@ -492,5 +489,5 @@ B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
-  return slash_c2(m_f64(0), memberOf_c1(m_f64(0), inc(x)), x);
+  return C2(slash, C1(memberOf, inc(x)), x);
 }
