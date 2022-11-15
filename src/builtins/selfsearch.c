@@ -1,3 +1,31 @@
+// Self-search: Mark Firsts (∊), Occurrence Count (⊒), Classify (⊐), Deduplicate (⍷)
+
+// Except for trivial cases, ⍷ is implemented as ∊⊸/
+// Other functions use adaptations of the same set of methods
+
+// Boolean ∊: 1 at first element and first ¬⊑𝕩
+// COULD do a branchless thing for boolean ⊒ instead of converting to i8
+// Boolean ⊐: ⥊¬⍟⊑𝕩
+// SHOULD implement boolean ⍷ directly
+// Brute force or all-pairs comparison for small lengths
+//   Branchless, not vectorized (+´∧` structure for ⊐)
+// Full-size table lookups for 1- and 2-byte 𝕩
+//   2-byte table can be "sparse" initialized with an extra pass over 𝕩
+//   4-byte ⊐ can use a small-range lookup table
+//   COULD add small-range 4-byte tables for ∊ and ⊒
+// Radix-assisted lookups are fallbacks for 4-byte ∊ and ⊒
+//   COULD do radix-assisted ⊐ as ⍷⊸⊐ or similar
+//   Specializes on constant top 1/2 bytes, but hashes make this rare
+// SHOULD check for sorted flags to use »⊸≠
+
+// Specialized 4-byte and 8-byte hash tables
+//   In-place resizing by factor of 4 based on measured collisions
+//   Max collisions ensures bounded time spent here before giving up
+//   First element used as sentinel (not good for ⊒)
+//   COULD prefetch when table gets larger
+// Generic hash table for other cases
+//   Resizing is pretty expensive here
+
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
@@ -6,6 +34,7 @@ B not_c1(B t, B x);
 B shape_c1(B t, B x);
 B slash_c2(B t, B w, B x);
 
+// These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
 static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
 #else
