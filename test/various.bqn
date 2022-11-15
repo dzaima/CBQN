@@ -80,10 +80,10 @@ Mod ← {𝕊:
 •Show "∨`bitarr" ⋄   OrScanBitarr 100000
 •Show "+`bitarr" ⋄ PlusScanBitarr 100000
 
-•Show "heap corruption test of /bit"    ⋄      @‿0‿200 BitSlash 1000000
-•Show "heap corruption test of bit/i8"  ⋄  "Ai8"‿1‿50  BitSlash 1000000
-•Show "heap corruption test of bit/i16" ⋄ "Ai16"‿1‿50  BitSlash 1000000
-•Show "heap corruption test of bit/i32" ⋄ "Ai32"‿1‿50  BitSlash 1000000
+# •Show "heap corruption test of /bit"    ⋄      @‿0‿200 BitSlash 1000000
+# •Show "heap corruption test of bit/i8"  ⋄  "Ai8"‿1‿50  BitSlash 1000000
+# •Show "heap corruption test of bit/i16" ⋄ "Ai16"‿1‿50  BitSlash 1000000
+# •Show "heap corruption test of bit/i32" ⋄ "Ai32"‿1‿50  BitSlash 1000000
 
 {
   ¬0 EEQ -0? •Out "Skipping tests requiring EEQUAL_NEGZERO";
