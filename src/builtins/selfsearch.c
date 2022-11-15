@@ -7,6 +7,9 @@
 // COULD do a branchless thing for boolean ⊒ instead of converting to i8
 // Boolean ⊐: ⥊¬⍟⊑𝕩
 // SHOULD implement boolean ⍷ directly
+// Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0 is 0 for ⊐ and 1 otherwise)
+//   ∊: ⊢; ⊐: +`; ⊒: ↕∘≠⊸(⊣-⌈`∘×)
+//   COULD determine ⊒ result type by direct comparisons on 𝕩
 // Brute force or all-pairs comparison for small lengths
 //   Branchless, not vectorized (+´∧` structure for ⊐)
 // Full-size table lookups for 1- and 2-byte 𝕩
@@ -16,7 +19,6 @@
 // Radix-assisted lookups are fallbacks for 4-byte ∊ and ⊒
 //   COULD do radix-assisted ⊐ as ⍷⊸⊐ or similar
 //   Specializes on constant top 1/2 bytes, but hashes make this rare
-// SHOULD check for sorted flags to use »⊸≠
 
 // Specialized 4-byte and 8-byte hash tables
 //   In-place resizing by factor of 4 based on measured collisions
@@ -29,10 +31,16 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
+#include "../utils/calls.h"
+#include "../builtins.h"
 
-B not_c1(B t, B x);
-B shape_c1(B t, B x);
-B slash_c2(B t, B w, B x);
+extern B not_c1(B, B);
+extern B shape_c1(B, B);
+extern B slash_c2(B, B, B);
+extern B scan_c1(Md1D*, B);
+extern B ud_c1(B, B);
+extern B sub_c2(B, B, B);
+extern B mul_c2(B, B, B);
 
 // These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
@@ -51,6 +59,20 @@ static inline u64 hash64(u64 x) {
   x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53;
   x ^= x >> 33;
   return x;
+}
+
+static inline bool use_sorted(B x, u8 logw) {
+  if (!FL_HAS(x, fl_asc|fl_dsc)) return 0;
+  if (logw==6) return TI(x, elType) == el_f64;
+  return 3<=logw & logw<=5;
+}
+static inline B shift_ne(B x, usz n, u8 lw, bool r0) { // consumes x
+  u64* rp; B r = m_bitarrv(&rp, n);
+  u8* xp = tyany_ptr(x);
+  u8 lb = lw - 3;
+  CMP_AA_IMM(ne, el_i8+lb, rp, xp-(1<<lb), xp, n);
+  bitp_set(rp, 0, r0);
+  decG(x); return r;
 }
 
 static bool canCompare64_norm(B x, usz n) {
@@ -198,6 +220,9 @@ B memberOf_c1(B t, B x) {
     rp[0]=1; if (i<n) bitp_set(rp, i, 1);
     return r;
   }
+  if (use_sorted(x, lw)) {
+    return shift_ne(x, n, lw, 1);
+  }
   #define BRUTE(T) \
     i##T* xp = xv;                                                     \
     u64 rv = 1;                                                        \
@@ -277,6 +302,13 @@ B count_c1(B t, B x) {
   
   u8 lw = cellWidthLog(x);
   if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
+  if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
+    B c = shift_ne(x, n, lw, 1);
+    B i = ud_c1(m_f64(0), m_f64(n));
+    Md1D d; d.f = bi_ceil;
+    B m = scan_c1(&d, mul_c2(m_f64(0), c, inc(i)));
+    return sub_c2(m_f64(0), i, m);
+  }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
@@ -309,7 +341,7 @@ B count_c1(B t, B x) {
     /*THRESHMUL*/1, THRESH,                                \
     /*INIT*/u32 ctr0 = 1;)
   if (lw==5) {
-    if (n<12) { BRUTE(32); }
+    if (n<20) { BRUTE(32); }
     i32* rp; B r = m_i32arrv(&rp, n);
     HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<14)? 3 : 5)
     // Radix-assisted lookup
@@ -365,6 +397,11 @@ B indexOf_c1(B t, B x) {
   if (lw == 0) {
     B r = 1&*(u64*)xv ? not_c1(m_f64(0), x) : x;
     return shape_c1(m_f64(0), r);
+  }
+  if (use_sorted(x, lw) && n>8) {
+    B r = shift_ne(x, n, lw, 0);
+    Md1D d; d.f = bi_add;
+    return scan_c1(&d, r);
   }
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
