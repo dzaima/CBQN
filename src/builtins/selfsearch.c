@@ -4,7 +4,8 @@
 // Other functions use adaptations of the same set of methods
 
 // Boolean ∊: 1 at first element and first ¬⊑𝕩
-// COULD do a branchless thing for boolean ⊒ instead of converting to i8
+// Boolean ⊒: Branchless sum thing
+//   COULD vectorize boolean ⊒ with +`
 // Boolean ⊐: ⥊¬⍟⊑𝕩
 // SHOULD implement boolean ⍷ directly
 // Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0 is 0 for ⊐ and 1 otherwise)
@@ -301,7 +302,27 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
-  if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
+  if (lw==0) {
+    u64* xp = bitarr_ptr(x);
+    B r;
+    #define COUNT_BOOL(T) \
+      T* rp; r = m_##T##arrv(&rp, n);         \
+      usz n1 = 0;                             \
+      for (usz i=0; i<n; ) {                  \
+        u64 bb = xp[i/64];                    \
+        for (usz e=n-i<64?n:i+64; i<e; i++) { \
+          bool b = bb&1; bb>>=1;              \
+          rp[i] = b? n1 : i-n1;               \
+          n1 += b;                            \
+        }                                     \
+      }
+    if      (n <= 128)   { COUNT_BOOL(i8) }
+    else if (n <= 1<<15) { COUNT_BOOL(i16) }
+    else                 { COUNT_BOOL(i32) }
+    decG(x); return r;
+    #undef COUNT_LOOP
+    #undef COUNT_BOOL
+  }
   if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
     B c = shift_ne(x, n, lw, 1);
     B i = C1(ud, m_f64(n));
