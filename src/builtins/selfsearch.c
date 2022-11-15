@@ -3,16 +3,14 @@
 // Except for trivial cases, ⍷ is implemented as ∊⊸/
 // Other functions use adaptations of the same set of methods
 
-// Boolean ∊: 1 at first element and first ¬⊑𝕩
-// Boolean ⊒: Branchless sum thing
+// Boolean cases all use special code, including ⍷
 //   COULD vectorize boolean ⊒ with +`
-// Boolean ⊐: ⥊¬⍟⊑𝕩
-// SHOULD implement boolean ⍷ directly
-// Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0 is 0 for ⊐ and 1 otherwise)
+// Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0←0 for ⊐, 1 otherwise)
 //   ∊: ⊢; ⊐: +`; ⊒: ↕∘≠⊸(⊣-⌈`∘×)
 //   COULD determine ⊒ result type by direct comparisons on 𝕩
 // Brute force or all-pairs comparison for small lengths
 //   Branchless, not vectorized (+´∧` structure for ⊐)
+//   COULD use direct all-pairs filter, not ∊⊸/, for short ⍷
 // Full-size table lookups for 1- and 2-byte 𝕩
 //   2-byte table can be "sparse" initialized with an extra pass over 𝕩
 //   4-byte ⊐ can use a small-range lookup table
@@ -28,6 +26,8 @@
 //   COULD prefetch when table gets larger
 // Generic hash table for other cases
 //   Resizing is pretty expensive here
+
+// SHOULD widen small odd sizes
 
 #include "../core.h"
 #include "../utils/hash.h"
@@ -510,5 +510,13 @@ B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
+  if (TI(x,elType)==el_bit && RNK(x)==1) {
+    u64* xp = bitarr_ptr(x);
+    u64 x0 = 1 & *xp;
+    usz i = bit_find(xp, n, !x0); decG(x);
+    u64* rp; B r = m_bitarrv(&rp, 1 + (i<n));
+    rp[0] = 2 ^ -x0;
+    return r;
+  }
   return C2(slash, C1(memberOf, inc(x)), x);
 }
