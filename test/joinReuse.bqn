@@ -1,8 +1,6 @@
 ⟨V⇐Variation ⋄ LV⇐ListVariations⟩←•internal
 AllEq ← !¨ (<∘⊑≡¨⊢)
-
-# run with -DPRINT_JOIN_REUSE
-# all that's important in the output is that there are at least some "reuse:1"s and "reuse:0"s for each item
+# all that's important in the output is that there are at least some "reuse:1"s and "reuse:0"s for each item; quoted errors the output are expected
 
 { w𝕊x:
   •Out "next"

@@ -26,6 +26,7 @@ atms∾↩ @+⥊128‿65536+⌜2-↕5
 
 LV ← •internal.ListVariations
 V ← •internal.Variation
+C ← •internal.ClearRefs
 ElType ← •internal.ElType
 
 NEas ← ((⊑¨∊=‿≠˙) ∨ 8≠·ElType 2⊑¨⊢)⊸/
@@ -33,7 +34,7 @@ NEas ← ((⊑¨∊=‿≠˙) ∨ 8≠·ElType 2⊑¨⊢)⊸/
 •Out "AS"
 {
 fn‿arr‿atm:
-  ∧´(⊏≡¨⊢) {(𝕩 V arr) Fn⎊"err" atm}¨ LV arr?0;
+  C@ ⋄ ∧´(⊏≡¨⊢) {(𝕩 V arr) Fn⎊"err" atm}¨ LV arr?0;
 fn‿arr‿atm:
   •Out "Fail:"
   •Show arr
@@ -46,6 +47,7 @@ fn‿arr‿atm:
 •Out "AA"
 {
 fn‿l‿r:
+  C@
   lr←(⌈´≠¨l‿r)↑¨l‿r
   ∧´(⊏≡¨⊢) {fn⎊"err"˝𝕩 V¨ lr}¨ ⥊≍○<⌜´ LV¨lr?0;
   𝕩!0

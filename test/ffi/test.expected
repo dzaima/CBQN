@@ -79,7 +79,7 @@ ff7fdfefefdf7bb4 ff7fdfefefdf7bb4 fefffdfff7ffbffb bffff7fffdfffeff
 ⟨ 0 0 0 1 0 1 1 0 1 0 1 0 0 1 1 0 0 0 1 1 0 1 1 0 0 0 1 1 0 1 1 0 1 1 1 1 0 1 1 0 1 1 1 0 1 1 1 0 1 1 1 1 0 1 1 0 0 1 0 0 1 1 1 0 ⟩
 
 # malloc test
-⟨ "fff7: refc:2 type:26=i32arr alloc:128" 2 ⟩
+⟨ "i32arr" 2 ⟩
 
 # pick item
 "hellowor"

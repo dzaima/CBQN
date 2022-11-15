@@ -62,7 +62,7 @@ f ↩ "lib.so" •FFI ⟨"u64:i32","ident_u64",">u64"    ⟩ ⋄ •Show F 12345
 f ↩ "lib.so" •FFI ⟨"u64:u1", "ident_u64",">u64:c8" ⟩ ⋄ •Show F "hellowor"
 
 Section "# malloc test"
-f ↩ "lib.so" •FFI "*:i32"‿"malloc"‿">u64" ⋄ •Show (•internal.Info⋈≠) malloc ← F 123
+f ↩ "lib.so" •FFI "*:i32"‿"malloc"‿">u64" ⋄ •Show (•internal.Type⋈≠) malloc ← F 123
 f ↩ "lib.so" •FFI ""‿"free"‿">*:i32" ⋄ F malloc
 
 Section "# pick item"
