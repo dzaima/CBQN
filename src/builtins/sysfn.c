@@ -1231,7 +1231,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   B r; u64* rp;
   if (v(x)->refc!=1 || (rt==t_bitarr && IS_SLICE(TY(x)))) {
     Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
-    arr_shCopy(ra, x);
+    arr_shCopyUnchecked(ra, x);
     r = taga(ra); rp = tyany_ptr(r);
   } else {
     r = inc(x); rp = xp;
@@ -1304,7 +1304,7 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   x = convert((CastType){ xw, isCharType(TY(x)) }, x);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
-  arr_shCopy(ra, x);
+  arr_shCopyUnchecked(ra, x);
   B r = taga(ra);
   u64* wp = tyany_ptr(w);
   u64* xp = tyany_ptr(x);

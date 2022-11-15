@@ -73,9 +73,7 @@ static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
   if (r>1) { x->sh = sh->a;  }
   else     { x->sh = &x->ia; }
 }
-static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
-  assert(isArr(o));
-  assert(IA(o)==n->ia);
+static Arr* arr_shCopyUnchecked(Arr* n, B o) {
   ur r = SPRNK(n,RNK(o));
   if (r<=1) {
     n->sh = &n->ia;
@@ -83,6 +81,12 @@ static void arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
     ptr_inc(shObj(o));
     n->sh = SH(o);
   }
+  return n;
+}
+static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
+  assert(isArr(o));
+  assert(IA(o)==n->ia);
+  return arr_shCopyUnchecked(n, o);
 }
 static void shcpy(usz* dst, usz* src, size_t len) {
   // memcpy(dst, src, len*sizeof(usz));
