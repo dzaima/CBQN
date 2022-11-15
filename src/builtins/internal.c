@@ -286,6 +286,7 @@ B internalTemp_c2(B t, B w, B x) {
   #ifdef TEST_MUT
   SGetU(x)
   FILL_TO(tyarr_ptr(w), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
+  dec(w);
   #endif
   return x;
 }
