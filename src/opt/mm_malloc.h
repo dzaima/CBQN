@@ -4,7 +4,7 @@ extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
 static void mm_free(Value* x) {
-  preFree(x);
+  preFree(x, false);
   free(x);
 }
 
@@ -23,8 +23,6 @@ static void gc_enable() { }
 static void mm_visit(B x) { }
 static void mm_visitP(void* x) { }
 
-void gc_add(B x);
-void gc_addFn(vfn f);
 void gc_maybeGC(void);
 void gc_forceGC(void);
 void gc_visitRoots(void);

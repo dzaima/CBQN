@@ -3,10 +3,6 @@
 extern u64 gc_depth;
 static void gc_disable() { gc_depth++; }
 static void gc_enable() { gc_depth--; }
-void gc_addFn(vfn f);
-void gc_add(B x);
-void gc_add_ref(B* x);
-
 
 #ifdef LOG_GC
 extern u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount;
