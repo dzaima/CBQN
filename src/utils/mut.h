@@ -167,6 +167,9 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
   u64 ria = wia+xia;
   if (!reusable(w)) goto no;
   u64 wsz = mm_size(v(w));
+  #if VERIFY_TAIL
+  wsz-= VERIFY_TAIL;
+  #endif
   u8 wt = TY(w);
   u8 we = TI(w, elType);
   // TODO f64∾i32, i32∾i8, c32∾c8 etc
@@ -204,6 +207,9 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
   usz ria = wia+1;
   if (reusable(w)) {
     u64 wsz = mm_size(v(w));
+    #if VERIFY_TAIL
+    wsz-= VERIFY_TAIL;
+    #endif
     u8 wt = TY(w);
     switch (wt) {
       case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { bitp_set(bitarr_ptr(w),wia,o2bG(x)); goto ok; } break;

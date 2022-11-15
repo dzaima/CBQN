@@ -101,17 +101,6 @@
     #error "can't have both RT_PERF and RT_VERIFY"
   #endif
 #endif
-#if defined(OBJ_TRACK)
-  #define OBJ_COUNTER 1
-#endif
-#if ALLOC_STAT
-  #define ALLOC_NOINLINE
-#endif
-#if ALLOC_NOINLINE
-  #define ALLOC_FN
-#else
-  #define ALLOC_FN static
-#endif
 
 typedef   int8_t i8;
 typedef  uint8_t u8;
@@ -222,6 +211,24 @@ typedef union B {
   #define IF_WRAP(X) X
 #else
   #define IF_WRAP(X)
+#endif
+
+#if defined(OBJ_TRACK)
+  #define OBJ_COUNTER 1
+#endif
+#if DEBUG && !defined(VERIFY_TAIL) && MM!=2
+  #define VERIFY_TAIL 64
+#endif
+#if ALLOC_STAT || VERIFY_TAIL
+  #define ALLOC_NOINLINE 1
+#endif
+#if ALLOC_NOINLINE
+  #if MM_C
+    #define ALLOC_IMPL 1
+  #endif
+  #define ALLOC_FN
+#else
+  #define ALLOC_FN static
 #endif
 
 #define FOR_TYPE(F) \

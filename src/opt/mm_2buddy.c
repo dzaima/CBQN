@@ -6,6 +6,9 @@
 #ifdef OBJ_COUNTER
   u64 currObjCounter;
 #endif
+#if VERIFY_TAIL
+  #error MM=2 doesn't support VERIFY_TAIL
+#endif
 
 u64 mm_ctrs[128];
 EmptyValue* mm_buckets[128];

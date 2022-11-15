@@ -280,7 +280,7 @@ static BBB2B c2fn(B f) {
   NOINLINE NORETURN void thrOOMTest(void);
 #endif
 
-FORCE_INLINE void onAlloc(usz sz, u8 type) {
+FORCE_INLINE void preAlloc(usz sz, u8 type) {
   #ifdef OOM_TEST
     if (--oomTestLeft==0) thrOOMTest();
   #endif
@@ -301,9 +301,21 @@ FORCE_INLINE void onAlloc(usz sz, u8 type) {
     talloc+= sz;
   #endif
 }
-FORCE_INLINE void onFree(Value* x) {
+#if VERIFY_TAIL
+void tailVerifyAlloc(void* ptr, u64 origSz, i64 logAlloc, u8 type);
+void tailVerifyFree(void* ptr);
+void tailVerifyReinit(void* ptr, u64 s, u64 e);
+#define REINIT_TAIL(P, S, E) tailVerifyReinit(P, S, E)
+#else
+#define REINIT_TAIL(P, S, E)
+#endif
+#define REINIT_TAIL_A(A, S, L) REINIT_TAIL(a(A), offsetof(TyArr,a)+(S), offsetof(TyArr,a)+(S)+(L));
+FORCE_INLINE void preFree(Value* x, bool mmx) {
   #ifdef ALLOC_STAT
     ctr_f[x->type]++;
+  #endif
+  #if VERIFY_TAIL
+    if (!mmx) tailVerifyFree(x);
   #endif
   #ifdef DEBUG
     if (x->type==t_empty) err("double-free");

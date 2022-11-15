@@ -1,3 +1,5 @@
+#define MM_C 1
+
 #include "../core.h"
 #include "../load.c"
 #include "../core/tyarr.c"

@@ -19,6 +19,8 @@ extern EmptyValue* mm_buckets[128];
 
 
 #define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
+
+#if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_MMX
 static void* mm_alloc(u64 sz, u8 type) {
   assert(sz>=16);
   u32 log = LOG2(sz);
@@ -26,6 +28,7 @@ static void* mm_alloc(u64 sz, u8 type) {
   bool b2 = sz <= (3ull<<logm2);
   return mm_allocL(b2? logm2|64 : log, type);
 }
+#endif
 
 static u64 mm_round(usz x) {
   u8 log = LOG2(x);

@@ -15,7 +15,7 @@
 #endif                // objdump -b binary -m i386 -M x86-64,intel --insn-width=10 -D --adjust-vma=$(cat asm_off) asm_bin | tail -n+8 | sed "$(cat asm_sed);s/\\t/ /g;s/.*: //"
 
 
-#define ALLOC_IMPL_ALWAYS 1
+#define ALLOC_IMPL_MMX 1
 // separate memory management system for executable code; isn't garbage-collected
 EmptyValue* mmX_buckets[64];
 u64 mmX_ctrs[64];
@@ -64,7 +64,7 @@ static void* mmap_nvm(u64 sz) {
 static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
 #undef BN
 #undef BSZ
-#undef ALLOC_IMPL_ALWAYS
+#undef ALLOC_IMPL_MMX
 
 
 // all the instructions to be called by the generated code

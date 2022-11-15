@@ -4,13 +4,13 @@ extern u64 mm_heapAlloc;
 extern u64 mm_heapMax;
 
 static void mm_free(Value* x) {
-  onFree(x);
+  preFree(x);
   free(x);
 }
 
 static void* mm_alloc(u64 sz, u8 type) {
   Value* x = malloc(sz);
-  onAlloc(sz, type);
+  preAlloc(sz, type);
   x->flags = x->extra = x->mmInfo = x->type = 0;
   x->refc = 1;
   x->type = type;

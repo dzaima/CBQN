@@ -1,6 +1,4 @@
-#if ALLOC_NOINLINE
-  #define ALLOC_IMPL 1
-#endif
+#define MM_C 1
 
 #include "../core.h"
 

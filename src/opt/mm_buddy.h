@@ -20,11 +20,20 @@ extern EmptyValue* mm_buckets[64];
 
 #define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
 
-#if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_ALWAYS
+#if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_MMX
 ALLOC_FN void* mm_alloc(u64 sz, u8 type) {
   assert(sz>=16);
-  onAlloc(sz, type);
-  return mm_allocL(LOG2(sz), type);
+  preAlloc(sz, type);
+  #if VERIFY_TAIL
+    i64 logAlloc = LOG2(sz + VERIFY_TAIL);
+  #else
+    i64 logAlloc = LOG2(sz);
+  #endif
+  void* res = mm_allocL(logAlloc, type);
+  #if VERIFY_TAIL && !ALLOC_IMPL_MMX
+    tailVerifyAlloc(res, sz, logAlloc, type);
+  #endif
+  return res;
 }
 #endif
 

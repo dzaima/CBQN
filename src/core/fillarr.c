@@ -173,22 +173,23 @@ NOINLINE B m_unit(B x) {
 }
 NOINLINE B m_atomUnit(B x) {
   u64 data; assert(sizeof(f64)<=8);
-  u8 t;
+  u8 t; u64 sz;
   if (isNum(x)) {
     i32 xi = (i32)x.f;
-    if (RARE(xi!=x.f))    { f64 v=x.f;     memcpy(&data, &v, sizeof(v)); t=t_f64arr; }
-    else if (q_ibit(xi))  { u64 v=bitx(x); memcpy(&data, &v, sizeof(v)); t=t_bitarr; }
-    else if (xi==(i8 )xi) { i8  v=xi;      memcpy(&data, &v, sizeof(v)); t=t_i8arr; }
-    else if (xi==(i16)xi) { i16 v=xi;      memcpy(&data, &v, sizeof(v)); t=t_i16arr; }
-    else                  { i32 v=xi;      memcpy(&data, &v, sizeof(v)); t=t_i32arr; }
+    if (RARE(xi!=x.f))    { f64 v=x.f;     memcpy(&data, &v, sz=sizeof(v)); t=t_f64arr; }
+    else if (q_ibit(xi))  { u64 v=bitx(x); memcpy(&data, &v, sz=sizeof(v)); t=t_bitarr; }
+    else if (xi==(i8 )xi) { i8  v=xi;      memcpy(&data, &v, sz=sizeof(v)); t=t_i8arr; }
+    else if (xi==(i16)xi) { i16 v=xi;      memcpy(&data, &v, sz=sizeof(v)); t=t_i16arr; }
+    else                  { i32 v=xi;      memcpy(&data, &v, sz=sizeof(v)); t=t_i32arr; }
   } else if (isC32(x)) {
     u32 xi = o2cG(x);
-    if      (xi==(u8 )xi) { u8  v=xi; memcpy(&data, &v, sizeof(v)); t=t_c8arr; }
-    else if (xi==(u16)xi) { u16 v=xi; memcpy(&data, &v, sizeof(v)); t=t_c16arr; }
-    else                  { u32 v=xi; memcpy(&data, &v, sizeof(v)); t=t_c32arr; }
+    if      (xi==(u8 )xi) { u8  v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c8arr; }
+    else if (xi==(u16)xi) { u16 v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c16arr; }
+    else                  { u32 v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c32arr; }
   } else return m_unit(x);
   TyArr* r = m_arr(offsetof(TyArr,a) + sizeof(u64), t, 1);
   *((u64*)r->a) = data;
+  REINIT_TAIL(r, offsetof(TyArr,a)+sz, offsetof(TyArr,a)+sizeof(u64));
   arr_shAlloc((Arr*)r, 0);
   return taga(r);
 }
