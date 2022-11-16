@@ -368,7 +368,7 @@ B rand_range_c2(B t, B w, B x) {
       end:;
       PLAINLOOP for (usz i = 0; i < u64am; i++) ((u64*)rp)[i] = wyrand(&seed) & mask;
     }
-    REINIT_TAIL(r, offsetof(TyArr,a) + aExact, offsetof(TyArr,a) + aFilled);
+    FINISH_OVERALLOC(r, offsetof(TyArr,a) + aExact, offsetof(TyArr,a) + aFilled);
   }
 
   RAND_END;
@@ -1173,7 +1173,7 @@ B bitcast_impl(B el0, B el1, B x) {
   } else {
     #if VERIFY_TAIL
       if (xct.s==1 && rct.s!=1) {
-        REINIT_TAIL(a(r), offsetof(TyArr,a)+IA(r)/8, offsetof(TyArr,a) + (BIT_N(IA(r))<<3));
+        FINISH_OVERALLOC(a(r), offsetof(TyArr,a)+IA(r)/8, offsetof(TyArr,a) + (BIT_N(IA(r))<<3));
       }
     #endif
   }

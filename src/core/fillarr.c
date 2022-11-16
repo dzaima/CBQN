@@ -189,7 +189,7 @@ NOINLINE B m_atomUnit(B x) {
   } else return m_unit(x);
   TyArr* r = m_arr(offsetof(TyArr,a) + sizeof(u64), t, 1);
   *((u64*)r->a) = data;
-  REINIT_TAIL(r, offsetof(TyArr,a)+sz, offsetof(TyArr,a)+sizeof(u64));
+  FINISH_OVERALLOC(r, offsetof(TyArr,a)+sz, offsetof(TyArr,a)+sizeof(u64));
   arr_shAlloc((Arr*)r, 0);
   return taga(r);
 }
