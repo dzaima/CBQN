@@ -13,7 +13,7 @@ tests ← •FLines •wdpath•file.At path∾"/test/cases/prim.bqn"
 ('#'≠ ·⊑ ∾⟜"#")◶@‿{
   (⊑'%'⊸∊)◶{𝕤
     •Out 𝕩
-    "../src/gen/interp" •FChars ⟨1,path,𝕩⟩ •Import "../cc.bqn"
+    "../build/interp" •FChars ⟨1,path,𝕩⟩ •Import "../cc.bqn"
     # make ← "make"‿"singeli=1"‿"f=-DPRECOMP -march=native"‿"c"
     # make ← "make"‿"f=-DPRECOMP -m32"‿"lf=-m32"‿"c"
     make ← "make"‿"f=-DPRECOMP"‿"c"

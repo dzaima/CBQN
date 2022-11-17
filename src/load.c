@@ -469,7 +469,7 @@ void load_init() { // very last init function
   
   #ifdef PRECOMP
     Block* c = compile(
-      #include PRECOMPILED_FILE(interp)
+      #include "../build/interp"
       , bi_N, bi_N, bi_N, bi_N, NULL
     );
     B interp = evalFunBlock(c, 0); ptr_dec(c);
