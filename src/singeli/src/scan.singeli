@@ -40,7 +40,7 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
 }
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
-avx2_scan_idem{T, op, id}(x:*T, r:*T, len:u64) : void = {
+avx2_scan_idem{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
   # Within each lane, scan using shifts by powers of 2. First k elements
   # when shifting by k don't need to change, so leave them alone.
   def w = width{T}
@@ -54,24 +54,25 @@ avx2_scan_idem{T, op, id}(x:*T, r:*T, len:u64) : void = {
     op{b, sel{[8]i32, spread{b}, make{[8]i32, 3*(3<iota{8})}}}
   }
 
-  scan_post{T, id, x, r, len, op, pre}
+  scan_post{T, init, x, r, len, op, pre}
 }
-avx2_scan_idem{T==f64, op, id}(x:*T, r:*T, len:u64) : void = {
+avx2_scan_idem{T==f64, op}(x:*T, r:*T, len:u64, init:T) : void = {
   def sh{s, a} = op{a, shuf{[4]u64, a, s}}
-  scan_post{T, id, x, r, len, op, {a}=>sh{4b1110,sh{4b2200,a}}}
+  scan_post{T, init, x, r, len, op, {a}=>sh{4b1110,sh{4b2200,a}}}
 }
-def avx2_scan_idem{T, op} = {
+'avx2_scan_min_init_i8'  = avx2_scan_idem{i8 , min}; 'avx2_scan_max_init_i8'  = avx2_scan_idem{i8 , max}
+'avx2_scan_min_init_i16' = avx2_scan_idem{i16, min}; 'avx2_scan_max_init_i16' = avx2_scan_idem{i16, max}
+'avx2_scan_min_init_i32' = avx2_scan_idem{i32, min}; 'avx2_scan_max_init_i32' = avx2_scan_idem{i32, max}
+'avx2_scan_min_init_f64' = avx2_scan_idem{f64, min}; 'avx2_scan_max_init_f64' = avx2_scan_idem{f64, max}
+
+avx2_scan_idem_id{T, op}(x:*T, r:*T, len:u64) : void = {
   def m = 1 << (width{T}-1)
-  avx2_scan_idem{T, op, (if (match{op,min}) m-1; else -m)}
+  def id = (if (match{op,min}) m-1; else -m)
+  avx2_scan_idem{T, op}(x, r, len, id)
 }
-'avx2_scan_min_i8'  = avx2_scan_idem{i8 , min}
-'avx2_scan_max_i8'  = avx2_scan_idem{i8 , max}
-'avx2_scan_min_i16' = avx2_scan_idem{i16, min}
-'avx2_scan_max_i16' = avx2_scan_idem{i16, max}
-'avx2_scan_min_i32' = avx2_scan_idem{i32, min}
-'avx2_scan_max_i32' = avx2_scan_idem{i32, max}
-'avx2_scan_min_f64' = avx2_scan_idem{f64, min, 'F64_MAX'}
-'avx2_scan_max_f64' = avx2_scan_idem{f64, max, 'F64_MIN'}
+'avx2_scan_min_i8'  = avx2_scan_idem_id{i8 , min}; 'avx2_scan_max_i8'  = avx2_scan_idem_id{i8 , max}
+'avx2_scan_min_i16' = avx2_scan_idem_id{i16, min}; 'avx2_scan_max_i16' = avx2_scan_idem_id{i16, max}
+'avx2_scan_min_i32' = avx2_scan_idem_id{i32, min}; 'avx2_scan_max_i32' = avx2_scan_idem_id{i32, max}
 
 # Associative scan
 avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
