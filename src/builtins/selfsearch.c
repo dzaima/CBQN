@@ -320,7 +320,6 @@ B count_c1(B t, B x) {
     else if (n <= 1<<15) { COUNT_BOOL(i16) }
     else                 { COUNT_BOOL(i32) }
     decG(x); return r;
-    #undef COUNT_LOOP
     #undef COUNT_BOOL
   }
   if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
