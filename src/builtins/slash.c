@@ -168,7 +168,7 @@
   extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
   #define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
   #define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
-  extern void (*const avx2_scan_max32)(int32_t* v0,int32_t* v1,uint64_t v2);
+  extern void (*const avx2_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
 #else
   #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
@@ -607,7 +607,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
 
 #if SINGELI
   #define IND_BY_SCAN \
-    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, avx2_scan_max32(rp+k,rp+k,e-k))
+    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, avx2_scan_max_i32(rp+k,rp+k,e-k))
 #else
   #define IND_BY_SCAN usz js=0; SUM_CORE(i32, xp[j], , 1)
 #endif

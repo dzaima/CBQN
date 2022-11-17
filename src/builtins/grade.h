@@ -31,22 +31,22 @@
   }
 
 #if SINGELI
-extern void (*const avx2_scan_max8)(int8_t* v0,int8_t* v1,uint64_t v2);
-extern void (*const avx2_scan_min8)(int8_t* v0,int8_t* v1,uint64_t v2);
-extern void (*const avx2_scan_max16)(int16_t* v0,int16_t* v1,uint64_t v2);
-extern void (*const avx2_scan_min16)(int16_t* v0,int16_t* v1,uint64_t v2);
+extern void (*const avx2_scan_max_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
+extern void (*const avx2_scan_min_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
+extern void (*const avx2_scan_max_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
+extern void (*const avx2_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
 #define COUNT_THRESHOLD 32
 #define WRITE_SPARSE_i8 \
   for (usz i=0; i<n; i++) rp[i]=j;                       \
   while (ij<n) { rp[ij]=GRADE_UD(++j,--j); ij+=c0o[j]; } \
-  GRADE_UD(avx2_scan_max8,avx2_scan_min8)(rp,rp,n);
+  GRADE_UD(avx2_scan_max_i8,avx2_scan_min_i8)(rp,rp,n);
 #define WRITE_SPARSE_i16 \
   usz b = 1<<10;                                              \
   for (usz k=0; ; ) {                                         \
     usz e = b<n-k? k+b : n;                                   \
     for (usz i=k; i<e; i++) rp[i]=j;                          \
     while (ij<e) { rp[ij]=GRADE_UD(++j,--j); ij+=c0o[j]; }    \
-    GRADE_UD(avx2_scan_max16,avx2_scan_min16)(rp+k,rp+k,e-k); \
+    GRADE_UD(avx2_scan_max_i16,avx2_scan_min_i16)(rp+k,rp+k,e-k); \
     if (e==n) {break;}  k=e;                                  \
   }
 #define WRITE_SPARSE(T) WRITE_SPARSE_##T
