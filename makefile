@@ -235,9 +235,9 @@ ${bd}/load.o: src/gen/customRuntime
 # singeli
 .INTERMEDIATE: preSingeliBin
 preSingeliBin:
-	@if [ ! -d Singeli ]; then \
-		echo "Updating Singeli submodule; link custom Singeli to Singeli/ to avoid"; \
-		git submodule update --init; \
+	@if [ ! -d build/singeliLocal ]; then \
+		echo "Using Singeli submodule; alternatively, link local version to build/singeliLocal"; \
+		git submodule update --init build/singeliSubmodule; \
 	fi
 	@echo "pre-singeli build:"
 	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
@@ -247,7 +247,7 @@ build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c sque
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d Singeli ]; then echo Singeli; else echo SingeliClone; fi)" $< $@ "obj/singeli/"
+	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d build/singeliLocal ]; then echo build/singeliLocal; else echo build/singeliSubmodule; fi)" $< $@ "obj/singeli/"
 
 ifeq (${i_singeli}, 1)
 # arithmetic table generator

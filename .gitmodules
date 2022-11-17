@@ -1,3 +1,3 @@
-[submodule "SingeliClone"]
-	path = SingeliClone
+[submodule "build/singeliSubmodule"]
+	path = build/singeliSubmodule
 	url = https://github.com/mlochbaum/Singeli

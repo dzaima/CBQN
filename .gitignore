@@ -8,6 +8,7 @@ perf.*
 /asm_*
 /src/singeli/gen
 /Singeli
+build/singeliLocal
 /local/
 CBQNHeapDump
 /test/ffi/ffiTest.o
