@@ -4,3 +4,6 @@
 [submodule "build/replxxSubmodule"]
 	path = build/replxxSubmodule
 	url = https://github.com/dzaima/replxx
+[submodule "build/bytecodeSubmodule"]
+	path = build/bytecodeSubmodule
+	url = https://github.com/dzaima/cbqnBytecode
