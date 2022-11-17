@@ -42,6 +42,7 @@ extern B scan_c1(Md1D*, B);
 extern B ud_c1(B, B);
 extern B sub_c2(B, B, B);
 extern B mul_c2(B, B, B);
+extern B scan_add_bool(B x, u64 ia);
 
 // These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
@@ -419,7 +420,7 @@ B indexOf_c1(B t, B x) {
     return C1(shape, r);
   }
   if (use_sorted(x, lw) && n>8) {
-    return M1C1(scan, add, shift_ne(x, n, lw, 0));
+    return scan_add_bool(shift_ne(x, n, lw, 0), n);
   }
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
