@@ -22,6 +22,7 @@
 #include "../builtins/sort.c"
 #include "../builtins/search.c"
 #include "../builtins/selfsearch.c"
+#include "../builtins/scan.c"
 #include "../builtins/arithm.c"
 #include "../builtins/arithd.c"
 #include "../builtins/cmp.c"
