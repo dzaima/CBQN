@@ -35,6 +35,7 @@
 - A specific build type can be cleaned by adding `clean=1` to the make argument list. Similarly, adding `builddir=1` will give you the build directory.
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - [Some implementation docs](https://github.com/dzaima/CBQN/tree/master/src#readme)
+- Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by, respectively, linking/copying a local version to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
 ### Precompiled bytecode
 
