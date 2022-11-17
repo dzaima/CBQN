@@ -257,7 +257,7 @@ build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c sque
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@build/obj/presingeli/BQN SingeliMake.bqn "$(SINGELI_DIR)" $< $@ "build/obj/singeli/"
+	@build/obj/presingeli/BQN build/singeliMake.bqn "$(SINGELI_DIR)" $< $@ "build/obj/singeli/"
 
 ifeq (${i_singeli}, 1)
 # arithmetic table generator

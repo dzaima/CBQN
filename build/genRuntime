@@ -1,7 +1,7 @@
 #!/usr/bin/env bqn
 args←•args
 "Usage: ./getRuntime.bqn path/to/mlochbaum/BQN output/path"!2≤≠args
-bqnSrc‿outputPath←2↑•args
+bqnSrc‿outputPath ← •wdpath⊸•file.At¨ 2↑•args
 
 rtSrc ← ⊑(<"src")∊2↓•args
 

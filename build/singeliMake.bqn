@@ -3,12 +3,13 @@
 # resolve arguments & files
 siDirR‿srcfileR‿resfileR‿buildDir ← •args
 filename ← (⊐⟜'/'↑⊢)⌾⌽ srcfileR
-siDir ← •file.At siDirR
+At ← •wdpath⊸•file.At
+siDir ← At siDirR
 
-srcfile ← •file.At srcfileR
-resfile ← •file.At resfileR
-tmpfile ← (•file.At buildDir) •file.At filename∾".d.orig"
-depfile ← (•file.At buildDir) •file.At filename∾".d"
+srcfile ← At srcfileR
+resfile ← At resfileR
+tmpfile ← (At buildDir) •file.At filename∾".d.orig"
+depfile ← (At buildDir) •file.At filename∾".d"
 prefix  ← "si_"∾ (∧`'.'⊸≠)⊸/ •file.Name srcfile
 
 # invoke singeli, which creates the result file
