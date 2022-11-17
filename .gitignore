@@ -9,6 +9,7 @@ perf.*
 /src/singeli/gen
 /Singeli
 build/singeliLocal
+build/replxxLocal
 /local/
 CBQNHeapDump
 /test/ffi/ffiTest.o

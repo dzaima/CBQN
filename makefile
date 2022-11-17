@@ -115,6 +115,7 @@ ifeq ($(origin LDFLAGS),command line)
 endif
 ifeq ($(REPLXX),1)
 	custom = 1
+	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
 endif
 
 i_LD = $(i_CC)
@@ -146,7 +147,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" "${REPLXX_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -172,12 +173,17 @@ else ifeq ($(origin builddir),command line)
 	@export bd=$$(${MAKE} builddir); \
 	echo "$$bd"
 else
+	
 ifeq ($(i_singeli), 1)
 	@mkdir -p src/singeli/gen
 	@mkdir -p obj/singeli
 	@${MAKE} postmsg="post-singeli build:" build_singeli
 endif
-
+	
+ifeq ($(REPLXX_DIR),build/replxxSubmodule)
+	@git submodule update --init build/replxxSubmodule
+endif
+	
 	@export bd=$$(${MAKE} builddir); \
 	mkdir -p "$$bd";                 \
 	${MAKE} run_incremental_1 bd="$$bd"
@@ -236,7 +242,6 @@ ${bd}/load.o: src/gen/customRuntime
 .INTERMEDIATE: preSingeliBin
 preSingeliBin:
 	@if [ ! -d build/singeliLocal ]; then \
-		echo "Using Singeli submodule; alternatively, link local version to build/singeliLocal"; \
 		git submodule update --init build/singeliSubmodule; \
 	fi
 	@echo "pre-singeli build:"
@@ -275,16 +280,15 @@ endif
 i_LD = $(i_CXX)
 REPLXX_FLAGS = -Os
 
-ALL_CC_FLAGS += -DUSE_REPLXX -Ireplxx/include
+ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include
 
-CXX_INC = $(i_CXX) $(CCFLAGS) $(REPLXX_FLAGS) -DREPLXX_STATIC=1 -Ireplxx/include -MMD -MP -MF
+CXX_INC = $(i_CXX) $(CCFLAGS) $(REPLXX_FLAGS) -DREPLXX_STATIC=1 -I$(REPLXX_DIR)/include -MMD -MP -MF
 replxx_obj: ${addprefix ${bd}/, ConvertUTF.cpp.o wcwidth.cpp.o conversion.cxx.o escape.cxx.o history.cxx.o prompt.cxx.o replxx.cxx.o replxx_impl.cxx.o terminal.cxx.o util.cxx.o windows.cxx.o}
-${bd}/%.o: replxx/src/%
+${bd}/%.o: $(REPLXX_DIR)/src/%
 	@echo $<
 	@$(CXX_INC) $@.d -o $@ -c $<
-
 ${bd}/BQN: replxx_obj
-endif
+endif # replxx
 
 
 
@@ -316,6 +320,8 @@ clean-specific:
 	rm -f $(bd)/*.d
 	rm -f $(bd)/BQN
 	rmdir $(bd); true
+clean-submodules:
+	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/
 	
 
 clean: clean-build clean-runtime clean-singeli

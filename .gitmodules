@@ -1,3 +1,6 @@
 [submodule "build/singeliSubmodule"]
 	path = build/singeliSubmodule
 	url = https://github.com/mlochbaum/Singeli
+[submodule "build/replxxSubmodule"]
+	path = build/replxxSubmodule
+	url = https://github.com/dzaima/replxx
