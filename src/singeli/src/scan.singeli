@@ -32,7 +32,8 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = sel{[8]i32, spread{n}, broadcast{[8]i32, 7}}
+    p = (if (width{T}<=32) sel{[8]i32, spread{n}, broadcast{[8]i32, 7}};
+         else shuf{[4]u64, n, 4b3333})
     n
   }
   scan_loop{T, init, x, r, len, scan, last}
@@ -55,6 +56,10 @@ avx2_scan_idem{T, op, id}(x:*T, r:*T, len:u64) : void = {
 
   scan_post{T, id, x, r, len, op, pre}
 }
+avx2_scan_idem{T==f64, op, id}(x:*T, r:*T, len:u64) : void = {
+  def sh{s, a} = op{a, shuf{[4]u64, a, s}}
+  scan_post{T, id, x, r, len, op, {a}=>sh{4b1110,sh{4b2200,a}}}
+}
 def avx2_scan_idem{T, op} = {
   def m = 1 << (width{T}-1)
   avx2_scan_idem{T, op, (if (match{op,min}) m-1; else -m)}
@@ -65,6 +70,8 @@ def avx2_scan_idem{T, op} = {
 'avx2_scan_max_i16' = avx2_scan_idem{i16, max}
 'avx2_scan_min_i32' = avx2_scan_idem{i32, min}
 'avx2_scan_max_i32' = avx2_scan_idem{i32, max}
+'avx2_scan_min_f64' = avx2_scan_idem{f64, min, 'F64_MAX'}
+'avx2_scan_max_f64' = avx2_scan_idem{f64, max, 'F64_MIN'}
 
 # Associative scan
 avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {

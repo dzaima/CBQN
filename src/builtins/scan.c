@@ -1,6 +1,9 @@
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
+#include <math.h>
+#define F64_MIN -INFINITY
+#define F64_MAX  INFINITY
 
 #if !USE_VALGRIND
 static u64 vg_rand(u64 x) { return x; }
@@ -104,10 +107,11 @@ B scan_add_bool(B x, u64 ia) { // consumes x
     MM_CASE(i8 ,NAME,C,I8_##INIT ) \
     MM_CASE(i16,NAME,C,I16_##INIT) \
     MM_CASE(i32,NAME,C,I32_##INIT) \
+    MM_CASE(f64,NAME,C,F64_##INIT) \
   } \
   decG(x); return FL_SET(r, fl_##ORD);
-static B scan_min_int(B x, u8 xe, usz ia) { MINMAX(min,<,MAX,dsc) }
-static B scan_max_int(B x, u8 xe, usz ia) { MINMAX(max,>,MIN,asc) }
+static B scan_min_num(B x, u8 xe, usz ia) { MINMAX(min,<,MAX,dsc) }
+static B scan_max_num(B x, u8 xe, usz ia) { MINMAX(max,>,MIN,asc) }
 #undef MM_CASE
 #undef MINMAX
 #undef MINMAX_SCAN
@@ -145,8 +149,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i16) { i16* xp=i16any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(addOn(c,xp[i]))goto base; rp[i]=c; } decG(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); i32 c=0; for (usz i=0; i<ia; i++) { if(addOn(c,xp[i]))goto base; rp[i]=c; } decG(x); return r; }
     }
-    if (rtid==n_floor && xe<el_f64) return scan_min_int(x, xe, ia); // ⌊
-    if (rtid==n_ceil  && xe<el_f64) return scan_max_int(x, xe, ia); // ⌈
+    if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
+    if (rtid==n_ceil ) return scan_max_num(x, xe, ia); // ⌈
     if (rtid==n_ne) { // ≠
       f64 x0 = IGetU(x,0).f; if (x0!=0 && x0!=1) goto base;
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); u64* rp; B r=m_bitarrv(&rp,ia); bool c=x0; rp[0]=c; for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
