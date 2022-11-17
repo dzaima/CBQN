@@ -120,6 +120,10 @@ endif
 ifeq ($(i_singeli),1)
 	SINGELI_DIR = $(shell if [ -d build/singeliLocal ]; then echo build/singeliLocal; else echo build/singeliSubmodule; fi)
 endif
+BYTECODE_DIR = $(shell if [ -d build/bytecodeLocal ]; then echo bytecodeLocal; else echo bytecodeSubmodule; fi)
+ifeq ($(BYTECODE_DIR),bytecodeLocal)
+	custom = 1
+endif
 
 i_LD = $(i_CC)
 
@@ -130,7 +134,7 @@ else
 	NOWARN = -Wno-parentheses
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LD_LIBS)
 
 ifneq (${manualJobs},1)
@@ -150,7 +154,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -185,6 +189,10 @@ endif
 	
 ifeq ($(REPLXX_DIR),build/replxxSubmodule)
 	@git submodule update --init build/replxxSubmodule
+endif
+ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+	@echo "Using precompiled bytecode; see readme for how to build your own"
+	@git submodule update --init build/bytecodeSubmodule
 endif
 	
 	@export bd=$$(${MAKE} builddir); \
@@ -232,12 +240,6 @@ ${bd}/%.o: src/builtins/%.c
 	@$(CC_INC) $@.d -o $@ -c $<
 
 .INTERMEDIATE: core base utils jit builtins
-
-src/gen/customRuntime:
-	@echo "Copying precompiled bytecode from the bytecode branch"
-	git checkout remotes/origin/bytecode src/gen/{compiles,formatter,runtime0,runtime1,src,explain}
-	git reset src/gen/{compiles,formatter,runtime0,runtime1,src,explain}
-${bd}/load.o: src/gen/customRuntime
 
 
 
@@ -313,8 +315,6 @@ clean-singeli:
 	rm -rf src/singeli/gen/
 	rm -rf build/obj/singeli/
 	@${MAKE} clean-specific bd=build/obj/presingeli
-clean-runtime:
-	rm -f src/gen/customRuntime
 clean-build:
 	rm -f build/obj/*/*.o
 	rm -f build/obj/*/*.d
@@ -328,4 +328,4 @@ clean-submodules:
 	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/
 	
 
-clean: clean-build clean-runtime clean-singeli
+clean: clean-build clean-singeli

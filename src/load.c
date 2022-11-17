@@ -4,6 +4,10 @@
 #include "ns.h"
 #include "builtins.h"
 
+#define PRECOMPILED_FILE0(X) #X
+#define PRECOMPILED_FILE1(X) PRECOMPILED_FILE0(X)
+#define PRECOMPILED_FILE(END) PRECOMPILED_FILE1(../build/BYTECODE_DIR/gen/END)
+
 #define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap) F(typesFinished)
 #define F(X) void X##_init(void);
 FOR_INIT(F)
@@ -114,7 +118,7 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   return r;
 }
 
-#include "gen/src"
+#include PRECOMPILED_FILE(src)
 #if RT_SRC
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
   return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
@@ -380,14 +384,14 @@ void load_init() { // very last init function
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
     Block* runtime0_b = load_compImport("(self-hosted runtime0)",
-      #include "gen/runtime0"
+      #include PRECOMPILED_FILE(runtime0)
     );
     B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
     B* runtime_0 = toHArr(r0r)->a;
     #endif
     
     Block* runtime_b = load_compImport("(self-hosted runtime1)",
-      #include "gen/runtime1"
+      #include PRECOMPILED_FILE(runtime1)
     );
     
     #ifdef ALL_R0
@@ -465,7 +469,7 @@ void load_init() { // very last init function
   
   #ifdef PRECOMP
     Block* c = compile(
-      #include "gen/interp"
+      #include PRECOMPILED_FILE(interp)
       , bi_N, bi_N, bi_N, bi_N, NULL
     );
     B interp = evalFunBlock(c, 0); ptr_dec(c);
@@ -483,7 +487,7 @@ void load_init() { // very last init function
     B prevAsrt = runtime[n_asrt];
     runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
     Block* comp_b = load_compImport("(compiler)",
-      #include "gen/compiles"
+      #include PRECOMPILED_FILE(compiles)
     );
     runtime[n_asrt] = prevAsrt;
     load_glyphs = m_hVec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
@@ -494,7 +498,7 @@ void load_init() { // very last init function
     
     #if FORMATTER
     Block* fmt_b = load_compImport("(formatter)",
-      #include "gen/formatter"
+      #include PRECOMPILED_FILE(formatter)
     );
     B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
     B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
@@ -532,7 +536,7 @@ B bqn_explain(B str, B path) {
     if (load_explain.u==0) {
       B* runtime = harr_ptr(load_rtObj);
       Block* expl_b = load_compImport("(explain)",
-        #include "gen/explain"
+        #include PRECOMPILED_FILE(explain)
       );
       load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);
       gc_add(load_explain);

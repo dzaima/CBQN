@@ -1,13 +1,3 @@
 #!./BQN
 # a version of genRuntime that also generates source maps, so that errors in the runtime or compiler get error messages
-args←•args
-"Usage: ./getRuntime.bqn path/to/mlochbaum/BQN"!1≤≠args
-path←⊑•args
-CC ← {𝕨 •FChars ⟨1,path,"-i",𝕩⟩ •Import "cc.bqn"}
-"src/gen/src" •FChars "#define RT_SRC 1"∾@+10
- "src/gen/compiles"CC"cc"
- "src/gen/runtime0"CC"r0"
- "src/gen/runtime1"CC"r1"
-"src/gen/formatter"CC"f"
-"src/gen/explain"CC"eu"
-"src/gen/customRuntime"•FChars""
+({𝕩∾<"src"}⍟(2≤≠) •args) •Import "genRuntime"

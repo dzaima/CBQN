@@ -1,13 +1,14 @@
 #!/usr/bin/env bqn
-# to revert to using precompiled bytecode, remove the file src/gen/customRuntime
 args←•args
-"Usage: ./getRuntime.bqn path/to/mlochbaum/BQN"!1≤≠args
-path←⊑•args
-CC ← {𝕨 •FChars ⟨1,path,𝕩⟩ •Import "cc.bqn"}
-"src/gen/src" •FChars "#define RT_SRC 0"∾@+10
- "src/gen/compiles"CC"cc"
- "src/gen/runtime0"CC"r0"
- "src/gen/runtime1"CC"r1"
-"src/gen/formatter"CC"f"
-"src/gen/explain"CC"eu"
-"src/gen/customRuntime"•FChars""
+"Usage: ./getRuntime.bqn path/to/mlochbaum/BQN output/path"!2≤≠args
+bqnSrc‿outputPath←2↑•args
+
+rtSrc ← ⊑(<"src")∊2↓•args
+
+CC ← {𝕨 •FChars (⟨1,bqnSrc⟩∾(rtSrc/⟨"-i"⟩)∾⟨𝕩⟩) •Import "cc.bqn"}
+(outputPath•file.At "gen/src"      )•FChars "#define RT_SRC "∾('0'+rtSrc)∾@+10
+(outputPath•file.At "gen/compiles" )CC"cc"
+(outputPath•file.At "gen/runtime0" )CC"r0"
+(outputPath•file.At "gen/runtime1" )CC"r1"
+(outputPath•file.At "gen/formatter")CC"f"
+(outputPath•file.At "gen/explain"  )CC"eu"
