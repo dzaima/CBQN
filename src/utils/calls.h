@@ -1,5 +1,12 @@
 #pragma once
 
+#define C1(F,  X) F##_c1(m_f64(0),  X)
+#define C2(F,W,X) F##_c2(m_f64(0),W,X)
+#define M1C1(M,F,  X) m1c1_unsafe(M##_c1, bi_##F,    X)
+#define M1C2(M,F,W,X) m1c2_unsafe(M##_c2, bi_##F, W, X)
+static inline B m1c1_unsafe(D1C1 m, B f,      B x) { Md1D d; d.f=f; return m(&d,    x); }
+static inline B m1c2_unsafe(D1C2 m, B f, B w, B x) { Md1D d; d.f=f; return m(&d, w, x); }
+
 typedef void (*M_CopyF)(void*, usz, B, usz, usz);
 typedef void (*M_FillF)(void*, usz, B, usz);
 extern M_CopyF copyFns[el_MAX];

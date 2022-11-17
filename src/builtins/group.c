@@ -25,7 +25,6 @@
 #include "../utils/mut.h"
 
 extern B ud_c1(B, B);
-extern B not_c1(B, B);
 extern B ne_c2(B, B, B);
 extern B slash_c1(B, B);
 extern B slash_c2(B, B, B);
@@ -100,9 +99,9 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   }
   if (we==el_bit) {
     assert(ria == 2);
-    if (wia>xn) w = take_c2(m_f64(0), m_f64(xn), w);
-    rp[1] = slash_c2(m_f64(0), inc(w), inc(x));
-    rp[0] = slash_c2(m_f64(0), not_c1(m_f64(0), w), x);
+    if (wia>xn) w = C2(take, m_f64(xn), w);
+    rp[1] = C2(slash, inc(w), inc(x));
+    rp[0] = C2(slash, bit_negate(w), x);
     return taga(r);
   }
   // Needed to make sure wia>0 for ip[wia-1] below
@@ -128,9 +127,6 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   
   // Few changes in 𝕨: move in chunks
   if (xn>64 && notB && change<(xn*width)/32) {
-    #define C1(F,X  ) F##_c1(m_f64(0),X  )
-    #define C2(F,X,W) F##_c2(m_f64(0),X,W)
-    
     u64* mp; B m = m_bitarrv(&mp, xn);
     u8* wp0 = tyany_ptr(w);
     we = TI(w,elType);
@@ -139,8 +135,6 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     
     B ind = C1(slash, m);
     w = C2(select, inc(ind), w);
-    #undef C1
-    #undef C2
     if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
     if (TI(w  ,elType)!=el_i32) w   = taga(cpyI32Arr(w  ));
     wia = IA(ind);
@@ -179,10 +173,10 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   
   // Many ¯1s: filter out, then continue
   if (xn>32 && neg>(bits?0:xn/4)+xn/8) {
-    if (wia>xn) w = take_c2(m_f64(0), m_f64(xn), w);
-    B m = ne_c2(m_f64(0), m_f64(-1), inc(w));
-    w = slash_c2(m_f64(0), inc(m), w);
-    x = slash_c2(m_f64(0), m, x); xn = *SH(x);
+    if (wia>xn) w = C2(take, m_f64(xn), w);
+    B m = C2(ne, m_f64(-1), inc(w));
+    w = C2(slash, inc(m), w);
+    x = C2(slash, m, x); xn = *SH(x);
     neg = 0;
   }
   if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w));
@@ -331,8 +325,8 @@ B group_c2(B t, B w, B x) {
 B group_c1(B t, B x) {
   if (isArr(x) && RNK(x)==1 && TI(x,arrD1)) {
     usz ia = IA(x);
-    B range = ud_c1(t, m_f64(ia));
-    return group_c2(m_f64(0), x, range);
+    B range = C1(ud, m_f64(ia));
+    return C2(group, x, range);
   }
   return c1(rt_group, x);
 }

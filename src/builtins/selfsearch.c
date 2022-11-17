@@ -1,11 +1,49 @@
+// Self-search: Mark Firsts (∊), Occurrence Count (⊒), Classify (⊐), Deduplicate (⍷)
+
+// Except for trivial cases, ⍷ is implemented as ∊⊸/
+// Other functions use adaptations of the same set of methods
+
+// Boolean cases all use special code, including ⍷
+//   COULD vectorize boolean ⊒ with +`
+// Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0←0 for ⊐, 1 otherwise)
+//   ∊: ⊢; ⊐: +`; ⊒: ↕∘≠⊸(⊣-⌈`∘×)
+//   COULD determine ⊒ result type by direct comparisons on 𝕩
+// Brute force or all-pairs comparison for small lengths
+//   Branchless, not vectorized (+´∧` structure for ⊐)
+//   COULD use direct all-pairs filter, not ∊⊸/, for short ⍷
+// Full-size table lookups for 1- and 2-byte 𝕩
+//   2-byte table can be "sparse" initialized with an extra pass over 𝕩
+//   4-byte ⊐ can use a small-range lookup table
+//   COULD add small-range 4-byte tables for ∊ and ⊒
+// Radix-assisted lookups are fallbacks for 4-byte ∊ and ⊒
+//   COULD do radix-assisted ⊐ as ⍷⊸⊐ or similar
+//   Specializes on constant top 1/2 bytes, but hashes make this rare
+
+// Specialized 4-byte and 8-byte hash tables
+//   In-place resizing by factor of 4 based on measured collisions
+//   Max collisions ensures bounded time spent here before giving up
+//   First element used as sentinel (not good for ⊒)
+//   COULD prefetch when table gets larger
+// Generic hash table for other cases
+//   Resizing is pretty expensive here
+
+// SHOULD widen small odd sizes
+
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
+#include "../utils/calls.h"
+#include "../builtins.h"
 
-B not_c1(B t, B x);
-B shape_c1(B t, B x);
-B slash_c2(B t, B w, B x);
+extern B shape_c1(B, B);
+extern B slash_c2(B, B, B);
+extern B ud_c1(B, B);
+extern B sub_c2(B, B, B);
+extern B mul_c2(B, B, B);
+extern B scan_add_bool(B x, u64 ia);
+extern B scan_max_num(B x, u8 xe, u64 ia);
 
+// These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
 static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
 #else
@@ -22,6 +60,20 @@ static inline u64 hash64(u64 x) {
   x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53;
   x ^= x >> 33;
   return x;
+}
+
+static inline bool use_sorted(B x, u8 logw) {
+  if (!FL_HAS(x, fl_asc|fl_dsc)) return 0;
+  if (logw==6) return TI(x, elType) == el_f64;
+  return 3<=logw & logw<=5;
+}
+static inline B shift_ne(B x, usz n, u8 lw, bool r0) { // consumes x
+  u64* rp; B r = m_bitarrv(&rp, n);
+  u8* xp = tyany_ptr(x);
+  u8 lb = lw - 3;
+  CMP_AA_IMM(ne, el_i8+lb, rp, xp-(1<<lb), xp, n);
+  bitp_set(rp, 0, r0);
+  decG(x); return r;
 }
 
 static bool canCompare64_norm(B x, usz n) {
@@ -169,6 +221,9 @@ B memberOf_c1(B t, B x) {
     rp[0]=1; if (i<n) bitp_set(rp, i, 1);
     return r;
   }
+  if (use_sorted(x, lw)) {
+    return shift_ne(x, n, lw, 1);
+  }
   #define BRUTE(T) \
     i##T* xp = xv;                                                     \
     u64 rv = 1;                                                        \
@@ -247,7 +302,32 @@ B count_c1(B t, B x) {
   if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
   
   u8 lw = cellWidthLog(x);
-  if (lw==0) { x = toI8Any(x); lw = cellWidthLog(x); }
+  if (lw==0) {
+    u64* xp = bitarr_ptr(x);
+    B r;
+    #define COUNT_BOOL(T) \
+      T* rp; r = m_##T##arrv(&rp, n);         \
+      usz n1 = 0;                             \
+      for (usz i=0; i<n; ) {                  \
+        u64 bb = xp[i/64];                    \
+        for (usz e=n-i<64?n:i+64; i<e; i++) { \
+          bool b = bb&1; bb>>=1;              \
+          rp[i] = b? n1 : i-n1;               \
+          n1 += b;                            \
+        }                                     \
+      }
+    if      (n <= 128)   { COUNT_BOOL(i8) }
+    else if (n <= 1<<15) { COUNT_BOOL(i16) }
+    else                 { COUNT_BOOL(i32) }
+    decG(x); return r;
+    #undef COUNT_BOOL
+  }
+  if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
+    B c = shift_ne(x, n, lw, 1);
+    B i = C1(ud, m_f64(n));
+    B m = C2(mul, c, inc(i));
+    return C2(sub, i, scan_max_num(m, TI(m,elType), n));
+  }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
@@ -280,7 +360,7 @@ B count_c1(B t, B x) {
     /*THRESHMUL*/1, THRESH,                                \
     /*INIT*/u32 ctr0 = 1;)
   if (lw==5) {
-    if (n<12) { BRUTE(32); }
+    if (n<20) { BRUTE(32); }
     i32* rp; B r = m_i32arrv(&rp, n);
     HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<14)? 3 : 5)
     // Radix-assisted lookup
@@ -334,8 +414,11 @@ B indexOf_c1(B t, B x) {
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
   if (lw == 0) {
-    B r = 1&*(u64*)xv ? not_c1(m_f64(0), x) : x;
-    return shape_c1(m_f64(0), r);
+    B r = 1&*(u64*)xv ? bit_negate(x) : x;
+    return C1(shape, r);
+  }
+  if (use_sorted(x, lw) && n>8) {
+    return scan_add_bool(shift_ne(x, n, lw, 0), n);
   }
   #define BRUTE(T) \
     i##T* xp = xv;                                             \
@@ -426,5 +509,13 @@ B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
-  return slash_c2(m_f64(0), memberOf_c1(m_f64(0), inc(x)), x);
+  if (TI(x,elType)==el_bit && RNK(x)==1) {
+    u64* xp = bitarr_ptr(x);
+    u64 x0 = 1 & *xp;
+    usz i = bit_find(xp, n, !x0); decG(x);
+    u64* rp; B r = m_bitarrv(&rp, 1 + (i<n));
+    rp[0] = 2 ^ -x0;
+    return r;
+  }
+  return C2(slash, C1(memberOf, inc(x)), x);
 }
