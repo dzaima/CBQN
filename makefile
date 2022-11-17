@@ -144,7 +144,7 @@ endif
 
 builddir:
 ifeq ($(force_build_dir),)
-	@printf 'obj/'
+	@printf 'build/obj/'
 ifeq ($(custom),)
 	@echo "def_$(i_t)"
 else
@@ -179,7 +179,7 @@ else
 	
 ifeq ($(i_singeli), 1)
 	@mkdir -p src/singeli/gen
-	@mkdir -p obj/singeli
+	@mkdir -p build/obj/singeli
 	@${MAKE} postmsg="post-singeli build:" build_singeli
 endif
 	
@@ -248,14 +248,14 @@ ifeq ($(SINGELI_DIR),build/singeliSubmodule)
 	@git submodule update --init build/singeliSubmodule
 endif
 	@echo "pre-singeli build:"
-	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
+	@${MAKE} i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
 
 
 build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c scan.c neq.c slash.c constrep.c bits.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@obj/presingeli/BQN SingeliMake.bqn "$(SINGELI_DIR)" $< $@ "obj/singeli/"
+	@build/obj/presingeli/BQN SingeliMake.bqn "$(SINGELI_DIR)" $< $@ "build/obj/singeli/"
 
 ifeq (${i_singeli}, 1)
 # arithmetic table generator
@@ -269,7 +269,7 @@ src/singeli/gen/arTables.c: genArithTables
 .INTERMEDIATE: genArithTables
 genArithTables: src/singeli/src/genArithTables.bqn preSingeliBin
 	@echo "  generating arDefs.singeli & arTables.c"
-	@obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/arDefs.singeli" "$$PWD/src/singeli/gen/arTables.c"
+	@build/obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/arDefs.singeli" "$$PWD/src/singeli/gen/arTables.c"
 endif
 
 
@@ -298,7 +298,7 @@ endif # replxx
 # dependency files
 -include $(bd)/*.d
 ifeq (${i_singeli}, 1)
--include obj/singeli/*.d
+-include build/obj/singeli/*.d
 endif
 
 DESTDIR =
@@ -311,13 +311,14 @@ uninstall:
 
 clean-singeli:
 	rm -rf src/singeli/gen/
-	rm -rf obj/singeli/
-	@${MAKE} clean-specific bd=obj/presingeli
+	rm -rf build/obj/singeli/
+	@${MAKE} clean-specific bd=build/obj/presingeli
 clean-runtime:
 	rm -f src/gen/customRuntime
 clean-build:
-	rm -f obj/*/*.o
-	rm -f obj/*/*.d
+	rm -f build/obj/*/*.o
+	rm -f build/obj/*/*.d
+	rm -f build/obj/*/BQN
 clean-specific:
 	rm -f $(bd)/*.o
 	rm -f $(bd)/*.d
