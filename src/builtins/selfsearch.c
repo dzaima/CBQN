@@ -35,7 +35,6 @@
 #include "../utils/calls.h"
 #include "../builtins.h"
 
-extern B not_c1(B, B);
 extern B shape_c1(B, B);
 extern B slash_c2(B, B, B);
 extern B ud_c1(B, B);
@@ -416,7 +415,7 @@ B indexOf_c1(B t, B x) {
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
   if (lw == 0) {
-    B r = 1&*(u64*)xv ? C1(not, x) : x;
+    B r = 1&*(u64*)xv ? bit_negate(x) : x;
     return C1(shape, r);
   }
   if (use_sorted(x, lw) && n>8) {

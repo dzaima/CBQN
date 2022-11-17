@@ -25,7 +25,6 @@
 #include "../utils/mut.h"
 
 extern B ud_c1(B, B);
-extern B not_c1(B, B);
 extern B ne_c2(B, B, B);
 extern B slash_c1(B, B);
 extern B slash_c2(B, B, B);
@@ -102,7 +101,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     assert(ria == 2);
     if (wia>xn) w = C2(take, m_f64(xn), w);
     rp[1] = C2(slash, inc(w), inc(x));
-    rp[0] = C2(slash, C1(not, w), x);
+    rp[0] = C2(slash, bit_negate(w), x);
     return taga(r);
   }
   // Needed to make sure wia>0 for ip[wia-1] below

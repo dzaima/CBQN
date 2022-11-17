@@ -413,7 +413,6 @@ static NOINLINE B zeroCells(B x) { // doesn't consume
   return r;
 }
 
-B not_c1(B t, B x);
 B grade_bool(B x, usz xia, bool up) {
   #define BRANCHLESS_GRADE(T) \
     T* rp; r = m_##T##arrv(&rp, xia);  \
@@ -433,7 +432,7 @@ B grade_bool(B x, usz xia, bool up) {
   #if SINGELI && defined(__BMI2__)
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
-    B notx = not_c1(m_f64(0), inc(x));
+    B notx = bit_negate(inc(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }

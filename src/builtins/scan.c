@@ -63,7 +63,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   B r;
   u8 re = xs<=I8_MAX? el_i8 : xs<=I16_MAX? el_i16 : xs<=I32_MAX? el_i32 : el_f64;
   if (xs < ia/128) {
-    B ones = slash_c1(m_f64(0), x);
+    B ones = C1(slash, x);
     MAKE_MUT(r0, ia) mut_init(r0, re); MUTG_INIT(r0);
     SGetU(ones)
     usz ri = 0;
@@ -112,8 +112,8 @@ B scan_add_bool(B x, u64 ia) { // consumes x
     MM_CASE(f64,NAME,C,F64_##INIT)         \
   }                                        \
   decG(x); return FL_SET(r, fl_##ORD);
-B scan_min_num(B x, u8 xe, usz ia) { MINMAX(min,<,MAX,and,dsc) }
-B scan_max_num(B x, u8 xe, usz ia) { MINMAX(max,>,MIN,or ,asc) }
+B scan_min_num(B x, u8 xe, u64 ia) { MINMAX(min,<,MAX,and,dsc) }
+B scan_max_num(B x, u8 xe, u64 ia) { MINMAX(max,>,MIN,or ,asc) }
 #undef MINMAX
 // Initialized: try to convert 𝕨 to type of 𝕩
 // (could do better for out-of-range floats)
