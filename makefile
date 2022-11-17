@@ -117,6 +117,9 @@ ifeq ($(REPLXX),1)
 	custom = 1
 	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
 endif
+ifeq ($(i_singeli),1)
+	SINGELI_DIR = $(shell if [ -d build/singeliLocal ]; then echo build/singeliLocal; else echo build/singeliSubmodule; fi)
+endif
 
 i_LD = $(i_CC)
 
@@ -147,7 +150,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" "${REPLXX_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${i_CXX}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -241,9 +244,9 @@ ${bd}/load.o: src/gen/customRuntime
 # singeli
 .INTERMEDIATE: preSingeliBin
 preSingeliBin:
-	@if [ ! -d build/singeliLocal ]; then \
-		git submodule update --init build/singeliSubmodule; \
-	fi
+ifeq ($(SINGELI_DIR),build/singeliSubmodule)
+	@git submodule update --init build/singeliSubmodule
+endif
 	@echo "pre-singeli build:"
 	@${MAKE} i_singeli=0 singeli=0 force_build_dir=obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=obj/presingeli/BQN c
 
@@ -252,7 +255,7 @@ build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c sque
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
-	@obj/presingeli/BQN SingeliMake.bqn "$$(if [ -d build/singeliLocal ]; then echo build/singeliLocal; else echo build/singeliSubmodule; fi)" $< $@ "obj/singeli/"
+	@obj/presingeli/BQN SingeliMake.bqn "$(SINGELI_DIR)" $< $@ "obj/singeli/"
 
 ifeq (${i_singeli}, 1)
 # arithmetic table generator
