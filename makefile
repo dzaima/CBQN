@@ -325,7 +325,7 @@ clean-specific:
 	rm -f $(bd)/BQN
 	rmdir $(bd); true
 clean-submodules:
-	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/
+	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/ build/bytecodeSubmodule/
 	
 
 clean: clean-build clean-singeli

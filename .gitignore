@@ -33,7 +33,6 @@ compile_commands.json
 /.cache/
 
 # things not used anymore, but still may be present in existing clones
-/Singeli/
 /SingeliClone/
 /obj/
 /src/gen/
