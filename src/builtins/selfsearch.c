@@ -38,11 +38,11 @@
 extern B not_c1(B, B);
 extern B shape_c1(B, B);
 extern B slash_c2(B, B, B);
-extern B scan_c1(Md1D*, B);
 extern B ud_c1(B, B);
 extern B sub_c2(B, B, B);
 extern B mul_c2(B, B, B);
 extern B scan_add_bool(B x, u64 ia);
+extern B scan_max_num(B x, u8 xe, u64 ia);
 
 // These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
@@ -327,8 +327,8 @@ B count_c1(B t, B x) {
   if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
     B c = shift_ne(x, n, lw, 1);
     B i = C1(ud, m_f64(n));
-    B m = M1C1(scan, ceil, C2(mul, c, inc(i)));
-    return C2(sub, i, m);
+    B m = C2(mul, c, inc(i));
+    return C2(sub, i, scan_max_num(m, TI(m,elType), n));
   }
   void* xv = tyany_ptr(x);
   #define BRUTE(T) \

@@ -102,16 +102,17 @@ B scan_add_bool(B x, u64 ia) { // consumes x
 #endif
 #define MM_CASE(T,N,C,I) \
   case el_##T : { T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,I); break; }
-#define MINMAX(NAME,C,INIT,ORD) \
-  B r; switch (xe) { default:UD; \
-    MM_CASE(i8 ,NAME,C,I8_##INIT ) \
-    MM_CASE(i16,NAME,C,I16_##INIT) \
-    MM_CASE(i32,NAME,C,I32_##INIT) \
-    MM_CASE(f64,NAME,C,F64_##INIT) \
-  } \
+#define MINMAX(NAME,C,INIT,BIT,ORD) \
+  B r; switch (xe) { default:UD;           \
+    case el_bit: return scan_##BIT(x, ia); \
+    MM_CASE(i8 ,NAME,C,I8_##INIT )         \
+    MM_CASE(i16,NAME,C,I16_##INIT)         \
+    MM_CASE(i32,NAME,C,I32_##INIT)         \
+    MM_CASE(f64,NAME,C,F64_##INIT)         \
+  }                                        \
   decG(x); return FL_SET(r, fl_##ORD);
-static B scan_min_num(B x, u8 xe, usz ia) { MINMAX(min,<,MAX,dsc) }
-static B scan_max_num(B x, u8 xe, usz ia) { MINMAX(max,>,MIN,asc) }
+B scan_min_num(B x, u8 xe, usz ia) { MINMAX(min,<,MAX,and,dsc) }
+B scan_max_num(B x, u8 xe, usz ia) { MINMAX(max,>,MIN,or ,asc) }
 #undef MM_CASE
 #undef MINMAX
 #undef MINMAX_SCAN
