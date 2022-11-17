@@ -36,6 +36,17 @@
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - [Some implementation docs](https://github.com/dzaima/CBQN/tree/master/src#readme)
 
+### Precompiled bytecode
+
+CBQN uses [the self-hosted BQN compiler](https://github.com/mlochbaum/BQN/blob/master/src/c.bqn) & some parts of [the runtime](https://github.com/mlochbaum/BQN/blob/master/src/r1.bqn), and therefore needs to be bootstrapped.  
+By default, the CBQN will use [precompiled bytecode](https://github.com/dzaima/cbqnBytecode). In order to build everything from source, you need to:
+
+1. get another BQN implementation; [dzaima/BQN](https://github.com/dzaima/BQN) is one that is completely implemented in Java (clone it & run `./build`).
+2. clone [mlochbaum/BQN](https://github.com/mlochbaum/BQN).
+2. From within CBQNs directory, run `mkdir -p build/bytecodeLocal/gen`
+3. Run `said-other-bqn-impl ./genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`  
+   In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./genRuntime ~/git/BQN build/bytecodeLocal`
+
 ## macOS
 
 To use FFI in macOS, libffi must be installed, and manually added to `C_INCLUDE_PATH` and `LIBRARY_PATH`. In addition, the `NO_DYNAMIC_LIST=1` make argument is needed, so the full command might, depending on where libffi is installed, look like one of these:
