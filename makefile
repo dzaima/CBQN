@@ -297,7 +297,7 @@ ifeq ($(origin CXX),command line)
 	i_CXX := $(CXX)
 endif
 i_LD = $(i_CXX)
-REPLXX_FLAGS = -Os
+REPLXX_FLAGS = -Os -std=c++11
 
 ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include
 
