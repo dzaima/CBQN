@@ -206,7 +206,6 @@ ifeq ($(REPLXX_DIR),build/replxxSubmodule)
 	@git submodule update --init build/replxxSubmodule
 endif
 ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
-	@echo "Using precompiled bytecode; see readme for how to build your own"
 	@git submodule update --init build/bytecodeSubmodule
 endif
 	@export bd=$$(${MAKE} builddir); \
@@ -253,8 +252,13 @@ ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-.INTERMEDIATE: core base utils jit builtins
+.INTERMEDIATE: core base utils jit builtins bytecodeMessage
 
+$(bd)/load.o: bytecodeMessage
+bytecodeMessage:
+ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+	@echo "Using precompiled bytecode; see readme for how to build your own"
+endif
 
 
 # singeli
