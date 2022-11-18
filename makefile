@@ -173,13 +173,28 @@ single-c:
 
 # actual build
 run_incremental_0:
+ifeq ($(verbose),1)
+	@echo "build directory: $$(${MAKE} builddir)"
+	@echo "  bytecode: build/$(BYTECODE_DIR)"
+ifeq ($(REPLXX),1)
+	@echo "  replxx: $(REPLXX_DIR)"
+else
+	@echo "  replxx: not used"
+endif
+ifeq ($(i_singeli), 1)
+	@echo "  singeli: $(SINGELI_DIR)"
+else
+	@echo "  singeli: not used"
+endif
+endif
+
 ifeq ($(origin clean),command line)
 	@export bd=$$(${MAKE} builddir); \
 	${MAKE} clean-specific bd="$$bd"
 else ifeq ($(origin builddir),command line)
 	@export bd=$$(${MAKE} builddir); \
 	echo "$$bd"
-else
+else # run build
 	
 ifeq ($(i_singeli), 1)
 	@mkdir -p src/singeli/gen
@@ -194,11 +209,10 @@ ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
 	@echo "Using precompiled bytecode; see readme for how to build your own"
 	@git submodule update --init build/bytecodeSubmodule
 endif
-	
 	@export bd=$$(${MAKE} builddir); \
 	mkdir -p "$$bd";                 \
 	${MAKE} run_incremental_1 bd="$$bd"
-endif
+endif # run build
 
 run_incremental_1: ${bd}/BQN
 ifneq (${bd}/BQN,${OUTPUT_BIN})
