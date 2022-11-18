@@ -286,12 +286,12 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
     if (is_B) {
       for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
       r = withFill(rh.b, getFillQ(x));
-      IA(r) = wsum; // Shape-setting code at end of compress expects this
+      a(r)->ia = wsum; // Shape-setting code at end of compress expects this
     }
   } else { // Bits
     usz width = csz;
     u64* xp = tyany_ptr(x);
-    u64* rp; r = m_bitarrv(&rp,wsum*width); IA(r) = wsum;
+    u64* rp; r = m_bitarrv(&rp,wsum*width); a(r)->ia = wsum;
     COMPRESS_GROUP(bit_cpy)
   }
   return r;
@@ -588,8 +588,8 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   ur xr = RNK(x);
   if (xr > 1) {
     Arr* ra=a(r); SPRNK(ra,xr);
-    usz* sh = PSH(ra) = m_shArr(xr)->a;
-    sh[0] = PIA(ra); PIA(ra) *= arr_csz(x);
+    usz* sh = ra->sh = m_shArr(xr)->a;
+    sh[0] = PIA(ra); ra->ia *= arr_csz(x);
     shcpy(sh+1, SH(x)+1, xr-1);
   }
   return r;
@@ -781,7 +781,7 @@ B slash_c2(B t, B w, B x) {
     
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
-      u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); SH(r) = rsh; }
+      u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); a(r)->sh = rsh; }
       if (s/1024 <= wia) {
         #define SPARSE_REP(T) T* wp=T##any_ptr(w); BOOL_REP_XOR_SCAN(wp[j])
         if      (we==el_i8 ) { SPARSE_REP(i8 ); }
@@ -796,7 +796,7 @@ B slash_c2(B t, B w, B x) {
     } else {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
-      if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); PSH(ra) = rsh; PIA(ra) = s*arr_csz(x); }
+      if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); ra->sh = rsh; ra->ia = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
       if ((xk<3? s/64 : s/32) <= wia) { // Sparse case: use both types
         #define CASE(L,XT) case L: { REP_BY_SCAN(XT, wp[j]) break; }
@@ -894,7 +894,7 @@ B slash_c2(B t, B w, B x) {
       usz* rsh = m_shArr(xr)->a;
       rsh[0] = s;
       shcpy(rsh+1, SH(x)+1, xr-1);
-      Arr* ra=a(r); SPRNK(ra,xr); PSH(ra)=rsh; PIA(ra)=s*arr_csz(x);
+      Arr* ra=a(r); SPRNK(ra,xr); ra->sh=rsh; ra->ia=s*arr_csz(x);
     }
     goto decX_ret;
   }
