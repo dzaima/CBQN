@@ -1,4 +1,3 @@
-#include <sys/mman.h>
 #include "../core.h"
 #include "../core/gstack.h"
 #include "../ns.h"
@@ -6,6 +5,7 @@
 #include "../utils/talloc.h"
 #include "../utils/wyhash.h"
 #include "../vm.h"
+#include <sys/mman.h>
 
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map

@@ -1,8 +1,3 @@
-#include <unistd.h>
-#include <poll.h>
-#include <errno.h>
-
-
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/calls.h"
@@ -13,6 +8,9 @@
 #include "../ns.h"
 #include "../nfns.h"
 
+#include <unistd.h>
+#include <poll.h>
+#include <errno.h>
 
 static bool eqStr(B w, u32* x) {
   if (isAtm(w) || RNK(w)!=1) return false;

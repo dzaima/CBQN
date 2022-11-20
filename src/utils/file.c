@@ -1,10 +1,10 @@
-#include <dirent.h>
-#include <unistd.h>
-#include <errno.h>
 #include "../core.h"
 #include "file.h"
 #include "talloc.h"
 #include "cstr.h"
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
 
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume

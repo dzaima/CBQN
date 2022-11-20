@@ -1,10 +1,10 @@
-#include <unistd.h>
 #include "core.h"
 #include "vm.h"
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"
 #include "utils/interrupt.h"
+#include <unistd.h>
 
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
   #define UNWIND_COMPILER 1

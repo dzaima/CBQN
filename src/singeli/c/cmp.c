@@ -1,6 +1,6 @@
-#include <math.h>
 #include "../../core.h"
 #include "../../builtins.h"
+#include <math.h>
 
 extern bool please_tail_call_err;
 static NOINLINE void cmp_err() { if (please_tail_call_err) thrM("Invalid comparison"); }

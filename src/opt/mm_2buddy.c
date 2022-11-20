@@ -1,3 +1,4 @@
+#include "../core.h"
 #if !NO_MMAP
 #include <sys/mman.h>
 #endif

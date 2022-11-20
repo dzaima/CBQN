@@ -1,9 +1,9 @@
-#include <stdarg.h>
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../utils/utf.h"
 #include "../utils/talloc.h"
 #include "../builtins.h"
+#include <stdarg.h>
 
 bool please_tail_call_err = true;
 

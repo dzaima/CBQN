@@ -1,8 +1,8 @@
-#include <math.h>
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
+#include <math.h>
 
 B md2BI_uc1(Md2* t, B o, B f, B g,      B x) { return ((BMd2*)t)->uc1(t, o, f, g,    x); }
 B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g, w, x); }
