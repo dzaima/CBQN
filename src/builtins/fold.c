@@ -55,6 +55,30 @@ static f64 sum_f64(void* xv, usz i, f64 r) {
 static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16, sum_small_i32 };
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
 
+// Try to keep to i32 product, go to f64 on overflow or non-i32 initial
+#define DEF_INT_PROD(T) \
+  static f64 prod_##T(void* xv, usz i, f64 init) {           \
+    while (i--) init*=((T*)xv)[i]; return init;              \
+  }                                                          \
+  static f64 prod_int_##T(void* xv, usz ia, i32 init) {      \
+    T* xp = xv;                                              \
+    while (ia--) {                                           \
+      i32 i0=init;                                           \
+      if (mulOn(init,xp[ia])) return prod_##T(xv, ia+1, i0); \
+    }                                                        \
+    return init;                                             \
+  }
+DEF_INT_PROD(i8)
+DEF_INT_PROD(i16)
+DEF_INT_PROD(i32)
+#undef DEF_PROD
+static f64 prod_f64(void* xv, usz i, f64 r) {
+  while (i--) r *= ((f64*)xv)[i];
+  return r;
+}
+static f64 (*const prod_int_fns[])(void*, usz, i32) = { prod_int_i8, prod_int_i16, prod_int_i32 };
+static f64 (*const prod_fns[])(void*, usz, f64) = { prod_i8, prod_i16, prod_i32, prod_f64 };
+
 #define MIN_MAX(T,C) \
   T* xp = xv; T r = xp[0]; \
   for (usz i=1; i<ia; i++) if (xp[i] C r) r=xp[i]; \
@@ -115,10 +139,11 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_floor) { f64 r=min_fns[xe-el_i8](tyany_ptr(x), ia); decG(x); return m_f64(r); } // ⌊
     if (rtid==n_ceil ) { f64 r=max_fns[xe-el_i8](tyany_ptr(x), ia); decG(x); return m_f64(r); } // ⌈
     if (rtid==n_mul | rtid==n_and) { // ×/∧
-      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i32 c=1; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_f64(c); }
-      if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=1; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=1; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_f64) { f64* xp = f64any_ptr(x); f64 c=1; for (usz i=ia; i--; ) c*= xp[i];                    decG(x); return m_f64(c); }
+      void *xv = tyany_ptr(x);
+      u8 sel = xe - el_i8;
+      f64 r = xe<=el_i32 ? prod_int_fns[sel](xv, ia, 1)
+                         : prod_fns[sel](xv, ia, 1);
+      decG(x); return m_f64(r);
     }
     if (rtid==n_or) { // ∨
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); bool r=0; for (usz i=0; i<ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; r|=c; } decG(x); return m_i32(r); }
@@ -179,10 +204,12 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
     if (rtid==n_ceil ) { f64 r=wf; if (ia>0) { f64 m=max_fns[xe-el_i8](tyany_ptr(x), ia); if (m>r) r=m; } decG(x); return m_f64(r); } // ⌈
     i32 wi = wf;
     if (rtid==n_mul | rtid==n_and) { // ×/∧
-      if (xe==el_i8  && wi==wf) { i8*  xp = i8any_ptr (x); i32 c=wi; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_i16 && wi==wf) { i16* xp = i16any_ptr(x); i32 c=wi; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_i32 && wi==wf) { i32* xp = i32any_ptr(x); i32 c=wi; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_f64          ) { f64* xp = f64any_ptr(x); f64 c=wf; for (usz i=ia; i--; ) c*= xp[i];                    decG(x); return m_f64(c); }
+      void *xv = tyany_ptr(x);
+      bool isint = xe<=el_i32 && wi==wf;
+      u8 sel = xe - el_i8;
+      f64 r = isint ? prod_int_fns[sel](xv, ia, wi)
+                    : prod_fns[sel](xv, ia, wf);
+      decG(x); return m_f64(r);
     }
     if (rtid==n_or && (wi&1)==wf) { // ∨
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); bool q=wi; for (usz i=0; i<ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; q|=c; } decG(x); return m_i32(q); }
