@@ -1,6 +1,13 @@
 #include "../core.h"
 #include "../builtins.h"
 
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/fold.c"
+  #pragma GCC diagnostic pop
+#endif
+
 static bool fold_ne(u64* x, u64 am) {
   u64 r = 0;
   for (u64 i = 0; i < (am>>6); i++) r^= x[i];
@@ -55,7 +62,13 @@ static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum
 #define DEF_MIN_MAX(T) \
   static f64 min_##T(void* xv, usz ia) { MIN_MAX(T,<) } \
   static f64 max_##T(void* xv, usz ia) { MIN_MAX(T,>) }
-DEF_MIN_MAX(i8) DEF_MIN_MAX(i16) DEF_MIN_MAX(i32) DEF_MIN_MAX(f64)
+DEF_MIN_MAX(i8) DEF_MIN_MAX(i16) DEF_MIN_MAX(i32)
+#if SINGELI
+  static f64 min_f64(void* xv, usz ia) { return avx2_fold_min_f64(xv,ia); }
+  static f64 max_f64(void* xv, usz ia) { return avx2_fold_max_f64(xv,ia); }
+#else
+  DEF_MIN_MAX(f64)
+#endif
 #undef DEF_MIN_MAX
 #undef MIN_MAX
 static f64 (*const min_fns[])(void*, usz) = { min_i8, min_i16, min_i32, min_f64 };
