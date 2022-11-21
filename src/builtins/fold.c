@@ -119,12 +119,16 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       u64* xp = bitarr_ptr(x);
       f64 r;
       switch (rtid) { default: goto base;
-        case n_add:                           r = bit_sum (xp, ia);           break;
-        case n_sub:                           r = bit_diff(xp, ia);           break;
-        case n_and: case n_mul: case n_floor: r = bit_has (xp, ia, 0) ^ 1;    break;
-        case n_or:              case n_ceil:  r = bit_has (xp, ia, 1)    ;    break;
-        case n_ne:                            r = fold_ne (xp, ia)          ; break;
-        case n_eq:                            r = fold_ne (xp, ia) ^ (1&~ia); break;
+        case n_add:                           r = bit_sum (xp, ia);            break;
+        case n_sub:                           r = bit_diff(xp, ia);            break;
+        case n_and: case n_mul: case n_floor: r = bit_has (xp, ia, 0) ^ 1;     break;
+        case n_or:              case n_ceil:  r = bit_has (xp, ia, 1)    ;     break;
+        case n_ne:                            r = fold_ne (xp, ia)          ;  break;
+        case n_eq:                            r = fold_ne (xp, ia) ^ (1&~ia);  break;
+        case n_lt:                            r = bit_find(xp, ia, 1) == ia-1; break;
+        case n_le:                            r = bit_find(xp, ia, 0) != ia-1; break;
+        case n_gt:                            r = bit_find(xp, ia, 0) & 1;     break;
+        case n_ge:                            r =~bit_find(xp, ia, 1) & 1;     break;
       }
       decG(x); return m_f64(r);
     }
