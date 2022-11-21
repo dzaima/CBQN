@@ -12,7 +12,7 @@
     - Use `gmake` on BSD
     - `make clean` if anything breaks and you want a clean build slate
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
-    - `make REPLXX=1` to enable replxx (syntax highlighting, completion)
+    - `make REPLXX=1` to enable replxx (syntax highlighting & some system & variable name completion)
 2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL (or just `./BQN` if replxx is enabled)
 
 ## Configuration options

@@ -30,7 +30,7 @@ heapverifyn-singeli:
 rtverifyn-singeli:
 	@${MAKE} i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
 wasi-o3:
-	@${MAKE} i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LD_LIBS= i_PIE= i_FFI=0 run_incremental_0
+	@${MAKE} i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
 	@${MAKE} i_singeli=0 i_t=emcc_o3 i_OUTPUT=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
 shared-o3:
@@ -43,7 +43,7 @@ c:
 # compiler setup
 i_CC := clang
 i_PIE := -no-pie
-i_LD_LIBS := -lm
+i_LIBS_LD := -lm
 i_FFI := 2
 i_singeli := 0
 i_OUTPUT := BQN
@@ -79,18 +79,23 @@ ifeq ($(origin FFI),command line)
 	custom = 1
 endif
 ifneq ($(i_FFI),0)
-	i_LD_LIBS += -ldl
+	i_LIBS_LD += -ldl
 ifneq ($(NO_DYNAMIC_LIST),1)
-	i_LD_LIBS += -Wl,--dynamic-list=include/syms
+	i_LIBS_LD += -Wl,--dynamic-list=include/syms
 else
 	custom = 1
 endif
 endif
 ifeq ($(i_FFI),2)
-	i_LD_LIBS += -lffi
+ifeq ($(shell command -v pkg-config 2>&1 > /dev/null && pkg-config --exists libffi && echo $$?),0)
+	i_LIBS_LD += $(shell pkg-config --libs libffi)
+	i_LIBS_CC += $(shell pkg-config --cflags libffi)
+else
+	i_LIBS_LD += -lffi
+endif
 endif
 ifeq ($(origin LD_LIBS),command line)
-	i_LD_LIBS := $(LD_LIBS)
+	i_LIBS_LD := $(LD_LIBS)
 	custom = 1
 endif
 ifeq ($(origin PIE),command line)
@@ -134,8 +139,8 @@ else
 	NOWARN = -Wno-parentheses
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS)
-ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LD_LIBS)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS) $(i_LIBS_CC)
+ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 ifneq (${manualJobs},1)
 	ifeq (${MAKECMDGOALS},run_incremental_1)
