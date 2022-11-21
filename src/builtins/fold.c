@@ -73,8 +73,11 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     thrM("´: No identity found");
   }
   u8 xe = TI(x,elType);
-  if (isFun(f) && v(f)->flags && xe<=el_f64) {
+  if (isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
+    if (rtid==n_ltack) { B r = IGet(x, 0   ); decG(x); return r; }
+    if (rtid==n_rtack) { B r = IGet(x, ia-1); decG(x); return r; }
+    if (xe>el_f64) goto base;
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
       f64 r;
@@ -132,9 +135,16 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   u8 xe = TI(x,elType);
-  if (isF64(w) && isFun(f) && v(f)->flags && xe<=el_f64) {
-    f64 wf = w.f;
+  if (isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
+    if (rtid==n_ltack) {
+      B r = w;
+      if (ia) { dec(w); r=IGet(x, 0); }
+      decG(x); return r;
+    }
+    if (rtid==n_rtack) { decG(x); return w; }
+    if (!isF64(w) || xe>el_f64) goto base;
+    f64 wf = w.f;
     if (xe==el_bit) {
       i32 wi = wf; if (wi!=wf) goto base;
       u64* xp = bitarr_ptr(x);
