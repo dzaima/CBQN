@@ -32,19 +32,37 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     u8 rtid = v(f)->flags-1;
     if (xe==el_bit) {
       u64* xp = bitarr_ptr(x);
-      if (rtid==n_add) { B r = m_f64(bit_sum (xp, ia)); decG(x); return r; }
-      if (rtid==n_sub) { B r = m_f64(bit_diff(xp, ia)); decG(x); return r; }
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) { B r = m_i32(!bit_has(xp, ia, 0)); decG(x); return r; }
-      if (rtid==n_or  |               rtid==n_ceil ) { B r = m_i32( bit_has(xp, ia, 1)); decG(x); return r; }
-      if (rtid==n_ne) { bool r=fold_ne(xp, ia)          ; decG(x); return m_i32(r); }
-      if (rtid==n_eq) { bool r=fold_ne(xp, ia) ^ (1&~ia); decG(x); return m_i32(r); }
-      goto base;
+      f64 r;
+      switch (rtid) { default: goto base;
+        case n_add:                           r = bit_sum (xp, ia);           break;
+        case n_sub:                           r = bit_diff(xp, ia);           break;
+        case n_and: case n_mul: case n_floor: r = bit_has (xp, ia, 0) ^ 1;    break;
+        case n_or:              case n_ceil:  r = bit_has (xp, ia, 1)    ;    break;
+        case n_ne:                            r = fold_ne (xp, ia)          ; break;
+        case n_eq:                            r = fold_ne (xp, ia) ^ (1&~ia); break;
+      }
+      decG(x); return m_f64(r);
     }
     if (rtid==n_add) { // +
-      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i64 c=0; for (usz i=0; i<ia; i++) c+= xp[i];                    decG(x); return m_f64(c); } // won't worry about 64TB array sum float inaccuracy for now
-      if (xe==el_i16) { i16* xp = i16any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (addOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) if (addOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
-      if (xe==el_f64) { f64* xp = f64any_ptr(x); f64 c=0; for (usz i=ia; i--; ) c+= xp[i];                       decG(x); return m_f64(c); }
+      void *xv = tyany_ptr(x);
+      f64 r;
+      #define CASE_INT(T,M,A) case el_i##T: {                \
+        usz b=1<<(M-T); i64 lim = (1ull<<53) - (1ull<<M);    \
+        i##T* xp = xv; i64 c=0;                              \
+        usz i0=ia; while (i0>0 && -lim<=c && c<=lim) {       \
+          usz e=i0; i0=(i0-1)&~(b-1);                        \
+          i##A s=0; for (usz i=i0; i<e; i++) s+=xp[i]; c+=s; \
+        }                                                    \
+        r = c; while (i0--) r+= xp[i0];                      \
+        break; }
+      switch (xe) { default: UD;
+        CASE_INT(8 ,32,32)
+        CASE_INT(16,32,32)
+        CASE_INT(32,52,64)
+        case el_f64: { r=0; for (usz i=ia; i--; ) c+=((f64*)xp)[i]; break; }
+      }
+      #undef CASE_INT
+      decG(x); return m_f64(r);
     }
     if (rtid==n_mul | rtid==n_and) { // ×/∧
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i32 c=1; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_f64(c); }
@@ -52,16 +70,18 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=1; for (usz i=ia; i--; ) if (mulOn(c,xp[i]))goto base; decG(x); return m_i32(c); }
       if (xe==el_f64) { f64* xp = f64any_ptr(x); f64 c=1; for (usz i=ia; i--; ) c*= xp[i];                    decG(x); return m_f64(c); }
     }
-    if (rtid==n_floor) { // ⌊
-      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8  c=I8_MAX ; for (usz i=0; i<ia; i++) if (xp[i]<c) c=xp[i]; decG(x); return m_i32(c); }
-      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c=I16_MAX; for (usz i=0; i<ia; i++) if (xp[i]<c) c=xp[i]; decG(x); return m_i32(c); }
-      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=I32_MAX; for (usz i=0; i<ia; i++) if (xp[i]<c) c=xp[i]; decG(x); return m_i32(c); }
-    }
-    if (rtid==n_ceil) { // ⌈
-      if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); i8  c=I8_MIN ; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; decG(x); return m_i32(c); }
-      if (xe==el_i16) { i16* xp = i16any_ptr(x); i16 c=I16_MIN; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; decG(x); return m_i32(c); }
-      if (xe==el_i32) { i32* xp = i32any_ptr(x); i32 c=I32_MIN; for (usz i=0; i<ia; i++) if (xp[i]>c) c=xp[i]; decG(x); return m_i32(c); }
-    }
+    #define CASE(T,C) case el_##T: { \
+      T* xp = xv; T c = xp[0]; \
+      for (usz i=0; i<ia; i++) if (xp[i] C c) c=xp[i]; \
+      r = c; break; }
+    #define FC(C) \
+      void *xv = tyany_ptr(x); f64 r; \
+      switch(xe) { default:UD; CASE(i8,C) CASE(i16,C) CASE(i32,C) CASE(f64,C) } \
+      decG(x); return m_f64(r);
+    if (rtid==n_floor) { FC(<) } // ⌊
+    if (rtid==n_ceil ) { FC(>) } // ⌈
+    #undef FC
+    #undef CASE
     if (rtid==n_or) { // ∨
       if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); bool r=0; for (usz i=0; i<ia; i++) { i8  c=xp[i]; if (c!=0&&c!=1)goto base; r|=c; } decG(x); return m_i32(r); }
       if (xe==el_i16) { i16* xp = i16any_ptr(x); bool r=0; for (usz i=0; i<ia; i++) { i16 c=xp[i]; if (c!=0&&c!=1)goto base; r|=c; } decG(x); return m_i32(r); }
