@@ -1,3 +1,14 @@
+// Fold (´)
+
+// Optimized operands:
+// ⊣⊢ on all types
+// +-∧∨=≠ and synonyms on booleans
+// ≤<>≥ on booleans, monadic only, with a search
+// +⌈⌊× on numbers
+//   Integer +: sum blocks associatively as long as sum can't exceed +-2⋆53
+//   COULD implement fast numeric -´
+// ∨ on boolean-valued integers, stopping at 1
+
 #include "../core.h"
 #include "../builtins.h"
 
