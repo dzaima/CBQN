@@ -197,7 +197,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
     }
     if (rtid==n_rtack) { decG(x); return w; }
     if (!isF64(w) || xe>el_f64) goto base;
-    f64 wf = w.f;
+    f64 wf = o2fG(w);
     if (xe==el_bit) {
       i32 wi = wf; if (wi!=wf) goto base;
       u64* xp = bitarr_ptr(x);
