@@ -1,3 +1,34 @@
+// Ordering functions: Sort (∧∨), Grade (⍋⍒), Bins (⍋⍒)
+
+// Sort and Grade
+// Small ≠𝕩 sort (not grade): insertion sort
+//   SHOULD implement insertion grade
+// Small range sort (not grade): counting sort
+//   Count 1s for booleans
+//   Large range/length ("sparse") uses scan: plus, or Singeli max/min
+//   COULD range check 4-byte 𝕩 to try counting sort
+// 4-byte grade checks range and sum
+//   If consistent with a permutation, grade as one and verify after
+//   If small-range, grade with bucket sort
+// Other 1-, 2-, 4-byte cases: radix sort
+//   Singeli +` used if available, speeding up shorter cases
+//   SHOULD skip steps where all bytes are equal
+// General case: Timsort
+// SHOULD check for sorted flag and scan for sortedness in all cases
+// SHOULD use an adaptive quicksort for 4- and 8-byte arguments
+// SHOULD widen odd cell sizes under 8 bytes in sort and grade
+
+// Bins
+// Mixed integer and character arguments gives all 0 or ≠𝕨
+// Integers and characters: 4-byte branchless binary search
+// General case: branching binary search
+// SHOULD implement f64 branchless binary search
+// SHOULD interleave multiple branchless binary searches
+// SHOULD specialize bins on equal types at least
+// SHOULD implement table-based ⍋⍒ for small-range 𝕨
+// SHOULD special-case short 𝕨
+// SHOULD partition 𝕩 when 𝕨 is large
+
 #define GRADE_CAT(N) CAT(GRADE_UD(gradeUp,gradeDown),N)
 #define GRADE_NEG GRADE_UD(,-)
 
