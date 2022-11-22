@@ -1551,7 +1551,7 @@ u32* dsv_text[] = {
   U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
-  U"•math.Acos",U"•math.Asin",U"•math.Atan",U"•math.Atan2",U"•math.Cos",U"•math.Sin",U"•math.Tan",
+  U"•math.Acos",U"•math.Asin",U"•math.Atan",U"•math.Atan2",U"•math.Cos",U"•math.GCD",U"•math.LCM",U"•math.Sin",U"•math.Tan",
   U"•rand.Deal",U"•rand.Range",U"•rand.Subset",
   U"•term.CharB",U"•term.CharN",U"•term.ErrRaw",U"•term.Flush",U"•term.OutRaw",U"•term.RawMode",
   NULL
