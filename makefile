@@ -44,6 +44,7 @@ c:
 i_CC := clang
 i_PIE := -no-pie
 i_LIBS_LD := -lm
+i_LIBS_CC := -fvisibility=hidden
 i_FFI := 2
 i_singeli := 0
 i_OUTPUT := BQN
@@ -57,15 +58,6 @@ ifeq ($(i_emcc),1)
 else
 	OUTPUT_BIN := $(OUTPUT)
 endif
-ifeq ($(i_SHARED),1)
-	i_PIE := -shared
-	SHARED_CCFLAGS := -DCBQN_SHARED
-	ifneq ($(no_fPIC),1)
-		SHARED_CCFLAGS += -fPIC
-	endif
-else
-	SHARED_CCFLAGS :=
-endif
 ifeq ($(origin CC),command line)
 	i_CC := $(CC)
 	custom = 1
@@ -78,21 +70,26 @@ ifeq ($(origin FFI),command line)
 	i_FFI := $(FFI)
 	custom = 1
 endif
+ifeq ($(i_SHARED),1)
+	i_PIE := -shared
+	i_EXPORT := 1
+	i_LIBS_CC += -DCBQN_SHARED
+	ifneq ($(no_fPIC),1)
+		i_LIBS_CC += -fPIC
+	endif
+endif
 ifneq ($(i_FFI),0)
-	i_LIBS_LD += -ldl
-ifneq ($(NO_DYNAMIC_LIST),1)
-	i_LIBS_LD += -Wl,--dynamic-list=include/syms
-else
-	custom = 1
+	i_EXPORT := 1
+	ifeq ($(shell command -v pkg-config 2>&1 > /dev/null && pkg-config --exists libffi && echo $$?),0)
+		i_LIBS_LD += $(shell pkg-config --libs libffi)
+		i_LIBS_CC += $(shell pkg-config --cflags libffi)
+	else
+		i_LIBS_LD += -lffi -ldl
+	endif
 endif
-endif
-ifeq ($(i_FFI),2)
-ifeq ($(shell command -v pkg-config 2>&1 > /dev/null && pkg-config --exists libffi && echo $$?),0)
-	i_LIBS_LD += $(shell pkg-config --libs libffi)
-	i_LIBS_CC += $(shell pkg-config --cflags libffi)
-else
-	i_LIBS_LD += -lffi
-endif
+ifeq ($(i_EXPORT),1)
+	i_LIBS_LD += -rdynamic
+	i_LIBS_CC += -DCBQN_EXPORT
 endif
 ifeq ($(origin LD_LIBS),command line)
 	i_LIBS_LD := $(LD_LIBS)
@@ -139,7 +136,7 @@ else
 	NOWARN = -Wno-parentheses
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(SHARED_CCFLAGS) $(i_LIBS_CC)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 ifneq (${manualJobs},1)
@@ -191,6 +188,8 @@ ifeq ($(i_singeli), 1)
 else
 	@echo "  singeli: not used"
 endif
+	@echo "  cc invocation: $(CC_INC) \$$@.d -o \$$@ -c \$$<"
+	@echo "  ld invocation: $(i_LD) ${CCFLAGS} -o [build_dir]/BQN [build_dir]/*.o $(ALL_LD_FLAGS)"
 endif
 
 ifeq ($(origin clean),command line)
