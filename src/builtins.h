@@ -17,7 +17,7 @@
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") M(heapDump,"•internal.HeapDump") \
 /*internal.c*/M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") D(eequal,"•internal.EEqual") A(internalTemp,"•internal.Temp") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
-/*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") D(atan2,"•math.Atan2") M(sinh,"•math.Sinh") M(cosh,"•math.Cosh") M(tanh,"•math.Tanh") M(asinh,"•math.Asinh") M(acosh,"•math.Acosh") M(atanh,"•math.Atanh") D(gcd,"•math.GCD") D(lcm,"•math.LCM")
+/*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") D(atan2,"•math.Atan2") D(hypot,"•math.Hypot") M(sinh,"•math.Sinh") M(cosh,"•math.Cosh") M(tanh,"•math.Tanh") M(asinh,"•math.Asinh") M(acosh,"•math.Acosh") M(atanh,"•math.Atanh") M(cbrt,"•math.Cbrt") M(log2,"•math.Log2") M(log10,"•math.Log10") M(log1p,"•math.Log1p") M(expm1,"•math.Expm1") D(gcd,"•math.GCD") D(lcm,"•math.LCM")
 
 #define FOR_PM1(A,M,D) \
     /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \

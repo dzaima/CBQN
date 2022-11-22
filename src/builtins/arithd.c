@@ -360,11 +360,14 @@ AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
 AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
 #undef AR_F_SCALAR
 
-B atan2_c2(B t, B w, B x) {
-  if (isNum(w) && isNum(x)) return m_f64(atan2(x.f, w.f));
-  P2(atan2)
-  thrM("•math.Atan2: Unexpected argument types");
-}
+#define MATH(n,N) \
+  B n##_c2(B t, B w, B x) {                              \
+    if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
+    P2(n)                                                \
+    thrM("•math." #N ": Unexpected argument types");     \
+  }
+MATH(atan2,Atan2) MATH(hypot,Hypot)
+#undef MATH
 
 static u64 gcd_u64(u64 a, u64 b) {
   if (a == 0) return b;
