@@ -92,12 +92,12 @@ GC1f(root, sqrt(xv), "√: Getting square root of non-number")
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
-B   sin_c1(B t, B x) { if (isF64(x)) return m_f64(  sin(x.f)); P1(  sin); thrM("•math.Sin: Argument contained non-number"); }
-B   cos_c1(B t, B x) { if (isF64(x)) return m_f64(  cos(x.f)); P1(  cos); thrM("•math.Cos: Argument contained non-number"); }
-B   tan_c1(B t, B x) { if (isF64(x)) return m_f64(  tan(x.f)); P1(  tan); thrM("•math.Tan: Argument contained non-number"); }
-B  asin_c1(B t, B x) { if (isF64(x)) return m_f64( asin(x.f)); P1( asin); thrM("•math.Asin: Argument contained non-number"); }
-B  acos_c1(B t, B x) { if (isF64(x)) return m_f64( acos(x.f)); P1( acos); thrM("•math.Acos: Argument contained non-number"); }
-B  atan_c1(B t, B x) { if (isF64(x)) return m_f64( atan(x.f)); P1( atan); thrM("•math.Atan: Argument contained non-number"); }
+#define MATH(n,N) \
+  B n##_c1(B t, B x) { if (isF64(x)) return m_f64(n(x.f)); P1(n); thrM("•math." #N ": Argument contained non-number"); }
+#define TRIG(n,N) MATH(n,N) MATH(a##n,A##n) MATH(n##h,N##h) MATH(a##n##h,A##n##h)
+TRIG(sin,Sin) TRIG(cos,Cos) TRIG(tan,Tan)
+#undef MATH
+#undef TRIG
 #undef P1
 
 B lt_c1(B t, B x) { return m_atomUnit(x); }
@@ -109,8 +109,8 @@ static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
     #define F(X) inc(bi_##X),
-    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","gcd","lcm");
-    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(gcd)F(lcm));
+    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","gcd","lcm");
+    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(gcd)F(lcm));
     #undef F
     gc_add(mathNS);
   }
@@ -130,4 +130,10 @@ void arith_init() {
   c(BFn,bi_asin)->im = sin_c1;
   c(BFn,bi_acos)->im = cos_c1;
   c(BFn,bi_atan)->im = tan_c1;
+  c(BFn,bi_sinh)->im = asinh_c1;
+  c(BFn,bi_cosh)->im = acosh_c1;
+  c(BFn,bi_tanh)->im = atanh_c1;
+  c(BFn,bi_asinh)->im = sinh_c1;
+  c(BFn,bi_acosh)->im = cosh_c1;
+  c(BFn,bi_atanh)->im = tanh_c1;
 }
