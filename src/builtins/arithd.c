@@ -360,10 +360,83 @@ AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
 AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
 #undef AR_F_SCALAR
 
-B atan2_c2(B t, B w, B x) {
-  if (isNum(w) && isNum(x)) return m_f64(atan2(x.f, w.f));
-  P2(atan2)
-  thrM("•math.Atan2: Unexpected argument types");
+static f64 comb_nat(f64 k, f64 n) {
+  assert(k>=0 && n>=2*k);
+  if (k > 514) return INFINITY;
+  f64 p = 1;
+  for (usz i=0; i<(usz)k; i++) {
+    p*= (n-i) / (k-i);
+    if (p == INFINITY) return p;
+  }
+  return round(p);
+}
+static f64 comb(f64 k, f64 n) { // n choose k
+  f64 j = n - k;  // j+k == n
+  bool jint = j == round(j);
+  if (k == round(k)) {
+    if (jint) {
+      if (k<j) { f64 t=k; k=j; j=t; } // Now j<k
+      if (n >= 0) {
+        return j<0? 0 : comb_nat(j, n);
+      } else {
+        if (k<0) return 0;
+        f64 l = -1-n; // l+k == -1-j
+        f64 r = comb_nat(k<l? k : l, -1-j);
+        return k<(1ull<<53) && ((i64)k&1)? -r : r;
+      }
+    }
+    if (k < 0) return 0;
+  } else if (jint) {
+    if (j < 0) return 0;
+  }
+  return exp(lgamma(n+1) - lgamma(k+1) - lgamma(j+1));
+}
+
+#define MATH(n,N) \
+  B n##_c2(B t, B w, B x) {                              \
+    if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
+    P2(n)                                                \
+    thrM("•math." #N ": Unexpected argument types");     \
+  }
+MATH(atan2,Atan2) MATH(hypot,Hypot) MATH(comb,Comb)
+#undef MATH
+
+static u64 gcd_u64(u64 a, u64 b) {
+  if (a == 0) return b;
+  if (b == 0) return a;
+  u8 az = CTZ(a);
+  u8 bz = CTZ(b);
+  u8 sh = az<bz? az : bz;
+  
+  b >>= bz;
+  while (a > 0) {
+      a >>= az;
+      u64 d = b - a;
+      az = CTZ(d);
+      b = b<a? b : a;
+      a = b<a? -d : d;
+  }
+  return b << sh;
+}
+static u64 lcm_u64(u64 a, u64 b) {
+  if (a==0 | b==0) return 0;
+  return (a / gcd_u64(a, b)) * b;
+}
+B gcd_c2(B t, B w, B x) {
+  if (isNum(w) && isNum(x)) {
+    if (!q_u64(w) || !q_u64(x)) thrM("•math.GCD: Inputs other than natural numbers not yet supported");
+    return m_f64(gcd_u64(o2u64G(w), o2u64G(x)));
+  }
+  P2(gcd)
+  thrM("•math.GCD: Unexpected argument types");
+}
+B lcm_c2(B t, B w, B x) {
+  if (isNum(w) && isNum(x)) {
+    if (!q_u64(w) || !q_u64(x)) thrM("•math.LCM: Inputs other than natural numbers not yet supported");
+    return m_f64(lcm_u64(o2u64G(w), o2u64G(x)));
+  }
+  P2(gcd)
+  thrM("•math.GCD: Unexpected argument types");
 }
 
 #undef P2

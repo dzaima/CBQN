@@ -9,6 +9,8 @@
 //   COULD implement fast numeric -´
 // ∨ on boolean-valued integers, stopping at 1
 
+// •math.Sum: +´ with faster and more precise SIMD code for i32, f64
+
 #include "../core.h"
 #include "../builtins.h"
 
@@ -65,6 +67,40 @@ static f64 sum_f64(void* xv, usz i, f64 r) {
 }
 static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16, sum_small_i32 };
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
+
+B sum_c1(B t, B x) {
+  if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum: Argument must be a list (%H ≡ ≢𝕩)", x);
+  usz ia = IA(x);
+  if (ia==0) return m_f64(0);
+  u8 xe = TI(x,elType);
+  if (!elNum(xe)) {
+    x = any_squeeze(x); xe = TI(x,elType);
+    if (!elNum(xe)) thrF("•math.Sum: Argument elements must be numbers", x);
+  }
+  f64 r;
+  void* xv = tyany_ptr(x);
+  if (xe == el_bit) {
+    r = bit_sum(xv, ia);
+  } else if (xe <= el_i32) {
+    u8 sel = xe - el_i8;
+    i64 s = 0; r = 0;
+    i64 m = 1ull<<48;
+    usz b = sum_small_max;
+    for (usz i=0; i<ia; i+=b) {
+      s += sum_small_fns[sel]((u8*)xv + (i<<sel), ia-i<b? ia-i : b);
+      if (s >=  m) { r+=m; s-=m; }
+      if (s <= -m) { r-=m; s+=m; }
+    }
+    r += s;
+  } else {
+    #if SINGELI
+      r = avx2_sum_f64(xv, ia);
+    #else
+      r=0; for (usz i=0; i<ia; i++) r+=((f64*)xv)[i];
+    #endif
+  }
+  decG(x); return m_f64(r);
+}
 
 // Try to keep to i32 product, go to f64 on overflow or non-i32 initial
 #define DEF_INT_PROD(T) \
