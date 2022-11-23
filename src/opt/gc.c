@@ -14,11 +14,11 @@ void gc_addFn(vfn f) {
   gc_roots[gc_rootSz++] = f;
 }
 
-Value* gc_rootObjs[256];
+Value* gc_rootObjs[512];
 u32 gc_rootObjSz;
 void gc_add(B x) {
   assert(isVal(x));
-  if (gc_rootObjSz>=256) err("Too many GC root objects");
+  if (gc_rootObjSz>=512) err("Too many GC root objects");
   gc_rootObjs[gc_rootObjSz++] = v(x);
 }
 
