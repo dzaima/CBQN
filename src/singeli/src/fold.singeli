@@ -4,6 +4,23 @@ include './avx'
 include './avx2'
 include './mask'
 
+def opsh{op}{v:[4]f64, perm} = op{v, shuf{[4]u64, v, perm}}
+def mix{op, v:[4]f64} = { def sh=opsh{op}; sh{sh{v, 4b2301}, 4b1032} }
+
+def reduce_pairwise{op, plog, x:*T, len, init:T} = {
+  # Pairwise combination to shorten dependency chains
+  def pairwise{p, i, k} = (if (k==0) { load{p,i} } else {
+    def l = k-1
+    op{pairwise{p, i       , l},
+       pairwise{p, i+(1<<l), l}}
+  })
+  f:= len >> plog
+  r:= init
+  @for (i to f) r = op{r, pairwise{x+(i<<plog), 0, plog}}
+  @for (x over i from f<<plog to len) r = op{r, x}
+  r
+}
+
 fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   def step = 256/width{T}
   def V = [step]T
@@ -14,28 +31,26 @@ fold_idem{T==f64, op}(x:*T, len:u64) : T = {
     assert{len > 0}
     r = load{xv}
     if (len > 1) {
-      if (len > 2) r = op{r, shuf{[4]u64, r, 4b2222}}
-                   r = op{r, shuf{[4]u64, r, 4b1111}}
+      if (len > 2) r = opsh{op}{r, 4b2222}
+                   r = opsh{op}{r, 4b1111}
     }
   } else {
-    # Pairwise combination to shorten dependency chains
-    def pairwise{p, i, k} = {
-      def l = k-1
-      op{pairwise{p, i       , l},
-         pairwise{p, i+(1<<l), l}}
-    }
-    def pairwise{p, i, k==0} = load{p, i}
-    def pk = 2  # Combine 1<<pk values in a step
-    r = load{*V ~~ (x+len-step)}
-    e:= (len-1)/step
-    f:= e >> pk
-    @for (i to f) r = op{r, pairwise{xv+(i<<pk), 0, pk}}
-    @for (xv over i from f<<pk to e) r = op{r, xv}
-    r = op{r, shuf{[4]u64, r, 4b2301}}
-    r = op{r, shuf{[4]u64, r, 4b1032}}
+    i:= load{*V ~~ (x+len-step)}
+    r = mix{op, reduce_pairwise{op, 2, xv, (len-1)/step, i}}
   }
   extract{r, 0}
 }
 
 'avx2_fold_min_f64' = fold_idem{f64,min}
 'avx2_fold_max_f64' = fold_idem{f64,max}
+
+fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
+  def step = 256/width{T}
+  def V = [step]T
+  xv:= *V ~~ x
+  e:= len / step
+  i:= load{xv, e} & (V~~maskOf{V, len % step})
+  r:= reduce_pairwise{op, 2, xv, e, i}
+  extract{mix{op, r}, 0}
+}
+'avx2_sum_f64' = fold_assoc_0{f64,+}
