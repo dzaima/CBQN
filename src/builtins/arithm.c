@@ -22,11 +22,12 @@ B bit_negate(B x) { // consumes
   return r;
 }
 
-#define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,BX,SQF) B NAME##_c1(B t, B x) { \
+#define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,SQF,TMIN,RMIN) B NAME##_c1(B t, B x) { \
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
   if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
   u8 xe = TI(x,elType);                                                 \
-  i64 sz = IA(x); BX                                                    \
+  if (xe<=TMIN) return RMIN;                                            \
+  i64 sz = IA(x);                                                       \
   if (xe==el_i8) { i8 MAX=I8_MAX; i8 MIN=I8_MIN; i8* xp=i8any_ptr(x); i8* rp; B r=m_i8arrc(&rp,x);        \
     for (i64 i = 0; i < sz; i++) { i8 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; } \
     decG(x); (void)MIN;(void)MAX; return r;                             \
@@ -56,14 +57,12 @@ B add_c1(B t, B x) {
   return x;
 }
 
-GC1i("-", sub,   -v,              v== MIN, -v,      {}, 0) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
-GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,{}, 0)
-GC1i("⌊", floor, floor(v),        0,           v,   {}, 1)
-GC1i("⌈", ceil,  ceil(v),         0,           v,   {}, 1)
-GC1i("×", mul,   v==0?0:v>0?1:-1, 0,           v==0?0:v>0?1:-1,{}, 1)
-GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     {
-  if(xe==el_bit) return bit_negate(x);
-}, 0)
+GC1i("-", sub,   -v,              v== MIN, -v,      0, el_bit, bit_sel(x,m_f64(0),m_f64(-1))) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
+GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,0, el_bit, x)
+GC1i("⌊", floor, floor(v),        0,       v,       1, el_i32, x)
+GC1i("⌈", ceil,  ceil(v),         0,       v,       1, el_i32, x)
+GC1i("×", mul,   v==0?0:v>0?1:-1, 0,v==0?0:v>0?1:-1,1, el_bit, x)
+GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     0, el_bit, bit_negate(x))
 
 #define GC1f(N, F, MSG) B N##_c1(B t, B x) {         \
   if (isF64(x)) { f64 xv=o2fG(x); return m_f64(F); } \
