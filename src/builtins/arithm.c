@@ -88,12 +88,14 @@ GC1f( div, 1/xv,     "÷: Getting reciprocal of non-number")
 GC1f(root, sqrt(xv), "√: Getting square root of non-number")
 #undef GC1f
 
+f64 fact(f64 x) { return tgamma(x+1); }
+
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
 #define MATH(n,N) \
   B n##_c1(B t, B x) { if (isF64(x)) return m_f64(n(x.f)); P1(n); thrM("•math." #N ": Argument contained non-number"); }
-MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1)
+MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1) MATH(fact,Fact)
 #define TRIG(n,N) MATH(n,N) MATH(a##n,A##n) MATH(n##h,N##h) MATH(a##n##h,A##n##h)
 TRIG(sin,Sin) TRIG(cos,Cos) TRIG(tan,Tan)
 #undef TRIG
@@ -109,8 +111,8 @@ static B mathNS;
 B getMathNS() {
   if (mathNS.u == 0) {
     #define F(X) inc(bi_##X),
-    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","gcd","lcm");
-    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(cbrt)F(log2)F(log10)F(log1p)F(expm1)F(hypot)F(gcd)F(lcm));
+    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","fact","comb","gcd","lcm");
+    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(cbrt)F(log2)F(log10)F(log1p)F(expm1)F(hypot)F(fact)F(comb)F(gcd)F(lcm));
     #undef F
     gc_add(mathNS);
   }

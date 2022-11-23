@@ -360,13 +360,47 @@ AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
 AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
 #undef AR_F_SCALAR
 
+static f64 comb_nat(f64 k, f64 n, f64 j) {
+  if (j < k) k = j;
+  if (k > 514) return INFINITY;
+  f64 p = 1;
+  for (usz i=0; i<(usz)k; i++) {
+    p*= (n-i) / (k-i);
+    if (p == INFINITY) return p;
+  }
+  return round(p);
+}
+static f64 comb(f64 k, f64 n) { // n choose k
+  f64 j = n - k;  // j+k == n
+  bool jint = j == round(j);
+  if (k == round(k)) {
+    if (jint) {
+      if (n >= 0) {
+        if (!(k>=0 && j>=0)) return 0; // Negative phrasing to catch NaN
+        return comb_nat(k, n, j);
+      } else {
+        if (k<0) {
+          if (j<0) return 0;
+          f64 t=k; k=j; j=t; // Swap so k is non-negative
+        }
+        f64 r = comb_nat(k, -1-j, -1-n);
+        return k<(1ull<<53) && ((i64)k&1)? -r : r;
+      }
+    }
+    if (k < 0) return 0;
+  } else if (jint) {
+    if (j < 0) return 0;
+  }
+  return exp(lgamma(n+1) - lgamma(k+1) - lgamma(j+1));
+}
+
 #define MATH(n,N) \
   B n##_c2(B t, B w, B x) {                              \
     if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
     P2(n)                                                \
     thrM("•math." #N ": Unexpected argument types");     \
   }
-MATH(atan2,Atan2) MATH(hypot,Hypot)
+MATH(atan2,Atan2) MATH(hypot,Hypot) MATH(comb,Comb)
 #undef MATH
 
 static u64 gcd_u64(u64 a, u64 b) {
