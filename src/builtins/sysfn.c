@@ -866,7 +866,7 @@ typedef struct pollfd pollfd;
 void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
 
 // #define shDbg(...) printf(__VA_ARGS__); fflush(stdout)
-#define shDbg(...) 
+#define shDbg(...)
 
 B sh_c2(B t, B w, B x) {
   
@@ -1500,7 +1500,7 @@ B sys_c1(B t, B x) {
       }
       case 14: { // •file
         if(!fileNS.u) {
-          initFileNS(); 
+          initFileNS();
           REQ_PATH;
           #define F(X) m_nfn(X##Desc, inc(path))
           fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));

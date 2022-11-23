@@ -701,7 +701,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
     #define P(N) B N=POP;
     #define ADD(X) { B tr=X; *(gStack++) = tr; }
     #define PEEK(X) gStack[-(X)]
-    #define STACK_HEIGHT 
+    #define STACK_HEIGHT
     #define GS_UPD
   #else
     B* lgStack = gStack;

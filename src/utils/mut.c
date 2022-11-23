@@ -191,7 +191,7 @@ NOINLINE void m_copyG_B_generic(void* a, B* mpo, B x, usz xs, usz l) {
   SGet(x)
   for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
 }
-DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { 
+DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) {
   B* mpo = ms+(B*)a;
   switch(TY(x)) {
     case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(bitp_get(xp, xs+i)); return; }
@@ -226,7 +226,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     void custom_storeu_si32(void* p, __m128i x) {
       _mm_store_ss(p, _mm_castsi128_ps(x));
     }
-    #define _mm_loadu_si32 custom_loadu_si32 
+    #define _mm_loadu_si32 custom_loadu_si32
     #define _mm_storeu_si32 custom_storeu_si32
   #endif
   

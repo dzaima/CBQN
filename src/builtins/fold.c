@@ -246,7 +246,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       if (rtid==n_eq) { bool r=wi^fold_ne(xp, ia) ^ (1&ia); decG(x); return m_i32(r); }
       goto base;
     }
-    if (rtid==n_add) { // + 
+    if (rtid==n_add) { // +
       u8 sel = xe - el_i8;
       f64 r = sum_fns[sel](tyany_ptr(x), ia, wf);
       decG(x); return m_f64(r);

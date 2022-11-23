@@ -949,7 +949,7 @@ B slash_im(B t, B x) {
     usz ria = (usz)max + 1;                                                  \
     i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
     for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
-    r = num_squeeze(r);                      
+    r = num_squeeze(r);
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \

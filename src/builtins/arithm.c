@@ -47,7 +47,7 @@ B bit_negate(B x) { // consumes
   }                                                                     \
   base: SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x);             \
 }
-  
+
 
 B add_c1(B t, B x) {
   if (isF64(x)) return x;

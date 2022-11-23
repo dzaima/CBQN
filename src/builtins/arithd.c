@@ -139,7 +139,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   )
   #undef GC2f
   
-
+  
   #if SINGELI
     #define AA_DISPATCH(NAME) FORCE_INLINE B NAME##_AA(B t, B w, B x) { return dyArith_AA(&NAME##DyTableAA, w, x); }
     AA_DISPATCH(add) AA_DISPATCH(or)
@@ -410,11 +410,11 @@ static u64 gcd_u64(u64 a, u64 b) {
   
   b >>= bz;
   while (a > 0) {
-      a >>= az;
-      u64 d = b - a;
-      az = CTZ(d);
-      b = b<a? b : a;
-      a = b<a? -d : d;
+    a >>= az;
+    u64 d = b - a;
+    az = CTZ(d);
+    b = b<a? b : a;
+    a = b<a? -d : d;
   }
   return b << sh;
 }

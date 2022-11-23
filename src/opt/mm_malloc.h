@@ -31,7 +31,7 @@ void mm_dumpHeap(FILE* f);
 
 static u64  mm_round(usz x) { return x; }
 static u64  mm_size(Value* x) {
-  size_t r = malloc_usable_size(x); 
+  size_t r = malloc_usable_size(x);
   if (((ssize_t)r) < 16) err("MM=0 requires working malloc_usable_size");
   return r;
 }
