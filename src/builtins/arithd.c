@@ -360,8 +360,8 @@ AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
 AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
 #undef AR_F_SCALAR
 
-static f64 comb_nat(f64 k, f64 n, f64 j) {
-  if (j < k) k = j;
+static f64 comb_nat(f64 k, f64 n) {
+  assert(k>=0 && n>=2*k);
   if (k > 514) return INFINITY;
   f64 p = 1;
   for (usz i=0; i<(usz)k; i++) {
@@ -375,15 +375,13 @@ static f64 comb(f64 k, f64 n) { // n choose k
   bool jint = j == round(j);
   if (k == round(k)) {
     if (jint) {
+      if (k<j) { f64 t=k; k=j; j=t; } // Now j<k
       if (n >= 0) {
-        if (!(k>=0 && j>=0)) return 0; // Negative phrasing to catch NaN
-        return comb_nat(k, n, j);
+        return j<0? 0 : comb_nat(j, n);
       } else {
-        if (k<0) {
-          if (j<0) return 0;
-          f64 t=k; k=j; j=t; // Swap so k is non-negative
-        }
-        f64 r = comb_nat(k, -1-j, -1-n);
+        if (k<0) return 0;
+        f64 l = -1-n; // l+k == -1-j
+        f64 r = comb_nat(k<l? k : l, -1-j);
         return k<(1ull<<53) && ((i64)k&1)? -r : r;
       }
     }
