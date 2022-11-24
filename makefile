@@ -84,7 +84,10 @@ ifneq ($(i_FFI),0)
 		i_LIBS_LD += $(shell pkg-config --libs libffi)
 		i_LIBS_CC += $(shell pkg-config --cflags libffi)
 	else
-		i_LIBS_LD += -lffi -ldl
+		i_LIBS_LD += -lffi
+	endif
+	ifneq ($(NO_LDL),1)
+		i_LIBS_LD += -ldl
 	endif
 endif
 ifeq ($(i_EXPORT),1)

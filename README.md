@@ -7,9 +7,9 @@
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - `make CC=cc` if clang isn't installed
-    - `make PIE=""` on ARM CPUs (incl. Android & M1)
-    - `make FFI=0` if your system doesn't have libffi (see [macOS](#macos) for FFI support on macOS)
-    - Use `gmake` on BSD
+    - `make PIE=""` on ARM CPUs (incl. Android & Apple M1/M2)
+    - `make FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
+    - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the build complains about `-ldl`)
     - `make clean` if anything breaks and you want a clean build slate
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
     - `make REPLXX=1` to enable replxx (syntax highlighting & some system & variable name completion)
@@ -51,17 +51,6 @@ By default, the CBQN will use [precompiled bytecode](https://github.com/dzaima/c
 3. From within CBQNs directory, run `mkdir -p build/bytecodeLocal/gen`
 4. Run `said-other-bqn-impl ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`  
    In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./build/genRuntime ~/git/BQN build/bytecodeLocal`
-
-## macOS
-
-To use FFI in macOS, libffi must be installed, and manually added to `C_INCLUDE_PATH` and `LIBRARY_PATH`. In addition, the `NO_DYNAMIC_LIST=1` make argument is needed, so the full command might, depending on where libffi is installed, look like one of these:
-
-```sh
-C_INCLUDE_PATH=/opt/homebrew/opt/libffi/include:$C_INCLUDE_PATH LIBRARY_PATH=/opt/homebrew/opt/libffi/lib:$LIBRARY_PATH make PIE="" NO_DYNAMIC_LIST=1
-C_INCLUDE_PATH=/usr/local/opt/libffi/include:$C_INCLUDE_PATH LIBRARY_PATH=/usr/local/opt/libffi/lib:$LIBRARY_PATH make PIE="" NO_DYNAMIC_LIST=1
-```
-
-Further configuration (different build type, compiler options, etc) can still be done by adding more make arguments.
 
 ## Requirements
 
