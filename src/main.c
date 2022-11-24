@@ -119,7 +119,7 @@ static NOINLINE void repl_init() {
       else if (c0=='#') { SKIP(!chr_nl(c));  FILL(1); }
       else if (c0=='"') { SKIP(c!='"'); SKIP1;  FILL(3); }
       else if (c0=='\'') { bool ok = i+2<=size && chars[i+1]=='\''; if(ok) i+=2;  FILL(ok? 3 : 11); }
-      else if (chr_num0(c0)) { SKIP(chr_num0(c) || c=='e' || c=='E' || c=='_');  FILL(2); }
+      else if (chr_num0(c0)) { SKIP(chr_num0(c) || c=='e' || c=='E' || c=='.' || c=='_');  FILL(2); }
       else if (chr_in(c0, chrs_fn)) SET1(5); else if (chr_in(c0, chrs_lit)) SET1(9);
       else if (chr_in(c0, chrs_m1)) SET1(6); else if (chr_in(c0, chrs_dmd)) SET1(8);
       else if (chr_in(c0, chrs_m2)) SET1(7); else if (chr_in(c0, chrs_blk)) SET1(10);
