@@ -1,32 +1,17 @@
-# get mask of first n items; n>0 & n<vcount{T}
-
-local def maskInit{w, T} = {
-  def n = w/width{T} - 1
-  merge{broadcast{n, -1}, broadcast{n, 0}}
-}
 local def maskInit1{w} = {
   apply{merge, each{{x} => {
     merge{broadcast{w/8-1, 255}, (1<<x)-1, broadcast{w/8, 0}}
   }, iota{8}}}
 }
-mask256_8 :*i8  = maskInit{256,i8 }; mask128_8 :*i8  = maskInit{128,i8 }
-mask256_16:*i16 = maskInit{256,i16}; mask128_16:*i16 = maskInit{128,i16}
-mask256_32:*i32 = maskInit{256,i32}; mask128_32:*i32 = maskInit{128,i32}
-mask256_64:*i64 = maskInit{256,i64}; mask128_64:*i64 = maskInit{128,i64}
-mask256_1 :*u8  = maskInit1{256};    mask128_1 :*u8  = maskInit1{128}
+mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n & w256{T}} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
+mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n & w128{T}} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
+mask256:*i64 = merge{broadcast{4, -1}, broadcast{4, 0}}
+local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(width{eltype{T}}/8))}
 
-def maskOf{T,n & w256{T, 8}} = load{*[32]u8  ~~ (mask256_8  + (n^31))}
-def maskOf{T,n & w256{T,16}} = load{*[16]u16 ~~ (mask256_16 + (n^15))}
-def maskOf{T,n & w256{T,32}} = load{*[ 8]u32 ~~ (mask256_32 + (n^7))}
-def maskOf{T,n & w256{T,64}} = load{*[ 4]u64 ~~ (mask256_64 + (n^3))}
-def maskOfBit{T,n & w256{T}} = load{*[32]u8  ~~ (mask256_1  + (n>>3)^31 + 64*(n&7))}
-
-def maskOf{T,n & w128{T, 8}} = load{*[16]u8  ~~ (mask128_8  + (n^15))}
-def maskOf{T,n & w128{T,16}} = load{*[ 8]u16 ~~ (mask128_16 + (n^7))}
-def maskOf{T,n & w128{T,32}} = load{*[ 4]u32 ~~ (mask128_32 + (n^3))}
-def maskOf{T,n & w128{T,64}} = load{*[ 2]u64 ~~ (mask128_64 + (n^1))}
-def maskOfBit{T,n & w128{T}} = load{*[16]u8  ~~ (mask128_1  + (n>>3)^15 + 32*(n&7))}
+# get mask of first n items; 0 ≤ n ≤ vcount{T}
+def maskOf{T,n & w256{T}} = maskOfImpl{T, n, 256}
+def maskOf{T,n & w128{T}} = maskOfImpl{T, n, 128}
 
 def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~all{x==y}
 def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  any{M{x!=y}}
