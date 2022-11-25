@@ -56,14 +56,14 @@ B wfn_identity(B x) {
   #define RT_VERIFY_ARGS 1
 #endif
 #if RT_VERIFY
-  B info_c1(B t, B x);
+  B info_c2(B t, B w, B x);
   #define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
     print(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
     if (RT_VERIFY_ARGS) {  \
-      if(!q_N(W)){printf("𝕨:"); print(W); printf(" / "); printRaw(info_c1(bi_N, inc(W))); putchar('\n'); fflush(stdout); } \
-      {           printf("𝕩:"); print(X); printf(" / "); printRaw(info_c1(bi_N, inc(X))); putchar('\n'); fflush(stdout); } \
-      {       printf("got:"); print(GOT); printf(" / "); printRaw(info_c1(bi_N, inc(GOT))); putchar('\n'); fflush(stdout); } \
-      {       printf("exp:"); print(EXP); printf(" / "); printRaw(info_c1(bi_N, inc(EXP))); putchar('\n'); fflush(stdout); } \
+      if(!q_N(W)){printf("𝕨:"); print(W); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(W))); putchar('\n'); fflush(stdout); } \
+      {           printf("𝕩:"); print(X); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(X))); putchar('\n'); fflush(stdout); } \
+      {       printf("got:"); print(GOT); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(GOT))); putchar('\n'); fflush(stdout); } \
+      {       printf("exp:"); print(EXP); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(EXP))); putchar('\n'); fflush(stdout); } \
     }                      \
     vm_pstLive(); exit(1); \
   }}
