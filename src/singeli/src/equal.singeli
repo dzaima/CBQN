@@ -28,11 +28,11 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       def bulk = 4
       f0:= broadcast{T, 0.0}
       f1:= broadcast{T, 1.0}
-      maskedLoop{bulk, l, {i, M} => {
+      maskedLoopPositive{bulk, l, {i, M} => {
         cw:= load{*u8 ~~ w, i>>1} >> cast_i{u8, 4*(i&1)}
         cx:= load{*T  ~~ x, i}
         wu:= blend{f0, f1, broadcast{[4]u64, cw} << make{[4]u64,63,62,61,60}}
-        if (anyne{wu, cx, M}) return{0}
+        if (anynePositive{wu, cx, M}) return{0}
       }}
     } else { # bitarr ≡ i8/i16/i32arr
       def T = [256/width{X}]X
@@ -54,12 +54,12 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     def ww{gw, E} = [gw/width{E}]E
     def fac = width{X}/width{W}
     
-    maskedLoop{bulk, l, {i, M} => {
+    maskedLoopPositive{bulk, l, {i, M} => {
       # TODO update this to modern mask stuff
       cw:= load{*ww{tern{fac==1, 256, 128}, W} ~~ (w + i*32/fac)}
       cx:= load{*ww{256, X} ~~ x, i}
       cwc:= cvt{W, ww{256, X}, cw}
-      if (anyne{cwc,cx,M}) return{0}
+      if (anynePositive{cwc,cx,M}) return{0}
     }}
   }
   1

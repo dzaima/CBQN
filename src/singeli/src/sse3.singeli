@@ -121,7 +121,7 @@ def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
 
 
 # mask stuff
-def getmask{x:T & w128{T, 8}} = emit{u32, '_mm_movemask_epi8', x}
+def getmask{x:T & w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
 def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, broadcast{[8]u16, 0}}}
 def getmask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def getmask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}

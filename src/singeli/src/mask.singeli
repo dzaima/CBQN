@@ -19,6 +19,9 @@ def anyne{x:T, y:T, M & M{0}==0 & anyInt{x}} = x!=y
 def anyne{x:T, y:T, M & M{0}==1 & anyInt{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
+def anynePositive{x:T, y:T, M & M{0}==0} = anyne{x, y, M}
+def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T}} = (promote{u32,~getmask{x==y}} << (32-M{'count'})) != 0
+
 def maskNone{x} = x
 def maskNone{x, mode=='all bits zeroes'} = andIsZero{x, x}
 def maskAfter{n} = {
@@ -83,4 +86,13 @@ def maskedLoop{bulk, i0, l, step} = {
   
   left:= l & (bulk-1)
   if (left!=0) step{m, maskAfter{left}}
+}
+
+def maskedLoopPositive{bulk, l:L, step} = {
+  i:L = 0
+  while(i < (l-1)/bulk) {
+    step{i, maskNone}
+    i = i + 1
+  }
+  step{i, maskAfter{l - i*bulk}}
 }
