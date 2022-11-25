@@ -572,37 +572,6 @@ i64 bit_sum(u64* x, u64 am) {
   return r;
 }
 
-u64 usum(B x) { // doesn't consume; may error
-  assert(isArr(x));
-  u64 r = 0;
-  usz xia = IA(x);
-  u8 xe = TI(x,elType);
-  if      (xe==el_bit) return bit_sum(bitarr_ptr(x), xia);
-  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); i8  m=0; for (usz i = 0; i < xia; ) { usz b=1<< 8; i16 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u16)s)) goto overflow; } }
-  else if (xe==el_i16) { i16* p = i16any_ptr(x); i16 m=0; for (usz i = 0; i < xia; ) { usz b=1<<16; i32 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u32)s)) goto overflow; } }
-  else if (xe==el_i32) { i32* p = i32any_ptr(x); i32 m=0; for (usz i = 0; i < xia; i++) { m|=p[i]; if (addOn(r,p[i])) goto overflow; } if (m<0) goto neg; }
-  else if (xe==el_f64) {
-    f64* p = f64any_ptr(x);
-    for (usz i = 0; i < xia; i++) {
-      f64 c = p[i];
-      u64 ci = (u64)c;
-      if (c!=ci) thrM("Expected integer");
-      if (ci<0) goto neg;
-      if (addOn(r,ci)) goto overflow;
-    }
-  } else {
-    SGetU(x)
-    for (usz i = 0; i < xia; i++) {
-      u64 c = o2u64(GetU(x,i));
-      if (c<0) thrM("Didn't expect negative integer");
-      if (addOn(r,c)) goto overflow;
-    }
-  }
-  return r;
-  overflow: thrM("Sum too big");
-  neg: thrM("Didn't expect negative integer");
-}
-
 usz depthF(B x) { // doesn't consume
   u64 r = 0;
   usz ia = IA(x);
