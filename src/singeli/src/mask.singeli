@@ -20,7 +20,8 @@ def anyne{x:T, y:T, M & M{0}==1 & anyInt{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
 def anynePositive{x:T, y:T, M & M{0}==0} = anyne{x, y, M}
-def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T}} = (promote{u32,~getmask{x==y}} << (32-M{'count'})) != 0
+def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T  }} = (promote{u32,~getmask{         x==y }} << (32-M{'count'}  )) != 0
+def anynePositive{x:T, y:T, M & M{0}==1 & w256{T,16}} = (promote{u32,~getmask{[32]u8~~(x==y)}} << (32-M{'count'}*2)) != 0
 
 def maskNone{x} = x
 def maskNone{x, mode=='all bits zeroes'} = andIsZero{x, x}
