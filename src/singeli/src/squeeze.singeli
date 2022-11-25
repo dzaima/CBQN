@@ -49,7 +49,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   # show{XV, EV, CHR, B}
   xp:= *X~~x0
   r1:= broadcast{EV, 0}
-  if (CHR) {
+  if (CHR) { # c8, c16, c32
     def hw = width{E}/2
     maskedLoop{bulk, len, {i, M} => {
       c:= EV~~loadBatch{xp, i, XV}
@@ -64,39 +64,34 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
     if (X>u32 and r2>=65536) return{2}
     if (X>u16 and r2>=256) return{1}
     0
-  } else {
-    if (X==i8) {
+  } else { # i8, i16, i32, f64
+    if (X==i8) { # i8
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
         if (anynePositive{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
       }}
       0
-    } else {
+    } else { # i16, i32, f64
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
-        if (isunsigned{X}) {
-          r1|= EV~~v0
-        } else {
-          def toint{x:T & isint{eltype{T}}} = x
-          def toint{flt:T & X==f64} = {
-            int:= cvt2{i32, flt}
-            
-            def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
-            
-            if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
-              if (B) maskedLoop{bulk, i, len, {i, M} => { # if B, need to give an even more special result
-                def XU = [bulk]u64
-                v:= XU ~~ loadBatch{xp, i, XV}
-                if (any{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
-              }}
-              
-              return{0xffff_ffff} # float
-            }
-            int
+        def toint{x:T & isint{eltype{T}}} = x
+        def toint{flt:T & X==f64} = {
+          int:= cvt2{i32, flt}
+          
+          def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
+          
+          if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
+            if (B) maskedLoop{bulk, i, len, {i, M} => { # if B, need to give an even more special result
+              def XU = [bulk]u64
+              v:= XU ~~ loadBatch{xp, i, XV}
+              if (any{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
+            }}
+            return{0xffff_ffff} # float
           }
-          v1:= toint{v0}
-          r1|= M{(broadcast{EV, ~E~~1} & EV~~v1) ^ EV~~(v1 >> (width{X}-1))}
+          int
         }
+        v1:= toint{v0}
+        r1|= M{(broadcast{EV, ~E~~1} & EV~~v1) ^ EV~~(v1 >> (width{X}-1))}
       }}
       
       promote{u32, fold{|, r1}}
