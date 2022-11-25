@@ -41,6 +41,18 @@ def fold{F, x:T & w128{T}} = {
 }
 def fold{F, x:T & w256{T}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
+def makeOptBranch{enable, F} = {
+  if (enable) {
+    def skip = makelabel{}; goto{skip}
+    def start = setlabel{}
+    F{}
+    setlabel{skip}
+    start
+  } else {
+    'not defined'
+  }
+}
+
 squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def bulk = vw / width{X}
   def XV = [bulk]X
@@ -72,6 +84,16 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       }}
       0
     } else { # i16, i32, f64
+      iCont:Size = 0
+      def case_B = makeOptBranch{B, {} => {
+        maskedLoop{bulk, iCont, len, {i, M} => {
+          def XU = [bulk]u64
+          v:= XU ~~ loadBatch{xp, i, XV}
+          if (any{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
+        }}
+        return{0xffff_ffff} # float
+      }}
+      
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
         def toint{x:T & isint{eltype{T}}} = x
@@ -81,12 +103,8 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
           
           if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
-            if (B) maskedLoop{bulk, i, len, {i, M} => { # if B, need to give an even more special result
-              def XU = [bulk]u64
-              v:= XU ~~ loadBatch{xp, i, XV}
-              if (any{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
-            }}
-            return{0xffff_ffff} # float
+            if (B) { iCont=i; goto{case_B} } # if B, need to give an even more special result
+            else return{0xffff_ffff} # float
           }
           int
         }
