@@ -57,7 +57,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       if (B) {
         if (any{M{~q_chr{c}}}) return{3}
       } else {
-        if (anyne{broadcast{EV, (1<<hw-1)<<hw} & c, broadcast{EV,0}, M}) return{lb{hw}-2}
+        if (anynePositive{broadcast{EV, (1<<hw-1)<<hw} & c, broadcast{EV,0}, M}) return{lb{hw}-2}
       }
     }}
     r2:= cast_i{u32, fold{|, r1}}
@@ -68,7 +68,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
     if (X==i8) {
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
-        if (anyne{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
+        if (anynePositive{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
       }}
       0
     } else {
@@ -83,7 +83,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
             
             def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
             
-            if (anyne{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
+            if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
               if (B) maskedLoop{bulk, i, len, {i, M} => { # if B, need to give an even more special result
                 def XU = [bulk]u64
                 v:= XU ~~ loadBatch{xp, i, XV}
