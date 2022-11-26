@@ -90,6 +90,18 @@ GC1f(root, sqrt(xv), "√: Getting square root of non-number")
 
 f64    fact(f64 x) { return tgamma(x+1); }
 f64 logfact(f64 x) { return lgamma(x+1); }
+NOINLINE f64 logfact_inv(f64 y) {
+  if (!(y >= -0.12)) thrM("⁼: required factorial result too small");
+  if (y == INFINITY) return y;
+  f64 x = 4;
+  PLAINLOOP for (usz i = 0; i < 20; i++) {
+    f64 x0 = x;
+    x += (y - logfact(x)) / log(0.52 + x);
+    if (x == x0) break;
+  }
+  return x;
+}
+f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
@@ -102,7 +114,7 @@ static NOINLINE B arith_recm_slow(f64 (*fn)(f64), BB2B rec, B x, char* s) {
 }
 #define MATH(n,N) B n##_c1(B t, B x) { return arith_recm_slow(n, n##_c1, x, #N); }
 MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1)
-MATH(fact,Fact) MATH(logfact,LogFact) MATH(erf,Erf) MATH(erfc,ErfC)
+MATH(fact,Fact) MATH(logfact,LogFact) MATH(logfact_inv,LogFact⁼) MATH(fact_inv,Fact⁼) MATH(erf,Erf) MATH(erfc,ErfC)
 #define TRIG(n,N) MATH(n,N) MATH(a##n,A##n) MATH(n##h,N##h) MATH(a##n##h,A##n##h)
 TRIG(sin,Sin) TRIG(cos,Cos) TRIG(tan,Tan)
 #undef TRIG
@@ -142,5 +154,7 @@ void arith_init() {
   INVERSE_PAIR(cosh, acosh)
   INVERSE_PAIR(tanh, atanh)
   INVERSE_PAIR(expm1, log1p)
+  c(BFn,bi_fact)->im = fact_inv_c1;
+  c(BFn,bi_logfact)->im = logfact_inv_c1;
   #undef INVERSE_PAIR
 }
