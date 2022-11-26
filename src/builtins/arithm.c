@@ -94,15 +94,19 @@ f64 logfact(f64 x) { return lgamma(x+1); }
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
-#define MATH(n,N) \
-  B n##_c1(B t, B x) { if (isF64(x)) return m_f64(n(x.f)); P1(n); thrM("•math." #N ": Argument contained non-number"); }
+#undef P1
+static NOINLINE B arith_recm_slow(f64 (*fn)(f64), BB2B rec, B x, char* s) {
+  if (isF64(x)) return m_f64(fn(x.f));
+  if(isArr(x)) return arith_recm(rec, x);
+  thrF("•math.%S: Argument contained non-number", s);
+}
+#define MATH(n,N) B n##_c1(B t, B x) { return arith_recm_slow(n, n##_c1, x, #N); }
 MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1)
 MATH(fact,Fact) MATH(logfact,LogFact) MATH(erf,Erf) MATH(erfc,ErfC)
 #define TRIG(n,N) MATH(n,N) MATH(a##n,A##n) MATH(n##h,N##h) MATH(a##n##h,A##n##h)
 TRIG(sin,Sin) TRIG(cos,Cos) TRIG(tan,Tan)
 #undef TRIG
 #undef MATH
-#undef P1
 
 B lt_c1(B t, B x) { return m_atomUnit(x); }
 B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(RNK(x)); decG(x); return r; }
