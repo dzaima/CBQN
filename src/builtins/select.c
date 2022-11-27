@@ -3,12 +3,12 @@
 #include "../utils/mut.h"
 #include "../builtins.h"
 
-// #if SINGELI
-//   #pragma GCC diagnostic push
-//   #pragma GCC diagnostic ignored "-Wunused-variable"
-//   #include "../singeli/gen/select.c"
-//   #pragma GCC diagnostic pop
-// #endif
+#if SINGELI
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/select.c"
+  #pragma GCC diagnostic pop
+#endif
 
 extern B rt_select;
 B select_c1(B t, B x) {
@@ -67,11 +67,29 @@ B select_c2(B t, B w, B x) {
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
-      // if (we==el_i8  && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 (i8any_ptr (w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i16 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i16_32(i16any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 (i32any_ptr(w), i8any_ptr (x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32(i32any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64(i32any_ptr(w), f64any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
+      #define CPUSEL(W, NEXT) \
+        if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
+    #else
+      #define CPUSEL(W, NEXT) \
+        if (sizeof(W) >= 4) {                           \
+          switch(xw) { default:UD; CASEW(1,u8); CASEW(2,u16); CASEW(4,u32); CASEW(8,f64); } \
+        } else {                                        \
+          W* wt = NULL;                                 \
+          for (usz bl=(1<<14)/sizeof(W), i0=0, i1=0; i0<wia; i0=i1) { \
+            i1+=bl; if (i1>wia) i1=wia;                 \
+            W min=wp[i0], max=min; for (usz i=i0+1; i<i1; i++) { W e=wp[i]; if (e>max) max=e; if (e<min) min=e; } \
+            if (min<-(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", min, xia); \
+            if (max>=(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xia); \
+            W* ip=wp; usz off=xia;                      \
+            if (max>=0) { off=0; if (RARE(min<0)) {     \
+              if (RARE(xia > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free(v(r)); return select_c2(m_f64(0), w, x); } \
+              if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0; \
+              for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xia & (W)-(e<0)); } \
+            } }                                         \
+            switch(xw) { default:UD; CASE(1,u8); CASE(2,u16); CASE(4,u32); CASE(8,f64); } \
+          }                                             \
+          if (wt) TFREE(wt);                            \
+        }
     #endif
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
     #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
@@ -92,25 +110,7 @@ B select_c2(B t, B w, B x) {
         usz xw = elWidth(xe);                           \
         void* rp = m_tyarrc(&r, xw, w, el2t(xe));       \
         void* xp = tyany_ptr(x);                        \
-        if (sizeof(W) >= 4) {                           \
-          switch(xw) { default:UD; CASEW(1,u8); CASEW(2,u16); CASEW(4,u32); CASEW(8,f64); } \
-        } else {                                        \
-          W* wt = NULL;                                 \
-          for (usz bl=(1<<14)/sizeof(W), i0=0, i1=0; i0<wia; i0=i1) { \
-            i1+=bl; if (i1>wia) i1=wia;                 \
-            W min=wp[i0], max=min; for (usz i=i0+1; i<i1; i++) { W e=wp[i]; if (e>max) max=e; if (e<min) min=e; } \
-            if (min<-(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", min, xia); \
-            if (max>=(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xia); \
-            W* ip=wp; usz off=xia;                      \
-            if (max>=0) { off=0; if (RARE(min<0)) {     \
-              if (RARE(xia > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free(v(r)); return select_c2(m_f64(0), w, x); } \
-              if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0; \
-              for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xia & (W)-(e<0)); } \
-            } }                                         \
-            switch(xw) { default:UD; CASE(1,u8); CASE(2,u16); CASE(4,u32); CASE(8,f64); } \
-          }                                             \
-          if (wt) TFREE(wt);                            \
-        }                                               \
+        CPUSEL(W, NEXT)                                 \
         goto dec_ret;                                   \
       }                                                 \
       M_HARR(r, wia);                                   \

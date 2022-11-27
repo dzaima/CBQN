@@ -4,6 +4,7 @@ include './sse3'
 include './avx'
 include './avx2'
 include './mask'
+include 'util/tup'
 
 def minBulk{w, A, B & width{A}< width{B}} = w/width{B}
 def minBulk{w, A, B & width{A}>=width{B}} = w/width{A}
@@ -44,12 +45,9 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   }}
   1
 }
+def select{TI, TD} = select{256, TI, TD}
 
-
-'avx2_select_i32_8' = select{256, i32, u8}
-'avx2_select_i32_16' = select{256, i32, u16}
-'avx2_select_i32_32' = select{256, i32, u32}
-'avx2_select_i32_64' = select{256, i32, u64}
-'avx2_select_i8_32' = select{256, i8, u32}
-'avx2_select_i16_32' = select{256, i16, u32}
-
+def selects = join{table{select, tup{i8, i16, i32},       # indices
+                                 tup{u8, u16, u32, u64}}} # values
+avx2_select_tab:*type{tupsel{0,selects}} = selects
+'avx2_select_tab' = avx2_select_tab
