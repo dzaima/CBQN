@@ -27,6 +27,21 @@ static NOINLINE void repl_init() {
   init = true;
 }
 
+typedef struct { bool r; char* e; } IsCmdTmp;
+static NOINLINE IsCmdTmp isCmd0(char* s, const char* cmd) {
+  while (*cmd) {
+    if (*cmd==' ' && *s==0) return (IsCmdTmp){.r=true, .e=s};
+    if (*s!=*cmd || *s==0) return (IsCmdTmp){.r=false, .e=s};
+    s++; cmd++;
+  }
+  return (IsCmdTmp){.r=true, .e=s};
+}
+static bool isCmd(char* s, char** e, const char* cmd) {
+  IsCmdTmp t = isCmd0(s, cmd);
+  *e = t.e;
+  return t.r;
+}
+
 
 #if USE_REPLXX
   #include <replxx.h>
@@ -36,31 +51,76 @@ static NOINLINE void repl_init() {
   static Replxx* global_replxx;
   static char* global_histfile;
   
-  i8 theme0[12][3] = { // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
-    [ 0] = {-1,-1,-1}, // default
-    [ 1] = {-1,-1,11}, // comments
-    [ 2] = {4,1,1},    // numbers
-    [ 3] = {1,2,5},    // strings
-    [ 4] = {-1,-1,-1}, // value names
-    [ 5] = {1,4,1},    // functions
-    [ 6] = {5,1,4},    // 1-modifiers
-    [ 7] = {5,4,2},    // 2-modifiers
-    [ 8] = {5,4,0},    // assignment (←↩→⇐), statement separators (,⋄)
-    [ 9] = {4,3,5},    // ⟨⟩, [] ·, @, ‿
-    [10] = {3,2,4},    // {}
-    [11] = {5,0,0},    // error
+  static i8 themes[3][12][3] = {
+    // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
+    { // 0: "none"
+      {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1},
+      {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1},
+      {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1},
+    },
+    { // 1: "dark"
+      [ 0] = {-1,-1,-1}, // default
+      [ 1] = {-1,-1,11}, // comments
+      [ 2] = {4,1,1},    // numbers
+      [ 3] = {1,2,5},    // strings
+      [ 4] = {-1,-1,-1}, // value names
+      [ 5] = {1,4,1},    // functions
+      [ 6] = {5,1,4},    // 1-modifiers
+      [ 7] = {5,4,2},    // 2-modifiers
+      [ 8] = {5,4,0},    // assignment (←↩→⇐), statement separators (,⋄)
+      [ 9] = {4,3,5},    // ⟨⟩, [] ·, @, ‿
+      [10] = {3,2,4},    // {}
+      [11] = {5,0,0},    // error
+    },
+    { // 2: "light"
+      [ 0] = {-1,-1,-1}, // default
+      [ 1] = {-1,-1,11}, // comments
+      [ 2] = {1,0,2},    // numbers
+      [ 3] = {0,0,2},    // strings
+      [ 4] = {-1,-1,-1}, // value names
+      [ 5] = {0,1,0},    // functions
+      [ 6] = {2,0,0},    // 1-modifiers
+      [ 7] = {2,1,0},    // 2-modifiers
+      [ 8] = {0,0,5},    // assignment (←↩→⇐), statement separators (,⋄)
+      [ 9] = {0,1,1},    // ⟨⟩, [] ·, @, ‿
+      [10] = {3,0,4},    // {}
+      [11] = {5,0,0},    // error
+    }
   };
-  ReplxxColor theme0_built[12];
   
-  static ReplxxColor* theme_replxx = theme0_built;
-  NOINLINE void build_theme(ReplxxColor* res, i8 data[12][3]) {
+  typedef i8 Theme[12][3];
+  static ReplxxColor theme_replxx[12];
+  
+  static i32 cfg_theme = 1;
+  static bool cfg_enableKeyboard = true;
+  static B cfg_path;
+  
+  NOINLINE void cfg_changed() {
+    B s = emptyCVec();
+    AFMT("theme=%i\nkeyboard=%i\n", cfg_theme, cfg_enableKeyboard);
+    if (CATCH) { freeThrown(); goto end; }
+    path_wChars(incG(cfg_path), s);
+    popCatch();
+    end: decG(s);
+  }
+  
+  NOINLINE void cfg_set_theme(i32 num, bool writeCfg) {
+    if (num>=3) return;
+    cfg_theme = num;
+    i8 (*data)[3] = themes[num];
     for (int i = 0; i < 12; i++) {
       i8 v0 = data[i][0];
       i8 v1 = data[i][1];
       i8 v2 = data[i][2];
-      res[i] = v0>=0? replxx_color_rgb666(v0,v1,v2) : v2>=0? replxx_color_grayscale(v2) : REPLXX_COLOR_DEFAULT;
+      theme_replxx[i] = v0>=0? replxx_color_rgb666(v0,v1,v2) : v2>=0? replxx_color_grayscale(v2) : REPLXX_COLOR_DEFAULT;
     }
+    if (writeCfg) cfg_changed();
   }
+  void cfg_set_keyboard(bool enable, bool writeCfg) {
+    cfg_enableKeyboard = enable;
+    if (writeCfg) cfg_changed();
+  }
+  
   extern u32* dsv_text[];
   static B sysvalNames, sysvalNamesNorm;
   
@@ -272,6 +332,8 @@ static NOINLINE void repl_init() {
     if (inBackslash()) {
       setState(insertChar('\\', false));
       stopBackslash();
+    } else if (!cfg_enableKeyboard) {
+      setState(insertChar('\\', false));
     } else {
       ReplxxState st;
       replxx_get_state(global_replxx, &st);
@@ -293,6 +355,7 @@ static NOINLINE void repl_init() {
   
   static B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
+    if (!cfg_enableKeyboard) return;
     if (!inBackslash()) return;
     
     TmpState t = getState();
@@ -321,11 +384,44 @@ static NOINLINE void repl_init() {
     }
   }
   
+  static NOINLINE B path_rel_dec(B base, B rel) {
+    B res = path_rel(base, rel);
+    dec(base);
+    return res;
+  }
+  static NOINLINE B get_config_path(bool inConfigDir, char* name) {
+    char* history_dir = getenv("XDG_DATA_HOME");
+    bool addConfig = false;
+    if (!history_dir) { history_dir = getenv("HOME"); if (history_dir) addConfig = inConfigDir; }
+    if (!history_dir) history_dir = ".";
+    B p = utf8Decode0(history_dir);
+    if (addConfig) p = path_rel_dec(p, m_c8vec_0(".config"));
+    return path_rel_dec(p, m_c8vec_0(name));
+  }
+  
   static void replxx_gcFn() {
     mm_visit(b_pv);
   }
   static void cbqn_init_replxx() {
-    build_theme(theme0_built, theme0);
+    B cfg = get_config_path(true, "cbqn_repl.txt");
+    cfg_path = cfg; gc_add(cfg);
+    
+    if (path_type(incG(cfg_path))==0) {
+      cfg_set_theme(1, false);
+      cfg_set_keyboard(true, false);
+    } else {
+      B lns = path_lines(incG(cfg_path));
+      SGetU(lns)
+      for (usz i = 0; i < IA(lns); i++) {
+        B ln = GetU(lns, i);
+        char* s = toCStr(ln); char* e;
+        if      (isCmd(s, &e, "theme="   )) cfg_theme          = e[0]-'0';
+        else if (isCmd(s, &e, "keyboard=")) cfg_enableKeyboard = e[0]-'0';
+      }
+      cfg_set_theme(cfg_theme, false);
+      cfg_set_keyboard(cfg_enableKeyboard, false);
+    }
+    
     gc_add(b_key = m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
     gc_add(b_val = m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
     sysvalNames = emptyHVec();
@@ -352,21 +448,6 @@ static NOINLINE B gsc_exec_inline(B src, B path, B args) {
   B r = execBlockInline(block, gsc);
   ptr_dec(block);
   return r;
-}
-
-typedef struct { bool r; char* e; } IsCmdTmp;
-static NOINLINE IsCmdTmp isCmd0(char* s, const char* cmd) {
-  while (*cmd) {
-    if (*cmd==' ' && *s==0) return (IsCmdTmp){.r=true, .e=s};
-    if (*s!=*cmd || *s==0) return (IsCmdTmp){.r=false, .e=s};
-    s++; cmd++;
-  }
-  return (IsCmdTmp){.r=true, .e=s};
-}
-static bool isCmd(char* s, char** e, const char* cmd) {
-  IsCmdTmp t = isCmd0(s, cmd);
-  *e = t.e;
-  return t.r;
 }
 
 bool profiler_alloc(void);
@@ -481,6 +562,18 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "clearImportCache ")) {
       clearImportCache();
       return;
+#if USE_REPLXX
+    } else if (isCmd(cmdS, &cmdE, "kb ")) {
+      cfg_set_keyboard(!cfg_enableKeyboard, true);
+      printf("Backslash input %s\n", cfg_enableKeyboard? "enabled" : "disabled");
+      return;
+    } else if (isCmd(cmdS, &cmdE, "theme ")) {
+      if      (strcmp(cmdE,"dark" )==0) cfg_set_theme(1, true);
+      else if (strcmp(cmdE,"light")==0) cfg_set_theme(2, true);
+      else if (strcmp(cmdE,"none" )==0) cfg_set_theme(0, true);
+      else printf("Unknown theme\n");
+      return;
+#endif
     } else if (isCmd(cmdS, &cmdE, "vars")) {
       B r = listVars(gsc);
       if (q_N(r)) {
@@ -750,14 +843,9 @@ int main(int argc, char* argv[]) {
       cbqn_init_replxx();
       Replxx* replxx = replxx_init();
       
-      char* history_dir = getenv("XDG_DATA_HOME");
-      if (!history_dir) history_dir = getenv("HOME");
-      if (!history_dir) history_dir = ".";
-      B p1 = utf8Decode0(history_dir);
-      B p2 = path_rel(p1, m_c8vec_0(".cbqn_repl_history"));
-      dec(p1);
-      char* histfile = toCStr(p2);
-      dec(p2);
+      B f = get_config_path(false, ".cbqn_repl_history");
+      char* histfile = toCStr(f);
+      dec(f);
       gc_add(tag(TOBJ(histfile), OBJ_TAG));
       replxx_history_load(replxx, histfile);
       global_replxx = replxx;

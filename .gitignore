@@ -17,6 +17,8 @@ libcbqn.so
 # files CBQN may create
 /asm_*
 CBQNHeapDump
+.cbqn_repl_history
+cbqn_repl.txt
 
 # test temporary files
 /test/ffi/ffiTest.o

@@ -12,7 +12,7 @@ Execute the expression, but don't print its result.
 
 ## `)clearImportCache`
 
-Clear the cache of monadic `•Import` calls, resulting in re-evaluating the source the next time one is executed
+Clear the cache of monadic `•Import` calls, resulting in re-evaluating the source the next time one is executed.
 
 ## `)t expr` / `)time expr` / `)t:n expr` / `)time:n expr`
 
@@ -24,11 +24,19 @@ Display a syntax breakdown of the expression
 
 ## `)profile expr` / `)profile@frequency expr`
 
-Profile the expression at the given sampling frequency, or 5000 samples/second by default
+Profile the expression at the given sampling frequency, or 5000 samples/second by default.
 
 ## `)vars`
 
 List the globally defined variables.
+
+## `)theme name` (replxx-only)
+
+Changes the color scheme of syntax highlighting; Supported: `)theme light`, `)theme dark`, `)theme none`.
+
+## `)kb` (replxx-only)
+
+Enable or disable backslash input for BQN characters.
 
 ## `)erase name`
 
