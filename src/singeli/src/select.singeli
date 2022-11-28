@@ -23,18 +23,36 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   x:= *TD ~~ x0
   r:= *TD ~~ r0
   
+  def wrap{cw0, VI,xlf} = cw0 + (xlf & VI~~(cw0<broadcast{VI, 0}))
+  
   def wd = width{TD}
-  if (width{TI}==8 and wd==8 and xl*wd<=128) {
-    def VI = [32]TI
-    def VD = [rw/wd]TD
+  def wi = width{TI}
+  if (wi==8 and wd<=32 and xl*wd<=128) {
+    def ri = rw/wi; def VI = [ri]TI
+    def rd = rw/wd; def VD = [rd]TD
     def xlf = broadcast{VI, cast_i{TI, xl}}
     xd := shuf{[4]u64, load{*VD~~x}, 4b1010}
-    maskedLoop{rw/8, wl, {i, M} => {
-      cw0:= loadBatch{w, i, VI}
-      cw1:= cw0+xlf
-      cw:= blendF{cw0, cw1, cw0<broadcast{VI, 0}}
+    maskedLoop{ri, wl, {i, M} => {
+      cw:= wrap{loadBatch{w, i, VI}, VI,xlf}
       if (any{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
-      storeBatch{r, i, VD~~sel{[16]i8, xd, cw}, M}
+      is := (if (wd>wi) i<<lb{wd/wi}; else i)
+      def se{w, c, o} = {
+        c2 := shuf{[4]u64, c+c, 4b3120}
+        each{
+          {c,o} => se{w*2, VI~~c, o},
+          unpackQ{c2, c2+broadcast{VI,1}},
+          2*o + iota{2}
+        }
+      }
+      def se{w==wd, c, o} = {
+        io:= is+o
+        got:= VD~~sel{[16]i8, xd, c}
+        def s{M} = storeBatch{r, io, got, M}
+        if (wd==wi or not M{0}) s{M}
+        else if (io*rd+rd <= wl) s{maskNone}
+        else if (io*rd    <  wl) s{maskAfter{wl & (rd-1)}}
+      }
+      se{wi, cw, 0}
     }}
     return{1}
   }
@@ -47,9 +65,7 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   def xlf = broadcast{VI, cast_i{TIE, xl}}
   
   maskedLoop{bulk, wl, {i, M} => {
-    cw0:= loadBatch{w, i, VI}
-    cw1:= cw0+xlf
-    cw:= blendF{cw0, cw1, cw0<broadcast{VI, 0}} # TODO this is utilizing clang optimizing out the comparison
+    cw:= wrap{loadBatch{w, i, VI}, VI,xlf}
     if (any{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
     got:= gather{broadcast{VD,0}, x, cw, M}
     if (TDE!=TD) got&= broadcast{VD, (1<<width{TD})-1}
