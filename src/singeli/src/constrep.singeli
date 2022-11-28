@@ -39,8 +39,7 @@ def get_rep_iter{V, wv==2}{x, gen} = {
 }
 def get_rep_iter{V==[4]u64, wv} = {
   def step = 4
-  def base4{l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+4*base4{slice{l,1}} }
-  def sh = each{base4, get_shufs{step, wv, wv}}
+  def sh = each{bind{base,4}, get_shufs{step, wv, wv}}
   {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
 }
 def read_shuf_vecs{l, elbytes:u64, shp:*[32]i8} = {

@@ -7,7 +7,6 @@ include './mask'
 def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
 def sel8{v, t & istup{t} & tuplen{t}==16} = sel8{v, merge{t,t}}
 
-def base{b,l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+b*base{b,slice{l,1}} }
 def shuf{T, v, n & istup{n}} = shuf{T, v, base{4,n}}
 
 # Fill last 4 bytes with last element, in each lane
