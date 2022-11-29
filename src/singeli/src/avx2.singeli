@@ -107,8 +107,8 @@ def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, 
 def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
 def maskstoreF{p, m, n, x:T & width{eltype{T}}>=32} = maskstore{p,m,n,x}
 
-def shl{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
-def shr{S==[16]u8, x:T, n & w256{T}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
+def shl{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
+def shr{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
 
 def blend{L==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}
 def blend{L==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}

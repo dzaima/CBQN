@@ -102,6 +102,7 @@ def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
 def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
+def half{x:T, i==0 & w256{T}}        = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
 def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 

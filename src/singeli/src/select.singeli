@@ -24,6 +24,13 @@ def wrapChk{cw0, VI,xlf, M} = {
   cw
 }
 
+def storeExp{dst, ind, val, M, ext, rd, wl} = {
+  def s{M} = storeBatch{dst, ind, val, M}
+  if (ext==1 or not M{0}) s{M}
+  else   if (ind*rd+rd <= wl) s{maskNone}
+  else { if (ind*rd    <  wl) s{maskAfter{wl & (rd-1)}}; return{1} }
+}
+
 def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
   def VI = [ri]TI
   def ext = ri/rd
@@ -39,15 +46,21 @@ def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
         2*o + iota{2}
       }
     }
-    def se{e==ext, c, o} = {
-      io:= is+o
-      got:= selx{c}
-      def s{M} = storeBatch{r, io, got, M}
-      if (ext==1 or not M{0}) s{M}
-      else   if (io*rd+rd <= wl) s{maskNone}
-      else { if (io*rd    <  wl) s{maskAfter{wl & (rd-1)}}; return{1} }
-    }
+    def se{e==ext, c, o} = storeExp{r, is+o, selx{c}, M, ext, rd, wl}
     se{1, cw, 0}
+  }}
+}
+
+def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
+  def VI = [ri]TI
+  def ext = ri/rd
+  xlf:= broadcast{VI, cast_i{TI, xl}}
+  maskedLoop{ri, wl, {i, M} => {
+    cw:= wrapChk{loadBatch{w, i, VI}, VI,xlf, M}
+    is:= (if (ext>1) i<<lb{ext}; else i)
+    def part{o} = cvt{i8, [8]i32, shuf{[4]u64, cw, 4b3210+o}}
+    def se{o} = storeExp{r, is+o, selx{part{o}}, M, ext, rd, wl}
+    each{se, iota{ext}}
   }}
 }
 
@@ -83,7 +96,13 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   def shuf_select{l} = {
     shuf_select{ri, rd, TI, w, r, wl, xl, makesel{[ri]TI,[rd]TD, x,l}}
   }
-  if      (wi==8 and wd<=32 and xl*wd<=128   ) { shuf_select{0} }
+  def perm_select{} = {
+    def VD = [rd]TD
+    xd:= load{*VD~~x}
+    perm_select{ri, rd, TI, w, r, wl, xl, {c}=>sel{VD, xd, c}}
+  }
+  if      (wi==8 and wd==32 and xl*wd<=256   ) { perm_select{ } }
+  else if (wi==8 and wd<=16 and xl*wd<=128   ) { shuf_select{0} }
   else if (wi==8 and wd<=16 and xl*wd<=128<<1) { shuf_select{1} }
   else if (wi==8 and wd<=16 and xl*wd<=128<<2) { shuf_select{2} }
   else if (wi==8 and wd<= 8 and xl*wd<=128<<3) { shuf_select{3} }
