@@ -100,8 +100,7 @@ B select_c2(B t, B w, B x) {
         for (usz i = wia; ; ) {                         \
           i--;                                          \
           usz n = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)); \
-          b <<= 1;                                      \
-          b |= (-(xp[n/64] & (1ull<<(n%64)))) >> 63;    \
+          b = 2*b + ((((u8*)xp)[n/8] >> (n%8)) & 1);    \
           if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
         }                                               \
         goto dec_ret;                                   \
