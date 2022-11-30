@@ -26,8 +26,8 @@
 // No longer needs to range-check but indices can be negative
 //   COULD convert negative indices before selection
 // Must check collisions if CHECK_VALID; uses a byte set
-//   SHOULD do sparse initialization if 𝕨 is much smaller than 𝕩
-//   COULD call Mark Firsts (∊) for very short 𝕨
+//   Sparse initialization if 𝕨 is much smaller than 𝕩
+//   COULD call Mark Firsts (∊) for very short 𝕨 to avoid allocation
 
 #include "../core.h"
 #include "../utils/talloc.h"
@@ -249,11 +249,17 @@ B select_ucw(B t, B o, B w, B x) {
   if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as 'a' (expected %H, got %H)", w, rep);
   #if CHECK_VALID
     TALLOC(bool, set, xia);
-    for (i64 i = 0; i < xia; i++) set[i] = false;
+    bool sparse = wia < xia/64;
+    if (!sparse) for (i64 i = 0; i < xia; i++) set[i] = false;
+    #define SPARSE_INIT(WI) \
+      if (sparse) for (usz i = 0; i < wia; i++) {                    \
+        i64 cw = WI; if (RARE(cw<0)) cw+= (i64)xia; set[cw] = false; \
+      }
     #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
     #define FREE_CHECK TFREE(set)
     SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
   #else
+    #define SPARSE_INIT(GET)
     #define EQ(F)
     #define FREE_CHECK
   #endif
@@ -265,6 +271,7 @@ B select_ucw(B t, B o, B w, B x) {
   if (elInt(we)) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);
+    SPARSE_INIT(wp[i])
     if (elNum(re) && elNum(xe)) {
       u8 me = xe>re?xe:re;
       bool reuse = reusable(x);
@@ -358,6 +365,7 @@ B select_ucw(B t, B o, B w, B x) {
   MUTG_INIT(r);
   mut_copyG(r, 0, x, 0, xia);
   SGet(rep)
+  SPARSE_INIT(o2i64G(GetU(w, i)))
   for (usz i = 0; i < wia; i++) {
     i64 cw = o2i64G(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
     B cr = Get(rep, i);
@@ -367,6 +375,7 @@ B select_ucw(B t, B o, B w, B x) {
   }
   decG(w); decG(rep); FREE_CHECK;
   return mut_fcd(r, x);
+  #undef SPARSE_INIT
   #undef EQ
   #undef FREE_CHECK
 }
