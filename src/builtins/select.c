@@ -1,3 +1,34 @@
+// First Cell and Select (⊏)
+
+// First Cell is just a slice
+
+// Complications in Select mostly come from range checks and negative 𝕨
+// Atom 𝕨 and any rank 𝕩: slice
+// Rank-1 𝕩:
+//   Empty 𝕨: no selection
+//   Small 𝕩 with Singeli: use shuffles
+//   Boolean 𝕨: use bit_sel for blend or similar
+//   Boolean 𝕩 and larger 𝕨: convert to i8, select, convert back
+//   Boolean 𝕩 otherwise: select/shift bytes, reversed for fast writing
+//     TRIED pext, doesn't seem faster (mask built with shifts anyway)
+//   SHOULD squeeze 𝕨 if not ≤i32 to get to optimized cases
+//   Integer 𝕨 with Singeli: fused wrap, range-check, and gather
+//     COULD try selecting from boolean with gather
+//     COULD detect <Skylake where gather is slow
+//   i32 𝕨: wrap, check, select one index at a time
+//   i8 and i16 𝕨: separate range check in blocks to auto-vectorize
+// SHOULD optimize simple 𝕨 based on cell size for any rank 𝕩
+// SHOULD implement nested 𝕨
+
+// Under Select ⌾(i⊸⊏)
+// Specialized for rank-1 numeric 𝕩
+// SHOULD apply to characters as well
+// No longer needs to range-check but indices can be negative
+//   COULD convert negative indices before selection
+// Must check collisions if CHECK_VALID; uses a byte set
+//   SHOULD do sparse initialization if 𝕨 is much smaller than 𝕩
+//   COULD call Mark Firsts (∊) for very short 𝕨
+
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
