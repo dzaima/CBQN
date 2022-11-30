@@ -64,26 +64,34 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
   }}
 }
 
-def makesel{VI,VD, x0,logv} = {
+def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
+  def bblend {m}{ft} = blend{tupsel{0,ft}, tupsel{1,ft}, m}
+  def bblendn{m}{tf} = bblend{m}{reverse{tf}}
+  def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
+  
+  def bs{b, c, x} = cshuf{x, c}
+  def bs{b, c, x & tuplen{b}>0} = {
+    tupsel{0,b}{each{bind{bs, slice{b,1}, c}, x}}
+  }
+  
+  def i = iota{logv}
+  def vs = each{bind{broadcast,VI}, nsel<<reverse{i}}
+  {c} => VD~~bs{each{bb{c},i==0,vs}, c, xd}
+}
+def makeshuf{VI, VD, x0, logv} = {
   x:= *VD~~x0
   def halves{v} = each{bind{shuf, [4]u64, v}, tup{4b1010, 4b3232}}
   def readx{l,o} = each{bind{readx,l-1}, o + iota{2}<<(l-2)}
   def readx{l==0,o} = shuf{[4]u64, load{x}, 4b1010}
   def readx{l==1,o} = halves{load{x, o}}
   xd:= readx{logv, 0}
-  
-  def bblend {m}{ft} = blend{tupsel{0,ft}, tupsel{1,ft}, m}
-  def bblendn{m}{tf} = bblend{m}{reverse{tf}}
-  def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
-  
-  def bs{b, c, x} = sel{[16]i8, x, c}
-  def bs{b, c, x & tuplen{b}>0} = {
-    tupsel{0,b}{each{bind{bs, slice{b,1}, c}, x}}
-  }
-  
-  def i = iota{logv}
-  def vs = each{bind{broadcast,VI}, 16<<reverse{i}}
-  {c} => VD~~bs{each{bb{c},i==0,vs}, c, xd}
+  makeselx{VI,VD,16,xd,logv, bind{sel,[16]i8}}
+}
+def makeperm{VI, VD, x0, logv} = {
+  x:= *VD~~x0
+  def readx{l,o} = each{bind{readx,l-1}, o + iota{2}<<(l-1)}
+  def readx{l==0,o} = load{x, o}
+  makeselx{[8]i32,VD,8, readx{logv, 0}, logv, bind{sel,[8]i32}}
 }
 
 select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
@@ -93,19 +101,17 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   
   def wd = width{TD}; def rd = rw/wd
   def wi = width{TI}; def ri = rw/wi
-  def shuf_select{l} = {
-    shuf_select{ri, rd, TI, w, r, wl, xl, makesel{[ri]TI,[rd]TD, x,l}}
+  def reg_select{sel,make}{l} = {
+    sel{ri, rd, TI, w, r, wl, xl, make{[ri]TI,[rd]TD, x,l}}
   }
-  def perm_select{} = {
-    def VD = [rd]TD
-    xd:= load{*VD~~x}
-    perm_select{ri, rd, TI, w, r, wl, xl, {c}=>sel{VD, xd, c}}
-  }
-  if      (wi==8 and wd==32 and xl*wd<=256   ) { perm_select{ } }
-  else if (wi==8 and wd<=16 and xl*wd<=128   ) { shuf_select{0} }
-  else if (wi==8 and wd<=16 and xl*wd<=128<<1) { shuf_select{1} }
-  else if (wi==8 and wd<=16 and xl*wd<=128<<2) { shuf_select{2} }
-  else if (wi==8 and wd<= 8 and xl*wd<=128<<3) { shuf_select{3} }
+  def shuf_select = reg_select{shuf_select, makeshuf}
+  def perm_select = reg_select{perm_select, makeperm}
+  if      (wi==8 and wd==32 and xl*wd<=256   ) perm_select{0}
+  else if (wi==8 and wd==32 and xl*wd<=256<<1) perm_select{1}
+  else if (wi==8 and wd<=16 and xl*wd<=128   ) shuf_select{0}
+  else if (wi==8 and wd<=16 and xl*wd<=128<<1) shuf_select{1}
+  else if (wi==8 and wd<=16 and xl*wd<=128<<2) shuf_select{2}
+  else if (wi==8 and wd<= 8 and xl*wd<=128<<3) shuf_select{3}
   else {
     def TIE = i32
     def TDE = tern{wd<32, u32, TD}
