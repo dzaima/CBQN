@@ -65,6 +65,7 @@ def __xor{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b
 def __and{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}
 def __or {a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}
 def __not{a:T & w256u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
+def andnot{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_andnot_ps', v2f{b}, v2f{a}}
 
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}

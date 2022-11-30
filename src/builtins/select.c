@@ -69,6 +69,12 @@ B select_c2(B t, B w, B x) {
     #if SINGELI
       #define CPUSEL(W, NEXT) \
         if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
+      #define BOOL_USE_SIMD (xia<=128)
+      #define BOOL_SPECIAL(W) \
+        if (sizeof(W)==1 && BOOL_USE_SIMD) { \
+          if (!avx2_select_bool128(wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); \
+          goto dec_ret;                                   \
+        }
     #else
       #define CPUSEL(W, NEXT) \
         if (sizeof(W) >= 4) {                           \
@@ -90,12 +96,15 @@ B select_c2(B t, B w, B x) {
           }                                             \
           if (wt) TFREE(wt);                            \
         }
+      #define BOOL_USE_SIMD 0
+      #define BOOL_SPECIAL(W)
     #endif
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
     #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
     #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
       if (xe==el_bit) { u64* xp=bitarr_ptr(x);          \
         u64* rp; r = m_bitarrc(&rp, w);                 \
+        BOOL_SPECIAL(W)                                 \
         u64 b=0;                                        \
         for (usz i = wia; ; ) {                         \
           i--;                                          \
@@ -121,7 +130,7 @@ B select_c2(B t, B w, B x) {
       for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
       decG(x); return withFill(HARR_FCD(r,w),xf); \
     }
-    if (xe==el_bit && wia>=256 && wia/4>=xia && we!=el_bit) {
+    if (xe==el_bit && wia>=256 && !BOOL_USE_SIMD && wia/4>=xia && we!=el_bit) {
       return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
     }
     if (we==el_bit) {
