@@ -65,6 +65,7 @@ def __xor{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b
 def __and{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}
 def __or {a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}
 def __not{a:T & w256u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
+def andnot{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_andnot_ps', v2f{b}, v2f{a}}
 
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
@@ -102,6 +103,7 @@ def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
 def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
+def half{x:T, i==0 & w256{T}}        = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
 def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 

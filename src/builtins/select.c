@@ -1,14 +1,52 @@
+// First Cell and Select (⊏)
+
+// First Cell is just a slice
+
+// Complications in Select mostly come from range checks and negative 𝕨
+// Atom 𝕨 and any rank 𝕩: slice
+// Rank-1 𝕩:
+//   Empty 𝕨: no selection
+//   Small 𝕩 with Singeli: use shuffles
+//   Boolean 𝕨: use bit_sel for blend or similar
+//   Boolean 𝕩 and larger 𝕨: convert to i8, select, convert back
+//   Boolean 𝕩 otherwise: select/shift bytes, reversed for fast writing
+//     TRIED pext, doesn't seem faster (mask built with shifts anyway)
+//   SHOULD squeeze 𝕨 if not ≤i32 to get to optimized cases
+//   Integer 𝕨 with Singeli: fused wrap, range-check, and gather
+//     COULD try selecting from boolean with gather
+//     COULD detect <Skylake where gather is slow
+//   i32 𝕨: wrap, check, select one index at a time
+//   i8 and i16 𝕨: separate range check in blocks to auto-vectorize
+// SHOULD optimize simple 𝕨 based on cell size for any rank 𝕩
+// SHOULD implement nested 𝕨
+
+// Under Select ⌾(i⊸⊏)
+// Specialized for rank-1 numeric 𝕩
+// SHOULD apply to characters as well
+// No longer needs to range-check but indices can be negative
+//   COULD convert negative indices before selection
+// Must check collisions if CHECK_VALID; uses a byte set
+//   Sparse initialization if 𝕨 is much smaller than 𝕩
+//   COULD call Mark Firsts (∊) for very short 𝕨 to avoid allocation
+
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
 
-// #if SINGELI
-//   #pragma GCC diagnostic push
-//   #pragma GCC diagnostic ignored "-Wunused-variable"
-//   #include "../singeli/gen/select.c"
-//   #pragma GCC diagnostic pop
-// #endif
+#if SINGELI
+  #include <xmmintrin.h>
+  #if __GNUC__ && !__clang__ // old gcc versions don't define _mm_loadu_si32 & _mm_storeu_si32
+    static __m128i custom_loadu_si32(void* p) { return (__m128i) _mm_load_ss(p); }
+    static void custom_storeu_si32(void* p, __m128i x) { _mm_store_ss(p, _mm_castsi128_ps(x)); }
+    #define _mm_loadu_si32 custom_loadu_si32
+    #define _mm_storeu_si32 custom_storeu_si32
+  #endif
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-variable"
+  #include "../singeli/gen/select.c"
+  #pragma GCC diagnostic pop
+#endif
 
 extern B rt_select;
 B select_c1(B t, B x) {
@@ -67,31 +105,16 @@ B select_c2(B t, B w, B x) {
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
     #if SINGELI
-      // if (we==el_i8  && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i8_32 (i8any_ptr (w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i16 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i16_32(i16any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i8 ) { i8*  rp; r = m_i8arrc (&rp, w); if (!avx2_select_i32_8 (i32any_ptr(w), i8any_ptr (x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_i32) { i32* rp; r = m_i32arrc(&rp, w); if (!avx2_select_i32_32(i32any_ptr(w), i32any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-      // if (we==el_i32 && xe==el_f64) { f64* rp; r = m_f64arrc(&rp, w); if (!avx2_select_i32_64(i32any_ptr(w), f64any_ptr(x), rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); goto dec_ret; }
-    #endif
-    #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
-    #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x);          \
-        u64* rp; r = m_bitarrc(&rp, w);                 \
-        u64 b=0;                                        \
-        for (usz i = wia; ; ) {                         \
-          i--;                                          \
-          usz n = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)); \
-          b <<= 1;                                      \
-          b |= (-(xp[n/64] & (1ull<<(n%64)))) >> 63;    \
-          if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
-        }                                               \
-        goto dec_ret;                                   \
-      }                                                 \
-      if (xe!=el_B) {                                   \
-        usz xw = elWidth(xe);                           \
-        void* rp = m_tyarrc(&r, xw, w, el2t(xe));       \
-        void* xp = tyany_ptr(x);                        \
+      #define CPUSEL(W, NEXT) \
+        if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
+      #define BOOL_USE_SIMD (xia<=128)
+      #define BOOL_SPECIAL(W) \
+        if (sizeof(W)==1 && BOOL_USE_SIMD) { \
+          if (!avx2_select_bool128(wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); \
+          goto dec_ret;                                   \
+        }
+    #else
+      #define CPUSEL(W, NEXT) \
         if (sizeof(W) >= 4) {                           \
           switch(xw) { default:UD; CASEW(1,u8); CASEW(2,u16); CASEW(4,u32); CASEW(8,f64); } \
         } else {                                        \
@@ -110,7 +133,30 @@ B select_c2(B t, B w, B x) {
             switch(xw) { default:UD; CASE(1,u8); CASE(2,u16); CASE(4,u32); CASE(8,f64); } \
           }                                             \
           if (wt) TFREE(wt);                            \
+        }
+      #define BOOL_USE_SIMD 0
+      #define BOOL_SPECIAL(W)
+    #endif
+    #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
+    #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
+      if (xe==el_bit) { u64* xp=bitarr_ptr(x);          \
+        u64* rp; r = m_bitarrc(&rp, w);                 \
+        BOOL_SPECIAL(W)                                 \
+        u64 b=0;                                        \
+        for (usz i = wia; ; ) {                         \
+          i--;                                          \
+          usz n = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)); \
+          b = 2*b + ((((u8*)xp)[n/8] >> (n%8)) & 1);    \
+          if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
         }                                               \
+        goto dec_ret;                                   \
+      }                                                 \
+      if (xe!=el_B) {                                   \
+        usz xw = elWidth(xe);                           \
+        void* rp = m_tyarrc(&r, xw, w, el2t(xe));       \
+        void* xp = tyany_ptr(x);                        \
+        CPUSEL(W, NEXT)                                 \
         goto dec_ret;                                   \
       }                                                 \
       M_HARR(r, wia);                                   \
@@ -122,7 +168,7 @@ B select_c2(B t, B w, B x) {
       for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
       decG(x); return withFill(HARR_FCD(r,w),xf); \
     }
-    if (xe==el_bit && wia>=256 && wia/4>=xia && we!=el_bit) {
+    if (xe==el_bit && wia>=256 && !BOOL_USE_SIMD && wia/4>=xia && we!=el_bit) {
       return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
     }
     if (we==el_bit) {
@@ -210,11 +256,17 @@ B select_ucw(B t, B o, B w, B x) {
   if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as 'a' (expected %H, got %H)", w, rep);
   #if CHECK_VALID
     TALLOC(bool, set, xia);
-    for (i64 i = 0; i < xia; i++) set[i] = false;
+    bool sparse = wia < xia/64;
+    if (!sparse) for (i64 i = 0; i < xia; i++) set[i] = false;
+    #define SPARSE_INIT(WI) \
+      if (sparse) for (usz i = 0; i < wia; i++) {                    \
+        i64 cw = WI; if (RARE(cw<0)) cw+= (i64)xia; set[cw] = false; \
+      }
     #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
     #define FREE_CHECK TFREE(set)
     SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
   #else
+    #define SPARSE_INIT(GET)
     #define EQ(F)
     #define FREE_CHECK
   #endif
@@ -226,6 +278,7 @@ B select_ucw(B t, B o, B w, B x) {
   if (elInt(we)) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);
+    SPARSE_INIT(wp[i])
     if (elNum(re) && elNum(xe)) {
       u8 me = xe>re?xe:re;
       bool reuse = reusable(x);
@@ -319,6 +372,7 @@ B select_ucw(B t, B o, B w, B x) {
   MUTG_INIT(r);
   mut_copyG(r, 0, x, 0, xia);
   SGet(rep)
+  SPARSE_INIT(o2i64G(GetU(w, i)))
   for (usz i = 0; i < wia; i++) {
     i64 cw = o2i64G(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
     B cr = Get(rep, i);
@@ -328,6 +382,7 @@ B select_ucw(B t, B o, B w, B x) {
   }
   decG(w); decG(rep); FREE_CHECK;
   return mut_fcd(r, x);
+  #undef SPARSE_INIT
   #undef EQ
   #undef FREE_CHECK
 }
