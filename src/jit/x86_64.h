@@ -157,55 +157,6 @@ static NOINLINE void asm_write(u8* P, u64 SZ) {
 #define nA_0REG(O,I) (((I)&7)<<3) + ((O)&7)
 #define nA_REG(O,I) ASM1(0xC0 + nA_0REG(O,I)) // aka MRM immediate
 
-#define  AC1(N,A    ) i##N(A    )
-#define  AC2(N,A,B  ) i##N(A,B  )
-#define  AC3(N,A,B,C) i##N(A,B,C)
-
-// meaning of lowercase after basic instr name:
-//   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced, 'p' - offset to rip; if all are 'r' or they don't have other options, they can be omitted
-//   add 'o' for an offset argument (e.g. the 5 in 'mov rax, [rdi+5]'), 'i' for an immediate (e.g. 5 in 'add r12,5', or in 'lea rax, [rdi+5]')
-#define INC4mo(O,IMM) AC2(INC4mo,O,IMM)
-#define INC8mo(O,IMM) AC2(INC8mo,O,IMM)
-#define DEC4mo(O,IMM) AC2(DEC4mo,O,IMM)
-#define DEC8mo(O,IMM) AC2(DEC8mo,O,IMM)
-
-#define MOV(O,I) AC2(MOV,O,I)
-#define MOV4(O,I) AC2(MOV4,O,I)
-#define ADD(O,IMM) AC2(ADD,O,IMM)
-#define SUB(O,IMM) AC2(SUB,O,IMM)
-#define XOR(O,IMM) AC2(XOR,O,IMM)
-#define  OR(O,IMM) AC2( OR,O,IMM)
-#define AND(O,IMM) AC2(AND,O,IMM)
-#define CMP(O,IMM) AC2(CMP,O,IMM)
-#define ADDi(O,IMM) AC2(ADDi,O,IMM)
-#define SUBi(O,IMM) AC2(SUBi,O,IMM)
-#define SHLi(O,IMM) AC2(SHLi,O,IMM)
-#define SHRi(O,IMM) AC2(SHRi,O,IMM)
-#define MOVi(O,IMM) AC2(MOVi,O,IMM)
-#define MOVi1l(O,IMM) AC2(MOVi1l,O,IMM)
-#define MOV4moi(I,OFF,IMM) AC3(MOV4moi,I,OFF,IMM)
-#define ADD4mi(O,IMM) AC2(ADD4mi,O,IMM) // ADD4mi(o,1) is an alternative for INC4mo(o,0)
-
-#define MOV8rm(O,I) AC2(MOV8rm,O,I) // O ← *(u64*)(nullptr + I)
-#define MOV8mr(I,O) AC2(MOV8mr,I,O) // *(u64*)(nullptr + I) ← O
-#define MOV4rm(O,I) AC2(MOV4rm,O,I) // O ← *(u32*)(nullptr + I)
-#define MOV4mr(I,O) AC2(MOV4mr,I,O) // *(u32*)(nullptr + I) ← O
-#define MOV8rmo(O,I,OFF) AC3(MOV8rmo,O,I,OFF) // O ← *(u64*)(nullptr + I + OFF)
-#define MOV8mro(I,O,OFF) AC3(MOV8mro,I,O,OFF) // *(u64*)(nullptr + I + OFF) ← O
-#define MOV4rmo(O,I,OFF) AC3(MOV4rmo,O,I,OFF)
-#define MOV4mro(I,O,OFF) AC3(MOV4mro,I,O,OFF)
-#define MOV8pr(POS,I) { AC2(MOV8pr,(u64)(POS),I); asm_addRel(ASM_SIZE-4); }
-#define MOV8rp(I,POS) { AC2(MOV8rp,(u64)(POS),I); asm_addRel(ASM_SIZE-4); }
-
-#define LEAi(O,I,IMM) AC3(LEAi,O,I,IMM)
-#define BZHI(O,I,N) AC3(BZHI,O,I,N) // requires __BMI2__
-
-#define PUSH(O) AC1(PUSH,O)
-#define POP(O) AC1(POP,O)
-#define CALL(I) AC1(CALL,I)
-#define CALLi(POS) { AC1(CALLi,(u64)(POS)); asm_addRel(ASM_SIZE-4); } // POS must be 32-bit
-#define RET() { ASMS; ASM1(0xC3); ASME; }
-
 static const u8 cO  = 0x0; static const u8 cNO = 0x1;
 static const u8 cB  = 0x2; static const u8 cAE = 0x3;
 static const u8 cE  = 0x4; static const u8 cNE = 0x5;
@@ -221,18 +172,27 @@ static const u8 cLE = 0xE; static const u8 cG  = 0xF;
 
 #define ASMS u8* ic=asm_ins.c
 #define ASME asm_ins.c = ic; asm_r()
-#define ASMI(N, ...) static NOINLINE void i##N(__VA_ARGS__)
+#define ASMI(N, ...) static NOINLINE void N(__VA_ARGS__)
 
 // meaning of lowercase after basic instr name:
 //   'r' means the corresponding argument is the direct register contents, 'm' - that it's dereferenced, 'p' - offset to rip; if all are 'r' or they don't have other options, they can be omitted
 //   add 'o' for an offset argument (e.g. the 5 in 'mov rax, [rdi+5]'), 'i' for an immediate (e.g. 5 in 'add r12,5', or in 'lea rax, [rdi+5]')
+// MOV8rm: O ← *(u64*)(nullptr + I)
+// MOV8mr: *(u64*)(nullptr + I) ← O
+// MOV4rm: O ← *(u32*)(nullptr + I)
+// MOV4mr: *(u32*)(nullptr + I) ← O
+// MOV8rmo: // O ← *(u64*)(nullptr + I + OFF)
+// MOV8mro: // *(u64*)(nullptr + I + OFF) ← O
+// MOV4rmo: // O ← *(u32*)(nullptr + I + OFF)
+// MOV4mro: // *(u32*)(nullptr + I + OFF) ← O
+// BZHI: requires __BMI2__
 ASMI(ADD, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x01); nA_REG(o,i); ASME; }
 ASMI(SUB, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x29); nA_REG(o,i); ASME; }
-ASMI(XOR, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
 ASMI( OR, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x09); nA_REG(o,i); ASME; }
 ASMI(AND, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x21); nA_REG(o,i); ASME; }
 ASMI(CMP, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x39); nA_REG(o,i); ASME; }
 ASMI(XOR4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
+ASMI(XOR,  Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
 ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,0); ASM1(imm); } else { ASM1(0x81); nA_REG(o,0); ASM4(imm); } ASME; }
 ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,5); ASM1(imm); } else { ASM1(0x81); nA_REG(o,5); ASM4(imm); } ASME; }
 ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; ASMS; nREX8(o,0); ASM1(0xC1); nA_REG(o,4); ASM1(imm); ASME; }
@@ -248,7 +208,7 @@ ASMI(DEC8mo, Reg o, i32 off) { ASMS; nREX8(o,0); ASM1(0xff); MRMo(o,1,off); ASME
 ASMI(MOV4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
 ASMI(MOV , Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
 ASMI(MOVi, Reg o, i64 i) {
-  if (i==0) { iXOR4(o,o); return; }
+  if (i==0) { XOR4(o,o); return; }
   ASMS;
   if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
   else           { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
@@ -260,16 +220,22 @@ ASMI(MOV8mr, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); MRM(o,i); ASME; }   A
 ASMI(MOV8rm, Reg i, Reg o) { ASMS; nREX8(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { ASMS; nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
 ASMI(MOV4mr, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { ASMS; nREX4(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
 ASMI(MOV4rm, Reg i, Reg o) { ASMS; nREX4(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { ASMS; nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
-ASMI(MOV8pr, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); ASME; }
-ASMI(MOV8rp, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); ASME; }
 
-ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) iMOV(o,i); else { ASMS; nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); ASME; } }
+ASMI(MOV8pr_i, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); ASME; }
+ASMI(MOV8rp_i, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); ASME; }
+
+ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) MOV(o,i); else { ASMS; nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); ASME; } }
 ASMI(BZHI, Reg o, Reg i, Reg n) { ASMS; ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); ASME; }
 
-ASMI(PUSH, Reg O) { ASMS; nREX4(O,0); ASM1(0x50+((O)&7)); ASME; }
-ASMI(POP , Reg O) { ASMS; nREX4(O,0); ASM1(0x58+((O)&7)); ASME; }
+ASMI(iPUSH, Reg O) { ASMS; nREX4(O,0); ASM1(0x50+((O)&7)); ASME; }
+ASMI(iPOP , Reg O) { ASMS; nREX4(O,0); ASM1(0x58+((O)&7)); ASME; }
 
+ASMI(CALLi_i, u64 pos) { ASMS; ASM1(0xE8); ASM4(pos-4); ASME; }
 ASMI(CALL, Reg i) { ASMS; nREX4(i,0); ASM1(0xFF); nA_REG(i,2); ASME; }
-ASMI(CALLi, u64 pos) { ASMS; ASM1(0xE8); ASM4(pos-4); ASME; }
+ASMI(RET) { ASMS; ASM1(0xC3); ASME; }
+
+#define MOV8pr(POS,I) { MOV8pr_i((u64)(POS),I); asm_addRel(ASM_SIZE-4); }
+#define MOV8rp(I,POS) { MOV8rp_i((u64)(POS),I); asm_addRel(ASM_SIZE-4); }
+#define CALLi(POS) { CALLi_i((u64)(POS)); asm_addRel(ASM_SIZE-4); } // POS must be 32-bit
 
 #define IMM(A,B) MOVi(A,(u64)(B))

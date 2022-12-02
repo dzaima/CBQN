@@ -539,10 +539,10 @@ Nvm_res m_nvm(Body* body) {
   Reg r_SC  = R_P1;
   Reg r_ENV = R_P2;
   u64 pushAm = 0;
-  PUSH(R_BP ); pushAm++; // idk, rbp; todo make gdb happy
-  PUSH(r_ENV); pushAm++; // env pointer for quick bytecode pos updating
-  PUSH(r_CS ); pushAm++; // starting gStack
-  PUSH(r_SC ); pushAm++; // Scope* sc
+  iPUSH(R_BP ); pushAm++; // idk, rbp; todo make gdb happy
+  iPUSH(r_ENV); pushAm++; // env pointer for quick bytecode pos updating
+  iPUSH(r_CS ); pushAm++; // starting gStack
+  iPUSH(r_SC ); pushAm++; // Scope* sc
   u64 lsz = 0; // local variable used up space
   #define ALLOCL(NAME,N) u64 NAME##Off = lsz; lsz+= (N)
   
@@ -700,10 +700,10 @@ Nvm_res m_nvm(Body* body) {
   }
   TSFREE(retLbls);
   ADDi(R_SP, lsz);
-  POP(r_SC);
-  POP(r_CS);
-  POP(r_ENV);
-  POP(R_BP);
+  iPOP(r_SC);
+  iPOP(r_CS);
+  iPOP(r_ENV);
+  iPOP(R_BP);
   RET();
   #undef CCALL
   #undef VAR8
