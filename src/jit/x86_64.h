@@ -138,24 +138,24 @@ static NOINLINE void asm_write(u8* P, u64 SZ) {
 
 
 
-#define nREX0(O,I) (((O)>7)+(((I)>7)<<2))
-#define nREX8(O,I) ASM1(0x48 + nREX0(O,I))
-#define nREX4(O,I) {u8 t=nREX0(O,I); if(t) ASM1(0x40+t); }
+#define REX0(O,I) (((O)>7)+(((I)>7)<<2))
+#define REX4(O,I) {u8 t=REX0(O,I); if(t) ASM1(0x40+t); }
+#define REX8(O,I) ASM1(0x48 + REX0(O,I))
 #define CHK4(O) (((O)&7)==4)
 #define CHK5(O) (((O)&7)==5)
 #define CHK45(O) (((O)&7)>>1==2)
 
 // ModR/M mess
-#define MRM(O,I) ASM1((((I)&7)<<3) + ((O)&7) + 0x40*CHK5(O)); if(CHK45(O)) ASM1(CHK4(O)?0x24:0);
-#define MRMo(O,I,OFF) { i64 t=OFF;                       \
-  bool b1 = t||CHK5(O); bool b4 = t!=(i8)t;              \
-  ASM1((((I)&7)<<3) + ((O)&7) + (b1? b4?0x80:0x40 : 0)); \
-  if(CHK4(O)) ASM1(0x24);                                \
-  if(b4) ASM4(t); else if (b1) ASM1(t);                  \
+#define A_0REG(O,I,A) ((((I)&7)<<3) + ((O)&7) + (A))
+#define MRM(O,I) ASM1(A_0REG(O,I,0x40*CHK5(O))); if(CHK45(O)) ASM1(CHK4(O)?0x24:0);
+#define MRMo(O,I,OFF) { i64 t=OFF;          \
+  bool b1 = t||CHK5(O); bool b4 = t!=(i8)t; \
+  ASM1(A_0REG(O, I, b1? b4?0x80:0x40 : 0)); \
+  if(CHK4(O)) ASM1(0x24);                   \
+  if(b4) ASM4(t); else if (b1) ASM1(t);     \
 }
-#define MRMp(OFF,I) ASM1((((I)&7)<<3) + 5); ASM4(OFF); // offset to rip
-#define nA_0REG(O,I) (((I)&7)<<3) + ((O)&7)
-#define nA_REG(O,I) ASM1(0xC0 + nA_0REG(O,I)) // aka MRM immediate
+#define MRMp(OFF,I) ASM1(A_0REG(5,I,0x00)); ASM4(OFF); // offset to rip
+#define MRMr(O,I)  ASM1(A_0REG(O,I,0xC0)) // only register operands
 
 static const u8 cO  = 0x0; static const u8 cNO = 0x1;
 static const u8 cB  = 0x2; static const u8 cAE = 0x3;
@@ -186,52 +186,52 @@ static const u8 cLE = 0xE; static const u8 cG  = 0xF;
 // MOV4rmo: // O ← *(u32*)(nullptr + I + OFF)
 // MOV4mro: // *(u32*)(nullptr + I + OFF) ← O
 // BZHI: requires __BMI2__
-ASMI(ADD, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x01); nA_REG(o,i); ASME; }
-ASMI(SUB, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x29); nA_REG(o,i); ASME; }
-ASMI( OR, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x09); nA_REG(o,i); ASME; }
-ASMI(AND, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x21); nA_REG(o,i); ASME; }
-ASMI(CMP, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x39); nA_REG(o,i); ASME; }
-ASMI(XOR4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
-ASMI(XOR,  Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x31); nA_REG(o,i); ASME; }
-ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,0); ASM1(imm); } else { ASM1(0x81); nA_REG(o,0); ASM4(imm); } ASME; }
-ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; ASMS; nREX8(o,0); if(imm==(i8)imm) { ASM1(0x83); nA_REG(o,5); ASM1(imm); } else { ASM1(0x81); nA_REG(o,5); ASM4(imm); } ASME; }
-ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; ASMS; nREX8(o,0); ASM1(0xC1); nA_REG(o,4); ASM1(imm); ASME; }
-ASMI(SHRi, Reg o, i8 imm) { if(!imm) return; ASMS; nREX8(o,0); ASM1(0xC1); nA_REG(o,5); ASM1(imm); ASME; }
-ASMI(ADD4mi, Reg o, i32 imm) { ASMS; nREX4(o,0); ASM1(0x83); nA_REG(o,0); ASM1(imm); ASME; }
+ASMI(ADD,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x01); MRMr(o,i); ASME; }
+ASMI(SUB,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x29); MRMr(o,i); ASME; }
+ASMI( OR,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x09); MRMr(o,i); ASME; }
+ASMI(AND,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x21); MRMr(o,i); ASME; }
+ASMI(CMP,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x39); MRMr(o,i); ASME; }
+ASMI(XOR4, Reg o, Reg i) { ASMS; REX4(o,i); ASM1(0x31); MRMr(o,i); ASME; }
+ASMI(XOR,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x31); MRMr(o,i); ASME; }
+ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; ASMS; REX8(o,0); if(imm==(i8)imm) { ASM1(0x83); MRMr(o,0); ASM1(imm); } else { ASM1(0x81); MRMr(o,0); ASM4(imm); } ASME; }
+ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; ASMS; REX8(o,0); if(imm==(i8)imm) { ASM1(0x83); MRMr(o,5); ASM1(imm); } else { ASM1(0x81); MRMr(o,5); ASM4(imm); } ASME; }
+ASMI(SHLi, Reg o, i8 imm) { if(!imm) return; ASMS; REX8(o,0); ASM1(0xC1); MRMr(o,4); ASM1(imm); ASME; }
+ASMI(SHRi, Reg o, i8 imm) { if(!imm) return; ASMS; REX8(o,0); ASM1(0xC1); MRMr(o,5); ASM1(imm); ASME; }
+ASMI(ADD4mi, Reg o, i32 imm) { ASMS; REX4(o,0); ASM1(0x83); MRMr(o,0); ASM1(imm); ASME; }
 
-ASMI(INC4mo, Reg o, i32 off) { ASMS; nREX4(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
-ASMI(INC8mo, Reg o, i32 off) { ASMS; nREX8(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
-ASMI(DEC4mo, Reg o, i32 off) { ASMS; nREX4(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
-ASMI(DEC8mo, Reg o, i32 off) { ASMS; nREX8(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
+ASMI(INC4mo, Reg o, i32 off) { ASMS; REX4(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
+ASMI(INC8mo, Reg o, i32 off) { ASMS; REX8(o,0); ASM1(0xff); MRMo(o,0,off); ASME; }
+ASMI(DEC4mo, Reg o, i32 off) { ASMS; REX4(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
+ASMI(DEC8mo, Reg o, i32 off) { ASMS; REX8(o,0); ASM1(0xff); MRMo(o,1,off); ASME; }
 
 
-ASMI(MOV4, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
-ASMI(MOV , Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); nA_REG(o,i); ASME; }
+ASMI(MOV4, Reg o, Reg i) { ASMS; REX4(o,i); ASM1(0x89); MRMr(o,i); ASME; }
+ASMI(MOV , Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x89); MRMr(o,i); ASME; }
 ASMI(MOVi, Reg o, i64 i) {
   if (i==0) { XOR4(o,o); return; }
   ASMS;
-  if (i==(i32)i) { nREX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
-  else           { nREX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
+  if (i==(i32)i) { REX4(o,0); ASM1(0xB8+(o&7)); ASM4(i); }
+  else           { REX8(o,0); ASM1(0xB8+(o&7)); ASM8(i); }
   ASME;
 }
 ASMI(MOVi1l, Reg o, i8 imm) { ASMS; if (o>=4) ASM1(o>=8?0x41:0x40); ASM1(0xb0+(o&7)); ASM1(imm); ASME; }
-ASMI(MOV4moi, Reg o, i32 off, i32 imm) { ASMS;  nREX4(o,0); ASM1(0xc7); MRMo(o,0,off); ASM4(imm); ASME; }
-ASMI(MOV8mr, Reg o, Reg i) { ASMS; nREX8(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { ASMS; nREX8(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
-ASMI(MOV8rm, Reg i, Reg o) { ASMS; nREX8(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { ASMS; nREX8(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
-ASMI(MOV4mr, Reg o, Reg i) { ASMS; nREX4(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { ASMS; nREX4(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
-ASMI(MOV4rm, Reg i, Reg o) { ASMS; nREX4(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { ASMS; nREX4(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
+ASMI(MOV4moi, Reg o, i32 off, i32 imm) { ASMS; REX4(o,0); ASM1(0xc7); MRMo(o,0,off); ASM4(imm); ASME; }
+ASMI(MOV4mr, Reg o, Reg i) { ASMS; REX4(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV4mro, Reg o, Reg i, i32 off) { ASMS; REX4(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
+ASMI(MOV4rm, Reg i, Reg o) { ASMS; REX4(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV4rmo, Reg i, Reg o, i32 off) { ASMS; REX4(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
+ASMI(MOV8mr, Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x89); MRM(o,i); ASME; }   ASMI(MOV8mro, Reg o, Reg i, i32 off) { ASMS; REX8(o,i); ASM1(0x89); MRMo(o,i, off); ASME; }
+ASMI(MOV8rm, Reg i, Reg o) { ASMS; REX8(o,i); ASM1(0x8B); MRM(o,i); ASME; }   ASMI(MOV8rmo, Reg i, Reg o, i32 off) { ASMS; REX8(o,i); ASM1(0x8B); MRMo(o,i, off); ASME; }
 
-ASMI(MOV8pr_i, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x89); MRMp(pos-4,i); ASME; }
-ASMI(MOV8rp_i, u64 pos, Reg i) { ASMS; nREX8(0,i); ASM1(0x8B); MRMp(pos-4,i); ASME; }
+ASMI(MOV8pr_i, u64 pos, Reg i) { ASMS; REX8(0,i); ASM1(0x89); MRMp(pos-4,i); ASME; }
+ASMI(MOV8rp_i, u64 pos, Reg i) { ASMS; REX8(0,i); ASM1(0x8B); MRMp(pos-4,i); ASME; }
 
-ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) MOV(o,i); else { ASMS; nREX8(i,o); ASM1(0x8D); MRMo(i,o,imm); ASME; } }
-ASMI(BZHI, Reg o, Reg i, Reg n) { ASMS; ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); nA_REG(i, o); ASME; }
+ASMI(LEAi, Reg o, Reg i, i32 imm) { if(imm==0) MOV(o,i); else { ASMS; REX8(i,o); ASM1(0x8D); MRMo(i,o,imm); ASME; } }
+ASMI(BZHI, Reg o, Reg i, Reg n) { ASMS; ASM1(0xC4); ASM1(0x42+(i<8)*0x20 + (o<8)*0x80); ASM1(0xf8-n*8); ASM1(0xF5); MRMr(i, o); ASME; }
 
-ASMI(iPUSH, Reg O) { ASMS; nREX4(O,0); ASM1(0x50+((O)&7)); ASME; }
-ASMI(iPOP , Reg O) { ASMS; nREX4(O,0); ASM1(0x58+((O)&7)); ASME; }
+ASMI(iPUSH, Reg O) { ASMS; REX4(O,0); ASM1(0x50+((O)&7)); ASME; }
+ASMI(iPOP , Reg O) { ASMS; REX4(O,0); ASM1(0x58+((O)&7)); ASME; }
 
 ASMI(CALLi_i, u64 pos) { ASMS; ASM1(0xE8); ASM4(pos-4); ASME; }
-ASMI(CALL, Reg i) { ASMS; nREX4(i,0); ASM1(0xFF); nA_REG(i,2); ASME; }
+ASMI(CALL, Reg i) { ASMS; REX4(i,0); ASM1(0xFF); MRMr(i,2); ASME; }
 ASMI(RET) { ASMS; ASM1(0xC3); ASME; }
 
 #define MOV8pr(POS,I) { MOV8pr_i((u64)(POS),I); asm_addRel(ASM_SIZE-4); }
