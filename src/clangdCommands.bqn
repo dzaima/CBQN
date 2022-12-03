@@ -7,7 +7,7 @@ allFiles ← ⟨⟩
 allFiles {⊑(<¯2↑𝕩)∊".c"‿".h"}¨⊸/↩
 
 initialFlags ← ⟨
-  "/usr/bin/clang","-std=gnu11","-Wall","-DCLANGD","-fms-extensions"
+  "/usr/bin/clang","-std=gnu11","-Wall","-DCLANGD","-DFFI=2","-DCBQN_EXPORT","-fms-extensions"
   "-Wno-microsoft-anon-tag","-Wno-unused-function","-Wno-undefined-internal","-Wno-bitwise-instead-of-logical","-Wno-unknown-warning-option"
 ⟩ ∾ additionalFlags ∾ enableSingeli/⟨"-DSINGELI","-march=native"⟩
 

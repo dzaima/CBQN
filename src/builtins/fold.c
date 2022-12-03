@@ -105,7 +105,7 @@ B sum_c1(B t, B x) {
 // Try to keep to i32 product, go to f64 on overflow or non-i32 initial
 #define DEF_INT_PROD(T) \
   static NOINLINE f64 prod_##T(void* xv, usz i, f64 init) {  \
-    while (i--) init*=((T*)xv)[i]; return init;              \
+    while (i--) { init*=((T*)xv)[i]; }  return init;         \
   }                                                          \
   static f64 prod_int_##T(void* xv, usz ia, i32 init) {      \
     T* xp = xv;                                              \

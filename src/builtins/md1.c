@@ -1,3 +1,6 @@
+#if defined(__GNUC__) && !defined(__clang__) // have to do this at the very top because diagnostic ignoring works based on the callee location, not caller
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include "../core.h"
 #include "../utils/each.h"
 #include "../utils/file.h"
@@ -144,6 +147,10 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   return r;
 }
 
+#pragma GCC diagnostic push
+#ifdef __clang__
+  #pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+#endif
 #define S_SLICES(X)            \
   BSS2A X##_slc = TI(X,slice); \
   usz X##_csz = 1;             \
@@ -152,7 +159,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
   if (X##_cr>1) {              \
     X##_csh = m_shArr(X##_cr); \
     PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
-      usz v = SH(X)[i+1];   \
+      usz v = SH(X)[i+1];      \
       X##_csz*= v;             \
       X##_csh->a[i] = v;       \
     }                          \
@@ -162,11 +169,6 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
 
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-  #pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
-  // no gcc case because gcc is gcc and does gcc things instead of doing what it's asked to do
-#endif
 
 extern B to_fill_cell_k(B x, ur k, char* err); // from md2.c
 static B to_fill_cell_1(B x) { // consumes x
