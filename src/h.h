@@ -41,6 +41,9 @@
 #endif
 #ifndef FFI
   #define FFI 2
+  #ifndef CBQN_EXPORT
+    #define CBQN_EXPORT 1
+  #endif
 #endif
 
 // #define HEAP_VERIFY  // enable usage of heapVerify()
@@ -141,6 +144,7 @@ typedef double   f64;
   #define NOUNROLL _Pragma("clang loop unroll(disable)")
   #define NOVECTORIZE _Pragma("clang loop vectorize(disable)")
 #elif __GNUC__
+  #define EXACTLY_GCC 1
   #define NOUNROLL _Pragma("GCC unroll 1")
   #define NOVECTORIZE
 #else
