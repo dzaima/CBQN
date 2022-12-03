@@ -1466,7 +1466,9 @@ bool profiler_stop() {
 }
 
 
-
+static bool isPathREPL(B path) {
+  return isArr(path) && IA(path)==1 && IGetU(path,0).u==m_c32('.').u;
+}
 usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
   Profiler_ent* c = profiler_buf_s;
   
@@ -1479,7 +1481,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
     usz bcPos = c->bcPos;
     Comp* comp = c->comp;
     B path = comp->path;
-    i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
+    i32 idx = profiler_index(&map, q_N(path) || isPathREPL(path)? tag(comp, OBJ_TAG) : path);
     if (idx == compCount) {
       compList = vec_addN(compList, tag(comp, OBJ_TAG));
       i32* rp;
@@ -1522,13 +1524,12 @@ void profiler_displayResults() {
     usz ia = IA(mapObj);
     for (usz i = 0; i < ia; i++) sum+= m[i];
     
+    if (q_N(c->path)) printf("(anonymous)");
+    else if (isPathREPL(c->path)) printf("(REPL)");
+    else printRaw(c->path);
     if (q_N(c->src)) {
-      if (q_N(c->path)) printf("(anonymous)");
-      else printRaw(c->path);
       printf(": "N64d" samples\n", sum);
     } else {
-      if (q_N(c->path)) printf("(anonymous)");
-      else printRaw(c->path);
       printf(": "N64d" samples:\n", sum);
       B src = c->src;
       SGetU(src)
