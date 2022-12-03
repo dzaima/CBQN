@@ -152,6 +152,11 @@ typedef double   f64;
   #define NOVECTORIZE
 #endif
 #define PLAINLOOP NOUNROLL NOVECTORIZE
+#if EXACTLY_GCC
+  #define ONLY_GCC(X) X
+#else
+  #define ONLY_GCC(X)
+#endif
 
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)

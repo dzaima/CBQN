@@ -139,7 +139,7 @@ B shape_c2(B t, B w, B x) {
     } else {
       SGetU(w)
       i32 unkPos = -1;
-      i32 unkInd;
+      i32 unkInd ONLY_GCC(= 0);
       bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
         B c = GetU(w, i);

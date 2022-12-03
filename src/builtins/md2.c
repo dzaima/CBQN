@@ -316,7 +316,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     return r;
   }
   usz csz = shProd(xsh, k, xr);
-  ShArr* csh;
+  ShArr* csh ONLY_GCC(= NULL);
   if (cr>1) {
     csh = m_shArr(cr);
     shcpy(csh->a, xsh+k, cr);

@@ -268,6 +268,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
       xp = tyany_ptr(x);
       rp = m_tyarrv(&r,width,wsum,xt);
     } else {
+      ONLY_GCC(r = m_f64(0);)
       xp = (u8*)arr_bptr(x);
       usz ria = wsum*csz;
       if (xp != NULL) {
@@ -709,7 +710,7 @@ B slash_c1(B t, B x) {
 
 B slash_c2(B t, B w, B x) {
   i32 wv = -1;
-  usz wia;
+  usz wia ONLY_GCC(= 0);
   if (isArr(w)) {
     if (depth(w)>1) goto base;
     ur wr = RNK(w);

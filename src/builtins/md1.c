@@ -1,6 +1,3 @@
-#if defined(__GNUC__) && !defined(__clang__) // have to do this at the very top because diagnostic ignoring works based on the callee location, not caller
-  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
 #include "../core.h"
 #include "../utils/each.h"
 #include "../utils/file.h"
@@ -150,12 +147,13 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
 #pragma GCC diagnostic push
 #ifdef __clang__
   #pragma GCC diagnostic ignored "-Wsometimes-uninitialized"
+  // no gcc case because there's no way to do it specifically for this segment of code; X##_csh is just initialized with an unused null pointer
 #endif
 #define S_SLICES(X)            \
   BSS2A X##_slc = TI(X,slice); \
   usz X##_csz = 1;             \
   usz X##_cr = RNK(X)-1;       \
-  ShArr* X##_csh;              \
+  ShArr* X##_csh ONLY_GCC(=0); \
   if (X##_cr>1) {              \
     X##_csh = m_shArr(X##_cr); \
     PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
