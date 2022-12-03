@@ -733,10 +733,14 @@ B slash_c2(B t, B w, B x) {
   if (wv < 0) { // Array w
     if (RARE(wia!=xlen)) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
     
+    u64 s;
     u8 we = TI(w,elType);
     if (!elInt(we)) {
       w=any_squeeze(w); we=TI(w,elType);
-      if (!elInt(we)) goto slow;
+      if (!elInt(we)) {
+        s = usum(w);
+        goto slow;
+      }
     }
     if (we==el_bit) {
       wbool:
@@ -744,7 +748,7 @@ B slash_c2(B t, B w, B x) {
       goto decWX_ret;
     }
     if (xl>6 || (xl<3 && xl!=0)) goto base;
-    u64 s = usum(w);
+    s = usum(w);
     if (s<=wia) {
       w=num_squeezeChk(w); we=TI(w,elType);
       if (we==el_bit) goto wbool;
