@@ -93,7 +93,7 @@ def maskedLoopPositive{bulk, l:L, step} = {
   i:L = 0
   while(i < (l-1)/bulk) {
     step{i, maskNone}
-    i = i + 1
+    ++i
   }
   step{i, maskAfter{l - i*bulk}}
 }

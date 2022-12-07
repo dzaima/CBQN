@@ -81,7 +81,7 @@ def for{vars,begin,end,block} = {
   i:u64 = begin
   while (i < end) {
     exec{i, vars, block}
-    i = i+1
+    ++i
   }
 }
 def forNZ{vars,begin,end,block} = {
@@ -89,7 +89,7 @@ def forNZ{vars,begin,end,block} = {
   assert{i!=end}
   while (i < end) {
     exec{i, vars, block}
-    i = i+1
+    ++i
   }
 }
 

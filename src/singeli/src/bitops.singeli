@@ -19,8 +19,8 @@ def b_setBatch{sz, x:*u64, n:(Size), v} = {
   am:u64 = 64/sz;
   w:u64 = load{x,n/am}
   sh:u64 = (n&(am-1)) * sz
-  w = w & ~(ones{u64,sz}<<sh)
-  w = w | (vc<<sh)
+  w&= ~(ones{u64,sz}<<sh)
+  w|= (vc<<sh)
   store{x, n/am, w}
 }
 
@@ -29,16 +29,16 @@ def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
   
   #w:u64 = cast_i{u64, load{x8,n/2}}
   #sh:u64 = (n&1) * 4
-  #w = w & ~(15<<sh)
-  #w = w |  (cast_i{u64,v}<<sh)
+  #w&= ~(15<<sh)
+  #w|=  (cast_i{u64,v}<<sh)
   
   w:u8 = load{x8,n/2}
   if ((n&1)==1) {
-    w = w & ~(cast{u8,15}<<4)
-    w = w |  (cast_i{u8,v}<<4)
+    w&= ~(cast{u8,15}<<4)
+    w|=  (cast_i{u8,v}<<4)
   } else {
-    w = w & ~(cast{u8,15})
-    w = w |  (cast_i{u8,v}<<0)
+    w&= ~(cast{u8,15})
+    w|=  (cast_i{u8,v}<<0)
   }
   
   store{x8, n/2, cast_i{u8,w}}
