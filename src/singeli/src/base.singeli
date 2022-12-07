@@ -3,6 +3,7 @@ include 'arch/c'
 include 'util/kind'
 
 oper ~~ reinterpret infix right 55
+oper ** broadcast infix right 55
 def Size = u64
 def load{x} = *x
 

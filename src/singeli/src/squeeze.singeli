@@ -10,12 +10,12 @@ def preserve_negative_zero = 0
 
 def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = {
   def TU = ty_u{TS}
-  TU~~(x-broadcast{TS,start}) < broadcast{TU,count}
+  (TU~~(x-TS**start))  <  TU**count
 }
 def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
   def TS = ty_s{TU}
   def h = 1 << (width{eltype{TU}}-1)
-  TS~~(x-broadcast{TU,start-h})  <  broadcast{TS,count-h}
+  (TS~~(x-TU**(start-h)))  <  TS**(count-h)
 }
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
 def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start}
@@ -60,7 +60,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def EV = [bulk]E
   # show{XV, EV, CHR, B}
   xp:= *X~~x0
-  r1:= broadcast{EV, 0}
+  r1:= EV**0
   if (CHR) { # c8, c16, c32
     def hw = width{E}/2
     maskedLoop{bulk, len, {i, M} => {
@@ -69,7 +69,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       if (B) {
         if (any{M{~q_chr{c}}}) return{3}
       } else {
-        if (anynePositive{broadcast{EV, (1<<hw-1)<<hw} & c, broadcast{EV,0}, M}) return{lb{hw}-2}
+        if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
     }}
     r2:= cast_i{u32, fold{|, r1}}
@@ -80,7 +80,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
     if (X==i8) { # i8
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
-        if (anynePositive{broadcast{EV, 0xfe} & EV~~v0, broadcast{EV, 0}, M}) return{2}
+        if (anynePositive{EV**0xfe & EV~~v0, EV**0, M}) return{2}
       }}
       0
     } else { # i16, i32, f64
@@ -109,7 +109,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           int
         }
         v1:= toint{v0}
-        r1|= M{(broadcast{EV, ~E~~1} & EV~~v1) ^ EV~~(v1 >> (width{X}-1))}
+        r1|= M{((EV ** ~E~~1) & EV~~v1)  ^  EV~~(v1 >> (width{X}-1))}
       }}
       
       promote{u32, fold{|, r1}}

@@ -19,7 +19,7 @@ def spread{a:VT} = {
 def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
   def step = 256/width{T}
   def V = [step]T
-  p:= broadcast{V, init}
+  p:= V**init
   xv:= *V ~~ x
   rv:= *V ~~ r
   e:= len/step
@@ -31,7 +31,7 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = (if (width{T}<=32) sel{[8]i32, spread{n}, broadcast{[8]i32, 7}};
+    p = (if (width{T}<=32) sel{[8]i32, spread{n}, [8]i32**7};
          else shuf{[4]u64, n, 4b3333})
     n
   }
@@ -100,14 +100,14 @@ avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
   def V = [vl]U
   rv:= *V~~r
   xv:= *u32~~x
-  c:= broadcast{V, 0}
+  c:= V**0
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
-  def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, broadcast{T, 0}}
+  def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, T**0}
   
   def sumlanes{x:u32} = {
-    b:= broadcast{[8]u32, x} >> make{[8]u32, 4*tail{1, iota{8}}}
+    b:= [8]u32**x >> make{[8]u32, 4*tail{1, iota{8}}}
     s:= sel8{[32]u8~~b, ii32>>3 + bit{2}}
     p:= s & make{[32]u8, (1<<(1+tail{2})) - 1}  # Prefixes
     d:= sel{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
@@ -123,7 +123,7 @@ avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
       v := V~~v0 + c
       # Update carry at the lane boundary
       if (w!=32 or tail{1,k}) {
-        c = sel{[8]u32, spread{v}, make{[8]i32, broadcast{8, 7}}}
+        c = sel{[8]u32, spread{v}, make{[8]i32, 8**7}}
       }
       store1{rv, j+k, v}
     }

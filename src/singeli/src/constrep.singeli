@@ -45,10 +45,10 @@ def get_rep_iter{V==[4]u64, wv} = {
 def read_shuf_vecs{l, elbytes:u64, shp:*[32]i8} = {
   def double{x} = {
     s:=shuf{[4]u64, x, 4b3120}; s+=s
-    each{bind{~~,[32]i8},unpackQ{s, s+broadcast{type{s},1}}}
+    each{bind{~~,[32]i8},unpackQ{s, s + type{s}**1}}
   }
   def doubles{n,tup} = slice{join{each{double,tup}}, 0, n}
-  def sh = each{{v}=>{r:=v}, copy{l, broadcast{[32]i8, 0}}}
+  def sh = each{{v}=>{r:=v}, copy{l, [32]i8**0}}
   def tlen{e} = (l+(-l)%e)/e  # Length for e bytes, rounded up
   def set{i} = { tupsel{i,sh} = each{bind{load,shp},i} }
   def ext{e} = {
@@ -69,7 +69,7 @@ def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = {
   if (nv*step < n) {
     nr := n * wv
     e := nr / step
-    s := broadcast{V, 0}
+    s := V**0
     def end = makelabel{}
     onreps{load{xv,nv}, {v} => {
       s = v
@@ -112,7 +112,7 @@ rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   }
   re += (h-1)*step
   a := shuf{[4]u64, load{*V~~(x+i),0}, 4b1010}
-  s := broadcast{V, 0}
+  s := V**0
   def end = makelabel{}
   @unroll (j to h) {
     s = sel{[16]i8, a, tupsel{j,sh}}
@@ -140,7 +140,7 @@ def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
   assert{kv > 0}
   def V = [256/width{T}]T
   @for (x over n) {
-    v := broadcast{V, x}
+    v := V**x
     @loop (j to kv) store{*V~~r, j, v}
     r += wv
     store{*V~~r, -1, v}

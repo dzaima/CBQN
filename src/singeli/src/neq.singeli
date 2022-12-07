@@ -9,7 +9,7 @@ def storel{a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_storeu_si64',     
 
 clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
-  m := broadcast{V, mark}
+  m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
     p := clmul{a, m, i}
     t := shr{[16]u8, p, 8}
@@ -20,7 +20,7 @@ clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   xv := *V ~~ x
   rv := *V ~~ r
   e := words/2;
-  c := broadcast{V, init}
+  c := V**init
   @for (rv, xv over e) {
     rv = apply{unpacklo, (@collect (j to 2) xor64{xv, j, c})}
   }

@@ -25,7 +25,7 @@ fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   def step = 256/width{T}
   def V = [step]T
   xv:= *V ~~ x
-  r:V = broadcast{[4]f64, 0}
+  r:V = [4]f64**0
   if (len < step) {
     # Can't overlap like the long case
     assert{len > 0}

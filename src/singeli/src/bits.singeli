@@ -11,8 +11,8 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   def bulk = VL/width{T}
   def VT = [bulk]T
   
-  e0v:= broadcast{VT, e0}
-  e1v:= broadcast{VT, e1}
+  e0v:= VT**e0
+  e1v:= VT**e1
   
   maskedLoop{bulk, len, {i, M} => {
     cb:= loadBatchBit{VT, bits, i}

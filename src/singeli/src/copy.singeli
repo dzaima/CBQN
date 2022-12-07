@@ -12,7 +12,7 @@ def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
   
   maskedLoop{bulk, l, {i, M} => {
     x:= loadBatchBit{TU, xp, i}
-    r:= x & TU~~broadcast{T, 1}
+    r:= x & TU ~~ T**1
     storeBatch{rp, i, T~~r, M}
   }}
 }
@@ -32,7 +32,7 @@ copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     assert{((X==u8) | (X==u16)) | (X==u32)}
     maskedLoop{bulk, l, {i, M} => { # TODO could maybe read 256 bits and use unpack to write >256
       v:= loadBatch{xp, i, RV}
-      v|= broadcast{RV, cbqn_c32Tag{} << 48}
+      v|= RV ** (cbqn_c32Tag{} << 48)
       storeBatch{rp, i, v, M}
     }}
   } else if (X==u1 and R==u1) {
@@ -50,7 +50,7 @@ copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     def XU = ty_u{XV}
     @forNZ (i to cdiv{l,vcount{XV}}) {
       v:= loadBatch{xp, i, XV}
-      r:= getmask{(XU~~v) == XU~~broadcast{XV,1}}
+      r:= getmask{(XU~~v) == XU~~XV**1}
       b_setBatch{vcount{XV}, rp, i, r} # TODO something more special for f64
     }
   } else if (width{X}<=width{R}) {

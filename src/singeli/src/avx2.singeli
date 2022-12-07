@@ -135,12 +135,12 @@ def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_ep
 # mask stuff
 def getmask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
 def getmask{x:T & w256{T, 16}} = {
-  msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, broadcast{[16]u16, 0}}}
+  msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, [16]u16**0}}
   (msk&255) | (msk>>8)
 }
 def any{x:T & w256i{T, 16}} = getmask{[32]u8~~x}!=0
 def all{x:T & w256i{T, 16}} = getmask{[32]u8~~x} == (1<<32)-1
-def anyneg{x:T & w256s{T, 16}} = getmask{[32]u8 ~~ ([16]i16~~x < broadcast{[16]i16, 0})}!=0
+def anyneg{x:T & w256s{T, 16}} = getmask{[32]u8 ~~ ([16]i16~~x < [16]i16**0)}!=0
 
 
 # conversion

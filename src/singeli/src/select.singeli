@@ -22,7 +22,7 @@ def gather{def:T, b:B, idx:[4]i32, M & w256{T,64}} = {
 }
 
 def wrapChk{cw0, VI,xlf, M} = {
-  cw:= cw0 + (xlf & VI~~(cw0<broadcast{VI, 0}))
+  cw:= cw0 + (xlf & VI~~(cw0<VI**0))
   if (any{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
   cw
 }
@@ -37,7 +37,7 @@ def storeExp{dst, ind, val, M, ext, rd, wl} = {
 def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
   def VI = [ri]TI
   def ext = ri/rd
-  xlf:= broadcast{VI, cast_i{TI, xl}}
+  xlf:= VI**cast_i{TI, xl}
   maskedLoop{ri, wl, {i, M} => {
     cw:= wrapChk{loadBatch{w, i, VI}, VI,xlf, M}
     is:= (if (ext>1) i<<lb{ext}; else i)
@@ -45,7 +45,7 @@ def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
       c2:= shuf{[4]u64, c+c, 4b3120}
       each{
         {c,o} => se{e*2, VI~~c, o},
-        unpackQ{c2, c2+broadcast{VI,1}},
+        unpackQ{c2, c2 + VI**1},
         2*o + iota{2}
       }
     }
@@ -57,7 +57,7 @@ def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
 def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
   def VI = [ri]TI
   def ext = ri/rd
-  xlf:= broadcast{VI, cast_i{TI, xl}}
+  xlf:= VI**cast_i{TI, xl}
   maskedLoop{ri, wl, {i, M} => {
     cw:= wrapChk{loadBatch{w, i, VI}, VI,xlf, M}
     is:= (if (ext>1) i<<lb{ext}; else i)
@@ -121,12 +121,12 @@ select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     def bulk = rw / width{TDE}
     def VI = [bulk]TIE
     def VD = [bulk]TDE
-    def xlf = broadcast{VI, cast_i{TIE, xl}}
+    def xlf = VI**cast_i{TIE, xl}
     
     maskedLoop{bulk, wl, {i, M} => {
       cw:= wrapChk{loadBatch{w, i, VI}, VI,xlf, M}
-      got:= gather{broadcast{VD,0}, x, cw, M}
-      if (TDE!=TD) got&= broadcast{VD, (1<<wd)-1}
+      got:= gather{VD**0, x, cw, M}
+      if (TDE!=TD) got&= VD**((1<<wd)-1)
       storeBatch{r, i, got, M}
     }}
   }
@@ -145,7 +145,7 @@ avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   def VI = [32]TI
   w:= *VI  ~~ w0
   r:= *u32 ~~ r0
-  xlf:= broadcast{VI, cast_i{TI, xl}}
+  xlf:= VI**cast_i{TI, xl}
   
   if (wl>32 and xl<=16) {
     xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 4b1010}
@@ -155,7 +155,7 @@ avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     }}
   } else {
     x:= shuf{[4]u64, load{*VI ~~ x0}, 4b1010}
-    low:= broadcast{VI, 7}
+    low:= VI**7
     b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
     maskedLoop{32, wl, {i, M} => {
       cw:= wrapChk{load{w, i}, VI,xlf, M}

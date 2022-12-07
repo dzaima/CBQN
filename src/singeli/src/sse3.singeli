@@ -58,7 +58,7 @@ def iota{T & w128{T}} = make{T, ...iota{vcount{T}}}
 def __xor{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_xor_ps', v2f{a}, v2f{b}}
 def __and{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_and_ps', v2f{a}, v2f{b}}
 def __or {a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_or_ps',  v2f{a}, v2f{b}}
-def __not{a:T & w128u{T}} = a ^ broadcast{T, ~cast{eltype{T},0}}
+def __not{a:T & w128u{T}} = a ^ (T ** ~cast{eltype{T},0})
 
 # signed comparison
 def __eq{a:T,b:T & T==[16]i8 } = emit{[16]u8,  '_mm_cmpeq_epi8',  a, b}
@@ -118,7 +118,7 @@ def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
 
 # mask stuff
 def getmask{x:T & w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
-def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, broadcast{[8]u16, 0}}}
+def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, [8]u16**0}}
 def getmask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def getmask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
 def any{x:T & w128i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
@@ -126,7 +126,7 @@ def all{x:T & w128i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
 def anyneg{x:T & w128s{T}} = getmask{x}!=0
 def any{x:T & w128i{T, 16}} = getmask{[32]u8 ~~ x}!=0
 def all{x:T & w128i{T, 16}} = getmask{[32]u8 ~~ x} == (1<<32)-1
-def anyneg{x:T & w128s{T, 16}} = getmask{[32]u8 ~~ (([16]i16~~x) < broadcast{[16]i16, 0})}!=0
+def anyneg{x:T & w128s{T, 16}} = getmask{[32]u8 ~~ (([16]i16~~x) < [16]i16**0)}!=0
 
 # the lone SSE2 extract
 def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}

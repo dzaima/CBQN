@@ -81,7 +81,7 @@ aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {
 
 as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:Size) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
-  xv:= broadcast{VT, pathAS{dst, len, eltype{VT}, op, x}}
+  xv:= VT**pathAS{dst, len, eltype{VT}, op, x}
   any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>x, {i}=>xv, dst, len}
 }
 

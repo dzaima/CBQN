@@ -1,12 +1,12 @@
 local def maskInit1{w} = {
   apply{merge, each{{x} => {
-    merge{broadcast{w/8-1, 255}, (1<<x)-1, broadcast{w/8, 0}}
+    merge{(w/8-1)**255, (1<<x)-1, (w/8)**0}
   }, iota{8}}}
 }
 mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n & w256{T}} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
 mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n & w128{T}} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
-mask256:*i64 = merge{broadcast{4, -1}, broadcast{4, 0}}
+mask256:*i64 = merge{4 ** -1,  4 ** 0}
 local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(width{eltype{T}}/8))}
 
 # get mask of first n items; 0 ≤ n ≤ vcount{T}

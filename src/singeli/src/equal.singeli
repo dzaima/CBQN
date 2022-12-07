@@ -26,12 +26,12 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     } else if (X==f64) { # bitarr ≡ f64arr
       def T = [4]f64
       def bulk = 4
-      f0:= broadcast{T, 0.0}
-      f1:= broadcast{T, 1.0}
+      f0:= T**0.0
+      f1:= T**1.0
       maskedLoopPositive{bulk, l, {i, M} => {
         cw:= load{*u8 ~~ w, i>>1} >> cast_i{u8, 4*(i&1)}
         cx:= load{*T  ~~ x, i}
-        wu:= blend{f0, f1, broadcast{[4]u64, cw} << make{[4]u64,63,62,61,60}}
+        wu:= blend{f0, f1, [4]u64**cw << make{[4]u64,63,62,61,60}}
         if (anynePositive{wu, cx, M}) return{0}
       }}
     } else { # bitarr ≡ i8/i16/i32arr
@@ -40,7 +40,7 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       def sh{c & X==u8} = T ~~ (to_el{u16,c}<<7)
       
       # TODO compare with doing the comparison in vector registers
-      badBits:= broadcast{T, ~cast{X,1}}
+      badBits:= T ** ~cast{X,1}
       maskedLoop{bulk, l, {i, M} => {
         cw:= load{*ty_u{bulk} ~~ w, i}
         cx:= load{*T ~~ x, i}
