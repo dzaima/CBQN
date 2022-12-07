@@ -65,6 +65,7 @@ NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
   i64 from = to;
   EmptyValue* c;
   while (true) {
+    if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
     from++;
     if (buckets[from]) {
       c = buckets[from];
@@ -72,7 +73,6 @@ NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
       buckets[from] = vg_def_v(c->next);
       break;
     }
-    if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
   }
   BN(splitTo)(c, from, to, true);
   assert(buckets[bucket]!=NULL);
