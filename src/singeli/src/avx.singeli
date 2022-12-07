@@ -45,20 +45,16 @@ def broadcast{T, v & w256i{T, 64}} = emit{T, '_mm256_set1_epi64x',promote{eltype
 def broadcast{T, v & w256f{T, 64}} = emit{T, '_mm256_set1_pd', v}
 def broadcast{T, v & w256f{T, 32}} = emit{T, '_mm256_set1_ps', v}
 
-def make{T==[4]f64,a,b,c,d} = emit{T,'_mm256_setr_pd',a,b,c,d}
-def make{T==[8]f32,a,b,c,d,e,f,g,h} = emit{T,'_mm256_setr_ps',a,b,c,d,e,f,g,h}
+local def makeGen{T,s,x} = emit{T, s, ...each{{c}=>promote{eltype{T},c}, x}}
+def make{T, ...xs & w256f{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_pd', xs}
+def make{T, ...xs & w256f{T,32} & tuplen{xs}== 8} = makeGen{T, '_mm256_setr_ps', xs}
+def make{T, ...xs & w256i{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_epi64x', xs}
+def make{T, ...xs & w256i{T,32} & tuplen{xs}== 8} = makeGen{T, '_mm256_setr_epi32', xs}
+def make{T, ...xs & w256i{T,16} & tuplen{xs}==16} = makeGen{T, '_mm256_setr_epi16', xs}
+def make{T, ...xs & w256i{T, 8} & tuplen{xs}==32} = makeGen{T, '_mm256_setr_epi8', xs}
+def make{T, x & w256{T} & istup{x}} = make{T, ...x}
 
-local def makeGen{T,s,x} = apply{emit, merge{tup{T,s}, each{{c}=>promote{eltype{T},c}, x}}}
-def make{T,a,b,c,d & w256i{T,64}} = makeGen{T, '_mm256_setr_epi64x', tup{a,b,c,d}}
-def make{T,a,b,c,d,e,f,g,h & w256i{T,32}} = makeGen{T, '_mm256_setr_epi32', tup{a,b,c,d,e,f,g,h}}
-def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p & w256i{T,16}} = makeGen{T, '_mm256_setr_epi16', tup{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p}}
-def make{T,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P & w256i{T,8}} = makeGen{T, '_mm256_setr_epi8', tup{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P}}
-def make{T,x & w256{T} & istup{x}} = apply{make, merge{tup{T}, x}}
-
-def iota{T & w256{T,64}} = make{T,0,1,2,3}
-def iota{T & w256{T,32}} = make{T,0,1,2,3,4,5,6,7}
-def iota{T & w256{T,16}} = make{T,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
-def iota{T & w256{T,8}} = make{T,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
+def iota{T & w256{T}} = make{T, ...iota{vcount{T}}}
 
 # bit arith
 def __xor{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b}}
