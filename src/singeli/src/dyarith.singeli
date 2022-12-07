@@ -8,17 +8,6 @@ include './bitops'
 include './mask'
 
 
-
-def fmt_op{X== __add}= '__add'
-def fmt_op{X== __sub}= '__sub'
-def fmt_op{X== __mul}= '__mul'
-def fmt_op{X== __div}= '__div'
-def fmt_op{X==  __or}= '__or'
-def fmt_op{X== __and}= '__and'
-def fmt_op{X==bqn_or}= 'bqn_or'
-def fmt_op{X==   min}= 'min'
-def fmt_op{X==   max}= 'max'
-
 def rootty{T & isprim{T}} = T
 def rootty{T & isvec{T}} = eltype{T}
 
@@ -84,7 +73,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
 def runner{u, R, F} = {
   def c = ~u
   
-  def run{F, OO, M, w, x} = { show{'todo', c, R, fmt_op{F}, w, x}; emit{void,'__builtin_abort'}; w }
+  def run{F, OO, M, w, x} = { show{'todo', c, R, F, w, x}; emit{void,'__builtin_abort'}; w }
   
   def run{F, OO, M, w:T, x:T & c & R!=u32} = {
     def r2 = arithChk2{F, M, w, x}
@@ -114,7 +103,7 @@ def runner{u, R, F} = {
 
 
 def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
-  # show{fmt_op{F}, mode, W, X, R}
+  # show{F, mode, W, X, R}
   if (R==u1) {
     def bulk = vw/64;
     def TY = [bulk]u64
@@ -165,7 +154,7 @@ def arithAA{mode, F, W, X, R} = {
 
 # mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed
 arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
-  # show{fmt_op{F}, swap, mode, W, X, R}
+  # show{F, swap, mode, W, X, R}
   assert{len>0}
   def bulk = vw / max{width{W}, width{R}}
   def TY = [bulk]R
