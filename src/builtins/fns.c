@@ -2,6 +2,7 @@
 #include "../utils/hash.h"
 #include "../utils/mut.h"
 #include "../utils/talloc.h"
+#include "../builtins.h"
 #include "../nfns.h"
 
 
@@ -270,6 +271,9 @@ void profiler_freeMap(void* mapRaw) {
   free_b2i((H_b2i*)mapRaw);
 }
 
+B tack_uc1(B t, B o, B x) {
+  return c1(o, x);
+}
 
 
 void fun_gcFn() {
@@ -294,4 +298,6 @@ void fns_init() {
   { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a);               gc_add(a); }
   { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; gc_add(a); }
   { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,0,1);                  bit2x[1] = a; gc_add(a); }
+  c(BFn,bi_ltack)->uc1 = tack_uc1;
+  c(BFn,bi_rtack)->uc1 = tack_uc1;
 }
