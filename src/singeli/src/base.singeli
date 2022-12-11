@@ -36,6 +36,7 @@ def isunsigned{T} = isint{T} & ~issigned{T}
 
 def isvec {T} = 0; def isvec {T & istype{T}} = match{typekind{T},'vector'}
 def isprim{T} = 0; def isprim{T & istype{T}} = match{typekind{T},'primitive'}
+def isptr {T} = 0; def isptr {T & istype{T}} = match{typekind{T},'pointer'}
 
 
 def anyNum{x} = isconst{x} | knum{x}

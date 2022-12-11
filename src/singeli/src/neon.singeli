@@ -1,0 +1,73 @@
+def n128{T} = 0
+def n128{T & isvec{T}} = width{T}==128
+
+local def ngen128{F} = {
+  def r{T} = 0
+  def r{T & n128{T}} = F{eltype{T}}
+  def r{T,w} = 0
+  def r{T,w & n128{T}} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T & ~isvec{T}} = 0
+  r
+}
+def n128{T,w} = 0
+def n128{T,w & n128{T}} = width{eltype{T}}==w
+def n128i = ngen128{{T} => isint{T}}
+def n128s = ngen128{{T} => isint{T} &   issigned{T}}
+def n128u = ngen128{{T} => isint{T} & isunsigned{T}}
+def n128f = ngen128{{T} => isfloat{T}}
+
+def reinterpret{T, v & match{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }
+
+def nty{T== u8} =  'u8'; def nty{T== i8} =  's8'
+def nty{T==u16} = 'u16'; def nty{T==i16} = 's16'
+def nty{T==u32} = 'u32'; def nty{T==i32} = 's32'
+def nty{T==u64} = 'u64'; def nty{T==i64} = 's64'
+def nty{T==f32} = 'f32'; def nty{T==f64} = 'f64'
+def nty{T & isvec{T}} = nty{eltype{T}}
+def nty{T & isptr{T}} = nty{eltype{T}}
+def ntyp{S, T} = merge{S, '_', nty{T}}
+
+def load{a:T, n & n128{eltype{T}}} = emit{eltype{T}, ntyp{'vld1q', T}, *eltype{eltype{T}} ~~ (a+n)}
+def store{a:*V, n, v:V & n128{V}} = emit{void, ntyp{'vst1q', V}, *eltype{V} ~~ (a+n), v}
+
+def __adds{a:T,b:T & n128i{T}} = emit{T, ntyp{'vqaddq', T}, a, b}
+def __subs{a:T,b:T & n128i{T}} = emit{T, ntyp{'vqsubq', T}, a, b}
+
+def  __add{a:T,b:T & n128 {T}} = emit{T, ntyp{'vaddq', T}, a, b}
+def  __sub{a:T,b:T & n128 {T}} = emit{T, ntyp{'vsubq', T}, a, b}
+def  __mul{a:T,b:T & n128 {T}} = emit{T, ntyp{'vmulq', T}, a, b}
+def  __div{a:T,b:T & n128f{T}} = emit{T, ntyp{'vdivq', T}, a, b}
+def  __and{a:T,b:T & n128i{T}} = emit{T, ntyp{'vandq', T}, a, b}
+def   __or{a:T,b:T & n128i{T}} = emit{T, ntyp{'vorrq', T}, a, b}
+def  __xor{a:T,b:T & n128i{T}} = emit{T, ntyp{'veorq', T}, a, b}
+def andnot{a:T,b:T & n128i{T}} = emit{T, ntyp{'vbicq', T}, a, b}
+def  ornot{a:T,b:T & n128i{T}} = emit{T, ntyp{'vornq', T}, a, b}
+def    min{a:T,b:T & n128i{T}} = emit{T, ntyp{'vminq', T}, a, b} # TODO float - there are multiple options
+def    max{a:T,b:T & n128i{T}} = emit{T, ntyp{'vmaxq', T}, a, b}
+def  __shl{a:T,b:S & n128i{T} & n128i{S} & width{eltype{T}}==width{eltype{S}}} = emit{T, ntyp{'vshlq', T}, a, ty_s{b}}
+
+def __shl{a:T,b & n128i{T} & knum{b}} = emit{T, ntyp{'vshlq_n', T}, a, b};  def __shl{a:T,b==0 & n128i{T}} = a
+def __shr{a:T,b & n128i{T} & knum{b}} = emit{T, ntyp{'vshrq_n', T}, a, b};  def __shr{a:T,b==0 & n128i{T}} = a
+def bblend{f:T, t:T, m:M & n128{T} & n128u{M} & width{eltype{T}}==width{eltype{M}}} = emit{T, ntyp{'vbslq', T}, m, t, f}
+
+def __neg{a:T & (n128s{T}|n128f{T})} = emit{T, ntyp{'vnegq', T}, a}
+def __not{a:T & n128u{T}} = emit{T, ntyp{'vmvnq',  T}, a}
+def  sqrt{a:T & n128f{T}} = emit{T, ntyp{'vsqrtq', T}, a}
+def floor{a:T & n128f{T}} = emit{T, ntyp{'vrndmq', T}, a}
+def  ceil{a:T & n128f{T}} = emit{T, ntyp{'vrndpq', T}, a}
+def   abs{a:T & (n128s{T}|n128f{T})} = emit{T, ntyp{'vabsq', T}, a}
+def  absu{a:T & n128i{T}} = ty_u{abs{a}}
+
+def __eq{a:T,b:T & n128{T}} = emit{ty_u{T}, ntyp{'vceqq', T}, a, b}
+def __ge{a:T,b:T & n128{T}} = emit{ty_u{T}, ntyp{'vcgeq', T}, a, b}
+def __gt{a:T,b:T & n128{T}} = emit{ty_u{T}, ntyp{'vcgtq', T}, a, b}
+def __lt{a:T,b:T & n128{T}} = emit{ty_u{T}, ntyp{'vcltq', T}, a, b}
+def __le{a:T,b:T & n128{T}} = emit{ty_u{T}, ntyp{'vcleq', T}, a, b}
+def __ne{a:T,b:T & n128{T}} = ~(a==b)
+
+def broadcast{T, x & n128{T}} = emit{T, ntyp{'vdupq_n', T}, x}
+def make{T, ...xs & tuplen{xs}==vcount{T}} = {
+  def TE = eltype{T}
+  load{*T ~~ *TE ~~ each{{c}=>promote{eltype{T},c}, xs}, 0}
+}
+def make{T, x & n128{T} & istup{x}} = make{T, ...x}
