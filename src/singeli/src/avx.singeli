@@ -5,12 +5,12 @@ local def wgen256{F} = {
   def r{T} = 0
   def r{T & w256{T}} = F{eltype{T}}
   def r{T,w} = 0
-  def r{T,w & w256{T}} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T,w & w256{T}} = F{eltype{T}} & (elwidth{T}==w)
   def r{T & ~isvec{T}} = 0
   r
 }
 def w256{T,w} = 0
-def w256{T,w & w256{T}} = width{eltype{T}}==w
+def w256{T,w & w256{T}} = elwidth{T}==w
 def w256i = wgen256{{T} => isint{T}}
 def w256s = wgen256{{T} => isint{T} &   issigned{T}}
 def w256u = wgen256{{T} => isint{T} & isunsigned{T}}
@@ -104,7 +104,7 @@ def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_m
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
 def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
-def cvt{F, T, a:A & w256{A} & width{F}<width{eltype{T}}} = cvt{F, T, half{a, 0}}
+def cvt{F, T, a:A & w256{A} & width{F}<elwidth{T}} = cvt{F, T, half{a, 0}}
 
 # structural operations
 def extract{x:T, i & w256i{T,32} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi32', x, i}

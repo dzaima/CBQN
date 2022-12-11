@@ -14,7 +14,7 @@ def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = {
 }
 def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
   def TS = ty_s{TU}
-  def h = 1 << (width{eltype{TU}}-1)
+  def h = 1 << (elwidth{TU}-1)
   (TS~~(x-TU**(start-h)))  <  TS**(count-h)
 }
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
@@ -32,7 +32,7 @@ def fold{F, x:T} = {
 }
 def fold{F, x:T & w128{T}} = {
   c:= x
-  def EW = width{eltype{T}}
+  def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
   if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
   if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}

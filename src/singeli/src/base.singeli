@@ -7,6 +7,8 @@ oper ** broadcast infix right 55
 def Size = u64
 def load{x} = *x
 
+def elwidth{T} = width{eltype{T}}
+
 # ceiling divide
 def cdiv{a,b} = (a+b-1)/b
 
@@ -20,11 +22,11 @@ def bit {k,x} = x &  (1<<k)      # get the k-th bit
 # Convert tuple to number in little-endian base b
 def base{b,l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+b*base{b,slice{l,1}} }
 
+# hints
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
 def assert{x:u1} = { if (not x) emit{void, '__builtin_unreachable'} }
-
 
 # various checks
 def isreg   = kreg
@@ -49,6 +51,7 @@ def anyInt{x & isreg{x}|isconst{x}} = isint{x}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 
+# reinterpret vector element type to signed/unsigned
 def ty_s{w} = primtype{'i', w}
 def ty_u{w} = primtype{'u', w}
 
@@ -60,6 +63,7 @@ def ty_s{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
 def ty_u{x:T & isvec{T}} = ty_u{T}~~x
 def ty_s{x:T & isvec{T}} = ty_s{T}~~x
 
+# reinterpret vector as one with element type E
 def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
 def to_el{E, x:T} = to_el{E,T} ~~ x
 

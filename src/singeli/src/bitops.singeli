@@ -56,7 +56,7 @@ def spreadBits{T==[32]u8, a:u32} = {
   e:= make{[32]u8, 1<<tail{3, idxs}}
   e == (d&e)
 }
-def spreadBits{T, a & vcount{T} <= width{eltype{T}} & w256u{T}} = {
+def spreadBits{T, a & vcount{T} <= elwidth{T} & w256u{T}} = {
   b:= make{T, 1<<iota{vcount{T}}}
   b == (b & T ~~ to_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }

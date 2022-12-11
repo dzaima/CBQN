@@ -5,12 +5,12 @@ local def ngen128{F} = {
   def r{T} = 0
   def r{T & n128{T}} = F{eltype{T}}
   def r{T,w} = 0
-  def r{T,w & n128{T}} = F{eltype{T}} & (width{eltype{T}}==w)
+  def r{T,w & n128{T}} = F{eltype{T}} & (elwidth{T}==w)
   def r{T & ~isvec{T}} = 0
   r
 }
 def n128{T,w} = 0
-def n128{T,w & n128{T}} = width{eltype{T}}==w
+def n128{T,w & n128{T}} = elwidth{T}==w
 def n128i = ngen128{{T} => isint{T}}
 def n128s = ngen128{{T} => isint{T} &   issigned{T}}
 def n128u = ngen128{{T} => isint{T} & isunsigned{T}}
@@ -44,11 +44,11 @@ def andnot{a:T,b:T & n128i{T}} = emit{T, ntyp{'vbicq', T}, a, b}
 def  ornot{a:T,b:T & n128i{T}} = emit{T, ntyp{'vornq', T}, a, b}
 def    min{a:T,b:T & n128i{T}} = emit{T, ntyp{'vminq', T}, a, b} # TODO float - there are multiple options
 def    max{a:T,b:T & n128i{T}} = emit{T, ntyp{'vmaxq', T}, a, b}
-def  __shl{a:T,b:S & n128i{T} & n128i{S} & width{eltype{T}}==width{eltype{S}}} = emit{T, ntyp{'vshlq', T}, a, ty_s{b}}
+def  __shl{a:T,b:S & n128i{T} & n128i{S} & elwidth{T}==elwidth{S}} = emit{T, ntyp{'vshlq', T}, a, ty_s{b}}
 
 def __shl{a:T,b & n128i{T} & knum{b}} = emit{T, ntyp{'vshlq_n', T}, a, b};  def __shl{a:T,b==0 & n128i{T}} = a
 def __shr{a:T,b & n128i{T} & knum{b}} = emit{T, ntyp{'vshrq_n', T}, a, b};  def __shr{a:T,b==0 & n128i{T}} = a
-def bblend{f:T, t:T, m:M & n128{T} & n128u{M} & width{eltype{T}}==width{eltype{M}}} = emit{T, ntyp{'vbslq', T}, m, t, f}
+def bblend{f:T, t:T, m:M & n128{T} & n128u{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbslq', T}, m, t, f}
 
 def __neg{a:T & (n128s{T}|n128f{T})} = emit{T, ntyp{'vnegq', T}, a}
 def __not{a:T & n128u{T}} = emit{T, ntyp{'vmvnq',  T}, a}

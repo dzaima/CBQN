@@ -11,7 +11,7 @@ def shuf{T, v, n & istup{n}} = shuf{T, v, base{4,n}}
 
 # Fill last 4 bytes with last element, in each lane
 def spread{a:VT} = {
-  def w = width{eltype{VT}}
+  def w = elwidth{VT}
   def b = w/8
   if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}}; else a
 }

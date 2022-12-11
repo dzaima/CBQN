@@ -7,7 +7,7 @@ mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n & w256{T}} = load{*[32]u8  ~~ 
 mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n & w128{T}} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
 mask256:*i64 = merge{4 ** -1,  4 ** 0}
-local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(width{eltype{T}}/8))}
+local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
 
 # get mask of first n items; 0 ≤ n ≤ vcount{T}
 def maskOf{T,n & w256{T}} = maskOfImpl{T, n, 256}
@@ -46,7 +46,7 @@ def storeLow{ptr:P, w, x:T & w128{T} & w==64} = emit{void, '_mm_storeu_si64', pt
 def storeLow{ptr:P, w, x:T & w256{T} & w==16} = storeLow{ptr, w, half{x, 0}}
 def storeLow{ptr:P, w, x:T & w256{T} & w==32} = storeLow{ptr, w, half{x, 0}}
 def storeLow{ptr:P, w, x:T & w256{T} & w==64} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:P, w, x:T & w256{T} & w==128} = store{*[128/width{eltype{T}}](eltype{T})~~ptr, 0, half{x, 0}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==128} = store{*[128/elwidth{T}](eltype{T})~~ptr, 0, half{x, 0}}
 
 
 def loadLow{ptr:P, w & w128{eltype{P}} & w==128} = eltype{P} ~~ load{*[16]u8 ~~ ptr}
@@ -55,9 +55,9 @@ def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_m
 def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
 
 def loadLow{ptr:P, w & w256{eltype{P}} & w<256} = undefPromote{eltype{P}, loadLow{*[16]u8 ~~ ptr, w}}
-def loadLow{ptr:P, w & width{eltype{P}} == w} = load{*eltype{P} ~~ ptr}
+def loadLow{ptr:P, w & elwidth{P} == w} = load{*eltype{P} ~~ ptr}
 
-def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/width{eltype{P}})), w}
+def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/elwidth{P})), w}
 
 # store vcount{T} items into the n'th batch of ptr elements, compressing the items if needed; masked by M
 def storeBatch{ptr:P, n, x:T, M} = {

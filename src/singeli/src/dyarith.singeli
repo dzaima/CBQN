@@ -24,8 +24,8 @@ def bqn_or{a, b} = (a+b)-(a*b)
 # + & -
 def arithChk1{F==__add, M, w:T, x:T, r:T} = anyneg{M{(w^r) & (x^r)}}
 def arithChk1{F==__sub, M, w:T, x:T, r:T} = anyneg{M{(w^x) & (w^r)}}
-def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__adds{w,x}, r, M}
-def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & width{eltype{T}}<=16} = anyne{__subs{w,x}, r, M}
+def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & elwidth{T}<=16} = anyne{__adds{w,x}, r, M}
+def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & elwidth{T}<=16} = anyne{__subs{w,x}, r, M}
 
 
 
@@ -83,7 +83,7 @@ def runner{u, R, F} = {
   
   def run{F, OO, M, w, x & u} = F{w, x} # trivial base implementation
   
-  def toggleTop{x:X} = x ^ X**(1<<(width{eltype{X}}-1))
+  def toggleTop{x:X} = x ^ X**(1<<(elwidth{X}-1))
   def run{F==__sub, OO, M, w:VU, x:VU & is_u{VU}} = { # 'b'-'a'
     def VS = ty_s{VU}
     run{F, OO, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
