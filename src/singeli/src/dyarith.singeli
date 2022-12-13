@@ -22,8 +22,8 @@ def bqn_or{a, b} = (a+b)-(a*b)
 
 
 # + & -
-def arithChk1{F==__add, M, w:T, x:T, r:T} = negAny{M{(w^r) & (x^r)}}
-def arithChk1{F==__sub, M, w:T, x:T, r:T} = negAny{M{(w^x) & (w^r)}}
+def arithChk1{F==__add, M, w:T, x:T, r:T} = topAny{M{(w^r) & (x^r)}}
+def arithChk1{F==__sub, M, w:T, x:T, r:T} = topAny{M{(w^x) & (w^r)}}
 def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & elwidth{T}<=16} = anyne{__adds{w,x}, r, M}
 def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & elwidth{T}<=16} = anyne{__subs{w,x}, r, M}
 
@@ -41,9 +41,9 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i8==eltype{T}} = {
   def rp = each{__mul, wp, xp}
   def bad = each{{v} => [16]i16 ~~ ((v<<8)>>8 != v), rp}
   if (M{0}) { # masked check
-    tup{packQ{rp}, mskAny{M{packQ{bad}}}}
+    tup{packQ{rp}, homAny{M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
-    tup{packQ{rp}, mskAny{tupsel{0,bad}|tupsel{1,bad}}}
+    tup{packQ{rp}, homAny{tupsel{0,bad}|tupsel{1,bad}}}
   }
 }
 def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i16==eltype{T}} = {
@@ -55,7 +55,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
   max:= [8]f32 ~~ [8]u32**0x4efffffe
   def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, mskAny{M{abs{f32mul} >= max}}}
+  tup{w*x, homAny{M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = unpackQ{w, T**0}
@@ -65,7 +65,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T}} = {
   # def bad = each{{v} => {
   #   ((T2~~v + T2**0x80000000) ^ T2**(cast{i64,1}<<63)) > T2**cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}
   # }, rp}
-  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, mskAny{tupsel{0,bad}|tupsel{1,bad}}} this doesn't use M
+  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, homAny{tupsel{0,bad}|tupsel{1,bad}}} this doesn't use M
 }
 
 
@@ -95,7 +95,7 @@ def runner{u, R, F} = {
   
   def run{F, OO, M, w:VW, x:VX & c & R==u32 & (match{F,__add} | match{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
-    if (mskAny{M{r > type{r}**1114111}}) OO{}
+    if (homAny{M{r > type{r}**1114111}}) OO{}
     to_el{R, VW}~~r
   }
   run

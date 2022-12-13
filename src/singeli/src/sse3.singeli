@@ -115,13 +115,13 @@ def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, [8]u
 def getmask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def getmask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
 
-def mskAny{x:T & w128i{T}} = getmask{[16]u8 ~~ x} != 0
-def mskAll{x:T & w128i{T}} = getmask{[16]u8 ~~ x} == 0xffff
+def homAny{x:T & w128i{T}} = getmask{[16]u8 ~~ x} != 0
+def homAll{x:T & w128i{T}} = getmask{[16]u8 ~~ x} == 0xffff
 
-def negAny{x:T & w128i{T}} = getmask{x} != 0
-def negAll{x:T & w128i{T}} = getmask{x} == (1<<vcount{T})-1
-def negAny{x:T & w128i{T, 16}} = mskAny{[8]i16~~x  <  [8]i16**0}
-def negAll{x:T & w128i{T, 16}} = mskAll{[8]i16~~x  <  [8]i16**0}
+def topAny{x:T & w128i{T}} = getmask{x} != 0
+def topAll{x:T & w128i{T}} = getmask{x} == (1<<vcount{T})-1
+def topAny{x:T & w128i{T, 16}} = homAny{[8]i16~~x  <  [8]i16**0}
+def topAll{x:T & w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
 
 
 # the lone SSE2 extract

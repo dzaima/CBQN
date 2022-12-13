@@ -70,10 +70,10 @@ def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 def bitAny{x:T} = fold_max{to_el{u32, x}}!=0
 def bitAll{x:T} = fold_min{to_el{u32, x}}==0xffff_ffff
 
-def negAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
-def negAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
-def mskAny{x:T & nvec{T}} = bitAny{x}
-def mskAll{x:T & nvec{T}} = bitAll{x}
+def topAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
+def topAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
+def homAny{x:T & nvec{T}} = bitAny{x}
+def homAll{x:T & nvec{T}} = bitAll{x}
 
 def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
 

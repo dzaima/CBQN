@@ -139,13 +139,13 @@ def getmask{x:T & w256{T, 16}} = {
   (msk&255) | (msk>>8)
 }
 
-def mskAny{x:T & w256i{T}} = getmask{[32]u8 ~~ x} != 0
-def mskAll{x:T & w256i{T}} = getmask{[32]u8 ~~ x} == 0xffff_ffff
+def homAny{x:T & w256i{T}} = getmask{[32]u8 ~~ x} != 0
+def homAll{x:T & w256i{T}} = getmask{[32]u8 ~~ x} == 0xffff_ffff
 
-def negAny{x:T & w256i{T}} = getmask{x} != 0
-def negAll{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1
-def negAny{x:T & w256i{T,16}} = mskAny{[16]i16~~x  <  [16]i16**0}
-def negAll{x:T & w256i{T,16}} = mskAll{[16]i16~~x  <  [16]i16**0}
+def topAny{x:T & w256i{T}} = getmask{x} != 0
+def topAll{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1
+def topAny{x:T & w256i{T,16}} = homAny{[16]i16~~x  <  [16]i16**0}
+def topAll{x:T & w256i{T,16}} = homAll{[16]i16~~x  <  [16]i16**0}
 
 
 # conversion

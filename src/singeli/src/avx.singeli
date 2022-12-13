@@ -121,8 +121,8 @@ def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
 
-def mskAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} != 0
-def mskAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} == 0xff
+def homAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} != 0
+def homAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} == 0xff
 
-def negAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} != 0
-def negAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} == (1<<vcount{T})-1
+def topAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} != 0
+def topAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} == (1<<vcount{T})-1

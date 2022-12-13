@@ -67,7 +67,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       c:= EV~~loadBatch{xp, i, XV}
       if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
       if (B) {
-        if (mskAny{M{~q_chr{c}}}) return{3}
+        if (homAny{M{~q_chr{c}}}) return{3}
       } else {
         if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
@@ -89,7 +89,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
         maskedLoop{bulk, iCont, len, {i, M} => {
           def XU = [bulk]u64
           v:= XU ~~ loadBatch{xp, i, XV}
-          if (mskAny{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
+          if (homAny{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
         }}
         return{0xffff_ffff} # float
       }}
