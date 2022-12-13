@@ -67,6 +67,14 @@ def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
 def fold_min {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vminv', T}, a}
 def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 
+def bitAny{x:T} = fold_max{to_el{u32, x}}!=0
+def bitAll{x:T} = fold_min{to_el{u32, x}}==0xffff_ffff
+
+def negAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
+def negAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
+def mskAny{x:T & nvec{T}} = bitAny{x}
+def mskAll{x:T & nvec{T}} = bitAll{x}
+
 def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
 
 def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {

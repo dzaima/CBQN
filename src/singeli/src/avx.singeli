@@ -116,9 +116,13 @@ def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_ble
 def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 
 # mask stuff
+def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
+
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
-def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
-def any{x:T & w256i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
-def all{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
-def anyneg{x:T & w256s{T}} = getmask{x}!=0
+
+def mskAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} != 0
+def mskAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{[8]u32 ~~ x} == 0xff
+
+def negAny{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} != 0
+def negAll{x:T & w256i{T} & elwidth{T}>=32} = getmask{x} == (1<<vcount{T})-1

@@ -13,8 +13,8 @@ local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth
 def maskOf{T,n & w256{T}} = maskOfImpl{T, n, 256}
 def maskOf{T,n & w128{T}} = maskOfImpl{T, n, 128}
 
-def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~all{x==y}
-def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  any{M{x!=y}}
+def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~mskAll{x==y}
+def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  mskAny{M{x!=y}}
 def anyne{x:T, y:T, M & M{0}==0 & anyInt{x}} = x!=y
 def anyne{x:T, y:T, M & M{0}==1 & anyInt{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}

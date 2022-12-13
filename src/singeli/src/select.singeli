@@ -23,7 +23,7 @@ def gather{def:T, b:B, idx:[4]i32, M & w256{T,64}} = {
 
 def wrapChk{cw0, VI,xlf, M} = {
   cw:= cw0 + (xlf & VI~~(cw0<VI**0))
-  if (any{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
+  if (mskAny{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
   cw
 }
 

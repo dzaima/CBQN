@@ -136,8 +136,6 @@ def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
 
 # tuple operations
 def broadcast{T, v & isprim{T}} = v
-def any{v:T & isprim{T}} = v
-def anyneg{v:T & isprim{T}} = v<0
 def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
 
