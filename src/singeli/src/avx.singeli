@@ -28,6 +28,13 @@ def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  *f6
 def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f32 ~~ (a+n), v}
 def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
 
+def loadLow{ptr:P, w & w256{eltype{P}} & w<=128} = undefPromote{eltype{P}, loadLow{*[16]u8 ~~ ptr, w}}
+def loadLow{ptr:P, w & w256{eltype{P}} & w==256} = load{ptr}
+
+def storeLow{ptr:P, w, x:T & w256{T} & w<=128} = storeLow{ptr, w, half{x, 0}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==256} = store{*T~~ptr, 0, x}
+
+
 # broadcast
 def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  promote{eltype{T},v}}
 def broadcast{T, v & w256i{T, 16}} = emit{T, '_mm256_set1_epi16', promote{eltype{T},v}}

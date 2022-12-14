@@ -48,7 +48,7 @@ def bblend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}=
 
 def __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
 def addpw{a:T & nveci{T} & elwidth{T}<=32} = emit{ty_dbl{T}, ntyp{'vpaddl', T}, a}
-def __not{a:T & nvecu{T}} = emit{T, ntyp{'vmvn',  T}, a}
+def __not{a:T & nvecu{T}} = T~~emit{to_el{u8,T}, ntyp{'vmvn', to_el{u8,T}}, a}
 def  sqrt{a:T & nvecf{T}} = emit{T, ntyp{'vsqrt', T}, a}
 def floor{a:T & nvecf{T}} = emit{T, ntyp{'vrndm', T}, a}
 def  ceil{a:T & nvecf{T}} = emit{T, ntyp{'vrndp', T}, a}

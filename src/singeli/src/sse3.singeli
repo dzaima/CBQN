@@ -26,6 +26,17 @@ def storea{a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_store_pd',  *f64 ~
 def store {a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_storeu_ps', *f32 ~~ (a+n), v}
 def storea{a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_store_ps',  *f32 ~~ (a+n), v}
 
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
+def loadLow{ptr:P, w & w128{eltype{P}} & w==128} = load{ptr}
+
+def storeLow{ptr:P, w, x:T & w128{T} & w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T & w128{T} & w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T & w128{T} & w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T & w128{T} & w==128} = store{*T~~ptr, 0, x}
+
+
 # broadcast
 def broadcast{T, v & w128i{T,  8}} = emit{T, '_mm_set1_epi8',  promote{eltype{T},v}}
 def broadcast{T, v & w128i{T, 16}} = emit{T, '_mm_set1_epi16', promote{eltype{T},v}}

@@ -37,25 +37,6 @@ def maskAfter{n} = {
 
 
 # store low packed elements of x to P
-def storeLow{ptr:P, w, x:T & width{T}==w} = store{*T~~ptr, 0, x}
-
-def storeLow{ptr:P, w, x:T & w128{T} & w==16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T & w128{T} & w==32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T & w128{T} & w==64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
-
-def storeLow{ptr:P, w, x:T & w256{T} & w==16} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:P, w, x:T & w256{T} & w==32} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:P, w, x:T & w256{T} & w==64} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:P, w, x:T & w256{T} & w==128} = store{*[128/elwidth{T}](eltype{T})~~ptr, 0, half{x, 0}}
-
-
-def loadLow{ptr:P, w & w128{eltype{P}} & w==128} = eltype{P} ~~ load{*[16]u8 ~~ ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
-
-def loadLow{ptr:P, w & w256{eltype{P}} & w<256} = undefPromote{eltype{P}, loadLow{*[16]u8 ~~ ptr, w}}
-def loadLow{ptr:P, w & elwidth{P} == w} = load{*eltype{P} ~~ ptr}
 
 def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/elwidth{P})), w}
 
