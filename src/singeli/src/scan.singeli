@@ -25,7 +25,7 @@ def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
   e:= len/step
   @for (xv, rv over e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q) maskstoreF{rv, maskOf{V, q}, e, scan_last{load{xv,e}, p}}
+  if (q) maskstoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
 }
 def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
@@ -141,7 +141,7 @@ avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
       if (jv+vl <= l) {
         store{p, j, v}
       } else {
-        if (jv < l) maskstoreF{rv, maskOf{V, l - jv}, j, v}
+        if (jv < l) maskstoreF{rv+j, maskOf{V, l - jv}, v}
         return{}
       }
     }

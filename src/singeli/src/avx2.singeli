@@ -100,12 +100,12 @@ def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
 
 
 # structural operations
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', *i32 ~~ (a+n), m, [8]i32~~v}
-def maskstore{a:T, m:M, n, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64 ~~ (a+n), m, [4]f64~~v}
+def maskstore{a:T, m:M, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_mm256_maskstore_epi32', *i32~~a, m, [8]i32~~v}
+def maskstore{a:T, m:M, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64~~a, m, [4]f64~~v}
 
 # maskstore with all cases defined, at the cost of not being a single instruction
-def maskstoreF{p, m, n, x:T} = store{p, n, blendF{load{p,n}, x, m}}
-def maskstoreF{p, m, n, x:T & elwidth{T}>=32} = maskstore{p,m,n,x}
+def maskstoreF{p, m, x:T} = store{p, 0, blendF{load{p}, x, m}}
+def maskstoreF{p, m, x:T & elwidth{T}>=32} = maskstore{p,m,x}
 
 def shl{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
 def shr{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
