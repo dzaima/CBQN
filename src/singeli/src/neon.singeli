@@ -67,6 +67,8 @@ def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
 def fold_min {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vminv', T}, a}
 def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 
+def half{x:T, n==0 & nvec{T} & width{T}==128} = emit{v_half{T}, ntyp{'vget', '_low',  v_half{T}}, x}
+def half{x:T, n==1 & nvec{T} & width{T}==128} = emit{v_half{T}, ntyp{'vget', '_high', v_half{T}}, x}
 def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
 
 # TODO don't rely on regular stores being unaligned
