@@ -97,18 +97,20 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
         def toint{x:T & isint{eltype{T}}} = x
-        def toint{flt:T & X==f64} = {
-          int:= cvt2{i32, flt}
+        def toint{flt:T & isfloat{eltype{T}}} = {
+          int:= narrow{i32, flt}
+          assert{width{type{int}} == width{XV}/2} # we'll be doing operations over it
           
           def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
           
-          if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
+          if (anynePositive{conv{flt}, conv{widen{T, int}}, M}) { # is any not an integer
             if (B) { iCont=i; goto{case_B} } # if B, need to give an even more special result
             else return{0xffff_ffff} # float
           }
           int
         }
-        v1:= toint{v0}
+        assert{XV == type{v0}}
+        v1:= toint{v0} # TODO do with an if instead
         r1|= M{((EV ** ~E~~1) & EV~~v1)  ^  EV~~(v1 >> (width{X}-1))}
       }}
       

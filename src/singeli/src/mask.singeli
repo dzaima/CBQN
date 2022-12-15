@@ -44,9 +44,10 @@ def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n
 def storeBatch{ptr:P, n, x:T, M} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
-  xu:= ucvt{E0, x}
   def TF = to_el{E0, T}
-  if (M{0}) maskstoreF{*TF~~rpos, M{TF, 'to sign bits'}, xu}
+  xu:= narrow{E0, x}
+  
+  if (M{0}) maskstoreF{*TF~~rpos, M{TF, 'to sign bits'}, undefPromote{TF, xu}}
   else storeLow{rpos, vcount{T}*width{E0}, xu}
 }
 
