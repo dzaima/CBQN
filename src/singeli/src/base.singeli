@@ -91,6 +91,9 @@ def v_half{T & isvec{T}} = [vcount{T}/2](eltype{T})
 # base vector utility definitions
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
+def undefPromote{T, x:X & T==X} = T~~x
+
+
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0

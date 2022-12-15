@@ -11,8 +11,7 @@ def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intr
 def v2f{x:T & w256{T}} = [8]f32 ~~ x
 def v2d{x:T & w256{T}} = [4]f64 ~~ x
 
-def undefPromote{T, x:X & w128{X} & w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
-def undefPromote{T, x:X & width{T}==width{X}} = T~~x
+def undefPromote{T, x:X & w128{X} & w256{T} & eltype{T}==eltype{X}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 
 # load & store
 def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
@@ -28,7 +27,7 @@ def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  *f6
 def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f32 ~~ (a+n), v}
 def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
 
-def loadLow{ptr:P, w & w256{eltype{P}} & w<=128} = undefPromote{eltype{P}, loadLow{*[16]u8 ~~ ptr, w}}
+def loadLow{ptr:P, w & w256{eltype{P}} & w<=128} = undefPromote{eltype{P}, loadLow{*v_half{eltype{P}} ~~ ptr, w}}
 def loadLow{ptr:P, w & w256{eltype{P}} & w==256} = load{ptr}
 
 def storeLow{ptr:P, w, x:T & w256{T} & w<=128} = storeLow{ptr, w, half{x, 0}}
