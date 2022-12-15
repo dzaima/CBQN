@@ -79,8 +79,10 @@ def to_el{E, x:T} = to_el{E,T} ~~ x
 # change width of primitive type
 def to_w{T, w} = primtype{quality{T}, w}
 # double (element) type width
-def ty_dbl{T & isprim{T}} = to_w{T, width{T}*2}
-def ty_dbl{T & isvec{T}} = to_el{ty_dbl{eltype{T}}, T}
+def ty_dbl {T & isprim{T}} = to_w{T, width{T}*2}
+def ty_half{T & isprim{T}} = to_w{T, width{T}/2}
+def ty_dbl {T & isvec{T}} = to_el{ty_dbl {eltype{T}}, T}
+def ty_half{T & isvec{T}} = to_el{ty_half{eltype{T}}, T}
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0

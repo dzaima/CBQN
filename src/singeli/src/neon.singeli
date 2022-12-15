@@ -67,6 +67,24 @@ def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
 def fold_min {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vminv', T}, a}
 def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 
+def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
+
+# TODO don't rely on regular stores being unaligned
+local def storeu{ptr:P, e:T} = store{ptr, 0, e}
+local def loadu{ptr:P} = load{ptr}
+
+def storeLow{ptr:P, w, x:T & nvec{T} & w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{to_el{E,T}~~x, 0}} }
+def storeLow{ptr:P, w, x:T & nvec{T} & w==width{T}} = store{*T~~ptr, 0, x}
+
+def loadLow{ptr:P, w & w<=64} = { # a broadcast load
+  def T=eltype{P};
+  def L=to_el{ty_u{w}, T};
+  T ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
+}
+def loadLow{ptr:P, w & w==elwidth{P}} = load{ptr}
+
+
+
 def bitAny{x:T} = fold_max{to_el{u32, x}}!=0
 def bitAll{x:T} = fold_min{to_el{u32, x}}==0xffff_ffff
 
@@ -74,6 +92,8 @@ def topAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
 def topAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
 def homAny{x:T & nvec{T}} = bitAny{x}
 def homAll{x:T & nvec{T}} = bitAll{x}
+
+def pack{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
 
 def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
 
@@ -90,3 +110,7 @@ def getmask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
 def getmask{x:T & nvecu{T} & T==[16]u8} = {
   fold_add{addpw{x & make{[16]u8, 1<<(iota{16}&7)}} << make{[8]u16, merge{4**0, 4**8}}}
 }
+def andIsZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
+
+def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bblend{load{p}, x, m}}
+def maskstoreF{p:P, m:M, x:T & nvec{T}} = maskstore{p, m, x}
