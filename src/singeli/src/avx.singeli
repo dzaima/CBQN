@@ -125,7 +125,7 @@ def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_ble
 def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 
 # mask stuff
-def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
+def andAllZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 
 def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}

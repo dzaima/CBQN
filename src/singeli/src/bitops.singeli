@@ -4,6 +4,7 @@ def b_get{x:*u64, n:(Size)} = {
   ((load{x,n>>6}>>(n&63)) & 1) != 0
 }
 
+def b_getBatch{sz, x:*u64, n:(Size) & sz==2} = (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2}) & 3
 def b_getBatch{sz, x:*u64, n:(Size) & sz==4} = (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4}) & 15
 def b_getBatch{sz, x:*u64, n:(Size) & sz>=8} = load{*ty_u{sz}~~x, n}
 
@@ -56,7 +57,13 @@ def spreadBits{T==[32]u8, a:u32} = {
   e:= make{[32]u8, 1<<tail{3, idxs}}
   e == (d&e)
 }
-def spreadBits{T, a & vcount{T} <= elwidth{T} & width{T}==256 & quality{eltype{T}}=='u'} = {
+
+def spreadBits{T==[16]u8, a:u16} = {
+  b:= sel{[16]u8, [16]u8~~[8]u16**a, make{[16]i8, iota{16}>=8}}
+  andnz{b, make{[16]u8, 1<<(iota{16}&7)}}
+}
+
+def spreadBits{T, a & vcount{T} <= elwidth{T} & quality{eltype{T}}=='u'} = {
   b:= make{T, 1<<iota{vcount{T}}}
   b == (b & T ~~ to_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }

@@ -44,7 +44,7 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       maskedLoop{bulk, l, {i, M} => {
         cw:= load{*ty_u{bulk} ~~ w, i}
         cx:= load{*T ~~ x, i}
-        if (~andIsZero{M{cx}, badBits}) return{0}
+        if (~andAllZero{M{cx}, badBits}) return{0}
         if (anyne{promote{u64,getmask{sh{cx}}}, promote{u64,cw}, M}) return{0}
       }}
       1

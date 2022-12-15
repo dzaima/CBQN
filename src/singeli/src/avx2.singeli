@@ -121,12 +121,12 @@ def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_ble
 def blendF{f:T, t:T, m:M & w256{T} & w256{M} & elwidth{M}!=16} = blend{f, t, m}
 def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, [32]i8 ~~ m}
 
-def shuf{L==[4]u32, x:T, n & w256{T} & knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
-def shuf{L==[4]u64, x:T, n & w256{T} & knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}
+def shuf{L, x:T, n & lvec{L,4,32} & w256{T} & knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
+def shuf{L, x:T, n & lvec{L,4,64} & w256{T} & knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}
 def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T ~~ emit{[4]i64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
 
-def sel{L, x:T, i:I & w256{T} & w256{L,32} & w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
-def sel{L, x:T, i:I & w256{T} & w128{L, 8} & w256{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
+def sel{L, x:T, i:I & w256{T} & lvec{L,8,32} & w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
+def sel{L, x:T, i:I & w256{T} & lvec{L,16,8} & w256{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
 
 def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
 def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}

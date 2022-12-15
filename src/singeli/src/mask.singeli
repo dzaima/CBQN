@@ -24,11 +24,11 @@ def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T}                      } = (pro
 def anynePositive{x:T, y:T, M & M{0}==1 & width{T}==256 & elwidth{T}==16} = (promote{u32,~getmask{[32]u8~~(x==y)}} << (32-M{'count'}*2)) != 0
 
 def maskNone{x} = x
-def maskNone{x, mode=='all bits zeroes'} = andIsZero{x, x}
+def maskNone{x, mode=='all bits zeroes'} = andAllZero{x, x}
 def maskAfter{n} = {
   def mask{x:X & isvec{X}} = x & (X~~maskOf{X,n})
   def mask{x:X & anyInt{x}} = x & ((1<<n) - 1)
-  def mask{x:X, mode=='all bits zeroes'} = andIsZero{x, X~~maskOfBit{X,n}}
+  def mask{x:X, mode=='all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
   def mask{mode=='count'} = n
   def mask{x==0} = 1

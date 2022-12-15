@@ -38,6 +38,7 @@ def   __or{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorr', T}, a, b}
 def  __xor{a:T,b:T & nveci{T}} = emit{T, ntyp{'veor', T}, a, b}
 def andnot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vbic', T}, a, b}
 def  ornot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorn', T}, a, b}
+def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
 def    min{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmin', T}, a, b} # TODO float - there are multiple options
 def    max{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
@@ -45,6 +46,7 @@ def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, nty
 def __shl{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
 def __shr{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshr', '_n', T}, a, b};  def __shr{a:T,b==0 & nveci{T}} = a
 def bblend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
+def blendF{f:T, t:T, m:M & nvec{M}} = bblend{f, t, m}
 
 def __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
 def addpw{a:T & nveci{T} & elwidth{T}<=32} = emit{ty_dbl{T}, ntyp{'vpaddl', T}, a}
@@ -88,7 +90,11 @@ def undefPromote{T, x:X & n64{X} & n128{T} & eltype{T}==eltype{X}} = emit{T, nty
 def half{x:T, n==0 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_low',  v_half{T}}, x}
 def half{x:T, n==1 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_high', v_half{T}}, x}
 def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
+
 def pack{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
+def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, to_el{eltype{I},x}, i}}
+
+
 
 local def eqqi{A, B} = isint{A} & (quality{A}==quality{B}) # equal quality integers
 
@@ -125,7 +131,7 @@ def getmask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
 def getmask{x:T & nvecu{T} & T==[16]u8} = {
   fold_add{addpw{x & make{[16]u8, 1<<(iota{16}&7)}} << make{[8]u16, merge{4**0, 4**8}}}
 }
-def andIsZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
+def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
 
 def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bblend{load{p}, x, m}}
 def maskstoreF{p:P, m:M, x:T & nvec{T}} = maskstore{p, m, x}
