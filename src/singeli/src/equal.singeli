@@ -58,7 +58,7 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       # TODO update this to modern mask stuff
       cw:= load{*ww{tern{fac==1, 256, 128}, W} ~~ (w + i*32/fac)}
       cx:= load{*ww{256, X} ~~ x, i}
-      cwc:= cvt{W, ww{256, X}, cw}
+      cwc:= widen{ww{256, X}, to_el{W, cw}}
       if (anynePositive{cwc,cx,M}) return{0}
     }}
   }

@@ -152,10 +152,15 @@ def extract{x:T, i & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_extract_epi32
 def extract{x:T, i & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_extract_epi64', x, i}
 
 # conversion
-def cvt{F,      T,         a:A & eltype{T}==F} = T~~a
-def cvt{F==i8,  T==[8]i16, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi16', a}
-def cvt{F==i8,  T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi8_epi32', a}
-def cvt{F==i16, T==[4]i32, a:A & w128i{A}} = emit{T, '_mm_cvtepi16_epi32', a}
+def widen{T==[8]u16, x:X & X==[16]u8} = emit{T, '_mm_cvtepu8_epi16',  x}; def widen{T==[8]i16, x:X & X==[16]i8} = emit{T, '_mm_cvtepi8_epi16',  x}
+def widen{T==[4]u32, x:X & X==[16]u8} = emit{T, '_mm_cvtepu8_epi32',  x}; def widen{T==[4]i32, x:X & X==[16]i8} = emit{T, '_mm_cvtepi8_epi32',  x}
+def widen{T==[4]u32, x:X & X==[8]u16} = emit{T, '_mm_cvtepu16_epi32', x}; def widen{T==[4]i32, x:X & X==[8]i16} = emit{T, '_mm_cvtepi16_epi32', x}
+def widen{T==[2]u64, x:X & X==[16]u8} = emit{T, '_mm_cvtepu8_epi64',  x}; def widen{T==[2]i64, x:X & X==[16]i8} = emit{T, '_mm_cvtepi8_epi64',  x}
+def widen{T==[2]u64, x:X & X==[8]u16} = emit{T, '_mm_cvtepu16_epi64', x}; def widen{T==[2]i64, x:X & X==[8]i16} = emit{T, '_mm_cvtepi16_epi64', x}
+def widen{T==[2]u64, x:X & X==[4]u32} = emit{T, '_mm_cvtepu32_epi64', x}; def widen{T==[2]i64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_epi64', x}
+def widen{T==[2]f64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
+def widen{T==[2]f64, x:X & X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
+def widen{T==[2]f64, x:X & w128i{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}}
 
 # blend by sign bit; no 16-bit case
 def blend{f:T, t:T, m:M & w128{T} & w128i{M,32}} = T ~~ emit{[4]f32, '_mm_blendv_ps', v2f{f}, v2f{t}, v2f{m}}

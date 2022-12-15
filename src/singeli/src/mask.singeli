@@ -55,7 +55,7 @@ def loadBatch{ptr:P, n, T} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
   
-  cvt{E0, T, loadLow{*to_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
+  widen{T, loadLow{*to_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
 }
 
 

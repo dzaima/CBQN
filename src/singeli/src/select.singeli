@@ -61,7 +61,7 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
   maskedLoop{ri, wl, {i, M} => {
     cw:= wrapChk{loadBatch{w, i, VI}, VI,xlf, M}
     is:= (if (ext>1) i<<lb{ext}; else i)
-    def part{o} = cvt{i8, [8]i32, shuf{[4]u64, cw, 4b3210+o}}
+    def part{o} = widen{[8]i32, to_el{i8, shuf{[4]u64, cw, 4b3210+o}}}
     def se{o} = storeExp{r, is+o, selx{part{o}}, M, ext, rd, wl}
     each{se, iota{ext}}
   }}
