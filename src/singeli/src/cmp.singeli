@@ -30,10 +30,14 @@ def pathAS{dst, len, T, op, x & issigned{T}} = {
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}
   xT:T = trunc{T, xi64}
-  if (rare{promote{i64, xT}!=xi64}) {
+  def nanchk{} = {
     if(~eqne{op}) { # NaN was already checked for ≠/=
       if (isNaN{xf}) { call{cmpIX, dst, len, x, op{0,1}}; return{}; }
     }
+  }
+  if (~hasarch{'X86_64'}) nanchk{}
+  if (rare{promote{i64, xT}!=xi64}) {
+    if (hasarch{'X86_64'}) nanchk{}
     fillbits{dst, len, op{0,xf}}
   }
   xT
