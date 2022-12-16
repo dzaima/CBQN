@@ -112,29 +112,27 @@ bitAS{op}(dst:*u64, wr:*void, x:u64, len:Size) : void = { # show{'bitAS'}
   else    call{cpy, dst, *u64~~wr, len}
 }
 
+def table{aa, F, w, G_bit, G_vec} = {
+  tup{
+    G_bit{},
+    ...each{{E}=>{
+      def E2 = (if (aa and isunsigned{E} and ((match{F,__eq} | match{F,__ne})  |  (E==u32))) {ty_s{E}} else E)
+      def bulk = w/width{E2}
+      G_vec{[bulk]E2, max{1, 8/bulk}}
+    }, tup{i8, i16, i32, f64, u8, u16, u32}}
+  }
+}
+def tableAA{w, F, F_bit} = table{1, F, w, {} => bitAA{F_bit}, {V, u} => aa2bit{V, u, F}}
+def tableAS{w, F       } = table{0, F, w, {} => bitAS{F},     {V, u} => as2bit{V, u, F}}
 
-# arr-arr =≠
-'avx2_eqAA_i8','avx2_eqAA_u8'=aa2bit{[32]i8,1,__eq}; 'avx2_eqAA_i16','avx2_eqAA_u16'=aa2bit{[16]i16,1,__eq}; 'avx2_eqAA_i32','avx2_eqAA_u32'=aa2bit{[8]i32,1,__eq}
-'avx2_neAA_i8','avx2_neAA_u8'=aa2bit{[32]i8,1,__ne}; 'avx2_neAA_i16','avx2_neAA_u16'=aa2bit{[16]i16,1,__ne}; 'avx2_neAA_i32','avx2_neAA_u32'=aa2bit{[8]i32,1,__ne}
-'avx2_eqAA_u1'=bitAA{{a,b}=>a ^ ~b}; 'avx2_eqAA_f64'=aa2bit{[4]f64,2,__eq}
-'avx2_neAA_u1'=bitAA{{a,b}=>a ^  b}; 'avx2_neAA_f64'=aa2bit{[4]f64,2,__ne}
-# arr-arr >≥
-'avx2_gtAA_i8'=aa2bit{[32]i8,1,__gt}; 'avx2_gtAA_i16'=aa2bit{[16]i16,1,__gt}; 'avx2_gtAA_i32','avx2_gtAA_u32'=aa2bit{[8]i32,1,__gt}; 'avx2_gtAA_f64'=aa2bit{[4]f64,2,__gt}
-'avx2_geAA_i8'=aa2bit{[32]i8,1,__ge}; 'avx2_geAA_i16'=aa2bit{[16]i16,1,__ge}; 'avx2_geAA_i32','avx2_geAA_u32'=aa2bit{[8]i32,1,__ge}; 'avx2_geAA_f64'=aa2bit{[4]f64,2,__ge}
-'avx2_gtAA_u8'=aa2bit{[32]u8,1,__gt}; 'avx2_gtAA_u16'=aa2bit{[16]u16,1,__gt}; 'avx2_gtAA_u1'=bitAA{{a,b}=>a & ~b}
-'avx2_geAA_u8'=aa2bit{[32]u8,1,__ge}; 'avx2_geAA_u16'=aa2bit{[16]u16,1,__ge}; 'avx2_geAA_u1'=bitAA{{a,b}=>a | ~b}
+def tup_eqAA = tableAA{256, __eq, {a,b}=>a ^ ~b}; v_eqAA:*type{tupsel{0,tup_eqAA}} = tup_eqAA; 'avx2_eqAA'=v_eqAA
+def tup_neAA = tableAA{256, __ne, {a,b}=>a ^  b}; v_neAA:*type{tupsel{0,tup_neAA}} = tup_neAA; 'avx2_neAA'=v_neAA
+def tup_gtAA = tableAA{256, __gt, {a,b}=>a & ~b}; v_gtAA:*type{tupsel{0,tup_gtAA}} = tup_gtAA; 'avx2_gtAA'=v_gtAA
+def tup_geAA = tableAA{256, __ge, {a,b}=>a | ~b}; v_geAA:*type{tupsel{0,tup_geAA}} = tup_geAA; 'avx2_geAA'=v_geAA
 
-# arr-scalar numeric
-'avx2_eqAS_i8'=as2bit{[32]i8,1,__eq}; 'avx2_eqAS_i16'=as2bit{[16]i16,1,__eq}; 'avx2_eqAS_i32'=as2bit{[8]i32,1,__eq}; 'avx2_eqAS_f64'=as2bit{[4]f64,2,__eq}
-'avx2_neAS_i8'=as2bit{[32]i8,1,__ne}; 'avx2_neAS_i16'=as2bit{[16]i16,1,__ne}; 'avx2_neAS_i32'=as2bit{[8]i32,1,__ne}; 'avx2_neAS_f64'=as2bit{[4]f64,2,__ne}
-'avx2_gtAS_i8'=as2bit{[32]i8,1,__gt}; 'avx2_gtAS_i16'=as2bit{[16]i16,1,__gt}; 'avx2_gtAS_i32'=as2bit{[8]i32,1,__gt}; 'avx2_gtAS_f64'=as2bit{[4]f64,2,__gt}
-'avx2_geAS_i8'=as2bit{[32]i8,1,__ge}; 'avx2_geAS_i16'=as2bit{[16]i16,1,__ge}; 'avx2_geAS_i32'=as2bit{[8]i32,1,__ge}; 'avx2_geAS_f64'=as2bit{[4]f64,2,__ge}
-'avx2_ltAS_i8'=as2bit{[32]i8,1,__lt}; 'avx2_ltAS_i16'=as2bit{[16]i16,1,__lt}; 'avx2_ltAS_i32'=as2bit{[8]i32,1,__lt}; 'avx2_ltAS_f64'=as2bit{[4]f64,2,__lt}
-'avx2_leAS_i8'=as2bit{[32]i8,1,__le}; 'avx2_leAS_i16'=as2bit{[16]i16,1,__le}; 'avx2_leAS_i32'=as2bit{[8]i32,1,__le}; 'avx2_leAS_f64'=as2bit{[4]f64,2,__le}
-# arr-scalar character & bit
-'avx2_eqAS_u8'=as2bit{[32]u8,1,__eq}; 'avx2_eqAS_u16'=as2bit{[16]u16,1,__eq}; 'avx2_eqAS_u32'=as2bit{[8]u32,1,__eq}; 'avx2_eqAS_u1'=bitAS{__eq}
-'avx2_neAS_u8'=as2bit{[32]u8,1,__ne}; 'avx2_neAS_u16'=as2bit{[16]u16,1,__ne}; 'avx2_neAS_u32'=as2bit{[8]u32,1,__ne}; 'avx2_neAS_u1'=bitAS{__ne}
-'avx2_gtAS_u8'=as2bit{[32]u8,1,__gt}; 'avx2_gtAS_u16'=as2bit{[16]u16,1,__gt}; 'avx2_gtAS_u32'=as2bit{[8]u32,1,__gt}; 'avx2_gtAS_u1'=bitAS{__gt}
-'avx2_geAS_u8'=as2bit{[32]u8,1,__ge}; 'avx2_geAS_u16'=as2bit{[16]u16,1,__ge}; 'avx2_geAS_u32'=as2bit{[8]u32,1,__ge}; 'avx2_geAS_u1'=bitAS{__ge}
-'avx2_ltAS_u8'=as2bit{[32]u8,1,__lt}; 'avx2_ltAS_u16'=as2bit{[16]u16,1,__lt}; 'avx2_ltAS_u32'=as2bit{[8]u32,1,__lt}; 'avx2_ltAS_u1'=bitAS{__lt}
-'avx2_leAS_u8'=as2bit{[32]u8,1,__le}; 'avx2_leAS_u16'=as2bit{[16]u16,1,__le}; 'avx2_leAS_u32'=as2bit{[8]u32,1,__le}; 'avx2_leAS_u1'=bitAS{__le}
+def tup_eqAS = tableAS{256, __eq}; v_eqAS:*type{tupsel{0,tup_eqAS}} = tup_eqAS; 'avx2_eqAS'=v_eqAS
+def tup_neAS = tableAS{256, __ne}; v_neAS:*type{tupsel{0,tup_neAS}} = tup_neAS; 'avx2_neAS'=v_neAS
+def tup_gtAS = tableAS{256, __gt}; v_gtAS:*type{tupsel{0,tup_gtAS}} = tup_gtAS; 'avx2_gtAS'=v_gtAS
+def tup_geAS = tableAS{256, __ge}; v_geAS:*type{tupsel{0,tup_geAS}} = tup_geAS; 'avx2_geAS'=v_geAS
+def tup_ltAS = tableAS{256, __lt}; v_ltAS:*type{tupsel{0,tup_ltAS}} = tup_ltAS; 'avx2_ltAS'=v_ltAS
+def tup_leAS = tableAS{256, __le}; v_leAS:*type{tupsel{0,tup_leAS}} = tup_leAS; 'avx2_leAS'=v_leAS

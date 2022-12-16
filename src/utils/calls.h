@@ -17,7 +17,7 @@ extern M_FillF fillFns[el_MAX];
 
 typedef void (*CmpAAFn)(u64*, void*, void*, u64);
 typedef void (*CmpASFn)(u64*, void*, u64, u64);
-#define CMP_DEF(F, S) extern const Cmp##S##Fn cmp_fns_##F##S[];
+#define CMP_DEF(F, S) extern Cmp##S##Fn cmp_fns_##F##S[];
 CMP_DEF(eq, AS); CMP_DEF(eq, AA);
 CMP_DEF(ne, AS); CMP_DEF(ne, AA);
 CMP_DEF(gt, AS); CMP_DEF(gt, AA);
