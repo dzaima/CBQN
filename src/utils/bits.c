@@ -2,10 +2,8 @@
 
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/bits.c"
-  #pragma GCC diagnostic pop
+  #define SINGELI_FILE bits
+  #include "../utils/includeSingeli.h"
   #define bitselFns avx2_bitsel
 #endif
 

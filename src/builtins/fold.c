@@ -15,10 +15,8 @@
 #include "../builtins.h"
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/fold.c"
-  #pragma GCC diagnostic pop
+  #define SINGELI_FILE fold
+  #include "../utils/includeSingeli.h"
 #endif
 
 static bool fold_ne(u64* x, u64 am) {

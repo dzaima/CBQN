@@ -218,18 +218,8 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 }
 
 #if SINGELI
-  #include <xmmintrin.h>
-  #if __GNUC__ && !__clang__ // old gcc versions don't define _mm_loadu_si32 & _mm_storeu_si32
-    static __m128i custom_loadu_si32(void* p) { return (__m128i) _mm_load_ss(p); }
-    static void custom_storeu_si32(void* p, __m128i x) { _mm_store_ss(p, _mm_castsi128_ps(x)); }
-    #define _mm_loadu_si32 custom_loadu_si32
-    #define _mm_storeu_si32 custom_storeu_si32
-  #endif
-  
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/copy.c"
-  #pragma GCC diagnostic pop
+  #define SINGELI_FILE copy
+  #include "./includeSingeli.h"
   typedef void (*copy_fn)(void*, void*, u64, void*);
   
   static void badCopy(void* xp, void* rp, u64 len, void* xRaw) {

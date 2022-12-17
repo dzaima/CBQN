@@ -150,19 +150,15 @@
   void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
   u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #if SINGELI
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wunused-variable"
-    #include "../singeli/gen/slash.c"
-    #pragma GCC diagnostic pop
+    #define SINGELI_FILE slash
+    #include "../utils/includeSingeli.h"
   #endif
 #endif
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/constrep.c"
-  #pragma GCC diagnostic pop
-
+  #define SINGELI_FILE constrep
+  #include "../utils/includeSingeli.h"
+  
   extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
   extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
   extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);

@@ -313,10 +313,8 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
   }
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#include "../gen/dyarith.c"
-#pragma GCC diagnostic pop
+#define SINGELI_FILE dyarith
+#include "../../utils/includeSingeli.h"
 
 static void  rootAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = pow(((f64*)x)[i], 1.0/((f64*)w)[i]); }
 static void   powAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =     pow(((f64*)w)[i], ((f64*)x)[i]); }

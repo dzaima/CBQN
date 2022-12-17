@@ -423,10 +423,8 @@ NOINLINE bool atomEqualF(B w, B x) {
 }
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/equal.c"
-  #pragma GCC diagnostic pop
+  #define SINGELI_FILE equal
+  #include "../utils/includeSingeli.h"
   
   typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
   bool notEq(void* a, void* b, u64 l, u64 data) { return false; }

@@ -22,8 +22,6 @@ B atan2_c2(B, B, B);
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 
 #if SINGELI
-  #define BCALL(N, X) N(b(X))
-  #define interp_f64(X) b(X).f
   #include "../singeli/c/arithdDispatch.c"
   static AndBytesFn andBytes_fn = avx2_andBytes;
 #else

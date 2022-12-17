@@ -1,10 +1,8 @@
 #include "../core.h"
 
 #if SINGELI
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#include "../singeli/gen/squeeze.c"
-#pragma GCC diagnostic pop
+  #define SINGELI_FILE squeeze
+  #include "../utils/includeSingeli.h"
 #endif
 
 NOINLINE B num_squeezeF(B x, usz ia) {

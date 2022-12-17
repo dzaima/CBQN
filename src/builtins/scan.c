@@ -10,18 +10,15 @@ static u64 vg_rand(u64 x) { return x; }
 #endif
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/scan.c"
-  #pragma GCC diagnostic pop
+  #define SINGELI_FILE scan
+  #include "../utils/includeSingeli.h"
+  #if __PCLMUL__
+    #define SINGELI_FILE neq
+    #include "../utils/includeSingeli.h"
+  #endif
 #endif
 
-#if SINGELI && __PCLMUL__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/neq.c"
-  #pragma GCC diagnostic pop
-#endif
+
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
