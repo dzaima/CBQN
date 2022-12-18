@@ -1393,7 +1393,6 @@ static Body* file_nsGen;
   F("sh", U"•SH", bi_sh) \
   F("decompose", U"•Decompose", bi_decp) \
   F("while", U"•_while_", bi_while) \
-  F("primind", U"•PrimInd", bi_primInd) \
   F("bqn", U"•BQN", bi_bqn) \
   F("cmp", U"•Cmp", bi_cmp) \
   F("unixtime", U"•UnixTime", bi_unixTime) \
