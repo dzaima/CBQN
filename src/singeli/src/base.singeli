@@ -95,6 +95,7 @@ def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
 def andnz{x, y} = assert{'andnz not supported', show{x, y}}
+def topBlend{f,t,m} = assert{'topBlend not supported', show{f,t,m}}
 
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {

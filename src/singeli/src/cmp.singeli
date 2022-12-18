@@ -45,7 +45,7 @@ def pathAS{dst, len, T, op, x & issigned{T}} = {
 
 def pathAS{dst, len, T, op, x & T==f64} = {
   if (rare{~q_f64{x}}) {
-    if (~eqne{op}) if (~q_chr{x}) cmp_err{x};
+    if (~eqne{op}) if (~q_chr{x}) cmp_err{x}
     fillbits{dst, len, op{0,1}, x}
   }
   from_B{T,x}
@@ -53,7 +53,7 @@ def pathAS{dst, len, T, op, x & T==f64} = {
 
 def pathAS{dst, len, T, op, x & isunsigned{T}} = {
   if (rare{~q_chr{x}}) {
-    if (~eqne{op}) if (~q_f64{x}) cmp_err{x};
+    if (~eqne{op}) if (~q_f64{x}) cmp_err{x}
     fillbits{dst, len, op{1,0}, x}
   }
   xc32:u32 = from_B{u32,x}

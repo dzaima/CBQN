@@ -31,7 +31,7 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = (if (width{T}<=32) sel{[8]i32, spread{n}, [8]i32**7};
+    p = (if (width{T}<=32) sel{[8]i32, spread{n}, [8]i32**7}
          else shuf{[4]u64, n, 4b3333})
     n
   }

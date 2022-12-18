@@ -5,6 +5,7 @@ include './sse3'
 include './avx'
 include './avx2'
 include './mask'
+include './bitops'
 
 def swap{w,x} = {
   t:= w
@@ -28,27 +29,33 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     } else if (X==f64) { # bitarr ≡ f64arr
       def TF = [vw/64]f64
       def TU = [vw/64]u64
-      def bulk = 4
       f0:= TF**0.0
       f1:= TF**1.0
       maskedLoopPositive{bulk, l, {i, M} => {
-        cw:= load{*u8 ~~ w, i>>1} >> cast_i{u8, 4*(i&1)}
-        cx:= load{*TF  ~~ x, i}
-        wu:= topBlend{f0, f1, TU**cw << make{TU,63,62,61,60}}
+        wu:= (if (hasarch{'X86_64'}) {
+          cw:= b_getBatchLo{bulk, *u64~~w, i}
+          topBlend{f0, f1, TU**cw << make{TU,63,62,61,60}}
+        } else {
+          cw:= loadBatchBit{TU, *u64~~w, i}
+          homBlend{f0, f1, cw}
+        })
+        cx:= load{*TF ~~ x, i}
         if (anynePositive{wu, cx, M}) return{0}
       }}
     } else { # bitarr ≡ i8/i16/i32arr
-      def T = [vw/width{X}]X
+      def T = [bulk]X
       def sh{c} = c << (width{X}-1)
       def sh{c & X==u8} = T ~~ (to_el{u16,c}<<7)
+      def topMask{x:X & hasarch{'X86_64'}} = getmask{x}
+      def topMask{x:X & hasarch{'AARCH64'}} = getmask{andnz{x, ~T**0}}
       
       # TODO compare with doing the comparison in vector registers
-      badBits:= T ** ~cast{X,1}
+      badBits:= T ** ~(X~~1)
       maskedLoop{bulk, l, {i, M} => {
-        cw:= load{*ty_u{bulk} ~~ w, i}
+        cw:= b_getBatch{bulk, *u64~~w, i}
         cx:= load{*T ~~ x, i}
         if (~andAllZero{M{cx}, badBits}) return{0}
-        if (anyne{promote{u64,getmask{sh{cx}}}, promote{u64,cw}, M}) return{0}
+        if (anyne{promote{u64,topMask{sh{cx}}}, promote{u64,cw}, M}) return{0}
       }}
       1
     }

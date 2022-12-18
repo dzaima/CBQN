@@ -105,7 +105,7 @@ def runner{u, R, F} = {
 def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   # show{F, mode, W, X, R}
   if (R==u1) {
-    def bulk = vw/64;
+    def bulk = vw/64
     def TY = [bulk]u64
     maskedLoop{bulk, cdiv{len, 64}, {i, M} => {
       cw:= loadBatch{*u64~~w, i, TY}

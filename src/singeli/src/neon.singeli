@@ -77,8 +77,8 @@ def storeLow{ptr:P, w, x:T & nvec{T} & w<=64} = { def E=ty_u{w}; storeu{*E~~ptr,
 def storeLow{ptr:P, w, x:T & nvec{T} & w==width{T}} = store{*T~~ptr, 0, x}
 
 def loadLow{ptr:P, w & w<=64} = { # a broadcast load
-  def T=eltype{P};
-  def L=to_el{ty_u{w}, T};
+  def T=eltype{P}
+  def L=to_el{ty_u{w}, T}
   T ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
 }
 def loadLow{ptr:P, w & w==elwidth{P}} = load{ptr}
@@ -98,8 +98,11 @@ def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, em
 
 local def eqqi{A, B} = isint{A} & (quality{A}==quality{B}) # equal quality integers
 
+def cvt{T, x:X & width{T}==width{X} & nvecf{T,64} & nveci{X}} = emit{T, ntyp{'vcvt', '_f64', X}, x}
+
 def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}==elwidth{X}*2} = emit{T, ntyp{'vmovl', X}, x}
 def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}> elwidth{X}*2} = widen{T, widen{ty_half{T}, x}}
+def widen{T, x:X & n64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>elwidth{X}} = cvt{T, widen{[vcount{T}](to_w{eltype{X},elwidth{T}}), x}}
 def widen{T, x:X & n128{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
 
 def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2< elwidth{X}} = narrow{T, undefPromote{ty_half{X}, narrow{ty_half{eltype{X}}, x}}}
