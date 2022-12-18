@@ -16,7 +16,7 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   
   maskedLoop{bulk, len, {i, M} => {
     cb:= loadBatchBit{VT, bits, i}
-    storeBatch{r, i, blendF{e0v, e1v, cb}, M}
+    storeBatch{r, i, homBlend{e0v, e1v, cb}, M}
   }}
 }
 

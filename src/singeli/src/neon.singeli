@@ -45,8 +45,8 @@ def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, nty
 
 def __shl{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
 def __shr{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshr', '_n', T}, a, b};  def __shr{a:T,b==0 & nveci{T}} = a
-def bblend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
-def blendF{f:T, t:T, m:M & nvec{M}} = bblend{f, t, m}
+def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
+def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
 
 def __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
 def addpw{a:T & nveci{T} & elwidth{T}<=32} = emit{ty_dbl{T}, ntyp{'vpaddl', T}, a}
@@ -133,5 +133,5 @@ def getmask{x:T & nvecu{T} & T==[16]u8} = {
 }
 def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
 
-def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bblend{load{p}, x, m}}
+def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bitBlend{load{p}, x, m}}
 def maskstoreF{p:P, m:M, x:T & nvec{T}} = maskstore{p, m, x}

@@ -21,19 +21,20 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       maskedLoop{vw, l, {i, M} => {
-        cw:= load{*[32]u8 ~~ w, i}
-        cx:= load{*[32]u8 ~~ x, i}
+        cw:= load{*[vw/8]u8 ~~ w, i}
+        cx:= load{*[vw/8]u8 ~~ x, i}
         if (anyneBit{cw,cx,M}) return{0}
       }}
     } else if (X==f64) { # bitarr ≡ f64arr
-      def T = [4]f64
+      def TF = [vw/64]f64
+      def TU = [vw/64]u64
       def bulk = 4
-      f0:= T**0.0
-      f1:= T**1.0
+      f0:= TF**0.0
+      f1:= TF**1.0
       maskedLoopPositive{bulk, l, {i, M} => {
         cw:= load{*u8 ~~ w, i>>1} >> cast_i{u8, 4*(i&1)}
-        cx:= load{*T  ~~ x, i}
-        wu:= blend{f0, f1, [4]u64**cw << make{[4]u64,63,62,61,60}}
+        cx:= load{*TF  ~~ x, i}
+        wu:= topBlend{f0, f1, TU**cw << make{TU,63,62,61,60}}
         if (anynePositive{wu, cx, M}) return{0}
       }}
     } else { # bitarr ≡ i8/i16/i32arr

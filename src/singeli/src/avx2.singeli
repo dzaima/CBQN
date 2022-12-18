@@ -104,7 +104,7 @@ def maskstore{a:T, m:M, v & w256{eltype{T}, 32} & w256i{M, 32}} = emit{void, '_m
 def maskstore{a:T, m:M, v & w256{eltype{T}, 64} & w256i{M, 64}} = emit{void, '_mm256_maskstore_pd',    *f64~~a, m, [4]f64~~v}
 
 # maskstore with all cases defined, at the cost of not being a single instruction
-def maskstoreF{p, m, x:T} = store{p, 0, blendF{load{p}, x, m}}
+def maskstoreF{p, m, x:T} = store{p, 0, homBlend{load{p}, x, m}}
 def maskstoreF{p, m, x:T & elwidth{T}>=32} = maskstore{p,m,x}
 
 def shl{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
@@ -114,12 +114,9 @@ def blend{L==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[16]i16, '_mm2
 def blend{L==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}
 def blend{L==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}
 
-# blend by sign bit; still no 16-bit case
-def blend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
-
-# assumes all bits are the same in each mask item
-def blendF{f:T, t:T, m:M & w256{T} & w256{M} & elwidth{M}!=16} = blend{f, t, m}
-def blendF{f:T, t:T, m:M & w256{T} & w256{M,16}} = blend{f, t, [32]i8 ~~ m}
+def topBlend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
+def homBlend{f:T, t:T, m:M & w256{T} & w256i{M, 8}} = topBlend{f, t, m}
+def homBlend{f:T, t:T, m:M & w256{T} & w256i{M,16}} = topBlend{f, t, [32]i8~~m}
 
 def shuf{L, x:T, n & lvec{L,4,32} & w256{T} & knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
 def shuf{L, x:T, n & lvec{L,4,64} & w256{T} & knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}

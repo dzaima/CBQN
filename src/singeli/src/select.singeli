@@ -68,7 +68,7 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
 }
 
 def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
-  def bblend {m}{ft} = blend{tupsel{0,ft}, tupsel{1,ft}, m}
+  def bblend {m}{ft} = topBlend{tupsel{0,ft}, tupsel{1,ft}, m}
   def bblendn{m}{tf} = bblend{m}{reverse{tf}}
   def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
   

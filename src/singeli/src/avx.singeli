@@ -120,9 +120,10 @@ def insert{x:T, i, v & w256i{T,16} & knum{i}} = emit{T, '_mm256_insert_epi16', x
 def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x, v, i}
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
-# blend by sign bit
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
+def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
+def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
+def homBlend{f:T, t:T, m:M & w256{T}} = topBlend{f, t, m}
+
 
 # mask stuff
 def andAllZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
