@@ -128,10 +128,10 @@ def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {
 def make{T, x & nvec{T} & istup{x}} = make{T, ...x}
 
 
-def getmask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
+def homMask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
   cast_i{ty_u{max{8,vcount{T}}}, fold_add{x & make{T, 1<<iota{vcount{T}}}}}
 }
-def getmask{x:T & nvecu{T} & T==[16]u8} = {
+def homMask{x:T & nvecu{T} & T==[16]u8} = {
   fold_add{addpw{x & make{[16]u8, 1<<(iota{16}&7)}} << make{[8]u16, merge{4**0, 4**8}}}
 }
 def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}

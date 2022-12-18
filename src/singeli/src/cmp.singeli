@@ -71,7 +71,7 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   assert{am>0}
   while (ri < am) {
     r:u64 = 0
-    @unroll (j to unr) r|= promote{u64, getmask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT})
+    @unroll (j to unr) r|= promote{u64, homMask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT})
     b_setBatch{bulk, dst, ri, r}
     xi+= unr
     ri+= 1

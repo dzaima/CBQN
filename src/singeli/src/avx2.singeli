@@ -130,17 +130,17 @@ def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_ep
 
 
 # mask stuff
-def getmask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
-def getmask{x:T & w256{T, 16}} = {
-  msk:u32 = getmask{emit{[32]u8, '_mm256_packs_epi16', x, [16]u16**0}}
+def topMask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
+def topMask{x:T & w256{T, 16}} = {
+  msk:u32 = topMask{emit{[32]u8, '_mm256_packs_epi16', x, [16]u16**0}}
   (msk&255) | (msk>>8)
 }
 
-def homAny{x:T & w256i{T}} = getmask{[32]u8 ~~ x} != 0
-def homAll{x:T & w256i{T}} = getmask{[32]u8 ~~ x} == 0xffff_ffff
+def homAny{x:T & w256i{T}} = homMask{[32]u8 ~~ x} != 0
+def homAll{x:T & w256i{T}} = homMask{[32]u8 ~~ x} == 0xffff_ffff
 
-def topAny{x:T & w256i{T}} = getmask{x} != 0
-def topAll{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1
+def topAny{x:T & w256i{T}} = topMask{x} != 0
+def topAll{x:T & w256i{T}} = topMask{x} == (1<<vcount{T})-1
 def topAny{x:T & w256i{T,16}} = homAny{[16]i16~~x  <  [16]i16**0}
 def topAll{x:T & w256i{T,16}} = homAll{[16]i16~~x  <  [16]i16**0}
 

@@ -121,16 +121,17 @@ def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
 # mask stuff
 def andAllZero{x:T, y:T & w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 
-def getmask{x:T & w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
-def getmask{x:T & w128{T, 16}} = getmask{emit{[16]u8, '_mm_packs_epi16', x, [8]u16**0}}
-def getmask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
-def getmask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
+def topMask{x:T & w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
+def topMask{x:T & w128{T, 16}} = topMask{emit{[16]u8, '_mm_packs_epi16', x, [8]u16**0}}
+def topMask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
+def topMask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
+def homMask{x:T & w128{T}} = topMask{x}
 
-def homAny{x:T & w128i{T}} = getmask{[16]u8 ~~ x} != 0
-def homAll{x:T & w128i{T}} = getmask{[16]u8 ~~ x} == 0xffff
+def homAny{x:T & w128i{T}} = homMask{[16]u8 ~~ x} != 0
+def homAll{x:T & w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
 
-def topAny{x:T & w128i{T}} = getmask{x} != 0
-def topAll{x:T & w128i{T}} = getmask{x} == (1<<vcount{T})-1
+def topAny{x:T & w128i{T}} = topMask{x} != 0
+def topAll{x:T & w128i{T}} = topMask{x} == (1<<vcount{T})-1
 def topAny{x:T & w128i{T, 16}} = homAny{[8]i16~~x  <  [8]i16**0}
 def topAll{x:T & w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
 
