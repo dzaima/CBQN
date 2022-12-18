@@ -112,19 +112,16 @@ B enclosed_0;
 B enclosed_1;
 extern B rt_memberOf;
 B memberOf_c2(B t, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1) goto bad;
+  if (isAtm(x) || RNK(x)!=1) return c2(rt_memberOf, w, x);
   if (isAtm(w)) goto single;
-  ur wr = RNK(w);
-  if (wr==0) {
-    B w0 = IGet(w, 0);
-    dec(w);
-    w = w0;
-    goto single;
-  }
-  if (wr==1) goto many;
-  goto bad;
   
-  bad: return c2(rt_memberOf, w, x);
+  ur wr = RNK(w);
+  if (wr>0) goto many;
+  
+  B w0 = IGet(w, 0);
+  dec(w);
+  w = w0;
+  goto single;
   
   B r;
   single: {
