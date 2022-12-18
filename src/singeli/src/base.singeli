@@ -94,8 +94,10 @@ def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
-def andnz{x, y} = assert{'andnz not supported', show{x, y}}
-def topBlend{f,t,m} = assert{'topBlend not supported', show{f,t,m}}
+def andnz{...x} = assert{'andnz not supported', show{...x}}
+def topBlend{...x} = assert{'topBlend not supported', show{...x}}
+def topMask{...x} = assert{'topBlend not supported', show{...x}}
+def pack{...x} = assert{'pack not supported', show{...x}}
 
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {

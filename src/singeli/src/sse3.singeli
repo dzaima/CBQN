@@ -101,6 +101,10 @@ def shr{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
 def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
 def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
 
+def packs{a:T,b:T & T==[8]i16} = emit{[16]i8,  '_mm_packs_epi16', a, b}
+def packs{a:T,b:T & T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
+def packs{a:T,b:T & T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
+def packs{a:T,b:T & T==[4]u32} = emit{[ 8]u16, '_mm_packus_epi32', a, b}
 
 # shuffle stuff
 def shuf{L, x:T, n & lvec{L,4,32} & w128{T} & knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
