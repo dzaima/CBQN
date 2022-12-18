@@ -146,13 +146,25 @@ static f64 (*const max_fns[])(void*, usz) = { max_i8, max_i16, max_i32, max_f64 
 B fold_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
-  if (ia==0) {
-    decG(x);
-    if (isFun(f)) {
-      B r = TI(f,identity)(f);
-      if (!q_N(r)) return inc(r);
+  if (ia<=2) {
+    if (ia==2) {
+      SGet(x)
+      B x0 = Get(x,0);
+      B x1 = Get(x,1);
+      decG(x);
+      return c2(f, x0, x1);
+    } else if (ia==1) {
+      B r = IGet(x,0);
+      decG(x);
+      return r;
+    } else {
+      decG(x);
+      if (isFun(f)) {
+        B r = TI(f,identity)(f);
+        if (!q_N(r)) return inc(r);
+      }
+      thrM("´: No identity found");
     }
-    thrM("´: No identity found");
   }
   u8 xe = TI(x,elType);
   if (isFun(f) && v(f)->flags) {
