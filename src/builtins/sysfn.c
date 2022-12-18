@@ -859,6 +859,7 @@ B toUtf8_c1(B t, B x) {
 extern char** environ;
 
 #if __has_include(<spawn.h>) && __has_include(<sys/wait.h>) && !WASM
+#define HAS_SH 1
 #include <spawn.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -1009,6 +1010,7 @@ B sh_c2(B t, B w, B x) {
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else
+#define HAS_SH 0
 B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
@@ -1378,11 +1380,11 @@ void getSysvals(B* res);
 
 static Body* file_nsGen;
 
-#if FFI
-#define OPT_FFI(F) F("ffi", U"•FFI", tag(10,VAR_TAG))
-#else
-#define OPT_FFI(F)
-#endif
+#define OPTSYS_0(X)
+#define OPTSYS_1(X) X
+#define OPTSYS_2(X) X
+#define OPTSYS_B(COND) OPTSYS_##COND
+#define OPTSYS(COND) OPTSYS_B(COND)
 
 #define FOR_DEFAULT_SYSVALS(F) \
   F("out", U"•Out", bi_out) \
@@ -1390,7 +1392,7 @@ static Body* file_nsGen;
   F("exit", U"•Exit", bi_exit) \
   F("getline", U"•GetLine", bi_getLine) \
   F("type", U"•Type", bi_type) \
-  F("sh", U"•SH", bi_sh) \
+  OPTSYS(HAS_SH)(F("sh", U"•SH", bi_sh)) \
   F("decompose", U"•Decompose", bi_decp) \
   F("while", U"•_while_", bi_while) \
   F("bqn", U"•BQN", bi_bqn) \
@@ -1418,7 +1420,7 @@ static Body* file_nsGen;
   F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
   F("flines", U"•FLines", tag(8,VAR_TAG)) \
   F("import", U"•Import", tag(9,VAR_TAG)) \
-  OPT_FFI(F) \
+  OPTSYS(FFI)(F("ffi", U"•FFI", tag(10,VAR_TAG))) \
   F("name", U"•name", tag(11,VAR_TAG)) \
   F("path", U"•path", tag(12,VAR_TAG)) \
   F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
@@ -1518,7 +1520,9 @@ B sys_c1(B t, B x) {
         cr = inc(comp_currArgs);
         break;
       }
-      case 17: cr = incG(curr_ns);
+      case 17: { // •listsys
+        cr = incG(curr_ns);
+      }
     }
     HARR_ADD(r, i, cr);
   }
