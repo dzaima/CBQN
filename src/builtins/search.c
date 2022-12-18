@@ -163,7 +163,7 @@ B memberOf_c2(B t, B w, B x) {
     SGetU(x) SGetU(w)
     bool had;
     for (usz i = 0; i < xia; i++) mk_Sb(&set, GetU(x,i), &had);
-    u64* rp; r = m_bitarrv(&rp, wia);
+    u64* rp; r = m_bitarrc(&rp, w);
     for (usz i = 0; i < wia; i++) bitp_set(rp, i, has_Sb(set, GetU(w,i)));
     free_Sb(set); decG(w);
     goto dec_x;
