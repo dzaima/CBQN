@@ -135,14 +135,14 @@ def table{aa, F, w, G_bit, G_vec} = {
 def tableAA{w, F, F_bit} = table{1, F, w, {} => bitAA{F_bit}, {V, u} => aa2bit{V, u, F}}
 def tableAS{w, F       } = table{0, F, w, {} => bitAS{F},     {V, u} => as2bit{V, u, F}}
 
-def tup_eqAA = tableAA{256, __eq, {a,b}=>a ^ ~b}; v_eqAA:*type{tupsel{0,tup_eqAA}} = tup_eqAA; 'avx2_eqAA'=v_eqAA
-def tup_neAA = tableAA{256, __ne, {a,b}=>a ^  b}; v_neAA:*type{tupsel{0,tup_neAA}} = tup_neAA; 'avx2_neAA'=v_neAA
-def tup_gtAA = tableAA{256, __gt, {a,b}=>a & ~b}; v_gtAA:*type{tupsel{0,tup_gtAA}} = tup_gtAA; 'avx2_gtAA'=v_gtAA
-def tup_geAA = tableAA{256, __ge, {a,b}=>a | ~b}; v_geAA:*type{tupsel{0,tup_geAA}} = tup_geAA; 'avx2_geAA'=v_geAA
+def tup_eqAA = tableAA{arch_defvw, __eq, {a,b}=>a ^ ~b}; v_eqAA:*type{tupsel{0,tup_eqAA}} = tup_eqAA; 'avx2_eqAA'=v_eqAA
+def tup_neAA = tableAA{arch_defvw, __ne, {a,b}=>a ^  b}; v_neAA:*type{tupsel{0,tup_neAA}} = tup_neAA; 'avx2_neAA'=v_neAA
+def tup_gtAA = tableAA{arch_defvw, __gt, {a,b}=>a & ~b}; v_gtAA:*type{tupsel{0,tup_gtAA}} = tup_gtAA; 'avx2_gtAA'=v_gtAA
+def tup_geAA = tableAA{arch_defvw, __ge, {a,b}=>a | ~b}; v_geAA:*type{tupsel{0,tup_geAA}} = tup_geAA; 'avx2_geAA'=v_geAA
 
-def tup_eqAS = tableAS{256, __eq}; v_eqAS:*type{tupsel{0,tup_eqAS}} = tup_eqAS; 'avx2_eqAS'=v_eqAS
-def tup_neAS = tableAS{256, __ne}; v_neAS:*type{tupsel{0,tup_neAS}} = tup_neAS; 'avx2_neAS'=v_neAS
-def tup_gtAS = tableAS{256, __gt}; v_gtAS:*type{tupsel{0,tup_gtAS}} = tup_gtAS; 'avx2_gtAS'=v_gtAS
-def tup_geAS = tableAS{256, __ge}; v_geAS:*type{tupsel{0,tup_geAS}} = tup_geAS; 'avx2_geAS'=v_geAS
-def tup_ltAS = tableAS{256, __lt}; v_ltAS:*type{tupsel{0,tup_ltAS}} = tup_ltAS; 'avx2_ltAS'=v_ltAS
-def tup_leAS = tableAS{256, __le}; v_leAS:*type{tupsel{0,tup_leAS}} = tup_leAS; 'avx2_leAS'=v_leAS
+def tup_eqAS = tableAS{arch_defvw, __eq}; v_eqAS:*type{tupsel{0,tup_eqAS}} = tup_eqAS; 'avx2_eqAS'=v_eqAS
+def tup_neAS = tableAS{arch_defvw, __ne}; v_neAS:*type{tupsel{0,tup_neAS}} = tup_neAS; 'avx2_neAS'=v_neAS
+def tup_gtAS = tableAS{arch_defvw, __gt}; v_gtAS:*type{tupsel{0,tup_gtAS}} = tup_gtAS; 'avx2_gtAS'=v_gtAS
+def tup_geAS = tableAS{arch_defvw, __ge}; v_geAS:*type{tupsel{0,tup_geAS}} = tup_geAS; 'avx2_geAS'=v_geAS
+def tup_ltAS = tableAS{arch_defvw, __lt}; v_ltAS:*type{tupsel{0,tup_ltAS}} = tup_ltAS; 'avx2_ltAS'=v_ltAS
+def tup_leAS = tableAS{arch_defvw, __le}; v_leAS:*type{tupsel{0,tup_leAS}} = tup_leAS; 'avx2_leAS'=v_leAS

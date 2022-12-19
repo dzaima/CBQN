@@ -30,4 +30,4 @@ bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
 
 def table{w} = each{{T} => bitsel_i{w, T}, tup{u8, u16, u32, u64}}
 
-def tup_bitsel = table{256}; v_bitsel:*type{tupsel{0,tup_bitsel}} = tup_bitsel; 'avx2_bitsel'=v_bitsel
+def tup_bitsel = table{arch_defvw}; v_bitsel:*type{tupsel{0,tup_bitsel}} = tup_bitsel; 'avx2_bitsel'=v_bitsel
