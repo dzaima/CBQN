@@ -142,12 +142,13 @@ endif
 ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
+j=4
 ifneq (${manualJobs},1)
 	ifeq (${MAKECMDGOALS},run_incremental_1)
-		MAKEFLAGS+= -j4 manualJobs=1
+		MAKEFLAGS+= -j${j} manualJobs=1
 	endif
 	ifeq (${MAKECMDGOALS},build_singeli)
-		MAKEFLAGS+= -j4 manualJobs=1
+		MAKEFLAGS+= -j${j} manualJobs=1
 	endif
 endif
 

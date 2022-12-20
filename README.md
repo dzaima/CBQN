@@ -38,6 +38,7 @@
     - If you want to use custom build types but your system doesn't have `shasum` or `sha256sum`, add `force_build_dir=build/obj/some_identifier`. That directory will be used to store incremental build object files.
   Macros that you may want to define are listed in `src/h.h`.  
 - Adding `builddir=1` to the make argument list will give you the build directory of the current configuration. Adding `clean=1` will clean that directory.
+- Use `j=8` instead of `-j8` to override the default parallel job count (which is currently `4`).
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by, respectively, linking/copying a local version to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
