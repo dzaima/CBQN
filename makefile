@@ -197,11 +197,9 @@ endif
 endif
 
 ifeq ($(origin clean),command line)
-	@export bd=$$(${MAKE} builddir); \
-	${MAKE} clean-specific bd="$$bd"
+	@${MAKE} clean-specific bd="$$(${MAKE} builddir)"
 else ifeq ($(origin builddir),command line)
-	@export bd=$$(${MAKE} builddir); \
-	echo "$$bd"
+	@echo "$$(${MAKE} builddir)"
 else # run build
 	
 ifeq ($(i_singeli), 1)
