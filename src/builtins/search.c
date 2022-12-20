@@ -48,20 +48,32 @@ B indexOf_c2(B t, B w, B x) {
       usz wia = IA(w);
       B el = isArr(x)? IGetU(x,0) : x;
       i32 res = wia;
-      if (TI(w,elType)==el_i32) {
-        if (q_i32(el)) {
-          i32* wp = i32any_ptr(w);
-          i32 v = o2iG(el);
-          for (usz i = 0; i < wia; i++) {
-            if (wp[i] == v) { res = i; break; }
-          }
+      u8 we = TI(w,elType);
+      if (we<el_B) {
+        void* wp = tyany_ptr(w);
+        u8 v8; u16 v16; u32 v32; f64 v64f;
+        switch(we) { default: UD;
+          case el_bit: if (!q_bit(el)) goto notfound; res = bit_find(wp,wia,o2bG(el)); goto checked;
+          case el_i8:  if (!q_i8 (el)) goto notfound;  v8  = ( u8)( i8)o2iG(el); goto chk8;
+          case el_i16: if (!q_i16(el)) goto notfound;  v16 = (u16)(i16)o2iG(el); goto chk16;
+          case el_i32: if (!q_i32(el)) goto notfound;  v32 = (u32)(i32)o2iG(el); goto chk32;
+          case el_f64: if (!q_f64(el)) goto notfound;  v64f=           o2fG(el); goto chk64f;
+          case el_c8:  if (!q_c8 (el)) goto notfound;  v8  = ( u8)     o2cG(el); goto chk8;
+          case el_c16: if (!q_c16(el)) goto notfound;  v16 = (u16)     o2cG(el); goto chk16;
+          case el_c32: if (!q_c32(el)) goto notfound;  v32 = (u32)     o2cG(el); goto chk32;
         }
-      } else {
-        SGetU(w)
-        for (usz i = 0; i < wia; i++) {
-          if (equal(GetU(w,i), el)) { res = i; break; }
-        }
+        
+        chk8:   for (usz i = 0; i < wia; i++) if ((( u8*)wp)[i]== v8 ) { res=i; break; } goto checked;
+        chk16:  for (usz i = 0; i < wia; i++) if (((u16*)wp)[i]==v16 ) { res=i; break; } goto checked;
+        chk32:  for (usz i = 0; i < wia; i++) if (((u32*)wp)[i]==v32 ) { res=i; break; } goto checked;
+        chk64f: for (usz i = 0; i < wia; i++) if (((f64*)wp)[i]==v64f) { res=i; break; } goto checked;
       }
+      else {
+        SGetU(w)
+        for (usz i = 0; i < wia; i++) if (equal(GetU(w,i), el)) { res = i; goto checked; }
+      }
+      
+      checked:; notfound:;
       decG(w); dec(x);
       i32* rp; Arr* r = m_i32arrp(&rp, 1);
       arr_shAlloc(r, 0);
