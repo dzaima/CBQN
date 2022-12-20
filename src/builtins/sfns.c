@@ -1180,6 +1180,10 @@ B select_ucw(B t, B o, B w, B x);
 
 B  transp_uc1(B t, B o, B x) { return  transp_im(t, c1(o,  transp_c1(t, x))); }
 B reverse_uc1(B t, B o, B x) { return reverse_c1(t, c1(o, reverse_c1(t, x))); }
+B reverse_ucw(B t, B o, B w, B x) {
+  B r = c1(o, reverse_c2(t, inc(w), x));
+  return reverse_c2(t, c1(bi_sub, w), r); // above reverse_c2 call asserts the -𝕨 is fine
+}
 
 NOINLINE B enclose_im(B t, B x) {
   if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
@@ -1194,6 +1198,7 @@ B enclose_uc1(B t, B o, B x) {
 void sfns_init() {
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_reverse)->uc1 = reverse_uc1;
+  c(BFn,bi_reverse)->ucw = reverse_ucw;
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
   c(BFn,bi_shape)->uc1 = shape_uc1;
