@@ -19,7 +19,11 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
+#ifdef SINGELI_DIR
+#include SINGELI_FILE1(../../build/obj2/SINGELI_DIR/SINGELI_FILE.c)
+#else
 #include SINGELI_FILE1(../singeli/gen/SINGELI_FILE.c)
+#endif
 #pragma GCC diagnostic pop
 
 #undef SINGELI_FILE

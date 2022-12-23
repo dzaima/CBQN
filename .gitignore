@@ -8,6 +8,7 @@ libcbqn.so
 
 # build system things
 /build/obj/
+/build/obj2/
 /build/singeliLocal
 /build/replxxLocal
 /build/bytecodeLocal

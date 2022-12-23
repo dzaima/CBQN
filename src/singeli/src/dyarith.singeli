@@ -189,4 +189,4 @@ andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
 
 'avx2_andBytes'=andBytes{256}
 'orSAc_f64_f64_f64'=arithSA{2,bqn_or,0,f64,f64,f64}
-include './../gen/arDefs'
+include 'gen/arDefs'

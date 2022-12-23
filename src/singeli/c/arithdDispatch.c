@@ -352,4 +352,5 @@ static NOINLINE B or_SA(B t, B w, B x) {
   return r;
 }
 
-#include "../gen/arTables.c"
+#define SINGELI_FILE arTables
+#include "../../utils/includeSingeli.h"
