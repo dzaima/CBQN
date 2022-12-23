@@ -342,6 +342,14 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     }
     return REPLXX_ACTION_RESULT_CONTINUE;
   }
+  ReplxxActionResult enter_replxx(int code, void* data) {
+    if (inBackslash()) {
+      setState(insertChar('\n', false));
+      stopBackslash();
+      return REPLXX_ACTION_RESULT_CONTINUE;
+    }
+    return REPLXX_ACTION_RESULT_RETURN;
+  }
   static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
     B ac = vec_slice(a, as, l);
     B bc = vec_slice(b, bs, l);
@@ -857,6 +865,7 @@ int main(int argc, char* argv[]) {
       replxx_set_completion_callback(replxx, complete_replxx, NULL);
       replxx_enable_bracketed_paste(replxx);
       replxx_bind_key(replxx, '\\', backslash_replxx, NULL);
+      replxx_bind_key(replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
       replxx_set_modify_callback(replxx, modified_replxx, NULL);
       replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('N'), "history_next");
       replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
