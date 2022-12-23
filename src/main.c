@@ -348,6 +348,9 @@ static bool isCmd(char* s, char** e, const char* cmd) {
       stopBackslash();
       return REPLXX_ACTION_RESULT_CONTINUE;
     }
+    TmpState s = getState();
+    s.pos = IA(s.s);
+    setState(s);
     return REPLXX_ACTION_RESULT_RETURN;
   }
   static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
