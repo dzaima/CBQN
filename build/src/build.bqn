@@ -535,12 +535,14 @@ cachedBin‿linkerCache ← {
 }
 
 outPath ← •wdpath •file.At po.output
+success ← Run cachedBin
 { 𝕊:
   po.emcc?
     SH ⟨"cp", AtRoot cachedBin,                   outPath •file.At •file.Name cachedBin⟩
     SH ⟨"cp", AtRoot linkerCache.File "BQN.wasm", outPath •file.At "BQN.wasm"⟩
   ;
     SH ⟨"cp", AtRoot cachedBin, outPath⟩
-}⍟⊢ Run cachedBin
+}⍟⊢ success
 
 OnExit@
+•Exit ¬success
