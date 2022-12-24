@@ -432,47 +432,49 @@ B drop_c1(B t, B x) { return affixes(x, 1); }
 
 extern B rt_take, rt_drop;
 B take_c2(B t, B w, B x) {
-  if (isNum(w)) {
-    if (!isArr(x)) x = m_atomUnit(x);
-    i64 wv = o2i64(w);
-    ur xr = RNK(x);
-    usz csz = 1;
-    usz* xsh;
-    if (xr>1) {
-      csz = arr_csz(x);
-      xsh = SH(x);
-      ptr_inc(shObjS(xsh)); // we'll look at it at the end and dec there
-    }
-    i64 t = wv*csz; // TODO error on overflow somehow
-    Arr* a;
-    if (t>=0) {
-      a = take_impl(t, x);
-    } else {
-      t = -t;
-      usz xia = IA(x);
-      if (t>xia) {
-        B xf = getFillE(x);
-        MAKE_MUT(r, t); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
-        MUTG_INIT(r);
-        mut_fillG(r, 0, xf, t-xia);
-        mut_copyG(r, t-xia, x, 0, xia);
-        decG(x); dec(xf);
-        a = mut_fp(r);
-      } else {
-        a = TI(x,slice)(x,xia-t,t);
-      }
-    }
-    if (xr<=1) {
-      arr_shVec(a);
-    } else {
-      usz* rsh = arr_shAlloc(a, xr); // xr>1, don't have to worry about 0
-      rsh[0] = wv<0?-wv:wv;
-      shcpy(rsh+1, xsh+1, xr-1);
-      ptr_dec(shObjS(xsh));
-    }
-    return taga(a);
+  if (!isArr(x)) x = m_atomUnit(x);
+  
+  if (!isNum(w)) return c2(rt_take, w, x);
+  
+  i64 wv = o2i64(w);
+  ur xr = RNK(x);
+  usz csz = 1;
+  usz* xsh;
+  if (xr>1) {
+    csz = arr_csz(x);
+    xsh = SH(x);
+    ptr_inc(shObjS(xsh)); // we'll look at it at the end and dec there
   }
-  return c2(rt_take, w, x);
+  i64 n = wv; // TODO error on overflow somehow
+  if (mulOn(n, csz)) thrOOM();
+  
+  Arr* a;
+  if (n>=0) {
+    a = take_impl(n, x);
+  } else {
+    n = -n;
+    usz xia = IA(x);
+    if (n>xia) {
+      B xf = getFillE(x);
+      MAKE_MUT(r, n); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
+      MUTG_INIT(r);
+      mut_fillG(r, 0, xf, n-xia);
+      mut_copyG(r, n-xia, x, 0, xia);
+      decG(x); dec(xf);
+      a = mut_fp(r);
+    } else {
+      a = TI(x,slice)(x,xia-n,n);
+    }
+  }
+  if (xr<=1) {
+    arr_shVec(a);
+  } else {
+    usz* rsh = arr_shAlloc(a, xr); // xr>1, don't have to worry about 0
+    rsh[0] = wv<0?-wv:wv;
+    shcpy(rsh+1, xsh+1, xr-1);
+    ptr_dec(shObjS(xsh));
+  }
+  return taga(a);
 }
 B drop_c2(B t, B w, B x) {
   if (isNum(w) && isArr(x) && RNK(x)==1) {
