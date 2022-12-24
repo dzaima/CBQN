@@ -43,81 +43,80 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
 extern B rt_indexOf;
 B indexOf_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)==0) thrM("⊐: 𝕨 must have rank at least 1");
-  if (RNK(w)==1) {
-    if (!isArr(x) || RNK(x)==0) {
-      usz wia = IA(w);
-      B el = isArr(x)? IGetU(x,0) : x;
-      i32 res = wia;
-      u8 we = TI(w,elType);
-      if (we<el_B) {
-        void* wp = tyany_ptr(w);
-        u8 v8; u16 v16; u32 v32; f64 v64f;
-        switch(we) { default: UD;
-          case el_bit: if (!q_bit(el)) goto notfound; res = bit_find(wp,wia,o2bG(el)); goto checked;
-          case el_i8:  if (!q_i8 (el)) goto notfound;  v8  = ( u8)( i8)o2iG(el); goto chk8;
-          case el_i16: if (!q_i16(el)) goto notfound;  v16 = (u16)(i16)o2iG(el); goto chk16;
-          case el_i32: if (!q_i32(el)) goto notfound;  v32 = (u32)(i32)o2iG(el); goto chk32;
-          case el_f64: if (!q_f64(el)) goto notfound;  v64f=           o2fG(el); goto chk64f;
-          case el_c8:  if (!q_c8 (el)) goto notfound;  v8  = ( u8)     o2cG(el); goto chk8;
-          case el_c16: if (!q_c16(el)) goto notfound;  v16 = (u16)     o2cG(el); goto chk16;
-          case el_c32: if (!q_c32(el)) goto notfound;  v32 = (u32)     o2cG(el); goto chk32;
-        }
-        
-        chk8:   for (usz i = 0; i < wia; i++) if ((( u8*)wp)[i]== v8 ) { res=i; break; } goto checked;
-        chk16:  for (usz i = 0; i < wia; i++) if (((u16*)wp)[i]==v16 ) { res=i; break; } goto checked;
-        chk32:  for (usz i = 0; i < wia; i++) if (((u32*)wp)[i]==v32 ) { res=i; break; } goto checked;
-        chk64f: for (usz i = 0; i < wia; i++) if (((f64*)wp)[i]==v64f) { res=i; break; } goto checked;
-      }
-      else {
-        SGetU(w)
-        for (usz i = 0; i < wia; i++) if (equal(GetU(w,i), el)) { res = i; goto checked; }
+  if (RNK(w)!=1) return c2(rt_indexOf, w, x);
+  
+  if (!isArr(x) || RNK(x)==0) {
+    usz wia = IA(w);
+    B el = isArr(x)? IGetU(x,0) : x;
+    i32 res = wia;
+    u8 we = TI(w,elType);
+    if (we<el_B) {
+      void* wp = tyany_ptr(w);
+      u8 v8; u16 v16; u32 v32; f64 v64f;
+      switch(we) { default: UD;
+        case el_bit: if (!q_bit(el)) goto notfound; res = bit_find(wp,wia,o2bG(el)); goto checked;
+        case el_i8:  if (!q_i8 (el)) goto notfound;  v8  = ( u8)( i8)o2iG(el); goto chk8;
+        case el_i16: if (!q_i16(el)) goto notfound;  v16 = (u16)(i16)o2iG(el); goto chk16;
+        case el_i32: if (!q_i32(el)) goto notfound;  v32 = (u32)(i32)o2iG(el); goto chk32;
+        case el_f64: if (!q_f64(el)) goto notfound;  v64f=           o2fG(el); goto chk64f;
+        case el_c8:  if (!q_c8 (el)) goto notfound;  v8  = ( u8)     o2cG(el); goto chk8;
+        case el_c16: if (!q_c16(el)) goto notfound;  v16 = (u16)     o2cG(el); goto chk16;
+        case el_c32: if (!q_c32(el)) goto notfound;  v32 = (u32)     o2cG(el); goto chk32;
       }
       
-      checked:; notfound:;
-      decG(w); dec(x);
-      i32* rp; Arr* r = m_i32arrp(&rp, 1);
-      arr_shAlloc(r, 0);
-      rp[0] = res;
-      return taga(r);
-    } else {
-      u8 we = TI(w,elType); usz wia = IA(w);
-      u8 xe = TI(x,elType); usz xia = IA(x);
-      if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
-      if (we==el_bit) {
-        u64* wp = bitarr_ptr(w);
-        u64 w0 = 1 & wp[0];
-        u64 i = bit_find(wp, wia, !w0); decG(w);
-        if (i!=wia) incG(x);
-        B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
-        return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
-      }
-      if (wia<=(we<=el_i16?4:16) && xia>16 && we<el_B && xe<el_B) {
-        SGetU(w);
-        #define XEQ(I) C2(ne, GetU(w,I), incG(x))
-        B r = XEQ(wia-1);
-        for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
-        #undef XEQ
-        decG(w); decG(x); return r;
-      }
-      if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
-        B r;
-        TABLE(w, x, i32, wia, i)
-        return r;
-      }
-      i32* rp; B r = m_i32arrc(&rp, x);
-      H_b2i* map = m_b2i(64);
-      SGetU(x)
-      SGetU(w)
-      for (usz i = 0; i < wia; i++) {
-        bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
-        if (!had) map->a[p].val = i;
-      }
-      for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
-      free_b2i(map); decG(w); decG(x);
-      return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
+      chk8:   for (usz i = 0; i < wia; i++) if ((( u8*)wp)[i]== v8 ) { res=i; break; } goto checked;
+      chk16:  for (usz i = 0; i < wia; i++) if (((u16*)wp)[i]==v16 ) { res=i; break; } goto checked;
+      chk32:  for (usz i = 0; i < wia; i++) if (((u32*)wp)[i]==v32 ) { res=i; break; } goto checked;
+      chk64f: for (usz i = 0; i < wia; i++) if (((f64*)wp)[i]==v64f) { res=i; break; } goto checked;
     }
+    else {
+      SGetU(w)
+      for (usz i = 0; i < wia; i++) if (equal(GetU(w,i), el)) { res = i; goto checked; }
+    }
+    
+    checked:; notfound:;
+    decG(w); dec(x);
+    i32* rp; Arr* r = m_i32arrp(&rp, 1);
+    arr_shAlloc(r, 0);
+    rp[0] = res;
+    return taga(r);
+  } else {
+    u8 we = TI(w,elType); usz wia = IA(w);
+    u8 xe = TI(x,elType); usz xia = IA(x);
+    if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
+    if (we==el_bit) {
+      u64* wp = bitarr_ptr(w);
+      u64 w0 = 1 & wp[0];
+      u64 i = bit_find(wp, wia, !w0); decG(w);
+      if (i!=wia) incG(x);
+      B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
+      return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
+    }
+    if (wia<=(we<=el_i16?4:16) && xia>16 && we<el_B && xe<el_B) {
+      SGetU(w);
+      #define XEQ(I) C2(ne, GetU(w,I), incG(x))
+      B r = XEQ(wia-1);
+      for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
+      #undef XEQ
+      decG(w); decG(x); return r;
+    }
+    if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+      B r;
+      TABLE(w, x, i32, wia, i)
+      return r;
+    }
+    i32* rp; B r = m_i32arrc(&rp, x);
+    H_b2i* map = m_b2i(64);
+    SGetU(x)
+    SGetU(w)
+    for (usz i = 0; i < wia; i++) {
+      bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
+      if (!had) map->a[p].val = i;
+    }
+    for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
+    free_b2i(map); decG(w); decG(x);
+    return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
   }
-  return c2(rt_indexOf, w, x);
 }
 
 B enclosed_0;
