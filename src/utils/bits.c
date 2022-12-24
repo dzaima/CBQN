@@ -4,7 +4,7 @@
 #if SINGELI
   #define SINGELI_FILE bits
   #include "../utils/includeSingeli.h"
-  #define bitselFns avx2_bitsel
+  #define bitselFns simd_bitsel
 #endif
 
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }

@@ -16,7 +16,7 @@ FN_LUT_A(cmp_fns, ge, AS); FN_LUT_A(cmp_fns, ge, AA);
 FN_LUT_A(cmp_fns, lt, AS);
 FN_LUT_A(cmp_fns, le, AS);
 
-#define ARCH(N) avx2_##N
+#define ARCH(N) simd_##N
 #define DSTE(N) &(cmp_fns_##N[0])
 void cmpA_init() {
   {
