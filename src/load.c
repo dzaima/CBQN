@@ -107,7 +107,7 @@ B comp_currSrc;
 B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
 
 B rt_undo, rt_select, rt_slash, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
-  rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_transp;
+  rt_group, rt_under, rt_reverse, rt_count, rt_find, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
@@ -421,9 +421,7 @@ void load_init() { // very last init function
     rt_group   = Get(rtObjRaw, n_group   ); gc_add(rt_group);
     rt_under   = Get(rtObjRaw, n_under   ); gc_add(rt_under);
     rt_reverse = Get(rtObjRaw, n_reverse ); gc_add(rt_reverse);
-    rt_indexOf = Get(rtObjRaw, n_indexOf ); gc_add(rt_indexOf);
     rt_count   = Get(rtObjRaw, n_count   ); gc_add(rt_count);
-    rt_memberOf= Get(rtObjRaw, n_memberOf); gc_add(rt_memberOf);
     rt_find    = Get(rtObjRaw, n_find    ); gc_add(rt_find);
     rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
     rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);

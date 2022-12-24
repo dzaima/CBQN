@@ -61,7 +61,6 @@ static NOINLINE B2 splitCells(B n, B p, bool indexOf) {
   #undef SYMB
 }
 
-extern B rt_indexOf;
 B indexOf_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     B2 t = splitCells(x, w, true);
@@ -144,7 +143,6 @@ B indexOf_c2(B t, B w, B x) {
 
 B enclosed_0;
 B enclosed_1;
-extern B rt_memberOf;
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) {
     B2 t = splitCells(w, x, false);
