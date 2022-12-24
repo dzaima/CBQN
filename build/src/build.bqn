@@ -1,5 +1,5 @@
+t0g ← •MonoTime@
 #!build/obj2/for_build
-
 # to emulate on makefile transition: NO_LDL → rm_lf=-ldl; no_fPIC → rm_f=-fPIC; something something PIE
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
@@ -388,7 +388,6 @@ Run ← { 𝕊:
   doneCount ← 0
   stopping ← 0
   Fail ← {stopping↩1 ⋄ Log 𝕩}
-  t0 ← •MonoTime@
   DoneLine ← {𝕊: ∾⟨•Repr doneCount, "/", •Repr ≠req⟩}
   { 𝕊:
     {𝕊:
@@ -417,7 +416,7 @@ Run ← { 𝕊:
     free∾↩ Ts done
   }•_while_{𝕊: (0<≠work) ∨ (¬stopping)∧0<≠left}@
   
-  Log ∾⟨DoneLine@, " in ", FmtTime t0-˜•MonoTime@, "s", stopping/"; failed to build"⟩
+  Log ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build"⟩
   
   ¬stopping
 }
