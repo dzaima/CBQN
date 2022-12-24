@@ -7,7 +7,6 @@
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - `make CC=cc` if clang isn't installed
-    - `make PIE=""` on ARM CPUs (incl. Android & Apple M1/M2)
     - `make FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
     - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the build complains about `-ldl`)
     - `make clean` if anything breaks and you want a clean build slate
