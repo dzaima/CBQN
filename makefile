@@ -44,7 +44,7 @@ c:
 
 # compiler setup
 i_CC := clang
-i_PIE := -no-pie
+i_PIE :=
 i_LIBS_LD := -lm
 i_LIBS_CC := -fvisibility=hidden
 i_FFI := 2
