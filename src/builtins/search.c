@@ -50,9 +50,9 @@ static NOINLINE B2 splitCells(B n, B p, bool indexOf) {
   if (isAtm(n)) n = m_hunit(n);
   ur nr = RNK(n);
   if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, indexOf? p : n, indexOf? n : p);
-  ur cr = (pr>nr? nr : pr-1);
+  ur cr = pr-1;
   n = toKCells(n, nr-cr);
-  p = toKCells(p, pr-cr);
+  p = toKCells(p, 1);
   assert(RNK(p)<=1);
   return (B2){.n=n, .p=p};
   
