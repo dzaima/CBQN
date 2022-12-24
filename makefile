@@ -38,7 +38,7 @@ shared-o3:
 shared-c:
 	@${MAKE} i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 forbuild:
-	@${MAKE} i_singeli=0 i_t=forbuild i_f="-O2" i_FFI=2 i_OUTPUT=build/obj2/for_build i_f='-DFOR_BUILD' run_incremental_0
+	@${MAKE} i_singeli=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=2 i_OUTPUT=build/obj2/for_build run_incremental_0
 c:
 	@${MAKE} custom=1 run_incremental_0
 
