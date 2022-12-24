@@ -149,13 +149,13 @@
   
   void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
   u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
-  #if SINGELI
+  #if SINGELI_X86_64
     #define SINGELI_FILE slash
     #include "../utils/includeSingeli.h"
   #endif
 #endif
 
-#if SINGELI
+#if SINGELI_X86_64
   #define SINGELI_FILE constrep
   #include "../utils/includeSingeli.h"
   
@@ -228,7 +228,7 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
 
 static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   assert(len <= bsp_max);
-  #if SINGELI && defined(__BMI2__)
+  #if SINGELI_X86_64 && defined(__BMI2__)
   if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len);
   #else
   if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
@@ -299,7 +299,7 @@ static B where(B x, usz xia, u64 s) {
   u64* xp = bitarr_ptr(x);
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
-    #if SINGELI && defined(__BMI2__)
+    #if SINGELI_X86_64 && defined(__BMI2__)
     i8* rp = m_tyarrvO(&r, 1, s, t_i8arr, 8);
     bmipopc_1slash8(xp, rp, xia);
     FINISH_OVERALLOC_A(r, s, 8);
@@ -307,7 +307,7 @@ static B where(B x, usz xia, u64 s) {
     i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
-    #if SINGELI && defined(__BMI2__)
+    #if SINGELI_X86_64 && defined(__BMI2__)
     if (s >= xia/8) {
       i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16);
       bmipopc_1slash16(xp, rp, xia);
@@ -329,7 +329,7 @@ static B where(B x, usz xia, u64 s) {
       }
     }
   } else if (xia <= (usz)I32_MAX+1) {
-    #if SINGELI && defined(__BMI2__)
+    #if SINGELI_X86_64 && defined(__BMI2__)
     i32* rp; r = m_i32arrv(&rp, s);
     #else
     i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
@@ -344,7 +344,7 @@ static B where(B x, usz xia, u64 s) {
       } else {
         bs = bit_sum(xp,b);
       }
-      #if SINGELI && defined(__BMI2__)
+      #if SINGELI_X86_64 && defined(__BMI2__)
       if (bs >= b/8+b/16) {
         bmipopc_1slash16(xp, buf, b);
         for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
@@ -430,7 +430,7 @@ B grade_bool(B x, usz xia, bool up) {
   u64* xp = bitarr_ptr(x);
   u64 sum = bit_sum(xp, xia);
   u64 l0 = up? xia-sum : sum; // Length of first set of indices
-  #if SINGELI && defined(__BMI2__)
+  #if SINGELI_X86_64 && defined(__BMI2__)
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(inc(x));
@@ -508,7 +508,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
-      #if SINGELI && defined(__BMI2__)
+      #if SINGELI_X86_64 && defined(__BMI2__)
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
@@ -549,7 +549,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
       else { DENSE; }                       \
       break; }
-    #if SINGELI
+    #if SINGELI_X86_64
     case 3: WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,xt,  8); bmipopc_2slash8 (wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum,    8))
     case 4: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,xt, 16); bmipopc_2slash16(wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum*2, 16))
     #else
@@ -606,7 +606,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
 #define SUM_CORE(T, WV, PREP, INC) \
   SCAN_CORE(WV, PREP; rp[ij]+=INC, , PLUS_SCAN(T))
 
-#if SINGELI
+#if SINGELI_X86_64
   #define IND_BY_SCAN \
     SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, avx2_scan_max_i32(rp+k,rp+k,e-k))
 #else
@@ -883,7 +883,7 @@ B slash_c2(B t, B w, B x) {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
-      #if SINGELI
+      #if SINGELI_X86_64
       #define CASE(L,T) case L: constrep_##T(wv, xv, rv, xlen); break;
       #else
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }

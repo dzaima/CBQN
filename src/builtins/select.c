@@ -34,7 +34,7 @@
 #include "../utils/mut.h"
 #include "../builtins.h"
 
-#if SINGELI
+#if SINGELI_X86_64
   #define SINGELI_FILE select
   #include "../utils/includeSingeli.h"
 #endif
@@ -95,7 +95,7 @@ B select_c2(B t, B w, B x) {
     if (xia==0) goto base; // can't just error immediately because depth 2 𝕨
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
-    #if SINGELI
+    #if SINGELI_X86_64
       #define CPUSEL(W, NEXT) \
         if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
       #define BOOL_USE_SIMD (xia<=128)

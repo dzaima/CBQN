@@ -14,7 +14,7 @@
 #include "../core.h"
 #include "../builtins.h"
 
-#if SINGELI
+#if SINGELI_X86_64
   #define SINGELI_FILE fold
   #include "../utils/includeSingeli.h"
 #endif
@@ -91,7 +91,7 @@ B sum_c1(B t, B x) {
     }
     r += s;
   } else {
-    #if SINGELI
+    #if SINGELI_X86_64
       r = avx2_sum_f64(xv, ia);
     #else
       r=0; for (usz i=0; i<ia; i++) r+=((f64*)xv)[i];
@@ -132,7 +132,7 @@ static f64 (*const prod_fns[])(void*, usz, f64) = { prod_i8, prod_i16, prod_i32,
   static f64 min_##T(void* xv, usz ia) { MIN_MAX(T,<) } \
   static f64 max_##T(void* xv, usz ia) { MIN_MAX(T,>) }
 DEF_MIN_MAX(i8) DEF_MIN_MAX(i16) DEF_MIN_MAX(i32)
-#if SINGELI
+#if SINGELI_X86_64
   static f64 min_f64(void* xv, usz ia) { return avx2_fold_min_f64(xv,ia); }
   static f64 max_f64(void* xv, usz ia) { return avx2_fold_max_f64(xv,ia); }
 #else

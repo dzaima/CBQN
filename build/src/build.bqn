@@ -201,6 +201,8 @@ po ← { # parsed options
     
     args∾↩ GetOpt "f"
     args∾↩ GetOpt "CCFLAGS"
+    args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
+    args∾↩ (singeli∧arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (               wasm) / ⟨"-DWASM"⟩
     args∾↩ (               wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (               emcc) / ⟨"-DEMCC", "-O3"⟩
@@ -464,7 +466,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/jit/", "nvm.c"⟩
     ⟨"src/utils/", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
-  singeliMap ← ⟨
+  singeliMap ← {po.arch≡"aarch64"? 𝕩/˜(1⊑¨𝕩)∊"cmp"‿"bits"‿"equal"; 𝕩} ⟨
     "src/core/stuff.c"‿"equal",        "src/utils/mut.c"‿"copy",       "src/utils/bits.c"‿"bits"
     "src/builtins/arithd.c"‿"dyarith", "src/builtins/cmp.c"‿"cmp",     "src/builtins/squeeze.c"‿"squeeze"
     "src/builtins/select.c"‿"select",  "src/builtins/fold.c"‿"fold",   "src/builtins/scan.c"‿"scan"

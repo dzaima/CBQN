@@ -11,7 +11,7 @@
 #define RDX_SUM_2(T)  GRADE_UD(c1[0]=0;,)             T s0=0, s1=0;             for(usz j=0;j<256;j++) { RDX_PRE(0); RDX_PRE(1); }
 #define RDX_SUM_4(T)  GRADE_UD(c1[0]=c2[0]=c3[0]=0;,) T s0=0, s1=0, s2=0, s3=0; for(usz j=0;j<256;j++) { RDX_PRE(0); RDX_PRE(1); RDX_PRE(2); RDX_PRE(3); }
 
-#if SINGELI
+#if SINGELI_X86_64
 extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
 extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
 #define RADIX_SUM_1_u8   avx2_scan_pluswrap_u8 (c0,c0,  256,0);
@@ -29,7 +29,7 @@ extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v
 #define RADIX_SUM_4_u32  RDX_SUM_4(u32)
 #endif
 
-#if SINGELI && !USZ_64
+#if SINGELI_X86_64 && !USZ_64
 #define RADIX_SUM_1_usz  avx2_scan_pluswrap_u32(c0,c0,  256,0);
 #define RADIX_SUM_2_usz  avx2_scan_pluswrap_u32(c0,c0,2*256,0);
 #define RADIX_SUM_4_usz  avx2_scan_pluswrap_u32(c0,c0,4*256,0);
