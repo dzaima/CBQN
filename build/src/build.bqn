@@ -270,7 +270,7 @@ updateSubmodule ← {
     "Local"≡¯5↑𝕩? @;
     ⊑𝕩<⊸∊done? @;
     done∾↩ <𝕩
-    SH ⟨"git", "submodule", "update", "--init", AtRoot 𝕩⟩
+    SH ⟨"git", "-C", rootDir, "submodule", "update", "--init", AtRoot 𝕩⟩
   }
 }
 
