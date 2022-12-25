@@ -4,6 +4,25 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
+static NOINLINE Arr* emptyArr(B x, ur xr) { // returns an empty array with the fill of x; if xr>1, shape is unset
+  B xf = getFillQ(x);
+  if (xr==1) {
+    if (isF64(xf)) return a(emptyIVec());
+    if (noFill(xf)) return a(emptyHVec());
+    if (isC32(xf)) return a(emptyCVec());
+  }
+  Arr* r;
+  if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
+  else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
+  else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
+  else                 { r = m_fillarrp(0); fillarr_setFill(r, xf); }
+  if (xr<=1) {
+    if (LIKELY(xr==1)) arr_shVec(r);
+    else arr_shAlloc(r, 0);
+  }
+  return r;
+}
+
 static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without set shape; v is non-negative
   usz xia = IA(x);
   if (ria>xia) {
@@ -13,7 +32,7 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
     mut_copyG(r, 0, x, 0, xia);
     mut_fillG(r, xia, xf, ria-xia);
     decG(x);
-    if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); }
+    if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); } // TODO dec(xf) not required? maybe define as a helper fn?
     return a(withFill(mut_fv(r), xf));
   } else {
     return TI(x,slice)(x,0,ria);
@@ -392,11 +411,6 @@ B pick_c2(B t, B w, B x) {
   return r;
 }
 
-static B slicev(B x, usz s, usz ia) {
-  usz xia = IA(x); assert(s+ia <= xia);
-  return taga(arr_shVec(TI(x,slice)(x, s, ia)));
-}
-
 FORCE_INLINE B affixes(B x, i32 post) {
   if (!isArr(x) || RNK(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
   ur xr = RNK(x);
@@ -431,26 +445,194 @@ B take_c1(B t, B x) { return affixes(x, 0); }
 B drop_c1(B t, B x) { return affixes(x, 1); }
 
 extern B rt_take, rt_drop;
-B take_c2(B t, B w, B x) {
-  if (!isArr(x)) x = m_atomUnit(x);
-  
-  if (!isNum(w)) return c2(rt_take, w, x);
-  
-  i64 wv = o2i64(w);
-  ur xr = RNK(x);
-  usz csz = 1;
-  usz* xsh;
-  if (xr>1) {
-    csz = arr_csz(x);
-    xsh = SH(x);
-    ptr_inc(shObjS(xsh)); // we'll look at it at the end and dec there
+B take_c2(B, B, B);
+B drop_c2(B, B, B);
+static NOINLINE B takedrop_highrank(bool take, B w, B x) {
+  #define SYMB (take? "↑" : "↓")
+  if (!isArr(w)) goto nonint;
+  ur wr = RNK(w);
+  if (wr>1) thrF("%U: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", SYMB, w);
+  usz wia = IA(w);
+  if (wia >= UR_MAX) thrF("%U: Result rank too large", SYMB);
+  B r, w0;
+  if (wia<=1) {
+    if (wia==0) { r = x; goto decW_ret; }
+    w0 = IGetU(w,0);
+    if (!isF64(w0)) goto nonint;
+    basicTake:;
+    r = take? C2(take, w0, x) : C2(drop, w0, x);
+    goto decW_ret;
+  } else {
+    // return take? c2(rt_take, w, x) : c2(rt_drop, w, x);
+    
+    ur xr = RNK(x);
+    ur rr = xr>wia? xr : wia;
+    assert(rr>=2);
+    ShArr* rsh = m_shArr(rr);
+    
+    TALLOC(usz, tmp, rr*5);
+    usz* ltv = tmp+rr*0; // total counters
+    usz* lcv = tmp+rr*1; // current counters
+    usz* xcv = tmp+rr*2; // sizes to skip by in x
+    usz* rcv = tmp+rr*3; // sizes to skip by in r
+    usz* wn  = tmp+rr*4; // 𝕨<0
+    usz* xsh = SH(x);
+    SGetU(w)
+    
+    usz ria = 1;
+    bool anyFill = false;
+    i64 cellStart = -1; // axis from which whole cells can be copied
+    for (usz i = 0; i < rr; i++) {
+      i64 cw = i<wia? o2i64(GetU(w, i)) : take? xsh[i] : 0;
+      u64 cwa = cw<0? -cw : cw;
+      wn[i] = cw<0;
+      usz xshc = i<rr-xr? 1 : xsh[i-(rr-xr)];
+      
+      usz c = take? cwa : cwa>=xshc? 0 : xshc-cwa;
+      if (c!=xshc) cellStart = i;
+      anyFill|= c>xshc;
+      rsh->a[i] = c;
+      if (mulOn(ria, c)) thrOOM();
+    }
+    
+    if (cellStart<=0) {
+      if (xr==rr) {
+        decShObj(rsh);
+      } else {
+        Arr* ra = TI(x,slice)(x,0,IA(x));
+        arr_shSetU(ra, rr, rsh);
+        x = taga(ra);
+      }
+      if (cellStart==-1) { // printf("equal shape\n");
+        r = x;
+        goto decW_tfree;
+      } else { // printf("last axis\n");
+        w0 = GetU(w, 0);
+        TFREE(tmp);
+        goto basicTake;
+      }
+    } else if (ria==0) { // printf("empty result\n");
+      Arr* ra = emptyArr(x, rr);
+      arr_shSetU(ra, rr, rsh);
+      r = taga(ra);
+    } else { // printf("generic\n");
+      MAKE_MUT(rm, ria); mut_init(rm, TI(x,elType));
+      B xf = getFillE(x);
+      
+      MUTG_INIT(rm);
+      if (IA(x)==0) {
+        mut_fillG(rm, 0, xf, ria);
+      } else { // actual generic copying code
+        
+        usz xcs=1, rcs=1; // current cell size
+        usz xs=0, rs=0; // cumulative sum
+        usz ri=0, xi=0; // index of first copy
+        usz xSkip, rSkip; // amount to skip forward by
+        usz cellWrite = 0; // batch write cell size
+        for (usz i=rr; i-->0; ) {
+          usz xshc = i<rr-xr? 1 : xsh[i-(rr-xr)];
+          usz rshc = rsh->a[i];
+          
+          i64 diff = xshc-(i64)rshc;
+          i64 off = take^wn[i]? 0 : diff; // take? (wn[i]? diff : 0) : wn[i]? 0 : diff
+          if (off>0) xi+= off*xcs;
+          if (off<0) ri-= off*rcs;
+          
+          bool pad = diff<0;
+          
+          // ltv[i] = lcv[i] = pad? xshc : rshc;
+          // rcv[i] = rs; if ( pad) rs-= rcs*diff; rcs*= rshc;
+          // xcv[i] = xs; if (!pad) xs+= xcs*diff; xcs*= xshc;
+          rcv[i]=rs;
+          xcv[i]=xs;
+          if (pad) { rs-= rcs*diff; ltv[i]=lcv[i]=xshc; }
+          else     { xs+= xcs*diff; ltv[i]=lcv[i]=rshc; }
+          usz rcs0 = rcs;
+          rcs*= rshc;
+          xcs*= xshc;
+          
+          if (i==cellStart) {
+            xSkip=xcs;
+            rSkip=rcs;
+            cellWrite = (pad? rcs0*xshc : rcs);
+            xs+= cellWrite;
+            rs+= cellWrite;
+          }
+        }
+        
+        usz pri = 0;
+        while (true) {
+          if (anyFill) { // TODO if cellWrite is a small enough number of bytes (limit possibly higher for el_bit) & elType<el_B, write all the fills at the start at once
+            if (ri!=pri) mut_fillG(rm, pri, xf, ri-pri);
+            pri = ri+cellWrite;
+          }
+          mut_copyG(rm, ri, x, xi, cellWrite);
+          usz cr = cellStart-1;
+          if (0 == --lcv[cr]) {
+            do {
+              if (cr==0) goto endCopy;
+              lcv[cr] = ltv[cr];
+              cr--;
+            } while (0 == --lcv[cr]);
+            ri+= rcv[cr];
+            xi+= xcv[cr];
+          } else {
+            ri+= rSkip;
+            xi+= xSkip;
+          }
+        }
+        endCopy:;
+        if (anyFill && pri!=ria) mut_fillG(rm, pri, xf, ria-pri);
+        
+      } // end of actual generic copying code
+      
+      Arr* ra = mut_fp(rm);
+      arr_shSetU(ra, rr, rsh);
+      r = withFill(taga(ra), xf);
+    }
+    decG(x);
+    decW_tfree: TFREE(tmp);
+    goto decW_ret;
   }
-  i64 n = wv; // TODO error on overflow somehow
-  if (mulOn(n, csz)) thrOOM();
+  UD;
   
-  Arr* a;
+  decW_ret: decG(w);
+  return r;
+  
+  nonint: thrF("%U: 𝕨 must consist of integers", SYMB);
+  #undef SYMB
+}
+
+#define TAKEDROP_INIT(TAKE) \
+  if (!isArr(x)) x = m_atomUnit(x); \
+  if (!isNum(w)) return takedrop_highrank(TAKE, w, x); \
+  Arr* a;                 \
+  i64 wv = o2i64(w);      \
+  ur xr = RNK(x);         \
+  usz csz=1; usz* xsh;    \
+  if (xr>1) {             \
+    csz = arr_csz(x);     \
+    xsh = SH(x);          \
+    ptr_inc(shObjS(xsh)); \
+  } else xr=1;            \
+  i64 n=wv; if (mulOn(n, csz)) thrOOM();
+
+#define TAKEDROP_SHAPE(SH0)     \
+  if (xr>1) {                   \
+    usz* rsh=arr_shAlloc(a,xr); \
+    u64 wva = wv<0? -wv : wv;   \
+    rsh[0] = SH0;               \
+    shcpy(rsh+1, xsh+1, xr-1);  \
+    ptr_dec(shObjS(xsh));       \
+  }                             \
+  return taga(a);
+
+B take_c2(B t, B w, B x) {
+  TAKEDROP_INIT(1);
+  
   if (n>=0) {
     a = take_impl(n, x);
+    if (xr==1) return taga(arr_shVec(a));
   } else {
     n = -n;
     usz xia = IA(x);
@@ -460,31 +642,30 @@ B take_c2(B t, B w, B x) {
       MUTG_INIT(r);
       mut_fillG(r, 0, xf, n-xia);
       mut_copyG(r, n-xia, x, 0, xia);
-      decG(x); dec(xf);
-      a = mut_fp(r);
+      decG(x);
+      a = a(withFill(taga(arr_shVec(mut_fp(r))), xf));
     } else {
       a = TI(x,slice)(x,xia-n,n);
+      if (xr==1) return taga(arr_shVec(a));
     }
   }
-  if (xr<=1) {
-    arr_shVec(a);
-  } else {
-    usz* rsh = arr_shAlloc(a, xr); // xr>1, don't have to worry about 0
-    rsh[0] = wv<0?-wv:wv;
-    shcpy(rsh+1, xsh+1, xr-1);
-    ptr_dec(shObjS(xsh));
-  }
-  return taga(a);
+  TAKEDROP_SHAPE(wva);
 }
 B drop_c2(B t, B w, B x) {
-  if (isNum(w) && isArr(x) && RNK(x)==1) {
-    i64 v = o2i64(w);
-    usz ia = IA(x);
-    if (v<0) return -v>ia? slicev(x, 0, 0) : slicev(x, 0, v+ia);
-    else     return  v>ia? slicev(x, 0, 0) : slicev(x, v, ia-v);
+  TAKEDROP_INIT(0);
+  
+  u64 na = n<0? -n : n;
+  usz xia = IA(x);
+  if (RARE(na>=xia)) { a = emptyArr(x, xr); decG(x); }
+  else {
+    a = TI(x,slice)(x, n<0? 0 : na, xia-na);
+    if (xr==1) return taga(arr_shVec(a));
   }
-  return c2(rt_drop, w, x);
+  
+  TAKEDROP_SHAPE(wva>=*xsh? 0 : *xsh-wva);
 }
+
+
 
 B join_c1(B t, B x) {
   if (isAtm(x)) thrM("∾: Argument must be an array");
