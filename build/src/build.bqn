@@ -10,48 +10,46 @@ t0g ← •MonoTime@
 #  1: toggle
 #  2: flag list
 opts ← ⟨
-  ⟨0, "j", "4"⟩       # number of parallel jobs
-  ⟨1, "verbose", 0⟩   # log more things
-  ⟨1, "rebuild", 0⟩   # forcibly rebuild everything
+  ⟨0, "j",       @, "Number of parallel jobs"⟩
+  ⟨1, "verbose", 0, "Log more things"⟩
+  ⟨1, "rebuild", 0, "Forcibly rebuild everything"∾@+10⟩
   # TODO clean
   
-  ⟨0, "CC", @⟩ # the C compiler
-  ⟨0, "LD", @⟩       # linker of the final binary; default CC, or CXX if REPLXX=1
-  ⟨1, "color", 1⟩    # whether to enable colored diagnostics
-  ⟨0, "os", @⟩       # target OS (linux, bsd, macos); used for .so vs .dylib, and changing linker flags for bsd
-  ⟨0, "arch", @⟩     # target architecture (x86-64, aarch64, generic); used for Singeli target deciding
+  ⟨0, "CC",    @, "The used C compiler"⟩
+  ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
+  ⟨1, "color", 1, "Whether to enable colored diagnostics"⟩
+  ⟨0, "os",    @, "Target OS (linux, bsd, macos)"⟩ # used for .so vs .dylib, and changing linker flags for bsd
+  ⟨0, "arch",  @, "Target architecture (x86-64, aarch64, generic)"∾@+10⟩ # used for selecting Singeli target
   
-  ⟨0, "OUTPUT", ""⟩  # output location; default depends
-  ⟨2, "f", ⟨⟩⟩       # C flags for CBQN files
-  ⟨2, "CCFLAGS", ⟨⟩⟩ # flags for all C compiler & linker invocations
-  ⟨2, "lf", ⟨⟩⟩      # linker flags
-  ⟨2, "LDFLAGS", ⟨⟩⟩ # more linker flags (identical to lf)
-  ⟨2, "rm_f", ⟨⟩⟩    # forcibly remove C compiler flag(s)
-  ⟨2, "rm_lf", ⟨⟩⟩   # forcibly remove linker flag(s)
+  ⟨0, "OUTPUT",  "", "Output location; defaults to ./BQN for regular builds"⟩
+  ⟨2, "f",       ⟨⟩, "C flags for CBQN files"⟩
+  ⟨2, "CCFLAGS", ⟨⟩, "flags for all C compiler & linker invocations"⟩
+  ⟨2, "lf",      ⟨⟩, "linker flags"⟩
+  ⟨2, "LDFLAGS", ⟨⟩, @⟩
+  ⟨2, "rm_f",    ⟨⟩, "forcibly remove C compiler flag(s)"⟩
+  ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"∾@+10⟩
   
-  # also define the default OUTPUT value (default default being "BQN")
-  ⟨1, "shared", 0⟩   # build a shared library; OUTPUT = "libcbqn.[so|dylib]"
-  ⟨1, "wasi", 0⟩     # build with WASI;        OUTPUT = "BQN.wasm"
-  ⟨1, "emcc", 0⟩     # build with emscripten;  OUTPUT = ".", is used as a directory
+  ⟨1, "shared", 0, "build a shared library; default output is libcbqn.[so|dylib]"⟩
+  ⟨1, "wasi",   0, "build with WASI; default output name is BQN.wasm"⟩
+  ⟨1, "emcc",   0, "build with emscripten; outputs BQN.wasm & BQN.js in a folder"⟩
   
-  ⟨1, "FFI", @⟩       # enable FFI through libffi; default ≡ ¬wasi∨emcc
-  ⟨1, "pkgconfig", 1⟩ # attempt to use pkg-config to find libffi inclusion flags
-  ⟨1, "singeli", 0⟩   # enable Singeli
-  ⟨1, "REPLXX", 0⟩    # enable replxx
+  ⟨1, "FFI",       @, "Enable FFI through libffi; On by default, except for WASM builds"⟩
+  ⟨1, "pkgconfig", 1, "Attempt to use pkg-config to find libffi flags"⟩
+  ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
+  ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   # TODO options for forcing around the bytecode/singeli/replxx directories
   
-  # CBQN toggles
-  ⟨1, "rtverify", 0⟩
-  ⟨1, "heapverify", 0⟩
+  ⟨1, "c",      0, "Disable some default flags"⟩
+  ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
+  ⟨1, "native", 0, "Use '-march=native'"∾@+10⟩
   
-  ⟨1, "c", 0⟩      # disable some default flags
-  ⟨1, "O3", @⟩     # -O3; default ≡ ¬c
-  ⟨1, "g", @⟩      # -g; default ≡ debug
-  ⟨1, "native", 0⟩ # -march=native & use native arch as lower & upper bound for Singeli
-  ⟨1, "debug",  0⟩ # -DDEBUG & -g
+  ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables stricter assertion checks"⟩
+  ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
+  ⟨1, "rtverify",   0, "Debug: compare builtin results with the self-hosted runtime"⟩
+  ⟨1, "heapverify", 0, "Debug: check reference count correctness"∾@+10⟩
   
-  ⟨0, "CXX", "c++"⟩ # C++ compiler (for replxx)
-  ⟨2, "REPLXX_FLAGS", ⟨"-std=c++11", "-Os"⟩⟩ # default replxx C++ build flags
+  ⟨0, "CXX", "c++", "C++ compiler (for replxx)"⟩
+  ⟨2, "REPLXX_FLAGS", ⟨"-std=c++11", "-Os"⟩, "default replxx C++ build flags"⟩
 ⟩
 
 Log ← •Out
@@ -65,8 +63,20 @@ Lowercase ← {𝕩 - (-´"Aa")×(𝕩≥'A')∧𝕩≤'Z'}
 
 getOpt ← {
   args ← ×∘≠¨⊸/ •args
-  [ot, on0, od] ← ⍉>opts
+  [ot, on0, od, oh] ← ⍉>opts
   on ← Lowercase¨ on0
+  
+  {𝕊:
+    •Out "Usage: path/to/cbqn/build/build [options]
+  Options are specified as arguments of 'key=value'. Keys are case-insensitive.
+  Toggles without a value implicitly enable it; e.g. 'singeli' is 'singeli=1'.
+  For flag lists, 'k=v' will split on spaces, i.e. 'f=-a -b' adds two flags,
+  whereas 'f+=-a -b' adds one flag that contains a space.
+Options:
+"∾∾oh {"  "∾𝕩∾"  "∾𝕨∾@+10}¨○((@≢¨oh)⊸/) (⌈´≠¨)⊸(↑¨)on0
+•Exit 0
+  }⍟⊢ ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨ •args
+  
   ot1 ← 1=ot
   ot2 ← 2=ot
   
@@ -77,7 +87,7 @@ getOpt ← {
   ks ← s0↑¨args      # keys
   ks Lowercase¨↩     # lowercase keys
   vs ← (1+s1)↓¨args  # values
-  {𝕊: "Unknown option -- "∾⊑(¬ks∊on)/ks}_assert_(∧´) ks∊on
+  {𝕊: ∾⟨"Unknown option -- '",⊑(¬ks∊on)/ks, "'; see --help for options"⟩}_assert_(∧´) ks∊on
   
   ci ← on⊐ks # index in option specification
   {𝕊: ∾⟨"Error: Unexpected '+=' for '",ks⊑˜⊑/¬𝕩,"'"⟩}_assert_(∧´) (ci⊏ot2)∨¬fl
@@ -108,13 +118,14 @@ SH ← {
   𝕩 {𝕊: ∾⟨"Error: ",⊑𝕨," exited with error code ",•Repr 𝕩⟩}_assert_(0=⊢) c
   o
 }
+TrySH ← {1⊑•SH⎊1‿𝕨‿"" 𝕩}
 
 rootDir ← •file.Parent⍟2 •file.path
 AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, j, rebuildAll, output,
+    verbose, J, rebuildAll, output,
     os, arch, native,
     emcc, wasm, replxx, singeli,
     bytecodeDir, replxxDir, singeliDir,
@@ -123,7 +134,7 @@ po ← { # parsed options
   
   custom ← GetOpt "c"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
-  j ⇐ •BQN GetOpt "j"
+  J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •BQN v; •BQN⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
@@ -144,7 +155,7 @@ po ← { # parsed options
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
-  uname ← ⊢◶""‿{𝕊: Lowercase 1⊑•SH⎊1‿""‿"" "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
+  uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
   InUname ← {𝕊: ∨´ 𝕩⍷uname}
   
   os ⇐ Lowercase {InUname"linux"? "linux"; InUname"darwin"? "macos"; InUname"bsd"? "bsd"; "linux"} DOpt "os"
@@ -365,7 +376,7 @@ Run ← { 𝕊:
     ⊑tb
   }
   
-  threads ← Spawn∘(•file.At "runner.bqn")¨ ↕(≠req)⌊po.j
+  threads ← Spawn∘(•file.At "runner.bqn")¨ ↕{0:0; 𝕩⌊po.J@} ≠req
   work ← ⟨⟩
   free ← threads
   Ts ← {𝕩.t}¨
