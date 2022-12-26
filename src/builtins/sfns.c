@@ -488,12 +488,13 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
       wn[i] = cw<0;
       usz xshc = i<rr-xr? 1 : xsh[i-(rr-xr)];
       
-      usz c = take? cwa : cwa>=xshc? 0 : xshc-cwa;
+      u64 c = take? cwa : cwa>=xshc? 0 : xshc-cwa;
       if (c!=xshc) cellStart = i;
       anyFill|= c>xshc;
       rsh->a[i] = c;
       if (mulOn(ria, c)) thrOOM();
     }
+    CHECK_IA(ria, 8);
     
     if (cellStart<=0) {
       if (xr==rr) {
@@ -609,14 +610,15 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
   if (!isNum(w)) return takedrop_highrank(TAKE, w, x); \
   Arr* a;                 \
   i64 wv = o2i64(w);      \
+  i64 n = wv;             \
   ur xr = RNK(x);         \
   usz csz=1; usz* xsh;    \
   if (xr>1) {             \
     csz = arr_csz(x);     \
     xsh = SH(x);          \
     ptr_inc(shObjS(xsh)); \
+    if (mulOn(n, csz)) thrOOM(); \
   } else xr=1;            \
-  i64 n=wv; if (mulOn(n, csz)) thrOOM();
 
 #define TAKEDROP_SHAPE(SH0)     \
   if (xr>1) {                   \
@@ -632,10 +634,12 @@ B take_c2(B t, B w, B x) {
   TAKEDROP_INIT(1);
   
   if (n>=0) {
+    CHECK_IA(n, 8);
     a = take_impl(n, x);
     if (xr==1) return taga(arr_shVec(a));
   } else {
     n = -n;
+    CHECK_IA(n, 8);
     usz xia = IA(x);
     if (n>xia) {
       B xf = getFillE(x);
