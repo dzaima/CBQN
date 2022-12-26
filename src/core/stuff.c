@@ -55,12 +55,14 @@ NOINLINE B arr_c2(B t, B w, B x) { return inc(t); }
 
 extern B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
+  SLOW3("!runtime 𝕎⌾F 𝕩", f, x, g);
   B fn = m2_d(incG(rt_under), inc(f), inc(g));
   B r = c1(fn, x);
   decG(fn);
   return r;
 }
 static B rtUnder_cw(B f, B g, B w, B x) { // consumes w,x
+  SLOW3("!runtime 𝔽⌾(𝕨⊸F) 𝕩", w, x, g);
   B fn = m2_d(incG(rt_under), inc(f), m2_d(incG(bi_before), w, inc(g)));
   B r = c1(fn, x);
   decG(fn);
@@ -840,7 +842,12 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     err("");
   }
 #endif
-#if WARN_SLOW==1
+#if WARN_SLOW
+  #if WARN_SLOW==2
+    #define ONLY_ALWAYS if (!always) return
+  #else
+    #define ONLY_ALWAYS
+  #endif
   static void warn_ln(B x) {
     if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
@@ -850,18 +857,27 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     }
   }
   void warn_slow1(char* s, B x) {
-    if (isArr(x) && IA(x)<100) return;
+    bool always = '!'==*s;
+    if (always) s++;
+    else if (isArr(x) && IA(x)<100) return;
+    ONLY_ALWAYS;
     fprintf(stderr, "slow %s: ", s); warn_ln(x);
     fflush(stderr);
   }
   void warn_slow2(char* s, B w, B x) {
-    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
+    bool always = '!'==*s;
+    if (always) s++;
+    else if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
+    ONLY_ALWAYS;
     fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
     fprintf(stderr, "  𝕩: "); warn_ln(x);
     fflush(stderr);
   }
   void warn_slow3(char* s, B w, B x, B y) {
-    if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
+    bool always = '!'==*s;
+    if (always) s++;
+    else if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
+    ONLY_ALWAYS;
     fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
     fprintf(stderr, "  𝕩: "); warn_ln(x);
     fprintf(stderr, "  f: "); warn_ln(y);

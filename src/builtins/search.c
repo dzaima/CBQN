@@ -213,7 +213,7 @@ B memberOf_c2(B t, B w, B x) {
 extern B rt_count;
 B count_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)==0) thrM("⊒: 𝕨 must have rank at least 1");
-  if (RNK(w)!=1) return c2(rt_count, w, x);
+  if (RNK(w)!=1) return c2rt(count, w, x);
   if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);

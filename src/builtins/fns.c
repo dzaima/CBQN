@@ -202,7 +202,7 @@ B fne_c2(B t, B w, B x) {
 
 extern B rt_find;
 B find_c2(B t, B w, B x) {
-  return c2(rt_find, w, x);
+  return c2rt(find, w, x);
 }
 
 static H_b2i* prevImports;

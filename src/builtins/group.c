@@ -320,7 +320,7 @@ B group_c2(B t, B w, B x) {
     }
   }
   base:
-  return c2(rt_group, w, x);
+  return c2rt(group, w, x);
 }
 B group_c1(B t, B x) {
   if (isArr(x) && RNK(x)==1 && TI(x,arrD1)) {
@@ -328,5 +328,5 @@ B group_c1(B t, B x) {
     B range = C1(ud, m_f64(ia));
     return C2(group, x, range);
   }
-  return c1(rt_group, x);
+  return c1rt(group, x);
 }

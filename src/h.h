@@ -315,7 +315,7 @@ typedef struct Arr {
   #define VALIDATEP(X) (X)
   #define UD __builtin_unreachable();
 #endif
-#if WARN_SLOW==1
+#if WARN_SLOW
   void warn_slow1(char* s, B x);
   void warn_slow2(char* s, B w, B x);
   void warn_slow3(char* s, B w, B x, B y);
@@ -644,6 +644,9 @@ typedef struct Fun {
 
 B c1F(B f, B x);
 B c2F(B f, B w, B x);
+
+#define c1rt(N,    X) ({           B x_=(X); SLOW1("!rt_" #N,   x_); c1(rt_##N,     x_); })
+#define c2rt(N, W, X) ({ B w_=(W); B x_=(X); SLOW2("!rt_" #N,w_,x_); c2(rt_##N, w_, x_); })
 static B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c1(f, VRES(x))));
   return c1F(f, x);

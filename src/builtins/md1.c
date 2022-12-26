@@ -260,7 +260,7 @@ extern B rt_insert;
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
-  if (xia==0) return m1c1(rt_insert, f, x);
+  if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
   if (RNK(x)==1 && isFun(f) && isPervasiveDy(f)) {
     return m_atomUnit(fold_c1(d, x));
   }

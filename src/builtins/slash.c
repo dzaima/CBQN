@@ -900,7 +900,7 @@ B slash_c2(B t, B w, B x) {
     goto decX_ret;
   }
   base:
-  return c2(rt_slash, w, x);
+  return c2rt(slash, w, x);
 }
 
 

@@ -157,7 +157,6 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   }
 }
 
-extern B rt_under, bi_before;
 B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   return (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f, x);
 }
@@ -472,8 +471,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
 
 
 extern B rt_depth;
-B depth_c1(Md2D* d,      B x) { return m2c1(rt_depth, d->f, d->g, x); }
-B depth_c2(Md2D* d, B w, B x) { return m2c2(rt_depth, d->f, d->g, w, x); }
+B depth_c1(Md2D* d,      B x) { SLOW3("!F⚇𝕨 𝕩", d->g, x, d->f); return m2c1(rt_depth, d->f, d->g, x); }
+B depth_c2(Md2D* d, B w, B x) { SLOW3("!𝕨 𝔽⚇f 𝕩", w, x, d->g);  return m2c2(rt_depth, d->f, d->g, w, x); }
 
 
 static void print_md2BI(FILE* f, B x) { fprintf(f, "%s", pm2_repr(c(Md1,x)->extra)); }

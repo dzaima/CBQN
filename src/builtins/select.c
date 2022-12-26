@@ -227,7 +227,7 @@ B select_c2(B t, B w, B x) {
   }
   base:;
   dec(xf);
-  return c2(rt_select, w, x);
+  return c2rt(select, w, x);
   
   dec_ret:;
   decG(w); decG(x); return r;

@@ -463,7 +463,7 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
     r = take? C2(take, w0, x) : C2(drop, w0, x);
     goto decW_ret;
   } else {
-    // return take? c2(rt_take, w, x) : c2(rt_drop, w, x);
+    // return take? c2rt(take, w, x) : c2rt(drop, w, x);
     
     ur xr = RNK(x);
     ur rr = xr>wia? xr : wia;
@@ -1127,7 +1127,7 @@ B reverse_c1(B t, B x) {
   return withFill(mut_fcd(r, x), xf);
 }
 B reverse_c2(B t, B w, B x) {
-  if (isArr(w)) return c2(rt_reverse, w, x);
+  if (isArr(w)) return c2rt(reverse, w, x);
   if (isAtm(x) || RNK(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
   usz xia = IA(x);
   if (xia==0) return x;
@@ -1230,7 +1230,7 @@ B transp_c1(B t, B x) {
   }
   decG(x); return taga(r);
 }
-B transp_c2(B t, B w, B x) { return c2(rt_transp, w, x); }
+B transp_c2(B t, B w, B x) { return c2rt(transp, w, x); }
 
 B transp_im(B t, B x) {
   if (isAtm(x)) thrM("⍉⁼: 𝕩 must not be an atom");

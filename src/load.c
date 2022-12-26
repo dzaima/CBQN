@@ -572,10 +572,10 @@ static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 B rt_invFnReg, rt_invFnSwap;
 BB2B rt_invFnRegFn;
 BB2B rt_invFnSwapFn;
-B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
-B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
 B def_m1_im(Md1D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
 B def_m1_iw(Md1D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
 B def_m1_ix(Md1D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
@@ -607,7 +607,7 @@ static B funBI_imRt(B t, B x) {
   return c1(c(BFn, t)->rtInvReg, x);
 }
 static B funBI_imInit(B t, B x) {
-  B f = c(BFn, t)->rtInvReg = c1(rt_invFnReg, inc(t));
+  B f = c(BFn, t)->rtInvReg = c1rt(invFnReg, inc(t));
   c(BFn, t)->im = funBI_imRt;
   return c1(f, x);
 }
