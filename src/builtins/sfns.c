@@ -500,8 +500,9 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
         decShObj(rsh);
       } else {
         Arr* ra = TI(x,slice)(x,0,IA(x));
+        PLAINLOOP for (usz i = 0; i < rr-xr; i++) rsh->a[i] = 1;
         arr_shSetU(ra, rr, rsh);
-        x = taga(ra);
+        x = VALIDATE(taga(ra));
       }
       if (cellStart==-1) { // printf("equal shape\n");
         r = x;
