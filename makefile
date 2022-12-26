@@ -355,6 +355,7 @@ clean-specific:
 	rmdir $(bd); true
 clean-submodules:
 	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/ build/bytecodeSubmodule/
-	
+clean-obj2:
+	rm -rf build/obj2
 
-clean: clean-build clean-singeli
+clean: clean-build clean-singeli clean-obj2
