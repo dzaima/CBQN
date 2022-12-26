@@ -753,6 +753,7 @@ int main(int argc, char* argv[]) {
       i++;
       if (carg[1]=='-') {
         if (!strcmp(carg, "--help")) {
+          print_help:
           printf(
           "Usage: %s [options] [file.bqn [arguments]]\n"
           "Options:\n"
@@ -817,6 +818,7 @@ int main(int argc, char* argv[]) {
               break;
             }
             #endif
+            case 'h': goto print_help;
             case 'r': { startREPL=true;                  break; }
             case 's': { startREPL=true; silentREPL=true; break; }
           }
