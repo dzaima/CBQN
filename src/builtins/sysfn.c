@@ -1380,9 +1380,14 @@ void getSysvals(B* res);
 
 static Body* file_nsGen;
 
+#if FFI || FOR_BUILD
+#define FFIOPT 1
+#else
+#define FFIOPT 0
+#endif
+
 #define OPTSYS_0(X)
 #define OPTSYS_1(X) X
-#define OPTSYS_2(X) X
 #define OPTSYS_B(COND) OPTSYS_##COND
 #define OPTSYS(COND) OPTSYS_B(COND)
 
@@ -1420,7 +1425,7 @@ static Body* file_nsGen;
   F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
   F("flines", U"•FLines", tag(8,VAR_TAG)) \
   F("import", U"•Import", tag(9,VAR_TAG)) \
-  OPTSYS(FFI)(F("ffi", U"•FFI", tag(10,VAR_TAG))) \
+  OPTSYS(FFIOPT)(F("ffi", U"•FFI", tag(10,VAR_TAG))) \
   F("name", U"•name", tag(11,VAR_TAG)) \
   F("path", U"•path", tag(12,VAR_TAG)) \
   F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
