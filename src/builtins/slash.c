@@ -215,7 +215,7 @@ static void bsp_block_u32(u64* src, u32* dst, usz len, usz sum, usz off) {
 static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
   usz b = bsp_max;
   usz bufsize = b<sum? b : sum;
-  TALLOC(u32, buf, bufsize);
+  TALLOC(u32, buf, bufsize+1);
   for (usz j=0; j<bufsize; j++) buf[j]=0;
   for (usz i=0; i<len; i+=b) {
     if (b > len-i) b = len-i;

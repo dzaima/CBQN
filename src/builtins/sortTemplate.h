@@ -259,13 +259,14 @@ typedef struct {
   SORT_TYPE *storage;
 } TEMP_STORAGE_T;
 
-static void TIM_SORT_RESIZE(TEMP_STORAGE_T *store, const size_t new_size) {
+static void TIM_SORT_RESIZE(TEMP_STORAGE_T *store, size_t new_size) {
+  new_size*= 2;
   if (store->storage == NULL) {
     store->storage = TALLOCP(SORT_TYPE, new_size);
   } else if (store->alloc < new_size) {
     store->storage = (SORT_TYPE *)TREALLOC(store->storage, new_size * sizeof(SORT_TYPE));
   } else return;
-  store->alloc = TSIZE(store->storage)/sizeof(SORT_TYPE);
+  store->alloc = new_size;
 }
 
 static void TIM_SORT_MERGE(SORT_TYPE *dst, const TIM_SORT_RUN_T *stack, const int stack_curr,

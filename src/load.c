@@ -706,6 +706,7 @@ void base_init() { // very first init function
   #endif
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
+  TIi(t_talloc,visit) = noop_visit;
   TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;

@@ -255,10 +255,10 @@ typedef union B {
   /*31*/ F(bitarr) \
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
-  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*49*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
+  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
+  /*50*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
   \
-  /*52*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*53*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -354,9 +354,12 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptySVec() incG(bi_emptySVec)
 ALLOC_FN void* mm_alloc(u64 sz, u8 type);
 ALLOC_FN void  mm_free(Value* x);
-static u64   mm_size(Value* x);
 static void  mm_visit(B x);
 static void  mm_visitP(void* x);
+static u64   mm_size(Value* x);
+#if !VERIFY_TAIL
+#define mm_sizeUsable mm_size
+#endif
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
