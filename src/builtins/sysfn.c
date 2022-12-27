@@ -1497,8 +1497,8 @@ B sys_c1(B t, B x) {
       case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
       case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: cr = inc(REQ_NAME); break; // •name
-      case 12: cr = inc(REQ_PATH); break; // •path
+      case 11: if (q_N(comp_currPath)) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
+      case 12: if (q_N(comp_currPath)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { // •wdpath
         if (!wdpath.u) wdpath = path_abs(inc(cdPath));
         cr = inc(wdpath);
@@ -1517,6 +1517,7 @@ B sys_c1(B t, B x) {
       }
       case 15: { // •state
         if (q_N(comp_currArgs)) thrM("No arguments present for •state");
+        if (q_N(comp_currPath)) thrM("No path present for •state");
         cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
         break;
       }
