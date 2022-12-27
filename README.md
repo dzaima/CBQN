@@ -67,7 +67,8 @@ x86-64 (Linux):
 x86 (Linux):
   clang 14.0.0; known to break on gcc - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
   running on the above x86-64 system, compiled with CCFLAGS=-m32
-AArch64 ARMv8-A (within Termux on Android):
+AArch64 ARMv8-A (within Termux on Android 8):
+  using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
   clang 15.0.4
   libffi 3.4.4 (structs were broken as of 3.4.3)
   replxx: clang++ 15.0.4
