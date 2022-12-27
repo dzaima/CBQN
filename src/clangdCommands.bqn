@@ -1,5 +1,5 @@
 # list all .c & .h files
-enableSingeli ← 0
+enableSingeli ← 1
 additionalFlags ← ⟨⟩
 
 allFiles ← ⟨⟩
@@ -9,7 +9,7 @@ allFiles {⊑(<¯2↑𝕩)∊".c"‿".h"}¨⊸/↩
 initialFlags ← ⟨
   "/usr/bin/clang","-std=gnu11","-Wall","-DCLANGD","-DFFI=2","-DCBQN_EXPORT","-fms-extensions"
   "-Wno-microsoft-anon-tag","-Wno-unused-function","-Wno-undefined-internal","-Wno-bitwise-instead-of-logical","-Wno-unknown-warning-option"
-⟩ ∾ additionalFlags ∾ enableSingeli/⟨"-DSINGELI","-march=native"⟩
+⟩ ∾ additionalFlags ∾ enableSingeli/⟨"-DSINGELI","-DSINGELI_X86_64","-DSINGELI_NEON","-march=native"⟩
 
 Esc←{
   in ← (@+0‿9‿10‿13)∾"'"""   # Null, Tab, LF, CR, and quotes
