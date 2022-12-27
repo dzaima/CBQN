@@ -199,7 +199,7 @@ po ← { # parsed options
       cc,
       "-std=gnu11",
       "-Wall", "-Wno-unused-function",
-      "-fms-extensions", "-ffp-contract=off", "-fno-math-errno", "-fvisibility=hidden",
+      "-fms-extensions", "-ffp-contract=off", "-fno-math-errno", "-fvisibility=hidden", "-fno-strict-aliasing",
       "-DBYTECODE_DIR="∾•file.Name bytecodeDir,
       "-DSINGELI="∾•Repr singeli,
       "-DFFI="∾•Repr 2×ffi
