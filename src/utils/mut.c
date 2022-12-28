@@ -269,24 +269,24 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   static copy_fn tcopy_c16Fns[] = {[t_c8arr]=avx2_copy_c8_c16,[t_c8slice]=avx2_copy_c8_c16, [t_c16arr]=avx2_copy_c16_c16,[t_c16slice]=avx2_copy_c16_c16};
   static copy_fn tcopy_c32Fns[] = {[t_c8arr]=avx2_copy_c8_c32,[t_c8slice]=avx2_copy_c8_c32, [t_c16arr]=avx2_copy_c16_c32,[t_c16slice]=avx2_copy_c16_c32, [t_c32arr]=avx2_copy_c32_c32,[t_c32slice]=avx2_copy_c32_c32};
   
-  #define TCOPY_FN(T, N) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
-    if (l==0) return; \
-    void* xp = tyany_ptr(x); \
-    T* rp = ms + (T*)a; \
-    u8 xt = TY(x);      \
-    if (xt==t_bitarr) { \
+  #define TCOPY_FN(T, N, NUM) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
+    if (l==0) return;          \
+    void* xp = tyany_ptr(x);   \
+    T* rp = ms + (T*)a;        \
+    u8 xt = TY(x);             \
+    if (NUM && xt==t_bitarr) { \
       for (usz i = 0; i < l; i++) rp[i] = bitp_get((u64*)xp, xs+i); \
-    } else { \
+    } else {                   \
       tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, rp, l, a(x)); \
-    } \
+    }                          \
   }
-  TCOPY_FN(i8,i8)
-  TCOPY_FN(i16,i16)
-  TCOPY_FN(i32,i32)
-  TCOPY_FN(u8,c8)
-  TCOPY_FN(u16,c16)
-  TCOPY_FN(u32,c32)
-  TCOPY_FN(f64,f64)
+  TCOPY_FN(i8,i8, 1)
+  TCOPY_FN(i16,i16, 1)
+  TCOPY_FN(i32,i32, 1)
+  TCOPY_FN(u8,c8, 0)
+  TCOPY_FN(u16,c16, 0)
+  TCOPY_FN(u32,c32, 0)
+  TCOPY_FN(f64,f64, 1)
   static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
     bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l);
   }
