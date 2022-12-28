@@ -6,11 +6,11 @@
 
 
 
-static B homFil1(B f, B r, B xf) {
+static NOINLINE B homFil1(B f, B r, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return toI32Any(r); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
-    if (f.u==bi_fne.u) { dec(xf); return withFill(r, m_harrUv(0).b); }
+    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return num_squeeze(r); }
+    if (f.u==bi_fne.u) { dec(xf); return withFill(r, emptyHVec()); }
     if (!noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c1(f, xf));
@@ -21,10 +21,10 @@ static B homFil1(B f, B r, B xf) {
   dec(xf);
   return r;
 }
-static B homFil2(B f, B r, B wf, B xf) {
+static NOINLINE B homFil2(B f, B r, B wf, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return toI32Any(r); }
+    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return num_squeeze(r); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c2(f, wf, xf));
@@ -36,18 +36,30 @@ static B homFil2(B f, B r, B wf, B xf) {
   return r;
 }
 
-B tbl_c1(Md1D* d, B x) { B f = d->f;
-  if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFillQ(x);
-  return homFil1(f, eachm(f, x), xf);
+B each_c1(Md1D* d, B x) { B f = d->f;
+  B r, xf;
+  if (EACH_FILLS) xf = getFillQ(x);
+  
+  if (isAtm(x)) r = m_hunit(c1(f, x));
+  else if (isFun(f)) r = eachm_fn(f, x, c(Fun,f)->c1);
+  else {
+    if (isMd(f)) if (isAtm(x) || IA(x)) { decR(x); thrM("Calling a modifier"); }
+    usz ia = IA(x);
+    MAKE_MUT(rm, ia);
+    mut_fill(rm, 0, f, ia);
+    r = mut_fcd(rm, x);
+  }
+  
+  if (EACH_FILLS) return homFil1(f, r, xf);
+  else return r;
+}
+B tbl_c1(Md1D* d, B x) {
+  return each_c1(d, x);
 }
 
 B slash_c2(B f, B w, B x);
 B shape_c2(B f, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
-  B wf, xf;
-  if (EACH_FILLS) wf = getFillQ(w);
-  if (EACH_FILLS) xf = getFillQ(x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
   ur wr = RNK(w); usz wia = IA(w);
@@ -59,7 +71,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   usz* rsh;
   
   BBB2B fc2 = c2fn(f);
-  if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
+  if (isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
     if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), incG(x)));
@@ -90,16 +102,23 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     shcpy(rsh   , SH(w), wr);
     shcpy(rsh+wr, SH(x), xr);
   }
-  decG(w); decG(x);
-  if (EACH_FILLS) return homFil2(f, r, wf, xf);
-  return r;
+  B wf, xf;
+  if (EACH_FILLS) {
+    assert(isArr(w)); wf=getFillQ(w);
+    assert(isArr(x)); xf=getFillQ(x);
+    decG(w); decG(x);
+    return homFil2(f, r, wf, xf);
+  } else {
+    decG(w); decG(x);
+    return r;
+  }
 }
 
-B each_c1(Md1D* d, B x) { B f = d->f;
-  if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFillQ(x);
-  return homFil1(f, eachm(f, x), xf);
+static B eachd(B f, B w, B x) {
+  if (isAtm(w) & isAtm(x)) return m_hunit(c2(f, w, x));
+  return eachd_fn(f, w, x, c2fn(f));
 }
+
 B each_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS) return eachd(f, w, x);
   B wf = getFillQ(w);
