@@ -326,7 +326,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   M_HARR(r, cam);
   usz p = 0;
   for (usz i = 0; i < cam; i++) {
-    Arr* s = slice(inc(x), p, csz); arr_shSetI(s, cr, csh);
+    Arr* s = arr_shSetI(slice(incG(x), p, csz), cr, csh);
     HARR_ADD(r, i, c1(f, taga(s)));
     p+= csz;
   }
@@ -373,7 +373,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       M_HARR(r, cam);
       usz p = 0;
       for (usz i = 0; i < cam; i++) {
-        Arr* s = slice(inc(x), p, csz); arr_shSetI(s, xc, csh);
+        Arr* s = arr_shSetI(slice(incG(x), p, csz), xc, csh);
         HARR_ADD(r, i, c2(f, inc(w), taga(s)));
         p+= csz;
       }
@@ -397,8 +397,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     M_HARR(r, cam);
     usz p = 0;
     for (usz i = 0; i < cam; i++) {
-      Arr* s = slice(inc(w), p, csz); arr_shSetI(s, wc, csh);
-      HARR_ADD(r, i, c2(f, taga(s), inc(x)));
+      Arr* s = arr_shSetI(slice(incG(w), p, csz), wc, csh);
+      HARR_ADD(r, i, c2(f, taga(s), incG(x)));
       p+= csz;
     }
 
@@ -432,8 +432,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     M_HARR(r, cam);
     usz wp = 0, xp = 0;
     #define CELL(wx) \
-      Arr* wx##s = wx##slice(inc(wx), wx##p, wx##sz); \
-      arr_shSetI(wx##s, wx##c, wx##cs); \
+      Arr* wx##s = arr_shSetI(wx##slice(incG(wx), wx##p, wx##sz), wx##c, wx##cs); \
       wx##p+= wx##sz
     #define F(W,X) HARR_ADD(r, i, c2(f, W, X))
     if (ext == 1) {
@@ -443,13 +442,13 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     } else if (wk < xk) {
       for (usz i = 0; i < cam; ) {
         CELL(w); B wb=taga(ws);
-        for (usz e = i+ext; i < e; i++) { CELL(x); F(inc(wb), taga(xs)); }
+        for (usz e = i+ext; i < e; i++) { CELL(x); F(incG(wb), taga(xs)); }
         dec(wb);
       }
     } else {
       for (usz i = 0; i < cam; ) {
         CELL(x); B xb=taga(xs);
-        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), inc(xb)); }
+        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), incG(xb)); }
         dec(xb);
       }
     }

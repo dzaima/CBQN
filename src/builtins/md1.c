@@ -163,7 +163,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
     }                          \
   } else if (X##_cr!=0) X##_csz*= SH(X)[1];
 
-#define SLICE(X, S) ({ Arr* r_ = X##_slc(incG(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
+#define SLICE(X, S) taga(arr_shSetI(X##_slc(incG(X), S, X##_csz), X##_cr, X##_csh))
 
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
 

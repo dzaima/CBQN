@@ -1168,8 +1168,8 @@ B bitcast_impl(B el0, B el1, B x) {
     r = taga(copy(xct, r));
   } else if (v(r)->refc!=1) {
     B pr = r;
-    r = taga(TI(r,slice)(r, 0, IA(r)));
-    arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
+    Arr* r2 = TI(r,slice)(r, 0, IA(r));
+    r = taga(arr_shSetI(r2, xr, shObj(pr))); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   } else {
     #if VERIFY_TAIL
       if (xct.s==1 && rct.s!=1) {

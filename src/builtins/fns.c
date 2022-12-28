@@ -119,8 +119,7 @@ B ud_c2(B t, B w, B x) {
   for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
 
   if (empty) {
-    Arr* ra = m_fillarrp(0);
-    arr_shSetU(ra, rr, sh);
+    Arr* ra = arr_shSetU(m_fillarrp(0), rr, sh);
     fillarr_setFill(ra, getFillQ(x));
     decG(x);
     return taga(ra);
@@ -155,9 +154,7 @@ B ud_c2(B t, B w, B x) {
     }
   }
   decG(x); TFREE(ri);
-  Arr* ra = mut_fp(r);
-  arr_shSetU(ra, rr, sh);
-  return withFill(taga(ra), xf);
+  return withFill(taga(arr_shSetU(mut_fp(r), rr, sh)), xf);
 }
 
 B ltack_c1(B t,      B x) {         return x; }

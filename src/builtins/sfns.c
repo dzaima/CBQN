@@ -265,9 +265,7 @@ B shape_c2(B t, B w, B x) {
           for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
           mut_copyG(m, div*xia, x, 0, mod);
           decG(x);
-          Arr* ra = mut_fp(m);
-          arr_shSetU(ra, nr, sh);
-          return withFill(taga(ra), xf);
+          return withFill(taga(arr_shSetU(mut_fp(m), nr, sh)), xf);
         }
         u8 xk = xl - 3;
         rp = m_tyarrp(&r, 1<<xk, nia, xt);
@@ -321,8 +319,7 @@ B shape_c2(B t, B w, B x) {
     }
     #undef FILL
   }
-  arr_shSetU(r,nr,sh);
-  return taga(r);
+  return taga(arr_shSetU(r,nr,sh));
 }
 
 B pick_c1(B t, B x) {
@@ -502,8 +499,7 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
       } else {
         Arr* ra = TI(x,slice)(x,0,IA(x));
         PLAINLOOP for (usz i = 0; i < rr-xr; i++) rsh->a[i] = 1;
-        arr_shSetU(ra, rr, rsh);
-        x = VALIDATE(taga(ra));
+        x = VALIDATE(taga(arr_shSetU(ra, rr, rsh)));
       }
       if (cellStart==-1) { // printf("equal shape\n");
         r = x;
@@ -514,9 +510,7 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
         goto basicTake;
       }
     } else if (ria==0) { // printf("empty result\n");
-      Arr* ra = emptyArr(x, rr);
-      arr_shSetU(ra, rr, rsh);
-      r = taga(ra);
+      r = taga(arr_shSetU(emptyArr(x, rr), rr, rsh));
     } else { // printf("generic\n");
       MAKE_MUT(rm, ria); mut_init(rm, TI(x,elType));
       B xf = getFillR(x);
@@ -589,9 +583,7 @@ static NOINLINE B takedrop_highrank(bool take, B w, B x) {
         
       } // end of actual generic copying code
       
-      Arr* ra = mut_fp(rm);
-      arr_shSetU(ra, rr, rsh);
-      r = withFill(taga(ra), xf);
+      r = withFill(taga(arr_shSetU(mut_fp(rm), rr, rsh)), xf);
     }
     decG(x);
     decW_tfree: TFREE(tmp);
