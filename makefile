@@ -4,43 +4,43 @@ MAKEFLAGS+= --no-print-directory --no-builtin-rules
 
 # various configurations
 o3:
-	@${MAKE} i_singeli=0 i_t=o3         i_f="-O3" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=o3         i_f="-O3" run_incremental_0
 o3g:
-	@${MAKE} i_singeli=0 i_t=o3g        i_f="-O3 -g" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=o3g        i_f="-O3 -g" run_incremental_0
 o3n:
-	@${MAKE} i_singeli=0 i_t=o3n        i_f="-O3 -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=o3n        i_f="-O3 -march=native" run_incremental_0
 debug:
-	@${MAKE} i_singeli=0 i_t=debug      i_f="-g -DDEBUG" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=debug      i_f="-g -DDEBUG" run_incremental_0
 debug1:
-	@${MAKE} i_singeli=0 i_t=debug1     i_f="-g -DDEBUG" manualJobs=1 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=debug1     i_f="-g -DDEBUG" manualJobs=1 run_incremental_0
 rtperf:
-	@${MAKE} i_singeli=0 i_t=rtperf     i_f="-O3 -DRT_PERF" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=rtperf     i_f="-O3 -DRT_PERF" run_incremental_0
 rtverify:
-	@${MAKE} i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" run_incremental_0
 heapverify:
-	@${MAKE} i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
 o3n-singeli:
-	@${MAKE} i_singeli=1 i_t=o3n_si     i_f="-O3 -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=1 i_t=o3n_si     i_f="-O3 -march=native" run_incremental_0
 o3ng-singeli:
-	@${MAKE} i_singeli=1 i_t=o3ng_si    i_f="-g -O3 -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=1 i_t=o3ng_si    i_f="-g -O3 -march=native" run_incremental_0
 debugn-singeli:
-	@${MAKE} i_singeli=1 i_t=debugn_si  i_f="-g -DDEBUG -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=1 i_t=debugn_si  i_f="-g -DDEBUG -march=native" run_incremental_0
 heapverifyn-singeli:
-	@${MAKE} i_singeli=1 i_t=heapverifyn_si i_f="-g -DDEBUG -DHEAP_VERIFY -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=1 i_t=heapverifyn_si i_f="-g -DDEBUG -DHEAP_VERIFY -march=native" run_incremental_0
 rtverifyn-singeli:
-	@${MAKE} i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
+	@"${MAKE}" i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
 wasi-o3:
-	@${MAKE} i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
-	@${MAKE} i_singeli=0 i_t=emcc_o3 i_OUTPUT=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=emcc_o3 i_OUTPUT=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
 shared-o3:
-	@${MAKE} i_OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
+	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
 shared-c:
-	@${MAKE} i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
+	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 forbuild:
-	@${MAKE} i_singeli=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
 c:
-	@${MAKE} custom=1 run_incremental_0
+	@"${MAKE}" custom=1 run_incremental_0
 
 # compiler setup
 i_CC := clang
@@ -185,7 +185,7 @@ ifeq ($(i_t),forbuild)
 	mkdir -p build/obj2
 endif
 ifeq ($(verbose),1)
-	@echo "build directory: $$(${MAKE} builddir)"
+	@echo "build directory: $$("${MAKE}" builddir)"
 	@echo "  bytecode: build/$(BYTECODE_DIR)"
 ifeq ($(REPLXX),1)
 	@echo "  replxx: $(REPLXX_DIR)"
@@ -202,15 +202,15 @@ endif
 endif
 
 ifeq ($(origin clean),command line)
-	@${MAKE} clean-specific bd="$$(${MAKE} builddir)"
+	@"${MAKE}" clean-specific bd="$$("${MAKE}" builddir)"
 else ifeq ($(origin builddir),command line)
-	@echo "$$(${MAKE} builddir)"
+	@echo "$$("${MAKE}" builddir)"
 else # run build
 	
 ifeq ($(i_singeli), 1)
 	@mkdir -p src/singeli/gen
 	@mkdir -p build/obj/singeli
-	@${MAKE} postmsg="post-singeli build:" build_singeli
+	@"${MAKE}" postmsg="post-singeli build:" build_singeli
 endif
 	
 ifeq ($(REPLXX_DIR),build/replxxSubmodule)
@@ -219,9 +219,9 @@ endif
 ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
 	@git submodule update --init build/bytecodeSubmodule
 endif
-	@export bd=$$(${MAKE} builddir); \
+	@export bd=$$("${MAKE}" builddir); \
 	mkdir -p "$$bd";                 \
-	${MAKE} run_incremental_1 bd="$$bd"
+	"${MAKE}" run_incremental_1 bd="$$bd"
 endif # run build
 
 run_incremental_1: ${bd}/BQN
@@ -279,7 +279,7 @@ ifeq ($(SINGELI_DIR),build/singeliSubmodule)
 	@git submodule update --init build/singeliSubmodule
 endif
 	@echo "pre-singeli build:"
-	@${MAKE} i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
+	@"${MAKE}" i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
 
 
 build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c copy.c equal.c squeeze.c select.c fold.c scan.c neq.c slash.c constrep.c bits.c}
@@ -343,7 +343,7 @@ uninstall:
 clean-singeli:
 	rm -rf src/singeli/gen/
 	rm -rf build/obj/singeli/
-	@${MAKE} clean-specific bd=build/obj/presingeli
+	@"${MAKE}" clean-specific bd=build/obj/presingeli
 clean-build:
 	rm -f build/obj/*/*.o
 	rm -f build/obj/*/*.d
