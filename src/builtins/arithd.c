@@ -72,7 +72,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   
-  #define GC2f(SYMB, NAME, EXPR, INT_SA) B NAME##_c2_arr(B t, B w, B x) { \
+  #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
@@ -84,35 +84,35 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
           if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp = tyany_ptr(x); \
           Rf64(x);                                                \
           if (we==el_i32) { B w,x /*shadow*/;                     \
-            if (xe==el_i32) { for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
-            else            { for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
+            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
+            else            { DECOR for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
           } else {          B w,x /*shadow*/;                     \
-            if (xe==el_i32) { for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
-            else            { for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
+            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
+            else            { DECOR for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
           }                                                       \
           decG(w); decG(x); return num_squeeze(r);                \
         }                                                         \
       } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
-        if (elInt(xe)){INT_SA Rf64(x); x=toI32Any(x); PI32(x) for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
-        if (xe==el_f64) { Rf64(x);                    PF(x)   for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (elInt(xe)){INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (xe==el_f64) { Rf64(x);                    PF(x)   DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); \
-        if (elInt(we)){       Rf64(w); w=toI32Any(w); PI32(w) for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
-        if (we==el_f64) { Rf64(w);                    PF(w)   for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (elInt(we)){       Rf64(w); w=toI32Any(w); PI32(w) DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (we==el_f64) { Rf64(w);                    PF(w)   DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
     thrM(SYMB ": Unexpected argument types");                     \
   }
-  GC2f("÷", div  ,           w.f/x.f, )
-  GC2f("√", root , pow(x.f, 1.0/w.f), )
-  GC2f("⋆", pow  ,     pow(w.f, x.f), )
-  GC2f("⋆⁼",log  , log(x.f)/log(w.f), )
+  GC2f("÷", div  ,           w.f/x.f, , )
+  GC2f("√", root , pow(x.f, 1.0/w.f), NOUNROLL, )
+  GC2f("⋆", pow  ,     pow(w.f, x.f), NOUNROLL, )
+  GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL, )
   static u64 repeatNum[] = {
     [el_i8 ] = 0x0101010101010101ULL,
     [el_i16] = 0x0001000100010001ULL,
     [el_i32] = 0x0000000100000001ULL,
   };
-  GC2f("|", stile,   pfmod(x.f, w.f),
+  GC2f("|", stile,   pfmod(x.f, w.f), NOUNROLL,
     f64 wf64 = o2fG(w); i32 wi32 = wf64;
     if (wf64==(f64)wi32 && wi32>0 && (wi32&(wi32-1))==0) {
       if (wi32==1) { Arr* ra=allZeroes(IA(x)); arr_shCopy(ra, x); r = taga(ra); decG(x); return r; }
