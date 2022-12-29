@@ -273,8 +273,18 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   
   if (IA(x)!=0 && isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_lt && RNK(x)>1) return toCells(x);
-    if (rtid==n_select && RNK(x)>1) return select_cells(0, x, RNK(x));
+    ur xr = RNK(x);
+    if (rtid==n_lt && xr>1) return toCells(x);
+    if (rtid==n_select && xr>1) return select_cells(0, x, xr);
+    if (rtid==n_couple && xr>0) {
+      ShArr* rsh = m_shArr(xr+1);
+      usz* xsh = SH(x);
+      rsh->a[0] = xsh[0];
+      rsh->a[1] = 1;
+      shcpy(rsh->a+2, xsh+1, xr-1);
+      Arr* r = TI(x,slice)(x, 0, IA(x));
+      return taga(arr_shSetU(r, xr+1, rsh));
+    }
   }
   
   usz cam = SH(x)[0];
