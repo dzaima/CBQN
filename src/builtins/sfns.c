@@ -441,7 +441,6 @@ FORCE_INLINE B affixes(B x, i32 post) {
 B take_c1(B t, B x) { return affixes(x, 0); }
 B drop_c1(B t, B x) { return affixes(x, 1); }
 
-extern B rt_take, rt_drop;
 B take_c2(B, B, B);
 B drop_c2(B, B, B);
 NOINLINE B takedrop_highrank(bool take, B w, B x) {
@@ -1064,7 +1063,6 @@ static u64 bit_reverse(u64 x) {
   c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
   return c;
 }
-extern B rt_reverse;
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
   usz n = *SH(x);
