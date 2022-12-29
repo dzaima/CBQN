@@ -274,14 +274,32 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   return bqn_merge(r);
 }
 
-extern B fold_c1(Md1D* d, B x);
+B fold_c1(Md1D* d, B x);
+B fold_c2(Md1D* d, B w, B x);
+
 extern B rt_insert;
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
-  if (RNK(x)==1 && isFun(f) && isPervasiveDy(f)) {
-    return m_atomUnit(fold_c1(d, x));
+  if (isFun(f)) {
+    u8 rtid = v(f)->flags-1;
+    if (RNK(x)==1 && isPervasiveDy(f)) return m_atomUnit(fold_c1(d, x));
+    if (rtid == n_join) {
+      ur xr = RNK(x);
+      if (xr==1) return x;
+      ShArr* rsh;
+      if (xr>2) {
+        rsh = m_shArr(xr-1);
+        usz* xsh = SH(x);
+        shcpy(rsh->a+1, xsh+2, xr-2);
+        rsh->a[0] = xsh[0] * xsh[1];
+      }
+      Arr* r = TI(x,slice)(x, 0, IA(x));
+      if (xr>2) arr_shSetU(r, xr-1, rsh);
+      else arr_shVec(r);
+      return taga(r);
+    }
   }
   
   S_SLICES(x)
@@ -298,15 +316,27 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   B r = w;
-  if (xia!=0) {
-    S_SLICES(x)
-    usz p = xia;
-    while(p!=0) {
-      p-= x_csz;
-      r = c2(f, SLICE(x, p), r);
+  if (xia==0) return r;
+  
+  if (isFun(f)) {
+    if (RNK(x)==1 && isPervasiveDy(f)) {
+      if (isAtm(w)) {
+        to_fold: return m_atomUnit(fold_c2(d, w, x));
+      }
+      if (RNK(w)==0) {
+        B w0=w; w = IGet(w,0); decG(w0);
+        goto to_fold;
+      }
     }
-    E_SLICES(x)
   }
+  
+  S_SLICES(x)
+  usz p = xia;
+  while(p!=0) {
+    p-= x_csz;
+    r = c2(f, SLICE(x, p), r);
+  }
+  E_SLICES(x)
   return r;
 }
 
