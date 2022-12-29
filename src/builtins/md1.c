@@ -215,7 +215,7 @@ B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   return merge_fill_result_1(rc);
 }
 
-B select_cells(usz n, B x, ur xr) {
+static NOINLINE B select_cells(usz n, B x, ur xr) {
   usz* xsh = SH(x);
   B r;
   usz cam = xsh[0];
@@ -265,6 +265,24 @@ B select_cells(usz n, B x, ur xr) {
   return r;
 }
 
+static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
+  MAKE_MUT(r, IA(x)); mut_init(r, e); MUTG_INIT(r);
+  usz cam = SH(x)[0];
+  usz csz = SH(x)[1];
+  assert(cam!=0 && csz!=0);
+  bool after = rtid==n_shifta;
+  usz xi=after, ri=!after, fi=after?csz-1:0;
+  incBy(f, cam-1); // cam≠0 → cam-1 ≥ 0
+  for (usz i = 0; i < cam; i++) {
+    mut_copyG(r, ri, x, xi, csz-1);
+    mut_setG(r, fi, f);
+    xi+= csz;
+    ri+= csz;
+    fi+= csz;
+  }
+  return mut_fcd(r, x);
+}
+
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
@@ -284,6 +302,10 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
       shcpy(rsh->a+2, xsh+1, xr-1);
       Arr* r = TI(x,slice)(x, 0, IA(x));
       return taga(arr_shSetU(r, xr+1, rsh));
+    }
+    if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
+      B xf = getFillR(x);
+      if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
     }
   }
   
@@ -314,8 +336,12 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
     if (isFun(f)) {
       u8 rtid = v(f)->flags-1;
-      if (rtid==n_select && isF64(w)) {
+      if (rtid==n_select && isF64(w) && xr>1) {
         return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
+      }
+      if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
+        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+        return shift_cells(w, x, el_or(TI(x,elType), selfElType(w)), rtid);
       }
     }
     S_SLICES(x)
