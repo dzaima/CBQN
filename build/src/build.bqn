@@ -19,7 +19,8 @@ opts ← ⟨
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
   ⟨1, "color", 1, "Whether to enable colored diagnostics"⟩
   ⟨0, "os",    @, "Target OS (linux, bsd, macos)"⟩ # used for .so vs .dylib, and changing linker flags for bsd
-  ⟨0, "arch",  @, "Target architecture (x86-64, aarch64, generic)"∾@+10⟩ # used for selecting Singeli target
+  ⟨0, "arch",  @, "Target architecture (x86-64, aarch64, generic)"⟩ # used for selecting Singeli target
+  ⟨1, "pie",   @, "Position-independent executable; default based on OS & arch"∾@+10⟩
   
   ⟨0, "OUTPUT",  "", "Output location; defaults to ./BQN for regular builds"⟩
   ⟨2, "f",       ⟨⟩, "C flags for CBQN files"⟩
@@ -155,6 +156,7 @@ po ← { # parsed options
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
+  
   uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
   InUname ← {𝕊: ∨´ 𝕩⍷uname}
   
@@ -166,6 +168,8 @@ po ← { # parsed options
   
   {𝕊: "Error: Cannot use Singeli on x86-64 without 'native'"}_assert_¬ (arch≡"x86-64")∧singeli∧¬native
   {𝕊: "Error: Cannot use Singeli on generic arch"}_assert_¬ singeli ∧ arch≡"generic"
+  
+  pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
   
   output ⇐ GetOpt "OUTPUT"
   output ↩ •wdpath•file.At {𝕊:
@@ -226,7 +230,8 @@ po ← { # parsed options
     args∾↩ (  GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
     args∾↩ (GetOpt "heapverify") / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (      exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
-    args∾↩ (             shared) / ⟨"-DCBQN_SHARED", "-shared", "-fPIC"⟩
+    args∾↩ (               ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ (             shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     cbqnc ↩ args
@@ -245,10 +250,11 @@ po ← { # parsed options
     args∾↩ (¬bsd) / ⟨"-ldl"⟩
     args∾↩ GetOpt "lf"
     args∾↩ GetOpt "LDFLAGS"
-    args∾↩ (                  wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
-    args∾↩ (                  emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
-    args∾↩ (         exportSymbols) / ⟨"-rdynamic"⟩
-    args∾↩ ( linux ∧ arch≡"x86-64") / ⟨"-no-pie"⟩
+    args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
+    args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
+    args∾↩ (exportSymbols) / ⟨"-rdynamic"⟩
+    args∾↩ (         ¬pie) / ⟨"-no-pie"⟩
+    args∾↩ (       shared) / ⟨"-shared"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
     {"linker: "∾•Repr 𝕩} _verboseLog args
     linker ↩ args
