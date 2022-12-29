@@ -106,8 +106,8 @@ B comp_currArgs;
 B comp_currSrc;
 B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
 
-B rt_undo, rt_select, rt_slash, rt_pick, rt_insert, rt_depth,
-  rt_group, rt_under, rt_count, rt_find, rt_transp;
+B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
+  rt_group, rt_under, rt_find, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
