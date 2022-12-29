@@ -325,7 +325,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
       }
     }
   } else if (!isMd(f)) {
-    const_f:
+    const_f:;
     usz cam = SH(x)[0];
     decG(x);
     B fv = inc(f);
