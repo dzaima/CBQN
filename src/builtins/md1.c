@@ -318,13 +318,24 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         B xf = getFillR(x);
         if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
       }
+      if (v(f)->type == t_md1D) {
+        Md1D* fd = c(Md1D,f);
+        u8 rtid = fd->m1->flags-1;
+        if (rtid == n_const) { f=fd->f; goto const_f; }
+      }
     }
   } else if (!isMd(f)) {
+    const_f:
     usz cam = SH(x)[0];
     decG(x);
     B fv = inc(f);
-    if (!isAtm(fv)) fv = m_unit(fv);
-    return C2(shape, m_f64(cam), fv);
+    if (isAtm(fv)) return C2(shape, m_f64(cam), fv);
+    usz vr = RNK(fv);
+    f64* shp; B sh = m_f64arrv(&shp, vr+1);
+    shp[0] = cam;
+    usz* fsh = SH(fv);
+    PLAINLOOP for (usz i = 0; i < vr; i++) shp[i+1] = fsh[i];
+    return C2(shape, sh, fv);
   }
   
   usz cam = SH(x)[0];
