@@ -393,7 +393,7 @@ Run ← { 𝕊:
   currLive ← ⟨⟩
   e ← @+27
   UpdateLive ← {
-    •term.OutRaw (∾(0⌈¯1+≠currLive)⥊<(e∾(@+13)∾"[0K"∾e∾"[1F")) ∾ (•ToUTF8 ∾storedOut) ∾ 1↓∾((@+10)∾•ToUTF8)¨ 𝕩
+    •term.OutRaw (¯4↓∾(≠currLive)⥊<(e∾(@+13)∾"[0K"∾e∾"[1F")) ∾ (•ToUTF8 ∾storedOut) ∾ 1↓∾((@+10)∾•ToUTF8)¨ 𝕩
     •term.Flush @
     currLive ↩ 𝕩
     storedOut ↩ ⟨⟩
