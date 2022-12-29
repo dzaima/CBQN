@@ -289,24 +289,32 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
     return isAtm(r)? m_atomUnit(r) : r;
   }
   
-  if (IA(x)!=0 && isFun(f)) {
-    u8 rtid = v(f)->flags-1;
-    ur xr = RNK(x);
-    if (rtid==n_lt && xr>1) return toCells(x);
-    if (rtid==n_select && xr>1) return select_cells(0, x, xr);
-    if (rtid==n_couple && xr>0) {
-      ShArr* rsh = m_shArr(xr+1);
-      usz* xsh = SH(x);
-      rsh->a[0] = xsh[0];
-      rsh->a[1] = 1;
-      shcpy(rsh->a+2, xsh+1, xr-1);
-      Arr* r = TI(x,slice)(x, 0, IA(x));
-      return taga(arr_shSetU(r, xr+1, rsh));
+  if (isFun(f)) {
+    if (IA(x)!=0) {
+      u8 rtid = v(f)->flags-1;
+      ur xr = RNK(x);
+      if (rtid==n_lt && xr>1) return toCells(x);
+      if (rtid==n_select && xr>1) return select_cells(0, x, xr);
+      if (rtid==n_couple) {
+        ShArr* rsh = m_shArr(xr+1);
+        usz* xsh = SH(x);
+        rsh->a[0] = xsh[0];
+        rsh->a[1] = 1;
+        shcpy(rsh->a+2, xsh+1, xr-1);
+        Arr* r = TI(x,slice)(x, 0, IA(x));
+        return taga(arr_shSetU(r, xr+1, rsh));
+      }
+      if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
+        B xf = getFillR(x);
+        if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
+      }
     }
-    if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
-      B xf = getFillR(x);
-      if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
-    }
+  } else if (!isMd(f)) {
+    usz cam = SH(x)[0];
+    decG(x);
+    B fv = inc(f);
+    if (!isAtm(fv)) fv = m_unit(fv);
+    return C2(shape, m_f64(cam), fv);
   }
   
   usz cam = SH(x)[0];
