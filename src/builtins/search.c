@@ -41,15 +41,15 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
   TFREE(tab0);
 
 typedef struct { B n, p; } B2;
-static NOINLINE B2 splitCells(B n, B p, bool indexOf) {
-  #define SYMB (indexOf? "⊐" : "∊")
-  #define ARG_N (indexOf? "𝕩" : "𝕨")
-  #define ARG_P (indexOf? "𝕨" : "𝕩")
+static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
+  #define SYMB (mode==0? "∊" : mode==1? "⊐" : "⊒")
+  #define ARG_N (mode? "𝕩" : "𝕨")
+  #define ARG_P (mode? "𝕨" : "𝕩")
   if (isAtm(p) || RNK(p)==0) thrF("%U: %U cannot have rank 0", SYMB, ARG_P);
   ur pr = RNK(p);
   if (isAtm(n)) n = m_hunit(n);
   ur nr = RNK(n);
-  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, indexOf? p : n, indexOf? n : p);
+  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode? p : n, mode? n : p);
   ur cr = pr-1;
   n = toKCells(n, nr-cr);
   p = toKCells(p, 1);
@@ -63,7 +63,7 @@ static NOINLINE B2 splitCells(B n, B p, bool indexOf) {
 
 B indexOf_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
-    B2 t = splitCells(x, w, true);
+    B2 t = splitCells(x, w, 1);
     w = t.p;
     x = t.n;
   }
@@ -210,10 +210,13 @@ B memberOf_c2(B t, B w, B x) {
   return r;
 }
 
-extern B rt_count;
 B count_c2(B t, B w, B x) {
-  if (!isArr(w) || RNK(w)==0) thrM("⊒: 𝕨 must have rank at least 1");
-  if (RNK(w)!=1) return c2rt(count, w, x);
+  if (RARE(!isArr(w) || RNK(w)!=1)) {
+    B2 t = splitCells(x, w, 2);
+    w = t.p;
+    x = t.n;
+  }
+  
   if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);

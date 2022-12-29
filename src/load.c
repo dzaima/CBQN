@@ -418,7 +418,6 @@ void load_init() { // very last init function
     rt_slash   = Get(rtObjRaw, n_slash   ); gc_add(rt_slash);
     rt_group   = Get(rtObjRaw, n_group   ); gc_add(rt_group);
     rt_under   = Get(rtObjRaw, n_under   ); gc_add(rt_under);
-    rt_count   = Get(rtObjRaw, n_count   ); gc_add(rt_count);
     rt_find    = Get(rtObjRaw, n_find    ); gc_add(rt_find);
     rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
     rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);
