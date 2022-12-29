@@ -444,7 +444,7 @@ B drop_c1(B t, B x) { return affixes(x, 1); }
 extern B rt_take, rt_drop;
 B take_c2(B, B, B);
 B drop_c2(B, B, B);
-static NOINLINE B takedrop_highrank(bool take, B w, B x) {
+NOINLINE B takedrop_highrank(bool take, B w, B x) {
   #define SYMB (take? "↑" : "↓")
   if (!isArr(w)) goto nonint;
   ur wr = RNK(w);

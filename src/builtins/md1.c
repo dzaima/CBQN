@@ -335,6 +335,8 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   return bqn_merge(HARR_FV(r));
 }
 
+B takedrop_highrank(bool take, B w, B x);
+
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr = isAtm(w)? 0 : RNK(w);
   ur xr = isAtm(x)? 0 : RNK(x);
@@ -352,6 +354,8 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
         if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
         return shift_cells(w, x, el_or(TI(x,elType), selfElType(w)), rtid);
       }
+      if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
+      if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
     }
     S_SLICES(x)
     M_HARR(r, cam);
