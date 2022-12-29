@@ -1241,6 +1241,7 @@ B transp_c1(B t, B x) {
   Arr* r;
   usz xi = 0;
   u8 xe = TI(x,elType);
+  bool toBit = false;
   if (h==2) {
     if (xe==el_B) {
       B* xp = arr_bptr(x); if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
@@ -1274,7 +1275,7 @@ B transp_c1(B t, B x) {
     }
   } else {
     switch(xe) { default: UD;
-      case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; // fallthough; lazy; TODO squeeze
+      case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; // fallthough
       case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
@@ -1307,7 +1308,7 @@ B transp_c1(B t, B x) {
     shcpy(rsh, xsh+1, xr-1);
     rsh[xr-1] = h;
   }
-  decG(x); return taga(r);
+  decG(x); return taga(toBit? (Arr*)cpyBitArr(taga(r)) : r);
 }
 B transp_c2(B t, B w, B x) { return c2rt(transp, w, x); }
 
