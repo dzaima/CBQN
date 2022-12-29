@@ -367,9 +367,8 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
     if (isFun(f)) {
       u8 rtid = v(f)->flags-1;
-      if (rtid==n_select && isF64(w) && xr>1) {
-        return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
-      }
+      if (rtid==n_select && isF64(w) && xr>1)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
+      if (rtid==n_pick && TI(x,arrD1) && xr>1 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
       if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
         if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
         return shift_cells(w, x, el_or(TI(x,elType), selfElType(w)), rtid);
