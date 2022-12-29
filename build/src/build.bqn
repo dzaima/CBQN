@@ -405,6 +405,7 @@ Run ← { 𝕊:
   doneCount ← 0
   stopping ← 0
   Fail ← {stopping↩1 ⋄ Log 𝕩}
+  nextRedraw ← ¯∞
   DoneLine ← {𝕊: ∾⟨•Repr doneCount, "/", •Repr ≠req⟩}
   { 𝕊:
     {𝕊:
@@ -418,13 +419,16 @@ Run ← { 𝕊:
     
     t1 ← •MonoTime@
     tmap ↩ ⍷tmap∾Ts work
-    UpdateLive (<DoneLine@)∾{
-      𝕩≡≠work? "";
-      o ← 𝕩⊑work
-      ∾⟨"[", FmtTime t1-o.t0, "] ", o.v.disp⟩
-    }¨ (Ts work) ⊐tmap
+    { 𝕊:
+      nextRedraw ↩ t1+0.1
+      UpdateLive (<DoneLine@)∾{
+        𝕩≡≠work? "";
+        o ← 𝕩⊑work
+        ∾⟨"[", FmtTime t1-o.t0, "] ", o.v.disp⟩
+      }¨ (Ts work) ⊐tmap
+    }⍟⊢ t1>nextRedraw-0.02
     
-    dm ← 0.1 WaitForOne Ts work
+    dm ← (0.1⌊nextRedraw-t1) WaitForOne Ts work
     lm ← ¬dm
     {𝕊: Fail "Error: Fork died" ⋄ dm‿lm∧↩<dm≠¯1}⍟⊢ ∨´dm=¯1
     done ← dm/work
