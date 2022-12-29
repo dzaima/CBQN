@@ -215,13 +215,67 @@ B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   return merge_fill_result_1(rc);
 }
 
+B select_cells(usz n, B x, ur xr) {
+  usz* xsh = SH(x);
+  B r;
+  usz cam = xsh[0];
+  if (xr==2) {
+    usz csz = xsh[1];
+    if (csz==1) return taga(arr_shVec(TI(x,slice)(x,0,IA(x))));
+    u8 xe = TI(x,elType);
+    if (xe==el_B) {
+      SGet(x)
+      HArr_p rp = m_harrUv(cam);
+      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i);
+      r = rp.b;
+    } else {
+      void* rp = m_tyarrv(&r, elWidth(xe), cam, el2t(xe));
+      void* xp = tyany_ptr(x);
+      switch(xe) {
+        case el_bit: for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*csz+n)); break;
+        case el_i8:  case el_c8:  for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*csz+n]; break;
+        case el_i16: case el_c16: for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*csz+n]; break;
+        case el_i32: case el_c32: for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*csz+n]; break;
+        case el_f64:              for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*csz+n]; break;
+      }
+    }
+  } else {
+    Arr* ra;
+    if (xsh[1]==1) {
+      ra = TI(x,slice)(incG(x), 0, IA(x));
+    } else {
+      usz rs = shProd(xsh, 2, xr);
+      usz xs = rs*xsh[1]; // aka csz
+      MAKE_MUT(rm, cam*rs); mut_init(rm, TI(x,elType)); MUTG_INIT(rm);
+      usz xi = rs*n;
+      usz ri = 0;
+      for (usz i = 0; i < cam; i++) {
+        mut_copyG(rm, ri, x, xi, rs);
+        xi+= xs;
+        ri+= rs;
+      }
+      ra = mut_fp(rm);
+    }
+    usz* rsh = arr_shAlloc(ra, xr-1);
+    shcpy(rsh+1, xsh+2, xr-2);
+    rsh[0] = cam;
+    r = taga(ra);
+  }
+  decG(x);
+  return r;
+}
+
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
   
-  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toCells(x);
+  if (IA(x)!=0 && isFun(f)) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_lt && RNK(x)>1) return toCells(x);
+    if (rtid==n_select && RNK(x)>1) return select_cells(0, x, RNK(x));
+  }
   
   usz cam = SH(x)[0];
   if (cam==0) {
@@ -236,18 +290,24 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   M_HARR(r, cam);
   for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
   E_SLICES(x)
-
+  
   return bqn_merge(HARR_FV(r));
 }
 
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
-  bool wr = isAtm(w)? 0 : RNK(w);
-  bool xr = isAtm(x)? 0 : RNK(x);
+  ur wr = isAtm(w)? 0 : RNK(w);
+  ur xr = isAtm(x)? 0 : RNK(x);
   B r;
   if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
   if (wr==0) {
     usz cam = SH(x)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
+    if (isFun(f)) {
+      u8 rtid = v(f)->flags-1;
+      if (rtid==n_select && isF64(w)) {
+        return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
+      }
+    }
     S_SLICES(x)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
