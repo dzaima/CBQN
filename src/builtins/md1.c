@@ -295,6 +295,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
       ur xr = RNK(x);
       if (rtid==n_lt && xr>1) return toCells(x);
       if (rtid==n_select && xr>1) return select_cells(0, x, xr);
+      if (rtid==n_pick && xr>1 && TI(x,arrD1)) return select_cells(0, x, xr);
       if (rtid==n_couple) {
         ShArr* rsh = m_shArr(xr+1);
         usz* xsh = SH(x);
