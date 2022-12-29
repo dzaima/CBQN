@@ -305,6 +305,15 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         Arr* r = TI(x,slice)(x, 0, IA(x));
         return taga(arr_shSetU(r, xr+1, rsh));
       }
+      if (rtid==n_shape) {
+        usz cam = SH(x)[0];
+        usz csz = arr_csz(x);
+        Arr* ra = TI(x,slice)(x,0,IA(x));
+        usz* rsh = arr_shAlloc(ra, 2);
+        rsh[0] = cam;
+        rsh[1] = csz;
+        return taga(ra);
+      }
       if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
         B xf = getFillR(x);
         if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
