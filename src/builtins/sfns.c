@@ -513,7 +513,13 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
     } else { // printf("generic\n");
       MAKE_MUT(rm, ria); mut_init(rm, TI(x,elType));
       B xf = getFillR(x);
-      if (anyFill && noFill(xf)) thrM("↑: fill element required for overtaking, but 𝕩 doesn't have one");
+      if (anyFill && noFill(xf)) {
+        #if PROPER_FILLS
+          thrM("↑: fill element required for overtaking, but 𝕩 doesn't have one");
+        #else
+          xf = m_f64(0);
+        #endif
+      }
       
       MUTG_INIT(rm);
       if (IA(x)==0) {
