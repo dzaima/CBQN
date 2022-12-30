@@ -15,6 +15,7 @@
 #include "../utils/mut.c"
 #include "../utils/each.c"
 #include "../utils/bits.c"
+#include "../utils/ryu.c"
 #include "../builtins/fns.c"
 #include "../builtins/sfns.c"
 #include "../builtins/select.c"

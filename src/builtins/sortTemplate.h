@@ -1,32 +1,7 @@
-// modified version of https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708
+// modified version of https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708; see licenses/LICENSE-MIT-sort
 /* Copyright (c) 2010-2019 Christopher Swenson. */
 /* Copyright (c) 2012 Vojtech Fried. */
 /* Copyright (c) 2012 Google Inc. All Rights Reserved. */
-/*
-The MIT License (MIT)
-
-Copyright (c) 2010-2019 Christopher Swenson and [others as listed in CONTRIBUTORS.md](CONTRIBUTORS.md)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-(contributors list, as this isn't markdown in the original repo: https://github.com/swenson/sort/blob/f79f2a525d03f102034b5a197c395f046eb82708/CONTRIBUTORS.md)
-*/
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -248,7 +248,7 @@ ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-utils: ${addprefix ${bd}/, utf.o hash.o file.o mut.o each.o bits.o}
+utils: ${addprefix ${bd}/, ryu.o utf.o hash.o file.o mut.o each.o bits.o}
 ${bd}/%.o: src/utils/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<

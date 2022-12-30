@@ -81,10 +81,18 @@ B glyph_c1(B t, B x) {
   return m_c32vec_0(U"(•Glyph: given object with unexpected type)");
 }
 
+#if !NO_RYU
+B ryu_d2s(double f);
+#endif
+
 B repr_c1(B t, B x) {
   if (isF64(x)) {
-    NUM_FMT_BUF(buf, x.f);
-    return utf8Decode(buf, strlen(buf));
+    #if NO_RYU
+      NUM_FMT_BUF(buf, x.f);
+      return utf8Decode(buf, strlen(buf));
+    #else
+      return ryu_d2s(o2fG(x));
+    #endif
   } else {
     #if FORMATTER
       return bqn_repr(x);
