@@ -455,7 +455,7 @@ static inline double int64Bits2Double(uint64_t bits) {
 }
 
 bool ryu_s2d_n(u8* buffer, int len, f64* result) {
-  assert(len>0 && len<(1<<20)); // max length so that '0.0000[a billion zeroes]0000e1000000000' doesn't have to be handled
+  assert(len>0 && len<(1<<20)); // max length so that '0.0000[a billion zeroes]0001e1000000000' doesn't have to be handled
   int m10digits = 0;
   int dotIndex = len;
   int eIndex = len;
@@ -474,7 +474,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
   for (; i < len; i++) {
     char c = buffer[i];
     if (c == '.') {
-      if (dotIndex!=len) return false;
+      if (dotIndex!=len) return false; // "12.34.56"
       dotIndex = i;
       continue;
     }
@@ -508,7 +508,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
       }
     }
   }
-  if (i < len) return false;
+  if (i < len) return false; // "123hello"
   if (signedE) e10 = -e10;
   
   e10+= offset;

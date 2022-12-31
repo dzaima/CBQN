@@ -660,9 +660,9 @@ B fchars_c2(B d, B w, B x) {
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
   I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x));
-  usz ia = PIA(tf); u8* p = (u8*)tf->a;
+  usz ia = PIA(tf);
   u8* rp; B r = m_c8arrv(&rp, ia);
-  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
+  COPY_TO(rp, el_i8, 0, taga(tf), 0, ia);
   ptr_dec(tf);
   return r;
 }
