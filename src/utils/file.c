@@ -49,9 +49,18 @@ I8Arr* path_bytes(B path) { // consumes
     src = stream_bytes(f);
   } else {
     i64 len = ftell(f);
+    CHECK_IA(len, 1);
+    #if USZ_64
+      if(len > USZ_MAX) { fclose(f); thrOOM(); }
+    #else
+      if (len > ((1LL<<31) - 1000)) { fclose(f); thrOOM(); }
+    #endif
     fseek(f, 0, SEEK_SET);
-    src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src);
-    if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
+    src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src); // TODO fclose file if allocation fails (+ elsewhere too)
+    if (fread((char*)src->a, 1, len, f)!=len) {
+      fclose(f);
+      thrF("Error reading file \"%R\"", path);
+    }
   }
   dec(path);
   fclose(f);
@@ -195,7 +204,7 @@ void path_wChars(B path, B x) { // consumes path
   TALLOC(char, val, len);
   toUTF8(x, val);
   
-  if (fwrite(val, 1, len, f) != len) thrF("Error writing to file \"%R\"", path);
+  if (fwrite(val, 1, len, f) != len) { fclose(f); thrF("Error writing to file \"%R\"", path); }
   TFREE(val);
   dec(path);
   fclose(f);
@@ -268,7 +277,7 @@ B mmap_file(B path) {
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
   u64 len = lseek(fd, 0, SEEK_END);
   
-  u8* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0); // TODO count in heap usage
+  u8* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0); // TODO count in some memory usage counter
   if (data==MAP_FAILED) {
     close(fd);
     thrM("failed to mmap file");
