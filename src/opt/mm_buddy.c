@@ -107,6 +107,9 @@ void tailVerifyFree(void* ptr) {
     case t_i8arr:  filled = TYARR_SZ(I8,  ia=PIA(xa)); break;
     case t_i16arr: filled = TYARR_SZ(I16, ia=PIA(xa)); break;
     case t_i32arr: filled = TYARR_SZ(I32, ia=PIA(xa)); break;
+    case t_c8arr:  filled = TYARR_SZ(C8,  ia=PIA(xa)); break;
+    case t_c16arr: filled = TYARR_SZ(C16, ia=PIA(xa)); break;
+    case t_c32arr: filled = TYARR_SZ(C32, ia=PIA(xa)); break;
     case t_f64arr: filled = TYARR_SZ(F64, ia=PIA(xa)); break;
     case t_harr:    filled = fsizeof(HArr,a,B,ia=PIA(xa)); break;
     case t_fillarr: filled = fsizeof(FillArr,a,B,ia=PIA(xa)); break;
