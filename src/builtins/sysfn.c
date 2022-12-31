@@ -1016,6 +1016,9 @@ B sh_c2(B t, B w, B x) {
   
   // free output buffer
   assert(reusable(oBufObj));
+  #if VERIFY_TAIL
+  *oBufIA = bufsz;
+  #endif
   mm_free(v(oBufObj));
   // free our ends of pipes
   if (!iDone) { shClose(p_in[1]); FREE_INPUT; shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
