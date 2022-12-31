@@ -22,6 +22,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Out`        | |
 | `•Show`       | |
 | `•Repr`       | |
+| `•ParseFloat` | Should exactly round floats with up to 17 significant digits, but won't necessarily round correctly with more |
 | `•Fmt`        | |
 | `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
 | `•SH`         | See [•SH](#sh) |

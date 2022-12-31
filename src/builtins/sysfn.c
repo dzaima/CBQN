@@ -83,6 +83,7 @@ B glyph_c1(B t, B x) {
 
 #if !NO_RYU
 B ryu_d2s(double f);
+bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
 B repr_c1(B t, B x) {
@@ -109,6 +110,27 @@ B fmt_c1(B t, B x) {
     thrM("•Fmt isn't supported without FORMATTER defined");
   #endif
 }
+
+#if NO_RYU
+B parseFloat_c1(B t, B x) { thrM("•ParseFloat: Not supported with Ryu disabled"); }
+#else
+B parseFloat_c1(B t, B x) {
+  if (isAtm(x)) thrM("•ParseFloat: Expected a character list argument");
+  if (TI(x,elType)!=el_c8) {
+    x = chr_squeeze(x);
+    if (TI(x,elType)!=el_c8) thrM("•ParseFloat: Expected a character list argument"); 
+  }
+  usz ia = IA(x);
+  if (RNK(x)!=1) thrM("•ParseFloat: Input must have rank 1");
+  if (ia==0) thrM("•ParseFloat: Input was empty");
+  if (ia >= (1<<20)) thrM("•ParseFloat: Input too long"); // otherwise things like 
+  u8* data = c8any_ptr(x);
+  f64 res;
+  if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat: Malformed input");
+  decG(x);
+  return m_f64(res);
+}
+#endif
 
 B fill_c1(B t, B x) {
   B r = getFillE(x);
@@ -1416,6 +1438,7 @@ static Body* file_nsGen;
   F("delay", U"•Delay", bi_delay) \
   F("hash", U"•Hash", bi_hash) \
   F("repr", U"•Repr", bi_repr) \
+  F("parsefloat", U"•ParseFloat", bi_parseFloat) \
   F("fmt", U"•Fmt", bi_fmt) \
   F("glyph", U"•Glyph", bi_glyph) \
   F("makerand", U"•MakeRand", bi_makeRand) \
