@@ -323,7 +323,7 @@ void mmap_init() { }
 bool dir_create(B path) {
   char* p = toCStr(path);
   #if defined(_WIN32) || defined(_WIN64)
-    bool r = 1;
+    bool r = 0;
   #else
     bool r = mkdir(p, S_IRWXU) == 0;
   #endif
@@ -366,11 +366,13 @@ char path_type(B path) {
   i64 mode = s.st_mode;
   if (S_ISREG (mode)) return 'f';
   if (S_ISDIR (mode)) return 'd';
-  if (S_ISLNK (mode)) return 'l';
   if (S_ISFIFO(mode)) return 'p';
-  if (S_ISSOCK(mode)) return 's';
   if (S_ISBLK (mode)) return 'b';
   if (S_ISCHR (mode)) return 'c';
+  #if !defined(_WIN32) && !defined(_WIN64)
+    if (S_ISLNK (mode)) return 'l';
+    if (S_ISSOCK(mode)) return 's';
+  #endif
   thrM("Unexpected file type");
 }
 

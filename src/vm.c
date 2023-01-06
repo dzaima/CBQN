@@ -6,10 +6,6 @@
 #include "utils/interrupt.h"
 #include <unistd.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-  #include "windows/sysconf.c"
-#endif
-
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
   #define UNWIND_COMPILER 1
 #endif
@@ -1134,8 +1130,12 @@ B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
 
 static usz pageSizeV;
 usz getPageSize() {
-  if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
-  return pageSizeV;
+  #if defined(_WIN32) || defined(_WIN64)
+    err("getPageSize unimplemented on Windows");
+  #else
+    if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
+    return pageSizeV;
+  #endif
 }
 static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   usz ps = getPageSize();

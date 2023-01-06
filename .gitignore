@@ -5,6 +5,7 @@
 *.wasm
 *.cwasm
 libcbqn.so
+libcbqn.dylib
 *.exe
 *.dll
 
