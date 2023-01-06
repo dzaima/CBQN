@@ -5,6 +5,8 @@
 *.wasm
 *.cwasm
 libcbqn.so
+*.exe
+*.dll
 
 # build system things
 /build/obj/
