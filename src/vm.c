@@ -1131,7 +1131,10 @@ B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
 static usz pageSizeV;
 usz getPageSize() {
   #if defined(_WIN32) || defined(_WIN64)
-    err("getPageSize unimplemented on Windows");
+    #if !NO_MMAP
+      #error "Windows builds must have NO_MMAP=1"
+    #endif
+    return 1; // doesn't actually need to be accurate if NO_MMAP, which Windows builds should have
   #else
     if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
     return pageSizeV;
