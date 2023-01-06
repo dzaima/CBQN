@@ -7,6 +7,10 @@
 #include "utils/time.h"
 #include "utils/interrupt.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+  #include "windows/getline.h"
+#endif
+
 
 #if __GNUC__ && __i386__ && !__clang__
   #warning "CBQN is known to miscompile on GCC for 32-bit x86 builds; using clang instead is suggested"
@@ -899,11 +903,7 @@ int main(int argc, char* argv[]) {
         }
         char* ln = NULL;
         size_t gl = 0;
-        #if defined(_WIN32) || defined(_WIN64)
-          i64 read = 0;
-        #else
-          i64 read = getline(&ln, &gl, stdin);
-        #endif
+        i64 read = getline(&ln, &gl, stdin);
         if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
         if (ln[read-1]==10) ln[--read] = 0;
         cbqn_runLine(ln, read);

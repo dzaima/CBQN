@@ -6,6 +6,6 @@
 
 #define MAX_LINE_LENGTH 8192
 
-//ssize_t processinput (char **lptr, size_t *n, FILE *hIn);
+ssize_t getline(char **lptr, size_t *n, FILE *fp);
 
 #endif /* GETLINE_H */

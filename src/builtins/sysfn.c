@@ -9,9 +9,7 @@
 #include "../nfns.h"
 
 #include <unistd.h>
-#if !defined(_WIN32) && !defined(_WIN64)
-  #include <poll.h>
-#else
+#if defined(_WIN32) || defined(_WIN64)
   #include "../windows/getline.c"
 #endif
 #include <errno.h>
@@ -892,11 +890,12 @@ B toUtf8_c1(B t, B x) {
 
 extern char** environ;
 
-#if __has_include(<spawn.h>) && __has_include(<sys/wait.h>) && !WASM
+#if __has_include(<spawn.h>) && __has_include(<fcntl.h>) && __has_include(<sys/wait.h>) && __has_include(<sys/poll.h>) && !WASM
 #define HAS_SH 1
 #include <spawn.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <poll.h>
 typedef struct pollfd pollfd;
 void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
 
