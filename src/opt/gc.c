@@ -39,7 +39,7 @@ static void gc_tryFree(Value* v) {
     if (t==t_freed) err("GC found t_freed\n");
   #endif
   if (t!=t_empty && !(v->mmInfo&0x80)) {
-    if (t==t_shape || t==t_temp) return;
+    if (t==t_shape || t==t_temp || t==t_talloc) return;
     #ifdef DONT_FREE
       v->flags = t;
     #else

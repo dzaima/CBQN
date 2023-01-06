@@ -1,27 +1,17 @@
 def w256{T} = 0
 def w256{T & isvec{T}} = width{T}==256
-
-local def wgen256{F} = {
-  def r{T} = 0
-  def r{T & w256{T}} = F{eltype{T}}
-  def r{T,w} = 0
-  def r{T,w & w256{T}} = F{eltype{T}} & (width{eltype{T}}==w)
-  def r{T & ~isvec{T}} = 0
-  r
-}
 def w256{T,w} = 0
-def w256{T,w & w256{T}} = width{eltype{T}}==w
-def w256i = wgen256{{T} => isint{T}}
-def w256s = wgen256{{T} => isint{T} &   issigned{T}}
-def w256u = wgen256{{T} => isint{T} & isunsigned{T}}
-def w256f = wgen256{{T} => isfloat{T}}
+def w256{T,w & w256{T}} = elwidth{T}==w
+def w256i = genchk{w256, {T} => isint{T}}
+def w256s = genchk{w256, {T} =>   issigned{T}}
+def w256u = genchk{w256, {T} => isunsigned{T}}
+def w256f = genchk{w256, {T} => isfloat{T}}
 
 def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intrinsic type system
 def v2f{x:T & w256{T}} = [8]f32 ~~ x
 def v2d{x:T & w256{T}} = [4]f64 ~~ x
 
-def undefPromote{T, x:X & w128{X} & w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
-def undefPromote{T, x:X & width{T}==width{X}} = T~~x
+def undefPromote{T, x:X & w128{X} & w256{T} & eltype{T}==eltype{X}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 
 # load & store
 def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
@@ -36,6 +26,13 @@ def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', *f6
 def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  *f64 ~~ (a+n), v}
 def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f32 ~~ (a+n), v}
 def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
+
+def loadLow{ptr:P, w & w256{eltype{P}} & w<=128} = undefPromote{eltype{P}, loadLow{*v_half{eltype{P}} ~~ ptr, w}}
+def loadLow{ptr:P, w & w256{eltype{P}} & w==256} = load{ptr}
+
+def storeLow{ptr:P, w, x:T & w256{T} & w<=128} = storeLow{ptr, w, half{x, 0}}
+def storeLow{ptr:P, w, x:T & w256{T} & w==256} = store{*T~~ptr, 0, x}
+
 
 # broadcast
 def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  promote{eltype{T},v}}
@@ -98,13 +95,16 @@ def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
-def half{x:T, i & w256{T} & knum{i}} = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
-def half{x:T, i==0 & w256{T}}        = [vcount{T}/2](eltype{T}) ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
-def pair{a:T,b:T & width{T}==128} = [vcount{T}*2](eltype{T}) ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
+def half{x:T, i & w256{T} & knum{i}} = v_half{T} ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
+def half{x:T, i==0 & w256{T}}        = v_half{T} ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
+def pair{a:T,b:T & width{T}==128} = v_dbl{T} ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 def pair{x} = pair{tupsel{0,x},tupsel{1,x}}
 
-def cvt{F==i32, T==[4]f64,  a:A & w128i{A}} = emit{T, '_mm256_cvtepi32_pd', a}
-def cvt{F, T, a:A & w256{A} & width{F}<width{eltype{T}}} = cvt{F, T, half{a, 0}}
+def widen{T==[4]f64, x:X & X==[4]i32} = emit{T, '_mm256_cvtepi32_pd', x}
+def widen{T==[4]f64, x:X & X==[4]f32} = emit{T, '_mm256_cvtps_pd', x}
+def widen{T==[4]f64, x:X & w128i{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}}
+def widen{T, x:X & w256{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
+
 
 # structural operations
 def extract{x:T, i & w256i{T,32} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi32', x, i}
@@ -120,14 +120,20 @@ def insert{x:T, i, v & w256i{T,16} & knum{i}} = emit{T, '_mm256_insert_epi16', x
 def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x, v, i}
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
-# blend by sign bit
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def blend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
+def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
+def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
+def homBlend{f:T, t:T, m:M & w256{T}} = topBlend{f, t, m}
+
 
 # mask stuff
-def getmask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
-def getmask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
-def andIsZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
-def any{x:T & w256i{T}} = getmask{x} != 0 # assumes elements of x all have equal bits (avx2 utilizes this for 16 bits)
-def all{x:T & w256i{T}} = getmask{x} == (1<<vcount{T})-1 # same assumption
-def anyneg{x:T & w256s{T}} = getmask{x}!=0
+def andAllZero{x:T, y:T & w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
+
+def topMask{x:T & w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
+def topMask{x:T & w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
+def homMask{x:T & w256{T}} = topMask{x}
+
+def homAny{x:T & w256i{T} & elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
+def homAll{x:T & w256i{T} & elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
+
+def topAny{x:T & w256i{T} & elwidth{T}>=32} = topMask{x} != 0
+def topAll{x:T & w256i{T} & elwidth{T}>=32} = topMask{x} == (1<<vcount{T})-1

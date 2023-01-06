@@ -14,7 +14,7 @@ def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = {
 }
 def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
   def TS = ty_s{TU}
-  def h = 1 << (width{eltype{TU}}-1)
+  def h = 1 << (elwidth{TU}-1)
   (TS~~(x-TU**(start-h)))  <  TS**(count-h)
 }
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
@@ -32,7 +32,7 @@ def fold{F, x:T} = {
 }
 def fold{F, x:T & w128{T}} = {
   c:= x
-  def EW = width{eltype{T}}
+  def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
   if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
   if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
@@ -67,7 +67,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       c:= EV~~loadBatch{xp, i, XV}
       if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
       if (B) {
-        if (any{M{~q_chr{c}}}) return{3}
+        if (homAny{M{~q_chr{c}}}) return{3}
       } else {
         if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
@@ -89,7 +89,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
         maskedLoop{bulk, iCont, len, {i, M} => {
           def XU = [bulk]u64
           v:= XU ~~ loadBatch{xp, i, XV}
-          if (any{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
+          if (homAny{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
         }}
         return{0xffff_ffff} # float
       }}
@@ -97,18 +97,20 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       maskedLoop{bulk, len, {i, M} => {
         v0:= loadBatch{xp, i, XV}
         def toint{x:T & isint{eltype{T}}} = x
-        def toint{flt:T & X==f64} = {
-          int:= cvt2{i32, flt}
+        def toint{flt:T & isfloat{eltype{T}}} = {
+          int:= narrow{i32, flt}
+          assert{width{type{int}} == width{XV}/2} # we'll be doing operations over it
           
           def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
           
-          if (anynePositive{conv{flt}, conv{cvt2{f64, int}}, M}) { # is any not an integer
+          if (anynePositive{conv{flt}, conv{widen{T, int}}, M}) { # is any not an integer
             if (B) { iCont=i; goto{case_B} } # if B, need to give an even more special result
             else return{0xffff_ffff} # float
           }
           int
         }
-        v1:= toint{v0}
+        assert{XV == type{v0}}
+        v1:= toint{v0} # TODO do with an if instead
         r1|= M{((EV ** ~E~~1) & EV~~v1)  ^  EV~~(v1 >> (width{X}-1))}
       }}
       

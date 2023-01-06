@@ -34,18 +34,9 @@
 #include "../utils/mut.h"
 #include "../builtins.h"
 
-#if SINGELI
-  #include <xmmintrin.h>
-  #if __GNUC__ && !__clang__ // old gcc versions don't define _mm_loadu_si32 & _mm_storeu_si32
-    static __m128i custom_loadu_si32(void* p) { return (__m128i) _mm_load_ss(p); }
-    static void custom_storeu_si32(void* p, __m128i x) { _mm_store_ss(p, _mm_castsi128_ps(x)); }
-    #define _mm_loadu_si32 custom_loadu_si32
-    #define _mm_storeu_si32 custom_storeu_si32
-  #endif
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/select.c"
-  #pragma GCC diagnostic pop
+#if SINGELI_X86_64
+  #define SINGELI_FILE select
+  #include "../utils/includeSingeli.h"
 #endif
 
 extern B rt_select;
@@ -104,7 +95,7 @@ B select_c2(B t, B w, B x) {
     if (xia==0) goto base; // can't just error immediately because depth 2 𝕨
     u8 xe = TI(x,elType);
     u8 we = TI(w,elType);
-    #if SINGELI
+    #if SINGELI_X86_64
       #define CPUSEL(W, NEXT) \
         if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
       #define BOOL_USE_SIMD (xia<=128)
@@ -236,7 +227,7 @@ B select_c2(B t, B w, B x) {
   }
   base:;
   dec(xf);
-  return c2(rt_select, w, x);
+  return c2rt(select, w, x);
   
   dec_ret:;
   decG(w); decG(x); return r;

@@ -6,11 +6,11 @@
 
 
 
-static B homFil1(B f, B r, B xf) {
+static NOINLINE B homFil1(B f, B r, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return toI32Any(r); } // ≠ may return ≥2⋆31, but whatever, this thing is stupid anyway
-    if (f.u==bi_fne.u) { dec(xf); return withFill(r, m_harrUv(0).b); }
+    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return num_squeeze(r); }
+    if (f.u==bi_fne.u) { dec(xf); return withFill(r, emptyHVec()); }
     if (!noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c1(f, xf));
@@ -21,10 +21,10 @@ static B homFil1(B f, B r, B xf) {
   dec(xf);
   return r;
 }
-static B homFil2(B f, B r, B wf, B xf) {
+static NOINLINE B homFil2(B f, B r, B wf, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return toI32Any(r); }
+    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return num_squeeze(r); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c2(f, wf, xf));
@@ -36,18 +36,30 @@ static B homFil2(B f, B r, B wf, B xf) {
   return r;
 }
 
-B tbl_c1(Md1D* d, B x) { B f = d->f;
-  if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFillQ(x);
-  return homFil1(f, eachm(f, x), xf);
+B each_c1(Md1D* d, B x) { B f = d->f;
+  B r, xf;
+  if (EACH_FILLS) xf = getFillQ(x);
+  
+  if (isAtm(x)) r = m_hunit(c1(f, x));
+  else if (isFun(f)) r = eachm_fn(f, x, c(Fun,f)->c1);
+  else {
+    if (isMd(f)) if (isAtm(x) || IA(x)) { decR(x); thrM("Calling a modifier"); }
+    usz ia = IA(x);
+    MAKE_MUT(rm, ia);
+    mut_fill(rm, 0, f, ia);
+    r = mut_fcd(rm, x);
+  }
+  
+  if (EACH_FILLS) return homFil1(f, r, xf);
+  else return r;
+}
+B tbl_c1(Md1D* d, B x) {
+  return each_c1(d, x);
 }
 
 B slash_c2(B f, B w, B x);
 B shape_c2(B f, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
-  B wf, xf;
-  if (EACH_FILLS) wf = getFillQ(w);
-  if (EACH_FILLS) xf = getFillQ(x);
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
   ur wr = RNK(w); usz wia = IA(w);
@@ -59,7 +71,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   usz* rsh;
   
   BBB2B fc2 = c2fn(f);
-  if (!EACH_FILLS && isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
+  if (isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
     if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, slash_c2(f, m_i32(xia), taga(wd)), shape_c2(f, m_f64(ria), incG(x)));
@@ -90,16 +102,23 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     shcpy(rsh   , SH(w), wr);
     shcpy(rsh+wr, SH(x), xr);
   }
-  decG(w); decG(x);
-  if (EACH_FILLS) return homFil2(f, r, wf, xf);
-  return r;
+  B wf, xf;
+  if (EACH_FILLS) {
+    assert(isArr(w)); wf=getFillQ(w);
+    assert(isArr(x)); xf=getFillQ(x);
+    decG(w); decG(x);
+    return homFil2(f, r, wf, xf);
+  } else {
+    decG(w); decG(x);
+    return r;
+  }
 }
 
-B each_c1(Md1D* d, B x) { B f = d->f;
-  if (!EACH_FILLS) return eachm(f, x);
-  B xf = getFillQ(x);
-  return homFil1(f, eachm(f, x), xf);
+static B eachd(B f, B w, B x) {
+  if (isAtm(w) & isAtm(x)) return m_hunit(c2(f, w, x));
+  return eachd_fn(f, w, x, c2fn(f));
 }
+
 B each_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS) return eachd(f, w, x);
   B wf = getFillQ(w);
@@ -163,7 +182,7 @@ static B m1c2(B t, B f, B w, B x) { // consumes w,x
     }                          \
   } else if (X##_cr!=0) X##_csz*= SH(X)[1];
 
-#define SLICE(X, S) ({ Arr* r_ = X##_slc(incG(X), S, X##_csz); arr_shSetI(r_, X##_cr, X##_csh); taga(r_); })
+#define SLICE(X, S) taga(arr_shSetI(X##_slc(incG(X), S, X##_csz), X##_cr, X##_csh))
 
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
 
@@ -196,13 +215,128 @@ B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   return merge_fill_result_1(rc);
 }
 
+static NOINLINE B select_cells(usz n, B x, ur xr) {
+  usz* xsh = SH(x);
+  B r;
+  usz cam = xsh[0];
+  if (xr==2) {
+    usz csz = xsh[1];
+    if (csz==1) return taga(arr_shVec(TI(x,slice)(x,0,IA(x))));
+    u8 xe = TI(x,elType);
+    if (xe==el_B) {
+      SGet(x)
+      HArr_p rp = m_harrUv(cam);
+      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*csz+n);
+      r = rp.b;
+    } else {
+      void* rp = m_tyarrv(&r, elWidth(xe), cam, el2t(xe));
+      void* xp = tyany_ptr(x);
+      switch(xe) {
+        case el_bit: for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*csz+n)); break;
+        case el_i8:  case el_c8:  PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*csz+n]; break;
+        case el_i16: case el_c16: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*csz+n]; break;
+        case el_i32: case el_c32: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*csz+n]; break;
+        case el_f64:              PLAINLOOP for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*csz+n]; break;
+      }
+    }
+  } else {
+    Arr* ra;
+    if (xsh[1]==1) {
+      ra = TI(x,slice)(incG(x), 0, IA(x));
+    } else {
+      usz rs = shProd(xsh, 2, xr);
+      usz xs = rs*xsh[1]; // aka csz
+      MAKE_MUT(rm, cam*rs); mut_init(rm, TI(x,elType)); MUTG_INIT(rm);
+      usz xi = rs*n;
+      usz ri = 0;
+      for (usz i = 0; i < cam; i++) {
+        mut_copyG(rm, ri, x, xi, rs);
+        xi+= xs;
+        ri+= rs;
+      }
+      ra = mut_fp(rm);
+    }
+    usz* rsh = arr_shAlloc(ra, xr-1);
+    shcpy(rsh+1, xsh+2, xr-2);
+    rsh[0] = cam;
+    r = taga(ra);
+  }
+  decG(x);
+  return r;
+}
+
+static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
+  MAKE_MUT(r, IA(x)); mut_init(r, e); MUTG_INIT(r);
+  usz cam = SH(x)[0];
+  usz csz = SH(x)[1];
+  assert(cam!=0 && csz!=0);
+  bool after = rtid==n_shifta;
+  usz xi=after, ri=!after, fi=after?csz-1:0;
+  incBy(f, cam-1); // cam≠0 → cam-1 ≥ 0
+  for (usz i = 0; i < cam; i++) {
+    mut_copyG(r, ri, x, xi, csz-1);
+    mut_setG(r, fi, f);
+    xi+= csz;
+    ri+= csz;
+    fi+= csz;
+  }
+  return mut_fcd(r, x);
+}
+
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
   
-  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toCells(x);
+  if (isFun(f)) {
+    if (IA(x)!=0) {
+      u8 rtid = v(f)->flags-1;
+      ur xr = RNK(x);
+      if (rtid==n_lt && xr>1) return toCells(x);
+      if (rtid==n_select && xr>1) return select_cells(0, x, xr);
+      if (rtid==n_pick && xr>1 && TI(x,arrD1)) return select_cells(0, x, xr);
+      if (rtid==n_couple) {
+        ShArr* rsh = m_shArr(xr+1);
+        usz* xsh = SH(x);
+        rsh->a[0] = xsh[0];
+        rsh->a[1] = 1;
+        shcpy(rsh->a+2, xsh+1, xr-1);
+        Arr* r = TI(x,slice)(x, 0, IA(x));
+        return taga(arr_shSetU(r, xr+1, rsh));
+      }
+      if (rtid==n_shape) {
+        usz cam = SH(x)[0];
+        usz csz = arr_csz(x);
+        Arr* ra = TI(x,slice)(x,0,IA(x));
+        usz* rsh = arr_shAlloc(ra, 2);
+        rsh[0] = cam;
+        rsh[1] = csz;
+        return taga(ra);
+      }
+      if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
+        B xf = getFillR(x);
+        if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
+      }
+      if (v(f)->type == t_md1D) {
+        Md1D* fd = c(Md1D,f);
+        u8 rtid = fd->m1->flags-1;
+        if (rtid == n_const) { f=fd->f; goto const_f; }
+      }
+    }
+  } else if (!isMd(f)) {
+    const_f:;
+    usz cam = SH(x)[0];
+    decG(x);
+    B fv = inc(f);
+    if (isAtm(fv)) return C2(shape, m_f64(cam), fv);
+    usz vr = RNK(fv);
+    f64* shp; B sh = m_f64arrv(&shp, vr+1);
+    shp[0] = cam;
+    usz* fsh = SH(fv);
+    PLAINLOOP for (usz i = 0; i < vr; i++) shp[i+1] = fsh[i];
+    return C2(shape, sh, fv);
+  }
   
   usz cam = SH(x)[0];
   if (cam==0) {
@@ -217,18 +351,31 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   M_HARR(r, cam);
   for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
   E_SLICES(x)
-
+  
   return bqn_merge(HARR_FV(r));
 }
 
+B takedrop_highrank(bool take, B w, B x);
+
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
-  bool wr = isAtm(w)? 0 : RNK(w);
-  bool xr = isAtm(x)? 0 : RNK(x);
+  ur wr = isAtm(w)? 0 : RNK(w);
+  ur xr = isAtm(x)? 0 : RNK(x);
   B r;
   if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
   if (wr==0) {
     usz cam = SH(x)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
+    if (isFun(f)) {
+      u8 rtid = v(f)->flags-1;
+      if (rtid==n_select && isF64(w) && xr>1)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
+      if (rtid==n_pick && TI(x,arrD1) && xr>1 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
+      if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
+        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+        return shift_cells(w, x, el_or(TI(x,elType), selfElType(w)), rtid);
+      }
+      if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
+      if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
+    }
     S_SLICES(x)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
@@ -255,14 +402,32 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   return bqn_merge(r);
 }
 
-extern B fold_c1(Md1D* d, B x);
+B fold_c1(Md1D* d, B x);
+B fold_c2(Md1D* d, B w, B x);
+
 extern B rt_insert;
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
-  if (xia==0) return m1c1(rt_insert, f, x);
-  if (RNK(x)==1 && isFun(f) && isPervasiveDy(f)) {
-    return m_atomUnit(fold_c1(d, x));
+  if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
+  if (isFun(f)) {
+    u8 rtid = v(f)->flags-1;
+    if (RNK(x)==1 && isPervasiveDy(f)) return m_atomUnit(fold_c1(d, x));
+    if (rtid == n_join) {
+      ur xr = RNK(x);
+      if (xr==1) return x;
+      ShArr* rsh;
+      if (xr>2) {
+        rsh = m_shArr(xr-1);
+        usz* xsh = SH(x);
+        shcpy(rsh->a+1, xsh+2, xr-2);
+        rsh->a[0] = xsh[0] * xsh[1];
+      }
+      Arr* r = TI(x,slice)(x, 0, IA(x));
+      if (xr>2) arr_shSetU(r, xr-1, rsh);
+      else arr_shVec(r);
+      return taga(r);
+    }
   }
   
   S_SLICES(x)
@@ -279,15 +444,27 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   B r = w;
-  if (xia!=0) {
-    S_SLICES(x)
-    usz p = xia;
-    while(p!=0) {
-      p-= x_csz;
-      r = c2(f, SLICE(x, p), r);
+  if (xia==0) return r;
+  
+  if (isFun(f)) {
+    if (RNK(x)==1 && isPervasiveDy(f)) {
+      if (isAtm(w)) {
+        to_fold: return m_atomUnit(fold_c2(d, w, x));
+      }
+      if (RNK(w)==0) {
+        B w0=w; w = IGet(w,0); decG(w0);
+        goto to_fold;
+      }
     }
-    E_SLICES(x)
   }
+  
+  S_SLICES(x)
+  usz p = xia;
+  while(p!=0) {
+    p-= x_csz;
+    r = c2(f, SLICE(x, p), r);
+  }
+  E_SLICES(x)
   return r;
 }
 

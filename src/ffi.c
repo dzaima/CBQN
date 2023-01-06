@@ -924,6 +924,92 @@ void ffi_init() {
 }
 
 #else // i.e. FFI==0
-void ffi_init() { }
-B ffiload_c2(B t, B w, B x) { thrM("CBQN was compiled without FFI"); }
+#if !FOR_BUILD
+  void ffi_init() { }
+  B ffiload_c2(B t, B w, B x) { err("•FFI called"); }
+#else // whatever build.bqn uses from •FFI
+  #include "nfns.h"
+  #include "utils/cstr.h"
+  #include <unistd.h>
+  #include <poll.h>
+  typedef struct pollfd pollfd;
+  NFnDesc* forbuildDesc;
+  B forbuild_c1(B t, B x) {
+    i32 id = o2i(nfn_objU(t));
+    switch (id) { default: err("bad id");
+      case 0: {
+        char* s = toCStr(x);
+        chdir(s);
+        freeCStr(s);
+        return x;
+      }
+      case 1: {
+        dec(x);
+        return m_f64(fork());
+      }
+      case 2: {
+        decG(x);
+        int vs[2];
+        int r = pipe(vs);
+        return m_vec2(m_f64(r), m_vec2(m_f64(vs[0]), m_f64(vs[1])));
+      }
+      case 3: {
+        SGetU(x)
+        int fd =          o2i(GetU(x,0));
+        I8Arr* buf = cpyI8Arr(GetU(x,1));
+        usz maxlen =      o2s(GetU(x,2));
+        assert(PIA(buf)==maxlen);
+        int res = read(fd, buf->a, maxlen);
+        return m_vec2(m_f64(res), taga(buf));
+      }
+      case 4: {
+        SGetU(x)
+        int fd =          o2i(GetU(x,0));
+        I8Arr* buf = cpyI8Arr(GetU(x,1));
+        usz maxlen =      o2s(GetU(x,2));
+        int res = write(fd, buf->a, maxlen);
+        return m_f64(res);
+      }
+      case 5: {
+        return m_f64(close(o2i(x)));
+      }
+      case 6: {
+        SGetU(x)
+        I16Arr* buf = cpyI16Arr(GetU(x,0)); i16* a = (i16*)buf->a;
+        int nfds =          o2i(GetU(x,1));
+        int timeout =       o2s(GetU(x,2));
+        
+        TALLOC(pollfd, ps, nfds)
+        for (i32 i = 0; i < nfds; i++) ps[i] = (pollfd){.fd = a[i*4+0]|a[i*4+1]<<16, .events=a[i*4+2]};
+        int res = poll(&ps[0], nfds, timeout);
+        for (i32 i = 0; i < nfds; i++) a[i*4+3] = ps[i].revents;
+        TFREE(ps);
+        
+        return m_vec2(m_f64(res), taga(buf));
+      }
+    }
+  }
+  B names;
+  B ffiload_c2(B t, B w, B x) {
+    B name = IGetU(x, 1);
+    i32 id = 0;
+    while (id<IA(names) && !equal(IGetU(names, id), name)) id++;
+    B r = m_nfn(forbuildDesc, m_f64(id));
+    decG(x);
+    return r;
+  }
+  
+  void ffi_init() {
+    HArr_p a = m_harrUv(7);
+    a.a[0] = m_c8vec_0("chdir");
+    a.a[1] = m_c8vec_0("fork");
+    a.a[2] = m_c8vec_0("pipe");
+    a.a[3] = m_c8vec_0("read");
+    a.a[4] = m_c8vec_0("write");
+    a.a[5] = m_c8vec_0("close");
+    a.a[6] = m_c8vec_0("poll");
+    names = a.b; gc_add(names);
+    forbuildDesc = registerNFn(m_c8vec_0("(function for build)"), forbuild_c1, c2_bad);
+  }
+#endif
 #endif

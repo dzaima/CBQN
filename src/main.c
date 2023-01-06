@@ -289,10 +289,11 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
     completion_impl(inp, res, true, dist);
   }
-  static NOINLINE char* malloc_B(B x) { // toCStr but allocated by malloc
+  static NOINLINE char* malloc_B(B x) { // toCStr but allocated by malloc; frees x
     u64 len1 = utf8lenB(x);
     char* s1 = malloc(len1+1);
     toUTF8(x, s1);
+    decG(x);
     s1[len1] = '\0';
     return s1;
   }
@@ -305,7 +306,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     replxx_get_state(global_replxx, &st);
     return (TmpState){.s = utf8Decode0(st.text), .pos = st.cursorPosition};
   }
-  static NOINLINE void setState(TmpState s) {
+  static NOINLINE void setState(TmpState s) { // frees s.s
     char* r = malloc_B(s.s);
     ReplxxState st = (ReplxxState){.text = r, .cursorPosition = s.pos};
     replxx_set_state(global_replxx, &st);
@@ -341,6 +342,17 @@ static bool isCmd(char* s, char** e, const char* cmd) {
       b_pp = st.cursorPosition;
     }
     return REPLXX_ACTION_RESULT_CONTINUE;
+  }
+  ReplxxActionResult enter_replxx(int code, void* data) {
+    if (inBackslash()) {
+      setState(insertChar('\n', false));
+      stopBackslash();
+      return REPLXX_ACTION_RESULT_CONTINUE;
+    }
+    TmpState s = getState();
+    s.pos = IA(s.s);
+    setState(s);
+    return REPLXX_ACTION_RESULT_RETURN;
   }
   static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
     B ac = vec_slice(a, as, l);
@@ -417,7 +429,9 @@ static bool isCmd(char* s, char** e, const char* cmd) {
         char* s = toCStr(ln); char* e;
         if      (isCmd(s, &e, "theme="   )) cfg_theme          = e[0]-'0';
         else if (isCmd(s, &e, "keyboard=")) cfg_enableKeyboard = e[0]-'0';
+        freeCStr(s);
       }
+      decG(lns);
       cfg_set_theme(cfg_theme, false);
       cfg_set_keyboard(cfg_enableKeyboard, false);
     }
@@ -739,6 +753,7 @@ int main(int argc, char* argv[]) {
       i++;
       if (carg[1]=='-') {
         if (!strcmp(carg, "--help")) {
+          print_help:
           printf(
           "Usage: %s [options] [file.bqn [arguments]]\n"
           "Options:\n"
@@ -803,6 +818,7 @@ int main(int argc, char* argv[]) {
               break;
             }
             #endif
+            case 'h': goto print_help;
             case 'r': { startREPL=true;                  break; }
             case 's': { startREPL=true; silentREPL=true; break; }
           }
@@ -857,6 +873,7 @@ int main(int argc, char* argv[]) {
       replxx_set_completion_callback(replxx, complete_replxx, NULL);
       replxx_enable_bracketed_paste(replxx);
       replxx_bind_key(replxx, '\\', backslash_replxx, NULL);
+      replxx_bind_key(replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
       replxx_set_modify_callback(replxx, modified_replxx, NULL);
       replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('N'), "history_next");
       replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('P'), "history_previous");

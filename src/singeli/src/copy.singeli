@@ -50,7 +50,7 @@ copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     def XU = ty_u{XV}
     @forNZ (i to cdiv{l,vcount{XV}}) {
       v:= loadBatch{xp, i, XV}
-      r:= getmask{(XU~~v) == XU~~XV**1}
+      r:= homMask{(XU~~v) == XU~~XV**1}
       b_setBatch{vcount{XV}, rp, i, r} # TODO something more special for f64
     }
   } else if (width{X}<=width{R}) {

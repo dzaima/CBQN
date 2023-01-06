@@ -13,7 +13,7 @@ depfile ← (At buildDir) •file.At filename∾".d"
 prefix  ← "si_"∾ (∧`'.'⊸≠)⊸/ •file.Name srcfile
 
 # invoke singeli, which creates the result file
-(⟨"-d" ⋄ tmpfile ⋄ "-o" ⋄ resfile ⋄ "-n" ⋄ prefix ⋄ srcfile⟩) •Import siDir •file.At "singeli"
+(⟨"-l", "gen=src/singeli/gen", "-d" ⋄ tmpfile ⋄ "-o" ⋄ resfile ⋄ "-n" ⋄ prefix ⋄ srcfile⟩) •Import siDir •file.At "singeli"
 
 # output dependency file
 deps ← siDir⊸•file.At¨ •file.Lines tmpfile

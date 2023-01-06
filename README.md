@@ -7,7 +7,6 @@
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - `make CC=cc` if clang isn't installed
-    - `make PIE=""` on ARM CPUs (incl. Android & Apple M1/M2)
     - `make FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
     - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the build complains about `-ldl`)
     - `make clean` if anything breaks and you want a clean build slate
@@ -38,6 +37,7 @@
     - If you want to use custom build types but your system doesn't have `shasum` or `sha256sum`, add `force_build_dir=build/obj/some_identifier`. That directory will be used to store incremental build object files.
   Macros that you may want to define are listed in `src/h.h`.  
 - Adding `builddir=1` to the make argument list will give you the build directory of the current configuration. Adding `clean=1` will clean that directory.
+- Use `j=8` instead of `-j8` to override the default parallel job count (which is currently `4`).
 - Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
 - Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by, respectively, linking/copying a local version to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
@@ -67,7 +67,8 @@ x86-64 (Linux):
 x86 (Linux):
   clang 14.0.0; known to break on gcc - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
   running on the above x86-64 system, compiled with CCFLAGS=-m32
-AArch64 ARMv8-A (within Termux on Android):
+AArch64 ARMv8-A (within Termux on Android 8):
+  using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
   clang 15.0.4
   libffi 3.4.4 (structs were broken as of 3.4.3)
   replxx: clang++ 15.0.4
@@ -76,4 +77,7 @@ Additionally, CBQN is known to compile as-is on macOS (with [some extra options]
 
 ## License
 
-Any file without an explicit copyright message is copyright (c) 2021 dzaima, GNU GPLv3 - see LICENSE
+Most files here are copyright (c) 2021 dzaima & others, [GNU GPLv3 only](licenses/LICENSE-GPLv3).
+Exceptions are:
+- timsort implementation - `src/builtins/sortTemplate.h`: [MIT](licenses/LICENSE-MIT-sort); [original repo](https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708)
+- Ryu - `src/utils/ryu.c` & files in `src/utils/ryu/`: [Apache 2.0](licenses/LICENSE-Apache2) or [Boost 1.0](licenses/LICENSE-Boost); [original repo](https://github.com/ulfjack/ryu/tree/75d5a85440ed356ad7b23e9e6002d71f62a6255c)

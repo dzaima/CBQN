@@ -258,11 +258,11 @@ B rtWrap_wrap(B t, bool nnbi) {
   #endif
   return t;
 }
-B rtWrap_unwrap(B x) {
+B rtWrap_unwrap(B x) { // consumes x
   if (!isVal(x)) return x;
-  if (TY(x)==t_funWrap) { B r = c(WFun,x)->v; dec(x); return r; }
-  if (TY(x)==t_md1Wrap) { B r = c(WMd1,x)->v; dec(x); return r; }
-  if (TY(x)==t_md2Wrap) { B r = c(WMd2,x)->v; dec(x); return r; }
+  if (TY(x)==t_funWrap) { B r = c(WFun,x)->v; decG(x); return inc(r); }
+  if (TY(x)==t_md1Wrap) { B r = c(WMd1,x)->v; decG(x); return inc(r); }
+  if (TY(x)==t_md2Wrap) { B r = c(WMd2,x)->v; decG(x); return inc(r); }
   return x;
 }
 

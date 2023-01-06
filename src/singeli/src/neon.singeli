@@ -1,0 +1,140 @@
+def nvec{T} = 0
+def nvec{T & isvec{T}} = (width{T}==64) | (width{T}==128)
+def nvec{T,w} = 0
+def nvec{T,w & nvec{T}} = elwidth{T}==w
+def nveci = genchk{nvec, {T} => isint{T}}
+def nvecs = genchk{nvec, {T} =>   issigned{T}}
+def nvecu = genchk{nvec, {T} => isunsigned{T}}
+def nvecf = genchk{nvec, {T} => isfloat{T}}
+
+def n128{T} = 0
+def n128{T&isvec{T}} = width{T}==128
+def n64{T} = 0
+def n64{T&isvec{T}} = width{T}==64
+
+def reinterpret{T, v & match{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }
+
+def nty{T== u8} =  'u8'; def nty{T== i8} =  's8'
+def nty{T==u16} = 'u16'; def nty{T==i16} = 's16'
+def nty{T==u32} = 'u32'; def nty{T==i32} = 's32'
+def nty{T==u64} = 'u64'; def nty{T==i64} = 's64'
+def nty{T==f32} = 'f32'; def nty{T==f64} = 'f64'
+def nty{T & isvec{T}} = nty{eltype{T}}
+def ntyp{S, ...S2, T & n128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
+def ntyp{S, ...S2, T &  n64{T}} = merge{S,      ...S2, '_', nty{T}}
+
+def load{a:T, n & nvec{eltype{T}}} = emit{eltype{T}, ntyp{'vld1', eltype{T}}, *eltype{eltype{T}} ~~ (a+n)}
+def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a+n), v}
+
+def __adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
+def __subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
+
+def  __add{a:T,b:T & nvec {T}} = emit{T, ntyp{'vadd', T}, a, b}
+def  __sub{a:T,b:T & nvec {T}} = emit{T, ntyp{'vsub', T}, a, b}
+def  __mul{a:T,b:T & nvec {T}} = emit{T, ntyp{'vmul', T}, a, b}
+def  __div{a:T,b:T & nvecf{T}} = emit{T, ntyp{'vdiv', T}, a, b}
+def  __and{a:T,b:T & nveci{T}} = emit{T, ntyp{'vand', T}, a, b}
+def   __or{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorr', T}, a, b}
+def  __xor{a:T,b:T & nveci{T}} = emit{T, ntyp{'veor', T}, a, b}
+def andnot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vbic', T}, a, b}
+def  ornot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorn', T}, a, b}
+def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
+def    min{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmin', T}, a, b} # TODO float - there are multiple options
+def    max{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmax', T}, a, b}
+def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
+
+def __shl{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
+def __shr{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshr', '_n', T}, a, b};  def __shr{a:T,b==0 & nveci{T}} = a
+def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
+def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
+
+def __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
+def addpw{a:T & nveci{T} & elwidth{T}<=32} = emit{ty_dbl{T}, ntyp{'vpaddl', T}, a}
+def __not{a:T & nvecu{T}} = T~~emit{to_el{u8,T}, ntyp{'vmvn', to_el{u8,T}}, a}
+def  sqrt{a:T & nvecf{T}} = emit{T, ntyp{'vsqrt', T}, a}
+def floor{a:T & nvecf{T}} = emit{T, ntyp{'vrndm', T}, a}
+def  ceil{a:T & nvecf{T}} = emit{T, ntyp{'vrndp', T}, a}
+def   abs{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vabs', T}, a}
+def  absu{a:T & nveci{T}} = ty_u{abs{a}}
+
+def __eq{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vceq', T}, a, b}
+def __ge{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcge', T}, a, b}
+def __gt{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcgt', T}, a, b}
+def __lt{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vclt', T}, a, b}
+def __le{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcle', T}, a, b}
+def __ne{a:T,b:T & nvec{T}} = ~(a==b)
+
+def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
+def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
+def fold_min {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vminv', T}, a}
+def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
+
+# TODO don't rely on regular stores being unaligned
+local def storeu{ptr:P, e:T} = store{ptr, 0, e}
+local def loadu{ptr:P} = load{ptr}
+
+def storeLow{ptr:P, w, x:T & nvec{T} & w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{to_el{E,T}~~x, 0}} }
+def storeLow{ptr:P, w, x:T & nvec{T} & w==width{T}} = store{*T~~ptr, 0, x}
+
+def loadLow{ptr:P, w & w<=64} = { # a broadcast load
+  def T=eltype{P}
+  def L=to_el{ty_u{w}, T}
+  T ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
+}
+def loadLow{ptr:P, w & w==elwidth{P}} = load{ptr}
+
+
+
+
+def undefPromote{T, x:X & n64{X} & n128{T} & eltype{T}==eltype{X}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
+def half{x:T, n==0 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_low',  v_half{T}}, x}
+def half{x:T, n==1 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_high', v_half{T}}, x}
+def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
+
+def pack{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
+def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, to_el{eltype{I},x}, i}}
+
+
+
+local def eqqi{A, B} = isint{A} & (quality{A}==quality{B}) # equal quality integers
+
+def cvt{T, x:X & width{T}==width{X} & nvecf{T,64} & nveci{X}} = emit{T, ntyp{'vcvt', '_f64', X}, x}
+
+def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}==elwidth{X}*2} = emit{T, ntyp{'vmovl', X}, x}
+def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}> elwidth{X}*2} = widen{T, widen{ty_half{T}, x}}
+def widen{T, x:X & n64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>elwidth{X}} = cvt{T, widen{[vcount{T}](to_w{eltype{X},elwidth{T}}), x}}
+def widen{T, x:X & n128{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
+
+def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2< elwidth{X}} = narrow{T, undefPromote{ty_half{X}, narrow{ty_half{eltype{X}}, x}}}
+def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2==elwidth{X}} = emit{ty_half{v_half{X}}, ntyp{'vmovn', v_half{X}}, x}
+
+
+
+def bitAny{x:T} = fold_max{to_el{u32, x}}!=0
+def bitAll{x:T} = fold_min{to_el{u32, x}}==0xffff_ffff
+
+def topAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
+def topAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
+def homAny{x:T & nvec{T}} = bitAny{x}
+def homAll{x:T & nvec{T}} = bitAll{x}
+
+
+def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
+
+def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {
+  def TE = eltype{T}
+  load{*T ~~ *TE ~~ each{{c}=>promote{eltype{T},c}, xs}, 0}
+}
+def make{T, x & nvec{T} & istup{x}} = make{T, ...x}
+
+
+def homMask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
+  cast_i{ty_u{max{8,vcount{T}}}, fold_add{x & make{T, 1<<iota{vcount{T}}}}}
+}
+def homMask{x:T & nvecu{T} & T==[16]u8} = {
+  fold_add{addpw{x & make{[16]u8, 1<<(iota{16}&7)}} << make{[8]u16, merge{4**0, 4**8}}}
+}
+def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
+
+def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bitBlend{load{p}, x, m}}
+def maskstoreF{p:P, m:M, x:T & nvec{T}} = maskstore{p, m, x}

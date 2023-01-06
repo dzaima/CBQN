@@ -85,10 +85,19 @@ B glyph_c1(B t, B x) {
   return m_c32vec_0(U"(•Glyph: given object with unexpected type)");
 }
 
+#if !NO_RYU
+B ryu_d2s(double f);
+bool ryu_s2d_n(u8* buffer, int len, f64* result);
+#endif
+
 B repr_c1(B t, B x) {
   if (isF64(x)) {
-    NUM_FMT_BUF(buf, x.f);
-    return utf8Decode(buf, strlen(buf));
+    #if NO_RYU
+      NUM_FMT_BUF(buf, x.f);
+      return utf8Decode(buf, strlen(buf));
+    #else
+      return ryu_d2s(o2fG(x));
+    #endif
   } else {
     #if FORMATTER
       return bqn_repr(x);
@@ -105,6 +114,27 @@ B fmt_c1(B t, B x) {
     thrM("•Fmt isn't supported without FORMATTER defined");
   #endif
 }
+
+#if NO_RYU
+B parseFloat_c1(B t, B x) { thrM("•ParseFloat: Not supported with Ryu disabled"); }
+#else
+B parseFloat_c1(B t, B x) {
+  if (isAtm(x)) thrM("•ParseFloat: Expected a character list argument");
+  if (TI(x,elType)!=el_c8) {
+    x = chr_squeeze(x);
+    if (TI(x,elType)!=el_c8) thrM("•ParseFloat: Expected a character list argument"); 
+  }
+  usz ia = IA(x);
+  if (RNK(x)!=1) thrM("•ParseFloat: Input must have rank 1");
+  if (ia==0) thrM("•ParseFloat: Input was empty");
+  if (ia >= (1<<20)) thrM("•ParseFloat: Input too long"); // otherwise things like 
+  u8* data = c8any_ptr(x);
+  f64 res;
+  if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat: Malformed input");
+  decG(x);
+  return m_f64(res);
+}
+#endif
 
 B fill_c1(B t, B x) {
   B r = getFillE(x);
@@ -634,9 +664,9 @@ B fchars_c2(B d, B w, B x) {
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
   I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x));
-  usz ia = PIA(tf); u8* p = (u8*)tf->a;
+  usz ia = PIA(tf);
   u8* rp; B r = m_c8arrv(&rp, ia);
-  for (i64 i = 0; i < ia; i++) rp[i] = p[i];
+  COPY_TO(rp, el_i8, 0, taga(tf), 0, ia);
   ptr_dec(tf);
   return r;
 }
@@ -863,6 +893,7 @@ B toUtf8_c1(B t, B x) {
 extern char** environ;
 
 #if __has_include(<spawn.h>) && __has_include(<sys/wait.h>) && !WASM
+#define HAS_SH 1
 #include <spawn.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -989,6 +1020,9 @@ B sh_c2(B t, B w, B x) {
   
   // free output buffer
   assert(reusable(oBufObj));
+  #if VERIFY_TAIL
+  *oBufIA = bufsz;
+  #endif
   mm_free(v(oBufObj));
   // free our ends of pipes
   if (!iDone) { shClose(p_in[1]); FREE_INPUT; shDbg("only got to write "N64u"/"N64u"\n", iOff, iLen); }
@@ -1013,6 +1047,7 @@ B sh_c2(B t, B w, B x) {
   return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
 }
 #else
+#define HAS_SH 0
 B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
@@ -1170,8 +1205,8 @@ B bitcast_impl(B el0, B el1, B x) {
     r = taga(copy(xct, r));
   } else if (v(r)->refc!=1) {
     B pr = r;
-    r = taga(TI(r,slice)(r, 0, IA(r)));
-    arr_shSetI(a(r), xr, shObj(pr)); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
+    Arr* r2 = TI(r,slice)(r, 0, IA(r));
+    r = taga(arr_shSetI(r2, xr, shObj(pr))); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   } else {
     #if VERIFY_TAIL
       if (xct.s==1 && rct.s!=1) {
@@ -1382,11 +1417,16 @@ void getSysvals(B* res);
 
 static Body* file_nsGen;
 
-#if FFI
-#define OPT_FFI(F) F("ffi", U"•FFI", tag(10,VAR_TAG))
+#if FFI || FOR_BUILD
+#define FFIOPT 1
 #else
-#define OPT_FFI(F)
+#define FFIOPT 0
 #endif
+
+#define OPTSYS_0(X)
+#define OPTSYS_1(X) X
+#define OPTSYS_B(COND) OPTSYS_##COND
+#define OPTSYS(COND) OPTSYS_B(COND)
 
 #define FOR_DEFAULT_SYSVALS(F) \
   F("out", U"•Out", bi_out) \
@@ -1394,10 +1434,9 @@ static Body* file_nsGen;
   F("exit", U"•Exit", bi_exit) \
   F("getline", U"•GetLine", bi_getLine) \
   F("type", U"•Type", bi_type) \
-  F("sh", U"•SH", bi_sh) \
+  OPTSYS(HAS_SH)(F("sh", U"•SH", bi_sh)) \
   F("decompose", U"•Decompose", bi_decp) \
   F("while", U"•_while_", bi_while) \
-  F("primind", U"•PrimInd", bi_primInd) \
   F("bqn", U"•BQN", bi_bqn) \
   F("cmp", U"•Cmp", bi_cmp) \
   F("unixtime", U"•UnixTime", bi_unixTime) \
@@ -1406,6 +1445,7 @@ static Body* file_nsGen;
   F("delay", U"•Delay", bi_delay) \
   F("hash", U"•Hash", bi_hash) \
   F("repr", U"•Repr", bi_repr) \
+  F("parsefloat", U"•ParseFloat", bi_parseFloat) \
   F("fmt", U"•Fmt", bi_fmt) \
   F("glyph", U"•Glyph", bi_glyph) \
   F("makerand", U"•MakeRand", bi_makeRand) \
@@ -1423,7 +1463,7 @@ static Body* file_nsGen;
   F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
   F("flines", U"•FLines", tag(8,VAR_TAG)) \
   F("import", U"•Import", tag(9,VAR_TAG)) \
-  OPT_FFI(F) \
+  OPTSYS(FFIOPT)(F("ffi", U"•FFI", tag(10,VAR_TAG))) \
   F("name", U"•name", tag(11,VAR_TAG)) \
   F("path", U"•path", tag(12,VAR_TAG)) \
   F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
@@ -1495,8 +1535,8 @@ B sys_c1(B t, B x) {
       case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
       case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: cr = inc(REQ_NAME); break; // •name
-      case 12: cr = inc(REQ_PATH); break; // •path
+      case 11: if (q_N(comp_currPath)) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
+      case 12: if (q_N(comp_currPath)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { // •wdpath
         if (!wdpath.u) wdpath = path_abs(inc(cdPath));
         cr = inc(wdpath);
@@ -1515,6 +1555,7 @@ B sys_c1(B t, B x) {
       }
       case 15: { // •state
         if (q_N(comp_currArgs)) thrM("No arguments present for •state");
+        if (q_N(comp_currPath)) thrM("No path present for •state");
         cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
         break;
       }
@@ -1523,7 +1564,9 @@ B sys_c1(B t, B x) {
         cr = inc(comp_currArgs);
         break;
       }
-      case 17: cr = incG(curr_ns);
+      case 17: { // •listsys
+        cr = incG(curr_ns);
+      }
     }
     HARR_ADD(r, i, cr);
   }
@@ -1552,7 +1595,7 @@ u32* dsv_text[] = {
   U"•bit._add",U"•bit._and",U"•bit._cast",U"•bit._mul",U"•bit._neg",U"•bit._not",U"•bit._or",U"•bit._sub",U"•bit._xor",
   
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
-  U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
+  U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",

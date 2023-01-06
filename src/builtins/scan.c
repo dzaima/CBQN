@@ -9,23 +9,20 @@
 static u64 vg_rand(u64 x) { return x; }
 #endif
 
-#if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/scan.c"
-  #pragma GCC diagnostic pop
+#if SINGELI_X86_64
+  #define SINGELI_FILE scan
+  #include "../utils/includeSingeli.h"
+  #if __PCLMUL__
+    #define SINGELI_FILE neq
+    #include "../utils/includeSingeli.h"
+  #endif
 #endif
 
-#if SINGELI && __PCLMUL__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/neq.c"
-  #pragma GCC diagnostic pop
-#endif
+
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
-#if SINGELI && __PCLMUL__
+#if SINGELI_X86_64 && __PCLMUL__
   clmul_scan_ne(p, xp, rp, BIT_N(ia));
 #else
   for (usz i = 0; i < BIT_N(ia); i++) {
@@ -78,7 +75,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   } else {
     void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
     #define SUM_BITWISE(T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
-    #if SINGELI
+    #if SINGELI_X86_64
       #define SUM(W,T) avx2_bcs##W(xp, rp, ia);
     #else
       #define SUM(W,T) SUM_BITWISE(T)
@@ -96,7 +93,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
 }
 
 // min/max-scan
-#if SINGELI
+#if SINGELI_X86_64
   #define MINMAX_SCAN(T,NAME,C,I) avx2_scan_##NAME##_init_##T(xp, rp, ia, I);
 #else
   #define MINMAX_SCAN(T,NAME,C,I) T c=I; for (usz i=0; i<ia; i++) { if (xp[i] C c)c=xp[i]; rp[i]=c; }

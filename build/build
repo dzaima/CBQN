@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+DIR="$(dirname $0)"
+"$DIR/obj2/for_build" "$DIR/src/build.bqn" "$@"

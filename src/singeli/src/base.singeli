@@ -7,6 +7,17 @@ oper ** broadcast infix right 55
 def Size = u64
 def load{x} = *x
 
+def elwidth{T} = width{eltype{T}}
+
+def genchk{B, F} = {
+  def r{T} = 0
+  def r{T & B{T}} = F{eltype{T}}
+  def r{T,w} = 0
+  def r{T,w & B{T}} = F{eltype{T}} & (elwidth{T}==w)
+  def r{T & ~isvec{T}} = 0
+  r
+}
+
 # ceiling divide
 def cdiv{a,b} = (a+b-1)/b
 
@@ -20,11 +31,11 @@ def bit {k,x} = x &  (1<<k)      # get the k-th bit
 # Convert tuple to number in little-endian base b
 def base{b,l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+b*base{b,slice{l,1}} }
 
+# hints
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
 def assert{x:u1} = { if (not x) emit{void, '__builtin_unreachable'} }
-
 
 # various checks
 def isreg   = kreg
@@ -36,6 +47,7 @@ def isunsigned{T} = isint{T} & ~issigned{T}
 
 def isvec {T} = 0; def isvec {T & istype{T}} = match{typekind{T},'vector'}
 def isprim{T} = 0; def isprim{T & istype{T}} = match{typekind{T},'primitive'}
+def isptr {T} = 0; def isptr {T & istype{T}} = match{typekind{T},'pointer'}
 
 
 def anyNum{x} = isconst{x} | knum{x}
@@ -48,6 +60,7 @@ def anyInt{x & isreg{x}|isconst{x}} = isint{x}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 
+# reinterpret vector element type to signed/unsigned
 def ty_s{w} = primtype{'i', w}
 def ty_u{w} = primtype{'u', w}
 
@@ -56,11 +69,36 @@ def ty_s{T & isprim{T}} = ty_s{width{T}}
 
 def ty_u{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
 def ty_s{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
-def ty_u{x:T & isvec{T}} = ty_u{T}~~x
-def ty_s{x:T & isvec{T}} = ty_s{T}~~x
+def ty_u{x:T} = ty_u{T}~~x
+def ty_s{x:T} = ty_s{T}~~x
 
+# reinterpret vector as one with element type E
 def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
 def to_el{E, x:T} = to_el{E,T} ~~ x
+
+# change width of primitive type
+def to_w{T, w} = primtype{quality{T}, w}
+# double/halve primitive or element type width
+def ty_dbl {T & isprim{T}} = to_w{T, width{T}*2}
+def ty_half{T & isprim{T}} = to_w{T, width{T}/2}
+def ty_dbl {T & isvec{T}} = to_el{ty_dbl {eltype{T}}, T}
+def ty_half{T & isvec{T}} = to_el{ty_half{eltype{T}}, T}
+# double/halve vector count
+def v_dbl {T & isvec{T}} = [vcount{T}*2](eltype{T})
+def v_half{T & isvec{T}} = [vcount{T}/2](eltype{T})
+# test if vector has a specific width & element type
+def lvec{T, n, w} = 0
+def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
+
+# base vector utility definitions
+def widen{T, x:X & T==X} = x
+def narrow{T, x:X & T==eltype{X}} = x
+def undefPromote{T, x:X & T==X} = T~~x
+def andnz{...x} = assert{'andnz not supported', show{...x}}
+def topBlend{...x} = assert{'topBlend not supported', show{...x}}
+def topMask{...x} = assert{'topBlend not supported', show{...x}}
+def pack{...x} = assert{'pack not supported', show{...x}}
+
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
@@ -116,8 +154,6 @@ def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
 
 # tuple operations
 def broadcast{T, v & isprim{T}} = v
-def any{v:T & isprim{T}} = v
-def anyneg{v:T & isprim{T}} = v<0
 def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
 
@@ -127,3 +163,5 @@ def printfType{T} = tern{isfloat{T}, '%.17g', merge{'%', tern{width{T}==64, 'l',
 def print{x & match{kind{x},'symbol'}} = { emit{void, 'printf', '"%s"', merge{'"', x, '"'}}; x }
 def print{x:T & anyNum{x}} = { emit{void, 'printf', merge{'"', printfType{T}, '"'}, x}; x }
 def println{x} = { print{x}; print{'\n'}; x }
+
+def arch_defvw = tern{hasarch{'X86_64'}, 256, 128}

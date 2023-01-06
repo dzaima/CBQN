@@ -2,17 +2,9 @@
 
 
 #if SINGELI
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/bits.c"
-  #pragma GCC diagnostic pop
-  typedef void (*BitselFn)(void*, u64*, u64, u64, u64);
-  static BitselFn bitselFns[] = {
-    [0]=avx2_bitsel_8,
-    [1]=avx2_bitsel_16,
-    [2]=avx2_bitsel_32,
-    [3]=avx2_bitsel_64,
-  };
+  #define SINGELI_FILE bits
+  #include "../utils/includeSingeli.h"
+  #define bitselFns simd_bitsel
 #endif
 
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }

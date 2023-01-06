@@ -63,23 +63,26 @@ static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape 
   x->sh = &x->ia;
   return NULL;
 }
-static void arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
+static Arr* arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
   SPRNK(x,r);
-  if (r>1) { x->sh = ptr_inc(sh)->a; }
-  else     { x->sh = &x->ia; }
+  if (r>1) x->sh = ptr_inc(sh)->a;
+  else     x->sh = &x->ia;
+  return x;
 }
-static void arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
+static Arr* arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
   SPRNK(x,r);
-  if (r>1) { x->sh = sh->a;  }
-  else     { x->sh = &x->ia; }
+  if (r>1) x->sh = sh->a;
+  else     x->sh = &x->ia;
+  return x;
 }
 static Arr* arr_shCopyUnchecked(Arr* n, B o) {
   ur r = SPRNK(n,RNK(o));
   if (r<=1) {
     n->sh = &n->ia;
   } else {
-    ptr_inc(shObj(o));
-    n->sh = SH(o);
+    usz* sh = SH(o);
+    ptr_inc(shObjS(sh));
+    n->sh = sh;
   }
   return n;
 }

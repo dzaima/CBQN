@@ -133,7 +133,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 }
 
 
-#if SINGELI
+#if SINGELI_X86_64
   #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
   #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
@@ -217,19 +217,9 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
 }
 
-#if SINGELI
-  #include <xmmintrin.h>
-  #if __GNUC__ && !__clang__ // old gcc versions don't define _mm_loadu_si32 & _mm_storeu_si32
-    static __m128i custom_loadu_si32(void* p) { return (__m128i) _mm_load_ss(p); }
-    static void custom_storeu_si32(void* p, __m128i x) { _mm_store_ss(p, _mm_castsi128_ps(x)); }
-    #define _mm_loadu_si32 custom_loadu_si32
-    #define _mm_storeu_si32 custom_storeu_si32
-  #endif
-  
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-  #include "../singeli/gen/copy.c"
-  #pragma GCC diagnostic pop
+#if SINGELI_X86_64
+  #define SINGELI_FILE copy
+  #include "./includeSingeli.h"
   typedef void (*copy_fn)(void*, void*, u64, void*);
   
   static void badCopy(void* xp, void* rp, u64 len, void* xRaw) {
@@ -279,24 +269,24 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   static copy_fn tcopy_c16Fns[] = {[t_c8arr]=avx2_copy_c8_c16,[t_c8slice]=avx2_copy_c8_c16, [t_c16arr]=avx2_copy_c16_c16,[t_c16slice]=avx2_copy_c16_c16};
   static copy_fn tcopy_c32Fns[] = {[t_c8arr]=avx2_copy_c8_c32,[t_c8slice]=avx2_copy_c8_c32, [t_c16arr]=avx2_copy_c16_c32,[t_c16slice]=avx2_copy_c16_c32, [t_c32arr]=avx2_copy_c32_c32,[t_c32slice]=avx2_copy_c32_c32};
   
-  #define TCOPY_FN(T, N) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
-    if (l==0) return; \
-    void* xp = tyany_ptr(x); \
-    T* rp = ms + (T*)a; \
-    u8 xt = TY(x);      \
-    if (xt==t_bitarr) { \
+  #define TCOPY_FN(T, N, NUM) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
+    if (l==0) return;          \
+    void* xp = tyany_ptr(x);   \
+    T* rp = ms + (T*)a;        \
+    u8 xt = TY(x);             \
+    if (NUM && xt==t_bitarr) { \
       for (usz i = 0; i < l; i++) rp[i] = bitp_get((u64*)xp, xs+i); \
-    } else { \
+    } else {                   \
       tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, rp, l, a(x)); \
-    } \
+    }                          \
   }
-  TCOPY_FN(i8,i8)
-  TCOPY_FN(i16,i16)
-  TCOPY_FN(i32,i32)
-  TCOPY_FN(u8,c8)
-  TCOPY_FN(u16,c16)
-  TCOPY_FN(u32,c32)
-  TCOPY_FN(f64,f64)
+  TCOPY_FN(i8,i8, 1)
+  TCOPY_FN(i16,i16, 1)
+  TCOPY_FN(i32,i32, 1)
+  TCOPY_FN(u8,c8, 0)
+  TCOPY_FN(u16,c16, 0)
+  TCOPY_FN(u32,c32, 0)
+  TCOPY_FN(f64,f64, 1)
   static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
     bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l);
   }

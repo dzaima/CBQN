@@ -25,6 +25,7 @@ u64 mm_heapUsed() {
 #undef BSZ
 
 #if VERIFY_TAIL
+#include "../utils/talloc.h"
 FORCE_INLINE u64 ptrHash(void* ptr, usz off) {
   u64 pv = ptr2u64(ptr) ^ off;
   pv*= 0xa0761d6478bd642full;
@@ -57,8 +58,8 @@ static void tailVerifyInit(void* ptr, u64 filled, u64 end, u64 allocEnd) {
 }
 void tailVerifyAlloc(void* ptr, u64 filled, i64 logAlloc, u8 type) {
   u64 end = 1ULL<<logAlloc;
-  filled = 8; // permit decreasing used size without having written anything to the space
-  tailVerifyInit(ptr, filled, end, end);
+  tailVerifyInit(ptr, sizeof(Value), end, end); // `sizeof(Value)` instead of `filled` to permit, without reinit, decreasing used size without having written anything to the space
+  if (type==t_talloc) ((u64*)((u8*)ptr + end - 8))[0] = filled-8; // -8 because TALLOCP does a +8
 }
 void verifyEnd(void* ptr, u64 sz, u64 start, u64 end) {
   if (end+64>sz) { printf("Bad used range: "N64u".."N64u", allocation size "N64u"\n", start, end, sz); exit(1); }
@@ -100,16 +101,20 @@ NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u
 }
 void tailVerifyFree(void* ptr) {
   u64 filled; u64 ia; Arr* xa = ptr;
+  u64 end = mm_size(ptr);
   switch(PTY(xa)) { default: return;
     case t_bitarr: filled = BITARR_SZ(ia=PIA(xa)); break;
     case t_i8arr:  filled = TYARR_SZ(I8,  ia=PIA(xa)); break;
     case t_i16arr: filled = TYARR_SZ(I16, ia=PIA(xa)); break;
     case t_i32arr: filled = TYARR_SZ(I32, ia=PIA(xa)); break;
+    case t_c8arr:  filled = TYARR_SZ(C8,  ia=PIA(xa)); break;
+    case t_c16arr: filled = TYARR_SZ(C16, ia=PIA(xa)); break;
+    case t_c32arr: filled = TYARR_SZ(C32, ia=PIA(xa)); break;
     case t_f64arr: filled = TYARR_SZ(F64, ia=PIA(xa)); break;
     case t_harr:    filled = fsizeof(HArr,a,B,ia=PIA(xa)); break;
     case t_fillarr: filled = fsizeof(FillArr,a,B,ia=PIA(xa)); break;
+    case t_talloc:  filled = ia = *(u64*)((u8*)ptr + end - 8); end-= 8; break;
   }
-  u64 end = mm_size(ptr);
   verifyEnd(ptr, end, 8, filled);
   #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end, ia)
   ITER_TAIL(F)

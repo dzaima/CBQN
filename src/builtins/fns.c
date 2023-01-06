@@ -119,8 +119,7 @@ B ud_c2(B t, B w, B x) {
   for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
 
   if (empty) {
-    Arr* ra = m_fillarrp(0);
-    arr_shSetU(ra, rr, sh);
+    Arr* ra = arr_shSetU(m_fillarrp(0), rr, sh);
     fillarr_setFill(ra, getFillQ(x));
     decG(x);
     return taga(ra);
@@ -155,9 +154,7 @@ B ud_c2(B t, B w, B x) {
     }
   }
   decG(x); TFREE(ri);
-  Arr* ra = mut_fp(r);
-  arr_shSetU(ra, rr, sh);
-  return withFill(taga(ra), xf);
+  return withFill(taga(arr_shSetU(mut_fp(r), rr, sh)), xf);
 }
 
 B ltack_c1(B t,      B x) {         return x; }
@@ -202,7 +199,7 @@ B fne_c2(B t, B w, B x) {
 
 extern B rt_find;
 B find_c2(B t, B w, B x) {
-  return c2(rt_find, w, x);
+  return c2rt(find, w, x);
 }
 
 static H_b2i* prevImports;
@@ -284,6 +281,8 @@ static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extr
 static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
+static B funBI_iw(B t, B w, B x) { return c(BFn,t)->iw(t, w, x); }
+static B funBI_ix(B t, B w, B x) { return c(BFn,t)->ix(t, w, x); }
 static B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
 void fns_init() {
   gc_addFn(fun_gcFn);
@@ -294,6 +293,8 @@ void fns_init() {
   TIi(t_funBI,fn_uc1) = funBI_uc1;
   TIi(t_funBI,fn_ucw) = funBI_ucw;
   TIi(t_funBI,fn_im) = funBI_im;
+  TIi(t_funBI,fn_iw) = funBI_iw;
+  TIi(t_funBI,fn_ix) = funBI_ix;
   bitUD[0] = a(bi_emptyIVec); // don't increment as it's already gc_add-ed
   { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a);               gc_add(a); }
   { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; gc_add(a); }

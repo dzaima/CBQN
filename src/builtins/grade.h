@@ -61,7 +61,7 @@
     rp[j] = xi;                                              \
   }
 
-#if SINGELI
+#if SINGELI_X86_64
 extern void (*const avx2_scan_max_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
 extern void (*const avx2_scan_min_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
 extern void (*const avx2_scan_max_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
@@ -227,7 +227,7 @@ B SORT_C1(B t, B x) {
 #undef SORT_C1
 #undef INSERTION_SORT
 #undef COUNTING_SORT
-#if SINGELI
+#if SINGELI_X86_64
 #undef WRITE_SPARSE_i8
 #undef WRITE_SPARSE_i16
 #endif

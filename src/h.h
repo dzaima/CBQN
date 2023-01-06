@@ -164,11 +164,11 @@ typedef double   f64;
 #if USZ_64
   typedef u64 usz;
   #define USZ_MAX ((u64)(1ULL<<48))
-  #define CHECK_IA(IA,W) if(IA>USZ_MAX) thrOOM()
+  #define CHECK_IA(IA,W) if((IA) > USZ_MAX) thrOOM()
 #else
   typedef u32 usz;
   #define USZ_MAX ((u32)((1LL<<32)-1))
-  #define CHECK_IA(IA,W) if (IA > ((1LL<<31)/W - 1000)) thrOOM()
+  #define CHECK_IA(IA,W) if ((IA) > ((1LL<<31)/W - 1000)) thrOOM()
 #endif
 #if UNSAFE_SIZES
   #undef CHECK_IA
@@ -255,10 +255,10 @@ typedef union B {
   /*31*/ F(bitarr) \
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
-  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(nfn) F(nfnDesc) \
-  /*49*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
+  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
+  /*50*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
   \
-  /*52*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*53*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -315,7 +315,7 @@ typedef struct Arr {
   #define VALIDATEP(X) (X)
   #define UD __builtin_unreachable();
 #endif
-#if WARN_SLOW==1
+#if WARN_SLOW
   void warn_slow1(char* s, B x);
   void warn_slow2(char* s, B w, B x);
   void warn_slow3(char* s, B w, B x, B y);
@@ -354,9 +354,12 @@ extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptySVec() incG(bi_emptySVec)
 ALLOC_FN void* mm_alloc(u64 sz, u8 type);
 ALLOC_FN void  mm_free(Value* x);
-static u64   mm_size(Value* x);
 static void  mm_visit(B x);
 static void  mm_visitP(void* x);
+static u64   mm_size(Value* x);
+#if !VERIFY_TAIL
+#define mm_sizeUsable mm_size
+#endif
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
@@ -644,6 +647,9 @@ typedef struct Fun {
 
 B c1F(B f, B x);
 B c2F(B f, B w, B x);
+
+#define c1rt(N,    X) ({           B x_=(X); SLOW1("!rt_" #N,   x_); c1(rt_##N,     x_); })
+#define c2rt(N, W, X) ({ B w_=(W); B x_=(X); SLOW2("!rt_" #N,w_,x_); c2(rt_##N, w_, x_); })
 static B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c1(f, VRES(x))));
   return c1F(f, x);

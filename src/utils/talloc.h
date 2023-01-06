@@ -5,14 +5,14 @@ typedef struct TAlloc {
   u8 data[];
 } TAlloc;
 #define TOFF offsetof(TAlloc, data)
-#define TALLOCP(T,AM) ((T*) ((TAlloc*)mm_alloc(TOFF + (AM)*sizeof(T) + 8, t_temp))->data) // +8 so mm is happy
+#define TALLOCP(T,AM) ((T*) ((TAlloc*)mm_alloc(TOFF + (AM)*sizeof(T) + 8, t_talloc))->data) // +8 so mm is happy
 #define TALLOC(T,N,AM) T* N = TALLOCP(T,AM);
 #define TOBJ(N) (void*)((u8*)(N) - TOFF)
 #define TFREE(N) mm_free((Value*)TOBJ(N));
 #define TREALLOC(N, AM) talloc_realloc(TOBJ(N), AM)
-#define TSIZE(N) (mm_size(TOBJ(N))-TOFF)
+#define TSIZE(N) (mm_sizeUsable(TOBJ(N))-TOFF)
 static inline void* talloc_realloc(TAlloc* t, u64 am) { // TODO maybe shouldn't be inline?
-  u64 stored = mm_size((Value*)t)-TOFF;
+  u64 stored = mm_sizeUsable((Value*)t)-TOFF;
   if (stored > am) return t->data;
   TALLOC(u8,r,am);
   memcpy(r, t->data, stored);

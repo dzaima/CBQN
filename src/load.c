@@ -8,8 +8,8 @@
 #define PRECOMPILED_FILE1(X) PRECOMPILED_FILE0(X)
 #define PRECOMPILED_FILE(END) PRECOMPILED_FILE1(../build/BYTECODE_DIR/gen/END)
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(load) F(sysfnPost) F(dervPost) F(ffi) F(mmap) F(typesFinished)
-#define F(X) void X##_init(void);
+#define FOR_INIT(F) F(base) F(harr) F(mutF) F(cmpA) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(load) F(sysfnPost) F(dervPost) F(ryu) F(ffi) F(mmap) F(typesFinished)
+#define F(X) NOINLINE void X##_init(void);
 FOR_INIT(F)
 #undef F
 
@@ -106,8 +106,8 @@ B comp_currArgs;
 B comp_currSrc;
 B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
 
-B rt_undo, rt_select, rt_slash, rt_pick, rt_take, rt_drop, rt_insert, rt_depth,
-  rt_group, rt_under, rt_reverse, rt_indexOf, rt_count, rt_memberOf, rt_find, rt_transp;
+B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
+  rt_group, rt_under, rt_find, rt_transp;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
@@ -416,14 +416,8 @@ void load_init() { // very last init function
     rt_undo    = Get(rtObjRaw, n_undo    ); gc_add(rt_undo);
     rt_select  = Get(rtObjRaw, n_select  ); gc_add(rt_select);
     rt_slash   = Get(rtObjRaw, n_slash   ); gc_add(rt_slash);
-    rt_take    = Get(rtObjRaw, n_take    ); gc_add(rt_take);
-    rt_drop    = Get(rtObjRaw, n_drop    ); gc_add(rt_drop);
     rt_group   = Get(rtObjRaw, n_group   ); gc_add(rt_group);
     rt_under   = Get(rtObjRaw, n_under   ); gc_add(rt_under);
-    rt_reverse = Get(rtObjRaw, n_reverse ); gc_add(rt_reverse);
-    rt_indexOf = Get(rtObjRaw, n_indexOf ); gc_add(rt_indexOf);
-    rt_count   = Get(rtObjRaw, n_count   ); gc_add(rt_count);
-    rt_memberOf= Get(rtObjRaw, n_memberOf); gc_add(rt_memberOf);
     rt_find    = Get(rtObjRaw, n_find    ); gc_add(rt_find);
     rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
     rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);
@@ -574,10 +568,10 @@ static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 B rt_invFnReg, rt_invFnSwap;
 BB2B rt_invFnRegFn;
 BB2B rt_invFnSwapFn;
-B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c1(fn,    x); dec(fn); return r; }
-B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
-B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
+B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
+B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
 B def_m1_im(Md1D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
 B def_m1_iw(Md1D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
 B def_m1_ix(Md1D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
@@ -604,15 +598,14 @@ static B empty_getU(Arr* x, usz n) {
 
 static void funBI_visit(Value* x) {
   mm_visit(((BFn*)x)->rtInvReg);
+  mm_visit(((BFn*)x)->rtInvSwap);
 }
-static B funBI_imRt(B t, B x) {
-  return c1(c(BFn, t)->rtInvReg, x);
-}
-static B funBI_imInit(B t, B x) {
-  B f = c(BFn, t)->rtInvReg = c1(rt_invFnReg, inc(t));
-  c(BFn, t)->im = funBI_imRt;
-  return c1(f, x);
-}
+static B funBI_imRt(B t,      B x) { return c1(c(BFn, t)->rtInvReg,     x); }
+static B funBI_iwRt(B t, B w, B x) { return c2(c(BFn, t)->rtInvSwap, w, x); }
+static B funBI_ixRt(B t, B w, B x) { return c2(c(BFn, t)->rtInvReg,  w, x); }
+static B funBI_imInit(B t,      B x) { B f=c(BFn,t)->rtInvReg; if(f.u==0) f=c(BFn,t)->rtInvReg=c1rt(invFnReg,  inc(t)); c(BFn,t)->im=funBI_imRt; return c1(f, x); }
+static B funBI_ixInit(B t, B w, B x) { B f=c(BFn,t)->rtInvReg; if(f.u==0) f=c(BFn,t)->rtInvReg=c1rt(invFnReg,  inc(t)); c(BFn,t)->ix=funBI_ixRt; return c2(f, w, x); }
+static B funBI_iwInit(B t, B w, B x) { B f=c(BFn,t)->rtInvSwap                                =c1rt(invFnSwap, inc(t)); c(BFn,t)->iw=funBI_iwRt; return c2(f, w, x); }
 
 
 void* customObj(u64 size, V2v visit, V2v freeO) {
@@ -638,7 +631,10 @@ static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
   f->uc1 = def_fn_uc1;
   f->ucw = def_fn_ucw;
   f->im = funBI_imInit;
-  f->rtInvReg = m_f64(0);
+  f->iw = funBI_iwInit;
+  f->ix = funBI_ixInit;
+  f->rtInvReg  = m_f64(0);
+  f->rtInvSwap = m_f64(0);
   B r = tag(f,FUN_TAG); gc_add(r);
   return r;
 }
@@ -706,6 +702,7 @@ void base_init() { // very first init function
   #endif
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
+  TIi(t_talloc,visit) = noop_visit;
   TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
   TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;

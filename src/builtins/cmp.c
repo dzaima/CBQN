@@ -50,11 +50,14 @@ CMP_REC(ne, ne, swapped=0;)
 #undef CMP_REC
 
 #define CMPFN(A,F,S,T) A##_##F##S##_##T
-#define FN_LUT(B,A,F,S) const Cmp##S##Fn B##_##F##S[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
+#define FN_LUT_T(B,F,S,...) Cmp##S##Fn B##_##F##S
+#define FN_LUT_C(B,A,F,S) FN_LUT_T(B,F,S)[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
+#define FN_LUT_A(B,F,S) FN_LUT_T(B,F,S)[8]
 
 #if SINGELI
   #include "../singeli/c/cmp.c"
 #else
+  void cmpA_init() { }
   #define BASE_CMP_LOOP(OP, W, X) \
     for (usz j = 0; j < (l+7)>>3; j++) { \
       u8 c = 0;                          \
@@ -115,15 +118,17 @@ CMP_REC(ne, ne, swapped=0;)
   CMP_SA_F(gt, > , CMP_TO_SLOW,  wv & ~xv)
   #undef CMP_SA_F
   
-  FN_LUT(cmp_fns, base, eq, AS); FN_LUT(cmp_fns, base, eq, AA);
-  FN_LUT(cmp_fns, base, ne, AS); FN_LUT(cmp_fns, base, ne, AA);
-  FN_LUT(cmp_fns, base, gt, AS); FN_LUT(cmp_fns, base, gt, AA);
-  FN_LUT(cmp_fns, base, ge, AS); FN_LUT(cmp_fns, base, ge, AA);
-  FN_LUT(cmp_fns, base, lt, AS);
-  FN_LUT(cmp_fns, base, le, AS);
+  FN_LUT_C(cmp_fns, base, eq, AS); FN_LUT_C(cmp_fns, base, eq, AA);
+  FN_LUT_C(cmp_fns, base, ne, AS); FN_LUT_C(cmp_fns, base, ne, AA);
+  FN_LUT_C(cmp_fns, base, gt, AS); FN_LUT_C(cmp_fns, base, gt, AA);
+  FN_LUT_C(cmp_fns, base, ge, AS); FN_LUT_C(cmp_fns, base, ge, AA);
+  FN_LUT_C(cmp_fns, base, lt, AS);
+  FN_LUT_C(cmp_fns, base, le, AS);
 #endif
 #if !CLANGD
-#undef FN_LUT
+#undef FN_LUT_B
+#undef FN_LUT_C
+#undef FN_LUT_T
 #endif
 
 

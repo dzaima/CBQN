@@ -43,6 +43,11 @@ static u64 mm_round(usz sz) {
 static u64 mm_size(Value* x) {
   return BSZ(x->mmInfo&63);
 }
+#if VERIFY_TAIL
+static u64 mm_sizeUsable(Value* x) {
+  return mm_size(x) - VERIFY_TAIL;
+}
+#endif
 void mm_forHeap(V2v f);
 void mm_dumpHeap(FILE* f);
 

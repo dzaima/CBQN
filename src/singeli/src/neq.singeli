@@ -19,7 +19,7 @@ clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   }
   xv := *V ~~ x
   rv := *V ~~ r
-  e := words/2;
+  e := words/2
   c := V**init
   @for (rv, xv over e) {
     rv = apply{unpacklo, (@collect (j to 2) xor64{xv, j, c})}

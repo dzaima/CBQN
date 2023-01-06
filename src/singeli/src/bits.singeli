@@ -1,9 +1,13 @@
 include './base'
 include './f64'
 include './cbqnDefs'
-include './sse3'
-include './avx'
-include './avx2'
+if (hasarch{'X86_64'}) {
+  include './sse3'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
 include './bitops'
 include './mask'
 
@@ -16,7 +20,7 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   
   maskedLoop{bulk, len, {i, M} => {
     cb:= loadBatchBit{VT, bits, i}
-    storeBatch{r, i, blendF{e0v, e1v, cb}, M}
+    storeBatch{r, i, homBlend{e0v, e1v, cb}, M}
   }}
 }
 
@@ -24,7 +28,6 @@ bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
   bitsel{VL, T, *T~~r, bits, trunc{T,e0}, trunc{T,e1}, len}
 }
 
-'avx2_bitsel_8' =bitsel_i{256, u8}
-'avx2_bitsel_16'=bitsel_i{256, u16}
-'avx2_bitsel_32'=bitsel_i{256, u32}
-'avx2_bitsel_64'=bitsel_i{256, u64}
+def table{w} = each{{T} => bitsel_i{w, T}, tup{u8, u16, u32, u64}}
+
+def tup_bitsel = table{arch_defvw}; v_bitsel:*type{tupsel{0,tup_bitsel}} = tup_bitsel; 'simd_bitsel'=v_bitsel
