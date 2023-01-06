@@ -249,6 +249,7 @@ po ← { # parsed options
     args∾↩ 1⊑GetLibs@
     args∾↩ (¬bsd) / ⟨"-ldl"⟩
     args∾↩ GetOpt "lf"
+    args∾↩ GetOpt "CCFLAGS"
     args∾↩ GetOpt "LDFLAGS"
     args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
     args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
