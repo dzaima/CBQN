@@ -6,6 +6,10 @@
 #include "utils/interrupt.h"
 #include <unistd.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+  #include "windows/sysconf.c"
+#endif
+
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
   #define UNWIND_COMPILER 1
 #endif

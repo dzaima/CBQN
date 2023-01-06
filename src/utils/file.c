@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+  #include "../windows/realpath.c"
+#endif
+
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   char* p = toCStr(path);
@@ -318,7 +322,11 @@ void mmap_init() { }
 
 bool dir_create(B path) {
   char* p = toCStr(path);
-  bool r = mkdir(p, S_IRWXU) == 0;
+  #if defined(_WIN32) || defined(_WIN64)
+    bool r = 1;
+  #else
+    bool r = mkdir(p, S_IRWXU) == 0;
+  #endif
   freeCStr(p);
   return r;
 }

@@ -9,7 +9,11 @@
 #include "../nfns.h"
 
 #include <unistd.h>
-#include <poll.h>
+#if !defined(_WIN32) && !defined(_WIN64)
+  #include <poll.h>
+#else
+  #include "../windows/getline.c"
+#endif
 #include <errno.h>
 
 static bool eqStr(B w, u32* x) {

@@ -899,7 +899,11 @@ int main(int argc, char* argv[]) {
         }
         char* ln = NULL;
         size_t gl = 0;
-        i64 read = getline(&ln, &gl, stdin);
+        #if defined(_WIN32) || defined(_WIN64)
+          i64 read = 0;
+        #else
+          i64 read = getline(&ln, &gl, stdin);
+        #endif
         if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
         if (ln[read-1]==10) ln[--read] = 0;
         cbqn_runLine(ln, read);
