@@ -2,6 +2,10 @@
 
 These are commands usable from a CBQN REPL that, for one reason or another, aren't suited to be system functions.
 
+## `)exit` / `)off`
+
+Equivalent to `•Exit 0`
+
 ## `)ex path/to/file`
 
 Execute the contents of the file as if it were REPL input (but allowing multiline definitions). Not a system function because modifying the list of global variables during execution is not allowed.

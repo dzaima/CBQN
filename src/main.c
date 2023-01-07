@@ -592,6 +592,8 @@ void cbqn_runLine0(char* ln, i64 read) {
       else printf("Unknown theme\n");
       return;
 #endif
+    } else if (isCmd(cmdS, &cmdE, "exit") || isCmd(cmdS, &cmdE, "off")) {
+      bqn_exit(0);
     } else if (isCmd(cmdS, &cmdE, "vars")) {
       B r = listVars(gsc);
       if (q_N(r)) {
