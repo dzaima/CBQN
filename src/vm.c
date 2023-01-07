@@ -1128,7 +1128,10 @@ void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 
 B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
 
+#if !defined(_WIN32) && !defined(_WIN64)
 static usz pageSizeV;
+#endif
+
 usz getPageSize() {
   #if defined(_WIN32) || defined(_WIN64)
     #if !NO_MMAP
@@ -1140,6 +1143,7 @@ usz getPageSize() {
     return pageSizeV;
   #endif
 }
+
 static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
   usz ps = getPageSize();
   u64 sz = (elSize*count + ps-1)/ps * ps;
