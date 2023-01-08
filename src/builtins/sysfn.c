@@ -252,7 +252,8 @@ B casrt_c1(B t, B x) {
 
 B sys_c1(B t, B x);
 B out_c1(B t, B x) {
-  if (isArr(x) && RNK(x)>1) thrF("•Out: Argument cannot have rank %i", RNK(x));
+  if (isAtm(x)) thrM("•Out: Argument must be a list");
+  if (RNK(x)>1) thrF("•Out: Argument cannot have rank %i", RNK(x));
   printRaw(x); putchar('\n');
   return x;
 }

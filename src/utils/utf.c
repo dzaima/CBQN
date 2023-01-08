@@ -53,19 +53,44 @@ B utf8DecodeA(I8Arr* a) { // consumes a
   return r;
 }
 
-void printUTF8(u32 c) {
-  if (c<128) printf("%c", c);
-  else if (c<=0x07FF) printf("%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );
-  else if (c<=0xFFFF) printf("%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
-  else                printf("%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
-}
-void fprintUTF8(FILE* f, u32 c) {
+void fprintCodepoint(FILE* f, u32 c) {
   if (c<128) fprintf(f, "%c", c);
   else if (c<=0x07FF) fprintf(f, "%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );
   else if (c<=0xFFFF) fprintf(f, "%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
   else                fprintf(f, "%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
 }
+void fprintsU32(FILE* f, u32* s, usz len) {
+  for (usz i = 0; i < len; i++) fprintCodepoint(f, s[i]);
+}
 
+
+void fprintsB(FILE* f, B x) {
+  u8 xe = TI(x,elType);
+  usz ia = IA(x);
+  if (ia==0) return;
+  if (xe==el_c32) {
+    fprintsU32(f, c32any_ptr(x), ia);
+  } else {
+    incG(x);
+    if (!elChr(xe)) { x=chr_squeeze(x); xe=TI(x,elType); }
+    if (!elChr(xe)) {
+      #if !CATCH_ERRORS
+        SGetU(x)
+        for (usz i = 0; i < ia; i++) {
+          B c = GetU(x, i);
+          if (isC32(c)) fprintCodepoint(f, o2cG(c));
+          else if (c.u==0 || noFill(c)) fprintf(f, " ");
+          else thrM("Trying to output non-character");
+        }
+        return;
+      #endif
+      thrM("Trying to output non-character");
+    }
+    x = taga(cpyC32Arr(x));
+    fprintsU32(f, c32any_ptr(x), ia);
+    decG(x);
+  }
+}
 
 u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all chars
   assert(isArr(x));

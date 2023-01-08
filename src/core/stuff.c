@@ -95,7 +95,6 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   return n;
 }
 
-void fprint(FILE* f, B x);
 void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
   ur r = RNK(x);
   SGetU(x)
@@ -108,27 +107,29 @@ void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging 
     }
     usz* sh = SH(x);
     for (i32 i = 0; i < r; i++) {
-      if(i==0)fprintf(f, N64d,(u64)sh[i]);
-      else fprintf(f, "‿"N64d,(u64)sh[i]);
+      if(i!=0) fprintCodepoint(f, U'‿');
+      fprintf(f, N64d, (u64)sh[i]);
     }
-    fprintf(f, "⥊");
+    fprintCodepoint(f, U'⥊');
   } else if (ia>0) {
-    for (usz i = 0; i < ia; i++) {
-      B c = GetU(x,i);
-      if (!isC32(c) || (u32)c.u=='\n') goto reg;
+    if (!elChr(TI(x,elType))) {
+      for (usz i = 0; i < ia; i++) {
+        B c = GetU(x, i);
+        if (!isC32(c) || o2cG(c)<32) goto reg;
+      }
     }
     fprintf(f, "\"");
-    for (usz i = 0; i < ia; i++) fprintUTF8(f, (u32)GetU(x,i).u); // c32, no need to decrement
+    fprintsB(f, x);
     fprintf(f, "\"");
     return;
   }
   reg:;
-  fprintf(f, "⟨");
+  fprintCodepoint(f, U'⟨');
   for (usz i = 0; i < ia; i++) {
     if (i!=0) fprintf(f, ", ");
     fprint(f, GetU(x,i));
   }
-  fprintf(f, "⟩");
+  fprintCodepoint(f, U'⟩');
 }
 
 void fprint(FILE* f, B x) {
@@ -136,9 +137,9 @@ void fprint(FILE* f, B x) {
     NUM_FMT_BUF(buf, x.f);
     fprintf(f, "%s", buf);
   } else if (isC32(x)) {
-    if ((u32)x.u>=32) { fprintf(f, "'"); fprintUTF8(f, (u32)x.u); fprintf(f, "'"); }
-    else if((u32)x.u>15) fprintf(f, "\\x%x", (u32)x.u);
-    else fprintf(f, "\\x0%x", (u32)x.u);
+    if      (o2cG(x)>=32) fprintsU32(f, (u32[3]){'\'', o2cG(x), '\''}, 3);
+    else if (o2cG(x)>=16) fprintf(f, "\\x%x", o2cG(x));
+    else fprintf(f, "\\x0%x", o2cG(x));
   } else if (isVal(x)) {
     #ifdef DEBUG
     if (isVal(x) && (TY(x)==t_freed || TY(x)==t_empty)) {
@@ -163,22 +164,7 @@ void fprint(FILE* f, B x) {
 }
 
 NOINLINE void fprintRaw(FILE* f, B x) {
-  if (isAtm(x)) {
-    if (isF64(x)) { NUM_FMT_BUF(buf, x.f); fprintf(f, "%s", buf); }
-    else if (isC32(x)) fprintUTF8(f, (u32)x.u);
-    else thrM("•Out: Unexpected argument type");
-  } else {
-    usz ia = IA(x);
-    SGetU(x)
-    for (usz i = 0; i < ia; i++) {
-      B c = GetU(x,i);
-      #if !CATCH_ERRORS
-      if (c.u==0 || noFill(c)) { fprintf(f, " "); continue; }
-      #endif
-      if (!isC32(c)) thrM("•Out: Unexpected element in argument");
-      fprintUTF8(f, (u32)c.u);
-    }
-  }
+  fprintsB(f, x);
 }
 
 NOINLINE void printRaw(B x) {

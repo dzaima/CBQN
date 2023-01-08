@@ -1339,6 +1339,9 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     
     // want to try really hard to print errors
     if (!cbqn_initialized) goto native_print;
+    #if FORCE_NATIVE_ERROR_PRINT
+      goto native_print;
+    #endif
     if (CATCH) goto native_print;
     
     B s = emptyCVec();
@@ -1355,7 +1358,7 @@ native_print:
     usz srcL = IA(src);
     SGetU(src)
     usz srcS = cs;   while (srcS>0 && o2cG(GetU(src,srcS-1))!='\n') srcS--;
-    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintUTF8(stderr, chr); srcE++; }
+    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintCodepoint(stderr, chr); srcE++; }
     if (ce>srcE) ce = srcE;
     cs-= srcS; ce-= srcS;
     fputc('\n', stderr);
@@ -1598,7 +1601,7 @@ NOINLINE void printErrMsg(B msg) {
     SGetU(msg)
     usz msgLen = IA(msg);
     for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
-    fprintRaw(stderr,msg);
+    fprintRaw(stderr, msg);
     return;
   }
   base:
