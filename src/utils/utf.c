@@ -53,15 +53,58 @@ B utf8DecodeA(I8Arr* a) { // consumes a
   return r;
 }
 
-void fprintCodepoint(FILE* f, u32 c) {
-  if (c<128) fprintf(f, "%c", c);
-  else if (c<=0x07FF) fprintf(f, "%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );
-  else if (c<=0xFFFF) fprintf(f, "%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
-  else                fprintf(f, "%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
-}
-void fprintsU32(FILE* f, u32* s, usz len) {
-  for (usz i = 0; i < len; i++) fprintCodepoint(f, s[i]);
-}
+
+// printing functions should avoid allocations, as they'll be used to print.. the out-of-memory message
+#if defined(_WIN32) || defined(_WIN64)
+  #include <io.h>
+  #include <fcntl.h>
+  void fprintsU32(FILE* f, u32* s, usz len) {
+    _setmode(_fileno(f), _O_U16TEXT);
+    #define BUF_SZ 1024
+    wchar_t buf[BUF_SZ];
+    u32* s_e = s+len;
+    while (s<s_e) {
+      wchar_t* buf_c = buf;
+      wchar_t* buf_e = buf+BUF_SZ-10;
+      while (s<s_e && buf_c<buf_e) {
+        u32 c = *s;
+        if (c<65536) {
+          if (c==0) break; // can't print null bytes into null-terminated buffer
+          buf_c[0] = c;
+          buf_c++;
+        } else {
+          c-= 0x10000;
+          buf_c[0] = 0xD800 + (c >> 10);
+          buf_c[1] = 0xDC00 + (c & ((1<<10)-1));
+          buf_c+= 2;
+        }
+        s++;
+      }
+      buf_c[0] = 0;
+      fwprintf(f, L"%ls", buf);
+      
+      while (s<s_e && *s==0) { // handle printing of null bytes; does nothing? idk
+        fwprintf(f, L"%c", '\0');
+        s++;
+      }
+    }
+    #undef BUF_SZ
+    _setmode(_fileno(f), _O_BINARY);
+  }
+  void fprintCodepoint(FILE* f, u32 c) {
+    fprintsU32(f, (u32[1]){c}, 1);
+  }
+#else
+  void fprintCodepoint(FILE* f, u32 c) {
+    if (c<128) fprintf(f, "%c", c);
+    else if (c<=0x07FF) fprintf(f, "%c%c"    , 0xC0| c>>6 , 0x80|(c    &0x3F)                                 );
+    else if (c<=0xFFFF) fprintf(f, "%c%c%c"  , 0xE0| c>>12, 0x80|(c>>6 &0x3F), 0x80|(c   &0x3F)               );
+    else                fprintf(f, "%c%c%c%c", 0xF0| c>>18, 0x80|(c>>12&0x3F), 0x80|(c>>6&0x3F), 0x80|(c&0x3F));
+  }
+  void fprintsU32(FILE* f, u32* s, usz len) {
+    for (usz i = 0; i < len; i++) fprintCodepoint(f, s[i]);
+  }
+#endif
 
 
 void fprintsB(FILE* f, B x) {
