@@ -222,7 +222,7 @@ po ← { # parsed options
     args∾↩ (               wasm) / ⟨"-DWASM"⟩
     args∾↩ (               wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (               emcc) / ⟨"-DEMCC", "-O3"⟩
-    args∾↩ (             replxx) / ⟨"-DUSE_REPLXX", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
+    args∾↩ (             replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
     args∾↩ (     debug DOpt "g") / ⟨"-g"⟩
     args∾↩ ((¬custom) DOpt "O3") / ⟨"-O3"⟩
     args∾↩ (             native) / ⟨"-march=native"⟩
