@@ -19,7 +19,7 @@ ssize_t getline (char **lptr, size_t *n, FILE *fp) {
     goto error;
   }
 
-  convertResult = WideCharToMultiByte(CP_ACP, 0, buf, -1, NULL, 0, NULL, NULL);
+  convertResult = WideCharToMultiByte(CP_UTF8, 0, buf, -1, NULL, 0, NULL, NULL);
   if (convertResult == 0) {
     fprintf(stderr, "Failed to get MultiByte length: %d", GetLastError());
     goto error;
@@ -27,13 +27,13 @@ ssize_t getline (char **lptr, size_t *n, FILE *fp) {
 
   m = *lptr = (char*) calloc(convertResult, sizeof(char));
 
-  if (WideCharToMultiByte(CP_ACP, 0, buf, -1, m, convertResult, NULL, NULL) == 0 ) {
+  if (WideCharToMultiByte(CP_UTF8, 0, buf, -1, m, convertResult, NULL, NULL) == 0 ) {
     fprintf(stderr, "Failed to convert wide characters: %d", GetLastError());
     free(m);
     goto error;
   }
   
-  return convertResult;
+  return convertResult-1;
 
 error:
   CloseHandle(hIn);

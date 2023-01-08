@@ -908,6 +908,7 @@ int main(int argc, char* argv[]) {
         i64 read = getline(&ln, &gl, stdin);
         if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
         if (ln[read-1]==10) ln[--read] = 0;
+        if (ln[read-1]==13) ln[--read] = 0;
         cbqn_runLine(ln, read);
         free(ln);
       }
