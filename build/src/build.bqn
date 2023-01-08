@@ -247,7 +247,7 @@ po ← { # parsed options
   Linker ⇐ { 𝕊:
     args ← ⟨{replxx? cxx; cc} DOpt "LD", "-lm"⟩
     args∾↩ 1⊑GetLibs@
-    args∾↩ (¬bsd) / ⟨"-ldl"⟩
+    args∾↩ (ffi ∧ ¬bsd) / ⟨"-ldl"⟩
     args∾↩ GetOpt "lf"
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ GetOpt "LDFLAGS"
