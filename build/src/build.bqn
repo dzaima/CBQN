@@ -151,20 +151,20 @@ po ← { # parsed options
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   cxx ← GetOpt "CXX"
-  ffi ← (¬wasm) DOpt "FFI"
   debug ← GetOpt "debug"
-  singeli ⇐ GetOpt "singeli"
-  replxx ⇐ GetOpt "REPLXX"
-  
   
   uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
   InUname ← {𝕊: ∨´ 𝕩⍷uname}
   
   os ⇐ Lowercase {InUname"linux"? "linux"; InUname"darwin"? "macos"; InUname"bsd"? "bsd"; "linux"} DOpt "os"
-  linux‿bsd‿macos ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"
+  linux‿bsd‿macos‿windows ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"‿"windows"
   
   arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
   {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch  <⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
+  
+  ffi ← ((¬windows)∧¬wasm) DOpt "FFI"
+  singeli ⇐ GetOpt "singeli"
+  replxx ⇐ GetOpt "REPLXX"
   
   {𝕊: "Error: Cannot use Singeli on x86-64 without 'native'"}_assert_¬ (arch≡"x86-64")∧singeli∧¬native
   {𝕊: "Error: Cannot use Singeli on generic arch"}_assert_¬ singeli ∧ arch≡"generic"
@@ -175,7 +175,8 @@ po ← { # parsed options
   output ↩ •wdpath•file.At {𝕊:
     wasi? "BQN.wasm";
     emcc? ".";
-    shared? "libcbqn." ∾ macos⊑"so"‿"dylib";
+    shared? "libcbqn." ∾ {macos?"dylib"; windows?"dll"; "so"};
+    windows? "BQN.exe";
     "BQN"
   }⍟(""≡⊢) output
   
@@ -232,6 +233,7 @@ po ← { # parsed options
     args∾↩ (      exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (               ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (             shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
+    args∾↩ (            windows) / ⟨"-DNO_MMAP"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     cbqnc ↩ args
@@ -256,6 +258,7 @@ po ← { # parsed options
     args∾↩ (exportSymbols) / ⟨"-rdynamic"⟩
     args∾↩ (         ¬pie) / ⟨"-no-pie"⟩
     args∾↩ (       shared) / ⟨"-shared"⟩
+    args∾↩ (      windows) / ⟨"-lpthread"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
     {"linker: "∾•Repr 𝕩} _verboseLog args
     linker ↩ args
@@ -551,7 +554,7 @@ cachedBin‿linkerCache ← {
     {po.replxx? replxxCache.hash; @}
     {po.singeli? singeliCache.hash; @}
   ⟩⟩
-  res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; "res"}, objs⟩
+  res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; "windows"≡po.os? "res.exe"; "res"}, objs⟩
   
   res.dst ⋈ linkerCache
 }
