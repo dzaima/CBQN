@@ -95,14 +95,14 @@ NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   return n;
 }
 
-void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
+NOINLINE void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging purposes
   ur r = RNK(x);
   SGetU(x)
   usz ia = IA(x);
   if (r!=1) {
     if (r==0) {
       fprintf(f, "<");
-      fprint(f, GetU(x,0));
+      fprintI(f, GetU(x,0));
       return;
     }
     usz* sh = SH(x);
@@ -112,11 +112,9 @@ void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging 
     }
     fprintCodepoint(f, U'⥊');
   } else if (ia>0) {
-    if (!elChr(TI(x,elType))) {
-      for (usz i = 0; i < ia; i++) {
-        B c = GetU(x, i);
-        if (!isC32(c) || o2cG(c)<32) goto reg;
-      }
+    for (usz i = 0; i < ia; i++) {
+      B c = GetU(x, i);
+      if (!isC32(c) || o2cG(c)<32) goto reg;
     }
     fprintf(f, "\"");
     fprintsB(f, x);
@@ -127,12 +125,12 @@ void farr_print(FILE* f, B x) { // should accept refc=0 arguments for debugging 
   fprintCodepoint(f, U'⟨');
   for (usz i = 0; i < ia; i++) {
     if (i!=0) fprintf(f, ", ");
-    fprint(f, GetU(x,i));
+    fprintI(f, GetU(x,i));
   }
   fprintCodepoint(f, U'⟩');
 }
 
-void fprint(FILE* f, B x) {
+NOINLINE void fprintI(FILE* f, B x) {
   if (isF64(x)) {
     NUM_FMT_BUF(buf, x.f);
     fprintf(f, "%s", buf);
@@ -163,19 +161,9 @@ void fprint(FILE* f, B x) {
   else fprintf(f, "(todo tag "N64x")", x.u>>48);
 }
 
-NOINLINE void fprintRaw(FILE* f, B x) {
-  fprintsB(f, x);
-}
-
-NOINLINE void printRaw(B x) {
-  fprintRaw(stdout, x);
-}
-NOINLINE void arr_print(B x) {
-  farr_print(stdout, x);
-}
-NOINLINE void print(B x) {
-  fprint(stdout, x);
-}
+void printI   (B x) { fprintI   (stdout, x); }
+void printsB  (B x) { fprintsB  (stdout, x); }
+void arr_print(B x) { farr_print(stdout, x); }
 
 i32 num_fmt(char buf[30], f64 x) {
   // for (int i = 0; i < 30; i++) buf[i] = 'a';
@@ -343,7 +331,7 @@ NOINLINE void fprint_fmt(FILE* f, char* p, ...) {
   va_start(a, p);
   B r = do_fmt(emptyCVec(), p, a);
   va_end(a);
-  fprintRaw(f, r);
+  fprintsB(f, r);
   decG(r);
 }
 NOINLINE void print_fmt(char* p, ...) {
@@ -351,7 +339,7 @@ NOINLINE void print_fmt(char* p, ...) {
   va_start(a, p);
   B r = do_fmt(emptyCVec(), p, a);
   va_end(a);
-  printRaw(r);
+  printsB(r);
   decG(r);
 }
 NOINLINE void thrF(char* p, ...) {
@@ -783,10 +771,10 @@ B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
 bool ignore_bad_tag;
-void   g_p(B x) { print(x); putchar(10); fflush(stdout); }
-void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); print(r); dec(r); putchar(10); fflush(stdout); }
-void   g_pv(void* x) { ignore_bad_tag=true; print(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); ignore_bad_tag=false; }
-void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); print(r); dec(r); putchar(10); fflush(stdout); ignore_bad_tag=false; }
+void   g_p(B x) { printI(x); putchar(10); fflush(stdout); }
+void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); printI(r); dec(r); putchar(10); fflush(stdout); }
+void   g_pv(void* x) { ignore_bad_tag=true; printI(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); ignore_bad_tag=false; }
+void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); printI(r); dec(r); putchar(10); fflush(stdout); ignore_bad_tag=false; }
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #ifdef DEBUG
@@ -799,7 +787,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       PRINT_ID(x);
       fprintf(stderr, "bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stderr);
-      fprint(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
+      fprintI(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
       err("");
     }
     if (TIv(x,isArr)) {
@@ -818,7 +806,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial && !ignore_bad_tag) {
       fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, TOPTR(void, x.u));
       PRINT_ID(v(x));
-      fprint(stderr, x);
+      fprintI(stderr, x);
       err("\n");
     }
     return x;
@@ -838,7 +826,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
       fprintf(stderr, "atom: ");
-      fprintRaw(stderr, x = bqn_fmt(inc(x))); dec(x);
+      fprintsB(stderr, x = bqn_fmt(inc(x))); dec(x);
       fputc('\n', stderr);
     }
   }

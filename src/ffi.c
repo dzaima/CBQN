@@ -243,7 +243,7 @@ typedef struct BQNFFIType {
 B vfyStr(B x, char* name, char* arg);
 static void printFFIType(FILE* f, B x) {
   if (isC32(x)) fprintf(f, "%d", o2cG(x));
-  else fprint(f, x);
+  else fprintI(f, x);
 }
 
 #if FFI==2
@@ -432,7 +432,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     else side = 0;
     
     t = ffi_parseTypeStr(&xp, false);
-    // print(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
+    // printI(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
     if (xp!=xpN) thrM("FFI: Bad type descriptor");
     t.onW = side;
     // keep .mutates
@@ -476,7 +476,7 @@ FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
 
 void genObj(B o, B c, bool anyMut, void* ptr) {
-  // printFFIType(stdout,o); printf(" = "); print(c); printf("\n");
+  // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
     u32 t = o2cG(o);
     f64 f = c.f;

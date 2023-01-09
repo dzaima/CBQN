@@ -15,7 +15,7 @@ static bool heapVerify_visitP(void* x) {
   Value* v = x;
   if     (heapVerify_mode==0) v->refc--;
   else if(heapVerify_mode==1) v->refc++;
-  else if(heapVerify_mode==2) if (x==heap_observed) { printf("referee: %p ", heap_curr); print(tag(heap_curr,OBJ_TAG)); putchar('\n'); }
+  else if(heapVerify_mode==2) if (x==heap_observed) { printf("referee: %p ", heap_curr); printI(tag(heap_curr,OBJ_TAG)); putchar('\n'); }
   return true;
 }
 void heapVerify(void);

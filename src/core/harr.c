@@ -123,7 +123,7 @@ static void harrP_print(FILE* f, B x) {
   for (usz i = 0; i < ia; i++) {
     if (i) fprintf(f, ", ");
     if (i>=am) fprintf(f, "?");
-    else fprint(f, p[i]);
+    else fprintI(f, p[i]);
   }
   fprintf(f, "⟩)");
 }

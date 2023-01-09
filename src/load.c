@@ -467,7 +467,7 @@ void load_init() { // very last init function
       , bi_N, bi_N, bi_N, bi_N, NULL
     );
     B interp = evalFunBlock(c, 0); ptr_dec(c);
-    print(interp);
+    printI(interp);
     printf("\n");
     dec(interp);
     #ifdef HEAP_VERIFY

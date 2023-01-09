@@ -511,7 +511,7 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
     if (!perf_map) {
       B s = m_c8vec_0("/tmp/perf-"); AFMT("%l.map", getpid());
       perf_map = file_open(s, "open", "wa");
-      print(s); printf(": map\n");
+      printsB(s); printf(": map\n");
       dec(s);
     }
     u32 bcPos = body->bl->map[0];

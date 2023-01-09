@@ -38,7 +38,7 @@ B type_c1(B t, B x) {
   else if (isNsp(x)) r = 6;
   if (RARE(r==-1)) {
     if (x.u == bi_optOut.u) thrM("Reading variable that was optimized out by F↩ after error");
-    print(x); err(": getting type");
+    printI(x); err(": getting type");
   }
   decR(x);
   return m_i32(r);
@@ -254,16 +254,16 @@ B sys_c1(B t, B x);
 B out_c1(B t, B x) {
   if (isAtm(x)) thrM("•Out: Argument must be a list");
   if (RNK(x)>1) thrF("•Out: Argument cannot have rank %i", RNK(x));
-  printRaw(x); putchar('\n');
+  printsB(x); putchar('\n');
   return x;
 }
 B show_c1(B t, B x) {
   #ifndef NO_SHOW
     #if FORMATTER
       B fmt = bqn_fmt(inc(x));
-      printRaw(fmt); dec(fmt);
+      printsB(fmt); dec(fmt);
     #else
-      print(x);
+      printI(x);
     #endif
     putchar('\n');
   #endif

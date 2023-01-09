@@ -363,12 +363,12 @@ static u64   mm_size(Value* x);
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
-void fprint    (FILE* f, B x); // doesn't consume
-void fprintRaw (FILE* f, B x); // doesn't consume
+void fprintI(FILE* f, B x); // doesn't consume
+void  printI(         B x); // doesn't consume
+void fprintsB(FILE* f, B x); // doesn't consume
+void  printsB(         B x); // doesn't consume
 void farr_print(FILE* f, B x); // doesn't consume
-void print(B x);          // doesn't consume
-void printRaw(B x);       // doesn't consume
-void arr_print(B x);      // doesn't consume
+void  arr_print(         B x); // doesn't consume
 bool equal(B w, B x);     // doesn't consume
 bool eequal(B w, B x);    // doesn't consume
 B    toCells(B x);        // consumes

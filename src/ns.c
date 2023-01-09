@@ -187,9 +187,9 @@ static void ns_print(FILE* f, B x) {
     if (id>=0) {
       if (first) first=false;
       else fprintf(f," ⋄ ");
-      fprintRaw(f, gid2str(id));
+      fprintsB(f, gid2str(id));
       fprintf(f, "⇐");
-      fprint(f, sc->vars[i]);
+      fprintI(f, sc->vars[i]);
     }
   }
   fputc('}', f);

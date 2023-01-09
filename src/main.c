@@ -603,7 +603,7 @@ void cbqn_runLine0(char* ln, i64 read) {
         B* rp = harr_ptr(r);
         for (usz i = 0; i < ia; i++) {
           if (i!=0) printf(", ");
-          printRaw(rp[i]);
+          printsB(rp[i]);
         }
         putchar('\n');
       }
@@ -645,7 +645,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       HArr* expla = toHArr(expl);
       usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
-        printRaw(expla->a[i]);
+        printsB(expla->a[i]);
         putchar('\n');
       }
       dec(expl);
@@ -697,10 +697,10 @@ void cbqn_runLine0(char* ln, i64 read) {
   if (output) {
     if (output!=2 && FORMATTER) {
       B resFmt = bqn_fmt(res);
-      printRaw(resFmt); dec(resFmt);
+      printsB(resFmt); dec(resFmt);
       putchar('\n');
     } else {
-      print(res); putchar('\n'); fflush(stdout);
+      printI(res); putchar('\n'); fflush(stdout);
       dec(res);
     }
   } else dec(res);
@@ -735,7 +735,7 @@ void cbqn_evalSrc(char* src, i64 len) {
   B res = bqn_exec(code, bi_N, bi_N);
   
   B resFmt = bqn_fmt(res);
-  printRaw(resFmt); dec(resFmt);
+  printsB(resFmt); dec(resFmt);
   putchar('\n');
 }
 #endif
@@ -790,13 +790,13 @@ int main(int argc, char* argv[]) {
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
               B r = bqn_fmt(gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec()));
-              printRaw(r); dec(r);
+              printsB(r); dec(r);
               printf("\n");
               break;
             }
             case 'o': { repl_init(); REQARG(o);
               B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-o)"), emptySVec());
-              printRaw(r); dec(r);
+              printsB(r); dec(r);
               printf("\n");
               break;
             }

@@ -72,7 +72,7 @@ void print_gStack() {
   printf("gStack %p, height "N64d":\n", gStackStart, (i64)(gStack-gStackStart));
   while (c!=gStack) {
     printf("  %d: ", i); fflush(stdout);
-    print(*c); fflush(stdout);
+    printI(*c); fflush(stdout);
     if (isVal(*c)) printf(", refc=%d", v(*c)->refc);
     printf("\n");
     fflush(stdout);
@@ -160,7 +160,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   bool boArr = isArr(bodyObj);
   i32 boCount = boArr? IA(bodyObj) : 1;
   if (boCount<1 || boCount>5) thrM("VM compiler: Unexpected body list length");
-  // if (boArr) { print(bodyObj); putchar('\n'); }
+  // if (boArr) { printI(bodyObj); putchar('\n'); }
   i32 firstMPos = failBodyI;
   
   for (i32 i = 0; i < 6; i+= 2) {
@@ -725,7 +725,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       print_BC(sbc,20); printf("@%d  in: ", bcPos);
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); printI(origStack[i]); } putchar('\n'); fflush(stdout);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -924,7 +924,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
     #ifdef DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) printf(" ");
       print_BC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); print(origStack[i]); } putchar('\n'); fflush(stdout);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); printI(origStack[i]); } putchar('\n'); fflush(stdout);
     #endif
   }
   end:;
@@ -1109,10 +1109,10 @@ void scExt_visit(Value* x) { ScopeExt* c = (ScopeExt*)x; u16 am = c->varAm*2; fo
 void comp_print (FILE* f, B x) { fprintf(f,"(%p: comp)",v(x)); }
 void body_print (FILE* f, B x) { fprintf(f,"(%p: body varam=%d)",v(x),c(Body,x)->varAm); }
 void block_print(FILE* f, B x) { fprintf(f,"(%p: block)",v(x)); }
-void scope_print(FILE* f, B x) { fprintf(f,"(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){fprintf(f," ");fprint(f,sc->vars[i]);}fprintf(f,")"); }
-void alias_print(FILE* f, B x) { fprintf(f,"(alias %d of ", c(FldAlias,x)->p); fprint(f,c(FldAlias,x)->obj); fprintf(f,")"); }
-void vfymO_print(FILE* f, B x) { fprint(f,c(FldAlias,x)->obj); }
-void marrO_print(FILE* f, B x) { fprintf(f,"["); fprint(f,c(FldAlias,x)->obj); fprintf(f,"]"); }
+void scope_print(FILE* f, B x) { fprintf(f,"(%p: scope; vars:",v(x));Scope*sc=c(Scope,x);for(u64 i=0;i<sc->varAm;i++){fprintf(f," ");fprintI(f,sc->vars[i]);}fprintf(f,")"); }
+void alias_print(FILE* f, B x) { fprintf(f,"(alias %d of ", c(FldAlias,x)->p); fprintI(f,c(FldAlias,x)->obj); fprintf(f,")"); }
+void vfymO_print(FILE* f, B x) { fprintI(f,c(FldAlias,x)->obj); }
+void marrO_print(FILE* f, B x) { fprintf(f,"["); fprintI(f,c(FldAlias,x)->obj); fprintf(f,"]"); }
 void bBlks_print(FILE* f, B x) { fprintf(f,"(block list)"); }
 void scExt_print(FILE* f, B x) { fprintf(f,"(scope extension with %d vars)", c(ScopeExt,x)->varAm); }
 
@@ -1346,7 +1346,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     
     B s = emptyCVec();
     B msg = vm_fmtPoint(src, s, comp->path, cs, ce);
-    fprintRaw(stderr, msg);
+    fprintsB(stderr, msg);
     dec(msg);
     fputc('\n', stderr);
     popCatch();
@@ -1540,7 +1540,7 @@ void profiler_displayResults() {
     
     if (q_N(c->path)) printf("(anonymous)");
     else if (isPathREPL(c->path)) printf("(REPL)");
-    else printRaw(c->path);
+    else printsB(c->path);
     if (q_N(c->src)) {
       printf(": "N64d" samples\n", sum);
     } else {
@@ -1557,7 +1557,7 @@ void profiler_displayResults() {
           Arr* sl = arr_shVec(TI(src,slice)(incG(src), pi, i-pi+(c=='\n'?0:1)));
           if (curr==0) printf("      │");
           else printf("%6d│", curr);
-          printRaw(taga(sl));
+          printsB(taga(sl));
           printf("\n");
           ptr_dec(sl);
           curr = 0;
@@ -1601,18 +1601,18 @@ NOINLINE void printErrMsg(B msg) {
     SGetU(msg)
     usz msgLen = IA(msg);
     for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
-    fprintRaw(stderr, msg);
+    fprintsB(stderr, msg);
     return;
   }
   base:
-  fprint(stderr, msg);
+  fprintI(stderr, msg);
 }
 
 
 void before_exit(void);
 NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
-  // while (c>gStackStart) { print(*--c); putchar('\n'); } printf("gStack printed\n");
+  // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
   
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if CATCH_ERRORS

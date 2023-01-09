@@ -58,12 +58,12 @@ B wfn_identity(B x) {
 #if RT_VERIFY
   B info_c2(B t, B w, B x);
   #define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
-    print(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
+    printI(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
     if (RT_VERIFY_ARGS) {  \
-      if(!q_N(W)){printf("𝕨:"); print(W); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(W))); putchar('\n'); fflush(stdout); } \
-      {           printf("𝕩:"); print(X); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(X))); putchar('\n'); fflush(stdout); } \
-      {       printf("got:"); print(GOT); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(GOT))); putchar('\n'); fflush(stdout); } \
-      {       printf("exp:"); print(EXP); printf(" / "); printRaw(info_c2(bi_N, m_i32(1), inc(EXP))); putchar('\n'); fflush(stdout); } \
+      if(!q_N(W)){printf("𝕨:"); printI(W); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(W))); putchar('\n'); fflush(stdout); } \
+      {           printf("𝕩:"); printI(X); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(X))); putchar('\n'); fflush(stdout); } \
+      {       printf("got:"); printI(GOT); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(GOT))); putchar('\n'); fflush(stdout); } \
+      {       printf("exp:"); printI(EXP); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(EXP))); putchar('\n'); fflush(stdout); } \
     }                      \
     vm_pstLive(); exit(1); \
   }}
@@ -294,19 +294,19 @@ void rtWrap_print() {
   #if RT_PERF
     WFun* cf = lastWF;
     while (cf) {
-      printRaw(c1(bi_glyph, tag(cf,FUN_TAG)));
+      printsB(c1(bi_glyph, tag(cf,FUN_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cf->c1a, cf->c1t/1e6, cf->c2a, cf->c2t/1e6);
       cf = cf->prev;
     }
     WMd1* cm1 = lastWM1;
     while (cm1) {
-      printRaw(c1(bi_glyph, tag(cm1,MD1_TAG)));
+      printsB(c1(bi_glyph, tag(cm1,MD1_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cm1->c1a, cm1->c1t/1e6, cm1->c2a, cm1->c2t/1e6);
       cm1 = cm1->prev;
     }
     WMd2* cm2 = lastWM2;
     while (cm2) {
-      printRaw(c1(bi_glyph, tag(cm2,MD2_TAG)));
+      printsB(c1(bi_glyph, tag(cm2,MD2_TAG)));
       printf(": m=%d %.3fms | d=%d %.3fms\n", cm2->c1a, cm2->c1t/1e6, cm2->c2a, cm2->c2t/1e6);
       cm2 = cm2->prev;
     }

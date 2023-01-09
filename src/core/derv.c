@@ -14,11 +14,11 @@ static void md2H_visit(Value* x) { mm_visitP(((Md2H*)x)->m2); mm_visit(((Md2H*)x
 static void fork_visit(Value* x) { mm_visit (((Fork*)x)->f ); mm_visit(((Fork*)x)->g); mm_visit(((Fork*)x)->h); }
 static void atop_visit(Value* x) {                            mm_visit(((Atop*)x)->g); mm_visit(((Atop*)x)->h); }
 
-static void md1D_print(FILE* f, B x) { fprintf(f,"(md1D ");fprint(f,c(Md1D,x)->f);fprintf(f," ");fprint(f,tag(c(Md1D,x)->m1,MD1_TAG));                                      fprintf(f,")"); }
-static void md2D_print(FILE* f, B x) { fprintf(f,"(md2D ");fprint(f,c(Md2D,x)->f);fprintf(f," ");fprint(f,tag(c(Md2D,x)->m2,MD2_TAG));fprintf(f," ");fprint(f,c(Md2D,x)->g);fprintf(f,")"); }
-static void md2H_print(FILE* f, B x) { fprintf(f,"(md2H ");                                      fprint(f,tag(c(Md2H,x)->m2,MD2_TAG));fprintf(f," ");fprint(f,c(Md2H,x)->g);fprintf(f,")"); }
-static void fork_print(FILE* f, B x) { fprintf(f,"(fork ");fprint(f,c(Fork,x)->f);fprintf(f," ");fprint(f,    c(Fork,x)->g          );fprintf(f," ");fprint(f,c(Fork,x)->h);fprintf(f,")"); }
-static void atop_print(FILE* f, B x) { fprintf(f,"(atop ");                                      fprint(f,    c(Atop,x)->g          );fprintf(f," ");fprint(f,c(Atop,x)->h);fprintf(f,")"); }
+static void md1D_print(FILE* f, B x) { fprintf(f,"(md1D ");fprintI(f,c(Md1D,x)->f);fprintf(f," ");fprintI(f,tag(c(Md1D,x)->m1,MD1_TAG));                                       fprintf(f,")"); }
+static void md2D_print(FILE* f, B x) { fprintf(f,"(md2D ");fprintI(f,c(Md2D,x)->f);fprintf(f," ");fprintI(f,tag(c(Md2D,x)->m2,MD2_TAG));fprintf(f," ");fprintI(f,c(Md2D,x)->g);fprintf(f,")"); }
+static void md2H_print(FILE* f, B x) { fprintf(f,"(md2H ");                                       fprintI(f,tag(c(Md2H,x)->m2,MD2_TAG));fprintf(f," ");fprintI(f,c(Md2H,x)->g);fprintf(f,")"); }
+static void fork_print(FILE* f, B x) { fprintf(f,"(fork ");fprintI(f,c(Fork,x)->f);fprintf(f," ");fprintI(f,    c(Fork,x)->g          );fprintf(f," ");fprintI(f,c(Fork,x)->h);fprintf(f,")"); }
+static void atop_print(FILE* f, B x) { fprintf(f,"(atop ");                                       fprintI(f,    c(Atop,x)->g          );fprintf(f," ");fprintI(f,c(Atop,x)->h);fprintf(f,")"); }
 
 B md1D_c1(B t,      B x) { Md1D* tc = c(Md1D, t); return ((Md1*)tc->m1)->c1(tc,    x); }
 B md1D_c2(B t, B w, B x) { Md1D* tc = c(Md1D, t); return ((Md1*)tc->m1)->c2(tc, w, x); }
