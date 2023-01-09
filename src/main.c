@@ -789,8 +789,10 @@ int main(int argc, char* argv[]) {
             }
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
-              B r = bqn_fmt(gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec()));
-              printsB(r); dec(r);
+              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec());
+              if (FORMATTER) { r = bqn_fmt(r); printsB(r); }
+              else { printI(r); }
+              dec(r);
               printf("\n");
               break;
             }

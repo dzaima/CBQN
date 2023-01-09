@@ -822,11 +822,13 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   #else
     #define ONLY_ALWAYS
   #endif
+  extern bool cbqn_initialized;
   static void warn_ln(B x) {
     if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
       fprintf(stderr, "atom: ");
-      fprintsB(stderr, x = bqn_fmt(inc(x))); dec(x);
+      if (cbqn_initialized && FORMATTER) { fprintsB(stderr, x = bqn_fmt(inc(x))); dec(x); }
+      else fprintI(stderr, x);
       fputc('\n', stderr);
     }
   }

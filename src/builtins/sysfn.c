@@ -100,7 +100,7 @@ B repr_c1(B t, B x) {
     #if FORMATTER
       return bqn_repr(x);
     #else
-      thrM("•Repr: Cannot represent non-numbers without FORMATTER defined");
+      thrM("•Repr: Cannot represent non-numbers with -DFORMATTER=0");
     #endif
   }
 }
@@ -109,7 +109,7 @@ B fmt_c1(B t, B x) {
   #if FORMATTER
     return bqn_fmt(x);
   #else
-    thrM("•Fmt isn't supported without FORMATTER defined");
+    thrM("•Fmt isn't supported with -DFORMATTER=0");
   #endif
 }
 
