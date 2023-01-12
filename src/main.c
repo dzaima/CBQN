@@ -15,6 +15,9 @@
 #if __GNUC__ && __i386__ && !__clang__
   #warning "CBQN is known to miscompile on GCC for 32-bit x86 builds; using clang instead is suggested"
 #endif
+#if USE_REPLXX_IO && !USE_REPLXX
+  #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
+#endif
 
 static B replPath;
 static Scope* gsc;
@@ -52,7 +55,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   #include <errno.h>
   #include "utils/calls.h"
   #include "utils/cstr.h"
-  static Replxx* global_replxx;
+  Replxx* global_replxx;
   static char* global_histfile;
   
   static i8 themes[3][12][3] = {
@@ -453,6 +456,8 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     gc_add(sysvalNames);
     gc_add(sysvalNamesNorm);
     gc_addFn(replxx_gcFn);
+    
+    global_replxx = replxx_init();
   }
 #else
   void before_exit() { }
@@ -747,6 +752,10 @@ int main() {
 #elif !CBQN_SHARED
 int main(int argc, char* argv[]) {
   repl_init();
+  #if USE_REPLXX_IO
+    cbqn_init_replxx();
+  #endif
+  
   bool startREPL = argc==1;
   bool silentREPL = false;
   bool execStdin = false;
@@ -864,37 +873,37 @@ int main(int argc, char* argv[]) {
     repl_init();
     #if USE_REPLXX
     if (!silentREPL) {
-      cbqn_init_replxx();
-      Replxx* replxx = replxx_init();
+      #if !USE_REPLXX_IO
+        cbqn_init_replxx();
+      #endif
       
       B f = get_config_path(false, ".cbqn_repl_history");
       char* histfile = toCStr(f);
       dec(f);
       gc_add(tag(TOBJ(histfile), OBJ_TAG));
-      replxx_history_load(replxx, histfile);
-      global_replxx = replxx;
+      replxx_history_load(global_replxx, histfile);
       global_histfile = histfile;
       
-      replxx_set_ignore_case(replxx, true);
-      replxx_set_highlighter_callback(replxx, highlighter_replxx, NULL);
-      replxx_set_hint_callback(replxx, hint_replxx, NULL);
-      replxx_set_completion_callback(replxx, complete_replxx, NULL);
-      replxx_enable_bracketed_paste(replxx);
-      replxx_bind_key(replxx, '\\', backslash_replxx, NULL);
-      replxx_bind_key(replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
-      replxx_set_modify_callback(replxx, modified_replxx, NULL);
-      replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('N'), "history_next");
-      replxx_bind_key_internal(replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
+      replxx_set_ignore_case(global_replxx, true);
+      replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
+      replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
+      replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
+      replxx_enable_bracketed_paste(global_replxx);
+      replxx_bind_key(global_replxx, '\\', backslash_replxx, NULL);
+      replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
+      replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
+      replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
+      replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
       
       while(true) {
-        const char* ln = replxx_input(replxx, "   ");
+        const char* ln = replxx_input(global_replxx, "   ");
         if (ln==NULL) {
           if (errno==0) printf("\n");
           break;
         }
-        replxx_history_add(replxx, ln);
+        replxx_history_add(global_replxx, ln);
         cbqn_runLine((char*)ln, strlen(ln));
-        replxx_history_save(replxx, histfile);
+        replxx_history_save(global_replxx, histfile);
       }
     }
     else

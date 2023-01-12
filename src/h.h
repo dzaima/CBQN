@@ -161,6 +161,12 @@ typedef double   f64;
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)
 
+#if USE_REPLXX_IO
+  #include <replxx.h>
+  extern Replxx* global_replxx;
+  #define printf(...) replxx_print(global_replxx, __VA_ARGS__)
+  #define fprintf(f, ...) replxx_print(global_replxx, __VA_ARGS__)
+#endif
 #if USZ_64
   typedef u64 usz;
   #define USZ_MAX ((u64)(1ULL<<48))

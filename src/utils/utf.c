@@ -18,6 +18,14 @@ static u32 utf8_p(u8* p) {
     case  4: return (0b111u  &*p)<<18  |  (0b111111u&p[3]) | (0b111111u&p[2])<<6 | (0b111111u&p[1])<<12;
   }
 }
+FORCE_INLINE void utf8_w(char** buf_i, u32 c) {
+  char* buf = *buf_i;
+  if (c<128) { *buf++ = c; }
+  else if (c<=0x07FF) { *buf++ = 0xC0| c>>6 ; *buf++ = 0x80|(c    &0x3F); }
+  else if (c<=0xFFFF) { *buf++ = 0xE0| c>>12; *buf++ = 0x80|(c>>6 &0x3F); *buf++ = 0x80|(c   &0x3F); }
+  else                { *buf++ = 0xF0| c>>18; *buf++ = 0x80|(c>>12&0x3F); *buf++ = 0x80|(c>>6&0x3F); *buf++ = 0x80|(c&0x3F); }
+  *buf_i = buf;
+}
 
 B utf8Decode(const char* s, i64 len) {
   u64 sz = 0;
@@ -55,41 +63,30 @@ B utf8DecodeA(I8Arr* a) { // consumes a
 
 
 // printing functions should avoid allocations, as they'll be used to print.. the out-of-memory message
-#if defined(_WIN32) || defined(_WIN64)
-  #include <io.h>
-  #include <fcntl.h>
+#if defined(USE_REPLXX_IO)
   void fprintsU32(FILE* f, u32* s, usz len) {
-    _setmode(_fileno(f), _O_U16TEXT);
-    #define BUF_SZ 1024
-    wchar_t buf[BUF_SZ];
     u32* s_e = s+len;
+    
+    #define BUF_SZ 1024
+    char buf[BUF_SZ];
     while (s<s_e) {
-      wchar_t* buf_c = buf;
-      wchar_t* buf_e = buf+BUF_SZ-10;
+      char* buf_c = buf;
+      char* buf_e = buf+BUF_SZ-10;
       while (s<s_e && buf_c<buf_e) {
         u32 c = *s;
-        if (c<65536) {
-          if (c==0) break; // can't print null bytes into null-terminated buffer
-          buf_c[0] = c;
-          buf_c++;
-        } else {
-          c-= 0x10000;
-          buf_c[0] = 0xD800 + (c >> 10);
-          buf_c[1] = 0xDC00 + (c & ((1<<10)-1));
-          buf_c+= 2;
-        }
+        if (c==0) break; // can't print null bytes into null-terminated buffer
+        utf8_w(&buf_c, c);
         s++;
       }
       buf_c[0] = 0;
-      fwprintf(f, L"%ls", buf);
+      fprintf(f, "%s", buf);
       
-      while (s<s_e && *s==0) { // handle printing of null bytes; does nothing? idk
-        fwprintf(f, L"%c", '\0');
+      while (s<s_e && *s==0) {
+        fprintf(f, "%c", '\0');
         s++;
       }
     }
     #undef BUF_SZ
-    _setmode(_fileno(f), _O_BINARY);
   }
   void fprintCodepoint(FILE* f, u32 c) {
     fprintsU32(f, (u32[1]){c}, 1);
@@ -149,11 +146,5 @@ u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all 
 void toUTF8(B x, char* p) {
   SGetU(x)
   usz ia = IA(x);
-  for (usz i = 0; i < ia; i++) {
-    u32 c = o2cG(GetU(x,i));
-    if (c<128)          { *p++ = c; }
-    else if (c<=0x07FF) { *p++ = 0xC0|c>>6 ; *p++ = 0x80|(c    &0x3F); }
-    else if (c<=0xFFFF) { *p++ = 0xE0|c>>12; *p++ = 0x80|(c>>6 &0x3F);*p++ = 0x80|(c   &0x3F); }
-    else                { *p++ = 0xF0|c>>18; *p++ = 0x80|(c>>12&0x3F);*p++ = 0x80|(c>>6&0x3F); *p++ = 0x80|(c&0x3F); }
-  }
+  for (usz i = 0; i < ia; i++) utf8_w(&p, o2cG(GetU(x,i)));
 }
