@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "each.h"
+#include "calls.h"
 
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
@@ -82,7 +83,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
         cr = f(fo, m_i32(xp[i]));
         if (!q_i32(cr)) {
           rH = m_harr0c(x);
-          for (usz j = 0; j < i; j++) rH.a[j] = m_i32(rp[j]);
+          COPY_TO(rH.a, el_B, 0, r, 0, i);
           decG(r);
           goto fallback;
         }
@@ -100,7 +101,7 @@ B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still 
         cr = f(fo, m_f64(xp[i]));
         if (!q_f64(cr)) {
           rH = m_harr0c(x);
-          for (usz j = 0; j < i; j++) rH.a[j] = m_f64(rp[j]);
+          COPY_TO(rH.a, el_B, 0, r, 0, i);
           decG(r);
           goto fallback;
         }
