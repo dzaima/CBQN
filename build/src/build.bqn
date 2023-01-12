@@ -1,6 +1,11 @@
 t0g ← •MonoTime@
 #!build/obj2/for_build
 # to emulate on makefile transition: NO_LDL → rm_lf=-ldl; no_fPIC → rm_f=-fPIC; something something PIE
+# todo:
+#   clean
+#   clangd commands generation
+#   forcing bytecode/singeli/replxx directories to whatever's applicable
+#   when adding `make forbuild` in build/build, make it run a sanity check of the output before copying to build/obj2/for_build
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
 ⟨Serialize, Deserialize⟩ ← •Import "serialize.bqn"
@@ -13,7 +18,6 @@ opts ← ⟨
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"∾@+10⟩
-  # TODO clean
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
@@ -38,7 +42,6 @@ opts ← ⟨
   ⟨1, "pkgconfig", 1, "Attempt to use pkg-config to find libffi flags"⟩
   ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
-  # TODO options for forcing around the bytecode/singeli/replxx directories
   
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩

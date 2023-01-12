@@ -38,7 +38,7 @@ shared-o3:
 shared-c:
 	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 forbuild:
-	@"${MAKE}" i_singeli=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
+	@"${MAKE}" i_singeli=0 i_CC=cc i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
 c:
 	@"${MAKE}" custom=1 run_incremental_0
 
@@ -182,7 +182,7 @@ single-c:
 # actual build
 run_incremental_0:
 ifeq ($(i_t),forbuild)
-	mkdir -p build/obj2
+	@mkdir -p build/obj2
 endif
 ifeq ($(verbose),1)
 	@echo "build directory: $$("${MAKE}" builddir)"
