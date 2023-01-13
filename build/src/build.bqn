@@ -45,7 +45,7 @@ opts ← ⟨
   
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
-  ⟨1, "native", 0, "Use '-march=native'"∾@+10⟩
+  ⟨1, "native", @, "Use '-march=native'"∾@+10⟩
   
   ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables stricter assertion checks"⟩
   ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
@@ -147,7 +147,7 @@ po ← { # parsed options
   
   
   shared ← GetOpt "shared"
-  native ⇐ GetOpt "native"
+  native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
   wasm ⇐ wasi∨emcc
@@ -169,7 +169,7 @@ po ← { # parsed options
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
-  {𝕊: "Error: Cannot use Singeli on x86-64 without 'native'"}_assert_¬ (arch≡"x86-64")∧singeli∧¬native
+  {𝕊: "Error: Cannot use Singeli on x86-64 without explicit 'native'"}_assert_¬ (arch≡"x86-64") ∧ singeli ∧ @≡GetOpt"native"
   {𝕊: "Error: Cannot use Singeli on generic arch"}_assert_¬ singeli ∧ arch≡"generic"
   
   pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
