@@ -121,6 +121,7 @@ ifeq ($(origin LDFLAGS),command line)
 	custom = 1
 endif
 ifeq ($(REPLXX),1)
+	i_f+= -DREPLXX_STATIC=1
 	custom = 1
 	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
 endif
@@ -139,6 +140,14 @@ ifeq (${CC_IS_CLANG}, 1)
 	NOWARN = -Wno-microsoft-anon-tag -Wno-bitwise-instead-of-logical -Wno-unknown-warning-option
 else
 	NOWARN = -Wno-parentheses
+endif
+
+ifeq ($(WINDOWS), 1)
+	i_f+= -DNO_MMAP
+	i_lf+= -lpthread
+	ifeq ($(REPLXX), 1)
+		i_f+= -DUSE_REPLXX_IO
+	endif
 endif
 
 ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC)
@@ -229,7 +238,11 @@ ifneq (${bd}/BQN,${OUTPUT_BIN})
 ifeq ($(i_emcc),1)
 	@cp -f ${bd}/BQN.wasm ${OUTPUT_FOLDER}/BQN.wasm
 endif
+ifeq ($(WINDOWS),1)
+	@cp -f ${bd}/BQN.exe ${OUTPUT_BIN}
+else
 	@cp -f ${bd}/BQN ${OUTPUT_BIN}
+endif
 endif
 	@echo ${postmsg}
 
