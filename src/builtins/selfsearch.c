@@ -45,6 +45,7 @@ extern B scan_max_num(B x, u8 xe, u64 ia);
 
 // These hashes are stored in tables and must be invertible!
 #if defined(__SSE4_2__)
+#include <x86intrin.h>
 static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
 #else
 // Murmur3
