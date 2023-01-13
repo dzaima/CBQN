@@ -511,7 +511,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
-      #if SINGELI_X86_64 && FAST_PDEP
+      #if SINGELI_X86_64 && __BMI2__
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
