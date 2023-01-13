@@ -57,6 +57,9 @@
 #include "../builtins.h"
 
 #ifdef __BMI2__
+  #if !SLOW_PDEP
+    #define FAST_PDEP 1
+  #endif
   #include <immintrin.h>
   
   #if USE_VALGRIND
@@ -228,7 +231,7 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
 
 static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   assert(len <= bsp_max);
-  #if SINGELI_X86_64 && defined(__BMI2__)
+  #if SINGELI_X86_64 && FAST_PDEP
   if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len);
   #else
   if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
@@ -299,7 +302,7 @@ static B where(B x, usz xia, u64 s) {
   u64* xp = bitarr_ptr(x);
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
-    #if SINGELI_X86_64 && defined(__BMI2__)
+    #if SINGELI_X86_64 && FAST_PDEP
     i8* rp = m_tyarrvO(&r, 1, s, t_i8arr, 8);
     bmipopc_1slash8(xp, rp, xia);
     FINISH_OVERALLOC_A(r, s, 8);
@@ -307,7 +310,7 @@ static B where(B x, usz xia, u64 s) {
     i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
-    #if SINGELI_X86_64 && defined(__BMI2__)
+    #if SINGELI_X86_64 && FAST_PDEP
     if (s >= xia/8) {
       i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16);
       bmipopc_1slash16(xp, rp, xia);
@@ -329,7 +332,7 @@ static B where(B x, usz xia, u64 s) {
       }
     }
   } else if (xia <= (usz)I32_MAX+1) {
-    #if SINGELI_X86_64 && defined(__BMI2__)
+    #if SINGELI_X86_64 && FAST_PDEP
     i32* rp; r = m_i32arrv(&rp, s);
     #else
     i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
@@ -344,7 +347,7 @@ static B where(B x, usz xia, u64 s) {
       } else {
         bs = bit_sum(xp,b);
       }
-      #if SINGELI_X86_64 && defined(__BMI2__)
+      #if SINGELI_X86_64 && FAST_PDEP
       if (bs >= b/8+b/16) {
         bmipopc_1slash16(xp, buf, b);
         for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
@@ -430,7 +433,7 @@ B grade_bool(B x, usz xia, bool up) {
   u64* xp = bitarr_ptr(x);
   u64 sum = bit_sum(xp, xia);
   u64 l0 = up? xia-sum : sum; // Length of first set of indices
-  #if SINGELI_X86_64 && defined(__BMI2__)
+  #if SINGELI_X86_64 && FAST_PDEP
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(inc(x));
@@ -508,7 +511,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
-      #if SINGELI_X86_64 && defined(__BMI2__)
+      #if SINGELI_X86_64 && FAST_PDEP
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
@@ -549,7 +552,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
       else { DENSE; }                       \
       break; }
-    #if SINGELI_X86_64
+    #if SINGELI_X86_64 && FAST_PDEP
     case 3: WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,xt,  8); bmipopc_2slash8 (wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum,    8))
     case 4: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,xt, 16); bmipopc_2slash16(wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum*2, 16))
     #else
@@ -848,7 +851,7 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
-      #if __BMI2__
+      #if FAST_PDEP
       if (wv <= 52) {
         u64 m = (u64)-1 / (((u64)1<<wv)-1); // TODO table lookup
         u64 xw = 0;
