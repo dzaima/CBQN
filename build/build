@@ -1,3 +1,21 @@
 #!/usr/bin/env bash
 DIR="$(dirname $0)"
-"$DIR/obj2/for_build" "$DIR/src/build.bqn" "$@"
+PREV_BQN="$DIR/obj2/for_build"
+if [ ! -f "$PREV_BQN" ]; then
+  TMP_BQN="$DIR/obj2/for_build_tmp"
+  if make forbuild OUTPUT="$TMP_BQN"; then
+    if [ "4" = "$("$TMP_BQN" -p "2+2")" ]; then
+      true
+    else
+      echo "bootstrap CBQN failed to return expected result; run 'make forbuild' with necessary configuration manually"
+      exit 1
+    fi
+  else
+    echo "failed to build bootstrap CBQN; run 'make forbuild' with necessary configuration manually"
+    exit 1
+  fi
+  
+  cp "$TMP_BQN" "$PREV_BQN"
+fi
+
+"$PREV_BQN" "$DIR/src/build.bqn" "$@"
