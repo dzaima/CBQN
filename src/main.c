@@ -894,6 +894,7 @@ int main(int argc, char* argv[]) {
       replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
       replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
       replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
+      replxx_set_max_history_size(global_replxx, 50000);
       
       while(true) {
         const char* ln = replxx_input(global_replxx, "   ");
