@@ -60,6 +60,16 @@ def anyInt{x & isreg{x}|isconst{x}} = isint{x}
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 
+def tern{c, T, F & anyInt{c}} = {
+  if(c) T
+  else F
+}
+def tern{c, t:T, f:T & anyInt{c}} = {
+  res:T = f
+  if (c) res = t
+  res
+}
+
 # reinterpret vector element type to signed/unsigned
 def ty_s{w} = primtype{'i', w}
 def ty_u{w} = primtype{'u', w}
@@ -89,8 +99,13 @@ def v_half{T & isvec{T}} = [vcount{T}/2](eltype{T})
 # test if vector has a specific width & element type
 def lvec{T, n, w} = 0
 def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
+# type stats
+def minvalue{T & isunsigned{T}} = 0
+def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
+def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
+def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
-# base vector utility definitions
+# base cases
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
@@ -98,6 +113,19 @@ def andnz{...x} = assert{'andnz not supported', show{...x}}
 def topBlend{...x} = assert{'topBlend not supported', show{...x}}
 def topMask{...x} = assert{'topBlend not supported', show{...x}}
 def pack{...x} = assert{'pack not supported', show{...x}}
+
+def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
+def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
+
+
+
+# tuple operations
+def broadcast{T, v & isprim{T}} = v
+def iota{n & knum{n}} = @collect(i to n) i
+def broadcast{n, v & knum{n}} = @collect(n) v
+
+def arch_defvw = tern{hasarch{'X86_64'}, 256, 128}
+
 
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
@@ -132,36 +160,10 @@ def forNZ{vars,begin,end,block} = {
   }
 }
 
-def minvalue{T & isunsigned{T}} = 0
-def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
-def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
-def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
-
-
-def tern{c, T, F & anyInt{c}} = {
-  if(c) T
-  else F
+def tree_fold{F, x} = {
+  def h = tuplen{x}/2
+  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,h*2}}}
 }
-def tern{c, t:T, f:T & anyInt{c}} = {
-  res:T = f
-  if (c) res = t
-  res
-}
+def tree_fold{F, x & tuplen{x}==1} = tupsel{0,x}
 
-def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
-def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
-
-
-# tuple operations
-def broadcast{T, v & isprim{T}} = v
-def iota{n & knum{n}} = @collect(i to n) i
-def broadcast{n, v & knum{n}} = @collect(n) v
-
-
-# debug stuff
-def printfType{T} = tern{isfloat{T}, '%.17g', merge{'%', tern{width{T}==64, 'l', ''}, tern{issigned{T}, 'd', 'u'}}}
-def print{x & match{kind{x},'symbol'}} = { emit{void, 'printf', '"%s"', merge{'"', x, '"'}}; x }
-def print{x:T & anyNum{x}} = { emit{void, 'printf', merge{'"', printfType{T}, '"'}, x}; x }
-def println{x} = { print{x}; print{'\n'}; x }
-
-def arch_defvw = tern{hasarch{'X86_64'}, 256, 128}
+def makeregs{v, n} = @collect(n) { reg:=v }

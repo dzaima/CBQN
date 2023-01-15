@@ -143,10 +143,6 @@ def topAll{x:T & w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
 # the lone SSE2 extract
 def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}
 
-# debug stuff
-local def printGen{x, s, n} = emit{void, 'printf', merge{'"', apply{merge,each{{c}=>{if(c>0) merge{',',s}; else s}, iota{n}}}, '"'}, ...each{{c}=>extract{x,c}, iota{n}}}
-def print{x:T & isvec{T}} = printGen{x, printfType{eltype{T}}, vcount{T}}
-
 
 
 ### SSE4.1; TODO either move to own file or rename this file

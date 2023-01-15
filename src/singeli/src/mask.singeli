@@ -31,12 +31,11 @@ def maskAfter{n} = {
   def mask{x:X, mode=='all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
   def mask{mode=='count'} = n
+  def mask{x & istup{x} & tuplen{x}==1} = tup{mask{tupsel{0,x}}}
   def mask{x==0} = 1
 }
 
 
-
-# store low packed elements of x to P
 
 def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/elwidth{P})), w}
 
@@ -59,6 +58,9 @@ def loadBatch{ptr:P, n, T} = {
   widen{T, loadLow{*to_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
 }
 
+def loadBatch {ptr:P, ns, T     & istup{ns}} = each{{n  } => loadBatch {ptr, n, T   }, ns}
+def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, x, M}, ns, xs}
+
 
 
 def maskedLoop{bulk, l, step} = maskedLoop{bulk, 0, l, step}
@@ -79,3 +81,38 @@ def maskedLoopPositive{bulk, l:L, step} = {
   }
   step{i, maskAfter{l - i*bulk}}
 }
+
+# masked unrolled loop
+#  bulk: vector count
+#  unr: unroll amount
+#  l: length
+#  step: {is, M}=>operation
+#    'is' is a tuple of bulk indexes to process, usable as an arg to loadBatch/storeBatch to get a tuple of vectors
+#  fromunr (optional): {}=>{transition from unrolled to non-unrolled}
+def muLoop{bulk, unr, l, step, fromunr} = {
+  if (unr==1) {
+    maskedLoop{bulk, l, {i, M} => step{tup{i}, M}}
+  } else {
+    m:u64 = l/bulk
+    if (m > 0) {
+      i:u64 = 0
+      if (unr <= m) {
+        while ((i+unr) <= m) {
+          def is = each{{j}=>i+j, iota{unr}}
+          step{each{{j}=>i+j, iota{unr}}, maskNone}
+          i+= unr
+        }
+        fromunr{}
+      }
+      if (unr==2) {
+        if (i!=m) step{tup{i}, maskNone}
+      } else {
+        @for(j from i to m) step{tup{j}, maskNone}
+      }
+    }
+    
+    left:= l & (bulk-1)
+    if (left!=0) step{tup{m}, maskAfter{left}}
+  }
+}
+def muLoop{bulk, unr, l, step} = muLoop{bulk, unr, l, step, {}=>0}

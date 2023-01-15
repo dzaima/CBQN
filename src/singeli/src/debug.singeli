@@ -1,0 +1,71 @@
+def assert{x:u1} = { if (not x) emit{void, '__builtin_trap'} }
+
+def test_assert = assert # test_assert is guaranteed to either not exist, or always trap on bad input
+
+def printf{...vs0} = {
+  def nsym = ~each{ksym, vs0}
+  def vs = join{each{{a,b}=>{
+    if (b) tup{' ', a}
+    else tup{a}
+  }, vs0, nsym & shiftright{tup{0}, nsym}}}
+  
+  def listfmt{hex, s, e, vs} = {
+    if (tuplen{vs}==0) {
+      tup{merge{s, e}, tup{}}
+    } else {
+      def f = each{{v} => runfmt{hex, v}, vs}
+      def f2 = each{{f1, i} => {
+        if (i+1 == tuplen{f}) f1
+        else merge{f1, tup{tup{',%c', tup{32}}}}
+      }, f, iota{tuplen{f}}}
+      tup{
+         tup{s, tup{}},
+         ...join{f2},
+         tup{e, tup{}}
+      }
+    }
+  }
+  
+  def runfmt{hex, x} = {
+    if (ksym{x}) {
+      each{{c} => {
+        if (c==' ') tup{'%c', tup{32}}
+        else tup{c, tup{}}
+      }, symchars{x}}
+    } else if (ktup{x}) {
+      if (tuplen{x}==2 and match{tupsel{0,x}, 'x'}) runfmt{1, tupsel{1,x}}
+      else listfmt{hex, '{', '}', x}
+    } else if (kreg{x} or kcon{x}) {
+      def T = type{x}
+      if (match{typekind{T},'primitive'}) {
+        def q = quality{T}
+        def w = width{T}
+        def u = (w>1) & (q=='u')
+        def spec = {
+          if (q=='f') '%.18g'
+          else merge{tern{u & hex, '0x', ''}, '%', tern{w==64, 'l', ''}, tern{u, tern{hex, 'x', 'u'}, 'd'}}
+        }
+        tup{tup{spec, tup{x}}}
+      } else if (match{typekind{T},'vector'}) {
+        listfmt{hex, '[', ']', each{{i} => extract{x, i}, iota{vcount{T}}}}
+      } else {
+        tup{tup{'(unknown typekind)', tup{}}}
+      }
+    } else if (knum{x}) {
+      if ((x>>0) == x) {
+        if      (x>=minvalue{i64} and x<=maxvalue{i64}) runfmt{0, i64~~x}
+        else if (x>=minvalue{u64} and x<=maxvalue{u64}) runfmt{0, u64~~x}
+        else runfmt{0, f64~~x}
+      } else runfmt{0, f64~~x}
+    } else {
+      tup{tup{'(unknown type)', tup{}}}
+    }
+  }
+  
+  def is = join{each{{v} => runfmt{0,v}, vs}}
+  
+  def e0s = join{each{{x}=>tupsel{0,x}, is}}
+  def e1s = join{each{{x}=>tupsel{1,x}, is}}
+  emit{void, 'printf', merge{'"', e0s, '"'}, ...e1s}
+}
+def lprintf{...vs} = printf{...vs, '\n'}
