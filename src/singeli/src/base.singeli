@@ -161,9 +161,14 @@ def forNZ{vars,begin,end,block} = {
 }
 
 def tree_fold{F, x} = {
-  def h = tuplen{x}/2
-  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,h*2}}}
+  def h = tuplen{x}>>1
+  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,tuplen{x}}}}
 }
 def tree_fold{F, x & tuplen{x}==1} = tupsel{0,x}
+
+def eachx{F, ...args} = {
+  def l = tree_fold{max, each{{x} => {if(ktup{x}) tuplen{x}; else 0}, args}}
+  each{F, ...each{{x} => {if (istup{x}) x; else l**x}, args}}
+}
 
 def makeregs{v, n} = @collect(n) { reg:=v }
