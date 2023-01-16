@@ -244,6 +244,7 @@ po ← { # parsed options
     args∾↩ (              ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (            shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
     args∾↩ (           windows) / ⟨"-DNO_MMAP"⟩
+    args∾↩ (  replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
