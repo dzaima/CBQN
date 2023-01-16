@@ -775,15 +775,16 @@ int main(int argc, char* argv[]) {
           printf(
           "Usage: %s [options] [file.bqn [arguments]]\n"
           "Options:\n"
-          "-f file: execute the contents of the file with all further arguments as •args\n"
-          "-e code: execute the argument as BQN\n"
-          "-p code: execute the argument as BQN and print its result pretty-printed\n"
-          "-o code: execute the argument as BQN and print its raw result\n"
-          "-M num : set maximum heap size to num megabytes\n"
-          "-r     : start the REPL after executing all arguments\n"
-          "-s     : start a silent REPL\n"
+          "  -f file    execute the contents of the file with all further arguments as •args\n"
+          "  -e code    execute the argument as BQN\n"
+          "  -p code    execute the argument as BQN and print its result pretty-printed\n"
+          "  -o code    execute the argument as BQN and print its raw result\n"
+          "  -M num     set maximum heap size to num megabytes\n"
+          "  -r         start the REPL after executing all arguments\n"
+          "  -s         start a silent REPL\n"
+          "  --help     show this help text\n"
           #if HAS_VERSION
-          "--version: display CBQN version information\n"
+          "  --version  display CBQN version information\n"
           #endif
           , argv[0]);
           exit(0);
