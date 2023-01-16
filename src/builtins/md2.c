@@ -59,26 +59,35 @@ B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 
 extern B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
+  #define UPD_BOUNDS(I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
   if (isArr(g)) {
-    SGetU(g)
     usz ia = IA(g);
-    for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
+    u8 xe = TI(g,elType);
+    if (elNum(xe)) {
+      incG(g);
+      if (xe<el_i32) g = taga(cpyI32Arr(g));
+      if (xe==el_f64) { f64* gp = f64any_ptr(g); NOUNROLL for (usz i=0; i<ia; i++) UPD_BOUNDS(o2i64(b(gp[i]))); }
+      else            { i32* gp = i32any_ptr(g); NOUNROLL for (usz i=0; i<ia; i++) UPD_BOUNDS(        gp[i]  ); }
+      decG(g);
+    } else {
+      SGetU(g)
+      for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
+    }
   } else if (isNum(g)) {
-    i64 i = o2i64(g);
-    if (i<bound[0]) bound[0] = i;
-    if (i>bound[1]) bound[1] = i;
+    UPD_BOUNDS(o2i64(g));
   } else thrM("⍟: 𝔾 contained a non-number atom");
 }
-B repeat_replace(B g, B* q) { // doesn't consume
-  if (isArr(g)) {
-    SGetU(g)
-    usz ia = IA(g);
-    M_HARR(r, ia);
-    for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
-    return HARR_FC(r, g);
-  } else {
-    return inc(q[o2i64G(g)]);
-  }
+B repeat_replaceR(B g, B* q);
+FORCE_INLINE B repeat_replace(B g, B* q) { // doesn't consume
+  if (isArr(g)) return repeat_replaceR(g, q);
+  else return inc(q[o2i64G(g)]);
+}
+NOINLINE B repeat_replaceR(B g, B* q) {
+  SGetU(g)
+  usz ia = IA(g);
+  M_HARR(r, ia);
+  for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
+  return HARR_FC(r, g);
 }
 #define REPEAT_T(CN, END, ...)                     \
   B g = CN(d->g, __VA_ARGS__ inc(x));              \
