@@ -100,6 +100,9 @@ ifeq ($(origin LD_LIBS),command line)
 	i_LIBS_LD := $(LD_LIBS)
 	custom = 1
 endif
+ifeq ($(REPLXX),1)
+	i_PIE += -fPIE
+endif
 ifeq ($(origin PIE),command line)
 	i_PIE := $(PIE)
 	custom = 1
