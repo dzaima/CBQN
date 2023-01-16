@@ -17,7 +17,8 @@ t0g ← •MonoTime@
 opts ← ⟨
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
-  ⟨1, "rebuild", 0, "Forcibly rebuild everything"∾@+10⟩
+  ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
+  ⟨1, "notui",   0, "disable live-updating status display"∾@+10⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
@@ -129,7 +130,7 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, output,
+    verbose, J, rebuildAll, tui, output,
     os, arch, native,
     emcc, wasm, replxx, singeli,
     bytecodeDir, replxxDir, singeliDir,
@@ -140,6 +141,7 @@ po ← { # parsed options
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •BQN v; •BQN⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
+  tui ⇐ ¬GetOpt "notui"
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
   Max1 ← {𝕩 {𝕊: a‿b←2↑𝕩/𝕨 ⋄ ∾⟨"Error: '",a,"' and '",b,"' cannot both be enabled"⟩}_assert_(1≥+´) GetOpt¨ 𝕩}
@@ -394,17 +396,18 @@ Run ← { 𝕊:
   free ← threads
   Ts ← {𝕩.t}¨
   
-  storedOut ← ⟨⟩
-  Log ↩ {storedOut∾↩ <𝕩∾@+10}
-  # Log ↩ {𝕊:1}
-  currLive ← ⟨⟩
-  e ← @+27
-  UpdateLive ← {
-    •term.OutRaw (¯4↓∾(≠currLive)⥊<(e∾(@+13)∾"[0K"∾e∾"[1F")) ∾ (•ToUTF8 ∾storedOut) ∾ 1↓∾((@+10)∾•ToUTF8)¨ 𝕩
-    •term.Flush @
-    currLive ↩ 𝕩
-    storedOut ↩ ⟨⟩
-  }
+  updateLive ← { 𝕊:
+    storedOut ← ⟨⟩
+    Log ↩ {storedOut∾↩ <𝕩∾@+10}
+    currLive ← ⟨⟩
+    e ← @+27
+    {
+      •term.OutRaw (¯4↓∾(≠currLive)⥊<(e∾(@+13)∾"[0K"∾e∾"[1F")) ∾ (•ToUTF8 ∾storedOut) ∾ 1↓∾((@+10)∾•ToUTF8)¨ 𝕩
+      •term.Flush @
+      currLive ↩ 𝕩
+      storedOut ↩ ⟨⟩
+    }
+  }⍟po.tui 0
   FmtTime ← {{(""≡◶⊢‿"0" ¯1↓𝕩)∾'.'∾¯1↑𝕩} •Repr ⌊0.5+ 10×𝕩}
   onExitList∾↩ {{𝕊: UpdateLive ⟨⟩}}
   
@@ -426,12 +429,12 @@ Run ← { 𝕊:
     
     t1 ← •MonoTime@
     tmap ↩ ⍷tmap∾Ts work
+    FileLine ← {∾⟨"[", FmtTime t1-𝕩.t0, "] ", 𝕩.v.disp⟩}
     { 𝕊:
       nextRedraw ↩ t1+0.1
       UpdateLive (<DoneLine@)∾{
         𝕩≡≠work? "";
-        o ← 𝕩⊑work
-        ∾⟨"[", FmtTime t1-o.t0, "] ", o.v.disp⟩
+        FileLine 𝕩⊑work
       }¨ (Ts work) ⊐tmap
     }⍟⊢ t1>nextRedraw-0.02
     
@@ -440,7 +443,12 @@ Run ← { 𝕊:
     {𝕊: Fail "Error: Fork died" ⋄ dm‿lm∧↩<dm≠¯1}⍟⊢ ∨´dm=¯1
     done ← dm/work
     work ↩ lm/work
-    {𝕩.i FinishJob 𝕩.t.Take@? doneCount+↩1; Fail "Error: During '"∾𝕩.v.disp∾"'"}¨ done
+    {
+      𝕩.i FinishJob 𝕩.t.Take@?
+        {𝕊: Log FileLine 𝕩}⍟(¬po.tui) 𝕩
+        doneCount+↩1;
+      Fail "Error: During '"∾𝕩.v.disp∾"'"
+    }¨ done
     free∾↩ Ts done
   }•_while_{𝕊: (0<≠work) ∨ (¬stopping)∧0<≠left}@
   
