@@ -33,7 +33,8 @@ opts ← ⟨
   ⟨2, "lf",      ⟨⟩, "linker flags"⟩
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
   ⟨2, "rm_f",    ⟨⟩, "forcibly remove C compiler flag(s)"⟩
-  ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"∾@+10⟩
+  ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
+  ⟨0, "v",       @,  "Version to report by --version; 'v=' to use git commit"∾@+10⟩
   
   ⟨1, "shared", 0, "build a shared library; default output is libcbqn.[so|dylib]"⟩
   ⟨1, "wasi",   0, "build with WASI; default output name is BQN.wasm"⟩
@@ -48,7 +49,7 @@ opts ← ⟨
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
   ⟨1, "native", @, "Use '-march=native'"∾@+10⟩
   
-  ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables stricter assertion checks"⟩
+  ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables various sanity checks"⟩
   ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
   ⟨1, "rtverify",   0, "Debug: compare builtin results with the self-hosted runtime"⟩
   ⟨1, "heapverify", 0, "Debug: check reference count correctness"∾@+10⟩
@@ -130,9 +131,10 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, tui, output,
+    verbose, J, rebuildAll, tui, output, versionName,
     os, arch, native,
     emcc, wasm, replxx, singeli,
+    ffi, o3,
     bytecodeDir, replxxDir, singeliDir,
     CBQNc, REPLXXc, Linker
   ⟩⇐
@@ -152,11 +154,14 @@ po ← { # parsed options
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
+  versionName ← GetOpt "v"
+  {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢@
   wasm ⇐ wasi∨emcc
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   cxx ← GetOpt "CXX"
   debug ← GetOpt "debug"
+  o3 ⇐ (¬custom) DOpt "O3"
   
   uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
   InUname ← {𝕊: ∨´ 𝕩⍷uname}
@@ -167,7 +172,7 @@ po ← { # parsed options
   arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
   {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch  <⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
   
-  ffi ← ((¬windows)∧¬wasm) DOpt "FFI"
+  ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
@@ -224,21 +229,22 @@ po ← { # parsed options
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
     args∾↩ (singeli∧arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
-    args∾↩ (               wasm) / ⟨"-DWASM"⟩
-    args∾↩ (               wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
-    args∾↩ (               emcc) / ⟨"-DEMCC", "-O3"⟩
-    args∾↩ (             replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
-    args∾↩ (     debug DOpt "g") / ⟨"-g"⟩
-    args∾↩ ((¬custom) DOpt "O3") / ⟨"-O3"⟩
-    args∾↩ (             native) / ⟨"-march=native"⟩
-    args∾↩ (              debug) / ⟨"-DDEBUG"⟩
-    args∾↩ (     GetOpt "color") / ⟨isClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩ # TODO exclude from hash?
-    args∾↩ (  GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
-    args∾↩ (GetOpt "heapverify") / ⟨"-DHEAP_VERIFY"⟩
-    args∾↩ (      exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
-    args∾↩ (               ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ (             shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
-    args∾↩ (            windows) / ⟨"-DNO_MMAP"⟩
+    args∾↩ (              wasm) / ⟨"-DWASM"⟩
+    args∾↩ (              wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
+    args∾↩ (              emcc) / ⟨"-DEMCC", "-O3"⟩
+    args∾↩ (            replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
+    args∾↩ (    debug DOpt "g") / ⟨"-g"⟩
+    args∾↩ (                o3) / ⟨"-O3"⟩
+    args∾↩ (            native) / ⟨"-march=native"⟩
+    args∾↩ (             debug) / ⟨"-DDEBUG"⟩
+    args∾↩ (    GetOpt "color") / ⟨isClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩ # TODO exclude from hash?
+    args∾↩ ( GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
+    args∾↩ (GetOpt"heapverify") / ⟨"-DHEAP_VERIFY"⟩
+    args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
+    args∾↩ (              ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ (            shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
+    args∾↩ (           windows) / ⟨"-DNO_MMAP"⟩
+    args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     cbqnc ↩ args
@@ -289,6 +295,9 @@ isFileTheSame ← {
     𝕩 ≡ t
   }
 }
+GitCmd ← {
+  ¯1↓SH ⟨"git", "-C", rootDir⟩∾𝕩
+}
 updateSubmodule ← {
   done ← ⟨⟩
   {
@@ -296,7 +305,7 @@ updateSubmodule ← {
     "Local"≡¯5↑𝕩? @;
     ⊑𝕩<⊸∊done? @;
     done∾↩ <𝕩
-    SH ⟨"git", "-C", rootDir, "submodule", "update", "--init", AtRoot 𝕩⟩
+    GitCmd ⟨"submodule", "update", "--init", AtRoot 𝕩⟩
   }
 }
 
@@ -458,7 +467,7 @@ Run ← { 𝕊:
 }
 
 
-MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store 
+MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
   key ⇐ id
   dst ⇐ cache.File key∾".o"
   GetCMD ← { 𝕊:
@@ -469,7 +478,7 @@ MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src shoul
   AddRule ⟨cache, key, dst, GetCMD, •file.Name src, customDeps⟩
 }
 
-MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store 
+MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
   key ⇐ id
   dst ⇐ cache.File key∾".c"
   GetCMD ← { 𝕊:
@@ -565,6 +574,22 @@ cachedBin‿linkerCache ← {
     {po.replxx? replxxCache.hash; @}
     {po.singeli? singeliCache.hash; @}
   ⟩⟩
+  
+  {
+    po.versionName≡@? @;
+    srcFile ← linkerCache.File "versionInfo.c"
+    src ← "char* cbqn_versionString = """∾(∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
+      "CBQN "∾{po.versionName≡""? "on commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain"⟩? ""; "-dirty"}; po.versionName}
+      {"built with "⊸∾⍟(×≠) ¯2↓∾∾⟜", "¨ 𝕩} po.ffi‿po.singeli‿po.replxx‿(¬po.o3) / ⟨"FFI", "singeli "∾{po.native? "native"; po.arch}, "replxx", "optimizations disabled"⟩
+      # "build invocation: "⊸∾⍟(×≠) ¯1↓∾∾⟜' '¨ •args
+    ⟩)∾""";"∾@+10
+    {
+      •file.Exists AtRoot srcFile? src≡•FChars AtRoot srcFile? @; # don't update
+      (AtRoot srcFile) •FChars src
+    }
+    objs∾↩ ⋈(MakeCCInv ⟨po.CBQNc, ⊢, linkerCache, "versionInfo", srcFile, ⟨⟩⟩).dst
+  }
+  
   res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; "windows"≡po.os? "res.exe"; "res"}, objs⟩
   
   res.dst ⋈ linkerCache

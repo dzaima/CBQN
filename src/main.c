@@ -750,6 +750,9 @@ int main() {
   repl_init();
 }
 #elif !CBQN_SHARED
+#if HAS_VERSION
+extern char* cbqn_versionString;
+#endif
 int main(int argc, char* argv[]) {
   repl_init();
   #if USE_REPLXX_IO
@@ -779,7 +782,17 @@ int main(int argc, char* argv[]) {
           "-M num : set maximum heap size to num megabytes\n"
           "-r     : start the REPL after executing all arguments\n"
           "-s     : start a silent REPL\n"
+          #if HAS_VERSION
+          "--version: display CBQN version information\n"
+          #endif
           , argv[0]);
+          exit(0);
+        } else if (!strcmp(carg, "--version")) {
+          #if HAS_VERSION
+            printf("%s", cbqn_versionString);
+          #else
+            printf("CBQN, unknown version\n");
+          #endif
           exit(0);
         } else {
           printf("%s: Unknown option: %s\n", argv[0], carg);
