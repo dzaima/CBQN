@@ -52,86 +52,55 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
   return any_squeeze(rb);
 }
 
-B eachm_fn(B fo, B x, BB2B f) { // TODO definitely rewrite this. Probably still has refcounting errors
+B eachm_fn(B fo, B x, BB2B f) {
   usz ia = IA(x);
-  if (ia==0) return x;
-  SGet(x);
   usz i = 0;
-  B cr = f(fo, Get(x,0));
-  HArr_p rH;
-  if (TI(x,canStore)(cr)) {
-    bool reuse = reusable(x);
-    if (TY(x)==t_harr) {
-      B* xp = harr_ptr(x);
-      if (reuse) {
-        dec(xp[i]); xp[i++] = cr;
-        for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return any_squeeze(REUSE(x));
-      } else {
-        M_HARR(rHc, ia)
-        HARR_ADD(rHc, i, cr);
-        for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
-        return any_squeeze(HARR_FCD(rHc, x));
-      }
-    } else if (TI(x,elType)==el_i32) {
-      i32* xp = i32any_ptr(x);
-      B r; i32* rp;
-      if (reuse && TY(x)==t_i32arr) { r=incG(REUSE(x)); rp = xp; }
-      else r = m_i32arrc(&rp, x);
-      rp[i++] = o2iG(cr);
-      for (; i < ia; i++) {
-        cr = f(fo, m_i32(xp[i]));
-        if (!q_i32(cr)) {
-          rH = m_harr0c(x);
-          COPY_TO(rH.a, el_B, 0, r, 0, i);
-          decG(r);
-          goto fallback;
-        }
-        rp[i] = o2iG(cr);
-      }
-      decG(x);
-      return num_squeeze(r);
-    } else if (TI(x,elType)==el_f64) {
-      f64* xp = f64any_ptr(x);
-      B r; f64* rp;
-      if (reuse && TY(x)==t_f64arr) { r=incG(REUSE(x)); rp = xp; }
-      else       r = m_f64arrc(&rp, x);
-      rp[i++] = o2fG(cr);
-      for (; i < ia; i++) {
-        cr = f(fo, m_f64(xp[i]));
-        if (!q_f64(cr)) {
-          rH = m_harr0c(x);
-          COPY_TO(rH.a, el_B, 0, r, 0, i);
-          decG(r);
-          goto fallback;
-        }
-        rp[i] = o2fG(cr);
-      }
-      decG(x);
-      return num_squeeze(r);
-    } else if (TY(x)==t_fillarr) {
-      B* xp = fillarr_ptr(a(x));
-      if (reuse) {
+  if (ia==0) return x;
+  if (reusable(x)) {
+    B* xp;
+    re_reuse:
+    switch (v(x)->type) {
+      case t_fillarr: {
         dec(c(FillArr,x)->fill);
         c(FillArr,x)->fill = bi_noFill;
-        dec(xp[i]); xp[i++] = cr;
-        for (; i < ia; i++) xp[i] = f(fo, mv(xp,i));
-        return any_squeeze(REUSE(x));
-      } else {
-        M_HARR(rHc, ia)
-        HARR_ADD(rHc, i, cr);
-        for (usz i = 1; i < ia; i++) HARR_ADD(rHc, i, f(fo, inc(xp[i])));
-        return any_squeeze(HARR_FCD(rHc, x));
+        xp = fillarr_ptr(a(x));
+        break;
       }
-    } else goto m_fallback;
-  } else goto m_fallback;
-  m_fallback:
-  rH = m_harr0c(x);
-  fallback:
-  rH.a[i++] = cr;
-  for (; i < ia; i++) rH.a[i] = f(fo, Get(x,i));
-  decG(x);
-  return any_squeeze(rH.b);
+      case t_harr: {
+        xp = harr_ptr(x);
+        break;
+      }
+      case t_fillslice: {
+        FillSlice* s = c(FillSlice,x);
+        Arr* p = s->p;
+        if (p->refc==1 && (p->type==t_fillarr || p->type==t_harr) && ((FillArr*)p)->a == s->a && p->ia==ia) {
+          x = taga(ptr_inc(p));
+          value_free((Value*)s);
+          goto re_reuse;
+        } else goto base;
+      }
+      default: goto base;
+    }
+    for (; i < ia; i++) xp[i] = f(fo, mv(xp, i));
+    return any_squeeze(x);
+  }
+  
+  base:;
+  M_HARR(r, ia)
+  void* xp = tyany_ptr(x);
+  switch(TI(x,elType)) { default: UD;
+    case el_B: { SGet(x);
+                 for (; i<ia; i++) HARR_ADD(r, i, f(fo, Get(x,i))); break; }
+    case el_bit: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(bitp_get(xp,i)))); break;
+    case el_i8:  for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(((i8* )xp)[i]))); break;
+    case el_i16: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(((i16*)xp)[i]))); break;
+    case el_i32: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(((i32*)xp)[i]))); break;
+    case el_f64: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_f64(((f64*)xp)[i]))); break;
+    case el_c8:  for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_c32(((u8* )xp)[i]))); break;
+    case el_c16: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_c32(((u16*)xp)[i]))); break;
+    case el_c32: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_c32(((u32*)xp)[i]))); break;
+  }
+  return any_squeeze(HARR_FCD(r, x));
 }
 
 #if CATCH_ERRORS
