@@ -587,7 +587,8 @@ Nvm_res m_nvm(Body* body) {
     #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
     #define TOPpR(R) MOV(R,R_RES)
     #define TOPp TOPpR(R_A0)
-    #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
+    // #define TOPs if (depth) { u8 t = SPOS(R_A3, 0, 0); MOV8mr(t, R_RES); }
+    #define TOPs if (depth) { MOV8mro(r_CS, R_RES, SPOSq(0)); }
     #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); } // TODO return r_SC directly without a pointless mov
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
