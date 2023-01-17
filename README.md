@@ -73,7 +73,7 @@ AArch64 ARMv8-A (within Termux on Android 8):
   libffi 3.4.4 (structs were broken as of 3.4.3)
   replxx: clang++ 15.0.4
 ```
-Additionally, CBQN is known to compile as-is on macOS (with [some extra options](#macOS) for FFI), but Windows requires [WinBQN](https://github.com/actalley/WinBQN) to properly set up Cygwin/Msys2.
+Additionally, CBQN is known to compile as-is on macOS, but Windows requires [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate build environment.
 
 ## License
 
