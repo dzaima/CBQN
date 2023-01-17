@@ -231,30 +231,38 @@ B clearRefs_c1(B t, B x) {
   return m_f64(res);
 }
 
+static NOINLINE B unshareShape(Arr* x) {
+  ur xr = PRNK(x);
+  if (xr<=1) return taga(x);
+  ShArr* sh = m_shArr(xr);
+  shcpy(sh->a, x->sh, xr);
+  arr_shReplace(x, xr, sh);
+  return taga(x);
+}
 static B unshare(B x) {
   if (!isArr(x)) return x;
   usz xia = IA(x);
   switch (TY(x)) {
-    case t_bitarr: return taga(cpyBitArr(incG(x)));
-    case t_i8arr:  case t_i8slice:  return taga(cpyI8Arr (incG(x)));
-    case t_i16arr: case t_i16slice: return taga(cpyI16Arr(incG(x)));
-    case t_i32arr: case t_i32slice: return taga(cpyI32Arr(incG(x)));
-    case t_c8arr:  case t_c8slice:  return taga(cpyC8Arr (incG(x)));
-    case t_c16arr: case t_c16slice: return taga(cpyC16Arr(incG(x)));
-    case t_c32arr: case t_c32slice: return taga(cpyC32Arr(incG(x)));
-    case t_f64arr: case t_f64slice: return taga(cpyF64Arr(incG(x)));
+    case t_bitarr: return unshareShape((Arr*)cpyBitArr(incG(x)));
+    case t_i8arr:  case t_i8slice:  return unshareShape((Arr*)cpyI8Arr (incG(x)));
+    case t_i16arr: case t_i16slice: return unshareShape((Arr*)cpyI16Arr(incG(x)));
+    case t_i32arr: case t_i32slice: return unshareShape((Arr*)cpyI32Arr(incG(x)));
+    case t_c8arr:  case t_c8slice:  return unshareShape((Arr*)cpyC8Arr (incG(x)));
+    case t_c16arr: case t_c16slice: return unshareShape((Arr*)cpyC16Arr(incG(x)));
+    case t_c32arr: case t_c32slice: return unshareShape((Arr*)cpyC32Arr(incG(x)));
+    case t_f64arr: case t_f64slice: return unshareShape((Arr*)cpyF64Arr(incG(x)));
     case t_harr: case t_hslice: {
       B* xp = hany_ptr(x);
       M_HARR(r, xia)
       for (usz i = 0; i < xia; i++) HARR_ADD(r, i, unshare(xp[i]));
-      return HARR_FC(r, x);
+      return unshareShape(a(HARR_FC(r, x)));
     }
     case t_fillarr: case t_fillslice: {
       Arr* r = m_fillarrp(xia); arr_shCopy(r, x);
       fillarr_setFill(r, unshare(getFillQ(x)));
       B* rp = fillarr_ptr(r); B* xp = fillarr_ptr(a(x));
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
-      return taga(r);
+      return unshareShape(r);
     }
     default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", TY(x), type_repr(TY(x)));
   }
