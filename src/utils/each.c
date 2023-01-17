@@ -81,6 +81,7 @@ B eachm_fn(B fo, B x, BB2B f) {
       }
       default: goto base;
     }
+    REUSE(x);
     for (; i < ia; i++) xp[i] = f(fo, mv(xp, i));
     return any_squeeze(x);
   }
