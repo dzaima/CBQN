@@ -47,21 +47,24 @@ static ShArr* m_shArr(ur r) {
   return ((ShArr*)mm_alloc(fsizeof(ShArr, a, usz, r), t_shape));
 }
 
-static Arr* arr_shVec(Arr* x) {
-  SPRNK(x, 1);
+FORCE_INLINE Arr* arr_rnk01(Arr* x, ur xr) {
+  SPRNK(x, xr);
   x->sh = &x->ia;
   return x;
 }
+static Arr* arr_shAtm(Arr* x) { return arr_rnk01(x, 0); }
+static Arr* arr_shVec(Arr* x) { return arr_rnk01(x, 1); }
+
 static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape (or null if r<2); assumes x has rank≤1 (which will be the case for new allocations)
   assert(PRNK(x)<=1);
-  if (r>1) {
+  if (r<=1) {
+    arr_rnk01(x, r);
+    return NULL;
+  } else {
     usz* sh = x->sh = m_shArr(r)->a; // if m_shArr fails, the assumed rank≤1 guarantees the uninitialized x->sh won't break
     SPRNK(x,r);
     return sh;
   }
-  SPRNK(x,r);
-  x->sh = &x->ia;
-  return NULL;
 }
 static Arr* arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
   SPRNK(x,r);
@@ -75,6 +78,12 @@ static Arr* arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
   else     x->sh = &x->ia;
   return x;
 }
+static Arr* arr_shSetUG(Arr* x, ur r, ShArr* sh) { // arr_shSetU but guaranteed r>1
+  assert(r>1);
+  SPRNK(x,r);
+  x->sh = sh->a;
+  return x;
+}
 static Arr* arr_shCopyUnchecked(Arr* n, B o) {
   ur r = SPRNK(n,RNK(o));
   if (r<=1) {
@@ -85,6 +94,14 @@ static Arr* arr_shCopyUnchecked(Arr* n, B o) {
     n->sh = sh;
   }
   return n;
+}
+static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a new one
+  usz* prevsh = x->sh;
+  u8 xr = PRNK(x);
+  SPRNK(x, r);
+  x->sh = sh->a;
+  if (xr>1) decShObj(shObjS(prevsh));
+  return x;
 }
 static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   assert(isArr(o));
@@ -123,6 +140,7 @@ B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);
 B bit_negate(B x); // consumes
+Arr* cpyWithShape(B x); // consumes; returns array with refcount 1 with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
 
 static B m_hVec1(B a               ); // consumes all
 static B m_hVec2(B a, B b          ); // consumes all

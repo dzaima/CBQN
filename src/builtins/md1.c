@@ -283,6 +283,7 @@ static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
   return mut_fcd(r, x);
 }
 
+B shape_c1(B, B);
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
@@ -297,22 +298,24 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
       if (rtid==n_select && xr>1) return select_cells(0, x, xr);
       if (rtid==n_pick && xr>1 && TI(x,arrD1)) return select_cells(0, x, xr);
       if (rtid==n_couple) {
+        if (xr==0) return C1(shape, x);
+        Arr* r = cpyWithShape(x);
+        usz* xsh = PSH(r);
         ShArr* rsh = m_shArr(xr+1);
-        usz* xsh = SH(x);
         rsh->a[0] = xsh[0];
         rsh->a[1] = 1;
         shcpy(rsh->a+2, xsh+1, xr-1);
-        Arr* r = TI(x,slice)(x, 0, IA(x));
-        return taga(arr_shSetU(r, xr+1, rsh));
+        return taga(arr_shReplace(r, xr+1, rsh));
       }
       if (rtid==n_shape) {
-        usz cam = SH(x)[0];
-        usz csz = arr_csz(x);
-        Arr* ra = TI(x,slice)(x,0,IA(x));
-        usz* rsh = arr_shAlloc(ra, 2);
-        rsh[0] = cam;
-        rsh[1] = csz;
-        return taga(ra);
+        if (xr==2) return x;
+        Arr* r = cpyWithShape(x);
+        usz cam = PSH(r)[0];
+        usz csz = shProd(PSH(r), 1, xr);
+        ShArr* rsh = m_shArr(2);
+        rsh->a[0] = cam;
+        rsh->a[1] = csz;
+        return taga(arr_shReplace(r, 2, rsh));
       }
       if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
         B xf = getFillR(x);

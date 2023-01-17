@@ -96,7 +96,7 @@ static HArr_p m_harrUp(usz ia) {
 
 static B m_hunit(B x) { // consumes
   HArr_p r = m_harrUp(1);
-  arr_shAlloc((Arr*)r.c, 0);
+  arr_shAtm((Arr*)r.c);
   r.a[0] = x;
   return r.b;
 }

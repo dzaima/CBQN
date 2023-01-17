@@ -166,7 +166,7 @@ NOINLINE B m_unit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) return m_hunit(x);
   FillArr* r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr, 1);
-  arr_shAlloc((Arr*)r, 0);
+  arr_shAtm((Arr*)r);
   r->fill = xf;
   r->a[0] = x;
   return taga(r);
@@ -190,6 +190,6 @@ NOINLINE B m_atomUnit(B x) {
   TyArr* r = m_arr(offsetof(TyArr,a) + sizeof(u64), t, 1);
   *((u64*)r->a) = data;
   FINISH_OVERALLOC(r, offsetof(TyArr,a)+sz, offsetof(TyArr,a)+sizeof(u64));
-  arr_shAlloc((Arr*)r, 0);
+  arr_shAtm((Arr*)r);
   return taga(r);
 }

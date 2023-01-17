@@ -16,10 +16,7 @@ static NOINLINE Arr* emptyArr(B x, ur xr) { // returns an empty array with the f
   else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
   else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
   else                 { r = m_fillarrp(0); fillarr_setFill(r, xf); }
-  if (xr<=1) {
-    if (LIKELY(xr==1)) arr_shVec(r);
-    else arr_shAlloc(r, 0);
-  }
+  if (xr<=1) arr_rnk01(r, xr);
   return r;
 }
 
@@ -100,6 +97,24 @@ B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
 
 B pair_c1(B t,      B x) { return m_vec1(x); }
 B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
+
+Arr* cpyWithShape(B x) {
+  Arr* xv = a(x);
+  if (reusable(x)) return xv;
+  ur xr = PRNK(xv);
+  Arr* r;
+  if (xr<=1) {
+    r = TIv(xv,slice)(x, 0, PIA(xv));
+    arr_rnk01(r, xr);
+  } else {
+    usz* sh = PSH(xv);
+    ptr_inc(shObjS(sh));
+    r = TIv(xv,slice)(x, 0, PIA(xv));
+    r->sh = sh;
+  }
+  SPRNK(r, xr);
+  return r;
+}
 
 B shape_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);

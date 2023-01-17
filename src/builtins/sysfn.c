@@ -405,14 +405,12 @@ B rand_range_c2(B t, B w, B x) {
   RAND_END;
   if (isArr(w)) {
     usz wia = IA(w);
-    switch (wia) {
-      case 0: { arr_shAlloc(r, 0); break; }
-      case 1: { arr_shVec(r); break; }
-      default: {
-        usz* sh = arr_shAlloc(r, wia);
-        SGetU(w);
-        for (usz i = 0; i < wia; i++) sh[i] = o2sG(GetU(w, i));
-      }
+    if (wia<2) {
+      arr_rnk01(r, wia);
+    } else {
+      usz* sh = arr_shAlloc(r, wia);
+      SGetU(w);
+      for (usz i = 0; i < wia; i++) sh[i] = o2sG(GetU(w, i));
     }
   } else {
     arr_shVec(r);
