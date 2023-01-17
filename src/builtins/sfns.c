@@ -1257,7 +1257,17 @@ B transp_c1(B t, B x) {
   usz ia = IA(x);
   usz* xsh = SH(x);
   usz h = xsh[0];
+  if (ia==0 || h==1) {
+    no_reorder:;
+    Arr* r = cpyWithShape(x);
+    ShArr* sh = m_shArr(xr);
+    shcpy(sh->a, xsh+1, xr-1);
+    sh->a[xr-1] = h;
+    arr_shReplace(r, xr, sh);
+    return taga(r);
+  }
   usz w = xsh[1] * shProd(xsh, 2, xr);
+  if (w==1) goto no_reorder;
   
   Arr* r;
   usz xi = 0;
