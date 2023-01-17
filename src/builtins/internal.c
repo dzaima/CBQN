@@ -235,23 +235,23 @@ static B unshare(B x) {
   if (!isArr(x)) return x;
   usz xia = IA(x);
   switch (TY(x)) {
-    case t_bitarr: return taga(cpyBitArr(inc(x)));
-    case t_i8arr:  return taga(cpyI8Arr (inc(x)));
-    case t_i16arr: return taga(cpyI16Arr(inc(x)));
-    case t_i32arr: return taga(cpyI32Arr(inc(x)));
-    case t_c8arr:  return taga(cpyC8Arr (inc(x)));
-    case t_c16arr: return taga(cpyC16Arr(inc(x)));
-    case t_c32arr: return taga(cpyC32Arr(inc(x)));
-    case t_f64arr: return taga(cpyF64Arr(inc(x)));
-    case t_harr: {
-      B* xp = harr_ptr(x);
+    case t_bitarr: return taga(cpyBitArr(incG(x)));
+    case t_i8arr:  case t_i8slice:  return taga(cpyI8Arr (incG(x)));
+    case t_i16arr: case t_i16slice: return taga(cpyI16Arr(incG(x)));
+    case t_i32arr: case t_i32slice: return taga(cpyI32Arr(incG(x)));
+    case t_c8arr:  case t_c8slice:  return taga(cpyC8Arr (incG(x)));
+    case t_c16arr: case t_c16slice: return taga(cpyC16Arr(incG(x)));
+    case t_c32arr: case t_c32slice: return taga(cpyC32Arr(incG(x)));
+    case t_f64arr: case t_f64slice: return taga(cpyF64Arr(incG(x)));
+    case t_harr: case t_hslice: {
+      B* xp = hany_ptr(x);
       M_HARR(r, xia)
       for (usz i = 0; i < xia; i++) HARR_ADD(r, i, unshare(xp[i]));
       return HARR_FC(r, x);
     }
-    case t_fillarr: {
+    case t_fillarr: case t_fillslice: {
       Arr* r = m_fillarrp(xia); arr_shCopy(r, x);
-      fillarr_setFill(r, unshare(c(FillArr,x)->fill));
+      fillarr_setFill(r, unshare(getFillQ(x)));
       B* rp = fillarr_ptr(r); B* xp = fillarr_ptr(a(x));
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return taga(r);
