@@ -1307,10 +1307,10 @@ B transp_c1(B t, B x) {
   } else {
     switch(xe) { default: UD;
       case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; // fallthough
-      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-      case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-      case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-      case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_B: { // can't be bothered to implement a bitarr transpose
         B* xp = arr_bptr(x);
         B xf = getFillR(x);
