@@ -33,7 +33,7 @@ B ud_c1(B t, B x) {
     if (LIKELY(xu<=I8_MAX)) {
       if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
       i8* rp; B r = m_i8arrv(&rp, xu);
-      for (usz i = 0; i < xu; i++) rp[i] = i;
+      NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
       return r;
     }
     if (xu<=I16_MAX) {
