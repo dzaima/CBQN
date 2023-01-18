@@ -398,9 +398,9 @@ B ryu_d2s(double f) {
   // Case distinction; exit early for the easy cases.
   if (exponent == ((1u << DOUBLE_EXPONENT_BITS) - 1u) || (exponent == 0 && mantissa == 0)) {
     B r;
-    if (mantissa) r = fmt_nan;
-    if (exponent) r = fmt_inf[sign];
-    else          r = fmt_zero[sign];
+    if (mantissa)      r = fmt_nan;
+    else if (exponent) r = fmt_inf[sign];
+    else               r = fmt_zero[sign];
     return incG(r);
   }
   
