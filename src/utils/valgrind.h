@@ -28,6 +28,11 @@ u64 vgRand64Range(u64 range);
 u64 vgRand64(void);
 u64 vg_rand(u64 x); // randomize undefined bits in x, and return the value with all bits defined
 
+u64 vg_loadLUT64(u64* p, u64 i);
+u64 vg_pext_u64(u64 src, u64 mask);
+u64 vg_pdep_u64(u64 src, u64 mask);
+u64 rand_popc64(u64 x);
+
 void vg_printDefined_u64(char* name, u64 x);
 void vg_printDump_p(char* name, void* data, u64 len);
 #define vg_printDump_v(X) ({ AUTO x_ = (X); vg_printDump_p(#X, &x_, sizeof(x_)); x_; })

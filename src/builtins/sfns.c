@@ -1245,7 +1245,10 @@ B reverse_c2(B t, B w, B x) {
 }
 
 #ifdef __BMI2__
-#include <immintrin.h>
+  #include <immintrin.h>
+  #if USE_VALGRIND
+    #define _pdep_u64 vg_pdep_u64
+  #endif
 #endif
 
 extern B rt_transp;

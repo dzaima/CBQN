@@ -24,6 +24,9 @@ B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* rp; B r=m_bitarrv(&rp,ia);
 #if SINGELI_X86_64 && __PCLMUL__
   clmul_scan_ne(p, xp, rp, BIT_N(ia));
+  #if USE_VALGRIND
+  if (ia&63) rp[ia>>6] = vg_def_u64(rp[ia>>6]);
+  #endif
 #else
   for (usz i = 0; i < BIT_N(ia); i++) {
     u64 c = xp[i];
