@@ -407,7 +407,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     usz p = 0;
     for (usz i = 0; i < cam; i++) {
       Arr* s = arr_shSetI(slice(incG(w), p, csz), wc, csh);
-      HARR_ADD(r, i, c2(f, taga(s), incG(x)));
+      HARR_ADD(r, i, c2(f, taga(s), inc(x)));
       p+= csz;
     }
 
