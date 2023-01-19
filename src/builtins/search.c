@@ -106,7 +106,7 @@ B indexOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
-    if (we==el_bit) {
+    if (we==el_bit && xe!=el_B) {
       u64* wp = bitarr_ptr(w);
       u64 w0 = 1 & wp[0];
       u64 i = bit_find(wp, wia, !w0); decG(w);
@@ -175,7 +175,7 @@ B memberOf_c2(B t, B w, B x) {
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (xia == 0) { r=taga(arr_shCopy(allZeroes(wia), w)); decG(w); goto dec_x; }
     #define WEQ(V) C2(eq, incG(w), V)
-    if (xe==el_bit) {
+    if (xe==el_bit && we!=el_B) {
       u64* xp = bitarr_ptr(x);
       u64 x0 = 1 & xp[0];
       r = WEQ(m_usz(x0));
