@@ -24,8 +24,8 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
   if (rw|rx && (wr==xr | rm==0)) {
     HArr_p r = harr_parts(REUSE(rw? w : x));
     usz ria = r.c->ia;
-    if      (wr==0) { B c=Get(w, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, inc(c),   hmv(r,i)); dec(c); }
-    else if (xr==0) { B c=Get(x, 0); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), inc(c)  ); dec(c); }
+    if      (wr==0) { B c=incBy(Get(w,0), ria); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, c,   hmv(r,i)); dec(c); }
+    else if (xr==0) { B c=incBy(Get(x,0), ria); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), c  ); dec(c); }
     else {
       assert(wr==xr);
       if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), Get(x,i));
@@ -39,8 +39,8 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
   usz ria = IA(bo);
   M_HARR(r, ria)
   if (wr==xr)                      for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri)));
-  else if (wr==0) { B c=Get(w, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, inc(c)   , Get(x,ri))); dec(c); }
-  else if (xr==0) { B c=Get(x, 0); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), inc(c)   )); dec(c); }
+  else if (wr==0) { B c=incBy(Get(w,0), ria); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, c   , Get(x,ri))); dec(c); }
+  else if (xr==0) { B c=incBy(Get(x,0), ria); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), c   )); dec(c); }
   else if (ria>0) {
     usz min = wg? IA(x) : IA(w);
     usz ext = ria / min;

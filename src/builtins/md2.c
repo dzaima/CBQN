@@ -381,9 +381,11 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       BSS2A slice = TI(x,slice);
       M_HARR(r, cam);
       usz p = 0;
+      incBy(w, cam);
+      incByG(x, cam);
       for (usz i = 0; i < cam; i++) {
-        Arr* s = arr_shSetI(slice(incG(x), p, csz), xc, csh);
-        HARR_ADD(r, i, c2(f, inc(w), taga(s)));
+        Arr* s = arr_shSetI(slice(x, p, csz), xc, csh);
+        HARR_ADD(r, i, c2(f, w, taga(s)));
         p+= csz;
       }
 
@@ -405,9 +407,11 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     BSS2A slice = TI(w,slice);
     M_HARR(r, cam);
     usz p = 0;
+    incByG(w, cam);
+    incBy(x, cam);
     for (usz i = 0; i < cam; i++) {
-      Arr* s = arr_shSetI(slice(incG(w), p, csz), wc, csh);
-      HARR_ADD(r, i, c2(f, taga(s), inc(x)));
+      Arr* s = arr_shSetI(slice(w, p, csz), wc, csh);
+      HARR_ADD(r, i, c2(f, taga(s), x));
       p+= csz;
     }
 
@@ -450,14 +454,14 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       }
     } else if (wk < xk) {
       for (usz i = 0; i < cam; ) {
-        CELL(w); B wb=taga(ws);
-        for (usz e = i+ext; i < e; i++) { CELL(x); F(incG(wb), taga(xs)); }
+        CELL(w); B wb=incBy(taga(ws), ext);
+        for (usz e = i+ext; i < e; i++) { CELL(x); F(wb, taga(xs)); }
         dec(wb);
       }
     } else {
       for (usz i = 0; i < cam; ) {
-        CELL(x); B xb=taga(xs);
-        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), incG(xb)); }
+        CELL(x); B xb=incBy(taga(xs), ext);
+        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), xb); }
         dec(xb);
       }
     }

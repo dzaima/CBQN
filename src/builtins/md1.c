@@ -78,7 +78,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     } else if (xia>7) {
       SGet(w)
       M_HARR(r, wia)
-      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), incG(x)));
+      incByG(x, wia);
+      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), x));
       r = bqn_merge(HARR_FV(r));
     } else goto generic;
     if (RNK(r)>1) {
@@ -92,8 +93,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     
     M_HARR(r, ria)
     for (usz wi = 0; wi < wia; wi++) {
-      B cw = GetU(w,wi);
-      for (usz xi = 0; xi < xia; xi++) HARR_ADDA(r, fc2(f, inc(cw), Get(x,xi)));
+      B cw = incBy(GetU(w,wi), xia);
+      for (usz xi = 0; xi < xia; xi++) HARR_ADDA(r, fc2(f, cw, Get(x,xi)));
     }
     rsh = HARR_FA(r, rr);
     r = HARR_O(r).b;

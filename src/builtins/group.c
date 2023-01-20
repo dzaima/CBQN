@@ -43,13 +43,13 @@ static B m_shChangeLen(u8 xt, ur xr, usz* xsh, usz l, usz cw, usz csz) {
   return taga(arr_shChangeLen(m_arr(offsetof(TyArr, a)+l*cw, xt, l*csz), xr, xsh, l));
 }
 static void allocGroups(B* rp, usz ria, B z, u8 xt, ur xr, usz* xsh, i32* len, usz width, usz csz) {
-  if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; if (!l) rp[j] = inc(z); else m_tyarrv(rp+j, width, l, xt); }
-  else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : m_shChangeLen(xt, xr, xsh, l, width, csz); }
+  if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; if (!l) rp[j] = incG(z); else m_tyarrv(rp+j, width, l, xt); }
+  else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : m_shChangeLen(xt, xr, xsh, l, width, csz); }
 }
 static Arr* m_bitarr_nop(usz ia) { return m_arr(BITARR_SZ(ia), t_bitarr, ia); }
 static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, i32* len, usz width) {
-  if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : taga(arr_shVec(m_bitarr_nop(l))); }
-  else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? inc(z) : taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)); }
+  if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : taga(arr_shVec(m_bitarr_nop(l))); }
+  else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)); }
 }
 
 // Integer list w
@@ -193,7 +193,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     #define GROUP_SORT(CPY, ALLOC) \
       for (usz j=0; j<ria; j++) {            \
         usz l = len[j];                      \
-        if (!l) { rp[j]=inc(z); continue; }  \
+        if (!l) { rp[j]=incG(z); continue; } \
         ALLOC;                               \
         u64 lw = l*width;                    \
         CPY(tyarr_ptr(rp[j]), 0, xp, i, lw); \
