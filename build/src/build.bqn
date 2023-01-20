@@ -31,6 +31,7 @@ opts ← ⟨
   ⟨2, "f",       ⟨⟩, "C flags for CBQN files"⟩
   ⟨2, "CCFLAGS", ⟨⟩, "flags for all C compiler & linker invocations"⟩
   ⟨2, "lf",      ⟨⟩, "linker flags"⟩
+  ⟨2, "sf",      ⟨⟩, "Singeli flags"⟩
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
   ⟨2, "rm_f",    ⟨⟩, "forcibly remove C compiler flag(s)"⟩
   ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
@@ -136,7 +137,7 @@ po ← { # parsed options
     emcc, wasm, replxx, singeli,
     ffi, o3,
     bytecodeDir, replxxDir, singeliDir,
-    CBQNc, REPLXXc, Linker
+    CBQNc, REPLXXc, Linker, singeliFlags
   ⟩⇐
   
   custom ← GetOpt "c"
@@ -257,6 +258,8 @@ po ← { # parsed options
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
     replxxc ↩ args
   }
+  
+  singeliFlags ← GetOpt "sf"
   
   Linker ⇐ { 𝕊:
     args ← ⟨{replxx? cxx; cc} DOpt "LD", "-lm"⟩
@@ -534,7 +537,7 @@ cachedBin‿linkerCache ← {
   singeliObjs ← @
   singeliCache ← {
     ¬po.singeli? @;
-    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch⟩⟩
+    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.singeliFlags⟩⟩
     
     # genArithTables
     ga ← "src/singeli/src/genArithTables.bqn"
@@ -547,7 +550,7 @@ cachedBin‿linkerCache ← {
       •file.Name ga, ⟨⟩
     ⟩
     
-    singeliArgs ← ⟨"-l", "gen="∾singeliCache.folder⟩∾{
+    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾singeliCache.folder⟩∾{
       po.native? ⟨⟩;
       "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"} po.arch
     }
