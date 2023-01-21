@@ -114,6 +114,7 @@ INS B i_LST_0() { // TODO combine with ADDI
   return emptyHVec();
 }
 INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
+  GS_UPD;
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
@@ -123,6 +124,7 @@ INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   return r.b;
 }
 INS B i_ARMO(B el0, i64 sz, B* cStack) { assert(sz>0);
+  GS_UPD;
   HArr_p r = m_harrUv(sz);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
@@ -130,6 +132,7 @@ INS B i_ARMO(B el0, i64 sz, B* cStack) { assert(sz>0);
   return bqn_merge(r.b);
 }
 INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
+  GS_UPD;
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;

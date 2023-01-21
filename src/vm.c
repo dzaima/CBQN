@@ -765,7 +765,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         dec(f);
         break;
       }
-      case LSTO: case LSTM: {
+      case LSTO: case LSTM: { GS_UPD;
         u32 sz = *bc++;
         if (sz==0) {
           ADD(emptyHVec());
@@ -889,19 +889,21 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
-      case ARMO: {
+      case ARMO: { GS_UPD;
         u32 sz = *bc++;
         assert(sz>0);
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
+        GS_UPD;
         ADD(bqn_merge(r.b));
         break;
       }
-      case ARMM: {
+      case ARMM: { GS_UPD;
         u32 sz = *bc++;
         assert(sz>0);
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
+        GS_UPD;
         WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
         a->obj = r.b;
         ADD(tag(a,OBJ_TAG));
