@@ -6,50 +6,55 @@ static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
 
 B eachd_fn(B fo, B w, B x, BBB2B f) {
-  if (isAtm(w)) w = m_atomUnit(w);
-  if (isAtm(x)) x = m_atomUnit(x);
-  ur wr = RNK(w); SGet(w);
-  ur xr = RNK(x); SGet(x);
+  ur wr, xr; // if rank is 0, respective w/x will be disclosed
+  if (isArr(w)) { wr=RNK(w); if (wr==0) { B c=IGet(w, 0); decG(w); w=c; } } else wr=0;
+  if (isArr(x)) { xr=RNK(x); if (xr==0) { B c=IGet(x, 0); decG(x); x=c; } } else xr=0;
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
-  if (rM==0) {
-    B r = f(fo, Get(w,0), Get(x,0));
-    decG(w); decG(x);
-    return m_unit(r);
-  }
+  if (rM==0) return m_unit(f(fo, w, x));
   if (rm && !eqShPart(SH(w), SH(x), rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-  bool rw = rM==wr && ((TY(w)==t_harr) & reusable(w)); // v(…) is safe as rank>0
-  bool rx = rM==xr && ((TY(x)==t_harr) & reusable(x));
+  bool rw = rM==wr && reusable(w) && TY(w)==t_harr; // dereferencing is safe as rank>0 from rM==
+  bool rx = rM==xr && reusable(x) && TY(x)==t_harr;
   if (rw|rx && (wr==xr | rm==0)) {
     HArr_p r = harr_parts(REUSE(rw? w : x));
     usz ria = r.c->ia;
-    if      (wr==0) { B c=incBy(Get(w,0), ria); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, c,   hmv(r,i)); dec(c); }
-    else if (xr==0) { B c=incBy(Get(x,0), ria); for(usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), c  ); dec(c); }
-    else {
-      assert(wr==xr);
-      if (rw) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), Get(x,i));
-      else    for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i));
+    if (ria>0) {
+      if      (wr==0) { incBy(w, ria-1); for(usz i=0; i<ria; i++) r.a[i] = f(fo, w,   hmv(r,i)); }
+      else if (xr==0) { incBy(x, ria-1); for(usz i=0; i<ria; i++) r.a[i] = f(fo, hmv(r,i), x  ); }
+      else {
+        assert(wr==xr);
+        if (rw) { SGet(x) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, hmv(r,i), Get(x,i)); }
+        else    { SGet(w) for (usz i = 0; i < ria; i++) r.a[i] = f(fo, Get(w,i), hmv(r,i)); }
+        decG(rw? x : w);
+      }
+    } else {
+      dec(rw? x : w);
     }
-    decG(rw? x : w);
     return any_squeeze(r.b);
   }
   
   B bo = wg? w : x;
   usz ria = IA(bo);
-  M_HARR(r, ria)
-  if (wr==xr)                      for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri)));
-  else if (wr==0) { B c=incBy(Get(w,0), ria); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, c   , Get(x,ri))); dec(c); }
-  else if (xr==0) { B c=incBy(Get(x,0), ria); for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), c   )); dec(c); }
-  else if (ria>0) {
-    usz min = wg? IA(x) : IA(w);
-    usz ext = ria / min;
-    if (wg) for (usz i = 0; i < min; i++) { B c=Get(x,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, Get(w,HARR_I(r)), inc(c))); }
-    else    for (usz i = 0; i < min; i++) { B c=Get(w,i); for (usz j = 0; j < ext; j++) HARR_ADDA(r, f(fo, inc(c), Get(x,HARR_I(r)))); }
+  B rb;
+  if (ria==0) {
+    rb = rM==1? emptyHVec() : m_harrUc(bo).b;
+  } else {
+    M_HARR(r, ria)
+    if (wr==xr) {            SGet(x) SGet(w) for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri))); }
+    else if (wr==0) { incBy(w, ria); SGet(x) for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, w        , Get(x,ri))); }
+    else if (xr==0) { incBy(x, ria); SGet(w) for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), x        )); }
+    else {
+      usz min = wg? IA(x) : IA(w);
+      usz ext = ria / min;
+      SGet(w) SGet(x)
+      if (wg) for (usz i = 0; i < min; i++) { B c=incBy(Get(x,i), ext-1); for (usz j=0; j<ext; j++) HARR_ADDA(r, f(fo, Get(w,HARR_I(r)), c)); }
+      else    for (usz i = 0; i < min; i++) { B c=incBy(Get(w,i), ext-1); for (usz j=0; j<ext; j++) HARR_ADDA(r, f(fo, c, Get(x,HARR_I(r)))); }
+    }
+    rb = any_squeeze(HARR_FC(r, bo));
   }
-  B rb = HARR_FC(r, bo);
-  decG(w); decG(x);
-  return any_squeeze(rb);
+  dec(w); dec(x);
+  return rb;
 }
 
 B eachm_fn(B fo, B x, BB2B f) {
