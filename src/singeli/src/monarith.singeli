@@ -1,0 +1,28 @@
+include './base'
+include './f64'
+include './cbqnDefs'
+if (hasarch{'X86_64'}) {
+  include './sse3'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
+include './bitops'
+include './mask'
+
+
+absFn{T}(r:*void, x:*void, len:u64) : u64 = {
+  def bulk = arch_defvw/width{T}
+  def VT = [bulk]T
+  muLoop{bulk, tern{T==f64, 2, 1}, len, {is, M} => {
+    def cx = loadBatch{*T~~x, is, VT}
+    if (T!=f64 and homAny{M{tree_fold{&, eachx{==, cx, VT**minvalue{T}}}}}) return{tupsel{0,is}*bulk}
+    storeBatch{*T~~r, is, each{abs, cx}, M}
+  }}
+  len
+}
+
+def tup_abs = each{{T}=>absFn{T}, tup{i8, i16, i32, f64}}
+t_abs:*type{tupsel{0,tup_abs}} = tup_abs
+'simd_abs' = t_abs

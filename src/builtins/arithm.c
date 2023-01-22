@@ -22,33 +22,6 @@ B bit_negate(B x) { // consumes
   return r;
 }
 
-#define GC1i(SYMB,NAME,FEXPR,IBAD,IEXPR,SQF,TMIN,RMIN) B NAME##_c1(B t, B x) { \
-  if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); }                   \
-  if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
-  u8 xe = TI(x,elType);                                                 \
-  if (xe<=TMIN) return RMIN;                                            \
-  i64 sz = IA(x);                                                       \
-  if (xe==el_i8) { i8 MAX=I8_MAX; i8 MIN=I8_MIN; i8* xp=i8any_ptr(x); i8* rp; B r=m_i8arrc(&rp,x);        \
-    for (i64 i = 0; i < sz; i++) { i8 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; } \
-    decG(x); (void)MIN;(void)MAX; return r;                             \
-  }                                                                     \
-  if (xe==el_i16) { i16 MAX=I16_MAX; i16 MIN=I16_MIN; i16* xp=i16any_ptr(x); i16* rp; B r=m_i16arrc(&rp,x); \
-    for (i64 i = 0; i < sz; i++) { i16 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; }  \
-    decG(x); (void)MIN;(void)MAX; return r;                             \
-  }                                                                     \
-  if (xe==el_i32) { i32 MAX=I32_MAX; i32 MIN=I32_MIN; i32* xp=i32any_ptr(x); i32* rp; B r=m_i32arrc(&rp,x); \
-    for (i64 i = 0; i < sz; i++) { i32 v = xp[i]; if (RARE(IBAD)) { decG(r); goto base; } rp[i] = IEXPR; }  \
-    decG(x); (void)MIN;(void)MAX; return r;                             \
-  }                                                                     \
-  if (xe==el_f64) { f64* xp = f64any_ptr(x);                            \
-    f64* rp; B r = m_f64arrc(&rp, x);                                   \
-    for (i64 i = 0; i < sz; i++) { f64 v = xp[i]; rp[i] = FEXPR; }      \
-    decG(x); return SQF? num_squeeze(r) : r;                            \
-  }                                                                     \
-  base: SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x);             \
-}
-
-
 B add_c1(B t, B x) {
   if (isF64(x)) return x;
   if (!isArr(x)) thrM("+: Argument must consist of numbers");
@@ -56,13 +29,69 @@ B add_c1(B t, B x) {
   dec(eachm_fn(m_f64(0), inc(x), add_c1));
   return x;
 }
+#if SINGELI
+  #define SINGELI_FILE monarith
+  #include "../utils/includeSingeli.h"
+#endif
 
-GC1i("-", sub,   -v,              v== MIN, -v,      0, el_bit, bit_sel(x,m_f64(0),m_f64(-1))) // change icond to v==-v to support ¯0 (TODO that won't work for i8/i16)
-GC1i("|", stile, fabs(v),         v== MIN, v<0?-v:v,0, el_bit, x)
-GC1i("⌊", floor, floor(v),        0,       v,       1, el_i32, x)
-GC1i("⌈", ceil,  ceil(v),         0,       v,       1, el_i32, x)
-GC1i("×", mul,   v==0?0:v>0?1:-1, 0,v==0?0:v>0?1:-1,1, el_bit, x)
-GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     0, el_bit, bit_negate(x))
+#define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \
+  if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); } \
+  if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
+  u8 xe = TI(x,elType);                               \
+  if (elNum(xe)) {                                    \
+    if (xe<=TMIN) return RMIN;                        \
+    MAIN(FEXPR)                                       \
+  }                                                   \
+  SLOW1(SYMB"𝕩", x); return arith_recm(NAME##_c1, x); \
+}
+
+#define LOOP_BODY(INIT, EXPR, POST) { \
+  i64 ia = IA(x); INIT;               \
+  void* xp = tyany_ptr(x);            \
+  switch(xe) { default: UD;           \
+    case el_i8:  for(usz i=0; i<ia; i++) { i8  c = ((i8* )xp)[i]; EXPR(i8,  c==I8_MIN)  } break; \
+    case el_i16: for(usz i=0; i<ia; i++) { i16 c = ((i16*)xp)[i]; EXPR(i16, c==I16_MIN) } break; \
+    case el_i32: for(usz i=0; i<ia; i++) { i32 c = ((i32*)xp)[i]; EXPR(i32, c==I32_MIN) } break; \
+    case el_f64: for(usz i=0; i<ia; i++) { f64 c = ((f64*)xp)[i]; EXPR(f64, 0)          } break; \
+  } \
+  decG(x); return r; POST \
+}
+
+#define SIGN_EXPR(T, C) rp[i] = c>0? 1 : c==0? 0 : -1;
+#define SIGN_MAIN(FEXPR) LOOP_BODY(i8* rp; B r=m_i8arrc(&rp,x);, SIGN_EXPR,)
+
+#if SINGELI
+  #define STILE_BODY(FEXPR) { usz ia = IA(x); B r; retry: \
+    void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));   \
+    u64 got = simd_abs[xe-el_i8](rp, tyany_ptr(x), ia);   \
+    if (LIKELY(got==ia)) { decG(x); return r; }           \
+    tyarr_freeF(v(r));                                    \
+    xe++;if (xe==el_i16) x=taga(cpyI16Arr(x));            \
+    else if (xe==el_i32) x=taga(cpyI32Arr(x));            \
+    else                 x=taga(cpyF64Arr(x));            \
+    goto retry;                                           \
+  }
+#else
+  #define STILE_EXPR(T, C) if(C) goto bad;  ((T*)rp)[i] = c>=0? c : -c;
+  #define STILE_BODY(FEXPR) LOOP_BODY(B r; void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));, STILE_EXPR, bad: tyarr_freeF(v(r));)
+#endif
+
+#define FLOAT_BODY(FEXPR) { i64 ia = IA(x);                  \
+  assert(xe==el_f64); f64* xp = f64any_ptr(x);               \
+  f64* rp; B r = m_f64arrc(&rp, x);                          \
+  for (usz i = 0; i < ia; i++) { f64 v=xp[i]; rp[i]=FEXPR; } \
+  decG(x); return num_squeeze(r);                            \
+}
+B sub_c2(B,B,B);
+#define SUB_BODY(FEXPR) return sub_c2(t, m_f64(0), x);
+#define NOT_BODY(FEXPR) x = num_squeezeChk(x); return TI(x,elType)==el_bit? bit_negate(x) : sub_c2(m_f64(0), m_f64(1), x);
+
+GC1i("-", sub,    -v,              el_bit, bit_sel(x,m_f64(0),m_f64(-1)), SUB_BODY)
+GC1i("|", stile,  fabs(v),         el_bit, x, STILE_BODY)
+GC1i("⌊", floor,  floor(v),        el_i32, x, FLOAT_BODY)
+GC1i("⌈", ceil,   ceil(v),         el_i32, x, FLOAT_BODY)
+GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN)
+GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
 
 #define GC1f(N, F, MSG) B N##_c1(B t, B x) {         \
   if (isF64(x)) { f64 xv=o2fG(x); return m_f64(F); } \
@@ -86,6 +115,16 @@ GC1i("¬", not,   1-v,             v<=-MAX, 1-v,     0, el_bit, bit_negate(x))
 
 GC1f( div, 1/xv,     "÷: Getting reciprocal of non-number")
 GC1f(root, sqrt(xv), "√: Getting square root of non-number")
+#undef GC1i
+#undef LOOP_BODY
+#undef SIGN_EXPR
+#undef SIGN_MAIN
+#undef STILE_BODY
+#undef STILE_EXPR
+#undef STILE_BODY
+#undef FLOAT_BODY
+#undef SUB_BODY
+#undef NOT_BODY
 #undef GC1f
 
 f64    fact(f64 x) { return tgamma(x+1); }

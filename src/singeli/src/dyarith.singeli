@@ -164,7 +164,7 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
     
     def run = runner{match{overflow, 0}, R, F}
     
-    def unr = tern{mode==0, 2, 1} # 2x unroll non-overflowing cases; surpresses clang's default unrolling, which unrolls a lot more; 2x appears to be plenty
+    def unr = tern{mode==0, 2, 1} # 2x unroll non-overflowing cases; suppresses clang's default unrolling, which unrolls a lot more; 2x appears to be plenty
     muLoop{bulk, unr, len, {is, M} => {
       def cw = loadBatch{*W~~w, is, ty_sc{W, TY}}
       def cx = loadBatch{*X~~x, is, ty_sc{X, TY}}
