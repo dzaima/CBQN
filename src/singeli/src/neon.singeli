@@ -28,6 +28,9 @@ def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a
 
 def __adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
 def __subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
+def mul1{a:T,b:T & n64{T}  & nveci{T}} = emit{ty_dbl{v_dbl{T}}, ntyp{'vmull', T}, a, b}
+def mul2{a:T,b:T & n128{T} & nveci{T}} = emit{ty_dbl{T}, ntyp{'vmull_high', v_half{T}}, a, b}
+def mul12{a:T,b:T & n128{T}} = tup{mul1{half{a,0}, half{b,0}}, mul2{a,b}}
 
 def  __add{a:T,b:T & nvec {T}} = emit{T, ntyp{'vadd', T}, a, b}
 def  __sub{a:T,b:T & nvec {T}} = emit{T, ntyp{'vsub', T}, a, b}
@@ -39,8 +42,8 @@ def  __xor{a:T,b:T & nveci{T}} = emit{T, ntyp{'veor', T}, a, b}
 def andnot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vbic', T}, a, b}
 def  ornot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorn', T}, a, b}
 def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
-def    min{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmin', T}, a, b} # TODO float - there are multiple options
-def    max{a:T,b:T & nveci{T}} = emit{T, ntyp{'vmax', T}, a, b}
+def    min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
+def    max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
 
 def __shl{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
@@ -92,7 +95,10 @@ def half{x:T, n==0 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_low',  v_half{T}}
 def half{x:T, n==1 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_high', v_half{T}}, x}
 def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
 
-def pack{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
+def packLo{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
+def packHi{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp2', H}, H~~x, H~~y} }
+def packLo{x} = packLo{tupsel{0,x}, tupsel{1,x}}
+def packHi{x} = packHi{tupsel{0,x}, tupsel{1,x}}
 def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, to_el{eltype{I},x}, i}}
 
 

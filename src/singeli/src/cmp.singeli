@@ -77,7 +77,7 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
     r:u64 = 0
     if (hasarch{'AARCH64'}) {
       def step{j, n & n==1} = op{wV{xi+j}, xV{xi+j}}
-      def step{j, n & n>=2} = pack{step{j, n/2}, step{j+n/2, n/2}}
+      def step{j, n & n>=2} = packLo{step{j, n/2}, step{j+n/2, n/2}}
       r = promote{u64, homMask{step{0, unr}}}
     } else {
       @unroll (j to unr) r|= promote{u64, homMask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT})

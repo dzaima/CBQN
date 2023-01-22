@@ -111,8 +111,13 @@ def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
 def andnz{...x} = assert{'andnz not supported', show{...x}}
 def topBlend{...x} = assert{'topBlend not supported', show{...x}}
-def topMask{...x} = assert{'topBlend not supported', show{...x}}
-def pack{...x} = assert{'pack not supported', show{...x}}
+def topMask{...x} = assert{'topMask not supported', show{...x}}
+def packLo{...x} = assert{'packLo not supported', show{...x}}
+def packHi{...x} = assert{'packHi not supported', show{...x}}
+def mul12{...x} = assert{'mul12 not supported', show{...x}}
+def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
+def packQ{...x} = assert{'packQ not supported', show{...x}}
+def __mulhi{...x} = assert{'__mulhi not supported', show{...x}}
 
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}

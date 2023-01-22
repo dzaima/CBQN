@@ -21,9 +21,9 @@ B atan2_c2(B, B, B);
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 
-#if SINGELI_X86_64
+#if SINGELI
   #include "../singeli/c/arithdDispatch.c"
-  static AndBytesFn andBytes_fn = avx2_andBytes;
+  static AndBytesFn andBytes_fn = simd_andBytes;
 #else
   static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
     u64* x64 = (u64*)x; usz i;
@@ -138,7 +138,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   #undef GC2f
   
   
-  #if SINGELI_X86_64
+  #if SINGELI
     #define AA_DISPATCH(NAME) FORCE_INLINE B NAME##_AA(B t, B w, B x) { return dyArith_AA(&NAME##DyTableAA, w, x); }
     AA_DISPATCH(add) AA_DISPATCH(or)
     AA_DISPATCH(sub)

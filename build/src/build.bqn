@@ -514,7 +514,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/jit/", "nvm.c"⟩
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
-  singeliMap ← {po.arch≡"aarch64"? 𝕩/˜(1⊑¨𝕩)∊"cmp"‿"bits"‿"equal"; 𝕩} ⟨
+  singeliMap ← {po.arch≡"aarch64"? 𝕩/˜(1⊑¨𝕩)∊"cmp"‿"bits"‿"equal"‿"dyarith"; 𝕩} ⟨
     "src/core/stuff.c"‿"equal",        "src/utils/mut.c"‿"copy",       "src/utils/bits.c"‿"bits"
     "src/builtins/arithd.c"‿"dyarith", "src/builtins/cmp.c"‿"cmp",     "src/builtins/squeeze.c"‿"squeeze"
     "src/builtins/select.c"‿"select",  "src/builtins/fold.c"‿"fold",   "src/builtins/scan.c"‿"scan"
