@@ -113,6 +113,14 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
 INS B i_LST_0() { // TODO combine with ADDI
   return emptyHVec();
 }
+INS B i_LST_1(B a) {
+  if (isNum(a)) return m_vec1(a);
+  return m_hVec1(a);
+}
+INS B i_LST_2(B a, B b) {
+  if (isNum(a) && isNum(b)) return m_vec2(a, b);
+  return m_hVec2(a, b);
+}
 INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   GS_UPD;
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
@@ -624,8 +632,8 @@ Nvm_res m_nvm(Body* body) {
       case LSTM: case LSTO:; { bool o = *(bc-1) == LSTO;
         u32 sz = *bc++;
         if      (sz==0     ) { TOPs; CCALL(i_LST_0); } // unused with optimizations
-        else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(m_vec1); } // (B a)
-        else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(m_vec2); } // (B a, B b)
+        else if (sz==1 && o) { TOPp;        GET(R_A3,0,2); CCALL(i_LST_1); } // (B a)
+        else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(i_LST_2); } // (B a, B b)
         else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_LST_p); } // (B a, i64 sz, S)
       } break;
       case ARMO: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMO); break; }
