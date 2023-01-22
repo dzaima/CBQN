@@ -550,7 +550,7 @@ cachedBin‿linkerCache ← {
       •file.Name ga, ⟨⟩
     ⟩
     
-    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾singeliCache.folder⟩∾{
+    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder⟩∾{
       po.native? ⟨⟩;
       "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"} po.arch
     }
