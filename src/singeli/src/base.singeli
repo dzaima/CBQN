@@ -25,6 +25,7 @@ def cdiv{a,b} = (a+b-1)/b
 def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
 def lb{n==1} = 0
 
+def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
 def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
 def bit {k,x} = x &  (1<<k)      # get the k-th bit
 

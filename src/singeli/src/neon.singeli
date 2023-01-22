@@ -22,6 +22,7 @@ def nty{T==f32} = 'f32'; def nty{T==f64} = 'f64'
 def nty{T & isvec{T}} = nty{eltype{T}}
 def ntyp{S, ...S2, T & n128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
 def ntyp{S, ...S2, T &  n64{T}} = merge{S,      ...S2, '_', nty{T}}
+def ntyp0{S, T} = merge{S, '_', nty{T}}
 
 def load{a:T, n & nvec{eltype{T}}} = emit{eltype{T}, ntyp{'vld1', eltype{T}}, *eltype{eltype{T}} ~~ (a+n)}
 def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a+n), v}
@@ -29,7 +30,7 @@ def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a
 def __adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
 def __subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
 def mul1{a:T,b:T & n64{T}  & nveci{T}} = emit{ty_dbl{v_dbl{T}}, ntyp{'vmull', T}, a, b}
-def mul2{a:T,b:T & n128{T} & nveci{T}} = emit{ty_dbl{T}, ntyp{'vmull_high', v_half{T}}, a, b}
+def mul2{a:T,b:T & n128{T} & nveci{T}} = emit{ty_dbl{T}, ntyp0{'vmull_high', T}, a, b}
 def mul12{a:T,b:T & n128{T}} = tup{mul1{half{a,0}, half{b,0}}, mul2{a,b}}
 
 def  __add{a:T,b:T & nvec {T}} = emit{T, ntyp{'vadd', T}, a, b}
@@ -60,6 +61,8 @@ def   abs{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vabs', T}, a}
 def  absu{a:T & nveci{T}} = ty_u{abs{a}}
 def addpw {     x:T & nveci{T} & elwidth{T}<=32               } = emit{ty_dbl{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D, x:T & nveci{T} & elwidth{T}<=32 & D==ty_dbl{T}} = emit{D,         ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
+def mla{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
+def mls{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 
 def __eq{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vceq', T}, a, b}
 def __ge{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcge', T}, a, b}
@@ -91,14 +94,18 @@ def loadLow{ptr:P, w & w==elwidth{P}} = load{ptr}
 
 
 def undefPromote{T, x:X & n64{X} & n128{T} & eltype{T}==eltype{X}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
-def half{x:T, n==0 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_low',  v_half{T}}, x}
-def half{x:T, n==1 & n128{T}} = emit{v_half{T}, ntyp{'vget', '_high', v_half{T}}, x}
+def half{x:T, n==0 & n128{T}} = emit{v_half{T}, ntyp0{'vget_low',  T}, x}
+def half{x:T, n==1 & n128{T}} = emit{v_half{T}, ntyp0{'vget_high', T}, x}
 def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
 
 def packLo{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
 def packHi{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp2', H}, H~~x, H~~y} }
 def packLo{x} = packLo{tupsel{0,x}, tupsel{1,x}}
 def packHi{x} = packHi{tupsel{0,x}, tupsel{1,x}}
+
+def trn1{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
+def trn2{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
+
 def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, to_el{eltype{I},x}, i}}
 
 
@@ -113,9 +120,13 @@ def widen{T, x:X & n64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>
 def widen{T, x:X & n128{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
 
 def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2< elwidth{X}} = narrow{T, undefPromote{ty_half{X}, narrow{ty_half{eltype{X}}, x}}}
-def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2==elwidth{X}} = emit{ty_half{v_half{X}}, ntyp{'vmovn', v_half{X}}, x}
+def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2==elwidth{X}} = emit{ty_half{v_half{X}}, ntyp0{'vmovn', X}, x}
 
+def narrowUpper{lowRes:L, x:X & n64{L} & n128{X} & isint{eltype{X}} & ty_dbl{v_dbl{L}}==X} = emit{[vcount{L}*2](eltype{L}), ntyp0{'vmovn_high', X}, lowRes, x}
+def narrowPair{a, b} = narrowUpper{narrow{ty_half{eltype{type{a}}}, a}, b}
 
+def widenUpper{x:T & n128{T} & isint{eltype{T}}} = emit{ty_dbl{T}, ntyp0{'vmovl_high', T}, x}
+def widen{x:T & n128{T}} = tup{widen{ty_dbl{T}, x}, widenUpper{x}}
 
 def bitAny{x:T} = fold_max{to_el{u32, x}}!=0
 def bitAll{x:T} = fold_min{to_el{u32, x}}==0xffff_ffff
