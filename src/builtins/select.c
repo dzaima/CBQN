@@ -57,9 +57,27 @@ B select_c2(B t, B w, B x) {
   ur xr = RNK(x);
   if (isAtm(w)) {
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
-    usz csz = arr_csz(x);
     usz cam = SH(x)[0];
     usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
+    if (xr==1) {
+      B xf = getFillR(x);
+      B xv = IGet(x, wi);
+      B rb;
+      if (isNum(xf) || isC32(xf)) {
+        rb = m_atomUnit(xv);
+      } else if (noFill(xf)) {
+        rb = m_hunit(xv);
+      } else {
+        Arr* r = m_fillarrp(1);
+        arr_shAtm(r);
+        fillarr_ptr(r)[0] = xv;
+        fillarr_setFill(r, xf);
+        rb = taga(r);
+      }
+      decG(x);
+      return rb;
+    }
+    usz csz = arr_csz(x);
     Arr* r = TI(x,slice)(incG(x), wi*csz, csz);
     usz* sh = arr_shAlloc(r, xr-1);
     if (sh) shcpy(sh, SH(x)+1, xr-1);
