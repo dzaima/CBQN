@@ -140,10 +140,10 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
     
     def run = runner{match{overflow, 0}, R, F}
     
-    maskedLoop{bulk, len, {i, M} => {
-      cw:= loadBatch{*W~~w, i, ty_sc{W, TY}}
-      cx:= loadBatch{*X~~x, i, ty_sc{X, TY}}
-      storeBatch{*R~~r, i, TY~~run{F, {} => overflow{i}, M, cw, cx}, M}
+    muLoop{bulk, tern{(mode==0) & hasarch{'AARCH64'}, 2, 1}, len, {is, M} => {
+      def cw = loadBatch{*W~~w, is, ty_sc{W, TY}}
+      def cx = loadBatch{*X~~x, is, ty_sc{X, TY}}
+      storeBatch{*R~~r, is, each{{w1, x1} => TY~~run{F, {} => overflow{tupsel{0, is}}, M, w1, x1}, cw, cx}, M}
     }}
   }
 }
