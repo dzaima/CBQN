@@ -61,15 +61,15 @@ B add_c1(B t, B x) {
 #define SIGN_MAIN(FEXPR) LOOP_BODY(i8* rp; B r=m_i8arrc(&rp,x);, SIGN_EXPR,)
 
 #if SINGELI
-  #define STILE_BODY(FEXPR) { usz ia = IA(x); B r; retry: \
-    void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));   \
-    u64 got = simd_abs[xe-el_i8](rp, tyany_ptr(x), ia);   \
-    if (LIKELY(got==ia)) { decG(x); return r; }           \
-    tyarr_freeF(v(r));                                    \
-    xe++;if (xe==el_i16) x=taga(cpyI16Arr(x));            \
-    else if (xe==el_i32) x=taga(cpyI32Arr(x));            \
-    else                 x=taga(cpyF64Arr(x));            \
-    goto retry;                                           \
+  #define STILE_BODY(FEXPR) { usz ia = IA(x); B r; retry:; \
+    void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));    \
+    u64 got = simd_abs[xe-el_i8](rp, tyany_ptr(x), ia);    \
+    if (LIKELY(got==ia)) { decG(x); return r; }            \
+    tyarr_freeF(v(r));                                     \
+    xe++;if (xe==el_i16) x=taga(cpyI16Arr(x));             \
+    else if (xe==el_i32) x=taga(cpyI32Arr(x));             \
+    else                 x=taga(cpyF64Arr(x));             \
+    goto retry;                                            \
   }
 #else
   #define STILE_EXPR(T, C) if(C) goto bad;  ((T*)rp)[i] = c>=0? c : -c;
