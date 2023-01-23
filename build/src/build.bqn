@@ -295,7 +295,7 @@ isFileTheSame ← {
     i ← ⊑ks⊐<𝕨
     i<≠ks? 𝕩 ≡ i⊑vs;
     ks∾↩ <𝕨
-    vs∾↩ <t←•file.Modified 𝕨
+    vs∾↩ <t←•file.Modified⎊"unknown" 𝕨
     𝕩 ≡ t
   }
 }
