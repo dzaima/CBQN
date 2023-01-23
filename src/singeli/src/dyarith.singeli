@@ -152,10 +152,10 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
     def TU = ty_u{R}
     def TV = [bulk]TU
     
-    maskedLoop{bulk, len, {i, M} => {
-      cw:= loadBatch{*TU~~w, i, TV}
-      cx:= loadBatchBit{TV, *u64~~x, i}
-      storeBatch{*TU~~r, i, cw&cx, M}
+    muLoop{bulk, 2, len, {is, M} => {
+      def cw = loadBatch{*TU~~w, is, TV}
+      def cx = loadBatchBit{TV, *u64~~x, is}
+      storeBatch{*TU~~r, is, each{&, cw, cx}, M}
     }}
   } else {
     def bulk = vw / max{max{width{W}, width{X}}, width{R}}

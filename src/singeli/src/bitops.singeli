@@ -76,3 +76,17 @@ def spreadBits{T, a & vcount{T} <= elwidth{T} & quality{eltype{T}}=='u'} = {
 def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element being either all 0s or 1s
   spreadBits{T, b_getBatchLo{vcount{T}, x, n}}
 }
+
+def truncBits{n, v & n<=8}  = cast_i{u8, v}
+def truncBits{n, v & n==16} = cast_i{u16, v}
+def truncBits{n, v & n==32} = cast_i{u32, v}
+def truncBits{n, v & n==64} = cast_i{u64, v}
+
+def loadBatchBit{T, x:*u64, is & ktup{is}} = {
+  # def len = tuplen{is}
+  # def count = vcount{T}
+  # assert{count*len <= 64}
+  # bits:= b_getBatchLo{count*len, x, tupsel{0,is}}
+  # @collect(i to len) spreadBits{T, truncBits{count, bits>>(i*count)}}
+  each{{i} => loadBatchBit{T, x, i}, is}
+}
