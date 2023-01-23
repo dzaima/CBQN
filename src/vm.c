@@ -1344,7 +1344,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     #if FORCE_NATIVE_ERROR_PRINT
       goto native_print;
     #endif
-    if (CATCH) goto native_print;
+    if (CATCH) { freeThrown(); goto native_print; }
     
     B s = emptyCVec();
     B msg = vm_fmtPoint(src, s, comp->path, cs, ce);
@@ -1600,9 +1600,11 @@ void unwindCompiler() {
 
 NOINLINE void printErrMsg(B msg) {
   if (isArr(msg)) {
-    SGetU(msg)
-    usz msgLen = IA(msg);
-    for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
+    if (!elChr(TI(msg,elType))) {
+      SGetU(msg)
+      usz msgLen = IA(msg);
+      for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
+    }
     fprintsB(stderr, msg);
     return;
   }

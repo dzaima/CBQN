@@ -274,6 +274,7 @@ static B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   if (wk) w = to_fill_cell(w, wk);
   if (xk) x = to_fill_cell(x, xk);
   if (CATCH) { empty:
+    freeThrown();
     r = empty_frame(sh, k);
   } else {
     B rc = c2(f, w, x);
@@ -314,6 +315,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     B cf = to_fill_cell(x, k);
     B r;
     if (CATCH) { empty:
+      freeThrown();
       r = empty_frame(xsh, k);
     } else {
       B rc = c1(f, cf);

@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "utf.h"
+#include "calls.h"
 
 static i8 utf8lenb(u8 ch) {
   if (ch<128)           return 1;
@@ -111,24 +112,33 @@ void fprintsB(FILE* f, B x) {
   if (xe==el_c32) {
     fprintsU32(f, c32any_ptr(x), ia);
   } else {
-    incG(x);
-    if (!elChr(xe)) { x=chr_squeeze(x); xe=TI(x,elType); }
-    if (!elChr(xe)) {
-      #if !CATCH_ERRORS
-        SGetU(x)
-        for (usz i = 0; i < ia; i++) {
-          B c = GetU(x, i);
-          if (isC32(c)) fprintCodepoint(f, o2cG(c));
-          else if (c.u==0 || noFill(c)) fprintf(f, " ");
-          else thrM("Trying to output non-character");
+    #define BUF_SZ 1024
+    if (elChr(xe)) {
+      if (xe==el_c32) {
+        fprintsU32(f, c32any_ptr(x), ia);
+      } else {
+        u32 buf[BUF_SZ];
+        usz i = 0;
+        while (i < ia) {
+          usz curr = ia-i;
+          if (curr>BUF_SZ) curr = BUF_SZ;
+          COPY_TO(buf, el_c32, 0, x, i, curr);
+          fprintsU32(f, buf, curr);
+          i+= curr;
         }
-        return;
-      #endif
-      thrM("Trying to output non-character");
+      }
+    } else {
+      SGetU(x)
+      for (usz i = 0; i < ia; i++) {
+        B c = GetU(x, i);
+        if (isC32(c)) fprintCodepoint(f, o2cG(c));
+#if CATCH_ERRORS
+        else if (c.u==0 || noFill(c)) fprintf(f, " ");
+#endif
+        else thrM("Trying to output non-character");
+      }
     }
-    x = taga(cpyC32Arr(x));
-    fprintsU32(f, c32any_ptr(x), ia);
-    decG(x);
+    #undef BUF_SZ
   }
 }
 

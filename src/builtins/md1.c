@@ -210,7 +210,7 @@ B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
   if (wr) w = to_fill_cell_1(w);
   if (xr) x = to_fill_cell_1(x);
-  if (CATCH) return emptyHVec();
+  if (CATCH) { freeThrown(); return emptyHVec(); }
   B rc = c2(f, w, x);
   popCatch();
   return merge_fill_result_1(rc);
@@ -346,7 +346,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   if (cam==0) {
     if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); return emptyHVec(); }
     B cf = to_fill_cell_1(x);
-    if (CATCH) return emptyHVec();
+    if (CATCH) { freeThrown(); return emptyHVec(); }
     B rc = c1(f, cf);
     popCatch();
     return merge_fill_result_1(rc);

@@ -154,7 +154,9 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     return false;
   }
   
+  #define CATCH_OOM(X) if (CATCH) { freeThrown(); X; }
   void highlighter_replxx(const char* input, ReplxxColor* colors, int size, void* data) {
+    CATCH_OOM(return)
     B charObj = utf8Decode0(input);
     if (IA(charObj) != size) goto end; // don't want to kill the REPL if this happens, but gotta do _something_
     
@@ -195,6 +197,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     }
     end:
     dec(charObj);
+    popCatch();
   }
   B allNsFields(void);
   B str_norm(u32* chars, usz len, bool* upper) {
@@ -223,6 +226,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     return c;
   }
   NOINLINE void completion_impl(const char* inp, void* res, bool hint, int* dist) {
+    CATCH_OOM(return)
     B inpB = toC32Any(utf8Decode0(inp));
     u32* chars = c32any_ptr(inpB);
     u32* we = chars+IA(inpB);
@@ -289,6 +293,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     }
     
     dec(inpB);
+    popCatch();
   }
   void complete_replxx(const char* inp, replxx_completions* res, int* dist, void* data) {
     completion_impl(inp, res, false, dist);
@@ -337,6 +342,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   static bool inBackslash() { return b_pv.u!=0; }
   static void stopBackslash() { decG(b_pv); b_pv.u = 0; }
   ReplxxActionResult backslash_replxx(int code, void* data) {
+    CATCH_OOM(goto end)
     if (inBackslash()) {
       setState(insertChar('\\', false));
       stopBackslash();
@@ -348,6 +354,8 @@ static bool isCmd(char* s, char** e, const char* cmd) {
       b_pv = utf8Decode0(st.text);
       b_pp = st.cursorPosition;
     }
+    popCatch();
+    end:
     return REPLXX_ACTION_RESULT_CONTINUE;
   }
   ReplxxActionResult enter_replxx(int code, void* data) {
@@ -376,7 +384,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!cfg_enableKeyboard) return;
     if (!inBackslash()) return;
-    
+    CATCH_OOM(return)
     TmpState t = getState();
     B s = t.s;
     u64 pos = t.pos;
@@ -392,6 +400,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     
     stop: decG(s);
     stopBackslash();
+    popCatch();
   }
   
   
