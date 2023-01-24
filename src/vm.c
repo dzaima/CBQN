@@ -775,7 +775,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
           for (i64 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
           if (allNum) {
             GS_UPD;
-            ADD(withFill(r.b, m_f64(0)));
+            ADD(num_squeeze(r.b));
           } else ADD(r.b);
         }
         break;
