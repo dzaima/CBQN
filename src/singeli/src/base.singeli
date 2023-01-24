@@ -120,6 +120,13 @@ def mul12{...x} = assert{'mul12 not supported', show{...x}}
 def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
 def packQ{...x} = assert{'packQ not supported', show{...x}}
 def __mulhi{...x} = assert{'__mulhi not supported', show{...x}}
+def fold_max {...x} = assert{'fold_max not supported', show{...x}}
+def fold_min {...x} = assert{'fold_min not supported', show{...x}}
+def fold_add {...x} = assert{'fold_add not supported', show{...x}}
+def fold_addw{...x} = assert{'fold_addw not supported', show{...x}}
+def cvt{...x} = assert{'cvt not supported', show{...x}}
+def cvt{T, x:X & T==eltype{X}} = x
+def shuf{...x} = assert{'shuf not supported', show{...x}}
 
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}

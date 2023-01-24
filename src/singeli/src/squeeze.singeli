@@ -1,7 +1,11 @@
 include './base'
-include './sse3'
-include './avx'
-include './avx2'
+if (hasarch{'X86_64'}) {
+  include './sse3'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
 include './mask'
 include './cbqnDefs'
 include 'util/tup'

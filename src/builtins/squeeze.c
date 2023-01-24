@@ -31,6 +31,10 @@ NOINLINE B num_squeezeF(B x, usz ia) {
 B num_squeeze(B x) {
   usz ia = IA(x);
   u8 xe = TI(x,elType);
+  if (ia==0) {
+    if (xe==el_bit) return x;
+    goto r_bit;
+  }
   
   #if !SINGELI_X86_64
   usz i = 0;

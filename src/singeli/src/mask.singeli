@@ -12,6 +12,7 @@ local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth
 # get mask of first n items; 0 ≤ n ≤ vcount{T}
 def maskOf{T,n & width{T}==256} = maskOfImpl{T, n, 256}
 def maskOf{T,n & width{T}==128} = maskOfImpl{T, n, 128}
+def maskOf{T,n & width{T}== 64} = maskOfImpl{T, n,  64}
 
 def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~homAll{x==y}
 def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  homAny{M{x!=y}}

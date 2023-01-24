@@ -47,8 +47,8 @@ def    min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
 def    max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S} & elwidth{T}==elwidth{S}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
 
-def __shl{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
-def __shr{a:T,b & nveci{T} & knum{b}} = emit{T, ntyp{'vshr', '_n', T}, a, b};  def __shr{a:T,b==0 & nveci{T}} = a
+def __shl{a:T,b & nveci{T} & knum{b} & b>0 & b<elwidth{T}} = emit{T, ntyp{'vshl', '_n', T}, a, b};  def __shl{a:T,b==0 & nveci{T}} = a
+def __shr{a:T,b & nveci{T} & knum{b} & b>0 & b<elwidth{T}} = emit{T, ntyp{'vshr', '_n', T}, a, b};  def __shr{a:T,b==0 & nveci{T}} = a
 def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M} & width{T}==width{M} & elwidth{T}==elwidth{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
 def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
 
@@ -73,8 +73,8 @@ def __ne{a:T,b:T & nvec{T}} = ~(a==b)
 
 def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
 def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
-def fold_min {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vminv', T}, a}
-def fold_max {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
+def fold_min {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vminv', T}, a}
+def fold_max {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 
 # TODO don't rely on regular stores being unaligned
 local def storeu{ptr:P, e:T} = store{ptr, 0, e}
@@ -112,11 +112,13 @@ def sel{L, x:T, i:I & lvec{L,16,8} & n128{T} & nvec{I, 8}} = to_el{eltype{T}, em
 
 local def eqqi{A, B} = isint{A} & (quality{A}==quality{B}) # equal quality integers
 
-def cvt{T, x:X & width{T}==width{X} & nvecf{T,64} & nveci{X}} = emit{T, ntyp{'vcvt', '_f64', X}, x}
+def cvt{T==f64, x:X & nveci{X,64}} = emit{[vcount{X}]T, ntyp{'vcvt', '_f64', X}, x}
+def cvt{T==i64, x:X & nvecf{X,64}} = emit{[vcount{X}]T, ntyp{'vcvt', '_s64', X}, x}
+def cvt{T==u64, x:X & nvecf{X,64}} = emit{[vcount{X}]T, ntyp{'vcvt', '_u64', X}, x}
 
 def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}==elwidth{X}*2} = emit{T, ntyp{'vmovl', X}, x}
 def widen{T, x:X & n64{X} & eqqi{eltype{T},eltype{X}} & elwidth{T}> elwidth{X}*2} = widen{T, widen{ty_half{T}, x}}
-def widen{T, x:X & n64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>elwidth{X}} = cvt{T, widen{[vcount{T}](to_w{eltype{X},elwidth{T}}), x}}
+def widen{T, x:X & n64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>elwidth{X}} = cvt{eltype{T}, widen{[vcount{T}](to_w{eltype{X},elwidth{T}}), x}}
 def widen{T, x:X & n128{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
 
 def narrow{T, x:X & n128{X} & eqqi{T,eltype{X}} & width{T}*2< elwidth{X}} = narrow{T, undefPromote{ty_half{X}, narrow{ty_half{eltype{X}}, x}}}

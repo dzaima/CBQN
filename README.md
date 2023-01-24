@@ -77,7 +77,7 @@ Additionally, CBQN is known to compile as-is on macOS, but Windows requires [Win
 
 ## License
 
-Most files here are copyright (c) 2021 dzaima & others, [GNU GPLv3 only](licenses/LICENSE-GPLv3).
+Most files here are copyright (c) 2021-2023 dzaima & others, [GNU GPLv3 only](licenses/LICENSE-GPLv3).
 Exceptions are:
 - timsort implementation - `src/builtins/sortTemplate.h`: [MIT](licenses/LICENSE-MIT-sort); [original repo](https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708)
 - Ryu - `src/utils/ryu.c` & files in `src/utils/ryu/`: [Apache 2.0](licenses/LICENSE-Apache2) or [Boost 1.0](licenses/LICENSE-Boost); [original repo](https://github.com/ulfjack/ryu/tree/75d5a85440ed356ad7b23e9e6002d71f62a6255c)
