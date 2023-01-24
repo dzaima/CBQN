@@ -31,10 +31,10 @@ def fold{F, x:T} = {
   show{'WARNING: using fallback fold'}
   def E = eltype{T}
   r:E = 0
-  each{{i} => { r = F{r, cast_i{E, extract{x, i}}, iota{vcount{T}}} }}
-  promote{u32, r}
+  each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
+  r
 }
-def fold{F, x:T & w128{T}} = {
+def fold{F, x:T & width{T}==128 & hasarch{'X86_64'}} = {
   c:= x
   def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
@@ -43,7 +43,7 @@ def fold{F, x:T & w128{T}} = {
   if (EW<=8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
   extract{c, 0}
 }
-def fold{F, x:T & w256{T}} = fold{F, F{half{x, 0}, half{x, 1}}}
+def fold{F, x:T & width{T}==256 & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
 def makeOptBranch{enable, F} = {
   if (enable) {
@@ -57,11 +57,29 @@ def makeOptBranch{enable, F} = {
   }
 }
 
+def cvtNarrow{T, x:X & width{T}==elwidth{X}} = cvt{T, x}
+def cvtNarrow{T, x:X & width{T}< elwidth{X}} = narrow{T, x}
+def cvtWiden{T, x:X & elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}
+def cvtWiden{T, x:X & elwidth{T}> elwidth{X}} = widen{T, x}
+
 squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
+  assert{len>0}
   def bulk = vw / width{X}
   def XV = [bulk]X
   def E = tern{X==f64, u32, ty_u{X}}
   def EV = [bulk]E
+  
+  # fold with either Max or Bitwise Or, truncating/zero-extending to TE
+  def foldTotal{TE, x:T} = cast_i{TE, fold{|, x}}
+  def foldTotal{TE, x:T & hasarch{'AARCH64'}} = {
+    if (elwidth{T}==64) {
+      if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
+      else fold_max{narrow{TE, x}}
+    } else {
+      fold_max{x}
+    }
+  }
+  
   # show{XV, EV, CHR, B}
   xp:= *X~~x0
   r1:= EV**0
@@ -76,7 +94,7 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
         if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
     }}
-    r2:= cast_i{u32, fold{|, r1}}
+    r2:= foldTotal{u32, r1}
     if (X>u32 and r2>=65536) return{2}
     if (X>u16 and r2>=256) return{1}
     0
@@ -98,37 +116,73 @@ squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
         return{0xffff_ffff} # float
       }}
       
-      maskedLoop{bulk, len, {i, M} => {
-        v0:= loadBatch{xp, i, XV}
-        def toint{x:T & isint{eltype{T}}} = x
-        def toint{flt:T & isfloat{eltype{T}}} = {
-          int:= narrow{i32, flt}
-          assert{width{type{int}} == width{XV}/2} # we'll be doing operations over it
-          
-          def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
-          
-          if (anynePositive{conv{flt}, conv{widen{T, int}}, M}) { # is any not an integer
-            if (B) { iCont=i; goto{case_B} } # if B, need to give an even more special result
-            else return{0xffff_ffff} # float
-          }
-          int
-        }
-        assert{XV == type{v0}}
-        v1:= toint{v0} # TODO do with an if instead
-        r1|= M{((EV ** ~E~~1) & EV~~v1)  ^  EV~~(v1 >> (width{X}-1))}
-      }}
+      def getAcc{EV, x:T} = {
+        ((EV ** ~(eltype{EV})~~1) & EV~~x)  ^  EV~~(x >> (elwidth{T}-1))
+      }
       
-      promote{u32, fold{|, r1}}
+      if (isint{X}) { # i16, i32
+        muLoop{bulk, 1, len, {is, M} => {
+          def v0 = loadBatch{xp, is, XV}
+          r1|= M{tree_fold{|, each{{v} => getAcc{EV, v}, v0}}}
+        }}
+      } else { # f64
+        def EV2 = v_dbl{EV}
+        r2:= EV2**0
+        muLoop{bulk, hasarch{'AARCH64'}+1, len, {is, M} => {
+          def v0 = loadBatch{xp, is, XV}
+          
+          def int = {
+            def tmp = {
+              if (hasarch{'AARCH64'} and tuplen{is}==2) {
+                def intp = narrowPair{...each{{v}=>cvt{i64,v}, v0}}
+                def wdn = each{{v}=>cvt{f64,v}, widen{intp}}
+                tup{intp, wdn}
+              } else {
+                def ints = each{{v} => cvtNarrow{ty_s{E}, v}, v0}
+                assert{vcount{type{tupsel{0,ints}}} == bulk} # we'll be doing operations over it
+                def wdn = each{{v} => cvtWiden{XV, v}, ints}
+                def intp = {
+                  if (tuplen{ints}==1) tupsel{0, ints}
+                  else pair{ints}
+                }
+                tup{intp, wdn}
+              }
+            }
+            def int = tupsel{0, tmp}
+            def wdn = tupsel{1, tmp}
+            
+            def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
+            def as = each{conv, v0}
+            def bs = each{conv, wdn}
+            def cond = {
+              if (tuplen{is}==1) anynePositive{...as, ...bs, M}
+              else ~homAll{tree_fold{&, each{==, as, bs}}}
+            }
+            if (cond) { # is any not an integer
+              if (B) { iCont=tupsel{0, is}; goto{case_B} } # if B, need to give an even more special result
+              else return{0xffff_ffff} # else, not integer => float
+            }
+            int
+          }
+          def acc = { if (tuplen{is}==2) r2; else r1 }
+          
+          acc|= M{getAcc{type{acc}, int}}
+        }, {} => { r1 = half{r2,0}|half{r2,1} }}
+      }
+      
+      
+      def f = foldTotal{E, r1}
+      cast_i{u32, f}
     }
   }
 }
 
-'avx2_squeeze_i8'  = squeeze{256, i8,  0, 0}
-'avx2_squeeze_i16' = squeeze{256, i16, 0, 0}
-'avx2_squeeze_i32' = squeeze{256, i32, 0, 0}
-'avx2_squeeze_f64' = squeeze{256, f64, 0, 0}
-'avx2_squeeze_numB'= squeeze{256, f64, 0, 1}
+'avx2_squeeze_i8'  = squeeze{arch_defvw, i8,  0, 0}
+'avx2_squeeze_i16' = squeeze{arch_defvw, i16, 0, 0}
+'avx2_squeeze_i32' = squeeze{arch_defvw, i32, 0, 0}
+'avx2_squeeze_f64' = squeeze{arch_defvw, f64, 0, 0}
+'avx2_squeeze_numB'= squeeze{arch_defvw, f64, 0, 1}
 
-'avx2_squeeze_c16' = squeeze{256, u16, 1, 0}
-'avx2_squeeze_c32' = squeeze{256, u32, 1, 0}
-'avx2_squeeze_chrB'= squeeze{256, u64, 1, 1}
+'avx2_squeeze_c16' = squeeze{arch_defvw, u16, 1, 0}
+'avx2_squeeze_c32' = squeeze{arch_defvw, u32, 1, 0}
+'avx2_squeeze_chrB'= squeeze{arch_defvw, u64, 1, 1}

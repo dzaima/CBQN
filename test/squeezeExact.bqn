@@ -18,7 +18,7 @@ spec ← specF64∾{⇐}∾"a⍉𝕨"∾(@+1114111-↕5)∾<"foo"
 
 RandEl ← r.Range∘3◶⟨
   {𝕊: r.Range∘≠⊸⊑ spec} # some special values
-  {𝕊: -⍟(r.Range 2) × (¯5+r.Range 10) + 2⋆r.Range 64} # random near-power-of-two number
+  {𝕊: -⍟(r.Range 2) (¯5+r.Range 10) + 2⋆r.Range 64} # random near-power-of-two number
   {𝕊: @+0⌈1114111⌊(¯5+r.Range 10) + 2⋆2+r.Range 20} # random near-power-of-two character
 ⟩
 
@@ -59,11 +59,11 @@ Do ← { 𝕊:
     }
     ¬ (arrv EEqual arr) ∧ (arrv EEqual sq) ∧ (⊑(<sqt) ∊ tOut)?
       •Out "Fail:"
-      •Out "Array: "∾•Fmt arr
-      •Out "Squeezed: "∾•Fmt sq
-      •Out "Testing variation "∾•Fmt 𝕩
-      •Out "Got: "∾•Fmt Type sq
-      •Out "Expected one of: "∾•Fmt tOut
+      •Out "Array: "∾•Repr arr
+      •Out "Squeezed: "∾•Repr sq
+      •Out "Testing variation "∾•Repr 𝕩
+      •Out "Got: "∾(Type sq)∾" / "∾sqt
+      •Out "Expected one of: "∾•Repr tOut
       •Exit 1
     ;@
   }¨ tIn

@@ -1,6 +1,6 @@
 #include "../core.h"
 
-#if SINGELI_X86_64
+#if SINGELI
   #define SINGELI_FILE squeeze
   #include "../utils/includeSingeli.h"
 #endif
@@ -36,14 +36,14 @@ B num_squeeze(B x) {
     goto r_bit;
   }
   
-  #if !SINGELI_X86_64
+  #if !SINGELI
   usz i = 0;
   #endif
   
   u32 or = 0; // using bitwise or as an approximate ⌈´
   switch (xe) { default: UD;
     case el_bit: goto r_x;
-    #if SINGELI_X86_64
+    #if SINGELI
       case el_i8:  { or = avx2_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
       case el_i16: { or = avx2_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
       case el_i32: { or = avx2_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
@@ -69,7 +69,7 @@ B num_squeeze(B x) {
   B* xp = arr_bptr(x);
   if (xp==NULL) goto r_f;
   
-  #if SINGELI_X86_64
+  #if SINGELI
     or = avx2_squeeze_numB(xp, ia);
     if (-2==(i32)or) goto r_x;
     if (-1==(i32)or) goto r_f64;
@@ -109,11 +109,15 @@ B num_squeeze(B x) {
 B chr_squeeze(B x) {
   usz ia = IA(x);
   u8 xe = TI(x,elType);
+  if (ia==0) {
+    if (xe==el_c8) return x;
+    goto r_c8;
+  }
   usz i = 0;
   i32 or = 0;
   switch(xe) { default: UD;
     case el_c8: goto r_x;
-    #if SINGELI_X86_64
+    #if SINGELI
     case el_c16: { u32 t = avx2_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
     case el_c32: { u32 t = avx2_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
     #else
@@ -138,7 +142,7 @@ B chr_squeeze(B x) {
   
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
-    #if SINGELI_X86_64
+    #if SINGELI
     u32 t = avx2_squeeze_chrB(xp, ia);
     if      (t==0) goto r_c8;
     else if (t==1) goto r_c16;
