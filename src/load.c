@@ -118,7 +118,10 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   return r;
 }
 
+#if !(ONLY_NATIVE_COMP && !FORMATTER && NO_RT && NO_EXPLAIN)
 #include PRECOMPILED_FILE(src)
+#endif
+
 #if RT_SRC
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
   return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
@@ -135,6 +138,15 @@ B load_rtObj;
 B load_compArg;
 B load_glyphs;
 B load_explain;
+
+
+#if NATIVE_COMPILER
+#include "opt/comp.c"
+B load_rtComp;
+void switchComp() {
+  load_comp = load_comp.u==load_rtComp.u? native_comp : load_rtComp;
+}
+#endif
 
 #if FORMATTER
 B load_fmt, load_repr;
@@ -414,15 +426,15 @@ void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
-    rt_undo    = Get(rtObjRaw, n_undo    ); gc_add(rt_undo);
-    rt_select  = Get(rtObjRaw, n_select  ); gc_add(rt_select);
-    rt_slash   = Get(rtObjRaw, n_slash   ); gc_add(rt_slash);
-    rt_group   = Get(rtObjRaw, n_group   ); gc_add(rt_group);
-    rt_under   = Get(rtObjRaw, n_under   ); gc_add(rt_under);
-    rt_find    = Get(rtObjRaw, n_find    ); gc_add(rt_find);
-    rt_transp  = Get(rtObjRaw, n_transp  ); gc_add(rt_transp);
-    rt_depth   = Get(rtObjRaw, n_depth   ); gc_add(rt_depth);
-    rt_insert  = Get(rtObjRaw, n_insert  ); gc_add(rt_insert);
+    rt_undo    = Get(rtObjRaw, n_undo    );
+    rt_select  = Get(rtObjRaw, n_select  );
+    rt_slash   = Get(rtObjRaw, n_slash   );
+    rt_group   = Get(rtObjRaw, n_group   );
+    rt_under   = Get(rtObjRaw, n_under   );
+    rt_find    = Get(rtObjRaw, n_find    );
+    rt_transp  = Get(rtObjRaw, n_transp  );
+    rt_depth   = Get(rtObjRaw, n_depth   );
+    rt_insert  = Get(rtObjRaw, n_insert  );
     
     for (usz i = 0; i < rtLen; i++) {
       #ifdef RT_WRAP
@@ -461,14 +473,22 @@ void load_init() { // very last init function
       if (isVal(r)) v(r)->flags|= i+1;
     }
     load_rtObj = frtObj;
-    load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(frtObj);
-    rt_select=rt_slash=rt_group=rt_find=rt_transp=rt_invFnReg=rt_invFnSwap = bi_invalidFn;
-    rt_undo=rt_insert = bi_invalidMd1;
-    rt_under=rt_depth = bi_invalidMd2;
+    load_compArg = m_hVec2(load_rtObj, incG(bi_sys));
+    rt_select=rt_slash=rt_group=rt_find=rt_transp=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
+    rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
+    rt_under=rt_depth = incByG(bi_invalidMd2, 2);
     rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
   #endif
   gc_add(load_compArg);
-  
+  gc_add(rt_undo);
+  gc_add(rt_select);
+  gc_add(rt_slash);
+  gc_add(rt_group);
+  gc_add(rt_under);
+  gc_add(rt_find);
+  gc_add(rt_transp);
+  gc_add(rt_depth);
+  gc_add(rt_insert);
   
   
   
@@ -489,29 +509,35 @@ void load_init() { // very last init function
     print_allocStats();
     exit(0);
   #else // use compiler
-    B prevAsrt = runtime[n_asrt];
-    runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
-    Block* comp_b = load_compImport("(compiler)",
-      #include PRECOMPILED_FILE(compiles)
-    );
-    runtime[n_asrt] = prevAsrt;
-    load_glyphs = m_hVec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
-    load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
-    load_comp = c1(load_compgen, inc(load_glyphs));
-    gc_add(load_compgen); gc_add(load_comp); gc_add(load_glyphs);
+    load_glyphs = m_hVec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(load_glyphs);
+    
+    #if !ONLY_NATIVE_COMP
+      B prevAsrt = runtime[n_asrt];
+      runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
+      Block* comp_b = load_compImport("(compiler)",
+        #include PRECOMPILED_FILE(compiles)
+      );
+      runtime[n_asrt] = prevAsrt;
+      load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
+      load_comp = c1(load_compgen, inc(load_glyphs));
+      #if NATIVE_COMPILER
+      load_rtComp = load_comp;
+      #endif
+      gc_add(load_compgen); gc_add(load_comp);
+    #endif
     
     
     #if FORMATTER
-    Block* fmt_b = load_compImport("(formatter)",
-      #include PRECOMPILED_FILE(formatter)
-    );
-    B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
-    B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
-    decG(fmtM);
-    SGet(fmtR)
-    load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
-    load_repr = Get(fmtR, 1); gc_add(load_repr);
-    decG(fmtR);
+      Block* fmt_b = load_compImport("(formatter)",
+        #include PRECOMPILED_FILE(formatter)
+      );
+      B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
+      B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
+      decG(fmtM);
+      SGet(fmtR)
+      load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
+      load_repr = Get(fmtR, 1); gc_add(load_repr);
+      decG(fmtR);
     #endif
     
     gc_enable();
@@ -754,6 +780,12 @@ void typesFinished_init() {
   for (u64 i = 0; i < t_COUNT; i++) {
     if (TIi(i,freeT) == def_fallbackTriv) TIi(i,freeT) = TIi(i,freeF);
   }
+  #if NATIVE_COMPILER
+  nativeCompiler_init();
+    #if ONLY_NATIVE_COMP
+      load_comp = native_comp;
+    #endif
+  #endif
 }
 
 bool cbqn_initialized;

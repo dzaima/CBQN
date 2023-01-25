@@ -489,6 +489,10 @@ void profiler_free(void);
 void profiler_displayResults(void);
 void clearImportCache(void);
 
+#if NATIVE_COMPILER && !ONLY_NATIVE_COMP
+void switchComp(void);
+#endif
+
 static B escape_parser;
 static B simple_unescape(B x) {
   if (RARE(escape_parser.u==0)) {
@@ -654,6 +658,11 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "internalPrint ")) {
       code = utf8Decode0(cmdE);
       output = 2;
+#if NATIVE_COMPILER && !ONLY_NATIVE_COMP
+    } else if (isCmd(cmdS, &cmdE, "switchCompiler")) {
+      switchComp();
+      return;
+#endif
     } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
       B expl = bqn_explain(utf8Decode0(cmdE), replPath);
       HArr* expla = toHArr(expl);

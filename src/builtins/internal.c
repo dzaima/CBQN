@@ -279,7 +279,18 @@ B eequal_c2(B t, B w, B x) {
 #ifdef TEST_BITCPY
   #include "../utils/mut.h"
 #endif
+#if NATIVE_COMPILER
+  extern B native_comp;
+  void switchComp(void);
+#endif
 B internalTemp_c1(B t, B x) {
+  
+  #if NATIVE_COMPILER
+    switchComp();
+    B r = bqn_exec(x, bi_N, bi_N);
+    switchComp();
+    return r;
+  #endif
   #ifdef TEST_BITCPY
   SGetU(x)
   bit_cpy(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
@@ -291,10 +302,13 @@ B internalTemp_c1(B t, B x) {
   #include "../utils/calls.h"
 #endif
 B internalTemp_c2(B t, B w, B x) {
+  #if NATIVE_COMPILER
+    return c2(native_comp, w, x);
+  #endif
   #ifdef TEST_MUT
-  SGetU(x)
-  FILL_TO(tyarr_ptr(w), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
-  dec(w);
+    SGetU(x)
+    FILL_TO(tyarr_ptr(w), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
+    dec(w);
   #endif
   return x;
 }

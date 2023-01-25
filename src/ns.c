@@ -140,7 +140,14 @@ Body* m_nnsDescF(i32 n, char** names) {
 
 B m_nnsF(Body* desc, i32 n, B* vals) {
   assert(n == desc->varAm);
-  Scope* sc = m_scope(desc, NULL, n, n, vals);
+  i32 varAm = n;
+  #if ONLY_NATIVE_COMP
+  varAm+= 100;
+  #endif
+  Scope* sc = m_scope(desc, NULL, varAm, n, vals);
+  #if ONLY_NATIVE_COMP
+  for (usz i = 0; i < 100; i++) sc->vars[i+n] = bi_N;
+  #endif
   return m_ns(sc, ptr_inc(desc->nsDesc));
 }
 

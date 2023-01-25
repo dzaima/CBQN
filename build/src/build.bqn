@@ -492,7 +492,7 @@ AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
     cacheKey ⇐ cacheKey
     found0 ⇐ 0
     SetFound ↩ {found0↩𝕩}
-    DepHash ⇐ {𝕊: Hash {𝕩.found1≡@? 𝕩.found0; 𝕩.found1}¨ ruleDeps}
+    DepHash ⇐ {𝕊: Hash {𝕩.found1≡@? 𝕩.found0; 𝕩.found1}¨ ruleDeps} # todo instead of conditionally choosing found1 or found2, decide statically; and properly cache
     found1 ⇐ @
     SetVal ⇐ {found1 ↩ 𝕩⋈DepHash@}
     disp ⇐ disp

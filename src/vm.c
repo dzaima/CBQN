@@ -82,6 +82,9 @@ void print_gStack() {
 }
 
 B listVars(Scope* sc) {
+  #if ONLY_NATIVE_COMP
+    return emptyHVec();
+  #endif
   Body* b = sc->body;
   if (b==NULL) return bi_N;
   
@@ -259,6 +262,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       while (*c!=RETN & *c!=RETD) {
         if (*c==PRED) { remapArgs = true; break; }
         c = nextBC(c);
+        if (c-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
       }
       if (remapArgs) {
         if (sc && depth==0) thrM("Predicates cannot be used directly in a REPL");
@@ -267,6 +271,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
         while (*c!=RETN & *c!=RETD) {
           if (*c==VARO | *c==VARM | *c==VARU) if (c[1]==0 && c[2]<argAm) argUsed[c[2]] = true;
           c = nextBC(c);
+          if (c-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
         }
         for (i32 i = 0; i < 6; i++) if (argUsed[i]) {
           TSADDA(newBC, ((u32[]){ VARO,0,i, VARM,0,vam+i, SETN, POPS }), 8);
@@ -277,7 +282,6 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       c = bc+idx;
       while (true) {
         u32* n = nextBC(c);
-        if (n-bc-1 >= bcIA) thrM("VM compiler: No RETN/RETD found before end of bytecode");
         bool ret = false;
         #define A64(X) { u64 a64=(X); TSADD(newBC, (u32)a64); TSADD(newBC, a64>>32); }
         switch (*c) {
