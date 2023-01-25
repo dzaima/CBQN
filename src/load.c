@@ -147,6 +147,12 @@ void switchComp() {
   load_comp = load_comp.u==load_rtComp.u? native_comp : load_rtComp;
 }
 #endif
+B compObj_c1(B t, B x) {
+  Block* block = load_compObj(x, bi_N, bi_N, NULL);
+  B res = evalFunBlock(block, 0);
+  ptr_dec(block);
+  return res;
+}
 
 #if FORMATTER
 B load_fmt, load_repr;

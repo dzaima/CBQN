@@ -124,9 +124,7 @@ usz addObj(B* objs, B val) { // consumes val
   return IA(*objs)-1;
 }
 
-i32 nc_ty(B x) {
-  assert(o2iG(IGetU(x, 0))<10);
-  return o2iG(IGetU(x, 0)); }
+i32 nc_ty(B x) { return o2iG(IGetU(x, 0)); }
 
 B nc_generate(B p1) { // consumes
   // printf("p1: "); printI(p1); putchar('\n');
