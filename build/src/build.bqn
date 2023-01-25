@@ -315,42 +315,36 @@ updateSubmodule ← {
 
 # gets/creates a directory of cacheable objects; key is the unique identifier of when it can be reused
 GetCache ← { 𝕊 basename‿desc‿key:
-  hash ⇐ Hash key
-  folder ⇐ allObjDir•file.At basename∾"-"∾hash
+  folderHash ⇐ Hash key
+  folder ⇐ allObjDir•file.At basename∾"-"∾folderHash
   MkDir AtRoot folder
   
   File ⇐ folder⊸•file.At
   {𝕊: desc∾": "∾AtRoot𝕩} _verboseLog folder
   
   dataPath ← AtRoot File "data"
-  prevKs‿prevVs ← •file.Exists◶⟨⟨⟩‿⟨⟩, {Deserialize ⟨8‿'c',8⟩•bit._cast •FBytes 𝕩}⟩ dataPath
+  dataVersion ← 0
+  prevKs‿prevVs ← {a‿b: a≡dataVersion? b; ⟨⟩‿⟨⟩} •file.Exists◶⟨@, {Deserialize ⟨8‿'c',8⟩•bit._cast •FBytes 𝕩}⟩ dataPath
   
   IsUpToDate ⇐ { 𝕊:
-    i ← ⊑prevKs⊐<𝕩
+    i ← ⊑prevKs⊐<𝕩.cacheKey
     i<≠prevKs?
       {@:0; ∧´ AtRoot⊸IsFileTheSame´¨𝕩} i⊑prevVs;
     0
   }
   newKs‿newVs ← ⟨⟩‿⟨⟩
-  Update ⇐ {key𝕊data: newKs∾↩ <key ⋄ newVs∾↩ <data} # data≡@ means failed to build
-  onExitList∾↩ {{ 𝕊:
+  finalNewData ← @
+  FinalData ⇐ { 𝕊:
+    finalNewData≢@?finalNewData;
     jKs ← newKs∾prevKs
     jVs ← newVs∾prevVs
-    dataPath •FBytes ⟨8,8‿'c'⟩•bit._cast Serialize (<∊jKs) /¨ jKs‿jVs
-  }⍟{𝕊: 0≠≠newKs}}
+    finalNewData ↩ Serialize dataVersion⋈ (<∊jKs) /¨ jKs‿jVs
+  }
+  Update ⇐ {key𝕊data: !finalNewData≡@ ⋄ newKs∾↩ <key ⋄ newVs∾↩ <data} # data≡@ means failed to build
+  onExitList∾↩ {{𝕊: dataPath •FBytes ⟨8,8‿'c'⟩•bit._cast FinalData@}⍟{𝕊: 0≠≠newKs}}
 }
 
 ruleKs‿ruleVs ← ⟨⟩‿⟨⟩
-AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿customDeps:
-  ruleKs∾↩ <dst
-  ruleVs∾↩ {
-    cache ⇐ cache
-    cacheKey ⇐ cacheKey
-    disp ⇐ disp
-    CMD ⇐ GetCMD
-    ruleDeps ⇐ customDeps
-  }
-}
 
 # dependency resolution & thread management
 Run ← { 𝕊:
@@ -370,7 +364,7 @@ Run ← { 𝕊:
     chr ← Require¨ chi
     rebuild∨↩ ∨´ chr
     # rebuild∨↩ ¬•file.Exists AtRoot 𝕩⊑ruleKs # not really needed unless someone deletes a specific file without deleting the data file
-    rebuild∨↩ ¬v.cache.IsUpToDate v.cacheKey
+    rebuild∨↩ ¬v.cache.IsUpToDate v
     {
       ruleN (+´chr)⊸+⌾(𝕩⊸⊑)↩
       ruleP ∾⟜𝕩¨⌾((chr/chi)⊸⊏)↩
@@ -471,33 +465,45 @@ Run ← { 𝕊:
 }
 
 
+AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
+  ruleKs∾↩ <dst
+  res ← {
+    dst ⇐ dst
+    cache ⇐ cache
+    cacheKey ⇐ cacheKey
+    disp ⇐ disp
+    CMD ⇐ GetCMD
+    ruleDeps ⇐ {𝕩.dst}¨ deps
+  }
+  ruleVs∾↩ res
+  res
+}
+
 MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
-  key ⇐ id
-  dst ⇐ cache.File key∾".o"
+  dst ← cache.File id∾".o"
   GetCMD ← { 𝕊:
     Init @
     dep ← AtRoot cache.File id∾".d"
     ⟨"sh", rootDir, (GetArgs@)∾⟨"-MT", "o", "-MMD", "-MF", dep, "-o", AtRoot dst, "-c", src⟩, dep⟩
   }
-  AddRule ⟨cache, key, dst, GetCMD, •file.Name src, customDeps⟩
+  AddRule ⟨cache, id, dst, GetCMD, •file.Name src, customDeps⟩
 }
 
 MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
-  key ⇐ id
-  dst ⇐ cache.File key∾".c"
+  dst ← cache.File id∾".c"
   GetCMD ← { 𝕊:
     Init @
     dep ← AtRoot cache.File id∾".d"
     ⟨"singeli", rootDir, AtRoot dst, AtRoot po.singeliDir, args, AtRoot src, dep⟩
   }
-  AddRule ⟨cache, key, dst, GetCMD, •file.Name src, customDeps⟩
+  AddRule ⟨cache, id, dst, GetCMD, •file.Name src, customDeps⟩
 }
 
 MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
-  dst ⇐ cache.File name
+  dst ← cache.File name
   GetCMD ← { 𝕊:
     args ← GetArgs@
-    ⟨"sh", rootDir, ⟨⊑args, "-o", dst⟩∾srcs∾1↓args, @⟩
+    ⟨"sh", rootDir, ⟨⊑args, "-o", dst⟩∾({𝕩.dst}¨ srcs)∾1↓args, @⟩
   }
   AddRule ⟨cache, name, dst, GetCMD, "link", srcs⟩
 }
@@ -530,7 +536,7 @@ cachedBin‿linkerCache ← {
     replxxCache ← GetCache ⟨"replxx", "REPLXX object file location", po.REPLXXc@⟩
     
     replxxSrc ← (po.replxxDir•file.At"src")⊸•file.At¨⟨"ConvertUTF.cpp", "wcwidth.cpp", "conversion.cxx", "escape.cxx", "history.cxx", "prompt.cxx", "replxx.cxx", "replxx_impl.cxx", "terminal.cxx", "util.cxx", "windows.cxx"⟩
-    objs∾↩ {𝕩.dst}¨ (Shorten replxxSrc) {MakeCCInv ⟨po.REPLXXc, ⊢, replxxCache, 𝕨, 𝕩, ⟨⟩⟩}¨ replxxSrc
+    objs∾↩ (Shorten replxxSrc) {MakeCCInv ⟨po.REPLXXc, ⊢, replxxCache, 𝕨, 𝕩, ⟨⟩⟩}¨ replxxSrc
     
     replxxCache
   }
@@ -544,7 +550,7 @@ cachedBin‿linkerCache ← {
     ga ← "src/singeli/src/genArithTables.bqn"
     gaDefs ← singeliCache.File "arDefs.singeli"
     gaTables ← singeliCache.File "arTables.c"
-    AddRule ⟨
+    gaRule ← AddRule ⟨
       singeliCache, "genArithTables",
       gaDefs, # am cheating and only using arDefs.singeli as destination; ¯\_(ツ)_/¯
       {𝕊: ⟨"runbqn", rootdir, AtRoot ga, AtRoot¨ gaDefs‿gaTables, ⟨ga⟩⟩},
@@ -555,31 +561,26 @@ cachedBin‿linkerCache ← {
       po.native? ⟨⟩;
       "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"} po.arch
     }
-    singeliObjs ↩ {𝕩.dst}¨ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaDefs⟩⟩}¨ 1⊑¨singeliMap
+    singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
     
     singeliCache
   }
   
   cbqnCache ← {
-    cbqnCache ← GetCache ⟨"cbqn", "CBQN object file location", ⟨po.CBQNc@, {po.singeli? singeliCache.hash; @}⟩⟩
+    cbqnCache ← GetCache ⟨"cbqn", "CBQN object file location", ⟨po.CBQNc@, {po.singeli? singeliCache.folderHash; @}⟩⟩
     ruleDeps ← {
       ¬po.singeli? ⟨⟩¨ cbqnSrc;
       ((≠cbqnSrc) ∾˜ cbqnSrc⊐⊑¨singeliMap) ⊔ singeliObjs
     }
     
     singeliArgs ← {po.singeli? ⟨"-DSINGELI_DIR="∾•file.Name singeliCache.folder⟩; ⟨⟩}
-    objs∾↩ {𝕩.dst}¨ {a‿b‿c: MakeCCInv ⟨po.CBQNc∾singeliArgs˙, {𝕊:UpdateSubmodule po.bytecodeDir ⋄ UpdateSubmodule po.replxxDir}, cbqnCache, a, b, c⟩}¨ <˘⍉[Shorten cbqnSrc, cbqnSrc, ruleDeps] # updates replxx because needs replxx.h
+    objs∾↩ {a‿b‿c: MakeCCInv ⟨po.CBQNc∾singeliArgs˙, {𝕊:UpdateSubmodule po.bytecodeDir ⋄ UpdateSubmodule po.replxxDir}, cbqnCache, a, b, c⟩}¨ <˘⍉[Shorten cbqnSrc, cbqnSrc, ruleDeps] # updates replxx because needs replxx.h
     
     cbqnCache
   }
   
-  linkerCache ← GetCache ⟨"linker", "linker cached result location", ⟨
-    po.Linker@,
-    cbqnCache.hash,
-    {po.replxx? replxxCache.hash; @}
-    {po.singeli? singeliCache.hash; @}
-  ⟩⟩
-  
+  linkerDeps ← @⊸≢¨⊸/ ⟨cbqnCache, replxxCache, singeliCache⟩
+  linkerCache ← GetCache ⟨"linker", "linker cached result location", ⟨po.Linker@, {𝕩.folderHash}¨ linkerDeps⟩⟩
   {
     po.versionName≡@? @;
     srcFile ← linkerCache.File "versionInfo.c"
@@ -592,7 +593,7 @@ cachedBin‿linkerCache ← {
       •file.Exists AtRoot srcFile? src≡•FChars AtRoot srcFile? @; # don't update
       (AtRoot srcFile) •FChars src
     }
-    objs∾↩ ⋈(MakeCCInv ⟨po.CBQNc, ⊢, linkerCache, "versionInfo", srcFile, ⟨⟩⟩).dst
+    objs∾↩ ⋈ MakeCCInv ⟨po.CBQNc, ⊢, linkerCache, "versionInfo", srcFile, ⟨⟩⟩
   }
   
   res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; "windows"≡po.os? "res.exe"; "res"}, objs⟩
