@@ -631,7 +631,7 @@ B slash_c1(B t, B x) {
 
 B slash_c2(B t, B w, B x) {
   i32 wv = -1;
-  usz wia ONLY_GCC(= 0);
+  usz wia ONLY_GCC(=0);
   if (isArr(w)) {
     if (depth(w)>1) goto base;
     ur wr = RNK(w);

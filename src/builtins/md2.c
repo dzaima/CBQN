@@ -377,7 +377,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
       usz cam = shProd(xsh, 0, k);
       if (cam == 0) return rank2_empty(f, w, 0, x, k);
       usz csz = shProd(xsh, k, xr);
-      ShArr* csh;
+      ShArr* csh ONLY_GCC(=0);
       if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
 
       BSS2A slice = TI(x,slice);
@@ -403,7 +403,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     usz cam = shProd(wsh, 0, k);
     if (cam == 0) return rank2_empty(f, w, k, x, 0);
     usz csz = shProd(wsh, k, wr);
-    ShArr* csh;
+    ShArr* csh ONLY_GCC(=0);
     if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
 
     BSS2A slice = TI(w,slice);
@@ -439,8 +439,8 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     usz wsz = shProd(wsh, wk, wr);
     usz xsz = shProd(xsh, xk, xr);
 
-    ShArr* wcs; if (wc>1) { wcs=m_shArr(wc); shcpy(wcs->a, wsh+wk, wc); }
-    ShArr* xcs; if (xc>1) { xcs=m_shArr(xc); shcpy(xcs->a, xsh+xk, xc); }
+    ShArr* wcs ONLY_GCC(=0); if (wc>1) { wcs=m_shArr(wc); shcpy(wcs->a, wsh+wk, wc); }
+    ShArr* xcs ONLY_GCC(=0); if (xc>1) { xcs=m_shArr(xc); shcpy(xcs->a, xsh+xk, xc); }
 
     BSS2A wslice = TI(w,slice);
     BSS2A xslice = TI(x,slice);

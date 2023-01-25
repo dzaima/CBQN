@@ -173,7 +173,7 @@ B shape_c2(B t, B w, B x) {
     } else {
       SGetU(w)
       i32 unkPos = -1;
-      i32 unkInd ONLY_GCC(= 0);
+      i32 unkInd ONLY_GCC(=0);
       bool bad=false, good=false;
       for (i32 i = 0; i < nr; i++) {
         B c = GetU(w, i);
@@ -546,6 +546,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
         usz ri=0, xi=0; // index of first copy
         usz xSkip, rSkip; // amount to skip forward by
         usz cellWrite = 0; // batch write cell size
+        ONLY_GCC(xSkip=rSkip=USZ_MAX/2;)
         for (usz i=rr; i-->0; ) {
           usz xshc = i<rr-xr? 1 : xsh[i-(rr-xr)];
           usz rshc = rsh->a[i];
@@ -625,7 +626,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   i64 wv = o2i64(w);      \
   i64 n = wv;             \
   ur xr = RNK(x);         \
-  usz csz=1; usz* xsh;    \
+  usz csz=1; usz* xsh ONLY_GCC(=0); \
   if (xr>1) {             \
     csz = arr_csz(x);     \
     xsh = SH(x);          \

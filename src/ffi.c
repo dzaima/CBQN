@@ -939,9 +939,9 @@ void ffi_init() {
     switch (id) { default: err("bad id");
       case 0: {
         char* s = toCStr(x);
-        chdir(s);
+        i32 r = chdir(s);
         freeCStr(s);
-        return x;
+        return m_f64(r);
       }
       case 1: {
         dec(x);

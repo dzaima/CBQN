@@ -96,7 +96,7 @@ B eachm_fn(B fo, B x, BB2B f) {
   void* xp = tyany_ptr(x);
   switch(TI(x,elType)) { default: UD;
     case el_B: { SGet(x);
-                 for (; i<ia; i++) HARR_ADD(r, i, f(fo, Get(x,i))); break; }
+               { for (; i<ia; i++) HARR_ADD(r, i, f(fo, Get(x,i))); } break; }
     case el_bit: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(bitp_get(xp,i)))); break;
     case el_i8:  for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(((i8* )xp)[i]))); break;
     case el_i16: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_i32(((i16*)xp)[i]))); break;
