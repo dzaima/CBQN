@@ -102,6 +102,7 @@ ifeq ($(origin LD_LIBS),command line)
 endif
 ifeq ($(REPLXX),1)
 	i_PIE += -fPIE
+	i_CC_PIE := -fPIE
 endif
 ifeq ($(origin PIE),command line)
 	i_PIE := $(PIE)
@@ -153,7 +154,7 @@ ifeq ($(WINDOWS), 1)
 	endif
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 j=4
@@ -330,7 +331,7 @@ endif
 i_LD = $(i_CXX)
 REPLXX_FLAGS = -Os -std=c++11
 
-ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include
+ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include $(i_CC_PIE)
 
 CXX_INC = $(i_CXX) $(CCFLAGS) $(REPLXX_FLAGS) -DREPLXX_STATIC=1 -I$(REPLXX_DIR)/include -MMD -MP -MF
 replxx_obj: ${addprefix ${bd}/, ConvertUTF.cpp.o wcwidth.cpp.o conversion.cxx.o escape.cxx.o history.cxx.o prompt.cxx.o replxx.cxx.o replxx_impl.cxx.o terminal.cxx.o util.cxx.o windows.cxx.o}
