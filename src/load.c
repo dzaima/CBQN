@@ -450,13 +450,23 @@ void load_init() { // very last init function
     B rtObj = runtimeH.b;
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
     load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
-    gc_add(load_compArg);
   #else
     B* runtime = fruntime;
     (void)frtObj;
     (void)rtComplete;
     (void)runtime;
+    for (usz i = 0; i < rtLen; i++) {
+      B r = fruntime[i];
+      if (isVal(r)) v(r)->flags|= i+1;
+    }
+    load_rtObj = frtObj;
+    load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(frtObj);
+    rt_select=rt_slash=rt_group=rt_find=rt_transp=rt_invFnReg=rt_invFnSwap = bi_invalidFn;
+    rt_undo=rt_insert = bi_invalidMd1;
+    rt_under=rt_depth = bi_invalidMd2;
+    rt_invFnRegFn=rt_invFnSwapFn = c1_bad;
   #endif
+  gc_add(load_compArg);
   
   
   

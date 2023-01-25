@@ -8,7 +8,7 @@
 /*    sfns.c*/A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") A(transp,"⍉") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /* everything before the definition of •Type is defined to be pure, and everything after is not */ \
-/*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") \
+/*   sysfn.c*/A(invalidFn, "(invalid fn)") M(type,"•Type") M(decp,"•Decompose") M(primInd,"•PrimInd") M(glyph,"•Glyph") A(fill,"•FillFn") M(sys,"•getsys") A(grLen,"•GroupLen") \
 /*   sysfn.c*/D(grOrd,"•GroupOrd") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") A(bqn,"•BQN") \
 /*   sysfn.c*/A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(toUtf8,"•ToUTF8") M(currentError,"•CurrentError") D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime")\
 /*   sysfn.c*/M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(reBQN,"•ReBQN") M(exit,"•Exit") M(getLine,"•GetLine") \
@@ -24,18 +24,19 @@
 /*  arithm.c*/M(erf,"•math.Erf") M(erfc,"•math.ErfC") D(gcd,"•math.GCD") D(lcm,"•math.LCM") M(sum,"•math.Sum")
 
 #define FOR_PM1(A,M,D) \
-    /*md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \
+/*    md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \
 /*inverse.c*/A(undo,"⁼") \
 /* everything before the definition of •_timed is defined to be pure, and everything after is not */ \
-    /*md1.c*/A(timed,"•_timed") \
-  /*sysfn.c*/M(bitcast,"•bit._cast") M(bitnot,"•bit._not") M(bitneg,"•bit._neg") \
-  /*sysfn.c*/D(bitand,"•bit._and") D(bitor,"•bit._or") D(bitxor,"•bit._xor") D(bitadd,"•bit._add") D(bitsub,"•bit._sub") D(bitmul,"•bit._mul")
+/*    md1.c*/A(timed,"•_timed") \
+/*  sysfn.c*/A(invalidMd1, "(invalid 1-modifier)") M(bitcast,"•bit._cast") M(bitnot,"•bit._not") M(bitneg,"•bit._neg") \
+/*  sysfn.c*/D(bitand,"•bit._and") D(bitor,"•bit._or") D(bitxor,"•bit._xor") D(bitadd,"•bit._add") D(bitsub,"•bit._sub") D(bitmul,"•bit._mul")
 
 #define FOR_PM2(A,M,D) \
   /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(rank,"⎉") A(depth,"⚇") A(fillBy,"•_fillBy_") A(catch,"⎊") \
   /*md2.c*/A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
 /* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
-  /*md2.c*/A(while,"•_while_")
+  /*md2.c*/A(while,"•_while_") \
+/*sysfn.c*/A(invalidMd2, "(invalid 2-modifier)")
 
 enum PrimNumbers {
     /* +-×÷⋆√⌊⌈|¬  */ n_add     , n_sub    , n_mul   , n_div  , n_pow    , n_root     , n_floor , n_ceil , n_stile  , n_not,

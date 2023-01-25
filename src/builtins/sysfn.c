@@ -1475,6 +1475,14 @@ B ffiload_c2(B t, B w, B x);
 B indexOf_c2(B t, B w, B x);
 bool fileInit;
 
+
+B invalidFn_c1 (B     t,      B x) { thrM("Using an invalid function"); }
+B invalidFn_c2 (B     t, B w, B x) { thrM("Using an invalid function"); }
+B invalidMd1_c1(Md1D* d,      B x) { thrM("Using an invalid 1-modifier"); }
+B invalidMd1_c2(Md1D* d, B w, B x) { thrM("Using an invalid 1-modifier"); }
+B invalidMd2_c1(Md2D* d,      B x) { thrM("Using an invalid 2-modifier"); }
+B invalidMd2_c2(Md2D* d, B w, B x) { thrM("Using an invalid 2-modifier"); }
+
 static void initFileNS() {
   if (fileInit) return;
   fileInit = true;
