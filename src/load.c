@@ -343,6 +343,7 @@ static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32ar
 static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
 static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
 static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
+B invalidFn_c1(B t, B x);
 
 void load_init() { // very last init function
   comp_currPath = bi_N;
@@ -464,7 +465,7 @@ void load_init() { // very last init function
     rt_select=rt_slash=rt_group=rt_find=rt_transp=rt_invFnReg=rt_invFnSwap = bi_invalidFn;
     rt_undo=rt_insert = bi_invalidMd1;
     rt_under=rt_depth = bi_invalidMd2;
-    rt_invFnRegFn=rt_invFnSwapFn = c1_bad;
+    rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
   #endif
   gc_add(load_compArg);
   
