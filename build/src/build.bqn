@@ -340,6 +340,7 @@ GetCache ← { 𝕊 basename‿desc‿key:
     𝕊:
       𝕩.found0≢@?
       fileInfo‿depInfo ← 𝕩.found0
+      fileInfo≢@?
       ∧´ AtRoot⊸IsFileTheSame´¨ fileInfo?
       depInfo≡𝕩.DepHash@
     ;
