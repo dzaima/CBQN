@@ -243,7 +243,8 @@ po ← { # parsed options
     args∾↩ (GetOpt"heapverify") / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (              ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ (            shared) / ⟨"-DCBQN_SHARED", "-fPIC"⟩
+    args∾↩ (     pie ∧ ¬shared) / ⟨"-fPIE"⟩
+    args∾↩ (            shared) / ⟨"-fPIC", "-DCBQN_SHARED"⟩
     args∾↩ (           windows) / ⟨"-DNO_MMAP"⟩
     args∾↩ (  replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
@@ -255,6 +256,9 @@ po ← { # parsed options
   REPLXXc ⇐ { 𝕊:
     args ← ⟨cxx, "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩
     args∾↩ GetOpt "REPLXX_FLAGS"
+    args∾↩ (         ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE"⟩
+    args∾↩ (       shared) / ⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
     replxxc ↩ args
   }
@@ -272,6 +276,7 @@ po ← { # parsed options
     args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
     args∾↩ (exportSymbols) / ⟨"-rdynamic"⟩
     args∾↩ (         ¬pie) / ⟨"-no-pie"⟩
+    args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE", "-pie"⟩
     args∾↩ (       shared) / ⟨"-shared"⟩
     args∾↩ (      windows) / ⟨"-lpthread"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
@@ -627,7 +632,7 @@ success ← Run cachedBin
     SH ⟨"cp", AtRoot cachedBin,                   outPath •file.At •file.Name cachedBin⟩
     SH ⟨"cp", AtRoot linkerCache.File "BQN.wasm", outPath •file.At "BQN.wasm"⟩
   ;
-    SH ⟨"cp", AtRoot cachedBin, outPath⟩
+    SH ⟨"cp", "-f", AtRoot cachedBin, outPath⟩
 }⍟⊢ success
 
 OnExit@
