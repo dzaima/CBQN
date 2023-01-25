@@ -326,21 +326,33 @@ GetCache ← { 𝕊 basename‿desc‿key:
   dataVersion ← 0
   prevKs‿prevVs ← {a‿b: a≡dataVersion? b; ⟨⟩‿⟨⟩} •file.Exists◶⟨@, {Deserialize ⟨8‿'c',8⟩•bit._cast •FBytes 𝕩}⟩ dataPath
   
-  IsUpToDate ⇐ { 𝕊:
+  Find ⇐ {
     i ← ⊑prevKs⊐<𝕩.cacheKey
-    i<≠prevKs?
-      {@:0; ∧´ AtRoot⊸IsFileTheSame´¨𝕩} i⊑prevVs;
-    0
+    i<≠prevKs? i⊑prevVs;
+    @
+  }
+  IsUpToDate ⇐ {
+    𝕊:
+      𝕩.found0≢@?
+      fileInfo‿depInfo ← 𝕩.found0
+      ∧´ AtRoot⊸IsFileTheSame´¨ fileInfo?
+      depInfo≡𝕩.DepHash@
+    ;
+      0
   }
   newKs‿newVs ← ⟨⟩‿⟨⟩
   finalNewData ← @
   FinalData ⇐ { 𝕊:
     finalNewData≢@?finalNewData;
-    jKs ← newKs∾prevKs
-    jVs ← newVs∾prevVs
+    jKs ← prevKs∾˜ {𝕩.cacheKey}¨ newKs
+    jVs ← prevVs∾˜ newKs {𝕨.SetVal 𝕩}¨ newVs
     finalNewData ↩ Serialize dataVersion⋈ (<∊jKs) /¨ jKs‿jVs
   }
-  Update ⇐ {key𝕊data: !finalNewData≡@ ⋄ newKs∾↩ <key ⋄ newVs∾↩ <data} # data≡@ means failed to build
+  Update ⇐ {key𝕊data: # data≡@ means failed to build
+    !finalNewData≡@
+    newKs∾↩ <key
+    newVs∾↩ <data
+  }
   onExitList∾↩ {{𝕊: dataPath •FBytes ⟨8,8‿'c'⟩•bit._cast FinalData@}⍟{𝕊: 0≠≠newKs}}
 }
 
@@ -348,7 +360,7 @@ ruleKs‿ruleVs ← ⟨⟩‿⟨⟩
 
 # dependency resolution & thread management
 Run ← { 𝕊:
-  ruleDeps ← {𝕩.ruleDeps}¨ ruleVs
+  ruleDeps ← {{𝕩.dst}¨ 𝕩.ruleDeps}¨ ruleVs
   ruleSrcs0 ← ruleKs⊐∾ruleDeps
   ! ∧´ ruleSrcs0<≠ruleKs
   ruleSrcs ← ((≠∾˜≠¨/↕∘≠)ruleDeps) ⊔ ruleSrcs0
@@ -386,10 +398,10 @@ Run ← { 𝕊:
     Log⍟(×≠) 1⊑tb
     ⊢◶⟨
       { 𝕊:
-        v.cacheKey v.cache.Update @
+        v v.cache.Update @
       }
       { 𝕊:
-        v.cacheKey v.cache.Update 3⊑tb
+        v v.cache.Update 3⊑tb
         ps ← i⊑ruleP
         ruleN -⟜1⌾(ps⊸⊏)↩
         left∾↩ (0=ps⊏ruleN)/ps
@@ -467,14 +479,21 @@ Run ← { 𝕊:
 
 AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
   ruleKs∾↩ <dst
+  setFound ← @
   res ← {
     dst ⇐ dst
     cache ⇐ cache
     cacheKey ⇐ cacheKey
+    found0 ⇐ 0
+    SetFound ↩ {found0↩𝕩}
+    DepHash ⇐ {𝕊: Hash {𝕩.found1≡@? 𝕩.found0; 𝕩.found1}¨ ruleDeps}
+    found1 ⇐ @
+    SetVal ⇐ {found1 ↩ 𝕩⋈DepHash@}
     disp ⇐ disp
     CMD ⇐ GetCMD
-    ruleDeps ⇐ {𝕩.dst}¨ deps
+    ruleDeps ⇐ deps
   }
+  SetFound cache.Find res
   ruleVs∾↩ res
   res
 }
