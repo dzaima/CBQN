@@ -117,7 +117,7 @@ NOINLINE void farr_print(FILE* f, B x) { // should accept refc=0 arguments for d
       if (!isC32(c) || o2cG(c)<32) goto reg;
     }
     fprintf(f, "\"");
-    fprintsB(f, x);
+    fprintsB(f, taga(a(x))); // allow incorrectly tagged input (e.g. by heapverify)
     fprintf(f, "\"");
     return;
   }

@@ -375,10 +375,12 @@ B nc_parseBlock(B tokens, usz i0, u32 end, bool isBlock, B* objs, u32* varCount)
   B vars0 = emptyHVec();
   #endif
   Vars vars = &vars0;
+  B toFree = emptyHVec();
   if (isBlock) {
-    nc_var(vars, m_c32vec(U"𝕤", 1));
-    nc_var(vars, m_c32vec(U"𝕩", 1));
-    nc_var(vars, m_c32vec(U"𝕨", 1));
+    B t;
+    t=m_c32vec(U"𝕤", 1); nc_var(vars, t); nc_add(&toFree, t);
+    t=m_c32vec(U"𝕩", 1); nc_var(vars, t); nc_add(&toFree, t);
+    t=m_c32vec(U"𝕨", 1); nc_var(vars, t); nc_add(&toFree, t);
   }
   B r0 = nc_parseStatements(tokens, i0, &i1, end, objs, vars);
   #if FAST_NATIVE_COMP
@@ -392,6 +394,7 @@ B nc_parseBlock(B tokens, usz i0, u32 end, bool isBlock, B* objs, u32* varCount)
   if (i1 != IA(tokens)) thrM("Native compiler: Code present after block end");
   B r = IGet(r0, 1);
   decG(r0);
+  decG(toFree);
   return r;
 }
 
