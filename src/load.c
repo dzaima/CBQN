@@ -153,6 +153,10 @@ B compObj_c1(B t, B x) {
   ptr_dec(block);
   return res;
 }
+B compObj_c2(B t, B w, B x) {
+  load_comp = x; gc_add(x);
+  return w;
+}
 
 #if FORMATTER
 B load_fmt, load_repr;
