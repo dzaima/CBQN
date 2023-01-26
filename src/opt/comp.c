@@ -70,62 +70,74 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
     u32 c = chars[i++];
     if (i==pi) thrF("Native compiler: Tokenizer stuck on \\u%xi / %i", c, c);
     B val;
-    if (c==U'∞') val = nc_literal(m_f64(1.0/0));
-    else if (c==U'π') val = nc_literal(m_f64(3.141592653589793));
-    else if (c=='@') val = nc_literal(m_c32(0));
-    else if (c==' ') continue;
-    else if (nc_num(c) | (c==U'¯')) {
-      bool neg = c==U'¯';
-      if (!neg) i--;
-      else if (!nc_num(chars[i])) thrM("Native compiler: Standalone negative sign");
-      f64 num = 0;
-      while (nc_num(chars[i])) num = num*10 + (chars[i++]-'0');
-      if (neg) num = -num;
-      val = nc_literal(m_f64(num));
-    } else if (c=='"') {
-      usz i0 = i;
-      while ('"'!=chars[i]) { i++; if (i>=len) thrM("Native compiler: Unclosed string literal"); }
-      usz ia = i-i0;
-      u32* vp; val = nc_literal(m_c32arrv(&vp, ia));
-      memcpy(vp, chars+i0, ia*sizeof(u32));
-      i++;
-    } else if (c=='#') { // comments
-      while (i<len && chars[i]!='\n') i++;
-      val = m_c32(','); i++;
-    } else if (c==U'𝕨' || c==U'𝕩') { // special names
-      *hasBlock = true;
-      val = m_hVec2(m_f64(3), m_c32vec((u32[1]){c}, 1));
-    } else if (nc_al(c) || c==U'•') { // names
-      bool sys = c==U'•';
-      usz i0 = sys? i : i-1;
-      while (nc_al(chars[i]) | nc_num(chars[i])) i++;
-      usz ia = i-i0;
-      u32* np; B name = m_c32arrv(&np, ia);
-      PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
-      if (sys) {
-        B sysRes = sys_c1(m_f64(0), m_hVec1(name));
-        val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
-        decG(sysRes);
-      } else {
-        val = m_hVec2(m_f64(nc_up(c)? 0 : 3), name);
+    switch (c) {
+      case U'∞': val = nc_literal(m_f64(1.0/0)); break;
+      case U'π': val = nc_literal(m_f64(3.141592653589793)); break;
+      case '@': val = nc_literal(m_c32(0)); break;
+      case ' ': continue;
+      case'0'...'9': case U'¯': { // numbers
+        bool neg = c==U'¯';
+        if (!neg) i--;
+        else if (!nc_num(chars[i])) thrM("Native compiler: Standalone negative sign");
+        f64 num = 0;
+        while (nc_num(chars[i])) num = num*10 + (chars[i++]-'0');
+        if (neg) num = -num;
+        val = nc_literal(m_f64(num));
+        break;
       }
-    } else if (c==U'⋄' | c==',' | c=='\n') { // separators
-      val = m_c32(',');
-    } else {
-      // primitives
-      u32* primRepr = U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊";
-      usz j = 0;
-      while(primRepr[j]) {
-        if (primRepr[j]==c) { val = nc_literal(IGet(prims, j)); goto add; }
-        j++;
+      case '"': { // string literal
+        usz i0 = i;
+        while ('"'!=chars[i]) { i++; if (i>=len) thrM("Native compiler: Unclosed string literal"); }
+        if (chars[i+1]=='"') thrM("Native compiler: No support for escaped quote characters in strings");
+        usz ia = i-i0;
+        u32* vp; val = nc_literal(m_c32arrv(&vp, ia));
+        memcpy(vp, chars+i0, ia*sizeof(u32));
+        i++;
+        break;
       }
-      // syntax
-      u32* basicChars = U"()⟨⟩←↩{}";
-      while (*basicChars) {
-        if (c==*basicChars) { val = m_c32(c); goto add; }
-        basicChars++;
+      case '#': { // comments
+        while (i<len && chars[i]!='\n') i++;
+        val = m_c32(','); i++;
+        break;
       }
-      thrF("Native compiler: Can't tokenize \\u%xi / %i", c, c);
+      case U'𝕨': case U'𝕩': { // special names
+        *hasBlock = true;
+        val = m_hVec2(m_f64(3), m_c32vec((u32[1]){c}, 1));
+        break;
+      }
+      case 'a'...'z': case 'A'...'Z': case U'•': { // names
+        bool sys = c==U'•';
+        usz i0 = sys? i : i-1;
+        while (nc_al(chars[i]) | nc_num(chars[i])) i++;
+        usz ia = i-i0;
+        u32* np; B name = m_c32arrv(&np, ia);
+        PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
+        if (sys) {
+          B sysRes = sys_c1(m_f64(0), m_hVec1(name));
+          val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
+          decG(sysRes);
+        } else {
+          val = m_hVec2(m_f64(nc_up(c)? 0 : 3), name);
+        }
+        break;
+      }
+      case U'⋄': case ',': case '\n': { // separators
+        val = m_c32(',');
+        break;
+      }
+      case '(': case ')': case '{': case '}': case U'⟨': case U'⟩': case U'←': case U'↩': { // syntax to be parsed later
+        val = m_c32(c);
+        break;
+      }
+      default: { // primitives
+        u32* primRepr = U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊";
+        usz j = 0;
+        while(primRepr[j]) {
+          if (primRepr[j]==c) { val = nc_literal(IGet(prims, j)); goto add; }
+          j++;
+        }
+        thrF("Native compiler: Can't tokenize \\u%xi / %i", c, c);
+      }
     }
     add:
     nc_add(&r, val);
