@@ -4,6 +4,9 @@
 
 B native_comp;
 
+#ifndef FAST_NATIVE_COMP
+  #define FAST_NATIVE_COMP 1
+#endif
 
 
 NOINLINE B nc_emptyI32Vec() {
@@ -14,12 +17,18 @@ B nc_ivec1(i32 a              ) { i32* rp; B r = m_i32arrv(&rp, 1); rp[0]=a;    
 B nc_ivec2(i32 a, i32 b       ) { i32* rp; B r = m_i32arrv(&rp, 2); rp[0]=a; rp[1]=b;          return r; }
 B nc_ivec3(i32 a, i32 b, i32 c) { i32* rp; B r = m_i32arrv(&rp, 3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
 NOINLINE void nc_iadd(B* w, i32 x) { // consumes x
+  assert(TY(*w)==t_i32arr);
   *w = vec_add(*w, m_f64(x));
 }
 NOINLINE void nc_ijoin(B* w, B x) { // doesn't consume x
-  SGetU(x)
-  usz ia = IA(x);
-  for (usz i = 0; i < ia; i++) nc_iadd(w, o2i(GetU(x, i)));
+  assert(TY(*w)==t_i32arr && TI(x,elType)==el_i32);
+  #if FAST_NATIVE_COMP
+    *w = vec_join(*w, incG(x));
+  #else
+    SGetU(x)
+    usz ia = IA(x);
+    for (usz i = 0; i < ia; i++) nc_iadd(w, o2i(GetU(x, i)));
+  #endif
 }
 
 
@@ -87,7 +96,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
       while (nc_al(chars[i]) | nc_num(chars[i])) i++;
       usz ia = i-i0;
       u32* np; B name = m_c32arrv(&np, ia);
-      for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
+      PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
       if (sys) {
         B sysRes = sys_c1(m_f64(0), m_hVec1(name));
         val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
@@ -224,16 +233,28 @@ B nc_generate(B p1) { // consumes
   return e;
 }
 
-u32 nc_var(B* vars, B name) { // doesn't consume
-  B o = *vars;
-  usz ia = IA(o);
-  SGetU(o)
-  for (usz i = 0; i < ia; i++) if (nc_equal(GetU(o, i), name)) return i;
-  nc_add(vars, incG(name));
-  return ia;
-}
+#if FAST_NATIVE_COMP
+  #include "../utils/hash.h"
+  typedef H_b2i** Vars;
+  u32 nc_var(Vars vars, B name) { // doesn't consume
+    bool had;
+    u64 p = mk_b2i(vars, name, &had);
+    if (had) return (*vars)->a[p].val;
+    return (*vars)->a[p].val = (*vars)->pop-1;
+  }
+#else
+  typedef B* Vars;
+  u32 nc_var(Vars vars, B name) { // doesn't consume
+    B o = *vars;
+    usz ia = IA(o);
+    SGetU(o)
+    for (usz i = 0; i < ia; i++) if (nc_equal(GetU(o, i), name)) return i;
+    nc_add(vars, incG(name));
+    return ia;
+  }
+#endif
 
-B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, B* vars) {
+B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
   SGetU(tokens)
   usz tia = IA(tokens);
   usz i = i0;
@@ -317,15 +338,25 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, B* vars) {
 }
 B nc_parseBlock(B tokens, usz i0, bool isBlock, B* objs, u32* varCount) { // returns bytecode
   usz i1;
-  B vars = emptyHVec();
+  #if FAST_NATIVE_COMP
+  H_b2i* vars0 = m_b2i(32);
+  #else
+  B vars0 = emptyHVec();
+  #endif
+  Vars vars = &vars0;
   if (isBlock) {
-    nc_add(&vars, m_c32vec(U"𝕤", 1));
-    nc_add(&vars, m_c32vec(U"𝕩", 1));
-    nc_add(&vars, m_c32vec(U"𝕨", 1));
+    nc_var(vars, m_c32vec(U"𝕤", 1));
+    nc_var(vars, m_c32vec(U"𝕩", 1));
+    nc_var(vars, m_c32vec(U"𝕨", 1));
   }
-  B r0 = nc_parseStatements(tokens, 0, &i1, '\0', objs, &vars);
-  *varCount = IA(vars);
-  decG(vars);
+  B r0 = nc_parseStatements(tokens, 0, &i1, '\0', objs, vars);
+  #if FAST_NATIVE_COMP
+  *varCount = vars0->pop;
+  free_b2i(vars0);
+  #else
+  *varCount = IA(vars0);
+  decG(vars0);
+  #endif
   if (i1 != IA(tokens)) thrM("Native compiler: Failed to parse");
   B r = IGet(r0, 1);
   decG(r0);
