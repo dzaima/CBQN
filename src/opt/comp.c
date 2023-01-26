@@ -1,6 +1,11 @@
 #include "../nfns.h"
 #include "../vm.h"
 #include "../utils/mut.h"
+// minimal compiler, capable of running mlochbaum/BQN/src/bootstrap/boot2.bqn
+// supports •-values, 1-modifiers, value and function class variables
+// input must be either an immediate expression, or a block potentially containing 𝕨 or 𝕩
+// goal is to either error, or compile correctly
+
 
 B native_comp;
 
@@ -69,10 +74,10 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
     else if (c==U'π') val = nc_literal(m_f64(3.141592653589793));
     else if (c=='@') val = nc_literal(m_c32(0));
     else if (c==' ') continue;
-    else if (c=='{' | c=='}') continue; // ignoring braces for now
     else if (nc_num(c) | (c==U'¯')) {
       bool neg = c==U'¯';
       if (!neg) i--;
+      else if (!nc_num(chars[i])) thrM("Native compiler: Standalone negative sign");
       f64 num = 0;
       while (nc_num(chars[i])) num = num*10 + (chars[i++]-'0');
       if (neg) num = -num;
@@ -115,7 +120,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         j++;
       }
       // syntax
-      u32* basicChars = U"()⟨⟩←↩";
+      u32* basicChars = U"()⟨⟩←↩{}";
       while (*basicChars) {
         if (c==*basicChars) { val = m_c32(c); goto add; }
         basicChars++;
@@ -185,7 +190,8 @@ B nc_generate(B p1) { // consumes
   if (p2ia==1) { listFinal=p2; goto toFinal; }
   B e = incG(GetU(p2, p2ia-1));
   usz i = p2ia-1; // pointer to last used thing
-  bool explicit = nc_ty(GetU(p2,p2ia-1)) == 3;
+  u8 tyE = nc_ty(GetU(p2,p2ia-1));
+  bool explicit = tyE==3;
   
   while(i>0) {
     B en1 = GetU(p2, i-1);
@@ -193,9 +199,11 @@ B nc_generate(B p1) { // consumes
     // printf("e @ %d: ", i); printI(e); putchar('\n');
     
     if (en1t==4 || en1t==5) { // assignment
+      if (!explicit && i!=1) thrM("Native compiler: Assignment in the middle of tacit code");
       B bc = nc_emptyI32Vec();
       nc_ijoin(&bc, IGetU(e,   1));
       nc_ijoin(&bc, IGetU(en1, 1));
+      if (tyE != o2iG(IGetU(en1, 2))) thrM("Native compiler: Wrong assignment class");
       nc_iadd(&bc, en1t==4? SETN : SETU);
       decG(e);
       e = m_hVec2(m_f64(explicit? 3 : 0), bc);
@@ -287,7 +295,11 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
         B res = nc_parseStatements(tokens, i, &iM, ctc=='('? ')' : U'⟩', objs, vars);
         i = iM;
         nc_add(&parts, res);
-      } else thrF("Native compiler: Unexpected character token: %B", ct);
+      } else if (ctc==U'{' || ctc==U'}') {
+        thrM("Native compiler: Nested blocks aren't supported");
+      } else if (ctc==U'←' || ctc==U'↩') {
+        thrM("Native compiler: Invalid assignment");
+      } else thrF("Native compiler: Unexpected character token \\u%xi / %i", ctc, ctc);
     } else if (isArr(ct)) {
       if (RNK(ct)==0) { // literal
         B val = IGetU(ct, 0);
@@ -296,15 +308,16 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
         nc_add(&parts, m_hVec2(m_f64(type), nc_ivec2(PUSH, i)));
       } else { // name
         u8 ty = nc_ty(ct);
+        u8 rty = ty;
         assert(ty<=3);
         if (i<tia) {
           B ct2 = GetU(tokens, i);
           if (isC32(ct2) && (o2cG(ct2)==U'←' || o2cG(ct2)==U'↩')) {
-            ty = o2cG(ct2)==U'←'? 4 : 5;
+            rty = o2cG(ct2)==U'←'? 4 : 5;
             i++;
           }
         }
-        nc_add(&parts, m_hVec2(m_f64(ty), nc_ivec3(ty<=3? VARO : VARM, 0, nc_var(vars, IGetU(ct, 1)))));
+        nc_add(&parts, m_hVec3(m_f64(rty), nc_ivec3(rty<=3? VARO : VARM, 0, nc_var(vars, IGetU(ct, 1))), m_f64(ty)));
       }
     } else thrF("Native compiler: Unexpected token %B", ct);
   }
@@ -336,7 +349,13 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
   } else thrM("bad closing");
   return m_hVec2(m_f64(type), final);
 }
-B nc_parseBlock(B tokens, usz i0, bool isBlock, B* objs, u32* varCount) { // returns bytecode
+
+NOINLINE usz nc_skipSeparators(B tokens, usz i) {
+  while (i < IA(tokens) && isC32(IGetU(tokens,i)) && o2cG(IGetU(tokens,i))==',') i++;
+  return i;
+}
+
+B nc_parseBlock(B tokens, usz i0, u32 end, bool isBlock, B* objs, u32* varCount) { // returns bytecode
   usz i1;
   #if FAST_NATIVE_COMP
   H_b2i* vars0 = m_b2i(32);
@@ -349,7 +368,7 @@ B nc_parseBlock(B tokens, usz i0, bool isBlock, B* objs, u32* varCount) { // ret
     nc_var(vars, m_c32vec(U"𝕩", 1));
     nc_var(vars, m_c32vec(U"𝕨", 1));
   }
-  B r0 = nc_parseStatements(tokens, 0, &i1, '\0', objs, vars);
+  B r0 = nc_parseStatements(tokens, i0, &i1, end, objs, vars);
   #if FAST_NATIVE_COMP
   *varCount = vars0->pop;
   free_b2i(vars0);
@@ -357,7 +376,8 @@ B nc_parseBlock(B tokens, usz i0, bool isBlock, B* objs, u32* varCount) { // ret
   *varCount = IA(vars0);
   decG(vars0);
   #endif
-  if (i1 != IA(tokens)) thrM("Native compiler: Failed to parse");
+  i1 = nc_skipSeparators(tokens, i1);
+  if (i1 != IA(tokens)) thrM("Native compiler: Code present after block end");
   B r = IGet(r0, 1);
   decG(r0);
   return r;
@@ -367,7 +387,7 @@ B nativeComp_c2(B t, B w, B x) {
   SGetU(w)
   B prims = GetU(w,0);
   B sysvs = GetU(w,1);
-  bool isBlock = false;
+  bool fnBlock = false;
   
   // tokenize
   usz xia = IA(x);
@@ -375,27 +395,31 @@ B nativeComp_c2(B t, B w, B x) {
   SGetU(x)
   for (usz i = 0; i < xia; i++) xBuf[i] = o2c(GetU(x, i));
   xBuf[xia] = 0;
-  B tokenized = nc_tokenize(prims, sysvs, xBuf, xia, &isBlock);
+  B tokens = nc_tokenize(prims, sysvs, xBuf, xia, &fnBlock);
   decG(xBufO);
   
   // // parse
   B objs = emptyHVec();
   i32* bc0;
-  B bytecode = m_i32arrv(&bc0, isBlock? 3 : 0);
-  if (isBlock) {
+  B bytecode = m_i32arrv(&bc0, fnBlock? 3 : 0);
+  usz i0 = nc_skipSeparators(tokens, 0);
+  bool anyBlock = i0<IA(tokens) && isC32(IGetU(tokens,i0)) && o2cG(IGetU(tokens,i0))=='{';
+  if (anyBlock) i0++;
+  if (fnBlock) {
     bc0[0] = DFND;
     bc0[1] = 1;
     bc0[2] = RETN;
   }
   u32 varCount;
-  B bc1 = nc_parseBlock(tokenized, 0, isBlock, &objs, &varCount);
+  if (fnBlock && !anyBlock) thrM("Native compiler: 𝕨/𝕩 outside block");
+  B bc1 = nc_parseBlock(tokens, i0, anyBlock? '}' : '\0', fnBlock, &objs, &varCount);
   nc_ijoin(&bytecode, bc1);
   decG(bc1);
-  decG(tokenized);
+  decG(tokens);
   
   // build result
   B res;
-  if (isBlock) {
+  if (fnBlock) {
     res = m_hVec4(
       bytecode,
       objs,
