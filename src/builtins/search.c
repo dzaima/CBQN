@@ -61,6 +61,10 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #undef SYMB
 }
 
+static B reduceWidth(B r, usz count) {
+  return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
+}
+
 B indexOf_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     B2 t = splitCells(x, w, 1);
@@ -90,18 +94,16 @@ B indexOf_c2(B t, B w, B x) {
       chk16:  for (usz i = 0; i < wia; i++) if (((u16*)wp)[i]==v16 ) { res=i; break; } goto checked;
       chk32:  for (usz i = 0; i < wia; i++) if (((u32*)wp)[i]==v32 ) { res=i; break; } goto checked;
       chk64f: for (usz i = 0; i < wia; i++) if (((f64*)wp)[i]==v64f) { res=i; break; } goto checked;
-    }
-    else {
+    } else {
       SGetU(w)
       for (usz i = 0; i < wia; i++) if (equal(GetU(w,i), el)) { res = i; goto checked; }
     }
     
     checked:; notfound:;
     decG(w); dec(x);
-    i32* rp; Arr* r = m_i32arrp(&rp, 1);
-    arr_shAlloc(r, 0);
-    rp[0] = res;
-    return taga(r);
+    B r = m_vec1(m_f64(res));
+    arr_shAtm(a(r)); // replaces shape
+    return r;
   } else {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
@@ -125,7 +127,7 @@ B indexOf_c2(B t, B w, B x) {
     if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
       B r;
       TABLE(w, x, i32, wia, i)
-      return r;
+      return reduceWidth(r, wia);
     }
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
@@ -137,7 +139,7 @@ B indexOf_c2(B t, B w, B x) {
     }
     for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
     free_b2i(map); decG(w); decG(x);
-    return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
+    return reduceWidth(r, wia);
   }
 }
 
@@ -193,7 +195,7 @@ B memberOf_c2(B t, B w, B x) {
     if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
       B r;
       TABLE(x, w, i8, 0, 1)
-      return num_squeeze(r);
+      return taga(cpyBitArr(r));
     }
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
@@ -264,7 +266,7 @@ B count_c2(B t, B w, B x) {
     free_b2i(map);
   }
   TFREE(wnext); decG(w); decG(x);
-  return wia<=I8_MAX? taga(cpyI8Arr(r)) : wia<=I16_MAX? taga(cpyI16Arr(r)) : r;
+  return reduceWidth(r, wia);
 }
 
 
