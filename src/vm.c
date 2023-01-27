@@ -1230,6 +1230,10 @@ i32 sC_m[BC_SIZE] = { // stack consumed map
 };
 i32 sA_m[BC_SIZE]; // stack added map
 
+B funBl_uc1(B t, B o, B x) {
+  return funBl_im(t, c1(o, c1(t, x)));
+}
+
 void comp_init() {
   TIi(t_comp    ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
   TIi(t_body    ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
@@ -1244,6 +1248,7 @@ void comp_init() {
   TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
   TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
   
+  TIi(t_funBl,fn_uc1) = funBl_uc1;
   TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
