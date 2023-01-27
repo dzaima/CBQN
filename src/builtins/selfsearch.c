@@ -354,7 +354,7 @@ B count_c1(B t, B x) {
   #undef LOOKUP
   #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB_VAL( \
     T, W, RAD, STOP,                                       \
-    /*RES0*/0, /*RESULT*/r,                                \
+    /*RES0*/0, /*RETURN*/num_squeeze(r),                   \
     /* RESWRITE */                                         \
     bool e0=h==x0; rp[i]=val[j]+(ctr0&-(u32)e0);           \
     hash[j]=h; val[j]+=!e0; ctr0+=e0; ,                    \
@@ -451,13 +451,13 @@ B indexOf_c1(B t, B x) {
     else                for (usz j=0; j<tn; j++) tab[j]=n;     \
     DOTAB(u##T)                                                \
     decG(x); TFREE(tab);                                       \
-    return num_squeeze(r)
+    return reduceI32WidthBelow(r, u)
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   
   #define HASHTAB(T, W, THRESH) SELFHASHTAB_VAL(T, W, 0, 2*n, \
-    /*RES0*/0, /*RESULT*/r,                                \
+    /*RES0*/0, /*RETURN*/reduceI32WidthBelow(r, ctr),      \
     /* RESWRITE */                                         \
     if (k!=h) { val[j]=ctr++; hash[j]=h; } rp[i]=val[j]; , \
     /*THRESHMUL*/2, THRESH,                                \
