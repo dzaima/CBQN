@@ -244,7 +244,7 @@ B memberOf_c1(B t, B x) {
     else                for (usz j=0; j<tn; j++) tab[j]=1;             \
     for (usz i=0; i<n; i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; }  \
     decG(x); TFREE(tab);                                               \
-    return num_squeeze(r)
+    return taga(cpyBitArr(r))
   if (lw == 3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw == 4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
@@ -403,7 +403,11 @@ B count_c1(B t, B x) {
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
   }
   decG(x); free_b2i(map);
-  return r;
+  return num_squeeze(r);
+}
+
+static B reduceI32WidthBelow(B r, usz after) {
+  return after<=2? taga(cpyBitArr(r)) : after<=I8_MAX+1? taga(cpyI8Arr(r)) : after<=I16_MAX+1? taga(cpyI16Arr(r)) : r;
 }
 
 B indexOf_c1(B t, B x) {
@@ -431,7 +435,7 @@ B indexOf_c1(B t, B x) {
       rp[i]=s; u+=u==s;                                        \
     }                                                          \
     decG(x); TFREE(uniq); return r;
-  #define DOTAB(T) \
+  #define DOTAB(T) /*leaves 1+max in u */ \
     i32 u=0;                                                   \
     for (usz i=0; i<n; i++) {                                  \
       T j=xp[i]; i32 t=tab[j];                                 \
@@ -476,7 +480,7 @@ B indexOf_c1(B t, B x) {
       DOTAB(i32)
       TFREE(tmp);
       decG(x);
-      return r;
+      return reduceI32WidthBelow(r, u);
     }
     HASHTAB(u32, 32, sz==msz? 0 : sz>=(1<<18)? 1 : sz>=(1<<14)? 4 : 6)
     decG(r); // Fall through
@@ -503,7 +507,7 @@ B indexOf_c1(B t, B x) {
     else     rp[i] = map->a[p].val = ctr++;
   }
   free_b2i(map); decG(x);
-  return r;
+  return reduceI32WidthBelow(r, ctr);
 }
 
 B find_c1(B t, B x) {

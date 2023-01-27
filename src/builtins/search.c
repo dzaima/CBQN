@@ -61,7 +61,7 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #undef SYMB
 }
 
-static B reduceWidth(B r, usz count) {
+static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
@@ -127,7 +127,7 @@ B indexOf_c2(B t, B w, B x) {
     if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
       B r;
       TABLE(w, x, i32, wia, i)
-      return reduceWidth(r, wia);
+      return reduceI32Width(r, wia);
     }
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
@@ -139,7 +139,7 @@ B indexOf_c2(B t, B w, B x) {
     }
     for (usz i = 0; i < xia; i++) rp[i] = getD_b2i(map, GetU(x,i), wia);
     free_b2i(map); decG(w); decG(x);
-    return reduceWidth(r, wia);
+    return reduceI32Width(r, wia);
   }
 }
 
@@ -266,7 +266,7 @@ B count_c2(B t, B w, B x) {
     free_b2i(map);
   }
   TFREE(wnext); decG(w); decG(x);
-  return reduceWidth(r, wia);
+  return reduceI32Width(r, wia);
 }
 
 
