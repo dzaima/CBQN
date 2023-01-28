@@ -485,40 +485,27 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
 
 
 // TODO fills on EACH_FILLS
-NFnDesc* depthfDesc;
 B depthf_c1(B t, B x) {
   if (isArr(x)) return eachm_fn(t, x, depthf_c1);
-  else return c1(nfn_objU(t), x);
+  else return c1(t, x);
 }
 B depthf_c2(B t, B w, B x) {
   if (isArr(w) || isArr(x)) return eachd_fn(t, w, x, depthf_c2);
-  else return c2(nfn_objU(t), w, x);
+  else return c2(t, w, x);
 }
 extern B rt_depth;
 B depth_c1(Md2D* d, B x) {
   if (isF64(d->g) && o2fG(d->g)==0) {
-    if (isArr(x)) {
-      B f = m_nfn(depthfDesc, incG(d->f));
-      B r = eachm_fn(f, x, depthf_c1);
-      decG(f);
-      return r;
-    } else {
-      return c1(d->f, x);
-    }
+    if (isArr(x)) return eachm_fn(d->f, x, depthf_c1);
+    else return c1(d->f, x);
   }
   SLOW3("!F⚇𝕨 𝕩", d->g, x, d->f);
   return m2c1(rt_depth, d->f, d->g, x);
 }
 B depth_c2(Md2D* d, B w, B x) {
   if (isF64(d->g) && o2fG(d->g)==0) {
-    if (isArr(w) || isArr(x)) {
-      B f = m_nfn(depthfDesc, incG(d->f));
-      B r = eachd_fn(f, w, x, depthf_c2);
-      decG(f);
-      return r;
-    } else {
-      return c2(d->f, w, x);
-    }
+    if (isArr(w) || isArr(x)) return eachd_fn(d->f, w, x, depthf_c2);
+    else return c2(d->f, w, x);
   }
   SLOW3("!𝕨 𝔽⚇f 𝕩", w, x, d->g);
   return m2c2(rt_depth, d->f, d->g, w, x);
@@ -537,7 +524,4 @@ void md2_init() {
   TIi(t_md2BI,m2_iw) = md2BI_iw;
   TIi(t_md2BI,m2_ix) = md2BI_ix;
   c(BMd2,bi_before)->uc1 = before_uc1;
-}
-void md2Post_init() {
-  depthfDesc = registerNFn(m_c8vec_0("(depth fn)"), depthf_c1, depthf_c2);
 }
