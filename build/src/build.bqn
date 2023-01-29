@@ -186,7 +186,7 @@ po ← { # parsed options
   output ↩ •wdpath•file.At {𝕊:
     wasi? "BQN.wasm";
     emcc? ".";
-    shared? "libcbqn." ∾ {macos?"dylib"; windows?"dll"; "so"};
+    shared? {macos? "libcbqn.dylib"; windows? "cbqn.dll"; "libcbqn.so"};
     windows? "BQN.exe";
     "BQN"
   }⍟(""≡⊢) output
@@ -266,6 +266,7 @@ po ← { # parsed options
   singeliFlags ← GetOpt "sf"
   
   Linker ⇐ { 𝕊:
+    rdynamic ← exportSymbols ∧ ¬windows
     args ← ⟨{replxx? cxx; cc} DOpt "LD", "-lm"⟩
     args∾↩ 1⊑GetLibs@
     args∾↩ (ffi ∧ ¬bsd) / ⟨"-ldl"⟩
@@ -274,7 +275,7 @@ po ← { # parsed options
     args∾↩ GetOpt "LDFLAGS"
     args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
     args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
-    args∾↩ (exportSymbols) / ⟨"-rdynamic"⟩
+    args∾↩ (     rdynamic) / ⟨"-rdynamic"⟩
     args∾↩ (         ¬pie) / ⟨"-no-pie"⟩
     args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE", "-pie"⟩
     args∾↩ (       shared) / ⟨"-shared"⟩
