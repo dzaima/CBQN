@@ -24,6 +24,8 @@ make f='-DVMPOS=0'            c && ./BQN -p 2+2 || exit
 make f='-DDONT_FREE'          c && ./BQN -p 2+2 || exit
 make f='-DOBJ_COUNTER'        c && ./BQN -p 2+2 || exit
 make f='-DNO_RT'              c && ./BQN -p 2+2 || exit
+make f='-DNATIVE_COMPILER'    c && ./BQN -p 2+2 || exit
+make f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' c && ./BQN -p 2+2 || exit
 make f='-DLOG_GC'             c && ./BQN -p 2+2 || exit
 make f='-DWRITE_ASM'          c && ./BQN -p 2+2 || exit
 make f='-DUSE_PERF'           c && ./BQN -p 2+2 || exit
