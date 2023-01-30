@@ -791,7 +791,7 @@ void typesFinished_init() {
     if (TIi(i,freeT) == def_fallbackTriv) TIi(i,freeT) = TIi(i,freeF);
   }
   #if NATIVE_COMPILER
-  nativeCompiler_init();
+    nativeCompiler_init();
     #if ONLY_NATIVE_COMP
       load_comp = native_comp;
     #endif

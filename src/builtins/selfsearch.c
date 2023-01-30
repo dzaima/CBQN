@@ -435,7 +435,7 @@ B indexOf_c1(B t, B x) {
       rp[i]=s; u+=u==s;                                        \
     }                                                          \
     decG(x); TFREE(uniq); return r;
-  #define DOTAB(T) /*leaves 1+max in u */ \
+  #define DOTAB(T) /* leaves 1+max in u */ \
     i32 u=0;                                                   \
     for (usz i=0; i<n; i++) {                                  \
       T j=xp[i]; i32 t=tab[j];                                 \

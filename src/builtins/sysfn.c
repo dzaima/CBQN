@@ -120,12 +120,12 @@ B parseFloat_c1(B t, B x) {
   if (isAtm(x)) thrM("•ParseFloat: Expected a character list argument");
   if (TI(x,elType)!=el_c8) {
     x = chr_squeeze(x);
-    if (TI(x,elType)!=el_c8) thrM("•ParseFloat: Expected a character list argument"); 
+    if (TI(x,elType)!=el_c8) thrM("•ParseFloat: Expected a character list argument");
   }
   usz ia = IA(x);
   if (RNK(x)!=1) thrM("•ParseFloat: Input must have rank 1");
   if (ia==0) thrM("•ParseFloat: Input was empty");
-  if (ia >= (1<<20)) thrM("•ParseFloat: Input too long"); // otherwise things like 
+  if (ia >= (1<<20)) thrM("•ParseFloat: Input too long"); // assumption by ryu_s2d_n
   u8* data = c8any_ptr(x);
   f64 res;
   if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat: Malformed input");
