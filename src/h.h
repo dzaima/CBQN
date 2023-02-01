@@ -262,9 +262,9 @@ typedef union B {
   \
   /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
   /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
-  /*50*/ F(freed) F(harrPartial) F(customObj) F(mmapH) \
+  /*50*/ F(freed) F(invalid) F(harrPartial) F(customObj) F(mmapH) \
   \
-  /*53*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*55*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,

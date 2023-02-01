@@ -5,7 +5,8 @@ u8 elType2type[] = {
   [el_i8 ] = t_i8arr, [el_c8 ] = t_c8arr,
   [el_i16] = t_i16arr,[el_c16] = t_c16arr,
   [el_i32] = t_i32arr,[el_c32] = t_c32arr,
-  [el_bit] = t_bitarr,[el_f64] = t_f64arr
+  [el_bit] = t_bitarr,[el_f64] = t_f64arr,
+  [el_B] = t_invalid, [el_MAX] = t_invalid
 };
 u8 elTypeWidth[] = {
   [el_i8 ] = 1, [el_c8 ] = 1,

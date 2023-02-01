@@ -740,8 +740,9 @@ void base_init() { // very first init function
     TIi(i,fn_iw) = def_fn_iw; TIi(i,m1_iw) = def_m1_iw; TIi(i,m2_iw) = def_m2_iw;
     TIi(i,fn_ix) = def_fn_ix; TIi(i,m1_ix) = def_m1_ix; TIi(i,m2_ix) = def_m2_ix;
   }
-  TIi(t_empty,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
-  TIi(t_empty,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
+  TIi(t_empty,freeO) = empty_free; TIi(t_invalid,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
+  TIi(t_empty,freeF) = empty_free; TIi(t_invalid,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
+  TIi(t_invalid,visit) = freed_visit;
   TIi(t_freed,visit) = freed_visit;
   #ifdef DONT_FREE
     TIi(t_empty,get) = empty_get;
