@@ -4,7 +4,7 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
-static NOINLINE Arr* emptyArr(B x, ur xr) { // returns an empty array with the fill of x; if xr>1, shape is unset
+NOINLINE Arr* emptyArr(B x, ur xr) {
   B xf = getFillQ(x);
   if (xr==1) {
     if (isF64(xf)) return a(emptyIVec());

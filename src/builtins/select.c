@@ -84,31 +84,30 @@ B select_c2(B t, B w, B x) {
     decG(x);
     return taga(r);
   }
-  B xf = getFillQ(x);
-  SGet(x)
+  
   usz wia = IA(w);
   B r;
+  if (wia==0) {
+    ur wr = RNK(w);
+    if (0 == *SH(x) && wr==1) {
+      r = incG(x);
+      goto dec_ret;
+    }
+    ur rr = xr+wr-1;
+    Arr* ra = emptyArr(x, rr);
+    if (rr>1) {
+      ShArr* sh = m_shArr(rr);
+      shcpy(sh->a, SH(w), wr);
+      shcpy(sh->a+wr, SH(x)+1, xr-1);
+      arr_shSetU(ra, rr, sh);
+    }
+    r = taga(ra);
+    goto dec_ret;
+  }
+  
+  B xf = getFillQ(x);
   
   if (xr==1) {
-    if (wia==0) {
-      decG(x);
-      if (RNK(w)==1) {
-        if (isNum(xf)) { r = emptyIVec(); goto ret; }
-        if (isC32(xf)) { r = emptyCVec(); goto ret; }
-      }
-      Arr* ra;
-      if (isNum(xf) || isC32(xf)) {
-        ra = m_arr(sizeof(TyArr), isNum(xf)? t_i8arr : t_c8arr, 0);
-      } else {
-        ra = m_fillarrp(0);
-        fillarr_setFill(ra, xf);
-      }
-      arr_shCopy(ra, w);
-      r = taga(ra);
-      ret:
-      decG(w);
-      return r;
-    }
     usz xia = IA(x);
     if (xia==0) goto base; // can't just error immediately because depth 2 𝕨
     u8 xe = TI(x,elType);
@@ -120,7 +119,7 @@ B select_c2(B t, B w, B x) {
       #define BOOL_SPECIAL(W) \
         if (sizeof(W)==1 && BOOL_USE_SIMD) { \
           if (!avx2_select_bool128(wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); \
-          goto dec_ret;                                   \
+          goto dec_ret; \
         }
     #else
       #define CPUSEL(W, NEXT) \
@@ -180,6 +179,7 @@ B select_c2(B t, B w, B x) {
     if (xe==el_bit && wia>=256 && !BOOL_USE_SIMD && wia/4>=xia && we!=el_bit) {
       return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
     }
+    SGet(x)
     if (we==el_bit) {
       SGetU(x)
       B x0 = GetU(x, 0);

@@ -141,6 +141,7 @@ Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);
 B bit_negate(B x); // consumes
 Arr* cpyWithShape(B x); // consumes; returns array with refcount 1 with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
+Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the fill of x; if xr>1, shape is unset
 
 static B m_hVec1(B a               ); // consumes all
 static B m_hVec2(B a, B b          ); // consumes all
