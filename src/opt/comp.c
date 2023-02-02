@@ -95,6 +95,12 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         i++;
         break;
       }
+      case '\'': { // character literal
+        if (i+1 >= len || chars[i+1] != '\'') thrM("Native compiler: Unclosed character literal");
+        val = nc_literal(m_c32(chars[i]));
+        i+= 2;
+        break;
+      }
       case '#': { // comments
         while (i<len && chars[i]!='\n') i++;
         val = m_c32(','); i++;
