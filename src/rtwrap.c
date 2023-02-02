@@ -96,7 +96,7 @@ B wfn_c1(B t, B x) {
     #endif
     dec(exp);
   #else
-    B r = fi(f, inc(x));
+    B r = fi(f, x);
   #endif
   return r;
 }
