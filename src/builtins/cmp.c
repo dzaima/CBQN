@@ -57,7 +57,7 @@ CMP_REC(ne, ne, swapped=0;)
 #if SINGELI
   #include "../singeli/c/cmp.c"
 #else
-  void cmpA_init() { }
+  void cmpA_init(void) { }
   #define BASE_CMP_LOOP(OP, W, X) \
     for (usz j = 0; j < (l+7)>>3; j++) { \
       u8 c = 0;                          \

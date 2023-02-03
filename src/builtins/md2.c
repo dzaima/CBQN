@@ -42,7 +42,7 @@ typedef struct ReObj {
 } ReObj;
 void re_visit(Value* v) { mm_visit(((ReObj*)v)->msg); }
 void re_freeO(Value* v) { dec(lastErrMsg); lastErrMsg = ((ReObj*)v)->msg; }
-void pushRe() {
+void pushRe(void) {
   ReObj* o = customObj(sizeof(ReObj), re_visit, re_freeO);
   o->msg = lastErrMsg;
   gsAdd(tag(o,OBJ_TAG));
@@ -516,7 +516,7 @@ static void print_md2BI(FILE* f, B x) { fprintf(f, "%s", pm2_repr(c(Md1,x)->extr
 static B md2BI_im(Md2D* d,      B x) { return ((BMd2*)d->m2)->im(d,    x); }
 static B md2BI_iw(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->iw(d, w, x); }
 static B md2BI_ix(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->ix(d, w, x); }
-void md2_init() {
+void md2_init(void) {
   TIi(t_md2BI,print) = print_md2BI;
   TIi(t_md2BI,m2_uc1) = md2BI_uc1;
   TIi(t_md2BI,m2_ucw) = md2BI_ucw;

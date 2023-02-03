@@ -137,7 +137,7 @@ static void harrP_print(FILE* f, B x) {
   }
 #endif
 
-void harr_init() {
+void harr_init(void) {
   TIi(t_harr,get)   = harr_get;    TIi(t_hslice,get)   = hslice_get;   TIi(t_harrPartial,get)   = harrP_get;
   TIi(t_harr,getU)  = harr_getU;   TIi(t_hslice,getU)  = hslice_getU;  TIi(t_harrPartial,getU)  = harrP_get;
   TIi(t_harr,slice) = harr_slice;  TIi(t_hslice,slice) = hslice_slice;

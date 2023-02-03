@@ -215,7 +215,7 @@ void setPrevImport(B path, i32 pos) {
   bool had; i32 prev = mk_b2i(&prevImports, path, &had);
   prevImports->a[prev].val = pos;
 }
-void clearImportCacheMap() {
+void clearImportCacheMap(void) {
   if (prevImports!=NULL) free_b2i(prevImports);
   prevImports = NULL;
 }
@@ -248,11 +248,11 @@ B gid2str(i32 n) {
   // print_fmt("gid2str %i → %R\n", n, r);
   return r;
 }
-B allNsFields() {
+B allNsFields(void) {
   return globalNames==NULL? bi_N : incG(globalNameList);
 }
 
-void* profiler_makeMap() {
+void* profiler_makeMap(void) {
   return m_b2i(64);
 }
 i32 profiler_index(void** mapRaw, B comp) {
@@ -273,7 +273,7 @@ B tack_uc1(B t, B o, B x) {
 }
 
 
-void fun_gcFn() {
+void fun_gcFn(void) {
   if (prevImports!=NULL) mm_visitP(prevImports);
   if (globalNames!=NULL) mm_visitP(globalNames);
 }
@@ -284,7 +284,7 @@ static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
 static B funBI_iw(B t, B w, B x) { return c(BFn,t)->iw(t, w, x); }
 static B funBI_ix(B t, B w, B x) { return c(BFn,t)->ix(t, w, x); }
 static B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
-void fns_init() {
+void fns_init(void) {
   gc_addFn(fun_gcFn);
   gc_add_ref(&globalNameList);
   

@@ -1503,7 +1503,7 @@ B enclose_uc1(B t, B o, B x) {
   return enclose_im(t, c1(o, m_atomUnit(x)));
 }
 
-void sfns_init() {
+void sfns_init(void) {
   c(BFn,bi_pick)->uc1 = pick_uc1;
   c(BFn,bi_reverse)->im = reverse_c1;
   c(BFn,bi_reverse)->ix = reverse_ix;

@@ -914,7 +914,7 @@ void ffiType_print(FILE* f, B x) {
   fprintf(f, "⟩");
 }
 
-void ffi_init() {
+void ffi_init(void) {
   boundFnDesc   = registerNFn(m_c8vec_0("(foreign function)"), boundFn_c1, boundFn_c2);
   foreignFnDesc = registerNFn(m_c8vec_0("(foreign function)"), directFn_c1, directFn_c2);
   TIi(t_ffiType,freeO) = ffiType_freeO;
@@ -999,7 +999,7 @@ void ffi_init() {
     return r;
   }
   
-  void ffi_init() {
+  void ffi_init(void) {
     HArr_p a = m_harrUv(7);
     a.a[0] = m_c8vec_0("chdir");
     a.a[1] = m_c8vec_0("fork");

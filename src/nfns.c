@@ -34,7 +34,7 @@ DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(FILE* f, B x) { fprintf(f, "(native function description)"); }
 
-void nfn_init() {
+void nfn_init(void) {
   nfn_list = emptyHVec();
   TIi(t_nfn,freeO) = nfn_freeO; TIi(t_nfnDesc,freeO) = nfnDesc_freeO;
   TIi(t_nfn,freeF) = nfn_freeF; TIi(t_nfnDesc,freeF) = nfnDesc_freeF;

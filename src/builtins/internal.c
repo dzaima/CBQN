@@ -325,7 +325,7 @@ B unshare_c1(B t, B x) {
   return r;
 }
 static B internalNS;
-B getInternalNS() {
+B getInternalNS(void) {
   if (internalNS.u == 0) {
     #define F(X) v_##X = m_c8vec_0(#X);
     FOR_VARIATION(F)

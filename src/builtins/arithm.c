@@ -165,7 +165,7 @@ B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(*SH(
 
 
 static B mathNS;
-B getMathNS() {
+B getMathNS(void) {
   if (mathNS.u == 0) {
     #define F(X) inc(bi_##X),
     Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","fact","logfact","erf","erfc","comb","gcd","lcm","sum");
@@ -176,7 +176,7 @@ B getMathNS() {
   return inc(mathNS);
 }
 
-void arith_init() {
+void arith_init(void) {
   c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_ne)->ident = c(BFn,bi_gt)->ident = m_i32(0);
   c(BFn,bi_mul)->ident = c(BFn,bi_div)->ident = c(BFn,bi_and)->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ge)->ident = c(BFn,bi_pow)->ident = c(BFn,bi_not)->ident = m_i32(1);
   c(BFn,bi_floor)->ident = m_f64(1.0/0.0);

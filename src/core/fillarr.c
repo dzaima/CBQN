@@ -64,7 +64,7 @@ static void fillslice_visit(Value* x) { FillSlice* s=(void*)x; mm_visitP(s->p); 
 static void fillslice_freeO(Value* x) { FillSlice* s=(void*)x; ptr_dec(s->p); dec(s->fill); decSh(x); }
 static void fillslice_freeF(Value* x) { fillslice_freeO(x); mm_free(x); }
 
-void fillarr_init() {
+void fillarr_init(void) {
   TIi(t_fillarr,get)   = fillarr_get;   TIi(t_fillslice,get)   = fillslice_get;
   TIi(t_fillarr,getU)  = fillarr_getU;  TIi(t_fillslice,getU)  = fillslice_getU;
   TIi(t_fillarr,slice) = fillarr_slice; TIi(t_fillslice,slice) = fillslice_slice;

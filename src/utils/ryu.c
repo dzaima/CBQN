@@ -20,7 +20,7 @@
 #define NEG_SCIENTIFIC_START    5 // negative scientific representation start
 
 #if NO_RYU
-void ryu_init() { }
+void ryu_init(void) { }
 #else
 
 // original file: d2s.h
@@ -635,7 +635,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
   return true;
 }
 
-void ryu_init() {
+void ryu_init(void) {
   gc_add(fmt_nan = m_c8vec("NaN", 3));
   gc_add(fmt_zero[0] = m_c8vec("0", 1));
   { u16* d; B c = m_c16arrv(&d, 1);            d[0]=U'∞'; gc_add(c); fmt_inf[0]  = c; }

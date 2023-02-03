@@ -276,7 +276,7 @@ B wm2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = ((WMd2*)t)->v; return TI(t2,
 
 static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
 static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
-void rtWrap_init() {
+void rtWrap_init(void) {
   TIi(t_funWrap,visit) = wfn_visit; TIi(t_funWrap,identity) = wfn_identity;
   TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,m1_d) = m1BI_d;
   TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,m2_d) = m2BI_d;
@@ -288,9 +288,9 @@ void rtWrap_init() {
   TIi(t_md2Wrap,m2_ucw) = wm2_ucw;
 }
 #else
-void rtWrap_init() { }
+void rtWrap_init(void) { }
 #endif
-void rtWrap_print() {
+void rtWrap_print(void) {
   #if RT_PERF
     WFun* cf = lastWF;
     while (cf) {

@@ -270,7 +270,7 @@ B count_c2(B t, B w, B x) {
 }
 
 
-void search_init() {
+void search_init(void) {
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p= 0;    gc_add(enclosed_0=taga(a)); }
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p=~0ULL; gc_add(enclosed_1=taga(a)); }
 }

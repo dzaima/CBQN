@@ -78,7 +78,7 @@ static Arr* bitarr_slice(B x, usz s, usz ia) {
 static B bitarr_get(Arr* x, usz n) { assert(PTY(x)==t_bitarr); return bitp_get((u64*)((BitArr*)x)->a, n)? m_f64(1) : m_f64(0); }
 static bool bitarr_canStore(B x) { return q_bit(x); }
 
-static void bitarr_init() {
+static void bitarr_init(void) {
   TIi(t_bitarr,get)   = bitarr_get;
   TIi(t_bitarr,getU)  = bitarr_get;
   TIi(t_bitarr,slice) = bitarr_slice;
@@ -92,7 +92,7 @@ static void bitarr_init() {
   TIi(t_bitarr,canStore) = bitarr_canStore;
 }
 
-void tyarr_init() {
+void tyarr_init(void) {
   i8arr_init(); i16arr_init(); i32arr_init(); bitarr_init();
   c8arr_init(); c16arr_init(); c32arr_init(); f64arr_init();
   

@@ -388,7 +388,7 @@ B bqn_fmt(B x); // consumes
 B bqn_repr(B x); // consumes
 
 NOINLINE NORETURN void thr(B b);
-NOINLINE NORETURN void rethrow();
+NOINLINE NORETURN void rethrow(void);
 NOINLINE NORETURN void thrM(char* s);
 NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);

@@ -312,7 +312,7 @@ B mmap_file(B path) {
 
 B mmapH_get(Arr* a, usz pos) { thrM("Reading mmapH directly"); }
 
-void mmap_init() {
+void mmap_init(void) {
   TIi(t_mmapH,get)   = mmapH_get;
   TIi(t_mmapH,getU)  = mmapH_get;
   TIi(t_mmapH,slice) = mmapH_slice;

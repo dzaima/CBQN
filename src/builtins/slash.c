@@ -989,7 +989,7 @@ B slash_ucw(B t, B o, B w, B x) {
   return mut_fcd(r, x);
 }
 
-void slash_init() {
+void slash_init(void) {
   c(BFn,bi_slash)->im = slash_im;
   c(BFn,bi_slash)->ucw = slash_ucw;
 }

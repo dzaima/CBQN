@@ -133,7 +133,7 @@ static B md1D_identity(B t) {
   return bi_N;
 }
 
-void derv_init() {
+void derv_init(void) {
   TIi(t_md1D,freeO) = md1D_freeO; TIi(t_md1D,freeF) = md1D_freeF; TIi(t_md1D,visit) = md1D_visit; TIi(t_md1D,print) = md1D_print; TIi(t_md1D,decompose) = md1D_decompose;
   TIi(t_md2D,freeO) = md2D_freeO; TIi(t_md2D,freeF) = md2D_freeF; TIi(t_md2D,visit) = md2D_visit; TIi(t_md2D,print) = md2D_print; TIi(t_md2D,decompose) = md2D_decompose;
   TIi(t_md2H,freeO) = md2H_freeO; TIi(t_md2H,freeF) = md2H_freeF; TIi(t_md2H,visit) = md2H_visit; TIi(t_md2H,print) = md2H_print; TIi(t_md2H,decompose) = md2H_decompose;
@@ -147,7 +147,7 @@ void derv_init() {
   TIi(t_md1D,fn_ix) = md1D_ix; TIi(t_md2D,fn_ix) = md2D_ix;
   TIi(t_md1D,identity) = md1D_identity;
 }
-void dervPost_init() {
+void dervPost_init(void) {
   ucwWrapDesc = registerNFn(m_c8vec_0("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
   uc1WrapDesc = registerNFn(m_c8vec_0("(temporary function for ⌾)"), uc1Wrap_c1, c2_bad);
   TIi(t_fork,fn_uc1) = fork_uc1; // in post probably to make sure it's not used while not fully initialized or something? idk

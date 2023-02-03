@@ -39,7 +39,7 @@ NOINLINE u64 bqn_hashArr(B x, const u64 secret[4]) { // TODO manual separation o
 
 u64 wy_secret[4];
 
-void hash_init() {
+void hash_init(void) {
   u64 bad1=0xa0761d6478bd642full; // values wyhash64 is afraid of
   u64 bad2=0xe7037ed1a0b428dbull;
   again:

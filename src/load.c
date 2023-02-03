@@ -143,7 +143,7 @@ B load_explain;
 #if NATIVE_COMPILER
 #include "opt/comp.c"
 B load_rtComp;
-void switchComp() {
+void switchComp(void) {
   load_comp = load_comp.u==load_rtComp.u? native_comp : load_rtComp;
 }
 #endif
@@ -301,7 +301,7 @@ void init_comp(B* set, B prim, B sys) {
     }
   }
 }
-B getPrimitives() {
+B getPrimitives(void) {
   B g, r;
   if (q_N(comp_currRe)) { g=load_glyphs; r=load_rtObj; }
   else { B* o = harr_ptr(comp_currRe); g=o[4]; r=o[3]; }

@@ -222,7 +222,7 @@ po ← { # parsed options
     ⟩
     args∾↩ isClang⊑⟨
       ⟨"-Wno-parentheses"⟩
-      ⟨"-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"⟩
+      ⟨"-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option", "-Wstrict-prototypes"⟩
     ⟩
     args∾↩ 0⊑GetLibs@
     

@@ -110,7 +110,7 @@ INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
   if (q_N(x)) { dec(w); return x; }
   else return q_N(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
-INS B i_LST_0() { // TODO combine with ADDI
+INS B i_LST_0(void) { // TODO combine with ADDI
   return emptyHVec();
 }
 INS B i_LST_1(B a) {

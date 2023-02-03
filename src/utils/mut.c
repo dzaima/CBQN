@@ -402,7 +402,7 @@ M_FillF fillFns[el_MAX];
 
 MutFns mutFns[el_MAX+1];
 u8 el_orArr[el_MAX*16 + el_MAX+1];
-void mutF_init() {
+void mutF_init(void) {
   for (u8 i = 0; i <= el_MAX; i++) {
     for (u8 j = 0; j <= el_MAX; j++) {
       u8 el;

@@ -18,7 +18,7 @@ FN_LUT_A(cmp_fns, le, AS);
 
 #define ARCH(N) simd_##N
 #define DSTE(N) &(cmp_fns_##N[0])
-void cmpA_init() {
+void cmpA_init(void) {
   {
     CmpAAFn* srcs[4] = {ARCH(eqAA), ARCH(neAA), ARCH(gtAA), ARCH(geAA)};
     CmpAAFn* dsts[4] = {DSTE(eqAA), DSTE(neAA), DSTE(gtAA), DSTE(geAA)};

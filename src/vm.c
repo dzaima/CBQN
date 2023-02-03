@@ -1234,7 +1234,7 @@ B funBl_uc1(B t, B o, B x) {
   return funBl_im(t, c1(o, c1(t, x)));
 }
 
-void comp_init() {
+void comp_init(void) {
   TIi(t_comp    ,freeO) =  comp_freeO; TIi(t_comp    ,freeF) =  comp_freeF; TIi(t_comp    ,visit) = comp_visit;  TIi(t_comp    ,print) =  comp_print;
   TIi(t_body    ,freeO) =  body_freeO; TIi(t_body    ,freeF) =  body_freeF; TIi(t_body    ,visit) = body_visit;  TIi(t_body    ,print) =  body_print;
   TIi(t_block   ,freeO) = block_freeO; TIi(t_block   ,freeF) = block_freeF; TIi(t_block   ,visit) = block_visit; TIi(t_block   ,print) = block_print;
@@ -1459,11 +1459,11 @@ static bool setProfTimer(i64 us) {
   return true;
 }
 
-void* profiler_makeMap();
+void* profiler_makeMap(void);
 i32 profiler_index(void** mapRaw, B comp);
 void profiler_freeMap(void* mapRaw);
 
-bool profiler_alloc() {
+bool profiler_alloc(void) {
   profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (profiler_buf_s == MAP_FAILED) {
     fprintf(stderr, "Failed to allocate profiler buffer\n");
@@ -1473,7 +1473,7 @@ bool profiler_alloc() {
   profile_buf_full = false;
   return true;
 }
-void profiler_free() {
+void profiler_free(void) {
   munmap(profiler_buf_s, PROFILE_BUFFER);
 }
 
@@ -1483,7 +1483,7 @@ bool profiler_start(i64 hz) {
   profiler_active = true;
   return setProfHandler(true) && setProfTimer(us);
 }
-bool profiler_stop() {
+bool profiler_stop(void) {
   if (!profiler_active) return false;
   profiler_active = false;
   if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the start of profiling will be shown.\n");
@@ -1533,7 +1533,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
   return compCount;
 }
 
-void profiler_displayResults() {
+void profiler_displayResults(void) {
   printf("Got "N64u" samples\n", (u64)(profiler_buf_c-profiler_buf_s));
   
   B compList, mapList;

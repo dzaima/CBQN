@@ -478,7 +478,7 @@ static void print_md1BI(FILE* f, B x) { fprintf(f, "%s", pm1_repr(c(Md1,x)->extr
 static B md1BI_im(Md1D* d,      B x) { return ((BMd1*)d->m1)->im(d,    x); }
 static B md1BI_iw(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->iw(d, w, x); }
 static B md1BI_ix(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->ix(d, w, x); }
-void md1_init() {
+void md1_init(void) {
   TIi(t_md1BI,print) = print_md1BI;
   TIi(t_md1BI,m1_im) = md1BI_im;
   TIi(t_md1BI,m1_iw) = md1BI_iw;

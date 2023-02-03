@@ -102,7 +102,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   static bool cfg_enableKeyboard = true;
   static B cfg_path;
   
-  NOINLINE void cfg_changed() {
+  NOINLINE void cfg_changed(void) {
     B s = emptyCVec();
     AFMT("theme=%i\nkeyboard=%i\n", cfg_theme, cfg_enableKeyboard);
     if (CATCH) { freeThrown(); goto end; }
@@ -404,7 +404,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   }
   
   
-  void before_exit() {
+  void before_exit(void) {
     if (global_replxx!=NULL && global_histfile!=NULL) {
       replxx_history_save(global_replxx, global_histfile);
       replxx_end(global_replxx);
@@ -469,7 +469,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     global_replxx = replxx_init();
   }
 #else
-  void before_exit() { }
+  void before_exit(void) { }
 #endif
 
 

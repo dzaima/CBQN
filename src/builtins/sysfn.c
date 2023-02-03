@@ -582,7 +582,7 @@ B makeRand_c1(B t, B x) {
   return r;
 }
 static B randNS;
-B getRandNS() {
+B getRandNS(void) {
   if (randNS.u == 0) {
     #if RANDSEED==0
       randNS = c1(bi_makeRand, m_f64(nsTime()));
@@ -742,7 +742,7 @@ B import_c1(B d, B x) {
   
   return r;
 }
-void clearImportCache() {
+void clearImportCache(void) {
   if (importKeyList.u!=0) {
     dec(importKeyList); importKeyList = m_f64(0);
     dec(importValList); importValList = m_f64(0);
@@ -1097,7 +1097,7 @@ B tErrRaw_c1(B t, B x) {
 }
 
 static B termNS;
-B getTermNS() {
+B getTermNS(void) {
   if (termNS.u == 0) {
     #define F(X) incG(bi_##X),
     Body* d = m_nnsDesc("flush", "rawmode", "charb", "charn", "outraw", "errraw");
@@ -1397,7 +1397,7 @@ DEF_OP2(add) DEF_OP2(sub) DEF_OP2(mul)
 #undef DEF_OP2
 
 static B bitNS;
-B getBitNS() {
+B getBitNS(void) {
   if (bitNS.u == 0) {
     #define F(X) incG(bi_bit##X),
     Body* d = m_nnsDesc("cast","not","neg","and","or","xor","add","sub","mul");
@@ -1614,7 +1614,7 @@ u32* dsv_text[] = {
 };
 
 B dsv_ns, dsv_vs;
-void sysfn_init() {
+void sysfn_init(void) {
   usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
   usz i = 0;
   HArr_p dsv_ns0 = m_harrUv(dsv_num); dsv_ns=dsv_ns0.b; gc_add(dsv_ns);
@@ -1636,6 +1636,6 @@ void sysfn_init() {
   
   reBQNDesc = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
 }
-void sysfnPost_init() {
+void sysfnPost_init(void) {
   c(BMd1,bi_bitcast)->im = bitcast_im;
 }
