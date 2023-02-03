@@ -721,7 +721,7 @@ B slash_c2(B t, B w, B x) {
       }
     } else {
       u8 xk = xl-3;
-      void* rv = m_tyarrv(&r, 1<<xk, s, xt);
+      void* rv = m_tyarrlv(&r, xk, s, xt);
       if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); ra->sh = rsh; ra->ia = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
       if ((xk<3? s/64 : s/32) <= wia) { // Sparse case: use both types

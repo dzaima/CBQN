@@ -56,9 +56,10 @@ B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
   ur xr = RNK(x);
   if (isAtm(w)) {
+    watom:;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
-    usz cam = SH(x)[0];
-    usz wi = WRAP(o2i64(w), cam, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam));
+    usz xn = *SH(x);
+    usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %H≡≢𝕩)", w, x));
     if (xr==1) {
       B xf = getFillR(x);
       B xv = IGet(x, wi);
@@ -86,170 +87,178 @@ B select_c2(B t, B w, B x) {
   }
   
   usz wia = IA(w);
-  B r;
+  Arr* r;
+  ur wr = RNK(w);
+  if (wr==0) {
+    B w0 = IGetU(w, 0);
+    if (isAtm(w0)) {
+      decG(w);
+      w = inc(w0);
+      goto watom;
+    }
+  }
+  i32 rr = xr+wr-1;
   if (wia==0) {
-    ur wr = RNK(w);
+    emptyRes:
     if (0 == *SH(x) && wr==1) {
-      r = incG(x);
-      goto dec_ret;
+      decG(w);
+      return x;
     }
-    ur rr = xr+wr-1;
-    Arr* ra = emptyArr(x, rr);
-    if (rr>1) {
-      ShArr* sh = m_shArr(rr);
-      shcpy(sh->a, SH(w), wr);
-      shcpy(sh->a+wr, SH(x)+1, xr-1);
-      arr_shSetU(ra, rr, sh);
-    }
-    r = taga(ra);
-    goto dec_ret;
+    r = emptyArr(x, rr);
+    if (rr<=1) goto dec_ret;
+    goto setsh;
   }
   
   B xf = getFillQ(x);
+  usz xn = *SH(x);
+  if (xn==0) goto base;
+  usz ria = wia * arr_csz(x);
   
-  if (xr==1) {
-    usz xia = IA(x);
-    if (xia==0) goto base; // can't just error immediately because depth 2 𝕨
-    u8 xe = TI(x,elType);
-    u8 we = TI(w,elType);
-    #if SINGELI_X86_64
-      #define CPUSEL(W, NEXT) \
-        if (!avx2_select_tab[4*(we-el_i8)+CTZ(xw)](wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds");
-      #define BOOL_USE_SIMD (xia<=128)
-      #define BOOL_SPECIAL(W) \
-        if (sizeof(W)==1 && BOOL_USE_SIMD) { \
-          if (!avx2_select_bool128(wp, xp, rp, wia, xia)) thrM("⊏: Indexing out-of-bounds"); \
-          goto dec_ret; \
-        }
-    #else
-      #define CPUSEL(W, NEXT) \
-        if (sizeof(W) >= 4) {                           \
-          switch(xw) { default:UD; CASEW(1,u8); CASEW(2,u16); CASEW(4,u32); CASEW(8,f64); } \
-        } else {                                        \
-          W* wt = NULL;                                 \
-          for (usz bl=(1<<14)/sizeof(W), i0=0, i1=0; i0<wia; i0=i1) { \
-            i1+=bl; if (i1>wia) i1=wia;                 \
-            W min=wp[i0], max=min; for (usz i=i0+1; i<i1; i++) { W e=wp[i]; if (e>max) max=e; if (e<min) min=e; } \
-            if (min<-(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", min, xia); \
-            if (max>=(i64)xia) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xia); \
-            W* ip=wp; usz off=xia;                      \
-            if (max>=0) { off=0; if (RARE(min<0)) {     \
-              if (RARE(xia > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free(v(r)); return select_c2(m_f64(0), w, x); } \
-              if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0; \
-              for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xia & (W)-(e<0)); } \
-            } }                                         \
-            switch(xw) { default:UD; CASE(1,u8); CASE(2,u16); CASE(4,u32); CASE(8,f64); } \
-          }                                             \
-          if (wt) TFREE(wt);                            \
-        }
-      #define BOOL_USE_SIMD 0
-      #define BOOL_SPECIAL(W)
-    #endif
+  usz xia = IA(x);
+  u8 xe = TI(x,elType);
+  u8 we = TI(w,elType);
+  u8 xl = cellWidthLog(x);
+  
+  
+  #if SINGELI_X86_64
+    #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
+      if (!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds");
+    #define BOOL_USE_SIMD (xia<=128)
+    #define BOOL_SPECIAL(W) \
+      if (sizeof(W)==1 && BOOL_USE_SIMD) { \
+        if (!avx2_select_bool128(wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds"); \
+        goto setsh; \
+      }
+  #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))]; break
-    #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
-      if (xe==el_bit) { u64* xp=bitarr_ptr(x);          \
-        u64* rp; r = m_bitarrc(&rp, w);                 \
-        BOOL_SPECIAL(W)                                 \
-        u64 b=0;                                        \
-        for (usz i = wia; ; ) {                         \
-          i--;                                          \
-          usz n = WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)); \
-          b = 2*b + ((((u8*)xp)[n/8] >> (n%8)) & 1);    \
-          if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
-        }                                               \
-        goto dec_ret;                                   \
-      }                                                 \
-      if (xe!=el_B) {                                   \
-        usz xw = elWidth(xe);                           \
-        void* rp = m_tyarrc(&r, xw, w, el2t(xe));       \
-        void* xp = tyany_ptr(x);                        \
-        CPUSEL(W, NEXT)                                 \
-        goto dec_ret;                                   \
-      }                                                 \
-      M_HARR(r, wia);                                   \
-      if (TY(x)==t_harr || TY(x)==t_hslice) {     \
-        B* xp = hany_ptr(x);                      \
-        for (usz i=0; i < wia; i++) HARR_ADD(r, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia))])); \
-        decG(x); return HARR_FCD(r, w);           \
-      } SLOW2("𝕨⊏𝕩", w, x);                       \
-      for (usz i=0; i < wia; i++) HARR_ADD(r, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xia)))); \
-      decG(x); return withFill(HARR_FCD(r,w),xf); \
-    }
-    if (xe==el_bit && wia>=256 && !BOOL_USE_SIMD && wia/4>=xia && we!=el_bit) {
-      return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
-    }
-    SGet(x)
-    if (we==el_bit) {
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
+    #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
+      if (sizeof(W) >= 4) {                          \
+        switch(xl) { default:UD; CASEW(3,u8); CASEW(4,u16); CASEW(5,u32); CASEW(6,u64); } \
+      } else {                                       \
+        W* wt = NULL;                                \
+        for (usz bl=(1<<14)/sizeof(W), i0=0, i1=0; i0<wia; i0=i1) { \
+          i1+=bl; if (i1>wia) i1=wia;                \
+          W min=wp[i0], max=min; for (usz i=i0+1; i<i1; i++) { W e=wp[i]; if (e>max) max=e; if (e<min) min=e; } \
+          if (min<-(i64)xn) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", min, xn); \
+          if (max>=(i64)xn) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xn); \
+          W* ip=wp; usz off=xn;                      \
+          if (max>=0) { off=0; if (RARE(min<0)) {    \
+            if (RARE(xn > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free((Value*)r); return select_c2(m_f64(0), w, x); } \
+            if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0;\
+            for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xn & (W)-(e<0)); } \
+          } }                                        \
+          switch(xl) { default:UD; CASE(3,u8); CASE(4,u16); CASE(5,u32); CASE(6,u64); } \
+        }                                            \
+        if (wt) TFREE(wt);                           \
+      }
+    #define BOOL_USE_SIMD 0
+    #define BOOL_SPECIAL(W)
+  #endif
+  
+  if (!BOOL_USE_SIMD && xe==el_bit && wia>=256 && xl<3 && wia/4>=xia && we!=el_bit) {
+    return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
+  }
+  
+  
+  #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
+    if (xl==0) { u64* xp=bitarr_ptr(x);               \
+      u64* rp; r = m_bitarrp(&rp, ria);               \
+      BOOL_SPECIAL(W)                                 \
+      u64 b=0;                                        \
+      for (usz i = wia; ; ) {                         \
+        i--;                                          \
+        usz n = WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)); \
+        b = 2*b + ((((u8*)xp)[n/8] >> (n%8)) & 1);    \
+        if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
+      }                                               \
+      goto setsh;                                     \
+    }                                                 \
+    if (xe!=el_B) {                                   \
+      if (xl<3 || xl==7) goto generic_l;              \
+      void* rp = m_tyarrlp(&r, xl-3, ria, arrNewType(TY(x))); \
+      void* xp = tyany_ptr(x);                        \
+      CPUSEL(W, NEXT)                                 \
+      goto setsh;                                     \
+    }                                                 \
+    if (xl!=6) goto generic_l;                        \
+    M_HARR(ra, wia); B* xp = arr_bptr(x);             \
+    SLOWIF(xp==NULL) SLOW2("𝕨⊏𝕩", w, x);              \
+    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %H≡≢𝕩)", wp[i], x))])); } \
+    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %H≡≢𝕩)", wp[i], x)) )); } \
+    r = a(withFill(HARR_FV(ra), xf)); goto setsh;     \
+  }
+  
+  retry:
+  switch (we) { default: UD;
+    case el_bit: {
+      if (xr!=1) goto generic_l;
       SGetU(x)
       B x0 = GetU(x, 0);
       B x1;
       if (xia<2) {
         u64* wp=bitarr_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
-        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xia);
+        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %H≡≢𝕩)", x);
         x1 = x0;
       } else {
         x1 = GetU(x,1);
       }
-      r = bit_sel(w, x0, x1);
+      B r = bit_sel(w, x0, x1);
       decG(x);
       return withFill(r, xf);
     }
-    else if (we==el_i8) TYPE(i8,cpyI16Arr)
-    else if (we==el_i16) TYPE(i16,cpyI32Arr)
-    else if (we==el_i32) TYPE(i32,cpyF64Arr)
-    else {
-      SLOW2("𝕨⊏𝕩", w, x);
-      M_HARR(r, wia)
-      SGetU(w)
-      for (usz i = 0; i < wia; i++) {
-        B cw = GetU(w, i);
-        if (!isNum(cw)) { HARR_ABANDON(r); goto base; }
-        usz c = WRAP(o2i64(cw), xia, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, xia));
-        HARR_ADD(r, i, Get(x, c));
-      }
-      decG(x);
-      return withFill(HARR_FCD(r,w),xf);
-    }
-    #undef CASE
-    #undef CASEW
-  } else {
-    if (!elNum(TI(w,elType))) { // 𝕨 could be depth 2, in which case allocating the buffer isn't acceptable even temporarily
+    case el_i8:  TYPE(i8, cpyI16Arr)
+    case el_i16: TYPE(i16,cpyI32Arr)
+    case el_i32: TYPE(i32,cpyF64Arr)
+    case el_f64:
+    case el_B: case el_c8: case el_c16: case el_c32: {
       w = num_squeezeChk(w);
-      if (!elNum(TI(w,elType))) goto base;
+      we = TI(w,elType);
+      if (elNum(we)) goto retry;
+      goto base;
     }
-    SLOW2("𝕨⊏𝕩", w, x);
-    SGetU(w)
-    ur wr = RNK(w);
-    i32 rr = wr+xr-1;
-    if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
-    if (rr>UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
-    usz csz = arr_csz(x);
-    usz cam = SH(x)[0];
-    MAKE_MUT(r, wia*csz); mut_init(r, TI(x,elType));
-    MUTG_INIT(r);
-    for (usz i = 0; i < wia; i++) {
-      B cw = GetU(w, i); // assumed number from previous squeeze
-      usz c = WRAP(o2i64(cw), cam, { mut_pfree(r, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", cw, cam); });
-      mut_copyG(r, i*csz, x, csz*c, csz);
-    }
-    Arr* ra = mut_fp(r);
-    usz* rsh = arr_shAlloc(ra, rr);
-    if (rsh) {
-      shcpy(rsh   , SH(w)  , wr  );
-      shcpy(rsh+wr, SH(x)+1, xr-1);
-    }
-    decG(w); decG(x);
-    return withFill(taga(ra),xf);
   }
+  #undef CASE
+  #undef CASEW
+  
   base:;
   dec(xf);
   return c2rt(select, w, x);
   
+  generic_l: {
+    if (xia==0) goto emptyRes;
+    SLOW2("𝕨⊏𝕩", w, x);
+    SGetU(w)
+    usz csz = arr_csz(x);
+    MAKE_MUT(rm, ria); mut_init(rm, TI(x,elType));
+    MUTG_INIT(rm);
+    for (usz i = 0; i < wia; i++) {
+      B cw = GetU(w, i); // assumed number from previous squeeze
+      usz c = WRAP(o2i64(cw), xn, { mut_pfree(rm, i*csz); thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %H≡≢𝕩)", cw, x); });
+      mut_copyG(rm, i*csz, x, csz*c, csz);
+    }
+    r = a(withFill(mut_fv(rm), xf));
+    goto setsh;
+  }
+  
+  
+  
+  setsh:
+  if (rr>1) {
+    if (rr > UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+    ShArr* sh = m_shArr(rr);
+    shcpy(sh->a, SH(w), wr);
+    shcpy(sh->a+wr, SH(x)+1, xr-1);
+    arr_shSetU(r, rr, sh);
+  } else {
+    arr_shVec(r);
+  }
+  
   dec_ret:;
-  decG(w); decG(x); return r;
+  decG(w); decG(x); return taga(r);
 }
+
 
 
 
