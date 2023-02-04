@@ -161,12 +161,13 @@ B select_c2(B t, B w, B x) {
   B xf = getFillQ(x);
   usz xn = *SH(x);
   if (xn==0) goto base;
-  usz ria = wia * arr_csz(x);
+  usz csz = arr_csz(x);
+  u8 xl = cellWidthLog(x);
+  usz ria = wia * csz;
   
   usz xia = IA(x);
   u8 xe = TI(x,elType);
   u8 we = TI(w,elType);
-  u8 xl = cellWidthLog(x);
   
   
   #if SINGELI_X86_64
@@ -205,7 +206,7 @@ B select_c2(B t, B w, B x) {
     #define BOOL_SPECIAL(W)
   #endif
   
-  if (!BOOL_USE_SIMD && xe==el_bit && wia>=256 && xl<3 && wia/4>=xia && we!=el_bit) {
+  if (!BOOL_USE_SIMD && xe==el_bit && wia>=256 && we!=el_bit && ((csz&7)!=0) && (xl==0? wia/4>=xia : wia>=xia/4 && csz<40)) {
     return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
   }
   
