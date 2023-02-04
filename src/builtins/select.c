@@ -206,7 +206,7 @@ B select_c2(B t, B w, B x) {
     #define BOOL_SPECIAL(W)
   #endif
   
-  if (!BOOL_USE_SIMD && xe==el_bit && wia>=256 && we!=el_bit && ((csz&7)!=0) && (xl==0? wia/4>=xia : wia>=xia/4 && csz<40)) {
+  if (!(BOOL_USE_SIMD && xl==0 && we==el_i8) && xe==el_bit && wia>=256 && we!=el_bit && ((csz&7)!=0) && (xl==0? wia/4>=xia : wia>=xia/4 && csz<40)) {
     return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
   }
   
