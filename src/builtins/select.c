@@ -211,7 +211,10 @@ B select_c2(B t, B w, B x) {
     case el_i8:  TYPE(i8, cpyI16Arr)
     case el_i16: TYPE(i16,cpyI32Arr)
     case el_i32: TYPE(i32,cpyF64Arr)
-    case el_f64:
+    case el_f64: {
+      if (FL_HAS(w, fl_squoze)) goto generic_l; // either has non-integers (i.e. error, thus don't care about speed) or very large (i.e. will hit memory bandwidth anyway)
+      // else fallthrough - want to do integer 𝕨 if possible
+    }
     case el_B: case el_c8: case el_c16: case el_c32: {
       w = num_squeezeChk(w);
       we = TI(w,elType);
