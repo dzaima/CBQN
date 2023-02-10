@@ -171,6 +171,11 @@ NOINLINE B widenBitArr(B x, ur axis) {
   
   return zeroPadToCellBits0(x, axis, shProd(SH(x), 0, axis), pcsz, ncsz);
 }
+
+#if defined(__BMI2__) && !SLOW_PDEP
+  #define FAST_PDEP 1
+#endif
+
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bits to be dropped are zero, origCellBits is a multiple of 8, and that there's at most 63 padding bits
   if (TI(x,elType)!=el_bit) return taga(cpyBitArr(x));
   
@@ -200,12 +205,33 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
   // FILL_TO(rp, el_bit, 0, m_f64(1), PIA(r));
   ABState ab = ab_new(rp);
   if (xcsz<=64 && (xcsz&(xcsz-1)) == 0) {
-    switch(xcsz) { default: UD;
-      case  8: for (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], ocsz); break;
-      case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], ocsz); break;
-      case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz); break;
-      case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz); break;
-    }
+    #if FAST_PDEP
+      if (xcsz<32) {
+        assert(xcsz==8 || xcsz==16);
+        bool c8 = xcsz==8;
+        u64 tmsk = (1ull<<ocsz)-1;
+        u64 msk0 = tmsk * (c8? 0x0101010101010101 : 0x0001000100010001);
+        ux am = c8? cam/8 : cam/4;
+        u32 count = POPC(msk0);
+        // printf("base %04lx %016lx count=%d am=%zu\n", tmsk, msk0, count, am);
+        for (ux i=0; i<am; i++) { ab_add(&ab, _pext_u64(*(u64*)xp, msk0), count); xp+= 8; }
+        u32 tb = c8? cam&7 : (cam&3)<<1;
+        if (tb) {
+          u64 msk1 = msk0 & ((1ull<<tb*8)-1);
+          // printf("tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
+          ab_add(&ab, _pext_u64(*(u64*)xp, msk1), POPC(msk1));
+        }
+      }
+      else if (xcsz==32) for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz);
+      else               for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz);
+    #else
+      switch(xcsz) { default: UD;
+        case  8: for (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], ocsz); break; // all assume zero padding
+        case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], ocsz); break;
+        case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz); break;
+        case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz); break;
+      }
+    #endif
   } else {
     assert(xcsz-ocsz<64);
     ux rfu64 = ocsz>>6; // full u64 count per cell in x
