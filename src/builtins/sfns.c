@@ -1413,7 +1413,7 @@ B pick_ucw(B t, B o, B w, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 
-static B takedrop_ucw(i64 wi, B o, u64 am, B x, size_t xr) {
+static B takedrop_ucw(i64 wi, B o, u64 am, B x, ux xr) {
   usz xia = IA(x);
   usz csz = arr_csz(x);
   usz tk = csz*am; // taken element count

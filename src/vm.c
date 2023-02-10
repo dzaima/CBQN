@@ -1008,7 +1008,7 @@ B md1Bl_c2(Md1D* d, B w, B x) { Md1Block* b=(Md1Block*)d->m1; ptr_inc(d); return
 B md2Bl_c1(Md2D* d,      B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->bodies[0], b->sc, 6, (B[]){tag(d,FUN_TAG), x, bi_N, tag(ptr_inc(d->m2),MD2_TAG), inc(d->f), inc(d->g)}); }
 B md2Bl_c2(Md2D* d, B w, B x) { Md2Block* b=(Md2Block*)d->m2; ptr_inc(d); return execBlock(b->bl, b->bl->dyBody,    b->sc, 6, (B[]){tag(d,FUN_TAG), x, w   , tag(ptr_inc(d->m2),MD2_TAG), inc(d->f), inc(d->g)}); }
 
-NORETURN NOINLINE static void noInv(Body* bo, Scope* psc, i8 type, i8 inv) {
+static NOINLINE NORETURN void noInv(Body* bo, Scope* psc, i8 type, i8 inv) {
   pushEnv(m_scope(bo, psc, 0, 0, (B[]){}), bo->bc);
   thrF("No %U undo header found for this%U block", inv==0? "monadic" : inv==1? "dyadic F˜⁼" : "dyadic F⁼", type==0? "" : type==1? " 1-modifier" : " 2-modifier");
 }

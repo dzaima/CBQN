@@ -7,6 +7,9 @@
 // Atom or enclosed atom 𝕨 and high-rank 𝕩: slice
 // Empty 𝕨: no selection
 // Float or generic 𝕨: attempt to squeeze, go generic cell size path if stays float
+// High-rank 𝕩 & boolean 𝕨: either widens 𝕨 to i8, or goes generic cell path
+//   SHOULD go a bit select path for small cells
+//   SHOULD reshape for 1=≠𝕩
 // Boolean 𝕩 (cell size = 1 bit):
 //   𝕨 larger than 𝕩: convert 𝕩 to i8, select, convert back
 //   Otherwise: select/shift bytes, reversed for fast writing
@@ -43,7 +46,6 @@
   #include "../utils/includeSingeli.h"
 #endif
 
-typedef size_t ux; // TODO move to h.h
 typedef void (*CFn)(void* r, ux rs, void* x, ux xs, ux data);
 typedef struct {
   CFn fn;
@@ -58,6 +60,7 @@ static void cf_3(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)
 static void cf_4(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4); }
 static CFn cfs_0_4[] = {cf_0, cf_1, cf_2, cf_3, cf_4};
 static void cf_8(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8); }
+static void cf_16(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); }
 static void cf_5_7  (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4);  memcpy(r+d, x+d, 4); }
 static void cf_9_16 (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8);  memcpy(r+d, x+d, 8); }
 static void cf_17_24(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); memcpy(r+d, x+d, 8); }
@@ -74,6 +77,7 @@ NOINLINE CFRes cf_get(usz count, usz cszBits) {
     if (bytes<5)   return (CFRes){.mul=cszBytes, .fn = cfs_0_4[bytes]};
     if (bytes<8)   return (CFRes){.mul=cszBytes, .fn = cf_5_7,   .data=bytes-4};
     if (bytes==8)  return (CFRes){.mul=cszBytes, .fn = cf_8};
+    if (bytes==16) return (CFRes){.mul=cszBytes, .fn = cf_16};
     if (bytes<=16) return (CFRes){.mul=cszBytes, .fn = cf_9_16,  .data=bytes-8};
     if (bytes<=24) return (CFRes){.mul=cszBytes, .fn = cf_17_24, .data=bytes-8};
     if (bytes<=32) return (CFRes){.mul=cszBytes, .fn = cf_25_32, .data=bytes-8};
@@ -173,9 +177,9 @@ B select_c2(B t, B w, B x) {
   #if SINGELI_X86_64
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds");
-    #define BOOL_USE_SIMD (xia<=128)
+    bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;
     #define BOOL_SPECIAL(W) \
-      if (sizeof(W)==1 && BOOL_USE_SIMD) { \
+      if (sizeof(W)==1 && bool_use_simd) { \
         if (!avx2_select_bool128(wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds"); \
         goto setsh; \
       }
@@ -202,12 +206,26 @@ B select_c2(B t, B w, B x) {
         }                                            \
         if (wt) TFREE(wt);                           \
       }
-    #define BOOL_USE_SIMD 0
+    bool bool_use_simd = 0;
     #define BOOL_SPECIAL(W)
   #endif
   
-  if (!(BOOL_USE_SIMD && xl==0 && we==el_i8) && xe==el_bit && wia>=256 && we!=el_bit && ((csz&7)!=0) && (xl==0? wia/4>=xia : wia>=xia/4 && csz<40)) {
-    return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
+  if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && (xl==0? wia>=256 : wia>=4) && csz<128) {
+    // test widen/narrow on bitarr input
+    // ShArr* sh = RNK(x)==1? NULL : ptr_inc(shObj(x));
+    // B t = select_c2(m_f64(0), w, widenBitArr(x, 1));
+    // B r = narrowWidenedBitArr(t, wr, xr-1, sh==NULL? &xn : sh->a+1);
+    // if (sh!=NULL) ptr_dec(sh);
+    // return r;
+    if (csz==1) {
+      if (wia/4>=xia) return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
+    } else if (csz>64? wia/2>=xn : wia>=xn/2) {
+      ShArr* sh = ptr_inc(shObj(x));
+      B t = select_c2(m_f64(0), w, widenBitArr(x, 1));
+      B r = narrowWidenedBitArr(t, wr, xr-1, sh->a+1);
+      ptr_dec(sh);
+      return r;
+    }
   }
   
   
@@ -242,7 +260,14 @@ B select_c2(B t, B w, B x) {
   retry:
   switch (we) { default: UD;
     case el_bit: {
-      if (xr!=1) goto generic_l;
+      if (xr!=1) {
+        if (xe!=el_B && (csz<<elWidthLogBits(xe)) < 128) {
+          dec(xf);
+          return select_c2(m_f64(0), taga(cpyI8Arr(w)), x);
+        } else {
+          goto generic_l;
+        }
+      }
       SGetU(x)
       B x0 = GetU(x, 0);
       B x1;

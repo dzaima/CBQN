@@ -114,6 +114,12 @@ typedef uint32_t u32;
 typedef  int64_t i64;
 typedef uint64_t u64;
 typedef double   f64;
+typedef size_t ux;
+#if defined(__SIZEOF_INT128__)
+  #define HAS_U128 1
+  typedef unsigned __int128 u128;
+  typedef signed __int128 i128;
+#endif
 #define I8_MIN -128
 #define I8_MAX  127
 #define I16_MIN -32768

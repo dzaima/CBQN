@@ -712,7 +712,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   NOINLINE Value* VALIDATEP(Value* x) {
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       PRINT_ID(x);
-      fprintf(stderr, "bad refcount for type %d: %d\nattempting to print: ", x->type, x->refc); fflush(stderr);
+      fprintf(stderr, "bad refcount for type %d @ %p: %d\nattempting to print: ", x->type, x, x->refc); fflush(stderr);
       fprintI(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
       err("");
     }

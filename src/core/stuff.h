@@ -108,9 +108,9 @@ static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
   assert(IA(o)==n->ia);
   return arr_shCopyUnchecked(n, o);
 }
-static void shcpy(usz* dst, usz* src, size_t len) {
+static void shcpy(usz* dst, usz* src, ux len) {
   // memcpy(dst, src, len*sizeof(usz));
-  PLAINLOOP for (size_t i = 0; i < len; i++) dst[i] = src[i];
+  PLAINLOOP for (ux i = 0; i < len; i++) dst[i] = src[i];
 }
 
 static usz shProd(usz* sh, usz s, usz e) {
@@ -140,6 +140,9 @@ B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);
 B bit_negate(B x); // consumes
+B widenBitArr(B x, ur axis); // consumes x, assumes bitarr; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
+B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes widenBitArr, overriding shape past axis to cr↑csh
+
 Arr* cpyWithShape(B x); // consumes; returns array with refcount 1 with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
 Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the fill of x; if xr>1, shape is unset
 
@@ -165,15 +168,9 @@ static u8 selfElType(B x) { // guaranteed to fit fill
   if (isC32(x)) return LIKELY(q_c8(x))? el_c8 : q_c16(x)? el_c16 : el_c32;
   return el_B;
 }
-static bool elChr(u8 x) {
-  return x>=el_c8 && x<=el_c32;
-}
-static bool elNum(u8 x) {
-  return x<=el_f64;
-}
-static bool elInt(u8 x) {
-  return x<=el_i32;
-}
+static bool elChr(u8 x) { return x>=el_c8 && x<=el_c32; }
+static bool elNum(u8 x) { return x<=el_f64; }
+static bool elInt(u8 x) { return x<=el_i32; }
 
 // string stuff
 
