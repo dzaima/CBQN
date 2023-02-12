@@ -182,8 +182,9 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
   return taga(r);
 }
 NOINLINE B widenBitArr(B x, ur axis) {
-  assert(isArr(x) && TI(x,elType)==el_bit && axis>=1 && RNK(x)>=axis);
-  usz pcsz = shProd(SH(x), axis, RNK(x));
+  assert(isArr(x) && TI(x,elType)!=el_B && axis>=1 && RNK(x)>=axis);
+  usz pcsz = shProd(SH(x), axis, RNK(x))<<elWidthLogBits(TI(x,elType));
+  assert(pcsz!=0);
   usz ncsz;
   if (pcsz<=8) ncsz = 8;
   else if (pcsz<=16) ncsz = 16;
@@ -202,7 +203,7 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
   usz xcsz = shProd(SH(x), axis, RNK(x));
   usz ocsz = shProd(csh, 0, cr);
   // printf("narrowWidenedBitArr ia=%d axis=%d cr=%d ocsz=%d xcsz=%d\n", IA(x), axis, cr, ocsz, xcsz);
-  assert((xcsz&7) == 0 && ocsz<xcsz);
+  assert((xcsz&7) == 0 && ocsz<xcsz && ocsz!=0);
   if (xcsz==ocsz) {
     if (RNK(x)-axis == cr && eqShPart(SH(x)+axis, csh, cr)) return x;
     Arr* r = cpyWithShape(x);
