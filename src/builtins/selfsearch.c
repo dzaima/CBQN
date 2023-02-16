@@ -3,7 +3,7 @@
 // Except for trivial cases, ⍷ is implemented as ∊⊸/
 // Other functions use adaptations of the same set of methods
 
-// Boolean cases all use special code, including ⍷
+// Boolean cases (1-bit cells) all use special code, including ⍷
 //   COULD vectorize boolean ⊒ with +`
 // Sorted flags: start with r0⌾⊑»⊸≠𝕩 (r0←0 for ⊐, 1 otherwise)
 //   ∊: ⊢; ⊐: +`; ⊒: ↕∘≠⊸(⊣-⌈`∘×)
@@ -18,6 +18,8 @@
 // Radix-assisted lookups are fallbacks for 4-byte ∊ and ⊒
 //   COULD do radix-assisted ⊐ as ⍷⊸⊐ or similar
 //   Specializes on constant top 1/2 bytes, but hashes make this rare
+// Cells with 2≤n≤63 bits, ¬n∊8‿16‿32:
+//   Pad to the nearest nice size (8, 16, 32, 64 bits)
 
 // Specialized 4-byte and 8-byte hash tables
 //   In-place resizing by factor of 4 based on measured collisions
@@ -26,8 +28,6 @@
 //   COULD prefetch when table gets larger
 // Generic hash table for other cases
 //   Resizing is pretty expensive here
-
-// SHOULD widen small odd sizes
 
 #include "../core.h"
 #include "../utils/hash.h"
@@ -94,7 +94,7 @@ static bool canCompare64_norm(B x, usz n) {
 static bool shouldWidenBitarr(B x, usz csz) { // assumes cells won't anymore have sizes of 0, 8, or 16 bits
   u8 xe = TI(x,elType);
   ux bcsz = ((ux)csz)<<elWidthLogBits(xe);
-  assert(csz!=0 && bcsz!=8 && bcsz!=16);
+  assert(csz!=0 && bcsz!=1 && bcsz!=8 && bcsz!=16);
   if (bcsz<64 && bcsz!=32) { assert(xe!=el_B); return true; } // not el_B because csz>0 → csz*sizeof(B) >= 64
   return false;
 }

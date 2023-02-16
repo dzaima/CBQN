@@ -1,3 +1,25 @@
+// Dyadic search functions: Member Of (∊), Index of (⊐), Progressive Index of (⊒)
+
+// 𝕨⊐unit or unit∊𝕩: scalar loop with early-exit
+//   SHOULD use simd
+//   SHOULD unify implementations
+// 𝕩⊒unit or 𝕨⊒𝕩 where 1≥≠𝕩: defer to 𝕨⊐𝕩
+
+// Both arguments with rank≥1:
+//   High-rank inputs:
+//     Convert to a (lower-rank) typed integer array if cells are ≤62 bits
+//     COULD have special hashing for equal type >64 bit cells, skipping squeezing
+//     COULD try conditionally squeezing ahead-of-time, and not squeezing in bqn_hash
+//   p⊐n & n∊p with short p & long n: n⊸=¨ p
+//     bitarr⊐𝕩: more special arithmetic
+//     SHOULD have impls for long p & short n
+//   ≤16-bit elements: lookup tables
+//   Character elements: reinterpret as integer elements
+//   Otherwise, generic hashtable
+//     SHOULD handle up to 64 bit cells via proper typed hash tables
+//   SHOULD have fast path when cell sizes or element types doesn't match
+//   SHOULD properly handle ¯0
+
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
@@ -41,20 +63,63 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
   TFREE(tab0);
 
 typedef struct { B n, p; } B2;
+static NOINLINE B toIntCell(B x, ux csz0, ur co) {
+  assert(TI(x,elType)!=el_B);
+  usz ria = shProd(SH(x), 0, co);
+  ShArr* rsh;
+  if (co>1) { rsh=m_shArr(co); shcpy(rsh->a,SH(x),co); }
+  B r0 = widenBitArr(x, co);
+  usz csz = shProd(SH(r0),co,RNK(r0)) << elWidthLogBits(TI(r0,elType));
+  u8 t;
+  if      (csz==8)  t = t_i8slice;
+  else if (csz==16) t = t_i16slice;
+  else if (csz==32) t = t_i32slice;
+  else if (csz==64) t = t_f64slice;
+  else UD;
+  TySlice* r = m_arr(sizeof(TySlice), t, ria);
+  r->p = a(r0);
+  r->a = tyany_ptr(r0);
+  if (co>=1) arr_shSetU((Arr*)r, co, rsh);
+  else arr_shVec((Arr*)r);
+  return taga(r);
+}
+static NOINLINE B cpyToElLog(B x, u8 xe, u8 lb) {
+  switch(lb) { default: UD;
+    case 0: return taga(cpyBitArr(x));
+    case 3: return taga(elNum(xe)? cpyI8Arr(x) : cpyC8Arr(x));
+    case 4: return taga(elNum(xe)? cpyI16Arr(x) : cpyC16Arr(x));
+    case 5: return taga(elNum(xe)? cpyI32Arr(x) : cpyC32Arr(x));
+    case 6: return taga(cpyF64Arr(x));
+  }
+}
 static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #define SYMB (mode==0? "∊" : mode==1? "⊐" : "⊒")
   #define ARG_N (mode? "𝕩" : "𝕨")
   #define ARG_P (mode? "𝕨" : "𝕩")
   if (isAtm(p) || RNK(p)==0) thrF("%U: %U cannot have rank 0", SYMB, ARG_P);
   ur pr = RNK(p);
-  if (isAtm(n)) n = m_hunit(n);
+  if (isAtm(n)) n = m_atomUnit(n);
   ur nr = RNK(n);
-  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode? p : n, mode? n : p);
-  ur cr = pr-1;
-  n = toKCells(n, nr-cr);
-  p = toKCells(p, 1);
-  assert(RNK(p)<=1);
-  return (B2){.n=n, .p=p};
+  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
+  ur pcr = pr-1;
+  ur nco = nr-pcr;
+  if (nco>0 && eqShPart(SH(n)+nco, SH(p)+1, pcr)) {
+    u8 ne = TI(n,elType);
+    u8 pe = TI(p,elType);
+    if (ne<el_B && pe<el_B && elNum(ne)==elNum(pe)) {
+      usz csz = arr_csz(p);
+      u8 neb = elWidthLogBits(ne);
+      u8 peb = elWidthLogBits(pe);
+      u8 meb = neb>peb? neb : peb;
+      ux rb = csz<<meb;
+      if (rb!=0 && rb<=62) {
+        if      (neb!=meb) n = cpyToElLog(n, ne, meb);
+        else if (peb!=meb) p = cpyToElLog(p, pe, meb);
+        return (B2){.n=toIntCell(n,rb,nco), .p=toIntCell(p,rb,1)};
+      }
+    }
+  }
+  return (B2){.n=toKCells(n,nco), .p=toCells(p)};
   
   #undef ARG_N
   #undef ARG_P
@@ -108,27 +173,33 @@ B indexOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
-    if (we==el_bit && xe!=el_B) {
-      u64* wp = bitarr_ptr(w);
-      u64 w0 = 1 & wp[0];
-      u64 i = bit_find(wp, wia, !w0); decG(w);
-      if (i!=wia) incG(x);
-      B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
-      return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
-    }
-    if (wia<=(we<=el_i16?4:16) && xia>16 && we<el_B && xe<el_B) {
-      SGetU(w);
-      #define XEQ(I) C2(ne, GetU(w,I), incG(x))
-      B r = XEQ(wia-1);
-      for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
-      #undef XEQ
-      decG(w); decG(x); return r;
-    }
-    if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
-      B r;
-      TABLE(w, x, i32, wia, i)
-      return reduceI32Width(r, wia);
-    }
+    
+    if (elNum(we) && elNum(xe)) { tyEls:
+      if (we==el_bit) {
+        u64* wp = bitarr_ptr(w);
+        u64 w0 = 1 & wp[0];
+        u64 i = bit_find(wp, wia, !w0); decG(w);
+        if (i!=wia) incG(x);
+        B r =                         C2i(mul, wia  , C2i(ne,  w0, x)) ;
+        return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
+      }
+      
+      if (wia<=(we<=el_i16?4:16) && xia>16) {
+        SGetU(w);
+        #define XEQ(I) C2(ne, GetU(w,I), incG(x))
+        B r = XEQ(wia-1);
+        for (usz i=wia-1; i--; ) r = C2(mul, XEQ(i), C2i(add, 1, r));
+        #undef XEQ
+        decG(w); decG(x); return r;
+      }
+      
+      if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        B r;
+        TABLE(w, x, i32, wia, i)
+        return reduceI32Width(r, wia);
+      }
+    } else if (elChr(we) && elChr(xe)) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
     SGetU(x)
@@ -143,8 +214,7 @@ B indexOf_c2(B t, B w, B x) {
   }
 }
 
-B enclosed_0;
-B enclosed_1;
+B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) {
     B2 t = splitCells(w, x, false);
@@ -176,27 +246,32 @@ B memberOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (xia == 0) { r=taga(arr_shCopy(allZeroes(wia), w)); decG(w); goto dec_x; }
-    #define WEQ(V) C2(eq, incG(w), V)
-    if (xe==el_bit && we!=el_B) {
-      u64* xp = bitarr_ptr(x);
-      u64 x0 = 1 & xp[0];
-      r = WEQ(m_usz(x0));
-      if (bit_has(xp, xia, !x0)) r = C2(or, r, WEQ(m_usz(!x0)));
-      decG(w); goto dec_x;
-    }
-    if (xia<=(xe==el_i16?8:16) && wia>16 && we<el_B && xe<el_B) {
-      SGetU(x);
-      r = WEQ(GetU(x,0));
-      for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
-      decG(w); goto dec_x;
-    }
-    #undef WEQ
-    // TODO O(wia×xia) for small wia
-    if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
-      B r;
-      TABLE(x, w, i8, 0, 1)
-      return taga(cpyBitArr(r));
-    }
+    
+    if (elNum(we) && elNum(xe)) { tyEls:
+      #define WEQ(V) C2(eq, incG(w), V)
+      if (xe==el_bit) {
+        u64* xp = bitarr_ptr(x);
+        u64 x0 = 1 & xp[0];
+        r = WEQ(m_usz(x0));
+        if (bit_has(xp, xia, !x0)) r = C2(or, r, WEQ(m_usz(!x0)));
+        decG(w); goto dec_x;
+      }
+      
+      if (xia<=(xe==el_i16?8:16) && wia>16) {
+        SGetU(x);
+        r = WEQ(GetU(x,0));
+        for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
+        decG(w); goto dec_x;
+      }
+      #undef WEQ
+      
+      if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        B r;
+        TABLE(x, w, i8, 0, 1)
+        return taga(cpyBitArr(r));
+      }
+    } else if (elChr(we) && elChr(xe)) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
     bool had;
@@ -228,6 +303,7 @@ B count_c2(B t, B w, B x) {
   if (we<=el_i16 && xe<=el_i16) {
     if (we==el_bit) { w = toI8Any(w); we = TI(w,elType); }
     if (xe==el_bit) { x = toI8Any(x); xe = TI(x,elType); }
+    el8or16:;
     usz it = elRange(we);    // Range of writes
     usz ft = elRange(xe);    // Range of lookups
     usz t = it>ft? it : ft;  // Table allocation width
@@ -248,6 +324,9 @@ B count_c2(B t, B w, B x) {
     if (xe==el_i8) { GET(i8) } else { GET(i16) }
     #undef GET
     TFREE(tab0);
+  } else if (we>=el_c8 && we<=el_c16 && xe>=el_c8 && xe<=el_c16) {
+    we-= el_c8-el_i8; xe-= el_c8-el_i8;
+    goto el8or16;
   } else {
     H_b2i* map = m_b2i(64);
     SGetU(x)
