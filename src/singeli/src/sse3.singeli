@@ -122,6 +122,32 @@ def __sub{a:T,b:T & w128i{T, 32}} = emit{T, '_mm_sub_epi32', a, b}
 def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
 
 
+
+# f32 arith
+def __add{a:T,b:T & T==[4]f32} = emit{T, '_mm_add_ps', a, b}
+def __sub{a:T,b:T & T==[4]f32} = emit{T, '_mm_sub_ps', a, b}
+def __mul{a:T,b:T & T==[4]f32} = emit{T, '_mm_mul_ps', a, b}
+def __div{a:T,b:T & T==[4]f32} = emit{T, '_mm_div_ps', a, b}
+def   max{a:T,b:T & T==[4]f32} = emit{T, '_mm_max_ps', a, b}
+def   min{a:T,b:T & T==[4]f32} = emit{T, '_mm_min_ps', a, b}
+def  sqrt{a:[4]f32} = emit{[4]f32, '_mm_sqrt_ps', a}
+def rsqrt{a:[4]f32} = emit{[4]f32, '_mm_rsqrt_ps', a}
+def   abs{a:[4]f32} = emit{[4]f32, '_mm_and_ps', a, v2f{[2]u32 ** 0x7FFFFFFF}}
+
+# f64 arith
+def __add{a:T,b:T & T==[2]f64} = emit{T, '_mm_add_pd', a, b}
+def __sub{a:T,b:T & T==[2]f64} = emit{T, '_mm_sub_pd', a, b}
+def __mul{a:T,b:T & T==[2]f64} = emit{T, '_mm_mul_pd', a, b}
+def __div{a:T,b:T & T==[2]f64} = emit{T, '_mm_div_pd', a, b}
+def   max{a:T,b:T & T==[2]f64} = emit{T, '_mm_max_pd', a, b}
+def   min{a:T,b:T & T==[2]f64} = emit{T, '_mm_min_pd', a, b}
+def  sqrt{a:[2]f64} = emit{[2]f64, '_mm_sqrt_pd', a}
+def rsqrt{a:[2]f64} = emit{[2]f64, '_mm_rsqrt_pd', a}
+def   abs{a:[2]f64} = emit{[2]f64, '_mm_and_pd', a, v2d{[2]u64 ** ((cast{u64,1}<<63)-1)}}
+
+
+
+
 # mask stuff
 def andAllZero{x:T, y:T & w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 
@@ -151,6 +177,12 @@ def extract{x:T, i & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16
 def extract{x:T, i & w128i{T, 8} & knum{i}} = emit{eltype{T}, '_mm_extract_epi8',  x, i}
 def extract{x:T, i & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_extract_epi32', x, i}
 def extract{x:T, i & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_extract_epi64', x, i}
+
+# float
+def floor{a:[4]f32} = emit{[4]f32, '_mm_floor_ps', a}
+def  ceil{a:[4]f32} = emit{[4]f32, '_mm_ceil_ps', a}
+def floor{a:[2]f64} = emit{[2]f64, '_mm_floor_pd', a}
+def  ceil{a:[2]f64} = emit{[2]f64, '_mm_ceil_pd', a}
 
 # conversion
 def widen{T==[8]u16, x:X & X==[16]u8} = emit{T, '_mm_cvtepu8_epi16',  x}; def widen{T==[8]i16, x:X & X==[16]i8} = emit{T, '_mm_cvtepi8_epi16',  x}

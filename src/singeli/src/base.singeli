@@ -188,3 +188,4 @@ def eachx{F, ...args} = {
 }
 
 def makeregs{v, n} = @collect(n) { reg:=v }
+def makeregs{T, n & istype{T}} = @collect(n) { reg:=undefined{T} }

@@ -77,7 +77,8 @@ def __mul{a:T,b:T & T==[8]f32} = emit{T, '_mm256_mul_ps', a, b}
 def __div{a:T,b:T & T==[8]f32} = emit{T, '_mm256_div_ps', a, b}
 def   max{a:T,b:T & T==[8]f32} = emit{T, '_mm256_max_ps', a, b}
 def   min{a:T,b:T & T==[8]f32} = emit{T, '_mm256_min_ps', a, b}
-def  sqrt{a:T,b:T & T==[8]f32} = emit{T, '_mm256_sqrt_ps', a, b}
+def  sqrt{a:[8]f32} = emit{[8]f32, '_mm256_sqrt_ps', a}
+def rsqrt{a:[8]f32} = emit{[8]f32, '_mm256_rsqrt_ps', a}
 def   abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, v2f{[8]u32 ** 0x7FFFFFFF}}
 def floor{a:[8]f32} = emit{[8]f32, '_mm256_floor_ps', a}
 def  ceil{a:[8]f32} = emit{[8]f32, '_mm256_ceil_ps', a}
@@ -89,7 +90,8 @@ def __mul{a:T,b:T & T==[4]f64} = emit{T, '_mm256_mul_pd', a, b}
 def __div{a:T,b:T & T==[4]f64} = emit{T, '_mm256_div_pd', a, b}
 def   max{a:T,b:T & T==[4]f64} = emit{T, '_mm256_max_pd', a, b}
 def   min{a:T,b:T & T==[4]f64} = emit{T, '_mm256_min_pd', a, b}
-def  sqrt{a:T,b:T & T==[4]f64} = emit{T, '_mm256_sqrt_pd', a, b}
+def  sqrt{a:[4]f64} = emit{[4]f64, '_mm256_sqrt_pd', a}
+def rsqrt{a:[4]f64} = emit{[4]f64, '_mm256_rsqrt_pd', a}
 def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, v2d{[4]u64 ** ((cast{u64,1}<<63)-1)}}
 def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
