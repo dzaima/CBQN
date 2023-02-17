@@ -4,9 +4,6 @@ include './sse3'
 def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
 def unpacklo{a:T,b:T & T==[2]u64} = emit{T, '_mm_unpacklo_epi64', a, b}
 
-def loadl{a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_loadu_si64',       a+n}
-def storel{a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_storeu_si64',       a+n,  v}
-
 clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
@@ -25,7 +22,7 @@ clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
     rv = apply{unpacklo, (@collect (j to 2) xor64{xv, j, c})}
   }
   if (words & 1) {
-    storel{rv,e, clmul{loadl{xv,e}, m, 0} ^ c}
+    storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
   }
 }
 clmul_scan_ne_bit(init:u64, x:*u64, r:*u64, ia:u64) : void = {
