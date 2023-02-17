@@ -554,12 +554,12 @@ cachedBin‿linkerCache ← {
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
-  singeliMap ← {po.arch≡"aarch64"? 𝕩/˜(1⊑¨𝕩)∊"cmp"‿"bits"‿"equal"‿"dyarith"‿"monarith"‿"squeeze"‿"copy"; 𝕩} ⟨
-    "src/builtins/arithm.c"‿"monarith",
-    "src/core/stuff.c"‿"equal",        "src/utils/mut.c"‿"copy",       "src/utils/bits.c"‿"bits"
-    "src/builtins/arithd.c"‿"dyarith", "src/builtins/cmp.c"‿"cmp",     "src/builtins/squeeze.c"‿"squeeze"
-    "src/builtins/select.c"‿"select",  "src/builtins/fold.c"‿"fold",   "src/builtins/scan.c"‿"scan"
-    "src/builtins/scan.c"‿"neq",       "src/builtins/slash.c"‿"slash", "src/builtins/slash.c"‿"constrep"
+  singeliMap ← 1↓¨ (∨´¨ (⊑po.arch) = ⊑¨)⊸/ ⟨
+    "xa"‿"src/builtins/arithm.c"‿"monarith",
+    "xa"‿"src/core/stuff.c"‿"equal",        "xa"‿"src/utils/mut.c"‿"copy",       "xa"‿"src/utils/bits.c"‿"bits"
+    "xa"‿"src/builtins/arithd.c"‿"dyarith", "xa"‿"src/builtins/cmp.c"‿"cmp",     "xa"‿"src/builtins/squeeze.c"‿"squeeze"
+    "x."‿"src/builtins/select.c"‿"select",  "x."‿"src/builtins/fold.c"‿"fold",   "x."‿"src/builtins/scan.c"‿"scan"
+    "x."‿"src/builtins/scan.c"‿"neq",       "x."‿"src/builtins/slash.c"‿"slash", "x."‿"src/builtins/slash.c"‿"constrep"
   ⟩
   objs ← ⟨⟩
   
