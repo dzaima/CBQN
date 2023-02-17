@@ -37,9 +37,8 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 #endif
 
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
-#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); \
-  return arith_recd(N##_c2, w, x); \
-}}
+#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x); }}
+
 #if !TYPED_ARITH
   #define AR_I_TO_ARR(NAME) P2(NAME)
   #define AR_F_TO_ARR AR_I_TO_ARR
@@ -84,11 +83,11 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
           if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp = tyany_ptr(x); \
           Rf64(x);                                                \
           if (we==el_i32) { B w,x /*shadow*/;                     \
-            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
-            else            { DECOR for (usz i = 0; i < ia; i++) {w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
+            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
+            else            { DECOR for (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
           } else {          B w,x /*shadow*/;                     \
-            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR;} } \
-            else            { DECOR for (usz i = 0; i < ia; i++) {w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR;} } \
+            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
+            else            { DECOR for (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
           }                                                       \
           decG(w); decG(x); return num_squeeze(r);                \
         }                                                         \
@@ -153,11 +152,24 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
     SA_DISPATCH(mul) SA_DISPATCH(and)
     SA_DISPATCH(ceil) SA_DISPATCH(floor)
     #undef SA_DISPATCH
+    
   #else
-    #define NO_SI_AA(N)
-    #define SI_AA NO_SI_AA
-    #define SI_AS REG_AS
-    #define SI_SA REG_SA
+    static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
+      B b = bitX? x : w;
+      u64* bp = bitarr_ptr(b);
+      usz ia = IA(b);
+      
+      bool b0 = ia? bp[0]&1 : 0;
+      bool both = bit_has(bp, ia, !b0);
+      
+      B e0=m_f64(0), e1=m_f64(0); // initialized to have something to decrement later
+      bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
+      bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
+      // non-bitarr arg has been consumed
+      B r = bit_sel(b, e0, e1); // and now the bitarr arg is consumed too
+      dec(e0); dec(e1);
+      return r;
+    }
     
     #define REG_SA(NAME, EXPR) \
       if (xe==el_bit) return bit_sel1Fn(NAME##_c2,w,x,1); \
@@ -240,6 +252,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
       }
     })
     #undef AR_I_AA
+    
     #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
       B r; u8 we=TI(w,elType); EXTRA                       \
       if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }     \
@@ -254,33 +267,16 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
       dec_ret: decG(x); return r;                          \
     }
     
-    static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
-      B b = bitX? x : w;
-      u64* bp = bitarr_ptr(b);
-      usz ia = IA(b);
-      
-      bool b0 = ia? bp[0]&1 : 0;
-      bool both = false;
-      for (usz i = 0; i < ia; i++) if (bitp_get(bp,i) != b0) { both=true; break; }
-      
-      B e0=m_f64(0), e1=m_f64(0); // initialized to have something to decrement later
-      bool h0=both || b0==0; if (h0) e0 = bitX? f(bi_N, inc(w), m_f64(0)) : f(bi_N, m_f64(0), inc(x));
-      bool h1=both || b0==1; if (h1) e1 = bitX? f(bi_N,     w,  m_f64(1)) : f(bi_N, m_f64(1), x);
-      // non-bitarr arg has been consumed
-      B r = bit_sel(b, e0, e1); // and now the bitarr arg is consumed too
-      dec(e0); dec(e1);
-      return r;
-    }
-    
-    AR_I_SA("-", sub, wv-xv, SI_SA, {})
-    AR_I_SA("×", mul, wv*xv, SI_SA, {})
+    AR_I_SA("-", sub, wv-xv, REG_SA, {})
+    AR_I_SA("×", mul, wv*xv, REG_SA, {})
     AR_I_SA("∧", and, wv*xv, REG_SA, {})
     AR_I_SA("∨", or , (wv+xv)-(wv*xv), REG_SA, {})
     AR_I_SA("⌊", floor, wv>xv?xv:wv, REG_SA, {})
     AR_I_SA("⌈", ceil , wv>xv?wv:xv, REG_SA, {})
-    AR_I_SA("+", add, wv+xv, SI_SA, {
-      if (isC32(w) && xe==el_i32) {
+    AR_I_SA("+", add, wv+xv, REG_SA, {
+      if (isC32(w) && elInt(xe)) {
         u32 wv = o2cG(w);
+        if (xe!=el_i32) x = taga(cpyI32Arr(x));
         i32* xp = i32any_ptr(x); usz xia = IA(x);
         u32* rp; r = m_c32arrc(&rp, x);
         for (usz i = 0; i < xia; i++) {
@@ -293,9 +289,10 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
     #undef AR_I_SA
     
     
-    AR_I_AS("-", sub, wv-xv, SI_AS, {
-      if (we==el_c32 && isC32(x)) {
+    AR_I_AS("-", sub, wv-xv, REG_AS, {
+      if (elChr(we) && isC32(x)) {
         i32 xv = (i32)o2cG(x);
+        if (we!=el_c32) w = taga(cpyC32Arr(w));
         u32* wp = c32any_ptr(w); usz wia = IA(w);
         i32* rp; r = m_i32arrc(&rp, w);
         for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
@@ -314,18 +311,15 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   
   #define AR_F_TO_ARR(NAME) return NAME##_c2_arr(t, w, x);
   #define AR_I_TO_ARR(NAME) \
-    if (isArr(x)) {                                  \
-      if (isArr(w)) return NAME##_AA(t, w, x);       \
-      else return NAME##_SA(t, w, x);                \
-    } else if (isArr(w)) return NAME##_AS(t, w, x);
+    if (isArr(x)) return isArr(w)? NAME##_AA(t, w, x) : NAME##_SA(t, w, x); \
+    else if (isArr(w)) return NAME##_AS(t, w, x);
   
 #endif // TYPED_ARITH
 
 #define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
-  MORE \
-  AR_I_TO_ARR(NAME) \
-  thrM(CHR ": Unexpected argument types"); \
+  MORE; AR_I_TO_ARR(NAME)                      \
+  thrM(CHR ": Unexpected argument types");     \
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
@@ -348,8 +342,8 @@ B not_c2(B t, B w, B x) {
 
 #define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
-  AR_F_TO_ARR(NAME) \
-  thrM(CHR ": Unexpected argument types"); \
+  AR_F_TO_ARR(NAME)                            \
+  thrM(CHR ": Unexpected argument types");     \
 }
 AR_F_SCALAR("÷", div  ,           w.f/x.f)
 AR_F_SCALAR("⋆", pow  ,     pow(w.f, x.f))
@@ -390,12 +384,11 @@ static f64 comb(f64 k, f64 n) { // n choose k
   return exp(lgamma(n+1) - lgamma(k+1) - lgamma(j+1));
 }
 
-#define MATH(n,N) \
-  B n##_c2(B t, B w, B x) {                              \
-    if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
-    P2(n)                                                \
-    thrM("•math." #N ": Unexpected argument types");     \
-  }
+#define MATH(n,N) B n##_c2(B t, B w, B x) {            \
+  if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
+  P2(n)                                                \
+  thrM("•math." #N ": Unexpected argument types");     \
+}
 MATH(atan2,Atan2) MATH(hypot,Hypot) MATH(comb,Comb)
 #undef MATH
 
