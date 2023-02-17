@@ -37,9 +37,10 @@ opts ← ⟨
   ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
   ⟨0, "v",       @,  "Version to report by --version; 'v=' to use git commit"∾@+10⟩
   
-  ⟨1, "shared", 0, "build a shared library; default output is libcbqn.[so|dylib]"⟩
-  ⟨1, "wasi",   0, "build with WASI; default output name is BQN.wasm"⟩
-  ⟨1, "emcc",   0, "build with emscripten; outputs BQN.wasm & BQN.js in a folder"⟩
+  ⟨1, "shared", 0, "Build a shared library; default output is libcbqn.[so|dylib]"⟩
+  ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
+  ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
+  ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
   
   ⟨1, "FFI",       @, "Enable FFI through libffi; On by default, except for WASM builds"⟩
   ⟨1, "pkgconfig", 1, "Attempt to use pkg-config to find libffi flags"⟩
@@ -132,7 +133,7 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, tui, output, versionName,
+    verbose, J, rebuildAll, tui, output, clangd, versionName,
     os, arch, native,
     emcc, wasm, replxx, singeli,
     ffi, o3,
@@ -141,6 +142,7 @@ po ← { # parsed options
   ⟩⇐
   
   custom ← GetOpt "c"
+  clangd ← GetOpt "clangd"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •BQN v; •BQN⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
@@ -210,7 +212,7 @@ po ← { # parsed options
   {𝕊: "Output location: "∾𝕩}_verboseLog output
   
   CBQNc ⇐ { 𝕊:
-    isClang ← ∨´"clang"⍷SH cc‿"--version" # TODO exclude from hash?
+    isClang ← {clangd? 1; ∨´"clang"⍷SH cc‿"--version"} # TODO exclude from hash?
     args ← ⟨
       cc,
       "-std=gnu11",
@@ -226,6 +228,8 @@ po ← { # parsed options
     ⟩
     args∾↩ 0⊑GetLibs@
     
+    color ← (GetOpt "color") ∧ ¬clangd
+    
     args∾↩ GetOpt "f"
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
@@ -238,7 +242,7 @@ po ← { # parsed options
     args∾↩ (                o3) / ⟨"-O3"⟩
     args∾↩ (            native) / ⟨"-march=native"⟩
     args∾↩ (             debug) / ⟨"-DDEBUG"⟩
-    args∾↩ (    GetOpt "color") / ⟨isClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩ # TODO exclude from hash?
+    args∾↩ (             color) / ⟨isClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩ # TODO exclude from hash?
     args∾↩ ( GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
     args∾↩ (GetOpt"heapverify") / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
@@ -505,7 +509,10 @@ AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
   res
 }
 
+clangd ← {¬po.clangd? {_add⇐{𝕨𝔽_𝕣𝕩:@} ⋄ Files⇐⊣}; ⟨AtRoot⟩ •Import "clangd.bqn"}
+
 MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
+  GetArgs clangd._add src
   dst ← cache.File id∾".o"
   GetCMD ← { 𝕊:
     Init @
@@ -538,7 +545,7 @@ MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
 
 # actual CBQN/Singeli/REPLXX definitions
 cachedBin‿linkerCache ← {
-  Shorten ← {r ← {𝕩↓˜¯1-⊑'.'⊐˜⌽𝕩}¨ •file.Name¨ 𝕩 ⋄ ! ∧´ ∊r ⋄ r}
+  Shorten ← {po.clangd? 𝕩; r ← {𝕩↓˜¯1-⊑'.'⊐˜⌽𝕩}¨ •file.Name¨ 𝕩 ⋄ ! ∧´ ∊r ⋄ r}
   cbqnSrc ← ∾{⌽(⊑𝕩)⊸•file.At¨ 1↓𝕩}¨ ⌽⟨
     ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "fold.c", "scan.c", "md1.c", "md2.c", "fns.c", "sysfn.c", "internal.c", "inverse.c"⟩
     ⟨"src/core/", "tyarr.c", "harr.c", "fillarr.c", "stuff.c", "derv.c", "mm.c", "heap.c"⟩
@@ -546,6 +553,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/jit/", "nvm.c"⟩
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
+  cbqnSrc ↩ cbqnSrc clangd.Files "src"
   singeliMap ← {po.arch≡"aarch64"? 𝕩/˜(1⊑¨𝕩)∊"cmp"‿"bits"‿"equal"‿"dyarith"‿"monarith"‿"squeeze"; 𝕩} ⟨
     "src/builtins/arithm.c"‿"monarith",
     "src/core/stuff.c"‿"equal",        "src/utils/mut.c"‿"copy",       "src/utils/bits.c"‿"bits"
@@ -628,14 +636,17 @@ cachedBin‿linkerCache ← {
 }
 
 outPath ← •wdpath •file.At po.output
-success ← Run cachedBin
-{ 𝕊:
-  po.emcc?
-    SH ⟨"cp", AtRoot cachedBin,                   outPath •file.At •file.Name cachedBin⟩
-    SH ⟨"cp", AtRoot linkerCache.File "BQN.wasm", outPath •file.At "BQN.wasm"⟩
-  ;
-    SH ⟨"cp", "-f", AtRoot cachedBin, outPath⟩
-}⍟⊢ success
-
-OnExit@
-•Exit ¬success
+{
+  po.clangd? clangd.Finish@;
+  # else, regular build
+  success ← Run cachedBin
+  { 𝕊:
+    po.emcc?
+      SH ⟨"cp", AtRoot cachedBin,                   outPath •file.At •file.Name cachedBin⟩
+      SH ⟨"cp", AtRoot linkerCache.File "BQN.wasm", outPath •file.At "BQN.wasm"⟩
+    ;
+      SH ⟨"cp", "-f", AtRoot cachedBin, outPath⟩
+  }⍟⊢ success
+  OnExit@
+  •Exit ¬success
+}

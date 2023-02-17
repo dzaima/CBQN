@@ -1,5 +1,10 @@
 # Overview of the CBQN source
 
+## clangd
+
+Run `build/build clangd` to generate a `compile_commands.json` file which clangd will use to resolve the flags CBQN expects. Other `build/build` flags will also be respected, e.g. `build/build replxx singeli native clangd` will result in clangd assuming the `SINGELI` and `USE_REPLXX` macros are defined, and will resolve generated Singeli sources to ones `build/build replxx singeli native` generates (along with everything else the configurations change).  
+(depending on the LSP in use, you may need to restart the LSP/clangd/editor after a modified `compile_commands.json`)
+
 ## Conventions
 
 Functions starting with `m_` create a new object (some NaN-boxed, some heap-allocated).  
