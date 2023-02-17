@@ -138,51 +138,53 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 #else
   #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
 #endif
+#define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
+#define PTR_COPY(X, R) for (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
 
 
 DEF_COPY(bit, { bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l); return; })
-DEF_COPY(i8 , { i8*  rp = ms+(i8*)a;
+DEF_COPY(i8 , { i8*  rp = ms+(i8*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return; }
-    case t_i8arr: case t_i8slice:   { i8*  xp = i8any_ptr(x);  for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_bitarr:                  BIT_COPY(i8)
+    case t_i8arr: case t_i8slice:   PTR_COPY(i8, i8)
   }
 })
-DEF_COPY(i16, { i16* rp = ms+(i16*)a;
+DEF_COPY(i16, { i16* rp = ms+(i16*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return; }
-    case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_bitarr:                  BIT_COPY(i16)
+    case t_i8arr:  case t_i8slice:  PTR_COPY(i8, i16)
+    case t_i16arr: case t_i16slice: PTR_COPY(i16, i16)
   }
 })
-DEF_COPY(i32, { i32* rp = ms+(i32*)a;
+DEF_COPY(i32, { i32* rp = ms+(i32*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return; }
-    case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_bitarr:                  BIT_COPY(i32)
+    case t_i8arr:  case t_i8slice:  PTR_COPY(i8, i32)
+    case t_i16arr: case t_i16slice: PTR_COPY(i16, i32)
+    case t_i32arr: case t_i32slice: PTR_COPY(i32, i32)
   }
 })
-DEF_COPY(f64, { f64* rp = ms+(f64*)a;
+DEF_COPY(f64, { f64* rp = ms+(f64*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return; }
-    case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_f64arr: case t_f64slice: { f64* xp = f64any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_bitarr:                  BIT_COPY(f64)
+    case t_i8arr:  case t_i8slice:  PTR_COPY(i8, f64)
+    case t_i16arr: case t_i16slice: PTR_COPY(i16, f64)
+    case t_i32arr: case t_i32slice: PTR_COPY(i32, f64)
+    case t_f64arr: case t_f64slice: PTR_COPY(f64, f64)
   }
 })
-DEF_COPY(c8 , { u8*  rp = ms+(u8*)a;   u8*  xp = c8any_ptr(x);  for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; })
-DEF_COPY(c16, { u16* rp = ms+(u16*)a;
+DEF_COPY(c8 , { u8*  rp = ms+(u8*)a; void* xp = tyany_ptr(x); PTR_COPY(u8, u8) })
+DEF_COPY(c16, { u16* rp = ms+(u16*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_c8arr:  case t_c8slice:  PTR_COPY(u8, u16)
+    case t_c16arr: case t_c16slice: PTR_COPY(u16, u16)
   }
 })
-DEF_COPY(c32, { u32* rp = ms+(u32*)a;
+DEF_COPY(c32, { u32* rp = ms+(u32*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
-    case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
-    case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); for (usz i = 0; i < l; i++) rp[i] = xp[i+xs]; return; }
+    case t_c8arr:  case t_c8slice:  PTR_COPY(u8, u32)
+    case t_c16arr: case t_c16slice: PTR_COPY(u16, u32)
+    case t_c32arr: case t_c32slice: PTR_COPY(u32, u32)
   }
 })
 DEF_E(void, copy, MAX, false, x, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { err("m_copyG_MAX"); }
