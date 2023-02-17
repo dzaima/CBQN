@@ -1,7 +1,11 @@
 include './base'
-include './sse3'
-include './avx'
-include './avx2'
+if (hasarch{'X86_64'}) {
+  include './sse3'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
 include './mask'
 include './cbqnDefs'
 include './bitops'
@@ -18,7 +22,8 @@ def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
 }
 
 
-copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+  def vw = arch_defvw
   assert{l!=0}
   
   def bulk = vw/max{width{X}, width{R}}
@@ -26,6 +31,7 @@ copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   rp:= *tern{R==u1, u64, R} ~~ r
   def XV = [bulk]X
   def RV = [bulk]R
+  def ur = tern{hasarch{'AARCH64'}, 4, 1}
   
   if (R==u64) {
     # show{'R==u64', X, R}
@@ -55,67 +61,67 @@ copy{vw, X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     }
   } else if (width{X}<=width{R}) {
     # show{'w{X}<=w{R}', X, R}
-    maskedLoop{bulk, l, {i, M} => {
-      v:= loadBatch{xp, i, RV}
-      storeBatch{rp, i, v, M}
+    muLoop{bulk, ur, l, {is, M} => {
+      def v = loadBatch{xp, is, RV}
+      storeBatch{rp, is, v, M}
     }}
   } else {
     # show{'w{X}>w{R}', X, R}
-    maskedLoop{bulk, l, {i, M} => {
-      v:= loadBatch{xp, i, XV}
-      storeBatch{rp, i, v, M}
+    muLoop{bulk, ur, l, {is, M} => {
+      def v = loadBatch{xp, is, XV}
+      storeBatch{rp, is, v, M}
     }}
   }
 }
 
-# avx2_copy_src_dst
+# simd_copy_src_dst
 # x→int & equal-width copies
-'avx2_copy_1_1'     = copy{256, u1,  u1}
-'avx2_copy_1_i8'    = copy{256, u1,  i8}
-'avx2_copy_1_i16'   = copy{256, u1,  i16}
-'avx2_copy_1_i32'   = copy{256, u1,  i32}
+'simd_copy_1_1'     = copy{u1,  u1}
+'simd_copy_1_i8'    = copy{u1,  i8}
+'simd_copy_1_i16'   = copy{u1,  i16}
+'simd_copy_1_i32'   = copy{u1,  i32}
 
-'avx2_copy_i8_1'    = copy{256, i8,  u1}
-'avx2_copy_i8_i8', 'avx2_copy_c8_c8' = copy{256, i8,  i8}
-'avx2_copy_i8_i16'  = copy{256, i8,  i16}
-'avx2_copy_i8_i32'  = copy{256, i8,  i32}
+'simd_copy_i8_1'    = copy{i8,  u1}
+'simd_copy_i8_i8', 'simd_copy_c8_c8' = copy{i8,  i8}
+'simd_copy_i8_i16'  = copy{i8,  i16}
+'simd_copy_i8_i32'  = copy{i8,  i32}
 
-'avx2_copy_i16_1'   = copy{256, i16, u1}
-'avx2_copy_i16_i8'  = copy{256, i16, i8}
-'avx2_copy_i16_i16', 'avx2_copy_c16_c16' = copy{256, i16, i16}
-'avx2_copy_i16_i32' = copy{256, i16, i32}
+'simd_copy_i16_1'   = copy{i16, u1}
+'simd_copy_i16_i8'  = copy{i16, i8}
+'simd_copy_i16_i16', 'simd_copy_c16_c16' = copy{i16, i16}
+'simd_copy_i16_i32' = copy{i16, i32}
 
-'avx2_copy_i32_1'   = copy{256, i32, u1}
-'avx2_copy_i32_i8'  = copy{256, i32, i8}
-'avx2_copy_i32_i16' = copy{256, i32, i16}
-'avx2_copy_i32_i32', 'avx2_copy_c32_c32'= copy{256, i32, i32}
+'simd_copy_i32_1'   = copy{i32, u1}
+'simd_copy_i32_i8'  = copy{i32, i8}
+'simd_copy_i32_i16' = copy{i32, i16}
+'simd_copy_i32_i32', 'simd_copy_c32_c32'= copy{i32, i32}
 
-'avx2_copy_f64_1'   = copy{256, f64, u1}
-'avx2_copy_f64_i8'  = copy{256, f64, i8}
-'avx2_copy_f64_i16' = copy{256, f64, i16}
-'avx2_copy_f64_i32' = copy{256, f64, i32}
+'simd_copy_f64_1'   = copy{f64, u1}
+'simd_copy_f64_i8'  = copy{f64, i8}
+'simd_copy_f64_i16' = copy{f64, i16}
+'simd_copy_f64_i32' = copy{f64, i32}
 
-# x→f64, x→B (no avx2_copy_B_B because that may possibly need refcounting)
-'avx2_copy_1_f64',   'avx2_copy_1_B'   = copy{256, u1,  f64}
-'avx2_copy_i8_f64',  'avx2_copy_i8_B'  = copy{256, i8,  f64}
-'avx2_copy_i16_f64', 'avx2_copy_i16_B' = copy{256, i16, f64}
-'avx2_copy_i32_f64', 'avx2_copy_i32_B' = copy{256, i32, f64}
-'avx2_copy_f64_f64', 'avx2_copy_f64_B' = copy{256, f64, f64}
+# x→f64, x→B (no simd_copy_B_B because that may possibly need refcounting)
+'simd_copy_1_f64',   'simd_copy_1_B'   = copy{u1,  f64}
+'simd_copy_i8_f64',  'simd_copy_i8_B'  = copy{i8,  f64}
+'simd_copy_i16_f64', 'simd_copy_i16_B' = copy{i16, f64}
+'simd_copy_i32_f64', 'simd_copy_i32_B' = copy{i32, f64}
+'simd_copy_f64_f64', 'simd_copy_f64_B' = copy{f64, f64}
 
 # chr→x
-'avx2_copy_c8_c16'  = copy{256, u8, u16}
-'avx2_copy_c8_c32'  = copy{256, u8, u32}
-'avx2_copy_c8_B'    = copy{256, u8, u64}
+'simd_copy_c8_c16'  = copy{u8, u16}
+'simd_copy_c8_c32'  = copy{u8, u32}
+'simd_copy_c8_B'    = copy{u8, u64}
 
-'avx2_copy_c16_c8'  = copy{256, u16, u8}
-'avx2_copy_c16_c32' = copy{256, u16, u32}
-'avx2_copy_c16_B'   = copy{256, u16, u64}
+'simd_copy_c16_c8'  = copy{u16, u8}
+'simd_copy_c16_c32' = copy{u16, u32}
+'simd_copy_c16_B'   = copy{u16, u64}
 
-'avx2_copy_c32_c8'  = copy{256, u32, u8}
-'avx2_copy_c32_c16' = copy{256, u32, u16}
-'avx2_copy_c32_B'   = copy{256, u32, u64}
+'simd_copy_c32_c8'  = copy{u32, u8}
+'simd_copy_c32_c16' = copy{u32, u16}
+'simd_copy_c32_B'   = copy{u32, u64}
 
 # B→chr
-'avx2_copy_B_c8'  = copy{256, u64, u8}
-'avx2_copy_B_c16' = copy{256, u64, u16}
-'avx2_copy_B_c32' = copy{256, u64, u32}
+'simd_copy_B_c8'  = copy{u64, u8}
+'simd_copy_B_c16' = copy{u64, u16}
+'simd_copy_B_c32' = copy{u64, u32}
