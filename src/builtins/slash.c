@@ -33,10 +33,11 @@
 // Replicate by constant
 // Boolean uses pdep, ≠`, or overwriting
 //   SHOULD make a shift/mask replacement for pdep
-// Others use +`, or lots of Singeli
+// Other typed 𝕩 uses +`, or lots of Singeli
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
-
-// SHOULD do something for odd cell widths in Replicate
+// Otherwise, cell-by-cell copying
+//   SHOULD better handle small odd cell widths
+//   COULD do large copies for large 𝕨
 
 // Indices inverse (/⁼), a lot like Group
 // Always gives a squeezed result for integer 𝕩
@@ -664,7 +665,7 @@ B slash_c2(B t, B w, B x) {
       w=any_squeeze(w); we=TI(w,elType);
       if (!elInt(we)) {
         s = usum(w);
-        goto slow;
+        goto arrW_base;
       }
     }
     if (we==el_bit) {
@@ -672,29 +673,31 @@ B slash_c2(B t, B w, B x) {
       r = compress(w, x, wia, xl, xt);
       goto decWX_ret;
     }
-    if (xl>6 || (xl<3 && xl!=0)) goto base;
     s = usum(w);
+    if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
     if (s<=wia) {
       w=num_squeezeChk(w); we=TI(w,elType);
       if (we==el_bit) goto wbool;
     }
     
     if (RARE(TI(x,elType)==el_B)) { // Slow case
-      slow:
-      if (xr > 1) goto base;
+      arrW_base:
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
-      MAKE_MUT(r0, s) mut_init(r0, el_B); MUTG_INIT(r0);
-      SGetU(w) SGetU(x)
-      usz ri = 0;
-      for (usz i = 0; i < wia; i++) {
-        usz c = o2s(GetU(w, i));
-        if (c) {
-          mut_fillG(r0, ri, GetU(x, i), c);
-          ri+= c;
-        }
+      usz csz = arr_csz(x);
+      MAKE_MUT(r0, s*csz) mut_init(r0, TI(x,elType)); MUTG_INIT(r0);
+      SGetU(w)
+      if (csz==1) { SGetU(x) usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); if (c)              { mut_fillG(r0, ri, GetU(x, i), c); ri+= c;     } } }
+      else        {          usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); for(ux j=0;j<c;j++) { mut_copyG(r0, ri, x, i*csz, csz); ri+= csz;   } } }
+      Arr* ra = mut_fp(r0);
+      if (xr == 1) {
+        arr_shVec(ra);
+      } else {
+        usz* rsh = arr_shAlloc(ra, xr);
+        rsh[0] = s;
+        shcpy(rsh+1, SH(x)+1, xr-1);
       }
-      r = withFill(mut_fv(r0), xf);
+      r = withFill(taga(ra), xf);
       decWX_ret: decG(w);
       decX_ret: decG(x);
       return r;
@@ -761,14 +764,25 @@ B slash_c2(B t, B w, B x) {
     if (xlen == 0) return x;
     usz s = xlen * wv;
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
-      if (xr!=1) goto base;
-      SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
+      if (xr!=1) {
+        MAKE_MUT(r0, IA(x) * wv) mut_init(r0, TI(x,elType)); MUTG_INIT(r0);
+        usz csz = arr_csz(x);
+        ux ri = 0;
+        for (ux i = 0; i < xlen; i++) for (ux j = 0; j < wv; j++) {
+          mut_copyG(r0, ri, x, i*csz, csz);
+          ri+= csz;
+        }
+        r = withFill(mut_fv(r0), xf);
+        r = taga(TI(r,slice)(r, 0, IA(r)));
+        goto atmW_setsh;
+      }
+      SLOW2("𝕨/𝕩", w, x);
       HArr_p r0 = m_harrUv(s);
       SGetU(x)
-      for (usz i = 0; i < xlen; i++) {
+      for (ux i = 0; i < xlen; i++) {
         B cx = incBy(GetU(x, i), wv);
-        for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
+        for (ux j = 0; j < wv; j++) *r0.a++ = cx;
       }
       NOGC_E;
       r = withFill(r0.b, xf);
@@ -803,7 +817,8 @@ B slash_c2(B t, B w, B x) {
             bool oo = o>=wv; xi+=d+oo; o-=wv&-oo;
           }
         }
-      } else
+        goto decX_ret;
+      }
       #endif
       if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
       else           { BOOL_REP_OVER(wv, xlen) }
@@ -821,6 +836,7 @@ B slash_c2(B t, B w, B x) {
       #undef CASE
     }
     if (xr > 1) {
+      atmW_setsh:;
       usz* rsh = m_shArr(xr)->a;
       rsh[0] = s;
       shcpy(rsh+1, SH(x)+1, xr-1);
