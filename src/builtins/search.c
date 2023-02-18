@@ -36,30 +36,32 @@ extern B mul_c2(B,B,B);
 static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
 
 #define TABLE(IN, FOR, TY, INIT, SET) \
-  usz it = elRange(IN##e);   /* Range of writes        */                   \
-  usz ft = elRange(FOR##e);  /* Range of lookups       */                   \
-  usz t = it>ft? it : ft;    /* Table allocation width */                   \
-  TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                                \
-  usz m=IN##ia, n=FOR##ia;                                                  \
-  void* ip = tyany_ptr(IN);                                                 \
-  void* fp = tyany_ptr(FOR);                                                \
-  /* Initialize */                                                          \
-  if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                               \
-       { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                 \
-  else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; }  \
-  /* Set */                                                                 \
-  if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }     \
-  else              { for (usz i=m; i--;    ) tab[((i16*)ip)[i]]=SET; }     \
-  decG(IN);                                                                 \
-  /* Lookup */                                                              \
-  if (FOR##e==el_bit) {                                                     \
-    r = bit_sel(FOR, m_i32(tab[0]), m_i32(tab[1]));                         \
-  } else {                                                                  \
-    TY* rp; r = m_##TY##arrc(&rp, FOR);                                     \
-    if (FOR##e==el_i8){ for (usz i=0; i<n; i++) rp[i]=tab[((i8 *)fp)[i]]; } \
-    else              { for (usz i=0; i<n; i++) rp[i]=tab[((i16*)fp)[i]]; } \
-    decG(FOR);                                                              \
-  }                                                                         \
+  usz it = elRange(IN##e);   /* Range of writes        */                    \
+  usz ft = elRange(FOR##e);  /* Range of lookups       */                    \
+  usz t = it>ft? it : ft;    /* Table allocation width */                    \
+  TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                                 \
+  usz m=IN##ia, n=FOR##ia;                                                   \
+  void* ip = tyany_ptr(IN);                                                  \
+  void* fp = tyany_ptr(FOR);                                                 \
+  /* Initialize */                                                           \
+  if (IN.u != FOR.u) {                                                       \
+    if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                              \
+         { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                \
+    else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; } \
+  }                                                                          \
+  /* Set */                                                                  \
+  if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }      \
+  else              { for (usz i=m; i--;    ) tab[((i16*)ip)[i]]=SET; }      \
+  decG(IN);                                                                  \
+  /* Lookup */                                                               \
+  if (FOR##e==el_bit) {                                                      \
+    r = bit_sel(FOR, m_i32(tab[0]), m_i32(tab[1]));                          \
+  } else {                                                                   \
+    TY* rp; r = m_##TY##arrc(&rp, FOR);                                      \
+    if (FOR##e==el_i8){ for (usz i=0; i<n; i++) rp[i]=tab[((i8 *)fp)[i]]; }  \
+    else              { for (usz i=0; i<n; i++) rp[i]=tab[((i16*)fp)[i]]; }  \
+    decG(FOR);                                                               \
+  }                                                                          \
   TFREE(tab0);
 
 typedef struct { B n, p; } B2;
@@ -113,6 +115,7 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
       u8 meb = neb>peb? neb : peb;
       ux rb = csz<<meb;
       if (rb!=0 && rb<=62) {
+        if (n.u == p.u) { decG(p); n=toIntCell(n,rb,1); return (B2){.n=n, .p=incG(n)}; }
         if      (neb!=meb) n = cpyToElLog(n, ne, meb);
         else if (peb!=meb) p = cpyToElLog(p, pe, meb);
         return (B2){.n=toIntCell(n,rb,nco), .p=toIntCell(p,rb,1)};
