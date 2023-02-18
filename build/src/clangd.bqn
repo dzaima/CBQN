@@ -78,7 +78,7 @@ ModifyCBQNFlags ← {
   gfv ← ∾¨ (⊐flagK) ⊔ flagV
   
   # resolve flags to actual files
-  𝕩 {n‿f 𝕊 f2: ⟨n, f∾f2⟩}¨ (gfk⊐•file.At¨ filenames)⊏gfv ∾ <⟨⟩
+  𝕩 {n‿f 𝕊 f2: ⟨n, f∾⟨"-Wno-undefined-internal", "-DCLANGD"⟩∾f2⟩}¨ (gfk⊐•file.At¨ filenames)⊏gfv ∾ <⟨⟩
 }
 
 objects ← ⟨⟩
