@@ -81,6 +81,18 @@ def truncBits{n, v & n<=8}  = cast_i{u8, v}
 def truncBits{n, v & n==16} = cast_i{u16, v}
 def truncBits{n, v & n==32} = cast_i{u32, v}
 def truncBits{n, v & n==64} = cast_i{u64, v}
+def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
+
+# load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it
+def loaduBitRaw{x:*u64, i} = {
+  loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)
+}
+def loaduBit{x:*u64, i, n} = {
+  assert{(n<58) | (((n==58) | (n==60)) & (i%n == 0))}
+  loaduBitRaw{x, i}
+}
+def loaduBitTrunc{x:*u64, i, n & knum{n}} = truncBits{n, loaduBit{x, i, n}}
+
 
 def loadBatchBit{T, x:*u64, is & ktup{is}} = {
   # def len = tuplen{is}

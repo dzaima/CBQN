@@ -23,7 +23,7 @@ u8 elTypeWidthLogBits[] = {
   [el_B] = 6
 };
 u8 arrTypeWidthLog[] = {
-  [t_bitarr]=99,
+  [t_bitarr]=0, // 0 for mut.c hack to allow restoring a bitarr offset from array pointer & arrTypeWidthLog-"corrected" element pointer
   [t_i8arr ]=0, [t_i8slice ]=0, [t_c8arr ]=0, [t_c8slice ]=0,
   [t_i16arr]=1, [t_i16slice]=1, [t_c16arr]=1, [t_c16slice]=1,
   [t_i32arr]=2, [t_i32slice]=2, [t_c32arr]=2, [t_c32slice]=2,

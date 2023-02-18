@@ -1,4 +1,5 @@
 include './base'
+include './debug'
 if (hasarch{'X86_64'}) {
   include './sse3'
   include './avx'
@@ -10,14 +11,14 @@ include './mask'
 include './cbqnDefs'
 include './bitops'
 
-def copyFromBits{T, xp: *u64, rp: *eltype{T}, l:u64} = {
+def copyFromBits{T, loadFn, rp, l:u64} = {
   def bulk = vcount{T}
   def TU = ty_u{T}
   
   maskedLoop{bulk, l, {i, M} => {
-    x:= loadBatchBit{TU, xp, i}
+    x:= loadFn{TU, i}
     r:= x & TU ~~ T**1
-    storeBatch{rp, i, T~~r, M}
+    storeBatch{*eltype{T}~~rp, i, T~~r, M}
   }}
 }
 
@@ -50,7 +51,7 @@ copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     }}
   } else if (X==u1) {
     # show{'X==u1', X, R}
-    copyFromBits{[bulk]R, *u64~~x, *R~~r, l}
+    copyFromBits{[bulk]R, {T, i} => loadBatchBit{T, xp, i}, r, l}
   } else if (R==u1) {
     # show{'R==u1', X, R}
     def XU = ty_u{XV}
@@ -72,6 +73,22 @@ copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
       storeBatch{rp, is, v, M}
     }}
   }
+}
+
+copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+  assert{l!=0}
+  x0:= (*u8~~xRaw) + cbqn_tyArrOffset{}
+  xs:= u64~~((*u8~~x) - x0)
+  # if ((xs&7)==0) {
+  #   copy{u1, R}(*void~~(x0 + (xs>>3)), r, l, xRaw)
+  # } else {
+  def vw = arch_defvw
+  def bulk = vw/width{R}
+  def RV = [bulk]R
+  rp:= *R~~r
+  
+  copyFromBits{RV, {T, i} => spreadBits{T, loaduBitTrunc{*u64~~x0, xs+i*vcount{T}, vcount{T}}}, r, l}
+  # }
 }
 
 # simd_copy_src_dst
@@ -125,3 +142,9 @@ copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
 'simd_copy_B_c8'  = copy{u64, u8}
 'simd_copy_B_c16' = copy{u64, u16}
 'simd_copy_B_c32' = copy{u64, u32}
+
+# unaligned bitarr widening
+'simd_copy_1u_i8'    = copy_ubit{i8}
+'simd_copy_1u_i16'   = copy_ubit{i16}
+'simd_copy_1u_i32'   = copy_ubit{i32}
+'simd_copy_1u_f64'   = copy_ubit{f64}

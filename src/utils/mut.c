@@ -220,6 +220,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 }
 
 #if SINGELI
+  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #define SINGELI_FILE copy
   #include "./includeSingeli.h"
   typedef void (*copy_fn)(void*, void*, u64, void*);
@@ -237,20 +238,19 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   } \
   static void cpy##T##Arr_B(void* xp, void* rp, u64 ia, void* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
-    if (bxp!=NULL && sizeof(B)==sizeof(f64)) {    \
-      H2T;                                        \
-    } else cpy##T##Arr_BF(xp, rp, ia, xa);        \
+    if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
+    else cpy##T##Arr_BF(xp, rp, ia, xa);          \
   }                                               \
   static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
-  T##Arr* cpy##T##Arr(B x) { \
-    usz ia = IA(x);          \
-    MAKE; arr_shCopy(r, x);  \
-    if (ia>0) {              \
+  T##Arr* cpy##T##Arr(B x) {  \
+    usz ia = IA(x);           \
+    MAKE; arr_shCopy(r, x);   \
+    if (ia>0) {               \
       copy##T##Fns[TI(x,elType)](tyany_ptr(x), XRP, ia, a(x)); \
-    }                        \
-    if (TY) ptr_decT(a(x));  \
-    else decG(x);            \
-    return (T##Arr*)r;       \
+    }                         \
+    if (TY) ptr_decT(a(x));   \
+    else decG(x);             \
+    return (T##Arr*)r;        \
   }
   #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bG(V))
   #define H2T_COPY(T) copy##T##Fns[el_MAX](bxp, rp, ia, xRaw)
@@ -263,24 +263,19 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
                                   Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
   
   
-  static copy_fn tcopy_i8Fns [] = {[t_bitarr]=simd_copy_1_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
-  static copy_fn tcopy_i16Fns[] = {[t_bitarr]=simd_copy_1_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
-  static copy_fn tcopy_i32Fns[] = {[t_bitarr]=simd_copy_1_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
-  static copy_fn tcopy_f64Fns[] = {[t_bitarr]=simd_copy_1_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
-  static copy_fn tcopy_c8Fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
-  static copy_fn tcopy_c16Fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
-  static copy_fn tcopy_c32Fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
+  copy_fn tcopy_i8Fns [] = {[t_bitarr]=simd_copy_1u_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
+  copy_fn tcopy_i16Fns[] = {[t_bitarr]=simd_copy_1u_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
+  copy_fn tcopy_i32Fns[] = {[t_bitarr]=simd_copy_1u_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
+  copy_fn tcopy_f64Fns[] = {[t_bitarr]=simd_copy_1u_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
+  copy_fn tcopy_c8Fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
+  copy_fn tcopy_c16Fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
+  copy_fn tcopy_c32Fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
   
   #define TCOPY_FN(T, N, NUM) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
     if (l==0) return;          \
     void* xp = tyany_ptr(x);   \
-    T* rp = ms + (T*)a;        \
     u8 xt = TY(x);             \
-    if (NUM && xt==t_bitarr) { \
-      for (usz i = 0; i < l; i++) rp[i] = bitp_get((u64*)xp, xs+i); \
-    } else {                   \
-      tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, rp, l, a(x)); \
-    }                          \
+    tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, ms + (T*)a, l, a(x)); \
   }
   TCOPY_FN(i8,i8, 1)
   TCOPY_FN(i16,i16, 1)

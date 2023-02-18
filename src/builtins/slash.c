@@ -72,8 +72,8 @@
     #define rand_popc64(X) POPC(X)
   #endif
   
-  void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
-  u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
+  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
+  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #if SINGELI_X86_64
     #define SINGELI_FILE slash
     #include "../utils/includeSingeli.h"

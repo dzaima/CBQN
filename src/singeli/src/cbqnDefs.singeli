@@ -30,3 +30,4 @@ def cbqn_elType{T & T==u8 } = 5
 def cbqn_elType{T & T==u16} = 6
 def cbqn_elType{T & T==u32} = 7
 
+def cbqn_tyArrOffset{} = emit{u64, 'offsetof', 'TyArr', 'a'}
