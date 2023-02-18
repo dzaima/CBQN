@@ -127,7 +127,7 @@ INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   bool allNum = isNum(el0);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) if (!isNum(r.a[sz-i-1] = GSP)) allNum = false;
-  GS_UPD;
+  NOGC_E; GS_UPD;
   if (allNum) return num_squeeze(r.b);
   return r.b;
 }
@@ -136,7 +136,7 @@ INS B i_ARMO(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
-  GS_UPD;
+  NOGC_E; GS_UPD;
   return bqn_merge(r.b);
 }
 INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
@@ -144,7 +144,7 @@ INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
-  GS_UPD;
+  NOGC_E; GS_UPD;
   WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
   a->obj = r.b;
   return tag(a,OBJ_TAG);
@@ -388,6 +388,7 @@ static OptRes opt(u32* bc0) {
           h.a[i] = inc(c.v);
           RM(c.p);
         }
+        NOGC_E;
         B r = allNum? num_squeeze(h.b) : h.b;
         cact = 5;
         TSADD(data, r.u);

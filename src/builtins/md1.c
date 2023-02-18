@@ -228,7 +228,7 @@ static NOINLINE B select_cells(usz n, B x, ur xr) {
       SGet(x)
       HArr_p rp = m_harrUv(cam);
       for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*csz+n);
-      r = rp.b;
+      NOGC_E; r=rp.b;
     } else {
       void* rp = m_tyarrv(&r, elWidth(xe), cam, el2t(xe));
       void* xp = tyany_ptr(x);

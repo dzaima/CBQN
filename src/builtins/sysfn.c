@@ -612,6 +612,7 @@ B reBQN_c1(B t, B x) {
   ptr_dec(initBlock);
   HArr_p d = m_harrUv(7); d.a[0] = m_f64(replVal); d.a[1] = scVal;
   for (usz i=2; i<7; i++) d.a[i] = bi_N;
+  NOGC_E;
   init_comp(d.a+2, prim, sys);
   decG(x);
   return m_nfn(reBQNDesc, d.b);
@@ -1619,10 +1620,13 @@ void sysfn_init(void) {
   usz i = 0;
   HArr_p dsv_ns0 = m_harrUv(dsv_num); dsv_ns=dsv_ns0.b; gc_add(dsv_ns);
   for (usz i = 0; i < dsv_num; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
+  NOGC_E;
+  
   HArr_p dsv_vs0 = m_harrUv(dsv_num); dsv_vs=dsv_vs0.b; gc_add(dsv_vs);
   #define F(L,N,B) dsv_vs0.a[i] = inc(B); i++;
   FOR_DEFAULT_SYSVALS(F)
   #undef F
+  NOGC_E;
   
   #if CATCH_ERRORS
   lastErrMsg = bi_N;

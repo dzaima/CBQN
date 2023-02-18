@@ -932,6 +932,7 @@ B join_c2(B t, B w, B x) {
     HArr_p r = m_harrUv(2);
     r.a[0] = IGet(w,0); decG(w);
     r.a[1] = IGet(x,0); decG(x);
+    NOGC_E;
     return qWithFill(r.b, f);
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
@@ -1115,6 +1116,7 @@ B reverse_c1(B t, B x) {
         B* xp = arr_bptr(x);
         if (xp!=NULL)  for (usz i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
         else { SGet(x) for (usz i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
+        NOGC_E;
         r = rp.b;
         B xf = getFillQ(x);
         decG(x);
@@ -1283,6 +1285,7 @@ B transp_c1(B t, B x) {
       B* x0 = xp; B* x1 = x0+w;
       HArr_p rp = m_harrUp(ia);
       for (usz i=0; i<w; i++) { rp.a[i*2] = inc(x0[i]); rp.a[i*2+1] = inc(x1[i]); }
+      NOGC_E;
       r = (Arr*) rp.c;
     } else {
       #ifndef __BMI2__
@@ -1322,6 +1325,7 @@ B transp_c1(B t, B x) {
         
         HArr_p p = m_harrUp(ia);
         for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[xi++]); // TODO inc afterwards, but don't when there's a method of freeing a HArr without freeing its elements
+        NOGC_E;
         
         usz* rsh = arr_shAlloc((Arr*)p.c, xr);
         if (xr==2) {

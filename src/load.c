@@ -468,6 +468,7 @@ void load_init() { // very last init function
       #endif
       runtimeH.a[i] = r;
     }
+    NOGC_E;
     decG(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;

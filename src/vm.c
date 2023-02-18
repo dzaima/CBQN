@@ -600,6 +600,7 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     B* sp = harr_ptr(s);
     HArr_p r = m_harrUv(ia);
     for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i], true);
+    NOGC_E;
     return r.b;
   } else if (isExt(s)) {
     Scope* sc = pscs[(u16)(s.u>>32)];
@@ -777,6 +778,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
           HArr_p r = m_harrUv(sz);
           bool allNum = true;
           for (i64 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+          NOGC_E;
           if (allNum) {
             GS_UPD;
             ADD(num_squeeze(r.b));
@@ -898,7 +900,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         assert(sz>0);
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
-        GS_UPD;
+        NOGC_E; GS_UPD;
         ADD(bqn_merge(r.b));
         break;
       }
@@ -907,7 +909,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         assert(sz>0);
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
-        GS_UPD;
+        NOGC_E; GS_UPD;
         WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
         a->obj = r.b;
         ADD(tag(a,OBJ_TAG));
@@ -1626,7 +1628,9 @@ void before_exit(void);
 NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
-  
+  #if DEBUG
+    if (cbqn_noAlloc && !gc_depth) err("throwing during noAlloc");
+  #endif
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if CATCH_ERRORS
   if (cf>cfStart) { // something wants to catch errors

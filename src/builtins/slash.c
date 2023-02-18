@@ -190,12 +190,10 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
       rp = m_tyarrv(&r,width,wsum,xt);
     } else {
       ONLY_GCC(r = m_f64(0);)
-      xp = (u8*)arr_bptr(x);
       usz ria = wsum*csz;
-      if (xp != NULL) {
-        rh = m_harrUv(ria);
-        rp = (u8*)rh.a;
-      } else {
+      
+      xp = (u8*)arr_bptr(x);
+      if (xp == NULL) {
         SLOW2("𝕨/𝕩", taga(RFLD(wp,TyArr,a)), x);
         M_HARR(rp, ria) SGet(x)
         for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
@@ -203,10 +201,14 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
         }
         return withFill(HARR_FV(rp), getFillQ(x));
       }
+      
+      rh = m_harrUv(ria);
+      rp = (u8*)rh.a;
     }
     COMPRESS_GROUP(MEM_CPY)
     if (is_B) {
       for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
+      NOGC_E;
       r = withFill(rh.b, getFillQ(x));
       a(r)->ia = wsum; // Shape-setting code at end of compress expects this
     }
@@ -456,8 +458,8 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       #endif
       break;
     }
-    #define COMPRESS_BLOCK(T) \
-      usz b = bsp_max; TALLOC(i16, buf, b);          \
+    #define COMPRESS_BLOCK_PREP(T, PREP) \
+      usz b = bsp_max; TALLOC(i16, buf, b); PREP;    \
       T* rp0=rp;                                     \
       for (usz i=0; i<wia; i+=b) {                   \
         usz bs;                                      \
@@ -468,6 +470,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         rp+= bs; wp+= b/64; xp+= b;                  \
       }                                              \
       TFREE(buf)
+    #define COMPRESS_BLOCK(T) COMPRESS_BLOCK_PREP(T, )
     #define WITH_SPARSE(W, CUTOFF, DENSE) { \
       i##W *xp=tyany_ptr(x), *rp;           \
       if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
@@ -492,9 +495,9 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         B xf = getFillQ(x);
         B* xp = arr_bptr(x);
         if (xp!=NULL) {
-          HArr_p rh = m_harrUv(wsum);
-          B *rp = rh.a; COMPRESS_BLOCK(B);
+          COMPRESS_BLOCK_PREP(B, HArr_p rh = m_harrUv(wsum); B *rp = rh.a;);
           for (usz i=0; i<wsum; i++) inc(rh.a[i]);
+          NOGC_E;
           r = withFill(rh.b, xf);
         } else {
           SLOW2("𝕨/𝕩", w, x);
@@ -758,7 +761,7 @@ B slash_c2(B t, B w, B x) {
     if (xlen == 0) return x;
     usz s = xlen * wv;
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
-      if (xr != 1) goto base;
+      if (xr!=1) goto base;
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
       HArr_p r0 = m_harrUv(s);
@@ -767,6 +770,7 @@ B slash_c2(B t, B w, B x) {
         B cx = incBy(GetU(x, i), wv);
         for (i64 j = 0; j < wv; j++) *r0.a++ = cx;
       }
+      NOGC_E;
       r = withFill(r0.b, xf);
       goto decX_ret;
     }

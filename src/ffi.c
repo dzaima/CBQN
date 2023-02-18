@@ -130,7 +130,7 @@ EXPORT BQNV bqn_makeF64Arr(size_t r0, const size_t* sh0, const f64*  data) { usz
 EXPORT BQNV bqn_makeC8Arr (size_t r0, const size_t* sh0, const u8*   data) { usz ia=calcIA(r0,sh0); u8*  rp; Arr* r = m_c8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
 EXPORT BQNV bqn_makeC16Arr(size_t r0, const size_t* sh0, const u16*  data) { usz ia=calcIA(r0,sh0); u16* rp; Arr* r = m_c16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
 EXPORT BQNV bqn_makeC32Arr(size_t r0, const size_t* sh0, const u32*  data) { usz ia=calcIA(r0,sh0); u32* rp; Arr* r = m_c32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeObjArr(size_t r0, const size_t* sh0, const BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); CPYSH(r.c);       copyBData(r.a,data,ia  ); return makeX(r.b); }
+EXPORT BQNV bqn_makeObjArr(size_t r0, const size_t* sh0, const BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); copyBData(r.a,data,ia); NOGC_E; CPYSH(r.c); return makeX(r.b); }
 
 EXPORT BQNV bqn_makeI8Vec (size_t len, const i8*   data) { i8*  rp; B r = m_i8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
 EXPORT BQNV bqn_makeI16Vec(size_t len, const i16*  data) { i16* rp; B r = m_i16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
@@ -139,7 +139,7 @@ EXPORT BQNV bqn_makeF64Vec(size_t len, const f64*  data) { f64* rp; B r = m_f64a
 EXPORT BQNV bqn_makeC8Vec (size_t len, const u8*   data) { u8*  rp; B r = m_c8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
 EXPORT BQNV bqn_makeC16Vec(size_t len, const u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
 EXPORT BQNV bqn_makeC32Vec(size_t len, const u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
-EXPORT BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len);      copyBData(r.a,data,len  ); return makeX(r.b); }
+EXPORT BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len); copyBData(r.a,data,len); NOGC_E;return makeX(r.b); }
 EXPORT BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(utf8Decode(str, len)); }
 
 typedef struct BoundFn {
@@ -1008,6 +1008,7 @@ void ffi_init(void) {
     a.a[4] = m_c8vec_0("write");
     a.a[5] = m_c8vec_0("close");
     a.a[6] = m_c8vec_0("poll");
+    NOGC_E;
     names = a.b; gc_add(names);
     forbuildDesc = registerNFn(m_c8vec_0("(function for build)"), forbuild_c1, c2_bad);
   }

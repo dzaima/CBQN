@@ -248,6 +248,7 @@ usz* sh = HARR_FA(r, 4); // allocate shape for a rank 4 array. To get the result
 HArr_p r = m_harrUv(10); // 10-item vector
 HArr_p r = m_harrUc(10, x); // 10-item array with the same shape as x
 HArr_p r = m_harrUp(10); // 10-item array without any set shape. Use the arr_shWhatever(r.c, …)
+// run `NOGC_E;` after filling in the items to resume allowing allocations (not necessary if item count is 0)
 
 // you can use withFill to add a fill element to a created array (or manually create a fillarr, see src/core/fillarr.h)
 

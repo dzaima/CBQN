@@ -10,6 +10,10 @@ bool please_tail_call_err = true;
 void before_exit(void);
 bool inErr;
 NORETURN NOINLINE void err(char* s) {
+  NOGC_E;
+  #if MM!=0
+    gc_depth=1;
+  #endif
   if (inErr) {
     fputs("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
     #ifdef DEBUG
@@ -704,6 +708,8 @@ void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = info_c
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #ifdef DEBUG
+  bool cbqn_noAlloc;
+  NOINLINE void cbqn_NOGC_start() { cbqn_noAlloc=true; }
   #ifdef OBJ_COUNTER
     #define PRINT_ID(X) fprintf(stderr, "Object ID: "N64u"\n", (X)->uid)
   #else

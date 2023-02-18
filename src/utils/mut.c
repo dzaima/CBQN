@@ -242,15 +242,15 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     else cpy##T##Arr_BF(xp, rp, ia, xa);          \
   }                                               \
   static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
-  T##Arr* cpy##T##Arr(B x) {  \
-    usz ia = IA(x);           \
-    MAKE; arr_shCopy(r, x);   \
-    if (ia>0) {               \
+  T##Arr* cpy##T##Arr(B x) {   \
+    usz ia = IA(x);            \
+    MAKE; arr_shCopy(r, x);    \
+    if (ia>0) {                \
       copy##T##Fns[TI(x,elType)](tyany_ptr(x), XRP, ia, a(x)); \
-    }                         \
-    if (TY) ptr_decT(a(x));   \
-    else decG(x);             \
-    return (T##Arr*)r;        \
+    }                          \
+    if (TY) ptr_decT(a(x));    \
+    else decG(x);              \
+    NOGC_E; return (T##Arr*)r; \
   }
   #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bG(V))
   #define H2T_COPY(T) copy##T##Fns[el_MAX](bxp, rp, ia, xRaw)
@@ -342,6 +342,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (xp!=NULL) { for (usz i=0; i<ia; i++) r.a[i] = inc(xp[i]); }
       else { SGet(x)  for (usz i=0; i<ia; i++) r.a[i] = Get(x, i);  }
     }
+    NOGC_E;
     decG(x);
     return r.c;
   }

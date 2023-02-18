@@ -321,11 +321,17 @@ typedef struct Arr {
   B VALIDATE(B x);
   Value* VALIDATEP(Value* x);
   #define UD assert(false);
+  extern bool cbqn_noAlloc;
+  NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
+  #define NOGC_S cbqn_NOGC_start()
+  #define NOGC_E cbqn_noAlloc=false
 #else
   #define assert(X) {if (!(X)) __builtin_unreachable();}
   #define VALIDATE(X) (X)
   #define VALIDATEP(X) (X)
   #define UD __builtin_unreachable();
+  #define NOGC_S
+  #define NOGC_E
 #endif
 #if WARN_SLOW
   void warn_slow1(char* s, B x);

@@ -64,23 +64,27 @@ static void mut_init(Mut* m, u8 n) {
 void mut_to(Mut* m, u8 n);
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
+  NOGC_E;
   Arr* a = m->val;
   a->sh = &a->ia;
   SPRNK(a, 1);
   return taga(a);
 }
 static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
+  NOGC_E;
   Arr* a = m->val;
   arr_shCopy(a, x);
   return taga(a);
 }
 static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
+  NOGC_E;
   Arr* a = m->val;
   arr_shCopy(a, x);
   decG(x);
   return taga(a);
 }
 static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
+  NOGC_E;
   return m->val;
 }
 

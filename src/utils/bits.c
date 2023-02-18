@@ -74,6 +74,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
   HArr_p ra = m_harrUc(b);
   SLOW3("bit_sel", e0, e1, b);
   for (usz i = 0; i < ia; i++) ra.a[i] = bitp_get(bp,i)? e1 : e0;
+  NOGC_E;
   
   u64 c1 = bit_sum(bp, ia);
   u64 c0 = ia-c1;

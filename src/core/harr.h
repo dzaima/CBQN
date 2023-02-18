@@ -72,25 +72,25 @@ void harr_abandon_impl(HArr* p);
 
 // unsafe-ish things - don't allocate/GC anything before having written to all items
 
-#define m_harr0v(N) ({ usz n_ = (N); HArr_p r_ = m_harrUv(n_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
-#define m_harr0c(X) ({ B x_ = (X); usz n_ = IA(x_); HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
-#define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); r_; })
+#define m_harr0v(N) ({ usz n_ = (N); HArr_p r_ = m_harrUv(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
+#define m_harr0c(X) ({ B x_ = (X); usz n_ = IA(x_); HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
+#define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
 static HArr_p m_harrUv(usz ia) {
   CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   arr_shVec((Arr*)r);
   return harrP_parts(r);
 }
 static HArr_p m_harrUc(B x) { assert(isArr(x));
   usz ia = IA(x);
   CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
 static HArr_p m_harrUp(usz ia) {
   CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia);
+  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   return harrP_parts(r);
 }
 
@@ -98,6 +98,7 @@ static B m_hunit(B x) { // consumes
   HArr_p r = m_harrUp(1);
   arr_shAtm((Arr*)r.c);
   r.a[0] = x;
+  NOGC_E;
   return r.b;
 }
 
@@ -109,8 +110,8 @@ static HArr* toHArr(B x) { return TY(x)==t_harr? c(HArr,x) : cpyHArr(x); }
 B m_caB(usz ia, B* a);
 
 // consumes all
-static B m_hVec1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;                                     return r.b; }
-static B m_hVec2(B a, B b          ) { HArr_p r = m_harrUv(2); r.a[0] = a; r.a[1] = b;                         return r.b; }
-static B m_hVec3(B a, B b, B c     ) { HArr_p r = m_harrUv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             return r.b; }
-static B m_hVec4(B a, B b, B c, B d) { HArr_p r = m_harrUv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; return r.b; }
+static B m_hVec1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;                                     NOGC_E; return r.b; }
+static B m_hVec2(B a, B b          ) { HArr_p r = m_harrUv(2); r.a[0] = a; r.a[1] = b;                         NOGC_E; return r.b; }
+static B m_hVec3(B a, B b, B c     ) { HArr_p r = m_harrUv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             NOGC_E; return r.b; }
+static B m_hVec4(B a, B b, B c, B d) { HArr_p r = m_harrUv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; NOGC_E; return r.b; }
 
