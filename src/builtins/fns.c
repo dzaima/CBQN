@@ -84,6 +84,8 @@ B ud_c1(B t, B x) {
   return taga(r);
 }
 
+B slash_c2(B t, B w, B x);
+
 B ud_c2(B t, B w, B x) {
   usz wia=1;
   if (isArr(w)) {
@@ -117,19 +119,23 @@ B ud_c2(B t, B w, B x) {
     rsh[i] = l - m;
   }
   for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
-
+  
   if (empty) {
     Arr* ra = arr_shSetU(m_fillarrp(0), rr, sh);
     fillarr_setFill(ra, getFillQ(x));
     decG(x);
     return taga(ra);
   }
+  if (wr==1 && wsh[0]==2 && xr==1) {
+    B t = C2(slash, w, x);
+    return taga(arr_shSetU(TI(t,slice)(t, 1, IA(t)-2), 2, sh));
+  }
+  
   ur fr=2*wr; // Frame rank in result
   usz cia=1; // Cell length
   for (usz i=fr; i<rr; i++) if (mulOn(cia, rsh[i])) thrM("↕: result shape too large");
   usz ria=cia;
   for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("↕: result shape too large");
-  B xf = getFillQ(x);
   TALLOC(usz, ri, fr-1);
   MAKE_MUT(r, ria); mut_init(r, TI(x,elType));
   MUTG_INIT(r);
@@ -141,19 +147,21 @@ B ud_c2(B t, B w, B x) {
     for (usz i=0, j=0;;) {
       mut_copyG(r, i, x, j, k);
       usz str = cia*xsh[xr-1];
-      i += k;
+      i+= k;
       if (i == ria) break;
-      j += str;
+      j+= str;
       for (usz a=fr-2, b=xr-2; RARE(++ri[a] == rsh[a]); ) {
         ri[a] = 0;
-        j -= rsh[a] * str;
+        j-= rsh[a] * str;
         str *= xsh[b]; if (!b) { str=cia; b=xr; }
         a--; b--;
-        j += str;
+        j+= str;
       }
     }
   }
-  decG(x); TFREE(ri);
+  TFREE(ri);
+  B xf = getFillQ(x);
+  decG(x);
   return withFill(taga(arr_shSetU(mut_fp(r), rr, sh)), xf);
 }
 
