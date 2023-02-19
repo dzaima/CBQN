@@ -1110,6 +1110,42 @@ B getTermNS(void) {
 }
 
 
+B nKeys_c1(B t, B x) {
+  if (!isNsp(x)) thrM("•ns.Keys: 𝕩 must be a namespace");
+  NSDesc* desc = c(NS,x)->desc;
+  ux am = desc->varAm;
+  HArr_p r = m_harr0v(am);
+  for (ux i = 0; i < am; i++) r.a[i] = incG(gid2str(desc->expGIDs[i]));
+  decG(x);
+  return r.b;
+}
+B nGet_c2(B t, B w, B x) {
+  if (!isNsp(w)) thrM("•ns.Has: 𝕨 must be a namespace");
+  vfyStr(x, "•ns.Get", "𝕩");
+  B r = ns_getNU(w, x, true);
+  decG(w); decG(x);
+  return inc(r);
+}
+B nHas_c2(B t, B w, B x) {
+  if (!isNsp(w)) thrM("•ns.Has: 𝕨 must be a namespace");
+  vfyStr(x, "•ns.Get", "𝕩");
+  B r = ns_getNU(w, x, false);
+  decG(w); decG(x);
+  return m_i32(!q_N(r));
+}
+static B nsNS;
+B getNsNS(void) {
+  if (nsNS.u == 0) {
+    #define F(X) incG(bi_##X),
+    Body* d = m_nnsDesc("get", "has", "keys");
+    nsNS =    m_nns(d,F(nGet)F(nHas)F(nKeys));
+    #undef F
+    gc_add(nsNS);
+  }
+  return incG(nsNS);
+}
+
+
 
 typedef struct CastType { usz s; bool c; } CastType;
 static bool isCharType(u8 t) {
@@ -1473,7 +1509,8 @@ static Body* file_nsGen;
   F("state", U"•state", tag(15,VAR_TAG)) \
   F("args", U"•args", tag(16,VAR_TAG)) \
   F("listsys", U"•listsys", tag(17,VAR_TAG)) \
-  OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tag(18,VAR_TAG)))
+  OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tag(18,VAR_TAG))) \
+  F("ns", U"•ns", tag(19,VAR_TAG))
 
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
@@ -1577,6 +1614,7 @@ B sys_c1(B t, B x) {
       }
       case 17: cr = incG(curr_ns); break; // •listsys
       case 18: cr = incG(bi_compObj); break; // •CompObj
+      case 19: cr = getNsNS(); break; // •ns
     }
     HARR_ADD(r, i, cr);
   }
@@ -1609,6 +1647,7 @@ u32* dsv_text[] = {
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",
+  U"•ns.Get",U"•ns.Has",U"•ns.Keys",
   U"•rand.Deal",U"•rand.Range",U"•rand.Subset",
   U"•term.CharB",U"•term.CharN",U"•term.ErrRaw",U"•term.Flush",U"•term.OutRaw",U"•term.RawMode",
   NULL
