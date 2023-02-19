@@ -1114,8 +1114,14 @@ B nKeys_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ns.Keys: 𝕩 must be a namespace");
   NSDesc* desc = c(NS,x)->desc;
   ux am = desc->varAm;
-  HArr_p r = m_harr0v(am);
-  for (ux i = 0; i < am; i++) r.a[i] = incG(gid2str(desc->expGIDs[i]));
+  ux eam = 0;
+  PLAINLOOP for (ux i = 0; i < am; i++) if (desc->expGIDs[i]!=-1) eam++;
+  HArr_p r = m_harr0v(eam);
+  ux ri = 0;
+  for (ux i = 0; i < am; i++) {
+    i32 c = desc->expGIDs[i];
+    if (c!=-1) r.a[ri++] = incG(gid2str(c));
+  }
   decG(x);
   return r.b;
 }
