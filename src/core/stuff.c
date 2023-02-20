@@ -404,9 +404,6 @@ NOINLINE bool atomEqualF(B w, B x) {
 
 // Functions in eqFns compare segments for matching
 // data argument comes from eqFnData
-typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
-bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
-
 static const u8 n = 99;
 u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
   0,0,0,0,0,n,n,n,
@@ -462,6 +459,7 @@ u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise
   #undef DEF_EQ_I
   #undef DEF_EQ
 #endif
+bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
 EqFn eqFns[] = {
   F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
   F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
@@ -496,7 +494,7 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   u8 xe = TI(x,elType);
   
   if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
-    u64 idx = we*8 + xe;
+    usz idx = EQFN_INDEX(we, xe);
     return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
   }
   return equalSlow(w, x, ia);

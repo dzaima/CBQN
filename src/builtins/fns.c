@@ -206,15 +206,14 @@ B fne_c2(B t, B w, B x) {
 
 
 extern B eq_c2(B, B, B);
-extern B drop_c2(B, B, B);
 extern B slash_c1(B, B);
 extern B rt_find;
 B find_c2(B t, B w, B x) {
   ur wr = isAtm(w) ? 0 : RNK(w);
   ur xr = isAtm(x) ? 0 : RNK(x);
   if (wr > xr) thrF("⍷: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
-  u8 xe;
-  if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || TI(w,elType)!=el_B)) {
+  u8 xe, we;
+  if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
     if (wr == 0) return C2(eq, w, x);
     usz wl = IA(w);
     usz xl = IA(x);
@@ -237,20 +236,19 @@ B find_c2(B t, B w, B x) {
       usz s = bit_sum(rp, rl);
       if (s == 0) break;
       // Switch to verifying matches individually
-      if (s < rl/32 && rl <= I32_MAX) {
+      if (s < rl/16 && rl <= I32_MAX && we != el_bit) {
         B ind = C1(slash, incG(r));
         if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
         usz ni = IA(ind);
         i32* ip = i32any_ptr(ind);
-        B ws = C2(drop, m_f64(i), incG(w));
-        BSS2A slice = TI(x,slice);
+        u8* wp = (u8*)tyany_ptr(w) + i*elWidth(we);
+        usz eq_idx = EQFN_INDEX(we, xe);
+        EqFn equalp = eqFns[eq_idx]; u8 ed = eqFnData[eq_idx];
         for (usz ii = 0; ii < ni; ii++) {
           usz j = ip[ii];
-          B sl = taga(arr_shVec(slice(incG(x), i+j, wl-i)));
-          if (!equal(ws, sl)) bitp_set(rp, j, 0);
-          decG(sl);
+          if (!equalp(wp, xp + (i+j)*xw, wl-i, ed)) bitp_set(rp, j, 0);
         }
-        decG(ind); decG(ws);
+        decG(ind);
         break;
       }
     }
