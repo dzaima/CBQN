@@ -205,8 +205,53 @@ B fne_c2(B t, B w, B x) {
 }
 
 
+extern B eq_c2(B, B, B);
+extern B take_c2(B, B, B);
+extern B drop_c2(B, B, B);
+extern B and_c2(B, B, B);
+extern B slash_c1(B, B);
 extern B rt_find;
 B find_c2(B t, B w, B x) {
+  ur wr = isAtm(w) ? 0 : RNK(w);
+  ur xr = isAtm(x) ? 0 : RNK(x);
+  if (wr > xr) thrF("⍷: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (xr==1 && TI(x,elType)!=el_B && (isAtm(w) || TI(w,elType)!=el_B)) {
+    if (wr == 0) return C2(eq, w, x);
+    usz wl = IA(w);
+    usz xl = IA(x);
+    if (wl > xl) { decG(w); decG(x); return emptyIVec(); }
+    if (wl == 0) { decG(w); decG(x); return taga(arr_shVec(allOnes(xl+1))); }
+    // Compare elements of w to slices of x
+    SGetU(w)
+    usz rl = xl - wl + 1; B rt = m_f64(rl); // Result length
+    B e = C2(eq, GetU(w,0), C2(take, rt, incG(x)));
+    for (usz i = 1; i < wl; i++) {
+      B slice = C2(take, rt, C2(drop, m_f64(i), incG(x)));
+      e = C2(and, e, C2(eq, GetU(w,i), slice));
+      assert(TI(e,elType) == el_bit);
+      ux* ep = bitarr_ptr(e);
+      usz s = bit_sum(ep, rl);
+      if (s == 0) break;
+      // Switch to verifying matches individually
+      if (s < rl/256 && rl <= I32_MAX) {
+        B ind = C1(slash, incG(e));
+        if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
+        usz ni = IA(ind);
+        i32* ip = i32any_ptr(ind);
+        B ws = C2(drop, m_f64(i), incG(w));
+        for (usz ii = 0; ii < ni; ii++) {
+          usz j = ip[ii];
+          B slice = C2(take, m_f64(wl-i), C2(drop, m_f64(i+j), incG(x)));
+          if (!equal(ws, slice)) bitp_set(ep, j, 0);
+          decG(slice);
+        }
+        decG(ind); decG(ws);
+        break;
+      }
+    }
+    decG(x); decG(w);
+    return e;
+  }
   return c2rt(find, w, x);
 }
 
