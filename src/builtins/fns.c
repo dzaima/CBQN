@@ -206,7 +206,6 @@ B fne_c2(B t, B w, B x) {
 
 
 extern B eq_c2(B, B, B);
-extern B take_c2(B, B, B);
 extern B drop_c2(B, B, B);
 extern B slash_c1(B, B);
 extern B rt_find;
@@ -238,17 +237,18 @@ B find_c2(B t, B w, B x) {
       usz s = bit_sum(rp, rl);
       if (s == 0) break;
       // Switch to verifying matches individually
-      if (s < rl/256 && rl <= I32_MAX) {
+      if (s < rl/32 && rl <= I32_MAX) {
         B ind = C1(slash, incG(r));
         if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
         usz ni = IA(ind);
         i32* ip = i32any_ptr(ind);
         B ws = C2(drop, m_f64(i), incG(w));
+        BSS2A slice = TI(x,slice);
         for (usz ii = 0; ii < ni; ii++) {
           usz j = ip[ii];
-          B slice = C2(take, m_f64(wl-i), C2(drop, m_f64(i+j), incG(x)));
-          if (!equal(ws, slice)) bitp_set(rp, j, 0);
-          decG(slice);
+          B sl = taga(arr_shVec(slice(incG(x), i+j, wl-i)));
+          if (!equal(ws, sl)) bitp_set(rp, j, 0);
+          decG(sl);
         }
         decG(ind); decG(ws);
         break;
