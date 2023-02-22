@@ -205,8 +205,56 @@ B fne_c2(B t, B w, B x) {
 }
 
 
+extern B eq_c2(B, B, B);
+extern B slash_c1(B, B);
 extern B rt_find;
 B find_c2(B t, B w, B x) {
+  ur wr = isAtm(w) ? 0 : RNK(w);
+  ur xr = isAtm(x) ? 0 : RNK(x);
+  if (wr > xr) thrF("⍷: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  u8 xe, we;
+  if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
+    if (wr == 0) return C2(eq, w, x);
+    usz wl = IA(w);
+    usz xl = IA(x);
+    B r;
+    if (wl > xl) { r = emptyIVec(); goto dec_ret; }
+    if (wl == 0) { r = taga(arr_shVec(allOnes(xl+1))); goto dec_ret; }
+    // Compare elements of w to slices of x
+    usz rl = xl - wl + 1; // Result length
+    u8* xp = tyany_ptr(x);
+    u64* rp; r = m_bitarrv(&rp, rl);
+    CmpASFn eq = CMP_AS_FN(eq, xe);
+    SGetU(w)
+    CMP_AS_CALL(eq, rp, xp, GetU(w,0), rl);
+    if (wl == 1) goto dec_ret;
+    usz xw = elWidth(xe);
+    usz rb = BIT_N(rl);
+    TALLOC(u64, eq_res, rb);
+    for (usz i = 1; i < wl; i++) {
+      CMP_AS_CALL(eq, eq_res, xp + i*xw, GetU(w,i), rl);
+      for (usz b = 0; b < rb; b++) rp[b] &= eq_res[b];
+      usz s = bit_sum(rp, rl);
+      if (s == 0) break;
+      // Switch to verifying matches individually
+      if (s < rl/16 && rl <= I32_MAX && we != el_bit) {
+        B ind = toI32Any(C1(slash, incG(r)));
+        usz ni = IA(ind);
+        i32* ip = i32any_ptr(ind);
+        u8* wp = (u8*)tyany_ptr(w) + i*elWidth(we);
+        EqFnObj eqfn = EQFN_GET(we, xe);
+        for (usz ii = 0; ii < ni; ii++) {
+          usz j = ip[ii];
+          if (!EQFN_CALL(eqfn, wp, xp + (i+j)*xw, wl-i)) bitp_set(rp, j, 0);
+        }
+        decG(ind);
+        break;
+      }
+    }
+    TFREE(eq_res);
+    dec_ret:;
+    decG(x); decG(w); return r;
+  }
   return c2rt(find, w, x);
 }
 

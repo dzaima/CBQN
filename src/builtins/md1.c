@@ -284,6 +284,36 @@ static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
   return mut_fcd(r, x);
 }
 
+static B allBit(bool b, usz n) {
+  return taga(arr_shVec(b ? allOnes(n) : allZeroes(n)));
+}
+static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
+  usz* wsh = SH(w);
+  if (wr != xr || (wr>1 && !eqShPart(wsh+1, SH(x)+1, wr-1))) {
+    return allBit(ne, len);
+  }
+  usz csz = shProd(wsh, 1, wr);
+  if (csz == 0) return allBit(!ne, len);
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  if (we>el_c32 || xe>el_c32) return bi_N;
+  usz ww = csz * elWidth(we); u8* wp = tyany_ptr(w);
+  usz xw = csz * elWidth(xe); u8* xp = tyany_ptr(x);
+  u64* rp; B r = m_bitarrv(&rp, len);
+  if (csz == 1 && we == xe) {
+    CmpAAFn cmp = ne ? CMP_AA_FN(ne,we) : CMP_AA_FN(eq,we);
+    CMP_AA_CALL(cmp, rp, wp, xp, len);
+  } else {
+    if (we==el_bit || xe==el_bit) return bi_N;
+    EqFnObj eqfn = EQFN_GET(we, xe);
+    for (usz i = 0; i < len; i++) {
+      bitp_set(rp, i, ne^EQFN_CALL(eqfn, wp, xp, csz));
+      wp += ww; xp += xw;
+    }
+  }
+  return r;
+}
+
 B shape_c1(B, B);
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
@@ -397,6 +427,13 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
     usz cam = SH(w)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
     if (cam != SH(x)[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    if (isFun(f)) {
+      u8 rtid = v(f)->flags-1;
+      if (rtid==n_feq || rtid==n_fne) {
+        B r = match_cells(rtid!=n_feq, w, x, wr, xr, cam);
+        if (!q_N(r)) { decG(w); decG(x); return r; }
+      }
+    }
     S_SLICES(w) S_SLICES(x)
     M_HARR(r, cam);
     for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, SLICE(w, wp), SLICE(x, xp)));

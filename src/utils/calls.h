@@ -35,4 +35,13 @@ CMP_DEF(le, AS);
 #define CMP_AA_IMM(FN, ELT, WHERE, WP, XP, LEN) CMP_AA_CALL(CMP_AA_FN(FN, ELT), WHERE, WP, XP, LEN)
 #define CMP_AS_IMM(FN, ELT, WHERE, WP, X,  LEN) CMP_AS_CALL(CMP_AS_FN(FN, ELT), WHERE, WP, X, LEN)
 
+// Check if the l elements starting at a and b match
+typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
+extern EqFn eqFns[];
+extern u8 eqFnData[];
+#define EQFN_INDEX(W_ELT, X_ELT) ((W_ELT)*8 + (X_ELT))
+typedef struct { EqFn fn; u8 data; } EqFnObj;
+#define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
+#define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data)
+
 void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s

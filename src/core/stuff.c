@@ -402,37 +402,75 @@ NOINLINE bool atomEqualF(B w, B x) {
                         decG(wd);decG(xd); return true;
 }
 
+// Functions in eqFns compare segments for matching
+// data argument comes from eqFnData
+static const u8 n = 99;
+u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
+  0,0,0,0,0,n,n,n,
+  1,0,0,0,0,n,n,n,
+  1,1,1,0,0,n,n,n,
+  1,1,1,2,0,n,n,n,
+  1,1,1,1,0,n,n,n,
+  n,n,n,n,n,0,0,0,
+  n,n,n,n,n,1,1,0,
+  n,n,n,n,n,1,1,2,
+};
+
 #if SINGELI
+  #define F(X) avx2_equal_##X
   #define SINGELI_FILE equal
   #include "../utils/includeSingeli.h"
-  
-  typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
-  bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
-  
-  #define F(X) avx2_equal_##X
-  EqFn eqFns[] = {
-    F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
-    F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
-    F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,
-    F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,
-    F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F(f64_f64), notEq,    notEq,     notEq,
-    notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),
-    notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32),
-    notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),
-  };
-  #undef F
-  static const u8 n = 99;
-  u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
-    0,0,0,0,0,n,n,n,
-    1,0,0,0,0,n,n,n,
-    1,1,1,0,0,n,n,n,
-    1,1,1,2,0,n,n,n,
-    1,1,1,1,0,n,n,n,
-    n,n,n,n,n,0,0,0,
-    n,n,n,n,n,1,1,0,
-    n,n,n,n,n,1,1,2,
-  };
+#else
+  #define F(X) equal_##X
+  bool F(1_1)(void* w, void* x, u64 l, u64 d) {
+    u64* wp = w; u64* xp = x;
+    usz q = l/64;
+    for (usz i=0; i<q; i++) if (wp[i] != xp[i]) return false;
+    usz r = (-l)%64; return r==0 || (wp[q]^xp[q])<<r == 0;
+  }
+  #define DEF_EQ_U1(N, T) \
+    bool F(1_##N)(void* w, void* x, u64 l, u64 d) {                    \
+      if (d!=0) { void* t=w; w=x; x=t; }                               \
+      u64* wp = w; T* xp = x;                                          \
+      for (usz i=0; i<l; i++) if (bitp_get(wp,i)!=xp[i]) return false; \
+      return true;                                                     \
+    }
+  DEF_EQ_U1(8, i8)
+  DEF_EQ_U1(16, i16)
+  DEF_EQ_U1(32, i32)
+  DEF_EQ_U1(f64, f64)
+  #undef DEF_EQ_U1
+
+  #define DEF_EQ_I(NAME, S, T, INIT) \
+    bool F(NAME)(void* w, void* x, u64 l, u64 d) {            \
+      INIT                                                    \
+      S* wp = w; T* xp = x;                                   \
+      for (usz i=0; i<l; i++) if (wp[i]!=xp[i]) return false; \
+      return true;                                            \
+    }
+  #define DEF_EQ(N,S,T) DEF_EQ_I(N,S,T, if (d!=0) { void* t=w; w=x; x=t; })
+  DEF_EQ_I(8_8, u8, u8, l<<=d;)
+  DEF_EQ_I(f64_f64, f64, f64, )
+  DEF_EQ(u8_16,  u8, u16)
+  DEF_EQ(u8_32,  u8, u32) DEF_EQ(u16_32,  u16, u32)
+  DEF_EQ(s8_16,  i8, i16)
+  DEF_EQ(s8_32,  i8, i32) DEF_EQ(s16_32,  i16, i32)
+  DEF_EQ(s8_f64, i8, f64) DEF_EQ(s16_f64, i16, f64) DEF_EQ(s32_f64, i32, f64)
+  #undef DEF_EQ_I
+  #undef DEF_EQ
 #endif
+bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
+EqFn eqFns[] = {
+  F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
+  F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
+  F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,
+  F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,
+  F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F(f64_f64), notEq,    notEq,     notEq,
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32),
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),
+};
+#undef F
 
 NOINLINE bool equalSlow(B w, B x, usz ia);
 NOINLINE bool equal(B w, B x) { // doesn't consume
@@ -455,29 +493,10 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   
-  #if SINGELI
-    if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
-      u64 idx = we*8 + xe;
-      return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
-    }
-  #else
-    if (((we==el_f64 | we==el_i32) && (xe==el_f64 | xe==el_i32))) {
-      if (we==el_i32) { i32* wp = i32any_ptr(w);
-        if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-        else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-      } else { f64* wp = f64any_ptr(w);
-        if(xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-        else           { f64* xp = f64any_ptr(x); for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false; }
-      }
-      return true;
-    }
-    if (we==el_c32 && xe==el_c32) {
-      u32* wp = c32any_ptr(w);
-      u32* xp = c32any_ptr(x);
-      for (usz i = 0; i < ia; i++) if(wp[i]!=xp[i]) return false;
-      return true;
-    }
-  #endif
+  if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
+    usz idx = EQFN_INDEX(we, xe);
+    return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
+  }
   return equalSlow(w, x, ia);
 }
 bool equalSlow(B w, B x, usz ia) {
