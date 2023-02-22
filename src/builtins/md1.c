@@ -305,10 +305,9 @@ static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
     CMP_AA_CALL(cmp, rp, wp, xp, len);
   } else {
     if (we==el_bit || xe==el_bit) return bi_N;
-    usz eq_idx = EQFN_INDEX(we, xe);
-    EqFn equalp = eqFns[eq_idx]; u8 ed = eqFnData[eq_idx];
+    EqFnObj eqfn = EQFN_GET(we, xe);
     for (usz i = 0; i < len; i++) {
-      bitp_set(rp, i, ne^equalp(wp, xp, csz, ed));
+      bitp_set(rp, i, ne^EQFN_CALL(eqfn, wp, xp, csz));
       wp += ww; xp += xw;
     }
   }

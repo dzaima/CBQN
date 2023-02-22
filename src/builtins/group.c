@@ -134,9 +134,9 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     bitp_set(mp, 0, -1!=o2fG(IGetU(w,0)));
     
     B ind = C1(slash, m);
-    w = C2(select, inc(ind), w);
-    if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
-    if (TI(w  ,elType)!=el_i32) w   = taga(cpyI32Arr(w  ));
+    w = C2(select, incG(ind), w);
+    ind = toI32Any(ind);
+    w = toI32Any(w);
     wia = IA(ind);
     
     i32* ip = i32any_ptr(ind);
@@ -179,7 +179,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     x = C2(slash, m, x); xn = *SH(x);
     neg = 0;
   }
-  if (TI(w,elType)!=el_i32) w = taga(cpyI32Arr(w));
+  w = toI32Any(w);
   i32* wp = i32any_ptr(w);
   for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
   for (usz i = 0; i < xn; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check

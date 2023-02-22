@@ -217,14 +217,15 @@ B find_c2(B t, B w, B x) {
     if (wr == 0) return C2(eq, w, x);
     usz wl = IA(w);
     usz xl = IA(x);
-    if (wl > xl) { decG(w); decG(x); return emptyIVec(); }
-    if (wl == 0) { decG(w); decG(x); return taga(arr_shVec(allOnes(xl+1))); }
+    B r;
+    if (wl > xl) { r = emptyIVec(); goto dec_ret; }
+    if (wl == 0) { r = taga(arr_shVec(allOnes(xl+1))); goto dec_ret; }
     // Compare elements of w to slices of x
-    SGetU(w)
     usz rl = xl - wl + 1; // Result length
     u8* xp = tyany_ptr(x);
-    u64* rp; B r = m_bitarrv(&rp, rl);
+    u64* rp; r = m_bitarrv(&rp, rl);
     CmpASFn eq = CMP_AS_FN(eq, xe);
+    SGetU(w)
     CMP_AS_CALL(eq, rp, xp, GetU(w,0), rl);
     if (wl == 1) goto dec_ret;
     usz xw = elWidth(xe);
@@ -237,16 +238,14 @@ B find_c2(B t, B w, B x) {
       if (s == 0) break;
       // Switch to verifying matches individually
       if (s < rl/16 && rl <= I32_MAX && we != el_bit) {
-        B ind = C1(slash, incG(r));
-        if (TI(ind,elType)!=el_i32) ind = taga(cpyI32Arr(ind));
+        B ind = toI32Any(C1(slash, incG(r)));
         usz ni = IA(ind);
         i32* ip = i32any_ptr(ind);
         u8* wp = (u8*)tyany_ptr(w) + i*elWidth(we);
-        usz eq_idx = EQFN_INDEX(we, xe);
-        EqFn equalp = eqFns[eq_idx]; u8 ed = eqFnData[eq_idx];
+        EqFnObj eqfn = EQFN_GET(we, xe);
         for (usz ii = 0; ii < ni; ii++) {
           usz j = ip[ii];
-          if (!equalp(wp, xp + (i+j)*xw, wl-i, ed)) bitp_set(rp, j, 0);
+          if (!EQFN_CALL(eqfn, wp, xp + (i+j)*xw, wl-i)) bitp_set(rp, j, 0);
         }
         decG(ind);
         break;
