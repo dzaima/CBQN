@@ -431,8 +431,8 @@ static u8 types_val[] = {
   #undef F
 };
 
-void cbqn_heapDump() {
-  char* name = "CBQNHeapDump";
+void cbqn_heapDump(char* name0) {
+  char* name = name0==NULL? "CBQNHeapDump" : name0;
   FILE* f = fopen(name, "w");
   if (f==NULL) {
     fprintf(stderr, "Failed to dump heap - could not open file for writing\n");
@@ -470,6 +470,6 @@ void cbqn_heapDump() {
   
   mm_dumpHeap(f);
   mmX_dumpHeap(f);
-  fprintf(stderr, "Heap dumped to \"%s\"\n", name);
+  if (name0==NULL) fprintf(stderr, "Heap dumped to \"%s\"\n", name);
   fclose(f);
 }

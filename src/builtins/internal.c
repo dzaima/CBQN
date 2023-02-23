@@ -2,6 +2,7 @@
 #include "../utils/file.h"
 #include "../builtins.h"
 #include "../ns.h"
+#include "../utils/cstr.h"
 
 B itype_c1(B t, B x) {
   B r;
@@ -314,8 +315,14 @@ B internalTemp_c2(B t, B w, B x) {
 }
 
 B heapDump_c1(B t, B x) {
-  cbqn_heapDump();
-  return m_c32(0);
+  if (!isArr(x)) {
+    cbqn_heapDump(NULL);
+  } else {
+    char* s = toCStr(x);
+    cbqn_heapDump(s);
+    freeCStr(s);
+  }
+  return x;
 }
 
 B unshare_c1(B t, B x) {

@@ -25,9 +25,9 @@ char* bc_repr(u32 p) {
     #undef F
   }
 }
-void print_BC(u32* p, i32 w) {
+void print_BC(FILE* f, u32* p, i32 w) {
   char* str = bc_repr(*p);
-  printf("%s", str);
+  fprintf(f, "%s", str);
   u32* n = nextBC(p);
   p++;
   i32 len = strlen(str);
@@ -39,16 +39,16 @@ void print_BC(u32* p, i32 w) {
       buf[clen++] = (c&15)>9? 'A'+(c&15)-10 : '0'+(c&15);
       c>>= 4;
     } while(c);
-    putchar(' ');
-    for (i32 i = 0; i < clen; i++) putchar(buf[clen-i-1]);
+    fputc(' ', f);
+    for (i32 i = 0; i < clen; i++) fputc(buf[clen-i-1], f);
     len+= clen+1;
   }
   len = w-len;
-  while(len-->0) putchar(' ');
+  while(len-->0) fputc(' ', f);
 }
-void print_BCStream(u32* p) {
+void print_BCStream(FILE* f, u32* p) {
   while(true) {
-    print_BC(p, 10); putchar(10);
+    print_BC(f, p, 10); fputc(10, f);
     if (*p == RETD || *p == RETN) return;
     p = nextBC(p);
   }
@@ -1357,8 +1357,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     #endif
     if (CATCH) { freeThrown(); goto native_print; }
     
-    B s = emptyCVec();
-    B msg = vm_fmtPoint(src, s, comp->path, cs, ce);
+    B msg = vm_fmtPoint(src, emptyCVec(), comp->path, cs, ce);
     fprintsB(stderr, msg);
     dec(msg);
     fputc('\n', stderr);

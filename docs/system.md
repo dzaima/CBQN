@@ -105,7 +105,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.Refc`           | Reference count of the argument, if it's heap-allocated |
 | `•internal.IsPure`         | Whether the vm considers the argument pure (i.e. it can execute it safely for computing fills) |
 | `•internal.Info`           | General internal info about the object; a left argument of `1` gives more details |
-| `•internal.HeapDump`       | Create a heap dump file |
+| `•internal.HeapDump`       | Create a heap dump file; saves to `•wdpath`-relative path `𝕩` or `CBQNHeapDump` if `𝕩` isn't an array |
 | `•internal.Squeeze`        | Try to convert the argument to its most compact representation |
 | `•internal.DeepSqueeze`    | Try to convert the argument and all its subarrays to its most compact representation; won't squeeze namespace fields |
 | `•internal.ListVariations` | List the possible type variations of the argument array |

@@ -267,6 +267,9 @@ INS B i_RETD(Scope* sc) {
 FILE* perf_map;
 u32 perfid = 0;
 #endif
+#if STORE_JIT_MAP
+FILE* jit_map;
+#endif
 
 static void* nvm_alloc(u64 sz) {
   // void* r = mmap(NULL, sz, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1, 0);
@@ -530,9 +533,7 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
     // printf("JIT %d:\n", perfid);
     // vm_printPos(body->comp, bcPos, -1);
     fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
-    #if PERF_MAP_FLUSH
-      fflush(perf_map);
-    #endif
+    fflush(perf_map);
   #endif
   #if WRITE_ASM
     write_asm(binEx, sz);
@@ -540,6 +541,31 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
   #endif
 }
 
+#if STORE_JIT_MAP
+void print_BC(FILE* f, u32* p, i32 w);
+static NOINLINE void print_jit_line(Body* body, usz* bc, usz bcpos) {
+  fprintf(jit_map, "  ");
+  if (bc!=NULL) {
+    print_BC(jit_map, bc, 10);
+    fprintf(jit_map, " ");
+  }
+  fprintf(jit_map, "# %+d\n", (int)ASM_SIZE);
+  Comp* comp = body->bl->comp;
+  if (!q_N(comp->src) && !q_N(comp->indices)) {
+    fprintf(jit_map, "    ");
+    B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcpos));
+    B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcpos))+1;
+    B msg = toC32Any(vm_fmtPoint(comp->src, emptyCVec(), comp->path, cs, ce));
+    u32* p = c32any_ptr(msg);
+    usz n = IA(msg);
+    for (ux i = 0; i < n; i++) {
+      if (p[i]=='\n') fprintf(jit_map, "\n    ");
+      else fprintCodepoint(jit_map, p[i]);
+    }
+    fprintf(jit_map, "\n");
+  }
+}
+#endif
 typedef B JITFn(B* cStack, Scope* sc);
 static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
@@ -578,6 +604,12 @@ Nvm_res m_nvm(Body* body) {
   
   #define CCALL(F) CALLi((u64)(F))
   u32* origBC = body->bc;
+  u32 bodyOff = origBC - (u32*)body->bl->bc;
+  #if STORE_JIT_MAP
+    if (!jit_map) jit_map = fopen("cbqn-jit.bqn", "wa");
+    fprintf(jit_map, "{\n");
+    print_jit_line(body, NULL, body->bl->map[bodyOff]);
+  #endif
   OptRes optRes = opt(origBC);
   i32 depth = 0;
   u32* bc = optRes.bc;
@@ -588,7 +620,11 @@ Nvm_res m_nvm(Body* body) {
     u32* s = bc;
     u32* n = nextBC(bc);
     u32 bcpos = optRes.offset[s-optRes.bc];
-    u32 bodyOff = origBC - (u32*)body->bl->bc;
+    #if STORE_JIT_MAP
+      print_jit_line(body, s, body->bl->map[bcpos+bodyOff]);
+    #endif
+    
+    
     u32* off = origBC + bcpos;
     bool ret = false;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
@@ -727,6 +763,10 @@ Nvm_res m_nvm(Body* body) {
   asm_write(binEx, sz);
   asm_free();
   onJIT(body, binEx, sz);
+  #if STORE_JIT_MAP
+    fprintf(jit_map, "  # start address: "N64d"\n}\n", ptr2u64(binEx));
+    fflush(jit_map);
+  #endif
   return (Nvm_res){.p = binEx, .refs = optRes.refs};
 }
 B evalJIT(Body* b, Scope* sc, u8* ptr) { // doesn't consume

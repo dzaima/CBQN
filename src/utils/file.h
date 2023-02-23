@@ -29,4 +29,4 @@ void file_wBytes(FILE* file, B name, B x); // doesn't consume
 B path_list(B path); // consumes
 char path_type(B path); // consumes; errors only if path isn't a string
 B path_info(B path, i32 mode); // consumes; mode: 0:created 1:accessed 2:modified 3:size
-void cbqn_heapDump(void);
+void cbqn_heapDump(char* name);

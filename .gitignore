@@ -23,6 +23,7 @@ libcbqn.dylib
 CBQNHeapDump
 .cbqn_repl_history
 cbqn_repl.txt
+cbqn-jit.bqn
 
 # test temporary files
 /test/ffi/ffiTest.o
