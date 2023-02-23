@@ -19,6 +19,7 @@ opts ← ⟨
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
   ⟨1, "notui",   0, "disable live-updating status display"∾@+10⟩
+  ⟨1, "rebuild-singeli", 0, @⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
@@ -37,7 +38,7 @@ opts ← ⟨
   ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
   ⟨0, "v",       @,  "Version to report by --version; 'v=' to use git commit"∾@+10⟩
   
-  ⟨1, "shared", 0, "Build a shared library; default output is libcbqn.[so|dylib]"⟩
+  ⟨1, "shared", 0, "Build a shared library; default output depends on 'os' setting"⟩
   ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
   ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
   ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
@@ -133,7 +134,7 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, tui, output, clangd, versionName,
+    verbose, J, rebuildAll, rebuildSingeli, tui, output, clangd, versionName,
     os, arch, native,
     emcc, wasm, replxx, singeli,
     ffi, o3,
@@ -146,6 +147,7 @@ po ← { # parsed options
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •BQN v; •BQN⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
+  rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ ¬GetOpt "notui"
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
@@ -378,11 +380,11 @@ Run ← { 𝕊:
   req ← ⟨⟩
   ruleN ← 0¨ ruleKs # number of children (i.e. how many have this in their ruleP list)
   ruleP ← ⟨⟩¨ ruleKs # parent rules (i.e. which ones require this)
-  rebuildAll ← po.rebuildAll
   
   Require ← {
     v ← 𝕩⊑ruleVs
-    rebuild ← rebuildAll
+    rebuild ← po.rebuildAll
+    {𝕊: rebuild∨↩ ".singeli"≡¯8↑v.disp}⍟⊢ po.rebuildSingeli
     chi ← 𝕩⊑ruleSrcs
     chr ← Require¨ chi
     rebuild∨↩ ∨´ chr
@@ -578,7 +580,7 @@ cachedBin‿linkerCache ← {
   singeliObjs ← @
   singeliCache ← {
     ¬po.singeli? @;
-    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.singeliFlags⟩⟩
+    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.singeliFlags, po.singeliDir⟩⟩
     
     # genArithTables
     ga ← "src/singeli/src/genArithTables.bqn"
