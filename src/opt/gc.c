@@ -82,6 +82,7 @@ static void gc_tryFree(Value* v) {
     GC_DEC_REFC, // decrement refcount
     GC_INC_REFC, // increment refcount
     GC_MARK,     // if unmarked, mark & visit
+    GC_LISTBAD,  // 
   };
   
   void gc_onVisit(Value* x) {
@@ -99,6 +100,16 @@ static void gc_tryFree(Value* v) {
       }
     }
   }
+  
+  static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
+  
+  #if HEAP_VERIFY
+  void gcv2_runHeapverify(i32 mode) {
+    visit_mode = mode==0? GC_DEC_REFC : GC_INC_REFC;
+    mm_forHeap(gcv2_visit);
+    gc_visitRoots();
+  }
+  #endif
   
   static Value** gcv2_bufS;
   static Value** gcv2_bufC;
@@ -124,7 +135,6 @@ static void gc_tryFree(Value* v) {
     if (gcv2_bufC == gcv2_bufE) return gcv2_storeRemainingR(x);
     gcv2_storeRemainingEnd(x);
   }
-  static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
   
   static void gc_run() {
     visit_mode = GC_DEC_REFC;

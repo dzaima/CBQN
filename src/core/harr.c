@@ -93,6 +93,7 @@ DEF_FREE(harr) {
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 static void harr_visit(Value* x) {
+  VISIT_SHAPE(x);
   usz ia = PIA((Arr*)x); B* p = ((HArr*)x)->a;
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }

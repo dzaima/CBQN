@@ -222,6 +222,13 @@ B def_fn_ix(B t, B w, B x);
 
 B def_decompose(B x);
 void noop_visit(Value* x);
+#if HEAP_VERIFY && GC_VISIT_V2
+  void arr_visit(Value* x);
+  #define VISIT_SHAPE(X) ({ if (PRNK(X)>1) mm_visitP(shObjP(X)); })
+#else
+  #define arr_visit noop_visit
+  #define VISIT_SHAPE(X)
+#endif
 
 #define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 NOINLINE i32 compareF(B w, B x);

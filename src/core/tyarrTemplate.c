@@ -21,7 +21,7 @@ static void TP(,arr_init)() {
   TIi(T_ARR,slice) = TP(,arr_slice); TIi(T_SLICE,slice) = TP(,slice_slice);
   TIi(T_ARR,freeO) = tyarr_freeO;    TIi(T_SLICE,freeO) =     slice_freeO; // typed array slice frees calling the generic function is relied on by mmap & •bit._cast
   TIi(T_ARR,freeF) = tyarr_freeF;    TIi(T_SLICE,freeF) =     slice_freeF;
-  TIi(T_ARR,visit) = noop_visit;     TIi(T_SLICE,visit) =     slice_visit;
+  TIi(T_ARR,visit) =  arr_visit;     TIi(T_SLICE,visit) =     slice_visit;
   TIi(T_ARR,print) = farr_print;     TIi(T_SLICE,print) = farr_print;
   TIi(T_ARR,isArr) = true;           TIi(T_SLICE,isArr) = true;
   TIi(T_ARR,arrD1) = true;           TIi(T_SLICE,arrD1) = true;

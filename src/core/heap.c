@@ -30,11 +30,18 @@ void heap_getReferents(Value* v) {
   TIv(v,visit)(v);
 }
 void gc_visitRoots(void);
+void gcv2_runHeapverify(i32);
 void heapVerify() {
   heap_observed = 0;
-  heapVerify_mode=0; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
-  mm_forHeap(heapVerify_checkFn);
-  heapVerify_mode=1; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
+  #if GC_VISIT_V2
+    gcv2_runHeapverify(0);
+    mm_forHeap(heapVerify_checkFn);
+    gcv2_runHeapverify(1);
+  #else
+    heapVerify_mode=0; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
+    mm_forHeap(heapVerify_checkFn);
+    heapVerify_mode=1; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
+  #endif
   if (heap_observed) {
     printf("refc of last: %d\n", heap_observed->refc);
     // heapVerify_mode=2; mm_forHeap(heap_getReferents);
