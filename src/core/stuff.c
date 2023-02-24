@@ -723,7 +723,7 @@ bool ignore_bad_tag;
 void   g_p(B x) { printI(x); putchar(10); fflush(stdout); }
 void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); printI(r); dec(r); putchar(10); fflush(stdout); }
 void   g_pv(void* x) { ignore_bad_tag=true; printI(tag(x,OBJ_TAG)); putchar(10); fflush(stdout); ignore_bad_tag=false; }
-void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = info_c2(xo, m_f64(1), inc(xo)); printI(r); dec(r); putchar(10); fflush(stdout); ignore_bad_tag=false; }
+void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); printI(r); dec(r); putchar(10); fflush(stdout); ignore_bad_tag=false; }
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #ifdef DEBUG

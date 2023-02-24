@@ -148,7 +148,7 @@ B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
     usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c1(IGetU(g, fri), x);
   } else {
-    B fn = pick_c2(m_f64(0), fr, inc(g));
+    B fn = C2(pick, fr, inc(g));
     B r = c1(fn, x);
     dec(fn);
     return r;
@@ -161,7 +161,7 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
     usz fri = WRAP(o2i64(fr), IA(g), thrM("◶: 𝔽 out of bounds of 𝕘"));
     return c2(IGetU(g, fri), w, x);
   } else {
-    B fn = pick_c2(m_f64(0), fr, inc(g));
+    B fn = C2(pick, fr, inc(g));
     B r = c2(fn, w, x);
     dec(fn);
     return r;

@@ -4,6 +4,7 @@
 #include "builtins.h"
 #endif
 #include "utils/time.h"
+#include "utils/calls.h"
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
 
@@ -60,10 +61,10 @@ B wfn_identity(B x) {
   #define CHK(EXP,GOT,W,X) { if (!eequal(EXP,GOT)) { \
     printI(f); printf(": failed RT_VERIFY\n"); fflush(stdout); \
     if (RT_VERIFY_ARGS) {  \
-      if(!q_N(W)){printf("𝕨:"); printI(W); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(W))); putchar('\n'); fflush(stdout); } \
-      {           printf("𝕩:"); printI(X); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(X))); putchar('\n'); fflush(stdout); } \
-      {       printf("got:"); printI(GOT); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(GOT))); putchar('\n'); fflush(stdout); } \
-      {       printf("exp:"); printI(EXP); printf(" / "); printsB(info_c2(bi_N, m_i32(1), inc(EXP))); putchar('\n'); fflush(stdout); } \
+      if(!q_N(W)){printf("𝕨:"); printI(W); printf(" / "); printsB(C2(info, m_i32(1), inc(W))); putchar('\n'); fflush(stdout); } \
+      {           printf("𝕩:"); printI(X); printf(" / "); printsB(C2(info, m_i32(1), inc(X))); putchar('\n'); fflush(stdout); } \
+      {       printf("got:"); printI(GOT); printf(" / "); printsB(C2(info, m_i32(1), inc(GOT))); putchar('\n'); fflush(stdout); } \
+      {       printf("exp:"); printI(EXP); printf(" / "); printsB(C2(info, m_i32(1), inc(EXP))); putchar('\n'); fflush(stdout); } \
     }                      \
     vm_pstLive(); exit(1); \
   }}

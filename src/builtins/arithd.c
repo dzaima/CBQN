@@ -337,7 +337,7 @@ AR_I_SCALAR("⌊", floor, w.f>x.f?x.f:w.f, {})
 AR_I_SCALAR("⌈", ceil , w.f>x.f?w.f:x.f, {})
 #undef AR_I_SCALAR
 B not_c2(B t, B w, B x) {
-  return add_c2(m_f64(1), m_f64(1), sub_c2(t, w, x));
+  return C2(add, m_f64(1), sub_c2(t, w, x));
 }
 
 #define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \

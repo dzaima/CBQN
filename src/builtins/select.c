@@ -198,7 +198,7 @@ B select_c2(B t, B w, B x) {
           if (max>=(i64)xn) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xn); \
           W* ip=wp; usz off=xn;                      \
           if (max>=0) { off=0; if (RARE(min<0)) {    \
-            if (RARE(xn > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free((Value*)r); return select_c2(m_f64(0), w, x); } \
+            if (RARE(xn > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free((Value*)r); return C2(select, w, x); } \
             if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0;\
             for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xn & (W)-(e<0)); } \
           } }                                        \
@@ -213,15 +213,15 @@ B select_c2(B t, B w, B x) {
   if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && (xl==0? wia>=256 : wia>=4) && csz<128) {
     // test widen/narrow on bitarr input
     // ShArr* sh = RNK(x)==1? NULL : ptr_inc(shObj(x));
-    // B t = select_c2(m_f64(0), w, widenBitArr(x, 1));
+    // B t = C2(select, w, widenBitArr(x, 1));
     // B r = narrowWidenedBitArr(t, wr, xr-1, sh==NULL? &xn : sh->a+1);
     // if (sh!=NULL) ptr_dec(sh);
     // return r;
     if (csz==1) {
-      if (wia/4>=xia) return taga(cpyBitArr(select_c2(m_f64(0), w, taga(cpyI8Arr(x)))));
+      if (wia/4>=xia) return taga(cpyBitArr(C2(select, w, taga(cpyI8Arr(x)))));
     } else if (csz>64? wia/2>=xn : wia>=xn/2) {
       ShArr* sh = ptr_inc(shObj(x));
-      B t = select_c2(m_f64(0), w, widenBitArr(x, 1));
+      B t = C2(select, w, widenBitArr(x, 1));
       B r = narrowWidenedBitArr(t, wr, xr-1, sh->a+1);
       ptr_dec(sh);
       return r;
@@ -263,7 +263,7 @@ B select_c2(B t, B w, B x) {
       if (xr!=1) {
         if (xe!=el_B && (csz<<elWidthLogBits(xe)) < 128) {
           dec(xf);
-          return select_c2(m_f64(0), taga(cpyI8Arr(w)), x);
+          return C2(select, taga(cpyI8Arr(w)), x);
         } else {
           goto generic_l;
         }

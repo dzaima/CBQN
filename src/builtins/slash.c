@@ -966,7 +966,7 @@ B slash_ucw(B t, B o, B w, B x) {
     w = num_squeezeChk(w);
     if (!elInt(TI(w,elType))) goto base;
   }
-  B arg = slash_c2(t, inc(w), inc(x));
+  B arg = C2(slash, incG(w), incG(x));
   usz argIA = IA(arg);
   B rep = c1(o, arg);
   if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);

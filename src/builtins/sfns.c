@@ -1474,7 +1474,7 @@ static B shape_uc1_t(B r, usz ia) {
 B shape_uc1(B t, B o, B x) {
   if (!isArr(x) || RNK(x)==0) {
     usz xia = isArr(x)? IA(x) : 1;
-    return shape_c2(t, emptyIVec(), shape_uc1_t(c1(o, shape_c1(t, x)), xia));
+    return C2(shape, emptyIVec(), shape_uc1_t(c1(o, shape_c1(t, x)), xia));
   }
   usz xia = IA(x);
   if (RNK(x)==1) return shape_uc1_t(c1(o, x), xia);
@@ -1485,17 +1485,17 @@ B shape_uc1(B t, B o, B x) {
 
 B select_ucw(B t, B o, B w, B x);
 
-B  transp_uc1(B t, B o, B x) { return  transp_im(t, c1(o,  transp_c1(t, x))); }
-B reverse_uc1(B t, B o, B x) { return reverse_c1(t, c1(o, reverse_c1(t, x))); }
+B  transp_uc1(B t, B o, B x) { return  transp_im(m_f64(0), c1(o,  transp_c1(t, x))); }
+B reverse_uc1(B t, B o, B x) { return reverse_c1(m_f64(0), c1(o, reverse_c1(t, x))); }
 
 B reverse_ix(B t, B w, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽⁼: 𝕩 must have rank at least 1");
-  if (isF64(w)) return reverse_c2(t, m_f64(-o2fG(w)), x);
+  if (isF64(w)) return C2(reverse, m_f64(-o2fG(w)), x);
   if (isAtm(w)) thrM("⌽⁼: 𝕨 must consist of integers");
   return rotate_highrank(1, w, x);
 }
 
-B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(t, w, c1(o, reverse_c2(t, inc(w), x))); }
+B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(m_f64(0), w, c1(o, reverse_c2(t, inc(w), x))); }
 
 NOINLINE B enclose_im(B t, B x) {
   if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");

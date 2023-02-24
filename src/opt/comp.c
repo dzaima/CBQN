@@ -119,7 +119,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         u32* np; B name = m_c32arrv(&np, ia);
         PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
         if (sys) {
-          B sysRes = sys_c1(m_f64(0), m_hVec1(name));
+          B sysRes = C1(sys, m_hVec1(name));
           val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
           decG(sysRes);
         } else {

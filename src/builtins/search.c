@@ -297,7 +297,7 @@ B count_c2(B t, B w, B x) {
     x = t.n;
   }
   
-  if (!isArr(x) || IA(x)<=1) return indexOf_c2(m_f64(0), w, x);
+  if (!isArr(x) || IA(x)<=1) return C2(indexOf, w, x);
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   i32* rp; B r = m_i32arrc(&rp, x);

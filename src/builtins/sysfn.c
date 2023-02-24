@@ -521,7 +521,7 @@ B rand_subset_c2(B t, B w, B x) {
     }
     s = taga(cpyBitArr(s));
     if (invert) s = bit_negate(s);
-    return slash_c1(t, s);
+    return C1(slash, s);
   } else {
     // Sorted "hash" set
     u64 sh = 0;
@@ -1560,7 +1560,7 @@ B sys_c1(B t, B x) {
   B tmp[2]; getSysvals(tmp);
   B curr_ns = tmp[0];
   B curr_vs = tmp[1]; SGetU(curr_vs)
-  B idxs = indexOf_c2(m_f64(0), incG(curr_ns), incG(x)); SGetU(idxs)
+  B idxs = C2(indexOf, incG(curr_ns), incG(x)); SGetU(idxs)
   
   B fileNS = m_f64(0);
   B path = m_f64(0);

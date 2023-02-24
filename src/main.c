@@ -391,7 +391,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop;
     if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
     if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
-    usz mapPos = o2i(pick_c1(m_f64(0), indexOf_c2(m_f64(0), incG(b_key), IGet(s,pos-1))));
+    usz mapPos = o2i(C1(pick, C2(indexOf, incG(b_key), IGet(s,pos-1))));
     if (mapPos==IA(b_key)) goto stop;
     
     TmpState t2 = insertChar(o2c(IGetU(b_val, mapPos)), true);
