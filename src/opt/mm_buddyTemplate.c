@@ -9,6 +9,8 @@
   usz getPageSize(void);
   #define MMAP(SZ) mmap(NULL, (SZ)+getPageSize(), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
 #endif
+#define str0(X) #X
+#define str1(X) str0(X)
 
 typedef struct AllocInfo {
   Value* p;
@@ -34,17 +36,42 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   buckets[from] = c;
 }
 
+static bool BN(allocMore_rec);
+
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
-  if (mm_heapAlloc+sz >= mm_heapMax) thrOOM();
   CHECK_INTERRUPT;
-  mm_heapAlloc+= sz;
-  // gc_maybeGC();
+  
+  #if GC_VISIT_V2
+    if (gc_maybeGC()) goto alloc_rec;
+  #endif
+  
+  if (mm_heapAlloc+sz >= mm_heapMax) {
+    #if GC_VISIT_V2
+      if (!BN(allocMore_rec)) {
+        gc_forceGC();
+        alloc_rec:;
+        BN(allocMore_rec) = true;
+        void* r = BN(allocL)(bucket, type);
+        BN(allocMore_rec) = false;
+        return r;
+      }
+      BN(allocMore_rec) = false;
+    #else
+      thrOOM();
+    #endif
+  }
+  
   #if NO_MMAP
     EmptyValue* c = calloc(sz+getPageSize(), 1);
   #else
     EmptyValue* c = MMAP(sz);
     if (c==MAP_FAILED) thrOOM();
+  #endif
+  mm_heapAlloc+= sz;
+  
+  #if LOG_GC || LOG_MM_MORE
+    fprintf(stderr, "allocating "N64u" more " str1(BN()) " heap (from allocation of "N64u"B/bucket %d)\n", sz, (u64)BSZ(bucket), (int)bucket);
   #endif
   if (alSize+1>=alCap) {
     alCap = alCap? alCap*2 : 1024;
@@ -102,8 +129,6 @@ void BN(forFreedHeap)(V2v f) {
   }
 }
 
-#define str0(X) #X
-#define str1(X) str0(X)
 void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {

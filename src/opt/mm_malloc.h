@@ -25,7 +25,6 @@ static void mm_visitP(void* x) { }
 
 void gc_maybeGC(void);
 void gc_forceGC(void);
-void gc_visitRoots(void);
 void mm_forHeap(V2v f);
 void mm_dumpHeap(FILE* f);
 

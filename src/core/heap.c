@@ -29,6 +29,7 @@ void heap_getReferents(Value* v) {
   if (TIv(v,isArr) && PRNK(v)>1) heapVerify_visitP(shObjP(v));
   TIv(v,visit)(v);
 }
+void gc_visitRoots(void);
 void heapVerify() {
   heap_observed = 0;
   heapVerify_mode=0; mm_forHeap(heapVerify_callVisit); gc_visitRoots();

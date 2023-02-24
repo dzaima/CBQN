@@ -427,9 +427,6 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     return path_rel_dec(p, m_c8vec_0(name));
   }
   
-  static void replxx_gcFn() {
-    mm_visit(b_pv);
-  }
   static void cbqn_init_replxx() {
     B cfg = get_config_path(true, "cbqn_repl.txt");
     cfg_path = cfg; gc_add(cfg);
@@ -464,7 +461,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     }
     gc_add(sysvalNames);
     gc_add(sysvalNamesNorm);
-    gc_addFn(replxx_gcFn);
+    gc_add_ref(&b_pv);
     
     global_replxx = replxx_init();
   }
