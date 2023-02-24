@@ -36,7 +36,9 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   buckets[from] = c;
 }
 
-static bool BN(allocMore_rec);
+#if GC_VISIT_V2
+  static bool BN(allocMore_rec);
+#endif
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
