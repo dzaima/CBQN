@@ -51,6 +51,7 @@ def __shr{a:T,b:S & w256s{T, 32} & w256i{S, 32}} = emit{T, '_mm256_srav_epi32', 
 def unpackQ{a:[32]i8,  b:[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
 def unpackQ{a:[16]i16, b:[16]i16} = { tup{emit{[ 8]i32, '_mm256_unpacklo_epi16', a, b}, emit{[ 8]i32, '_mm256_unpackhi_epi16', a, b}}}
 def unpackQ{a:[ 8]i32, b:[ 8]i32} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi32', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi32', a, b}}}
+def unpackQ{a:[ 4]i64, b:[ 4]i64} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi64', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi64', a, b}}}
 # inverse of questionable pack; these saturate the argument
 def packQ{a:T,b:T & T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}
 def packQ{a:T,b:T & T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}

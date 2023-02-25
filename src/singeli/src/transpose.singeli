@@ -1,0 +1,63 @@
+include './base'
+include './cbqnDefs'
+include './f64'
+if (hasarch{'X86_64'}) {
+  include './sse3'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
+include './mask'
+include './bitops'
+
+def vtranspose{x & tuplen{x}==8 & type{tupsel{0,x}}==[8]i32 & hasarch{'X86_64'}} = {
+  def t1 = merge{...each{{i} => unpackQ{tupsel{i*2,x}, tupsel{i*2+1,x}}, iota{4}}}
+  def t2 = merge{...each{{i} => unpackQ{tupsel{i, t1}, tupsel{i+2, t1}}, tup{0,1,4,5}}}
+  each{{i} => emit{[8]i32, '_mm256_permute2f128_si256', tupsel{i%4,t2}, tupsel{i%4+4,t2}, tern{i>=4,16b31,16b20}}, iota{8}}
+}
+
+
+
+transpose_rec{T}(rpo:*T, xpo:*T, w:u64, h:u64, wm:i64, hm:i64, scl:u64) : void = {
+  if (wm<=0 or hm<=0) return{}
+  
+  if (scl==1) {
+    assert{T==u32}
+    def VT = [8]i32
+    def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{vcount{VT}}}
+    def rvs = vtranspose{xvs}
+    each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{vcount{VT}}, rvs}
+  } else {
+    o:= (scl+1)>>1; s:= i64~~o
+    transpose_rec{T}(rpo              , xpo              , w, h, wm  , hm  , o)
+    transpose_rec{T}(rpo +         o*8, xpo + o*8*w      , w, h, wm  , hm-s, o)
+    transpose_rec{T}(rpo + o*8*h      , xpo +         o*8, w, h, wm-s, hm  , o)
+    transpose_rec{T}(rpo + o*8*h + o*8, xpo + o*8*w + o*8, w, h, wm-s, hm-s, o)
+  }
+}
+
+transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+  rp:*T = *T~~r0
+  xp:*T = *T~~x0
+  
+  @for (y to h/8) {
+    @for (x to w/8) {
+      def VT = [8]i32
+      xpo:= xp + y*8*w + x*8
+      rpo:= rp + x*8*h + y*8
+      def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{vcount{VT}}}
+      def rvs = vtranspose{xvs}
+      each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{vcount{VT}}, rvs}
+    }    
+  }
+  
+  # wm:= w/8
+  # hm:= h/8
+  # transpose_rec{T}(rp, xp, w, h, i64~~wm, i64~~hm, tern{wm>hm, wm, hm})
+  
+  if (w%8) emit{void, 'base_transpose_u32', rp+h*(w-w%8), xp+(w-w%8), w%8, h, w, h}
+  if (h%8) emit{void, 'base_transpose_u32', rp+(h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
+}
+
+'simd_transpose_i32' = transpose{u32}

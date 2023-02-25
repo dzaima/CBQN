@@ -1254,6 +1254,13 @@ B reverse_c2(B t, B w, B x) {
   #endif
 #endif
 
+#if SINGELI_X86_64
+  static NOINLINE void base_transpose_u32(u32* rp, u32* xp, u64 w, u64 h, u64 xo, u64 ro) { PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*ro+y] = xp[y*xo+x]; }
+  #define SINGELI_FILE transpose
+  #include "../utils/includeSingeli.h"
+#endif
+
+
 extern B rt_transp;
 B transp_c1(B t, B x) {
   if (RARE(isAtm(x))) return m_atomUnit(x);
@@ -1316,7 +1323,11 @@ B transp_c1(B t, B x) {
       case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; // fallthough
       case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-      case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_i32:case el_c32: 
+      #if SINGELI_X86_64
+      if (w>=8 && h>=8)        { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); simd_transpose_i32(rp, xp, w, h); break; }
+      #endif
+                               { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_B: { // can't be bothered to implement a bitarr transpose
         B* xp = arr_bptr(x);
