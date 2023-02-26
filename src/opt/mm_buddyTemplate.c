@@ -52,16 +52,15 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     #if GC_VISIT_V2
       if (!BN(allocMore_rec)) {
         gc_forceGC();
-        alloc_rec:;
         BN(allocMore_rec) = true;
+        alloc_rec:;
         void* r = BN(allocL)(bucket, type);
         BN(allocMore_rec) = false;
         return r;
       }
       BN(allocMore_rec) = false;
-    #else
-      thrOOM();
     #endif
+    thrOOM();
   }
   
   #if NO_MMAP
