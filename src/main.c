@@ -815,7 +815,6 @@ int main() {
 extern char* cbqn_versionString;
 #endif
 int main(int argc, char* argv[]) {
-  repl_init();
   #if USE_REPLXX_IO
     cbqn_init_replxx();
   #endif
