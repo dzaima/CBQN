@@ -102,6 +102,28 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   static bool cfg_enableKeyboard = true;
   static B cfg_path;
   
+  static char* command_completion[] = {
+    ")ex ",
+    ")r ",
+    ")escaped ",
+    ")profile ", ")profile@",
+    ")t ", ")t:", ")time ", ")time:",
+    ")mem ", ")mem t", ")mem s", ")mem f",
+    ")erase ",
+    ")clearImportCache",
+    ")kb",
+    ")theme dark", ")theme light", ")theme none", 
+    ")exit",
+    ")off",
+    ")vars",
+    ")gc", ")gc off", ")gc on",
+    ")internalPrint ",
+#if NATIVE_COMPILER && !ONLY_NATIVE_COMP
+    ")switchCompiler",
+#endif
+    ")e ", ")explain ",
+  };
+  
   NOINLINE void cfg_changed(void) {
     B s = emptyCVec();
     AFMT("theme=%i\nkeyboard=%i\n", cfg_theme, cfg_enableKeyboard);
@@ -229,32 +251,54 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     CATCH_OOM(return)
     B inpB = toC32Any(utf8Decode0(inp));
     u32* chars = c32any_ptr(inpB);
-    u32* we = chars+IA(inpB);
-    u32* ws = rskip_name(chars, we);
-    bool sysval = ws>chars && U'•' == *(ws-1);
-    bool nsField = ws>chars && '.' == *(ws-1);
-    if (nsField) {
-      u32* ws2 = rskip_name(chars, ws-1);
-      if (ws2>chars && U'•' == *(ws2-1)) { ws=ws2; sysval=true; nsField=false; }
+    u32* ws;
+    u32* we;
+    i32 mode; // 0:var 1:sys 2:ns 3:cmd
+    if (chars[0] == ')') {
+      ws = chars;
+      we = chars+IA(inpB);
+      mode = 3;
+    } else {
+      we = chars+IA(inpB);
+      ws = rskip_name(chars, we);
+      u32 last = ws>chars? *(ws-1) : 0;
+      mode = last=='.'? 2 : last==U'•'? 1 : 0;
+      if (mode==2) {
+        u32* ws2 = rskip_name(chars, ws-1);
+        if (ws2>chars && U'•' == *(ws2-1)) { ws=ws2; mode = 1; }
+      }
+      if (mode==1) ws--;
     }
-    if (sysval) ws--;
     
     usz wl = *dist = we-ws;
     if (wl>0) {
       usz wo = ws-chars;
-      bool doUpper;
-      B norm = str_norm(ws, wl, &doUpper);
-      B reg = sysval? vec_slice(inpB, wo, wl) : bi_N;
+      bool doUpper = false;
+      B norm = mode==3? incG(inpB) : str_norm(ws, wl, &doUpper);
+      B reg = mode==1? vec_slice(inpB, wo, wl) : bi_N;
       usz normLen = IA(norm);
       if (normLen>0) {
-        B vars = sysval? incG(sysvalNames) : nsField? allNsFields() : listVars(gsc);
+        B vars;
+        
+        switch (mode) {
+          case 0: vars = listVars(gsc); break;
+          case 1: vars = incG(sysvalNames); break;
+          case 2: vars = allNsFields(); break;
+          case 3: {
+            usz n = sizeof(command_completion)/sizeof(char*);
+            HArr_p vo = m_harr0v(n);
+            for (ux i = 0; i < n; i++) vo.a[i] = m_c8vec_0(command_completion[i]);
+            vars = vo.b;
+          }
+        }
+        
         if (q_N(vars)) goto noVars;
         usz via=IA(vars); SGetU(vars)
         for (usz i = 0; i < via; i++) {
           i32 matchState=0; B match=bi_N; usz matchLen=0, skip=0;
-          for (usz j = 0; j < (sysval? 2 : 1); j++) {
+          for (usz j = 0; j < (mode==1? 2 : 1); j++) {
             match = j? harr_ptr(sysvalNamesNorm)[i] : GetU(vars,i);
-            bool doNorm = sysval? j : true;
+            bool doNorm = mode==1? j : true;
             matchLen = IA(match);
             usz wlen = doNorm? normLen : wl;
             if (wlen>=matchLen) continue;
@@ -289,7 +333,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
         noVars:;
       }
       decG(norm);
-      if (sysval) decG(reg);
+      if (mode==1) decG(reg);
     }
     
     dec(inpB);
