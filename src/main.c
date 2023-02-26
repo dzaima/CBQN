@@ -624,7 +624,7 @@ void cbqn_runLine0(char* ln, i64 read) {
             e->vars[i] = bi_noVar;
             dec(val);
             #if ENABLE_GC
-              if (!gc_depth) gc_forceGC();
+              if (!gc_depth) gc_forceGC(true);
             #endif
             return;
           }
@@ -665,15 +665,21 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
     } else if (isCmd(cmdS, &cmdE, "gc ")) {
       #if ENABLE_GC
+        bool toplevel = true;
         if (0==*cmdE) {
+          gc_now:;
           if (gc_depth!=0) {
             printf("GC is disabled, but forcibly GCing anyway\n");
-            gc_enable();
-            gc_forceGC();
-            gc_disable();
+            u64 stored_depth = gc_depth;
+            gc_depth = 0;
+            gc_forceGC(toplevel);
+            gc_depth = stored_depth;
           } else {
-            gc_forceGC();
+            gc_forceGC(toplevel);
           }
+        } else if (strcmp(cmdE,"nontop")==0) {
+          toplevel = false;
+          goto gc_now;
         } else if (strcmp(cmdE,"on")==0) {
           if (gc_depth==0) printf("GC already on\n");
           else if (gc_depth>1) printf("GC cannot be enabled\n");
@@ -935,7 +941,7 @@ int main(int argc, char* argv[]) {
       #ifdef HEAP_VERIFY
         heapVerify();
       #endif
-      gc_forceGC();
+      gc_forceGC(true);
     }
   }
   if (startREPL) {

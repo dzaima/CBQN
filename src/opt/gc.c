@@ -136,22 +136,29 @@ static void gc_tryFree(Value* v) {
     gcv2_storeRemainingEnd(x);
   }
   
-  static void gc_run() {
-    visit_mode = GC_DEC_REFC;
-    mm_forHeap(gcv2_visit);
-    
-    gcv2_bufS = gcv2_bufC = malloc(1<<20);
-    gcv2_bufE = gcv2_bufS + ((1<<20) / sizeof(Value*));
-    mm_forHeap(gcv2_storeRemaining); // incl. unmark
-    
-    visit_mode = GC_INC_REFC;
-    mm_forHeap(gcv2_visit);
+  static void gc_run(bool toplevel) {
+    if (toplevel) {
+      mm_forHeap(gc_resetTag);
+    } else {
+      visit_mode = GC_DEC_REFC;
+      mm_forHeap(gcv2_visit);
+      
+      gcv2_bufS = gcv2_bufC = malloc(1<<20);
+      gcv2_bufE = gcv2_bufS + ((1<<20) / sizeof(Value*));
+      mm_forHeap(gcv2_storeRemaining); // incl. unmark
+      
+      visit_mode = GC_INC_REFC;
+      mm_forHeap(gcv2_visit);
+    }
     
     visit_mode = GC_MARK;
     gc_visitRoots();
-    Value** c = gcv2_bufS;
-    while (c < gcv2_bufC) mm_visitP(*(c++));
-    free(gcv2_bufS);
+    
+    if (!toplevel) {
+      Value** c = gcv2_bufS;
+      while (c < gcv2_bufC) mm_visitP(*(c++));
+      free(gcv2_bufS);
+    }
     
     mm_forHeap(gc_tryFree);
     mm_forHeap(gc_freeFreed);
@@ -166,7 +173,7 @@ static void gc_tryFree(Value* v) {
 #endif
 
 u64 gc_lastAlloc;
-void gc_forceGC() {
+void gc_forceGC(bool toplevel) {
   #if ENABLE_GC
     #ifdef LOG_GC
       u64 start = nsTime();
@@ -175,7 +182,7 @@ void gc_forceGC() {
       gc_unkRefsBytes = 0; gc_unkRefsCount = 0;
       u64 startSize = mm_heapUsed();
     #endif
-      gc_run();
+      gc_run(toplevel);
     u64 endSize = mm_heapUsed();
     #ifdef LOG_GC
       fprintf(stderr, "GC kept "N64d"B/"N64d" objs, freed "N64d"B, incl. directly "N64d"B/"N64d" objs", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount);
@@ -193,7 +200,7 @@ bool gc_maybeGC() {
   if (gc_depth) return false;
   u64 used = mm_heapUsed();
   if (used > gc_lastAlloc*2) {
-    gc_forceGC();
+    gc_forceGC(false);
     return true;
   }
   return false;
