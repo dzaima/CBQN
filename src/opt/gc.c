@@ -164,7 +164,7 @@ static void gc_tryFree(Value* v) {
     mm_forHeap(gc_freeFreed);
   }
 #else
-  static void gc_run() {
+  static void gc_run(bool toplevel) {
     mm_forHeap(gc_resetTag);
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
