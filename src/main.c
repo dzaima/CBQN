@@ -367,7 +367,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     TmpState s = getState();
     s.pos = IA(s.s);
     setState(s);
-    return REPLXX_ACTION_RESULT_RETURN;
+    return replxx_invoke(global_replxx, REPLXX_ACTION_COMMIT_LINE, 0);
   }
   static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
     B ac = vec_slice(a, as, l);
