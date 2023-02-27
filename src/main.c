@@ -258,6 +258,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
       we = chars+IA(inpB);
       mode = 3;
     } else {
+      not_cmd:;
       we = chars+IA(inpB);
       ws = rskip_name(chars, we);
       u32 last = ws>chars? *(ws-1) : 0;
@@ -270,6 +271,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     }
     
     usz wl = *dist = we-ws;
+    bool failedCmd = mode==3;
     if (wl>0) {
       usz wo = ws-chars;
       bool doUpper = false;
@@ -308,6 +310,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
           }
           
           if (matchState) {
+            failedCmd = false;
             usz ext = matchLen-skip;
             assert(ext<100);
             u32* rp; B r = m_c32arrv(&rp, wl + ext);
@@ -333,6 +336,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
       }
       decG(norm);
       if (mode==1) decG(reg);
+      if (failedCmd) goto not_cmd;
     }
     
     dec(inpB);

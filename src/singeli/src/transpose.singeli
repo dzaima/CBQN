@@ -56,8 +56,8 @@ transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   # hm:= h/8
   # transpose_rec{T}(rp, xp, w, h, i64~~wm, i64~~hm, tern{wm>hm, wm, hm})
   
-  if (w%8) emit{void, 'base_transpose_u32', rp+h*(w-w%8), xp+(w-w%8), w%8, h, w, h}
-  if (h%8) emit{void, 'base_transpose_u32', rp+(h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
+  if (w%8) emit{void, 'base_transpose_u32', rp+h*(w-w%8), xp+  (w-w%8), w%8,   h,   w, h}
+  if (h%8) emit{void, 'base_transpose_u32', rp+  (h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
 }
 
 'simd_transpose_i32' = transpose{u32}
