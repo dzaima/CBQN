@@ -23,6 +23,8 @@ def fold{F, x:T & width{T}==128 & hasarch{'X86_64'}} = {
 }
 def fold{F, x:T & width{T}==256 & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
+fn sum_vec{T==[32]i8}(v:T) = fold{+, [16]i16~~fold{+, unpackQ{v, T**0}}}
+
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
@@ -39,25 +41,30 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
     b := r / vec
     xv := *V~~x
     used_eq:u1 = 0
-    if (r >= 256) {
+    if (r >= 128) {
       b = block; if (r < vec*b) b = r / vec
       mv := V**0
       @for (xv over b) mv = max{mv, xv}
       mi := iV~~mv
       if (homAny{mi <  iV**0}) return{1}
-      if (homAll{mi <= iV**32}) {
+      if (homAll{mi <= iV**48}) {
         used_eq = 1
         r = b * vec
-        m := fold{max, mv}
-        total := b*vec
-        @for (j to promote{u64,m}) {
-          c := V**0
-          e := V**trunc{uT, j}
-          @for (xv over b) c -= xv == e
-          s := fold{+, [vec/2]i16~~fold{+, unpackQ{iV~~c, iV**0}}}
-          total -= promote{u64, s}
-          inc{tab, j, promote{usz, s}}
+        m := promote{u64, fold{max, mv}}
+        total := trunc{usz, b*vec}
+        def count_each{j} = {
+          c := copy{tuplen{j}, V**0}
+          e := each{{j}=>V**trunc{uT, j}, j}
+          @for (xv over b) each{{c,e} => c -= xv == e, c, e}
+          def add_sum{c, j} = {
+            s := promote{usz, sum_vec{iV}(iV~~c)}
+            total -= s; inc{tab, j, s}
+          }
+          each{add_sum, c, j}
         }
+        m4 := m / 4
+        @for (j4 to m4) count_each{each{{k}=>4*j4 + k, iota{4}}}
+        @for (j from 4*m4 to m) count_each{tup{j}}
         inc{tab, m, trunc{usz,total}}
       }
     }
