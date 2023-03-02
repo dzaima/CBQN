@@ -34,7 +34,8 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
   def uT = ty_u{T}
   def V = [vec]uT
   def iV = [vec]T
-  def block = (1024*8) / vbits  # Desired vectors per block
+  def block = (2048*8) / vbits  # Target vectors per block
+  assert{block < 1<<width{T}}   # Don't overflow count in vector section
   i:u64 = 0
   while (i < n) {
     r:u64 = n - i
@@ -43,16 +44,19 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
     used_eq:u1 = 0
     if (r >= 128) {
       b = block; if (r < vec*b) b = r / vec
-      mv := V**0
-      @for (xv over b) mv = max{mv, xv}
+      jv := load{xv}; mv := jv
+      @for (xv over _ from 1 to b) { jv = min{jv, xv}; mv = max{mv, xv} }
       mi := iV~~mv
       if (homAny{mi <  iV**0}) return{1}
-      if (homAll{mi <= iV**48}) {
+      jt := fold{min, jv}
+      if (homAll{mi <= iV**(48 + i8~~jt)}) {
         used_eq = 1
         r = b * vec
-        m := promote{u64, fold{max, mv}}
+        j0 := promote{u64, jt}
+        m := promote{u64, fold{max, mv}} - j0
         total := trunc{usz, b*vec}
-        def count_each{j} = {
+        def count_each{js, num} = {
+          j := (@collect (k to num) js+k)
           c := copy{tuplen{j}, V**0}
           e := each{{j}=>V**trunc{uT, j}, j}
           @for (xv over b) each{{c,e} => c -= xv == e, c, e}
@@ -63,9 +67,9 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
           each{add_sum, c, j}
         }
         m4 := m / 4
-        @for (j4 to m4) count_each{each{{k}=>4*j4 + k, iota{4}}}
-        @for (j from 4*m4 to m) count_each{tup{j}}
-        inc{tab, m, trunc{usz,total}}
+        @for (j4 to m4) count_each{j0 + 4*j4, 4}
+        @for (j from 4*m4 to m) count_each{j0 + j, 1}
+        inc{tab, j0 + m, trunc{usz,total}}
       }
     }
     if (not used_eq) @for (x over r) inc{tab, x}
