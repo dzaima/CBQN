@@ -604,6 +604,7 @@ cachedBin‿linkerCache ← {
     "2.."‿"src/builtins/select.c"‿"select",   "2.."‿"src/builtins/scan.c"‿"scan",
     "2.."‿"src/builtins/fold.c"‿"fold",       "2.."‿"src/builtins/slash.c"‿"slash",
     "2.."‿"src/builtins/slash.c"‿"constrep",  "2.."‿"src/builtins/scan.c"‿"neq",
+    "2.."‿"src/builtins/slash.c"‿"count"
   ⟩
   objs ← ⟨⟩
   

@@ -1,0 +1,71 @@
+include './base'
+include './sse'
+include './avx'
+include './avx2'
+include 'util/tup'
+
+# TODO merge with squeeze
+def fold{F, x:T} = {
+  show{'WARNING: using fallback fold'}
+  def E = eltype{T}
+  r:E = 0
+  each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
+  r
+}
+def fold{F, x:T & width{T}==128 & hasarch{'X86_64'}} = {
+  c:= x
+  def EW = elwidth{T}
+  if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
+  if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
+  if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
+  if (EW<=8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
+  extract{c, 0}
+}
+def fold{F, x:T & width{T}==256 & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
+
+def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
+def inc{ptr, ind} = inc{ptr, ind, 1}
+
+fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
+  def vbits = 256
+  def vec = vbits/width{T}
+  def uT = ty_u{T}
+  def V = [vec]uT
+  def iV = [vec]T
+  def block = (1024*8) / vbits  # Desired vectors per block
+  i:u64 = 0
+  while (i < n) {
+    r:u64 = n - i
+    b := r / vec
+    xv := *V~~x
+    used_eq:u1 = 0
+    if (r >= 256) {
+      b = block; if (r < vec*b) b = r / vec
+      mv := V**0
+      @for (xv over b) mv = max{mv, xv}
+      mi := iV~~mv
+      if (homAny{mi <  iV**0}) return{1}
+      if (homAll{mi <= iV**32}) {
+        used_eq = 1
+        r = b * vec
+        m := fold{max, mv}
+        total := b*vec
+        @for (j to promote{u64,m}) {
+          c := V**0
+          e := V**trunc{uT, j}
+          @for (xv over b) c -= xv == e
+          s := fold{+, [vec/2]i16~~fold{+, unpackQ{iV~~c, iV**0}}}
+          total -= promote{u64, s}
+          inc{tab, j, promote{usz, s}}
+        }
+        inc{tab, m, trunc{usz,total}}
+      }
+    }
+    if (not used_eq) @for (x over r) inc{tab, x}
+    i += r
+    x += r
+  }
+  0
+}
+
+export{'avx2_count_i8', count{i8}}

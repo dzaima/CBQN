@@ -352,7 +352,7 @@ endif
 	@"${MAKE}" i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
 
 
-build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c monarith.c copy.c equal.c squeeze.c select.c fold.c scan.c neq.c slash.c constrep.c bits.c transpose.c}
+build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c monarith.c copy.c equal.c squeeze.c select.c fold.c scan.c neq.c slash.c constrep.c count.c bits.c transpose.c}
 	@echo $(postmsg)
 src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
 	@echo $< | cut -c 17- | sed 's/^/  /'
