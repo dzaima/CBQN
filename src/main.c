@@ -49,6 +49,17 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   return t.r;
 }
 
+static NOINLINE i64 readInt(char** p) {
+  char* c = *p;
+  i64 am = 0;
+  while (*c>='0' & *c<='9') {
+    am = am*10 + (*c - '0');
+    c++;
+  }
+  *p = c;
+  return am;
+}
+
 
 #if USE_REPLXX
   #include <replxx.h>
@@ -57,6 +68,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   #include "utils/cstr.h"
   Replxx* global_replxx;
   static char* global_histfile;
+  static u32 cfg_prefixChar = U'\\';
   
   static i8 themes[3][12][3] = {
     // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
@@ -125,7 +137,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   
   NOINLINE void cfg_changed(void) {
     B s = emptyCVec();
-    AFMT("theme=%i\nkeyboard=%i\n", cfg_theme, cfg_enableKeyboard);
+    AFMT("theme=%i\nkeyboard=%i\nprefix=%i\n", cfg_theme, cfg_enableKeyboard, cfg_prefixChar);
     if (CATCH) { freeThrown(); goto end; }
     path_wChars(incG(cfg_path), s);
     popCatch();
@@ -348,7 +360,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   void hint_replxx(const char* inp, replxx_hints* res, int* dist, ReplxxColor* c, void* data) {
     completion_impl(inp, res, true, dist);
   }
-  static NOINLINE char* malloc_B(B x) { // toCStr but allocated by malloc; frees x
+  static NOINLINE char* malloc_B(B x) { // toCStr but allocated by malloc; consumes x
     u64 len1 = utf8lenB(x);
     char* s1 = malloc(len1+1);
     toUTF8(x, s1);
@@ -365,7 +377,7 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     replxx_get_state(global_replxx, &st);
     return (TmpState){.s = utf8Decode0(st.text), .pos = st.cursorPosition};
   }
-  static NOINLINE void setState(TmpState s) { // frees s.s
+  static NOINLINE void setState(TmpState s) { // consumes s.s
     char* r = malloc_B(s.s);
     ReplxxState st = (ReplxxState){.text = r, .cursorPosition = s.pos};
     replxx_set_state(global_replxx, &st);
@@ -386,29 +398,23 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   }
   static B b_pv;
   static int b_pp;
-  static bool inBackslash() { return b_pv.u!=0; }
-  static void stopBackslash() { decG(b_pv); b_pv.u = 0; }
-  ReplxxActionResult backslash_replxx(int code, void* data) {
-    CATCH_OOM(goto end)
-    if (inBackslash()) {
-      setState(insertChar('\\', false));
-      stopBackslash();
-    } else if (!cfg_enableKeyboard) {
-      setState(insertChar('\\', false));
-    } else {
-      ReplxxState st;
-      replxx_get_state(global_replxx, &st);
-      b_pv = utf8Decode0(st.text);
-      b_pp = st.cursorPosition;
-    }
-    popCatch();
-    end:
-    return REPLXX_ACTION_RESULT_CONTINUE;
+  static bool inBackslash;
+  static void stopBackslash() { inBackslash = false; }
+  NOINLINE void setPrev(B s, u64 pos) { // consumes
+    decG(b_pv);
+    b_pv = s;
+    b_pp = pos;
+  }
+  NOINLINE void setPrevNow() {
+    ReplxxState st;
+    replxx_get_state(global_replxx, &st);
+    setPrev(utf8Decode0(st.text), st.cursorPosition);
   }
   ReplxxActionResult enter_replxx(int code, void* data) {
-    if (inBackslash()) {
+    if (inBackslash) {
       setState(insertChar('\n', false));
       stopBackslash();
+      setPrevNow();
       return REPLXX_ACTION_RESULT_CONTINUE;
     }
     return replxx_invoke(global_replxx, REPLXX_ACTION_COMMIT_LINE, 0);
@@ -427,23 +433,42 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   static B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!cfg_enableKeyboard) return;
-    if (!inBackslash()) return;
     CATCH_OOM(return)
     TmpState t = getState();
     B s = t.s;
     u64 pos = t.pos;
-    if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop;
-    if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
-    if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
-    usz mapPos = o2i(C1(pick, C2(indexOf, incG(b_key), IGet(s,pos-1))));
-    if (mapPos==IA(b_key)) goto stop;
+    if (equal(b_pv, s) && pos==b_pp) goto end_withPrev; // sometimes this is called when nothing actually changed
     
-    TmpState t2 = insertChar(o2c(IGetU(b_val, mapPos)), true);
-    *s_res = malloc_B(t2.s); // will be free()'d by replxx
-    *p_res = t2.pos;
+    if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop; // user did something other than type a single character
     
-    stop: decG(s);
+    if (inBackslash) {
+      if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
+      if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
+      if (o2cG(IGet(s,pos-1)) == cfg_prefixChar) goto stop; // always make sure that the prefix char typed in twice types in the prefix char
+      usz mapPos = o2i(C1(pick, C2(indexOf, incG(b_key), IGet(s,pos-1))));
+      if (mapPos==IA(b_key)) goto stop;
+      
+      TmpState t2 = insertChar(o2c(IGetU(b_val, mapPos)), true);
+      *s_res = malloc_B(t2.s); // will be free()'d by replxx
+      *p_res = t2.pos;
+      goto stop;
+    } else {
+      if (o2cG(IGetU(s,b_pp))==cfg_prefixChar) {
+        inBackslash = true;
+        *s_res = malloc_B(incG(b_pv)); // will be free()'d by replxx
+        *p_res = b_pp;
+        // restore state to previous one, and don't call setPrev as that'll set it to the updated one
+        goto end_noPrev;
+      }
+      goto end_withPrev;
+    }
+    
+    stop:
     stopBackslash();
+    end_withPrev:
+    setPrevNow();
+    end_noPrev:
+    decG(s);
     popCatch();
   }
   
@@ -486,6 +511,9 @@ static bool isCmd(char* s, char** e, const char* cmd) {
         char* s = toCStr(ln); char* e;
         if      (isCmd(s, &e, "theme="   )) cfg_theme          = e[0]-'0';
         else if (isCmd(s, &e, "keyboard=")) cfg_enableKeyboard = e[0]-'0';
+        #if !NO_RYU
+        else if (isCmd(s, &e, "prefix="  )) cfg_prefixChar     = readInt(&e);
+        #endif
         freeCStr(s);
       }
       decG(lns);
@@ -508,6 +536,12 @@ static bool isCmd(char* s, char** e, const char* cmd) {
     gc_add_ref(&b_pv);
     
     global_replxx = replxx_init();
+    b_pv = emptyCVec();
+    b_pp = 0;
+  }
+  const char* cbqn_replxx_input(char* prefix) {
+    setPrev(emptyCVec(), 0);
+    return replxx_input(global_replxx, prefix);
   }
 #else
   void before_exit(void) { }
@@ -543,16 +577,6 @@ static B simple_unescape(B x) {
   return c1(escape_parser, x);
 }
 
-static NOINLINE i64 readInt(char** p) {
-  char* c = *p;
-  i64 am = 0;
-  while (*c>='0' & *c<='9') {
-    am = am*10 + (*c - '0');
-    c++;
-  }
-  *p = c;
-  return am;
-}
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -641,8 +665,23 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
 #if USE_REPLXX
     } else if (isCmd(cmdS, &cmdE, "kb ")) {
-      cfg_set_keyboard(!cfg_enableKeyboard, true);
-      printf("Backslash input %s\n", cfg_enableKeyboard? "enabled" : "disabled");
+      if (*cmdE == 0) {
+        kb_toggle:
+        cfg_set_keyboard(!cfg_enableKeyboard, true);
+        printf("Backslash input %s\n", cfg_enableKeyboard? "enabled" : "disabled");
+      } else {
+        B a = utf8Decode0(cmdE);
+        if (IA(a)==0) goto kb_toggle;
+        if (IA(a)!=1) {
+          printf("Invalid )kb usage: expected either no argument, or a single character\n");
+        } else {
+          u32 c = o2cG(IGetU(a,0));
+          printf("Backslash input prefix character set to U+%04x\n", c);
+          cfg_prefixChar = c;
+          cfg_changed();
+        }
+        decG(a);
+      }
       return;
     } else if (isCmd(cmdS, &cmdE, "theme ")) {
       if      (strcmp(cmdE,"dark" )==0) cfg_set_theme(1, true);
@@ -967,7 +1006,6 @@ int main(int argc, char* argv[]) {
       replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
       replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
       replxx_enable_bracketed_paste(global_replxx);
-      replxx_bind_key(global_replxx, '\\', backslash_replxx, NULL);
       replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
       replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
       replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
@@ -975,7 +1013,7 @@ int main(int argc, char* argv[]) {
       replxx_set_max_history_size(global_replxx, 50000);
       
       while(true) {
-        const char* ln = replxx_input(global_replxx, "   ");
+        const char* ln = cbqn_replxx_input("   ");
         if (ln==NULL) {
           if (errno==0) printf("\n");
           break;

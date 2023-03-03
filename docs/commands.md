@@ -42,6 +42,10 @@ Changes the color scheme of syntax highlighting; Supported: `)theme light`, `)th
 
 Enable or disable backslash input for BQN characters.
 
+## `)kb character` (replxx-only)
+
+Set keyboard prefix character to a custom one. Default is backslash, i.e. `)kb \`
+
 ## `)erase name`
 
 Erase the specified variable name.
