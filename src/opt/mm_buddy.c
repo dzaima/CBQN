@@ -62,10 +62,10 @@ void tailVerifyAlloc(void* ptr, u64 filled, i64 logAlloc, u8 type) {
   if (type==t_talloc) ((u64*)((u8*)ptr + end - 8))[0] = filled-8; // -8 because TALLOCP does a +8
 }
 void verifyEnd(void* ptr, u64 sz, u64 start, u64 end) {
-  if (end+64>sz) { printf("Bad used range: "N64u".."N64u", allocation size "N64u"\n", start, end, sz); exit(1); }
+  if (end+64>sz) { printf("Bad used range: "N64u".."N64u", allocation size "N64u"\n", start, end, sz); __builtin_trap(); }
 }
 void tailVerifyReinit(void* ptr, u64 filled, u64 end) {
-  if(filled>end || filled<=8) { printf("Bad reinit arguments: "N64u".."N64u"\n", filled, end); exit(1); }
+  if(filled>end || filled<=8) { printf("Bad reinit arguments: "N64u".."N64u"\n", filled, end); __builtin_trap(); }
   verifyEnd(ptr, mm_size(ptr), filled, end);
   tailVerifyInit(ptr, filled, end, mm_size(ptr));
 }
