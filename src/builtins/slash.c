@@ -676,9 +676,11 @@ B slash_c2(B t, B w, B x) {
     s = usum(w);
     if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
     if (s<=wia) {
+      if (s==0) { r = zeroCells(x); goto decWX_ret; }
       w=num_squeezeChk(w); we=TI(w,elType);
       if (we==el_bit) goto wbool;
     }
+    // s≠0 now
     
     if (RARE(TI(x,elType)==el_B)) { // Slow case
       arrW_base:
