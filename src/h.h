@@ -355,7 +355,7 @@ typedef void (*vfn)(void);
 void gc_add(B x); // add permanent root object
 void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic roots
 void gc_add_ref(B* x); // add x as a root reference
-bool gc_maybeGC(void); // gc if that seems necessary; returns if did gc
+bool gc_maybeGC(bool toplevel); // gc if that seems necessary; returns if did gc
 void gc_forceGC(bool toplevel); // force a gc; who knows what happens if gc is disabled (probably should error)
 
 // some primitive actions

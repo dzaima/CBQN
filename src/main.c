@@ -128,7 +128,7 @@ static NOINLINE i64 readInt(char** p) {
     ")exit", ")off",
     ")vars",
     ")gc", ")gc off", ")gc on",
-    ")internalPrint ",
+    ")internalPrint ", ")heapdump",
 #if NATIVE_COMPILER && !ONLY_NATIVE_COMP
     ")switchCompiler",
 #endif
@@ -577,6 +577,7 @@ static B simple_unescape(B x) {
   return c1(escape_parser, x);
 }
 
+void heap_printInfo(bool sizes, bool types, bool freed, bool chain);
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -624,16 +625,15 @@ void cbqn_runLine0(char* ln, i64 read) {
       time = am;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
-      bool sizes = 0;
-      bool types = 0;
-      bool freed = 0;
+      bool sizes=0, types=0;
+      i32 freed=0;
       char c;
       while ((c=*(cmdE++)) != 0) {
         if (c=='t') types=1;
         if (c=='s') sizes=1;
-        if (c=='f') freed=1;
+        if (c=='f') freed++;
       }
-      heap_printInfo(sizes, types, freed);
+      heap_printInfo(sizes, types, freed!=0, freed>=2);
       return;
     } else if (isCmd(cmdS, &cmdE, "erase ")) {
       char* name = cmdE;
@@ -662,6 +662,9 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
     } else if (isCmd(cmdS, &cmdE, "clearImportCache ")) {
       clearImportCache();
+      return;
+    } else if (isCmd(cmdS, &cmdE, "heapdump ")) {
+      cbqn_heapDump(NULL);
       return;
 #if USE_REPLXX
     } else if (isCmd(cmdS, &cmdE, "kb ")) {
@@ -825,7 +828,7 @@ void cbqn_runLine(char* ln, i64 len) {
     #ifdef HEAP_VERIFY
       heapVerify();
     #endif
-    gc_maybeGC();
+    gc_maybeGC(true);
     return;
   }
   cbqn_takeInterrupts(true);
@@ -833,7 +836,7 @@ void cbqn_runLine(char* ln, i64 len) {
   #ifdef HEAP_VERIFY
     heapVerify();
   #endif
-  gc_maybeGC();
+  gc_maybeGC(true);
   cbqn_takeInterrupts(false);
   popCatch();
 }

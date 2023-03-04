@@ -1,5 +1,6 @@
 #include "gc.h"
 
+void mm_freeFreedAndMerge(void);
 #ifdef LOG_GC
 #include "../utils/time.h"
 #endif
@@ -31,10 +32,6 @@ void gc_add_ref(B* x) {
 
 
 
-
-static void gc_freeFreed(Value* v) {
-  if (v->type==t_freed) mm_free(v);
-}
 
 static void gc_resetTag(Value* x) {
   x->mmInfo&= 0x7F;
@@ -161,14 +158,14 @@ static void gc_tryFree(Value* v) {
     }
     
     mm_forHeap(gc_tryFree);
-    mm_forHeap(gc_freeFreed);
+    mm_freeFreedAndMerge();
   }
 #else
   static void gc_run(bool toplevel) {
     mm_forHeap(gc_resetTag);
     gc_visitRoots();
     mm_forHeap(gc_tryFree);
-    mm_forHeap(gc_freeFreed);
+    mm_freeFreedAndMerge();
   }
 #endif
 
@@ -195,12 +192,13 @@ void gc_forceGC(bool toplevel) {
   #endif
 }
 
-
-bool gc_maybeGC() {
+static bool gc_wantTopLevelGC;
+bool gc_maybeGC(bool toplevel) {
   if (gc_depth) return false;
   u64 used = mm_heapUsed();
-  if (used > gc_lastAlloc*2) {
-    gc_forceGC(false);
+  if (used > gc_lastAlloc*2 || (toplevel && gc_wantTopLevelGC)) {
+    if (toplevel) gc_wantTopLevelGC = false;
+    gc_forceGC(toplevel);
     return true;
   }
   return false;

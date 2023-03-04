@@ -1,7 +1,8 @@
 #define buckets BN(buckets)
 
 #if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_MMX
-ALLOC_FN void BN(free)(Value* x) {
+
+FORCE_INLINE void BN(freeLink)(Value* x, bool link) {
   #if ALLOC_IMPL_MMX
     preFree(x, true);
   #else
@@ -12,11 +13,17 @@ ALLOC_FN void BN(free)(Value* x) {
   #else
     u8 b = x->mmInfo&127;
     BN(ctrs)[b]--;
-    ((EmptyValue*)x)->next = buckets[b];
-    buckets[b] = (EmptyValue*)x;
+    if (link) {
+      ((EmptyValue*)x)->next = buckets[b];
+      buckets[b] = (EmptyValue*)x;
+    }
   #endif
   x->type = t_empty;
   vg_undef_p(x, BSZ(x->mmInfo&127));
+}
+
+ALLOC_FN void BN(free)(Value* x) {
+  BN(freeLink)(x, true);
 }
 
 NOINLINE void* BN(allocS)(i64 bucket, u8 type);

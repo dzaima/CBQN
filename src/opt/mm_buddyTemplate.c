@@ -36,7 +36,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   buckets[from] = c;
 }
 
-#if GC_VISIT_V2
+#if GC_VISIT_V2 && !BUDDY_NO_GC
   static bool BN(allocMore_rec);
 #endif
 
@@ -44,12 +44,12 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
   CHECK_INTERRUPT;
   
-  #if GC_VISIT_V2
-    if (gc_maybeGC()) goto alloc_rec;
+  #if GC_VISIT_V2 && !BUDDY_NO_GC
+    if (gc_maybeGC(false)) goto alloc_rec;
   #endif
   
   if (mm_heapAlloc+sz >= mm_heapMax) {
-    #if GC_VISIT_V2
+    #if GC_VISIT_V2 && !BUDDY_NO_GC
       if (!BN(allocMore_rec)) {
         gc_forceGC(false);
         BN(allocMore_rec) = true;
@@ -59,6 +59,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
         return r;
       }
       BN(allocMore_rec) = false;
+      gc_wantTopLevelGC = true;
     #endif
     thrOOM();
   }
@@ -129,6 +130,51 @@ void BN(forFreedHeap)(V2v f) {
     }
   }
 }
+static void BN(freeFreedAndMerge)() {
+  for (u64 i = 0; i < 64; i++) buckets[i] = NULL;
+  
+  for (u64 i = 0; i < alSize; i++) {
+    AllocInfo ci = al[i];
+    u64 emptySize = 0;
+    Value* c = ci.p;
+    Value* e = (Value*)(ci.sz + (u8*)ci.p);
+    assert(c!=e);
+    while (true) {
+      if (vg_def_v(c->type)==t_freed) BN(freeLink)(c, false);
+      
+      Value* next = (Value*)(BSZ(vg_def_v(c->mmInfo)&63) + (u8*)c);
+      if (vg_def_v(c->type)==t_empty) {
+        emptySize+= 1ULL<<(vg_def_v(c->mmInfo)&63);
+      } else if (emptySize > 0) {
+        emptyTail:;
+        u8* emptyStart = ((u8*)c) - emptySize*MUL;
+        while(emptySize) {
+          u64 left = emptySize & (emptySize-1);
+          u64 curr = emptySize ^ left;
+          
+          EmptyValue* cv = (EmptyValue*)emptyStart;
+          u64 b = 63-CLZ(curr);
+          *cv = (EmptyValue){
+            .type = 0,
+            .mmInfo = MMI(b),
+            .next = buckets[b]
+          };
+          buckets[b] = cv;
+          
+          emptyStart+= curr*MUL;
+          emptySize = left;
+        }
+        emptySize = 0;
+      }
+      
+      c = next;
+      if (c==e) {
+        if (emptySize!=0) goto emptyTail;
+        break;
+      }
+    }
+  }
+}
 
 void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
@@ -151,4 +197,5 @@ void BN(dumpHeap)(FILE* f) {
 #undef alSize
 #undef alCap
 #undef MMI
+#undef MUL
 #undef ALSZ

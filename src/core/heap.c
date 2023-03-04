@@ -65,7 +65,7 @@ void heap_PIFreedFn(Value* v) {
 }
 
 void mm_forFreedHeap(V2v f);
-void heap_printInfo(bool sizes, bool types, bool freed) {
+void heap_printInfo(bool sizes, bool types, bool freed, bool chain) {
   u64 total = mm_heapAlloc;
   u64 used = mm_heapUsed();
   printf("RAM allocated: "N64u"\n", total);
@@ -88,14 +88,31 @@ void heap_printInfo(bool sizes, bool types, bool freed) {
         if (count>0) printf("type %d/%s: count "N64u", total size "N64u"\n", i, type_repr(i), count, heap_PISizes[i]);
       }
     }
-    if (freed) {
-      for (i32 i = 0; i < MM*64; i++) heap_PIFreed[i] = 0;
-      mm_forFreedHeap(heap_PIFreedFn);
+    if (freed || chain) {
+      if (freed) {
+        for (i32 i = 0; i < MM*64; i++) heap_PIFreed[i] = 0;
+        mm_forFreedHeap(heap_PIFreedFn);
+      }
+      
       for (i32 i = 2; i < 64; i++) {
         for (i32 j = 0; j < MM; j++) {
           i32 o = i-j;
-          u64 count = heap_PIFreed[o + j*64];
-          if (count>0) printf("freed size %llu: "N64u"\n", (1ULL<<o)*(j?3:1), count);
+          ux cf=0, cc=0;
+          if (freed) {
+            cf = heap_PIFreed[o + j*64];
+          }
+          
+          if (chain) {
+            i32 b = j*64 + i;
+            if (mm_buckets[b]) {
+              EmptyValue* p = mm_buckets[b];
+              while (p) { cc++; p = p->next; }
+            }
+          }
+          if (cf!=0 || cc!=0) {
+            if (chain && freed) printf("freed size %llu: count "N64u", chain "N64u"\n", (1ULL<<o)*(j?3:1), cf, cc);
+            else printf("freed size %llu: "N64u"\n", (1ULL<<o)*(j?3:1), freed? cf : cc);
+          }
         }
       }
     }

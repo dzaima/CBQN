@@ -21,5 +21,3 @@ static bool heapVerify_visitP(void* x) {
 void heapVerify(void);
 
 #endif
-
-void heap_printInfo(bool sizes, bool types, bool freed);

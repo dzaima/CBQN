@@ -17,6 +17,7 @@ EmptyValue* mm_buckets[128];
 #define b1_allocL mm_allocL
 #define  ALSZ   20
 #define  BSZ(X) (1ull<<(X))
+#define  MUL 1
 #define  MMI(X) X
 #define   BN(X) b1_##X
 #include "mm_buddyTemplate.c"
@@ -27,6 +28,7 @@ EmptyValue* mm_buckets[128];
 #define b3_allocL mm_allocL
 #define  ALSZ   20
 #define  BSZ(X) (3ull<<(X))
+#define  MUL 3
 #define  MMI(X) ((X)|64)
 #define   BN(X) b3_##X
 #include "mm_buddyTemplate.c"
@@ -44,6 +46,10 @@ void mm_forHeap(V2v f) {
 void mm_forFreedHeap(V2v f) {
   b1_forFreedHeap(f);
   b3_forFreedHeap(f);
+}
+void mm_freeFreedAndMerge() {
+  b1_freeFreedAndMerge();
+  b3_freeFreedAndMerge();
 }
 void mm_dumpHeap(FILE* f) {
   b1_dumpHeap(f);

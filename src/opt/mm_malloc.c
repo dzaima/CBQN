@@ -9,8 +9,8 @@
 void gc_add(B x) { }
 void gc_addFn(vfn f) { }
 void gc_add_ref(B* x) { }
-bool gc_maybeGC() { return false; }
-void gc_forceGC() { }
+bool gc_maybeGC(bool toplevel) { return false; }
+void gc_forceGC(bool toplevel) { }
 void mm_forHeap(V2v f) { }
 u64 mm_heapUsed() { return 123; } // idk
 void mm_dumpHeap(FILE* f) { }

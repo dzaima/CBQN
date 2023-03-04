@@ -12,6 +12,7 @@ u64 mm_ctrs[64];
 EmptyValue* mm_buckets[64];
 #define  ALSZ   20
 #define  BSZ(X) (1ull<<(X))
+#define  MUL 1
 #define  MMI(X) X
 #define   BN(X) mm_##X
 #include "mm_buddyTemplate.c"
