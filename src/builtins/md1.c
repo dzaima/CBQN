@@ -315,8 +315,7 @@ static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
 }
 
 B shape_c1(B, B);
-B transp_c1(B, B);
-B insert_c1(Md1D* d, B x);
+B fold_rows(Md1D* d, B x);  // From fold.c
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
@@ -358,9 +357,8 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         Md1D* fd = c(Md1D,f);
         u8 rtid = fd->m1->flags-1;
         if (rtid==n_const) { f=fd->f; goto const_f; }
-        if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && isPervasiveDy(fd->f) && RNK(x)==2 && SH(x)[1]==2) {
-          x = C1(transp, x);
-          return insert_c1(fd, x);
+        if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && isPervasiveDy(fd->f) && RNK(x)==2 && SH(x)[1]<=64) {
+          return fold_rows(fd, x);
         }
       }
     }
