@@ -358,9 +358,9 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         u8 rtid = fd->m1->flags-1;
         if (rtid==n_const) { f=fd->f; goto const_f; }
         if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && isPervasiveDy(fd->f) && RNK(x)==2) {
-          usz n = SH(x)[1];
-          if (n == 1) return select_cells(0, x, 2);
-          if (n <= 64) return fold_rows(fd, x);
+          usz *sh = SH(x); usz m = sh[1];
+          if (m == 1) return select_cells(0, x, 2);
+          if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
         }
       }
     }
