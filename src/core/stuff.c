@@ -56,8 +56,8 @@ NOINLINE B m2c2_bad(Md2D* d, B w, B x) { thrM("This 2-modifier can't be called d
 
 NOINLINE B md_c1(B t,      B x) { thrM("Cannot call a modifier"); }
 NOINLINE B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }
-NOINLINE B arr_c1(B t,      B x) { return inc(t); }
-NOINLINE B arr_c2(B t, B w, B x) { return inc(t); }
+NOINLINE B arr_c1(B t,      B x) {         dec(x); return inc(t); }
+NOINLINE B arr_c2(B t, B w, B x) { dec(w); dec(x); return inc(t); }
 
 
 extern B rt_under, bi_before;
