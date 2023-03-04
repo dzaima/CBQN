@@ -44,7 +44,7 @@ NOINLINE B c2F(B f, B w, B x) { dec(w); dec(x);
 NOINLINE void value_freeF(Value* x) { value_free(x); }
 NOINLINE void decA_F(B x) { dec(x); }
 void noop_visit(Value* x) { }
-#if HEAP_VERIFY && GC_VISIT_V2
+#if HEAP_VERIFY
   void arr_visit(Value* x) { VISIT_SHAPE(x); }
 #endif
 NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
@@ -666,7 +666,7 @@ B bqn_merge(B x) {
   usz* rsh = arr_shAlloc(ra, xr+elR);
   if (rsh) {
     shcpy         (rsh   , SH(x), xr);
-    if (elSh)shcpy(rsh+xr, elSh,     elR);
+    if (elSh)shcpy(rsh+xr, elSh,  elR);
   }
   decG(x);
   return withFill(taga(ra),fill);

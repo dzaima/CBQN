@@ -2,7 +2,6 @@
 
 #include "h.h"
 #include "core/stuff.h"
-#include "core/heap.h"
 
 #if MM==0
   #include "opt/mm_malloc.h"

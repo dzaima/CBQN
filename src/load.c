@@ -512,8 +512,8 @@ void load_init() { // very last init function
     printI(interp);
     printf("\n");
     dec(interp);
-    #ifdef HEAP_VERIFY
-      heapVerify();
+    #if HEAP_VERIFY
+      cbqn_heapVerify();
     #endif
     rtWrap_print();
     CTR_FOR(CTR_PRINT)
@@ -551,7 +551,6 @@ void load_init() { // very last init function
       decG(fmtR);
     #endif
     
-    gc_enable();
   #endif // PRECOMP
 }
 
@@ -806,6 +805,7 @@ void cbqn_init() {
   #define F(X) X##_init();
    FOR_INIT(F)
   #undef F
-   cbqn_initialized = true;
+  cbqn_initialized = true;
+  gc_enable();
 }
 #undef FOR_INIT

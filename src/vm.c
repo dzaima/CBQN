@@ -690,7 +690,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
     if (!vmStack) vmStack = malloc(400);
     i32 stackNum = bcDepth>>1;
     vmStack[stackNum] = -1;
-    printf("new eval\n");
+    fprintf(stderr,"new eval\n");
     B* origStack = gStack;
   #endif
   u32* bc = b->bc;
@@ -728,9 +728,9 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       u32* sbc = bc;
       i32 bcPos = BCPOS(b,sbc);
       vmStack[stackNum] = bcPos;
-      for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      print_BC(sbc,20); printf("@%d  in: ", bcPos);
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); printI(origStack[i]); } putchar('\n'); fflush(stdout);
+      for(i32 i = 0; i < bcDepth; i++) fprintf(stderr," ");
+      print_BC(stderr,sbc,20); fprintf(stderr,"@%d  in: ",bcPos);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fputc('\n',stderr); fflush(stderr);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -930,9 +930,9 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         #endif
     }
     #ifdef DEBUG_VM
-      for(i32 i = 0; i < bcDepth; i++) printf(" ");
-      print_BC(sbc,20); printf("@%d out: ", BCPOS(b, sbc));
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)printf("; "); printI(origStack[i]); } putchar('\n'); fflush(stdout);
+      for(i32 i = 0; i < bcDepth; i++) fprintf(stderr," ");
+      print_BC(stderr,sbc,20); fprintf(stderr,"@%d out: ",BCPOS(b, sbc));
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fputc('\n',stderr); fflush(stderr);
     #endif
   }
   end:;

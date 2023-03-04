@@ -23,7 +23,7 @@ static void gc_enable() { }
 static void mm_visit(B x) { }
 static void mm_visitP(void* x) { }
 
-void gc_maybeGC(bool);
+bool gc_maybeGC(bool);
 void gc_forceGC(bool);
 void mm_forHeap(V2v f);
 void mm_dumpHeap(FILE* f);

@@ -1326,7 +1326,7 @@ B transp_c1(B t, B x) {
     void* xp = tyany_ptr(x);
     switch(xe) { default: UD;
       #if __BMI2__
-      case el_bit:
+      case el_bit:;
         u64* r0 = rp; TALLOC(u64, r1, BIT_N(h));
         for (usz i=0; i<BIT_N(ia); i++) {
           u64 v = ((u64*)xp)[i];

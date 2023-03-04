@@ -1,8 +1,11 @@
 #include "gc.h"
 
-void mm_freeFreedAndMerge(void);
+#if ENABLE_GC
+  static void mm_freeFreedAndMerge(void);
+#endif
+
 #ifdef LOG_GC
-#include "../utils/time.h"
+  #include "../utils/time.h"
 #endif
 
 u64 gc_depth = 1;
@@ -73,41 +76,45 @@ static void gc_tryFree(Value* v) {
   u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, gc_unkRefsBytes, gc_unkRefsCount;
 #endif
 
-#if GC_VISIT_V2
-  i32 visit_mode;
-  enum {
-    GC_DEC_REFC, // decrement refcount
-    GC_INC_REFC, // increment refcount
-    GC_MARK,     // if unmarked, mark & visit
-    GC_LISTBAD,  // 
-  };
-  
-  void gc_onVisit(Value* x) {
-    switch (visit_mode) { default: UD;
-      case GC_DEC_REFC: x->refc--; return;
-      case GC_INC_REFC: x->refc++; return;
-      case GC_MARK: {
-        if (x->mmInfo&0x80) return;
-        x->mmInfo|= 0x80;
-        #ifdef LOG_GC
-          gc_visitBytes+= mm_size(x); gc_visitCount++;
-        #endif
-        TIv(x,visit)(x);
-        return;
-      }
+i32 visit_mode;
+enum {
+  GC_DEC_REFC, // decrement refcount
+  GC_INC_REFC, // increment refcount
+  GC_MARK,     // if unmarked, mark & visit
+};
+
+void gc_onVisit(Value* x) {
+  switch (visit_mode) { default: UD;
+    case GC_DEC_REFC:
+      #if DEBUG
+        if(x->refc==0) err("decrementing refc 0");
+      #endif
+      x->refc--;
+      return;
+    case GC_INC_REFC: x->refc++; return;
+    case GC_MARK: {
+      if (x->mmInfo&0x80) return;
+      x->mmInfo|= 0x80;
+      #ifdef LOG_GC
+        gc_visitBytes+= mm_size(x); gc_visitCount++;
+      #endif
+      TIv(x,visit)(x);
+      return;
     }
   }
-  
-  static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
-  
-  #if HEAP_VERIFY
+}
+
+static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
+
+#if HEAP_VERIFY
   void gcv2_runHeapverify(i32 mode) {
     visit_mode = mode==0? GC_DEC_REFC : GC_INC_REFC;
     mm_forHeap(gcv2_visit);
     gc_visitRoots();
   }
-  #endif
-  
+#endif
+
+#if ENABLE_GC
   static Value** gcv2_bufS;
   static Value** gcv2_bufC;
   static Value** gcv2_bufE;
@@ -132,7 +139,7 @@ static void gc_tryFree(Value* v) {
     if (gcv2_bufC == gcv2_bufE) return gcv2_storeRemainingR(x);
     gcv2_storeRemainingEnd(x);
   }
-  
+
   static void gc_run(bool toplevel) {
     if (toplevel) {
       mm_forHeap(gc_resetTag);
@@ -160,13 +167,6 @@ static void gc_tryFree(Value* v) {
     mm_forHeap(gc_tryFree);
     mm_freeFreedAndMerge();
   }
-#else
-  static void gc_run(bool toplevel) {
-    mm_forHeap(gc_resetTag);
-    gc_visitRoots();
-    mm_forHeap(gc_tryFree);
-    mm_freeFreedAndMerge();
-  }
 #endif
 
 u64 gc_lastAlloc;
@@ -183,9 +183,7 @@ void gc_forceGC(bool toplevel) {
     u64 endSize = mm_heapUsed();
     #ifdef LOG_GC
       fprintf(stderr, "GC kept "N64d"B/"N64d" objs, freed "N64d"B, incl. directly "N64d"B/"N64d" objs", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount);
-      #if GC_VISIT_V2
-        fprintf(stderr, "; unknown refs: "N64d"B/"N64d" objs", gc_unkRefsBytes, gc_unkRefsCount);
-      #endif
+      fprintf(stderr, "; unknown refs: "N64d"B/"N64d" objs", gc_unkRefsBytes, gc_unkRefsCount);
       fprintf(stderr, "; took %.3fms\n", (nsTime()-start)/1e6);
     #endif
     gc_lastAlloc = endSize;

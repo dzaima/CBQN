@@ -222,7 +222,7 @@ B def_fn_ix(B t, B w, B x);
 
 B def_decompose(B x);
 void noop_visit(Value* x);
-#if HEAP_VERIFY && GC_VISIT_V2
+#if HEAP_VERIFY
   void arr_visit(Value* x);
   #define VISIT_SHAPE(X) ({ if (PRNK(X)>1) mm_visitP(shObjP(X)); })
 #else

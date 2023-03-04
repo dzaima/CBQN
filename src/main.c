@@ -825,16 +825,16 @@ void cbqn_runLine(char* ln, i64 len) {
     fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n', stderr);
     vm_pst(envCurr+1, envStart+envPrevHeight);
     freeThrown();
-    #ifdef HEAP_VERIFY
-      heapVerify();
+    #if HEAP_VERIFY
+      cbqn_heapVerify();
     #endif
     gc_maybeGC(true);
     return;
   }
   cbqn_takeInterrupts(true);
   cbqn_runLine0(ln, len);
-  #ifdef HEAP_VERIFY
-    heapVerify();
+  #if HEAP_VERIFY
+    cbqn_heapVerify();
   #endif
   gc_maybeGC(true);
   cbqn_takeInterrupts(false);
@@ -983,8 +983,8 @@ int main(int argc, char* argv[]) {
         execRes = bqn_execFile(src, args);
       }
       dec(execRes);
-      #ifdef HEAP_VERIFY
-        heapVerify();
+      #if HEAP_VERIFY
+        cbqn_heapVerify();
       #endif
       gc_forceGC(true);
     }
@@ -1045,8 +1045,8 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  #ifdef HEAP_VERIFY
-    heapVerify();
+  #if HEAP_VERIFY
+    cbqn_heapVerify();
   #endif
   bqn_exit(0);
   #undef INIT

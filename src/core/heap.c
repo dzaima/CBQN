@@ -19,33 +19,14 @@ void heapVerify_checkFn(Value* v) {
 
 
 
-void heapVerify_callVisit(Value* v) {
-  if (TIv(v,isArr) && PRNK(v)>1) heapVerify_visitP(shObjP(v));
-  TIv(v,visit)(v);
-}
-
-void heap_getReferents(Value* v) {
-  heap_curr = v;
-  if (TIv(v,isArr) && PRNK(v)>1) heapVerify_visitP(shObjP(v));
-  TIv(v,visit)(v);
-}
 void gc_visitRoots(void);
 void gcv2_runHeapverify(i32);
-void heapVerify() {
+void cbqn_heapVerify() {
   heap_observed = 0;
-  #if GC_VISIT_V2
-    gcv2_runHeapverify(0);
-    mm_forHeap(heapVerify_checkFn);
-    gcv2_runHeapverify(1);
-  #else
-    heapVerify_mode=0; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
-    mm_forHeap(heapVerify_checkFn);
-    heapVerify_mode=1; mm_forHeap(heapVerify_callVisit); gc_visitRoots();
-  #endif
-  if (heap_observed) {
-    printf("refc of last: %d\n", heap_observed->refc);
-    // heapVerify_mode=2; mm_forHeap(heap_getReferents);
-  }
+  gcv2_runHeapverify(0);
+  mm_forHeap(heapVerify_checkFn);
+  gcv2_runHeapverify(1);
+  if (heap_observed) printf("refc of last: %d\n", heap_observed->refc);
   heapVerify_mode=-1;
 }
 
@@ -97,7 +78,7 @@ void heap_printInfo(bool sizes, bool types, bool freed, bool chain) {
       for (i32 i = 2; i < 64; i++) {
         for (i32 j = 0; j < MM; j++) {
           i32 o = i-j;
-          ux cf=0, cc=0;
+          u64 cf=0, cc=0;
           if (freed) {
             cf = heap_PIFreed[o + j*64];
           }

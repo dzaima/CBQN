@@ -939,6 +939,7 @@ void ffi_init(void) {
     switch (id) { default: err("bad id");
       case 0: {
         char* s = toCStr(x);
+        decG(x);
         i32 r = chdir(s);
         freeCStr(s);
         return m_f64(r);
@@ -954,30 +955,34 @@ void ffi_init(void) {
         return m_vec2(m_f64(r), m_vec2(m_f64(vs[0]), m_f64(vs[1])));
       }
       case 3: {
-        SGetU(x)
-        int fd =          o2i(GetU(x,0));
-        I8Arr* buf = cpyI8Arr(GetU(x,1));
-        usz maxlen =      o2s(GetU(x,2));
+        SGet(x)
+        int fd =          o2i(Get(x,0));
+        I8Arr* buf = cpyI8Arr(Get(x,1));
+        usz maxlen =      o2s(Get(x,2));
+        decG(x);
         assert(PIA(buf)==maxlen);
         int res = read(fd, buf->a, maxlen);
         return m_vec2(m_f64(res), taga(buf));
       }
       case 4: {
-        SGetU(x)
-        int fd =          o2i(GetU(x,0));
-        I8Arr* buf = cpyI8Arr(GetU(x,1));
-        usz maxlen =      o2s(GetU(x,2));
+        SGet(x)
+        int fd =          o2i(Get(x,0));
+        I8Arr* buf = cpyI8Arr(Get(x,1));
+        usz maxlen =      o2s(Get(x,2));
+        decG(x);
         int res = write(fd, buf->a, maxlen);
+        ptr_dec(buf);
         return m_f64(res);
       }
       case 5: {
         return m_f64(close(o2i(x)));
       }
       case 6: {
-        SGetU(x)
-        I16Arr* buf = cpyI16Arr(GetU(x,0)); i16* a = (i16*)buf->a;
-        int nfds =          o2i(GetU(x,1));
-        int timeout =       o2s(GetU(x,2));
+        SGet(x)
+        I16Arr* buf = cpyI16Arr(Get(x,0)); i16* a = (i16*)buf->a;
+        int nfds =          o2i(Get(x,1));
+        int timeout =       o2s(Get(x,2));
+        decG(x);
         
         TALLOC(pollfd, ps, nfds)
         for (i32 i = 0; i < nfds; i++) ps[i] = (pollfd){.fd = a[i*4+0]|a[i*4+1]<<16, .events=a[i*4+2]};

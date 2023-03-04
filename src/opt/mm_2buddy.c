@@ -47,7 +47,7 @@ void mm_forFreedHeap(V2v f) {
   b1_forFreedHeap(f);
   b3_forFreedHeap(f);
 }
-void mm_freeFreedAndMerge() {
+static void mm_freeFreedAndMerge() {
   b1_freeFreedAndMerge();
   b3_freeFreedAndMerge();
 }

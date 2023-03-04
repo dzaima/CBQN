@@ -36,7 +36,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   buckets[from] = c;
 }
 
-#if GC_VISIT_V2 && !BUDDY_NO_GC
+#if !BUDDY_NO_GC && ENABLE_GC
   static bool BN(allocMore_rec);
 #endif
 
@@ -44,12 +44,12 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
   CHECK_INTERRUPT;
   
-  #if GC_VISIT_V2 && !BUDDY_NO_GC
+  #if !BUDDY_NO_GC && ENABLE_GC
     if (gc_maybeGC(false)) goto alloc_rec;
   #endif
   
   if (mm_heapAlloc+sz >= mm_heapMax) {
-    #if GC_VISIT_V2 && !BUDDY_NO_GC
+    #if !BUDDY_NO_GC && ENABLE_GC
       if (!BN(allocMore_rec)) {
         gc_forceGC(false);
         BN(allocMore_rec) = true;
@@ -130,6 +130,7 @@ void BN(forFreedHeap)(V2v f) {
     }
   }
 }
+#if !BUDDY_NO_GC && ENABLE_GC
 static void BN(freeFreedAndMerge)() {
   for (u64 i = 0; i < 64; i++) buckets[i] = NULL;
   
@@ -140,7 +141,7 @@ static void BN(freeFreedAndMerge)() {
     Value* e = (Value*)(ci.sz + (u8*)ci.p);
     assert(c!=e);
     while (true) {
-      if (vg_def_v(c->type)==t_freed) BN(freeLink)(c, false);
+      if (vg_def_v(c->type)==t_freed) mm_freeLink(c, false);
       
       Value* next = (Value*)(BSZ(vg_def_v(c->mmInfo)&63) + (u8*)c);
       if (vg_def_v(c->type)==t_empty) {
@@ -159,6 +160,7 @@ static void BN(freeFreedAndMerge)() {
             .mmInfo = MMI(b),
             .next = buckets[b]
           };
+          vg_undef_p(cv, sizeof(EmptyValue));
           buckets[b] = cv;
           
           emptyStart+= curr*MUL;
@@ -175,6 +177,7 @@ static void BN(freeFreedAndMerge)() {
     }
   }
 }
+#endif
 
 void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {

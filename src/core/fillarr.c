@@ -52,6 +52,7 @@ DEF_FREE(fillarr) {
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 static void fillarr_visit(Value* x) { assert(PTY(x) == t_fillarr);
+  VISIT_SHAPE(x);
   usz ia = PIA((Arr*)x); B* p = ((FillArr*)x)->a;
   mm_visit(((FillArr*)x)->fill);
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
@@ -60,7 +61,7 @@ static bool fillarr_canStore(B x) { return true; }
 
 static void fillarr_freeT(Value* x) { FillArr* s=(void*)x; dec(s->fill); decSh(x); mm_free(x); }
 
-static void fillslice_visit(Value* x) { FillSlice* s=(void*)x; mm_visitP(s->p); mm_visit(s->fill); }
+static void fillslice_visit(Value* x) { FillSlice* s=(void*)x; mm_visitP(s->p); mm_visit(s->fill); VISIT_SHAPE(x); }
 static void fillslice_freeO(Value* x) { FillSlice* s=(void*)x; ptr_dec(s->p); dec(s->fill); decSh(x); }
 static void fillslice_freeF(Value* x) { fillslice_freeO(x); mm_free(x); }
 
