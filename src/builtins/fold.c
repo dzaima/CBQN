@@ -13,6 +13,7 @@
 
 #include "../core.h"
 #include "../builtins.h"
+#include "../utils/calls.h"
 
 #if SINGELI_X86_64
   #define SINGELI_FILE fold
@@ -318,4 +319,37 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
   return r;
   overflow: thrM("Sum too big");
   neg: thrM("Didn't expect negative integer");
+}
+
+// Arithmetic fold/insert on rows of flat rank-2 array x
+B insert_c1(Md1D*, B);
+B transp_c1(B, B);
+B join_c2(B, B, B);
+B fold_rows(Md1D* fd, B x) {
+  assert(isArr(x) && RNK(x)==2);
+  // Target block size trying to avoid power-of-two lengths, from:
+  // {𝕩/˜⌊´⊸= +˝˘ +˝¬∨`2|>⌊∘÷⟜2⍟(↕12) ⌊0.5+32÷˜𝕩÷⌜1+↕64} +⟜↕2⋆16
+  u64 block = (116053*8) >> arrTypeBitsLog(TY(x));
+  if (TI(x,elType)==el_bit || IA(x)/2 <= block) {
+    x = C1(transp, x);
+    return insert_c1(fd, x);
+  } else {
+    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
+    usz b = (block + m - 1) / m; // Normal block length
+    usz b_max = b + b/4;         // Last block max length
+    B r = bi_N;
+    BSS2A slice = TI(x,slice);
+    for (usz i=0, im=0; i<n; ) {
+      usz l = n-i; if (l > b_max) { incG(x); l = b; }
+      usz sia = l * m;
+      Arr* sl = slice(x, im, sia);
+      usz* ssh = arr_shAlloc(sl, 2);
+      ssh[0] = l;
+      ssh[1] = m;
+      B sr = insert_c1(fd, C1(transp, taga(sl)));
+      r = q_N(r) ? sr : C2(join, r, sr);
+      i += l; im += sia;
+    }
+    return r;
+  }
 }
