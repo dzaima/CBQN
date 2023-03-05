@@ -57,6 +57,15 @@ B tbl_c1(Md1D* d, B x) {
   return each_c1(d, x);
 }
 
+bool isPervasiveDyExt(B x) {
+  if (isPervasiveDy(x)) return true;
+  if (isFun(x) && TY(x)==t_md1D) {
+    Md1D* d = c(Md1D, x);
+    if (d->m1->flags-1 == n_swap) return isPervasiveDy(d->f);
+  }
+  return false;
+}
+
 B slash_c2(B f, B w, B x);
 B shape_c2(B f, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
@@ -71,7 +80,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   usz* rsh;
   
   BBB2B fc2 = c2fn(f);
-  if (isFun(f) && isPervasiveDy(f) && TI(w,arrD1)) {
+  if (isFun(f) && TI(w,arrD1) && isPervasiveDyExt(f)) {
     if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
@@ -353,11 +362,11 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         B xf = getFillR(x);
         if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
       }
-      if (v(f)->type == t_md1D) {
+      if (TY(f) == t_md1D) {
         Md1D* fd = c(Md1D,f);
         u8 rtid = fd->m1->flags-1;
         if (rtid==n_const) { f=fd->f; goto const_f; }
-        if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && isPervasiveDy(fd->f) && RNK(x)==2) {
+        if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && isPervasiveDyExt(fd->f) && RNK(x)==2) {
           usz *sh = SH(x); usz m = sh[1];
           if (m == 1) return select_cells(0, x, 2);
           if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
@@ -459,7 +468,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (RNK(x)==1 && isPervasiveDy(f)) return m_atomUnit(fold_c1(d, x));
+    if (RNK(x)==1 && isPervasiveDyExt(f)) return m_atomUnit(fold_c1(d, x));
     if (rtid == n_join) {
       ur xr = RNK(x);
       if (xr==1) return x;
@@ -494,7 +503,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (xia==0) return r;
   
   if (isFun(f)) {
-    if (RNK(x)==1 && isPervasiveDy(f)) {
+    if (RNK(x)==1 && isPervasiveDyExt(f)) {
       if (isAtm(w)) {
         to_fold: return m_atomUnit(fold_c2(d, w, x));
       }
