@@ -100,6 +100,7 @@ Namespace of various internal functions. May change at any time.
 
 | name                       | description |
 |----------------------------|-------------|
+| `•internal.GC`             | Run a garbage collection cycle |
 | `•internal.Type`           | Name of the internal type for an object |
 | `•internal.ElType`         | Element size type identifier; see `enum ElType` |
 | `•internal.Refc`           | Reference count of the argument, if it's heap-allocated |

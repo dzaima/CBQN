@@ -17,7 +17,7 @@
 /*   sysfn.c*/M(tRawMode,"•term.RawMode") M(tFlush,"•term.Flush") M(tCharB,"•term.CharB") M(tCharN,"•term.CharN") M(tOutRaw,"•term.OutRaw") M(tErrRaw,"•term.ErrRaw") \
 /* inverse.c*/M(setInvReg,"(SetInvReg)") M(setInvSwap,"(SetInvSwap)") M(nativeInvReg,"(NativeInvReg)") M(nativeInvSwap,"(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") M(heapDump,"•internal.HeapDump") \
-/*internal.c*/M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") D(eequal,"•internal.EEqual") A(internalTemp,"•internal.Temp") \
+/*internal.c*/M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") D(eequal,"•internal.EEqual") A(internalTemp,"•internal.Temp") M(internalGC,"•internal.GC") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
 /*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") D(atan2,"•math.Atan2") D(hypot,"•math.Hypot") \
 /*  arithm.c*/M(sinh,"•math.Sinh") M(cosh,"•math.Cosh") M(tanh,"•math.Tanh") M(asinh,"•math.Asinh") M(acosh,"•math.Acosh") M(atanh,"•math.Atanh") \
