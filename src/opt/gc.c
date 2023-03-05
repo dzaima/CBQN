@@ -104,7 +104,13 @@ void gc_onVisit(Value* x) {
   }
 }
 
-static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
+static void gcv2_visit(Value* x) {
+  TIv(x,visit)(x);
+}
+static void gcv2_unmark_visit(Value* x) {
+  gc_resetTag(x);
+  TIv(x,visit)(x);
+}
 
 #if HEAP_VERIFY
   void gcv2_runHeapverify(i32 mode) {
@@ -115,41 +121,23 @@ static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
 #endif
 
 #if ENABLE_GC
-  static Value** gcv2_bufS;
-  static Value** gcv2_bufC;
-  static Value** gcv2_bufE;
-  FORCE_INLINE void gcv2_storeRemainingEnd(Value* x) {
-    *gcv2_bufC = x;
-    gcv2_bufC++;
+  static void gc_visitRefcNonzero(Value* x) {
+    if (x->refc == 0) return;
     #ifdef LOG_GC
       gc_unkRefsBytes+= mm_size(x); gc_unkRefsCount++;
     #endif
+    mm_visitP(x);
   }
-  static NOINLINE void gcv2_storeRemainingR(Value* x) {
-    ux i = gcv2_bufC - gcv2_bufS;
-    ux n = (gcv2_bufE-gcv2_bufS)*2;
-    gcv2_bufS = realloc(gcv2_bufS, n*sizeof(Value*));
-    gcv2_bufC = gcv2_bufS + i;
-    gcv2_bufE = gcv2_bufS + n;
-    gcv2_storeRemainingEnd(x);
-  }
-  static void gcv2_storeRemaining(Value* x) {
-    gc_resetTag(x);
-    if (x->refc == 0) return;
-    if (gcv2_bufC == gcv2_bufE) return gcv2_storeRemainingR(x);
-    gcv2_storeRemainingEnd(x);
-  }
-
+  
   static void gc_run(bool toplevel) {
     if (toplevel) {
       mm_forHeap(gc_resetTag);
     } else {
       visit_mode = GC_DEC_REFC;
-      mm_forHeap(gcv2_visit);
+      mm_forHeap(gcv2_unmark_visit);
       
-      gcv2_bufS = gcv2_bufC = malloc(1<<20);
-      gcv2_bufE = gcv2_bufS + ((1<<20) / sizeof(Value*));
-      mm_forHeap(gcv2_storeRemaining); // incl. unmark
+      visit_mode = GC_MARK;
+      mm_forHeap(gc_visitRefcNonzero);
       
       visit_mode = GC_INC_REFC;
       mm_forHeap(gcv2_visit);
@@ -157,12 +145,6 @@ static void gcv2_visit(Value* x) { TIv(x,visit)(x); }
     
     visit_mode = GC_MARK;
     gc_visitRoots();
-    
-    if (!toplevel) {
-      Value** c = gcv2_bufS;
-      while (c < gcv2_bufC) mm_visitP(*(c++));
-      free(gcv2_bufS);
-    }
     
     mm_forHeap(gc_tryFree);
     mm_freeFreedAndMerge();
