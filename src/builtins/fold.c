@@ -14,6 +14,7 @@
 #include "../core.h"
 #include "../builtins.h"
 #include "../utils/calls.h"
+#include "../utils/mut.h"
 
 #if SINGELI_X86_64
   #define SINGELI_FILE fold
@@ -337,7 +338,7 @@ B fold_rows(Md1D* fd, B x) {
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     usz b = (block + m - 1) / m; // Normal block length
     usz b_max = b + b/4;         // Last block max length
-    B r = bi_N;
+    MAKE_MUT(r, n);
     BSS2A slice = TI(x,slice);
     for (usz i=0, im=0; i<n; ) {
       usz l = n-i; if (l > b_max) { incG(x); l = b; }
@@ -347,9 +348,10 @@ B fold_rows(Md1D* fd, B x) {
       ssh[0] = l;
       ssh[1] = m;
       B sr = insert_c1(fd, C1(transp, taga(sl)));
-      r = q_N(r) ? sr : C2(join, r, sr);
+      mut_copy(r, i, sr, 0, l);
+      decG(sr);
       i += l; im += sia;
     }
-    return r;
+    return mut_fv(r);
   }
 }
