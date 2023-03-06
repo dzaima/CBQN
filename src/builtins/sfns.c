@@ -24,8 +24,7 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
   usz xia = IA(x);
   if (ria>xia) {
     B xf = getFillE(x);
-    MAKE_MUT(r, ria); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
-    MUTG_INIT(r);
+    MAKE_MUT_INIT(r, ria, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
     mut_copyG(r, 0, x, 0, xia);
     mut_fillG(r, xia, xf, ria-xia);
     decG(x);
@@ -273,8 +272,7 @@ B shape_c2(B t, B w, B x) {
       } else {
         if (TI(x,elType) == el_B) {
           B xf = getFillQ(x);
-          MAKE_MUT(m, nia); mut_init(m, el_B);
-          MUTG_INIT(m);
+          MAKE_MUT_INIT(m, nia, el_B); MUTG_INIT(m);
           i64 div = nia/xia;
           i64 mod = nia%xia;
           for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
@@ -526,7 +524,6 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
     } else if (ria==0) { // printf("empty result\n");
       r = taga(arr_shSetU(emptyArr(x, rr), rr, rsh));
     } else { // printf("generic\n");
-      MAKE_MUT(rm, ria); mut_init(rm, TI(x,elType));
       B xf = getFillR(x);
       if (anyFill && noFill(xf)) {
         #if PROPER_FILLS
@@ -536,7 +533,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
         #endif
       }
       
-      MUTG_INIT(rm);
+      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
       if (IA(x)==0) {
         mut_fillG(rm, 0, xf, ria);
       } else { // actual generic copying code
@@ -657,8 +654,7 @@ B take_c2(B t, B w, B x) {
     usz xia = IA(x);
     if (n>xia) {
       B xf = getFillE(x);
-      MAKE_MUT(r, n); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
-      MUTG_INIT(r);
+      MAKE_MUT_INIT(r, n, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
       mut_fillG(r, 0, xf, n-xia);
       mut_copyG(r, n-xia, x, 0, xia);
       decG(x);
@@ -997,8 +993,7 @@ B couple_c2(B t, B w, B x) {
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = IA(w);
   ur wr = RNK(w);
-  MAKE_MUT(r, ia*2); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, ia*2, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);
   Arr* ra = mut_fp(r);
@@ -1025,8 +1020,7 @@ B shiftb_c1(B t, B x) {
   B xf = getFillE(x);
   usz csz = arr_csz(x);
   
-  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, csz, x, 0, ia-csz);
   mut_fillG(r, 0, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
@@ -1038,8 +1032,7 @@ B shiftb_c2(B t, B w, B x) {
   B f = fill_both(w, x);
   usz wia = IA(w);
   usz xia = IA(x);
-  MAKE_MUT(r, xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
   int mid = wia<xia? wia : xia;
   mut_copyG(r, 0  , w, 0, mid);
   mut_copyG(r, mid, x, 0, xia-mid);
@@ -1053,8 +1046,7 @@ B shifta_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
-  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(xf)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, 0, x, csz, ia-csz);
   mut_fillG(r, ia-csz, xf, csz);
   return qWithFill(mut_fcd(r, x), xf);
@@ -1066,8 +1058,7 @@ B shifta_c2(B t, B w, B x) {
   B f = fill_both(w, x);
   usz wia = IA(w);
   usz xia = IA(x);
-  MAKE_MUT(r, xia); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
   if (wia < xia) {
     usz m = xia-wia;
     mut_copyG(r, 0, x, wia, m);
@@ -1132,8 +1123,7 @@ B reverse_c1(B t, B x) {
   usz cam = SH(x)[0];
   usz rp = 0;
   usz ip = IA(x);
-  MAKE_MUT(r, ip); mut_init(r, TI(x,elType));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, ip, TI(x,elType)); MUTG_INIT(r);
   for (usz i = 0; i < cam; i++) {
     ip-= csz;
     mut_copyG(r, rp, x, ip, csz);
@@ -1200,8 +1190,7 @@ static NOINLINE B rotate_highrank(bool inv, B w, B x) {
     ccsz*= xshc;
   }
   
-  MAKE_MUT(rm, IA(x)); mut_init(rm, TI(x,elType));
-  MUTG_INIT(rm);
+  MAKE_MUT_INIT(rm, IA(x), TI(x,elType)); MUTG_INIT(rm);
   
   usz n0 = csz*rot0;
   usz n1 = csz*(l0-rot0);
@@ -1239,8 +1228,7 @@ B reverse_c2(B t, B w, B x) {
   i64 am = WRAP_ROT(o2i64(w), cam);
   if (am==0) return x;
   am*= csz;
-  MAKE_MUT(r, xia); mut_init(r, TI(x,elType));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, TI(x,elType)); MUTG_INIT(r);
   mut_copyG(r, 0, x, am, xia-am);
   mut_copyG(r, xia-am, x, 0, am);
   B xf = getFillQ(x);
@@ -1398,8 +1386,7 @@ B pick_uc1(B t, B o, B x) { // TODO do in-place like pick_ucw; maybe just call i
   usz ia = IA(x);
   B arg = IGet(x, 0);
   B rep = c1(o, arg);
-  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(rep))); MUTG_INIT(r);
   mut_setG(r, 0, rep);
   mut_copyG(r, 1, x, 1, ia-1);
   return qWithFill(mut_fcd(r, x), xf);
@@ -1442,8 +1429,7 @@ B pick_ucw(B t, B o, B w, B x) {
     else if (xt==t_c16arr) { u16* xp = c16any_ptr(x); xp[wi] = o2cG(rep); return x; }
     else if (xt==t_c32arr) { u32* xp = c32any_ptr(x); xp[wi] = o2cG(rep); return x; }
   }
-  MAKE_MUT(r, xia); mut_init(r, el_or(TI(x,elType), selfElType(rep)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), selfElType(rep))); MUTG_INIT(r);
   mut_setG(r, wi, rep);
   mut_copyG(r, 0, x, 0, wi);
   mut_copyG(r, wi+1, x, wi+1, xia-wi-1);
@@ -1466,8 +1452,7 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, ux xr) {
   usz* repsh = SH(rep);
   if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
   
-  MAKE_MUT(r, xia);
-  mut_init(r, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
   if (wi<0) {
     mut_copyG(r, 0, x, 0, lv);
     mut_copyG(r, lv, rep, 0, tk);

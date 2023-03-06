@@ -64,7 +64,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   u8 re = xs<=I8_MAX? el_i8 : xs<=I16_MAX? el_i16 : xs<=I32_MAX? el_i32 : el_f64;
   if (xs < ia/128) {
     B ones = C1(slash, x);
-    MAKE_MUT(r0, ia) mut_init(r0, re); MUTG_INIT(r0);
+    MAKE_MUT_INIT(r0, ia, re); MUTG_INIT(r0);
     SGetU(ones)
     usz ri = 0;
     for (usz i = 0; i < xs; i++) {

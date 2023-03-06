@@ -256,7 +256,7 @@ static NOINLINE B select_cells(usz n, B x, ur xr) {
     } else {
       usz rs = shProd(xsh, 2, xr);
       usz xs = rs*xsh[1]; // aka csz
-      MAKE_MUT(rm, cam*rs); mut_init(rm, TI(x,elType)); MUTG_INIT(rm);
+      MAKE_MUT_INIT(rm, cam*rs, TI(x,elType)); MUTG_INIT(rm);
       usz xi = rs*n;
       usz ri = 0;
       for (usz i = 0; i < cam; i++) {
@@ -276,7 +276,7 @@ static NOINLINE B select_cells(usz n, B x, ur xr) {
 }
 
 static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
-  MAKE_MUT(r, IA(x)); mut_init(r, e); MUTG_INIT(r);
+  MAKE_MUT_INIT(r, IA(x), e); MUTG_INIT(r);
   usz cam = SH(x)[0];
   usz csz = SH(x)[1];
   assert(cam!=0 && csz!=0);

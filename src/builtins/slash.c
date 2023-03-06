@@ -687,7 +687,7 @@ B slash_c2(B t, B w, B x) {
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillQ(x);
       usz csz = arr_csz(x);
-      MAKE_MUT(r0, s*csz) mut_init(r0, TI(x,elType)); MUTG_INIT(r0);
+      MAKE_MUT_INIT(r0, s*csz, TI(x,elType)); MUTG_INIT(r0);
       SGetU(w)
       if (csz!=1) {   usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); for(ux j=0;j<c;j++) { mut_copyG(r0, ri, x, i*csz, csz); ri+= csz; } } }
       else { SGetU(x) usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); if (c)              { mut_fillG(r0, ri, GetU(x, i), c); ri+= c;   } } }
@@ -768,7 +768,7 @@ B slash_c2(B t, B w, B x) {
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
       B xf = getFillQ(x);
       if (xr!=1) {
-        MAKE_MUT(r0, IA(x) * wv) mut_init(r0, TI(x,elType)); MUTG_INIT(r0);
+        MAKE_MUT_INIT(r0, IA(x) * wv, TI(x,elType)); MUTG_INIT(r0);
         usz csz = arr_csz(x);
         ux ri = 0;
         for (ux i = 0; i < xlen; i++) for (ux j = 0; j < wv; j++) {
@@ -971,7 +971,7 @@ B slash_ucw(B t, B o, B w, B x) {
   usz argIA = IA(arg);
   B rep = c1(o, arg);
   if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
-  MAKE_MUT(r, ia); mut_init(r, el_or(TI(x,elType), TI(rep,elType)));
+  MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), TI(rep,elType)));
   SGet(x)
   SGet(rep)
   usz repI = 0;
@@ -979,7 +979,7 @@ B slash_ucw(B t, B o, B w, B x) {
     u64* d = bitarr_ptr(w);
     if (elInt(TI(x,elType)) && elInt(TI(rep,elType))) {
       if (r->fns->elType!=el_i32) mut_to(r, el_i32);
-      i32* rp = r->ai32;
+      i32* rp = r->a;
       x   = toI32Any(x);   i32* xp = i32any_ptr(x);
       rep = toI32Any(rep); i32* np = i32any_ptr(rep);
       for (usz i = 0; i < ia; i++) {

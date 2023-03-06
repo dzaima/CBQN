@@ -408,10 +408,10 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
   }
   arg = chr_squeezeChk(inc(arg));
   
-  MAKE_MUT(tmp, ia+1); mut_init(tmp, el_c32); MUTG_INIT(tmp);
+  MAKE_MUT_INIT(tmp, ia+1, el_c32); MUTG_INIT(tmp);
   mut_copyG(tmp, 0, arg, 0, ia);
   mut_setG(tmp, ia, m_c32(0));
-  u32* xp = tmp->ac32;
+  u32* xp = tmp->a;
   u32* xpN = xp + ia;
   
   BQNFFIEnt t;

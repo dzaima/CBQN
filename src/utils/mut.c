@@ -1,6 +1,42 @@
 #include "../core.h"
 #include "mut.h"
 
+FORCE_INLINE void mut_init(Mut* m, u8 n) {
+  m->fns = &mutFns[n];
+  usz ia = m->ia;
+  u64 sz;
+  // hack around inlining of the allocator too many times
+  switch(n) { default: UD;
+    case el_bit:              sz = BITARR_SZ(   ia); break;
+    case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
+    case el_i16: case el_c16: sz = TYARR_SZ(I16,ia); break;
+    case el_i32: case el_c32: sz = TYARR_SZ(I32,ia); break;
+    case el_f64:              sz = TYARR_SZ(F64,ia); break;
+    case el_B:;
+      HArr_p t = m_harrUp(ia);
+      m->val = (Arr*)t.c;
+      m->a = t.c->a;
+      return;
+  }
+  Arr* a = m_arr(sz, m->fns->valType, ia);
+  m->val = a;
+  m->a = ((TyArr*)a)->a;
+}
+
+#if __clang__
+NOINLINE void make_mut_init(Mut* rp, ux ia, u8 el) {
+  MAKE_MUT(r, ia)
+  mut_init(r, el);
+  *rp = r_val;
+}
+#else
+NOINLINE Mut make_mut_init(ux ia, u8 el) {
+  MAKE_MUT(r, ia)
+  mut_init(r, el);
+  return r_val;
+}
+#endif
+
 static Arr* (*cpyFns[])(B) = {
   [el_bit] = cpyBitArr,
   [el_i8]  = cpyI8Arr,  [el_c8]  = cpyC8Arr,
@@ -35,8 +71,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
 
 NOINLINE B vec_addF(B w, B x) {
   usz wia = IA(w);
-  MAKE_MUT(r, wia+1); mut_init(r, el_or(TI(w,elType), selfElType(x)));
-  MUTG_INIT(r);
+  MAKE_MUT_INIT(r, wia+1, el_or(TI(w,elType), selfElType(x))); MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
   mut_setG(r, wia, x);
   dec(w);
@@ -383,16 +418,16 @@ MAKE_CCPY(C32, c32)
 
 
 
-static B m_getU_MAX(Mut* m, usz ms) { err("m_setG_MAX"); }
-static B m_getU_bit(Mut* m, usz ms) { return m_i32(bitp_get(m->abit, ms)); }
-static B m_getU_i8 (Mut* m, usz ms) { return m_i32(m->ai8 [ms]); }
-static B m_getU_i16(Mut* m, usz ms) { return m_i32(m->ai16[ms]); }
-static B m_getU_i32(Mut* m, usz ms) { return m_i32(m->ai32[ms]); }
-static B m_getU_c8 (Mut* m, usz ms) { return m_c32(m->ac8 [ms]); }
-static B m_getU_c16(Mut* m, usz ms) { return m_c32(m->ac16[ms]); }
-static B m_getU_c32(Mut* m, usz ms) { return m_c32(m->ac32[ms]); }
-static B m_getU_f64(Mut* m, usz ms) { return m_f64(m->af64[ms]); }
-static B m_getU_B  (Mut* m, usz ms) { return m->aB[ms]; }
+static B m_getU_MAX(void* a, usz ms) { err("m_setG_MAX"); }
+static B m_getU_bit(void* a, usz ms) { return m_i32(bitp_get(((u64*) a), ms)); }
+static B m_getU_i8 (void* a, usz ms) { return m_i32(((i8* ) a)[ms]); }
+static B m_getU_i16(void* a, usz ms) { return m_i32(((i16*) a)[ms]); }
+static B m_getU_i32(void* a, usz ms) { return m_i32(((i32*) a)[ms]); }
+static B m_getU_c8 (void* a, usz ms) { return m_c32(((u8* ) a)[ms]); }
+static B m_getU_c16(void* a, usz ms) { return m_c32(((u16*) a)[ms]); }
+static B m_getU_c32(void* a, usz ms) { return m_c32(((u32*) a)[ms]); }
+static B m_getU_f64(void* a, usz ms) { return m_f64(((f64*) a)[ms]); }
+static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 M_CopyF copyFns[el_MAX];
 M_FillF fillFns[el_MAX];

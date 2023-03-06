@@ -311,7 +311,7 @@ B select_c2(B t, B w, B x) {
     usz csz = arr_csz(x);
     CFRes f = cf_get(1, csz<<elWidthLogBits(xe));
     
-    MAKE_MUT(rm, ria); mut_init(rm, xe);
+    MAKE_MUT_INIT(rm, ria, xe);
     usz i = 0; f64 badw;
     if (xe<el_B && elInt(we)) {
       void* wp = tyany_ptr(w);
@@ -472,7 +472,7 @@ B select_ucw(B t, B o, B w, B x) {
         return x;
       }
     }
-    MAKE_MUT(r, xia); mut_init(r, el_or(xe, re));
+    MAKE_MUT_INIT(r, xia, el_or(xe, re));
     MUTG_INIT(r);
     mut_copyG(r, 0, x, 0, xia);
     SGet(rep)
@@ -486,7 +486,7 @@ B select_ucw(B t, B o, B w, B x) {
     decG(w); decG(rep); FREE_CHECK;
     return mut_fcd(r, x);
   }
-  MAKE_MUT(r, xia); mut_init(r, el_or(xe, re));
+  MAKE_MUT_INIT(r, xia, el_or(xe, re));
   MUTG_INIT(r);
   mut_copyG(r, 0, x, 0, xia);
   SGet(rep)

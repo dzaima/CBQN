@@ -419,7 +419,7 @@ B nativeComp_c2(B t, B w, B x) {
   B tokens = nc_tokenize(prims, sysvs, xBuf, xia, &fnBlock);
   decG(xBufO);
   
-  // // parse
+  // parse
   B objs = emptyHVec();
   i32* bc0;
   B bytecode = m_i32arrv(&bc0, fnBlock? 3 : 0);

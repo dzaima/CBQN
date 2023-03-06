@@ -137,7 +137,7 @@ B ud_c2(B t, B w, B x) {
   usz ria=cia;
   for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("↕: result shape too large");
   TALLOC(usz, ri, fr-1);
-  MAKE_MUT(r, ria); mut_init(r, TI(x,elType));
+  MAKE_MUT_INIT(r, ria, TI(x,elType));
   MUTG_INIT(r);
   usz k = cia*rsh[fr-1];
   if (wr==1) {

@@ -3,20 +3,21 @@
 
 /* Usage:
 
-Start with MAKE_MUT(name, itemAmount);
-MAKE_MUT allocates the object on the stack, so everything must happen within the scope of it.
-Optionally, call mut_init(name, el_something) with an appropriate ElType.
-End with mut_f(v|c|cd|p);
+Start with MAKE_MUT(name, itemAmount) or MAKE_MUT_INIT(name, itemAmount, elType).
+Those allocate the Mut instance on the stack, so it must be finished before the scope ends.
+MAKE_MUT doesn't allocate any backing array, and will do so during mut_(set|fill|copy) (one of which must be the next operation on the Mut).
+MAKE_MUT_INIT makes a backing array with the specified element type; mut_(set|fill|copy) can still widen it, but the primary use-case is for the G-postfixed functions.
 
-There must be no allocations while a mut object is being built so GC doesn't do bad things.
-mut_pfree must be used to free a partially finished `mut` instance safely (e.g. before throwing an error).
-Methods ending with G expect that mut_init has been called with a type that can fit the elements that it'll set, and MUTG_INIT afterwards in the same scope.
+End with mut_f(v|c|cd|p);.
+
+There must be no allocations while a mut object is being built so GC doesn't read the partially-initialized object.
+mut_pfree must be used to free a partially filled `mut` instance safely (e.g. before throwing an error).
 
 */
 typedef struct Mut Mut;
 typedef struct MutFns MutFns;
 typedef void (*M_SetF)(void*, usz, B);
-typedef B (*M_GetF)(Mut*, usz);
+typedef B (*M_GetF)(void*, usz);
 struct MutFns {
   u8 elType;
   u8 valType;
@@ -31,37 +32,18 @@ struct Mut {
   MutFns* fns;
   usz ia;
   Arr* val;
-  union {
-    void* a; B* aB;
-    i8* ai8; i16* ai16; i32* ai32;
-    u8* ac8; u16* ac16; u32* ac32;
-    f64* af64; u64* abit;
-  };
+  void* a;
 };
-#define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
 
-static void mut_init(Mut* m, u8 n) {
-  m->fns = &mutFns[n];
-  usz ia = PIA(m);
-  u64 sz;
-  // hack around inlining of the allocator too many times
-  switch(n) { default: UD;
-    case el_bit:              sz = BITARR_SZ(   ia); break;
-    case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
-    case el_i16: case el_c16: sz = TYARR_SZ(I16,ia); break;
-    case el_i32: case el_c32: sz = TYARR_SZ(I32,ia); break;
-    case el_f64:              sz = TYARR_SZ(F64,ia); break;
-    case el_B:;
-      HArr_p t = m_harrUp(ia);
-      m->val = (Arr*)t.c;
-      m->aB = t.c->a;
-      return;
-  }
-  Arr* a = m_arr(sz, m->fns->valType, ia);
-  m->val = a;
-  m->a = ((TyArr*)a)->a;
-}
 void mut_to(Mut* m, u8 n);
+#if __clang__ && __has_attribute(noescape) // workaround for clang not realizing that stack-returned structs aren't captured
+  void make_mut_init(__attribute__((noescape)) Mut* rp, ux ia, u8 el);
+  #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val; Mut* N = &N##_val; make_mut_init(N, IA, EL);
+#else
+  Mut make_mut_init(ux ia, u8 el);
+  #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = make_mut_init(IA, EL); Mut* N = &N##_val;
+#endif
+#define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   NOGC_E;
@@ -70,13 +52,13 @@ static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   SPRNK(a, 1);
   return taga(a);
 }
-static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
+static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX); // doesn't consume x
   NOGC_E;
   Arr* a = m->val;
   arr_shCopy(a, x);
   return taga(a);
 }
-static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX);
+static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX); // consumes x
   NOGC_E;
   Arr* a = m->val;
   arr_shCopy(a, x);
@@ -100,25 +82,24 @@ static void mut_set(Mut* m, usz ms, B x) { m->fns->m_set(m, ms, x); }
 
 
 // clears the object (decrements its refcount) at position ms
-static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(m->aB[ms]); }
+static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(((B*)m->a)[ms]); }
 
 // gets object at position ms, without increasing refcount
-static B mut_getU(Mut* m, usz ms) { return m->fns->m_getU(m, ms); }
+static B mut_getU(Mut* m, usz ms) { return m->fns->m_getU(m->a, ms); }
 
 // doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); }
 
-// expects x to be an array, each position must be written to precisely once
-// doesn't consume
+// doesn't consume; expects x to be an array, each position must be written to precisely once
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
 
 
+
 #define MUTG_INIT(N) MutFns N##_mutfns = *N->fns; void* N##_mutarr = N->a
-// // mut_set but assumes the type of x already fits in m
+// these methods function as the non-G-postfixed ones, except that
+// the MAKE_MUT_INIT must have been used, MUTG_INIT called, and x must fit into the array type initialized to
 #define mut_setG(N, ms, x) N##_mutfns.m_setG(N##_mutarr, ms, x)
-// // mut_fill but assumes the type of x already fits in m
 #define mut_fillG(N, ms, x, l) N##_mutfns.m_fillG(N##_mutarr, ms, x, l)
-// // mut_copy but assumes the type of x already fits in m
 #define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N##_mutarr, ms, x, xs, l)
 
 
@@ -187,7 +168,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
     case t_harr: if (fsizeof(HArr,a,B,ria)<wsz) { rp = harr_ptr(w); goto yes; } break;
   }
   no:; // failed to reuse
-  MAKE_MUT(r, ria); mut_init(r, el_or(TI(w,elType), TI(x,elType)));
+  MAKE_MUT_INIT(r, ria, el_or(TI(w,elType), TI(x,elType)));
   MUTG_INIT(r);
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
