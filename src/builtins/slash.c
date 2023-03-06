@@ -937,8 +937,7 @@ B slash_im(B t, B x) {
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
       SLOW1("/⁼", x);
-      B* xp = arr_bptr(x);
-      if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
+      B* xp = TO_BPTR(x);
       usz i,j; i64 max=-1;
       for (i = 0; i < xia; i++) { i64 c=o2i64(xp[i]); if (c<=max) break; max=c; }
       for (j = i; j < xia; j++) { i64 c=o2i64(xp[j]); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }

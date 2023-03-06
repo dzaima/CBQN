@@ -401,7 +401,7 @@ B select_ucw(B t, B o, B w, B x) {
       u8 me = xe>re?xe:re;
       bool reuse = reusable(x);
       if (me==el_i32) {
-        I32Arr* xn = reuse? toI32Arr(REUSE(x)) : cpyI32Arr(x);
+        I32Arr* xn = reuse? toI32Arr(REUSE(x)) : (I32Arr*)cpyI32Arr(x);
         i32* xp = i32arrv_ptr(xn);
         rep = toI32Any(rep); i32* rp = i32any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
@@ -412,7 +412,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         decG(w); decG(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i8) {
-        I8Arr* xn = reuse? toI8Arr(REUSE(x)) : cpyI8Arr(x);
+        I8Arr* xn = reuse? toI8Arr(REUSE(x)) : (I8Arr*)cpyI8Arr(x);
         i8* xp = i8arrv_ptr(xn);
         rep = toI8Any(rep); i8* rp = i8any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
@@ -423,7 +423,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         decG(w); decG(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_i16) {
-        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : cpyI16Arr(x);
+        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : (I16Arr*)cpyI16Arr(x);
         i16* xp = i16arrv_ptr(xn);
         rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
         for (usz i = 0; i < wia; i++) {
@@ -434,7 +434,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         decG(w); decG(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_bit) {
-        BitArr* xn = reuse? toBitArr(REUSE(x)) : cpyBitArr(x);
+        BitArr* xn = reuse? toBitArr(REUSE(x)) : (BitArr*)cpyBitArr(x);
         u64* xp = bitarrv_ptr(xn);
         rep = taga(toBitArr(rep)); u64* rp = bitarr_ptr(rep);
         for (usz i = 0; i < wia; i++) {
@@ -445,7 +445,7 @@ B select_ucw(B t, B o, B w, B x) {
         }
         decG(w); decG(rep); FREE_CHECK; return taga(xn);
       } else if (me==el_f64) {
-        F64Arr* xn = reuse? toF64Arr(REUSE(x)) : cpyF64Arr(x);
+        F64Arr* xn = reuse? toF64Arr(REUSE(x)) : (F64Arr*)cpyF64Arr(x);
         f64* xp = f64arrv_ptr(xn);
         rep = toF64Any(rep); f64* rp = f64any_ptr(rep);
         for (usz i = 0; i < wia; i++) {

@@ -299,9 +299,9 @@ if (TY(x)==t_harr || TY(x)==t_hslice) B* xp = hany_ptr(x); // note that elType==
 if (TY(x)==t_fillarr) B* xp = fillarr_ptr(x);
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by contiguous B*-s
 
-// functions to convert arrays to a specific type array: (all consume their argument)
+// functions to convert arrays to a specific type array: (all consume their argument, and assume that the elements fit in the desired type)
 I8Arr* a = toI8Arr(x); // convert x to an I8Arr instance (returns the argument if it already is)
-I8Arr* a = cpyI8Arr(x); // get an I8Arr with reference count 1 with the same items
+I8Arr* a = (I8Arr*)cpyI8Arr(x); // get an I8Arr with reference count 1 with the same items & shape
 B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
 // same logic applies for:
 // toBitArr/toI8Arr/toI16Arr/toI32Arr/toF64Arr/toC8Arr/toC16Arr/toC32Arr/toHArr

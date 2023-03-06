@@ -1288,7 +1288,7 @@ B transp_c1(B t, B x) {
   bool toBit = false;
   if (h==2) {
     if (xe==el_B) {
-      B* xp = arr_bptr(x); if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; }
+      B* xp = TO_BPTR(x);
       B* x0 = xp; B* x1 = x0+w;
       HArr_p rp = m_harrUp(ia);
       for (usz i=0; i<w; i++) { rp.a[i*2] = inc(x0[i]); rp.a[i*2+1] = inc(x1[i]); }
@@ -1354,9 +1354,8 @@ B transp_c1(B t, B x) {
                                { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_B: { // can't be bothered to implement a bitarr transpose
-        B* xp = arr_bptr(x);
         B xf = getFillR(x);
-        if (xp==NULL) { HArr* xa=cpyHArr(x); x=taga(xa); xp=xa->a; } // TODO extract this to an inline function
+        B* xp = TO_BPTR(x);
         
         HArr_p p = m_harrUp(ia);
         for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[xi++]); // TODO inc afterwards, but don't when there's a method of freeing a HArr without freeing its elements

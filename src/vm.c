@@ -460,7 +460,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   comp->blockAm = 0;
   comp->objs = NULL;
   // and now finally it's safe to allocate stuff
-  HArr* objArr = cpyHArr(objs);
+  HArr* objArr = (HArr*)cpyHArr(objs);
   comp->objs = objArr;
   usz objAm = PIA(objArr);
   for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);

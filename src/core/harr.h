@@ -105,8 +105,10 @@ static B m_hunit(B x) { // consumes
 static B* harr_ptr(B x) { VTY(x,t_harr); return c(HArr,x)->a; }
 static B* hany_ptr(B x) { return TY(x)==t_hslice? c(HSlice,x)->a : harr_ptr(x); }
 
-HArr* cpyHArr(B x); // consumes
-static HArr* toHArr(B x) { return TY(x)==t_harr? c(HArr,x) : cpyHArr(x); }
+Arr* cpyHArr(B x); // consumes
+static HArr* toHArr(B x) { return TY(x)==t_harr? c(HArr,x) : (HArr*) cpyHArr(x); }
+#define TO_BPTR(X) ({ B* bp_ = arr_bptr(X); if (bp_==NULL) { HArr* nha_ = (HArr*)cpyHArr(X); X=taga(nha_); bp_=nha_->a; }; bp_; })
+
 B m_caB(usz ia, B* a);
 
 // consumes all

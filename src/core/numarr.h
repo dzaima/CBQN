@@ -82,18 +82,18 @@ static u64* bitarr_ptr(B x) { VTY(x, t_bitarr); return (u64*)c(BitArr,x)->a; }
 static u64* bitarrv_ptr(TyArr* x) { return (u64*)x->a; }
 
 
-I8Arr*  cpyI8Arr (B x); // consumes
-I16Arr* cpyI16Arr(B x); // consumes
-I32Arr* cpyI32Arr(B x); // consumes
-F64Arr* cpyF64Arr(B x); // consumes
-BitArr* cpyBitArr(B x); // consumes
+Arr* cpyI8Arr (B x); // consumes
+Arr* cpyI16Arr(B x); // consumes
+Arr* cpyI32Arr(B x); // consumes
+Arr* cpyF64Arr(B x); // consumes
+Arr* cpyBitArr(B x); // consumes
 
 // all consume x
-static I8Arr*  toI8Arr (B x) { return TY(x)==t_i8arr ? c(I8Arr, x) : cpyI8Arr (x); }
-static I16Arr* toI16Arr(B x) { return TY(x)==t_i16arr? c(I16Arr,x) : cpyI16Arr(x); }
-static I32Arr* toI32Arr(B x) { return TY(x)==t_i32arr? c(I32Arr,x) : cpyI32Arr(x); }
-static F64Arr* toF64Arr(B x) { return TY(x)==t_f64arr? c(F64Arr,x) : cpyF64Arr(x); }
-static BitArr* toBitArr(B x) { return TY(x)==t_bitarr? c(BitArr,x) : cpyBitArr(x); }
+static I8Arr*  toI8Arr (B x) { return TY(x)==t_i8arr ? c(I8Arr, x) : (I8Arr*)  cpyI8Arr (x); }
+static I16Arr* toI16Arr(B x) { return TY(x)==t_i16arr? c(I16Arr,x) : (I16Arr*) cpyI16Arr(x); }
+static I32Arr* toI32Arr(B x) { return TY(x)==t_i32arr? c(I32Arr,x) : (I32Arr*) cpyI32Arr(x); }
+static F64Arr* toF64Arr(B x) { return TY(x)==t_f64arr? c(F64Arr,x) : (F64Arr*) cpyF64Arr(x); }
+static BitArr* toBitArr(B x) { return TY(x)==t_bitarr? c(BitArr,x) : (BitArr*) cpyBitArr(x); }
 
 static B toI8Any (B x) { u8 t=TY(x); return t==t_i8arr  || t==t_i8slice ? x : taga(cpyI8Arr (x)); }
 static B toI16Any(B x) { u8 t=TY(x); return t==t_i16arr || t==t_i16slice? x : taga(cpyI16Arr(x)); }

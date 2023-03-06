@@ -190,11 +190,7 @@ B variation_c2(B t, B w, B x) {
       arr_shCopy(t, x);
       HArr* h = NULL;
       
-      B* xp = arr_bptr(x);
-      if (xp==NULL) {
-        h = cpyHArr(incG(x));
-        xp = h->a;
-      }
+      B* xp = TO_BPTR(x);
       
       B* rp = fillarr_ptr(t);
       for (usz i = 0; i < xia; i++) rp[i] = inc(xp[i]);

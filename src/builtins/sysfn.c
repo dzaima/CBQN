@@ -1190,11 +1190,11 @@ static B convert(CastType t, B x) {
 }
 static TyArr* copy(CastType t, B x) {
   switch (t.s) {
-    case  1: return cpyBitArr(x);
-    case  8: return t.c ? cpyC8Arr (x) : cpyI8Arr (x);
-    case 16: return t.c ? cpyC16Arr(x) : cpyI16Arr(x);
-    case 32: return t.c ? cpyC32Arr(x) : cpyI32Arr(x);
-    case 64: return cpyF64Arr(x);
+    case  1: return (TyArr*) (cpyBitArr(x));
+    case  8: return (TyArr*) (t.c ? cpyC8Arr (x) : cpyI8Arr (x));
+    case 16: return (TyArr*) (t.c ? cpyC16Arr(x) : cpyI16Arr(x));
+    case 32: return (TyArr*) (t.c ? cpyC32Arr(x) : cpyI32Arr(x));
+    case 64: return (TyArr*) (cpyF64Arr(x));
     default: thrM("•bit._cast: unsupported input width");
   }
 }
