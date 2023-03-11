@@ -18,7 +18,7 @@ def swap{w,x} = {
 }
 
 # width{W} ≤ width{X}
-equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
+fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   def vw = arch_defvw
   def bulk = vw / width{X}
   if (W!=X) if (d!=0) swap{w,x}
@@ -77,23 +77,23 @@ equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   1
 }
 
-'avx2_equal_1_1'    = equal{u1, u1}
-'avx2_equal_1_8'    = equal{u1, u8}
-'avx2_equal_1_16'   = equal{u1, u16}
-'avx2_equal_1_32'   = equal{u1, u32}
-'avx2_equal_1_f64'  = equal{u1, f64}
+export{'avx2_equal_1_1',     equal{u1, u1}}
+export{'avx2_equal_1_8',     equal{u1, u8}}
+export{'avx2_equal_1_16',    equal{u1, u16}}
+export{'avx2_equal_1_32',    equal{u1, u32}}
+export{'avx2_equal_1_f64',   equal{u1, f64}}
 
-'avx2_equal_8_8'    = equal{i8, i8}
+export{'avx2_equal_8_8',     equal{i8, i8}}
 
-'avx2_equal_s8_16'  = equal{i8, i16}
-'avx2_equal_s8_32'  = equal{i8, i32}
-'avx2_equal_s16_32' = equal{i16, i32}
+export{'avx2_equal_s8_16',   equal{i8, i16}}
+export{'avx2_equal_s8_32',   equal{i8, i32}}
+export{'avx2_equal_s16_32',  equal{i16, i32}}
 
-'avx2_equal_s8_f64' = equal{i8,  f64}
-'avx2_equal_s16_f64'= equal{i16, f64}
-'avx2_equal_s32_f64'= equal{i32, f64}
-'avx2_equal_f64_f64'= equal{f64, f64}
+export{'avx2_equal_s8_f64',  equal{i8,  f64}}
+export{'avx2_equal_s16_f64', equal{i16, f64}}
+export{'avx2_equal_s32_f64', equal{i32, f64}}
+export{'avx2_equal_f64_f64', equal{f64, f64}}
 
-'avx2_equal_u8_16'  = equal{u8, u16}
-'avx2_equal_u8_32'  = equal{u8, u32}
-'avx2_equal_u16_32' = equal{u16, u32}
+export{'avx2_equal_u8_16',   equal{u8, u16}}
+export{'avx2_equal_u8_32',   equal{u8, u32}}
+export{'avx2_equal_u16_32',  equal{u16, u32}}

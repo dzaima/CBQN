@@ -173,12 +173,12 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   }
 }
 
-arithAAc{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : u64 = {
+fn arithAAc{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : u64 = {
   arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
   if (mode==1) len
   else 0
 }
-arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
+fn arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
   arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
 }
 
@@ -189,7 +189,7 @@ def arithAA{mode, F, W, X, R} = {
 }
 
 # mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed
-arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
+fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   # show{F, swap, mode, W, X, R}
   assert{len>0}
   def bulk = vw / max{width{W}, width{R}}
@@ -214,7 +214,7 @@ arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
 
 def arithSA{mode, F, swap, W, X, R} = arithSAf{arch_defvw, mode, F, swap, W, X, R}
 
-andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
+fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   assert{vw>=64}
   def bulk = vw / width{u8}
   def T8 = [bulk]u8
@@ -225,6 +225,6 @@ andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   }}
 }
 
-'simd_andBytes'=andBytes{arch_defvw}
-'orSAc_f64_f64_f64'=arithSA{2,bqn_or,0,f64,f64,f64}
+export{'simd_andBytes', andBytes{arch_defvw}}
+export{'orSAc_f64_f64_f64', arithSA{2,bqn_or,0,f64,f64,f64}}
 include 'gen/arDefs'

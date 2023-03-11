@@ -6,6 +6,8 @@ oper ~~ reinterpret infix right 55
 oper ** broadcast infix right 55
 def Size = u64
 def load{x} = *x
+def exportN{f, ...ns} = each{{n} => export{n, f}, ns}
+def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
 def elwidth{T} = width{eltype{T}}
 

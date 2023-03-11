@@ -24,10 +24,10 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   }}
 }
 
-bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
+fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
   bitsel{VL, T, *T~~r, bits, trunc{T,e0}, trunc{T,e1}, len}
 }
 
 def table{w} = each{{T} => bitsel_i{w, T}, tup{u8, u16, u32, u64}}
 
-def tup_bitsel = table{arch_defvw}; v_bitsel:*type{tupsel{0,tup_bitsel}} = tup_bitsel; 'simd_bitsel'=v_bitsel
+exportT{'simd_bitsel', table{arch_defvw}}

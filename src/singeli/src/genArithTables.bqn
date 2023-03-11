@@ -163,7 +163,7 @@ Make ← {𝕊ns:
             tr≢@?
             siName ← ∾⟨id, argarr, 𝕨⊑"?ce", ∾'_'⊸∾¨ tw‿tx‿tr⟩
             𝕨 { 𝕊:
-              siSrc∾↩ ∾⟨"'", siName, "'=arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, 1⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, '}', nl⟩
+              siSrc∾↩ ∾⟨"export{'", siName, "', arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, 1⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, "}}", nl⟩
               singeliASFns∾↩ <siName
             }⍟⊢ ¬⊑(<siName)∊singeliASFns
             siName;
@@ -242,7 +242,7 @@ Make ← {𝕊ns:
 
 GenSingeli ← { 𝕊name‿w‿x‿r‿tm‿si:
   si≢@?
-    siSrc ∾↩ ∾⟨"'", name, "'=arithAA{", '0'+tm, ',', si, ',', w⊑tySiName, ',', x⊑tySiName, ',', r⊑tySiName, '}', nl⟩;
+    siSrc ∾↩ ∾⟨"export{'", name, "', arithAA{", '0'+tm, ',', si, ',', w⊑tySiName, ',', x⊑tySiName, ',', r⊑tySiName, "}}", nl⟩;
   # else
     @
 }

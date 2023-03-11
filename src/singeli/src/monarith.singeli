@@ -12,7 +12,7 @@ include './bitops'
 include './mask'
 
 
-absFn{T}(r:*void, x:*void, len:u64) : u64 = {
+fn absFn{T}(r:*void, x:*void, len:u64) : u64 = {
   def bulk = arch_defvw/width{T}
   def VT = [bulk]T
   muLoop{bulk, tern{T==f64, 2, 1}, len, {is, M} => {
@@ -23,6 +23,4 @@ absFn{T}(r:*void, x:*void, len:u64) : u64 = {
   len
 }
 
-def tup_abs = each{{T}=>absFn{T}, tup{i8, i16, i32, f64}}
-t_abs:*type{tupsel{0,tup_abs}} = tup_abs
-'simd_abs' = t_abs
+exportT{'simd_abs', each{{T}=>absFn{T}, tup{i8, i16, i32, f64}}}

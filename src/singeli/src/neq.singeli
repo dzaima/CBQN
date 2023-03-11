@@ -4,7 +4,7 @@ include './sse3'
 def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
 def unpacklo{a:T,b:T & T==[2]u64} = emit{T, '_mm_unpacklo_epi64', a, b}
 
-clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
+fn clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
@@ -25,7 +25,7 @@ clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
     storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
   }
 }
-clmul_scan_ne_bit(init:u64, x:*u64, r:*u64, ia:u64) : void = {
+fn clmul_scan_ne_bit(init:u64, x:*u64, r:*u64, ia:u64) : void = {
   clmul_scan_ne_any(*void~~x, *void~~r, init, ia, -(u64~~1))
 }
-'clmul_scan_ne' = clmul_scan_ne_bit
+export{'clmul_scan_ne', clmul_scan_ne_bit}

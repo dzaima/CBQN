@@ -21,7 +21,7 @@ def reduce_pairwise{op, plog, x:*T, len, init:T} = {
   r
 }
 
-fold_idem{T==f64, op}(x:*T, len:u64) : T = {
+fn fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   def step = 256/width{T}
   def V = [step]T
   xv:= *V ~~ x
@@ -41,10 +41,10 @@ fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   extract{r, 0}
 }
 
-'avx2_fold_min_f64' = fold_idem{f64,min}
-'avx2_fold_max_f64' = fold_idem{f64,max}
+export{'avx2_fold_min_f64', fold_idem{f64,min}}
+export{'avx2_fold_max_f64', fold_idem{f64,max}}
 
-fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
+fn fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
   def step = 256/width{T}
   def V = [step]T
   xv:= *V ~~ x
@@ -53,4 +53,4 @@ fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
   r:= reduce_pairwise{op, 2, xv, e, i}
   extract{mix{op, r}, 0}
 }
-'avx2_sum_f64' = fold_assoc_0{f64,+}
+export{'avx2_sum_f64', fold_assoc_0{f64,+}}

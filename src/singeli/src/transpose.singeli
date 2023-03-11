@@ -19,7 +19,7 @@ def vtranspose{x & tuplen{x}==8 & type{tupsel{0,x}}==[8]i32 & hasarch{'X86_64'}}
 
 
 
-transpose_rec{T}(rpo:*T, xpo:*T, w:u64, h:u64, wm:i64, hm:i64, scl:u64) : void = {
+fn transpose_rec{T}(rpo:*T, xpo:*T, w:u64, h:u64, wm:i64, hm:i64, scl:u64) : void = {
   if (wm<=0 or hm<=0) return{}
   
   if (scl==1) {
@@ -37,7 +37,7 @@ transpose_rec{T}(rpo:*T, xpo:*T, w:u64, h:u64, wm:i64, hm:i64, scl:u64) : void =
   }
 }
 
-transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+fn transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   
@@ -60,4 +60,4 @@ transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   if (h%8) emit{void, 'base_transpose_u32', rp+  (h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
 }
 
-'simd_transpose_i32' = transpose{u32}
+export{'simd_transpose_i32', transpose{u32}}

@@ -86,7 +86,7 @@ def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:u64} = rep_const_shuffle{V, wv, get
 def rcsh_vals = slice{basic_rep, 1} # Handle 2 specially
 rcsh_offs:*u8 = shiftright{0, scan{+,rcsh_vals}}
 rcsh_data:*i8 = join{join{each{get_shuf_data, rcsh_vals}}}
-rcsh_sub{wv}(elbytes:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
+fn rcsh_sub{wv}(elbytes:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
   def V = [32]i8
   def st = read_shuf_vecs{wv, elbytes, sh}
   rep_const_shuffle{V, wv, rep_iter_from_sh{st}, *V~~x, *V~~r, n}
@@ -95,7 +95,7 @@ rcsh_sub{wv}(elbytes:u64, x:*i8, r:*i8, n:u64, sh:*[32]i8) : void = {
 def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
 rcsh4_dat:*i8 = join{join{each{{wv}=>get_shuf_data{wv, 4}, rcsh4_dom}}}
 rchs4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
-rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
+fn rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   def h = 4
   def sh = read_shuf_vecs{h, elbytes, *[32]i8~~rcsh4_dat + 4*load{rchs4_lkup,wv}}
   def V = [32]i8
@@ -125,7 +125,7 @@ rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   if (q) maskstoreF{*V~~r, maskOf{V, q}, s}
 }
 
-rep_const_shuffle_any(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
+fn rep_const_shuffle_any(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
   if (wv > tupsel{-1,rcsh_vals}) {
     return{rep_const_shuffle_partial4(wv, elbytes, x, r, n)}
   }
@@ -146,10 +146,10 @@ def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
     store{*V~~r, -1, v}
   }
 }
-rep_const_broadcast{T, kv    }(wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, unroll, wv, x, r, n}
-rep_const_broadcast{T}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, for   , wv, x, r, n}
+fn rep_const_broadcast{T, kv    }(wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, unroll, wv, x, r, n}
+fn rep_const_broadcast{T}(kv:u64, wv:u64, x:*T, r:*T, n:u64) : void = rep_const_broadcast{T, kv, for   , wv, x, r, n}
 
-rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
+fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   assert{wv>=2}
   if (wv>=8 and wv<=fact_size) {
     fa := promote{u64, load{factors,wv-8}}
@@ -180,5 +180,5 @@ rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   }
 }
 
-'constrep_u8'  = rep_const{i8 }; 'constrep_u16' = rep_const{i16}
-'constrep_u32' = rep_const{i32}; 'constrep_u64' = rep_const{u64}
+export{'constrep_u8',  rep_const{i8 }}; export{'constrep_u16', rep_const{i16}}
+export{'constrep_u32', rep_const{i32}}; export{'constrep_u64', rep_const{u64}}

@@ -23,7 +23,7 @@ def copyFromBits{T, loadFn, rp, l:u64} = {
 }
 
 
-copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   def vw = arch_defvw
   assert{l!=0}
   
@@ -75,7 +75,7 @@ copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   }
 }
 
-copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+fn copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   assert{l!=0}
   x0:= (*u8~~xRaw) + cbqn_tyArrOffset{}
   xs:= u64~~((*u8~~x) - x0)
@@ -91,60 +91,26 @@ copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   # }
 }
 
-# simd_copy_src_dst
-# x→int & equal-width copies
-'simd_copy_1_1'     = copy{u1,  u1}
-'simd_copy_1_i8'    = copy{u1,  i8}
-'simd_copy_1_i16'   = copy{u1,  i16}
-'simd_copy_1_i32'   = copy{u1,  i32}
 
-'simd_copy_i8_1'    = copy{i8,  u1}
-'simd_copy_i8_i8', 'simd_copy_c8_c8' = copy{i8,  i8}
-'simd_copy_i8_i16'  = copy{i8,  i16}
-'simd_copy_i8_i32'  = copy{i8,  i32}
+def gen{p} = {
+  def ts = tup{u1,  i8,  i16,  i32,  f64,  u8,  u16,  u32,  u64}
+  def tn = tup{'1','i8','i16','i32','f64','c8','c16','c32','B'}
+  def tm = tup{0,   0,   0,    0,    0,    1,   1,    1,    2}
+  each{{tx0,nx,mx} => {
+    each{{tr0,nr,mr} => {
+      if ((mx==mr or mx==2 or mr==2) and (if (mx==2) mr==1; else 1)) {
+        def tr = if (mx==0 and mr==2) f64; else if (tx0==tr0 and mx==1) ty_s{tx0}; else tr0
+        def tx = if (mr==0 and mx==2) f64; else if (tx0==tr0 and mx==1) ty_s{tx0}; else tx0
+        export{merge{p, nx, '_', nr}, copy{tx, tr}}
+      }
+    }, ts, tn, tm}
+  }, ts, tn, tm}
+}
 
-'simd_copy_i16_1'   = copy{i16, u1}
-'simd_copy_i16_i8'  = copy{i16, i8}
-'simd_copy_i16_i16', 'simd_copy_c16_c16' = copy{i16, i16}
-'simd_copy_i16_i32' = copy{i16, i32}
-
-'simd_copy_i32_1'   = copy{i32, u1}
-'simd_copy_i32_i8'  = copy{i32, i8}
-'simd_copy_i32_i16' = copy{i32, i16}
-'simd_copy_i32_i32', 'simd_copy_c32_c32'= copy{i32, i32}
-
-'simd_copy_f64_1'   = copy{f64, u1}
-'simd_copy_f64_i8'  = copy{f64, i8}
-'simd_copy_f64_i16' = copy{f64, i16}
-'simd_copy_f64_i32' = copy{f64, i32}
-
-# x→f64, x→B (no simd_copy_B_B because that may possibly need refcounting)
-'simd_copy_1_f64',   'simd_copy_1_B'   = copy{u1,  f64}
-'simd_copy_i8_f64',  'simd_copy_i8_B'  = copy{i8,  f64}
-'simd_copy_i16_f64', 'simd_copy_i16_B' = copy{i16, f64}
-'simd_copy_i32_f64', 'simd_copy_i32_B' = copy{i32, f64}
-'simd_copy_f64_f64', 'simd_copy_f64_B' = copy{f64, f64}
-
-# chr→x
-'simd_copy_c8_c16'  = copy{u8, u16}
-'simd_copy_c8_c32'  = copy{u8, u32}
-'simd_copy_c8_B'    = copy{u8, u64}
-
-'simd_copy_c16_c8'  = copy{u16, u8}
-'simd_copy_c16_c32' = copy{u16, u32}
-'simd_copy_c16_B'   = copy{u16, u64}
-
-'simd_copy_c32_c8'  = copy{u32, u8}
-'simd_copy_c32_c16' = copy{u32, u16}
-'simd_copy_c32_B'   = copy{u32, u64}
-
-# B→chr
-'simd_copy_B_c8'  = copy{u64, u8}
-'simd_copy_B_c16' = copy{u64, u16}
-'simd_copy_B_c32' = copy{u64, u32}
+gen{'simd_copy_'}
 
 # unaligned bitarr widening
-'simd_copy_1u_i8'    = copy_ubit{i8}
-'simd_copy_1u_i16'   = copy_ubit{i16}
-'simd_copy_1u_i32'   = copy_ubit{i32}
-'simd_copy_1u_f64'   = copy_ubit{f64}
+export{'simd_copy_1u_i8',  copy_ubit{i8}}
+export{'simd_copy_1u_i16', copy_ubit{i16}}
+export{'simd_copy_1u_i32', copy_ubit{i32}}
+export{'simd_copy_1u_f64', copy_ubit{f64}}
