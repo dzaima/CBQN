@@ -23,7 +23,7 @@ opts ← ⟨
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
-  ⟨1, "color", 1, "Whether to enable colored diagnostics"⟩
+  ⟨1, "color", @, "Whether to enable colored diagnostics; default based on notui"⟩
   ⟨0, "os",    @, "Target OS (linux, bsd, macos)"⟩ # used for .so vs .dylib, and changing linker flags for bsd
   ⟨0, "arch",  @, "Target architecture (x86-64, aarch64, generic)"⟩ # used for selecting Singeli target
   ⟨1, "pie",   @, "Position-independent executable; default based on OS & arch"∾@+10⟩
@@ -139,7 +139,7 @@ po ← { # parsed options
     emcc, wasm, replxx, singeli,
     ffi, o3,
     bytecodeDir, replxxDir, singeliDir,
-    CBQNc, REPLXXc, Linker, singeliFlags
+    CBQNc, ccColor, singeliFlags, REPLXXc, Linker
   ⟩⇐
   
   custom ← GetOpt "c"
@@ -213,8 +213,10 @@ po ← { # parsed options
   singeliDir  ⇐ singeli SubmoduleDir "singeli"  ⋄ "Singeli" LogDir singeliDir
   {𝕊: "Output location: "∾𝕩}_verboseLog output
   
-  CBQNc ⇐ { 𝕊:
-    isClang ← {clangd? 1; ∨´"clang"⍷SH cc‿"--version"} # TODO exclude from hash?
+  ccClang ← {clangd? 1; ∨´"clang"⍷SH cc‿"--version"}
+  ccColor ⇐ ((¬clangd) ∧ tui DOpt "color") / ⟨ccClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩
+  
+  cbqnc ← {
     args ← ⟨
       cc,
       "-std=gnu11",
@@ -224,13 +226,12 @@ po ← { # parsed options
       "-DSINGELI="∾•Repr singeli,
       "-DFFI="∾•Repr 2×ffi
     ⟩
-    args∾↩ isClang⊑⟨
+    args∾↩ ccClang⊑⟨
       ⟨"-Wno-parentheses"⟩
       ⟨"-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"⟩
     ⟩
     args∾↩ 0⊑GetLibs@
     
-    color ← (GetOpt "color") ∧ ¬clangd
     
     args∾↩ GetOpt "f"
     args∾↩ GetOpt "CCFLAGS"
@@ -244,7 +245,6 @@ po ← { # parsed options
     args∾↩ (                o3) / ⟨"-O3"⟩
     args∾↩ (            native) / ⟨"-march=native"⟩
     args∾↩ (             debug) / ⟨"-DDEBUG"⟩
-    args∾↩ (             color) / ⟨isClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩ # TODO exclude from hash?
     args∾↩ ( GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
     args∾↩ (GetOpt"heapverify") / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
@@ -256,7 +256,7 @@ po ← { # parsed options
     args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
-    cbqnc ↩ args
+    args
   }
   
   REPLXXc ⇐ { 𝕊:
@@ -477,7 +477,7 @@ Run ← { 𝕊:
     work ↩ lm/work
     {
       𝕩.i FinishJob 𝕩.t.Take@?
-        {𝕊: Log FileLine 𝕩}⍟(¬po.tui) 𝕩
+        {𝕊: Log FileLine 𝕩 ⋄ •term.Flush@}⍟(¬po.tui) 𝕩
         doneCount+↩1;
       Fail "Error: During '"∾𝕩.v.disp∾"'"
     }¨ done
@@ -611,7 +611,7 @@ cachedBin‿linkerCache ← {
     }
     
     singeliArgs ← {po.singeli? ⟨"-DSINGELI_DIR="∾•file.Name singeliCache.folder⟩; ⟨⟩}
-    objs∾↩ {a‿b‿c: MakeCCInv ⟨po.CBQNc∾singeliArgs˙, {𝕊:UpdateSubmodule po.bytecodeDir ⋄ UpdateSubmodule po.replxxDir}, cbqnCache, a, b, c⟩}¨ <˘⍉[Shorten cbqnSrc, cbqnSrc, ruleDeps] # updates replxx because needs replxx.h
+    objs∾↩ {a‿b‿c: MakeCCInv ⟨po.CBQNc∾po.ccColor∾singeliArgs˙, {𝕊:UpdateSubmodule po.bytecodeDir ⋄ UpdateSubmodule po.replxxDir}, cbqnCache, a, b, c⟩}¨ <˘⍉[Shorten cbqnSrc, cbqnSrc, ruleDeps] # updates replxx because needs replxx.h
     
     cbqnCache
   }

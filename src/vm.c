@@ -673,6 +673,7 @@ FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   i32 ga = blockGivenVars(bl);
   
   for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
+  assert(sc->psc!=NULL);
   Scope* nsc = m_scopeI(body, sc->psc, body->varAm, ga, sc->vars, true);
   scope_dec(sc);
   return execBodyInlineI(body, nsc, bl);
