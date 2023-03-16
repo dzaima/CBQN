@@ -7,6 +7,32 @@
 
 
 
+NOINLINE B intRange(ux s, ux n) { // intended for s+n≥128; assumes n≥1
+  assert(n>0);
+  ux last = n+s-1;
+  if (last<=I16_MAX) {
+    i16* rp; B r = m_i16arrv(&rp, n);
+    for (ux i = 0; i < n; i++) rp[i] = (i16)s + (i16)i;
+    return r;
+  }
+  if (last<=I32_MAX) {
+    i32* rp; B r = m_i32arrv(&rp, n);
+    for (ux i = 0; i < n; i++) rp[i] = (i32)s + (i32)i;
+    return r;
+  }
+  
+  f64* rp; B r = m_f64arrv(&rp, n);
+  
+  f64 c = s;
+  PLAINLOOP for (ux i = 0; i < n/16; i++) {
+    for (ux j = 0; j < 16; j++) rp[j] = c+j;
+    rp+= 16;
+    c+= 16;
+  }
+  for (ux j = 0; j < (n&15); j++) rp[j] = c+j;
+  return r;
+}
+
 static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
   usz cl = sh[d];
   if (d+1==r) {
@@ -30,25 +56,13 @@ B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
 B ud_c1(B t, B x) {
   if (isAtm(x)) {
     usz xu = o2s(x);
-    if (LIKELY(xu<=I8_MAX)) {
+    if (LIKELY(xu<=I8_MAX+1)) {
       if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
       i8* rp; B r = m_i8arrv(&rp, xu);
       NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
       return r;
     }
-    if (xu<=I16_MAX) {
-      i16* rp; B r = m_i16arrv(&rp, xu);
-      for (usz i = 0; i < xu; i++) rp[i] = i;
-      return r;
-    }
-    if (xu<=I32_MAX) {
-      i32* rp; B r = m_i32arrv(&rp, xu);
-      for (usz i = 0; i < xu; i++) rp[i] = i;
-      return r;
-    }
-    f64* rp; B r = m_f64arrv(&rp, xu);
-    for (usz i = 0; i < xu; i++) rp[i] = i;
-    return r;
+    return intRange(0, xu);
   }
   SGetU(x)
   usz xia = IA(x);
