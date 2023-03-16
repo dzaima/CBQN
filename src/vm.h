@@ -274,6 +274,8 @@ typedef struct WrappedObj {
   B obj;
 } WrappedObj;
 
+#define V_POS(X) ((u32)((X).u))
+#define V_DEPTH(X) ((u16)((X).u>>32))
 
 NOINLINE B v_getF(Scope* pscs[], B s); // doesn't consume
 FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
@@ -284,7 +286,7 @@ FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
 }
 FORCE_INLINE B v_get(Scope* pscs[], B s, bool chk) { // get value representing s, replacing with bi_optOut; doesn't consume; if chk is false, content variables _may_ not be checked to be set
   if (RARE(!isVar(s))) return v_getF(pscs, s);
-  return v_getI(pscs[(u16)(s.u>>32)], (u32)s.u, chk);
+  return v_getI(pscs[V_DEPTH(s)], V_POS(s), chk);
 }
 
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd); // doesn't consume
@@ -301,7 +303,7 @@ FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consume
 }
 FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk, bool consumeS, bool consumeX) { // if chk is false, content variables _may_ not be checked to be set
   if (LIKELY(isVar(s))) {
-    v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, consumeX? x : inc(x), upd, chk);
+    v_setI(pscs[V_DEPTH(s)], V_POS(s), consumeX? x : inc(x), upd, chk);
   } else {
     v_setF(pscs, s, x, upd);
     if (consumeX) dec(x);
@@ -311,7 +313,7 @@ FORCE_INLINE void v_set(Scope* pscs[], B s, B x, bool upd, bool chk, bool consum
 
 FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot contain extended variables
   if (LIKELY(isVar(s))) {
-    v_setI(pscs[(u16)(s.u>>32)], (u32)s.u, inc(x), false, false);
+    v_setI(pscs[V_DEPTH(s)], V_POS(s), inc(x), false, false);
     return true;
   }
   if (s.u == bi_N.u) return true;

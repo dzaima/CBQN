@@ -529,11 +529,11 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
       for (u64 i = 0; i < ia; i++) {
         B c = sp[i];
         if (isVar(c)) {
-          Scope* sc = pscs[(u16)(c.u>>32)];
-          v_set(pscs, c, ns_getU(x, pos2gid(sc->body, (u32)c.u)), upd, true, false, false);
+          Scope* sc = pscs[V_DEPTH(c)];
+          v_set(pscs, c, ns_getU(x, pos2gid(sc->body, V_POS(c))), upd, true, false, false);
         } else if (isExt(c)) {
-          ScopeExt* ext = pscs[(u16)(c.u>>32)]->ext;
-          v_set(pscs, c, ns_getNU(x, ext->vars[(u32)c.u + ext->varAm], true), upd, true, false, false);
+          ScopeExt* ext = pscs[V_DEPTH(c)]->ext;
+          v_set(pscs, c, ns_getNU(x, ext->vars[V_POS(c) + ext->varAm], true), upd, true, false, false);
         } else if (isObj(c)) {
           assert(TY(c) == t_fldAlias);
           FldAlias* cf = c(FldAlias,c);
@@ -551,13 +551,13 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
     else if (TY(s) == t_fldAlias) thrF("Assignment: Cannot assign non-namespace to a list containing aliases");
     else UD;
   } else if (isExt(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B prev = sc->ext->vars[(u32)s.u];
+    Scope* sc = pscs[V_DEPTH(s)];
+    B prev = sc->ext->vars[V_POS(s)];
     if (upd) {
       if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
       dec(prev);
     } else dec(prev);
-    sc->ext->vars[(u32)s.u] = inc(x);
+    sc->ext->vars[V_POS(s)] = inc(x);
   } else UD;
 }
 NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
@@ -570,8 +570,8 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x) {
       for (u64 i = 0; i < ia; i++) {
         B c = sp[i];
         if (isVar(c)) {
-          Scope* sc = pscs[(u16)(c.u>>32)];
-          B g = ns_qgetU(x, pos2gid(sc->body, (u32)c.u));
+          Scope* sc = pscs[V_DEPTH(c)];
+          B g = ns_qgetU(x, pos2gid(sc->body, V_POS(c)));
           if (q_N(g) || !v_seth(pscs, c, g)) return false;
         } else if (isObj(c) && TY(c)==t_fldAlias) {
           FldAlias* cf = c(FldAlias,c);
@@ -603,10 +603,10 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     NOGC_E;
     return r.b;
   } else if (isExt(s)) {
-    Scope* sc = pscs[(u16)(s.u>>32)];
-    B r = sc->ext->vars[(u32)s.u];
+    Scope* sc = pscs[V_DEPTH(s)];
+    B r = sc->ext->vars[V_POS(s)];
     if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
-    sc->ext->vars[(u32)s.u] = bi_optOut;
+    sc->ext->vars[V_POS(s)] = bi_optOut;
     return r;
   } else {
     assert(isObj(s) && TY(s)==t_arrMerge);
