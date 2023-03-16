@@ -23,10 +23,8 @@ extern EmptyValue* mm_buckets[64];
 #if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_MMX
 ALLOC_FN void* mm_alloc(u64 sz, u8 type) {
   assert(sz>=16);
+  NOGC_CHECK;
   preAlloc(sz, type);
-  #if DEBUG
-    if (cbqn_noAlloc && !gc_depth) err("allocating during noAlloc");
-  #endif
   #if VERIFY_TAIL
     i64 logAlloc = LOG2(sz + VERIFY_TAIL);
   #else

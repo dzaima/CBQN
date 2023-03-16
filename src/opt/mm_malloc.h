@@ -25,6 +25,7 @@ static void mm_visitP(void* x) { }
 
 bool gc_maybeGC(bool);
 void gc_forceGC(bool);
+#define gc_depth 0
 void mm_forHeap(V2v f);
 void mm_dumpHeap(FILE* f);
 

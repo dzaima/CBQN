@@ -236,7 +236,7 @@ typedef union B {
 #if defined(OBJ_TRACK)
   #define OBJ_COUNTER 1
 #endif
-#if DEBUG && !defined(VERIFY_TAIL) && MM!=2
+#if DEBUG && !defined(VERIFY_TAIL) && MM==1
   #define VERIFY_TAIL 64
 #endif
 #if ALLOC_STAT || VERIFY_TAIL
@@ -322,6 +322,7 @@ typedef struct Arr {
   #define UD assert(false);
   extern bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
+  #define NOGC_CHECK if (cbqn_noAlloc && !gc_depth) err("allocating during noalloc");
   #define NOGC_S cbqn_NOGC_start()
   #define NOGC_E cbqn_noAlloc=false
 #else
@@ -331,6 +332,7 @@ typedef struct Arr {
   #define UD __builtin_unreachable();
   #define NOGC_S
   #define NOGC_E
+  #define NOGC_CHECK
 #endif
 #if WARN_SLOW
   void warn_slow1(char* s, B x);

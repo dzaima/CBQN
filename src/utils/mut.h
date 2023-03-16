@@ -46,27 +46,27 @@ void mut_to(Mut* m, u8 n);
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
-  NOGC_E;
+  NOGC_E; assert(m->ia == m->val->ia);
   Arr* a = m->val;
   a->sh = &a->ia;
   SPRNK(a, 1);
   return taga(a);
 }
 static B mut_fc(Mut* m, B x) { assert(m->fns->elType!=el_MAX); // doesn't consume x
-  NOGC_E;
+  NOGC_E; assert(m->ia == m->val->ia);
   Arr* a = m->val;
   arr_shCopy(a, x);
   return taga(a);
 }
 static B mut_fcd(Mut* m, B x) { assert(m->fns->elType!=el_MAX); // consumes x
-  NOGC_E;
+  NOGC_E; assert(m->ia == m->val->ia);
   Arr* a = m->val;
   arr_shCopy(a, x);
   decG(x);
   return taga(a);
 }
 static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
-  NOGC_E;
+  NOGC_E; assert(m->ia == m->val->ia);
   return m->val;
 }
 
@@ -93,7 +93,15 @@ static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); 
 // doesn't consume; expects x to be an array, each position must be written to precisely once
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
 
-
+// MUT_APPEND_INIT must be called immediately after MAKE_MUT or MAKE_MUT_INIT
+// after that, the only valid operation on the Mut will be MUT_APPEND
+// using this append system will no longer prevent allocations from being done during the lifetime of the Mut
+#define MUT_APPEND_INIT(N) ux N##_ci = 0; NOGC_E;
+#define MUT_APPEND(N, X, XS, L) ({ ux l_ = (L); NOGC_CHECK; \
+  mut_copy(N, N##_ci, X, XS, l_);  \
+  N##_ci+= l_;                     \
+  if (PTY(N->val) == t_harr) { NOGC_E; N->val->ia = N##_ci; } \
+})
 
 #define MUTG_INIT(N) MutFns N##_mutfns = *N->fns; void* N##_mutarr = N->a
 // these methods function as the non-G-postfixed ones, except that

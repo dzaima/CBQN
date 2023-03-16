@@ -338,7 +338,7 @@ B fold_rows(Md1D* fd, B x) {
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     usz b = (block + m - 1) / m; // Normal block length
     usz b_max = b + b/4;         // Last block max length
-    MAKE_MUT(r, n);
+    MAKE_MUT(r, n); MUT_APPEND_INIT(r);
     BSS2A slice = TI(x,slice);
     for (usz i=0, im=0; i<n; ) {
       usz l = n-i; if (l > b_max) { incG(x); l = b; }
@@ -348,7 +348,7 @@ B fold_rows(Md1D* fd, B x) {
       ssh[0] = l;
       ssh[1] = m;
       B sr = insert_c1(fd, C1(transp, taga(sl)));
-      mut_copy(r, i, sr, 0, l);
+      MUT_APPEND(r, sr, 0, l);
       decG(sr);
       i += l; im += sia;
     }
