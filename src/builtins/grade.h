@@ -81,6 +81,9 @@ extern void (*const avx2_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
     if (e==n) {break;}  k=e;                                  \
   }
 #define WRITE_SPARSE(T) WRITE_SPARSE_##T
+extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
+#define SINGELI_COUNT_OR(T) \
+  if (1==sizeof(T)) avx2_count_i8(c0o, (i8*)xp, n, -128); else
 #else
 #define COUNT_THRESHOLD 16
 #define WRITE_SPARSE(T) \
@@ -88,13 +91,14 @@ extern void (*const avx2_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
   usz js = j;                                            \
   while (ij<n) { rp[ij]GRADE_UD(++,--); ij+=c0o[GRADE_UD(++j,--j)]; } \
   for (usz i=0; i<n; i++) js=rp[i]+=js;
+#define SINGELI_COUNT_OR(T)
 #endif
 
 #define COUNTING_SORT(T) \
   usz C=1<<(8*sizeof(T));                              \
   TALLOC(usz, c0, C); usz *c0o=c0+C/2;                 \
   for (usz j=0; j<C; j++) c0[j]=0;                     \
-  for (usz i=0; i<n; i++) c0o[xp[i]]++;                \
+  SINGELI_COUNT_OR(T) for (usz i=0; i<n; i++) c0o[xp[i]]++; \
   if (n/(COUNT_THRESHOLD*sizeof(T)) <= C) { /* Scan-based */ \
     T j=GRADE_UD(-C/2,C/2-1);                          \
     usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
@@ -227,6 +231,7 @@ B SORT_C1(B t, B x) {
 #undef SORT_C1
 #undef INSERTION_SORT
 #undef COUNTING_SORT
+#undef SINGELI_COUNT_OR
 #if SINGELI_AVX2
 #undef WRITE_SPARSE_i8
 #undef WRITE_SPARSE_i16

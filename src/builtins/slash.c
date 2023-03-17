@@ -922,7 +922,7 @@ B slash_im(B t, B x) {
   #define SINGELI_COUNT_OR(N) if (N==8) { \
       TALLOC(usz, t, m/2);                                                     \
       for (usz j=0; j<m/2; j++) t[j]=0;                                        \
-      i8 max = avx2_count_i8(t, (i8*)xp, xia);                                 \
+      i8 max = avx2_count_i8(t, (i8*)xp, xia, 0);                              \
       if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
       usz ria=max+1;                                                           \
       i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
