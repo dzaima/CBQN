@@ -3,27 +3,12 @@ include './sse'
 include './avx'
 include './avx2'
 include 'util/tup'
-
-# TODO merge with squeeze
-def fold{F, x:T} = {
-  show{'WARNING: using fallback fold'}
-  def E = eltype{T}
-  r:E = 0
-  each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
-  r
-}
-def fold{F, x:T & width{T}==128 & hasarch{'X86_64'}} = {
-  c:= x
-  def EW = elwidth{T}
-  if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
-  if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
-  if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
-  if (EW<=8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
-  extract{c, 0}
-}
-def fold{F, x:T & width{T}==256 & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
+include './vecfold'
 
 fn sum_vec{T==[32]i8}(v:T) = fold{+, [16]i16~~fold{+, unpackQ{v, T**0}}}
+def minmax{c, a, b} = tern{c{cast_i{i8,a},cast_i{i8,b}}, a, b}
+def min{a:i16, b:i16} = minmax{<, a, b}
+def max{a:i16, b:i16} = minmax{>, a, b}
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
