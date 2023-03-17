@@ -85,6 +85,9 @@
   #define SINGELI_FILE constrep
   #include "../utils/includeSingeli.h"
   
+  #define SINGELI_FILE count
+  #include "../utils/includeSingeli.h"
+  
   extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
   extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
   extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
@@ -850,15 +853,6 @@ B slash_c2(B t, B w, B x) {
   return c2rt(slash, w, x);
 }
 
-#if SINGELI_AVX2
-  #define SINGELI_FILE count
-  #include "../utils/includeSingeli.h"
-  #define SINGELI_COUNT_OR(N) \
-    if (N==8) avx2_count_i8(t, (u8*)xp, xia); else
-#else
-  #define SINGELI_COUNT_OR(N)
-#endif
-
 B slash_im(B t, B x) {
   if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be an array");
   u8 xe = TI(x,elType);
@@ -912,10 +906,10 @@ B slash_im(B t, B x) {
       usz m=1<<N;                                                                \
       if (xia < m/2) {                                                           \
         IIND_INT(N)                                                              \
-      } else {                                                                   \
+      } else SINGELI_COUNT_OR(N) {                                               \
         TALLOC(usz, t, m);                                                       \
         for (usz j=0; j<m/2; j++) t[j]=0;                                        \
-        SINGELI_COUNT_OR(N) for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;          \
+        for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
         t[m/2]=xia; usz ria=0; for (u64 s=0; s<xia; ria++) s+=t[ria];            \
         if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
@@ -924,8 +918,23 @@ B slash_im(B t, B x) {
       }                                                                          \
       break;                                                                     \
     }
+#if SINGELI_AVX2
+  #define SINGELI_COUNT_OR(N) if (N==8) { \
+      TALLOC(usz, t, m/2);                                                     \
+      for (usz j=0; j<m/2; j++) t[j]=0;                                        \
+      i8 max = avx2_count_i8(t, (i8*)xp, xia);                                 \
+      if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
+      usz ria=max+1;                                                           \
+      i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
+      TFREE(t);                                                                \
+      r = num_squeeze(r);                                                      \
+    } else
+#else
+  #define SINGELI_COUNT_OR(N)
+#endif
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
+#undef SINGELI_COUNT_OR
     case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32) r = num_squeeze(r); break; }
 #undef IIND_INT
     case el_f64: {

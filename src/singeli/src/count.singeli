@@ -13,7 +13,8 @@ def max{a:i16, b:i16} = minmax{>, a, b}
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
-fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
+# Write counts /⁼x to tab and return ⌈´x
+fn count{T}(tab:*usz, x:*T, n:u64) : T = {
   def vbits = 256
   def vec = vbits/width{T}
   def uT = ty_u{T}
@@ -21,25 +22,30 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
   def block = (2048*8) / vbits  # Target vectors per block
   def b_max = block + block/4   # Last block max length
   assert{b_max < 1<<width{T}}   # Don't overflow count in vector section
+  mx:T = -1                     # Maximum of x
   i:u64 = 0
   while (i < n) {
     # Number of elements to handle in this iteration
     r:u64 = n - i; if (r > vec*b_max) r = vec*block
     b := r / vec  # Vector case does b full vectors if it runs
+    rv:= b * vec
     r0:u64 = 0    # Elements actually handled by vector case
 
-    # Find range to check for suitability
+    # Find range to check for suitability; return a negative if found
     xv := *V~~x
     jv := load{xv}; mv := jv
     @for (xv over _ from 1 to b) { jv = min{jv, xv}; mv = max{mv, xv} }
+    @for (x over _ from rv to r) { if (x<0) return{x}; if (x>mx) mx=x }
     jt := fold{min, jv}
-    mt := fold{max, mv} - jt # Counts needed (last one's implicit)
-    if (jt < 0) return{1}    # Negative number found!
+    mt := fold{max, mv}
+    if (jt < 0) return{jt}
+    if (mt > mx) mx = mt
 
-    if (mt <= 48) {
-      r0 = b * vec
+    nc := mt - jt  # Number of counts to perform: last is implicit
+    if (nc <= 48) {
+      r0 = rv
       j0 := promote{u64, uT~~jt} # Starting count
-      m := promote{u64, uT~~mt}  # Number of iterations
+      m := promote{u64, uT~~nc}  # Number of iterations
       total := trunc{usz, r0}    # To compute last count
       def count_each{js, num} = {
         j := @collect (k to num) js+k
@@ -63,7 +69,7 @@ fn count{T}(tab:*usz, x:*ty_u{T}, n:u64) : u1 = {
     i += r
     x += r
   }
-  0
+  mx
 }
 
 export{'avx2_count_i8', count{i8}}
