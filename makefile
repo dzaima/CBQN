@@ -233,7 +233,8 @@ ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
 	@git submodule update --init build/bytecodeSubmodule
 endif
 	@export bd=$$("${MAKE}" builddir); \
-	mkdir -p "$$bd";                 \
+	[ "build/obj/" = "$$bd" ] && echo "Neither shasum nor sha256sum was found; cannot use custom configurations" && exit 1; \
+	mkdir -p "$$bd";                   \
 	"${MAKE}" run_incremental_1 bd="$$bd"
 endif # run build
 
