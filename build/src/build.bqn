@@ -145,7 +145,7 @@ po ← { # parsed options
   custom ← GetOpt "c"
   clangd ← GetOpt "clangd"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
-  J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •BQN v; •BQN⎊4 "4" TrySH ⟨"nproc"⟩}
+  J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •ParseFloat v; •ParseFloat⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
   rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ ¬GetOpt "notui"
