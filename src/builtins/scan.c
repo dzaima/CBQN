@@ -55,7 +55,7 @@ static B scan_and(B x, u64 ia) { // consumes x
   decG(x); return FL_SET(r, fl_dsc|fl_squoze);
 }
 
-B slash_c1(B f, B x);
+B slash_c1(B t, B x);
 B scan_add_bool(B x, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64 xs = bit_sum(xp, ia);

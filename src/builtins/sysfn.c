@@ -1110,6 +1110,26 @@ B getTermNS(void) {
   return incG(termNS);
 }
 
+static bool name_isUpper(u32 c) { return (c>='A' & c<='Z') || (c>=U'À' && c<=U'Þ'); }
+B slash_c2(B, B, B);
+B ne_c2(B, B, B);
+static NOINLINE B name_normalize(B x) {
+  usz ia = IA(x); SGetU(x)
+  for (ux i = 0; i < ia; i++) {
+    u32 c0 = o2cG(GetU(x, i));
+    if (name_isUpper(c0) || c0=='_') {
+      u32* rp; B r = m_c32arrv(&rp, ia);
+      COPY_TO(rp, el_c32, 0, x, 0, i);
+      while (i < ia) {
+        u32 c = o2cG(GetU(x, i));
+        rp[i] = name_isUpper(c)? c+32 : c;
+        i++;
+      }
+      return C2(slash, C2(ne, x, m_c32('_')), r);
+    }
+  }
+  return x;
+}
 
 B nKeys_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ns.Keys: 𝕩 must be a namespace");
@@ -1129,13 +1149,15 @@ B nKeys_c1(B t, B x) {
 B nGet_c2(B t, B w, B x) {
   if (!isNsp(w)) thrM("•ns.Has: 𝕨 must be a namespace");
   vfyStr(x, "•ns.Get", "𝕩");
+  x = name_normalize(x);
   B r = ns_getNU(w, x, true);
   decG(w); decG(x);
   return inc(r);
 }
 B nHas_c2(B t, B w, B x) {
   if (!isNsp(w)) thrM("•ns.Has: 𝕨 must be a namespace");
-  vfyStr(x, "•ns.Get", "𝕩");
+  vfyStr(x, "•ns.Has", "𝕩");
+  x = name_normalize(x);
   B r = ns_getNU(w, x, false);
   decG(w); decG(x);
   return m_i32(!q_N(r));

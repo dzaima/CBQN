@@ -66,8 +66,8 @@ bool isPervasiveDyExt(B x) {
   return false;
 }
 
-B slash_c2(B f, B w, B x);
-B shape_c2(B f, B w, B x);
+B slash_c2(B t, B w, B x);
+B shape_c2(B t, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(w)) w = m_atomUnit(w);
   if (isAtm(x)) x = m_atomUnit(x);
