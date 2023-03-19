@@ -156,8 +156,8 @@ B shape_c2(B t, B w, B x) {
   } else {
     if (isAtm(w)) w = m_atomUnit(w);
     if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
-    if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
     nr = IA(w);
+    if (nr>UR_MAX) thrM("⥊: Result rank too large");
     sh = nr<=1? NULL : m_shArr(nr);
     if (TI(w,elType)==el_i32) {
       i32* wi = i32any_ptr(w);
@@ -978,11 +978,12 @@ B join_c2(B t, B w, B x) {
 
 B couple_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
-  usz rr = RNK(x);
+  ur xr = RNK(x);
+  if (xr==UR_MAX) thrF("≍: Result rank too large (%i≡=𝕩)", xr);
   usz ia = IA(x);
-  Arr* r = TI(x,slice)(incG(x),0, ia);
-  usz* sh = arr_shAlloc(r, rr+1);
-  if (sh) { sh[0] = 1; shcpy(sh+1, SH(x), rr); }
+  Arr* r = TI(x,slice)(incG(x), 0, ia);
+  usz* sh = arr_shAlloc(r, xr+1);
+  if (sh) { sh[0] = 1; shcpy(sh+1, SH(x), xr); }
   decG(x);
   return taga(r);
 }
@@ -993,6 +994,7 @@ B couple_c2(B t, B w, B x) {
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = IA(w);
   ur wr = RNK(w);
+  if (wr==UR_MAX) thrM("≍: Result rank too large");
   MAKE_MUT_INIT(r, ia*2, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);

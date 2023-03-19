@@ -133,6 +133,7 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
     if (ncsz==32) return taga(cpyI32Arr(x));
   }
   
+  if (lr==UR_MAX) thrM("Rank too large");
   u64* rp;
   Arr* r = m_bitarrp(&rp, cam*ncsz);
   usz* rsh = arr_shAlloc(r, lr+1);
@@ -200,6 +201,7 @@ NOINLINE B widenBitArr(B x, ur axis) {
 
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bits to be dropped are zero, origCellBits is a multiple of 8, and that there's at most 63 padding bits
   if (TI(x,elType)!=el_bit) return taga(cpyBitArr(x));
+  if (axis+cr>UR_MAX) thrM("Rank too large");
   
   usz xcsz = shProd(SH(x), axis, RNK(x));
   usz ocsz = shProd(csh, 0, cr);

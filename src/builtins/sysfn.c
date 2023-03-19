@@ -408,6 +408,7 @@ B rand_range_c2(B t, B w, B x) {
     if (wia<2) {
       arr_rnk01(r, wia);
     } else {
+      if (wia>UR_MAX) thrF("(rand).Range: Result rank too large (%s≡≢𝕨)", wia);
       usz* sh = arr_shAlloc(r, wia);
       SGetU(w);
       for (usz i = 0; i < wia; i++) sh[i] = o2sG(GetU(w, i));
