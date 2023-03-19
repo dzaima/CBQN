@@ -548,11 +548,11 @@ static NOINLINE i64 readInt(char** p) {
 #endif
 
 
-static NOINLINE B gsc_exec_inline(B src, B path, B args) {
+static NOINLINE B gsc_exec_inplace(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
   gsc->body = ptr_inc(block->bodies[0]);
-  B r = execBlockInline(block, gsc);
+  B r = execBlockInplace(block, gsc);
   ptr_dec(block);
   return r;
 }
@@ -780,12 +780,12 @@ void cbqn_runLine0(char* ln, i64 read) {
     f64 t;
     if (time==-1) {
       u64 sns = nsTime();
-      res = execBlockInline(block, gsc);
+      res = execBlockInplace(block, gsc);
       u64 ens = nsTime();
       t = ens-sns;
     } else {
       u64 sns = nsTime();
-      for (i64 i = 0; i < time; i++) dec(execBlockInline(block, gsc));
+      for (i64 i = 0; i < time; i++) dec(execBlockInplace(block, gsc));
       u64 ens = nsTime();
       t = (ens-sns)*1.0 / time;
       res = m_c32(0);
@@ -797,13 +797,13 @@ void cbqn_runLine0(char* ln, i64 read) {
   } else if (profile>0) {
     if (CATCH) { profiler_stop(); profiler_free(); rethrow(); }
     if (profiler_alloc() && profiler_start(profile)) {
-      res = execBlockInline(block, gsc);
+      res = execBlockInplace(block, gsc);
       profiler_stop();
       profiler_displayResults();
       profiler_free();
     }
     popCatch();
-  } else res = execBlockInline(block, gsc);
+  } else res = execBlockInplace(block, gsc);
   ptr_dec(block);
   
   if (output) {
@@ -913,12 +913,12 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-e)"), emptySVec()));
+              dec(gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-e)"), emptySVec()));
               break;
             }
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
-              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec());
               if (FORMATTER) { r = bqn_fmt(r); printsB(r); }
               else { printI(r); }
               dec(r);
@@ -926,7 +926,7 @@ int main(int argc, char* argv[]) {
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inline(utf8Decode0(argv[i++]), m_c8vec_0("(-o)"), emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-o)"), emptySVec());
               printsB(r); dec(r);
               printf("\n");
               break;
@@ -950,7 +950,7 @@ int main(int argc, char* argv[]) {
               usz ia = IA(lines);
               SGet(lines)
               for (u64 i = 0; i < ia; i++) {
-                dec(gsc_exec_inline(Get(lines, i), incG(replPath), emptySVec()));
+                dec(gsc_exec_inplace(Get(lines, i), incG(replPath), emptySVec()));
               }
               break;
             }
@@ -978,7 +978,7 @@ int main(int argc, char* argv[]) {
       
       B execRes;
       if (execStdin) {
-        execRes = gsc_exec_inline(utf8DecodeA(stream_bytes(stdin)), m_c8vec_0("(-)"), args);
+        execRes = gsc_exec_inplace(utf8DecodeA(stream_bytes(stdin)), m_c8vec_0("(-)"), args);
       } else {
         execRes = bqn_execFile(src, args);
       }

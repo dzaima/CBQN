@@ -676,7 +676,7 @@ FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   assert(sc->psc!=NULL);
   Scope* nsc = m_scopeI(body, sc->psc, body->varAm, ga, sc->vars, true);
   scope_dec(sc);
-  return execBodyInlineI(body, nsc, bl);
+  return execBodyInplaceI(body, nsc, bl);
 }
 
 #ifdef DEBUG_VM
@@ -957,10 +957,10 @@ NOINLINE Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* ini
   return m_scopeI(body, psc, varAm, initVarAm, initVars, false);
 }
 
-B execBlockInlineImpl(Body* body, Scope* sc, Block* block) { return execBodyInlineI(block->bodies[0], sc, block); }
+B execBlockInplaceImpl(Body* body, Scope* sc, Block* block) { return execBodyInplaceI(block->bodies[0], sc, block); }
 
 #if JIT_START != -1
-B mnvmExecBodyInline(Body* body, Scope* sc) {
+B mnvmExecBodyInplace(Body* body, Scope* sc) {
   Nvm_res r = m_nvm(body);
   body->nvm = r.p;
   body->nvmRefs = r.refs;
@@ -1000,7 +1000,7 @@ FORCE_INLINE B execBlock(Block* block, Body* body, Scope* psc, i32 ga, B* svar) 
   assert(varAm>=ga);
   assert(ga == blockGivenVars(block));
   Scope* sc = m_scopeI(body, psc, varAm, ga, svar, true);
-  B r = execBodyInlineI(body, sc, block);
+  B r = execBodyInplaceI(body, sc, block);
   return r;
 }
 

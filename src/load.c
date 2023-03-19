@@ -340,7 +340,7 @@ B rebqn_exec(B str, B path, B args, B o) {
     comp_currRe = prevRe;
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
-    res = execBlockInline(block, sc);
+    res = execBlockInplace(block, sc);
   } else {
     B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
     block = bqn_compc(str, path, args, op[2], rtsys);

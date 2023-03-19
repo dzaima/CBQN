@@ -196,7 +196,7 @@ FORCE_INLINE B gotoNextBodyJIT(Scope* sc, Body* body) {
   u64 ga = blockGivenVars(bl);
   for (u64 i = 0; i < ga; i++) inc(sc->vars[i]);
   Scope* nsc = m_scope(body, sc->psc, body->varAm, ga, sc->vars);
-  return execBodyInlineI(body, nsc, bl);
+  return execBodyInplaceI(body, nsc, bl);
 }
 INS B i_SETH1(B s, B x, Scope** pscs, u32* bc, Body* v1) { POS_UPD;
   bool ok = v_seth(pscs, s, x); dec(x); dec(s);

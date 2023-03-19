@@ -167,15 +167,15 @@ void nvm_free(u8* ptr);
 B evalJIT(Body* b, Scope* sc, u8* ptr);
 B evalBC(Body* b, Scope* sc, Block* bl);
 
-B execBlockInlineImpl(Body* body, Scope* sc, Block* block);
-static B execBlockInline(Block* block, Scope* sc) { // doesn't consume; executes bytecode of the monadic body directly in the scope
-  return execBlockInlineImpl(block->bodies[0], ptr_inc(sc), block);
+B execBlockInplaceImpl(Body* body, Scope* sc, Block* block);
+static B execBlockInplace(Block* block, Scope* sc) { // doesn't consume; executes bytecode of the monadic body directly in the scope
+  return execBlockInplaceImpl(block->bodies[0], ptr_inc(sc), block);
 }
 
 #if JIT_START != -1
-NOINLINE B mnvmExecBodyInline(Body* body, Scope* sc);
+NOINLINE B mnvmExecBodyInplace(Body* body, Scope* sc);
 #endif
-FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc, Block* block) { // consumes sc, unlike execBlockInline
+FORCE_INLINE B execBodyInplaceI(Body* body, Scope* sc, Block* block) { // consumes sc, unlike execBlockInplace
   #if JIT_START != -1
     if (LIKELY(body->nvm != NULL)) return evalJIT(body, sc, body->nvm);
     bool jit = true;
@@ -183,7 +183,7 @@ FORCE_INLINE B execBodyInlineI(Body* body, Scope* sc, Block* block) { // consume
       jit = body->callCount++ >= JIT_START;
     #endif
     // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT for blocks starting with `123456⋄`
-    if (jit) return mnvmExecBodyInline(body, sc);
+    if (jit) return mnvmExecBodyInplace(body, sc);
   #endif
   return evalBC(body, sc, block);
 }
