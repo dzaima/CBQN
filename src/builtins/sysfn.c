@@ -1122,7 +1122,7 @@ static NOINLINE B name_normalize(B x) {
       COPY_TO(rp, el_c32, 0, x, 0, i);
       while (i < ia) {
         u32 c = o2cG(GetU(x, i));
-        rp[i] = name_isUpper(c)? c+32 : c;
+        rp[i] = name_isUpper(c) && c!=U'×'? c+32 : c;
         i++;
       }
       return C2(slash, C2(ne, x, m_c32('_')), r);
