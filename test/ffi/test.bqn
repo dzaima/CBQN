@@ -90,11 +90,28 @@ f ↩ @ •FFI ⟨"i32", "putchar", ">i32"⟩ ⋄ F¨ 10∾˜"text"-@
 •term.Flush@
 f ↩ @ •FFI ⟨"a", "bqn_makeChar", ">u64"⟩ ⋄ •Show F 120169
 
+Section "# array types"
+
+f ↩ "lib.so"•FFI"i32"‿"arrarg"‿">[3]i32" ⋄ •Show F ⟨1,2,3⟩
+f ↩ "lib.so"•FFI"i32"‿"ptrToArr"‿">*[2]i32" ⋄ •Show F ⟨0‿0, 0‿0, 0‿0, 10‿20, 3‿4⟩
+
+as1 ← "{[1]i32}"
+f ↩ "lib.so"•FFI ⟨"i32", "arrstruct1", as1, "*"∾as1⟩ ⋄ •Show F ⟨⋈⋈10, ⟨⋈⋈20⟩⟩
+
+as2 ← "{[1]i32,[2]"∾as1∾",[3]f64}"
+f ↩ "lib.so"•FFI ⟨as2, "arrstruct2", as2, "*"∾as2⟩ ⋄ •Out •Repr F ⟨⟨⟨4⟩ ⋄ ⋈∘⋈¨1‿2 ⋄ 1.2‿2.3‿3.4⟩, ⟨⟨⟨5⟩ ⋄ ⋈∘⋈¨10‿20 ⋄ 5.1‿6.1‿7.1⟩⟩⟩
+f ↩ "lib.so"•FFI ⟨"&", "arrstruct2Inc", ">&"∾as2⟩ ⋄ •Out •Repr F (⊢⋈50⊸+) ⟨⟨10⟩ ⋄ ⋈∘⋈¨11‿12 ⋄ 13‿14‿15⟩
+
 # erroring:
 
-# "local/lib.so" •FFI ""‿"printArgs"‿"i8"‿"i16:c32"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
-# "local/lib.so" •FFI ""‿"testArgs"‿"i8:c16"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
-# "local/lib.so" •FFI ""‿"testArgs"‿"i8:c32"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
+# "lib.so" •FFI ""‿"printArgs"‿"i8"‿"i16:c32"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
+# "lib.so" •FFI ""‿"testArgs"‿"i8:c16"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
+# "lib.so" •FFI ""‿"testArgs"‿"i8:c32"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64"
 
-# f ↩ "local/lib.so" •FFI "u64"‿"ident_u64"‿">u64:i32" ⋄ •Show F 1234‿12344444
-# f ↩ "local/lib.so" •FFI "u64"‿"ident_u64"‿">u64" ⋄ •Show F +´2⋆53‿20
+# f ↩ "lib.so" •FFI "u64"‿"ident_u64"‿">u64:i32" ⋄ •Show F 1234‿12344444
+# f ↩ "lib.so" •FFI "u64"‿"ident_u64"‿">u64" ⋄ •Show F +´2⋆53‿20
+
+# f ↩ "lib.so"•FFI"i32"‿"arrarg"‿">[3]i32" ⋄ •Show F ⟨1,2⟩
+# f ↩ "lib.so"•FFI ⟨as2, "arrstruct2", as2, "*"∾as2⟩ ⋄ •Show F ⟨⟨⟨4⟩ ⋄ ⋈∘⋈¨1‿2 ⋄ 1.2‿2.3‿3.4‿4⟩, ⟨⟨⟨5⟩ ⋄ ⋈∘⋈¨10‿20 ⋄ 5.1‿6.1‿7.1⟩⟩⟩
+# f ↩ "lib.so"•FFI ⟨as2, "arrstruct2", as2, "*"∾as2⟩ ⋄ •Show F ⟨⟨⟨4⟩ ⋄ ⋈∘⋈¨1‿2 ⋄ 1.2‿2.3‿3.4⟩, ⟨⟨⟨5⟩ ⋄ ⋈∘⋈¨10‿20 ⋄ 5.1‿6.1‿7.1‿5⟩⟩⟩
+# f ↩ "lib.so"•FFI ⟨as2, "arrstruct2", as2, "*"∾as2⟩ ⋄ •Show F ⟨⟨⟨4⟩ ⋄ ⋈∘⋈¨1‿2 ⋄ 1.2‿2.3‿3.4⟩, ⟨⟨⟨5⟩ ⋄ ⋈∘⋈¨10‿20 ⋄ 5.1‿6.1‿7.1,5⟩⟩⟩

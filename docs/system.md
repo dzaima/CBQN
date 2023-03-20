@@ -124,6 +124,7 @@ That is, the supported types are:
 - scalars (e.g. `i8`, `u64`);
 - pointers to scalars (e.g. `*i8`, `&u64`);
 - conversions of either scalars, pointers to scalars, or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `*:i8`, `**:c8`);
+- arrays of scalars or structs (e.g. `[2]i32`, `[4]{i32,i32}`);
 - structs of any of the above (except `&`-pointers) or other structs (e.g. `{*i8,*{*u32:i8,u64:i32}}`), except structs that are within `&` themselves cannot contain any pointers other than converted opaque pointers (e.g. `*{*i32,u64}`, `&{*:i32,u64}`, and `&{i32,u64}` are fine, but `&{*i32,u64}` is not);
 - the `a` type, which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
 

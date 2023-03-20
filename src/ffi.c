@@ -234,7 +234,7 @@ typedef struct BQNFFIEnt {
 } BQNFFIEnt;
 typedef struct BQNFFIType {
   struct Value;
-  union { u16 structSize; u16 staticAllocTotal; };
+  union { u16 structSize; u16 arrCount; u16 staticAllocTotal; };
   u8 ty;
   usz ia;
   BQNFFIEnt a[];
@@ -267,9 +267,11 @@ static const char* sty_names[] = {
   [sty_f32]="f32", [sty_f64]="f64"
 };
 enum CompoundTy {
-  cty_ptr,
-  cty_repr,
-  cty_struct,
+  cty_ptr, // *... / &...
+  cty_repr, // something:type
+  cty_struct, // {...}
+  cty_starr, // struct-based array
+  cty_tlarr, // top-level array
 };
 
 static B m_bqnFFIType(BQNFFIEnt** rp, u8 ty, usz ia) {
@@ -292,7 +294,7 @@ static u32 readUInt(u32** p) {
   *p = c;
   return r;
 }
-BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
+BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual type
   u32* c = *src;
   u32 c0 = *c++;
   ffi_type rt;
@@ -300,7 +302,46 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
   bool parseRepr=false, canRetype=false, mut=false;
   u32 myWidth = 0; // used if parseRepr
   switch (c0) {
-    default: thrM("FFI: Error parsing type");
+    default: thrF("FFI: Error parsing type: Unexpected character '%c'", c0);
+    case '[': {
+      u32 n = readUInt(&c);
+      if (*c++!=']') thrM("FFI: Bad array type");
+      if (n==0) thrM("FFI: 0-item arrays not supported");
+      BQNFFIEnt e = ffi_parseTypeStr(&c, top, false);
+      
+      if (top) { // largely copy-pasted from `case '*': case '&':`
+        myWidth = sizeof(void*);
+        BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_tlarr, 1);
+        rp[0] = e;
+        if (n>U16_MAX) thrM("FFI: Top-level array too large; limit is 65535 elements");
+        c(BQNFFIType, ro)->arrCount = n;
+        mut|= rp[0].mutates;
+        parseRepr = rp[0].canRetype;
+        rp[0].mutPtr = false;
+        rt = ffi_type_pointer;
+      } else { // largely copy-pasted from `case '{':`
+        BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_starr, n+1);
+        for (int i = 0; i < n; i++) rp[i] = e;
+        incBy(e.o, n-1);
+        rp[n].structData = NULL;
+        
+        TAlloc* ao = ARBOBJ(sizeof(ffi_type*) * (n+1));
+        rp[n].structData = ao;
+        ffi_type** els = rt.elements = (ffi_type**) ao->data;
+        for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
+        els[n] = NULL;
+      
+        rt.type = FFI_TYPE_STRUCT;
+        
+        TALLOC(size_t, offsets, n);
+        if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("FFI: Failed getting array offsets");
+        if (rt.size>=U16_MAX) thrM("FFI: Array too large; limit is 65534 bytes");
+        for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
+        c(BQNFFIType, ro)->structSize = rt.size;
+        TFREE(offsets);
+      }
+      break;
+    }
     
     case 'i': case 'u': case 'f': {
       u32 n = readUInt(&c);
@@ -339,7 +380,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
       } else {
         if (c0=='&') mut = true;
         BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_ptr, 1);
-        rp[0] = ffi_parseTypeStr(&c, true);
+        rp[0] = ffi_parseTypeStr(&c, true, false);
         mut|= rp[0].mutates;
         parseRepr = rp[0].canRetype;
         
@@ -352,7 +393,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr) { // parse actual type
     case '{': {
       TSALLOC(BQNFFIEnt, es, 4);
       while (true) {
-        BQNFFIEnt e = TSADD(es, ffi_parseTypeStr(&c, false));
+        BQNFFIEnt e = TSADD(es, ffi_parseTypeStr(&c, false, false));
         if (e.mutates) thrM("FFI: Structs currently cannot contain mutable references");
         u32 m = *c++;
         if (m=='}') break;
@@ -431,7 +472,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     if (side) side--;
     else side = 0;
     
-    t = ffi_parseTypeStr(&xp, false);
+    t = ffi_parseTypeStr(&xp, false, true);
     // printI(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
     if (xp!=xpN) thrM("FFI: Bad type descriptor");
     t.onW = side;
@@ -496,14 +537,18 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
     }
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
-    if (t->ty==cty_ptr) { // *any / &any
+    if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any
       
       B e = t->a[0].o;
+      if (!isArr(c)) {
+        if (isC32(e)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cG(e)]);
+        else thrM("FFI: Expected array corresponding to *{...}");
+      }
+      usz ia = IA(c);
+      if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to \"[%s]...\"", ia, (usz)t->arrCount);
       if (isC32(e)) { // *num / &num
         inc(c);
         B cG;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cG(e)]);
-        usz ia = IA(c);
         bool mut = t->a[0].mutPtr;
         switch(o2cG(e)) { default: thrF("FFI: \"*%S\" argument type NYI", sty_names[o2cG(e)]);
           case sty_i8:  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
@@ -518,13 +563,10 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         
         ffiObjs = vec_addN(ffiObjs, cG);
         *(void**)ptr = tyany_ptr(cG);
-      } else {
+      } else { // *{...} / &{...} / *[n]any
         BQNFFIType* t2 = c(BQNFFIType, e);
-        if (t2->ty != cty_struct) thrM("FFI: Unimplemented pointer element type");
+        if (t2->ty!=cty_struct && t2->ty!=cty_starr) thrM("FFI: Unimplemented pointer element type");
         
-        if (!isArr(c)) thrM("FFI: Expected array corresponding to *{...}");
-        // *{...} / &{...}
-        usz ia = IA(c);
         
         usz elSz = t2->structSize;
         TALLOC(u8, dataAll, elSz*ia + sizeof(usz));
@@ -569,15 +611,15 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         *(void**)ptr = tyany_ptr(cG);
         ffiObjs = vec_addN(ffiObjs, cG);
       }
-    } else if (t->ty==cty_struct) {
+    } else if (t->ty==cty_struct || t->ty==cty_starr) {
       if (!isArr(c)) thrM("FFI: Expected array corresponding to a struct");
-      if (IA(c)!=t->ia-1) thrM("FFI: Incorrect list length corresponding to a struct");
+      if (IA(c)!=t->ia-1) thrF("FFI: Incorrect list length corresponding to %S: expected %s, got %s", t->ty==cty_struct? "a struct" : "an array", (usz)(t->ia-1), IA(c));
       SGetU(c)
       for (usz i = 0; i < t->ia-1; i++) {
         BQNFFIEnt e = t->a[i];
         genObj(e.o, GetU(c, i), anyMut, e.offset + (u8*)ptr);
       }
-    } else thrM("FFI: Unimplemented type");
+    } else thrM("FFI: Unimplemented type (genObj)");
   }
 }
 
@@ -625,7 +667,7 @@ B readAny(BQNFFIEnt e, u8* ptr) {
     BQNFFIType* t = c(BQNFFIType, e.o);
     if (t->ty == cty_repr) { // cty_repr, scalar:x
       return readRe(t->a[0], ptr);
-    } else if (t->ty == cty_struct) { // {...}
+    } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}
       return readStruct(c(BQNFFIType, e.o), ptr);
     }
   }
@@ -651,7 +693,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
         }
       } else {
         BQNFFIType* t2 = c(BQNFFIType, e);
-        assert(t2->ty == cty_struct);
+        assert(t2->ty==cty_struct || t2->ty==cty_starr);
         
         u8* dataAll = c(TAlloc,f)->data;
         void* dataStruct = dataAll+sizeof(usz);
@@ -671,7 +713,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     bool mut = t->a[0].mutPtr;
     if (!mut) return m_f64(0);
     return inc(f);
-  } else thrM("FFI: Unimplemented type");
+  } else thrM("FFI: Unimplemented type (buildObj)");
 }
 
 B libffiFn_c2(B t, B w, B x) {
@@ -771,6 +813,21 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) {
 static u64 atomSize(B chr) {
   return o2cG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
 }
+static u64 calcStaticSize(BQNFFIEnt e) {
+  if (isC32(e.o)) { // scalar
+    return atomSize(e.o);
+  } else {
+    BQNFFIType* t = c(BQNFFIType, e.o);
+    if (t->ty==cty_ptr || t->ty==cty_tlarr) return sizeof(void*); // *any / &any / top-level [n]any
+    else if (t->ty==cty_struct || t->ty==cty_starr) return t->structSize; // {...}
+    else if (t->ty==cty_repr) { // any:any
+      B o2 = t->a[0].o;
+      if (isC32(o2)) return atomSize(o2);
+      if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
+      return sizeof(void*);
+    } else thrM("FFI: Unimplemented type (size calculation)");
+  }
+}
 
 B ffiload_c2(B t, B w, B x) {
   usz xia = IA(x);
@@ -796,7 +853,8 @@ B ffiload_c2(B t, B w, B x) {
       atomType = o2;
       goto calcRes;
     }
-    if (t->ty == cty_struct) { size = t->structSize; goto allocRes; }
+    if (t->ty==cty_struct) { size = t->structSize; goto allocRes; }
+    if (t->ty==cty_tlarr) thrM("FFI: Cannot return array");
     thrM("FFI: Unimplemented result type");
     
     calcRes:; size = atomSize(atomType);
@@ -812,23 +870,7 @@ B ffiload_c2(B t, B w, B x) {
     for (usz i = 0; i < argn; i++) {
       BQNFFIEnt e = ffi_parseType(GetU(x,i+2), false);
       
-      u16 size;
-      if (isC32(e.o)) { // scalar
-        size = atomSize(e.o);
-      } else {
-        BQNFFIType* t = c(BQNFFIType, e.o);
-        if (t->ty==cty_ptr) size = sizeof(void*); // *any / &any
-        else if (t->ty==cty_struct) size = t->structSize; // {...}
-        else if (t->ty==cty_repr) { // any:any
-          B o2 = t->a[0].o;
-          if (isC32(o2)) size = atomSize(o2);
-          else {
-            if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
-            size = sizeof(void*);
-          }
-        } else thrM("FFI: Unimplemented type");
-      }
-      STATIC_ALLOC(e, size);
+      STATIC_ALLOC(e, calcStaticSize(e));
       
       args[i+1] = e;
       (e.wholeArg? one : many)[e.extra] = true;
@@ -888,7 +930,7 @@ B ffiload_c2(B t, B w, B x) {
 #define FFI_TYPE_FLDS(OBJ, PTR) \
   BQNFFIType* t = (BQNFFIType*) x;   \
   BQNFFIEnt* arr=t->a; usz ia=t->ia; \
-  if (t->ty == cty_struct) {         \
+  if (t->ty==cty_struct || t->ty==cty_starr) { \
     ia--;                            \
     if (arr[ia].structData!=NULL) {  \
       PTR(arr[ia].structData);       \
@@ -906,7 +948,7 @@ void ffiType_print(FILE* f, B x) {
   BQNFFIType* t = c(BQNFFIType,x);
   fprintf(f, "cty_%d⟨", t->ty);
   usz ia = t->ia;
-  if (t->ty==cty_struct) ia--;
+  if (t->ty==cty_struct || t->ty==cty_starr) ia--;
   for (usz i=0; i<ia; i++) {
     if (i) fprintf(f, ", ");
     printFFIType(f, t->a[i].o);

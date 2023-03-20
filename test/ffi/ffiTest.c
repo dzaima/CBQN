@@ -250,3 +250,43 @@ uint32_t arrayRefOp(U32Arr* a) {
 int plusone(int x) {
   return x + 1;
 }
+
+
+
+int32_t arrarg(int32_t a[3]) {
+  return a[0] + a[1] + a[2];
+}
+
+typedef struct {
+  int32_t a[1];
+} ArrStruct1;
+
+int32_t arrstruct1(ArrStruct1 a, ArrStruct1* b) {
+  return a.a[0] + b->a[0];
+}
+
+int32_t ptrToArr(int32_t (*a)[2]) {
+  return a[3][0]+a[4][1];
+}
+
+typedef struct {
+  int32_t a[1];
+  ArrStruct1 b[2];
+  double c[3];
+} ArrStruct2;
+
+ArrStruct2 arrstruct2(ArrStruct2 a, ArrStruct2* b) {
+  return (ArrStruct2){
+    .a = {a.a[0] + b->a[0]},
+    .b = {{a.b[0].a[0] + b->b[1].a[0]}, {a.b[1].a[0] + b->b[0].a[0]}},
+    .c = {1.0, 2.0, a.c[0] + a.c[2] + b->c[1] + b->c[2]}
+  };
+}
+void arrstruct2Inc(ArrStruct2* b) {
+  for (int i = 0; i < 2; i++) {
+    b[i].a[0]++;
+    b[i].b[1].a[0]++;
+    b[i].c[1]++;
+    b[i].c[2]++;
+  }
+}

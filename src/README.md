@@ -73,7 +73,7 @@ src/
 Type checks (all are safe to execute on any B object):
   test           tag    description     heap-allocated
   isF64(x)     F64_TAG  a number        no
-  isChr(x)     C32_TAG  a character     no
+  isC32(x)     C32_TAG  a character     no
   isAtm(x)      [many]  !isArr(x)       depends
   isVal(x)      [many]  heap-allocated  yes
   isFun(x)     FUN_TAG  a function      yes
