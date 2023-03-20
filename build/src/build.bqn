@@ -82,7 +82,7 @@ getOpt ← {
   For flag lists, 'k=v' will split on spaces, i.e. 'f=-a -b' adds two flags,
   whereas 'f+=-a -b' adds one flag that contains a space.
 Options:
-"∾∾oh {"  "∾𝕩∾"  "∾𝕨∾@+10}¨○((@≢¨oh)⊸/) (⌈´≠¨)⊸(↑¨)on0
+"∾∾oh {"  "∾𝕩∾"  "∾𝕨∾@+10}¨⟜((⌈´≠¨)⊸(↑¨))○((@≢¨oh)⊸/) on0
 •Exit 0
   }⍟⊢ ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨ •args
   
