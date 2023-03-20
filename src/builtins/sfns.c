@@ -1245,7 +1245,8 @@ B reverse_c2(B t, B w, B x) {
 #endif
 
 #if SINGELI_X86_64
-  static NOINLINE void base_transpose_u32(u32* rp, u32* xp, u64 w, u64 h, u64 xo, u64 ro) { PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*ro+y] = xp[y*xo+x]; }
+  static NOINLINE void base_transpose_i32(i32* rp, i32* xp, u64 w, u64 h, u64 xo, u64 ro) { PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*ro+y] = xp[y*xo+x]; }
+  static NOINLINE void base_transpose_i64(i64* rp, i64* xp, u64 w, u64 h, u64 xo, u64 ro) { PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*ro+y] = xp[y*xo+x]; }
   #define SINGELI_FILE transpose
   #include "../utils/includeSingeli.h"
 #endif
@@ -1342,7 +1343,11 @@ B transp_c1(B t, B x) {
       if (w>=8 && h>=8)        { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); simd_transpose_i32(rp, xp, w, h); break; }
       #endif
                                { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
-      case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
+      case el_f64:
+      #if SINGELI_X86_64
+      if (w>=4 && h>=4)        { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        simd_transpose_i64(rp, xp, w, h); break; }
+      #endif
+                               { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_B: { // can't be bothered to implement a bitarr transpose
         B xf = getFillR(x);
         B* xp = TO_BPTR(x);

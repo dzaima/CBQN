@@ -28,20 +28,24 @@ def vtranspose{x & tuplen{x}==8 & type{tupsel{0,x}}==[8]i32 & hasarch{'X86_64'}}
   merge{h{16b20}, h{16b31}}
 }
 
+def vtranspose{x & tuplen{x}==4 & type{tupsel{0,x}}==[4]i64 & hasarch{'X86_64'}} = {
+  def t1 = unpack_pass{1, x}
+  def t2pairs = pairs{2, t1}
+  def h{p} = each{{a,b}=>emit{[8]i32, '_mm256_permute2f128_si256', a,b,p}, ...t2pairs}
+  merge{h{16b20}, h{16b31}}
+}
 
 
-fn transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+
+fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
+  def VT = [k]T
 
   def for_mult{k}{vars,begin,end,block} = {
     assert{begin == 0}
     @for (i to end/k) exec{k*i, vars, block}
   }
-
-  # Kernel size
-  def k = 8
-  def VT = [k]i32
 
   # Cache line info
   def line_bytes = 64
@@ -68,7 +72,7 @@ fn transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
       def vt{i} = vtranspose{each{loadx, k*i + iota{k}}}
       each{tup, ...each{vt, iota{line_vecs}}}
     }
-    ro := tail{6, -u64~~r0} / 4  # Offset to align within cache line; assume elt-aligned
+    ro := tail{6, -u64~~r0} / (width{T}/8)  # Offset to align within cache line; assume elt-aligned
     wh := w*h
     yn := h
     if (ro != 0) {
@@ -103,8 +107,10 @@ fn transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
     }
   }
   
-  if (w%8) emit{void, 'base_transpose_u32', rp+h*(w-w%8), xp+  (w-w%8), w%8,   h,   w, h}
-  if (h%8) emit{void, 'base_transpose_u32', rp+  (h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
+  def base = if (T==i32) 'base_transpose_i32' else 'base_transpose_i64'
+  if (w%k) emit{void, base, rp+h*(w-w%k), xp+  (w-w%k), w%k,   h,   w, h}
+  if (h%k) emit{void, base, rp+  (h-h%k), xp+w*(h-h%k), w-w%k, h%k, w, h}
 }
 
-export{'simd_transpose_i32', transpose{u32}}
+export{'simd_transpose_i32', transpose{i32, 8}}
+export{'simd_transpose_i64', transpose{i64, 4}}
