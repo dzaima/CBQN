@@ -577,13 +577,31 @@ static B simple_unescape(B x) {
   return c1(escape_parser, x);
 }
 
+static NOINLINE void printTime(f64 ns) {
+  if      (ns<1e3) printf("%.5gns\n", ns);
+  else if (ns<1e6) printf("%.4gus\n", ns/1e3);
+  else if (ns<1e9) printf("%.4gms\n", ns/1e6);
+  else             printf("%.5gs\n", ns/1e9);
+}
+static NOINLINE f64 timeBlockN(Block* block, i64 rep) {
+  u64 sns = nsTime();
+  for (i64 i = 0; i < rep; i++) dec(execBlockInplace(block, gsc));
+  u64 ens = nsTime();
+  return ens-sns;
+}
+#if !NO_RYU
+bool ryu_s2d_n(u8* buffer, int len, f64* result);
+#endif
+
 void heap_printInfo(bool sizes, bool types, bool freed, bool chain);
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
   B code;
   int output; // 0-no; 1-formatter; 2-internal
-  i32 time = 0;
+  int mode = 0; // 0: regular execution; 1: single timing; 2: many timings; 3: second-limited timing; 4: profile
+  i32 timeRep = 0;
+  f64 timeNanos = -1;
   i64 profile = -1;
   if (ln[0] == ')') {
     char* cmdS = ln+1;
@@ -607,9 +625,10 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
     } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
       code = utf8Decode0(cmdE);
-      time = -1;
+      mode = 1;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "profile ") || isCmd(cmdS, &cmdE, "profile@")) {
+      mode = 4;
       char* cpos = cmdE;
       profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
       if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
@@ -618,16 +637,20 @@ void cbqn_runLine0(char* ln, i64 read) {
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
-      i64 am = readInt(&repE);
-      if (*repE == 'e') { repE++;
-        i64 exp = readInt(&repE);
-        if (exp>18) { printf("time repetition count too large\n"); return; }
-        for (int i = 0; i < exp; i++) am*= 10;
-      }
-      if (repE==cmdE) { printf("time command not given repetition count\n"); return; }
-      if (am==0) { printf("repetition count was zero\n"); return; }
+      mode = 2;
+      #if NO_RYU
+        i64 am = readInt(&repE);
+      #else
+        while ((*repE>='0' & *repE<='9') || *repE=='.' || *repE=='e') repE++;
+        if (repE-cmdE >= 40) { printf("Timing repetition count too large\n"); return; }
+        ux chrs = repE-cmdE;
+        f64 am;
+        if (!ryu_s2d_n((u8*)cmdE, chrs, &am)) { printf("Bad timing repetition count\n"); return; }
+        if (am==0) { printf("Timing repetition count was zero\n"); return; }
+        if (*repE == 's') { repE++; mode=3; timeNanos=am*1e9; }
+      #endif
       code = utf8Decode0(repE);
-      time = am;
+      timeRep = am;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
       bool sizes=0, types=0;
@@ -781,25 +804,32 @@ void cbqn_runLine0(char* ln, i64 read) {
   gsc->body = ptr_inc(block->bodies[0]);
   
   B res;
-  if (time) {
-    f64 t;
-    if (time==-1) {
-      u64 sns = nsTime();
-      res = execBlockInplace(block, gsc);
-      u64 ens = nsTime();
-      t = ens-sns;
-    } else {
-      u64 sns = nsTime();
-      for (i64 i = 0; i < time; i++) dec(execBlockInplace(block, gsc));
-      u64 ens = nsTime();
-      t = (ens-sns)*1.0 / time;
-      res = m_c32(0);
+  if (mode==1) {
+    u64 sns = nsTime();
+    res = execBlockInplace(block, gsc);
+    u64 ens = nsTime();
+    printTime(ens-sns);
+  } else if (mode==2) {
+    printTime(timeBlockN(block, timeRep) / timeRep);
+    res = m_c32(0);
+  } else if (mode==3) {
+    f64 tns = 0; // total nanoseconds timed
+    u64 rt = 0; // count of runs of those nanoseconds
+    u64 r1 = 1; // run count to attempt next
+    while (1) {
+      // printf(N64d"\n", r1);
+      f64 ct = timeBlockN(block, r1);
+      tns+= ct;
+      rt+= r1;
+      timeNanos-= ct;
+      if (timeNanos<=0) break;
+      u64 r2 = timeNanos*r1/ct;
+      if      (r2 <= r1/8) { r1/=8; if (!r1) r1=1; }
+      else if (r2 >= r1*2) { r1*=2; }
+      else r1 = r2;
     }
-    if      (t<1e3) printf("%.5gns\n", t);
-    else if (t<1e6) printf("%.4gus\n", t/1e3);
-    else if (t<1e9) printf("%.4gms\n", t/1e6);
-    else            printf("%.5gs\n", t/1e9);
-  } else if (profile>0) {
+    printTime(tns / rt);
+  } else if (mode==4) {
     if (CATCH) { profiler_stop(); profiler_free(); rethrow(); }
     if (profiler_alloc() && profiler_start(profile)) {
       res = execBlockInplace(block, gsc);
@@ -808,7 +838,10 @@ void cbqn_runLine0(char* ln, i64 read) {
       profiler_free();
     }
     popCatch();
-  } else res = execBlockInplace(block, gsc);
+  } else {
+    res = execBlockInplace(block, gsc);
+  }
+  
   ptr_dec(block);
   
   if (output) {
