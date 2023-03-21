@@ -36,6 +36,68 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   static AndBytesFn andBytes_fn = base_andBytes;
 #endif
 
+B floor_c1(B t, B x);
+B sub_c1(B t, B x);
+B fne_c1(B t, B x);
+B shape_c2(B t, B w, B x);
+
+// all divint/floordiv/modint assume integer arguments
+// floordiv will return float result only on ¯2147483648÷¯1 or n÷0, but may not otherwise squeeze integer types; integer argument requirement may be relaxed in the future
+// divint will return float result if there's a fractional result, or in overflow cases same as floordiv
+// TODO overflow-checked Singeli code for _AA cases?
+typedef float f32;
+#define DIVLOOP(RE, WE, EXPR) RE* rp; B r=m_##RE##arrc(&rp, w); usz ia=IA(w); WE* wp=WE##any_ptr(w); for(ux i=0; i<ia; i++) rp[i] = (EXPR);
+static B divint_AA(B w, B x) { // consumes both
+  w = toI32Any(w);
+  x = toI32Any(x); i32* xp = tyany_ptr(x);
+  DIVLOOP(f64, i32, wp[i]/(f64)xp[i]);
+  r = num_squeeze(r); decG(w); decG(x); return r;
+}
+static B divint_AS(B w, i32 xv) { // consumes
+  w = toI32Any(w);
+  if (xv==1) return w;
+  if (xv==-1) return C1(sub, w);
+  if (xv==0) return C2(mul, w, m_f64(1.0/0.0));
+  DIVLOOP(f64, i32, wp[i]/(f64)xv);
+  r = num_squeeze(r); decG(w); return r;
+}
+
+static B floordiv_AA(B w, B x) { // consumes both
+  u8 we=TI(w,elType); assert(we<=el_i32);
+  u8 xe=TI(x,elType); assert(xe<=el_i32);
+  if (we<=el_i16) {
+    w = taga(cpyI16Arr(w));
+    x = toI32Any(x); i32* xp = i32any_ptr(x);
+    DIVLOOP(f64, i16, floorf((f32)wp[i] / (f32)xp[i]));
+    r = num_squeeze(r); decG(w); decG(x); return r;
+  }
+  return C1(floor, divint_AA(w, x));
+}
+static B floordiv_AS(B w, i32 xv) { // consumes
+  u8 we = TI(w,elType);
+  assert(we<=el_i32);
+  if (xv==1) return w;
+  if (xv==-1) return C1(sub, w);
+  if (xv==0) return C2(mul, w, m_f64(1.0/0.0));
+  if (we<=el_i16) {
+    w = toI16Any(w);
+    DIVLOOP(i16, i16, floorf((f32)wp[i] / (f32)xv));
+    decG(w); return r;
+  } else {
+    w = toI32Any(w);
+    DIVLOOP(i32, i32, floor((f64)wp[i] / (f64)xv));
+    decG(w); return r;
+  }
+}
+#undef DIVLOOP
+
+static B modint_AA(B w,    B x) { return num_squeeze(C2(sub, x, C2(mul, w,         floordiv_AA(incG(x), incG(w))))); } // consumes both
+static B modint_SA(i32 wv, B x) { return num_squeeze(C2(sub, x, C2(mul, m_i32(wv), floordiv_AS(incG(x), wv)))); } // consumes
+static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w)), xv)); } // consumes w, assumes xv is number
+
+
+
+
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
 #define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x); }}
 
@@ -71,7 +133,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   
-  #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA) B NAME##_c2_arr(B t, B w, B x) { \
+  #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA, INT_AS, INT_AA) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
@@ -79,8 +141,9 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
         u8 we = TI(w,elType);                                     \
         u8 xe = TI(x,elType);                                     \
         if (elNum(we) && elNum(xe)) {                             \
-          if (we<el_i32) { w=taga(cpyI32Arr(w)); we=el_i32; } void* wp = tyany_ptr(w); \
-          if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp = tyany_ptr(x); \
+          if (we<=el_i32 && xe<=el_i32) { INT_AA; }               \
+          if (we<el_i32) { w=taga(cpyI32Arr(w)); we=el_i32; } void* wp=tyany_ptr(w); \
+          if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp=tyany_ptr(x); \
           Rf64(x);                                                \
           if (we==el_i32) { B w,x /*shadow*/;                     \
             if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
@@ -95,44 +158,55 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
         if (elInt(xe)){INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
         if (xe==el_f64) { Rf64(x);                    PF(x)   DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); \
-        if (elInt(we)){       Rf64(w); w=toI32Any(w); PI32(w) DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (elInt(we)){INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
         if (we==el_f64) { Rf64(w);                    PF(w)   DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
     thrM(SYMB ": Unexpected argument types");                     \
   }
-  GC2f("÷", div  ,           w.f/x.f, , )
-  GC2f("√", root , pow(x.f, 1.0/w.f), NOUNROLL, )
-  GC2f("⋆", pow  ,     pow(w.f, x.f), NOUNROLL, )
-  GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL, )
+  GC2f("÷", div  ,           w.f/x.f,
+    , /*INT_SA*/
+    , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
+    , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
+    )
+  GC2f("√", root , pow(x.f, 1.0/w.f), NOUNROLL,,,)
+  GC2f("⋆", pow  ,     pow(w.f, x.f), NOUNROLL,,,)
+  GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,)
   static u64 repeatNum[] = {
     [el_i8 ] = 0x0101010101010101ULL,
     [el_i16] = 0x0001000100010001ULL,
     [el_i32] = 0x0000000100000001ULL,
   };
   GC2f("|", stile,   pfmod(x.f, w.f), NOUNROLL,
-    f64 wf64 = o2fG(w); i32 wi32 = wf64;
-    if (wf64==(f64)wi32 && wi32>0 && (wi32&(wi32-1))==0) {
-      if (wi32==1) { Arr* ra=allZeroes(IA(x)); arr_shCopy(ra, x); r = taga(ra); decG(x); return r; }
-      if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
-      u8 elw = elWidth(xe);
-      u32 mask0 = (u32)wi32;
-      if (mask0 > (1 << (elw*8-1))) {
-        if      (mask0 > 32768) { x=taga(cpyI32Arr(x)); xe=el_i32; elw=4; }
-        else if (mask0 >   128) { x=taga(cpyI16Arr(x)); xe=el_i16; elw=2; }
-        else UD;
+    /*INT_SA*/
+    if (q_i32(w)) {
+      i32 wi32 = o2iG(w);
+      if (wi32>0 && (wi32&(wi32-1))==0) {
+        if (wi32==1) { Arr* ra=allZeroes(IA(x)); arr_shCopy(ra, x); r = taga(ra); decG(x); return r; }
+        if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
+        u8 elw = elWidth(xe);
+        u32 mask0 = (u32)wi32;
+        if (mask0 > (1 << (elw*8-1))) {
+          if      (mask0 > 32768) { x=taga(cpyI32Arr(x)); xe=el_i32; elw=4; }
+          else if (mask0 >   128) { x=taga(cpyI16Arr(x)); xe=el_i16; elw=2; }
+          else UD;
+        }
+        u64 mask = (mask0-1)*repeatNum[xe];
+        usz bytes = IA(x)*elw;
+        u8* rp = m_tyarrc(&r, elw, x, el2t(xe));
+        andBytes_fn(rp, tyany_ptr(x), mask, bytes);
+        decG(x);
+        if (wi32==2) return taga(cpyBitArr(r));
+        else if (wi32<256) return taga(cpyI8Arr(r)); // these won't widen, as the code doesn't even get to here if 𝕨 > max possible in 𝕩
+        else if (wi32<65536) return taga(cpyI16Arr(r));
+        return r;
+      } else {
+        return modint_SA(wi32, x);
       }
-      u64 mask = (mask0-1)*repeatNum[xe];
-      usz bytes = IA(x)*elw;
-      u8* rp = m_tyarrc(&r, elw, x, el2t(xe));
-      andBytes_fn(rp, tyany_ptr(x), mask, bytes);
-      decG(x);
-      if (wi32==2) return taga(cpyBitArr(r));
-      if (wi32<256) return taga(cpyI8Arr(r)); // these won't widen, as the code doesn't even get to here if 𝕨 > max possible in 𝕩
-      if (wi32<65536) return taga(cpyI16Arr(r));
-      return r;
     }
+    , /*INT_AS*/ if (q_i32(x)) return modint_AS(w, x);
+    , /*INT_AA*/ return modint_AA(w, x);
   )
   #undef GC2f
   
