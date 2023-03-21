@@ -40,6 +40,11 @@ def vtranspose2{x & ktest{'X86_64',8,[16]i16}{x}} = {
   def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
   each{bind{~~,[16]i16}, r}
 }
+# Transpose 16x16 packed as halves
+def vtranspose{x & ktest{'X86_64',8,[32]i8}{x}} = {
+  def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
+  each{{v}=>[32]i8~~shuf{[4]i64, v, 4b3120}, r}
+}
 def load2{a:T, b:T & w128i{eltype{T}}} = {
   def V = eltype{T}
   emit{[2*vcount{V}](eltype{V}), '_mm256_loadu2_m128i', b, a}
@@ -48,6 +53,35 @@ def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
   each{{p, i} => store{p, 0, half{v, i}}, tup{a,b}, iota{2}}
 }
 
+def kernel{src:P, dst:P, k, k, w, h & k*width{eltype{P}}==256} = {
+  def VT = [k](eltype{P})
+  def xvs = each{{i}=>load{*VT~~(src+i*w), 0}, iota{k}}
+  def rvs = vtranspose{xvs}
+  each{{i,v}=>store{*VT~~(dst+i*h), 0, v}, iota{k}, rvs}
+}
+def kernel{src:P, dst:P, k, k, w, h & k*width{eltype{P}}==128} = {
+  def VT = [k](eltype{P})
+  def s = k/2
+  def xvs = each{{i}=>{p:=src+i*w; load2{*VT~~p, *VT~~(p+s*w)}}, iota{s}}
+  def rvs = vtranspose{xvs}
+  each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+h), v}}, iota{s}, rvs}
+}
+def kernel{src:P, dst:P, k, d, w, h & d==2*k & d*width{eltype{P}}==256} = {
+  def HT = [k](eltype{P})
+  def VT = [d](eltype{P})
+  def xvs = each{{i}=>{p:=src+i*w; load2{*HT~~p, *HT~~(p+k*w)}}, iota{k}}
+  def rvs = vtranspose2{xvs}
+  each{{i,v}=>store{*VT~~(dst+i*h), 0, v}, iota{k}, rvs}
+}
+# 8x8 i16 with a wasted half: would be better to store as 4x16
+def kernel{src:P, dst:P, k==8, k, w, h & eltype{P}==i16} = {
+  def T = i16
+  def VT = [2*k]i16
+  def lw = k*width{T}
+  def xvs = each{{i}=>loadLow{*VT~~(src+i*w), lw}, iota{k}}
+  def rvs = vtranspose2{xvs}
+  each{{i,v}=>storeLow{*VT~~(dst+i*h), lw, v}, iota{k}, rvs}
+}
 
 
 def for_mult{k}{vars,begin,end,block} = {
@@ -56,6 +90,14 @@ def for_mult{k}{vars,begin,end,block} = {
 }
 
 def mat_at{rp,xp,w,h}{x,y} = tup{xp + y*w + x, rp + x*h + y}
+
+def transpose_kernels{kw, kh, rp, xp, w, h} = {
+  @for_mult{kh} (y to h) {
+    @for_mult{kw} (x to w) {
+      kernel{...mat_at{rp,xp,w,h}{x,y}, kw, kh, w, h}
+    }
+  }
+}
 
 # Scalar transpose defined in C
 def call_base{T} = {
@@ -75,7 +117,6 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   small_transpose_out{T, k, rp, xp, w, h}
-  def at = mat_at{rp,xp,w,h}
   def VT = [k]T
   
   # Cache line info
@@ -83,15 +124,9 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   def line_elts = line_bytes / (width{T}/8)
   def line_vecs = line_bytes / (width{VT}/8)
   
-  if (h&(line_elts-1) != 0) {
-    @for_mult{k} (y to h) {
-      @for_mult{k} (x to w) {
-        {xpo,rpo} := at{x, y}
-        def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{k}}
-        def rvs = vtranspose{xvs}
-        each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
-      }
-    }
+  if (line_elts > 2*k or h&(line_elts-1) != 0) {
+    # Main transpose
+    transpose_kernels{k, k, rp, xp, w, h}
   } else {
     # Result rows are aligned with each other so it's possible to
     # write a full cache line at a time
@@ -129,7 +164,7 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
     }
     @for_mult{line_elts} (y0 to yn) { y := y0 + ro
       @for_mult{k} (x to w) {
-        {xpo,rpo} := at{x, y}
+        {xpo,rpo} := mat_at{rp,xp,w,h}{x, y}
         def rls = get_lines{{i} => load{*VT~~(xpo+i*w), 0}}
         each{{i,v} => store_line{*VT~~(rpo+i*h), v}, iota{k}, rls}
       }
@@ -143,50 +178,13 @@ fn transpose{T, k, m==2}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   small_transpose_out{T, k, rp, xp, w, h}
-  def at = mat_at{rp,xp,w,h}
   def d = m*k
-  def VT = [d]T
-  def HT = [k]T
   
-  @for_mult{d} (y to h) {
-    @for_mult{k} (x to w) {
-      {xpo, rpo} := at{x, y}
-      def xvs = each{{i}=>{p:=xpo+i*w; load2{*HT~~p, *HT~~(p+k*w)}}, iota{k}}
-      def rvs = vtranspose2{xvs}
-      each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
-    }
-  }
+  transpose_kernels{k, d, rp, xp, w, h}
+  
   if ((h & k) != 0) { y := h-h%d
     @for_mult{k} (x to w) {
-      {xpo, rpo} := at{x, y}
-      def lw = k*width{T}
-      def xvs = each{{i}=>loadLow{*VT~~(xpo+i*w), lw}, iota{k}}
-      def rvs = vtranspose2{xvs}
-      each{{i,v}=>storeLow{*VT~~(rpo+i*h), lw, v}, iota{k}, rvs}
-    }
-  }
-  
-  edge_transpose{T, k, rp, xp, w, h}
-}
-
-def vtranspose{x & ktest{'X86_64',8,[32]i8}{x}} = {
-  def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
-  each{{v}=>[32]i8~~shuf{[4]i64, v, 4b3120}, r}
-}
-fn transpose{T==i8, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
-  rp:*T = *T~~r0
-  xp:*T = *T~~x0
-  small_transpose_out{T, k, rp, xp, w, h}
-  def at = mat_at{rp,xp,w,h}
-  def VT = [k]T
-  
-  @for_mult{k} (y to h) {
-    @for_mult{k} (x to w) {
-      {xpo, rpo} := at{x, y}
-      def s = k/2
-      def xvs = each{{i}=>{p:=xpo+i*w; load2{*VT~~p, *VT~~(p+s*w)}}, iota{s}}
-      def rvs = vtranspose{xvs}
-      each{{i,v}=>{p:=rpo+2*i*h; store2{*VT~~p, *VT~~(p+h), v}}, iota{s}, rvs}
+      kernel{...mat_at{rp,xp,w,h}{x,y}, k, k, w, h}
     }
   }
   
