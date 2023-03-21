@@ -18,7 +18,7 @@
     static NOINLINE void base_transpose_##T(T* rp, T* xp, u64 bw, u64 bh, u64 w, u64 h) { \
       TRANSPOSE_BLOCK(rp, xp, bw, bh, w, h); \
     }
-  DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
+  DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
   #undef DECL_BASE
   #define SINGELI_FILE transpose
   #include "../utils/includeSingeli.h"
@@ -112,7 +112,7 @@ B transp_c1(B t, B x) {
   } else {
     switch(xe) { default: UD;
       case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; // fallthough
-      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); TRANSPOSE_LOOP(     rp, xp, w, h); break; }
+      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
       case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
       case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
       case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }

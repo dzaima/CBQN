@@ -44,6 +44,9 @@ def load2{a:T, b:T & w128i{eltype{T}}} = {
   def V = eltype{T}
   emit{[2*vcount{V}](eltype{V}), '_mm256_loadu2_m128i', b, a}
 }
+def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
+  each{{p, i} => store{p, 0, half{v, i}}, tup{a,b}, iota{2}}
+}
 
 
 
@@ -56,7 +59,7 @@ def mat_at{rp,xp,w,h}{x,y} = tup{xp + y*w + x, rp + x*h + y}
 
 # Scalar transpose defined in C
 def call_base{T} = {
-  def ts = if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
+  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
   {...a} => emit{void, merge{'base_transpose_',ts}, ...a}
 }
 def small_transpose_out{T, k, rp, xp, w, h} = {
@@ -166,6 +169,31 @@ fn transpose{T, k, m==2}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   edge_transpose{T, k, rp, xp, w, h}
 }
 
+def vtranspose{x & ktest{'X86_64',8,[32]i8}{x}} = {
+  def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
+  each{{v}=>[32]i8~~shuf{[4]i64, v, 4b3120}, r}
+}
+fn transpose{T==i8, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+  rp:*T = *T~~r0
+  xp:*T = *T~~x0
+  small_transpose_out{T, k, rp, xp, w, h}
+  def at = mat_at{rp,xp,w,h}
+  def VT = [k]T
+  
+  @for_mult{k} (y to h) {
+    @for_mult{k} (x to w) {
+      {xpo, rpo} := at{x, y}
+      def s = k/2
+      def xvs = each{{i}=>{p:=xpo+i*w; load2{*VT~~p, *VT~~(p+s*w)}}, iota{s}}
+      def rvs = vtranspose{xvs}
+      each{{i,v}=>{p:=rpo+2*i*h; store2{*VT~~p, *VT~~(p+h), v}}, iota{s}, rvs}
+    }
+  }
+  
+  edge_transpose{T, k, rp, xp, w, h}
+}
+
+export{'simd_transpose_i8',  transpose{i8 , 16}}
 export{'simd_transpose_i16', transpose{i16, 8, 2}}
 export{'simd_transpose_i32', transpose{i32, 8}}
 export{'simd_transpose_i64', transpose{i64, 4}}
