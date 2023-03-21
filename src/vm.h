@@ -24,10 +24,10 @@ enum {
   POPS = 0x06, // pop object from stack
   RETN = 0x07, // returns top of stack
   RETD = 0x08, // return a namespace of exported items
-  LSTO = 0x0B, // N; create a vector of top N items
-  LSTM = 0x0C, // N; create a mutable vector of top N items
-  ARMO = 0x0D, // push `>ToS`
-  ARMM = 0x0E, // push a mutable version of `>ToS` that unpacks cells of what its assigned to
+  LSTO = 0x0B, // N; push a vector of top N items
+  LSTM = 0x0C, // N; push a mutable vector of top N items
+  ARMO = 0x0D, // N; push an array whose cells are the top N items
+  ARMM = 0x0E, // N; push a mutable array whose cells are the top N items
   
   FN1C = 0x10, // monadic function call ⟨…,x,f  ⟩ → F x
   FN2C = 0x11, //  dyadic function call ⟨…,x,f,w⟩ → w F x
