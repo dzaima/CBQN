@@ -40,11 +40,16 @@ def vtranspose2{x & ktest{'X86_64',8,[16]i16}{x}} = {
   def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
   each{bind{~~,[16]i16}, r}
 }
-# Transpose 16x16 packed as halves
+# Transpose square packed as halves
 def vtranspose{x & ktest{'X86_64',8,[32]i8}{x}} = {
   def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
   each{{v}=>[32]i8~~shuf{[4]i64, v, 4b3120}, r}
 }
+def vtranspose{x & ktest{'X86_64',4,[16]i16}{x}} = {
+  def r = unpack_pass{2, unpack_pass{1, x}}
+  each{{v}=>[16]i16~~shuf{[4]i64, v, 4b3120}, r}
+}
+
 def load2{a:T, b:T & w128i{eltype{T}}} = {
   def V = eltype{T}
   emit{[2*vcount{V}](eltype{V}), '_mm256_loadu2_m128i', b, a}
@@ -72,15 +77,6 @@ def kernel{src:P, dst:P, k, d, w, h & d==2*k & d*width{eltype{P}}==256} = {
   def xvs = each{{i}=>{p:=src+i*w; load2{*HT~~p, *HT~~(p+k*w)}}, iota{k}}
   def rvs = vtranspose2{xvs}
   each{{i,v}=>store{*VT~~(dst+i*h), 0, v}, iota{k}, rvs}
-}
-# 8x8 i16 with a wasted half: would be better to store as 4x16
-def kernel{src:P, dst:P, k==8, k, w, h & eltype{P}==i16} = {
-  def T = i16
-  def VT = [2*k]i16
-  def lw = k*width{T}
-  def xvs = each{{i}=>loadLow{*VT~~(src+i*w), lw}, iota{k}}
-  def rvs = vtranspose2{xvs}
-  each{{i,v}=>storeLow{*VT~~(dst+i*h), lw, v}, iota{k}, rvs}
 }
 
 
