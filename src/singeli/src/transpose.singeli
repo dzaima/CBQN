@@ -61,7 +61,7 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
         def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{k}}
         def rvs = vtranspose{xvs}
         each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
-      }    
+      }
     }
   } else {
     # Result rows are aligned with each other so it's possible to
@@ -132,12 +132,22 @@ fn transpose2{T, k & T < i32}(r0:*void, x0:*void, w:u64, h:u64) : void = {
       def xvs = each{{i}=>{p:=xpo+i*w; load2{p, p+k*w}}, iota{k}}
       def rvs = vtranspose2{xvs}
       each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
-    }    
+    }
+  }
+  if ((h & k) != 0) { y := h-h%d
+    @for_mult{k} (x to w) {
+      xpo:= xp + y*w + x
+      rpo:= rp + x*h + y
+      def lw = k*width{T}
+      def xvs = each{{i}=>loadLow{*VT~~(xpo+i*w), lw}, iota{k}}
+      def rvs = vtranspose2{xvs}
+      each{{i,v}=>storeLow{*VT~~(rpo+i*h), lw, v}, iota{k}, rvs}
+    }
   }
   
   def base = 'base_transpose_i16'
   if (w%k) emit{void, base, rp+h*(w-w%k), xp+  (w-w%k), w%k,   h,   w, h}
-  if (h%d) emit{void, base, rp+  (h-h%d), xp+w*(h-h%d), w-w%k, h%d, w, h}
+  if (h%k) emit{void, base, rp+  (h-h%k), xp+w*(h-h%k), w-w%k, h%k, w, h}
 }
 
 export{'simd_transpose_i16', transpose2{i16, 8}}

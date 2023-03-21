@@ -1340,7 +1340,7 @@ B transp_c1(B t, B x) {
       case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_i16:case el_c16:
       #if SINGELI_X86_64
-      if (w>=8 && h>=16)       { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,4,ia,el2t(xe)); simd_transpose_i16(rp, xp, w, h); break; }
+      if (w>=8 && h>=8)        { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,4,ia,el2t(xe)); simd_transpose_i16(rp, xp, w, h); break; }
       #endif
                                { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); PLAINLOOP for(usz y=0;y<h;y++) NOVECTORIZE for(usz x=0;x<w;x++) rp[x*h+y] = xp[xi++]; break; }
       case el_i32:case el_c32: 
