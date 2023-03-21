@@ -38,16 +38,16 @@ def vtranspose{x & ktest{'X86_64',4,[4]i64}{x}} = {
 
 
 
+def for_mult{k}{vars,begin,end,block} = {
+  assert{begin == 0}
+  @for (i to end/k) exec{k*i, vars, block}
+}
+
 fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   def VT = [k]T
-
-  def for_mult{k}{vars,begin,end,block} = {
-    assert{begin == 0}
-    @for (i to end/k) exec{k*i, vars, block}
-  }
-
+  
   # Cache line info
   def line_bytes = 64
   def line_elts = line_bytes / (width{T}/8)
@@ -58,9 +58,9 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
       @for_mult{k} (x to w) {
         xpo:= xp + y*w + x
         rpo:= rp + x*h + y
-        def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{vcount{VT}}}
+        def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{k}}
         def rvs = vtranspose{xvs}
-        each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{vcount{VT}}, rvs}
+        each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
       }    
     }
   } else {
@@ -113,5 +113,33 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   if (h%k) emit{void, base, rp+  (h-h%k), xp+w*(h-h%k), w-w%k, h%k, w, h}
 }
 
+def vtranspose2{x & ktest{'X86_64',8,[16]i16}{x}} = {
+  def r = unpack_pass{4, unpack_pass{2, unpack_pass{1, x}}}
+  each{bind{~~,[16]i16}, r}
+}
+def load2{x, y} = emit{[16]i16, '_mm256_loadu2_m128i', *[8]i16~~y, *[8]i16~~x}
+
+fn transpose2{T, k & T < i32}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+  rp:*T = *T~~r0
+  xp:*T = *T~~x0
+  def d = 2*k
+  def VT = [d]T
+  
+  @for_mult{d} (y to h) {
+    @for_mult{k} (x to w) {
+      xpo:= xp + y*w + x
+      rpo:= rp + x*h + y
+      def xvs = each{{i}=>{p:=xpo+i*w; load2{p, p+k*w}}, iota{k}}
+      def rvs = vtranspose2{xvs}
+      each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{k}, rvs}
+    }    
+  }
+  
+  def base = 'base_transpose_i16'
+  if (w%k) emit{void, base, rp+h*(w-w%k), xp+  (w-w%k), w%k,   h,   w, h}
+  if (h%d) emit{void, base, rp+  (h-h%d), xp+w*(h-h%d), w-w%k, h%d, w, h}
+}
+
+export{'simd_transpose_i16', transpose2{i16, 8}}
 export{'simd_transpose_i32', transpose{i32, 8}}
 export{'simd_transpose_i64', transpose{i64, 4}}
