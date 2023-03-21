@@ -619,6 +619,11 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
       i64 am = readInt(&repE);
+      if (*repE == 'e') { repE++;
+        i64 exp = readInt(&repE);
+        if (exp>18) { printf("time repetition count too large\n"); return; }
+        for (int i = 0; i < exp; i++) am*= 10;
+      }
       if (repE==cmdE) { printf("time command not given repetition count\n"); return; }
       if (am==0) { printf("repetition count was zero\n"); return; }
       code = utf8Decode0(repE);
