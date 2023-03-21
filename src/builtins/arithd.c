@@ -41,11 +41,13 @@ B sub_c1(B t, B x);
 B fne_c1(B t, B x);
 B shape_c2(B t, B w, B x);
 
+// TODO move to h.h
+typedef float f32;
+
 // all divint/floordiv/modint assume integer arguments
 // floordiv will return float result only on ¯2147483648÷¯1 or n÷0, but may not otherwise squeeze integer types; integer argument requirement may be relaxed in the future
 // divint will return float result if there's a fractional result, or in overflow cases same as floordiv
-// TODO overflow-checked Singeli code for _AA cases?
-typedef float f32;
+// TODO overflow-checked Singeli code for exact integer divint, and maybe floordiv_AA
 #define DIVLOOP(RE, WE, EXPR) RE* rp; B r=m_##RE##arrc(&rp, w); usz ia=IA(w); WE* wp=WE##any_ptr(w); for(ux i=0; i<ia; i++) rp[i] = (EXPR);
 static B divint_AA(B w, B x) { // consumes both
   w = toI32Any(w);
@@ -81,11 +83,15 @@ static B floordiv_AS(B w, i32 xv) { // consumes
   if (xv==0) return C2(mul, w, m_f64(1.0/0.0));
   if (we<=el_i16) {
     w = toI16Any(w);
-    DIVLOOP(i16, i16, floorf((f32)wp[i] / (f32)xv));
+    f32 xr = 1/(f32)xv;
+    f32 off = 0.5*fabsf(xr);
+    DIVLOOP(i16, i16, floorf((f32)wp[i] * xr + off));
     decG(w); return r;
   } else {
     w = toI32Any(w);
-    DIVLOOP(i32, i32, floor((f64)wp[i] / (f64)xv));
+    f64 xr = 1/(f64)xv;
+    f64 off = 0.5*fabs(xr);
+    DIVLOOP(i32, i32, floor((f64)wp[i] * xr + off));
     decG(w); return r;
   }
 }
