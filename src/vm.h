@@ -62,6 +62,7 @@ enum {
   ALIM = 0x42, // N; replace ToS with one with a namespace field alias N
   
   EXTO, EXTM, EXTU, // alternate versions of VAR_ for extended variables
+  FLDG, // N; FLDO but using gid instead of nameList index
   ADDI, ADDU, // separate PUSH for refcounting needed/not needed (stores the object inline as 2 u32s, instead of reading from `objs`)
   FN1Ci, FN1Oi, FN2Ci, FN2Oi, // FN__ alternatives that don't take the function from the stack, but instead as an 2×u32 immediate in the bytecode
   SETNi, SETUi, SETMi, SETCi, // SET_ alternatives that expect the set variable as a depth-position pair like VAR_

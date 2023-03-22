@@ -13,7 +13,7 @@
 #define FOR_BC(F) F(PUSH) F(DYNO) F(DYNM) F(LSTO) F(LSTM) F(ARMO) F(ARMM) F(FN1C) F(FN2C) F(MD1C) F(MD2C) F(TR2D) \
                   F(TR3D) F(SETN) F(SETU) F(SETM) F(SETC) F(POPS) F(DFND) F(FN1O) F(FN2O) F(CHKV) F(TR3O) \
                   F(MD2R) F(MD2L) F(VARO) F(VARM) F(VFYM) F(SETH) F(RETN) F(FLDO) F(FLDM) F(ALIM) F(NOTM) F(RETD) F(SYSV) F(VARU) F(PRED) \
-                  F(EXTO) F(EXTM) F(EXTU) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
+                  F(EXTO) F(EXTM) F(EXTU) F(FLDG) F(ADDI) F(ADDU) F(FN1Ci)F(FN1Oi)F(FN2Ci)F(FN2Oi) \
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
@@ -350,7 +350,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             TSADD(bodyReqs, ((NextRequest){.off = TSSIZE(newBC), .pos1 = pos1, .pos2 = imm? U32_MAX : pos2}));
             A64(0); if(!imm) A64(0); // to be filled in by later bodyReqs handling
             break;
-          case FLDO: TSADD(newBC, FLDO); TSADD(newBC, str2gid(IGetU(nameList, c[1]))); break;
+          case FLDO: TSADD(newBC, FLDG); TSADD(newBC, str2gid(IGetU(nameList, c[1]))); break;
           case ALIM: TSADD(newBC, ALIM); TSADD(newBC, str2gid(IGetU(nameList, c[1]))); break;
           default: {
             u32* ccpy = c;
@@ -872,7 +872,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       
-      case FLDO: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
+      case FLDG: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, p)));
         dec(ns);
@@ -1189,7 +1189,7 @@ u32 bL_m[BC_SIZE] = { // bytecode length map
   [FAIL]=1, [PRED]=1,
   
   [PUSH]=2, [DFND]=2, [LSTO]=2, [LSTM]=2, [ARMO]=2, [ARMM]=2,
-  [DYNO]=2, [DYNM]=2, [FLDO]=2, [FLDM]=2,
+  [DYNO]=2, [DYNM]=2, [FLDO]=2, [FLDG]=2, [FLDM]=2,
   [SYSV]=2, [ALIM]=2,
   
   [VARO]=3, [VARM]=3, [VARU]=3,
@@ -1204,7 +1204,7 @@ u32 bL_m[BC_SIZE] = { // bytecode length map
 i32 sD_m[BC_SIZE] = { // stack diff map
   [PUSH ]= 1, [DYNO ]= 1, [DYNM]= 1, [DFND]= 1, [VARO]= 1, [VARM]= 1, [DFND0]= 1, [DFND1]=1, [DFND2]=1,
   [VARU ]= 1, [EXTO ]= 1, [EXTM]= 1, [EXTU]= 1, [SYSV]= 1, [ADDI]= 1, [ADDU ]= 1, [NOTM ]= 1,
-  [FN1Ci]= 0, [FN1Oi]= 0, [CHKV]= 0, [VFYM]= 0, [FLDO]= 0, [FLDM]= 0, [RETD ]= 0, [ALIM ]=0,
+  [FN1Ci]= 0, [FN1Oi]= 0, [CHKV]= 0, [VFYM]= 0, [FLDO]= 0, [FLDG]= 0, [FLDM]= 0, [RETD ]= 0, [ALIM ]=0,
   [FN2Ci]=-1, [FN2Oi]=-1, [FN1C]=-1, [FN1O]=-1, [MD1C]=-1, [TR2D]=-1, [POPS ]=-1, [MD2R ]=-1, [RETN]=-1, [PRED]=-1, [PRED1]=-1, [PRED2]=-1,
   [MD2C ]=-2, [TR3D ]=-2, [FN2C]=-2, [FN2O]=-2, [TR3O]=-2, [SETH]=-2, [SETH1]=-2, [SETH2]=-2,
   
@@ -1220,7 +1220,7 @@ i32 sC_m[BC_SIZE] = { // stack consumed map
   [EXTU]=0, [SYSV]=0, [ADDI]=0, [ADDU]=0, [DFND0]=0,[DFND1]=0,[DFND2]=0,
   
   [CHKV ]=0,[RETD ]=0,
-  [FN1Ci]=1,[FN1Oi]=1, [FLDO]=1, [FLDM]=1, [ALIM]=1, [RETN]=1, [POPS]=1, [PRED]=1, [PRED1]=1, [PRED2]=1, [VFYM]=1,
+  [FN1Ci]=1,[FN1Oi]=1, [FLDO]=1, [FLDG]=1, [FLDM]=1, [ALIM]=1, [RETN]=1, [POPS]=1, [PRED]=1, [PRED1]=1, [PRED2]=1, [VFYM]=1,
   [FN2Ci]=2,[FN2Oi]=2, [FN1C]=2, [FN1O]=2, [MD1C]=2, [TR2D]=2, [MD2R]=2, [SETH]=2, [SETH1]=2, [SETH2]=2,
   [MD2C ]=3,[TR3D ]=3, [FN2C]=3, [FN2O]=3, [TR3O]=3,
   
