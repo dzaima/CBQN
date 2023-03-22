@@ -65,31 +65,43 @@ def for_mult{k}{vars,begin,end,block} = {
 fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   # Scalar transpose defined in C
   def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
-  def call_base{...a} = emit{void, merge{'base_transpose_',ts}, ...a}
+  def call_base{...a} = emit{void, merge{'base_transpose_',ts}, ...a, w, h}
   
   rp:*T = *T~~r0
   xp:*T = *T~~x0
-  if (w<k or h<k) { call_base{rp, xp, w, h, w, h}; return{} }
+  if (w<k or h<k) { call_base{rp, xp, w, h}; return{} }
   
   def at{x,y} = tup{xp + y*w + x, rp + x*h + y}
   
   # Cache line info
   def line_bytes = 64
   def line_elts = line_bytes / (width{T}/8)
+
+  def use_overlap{o} = o >= 2  # For overlapped SIMD instead of scalar
   
+  # Handle uneven height (extra rows) here, but not uneven width
   if (line_elts > 2*k or h&(line_elts-1) != 0) {
+    ho := h%k
+    # Effective height: number of rows read, counting overlap twice
+    # Just use base transpose for short overhang; otherwise round up
+    he := h; if (use_overlap{ho}) he += k - ho
     # Main transpose
-    @for_mult{kh} (y to h) {
+    hm := h - kh
+    @for_mult{kh} (y0 to he) { y:=y0; if (y>hm) y = hm
       @for_mult{k} (x to w) {
         kernel{...at{x,y}, k, kh, w, h}
       }
     }
-    # Extra row for uneven i16 case
-    if (2*k == kh and (h & k) != 0) { y := h-h%kh
+    # Half-row for non-square i16 case
+    if (2*k == kh and (he & k) != 0) {
+      e := h%kh; if (e<k) e = k
+      y := h - e
       @for_mult{k} (x to w) {
         kernel{...at{x,y}, k, k, w, h}
       }
     }
+    # Base transpose used if overlap wasn't
+    if (ho!=0 and he==h) { hs := h-ho; call_base{rp+hs, xp+w*hs, w-w%k, ho} }
   } else {
     # Result rows are aligned with each other so it's possible to
     # write a full cache line at a time
@@ -137,9 +149,7 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
     }
   }
   
-  def edge_tr{...a} = call_base{...a, w, h}
-  wo := w%k; ws := w-wo; if (wo) edge_tr{rp+h*ws, xp+  ws, wo, h }
-  ho := h%k; hs := h-ho; if (ho) edge_tr{rp+  hs, xp+w*hs, ws, ho}
+  wo := w%k; if (wo!=0) { ws := w-wo; call_base{rp+h*ws, xp+ws, wo, h } }
 }
 
 def transpose{T, k} = transpose{T, k, k}
