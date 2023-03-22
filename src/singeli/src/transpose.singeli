@@ -85,6 +85,8 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
     # Effective height: number of rows read, counting overlap twice
     # Just use base transpose for short overhang; otherwise round up
     he := h; if (use_overlap{ho}) he += k - ho
+    def has_half = 2*k == kh
+    if (has_half and he==kh and h<he) he = k  # Skip main loop; caught with he<h tests later
     # Main transpose
     hm := h - kh
     @for_mult{kh} (y0 to he) { y:=y0; if (y>hm) y = hm
@@ -92,12 +94,15 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
         kernel{...at{x,y}, k, kh, w, h}
       }
     }
-    # Half-row for non-square i16 case
-    if (2*k == kh and (he & k) != 0) {
-      e := h%kh; if (e<k) e = k
-      y := h - e
-      @for_mult{k} (x to w) {
-        kernel{...at{x,y}, k, k, w, h}
+    # Half-row(s) for non-square i16 case
+    if (has_half and (he & k) != 0) {
+      n := 1 + cast_i{u64, he < h}  # 2 for overlapped halves
+      e := h%kh; if (he<h or e<k) e = k
+      @for (yi to n) {
+        y:u64 = 0; if (yi == n-1) y = h - e
+        @for_mult{k} (x to w) {
+          kernel{...at{x,y}, k, k, w, h}
+        }
       }
     }
     # Base transpose used if overlap wasn't
