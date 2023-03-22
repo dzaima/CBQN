@@ -39,6 +39,8 @@ shared-c:
 	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 forbuild:
 	@"${MAKE}" i_singeli=0 i_CC=cc i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
+for-bootstrap:
+	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 c:
 	@"${MAKE}" custom=1 run_incremental_0
 
@@ -136,6 +138,11 @@ BYTECODE_DIR = $(shell if [ -d build/bytecodeLocal ]; then echo bytecodeLocal; e
 ifeq ($(BYTECODE_DIR),bytecodeLocal)
 	custom = 1
 endif
+ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+ifeq ($(i_USE_BC_SUBMODULE),)
+	i_USE_BC_SUBMODULE=1
+endif
+endif
 
 i_LD = $(i_CC)
 
@@ -229,7 +236,7 @@ endif
 ifeq ($(REPLXX_DIR),build/replxxSubmodule)
 	@git submodule update --init build/replxxSubmodule
 endif
-ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+ifeq ($(i_USE_BC_SUBMODULE),1)
 	@git submodule update --init build/bytecodeSubmodule
 endif
 	@export bd=$$("${MAKE}" builddir); \
@@ -285,7 +292,7 @@ ${bd}/%.o: src/builtins/%.c
 
 $(bd)/load.o: bytecodeMessage
 bytecodeMessage:
-ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+ifeq ($(i_USE_BC_SUBMODULE),1)
 	@echo "Using precompiled bytecode; see readme for how to build your own"
 endif
 
