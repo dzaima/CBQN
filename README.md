@@ -50,7 +50,7 @@ By default, the CBQN will use [precompiled bytecode](https://github.com/dzaima/c
 2. clone [mlochbaum/BQN](https://github.com/mlochbaum/BQN).
 3. From within CBQNs directory, run `mkdir -p build/bytecodeLocal/gen`
 4. Run `said-other-bqn-impl ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`  
-   In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./build/genRuntime ~/git/BQN build/bytecodeLocal`
+   In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`
 
 ## Requirements
 
