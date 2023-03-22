@@ -86,25 +86,32 @@ def edge_transpose{T, k, rp, xp, w, h} = {
   ho := h%k; hs := h-ho; if (ho) tr{rp+  hs, xp+w*hs, ws, ho}
 }
 
-fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+fn transpose{T, k, d}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   small_transpose_out{T, k, rp, xp, w, h}
-  def VT = [k]T
   
   # Cache line info
   def line_bytes = 64
   def line_elts = line_bytes / (width{T}/8)
-  def line_vecs = line_bytes / (width{VT}/8)
   
   if (line_elts > 2*k or h&(line_elts-1) != 0) {
     # Main transpose
-    transpose_kernels{k, k, rp, xp, w, h}
+    transpose_kernels{k, d, rp, xp, w, h}
+    # Extra column for uneven i16 case
+    if (2*k == d and (h & k) != 0) { y := h-h%d
+      @for_mult{k} (x to w) {
+        kernel{...mat_at{rp,xp,w,h}{x,y}, k, k, w, h}
+      }
+    }
   } else {
     # Result rows are aligned with each other so it's possible to
     # write a full cache line at a time
     # This case is here to mitigate cache associativity problems at
     # at multiples of 256 or so, but it's faster whenever it applies
+    assert{k == d}
+    def VT = [k]T
+    def line_vecs = line_bytes / (width{VT}/8)
     def store_line{p, vs} = each{bind{store,p}, iota{line_vecs}, vs}
     def get_lines{loadx} = {
       def vt{i} = transpose_square{VT, k, each{loadx, k*i + iota{k}}}
@@ -147,24 +154,9 @@ fn transpose{T, k}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   edge_transpose{T, k, rp, xp, w, h}
 }
 
-fn transpose{T, k, m==2}(r0:*void, x0:*void, w:u64, h:u64) : void = {
-  rp:*T = *T~~r0
-  xp:*T = *T~~x0
-  small_transpose_out{T, k, rp, xp, w, h}
-  def d = m*k
-  
-  transpose_kernels{k, d, rp, xp, w, h}
-  
-  if ((h & k) != 0) { y := h-h%d
-    @for_mult{k} (x to w) {
-      kernel{...mat_at{rp,xp,w,h}{x,y}, k, k, w, h}
-    }
-  }
-  
-  edge_transpose{T, k, rp, xp, w, h}
-}
+def transpose{T, k} = transpose{T, k, k}
 
 export{'simd_transpose_i8',  transpose{i8 , 16}}
-export{'simd_transpose_i16', transpose{i16, 8, 2}}
+export{'simd_transpose_i16', transpose{i16, 8, 16}}
 export{'simd_transpose_i32', transpose{i32, 8}}
 export{'simd_transpose_i64', transpose{i64, 4}}
