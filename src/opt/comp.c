@@ -1,5 +1,6 @@
 #include "../nfns.h"
 #include "../vm.h"
+#include "../ns.h"
 #include "../utils/mut.h"
 // minimal compiler, capable of running mlochbaum/BQN/src/bootstrap/boot2.bqn
 // supports •-values, 1-modifiers, value and function class variables
@@ -131,7 +132,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         val = m_c32(',');
         break;
       }
-      case '(': case ')': case '{': case '}': case U'⟨': case U'⟩': case U'←': case U'↩': { // syntax to be parsed later
+      case '(': case ')': case '{': case '}': case U'⟨': case U'⟩': case U'←': case U'↩': case U'.': { // syntax to be parsed later
         val = m_c32(c);
         break;
       }
@@ -286,7 +287,7 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
   usz i = i0;
   
   B statements = emptyHVec();
-  B parts = emptyHVec(); // list of lists; first element indicates class: 0:fn; 1:md1; 2:md2; 3:arr; 4:v←; 5:v↩
+  B parts = emptyHVec(); // list of lists; first element indicates class: 0:fn; 1:md1; 2:md2; 3:subject; 4:v←; 5:v↩
   
   while (true) {
     B ct;
@@ -317,13 +318,29 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
         thrM("Native compiler: Nested blocks aren't supported");
       } else if (ctc==U'←' || ctc==U'↩') {
         thrM("Native compiler: Invalid assignment");
+      } else if (ctc=='.') {
+        if (IA(parts)==0 || i==i0+1) thrM("Native compiler: Expected value before '.'");
+        
+        B ns = nc_pop(&parts);
+        if (nc_ty(ns) != 3) thrM("Native compiler: Expected subject before '.'");
+        
+        if (i==tia) thrM("Native compiler: Expression ended with '.'");
+        B name = GetU(tokens, i++);
+        if (!isArr(name) || RNK(name)!=1) thrM("Native compiler: Expected name to follow '.'");
+        
+        B bc = nc_emptyI32Vec();
+        nc_ijoin(&bc, IGetU(ns, 1));
+        decG(ns);
+        nc_iadd(&bc, FLDG);
+        nc_iadd(&bc, str2gid(IGetU(name,1)));
+        nc_add(&parts, m_hVec2(IGet(name,0), bc));
       } else thrF("Native compiler: Unexpected character token \\u%xi / %i", ctc, ctc);
     } else if (isArr(ct)) {
       if (RNK(ct)==0) { // literal
         B val = IGetU(ct, 0);
-        usz i = addObj(objs, inc(val));
+        usz j = addObj(objs, inc(val));
         i32 type = isFun(val)? 0 : isMd1(val)? 1 : isMd2(val)? 2 : 3;
-        nc_add(&parts, m_hVec2(m_f64(type), nc_ivec2(PUSH, i)));
+        nc_add(&parts, m_hVec2(m_f64(type), nc_ivec2(PUSH, j)));
       } else { // name
         u8 ty = nc_ty(ct);
         u8 rty = ty;

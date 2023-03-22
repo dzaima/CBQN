@@ -1,5 +1,5 @@
 "bootstrap.bqn: requires an argument of the path to mlochbaum/BQN" ! 1=≠•args
-path ← ⊑•args
+path ← •wdpath •file.At ⊑•args
 
 prims ← 1⊑¨•primitives # list of primitive values
 g ← 3 ↓ (•Type¨ prims) ⊔ •primitives # ⟨fns, 1-modifiers, 2-modifiers⟩, each being a pair of character & value
