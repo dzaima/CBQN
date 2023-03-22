@@ -162,7 +162,10 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
     }
   }
   
-  if (wo!=0 and we==w) { ws := w-wo; call_base{rp+h*ws, xp+ws, wo, h } }
+  if (we==w) @for(ws from w-wo to w) {
+    xpo:=xp+ws; rpo:=rp+h*ws
+    @for (i to h) store{rpo, i, load{xpo, w*i}}
+  }
 }
 
 def transpose{T, k} = transpose{T, k, k}
