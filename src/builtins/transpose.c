@@ -1,3 +1,26 @@
+// Transpose and Reorder Axes (⍉)
+
+// Transpose
+// One length-2 axis: dedicated code
+//   Boolean: pdep for height 2; pext for width 2
+//     SHOULD use a generic implementation if BMI2 not present
+// SHOULD optimize other short lengths with pdep/pext and shuffles
+// Boolean 𝕩: convert to integer
+//   SHOULD have bit matrix transpose kernel
+// CPU sizes: native or SIMD code
+//   Large SIMD kernels used when they fit, overlapping for odd sizes
+//     i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
+//   COULD use half-width or smaller kernels to improve odd sizes
+//   Scalar transpose or loop used for overhang of 1
+
+// Reorder Axes: self-hosted runtime (based on +⌜ and ⊏, not that slow)
+
+// Transpose inverse ⍉⁼
+//   Same as ⍉ for a rank ≤2 argument
+//   SHOULD share data movement with ⍉ for other sizes
+// COULD implement fast ⍉⍟n
+// SHOULD convert ⍉ with rank to a Reorder Axes call
+
 #include "../core.h"
 #include "../utils/each.h"
 #include "../utils/talloc.h"
@@ -154,7 +177,9 @@ B transp_im(B t, B x) {
   return def_fn_im(bi_transp, x);
 }
 
-B  transp_uc1(B t, B o, B x) { return  transp_im(m_f64(0), c1(o,  transp_c1(t, x))); }
+B transp_uc1(B t, B o, B x) {
+  return transp_im(m_f64(0), c1(o,  transp_c1(t, x)));
+}
 
 void transp_init(void) {
   c(BFn,bi_transp)->uc1 = transp_uc1;
