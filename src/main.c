@@ -124,7 +124,7 @@ static NOINLINE i64 readInt(char** p) {
     ")erase ",
     ")clearImportCache",
     ")kb",
-    ")theme dark", ")theme light", ")theme none", 
+    ")theme dark", ")theme light", ")theme none",
     ")exit", ")off",
     ")vars",
     ")gc", ")gc off", ")gc on",
