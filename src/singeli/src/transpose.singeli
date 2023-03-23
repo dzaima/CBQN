@@ -34,10 +34,7 @@ def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 4b3120}, x}
 # Square kernel where width is a full vector
 def transpose_square{VT, l, x & hasarch{'X86_64'}} = unpack_to{1, l/2, x}
 
-def load2{a:T, b:T & w128i{eltype{T}}} = {
-  def V = eltype{T}
-  emit{[2*vcount{V}](eltype{V}), '_mm256_loadu2_m128i', b, a}
-}
+def load2{a:T, b:T} = pair{load{a}, load{b}}
 def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
   each{{p, i} => store{p, 0, half{v, i}}, tup{a,b}, iota{2}}
 }
