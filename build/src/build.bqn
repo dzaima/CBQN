@@ -549,7 +549,7 @@ MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
 cachedBin‿linkerCache ← {
   Shorten ← {po.clangd? 𝕩; r ← {𝕩↓˜¯1-⊑'.'⊐˜⌽𝕩}¨ •file.Name¨ 𝕩 ⋄ ! ∧´ ∊r ⋄ r}
   cbqnSrc ← ∾{⌽(⊑𝕩)⊸•file.At¨ 1↓𝕩}¨ ⌽⟨
-    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "fold.c", "scan.c", "md1.c", "md2.c", "fns.c", "sysfn.c", "internal.c", "inverse.c"⟩
+    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "transpose.c", "fold.c", "scan.c", "md1.c", "md2.c", "fns.c", "sysfn.c", "internal.c", "inverse.c"⟩
     ⟨"src/core/", "tyarr.c", "harr.c", "fillarr.c", "stuff.c", "derv.c", "mm.c", "heap.c"⟩
     ⟨"src/", "load.c", "main.c", "rtwrap.c", "vm.c", "ns.c", "nfns.c", "ffi.c"⟩
     ⟨"src/jit/", "nvm.c"⟩
@@ -562,7 +562,7 @@ cachedBin‿linkerCache ← {
     "xa"‿"src/builtins/arithd.c"‿"dyarith", "xa"‿"src/builtins/cmp.c"‿"cmp",     "xa"‿"src/builtins/squeeze.c"‿"squeeze"
     "x."‿"src/builtins/select.c"‿"select",  "x."‿"src/builtins/fold.c"‿"fold",   "x."‿"src/builtins/scan.c"‿"scan"
     "x."‿"src/builtins/scan.c"‿"neq",       "x."‿"src/builtins/slash.c"‿"slash", "x."‿"src/builtins/slash.c"‿"constrep"
-    "x."‿"src/builtins/sfns.c"‿"transpose"
+    "x."‿"src/builtins/transpose.c"‿"transpose"
   ⟩
   objs ← ⟨⟩
   

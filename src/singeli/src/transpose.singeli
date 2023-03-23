@@ -11,53 +11,163 @@ if (hasarch{'X86_64'}) {
 include './mask'
 include './bitops'
 
-def vtranspose{x & tuplen{x}==8 & type{tupsel{0,x}}==[8]i32 & hasarch{'X86_64'}} = {
-  def t1 = merge{...each{{i} => unpackQ{tupsel{i*2,x}, tupsel{i*2+1,x}}, iota{4}}}
-  def t2 = merge{...each{{i} => unpackQ{tupsel{i, t1}, tupsel{i+2, t1}}, tup{0,1,4,5}}}
-  each{{i} => emit{[8]i32, '_mm256_permute2f128_si256', tupsel{i%4,t2}, tupsel{i%4+4,t2}, tern{i>=4,16b31,16b20}}, iota{8}}
+# Group l (power of 2) elements into paired groups of length o
+# e.g. pairs{2, iota{8}} = {{0,1,4,5}, {2,3,6,7}}
+def pairs{o, x} = {
+  def i = iota{tuplen{x}/2}
+  def g = 2*i - i%o
+  tupsel{tup{g, g+o}, x}
+}
+def unpack_pass{o, x} = merge{...each{unpackQ, ...pairs{o, x}}}
+def permute_pass{o, x} = {
+  def p = pairs{o, x}
+  def h{s} = each{{a,b}=>emit{[8]i32, '_mm256_permute2f128_si256', a,b,s}, ...p}
+  merge{h{16b20}, h{16b31}}
+}
+def unpack_to{f, l, x} = {
+  def pass = if (f) permute_pass else unpack_pass
+  pass{l, if (l==1) x else unpack_to{0, l/2, x}}
+}
+# Last pass for square kernel packed in halves
+def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 4b3120}, x}
+
+# Square kernel where width is a full vector
+def transpose_square{VT, l, x & hasarch{'X86_64'}} = unpack_to{1, l/2, x}
+
+def load2{a:T, b:T} = pair{load{a}, load{b}}
+def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
+  each{{p, i} => store{p, 0, half{v, i}}, tup{a,b}, iota{2}}
+}
+def load_k {VT, src,    l, w & w256{VT}} = each{{i}  =>load {*VT~~(src+i*w), 0   }, iota{l}}
+def store_k{VT, dst, x, l, h & w256{VT}} = each{{i,v}=>store{*VT~~(dst+i*h), 0, v}, iota{l}, x}
+def load_k {VT, src,    l, w & w128{VT}} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
+def store_k{VT, dst, x, l, h & w128{VT}} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
+
+# Transpose kernel of size kw,kh in size w,h array
+def kernel{src:P, dst:P, kw, kh, w, h} = {
+  def T = eltype{P}
+  def n = (kw*kh*width{T}) / 256             # Number of vectors
+  def xvs = load_k{[kw]T, src, n, w}
+  def xt  = unpack_to{n==kh, n/2, xvs}       # Transpose n by n
+  def rvs = if (n==kw) xt else shuf_pass{xt} # To kh by kh for packed square
+  store_k{[kh]T, dst, rvs, n, h}
 }
 
 
-
-fn transpose_rec{T}(rpo:*T, xpo:*T, w:u64, h:u64, wm:i64, hm:i64, scl:u64) : void = {
-  if (wm<=0 or hm<=0) return{}
-  
-  if (scl==1) {
-    assert{T==u32}
-    def VT = [8]i32
-    def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{vcount{VT}}}
-    def rvs = vtranspose{xvs}
-    each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{vcount{VT}}, rvs}
-  } else {
-    o:= (scl+1)>>1; s:= i64~~o
-    transpose_rec{T}(rpo              , xpo              , w, h, wm  , hm  , o)
-    transpose_rec{T}(rpo +         o*8, xpo + o*8*w      , w, h, wm  , hm-s, o)
-    transpose_rec{T}(rpo + o*8*h      , xpo +         o*8, w, h, wm-s, hm  , o)
-    transpose_rec{T}(rpo + o*8*h + o*8, xpo + o*8*w + o*8, w, h, wm-s, hm-s, o)
+def for_mult{k}{vars,begin,end,block} = {
+  assert{begin == 0}
+  @for (i to end/k) exec{k*i, vars, block}
+}
+def for_mult_max{k, m}{vars,begin,end,block} = {
+  @for_mult{k} (i0 to end) {
+    i:=i0; if (i>m) i = m
+    exec{i, vars, block}
   }
 }
 
-fn transpose{T}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+  # Scalar transpose defined in C
+  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
+  def call_base{...a} = emit{void, merge{'base_transpose_',ts}, ...a, w, h}
+  
   rp:*T = *T~~r0
   xp:*T = *T~~x0
+  if (w<k or h<k) { call_base{rp, xp, w, h}; return{} }
   
-  @for (y to h/8) {
-    @for (x to w/8) {
-      def VT = [8]i32
-      xpo:= xp + y*8*w + x*8
-      rpo:= rp + x*8*h + y*8
-      def xvs = each{{i}=>load{*VT~~(xpo+i*w), 0}, iota{vcount{VT}}}
-      def rvs = vtranspose{xvs}
-      each{{i,v}=>store{*VT~~(rpo+i*h), 0, v}, iota{vcount{VT}}, rvs}
-    }    
+  def at{x,y} = tup{xp + y*w + x, rp + x*h + y}
+  
+  # Cache line info
+  def line_bytes = 64
+  def line_elts = line_bytes / (width{T}/8)
+
+  def use_overlap{o} = o >= 2  # For overlapped SIMD instead of scalar
+  wo := w%k
+  # Effective width: number of columns read, counting overlap twice
+  # Just use base transpose for short overhang; otherwise round up
+  we := w; if (use_overlap{wo}) we += k - wo
+  wm := w - k
+  
+  if (line_elts > 2*k or h&(line_elts-1) != 0) {
+    ho := h%k
+    # Effective height, like we for w
+    he := h; if (use_overlap{ho}) he += k - ho
+    def has_half = 2*k == kh
+    if (has_half and he==kh and h<he) he = k  # Skip main loop; caught with he<h tests later
+    # Main transpose
+    @for_mult_max{kh, h-kh} (y to he) {
+      @for_mult_max{k, wm} (x to we) {
+        kernel{...at{x,y}, k, kh, w, h}
+      }
+    }
+    # Half-row(s) for non-square i16 case
+    if (has_half and (he & k) != 0) {
+      n := 1 + cast_i{u64, he < h}  # 2 for overlapped halves
+      e := h%kh; if (he<h or e<k) e = k
+      @for (yi to n) {
+        y:u64 = 0; if (yi == n-1) y = h - e
+        @for_mult_max{k, wm} (x to we) {
+          kernel{...at{x,y}, k, k, w, h}
+        }
+      }
+    }
+    # Base transpose used if overlap wasn't
+    if (ho!=0 and he==h) { hs := h-ho; call_base{rp+hs, xp+w*hs, w, ho} }
+  } else {
+    # Result rows are aligned with each other so it's possible to
+    # write a full cache line at a time
+    # This case is here to mitigate cache associativity problems at
+    # at multiples of 256 or so, but it's faster whenever it applies
+    assert{k == kh}
+    def VT = [k]T
+    def line_vecs = line_bytes / (width{VT}/8)
+    def store_line{p, vs} = each{bind{store,p}, iota{line_vecs}, vs}
+    def get_lines{loadx} = {
+      def vt{i} = transpose_square{VT, k, each{loadx, k*i + iota{k}}}
+      each{tup, ...each{vt, iota{line_vecs}}}
+    }
+    ro := tail{6, -u64~~r0} / (width{T}/8)  # Offset to align within cache line; assume elt-aligned
+    wh := w*h
+    yn := h
+    if (ro != 0) {
+      ra := line_elts - ro
+      y := h - ra
+      rpe := rp + y + (w-1)*h  # Cache aligned
+      # Part of first and last result row aren't covered by the split loop
+      def trtail{dst, src, len} = @for (i to len) store{dst, i, load{src, w*i}}
+      trtail{rp, xp, ro}
+      trtail{rpe, xp + y*w + w-1, ra}
+      # Transpose first few rows and last few rows together
+      @for_mult_max{k, wm} (x to we) {
+        {xpo,rpo} := at{x, y}
+        o := w*y + x
+        def loadx{_} = {
+          l:=load{*VT~~(xp+o)}
+          o+=w; if (o>wh-k) o -= wh-1  # Jump from last source row to first, shifting right 1
+          l
+        }
+        def rls = get_lines{loadx}  # 4 rows of 2 vectors each
+        each{{i,v} => {p:=rpo+i*h; if (i<3 or p<rpe) store_line{*VT~~p, v}}, iota{k}, rls}
+      }
+      --yn  # One strip handled
+    }
+    @for_mult{line_elts} (y0 to yn) { y := y0 + ro
+      @for_mult_max{k, wm} (x to we) {
+        {xpo,rpo} := at{x, y}
+        def rls = get_lines{{i} => load{*VT~~(xpo+i*w), 0}}
+        each{{i,v} => store_line{*VT~~(rpo+i*h), v}, iota{k}, rls}
+      }
+    }
   }
   
-  # wm:= w/8
-  # hm:= h/8
-  # transpose_rec{T}(rp, xp, w, h, i64~~wm, i64~~hm, tern{wm>hm, wm, hm})
-  
-  if (w%8) emit{void, 'base_transpose_u32', rp+h*(w-w%8), xp+  (w-w%8), w%8,   h,   w, h}
-  if (h%8) emit{void, 'base_transpose_u32', rp+  (h-h%8), xp+w*(h-h%8), w-w%8, h%8, w, h}
+  if (we==w) @for(ws from w-wo to w) {
+    xpo:=xp+ws; rpo:=rp+h*ws
+    @for (i to h) store{rpo, i, load{xpo, w*i}}
+  }
 }
 
-export{'simd_transpose_i32', transpose{u32}}
+def transpose{T, k} = transpose{T, k, k}
+
+export{'simd_transpose_i8',  transpose{i8 , 16}}
+export{'simd_transpose_i16', transpose{i16, 8, 16}}
+export{'simd_transpose_i32', transpose{i32, 8}}
+export{'simd_transpose_i64', transpose{i64, 4}}
