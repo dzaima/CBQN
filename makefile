@@ -37,8 +37,8 @@ shared-o3:
 	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
 shared-c:
 	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
-forbuild:
-	@"${MAKE}" i_singeli=0 i_CC=cc i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build run_incremental_0
+for-build:
+	@"${MAKE}" i_singeli=0 i_CC=cc i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build2 run_incremental_0
 for-bootstrap:
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 c:
