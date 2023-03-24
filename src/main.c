@@ -548,7 +548,7 @@ static NOINLINE i64 readInt(char** p) {
 #endif
 
 
-static NOINLINE B gsc_exec_inplace(B src, B path, B args) {
+NOINLINE B gsc_exec_inplace(B src, B path, B args) {
   Block* block = bqn_compSc(src, path, args, gsc, true);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
   gsc->body = ptr_inc(block->bodies[0]);
@@ -558,7 +558,7 @@ static NOINLINE B gsc_exec_inplace(B src, B path, B args) {
 }
 
 bool profiler_alloc(void);
-bool profiler_start(i64 hz);
+bool profiler_start(i32 mode, i64 hz);
 bool profiler_stop(void);
 void profiler_free(void);
 void profiler_displayResults(void);
@@ -599,7 +599,7 @@ void cbqn_runLine0(char* ln, i64 read) {
   
   B code;
   int output; // 0-no; 1-formatter; 2-internal
-  int mode = 0; // 0: regular execution; 1: single timing; 2: many timings; 3: second-limited timing; 4: profile
+  int mode = 0; // 0: regular execution; 1: single timing; 2: many timings; 3: second-limited timing; 4: profile; 4: profile ip
   i32 timeRep = 0;
   f64 timeNanos = -1;
   i64 profile = -1;
@@ -629,12 +629,18 @@ void cbqn_runLine0(char* ln, i64 read) {
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "profile ") || isCmd(cmdS, &cmdE, "profile@")) {
       mode = 4;
+      goto profile_init; profile_init:;
       char* cpos = cmdE;
       profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
       if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
       if (profile>999999) { printf("Cannot profile with >999999hz frequency\n"); return; }
       code = utf8Decode0(cpos);
       output = 0;
+#if PROFILE_IP
+    } else if (isCmd(cmdS, &cmdE, "profileip ") || isCmd(cmdS, &cmdE, "profileip@")) {
+      mode = 5;
+      goto profile_init;
+#endif
     } else if (isCmd(cmdS, &cmdE, "t:") || isCmd(cmdS, &cmdE, "time:")) {
       char* repE = cmdE;
       mode = 2;
@@ -829,9 +835,9 @@ void cbqn_runLine0(char* ln, i64 read) {
       else r1 = r2;
     }
     printTime(tns / rt);
-  } else if (mode==4) {
+  } else if (mode==4 || mode==5) {
     if (CATCH) { profiler_stop(); profiler_free(); rethrow(); }
-    if (profiler_alloc() && profiler_start(profile)) {
+    if (profiler_alloc() && profiler_start(mode==5? 2 : 1, profile)) {
       res = execBlockInplace(block, gsc);
       profiler_stop();
       profiler_displayResults();

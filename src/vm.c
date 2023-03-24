@@ -1,3 +1,8 @@
+#if PROFILE_IP
+  #define _GNU_SOURCE 1
+  #include <sys/ucontext.h>
+#endif
+
 #include "core.h"
 #include "vm.h"
 #include "ns.h"
@@ -1415,20 +1420,25 @@ NOINLINE void vm_pstLive() {
 #include <signal.h>
 #define PROFILE_BUFFER (1ULL<<25) // number of `Profiler_ent`s
 
-typedef struct Profiler_ent {
-  Comp* comp;
-  usz bcPos;
+#define PROFILE_BUFFER_CHECK \
+  Profiler_ent* bn = profiler_buf_c+1; \
+  if (RARE(bn>=profiler_buf_e)) { profile_buf_full = true; return; }
+
+typedef union Profiler_ent {
+  struct {
+    Comp* comp;
+    usz bcPos;
+  };
+  u64 ip;
 } Profiler_ent;
 Profiler_ent* profiler_buf_s;
 Profiler_ent* profiler_buf_c;
 Profiler_ent* profiler_buf_e;
 bool profile_buf_full;
-void profiler_sigHandler(int x) {
-  Profiler_ent* bn = profiler_buf_c+1;
-  if (RARE(bn>=profiler_buf_e)) {
-    profile_buf_full = true;
-    return;
-  }
+
+
+void profiler_bc_handler(int x) {
+  PROFILE_BUFFER_CHECK;
   
   if (envCurr<envStart) return;
   Env e = *envCurr;
@@ -1439,9 +1449,35 @@ void profiler_sigHandler(int x) {
   profiler_buf_c = bn;
 }
 
-static bool setProfHandler(bool b) {
+#if PROFILE_IP
+void profiler_ip_handler(int x, siginfo_t* info, void* context) {
+  PROFILE_BUFFER_CHECK;
+  
+  ucontext_t* ctx = (ucontext_t*)context;
+  u64 ptr;
+  #if __x86_64__
+    ptr = ctx->uc_mcontext.gregs[REG_RIP];
+  #elif __aarch64__
+    ptr = ctx->uc_mcontext.pc;
+  #else
+    #error "don't know how to get instruction pointer on current arch"
+  #endif
+  *profiler_buf_c = (Profiler_ent){.ip = ptr};
+  profiler_buf_c = bn;
+}
+NOINLINE B gsc_exec_inplace(B src, B path, B args);
+#endif
+
+static bool setProfHandler(i32 mode) {
   struct sigaction act = {};
-  act.sa_handler = b? profiler_sigHandler : SIG_DFL;
+  switch (mode) {
+    default: printf("Unsupported profiling mode\n"); return false;
+    case 0: act.sa_handler = SIG_DFL; break;
+    case 1: act.sa_handler = profiler_bc_handler; break;
+    #if PROFILE_IP
+    case 2: act.sa_sigaction = profiler_ip_handler; act.sa_flags=SA_SIGINFO;
+    #endif
+  }
   if (sigaction(SIGALRM/*SIGPROF*/, &act, NULL)) {
     printf("Failed to set profiling signal handler\n");
     return false;
@@ -1465,6 +1501,9 @@ void* profiler_makeMap(void);
 i32 profiler_index(void** mapRaw, B comp);
 void profiler_freeMap(void* mapRaw);
 
+i32 profiler_mode; // 0: freed; 1: bytecode; 2: instruction pointers
+bool profiler_active;
+
 bool profiler_alloc(void) {
   profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (profiler_buf_s == MAP_FAILED) {
@@ -1476,20 +1515,22 @@ bool profiler_alloc(void) {
   return true;
 }
 void profiler_free(void) {
+  profiler_mode = 0;
   munmap(profiler_buf_s, PROFILE_BUFFER*sizeof(Profiler_ent));
 }
 
-bool profiler_active;
-bool profiler_start(i64 hz) {
+bool profiler_start(i32 mode, i64 hz) { // 1: bytecode; 2: instruction pointers
+  assert(mode==1 || mode==2);
   i64 us = 999999/hz;
+  profiler_mode = mode;
   profiler_active = true;
-  return setProfHandler(true) && setProfTimer(us);
+  return setProfHandler(mode) && setProfTimer(us);
 }
 bool profiler_stop(void) {
-  if (!profiler_active) return false;
+  if (profiler_mode==0) return false;
   profiler_active = false;
   if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the first "N64u" samples will be shown.\n", (u64)PROFILE_BUFFER);
-  return setProfTimer(0) && setProfHandler(false);
+  return setProfTimer(0) && setProfHandler(0);
 }
 
 
@@ -1497,6 +1538,7 @@ static bool isPathREPL(B path) {
   return isArr(path) && IA(path)==1 && IGetU(path,0).u==m_c32('.').u;
 }
 usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
+  if (profiler_mode!=1) err("profiler_getResults called on mode!=1");
   Profiler_ent* c = profiler_buf_s;
   
   B compList = emptyHVec();
@@ -1536,51 +1578,60 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
 }
 
 void profiler_displayResults(void) {
-  printf("Got "N64u" samples\n", (u64)(profiler_buf_c-profiler_buf_s));
-  
-  B compList, mapList;
-  usz compCount = profiler_getResults(&compList, &mapList, true);
-  
-  SGetU(compList) SGetU(mapList)
-  for (usz i = 0; i < compCount; i++) {
-    Comp* c = c(Comp, GetU(compList, i));
-    B mapObj = GetU(mapList, i);
-    i32* m = i32arr_ptr(mapObj);
+  ux count = (u64)(profiler_buf_c-profiler_buf_s);
+  printf("Got "N64u" samples\n", count);
+  if (profiler_mode==1) {
+    B compList, mapList;
+    usz compCount = profiler_getResults(&compList, &mapList, true);
     
-    u64 sum = 0;
-    usz ia = IA(mapObj);
-    for (usz i = 0; i < ia; i++) sum+= m[i];
-    
-    if (q_N(c->path)) printf("(anonymous)");
-    else if (isPathREPL(c->path)) printf("(REPL)");
-    else printsB(c->path);
-    if (q_N(c->src)) {
-      printf(": "N64d" samples\n", sum);
-    } else {
-      printf(": "N64d" samples:\n", sum);
-      B src = c->src;
-      SGetU(src)
-      usz sia = IA(src);
-      usz pi = 0;
-      i32 curr = 0;
-      for (usz i = 0; i < sia; i++) {
-        u32 c = o2cG(GetU(src, i));
-        curr+= m[i];
-        if (c=='\n' || i==sia-1) {
-          Arr* sl = arr_shVec(TI(src,slice)(incG(src), pi, i-pi+(c=='\n'?0:1)));
-          if (curr==0) printf("      │");
-          else printf("%6d│", curr);
-          printsB(taga(sl));
-          printf("\n");
-          ptr_dec(sl);
-          curr = 0;
-          pi = i+1;
+    SGetU(compList) SGetU(mapList)
+    for (usz i = 0; i < compCount; i++) {
+      Comp* c = c(Comp, GetU(compList, i));
+      B mapObj = GetU(mapList, i);
+      i32* m = i32arr_ptr(mapObj);
+      
+      u64 sum = 0;
+      usz ia = IA(mapObj);
+      for (usz i = 0; i < ia; i++) sum+= m[i];
+      
+      if (q_N(c->path)) printf("(anonymous)");
+      else if (isPathREPL(c->path)) printf("(REPL)");
+      else printsB(c->path);
+      if (q_N(c->src)) {
+        printf(": "N64d" samples\n", sum);
+      } else {
+        printf(": "N64d" samples:\n", sum);
+        B src = c->src;
+        SGetU(src)
+        usz sia = IA(src);
+        usz pi = 0;
+        i32 curr = 0;
+        for (usz i = 0; i < sia; i++) {
+          u32 c = o2cG(GetU(src, i));
+          curr+= m[i];
+          if (c=='\n' || i==sia-1) {
+            Arr* sl = arr_shVec(TI(src,slice)(incG(src), pi, i-pi+(c=='\n'?0:1)));
+            if (curr==0) printf("      │");
+            else printf("%6d│", curr);
+            printsB(taga(sl));
+            printf("\n");
+            ptr_dec(sl);
+            curr = 0;
+            pi = i+1;
+          }
         }
       }
     }
-  }
-  dec(compList);
-  dec(mapList);
+    dec(compList);
+    dec(mapList);
+#if PROFILE_IP
+  } else if (profiler_mode==2) {
+    f64* rp; B r = m_f64arrv(&rp, count);
+    PLAINLOOP for (ux i = 0; i < count; i++) rp[i] = profiler_buf_s[i].ip;
+    gsc_exec_inplace(utf8Decode0("profilerResult←•args⋄@"), bi_N, r);
+    printf("wrote result to profilerResult\n");
+#endif
+  } else err("profiler_displayResults called with unexpected active mode");
 }
 #else
 bool profiler_alloc() {
