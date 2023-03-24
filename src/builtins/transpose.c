@@ -190,6 +190,7 @@ B transp_c2(B t, B w, B x) {
   if (isAtm(w)) {
     usz a=o2s(w);
     if (a>=xr) thrF("⍉: Axis %s does not exist (%i≡=𝕩)", a, xr);
+    if (a==xr-1) { TFREE(p); return C1(transp, x); }
     p[0] = a;
   } else {
     SGetU(w)
@@ -242,7 +243,8 @@ B transp_c2(B t, B w, B x) {
 
   // Number of axes that move
   ur ar = max+1+dup;
-  if (ar == 1) { r = x; goto ret; }
+  if (!dup) while (ar>1 && p[ar-1]==ar-1) ar--; // Unmoved trailing
+  if (ar <= 1) { r = x; goto ret; }
   // Add up stride for each axis
   TALLOC(u64, st, rr);
   for (usz j=0; j<rr; j++) st[j] = 0;
