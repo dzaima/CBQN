@@ -1,5 +1,5 @@
 SHELL = /usr/bin/env bash
-MAKEFLAGS+= --no-print-directory --no-builtin-rules
+MAKEFLAGS+= --no-print-directory --no-builtin-rules --no-builtin-variables
 # note: do not manually define any i_… arguments, or incremental compiling will not work properly!
 
 # various configurations
@@ -38,11 +38,51 @@ shared-o3:
 shared-c:
 	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
 for-build:
-	@"${MAKE}" i_singeli=0 i_CC=cc i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build2 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build2 run_incremental_0
 for-bootstrap:
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 c:
 	@"${MAKE}" custom=1 run_incremental_0
+
+i_notui=0
+ifeq ($(origin notui),command line)
+	i_notui=1
+endif
+ifeq ($(origin REPLXX),command line)
+	i_REPLXX_1 = "$(REPLXX)"
+else
+	i_REPLXX_1 = 1
+endif
+
+to-bqn-build:
+ifeq ($(origin builddir),command line)
+	@echo "Error: 'builddir' unsupported"; false
+endif
+ifeq ($(origin clean),command line)
+	@echo "Error: build-specific 'clean' unsupported"; false
+endif
+	@build/build from-makefile CC="$(CC)" CXX="$(CXX)" PIE="$(ENABLE_PIE)" OUTPUT="$(OUTPUT)" j="$(j)" \
+	  verbose="$(verbose)" notui="$(i_notui)" v="$(version)" \
+	  f="$(f)" lf="$(lf)" CCFLAGS="$(CCFLAGS)" LDFLAGS="$(LDFLAGS)" REPLXX_FLAGS="$(REPLXX_FLAGS)" \
+	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" \
+	  c="$(build_c)" debug="$(debug)" $(i_build_opts) $(build_opts) \
+	  os="$(target_os)" arch="$(target_arch)"  \
+	  shared="$(i_SHARED)" singeli="$(i_singeli)" replxx="$(REPLXX)" FFI="$(FFI)"
+
+o3-temp:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1)
+o3n-temp:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) i_build_opts="native"
+debug-temp:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
+heapverify-temp:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
+o3n-singeli-temp:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native"
+o3-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1
+shared-o3-temp:
+	@"${MAKE}" to-bqn-build i_SHARED=1
 
 # compiler setup
 i_CC := clang
@@ -337,7 +377,7 @@ ifeq ($(origin CXX),command line)
 	i_CXX := $(CXX)
 endif
 i_LD = $(i_CXX)
-REPLXX_FLAGS = -Os -std=c++11
+REPLXX_FLAGS = -std=c++11 -Os
 
 ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include $(i_CC_PIE)
 

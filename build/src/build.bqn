@@ -1,11 +1,8 @@
 t0g ← •MonoTime@
 #!build/obj2/for_build
-# to emulate on makefile transition: NO_LDL → rm_lf=-ldl; no_fPIC → rm_f=-fPIC; something something PIE
 # todo:
 #   clean
-#   clangd commands generation
 #   forcing bytecode/singeli/replxx directories to whatever's applicable
-#   when adding `make forbuild` in build/build, make it run a sanity check of the output before copying to build/obj2/for_build
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
 ⟨Serialize, Deserialize⟩ ← •Import "serialize.bqn"
@@ -15,6 +12,12 @@ t0g ← •MonoTime@
 #  1: toggle
 #  2: flag list
 opts ← ⟨
+  # makefile compatibility options:
+  ⟨1, "from-makefile", 0, @⟩
+  ⟨2, "LD_LIBS", @, @⟩
+  ⟨1, "NO_LDL",  0, @⟩
+  ⟨1, "no_fPIC", 0, @⟩
+  
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
@@ -72,6 +75,14 @@ Lowercase ← {𝕩 - (-´"Aa")×(𝕩≥'A')∧𝕩≤'Z'}
 
 getOpt ← {
   args ← ×∘≠¨⊸/ •args
+  
+  treq ← (args≢¨<"v=") ∧ '='=¯1⊑¨args
+  compat ← ⊑(<"from-makefile") ∊ args
+  {
+    compat? args (¬treq)⊸/ ↩; # makefile will leave things like "shared=" if the envvar was empty; build/build by default sees this as "shared=1", but we want to ignore it
+    {𝕊: "Error: Trailing '=' for an option"} _assert_¬ ∨´treq
+  }
+  
   [ot, on0, od, oh] ← ⍉>opts
   on ← Lowercase¨ on0
   
@@ -83,12 +94,11 @@ getOpt ← {
   whereas 'f+=-a -b' adds one flag that contains a space.
 Options:
 "∾∾oh {"  "∾𝕩∾"  "∾𝕨∾@+10}¨⟜((⌈´≠¨)⊸(↑¨))○((@≢¨oh)⊸/) on0
-•Exit 0
+    •Exit 0
   }⍟⊢ ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨ •args
   
   ot1 ← 1=ot
   ot2 ← 2=ot
-  
   s1 ← ⊑∘⊐⟜'='¨ args # start of =
   hs ← s1<≠¨args     # has value
   fl ← hs∧'+'=(0⌈s1-1)⊑¨args # is appended flag, i.e. "f+=a b c"
@@ -142,6 +152,7 @@ po ← { # parsed options
     CBQNc, ccColor, singeliFlags, REPLXXc, Linker
   ⟩⇐
   
+  compat ← GetOpt "from-makefile"
   custom ← GetOpt "c"
   clangd ← GetOpt "clangd"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
@@ -159,7 +170,7 @@ po ← { # parsed options
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
-  versionName ← GetOpt "v"
+  versionName ← {compat ∧ shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
   {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢@
   wasm ⇐ wasi∨emcc
   
@@ -197,8 +208,9 @@ po ← { # parsed options
   
   exportSymbols ← ffi∨shared
   
+  defLibs ← @≡GetOpt "LD_LIBS"
   GetLibs ← { 𝕊:
-    getLibs ↩ {
+    getLibs ↩ ⟨⟩⌾(1⊸⊑)⍟(¬defLibs) {
       ¬ffi? ⟨⟨⟩,⟨⟩⟩;
       GetOpt "pkgconfig"? 0=⊑ •SH⎊1 "pkg-config"‿"--exists"‿"libffi"?
         {SepArgs ¯1↓SH⟨"pkg-config",𝕩,"libffi"⟩}¨ ⟨"--cflags", "--libs"⟩;
@@ -250,7 +262,7 @@ po ← { # parsed options
     args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (              ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (     pie ∧ ¬shared) / ⟨"-fPIE"⟩
-    args∾↩ (            shared) / ⟨"-fPIC", "-DCBQN_SHARED"⟩
+    args∾↩ (            shared) / ⟨"-DCBQN_SHARED"⟩ ∾ (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     args∾↩ (           windows) / ⟨"-DNO_MMAP"⟩
     args∾↩ (  replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
@@ -264,7 +276,7 @@ po ← { # parsed options
     args∾↩ GetOpt "REPLXX_FLAGS"
     args∾↩ (         ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE"⟩
-    args∾↩ (       shared) / ⟨"-fPIC"⟩
+    args∾↩ (       shared) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
     replxxc ↩ args
   }
@@ -273,9 +285,11 @@ po ← { # parsed options
   
   Linker ⇐ { 𝕊:
     rdynamic ← exportSymbols ∧ ¬windows
-    args ← ⟨{replxx? cxx; cc} DOpt "LD", "-lm"⟩
+    args ← ⟨{replxx? cxx; cc} DOpt "LD"⟩
+    args∾↩ defLibs / ⟨"-lm"⟩
+    args∾↩ ⟨⟩ DOpt "LD_LIBS"
+    args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
     args∾↩ 1⊑GetLibs@
-    args∾↩ (ffi ∧ ¬bsd) / ⟨"-ldl"⟩
     args∾↩ GetOpt "lf"
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ GetOpt "LDFLAGS"
