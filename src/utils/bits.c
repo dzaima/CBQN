@@ -10,6 +10,7 @@
 
 #if defined(__BMI2__) && !SLOW_PDEP
   #define FAST_PDEP 1
+  #include <immintrin.h>
 #endif
 
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
