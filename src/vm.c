@@ -1413,7 +1413,7 @@ NOINLINE void vm_pstLive() {
 #if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP && !WASM
 #include <sys/time.h>
 #include <signal.h>
-#define PROFILE_BUFFER (1ULL<<25)
+#define PROFILE_BUFFER (1ULL<<25) // number of `Profiler_ent`s
 
 typedef struct Profiler_ent {
   Comp* comp;
@@ -1466,7 +1466,7 @@ i32 profiler_index(void** mapRaw, B comp);
 void profiler_freeMap(void* mapRaw);
 
 bool profiler_alloc(void) {
-  profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (profiler_buf_s == MAP_FAILED) {
     fprintf(stderr, "Failed to allocate profiler buffer\n");
     return false;
@@ -1476,7 +1476,7 @@ bool profiler_alloc(void) {
   return true;
 }
 void profiler_free(void) {
-  munmap(profiler_buf_s, PROFILE_BUFFER);
+  munmap(profiler_buf_s, PROFILE_BUFFER*sizeof(Profiler_ent));
 }
 
 bool profiler_active;
@@ -1488,7 +1488,7 @@ bool profiler_start(i64 hz) {
 bool profiler_stop(void) {
   if (!profiler_active) return false;
   profiler_active = false;
-  if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the start of profiling will be shown.\n");
+  if (profile_buf_full) fprintf(stderr, "Profiler buffer ran out in the middle of execution. Only timings of the first "N64u" samples will be shown.\n", (u64)PROFILE_BUFFER);
   return setProfTimer(0) && setProfHandler(false);
 }
 
