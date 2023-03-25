@@ -32,32 +32,33 @@
   #endif
 #endif
 
-#define TRANSPOSE_LOOP( DST, SRC,         W, H) PLAINLOOP for(usz y=0,xi=0;y< H;y++) NOVECTORIZE for(usz x=0;x< W;x++) DST[x*H+y] = SRC[xi++]
-#define TRANSPOSE_BLOCK(DST, SRC, BW, BH, W, H) PLAINLOOP for(usz y=0     ;y<BH;y++) NOVECTORIZE for(usz x=0;x<BW;x++) DST[x*H+y] = SRC[y*W+x]
-
 #if SINGELI
+  #define transposeFns simd_transpose
   #define DECL_BASE(T) \
     static NOINLINE void base_transpose_##T(T* rp, T* xp, u64 bw, u64 bh, u64 w, u64 h) { \
-      TRANSPOSE_BLOCK(rp, xp, bw, bh, w, h); \
+      PLAINLOOP for(usz y=0;y<bh;y++) NOVECTORIZE for(usz x=0;x<bw;x++) rp[x*h+y] = xp[y*w+x]; \
     }
   DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
   #undef DECL_BASE
   #define SINGELI_FILE transpose
   #include "../utils/includeSingeli.h"
-  #define TRANSPOSE_SIMD(T, DST, SRC, W, H) simd_transpose_##T(DST, SRC, W, H)
 #else
-  #define TRANSPOSE_SIMD(T, DST, SRC, W, H) TRANSPOSE_LOOP(DST, SRC, W, H)
+  #define DECL_BASE(T) \
+    static NOINLINE void transpose_##T(void* rv, void* xv, u64 w, u64 h) { \
+      T* rp=rv; T* xp=xv; usz xi=0;                                        \
+      PLAINLOOP for(usz y=0;y< h;y++) NOVECTORIZE for(usz x=0;x< w;x++) rp[x*h+y] = xp[xi++]; \
+    }
+  DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
+  #undef DECL_BASE
+  static void (*transposeFns[])(void*,void*,u64,u64) = {
+    transpose_i8, transpose_i16, transpose_i32, transpose_i64
+  };
 #endif
 
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);
-  switch(xe) { default: UD;
-    case el_i8: case el_c8:  { u8*  xp=xv; u8*  rp=rv; TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
-    case el_i16:case el_c16: { u16* xp=xv; u16* rp=rv; TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
-    case el_i32:case el_c32: { u32* xp=xv; u32* rp=rv; TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
-    case el_f64:             { u64* xp=xv; u64* rp=rv; TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }
-  }
+  transposeFns[elWidthLogBits(xe)-3](rv, xv, w, h);
 }
 // Return an array with data from x transposed as though it's shape h,w
 // Shape of result needs to be set afterwards!

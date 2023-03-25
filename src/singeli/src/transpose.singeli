@@ -175,7 +175,9 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
 
 def transpose{T, k} = transpose{T, k, k}
 
-export{'simd_transpose_i8',  transpose{i8 , 16}}
-export{'simd_transpose_i16', transpose{i16, 8, 16}}
-export{'simd_transpose_i32', transpose{i32, 8}}
-export{'simd_transpose_i64', transpose{i64, 4}}
+exportT{'simd_transpose', tup{
+  transpose{i8 , 16},
+  transpose{i16, 8, 16},
+  transpose{i32, 8},
+  transpose{i64, 4}
+}}
