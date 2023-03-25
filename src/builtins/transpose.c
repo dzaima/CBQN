@@ -15,9 +15,7 @@
 
 // Reorder Axes: generate indices and select with +⌜ and ⊏
 
-// Transpose inverse ⍉⁼
-//   Same as ⍉ for a rank ≤2 argument
-//   SHOULD share data movement with ⍉ for other sizes
+// Transpose inverse ⍉⁼𝕩: data movement of ⍉ with different shape logic
 // COULD implement fast ⍉⍟n
 // SHOULD convert ⍉ with rank to a Reorder Axes call
 
@@ -77,45 +75,22 @@ static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
     }
   }
 }
-
-B transp_c1(B t, B x) {
-  if (RARE(isAtm(x))) return m_atomUnit(x);
-  ur xr = RNK(x);
-  if (xr<=1) return x;
-  
-  usz ia = IA(x);
-  usz* xsh = SH(x);
-  usz h = xsh[0];
-  if (ia==0 || h==1 || h==ia /*w==1*/) {
-    Arr* r = cpyWithShape(x);
-    ShArr* sh = m_shArr(xr);
-    shcpy(sh->a, xsh+1, xr-1);
-    sh->a[xr-1] = h;
-    arr_shReplace(r, xr, sh);
-    return taga(r);
-  }
-  usz w = xsh[1] * shProd(xsh, 2, xr);
-  
-  Arr* r;
+// Return an array with data from x transposed as though it's shape h,w
+// Shape of result needs to be set afterwards!
+static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
+  B x = *px;
   u8 xe = TI(x,elType);
+  Arr* r;
   if (xe==el_B) {
     B xf = getFillR(x);
     B* xp = TO_BPTR(x);
     
-    HArr_p p = m_harrUp(ia);
+    HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
     transpose_move(p.a, xp, el_f64, w, h);
     for (usz xi=0; xi<ia; xi++) inc(p.a[xi]); // TODO don't inc when there's a method of freeing a HArr without freeing its elements
     NOGC_E;
     
-    usz* rsh = arr_shAlloc((Arr*)p.c, xr);
-    if (xr==2) {
-      rsh[0] = w;
-      rsh[1] = h;
-    } else {
-      shcpy(rsh, xsh+1, xr-1);
-      rsh[xr-1] = h;
-    }
-    decG(x); return qWithFill(p.b, xf);
+    r=a(qWithFill(p.b, xf));
   } else if (xe==el_bit) {
     #ifdef __BMI2__
     if (h==2) {
@@ -139,7 +114,7 @@ B transp_c1(B t, B x) {
     } else
     #endif
     {
-      x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8;
+      *px = x = taga(cpyI8Arr(x)); xe=el_i8;
       void* rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
       void* xv = tyany_ptr(x);
       transpose_move(rv, xv, xe, w, h);
@@ -150,14 +125,32 @@ B transp_c1(B t, B x) {
     void* xv = tyany_ptr(x);
     transpose_move(rv, xv, xe, w, h);
   }
-  usz* rsh = arr_shAlloc(r, xr);
-  if (xr==2) {
-    rsh[0] = w;
-    rsh[1] = h;
-  } else {
-    shcpy(rsh, xsh+1, xr-1);
-    rsh[xr-1] = h;
+  return r;
+}
+
+B transp_c1(B t, B x) {
+  if (RARE(isAtm(x))) return m_atomUnit(x);
+  ur xr = RNK(x);
+  if (xr<=1) return x;
+  
+  usz ia = IA(x);
+  usz* xsh = SH(x);
+  usz h = xsh[0];
+  if (ia==0 || h==1 || h==ia /*w==1*/) {
+    Arr* r = cpyWithShape(x);
+    ShArr* sh = m_shArr(xr);
+    shcpy(sh->a, xsh+1, xr-1);
+    sh->a[xr-1] = h;
+    arr_shReplace(r, xr, sh);
+    return taga(r);
   }
+  usz w = xsh[1] * shProd(xsh, 2, xr);
+  
+  Arr* r = transpose_noshape(&x, ia, w, h);
+  
+  usz* rsh = arr_shAlloc(r, xr);
+  if (xr==2) rsh[0] = w; else shcpy(rsh, SH(x)+1, xr-1);
+  rsh[xr-1] = h;
   decG(x); return taga(r);
 }
 
@@ -275,8 +268,28 @@ B transp_c2(B t, B w, B x) {
 
 B transp_im(B t, B x) {
   if (isAtm(x)) thrM("⍉⁼: 𝕩 must not be an atom");
-  if (RNK(x)<=2) return transp_c1(t, x);
-  return def_fn_im(bi_transp, x);
+  ur xr = RNK(x);
+  if (xr<=1) return x;
+  
+  usz ia = IA(x);
+  usz* xsh = SH(x);
+  usz w = xsh[xr-1];
+  if (ia==0 || w==1 || w==ia /*h==1*/) {
+    Arr* r = cpyWithShape(x);
+    ShArr* sh = m_shArr(xr);
+    sh->a[0] = w;
+    shcpy(sh->a+1, xsh, xr-1);
+    arr_shReplace(r, xr, sh);
+    return taga(r);
+  }
+  usz h = xsh[0] * shProd(xsh, 1, xr-1);
+  
+  Arr* r = transpose_noshape(&x, ia, w, h);
+  
+  usz* rsh = arr_shAlloc(r, xr);
+  rsh[0] = w;
+  if (xr==2) rsh[1] = h; else shcpy(rsh+1, SH(x), xr-1);
+  decG(x); return taga(r);
 }
 
 B transp_uc1(B t, B o, B x) {
