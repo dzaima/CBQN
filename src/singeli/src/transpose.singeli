@@ -65,20 +65,7 @@ def for_mult_max{k, m}{vars,begin,end,block} = {
   }
 }
 
-fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
-  # Scalar transpose defined in C
-  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
-  def call_base{...a} = emit{void, merge{'base_transpose_',ts}, ...a, w, h}
-  
-  rp:*T = *T~~r0
-  xp:*T = *T~~x0
-  if (w<k or h<k) {
-    if      (h==2) @for (x0 in xp, x1 in xp+w over i to w) { store{rp, i*2, x0}; store{rp, i*2+1, x1} }
-    else if (w==2) @for (r0 in rp, r1 in rp+h over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
-    else call_base{rp, xp, w, h}
-    return{}
-  }
-  
+def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h} = {
   def at{x,y} = tup{xp + y*w + x, rp + x*h + y}
   
   # Cache line info
@@ -130,7 +117,7 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
       def vt{i} = transpose_square{VT, k, each{loadx, k*i + iota{k}}}
       each{tup, ...each{vt, iota{line_vecs}}}
     }
-    ro := tail{6, -u64~~r0} / (width{T}/8)  # Offset to align within cache line; assume elt-aligned
+    ro := tail{6, -u64~~rp} / (width{T}/8)  # Offset to align within cache line; assume elt-aligned
     wh := w*h
     yn := h
     if (ro != 0) {
@@ -167,6 +154,22 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   if (we==w) @for(ws from w-wo to w) {
     xpo:=xp+ws; rpo:=rp+h*ws
     @for (i to h) store{rpo, i, load{xpo, w*i}}
+  }
+}
+
+fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
+  # Scalar transpose defined in C
+  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
+  def call_base{...a} = emit{void, merge{'base_transpose_',ts}, ...a, w, h}
+  
+  rp:*T = *T~~r0
+  xp:*T = *T~~x0
+  if (hasarch{'X86_64'} and w>=k and h>=k) {
+    transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h}
+  } else {
+    if      (h==2) @for (x0 in xp, x1 in xp+w over i to w) { store{rp, i*2, x0}; store{rp, i*2+1, x1} }
+    else if (w==2) @for (r0 in rp, r1 in rp+h over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
+    else call_base{rp, xp, w, h}
   }
 }
 

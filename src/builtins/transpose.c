@@ -35,7 +35,7 @@
 #define TRANSPOSE_LOOP( DST, SRC,         W, H) PLAINLOOP for(usz y=0,xi=0;y< H;y++) NOVECTORIZE for(usz x=0;x< W;x++) DST[x*H+y] = SRC[xi++]
 #define TRANSPOSE_BLOCK(DST, SRC, BW, BH, W, H) PLAINLOOP for(usz y=0     ;y<BH;y++) NOVECTORIZE for(usz x=0;x<BW;x++) DST[x*H+y] = SRC[y*W+x]
 
-#if SINGELI_X86_64
+#if SINGELI
   #define DECL_BASE(T) \
     static NOINLINE void base_transpose_##T(T* rp, T* xp, u64 bw, u64 bh, u64 w, u64 h) { \
       TRANSPOSE_BLOCK(rp, xp, bw, bh, w, h); \
