@@ -52,27 +52,11 @@
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);
-  if (h==2) {
-    switch(xe) { default: UD;
-      case el_i8: case el_c8:  { u8*  x0=xv; u8*  x1=x0+w; u8*  rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
-      case el_i16:case el_c16: { u16* x0=xv; u16* x1=x0+w; u16* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
-      case el_i32:case el_c32: { u32* x0=xv; u32* x1=x0+w; u32* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
-      case el_f64:             { u64* x0=xv; u64* x1=x0+w; u64* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
-    }
-  } else if (w==2) {
-    switch(xe) { default: UD;
-      case el_i8: case el_c8:  { u8*  xp=xv; u8*  r0=rv; u8*  r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
-      case el_i16:case el_c16: { u16* xp=xv; u16* r0=rv; u16* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
-      case el_i32:case el_c32: { u32* xp=xv; u32* r0=rv; u32* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
-      case el_f64:             { u64* xp=xv; u64* r0=rv; u64* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
-    }
-  } else {
-    switch(xe) { default: UD;
-      case el_i8: case el_c8:  { u8*  xp=xv; u8*  rp=rv; TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
-      case el_i16:case el_c16: { u16* xp=xv; u16* rp=rv; TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
-      case el_i32:case el_c32: { u32* xp=xv; u32* rp=rv; TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
-      case el_f64:             { u64* xp=xv; u64* rp=rv; TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }
-    }
+  switch(xe) { default: UD;
+    case el_i8: case el_c8:  { u8*  xp=xv; u8*  rp=rv; TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
+    case el_i16:case el_c16: { u16* xp=xv; u16* rp=rv; TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
+    case el_i32:case el_c32: { u32* xp=xv; u32* rp=rv; TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
+    case el_f64:             { u64* xp=xv; u64* rp=rv; TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }
   }
 }
 // Return an array with data from x transposed as though it's shape h,w

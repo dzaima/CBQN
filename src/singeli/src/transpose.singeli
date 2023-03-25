@@ -72,7 +72,12 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64) : void = {
   
   rp:*T = *T~~r0
   xp:*T = *T~~x0
-  if (w<k or h<k) { call_base{rp, xp, w, h}; return{} }
+  if (w<k or h<k) {
+    if      (h==2) @for (x0 in xp, x1 in xp+w over i to w) { store{rp, i*2, x0}; store{rp, i*2+1, x1} }
+    else if (w==2) @for (r0 in rp, r1 in rp+h over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
+    else call_base{rp, xp, w, h}
+    return{}
+  }
   
   def at{x,y} = tup{xp + y*w + x, rp + x*h + y}
   
