@@ -34,8 +34,8 @@
   #endif
 #endif
 
-#define TRANSPOSE_LOOP( DST, SRC,         W, H) PLAINLOOP for(usz y=0;y< H;y++) NOVECTORIZE for(usz x=0;x< W;x++) DST[x*H+y] = SRC[xi++]
-#define TRANSPOSE_BLOCK(DST, SRC, BW, BH, W, H) PLAINLOOP for(usz y=0;y<BH;y++) NOVECTORIZE for(usz x=0;x<BW;x++) DST[x*H+y] = SRC[y*W+x]
+#define TRANSPOSE_LOOP( DST, SRC,         W, H) PLAINLOOP for(usz y=0,xi=0;y< H;y++) NOVECTORIZE for(usz x=0;x< W;x++) DST[x*H+y] = SRC[xi++]
+#define TRANSPOSE_BLOCK(DST, SRC, BW, BH, W, H) PLAINLOOP for(usz y=0     ;y<BH;y++) NOVECTORIZE for(usz x=0;x<BW;x++) DST[x*H+y] = SRC[y*W+x]
 
 #if SINGELI_X86_64
   #define DECL_BASE(T) \
@@ -51,6 +51,32 @@
   #define TRANSPOSE_SIMD(T, DST, SRC, W, H) TRANSPOSE_LOOP(DST, SRC, W, H)
 #endif
 
+
+static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
+  assert(xe!=el_bit); assert(xe!=el_B);
+  if (h==2) {
+    switch(xe) { default: UD;
+      case el_i8: case el_c8:  { u8*  x0=xv; u8*  x1=x0+w; u8*  rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
+      case el_i16:case el_c16: { u16* x0=xv; u16* x1=x0+w; u16* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
+      case el_i32:case el_c32: { u32* x0=xv; u32* x1=x0+w; u32* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
+      case el_f64:             { u64* x0=xv; u64* x1=x0+w; u64* rp=rv; for (usz i=0; i<w; i++) { rp[i*2] = x0[i]; rp[i*2+1] = x1[i]; } } break;
+    }
+  } else if (w==2) {
+    switch(xe) { default: UD;
+      case el_i8: case el_c8:  { u8*  xp=xv; u8*  r0=rv; u8*  r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
+      case el_i16:case el_c16: { u16* xp=xv; u16* r0=rv; u16* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
+      case el_i32:case el_c32: { u32* xp=xv; u32* r0=rv; u32* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
+      case el_f64:             { u64* xp=xv; u64* r0=rv; u64* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = xp[i*2]; r1[i] = xp[i*2+1]; } } break;
+    }
+  } else {
+    switch(xe) { default: UD;
+      case el_i8: case el_c8:  { u8*  xp=xv; u8*  rp=rv; TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
+      case el_i16:case el_c16: { u16* xp=xv; u16* rp=rv; TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
+      case el_i32:case el_c32: { u32* xp=xv; u32* rp=rv; TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
+      case el_f64:             { u64* xp=xv; u64* rp=rv; TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }
+    }
+  }
+}
 
 B transp_c1(B t, B x) {
   if (RARE(isAtm(x))) return m_atomUnit(x);
@@ -71,20 +97,14 @@ B transp_c1(B t, B x) {
   usz w = xsh[1] * shProd(xsh, 2, xr);
   
   Arr* r;
-  usz xi = 0;
   u8 xe = TI(x,elType);
-  bool toBit = false;
   if (xe==el_B) {
     B xf = getFillR(x);
     B* xp = TO_BPTR(x);
     
     HArr_p p = m_harrUp(ia);
-    if (h==2) {
-      B* x0 = xp; B* x1 = x0+w;
-      for (usz i=0; i<w; i++) { p.a[i*2] = inc(x0[i]); p.a[i*2+1] = inc(x1[i]); }
-    } else {
-      for(usz y=0;y<h;y++) for(usz x=0;x<w;x++) p.a[x*h+y] = inc(xp[xi++]); // TODO inc afterwards, but don't when there's a method of freeing a HArr without freeing its elements
-    }
+    transpose_move(p.a, xp, el_f64, w, h);
+    for (usz xi=0; xi<ia; xi++) inc(p.a[xi]); // TODO don't inc when there's a method of freeing a HArr without freeing its elements
     NOGC_E;
     
     usz* rsh = arr_shAlloc((Arr*)p.c, xr);
@@ -96,61 +116,39 @@ B transp_c1(B t, B x) {
       rsh[xr-1] = h;
     }
     decG(x); return qWithFill(p.b, xf);
-  } else if (h==2) {
-    #ifndef __BMI2__
-    if (xe==el_bit) { x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; }
-    void* rp = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
-    #else
-    void* rp = m_tyarrlbp(&r,elWidthLogBits(xe),ia,el2t(xe));
+  } else if (xe==el_bit) {
+    #ifdef __BMI2__
+    if (h==2) {
+      u32* x0 = (u32*)bitarr_ptr(x);
+      u64* rp; r=m_bitarrp(&rp, ia);
+      Arr* x1o = TI(x,slice)(inc(x),w,w);
+      u32* x1 = (u32*) ((TyArr*)x1o)->a;
+      for (usz i=0; i<BIT_N(ia); i++) rp[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+      mm_free((Value*)x1o);
+    } else if (w==2) {
+      u64* xp = bitarr_ptr(x);
+      u64* r0; r=m_bitarrp(&r0, ia);
+      TALLOC(u64, r1, BIT_N(h));
+      for (usz i=0; i<BIT_N(ia); i++) {
+        u64 v = xp[i];
+        ((u32*)r0)[i] = _pext_u64(v, 0x5555555555555555);
+        ((u32*)r1)[i] = _pext_u64(v, 0xAAAAAAAAAAAAAAAA);
+      }
+      bit_cpy(r0, h, r1, 0, h);
+      TFREE(r1);
+    } else
     #endif
-    void* xp = tyany_ptr(x);
-    switch(xe) { default: UD;
-      #ifdef __BMI2__
-      case el_bit:;
-        u32* x0 = xp;
-        Arr* x1o = TI(x,slice)(inc(x),w,w);
-        u32* x1 = (u32*) ((TyArr*)x1o)->a;
-        for (usz i=0; i<BIT_N(ia); i++) ((u64*)rp)[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
-        mm_free((Value*)x1o);
-        break;
-      #endif
-      case el_i8: case el_c8:  { u8*  x0=xp; u8*  x1=x0+w; for (usz i=0; i<w; i++) { ((u8* )rp)[i*2] = x0[i]; ((u8* )rp)[i*2+1] = x1[i]; } } break;
-      case el_i16:case el_c16: { u16* x0=xp; u16* x1=x0+w; for (usz i=0; i<w; i++) { ((u16*)rp)[i*2] = x0[i]; ((u16*)rp)[i*2+1] = x1[i]; } } break;
-      case el_i32:case el_c32: { u32* x0=xp; u32* x1=x0+w; for (usz i=0; i<w; i++) { ((u32*)rp)[i*2] = x0[i]; ((u32*)rp)[i*2+1] = x1[i]; } } break;
-      case el_f64:             { u64* x0=xp; u64* x1=x0+w; for (usz i=0; i<w; i++) { ((u64*)rp)[i*2] = x0[i]; ((u64*)rp)[i*2+1] = x1[i]; } } break;
-    }
-  } else if (w==2) {
-    #ifndef __BMI2__
-      if (xe==el_bit) { x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; }
-    #endif
-    void* rp = m_tyarrlbp(&r,elWidthLogBits(xe),ia,el2t(xe));
-    void* xp = tyany_ptr(x);
-    switch(xe) { default: UD;
-      #if __BMI2__
-      case el_bit:;
-        u64* r0 = rp; TALLOC(u64, r1, BIT_N(h));
-        for (usz i=0; i<BIT_N(ia); i++) {
-          u64 v = ((u64*)xp)[i];
-          ((u32*)r0)[i] = _pext_u64(v, 0x5555555555555555);
-          ((u32*)r1)[i] = _pext_u64(v, 0xAAAAAAAAAAAAAAAA);
-        }
-        bit_cpy(r0, h, r1, 0, h);
-        TFREE(r1);
-        break;
-      #endif
-      case el_i8: case el_c8:  { u8*  r0=rp; u8*  r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = ((u8* )xp)[i*2]; r1[i] = ((u8* )xp)[i*2+1]; } } break;
-      case el_i16:case el_c16: { u16* r0=rp; u16* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = ((u16*)xp)[i*2]; r1[i] = ((u16*)xp)[i*2+1]; } } break;
-      case el_i32:case el_c32: { u32* r0=rp; u32* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = ((u32*)xp)[i*2]; r1[i] = ((u32*)xp)[i*2+1]; } } break;
-      case el_f64:             { f64* r0=rp; f64* r1=r0+h; for (usz i=0; i<h; i++) { r0[i] = ((f64*)xp)[i*2]; r1[i] = ((f64*)xp)[i*2+1]; } } break;
+    {
+      x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8;
+      void* rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
+      void* xv = tyany_ptr(x);
+      transpose_move(rv, xv, xe, w, h);
+      r = (Arr*)cpyBitArr(taga(r));
     }
   } else {
-    switch(xe) { default: UD;
-      case el_bit: x = taga(cpyI8Arr(x)); xsh=SH(x); xe=el_i8; toBit=true; // fallthough
-      case el_i8: case el_c8:  { u8*  xp=tyany_ptr(x); u8*  rp = m_tyarrp(&r,1,ia,el2t(xe)); TRANSPOSE_SIMD( i8, rp, xp, w, h); break; }
-      case el_i16:case el_c16: { u16* xp=tyany_ptr(x); u16* rp = m_tyarrp(&r,2,ia,el2t(xe)); TRANSPOSE_SIMD(i16, rp, xp, w, h); break; }
-      case el_i32:case el_c32: { u32* xp=tyany_ptr(x); u32* rp = m_tyarrp(&r,4,ia,el2t(xe)); TRANSPOSE_SIMD(i32, rp, xp, w, h); break; }
-      case el_f64:             { f64* xp=f64any_ptr(x); f64* rp; r=m_f64arrp(&rp,ia);        TRANSPOSE_SIMD(i64, rp, xp, w, h); break; }
-    }
+    void* rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
+    void* xv = tyany_ptr(x);
+    transpose_move(rv, xv, xe, w, h);
   }
   usz* rsh = arr_shAlloc(r, xr);
   if (xr==2) {
@@ -160,7 +158,7 @@ B transp_c1(B t, B x) {
     shcpy(rsh, xsh+1, xr-1);
     rsh[xr-1] = h;
   }
-  decG(x); return taga(toBit? (Arr*)cpyBitArr(taga(r)) : r);
+  decG(x); return taga(r);
 }
 
 B mul_c2(B,B,B);
