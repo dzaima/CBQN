@@ -1579,7 +1579,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
 
 void profiler_displayResults(void) {
   ux count = (u64)(profiler_buf_c-profiler_buf_s);
-  printf("Got "N64u" samples\n", count);
+  printf("Got %zu samples\n", count);
   if (profiler_mode==1) {
     B compList, mapList;
     usz compCount = profiler_getResults(&compList, &mapList, true);
