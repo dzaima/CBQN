@@ -60,17 +60,26 @@ static B getFillE(B x) { // errors if there's no fill
 }
 
 
-static Arr* m_fillarrp(usz ia) {
+static Arr* m_fillarrp(usz ia) { // needs a NOGC_E after fill & all elements are initialized
   CHECK_IA(ia, sizeof(B));
-  return m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
+  Arr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
+  NOGC_S;
+  return r;
 }
 static void fillarr_setFill(Arr* x, B fill) { assert(PTY(x)==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
 static B* fillarr_ptr(Arr* x) { assert(PTY(x)==t_fillarr); return ((FillArr*)x)->a; }
-
-static B m_emptyFVec(B f) { // consumes f
-  Arr* r = arr_shVec(m_fillarrp(0));
-  fillarr_setFill(r, f);
-  return taga(r);
+static Arr* m_fillarrpEmpty(B fill) {
+  Arr* r = m_fillarrp(0);
+  fillarr_setFill(r, fill);
+  NOGC_E;
+  return r;
+}
+static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & elements set to m_f64(0)
+  Arr* r = arr_shVec(m_fillarrp(ia));
+  fillarr_setFill(r, m_f64(0));
+  FILL_TO(fillarr_ptr(r), el_B, 0, m_f64(0), ia);
+  NOGC_E;
+  return r;
 }
 
 B m_unit(B x); // consumes

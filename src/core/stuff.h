@@ -136,6 +136,13 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   return eqShPart(wsh, xsh, wr);
 }
 
+typedef void (*M_CopyF)(void*, usz, B, usz, usz);
+typedef void (*M_FillF)(void*, usz, B, usz);
+extern M_CopyF copyFns[el_MAX];
+extern M_FillF fillFns[el_MAX];
+#define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
+#define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
+
 B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);

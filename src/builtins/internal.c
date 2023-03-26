@@ -185,18 +185,13 @@ B variation_c2(B t, B w, B x) {
     else if (u8_get(&wp, wpE, "f64")) res = taga(cpyF64Arr(incG(x)));
     else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr  (incG(x)));
     else if (u8_get(&wp, wpE, "f")) {
-      Arr* t = m_fillarrp(xia);
-      fillarr_setFill(t, getFillQ(x));
-      arr_shCopy(t, x);
-      HArr* h = NULL;
+      Arr* r = m_fillarrp(xia);
+      fillarr_setFill(r, getFillQ(x));
+      arr_shCopy(r, x);
+      COPY_TO(fillarr_ptr(r), el_B, 0, x, 0, xia);
+      NOGC_E;
       
-      B* xp = TO_BPTR(x);
-      
-      B* rp = fillarr_ptr(t);
-      for (usz i = 0; i < xia; i++) rp[i] = inc(xp[i]);
-      if (h) ptr_dec(h);
-      
-      res = taga(t);
+      res = taga(r);
     } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
     
     if (slice) {
@@ -255,9 +250,10 @@ static B unshare(B x) {
       return unshareShape(a(HARR_FC(r, x)));
     }
     case t_fillarr: case t_fillslice: {
-      Arr* r = m_fillarrp(xia); arr_shCopy(r, x);
+      Arr* r = arr_shCopy(m_fillarr0p(xia), x);
       fillarr_setFill(r, unshare(getFillQ(x)));
-      B* rp = fillarr_ptr(r); B* xp = fillarr_ptr(a(x));
+      B* rp = fillarr_ptr(r);
+      B* xp = fillarr_ptr(a(x));
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return unshareShape(r);
     }

@@ -248,9 +248,7 @@ static B to_fill_cell(B x, ur k) {
 static B merge_fill_result(B rc, ur k, usz* sh) {
   u64 rr = k; if (isArr(rc)) rr += RNK(rc);
   if (rr>UR_MAX) thrM("⎉: Result rank too large");
-  B rf = getFillQ(rc);
-  Arr* r = m_fillarrp(0);
-  fillarr_setFill(r, rf);
+  Arr* r = m_fillarrpEmpty(getFillQ(rc));
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     shcpy(rsh, sh, k);

@@ -204,9 +204,7 @@ static B to_fill_cell_1(B x) { // consumes x
 static B merge_fill_result_1(B rc) {
   u64 rr = isArr(rc)? RNK(rc)+1ULL : 1;
   if (rr>UR_MAX) thrM("˘: Result rank too large");
-  B rf = getFillQ(rc);
-  Arr* r = m_fillarrp(0);
-  fillarr_setFill(r, rf);
+  Arr* r = m_fillarrpEmpty(getFillQ(rc));
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     rsh[0] = 0;

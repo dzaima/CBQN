@@ -81,12 +81,11 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
   if (ria > (i64)(USZ_MAX)) thrOOM();
   
-  Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
+  Arr* r = m_fillarr0p(ria);
   B* rp = fillarr_ptr(r);
-  for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
   
   B xf = getFillQ(x);
-  Arr* rf = m_fillarrp(0); fillarr_setFill(rf, xf);
+  Arr* rf = m_fillarrpEmpty(xf);
   if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
   
   B z = taga(rf);
@@ -229,12 +228,14 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
       Arr* c = m_fillarrp(l*csz);
       c->ia = 0;
       fillarr_setFill(c, inc(xf));
+      NOGC_E; // ia=0 means that this is a "safe" array
       if (xr==1) arr_shVec(c); else arr_shChangeLen(c, xr, xsh, l);
       rp[i] = taga(c);
     }
     if (csz==0) goto done;
     SLOW2("𝕨⊔𝕩", w, x);
     SGet(x)
+    NOGC_S; // ia==0 of the elements means they're in a sort of invalid state; though it should be fine as `x` references all the items that may be in them, so this NOGC isn't strictly necessary
     if (csz == 1) {
       for (usz i = 0; i < xn; i++) {
         i32 n = wp[i];
@@ -250,6 +251,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
       }
     }
     for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i]*csz;
+    NOGC_E;
   }
   
   done:
@@ -294,27 +296,26 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
       for (usz i = 0; i < xn; i++) len[o2i64G(GetU(w, i))]++;
       
-      Arr* r = arr_shVec(m_fillarrp(ria)); fillarr_setFill(r, m_f64(0));
-      B* rp = fillarr_ptr(r);
-      for (usz i = 0; i < ria; i++) rp[i] = m_f64(0); // don't break if allocation errors
+      Arr* r = m_fillarr0p(ria);
       B xf = getFillQ(x);
-      
+      B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) {
         Arr* c = m_fillarrp(len[i]);
         c->ia = 0;
         fillarr_setFill(c, inc(xf));
+        NOGC_E; // see comments in group_simple
         arr_shVec(c);
         rp[i] = taga(c);
       }
-      Arr* rf = m_fillarrp(0); arr_shVec(rf);
-      fillarr_setFill(rf, xf);
-      fillarr_setFill(r, taga(rf));
+      fillarr_setFill(r, taga(arr_shVec(m_fillarrpEmpty(xf))));
       SGet(x)
+      NOGC_S;
       for (usz i = 0; i < xn; i++) {
         i64 n = o2i64G(GetU(w, i));
         if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
       for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i];
+      NOGC_E;
       decG(w); decG(x); TFREE(lenO); TFREE(pos);
       return taga(r);
     }

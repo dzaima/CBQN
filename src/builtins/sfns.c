@@ -15,7 +15,7 @@ NOINLINE Arr* emptyArr(B x, ur xr) {
   if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
   else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
   else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
-  else                 { r = m_fillarrp(0); fillarr_setFill(r, xf); }
+  else                 { r = m_fillarrpEmpty(xf); }
   if (xr<=1) arr_rnk01(r, xr);
   return r;
 }
@@ -53,6 +53,7 @@ B m_vec1(B a) {
   Arr* ra = arr_shVec(m_fillarrp(1));
   fillarr_ptr(ra)[0] = a;
   fillarr_setFill(ra, m_f64(0));
+  NOGC_E;
   fillarr_setFill(ra, asFill(inc(a)));
   return taga(ra);
 }
@@ -86,6 +87,7 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
     fillarr_setFill(ra, af);
     fillarr_ptr(ra)[0] = a;
     fillarr_ptr(ra)[1] = b;
+    NOGC_E;
     return taga(ra);
   }
   noFills:
@@ -325,10 +327,12 @@ B shape_c2(B t, B w, B x) {
       else                { FILL(c32,u32,c*0x0000000100000001) }
     } else {
       incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
+      B rf = asFill(x);
       r = m_fillarrp(nia);
       if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
       else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
-      fillarr_setFill(r, asFill(x));
+      fillarr_setFill(r, rf);
+      NOGC_E;
     }
     #undef FILL
   }
@@ -1266,6 +1270,7 @@ B pick_ucw(B t, B o, B w, B x) {
       fillarr_setFill(x2, getFillQ(x));
       xp = fillarr_ptr(x2);
       COPY_TO(xp, el_B, 0, x, 0, xia);
+      NOGC_E;
       arr_shCopy(x2, x);
       dec(x);
       x = taga(x2);

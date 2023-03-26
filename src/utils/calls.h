@@ -7,14 +7,6 @@
 static inline B m1c1_unsafe(D1C1 m, B f,      B x) { Md1D d; d.f=f; return m(&d,    x); }
 static inline B m1c2_unsafe(D1C2 m, B f, B w, B x) { Md1D d; d.f=f; return m(&d, w, x); }
 
-typedef void (*M_CopyF)(void*, usz, B, usz, usz);
-typedef void (*M_FillF)(void*, usz, B, usz);
-extern M_CopyF copyFns[el_MAX];
-extern M_FillF fillFns[el_MAX];
-#define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
-#define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
-
-
 typedef void (*CmpAAFn)(u64*, void*, void*, u64);
 typedef void (*CmpASFn)(u64*, void*, u64, u64);
 #define CMP_DEF(F, S) extern Cmp##S##Fn cmp_fns_##F##S[];

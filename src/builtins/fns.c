@@ -80,10 +80,9 @@ B ud_c1(B t, B x) {
   }
   decG(x);
   
-  Arr* r = m_fillarrp(ria); fillarr_setFill(r, m_f64(0));
-  B* rp = fillarr_ptr(r);
-  FILL_TO(rp, el_B, 0, m_f64(0), ria); // don't have r in undefined state if allocation errors
+  Arr* r = m_fillarr0p(ria);
   
+  B* rp = fillarr_ptr(r);
   ud_rec(rp, 0, xia, pos, sh);
   
   usz* rsh = arr_shAlloc(r, xia);
@@ -135,8 +134,7 @@ B ud_c2(B t, B w, B x) {
   for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
   
   if (empty) {
-    Arr* ra = arr_shSetU(m_fillarrp(0), rr, sh);
-    fillarr_setFill(ra, getFillQ(x));
+    Arr* ra = arr_shSetU(m_fillarrpEmpty(getFillQ(x)), rr, sh);
     decG(x);
     return taga(ra);
   }

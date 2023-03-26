@@ -126,6 +126,7 @@ B select_c2(B t, B w, B x) {
         arr_shAtm(r);
         fillarr_ptr(r)[0] = xv;
         fillarr_setFill(r, xf);
+        NOGC_E;
         rb = taga(r);
       }
       decG(x);

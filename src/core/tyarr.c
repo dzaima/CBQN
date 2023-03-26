@@ -101,7 +101,6 @@ void tyarr_init(void) {
   { u64* tmp; bi_emptyIVec = m_bitarrv(&tmp, 0); gc_add(bi_emptyIVec); }
   { u8*  tmp; bi_emptyCVec = m_c8arrv (&tmp, 0); gc_add(bi_emptyCVec); }
   
-  Arr* emptySVec = arr_shVec(m_fillarrp(0));
-  fillarr_setFill(emptySVec, emptyCVec());
+  Arr* emptySVec = arr_shVec(m_fillarrpEmpty(emptyCVec()));
   bi_emptySVec = taga(emptySVec); gc_add(bi_emptySVec);
 }

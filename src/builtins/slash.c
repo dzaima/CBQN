@@ -328,11 +328,11 @@ static NOINLINE B zeroCells(B x) { // doesn't consume
   u8 xe = TI(x,elType);
   B r; ur xr = RNK(x);
   if (xr==1) {
-    if (xe==el_B) { B xf = getFillR(x); r = noFill(xf)? emptyHVec() : m_emptyFVec(xf); }
+    if (xe==el_B) { B xf = getFillR(x); r = noFill(xf)? emptyHVec() : taga(arr_shVec(m_fillarrpEmpty(xf))); }
     else r = elNum(xe)? emptyIVec() : emptyCVec();
   } else {
     Arr* ra;
-    if (xe==el_B) { B xf = getFillR(x); if (noFill(xf)) ra = (Arr*)m_harrUp(0).c; else { ra = m_fillarrp(0); fillarr_setFill(ra, xf); } }
+    if (xe==el_B) { B xf = getFillR(x); ra = noFill(xf)? (Arr*)m_harrUp(0).c : m_fillarrpEmpty(xf); }
     else m_tyarrp(&ra, 1, 0, elNum(xe)? t_bitarr : t_c8arr);
     usz* rsh = arr_shAlloc(ra, xr);
     shcpy(rsh+1, SH(x)+1, xr-1);
