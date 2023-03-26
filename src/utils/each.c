@@ -1,6 +1,5 @@
 #include "../core.h"
 #include "each.h"
-#include "calls.h"
 
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }

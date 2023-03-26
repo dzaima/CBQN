@@ -1,6 +1,5 @@
 #include "../core.h"
 #include "utf.h"
-#include "calls.h"
 
 static i8 utf8lenb(u8 ch) {
   if (ch<128)           return 1;

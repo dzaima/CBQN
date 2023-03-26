@@ -4,7 +4,6 @@
 #include "builtins.h"
 #endif
 #include "utils/time.h"
-#include "utils/calls.h"
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
 

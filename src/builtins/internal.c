@@ -291,9 +291,6 @@ B internalTemp_c1(B t, B x) {
   return x;
 }
 
-#ifdef TEST_MUT
-  #include "../utils/calls.h"
-#endif
 B internalTemp_c2(B t, B w, B x) {
   #if NATIVE_COMPILER
     return c2(native_comp, w, x);

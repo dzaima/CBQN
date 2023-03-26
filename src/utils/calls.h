@@ -1,7 +1,6 @@
 #pragma once
 
-#define C1(F,  X) F##_c1(m_f64(0),  X)
-#define C2(F,W,X) F##_c2(m_f64(0),W,X)
+
 #define M1C1(M,F,  X) m1c1_unsafe(M##_c1, bi_##F,    X)
 #define M1C2(M,F,W,X) m1c2_unsafe(M##_c2, bi_##F, W, X)
 static inline B m1c1_unsafe(D1C1 m, B f,      B x) { Md1D d; d.f=f; return m(&d,    x); }
@@ -35,5 +34,3 @@ extern u8 eqFnData[];
 typedef struct { EqFn fn; u8 data; } EqFnObj;
 #define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
 #define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data)
-
-void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s

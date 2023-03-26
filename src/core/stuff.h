@@ -31,6 +31,13 @@ static void decSh(Value* x) { if (RARE(PRNK(x)>1)) decShObj(shObjP(x)); }
 
 // some array stuff
 
+typedef void (*M_CopyF)(void*, usz, B, usz, usz);
+typedef void (*M_FillF)(void*, usz, B, usz);
+extern M_CopyF copyFns[el_MAX];
+extern M_FillF fillFns[el_MAX];
+#define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
+#define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
+
 #define TYARR_SZ(T,IA) fsizeof(TyArr, a, T##Atom, IA)
 #define TYARR_SZ2(T,IA) TYARR_SZ(T,IA)
 #define TYARR_SZW(W,IA) (offsetof(TyArr, a) + (W)*(IA))
@@ -136,17 +143,11 @@ static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
   return eqShPart(wsh, xsh, wr);
 }
 
-typedef void (*M_CopyF)(void*, usz, B, usz, usz);
-typedef void (*M_FillF)(void*, usz, B, usz);
-extern M_CopyF copyFns[el_MAX];
-extern M_FillF fillFns[el_MAX];
-#define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
-#define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
-
 B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
 Arr* allOnes(usz ia);
 B bit_negate(B x); // consumes
+void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s
 B widenBitArr(B x, ur axis); // consumes x, assumes bitarr; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes widenBitArr, overriding shape past axis to cr↑csh
 
@@ -197,6 +198,9 @@ void fprint_fmt(FILE* f, char* p, ...);
 #define AFMT(...) s = append_fmt(s, __VA_ARGS__)
 
 // function stuff
+
+#define C1(F,  X) F##_c1(m_f64(0),  X)
+#define C2(F,W,X) F##_c2(m_f64(0),W,X)
 
 char* type_repr(u8 u);
 char* pfn_repr(u8 u);

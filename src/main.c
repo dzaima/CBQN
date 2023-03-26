@@ -64,7 +64,6 @@ static NOINLINE i64 readInt(char** p) {
 #if USE_REPLXX
   #include <replxx.h>
   #include <errno.h>
-  #include "utils/calls.h"
   #include "utils/cstr.h"
   Replxx* global_replxx;
   static char* global_histfile;

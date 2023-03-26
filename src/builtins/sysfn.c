@@ -1,6 +1,5 @@
 #include "../core.h"
 #include "../utils/hash.h"
-#include "../utils/calls.h"
 #include "../utils/file.h"
 #include "../utils/wyhash.h"
 #include "../utils/time.h"

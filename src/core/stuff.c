@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../utils/mut.h"
+#include "../utils/calls.h"
 #include "../utils/utf.h"
 #include "../utils/talloc.h"
 #include "../builtins.h"

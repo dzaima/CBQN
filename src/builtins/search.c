@@ -23,7 +23,6 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
-#include "../utils/calls.h"
 
 #define C2i(F, W, X) C2(F, m_i32(W), X)
 extern B eq_c2(B,B,B);
