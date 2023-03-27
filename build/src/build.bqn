@@ -636,7 +636,7 @@ cachedBin‿linkerCache ← {
     po.versionName≡@? @;
     srcFile ← linkerCache.File "versionInfo.c"
     src ← "char* cbqn_versionString = """∾(∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
-      "CBQN "∾{po.versionName≡""? "on commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain"⟩? ""; "-dirty"}; po.versionName}
+      "CBQN "∾{po.versionName≡""? "on commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; po.versionName}
       {"built with "⊸∾⍟(×≠) ¯2↓∾∾⟜", "¨ 𝕩} po.ffi‿po.singeli‿po.replxx‿(¬po.o3) / ⟨"FFI", "singeli "∾{po.native? "native"; po.arch}, "replxx", "optimizations disabled"⟩
       # "build invocation: "⊸∾⍟(×≠) ¯1↓∾∾⟜' '¨ •args
     ⟩)∾""";"∾@+10
