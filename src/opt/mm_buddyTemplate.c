@@ -36,7 +36,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   buckets[from] = c;
 }
 
-#if !BUDDY_NO_GC && ENABLE_GC
+#if ALLOC_MODE==0 && ENABLE_GC
   static bool BN(allocMore_rec);
 #endif
 
@@ -44,12 +44,12 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   u64 sz = BSZ(from);
   CHECK_INTERRUPT;
   
-  #if !BUDDY_NO_GC && ENABLE_GC
+  #if ALLOC_MODE==0 && ENABLE_GC
     if (gc_maybeGC(false)) goto alloc_rec;
   #endif
   
   if (mm_heapAlloc+sz >= mm_heapMax) {
-    #if !BUDDY_NO_GC && ENABLE_GC
+    #if ALLOC_MODE==0 && ENABLE_GC
       if (!BN(allocMore_rec)) {
         gc_forceGC(false);
         BN(allocMore_rec) = true;
@@ -67,8 +67,13 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   #if NO_MMAP
     EmptyValue* c = calloc(sz+getPageSize(), 1);
   #else
-    EmptyValue* c = MMAP(sz);
-    if (c==MAP_FAILED) thrOOM();
+    u8* mem = MMAP(sz);
+    if (mem==MAP_FAILED) thrOOM();
+    #if ALLOC_MODE==0
+    // ux off = offsetof(TyArr,a);
+    // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
+    #endif
+    EmptyValue* c = (void*)mem;
   #endif
   mm_heapAlloc+= sz;
   
@@ -130,7 +135,7 @@ void BN(forFreedHeap)(V2v f) {
     }
   }
 }
-#if !BUDDY_NO_GC && ENABLE_GC
+#if ALLOC_MODE==0 && ENABLE_GC
 static void BN(freeFreedAndMerge)() {
   for (u64 i = 0; i < 64; i++) buckets[i] = NULL;
   

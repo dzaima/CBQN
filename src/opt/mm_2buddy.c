@@ -11,6 +11,7 @@
   #error MM=2 doesn't support VERIFY_TAIL
 #endif
 
+#define ALLOC_MODE 0
 u64 mm_ctrs[128];
 EmptyValue* mm_buckets[128];
 #define b1_buckets mm_buckets
@@ -34,6 +35,7 @@ EmptyValue* mm_buckets[128];
 #include "mm_buddyTemplate.c"
 #undef BN
 #undef BSZ
+#undef ALLOC_MODE
 
 NOINLINE void* mm_allocS(i64 bucket, u8 type) {
   return bucket&64? b3_allocS(bucket, type) : b1_allocS(bucket, type);

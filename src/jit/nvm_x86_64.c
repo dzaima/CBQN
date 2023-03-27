@@ -61,9 +61,9 @@ static void* mmap_nvm(u64 sz) {
 
 #define MMAP(SZ) mmap_nvm(sz);
 #define  MUL 1
-#define BUDDY_NO_GC 1
+#define ALLOC_MODE 1
 #include "../opt/mm_buddyTemplate.c"
-#undef BUDDY_NO_GC
+#undef ALLOC_MODE
 static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
 #undef BN
 #undef BSZ
