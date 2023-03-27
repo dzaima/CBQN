@@ -144,6 +144,16 @@ B ud_c1(B,B);
 B tbl_c2(Md1D*,B,B);
 B select_c2(B,B,B);
 
+static void shSet_alloc(Arr* ra, ur rr, usz* rsh) {
+  if (RARE(rr <= 1)) {
+    arr_shVec(ra);
+  } else {
+    ShArr* sh=m_shArr(rr);
+    shcpy(sh->a, rsh, rr);
+    arr_shSetU(ra, rr, sh);
+  }
+}
+
 B transp_c2(B t, B w, B x) {
   usz wia=1;
   if (isArr(w)) {
@@ -199,13 +209,7 @@ B transp_c2(B t, B w, B x) {
   // Empty result
   if (IA(x) == 0) {
     Arr* ra = m_fillarrpEmpty(getFillQ(x));
-    if (RARE(rr <= 1)) {
-      arr_shVec(ra);
-    } else {
-      ShArr* sh=m_shArr(rr);
-      shcpy(sh->a, rsh, rr);
-      arr_shSetU(ra, rr, sh);
-    }
+    shSet_alloc(ra, rr, rsh);
     decG(x);
     r = taga(ra); goto ret;
   }
@@ -214,11 +218,39 @@ B transp_c2(B t, B w, B x) {
   ur ar = max+1+dup;
   if (!dup) while (ar>1 && p[ar-1]==ar-1) ar--; // Unmoved trailing
   if (ar <= 1) { r = x; goto ret; }
+  ur na = ar - dup;
   // Add up stride for each axis
   TALLOC(u64, st, rr);
   for (usz j=0; j<rr; j++) st[j] = 0;
   usz c = 1;
   for (usz i=ar; i--; ) { st[p[i]]+=c; c*=xsh[i]; }
+
+  u8 xe = TI(x,elType);
+  usz csz = shProd(xsh, ar, xr);
+  if (csz >= (32*8) >> elWidthLogBits(xe)) { // cell >= 32 bytes
+    usz ria = csz * shProd(rsh, 0, na);
+    MAKE_MUT_INIT(rm, ria, xe); MUTG_INIT(rm);
+    for (usz i=0; i<na; i++) st[i] *= csz;
+    TALLOC(usz, ri, na); for (usz i=0; i<na; i++) ri[i]=0;
+    for (usz i=0, j=0;;) {
+      mut_copyG(rm, i, x, j, csz);
+      usz str = st[na-1];
+      i += csz;
+      if (i == ria) break;
+      j += str;
+      for (usz a=na-1; RARE(++ri[a] == rsh[a]); ) {
+        ri[a] = 0;
+        j -= rsh[a] * str;
+        str = st[--a];
+        j += str;
+      }
+    }
+    TFREE(ri);
+    Arr* ra = mut_fp(rm);
+    shSet_alloc(ra, rr, rsh);
+    r = withFill(taga(ra), getFillQ(x));
+    decG(x); goto ret_decst;
+  }
 
   // Reshape x for selection, collapsing ar axes
   if (ar != 1) {
@@ -236,14 +268,15 @@ B transp_c2(B t, B w, B x) {
   }
   // (+⌜´st×⟜↕¨rsh)⊏⥊𝕩
   B ind = bi_N;
-  for (ur k=ar-dup; k--; ) {
+  for (ur k=na; k--; ) {
     B v = C2(mul, m_f64(st[k]), C1(ud, m_f64(rsh[k])));
     if (q_N(ind)) ind = v;
     else ind = M1C2(tbl, add, v, ind);
   }
-  TFREE(st);
   r = C2(select, ind, x);
 
+  ret_decst:;
+  TFREE(st);
   ret:;
   TFREE(rsh);
   TFREE(p);
