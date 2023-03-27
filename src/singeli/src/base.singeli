@@ -11,15 +11,6 @@ def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
 def elwidth{T} = width{eltype{T}}
 
-def genchk{B, F} = {
-  def r{T} = 0
-  def r{T & B{T}} = F{eltype{T}}
-  def r{T,w} = 0
-  def r{T,w & B{T}} = F{eltype{T}} & (elwidth{T}==w)
-  def r{T & ~isvec{T}} = 0
-  r
-}
-
 # ceiling divide
 def cdiv{a,b} = (a+b-1)/b
 
@@ -60,6 +51,34 @@ def anyNum{x:T} = isprim{T}
 def anyInt{x} = 0
 def anyInt{x & knum{x}} = (x>>0) == x
 def anyInt{x & isreg{x}|isconst{x}} = isint{x}
+
+# vector width/type checks
+def w128{T} = 0
+def w128{T & isvec{T}} = width{T}==128
+def w128{T,w} = 0
+def w128{T,w & w128{T}} = elwidth{T}==w
+def w256{T} = 0
+def w256{T & isvec{T}} = width{T}==256
+def w256{T,w} = 0
+def w256{T,w & w256{T}} = elwidth{T}==w
+
+# width+type checks
+def genchk{B, F} = {
+  def r{T} = 0
+  def r{T & B{T}} = F{eltype{T}}
+  def r{T,w} = 0
+  def r{T,w & B{T}} = F{eltype{T}} & (elwidth{T}==w)
+  def r{T & ~isvec{T}} = 0
+  r
+}
+def w128i = genchk{w128, {T} => isint{T}}
+def w128s = genchk{w128, {T} =>   issigned{T}}
+def w128u = genchk{w128, {T} => isunsigned{T}}
+def w128f = genchk{w128, {T} => isfloat{T}}
+def w256i = genchk{w256, {T} => isint{T}}
+def w256s = genchk{w256, {T} =>   issigned{T}}
+def w256u = genchk{w256, {T} => isunsigned{T}}
+def w256f = genchk{w256, {T} => isfloat{T}}
 
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}

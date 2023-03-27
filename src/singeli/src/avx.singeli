@@ -1,12 +1,3 @@
-def w256{T} = 0
-def w256{T & isvec{T}} = width{T}==256
-def w256{T,w} = 0
-def w256{T,w & w256{T}} = elwidth{T}==w
-def w256i = genchk{w256, {T} => isint{T}}
-def w256s = genchk{w256, {T} =>   issigned{T}}
-def w256u = genchk{w256, {T} => isunsigned{T}}
-def w256f = genchk{w256, {T} => isfloat{T}}
-
 def v2i{x:T & w256{T}} = [32]u8 ~~ x # for compact casting for the annoying intrinsic type system
 def v2f{x:T & w256{T}} = [8]f32 ~~ x
 def v2d{x:T & w256{T}} = [4]f64 ~~ x
