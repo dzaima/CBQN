@@ -231,18 +231,24 @@ B transp_c2(B t, B w, B x) {
     usz ria = csz * shProd(rsh, 0, na);
     MAKE_MUT_INIT(rm, ria, xe); MUTG_INIT(rm);
     for (usz i=0; i<na; i++) st[i] *= csz;
-    TALLOC(usz, ri, na); for (usz i=0; i<na; i++) ri[i]=0;
+    TALLOC(usz, ri, na-1); for (usz i=0; i<na-1; i++) ri[i]=0;
     for (usz i=0, j=0;;) {
-      mut_copyG(rm, i, x, j, csz);
-      usz str = st[na-1];
-      i += csz;
+      // Hardcode one innermost loop: we know a>=0
+      ur a = na - 1;
+      usz str = st[a];
+      usz l = rsh[a];
+      for (usz k=0; k<l; k++) {
+        mut_copyG(rm, i, x, j+k*str, csz);
+        i += csz;
+      }
       if (i == ria) break;
-      j += str;
-      for (usz a=na-1; RARE(++ri[a] == rsh[a]); ) {
-        ri[a] = 0;
-        j -= rsh[a] * str;
+      // Update result index, starting with last axis finished
+      while (1) {
         str = st[--a];
         j += str;
+        if (LIKELY(++ri[a] < rsh[a])) break;
+        ri[a] = 0;
+        j -= rsh[a] * str;
       }
     }
     TFREE(ri);
