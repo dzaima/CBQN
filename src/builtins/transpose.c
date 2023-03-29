@@ -32,25 +32,20 @@
   #endif
 #endif
 
-typedef void (*TranspFn)(void*,void*,u64,u64);
+#define DECL_BASE(T) \
+  static NOINLINE void transpose_##T(void* rv, void* xv, u64 bw, u64 bh, u64 w, u64 h) {     \
+    T* rp=rv; T* xp=xv;                                                                      \
+    PLAINLOOP for(usz y=0;y<bh;y++) NOVECTORIZE for(usz x=0;x<bw;x++) rp[x*h+y] = xp[y*w+x]; \
+  }
+DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
+#undef DECL_BASE
+
+typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
 #if SINGELI
   #define transposeFns simd_transpose
-  #define DECL_BASE(T) \
-    static NOINLINE void base_transpose_##T(T* rp, T* xp, u64 bw, u64 bh, u64 w, u64 h) { \
-      PLAINLOOP for(usz y=0;y<bh;y++) NOVECTORIZE for(usz x=0;x<bw;x++) rp[x*h+y] = xp[y*w+x]; \
-    }
-  DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
-  #undef DECL_BASE
   #define SINGELI_FILE transpose
   #include "../utils/includeSingeli.h"
 #else
-  #define DECL_BASE(T) \
-    static NOINLINE void transpose_##T(void* rv, void* xv, u64 w, u64 h) { \
-      T* rp=rv; T* xp=xv; usz xi=0;                                        \
-      PLAINLOOP for(usz y=0;y< h;y++) NOVECTORIZE for(usz x=0;x< w;x++) rp[x*h+y] = xp[xi++]; \
-    }
-  DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
-  #undef DECL_BASE
   static TranspFn transposeFns[] = {
     transpose_i8, transpose_i16, transpose_i32, transpose_i64
   };
@@ -59,7 +54,7 @@ typedef void (*TranspFn)(void*,void*,u64,u64);
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);
-  transposeFns[elWidthLogBits(xe)-3](rv, xv, w, h);
+  transposeFns[elWidthLogBits(xe)-3](rv, xv, w, h, w, h);
 }
 // Return an array with data from x transposed as though it's shape h,w
 // Shape of result needs to be set afterwards!
@@ -274,12 +269,12 @@ B transp_c2(B t, B w, B x) {
     usz w = rsh[na-2];
     usz h = rsh[na-1];
     if (na == 2) {
-      tran(rp, xp, w, h);
+      tran(rp, xp, w, h, w, h);
     } else {
       csz = (csz<<xlw) / 8; // Convert to bytes
       usz ria = rf*csz;
       usz hw = h*w*csz;
-      AXIS_LOOP(na-2, hw, tran(rp+i, xp+j, w, h));
+      AXIS_LOOP(na-2, hw, tran(rp+i, xp+j, w, h, w, h));
     }
     shSet(ra, rr, sh);
     r = taga(ra);
