@@ -13,7 +13,17 @@
 //   COULD use half-width or smaller kernels to improve odd sizes
 //   Scalar transpose or loop used for overhang of 1
 
-// Reorder Axes: generate indices and select with +⌜ and ⊏
+// Reorder Axes
+// If 𝕨 indicates the identity permutation, return 𝕩
+// Simplify: remove length-1 axes; coalesce adjacent and trailing axes
+// Empty result or trivial reordering: reshape 𝕩
+// Large cells: slow outer loop plus mut_copy
+// CPU-sized cells, large last 𝕩 and result axes: strided 2D transposes
+// Otherwise, generate indices and select with +⌜ and ⊏
+//   SHOULD generate for a cell and virtualize the rest to save space
+// COULD decompose axis permutations to use 2D transpose when possible
+// COULD convert boolean to integer for some axis reorderings
+// SHOULD have a small-subarray transposer using one or a few shuffles
 
 // Transpose inverse ⍉⁼𝕩: data movement of ⍉ with different shape logic
 // COULD implement fast ⍉⍟n
