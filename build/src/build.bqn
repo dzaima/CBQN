@@ -192,8 +192,7 @@ po ← { # parsed options
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
-  {𝕊: "Error: Cannot use Singeli on x86-64 without explicit 'native'"}_assert_¬ (arch≡"x86-64") ∧ singeli ∧ @≡GetOpt"native"
-  {𝕊: "Error: Cannot use Singeli on generic arch"}_assert_¬ singeli ∧ arch≡"generic"
+  {𝕊: arch↩"generic" ⋄ Log ∾⟨"Note: on x86-64, a native build will be much faster: ", compat⊑"add an argument of 'native'"‿"use 'make o3n-singeli' if possible"⟩}⍟⊢ (arch≡"x86-64") ∧ singeli ∧ @≡GetOpt"native"
   
   pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
   
@@ -249,6 +248,7 @@ po ← { # parsed options
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
     args∾↩ (singeli∧arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
+    args∾↩ (singeli∧⊑arch≢"generic") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (              wasm) / ⟨"-DWASM"⟩
     args∾↩ (              wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (              emcc) / ⟨"-DEMCC", "-O3"⟩
@@ -571,12 +571,12 @@ cachedBin‿linkerCache ← {
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
   singeliMap ← 1↓¨ (∨´¨ (⊑po.arch) = ⊑¨)⊸/ ⟨
-    "xa"‿"src/builtins/arithm.c"‿"monarith",
-    "xa"‿"src/core/stuff.c"‿"equal",        "xa"‿"src/utils/mut.c"‿"copy",       "xa"‿"src/utils/bits.c"‿"bits"
-    "xa"‿"src/builtins/arithd.c"‿"dyarith", "xa"‿"src/builtins/cmp.c"‿"cmp",     "xa"‿"src/builtins/squeeze.c"‿"squeeze"
-    "x."‿"src/builtins/select.c"‿"select",  "x."‿"src/builtins/fold.c"‿"fold",   "x."‿"src/builtins/scan.c"‿"scan"
-    "x."‿"src/builtins/scan.c"‿"neq",       "x."‿"src/builtins/slash.c"‿"slash", "x."‿"src/builtins/slash.c"‿"constrep"
-    "xa"‿"src/builtins/transpose.c"‿"transpose"
+    "xa."‿"src/builtins/arithm.c"‿"monarith",
+    "xa."‿"src/core/stuff.c"‿"equal",        "xa."‿"src/utils/mut.c"‿"copy",       "xa."‿"src/utils/bits.c"‿"bits"
+    "xa."‿"src/builtins/arithd.c"‿"dyarith", "xa."‿"src/builtins/cmp.c"‿"cmp",     "xa."‿"src/builtins/squeeze.c"‿"squeeze"
+    "x.."‿"src/builtins/select.c"‿"select",  "x.."‿"src/builtins/fold.c"‿"fold",   "x.."‿"src/builtins/scan.c"‿"scan"
+    "x.."‿"src/builtins/scan.c"‿"neq",       "x.."‿"src/builtins/slash.c"‿"slash", "x.."‿"src/builtins/slash.c"‿"constrep"
+    "xag"‿"src/builtins/transpose.c"‿"transpose"
   ⟩
   objs ← ⟨⟩
   
@@ -610,8 +610,9 @@ cachedBin‿linkerCache ← {
     
     singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder⟩∾{
       po.native? ⟨⟩;
-      "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"} po.arch
+      "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch
     }
+    {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
     
     singeliCache

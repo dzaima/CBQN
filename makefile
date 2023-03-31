@@ -201,7 +201,7 @@ ifeq ($(WINDOWS), 1)
 	endif
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_SIMD=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 j=4

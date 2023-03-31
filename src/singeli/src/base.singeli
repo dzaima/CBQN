@@ -150,6 +150,16 @@ def pair{...x} = assert{'pair not supported', show{...x}}
 def cvt{...x} = assert{'cvt not supported', show{...x}}
 def cvt{T, x:X & T==eltype{X}} = x
 def shuf{...x} = assert{'shuf not supported', show{...x}}
+def homAll{...x} = assert{'homAll not supported', show{...x}}
+def homAny{...x} = assert{'homAny not supported', show{...x}}
+def homMask{...x} = assert{'homMask not supported', show{...x}}
+def andAllZero{...x} = assert{'andAllZero not supported', show{...x}}
+def loadLow{...x} = assert{'loadLow not supported', show{...x}}
+def storeLow{...x} = assert{'storeLow not supported', show{...x}}
+def sel{...x} = assert{'sel not supported', show{...x}}
+def make{...x} = assert{'make not supported', show{...x}}
+def half{...x} = assert{'half not supported', show{...x}}
+def maskstoreF{...x} = assert{'maskstoreF not supported', show{...x}}
 
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
