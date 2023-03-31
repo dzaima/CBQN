@@ -29,8 +29,9 @@
 // 𝕨⍉⁼𝕩: compute inverse 𝕨, length 1+⌈´𝕨
 // Under Transpose supports invertible cases
 //   SHOULD implement Under with duplicate axes, maybe as Under Select
+// ⍉˘𝕩 and k⍉˘𝕩 for number k: convert to 0‿a⍉𝕩
+//   SHOULD convert ⍉ with rank to a Reorder Axes call
 // COULD implement fast ⍉⍟n
-// SHOULD convert ⍉ with rank to a Reorder Axes call
 
 #include "../core.h"
 #include "../utils/each.h"

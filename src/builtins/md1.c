@@ -322,6 +322,12 @@ static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
   return r;
 }
 
+B transp_c2(B, B, B);
+static B transp_cells(ur ax, B x) {
+  i8* wp; B w=m_i8arrv(&wp, 2); wp[0]=0; wp[1]=ax;
+  return C2(transp, w, x);
+}
+
 B shape_c1(B, B);
 B fold_rows(Md1D* d, B x);  // From fold.c
 B cell_c1(Md1D* d, B x) { B f = d->f;
@@ -362,6 +368,7 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
         B xf = getFillR(x);
         if (!noFill(xf)) return shift_cells(xf, x, TI(x,elType), rtid);
       }
+      if (rtid==n_transp) return xr<=2? x : transp_cells(xr-1, x);
       if (TY(f) == t_md1D) {
         Md1D* fd = c(Md1D,f);
         u8 rtid = fd->m1->flags-1;
@@ -425,6 +432,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
       }
       if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
       if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
+      if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, x); }
     }
     S_SLICES(x)
     M_HARR(r, cam);
