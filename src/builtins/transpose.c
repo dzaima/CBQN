@@ -170,11 +170,12 @@ B transp_c2(B t, B w, B x) {
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("⍉: Length of 𝕨 must be at most rank of 𝕩");
 
   // Axis permutation
-  TALLOC(ur, p, xr*(1+3*sizeof(usz))); // Also rsh, st, ri
+  TALLOC(u8, alloc, xr*(sizeof(ur) + 3*sizeof(usz))); // ur* p, usz* rsh, usz* st, usz* ri
+  ur* p = (ur*)alloc;
   if (isAtm(w)) {
     usz a=o2s(w);
     if (a>=xr) thrF("⍉: Axis %s does not exist (%i≡=𝕩)", a, xr);
-    if (a==xr-1) { TFREE(p); return C1(transp, x); }
+    if (a==xr-1) { TFREE(alloc); return C1(transp, x); }
     p[0] = a;
   } else {
     SGetU(w)
@@ -190,7 +191,7 @@ B transp_c2(B t, B w, B x) {
 
   // Compute shape for the given axes
   usz* xsh = SH(x);
-  usz *rsh = (usz*)(p + xr); // Length xr
+  usz* rsh = (usz*)(p + xr); // Length xr
   usz dup = 0, max = 0, id = 0;
   usz no_sh = -(usz)1;
   for (usz j=0; j<xr; j++) rsh[j] = no_sh;
@@ -348,7 +349,7 @@ B transp_c2(B t, B w, B x) {
   else { decSh(v(r)); arr_shVec(a(r)); }
 
   ret:;
-  TFREE(p);
+  TFREE(alloc);
   return r;
 }
 
