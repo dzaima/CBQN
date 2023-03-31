@@ -576,7 +576,7 @@ cachedBin‿linkerCache ← {
     "xa"‿"src/builtins/arithd.c"‿"dyarith", "xa"‿"src/builtins/cmp.c"‿"cmp",     "xa"‿"src/builtins/squeeze.c"‿"squeeze"
     "x."‿"src/builtins/select.c"‿"select",  "x."‿"src/builtins/fold.c"‿"fold",   "x."‿"src/builtins/scan.c"‿"scan"
     "x."‿"src/builtins/scan.c"‿"neq",       "x."‿"src/builtins/slash.c"‿"slash", "x."‿"src/builtins/slash.c"‿"constrep"
-    "x."‿"src/builtins/transpose.c"‿"transpose"
+    "xa"‿"src/builtins/transpose.c"‿"transpose"
   ⟩
   objs ← ⟨⟩
   

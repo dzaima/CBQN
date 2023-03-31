@@ -107,7 +107,7 @@ B comp_currSrc;
 B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
 
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
-  rt_group, rt_under, rt_find, rt_transp;
+  rt_group, rt_under, rt_find;
 Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
@@ -442,7 +442,6 @@ void load_init() { // very last init function
     rt_group   = Get(rtObjRaw, n_group   );
     rt_under   = Get(rtObjRaw, n_under   );
     rt_find    = Get(rtObjRaw, n_find    );
-    rt_transp  = Get(rtObjRaw, n_transp  );
     rt_depth   = Get(rtObjRaw, n_depth   );
     rt_insert  = Get(rtObjRaw, n_insert  );
     
@@ -485,7 +484,7 @@ void load_init() { // very last init function
     }
     load_rtObj = frtObj;
     load_compArg = m_hVec2(load_rtObj, incG(bi_sys));
-    rt_select=rt_slash=rt_group=rt_find=rt_transp=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
+    rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
     rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
     rt_under=rt_depth = incByG(bi_invalidMd2, 2);
     rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
@@ -497,7 +496,6 @@ void load_init() { // very last init function
   gc_add(rt_group);
   gc_add(rt_under);
   gc_add(rt_find);
-  gc_add(rt_transp);
   gc_add(rt_depth);
   gc_add(rt_insert);
   
