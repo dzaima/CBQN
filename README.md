@@ -6,57 +6,77 @@
 
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
-    - `make CC=cc` if clang isn't installed
+    - `make REPLXX=1` to enable replxx (syntax highlighting & some system/variable name completion)
+    - `make CC=cc` if `clang` isn't installed
+    - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the linker complains about `-ldl`)
     - `make FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
-    - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the build complains about `-ldl`)
-    - `make clean` if anything breaks and you want a clean build slate
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
-    - `make REPLXX=1` to enable replxx (syntax highlighting & some system & variable name completion)
+    - `make clean` if anything breaks and you want a clean build slate
 2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL (or just `./BQN` if replxx is enabled)
 
 ## Configuration options
 
-- Different build types:
-    - `make o3` - `-O3`, the default build
-    - `make o3n` - `-O3 -march=native`
+- Builds with more performance:
+    - `make o3n-singeli` - native for the current processor (i.e. `-march=native`); on x86-64 this assumes & uses AVX2 (and, if available, also uses BMI2)
+    - `make o3-singeli` - generic build for the current architecture; on x86-64 or unknown architectures this doesn't do much, but on aarch64 it uses NEON  
+      Therefore, on x86-64, `o3n-singeli` is highly recommended, but, on aarch64, `o3-singeli` is enough
+    - `make o3-singeli has=avx2` - generic build for any x86-64 CPU that supports AVX2 (won't utilize BMI2 though; `has='avx2 bmi2'` to assume both AVX2 & BMI2)
+    - `make o3n-singeli has=slow-pdep` - build tuned for AMD Zen 1/Zen 2 CPUs, which have BMI2, but their pdep/pext instructions are extremely slow
+    - Target architecture is decided by `uname -sm` - override with `target_arch=x86-64`/`target_arch=aarch64`; and extensions by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks, for native builds
+
+- Build flags:
+    - `CC=cc` - choose a different C compiler (default is `clang`)
+    - `CXX=c++` - choose a different C++ compiler (default is `c++`)
+    - `f=...` - add extra C compiler flags for CBQN file compilation
+    - `lf=...` - add extra linker flags
+    - `CCFLAGS=...` - add flags for all CC/CXX/linker invocations
+    - `REPLXX=1` - enable/disable replxx (default depends on target and may change in the future)
+    - `REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)
+    - `FFI=0` - disable libffi usage
+    - `j=8` to override the default parallel job count
+    - `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename
+    - For build targets which use build.bqn (currently all the `-singeli` & `shared-` ones), `target_arch` and `target_os` options can be added, specifying the target architecture/OS (mostly just changing library loading defaults/Singeli configuration; if cross-compiling, further manual configuration will be necessary)
+
+- More build types:
+    - `make o3` - `-O3`; currently the default build
+    - `make shared-o3` - produce a shared library `libcbqn.so`/`libcbqn.dylib`/`cbqn.dll`
     - `make o3g` - `-O3 -g`
-    - `make debug` - unoptimized build with extra assertion checks (incl. `-g`)
+    - `make o3g-singeli` / `make o3ng-singeli` - Singeli builds with `-g`
+    - `make debug` - unoptimized build with extra assertion checks (also includes `-g`)
     - `make debug1` - debug build without parallel compilation. Useful if everything errors, and you don't want error messages from multiple threads to be printed at the same time.
-    - `make heapverify` - verify that refcounting is done correctly
-    - `make o3n-singeli` - a Singeli build, currently only for x86-64 CPUs supporting AVX2 & BMI2
-    - `make shared-o3` - produce the shared library `libcbqn.so`
-    - `make c` - a build with no flags, for manual customizing
+    - `make c` - a build with minimal default settings, for manual customizing
     - `make shared-c` - like `make c` but for a shared library
-    - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Will take longer to compile & won't have incremental compilation, and isn't supported for many configurations.
+    - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Won't have incremental/parallel compilation, and isn't supported for many configurations
     - `make emcc-o3` - build with Emscripten `emcc`
-- Output executable/library location can be changed with `OUTPUT=output/path/file`.  
-  For `emcc-o3`, that will be used as a directory to add the `BQN.js` and `BQN.wasm` files to.
-- For any of the above (especially `make c`), you can add extra compiler flags with `f=...`, e.g.  
-  `make f='-O3 -DSOME_MACRO=whatever -some_other_cc_flag' c` or `make debug f=-O2`.  
-    - Linker flags can be added with `lf=...`, and flags for both with `CCFLAGS=...`; for replxx compilation, `REPLXX_FLAGS=...` will change the C++ flags.
-    - If you want to use custom build types but your system doesn't have `shasum` or `sha256sum`, add `force_build_dir=build/obj/some_identifier`. That directory will be used to store incremental build object files.
-  Macros that you may want to define are listed in `src/h.h`.  
-- Adding `builddir=1` to the make argument list will give you the build directory of the current configuration. Adding `clean=1` will clean that directory.
-- Use `j=8` instead of `-j8` to override the default parallel job count (which is currently `4`).
-- Tests can be run with `./BQN path/to/mlochbaum/BQN/test/this.bqn` (add `-noerr` if using `make heapverify`).
-- Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by, respectively, linking/copying a local version to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
+    - `make wasi-o3` - build targeting WASI
+- Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by linking/copying a local version to, respectively, `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
 ### Precompiled bytecode
 
-CBQN uses [the self-hosted BQN compiler](https://github.com/mlochbaum/BQN/blob/master/src/c.bqn) & some parts of [the runtime](https://github.com/mlochbaum/BQN/blob/master/src/r1.bqn), and therefore needs to be bootstrapped.  
-By default, the CBQN will use [precompiled bytecode](https://github.com/dzaima/cbqnBytecode). In order to build everything from source, you need to:
+CBQN uses [the self-hosted BQN compiler](https://github.com/mlochbaum/BQN/blob/master/src/c.bqn) & some parts of [the runtime](https://github.com/mlochbaum/BQN/blob/master/src/r1.bqn), and therefore needs to be bootstrapped. By default, the CBQN will use [precompiled bytecode](https://github.com/dzaima/cbqnBytecode).
 
-1. get another BQN implementation; [dzaima/BQN](https://github.com/dzaima/BQN) is one that is completely implemented in Java (clone it & run `./build`).
-2. clone [mlochbaum/BQN](https://github.com/mlochbaum/BQN).
-3. From within CBQNs directory, run `mkdir -p build/bytecodeLocal/gen`
-4. Run `said-other-bqn-impl ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`  
-   In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`
+In order to build everything from source, you can:
+
+#### option 1: use another BQN implementation
+
+  1. [dzaima/BQN](https://github.com/dzaima/BQN) is a BQN implementation that is completely implemented in Java (clone it & run `./build`)
+  2. clone [mlochbaum/BQN](https://github.com/mlochbaum/BQN)
+  3. `mkdir -p build/bytecodeLocal/gen`
+  4. `other-bqn-impl ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`  
+     In the case of the Java impl, `java -jar path/to/dzaima/BQN/BQN.jar ./build/genRuntime path/to/mlochbaum/BQN build/bytecodeLocal`
+
+#### option 2: use the bootstrap compilers
+
+  1. clone [mlochbaum/BQN](https://github.com/mlochbaum/BQN)
+  2. `mkdir -p build/bytecodeLocal/gen && make for-bootstrap && ./BQN build/bootstrap.bqn path/to/mlochbaum/BQN`
+
+Note that, after either of those, the compiled bytecode may become desynchronized if you later update CBQN without also rebuilding the bytecode. Usage of the submodule can be restored by removing `build/bytecodeLocal`.
 
 ## Requirements
 
-CBQN requires either gcc or clang as the C compiler (though it defaults to `clang`, as optimizations are written based on whether or not clang needs them; add a `CC=cc` make arg to use the default system compiler), and, optionally libffi for `•FFI`, and C++ (C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
+CBQN requires either gcc or clang as the C compiler (it defaults to `clang` as optimizations are written based on whether or not clang needs them, but a `CC=cc` make arg can be added to use the default system compiler), and, optionally, libffi for `•FFI`, and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
 
-While there aren't hard expectations of specific versions for any of those, nevertheless here are some configurations that CBQN is tested on by dzaima:
+There aren't hard requirements for versions of any of those, but nevertheless here are some configurations that CBQN is tested on by dzaima:
 
 ```
 x86-64 (Linux):
@@ -69,11 +89,11 @@ x86 (Linux):
   running on the above x86-64 system, compiled with CCFLAGS=-m32
 AArch64 ARMv8-A (within Termux on Android 8):
   using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
-  clang 15.0.4
+  clang 15.0.7
   libffi 3.4.4 (structs were broken as of 3.4.3)
   replxx: clang++ 15.0.4
 ```
-Additionally, CBQN is known to compile as-is on macOS, but Windows requires [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate build environment.
+Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
 
 ## License
 

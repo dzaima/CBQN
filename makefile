@@ -20,15 +20,11 @@ rtverify:
 heapverify:
 	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
 wasi-o3:
-	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_OUTPUT_DEF=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
-	@"${MAKE}" i_singeli=0 i_t=emcc_o3 i_OUTPUT=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
-shared-o3:
-	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 i_t=shared_o3 i_f="-O3" run_incremental_0
-shared-c:
-	@"${MAKE}" i_OUTPUT=libcbqn.so i_SHARED=1 custom=1                run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=emcc_o3 i_OUTPUT_DEF=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
 for-build:
-	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT=build/obj2/for_build2 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
 for-bootstrap:
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 c:
@@ -85,8 +81,10 @@ heapverifyn-singeli:
 rtverifyn-singeli:
 	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native rtverify"
 
-shared-o3-temp:
+shared-o3:
 	@"${MAKE}" to-bqn-build i_SHARED=1
+shared-c:
+	@"${MAKE}" to-bqn-build i_SHARED=1 i_build_opts=c
 
 # compiler setup
 i_CC := clang
@@ -97,14 +95,17 @@ i_FFI := 2
 i_singeli := 0
 i_OUTPUT := BQN
 
-ifneq ($(origin OUTPUT),command line)
-	OUTPUT := $(i_OUTPUT)
+ifeq ($(origin i_OUTPUT_DEF),command line)
+	i_OUTPUT := $(i_OUTPUT_DEF)
+endif
+ifeq ($(origin OUTPUT),command line)
+	i_OUTPUT := $(OUTPUT)
 endif
 ifeq ($(i_emcc),1)
-	OUTPUT_FOLDER := $(OUTPUT)
-	OUTPUT_BIN := $(OUTPUT_FOLDER)/BQN.js
+	i_OUTPUT_FOLDER := $(i_OUTPUT)
+	i_OUTPUT_BIN := $(i_OUTPUT_FOLDER)/BQN.js
 else
-	OUTPUT_BIN := $(OUTPUT)
+	i_OUTPUT_BIN := $(i_OUTPUT)
 endif
 ifeq ($(origin CC),command line)
 	i_CC := $(CC)
@@ -235,13 +236,13 @@ endif
 
 # simple non-incremental builds
 single-o3:
-	$(i_CC) $(ALL_CC_FLAGS) -O3 -o ${OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -O3 -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-o3g:
-	$(i_CC) $(ALL_CC_FLAGS) -O3 -g -o ${OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -O3 -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-debug:
-	$(i_CC) $(ALL_CC_FLAGS) -DDEBUG -g -o ${OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DDEBUG -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-c:
-	$(i_CC) $(ALL_CC_FLAGS) -o ${OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 
 # actual build
 run_incremental_0:
@@ -290,14 +291,14 @@ endif
 endif # run build
 
 run_incremental_1: ${bd}/BQN
-ifneq (${bd}/BQN,${OUTPUT_BIN})
+ifneq (${bd}/BQN,${i_OUTPUT_BIN})
 ifeq ($(i_emcc),1)
-	@cp -f ${bd}/BQN.wasm ${OUTPUT_FOLDER}/BQN.wasm
+	@cp -f ${bd}/BQN.wasm "${i_OUTPUT_FOLDER}/BQN.wasm"
 endif
 ifeq ($(WINDOWS),1)
-	@cp -f ${bd}/BQN.exe ${OUTPUT_BIN}
+	@cp -f ${bd}/BQN.exe "${i_OUTPUT_BIN}"
 else
-	@cp -f ${bd}/BQN ${OUTPUT_BIN}
+	@cp -f ${bd}/BQN "${i_OUTPUT_BIN}"
 endif
 endif
 	@echo ${postmsg}
