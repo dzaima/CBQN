@@ -19,16 +19,6 @@ rtverify:
 	@"${MAKE}" i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" run_incremental_0
 heapverify:
 	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
-o3n-singeli:
-	@"${MAKE}" i_singeli=1 i_t=o3n_si     i_f="-O3 -march=native" run_incremental_0
-o3ng-singeli:
-	@"${MAKE}" i_singeli=1 i_t=o3ng_si    i_f="-g -O3 -march=native" run_incremental_0
-debugn-singeli:
-	@"${MAKE}" i_singeli=1 i_t=debugn_si  i_f="-g -DDEBUG -march=native" run_incremental_0
-heapverifyn-singeli:
-	@"${MAKE}" i_singeli=1 i_t=heapverifyn_si i_f="-g -DDEBUG -DHEAP_VERIFY -march=native" run_incremental_0
-rtverifyn-singeli:
-	@"${MAKE}" i_singeli=1 i_t=rtverifyn_si i_f="-O3 -DRT_VERIFY -DEEQUAL_NEGZERO -march=native" run_incremental_0
 wasi-o3:
 	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_OUTPUT=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
@@ -66,7 +56,7 @@ endif
 	  f="$(f)" lf="$(lf)" CCFLAGS="$(CCFLAGS)" LDFLAGS="$(LDFLAGS)" REPLXX_FLAGS="$(REPLXX_FLAGS)" \
 	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" \
 	  c="$(build_c)" debug="$(debug)" $(i_build_opts) $(build_opts) \
-	  os="$(target_os)" arch="$(target_arch)"  \
+	  os="$(target_os)" arch="$(target_arch)" has="$(has)" \
 	  shared="$(i_SHARED)" singeli="$(i_singeli)" replxx="$(REPLXX)" FFI="$(FFI)"
 
 o3-temp:
@@ -77,10 +67,24 @@ debug-temp:
 	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
 heapverify-temp:
 	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
-o3n-singeli-temp:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native"
+
 o3-singeli:
 	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1
+o3g-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="g"
+	
+o3n-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native"
+o3ng-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native g"
+	
+debugn-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native debug o3=0"
+heapverifyn-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native debug o3=0 heapverify"
+rtverifyn-singeli:
+	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native rtverify"
+
 shared-o3-temp:
 	@"${MAKE}" to-bqn-build i_SHARED=1
 

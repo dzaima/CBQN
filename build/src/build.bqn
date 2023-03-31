@@ -39,7 +39,7 @@ opts ← ⟨
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
   ⟨2, "rm_f",    ⟨⟩, "forcibly remove C compiler flag(s)"⟩
   ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
-  ⟨0, "v",       @,  "Version to report by --version; 'v=' to use git commit"∾@+10⟩
+  ⟨0, "v",       "", "Version string to report by --version; v=0 to disable"∾@+10⟩
   
   ⟨1, "shared", 0, "Build a shared library; default output depends on 'os' setting"⟩
   ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
@@ -51,9 +51,10 @@ opts ← ⟨
   ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨1, "c",      0, "Disable some default flags"⟩
-  ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
-  ⟨1, "native", @, "Use '-march=native'"∾@+10⟩
+  ⟨1, "c",      0,  "Disable some default flags"⟩
+  ⟨1, "O3",     @,  "Use '-O3'; On by default unless 'c=1'"⟩
+  ⟨1, "native", @,  "Use '-march=native'"⟩
+  ⟨2, "has",    ⟨⟩, "Assume specific arch features; options: AVX2, BMI2, slow-pdep"∾@+10⟩
   
   ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables various sanity checks"⟩
   ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
@@ -145,9 +146,9 @@ AtRoot ← rootDir⊸•file.At
 po ← { # parsed options
   ⟨
     verbose, J, rebuildAll, rebuildSingeli, tui, output, clangd, versionName,
-    os, arch, native,
+    os, arch, native, has,
     emcc, wasm, replxx, singeli,
-    ffi, o3,
+    ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
     CBQNc, ccColor, singeliFlags, REPLXXc, Linker
   ⟩⇐
@@ -176,23 +177,38 @@ po ← { # parsed options
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   cxx ← GetOpt "CXX"
-  debug ← GetOpt "debug"
+  debug ⇐ GetOpt "debug"
+  rtverify ⇐ GetOpt "rtverify"
+  heapverify ⇐ GetOpt "heapverify"
   o3 ⇐ (¬custom) DOpt "O3"
   
-  uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∧´ (@≡GetOpt)¨ "os"‿"arch"
+  uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∨´ (@≡GetOpt)¨ "os"‿"arch"
   InUname ← {𝕊: ∨´ 𝕩⍷uname}
   
   os ⇐ Lowercase {InUname"linux"? "linux"; InUname"darwin"? "macos"; InUname"bsd"? "bsd"; "linux"} DOpt "os"
   linux‿bsd‿macos‿windows ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"‿"windows"
   
   arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
-  {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch  <⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
+  {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch<⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
   
   ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
-  {𝕊: arch↩"generic" ⋄ Log ∾⟨"Note: on x86-64, a native build will be much faster: ", compat⊑"add an argument of 'native'"‿"use 'make o3n-singeli' if possible"⟩}⍟⊢ (arch≡"x86-64") ∧ singeli ∧ @≡GetOpt"native"
+  has ⇐ Lowercase GetOpt "has"
+  has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊has)/⋈"bmi2"
+  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"slow-pdep"
+  {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
+  
+  {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
+  
+  {𝕊:
+    arch↩"generic"
+    Log⍟((0=≠has) ∧ @≡GetOpt"native") ∾⟨
+      "Note: on x86-64, a generic build doesn't include many optimizations; ",
+      compat⊑"add an argument of 'native' or 'has=avx2' if possible; add 'native=0' to hide"‿"use 'make o3n-singeli' (targets the current CPU, assumes AVX2) or 'make o3-singeli has=avx2' if possible"
+    ⟩
+  }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ (¬native) ∧ ¬⊑"avx2"<⊸∊has
   
   pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
   
@@ -249,23 +265,24 @@ po ← { # parsed options
     args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
     args∾↩ (singeli∧arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli∧⊑arch≢"generic") / ⟨"-DSINGELI_SIMD"⟩
-    args∾↩ (              wasm) / ⟨"-DWASM"⟩
-    args∾↩ (              wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
-    args∾↩ (              emcc) / ⟨"-DEMCC", "-O3"⟩
-    args∾↩ (            replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
-    args∾↩ (    debug DOpt "g") / ⟨"-g"⟩
-    args∾↩ (                o3) / ⟨"-O3"⟩
-    args∾↩ (            native) / ⟨"-march=native"⟩
-    args∾↩ (             debug) / ⟨"-DDEBUG"⟩
-    args∾↩ ( GetOpt "rtverify") / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
-    args∾↩ (GetOpt"heapverify") / ⟨"-DHEAP_VERIFY"⟩
-    args∾↩ (     exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
-    args∾↩ (              ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ (     pie ∧ ¬shared) / ⟨"-fPIE"⟩
-    args∾↩ (            shared) / ⟨"-DCBQN_SHARED"⟩ ∾ (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
-    args∾↩ (           windows) / ⟨"-DNO_MMAP"⟩
-    args∾↩ (  replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
-    args∾↩ (     @≢versionName) / ⟨"-DHAS_VERSION"⟩
+    args∾↩ (            wasm) / ⟨"-DWASM"⟩
+    args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
+    args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩
+    args∾↩ (          replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
+    args∾↩ (  debug DOpt "g") / ⟨"-g"⟩
+    args∾↩ (              o3) / ⟨"-O3"⟩
+    args∾↩ (          native) / ⟨"-march=native"⟩
+    args∾↩ (           debug) / ⟨"-DDEBUG"⟩
+    args∾↩ (        rtverify) / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
+    args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY"⟩
+    args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
+    args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ (   pie ∧ ¬shared) / ⟨"-fPIE"⟩
+    args∾↩ (          shared) / ⟨"-DCBQN_SHARED"⟩ ∾ (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
+    args∾↩ (         windows) / ⟨"-DNO_MMAP"⟩
+    args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
+    args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
+    args∾↩ {"slow-pdep": "-DSLOW_PDEP"; "-m"∾𝕩}¨ has
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     args
@@ -610,7 +627,7 @@ cachedBin‿linkerCache ← {
     
     singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder⟩∾{
       po.native? ⟨⟩;
-      "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch
+      "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch # TODO expand based on po.has (and then include in cache key)
     }
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
@@ -636,9 +653,16 @@ cachedBin‿linkerCache ← {
   {
     po.versionName≡@? @;
     srcFile ← linkerCache.File "versionInfo.c"
+    List ← {¯2↓ ∾ ∾⟜", "¨ /´ <˘⍉> 𝕩}
     src ← "char* cbqn_versionString = """∾(∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
       "CBQN "∾{po.versionName≡""? "on commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; po.versionName}
-      {"built with "⊸∾⍟(×≠) ¯2↓∾∾⟜", "¨ 𝕩} po.ffi‿po.singeli‿po.replxx‿(¬po.o3) / ⟨"FFI", "singeli "∾{po.native? "native"; po.arch}, "replxx", "optimizations disabled"⟩
+      "built with "⊸∾⍟(×≠) List ⟨
+       ⟨po.ffi, "FFI"⟩
+       ⟨po.singeli, "singeli "∾{po.native? "native "∾po.arch; po.arch≡"generic"? po.arch∾" (no SIMD)"; po.arch}∾∾' '∾¨po.has⟩
+       ⟨po.replxx, "replxx"⟩
+       ⟨¬po.o3, "optimizations disabled"⟩
+       {⟨×≠𝕩, "debugging checks enabled ("∾𝕩∾")"⟩} List ⟨po.debug‿"DEBUG", po.heapverify‿"heapverify", po.rtverify‿"rtverify"⟩
+      ⟩
       # "build invocation: "⊸∾⍟(×≠) ¯1↓∾∾⟜' '¨ •args
     ⟩)∾""";"∾@+10
     {
