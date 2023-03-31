@@ -214,7 +214,7 @@ B transp_c2(B t, B w, B x) {
     i++;
   }
   // Create shape object, saving unprocessed result shape
-  ShArr* sh;
+  ShArr* sh ONLY_GCC(=0);
   if (LIKELY(rr > 1)) { // Not all duplicates
     sh = m_shArr(rr);
     shcpy(sh->a, rsh, rr);
