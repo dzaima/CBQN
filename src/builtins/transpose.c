@@ -340,7 +340,7 @@ B transp_c2(B t, B w, B x) {
   // (+⌜´st×⟜↕¨rsh)⊏⥊𝕩
   B ind = bi_N;
   for (ur k=na; k--; ) {
-    B v = C2(mul, m_f64(st[k]/csz), C1(ud, m_f64(rsh[k])));
+    B v = C2(mul, m_usz(st[k]/csz), C1(ud, m_f64(rsh[k])));
     if (q_N(ind)) ind = v;
     else ind = M1C2(tbl, add, v, ind);
   }
@@ -382,7 +382,7 @@ B transp_im(B t, B x) {
 }
 
 B transp_uc1(B t, B o, B x) {
-  return transp_im(m_f64(0), c1(o,  transp_c1(t, x)));
+  return transp_im(m_f64(0), c1(o, transp_c1(t, x)));
 }
 
 // Consumes w; return bi_N if w contained duplicates
