@@ -345,8 +345,9 @@ B transp_c2(B t, B w, B x) {
     else ind = M1C2(tbl, add, v, ind);
   }
   r = C2(select, ind, x);
-  if (rr>1) arr_shReplace(a(r), rr, sh);
-  else { decSh(v(r)); arr_shVec(a(r)); }
+  Arr* ra = cpyWithShape(r); r = taga(ra);
+  if (rr>1) arr_shReplace(ra, rr, sh);
+  else { decSh((Value*)ra); arr_shVec(ra); }
 
   ret:;
   TFREE(alloc);
