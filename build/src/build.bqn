@@ -589,16 +589,15 @@ cachedBin‿linkerCache ← {
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
-  singeliMap ← 1↓¨ ({∨´ ((po.avx2/"X")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
-    "xa."‿"src/builtins/arithm.c"‿"monarith", "Xa."‿"src/core/stuff.c"‿"equal",
+  singeliMap ← 1↓¨ ({∨´ ((po.avx2/"2")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
+    "xa."‿"src/builtins/arithm.c"‿"monarith", "2a."‿"src/core/stuff.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
-    "Xa."‿"src/builtins/squeeze.c"‿"squeeze", "Xa."‿"src/utils/mut.c"‿"copy",
-    "xa."‿"src/utils/bits.c"‿"bits",
-    "xag"‿"src/builtins/transpose.c"‿"transpose",
-    "X.."‿"src/builtins/select.c"‿"select", "X.."‿"src/builtins/scan.c"‿"scan",
-    "X.."‿"src/builtins/fold.c"‿"fold",     "X.."‿"src/builtins/slash.c"‿"slash",
-    "X.."‿"src/builtins/slash.c"‿"constrep",
-    "X.."‿"src/builtins/scan.c"‿"neq",
+    "2a."‿"src/builtins/squeeze.c"‿"squeeze", "2a."‿"src/utils/mut.c"‿"copy",
+    "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
+    
+    "2.."‿"src/builtins/select.c"‿"select",   "2.."‿"src/builtins/scan.c"‿"scan",
+    "2.."‿"src/builtins/fold.c"‿"fold",       "2.."‿"src/builtins/slash.c"‿"slash",
+    "2.."‿"src/builtins/slash.c"‿"constrep",  "2.."‿"src/builtins/scan.c"‿"neq",
   ⟩
   objs ← ⟨⟩
   
