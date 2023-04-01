@@ -41,7 +41,8 @@ def widen{T==[2]f64, x:X & w128i{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}
 def narrow{T, x:X & w128i{X,32} & T==i8}  = sel{[16]u8, [16]i8~~x, make{[16]i8, 0,4,8,12, 0,0,0,0, 0,0,0,0, 0,0,0,0}}
 def narrow{T, x:X & w128i{X,32} & T==i16} = sel{[16]u8, [8]i16~~x, make{[16]i8, 0,1,4,5, 8,9,12,13, 0,0,0,0, 0,0,0,0}}
 
-# mask
+# mask stuff
+def andAllZero{x:T, y:T & w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 def topBlend{f:T, t:T, m:M & w128{T} & w128i{M,32}} = T ~~ emit{[4]f32, '_mm_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
 def topBlend{f:T, t:T, m:M & w128{T} & w128i{M,64}} = T ~~ emit{[2]f64, '_mm_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 def topBlend{f:T, t:T, m:M & w128{T} & w128i{M, 8}} = T ~~ emit{[16]i8, '_mm_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}

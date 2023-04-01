@@ -164,6 +164,7 @@ def topMaskStore{...x} = assert{'topMaskStore not supported', show{...x}}
 def homMaskStore{...x} = assert{'homMaskStore not supported', show{...x}}
 def topMaskStoreF{...x} = assert{'topMaskStoreF not supported', show{...x}}
 def homMaskStoreF{...x} = assert{'homMaskStoreF not supported', show{...x}}
+def widen{...x} = assert{'widen not supported', show{...x}}
 
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x

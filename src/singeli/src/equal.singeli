@@ -1,10 +1,12 @@
 include './base'
 include './cbqnDefs'
 include './f64'
-if (hasarch{'X86_64'}) {
+if (hasarch{'AVX2'}) {
   include './sse'
   include './avx'
   include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse2'
 } else if (hasarch{'AARCH64'}) {
   include './neon'
 }
@@ -36,9 +38,9 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       f0:= TF**0.0
       f1:= TF**1.0
       maskedLoopPositive{bulk, l, {i, M} => {
-        wu:= (if (hasarch{'X86_64'}) {
+        wu:= (if (hasarch{'AVX2'}) {
           cw:= b_getBatchLo{bulk, *u64~~w, i}
-          topBlend{f0, f1, TU**cw << make{TU,63,62,61,60}}
+          topBlend{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
         } else {
           cw:= loadBatchBit{TU, *u64~~w, i}
           homBlend{f0, f1, cw}
@@ -77,23 +79,23 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   1
 }
 
-export{'avx2_equal_1_1',     equal{u1, u1}}
-export{'avx2_equal_1_8',     equal{u1, u8}}
-export{'avx2_equal_1_16',    equal{u1, u16}}
-export{'avx2_equal_1_32',    equal{u1, u32}}
-export{'avx2_equal_1_f64',   equal{u1, f64}}
+export{'simd_equal_1_1',     equal{u1, u1}}
+export{'simd_equal_1_8',     equal{u1, u8}}
+export{'simd_equal_1_16',    equal{u1, u16}}
+export{'simd_equal_1_32',    equal{u1, u32}}
+export{'simd_equal_1_f64',   equal{u1, f64}}
 
-export{'avx2_equal_8_8',     equal{i8, i8}}
+export{'simd_equal_8_8',     equal{i8, i8}}
 
-export{'avx2_equal_s8_16',   equal{i8, i16}}
-export{'avx2_equal_s8_32',   equal{i8, i32}}
-export{'avx2_equal_s16_32',  equal{i16, i32}}
+export{'simd_equal_s8_16',   equal{i8, i16}}
+export{'simd_equal_s8_32',   equal{i8, i32}}
+export{'simd_equal_s16_32',  equal{i16, i32}}
 
-export{'avx2_equal_s8_f64',  equal{i8,  f64}}
-export{'avx2_equal_s16_f64', equal{i16, f64}}
-export{'avx2_equal_s32_f64', equal{i32, f64}}
-export{'avx2_equal_f64_f64', equal{f64, f64}}
+export{'simd_equal_s8_f64',  equal{i8,  f64}}
+export{'simd_equal_s16_f64', equal{i16, f64}}
+export{'simd_equal_s32_f64', equal{i32, f64}}
+export{'simd_equal_f64_f64', equal{f64, f64}}
 
-export{'avx2_equal_u8_16',   equal{u8, u16}}
-export{'avx2_equal_u8_32',   equal{u8, u32}}
-export{'avx2_equal_u16_32',  equal{u16, u32}}
+export{'simd_equal_u8_16',   equal{u8, u16}}
+export{'simd_equal_u8_32',   equal{u8, u32}}
+export{'simd_equal_u16_32',  equal{u16, u32}}
