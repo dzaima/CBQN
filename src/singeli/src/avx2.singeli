@@ -152,7 +152,7 @@ def narrow{T, x:X & w256i{X,32} & width{T}==16} = to_el{T, shuf{[4]u64, packQ{x,
 def narrow{T, x:X & w256i{X,16} & width{T}== 8} = to_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
 
 def narrow{T, x:X & w256f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
-def narrow{T, x:X & w256f{X,64} & T==i32} = to_el{T, emit{[4]i32, '_mm256_cvtpd_epi32', x}}
+def narrow{T, x:X & w256f{X,64} & T==i32} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
 
 def narrow{T, x:X & w256u{X,64} & T==u32} = to_el{T, sel{[8]i32, x, make{[8]i32, 2*iota{8}}}}
 def narrow{T, x:X & w256u{X,64} & T==u16} = to_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, (iota{32}>>1<<2) | (iota{32}&1)}}}

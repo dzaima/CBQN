@@ -195,11 +195,27 @@ def shuf{L, x:T, n      & w128{T} & lvec{L,4,32} & knum{n}} = T ~~ emit{[4]i32, 
 def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}
 def shuf16Hi{x:T, n} = T~~emit{[8]i16, '_mm_shufflehi_epi16', x, n}
 
-def widen{T==[2]f64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
-def widen{T==[2]f64, x:X & X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
-def widen{T, x:X & w128i{T} & w128i{X,elwidth{T}/2}} = unpackLo{x, x} >> elwidth{X}
-def widen{T, x:X & w128i{T,32} & w128i{X,8} & w128s{T}==w128s{X}} = { def u=unpackLo{x, x}; unpackLo{u, u} >> 24}
-def widen{T==[2]f64, x:X & w128s{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}}
-
 def homBlend{f:T, t:T, m:M & w128{T} & w128i{M,elwidth{T}}} = T ~~ ((M~~t & m) | (M~~f & ~m))
 def homMaskStoreF{p:P, m:M, v:T & w128i{M} & w128{T,elwidth{M}} & eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
+
+def widen{T, x:X & w128i{T} & w128i{X} & w128s{T}==w128s{X} & elwidth{T}>elwidth{X}} = {
+  def s{v} = s{unpackLo{v, v}}
+  def s{v:V & V==T} = v
+  s{x} >> (elwidth{T} - elwidth{X})
+}
+def widen{T==[2]f64, x:X & w128s{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}}
+def widen{T==[2]f64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
+def widen{T==[2]f64, x:X & X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
+
+def narrow{T==i16, x:[4]i32} = packs{x,x}
+def narrow{T==i8,  x:[8]i16} = packs{x,x}
+def narrow{T==u8,  x:[8]u16} = packs{x,x}
+def narrow{T==u16, x:[4]u32} = [8]u16~~shuf{[4]i32, shuf16Hi{shuf16Lo{x, 4b3320}, 4b3320}, 4b3320}
+def narrow{T==i8,  x:[4]i32} = narrow{T, narrow{i16, x}}
+def narrow{T==u8,  x:[4]u32} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{x}}}
+def narrow{T==u8,  x:[2]u64} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{f{x}}}}
+def narrow{T==u16, x:[2]u64} = shuf16Lo{[8]u16~~shuf{[4]i32, x, 4b3320}, 4b3320}
+def narrow{T==u32, x:[2]u64} = [4]u32~~shuf{[4]i32, x, 4b3320}
+
+def narrow{T, x:X & w128f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
+def narrow{T==i32, x:[2]f64} = emit{[4]i32, '_mm_cvtpd_epi32', x}

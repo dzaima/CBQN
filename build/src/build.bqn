@@ -592,7 +592,7 @@ cachedBin‿linkerCache ← {
   singeliMap ← 1↓¨ ({∨´ ((po.avx2/"2")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
     "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/core/stuff.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
-    "2a."‿"src/builtins/squeeze.c"‿"squeeze", "2a."‿"src/utils/mut.c"‿"copy",
+    "2a."‿"src/builtins/squeeze.c"‿"squeeze", "xa."‿"src/utils/mut.c"‿"copy",
     "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
     
     "2.."‿"src/builtins/select.c"‿"select",   "2.."‿"src/builtins/scan.c"‿"scan",
