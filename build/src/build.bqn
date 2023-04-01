@@ -590,8 +590,8 @@ cachedBin‿linkerCache ← {
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
   singeliMap ← 1↓¨ ({∨´ ((po.avx2/"X")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
-    "Xa."‿"src/builtins/arithm.c"‿"monarith", "Xa."‿"src/core/stuff.c"‿"equal",
-    "xa."‿"src/builtins/arithd.c"‿"dyarith",  "Xa."‿"src/builtins/cmp.c"‿"cmp",
+    "xa."‿"src/builtins/arithm.c"‿"monarith", "Xa."‿"src/core/stuff.c"‿"equal",
+    "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
     "Xa."‿"src/builtins/squeeze.c"‿"squeeze", "Xa."‿"src/utils/mut.c"‿"copy",
     "xa."‿"src/utils/bits.c"‿"bits",
     "xag"‿"src/builtins/transpose.c"‿"transpose",

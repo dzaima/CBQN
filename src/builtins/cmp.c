@@ -54,7 +54,7 @@ CMP_REC(ne, ne, swapped=0;)
 #define FN_LUT_C(B,A,F,S) FN_LUT_T(B,F,S)[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
 #define FN_LUT_A(B,F,S) FN_LUT_T(B,F,S)[8]
 
-#if SINGELI_SIMD
+#if SINGELI_SIMD || SINGELI_X86_64
   #include "../singeli/c/cmp.c"
 #else
   void cmpA_init(void) { }
