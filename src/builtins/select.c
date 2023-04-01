@@ -41,7 +41,7 @@
 #include "../utils/mut.h"
 #include "../builtins.h"
 
-#if SINGELI_X86_64
+#if SINGELI_AVX2
   #define SINGELI_FILE select
   #include "../utils/includeSingeli.h"
 #endif
@@ -175,7 +175,7 @@ B select_c2(B t, B w, B x) {
   u8 we = TI(w,elType);
   
   
-  #if SINGELI_X86_64
+  #if SINGELI_AVX2
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds");
     bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;

@@ -73,6 +73,7 @@ _assert_ ← { 𝔾𝕩?𝕩; Log 𝕨𝔽𝕩 ⋄ OnExit@ ⋄ •Exit 1}
 
 SepArgs ← {' ' ((¬-˜⊢×·+`»⊸>)∘≠⊔⊢) 𝕩}
 Lowercase ← {𝕩 - (-´"Aa")×(𝕩≥'A')∧𝕩≤'Z'}
+Uppercase ← {𝕩 - (-´"aA")×(𝕩≥'a')∧𝕩≤'z'}
 
 getOpt ← {
   args ← ×∘≠¨⊸/ •args
@@ -146,7 +147,7 @@ AtRoot ← rootDir⊸•file.At
 po ← { # parsed options
   ⟨
     verbose, J, rebuildAll, rebuildSingeli, tui, output, clangd, versionName,
-    os, arch, native, has,
+    os, arch, native, has, avx2
     emcc, wasm, replxx, singeli,
     ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
@@ -200,15 +201,16 @@ po ← { # parsed options
   {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"slow-pdep"
   {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
   
+  avx2 ⇐ (arch≡"x86-64") ∧ singeli ∧ native ∨ ⊑"avx2"<⊸∊has
+  
   {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
   
   {𝕊:
-    arch↩"generic"
     Log⍟((0=≠has) ∧ @≡GetOpt"native") ∾⟨
       "Note: on x86-64, a generic build doesn't include many optimizations; ",
       compat⊑"add an argument of 'native' or 'has=avx2' if possible; add 'native=0' to hide"‿"use 'make o3n-singeli' (targets the current CPU, assumes AVX2) or 'make o3-singeli has=avx2' if possible"
     ⟩
-  }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ (¬native) ∧ ¬⊑"avx2"<⊸∊has
+  }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ ¬avx2
   
   pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
   
@@ -262,9 +264,9 @@ po ← { # parsed options
     
     args∾↩ GetOpt "f"
     args∾↩ GetOpt "CCFLAGS"
-    args∾↩ (singeli∧arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩
-    args∾↩ (singeli∧arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
-    args∾↩ (singeli∧⊑arch≢"generic") / ⟨"-DSINGELI_SIMD"⟩
+    args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ avx2 / ⋈"-DSINGELI_AVX2"
+    args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
+    args∾↩ (singeli ∧ avx2∨arch≡"aarch64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
     args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩
@@ -587,13 +589,16 @@ cachedBin‿linkerCache ← {
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
-  singeliMap ← 1↓¨ (∨´¨ (⊑po.arch) = ⊑¨)⊸/ ⟨
-    "xa."‿"src/builtins/arithm.c"‿"monarith",
-    "xa."‿"src/core/stuff.c"‿"equal",        "xa."‿"src/utils/mut.c"‿"copy",       "xa."‿"src/utils/bits.c"‿"bits"
-    "xa."‿"src/builtins/arithd.c"‿"dyarith", "xa."‿"src/builtins/cmp.c"‿"cmp",     "xa."‿"src/builtins/squeeze.c"‿"squeeze"
-    "x.."‿"src/builtins/select.c"‿"select",  "x.."‿"src/builtins/fold.c"‿"fold",   "x.."‿"src/builtins/scan.c"‿"scan"
-    "x.."‿"src/builtins/scan.c"‿"neq",       "x.."‿"src/builtins/slash.c"‿"slash", "x.."‿"src/builtins/slash.c"‿"constrep"
-    "xag"‿"src/builtins/transpose.c"‿"transpose"
+  singeliMap ← 1↓¨ ({∨´ ((po.avx2/"X")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
+    "Xa."‿"src/builtins/arithm.c"‿"monarith", "Xa."‿"src/core/stuff.c"‿"equal",
+    "xa."‿"src/builtins/arithd.c"‿"dyarith",  "Xa."‿"src/builtins/cmp.c"‿"cmp",
+    "Xa."‿"src/builtins/squeeze.c"‿"squeeze", "Xa."‿"src/utils/mut.c"‿"copy",
+    "xa."‿"src/utils/bits.c"‿"bits",
+    "xag"‿"src/builtins/transpose.c"‿"transpose",
+    "X.."‿"src/builtins/select.c"‿"select", "X.."‿"src/builtins/scan.c"‿"scan",
+    "X.."‿"src/builtins/fold.c"‿"fold",     "X.."‿"src/builtins/slash.c"‿"slash",
+    "X.."‿"src/builtins/slash.c"‿"constrep",
+    "X.."‿"src/builtins/scan.c"‿"neq",
   ⟩
   objs ← ⟨⟩
   
@@ -612,7 +617,7 @@ cachedBin‿linkerCache ← {
   singeliObjs ← @
   singeliCache ← {
     ¬po.singeli? @;
-    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.singeliFlags, po.singeliDir⟩⟩
+    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.avx2, po.has, po.singeliFlags, po.singeliDir⟩⟩
     
     # genArithTables
     ga ← "src/singeli/src/genArithTables.bqn"
@@ -627,7 +632,7 @@ cachedBin‿linkerCache ← {
     
     singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder⟩∾{
       po.native? ⟨⟩;
-      "-a" ⋈ {"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch # TODO expand based on po.has (and then include in cache key)
+      "-a" ⋈ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch) ∾ ∾ ','⊸∾¨ Uppercase ∊⟜"avx2"‿"bmi2"⊸/po.has
     }
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap

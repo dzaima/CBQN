@@ -2,7 +2,7 @@
 #include "mut.h"
 
 
-#if SINGELI_SIMD
+#if SINGELI_SIMD || SINGELI_X86_64
   #define SINGELI_FILE bits
   #include "../utils/includeSingeli.h"
   #define bitselFns simd_bitsel
@@ -58,7 +58,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
     
     sel:;
     void* rp = m_tyarrlc(&r, width, b, type);
-    #if SINGELI_SIMD
+    #if SINGELI_SIMD || SINGELI_X86_64
       bitselFns[width](rp, bp, e0i, e1i, ia);
     #else
       switch(width) {

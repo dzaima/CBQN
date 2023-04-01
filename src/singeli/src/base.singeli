@@ -129,15 +129,15 @@ def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
-def widen{T, x:X & T==X} = x
-def narrow{T, x:X & T==eltype{X}} = x
-def undefPromote{T, x:X & T==X} = T~~x
 def andnz{...x} = assert{'andnz not supported', show{...x}}
 def topBlend{...x} = assert{'topBlend not supported', show{...x}}
 def topMask{...x} = assert{'topMask not supported', show{...x}}
 def packLo{...x} = assert{'packLo not supported', show{...x}}
 def packHi{...x} = assert{'packHi not supported', show{...x}}
 def mul12{...x} = assert{'mul12 not supported', show{...x}}
+def unpack{...x} = assert{'unpack not supported', show{...x}}
+def unpackLo{...x} = assert{'unpackLo not supported', show{...x}}
+def unpackHi{...x} = assert{'unpackHi not supported', show{...x}}
 def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
 def packQ{...x} = assert{'packQ not supported', show{...x}}
 def __mulhi{...x} = assert{'__mulhi not supported', show{...x}}
@@ -148,8 +148,9 @@ def fold_addw{...x} = assert{'fold_addw not supported', show{...x}}
 def narrowPair{...x} = assert{'narrowPair not supported', show{...x}}
 def pair{...x} = assert{'pair not supported', show{...x}}
 def cvt{...x} = assert{'cvt not supported', show{...x}}
-def cvt{T, x:X & T==eltype{X}} = x
 def shuf{...x} = assert{'shuf not supported', show{...x}}
+def shuf16Lo{...x} = assert{'shuf16Lo not supported', show{...x}}
+def shuf16Hi{...x} = assert{'shuf16Hi not supported', show{...x}}
 def homAll{...x} = assert{'homAll not supported', show{...x}}
 def homAny{...x} = assert{'homAny not supported', show{...x}}
 def homMask{...x} = assert{'homMask not supported', show{...x}}
@@ -159,7 +160,16 @@ def storeLow{...x} = assert{'storeLow not supported', show{...x}}
 def sel{...x} = assert{'sel not supported', show{...x}}
 def make{...x} = assert{'make not supported', show{...x}}
 def half{...x} = assert{'half not supported', show{...x}}
-def maskstoreF{...x} = assert{'maskstoreF not supported', show{...x}}
+def topMaskStore{...x} = assert{'topMaskStore not supported', show{...x}}
+def homMaskStore{...x} = assert{'homMaskStore not supported', show{...x}}
+def topMaskStoreF{...x} = assert{'topMaskStoreF not supported', show{...x}}
+def homMaskStoreF{...x} = assert{'homMaskStoreF not supported', show{...x}}
+
+def widen{T, x:X & T==X} = x
+def narrow{T, x:X & T==eltype{X}} = x
+def undefPromote{T, x:X & T==X} = T~~x
+def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
+def cvt{T, x:X & T==eltype{X}} = x
 
 def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
 def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
@@ -171,7 +181,7 @@ def broadcast{T, v & isprim{T}} = v
 def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
 
-def arch_defvw = tern{hasarch{'X86_64'}, 256, 128}
+def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
 
 
 

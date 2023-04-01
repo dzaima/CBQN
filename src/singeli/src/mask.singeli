@@ -9,7 +9,7 @@ mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n & width{T}==128} = load{*[16]u
 mask256:*i64 = merge{4 ** -1,  4 ** 0}
 local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
 
-# get mask of first n items; 0 ≤ n ≤ vcount{T}
+# get homogeneous mask of first n items; 0 ≤ n ≤ vcount{T}
 def maskOf{T,n & width{T}==256} = maskOfImpl{T, n, 256}
 def maskOf{T,n & width{T}==128} = maskOfImpl{T, n, 128}
 def maskOf{T,n & width{T}== 64} = maskOfImpl{T, n,  64}
@@ -31,6 +31,7 @@ def maskAfter{n} = {
   def mask{x:X & anyInt{x}} = x & ((1<<n) - 1)
   def mask{x:X, mode=='all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
+  def mask{X, mode=='to homogeneous bits'} = maskOf{X,n}
   def mask{mode=='count'} = n
   def mask{x & istup{x} & tuplen{x}==1} = tup{mask{tupsel{0,x}}}
   def mask{x==0} = 1
@@ -47,7 +48,7 @@ def storeBatch{ptr:P, n, x:T, M} = {
   def TF = to_el{E0, T}
   xu:= narrow{E0, x}
   
-  if (M{0}) maskstoreF{*TF~~rpos, M{TF, 'to sign bits'}, undefPromote{TF, xu}}
+  if (M{0}) homMaskStoreF{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
   else storeLow{rpos, vcount{T}*width{E0}, xu}
 }
 

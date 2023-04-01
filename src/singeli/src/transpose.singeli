@@ -1,8 +1,8 @@
 include './base'
 include './cbqnDefs'
 include './f64'
-if (hasarch{'X86_64'}) {
-  include './sse3'
+if (hasarch{'AVX2'}) {
+  include './sse'
   include './avx'
   include './avx2'
 } else if (hasarch{'AARCH64'}) {
@@ -32,7 +32,7 @@ def unpack_to{f, l, x} = {
 def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 4b3120}, x}
 
 # Square kernel where width is a full vector
-def transpose_square{VT, l, x & hasarch{'X86_64'}} = unpack_to{1, l/2, x}
+def transpose_square{VT, l, x & hasarch{'AVX2'}} = unpack_to{1, l/2, x}
 
 def load2{a:T, b:T} = pair{load{a}, load{b}}
 def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
@@ -164,7 +164,7 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : void 
   
   rp:*T = *T~~r0
   xp:*T = *T~~x0
-  if (hasarch{'X86_64'} and w>=k and h>=k) {
+  if (hasarch{'AVX2'} and w>=k and h>=k) {
     transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
   } else {
     if      (h==2 and h==hs) @for (x0 in xp, x1 in xp+ws over i to w) { store{rp, i*2, x0}; store{rp, i*2+1, x1} }

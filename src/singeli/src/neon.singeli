@@ -158,5 +158,4 @@ def homMask{x:T & nvecu{T} & T==[16]u8} = {
 }
 def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
 
-def maskstore{p:P, m:M, x:T & eltype{P}==T & nvec{T}} = store{p, 0, bitBlend{load{p}, x, m}}
-def maskstoreF{p:P, m:M, x:T & nvec{T}} = maskstore{p, m, x}
+def homMaskStoreF{p:P, m:M, v:T & nveci{M} & nvec{T,elwidth{M}} & eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}

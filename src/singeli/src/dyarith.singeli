@@ -1,10 +1,12 @@
 include './base'
 include './f64'
 include './cbqnDefs'
-if (hasarch{'X86_64'}) {
-  include './sse3'
+if (hasarch{'AVX2'}) {
+  include './sse'
   include './avx'
   include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse2'
 } else if (hasarch{'AARCH64'}) {
   include './neon'
 }
@@ -44,7 +46,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i8==eltype{T} & hasar
   def wp = unpackQ{w, T ~~ (T**0 > w)}
   def xp = unpackQ{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
-  def bad = each{{v} => [16]i16 ~~ ((v<<8)>>8 != v), rp}
+  def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
   if (M{0}) { # masked check
     tup{packQ{rp}, tup{'homAny', M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
@@ -57,8 +59,8 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i16==eltype{T} & hasa
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
 def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T} & hasarch{'X86_64'}} = {
-  max:= [8]f32 ~~ [8]u32**0x4efffffe
-  def cf32{x} = emit{[8]f32, '_mm256_cvtepi32_ps', x}
+  max:= to_el{f32, (ty_u{T})**0x4efffffe}
+  def cf32{x:X} = emit{to_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
   tup{w*x, tup{'homAny', M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails

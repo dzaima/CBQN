@@ -2,7 +2,7 @@ include './base'
 include './f64'
 include './cbqnDefs'
 if (hasarch{'X86_64'}) {
-  include './sse3'
+  include './sse'
   include './avx'
   include './avx2'
 } else if (hasarch{'AARCH64'}) {

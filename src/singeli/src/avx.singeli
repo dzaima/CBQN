@@ -70,6 +70,7 @@ def   max{a:T,b:T & T==[8]f32} = emit{T, '_mm256_max_ps', a, b}
 def   min{a:T,b:T & T==[8]f32} = emit{T, '_mm256_min_ps', a, b}
 def  sqrt{a:[8]f32} = emit{[8]f32, '_mm256_sqrt_ps', a}
 def rsqrt{a:[8]f32} = emit{[8]f32, '_mm256_rsqrt_ps', a}
+def   rcp{a:[8]f32} = emit{[8]f32, '_mm256_rcp_ps', a}
 def   abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, v2f{[8]u32 ** 0x7FFFFFFF}}
 def floor{a:[8]f32} = emit{[8]f32, '_mm256_floor_ps', a}
 def  ceil{a:[8]f32} = emit{[8]f32, '_mm256_ceil_ps', a}
@@ -82,7 +83,6 @@ def __div{a:T,b:T & T==[4]f64} = emit{T, '_mm256_div_pd', a, b}
 def   max{a:T,b:T & T==[4]f64} = emit{T, '_mm256_max_pd', a, b}
 def   min{a:T,b:T & T==[4]f64} = emit{T, '_mm256_min_pd', a, b}
 def  sqrt{a:[4]f64} = emit{[4]f64, '_mm256_sqrt_pd', a}
-def rsqrt{a:[4]f64} = emit{[4]f64, '_mm256_rsqrt_pd', a}
 def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, v2d{[4]u64 ** ((cast{u64,1}<<63)-1)}}
 def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
 def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
@@ -113,8 +113,8 @@ def insert{x:T, i, v & w256i{T,16} & knum{i}} = emit{T, '_mm256_insert_epi16', x
 def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x, v, i}
 def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
 
-def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def topBlend{f:T, t:T, m:M & w256{T} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
+def topBlend{f:T, t:T, m:M & w256{T,32} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
+def topBlend{f:T, t:T, m:M & w256{T,64} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 def homBlend{f:T, t:T, m:M & w256{T}} = topBlend{f, t, m}
 
 

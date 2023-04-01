@@ -1,5 +1,5 @@
 include './base'
-include './sse3'
+include './sse'
 include './avx'
 include './avx2'
 include './mask'
@@ -78,7 +78,7 @@ def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = {
     }}
     setlabel{end}
     q := nr & (step-1)
-    if (q) maskstoreF{rv+e, maskOf{V, q}, s}
+    if (q) homMaskStoreF{rv+e, maskOf{V, q}, s}
   }
 }
 def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:u64} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
@@ -122,7 +122,7 @@ fn rep_const_shuffle_partial4(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void =
   }
   setlabel{end}
   q := (re+step) - r
-  if (q) maskstoreF{*V~~r, maskOf{V, q}, s}
+  if (q) homMaskStoreF{*V~~r, maskOf{V, q}, s}
 }
 
 fn rep_const_shuffle_any(wv:u64, elbytes:u64, x:*i8, r:*i8, n:u64) : void = {
