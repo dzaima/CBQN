@@ -167,6 +167,8 @@ def widen{...x} = assert{'widen not supported', show{...x}}
 def narrow{...x} = assert{'narrow not supported', show{...x}}
 def unord{...x} = assert{'unord not supported', show{...x}}
 
+def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
+oper &~ andnot infix none 35
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x

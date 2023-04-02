@@ -7,8 +7,6 @@ include './mask'
 include './bitops'
 include 'util/tup'
 
-oper &~ andnot infix none 35
-
 # def:T - masked original content
 # b:B - pointer to data to index; if width{B}<elwidth{T}, padding bytes are garbage read after wanted position
 # idx - actual (unscaled) index list
@@ -158,7 +156,7 @@ fn avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
     maskedLoop{32, wl, {i, M} => {
       cw:= wrapChk{load{w, i}, VI,xlf, M}
-      byte:= sel{[16]i8, x, VI~~(([8]u32~~andnot{cw, low})>>3)}
+      byte:= sel{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
       mask:= sel{[16]i8, b, cw & low}
       store{r, i, homMask{(mask & byte) == mask}}
     }}

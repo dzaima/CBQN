@@ -20,7 +20,7 @@ def cmp_err{x} = { emit{void, 'cmp_err'}; return{}; }
 fn cmpIX(dst:*u64, len:Size, x:u64, v:u1) : void = {
   nan:u1 = q_f64{x}
   if (~(nan | q_chr{x})) cmp_err{x}
-  fillbits{dst, len, v & ~nan, x}
+  fillbits{dst, len, v&~nan, x}
 }
 
 def eqne{op} = match{op,__eq}|match{op,__ne}
