@@ -275,7 +275,7 @@ po ← { # parsed options
     args∾↩ (              o3) / ⟨"-O3"⟩
     args∾↩ (          native) / ⟨"-march=native"⟩
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
-    args∾↩ (        rtverify) / ⟨"-DRT_VERIFY", "-DEEQUAL_NEGZERO"⟩
+    args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
     args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩

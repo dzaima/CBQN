@@ -86,6 +86,6 @@ Mod ← {𝕊:
 # •Show "heap corruption test of bit/i32" ⋄ "Ai32"‿1‿50  BitSlash 1000000
 
 {
-  ¬0 EEQ -0? •Out "Skipping tests requiring EEQUAL_NEGZERO";
+  ¬0 EEQ -0? •Out "Skipping tests requiring !NEEQUAL_NEGZERO";
   •Show "⊔ consistency" ⋄ Group 10000
 }

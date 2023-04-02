@@ -113,7 +113,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.Variation`      | Convert `𝕩` to the variation specified in `𝕨` |
 | `•internal.ClearRefs`      | Clear references `•internal.Variation` made for `*Inc` variations |
 | `•internal.Unshare`        | Get a unique, reference count 1 version of the argument; recursively unshares array items, doesn't touch namespaces |
-| `•internal.EEqual`         | exactly equal (NaN equals NaN); 0 and ¯0 aren't equal, but can be made so with the C compile-time flag `-DEEQUAL_NEGZERO` |
+| `•internal.EEqual`         | exactly equal (NaN equals NaN, 0 equals ¯0) |
 | `•internal.Temp`           | place to test new features or temporarily expose some internal function |
 
 # FFI

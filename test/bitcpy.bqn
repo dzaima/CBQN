@@ -1,4 +1,4 @@
-# make f='-O3 -march=native -DTEST_BITCPY' singeli=1 c && ./BQN test/bitcpy.bqn
+# make o3-singeli f=-DTEST_BITCPY && ./BQN test/bitcpy.bqn
 ⟨Temp, Type, Unshare, Squeeze, Info, Variation⟩ ← •internal
 u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123

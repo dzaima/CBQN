@@ -16,7 +16,7 @@ debug1:
 rtperf:
 	@"${MAKE}" i_singeli=0 i_t=rtperf     i_f="-O3 -DRT_PERF" run_incremental_0
 rtverify:
-	@"${MAKE}" i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY -DEEQUAL_NEGZERO" run_incremental_0
+	@"${MAKE}" i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY" run_incremental_0
 heapverify:
 	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
 wasi-o3:

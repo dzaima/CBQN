@@ -513,7 +513,7 @@ bool equalSlow(B w, B x, usz ia) {
 
 bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really currently)
   if (w.u==x.u) return true;
-  #if EEQUAL_NEGZERO
+  #if !NEEQUAL_NEGZERO
     if (isF64(w)&isF64(x)) return w.f==x.f;
   #endif
   if(isF64(w)|isF64(x)) return false;
@@ -550,10 +550,10 @@ bool eequal(B w, B x) { // doesn't consume
     f64* xp = f64any_ptr(x);
     u64 r = 1;
     for (usz i = 0; i < ia; i++) {
-      #if EEQUAL_NEGZERO
-      r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
-      #else
+      #if NEEQUAL_NEGZERO
       r&= ((u64*)wp)[i] == ((u64*)xp)[i];
+      #else
+      r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
       #endif
     }
     return r;

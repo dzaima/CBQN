@@ -1,4 +1,3 @@
-# make f='-march=native -O3 -DEEQUAL_NEGZERO' singeli=1 c && ./BQN test/squeeze.bqn
 ⟨EEqual, ListVariations, ClearRefs, Variation, Squeeze, Info⟩ ← •internal
 u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123
