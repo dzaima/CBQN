@@ -294,6 +294,7 @@ po ← { # parsed options
     args ← ⟨cxx, "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩
     args∾↩ GetOpt "REPLXX_FLAGS"
     args∾↩ (         ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ GetOpt "CCFLAGS"
     args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE"⟩
     args∾↩ (       shared) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
