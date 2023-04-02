@@ -1,8 +1,10 @@
 include './base'
-if (hasarch{'X86_64'}) {
+if (hasarch{'AVX2'}) {
   include './sse'
   include './avx'
   include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse2'
 } else if (hasarch{'AARCH64'}) {
   include './neon'
 }
@@ -24,26 +26,45 @@ def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
 def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start}
 
-def isSNaN{x:T & isunsigned{eltype{T}}} = inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}
-def q_chr{x:T & isvec{T} & eltype{T}==u64} = inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}
+# SSE2 versions avoid any 64-bit integer comparsions
+def anySNaN{M, x:T & eltype{T}==u64} = {
+  homAny{inRangeLen{M{x}<<1, (0xFFE<<52)+2, (1<<52)-2}}
+}
+def anySNaN{M, x:T & T==[2]u64 & hasarch{'X86_64'} & ~hasarch{'SSE4.2'}} = {
+  topAny{M{andnot{unord{[2]f64~~x, [2]f64~~x}, [2]u64~~([4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000))}}}
+}
+def anyNonChar{M, x:T & isvec{T} & eltype{T}==u64} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
+def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
+  def H = to_el{u32, T}
+  def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
+  topAny{M{T~~ne}}
+}
+
+
 
 def fold{F, x:T} = {
-  show{'WARNING: using fallback fold'}
+  show{'WARNING: using fallback fold for ', F, T}
   def E = eltype{T}
   r:E = 0
   each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
   r
 }
-def fold{F, x:T & width{T}==128 & hasarch{'X86_64'}} = {
+def fold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
   c:= x
   def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
   if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
-  if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
-  if (EW<=8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
-  extract{c, 0}
+  if (hasarch{'SSSE3'} and 0) {
+    if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
+    if (EW==8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
+    extract{c, 0}
+  } else {
+    if (EW<=16) c = F{c, shuf16Lo{c, 4b2301}}
+    if (EW==8) { v:=extract{[8]i16~~c, 0}; cast_i{u8, F{v, v>>8}} }
+    else extract{c, 0}
+  }
 }
-def fold{F, x:T & width{T}==256 & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
+def fold{F, x:T & w256{T} & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
 
 def makeOptBranch{enable, F} = {
   if (enable) {
@@ -67,7 +88,8 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def bulk = vw / width{X}
   def XV = [bulk]X
   def E = tern{X==f64, u32, ty_u{X}}
-  def EV = [bulk]E
+  def EV2 = [bulk*2]E
+  def EV = tern{(width{E}*bulk == 64) & hasarch{'X86_64'}, EV2, [bulk]E}
   
   # fold with either Max or Bitwise Or, truncating/zero-extending to TE
   def foldTotal{TE, x:T} = cast_i{TE, fold{|, x}}
@@ -89,7 +111,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       c:= EV~~loadBatch{xp, i, XV}
       if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
       if (B) {
-        if (homAny{M{~q_chr{c}}}) return{3}
+        if (anyNonChar{M, c}) return{3}
       } else {
         if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
@@ -111,7 +133,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
         maskedLoop{bulk, iCont, len, {i, M} => {
           def XU = [bulk]u64
           v:= XU ~~ loadBatch{xp, i, XV}
-          if (homAny{M{isSNaN{v}}}) return{0xffff_fffe} # not even a number
+          if (anySNaN{M, v}) return{0xffff_fffe} # not even a number
         }}
         return{0xffff_ffff} # float
       }}
@@ -126,7 +148,6 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           r1|= M{tree_fold{|, each{{v} => getAcc{EV, v}, v0}}}
         }}
       } else { # f64
-        def EV2 = v_dbl{EV}
         r2:= EV2**0
         muLoop{bulk, hasarch{'AARCH64'}+1, len, {is, M} => {
           def v0 = loadBatch{xp, is, XV}
@@ -139,13 +160,16 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
                 tup{intp, wdn}
               } else {
                 def ints = each{{v} => cvtNarrow{ty_s{E}, v}, v0}
-                assert{vcount{type{tupsel{0,ints}}} == bulk} # we'll be doing operations over it
                 def wdn = each{{v} => cvtWiden{XV, v}, ints}
-                def intp = {
-                  if (tuplen{ints}==1) tupsel{0, ints}
-                  else pair{ints}
+                if (vcount{type{tupsel{0,ints}}} == bulk) {
+                  def intp = {
+                    if (tuplen{ints}==1) tupsel{0, ints}
+                    else pair{ints}
+                  }
+                  tup{intp, wdn}
+                } else if (tuplen{ints}==1 and hasarch{'X86_64'} and ~hasarch{'AVX'}) {
+                  tup{tupsel{0, ints}, wdn}
                 }
-                tup{intp, wdn}
               }
             }
             def int = tupsel{0, tmp}

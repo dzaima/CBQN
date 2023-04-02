@@ -82,6 +82,8 @@ def __gt{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpgt_ps',  a, b}; def
 def __ge{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpge_ps',  a, b}; def __ge{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpge_pd',  a, b}
 def __lt{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmplt_ps',  a, b}; def __lt{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmplt_pd',  a, b}
 def __le{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmple_ps',  a, b}; def __le{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmple_pd',  a, b}
+def unord{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
+def unord{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
 
 
 
@@ -90,6 +92,7 @@ def __xor{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_xor_ps', v2f{a}, v2f{b}}
 def __and{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_and_ps', v2f{a}, v2f{b}}
 def __or {a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_or_ps',  v2f{a}, v2f{b}}
 def __not{a:T & w128u{T}} = a ^ (T ** ~cast{eltype{T},0})
+def andnot{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_andnot_ps', v2f{b}, v2f{a}}
 
 # shift
 def __shl{a:T,b & w128i{T, 16} & knum{b}} = emit{T, '_mm_slli_epi16', a, b}
