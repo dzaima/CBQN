@@ -29,7 +29,7 @@ B add_c1(B t, B x) {
   dec(eachm_fn(m_f64(0), inc(x), add_c1));
   return x;
 }
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   #define SINGELI_FILE monarith
   #include "../utils/includeSingeli.h"
 #endif
@@ -60,7 +60,7 @@ B add_c1(B t, B x) {
 #define SIGN_EXPR(T, C) rp[i] = c>0? 1 : c==0? 0 : -1;
 #define SIGN_MAIN(FEXPR) LOOP_BODY(i8* rp; B r=m_i8arrc(&rp,x);, SIGN_EXPR,)
 
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   #define STILE_BODY(FEXPR) { usz ia = IA(x); B r; retry:; \
     void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));    \
     u64 got = simd_abs[xe-el_i8](rp, tyany_ptr(x), ia);    \

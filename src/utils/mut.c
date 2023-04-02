@@ -167,7 +167,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 }
 
 
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
   #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
@@ -253,7 +253,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
 }
 
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #define SINGELI_FILE copy
   #include "./includeSingeli.h"

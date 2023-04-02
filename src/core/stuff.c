@@ -420,7 +420,7 @@ u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise
   n,n,n,n,n,1,1,2,
 };
 
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   #define F(X) simd_equal_##X
   #define SINGELI_FILE equal
   #include "../utils/includeSingeli.h"

@@ -266,7 +266,7 @@ po ← { # parsed options
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ avx2 / ⋈"-DSINGELI_AVX2"
     args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
-    args∾↩ (singeli ∧ avx2∨arch≡"aarch64") / ⟨"-DSINGELI_SIMD"⟩
+    args∾↩ (singeli ∧ ⊑arch<⊸∊"x86-64"‿"aarch64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
     args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩

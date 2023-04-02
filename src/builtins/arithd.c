@@ -21,7 +21,7 @@ B atan2_c2(B, B, B);
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 
-#if SINGELI_SIMD || SINGELI_X86_64
+#if SINGELI_SIMD
   #include "../singeli/c/arithdDispatch.c"
   static AndBytesFn andBytes_fn = simd_andBytes;
 #else
@@ -217,7 +217,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   #undef GC2f
   
   
-  #if SINGELI_SIMD || SINGELI_X86_64
+  #if SINGELI_SIMD
     #define AA_DISPATCH(NAME) FORCE_INLINE B NAME##_AA(B t, B w, B x) { return dyArith_AA(&NAME##DyTableAA, w, x); }
     AA_DISPATCH(add) AA_DISPATCH(or)
     AA_DISPATCH(sub)
