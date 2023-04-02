@@ -4,15 +4,15 @@
 
 ## Running
 
-1. `make`
+1. `make REPLXX=1`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
-    - `make REPLXX=1` to enable replxx (syntax highlighting & some system/variable name completion)
-    - `make CC=cc` if `clang` isn't installed
+    - Add `CC=cc` if `clang` isn't installed
+    - Add `FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
     - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the linker complains about `-ldl`)
-    - `make FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
+    - Remove `REPLXX=1` if it causes issues (will remove line editing/coloring/name completion in the REPL)
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
     - `make clean` if anything breaks and you want a clean build slate
-2. `./BQN somefile.bqn` to execute a file, or `rlwrap ./BQN` for a REPL (or just `./BQN` if replxx is enabled)
+2. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL (or `rlwrap ./BQN` if replxx wasn't enabled)
 
 ## Configuration options
 
@@ -22,7 +22,7 @@
       Therefore, on x86-64, `o3n-singeli` is highly recommended, but, on aarch64, `o3-singeli` is enough
     - `make o3-singeli has=avx2` - generic build for any x86-64 CPU that supports AVX2 (won't utilize BMI2 though; `has='avx2 bmi2'` to assume both AVX2 & BMI2)
     - `make o3n-singeli has=slow-pdep` - build tuned for AMD Zen 1/Zen 2 CPUs, which have BMI2, but their pdep/pext instructions are extremely slow
-    - Target architecture is decided by `uname -sm` - override with `target_arch=x86-64`/`target_arch=aarch64`; and extensions by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks, for native builds
+    - Target architecture is decided from `uname` - override with `target_arch=...` (valid values being `x86-64`, `aarch64`, `generic`). For native builds, targeted extensions are decided by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks.
 
 - Build flags:
     - `CC=cc` - choose a different C compiler (default is `clang`)
@@ -30,12 +30,13 @@
     - `f=...` - add extra C compiler flags for CBQN file compilation
     - `lf=...` - add extra linker flags
     - `CCFLAGS=...` - add flags for all CC/CXX/linker invocations
-    - `REPLXX=1` - enable/disable replxx (default depends on target and may change in the future)
+    - `REPLXX=0`/`REPLXX=1` - enable/disable replxx (default depends on target and may change in the future)
     - `REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)
     - `FFI=0` - disable libffi usage
     - `j=8` to override the default parallel job count
     - `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename
     - For build targets which use build.bqn (currently all the `-singeli` & `shared-` ones), `target_arch` and `target_os` options can be added, specifying the target architecture/OS (mostly just changing library loading defaults/Singeli configuration; if cross-compiling, further manual configuration will be necessary)
+    - Alternatively, `build/build` (aka build.bqn) can be invoked manually, though note that it has slightly different argument naming (see `build/build --help`), doesn't have predefined build types (i.e. `make o3ng-singeli` is `build/build replxx singeli native g`), and may be slightly less stable
 
 - More build types:
     - `make o3` - `-O3`; currently the default build
