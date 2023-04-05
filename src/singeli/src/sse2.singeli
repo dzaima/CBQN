@@ -65,8 +65,8 @@ def __lt{a:T,b:T & w128s{T}} = b>a
 def __ge{a:T,b:T & w128s{T}} = ~(b>a)
 def __le{a:T,b:T & w128s{T}} = ~(a>b)
 # unsigned comparison
-def __lt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} < ty_s{a^s} }
-def __gt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} > ty_s{a^s} }
+def __lt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} < ty_s{b^s} }
+def __gt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} > ty_s{b^s} }
 def __le{a:T,b:T & w128u{T}} = ~(a>b)
 def __ge{a:T,b:T & w128u{T}} = ~(a<b)
 def __le{a:T,b:T & w128u{T, 8}} = a==min{a,b}
