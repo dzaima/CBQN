@@ -1,11 +1,19 @@
 include './base'
-include './sse'
-include './avx'
-include './avx2'
+if (hasarch{'AVX2'}) {
+  include './sse'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
 include './mask'
 
-def opsh{op}{v:[4]f64, perm} = op{v, shuf{[4]u64, v, perm}}
-def mix{op, v:[4]f64} = { def sh=opsh{op}; sh{sh{v, 4b2301}, 4b1032} }
+def opsh64{op}{v:[4]f64, perm} = op{v, shuf{[4]u64, v, perm}}
+def opsh32{op}{v:[2]f64, perm} = op{v, shuf{[4]u32, v, perm}}
+def mix{op, v:[4]f64 & hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 4b2301}, 4b1032} }
+def mix{op, v:[2]f64 & hasarch{'X86_64'}} = opsh32{op}{v, 4b1032}
 
 def reduce_pairwise{op, plog, x:*T, len, init:T} = {
   # Pairwise combination to shorten dependency chains
@@ -22,35 +30,39 @@ def reduce_pairwise{op, plog, x:*T, len, init:T} = {
 }
 
 fn fold_idem{T==f64, op}(x:*T, len:u64) : T = {
-  def step = 256/width{T}
-  def V = [step]T
+  def bulk = arch_defvw/width{T}
+  def V = [bulk]T
   xv:= *V ~~ x
-  r:V = [4]f64**0
-  if (len < step) {
+  r:V = [bulk]f64**0
+  if (len < bulk) {
     # Can't overlap like the long case
     assert{len > 0}
     r = load{xv}
-    if (len > 1) {
-      if (len > 2) r = opsh{op}{r, 4b2222}
-                   r = opsh{op}{r, 4b1111}
+    if (bulk==4 and hasarch{'AVX'}) {
+      if (len > 1) {
+        if (len > 2) r = opsh64{op}{r, 4b2222}
+                     r = opsh64{op}{r, 4b1111}
+      }
+    } else {
+      assert{bulk==2}
     }
   } else {
-    i:= load{*V ~~ (x+len-step)}
-    r = mix{op, reduce_pairwise{op, 2, xv, (len-1)/step, i}}
+    i:= load{*V ~~ (x+len-bulk)}
+    r = mix{op, reduce_pairwise{op, 2, xv, (len-1)/bulk, i}}
   }
   extract{r, 0}
 }
 
-export{'avx2_fold_min_f64', fold_idem{f64,min}}
-export{'avx2_fold_max_f64', fold_idem{f64,max}}
+export{'simd_fold_min_f64', fold_idem{f64,min}}
+export{'simd_fold_max_f64', fold_idem{f64,max}}
 
 fn fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
-  def step = 256/width{T}
-  def V = [step]T
+  def bulk = arch_defvw/width{T}
+  def V = [bulk]T
   xv:= *V ~~ x
-  e:= len / step
-  i:= load{xv, e} & (V~~maskOf{V, len % step})
+  e:= len / bulk
+  i:= load{xv, e} & (V~~maskOf{V, len % bulk})
   r:= reduce_pairwise{op, 2, xv, e, i}
   extract{mix{op, r}, 0}
 }
-export{'avx2_sum_f64', fold_assoc_0{f64,+}}
+export{'simd_sum_f64', fold_assoc_0{f64,+}}

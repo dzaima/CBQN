@@ -194,8 +194,9 @@ def unpackLo{a:T, b:T & w128i{T}} = tupsel{0, unpack{a, b}}
 def unpackQ{a:T, b:T & w128{T}} = unpack{a, b}
 
 def extract{x:T, i    & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}
-def extract{x:T, i==0 & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_cvtsi128_si32', x}
-def extract{x:T, i==0 & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_cvtsi128_si64', x}
+def extract{x:T, i==0 & w128i{T,32}} = emit{eltype{T}, '_mm_cvtsi128_si32', x}
+def extract{x:T, i==0 & w128i{T,64}} = emit{eltype{T}, '_mm_cvtsi128_si64', x}
+def extract{x:T, i==0 & w128f{T,64}} = emit{eltype{T}, '_mm_cvtsd_f64', x}
 
 def shuf{L, x:T, n & w128{T} & lvec{L,4,32} & knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
 def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}
