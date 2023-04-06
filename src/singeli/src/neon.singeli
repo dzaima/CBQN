@@ -68,7 +68,7 @@ def __le{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcle', T}, a, b}
 def __ne{a:T,b:T & nvec{T}} = ~(a==b)
 
 def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
-def fold_addw{a:T & nvec{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
+def fold_addw{a:T & nveci{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
 def fold_min {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vminv', T}, a}
 def fold_max {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
 def vfold{F, x:T & nvec{T} & match{F, min} & elwidth{T}<=32} = fold_min{x}
