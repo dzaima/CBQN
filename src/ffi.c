@@ -83,12 +83,16 @@ EXPORT void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); m
 EXPORT void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), IA(c) * 4); dec(c); }
 EXPORT void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
   usz ia = IA(b);
-  B* p = arr_bptr(b);
-  if (p!=NULL) {
-    for (usz i = 0; i < ia; i++) buf[i] = makeX(inc(p[i]));
+  if (DIRECT_BQNV && sizeof(BQNV)==sizeof(B)) {
+    COPY_TO(buf, el_B, 0, b, 0, ia);
   } else {
-    SGet(b)
-    for (usz i = 0; i < ia; i++) buf[i] = makeX(Get(b, i));
+    B* p = arr_bptr(b);
+    if (p!=NULL) {
+      for (usz i = 0; i < ia; i++) buf[i] = makeX(inc(p[i]));
+    } else {
+      SGet(b)
+      for (usz i = 0; i < ia; i++) buf[i] = makeX(Get(b, i));
+    }
   }
 }
 
@@ -724,8 +728,8 @@ B libffiFn_c2(B t, B w, B x) {
   
   u32 flags = (u64)bf->w_c1;
   
-  Arr* wa; AS2B wf;
-  Arr* xa; AS2B xf;
+  Arr* wa ONLY_GCC(=0); AS2B wf ONLY_GCC(=0);
+  Arr* xa ONLY_GCC(=0); AS2B xf ONLY_GCC(=0);
   if (flags&1) { wa=a(w); wf=TIv(wa,getU); }
   if (flags&2) { xa=a(x); xf=TIv(xa,getU); }
   i32 idxs[2] = {0,0};
