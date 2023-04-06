@@ -11,6 +11,7 @@ if (hasarch{'AVX2'}) {
 include './mask'
 include './cbqnDefs'
 include 'util/tup'
+include './vecfold'
 
 def preserve_negative_zero = 0
 
@@ -42,30 +43,6 @@ def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
 
 
 
-def fold{F, x:T} = {
-  show{'WARNING: using fallback fold for ', F, T}
-  def E = eltype{T}
-  r:E = 0
-  each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
-  r
-}
-def fold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
-  c:= x
-  def EW = elwidth{T}
-  if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
-  if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
-  if (hasarch{'SSSE3'} and 0) {
-    if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
-    if (EW==8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
-    extract{c, 0}
-  } else {
-    if (EW<=16) c = F{c, shuf16Lo{c, 4b2301}}
-    if (EW==8) { v:=extract{[8]i16~~c, 0}; cast_i{u8, F{v, v>>8}} }
-    else extract{c, 0}
-  }
-}
-def fold{F, x:T & w256{T} & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
-
 def makeOptBranch{enable, F} = {
   if (enable) {
     def skip = makelabel{}; goto{skip}
@@ -92,7 +69,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def EV = tern{(width{E}*bulk == 64) & hasarch{'X86_64'}, EV2, [bulk]E}
   
   # fold with either Max or Bitwise Or, truncating/zero-extending to TE
-  def foldTotal{TE, x:T} = cast_i{TE, fold{|, x}}
+  def foldTotal{TE, x:T} = cast_i{TE, vfold{|, x}}
   def foldTotal{TE, x:T & hasarch{'AARCH64'}} = {
     if (elwidth{T}==64) {
       if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
