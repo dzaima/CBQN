@@ -51,10 +51,11 @@ opts ← ⟨
   ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨1, "c",      0,  "Disable some default flags"⟩
-  ⟨1, "O3",     @,  "Use '-O3'; On by default unless 'c=1'"⟩
-  ⟨1, "native", @,  "Use '-march=native'"⟩
-  ⟨2, "has",    ⟨⟩, "Assume specific arch features; options: AVX2, BMI2, slow-pdep"∾@+10⟩
+  ⟨0, "usz", "32", "Size of array length fields in bits; default 32, can be 32 or 64"⟩
+  ⟨1, "c",      0, "Disable some default flags"⟩
+  ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
+  ⟨1, "native", @, "Use '-march=native'"⟩
+  ⟨2, "has",   ⟨⟩, "Assume specific arch features; options: AVX2, BMI2, slow-pdep"∾@+10⟩
   
   ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables various sanity checks"⟩
   ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
@@ -149,7 +150,7 @@ po ← { # parsed options
     verbose, J, rebuildAll, rebuildSingeli, tui, output, clangd, versionName,
     os, arch, native, has, avx2
     emcc, wasm, replxx, singeli,
-    ffi, o3, debug, rtverify, heapverify,
+    usz, ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
     CBQNc, ccColor, singeliFlags, REPLXXc, Linker
   ⟩⇐
@@ -172,6 +173,8 @@ po ← { # parsed options
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
+  usz ⇐ •ParseFloat GetOpt "usz"
+  {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
   versionName ← {compat ∧ shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
   {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢@
   wasm ⇐ wasi∨emcc
@@ -284,6 +287,7 @@ po ← { # parsed options
     args∾↩ (         windows) / ⟨"-DNO_MMAP"⟩
     args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
+    args∾↩ (          usz≡64) / ⟨"-DUSZ_64"⟩
     args∾↩ {"slow-pdep": "-DSLOW_PDEP"; "-m"∾𝕩}¨ has
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
@@ -631,7 +635,7 @@ cachedBin‿linkerCache ← {
       •file.Name ga, ⟨⟩
     ⟩
     
-    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder⟩∾{
+    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩∾{
       po.native? ⟨⟩;
       "-a" ⋈ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch) ∾ ∾ ','⊸∾¨ Uppercase ∊⟜"avx2"‿"bmi2"⊸/po.has
     }

@@ -10,6 +10,8 @@ def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{{n} => export{n, f}, ns}
 def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
+config usz = u32
+
 def elwidth{T} = width{eltype{T}}
 
 # more arith
