@@ -43,13 +43,14 @@ def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
 
 
 
-def makeOptBranch{enable, F} = {
+def makeOptBranch{enable, Ts, F} = {
   if (enable) {
+    def args = undef{Ts}
     def skip = makelabel{}; goto{skip}
     def start = setlabel{}
-    F{}
+    F{...args}
     setlabel{skip}
-    start
+    {...vs} => { each{=, args, vs}; goto{start} }
   } else {
     'not defined'
   }
@@ -105,8 +106,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       }}
       0
     } else { # i16, i32, f64
-      iCont:Size = 0
-      def case_B = makeOptBranch{B, {} => {
+      def case_B = makeOptBranch{B, tup{Size}, {iCont} => {
         maskedLoop{bulk, iCont, len, {i, M} => {
           def XU = [bulk]u64
           v:= XU ~~ loadBatch{xp, i, XV}
@@ -160,7 +160,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
               else ~homAll{tree_fold{&, each{==, as, bs}}}
             }
             if (cond) { # is any not an integer
-              if (B) { iCont=tupsel{0, is}; goto{case_B} } # if B, need to give an even more special result
+              if (B) case_B{tupsel{0, is}} # if B, need to give an even more special result
               else return{0xffff_ffff} # else, not integer => float
             }
             int

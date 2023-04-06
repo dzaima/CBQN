@@ -12,7 +12,7 @@ include './mask'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
-  def args = each{{c:T}=>{ a:=undefined{T} }, M{...each{{c}=>tupsel{0,c}, v1}}}
+  def args = undef{M{...each{{c}=>tupsel{0,c}, v1}}}
   def am = tuplen{tupsel{0,v1}}
   each{{last, ...v2} => {
     if (last or C{...v2}) {

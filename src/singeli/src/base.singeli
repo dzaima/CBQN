@@ -239,5 +239,7 @@ def eachx{F, ...args} = {
   each{F, ...each{{x} => {if (istup{x}) x; else l**x}, args}}
 }
 
-def makeregs{v, n} = @collect(n) { reg:=v }
-def makeregs{T, n & istype{T}} = @collect(n) { reg:=undefined{T} }
+def undef{T, n & istype{T}} = @collect(n) undef{T}
+def undef{Ts & istup{Ts}} = each{undef, Ts}
+def undef{x:T} = undef{T}
+def undef{T & istype{T}} = { reg:=undefined{T} }
