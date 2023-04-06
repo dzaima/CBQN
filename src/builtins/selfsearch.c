@@ -101,7 +101,7 @@ static bool shouldWidenBitarr(B x, usz csz) { // assumes cells won't anymore hav
 
 #define GRADE_UD(U,D) U
 #include "radix.h"
-u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
+u8 radix_offsets_2_usz(usz* c0, u32* v0, usz n) {
   usz rx = 256;
   usz* c1 = c0 + rx;
   // Count keys
@@ -109,13 +109,13 @@ u8 radix_offsets_2_u32(usz* c0, u32* v0, usz n) {
   for (usz i=0; i<n; i++) { u32 v=v0[i]; (c0+1)[(u8)(v>>16)]++; (c1+1)[(u8)(v>>24)]++; }
   u32 v=v0[0];
   // Inclusive prefix sum; note c offsets above
-  if ((c1+1)[(u8)(v>>24)] < n) { c1[0]-=n; RADIX_SUM_2_u32; return 2; }
-  if ((c0+1)[(u8)(v>>16)] < n) {           RADIX_SUM_1_u32; return 1; }
+  if ((c1+1)[(u8)(v>>24)] < n) { c1[0]-=n; RADIX_SUM_2_usz; return 2; }
+  if ((c0+1)[(u8)(v>>16)] < n) {           RADIX_SUM_1_usz; return 1; }
   return 0;
 }
 #undef GRADE_UD
 #define RADIX_LOOKUP_32(INIT, SETTAB) \
-  u8 bytes = radix_offsets_2_u32(c0, v0, n);                                                    \
+  u8 bytes = radix_offsets_2_usz(c0, v0, n);                                                    \
   usz tim = tn/(64/sizeof(*tab)); /* sparse table init max */                                   \
   if (bytes==0) {                                                                               \
     if (n<tim) for (usz i=0; i< n; i++) tab[(u16)v0[i]]=INIT;                                   \
