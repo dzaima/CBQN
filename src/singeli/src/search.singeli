@@ -10,13 +10,35 @@ if (hasarch{'AVX2'}) {
 }
 include './mask'
 
+def findFirst{C, M, F, ...v1} = {
+  def exit = makelabel{}
+  def args = each{{c:T}=>{ a:=undefined{T} }, M{...each{{c}=>tupsel{0,c}, v1}}}
+  def am = tuplen{tupsel{0,v1}}
+  each{{last, ...v2} => {
+    if (last or C{...v2}) {
+      each{=, args, M{...v2}}
+      goto{exit}
+    }
+  }, iota{am} == am-1, ...v1}
+  unreachable{}
+  setlabel{exit}
+  F{...args}
+}
+
 fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
   def e = if (A==E) e0 else cast_i{E, e0}
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
-  maskedLoop{bulk, n, {i, M} => {
-    eq:= loadBatch{*E~~l, i, VT} == VT**e
-    if (homAny{M{eq}}) return{i*bulk + promote{u64, ctz{homMask{eq}}}}
+  muLoop{bulk, tern{arch_defvw>=256, 1, 2}, n, {is, M} => {
+    eq:= eachx{==, loadBatch{*E~~l, is, VT}, VT**e}
+    if (homAny{M{tree_fold{|, eq}}}) {
+      findFirst{
+        {i,c} => homAny{c},
+        {i,c} => tup{i,c},
+        {i,c} => return{i*bulk + promote{u64, ctz{homMask{c}}}},
+        is, eq
+      }
+    }
   }}
   n
 }
