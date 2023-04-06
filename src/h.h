@@ -134,6 +134,11 @@ typedef size_t ux;
 #define NOINLINE     __attribute__((noinline))
 #define FORCE_INLINE __attribute__((always_inline)) static inline
 #define NORETURN     __attribute__((noreturn))
+#if DEBUG
+  #define SHOULD_INLINE static
+#else
+  #define SHOULD_INLINE FORCE_INLINE
+#endif
 #define AUTO __auto_type
 #define CLZ(X) __builtin_clzll(X)
 #define CTZ(X) __builtin_ctzll(X)

@@ -104,7 +104,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
         ((u32*)r0)[i] = _pext_u64(v, 0x5555555555555555);
         ((u32*)r1)[i] = _pext_u64(v, 0xAAAAAAAAAAAAAAAA);
       }
-      bit_cpy(r0, h, r1, 0, h);
+      bit_cpyN(r0, h, r1, 0, h);
       TFREE(r1);
     } else
     #endif

@@ -163,7 +163,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
       GROUP_CHUNKED(MEM_CPY)
     } else {
       allocBitGroups(rp, ria, z, xr, xsh, len, width);
-      GROUP_CHUNKED(bit_cpy)
+      GROUP_CHUNKED(bit_cpyN)
     }
     #undef GROUP_CHUNKED
     decG(ind);
@@ -202,8 +202,8 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
       if (xr==1) GROUP_SORT(MEM_CPY, m_tyarrv(rp+j, width, l, xt))
       else       GROUP_SORT(MEM_CPY, rp[j] = m_shChangeLen(xt, xr, xsh, l, width, csz))
     } else {
-      if (xr==1) GROUP_SORT(bit_cpy, rp[j] = taga(arr_shVec(m_bitarr_nop(l))))
-      else       GROUP_SORT(bit_cpy, rp[j] = taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)))
+      if (xr==1) GROUP_SORT(bit_cpyN, rp[j] = taga(arr_shVec(m_bitarr_nop(l))))
+      else       GROUP_SORT(bit_cpyN, rp[j] = taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)))
     }
     #undef GROUP_SORT
   } else if (notB && xk <= 3) { // Cells of 𝕩 are CPU-sized

@@ -286,7 +286,7 @@ B internalTemp_c1(B t, B x) {
   #endif
   #ifdef TEST_BITCPY
   SGetU(x)
-  bit_cpy(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
+  bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
   #endif
   return x;
 }

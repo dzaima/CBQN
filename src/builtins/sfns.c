@@ -259,11 +259,11 @@ B shape_c2(B t, B w, B x) {
           }
           for (; b%8; b*=2) {
             if (b>nw*32) {
-              if (b<nia) bit_cpy(rq, b, rq, 0, nia-b);
+              if (b<nia) bit_cpyN(rq, b, rq, 0, nia-b);
               b = 64*nw; // Ensure bi>=bf since bf is rounded up
               break;
             }
-            bit_cpy(rq, b, rq, 0, b);
+            bit_cpyN(rq, b, rq, 0, b);
           }
         } else {
           memcpy(rp, xp, b/8);

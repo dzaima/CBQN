@@ -28,7 +28,7 @@ NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 #define HARR_ADDA(N, V)   ({ B v_ = (V); N##_v.a[N##_i] = v_; *N##_ia = ++N##_i; v_; })
 #define HARR_O(N) N##_v
 #define HARR_I(N) N##_i
-static HArr_p m_harr_impl(usz ia) {
+SHOULD_INLINE HArr_p m_harr_impl(usz ia) {
   CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
   r->ia = 0;
@@ -43,27 +43,27 @@ static HArr_p m_harr_impl(usz ia) {
 #define HARR_FCD(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fcd_impl(N##_v, X); })
 #define HARR_FA(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fa_impl(N##_v, R); })
 #define HARR_ABANDON(N) harr_abandon_impl(N##_v.c)
-static B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   p.c->sh = &p.c->ia;
   SRNK(p.b, 1);
   gsPop();
   return p.b;
 }
-static B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
   gsPop();
   return p.b;
 }
-static B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
   decG(x);
   gsPop();
   return p.b;
 }
-static usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
   gsPop();
   return arr_shAlloc((Arr*)p.c, r);
@@ -75,20 +75,20 @@ void harr_abandon_impl(HArr* p);
 #define m_harr0v(N) ({ usz n_ = (N); HArr_p r_ = m_harrUv(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
 #define m_harr0c(X) ({ B x_ = (X); usz n_ = IA(x_); HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
 #define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
-static HArr_p m_harrUv(usz ia) {
+SHOULD_INLINE HArr_p m_harrUv(usz ia) {
   CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   arr_shVec((Arr*)r);
   return harrP_parts(r);
 }
-static HArr_p m_harrUc(B x) { assert(isArr(x));
+SHOULD_INLINE HArr_p m_harrUc(B x) { assert(isArr(x));
   usz ia = IA(x);
   CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   arr_shCopy((Arr*)r, x);
   return harrP_parts(r);
 }
-static HArr_p m_harrUp(usz ia) {
+SHOULD_INLINE HArr_p m_harrUp(usz ia) {
   CHECK_IA(ia, sizeof(B));
   HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
   return harrP_parts(r);

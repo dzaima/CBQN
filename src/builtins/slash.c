@@ -217,7 +217,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
     usz width = csz;
     u64* xp = tyany_ptr(x);
     u64* rp; r = m_bitarrv(&rp,wsum*width); a(r)->ia = wsum;
-    COMPRESS_GROUP(bit_cpy)
+    COMPRESS_GROUP(bit_cpyN)
   }
   return r;
 }

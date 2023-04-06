@@ -113,7 +113,8 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->
 // Companion to bit_cpy when uniform syntax is wanted
 #define MEM_CPY(R,RI,X,XI,L) memcpy((u8*)(R)+(RI), (u8*)(X)+(XI), (L))
 
-static void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
+void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l);
+SHOULD_INLINE void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   u64 re = rs+(u64)l;
   i64 d = (i64)xs-(i64)rs;
   

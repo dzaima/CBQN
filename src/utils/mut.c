@@ -175,8 +175,11 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 #define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
 #define PTR_COPY(X, R) for (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
 
+void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l) {
+  bit_cpy(r, rs, x, xs, l);
+}
 
-DEF_COPY(bit, { bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l); return; })
+DEF_COPY(bit, { bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l); return; })
 DEF_COPY(i8 , { i8*  rp = ms+(i8*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
     case t_bitarr:                  BIT_COPY(i8)
@@ -319,7 +322,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   TCOPY_FN(u32,c32, 0)
   TCOPY_FN(f64,f64, 1)
   static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
-    bit_cpy((u64*)a, ms, bitarr_ptr(x), xs, l);
+    bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l);
   }
 #else
   #define MAKE_ICPY(T,E) Arr* cpy##T##Arr(B x) { \
