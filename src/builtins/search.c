@@ -132,6 +132,38 @@ static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
+static NOINLINE usz indexOfOne(B l, B e) {
+    void* lp = tyany_ptr(l);
+    usz wia = IA(l);
+    u8 v8; u16 v16; u32 v32; f64 v64f;
+    switch(TI(l,elType)) { default: UD;
+      case el_bit: if (!q_bit(e)) return wia;  return bit_find(lp,wia,o2bG(e));
+      case el_i8:  if (!q_i8 (e)) return wia;  v8  = ( u8)( i8)o2iG(e); goto chk8;
+      case el_i16: if (!q_i16(e)) return wia;  v16 = (u16)(i16)o2iG(e); goto chk16;
+      case el_i32: if (!q_i32(e)) return wia;  v32 = (u32)(i32)o2iG(e); goto chk32;
+      case el_f64: if (!q_f64(e)) return wia;  v64f=           o2fG(e); goto chk64f;
+      case el_c8:  if (!q_c8 (e)) return wia;  v8  = ( u8)     o2cG(e); goto chk8;
+      case el_c16: if (!q_c16(e)) return wia;  v16 = (u16)     o2cG(e); goto chk16;
+      case el_c32: if (!q_c32(e)) return wia;  v32 = (u32)     o2cG(e); goto chk32;
+      case el_B: {
+        if (isF64(e) && sizeof(B)==sizeof(f64)) { // TODO could also have character atom case
+          if ((lp = arr_bptr(l)) == NULL) goto generic;
+          v64f = o2fG(e);
+          goto chk64f;
+        }
+        generic:;
+        SGetU(l)
+        for (usz i = 0; i < wia; i++) if (equal(GetU(l,i), e)) return i;
+        return wia;
+      }
+    }
+    
+    chk8:   for (ux i=0; i<wia; i++) { if ((( u8*)lp)[i]== v8 ) return i; } return wia;
+    chk16:  for (ux i=0; i<wia; i++) { if (((u16*)lp)[i]==v16 ) return i; } return wia;
+    chk32:  for (ux i=0; i<wia; i++) { if (((u32*)lp)[i]==v32 ) return i; } return wia;
+    chk64f: for (ux i=0; i<wia; i++) { if (((f64*)lp)[i]==v64f) return i; } return wia;
+}
+
 B indexOf_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     B2 t = splitCells(x, w, 1);
@@ -139,34 +171,8 @@ B indexOf_c2(B t, B w, B x) {
     x = t.n;
   }
   if (!isArr(x) || RNK(x)==0) {
-    usz wia = IA(w);
     B el = isArr(x)? IGetU(x,0) : x;
-    i32 res = wia;
-    u8 we = TI(w,elType);
-    if (we<el_B) {
-      void* wp = tyany_ptr(w);
-      u8 v8; u16 v16; u32 v32; f64 v64f;
-      switch(we) { default: UD;
-        case el_bit: if (!q_bit(el)) goto notfound; res = bit_find(wp,wia,o2bG(el)); goto checked;
-        case el_i8:  if (!q_i8 (el)) goto notfound;  v8  = ( u8)( i8)o2iG(el); goto chk8;
-        case el_i16: if (!q_i16(el)) goto notfound;  v16 = (u16)(i16)o2iG(el); goto chk16;
-        case el_i32: if (!q_i32(el)) goto notfound;  v32 = (u32)(i32)o2iG(el); goto chk32;
-        case el_f64: if (!q_f64(el)) goto notfound;  v64f=           o2fG(el); goto chk64f;
-        case el_c8:  if (!q_c8 (el)) goto notfound;  v8  = ( u8)     o2cG(el); goto chk8;
-        case el_c16: if (!q_c16(el)) goto notfound;  v16 = (u16)     o2cG(el); goto chk16;
-        case el_c32: if (!q_c32(el)) goto notfound;  v32 = (u32)     o2cG(el); goto chk32;
-      }
-      
-      chk8:   for (usz i = 0; i < wia; i++) if ((( u8*)wp)[i]== v8 ) { res=i; break; } goto checked;
-      chk16:  for (usz i = 0; i < wia; i++) if (((u16*)wp)[i]==v16 ) { res=i; break; } goto checked;
-      chk32:  for (usz i = 0; i < wia; i++) if (((u32*)wp)[i]==v32 ) { res=i; break; } goto checked;
-      chk64f: for (usz i = 0; i < wia; i++) if (((f64*)wp)[i]==v64f) { res=i; break; } goto checked;
-    } else {
-      SGetU(w)
-      for (usz i = 0; i < wia; i++) if (equal(GetU(w,i), el)) { res = i; goto checked; }
-    }
-    
-    checked:; notfound:;
+    usz res = indexOfOne(w, el);
     decG(w); dec(x);
     B r = m_vec1(m_f64(res));
     arr_shAtm(a(r)); // replaces shape
@@ -235,11 +241,8 @@ B memberOf_c2(B t, B w, B x) {
   
   B r;
   single: {
-    usz xia = IA(x);
-    SGetU(x)
-    for (usz i = 0; i < xia; i++) if (equal(GetU(x, i), w)) { r = incG(enclosed_1); goto dec_wx; }
-    r = incG(enclosed_0);
-    dec_wx:; dec(w);
+    r = incG(indexOfOne(x,w)==IA(x)? enclosed_0 : enclosed_1);
+    dec(w);
     goto dec_x;
   }
   
