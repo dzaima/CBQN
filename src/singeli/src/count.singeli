@@ -5,10 +5,7 @@ include './avx2'
 include 'util/tup'
 include './vecfold'
 
-fn sum_vec{T==[32]i8}(v:T) = fold{+, [16]i16~~fold{+, unpackQ{v, T**0}}}
-def minmax{c, a, b} = tern{c{cast_i{i8,a},cast_i{i8,b}}, a, b}
-def min{a:i16, b:i16} = minmax{<, a, b}
-def max{a:i16, b:i16} = minmax{>, a, b}
+fn sum_vec{T==[32]i8}(v:T) = vfold{+, [16]i16~~fold{+, unpackQ{v, T**0}}}
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
@@ -36,8 +33,8 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
     jv := load{xv}; mv := jv
     @for (xv over _ from 1 to b) { jv = min{jv, xv}; mv = max{mv, xv} }
     @for (x over _ from rv to r) { if (x<min_allowed) return{x}; if (x>mx) mx=x }
-    jt := fold{min, jv}
-    mt := fold{max, mv}
+    jt := vfold{min, jv}
+    mt := vfold{max, mv}
     if (jt < min_allowed) return{jt}
     if (mt > mx) mx = mt
 

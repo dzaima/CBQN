@@ -184,8 +184,8 @@ def undefPromote{T, x:X & T==X} = T~~x
 def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
 def cvt{T, x:X & T==eltype{X}} = x
 
-def min{a, b & knum{a} & knum{b}} = tern{a<b, a, b}
-def max{a, b & knum{a} & knum{b}} = tern{a>b, a, b}
+def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
+def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
 
 
 

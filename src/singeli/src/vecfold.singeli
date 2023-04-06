@@ -2,26 +2,20 @@
 # Used by squeeze.singeli, count.singeli
 # Has to be included after util/tup because of name conflict
 
-def fold{F, x:T} = {
+def vfold{F, x:T} = {
   show{'WARNING: using fallback fold for ', F, T}
   def E = eltype{T}
   r:E = 0
   each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
   r
 }
-def fold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
+def vfold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
   c:= x
   def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
   if (EW<=32) c = F{c, shuf{[4]u32, c, 4b2301}}
-  if (hasarch{'SSSE3'} and 0) {
-    if (EW<=16) c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^2}}}
-    if (EW==8)  c = F{c, sel{[16]u8, c, make{[16]i8, iota{16}^1}}}
-    extract{c, 0}
-  } else {
-    if (EW<=16) c = F{c, shuf16Lo{c, 4b2301}}
-    if (EW==8) { v:=extract{[8]i16~~c, 0}; cast_i{eltype{T}, F{v, v>>8}} }
-    else extract{c, 0}
-  }
+  if (EW<=16) c = F{c, shuf16Lo{c, 4b2301}}
+  if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{eltype{T}, v}, cast_i{eltype{T}, v>>8}} }
+  else extract{c, 0}
 }
-def fold{F, x:T & w256{T} & hasarch{'X86_64'}} = fold{F, F{half{x, 0}, half{x, 1}}}
+def vfold{F, x:T & w256{T} & hasarch{'X86_64'}} = vfold{F, F{half{x, 0}, half{x, 1}}}
