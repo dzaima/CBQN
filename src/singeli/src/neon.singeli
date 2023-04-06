@@ -29,6 +29,9 @@ def mul1{a:T,b:T & w64i{T}} = emit{ty_dbl{v_dbl{T}}, ntyp{'vmull', T}, a, b}
 def mul2{a:T,b:T & w128i{T}} = emit{ty_dbl{T}, ntyp0{'vmull_high', T}, a, b}
 def mul12{a:T,b:T & w128{T}} = tup{mul1{half{a,0}, half{b,0}}, mul2{a,b}}
 
+def  __or{a:T,b:T & nvecf{T}} = T~~ __or{ty_u{a}, ty_u{b}}
+def __and{a:T,b:T & nvecf{T}} = T~~__and{ty_u{a}, ty_u{b}}
+def __xor{a:T,b:T & nvecf{T}} = T~~__xor{ty_u{a}, ty_u{b}}
 def  __add{a:T,b:T & nvec {T}} = emit{T, ntyp{'vadd', T}, a, b}
 def  __sub{a:T,b:T & nvec {T}} = emit{T, ntyp{'vsub', T}, a, b}
 def  __mul{a:T,b:T & nvec {T}} = emit{T, ntyp{'vmul', T}, a, b}
@@ -69,10 +72,10 @@ def __ne{a:T,b:T & nvec{T}} = ~(a==b)
 
 def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
 def fold_addw{a:T & nveci{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
-def fold_min {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vminv', T}, a}
-def fold_max {a:T & nvec{T} & elwidth{T}<=32} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
-def vfold{F, x:T & nvec{T} & match{F, min} & elwidth{T}<=32} = fold_min{x}
-def vfold{F, x:T & nvec{T} & match{F, max} & elwidth{T}<=32} = fold_max{x}
+def fold_min {a:T & nvec{T} & ~nveci{T,64}} = emit{eltype{T}, ntyp{'vminv', T}, a}
+def fold_max {a:T & nvec{T} & ~nveci{T,64}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
+def vfold{F, x:T & nvec{T} & ~nveci{T,64} & match{F, min}} = fold_min{x}
+def vfold{F, x:T & nvec{T} & ~nveci{T,64} & match{F, max}} = fold_max{x}
 def vfold{F, x:T & nvec{T} & match{F, +}} = fold_add{x}
 
 # TODO don't rely on regular stores being unaligned

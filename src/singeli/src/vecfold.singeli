@@ -1,14 +1,6 @@
 # Fold associative/commutative operation across a register
 # Used by squeeze.singeli, count.singeli
-# Has to be included after util/tup because of name conflict
 
-def vfold{F, x:T} = {
-  show{'WARNING: using fallback fold for ', F, T}
-  def E = eltype{T}
-  r:E = 0
-  each{{i} => { r = F{r, extract{x, i}} }, iota{vcount{T}}}
-  r
-}
 def vfold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
   c:= x
   def EW = elwidth{T}

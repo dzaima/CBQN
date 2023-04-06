@@ -73,9 +73,9 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   def foldTotal{TE, x:T & hasarch{'AARCH64'}} = {
     if (elwidth{T}==64) {
       if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
-      else fold_max{narrow{TE, x}}
+      else vfold{max, narrow{TE, x}}
     } else {
-      fold_max{x}
+      vfold{max, x}
     }
   }
   

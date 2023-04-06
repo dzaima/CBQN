@@ -34,21 +34,22 @@ fn fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   def V = [bulk]T
   xv:= *V ~~ x
   r:V = [bulk]f64**0
-  if (len < bulk) {
+  assert{len > 0}
+  if (len<bulk) {
     # Can't overlap like the long case
-    assert{len > 0}
     r = load{xv}
-    if (bulk==4 and hasarch{'AVX'}) {
+    if (bulk>2) {
+      assert{(bulk==4) & hasarch{'AVX'}}
       if (len > 1) {
         if (len > 2) r = opsh64{op}{r, 4b2222}
                      r = opsh64{op}{r, 4b1111}
       }
-    } else {
-      assert{bulk==2}
     }
   } else {
     i:= load{*V ~~ (x+len-bulk)}
-    r = mix{op, reduce_pairwise{op, 2, xv, (len-1)/bulk, i}}
+    r0:= reduce_pairwise{op, 2, xv, (len-1)/bulk, i}
+    if (hasarch{'AARCH64'}) return{vfold{op, r0}}
+    else r = mix{op, r0}
   }
   extract{r, 0}
 }
@@ -63,6 +64,7 @@ fn fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
   e:= len / bulk
   i:= load{xv, e} & (V~~maskOf{V, len % bulk})
   r:= reduce_pairwise{op, 2, xv, e, i}
-  extract{mix{op, r}, 0}
+  if (hasarch{'AARCH64'}) vfold{op, r}
+  else extract{mix{op, r}, 0}
 }
 export{'simd_sum_f64', fold_assoc_0{f64,+}}
