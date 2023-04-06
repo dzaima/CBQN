@@ -132,6 +132,11 @@ static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
+#if SINGELI_SIMD
+  #define SINGELI_FILE search
+  #include "../utils/includeSingeli.h"
+#endif
+
 static NOINLINE usz indexOfOne(B l, B e) {
     void* lp = tyany_ptr(l);
     usz wia = IA(l);
@@ -158,10 +163,17 @@ static NOINLINE usz indexOfOne(B l, B e) {
       }
     }
     
-    chk8:   for (ux i=0; i<wia; i++) { if ((( u8*)lp)[i]== v8 ) return i; } return wia;
-    chk16:  for (ux i=0; i<wia; i++) { if (((u16*)lp)[i]==v16 ) return i; } return wia;
-    chk32:  for (ux i=0; i<wia; i++) { if (((u32*)lp)[i]==v32 ) return i; } return wia;
-    chk64f: for (ux i=0; i<wia; i++) { if (((f64*)lp)[i]==v64f) return i; } return wia;
+    #if SINGELI_SIMD
+      chk8:   return simd_search_u8 (lp, v8,   wia);
+      chk16:  return simd_search_u16(lp, v16,  wia);
+      chk32:  return simd_search_u32(lp, v32,  wia);
+      chk64f: return simd_search_f64(lp, v64f, wia);
+    #else
+      chk8:   for (ux i=0; i<wia; i++) { if ((( u8*)lp)[i]== v8 ) return i; } return wia;
+      chk16:  for (ux i=0; i<wia; i++) { if (((u16*)lp)[i]==v16 ) return i; } return wia;
+      chk32:  for (ux i=0; i<wia; i++) { if (((u32*)lp)[i]==v32 ) return i; } return wia;
+      chk64f: for (ux i=0; i<wia; i++) { if (((f64*)lp)[i]==v64f) return i; } return wia;
+    #endif
 }
 
 B indexOf_c2(B t, B w, B x) {

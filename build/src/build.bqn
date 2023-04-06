@@ -595,6 +595,7 @@ cachedBin‿linkerCache ← {
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
     "xa."‿"src/builtins/squeeze.c"‿"squeeze", "xa."‿"src/utils/mut.c"‿"copy",
     "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
+    "xa."‿"src/builtins/search.c"‿"search",
     
     "2.."‿"src/builtins/select.c"‿"select",   "2.."‿"src/builtins/scan.c"‿"scan",
     "2.."‿"src/builtins/fold.c"‿"fold",       "2.."‿"src/builtins/slash.c"‿"slash",

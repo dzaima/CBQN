@@ -1,0 +1,27 @@
+include './base'
+if (hasarch{'AVX2'}) {
+  include './sse'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+}
+include './mask'
+
+fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
+  def e = if (A==E) e0 else cast_i{E, e0}
+  def bulk = arch_defvw/width{E}
+  def VT = [bulk]E
+  maskedLoop{bulk, n, {i, M} => {
+    eq:= loadBatch{*E~~l, i, VT} == VT**e
+    if (homAny{M{eq}}) return{i*bulk + promote{u64, ctz{homMask{eq}}}}
+  }}
+  n
+}
+
+export{'simd_search_u8',  search{u64, u8}}
+export{'simd_search_u16', search{u64, u16}}
+export{'simd_search_u32', search{u64, u32}}
+export{'simd_search_f64', search{f64, f64}}

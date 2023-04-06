@@ -12,8 +12,14 @@ def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
 def elwidth{T} = width{eltype{T}}
 
-# ceiling divide
-def cdiv{a,b} = (a+b-1)/b
+# more arith
+def cdiv{a,b} = (a+b-1)/b # ceiling divide
+def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
+def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
+def ctz{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_ctzll', x}
+def ctz{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_ctz', x}
+def clz{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_clzll', x}
+def clz{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_clz', x}
 
 # base-2 log of a constant power of two
 def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
@@ -31,6 +37,7 @@ def rare{x & knum{x}} = x
 def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
+def unreachable{} = emit{void, '__builtin_unreachable'}
 def assert{x:u1} = { if (not x) emit{void, '__builtin_unreachable'} }
 
 # various checks
