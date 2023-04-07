@@ -2,7 +2,7 @@ include './sse2'
 
 ### SSSE3 ###
 def sel{L, x:T, i:I & lvec{L,16,8} & w128{T} & w128i{I, 8}} = T ~~ emit{[16]u8, '_mm_shuffle_epi8', v2i{x}, i}
-
+def vshl{a:T, b:T, n} = T~~emit{[16]u8, '_mm_alignr_epi8', v2i{b}, v2i{a}, n*(elwidth{T}/8)}
 
 
 ### SSE4.1 ###
