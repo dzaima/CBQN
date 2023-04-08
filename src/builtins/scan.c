@@ -152,6 +152,32 @@ static B scan_lt(B x, u64 p, usz ia) {
   decG(x); return r;
 }
 
+static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
+  assert(xe!=el_bit && elNum(xe));
+  B r; void* rp = m_tyarrv(&r, xe==el_f64? sizeof(f64) : sizeof(i32), ia, xe==el_f64? t_f64arr : t_i32arr);
+  #if SINGELI_AVX2
+    switch(xe) { default:UD;
+      case el_i8:  { if (!q_fi32(r0) || simd_scan_plus_i8_i32 (i8any_ptr(x),  r0, rp, ia)!=ia) goto cs_i8_f64;  decG(x); return r; }
+      case el_i16: { if (!q_fi32(r0) || simd_scan_plus_i16_i32(i16any_ptr(x), r0, rp, ia)!=ia) goto cs_i16_f64; decG(x); return r; }
+      case el_i32: { if (!q_fi32(r0) || simd_scan_plus_i32_i32(i32any_ptr(x), r0, rp, ia)!=ia) goto cs_i32_f64; decG(x); return r; }
+      case el_f64: { f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];  ((f64*)rp)[i]=c; } decG(x); return r; }
+    }
+    cs_i8_f64: { x=taga(cpyI16Arr(x)); goto cs_i16_f64; }
+    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); simd_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); simd_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
+  #else
+    if (xe==el_i8  && q_fi32(r0)) { i8*  xp=i8any_ptr (x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
+    if (xe==el_i16 && q_fi32(r0)) { i16* xp=i16any_ptr(x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
+    if (xe==el_i32 && q_fi32(r0)) { i32* xp=i32any_ptr(x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
+    if (xe==el_f64) {   res_float:; f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];                     ((f64*)rp)[i]=c; } decG(x); return r; }
+    base:;
+    decG(r);
+    f64* rp2; r = m_f64arrv(&rp2, ia); rp = rp2;
+    x = toF64Any(x);
+    goto res_float;
+  #endif
+}
+
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = RNK(x);
@@ -169,13 +195,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (rtid==n_lt)                                return scan_lt(x, 0, ia);    // <
       goto base;
     }
-    if (rtid==n_add) { // +
-      B r; void* rp = m_tyarrv(&r, xe==el_f64? sizeof(f64) : sizeof(i32), ia, xe==el_f64? t_f64arr : t_i32arr);
-      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); i32 c=0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } ((i32*)rp)[i]=c; } decG(x); return r; }
-      if (xe==el_i16) { i16* xp=i16any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } ((i32*)rp)[i]=c; } decG(x); return r; }
-      if (xe==el_i32) { i32* xp=i32any_ptr(x); i32 c=0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } ((i32*)rp)[i]=c; } decG(x); return r; }
-      if (xe==el_f64) { f64* xp=f64any_ptr(x); f64 c=0; for (usz i=0; i<ia; i++) { c+= xp[i];                                  ((f64*)rp)[i]=c; } decG(x); return r; }
-    }
+    if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
     if (rtid==n_ceil ) return scan_max_num(x, xe, ia); // ⌈
     if (rtid==n_ne) { // ≠
@@ -226,8 +246,6 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     if (rtid==n_ceil ) return scan2_max_num(w, x, xe, ia); // ⌈
     
     if (rtid==n_add) { // +
-      if (xe==el_f64) { f64 c=o2fG(w); f64* rp; B r=m_f64arrv(&rp, ia); f64* xp=f64any_ptr(x); for (usz i=0; i<ia; i++) { c+= xp[i]; rp[i]=c; } decG(x); return r; }
-      
       if (xe==el_bit) {
         if (!q_i64(w)) goto base;
         i64 wv = o2i64G(w);
@@ -236,13 +254,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
         return wv==0? t : C2(add, w, t);
       }
       
-      if (!q_i32(w) || !elInt(xe)) goto base;
-      i32 c = o2iG(w);
-      i32* rp; B r = m_i32arrv(&rp, ia);
-      if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } rp[i]=c; } decG(x); return r; }
-      if (xe==el_i16) { i16* xp=i16any_ptr(x); for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } rp[i]=c; } decG(x); return r; }
-      if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) { decG(r); goto base; } rp[i]=c; } decG(x); return r; }
-      UD;
+      if (isF64(w) && elInt(xe)) return scan_plus(o2fG(w), x, xe, ia);
     }
     
     if (rtid==n_ne) { // ≠

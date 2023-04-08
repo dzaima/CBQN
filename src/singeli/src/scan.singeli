@@ -3,6 +3,7 @@ include './sse'
 include './avx'
 include './avx2'
 include './mask'
+include './f64'
 
 def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
 def sel8{v, t & istup{t} & tuplen{t}==16} = sel8{v, merge{t,t}}
@@ -14,6 +15,12 @@ def spread{a:VT} = {
   def w = elwidth{VT}
   def b = w/8
   if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}}; else a
+}
+
+# Set all elements with the last element of the input
+def toLast{n:VT} = {
+  if (elwidth{VT}<=32) sel{[8]i32, spread{n}, [8]i32**7}
+  else shuf{[4]u64, n, 4b3333}
 }
 
 def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
@@ -31,8 +38,7 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = (if (width{T}<=32) sel{[8]i32, spread{n}, [8]i32**7}
-         else shuf{[4]u64, n, 4b3333})
+    p = toLast{n}
     n
   }
   scan_loop{T, init, x, r, len, scan, last}
@@ -73,20 +79,23 @@ export{'avx2_scan_min_i8',  avx2_scan_idem_id{i8 , min}}; export{'avx2_scan_max_
 export{'avx2_scan_min_i16', avx2_scan_idem_id{i16, min}}; export{'avx2_scan_max_i16', avx2_scan_idem_id{i16, max}}
 export{'avx2_scan_min_i32', avx2_scan_idem_id{i32, min}}; export{'avx2_scan_max_i32', avx2_scan_idem_id{i32, max}}
 
+# Assumes identity is 0
+def scan_assoc{op, a:T} = {
+  # Within each lane, scan using shifts by powers of 2
+  def w = elwidth{T}
+  def c32{k, a} = (if (w<=8*k) op{a, shl{[16]u8, a, k}}; else a)
+  b:= c32{8, c32{4, c32{2, c32{1, a}}}}
+  # After lanewise scan, broadcast end of lane 0 to entire lane 1
+  l:= (type{b}~~make{[8]i32,0,0,0,-1,0,0,0,0}) & spread{b}
+  op{b, sel{[8]i32, l, make{[8]i32,0,0,0,0, 3,3,3,3}}}
+}
+def scan_plus = bind{scan_assoc, +}
+
 # Associative scan
 fn avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
   # Prefix op on entire AVX register
-  def pre{a} = {
-    # Within each lane, scan using shifts by powers of 2.
-    # Assumes identity is 0.
-    def w = width{T}
-    def c32{k, a} = (if (w<=8*k) op{a, shl{[16]u8, a, k}}; else a)
-    b:= c32{8, c32{4, c32{2, c32{1, a}}}}
-    # After lanewise scan, broadcast end of lane 0 to entire lane 1
-    l:= (type{b}~~make{[8]i32,0,0,0,-1,0,0,0,0}) & spread{b}
-    op{b, sel{[8]i32, l, make{[8]i32,0,0,0,0, 3,3,3,3}}}
-  }
-  scan_post{T, init, x, r, len, op, pre}
+
+  scan_post{T, init, x, r, len, op, scan_plus}
 }
 export{'avx2_scan_pluswrap_u8',  avx2_scan_assoc_0{u8 , +}}
 export{'avx2_scan_pluswrap_u16', avx2_scan_assoc_0{u16, +}}
@@ -151,3 +160,97 @@ fn avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
 export{'avx2_bcs8',  avx2_bcs{i8}}
 export{'avx2_bcs16', avx2_bcs{i16}}
 export{'avx2_bcs32', avx2_bcs{i32}}
+
+
+
+def addChk{a:T, b:T} = {
+  mem:*T = tup{a}
+  def bad = emit{u1, '__builtin_add_overflow', a, b, mem}
+  tup{bad, load{mem}}
+}
+def addChk{a:T, b:T & T==f64} = tup{0, a+b}
+
+def widenFull{E, xs} = {
+  merge{...each{{x:X} => {
+    def n = vcount{X}
+    def tb = width{E} * n
+    if (tb<=arch_defvw) tup{widen{[n]E, x}}
+    else if (1) {
+      assert{tb == 2*arch_defvw}
+      tup{
+        widen{[n/2]E, half{x,0}},
+        widen{[n/2]E, half{x,1}}
+      }
+    }
+  }, xs}}
+}
+
+def floor{x & knum{x}} = x - (x%1)
+def maxabsval{T & issigned{T}} = -minvalue{T}
+def maxsafeint{T & issigned{T}} = maxvalue{T}
+def maxsafeint{T==f64} = 1<<53
+
+def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
+  def bulk = arch_defvw/b
+  
+  def wd = (X!=R) & (width{X}<32) # whether to widen the working copy one size
+  def WE = tern{wd, ty_dbl{X}, X} # working copy element type
+  
+  # maxFastA: max absolute value for accumulator
+  # maxFastE: max absolute value for vector elements (not used if ~wd)
+  def maxFastE = if (wd) maxabsval{X} else maxabsval{X}/(bulk*tern{R==f64, 1, 4}) # 4 to give maxFastA some range
+  def maxFastA = maxsafeint{R} - maxFastE*bulk
+  
+  if (R!=f64) { def m = maxFastA + maxFastE*bulk; assert{m<=maxvalue{R}}; assert{-m>=minvalue{R}} }
+  
+  i:u64 = 0
+  cv:= [arch_defvw/width{R}]R ** c
+  if (R==f64 and c != floor{c}) goto{'end'}
+  while (1) {
+    def ctmp = extract{cv,0}
+    if (max{ctmp,-ctmp} >= tern{R==f64, cast_i{f64, i64~~maxFastA}, maxFastA}) goto{'end'}
+    i2:= i+bulk
+    if (i2>len) goto{'end'}
+    def cx0 = tup{load{*[bulk]X~~(x+i)}}
+    def cx = if(wd) widenFull{WE,cx0} else cx0
+    if (~wd) { # within-vector overflow check; widening gives range space for this to not happen
+      if (rare{homAny{tree_fold{|, each{{c:T} => absu{c} >= (ty_u{T}**maxFastE), cx}}}}) goto{'end'}
+    }
+    
+    def s0 = each{scan_plus, cx}
+    
+    def s1 = {
+      if (tuplen{s0}==1) s0
+      else { def {v0,v1}=s0; tup{v0,v1+toLast{v0}} }
+    }
+    
+    def cr = eachx{+, widenFull{R, s1}, cv}
+    cv = toLast{tupsel{-1, cr}}
+    
+    each{{c:T} => assert{T==type{cv}}, cr}
+    assert{vcount{type{cv}} * tuplen{cr} == bulk}
+    
+    each{{c:T, j} => store{*T~~(r+i), j, c}, cr, iota{tuplen{cr}}}
+    i = i2
+  }
+  setlabel{'end'}
+  
+  c = extract{cv, vcount{type{cv}}-1}
+  while (i < len) {
+    def {b,n} = addChk{c, promote{R,load{x,i}}}
+    if (rare{b}) return{i}
+    store{r, i, n}
+    c = n
+    ++i
+  }
+  len
+}
+fn simd_plus_scanG{X, b, R}(x:*X, c:R, r:*R, len:u64) : void = simd_plus_scan{X,b,R}{x, c, r, len}
+fn simd_plus_scanC{X, b, R}(x:*X, c:R, r:*R, len:u64) : u64  = simd_plus_scan{X,b,R}{x, c, r, len}
+
+export{'simd_scan_plus_i8_i32',  simd_plus_scanC{i8, 16, i32}}
+export{'simd_scan_plus_i16_i32', simd_plus_scanC{i16, 16, i32}}
+export{'simd_scan_plus_i32_i32', simd_plus_scanC{i32, 32, i32}}
+
+export{'simd_scan_plus_i16_f64', simd_plus_scanG{i16, 32, f64}}
+export{'simd_scan_plus_i32_f64', simd_plus_scanG{i32, 32, f64}}
