@@ -138,10 +138,10 @@ def min{a:T,b:T & w128u{T,16}} = a-__subs{a,b}
 def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
 def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
 
-def abs{a:[16]i8 } = { def U=[16]u8; ty_s{min{U~~a, U**0 - U~~a}} }
-def abs{a:[ 8]i16} = max{a, [8]i16**0 - a}
-def abs{a:[ 4]i32} = { t:= a>>31; (t^a) - t }
-def absu{a & w128u{a}} = ty_u{abs{a}}
+def abs{a:T & w128i{T,8 }} = { def U=[16]u8; ty_s{min{U~~a, U**0 - U~~a}} }
+def abs{a:T & w128i{T,16}} = max{a, [8]i16**0 - a}
+def abs{a:T & w128i{T,32}} = { t:= a>>31; (t^a) - t }
+def absu{a:T & w128i{T}} = ty_u{abs{a}}
 
 # saturating
 def __adds{a:T,b:T & T==[16]i8 } = emit{T, '_mm_adds_epi8',  a, b}; def __adds{a:T,b:T & T==[16]u8 } = emit{T, '_mm_adds_epu8',  a, b}

@@ -70,10 +70,10 @@ def __mul  {a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
 def __mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
 def __mul32{a:T,b:T & [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
 
-def abs{a:[32]i8 } = emit{[32]i8 , '_mm256_abs_epi8',  a}
-def abs{a:[16]i16} = emit{[16]i16, '_mm256_abs_epi16', a}
-def abs{a:[ 8]i32} = emit{[ 8]i32, '_mm256_abs_epi32', a}
-def absu{a & w256u{a}} = ty_u{abs{a}}
+def abs{a:T & w256i{T,8 }} = emit{[32]i8 , '_mm256_abs_epi8',  a}
+def abs{a:T & w256i{T,16}} = emit{[16]i16, '_mm256_abs_epi16', a}
+def abs{a:T & w256i{T,32}} = emit{[ 8]i32, '_mm256_abs_epi32', a}
+def absu{a:T & w256i{T}} = ty_u{abs{a}}
 
 def __add{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_add_epi8',  a, b}; def __sub{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_sub_epi8',  a, b}
 def __add{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_add_epi16', a, b}; def __sub{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_sub_epi16', a, b}
