@@ -987,7 +987,7 @@ B slash_ucw(B t, B o, B w, B x) {
   B arg = C2(slash, incG(w), incG(x));
   usz argIA = IA(arg);
   B rep = c1(o, arg);
-  if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: Result of 𝔽 must have the same shape as a/𝕩 (expected ⟨%s⟩, got %H)", argIA, rep);
+  if (isAtm(rep) || RNK(rep)!=1 || IA(rep) != argIA) thrF("𝔽⌾(a⊸/)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨%s⟩, got %H)", argIA, rep);
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), TI(rep,elType)));
   SGet(x)
   SGet(rep)

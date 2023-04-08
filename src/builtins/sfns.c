@@ -1313,7 +1313,7 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, ux xr) {
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
   usz* repsh = SH(rep);
-  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrM("𝔽⌾(n⊸↑)𝕩: 𝔽 returned an array with a different shape than n↑𝕩");
+  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrF("𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", wi, rep);
   
   MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
   if (wi<0) {
@@ -1334,7 +1334,7 @@ B take_ucw(B t, B o, B w, B x) {
   u64 am = wi<0? -wi : wi;
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
-  if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ 𝕨, %H ≡ ≢𝕩)", wi, x);
+  if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ n, %H ≡ ≢𝕩)", wi, x);
   return takedrop_ucw(wi, o, am, x, xr);
 }
 
@@ -1350,7 +1350,7 @@ B drop_ucw(B t, B o, B w, B x) {
 }
 
 static B shape_uc1_t(B r, usz ia) {
-  if (!isArr(r) || RNK(r)!=1 || IA(r)!=ia) thrM("𝔽⌾⥊: 𝔽 changed the shape of the argument");
+  if (!isArr(r) || RNK(r)!=1 || IA(r)!=ia) thrF("𝔽⌾⥊: 𝔽 must return an array with the same shape as its input (%s ≡ ≢⥊𝕩, %H ≡ shape of result of 𝔽)", ia, r);
   return r;
 }
 B shape_uc1(B t, B o, B x) {

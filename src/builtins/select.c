@@ -372,7 +372,7 @@ B select_ucw(B t, B o, B w, B x) {
   if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
   B arg = select_c2(t, inc(w), inc(x));
   B rep = c1(o, arg);
-  if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: Result of 𝔽 must have the same shape as 'a' (expected %H, got %H)", w, rep);
+  if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
   #if CHECK_VALID
     TALLOC(bool, set, xia);
     bool sparse = wia < xia/64;

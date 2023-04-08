@@ -36,7 +36,7 @@ B add_c1(B t, B x) {
 
 #define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); } \
-  if (RARE(!isArr(x))) thrM(SYMB ": Expected argument to be a number"); \
+  if (RARE(!isArr(x))) thrM(SYMB ": Argument contained non-number"); \
   u8 xe = TI(x,elType);                               \
   if (elNum(xe)) {                                    \
     if (xe<=TMIN) return RMIN;                        \
@@ -113,8 +113,8 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
   thrM(MSG);                                \
 }
 
-GC1f( div, 1/xv,     "÷: Getting reciprocal of non-number")
-GC1f(root, sqrt(xv), "√: Getting square root of non-number")
+GC1f( div, 1/xv,     "÷: Argument contained non-number")
+GC1f(root, sqrt(xv), "√: Argument contained non-number")
 #undef GC1i
 #undef LOOP_BODY
 #undef SIGN_EXPR
@@ -143,8 +143,8 @@ NOINLINE f64 logfact_inv(f64 y) {
 f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Getting exp of non-number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Getting log of non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Argument contained non-number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Argument contained non-number"); }
 #undef P1
 static NOINLINE B arith_recm_slow(f64 (*fn)(f64), BB2B rec, B x, char* s) {
   if (isF64(x)) return m_f64(fn(x.f));
