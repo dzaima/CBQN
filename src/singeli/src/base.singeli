@@ -16,6 +16,7 @@ def elwidth{T} = width{eltype{T}}
 
 # more arith
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
+def cdiv{a,b & knum{a} & knum{b}} = ((a+b-1)/b)>>0
 def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
 def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
 def ctz{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_ctzll', x}
@@ -205,11 +206,13 @@ def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   f{begin,end}
 }
 def collect{vars,begin,end,block & knum{begin} & knum{end}} = {
-  def f{i,l & i==l} = tup{}
-  def f{i,l & i!=l} = {
-    def r = exec{i, vars, block}
-    merge{tup{r}, f{i+1, l}}
+  def f{s,e & s==e} = tup{}
+  def f{s,e & s<e} = {
+    def m = s + ((e-s)>>1)
+    def r0 = f{s, m}
+    merge{r0, f{m, e}}
   }
+  def f{s,e & s+1==e} = tup{exec{s, vars, block}}
   f{begin,end}
 }
 def for{vars,begin,end,block} = {
