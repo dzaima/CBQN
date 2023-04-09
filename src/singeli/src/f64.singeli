@@ -1,5 +1,6 @@
 def ceil{x:f64} = emit{f64, 'ceil', x}
 def floor{x:f64} = emit{f64, 'floor', x}
+def abs{x:f64} = emit{f64, 'fabs', x}
 
 def NaN = 0.0/0.0
 def isNaN{x:f64} = x!=x

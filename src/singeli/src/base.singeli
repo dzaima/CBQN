@@ -227,6 +227,30 @@ def forNZ{vars,begin,end,block} = {
     ++i
   }
 }
+def forUnroll{exp,unr}{vars,begin,end,block} = {
+  i:u64 = begin
+  while ((i+unr) <= end) {
+    exec{each{{j}=>i+j, iota{unr}}, vars, block}
+    i+= unr
+  }
+  if (unr==2) { if (i!=end) exec{tup{i}, vars, block} }
+  else if (unr>1) {
+    if (exp) {
+      def stop = makelabel{}
+      each{{j} => {
+        if (i+j >= end) goto{stop}
+        exec{tup{i+j}, vars, block}
+      }, iota{unr}}
+      setlabel{stop}
+    } else {
+      @for(j from i to end) exec{tup{j}, vars, block}
+    }
+  }
+}
+def forXUnroll{unr}{vars,begin,end,block} = {
+  @forUnroll{unr}(is from begin to end) each{{i} => exec{i, vars, block}, is}
+}
+
 
 def tree_fold{F, x} = {
   def h = tuplen{x}>>1

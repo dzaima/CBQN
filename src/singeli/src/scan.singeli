@@ -205,12 +205,15 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
   
   i:u64 = 0
   cv:= [arch_defvw/width{R}]R ** c
+  
   if (R==f64 and c != floor{c}) goto{'end'}
   while (1) {
-    def ctmp = extract{cv,0}
-    if (max{ctmp,-ctmp} >= tern{R==f64, cast_i{f64, i64~~maxFastA}, maxFastA}) goto{'end'}
+    if (R==f64) { if (rare{abs{extract{cv,0}} >= cast_i{f64, i64~~maxFastA}}) goto{'end'} }
+    else        { if (rare{extract{absu{half{cv,0}},0} > maxFastA}) goto{'end'} }
+    
     i2:= i+bulk
     if (i2>len) goto{'end'}
+    
     def cx0 = tup{load{*[bulk]X~~(x+i)}}
     def cx = if(wd) widenFull{WE,cx0} else cx0
     if (~wd) { # within-vector overflow check; widening gives range space for this to not happen
@@ -233,15 +236,18 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
     each{{c:T, j} => store{*T~~(r+i), j, c}, cr, iota{tuplen{cr}}}
     i = i2
   }
-  setlabel{'end'}
   
-  c = extract{cv, vcount{type{cv}}-1}
-  while (i < len) {
-    def {b,n} = addChk{c, promote{R,load{x,i}}}
-    if (rare{b}) return{i}
-    store{r, i, n}
-    c = n
-    ++i
+  setlabel{'end'}
+  c = extract{cv, 0}
+  
+  @forUnroll{1,1} (js from i to len) {
+    def vs = eachx{load, x, js}
+    each{{j, v} => {
+      def {b,n} = addChk{c, promote{R, v}}
+      if (rare{b}) return{j}
+      store{r, j, n}
+      c = n
+    }, js, vs}
   }
   len
 }
