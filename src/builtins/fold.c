@@ -491,6 +491,26 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       }
       return r;
     }
+    #if SINGELI_AVX2
+    u8 xe = TI(x,elType);
+    if (RTID(f) == n_floor && elNum(xe) && xe!=el_bit) {
+      usz wd = elWidth(xe);
+      usz* xsh = SH(x);
+      usz c = shProd(xsh, 1, xr);
+      if (c*wd <= 6*32) {
+        Arr* r; void* rp = m_tyarrp(&r,elWidth(xe),c,el2t(xe));
+        if (xr>2) {
+          ShArr* rsh = m_shArr(xr-1);
+          shcpy(rsh->a, xsh+1, xr-1);
+          arr_shSetUG(r, xr-1, rsh);
+        } else {
+          arr_shVec(r);
+        }
+        avx2_insert_min[xe-el_i8](rp, tyany_ptr(x), len, c);
+        decG(x); return taga(r);
+      }
+    }
+    #endif
     if (len>2 && HEURISTIC(xia<6*(u64)len)) {
       return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
     }

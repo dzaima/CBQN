@@ -540,3 +540,127 @@ fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
 }
 
 each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}, tup{8, 16, 32}}
+
+
+def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
+  def n = 6
+  def vw = arch_defvw{} / width{T}
+  def V = [vw]T
+  total := len*wid             # Total elements
+  set := len; step := total; numr:u64 = 0
+  if (total > n*vw) {
+    set  = n*vw / wid          # Rows in one set of vectors
+    assert{set > 0}
+    step = set * wid           # Elements in one set
+    numr = cdiv{total-n*vw, step} * step # Elements handled by main loop
+  }
+
+  # rv: masked load of up to n vectors starting at end (rem elements)
+  x := *T~~x0; end := x + numr
+  rem := total - numr
+  rv  := undef{V, n}
+  idv := V**id
+  def id_labels = @collect (n) makelabel{}
+  each{{g} => each{g, iota{n}, rv, id_labels}, tup{
+    # Read and possibly mask
+    {i, v, lbl} => {
+      v = load{*V~~end, i}
+      def j = i+1
+      if (j==n or j*vw >= rem) {
+        v = blend_hom{idv, v, mask_of_first{V, rem-i*vw}}
+        goto{lbl}
+      }
+    },
+    # Set to identity
+    {i,v,lbl} => { if (i>0) v=idv; setlabel{lbl} }
+  }}
+
+  while (x < end) {
+    rv = each{{v,i} => op{v, load{*V~~x, i}}, rv, iota{n}}
+    x += step
+  }
+
+  # In-vector reduction on shape set,wid
+  def done = makelabel{}
+  if (set > 1) {
+    # Shuffle uses byte indices
+    def ls = 16; def ms = ls-1; def S = [ls]i8      # One lane
+    def ns = arch_defvw{} / width{i8}; def I = [ns]i8 # One vector
+    def has_lanes = ns>ls
+    def iblend{a,b,m} = V~~blend_hom{I~~a, I~~b, m}
+    vms := I**ms
+    viota := make{I, iota{ns}}
+    hiota := viota & vms
+    ws := wid*(width{T}/8) # Bytes in a row
+    s := (set+1)/2         # Number of rows after halving
+    k := s*ws              # Corresponding number of bytes
+    def finish_step{} = {
+      if (s==1) goto{done}
+      set = s
+      s = (s+1)/2
+      k = s*ws
+    }
+    def nh = n/2+1
+    @unroll (mi to nh+has_lanes) { def m = nh-mi  # reverse, m in [n/2+1,1-has_lanes]
+      while (k >= (if (m>0) m*ns else ls)) {      # m==0 used for 1-lane offset
+        o := k & (ns - 1)
+        vo := I**cast_i{i8, o & ms}
+        selmask := hiota < vo
+        selind  := (hiota + vo) & vms
+        def nv = __min{m+1, n-m}  # Number of vectors to change
+        @unroll (i from m+(m+1)>>1 to __min{m+nv, n}) {
+          def v = select{rv, i}
+          v = iblend{v, idv, viota >= I**cast_i{i8,set*ws-i*ns}}
+        }
+        @unroll (i to __min{m+1, n-m}) {
+          {a, b} := select{merge{rv, tup{idv}}, i + tup{m, m+1}}
+          if (has_lanes) {
+            h := vec_select{128, tup{a,b}, tup{1,2}}
+            if (o<ls) b = h; else a = h
+          }
+          def r = select{rv, i}
+          r = op{r, sel{S, iblend{a, b, selmask}, selind}}
+        }
+        finish_step{}
+      }
+    }
+    # Down to one vector; reduce to a lane
+    def v = select{rv, 0}
+    while (1) {
+      v = iblend{idv, v, I~~mask_of_first{I, set*ws}}
+      t := if (has_lanes) iblend{v, shuf{[4]i64, v, 2,3,0,1}, mask_of_first{I, k}} else v
+      v = op{v, sel{S, t, (hiota + I**cast_i{i8, k}) & vms}}
+      finish_step{}
+    }
+  }
+  setlabel{done}
+  rv  # Caller writes
+}
+
+fn insert_assoc{T, op, id0}(r:*void, x:*void, len:u64, width:u64) : void = {
+  def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
+  def rv = insert_assoc_reg{T, op, id, x, len, width}
+
+  # Write results
+  def V = type{select{rv,0}}
+  def vw = vcount{V}
+  rp := *V~~r
+  lastv := select{rv, 0}
+  i:u64 = 0
+  each{
+    {v} => {
+      if ((i+1)*vw >= width) goto{'last'}
+      store{rp, i, lastv}
+      ++i; lastv = v
+    },
+    slice{rv, 1}
+  }
+  setlabel{'last'}
+  store_blended_hom{rp+i, mask_of_first{V, width-i*vw}, lastv}
+}
+
+def maxvalue{T==f64} = 1/0
+if (hasarch{'AVX2'}) export_tab{
+  'avx2_insert_min',
+  each{{T} => insert_assoc{T, __min, maxvalue{T}}, tup{i8,i16,i32,f64}}
+}
