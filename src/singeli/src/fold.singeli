@@ -542,8 +542,9 @@ fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
 each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}, tup{8, 16, 32}}
 
 
+def assoc_num_reg = 6
 def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
-  def n = 6
+  def n = assoc_num_reg
   def vw = arch_defvw{} / width{T}
   def V = [vw]T
   total := len*wid             # Total elements
@@ -669,9 +670,27 @@ fn write_reg{n}(rp:*I, rv:n**I, bytes:u64) = {
 }
 
 fn insert_assoc{T, op, id0}(r:*void, x:*void, len:u64, wid:u64) : void = {
-  def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
-  def rv = insert_assoc_reg{T, op, id, x, len, wid}
-  write_reg{length{rv}}(*I~~r, rv, wid*(width{T}/8))
+  assert{len > 1}
+  def vw = arch_defvw{} / width{T}
+  def V = [vw]T
+  if (wid <= assoc_num_reg * vw) {
+    def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
+    def rv = insert_assoc_reg{T, op, id, x, len, wid}
+    write_reg{length{rv}}(*I~~r, rv, wid*(width{T}/8))
+  } else {
+    rp := *T~~r; xp := *T~~x
+    nv := cdiv{wid, vw} - 1
+    rv := *V~~rp; re := *V~~(rp+wid) - 1
+    sv := *V~~xp; se := *V~~(xp+wid) - 1  # Source; don't copy first row
+    xp += wid
+    @for (i from 1 to len) {
+      ss := load{se,0}
+      @for (rv, sv, x in *V~~xp over nv) rv = op{sv, x}
+      xp += wid
+      sv = rv; se = re
+      store{se, 0, op{ss, load{*V~~xp, -1}}}
+    }
+  }
 }
 
 def maxvalue{T==f64} = 1/0
