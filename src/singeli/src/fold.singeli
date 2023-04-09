@@ -560,16 +560,15 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
   rem := total - numr
   rv  := undef{V, n}
   idv := V**id
+  # Last index and corresponding masked vector
+  li  := (rem-1)/vw
+  last:= blend_hom{idv, load{*V~~end, li}, mask_of_first{V, rem-li*vw}}
   def id_labels = @collect (n) makelabel{}
   each{{g} => each{g, iota{n}, rv, id_labels}, tup{
-    # Read and possibly mask
+    # Read or use last vector
     {i, v, lbl} => {
-      v = load{*V~~end, i}
-      def j = i+1
-      if (j==n or j*vw >= rem) {
-        v = blend_hom{idv, v, mask_of_first{V, rem-i*vw}}
-        goto{lbl}
-      }
+      if (i<n-1 and i<li) { v = load{*V~~end, i} }
+      else                { v = last; goto{lbl} }
     },
     # Set to identity
     {i,v,lbl} => { if (i>0) v=idv; setlabel{lbl} }
@@ -580,18 +579,24 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
     x += step
   }
 
+  def opI{a, b} = I~~op{V~~a, V~~b}
+  ws := wid*(width{T}/8)
+  insert_assoc_finish{opI, I~~idv, each{{v}=>{u:=I~~v},rv}, set, ws}
+}
+
+# Shuffle uses byte indices
+def ls = 16; def ms = ls-1; def S = [ls]i8        # One lane
+def ns = arch_defvw{} / width{i8}; def I = [ns]i8 # One vector
+def has_lanes = ns>ls
+
+def insert_assoc_finish{op, idv:I, rv, set:(u64), ws:(u64)} = {
+  def n = length{rv}
   # In-vector reduction on shape set,wid
   def done = makelabel{}
   if (set > 1) {
-    # Shuffle uses byte indices
-    def ls = 16; def ms = ls-1; def S = [ls]i8      # One lane
-    def ns = arch_defvw{} / width{i8}; def I = [ns]i8 # One vector
-    def has_lanes = ns>ls
-    def iblend{a,b,m} = V~~blend_hom{I~~a, I~~b, m}
     vms := I**ms
     viota := make{I, iota{ns}}
     hiota := viota & vms
-    ws := wid*(width{T}/8) # Bytes in a row
     s := (set+1)/2         # Number of rows after halving
     k := s*ws              # Corresponding number of bytes
     def finish_step{} = {
@@ -600,35 +605,46 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
       s = (s+1)/2
       k = s*ws
     }
-    def nh = n/2+1
-    @unroll (mi to nh+has_lanes) { def m = nh-mi  # reverse, m in [n/2+1,1-has_lanes]
-      while (k >= (if (m>0) m*ns else ls)) {      # m==0 used for 1-lane offset
-        o := k & (ns - 1)
-        vo := I**cast_i{i8, o & ms}
-        selmask := hiota < vo
-        selind  := (hiota + vo) & vms
+    while (k >= ls) {
+      km := k/ns; o := k%ns
+      vo := I**cast_i{i8, o & ms}
+      selmask := hiota < vo
+      selind  := (hiota + vo) & vms
+      def set_shift{r,a,b} = {
+        r = op{r, sel{S, blend_hom{a, b, selmask}, selind}}
+      }
+      sws := set*ws
+      def do_offset{m} = {
         def nv = __min{m+1, n-m}  # Number of vectors to change
         @unroll (i from m+(m+1)>>1 to __min{m+nv, n}) {
           def v = select{rv, i}
-          v = iblend{v, idv, viota >= I**cast_i{i8,set*ws-i*ns}}
+          v = blend_hom{idv, v, viota < I**cast_i{i8,sws-i*ns}}
         }
-        @unroll (i to __min{m+1, n-m}) {
-          {a, b} := select{merge{rv, tup{idv}}, i + tup{m, m+1}}
-          if (has_lanes) {
-            h := vec_select{128, tup{a,b}, tup{1,2}}
-            if (o<ls) b = h; else a = h
-          }
-          def r = select{rv, i}
-          r = op{r, sel{S, iblend{a, b, selmask}, selind}}
+        def i = iota{nv}
+        {a, b} := select{merge{rv, tup{idv}}, tup{i+m, i+m+1}}
+        if (has_lanes) {
+          h := each{{a,b}=>vec_select{128, tup{a,b}, tup{1,2}}, a,b}
+          if (o<ls) b = h; else a = h
         }
-        finish_step{}
+        def nsh = __min{n_share,nv}
+        def sl_e{vs, i,j} = each{{v}=>slice{v, i,j}, vs}
+        each{set_shift, ...sl_e{tup{rv,a,b}, nsh,nv}}
+        sl_e{ab_share, 0,nsh} = sl_e{tup{a,b}, 0,nsh}
       }
+      def rec{m, max} = {
+        if (km==m) do_offset{m}; else if (m<max) rec{m+1, max}
+      }
+      def n_share = 1
+      ab_share := 2**n_share**idv
+      rec{1-has_lanes, cdiv{2*n,3}}
+      each{set_shift, slice{rv,0,n_share}, ...ab_share}
+      finish_step{}
     }
     # Down to one vector; reduce to a lane
     def v = select{rv, 0}
     while (1) {
-      v = iblend{idv, v, I~~mask_of_first{I, set*ws}}
-      t := if (has_lanes) iblend{v, shuf{[4]i64, v, 2,3,0,1}, mask_of_first{I, k}} else v
+      v = blend_hom{idv, v, I~~mask_of_first{I, set*ws}}
+      t := if (has_lanes) blend_hom{v, shuf{[4]i64, v, 2,3,0,1}, mask_of_first{I, k}} else v
       v = op{v, sel{S, t, (hiota + I**cast_i{i8, k}) & vms}}
       finish_step{}
     }
@@ -637,26 +653,25 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
   rv  # Caller writes
 }
 
-fn insert_assoc{T, op, id0}(r:*void, x:*void, len:u64, width:u64) : void = {
-  def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
-  def rv = insert_assoc_reg{T, op, id, x, len, width}
-
-  # Write results
-  def V = type{select{rv,0}}
-  def vw = vcount{V}
-  rp := *V~~r
+fn write_reg{n}(rp:*I, rv:n**I, bytes:u64) = {
   lastv := select{rv, 0}
   i:u64 = 0
   each{
     {v} => {
-      if ((i+1)*vw >= width) goto{'last'}
+      if ((i+1)*ns >= bytes) goto{'last'}
       store{rp, i, lastv}
       ++i; lastv = v
     },
     slice{rv, 1}
   }
   setlabel{'last'}
-  store_blended_hom{rp+i, mask_of_first{V, width-i*vw}, lastv}
+  store_blended_hom{rp+i, mask_of_first{I, bytes-i*ns}, lastv}
+}
+
+fn insert_assoc{T, op, id0}(r:*void, x:*void, len:u64, wid:u64) : void = {
+  def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
+  def rv = insert_assoc_reg{T, op, id, x, len, wid}
+  write_reg{length{rv}}(*I~~r, rv, wid*(width{T}/8))
 }
 
 def maxvalue{T==f64} = 1/0
