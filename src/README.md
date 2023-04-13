@@ -126,7 +126,7 @@ A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to 
 
 `TY(x)` / `PTY(x)` givs you the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object. Note that the type is separate from the tag used for NaN-boxing.
 
-The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will return the object to the memory manager if the refcount as a result goes to zero.
+The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will free the object if the refcount as a result goes to zero. `incBy` / `incByG` offset the reference count by the specified amount, but will not free the object if it results in a reference count of zero.
 
 Since reference counting is hard, there's `make heapverify` that verifies that any code executed does it right (and screams unreadable messages when it doesn't). After any changes, I'd suggest running `test/mainCfgs.sh path/to/mlochbaum/BQN`, which'll run a couple primary configurations, including said `heapverify`.
 
@@ -136,9 +136,10 @@ Temporary allocations can be made with `utils/talloc.h`:
 TALLOC(char, buf, 123); // allocate char* buf with 123 elements
 char* buf = TALLOCP(char, 123); // alternative syntax, useful if buf is declared elsewhere
 // buf is now a regular char* and can be stored/passed around as needed
-TREALLOC(buf, 456); // extend buf
+buf = TREALLOC(buf, 456); // extend buf; may reuse, may allocate new space; won't ever truncate
 TFREE(buf); // free buf
-// if the size is guaranteed to be small enough, using VLAs is fine i guess
+// if the size is guaranteed to be small enough, using VLAs is potentially fine
+// but even a rank-sized buffer is probably better off in a TALLOC (if impossible to write directly in a shape ahead-of-time)
 
 TSALLOC(i32, stack, 10); // allocate an i32 stack with initially reserved 10 items (initial reserve must be positive!)
 TSADD(stack, 15); // add a single item
@@ -338,9 +339,17 @@ Use `assert(predicate)` for checks (for optimized builds they're replaced with `
 
 There's also `err("message")` that (at least currently) is kept in optimized builds as-is, and always kills the process on being called.
 
+## Garbage collector
+
+The garbage collector can run either at the top level (currently, between lines of REPL input) at full capability, where all unreferenced objects will be freed, or potentially during any allocation at restricted capability, where any object with a reference count not matching the expected value is assumed as a GC root (which usually means the object is referenced from the C stack, but could also be a leak if an error unwound the stack past where the object in question would be freed or properly stored).
+
+Therefore, any code that may result in allocations must ensure that the heap is at a valid state (that is, most allocated objects need all their pointer/object fields initialized (more precisely, anything used by the object's `void [type]_visit()` function), including all elements of `HArr`/`FillArr` arrays). Manually `mm_alloc`ing an object will result in an invalid initial state for most types, but higher-level allocation function helpers usually initialize them to a valid state (e.g. `m_c8arrv`, `m_tyarrp`, `m_md2D`, `m_scope`, `m_harr0p`, `m_fillarr0p`, `m_fillarrpEmpty`), but some do not (e.g. `m_harrUv`, `m_fillarrp`); those will need a `NOGC_E;` statement to be added after you've initialized them (and be careful to do that only when actually done - the debugging options for a GC during an incompletely-initialized heap aren't nice!)
+
+To add a permanent GC root, use `gc_add(B x)`. To add dynamic roots, the options are `gc_add_ref(B* x)`, which check & use `*x` as a GC root, or `gc_addFn(vfn f)`, where the given function should invoke `mm_visit` or `mm_visitP` on the objects it wants to assume as roots. `gc_add` and `gc_add_ref` and `mm_visit` accept non-heap-allocated values (i.e. numbers, characters, `bi_N`), but `mm_visitP` must not be passed the null pointer.
+
 ## GDB
 
-A couple functions for usage in GDB are defined:
+A couple functions for simple actions within GDB/LLDB are defined:
 
 ```C
 void g_pst()         // print a CBQN stacktrace; might not work if paused in the middle of stackframe manipulation, but it tries
@@ -353,5 +362,5 @@ Arr*   g_a(B x)      // untag a value to Arr*
 B      g_t (void* x) // tag pointer with OBJ_TAG
 B      g_ta(void* x) // tag pointer with ARR_TAG
 B      g_tf(void* x) // tag pointer with FUN_TAG
-// invoke with "p g_p(whatever)"; for g_pst, you may need to do "p (void)g_pst()" in non-debug builds
+// invoke with "p g_p(whatever)"; requires a build with debug symbols to be usable, but e.g. "p (void)g_pst()" can be used without one
 ```
