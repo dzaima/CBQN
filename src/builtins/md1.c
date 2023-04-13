@@ -509,7 +509,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
   usz xia = IA(x);
   B r = w;
-  if (xia==0) return r;
+  if (xia==0) { decG(x); return r; }
   
   if (isFun(f)) {
     if (RNK(x)==1 && isPervasiveDyExt(f)) {
