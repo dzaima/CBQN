@@ -218,7 +218,7 @@ B indexOf_c2(B t, B w, B x) {
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
       }
-    } else if (elChr(we) && elChr(xe)) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    } else if (elChr(we) && we==xe) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
     
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
@@ -287,7 +287,7 @@ B memberOf_c2(B t, B w, B x) {
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }
-    } else if (elChr(we) && elChr(xe)) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    } else if (elChr(we) && we==xe) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
     
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
