@@ -528,7 +528,7 @@ static void onJIT(Body* body, u8* binEx, u64 sz) {
   #if USE_PERF
     if (!perf_map) {
       B s = m_c8vec_0("/tmp/perf-"); AFMT("%l.map", getpid());
-      perf_map = file_open(s, "open", "wa");
+      perf_map = file_open(s, "open", "wab");
       printsB(s); printf(": map\n");
       dec(s);
     }
@@ -609,7 +609,7 @@ Nvm_res m_nvm(Body* body) {
   u32* origBC = body->bc;
   u32 bodyOff = origBC - (u32*)body->bl->bc;
   #if STORE_JIT_MAP
-    if (!jit_map) jit_map = fopen("cbqn-jit.bqn", "wa");
+    if (!jit_map) jit_map = fopen("cbqn-jit.bqn", "wab");
     fprintf(jit_map, "{\n");
     print_jit_line(body, NULL, body->bl->map[bodyOff]);
   #endif

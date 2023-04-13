@@ -61,7 +61,7 @@ I8Arr* stream_bytes(FILE* f) {
 }
 
 I8Arr* path_bytes(B path) { // consumes
-  FILE* f = file_open(path, "read", "r");
+  FILE* f = file_open(path, "read", "rb");
   int seekRes = fseek(f, 0, SEEK_END);
   I8Arr* src;
   if (seekRes==-1) {
@@ -217,7 +217,7 @@ void free_chars(CharBuf b) {
 }
 
 void path_wChars(B path, B x) { // consumes path
-  FILE* f = file_open(path, "write to", "w");
+  FILE* f = file_open(path, "write to", "wb");
   
   u64 len = utf8lenB(x);
   TALLOC(char, val, len);
@@ -241,7 +241,7 @@ void file_wBytes(FILE* f, B name, B x) {
   free_chars(buf);
 }
 void path_wBytes(B path, B x) { // consumes path
-  FILE* f = file_open(path, "write to", "w");
+  FILE* f = file_open(path, "write to", "wb");
   file_wBytes(f, path, x);
   fclose(f);
   dec(path);
@@ -433,7 +433,7 @@ static u8 types_val[] = {
 
 void cbqn_heapDump(char* name0) {
   char* name = name0==NULL? "CBQNHeapDump" : name0;
-  FILE* f = fopen(name, "w");
+  FILE* f = fopen(name, "wb");
   if (f==NULL) {
     fprintf(stderr, "Failed to dump heap - could not open file for writing\n");
     return;
