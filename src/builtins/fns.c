@@ -140,7 +140,7 @@ B ud_c2(B t, B w, B x) {
     return taga(ra);
   }
   if (wr==1 && wsh[0]==2 && xr==1) {
-    B t = C2(slash, w, x);
+    B t = C2(slash, m_f64(2), x);
     return taga(arr_shSetU(TI(t,slice)(t, 1, IA(t)-2), 2, sh));
   }
   
