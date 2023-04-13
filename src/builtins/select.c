@@ -211,7 +211,7 @@ B select_c2(B t, B w, B x) {
     #define BOOL_SPECIAL(W)
   #endif
   
-  if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && (xl==0? wia>=256 : wia>=4) && csz<128) {
+  if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && (xl==0? wia>=256 : wia>=4) && csz<128 && TI(w,arrD1)) {
     // test widen/narrow on bitarr input
     // ShArr* sh = RNK(x)==1? NULL : ptr_inc(shObj(x));
     // B t = C2(select, w, widenBitArr(x, 1));
