@@ -183,7 +183,6 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   ur xr = RNK(x);
   usz ia = IA(x);
   if (ia==0) return x;
-  B xf = getFillQ(x);
   u8 xe = TI(x,elType);
   if (xr==1 && xe<=el_f64 && isFun(f) && v(f)->flags) {
     u8 rtid = v(f)->flags-1;
@@ -214,6 +213,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   }
   base:;
   SLOW2("𝕎` 𝕩", f, x);
+  B xf = getFillQ(x);
   
   bool reuse = TY(x)==t_harr && reusable(x);
   HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
@@ -237,7 +237,6 @@ B add_c2(B, B, B);
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
-  B wf = getFillQ(w);
   u8 xe = TI(x,elType);
   if (xr==1 && elNum(xe) && isFun(f) && v(f)->flags && isF64(w)) {
     u8 rtid = v(f)->flags-1;
@@ -278,6 +277,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   }
   base:;
   SLOW3("𝕨 F` 𝕩", w, x, f);
+  B wf = getFillQ(w);
   
   bool reuse = (TY(x)==t_harr && reusable(x)) | !ia;
   usz i = 0;
@@ -288,10 +288,11 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isArr(w)) {
     ur wr = RNK(w); usz* wsh = SH(w); SGet(w)
     if (wr+1!=xr || !eqShPart(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-    if (ia==0) return x;
-    usz csz = arr_csz(x);
-    for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
-    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
+    if (ia!=0) {
+      usz csz = arr_csz(x);
+      for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
+      for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
+    }
     decG(w);
   } else {
     if (xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
