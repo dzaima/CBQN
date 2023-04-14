@@ -381,7 +381,8 @@ static inline B to_chars(const floating_decimal_64 v, const bool sign, const boo
   return r;
 }
 
-static B fmt_nan, fmt_inf[2], fmt_zero[2];
+static B fmt_nan, fmt_zero;
+static B fmt_inf[2];
 B ryu_d2s(double f) {
   const uint64_t bits = double_to_bits(f); // decode the floating-point number, and unify normalized and subnormal cases.
   
@@ -400,7 +401,7 @@ B ryu_d2s(double f) {
     B r;
     if (mantissa)      r = fmt_nan;
     else if (exponent) r = fmt_inf[sign];
-    else               r = fmt_zero[sign];
+    else               r = fmt_zero;
     return incG(r);
   }
   
@@ -637,9 +638,8 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
 
 void ryu_init(void) {
   gc_add(fmt_nan = m_c8vec("NaN", 3));
-  gc_add(fmt_zero[0] = m_c8vec("0", 1));
+  gc_add(fmt_zero = m_c8vec("0", 1));
   { u16* d; B c = m_c16arrv(&d, 1);            d[0]=U'∞'; gc_add(c); fmt_inf[0]  = c; }
   { u16* d; B c = m_c16arrv(&d, 2); d[0]=U'¯'; d[1]=U'∞'; gc_add(c); fmt_inf[1]  = c; }
-  { u8*  d; B c = m_c8arrv (&d, 2); d[0]=U'¯'; d[1]=U'0'; gc_add(c); fmt_zero[1] = c; }
 }
 #endif
