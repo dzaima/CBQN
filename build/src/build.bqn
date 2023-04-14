@@ -587,7 +587,7 @@ MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
 cachedBin‿linkerCache ← {
   Shorten ← {po.clangd? 𝕩; r ← {𝕩↓˜¯1-⊑'.'⊐˜⌽𝕩}¨ •file.Name¨ 𝕩 ⋄ ! ∧´ ∊r ⋄ r}
   cbqnSrc ← ∾{⌽(⊑𝕩)⊸•file.At¨ 1↓𝕩}¨ ⌽⟨
-    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "transpose.c", "fold.c", "scan.c", "md1.c", "md2.c", "fns.c", "sysfn.c", "internal.c", "inverse.c"⟩
+    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "transpose.c", "fold.c", "scan.c", "md1.c", "md2.c", "compare.c", "fns.c", "sysfn.c", "internal.c", "inverse.c"⟩
     ⟨"src/core/", "tyarr.c", "harr.c", "fillarr.c", "stuff.c", "derv.c", "mm.c", "heap.c"⟩
     ⟨"src/", "load.c", "main.c", "rtwrap.c", "vm.c", "ns.c", "nfns.c", "ffi.c"⟩
     ⟨"src/jit/", "nvm.c"⟩
@@ -595,7 +595,7 @@ cachedBin‿linkerCache ← {
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
   singeliMap ← 1↓¨ ({∨´ ((po.avx2/"2")∾⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
-    "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/core/stuff.c"‿"equal",
+    "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/builtins/compare.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
     "xa."‿"src/builtins/squeeze.c"‿"squeeze", "xa."‿"src/utils/mut.c"‿"copy",
     "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
