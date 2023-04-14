@@ -113,7 +113,7 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
   thrM(MSG);                                \
 }
 
-GC1f( div, 1/xv,     "÷: Argument contained non-number")
+GC1f( div, 1/(xv+0), "÷: Argument contained non-number")
 GC1f(root, sqrt(xv), "√: Argument contained non-number")
 #undef GC1i
 #undef LOOP_BODY

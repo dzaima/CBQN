@@ -171,7 +171,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     }                                                             \
     thrM(SYMB ": Unexpected argument types");                     \
   }
-  GC2f("÷", div  ,           w.f/x.f,
+  GC2f("÷", div  , w.f/(x.f+0),
     , /*INT_SA*/
     , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
     , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
@@ -425,7 +425,7 @@ B not_c2(B t, B w, B x) {
   AR_F_TO_ARR(NAME)                            \
   thrM(CHR ": Unexpected argument types");     \
 }
-AR_F_SCALAR("÷", div  ,           w.f/x.f)
+AR_F_SCALAR("÷", div  ,       w.f/(x.f+0))
 AR_F_SCALAR("⋆", pow  ,     pow(w.f, x.f))
 AR_F_SCALAR("√", root , pow(x.f, 1.0/w.f))
 AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
