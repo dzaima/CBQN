@@ -12,7 +12,6 @@ static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
 }
 
 static inline f64 normalizeFloat(f64 v) {
-  v = v+0;
   return v==v? v+0 : 0.0/0.0;
 }
 u64 bqn_hashObj(B x, const u64 secret[4]);
