@@ -190,7 +190,7 @@ def arithAA{mode, F, W, X, R} = {
   else arithAAu{vw, mode, F, W, X, R}
 }
 
-# mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed
+# mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed; 3: overflow-erroring, not needed
 fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   # show{F, swap, mode, W, X, R}
   assert{len>0}
@@ -198,19 +198,19 @@ fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 
   def TY = [bulk]R
   def overflow = tern{mode==1, {i}=>return{1}, {i}=>return{i}}
   
-  def run = runner{(R==f64) | (mode==2), R, F}
+  def run = runner{(R==f64) | (mode>=2), R, F}
   def getW{v} = trunc{W, v}
   def getW{v & W==f64} = interp_f64{v}
   cw:= ty_sc{W, TY}**getW{w}
   
-  def unr = tern{mode==2, 2, 1} # same as in arithAAimpl
+  def unr = tern{mode>=2, 2, 1} # same as in arithAAimpl
   muLoop{bulk, unr, len, {is, M} => {
     def cx = loadBatch{*X~~x, is, ty_sc{X, TY}}
     def cws = tuplen{is}**cw
     storeBatch{*R~~r, is, arithProcess{F, run, overflow, M, is, tern{swap,cx,cws}, tern{swap,cws,cx}, TY}, M}
   }}
   
-  if (mode==1) 0
+  if (mode==1 or mode==3) 0
   else len
 }
 

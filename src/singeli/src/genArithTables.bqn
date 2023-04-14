@@ -136,13 +136,15 @@ Make ← {𝕊ns:
   { 𝕊 swap:
     choices ← ⌽⍟swap⌾(2⊸↑)¨ ns.sa
     hadChrArr ← 0
-    ResMap ← {{(2⊑¨𝕩)⌾((2↑¨𝕩)⊸⊑) 2‿2⥊@} 'c'=𝕩}
+    _tyMap ← {(𝔽 𝕩)⌾((2↑¨𝕩='c')⊸⊑) 2‿2⥊@}
+    ResMap ← ('c'=2⊑¨⊢) _tyMap
     {
       0≡≠𝕩? @;
       charAtm ← 'c' ≡ ⊑⊑𝕩
       hasNumArr  ← ⊑'i' ∊ 1⊑¨𝕩
       hasChrArr ← ⊑'c' ∊ 1⊑¨𝕩
       resChr ← ResMap 𝕩
+      uncheckedMap ← (⊑¨'u'∊¨⊢) _tyMap 𝕩
       argarr ← ⌽⍟swap "SA"
       canOverflow ← "f64"⊸≢¨ tyName
       P ← {∾⟨"{",𝕨,",",𝕩,"}"⟩}´
@@ -158,12 +160,13 @@ Make ← {𝕊ns:
             charArr ← num⊑isc
             ¬ (charAtm∧¬num⊑canOverflow) ∨ (onlyFirst ∧ 𝕨=2) ∨ (¬hasChrArr)∧charArr?
             currRes ← charAtm‿charArr⊑resChr
+            unchFn2 ← charAtm‿charArr⊑uncheckedMap
             currRes≢@?
             tw←num⊑charAtm⊑tyi‿tyc ⋄ tx←num⊑tyName ⋄ tr←𝕩⊑currRes⊑tyi‿tyc
             tr≢@?
             siName ← ∾⟨id, argarr, 𝕨⊑"?ce", ∾'_'⊸∾¨ tw‿tx‿tr⟩
             𝕨 { 𝕊:
-              siSrc∾↩ ∾⟨"export{'", siName, "', arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, 1⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, "}}", nl⟩
+              siSrc∾↩ ∾⟨"export{'", siName, "', arithSA{", '0'+ 𝕨⊑⟨@, onlyFirst⊑0‿2, unchFn2⊑1‿3⟩, ',', si, ',', '0'+swap, ∾(',' ∾ 'u'⌾⊑⍟('c'≡⊑))¨ tw‿tx‿tr, "}}", nl⟩
               singeliASFns∾↩ <siName
             }⍟⊢ ¬⊑(<siName)∊singeliASFns
             siName;
@@ -189,11 +192,12 @@ Make ← {𝕊ns:
 
 
 
-# TODO unify sub u‿c32‿c32‿i32 and c‿i32‿i32‿i32?
-# TODO when there's singeli div/sqrt, use scalar for like 1-2 tail elements
 
-{ # definitions
-  # ⟨mode, w, x, r⟩
+# definitions
+{
+  # TODO when there's singeli div/sqrt, use scalar for like 1-2 tail elements
+  # aa_a/aa_b: list of ⟨mode, w, x, r⟩
+  # sa: list of "wxr", with an appended "u" if widened case can't error
   c_numDiag ← ⟨c‿i8‿i8‿i8,  c‿i16‿i16‿i16, c‿i32‿i32‿i32, u‿f64‿f64‿f64⟩
   u_numDiag ← ⟨u‿i8‿i8‿i8,  u‿i16‿i16‿i16, u‿i32‿i32‿i32, u‿f64‿f64‿f64⟩
   w_numDiag ← ⟨u‿i8‿i8‿i16, u‿i16‿i16‿i32, u‿i32‿i32‿f64⟩
@@ -203,19 +207,19 @@ Make ← {𝕊ns:
     commutative⇐1 ⋄ repr⇐"+" ⋄ cbqn⇐"add" ⋄ si⇐"__add" ⋄ id⇐"add"
     aa_a ⇐ c_numDiag∾⟨c‿i8‿c8‿c8,  c‿i16‿c16‿c16, e‿i32‿c32‿c32, xsq‿c8‿f64‿@, xsq‿c16‿f64‿@, xsq‿c32‿f64‿@⟩∾⟨c‿i8‿i16‿i16, c‿i8‿i32‿i32, c‿i16‿i32‿i32⟩
     aa_b ⇐ w_numDiag∾⟨e‿i8‿c8‿c16, e‿i16‿c16‿c32⟩
-    sa⇐"iii"‿"icc"‿"cic" ⋄ overflowEq⇐1
+    sa⇐"iiiu"‿"icc"‿"cic" ⋄ overflowEq⇐1
   }
   Make {
     commutative⇐0 ⋄ repr⇐"-" ⋄ cbqn⇐"sub" ⋄ si⇐"__sub" ⋄ id⇐"sub"
     aa_a ⇐ c_numDiag∾⟨c‿c8‿c8‿i8,  c‿c16‿c16‿i16, u‿c32‿c32‿i32⟩∾⟨c‿c8‿i8‿c8,  c‿c16‿i16‿c16, e‿c32‿i32‿c32⟩∾⟨xsq‿c8‿f64‿@, xsq‿c16‿f64‿@, xsq‿c32‿f64‿@⟩
     aa_b ⇐ w_numDiag∾⟨u‿c8‿c8‿i16, u‿c16‿c16‿i32⟩               ∾⟨e‿c8‿i8‿c16, e‿c16‿i16‿c32⟩
-    sa⇐"iii"‿"cic"‿"cci" ⋄ overflowEq⇐1
+    sa⇐"iiiu"‿"cic"‿"cciu" ⋄ overflowEq⇐1
   }
   Make¨ { repr‿cbqn:
     commutative⇐1 ⋄ repr‿cbqn⇐ ⋄ si⇐"__mul" ⋄ id⇐"mul"
     aa_a ⇐ bitand∾c_numDiag∾⟨u‿bit‿i8‿i8, u‿bit‿i16‿i16, u‿bit‿i32‿i32⟩ # no u‿bit‿f64‿f64 because 0×∞ etc
     aa_b ⇐ w_numDiag
-    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐1
+    sa⇐⟨"iiiu"⟩ ⋄ overflowEq⇐1
   }¨ ⟨"×"‿"mul", "∧"‿"and"⟩
   Make {
     commutative⇐1 ⋄ repr⇐"∨" ⋄ cbqn⇐"or" ⋄ si⇐"bqn_or" ⋄ id⇐"or"
@@ -226,12 +230,12 @@ Make ← {𝕊ns:
   Make {
     commutative⇐1 ⋄ repr⇐"⌊" ⋄ cbqn⇐"floor" ⋄ si⇐"min" ⋄ id⇐"min"
     aa_a ⇐ bitand∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
-    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐0
+    sa⇐⟨"iiiu"⟩ ⋄ overflowEq⇐0
   }
   Make {
     commutative⇐1 ⋄ repr⇐"⌈" ⋄ cbqn⇐"ceil" ⋄ si⇐"max" ⋄ id⇐"max"
     aa_a ⇐ bitor∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
-    sa⇐⟨"iii"⟩ ⋄ overflowEq⇐0
+    sa⇐⟨"iiiu"⟩ ⋄ overflowEq⇐0
   }
   # Make¨ { repr‿cbqn‿si:
   #   commutative⇐0 ⋄ repr‿cbqn‿si⇐ ⋄ id⇐cbqn
