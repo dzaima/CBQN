@@ -176,6 +176,16 @@ static NOINLINE usz indexOfOne(B l, B e) {
     #endif
 }
 
+#define CHR_TO_INT if (elChr(we) && elChr(xe)) { \
+  if (we!=xe && we<=el_c16 && xe<=el_c16) { /* LUT uses signed integers, so needs equal-width args if we're gonna give unsigned ones */ \
+    if (we>xe) x=taga(cpyC16Arr(x)); \
+    else       w=taga(cpyC16Arr(w)); \
+    we = xe = el_i16;                \
+    goto tyEls;                      \
+  }                                  \
+  we-=el_c8-el_i8; xe-=el_c8-el_i8; goto tyEls; \
+}
+
 B indexOf_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     B2 t = splitCells(x, w, 1);
@@ -218,7 +228,7 @@ B indexOf_c2(B t, B w, B x) {
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
       }
-    } else if (elChr(we) && we==xe) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    } else { CHR_TO_INT; }
     
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
@@ -287,7 +297,7 @@ B memberOf_c2(B t, B w, B x) {
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }
-    } else if (elChr(we) && we==xe) { we-= el_c8-el_i8; xe-= el_c8-el_i8; goto tyEls; }
+    } else { CHR_TO_INT; }
     
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
@@ -303,6 +313,7 @@ B memberOf_c2(B t, B w, B x) {
   decG(x);
   return r;
 }
+#undef CHR_TO_INT
 
 B count_c2(B t, B w, B x) {
   if (RARE(!isArr(w) || RNK(w)!=1)) {
