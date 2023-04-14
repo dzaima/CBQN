@@ -176,8 +176,8 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
     , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
     )
-  GC2f("√", root , pow(x.f, 1.0/w.f), NOUNROLL,,,)
-  GC2f("⋆", pow  ,     pow(w.f, x.f), NOUNROLL,,,)
+  GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,)
+  GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,)
   GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,)
   static u64 repeatNum[] = {
     [el_i8 ] = 0x0101010101010101ULL,
@@ -426,8 +426,8 @@ B not_c2(B t, B w, B x) {
   thrM(CHR ": Unexpected argument types");     \
 }
 AR_F_SCALAR("÷", div  ,       w.f/(x.f+0))
-AR_F_SCALAR("⋆", pow  ,     pow(w.f, x.f))
-AR_F_SCALAR("√", root , pow(x.f, 1.0/w.f))
+AR_F_SCALAR("⋆", pow  , pow(w.f+0, x.f))
+AR_F_SCALAR("√", root , pow(x.f+0, 1.0/(0+w.f)))
 AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
 AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
 #undef AR_F_SCALAR
@@ -463,13 +463,14 @@ static f64 comb(f64 k, f64 n) { // n choose k
   }
   return exp(lgamma(n+1) - lgamma(k+1) - lgamma(j+1));
 }
+static f64 bqn_atan2(f64 w, f64 x) { return atan2(w+0, x+0); }
 
-#define MATH(n,N) B n##_c2(B t, B w, B x) {            \
-  if (isNum(w) && isNum(x)) return m_f64(n(x.f, w.f)); \
+#define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
+  if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
   P2(n)                                                \
   thrM("•math." #N ": Unexpected argument types");     \
 }
-MATH(atan2,Atan2) MATH(hypot,Hypot) MATH(comb,Comb)
+MATH(atan2,Atan2,bqn_atan2) MATH(hypot,Hypot,hypot) MATH(comb,Comb,comb)
 #undef MATH
 
 static u64 gcd_u64(u64 a, u64 b) {
