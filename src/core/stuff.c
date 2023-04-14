@@ -396,8 +396,8 @@ NOINLINE bool atomEqualF(B w, B x) {
   if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
-  B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
-  B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
+  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
+  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
   usz wia = IA(wd);
   if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
@@ -476,31 +476,31 @@ EqFn eqFns[] = {
 };
 #undef F
 
+#define CHECK_EQ_SHAPE          \
+  ur wr = RNK(w);               \
+  if (wr!=RNK(x)) return false; \
+  usz ia = IA(x);               \
+  if (LIKELY(wr==1)) { if (ia != IA(w)) return false; } \
+  else if (!eqShPart(SH(w), SH(x), wr)) return false; \
+  if (ia==0) return true;
+
+FORCE_INLINE bool equalTyped(B w, B x, u8 we, u8 xe, usz ia) {
+  usz idx = EQFN_INDEX(we, xe);
+  return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
+}
+
 NOINLINE bool equalSlow(B w, B x, usz ia);
 NOINLINE bool equal(B w, B x) { // doesn't consume
   bool wa = isAtm(w);
   bool xa = isAtm(x);
   if (wa!=xa) return false;
   if (wa) return atomEqual(w, x);
-  ur wr = RNK(w);
-  ur xr = RNK(x);
-  if (wr!=xr) return false;
-  usz ia = IA(x);
-  if (LIKELY(wr==1)) {
-    if (ia != IA(w)) return false;
-  } else {
-    usz* wsh = SH(w);
-    usz* xsh = SH(x);
-    if (wsh!=xsh) for (usz i = 0; i < wr; i++) if (wsh[i]!=xsh[i]) return false;
-  }
-  if (ia==0) return true;
+  CHECK_EQ_SHAPE;
+  
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
+  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia); // remove & pass a(w) and a(x) to fn so it can do basic loop
   
-  if (we<=el_c32 && xe<=el_c32) { // remove & pass a(w) and a(x) to fn so it can do basic loop
-    usz idx = EQFN_INDEX(we, xe);
-    return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
-  }
   return equalSlow(w, x, ia);
 }
 bool equalSlow(B w, B x, usz ia) {
@@ -511,7 +511,7 @@ bool equalSlow(B w, B x, usz ia) {
   return true;
 }
 
-bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really currently)
+bool atomEEqual(B w, B x) { // doesn't consume
   if (w.u==x.u) return true;
   #if !NEEQUAL_NEGZERO
     if (isF64(w)&isF64(x)) return w.f==x.f;
@@ -521,14 +521,14 @@ bool atomEEqual(B w, B x) { // doesn't consume (not that that matters really cur
   if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
   if (dcf == def_decompose) return false;
-  B wd=dcf(inc(w)); B* wdp = harr_ptr(wd);
-  B xd=dcf(inc(x)); B* xdp = harr_ptr(xd);
+  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
+  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
   usz wia = IA(wd);
   if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
                       { decG(wd);decG(xd); return false; }
-                        decG(wd);dec(xd); return true;
+                        decG(wd);decG(xd); return true;
 }
 bool eequal(B w, B x) { // doesn't consume
   if (w.u==x.u) return true;
@@ -536,16 +536,11 @@ bool eequal(B w, B x) { // doesn't consume
   bool xa = isAtm(x);
   if (wa!=xa) return false;
   if (wa) return atomEEqual(w, x);
-  // B wf = getFillQ(w);
-  // B xf = getFillQ(x);
-  // bool feq = eequal(wf, xf);
-  // dec(wf); dec(xf);
-  // if (!feq) return false;
-  if (!eqShape(w,x)) return false;
+  CHECK_EQ_SHAPE;
+  
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we==el_f64 && xe==el_f64) {
-    usz ia = IA(x);
     f64* wp = f64any_ptr(w);
     f64* xp = f64any_ptr(x);
     u64 r = 1;
@@ -558,10 +553,8 @@ bool eequal(B w, B x) { // doesn't consume
     }
     return r;
   }
-  if (we!=el_B && xe!=el_B) return equal(w, x);
-  usz ia = IA(x);
-  SGetU(x)
-  SGetU(w)
+  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia);
+  SGetU(x) SGetU(w)
   for (usz i = 0; i < ia; i++) if(!eequal(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
