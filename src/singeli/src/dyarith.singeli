@@ -46,11 +46,13 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i8==eltype{T} & hasar
   def wp = unpackQ{w, T ~~ (T**0 > w)}
   def xp = unpackQ{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
-  def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
   if (M{0}) { # masked check
+    def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
     tup{packQ{rp}, tup{'homAny', M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
-    tup{packQ{rp}, tup{'homAny', tupsel{0,bad}|tupsel{1,bad}}}
+    def bad = each{{v} => ty_s{v ^ (v>>15)}, rp}
+    def RU = to_el{u16,T}
+    tup{packQ{rp}, tup{'~andAllZero', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
 def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i16==eltype{T} & hasarch{'X86_64'}} = {
@@ -113,10 +115,12 @@ def runner{u, R, F} = {
   run
 }
 
+# homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
 def runChecks_any{F, vals} = { F{tree_fold{|, each{{c}=>tupsel{1,c}, vals}}} }
 def runChecks{type=='homAny', vals, M} = runChecks_any{homAny, vals}
 def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
+def runChecks{type=='~andAllZero', vals, M & ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
 def runChecks{type=='anyne',  vals, M} = {
   def cols = flip{vals}
   def xs = tupsel{1, cols}
