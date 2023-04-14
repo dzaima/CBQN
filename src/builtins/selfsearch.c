@@ -82,11 +82,10 @@ static bool canCompare64_norm(B x, usz n) {
   if (e == el_B) return 0;
   if (e == el_f64) {
     f64* pf = f64any_ptr(x);
-    u64* pu = (u64*)pf;
     for (usz i = 0; i < n; i++) {
       f64 f = pf[i];
       if (f!=f) return 0;
-      if (pu[i] == m_f64(-0.0).u) return 0;
+      pf[i] = f==0? 0 : f;
     }
   }
   return 1;

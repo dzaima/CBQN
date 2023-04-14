@@ -18,7 +18,6 @@
 //   Otherwise, generic hashtable
 //     SHOULD handle up to 64 bit cells via proper typed hash tables
 //   SHOULD have fast path when cell sizes or element types doesn't match
-//   SHOULD properly handle ¯0
 
 #include "../core.h"
 #include "../utils/hash.h"

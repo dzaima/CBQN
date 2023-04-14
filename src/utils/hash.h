@@ -11,10 +11,23 @@ static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
   }
 }
 
+static inline f64 normalizeFloat(f64 v) {
+  v = v+0;
+  return v==v? v+0 : 0.0/0.0;
+}
 u64 bqn_hashObj(B x, const u64 secret[4]);
 static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
-  if (isVal(x)) return bqn_hashObj(x, secret);
-  return wyhash64(secret[0], x.u);
+  u64 h;
+  if (LIKELY(x.f==x.f)) {
+    h = m_f64(x.f+0).u;
+  } else if (isVal(x)) {
+    return bqn_hashObj(x, secret);
+  } else if ((x.u<<1) == (0x7FF8000000000000<<1)) {
+    h = secret[1];
+  } else {
+    h = x.u;
+  }
+  return wyhash64(secret[0], h);
 }
 
 static u64 bqn_hashP(B x, const u64 secret[4]) { // bqn_hash but never zero

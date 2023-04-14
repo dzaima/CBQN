@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "time.h"
 
+
 NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation of atom & arr probably won't be worth it when there are actually sane typed array hashing things
   if (isArr(x)) {
     usz xia = IA(x);
@@ -21,7 +22,9 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
       case el_i8:  case el_c8:  data =  tyany_ptr(x); bytes = xia*1; break;
       case el_i16: case el_c16: data =  tyany_ptr(x); bytes = xia*2; break;
       case el_i32: case el_c32: data =  tyany_ptr(x); bytes = xia*4; break;
-      case el_f64:              data = f64any_ptr(x); bytes = xia*8; break;
+      case el_f64:              data = f64any_ptr(x); bytes = xia*8;
+        for (ux i = 0; i < xia; i++) ((f64*)data)[i] = normalizeFloat(((f64*)data)[i]);
+        break;
       case el_B:;
         data = TALLOCP(u64, xia);
         isTemp = true;
