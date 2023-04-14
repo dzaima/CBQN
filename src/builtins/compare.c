@@ -42,8 +42,27 @@ NOINLINE bool atomEqualF(B w, B x) {
   B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
   usz wia = IA(wd);
-  if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
+  if (wia!=IA(xd))    { decG(wd);decG(xd); return false; }
   for (u64 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
+                      { decG(wd);decG(xd); return false; }
+                        decG(wd);decG(xd); return true;
+}
+
+bool atomEEqual(B w, B x) { // doesn't consume
+  if (w.u==x.u) return true;
+  #if !NEEQUAL_NEGZERO
+    if (isF64(w)&isF64(x)) return w.f==x.f;
+  #endif
+  if (!isVal(w) | !isVal(x)) return false;
+  if (TY(w)!=TY(x)) return false;
+  B2B dcf = TI(w,decompose);
+  if (dcf == def_decompose) return false;
+  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
+  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
+  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
+  usz wia = IA(wd);
+  if (wia!=IA(xd))    { decG(wd);decG(xd); return false; }
+  for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
                       { decG(wd);decG(xd); return false; }
                         decG(wd);decG(xd); return true;
 }
@@ -118,85 +137,69 @@ EqFn eqFns[] = {
 };
 #undef F
 
-#define CHECK_EQ_SHAPE          \
-  ur wr = RNK(w);               \
-  if (wr!=RNK(x)) return false; \
-  usz ia = IA(x);               \
-  if (LIKELY(wr==1)) { if (ia != IA(w)) return false; } \
-  else if (!eqShPart(SH(w), SH(x), wr)) return false; \
-  if (ia==0) return true;
+
 
 FORCE_INLINE bool equalTyped(B w, B x, u8 we, u8 xe, usz ia) {
   usz idx = EQFN_INDEX(we, xe);
   return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
 }
 
-NOINLINE bool equalSlow(B w, B x, usz ia);
-NOINLINE bool equal(B w, B x) { // doesn't consume
-  bool wa = isAtm(w);
-  bool xa = isAtm(x);
-  if (wa!=xa) return false;
-  if (wa) return atomEqual(w, x);
-  CHECK_EQ_SHAPE;
-  
-  u8 we = TI(w,elType);
-  u8 xe = TI(x,elType);
-  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia); // remove & pass a(w) and a(x) to fn so it can do basic loop
-  
-  return equalSlow(w, x, ia);
-}
-bool equalSlow(B w, B x, usz ia) {
+static NOINLINE bool equalSlow(B w, B x, usz ia) {
   SLOW2("equal", w, x);
-  SGetU(x)
-  SGetU(w)
+  SGetU(x) SGetU(w)
   for (usz i = 0; i < ia; i++) if(!equal(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
-
-bool atomEEqual(B w, B x) { // doesn't consume
-  if (w.u==x.u) return true;
-  #if !NEEQUAL_NEGZERO
-    if (isF64(w)&isF64(x)) return w.f==x.f;
-  #endif
-  if(isF64(w)|isF64(x)) return false;
-  if (!isVal(w) | !isVal(x)) return false;
-  if (TY(w)!=TY(x)) return false;
-  B2B dcf = TI(w,decompose);
-  if (dcf == def_decompose) return false;
-  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
-  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
-  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
-  usz wia = IA(wd);
-  if (wia!=IA(xd)) { decG(wd);decG(xd); return false; }
-  for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
-                      { decG(wd);decG(xd); return false; }
-                        decG(wd);decG(xd); return true;
-}
-bool eequal(B w, B x) { // doesn't consume
-  if (w.u==x.u) return true;
-  bool wa = isAtm(w);
-  bool xa = isAtm(x);
-  if (wa!=xa) return false;
-  if (wa) return atomEEqual(w, x);
-  CHECK_EQ_SHAPE;
-  
-  u8 we = TI(w,elType);
-  u8 xe = TI(x,elType);
-  if (we==el_f64 && xe==el_f64) {
-    f64* wp = f64any_ptr(w);
-    f64* xp = f64any_ptr(x);
-    u64 r = 1;
-    for (usz i = 0; i < ia; i++) {
-      #if NEEQUAL_NEGZERO
-      r&= ((u64*)wp)[i] == ((u64*)xp)[i];
-      #else
-      r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
-      #endif
-    }
-    return r;
-  }
-  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia);
+static NOINLINE bool eequalSlow(B w, B x, usz ia) {
+  SLOW2("eequal", w, x);
   SGetU(x) SGetU(w)
   for (usz i = 0; i < ia; i++) if(!eequal(GetU(w,i),GetU(x,i))) return false;
   return true;
+}
+static NOINLINE bool eequalFloat(f64* wp, f64* xp, usz ia) {
+  u64 r = 1;
+  for (usz i = 0; i < ia; i++) {
+    #if NEEQUAL_NEGZERO
+    r&= ((u64*)wp)[i] == ((u64*)xp)[i];
+    #else
+    r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
+    #endif
+  }
+  return r;
+}
+
+
+
+#define EQ_START(F)              \
+  if (isAtm(w)) {                \
+    if (!isAtm(x)) return false; \
+    return F(w, x);              \
+  }                              \
+  if (isAtm(x)) return false;    \
+  ur wr = RNK(w);                \
+  if (wr!=RNK(x)) return false;  \
+  usz ia = IA(x);                \
+  if (LIKELY(wr==1)) { if (ia != IA(w)) return false; } \
+  else if (!eqShPart(SH(w), SH(x), wr)) return false;   \
+  if (ia==0) return true;
+
+NOINLINE bool equal(B w, B x) { // doesn't consume
+  EQ_START(atomEqual);
+  
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia);
+  
+  return equalSlow(w, x, ia);
+}
+
+bool eequal(B w, B x) { // doesn't consume
+  if (w.u==x.u) return true;
+  EQ_START(atomEEqual);
+  
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  if (we==el_f64 && xe==el_f64) return eequalFloat(f64any_ptr(w), f64any_ptr(x), ia);
+  if (RARE(we==el_B || xe==el_B)) return eequalSlow(w, x, ia);
+  return equalTyped(w, x, we, xe, ia);
 }
