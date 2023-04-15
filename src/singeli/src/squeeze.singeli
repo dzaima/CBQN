@@ -42,20 +42,6 @@ def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
 }
 
 
-
-def makeOptBranch{enable, Ts, F} = {
-  if (enable) {
-    def args = undef{Ts}
-    def skip = makelabel{}; goto{skip}
-    def start = setlabel{}
-    F{...args}
-    setlabel{skip}
-    {...vs} => { each{=, args, vs}; goto{start} }
-  } else {
-    'not defined'
-  }
-}
-
 def cvtNarrow{T, x:X & width{T}==elwidth{X}} = cvt{T, x}
 def cvtNarrow{T, x:X & width{T}< elwidth{X}} = narrow{T, x}
 def cvtWiden{T, x:X & elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}

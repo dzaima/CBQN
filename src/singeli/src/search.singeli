@@ -29,13 +29,18 @@ fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
   def e = if (A==E) e0 else cast_i{E, e0}
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
+  def end = makeBranch{
+    tup{u64, ty_u{VT}},
+    {i,c} => return{i*bulk + promote{u64, ctz{homMask{c}}}}
+  }
+  
   muLoop{bulk, tern{arch_defvw>=256, 1, 2}, n, {is, M} => {
     eq:= eachx{==, loadBatch{*E~~l, is, VT}, VT**e}
     if (homAny{M{tree_fold{|, eq}}}) {
       findFirst{
         {i,c} => homAny{c},
         {i,c} => tup{i,c},
-        {i,c} => return{i*bulk + promote{u64, ctz{homMask{c}}}},
+        end,
         is, eq
       }
     }

@@ -255,6 +255,17 @@ def forXUnroll{unr}{vars,begin,end,block} = {
 }
 
 
+def makeBranch{Ts, F} = {
+  def args = undef{Ts}
+  def skip = makelabel{}; goto{skip}
+  def start = setlabel{}
+  F{...args}
+  setlabel{skip}
+  {...vs} => { each{=, args, vs}; goto{start} }
+}
+def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defined'
+
+
 def tree_fold{F, x} = {
   def h = tuplen{x}>>1
   F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,tuplen{x}}}}
