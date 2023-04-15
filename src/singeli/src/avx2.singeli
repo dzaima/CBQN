@@ -30,6 +30,12 @@ def __gt{a:T,b:T & w256u{T}} = ~(a<=b)
 # rest of comparison
 def __ne{a:T,b:T & w256i{T}} = ~(b==a)
 
+# cast-less bitwise fns
+def __xor{a:T, b:T & w256i{T}} = emit{T, '_mm256_xor_si256', a, b}
+def __and{a:T, b:T & w256i{T}} = emit{T, '_mm256_and_si256', a, b}
+def __or {a:T, b:T & w256i{T}} = emit{T, '_mm256_or_si256',  a, b}
+def andnot{a:T, b:T & w256i{T}} = emit{T, '_mm256_andnot_si256', b, a}
+
 # shift
 def __shl{a:T,b & w256i{T, 16} & knum{b}} = emit{T, '_mm256_slli_epi16', a, b}
 def __shl{a:T,b & w256i{T, 32} & knum{b}} = emit{T, '_mm256_slli_epi32', a, b}
