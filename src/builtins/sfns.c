@@ -495,6 +495,8 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
     usz ria = 1;
     bool anyFill = false;
     i64 cellStart = -1; // axis from which whole cells can be copied
+    bool overflow = false;
+    bool anyZero = false;
     for (usz i = 0; i < rr; i++) {
       i64 cw = i<wia? o2i64(GetU(w, i)) : take? xsh[i] : 0;
       u64 cwa = cw<0? -cw : cw;
@@ -505,7 +507,12 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       if (c!=xshc) cellStart = i;
       anyFill|= c>xshc;
       rsh->a[i] = c;
-      if (mulOn(ria, c)) thrOOM();
+      if (c==0) anyZero = true;
+      if (mulOn(ria, c)) overflow = true;
+    }
+    if (overflow) {
+      if (!anyZero) thrOOM();
+      ria = 0;
     }
     CHECK_IA(ria, 8);
     
