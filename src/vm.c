@@ -902,6 +902,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
       case ARMO: { GS_UPD;
+        POS_UPD;
         u32 sz = *bc++;
         assert(sz>0);
         HArr_p r = m_harrUv(sz);

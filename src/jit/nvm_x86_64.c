@@ -134,7 +134,7 @@ INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   if (allNum) return num_squeeze(r.b);
   return r.b;
 }
-INS B i_ARMO(B el0, i64 sz, B* cStack) { assert(sz>0);
+INS B i_ARMO(B el0, i64 sz, u32* bc, B* cStack) { assert(sz>0); POS_UPD;
   GS_UPD;
   HArr_p r = m_harrUv(sz);
   r.a[sz-1] = el0;
@@ -676,8 +676,8 @@ Nvm_res m_nvm(Body* body) {
         else if (sz==2 && o) { TOPpR(R_A1); GET(R_A0,1,1); CCALL(i_LST_2); } // (B a, B b)
         else                 { TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_LST_p); } // (B a, i64 sz, S)
       } break;
-      case ARMO: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMO); break; }
-      case ARMM: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); INV(2,0,i_ARMM); break; }
+      case ARMO: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz); IMM(R_A2,off); INV(3,0,i_ARMO); break; } // (B el0, i64 sz, u32* bc, B* cStack)
+      case ARMM: { u32 sz = *bc++; TOPp; IMM(R_A1, sz); lGPos=SPOSq(1-sz);                INV(2,0,i_ARMM); break; } // (B el0, i64 sz,          B* cStack)
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
