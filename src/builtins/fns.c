@@ -73,24 +73,26 @@ B ud_c1(B t, B x) {
   usz sh[xia]; // stack allocation of rank items
   i32 pos[xia];
   usz ria = 1;
+  bool bad=false, good=false;
   for (usz i = xia; i--; ) {
     usz c = o2s(GetU(x, i));
-    if (c > I32_MAX) thrM("↕: Result too large");
+    good = c==0;
+    bad|= c > I32_MAX;
     sh[i] = c;
-    if (mulOn(ria, c)) thrM("↕: Result too large");
+    bad|= mulOn(ria, c); 
   }
+  if (bad && !good) thrM("↕: Result too large");
   decG(x);
   
   Arr* r = m_fillarr0p(ria);
-  
-  B* rp = fillarr_ptr(r);
-  ud_rec(rp, 0, xia, pos, sh);
-  
   usz* rsh = arr_shAlloc(r, xia);
   if (rsh) shcpy(rsh, sh, xia);
   
-  if (ria) fillarr_setFill(r, inc(rp[0]));
-  else {
+  if (ria) {
+    B* rp = fillarr_ptr(r);
+    ud_rec(rp, 0, xia, pos, sh);
+    fillarr_setFill(r, incG(rp[0]));
+  } else {
     i32* fp;
     fillarr_setFill(r, m_i32arrv(&fp, xia));
     for (usz i = 0; i < xia; i++) fp[i] = 0;

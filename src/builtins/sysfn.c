@@ -353,7 +353,13 @@ B rand_range_c2(B t, B w, B x) {
     if (RNK(w) > 1) thrM("(rand).Range: 𝕨 must be a valid shape");
     SGetU(w);
     usz wia = IA(w);
-    for (u64 i = 0; i < wia; i++) mulOn(am, o2s(GetU(w, i)));
+    bool bad=false, good=false;
+    for (u64 i = 0; i < wia; i++) {
+      usz c = o2s(GetU(w, i));
+      bad|= mulOn(am, c);
+      good|= c==0;
+    }
+    if (bad && !good) thrOOM();
   } else {
     am = o2s(w);
   }
