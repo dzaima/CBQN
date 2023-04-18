@@ -665,32 +665,42 @@ fn write_reg{n}(rp:*I, rv:n**I, bytes:u64) = {
   store_blended_hom{rp+i, mask_of_first{I, bytes-i*ns}, lastv}
 }
 
-fn insert_assoc{T, op, id0}(r:*void, x:*void, len:u64, wid:u64) : void = {
+fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:u64, wid:u64) : void = {
   assert{len > 1}
-  def vw = arch_defvw{} / width{T}
-  def V = [vw]T
-  if (wid <= assoc_num_reg * vw) {
-    def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
-    def rv = insert_assoc_reg{T, op, id, x, len, wid}
-    write_reg{length{rv}}(*I~~r, rv, wid*(width{T}/8))
-  } else {
-    rp := *T~~r; xp := *T~~x
-    nv := cdiv{wid, vw} - 1
-    rv := *V~~rp; re := *V~~(rp+wid) - 1
-    sv := *V~~xp; se := *V~~(xp+wid) - 1  # Source; don't copy first row
-    xp += wid
+  if (not hasarch{'AVX2'}) {
+    r := *T~~r0; x := *T~~x0
+    s := x  # Source; don't copy first row
     @for (i from 1 to len) {
-      ss := load{se,0}
-      @for (rv, sv, x in *V~~xp over nv) rv = op{sv, x}
-      xp += wid
-      sv = rv; se = re
-      store{se, 0, op{ss, load{*V~~xp, -1}}}
+      x += wid
+      @for (r, s, x over wid) r = op{s, x}
+      s = r
+    }
+  } else {
+    def vw = arch_defvw{} / width{T}
+    def V = [vw]T
+    if (wid <= assoc_num_reg * vw) {
+      def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
+      def rv = insert_assoc_reg{T, op, id, x0, len, wid}
+      write_reg{length{rv}}(*I~~r0, rv, wid*(width{T}/8))
+    } else {
+      r := *T~~r0; x := *T~~x0
+      nv := cdiv{wid, vw} - 1
+      rv := *V~~r; re := *V~~(r+wid) - 1
+      sv := *V~~x; se := *V~~(x+wid) - 1  # Source; don't copy first row
+      x += wid
+      @for (i from 1 to len) {
+        ss := load{se,0}
+        @for (rv, sv, x in *V~~x over nv) rv = op{sv, x}
+        x += wid
+        sv = rv; se = re
+        store{se, 0, op{ss, load{*V~~x, -1}}}
+      }
     }
   }
 }
 
 def maxvalue{T==f64} = 1/0
-if (hasarch{'AVX2'}) export_tab{
-  'avx2_insert_min',
+export_tab{
+  'si_insert_min',
   each{{T} => insert_assoc{T, __min, maxvalue{T}}, tup{i8,i16,i32,f64}}
 }

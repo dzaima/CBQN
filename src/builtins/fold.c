@@ -491,7 +491,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       }
       return r;
     }
-    #if SINGELI_AVX2
+    #if SINGELI
     u8 xe = TI(x,elType);
     if (RTID(f) == n_floor && elNum(xe) && xe!=el_bit) {
       usz* xsh = SH(x);
@@ -504,7 +504,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       } else {
         arr_shVec(r);
       }
-      avx2_insert_min[xe-el_i8](rp, tyany_ptr(x), len, c);
+      si_insert_min[xe-el_i8](rp, tyany_ptr(x), len, c);
       decG(x); return taga(r);
     }
     #endif
