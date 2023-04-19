@@ -10,12 +10,11 @@ NOINLINE i32 compareF(B w, B x) {
   bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU; Arr* xArr;
   if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=RNK(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
   if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=RNK(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
-  if (wia==0 || xia==0) return CMP(wia, xia);
   
   i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
   ur rr = wr<xr? wr : xr;
   i32 ri = 0; // matching shape tail
-  i32 rm = 1;
+  usz rm = 1;
   while (ri<rr  &&  wsh[wr-1-ri] == xsh[xr-1-ri]) {
     rm*= wsh[wr-ri-1];
     ri++;
@@ -26,7 +25,12 @@ NOINLINE i32 compareF(B w, B x) {
     rc = CMP(wm, xm);
     rm*= wm<xm? wm : xm;
   }
-  for (u64 i = 0; i < (u64)rm; i++) {
+  if (wia==0 || xia==0) {
+    i32 rc2 = CMP(wia, xia);
+    return rc2!=0? rc2 : rc;
+  }
+  assert(rm<=wia && rm<=xia);
+  for (u64 i = 0; i < rm; i++) {
     int c = compare(wa? w : wgetU(wArr,i), xa? x : xgetU(xArr,i));
     if (c!=0) return c;
   }
