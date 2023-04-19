@@ -44,6 +44,7 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
   switch(TY(x)) {
     case t_funBl: case t_md1Bl: case t_md2Bl:
     case t_funBI: case t_md1BI: case t_md2BI:
+    IF_WRAP(case t_funWrap: case t_md1Wrap: case t_md2Wrap:)
     case t_ns: case t_nfn: case t_comp: // t_comp for profiler
       return wyhash64(secret[0], x.u);
     
@@ -75,7 +76,7 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
       hashbuf[2] = bqn_hash(xv->h, secret);
       break;
     }
-    default: printf("%d/%s\n",TY(x),type_repr(TY(x))); thrM("Cannot hash this object");
+    default: /*printf("%d/%s\n",TY(x),type_repr(TY(x)));*/ thrM("Cannot hash this object");
   }
   return wyhash(hashbuf, sizeof(hashbuf), TY(x), secret);
 }
