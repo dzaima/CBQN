@@ -683,17 +683,25 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:u64, wid:u64) : void = {
       def rv = insert_assoc_reg{T, op, id, x0, len, wid}
       write_reg{length{rv}}(*I~~r0, rv, wid*(width{T}/8))
     } else {
-      r := *T~~r0; x := *T~~x0
-      nv := cdiv{wid, vw} - 1
-      rv := *V~~r; re := *V~~(r+wid) - 1
-      sv := *V~~x; se := *V~~(x+wid) - 1  # Source; don't copy first row
-      x += wid
-      @for (i from 1 to len) {
-        ss := load{se,0}
-        @for (rv, sv, x in *V~~x over nv) rv = op{sv, x}
-        x += wid
-        sv = rv; se = re
-        store{se, 0, op{ss, load{*V~~x, -1}}}
+      # Accumulate columns of n registers
+      def n = 4; def nvw = n*vw; def i = iota{n}
+      r := *T~~r0; xc := *T~~x0
+      end := xc + len*wid
+      last := xc + wid - nvw
+      while (1) {
+        rv := each{bind{load, *V~~xc}, i}
+        x := xc + wid
+        while (x < end) {
+          rv = each{{v,i} => op{v, load{*V~~x, i}}, rv, i}
+          x += wid
+        }
+        each{bind{store, *V~~r}, i, rv}
+        xc += nvw; r += nvw
+        if (rare{xc > last}) {
+          if (xc == last+nvw) return{}
+          xc = last
+          r = *T~~r0 + (wid - nvw)
+        }
       }
     }
   }
