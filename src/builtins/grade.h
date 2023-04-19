@@ -171,9 +171,9 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
 #define SORT_C1 CAT(GRADE_UD(and,or),c1)
 B SORT_C1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
-  if (RNK(x)!=1) return bqn_merge(SORT_C1(t, toCells(x)));
-  usz n = IA(x);
+  usz n = *SH(x);
   if (n <= 1) return x;
+  if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)));
   u8 xe = TI(x,elType);
   B r;
   if (xe==el_bit) {
