@@ -81,6 +81,9 @@ enum {
   GC_DEC_REFC, // decrement refcount
   GC_INC_REFC, // increment refcount
   GC_MARK,     // if unmarked, mark & visit
+  #if HEAP_VERIFY
+  GC_DEC_REFC_HV, // decrement refcount without checking for 0
+  #endif
 };
 
 void gc_onVisit(Value* x) {
@@ -91,6 +94,13 @@ void gc_onVisit(Value* x) {
       #endif
       x->refc--;
       return;
+    
+    #if HEAP_VERIFY
+    case GC_DEC_REFC_HV:
+      x->refc--;
+      return;
+    #endif
+    
     case GC_INC_REFC: x->refc++; return;
     case GC_MARK: {
       if (x->mmInfo&0x80) return;
@@ -114,7 +124,7 @@ static void gcv2_unmark_visit(Value* x) {
 
 #if HEAP_VERIFY
   void gcv2_runHeapverify(i32 mode) {
-    visit_mode = mode==0? GC_DEC_REFC : GC_INC_REFC;
+    visit_mode = mode==0? GC_DEC_REFC_HV : GC_INC_REFC;
     mm_forHeap(gcv2_visit);
     gc_visitRoots();
   }
