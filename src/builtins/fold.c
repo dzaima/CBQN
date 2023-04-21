@@ -329,9 +329,7 @@ static B m1c1(B t, B f, B x) { // consumes x
   return r;
 }
 extern B rt_insert;
-// From md1.c
-extern bool isPervasiveDyExt(B x);
-extern B insert_base(B f, B x, usz xia, bool has_w, B w);
+extern B insert_base(B f, B x, usz xia, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");

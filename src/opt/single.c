@@ -37,6 +37,7 @@
 #include "../builtins/inverse.c"
 #include "../builtins/squeeze.c"
 #include "../builtins/compare.c"
+#include "../builtins/cells.c"
 #include "../vm.c"
 #include "../ns.c"
 #include "../nfns.c"

@@ -88,6 +88,15 @@ static inline bool isImpureBuiltin(B x) {
 static inline bool isPervasiveDy (B x) { return (u8)(v(x)->flags-1) <= n_ge; }
 static inline bool isPervasiveMon(B x) { return (u8)(v(x)->flags-1) <= n_stile; }
 
+static bool isPervasiveDyExt(B x) {
+  if (isPervasiveDy(x)) return true;
+  if (isFun(x) && TY(x)==t_md1D) {
+    Md1D* d = c(Md1D, x);
+    if (d->m1->flags-1 == n_swap) return isPervasiveDy(d->f);
+  }
+  return false;
+}
+
 extern B
 #define F(N,X) bi_##N,
 FOR_PFN(F,F,F)
