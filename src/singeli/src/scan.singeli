@@ -208,7 +208,7 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
   
   if (R==f64 and c != floor{c}) goto{'end'}
   while (1) {
-    if (R==f64) { if (rare{abs{extract{cv,0}} >= cast_i{f64, i64~~maxFastA}}) goto{'end'} }
+    if (R==f64) { if (rare{abs{extract{cv,0}} >= maxFastA}) goto{'end'} }
     else        { if (rare{extract{absu{half{cv,0}},0} > maxFastA}) goto{'end'} }
     
     i2:= i+bulk
