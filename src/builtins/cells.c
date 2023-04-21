@@ -10,19 +10,24 @@ B transp_c2(B, B, B);
 B fold_rows(Md1D* d, B x); // from fold.c
 B takedrop_highrank(bool take, B w, B x); // from sfns.c
 
-#define S_SLICES(X)            \
-  BSS2A X##_slc = TI(X,slice); \
-  usz X##_csz = 1;             \
-  usz X##_cr = RNK(X)-1;       \
-  ShArr* X##_csh = NULL;       \
-  if (X##_cr>1) {              \
-    X##_csh = m_shArr(X##_cr); \
-    PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
-      usz v = SH(X)[i+1];      \
-      X##_csz*= v;             \
-      X##_csh->a[i] = v;       \
-    }                          \
-  } else if (X##_cr!=0) X##_csz*= SH(X)[1];
+#define S_KSLICES(X, XSH, K)     \
+  usz X##_k = (K);               \
+  usz X##_cr = RNK(X)-X##_k;     \
+  usz X##_csz = 1;               \
+  ShArr* X##_csh = NULL;         \
+  if (LIKELY(X##_cr >= 1)) {     \
+    if (RARE(X##_cr > 1)) {      \
+      X##_csh = m_shArr(X##_cr); \
+      PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
+        usz v = XSH[i+X##_k];    \
+        X##_csz*= v;             \
+        X##_csh->a[i] = v;       \
+      }                          \
+    } else X##_csz = XSH[X##_k]; \
+  }                              \
+  BSS2A X##_slc = TI(X,slice);
+
+#define S_SLICES(X) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1)
 #define SLICE(X, S) taga(arr_shSetI(X##_slc(incG(X), S, X##_csz), X##_cr, X##_csh))
 #define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
 
@@ -430,28 +435,14 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     if (xr>1) ptr_dec(s);
     return r;
   }
-  usz csz = shProd(xsh, k, xr);
-  ShArr* csh ONLY_GCC(= NULL);
-  if (cr>1) {
-    csh = m_shArr(cr);
-    shcpy(csh->a, xsh+k, cr);
-  }
   
-  
-  BSS2A slice = TI(x,slice);
   M_HARR(r, cam);
-  usz p = 0;
-  for (usz i = 0; i < cam; i++) {
-    Arr* s = arr_shSetI(slice(incG(x), p, csz), cr, csh);
-    HARR_ADD(r, i, c1(f, taga(s)));
-    p+= csz;
-  }
-  
-  if (cr>1) ptr_dec(csh);
+  S_KSLICES(x, xsh, k);
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
   usz* rsh = HARR_FA(r, k);
   if (k>1) shcpy(rsh, xsh, k);
+  E_SLICES(x);
   
-  decG(x);
   return bqn_merge(HARR_O(r).b);
 }
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
