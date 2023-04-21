@@ -113,6 +113,7 @@ typedef uint32_t u32;
 typedef  int64_t i64;
 typedef uint64_t u64;
 typedef double   f64;
+typedef float    f32;
 typedef size_t ux;
 #if defined(__SIZEOF_INT128__)
   #define HAS_U128 1
@@ -231,6 +232,16 @@ typedef union B {
   f64 f;
 } B;
 #define b(x) ((B)(x))
+
+typedef union { u32 u; f32 f; } F32R;
+FORCE_INLINE u64 r_f64u(f64 x) { return ((B) x).u; }
+FORCE_INLINE f64 r_u64f(u64 x) { return ((B) x).f; }
+FORCE_INLINE u32 r_f32u(f32 x) { return ((F32R) x).u; }
+FORCE_INLINE f32 r_u32f(u32 x) { return ((F32R) x).f; }
+FORCE_INLINE u64 r_Bu(B x) { return x.u; }
+FORCE_INLINE f64 r_Bf(B x) { return x.f; }
+FORCE_INLINE B r_uB(u64 x) { return b(x); }
+FORCE_INLINE B r_fB(f64 x) { return b(x); }
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
   #define IF_WRAP(X) X

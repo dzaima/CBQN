@@ -41,9 +41,6 @@ B sub_c1(B t, B x);
 B fne_c1(B t, B x);
 B shape_c2(B t, B w, B x);
 
-// TODO move to h.h
-typedef float f32;
-
 // all divint/floordiv/modint assume integer arguments
 // floordiv will return float result only on ¯2147483648÷¯1 or n÷0, but may not otherwise squeeze integer types; integer argument requirement may be relaxed in the future
 // divint will return float result if there's a fractional result, or in overflow cases same as floordiv
