@@ -5,13 +5,24 @@
 NOINLINE i32 compareF(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
-  if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
-  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU ONLY_GCC(=0); Arr* wArr ONLY_GCC(=0);
-  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU ONLY_GCC(=0); Arr* xArr ONLY_GCC(=0);
-  if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=RNK(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
-  if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=RNK(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
   
-  i32 rc = CMP(wr+(wa?0:1), xr+(xa?0:1));
+  i32 atmNeg;
+  if (isAtm(w)) {
+    atmNeg = 0;
+    
+    atmW:;
+    if (isAtm(x)) thrM("Invalid comparison");
+    
+    if (IA(x)==0) return atmNeg? -1 : 1;
+    i32 c = compare(w, IGetU(x,0));
+    return (c<=0)^atmNeg? -1 : 1;
+  }
+  if (isAtm(x)) { B t=w; w=x; x=t; atmNeg=1; goto atmW; }
+  
+  ur wr=RNK(w); usz* wsh=SH(w);
+  ur xr=RNK(x); usz* xsh=SH(x);
+  
+  i32 rc = CMP(wr, xr);
   ur rr = wr<xr? wr : xr;
   i32 ri = 0; // matching shape tail
   usz rm = 1;
@@ -25,13 +36,18 @@ NOINLINE i32 compareF(B w, B x) {
     rc = CMP(wm, xm);
     rm*= wm<xm? wm : xm;
   }
+  
+  usz wia = IA(w);
+  usz xia = IA(x);
   if (wia==0 || xia==0) {
     i32 rc2 = CMP(wia, xia);
     return rc2!=0? rc2 : rc;
   }
+  
   assert(rm<=wia && rm<=xia);
+  SGetU(w) SGetU(x)
   for (u64 i = 0; i < rm; i++) {
-    int c = compare(wa? w : wgetU(wArr,i), xa? x : xgetU(xArr,i));
+    i32 c = compare(GetU(w,i), GetU(x,i));
     if (c!=0) return c;
   }
   return rc;
