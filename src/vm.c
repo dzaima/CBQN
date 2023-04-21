@@ -1639,7 +1639,7 @@ bool profiler_alloc() {
   printf("Profiler not supported\n");
   return false;
 }
-bool profiler_start(i64 hz) { return false; }
+bool profiler_start(i32 mode, i64 hz) { return false; }
 bool profiler_stop() { return false; }
 void profiler_free() { thrM("Profiler not supported"); }
 usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) { thrM("Profiler not supported"); }
