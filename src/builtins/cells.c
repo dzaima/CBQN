@@ -37,9 +37,10 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
     p -= x_csz;
     r = SLICE(x, p);
   }
+  BBB2B fc2 = c2fn(f);
   while(p!=0) {
     p-= x_csz;
-    r = c2(f, SLICE(x, p), r);
+    r = fc2(f, SLICE(x, p), r);
   }
   E_SLICES(x)
   return r;
