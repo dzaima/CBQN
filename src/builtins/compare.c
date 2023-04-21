@@ -6,8 +6,8 @@ NOINLINE i32 compareF(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
   if (isAtm(w) & isAtm(x)) thrM("Invalid comparison");
-  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU ONLY_GCC(=0); Arr* wArr;
-  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU ONLY_GCC(=0); Arr* xArr;
+  bool wa=isAtm(w); usz wia; ur wr; usz* wsh; AS2B wgetU ONLY_GCC(=0); Arr* wArr ONLY_GCC(=0);
+  bool xa=isAtm(x); usz xia; ur xr; usz* xsh; AS2B xgetU ONLY_GCC(=0); Arr* xArr ONLY_GCC(=0);
   if(wa) { wia=1; wr=0; wsh=NULL; } else { wia=IA(w); wr=RNK(w); wsh=SH(w); wgetU=TI(w,getU); wArr = a(w); }
   if(xa) { xia=1; xr=0; xsh=NULL; } else { xia=IA(x); xr=RNK(x); xsh=SH(x); xgetU=TI(x,getU); xArr = a(x); }
   
