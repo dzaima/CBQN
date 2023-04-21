@@ -304,8 +304,8 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         break;
       }
       case 'c': {
-        buf[0] = va_arg(a, int); buf[1] = 0;
-        A8(buf);
+        u32 p = va_arg(a, u32);
+        ACHR(p);
         break;
       }
       case '%': {

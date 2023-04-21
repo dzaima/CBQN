@@ -325,7 +325,7 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %s   decimal usz
 %f   f64
 %p   pointer
-%c   char
+%c   unicode character (u32)
 %S   char* C-string consisting of ASCII
 %U   char* of UTF-8 data
 %R   a B object of a number or string (string is printed without quotes or escaping)

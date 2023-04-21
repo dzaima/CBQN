@@ -429,11 +429,11 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     c++;
     u8 t = *c++;
     u32 n = readUInt(&c);
-    if (t=='i' | t=='c') if (n!=8 & n!=16 & n!=32) { badW: thrF("Bad width in :%c%i", t, n); }
+    if (t=='i' | t=='c') if (n!=8 & n!=16 & n!=32) { badW: thrF("Bad width in :%c%i", (u32)t, n); }
     if (t=='u') if (n!=1 & n!=8 & n!=16 & n!=32) goto badW;
     if (t=='f') if (n!=64) goto badW;
     
-    if (isC32(ro) && n > myWidth*8) thrF("FFI: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], t, n);
+    if (isC32(ro) && n > myWidth*8) thrF("FFI: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
     // TODO figure out what to do with i32:i32 etc
     
     B roP = ro;
@@ -588,7 +588,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
       if (isC32(o2)) { // scalar:any
         u8 et = o2cG(o2);
         u8 etw = sty_w[et]*8;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], reT, 1<<reW);
+        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], (u32)reT, 1<<reW);
         if (IA(c) != etw>>reW) thrM("FFI: Bad input array length");
         B cG = toW(reT, reW, inc(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
