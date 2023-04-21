@@ -18,6 +18,7 @@ NOINLINE i32 compareF(B w, B x) {
     return (c<=0)^atmNeg? -1 : 1;
   }
   if (isAtm(x)) { B t=w; w=x; x=t; atmNeg=1; goto atmW; }
+  if (w.u==x.u && TI(w,arrD1)) return 0;
   
   ur wr=RNK(w); usz* wsh=SH(w);
   ur xr=RNK(x); usz* xsh=SH(x);
