@@ -165,8 +165,12 @@ po ← { # parsed options
   tui ⇐ ¬GetOpt "notui"
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
-  Max1 ← {𝕩 {𝕊: a‿b←2↑𝕩/𝕨 ⋄ ∾⟨"Error: '",a,"' and '",b,"' cannot both be enabled"⟩}_assert_(1≥+´) GetOpt¨ 𝕩}
-  Max1 "REPLXX"‿"shared"‿"wasi"‿"emcc"
+  ErrBoth ← {a‿b: ∾⟨"Error: '",a,"' and '",b,"' cannot both be enabled"⟩}
+  Max1 ← {𝕩 ErrBoth∘(2↑/˜) _assert_(1≥+´) GetOpt¨ 𝕩}
+  NotWith ← {¬GetOpt 𝕨?@; ErrBoth∘(𝕨⋈0⊑/⟜𝕩) _assert_(¬∨´) GetOpt¨ 𝕩}
+  
+  Max1 "REPLXX"‿"wasi"‿"emcc"
+  "shared" NotWith "REPLXX"‿"emcc"
   
   
   shared ← GetOpt "shared"
@@ -176,7 +180,7 @@ po ← { # parsed options
   usz ⇐ •ParseFloat GetOpt "usz"
   {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
   versionName ← {compat ∧ shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
-  {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢@
+  {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢""
   wasm ⇐ wasi∨emcc
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
@@ -308,7 +312,7 @@ po ← { # parsed options
   singeliFlags ← GetOpt "sf"
   
   Linker ⇐ { 𝕊:
-    rdynamic ← exportSymbols ∧ ¬windows
+    rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
     args ← ⟨{replxx? cxx; cc} DOpt "LD"⟩
     args∾↩ defLibs / ⟨"-lm"⟩
     args∾↩ ⟨⟩ DOpt "LD_LIBS"
@@ -317,12 +321,13 @@ po ← { # parsed options
     args∾↩ GetOpt "lf"
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ GetOpt "LDFLAGS"
-    args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
     args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
+    args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
+    args∾↩ (shared ∧ wasi) / ⟨"-mexec-model=reactor", "-Wl,--export-dynamic", "-Wl,--export=malloc", "-Wl,--export=free"⟩
+    args∾↩ (shared ∧¬wasi) / ⟨"-shared"⟩
     args∾↩ (     rdynamic) / ⟨"-rdynamic"⟩
-    args∾↩ (         ¬pie) / ⟨"-no-pie"⟩
+    args∾↩ ((¬wasm)∧ ¬pie) / ⟨"-no-pie"⟩
     args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE", "-pie"⟩
-    args∾↩ (       shared) / ⟨"-shared"⟩
     args∾↩ (      windows) / ⟨"-lpthread"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
     {"linker: "∾•Repr 𝕩} _verboseLog args
