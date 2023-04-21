@@ -21,6 +21,8 @@ heapverify:
 	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
 wasi-o3:
 	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_OUTPUT_DEF=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
+wasi-reactor-o3:
+	@"${MAKE}" i_singeli=0 i_t=wasi_o3 i_SHARED=1 i_OUTPUT_DEF=BQN.wasm i_f="-DWASM -DWASI -DNO_MMAP -O3 -DCATCH_ERRORS=0 -D_WASI_EMULATED_MMAN --target=wasm32-wasi" i_lf="-lwasi-emulated-mman --target=wasm32-wasi -Wl,-z,stack-size=8388608 -Wl,--initial-memory=67108864 -mexec-model=reactor -Wl,--export-dynamic -Wl,--export=malloc -Wl,--export=free" i_LIBS_LD= i_PIE= i_FFI=0 run_incremental_0
 emcc-o3:
 	@"${MAKE}" i_singeli=0 i_t=emcc_o3 i_OUTPUT_DEF=. i_emcc=1 CC=emcc i_f='-DWASM -DEMCC -O3' i_lf='-s EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s ALLOW_MEMORY_GROWTH=1' i_FFI=0 run_incremental_0
 for-build:
