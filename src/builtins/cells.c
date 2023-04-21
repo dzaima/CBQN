@@ -53,50 +53,6 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
 
 
 
-// helpers for ˘ & ⎉
-static NOINLINE B to_fill_cell_impl(B x, ur k, char* err) { // consumes x
-  B xf = getFillQ(x);
-  if (noFill(xf)) xf = m_f64(0);
-  ur cr = RNK(x)-k;
-  usz* sh = SH(x)+k;
-  usz csz = 1;
-  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
-  MAKE_MUT(fc, csz);
-  mut_fill(fc, 0, xf, csz); dec(xf);
-  Arr* ca = mut_fp(fc);
-  usz* csh = arr_shAlloc(ca, cr);
-  if (cr>1) shcpy(csh, sh, cr);
-  decG(x);
-  return taga(ca);
-}
-static B to_fill_cell_k(B x, ur k) { // consumes x
-  return to_fill_cell_impl(x, k, "⎉: Empty argument too large (%H ≡ ≢𝕩)");
-}
-static B to_fill_cell_1(B x) { // consumes x
-  return to_fill_cell_impl(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
-}
-
-FORCE_INLINE B merge_fill_result_impl(u32 chr, B rc, ur k, usz* sh) {
-  u64 rr = k; if (isArr(rc)) rr += RNK(rc);
-  if (rr>UR_MAX) thrF("%c: Result rank too large", chr);
-  Arr* r = m_fillarrpEmpty(getFillQ(rc));
-  usz* rsh = arr_shAlloc(r, rr);
-  if (rr>1) {
-    shcpy(rsh, sh, k);
-    shcpy(rsh+k, SH(rc), rr-k);
-  }
-  dec(rc);
-  return taga(r);
-}
-static NOINLINE B merge_fill_result_k(B rc, ur k, usz* sh) {
-  return merge_fill_result_impl(U'⎉', rc, k, sh);
-}
-static NOINLINE B merge_fill_result_1(B rc) {
-  return merge_fill_result_impl(U'˘', rc, 1, (usz[]){0});
-}
-
-
-
 // fast special-case implementations
 static NOINLINE B select_cells(usz n, B x, ur xr) {
   usz* xsh = SH(x);
@@ -203,7 +159,47 @@ static B transp_cells(ur ax, B x) {
 
 
 
-// ˘ helpers
+// helpers
+static NOINLINE B to_fill_cell_impl(B x, ur k, char* err) { // consumes x
+  B xf = getFillQ(x);
+  if (noFill(xf)) xf = m_f64(0);
+  ur cr = RNK(x)-k;
+  usz* sh = SH(x)+k;
+  usz csz = 1;
+  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF(err, x);
+  MAKE_MUT(fc, csz);
+  mut_fill(fc, 0, xf, csz); dec(xf);
+  Arr* ca = mut_fp(fc);
+  usz* csh = arr_shAlloc(ca, cr);
+  if (cr>1) shcpy(csh, sh, cr);
+  decG(x);
+  return taga(ca);
+}
+static B to_fill_cell_k(B x, ur k) { // consumes x
+  return to_fill_cell_impl(x, k, "⎉: Empty argument too large (%H ≡ ≢𝕩)");
+}
+static B to_fill_cell_1(B x) { // consumes x
+  return to_fill_cell_impl(x, 1, "˘: Empty argument too large (%H ≡ ≢𝕩)");
+}
+
+FORCE_INLINE B merge_fill_result_impl(u32 chr, B rc, ur k, usz* sh) {
+  u64 rr = k; if (isArr(rc)) rr += RNK(rc);
+  if (rr>UR_MAX) thrF("%c: Result rank too large", chr);
+  Arr* r = m_fillarrpEmpty(getFillQ(rc));
+  usz* rsh = arr_shAlloc(r, rr);
+  if (rr>1) {
+    shcpy(rsh, sh, k);
+    shcpy(rsh+k, SH(rc), rr-k);
+  }
+  dec(rc);
+  return taga(r);
+}
+static NOINLINE B merge_fill_result_k(B rc, ur k, usz* sh) {
+  return merge_fill_result_impl(U'⎉', rc, k, sh);
+}
+static NOINLINE B merge_fill_result_1(B rc) {
+  return merge_fill_result_impl(U'˘', rc, 1, (usz[]){0});
+}
 static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
   if (wr) w = to_fill_cell_1(w);
@@ -213,8 +209,33 @@ static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   popCatch();
   return merge_fill_result_1(rc);
 }
+static NOINLINE B empty_frame(usz* xsh, ur k) {
+  HArr_p f = m_harrUp(0);
+  Arr *a = (Arr*)f.c;
+  if (k <= 1) arr_shVec(a); else shcpy(arr_shAlloc(a,k), xsh, k);
+  return f.b;
+}
+static f64 req_whole(f64 f) {
+  if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");
+  return f;
+}
+static usz check_rank_vec(B g) {
+  if (!isArr(g)) thrM("⎉: Invalid 𝔾 result");
+  usz gia = IA(g);
+  if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
+  SGetU(g)
+  if (!elInt(TI(g,elType))) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
+  return gia;
+}
+static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
+  return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
+}
 
-// ˘
+
+
+
+
+// monadic ˘ & ⎉
 B cell_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) {
     B r = c1(f, x);
@@ -296,7 +317,62 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
   
   return bqn_merge(HARR_FV(r));
 }
+B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
+  f64 kf;
+  bool gf = isFun(g);
+  if (RARE(gf)) g = c1(g, inc(x));
+  if (LIKELY(isNum(g))) {
+    kf = req_whole(o2fG(g));
+  } else {
+    usz gia = check_rank_vec(g);
+    SGetU(g); kf = GetU(g, gia==2).f;
+  }
+  if (gf) dec(g);
+  
+  if (isAtm(x) || RNK(x)==0) {
+    B r = c1(f, x);
+    return isAtm(r)? m_atomUnit(r) : r;
+  }
+  i32 xr = RNK(x);
+  ur cr = cell_rank(xr, kf);
+  i32 k = xr - cr;
+  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toKCells(x, k);
+  
+  usz* xsh = SH(x);
+  usz cam = shProd(xsh, 0, k);
+  if (cam == 0) {
+    usz s0=0; ShArr* s=NULL;
+    if (xr<=1) { s0=xsh[0]; xsh=&s0; } else { s=ptr_inc(shObj(x)); }
+    if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); goto empty; }
+    B cf = to_fill_cell_k(x, k);
+    B r;
+    if (CATCH) { empty:
+      freeThrown();
+      r = empty_frame(xsh, k);
+    } else {
+      B rc = c1(f, cf);
+      popCatch();
+      r = merge_fill_result_k(rc, k, xsh);
+    }
+    if (xr>1) ptr_dec(s);
+    return r;
+  }
+  
+  M_HARR(r, cam);
+  S_KSLICES(x, xsh, k);
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
+  usz* rsh = HARR_FA(r, k);
+  if (k>1) shcpy(rsh, xsh, k);
+  E_SLICES(x);
+  
+  return bqn_merge(HARR_O(r).b);
+}
 
+
+
+
+
+// dyadic ˘ & ⎉
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr = isAtm(w)? 0 : RNK(w);
   ur xr = isAtm(x)? 0 : RNK(x);
@@ -350,13 +426,8 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   return bqn_merge(r);
 }
 
-// ⎉ helpers
-static NOINLINE B empty_frame(usz* xsh, ur k) {
-  HArr_p f = m_harrUp(0);
-  Arr *a = (Arr*)f.c;
-  if (k <= 1) arr_shVec(a); else shcpy(arr_shAlloc(a,k), xsh, k);
-  return f.b;
-}
+
+
 static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
@@ -377,73 +448,6 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   }
   if (sho) ptr_dec(s);
   return r;
-}
-static f64 req_whole(f64 f) {
-  if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");
-  return f;
-}
-static usz check_rank_vec(B g) {
-  if (!isArr(g)) thrM("⎉: Invalid 𝔾 result");
-  usz gia = IA(g);
-  if (!(gia>=1 && gia<=3)) thrM("⎉: 𝔾 result must have 1 to 3 elements");
-  SGetU(g)
-  if (!elInt(TI(g,elType))) for (i32 i = 0; i < gia; i++) req_whole(o2f(GetU(g,i)));
-  return gia;
-}
-static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
-  return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
-}
-
-// ⎉
-B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
-  f64 kf;
-  bool gf = isFun(g);
-  if (RARE(gf)) g = c1(g, inc(x));
-  if (LIKELY(isNum(g))) {
-    kf = req_whole(o2fG(g));
-  } else {
-    usz gia = check_rank_vec(g);
-    SGetU(g); kf = GetU(g, gia==2).f;
-  }
-  if (gf) dec(g);
-  
-  if (isAtm(x) || RNK(x)==0) {
-    B r = c1(f, x);
-    return isAtm(r)? m_atomUnit(r) : r;
-  }
-  i32 xr = RNK(x);
-  ur cr = cell_rank(xr, kf);
-  i32 k = xr - cr;
-  if (Q_BI(f,lt) && IA(x)!=0 && RNK(x)>1) return toKCells(x, k);
-  
-  usz* xsh = SH(x);
-  usz cam = shProd(xsh, 0, k);
-  if (cam == 0) {
-    usz s0=0; ShArr* s=NULL;
-    if (xr<=1) { s0=xsh[0]; xsh=&s0; } else { s=ptr_inc(shObj(x)); }
-    if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); goto empty; }
-    B cf = to_fill_cell_k(x, k);
-    B r;
-    if (CATCH) { empty:
-      freeThrown();
-      r = empty_frame(xsh, k);
-    } else {
-      B rc = c1(f, cf);
-      popCatch();
-      r = merge_fill_result_k(rc, k, xsh);
-    }
-    if (xr>1) ptr_dec(s);
-    return r;
-  }
-  
-  M_HARR(r, cam);
-  S_KSLICES(x, xsh, k);
-  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
-  usz* rsh = HARR_FA(r, k);
-  if (k>1) shcpy(rsh, xsh, k);
-  E_SLICES(x);
-  
-  return bqn_merge(HARR_O(r).b);
 }
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
