@@ -102,7 +102,8 @@ static Arr* arr_shCopyUnchecked(Arr* n, B o) {
   }
   return n;
 }
-static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a new one
+static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a new one; assumes r>1, but PRNK(x) can be anything
+  assert(r>1);
   usz* prevsh = x->sh;
   u8 xr = PRNK(x);
   SPRNK(x, r);
