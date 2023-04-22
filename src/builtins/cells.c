@@ -280,16 +280,18 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k); // from k>0 this will always include at least one item of shape; therefore, cam≡0 → IA(x)≡0 and IA(x)≢0 → cam≢0
   if (isFun(f)) {
-    if (cam==0 || IA(x)==0) goto noSpecial; // TODO be more granular about this
     u8 rtid = v(f)->flags-1;
     switch(rtid) {
       case n_lt:
+        if (cam==0) goto noCells; // toCells/toKCells don't set outer array fill
         return k==1 && RNK(x)>1? toCells(x) : k==0? m_atomUnit(x) : toKCells(x, k);
       case n_select:
+        if (IA(x)==0) goto noSpecial;
         if (k!=1 || xr<=1) goto base; // TODO handle more ranks
         selectCells:;
         return select_cells(0, x, xr);
       case n_pick:
+        if (IA(x)==0) goto noSpecial;
         if (k!=1 || cr!=1 || !TI(x,arrD1)) goto base; // TODO handle more ranks
         goto selectCells;
       case n_couple: {
@@ -303,7 +305,6 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       }
       case n_shape: {
         if (cr==1) return x;
-        if (k==0) return C1(shape, x);
         Arr* r = cpyWithShape(x); xsh=PSH(r);
         usz csz = shProd(xsh, k, xr);
         ShArr* rsh = m_shArr(k+1);
@@ -312,18 +313,18 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         return taga(arr_shReplace(r, k+1, rsh));
       }
       case n_shifta: case n_shiftb: {
+        if (IA(x)==0) goto noSpecial;
         if (k!=1 || xr!=2) goto base; // TODO handle more ranks
         B xf = getFillR(x);
         if (noFill(xf)) goto base;
         return shift_cells(xf, x, TI(x,elType), rtid);
       }
       case n_transp: {
-        if (k!=1) goto base; // TODO handle more ranks
+        if (k!=1) goto noSpecial; // TODO handle more ranks
         return cr<=1? x : transp_cells(xr-1, x);
       }
     }
     
-    noSpecial:;
     if (TY(f) == t_md1D) {
       Md1D* fd = c(Md1D,f);
       u8 rtid = fd->m1->flags-1;
@@ -357,7 +358,9 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
     }
   }
   
+  noSpecial:;
   if (cam == 0) {
+    noCells:;
     usz s0=0; ShArr* s=NULL;
     if (xr<=1) { s0=xsh[0]; xsh=&s0; } else { s=ptr_inc(shObj(x)); }
     if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); goto empty; }
