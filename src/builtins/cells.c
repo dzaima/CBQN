@@ -275,7 +275,8 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
 
 
 
-
+static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_atomUnit(r) : r; }
+static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_atomUnit(r) : r; }
 // monadic ˘ & ⎉
 B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with array x, xr>0, 0≤cr<xr, k≡xr-cr
   assert(isArr(x) && xr>0 && k>0 && cr<xr);
@@ -392,10 +393,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
 
 B cell_c1(Md1D* d, B x) { B f = d->f;
   ur xr;
-  if (isAtm(x) || (xr=RNK(x))==0) {
-    B r = c1(f, x);
-    return isAtm(r)? m_atomUnit(r) : r;
-  }
+  if (isAtm(x) || (xr=RNK(x))==0) return c1wrap(f, x);
   return for_cells_c1(f, xr, xr-1, 1, x, U'˘');
 }
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
@@ -409,14 +407,10 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     SGetU(g); kf = GetU(g, gia==2).f;
   }
   if (gf) dec(g);
-  if (isAtm(x)) {
-    wholeCell:;
-    B r = c1(f, x);
-    return isAtm(r)? m_atomUnit(r) : r;
-  }
+  if (isAtm(x)) return c1wrap(f, x);
   ur xr = RNK(x);
   ur cr = cell_rank(xr, kf);
-  if (cr==xr) goto wholeCell;
+  if (cr==xr) return c1wrap(f, x);
   return for_cells_c1(f, xr, cr, xr-cr, x, U'⎉');
 }
 
@@ -427,7 +421,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr = isAtm(w)? 0 : RNK(w);
   ur xr = isAtm(x)? 0 : RNK(x);
   B r;
-  if (wr==0 && xr==0) return isAtm(r = c2(f, w, x))? m_atomUnit(r) : r;
+  if (wr==0 && xr==0) return c2wrap(f, w, x);
   if (wr==0) {
     usz cam = SH(x)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
@@ -519,8 +513,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   if (wr == wc) {
     if (xr == xc) {
       if (gf) dec(g);
-      r = c2(f, w, x);
-      return isAtm(r)? m_atomUnit(r) : r;
+      return c2wrap(f, w, x);
     } else {
       i32 k = xr - xc;
       usz* xsh = SH(x);
