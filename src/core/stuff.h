@@ -55,6 +55,7 @@ static ShArr* m_shArr(ur r) {
 }
 
 FORCE_INLINE Arr* arr_rnk01(Arr* x, ur xr) {
+  assert(xr<=1);
   SPRNK(x, xr);
   x->sh = &x->ia;
   return x;
@@ -101,6 +102,16 @@ static Arr* arr_shCopyUnchecked(Arr* n, B o) {
     n->sh = sh;
   }
   return n;
+}
+static Arr* arr_shErase(Arr* x, ur r) { // replace x's shape with rank 0 or 1
+  assert(r<=1);
+  u8 xr = PRNK(x);
+  if (xr!=r) {
+    usz* prevsh = x->sh;
+    arr_rnk01(x, r);
+    if (xr>1) decShObj(shObjS(prevsh));
+  }
+  return x;
 }
 static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a new one; assumes r>1, but PRNK(x) can be anything
   assert(r>1);
