@@ -160,11 +160,9 @@ static NOINLINE B select_cells(usz n, B x, ur xr) {
   return r;
 }
 
-static NOINLINE B shift_cells(B f, B x, u8 e, u8 rtid) {
-  MAKE_MUT_INIT(r, IA(x), e); MUTG_INIT(r);
-  usz cam = SH(x)[0];
-  usz csz = SH(x)[1];
+static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »⎉1 or «⎉1
   assert(cam!=0 && csz!=0);
+  MAKE_MUT_INIT(r, IA(x), e); MUTG_INIT(r);
   bool after = rtid==n_shifta;
   usz xi=after, ri=!after, fi=after?csz-1:0;
   incBy(f, cam-1); // cam≠0 → cam-1 ≥ 0
@@ -208,8 +206,12 @@ static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
   return r;
 }
 
-static B transp_cells(ur ax, B x) {
-  i8* wp; B w=m_i8arrv(&wp, 2); wp[0]=0; wp[1]=ax;
+static NOINLINE B transp_cells(ur ax, ur k, B x) {
+  assert(k>0 && ax>=k);
+  assert(UR_MAX < I16_MAX);
+  i16* wp; B w=m_i16arrv(&wp, k+1);
+  PLAINLOOP for (usz i=0; i<k; i++) wp[i] = i;
+  wp[k]=ax;
   return C2(transp, w, x);
 }
 
@@ -287,7 +289,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         return k==1 && RNK(x)>1? toCells(x) : k==0? m_atomUnit(x) : toKCells(x, k);
       case n_select:
         if (IA(x)==0) goto noSpecial;
-        if (k!=1 || xr<=1) goto base; // TODO handle more ranks
+        if (cr==0 || k!=1) goto base; // TODO handle more ranks
         selectCells:;
         return select_cells(0, x, xr);
       case n_pick:
@@ -314,14 +316,14 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       }
       case n_shifta: case n_shiftb: {
         if (IA(x)==0) goto noSpecial;
-        if (k!=1 || xr!=2) goto base; // TODO handle more ranks
+        if (cr!=1) goto base;
         B xf = getFillR(x);
         if (noFill(xf)) goto base;
-        return shift_cells(xf, x, TI(x,elType), rtid);
+        return shift_cells(xf, x, cam, xsh[k], TI(x,elType), rtid);
+        break;
       }
       case n_transp: {
-        if (k!=1) goto noSpecial; // TODO handle more ranks
-        return cr<=1? x : transp_cells(xr-1, x);
+        return cr<=1? x : transp_cells(xr-1, k, x);
       }
     }
     
@@ -437,11 +439,11 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
       if (rtid==n_pick && TI(x,arrD1) && xr>1 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, xr);
       if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
         if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
-        return shift_cells(w, x, el_or(TI(x,elType), selfElType(w)), rtid);
+        return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
       }
       if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
       if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
-      if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, x); }
+      if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
     }
     S_SLICES(x, cam)
     M_HARR(r, cam);
