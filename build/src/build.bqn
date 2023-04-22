@@ -179,8 +179,7 @@ po ← { # parsed options
   wasi ← GetOpt "wasi"
   usz ⇐ •ParseFloat GetOpt "usz"
   {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
-  versionName ← {compat ∧ shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
-  {𝕊: "Error: Specifying version for shared build is useless"}_assert_¬ shared ∧ versionName≢""
+  versionName ← {shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
   wasm ⇐ wasi∨emcc
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
