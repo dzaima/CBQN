@@ -51,6 +51,57 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
   return r;
 }
 
+static NOINLINE B empty_frame(usz* xsh, ur k) {
+  if (k==1) return emptyHVec();
+  assert(k>1);
+  HArr_p f = m_harrUp(0);
+  shcpy(arr_shAlloc((Arr*)f.c, k), xsh, k);
+  return f.b;
+}
+NOINLINE B toCells(B x) {
+  assert(isArr(x) && RNK(x)>1);
+  usz* xsh = SH(x);
+  usz cam = xsh[0];
+  if (cam==0) { decG(x); return emptyHVec(); }
+  if (RNK(x)==2) {
+    M_HARR(r, cam)
+    incBy(x, cam-1);
+    BSS2A slice = TI(x,slice);
+    usz csz = arr_csz(x);
+    for (usz i=0,p=0; i<cam; i++,p+=csz) HARR_ADD(r, i, taga(arr_shVec(slice(x, p, csz))));
+    return HARR_FV(r);
+  } else {
+    S_KSLICES(x, xsh, 1)
+    M_HARR(r, cam)
+    assert(x_cr > 1);
+    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, SLICE(x, p));
+    E_SLICES(x)
+    return HARR_FV(r);
+  }
+}
+NOINLINE B toKCells(B x, ur k) {
+  assert(isArr(x) && k<=RNK(x) && k>=0);
+  usz* xsh = SH(x);
+  usz cam = shProd(xsh, 0, k);
+  
+  B r;
+  if (cam==0) {
+    r = empty_frame(xsh, k); 
+  } else {
+    S_KSLICES(x, xsh, k)
+    incG(x);
+    M_HARR(r, cam)
+    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, SLICE(x, p));
+    E_SLICES(x)
+    usz* rsh = HARR_FA(r, k);
+    if (rsh) shcpy(rsh, xsh, k);
+    r = HARR_O(r).b;
+  }
+  
+  decG(x);
+  return r;
+}
+
 
 
 // fast special-case implementations
@@ -208,12 +259,6 @@ static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   B rc = c2(f, w, x);
   popCatch();
   return merge_fill_result_1(rc);
-}
-static NOINLINE B empty_frame(usz* xsh, ur k) {
-  HArr_p f = m_harrUp(0);
-  Arr *a = (Arr*)f.c;
-  if (k <= 1) arr_shVec(a); else shcpy(arr_shAlloc(a,k), xsh, k);
-  return f.b;
 }
 static f64 req_whole(f64 f) {
   if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");

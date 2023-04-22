@@ -2,60 +2,6 @@
 #include "gstack.h"
 
 
-
-B toCells(B x) {
-  assert(isArr(x) && RNK(x)>1);
-  usz cam = SH(x)[0];
-  usz csz = arr_csz(x);
-  BSS2A slice = TI(x,slice);
-  M_HARR(r, cam)
-  usz p = 0;
-  if (RNK(x)==2) {
-    for (usz i = 0; i < cam; i++) {
-      HARR_ADD(r, i, taga(arr_shVec(slice(incG(x), p, csz))));
-      p+= csz;
-    }
-  } else {
-    usz cr = RNK(x)-1;
-    ShArr* csh = m_shArr(cr);
-    usz* xsh = SH(x);
-    shcpy(csh->a, xsh+1, cr);
-    for (usz i = 0; i < cam; i++) {
-      HARR_ADD(r, i, taga(arr_shSetI(slice(incG(x), p, csz), cr, csh)));
-      p+= csz;
-    }
-    ptr_dec(csh);
-  }
-  decG(x);
-  return HARR_FV(r);
-}
-B toKCells(B x, ur k) {
-  assert(isArr(x) && k<=RNK(x) && k>=0);
-  ur xr = RNK(x); usz* xsh = SH(x);
-  ur cr = xr-k;
-  usz cam = shProd(xsh, 0, k);
-  usz csz = shProd(xsh, k, xr);
-  
-  ShArr* csh;
-  if (cr>1) {
-    csh = m_shArr(cr);
-    shcpy(csh->a, xsh+k, cr);
-  }
-  
-  BSS2A slice = TI(x,slice);
-  M_HARR(r, cam);
-  usz p = 0;
-  for (usz i = 0; i < cam; i++) {
-    HARR_ADD(r, i, taga(arr_shSetI(slice(incG(x), p, csz), cr, csh)));
-    p+= csz;
-  }
-  if (cr>1) ptr_dec(csh);
-  usz* rsh = HARR_FA(r, k);
-  if (rsh) shcpy(rsh, xsh, k);
-  decG(x);
-  return HARR_O(r).b;
-}
-
 NOINLINE B m_caB(usz ia, B* a) {
   HArr_p r = m_harrUv(ia);
   for (usz i = 0; i < ia; i++) r.a[i] = a[i];
