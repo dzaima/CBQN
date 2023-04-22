@@ -158,8 +158,8 @@ B shape_c2(B t, B w, B x) {
   } else {
     if (isAtm(w)) w = m_atomUnit(w);
     if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
+    if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
     nr = IA(w);
-    if (nr>UR_MAX) thrM("⥊: Result rank too large");
     sh = nr<=1? NULL : m_shArr(nr);
     if (TI(w,elType)==el_i32) {
       i32* wi = i32any_ptr(w);
