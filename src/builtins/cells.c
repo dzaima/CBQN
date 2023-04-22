@@ -232,23 +232,18 @@ static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
   return taga(ca);
 }
 
-static NOINLINE B merge_fill_result_impl(B rc, ur k, usz* sh, u32 chr) {
-  u64 rr = k; if (isArr(rc)) rr += RNK(rc);
+static NOINLINE B merge_fill_result(B rc, ur k, usz* sh, u32 chr) {
+  u64 rr = k; if (isArr(rc)) rr+= RNK(rc);
   if (rr>UR_MAX) thrF("%c: Result rank too large", chr);
   Arr* r = m_fillarrpEmpty(getFillQ(rc));
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     shcpy(rsh, sh, k);
-    shcpy(rsh+k, SH(rc), rr-k);
+    usz cr = rr-k;
+    if (cr) shcpy(rsh+k, SH(rc), cr);
   }
   dec(rc);
   return taga(r);
-}
-static B merge_fill_result_k(B rc, ur k, usz* sh) {
-  return merge_fill_result_impl(rc, k, sh, U'⎉');
-}
-static B merge_fill_result_1(B rc) {
-  return merge_fill_result_impl(rc, 1, (usz[]){0}, U'˘');
 }
 static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
@@ -257,7 +252,7 @@ static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
   if (CATCH) { freeThrown(); return emptyHVec(); }
   B rc = c2(f, w, x);
   popCatch();
-  return merge_fill_result_1(rc);
+  return merge_fill_result(rc, 1, (usz[]){0}, U'˘');
 }
 static f64 req_whole(f64 f) {
   if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");
@@ -374,7 +369,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with 0�
     } else {
       B rc = c1(f, cf);
       popCatch();
-      r = merge_fill_result_k(rc, k, xsh);
+      r = merge_fill_result(rc, k, xsh, chr);
     }
     if (xr>1) ptr_dec(s);
     return r;
@@ -494,7 +489,7 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   } else {
     B rc = c2(f, w, x);
     popCatch();
-    r = merge_fill_result_k(rc, k, sh);
+    r = merge_fill_result(rc, k, sh, U'⎉');
   }
   if (sho) ptr_dec(s);
   return r;
