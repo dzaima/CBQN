@@ -10,7 +10,10 @@ B transp_c2(B, B, B);
 B fold_rows(Md1D* d, B x); // from fold.c
 B takedrop_highrank(bool take, B w, B x); // from sfns.c
 
-#define S_KSLICES(X, XSH, K)     \
+// X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
+#define S_KSLICES(X, XSH, K, SLN, DX)\
+  usz X##_sn = (SLN);            \
+  assert(X##_sn>0);              \
   usz X##_k = (K);               \
   usz X##_cr = RNK(X)-X##_k;     \
   usz X##_csz = 1;               \
@@ -18,6 +21,7 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
   if (LIKELY(X##_cr >= 1)) {     \
     if (RARE(X##_cr > 1)) {      \
       X##_csh = m_shArr(X##_cr); \
+      ptr_incBy(X##_csh, X##_sn-1); \
       PLAINLOOP for (usz i = 0; i < X##_cr; i++) { \
         usz v = XSH[i+X##_k];    \
         X##_csz*= v;             \
@@ -25,17 +29,19 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
       }                          \
     } else X##_csz = XSH[X##_k]; \
   }                              \
-  BSS2A X##_slc = TI(X,slice);
+  BSS2A X##_slc = TI(X,slice);   \
+  incBy(X, (i64)X##_sn + ((i64)DX-1));
 
-#define S_SLICES(X) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1)
-#define SLICE(X, S) taga(arr_shSetI(X##_slc(incG(X), S, X##_csz), X##_cr, X##_csh))
-#define E_SLICES(X) if (X##_cr>1) ptr_dec(X##_csh); decG(X);
+#define S_SLICES(X, SLN) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1, SLN, 0)
+#define SLICE(X, S) taga(arr_shSetU(X##_slc(X, S, X##_csz), X##_cr, X##_csh))
+#define E_SLICES(X) 
 
 
 
 // Used by Insert in fold.c
 B insert_base(B f, B x, usz xia, bool has_w, B w) {
-  S_SLICES(x)
+  assert(isArr(x) && RNK(x)>0);
+  S_SLICES(x, *x_sh)
   usz p = xia;
   B r = w;
   if (!has_w) {
@@ -71,7 +77,7 @@ NOINLINE B toCells(B x) {
     for (usz i=0,p=0; i<cam; i++,p+=csz) HARR_ADD(r, i, taga(arr_shVec(slice(x, p, csz))));
     return HARR_FV(r);
   } else {
-    S_KSLICES(x, xsh, 1)
+    S_KSLICES(x, xsh, 1, cam, 0)
     M_HARR(r, cam)
     assert(x_cr > 1);
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, SLICE(x, p));
@@ -88,8 +94,7 @@ NOINLINE B toKCells(B x, ur k) {
   if (cam==0) {
     r = empty_frame(xsh, k); 
   } else {
-    S_KSLICES(x, xsh, k)
-    incG(x);
+    S_KSLICES(x, xsh, k, cam, 1)
     M_HARR(r, cam)
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, SLICE(x, p));
     E_SLICES(x)
@@ -377,11 +382,12 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // FâŽ‰cr x, with 0â‰
   
   base:;
   M_HARR(r, cam);
-  S_KSLICES(x, xsh, k);
+  S_KSLICES(x, xsh, k, cam, 1);
   for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
+  E_SLICES(x);
   usz* rsh = HARR_FA(r, k);
   if (k>1) shcpy(rsh, xsh, k);
-  E_SLICES(x);
+  decG(x);
   
   return bqn_merge(HARR_O(r).b);
 }
@@ -437,7 +443,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
       if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
       if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, x); }
     }
-    S_SLICES(x)
+    S_SLICES(x, cam)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
     E_SLICES(x) dec(w);
@@ -445,7 +451,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   } else if (xr==0) {
     usz cam = SH(w)[0];
     if (cam==0) return cell2_empty(f, w, x, wr, xr);
-    S_SLICES(w)
+    S_SLICES(w, cam)
     M_HARR(r, cam);
     for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, SLICE(w, p), x));
     E_SLICES(w) dec(x);
@@ -461,7 +467,7 @@ B cell_c2(Md1D* d, B w, B x) { B f = d->f;
         if (!q_N(r)) { decG(w); decG(x); return r; }
       }
     }
-    S_SLICES(w) S_SLICES(x)
+    S_SLICES(w, cam) S_SLICES(x, cam)
     M_HARR(r, cam);
     for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, SLICE(w, wp), SLICE(x, xp)));
     E_SLICES(w) E_SLICES(x)
