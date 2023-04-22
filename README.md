@@ -17,9 +17,9 @@
 ## Configuration options
 
 - Builds with more performance:
-    - `make o3n-singeli` - native for the current processor (i.e. `-march=native`); on x86-64 this assumes & uses AVX2 (and, if available, also uses BMI2)
-    - `make o3-singeli` - generic build for the current architecture; on x86-64 or unknown architectures this doesn't do much, but on aarch64 it uses NEON  
-      Therefore, on x86-64, `o3n-singeli` is highly recommended, but, on aarch64, `o3-singeli` is enough
+    - `make o3n-singeli` - native for the current processor (i.e. `-march=native`); on x86-64 this assumes & uses AVX2 (and, if available, also BMI2)
+    - `make o3-singeli` - generic build for the current architecture; on x86-64 this uses SSE2 (i.e. 128-bit vectors (AVX2 being 256-bit), among other things), on aarch64 - NEON. (on other architectures this also works and provides some performance improvements, but won't include any more SIMD optimizations)  
+      Therefore, on x86-64, `o3n-singeli` is highly recommended, but on aarch64 `o3-singeli` is enough.
     - `make o3-singeli has=avx2` - generic build for any x86-64 CPU that supports AVX2 (won't utilize BMI2 though; `has='avx2 bmi2'` to assume both AVX2 & BMI2)
     - `make o3n-singeli has=slow-pdep` - build tuned for AMD Zen 1/Zen 2 CPUs, which have BMI2, but their pdep/pext instructions are extremely slow
     - Target architecture is decided from `uname` - override with `target_arch=...` (valid values being `x86-64`, `aarch64`, `generic`). For native builds, targeted extensions are decided by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks.
