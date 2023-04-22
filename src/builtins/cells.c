@@ -275,10 +275,10 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
 
 
 // monadic ˘ & ⎉
-B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with 0≤cr≤xr, array x, and xr>0
-  assert(isArr(x) && xr>0);
+B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with array x, xr>0, 0≤cr<xr, k≡xr-cr
+  assert(isArr(x) && xr>0 && k>0 && cr<xr);
   usz* xsh = SH(x);
-  usz cam = shProd(xsh, 0, k);
+  usz cam = shProd(xsh, 0, k); // from k>0 this will always include at least one item of shape; therefore, cam≡0 → IA(x)≡0 and IA(x)≢0 → cam≢0
   if (isFun(f)) {
     if (cam==0 || IA(x)==0) goto noSpecial; // TODO be more granular about this
     u8 rtid = v(f)->flags-1;
@@ -406,12 +406,14 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     SGetU(g); kf = GetU(g, gia==2).f;
   }
   if (gf) dec(g);
-  ur xr;
-  if (isAtm(x) || (xr=RNK(x))==0) {
+  if (isAtm(x)) {
+    wholeCell:;
     B r = c1(f, x);
     return isAtm(r)? m_atomUnit(r) : r;
   }
+  ur xr = RNK(x);
   ur cr = cell_rank(xr, kf);
+  if (cr==xr) goto wholeCell;
   return for_cells_c1(f, xr, cr, xr-cr, x, U'⎉');
 }
 
