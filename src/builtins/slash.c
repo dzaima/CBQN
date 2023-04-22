@@ -260,11 +260,7 @@ static B where(B x, usz xia, u64 s) {
       }
     }
   } else if (xia <= (usz)I32_MAX+1) {
-    #if SINGELI_AVX2 && FAST_PDEP
-    i32* rp; r = m_i32arrv(&rp, s);
-    #else
     i32* rp = m_tyarrvO(&r, 4, s, t_i32arr, 4);
-    #endif
     usz b = bsp_max; TALLOC(i16, buf, b);
     i32* rq = rp;
     for (usz i=0; i<xia; i+=b) {
