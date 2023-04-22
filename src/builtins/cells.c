@@ -319,7 +319,6 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         B xf = getFillR(x);
         if (noFill(xf)) goto base;
         return shift_cells(xf, x, cam, xsh[k], TI(x,elType), rtid);
-        break;
       }
       case n_transp: {
         return cr<=1? x : transp_cells(xr-1, k, x);
@@ -330,7 +329,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       Md1D* fd = c(Md1D,f);
       u8 rtid = fd->m1->flags-1;
       if (rtid==n_const) { f=fd->f; goto const_f; }
-      if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && k==1 && xr==2 && isPervasiveDyExt(fd->f)) {
+      if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && k==1 && xr==2 && isPervasiveDyExt(fd->f)) { // TODO extend to any rank x with cr==1
         usz *sh = SH(x); usz m = sh[1];
         if (m == 1) return select_cells(0, x, cam, k, false);
         if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
