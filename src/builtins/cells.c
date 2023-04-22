@@ -381,8 +381,8 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   
   base:;
   M_HARR(r, cam);
-  S_KSLICES(x, xsh, k, cam, 1);
-  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c1(f, SLICE(x, p)));
+  S_KSLICES(x, xsh, k, cam, 1); BB2B fc1 = c1fn(f);
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, fc1(f, SLICE(x, p)));
   E_SLICES(x);
   usz* rsh = HARR_FA(r, k);
   if (k>1) shcpy(rsh, xsh, k);
