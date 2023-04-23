@@ -1049,7 +1049,10 @@ B sh_c2(B t, B w, B x) {
     s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
     s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
   }
-  return m_hVec3(m_i32(WEXITSTATUS(status)), s_outObj, s_errObj);
+  int code = WIFEXITED(status)?   WEXITSTATUS(status)
+           : WIFSIGNALED(status)? WTERMSIG(status)+128
+           : -1;
+  return m_hVec3(m_i32(code), s_outObj, s_errObj);
 }
 #else
 #define HAS_SH 0
