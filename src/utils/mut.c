@@ -82,8 +82,12 @@ NOINLINE B vec_addN(B w, B x) {
 }
 
 NOINLINE void mut_pfree(Mut* m, usz n) { // free the first n elements
-  if (m->fns->elType==el_B) harr_pfree(taga(m->val), n);
-  else mm_free((Value*) m->val);
+  if (m->fns->elType==el_B) {
+    NOGC_E;
+    harr_pfree(taga(m->val), n);
+  } else {
+    mm_free((Value*) m->val);
+  }
 }
 
 
