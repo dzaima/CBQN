@@ -247,15 +247,6 @@ static NOINLINE B merge_fill_result(B rc, ur k, usz* sh, u32 chr) {
   dec(rc);
   return taga(r);
 }
-static NOINLINE B cell2_empty(B f, B w, B x, ur wr, ur xr) {
-  if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); return emptyHVec(); }
-  if (wr) w = to_fill_cell(w, 1, U'˘');
-  if (xr) x = to_fill_cell(x, 1, U'˘');
-  if (CATCH) { freeThrown(); return emptyHVec(); }
-  B rc = c2(f, w, x);
-  popCatch();
-  return merge_fill_result(rc, 1, (usz[]){0}, U'˘');
-}
 static f64 req_whole(f64 f) {
   if (floor(f)!=f) thrM("⎉: 𝕘 was a fractional number");
   return f;
@@ -415,63 +406,6 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
 }
 
 
-
-// dyadic ˘ & ⎉
-B cell_c2(Md1D* d, B w, B x) { B f = d->f;
-  ur wr = isAtm(w)? 0 : RNK(w);
-  ur xr = isAtm(x)? 0 : RNK(x);
-  B r;
-  if (wr==0 && xr==0) return c2wrap(f, w, x);
-  if (wr==0) {
-    usz cam = SH(x)[0];
-    if (cam==0) return cell2_empty(f, w, x, wr, xr);
-    if (isFun(f)) {
-      u8 rtid = v(f)->flags-1;
-      if (rtid==n_select && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
-      if (rtid==n_pick && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
-      if ((rtid==n_shifta || rtid==n_shiftb) && xr==2) {
-        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
-        return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
-      }
-      if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
-      if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
-      if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
-    }
-    S_SLICES(x, cam)
-    M_HARR(r, cam);
-    for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, c2iW(f, w, SLICE(x, p)));
-    E_SLICES(x) dec(w);
-    r = HARR_FV(r);
-  } else if (xr==0) {
-    usz cam = SH(w)[0];
-    if (cam==0) return cell2_empty(f, w, x, wr, xr);
-    S_SLICES(w, cam)
-    M_HARR(r, cam);
-    for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, c2iX(f, SLICE(w, p), x));
-    E_SLICES(w) dec(x);
-    r = HARR_FV(r);
-  } else {
-    usz cam = SH(w)[0];
-    if (cam==0) return cell2_empty(f, w, x, wr, xr);
-    if (cam != SH(x)[0]) thrF("˘: Leading axis of arguments not equal (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-    if (isFun(f)) {
-      u8 rtid = v(f)->flags-1;
-      if (rtid==n_feq || rtid==n_fne) {
-        B r = match_cells(rtid!=n_feq, w, x, wr, xr, cam);
-        if (!q_N(r)) { decG(w); decG(x); return r; }
-      }
-    }
-    S_SLICES(w, cam) S_SLICES(x, cam)
-    M_HARR(r, cam);
-    for (usz i=0,wp=0,xp=0; i<cam; i++,wp+=w_csz,xp+=x_csz) HARR_ADD(r, i, c2(f, SLICE(w, wp), SLICE(x, xp)));
-    E_SLICES(w) E_SLICES(x)
-    r = HARR_FV(r);
-  }
-  return bqn_merge(r);
-}
-
-
-
 static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
@@ -493,10 +427,112 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
   if (sho) ptr_dec(s);
   return r;
 }
+
+NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr) {
+  ur wk = wr-wcr; assert(wk>0 && wcr<wr);
+  usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
+  if (cam==0) return rank2_empty(f, w, wk, x, 0);
+  S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
+  M_HARR(r, cam); BBB2B fc2 = c2fn(f);
+  for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, fc2(f, SLICE(w, p), x));
+  E_SLICES(w)
+  usz* rsh = HARR_FA(r, wk);
+  if (wk>1) shcpy(rsh, wsh, wk);
+  decG(w); return bqn_merge(HARR_O(r).b);
+}
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr) {
+  ur xk = xr-xcr; assert(xk>0 && xcr<xr);
+  usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
+  if (cam==0) return rank2_empty(f, w, 0, x, xk);
+  if (isFun(f) && xk==1 && IA(x)!=0) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_select && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
+    if (rtid==n_pick && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
+    if ((rtid==n_shifta || rtid==n_shiftb) && xr==2 && isAtm(w)) {
+      if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+      return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
+    }
+    if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
+    if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
+    if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
+  }
+  S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
+  M_HARR(r, cam); BBB2B fc2 = c2fn(f);
+  for (usz i=0,p=0; i<cam; i++,p+=x_csz) HARR_ADD(r, i, fc2(f, w, SLICE(x, p)));
+  E_SLICES(x)
+  usz* rsh = HARR_FA(r, xk);
+  if (xk>1) shcpy(rsh, xsh, xk);
+  decG(x); return bqn_merge(HARR_O(r).b);
+}
+NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr) {
+  assert(isArr(w) && isArr(x));
+  ur wr = RNK(w); ur wk = wr-wcr; usz* wsh = SH(w);
+  ur xr = RNK(x); ur xk = xr-xcr; usz* xsh = SH(x);
+  i32 k=wk, zk=xk; if (k>zk) { i32 t=k; k=zk; zk=t; }
+  usz* zsh = wk>xk? wsh : xsh;
+  assert(wcr<wr && xcr<xr && wk>0 && xk>0);
+  
+  usz cam = 1;
+  for (usz i = 0; i < k; i++) {
+    usz wl = wsh[i], xl = xsh[i];
+    if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", w, x, k);
+    cam*= wsh[i];
+  }
+  usz ext = shProd(zsh,  k, zk);
+  cam*= ext;
+  if (cam==0) return rank2_empty(f, w, wk, x, xk);
+  if (isFun(f) && wk==1 && xk==1) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_feq || rtid==n_fne) {
+      B r = match_cells(rtid!=n_feq, w, x, wr, xr, cam);
+      if (!q_N(r)) { decG(w); decG(x); return r; }
+    }
+  }
+  
+  usz wsz = shProd(wsh, wk, wr);
+  usz xsz = shProd(xsh, xk, xr);
+  
+  ShArr* wcs=NULL; if (wcr>1) { wcs=m_shArr(wcr); shcpy(wcs->a, wsh+wk, wcr); }
+  ShArr* xcs=NULL; if (xcr>1) { xcs=m_shArr(xcr); shcpy(xcs->a, xsh+xk, xcr); }
+  
+  BSS2A wslice = TI(w,slice);
+  BSS2A xslice = TI(x,slice);
+  M_HARR(r, cam);
+  
+  usz wp = 0, xp = 0;
+  #define CELL(wx) ({ Arr* cell_ = arr_shSetI(wx##slice(incG(wx), wx##p, wx##sz), wx##cr, wx##cs); wx##p+= wx##sz; cell_; })
+  #define F(W,X) HARR_ADD(r, i, fc2(f, W, X))
+  BBB2B fc2 = c2fn(f);
+  if (ext == 1) {
+    for (usz i = 0; i < cam; i++) F(taga(CELL(w)), taga(CELL(x)));
+  } else if (wk < xk) {
+    for (usz i = 0; i < cam; ) {
+      B wb=taga(ptr_incBy(CELL(w), ext));
+      for (usz e = i+ext; i < e; i++) F(wb, taga(CELL(x)));
+      decG(wb);
+    }
+  } else {
+    for (usz i = 0; i < cam; ) {
+      B xb=taga(ptr_incBy(CELL(x), ext));
+      for (usz e = i+ext; i < e; i++) F(taga(CELL(w)), xb);
+      decG(xb);
+    }
+  }
+  #undef CELL
+  #undef F
+  
+  if (wcr>1) ptr_dec(wcs);
+  if (xcr>1) ptr_dec(xcs);
+  usz* rsh = HARR_FA(r, zk);
+  if (zk>1) shcpy(rsh, zsh, zk);
+  
+  decG(w); decG(x); return bqn_merge(HARR_O(r).b);
+}
+
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
-  bool gf = isFun(g);
-  if (RARE(gf)) g = c2(g, inc(w), inc(x));
+  B gi = m_f64(0);
+  if (RARE(isFun(g))) { gi = g = c2(g, inc(w), inc(x)); }
   if (LIKELY(isNum(g))) {
     wf = xf = req_whole(o2fG(g));
   } else {
@@ -504,122 +540,26 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
     SGetU(g);
     wf = GetU(g, gia<2?0:gia-2).f;
     xf = GetU(g, gia-1).f;
+    dec(gi);
   }
-
-  ur wr = isAtm(w) ? 0 : RNK(w); ur wc = cell_rank(wr, wf);
-  ur xr = isAtm(x) ? 0 : RNK(x); ur xc = cell_rank(xr, xf);
-
-  B r;
-  if (wr == wc) {
-    if (xr == xc) {
-      if (gf) dec(g);
-      return c2wrap(f, w, x);
-    } else {
-      i32 k = xr - xc;
-      usz* xsh = SH(x);
-      usz cam = shProd(xsh, 0, k);
-      if (cam == 0) return rank2_empty(f, w, 0, x, k);
-      usz csz = shProd(xsh, k, xr);
-      ShArr* csh ONLY_GCC(=0);
-      if (xc>1) { csh=m_shArr(xc); shcpy(csh->a, xsh+k, xc); }
-
-      BSS2A slice = TI(x,slice);
-      M_HARR(r, cam);
-      usz p = 0;
-      incBy(w, cam);
-      incByG(x, cam);
-      for (usz i = 0; i < cam; i++) {
-        Arr* s = arr_shSetI(slice(x, p, csz), xc, csh);
-        HARR_ADD(r, i, c2(f, w, taga(s)));
-        p+= csz;
-      }
-
-      if (xc>1) ptr_dec(csh);
-      usz* rsh = HARR_FA(r, k);
-      if (k>1) shcpy(rsh, xsh, k);
-
-      dec(w); decG(x); r = HARR_O(r).b;
-    }
-  } else if (xr == xc) {
-    i32 k = wr - wc;
-    usz* wsh = SH(w);
-    usz cam = shProd(wsh, 0, k);
-    if (cam == 0) return rank2_empty(f, w, k, x, 0);
-    usz csz = shProd(wsh, k, wr);
-    ShArr* csh ONLY_GCC(=0);
-    if (wc>1) { csh=m_shArr(wc); shcpy(csh->a, wsh+k, wc); }
-
-    BSS2A slice = TI(w,slice);
-    M_HARR(r, cam);
-    usz p = 0;
-    incByG(w, cam);
-    incBy(x, cam);
-    for (usz i = 0; i < cam; i++) {
-      Arr* s = arr_shSetI(slice(w, p, csz), wc, csh);
-      HARR_ADD(r, i, c2(f, taga(s), x));
-      p+= csz;
-    }
-
-    if (wc>1) ptr_dec(csh);
-    usz* rsh = HARR_FA(r, k);
-    if (k>1) shcpy(rsh, wsh, k);
-
-    decG(w); dec(x); r = HARR_O(r).b;
-  } else {
-    i32 wk = wr - wc; usz* wsh = SH(w);
-    i32 xk = xr - xc; usz* xsh = SH(x);
-    i32 k=wk, zk=xk; if (k>zk) { i32 t=k; k=zk; zk=t; }
-    usz* zsh = wk>xk? wsh : xsh;
-
-    usz cam = 1; for (usz i =  0; i <  k; i++) {
-      usz wl = wsh[i], xl = xsh[i];
-      if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", w, x, k);
-      cam*= wsh[i];
-    }
-    usz ext = shProd(zsh,  k, zk);
-    cam *= ext;
-    if (cam == 0) return rank2_empty(f, w, wk, x, xk);
-    usz wsz = shProd(wsh, wk, wr);
-    usz xsz = shProd(xsh, xk, xr);
-
-    ShArr* wcs ONLY_GCC(=0); if (wc>1) { wcs=m_shArr(wc); shcpy(wcs->a, wsh+wk, wc); }
-    ShArr* xcs ONLY_GCC(=0); if (xc>1) { xcs=m_shArr(xc); shcpy(xcs->a, xsh+xk, xc); }
-
-    BSS2A wslice = TI(w,slice);
-    BSS2A xslice = TI(x,slice);
-    M_HARR(r, cam);
-    usz wp = 0, xp = 0;
-    #define CELL(wx) \
-      Arr* wx##s = arr_shSetI(wx##slice(incG(wx), wx##p, wx##sz), wx##c, wx##cs); \
-      wx##p+= wx##sz
-    #define F(W,X) HARR_ADD(r, i, c2(f, W, X))
-    if (ext == 1) {
-      for (usz i = 0; i < cam; i++) {
-        CELL(w); CELL(x); F(taga(ws), taga(xs));
-      }
-    } else if (wk < xk) {
-      for (usz i = 0; i < cam; ) {
-        CELL(w); B wb=taga(ptr_incBy(ws, ext));
-        for (usz e = i+ext; i < e; i++) { CELL(x); F(wb, taga(xs)); }
-        dec(wb);
-      }
-    } else {
-      for (usz i = 0; i < cam; ) {
-        CELL(x); B xb=taga(ptr_incBy(xs, ext));
-        for (usz e = i+ext; i < e; i++) { CELL(w); F(taga(ws), xb); }
-        dec(xb);
-      }
-    }
-    #undef CELL
-    #undef F
-
-    if (wc>1) ptr_dec(wcs);
-    if (xc>1) ptr_dec(xcs);
-    usz* rsh = HARR_FA(r, zk);
-    if (zk>1) shcpy(rsh, zsh, zk);
-
-    decG(w); decG(x); r = HARR_O(r).b;
+  
+  ur wr, wcr;
+  ur xr, xcr;
+  if     (isAtm(w)) goto r0Wt; else { wr = RNK(w); if ((wcr=cell_rank(wr,wf)) == wr) goto r0Wt; /*else fallthrough*/ }
+  if     (isAtm(x)) goto r0X;  else { xr = RNK(x); if ((xcr=cell_rank(xr,xf)) == xr) goto r0X;  else goto neither; }
+  r0Wt:if(isAtm(x)) goto r0WX; else { xr = RNK(x); if ((xcr=cell_rank(xr,xf)) == xr) goto r0WX; else goto r0W; }
+  
+  neither: return for_cells_AA(f, w, x, wcr, xcr);
+  r0X: return for_cells_AS(f, w, x, wcr, wr);
+  r0W: return for_cells_SA(f, w, x, xcr, xr);
+  r0WX: return c2wrap(f, w, x);
+}
+B cell_c2(Md1D* d, B w, B x) { B f = d->f;
+  ur wr, xr;
+  if (isAtm(w) || (wr=RNK(w))==0) {
+    if (isAtm(x) || (xr=RNK(x))==0) return c2wrap(f, w, x);
+    return for_cells_SA(f, w, x, xr-1, xr);
   }
-  if (gf) dec(g);
-  return bqn_merge(r);
+  if (isAtm(x) || (xr=RNK(x))==0) return for_cells_AS(f, w, x, wr-1, wr);
+  return for_cells_AA(f, w, x, wr-1, xr-1);
 }
