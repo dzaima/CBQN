@@ -76,10 +76,9 @@ B ud_c1(B t, B x) {
   bool bad=false, good=false;
   for (usz i = xia; i--; ) {
     usz c = o2s(GetU(x, i));
-    good = c==0;
-    bad|= c > I32_MAX;
     sh[i] = c;
-    bad|= mulOn(ria, c); 
+    good|= c==0;
+    bad|= (c > I32_MAX) | mulOn(ria, c);
   }
   if (bad && !good) thrM("↕: Result too large");
   decG(x);
