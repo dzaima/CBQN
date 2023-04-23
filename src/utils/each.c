@@ -77,7 +77,7 @@ B eachm_fn(B fo, B x, BB2B f) {
       case t_fillslice: {
         FillSlice* s = c(FillSlice,x);
         Arr* p = s->p;
-        if (p->refc==1 && (p->type==t_fillarr || p->type==t_harr) && ((FillArr*)p)->a == s->a && p->ia==ia) {
+        if (p->refc==1 && (p->type==t_fillarr || p->type==t_harr) && ((FillArr*)p)->a == s->a && ptr_eqShape(p, a(x))) {
           x = taga(ptr_inc(p));
           value_free((Value*)s);
           goto re_reuse;

@@ -147,13 +147,14 @@ static bool eqShPart(usz* w, usz* x, usz len) {
   PLAINLOOP for (i32 i = 0; i < len; i++) if (w[i]!=x[i]) return false;
   return true;
 }
-static bool eqShape(B w, B x) { assert(isArr(w)); assert(isArr(x));
-  ur wr = RNK(w); usz* wsh = SH(w);
-  ur xr = RNK(x); usz* xsh = SH(x);
+static bool ptr_eqShape(Arr* w, Arr* x) {
+  ur wr = PRNK(w); usz* wsh = PSH(w);
+  ur xr = PRNK(x); usz* xsh = PSH(x);
   if (wr!=xr) return false;
   if (wsh==xsh) return true;
   return eqShPart(wsh, xsh, wr);
 }
+static bool eqShape(B w, B x) { assert(isArr(w) && isArr(x)); return ptr_eqShape(a(w), a(x)); }
 
 B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
