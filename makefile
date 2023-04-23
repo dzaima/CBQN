@@ -26,7 +26,7 @@ wasi-reactor-o3:
 emcc-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="emcc"
 for-build:
-	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
+	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
 for-bootstrap:
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 c:
