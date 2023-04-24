@@ -420,7 +420,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
 }
 
 
-static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) { // TODO pass chr around everywhere
+static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk, u32 chr) {
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
   usz* sh = SH(fa);
@@ -428,8 +428,8 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) { // TODO pass chr ar
   if (!sho) { s0=sh[0]; sh=&s0; } else { s=ptr_inc(shObj(fa)); }
   if (!DO_CELL_CATCH || !isPureFn(f)) { dec(w); dec(x); goto empty; }
   B r;
-  if (wk) w = to_fill_cell(w, wk, U'⎉');
-  if (xk) x = to_fill_cell(x, xk, U'⎉');
+  if (wk) w = to_fill_cell(w, wk, chr);
+  if (xk) x = to_fill_cell(x, xk, chr);
   if (CATCH) {
     SET_FILL_ERRORED;
     freeThrown();
@@ -444,10 +444,10 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) { // TODO pass chr ar
   return r;
 }
 
-NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr) {
+NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   ur wk = wr-wcr; assert(wk>0 && wcr<wr);
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
-  if (cam==0) return rank2_empty(f, w, wk, x, 0);
+  if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
   M_HARR(r, cam); BBB2B fc2 = c2fn(f);
   for (usz i=0,p=0; i<cam; i++,p+=w_csz) HARR_ADD(r, i, fc2(f, SLICE(w, p), x));
@@ -456,10 +456,10 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr) {
   if (wk>1) shcpy(rsh, wsh, wk);
   decG(w); return bqn_merge(HARR_O(r).b);
 }
-NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr) {
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
-  if (cam==0) return rank2_empty(f, w, 0, x, xk);
+  if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
   if (isFun(f) && xk==1 && IA(x)!=0) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_select && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
@@ -480,7 +480,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr) {
   if (xk>1) shcpy(rsh, xsh, xk);
   decG(x); return bqn_merge(HARR_O(r).b);
 }
-NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr) {
+NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   assert(isArr(w) && isArr(x));
   ur wr = RNK(w); ur wk = wr-wcr; usz* wsh = SH(w);
   ur xr = RNK(x); ur xk = xr-xcr; usz* xsh = SH(x);
@@ -491,12 +491,12 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr) {
   usz cam = 1;
   for (usz i = 0; i < k; i++) {
     usz wl = wsh[i], xl = xsh[i];
-    if (wl != xl) thrF("⎉: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", w, x, k);
+    if (wl != xl) thrF("%c: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
     cam*= wsh[i];
   }
   usz ext = shProd(zsh,  k, zk);
   cam*= ext;
-  if (cam==0) return rank2_empty(f, w, wk, x, xk);
+  if (cam==0) return rank2_empty(f, w, wk, x, xk, chr);
   if (isFun(f) && wk==1 && xk==1) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_feq || rtid==n_fne) {
@@ -565,17 +565,17 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   if     (isAtm(x)) goto r0X;  else { xr = RNK(x); if ((xcr=cell_rank(xr,xf)) == xr) goto r0X;  else goto neither; }
   r0Wt:if(isAtm(x)) goto r0WX; else { xr = RNK(x); if ((xcr=cell_rank(xr,xf)) == xr) goto r0WX; else goto r0W; }
   
-  neither: return for_cells_AA(f, w, x, wcr, xcr);
-  r0X: return for_cells_AS(f, w, x, wcr, wr);
-  r0W: return for_cells_SA(f, w, x, xcr, xr);
+  neither: return for_cells_AA(f, w, x, wcr, xcr, U'⎉');
+  r0X: return for_cells_AS(f, w, x, wcr, wr, U'⎉');
+  r0W: return for_cells_SA(f, w, x, xcr, xr, U'⎉');
   r0WX: return c2wrap(f, w, x);
 }
 B cell_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr, xr;
   if (isAtm(w) || (wr=RNK(w))==0) {
     if (isAtm(x) || (xr=RNK(x))==0) return c2wrap(f, w, x);
-    return for_cells_SA(f, w, x, xr-1, xr);
+    return for_cells_SA(f, w, x, xr-1, xr, U'˘');
   }
-  if (isAtm(x) || (xr=RNK(x))==0) return for_cells_AS(f, w, x, wr-1, wr);
-  return for_cells_AA(f, w, x, wr-1, xr-1);
+  if (isAtm(x) || (xr=RNK(x))==0) return for_cells_AS(f, w, x, wr-1, wr, U'˘');
+  return for_cells_AA(f, w, x, wr-1, xr-1, U'˘');
 }
