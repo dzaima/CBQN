@@ -97,52 +97,68 @@ def bittab_selector{loadtab} = {
   tup{selector, reload}
 }
 
-fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
-  assert{nw > 0}
-  vtab:= *VI~~tab; btab:= *i8~~tab
-  z:= VI**0
-  @unroll (vtab over 8) vtab = z
-  def readbytes{} = {
-    def side{i} = {
-      def m = @collect (vtab over _ from i to i+4) homMask{vtab}
-      VI~~make{[8]u32, merge{m,m}}
-    }
-    each{side, 4*iota{2}}
+def readbytes{vtab}{} = {
+  def side{i} = {
+    def m = @collect (vtab over _ from i to i+4) homMask{vtab}
+    VI~~make{[8]u32, merge{m,m}}
   }
+  each{side, 4*iota{2}}
+}
 
-  # Fill table
-  u:u8 = 0  # Unseen unique bytes (goes to 255 on first step)
-  w:= *u8~~w0
-  iw:u64 = 32; if (nw<=48) iw=nw
-  @for (w over iw) {
-    u-= 1 + u8~~load{btab, w}  # Subtract 1 if new
-    store{btab, w, -1}
+# Fill table with t (0 or -1) at all bytes in x0
+# Stop early if the sum u reaches 0, indicating all bytes in the table
+# are equal: by the time it's checked at least one has been set to t,
+# so they're all t
+fn fill_bittab(x0:*void, n:u64, tab:*void, u:u8, t:i8) : u8 = {
+  btab:= *i8~~tab
+  def settab{x} = {
+    u+= u8~~(t - load{btab, x})  # u tracks the total of btab
+    store{btab, x, t}
   }
-  def {bitsel, reload_tab} = bittab_selector{readbytes}
-  wv:= *VI~~w0
-  while (iw < nw) {
-    ii:= iw+32
-    m:= bitsel{load{wv, iw/32}}
-    if (ii > nw) { ii=nw; m|=(~u32~~0)<<(nw%32) }
-    m = ~m
+  x:= *u8~~x0
+  i:u64 = 32; if (n<=48) i=n
+  @for (x over i) settab{x}
+  if (u == 0) return{u} # Won't ever trigger (m != 0)!
+  def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
+  xv:= *VI~~x0
+  while (i < n) {
+    ii:= i+32
+    m:= bitsel{load{xv, i/32}}
+    if (ii > n) { ii=n; m|=(~u32~~0)<<(n%32) }
+    m^= u32~~cast_i{i32, t}
     if (m != 0) { # Need to add entries
       do {
-        wj:= load{w, iw+emit{u64, 'CTZ', m}}
-        u-= 1 + u8~~load{btab, wj}  # Subtract 1 if new
-        store{btab, wj, -1}
+        settab{load{x, i+emit{u64, 'CTZ', m}}}
         m&= m-1 # Clear last bit
       } while (m != 0)
-
-      if (u == 0) { # All found!
-        @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
-        return{}
-      }
+      if (u == 0) return{u} # Table is all one value
       reload_tab{}
     }
-    iw = ii
+    i = ii
+  }
+  u
+}
+
+fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
+  assert{nw > 0}
+  vtab:= *VI~~tab
+
+  # Initialize
+  rev:u1 = nx < nw/4  # Reverse lookup
+  z:= VI**(-cast_i{i8,rev})
+  @unroll (vtab over 8) vtab = z
+  u:u8 = 0  # Sum of table, either 0 or 256
+  if (rev) u = fill_bittab(x0, nx, tab, u, 0)
+
+  # Fill table
+  u = fill_bittab(w0, nw, tab, u, -1)
+  if (u == 0) { # All found!
+    @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
+    return{}
   }
 
   # Read result
+  def {bitsel, _} = bittab_selector{readbytes{vtab}}
   @for (x in *VI~~x0, r in *u32~~r0 over cdiv{nx,32}) r = bitsel{x}
 }
 
