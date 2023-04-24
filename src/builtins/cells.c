@@ -57,6 +57,19 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
   return r;
 }
 
+
+#if TEST_CELL_FILLS
+  i32 fullCellFills = 2*CATCH_ERRORS;
+  i32 cellFillErrored = 0;
+  #define DO_CELL_CATCH (fullCellFills==2)
+  #define getFillQ2 (fullCellFills? getFillR : getFillQ)
+  #define SET_FILL_ERRORED cellFillErrored = 1
+#else
+  #define DO_CELL_CATCH CATCH_ERRORS
+  #define getFillQ2 getFillQ
+  #define SET_FILL_ERRORED
+#endif
+
 static NOINLINE B empty_frame(usz* xsh, ur k) {
   if (k==1) return emptyHVec();
   assert(k>1);
@@ -219,7 +232,7 @@ static NOINLINE B transp_cells(ur ax, ur k, B x) {
 
 // helpers
 static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
-  B xf = getFillQ(x);
+  B xf = getFillQ2(x);
   if (noFill(xf)) xf = m_f64(0);
   ur cr = RNK(x)-k;
   usz* sh = SH(x)+k;
@@ -237,7 +250,7 @@ static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
 static NOINLINE B merge_fill_result(B rc, ur k, usz* sh, u32 chr) {
   u64 rr = k; if (isArr(rc)) rr+= RNK(rc);
   if (rr>UR_MAX) thrF("%c: Result rank too large", chr);
-  Arr* r = m_fillarrpEmpty(getFillQ(rc));
+  Arr* r = m_fillarrpEmpty(getFillQ2(rc));
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     shcpy(rsh, sh, k);
@@ -262,7 +275,6 @@ static usz check_rank_vec(B g) {
 static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
   return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
 }
-
 
 
 
@@ -355,11 +367,13 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
     noCells:;
     usz s0=0; ShArr* s=NULL;
     if (xr<=1) { s0=xsh[0]; xsh=&s0; } else { s=ptr_inc(shObj(x)); }
-    if (!isPureFn(f) || !CATCH_ERRORS) { decG(x); goto empty; }
+    if (!DO_CELL_CATCH || !isPureFn(f)) { decG(x); goto empty; }
     B cf = to_fill_cell(x, k, chr);
     B r;
-    if (CATCH) { empty:
+    if (CATCH) {
+      SET_FILL_ERRORED;
       freeThrown();
+      empty:
       r = empty_frame(xsh, k);
     } else {
       B rc = c1(f, cf);
@@ -406,18 +420,20 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
 }
 
 
-static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) {
+static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk) { // TODO pass chr around everywhere
   B fa = wk>xk?w:x;
   ur k = wk>xk?wk:xk;
   usz* sh = SH(fa);
   usz s0=0; ShArr* s=NULL; ur sho=RNK(fa)>1;
   if (!sho) { s0=sh[0]; sh=&s0; } else { s=ptr_inc(shObj(fa)); }
-  if (!isPureFn(f) || !CATCH_ERRORS) { dec(w); dec(x); goto empty; }
+  if (!DO_CELL_CATCH || !isPureFn(f)) { dec(w); dec(x); goto empty; }
   B r;
   if (wk) w = to_fill_cell(w, wk, U'⎉');
   if (xk) x = to_fill_cell(x, xk, U'⎉');
-  if (CATCH) { empty:
+  if (CATCH) {
+    SET_FILL_ERRORED;
     freeThrown();
+    empty:
     r = empty_frame(sh, k);
   } else {
     B rc = c2(f, w, x);

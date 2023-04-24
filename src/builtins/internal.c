@@ -276,8 +276,17 @@ B eequal_c2(B t, B w, B x) {
   extern B native_comp;
   void switchComp(void);
 #endif
+#if TEST_CELL_FILLS
+  extern i32 fullCellFills;
+  extern i32 cellFillErrored;
+#endif
 B internalTemp_c1(B t, B x) {
-  
+  #if TEST_CELL_FILLS
+    if (isNum(x)) fullCellFills = o2iG(x);
+    B r = m_i32(cellFillErrored);
+    cellFillErrored = 0;
+    return r;
+  #endif
   #if NATIVE_COMPILER
     switchComp();
     B r = bqn_exec(x, bi_N, bi_N);
@@ -285,8 +294,8 @@ B internalTemp_c1(B t, B x) {
     return r;
   #endif
   #ifdef TEST_BITCPY
-  SGetU(x)
-  bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
+    SGetU(x)
+    bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitarr_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
   #endif
   return x;
 }
