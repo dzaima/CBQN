@@ -23,6 +23,11 @@
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
 
+#if SINGELI_SIMD
+  #define SINGELI_FILE search
+  #include "../utils/includeSingeli.h"
+#endif
+
 #define C2i(F, W, X) C2(F, m_i32(W), X)
 extern B eq_c2(B,B,B);
 extern B ne_c2(B,B,B);
@@ -130,11 +135,6 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
 static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
-
-#if SINGELI_SIMD
-  #define SINGELI_FILE search
-  #include "../utils/includeSingeli.h"
-#endif
 
 static NOINLINE usz indexOfOne(B l, B e) {
     void* lp = tyany_ptr(l);
@@ -293,6 +293,15 @@ B memberOf_c2(B t, B w, B x) {
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
         B r;
+        #if SINGELI_AVX2
+        if (we==el_i8 && xe==el_i8) {
+          TALLOC(u8, tab, 256);
+          u64* rp; r = m_bitarrc(&rp, w);
+          avx2_member_u8(tyany_ptr(x), xia, tyany_ptr(w), wia, rp, tab);
+          TFREE(tab);
+          return r;
+        }
+        #endif
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }

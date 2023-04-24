@@ -75,3 +75,76 @@ export{'simd_search_u32', searchOne{u64, u32}}
 export{'simd_search_f64', searchOne{f64, f64}}
 export{'simd_search_normalizable', searchNormalizable{}}
 export{'simd_copy_ordered', copyOrdered{}}
+
+
+# In-register bit table
+if (hasarch{'AVX2'}) {
+def TI = i8
+def VI = [32]TI
+
+def bittab_selector{loadtab} = {
+  {t0, t1}:= loadtab{}
+  low:= VI**7
+  hi4:= VI**(-(1<<4))
+  b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
+  def selector{x} = {
+    top := hi4 + VI~~(([8]u32~~(x&~low))>>3)
+    byte:= sel{[16]i8, t0, hi4^top} | sel{[16]i8, t1, top}
+    mask:= sel{[16]i8, b, x & low}
+    homMask{(mask & byte) == mask}
+  }
+  def reload{} = { tup{t0,t1} = loadtab{} }
+  tup{selector, reload}
+}
+
+fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
+  assert{nw > 0}
+  vtab:= *VI~~tab; btab:= *i8~~tab
+  z:= VI**0
+  @unroll (vtab over 8) vtab = z
+  def readbytes{} = {
+    def side{i} = {
+      def m = @collect (vtab over _ from i to i+4) homMask{vtab}
+      VI~~make{[8]u32, merge{m,m}}
+    }
+    each{side, 4*iota{2}}
+  }
+
+  # Fill table
+  u:u8 = 0  # Unseen unique bytes (goes to 255 on first step)
+  w:= *u8~~w0
+  iw:u64 = 32; if (nw<=48) iw=nw
+  @for (w over iw) {
+    u-= 1 + u8~~load{btab, w}  # Subtract 1 if new
+    store{btab, w, -1}
+  }
+  def {bitsel, reload_tab} = bittab_selector{readbytes}
+  wv:= *VI~~w0
+  while (iw < nw) {
+    ii:= iw+32
+    m:= bitsel{load{wv, iw/32}}
+    if (ii > nw) { ii=nw; m|=(~u32~~0)<<(nw%32) }
+    m = ~m
+    if (m != 0) { # Need to add entries
+      do {
+        wj:= load{w, iw+emit{u64, 'CTZ', m}}
+        u-= 1 + u8~~load{btab, wj}  # Subtract 1 if new
+        store{btab, wj, -1}
+        m&= m-1 # Clear last bit
+      } while (m != 0)
+
+      if (u == 0) { # All found!
+        @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
+        return{}
+      }
+      reload_tab{}
+    }
+    iw = ii
+  }
+
+  # Read result
+  @for (x in *VI~~x0, r in *u32~~r0 over cdiv{nx,32}) r = bitsel{x}
+}
+
+export{'avx2_member_u8', avx2_member_u8}
+} # hasarch{'AVX2'}
