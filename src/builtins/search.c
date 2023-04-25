@@ -201,7 +201,10 @@ B indexOf_c2(B t, B w, B x) {
   } else {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
-    if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
+    if (wia==0 || xia==0) {
+      B r=taga(arr_shCopy(allZeroes(xia), x));
+      decG(w); decG(x); return r;
+    }
     
     if (elNum(we) && elNum(xe)) { tyEls:
       if (we==el_bit) {
@@ -271,7 +274,10 @@ B memberOf_c2(B t, B w, B x) {
   many: {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
-    if (xia == 0) { r=taga(arr_shCopy(allZeroes(wia), w)); decG(w); goto dec_x; }
+    if (wia==0 || xia==0) {
+      r=taga(arr_shCopy(allZeroes(wia), w));
+      decG(w); goto dec_x;
+    }
     
     if (elNum(we) && elNum(xe)) { tyEls:
       #define WEQ(V) C2(eq, incG(w), V)
@@ -330,7 +336,7 @@ B count_c2(B t, B w, B x) {
     x = t.n;
   }
   
-  if (!isArr(x) || IA(x)<=1) return C2(indexOf, w, x);
+  if (!isArr(x) || IA(x)<=1 || IA(w)==0) return C2(indexOf, w, x);
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   i32* rp; B r = m_i32arrc(&rp, x);
