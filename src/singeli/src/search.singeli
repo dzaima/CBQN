@@ -122,19 +122,18 @@ fn fill_bittab(x0:*void, n:u64, tab:*void, u:u8, t:i8) : u8 = {
   def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
   xv:= *VI~~x0
   while (i < n) {
-    ii:= i+32
-    m:= bitsel{load{xv, i/32}}
-    if (ii > n) { ii=n; m|=(~u32~~0)<<(n%32) }
-    m^= u32~~cast_i{i32, t}
+    m:= u32~~cast_i{i32, t} ^ bitsel{load{xv, i/32}}
+    i0:= i
+    i+= 32
+    if (i > n) m&= (~u32~~0)>>((-n)%32)
     if (m != 0) { # Need to add entries
       do {
-        settab{load{x, i+emit{u64, 'CTZ', m}}}
+        settab{load{x, i0 + cast_i{u64,ctz{m}}}}
         m&= m-1 # Clear last bit
       } while (m != 0)
       if (u == 0) return{u} # Table is all one value
       reload_tab{}
     }
-    i = ii
   }
   u
 }
