@@ -320,14 +320,15 @@ po ← { # parsed options
     args∾↩ GetOpt "lf"
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ GetOpt "LDFLAGS"
-    args∾↩ (         emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
-    args∾↩ (         wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
-    args∾↩ (shared ∧ wasi) / ⟨"-mexec-model=reactor", "-Wl,--export-dynamic", "-Wl,--export=malloc", "-Wl,--export=free"⟩
-    args∾↩ (shared ∧¬wasi) / ⟨"-shared"⟩
-    args∾↩ (     rdynamic) / ⟨"-rdynamic"⟩
-    args∾↩ ((¬wasm)∧ ¬pie) / ⟨"-no-pie"⟩
-    args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE", "-pie"⟩
-    args∾↩ (      windows) / ⟨"-lpthread"⟩
+    args∾↩ (          emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
+    args∾↩ (          wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
+    args∾↩ (shared ∧  wasi) / ⟨"-mexec-model=reactor", "-Wl,--export-dynamic", "-Wl,--export=malloc", "-Wl,--export=free"⟩
+    args∾↩ (shared ∧ ¬wasi) / ⟨"-shared"⟩
+    args∾↩ (shared ∧ macos) / ⟨"-install_name", "@rpath/libcbqn.dylib"⟩
+    args∾↩ (      rdynamic) / ⟨"-rdynamic"⟩
+    args∾↩ ((¬wasm)∧  ¬pie) / ⟨"-no-pie"⟩
+    args∾↩ (pie ∧  ¬shared) / ⟨"-fPIE", "-pie"⟩
+    args∾↩ (       windows) / ⟨"-lpthread"⟩
     args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
     {"linker: "∾•Repr 𝕩} _verboseLog args
     linker ↩ args
