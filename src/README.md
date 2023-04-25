@@ -243,6 +243,7 @@ B result = HARR_FV(r); // sets shape to a vector
 B result = HARR_FC(r, x); // copies the shape of x, doesn't consume x
 B result = HARR_FCD(r, x); // copies the shape of x and consumes it
 usz* sh = HARR_FA(r, 4); // allocate shape for a rank 4 array. To get the result `B` object, do HARR_O(r).b later
+Arr* result = HARR_FP(r); // don't allocate/set any shape
 // If at any point you want to free the object before finishing it, do HARR_ABANDON(r)
 
 // If you're sure GC cannot happen (that includes no allocating) before all items in the array are set, you can use:

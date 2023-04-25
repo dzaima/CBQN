@@ -71,6 +71,7 @@ static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape 
   } else {
     usz* sh = x->sh = m_shArr(r)->a; // if m_shArr fails, the assumed rank≤1 guarantees the uninitialized x->sh won't break
     SPRNK(x,r);
+    assert(sh!=NULL);
     return sh;
   }
 }

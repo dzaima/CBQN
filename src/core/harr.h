@@ -42,6 +42,7 @@ SHOULD_INLINE HArr_p m_harr_impl(usz ia) {
 #define HARR_FC(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fc_impl(N##_v, X); })
 #define HARR_FCD(N, X) ({ assert(N##_v.c->ia == N##_len); harr_fcd_impl(N##_v, X); })
 #define HARR_FA(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fa_impl(N##_v, R); })
+#define HARR_FP(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fp_impl(N##_v, R); })
 #define HARR_ABANDON(N) harr_abandon_impl(N##_v.c)
 SHOULD_INLINE B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
@@ -62,6 +63,11 @@ SHOULD_INLINE B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
   decG(x);
   gsPop();
   return p.b;
+}
+SHOULD_INLINE Arr* harr_fp_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
+  p.c->type = t_harr;
+  gsPop();
+  return (Arr*)p.c;
 }
 SHOULD_INLINE usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
   p.c->type = t_harr;
