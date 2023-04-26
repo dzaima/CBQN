@@ -35,7 +35,10 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   def RV = [bulk]R
   def ur = tern{hasarch{'AARCH64'}, 4, 1}
   
-  if (R==u64) {
+  if (X==R and R!=u1) {
+    if (hasarch{'X86_64'} and l<=bulk) storeBatch{rp, 0, loadBatch{xp, 0, RV}, maskAfter{l}}
+    else emit{void, 'memcpy', r, x, l*(width{X}/8)}
+  } else if (R==u64) {
     # show{'R==u64', X, R}
     assert{((X==u8) | (X==u16)) | (X==u32)}
     maskedLoop{bulk, l, {i, M} => { # TODO could maybe read 256 bits and use unpack to write >256
