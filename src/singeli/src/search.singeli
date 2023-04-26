@@ -161,5 +161,53 @@ fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : voi
   @for (x in *VI~~x0, r in *u32~~r0 over cdiv{nx,32}) r = bitsel{x}
 }
 
+fn avx2_mark_firsts_u8(x0:*void, n:u64, r0:*void, tab:*void) : void = {
+  vtab:= *VI~~tab
+  init:= VI**(-1)
+  @unroll (vtab over 8) vtab = init
+
+  u:u8 = 0  # Sum of table, either 0 or 256
+  btab:= *i8~~tab
+  def settab{x} = {
+    v:= load{btab, x}
+    u-= u8~~v  # u tracks the total of btab
+    store{btab, x, 0}
+    v
+  }
+
+  # Do first 64 values with a scalar loop
+  x:= *u8~~x0
+  i:u64 = 64; if (n<=64) i=n
+  rw:u64 = 0
+  @for (x over j to i) rw|= u64~~cast_i{i64,settab{x}} & ((u64~~1)<<j)
+  store{*u64~~r0, 0, rw}
+
+  def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
+  xv:= *VI~~x0; r:= *u32~~r0
+  while (i < n) {
+    i0:= i; iw:= i/32
+    m:= bitsel{load{xv, iw}} # Mask of possibly-new values
+    i+= 32
+    if (i > n) m&= (~u32~~0)>>((-n)%32)
+    if (m == 0) { # No new values
+      store{r, iw, m}
+    } else { # Add values to the table and filter m
+      rv:= m
+      do {
+        new:= settab{load{x, i0 + cast_i{u64,ctz{m}}}}
+        m1:= m-1; m&= m1               # Clear last bit
+        rv&= m1 | u32~~cast_i{i32,new} # Clear if not new
+      } while (m != 0)
+      store{r, iw, rv}
+      if (u == 0) { # All bytes seen
+        @for (r over _ from iw+1 to cdiv{n,32}) r = 0
+        return{}
+      }
+      reload_tab{}
+    }
+  }
+}
+
+export{'avx2_mark_firsts_u8', avx2_mark_firsts_u8}
 export{'avx2_member_u8', avx2_member_u8}
 } # hasarch{'AVX2'}

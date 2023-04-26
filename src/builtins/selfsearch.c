@@ -213,6 +213,8 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
     /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
     /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
 
+extern void (*const avx2_mark_firsts_u8)(void*,uint64_t,void*,void*);
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   u64 n = *SH(x);
@@ -251,7 +253,17 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n; i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; }  \
     decG(x); TFREE(tab);                                               \
     return taga(cpyBitArr(r))
-  if (lw==3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
+  if (lw==3) { if (n<8) { BRUTE(8); } else {
+    #if SINGELI_AVX2
+    TALLOC(u8, tab, 256);
+    u64* rp; B r = m_bitarrv(&rp, n);
+    avx2_mark_firsts_u8(xv, n, rp, tab);
+    TFREE(tab);
+    return r;
+    #else
+    LOOKUP(8);
+    #endif
+  } }
   if (lw==4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
