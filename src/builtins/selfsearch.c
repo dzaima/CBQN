@@ -214,6 +214,7 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
     /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
 
 extern void (*const avx2_mark_firsts_u8)(void*,uint64_t,void*,void*);
+extern u64  (*const avx2_deduplicate_u8)(void*,uint64_t,void*,void*);
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
@@ -545,7 +546,8 @@ B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
-  if (TI(x,elType)==el_bit && RNK(x)==1) {
+  u8 xe = TI(x,elType);
+  if (xe==el_bit && RNK(x)==1) {
     u64* xp = bitarr_ptr(x);
     u64 x0 = 1 & *xp;
     usz i = bit_find(xp, n, !x0); decG(x);
@@ -553,5 +555,15 @@ B find_c1(B t, B x) {
     rp[0] = 2 ^ -x0;
     return r;
   }
+  #if SINGELI_AVX2
+  if (elWidth(xe)==1 && RNK(x)==1 && !FL_HAS(x, fl_asc|fl_dsc)) {
+    TALLOC(u8, tab, 512); u8* res = tab+256;
+    usz ria = avx2_deduplicate_u8(tyany_ptr(x), n, res, tab);
+    B r; i8* rp = m_tyarrv(&r, 1, ria, el2t(xe));
+    memcpy(rp, res, ria);
+    TFREE(tab); decG(x);
+    return r;
+  }
+  #endif
   return C2(slash, C1(memberOf, incG(x)), x);
 }

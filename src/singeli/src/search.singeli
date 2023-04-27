@@ -111,10 +111,19 @@ def readbytes{vtab}{} = {
 # Stop early if the sum u reaches 0, indicating all bytes in the table
 # are equal: by the time it's checked at least one has been set to t,
 # so they're all t
-# If r0 is a pointer, set it to the unique mask of x0
-def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, r0} = {
+# Fill r0 depending on mode:
+# - 'none': ignore
+# - 'mask': Mark Firsts of x0
+# - 'unique': Deduplicate of x0
+def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
+  def rbit = mode == 'mask'
+  def storebit{i, v:T} = if (rbit) store{*T~~r0, i, v}
+  def rval = mode == 'unique'
+  if (rbit or rval) assert{match{t,0}}
+
   btab:= *i8~~tab
   def settab_sub{x, v} = {
+    if (rval and v!=0) store{*u8~~r0, u, x}
     u+= u8~~(t - v)  # u tracks the total of btab
     store{btab, x, t}
     v
@@ -122,9 +131,6 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, r0} = {
   def settab1{x} = settab_sub{x, -1 - t}       # Known new
   def settab{x} = settab_sub{x, load{btab, x}} # General case
   def settab{T, x} = T~~promote{ty_s{T}, settab{x}}
-
-  def rbit = ~match{r0, 0}
-  def storebit{i, v:T} = if (rbit) store{*T~~r0, i, v}
 
   # Do first few values with a scalar loop
   # Avoids the cost of ever loading the table into vectors for n<=48
@@ -137,7 +143,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, r0} = {
     if (rbit) rw|= new & ((u64~~1)<<j)
   }
   storebit{0, rw}
-  if (not rbit and u == 0) return{u} # Won't ever trigger (m != 0)!
+  if (mode == 'none' and u == 0) return{u} # Won't ever trigger (m != 0)!
 
   def done = makelabel{}
   def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
@@ -187,11 +193,20 @@ fn avx2_mark_firsts_u8(x0:*void, n:u64, r0:*void, tab:*void) : void = {
   init:= VI**(-1)
   @unroll (t in *VI~~tab over 8) t = init
   u:u8 = 0
-  do_bittab{x0, n, tab, u, 0, r0}
+  do_bittab{x0, n, tab, u, 0, 'mask', r0}
+}
+
+fn avx2_deduplicate_u8(x0:*void, n:u64, r0:*void, tab:*void) : u64 = {
+  assert{n != 0}
+  init:= VI**(-1)
+  @unroll (t in *VI~~tab over 8) t = init
+  u:u8 = 0
+  do_bittab{x0, n, tab, u, 0, 'unique', r0}
+  1 + promote{u64, u-1}  # 0 to 256
 }
 
 fn fill_bittab(x0:*void, n:u64, tab:*void, u:u8, t:i8) : u8 = {
-  do_bittab{x0, n, tab, u, t, 0}
+  do_bittab{x0, n, tab, u, t, 'none', 0}
 }
 
 fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
@@ -218,5 +233,6 @@ fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : voi
 }
 
 export{'avx2_mark_firsts_u8', avx2_mark_firsts_u8}
+export{'avx2_deduplicate_u8', avx2_deduplicate_u8}
 export{'avx2_member_u8', avx2_member_u8}
 } # hasarch{'AVX2'}
