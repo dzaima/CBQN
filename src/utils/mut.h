@@ -226,7 +226,7 @@ static B vec_add(B w, B x) { // consumes both; fills may be wrong
 
 typedef struct ApdMut ApdMut;
 typedef void ApdFn(ApdMut* m, B a);
-typedef Arr* ApdEnd(ApdMut* m, u8 type);
+typedef Arr* ApdEnd(ApdMut* m, u32 type);
 struct ApdMut {
   ApdFn* apd;
   ApdEnd* end;

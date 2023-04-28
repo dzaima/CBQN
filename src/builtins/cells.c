@@ -388,7 +388,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc1(f, SLICEI(x)));
   decG(x);
   
-  return taga(APD_SH_GET(r, 1));
+  return taga(APD_SH_GET(r, chr));
 }
 
 B cell_c1(Md1D* d, B x) { B f = d->f;
@@ -446,7 +446,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
   M_APD_SH(r, wk, wsh); BBB2B fc2 = c2fn(f);
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
-  decG(w); return taga(APD_SH_GET(r,2));
+  decG(w); return taga(APD_SH_GET(r, chr));
 }
 NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
@@ -467,7 +467,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
   M_APD_SH(r, xk, xsh); BBB2B fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
-  decG(x); return taga(APD_SH_GET(r,2));
+  decG(x); return taga(APD_SH_GET(r, chr));
 }
 NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   assert(isArr(w) && isArr(x));
@@ -510,7 +510,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   else          { for (usz i=0; i<cam; ) { B xb=incByG(SLICEI(x), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, SLICEI(w), xb)); } }
   
   if (rsh!=0) decShObj(rsh);
-  return taga(APD_SH_GET(r, 2));
+  return taga(APD_SH_GET(r, chr));
 }
 
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;

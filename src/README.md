@@ -331,6 +331,7 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %U   char* of UTF-8 data
 %R   a B object of a number or string (string is printed without quotes or escaping)
 %H   the shape of a B object
+%2H  a shape, passed in by a ur & usz*
 %B   a B object, formatted by •Repr (be very very careful to not give a potentially large object, which'd lead to unreadably long messages!)
 %%   "%"
 ```

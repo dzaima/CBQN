@@ -454,18 +454,20 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 
 void apd_fail_apd(ApdMut* m, B x) { }
-Arr* apd_sh_err(ApdMut* m, u8 ty) {
-  arr_shErase(m->obj, 1); // TODO this clears the shape that ↓ would use
+Arr* apd_sh_err(ApdMut* m, u32 ty) {
+  B msg = make_fmt("%c: Incompatible %S shapes (encountered shapes %2H and %H)", ty==0? '>' : ty, ty==0? "element" : "result", m->cr, m->csh, m->failEl);
+  arr_shErase(m->obj, 1);
   ptr_dec(m->obj);
   dec(m->failEl);
-  thrF("%c: Incompatible shapes", ty==0? '>' : '?'); // TODO include shapes
+  thr(msg);
 }
-Arr* apd_rnk_err(ApdMut* m, u8 ty) {
+Arr* apd_rnk_err(ApdMut* m, u32 ty) {
   ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
   dec(m->failEl);
-  thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =⊑𝕩)", ">𝕩", m->rr0, er);
+  thrF("%c: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", ty==0? '>' : ty, m->rr0, er, ty==0? "⊑𝕩" : "𝔽v");
 }
-NOINLINE void apd_sh_fail(ApdMut* m, B x) {
+NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
+  if (mode<=1) m->cr = mode;
   m->apd = apd_fail_apd;
   m->end = apd_sh_err;
   if (PTY(m->obj) == t_harr) dec(m->fill);
@@ -474,7 +476,7 @@ NOINLINE void apd_sh_fail(ApdMut* m, B x) {
 
 #if DEBUG
   void apd_dbg_apd(ApdMut* m, B x) { err("ApdMut default .apd invoked"); }
-  Arr* apd_dbg_end(ApdMut* m, u8 ty) { err("ApdMut default .end invoked"); }
+  Arr* apd_dbg_end(ApdMut* m, u32 ty) { err("ApdMut default .end invoked"); }
 #endif
 
 void apd_widen(ApdMut* m, B x, ApdFn** fns);
@@ -505,16 +507,16 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
     COPY_TO_2(m->a, E, p0, x, xe, cia);            \
   }
 
-#define APD_SH0_CHK if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m, x); return; }
-#define APD_SHH_CHK if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m, x); return; }
+#define APD_SH1_CHK(N) if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m,x,N); return; }
+#define APD_SHH_CHK(N) if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m,x,N); return; }
 #define APD_MK(E, EB, W, TATOM, TARR) \
   APD_MK0(E, EB, tot, TARR, IA(x), ) \
-  APD_MK0(E, EB, sh1, TARR, m->cia,                   APD_SH0_CHK) \
-  APD_MK0(E, EB, sh2, TARR, m->cia, assert(m->cr>=2); APD_SHH_CHK) \
+  APD_MK0(E, EB, sh1, TARR, m->cia,                   APD_SH1_CHK(1)) \
+  APD_MK0(E, EB, sh2, TARR, m->cia, assert(m->cr>=2); APD_SHH_CHK(2)) \
   NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
     APD_OR_FILL(EB, x);                       \
     if (isArr(x)) {                           \
-      if (RARE(RNK(x)!=0)) { apd_sh_fail(m, x); return; } \
+      if (RARE(RNK(x)!=0)) { apd_sh_fail(m,x,0); return; } \
       x = IGetU(x,0);                         \
     }                                         \
     if (RARE(!TATOM)) { apd_widen(m, x, apd_sh0_fns); return; } \
@@ -530,8 +532,8 @@ APD_MK(i32, 0,       ((i32*)a)[p0]=o2iG(x),  q_i32(x), xe<=el_i32)  APD_MK(c32, 
 APD_MK(f64, 0,       ((f64*)a)[p0]=o2fG(x),  q_f64(x), xe<=el_f64)  APD_MK(B,   1, ((B*)a)[p0]=inc(x);, 1, 1)
 #undef APD_MK
 
-NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK }
-NOINLINE void apd_shE_B(ApdMut* m, B x) { APD_SHH_CHK }
+NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK(2) }
+NOINLINE void apd_shE_B(ApdMut* m, B x) { APD_SHH_CHK(2) }
 
 #define APD_FNS(N) ApdFn* apd_##N##_fns[] = {apd_##N##_bit,apd_##N##_i8,apd_##N##_i16,apd_##N##_i32,apd_##N##_f64,apd_##N##_c8,apd_##N##_c16,apd_##N##_c32,apd_##N##_B}
 APD_FNS(tot);
@@ -539,8 +541,8 @@ APD_FNS(sh0); APD_FNS(sh1); APD_FNS(sh2);
 #undef APD_FNS
 ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_B};
 
-NOINLINE Arr* apd_ret_end(ApdMut* m, u8 ty) { NOGC_E; return m->obj; }
-NOINLINE Arr* apd_fill_end(ApdMut* m, u8 ty) {
+NOINLINE Arr* apd_ret_end(ApdMut* m, u32 ty) { NOGC_E; return m->obj; }
+NOINLINE Arr* apd_fill_end(ApdMut* m, u32 ty) {
   if (noFill(m->fill)) return m->obj;
   return a(withFill(taga(m->obj), m->fill));
 }
