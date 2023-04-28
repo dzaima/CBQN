@@ -14,6 +14,7 @@
   
   #define SINGELI_FILE0(X) #X
   #define SINGELI_FILE1(X) SINGELI_FILE0(X)
+  #define si_unreachable() ({UD})
 #endif
 
 
