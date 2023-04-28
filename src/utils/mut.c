@@ -482,15 +482,13 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
 
 #define APD_CAT(A,B) A##B
 
-#define APD_OR_FILL_0(CF)
-#define APD_OR_FILL_1(CF) \
-  B cf = m->fill;              \
-  if (noFill(cf)) goto noFill; \
-  cf = fill_or(cf,CF);         \
-  if (noFill(cf)) goto noFill; \
-  m->fill = cf; noFill:;
+#define APD_OR_FILL_0(X)
+#define APD_OR_FILL_1(X) \
+  B f0=m->fill; if (noFill(f0)) goto noFill;                           \
+  if (!fillEqualsGetFill(f0, X)) { dec(m->fill); m->fill=bi_noFill; }  \
+  noFill:;
 
-#define APD_OR_FILL(EB, CF) APD_CAT(APD_OR_FILL_,EB)(CF)
+#define APD_OR_FILL(EB, X) APD_CAT(APD_OR_FILL_,EB)(X)
 
 #define APD_POS_0() m->pos
 #define APD_POS_1() m->obj->ia
@@ -502,7 +500,7 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
     if (RARE(!(TARR))) {                           \
       apd_widen(m, x, apd_##TY##_fns); return;     \
     }                                              \
-    APD_OR_FILL(EB, getFillQ(x));                  \
+    APD_OR_FILL(EB, x);                            \
     usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;   \
     COPY_TO_2(m->a, E, p0, x, xe, cia);            \
   }
@@ -514,7 +512,7 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
   APD_MK0(E, EB, sh1, TARR, m->cia,                   APD_SH0_CHK) \
   APD_MK0(E, EB, sh2, TARR, m->cia, assert(m->cr>=2); APD_SHH_CHK) \
   NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
-    APD_OR_FILL(EB,getFillQ(x));              \
+    APD_OR_FILL(EB, x);                       \
     if (isArr(x)) {                           \
       if (RARE(RNK(x)!=0)) { apd_sh_fail(m, x); return; } \
       x = IGetU(x,0);                         \
@@ -601,7 +599,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   }
   if (xe==el_B) {
     m->tia = ria;
-    m->fill = getFillQ(x);
+    m->fill = getFillR(x);
     m->end = apd_fill_end;
   } else {
     m->pos = pos0;
@@ -637,9 +635,13 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
   u8 re = el_or(xe, pe);
   assert(pe!=re && pe<el_B);
   if (re==el_B) {
-    B cf = fill_or(elNum(pe)? m_f64(0) : m_c32(' '), getFillQ(x));
-    m->fill = cf;
-    if (!noFill(cf)) m->end = apd_fill_end;
+    B cf = elNum(pe)? m_f64(0) : m_c32(' ');
+    if (fillEqualsGetFill(cf, x)) {
+      m->fill = cf;
+      m->end = apd_fill_end;
+    } else {
+      m->fill = bi_noFill;
+    }
   }
   ApdFn* fn = m->apd = fns[re];
   
