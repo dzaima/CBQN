@@ -186,8 +186,15 @@ static usz uszMul(usz a, usz b) {
 }
 
 static u8 selfElType(B x) { // guaranteed to fit fill
-  if (isF64(x)) return q_i8(x)? (q_bit(x)? el_bit : el_i8) : (q_i16(x)? el_i16 : q_i32(x)? el_i32 : el_f64);
-  if (isC32(x)) { u32 c = o2cG(x); return LIKELY(c<=255)? el_c8 : c<=65535? el_c16 : el_c32; }
+  if (isF64(x)) {
+    if (!q_i32(x)) return el_f64;
+    i32 i = o2iG(x);
+    return i==(i8)i? (i==(i&1)? el_bit : el_i8) : (i==(i16)i? el_i16 : el_i32);
+  }
+  if (isC32(x)) {
+    u32 c = o2cG(x);
+    return LIKELY(c<=255)? el_c8 : c<=65535? el_c16 : el_c32;
+  }
   return el_B;
 }
 static bool elChr(u8 x) { return x>=el_c8 && x<=el_c32; }
