@@ -435,32 +435,45 @@ B bqn_merge(B x) {
     return taga(r);
   }
   
+  M_APD_SH(r, xr, SH(x));
   SGetU(x)
-  B x0 = GetU(x, 0);
-  usz* elSh = isArr(x0)? SH(x0) : NULL;
-  ur elR = isArr(x0)? RNK(x0) : 0;
-  usz elIA = isArr(x0)? IA(x0) : 1;
-  B fill = getFillQ(x0);
-  if (xr+elR > UR_MAX) thrM(">: Result rank too large");
-  
-  MAKE_MUT(r, xia*elIA);
-  usz rp = 0;
-  for (usz i = 0; i < xia; i++) {
+  B c0 = GetU(x, 0);
+  B fill = getFillQ(c0);
+  APD(r, c0);
+  for (usz i = 1; i < xia; i++) {
     B c = GetU(x, i);
-    if (isArr(c)? (elR!=RNK(c) || !eqShPart(elSh, SH(c), elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
-    if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
-    else mut_set(r, rp, inc(c));
+    APD(r, c);
     if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
-    rp+= elIA;
-  }
-  Arr* ra = mut_fp(r);
-  usz* rsh = arr_shAlloc(ra, xr+elR);
-  if (rsh) {
-    shcpy         (rsh   , SH(x), xr);
-    if (elSh)shcpy(rsh+xr, elSh,  elR);
   }
   decG(x);
-  return withFill(taga(ra),fill);
+  return withFill(taga(APD_GET(r)), fill);
+  
+  // SGetU(x)
+  // B x0 = GetU(x, 0);
+  // usz* elSh = isArr(x0)? SH(x0) : NULL;
+  // ur elR = isArr(x0)? RNK(x0) : 0;
+  // usz elIA = isArr(x0)? IA(x0) : 1;
+  // B fill = getFillQ(x0);
+  // if (xr+elR > UR_MAX) thrM(">: Result rank too large");
+  
+  // MAKE_MUT(r, xia*elIA);
+  // usz rp = 0;
+  // for (usz i = 0; i < xia; i++) {
+  //   B c = GetU(x, i);
+  //   if (isArr(c)? (elR!=RNK(c) || !eqShPart(elSh, SH(c), elR)) : elR!=0) { mut_pfree(r, rp); thrF(">: Elements didn't have equal shapes (contained shapes %H and %H)", x0, c); }
+  //   if (isArr(c)) mut_copy(r, rp, c, 0, elIA);
+  //   else mut_set(r, rp, inc(c));
+  //   if (!noFill(fill)) fill = fill_or(fill, getFillQ(c));
+  //   rp+= elIA;
+  // }
+  // Arr* ra = mut_fp(r);
+  // usz* rsh = arr_shAlloc(ra, xr+elR);
+  // if (rsh) {
+  //   shcpy         (rsh   , SH(x), xr);
+  //   if (elSh)shcpy(rsh+xr, elSh,  elR);
+  // }
+  // decG(x);
+  // return withFill(taga(ra),fill);
 }
 
 #ifdef ALLOC_STAT

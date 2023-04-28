@@ -223,3 +223,29 @@ static B vec_add(B w, B x) { // consumes both; fills may be wrong
   if (inplace_add(w, x)) return w;
   return vec_addF(w, x);
 }
+
+typedef struct ApdMut ApdMut;
+typedef void ApdFn(ApdMut* m, B a);
+// typedef Arr* ApdEnd(ApdMut* m);
+struct ApdMut {
+  ApdFn* apd;
+  // ApdEnd* end;
+  
+  Arr* obj; // current result
+  void* a; // data pointer in result
+  ux pos; // current offset in the result
+  
+  union {
+    struct { ux ia0; }; // tot init
+    struct { usz* rsh0; ur rr0; }; // sh init
+    struct { usz* csh; usz cia; ur cr; }; // sh2 & shE (& cia also for sh1); sh initially means result shape prefix, afterwards becomes cell shape }
+  };
+};
+
+ApdFn apd_tot_init, apd_sh_init;
+#define M_APD_TOT(M, IA) ApdMut M; M.apd = apd_tot_init; M.ia0 = (IA); // assumes elements will be arrays; end gives uninitialized shape
+#define M_APD_SH(M, RR, RSH) ApdMut M; M.apd = apd_sh_init; M.rsh0 = (RSH); M.rr0 = (RR); // appended things can be anything, will error on invalid; end gives full shape; rsh must be alive until at least the first APD call
+#define M_APD_SH1(M, RIA) usz M##_sh0 = (RIA); M_APD_SH(M, 1, &M##_sh0);
+#define APD(M, A) M.apd(&M, A) // consumes A
+// #define APD_GET() (M.end())
+#define APD_GET(M) ({ NOGC_E; M.obj; })

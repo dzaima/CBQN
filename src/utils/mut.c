@@ -1,11 +1,9 @@
 #include "../core.h"
 #include "mut.h"
 
-FORCE_INLINE void mut_init(Mut* m, u8 n) {
-  m->fns = &mutFns[n];
-  usz ia = m->ia;
+typedef struct { Arr* arr; void* els; } MadeArr;
+FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 n) {
   u64 sz;
-  // hack around inlining of the allocator too many times
   switch(n) { default: UD;
     case el_bit:              sz = BITARR_SZ(   ia); break;
     case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
@@ -14,13 +12,17 @@ FORCE_INLINE void mut_init(Mut* m, u8 n) {
     case el_f64:              sz = TYARR_SZ(F64,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
-      m->val = (Arr*)t.c;
-      m->a = t.c->a;
-      return;
+      return (MadeArr){(Arr*)t.c, t.c->a};
   }
-  Arr* a = m_arr(sz, m->fns->valType, ia);
-  m->val = a;
-  m->a = ((TyArr*)a)->a;
+  Arr* a = m_arr(sz, type, ia);
+  return (MadeArr){a, ((TyArr*)a)->a};
+}
+
+FORCE_INLINE void mut_init(Mut* m, u8 n) {
+  m->fns = &mutFns[n];
+  MadeArr a = mut_make_arr(m->ia, m->fns->valType, n);
+  m->val = a.arr;
+  m->a = a.els;
 }
 
 #if __clang__
@@ -179,7 +181,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 #define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
 #define PTR_COPY(X, R) for (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
 
-void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l) {
+NOINLINE void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l) {
   bit_cpy(r, rs, x, xs, l);
 }
 
@@ -328,7 +330,20 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
     bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l);
   }
+  
+  #define F(N,E,T) static copy_fn copy##N##Fns[]; FORCE_INLINE void copy2_##E(void* a, usz ms, B x, u8 xe, usz l) { copy##N##Fns[xe](tyany_ptr(x), ms+(T*)a, l, a(x)); }
+  F(I8, i8, i8)  F(C8, c8, u8)
+  F(I16,i16,i16) F(C16,c16,u16)
+  F(I32,i32,i32) F(C32,c32,u32)
+  F(F64,f64,f64)
+  #undef F
+  FORCE_INLINE void copy2_bit(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_bit(a, ms, x, 0, l); }
+  FORCE_INLINE void copy2_B(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_B(a, ms, x, 0, l); }
+  #define COPY_TO_2(WHERE, RE, MS, X, XE, LEN) copy2_##RE(WHERE, MS, X, XE, LEN) // assumptions: x fits; LEN≠0
+  
 #else
+  #define COPY_TO_2(WHERE, RE, MS, X, XE, LEN) copyFns[el_##RE](WHERE, MS, X, 0, LEN)
+  
   #define MAKE_ICPY(T,E) Arr* cpy##T##Arr(B x) { \
     usz ia = IA(x);        \
     E* rp; Arr* r = m_##E##arrp(&rp, ia); \
@@ -438,6 +453,138 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 M_CopyF copyFns[el_MAX];
 M_FillF fillFns[el_MAX];
+
+
+extern bool please_tail_call_err;
+NOINLINE void apd_sh_fail(ApdMut* m, B x) {
+  if (!please_tail_call_err) return;
+  thrM("apd fail");
+}
+
+void apd_widen(ApdMut* m, B x, ApdFn** fns);
+ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_sh2_fns[];
+
+#define APD_MK0(E, TY, CT, CIA, CS) \
+  NOINLINE void apd_##TY##_##E(ApdMut* m, B x) {   \
+    usz cia=CIA; CS; u8 xe=TI(x,elType); (void)xe; \
+    if (RARE(!(CT))) {                             \
+      apd_widen(m, x, apd_##TY##_fns); return;     \
+    }                                              \
+    usz p0 = m->pos;  m->pos = p0+cia;             \
+    COPY_TO_2(m->a, E, p0, x, xe, cia);            \
+  }
+
+#define APD_SH0_CHK if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m, x); return; }
+#define APD_SHH_CHK if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m, x); return; }
+#define APD_MK(E, W, TAT, TEL) \
+  APD_MK0(E, tot, TEL, IA(x), ) \
+  APD_MK0(E, sh1, TEL, m->cia,                   APD_SH0_CHK) \
+  APD_MK0(E, sh2, TEL, m->cia, assert(m->cr>=2); APD_SHH_CHK) \
+  NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
+    if (isArr(x)) {     \
+      if (RARE(RNK(x)!=0)) { apd_sh_fail(m, x); return; } \
+      x = IGetU(x,0);   \
+    }                   \
+    if (RARE(!TAT)) { apd_widen(m, x, apd_sh0_fns); return; } \
+    usz p0 = m->pos;    \
+    m->pos = p0+1;      \
+    void* a = m->a; W;  \
+  }
+
+APD_MK(bit, bitp_set((u64*)a,p0,o2bG(x)), q_bit(x), xe==el_bit)
+APD_MK(i8,  ((i8 *)a)[p0]=o2iG(x),        q_i8(x),  xe<=el_i8 ) APD_MK(c8,  ((u8 *)a)[p0]=o2cG(x), q_c8(x),  xe==el_c8)
+APD_MK(i16, ((i16*)a)[p0]=o2iG(x),        q_i16(x), xe<=el_i16) APD_MK(c16, ((u16*)a)[p0]=o2cG(x), q_c16(x), xe>=el_c8 && xe<=el_c16)
+APD_MK(i32, ((i32*)a)[p0]=o2iG(x),        q_i32(x), xe<=el_i32) APD_MK(c32, ((u32*)a)[p0]=o2cG(x), q_c32(x), xe>=el_c8 && xe<=el_c32)
+APD_MK(f64, ((f64*)a)[p0]=o2fG(x),        q_f64(x), xe<=el_f64) APD_MK(B, ((B*)a)[p0]=inc(x);, 1, 1)
+#undef APD_MK
+
+NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK }
+
+#define APD_FNS(N) ApdFn* apd_##N##_fns[] = {apd_##N##_bit,apd_##N##_i8,apd_##N##_i16,apd_##N##_i32,apd_##N##_f64,apd_##N##_c8,apd_##N##_c16,apd_##N##_c32,apd_##N##_B}
+APD_FNS(tot);
+APD_FNS(sh0); APD_FNS(sh1); APD_FNS(sh2);
+#undef APD_FNS
+ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T};
+
+// NOINLINE Arr* apd_end(ApdMut* m) { NOGC_E; return m->obj; }
+
+SHOULD_INLINE Arr* apd_setArr(ApdMut* m, usz ia, u8 xe) {
+  MadeArr a = mut_make_arr(ia, el2t(xe), xe);
+  m->obj = a.arr;
+  m->a = a.els;
+  return m->obj;
+}
+NOINLINE void apd_tot_init(ApdMut* m, B x) {
+  u8 xe = TI(x,elType);
+  m->apd = apd_tot_fns[xe];
+  m->pos = 0;
+  apd_setArr(m, m->ia0, xe);
+  // m->end = apd_end;
+  m->apd(m, x);
+}
+NOINLINE void apd_sh_init(ApdMut* m, B x) {
+  ur rr0 = m->rr0; // need to be read before union fields are written
+  usz* rsh0 = m->rsh0; // ↑
+  
+  ux ria;
+  if (rr0==1) ria = *rsh0;
+  else if (rr0!=0) ria = shProd(rsh0, 0, rr0);
+  else ria = 1;
+  ur rr = rr0;
+  ur xr = 0;
+  u8 xe;
+  if (isAtm(x)) {
+    xe = selfElType(x);
+    m->apd = apd_sh0_fns[xe];
+  } else if ((xr=RNK(x))==0) {
+    xe = TI(x,elType);
+    m->apd = apd_sh0_fns[xe];
+  } else {
+    xe = TI(x,elType);
+    if (rr+xr > UR_MAX) thrM("apd rank too big");
+    usz xia = IA(x);
+    if (xia==0)     { m->apd=apd_shE_fns[xe]; m->cr=xr; m->csh = &m->cia; } // csh will be overwritten on result shape creation for high-rank
+    else if (xr==1) { m->apd=apd_sh1_fns[xe]; }
+    else            { m->apd=apd_sh2_fns[xe]; m->cr=xr; } // csh written on result shape creation
+    rr+= xr;
+    m->cia = xia;
+    ria*= xia;
+  }
+  m->pos = 0;
+  ShArr* rsh = NULL;
+  if (rr>1) {
+    rsh = m_shArr(rr);
+    shcpy(rsh->a, rsh0, rr0);
+    if (xr!=0) {
+      usz* csh = rsh->a + rr0;
+      m->csh = csh; // for sh2 & shE; not needed for sh1, but whatever
+      shcpy(csh, SH(x), xr);
+    }
+  }
+  Arr* a = apd_setArr(m, ria, xe);
+  if (rr<=1) arr_rnk01(a, rr);
+  else arr_shSetU(a, rr, rsh);
+  
+  // m->end = apd_end;
+  m->apd(m, x);
+}
+
+NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
+  u8 re = el_or(isArr(x)? TI(x,elType) : selfElType(x), TIv(m->obj,elType));
+  ApdFn* fn = m->apd = fns[re];
+  
+  Arr* pa = m->obj;
+  assert(pa->refc==1 && TIv(pa,freeF)==tyarr_freeF);
+  Arr* na = apd_setArr(m, PIA(pa), re);
+  
+  ur pr = PRNK(pa);
+  if (pr<=1) arr_rnk01(na, pr);
+  else arr_shSetU(na, pr, shObjP((Value*)pa));
+  
+  COPY_TO(m->a, re, 0, taga(pa), 0, m->pos);
+  mm_free((Value*)pa);
+  fn(m, x);
+}
 
 MutFns mutFns[el_MAX+1];
 u8 el_orArr[el_MAX*16 + el_MAX+1];
