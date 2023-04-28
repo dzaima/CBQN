@@ -213,8 +213,8 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
     /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
     /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
 
-extern void (*const avx2_mark_firsts_u8)(void*,uint64_t,void*,void*);
-extern u64  (*const avx2_deduplicate_u8)(void*,uint64_t,void*,void*);
+extern void (*const simd_mark_firsts_u8)(void*,uint64_t,void*,void*);
+extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
@@ -255,10 +255,10 @@ B memberOf_c1(B t, B x) {
     decG(x); TFREE(tab);                                               \
     return taga(cpyBitArr(r))
   if (lw==3) { if (n<8) { BRUTE(8); } else {
-    #if SINGELI_AVX2
+    #if SINGELI
     TALLOC(u8, tab, 256);
     u64* rp; B r = m_bitarrv(&rp, n);
-    avx2_mark_firsts_u8(xv, n, rp, tab);
+    simd_mark_firsts_u8(xv, n, rp, tab);
     TFREE(tab);
     return r;
     #else
@@ -555,10 +555,10 @@ B find_c1(B t, B x) {
     rp[0] = 2 ^ -x0;
     return r;
   }
-  #if SINGELI_AVX2
+  #if SINGELI
   if (elWidth(xe)==1 && RNK(x)==1 && !FL_HAS(x, fl_asc|fl_dsc)) {
     TALLOC(u8, tab, 513); u8* res = tab+256;
-    usz ria = avx2_deduplicate_u8(tyany_ptr(x), n, res, tab);
+    usz ria = simd_deduplicate_u8(tyany_ptr(x), n, res, tab);
     B r; i8* rp = m_tyarrv(&r, 1, ria, el2t(xe));
     memcpy(rp, res, ria);
     TFREE(tab); decG(x);

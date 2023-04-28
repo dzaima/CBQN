@@ -299,11 +299,11 @@ B memberOf_c2(B t, B w, B x) {
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
         B r;
-        #if SINGELI_AVX2
+        #if SINGELI
         if (we==el_i8 && xe==el_i8) {
           TALLOC(u8, tab, 256);
           u64* rp; r = m_bitarrc(&rp, w);
-          avx2_member_u8(tyany_ptr(x), xia, tyany_ptr(w), wia, rp, tab);
+          simd_member_u8(tyany_ptr(x), xia, tyany_ptr(w), wia, rp, tab);
           TFREE(tab);
           return r;
         }

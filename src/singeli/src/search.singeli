@@ -80,9 +80,16 @@ export{'simd_copy_ordered', copyOrdered{}}
 
 
 # In-register bit table
-if (hasarch{'AVX2'}) {
-def TI = i8
+def TI = i8     # Table values
 def VI = [32]TI
+
+def bittab_init{tab, z} = {
+  @for (t in *TI~~tab over 256) t = z
+}
+def bittab_init{tab, z & hasarch{'AVX2'}} = {
+  init:= VI**z
+  @unroll (t in *VI~~tab over 256/vcount{VI}) t = init
+}
 
 def bittab_selector{loadtab} = {
   {t0, t1}:= loadtab{}
@@ -105,6 +112,25 @@ def readbytes{vtab}{} = {
     VI~~make{[8]u32, merge{m,m}}
   }
   each{side, 4*iota{2}}
+}
+
+# Look up bits from table
+def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void} = {
+  x:= *u8~~x0
+  t:= *TI~~tab
+  r:= *u64~~r0
+  rem:= n
+  while (rem > 0) {
+    k:= rem; if (k>64) k=64
+    rv:u64 = 0
+    @for (x over j to k) rv|= u64~~promote{i64,load{t,x}} & ((u64~~1)<<j)
+    store{r, 0, rv}
+    x+=k; rem-=k; ++r
+  }
+}
+def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & hasarch{'AVX2'}} = {
+  def {bitsel, _} = bittab_selector{readbytes{*VI~~tab}}
+  @for (x in *VI~~x0, r in *u32~~r0 over cdiv{n,32}) r = bitsel{x}
 }
 
 # Fill table with t (0 or -1) at all bytes in x0
@@ -132,74 +158,86 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
   def settab{x} = settab_sub{x, load{btab, x}} # General case
   def settab{T, x} = T~~promote{ty_s{T}, settab{x}}
 
-  # Do first few values with a scalar loop
-  # Avoids the cost of ever loading the table into vectors for n<=48
   x:= *u8~~x0
-  i:u64 = 32; if (n<=48) i=n
-  {rw,rv} := undef{tup{u64,u32}} # Bit results, used if rbit
-  if (rbit) rw = 0
-  @for (x over j to i) {
-    new:= settab{u64, x}
-    if (rbit) rw|= new & ((u64~~1)<<j)
-  }
-  storebit{0, rw}
-  if (mode == 'none' and u == 0) return{u} # Won't ever trigger (m != 0)!
-
-  def done = makelabel{}
-  def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
-  xv:= *VI~~x0
-  while (i < n) {
-    i0:= i; iw:= i/32
-    v:= load{xv, iw}
-    m:= bitsel{v} # Mask of possibly-new values
-    if (not match{t,0}) m^= u32~~promote{i32, t}
-    i+= 32
-    if (i > n) m&= (~u32~~0)>>((-n)%32)
-    # Any new values?
-    if (m == 0) {
-      storebit{iw, m}
-    } else {
-      # Add values to the table and filter m
-      if (rbit) rv = m
-      xi:= load{x, i0 + ctzi{m}}
-      settab1{xi}
-      if ((m&(m-1)) != 0) { # More bits than one
-        # Filter out values equal to the previous, or first new
-        def pind = (iota{32}&15) - 1
-        prev:= make{VI, each{bind{max,0}, pind}}
-        e:= ~homMask{v == VI**TI~~xi}
-        e&= base{2,pind<0} | ~homMask{v == sel{[16]i8, v, prev}}
-        if (rbit) rv&= e | -m # Don't remove first bit
-        m&= e
-        while (m != 0) {
-          new:= settab{u32, load{x, i0 + ctzi{m}}}
-          m1:= m-1;  m&= m1         # Clear low bit
-          if (rbit) rv&= m1 | new   # Clear if not new
-        }
+  if (not hasarch{'AVX2'}) {
+    rem:= n
+    @for (i to cdiv{n,64}) {
+      k:= rem; if (k>64) k=64
+      rw:u64 = 0
+      @for (x over j to k) {
+        new:= settab{u64, x}
+        if (rbit) rw|= new & ((u64~~1)<<j)
       }
-      storebit{iw, rv}
-      if (u == 0) { # All bytes seen
-        if (rbit) @for (r in *u32~~r0 over _ from iw+1 to cdiv{n,32}) r = 0
-        goto{done}
-      }
-      reload_tab{}
+      storebit{i, rw}
+      x+=k; rem-=k
     }
+  } else {
+    # Do first few values with a scalar loop
+    # Avoids the cost of ever loading the table into vectors for n<=48
+    i:u64 = 32; if (n<=48) i=n
+    {rw,rv} := undef{tup{u64,u32}} # Bit results, used if rbit
+    if (rbit) rw = 0
+    @for (x over j to i) {
+      new:= settab{u64, x}
+      if (rbit) rw|= new & ((u64~~1)<<j)
+    }
+    storebit{0, rw}
+    if (mode == 'none' and u == 0) return{u} # Won't ever trigger (m != 0)!
+
+    def done = makelabel{}
+    def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
+    xv:= *VI~~x0
+    while (i < n) {
+      i0:= i; iw:= i/32
+      v:= load{xv, iw}
+      m:= bitsel{v} # Mask of possibly-new values
+      if (not match{t,0}) m^= u32~~promote{i32, t}
+      i+= 32
+      if (i > n) m&= (~u32~~0)>>((-n)%32)
+      # Any new values?
+      if (m == 0) {
+        storebit{iw, m}
+      } else {
+        # Add values to the table and filter m
+        if (rbit) rv = m
+        xi:= load{x, i0 + ctzi{m}}
+        settab1{xi}
+        if ((m&(m-1)) != 0) { # More bits than one
+          # Filter out values equal to the previous, or first new
+          def pind = (iota{32}&15) - 1
+          prev:= make{VI, each{bind{max,0}, pind}}
+          e:= ~homMask{v == VI**TI~~xi}
+          e&= base{2,pind<0} | ~homMask{v == sel{[16]i8, v, prev}}
+          if (rbit) rv&= e | -m # Don't remove first bit
+          m&= e
+          while (m != 0) {
+            new:= settab{u32, load{x, i0 + ctzi{m}}}
+            m1:= m-1;  m&= m1         # Clear low bit
+            if (rbit) rv&= m1 | new   # Clear if not new
+          }
+        }
+        storebit{iw, rv}
+        if (u == 0) { # All bytes seen
+          if (rbit) @for (r in *u32~~r0 over _ from iw+1 to cdiv{n,32}) r = 0
+          goto{done}
+        }
+        reload_tab{}
+      }
+    }
+    setlabel{done}
   }
-  setlabel{done}
   u
 }
 
-fn avx2_mark_firsts_u8(x0:*void, n:u64, r0:*void, tab:*void) : void = {
-  init:= VI**(-1)
-  @unroll (t in *VI~~tab over 8) t = init
+fn simd_mark_firsts_u8(x0:*void, n:u64, r0:*void, tab:*void) : void = {
+  bittab_init{tab, -1}
   u:u8 = 0
   do_bittab{x0, n, tab, u, 0, 'mask', r0}
 }
 
-fn avx2_deduplicate_u8(x0:*void, n:u64, r0:*void, tab:*void) : u64 = {
+fn simd_deduplicate_u8(x0:*void, n:u64, r0:*void, tab:*void) : u64 = {
   assert{n != 0}
-  init:= VI**(-1)
-  @unroll (t in *VI~~tab over 8) t = init
+  bittab_init{tab, -1}
   u:u8 = 0
   do_bittab{x0, n, tab, u, 0, 'unique', r0}
   1 + promote{u64, u-1}  # 0 to 256
@@ -209,30 +247,26 @@ fn fill_bittab(x0:*void, n:u64, tab:*void, u:u8, t:i8) : u8 = {
   do_bittab{x0, n, tab, u, t, 'none', 0}
 }
 
-fn avx2_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
+fn simd_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
   assert{nw > 0}
-  vtab:= *VI~~tab
 
   # Initialize
   rev:u1 = nx < nw/4  # Reverse lookup
-  z:= VI**(-promote{i8,rev})
-  @unroll (vtab over 8) vtab = z
+  bittab_init{tab, -promote{i8,rev}}
   u:u8 = 0  # Sum of table, either 0 or 256
   if (rev) u = fill_bittab(x0, nx, tab, u, 0)
 
   # Fill table
   u = fill_bittab(w0, nw, tab, u, -1)
-  if (u == 0) { # All found!
-    @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
-    return{}
-  }
 
   # Read result
-  def {bitsel, _} = bittab_selector{readbytes{vtab}}
-  @for (x in *VI~~x0, r in *u32~~r0 over cdiv{nx,32}) r = bitsel{x}
+  if (u == 0) { # All found!
+    @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
+  } else {
+    bittab_lookup{x0, nx, r0, tab}
+  }
 }
 
-export{'avx2_mark_firsts_u8', avx2_mark_firsts_u8}
-export{'avx2_deduplicate_u8', avx2_deduplicate_u8}
-export{'avx2_member_u8', avx2_member_u8}
-} # hasarch{'AVX2'}
+export{'simd_mark_firsts_u8', simd_mark_firsts_u8}
+export{'simd_deduplicate_u8', simd_deduplicate_u8}
+export{'simd_member_u8', simd_member_u8}
