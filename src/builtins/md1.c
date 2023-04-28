@@ -78,10 +78,10 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
     } else if (xia>7) {
       SGet(w)
-      M_HARR(r, wia)
+      M_APD_SH1(rm, wia)
       incByG(x, wia);
-      for (usz wi = 0; wi < wia; wi++) HARR_ADD(r, wi, fc2(f, Get(w,wi), x));
-      r = bqn_merge(HARR_FV(r));
+      for (usz wi = 0; wi < wia; wi++) APDD(rm, fc2(f, Get(w,wi), x));
+      r = taga(APD_SH_GET(rm, 0));
     } else goto generic;
     if (RNK(r)>1) {
       SRNK(r, 0); // otherwise the following arr_shAlloc failing will result in r->sh dangling

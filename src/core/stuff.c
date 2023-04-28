@@ -439,7 +439,7 @@ B bqn_merge(B x) {
   SGetU(x)
   for (usz i = 0; i < xia; i++) APD(r, GetU(x, i));
   decG(x);
-  return taga(APD_SH_GET(r, 0));
+  return taga(APD_SH_GET(r, 1));
 }
 
 #ifdef ALLOC_STAT
