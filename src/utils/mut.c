@@ -439,7 +439,6 @@ MAKE_CCPY(C32, c32)
 
 
 
-
 static B m_getU_MAX(void* a, usz ms) { err("m_setG_MAX"); }
 static B m_getU_bit(void* a, usz ms) { return m_i32(bitp_get(((u64*) a), ms)); }
 static B m_getU_i8 (void* a, usz ms) { return m_i32(((i8* ) a)[ms]); }
@@ -451,8 +450,8 @@ static B m_getU_c32(void* a, usz ms) { return m_c32(((u32*) a)[ms]); }
 static B m_getU_f64(void* a, usz ms) { return m_f64(((f64*) a)[ms]); }
 static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
-M_CopyF copyFns[el_MAX];
-M_FillF fillFns[el_MAX];
+
+
 
 
 extern bool please_tail_call_err;
@@ -461,52 +460,76 @@ NOINLINE void apd_sh_fail(ApdMut* m, B x) {
   thrM("apd fail");
 }
 
+#if DEBUG
+  void apd_dbg_apd(ApdMut* m, B x) { err("ApdMut default .apd invoked"); }
+  Arr* apd_dbg_end(ApdMut* m) { err("ApdMut default .end invoked"); }
+#endif
+
 void apd_widen(ApdMut* m, B x, ApdFn** fns);
 ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_sh2_fns[];
 
-#define APD_MK0(E, TY, CT, CIA, CS) \
+#define APD_OR_FILL_0(CF)
+#define APD_OR_FILL_1(CF) \
+  B cf = m->fill;              \
+  if (noFill(cf)) goto noFill; \
+  cf = fill_or(cf,CF);         \
+  if (noFill(cf)) goto noFill; \
+  m->fill = cf; noFill:;
+
+#define APD_CAT(A,B) A##B
+#define APD_OR_FILL(EB, CF) APD_CAT(APD_OR_FILL_,EB)(CF)
+
+#define APD_MK0(E, EB, TY, TARR, CIA, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) {   \
     usz cia=CIA; CS; u8 xe=TI(x,elType); (void)xe; \
-    if (RARE(!(CT))) {                             \
+    if (RARE(!(TARR))) {                           \
       apd_widen(m, x, apd_##TY##_fns); return;     \
     }                                              \
+    APD_OR_FILL(EB, getFillQ(x));                  \
     usz p0 = m->pos;  m->pos = p0+cia;             \
     COPY_TO_2(m->a, E, p0, x, xe, cia);            \
   }
 
 #define APD_SH0_CHK if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m, x); return; }
 #define APD_SHH_CHK if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m, x); return; }
-#define APD_MK(E, W, TAT, TEL) \
-  APD_MK0(E, tot, TEL, IA(x), ) \
-  APD_MK0(E, sh1, TEL, m->cia,                   APD_SH0_CHK) \
-  APD_MK0(E, sh2, TEL, m->cia, assert(m->cr>=2); APD_SHH_CHK) \
+#define APD_MK(E, EB, W, TATOM, TARR) \
+  APD_MK0(E, EB, tot, TARR, IA(x), ) \
+  APD_MK0(E, EB, sh1, TARR, m->cia,                   APD_SH0_CHK) \
+  APD_MK0(E, EB, sh2, TARR, m->cia, assert(m->cr>=2); APD_SHH_CHK) \
   NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
-    if (isArr(x)) {     \
+    APD_OR_FILL(EB,getFillQ(x));              \
+    if (isArr(x)) {                           \
       if (RARE(RNK(x)!=0)) { apd_sh_fail(m, x); return; } \
-      x = IGetU(x,0);   \
-    }                   \
-    if (RARE(!TAT)) { apd_widen(m, x, apd_sh0_fns); return; } \
-    usz p0 = m->pos;    \
-    m->pos = p0+1;      \
-    void* a = m->a; W;  \
+      x = IGetU(x,0);                         \
+    }                                         \
+    if (RARE(!TATOM)) { apd_widen(m, x, apd_sh0_fns); return; } \
+    usz p0 = m->pos;                          \
+    m->pos = p0+1;                            \
+    void* a = m->a; W; \
   }
 
-APD_MK(bit, bitp_set((u64*)a,p0,o2bG(x)), q_bit(x), xe==el_bit)
-APD_MK(i8,  ((i8 *)a)[p0]=o2iG(x),        q_i8(x),  xe<=el_i8 ) APD_MK(c8,  ((u8 *)a)[p0]=o2cG(x), q_c8(x),  xe==el_c8)
-APD_MK(i16, ((i16*)a)[p0]=o2iG(x),        q_i16(x), xe<=el_i16) APD_MK(c16, ((u16*)a)[p0]=o2cG(x), q_c16(x), xe>=el_c8 && xe<=el_c16)
-APD_MK(i32, ((i32*)a)[p0]=o2iG(x),        q_i32(x), xe<=el_i32) APD_MK(c32, ((u32*)a)[p0]=o2cG(x), q_c32(x), xe>=el_c8 && xe<=el_c32)
-APD_MK(f64, ((f64*)a)[p0]=o2fG(x),        q_f64(x), xe<=el_f64) APD_MK(B, ((B*)a)[p0]=inc(x);, 1, 1)
+APD_MK(bit, 0, bitp_set((u64*)a,p0,o2bG(x)), q_bit(x), xe==el_bit)
+APD_MK(i8,  0,       ((i8 *)a)[p0]=o2iG(x),  q_i8(x),  xe<=el_i8 )  APD_MK(c8,  0, ((u8 *)a)[p0]=o2cG(x), q_c8(x),  xe==el_c8)
+APD_MK(i16, 0,       ((i16*)a)[p0]=o2iG(x),  q_i16(x), xe<=el_i16)  APD_MK(c16, 0, ((u16*)a)[p0]=o2cG(x), q_c16(x), xe>=el_c8 && xe<=el_c16)
+APD_MK(i32, 0,       ((i32*)a)[p0]=o2iG(x),  q_i32(x), xe<=el_i32)  APD_MK(c32, 0, ((u32*)a)[p0]=o2cG(x), q_c32(x), xe>=el_c8 && xe<=el_c32)
+APD_MK(f64, 0,       ((f64*)a)[p0]=o2fG(x),  q_f64(x), xe<=el_f64)  APD_MK(B,   1, ((B*)a)[p0]=inc(x);, 1, 1)
 #undef APD_MK
 
 NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK }
+NOINLINE void apd_shE_B(ApdMut* m, B x) { APD_SHH_CHK }
 
 #define APD_FNS(N) ApdFn* apd_##N##_fns[] = {apd_##N##_bit,apd_##N##_i8,apd_##N##_i16,apd_##N##_i32,apd_##N##_f64,apd_##N##_c8,apd_##N##_c16,apd_##N##_c32,apd_##N##_B}
 APD_FNS(tot);
 APD_FNS(sh0); APD_FNS(sh1); APD_FNS(sh2);
 #undef APD_FNS
-ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T};
+ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_B};
 
-// NOINLINE Arr* apd_end(ApdMut* m) { NOGC_E; return m->obj; }
+NOINLINE Arr* apd_ret_end(ApdMut* m) { NOGC_E; return m->obj; }
+NOINLINE Arr* apd_fill_end(ApdMut* m) {
+  NOGC_E;
+  if (noFill(m->fill)) return m->obj;
+  return a(withFill(taga(m->obj), m->fill));
+}
 
 SHOULD_INLINE Arr* apd_setArr(ApdMut* m, usz ia, u8 xe) {
   MadeArr a = mut_make_arr(ia, el2t(xe), xe);
@@ -519,7 +542,6 @@ NOINLINE void apd_tot_init(ApdMut* m, B x) {
   m->apd = apd_tot_fns[xe];
   m->pos = 0;
   apd_setArr(m, m->ia0, xe);
-  // m->end = apd_end;
   m->apd(m, x);
 }
 NOINLINE void apd_sh_init(ApdMut* m, B x) {
@@ -536,9 +558,11 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   if (isAtm(x)) {
     xe = selfElType(x);
     m->apd = apd_sh0_fns[xe];
+    m->pos = 0; // m->apd will be used
   } else if ((xr=RNK(x))==0) {
     xe = TI(x,elType);
     m->apd = apd_sh0_fns[xe];
+    m->pos = 1;
   } else {
     xe = TI(x,elType);
     if (rr+xr > UR_MAX) thrM("apd rank too big");
@@ -549,8 +573,8 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
     rr+= xr;
     m->cia = xia;
     ria*= xia;
+    m->pos = xia;
   }
-  m->pos = 0;
   ShArr* rsh = NULL;
   if (rr>1) {
     rsh = m_shArr(rr);
@@ -561,16 +585,25 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
       shcpy(csh, SH(x), xr);
     }
   }
+  m->end = xe==el_B? apd_fill_end : apd_ret_end;
+  if (xe==el_B) m->fill = getFillQ(x);
   Arr* a = apd_setArr(m, ria, xe);
   if (rr<=1) arr_rnk01(a, rr);
   else arr_shSetU(a, rr, rsh);
-  
-  // m->end = apd_end;
-  m->apd(m, x);
+  if (isArr(x)) COPY_TO(m->a, xe, 0, x, 0, IA(x));
+  else m->apd(m, x);
 }
 
 NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
-  u8 re = el_or(isArr(x)? TI(x,elType) : selfElType(x), TIv(m->obj,elType));
+  u8 xe = isArr(x)? TI(x,elType) : selfElType(x);
+  u8 pe = TIv(m->obj,elType);
+  u8 re = el_or(xe, pe);
+  assert(pe!=re && pe<el_B);
+  if (re==el_B) {
+    B cf = fill_or(elNum(pe)? m_f64(0) : m_c32(' '), getFillQ(x));
+    m->fill = cf;
+    if (!noFill(cf)) m->end = apd_fill_end;
+  }
   ApdFn* fn = m->apd = fns[re];
   
   Arr* pa = m->obj;
@@ -586,6 +619,12 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
   fn(m, x);
 }
 
+
+
+
+
+M_CopyF copyFns[el_MAX];
+M_FillF fillFns[el_MAX];
 MutFns mutFns[el_MAX+1];
 u8 el_orArr[el_MAX*16 + el_MAX+1];
 void mutF_init(void) {
