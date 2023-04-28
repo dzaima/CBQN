@@ -140,7 +140,7 @@ INS B i_ARMO(B el0, i64 sz, u32* bc, B* cStack) { assert(sz>0); POS_UPD;
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
   NOGC_E; GS_UPD;
-  return bqn_merge(r.b);
+  return bqn_merge(r.b, 2);
 }
 INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
   GS_UPD;

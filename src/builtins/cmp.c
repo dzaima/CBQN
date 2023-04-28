@@ -209,5 +209,5 @@ B ne_c2(B t, B w, B x) { if(isF64(w)&isF64(x)) return m_i32(w.f!=x.f); if(isC32(
 
 B gt_c1(B t, B x) {
   if (isAtm(x)) return x;
-  return bqn_merge(x);
+  return bqn_merge(x, 1);
 }

@@ -773,7 +773,7 @@ B join_c1(B t, B x) {
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   } else if (xr==0) {
-    return bqn_merge(x);
+    return bqn_merge(x, 1);
   } else {
     SGetU(x)
     B x0 = GetU(x,0);

@@ -229,7 +229,7 @@ char* pm1_repr(u8 u);
 char* pm2_repr(u8 u);
 char* eltype_repr(u8 u);
 bool isPureFn(B x); // doesn't consume
-B bqn_merge(B x); // consumes
+B bqn_merge(B x, u32 type); // consumes
 
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed

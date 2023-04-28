@@ -416,7 +416,7 @@ bool isPureFn(B x) { // doesn't consume
   } else return isNum(x) || isC32(x);
 }
 
-B bqn_merge(B x) {
+B bqn_merge(B x, u32 type) {
   assert(isArr(x));
   usz xia = IA(x);
   ur xr = RNK(x);
@@ -439,7 +439,7 @@ B bqn_merge(B x) {
   SGetU(x)
   for (usz i = 0; i < xia; i++) APD(r, GetU(x, i));
   decG(x);
-  return taga(APD_SH_GET(r, 1));
+  return taga(APD_SH_GET(r, type));
 }
 
 #ifdef ALLOC_STAT

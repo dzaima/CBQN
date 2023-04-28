@@ -454,8 +454,11 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 
 void apd_fail_apd(ApdMut* m, B x) { }
+NOINLINE char* apd_ty_base(u32 ty) {
+  return ty==1? ">" : ty==2? "[...]" : ty==U'˘'? "˘" : ty==U'⎉'? "⎉" : "??";
+}
 Arr* apd_sh_err(ApdMut* m, u32 ty) {
-  B msg = make_fmt("%c: Incompatible %S shapes (encountered shapes %2H and %H)", ty==1? '>' : ty, ty==1? "element" : "result", m->cr, m->csh, m->failEl);
+  B msg = make_fmt("%U: Incompatible %S shapes (encountered shapes %2H and %H)", apd_ty_base(ty), ty>2? "result" : "element", m->cr, m->csh, m->failEl);
   arr_shErase(m->obj, 1);
   ptr_dec(m->obj);
   dec(m->failEl);
@@ -464,7 +467,7 @@ Arr* apd_sh_err(ApdMut* m, u32 ty) {
 Arr* apd_rnk_err(ApdMut* m, u32 ty) {
   ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
   dec(m->failEl);
-  thrF("%c: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", ty==1? '>' : ty, m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
+  thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", apd_ty_base(ty), m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
 }
 NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
   if (mode<=1) m->cr = mode;

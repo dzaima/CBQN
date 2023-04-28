@@ -173,7 +173,7 @@ B SORT_C1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
   usz n = *SH(x);
   if (n <= 1) return x;
-  if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)));
+  if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)), 0);
   u8 xe = TI(x,elType);
   B r;
   if (xe==el_bit) {

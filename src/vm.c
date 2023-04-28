@@ -615,7 +615,7 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     return r;
   } else {
     assert(isObj(s) && TY(s)==t_arrMerge);
-    return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj));
+    return bqn_merge(v_getF(pscs, c(WrappedObj,s)->obj), 2);
   }
 }
 
@@ -908,7 +908,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
         NOGC_E; GS_UPD;
-        ADD(bqn_merge(r.b));
+        ADD(bqn_merge(r.b, 2));
         break;
       }
       case ARMM: { GS_UPD;
