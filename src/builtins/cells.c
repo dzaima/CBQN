@@ -382,14 +382,13 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   }
   
   base:;
-  M_HARR(r, cam);
+  
+  M_APD_SH(r, k, xsh);
   S_KSLICES(x, xsh, k, cam, 1); BB2B fc1 = c1fn(f);
-  for (usz i=0,xp=0; i<cam; i++) HARR_ADD(r, i, fc1(f, SLICEI(x)));
-  usz* rsh = HARR_FA(r, k);
-  if (k>1) shcpy(rsh, xsh, k);
+  for (usz i=0,xp=0; i<cam; i++) APDD(r, fc1(f, SLICEI(x)));
   decG(x);
   
-  return bqn_merge(HARR_O(r).b);
+  return taga(APD_SH_GET(r, 1));
 }
 
 B cell_c1(Md1D* d, B x) { B f = d->f;
@@ -445,11 +444,9 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
-  M_HARR(r, cam); BBB2B fc2 = c2fn(f);
-  for (usz i=0,wp=0; i<cam; i++) HARR_ADD(r, i, fc2(f, SLICEI(w), x));
-  usz* rsh = HARR_FA(r, wk);
-  if (wk>1) shcpy(rsh, wsh, wk);
-  decG(w); return bqn_merge(HARR_O(r).b);
+  M_APD_SH(r, wk, wsh); BBB2B fc2 = c2fn(f);
+  for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
+  decG(w); return taga(APD_SH_GET(r,2));
 }
 NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
@@ -468,11 +465,9 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
     if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
   }
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
-  M_HARR(r, cam); BBB2B fc2 = c2fn(f);
-  for (usz i=0,xp=0; i<cam; i++) HARR_ADD(r, i, fc2(f, w, SLICEI(x)));
-  usz* rsh = HARR_FA(r, xk);
-  if (xk>1) shcpy(rsh, xsh, xk);
-  decG(x); return bqn_merge(HARR_O(r).b);
+  M_APD_SH(r, xk, xsh); BBB2B fc2 = c2fn(f);
+  for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
+  decG(x); return taga(APD_SH_GET(r,2));
 }
 NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   assert(isArr(w) && isArr(x));
@@ -504,17 +499,18 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   }
   
   ShArr* rsh = NULL;
-  if (zk>1) { rsh=m_shArr(zk); shcpy(rsh->a, zsh, zk); }
+  if (zk>1) ptr_inc(rsh = shObjS(zsh)); // need to keep zsh alive
   
-  M_HARR(r, cam);
+  M_APD_SH(r, zk, zsh);
   S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 0) usz wp = 0;
   S_KSLICES(x, xsh, xk, xkM? cam : cam0, 0) usz xp = 0;
   BBB2B fc2 = c2fn(f);
-  if (ext==1) { for (usz i=0; i<cam; i++) HARR_ADD(r, i, fc2(f, SLICEI(w), SLICEI(x))); }
-  else if (xkM) { for (usz i=0; i<cam; ) { B wb=incByG(SLICEI(w), ext-1); for (usz e = i+ext; i < e; i++) HARR_ADD(r, i, fc2(f, wb, SLICEI(x))); } }
-  else          { for (usz i=0; i<cam; ) { B xb=incByG(SLICEI(x), ext-1); for (usz e = i+ext; i < e; i++) HARR_ADD(r, i, fc2(f, SLICEI(w), xb)); } }
+  if (ext==1) { for (usz i=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), SLICEI(x))); }
+  else if (xkM) { for (usz i=0; i<cam; ) { B wb=incByG(SLICEI(w), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, wb, SLICEI(x))); } }
+  else          { for (usz i=0; i<cam; ) { B xb=incByG(SLICEI(x), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, SLICEI(w), xb)); } }
   
-  return bqn_merge(taga(arr_shSetU(HARR_FP(r, zk), zk, rsh)));
+  if (rsh!=0) decShObj(rsh);
+  return taga(APD_SH_GET(r, 2));
 }
 
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
