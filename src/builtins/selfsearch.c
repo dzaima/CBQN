@@ -557,7 +557,7 @@ B find_c1(B t, B x) {
   }
   #if SINGELI_AVX2
   if (elWidth(xe)==1 && RNK(x)==1 && !FL_HAS(x, fl_asc|fl_dsc)) {
-    TALLOC(u8, tab, 512); u8* res = tab+256;
+    TALLOC(u8, tab, 513); u8* res = tab+256;
     usz ria = avx2_deduplicate_u8(tyany_ptr(x), n, res, tab);
     B r; i8* rp = m_tyarrv(&r, 1, ria, el2t(xe));
     memcpy(rp, res, ria);
