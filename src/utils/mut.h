@@ -258,10 +258,10 @@ ApdFn apd_tot_init, apd_sh_init;
 #else
   #define M_APD_BASE(M) ApdMut M;
 #endif
-#define M_APD_TOT(M, IA) M_APD_BASE(M) M.apd = apd_tot_init; M.ia0 = (IA); // assumes elements will be arrays; end gives uninitialized shape
-#define M_APD_SH(M, RR, RSH) M_APD_BASE(M) M.apd = apd_sh_init; M.rsh0 = (RSH); M.rr0 = (RR); // appended things can be anything, will error on invalid; end gives full shape; rsh must be alive until at least the first APD call
+#define M_APD_TOT(M, IA) M_APD_BASE(M) M.apd = apd_tot_init; M.ia0 = (IA); // end gives uninitialized shape
+#define M_APD_SH(M, RR, RSH) M_APD_BASE(M) M.apd = apd_sh_init; M.rsh0 = (RSH); M.rr0 = (RR); // end gives full shape; will error on invalid at the end; rsh must be alive until at least the first APD call
 #define M_APD_SH1(M, RIA) usz M##_sh0 = (RIA); M_APD_SH(M, 1, &M##_sh0);
 #define APD(M, A) M.apd(&M, A) // doesn't consume A
 #define APDD(M, A) ({ B av_ = (A); M.apd(&M, av_); dec(av_); }) // consumes A
 #define APD_SH_GET(M, TY) (M.end(&M, TY))
-#define APD_TOT_GET(M) ({ NOGC_E; M.obj; })
+#define APD_TOT_GET(M) (M.obj)

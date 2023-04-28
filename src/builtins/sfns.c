@@ -762,21 +762,9 @@ B join_c1(B t, B x) {
     if (rm==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
     
     usz csz = shProd(esh, 0, rr-1);
-    MAKE_MUT(r, cam*csz);
-    usz ri = 0;
-    for (usz i = 0; i < xia; i++) {
-      B c = GetU(x, i);
-      if (isArr(c)) {
-        usz cia = IA(c);
-        mut_copy(r, ri, c, 0, cia);
-        ri+= cia;
-      } else {
-        mut_set(r, ri, inc(c));
-        ri++;
-      }
-    }
-    assert(ri==cam*csz);
-    Arr* ra = mut_fp(r);
+    M_APD_TOT(r, cam*csz);
+    for (usz i = 0; i < xia; i++) APD(r, GetU(x, i));
+    Arr* ra = APD_TOT_GET(r);
     usz* sh = arr_shAlloc(ra, rr);
     if (sh) {
       sh[0] = cam;
