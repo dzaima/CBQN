@@ -101,21 +101,15 @@ static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & 
 B m_unit(B x); // consumes
 B m_atomUnit(B x); // consumes
 
-static B fill_or(B wf, B xf) { // consumes
-  if (fillEqual(wf, xf)) {
-    dec(wf);
-    return xf;
-  }
-  dec(wf); dec(xf);
-  return bi_noFill;
-}
-static bool fillEqualsGetFill(B fill, B obj) { // equal to fill_or(fill, getFillQ(obj))
+static bool fillEqualsGetFill(B fill, B obj) { // returns whether `fill` equals the fill of `obj`
   return fillEqual(fill, getFillN(obj));
 }
 
 static B fill_both(B w, B x) { // doesn't consume
-  B wf = getFillQ(w);
+  B wf = getFillN(w);
   if (noFill(wf)) return bi_noFill;
   B xf = getFillQ(x);
-  return fill_or(wf, xf);
+  if (fillEqual(wf, xf)) return xf;
+  dec(xf);
+  return bi_noFill;
 }

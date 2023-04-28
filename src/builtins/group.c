@@ -298,11 +298,12 @@ B group_c2(B t, B w, B x) {
       
       Arr* r = m_fillarr0p(ria);
       B xf = getFillQ(x);
+      incBy(xf, ria);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) {
         Arr* c = m_fillarrp(len[i]);
         c->ia = 0;
-        fillarr_setFill(c, inc(xf));
+        fillarr_setFill(c, xf);
         NOGC_E; // see comments in group_simple
         arr_shVec(c);
         rp[i] = taga(c);

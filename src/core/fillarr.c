@@ -99,11 +99,9 @@ NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be array
   
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
-  if (we!=el_B && xe!=el_B) {
-    return elChr(we) == elChr(xe);
-  }
-  SGetU(x)
-  SGetU(w)
+  if (we!=el_B && xe!=el_B) return elNum(we) == elNum(xe);
+  
+  SGetU(x) SGetU(w)
   for (usz i = 0; i < ia; i++) if(!fillEqual(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
