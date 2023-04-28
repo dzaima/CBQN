@@ -27,6 +27,22 @@ static bool fillEqual(B w, B x) {
 }
 
 
+static B getFillN(B x) { // doesn't consume, doesn't increment result; can return bi_noFill
+  if (isArr(x)) {
+    switch(TI(x,elType)) { default: UD;
+      case el_i8: case el_i16: case el_i32: case el_f64: case el_bit: return m_i32(0);
+      case el_c8: case el_c16: case el_c32: return m_c32(' ');
+      case el_B:;
+        u8 t = TY(x);
+        if (t==t_fillarr  ) return c(FillArr,  x)->fill;
+        if (t==t_fillslice) return c(FillSlice,x)->fill;
+        return bi_noFill;
+    }
+  }
+  if (isNum(x)) return m_i32(0);
+  if (isC32(x)) return m_c32(' ');
+  return bi_noFill;
+}
 static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isArr(x)) {
     switch(TI(x,elType)) { default: UD;
@@ -92,6 +108,9 @@ static B fill_or(B wf, B xf) { // consumes
   }
   dec(wf); dec(xf);
   return bi_noFill;
+}
+static bool fillEqualsGetFill(B fill, B obj) { // equal to fill_or(fill, getFillQ(obj))
+  return fillEqual(fill, getFillN(obj));
 }
 
 static B fill_both(B w, B x) { // doesn't consume
