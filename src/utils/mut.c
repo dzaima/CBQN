@@ -453,20 +453,34 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 
 
-
-extern bool please_tail_call_err;
+void apd_fail_apd(ApdMut* m, B x) { }
+Arr* apd_sh_err(ApdMut* m, u8 ty) {
+  arr_shErase(m->obj, 1); // TODO this clears the shape that ↓ would use
+  ptr_dec(m->obj);
+  dec(m->failEl);
+  thrF("%c: Incompatible shapes", ty==0? '>' : '?'); // TODO include shapes
+}
+Arr* apd_rnk_err(ApdMut* m, u8 ty) {
+  ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
+  dec(m->failEl);
+  thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =⊑𝕩)", ">𝕩", m->rr0, er);
+}
 NOINLINE void apd_sh_fail(ApdMut* m, B x) {
-  if (!please_tail_call_err) return;
-  thrM("apd fail");
+  m->apd = apd_fail_apd;
+  m->end = apd_sh_err;
+  if (PTY(m->obj) == t_harr) dec(m->fill);
+  m->failEl = inc(x);
 }
 
 #if DEBUG
   void apd_dbg_apd(ApdMut* m, B x) { err("ApdMut default .apd invoked"); }
-  Arr* apd_dbg_end(ApdMut* m) { err("ApdMut default .end invoked"); }
+  Arr* apd_dbg_end(ApdMut* m, u8 ty) { err("ApdMut default .end invoked"); }
 #endif
 
 void apd_widen(ApdMut* m, B x, ApdFn** fns);
 ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_sh2_fns[];
+
+#define APD_CAT(A,B) A##B
 
 #define APD_OR_FILL_0(CF)
 #define APD_OR_FILL_1(CF) \
@@ -476,8 +490,11 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
   if (noFill(cf)) goto noFill; \
   m->fill = cf; noFill:;
 
-#define APD_CAT(A,B) A##B
 #define APD_OR_FILL(EB, CF) APD_CAT(APD_OR_FILL_,EB)(CF)
+
+#define APD_POS_0() m->pos
+#define APD_POS_1() m->obj->ia
+#define APD_POS(EB) APD_CAT(APD_POS_,EB)()
 
 #define APD_MK0(E, EB, TY, TARR, CIA, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) {   \
@@ -486,7 +503,7 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
       apd_widen(m, x, apd_##TY##_fns); return;     \
     }                                              \
     APD_OR_FILL(EB, getFillQ(x));                  \
-    usz p0 = m->pos;  m->pos = p0+cia;             \
+    usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;   \
     COPY_TO_2(m->a, E, p0, x, xe, cia);            \
   }
 
@@ -503,9 +520,9 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
       x = IGetU(x,0);                         \
     }                                         \
     if (RARE(!TATOM)) { apd_widen(m, x, apd_sh0_fns); return; } \
-    usz p0 = m->pos;                          \
-    m->pos = p0+1;                            \
-    void* a = m->a; W; \
+    usz p0 = APD_POS(EB);                     \
+    APD_POS(EB) = p0+1;                       \
+    void* a = m->a; W;                        \
   }
 
 APD_MK(bit, 0, bitp_set((u64*)a,p0,o2bG(x)), q_bit(x), xe==el_bit)
@@ -524,9 +541,8 @@ APD_FNS(sh0); APD_FNS(sh1); APD_FNS(sh2);
 #undef APD_FNS
 ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_B};
 
-NOINLINE Arr* apd_ret_end(ApdMut* m) { NOGC_E; return m->obj; }
-NOINLINE Arr* apd_fill_end(ApdMut* m) {
-  NOGC_E;
+NOINLINE Arr* apd_ret_end(ApdMut* m, u8 ty) { NOGC_E; return m->obj; }
+NOINLINE Arr* apd_fill_end(ApdMut* m, u8 ty) {
   if (noFill(m->fill)) return m->obj;
   return a(withFill(taga(m->obj), m->fill));
 }
@@ -540,9 +556,10 @@ SHOULD_INLINE Arr* apd_setArr(ApdMut* m, usz ia, u8 xe) {
 NOINLINE void apd_tot_init(ApdMut* m, B x) {
   u8 xe = TI(x,elType);
   m->apd = apd_tot_fns[xe];
-  m->pos = 0;
-  apd_setArr(m, m->ia0, xe);
-  m->apd(m, x);
+  Arr* a = apd_setArr(m, m->ia0, xe);
+  if (xe==el_B) { a->ia = 0; NOGC_E; }
+  else m->pos = 0;
+  m->apd(m, x); // TODO direct copy for non-atom
 }
 NOINLINE void apd_sh_init(ApdMut* m, B x) {
   ur rr0 = m->rr0; // need to be read before union fields are written
@@ -555,17 +572,24 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   ur rr = rr0;
   ur xr = 0;
   u8 xe;
+  ux pos0;
   if (isAtm(x)) {
     xe = selfElType(x);
     m->apd = apd_sh0_fns[xe];
-    m->pos = 0; // m->apd will be used
+    pos0 = 0; // m->apd will be used instead of a direct copy
   } else if ((xr=RNK(x))==0) {
     xe = TI(x,elType);
     m->apd = apd_sh0_fns[xe];
-    m->pos = 1;
+    pos0 = 1;
   } else {
     xe = TI(x,elType);
-    if (rr+xr > UR_MAX) thrM("apd rank too big");
+    if (rr+xr > UR_MAX) {
+      m->failEl = inc(x);
+      m->obj = NULL;
+      m->apd = apd_fail_apd;
+      m->end = apd_rnk_err;
+      return;
+    }
     usz xia = IA(x);
     if (xia==0)     { m->apd=apd_shE_fns[xe]; m->cr=xr; m->csh = &m->cia; } // csh will be overwritten on result shape creation for high-rank
     else if (xr==1) { m->apd=apd_sh1_fns[xe]; }
@@ -573,8 +597,17 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
     rr+= xr;
     m->cia = xia;
     ria*= xia;
-    m->pos = xia;
+    pos0 = xia;
   }
+  if (xe==el_B) {
+    m->tia = ria;
+    m->fill = getFillQ(x);
+    m->end = apd_fill_end;
+  } else {
+    m->pos = pos0;
+    m->end = apd_ret_end;
+  }
+  
   ShArr* rsh = NULL;
   if (rr>1) {
     rsh = m_shArr(rr);
@@ -585,13 +618,17 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
       shcpy(csh, SH(x), xr);
     }
   }
-  m->end = xe==el_B? apd_fill_end : apd_ret_end;
-  if (xe==el_B) m->fill = getFillQ(x);
+  
+  
   Arr* a = apd_setArr(m, ria, xe);
+  if (xe==el_B) a->ia = pos0;
+  
   if (rr<=1) arr_rnk01(a, rr);
   else arr_shSetU(a, rr, rsh);
+  
   if (isArr(x)) COPY_TO(m->a, xe, 0, x, 0, IA(x));
   else m->apd(m, x);
+  if (xe==el_B) NOGC_E;
 }
 
 NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
@@ -608,13 +645,17 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
   
   Arr* pa = m->obj;
   assert(pa->refc==1 && TIv(pa,freeF)==tyarr_freeF);
-  Arr* na = apd_setArr(m, PIA(pa), re);
+  usz tia = pe==el_B? m->tia : PIA(pa);
+  ux pos = pe==el_B? PIA(pa) : m->pos;
+  Arr* na = apd_setArr(m, tia, re);
+  if (re==el_B) na->ia = pos;
   
   ur pr = PRNK(pa);
   if (pr<=1) arr_rnk01(na, pr);
   else arr_shSetU(na, pr, shObjP((Value*)pa));
   
-  COPY_TO(m->a, re, 0, taga(pa), 0, m->pos);
+  COPY_TO(m->a, re, 0, taga(pa), 0, pos);
+  if (re==el_B) NOGC_E;
   mm_free((Value*)pa);
   fn(m, x);
 }
