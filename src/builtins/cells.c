@@ -498,18 +498,15 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
     }
   }
   
-  ShArr* rsh = NULL;
-  if (zk>1) ptr_inc(rsh = shObjS(zsh)); // need to keep zsh alive
-  
   M_APD_SH(r, zk, zsh);
-  S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 0) usz wp = 0;
-  S_KSLICES(x, xsh, xk, xkM? cam : cam0, 0) usz xp = 0;
+  S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp = 0;
+  S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp = 0;
   BBB2B fc2 = c2fn(f);
   if (ext==1) { for (usz i=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), SLICEI(x))); }
   else if (xkM) { for (usz i=0; i<cam; ) { B wb=incByG(SLICEI(w), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, wb, SLICEI(x))); } }
   else          { for (usz i=0; i<cam; ) { B xb=incByG(SLICEI(x), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, SLICEI(w), xb)); } }
   
-  if (rsh!=0) decShObj(rsh);
+  decG(w); decG(x);
   return taga(APD_SH_GET(r, chr));
 }
 
