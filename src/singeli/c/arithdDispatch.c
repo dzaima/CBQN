@@ -62,7 +62,14 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
   u8 xe = TI(x, elType); if (xe==el_B) goto rec;
   ur wr = RNK(w);
   ur xr = RNK(x);
-  if (wr!=xr || !eqShPart(SH(w), SH(x), wr)) goto rec;
+  if (wr!=xr) {
+    usz* xsh=SH(x);
+    usz* wsh=SH(w);
+    ur mr=wr<xr?wr:xr;
+    if (!eqShPart(wsh, xsh, mr)) goto rec;
+    return leading_axis_arith(table->mainFn, w, x, wsh, xsh, mr);
+  }
+  if (!eqShPart(SH(w), SH(x), wr)) goto rec;
   
   B r, t;
   usz ia = IA(w);

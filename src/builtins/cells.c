@@ -117,6 +117,23 @@ NOINLINE B toKCells(B x, ur k) {
   return r;
 }
 
+NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank typed array arguments
+  assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B);
+  ur wr = RNK(w);
+  #if DEBUG
+    assert(wr!=RNK(x) && eqShPart(wsh, xsh, mr));
+  #endif
+  usz cam2 = shProd(xsh, 0, mr);
+  usz* lsh = mr==wr? xsh : wsh;
+  B s = mr==wr? x : w;
+  M_APD_SH(r, mr, lsh);
+  S_KSLICES(s, lsh, mr, cam2, 1) usz sp=0;
+  if (mr==wr) { SGetU(w); for (usz i=0; i<cam2; i++) APDD(r, fc2(m_f64(0), GetU(w,i), SLICEI(s))); }
+  else        { SGetU(x); for (usz i=0; i<cam2; i++) APDD(r, fc2(m_f64(0), SLICEI(s), GetU(x,i))); }
+  decG(w); decG(x);
+  return taga(APD_SH_GET(r, 0));
+}
+
 
 
 // fast special-case implementations
@@ -518,12 +535,19 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
         decG(w); decG(x); return taga(r);
       }
     }
+    if (isPervasiveDy(f)) {
+      if (TI(w,elType)==el_B) goto generic; // for generic arrays it'd ¨ either way
+      if (TI(x,elType)==el_B) goto generic;
+      ur mr = xr<wr? xr : wr;
+      if ((wk>mr?mr:wk) != (xk>mr?mr:xk) || !eqShPart(wsh, xsh, mr)) goto generic;
+      return c2(f, w, x);
+    }
   }
   generic:;
   
   M_APD_SH(r, zk, zsh);
-  S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp = 0;
-  S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp = 0;
+  S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp=0;
+  S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp=0;
   FC2 fc2 = c2fn(f);
   if (ext==1) { for (usz i=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), SLICEI(x))); }
   else if (xkM) { for (usz i=0; i<cam; ) { B wb=incByG(SLICEI(w), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, wb, SLICEI(x))); } }

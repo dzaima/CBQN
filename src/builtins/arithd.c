@@ -20,6 +20,7 @@ B atan2_c2(B, B, B);
 
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
+B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
 
 #if SINGELI_SIMD
   #include "../singeli/c/arithdDispatch.c"
@@ -181,7 +182,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     [el_i16] = 0x0001000100010001ULL,
     [el_i32] = 0x0000000100000001ULL,
   };
-  GC2f("|", stile,   pfmod(x.f, w.f), NOUNROLL,
+  GC2f("|", stile, pfmod(x.f, w.f), NOUNROLL,
     /*INT_SA*/
     if (q_i32(w)) {
       i32 wi32 = o2iG(w);
@@ -276,8 +277,13 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     }
     
     #define AR_I_AA(CHR, NAME, EXPR, BIT, EXTRA) NOINLINE B NAME##_AA(B t, B w, B x) { \
-      if (RNK(w)!=RNK(x)) goto bad;                              \
-      if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+      ur wr=RNK(w); usz* xsh=SH(x);                              \
+      ur xr=RNK(x); usz* wsh=SH(w); ur mr=wr<xr?wr:xr;           \
+      if (!eqShPart(wsh, xsh, mr)) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+      if (wr!=xr) {                                              \
+        if (TI(w,elType)!=el_B && TI(x,elType)!=el_B) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
+        else goto bad;                                           \
+      }                                                          \
       usz ia = IA(x); B r;                                       \
       u8 we = TI(w,elType);                                      \
       u8 xe = TI(x,elType);                                      \
