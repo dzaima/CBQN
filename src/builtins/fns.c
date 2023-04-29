@@ -52,19 +52,7 @@ static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
   }
   return p;
 }
-Arr* bitUD[3];
-B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
-B ud_c1(B t, B x) {
-  if (isAtm(x)) {
-    usz xu = o2s(x);
-    if (LIKELY(xu<=I8_MAX+1)) {
-      if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
-      i8* rp; B r = m_i8arrv(&rp, xu);
-      NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
-      return r;
-    }
-    return intRange(0, xu);
-  }
+NOINLINE B list_range(B x) {
   SGetU(x)
   usz xia = IA(x);
   if (RNK(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", RNK(x));
@@ -97,6 +85,20 @@ B ud_c1(B t, B x) {
     for (usz i = 0; i < xia; i++) fp[i] = 0;
   }
   return taga(r);
+}
+
+Arr* bitUD[3];
+B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
+B ud_c1(B t, B x) {
+  if (!isAtm(x)) return list_range(x);
+  usz xu = o2s(x);
+  if (LIKELY(xu<=I8_MAX+1)) {
+    if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
+    i8* rp; B r = m_i8arrv(&rp, xu);
+    NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
+    return r;
+  }
+  return intRange(0, xu);
 }
 
 B slash_c2(B t, B w, B x);
