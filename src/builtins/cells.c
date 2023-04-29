@@ -275,8 +275,8 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
 
 
 
-static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_atomUnit(r) : r; }
-static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_atomUnit(r) : r; }
+static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_unit(r) : r; }
+static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_unit(r) : r; }
 // monadic ˘ & ⎉
 B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with array x, xr>0, 0≤cr<xr, k≡xr-cr
   assert(isArr(x) && xr>0 && k>0 && cr<xr);
@@ -287,7 +287,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
     switch(rtid) {
       case n_lt:
         if (cam==0) goto noCells; // toCells/toKCells don't set outer array fill
-        return k==1 && RNK(x)>1? toCells(x) : k==0? m_atomUnit(x) : toKCells(x, k);
+        return k==1 && RNK(x)>1? toCells(x) : k==0? m_unit(x) : toKCells(x, k);
       case n_select:
         if (IA(x)==0) goto noSpecial;
         if (cr==0) goto base;

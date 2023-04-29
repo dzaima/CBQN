@@ -1382,8 +1382,8 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
     ow = t[0]; rw = t[1]; xw = t[2]; ww = t[3];
   }
   
-  if (isAtm(x)) x = m_atomUnit(x);
-  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(x)) x = m_unit(x);
+  if (isAtm(w)) w = m_unit(w);
   ur wr=RNK(w); usz* wsh = SH(w); u64 s = wr==0? ww : ww*(u64)wsh[wr-1];
   ur xr=RNK(x); usz*  sh = SH(x); u64 t = xr==0? xw : xw*(u64) sh[xr-1];
   bool negw = 0; // Negate 𝕨 to subtract from 𝕩

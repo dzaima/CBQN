@@ -35,28 +35,6 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
   }
 }
 
-B m_vec1(B a) {
-  if (isF64(a)) {
-    i32 i = (i32)a.f;
-    if (RARE(a.f != i))   { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
-    else if (q_ibit(i))   { u64* rp; B r = m_bitarrv(&rp, 1); rp[0] = i; return r; }
-    else if (i == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
-    else if (i == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
-    else                  { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
-  }
-  if (isC32(a)) {
-    u32 c = o2cG(a);
-    if      (LIKELY(c<U8_MAX )) { u8*  rp; B r = m_c8arrv (&rp, 1); rp[0] = c; return r; }
-    else if (LIKELY(c<U16_MAX)) { u16* rp; B r = m_c16arrv(&rp, 1); rp[0] = c; return r; }
-    else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
-  }
-  Arr* ra = arr_shVec(m_fillarrp(1));
-  fillarr_ptr(ra)[0] = a;
-  fillarr_setFill(ra, m_f64(0));
-  NOGC_E;
-  fillarr_setFill(ra, asFill(inc(a)));
-  return taga(ra);
-}
 
 FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   if (isAtm(a)&isAtm(b)) {
@@ -156,7 +134,7 @@ B shape_c2(B t, B w, B x) {
     nr = 1;
     sh = NULL;
   } else {
-    if (isAtm(w)) w = m_atomUnit(w);
+    if (isAtm(w)) w = m_unit(w);
     if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
     if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
     nr = IA(w);
@@ -214,7 +192,7 @@ B shape_c2(B t, B w, B x) {
         if (sh) sh->a[unkPos] = item;
         nia = uszMul(nia, item);
         if (fill) {
-          if (!isArr(x)) x = m_atomUnit(x);
+          if (!isArr(x)) x = m_unit(x);
           x = taga(arr_shVec(take_impl(nia, x)));
           xia = nia;
         }
@@ -410,7 +388,7 @@ static B recPick(B w, B x) { // doesn't consume
 B pick_c2(B t, B w, B x) {
   if (RARE(isAtm(x))) {
     if (isArr(w) && RNK(w)==1 && IA(w)==0) { dec(w); return x; }
-    x = m_atomUnit(x);
+    x = m_unit(x);
   }
   if (isNum(w)) {
     if (RNK(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
@@ -625,7 +603,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
 }
 
 #define TAKEDROP_INIT(TAKE) \
-  if (!isArr(x)) x = m_atomUnit(x); \
+  if (!isArr(x)) x = m_unit(x); \
   if (!isNum(w)) return takedrop_highrank(TAKE, w, x); \
   Arr* a;                 \
   i64 wv = o2i64(w);      \
@@ -910,11 +888,11 @@ B join_c1(B t, B x) {
   }
 }
 B join_c2(B t, B w, B x) {
-  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(w)) w = m_unit(w);
   ur wr = RNK(w);
   if (isAtm(x)) {
     if (wr==1 && inplace_add(w, x)) return w;
-    x = m_atomUnit(x);
+    x = m_unit(x);
   }
   ur xr = RNK(x);
   B f = fill_both(w, x);
@@ -985,8 +963,8 @@ B couple_c1(B t, B x) {
 }
 B couple_c2(B t, B w, B x) {
   if (isAtm(w)&isAtm(x)) return m_vec2(w, x);
-  if (isAtm(w)) w = m_atomUnit(w);
-  if (isAtm(x)) x = m_atomUnit(x);
+  if (isAtm(w)) w = m_unit(w);
+  if (isAtm(x)) x = m_unit(x);
   if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = IA(w);
   ur wr = RNK(w);
@@ -1025,7 +1003,7 @@ B shiftb_c1(B t, B x) {
 }
 B shiftb_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("»: 𝕩 cannot be a scalar");
-  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(w)) w = m_unit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
   usz wia = IA(w);
@@ -1051,7 +1029,7 @@ B shifta_c1(B t, B x) {
 }
 B shifta_c2(B t, B w, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("«: 𝕩 cannot be a scalar");
-  if (isAtm(w)) w = m_atomUnit(w);
+  if (isAtm(w)) w = m_unit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
   usz wia = IA(w);
@@ -1378,7 +1356,7 @@ NOINLINE B enclose_im(B t, B x) {
   return r;
 }
 B enclose_uc1(B t, B o, B x) {
-  return enclose_im(t, c1(o, m_atomUnit(x)));
+  return enclose_im(t, c1(o, m_unit(x)));
 }
 
 void sfns_init(void) {

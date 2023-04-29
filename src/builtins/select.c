@@ -118,7 +118,7 @@ B select_c2(B t, B w, B x) {
       B xv = IGet(x, wi);
       B rb;
       if (isNum(xf) || isC32(xf)) {
-        rb = m_atomUnit(xv);
+        rb = m_unit(xv);
       } else if (noFill(xf)) {
         rb = m_hunit(xv);
       } else {

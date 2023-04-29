@@ -161,7 +161,7 @@ B withFill(B x, B fill) { // consumes both
 }
 
 
-NOINLINE B m_unit(B x) {
+NOINLINE B m_funit(B x) {
   B xf = asFill(inc(x));
   if (noFill(xf)) return m_hunit(x);
   FillArr* r = m_arr(fsizeof(FillArr,a,B,1), t_fillarr, 1);
@@ -170,7 +170,8 @@ NOINLINE B m_unit(B x) {
   r->a[0] = x;
   return taga(r);
 }
-NOINLINE B m_atomUnit(B x) {
+
+NOINLINE B m_unit(B x) {
   u64 data; assert(sizeof(f64)<=8);
   u8 t; u64 sz;
   if (isNum(x)) {
@@ -185,10 +186,33 @@ NOINLINE B m_atomUnit(B x) {
     if      (xi==(u8 )xi) { u8  v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c8arr; }
     else if (xi==(u16)xi) { u16 v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c16arr; }
     else                  { u32 v=xi; memcpy(&data, &v, sz=sizeof(v)); t=t_c32arr; }
-  } else return m_unit(x);
+  } else return m_funit(x);
   TyArr* r = m_arr(offsetof(TyArr,a) + sizeof(u64), t, 1);
   *((u64*)r->a) = data;
   FINISH_OVERALLOC(r, offsetof(TyArr,a)+sz, offsetof(TyArr,a)+sizeof(u64));
   arr_shAtm((Arr*)r);
   return taga(r);
+}
+
+NOINLINE B m_vec1(B a) {
+  if (isF64(a)) {
+    i32 i = (i32)a.f;
+    if (RARE(a.f != i))   { f64* rp; B r = m_f64arrv(&rp, 1); rp[0] = a.f; return r; }
+    else if (q_ibit(i))   { u64* rp; B r = m_bitarrv(&rp, 1); rp[0] = i; return r; }
+    else if (i == (i8 )i) { i8*  rp; B r = m_i8arrv (&rp, 1); rp[0] = i; return r; }
+    else if (i == (i16)i) { i16* rp; B r = m_i16arrv(&rp, 1); rp[0] = i; return r; }
+    else                  { i32* rp; B r = m_i32arrv(&rp, 1); rp[0] = i; return r; }
+  }
+  if (isC32(a)) {
+    u32 c = o2cG(a);
+    if      (LIKELY(c<U8_MAX )) { u8*  rp; B r = m_c8arrv (&rp, 1); rp[0] = c; return r; }
+    else if (LIKELY(c<U16_MAX)) { u16* rp; B r = m_c16arrv(&rp, 1); rp[0] = c; return r; }
+    else                        { u32* rp; B r = m_c32arrv(&rp, 1); rp[0] = c; return r; }
+  }
+  Arr* ra = arr_shVec(m_fillarrp(1));
+  fillarr_ptr(ra)[0] = a;
+  fillarr_setFill(ra, m_f64(0));
+  NOGC_E;
+  fillarr_setFill(ra, asFill(inc(a)));
+  return taga(ra);
 }

@@ -128,7 +128,7 @@ static B md1D_identity(B t) {
   Md1D* d = c(Md1D, t);
   if (d->m1==c(Md1,bi_tbl)) {
     B i = TI(d->f,identity)(d->f);
-    return q_N(i)? i : m_atomUnit(i);
+    return q_N(i)? i : m_unit(i);
   }
   return bi_N;
 }

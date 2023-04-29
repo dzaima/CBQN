@@ -98,7 +98,7 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #define ARG_P (mode? "𝕨" : "𝕩")
   if (isAtm(p) || RNK(p)==0) thrF("%U: %U cannot have rank 0", SYMB, ARG_P);
   ur pr = RNK(p);
-  if (isAtm(n)) n = m_atomUnit(n);
+  if (isAtm(n)) n = m_unit(n);
   ur nr = RNK(n);
   if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
   ur pcr = pr-1;

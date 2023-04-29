@@ -69,7 +69,7 @@ B ud_c1(B t, B x) {
   usz xia = IA(x);
   if (RNK(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", RNK(x));
   if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
-  if (xia==0) { decG(x); return m_unit(emptyIVec()); }
+  if (xia==0) { decG(x); return m_funit(emptyIVec()); }
   usz sh[xia]; // stack allocation of rank items
   i32 pos[xia];
   usz ria = 1;
@@ -106,7 +106,7 @@ B ud_c2(B t, B w, B x) {
   if (isArr(w)) {
     if (RNK(w)>1) thrM("↕: 𝕨 must have rank at most 1");
     wia = IA(w);
-    if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
+    if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   }
   ur xr;
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("↕: Length of 𝕨 must be at most rank of 𝕩");

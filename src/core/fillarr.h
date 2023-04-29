@@ -98,8 +98,8 @@ static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & 
   return r;
 }
 
+B m_funit(B x); // consumes
 B m_unit(B x); // consumes
-B m_atomUnit(B x); // consumes
 
 static bool fillEqualsGetFill(B fill, B obj) { // returns whether `fill` equals the fill of `obj`
   return fillEqual(fill, getFillN(obj));

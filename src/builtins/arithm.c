@@ -159,7 +159,7 @@ TRIG(sin,Sin) TRIG(cos,Cos) TRIG(tan,Tan)
 #undef TRIG
 #undef MATH
 
-B lt_c1(B t, B x) { return m_atomUnit(x); }
+B lt_c1(B t, B x) { return m_unit(x); }
 B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(RNK(x)); decG(x); return r; }
 B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(*SH(x)); decG(x); return r; }
 

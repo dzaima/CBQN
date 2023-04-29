@@ -641,7 +641,7 @@ B slash_c2(B t, B w, B x) {
     if (wr>1) thrF("/: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
     if (wr<1) { B v=IGet(w, 0); decG(w); w=v; goto atom; }
     wia = IA(w);
-    if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
+    if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   } else {
     atom:
     if (!q_i32(w)) goto base;

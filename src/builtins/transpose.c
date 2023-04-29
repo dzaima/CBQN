@@ -124,7 +124,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
 }
 
 B transp_c1(B t, B x) {
-  if (RARE(isAtm(x))) return m_atomUnit(x);
+  if (RARE(isAtm(x))) return m_unit(x);
   ur xr = RNK(x);
   if (xr<=1) return x;
   
@@ -164,7 +164,7 @@ B transp_c2(B t, B w, B x) {
   if (isArr(w)) {
     if (RNK(w)>1) thrM("⍉: 𝕨 must have rank at most 1");
     wia = IA(w);
-    if (wia==0) { decG(w); return isArr(x)? x : m_atomUnit(x); }
+    if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   }
   ur xr;
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("⍉: Length of 𝕨 must be at most rank of 𝕩");

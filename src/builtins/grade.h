@@ -328,7 +328,7 @@ B GRADE_CAT(c1)(B t, B x) {
 
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
-  if (isAtm(x)) x = m_atomUnit(x);
+  if (isAtm(x)) x = m_unit(x);
   ur wr = RNK(w);
   ur xr = RNK(x);
   

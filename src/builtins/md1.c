@@ -61,8 +61,8 @@ B tbl_c1(Md1D* d, B x) {
 B slash_c2(B t, B w, B x);
 B shape_c2(B t, B w, B x);
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(w)) w = m_atomUnit(w);
-  if (isAtm(x)) x = m_atomUnit(x);
+  if (isAtm(w)) w = m_unit(w);
+  if (isAtm(x)) x = m_unit(x);
   ur wr = RNK(w); usz wia = IA(w);
   ur xr = RNK(x); usz xia = IA(x);
   ur rr = wr+xr;  usz ria = uszMul(wia, xia);

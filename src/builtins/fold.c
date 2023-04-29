@@ -337,7 +337,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (RNK(x)==1 && isPervasiveDyExt(f)) return m_atomUnit(fold_c1(d, x));
+    if (RNK(x)==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
     if (rtid == n_join) {
       ur xr = RNK(x);
       if (xr==1) return x;
@@ -365,7 +365,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isFun(f)) {
     if (RNK(x)==1 && isPervasiveDyExt(f)) {
       if (isAtm(w)) {
-        to_fold: return m_atomUnit(fold_c2(d, w, x));
+        to_fold: return m_unit(fold_c2(d, w, x));
       }
       if (RNK(w)==0) {
         B w0=w; w = IGet(w,0); decG(w0);

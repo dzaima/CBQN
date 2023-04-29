@@ -11,7 +11,7 @@ B eachd_fn(B fo, B w, B x, FC2 f) {
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;
-  if (rM==0) return m_unit(f(fo, w, x));
+  if (rM==0) return m_funit(f(fo, w, x));
   if (rm && !eqShPart(SH(w), SH(x), rm)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   bool rw = rM==wr && reusable(w) && TY(w)==t_harr; // dereferencing is safe as rank>0 from rM==
   bool rx = rM==xr && reusable(x) && TY(x)==t_harr;
