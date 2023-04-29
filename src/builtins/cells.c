@@ -189,24 +189,24 @@ static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »
 static B allBit(bool b, usz n) {
   return taga(arr_shVec(b ? allOnes(n) : allZeroes(n)));
 }
-static NOINLINE B match_cells(bool ne, B w, B x, ur wr, ur xr, usz len) {
+static NOINLINE Arr* match_cells(bool ne, B w, B x, ur wr, ur xr, ur k, usz len) {
   usz* wsh = SH(w);
-  if (wr != xr || (wr>1 && !eqShPart(wsh+1, SH(x)+1, wr-1))) {
-    return allBit(ne, len);
+  if (wr!=xr || (wr>k && !eqShPart(wsh+k, SH(x)+k, wr-k))) {
+    return a(allBit(ne, len));
   }
-  usz csz = shProd(wsh, 1, wr);
-  if (csz == 0) return allBit(!ne, len);
+  usz csz = shProd(wsh, k, wr);
+  if (csz==0) return a(allBit(!ne, len));
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
-  if (we>el_c32 || xe>el_c32) return bi_N;
+  if (we>el_c32 || xe>el_c32) return NULL;
   usz ww = csz * elWidth(we); u8* wp = tyany_ptr(w);
   usz xw = csz * elWidth(xe); u8* xp = tyany_ptr(x);
-  u64* rp; B r = m_bitarrv(&rp, len);
-  if (csz == 1 && we == xe) {
+  u64* rp; Arr* r = m_bitarrp(&rp, len);
+  if (csz==1 && we==xe) {
     CmpAAFn cmp = ne ? CMP_AA_FN(ne,we) : CMP_AA_FN(eq,we);
     CMP_AA_CALL(cmp, rp, wp, xp, len);
   } else {
-    if (we==el_bit || xe==el_bit) return bi_N;
+    if (we==el_bit || xe==el_bit) { mm_free((Value*)r); return NULL; }
     EqFnObj eqfn = EQFN_GET(we, xe);
     for (usz i = 0; i < len; i++) {
       bitp_set(rp, i, ne^EQFN_CALL(eqfn, wp, xp, csz));
@@ -498,11 +498,17 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   
   if (cam==0) return rank2_empty(f, w, wk, x, xk, chr);
   
-  if (isFun(f) && wk==1 && xk==1) {
-    u8 rtid = v(f)->flags-1;
-    if (rtid==n_feq || rtid==n_fne) {
-      B r = match_cells(rtid!=n_feq, w, x, wr, xr, cam);
-      if (!q_N(r)) { decG(w); decG(x); return r; }
+  if (isFun(f)) {
+    if (wk==xk) {
+      u8 rtid = v(f)->flags-1;
+      if (rtid==n_feq || rtid==n_fne) {
+        Arr* r = match_cells(rtid!=n_feq, w, x, wr, xr, wk, cam);
+        if (r!=NULL) {
+          usz* rsh = arr_shAlloc(r, zk);
+          if (rsh) shcpy(rsh, zsh, zk);
+          decG(w); decG(x); return taga(r);
+        }
+      }
     }
   }
   
