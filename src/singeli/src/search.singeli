@@ -138,25 +138,28 @@ def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & hasarch{'AVX2'}} = {
 # are equal: by the time it's checked at least one has been set to t,
 # so they're all t
 # Fill r0 depending on mode:
-# - 'none': ignore
-# - 'mask': Mark Firsts of x0
+# - 'none':   ignore
+# - 'mask':   Mark Firsts of x0
 # - 'unique': Deduplicate of x0
+# - 'index':  First index of value x at r0+x
 def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
   def rbit = mode == 'mask'
-  def storebit{i, v:T} = if (rbit) store{*T~~r0, i, v}
   def rval = mode == 'unique'
+  def rind = mode == 'index'
+  def storebit{i, v:T} = if (rbit) store{*T~~r0, i, v}
   if (rbit or rval) assert{match{t,0}}
 
   btab:= *i8~~tab
-  def settab_sub{x, v} = {
+  def settab_sub{x, v, i} = {
     if (rval) store{*u8~~r0, u, x}
-    u+= u8~~(t - v)  # u tracks the total of btab
+    if (rind and v!=t) store{r0, x, i}
+    u+= u8~~i8~~(t - v)  # u tracks the total of btab
     store{btab, x, t}
     v
   }
-  def settab1{x} = settab_sub{x, -1 - t}       # Known new
-  def settab{x} = settab_sub{x, load{btab, x}} # General case
-  def settab{T, x} = T~~promote{ty_s{T}, settab{x}}
+  def settab1{x, i} = settab_sub{x, -1 - t, i}       # Known new
+  def settab{x, i} = settab_sub{x, load{btab, x}, i} # General case
+  def settab{T, x, i} = T~~promote{ty_s{T}, settab{x, i}}
 
   x:= *u8~~x0
   if (not hasarch{'AVX2'}) {
@@ -165,7 +168,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
       k:= rem; if (k>64) k=64
       rw:u64 = 0
       @for (x over j to k) {
-        new:= settab{u64, x}
+        new:= settab{u64, x, i*64+j} # Index usually unused
         if (rbit) rw|= new & ((u64~~1)<<j)
       }
       storebit{i, rw}
@@ -178,11 +181,11 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
     {rw,rv} := undef{tup{u64,u32}} # Bit results, used if rbit
     if (rbit) rw = 0
     @for (x over j to i) {
-      new:= settab{u64, x}
+      new:= settab{u64, x, j}
       if (rbit) rw|= new & ((u64~~1)<<j)
     }
     storebit{0, rw}
-    if (mode == 'none' and u == 0) return{u} # Won't ever trigger (m != 0)!
+    if ((mode == 'none' or rind) and u == 0) return{u} # Won't ever trigger (m != 0)!
 
     def done = makelabel{}
     def {bitsel, reload_tab} = bittab_selector{readbytes{*VI~~tab}}
@@ -200,8 +203,9 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
       } else {
         # Add values to the table and filter m
         if (rbit) rv = m
-        xi:= load{x, i0 + ctzi{m}}
-        settab1{xi}
+        im:= i0 + ctzi{m}
+        xi:= load{x, im}
+        settab1{xi, im}
         if ((m&(m-1)) != 0) { # More bits than one
           # Filter out values equal to the previous, or first new
           def pind = (iota{32}&15) - 1
@@ -211,7 +215,8 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
           if (rbit) rv&= e | -m # Don't remove first bit
           m&= e
           while (m != 0) {
-            new:= settab{u32, load{x, i0 + ctzi{m}}}
+            im:= i0 + ctzi{m}
+            new:= settab{u32, load{x, im}, im}
             m1:= m-1;  m&= m1         # Clear low bit
             if (rbit) rv&= m1 | new   # Clear if not new
           }
@@ -250,16 +255,13 @@ fn fill_bittab(x0:*void, n:u64, tab:*void, u:u8, t:i8) : u8 = {
 fn simd_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : void = {
   assert{nw > 0}
 
-  # Initialize
   rev:u1 = nx < nw/4  # Reverse lookup
   bittab_init{tab, -promote{i8,rev}}
   u:u8 = 0  # Sum of table, either 0 or 256
   if (rev) u = fill_bittab(x0, nx, tab, u, 0)
 
-  # Fill table
   u = fill_bittab(w0, nw, tab, u, -1)
 
-  # Read result
   if (u == 0) { # All found!
     @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
   } else {
@@ -267,6 +269,17 @@ fn simd_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : voi
   }
 }
 
+fn simd_index_tab_u8{I}(w0:*void, nw:u64, x0:*void, nx:u64, tab:*void, i0:*void) : void = {
+  rev:u1 = nx < nw/4
+  bittab_init{tab, -promote{i8,rev}}
+  ind:= *I~~i0
+  @for (ind over 256) ind = cast_i{I, nw}
+  u:u8 = 0
+  if (rev) u = fill_bittab(x0, nx, tab, u, 0)
+  do_bittab{w0, nw, tab, u, -1, 'index', ind}
+}
+
 export{'simd_mark_firsts_u8', simd_mark_firsts_u8}
 export{'simd_deduplicate_u8', simd_deduplicate_u8}
 export{'simd_member_u8', simd_member_u8}
+export{'simd_index_tab_u8', simd_index_tab_u8{usz}}

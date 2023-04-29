@@ -226,6 +226,18 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        #if SINGELI
+        if (wia>256 && we==el_i8 && xe==el_i8) {
+          TALLOC(u8, tab, 256*(1+sizeof(usz))); usz* ind = (usz*)(tab+256);
+          void* fp = tyany_ptr(x);
+          simd_index_tab_u8(tyany_ptr(w), wia, fp, xia, tab, ind);
+          decG(w);
+          i32* rp; B r = m_i32arrc(&rp, x);
+          for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          TFREE(tab); decG(x);
+          return reduceI32Width(r, wia);
+        }
+        #endif
         B r;
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
