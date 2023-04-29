@@ -460,18 +460,27 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
-  if (isFun(f) && xk==1 && IA(x)!=0) {
+  if (isFun(f) && IA(x)!=0) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_select && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
-    if (rtid==n_pick && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
-    if ((rtid==n_shifta || rtid==n_shiftb) && xr==2 && isAtm(w)) {
+    if (rtid==n_select && xk==1 && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
+    if (rtid==n_pick && xk==1 && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
+    if ((rtid==n_shifta || rtid==n_shiftb) && xk==1 && xr==2 && isAtm(w)) {
       if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
       return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
     }
-    if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hvec2(m_f64(SH(x)[0]), w), x);
-    if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hvec2(m_f64(0),        w), x);
-    if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
+    if (rtid==n_take || rtid==n_drop) {
+      if (xcr==0 || !isF64(w)) goto generic;
+      bool take = rtid==n_take;
+      f64* ap;
+      B a = m_f64arrv(&ap, xk+1);
+      if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
+      else { usz* xsh=SH(x); PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
+      ap[xk] = o2fG(w);
+      return takedrop_highrank(take, a, x);
+    }
+    if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
   }
+  generic:;
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
   M_APD_SH(r, xk, xsh); FC2 fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
@@ -503,14 +512,14 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
       u8 rtid = v(f)->flags-1;
       if (rtid==n_feq || rtid==n_fne) {
         Arr* r = match_cells(rtid!=n_feq, w, x, wr, xr, wk, cam);
-        if (r!=NULL) {
-          usz* rsh = arr_shAlloc(r, zk);
-          if (rsh) shcpy(rsh, zsh, zk);
-          decG(w); decG(x); return taga(r);
-        }
+        if (r==NULL) goto generic;
+        usz* rsh = arr_shAlloc(r, zk);
+        if (rsh) shcpy(rsh, zsh, zk);
+        decG(w); decG(x); return taga(r);
       }
     }
   }
+  generic:;
   
   M_APD_SH(r, zk, zsh);
   S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp = 0;
