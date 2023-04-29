@@ -63,7 +63,6 @@
 // #define RT_PERF   // time runtime primitives
 // #define RT_VERIFY // compare native and runtime versions of primitives
 // #define NO_RT     // whether to completely disable self-hosted runtime loading
-// #define PRECOMP   // execute just precompiled code at src/gen/interp
 
 
 #ifdef __OpenBSD__
@@ -83,7 +82,7 @@
   #define CATCH_ERRORS 0
 #endif
 
-#define rtLen 64
+#define RT_LEN 64
 
 #if CATCH_ERRORS
   #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
@@ -178,6 +177,7 @@ typedef size_t ux;
   #define printf(...) replxx_print(global_replxx, __VA_ARGS__)
   #define fprintf(f, ...) replxx_print(global_replxx, __VA_ARGS__)
 #endif
+
 #if USZ_64
   typedef u64 usz;
   #define USZ_MAX ((u64)(1ULL<<48))
@@ -187,18 +187,13 @@ typedef size_t ux;
   #define USZ_MAX ((u32)((1LL<<32)-1))
   #define CHECK_IA(IA,W) if ((IA) > ((1LL<<31)/W - 1000)) thrOOM()
 #endif
+
 #if UNSAFE_SIZES
   #undef CHECK_IA
   #define CHECK_IA(IA,W)
 #endif
 typedef u8 ur;
 #define UR_MAX 255
-
-#define CTR_FOR(F)
-#define CTR_PRINT(N) if(N) printf(#N ": "N64u"\n", N);
-#define F(N) extern u64 N;
-CTR_FOR(F)
-#undef F
 
                                                // .FF0 .111111111110000000000000000000000000000000000000000000000000000 infinity
                                                // .FF8 .111111111111000000000000000000000000000000000000000000000000000 qNaN
@@ -222,11 +217,6 @@ static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110............
 #define tag(V, T) b(ptr2u64(V) | ftag(T))
 #define taga(V) tag(V,ARR_TAG)
 
-void cbqn_init(void);
-
-// #if __STDC_IEC_559__ == 0 // this has some issues on M1, so disabling for now
-//   #error "IEEE 754 floating point number support is required for CBQN"
-// #endif
 typedef union B {
   u64 u;
   f64 f;
@@ -413,6 +403,7 @@ B    toCells(B x);        // consumes
 B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
 
+void cbqn_init(void);
 B bqn_exec(B str, B path, B args); // consumes all
 B bqn_execFile(B path, B args); // consumes
 B bqn_explain(B str, B path); // consumes str
@@ -426,11 +417,12 @@ NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);
 #if CATCH_ERRORS
 jmp_buf* prepareCatch(void);
-#define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ freeThrown(); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
-#else                                 // note: popCatch() must always be called if no error was caught, so no returns before it!
-#define CATCH false
+  #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ freeThrown(); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
+  void popCatch(void);                  // note: popCatch() must always be called if no error is thrown, so no returns before it!
+#else
+  #define CATCH false
+  #define popCatch()
 #endif
-void popCatch(void);
 extern B thrownMsg;
 void freeThrown(void);
 
@@ -637,7 +629,7 @@ static void decR(B x) {
   if(!--vx->refc) value_freeF(vx);
 }
 void decA_F(B x);
-static void decA(B x) { if (RARE(isVal(x))) decA_F(x); } // decrement what's likely an atom
+static void decA(B x) { if (RARE(isVal(x))) decA_F(x); } // decrement a value which is likely to not be heap-allocated
 static inline B inc(B x) {
   if (isVal(VALIDATE(x))) v(x)->refc++;
   return x;
@@ -699,12 +691,12 @@ static B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
 }
 static void errMd(B x) { if(RARE(isMd(x))) thrM("Calling a modifier"); }
 // like c1/c2, but with less overhead on non-functions
-static B c1i(B f, B x) {
+SHOULD_INLINE B c1I(B f, B x) {
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
   dec(x); errMd(f);
   return inc(f);
 }
-static B c2i(B f, B w, B x) {
+SHOULD_INLINE B c2I(B f, B w, B x) {
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
   dec(w); dec(x); errMd(f);
   return inc(f);
@@ -712,16 +704,6 @@ static B c2i(B f, B w, B x) {
 static B c1iX(B f, B x) { // c1 with inc(x)
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, inc(x)));
   errMd(f);
-  return inc(f);
-}
-static B c2iX(B f, B w, B x) { // c2 with inc(x)
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, inc(x)));
-  dec(w); errMd(f);
-  return inc(f);
-}
-static B c2iW(B f, B w, B x) { // c2 with inc(w)
-  if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, inc(w), x));
-  dec(x); errMd(f);
   return inc(f);
 }
 static B c2iWX(B f, B w, B x) { // c2 with inc(w), inc(x)
@@ -741,13 +723,3 @@ struct Md2 {
   D2C1 c1; // f(md2d{this,f,g},  x); consumes x
   D2C2 c2; // f(md2d{this,f,g},w,x); consumes w,x
 };
-static B m1_d(B m, B f     );
-static B m2_d(B m, B f, B g);
-static B m2_h(B m,      B g);
-static B m_md1D(Md1* m, B f     );
-static B m_md2D(Md2* m, B f, B g);
-static B m_md2H(Md2* m,      B g);
-static B m_fork(B f, B g, B h);
-static B m_atop(     B g, B h);
-
-

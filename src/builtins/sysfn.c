@@ -50,10 +50,10 @@ B decp_c1(B t, B x) {
 }
 
 B primInd_c1(B t, B x) {
-  if (!isVal(x)) return m_i32(rtLen);
+  if (!isVal(x)) return m_i32(RT_LEN);
   if (isPrim(x)) { B r = m_i32(v(x)->flags-1); dec(x); return r; }
   dec(x);
-  return m_i32(rtLen);
+  return m_i32(RT_LEN);
 }
 
 B nsFmt(B x);
@@ -1500,8 +1500,7 @@ static Body* file_nsGen;
 
 #define OPTSYS_0(X)
 #define OPTSYS_1(X) X
-#define OPTSYS_B(COND) OPTSYS_##COND
-#define OPTSYS(COND) OPTSYS_B(COND)
+#define OPTSYS(COND) JOIN0(OPTSYS_,COND)
 
 #define FOR_DEFAULT_SYSVALS(F) \
   F("out", U"•Out", bi_out) \

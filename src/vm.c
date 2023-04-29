@@ -1309,14 +1309,11 @@ jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch(
   cf->envDepth = (envCurr+1)-envStart;
   return &(cf++)->jmp;
 }
-#endif
-
 void popCatch() {
-  #if CATCH_ERRORS
-    assert(cf>cfStart);
-    cf--;
-  #endif
+  assert(cf>cfStart);
+  cf--;
 }
+#endif
 
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
   SGetU(src)

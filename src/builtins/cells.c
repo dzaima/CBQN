@@ -398,15 +398,15 @@ B cell_c1(Md1D* d, B x) { B f = d->f;
 }
 B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
-  bool gf = isFun(g);
-  if (RARE(gf)) g = c1(g, inc(x));
+  B gi = m_f64(0);
+  if (RARE(isFun(g))) gi = g = c1iX(g, x);
   if (LIKELY(isNum(g))) {
     kf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);
-    SGetU(g); kf = GetU(g, gia==2).f;
+    kf = IGetU(g, gia==2).f;
+    decA(gi);
   }
-  if (gf) dec(g);
   if (isAtm(x)) return c1wrap(f, x);
   ur xr = RNK(x);
   ur cr = cell_rank(xr, kf);
@@ -513,7 +513,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
 B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
   B gi = m_f64(0);
-  if (RARE(isFun(g))) { gi = g = c2(g, inc(w), inc(x)); }
+  if (RARE(isFun(g))) gi = g = c2iWX(g, w, x);
   if (LIKELY(isNum(g))) {
     wf = xf = req_whole(o2fG(g));
   } else {

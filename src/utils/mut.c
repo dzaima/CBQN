@@ -485,19 +485,17 @@ NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
 void apd_widen(ApdMut* m, B x, ApdFn** fns);
 ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_sh2_fns[];
 
-#define APD_CAT(A,B) A##B
-
 #define APD_OR_FILL_0(X)
 #define APD_OR_FILL_1(X) \
   B f0=m->fill; if (noFill(f0)) goto noFill;                           \
   if (!fillEqualsGetFill(f0, X)) { dec(m->fill); m->fill=bi_noFill; }  \
   noFill:;
 
-#define APD_OR_FILL(EB, X) APD_CAT(APD_OR_FILL_,EB)(X)
+#define APD_OR_FILL(EB, X) JOIN0(APD_OR_FILL_,EB)(X)
 
 #define APD_POS_0() m->pos
 #define APD_POS_1() m->obj->ia
-#define APD_POS(EB) APD_CAT(APD_POS_,EB)()
+#define APD_POS(EB) JOIN0(APD_POS_,EB)()
 
 #define APD_WIDEN(TY) do { apd_widen(m, x, apd_##TY##_fns); return; } while(0)
 #define APD_INC_POS(EB) 

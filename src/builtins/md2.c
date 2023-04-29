@@ -132,8 +132,8 @@ NOINLINE B before_c1F(Md2D* d, B x, B f) { errMd(f); return c2(d->g, c(Fun,f)->c
 NOINLINE B after_c1F (Md2D* d, B x, B g) { errMd(g); return c2(d->f, x, c(Fun,g)->c1(g,inc(x))); }
 B before_c1(Md2D* d, B x) { B f=d->f; return isCallable(f)? before_c1F(d, x, f) : c2(d->g, inc(f), x); }
 B after_c1 (Md2D* d, B x) { B g=d->g; return isCallable(g)? after_c1F (d, x, g) : c2(d->f, x, inc(g)); }
-B before_c2(Md2D* d, B w, B x) { return c2(d->g, c1i(d->f, w), x); }
-B after_c2 (Md2D* d, B w, B x) { return c2(d->f, w, c1i(d->g, x)); }
+B before_c2(Md2D* d, B w, B x) { return c2(d->g, c1I(d->f, w), x); }
+B after_c2 (Md2D* d, B w, B x) { return c2(d->f, w, c1I(d->g, x)); }
 B atop_c1(Md2D* d,      B x) { return c1(d->f, c1(d->g,    x)); }
 B atop_c2(Md2D* d, B w, B x) { return c1(d->f, c2(d->g, w, x)); }
 B over_c1(Md2D* d,      B x) { return c1(d->f, c1(d->g,    x)); }

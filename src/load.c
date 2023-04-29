@@ -63,9 +63,6 @@ FOR_PM2(FA,FM,FD)
 #undef FM
 #undef FD
 
-#define F(N) u64 N;
-CTR_FOR(F)
-#undef F
 char* pfn_repr(u8 u) {
   switch(u) { default: return "(unknown function)";
     #define F(N,X) case pf_##N: return X;
@@ -94,7 +91,7 @@ char* pm2_repr(u8 u) {
   FOR_TI(F)
 #undef F
 
-B r1Objs[rtLen];
+B r1Objs[RT_LEN];
 B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
@@ -397,9 +394,9 @@ void load_init() { // very last init function
     /* ´˝`∘○⊸⟜⌾⊘◶  */ 1,1,1,1,1,1,1,1,1,1,
     /* ⎉⚇⍟⎊        */ 1,1,1,1
   };
-  assert(sizeof(fruntime)/sizeof(B) == rtLen);
-  for (u64 i = 0; i < rtLen; i++) inc(fruntime[i]);
-  B frtObj = m_caB(rtLen, fruntime);
+  assert(sizeof(fruntime)/sizeof(B) == RT_LEN);
+  for (u64 i = 0; i < RT_LEN; i++) inc(fruntime[i]);
+  B frtObj = m_caB(RT_LEN, fruntime);
   
   #ifndef NO_RT
     B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
@@ -432,7 +429,7 @@ void load_init() { // very last init function
     
     
     
-    if (IA(rtObjRaw) != rtLen) err("incorrectly defined rtLen!");
+    if (IA(rtObjRaw) != RT_LEN) err("incorrectly defined RT_LEN!");
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
@@ -445,7 +442,7 @@ void load_init() { // very last init function
     rt_depth   = Get(rtObjRaw, n_depth   );
     rt_insert  = Get(rtObjRaw, n_insert  );
     
-    for (usz i = 0; i < rtLen; i++) {
+    for (usz i = 0; i < RT_LEN; i++) {
       #ifdef RT_WRAP
       r1Objs[i] = Get(rtObjRaw, i); gc_add(r1Objs[i]);
       #endif
@@ -478,7 +475,7 @@ void load_init() { // very last init function
     (void)frtObj;
     (void)rtComplete;
     (void)runtime;
-    for (usz i = 0; i < rtLen; i++) {
+    for (usz i = 0; i < RT_LEN; i++) {
       B r = fruntime[i];
       if (isVal(r)) v(r)->flags|= i+1;
     }
@@ -514,7 +511,6 @@ void load_init() { // very last init function
       cbqn_heapVerify();
     #endif
     rtWrap_print();
-    CTR_FOR(CTR_PRINT)
     print_allocStats();
     exit(0);
   #else // use compiler
@@ -562,7 +558,6 @@ void bqn_exit(i32 code) {
     cbqn_heapDump(NULL);
   #endif
   rtWrap_print();
-  CTR_FOR(CTR_PRINT)
   print_allocStats();
   before_exit();
   exit(code);
