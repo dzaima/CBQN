@@ -603,7 +603,7 @@ static B def_get(Arr* x, usz n) { err("def_get"); }
 static B def_getU(Arr* x, usz n) { err("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
-static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
+static Arr* def_slice(B x, usz s, usz ia) { err("cannot slice non-array!"); }
 
 B rt_invFnReg, rt_invFnSwap;
 FC1 rt_invFnRegFn;
