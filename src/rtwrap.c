@@ -76,7 +76,7 @@ u64 fwTotal;
 B wfn_c1(B t, B x) {
   WFun* c = c(WFun,t);
   B f = c->v;
-  BB2B fi = c(Fun,f)->c1;
+  FC1 fi = c(Fun,f)->c1;
   #if RT_PERF
     u64 s = nsTime();
     B r = fi(f, x);
@@ -103,7 +103,7 @@ B wfn_c1(B t, B x) {
 B wfn_c2(B t, B w, B x) {
   WFun* c = c(WFun,t);
   B f = c->v;
-  BBB2B fi = c(Fun,f)->c2;
+  FC2 fi = c(Fun,f)->c2;
   #if RT_PERF
     u64 s = nsTime();
     B r = fi(f, w, x);

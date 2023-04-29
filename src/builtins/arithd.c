@@ -231,7 +231,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     #undef SA_DISPATCH
     
   #else
-    static NOINLINE B bit_sel1Fn(BBB2B f, B w, B x, bool bitX) { // consumes both
+    static NOINLINE B bit_sel1Fn(FC2 f, B w, B x, bool bitX) { // consumes both
       B b = bitX? x : w;
       u64* bp = bitarr_ptr(b);
       usz ia = IA(b);

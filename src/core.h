@@ -33,11 +33,11 @@
 typedef struct BFn {
   struct Fun;
   B ident;
-   BBB2B uc1;
+  FC2 uc1;
   BBBB2B ucw;
-  BB2B im;
-  BBB2B iw; B rtInvSwap;
-  BBB2B ix; B rtInvReg;
+  FC1 im;
+  FC2 iw; B rtInvSwap;
+  FC2 ix; B rtInvReg;
 } BFn;
 typedef struct BMd1 {
   struct Md1;

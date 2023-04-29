@@ -5,7 +5,7 @@
 #include "../ns.h"
 #include <math.h>
 
-static inline B arith_recm(BB2B f, B x) {
+static inline B arith_recm(FC1 f, B x) {
   B fx = getFillQ(x);
   B r = eachm_fn(bi_N, x, f);
   return withFill(r, fx);
@@ -146,7 +146,7 @@ f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
 B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Argument contained non-number"); }
 B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Argument contained non-number"); }
 #undef P1
-static NOINLINE B arith_recm_slow(f64 (*fn)(f64), BB2B rec, B x, char* s) {
+static NOINLINE B arith_recm_slow(f64 (*fn)(f64), FC1 rec, B x, char* s) {
   if (isF64(x)) return m_f64(fn(x.f));
   if(isArr(x)) return arith_recm(rec, x);
   thrF("•math.%S: Argument contained non-number", s);

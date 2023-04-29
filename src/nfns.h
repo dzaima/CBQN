@@ -13,11 +13,11 @@ struct NFnDesc {
   struct Value;
   u32 id;
   B name;
-  BB2B c1;
-  BBB2B c2;
+  FC1 c1;
+  FC2 c2;
 };
 
-NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2); // should be called a constant number of times; consumes name
+NFnDesc* registerNFn(B name, FC1 c1, FC2 c2); // should be called a constant number of times; consumes name
 B m_nfn(NFnDesc* desc, B obj); // consumes obj
 B nfn_name(B x); // doesn't consume
 static void nfn_lateInit(NFn* fn, NFnDesc* desc) {

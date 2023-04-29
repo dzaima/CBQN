@@ -53,7 +53,7 @@ typedef struct EntAA {
 
 typedef struct DyTableAA {
   EntAA entsAA[el_B*el_B]; // one for each instruction
-  BBB2B mainFn;
+  FC2 mainFn;
   char* repr;
 } DyTableAA;
 
@@ -161,7 +161,7 @@ typedef struct {
 
 struct DyTableSA {
   EntSA ents[el_B];
-  BBB2B mainFn;
+  FC2 mainFn;
   char* repr;
   u8 fill[2][2]; // 0:none 1:int 2:char
   DyTableSA* chrAtom;

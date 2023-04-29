@@ -105,11 +105,11 @@ INS B i_FN2O(B w, B f, B x, u32* bc) { POS_UPD;
   dec(f);
   return r;
 }
-INS B i_FN1Oi(B x, BB2B fm, u32* bc) { POS_UPD;
+INS B i_FN1Oi(B x, FC1 fm, u32* bc) { POS_UPD;
   B r = q_N(x)? x : fm(b((u64)0), x);
   return r;
 }
-INS B i_FN2Oi(B w, B x, BB2B fm, BBB2B fd, u32* bc) { POS_UPD;
+INS B i_FN2Oi(B w, B x, FC1 fm, FC2 fd, u32* bc) { POS_UPD;
   if (q_N(x)) { dec(w); return x; }
   else return q_N(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
 }
@@ -667,8 +667,8 @@ Nvm_res m_nvm(Body* body) {
       case FN2O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_FN2O); break; // (B w, B f, B x, u32* bc)
       case FN1Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,0,2); CCALL(fn); } break;
       case FN2Ci: { u64 fn = L64; POS_UPD(R_A0,R_A3); MOV(R_A1, R_RES); GET(R_A2,1,1); CCALL(fn); } break;
-      case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, BB2B fm,           u32* bc)
-      case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, BB2B fm, BBB2B fd, u32* bc)
+      case FN1Oi:TOPp; GET(R_A1,0,2); IMM(R_A1,L64);                 IMM(R_A2,off); CCALL(i_FN1Oi); break; // (     B x, FC1 fm,         u32* bc)
+      case FN2Oi:TOPp; GET(R_A1,1,1); IMM(R_A2,L64); IMM(R_A3, L64); IMM(R_A4,off); CCALL(i_FN2Oi); break; // (B w, B x, FC1 fm, FC2 fd, u32* bc)
       case LSTM: case LSTO:; { bool o = *(bc-1) == LSTO;
         u32 sz = *bc++;
         if      (sz==0     ) { TOPs; CCALL(i_LST_0); } // unused with optimizations

@@ -48,7 +48,7 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
     p -= x_csz;
     r = SLICE(x, p);
   }
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   while(p!=0) {
     p-= x_csz;
     r = fc2(f, SLICE(x, p), r);
@@ -384,7 +384,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   base:;
   
   M_APD_SH(r, k, xsh);
-  S_KSLICES(x, xsh, k, cam, 1); BB2B fc1 = c1fn(f);
+  S_KSLICES(x, xsh, k, cam, 1); FC1 fc1 = c1fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc1(f, SLICEI(x)));
   decG(x);
   
@@ -444,7 +444,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
-  M_APD_SH(r, wk, wsh); BBB2B fc2 = c2fn(f);
+  M_APD_SH(r, wk, wsh); FC2 fc2 = c2fn(f);
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
   decG(w); return taga(APD_SH_GET(r, chr));
 }
@@ -465,7 +465,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
     if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
   }
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
-  M_APD_SH(r, xk, xsh); BBB2B fc2 = c2fn(f);
+  M_APD_SH(r, xk, xsh); FC2 fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
   decG(x); return taga(APD_SH_GET(r, chr));
 }
@@ -501,7 +501,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   M_APD_SH(r, zk, zsh);
   S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp = 0;
   S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp = 0;
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   if (ext==1) { for (usz i=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), SLICEI(x))); }
   else if (xkM) { for (usz i=0; i<cam; ) { B wb=incByG(SLICEI(w), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, wb, SLICEI(x))); } }
   else          { for (usz i=0; i<cam; ) { B xb=incByG(SLICEI(x), ext-1); for (usz e = i+ext; i < e; i++) APDD(r, fc2(f, SLICEI(w), xb)); } }

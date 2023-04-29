@@ -5,7 +5,7 @@
 static u32 nfn_curr;
 static B nfn_list;
 
-NFnDesc* registerNFn(B name, BB2B c1, BBB2B c2) {
+NFnDesc* registerNFn(B name, FC1 c1, FC2 c2) {
   u32 id = nfn_curr++;
   NFnDesc* r = mm_alloc(sizeof(NFnDesc), t_nfnDesc);
   r->id = id;

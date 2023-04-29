@@ -165,7 +165,7 @@ typedef BQNV (*bqn_foreignFn2)(BQNV w, BQNV x);
 B directFn_c1(B t,      B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_foreignFn1)c->w_c1)(          makeX(x))); }
 B directFn_c2(B t, B w, B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_foreignFn2)c->w_c2)(makeX(w), makeX(x))); }
 
-static B m_ffiFn(NFnDesc* desc, B obj, BB2B c1, BBB2B c2, void* wc1, void* wc2) {
+static B m_ffiFn(NFnDesc* desc, B obj, FC1 c1, FC2 c2, void* wc1, void* wc2) {
   BoundFn* r = mm_alloc(sizeof(BoundFn), t_nfn);
   nfn_lateInit((NFn*)r, desc);
   r->obj = obj;

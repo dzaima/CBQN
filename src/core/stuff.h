@@ -322,12 +322,12 @@ B md_c1(B t,      B x);
 B md_c2(B t, B w, B x);
 B arr_c1(B t,      B x);
 B arr_c2(B t, B w, B x);
-static BB2B c1fn(B f) {
+static FC1 c1fn(B f) {
   if (isFun(f)) return c(Fun,f)->c1;
   if (isMd(f)) return md_c1;
   return arr_c1;
 }
-static BBB2B c2fn(B f) {
+static FC2 c2fn(B f) {
   if (isFun(f)) return c(Fun,f)->c2;
   if (isMd(f)) return md_c2;
   return arr_c2;

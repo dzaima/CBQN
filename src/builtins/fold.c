@@ -218,7 +218,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   SLOW2("𝕎´ 𝕩", f, x);
   
   SGet(x)
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   B c;
   if (TI(x,elType)==el_i32) {
     i32* xp = i32any_ptr(x);
@@ -285,7 +285,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   
   B c = w;
   SGet(x)
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   for (usz i = ia; i>0; i--) c = fc2(f, Get(x, i-1), c);
   decG(x);
   return c;

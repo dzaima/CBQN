@@ -218,7 +218,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   bool reuse = TY(x)==t_harr && reusable(x);
   HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
   AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   
   if (xr==1) {
     r.a[0] = xget(xa,0);
@@ -283,7 +283,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   usz i = 0;
   HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
   AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
-  BBB2B fc2 = c2fn(f);
+  FC2 fc2 = c2fn(f);
   
   if (isArr(w)) {
     ur wr = RNK(w); usz* wsh = SH(w); SGet(w)

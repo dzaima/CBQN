@@ -4,7 +4,7 @@
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }
 static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r; }
 
-B eachd_fn(B fo, B w, B x, BBB2B f) {
+B eachd_fn(B fo, B w, B x, FC2 f) {
   ur wr, xr; // if rank is 0, respective w/x will be disclosed
   if (isArr(w)) { wr=RNK(w); if (wr==0) { B c=IGet(w, 0); decG(w); w=c; } } else wr=0;
   if (isArr(x)) { xr=RNK(x); if (xr==0) { B c=IGet(x, 0); decG(x); x=c; } } else xr=0;
@@ -56,7 +56,7 @@ B eachd_fn(B fo, B w, B x, BBB2B f) {
   return rb;
 }
 
-B eachm_fn(B fo, B x, BB2B f) {
+B eachm_fn(B fo, B x, FC1 f) {
   usz ia = IA(x);
   usz i = 0;
   if (ia==0) return x;
@@ -117,7 +117,7 @@ B eachm_fn(B fo, B x, BB2B f) {
 }
 
 #if CATCH_ERRORS
-B arith_recd(BBB2B f, B w, B x) {
+B arith_recd(FC2 f, B w, B x) {
   B fx = getFillQ(x);
   if (noFill(fx)) return eachd_fn(bi_N, w, x, f);
   B fw = getFillQ(w);

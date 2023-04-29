@@ -185,14 +185,14 @@ B before_uc1(Md2* t, B o, B f, B g, B x) {
 
 
 B while_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
-  BB2B ff = c1fn(f);
-  BB2B gf = c1fn(g);
+  FC1 ff = c1fn(f);
+  FC1 gf = c1fn(g);
   while (o2b(gf(g,inc(x)))) x = ff(f, x);
   return x;
 }
 B while_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
-  BBB2B ff = c2fn(f);
-  BBB2B gf = c2fn(g);
+  FC2 ff = c2fn(f);
+  FC2 gf = c2fn(g);
   while (o2b(gf(g,inc(w),inc(x)))) x = ff(f, inc(w), x);
   dec(w);
   return x;

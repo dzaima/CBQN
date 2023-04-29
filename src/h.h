@@ -533,6 +533,9 @@ typedef B (*     B2B)(B);
 typedef B (*    BB2B)(B, B);
 typedef B (*   BBB2B)(B, B, B);
 typedef B (*  BBBB2B)(B, B, B, B);
+typedef BB2B FC1;
+typedef BBB2B FC2;
+
 
 typedef B (*M1C3)(Md1*, B, B, B);
 typedef B (*M1C4)(Md1*, B, B, B, B);
@@ -560,16 +563,16 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(M2C4, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
   F(M2C5, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
   \
-  F( BB2B, fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
-  F( BB2B, fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
-  F(BBB2B, fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
-  F(BBB2B, fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
-  F( D1C1, m1_im) /* d,  x; 1-modifier monadic inverse;  consumes x   */ \
-  F( D1C2, m1_iw) /* d,w,x; 1-modifier dyadic 𝕨-inverse; consumes w,x */ \
-  F( D1C2, m1_ix) /* d,w,x; 1-modifier dyadic 𝕩-inverse; consumes w,x */ \
-  F( D2C1, m2_im) /* d,  x; 2-modifier monadic inverse;  consumes x   */ \
-  F( D2C2, m2_iw) /* d,w,x; 2-modifier dyadic 𝕨-inverse; consumes w,x */ \
-  F( D2C2, m2_ix) /* d,w,x; 2-modifier dyadic 𝕩-inverse; consumes w,x */ \
+  F(FC1,  fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
+  F(FC1,  fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \
+  F(FC2,  fn_iw) /* t,w,x; function dyadic 𝕨-inverse;  consumes w,x */ \
+  F(FC2,  fn_ix) /* t,w,x; function dyadic 𝕩-inverse;  consumes w,x */ \
+  F(D1C1, m1_im) /* d,  x; 1-modifier monadic inverse;  consumes x   */ \
+  F(D1C2, m1_iw) /* d,w,x; 1-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F(D1C2, m1_ix) /* d,w,x; 1-modifier dyadic 𝕩-inverse; consumes w,x */ \
+  F(D2C1, m2_im) /* d,  x; 2-modifier monadic inverse;  consumes x   */ \
+  F(D2C2, m2_iw) /* d,w,x; 2-modifier dyadic 𝕨-inverse; consumes w,x */ \
+  F(D2C2, m2_ix) /* d,w,x; 2-modifier dyadic 𝕩-inverse; consumes w,x */ \
   \
   F(B2b, canStore) /* doesn't consume */ \
   F(u8, elType) /* guarantees that the corresponding i32any_ptr/f64any_ptr/c32any_ptr/… always succeeds */ \
@@ -665,8 +668,8 @@ static inline B incByG(B x, i64 am) { v(x)->refc+= am; return x; }
 
 typedef struct Fun {
   struct Value;
-  BB2B c1;
-  BBB2B c2;
+  FC1 c1;
+  FC2 c2;
 } Fun;
 
 #if USE_VALGRIND

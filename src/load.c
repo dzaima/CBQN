@@ -606,8 +606,8 @@ static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { thrM("cannot slice non-array!"); }
 
 B rt_invFnReg, rt_invFnSwap;
-BB2B rt_invFnRegFn;
-BB2B rt_invFnSwapFn;
+FC1 rt_invFnRegFn;
+FC1 rt_invFnSwapFn;
 B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
 B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
 B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
@@ -662,7 +662,7 @@ void def_fallbackTriv(Value* v) { // used while vtables aren't yet fully loaded;
   TIv(v,freeF)(v);
 }
 
-static NOINLINE B m_bfn(BB2B c1, BBB2B c2, u8 id) {
+static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
   BFn* f = mm_alloc(sizeof(BFn), t_funBI);
   f->c1 = c1;
   f->c2 = c2;

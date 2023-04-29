@@ -84,9 +84,9 @@ CMP_REC(ne, ne, swapped=0;)
   #undef CMP_AA_F
   
   
-  #define CMP_SLOW(T, GW) void cmp_slow_##T(void* r, void* w, B x, u64 l, BBB2B fn) { \
+  #define CMP_SLOW(T, GW) void cmp_slow_##T(void* r, void* w, B x, u64 l, FC2 fc2) { \
     assert(l>0); incBy(x,l-1); \
-    for (usz i=0; i<l; i++) bitp_set(r, i, o2bG(fn(m_f64(0), GW, x))); \
+    for (usz i=0; i<l; i++) bitp_set(r, i, o2bG(fc2(m_f64(0), GW, x))); \
   }
   #define CMP_SLOWi(T,M) CMP_SLOW(T, m_##M(((T*)w)[i]))
   CMP_SLOW(u1,m_i32(bitp_get(w,i)))
