@@ -274,6 +274,9 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
 }
 
 
+NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr);
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr);
+NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr);
 
 static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_unit(r) : r; }
 static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_unit(r) : r; }
@@ -335,6 +338,11 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         if (m == 1) return select_cells(0, x, cam, k, false);
         if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
       }
+    } else if (TY(f) == t_md2D) {
+      Md2D* fd = c(Md2D,f);
+      u8 rtid = fd->m2->flags-1;
+      if (rtid==n_before && !isCallable(fd->f)) return for_cells_SA(fd->g, inc(fd->f), x, cr, xr, chr);
+      if (rtid==n_after  && !isCallable(fd->g)) return for_cells_AS(fd->f, x, inc(fd->g), cr, xr, chr);
     }
   } else if (!isMd(f)) {
     const_f:; inc(f);
