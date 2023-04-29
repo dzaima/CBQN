@@ -273,76 +273,72 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }
   
   #define COPY_FN(X,R) simd_copy_##X##_##R
-  #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, T, ...) \
-  static copy_fn copy##T##Fns[10];                \
-  NOINLINE void cpy##T##Arr_BF(void* xp, void* rp, u64 ia, Arr* xa) { \
+  #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, E, N, ...) \
+  static copy_fn copy0_##E##_fns[10];      \
+  NOINLINE void cpy##N##Arr_BF(void* xp, void* rp, u64 ia, Arr* xa) { \
     AS2B fn = TIv(xa,GET);                 \
     for (usz i=0; i<ia; i++) WR(fn(xa,i)); \
   } \
-  static void cpy##T##Arr_B(void* xp, void* rp, u64 ia, void* xRaw) { \
+  static void cpy##N##Arr_B(void* xp, void* rp, u64 ia, void* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
     if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
-    else cpy##T##Arr_BF(xp, rp, ia, xa);          \
+    else cpy##N##Arr_BF(xp, rp, ia, xa);          \
   }                                               \
-  static copy_fn copy##T##Fns[] = __VA_ARGS__;    \
-  Arr* cpy##T##Arr(B x) {   \
+  static copy_fn copy0_##E##_fns[] = __VA_ARGS__; \
+  Arr* cpy##N##Arr(B x) {   \
     usz ia = IA(x);         \
     MAKE; arr_shCopy(r, x); \
     if (ia>0) {             \
-      copy##T##Fns[TI(x,elType)](tyany_ptr(x), XRP, ia, a(x)); \
+      copy0_##E##_fns[TI(x,elType)](tyany_ptr(x), XRP, ia, a(x)); \
     }                       \
     if (TY) ptr_decT(a(x)); \
     else decG(x);           \
     NOGC_E; return (Arr*)r; \
   }
   #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bG(V))
-  #define H2T_COPY(T) copy##T##Fns[el_MAX](bxp, rp, ia, xRaw)
-  #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(1, T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(T), T, __VA_ARGS__)
+  #define H2T_COPY(E) copy0_##E##_fns[el_MAX](bxp, rp, ia, xRaw)
+  #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(1, T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(E), E, T, __VA_ARGS__)
   #define MAKE_CCPY(T,E) MAKE_TYCPY(T, E, o2cG, {badCopy,     badCopy,      badCopy,       badCopy,       badCopy,       COPY_FN(c8,E),COPY_FN(c16,E),COPY_FN(c32,E),cpy##T##Arr_B,COPY_FN(B,E)})
   #define MAKE_ICPY(T,E) MAKE_TYCPY(T, E, o2fG, {COPY_FN(1,E),COPY_FN(i8,E),COPY_FN(i16,E),COPY_FN(i32,E),COPY_FN(f64,E),badCopy,      badCopy,       badCopy,       cpy##T##Arr_B,COPY_FN(f64,E)})
   MAKE_CPY(0, HArr_p p = m_harrUp(ia); Arr* r = (Arr*)p.c, get, ((B*)rp)[i] =, p.a, for (usz i=0; i<ia; i++) ((B*)rp)[i] = inc(bxp[i]),
-                                    H,          {COPY_FN(1,B),COPY_FN(i8,B),COPY_FN(i16,B),COPY_FN(i32,B),COPY_FN(f64,B),COPY_FN(c8,B),COPY_FN(c16,B),COPY_FN(c32,B),cpyHArr_B,    COPY_FN(f64,B)})
-  MAKE_CPY(1, u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(Bit),
-                                  Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
+                               B,   H,          {COPY_FN(1,B),COPY_FN(i8,B),COPY_FN(i16,B),COPY_FN(i32,B),COPY_FN(f64,B),COPY_FN(c8,B),COPY_FN(c16,B),COPY_FN(c32,B),cpyHArr_B,    COPY_FN(f64,B)})
+  MAKE_CPY(1, u64* rp; Arr* r = m_bitarrp(&rp, ia), getU, BIT_PUT, rp, H2T_COPY(bit),
+                             bit, Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
   
   
-  copy_fn tcopy_i8Fns [] = {[t_bitarr]=simd_copy_1u_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
-  copy_fn tcopy_i16Fns[] = {[t_bitarr]=simd_copy_1u_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
-  copy_fn tcopy_i32Fns[] = {[t_bitarr]=simd_copy_1u_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
-  copy_fn tcopy_f64Fns[] = {[t_bitarr]=simd_copy_1u_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
-  copy_fn tcopy_c8Fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
-  copy_fn tcopy_c16Fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
-  copy_fn tcopy_c32Fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
+  copy_fn tcopy_i8_fns [] = {[t_bitarr]=simd_copy_1u_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
+  copy_fn tcopy_i16_fns[] = {[t_bitarr]=simd_copy_1u_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
+  copy_fn tcopy_i32_fns[] = {[t_bitarr]=simd_copy_1u_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
+  copy_fn tcopy_f64_fns[] = {[t_bitarr]=simd_copy_1u_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
+  copy_fn tcopy_c8_fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
+  copy_fn tcopy_c16_fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
+  copy_fn tcopy_c32_fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
   
-  #define TCOPY_FN(T, N, NUM) static void m_copyG_##N(void* a, usz ms, B x, usz xs, usz l) { \
-    if (l==0) return;          \
-    void* xp = tyany_ptr(x);   \
-    u8 xt = TY(x);             \
-    tcopy_##N##Fns[xt]((xs << arrTypeWidthLog(xt)) + (u8*)xp, ms + (T*)a, l, a(x)); \
-  }
-  TCOPY_FN(i8,i8, 1)
-  TCOPY_FN(i16,i16, 1)
-  TCOPY_FN(i32,i32, 1)
-  TCOPY_FN(u8,c8, 0)
-  TCOPY_FN(u16,c16, 0)
-  TCOPY_FN(u32,c32, 0)
-  TCOPY_FN(f64,f64, 1)
-  static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) {
-    bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l);
-  }
+  #define COPY_FNS(E, NUM) \
+    static void m_copyG_##E(void* a, usz ms, B x, usz xs, usz l) { \
+      if (l==0) return;       \
+      u8 xt = TY(x);          \
+      u8* xp = tyany_ptr(x);  \
+      tcopy_##E##_fns[xt]((xs << arrTypeWidthLog(xt)) + xp, ms + (E*)a, l, a(x)); \
+    }                         \
+    FORCE_INLINE void copy0_##E(void* a, usz ms, B x, u8 xe, usz l) { copy0_##E##_fns[xe](tyany_ptr(x), ms+(E*)a, l, a(x)); }
   
-  #define F(N,E,T) static copy_fn copy##N##Fns[]; FORCE_INLINE void copy2_##E(void* a, usz ms, B x, u8 xe, usz l) { copy##N##Fns[xe](tyany_ptr(x), ms+(T*)a, l, a(x)); }
-  F(I8, i8, i8)  F(C8, c8, u8)
-  F(I16,i16,i16) F(C16,c16,u16)
-  F(I32,i32,i32) F(C32,c32,u32)
-  F(F64,f64,f64)
-  #undef F
-  FORCE_INLINE void copy2_bit(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_bit(a, ms, x, 0, l); }
-  FORCE_INLINE void copy2_B(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_B(a, ms, x, 0, l); }
-  #define COPY_TO_2(WHERE, RE, MS, X, XE, LEN) copy2_##RE(WHERE, MS, X, XE, LEN) // assumptions: x fits; LEN≠0
+  MAKE_ICPY(I8 , i8)  COPY_FNS(i8,  1)
+  MAKE_ICPY(I16, i16) COPY_FNS(i16, 1)
+  MAKE_ICPY(I32, i32) COPY_FNS(i32, 1)
+  MAKE_ICPY(F64, f64) COPY_FNS(f64, 1)
+  MAKE_CCPY(C8,  c8)  COPY_FNS(c8,  0)
+  MAKE_CCPY(C16, c16) COPY_FNS(c16, 0)
+  MAKE_CCPY(C32, c32) COPY_FNS(c32, 0)
+  static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) { bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l); }
+  FORCE_INLINE void copy0_bit(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_bit(a, ms, x, 0, l); }
+  FORCE_INLINE void copy0_B  (void* a, usz ms, B x, u8 xe, usz l) { m_copyG_B  (a, ms, x, 0, l); }
+  #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copy0_##RE(WHERE, MS, X, XE, LEN) // assumptions: x fits; LEN≠0
+  #undef COPY_FNS
+  #undef COPY_FN
   
 #else
-  #define COPY_TO_2(WHERE, RE, MS, X, XE, LEN) copyFns[el_##RE](WHERE, MS, X, 0, LEN)
+  #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copyFns[el_##RE](WHERE, MS, X, 0, LEN)
   
   #define MAKE_ICPY(T,E) Arr* cpy##T##Arr(B x) { \
     usz ia = IA(x);        \
@@ -420,23 +416,11 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     ptr_decT(a(x));
     return r;
   }
-
+  MAKE_ICPY(I8 , i8)  MAKE_CCPY(C8,  c8)
+  MAKE_ICPY(I16, i16) MAKE_CCPY(C16, c16)
+  MAKE_ICPY(I32, i32) MAKE_CCPY(C32, c32)
+  MAKE_ICPY(F64, f64)
 #endif
-
-MAKE_ICPY(I8, i8)
-MAKE_ICPY(I16, i16)
-MAKE_ICPY(I32, i32)
-MAKE_ICPY(F64, f64)
-
-MAKE_CCPY(C8, c8)
-MAKE_CCPY(C16, c16)
-MAKE_CCPY(C32, c32)
-#undef BIT_PUT
-#undef MAKE_CCPY
-#undef MAKE_ICPY
-#undef MAKE_CPY
-#undef COPY_FN
-
 
 
 static B m_getU_MAX(void* a, usz ms) { err("m_setG_MAX"); }
@@ -505,35 +489,35 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
     if (RARE(!(TARR))) APD_WIDEN(TY);               \
     APD_OR_FILL(FEB, x);                            \
     usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;    \
-    COPY_TO_2(m->a, E, p0, x, xe, cia);             \
+    COPY0_TO(m->a, E, p0, x, xe, cia);              \
   }
 
 #define APD_SH1_CHK(N) if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m,x,N); return; }
 #define APD_SHH_CHK(N) if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m,x,N); return; }
-#define APD_WATOM(N, EB, TATOM, WATOM) \
-  if (RARE(!TATOM)) APD_WIDEN(N); \
+#define APD_WATOM(N, EB, E, WATOM) \
+  if (RARE(!q_##E(x))) APD_WIDEN(N); \
   usz p0 = APD_POS(EB);           \
   APD_POS(EB) = p0+1;             \
   void* a = m->a; WATOM;
 
-#define APD_MK(E, EB, WATOM, TATOM, TARR) \
+#define APD_MK(E, EB, WATOM, TARR) \
   APD_MK0(E, EB, EB, sh1, TARR, m->cia, ,                   APD_SH1_CHK(1)) \
   APD_MK0(E, EB, EB, sh2, TARR, m->cia, , assert(m->cr>=2); APD_SHH_CHK(2)) \
-  APD_MK0(E, 0,  EB, tot, TARR, IA(x),  if (isAtm(x)) { APD_WATOM(tot, EB, TATOM, WATOM); return; }, if (cia==0) return; ) \
+  APD_MK0(E, 0,  EB, tot, TARR, IA(x),  if (isAtm(x)) { APD_WATOM(tot, EB, E, WATOM); return; }, if (cia==0) return; ) \
   NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
     APD_OR_FILL(EB, x);                       \
     if (isArr(x)) {                           \
       if (RARE(RNK(x)!=0)) { apd_sh_fail(m,x,0); return; } \
       x = IGetU(x,0);                         \
     }                                         \
-    APD_WATOM(sh0, EB, TATOM, WATOM);         \
+    APD_WATOM(sh0, EB, E, WATOM);             \
   }
 
-APD_MK(bit, 0, bitp_set((u64*)a,p0,o2bG(x)), q_bit(x), xe==el_bit)
-APD_MK(i8,  0,       ((i8 *)a)[p0]=o2iG(x),  q_i8(x),  xe<=el_i8 )  APD_MK(c8,  0, ((u8 *)a)[p0]=o2cG(x), q_c8(x),  xe==el_c8)
-APD_MK(i16, 0,       ((i16*)a)[p0]=o2iG(x),  q_i16(x), xe<=el_i16)  APD_MK(c16, 0, ((u16*)a)[p0]=o2cG(x), q_c16(x), xe>=el_c8 && xe<=el_c16)
-APD_MK(i32, 0,       ((i32*)a)[p0]=o2iG(x),  q_i32(x), xe<=el_i32)  APD_MK(c32, 0, ((u32*)a)[p0]=o2cG(x), q_c32(x), xe>=el_c8 && xe<=el_c32)
-APD_MK(f64, 0,       ((f64*)a)[p0]=o2fG(x),  q_f64(x), xe<=el_f64)  APD_MK(B,   1, ((B*)a)[p0]=inc(x);, 1, 1)
+APD_MK(bit, 0, bitp_set((u64*)a,p0,o2bG(x)), xe==el_bit)
+APD_MK(i8,  0,       ((i8 *)a)[p0]=o2iG(x),  xe<=el_i8 )  APD_MK(c8,  0, ((u8 *)a)[p0]=o2cG(x), xe==el_c8)
+APD_MK(i16, 0,       ((i16*)a)[p0]=o2iG(x),  xe<=el_i16)  APD_MK(c16, 0, ((u16*)a)[p0]=o2cG(x), xe>=el_c8 && xe<=el_c16)
+APD_MK(i32, 0,       ((i32*)a)[p0]=o2iG(x),  xe<=el_i32)  APD_MK(c32, 0, ((u32*)a)[p0]=o2cG(x), xe>=el_c8 && xe<=el_c32)
+APD_MK(f64, 0,       ((f64*)a)[p0]=o2fG(x),  xe<=el_f64)  APD_MK(B,   1, ((B*)a)[p0]=inc(x);, 1)
 #undef APD_MK
 
 NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK(2) }
