@@ -38,8 +38,6 @@ u8 arrTypeBitsLog[] = {
   [t_harr  ]=6, [t_hslice  ]=6, [t_fillarr]=6,[t_fillslice]=6
 };
 
-B m_i8(i8 x) { return m_i32(x); } B m_i16(i16 x) { return m_i32(x); }
-B m_c8(u8 x) { return m_c32(x); } B m_c16(u16 x) { return m_c32(x); }
 #define TU I8
 #define TP(W,X) W##i8##X
 #include "tyarrTemplate.c"

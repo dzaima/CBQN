@@ -508,6 +508,11 @@ FORCE_INLINE f64   o2fG(B x) { return      x.f; }   FORCE_INLINE f64   o2f(B x) 
 FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }   FORCE_INLINE i64 o2i64(B x) { if (!q_i64(x)) thrM("Expected integer");              return o2i64G(x); }
 FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }   FORCE_INLINE u64 o2u64(B x) { if (!q_u64(x)) thrM("Expected integer");              return o2u64G(x); }
 
+// some aliases for macro-generated code
+typedef u8 c8; typedef u16 c16; typedef u32 c32;
+static B m_i8(i8 x) { return m_i32(x); } static B m_i16(i16 x) { return m_i32(x); }
+static B m_c8(u8 x) { return m_c32(x); } static B m_c16(u16 x) { return m_c32(x); }
+static B m_B(B x) { return x; } static bool q_B(B x) { return true; }
 
 typedef struct Slice {
   struct Arr;
