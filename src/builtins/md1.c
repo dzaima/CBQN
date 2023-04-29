@@ -77,7 +77,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
       arr_shErase(a(r), 1);
-    } else if (xia>7) {
+    } else if (xia>7 && wia>0) {
       SGet(w)
       M_APD_TOT(rm, ria)
       incByG(x, wia);
