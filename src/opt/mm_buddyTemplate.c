@@ -69,6 +69,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   #else
     u8* mem = MMAP(sz);
     if (mem==MAP_FAILED) thrOOM();
+    if (ptr2u64(mem)+sz > (1ULL<<48)) err("mmap returned address range above 2⋆48");
     #if ALLOC_MODE==0
     // ux off = offsetof(TyArr,a);
     // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
