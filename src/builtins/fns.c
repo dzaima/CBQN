@@ -136,13 +136,13 @@ B ud_c2(B t, B w, B x) {
   for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
   
   if (empty) {
-    Arr* ra = arr_shSetU(m_fillarrpEmpty(getFillQ(x)), rr, sh);
+    Arr* ra = arr_shSetUG(m_fillarrpEmpty(getFillQ(x)), rr, sh);
     decG(x);
     return taga(ra);
   }
   if (wr==1 && wsh[0]==2 && xr==1) {
     B t = C2(slash, m_f64(2), x);
-    return taga(arr_shSetU(TI(t,slice)(t, 1, IA(t)-2), 2, sh));
+    return taga(arr_shSetUG(TI(t,slice)(t, 1, IA(t)-2), 2, sh));
   }
   
   ur fr=2*wr; // Frame rank in result
@@ -176,7 +176,7 @@ B ud_c2(B t, B w, B x) {
   TFREE(ri);
   B xf = getFillQ(x);
   decG(x);
-  return withFill(taga(arr_shSetU(mut_fp(r), rr, sh)), xf);
+  return withFill(taga(arr_shSetUG(mut_fp(r), rr, sh)), xf);
 }
 
 B ltack_c1(B t,      B x) {         return x; }

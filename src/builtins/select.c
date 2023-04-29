@@ -351,7 +351,7 @@ B select_c2(B t, B w, B x) {
     ShArr* sh = m_shArr(rr);
     shcpy(sh->a, SH(w), wr);
     shcpy(sh->a+wr, SH(x)+1, xr-1);
-    arr_shSetU(r, rr, sh);
+    arr_shSetUG(r, rr, sh);
   } else {
     arr_shVec(r);
   }

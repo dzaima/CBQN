@@ -627,8 +627,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   Arr* a = apd_setArr(m, ria, xe);
   if (xe==el_B) a->ia = pos0;
   
-  if (rr<=1) arr_rnk01(a, rr);
-  else arr_shSetU(a, rr, rsh);
+  arr_shSetUO(a, rr, rsh);
   
   if (isArr(x)) COPY_TO(m->a, xe, 0, x, 0, IA(x));
   else m->apd(m, x);
@@ -658,9 +657,7 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
   Arr* na = apd_setArr(m, tia, re);
   if (re==el_B) na->ia = pos;
   
-  ur pr = PRNK(pa);
-  if (pr<=1) arr_rnk01(na, pr);
-  else arr_shSetU(na, pr, shObjP((Value*)pa));
+  arr_shSetUO(na, PRNK(pa), shObjP((Value*)pa));
   
   COPY_TO(m->a, re, 0, taga(pa), 0, pos);
   if (re==el_B) NOGC_E;

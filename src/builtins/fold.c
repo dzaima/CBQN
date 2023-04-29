@@ -349,7 +349,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
         rsh->a[0] = xsh[0] * xsh[1];
       }
       Arr* r = TI(x,slice)(x, 0, IA(x));
-      if (xr>2) arr_shSetU(r, xr-1, rsh);
+      if (xr>2) arr_shSetUG(r, xr-1, rsh);
       else arr_shVec(r);
       return taga(r);
     }

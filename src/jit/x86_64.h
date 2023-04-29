@@ -70,7 +70,7 @@ static void asmRestorer_free(Value* v) {
   asm_rel   = ((AsmRestorer*)v)->rel;
 }
 static NOINLINE void asm_init() {
-  AsmRestorer* r = customObj(sizeof(AsmRestorer), noop_visit, asmRestorer_free);
+  AsmRestorer* r = m_customObj(sizeof(AsmRestorer), noop_visit, asmRestorer_free);
   r->depth = asm_depth;
   r->ins = asm_ins;
   r->rel = asm_rel;

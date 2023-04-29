@@ -262,7 +262,7 @@ FORCE_INLINE B r_fB(f64 x) { return b(x); }
   /* 1*/ F(funBI) F(funBl) \
   /* 3*/ F(md1BI) F(md1Bl) \
   /* 5*/ F(md2BI) F(md2Bl) \
-  /* 7*/ F(shape) /* doesn't get F(visited) shouldn't be unallocated by gc */ \
+  /* 7*/ F(shape) /* doesn't get visited in arrays, won't be freed by gc */ \
   \
   /* 8*/ F(fork) F(atop) \
   /*10*/ F(md1D) F(md2D) F(md2H) \
@@ -325,7 +325,7 @@ typedef struct Arr {
   #define assert(X) do { if (!(X)) assert_fail(#X, __FILE__, __LINE__, __PRETTY_FUNCTION__); } while (0)
   B VALIDATE(B x);
   Value* VALIDATEP(Value* x);
-  #define UD assert(false);
+  #define UD assert(false)
   extern bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
   #define NOGC_CHECK if (cbqn_noAlloc && !gc_depth) err("allocating during noalloc");
@@ -335,7 +335,7 @@ typedef struct Arr {
   #define assert(X) {if (!(X)) __builtin_unreachable();}
   #define VALIDATE(X) (X)
   #define VALIDATEP(X) (X)
-  #define UD __builtin_unreachable();
+  #define UD __builtin_unreachable()
   #define NOGC_S
   #define NOGC_E
   #define NOGC_CHECK
@@ -404,6 +404,7 @@ B    toKCells(B x, ur k); // consumes
 B    withFill(B x, B f);  // consumes both
 
 void cbqn_init(void);
+NORETURN void bqn_exit(i32 code);
 B bqn_exec(B str, B path, B args); // consumes all
 B bqn_execFile(B path, B args); // consumes
 B bqn_explain(B str, B path); // consumes str
@@ -556,12 +557,12 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(BSS2A, slice) /* consumes; create slice from a starting position and length; add shape & rank yourself; may not actually be a Slice object; preserves fill */ \
   F(B2B, identity) /* return identity element of this function; doesn't consume */ \
   \
-  F(   BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \
-  F(  BBBB2B, fn_ucw) /* t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x */ \
-  F(M1C3, m1_uc1) /* t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x   */ \
-  F(M1C4, m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
-  F(M2C4, m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
-  F(M2C5, m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
+  F( BBB2B, fn_uc1) /* t,o,      x→r; r≡O⌾(      T    ) x; consumes x   */ \
+  F(BBBB2B, fn_ucw) /* t,o,    w,x→r; r≡O⌾(w⊸    T    ) x; consumes w,x */ \
+  F(M1C3,   m1_uc1) /* t,o,f,    x→r; r≡O⌾(   F _T    ) x; consumes x   */ \
+  F(M1C4,   m1_ucw) /* t,o,f,  w,x→r; r≡O⌾(w⊸(F _T   )) x; consumes w,x */ \
+  F(M2C4,   m2_uc1) /* t,o,f,g,  x→r; r≡O⌾(   F _T_ G ) x; consumes x   */ \
+  F(M2C5,   m2_ucw) /* t,o,f,g,w,x→r; r≡O⌾(w⊸(F _T_ G)) x; consumes w,x */ \
   \
   F(FC1,  fn_im) /* t,  x; function monadic inverse;   consumes x   */ \
   F(FC1,  fn_is) /* t,  x; function equal-arg inverse; consumes x   */ \

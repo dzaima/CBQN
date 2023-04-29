@@ -360,7 +360,7 @@ B grade_bool(B x, usz xia, bool up) {
   #if SINGELI_AVX2 && FAST_PDEP
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
-    B notx = bit_negate(inc(x));
+    B notx = bit_negate(incG(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }

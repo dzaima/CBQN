@@ -76,17 +76,14 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
+      arr_shErase(a(r), 1);
     } else if (xia>7) {
       SGet(w)
       M_APD_TOT(rm, ria)
       incByG(x, wia);
       for (usz wi = 0; wi < wia; wi++) APDD(rm, fc2(f, Get(w,wi), x));
-      r = taga(APD_TOT_GET(rm));
+      r = taga(arr_shVec(APD_TOT_GET(rm)));
     } else goto generic;
-    if (RNK(r)>1) {
-      SRNK(r, 0); // otherwise the following arr_shAlloc failing will result in r->sh dangling
-      ptr_dec(shObj(r));
-    }
     rsh = arr_shAlloc(a(r), rr);
   } else {
     generic:;

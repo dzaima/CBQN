@@ -648,7 +648,7 @@ static B funBI_ixInit(B t, B w, B x) { B f=c(BFn,t)->rtInvReg; if(f.u==0) f=c(BF
 static B funBI_iwInit(B t, B w, B x) { B f=c(BFn,t)->rtInvSwap                                =c1rt(invFnSwap, inc(t)); c(BFn,t)->iw=funBI_iwRt; return c2(f, w, x); }
 
 
-void* customObj(u64 size, V2v visit, V2v freeO) {
+void* m_customObj(u64 size, V2v visit, V2v freeO) {
   CustomObj* r = mm_alloc(size, t_customObj);
   r->visit = visit;
   r->freeO = freeO;

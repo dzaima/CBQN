@@ -43,7 +43,7 @@ typedef struct ReObj {
 void re_visit(Value* v) { mm_visit(((ReObj*)v)->msg); }
 void re_freeO(Value* v) { dec(lastErrMsg); lastErrMsg = ((ReObj*)v)->msg; }
 void pushRe(void) {
-  ReObj* o = customObj(sizeof(ReObj), re_visit, re_freeO);
+  ReObj* o = m_customObj(sizeof(ReObj), re_visit, re_freeO);
   o->msg = lastErrMsg;
   gsAdd(tag(o,OBJ_TAG));
   

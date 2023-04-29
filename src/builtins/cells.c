@@ -33,7 +33,7 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
   incByG(X, (i64)X##_sn + ((i64)DX-1));
 
 #define S_SLICES(X, SLN) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1, SLN, 0)
-#define SLICE(X, S) taga(arr_shSetU(X##_slc(X, S, X##_csz), X##_cr, X##_csh))
+#define SLICE(X, S) taga(arr_shSetUO(X##_slc(X, S, X##_csz), X##_cr, X##_csh))
 #define SLICEI(X) ({ B r = SLICE(X, X##p); X##p+= X##_csz; r; })
 
 

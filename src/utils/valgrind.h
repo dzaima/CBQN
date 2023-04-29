@@ -1,5 +1,9 @@
 #pragma once
+#include <valgrind/valgrind.h>
 #include <valgrind/memcheck.h>
+static void pst(char* msg) {
+  VALGRIND_PRINTF_BACKTRACE("%s", msg);
+}
 
 static u64 vg_getDefined_u64(u64 x) { // for each bit, returns whether it is defined
   u64 r;

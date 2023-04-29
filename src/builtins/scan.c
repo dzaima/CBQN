@@ -286,10 +286,10 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   FC2 fc2 = c2fn(f);
   
   if (isArr(w)) {
-    ur wr = RNK(w); usz* wsh = SH(w); SGet(w)
-    if (wr+1!=xr || !eqShPart(wsh, xsh+1, wr)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+    if (!ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
     if (ia!=0) {
       usz csz = arr_csz(x);
+      SGet(w)
       for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
       for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
     }

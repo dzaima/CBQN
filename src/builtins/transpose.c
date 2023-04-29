@@ -156,7 +156,7 @@ B select_c2(B,B,B);
 
 static void shSet(Arr* ra, ur rr, ShArr* sh) {
   if (RARE(rr <= 1)) arr_shVec(ra);
-  else arr_shSetU(ra, rr, sh);
+  else arr_shSetUO(ra, rr, sh);
 }
 
 B transp_c2(B t, B w, B x) {
@@ -335,7 +335,7 @@ B transp_c2(B t, B w, B x) {
   zsh->a[0] = IA(x)/csz;
   zsh->a[1] = csz;
   Arr* z = TI(x,slice)(x, 0, IA(x));
-  arr_shSetU(z, 2, zsh);
+  arr_shSetUG(z, 2, zsh);
   x = taga(z);
   // (+⌜´st×⟜↕¨rsh)⊏⥊𝕩
   B ind = bi_N;

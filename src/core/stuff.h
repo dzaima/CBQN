@@ -1,21 +1,17 @@
 // memory defs
-
-NORETURN void bqn_exit(i32 code);
-u64 mm_heapUsed(void);
-void print_allocStats(void);
-void vm_pstLive(void);
-
-
 #ifndef MAP_NORESERVE
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
+
+void print_allocStats(void);
+void vm_pstLive(void);
 
 typedef struct CustomObj {
   struct Value;
   V2v visit;
   V2v freeO;
 } CustomObj;
-void* customObj(u64 size, V2v visit, V2v freeO);
+void* m_customObj(u64 size, V2v visit, V2v freeO);
 
 // shape mess
 
@@ -81,13 +77,13 @@ static Arr* arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and inc
   else     x->sh = &x->ia;
   return x;
 }
-static Arr* arr_shSetU(Arr* x, ur r, ShArr* sh) { // set rank and assign shape
+static Arr* arr_shSetUO(Arr* x, ur r, ShArr* sh) { // set rank, and consume & assign shape if r>1
   SPRNK(x,r);
   if (r>1) x->sh = sh->a;
   else     x->sh = &x->ia;
   return x;
 }
-static Arr* arr_shSetUG(Arr* x, ur r, ShArr* sh) { // arr_shSetU but guaranteed r>1
+static Arr* arr_shSetUG(Arr* x, ur r, ShArr* sh) { // arr_shSetUO but guaranteed r>1, i.e. always consumes sh
   assert(r>1);
   SPRNK(x,r);
   x->sh = sh->a;
@@ -124,12 +120,10 @@ static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a
   return x;
 }
 static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
-  assert(isArr(o));
-  assert(IA(o)==n->ia);
+  assert(isArr(o) && IA(o)==n->ia);
   return arr_shCopyUnchecked(n, o);
 }
 static void shcpy(usz* dst, usz* src, ux len) {
-  // memcpy(dst, src, len*sizeof(usz));
   PLAINLOOP for (ux i = 0; i < len; i++) dst[i] = src[i];
 }
 
@@ -144,18 +138,14 @@ static usz arr_csz(B x) {
   return shProd(SH(x), 1, xr);
 }
 static bool eqShPart(usz* w, usz* x, usz len) {
-  // return memcmp(w, x, len*sizeof(usz))==0;
   PLAINLOOP for (i32 i = 0; i < len; i++) if (w[i]!=x[i]) return false;
   return true;
 }
-static bool ptr_eqShape(Arr* w, Arr* x) {
-  ur wr = PRNK(w); usz* wsh = PSH(w);
-  ur xr = PRNK(x); usz* xsh = PSH(x);
-  if (wr!=xr) return false;
-  if (wsh==xsh) return true;
+static bool ptr_eqShape(usz* wsh, ur wr, usz* xsh, ur xr) {
+  if (wr != xr) return false;
   return eqShPart(wsh, xsh, wr);
 }
-static bool eqShape(B w, B x) { assert(isArr(w) && isArr(x)); return ptr_eqShape(a(w), a(x)); }
+static bool eqShape(B w, B x) { assert(isArr(w) && isArr(x)); return ptr_eqShape(SH(w), RNK(w), SH(x), RNK(x)); }
 
 B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia);
@@ -168,10 +158,6 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes 
 Arr* cpyWithShape(B x); // consumes; returns array with refcount 1 with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
 Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the fill of x; if xr>1, shape is unset
 
-static B m_hVec1(B a               ); // consumes all
-static B m_hVec2(B a, B b          ); // consumes all
-static B m_hVec3(B a, B b, B c     ); // consumes all
-static B m_hVec4(B a, B b, B c, B d); // consumes all
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills
 
@@ -241,8 +227,8 @@ B chr_squeeze(B x); // consumes; see note below
 static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
 static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
 
-B def_fn_uc1(B t, B o,                B x);
-B def_fn_ucw(B t, B o,           B w, B x);
+B def_fn_uc1(B t,    B o,                B x);
+B def_fn_ucw(B t,    B o,           B w, B x);
 B def_m1_uc1(Md1* t, B o, B f,           B x);
 B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
 B def_m2_uc1(Md2* t, B o, B f, B g,      B x);
@@ -251,8 +237,8 @@ B def_fn_im(B t,      B x);
 B def_fn_is(B t,      B x);
 B def_fn_iw(B t, B w, B x);
 B def_fn_ix(B t, B w, B x);
-
 B def_decompose(B x);
+
 void noop_visit(Value* x);
 #if HEAP_VERIFY
   void arr_visit(Value* x);
@@ -298,10 +284,6 @@ static usz depth(B x) { // doesn't consume
 
 #ifdef USE_VALGRIND
   #include "../utils/valgrind.h"
-  #include <valgrind/valgrind.h>
-  static void pst(char* msg) {
-    VALGRIND_PRINTF_BACKTRACE("%s", msg);
-  }
 #else
   #define vg_def_p(X, L)
   #define vg_undef_p(X, L)
@@ -310,7 +292,6 @@ static usz depth(B x) { // doesn't consume
 #endif
 
 // call stuff
-
 NORETURN B c1_bad(B f,      B x);
 NORETURN B c2_bad(B f, B w, B x);
 NORETURN B m1c1_bad(Md1D* d,      B x);
@@ -334,7 +315,6 @@ static FC2 c2fn(B f) {
 }
 
 // alloc stuff
-
 #ifdef ALLOC_STAT
   extern u64* ctr_a;
   extern u64* ctr_f;

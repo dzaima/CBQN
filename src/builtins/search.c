@@ -79,7 +79,7 @@ static NOINLINE B toIntCell(B x, ux csz0, ur co) {
   TySlice* r = m_arr(sizeof(TySlice), t, ria);
   r->p = a(r0);
   r->a = tyany_ptr(r0);
-  if (co>=1) arr_shSetU((Arr*)r, co, rsh);
+  if (co>=1) arr_shSetUO((Arr*)r, co, rsh);
   else arr_shVec((Arr*)r);
   return taga(r);
 }

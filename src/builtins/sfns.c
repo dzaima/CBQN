@@ -132,11 +132,11 @@ B shape_c1(B t, B x) {
   }
   return taga(arr_shVec(TI(x,slice)(x, 0, ia)));
 }
-static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes all
+static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes x, and sh if nr>1
   B r; Arr* ra;
   if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
   else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
-  arr_shSetU(ra, nr, sh);
+  arr_shSetUO(ra, nr, sh);
   return r;
 }
 static void fill_words(void* rp, u64 v, u64 bytes) {
@@ -280,7 +280,7 @@ B shape_c2(B t, B w, B x) {
           for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
           mut_copyG(m, div*xia, x, 0, mod);
           decG(x);
-          return withFill(taga(arr_shSetU(mut_fp(m), nr, sh)), xf);
+          return withFill(taga(arr_shSetUO(mut_fp(m), nr, sh)), xf);
         }
         u8 xk = xl - 3;
         rp = m_tyarrp(&r, 1<<xk, nia, xt);
@@ -336,7 +336,7 @@ B shape_c2(B t, B w, B x) {
     }
     #undef FILL
   }
-  return taga(arr_shSetU(r,nr,sh));
+  return taga(arr_shSetUO(r,nr,sh));
 }
 
 B pick_c1(B t, B x) {
@@ -519,7 +519,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       } else {
         Arr* ra = TI(x,slice)(x,0,IA(x));
         PLAINLOOP for (usz i = 0; i < rr-xr; i++) rsh->a[i] = 1;
-        x = VALIDATE(taga(arr_shSetU(ra, rr, rsh)));
+        x = VALIDATE(taga(arr_shSetUG(ra, rr, rsh)));
       }
       if (cellStart==-1) { // printf("equal shape\n");
         r = x;
@@ -530,7 +530,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
         goto basicTake;
       }
     } else if (ria==0) { // printf("empty result\n");
-      r = taga(arr_shSetU(emptyArr(x, rr), rr, rsh));
+      r = taga(arr_shSetUG(emptyArr(x, rr), rr, rsh));
     } else { // printf("generic\n");
       B xf = getFillR(x);
       if (anyFill && noFill(xf)) {
@@ -609,7 +609,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
         
       } // end of actual generic copying code
       
-      r = withFill(taga(arr_shSetU(mut_fp(rm), rr, rsh)), xf);
+      r = withFill(taga(arr_shSetUG(mut_fp(rm), rr, rsh)), xf);
     }
     decG(x);
     decW_tfree: TFREE(tmp);
@@ -1346,13 +1346,14 @@ static B shape_uc1_t(B r, usz ia) {
   return r;
 }
 B shape_uc1(B t, B o, B x) {
-  if (!isArr(x) || RNK(x)==0) {
+  ur xr;
+  if (!isArr(x) || (xr=RNK(x))==0) {
     usz xia = isArr(x)? IA(x) : 1;
     return C2(shape, emptyIVec(), shape_uc1_t(c1(o, shape_c1(t, x)), xia));
   }
   usz xia = IA(x);
-  if (RNK(x)==1) return shape_uc1_t(c1(o, x), xia);
-  ur xr = RNK(x);
+  if (xr==1) return shape_uc1_t(c1(o, x), xia);
+  assert(xr>1);
   ShArr* sh = ptr_inc(shObj(x));
   return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
 }
