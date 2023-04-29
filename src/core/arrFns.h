@@ -14,11 +14,11 @@ static B* arrV_bptr(Arr* x) {
   if (PTY(x)==t_fillslice) return ((FillSlice*)x)->a;
   return NULL;
 }
-static void* tyarr_ptr(B x) { assert(IS_ARR(TY(x))); return c(TyArr,x)->a; }
-static void* tyslice_ptr(B x) { assert(IS_SLICE(TY(x))); return c(TySlice,x)->a; }
-static void* tyany_ptr(B x) { assert(IS_ARR(TY(x)) || IS_SLICE(TY(x)));
-  u8 t = TY(x);
-  return IS_SLICE(t)? c(TySlice,x)->a : c(TyArr,x)->a;
+static void* tyarr_ptr(B x)   { assert(IS_ANY_ARR(TY(x)) && !IS_SLICE(TY(x))); return c(TyArr,x)->a; }
+static void* tyslice_ptr(B x) { assert(IS_ANY_ARR(TY(x)) &&  IS_SLICE(TY(x))); return c(TySlice,x)->a; }
+static void* tyany_ptr(B x) {
+  assert(IS_ANY_ARR(TY(x)));
+  return IS_SLICE(TY(x))? c(TySlice,x)->a : c(TyArr,x)->a;
 }
 
 #define M_TYARR(WM, OVER, MID, RV, PRE) { PRE \
