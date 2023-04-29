@@ -337,9 +337,9 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (RNK(x)==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
+    ur xr = RNK(x);
+    if (xr==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
     if (rtid == n_join) {
-      ur xr = RNK(x);
       if (xr==1) return x;
       ShArr* rsh;
       if (xr>2) {
