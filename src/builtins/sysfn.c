@@ -1343,7 +1343,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
     arr_shCopyUnchecked(ra, x);
     r = taga(ra); rp = tyany_ptr(r);
   } else {
-    r = inc(x); rp = xp;
+    r = incG(x); rp = xp;
   }
   switch (op) { default: UD;
     case op_not: {

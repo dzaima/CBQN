@@ -428,7 +428,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   usz wia0 = wia;
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
-  if (wsum == wia0) return inc(x);
+  if (wsum == wia0) return incG(x);
   
   B r;
   switch(xl) {

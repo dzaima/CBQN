@@ -93,13 +93,13 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   
   if (ria <= 1) {
     if (ria == 0) goto dec_ret; // Needed so wia>0
-    if (neg == 0) { rp[0]=inc(x); goto dec_ret; }
+    if (neg == 0) { rp[0]=incG(x); goto dec_ret; }
     // else, 𝕨 is a mix of 0 and ¯1 (and maybe trailing 1)
   }
   if (we==el_bit) {
     assert(ria == 2);
     if (wia>xn) w = C2(take, m_f64(xn), w);
-    rp[1] = C2(slash, inc(w), inc(x));
+    rp[1] = C2(slash, incG(w), incG(x));
     rp[0] = C2(slash, bit_negate(w), x);
     return taga(r);
   }
@@ -173,8 +173,8 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   // Many ¯1s: filter out, then continue
   if (xn>32 && neg>(bits?0:xn/4)+xn/8) {
     if (wia>xn) w = C2(take, m_f64(xn), w);
-    B m = C2(ne, m_f64(-1), inc(w));
-    w = C2(slash, inc(m), w);
+    B m = C2(ne, m_f64(-1), incG(w));
+    w = C2(slash, incG(m), w);
     x = C2(slash, m, x); xn = *SH(x);
     neg = 0;
   }
@@ -263,7 +263,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
 
 extern B rt_group;
 B group_c2(B t, B w, B x) {
-  if (!isArr(x)) thrM("⊔: 𝕩 must be an array");
+  if (isAtm(x)) thrM("⊔: 𝕩 must be an array");
   ur xr = RNK(x);
   if (isArr(w) && RNK(w)==1 && xr>=1 && depth(w)==1) {
     usz wia = IA(w);

@@ -26,7 +26,7 @@ B add_c1(B t, B x) {
   if (isF64(x)) return x;
   if (!isArr(x)) thrM("+: Argument must consist of numbers");
   if (elNum(TI(x,elType))) return x;
-  dec(eachm_fn(m_f64(0), inc(x), add_c1));
+  decG(eachm_fn(m_f64(0), incG(x), add_c1));
   return x;
 }
 #if SINGELI_SIMD
@@ -167,13 +167,13 @@ B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(*SH(
 static B mathNS;
 B getMathNS(void) {
   if (mathNS.u == 0) {
-    #define F(X) inc(bi_##X),
+    #define F(X) incG(bi_##X),
     Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","fact","logfact","erf","erfc","comb","gcd","lcm","sum");
     mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(cbrt)F(log2)F(log10)F(log1p)F(expm1)F(hypot)F(fact)F(logfact)F(erf)F(erfc)F(comb)F(gcd)F(lcm)F(sum));
     #undef F
     gc_add(mathNS);
   }
-  return inc(mathNS);
+  return incG(mathNS);
 }
 
 void arith_init(void) {

@@ -451,7 +451,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     if (!forRes) thrM("FFI: Argument type empty");
     return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=false};
   }
-  arg = chr_squeezeChk(inc(arg));
+  arg = chr_squeezeChk(incG(arg));
   
   MAKE_MUT_INIT(tmp, ia+1, el_c32); MUTG_INIT(tmp);
   mut_copyG(tmp, 0, arg, 0, ia);
@@ -551,7 +551,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
       usz ia = IA(c);
       if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to \"[%s]...\"", ia, (usz)t->arrCount);
       if (isC32(e)) { // *num / &num
-        inc(c);
+        incG(c);
         B cG;
         bool mut = t->a[0].mutPtr;
         switch(o2cG(e)) { default: thrF("FFI: \"*%S\" argument type NYI", sty_names[o2cG(e)]);
@@ -590,7 +590,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         u8 etw = sty_w[et]*8;
         if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], (u32)reT, 1<<reW);
         if (IA(c) != etw>>reW) thrM("FFI: Bad input array length");
-        B cG = toW(reT, reW, inc(c));
+        B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
       } else { // *scalar:any / &scalar:any
@@ -598,7 +598,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && isC32(ore)); // we shouldn't be generating anything else
-        inc(c);
+        incG(c);
         B cG;
         bool mut = t->a[0].mutPtr;
         if (mut) {
@@ -689,7 +689,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
       usz ia = IA(f);
       if (isC32(e)) {
         switch(o2cG(e)) { default: UD;
-          case sty_i8: case sty_i16: case sty_i32: case sty_f64: return inc(f);
+          case sty_i8: case sty_i16: case sty_i32: case sty_f64: return incG(f);
           case sty_u8:  { u8*   tp=tyarr_ptr(f); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }
           case sty_u16: { u16*  tp=tyarr_ptr(f); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }
           case sty_u32: { u32*  tp=tyarr_ptr(f); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }

@@ -221,7 +221,7 @@ B SORT_C1(B t, B x) {
     }
   } else {
     B xf = getFillQ(x);
-    HArr* r0 = (HArr*)cpyHArr(inc(x));
+    HArr* r0 = (HArr*)cpyHArr(incG(x));
     CAT(GRADE_UD(bA,bD),tim_sort)(r0->a, n);
     r = withFill(taga(r0), xf);
   }

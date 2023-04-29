@@ -50,8 +50,8 @@ void pushRe(void) {
   lastErrMsg = inc(thrownMsg);
   freeThrown();
 }
-B catch_c1(Md2D* d,      B x) { if(CATCH) { pushRe(); B r = c1(d->g,   x); dec(gsPop()); return r; }         inc(x); B r = c1(d->f,   x); popCatch();         dec(x); return r; }
-B catch_c2(Md2D* d, B w, B x) { if(CATCH) { pushRe(); B r = c2(d->g, w,x); dec(gsPop()); return r; } inc(w); inc(x); B r = c2(d->f, w,x); popCatch(); dec(w); dec(x); return r; }
+B catch_c1(Md2D* d,      B x) { if(CATCH) { pushRe(); B r = c1(d->g,   x); dec(gsPop()); return r; } B r = c1(d->f,        inc(x)); popCatch();         dec(x); return r; }
+B catch_c2(Md2D* d, B w, B x) { if(CATCH) { pushRe(); B r = c2(d->g, w,x); dec(gsPop()); return r; } B r = c2(d->f, inc(w),inc(x)); popCatch(); dec(w); dec(x); return r; }
 #else
 B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }

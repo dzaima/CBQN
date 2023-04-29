@@ -338,7 +338,7 @@ B count_c1(B t, B x) {
   if (use_sorted(x, lw) && n>16 && (lw>4 || n<1<<16)) { // ↕∘≠(⊣-⌈`∘×)∊
     B c = shift_ne(x, n, lw, 1);
     B i = C1(ud, m_f64(n));
-    B m = C2(mul, c, inc(i));
+    B m = C2(mul, c, incG(i));
     return C2(sub, i, scan_max_num(m, TI(m,elType), n));
   }
   void* xv = tyany_ptr(x);
@@ -542,5 +542,5 @@ B find_c1(B t, B x) {
     rp[0] = 2 ^ -x0;
     return r;
   }
-  return C2(slash, C1(memberOf, inc(x)), x);
+  return C2(slash, C1(memberOf, incG(x)), x);
 }

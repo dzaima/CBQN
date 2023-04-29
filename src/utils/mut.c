@@ -168,7 +168,7 @@ DEF_S(void, fill, f64, isF64(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { f
 DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
   B* p = ms + (B*)a;
   for (usz i = 0; i < l; i++) p[i] = x;
-  if (isVal(x)) incBy(x, l);
+  incBy(x, l);
   return;
 }
 
