@@ -1142,7 +1142,7 @@ void funBl_print(FILE* f, B x) { fprintf(f,"{function"" block}"); }
 void md1Bl_print(FILE* f, B x) { fprintf(f,"{1-modifier block}"); }
 void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 
-B block_decompose(B x) { return m_hVec2(m_i32(1), x); }
+B block_decompose(B x) { return m_hvec2(m_i32(1), x); }
 
 #if !defined(_WIN32) && !defined(_WIN64)
 static usz pageSizeV;

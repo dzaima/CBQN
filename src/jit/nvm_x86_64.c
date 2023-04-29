@@ -118,11 +118,11 @@ INS B i_LST_0(void) { // TODO combine with ADDI
 }
 INS B i_LST_1(B a) {
   if (isNum(a)) return m_vec1(a);
-  return m_hVec1(a);
+  return m_hvec1(a);
 }
 INS B i_LST_2(B a, B b) {
   if (isNum(a) && isNum(b)) return m_vec2(a, b);
-  return m_hVec2(a, b);
+  return m_hvec2(a, b);
 }
 INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   GS_UPD;

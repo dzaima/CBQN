@@ -210,7 +210,7 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(comp, m_hVec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   POP_COMP; popCatch();
   return r;
@@ -309,7 +309,7 @@ B getPrimitives(void) {
     usz l = IA(gg[gi]);
     u32* gp = c32arr_ptr(gg[gi]);
     for (usz i = 0; i < l; i++) {
-      HARR_ADDA(ph, m_hVec2(m_c32(gp[i]), inc(pr[i])));
+      HARR_ADDA(ph, m_hvec2(m_c32(gp[i]), inc(pr[i])));
     }
     pr+= l;
   }
@@ -339,7 +339,7 @@ B rebqn_exec(B str, B path, B args, B o) {
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInplace(block, sc);
   } else {
-    B rtsys = m_hVec2(inc(op[3]), incG(bi_sys));
+    B rtsys = m_hvec2(inc(op[3]), incG(bi_sys));
     block = bqn_compc(str, path, args, op[2], rtsys);
     decG(rtsys);
     comp_currRe = prevRe;
@@ -353,10 +353,10 @@ B rebqn_exec(B str, B path, B args, B o) {
 }
 
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
-static NOINLINE B m_lvB_1(B a               ) { return m_hVec1(a); }
-static NOINLINE B m_lvB_2(B a, B b          ) { return m_hVec2(a,b); }
-static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hVec3(a,b,c); }
-static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hVec4(a,b,c,d); }
+static NOINLINE B m_lvB_1(B a               ) { return m_hvec1(a); }
+static NOINLINE B m_lvB_2(B a, B b          ) { return m_hvec2(a,b); }
+static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hvec3(a,b,c); }
+static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
 static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
 static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
 static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
@@ -424,7 +424,7 @@ void load_init() { // very last init function
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
     dec(rtRes);
-    dec(c1(setPrims, m_hVec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
+    dec(c1(setPrims, m_hvec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
     dec(c2(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
     
@@ -469,7 +469,7 @@ void load_init() { // very last init function
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
     load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
-    load_compArg = m_hVec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    load_compArg = m_hvec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
   #else
     B* runtime = fruntime;
     (void)frtObj;
@@ -480,7 +480,7 @@ void load_init() { // very last init function
       if (isVal(r)) v(r)->flags|= i+1;
     }
     load_rtObj = frtObj;
-    load_compArg = m_hVec2(load_rtObj, incG(bi_sys));
+    load_compArg = m_hvec2(load_rtObj, incG(bi_sys));
     rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
     rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
     rt_under=rt_depth = incByG(bi_invalidMd2, 2);
@@ -514,7 +514,7 @@ void load_init() { // very last init function
     print_allocStats();
     exit(0);
   #else // use compiler
-    load_glyphs = m_hVec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(load_glyphs);
+    load_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(load_glyphs);
     
     #if !ONLY_NATIVE_COMP
       B prevAsrt = runtime[n_asrt];

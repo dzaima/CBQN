@@ -460,8 +460,8 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
       if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
       return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
     }
-    if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hVec2(m_f64(SH(x)[0]), w), x);
-    if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hVec2(m_f64(0),        w), x);
+    if (rtid==n_take && xr>1 && isF64(w)) return takedrop_highrank(1, m_hvec2(m_f64(SH(x)[0]), w), x);
+    if (rtid==n_drop && xr>1 && isF64(w)) return takedrop_highrank(0, m_hvec2(m_f64(0),        w), x);
     if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xr-1) return transp_cells(a+1, 1, x); }
   }
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);

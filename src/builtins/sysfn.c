@@ -44,8 +44,8 @@ B type_c1(B t, B x) {
 }
 
 B decp_c1(B t, B x) {
-  if (!isVal(x)) return m_hVec2(m_i32(-1), x);
-  if (isPrim(x)) return m_hVec2(m_i32(0), x);
+  if (!isVal(x)) return m_hvec2(m_i32(-1), x);
+  if (isPrim(x)) return m_hvec2(m_i32(0), x);
   return TI(x,decompose)(x);
 }
 
@@ -1052,7 +1052,7 @@ B sh_c2(B t, B w, B x) {
   int code = WIFEXITED(status)?   WEXITSTATUS(status)
            : WIFSIGNALED(status)? WTERMSIG(status)+128
            : -1;
-  return m_hVec3(m_i32(code), s_outObj, s_errObj);
+  return m_hvec3(m_i32(code), s_outObj, s_errObj);
 }
 #else
 #define HAS_SH 0
@@ -1640,7 +1640,7 @@ B sys_c1(B t, B x) {
       case 15: { // •state
         if (q_N(comp_currArgs)) thrM("No arguments present for •state");
         if (q_N(comp_currPath)) thrM("No path present for •state");
-        cr = m_hVec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
+        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
         break;
       }
       case 16: { // •args

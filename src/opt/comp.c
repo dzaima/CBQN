@@ -109,7 +109,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
       }
       case U'𝕨': case U'𝕩': { // special names
         *hasBlock = true;
-        val = m_hVec2(m_f64(3), m_c32vec((u32[1]){c}, 1));
+        val = m_hvec2(m_f64(3), m_c32vec((u32[1]){c}, 1));
         break;
       }
       case 'a'...'z': case 'A'...'Z': case U'•': { // names
@@ -120,11 +120,11 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         u32* np; B name = m_c32arrv(&np, ia);
         PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
         if (sys) {
-          B sysRes = C1(sys, m_hVec1(name));
+          B sysRes = C1(sys, m_hvec1(name));
           val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
           decG(sysRes);
         } else {
-          val = m_hVec2(m_f64(nc_up(c)? 0 : 3), name);
+          val = m_hvec2(m_f64(nc_up(c)? 0 : 3), name);
         }
         break;
       }
@@ -192,7 +192,7 @@ B nc_generate(B p1) { // consumes
         nc_ijoin(&bc, IGetU(e,  1));
         nc_iadd(&bc, MD1C);
         decG(e);
-        e = m_hVec2(m_f64(0), bc);
+        e = m_hvec2(m_f64(0), bc);
         j++;
       }
       
@@ -225,7 +225,7 @@ B nc_generate(B p1) { // consumes
       if (tyE != o2iG(IGetU(en1, 2))) thrM("Native compiler: Wrong assignment class");
       nc_iadd(&bc, en1t==4? SETN : SETU);
       decG(e);
-      e = m_hVec2(m_f64(explicit? 3 : 0), bc);
+      e = m_hvec2(m_f64(explicit? 3 : 0), bc);
       i-= 1;
       continue;
     }
@@ -240,7 +240,7 @@ B nc_generate(B p1) { // consumes
         nc_ijoin(&bc, IGetU(en2, 1));
         nc_iadd(&bc, explicit? FN2O : TR3O);
         decG(e);
-        e = m_hVec2(m_f64(explicit? 3 : 0), bc);
+        e = m_hvec2(m_f64(explicit? 3 : 0), bc);
         i-= 2;
         continue;
       }
@@ -252,7 +252,7 @@ B nc_generate(B p1) { // consumes
     nc_ijoin(&bc, IGetU(en1, 1));
     nc_iadd(&bc, explicit? FN1O : TR2D);
     decG(e);
-    e = m_hVec2(m_f64(explicit? 3 : 0), bc);
+    e = m_hvec2(m_f64(explicit? 3 : 0), bc);
     i-= 1;
   }
   // printf("e: "); printI(e); putchar('\n');
@@ -333,14 +333,14 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
         decG(ns);
         nc_iadd(&bc, FLDG);
         nc_iadd(&bc, str2gid(IGetU(name,1)));
-        nc_add(&parts, m_hVec2(IGet(name,0), bc));
+        nc_add(&parts, m_hvec2(IGet(name,0), bc));
       } else thrF("Native compiler: Unexpected character token \\u%xi / %i", ctc, ctc);
     } else if (isArr(ct)) {
       if (RNK(ct)==0) { // literal
         B val = IGetU(ct, 0);
         usz j = addObj(objs, inc(val));
         i32 type = isFun(val)? 0 : isMd1(val)? 1 : isMd2(val)? 2 : 3;
-        nc_add(&parts, m_hVec2(m_f64(type), nc_ivec2(PUSH, j)));
+        nc_add(&parts, m_hvec2(m_f64(type), nc_ivec2(PUSH, j)));
       } else { // name
         u8 ty = nc_ty(ct);
         u8 rty = ty;
@@ -352,7 +352,7 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
             i++;
           }
         }
-        nc_add(&parts, m_hVec3(m_f64(rty), nc_ivec3(rty<=3? VARO : VARM, 0, nc_var(vars, IGetU(ct, 1))), m_f64(ty)));
+        nc_add(&parts, m_hvec3(m_f64(rty), nc_ivec3(rty<=3? VARO : VARM, 0, nc_var(vars, IGetU(ct, 1))), m_f64(ty)));
       }
     } else thrF("Native compiler: Unexpected token %B", ct);
   }
@@ -382,7 +382,7 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
   } else if (close==')') {
     type = type0;
   } else thrM("bad closing");
-  return m_hVec2(m_f64(type), final);
+  return m_hvec2(m_f64(type), final);
 }
 
 NOINLINE usz nc_skipSeparators(B tokens, usz i) {
@@ -458,18 +458,18 @@ B nativeComp_c2(B t, B w, B x) {
   // build result
   B res;
   if (fnBlock) {
-    res = m_hVec4(
+    res = m_hvec4(
       bytecode,
       objs,
-      m_hVec2(nc_ivec3(0, 1, 0), nc_ivec3(0, 0, 1)),
-      m_hVec2(nc_ivec2(0, 0), nc_ivec2(3, varCount))
+      m_hvec2(nc_ivec3(0, 1, 0), nc_ivec3(0, 0, 1)),
+      m_hvec2(nc_ivec2(0, 0), nc_ivec2(3, varCount))
     );
   } else {
-    res = m_hVec4(
+    res = m_hvec4(
       bytecode,
       objs,
-      m_hVec1(nc_ivec3(0, 1, 0)),
-      m_hVec1(nc_ivec2(0, varCount))
+      m_hvec1(nc_ivec3(0, 1, 0)),
+      m_hvec1(nc_ivec2(0, varCount))
     );
   }
   

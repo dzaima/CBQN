@@ -925,7 +925,7 @@ B ffiload_c2(B t, B w, B x) {
     if (s!=FFI_OK) thrM("FFI: Error preparing call interface");
     // mm_free(argsRaw)
     u32 flags = many[1] | many[0]<<1 | tRes.resSingle<<2;
-    B r = m_ffiFn(foreignFnDesc, m_hVec3(argObj, tag(cif, OBJ_TAG), tag(argsRaw, OBJ_TAG)), libffiFn_c1, libffiFn_c2, (void*)(u64)flags, sym);
+    B r = m_ffiFn(foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(argsRaw, OBJ_TAG)), libffiFn_c1, libffiFn_c2, (void*)(u64)flags, sym);
     c(BoundFn,r)->mutCount = mutCount;
     return r;
   #endif
