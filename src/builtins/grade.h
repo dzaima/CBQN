@@ -374,7 +374,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
       i32 *s = wi-1;
-      for (usz l = wia+1, h; (h=l/2)>0; l-=h) s += h * !(c LT s[h]);
+      for (usz l = wia+1, h; (h=l/2)>0; l-=h) { i32* m = s+h; if (!(c LT *m)) s = m; }
       rp[i] = s - (wi-1);
     }
   } else {

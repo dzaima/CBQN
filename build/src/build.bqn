@@ -262,8 +262,11 @@ po ← { # parsed options
       "-DFFI="∾•Repr 2×ffi
     ⟩
     args∾↩ ccClang⊑⟨
-      ⟨"-Wno-parentheses"⟩
-      ⟨"-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"⟩
+      ⟨"-Wno-parentheses"⟩ # gcc
+      ⟨ # clang
+        "-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"
+        "-mllvm", "--x86-cmov-converter=0" # thing that converts `cmov`s to branching sometimes (?), but we don't want that
+      ⟩
     ⟩
     args∾↩ 0⊑GetLibs@
     
