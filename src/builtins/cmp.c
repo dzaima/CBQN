@@ -142,6 +142,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
   ur xr=RNK(x); usz* xsh=SH(x);         \
   if (wr!=xr) {                         \
     ur mr = wr<xr? wr : xr;             \
+    if (IA(w)==0 || IA(x)==0) goto base;\
     if (!eqShPart(wsh, xsh, mr)) goto badShape; \
     return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
   }                                     \

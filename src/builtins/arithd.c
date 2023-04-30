@@ -281,7 +281,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
       ur xr=RNK(x); usz* wsh=SH(w); ur mr=wr<xr?wr:xr;           \
       if (!eqShPart(wsh, xsh, mr)) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
       if (wr!=xr) {                                              \
-        if (TI(w,elType)!=el_B && TI(x,elType)!=el_B) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
+        if (TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
         else goto bad;                                           \
       }                                                          \
       usz ia = IA(x); B r;                                       \

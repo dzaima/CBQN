@@ -118,8 +118,8 @@ NOINLINE B toKCells(B x, ur k) {
 }
 
 B slash_c2(B, B, B);
-NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank conforming typed array arguments
-  assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B);
+NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank non-empty conforming typed array arguments
+  assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0);
   ur wr = RNK(w);
   ur xr = RNK(x);
   #if DEBUG
