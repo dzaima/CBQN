@@ -367,7 +367,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     i32* wi = tyany_ptr(w);
     i32* xi = tyany_ptr(x);
     if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if ((wi[i]-wi[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+      for (i64 i = 0; i < (i64)wia-1; i++) if (wi[i] GRADE_UD(>,<) wi[i+1]) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
       FL_SET(w, fl);
     }
     
