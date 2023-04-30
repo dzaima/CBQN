@@ -295,14 +295,14 @@ B shape_c2(B t, B w, B x) {
         else           { r = m_i8arrp (       &rp,nia); }
         memset(rp, b, nb);
       } else {
-        if(n==(i16)n)  { FILL(i16,i16,(u16)n*0x0001000100010001) }
-        else           { FILL(i32,i32,(u32)n*0x0000000100000001) }
+        if(n==(i16)n)  { FILL(i16,i16,(u16)n*0x0001000100010001U) }
+        else           { FILL(i32,i32,(u32)n*0x0000000100000001U) }
       }
     } else if (isC32(x)) {
       u32 c = o2cG(x);
       if      (c==(u8 )c) { u8* rp; r = m_c8arrp(&rp,nia); memset(rp, c, nia); }
-      else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001) }
-      else                { FILL(c32,u32,c*0x0000000100000001) }
+      else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001U) }
+      else                { FILL(c32,u32,c*0x0000000100000001U) }
     } else {
       incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
       B rf = asFill(x);

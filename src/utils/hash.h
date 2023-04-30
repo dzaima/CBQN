@@ -21,7 +21,7 @@ static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
     h = m_f64(x.f+0).u;
   } else if (isVal(x)) {
     return bqn_hashObj(x, secret);
-  } else if ((x.u<<1) == (0x7FF8000000000000<<1)) {
+  } else if ((x.u<<1) == (0x7FF8000000000000U<<1)) {
     h = secret[1];
   } else {
     h = x.u;

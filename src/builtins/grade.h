@@ -273,17 +273,17 @@ B GRADE_CAT(c1)(B t, B x) {
     el32:;
     i32* xp = tyany_ptr(x);
     i32 min=I32_MAX, max=I32_MIN;
-    i32 sum=0;
+    u32 sum=0;
     for (usz i = 0; i < ia; i++) {
       i32 c = xp[i];
-      sum += c;
+      sum += (u32)c;
       if (c<min) min=c;
       if (c>max) max=c;
     }
     u64 range = max - (i64)min + 1;
     if (range/2 < ia) {
       // First try to invert it as a permutation
-      if (range==ia && sum==(i32)((i64)ia*(min+max)/2)) {
+      if (range==ia && sum==(u32)(i32)((i64)ia*(min+max)/2)) {
         for (usz i = 0; i < ia; i++) rp[i]=ia;
         for (usz i = 0; i < ia; i++) { i32 v=xp[i]; GRADE_UD(rp[v-min],rp[max-v])=i; }
         bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
