@@ -133,21 +133,29 @@ CMP_REC(ne, ne, swapped=0;)
 
 
 
+B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=IA(r)
 #define CMP_AA_D(CN, CR, NAME, PRE) NOINLINE B NAME##_AA(i32 swapped, B w, B x) { PRE \
-  u8 xe = TI(x, elType); if (xe==el_B) goto bad; \
-  u8 we = TI(w, elType); if (we==el_B) goto bad; \
-  if (RNK(w)==RNK(x)) { if (!eqShape(w, x)) thrF("%U: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", swapped?CR:CN, swapped?x:w, swapped?w:x); \
-    if (we!=xe) { B tw=w,tx=x;           \
-      we = aMakeEq(&tw, &tx, we, xe);    \
-      if (we==el_MAX) goto bad;          \
-      w=tw; x=tx;                        \
-    }                                    \
-    AL(x);                               \
-    if (ria) cmp_fns_##NAME##AA[we](rp, tyany_ptr(w), tyany_ptr(x), ria); \
-    decG(w);decG(x); return r;           \
+  u8 xe = TI(x,elType); if (xe==el_B) goto base; \
+  u8 we = TI(w,elType); if (we==el_B) goto base; \
+  ur wr=RNK(w); usz* wsh=SH(w);         \
+  ur xr=RNK(x); usz* xsh=SH(x);         \
+  if (wr!=xr) {                         \
+    ur mr = wr<xr? wr : xr;             \
+    if (!eqShPart(wsh, xsh, mr)) goto badShape; \
+    return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
+  }                                     \
+  if (!eqShPart(wsh, xsh, wr)) goto badShape; \
+  if (we!=xe) { B tw=w,tx=x;             \
+    we = aMakeEq(&tw, &tx, we, xe);      \
+    if (we==el_MAX) goto base;           \
+    w=tw; x=tx;                          \
   }                                      \
-  bad: return NAME##_rec(swapped, w, x); \
+  AL(x);                                 \
+  if (ria) cmp_fns_##NAME##AA[we](rp, tyany_ptr(w), tyany_ptr(x), ria); \
+  decG(w);decG(x); return r;            \
+  base: return NAME##_rec(swapped,w,x); \
+  badShape: thrF("%U: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", swapped?CR:CN, swapped?x:w, swapped?w:x); \
 }
 CMP_AA_D("≥", "≤", ge, )
 CMP_AA_D(">", "<", gt, )
