@@ -434,7 +434,7 @@ B rand_deal_c1(B t, B x) {
 
   // MergeShuffle
   usz sh = 0;
-  usz thr = 1<<24;
+  usz thr = 1<<18;
   while ((xi >> sh) > thr) sh++;
   usz q = 1 << sh;
   u64 n = xi;
@@ -454,13 +454,16 @@ B rand_deal_c1(B t, B x) {
       usz t = i;
       usz j = (n*(p + w)) >> sh;
       usz e = (n*(p + 2*w)) >> sh;
-      u64 r = wyrand(&seed); // Random bits
-      while (1) {
-        u64 bit = r&1; r>>=1;
-        if (bit) { if (j == e) break; usz c=rp[i]; rp[i]=rp[j]; rp[j]=c; j++; }
-        else     { if (i == j) break; }
-        if (++i%64==0) r = wyrand(&seed);
+      for (usz i0 = i; ; i0 += 64) {
+        for (u64 r = wyrand(&seed); r; r&=r-1) {
+          i = i0 + CTZ(r);
+          if (i > j) { i=j; goto tail; }
+          if (j == e) goto tail;
+          usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+          j++;
+        }
       }
+      tail:
       for (; i < e; i++) {
         usz j = wy2u0k(wyrand(&seed), 1+i-t) + t;
         usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
