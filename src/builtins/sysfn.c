@@ -431,13 +431,43 @@ B rand_deal_c1(B t, B x) {
   if (xi==0) return emptyIVec();
   RAND_START;
   i32* rp; B r = m_i32arrv(&rp, xi);
-  for (i64 i = 0; i < xi; i++) rp[i] = i;
-  for (i64 i = 0; i < xi; i++) {
-    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
-    i32 c = rp[j];
-    rp[j] = rp[i];
-    rp[i] = c;
+
+  // MergeShuffle
+  usz sh = 0;
+  usz thr = 1<<24;
+  while ((xi >> sh) > thr) sh++;
+  usz q = 1 << sh;
+  u64 n = xi;
+
+  for (usz p = 0, i = 0; p < q; p++) {
+    usz e = (n*(p+1)) >> sh;
+    for (usz k = i; k < e; k++) rp[k] = k;
+    for (; i < e; i++) {
+      usz j = wy2u0k(wyrand(&seed), e-i) + i;
+      usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+    }
   }
+
+  for (usz w = 1; w < q; w <<= 1) {
+    usz i = 0;
+    for (usz p = 0; p < q; p += 2*w) {
+      usz t = i;
+      usz j = (n*(p + w)) >> sh;
+      usz e = (n*(p + 2*w)) >> sh;
+      u64 r = wyrand(&seed); // Random bits
+      while (1) {
+        u64 bit = r&1; r>>=1;
+        if (bit) { if (j == e) break; usz c=rp[i]; rp[i]=rp[j]; rp[j]=c; j++; }
+        else     { if (i == j) break; }
+        if (++i%64==0) r = wyrand(&seed);
+      }
+      for (; i < e; i++) {
+        usz j = wy2u0k(wyrand(&seed), 1+i-t) + t;
+        usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+      }
+    }
+  }
+
   RAND_END;
   return r;
 }
