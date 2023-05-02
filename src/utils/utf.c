@@ -148,7 +148,7 @@ u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all 
   u64 res = 0;
   for (usz i = 0; i < ia; i++) {
     u32 c = o2c(GetU(x,i));
-    res+= c<128? 1 : c<0x07FF? 2 : c<0xFFFF? 3 : 4;
+    res+= c<=127? 1 : c<=0x07FF? 2 : c<=0xFFFF? 3 : 4;
   }
   return res;
 }
