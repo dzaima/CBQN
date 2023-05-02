@@ -191,7 +191,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
         u8 elw = elWidth(xe);
         u32 mask0 = (u32)wi32;
-        if (mask0 > (1 << (elw*8-1))) {
+        if (mask0 > ((u32)1 << (elw*8-1))) {
           if      (mask0 > 32768) { x=taga(cpyI32Arr(x)); xe=el_i32; elw=4; }
           else if (mask0 >   128) { x=taga(cpyI16Arr(x)); xe=el_i16; elw=2; }
           else UD;
