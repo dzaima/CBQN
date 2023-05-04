@@ -41,6 +41,8 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 #endif
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
+  if (from >= ALSZ) from = ALSZ;
+  if (from < (bucket&63)) from = bucket&63;
   u64 sz = BSZ(from);
   CHECK_INTERRUPT;
   
@@ -100,7 +102,7 @@ NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
   i64 from = to;
   EmptyValue* c;
   while (true) {
-    if (from >= ALSZ) return BN(allocateMore)(bucket, type, from, to);
+    if (from >= 63) return BN(allocateMore)(bucket, type, from, to);
     from++;
     if (buckets[from]) {
       c = buckets[from];
