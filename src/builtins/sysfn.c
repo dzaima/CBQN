@@ -91,7 +91,7 @@ B repr_c1(B t, B x) {
   if (isF64(x)) {
     #if NO_RYU
       NUM_FMT_BUF(buf, x.f);
-      return utf8Decode(buf, strlen(buf));
+      return utf8Decode0(buf);
     #else
       return ryu_d2s(o2fG(x));
     #endif

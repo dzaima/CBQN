@@ -796,7 +796,7 @@ bool cbqn_initialized;
 void cbqn_init() {
   if (cbqn_initialized) return;
   #define F(X) X##_init();
-   FOR_INIT(F)
+    FOR_INIT(F)
   #undef F
   cbqn_initialized = true;
   gc_enable();

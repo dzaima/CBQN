@@ -1296,7 +1296,7 @@ CatchFrame* cfStart;
 CatchFrame* cfEnd;
 
 #if CATCH_ERRORS
-jmp_buf* prepareCatch() { // in the case of returning false, must call popCatch();
+jmp_buf* prepareCatch() {
   if (cf==cfEnd) {
     u64 n = cfEnd-cfStart;
     n = n<8? 8 : n*2;
@@ -1727,7 +1727,7 @@ NOINLINE void freeThrown() {
 }
 
 NOINLINE NORETURN void thrM(char* s) {
-  thr(utf8Decode(s, strlen(s)));
+  thr(utf8Decode0(s));
 }
 NOINLINE NORETURN void thrOOM() {
   if (oomMessage.u==0) err("out-of-memory encountered before out-of-memory error message object was initialized");

@@ -439,7 +439,7 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 void apd_fail_apd(ApdMut* m, B x) { }
 NOINLINE char* apd_ty_base(u32 ty) {
-  return ty==1? ">" : ty==2? "[...]" : ty==U'˘'? "˘" : ty==U'⎉'? "⎉" : "??";
+  return ty==1? ">" : ty==2? "[…]" : ty==U'˘'? "˘" : ty==U'⎉'? "⎉" : "??";
 }
 Arr* apd_sh_err(ApdMut* m, u32 ty) {
   B msg = make_fmt("%U: Incompatible %S shapes (encountered shapes %2H and %H)", apd_ty_base(ty), ty>2? "result" : "element", m->cr, m->csh, m->failEl);
