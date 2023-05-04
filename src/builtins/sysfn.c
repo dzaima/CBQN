@@ -449,14 +449,13 @@ B rand_deal_c1(B t, B x) {
     i32* rp; r = m_i32arrv(&rp, xi);
 
     // MergeShuffle
-    usz sh = 0;
-    usz thr = 1<<18;
-    while ((xi >> sh) > thr) sh++;
-    usz q = 1 << sh;
     u64 n = xi;
+    usz log2 = 64 - CLZ(n-1);
+    usz thr = 18;
+    usz sh = log2<=thr? 0 : log2-thr;
 
-    for (usz p = 0, i = 0; p < q; p++) {
-      usz e = (n*(p+1)) >> sh;
+    for (u64 es = n, i = 0; i < n; es += n) {
+      usz e = es >> sh;
       for (usz k = i; k < e; k++) rp[k] = k;
       for (; i < e; i++) {
         usz j = wy2u0k(wyrand(&seed), e-i) + i;
@@ -464,12 +463,12 @@ B rand_deal_c1(B t, B x) {
       }
     }
 
-    for (usz w = 1; w < q; w <<= 1) {
+    for (; sh > 0; sh--) {
       usz i = 0;
-      for (usz p = 0; p < q; p += 2*w) {
+      for (u64 es = 2*n; i < n; es += 2*n) {
         usz t = i;
-        usz j = (n*(p + w)) >> sh;
-        usz e = (n*(p + 2*w)) >> sh;
+        usz j = (es - n) >> sh;
+        usz e = es >> sh;
         for (usz i0 = i; ; i0 += 64) {
           for (u64 r = wyrand(&seed); r; r&=r-1) {
             i = i0 + CTZ(r);
