@@ -425,50 +425,6 @@ B rand_range_c2(B t, B w, B x) {
   return taga(r);
 }
 
-// MergeShuffle
-static void merge_shuffle(i32* rp, i32* sp, u64 n, u64* pseed) {
-  u64 seed = *pseed;
-  usz log2 = 64 - CLZ(n-1);
-  usz thr = 20;
-  usz sh = log2<=thr? 0 : log2-thr;
-
-  bool init = sp==NULL;
-  if (init) sp = rp;
-
-  usz i = 0; for (u64 es = n; i < n; es += n) {
-    usz e = es >> sh;
-    if (init) for (usz k = i; k < e; k++) rp[k] = k;
-    for (; i < e; i++) {
-      usz j = wy2u0k(wyrand(&seed), e-i) + i;
-      usz c=sp[j]; sp[j]=sp[i]; rp[i]=c;
-    }
-  }
-
-  for (; sh > 0; sh--) {
-    usz i = 0;
-    for (u64 es = 2*n; i < n; es += 2*n) {
-      usz t = i;
-      usz j = (es - n) >> sh;
-      usz e = es >> sh;
-      for (usz i0 = i; ; i0 += 64) {
-        for (u64 r = wyrand(&seed); r; r&=r-1) {
-          i = i0 + CTZ(r);
-          if (i > j) { i=j; goto tail; }
-          if (j == e) goto tail;
-          usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
-          j++;
-        }
-      }
-      tail:
-      for (; i < e; i++) {
-        usz j = wy2u0k(wyrand(&seed), 1+i-t) + t;
-        usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
-      }
-    }
-  }
-  *pseed = seed;
-}
-
 extern Arr* bitUD[3]; // from fns.c
 extern B bit2x[2];
 B rand_deal_c1(B t, B x) {
@@ -480,31 +436,30 @@ B rand_deal_c1(B t, B x) {
 
   RAND_START;
   B r;
+  #define SHUF \
+    for (usz i = 0; i < xi; i++) rp[i] = i;    \
+    for (usz i = 0; i < xi-1; i++) {           \
+      usz j = wy2u0k(wyrand(&seed), xi-i) + i; \
+      usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;       \
+    }
   if (xi == 2) {
     r = incG(bit2x[wyrand(&seed)&1]);
   } else if (LIKELY(xi <= 128)) {
-    #define SHUF \
-      for (usz i = 0; i < xi; i++) rp[i] = i;    \
-      for (usz i = 0; i < xi-1; i++) {           \
-        usz j = wy2u0k(wyrand(&seed), xi-i) + i; \
-        usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;       \
-      }
     i8* rp; r = m_i8arrv(&rp, xi);
     SHUF
   } else if (LIKELY(xi <= 1<<15)) {
     i16* rp; r = m_i16arrv(&rp, xi);
     SHUF
-    #undef SHUF
   } else {
     i32* rp; r = m_i32arrv(&rp, xi);
-    u64 n = xi;
-    if (n <= 1<<19) {
-      merge_shuffle(rp, NULL, n, &seed);
+    if (xi <= 1<<19) {
+      SHUF
     } else {
       // Initial split pass like a random radix sort
       // Don't count partition size exactly; instead, assume lengths
       // are within 1 and stop when a partition is full
       // Shuffle leftovers in at the end
+      u64 n = xi;
       usz log2 = 64 - CLZ(n-1);
       usz thr = 16;
       usz sd = log2<thr+8? log2-thr : 8;
@@ -526,11 +481,16 @@ B rand_deal_c1(B t, B x) {
         }
       }
       split_done:
-      for (usz p=0, j=0, s=0; p<m; p++) {
+      for (usz p=0, b=0, s=0; p<m; p++) {
         usz l = pos[2*p] - s;
-        merge_shuffle(rp+j, rp+s, l, &seed);
+        i32* dp = rp+b;
+        i32* sp = rp+s;
+        for (usz i = 0; i < l; i++) {
+          usz j = wy2u0k(wyrand(&seed), l-i) + i;
+          usz c=sp[j]; sp[j]=sp[i]; dp[i]=c;
+        }
         s = pos[2*p+1];
-        j+= l;
+        b+= l;
       }
       TFREE(pos)
       for (usz j=i; j<n; j++) rp[j] = j;
@@ -540,6 +500,7 @@ B rand_deal_c1(B t, B x) {
       }
     }
   }
+  #undef SHUF
   RAND_END;
   return r;
 }
