@@ -425,52 +425,68 @@ B rand_range_c2(B t, B w, B x) {
   return taga(r);
 }
 
+extern Arr* bitUD[3]; // from fns.c
+extern B bit2x[2];
 B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
-  if (RARE(xi<0)) thrM("(rand).Deal: Argument cannot be negative");
-  if (xi==0) return emptyIVec();
-  RAND_START;
-  i32* rp; B r = m_i32arrv(&rp, xi);
-
-  // MergeShuffle
-  usz sh = 0;
-  usz thr = 1<<18;
-  while ((xi >> sh) > thr) sh++;
-  usz q = 1 << sh;
-  u64 n = xi;
-
-  for (usz p = 0, i = 0; p < q; p++) {
-    usz e = (n*(p+1)) >> sh;
-    for (usz k = i; k < e; k++) rp[k] = k;
-    for (; i < e; i++) {
-      usz j = wy2u0k(wyrand(&seed), e-i) + i;
-      usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
-    }
+  if (RARE(xi<=1)) {
+    if (xi<0) thrM("(rand).Deal: Argument cannot be negative");
+    return xi==0? emptyIVec() : taga(ptr_inc(bitUD[xi]));
   }
 
-  for (usz w = 1; w < q; w <<= 1) {
-    usz i = 0;
-    for (usz p = 0; p < q; p += 2*w) {
-      usz t = i;
-      usz j = (n*(p + w)) >> sh;
-      usz e = (n*(p + 2*w)) >> sh;
-      for (usz i0 = i; ; i0 += 64) {
-        for (u64 r = wyrand(&seed); r; r&=r-1) {
-          i = i0 + CTZ(r);
-          if (i > j) { i=j; goto tail; }
-          if (j == e) goto tail;
-          usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
-          j++;
-        }
-      }
-      tail:
+  RAND_START;
+  B r;
+  if (xi == 2) {
+    r = incG(bit2x[wyrand(&seed)&1]);
+  } else if (LIKELY(xi <= 128)) {
+    i8* rp; r = m_i8arrv(&rp, xi);
+    for (usz i = 0; i < xi; i++) rp[i] = i;
+    for (usz i = 0; i < xi-1; i++) {
+      usz j = wy2u0k(wyrand(&seed), xi-i) + i;
+      usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+    }
+  } else {
+    i32* rp; r = m_i32arrv(&rp, xi);
+
+    // MergeShuffle
+    usz sh = 0;
+    usz thr = 1<<18;
+    while ((xi >> sh) > thr) sh++;
+    usz q = 1 << sh;
+    u64 n = xi;
+
+    for (usz p = 0, i = 0; p < q; p++) {
+      usz e = (n*(p+1)) >> sh;
+      for (usz k = i; k < e; k++) rp[k] = k;
       for (; i < e; i++) {
-        usz j = wy2u0k(wyrand(&seed), 1+i-t) + t;
+        usz j = wy2u0k(wyrand(&seed), e-i) + i;
         usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
       }
     }
-  }
 
+    for (usz w = 1; w < q; w <<= 1) {
+      usz i = 0;
+      for (usz p = 0; p < q; p += 2*w) {
+        usz t = i;
+        usz j = (n*(p + w)) >> sh;
+        usz e = (n*(p + 2*w)) >> sh;
+        for (usz i0 = i; ; i0 += 64) {
+          for (u64 r = wyrand(&seed); r; r&=r-1) {
+            i = i0 + CTZ(r);
+            if (i > j) { i=j; goto tail; }
+            if (j == e) goto tail;
+            usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+            j++;
+          }
+        }
+        tail:
+        for (; i < e; i++) {
+          usz j = wy2u0k(wyrand(&seed), 1+i-t) + t;
+          usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+        }
+      }
+    }
+  }
   RAND_END;
   return r;
 }
@@ -478,10 +494,11 @@ B rand_deal_c1(B t, B x) {
 B rand_deal_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
-  if (RARE(wi<0)) thrM("(rand).Deal: 𝕨 cannot be negative");
   if (RARE(xi<0)) thrM("(rand).Deal: 𝕩 cannot be negative");
-  if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
+  if (RARE(wi<0)) thrM("(rand).Deal: 𝕨 cannot be negative");
   if (wi==0) return emptyIVec();
+  if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
+  if (wi==xi) return rand_deal_c1(t, x);
   B r;
   RAND_START;
   if (wi > xi/64) {
