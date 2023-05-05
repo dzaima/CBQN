@@ -425,19 +425,87 @@ B rand_range_c2(B t, B w, B x) {
   return taga(r);
 }
 
+extern Arr* bitUD[3]; // from fns.c
+extern B bit2x[2];
+B intRange16(ux s, ux n);
+B intRange32(ux s, ux n);
+void intRange32Fill(i32* xp, ux s, ux n);
+
 B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
-  if (RARE(xi<0)) thrM("(rand).Deal: Argument cannot be negative");
-  if (xi==0) return emptyIVec();
-  RAND_START;
-  i32* rp; B r = m_i32arrv(&rp, xi);
-  for (i64 i = 0; i < xi; i++) rp[i] = i;
-  for (i64 i = 0; i < xi; i++) {
-    i32 j = wy2u0k(wyrand(&seed), xi-i) + i;
-    i32 c = rp[j];
-    rp[j] = rp[i];
-    rp[i] = c;
+  if (RARE(xi<=1)) {
+    if (xi<0) thrM("(rand).Deal: Argument cannot be negative");
+    return taga(ptr_inc(bitUD[xi]));
   }
+
+  RAND_START;
+  B r;
+  #define SHUF \
+    for (usz i = 0; i < xi-1; i++) {           \
+      usz j = wy2u0k(wyrand(&seed), xi-i) + i; \
+      usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;       \
+    }
+  if (xi == 2) {
+    r = incG(bit2x[wyrand(&seed)&1]);
+  } else if (LIKELY(xi <= 128)) {
+    i8* rp; r = m_i8arrv(&rp, xi);
+    NOUNROLL for (usz i = 0; i < xi; i++) rp[i] = i;
+    SHUF
+  } else if (LIKELY(xi <= 1<<15)) {
+    r = intRange16(0, xi); i16* rp = i16arr_ptr(r);
+    SHUF
+  } else {
+    if (xi <= 1<<19) {
+      r = intRange32(0, xi); i32* rp = i32arr_ptr(r);
+      SHUF
+    } else {
+      i32* rp; r = m_i32arrv(&rp, xi);
+      // Initial split pass like a random radix sort
+      // Don't count partition size exactly; instead, assume lengths
+      // are within 1 and stop when a partition is full
+      // Shuffle leftovers in at the end
+      u64 n = xi;
+      usz log2 = 64 - CLZ(n-1);
+      usz thr = 16;
+      usz sd = log2<thr+8? log2-thr : 8;
+      usz m = 1<<sd; // Number of partitions
+      u64 mm = 0x0101010101010101ull * (m-1);
+      TALLOC(usz, pos, 2*m) // Current and ending positions
+      pos[0] = 0; pos[2*m-1] = n;
+      PLAINLOOP for (usz p=1; p<m; p++) pos[2*p-1] = pos[2*p] = (n*p) >> sd;
+      usz i = 0;
+      while (1) {
+        u64 r = wyrand(&seed) & mm;
+        for (usz j = 0; j < 8; j++) {
+          u8 k = r; r>>= 8;
+          usz* pp = pos+2*k;
+          usz p = pp[0];
+          if (p == pp[1]) goto split_done;
+          pp[0]++;
+          rp[p] = i++;
+        }
+      }
+      split_done:
+      for (usz p=0, b=0, s=0; p<m; p++) {
+        usz l = pos[2*p] - s;
+        i32* dp = rp+b;
+        i32* sp = rp+s;
+        for (usz i = 0; i < l; i++) {
+          usz j = wy2u0k(wyrand(&seed), l-i) + i;
+          usz c=sp[j]; sp[j]=sp[i]; dp[i]=c;
+        }
+        s = pos[2*p+1];
+        b+= l;
+      }
+      TFREE(pos)
+      intRange32Fill(rp+i, i, n-i);
+      for (; i < n; i++) {
+        usz j = wy2u0k(wyrand(&seed), 1+i);
+        usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
+      }
+    }
+  }
+  #undef SHUF
   RAND_END;
   return r;
 }
@@ -445,10 +513,11 @@ B rand_deal_c1(B t, B x) {
 B rand_deal_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
-  if (RARE(wi<0)) thrM("(rand).Deal: 𝕨 cannot be negative");
   if (RARE(xi<0)) thrM("(rand).Deal: 𝕩 cannot be negative");
-  if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
+  if (RARE(wi<0)) thrM("(rand).Deal: 𝕨 cannot be negative");
   if (wi==0) return emptyIVec();
+  if (RARE(wi>xi)) thrM("(rand).Deal: 𝕨 cannot exceed 𝕩");
+  if (wi==xi) return rand_deal_c1(t, x);
   B r;
   RAND_START;
   if (wi > xi/64) {
