@@ -51,7 +51,7 @@ static void* mmap_nvm(u64 sz) {
       noreplace|= MAP_FIXED_NOREPLACE;
     #endif
     void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS|noreplace, -1, 0);
-    if (c==NULL) continue;
+    if (c==MAP_FAILED) continue;
     
     i64 dist = (i64)near - (i64)c;
     if ((dist<0?-dist:dist) < MAX_DIST) return c;
