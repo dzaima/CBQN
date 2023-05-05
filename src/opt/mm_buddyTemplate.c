@@ -66,10 +66,15 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     thrOOM();
   }
   
+  #if LOG_GC || LOG_MM_MORE
+    fprintf(stderr, "allocating "N64u" more " str1(BN()) " heap (from allocation of "N64u"B/bucket %d)", sz, (u64)BSZ(bucket), (int)bucket);
+  #endif
   #if NO_MMAP
     EmptyValue* c = calloc(sz+getPageSize(), 1);
+    fprintf(stderr, "\n");
   #else
     u8* mem = MMAP(sz);
+    fprintf(stderr, ": got %p\n", mem);
     if (mem==MAP_FAILED) thrOOM();
     if (ptr2u64(mem)+sz > (1ULL<<48)) err("mmap returned address range above 2⋆48");
     #if ALLOC_MODE==0
@@ -80,9 +85,6 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   #endif
   mm_heapAlloc+= sz;
   
-  #if LOG_GC || LOG_MM_MORE
-    fprintf(stderr, "allocating "N64u" more " str1(BN()) " heap (from allocation of "N64u"B/bucket %d)\n", sz, (u64)BSZ(bucket), (int)bucket);
-  #endif
   if (alSize+1>=alCap) {
     alCap = alCap? alCap*2 : 1024;
     al = realloc(al, sizeof(AllocInfo)*alCap);
