@@ -471,7 +471,7 @@ B rand_deal_c1(B t, B x) {
       u64 mm = 0x0101010101010101ull * (m-1);
       TALLOC(usz, pos, 2*m) // Current and ending positions
       pos[0] = 0; pos[2*m-1] = n;
-      for (usz p=1; p<m; p++) pos[2*p-1] = pos[2*p] = (n*p) >> sd;
+      PLAINLOOP for (usz p=1; p<m; p++) pos[2*p-1] = pos[2*p] = (n*p) >> sd;
       usz i = 0;
       while (1) {
         u64 r = wyrand(&seed) & mm;
