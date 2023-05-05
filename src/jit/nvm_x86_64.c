@@ -25,7 +25,7 @@ u64 mmX_ctrs[64];
 #define   BN(X) mmX_##X
 #include "../opt/mm_buddyTemplate.h"
 #define  MMI(X) X
-#define  ALSZ  17
+#define  ALSZ  20
 
 static u64 nvm_mmap_seed = 0;
 #ifdef __clang__
