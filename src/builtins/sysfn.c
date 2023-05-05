@@ -427,6 +427,9 @@ B rand_range_c2(B t, B w, B x) {
 
 extern Arr* bitUD[3]; // from fns.c
 extern B bit2x[2];
+NOINLINE B intRange16(ux s, ux n);
+NOINLINE B intRange32(ux s, ux n);
+
 B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
   if (RARE(xi<=1)) {
@@ -437,7 +440,6 @@ B rand_deal_c1(B t, B x) {
   RAND_START;
   B r;
   #define SHUF \
-    for (usz i = 0; i < xi; i++) rp[i] = i;    \
     for (usz i = 0; i < xi-1; i++) {           \
       usz j = wy2u0k(wyrand(&seed), xi-i) + i; \
       usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;       \
@@ -446,15 +448,17 @@ B rand_deal_c1(B t, B x) {
     r = incG(bit2x[wyrand(&seed)&1]);
   } else if (LIKELY(xi <= 128)) {
     i8* rp; r = m_i8arrv(&rp, xi);
+    NOUNROLL for (usz i = 0; i < xi; i++) rp[i] = i;
     SHUF
   } else if (LIKELY(xi <= 1<<15)) {
-    i16* rp; r = m_i16arrv(&rp, xi);
+    r = intRange16(0, xi); i16* rp = i16arr_ptr(r);
     SHUF
   } else {
-    i32* rp; r = m_i32arrv(&rp, xi);
     if (xi <= 1<<19) {
+      r = intRange32(0, xi); i32* rp = i32arr_ptr(r);
       SHUF
     } else {
+      i32* rp; r = m_i32arrv(&rp, xi);
       // Initial split pass like a random radix sort
       // Don't count partition size exactly; instead, assume lengths
       // are within 1 and stop when a partition is full

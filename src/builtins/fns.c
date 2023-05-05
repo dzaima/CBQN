@@ -7,23 +7,18 @@
 #include "../nfns.h"
 
 
-
-NOINLINE B intRange(ux s, ux n) { // intended for s+n≥128; assumes n≥1
-  assert(n>0);
-  ux last = n+s-1;
-  if (last<=I16_MAX) {
-    i16* rp; B r = m_i16arrv(&rp, n);
-    for (ux i = 0; i < n; i++) rp[i] = (i16)s + (i16)i;
-    return r;
-  }
-  if (last<=I32_MAX) {
-    i32* rp; B r = m_i32arrv(&rp, n);
-    for (ux i = 0; i < n; i++) rp[i] = (i32)s + (i32)i;
-    return r;
-  }
-  
+NOINLINE B intRange16(ux s, ux n) { // s+↕n with i16arr result
+  i16* rp; B r = m_i16arrv(&rp, n);
+  for (ux i = 0; i < n; i++) rp[i] = (i16)s + (i16)i;
+  return r;
+}
+NOINLINE B intRange32(ux s, ux n) { // s+↕n with i32arr result
+  i32* rp; B r = m_i32arrv(&rp, n);
+  for (ux i = 0; i < n; i++) rp[i] = (i32)s + (i32)i;
+  return r;
+}
+NOINLINE B intRangeF64(ux s, ux n) { // s+↕n with f64arr result
   f64* rp; B r = m_f64arrv(&rp, n);
-  
   f64 c = s;
   PLAINLOOP for (ux i = 0; i < n/16; i++) {
     for (ux j = 0; j < 16; j++) rp[j] = c+j;
@@ -32,6 +27,13 @@ NOINLINE B intRange(ux s, ux n) { // intended for s+n≥128; assumes n≥1
   }
   for (ux j = 0; j < (n&15); j++) rp[j] = c+j;
   return r;
+}
+B intRange(ux s, ux n) { // intended for s+n≥128; assumes n≥1
+  assert(n>0);
+  ux last = n+s-1;
+  if (last<=I16_MAX) return intRange16(s, n);
+  if (last<=I32_MAX) return intRange32(s, n);
+  return intRangeF64(s, n);
 }
 
 static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
