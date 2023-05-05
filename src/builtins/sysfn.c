@@ -431,7 +431,7 @@ B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
   if (RARE(xi<=1)) {
     if (xi<0) thrM("(rand).Deal: Argument cannot be negative");
-    return xi==0? emptyIVec() : taga(ptr_inc(bitUD[xi]));
+    return taga(ptr_inc(bitUD[xi]));
   }
 
   RAND_START;
