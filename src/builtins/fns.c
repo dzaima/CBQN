@@ -12,9 +12,12 @@ NOINLINE B intRange16(ux s, ux n) { // s+↕n with i16arr result
   for (ux i = 0; i < n; i++) rp[i] = (i16)s + (i16)i;
   return r;
 }
+NOINLINE void intRange32Fill(i32* xp, ux s, ux n) { // fill xp with s+↕n
+  for (ux i = 0; i < n; i++) xp[i] = (i32)s + (i32)i;
+}
 NOINLINE B intRange32(ux s, ux n) { // s+↕n with i32arr result
   i32* rp; B r = m_i32arrv(&rp, n);
-  for (ux i = 0; i < n; i++) rp[i] = (i32)s + (i32)i;
+  intRange32Fill(rp, s, n);
   return r;
 }
 NOINLINE B intRangeF64(ux s, ux n) { // s+↕n with f64arr result

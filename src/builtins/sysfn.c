@@ -427,8 +427,9 @@ B rand_range_c2(B t, B w, B x) {
 
 extern Arr* bitUD[3]; // from fns.c
 extern B bit2x[2];
-NOINLINE B intRange16(ux s, ux n);
-NOINLINE B intRange32(ux s, ux n);
+B intRange16(ux s, ux n);
+B intRange32(ux s, ux n);
+void intRange32Fill(i32* xp, ux s, ux n);
 
 B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
@@ -497,7 +498,7 @@ B rand_deal_c1(B t, B x) {
         b+= l;
       }
       TFREE(pos)
-      for (usz j=i; j<n; j++) rp[j] = j;
+      intRange32Fill(rp+i, i, n-i);
       for (; i < n; i++) {
         usz j = wy2u0k(wyrand(&seed), 1+i);
         usz c=rp[j]; rp[j]=rp[i]; rp[i]=c;
