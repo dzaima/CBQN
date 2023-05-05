@@ -725,15 +725,20 @@ B join_c1(B t, B x) {
         if (RARE(cd > rd)) {
           if ((ur)(cd+1-rd) > 2-rd) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
           if (cr > rr) { // Previous elements were cells
+            assert(rd==0 && rr>0);
             esh--;
-            if (cam != i * *esh) thrM("∾: Item trailing shapes must be equal");
+            usz l = *esh;
+            for (usz j=1; j<i; j++) {
+              B xj = GetU(x,j);
+              if (l != *SH(xj)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H and later higher-rank array)", x0, xj);
+            }
             rr=cr; cam=i;
           }
           rm = cr>rm ? cr : rm;
           rd = 1;
         }
         cam += cr < rm ? 1 : *csh++;
-        if (!eqShPart(csh, esh, cr-1)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
+        if (!eqShPart(csh, esh, rm-1)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       }
       if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) rf = bi_noFill;
     }
