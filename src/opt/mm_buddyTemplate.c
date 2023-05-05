@@ -71,10 +71,14 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   #endif
   #if NO_MMAP
     EmptyValue* c = calloc(sz+getPageSize(), 1);
-    fprintf(stderr, "\n");
+    #if LOG_GC || LOG_MM_MORE
+      fprintf(stderr, "\n");
+    #endif
   #else
     u8* mem = MMAP(sz);
-    fprintf(stderr, ": got %p\n", mem);
+    #if LOG_GC || LOG_MM_MORE
+      fprintf(stderr, ": got %p\n", mem);
+    #endif
     if (mem==MAP_FAILED) thrOOM();
     if (ptr2u64(mem)+sz > (1ULL<<48)) err("mmap returned address range above 2⋆48");
     #if ALLOC_MODE==0
