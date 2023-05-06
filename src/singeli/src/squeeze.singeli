@@ -116,7 +116,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           def v0 = loadBatch{xp, is, XV}
           
           def int = {
-            def tmp = {
+            def {int, wdn} = {
               if (hasarch{'AARCH64'} and tuplen{is}==2) {
                 def intp = narrowPair{...each{{v}=>cvt{i64,v}, v0}}
                 def wdn = each{{v}=>cvt{f64,v}, widen{intp}}
@@ -135,8 +135,6 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
                 }
               }
             }
-            def int = tupsel{0, tmp}
-            def wdn = tupsel{1, tmp}
             
             def conv{x} = tern{preserve_negative_zero, ty_u{x}, x}
             def as = each{conv, v0}

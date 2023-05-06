@@ -103,8 +103,8 @@ def runner{u, R, F} = {
     run{F, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
   }
   def run{F, M, w:VU, x:VS & is_u{VU} & is_s{VS}} = { # 'a'+3, 'a'-3
-    def r = run{F, M, VS~~toggleTop{w}, x}
-    tup{toggleTop{VU~~tupsel{0,r}}, tupsel{1,r}}
+    def {res, ok} = run{F, M, VS~~toggleTop{w}, x}
+    tup{toggleTop{VU~~res}, ok}
   }
   def run{F==__add, M, w:VS, x:VU & is_s{VS} & is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
   
@@ -122,9 +122,7 @@ def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
 def runChecks{type=='~andAllZero', vals, M & ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
 def runChecks{type=='anyne',  vals, M} = {
-  def cols = flip{vals}
-  def xs = tupsel{1, cols}
-  def ys = tupsel{2, cols}
+  def {_, xs, ys} = flip{vals}
   if (tuplen{vals}==1) {
     anyne{...xs, ...ys, M}
   } else {
@@ -134,9 +132,7 @@ def runChecks{type=='anyne',  vals, M} = {
 }
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
-  def r0 = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
-  def values = tupsel{0, r0}
-  def checks = tupsel{1, r0}
+  def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
   def ctype = tupsel{0,tupsel{0,checks}}
   assert{tree_fold{&, each{{c}=>match{ctype, tupsel{0,c}}, checks}}}
   if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0, is}}
