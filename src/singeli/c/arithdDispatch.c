@@ -26,7 +26,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     ur mr=wr<xr?wr:xr;
     if (IA(w)==0 || IA(x)==0) goto rec;
     if (!eqShPart(wsh, xsh, mr)) goto rec;
-    return leading_axis_arith(table->mainFn, w, x, wsh, xsh, mr);
+    return leading_axis_arith(table->mainFnObj, w, x, wsh, xsh, mr);
   }
   if (!eqShPart(SH(w), SH(x), wr)) goto rec;
   

@@ -48,6 +48,7 @@ typedef struct EntAA {
 typedef struct DyTableAA {
   EntAA entsAA[el_B*el_B]; // one for each instruction
   FC2 mainFn;
+  B mainFnObj;
   char* repr;
 } DyTableAA;
 

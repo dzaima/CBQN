@@ -1,6 +1,7 @@
 #include "../core.h"
 #include "../utils/each.h"
 #include "../utils/calls.h"
+#include "../builtins.h"
 
 static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   memset((u8*)dst, v?0xff:0, BIT_N(sz)*8);
@@ -131,7 +132,7 @@ CMP_REC(ne, ne, swapped=0;)
 
 
 
-B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
+B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr);
 #define AL(X) u64* rp; B r = m_bitarrc(&rp, X); usz ria=IA(r)
 #define CMP_AA_D(CN, CR, NAME, PRE) NOINLINE B NAME##_AA(i32 swapped, B w, B x) { PRE \
   u8 xe = TI(x,elType); if (xe==el_B) goto base; \
@@ -142,7 +143,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
     ur mr = wr<xr? wr : xr;             \
     if (IA(w)==0 || IA(x)==0) goto base;\
     if (!eqShPart(wsh, xsh, mr)) goto badShape; \
-    return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
+    return leading_axis_arith(bi_##NAME, w, x, wsh, xsh, mr); \
   }                                     \
   if (!eqShPart(wsh, xsh, wr)) goto badShape; \
   if (we!=xe) { B tw=w,tx=x;             \

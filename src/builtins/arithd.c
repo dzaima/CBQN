@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "../utils/each.h"
+#include "../builtins.h"
 #include <math.h>
 
 static f64 pfmod(f64 a, f64 b) {
@@ -20,7 +21,7 @@ B atan2_c2(B, B, B);
 
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
-B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
+B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr);
 
 #if SINGELI_SIMD
   #include "../singeli/c/arithdDispatch.c"
@@ -281,7 +282,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
       ur xr=RNK(x); usz* wsh=SH(w); ur mr=wr<xr?wr:xr;           \
       if (!eqShPart(wsh, xsh, mr)) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
       if (wr!=xr) {                                              \
-        if (TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
+        if (TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0) return leading_axis_arith(bi_##NAME, w, x, wsh, xsh, mr); \
         else goto bad;                                           \
       }                                                          \
       usz ia = IA(x); B r;                                       \
@@ -518,5 +519,13 @@ B lcm_c2(B t, B w, B x) {
 #undef P2
 
 void arithd_init() {
-  
+  #if SINGELI_SIMD
+  addDyTableAA.mainFnObj = bi_add;
+  subDyTableAA.mainFnObj = bi_sub;
+  mulDyTableAA.mainFnObj = bi_mul;
+  andDyTableAA.mainFnObj = bi_and;
+  orDyTableAA.mainFnObj = bi_or;
+  floorDyTableAA.mainFnObj = bi_floor;
+  ceilDyTableAA.mainFnObj = bi_ceil;
+  #endif
 }

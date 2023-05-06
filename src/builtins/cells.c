@@ -117,7 +117,7 @@ NOINLINE B toKCells(B x, ur k) {
 }
 
 B slash_c2(B, B, B);
-NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank non-empty conforming typed array arguments
+NOINLINE B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank non-empty conforming typed array arguments, and that f won't use its first argument
   assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0);
   ur wr = RNK(w);
   ur xr = RNK(x);
@@ -131,6 +131,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
   ur br = wr>xr? wr : xr;
   
   usz csz = shProd(bsh, mr, br);
+  FC2 fc2 = c2fn(f);
   if (csz<5120>>arrTypeBitsLog(TY(b))) {
     B s = mr==wr? w : x; // smaller argument
     s = C2(slash, m_usz(csz), taga(arr_shVec(TI(s,slice)(s,0,IA(s)))));
