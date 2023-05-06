@@ -516,3 +516,7 @@ B lcm_c2(B t, B w, B x) {
 }
 
 #undef P2
+
+void arithd_init() {
+  
+}

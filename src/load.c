@@ -8,7 +8,11 @@
 #define PRECOMPILED_FILE1(X) PRECOMPILED_FILE0(X)
 #define PRECOMPILED_FILE(END) PRECOMPILED_FILE1(../build/BYTECODE_DIR/gen/END)
 
-#define FOR_INIT(F) F(base) F(harr) F(mutF) F(cmpA) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arith) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(transp) F(load) F(sysfnPost) F(dervPost) F(ryu) F(ffi) F(mmap) F(typesFinished)
+#define FOR_INIT(F) \
+/* initialize primary things */ F(base) F(harr) F(mutF) F(cmpA) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arithm) F(arithd) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(transp) F(ryu) F(ffi) F(mmap) \
+/* first thing that executes BQN code (the precompiled stuff) */ F(load) \
+/* precompiled stuff loaded; init things that need it */ F(sysfnPost) F(dervPost) F(typesFinished)
+
 #define F(X) NOINLINE void X##_init(void);
 FOR_INIT(F)
 #undef F

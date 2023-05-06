@@ -176,12 +176,12 @@ B getMathNS(void) {
   return incG(mathNS);
 }
 
-void arith_init(void) {
+void arithm_init(void) {
   c(BFn,bi_add)->ident = c(BFn,bi_sub)->ident = c(BFn,bi_or )->ident = c(BFn,bi_ne)->ident = c(BFn,bi_gt)->ident = m_i32(0);
   c(BFn,bi_mul)->ident = c(BFn,bi_div)->ident = c(BFn,bi_and)->ident = c(BFn,bi_eq)->ident = c(BFn,bi_ge)->ident = c(BFn,bi_pow)->ident = c(BFn,bi_not)->ident = m_i32(1);
   c(BFn,bi_floor)->ident = m_f64(1.0/0.0);
   c(BFn,bi_ceil )->ident = m_f64(-1.0/0.0);
-
+  
   #define INVERSE_PAIR(F,G) \
     c(BFn,bi_##F)->im = G##_c1; \
     c(BFn,bi_##G)->im = F##_c1;
