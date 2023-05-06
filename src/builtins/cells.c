@@ -4,7 +4,7 @@
 #include "../utils/calls.h"
 #include <math.h>
 
-B shape_c1(B, B);
+B fne_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
 B fold_rows(Md1D* d, B x); // from fold.c
@@ -480,15 +480,26 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk, u32 chr) {
 }
 
 NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
+  assert(isArr(w));
   ur wk = wr-wcr; assert(wk>0 && wcr<wr);
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
+  if (isFun(f) && IA(w)!=0) {
+    if (isPervasiveDy(f)) {
+      if (isAtm(x)) return c2(f, w, x);
+      if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B) goto generic;
+      return c2(f, w, C2(shape, C1(fne, incG(w)), x));
+    }
+  }
+  generic:;
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
   M_APD_SH(r, wk, wsh); FC2 fc2 = c2fn(f);
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
   decG(w); return taga(APD_SH_GET(r, chr));
 }
 NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
+  assert(isArr(x));
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
@@ -511,6 +522,12 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
       return takedrop_highrank(take, a, x);
     }
     if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
+    if (isPervasiveDy(f)) {
+      if (isAtm(w)) return c2(f, w, x);
+      if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B) goto generic;
+      return c2(f, C2(shape, C1(fne, incG(x)), w), x);
+    }
   }
   generic:;
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
