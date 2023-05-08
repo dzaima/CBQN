@@ -186,7 +186,7 @@ B squeeze_deep(B x) {
   usz ia = IA(x);
   M_HARR(r, ia)
   B* xp = arr_bptr(x);
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   if (xp!=NULL) {
     for (usz i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(inc(xp[i]))); }
   } else {

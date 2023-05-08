@@ -424,7 +424,7 @@ B bqn_merge(B x, u32 type) {
     B xf = getFillE(x);
     if (isAtm(xf)) { dec(xf); return x; }
     i32 xfr = RNK(xf);
-    Arr* r = m_fillarrpEmpty(getFillQ(xf));
+    Arr* r = m_fillarrpEmpty(getFillR(xf));
     if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
     usz* rsh = arr_shAlloc(r, xr+xfr);
     if (rsh) {

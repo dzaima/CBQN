@@ -222,7 +222,7 @@ B transp_c2(B t, B w, B x) {
 
   // Empty result
   if (IA(x) == 0) {
-    Arr* ra = m_fillarrpEmpty(getFillQ(x));
+    Arr* ra = m_fillarrpEmpty(getFillR(x));
     shSet(ra, rr, sh);
     decG(x);
     r = taga(ra); goto ret;
@@ -281,7 +281,7 @@ B transp_c2(B t, B w, B x) {
     AXIS_LOOP(na, csz, mut_copyG(rm, i, x, j, csz));
     Arr* ra = mut_fp(rm);
     shSet(ra, rr, sh);
-    r = withFill(taga(ra), getFillQ(x));
+    r = withFill(taga(ra), getFillR(x));
     decG(x); goto ret;
   }
   #undef AXIS_LOOP

@@ -186,7 +186,7 @@ B variation_c2(B t, B w, B x) {
     else if (u8_get(&wp, wpE, "h"  )) res = taga(cpyHArr  (incG(x)));
     else if (u8_get(&wp, wpE, "f")) {
       Arr* r = m_fillarrp(xia);
-      fillarr_setFill(r, getFillQ(x));
+      fillarr_setFill(r, getFillR(x));
       arr_shCopy(r, x);
       COPY_TO(fillarr_ptr(r), el_B, 0, x, 0, xia);
       NOGC_E;
@@ -251,7 +251,7 @@ static B unshare(B x) {
     }
     case t_fillarr: case t_fillslice: {
       Arr* r = arr_shCopy(m_fillarr0p(xia), x);
-      fillarr_setFill(r, unshare(getFillQ(x)));
+      fillarr_setFill(r, unshare(getFillR(x)));
       B* rp = fillarr_ptr(r);
       B* xp = fillarr_ptr(a(x));
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);

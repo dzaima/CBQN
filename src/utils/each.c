@@ -118,9 +118,9 @@ B eachm_fn(B fo, B x, FC1 f) {
 
 #if CATCH_ERRORS
 B arith_recd(FC2 f, B w, B x) {
-  B fx = getFillQ(x);
+  B fx = getFillR(x);
   if (noFill(fx)) return eachd_fn(bi_N, w, x, f);
-  B fw = getFillQ(w);
+  B fw = getFillR(w);
   B r = eachd_fn(bi_N, w, x, f);
   if (noFill(fw)) { dec(fx); return r; }
   if (CATCH) { freeThrown(); return r; }

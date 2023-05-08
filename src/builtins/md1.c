@@ -39,7 +39,7 @@ static NOINLINE B homFil2(B f, B r, B wf, B xf) {
 
 B each_c1(Md1D* d, B x) { B f = d->f;
   B r, xf;
-  if (EACH_FILLS) xf = getFillQ(x);
+  if (EACH_FILLS) xf = getFillR(x);
   
   if (isAtm(x)) r = m_hunit(c1(f, x));
   else if (isFun(f)) r = eachm_fn(f, x, c(Fun,f)->c1);
@@ -103,8 +103,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   }
   B wf, xf;
   if (EACH_FILLS) {
-    assert(isArr(w)); wf=getFillQ(w);
-    assert(isArr(x)); xf=getFillQ(x);
+    assert(isArr(w)); wf=getFillR(w);
+    assert(isArr(x)); xf=getFillR(x);
     decG(w); decG(x);
     return homFil2(f, r, wf, xf);
   } else {
@@ -120,8 +120,8 @@ static B eachd(B f, B w, B x) {
 
 B each_c2(Md1D* d, B w, B x) { B f = d->f;
   if (!EACH_FILLS) return eachd(f, w, x);
-  B wf = getFillQ(w);
-  B xf = getFillQ(x);
+  B wf = getFillR(w);
+  B xf = getFillR(x);
   return homFil2(f, eachd(f, w, x), wf, xf);
 }
 

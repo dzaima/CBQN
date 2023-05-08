@@ -84,7 +84,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   Arr* r = m_fillarr0p(ria);
   B* rp = fillarr_ptr(r);
   
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   Arr* rf = m_fillarrpEmpty(xf);
   if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
   
@@ -297,8 +297,7 @@ B group_c2(B t, B w, B x) {
       for (usz i = 0; i < xn; i++) len[o2i64G(GetU(w, i))]++;
       
       Arr* r = m_fillarr0p(ria);
-      B xf = getFillQ(x);
-      incBy(xf, ria);
+      B xf = incBy(getFillN(x), ria+1);
       B* rp = fillarr_ptr(r);
       for (usz i = 0; i < ria; i++) {
         Arr* c = m_fillarrp(len[i]);

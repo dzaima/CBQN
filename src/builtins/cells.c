@@ -61,11 +61,9 @@ B insert_base(B f, B x, usz xia, bool has_w, B w) {
   i32 fullCellFills = 2*CATCH_ERRORS;
   i32 cellFillErrored = 0;
   #define DO_CELL_CATCH (fullCellFills==2)
-  #define getFillQ2 (fullCellFills? getFillR : getFillQ)
   #define SET_FILL_ERRORED cellFillErrored = 1
 #else
   #define DO_CELL_CATCH CATCH_ERRORS
-  #define getFillQ2 getFillQ
   #define SET_FILL_ERRORED
 #endif
 
@@ -261,7 +259,7 @@ static NOINLINE B transp_cells(ur ax, ur k, B x) {
 
 // helpers
 static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
-  B xf = getFillQ2(x);
+  B xf = getFillR(x);
   if (noFill(xf)) xf = m_f64(0);
   ur cr = RNK(x)-k;
   usz* sh = SH(x)+k;
@@ -279,7 +277,7 @@ static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
 static NOINLINE B merge_fill_result(B rc, ur k, usz* sh, u32 chr) {
   u64 rr = k; if (isArr(rc)) rr+= RNK(rc);
   if (rr>UR_MAX) thrF("%c: Result rank too large", chr);
-  Arr* r = m_fillarrpEmpty(getFillQ2(rc));
+  Arr* r = m_fillarrpEmpty(getFillR(rc));
   usz* rsh = arr_shAlloc(r, rr);
   if (rr>1) {
     shcpy(rsh, sh, k);

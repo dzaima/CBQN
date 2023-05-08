@@ -21,7 +21,7 @@ B asFill(B x) { // consumes
     for (usz i = 0; i < ia; i++) {
       if (noFill(HARR_ADD(r, i, asFill(Get(x,i))))) { HARR_ABANDON(r); decG(x); return bi_noFill; }
     }
-    B xf = getFillQ(x);
+    B xf = getFillR(x);
     return withFill(HARR_FCD(r, x), xf);
   }
   if (isF64(x)) return m_i32(0);

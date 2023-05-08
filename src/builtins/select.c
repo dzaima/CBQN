@@ -163,7 +163,7 @@ B select_c2(B t, B w, B x) {
     goto setsh;
   }
   
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   usz xn = *SH(x);
   if (xn==0) goto base;
   usz csz = arr_csz(x);

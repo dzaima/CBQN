@@ -203,7 +203,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
         for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
           for (usz j = 0; j < csz; j++) HARR_ADDA(rp, Get(x,i*csz+j));
         }
-        return withFill(HARR_FV(rp), getFillQ(x));
+        return withFill(HARR_FV(rp), getFillR(x));
       }
       
       rh = m_harrUv(ria);
@@ -213,7 +213,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) {
     if (is_B) {
       for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
       NOGC_E;
-      r = withFill(rh.b, getFillQ(x));
+      r = withFill(rh.b, getFillR(x));
       a(r)->ia = wsum; // Shape-setting code at end of compress expects this
     }
   } else { // Bits
@@ -492,7 +492,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     case 6:
       if (TI(x,elType)!=el_B) { BLOCK_OR_GROUPED(u64) }
       else {
-        B xf = getFillQ(x);
+        B xf = getFillR(x);
         B* xp = arr_bptr(x);
         if (xp!=NULL) {
           COMPRESS_BLOCK_PREP(B, HArr_p rh = m_harrUv(wsum); B *rp = rh.a;);
@@ -684,7 +684,7 @@ B slash_c2(B t, B w, B x) {
     if (RARE(TI(x,elType)==el_B)) { // Slow case
       arrW_base:
       SLOW2("𝕨/𝕩", w, x);
-      B xf = getFillQ(x);
+      B xf = getFillR(x);
       usz csz = arr_csz(x);
       MAKE_MUT_INIT(r0, s*csz, TI(x,elType)); MUTG_INIT(r0);
       SGetU(w)
@@ -765,7 +765,7 @@ B slash_c2(B t, B w, B x) {
     if (xlen == 0) return x;
     usz s = xlen * wv;
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
-      B xf = getFillQ(x);
+      B xf = getFillR(x);
       if (xr!=1) {
         MAKE_MUT_INIT(r0, IA(x) * wv, TI(x,elType)); MUTG_INIT(r0);
         usz csz = arr_csz(x);

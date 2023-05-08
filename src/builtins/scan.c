@@ -213,7 +213,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   }
   base:;
   SLOW2("𝕎` 𝕩", f, x);
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   
   bool reuse = TY(x)==t_harr && reusable(x);
   HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
@@ -277,7 +277,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   }
   base:;
   SLOW3("𝕨 F` 𝕩", w, x, f);
-  B wf = getFillQ(w);
+  B wf = getFillR(w);
   
   bool reuse = (TY(x)==t_harr && reusable(x)) | !ia;
   usz i = 0;

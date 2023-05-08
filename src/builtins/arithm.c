@@ -6,7 +6,7 @@
 #include <math.h>
 
 static inline B arith_recm(FC1 f, B x) {
-  B fx = getFillQ(x);
+  B fx = getFillR(x);
   B r = eachm_fn(bi_N, x, f);
   return withFill(r, fx);
 }

@@ -5,7 +5,7 @@
 #include "../builtins.h"
 
 NOINLINE Arr* emptyArr(B x, ur xr) {
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   if (xr==1) {
     if (isF64(xf)) return a(emptyIVec());
     if (noFill(xf)) return a(emptyHVec());
@@ -251,12 +251,12 @@ B shape_c2(B t, B w, B x) {
         if (bi == 1) { memset(rp, rp[0], bf); bi=bf; }
       } else {
         if (TI(x,elType) == el_B) {
-          B xf = getFillQ(x);
           MAKE_MUT_INIT(m, nia, el_B); MUTG_INIT(m);
           i64 div = nia/xia;
           i64 mod = nia%xia;
           for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
           mut_copyG(m, div*xia, x, 0, mod);
+          B xf = getFillR(x);
           decG(x);
           return withFill(taga(arr_shSetUO(mut_fp(m), nr, sh)), xf);
         }
@@ -682,7 +682,6 @@ B join_c1(B t, B x) {
     }
     ur ir = RNK(xf);
     if (ir<xr) thrF("∾: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
-    B xff = getFillQ(xf);
     HArr_p r = m_harrUp(0);
     usz* sh = arr_shAlloc((Arr*)r.c, ir);
     if (sh) {
@@ -694,13 +693,14 @@ B join_c1(B t, B x) {
       }
       shcpy(sh+xr, fsh+xr, ir-xr);
     }
+    B xff = getFillR(xf);
     dec(xf); decG(x);
     return withFill(r.b, xff);
 
   } else if (xr==1) {
     SGetU(x)
     B x0 = GetU(x,0);
-    B rf; if(SFNS_FILLS) rf = getFillQ(x0);
+    B rf; if(SFNS_FILLS) rf = getFillR(x0);
     ur rm = isAtm(x0) ? 0 : RNK(x0); // Maximum element rank seen
     ur rr = rm;      // Result rank, or minimum possible so far
     ur rd = 0;       // Difference of max and min lengths (0 or 1)
@@ -760,7 +760,7 @@ B join_c1(B t, B x) {
   } else {
     SGetU(x)
     B x0 = GetU(x,0);
-    B rf; if(SFNS_FILLS) rf = getFillQ(x0);
+    B rf; if(SFNS_FILLS) rf = getFillR(x0);
     ur r0 = isAtm(x0) ? 0 : RNK(x0);
 
     usz xia = IA(x);
@@ -1090,7 +1090,7 @@ B reverse_c1(B t, B x) {
         else { SGet(x) for (usz i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
         NOGC_E;
         r = rp.b;
-        B xf = getFillQ(x);
+        B xf = getFillR(x);
         decG(x);
         return withFill(r, xf);
       }
@@ -1098,7 +1098,7 @@ B reverse_c1(B t, B x) {
     decG(x);
     return r;
   }
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   SLOW1("⌽𝕩", x);
   usz csz = arr_csz(x);
   usz cam = SH(x)[0];
@@ -1212,20 +1212,20 @@ B reverse_c2(B t, B w, B x) {
   MAKE_MUT_INIT(r, xia, TI(x,elType)); MUTG_INIT(r);
   mut_copyG(r, 0, x, am, xia-am);
   mut_copyG(r, xia-am, x, 0, am);
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   return withFill(mut_fcd(r, x), xf);
 }
 
 
 B pick_uc1(B t, B o, B x) { // TODO do in-place like pick_ucw; maybe just call it?
   if (isAtm(x) || IA(x)==0) return def_fn_uc1(t, o, x);
-  B xf = getFillQ(x);
   usz ia = IA(x);
   B arg = IGet(x, 0);
   B rep = c1(o, arg);
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(rep))); MUTG_INIT(r);
   mut_setG(r, 0, rep);
   mut_copyG(r, 1, x, 1, ia-1);
+  B xf = getFillR(x);
   return qWithFill(mut_fcd(r, x), xf);
 }
 
@@ -1242,7 +1242,7 @@ B pick_ucw(B t, B o, B w, B x) {
       xp = fillarr_ptr(a(x));
     } else {
       Arr* x2 = m_fillarrp(xia);
-      fillarr_setFill(x2, getFillQ(x));
+      fillarr_setFill(x2, getFillR(x));
       xp = fillarr_ptr(x2);
       COPY_TO(xp, el_B, 0, x, 0, xia);
       NOGC_E;
@@ -1271,7 +1271,7 @@ B pick_ucw(B t, B o, B w, B x) {
   mut_setG(r, wi, rep);
   mut_copyG(r, 0, x, 0, wi);
   mut_copyG(r, wi+1, x, wi+1, xia-wi-1);
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   return qWithFill(mut_fcd(r, x), xf);
 }
 
