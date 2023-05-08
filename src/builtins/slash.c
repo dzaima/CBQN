@@ -829,11 +829,11 @@ B slash_c2(B t, B w, B x) {
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
       #if SINGELI_AVX2
-      #define CASE(L,T) case L: constrep_##T(wv, xv, rv, xlen); break;
+      simd_constrep[xk](wv, xv, rv, xlen);
       #else
       #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
-      #endif
       switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
+      #endif
       #undef CASE
     }
     if (xr > 1) {

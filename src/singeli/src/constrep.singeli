@@ -180,5 +180,4 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   }
 }
 
-export{'constrep_u8',  rep_const{i8 }}; export{'constrep_u16', rep_const{i16}}
-export{'constrep_u32', rep_const{i32}}; export{'constrep_u64', rep_const{u64}}
+exportT{'simd_constrep', each{rep_const, tup{i8, i16, i32, u64}}}
