@@ -309,7 +309,7 @@ static B where(B x, usz xia, u64 s) {
 }
 
 // Is the number of values switches in w at most max?
-static bool groups_lt(u64* wp, usz len, usz max) {
+static NOINLINE bool groups_lt(u64* wp, usz len, usz max) {
   usz r = 0;
   u64 prev = 0;
   usz l = (len-1)/64+1;  // assume trailing bits are zeroed out
