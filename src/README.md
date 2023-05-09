@@ -86,13 +86,13 @@ Type checks (all are safe to execute on any B object):
   isObj(x)     OBJ_TAG  internal        yes
   and then there are some extra types for variable slot references for the VM & whatever; see h.h *_TAG definitions
 
-Functions for converting/using basic types:
+Functions for converting/using atom types:
   m_f64(x)  // f64 → B
   m_c32(x)  // codepoint → B
   m_i32(x)  // i32 → B
   m_usz(x)  // usz → B
   
-  // convert B to a basic type (first one errors on invalid, second assumes the conversion is doable losslessly):
+  // convert B to an atom type (first one errors on invalid, second assumes the conversion is doable losslessly):
   o2b(x)   o2bG(x)   // bool
   o2i(x)   o2iG(x)   // i32
   o2c(x)   o2cG(x)   // c32
@@ -114,17 +114,43 @@ Functions for converting/using basic types:
   noFill(x)    // query if x represents undefined fill (which returned by getFill*; aka test if equal to bi_noFill)
   tag(x,*_TAG) // pointer → B
 
+type field for heap-allocated objects:
+  // note that this is distinct from the tag; use TY(x) / PTY(x) to read this field
+  t_empty // empty bucket; EmptyValue
+  t_funBI, t_md1BI, t_md2BI // function/1-modifier/2-modifier builtins; BFn, BMd1, BMd2
+  t_funBl, t_md1Bl, t_md2Bl // function/1-modifier/2-modifier blocks; FunBlock, Md1Block, Md2Block
+  t_shape // shape object
+  
+  t_fork, t_atop // (F G H), (F G); Fork, Atop
+  t_md1D, t_md2D, t_md2H // (F _m), (F _m_ G), unused (_m_ G); Md1D, Md2D, Md2H
+  
+  t_harr // array with generic items and no fill; HArr
+  t_fillarr // array with generic items and a fill; FillArr
+  t_bitarr, t_i8arr, t_i16arr, t_i32arr, t_c8arr, t_c16arr, t_c32arr, t_f64arr // arrays with typed elements; TyArr
+  t_hslice, t_fillslice, t_i8slice, t_i16slice, t_i32slice, t_c8slice, t_c16slice, t_c32slice, t_f64slice // slice types of the above (except bitarr!); Slice, TySlice, HSlice, FillSlice
+  
+  t_mmapH // mmap-ped data; MmapHolder
+  t_harrPartial // partially-written HArr
+  t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks // various compiled object things; see vm.h/vm.c
+  t_fldAlias, t_arrMerge, t_vfyObj // various mutation target data holders; see vm.h/vm.c
+  t_ns, t_nsDesc // namespace, namespace descriptor; NS, NSDesc
+  t_nfn, t_nfnDesc // native function, native function descriptor; NFn/NFnDesc
+  t_ffiType // FFI data object; BQNFFIType
+  t_customObj // type with dynamic visit & free methods; CustomObj
+  t_arbObj // generic arbitrary heap-allocated object
+  t_talloc, t_temp // temporary allocation types; multiple uses
+  t_hashmap // hashmap
+  t_freed // object mid-freeing during GC
+  t_invalid // placeholder type for places where a type shouldn't be
+  
+  t_funWrap, t_md1Wrap, t_md2Wrap // types wrapping builtins for RT_WRAP; see rtwrap.c
+
 See src/h.h for more basics
 ```
-
-
-All heap-allocated objects have a type - `t_i32arr`, `t_f64slice`, `t_funBl`, `t_temp`, etc. Full list is at `#define FOR_TYPE` in `src/h.h`.
 
 An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
 
 A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`.
-
-`TY(x)` / `PTY(x)` givs you the type of an object (one of `t_whatever`), which is used to dynamically determine how to interpret an object. Note that the type is separate from the tag used for NaN-boxing.
 
 The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will free the object if the refcount as a result goes to zero. `incBy` / `incByG` offset the reference count by the specified amount, but will not free the object if it results in a reference count of zero.
 
