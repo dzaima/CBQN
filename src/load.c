@@ -399,7 +399,12 @@ void load_init() { // very last init function
   B frtObj = m_caB(RT_LEN, fruntime);
   
   #ifndef NO_RT
-    B provide[] = {bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch};
+    B provide[] = {
+      /* actual provide: */
+      bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch
+      /* result list from commented-out •Out line in cc.bqn: */,
+      bi_root,bi_not,bi_and,bi_or,bi_feq,bi_couple,bi_shifta,bi_shiftb,bi_reverse,bi_transp,bi_gradeUp,bi_gradeDown,bi_indexOf,bi_count,bi_memberOf,bi_cell,bi_rank
+    };
     #ifndef ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
@@ -411,7 +416,11 @@ void load_init() { // very last init function
     #endif
     
     Block* runtime_b = load_compImport("(self-hosted runtime1)",
-      #include PRECOMPILED_FILE(runtime1)
+      #if ALL_R0 || ALL_R1 || NO_EXTENDED_PROVIDE || RT_VERIFY || !__has_include(PRECOMPILED_FILE(runtime1x))
+        #include PRECOMPILED_FILE(runtime1)
+      #else
+        #include PRECOMPILED_FILE(runtime1x)
+      #endif
     );
     
     #ifdef ALL_R0

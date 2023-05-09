@@ -10,5 +10,6 @@ CC ← {𝕨 •FChars (⟨1,bqnSrc⟩∾(rtSrc/⟨"-i"⟩)∾⟨𝕩⟩) •Imp
 (outputPath•file.At "gen/compiles" )CC"cc"
 (outputPath•file.At "gen/runtime0" )CC"r0"
 (outputPath•file.At "gen/runtime1" )CC"r1"
+(outputPath•file.At "gen/runtime1x")CC"r1x"
 (outputPath•file.At "gen/formatter")CC"f"
 (outputPath•file.At "gen/explain"  )CC"eu"
