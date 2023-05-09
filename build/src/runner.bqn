@@ -25,7 +25,7 @@ _runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
   "sh"‿dir‿cmd‿depf:
     t0 ← •MonoTime@
     Chdir @∾˜ •ToUTF8 dir
-    c‿o‿e ← •SH cmd
+    c‿o‿e ← •SH⎊{𝕊: ⟨'e',"",∾⟨"Failed to run ", ⊑cmd, ": ", •CurrentError@⟩⟩} cmd
     t1 ← •MonoTime@
     {
       0: @≡depf?
