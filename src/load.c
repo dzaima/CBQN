@@ -416,7 +416,7 @@ void load_init() { // very last init function
     #endif
     
     Block* runtime_b = load_compImport("(self-hosted runtime1)",
-      #if ALL_R0 || ALL_R1 || NO_EXTENDED_PROVIDE || RT_VERIFY || !__has_include(PRECOMPILED_FILE(runtime1x))
+      #if ALL_R0 || ALL_R1 || NO_EXTENDED_PROVIDE || RT_VERIFY
         #include PRECOMPILED_FILE(runtime1)
       #else
         #include PRECOMPILED_FILE(runtime1x)
