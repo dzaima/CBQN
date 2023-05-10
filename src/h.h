@@ -321,7 +321,7 @@ typedef struct Arr {
 
 #ifdef DEBUG
   NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]);
-  #define assert(X) do { if (!(X)) assert_fail(#X, __FILE__, __LINE__, __PRETTY_FUNCTION__); } while (0)
+  #define assert(X) do {if (!(X)) assert_fail(#X, __FILE__, __LINE__, __PRETTY_FUNCTION__);} while(0)
   B VALIDATE(B x);
   Value* VALIDATEP(Value* x);
   #define UD assert(false)
@@ -331,7 +331,7 @@ typedef struct Arr {
   #define NOGC_S cbqn_NOGC_start()
   #define NOGC_E cbqn_noAlloc=false
 #else
-  #define assert(X) {if (!(X)) __builtin_unreachable();}
+  #define assert(X) do {if (!(X)) __builtin_unreachable();} while(0)
   #define VALIDATE(X) (X)
   #define VALIDATEP(X) (X)
   #define UD __builtin_unreachable()
