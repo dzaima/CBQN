@@ -367,7 +367,7 @@ FORCE_INLINE void preFree(Value* x, bool mmx) {
     if (!mmx) tailVerifyFree(x);
   #endif
   #ifdef DEBUG
-    if (x->type==t_empty) err("double-free");
+    if (x->type==t_empty) fatal("double-free");
     // u32 undef;
     // x->refc = undef;
     x->refc = -1431655000;

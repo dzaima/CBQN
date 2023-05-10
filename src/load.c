@@ -438,7 +438,7 @@ void load_init() { // very last init function
     
     
     
-    if (IA(rtObjRaw) != RT_LEN) err("incorrectly defined RT_LEN!");
+    if (IA(rtObjRaw) != RT_LEN) fatal("incorrectly defined RT_LEN!");
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
@@ -461,11 +461,11 @@ void load_init() { // very last init function
       #else
         bool nnbi = !rtComplete[i];
         #if !defined(WRAP_NNBI)
-        if (nnbi) err("Refusing to load non-native builtin into runtime without -DWRAP_NNBI");
+        if (nnbi) fatal("Refusing to load non-native builtin into runtime without -DWRAP_NNBI");
         #endif
         B r = nnbi? Get(rtObjRaw, i) : inc(fruntime[i]);
       #endif
-      if (q_N(r)) err("· in runtime!\n");
+      if (q_N(r)) fatal("· in runtime!\n");
       if (isVal(r)) v(r)->flags|= i+1;
       #if defined(RT_WRAP) || defined(WRAP_NNBI)
         r = rtWrap_wrap(r, nnbi);
@@ -598,21 +598,21 @@ B bqn_explain(B str, B path) {
 
 static void freed_visit(Value* x) {
   #if CATCH_ERRORS
-  err("visiting t_freed\n");
+  fatal("visiting t_freed\n");
   #endif
 }
-static void empty_free(Value* x) { err("FREEING EMPTY\n"); }
-static void builtin_free(Value* x) { err("FREEING BUILTIN\n"); }
+static void empty_free(Value* x) { fatal("FREEING EMPTY\n"); }
+static void builtin_free(Value* x) { fatal("FREEING BUILTIN\n"); }
 DEF_FREE(def) { }
-static void def_visit(Value* x) { err("undefined visit for object\n"); }
+static void def_visit(Value* x) { fatal("undefined visit for object\n"); }
 static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
-static B def_get(Arr* x, usz n) { err("def_get"); }
-static B def_getU(Arr* x, usz n) { err("def_getU"); }
+static B def_get(Arr* x, usz n) { fatal("def_get"); }
+static B def_getU(Arr* x, usz n) { fatal("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
-static Arr* def_slice(B x, usz s, usz ia) { err("cannot slice non-array!"); }
+static Arr* def_slice(B x, usz s, usz ia) { fatal("cannot slice non-array!"); }
 
 B rt_invFnReg, rt_invFnSwap;
 FC1 rt_invFnRegFn;
@@ -631,14 +631,14 @@ B def_m2_ix(Md2D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
 #ifdef DONT_FREE
 static B empty_get(Arr* x, usz n) {
   x->type = x->flags;
-  if (x->type==t_empty) err("getting from empty without old type data");
+  if (x->type==t_empty) fatal("getting from empty without old type data");
   B r = TIv(x,get)(x, n);
   x->type = t_empty;
   return r;
 }
 static B empty_getU(Arr* x, usz n) {
   x->type = x->flags;
-  if (x->type==t_empty) err("getting from empty without old type data");
+  if (x->type==t_empty) fatal("getting from empty without old type data");
   B r = TIv(x,getU)(x, n);
   x->type = t_empty;
   return r;

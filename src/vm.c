@@ -1167,7 +1167,7 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   void* mem = calloc(sz+ps, 1);
   #else
   void* mem = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-  if (*curr == MAP_FAILED) err("Failed to allocate stack");
+  if (*curr == MAP_FAILED) fatal("Failed to allocate stack");
   #endif
   *curr = *start = mem;
   *end = ((char*)*start)+sz;
@@ -1536,7 +1536,7 @@ static bool isPathREPL(B path) {
   return isArr(path) && IA(path)==1 && IGetU(path,0).u==m_c32('.').u;
 }
 usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
-  if (profiler_mode!=1) err("profiler_getResults called on mode!=1");
+  if (profiler_mode!=1) fatal("profiler_getResults called on mode!=1");
   Profiler_ent* c = profiler_buf_s;
   
   B compList = emptyHVec();
@@ -1629,7 +1629,7 @@ void profiler_displayResults(void) {
     gsc_exec_inplace(utf8Decode0("profilerResult←•args⋄@"), bi_N, r);
     printf("wrote result to profilerResult\n");
 #endif
-  } else err("profiler_displayResults called with unexpected active mode");
+  } else fatal("profiler_displayResults called with unexpected active mode");
 }
 #else
 bool profiler_alloc() {
@@ -1678,7 +1678,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
   #if DEBUG
-    if (cbqn_noAlloc && !gc_depth) err("throwing during noAlloc");
+    if (cbqn_noAlloc && !gc_depth) fatal("throwing during noAlloc");
   #endif
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if CATCH_ERRORS
@@ -1691,7 +1691,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     unwindEnv(envStart + cf->envDepth - 1);
     
     
-    if (cfStart+cf->cfDepth > cf) err("bad catch cfDepth");
+    if (cfStart+cf->cfDepth > cf) fatal("bad catch cfDepth");
     cf = cfStart+cf->cfDepth;
     longjmp(cf->jmp, 1);
   } else { // uncaught error
@@ -1729,6 +1729,6 @@ NOINLINE NORETURN void thrM(char* s) {
   thr(utf8Decode0(s));
 }
 NOINLINE NORETURN void thrOOM() {
-  if (oomMessage.u==0) err("out-of-memory encountered before out-of-memory error message object was initialized");
+  if (oomMessage.u==0) fatal("out-of-memory encountered before out-of-memory error message object was initialized");
   thr(incG(oomMessage));
 }

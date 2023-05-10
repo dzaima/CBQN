@@ -9,13 +9,13 @@ static u64 vg_getDefined_u64(u64 x) { // for each bit, returns whether it is def
   u64 r;
   i32 v = VALGRIND_GET_VBITS(&x, &r, 8);
   if(v==0) return ~0ULL; // don't do weird stuff if not on valgrind
-  if (v!=1) err("unexpected VALGRIND_GET_VBITS result");
+  if (v!=1) fatal("unexpected VALGRIND_GET_VBITS result");
   return ~r;
 }
 static u64 vg_withDefined_u64(u64 x, u64 where) {
   where = ~where;
   i32 v = VALGRIND_SET_VBITS(&x, &where, 8);
-  if (v>1) err("unexpected VALGRIND_SET_VBITS result");
+  if (v>1) fatal("unexpected VALGRIND_SET_VBITS result");
   return x;
 }
 static u64 vg_undef_u64(u64 x) {

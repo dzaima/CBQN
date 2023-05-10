@@ -59,7 +59,7 @@ B vg_validateResult(B x) {
         if ((got&exp) != exp) {
           printf("Expected %d defined trailing bits, got:\n", left);
           vg_printDefined_u64(NULL, last);
-          err("");
+          fatal("");
         }
       }
     } else {
@@ -74,7 +74,7 @@ B vg_validateResult(B x) {
   if (VALGRIND_CHECK_MEM_IS_DEFINED(data, len)) {
     printf("Expected "N64d" defined bytes, got:\n", len);
     vg_printDump_p(NULL, data, len);
-    err("");
+    fatal("");
   }
   return x;
 }
@@ -99,7 +99,7 @@ NOINLINE u64 vg_loadLUT64(u64* p, u64 i) {
   
   i32 undefCount = POPC(unk);
   if (undefCount>0) {
-    if (undefCount>8) err("too many unknown bits in index of vg_loadLUT64");
+    if (undefCount>8) fatal("too many unknown bits in index of vg_loadLUT64");
     res = vg_withDefined_u64(res, loadMask(p, unk, res, i & ~unk, 1));
   }
   #if DBG_VG_OVERRIDES
@@ -132,7 +132,7 @@ NOINLINE u64 vg_pext_u64(u64 src, u64 mask) {
 }
 
 NOINLINE u64 vg_pdep_u64(u64 src, u64 mask) {
-  if (0 != ~vg_getDefined_u64(mask)) err("pdep impl assumes mask is defined everywhere");
+  if (0 != ~vg_getDefined_u64(mask)) fatal("pdep impl assumes mask is defined everywhere");
   u64 c = src;
   u64 r = 0;
   for (i32 i = 0; i < 64; i++) {

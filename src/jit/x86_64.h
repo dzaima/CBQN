@@ -171,8 +171,8 @@ static const u8 cL  = 0xC; static const u8 cGE = 0xD;
 static const u8 cLE = 0xE; static const u8 cG  = 0xF;
 #define J1(T, L) u64 L=ASM_SIZE; { ASMS;            ASM1((i8)(0x70+(T)));ASM1(-2);ASME; } // -2 comes from the instruction being 2 bytes long and L being defined at the start
 #define J4(T, L) u64 L=ASM_SIZE; { ASMS; ASM1(0x0f);ASM1((i8)(0x80+(T)));ASM4(-6);ASME; }
-#define LBL1(L) { i64 t=    (i8)asm_ins.s[L+1]  + ASM_SIZE-(i64)L; if(t!=(i8 )t) err("x86-64 codegen: jump too long!"); asm_ins.s[L+1] = t; }
-#define LBL4(L) { i64 t=asm_r4(asm_ins.s+(L+2)) + ASM_SIZE-(i64)L; if(t!=(i32)t) err("x86-64 codegen: jump too long!"); asm_w4(asm_ins.s+(L+2), t); }
+#define LBL1(L) { i64 t=    (i8)asm_ins.s[L+1]  + ASM_SIZE-(i64)L; if(t!=(i8 )t) fatal("x86-64 codegen: jump too long!"); asm_ins.s[L+1] = t; }
+#define LBL4(L) { i64 t=asm_r4(asm_ins.s+(L+2)) + ASM_SIZE-(i64)L; if(t!=(i32)t) fatal("x86-64 codegen: jump too long!"); asm_w4(asm_ins.s+(L+2), t); }
 
 #define ASMS u8* ic=asm_ins.c
 #define ASME asm_ins.c = ic; asm_r()

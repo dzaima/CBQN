@@ -62,7 +62,7 @@ static void harrP_visit(Value* x) { assert(PTY(x) == t_harrPartial);
   usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
-static B harrP_get(Arr* x, usz n) { err("getting item from t_harrPartial"); }
+static B harrP_get(Arr* x, usz n) { fatal("getting item from t_harrPartial"); }
 static void harrP_print(FILE* f, B x) {
   B* p = c(HArr,x)->a;
   usz am = *SH(x);

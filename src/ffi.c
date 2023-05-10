@@ -972,7 +972,7 @@ void ffi_init(void) {
 #else // i.e. FFI==0
 #if !FOR_BUILD
   void ffi_init() { }
-  B ffiload_c2(B t, B w, B x) { err("•FFI called"); }
+  B ffiload_c2(B t, B w, B x) { fatal("•FFI called"); }
 #else // whatever build.bqn uses from •FFI
   #include "nfns.h"
   #include "utils/cstr.h"
@@ -982,7 +982,7 @@ void ffi_init(void) {
   NFnDesc* forbuildDesc;
   B forbuild_c1(B t, B x) {
     i32 id = o2i(nfn_objU(t));
-    switch (id) { default: err("bad id");
+    switch (id) { default: fatal("bad id");
       case 0: {
         char* s = toCStr(x);
         decG(x);

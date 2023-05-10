@@ -9,23 +9,24 @@ bool please_tail_call_err = true;
 
 void before_exit(void);
 bool inErr;
-NORETURN NOINLINE void err(char* s) {
+NORETURN NOINLINE void fatal(char* s) {
   NOGC_E;
   #if MM!=0
     gc_depth=1;
   #endif
   if (inErr) {
-    fputs("\nCBQN encountered fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
+    fputs("\nCBQN encountered a fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
     #ifdef DEBUG
       __builtin_trap();
     #endif
     exit(1);
   }
   inErr = true;
-  fputs(s, stderr); fputc('\n', stderr); fflush(stderr);
+  fputs("CBQN encountered a fatal error: ", stderr); fflush(stderr);
+  fputs(s, stderr); fflush(stderr);
+  fputc('\n', stderr); fflush(stderr);
   vm_pstLive(); fflush(stderr); fflush(stdout);
   print_vmStack(); fflush(stderr);
-  fputs("CBQN interpreter entered unexpected state, exiting.\n", stderr);
   before_exit();
   #ifdef DEBUG
     __builtin_trap();
@@ -221,7 +222,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
   while (*p != 0) { c = *p++;
     if (c!='%') continue;
     if (lp!=p-1) AJOIN(utf8Decode(lp, p-1-lp));
-    switch(c = *p++) { default: printf("Unknown format character '%c'", c); err(""); UD;
+    switch(c = *p++) { default: printf("Unknown format character '%c'", c); fatal(""); UD;
       case 'R': {
         B b = va_arg(a, B);
         if (isNum(b)) AFMT("%f", o2f(b));
@@ -238,7 +239,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         ur r;
         usz* sh;
         if (c=='2') {
-          if ('H' != *p++) err("Invalid format string: expected H after %2");
+          if ('H' != *p++) fatal("Invalid format string: expected H after %2");
           r = va_arg(a, int);
           sh = va_arg(a, usz*);
         } else {
@@ -512,7 +513,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
       PRINT_ID(x);
       fprintf(stderr, "bad refcount for type %d @ %p: %d\nattempting to print: ", x->type, x, x->refc); fflush(stderr);
       fprintI(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
-      err("");
+      fatal("");
     }
     if (TIv(x,isArr)) {
       Arr* a = (Arr*)x;
@@ -531,13 +532,13 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
       fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, TOPTR(void, x.u));
       PRINT_ID(v(x));
       fprintI(stderr, x);
-      err("\n");
+      fatal("\n");
     }
     return x;
   }
   NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]) {
     fprintf(stderr, "%s:%d: %s: Assertion `%s` failed.\n", file, line, fn, expr);
-    err("");
+    fatal("");
   }
 #endif
 #if WARN_SLOW

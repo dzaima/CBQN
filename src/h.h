@@ -327,7 +327,7 @@ typedef struct Arr {
   #define UD assert(false)
   extern bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
-  #define NOGC_CHECK if (cbqn_noAlloc && !gc_depth) err("allocating during noalloc");
+  #define NOGC_CHECK if (cbqn_noAlloc && !gc_depth) fatal("allocating during noalloc");
   #define NOGC_S cbqn_NOGC_start()
   #define NOGC_E cbqn_noAlloc=false
 #else
@@ -451,7 +451,7 @@ void print_vmStack(void);
   B validate(B x);
   Value* validateP(Value* x);
 #endif
-NORETURN NOINLINE void err(char* s);
+NORETURN NOINLINE void fatal(char* s);
 
 // tag checks
 FORCE_INLINE bool isFun(B x) { return (x.u>>48) == FUN_TAG; }

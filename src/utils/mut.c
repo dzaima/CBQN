@@ -129,7 +129,7 @@ B vec_join(B w, B x) {
   }                                           \
   static RT m_##N##G_##TY ARGS
 
-DEF_S(void, set, MAX, false,    x, (void* a, usz ms, B x), ms, x) { err("m_setG_MAX"); }
+DEF_S(void, set, MAX, false,    x, (void* a, usz ms, B x), ms, x) { fatal("m_setG_MAX"); }
 DEF_S(void, set, bit, q_bit(x), x, (void* a, usz ms, B x), ms, x) { bitp_set((u64*)a, ms, o2bG(x)); }
 DEF_S(void, set, i8,  q_i8 (x), x, (void* a, usz ms, B x), ms, x) { (( i8*)a)[ms] = o2iG(x); }
 DEF_S(void, set, i16, q_i16(x), x, (void* a, usz ms, B x), ms, x) { ((i16*)a)[ms] = o2iG(x); }
@@ -140,7 +140,7 @@ DEF_S(void, set, c32, q_c32(x), x, (void* a, usz ms, B x), ms, x) { ((u32*)a)[ms
 DEF_S(void, set, f64, q_f64(x), x, (void* a, usz ms, B x), ms, x) { ((f64*)a)[ms] = o2fG(x); }
 DEF_G(void, set, B,                (void* a, usz ms, B x), ms, x) { ((  B*)a)[ms] = x; }
 
-DEF_S(void, fill, MAX, false,    x, (void* a, usz ms, B x, usz l), ms, x, l) { err("m_fillG_MAX"); }
+DEF_S(void, fill, MAX, false,    x, (void* a, usz ms, B x, usz l), ms, x, l) { fatal("m_fillG_MAX"); }
 DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u64* p = (u64*)a; bool v = o2bG(x);
   usz me = ms+l;
   if (ms>>6 == me>>6) {
@@ -230,7 +230,7 @@ DEF_COPY(c32, { u32* rp = ms+(u32*)a; void* xp = tyany_ptr(x);
     case t_c32arr: case t_c32slice: PTR_COPY(u32, u32)
   }
 })
-DEF_E(void, copy, MAX, false, x, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { err("m_copyG_MAX"); }
+DEF_E(void, copy, MAX, false, x, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { fatal("m_copyG_MAX"); }
 NOINLINE void m_copyG_B_generic(void* a, B* mpo, B x, usz xs, usz l) {
   SLOW1("copyG", x);
   SGet(x)
@@ -269,7 +269,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   typedef void (*copy_fn)(void*, void*, u64, void*);
   
   static void badCopy(void* xp, void* rp, u64 len, void* xRaw) {
-    err("Copying wrong array type");
+    fatal("Copying wrong array type");
   }
   
   #define COPY_FN(X,R) simd_copy_##X##_##R
@@ -423,7 +423,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 #endif
 
 
-static B m_getU_MAX(void* a, usz ms) { err("m_setG_MAX"); }
+static B m_getU_MAX(void* a, usz ms) { fatal("m_setG_MAX"); }
 static B m_getU_bit(void* a, usz ms) { return m_i32(bitp_get(((u64*) a), ms)); }
 static B m_getU_i8 (void* a, usz ms) { return m_i32(((i8* ) a)[ms]); }
 static B m_getU_i16(void* a, usz ms) { return m_i32(((i16*) a)[ms]); }
@@ -462,8 +462,8 @@ NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
 }
 
 #if DEBUG
-  void apd_dbg_apd(ApdMut* m, B x) { err("ApdMut default .apd invoked"); }
-  Arr* apd_dbg_end(ApdMut* m, u32 ty) { err("ApdMut default .end invoked"); }
+  void apd_dbg_apd(ApdMut* m, B x) { fatal("ApdMut default .apd invoked"); }
+  Arr* apd_dbg_end(ApdMut* m, u32 ty) { fatal("ApdMut default .end invoked"); }
 #endif
 
 void apd_widen(ApdMut* m, B x, ApdFn** fns);

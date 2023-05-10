@@ -37,7 +37,7 @@ B type_c1(B t, B x) {
   else if (isNsp(x)) r = 6;
   if (RARE(r==-1)) {
     if (x.u == bi_optOut.u) thrM("Reading variable that was optimized out by F↩ after error");
-    printI(x); err(": getting type");
+    printI(x); fatal(": getting type");
   }
   decR(x);
   return m_i32(r);
@@ -972,7 +972,7 @@ extern char** environ;
 #include <sys/wait.h>
 #include <poll.h>
 typedef struct pollfd pollfd;
-void shClose(int fd) { if (close(fd)) err("bad file descriptor close"); }
+void shClose(int fd) { if (close(fd)) fatal("bad file descriptor close"); }
 
 // #define shDbg(...) printf(__VA_ARGS__); fflush(stdout)
 #define shDbg(...)

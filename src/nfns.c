@@ -30,7 +30,7 @@ B nfn_name(B x) { VTY(x, t_nfn);
 DEF_FREE(nfn) { dec(((NFn*)x)->obj); }
 void nfn_visit(Value* x) { mm_visit(((NFn*)x)->obj); }
 void nfn_print(FILE* f, B x) { fprintsB(f, c(NFnDesc,IGetU(nfn_list,c(NFn,x)->id))->name); }
-DEF_FREE(nfnDesc) { err("nfnDesc shouldn't be freed!"); }
+DEF_FREE(nfnDesc) { fatal("nfnDesc shouldn't be freed!"); }
 void nfnDesc_visit(Value* x) { mm_visit(((NFnDesc*)x)->name); }
 void nfnDesc_print(FILE* f, B x) { fprintf(f, "(native function description)"); }
 

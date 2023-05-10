@@ -42,7 +42,7 @@ static void* mmap_nvm(u64 sz) {
   i32 attempt = 0;
   // printf("binary at %p\n", &bqn_exec);
   while(true) {
-    if (attempt++ > 200) err("Failed to allocate memory for JIT 200 times; stopping trying");
+    if (attempt++ > 200) fatal("Failed to allocate memory for JIT 200 times; stopping trying");
     u64 randOff = wyrand(&nvm_mmap_seed) & (MAX_DIST>>1)-1;
     u64 loc = near+randOff & ~(ps-1);
     // printf("request %d: %p\n", attempt, (void*)loc);
@@ -304,7 +304,7 @@ static OptRes opt(u32* bc0) {
     u8 cact = 0;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
-    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: err("optimization: didn't expect already immediate FN__");
+    switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: fatal("optimization: didn't expect already immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
       case POPS: { assert(TSSIZE(actions) > 0);
         u64 asz = TSSIZE(actions);
@@ -366,7 +366,7 @@ static OptRes opt(u32* bc0) {
       }
       case TR3D: case TR3O: { S(f,0) S(g,1) S(h,2)
         if (f.p==-1 | g.p==-1 | h.p==-1) goto defIns;
-        if (q_N(f.v)) err("JIT optimization: didn't expect constant ·");
+        if (q_N(f.v)) fatal("JIT optimization: didn't expect constant ·");
         B d = m_fork(inc(f.v), inc(g.v), inc(h.v));
         cact = 5; RM(f.p); RM(g.p); RM(h.p);
         TSADD(data, d.u);
@@ -680,7 +680,7 @@ Nvm_res m_nvm(Body* body) {
       case DFND0: case DFND1: case DFND2: TOPs; // (u32* bc, Scope* sc, Block* bl)
         Block* bl = (Block*)L64;
         u64 fn = (u64)(bl->ty==0? i_DFND_0 : bl->ty==1? i_DFND_1 : bl->ty==2? i_DFND_2 : NULL);
-        if (fn==0) err("JIT: Bad DFND argument");
+        if (fn==0) fatal("JIT: Bad DFND argument");
         GET(R_A3,-1,2);
         IMM(R_A0,off); MOV(R_A1,r_SC); IMM(R_A2,bl); CCALL(fn);
         break;
@@ -726,7 +726,7 @@ Nvm_res m_nvm(Body* body) {
       case RETD: if (lGPos!=0) GS_SET(r_CS); MOV(R_A0,r_SC); CCALL(i_RETD); ret=true; break; // (Scope* sc)
       case RETN: if (lGPos!=0) GS_SET(r_CS);                                ret=true; break;
       case FAIL: TOPs; IMM(R_A0,off); MOV(R_A1,r_SC);      INV(2,0,i_FAIL); ret=true; break;
-      default: print_fmt("JIT: Unsupported bytecode %i/%S\n", *s, bc_repr(*s)); err("");
+      default: print_fmt("JIT: Unsupported bytecode %i/%S\n", *s, bc_repr(*s)); fatal("");
     }
     #undef GET
     #undef GS_SET
@@ -739,7 +739,7 @@ Nvm_res m_nvm(Body* body) {
     #undef INV
     #undef SPOS
     #undef L64
-    if (n!=bc) err("JIT: Wrong parsing of bytecode");
+    if (n!=bc) fatal("JIT: Wrong parsing of bytecode");
     depth+= stackDiff(s);
     if (ret) break;
   }

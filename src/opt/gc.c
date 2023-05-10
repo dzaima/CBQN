@@ -14,7 +14,7 @@ u64 gc_depth = 1;
 vfn gc_roots[8];
 u32 gc_rootSz;
 void gc_addFn(vfn f) {
-  if (gc_rootSz>=8) err("Too many GC root functions");
+  if (gc_rootSz>=8) fatal("Too many GC root functions");
   gc_roots[gc_rootSz++] = f;
 }
 
@@ -22,13 +22,13 @@ Value* gc_rootObjs[512];
 u32 gc_rootObjSz;
 void gc_add(B x) {
   assert(isVal(x));
-  if (gc_rootObjSz>=512) err("Too many GC root objects");
+  if (gc_rootObjSz>=512) fatal("Too many GC root objects");
   gc_rootObjs[gc_rootObjSz++] = v(x);
 }
 
 B* gc_rootBRefs[64]; u32 gc_rootBRefsSz;
 void gc_add_ref(B* x) {
-  if (gc_rootBRefsSz>=64) err("Too many GC root B refs");
+  if (gc_rootBRefsSz>=64) fatal("Too many GC root B refs");
   gc_rootBRefs[gc_rootBRefsSz++] = x;
 }
 
@@ -49,7 +49,7 @@ void gc_visitRoots() {
 static void gc_tryFree(Value* v) {
   u8 t = v->type;
   #if defined(DEBUG) && !defined(CATCH_ERRORS)
-    if (t==t_freed) err("GC found t_freed\n");
+    if (t==t_freed) fatal("GC found t_freed\n");
   #endif
   if (t!=t_empty && !(v->mmInfo&0x80)) {
     if (t==t_shape || t==t_temp || t==t_talloc) return;
@@ -90,7 +90,7 @@ void gc_onVisit(Value* x) {
   switch (visit_mode) { default: UD;
     case GC_DEC_REFC:
       #if DEBUG
-        if(x->refc==0) err("decrementing refc 0");
+        if(x->refc==0) fatal("decrementing refc 0");
       #endif
       x->refc--;
       return;
