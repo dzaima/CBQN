@@ -1,7 +1,6 @@
 #include "../core.h"
 #include "../utils/calls.h"
 
-#define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 NOINLINE i32 compareF(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
   if (isC32(w) & isNum(x)) return  1;
@@ -23,7 +22,7 @@ NOINLINE i32 compareF(B w, B x) {
   ur wr=RNK(w); usz* wsh=SH(w);
   ur xr=RNK(x); usz* xsh=SH(x);
   
-  i32 rc = CMP(wr, xr);
+  i32 rc = ICMP(wr, xr);
   ur rr = wr<xr? wr : xr;
   i32 ri = 0; // matching shape tail
   usz rm = 1;
@@ -34,14 +33,14 @@ NOINLINE i32 compareF(B w, B x) {
   if (ri<rr) {
     usz wm = wsh[wr-1-ri];
     usz xm = xsh[xr-1-ri];
-    rc = CMP(wm, xm);
+    rc = ICMP(wm, xm);
     rm*= wm<xm? wm : xm;
   }
   
   usz wia = IA(w);
   usz xia = IA(x);
   if (wia==0 || xia==0) {
-    i32 rc2 = CMP(wia, xia);
+    i32 rc2 = ICMP(wia, xia);
     return rc2!=0? rc2 : rc;
   }
   
@@ -53,7 +52,6 @@ NOINLINE i32 compareF(B w, B x) {
   }
   return rc;
 }
-#undef CMP
 
 NOINLINE bool atomEqualF(B w, B x) {
   if (TY(w)!=TY(x)) return false;

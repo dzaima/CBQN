@@ -248,7 +248,7 @@ void noop_visit(Value* x);
   #define VISIT_SHAPE(X)
 #endif
 
-#define CMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
+#define ICMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 SHOULD_INLINE i32 compareFloat(f64 w, f64 x) {
   if (RARE(w!=w || x!=x)) return (w!=w) - (x!=x);
   #if __x86_64__
@@ -260,10 +260,9 @@ SHOULD_INLINE i32 compareFloat(f64 w, f64 x) {
 NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x
   if (isNum(w) & isNum(x)) return compareFloat(o2fG(w), o2fG(x));
-  if (isC32(w) & isC32(x)) return CMP(o2cG(w), o2cG(x));
+  if (isC32(w) & isC32(x)) return ICMP(o2cG(w), o2cG(x));
   return compareF(w, x);
 }
-#undef CMP
 
 NOINLINE bool atomEqualF(B w, B x);
 static bool atomEqual(B w, B x) { // doesn't consume
