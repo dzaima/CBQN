@@ -264,8 +264,7 @@ FORCE_INLINE B r_fB(f64 x) { return b(x); }
   /* 5*/ F(md2BI) F(md2Bl) \
   /* 7*/ F(shape) /* doesn't get visited in arrays, won't be freed by gc */ \
   \
-  /* 8*/ F(fork) F(atop) \
-  /*10*/ F(md1D) F(md2D) F(md2H) \
+  /* 8*/ F(fork) F(atop) F(md1D) F(md2D) \
   \
   /*13*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
   /*22*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \

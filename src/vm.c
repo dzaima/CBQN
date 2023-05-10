@@ -799,7 +799,6 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       
       case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
-      case MD2R: {     P(m)P(g) GS_UPD;         ADD(m2_h  (m,  g)); break; }
       case TR2D: {     P(g)P(h) GS_UPD;         ADD(m_atop(  g,h)); break; }
       case TR3D: { P(f)P(g)P(h) GS_UPD;         ADD(m_fork(f,g,h)); break; }
       case TR3O: { P(f)P(g)P(h) GS_UPD;

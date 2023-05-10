@@ -122,7 +122,7 @@ type field for heap-allocated objects:
   t_shape // shape object
   
   t_fork, t_atop // (F G H), (F G); Fork, Atop
-  t_md1D, t_md2D, t_md2H // (F _m), (F _m_ G), unused (_m_ G); Md1D, Md2D, Md2H
+  t_md1D, t_md2D // (F _m), (F _m_ G); Md1D, Md2D
   
   t_harr // array with generic items and no fill; HArr
   t_fillarr // array with generic items and a fill; FillArr

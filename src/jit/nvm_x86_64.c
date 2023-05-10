@@ -157,7 +157,6 @@ INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, s
 INS B i_DFND_2(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md2Block(bl, sc); }
 INS B i_MD1C(B f,B m,      u32* bc) { POS_UPD; return m1_d  (m,f  ); }
 INS B i_MD2C(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
-INS B i_MD2R(B m,     B g         ) {          return m2_h  (m,  g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
 INS B i_TR3O(B f,B g, B h         ) {          return q_N(f)? m_atop(g,h) : m_fork(f,g,h); }
@@ -687,8 +686,7 @@ Nvm_res m_nvm(Body* body) {
         break;
       case MD1C: TOPp; GET(R_A1,1,1);                IMM(R_A2,off); CCALL(i_MD1C); break; // (B f,B m,      u32* bc)
       case MD2C: TOPp; GET(R_A1,1,0); GET(R_A2,2,1); IMM(R_A3,off); CCALL(i_MD2C); break; // (B f,B m, B g, u32* bc)
-      case MD2R: TOPp; GET(R_A1,1,1);                               CCALL(i_MD2R); break; // (B m,     B g) // TODO these can actually error on OOM so should do something with bc/gStack
-      case TR2D: TOPp; GET(R_A1,1,1);                               CCALL(i_TR2D); break; // (B g,     B h)
+      case TR2D: TOPp; GET(R_A1,1,1);                               CCALL(i_TR2D); break; // (B g,     B h) // TODO these can actually error on OOM so should do something with bc/gStack
       case TR3D: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3D); break; // (B f,B g, B h)
       case TR3O: TOPp; GET(R_A1,1,0); GET(R_A2,2,1);                CCALL(i_TR3O); break; // (B f,B g, B h)
       case VARM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tagu64((u64)d<<32 | (u32)p, VAR_TAG).u); } break;
