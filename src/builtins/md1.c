@@ -153,12 +153,16 @@ static B md1BI_im(Md1D* d,      B x) { return ((BMd1*)d->m1)->im(d,    x); }
 static B md1BI_iw(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->iw(d, w, x); }
 static B md1BI_ix(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->ix(d, w, x); }
 
-B swap_im(Md1D* d, B x) { return isFun(d->f)? TI(d->f,fn_is)(d->f, x): def_fn_is(d->f, x); }
+B swap_im(Md1D* d,      B x) { return isFun(d->f)? TI(d->f,fn_is)(d->f,    x): def_fn_is(d->f,    x); }
+B swap_iw(Md1D* d, B w, B x) { return isFun(d->f)? TI(d->f,fn_ix)(d->f, w, x): def_fn_ix(d->f, w, x); }
+B swap_ix(Md1D* d, B w, B x) { return isFun(d->f)? TI(d->f,fn_iw)(d->f, w, x): def_fn_iw(d->f, w, x); }
 
 void md1_init(void) {
   TIi(t_md1BI,print) = print_md1BI;
   TIi(t_md1BI,m1_im) = md1BI_im;
   TIi(t_md1BI,m1_iw) = md1BI_iw;
   TIi(t_md1BI,m1_ix) = md1BI_ix;
+  c(BMd1,bi_swap)->iw = swap_iw;
+  c(BMd1,bi_swap)->ix = swap_ix;
   c(BMd1,bi_swap)->im = swap_im;
 }
