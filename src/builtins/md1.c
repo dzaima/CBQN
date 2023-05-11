@@ -136,8 +136,9 @@ B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
   if (am<=0) thrM("•_timed: 𝕨 must be an integer greater than 1");
   incBy(x, am);
+  FC1 fc1 = c1fn(f);
   u64 sns = nsTime();
-  for (i64 i = 0; i < am; i++) dec(c1(f, x));
+  for (i64 i = 0; i < am; i++) dec(fc1(f, x));
   u64 ens = nsTime();
   return m_f64((ens-sns)/(1e9*am));
 }

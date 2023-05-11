@@ -158,10 +158,10 @@ B compObj_c2(B t, B w, B x) {
 #if FORMATTER
 B load_fmt, load_repr;
 B bqn_fmt(B x) { // consumes
-  return c1(load_fmt, x);
+  return c1G(load_fmt, x);
 }
 B bqn_repr(B x) { // consumes
-  return c1(load_repr, x);
+  return c1G(load_repr, x);
 }
 #else
 B bqn_fmt(B x) {
@@ -187,7 +187,7 @@ B bqn_repr(B x) {
 
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   PUSH_COMP;
-  Block* r = load_compObj(c2(comp, incG(compArg), inc(str)), str, path, NULL);
+  Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   POP_COMP; popCatch();
   return r;
@@ -210,7 +210,7 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2G(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
   dec(path); dec(args);
   POP_COMP; popCatch();
   return r;
@@ -433,8 +433,8 @@ void load_init() { // very last init function
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
     dec(rtRes);
-    dec(c1(setPrims, m_hvec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
-    dec(c2(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
+    dec(c1G(setPrims, m_hvec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
+    dec(c2G(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
     
     

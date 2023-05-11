@@ -660,9 +660,9 @@ static B randNS;
 B getRandNS(void) {
   if (randNS.u == 0) {
     #if RANDSEED==0
-      randNS = c1(bi_makeRand, m_f64(nsTime()));
+      randNS = c1G(bi_makeRand, m_f64(nsTime()));
     #else
-      randNS = c1(bi_makeRand, m_f64(RANDSEED));
+      randNS = c1G(bi_makeRand, m_f64(RANDSEED));
     #endif
     gc_add(randNS);
   }

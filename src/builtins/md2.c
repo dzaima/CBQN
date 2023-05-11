@@ -128,8 +128,8 @@ B repeat_c2(Md2D* d, B w, B x) { REPEAT_T(c2,dec(w), inc(w), ); }
 #undef REPEAT_T
 
 
-NOINLINE B before_c1F(Md2D* d, B x, B f) { errMd(f); return c2(d->g, c(Fun,f)->c1(f,inc(x)), x); }
-NOINLINE B after_c1F (Md2D* d, B x, B g) { errMd(g); return c2(d->f, x, c(Fun,g)->c1(g,inc(x))); }
+NOINLINE B before_c1F(Md2D* d, B x, B f) { errMd(f); return c2(d->g, c1G(f,inc(x)), x); }
+NOINLINE B after_c1F (Md2D* d, B x, B g) { errMd(g); return c2(d->f, x, c1G(g,inc(x))); }
 B before_c1(Md2D* d, B x) { B f=d->f; return isCallable(f)? before_c1F(d, x, f) : c2(d->g, inc(f), x); }
 B after_c1 (Md2D* d, B x) { B g=d->g; return isCallable(g)? after_c1F (d, x, g) : c2(d->f, x, inc(g)); }
 B before_c2(Md2D* d, B w, B x) { return c2(d->g, c1I(d->f, w), x); }

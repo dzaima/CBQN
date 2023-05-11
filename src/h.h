@@ -686,9 +686,6 @@ typedef struct Fun {
 
 B c1F(B f, B x);
 B c2F(B f, B w, B x);
-
-#define c1rt(N,    X) ({           B x_=(X); SLOW1("!rt_" #N,   x_); c1(rt_##N,     x_); })
-#define c2rt(N, W, X) ({ B w_=(W); B x_=(X); SLOW2("!rt_" #N,w_,x_); c2(rt_##N, w_, x_); })
 static B c1(B f, B x) { // BQN-call f monadically; consumes x
   if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c1(f, VRES(x))));
   return c1F(f, x);
@@ -719,6 +716,11 @@ static B c2iWX(B f, B w, B x) { // c2 with inc(w), inc(x)
   errMd(f);
   return inc(f);
 }
+
+static B c1G(B f,      B x) { assert(isFun(f)); return c(Fun,f)->c1(f,    x); }
+static B c2G(B f, B w, B x) { assert(isFun(f)); return c(Fun,f)->c2(f, w, x); }
+#define c1rt(N,    X) ({           B x_=(X); SLOW1("!rt_" #N,   x_); c1G(rt_##N,     x_); })
+#define c2rt(N, W, X) ({ B w_=(W); B x_=(X); SLOW2("!rt_" #N,w_,x_); c2G(rt_##N, w_, x_); })
 
 
 struct Md1 {

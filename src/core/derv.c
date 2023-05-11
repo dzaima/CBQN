@@ -28,7 +28,7 @@ B fork_c1(B t, B x) {
   B h = c(Fork,t)->h;
   if (isFun(f)) {
     B hr = c1(h, inc(x));
-    return c2(c(Fork,t)->g, c(Fun,f)->c1(f,x), hr);
+    return c2(c(Fork,t)->g, c1G(f,x), hr);
   } else {
     return c2(c(Fork,t)->g, inc(f), c1(h,x));
   }
@@ -38,7 +38,7 @@ B fork_c2(B t, B w, B x) {
   B h = c(Fork,t)->h;
   if (isFun(f)) {
     B hr = c2(h, inc(w), inc(x));
-    return c2(c(Fork,t)->g, c(Fun,f)->c2(f,w,x), hr);
+    return c2(c(Fork,t)->g, c2G(f,w,x), hr);
   } else {
     return c2(c(Fork,t)->g, inc(f), c2(h,w,x));
   }
