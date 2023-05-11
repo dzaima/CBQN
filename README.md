@@ -25,13 +25,14 @@
     - Target architecture is decided from `uname` - override with `target_arch=...` (valid values being `x86-64`, `aarch64`, `generic`). For native builds, targeted extensions are decided by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks.
 
 - Build flags:
-    - `CC=cc` - choose a different C compiler (default is `clang`)
-    - `CXX=c++` - choose a different C++ compiler (default is `c++`)
+    - `CC=...` - choose a different C compiler (default is `clang`)
+    - `CXX=...` - choose a different C++ compiler (default is `c++`)
     - `f=...` - add extra C compiler flags for CBQN file compilation
-    - `lf=...` - add extra linker flags
-    - `CCFLAGS=...` - add flags for all CC/CXX/linker invocations
-    - `REPLXX=0`/`REPLXX=1` - enable/disable replxx (default depends on target and may change in the future)
+    - `lf=...` - add extra linking flags
+    - `CCFLAGS=...` - add flags for all CC/CXX/linking invocations
+    - `REPLXX=0`/`REPLXX=1` - enable/disable replxx (default depends on the target and may change in the future)
     - `REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)
+    - `CXXFLAGS=...` - add additional CXX flags
     - `FFI=0` - disable libffi usage
     - `j=8` to override the default parallel job count
     - `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename
@@ -100,6 +101,14 @@ Note that, after either of those, the compiled bytecode may become desynchronize
 Git submodules are used for Singeli, replxx, and bytecode. Thus, CBQN won't build if downloaded just as source files.
 
 Thus, you must either clone the repo (submodules will be automatically initialized/updated as needed), or use local copies of the submodules by linking/copying local versions to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
+
+### Cross-compilation
+
+You must manually set up a cross-compilation environment. It's possible to pass flags to all CC/CXX/linking invocations via `CCFLAGS=...`, and `LDFLAGS=...` to pass ones to the linking step specifically (more configuration options [above](#configuration-options)).
+
+A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as the default is to choose based on `uname`.
+
+Furthermore, most build targets will need a non-cross-compiled version of CBQN at build time to run Singeli and/or the build system. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 
 ## License
 

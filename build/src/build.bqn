@@ -33,7 +33,8 @@ opts ← ⟨
   
   ⟨0, "OUTPUT",  "", "Output location; defaults to ./BQN for regular builds"⟩
   ⟨2, "f",       ⟨⟩, "C flags for CBQN files"⟩
-  ⟨2, "CCFLAGS", ⟨⟩, "flags for all C compiler & linker invocations"⟩
+  ⟨2, "CCFLAGS", ⟨⟩, "flags for all CC/CXX invocations (both object file & linking)"⟩
+  ⟨2, "CXXFLAGS",⟨⟩, "flags for C++ object file creation invocations"⟩
   ⟨2, "lf",      ⟨⟩, "linker flags"⟩
   ⟨2, "sf",      ⟨⟩, "Singeli flags"⟩
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
@@ -303,6 +304,7 @@ po ← { # parsed options
   REPLXXc ⇐ { 𝕊:
     args ← ⟨cxx, "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩
     args∾↩ GetOpt "REPLXX_FLAGS"
+    args∾↩ GetOpt "CXXFLAGS"
     args∾↩ (         ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ GetOpt "CCFLAGS"
     args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE"⟩
