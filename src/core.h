@@ -35,7 +35,7 @@ typedef struct BFn {
   B ident;
   FC2 uc1;
   BBBB2B ucw;
-  FC1 im;
+  FC1 im, is;
   FC2 iw; B rtInvSwap;
   FC2 ix; B rtInvReg;
 } BFn;

@@ -650,11 +650,13 @@ static void funBI_visit(Value* x) {
   mm_visit(((BFn*)x)->rtInvSwap);
 }
 static B funBI_imRt(B t,      B x) { return c1(c(BFn, t)->rtInvReg,     x); }
+static B funBI_isRt(B t,      B x) { return c1(c(BFn, t)->rtInvSwap,    x); }
 static B funBI_iwRt(B t, B w, B x) { return c2(c(BFn, t)->rtInvSwap, w, x); }
 static B funBI_ixRt(B t, B w, B x) { return c2(c(BFn, t)->rtInvReg,  w, x); }
-static B funBI_imInit(B t,      B x) { B f=c(BFn,t)->rtInvReg; if(f.u==0) f=c(BFn,t)->rtInvReg=c1rt(invFnReg,  incG(t)); c(BFn,t)->im=funBI_imRt; return c1(f, x); }
-static B funBI_ixInit(B t, B w, B x) { B f=c(BFn,t)->rtInvReg; if(f.u==0) f=c(BFn,t)->rtInvReg=c1rt(invFnReg,  incG(t)); c(BFn,t)->ix=funBI_ixRt; return c2(f, w, x); }
-static B funBI_iwInit(B t, B w, B x) { B f=c(BFn,t)->rtInvSwap                                =c1rt(invFnSwap, incG(t)); c(BFn,t)->iw=funBI_iwRt; return c2(f, w, x); }
+static B funBI_imInit(B t,      B x) { B f=c(BFn,t)->rtInvReg;  if(f.u==0) f=c(BFn,t)->rtInvReg =c1rt(invFnReg,  incG(t)); c(BFn,t)->im=funBI_imRt; return c1(f, x); }
+static B funBI_isInit(B t,      B x) { B f=c(BFn,t)->rtInvSwap; if(f.u==0) f=c(BFn,t)->rtInvSwap=c1rt(invFnSwap, incG(t)); c(BFn,t)->is=funBI_isRt; return c1(f, x); }
+static B funBI_ixInit(B t, B w, B x) { B f=c(BFn,t)->rtInvReg;  if(f.u==0) f=c(BFn,t)->rtInvReg =c1rt(invFnReg,  incG(t)); c(BFn,t)->ix=funBI_ixRt; return c2(f, w, x); }
+static B funBI_iwInit(B t, B w, B x) { B f=c(BFn,t)->rtInvSwap; if(f.u==0) f=c(BFn,t)->rtInvSwap=c1rt(invFnSwap, incG(t)); c(BFn,t)->iw=funBI_iwRt; return c2(f, w, x); }
 
 
 void* m_customObj(u64 size, V2v visit, V2v freeO) {
@@ -682,6 +684,7 @@ static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
   f->im = funBI_imInit;
   f->iw = funBI_iwInit;
   f->ix = funBI_ixInit;
+  f->is = funBI_isInit;
   f->rtInvReg  = m_f64(0);
   f->rtInvSwap = m_f64(0);
   B r = tag(f,FUN_TAG); gc_add(r);

@@ -358,6 +358,7 @@ static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extr
 static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
+static B funBI_is(B t, B x) { return c(BFn,t)->is(t, x); }
 static B funBI_iw(B t, B w, B x) { return c(BFn,t)->iw(t, w, x); }
 static B funBI_ix(B t, B w, B x) { return c(BFn,t)->ix(t, w, x); }
 static B funBI_identity(B x) { return inc(c(BFn,x)->ident); }
@@ -372,6 +373,7 @@ void fns_init(void) {
   TIi(t_funBI,fn_im) = funBI_im;
   TIi(t_funBI,fn_iw) = funBI_iw;
   TIi(t_funBI,fn_ix) = funBI_ix;
+  TIi(t_funBI,fn_is) = funBI_is;
   bitUD[0] = a(bi_emptyIVec); // don't increment as it's already gc_add-ed
   { u64* p; B a=m_bitarrv(&p, 1); *p=0;                  bitUD[1] = a(a);               gc_add(a); }
   { u64* p; B a=m_bitarrv(&p, 2); *p=0; bitp_set(p,1,1); bitUD[2] = a(a); bit2x[0] = a; gc_add(a); }
