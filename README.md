@@ -50,7 +50,29 @@
     - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Won't have incremental/parallel compilation, and isn't supported for many configurations
     - `make emcc-o3` - build with Emscripten `emcc`
     - `make wasi-o3` - build targeting WASI
-- Git submodules are used for Singeli, replxx, and bytecode. It's possible to override those by linking/copying a local version to, respectively, `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
+
+## Requirements
+
+CBQN requires either gcc or clang as the C compiler (it defaults to `clang` as things are primarily optimized for it, but a `CC=cc` make arg can be added to use the default system compiler), and, optionally, libffi for `•FFI`, and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
+
+There aren't hard requirements for versions of any of those, but nevertheless here are some configurations that CBQN is tested on by dzaima:
+
+```
+x86-64 (Linux):
+  gcc 9.5; gcc 11.3; clang 10.0.0; clang 14.0.0
+  libffi 3.4.2
+  cpu microarchitecture: Haswell
+  replxx: g++ 11.3.0
+x86 (Linux):
+  clang 14.0.0; known to break on gcc - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
+  running on the above x86-64 system, compiled with CCFLAGS=-m32
+AArch64 ARMv8-A (within Termux on Android 8):
+  using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
+  clang 15.0.7
+  libffi 3.4.4 (structs were broken as of 3.4.3)
+  replxx: clang++ 15.0.4
+```
+Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
 
 ### Precompiled bytecode
 
@@ -73,28 +95,11 @@ In order to build everything from source, you can:
 
 Note that, after either of those, the compiled bytecode may become desynchronized if you later update CBQN without also rebuilding the bytecode. Usage of the submodule can be restored by removing `build/bytecodeLocal`.
 
-## Requirements
+### Submodules
 
-CBQN requires either gcc or clang as the C compiler (it defaults to `clang` as optimizations are written based on whether or not clang needs them, but a `CC=cc` make arg can be added to use the default system compiler), and, optionally, libffi for `•FFI`, and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
+Git submodules are used for Singeli, replxx, and bytecode. Thus, CBQN won't build if downloaded just as source files.
 
-There aren't hard requirements for versions of any of those, but nevertheless here are some configurations that CBQN is tested on by dzaima:
-
-```
-x86-64 (Linux):
-  gcc 9.5; gcc 11.3; clang 10.0.0; clang 14.0.0
-  libffi 3.4.2
-  cpu microarchitecture: Haswell
-  replxx: g++ 11.3.0
-x86 (Linux):
-  clang 14.0.0; known to break on gcc - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
-  running on the above x86-64 system, compiled with CCFLAGS=-m32
-AArch64 ARMv8-A (within Termux on Android 8):
-  using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
-  clang 15.0.7
-  libffi 3.4.4 (structs were broken as of 3.4.3)
-  replxx: clang++ 15.0.4
-```
-Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
+Thus, you must either clone the repo (submodules will be automatically initialized/updated as needed), or use local copies of the submodules by linking/copying local versions to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
 ## License
 

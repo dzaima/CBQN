@@ -281,10 +281,10 @@ ifeq ($(i_singeli), 1)
 endif
 	
 ifeq ($(REPLXX_DIR),build/replxxSubmodule)
-	@git submodule update --init build/replxxSubmodule
+	@git submodule update --init build/replxxSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
 endif
 ifeq ($(i_USE_BC_SUBMODULE),1)
-	@git submodule update --init build/bytecodeSubmodule
+	@git submodule update --init build/bytecodeSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
 endif
 	@export bd=$$("${MAKE}" builddir); \
 	[ "build/obj/" = "$$bd" ] && echo "Neither shasum nor sha256sum was found; cannot use custom configurations" && exit 1; \
@@ -348,7 +348,7 @@ endif
 .INTERMEDIATE: preSingeliBin
 preSingeliBin:
 ifeq ($(SINGELI_DIR),build/singeliSubmodule)
-	@git submodule update --init build/singeliSubmodule
+	@git submodule update --init build/singeliSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
 endif
 	@echo "pre-singeli build:"
 	@"${MAKE}" i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
