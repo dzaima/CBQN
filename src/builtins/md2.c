@@ -182,6 +182,8 @@ B before_uc1(Md2* t, B o, B f, B g, B x) {
   if (!isFun(g)) return def_m2_uc1(t, o, f, g, x);
   return TI(g,fn_ucw)(g, o, inc(f), x);
 }
+B before_im(Md2D* d, B x) { return isFun(d->g) && !isCallable(d->f)? TI(d->g,fn_ix)(d->g, inc(d->f), x) : def_m2_im(d, x); }
+B after_im (Md2D* d, B x) { return isFun(d->f) && !isCallable(d->g)? TI(d->f,fn_iw)(d->f, inc(d->g), x) : def_m2_im(d, x); }
 
 
 B while_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
@@ -253,4 +255,6 @@ void md2_init(void) {
   TIi(t_md2BI,m2_iw) = md2BI_iw;
   TIi(t_md2BI,m2_ix) = md2BI_ix;
   c(BMd2,bi_before)->uc1 = before_uc1;
+  c(BMd2,bi_after)->im = after_im;
+  c(BMd2,bi_before)->im = before_im;
 }

@@ -621,12 +621,12 @@ B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW2(
 B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
 B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
 B def_fn_ix(B t, B w, B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
-B def_m1_im(Md1D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
-B def_m1_iw(Md1D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
-B def_m1_ix(Md1D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
-B def_m2_im(Md2D* t,      B x) { return def_fn_im(tag(t,FUN_TAG),    x); }
-B def_m2_iw(Md2D* t, B w, B x) { return def_fn_iw(tag(t,FUN_TAG), w, x); }
-B def_m2_ix(Md2D* t, B w, B x) { return def_fn_ix(tag(t,FUN_TAG), w, x); }
+B def_m1_im(Md1D* d,      B x) { return def_fn_im(tag(d,FUN_TAG),    x); }
+B def_m1_iw(Md1D* d, B w, B x) { return def_fn_iw(tag(d,FUN_TAG), w, x); }
+B def_m1_ix(Md1D* d, B w, B x) { return def_fn_ix(tag(d,FUN_TAG), w, x); }
+B def_m2_im(Md2D* d,      B x) { return def_fn_im(tag(d,FUN_TAG),    x); }
+B def_m2_iw(Md2D* d, B w, B x) { return def_fn_iw(tag(d,FUN_TAG), w, x); }
+B def_m2_ix(Md2D* d, B w, B x) { return def_fn_ix(tag(d,FUN_TAG), w, x); }
 
 #ifdef DONT_FREE
 static B empty_get(Arr* x, usz n) {

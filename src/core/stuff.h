@@ -227,16 +227,13 @@ B chr_squeeze(B x); // consumes; see note below
 static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
 static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
 
-B def_fn_uc1(B t,    B o,                B x);
-B def_fn_ucw(B t,    B o,           B w, B x);
-B def_m1_uc1(Md1* t, B o, B f,           B x);
-B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
-B def_m2_uc1(Md2* t, B o, B f, B g,      B x);
-B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x);
-B def_fn_im(B t,      B x);
+B def_fn_uc1(B t,    B o,           B x);  B def_fn_ucw(B t,    B o,           B w, B x);
+B def_m1_uc1(Md1* t, B o, B f,      B x);  B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
+B def_m2_uc1(Md2* t, B o, B f, B g, B x);  B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x);
 B def_fn_is(B t,      B x);
-B def_fn_iw(B t, B w, B x);
-B def_fn_ix(B t, B w, B x);
+B def_fn_im(B t,      B x);  B def_m1_im(Md1D* d,      B x);  B def_m2_im(Md2D* d,      B x);
+B def_fn_iw(B t, B w, B x);  B def_m1_iw(Md1D* d, B w, B x);  B def_m2_iw(Md2D* d, B w, B x);
+B def_fn_ix(B t, B w, B x);  B def_m1_ix(Md1D* d, B w, B x);  B def_m2_ix(Md2D* d, B w, B x);
 B def_decompose(B x);
 
 void noop_visit(Value* x);
