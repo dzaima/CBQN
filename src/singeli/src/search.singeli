@@ -25,8 +25,7 @@ def findFirst{C, M, F, ...v1} = {
   F{...args}
 }
 
-fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
-  def e = if (A==E) e0 else cast_i{E, e0}
+def search{E, x, n:u64, OP} = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
   def end = makeBranch{
@@ -35,7 +34,7 @@ fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
   }
   
   muLoop{bulk, tern{arch_defvw>=256, 1, 2}, n, {is, M} => {
-    eq:= eachx{==, loadBatch{*E~~l, is, VT}, VT**e}
+    eq:= each{OP, loadBatch{*E~~x, is, VT}}
     if (homAny{M{tree_fold{|, eq}}}) {
       findFirst{
         {i,c} => homAny{c},
@@ -48,7 +47,31 @@ fn search{A, E}(l:*void, e0:A, n:u64) : u64 = {
   n
 }
 
-export{'simd_search_u8',  search{u64, u8}}
-export{'simd_search_u16', search{u64, u16}}
-export{'simd_search_u32', search{u64, u32}}
-export{'simd_search_f64', search{f64, f64}}
+fn searchOne{A, E}(x:*void, e0:A, len:u64) : u64 = {
+  def e = if (A==E) e0 else cast_i{E, e0}
+  search{E, x, len, {c:VT} => c == VT**e}
+}
+
+def isNegZero{x:T} = to_el{u64,x} == to_el{u64, T ** -f64~~0}
+fn searchNormalizable{}(x:*f64, len:u64) : u64 = {
+  search{f64, x, len, {c:VT} => isNegZero{c} | (c!=c)}
+}
+
+fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
+  def E = f64
+  def bulk = arch_defvw/width{E}
+  def VT = [bulk]E
+  maskedLoop{bulk, len, {i, M} => {
+    c:= loadBatch{x, i, VT}
+    if (homAny{M{c!=c}}) return{1}
+    storeBatch{r, i, c + VT**0, M}
+  }}
+  0
+}
+
+export{'simd_search_u8',  searchOne{u64, u8}}
+export{'simd_search_u16', searchOne{u64, u16}}
+export{'simd_search_u32', searchOne{u64, u32}}
+export{'simd_search_f64', searchOne{f64, f64}}
+export{'simd_search_normalizable', searchNormalizable{}}
+export{'simd_copy_ordered', copyOrdered{}}

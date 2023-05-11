@@ -61,6 +61,8 @@ def __gt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,30}; def __gt{a:T,b:T & T==[4]f64}
 def __ge{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,29}; def __ge{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,29}
 def __lt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,17}; def __lt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,17}
 def __le{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,18}; def __le{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,18}
+def unord{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,3}
+def unord{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,3}
 
 # f32 arith
 def __add{a:T,b:T & T==[8]f32} = emit{T, '_mm256_add_ps', a, b}

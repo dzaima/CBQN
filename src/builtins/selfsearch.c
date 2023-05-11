@@ -77,16 +77,15 @@ static inline B shift_ne(B x, usz n, u8 lw, bool r0) { // consumes x
   decG(x); return r;
 }
 
-static bool canCompare64_norm(B x, usz n) {
-  u8 e = TI(x,elType);
+B asNormalized(B x, usz n, bool nanBad); // from search.c
+SHOULD_INLINE bool canCompare64_norm(B* x, void** xp, usz n) {
+  u8 e = TI(*x,elType);
   if (e == el_B) return 0;
   if (e == el_f64) {
-    f64* pf = f64any_ptr(x);
-    for (usz i = 0; i < n; i++) {
-      f64 f = pf[i];
-      if (f!=f) return 0;
-      pf[i] = f==0? 0 : f;
-    }
+    B r = asNormalized(*x, n, true);
+    if (r.u == m_f64(0).u) return 0;
+    *x = r;
+    *xp = tyany_ptr(r);
   }
   return 1;
 }
@@ -252,14 +251,14 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n; i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; }  \
     decG(x); TFREE(tab);                                               \
     return taga(cpyBitArr(r))
-  if (lw == 3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
-  if (lw == 4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
+  if (lw==3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
+  if (lw==4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
     T, W, RAD, STOP,                                    \
     1, taga(cpyBitArr(r)), hash[j]=h; rp[i]=k!=h;,      \
     1, THRESH, 0,,,)
-  if (lw == 5) {
+  if (lw==5) {
     if (n<12) { BRUTE(32); }
     i8* rp; B r = m_i8arrv(&rp, n);
     HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<15)? 3 : 5)
@@ -285,7 +284,7 @@ B memberOf_c1(B t, B x) {
     RADIX_LOOKUP_32(1, =0)
     return taga(cpyBitArr(r));
   }
-  if (lw == 6 && canCompare64_norm(x, n)) {
+  if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<20) { BRUTE(64); }
     i8* rp; B r = m_i8arrv(&rp, n);
     HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
@@ -397,7 +396,7 @@ B count_c1(B t, B x) {
     RADIX_LOOKUP_32(0, ++)
     return num_squeeze(r);
   }
-  if (lw == 6 && canCompare64_norm(x, n)) {
+  if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<20) { BRUTE(64); }
     i32* rp; B r = m_i32arrv(&rp, n);
     HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
@@ -435,7 +434,7 @@ B indexOf_c1(B t, B x) {
   if (csz==0) goto zeroRes;
   u8 lw = cellWidthLog(x);
   void* xv = tyany_ptr(x);
-  if (lw == 0) {
+  if (lw==0) {
     B r = 1&*(u64*)xv ? bit_negate(x) : x;
     return C1(shape, r);
   }
@@ -502,7 +501,7 @@ B indexOf_c1(B t, B x) {
     HASHTAB(u32, 32, sz==msz? 0 : sz>=(1<<18)? 1 : sz>=(1<<14)? 4 : 6)
     decG(r); // Fall through
   }
-  if (lw==6 && canCompare64_norm(x, n)) {
+  if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<16) { BRUTE(64); }
     i32* rp; B r = m_i32arrv(&rp, n);
     u64* xp = tyany_ptr(x);

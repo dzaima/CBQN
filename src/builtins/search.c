@@ -375,6 +375,50 @@ B count_c2(B t, B w, B x) {
   return reduceI32Width(r, wia);
 }
 
+// if nanBad and input contains a NaN, doesn't consume and returns m_f64(0)
+// otherwise, consumes and returns an array with -0 (and NaNs if !nanBad) normalized
+B asNormalized(B x, usz n, bool nanBad) {
+  f64* fp = f64any_ptr(x);
+  ux i = 0;
+  #if SINGELI_SIMD
+    i = simd_search_normalizable(fp, n);
+    if (i!=n) goto some;
+  #else
+    for (; i < n; i++) if (r_f64u(fp[i])==r_f64u(-0.0) || fp[i]!=fp[i]) goto some;
+  #endif
+  return x;
+  
+  some:;
+  f64* rp;
+  B r;
+  if (TY(x)==t_f64arr && reusable(x)) {
+    rp = fp;
+    r = x;
+  } else {
+    r = m_f64arrc(&rp, x);
+    COPY_TO(rp, el_f64, 0, x, 0, i);
+  }
+  
+  if (nanBad) {
+    #if SINGELI_SIMD
+      if (RARE(simd_copy_ordered(rp+i, fp+i, n-i))) goto bad;
+    #else
+      for (; i < n; i++) {
+        if (RARE(fp[i]!=fp[i])) goto bad;
+        rp[i] = fp[i]+0.0;
+      }
+    #endif
+  } else {
+    for (; i < n; i++) rp[i] = normalizeFloat(fp[i]);
+  }
+  
+  if (r.u!=x.u) decG(x);
+  return r;
+  
+  bad:
+  if (r.u!=x.u) mm_free(v(r));
+  return m_f64(0);
+}
 
 void search_init(void) {
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p= 0;    gc_add(enclosed_0=taga(a)); }

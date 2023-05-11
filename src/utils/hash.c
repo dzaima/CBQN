@@ -3,7 +3,7 @@
 #include "hash.h"
 #include "time.h"
 
-
+B asNormalized(B x, usz n, bool nanBad); // from search.c
 NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation of atom & arr probably won't be worth it when there are actually sane typed array hashing things
   if (isArr(x)) {
     usz xia = IA(x);
@@ -18,12 +18,13 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
     void* data;
     u64 bytes;
     switch(xe) { default: UD;
-      case el_bit: bcl(x,xia);  data = bitarr_ptr(x); bytes = (xia+7)>>3; break;
-      case el_i8:  case el_c8:  data =  tyany_ptr(x); bytes = xia*1; break;
-      case el_i16: case el_c16: data =  tyany_ptr(x); bytes = xia*2; break;
-      case el_i32: case el_c32: data =  tyany_ptr(x); bytes = xia*4; break;
-      case el_f64:              data = f64any_ptr(x); bytes = xia*8;
-        for (ux i = 0; i < xia; i++) ((f64*)data)[i] = normalizeFloat(((f64*)data)[i]);
+      case el_bit: bcl(x,xia);  bytes = (xia+7)>>3; data = bitarr_ptr(x); break;
+      case el_i8:  case el_c8:  bytes = xia*1; data = tyany_ptr(x); break;
+      case el_i16: case el_c16: bytes = xia*2; data = tyany_ptr(x); break;
+      case el_i32: case el_c32: bytes = xia*4; data = tyany_ptr(x); break;
+      case el_f64:              bytes = xia*8;
+        x = asNormalized(x, xia, false);
+        data = f64any_ptr(x);
         break;
       case el_B:;
         data = TALLOCP(u64, xia);
