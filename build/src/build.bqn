@@ -21,6 +21,7 @@ opts ← ⟨
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
+  ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"⟩
   ⟨1, "notui",   0, "disable live-updating status display"∾@+10⟩
   ⟨1, "rebuild-singeli", 0, @⟩
   
@@ -148,7 +149,7 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, rebuildSingeli, tui, output, clangd, versionName,
+    verbose, J, rebuildAll, rebuildSingeli, tui, loud, output, clangd, versionName,
     os, arch, native, has, avx2
     emcc, wasm, replxx, singeli,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -164,6 +165,8 @@ po ← { # parsed options
   rebuildAll ⇐ GetOpt "rebuild"
   rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ ¬GetOpt "notui"
+  loud ⇐ ¬GetOpt "quiet"
+  
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
   ErrBoth ← {a‿b: ∾⟨"Error: '",a,"' and '",b,"' cannot both be enabled"⟩}
@@ -525,14 +528,14 @@ Run ← { 𝕊:
     work ↩ lm/work
     {
       𝕩.i FinishJob 𝕩.t.Take@?
-        {𝕊: Log FileLine 𝕩 ⋄ •term.Flush@}⍟(¬po.tui) 𝕩
+        {𝕊: Log FileLine 𝕩 ⋄ •term.Flush@}⍟(po.loud∧¬po.tui) 𝕩
         doneCount+↩1;
       Fail "Error: During '"∾𝕩.v.disp∾"'"
     }¨ done
     free∾↩ Ts done
   }•_while_{𝕊: (0<≠work) ∨ (¬stopping)∧0<≠left}@
   
-  Log ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build"⟩
+  Log⍟po.loud ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build"⟩
   
   ¬stopping
 }
