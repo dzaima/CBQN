@@ -23,6 +23,11 @@
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
 
+#if SINGELI_SIMD
+  #define SINGELI_FILE search
+  #include "../utils/includeSingeli.h"
+#endif
+
 #define C2i(F, W, X) C2(F, m_i32(W), X)
 extern B eq_c2(B,B,B);
 extern B ne_c2(B,B,B);
@@ -131,11 +136,6 @@ static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
-#if SINGELI_SIMD
-  #define SINGELI_FILE search
-  #include "../utils/includeSingeli.h"
-#endif
-
 static NOINLINE usz indexOfOne(B l, B e) {
     void* lp = tyany_ptr(l);
     usz wia = IA(l);
@@ -201,7 +201,10 @@ B indexOf_c2(B t, B w, B x) {
   } else {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
-    if (wia == 0) { B r=taga(arr_shCopy(allZeroes(xia), x)); decG(w); decG(x); return r; }
+    if (wia==0 || xia==0) {
+      B r=taga(arr_shCopy(allZeroes(xia), x));
+      decG(w); decG(x); return r;
+    }
     
     if (elNum(we) && elNum(xe)) { tyEls:
       if (we==el_bit) {
@@ -223,6 +226,18 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        #if SINGELI
+        if (wia>256 && we==el_i8 && xe==el_i8) {
+          TALLOC(u8, tab, 256*(1+sizeof(usz))); usz* ind = (usz*)(tab+256);
+          void* fp = tyany_ptr(x);
+          simd_index_tab_u8(tyany_ptr(w), wia, fp, xia, tab, ind);
+          decG(w);
+          i32* rp; B r = m_i32arrc(&rp, x);
+          for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          TFREE(tab); decG(x);
+          return reduceI32Width(r, wia);
+        }
+        #endif
         B r;
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
@@ -271,7 +286,10 @@ B memberOf_c2(B t, B w, B x) {
   many: {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
-    if (xia == 0) { r=taga(arr_shCopy(allZeroes(wia), w)); decG(w); goto dec_x; }
+    if (wia==0 || xia==0) {
+      r=taga(arr_shCopy(allZeroes(wia), w));
+      decG(w); goto dec_x;
+    }
     
     if (elNum(we) && elNum(xe)) { tyEls:
       #define WEQ(V) C2(eq, incG(w), V)
@@ -283,7 +301,7 @@ B memberOf_c2(B t, B w, B x) {
         decG(w); goto dec_x;
       }
       
-      if (xia<=(xe==el_i16?8:16) && wia>16) {
+      if (xia<=(xe==el_i8?1:xe==el_i16?4:16) && wia>16) {
         SGetU(x);
         r = WEQ(GetU(x,0));
         for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
@@ -292,7 +310,15 @@ B memberOf_c2(B t, B w, B x) {
       #undef WEQ
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
-        B r;
+        #if SINGELI
+        if (we==el_i8 && xe==el_i8) {
+          TALLOC(u8, tab, 256);
+          u64* rp; r = m_bitarrc(&rp, w);
+          simd_member_u8(tyany_ptr(x), xia, tyany_ptr(w), wia, rp, tab);
+          TFREE(tab); decG(w);
+          goto dec_x;
+        }
+        #endif
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }
@@ -321,7 +347,7 @@ B count_c2(B t, B w, B x) {
     x = t.n;
   }
   
-  if (!isArr(x) || IA(x)<=1) return C2(indexOf, w, x);
+  if (!isArr(x) || IA(x)<=1 || IA(w)==0) return C2(indexOf, w, x);
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   i32* rp; B r = m_i32arrc(&rp, x);

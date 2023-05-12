@@ -213,6 +213,9 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
     /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
     /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
 
+extern void (*const simd_mark_firsts_u8)(void*,uint64_t,void*,void*);
+extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
+
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   u64 n = *SH(x);
@@ -251,7 +254,17 @@ B memberOf_c1(B t, B x) {
     for (usz i=0; i<n; i++) { u##T j=xp[i]; rp[i]=tab[j]; tab[j]=0; }  \
     decG(x); TFREE(tab);                                               \
     return taga(cpyBitArr(r))
-  if (lw==3) { if (n<8) { BRUTE(8); } else { LOOKUP(8); } }
+  if (lw==3) { if (n<8) { BRUTE(8); } else {
+    #if SINGELI
+    TALLOC(u8, tab, 256);
+    u64* rp; B r = m_bitarrv(&rp, n);
+    simd_mark_firsts_u8(xv, n, rp, tab);
+    TFREE(tab); decG(x);
+    return r;
+    #else
+    LOOKUP(8);
+    #endif
+  } }
   if (lw==4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
   #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
@@ -533,7 +546,8 @@ B find_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
-  if (TI(x,elType)==el_bit && RNK(x)==1) {
+  u8 xe = TI(x,elType);
+  if (xe==el_bit && RNK(x)==1) {
     u64* xp = bitarr_ptr(x);
     u64 x0 = 1 & *xp;
     usz i = bit_find(xp, n, !x0); decG(x);
@@ -541,5 +555,15 @@ B find_c1(B t, B x) {
     rp[0] = 2 ^ -x0;
     return r;
   }
+  #if SINGELI
+  if (elWidth(xe)==1 && RNK(x)==1 && !FL_HAS(x, fl_asc|fl_dsc)) {
+    TALLOC(u8, tab, 513); u8* res = tab+256;
+    usz ria = simd_deduplicate_u8(tyany_ptr(x), n, res, tab);
+    B r; i8* rp = m_tyarrv(&r, 1, ria, el2t(xe));
+    memcpy(rp, res, ria);
+    TFREE(tab); decG(x);
+    return r;
+  }
+  #endif
   return C2(slash, C1(memberOf, incG(x)), x);
 }
