@@ -6,11 +6,11 @@ default: o3
 
 # targets that only use the makefile
 for-build: # for running the build system & Singeli
-	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
+	@"${MAKE}" i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
 for-bootstrap: # for bootstrapping bytecode
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 o3-makeonly:
-	@"${MAKE}" i_singeli=0 i_t=o3 i_f="-O3" run_incremental_0
+	@"${MAKE}" i_t=o3 i_f="-O3" run_incremental_0
 c-makeonly:
 	@"${MAKE}" custom=1 run_incremental_0
 
@@ -96,7 +96,6 @@ i_PIE :=
 i_LIBS_LD := -lm
 i_LIBS_CC := -fvisibility=hidden
 i_FFI := 2
-i_singeli := 0
 i_OUTPUT := BQN
 
 ifeq ($(origin i_OUTPUT_DEF),command line)
@@ -113,10 +112,6 @@ else
 endif
 ifeq ($(origin CC),command line)
 	i_CC := $(CC)
-	custom = 1
-endif
-ifeq ($(origin singeli),command line)
-	i_singeli := $(singeli)
 	custom = 1
 endif
 ifeq ($(origin FFI),command line)
@@ -180,9 +175,6 @@ ifeq ($(i_REPLXX_1),1)
 	custom = 1
 	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
 endif
-ifeq ($(i_singeli),1)
-	SINGELI_DIR = $(shell if [ -d build/singeliLocal ]; then echo build/singeliLocal; else echo build/singeliSubmodule; fi)
-endif
 BYTECODE_DIR = $(shell if [ -d build/bytecodeLocal ]; then echo bytecodeLocal; else echo bytecodeSubmodule; fi)
 ifeq ($(BYTECODE_DIR),bytecodeLocal)
 	custom = 1
@@ -210,15 +202,12 @@ ifeq ($(WINDOWS), 1)
 	endif
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DSINGELI=$(i_singeli) -DSINGELI_SIMD=$(i_singeli) -DSINGELI_X86_64=$(i_singeli) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 j=4
 ifneq (${manualJobs},1)
 	ifeq (${MAKECMDGOALS},run_incremental_1)
-		MAKEFLAGS+= -j${j} manualJobs=1
-	endif
-	ifeq (${MAKECMDGOALS},build_singeli)
 		MAKEFLAGS+= -j${j} manualJobs=1
 	endif
 endif
@@ -231,7 +220,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${i_REPLXX_1}" "${REPLXX_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${i_REPLXX_1}" "${REPLXX_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -261,13 +250,11 @@ ifeq ($(i_REPLXX_1),1)
 else
 	@echo "  replxx: not used"
 endif
-ifeq ($(i_singeli), 1)
-	@echo "  singeli: $(SINGELI_DIR)"
-else
-	@echo "  singeli: not used"
-endif
 	@echo "  cc invocation: $(CC_INC) \$$@.d -o \$$@ -c \$$<"
 	@echo "  ld invocation: $(i_LD) ${CCFLAGS} -o [build_dir]/BQN [build_dir]/*.o $(ALL_LD_FLAGS)"
+endif
+ifeq ($(singeli),1)
+	@echo "makefile-only builds don't support Singeli"; false
 endif
 	
 ifeq ($(origin clean),command line)
@@ -275,12 +262,6 @@ ifeq ($(origin clean),command line)
 else ifeq ($(origin builddir),command line)
 	@echo "$$("${MAKE}" builddir)"
 else # run build
-	
-ifeq ($(i_singeli), 1)
-	@mkdir -p src/singeli/gen
-	@mkdir -p build/obj/singeli
-	@"${MAKE}" postmsg="post-singeli build:" build_singeli
-endif
 	
 ifeq ($(REPLXX_DIR),build/replxxSubmodule)
 	@git submodule update --init build/replxxSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
@@ -346,38 +327,6 @@ ifeq ($(i_USE_BC_SUBMODULE),1)
 endif
 
 
-# singeli
-.INTERMEDIATE: preSingeliBin
-preSingeliBin:
-ifeq ($(SINGELI_DIR),build/singeliSubmodule)
-	@git submodule update --init build/singeliSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
-endif
-	@echo "pre-singeli build:"
-	@"${MAKE}" i_singeli=0 singeli=0 force_build_dir=build/obj/presingeli REPLXX=0 f= lf= postmsg="singeli sources:" i_t=presingeli i_f='-O1 -DPRE_SINGELI' FFI=0 OUTPUT=build/obj/presingeli/BQN c
-
-
-build_singeli: ${addprefix src/singeli/gen/, cmp.c dyarith.c monarith.c copy.c equal.c squeeze.c select.c fold.c scan.c neq.c slash.c constrep.c count.c bits.c transpose.c}
-	@echo $(postmsg)
-src/singeli/gen/%.c: src/singeli/src/%.singeli preSingeliBin
-	@echo $< | cut -c 17- | sed 's/^/  /'
-	@build/obj/presingeli/BQN build/singeliMake.bqn "$(SINGELI_DIR)" $< $@ "build/obj/singeli/"
-
-ifeq (${i_singeli}, 1)
-# arithmetic table generator
-src/builtins/arithd2.c: src/singeli/c/dyarith.c
-src/singeli/src/builtins/arithd.c: src/singeli/gen/arTables.c
-src/singeli/gen/dyarith.c: src/singeli/gen/arDefs.singeli genArithTables
-
-src/singeli/gen/arDefs.singeli: genArithTables
-src/singeli/gen/arTables.c: genArithTables
-
-.INTERMEDIATE: genArithTables
-genArithTables: src/singeli/src/genArithTables.bqn preSingeliBin
-	@echo "  generating arDefs.singeli & arTables.c"
-	@build/obj/presingeli/BQN src/singeli/src/genArithTables.bqn "$$PWD/src/singeli/gen/arDefs.singeli" "$$PWD/src/singeli/gen/arTables.c"
-endif
-
-
 
 # replxx
 ifeq ($(i_REPLXX_1),1)
@@ -402,9 +351,6 @@ endif # replxx
 
 # dependency files
 -include $(bd)/*.d
-ifeq (${i_singeli}, 1)
--include build/obj/singeli/*.d
-endif
 
 DESTDIR =
 PREFIX = /usr/local
@@ -414,10 +360,6 @@ install: uninstall
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
 
-clean-singeli:
-	rm -rf src/singeli/gen/
-	rm -rf build/obj/singeli/
-	@"${MAKE}" clean-specific bd=build/obj/presingeli
 clean-build:
 	rm -f build/obj/*/*.o
 	rm -f build/obj/*/*.d
@@ -432,4 +374,4 @@ clean-submodules:
 clean-obj2:
 	rm -rf build/obj2
 
-clean: clean-build clean-singeli clean-obj2
+clean: clean-build clean-obj2
