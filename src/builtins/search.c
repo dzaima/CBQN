@@ -301,7 +301,7 @@ B memberOf_c2(B t, B w, B x) {
         decG(w); goto dec_x;
       }
       
-      if (xia<=(xe==el_i16?8:16) && wia>16) {
+      if (xia<=(xe==el_i8?1:xe==el_i16?4:16) && wia>16) {
         SGetU(x);
         r = WEQ(GetU(x,0));
         for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
