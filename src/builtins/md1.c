@@ -73,7 +73,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   
   FC2 fc2 = c2fn(f);
   if (isFun(f) && TI(w,arrD1) && isPervasiveDyExt(f)) {
-    if (TI(x,arrD1) && wia>130 && xia<2560>>arrTypeBitsLog(TY(x))) {
+    if (TI(x,arrD1) && wia>=4 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
       arr_shErase(a(r), 1);

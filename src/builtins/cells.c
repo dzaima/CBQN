@@ -130,7 +130,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
   ur br = wr>xr? wr : xr;
   
   usz csz = shProd(bsh, mr, br);
-  if (csz<200) {
+  if (csz<5120>>arrTypeBitsLog(TY(b))) {
     B s = mr==wr? w : x; // smaller argument
     s = C2(slash, m_usz(csz), taga(arr_shVec(TI(s,slice)(s,0,IA(s)))));
     assert(reusable(s) && RNK(s)==1);
@@ -486,7 +486,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
     if (isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
       if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>500 && IA(w)!=IA(x))) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
       return c2(f, w, C2(shape, C1(fne, incG(w)), x));
     }
   }
@@ -523,7 +523,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
     if (isPervasiveDy(f)) {
       if (isAtm(w)) return c2(f, w, x);
       if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>500 && IA(w)!=IA(x))) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
       return c2(f, C2(shape, C1(fne, incG(x)), w), x);
     }
   }
