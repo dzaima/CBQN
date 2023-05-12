@@ -486,7 +486,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
     if (isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
       if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>(2048*8)>>arrTypeBitsLog(TY(x)) && IA(w)!=IA(x))) goto generic;
       return c2(f, w, C2(shape, C1(fne, incG(w)), x));
     }
   }
