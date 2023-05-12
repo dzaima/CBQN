@@ -1,4 +1,7 @@
 #define MM_C 1
+#if SINGLE_BUILD
+  #undef USE_REPLXX
+#endif
 
 #include "../core.h"
 #include "../load.c"

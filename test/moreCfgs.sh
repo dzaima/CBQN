@@ -7,7 +7,6 @@ make                                   && ./BQN -p 2+2                || exit
 make single-debug                      && ./BQN -p 2+2                || exit
 make heapverify                        && ./BQN -p 2+2                || exit
 make rtverify                          && ./BQN -p 2+2                || exit
-make rtperf                            && ./BQN -p 2+2      | head -2 || exit
 build/build f='-DDEBUG -DDEBUG_VM'   c && ./BQN -p 2+2 2>&1 | tail -2 || exit
 build/build f='-DWARN_SLOW'          c && ./BQN -p 2+2 2> /dev/null   || exit
 build/build f='-DMM=0 -DENABLE_GC=0' c && ./BQN -p 2+2 || exit

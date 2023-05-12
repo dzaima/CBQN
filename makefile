@@ -2,34 +2,16 @@ SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory --no-builtin-rules --no-builtin-variables
 # note: do not manually define any i_… arguments, or incremental compiling will not work properly!
 
-# various configurations
-o3:
-	@"${MAKE}" i_singeli=0 i_t=o3         i_f="-O3" run_incremental_0
-o3g:
-	@"${MAKE}" i_singeli=0 i_t=o3g        i_f="-O3 -g" run_incremental_0
-o3n:
-	@"${MAKE}" i_singeli=0 i_t=o3n        i_f="-O3 -march=native" run_incremental_0
-debug:
-	@"${MAKE}" i_singeli=0 i_t=debug      i_f="-g -DDEBUG" run_incremental_0
-debug1:
-	@"${MAKE}" i_singeli=0 i_t=debug1     i_f="-g -DDEBUG" manualJobs=1 run_incremental_0
-rtperf:
-	@"${MAKE}" i_singeli=0 i_t=rtperf     i_f="-O3 -DRT_PERF" run_incremental_0
-rtverify:
-	@"${MAKE}" i_singeli=0 i_t=rtverify   i_f="-DDEBUG -O3 -DRT_VERIFY" run_incremental_0
-heapverify:
-	@"${MAKE}" i_singeli=0 i_t=heapverify i_f="-DDEBUG -g -DHEAP_VERIFY" run_incremental_0
-wasi-o3:
-	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="wasi"
-wasi-reactor-o3:
-	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="wasi" i_SHARED=1
-emcc-o3:
-	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="emcc"
-for-build:
+default: o3
+
+# targets that only use the makefile
+for-build: # for running the build system & Singeli
 	@"${MAKE}" i_singeli=0 i_CC=cc REPLXX=0 i_t=forbuild i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build2 run_incremental_0
-for-bootstrap:
+for-bootstrap: # for bootstrapping bytecode
 	@"${MAKE}" i_t=for_bootstrap i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' run_incremental_0 i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
-c:
+o3-makeonly:
+	@"${MAKE}" i_singeli=0 i_t=o3 i_f="-O3" run_incremental_0
+c-makeonly:
 	@"${MAKE}" custom=1 run_incremental_0
 
 i_notui=0
@@ -40,6 +22,11 @@ ifeq ($(origin REPLXX),command line)
 	i_REPLXX_1 = "$(REPLXX)"
 else
 	i_REPLXX_1 = 1
+endif
+ifeq ($(origin singeli),command line)
+	i_singeli_1 = "$(singeli)"
+else
+	i_singeli_1 = 1
 endif
 
 to-bqn-build:
@@ -55,38 +42,53 @@ endif
 	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" \
 	  c="$(build_c)" debug="$(debug)" $(i_build_opts) $(build_opts) \
 	  os="$(target_os)" arch="$(target_arch)" has="$(has)" \
-	  shared="$(i_SHARED)" singeli="$(i_singeli)" replxx="$(REPLXX)" FFI="$(FFI)"
+	  shared="$(i_SHARED)" singeli="$(i_singeli_1)" replxx="$(i_REPLXX_1)" FFI="$(FFI)"
 
-o3-temp:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1)
-o3n-temp:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) i_build_opts="native"
-debug-temp:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
-heapverify-temp:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) build_c=1 i_build_opts="heapverify debug"
+# targets that go to build.bqn
+o3:
+	@"${MAKE}" to-bqn-build
+o3g:
+	@"${MAKE}" to-bqn-build i_build_opts="g"
+o3n:
+	@"${MAKE}" to-bqn-build i_build_opts="native"
+o3ng:
+	@"${MAKE}" to-bqn-build i_build_opts="native g"
+c:
+	@"${MAKE}" to-bqn-build build_c=1
 
-o3-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1
-o3g-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="g"
-	
-o3n-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native"
-o3ng-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native g"
-	
-debugn-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native debug o3=0"
-heapverifyn-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native debug o3=0 heapverify"
-rtverifyn-singeli:
-	@"${MAKE}" to-bqn-build REPLXX=$(i_REPLXX_1) singeli=1 i_build_opts="native rtverify"
+debug:
+	@"${MAKE}" to-bqn-build build_c=1 i_build_opts="debug"
+heapverify:
+	@"${MAKE}" to-bqn-build build_c=1 i_build_opts="debug heapverify"
+rtverify:
+	@"${MAKE}" to-bqn-build i_build_opts="debug rtverify"
 
+debugn:
+	@"${MAKE}" to-bqn-build build_c=1 i_build_opts="native debug"
+heapverifyn:
+	@"${MAKE}" to-bqn-build build_c=1 i_build_opts="native debug heapverify"
+rtverifyn:
+	@"${MAKE}" to-bqn-build i_build_opts="native rtverify"
+
+wasi-o3:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="wasi"
+wasi-reactor-o3:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="wasi" i_SHARED=1
+emcc-o3:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="emcc"
 shared-o3:
-	@"${MAKE}" to-bqn-build i_SHARED=1
+	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1
 shared-c:
-	@"${MAKE}" to-bqn-build i_SHARED=1 i_build_opts=c
+	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts=c
+
+# mappings of old names
+o3-singeli: o3
+o3g-singeli: o3g
+o3n-singeli: o3n
+o3ng-singeli: o3ng
+debugn-singeli: debugn
+heapverifyn-singeli: heapverifyn
+rtverifyn-singeli: rtverifyn
 
 # compiler setup
 i_CC := clang
@@ -149,7 +151,7 @@ ifeq ($(origin LD_LIBS),command line)
 	i_LIBS_LD := $(LD_LIBS)
 	custom = 1
 endif
-ifeq ($(REPLXX),1)
+ifeq ($(i_REPLXX_1),1)
 	i_PIE += -fPIE
 	i_CC_PIE := -fPIE
 endif
@@ -173,7 +175,7 @@ endif
 ifeq ($(origin LDFLAGS),command line)
 	custom = 1
 endif
-ifeq ($(REPLXX),1)
+ifeq ($(i_REPLXX_1),1)
 	i_f+= -DREPLXX_STATIC=1
 	custom = 1
 	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
@@ -203,7 +205,7 @@ endif
 ifeq ($(WINDOWS), 1)
 	i_f+= -DNO_MMAP
 	i_lf+= -lpthread
-	ifeq ($(REPLXX), 1)
+	ifeq ($(i_REPLXX_1), 1)
 		i_f+= -DUSE_REPLXX_IO
 	endif
 endif
@@ -229,7 +231,7 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${REPLXX}" "${REPLXX_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${i_REPLXX_1}" "${REPLXX_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" "${SINGELI_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
@@ -238,13 +240,13 @@ endif
 
 # simple non-incremental builds
 single-o3:
-	$(i_CC) $(ALL_CC_FLAGS) -O3 -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-o3g:
-	$(i_CC) $(ALL_CC_FLAGS) -O3 -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-debug:
-	$(i_CC) $(ALL_CC_FLAGS) -DDEBUG -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -DDEBUG -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 single-c:
-	$(i_CC) $(ALL_CC_FLAGS) -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
 
 # actual build
 run_incremental_0:
@@ -254,7 +256,7 @@ endif
 ifeq ($(verbose),1)
 	@echo "build directory: $$("${MAKE}" builddir)"
 	@echo "  bytecode: build/$(BYTECODE_DIR)"
-ifeq ($(REPLXX),1)
+ifeq ($(i_REPLXX_1),1)
 	@echo "  replxx: $(REPLXX_DIR)"
 else
 	@echo "  replxx: not used"
@@ -378,7 +380,7 @@ endif
 
 
 # replxx
-ifeq ($(REPLXX),1)
+ifeq ($(i_REPLXX_1),1)
 i_CXX := c++
 ifeq ($(origin CXX),command line)
 	i_CXX := $(CXX)

@@ -4,53 +4,74 @@
 
 ## Running
 
-1. `make REPLXX=1`
+1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - Add `CC=cc` if `clang` isn't installed
     - Add `FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
-    - Use `gmake` on BSD (a `NO_LDL=1` make arg may be useful if the linker complains about `-ldl`)
-    - Remove `REPLXX=1` if it causes issues (will remove line editing/coloring/name completion in the REPL)
+    - Use `gmake` on BSD
+    - Add `REPLXX=0` if C++ is unavailable (will remove line editing/coloring/name completion in the REPL)
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
     - `make clean` if anything breaks and you want a clean build slate
-2. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL (or `rlwrap ./BQN` if replxx wasn't enabled)
+2. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL
 
 ## Configuration options
 
-- Builds with more performance:
-    - `make o3n-singeli` - native for the current processor (i.e. `-march=native`); on x86-64 this assumes & uses AVX2 (and, if available, also BMI2)
-    - `make o3-singeli` - generic build for the current architecture; on x86-64 this uses SSE2 (i.e. 128-bit vectors (AVX2 being 256-bit), among other things), on aarch64 - NEON. (on other architectures this also works and provides some performance improvements, but won't include any more SIMD optimizations)  
-      Therefore, on x86-64, `o3n-singeli` is highly recommended, but on aarch64 `o3-singeli` is enough.
-    - `make o3-singeli has=avx2` - generic build for any x86-64 CPU that supports AVX2 (won't utilize BMI2 though; `has='avx2 bmi2'` to assume both AVX2 & BMI2)
-    - `make o3n-singeli has=slow-pdep` - build tuned for AMD Zen 1/Zen 2 CPUs, which have BMI2, but their pdep/pext instructions are extremely slow
-    - Target architecture is decided from `uname` - override with `target_arch=...` (valid values being `x86-64`, `aarch64`, `generic`). For native builds, targeted extensions are decided by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS), and C macro checks.
+The default configuration enables REPLXX & Singeli, and, if not done before, implicitly runs `make for-build` to build a CBQN for running `build/src/build.bqn` and compiling Singeli.
 
-- Build flags:
-    - `CC=...` - choose a different C compiler (default is `clang`)
-    - `CXX=...` - choose a different C++ compiler (default is `c++`)
-    - `f=...` - add extra C compiler flags for CBQN file compilation
-    - `lf=...` - add extra linking flags
-    - `CCFLAGS=...` - add flags for all CC/CXX/linking invocations
-    - `REPLXX=0`/`REPLXX=1` - enable/disable replxx (default depends on the target and may change in the future)
-    - `REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)
-    - `CXXFLAGS=...` - add additional CXX flags
-    - `FFI=0` - disable libffi usage
-    - `j=8` to override the default parallel job count
-    - `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename
-    - For build targets which use build.bqn (currently all the `-singeli` & `shared-` ones), `target_arch` and `target_os` options can be added, specifying the target architecture/OS (mostly just changing library loading defaults/Singeli configuration; if cross-compiling, further manual configuration will be necessary)
-    - Alternatively, `build/build` (aka build.bqn) can be invoked manually, though note that it has slightly different argument naming (see `build/build --help`), doesn't have predefined build types (i.e. `make o3ng-singeli` is `build/build replxx singeli native g`), and may be slightly less stable
+### Builds with more performance
 
-- More build types:
-    - `make o3` - `-O3`; currently the default build
-    - `make shared-o3` - produce a shared library `libcbqn.so`/`libcbqn.dylib`/`cbqn.dll`
-    - `make o3g` - `-O3 -g`
-    - `make o3g-singeli` / `make o3ng-singeli` - Singeli builds with `-g`
-    - `make debug` - unoptimized build with extra assertion checks (also includes `-g`)
-    - `make debug1` - debug build without parallel compilation. Useful if everything errors, and you don't want error messages from multiple threads to be printed at the same time.
-    - `make c` - a build with minimal default settings, for manual customizing
-    - `make shared-c` - like `make c` but for a shared library
-    - `make single-(o3|o3g|debug|c)` - compile everything as a single translation unit. Won't have incremental/parallel compilation, and isn't supported for many configurations
-    - `make emcc-o3` - build with Emscripten `emcc`
-    - `make wasi-o3` - build targeting WASI
+(TL;DR: use `make o3n` for local builds on x86-64, but `make` is fine on other architectures)
+
+The default target (`make o3`) will target optimizations for the current architecture, but not any further extensions the specific CPU may have.
+
+Thus, performance can be significantly improved by targeting the specific CPU via `make o3n` (with the usual drawback of `-march=native` of it not producing a binary portable to other CPUs of the same architecture).
+
+On x86-64, a native build will enable usage of AVX2 (i.e. ability to use 256-bit SIMD vectors instead of 128-bit ones, among other things), and BMI2 if available. But, on aarch64, NEON is always available, so a native build won't give significant benefits.
+
+To produce a binary utilizing AVX2 not specific to any processor, it's possible to do `make o3 has=avx2`. (`has='avx2 bmi2'` for targeting both AVX2 & BMI2)
+
+Additionally, on AMD Zen 1 & Zen 2, `make o3n has=slow-pdep` will further improve certain builtins (Zen 1/2 support BMI2, but their implementation of `pdep`/`pext` is so slow that not using it for certain operations is very beneficial).
+
+CBQN currently does not utilize AVX-512 or SVE, or have any SIMD optimizations specific to any architectures other than x86-64 and aarch64.
+
+For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sysctl machdep.cpu` on macOS) and C macros defined as a result of `-march=native`.
+
+### Build flags
+
+`CC=...` - choose a different C compiler (default is `clang`)  
+`CXX=...` - choose a different C++ compiler (default is `c++`)  
+`OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename  
+`target_arch=(x86-64|aarch64|generic)` - target architecture. Inferred from `uname` by default. Used for deciding target optimizations.  
+`target_os=(linux|bsd|macos|windows)` - target OS. Inferred from `uname` by default. Used for determining default output names and slight configuration changes.  
+`j=8` - override the default parallel job count (default is the output of `nproc`)  
+`notui=1` - display build progress in a plain-text format  
+`version=...` - specify the version to report in `--version` (default is commit hash)
+
+`REPLXX=0` - disable REPLXX (as a result of which C++ won't be used)  
+`singeli=0` - disable usage of Singeli  
+`FFI=0` - disable `•FFI`, thus not depending on libffi
+
+`f=...` - add extra C compiler flags for CBQN file compilation  
+`lf=...` - add extra linking flags (`LDFLAGS` is a synonym)  
+`CCFLAGS=...` - add flags for all CC/CXX/linking invocations  
+`REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)  
+`CXXFLAGS=...` - add additional CXX flags
+
+Alternatively, `build/build` (aka build.bqn) can be invoked manually, though note that it has slightly different argument naming (see `build/build --help`) and doesn't have predefined build types (i.e. `make o3ng` is done as `build/build replxx singeli native g`)
+
+### More build types
+
+- `make o3` - the default build
+- `make o3g` - effectively `make o3 f=-g` (custom `f=...` can still be added on)
+- `make c` - `make o3` but without `-O3`
+- `make shared-o3` - produce a shared library `libcbqn.so`/`libcbqn.dylib`/`cbqn.dll`
+- `make shared-c` - like `make c` but for a shared library
+- `make emcc-o3` - build with Emscripten `emcc`
+- `make wasi-o3` - build targeting WASI
+- `make wasi-reactor-o3` - build producing a WASI Reactor
+- `make debug` - unoptimized build with extra assertion checks (also includes `-g`)
+
+All of the above will go through build.bqn. If that causes problems, `make o3-makeonly` or `make c-makeonly` can be used. These still enable REPLXX by default, but do not support Singeli. Furthermore, these targets don't support some of the build flags that the others do.
 
 ## Requirements
 
@@ -108,7 +129,7 @@ You must manually set up a cross-compilation environment. It's possible to pass 
 
 A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as the default is to choose based on `uname`.
 
-Furthermore, most build targets will need a non-cross-compiled version of CBQN at build time to run Singeli and/or the build system. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
+Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and (if enabled) Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 
 ## License
 

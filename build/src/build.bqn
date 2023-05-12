@@ -216,9 +216,9 @@ po ← { # parsed options
   {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
   
   {𝕊:
-    Log⍟((0=≠has) ∧ @≡GetOpt"native") ∾⟨
+    Log⍟((¬compat) ∧ (0=≠has) ∧ @≡GetOpt"native") ∾⟨
       "Note: on x86-64, a generic build doesn't include many optimizations; ",
-      compat⊑"add an argument of 'native' or 'has=avx2' if possible; add 'native=0' to hide"‿"use 'make o3n-singeli' (targets the current CPU, assumes AVX2) or 'make o3-singeli has=avx2' if possible"
+      compat⊑"add an argument of 'native' or 'has=avx2' if possible; add 'native=0' to hide"‿"use 'make o3n' (targets the current CPU, assumes AVX2) or 'make o3 has=avx2' if possible"
     ⟩
   }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ ¬avx2
   
