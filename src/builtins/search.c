@@ -310,14 +310,13 @@ B memberOf_c2(B t, B w, B x) {
       #undef WEQ
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
-        B r;
         #if SINGELI
         if (we==el_i8 && xe==el_i8) {
           TALLOC(u8, tab, 256);
           u64* rp; r = m_bitarrc(&rp, w);
           simd_member_u8(tyany_ptr(x), xia, tyany_ptr(w), wia, rp, tab);
-          TFREE(tab);
-          return r;
+          TFREE(tab); decG(w);
+          goto dec_x;
         }
         #endif
         TABLE(x, w, i8, 0, 1)

@@ -259,7 +259,7 @@ B memberOf_c1(B t, B x) {
     TALLOC(u8, tab, 256);
     u64* rp; B r = m_bitarrv(&rp, n);
     simd_mark_firsts_u8(xv, n, rp, tab);
-    TFREE(tab);
+    TFREE(tab); decG(x);
     return r;
     #else
     LOOKUP(8);
