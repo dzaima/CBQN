@@ -26,7 +26,7 @@ build/build f='-DOBJ_COUNTER'         c && ./BQN -p 2+2 || exit
 build/build f='-DNO_RT'               c && ./BQN -p 2+2 || exit
 build/build f='-DNATIVE_COMPILER'     c && ./BQN -p 2+2 || exit
 build/build f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' c && ./BQN -p 2+2 || exit
-build/build f='-DLOG_GC' arch=generic c && ./BQN -p 2+2 || exit
+build/build f='-DLOG_GC' arch=generic singeli=1 c && ./BQN -p 2+2 || exit
 build/build f='-DUSE_PERF'            c && ./BQN -p 2+2 || exit
 build/build f='-DREPL_INTERRUPT=0'    c && ./BQN -p 2+2 || exit
 build/build f='-DREPL_INTERRUPT=1'    c && ./BQN -p 2+2 || exit
