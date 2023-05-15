@@ -200,6 +200,7 @@ po ← { # parsed options
   linux‿bsd‿macos‿windows ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"‿"windows"
   
   arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
+  {𝕊: arch ↩ "generic"}⍟⊢ wasm
   {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch<⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
   
   ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
@@ -223,6 +224,7 @@ po ← { # parsed options
   }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ ¬avx2
   
   pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
+  {𝕊: pie ↩ 0}⍟⊢ wasm
   
   output ⇐ GetOpt "OUTPUT"
   output ↩ •wdpath•file.At {𝕊:
@@ -269,8 +271,8 @@ po ← { # parsed options
       ⟨"-Wno-parentheses"⟩ # gcc
       ⟨ # clang
         "-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"
-        "-mllvm", "--x86-cmov-converter=0" # thing that converts `cmov`s to branching sometimes (?), but we don't want that
       ⟩
+      (¬wasm)/⟨"-mllvm", "--x86-cmov-converter=0"⟩ # thing that converts `cmov`s to branching sometimes (?), but we don't want that
     ⟩
     args∾↩ 0⊑GetLibs@
     

@@ -73,12 +73,14 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   0
 }
 
-export{'simd_search_u8',  searchOne{u64, u8}}
-export{'simd_search_u16', searchOne{u64, u16}}
-export{'simd_search_u32', searchOne{u64, u32}}
-export{'simd_search_f64', searchOne{f64, f64}}
-export{'simd_search_normalizable', searchNormalizable{}}
-export{'simd_copy_ordered', copyOrdered{}}
+if (hasarch{'X86_64'} or hasarch{'AARCH64'}) {
+  export{'simd_search_u8',  searchOne{u64, u8}}
+  export{'simd_search_u16', searchOne{u64, u16}}
+  export{'simd_search_u32', searchOne{u64, u32}}
+  export{'simd_search_f64', searchOne{f64, f64}}
+  export{'simd_search_normalizable', searchNormalizable{}}
+  export{'simd_copy_ordered', copyOrdered{}}
+}
 
 
 # In-register bit table

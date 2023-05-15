@@ -23,7 +23,7 @@
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
 
-#if SINGELI_SIMD
+#if SINGELI
   #define SINGELI_FILE search
   #include "../utils/includeSingeli.h"
 #endif
