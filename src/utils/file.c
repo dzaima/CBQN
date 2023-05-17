@@ -118,16 +118,16 @@ static NOINLINE void guaranteeStr(B x) { // assumes x is an array
   if (elChr(TI(x,elType))) return;
   usz xia = IA(x);
   SGetU(x)
-  for (usz i = 0; i < xia; i++) if (!isC32(GetU(x, i))) thrM("Paths must be character vectors");
+  for (usz i = 0; i < xia; i++) if (!isC32(GetU(x, i))) thrM("Path wasn't a list of characters");
 }
 
 
 B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
   assert(isArr(base) || q_N(base));
-  if (!isArr(rel) || RNK(rel)!=1) thrM("Paths must be character vectors");
+  if (!isArr(rel) || RNK(rel)!=1) thrM("Path wasn't a list of characters");
   SGetU(rel)
   usz ria = IA(rel);
-  if (RNK(rel)!=1) thrM("Paths must be character vectors");
+  if (RNK(rel)!=1) thrM("Path wasn't a list of characters");
   guaranteeStr(rel);
   if (ria>0 && isAbsolutePath(rel)) return rel;
   if (q_N(base)) thrM("Using relative path with no absolute base path known");

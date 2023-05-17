@@ -28,7 +28,7 @@ static bool eqStr(B w, u32* x) {
 
 B type_c1(B t, B x) {
   i32 r = -1;
-       if (isArr(x)) r = 0;
+  if      (isArr(x)) r = 0;
   else if (isF64(x)) r = 1;
   else if (isC32(x)) r = 2;
   else if (isFun(x)) r = 3;
@@ -251,8 +251,7 @@ B casrt_c1(B t, B x) {
 
 B sys_c1(B t, B x);
 B out_c1(B t, B x) {
-  if (isAtm(x)) thrM("•Out: Argument must be a list");
-  if (RNK(x)>1) thrF("•Out: Argument cannot have rank %i", RNK(x));
+  if (isAtm(x) || RNK(x)!=1) thrM("•Out: Argument must be a string");
   printsB(x); putchar('\n');
   return x;
 }
@@ -270,11 +269,11 @@ B show_c1(B t, B x) {
 }
 
 B vfyStr(B x, char* name, char* arg) {
-  if (isAtm(x) || RNK(x)!=1) thrF("%U: %U must be a character vector", name, arg);
+  if (isAtm(x) || RNK(x)!=1) thrF("%U: %U must be a string", name, arg);
   if (!elChr(TI(x,elType))) {
     usz ia = IA(x);
     SGetU(x)
-    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a character vector", name, arg);
+    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a string", name, arg);
   }
   return x;
 }
@@ -728,7 +727,7 @@ B fchars_c1(B d, B x) {
   return path_chars(path_rel(nfn_objU(d), x));
 }
 B fchars_c2(B d, B w, B x) {
-  if (!isArr(x)) thrM("•FChars: Non-array 𝕩");
+  if (isAtm(x) || RNK(x)!=1) thrM("•file.Chars: 𝕩 must be a list of characters");
   B p = path_rel(nfn_objU(d), w);
   path_wChars(incG(p), x);
   dec(x);
@@ -744,7 +743,7 @@ B fbytes_c1(B d, B x) {
   return r;
 }
 B fbytes_c2(B d, B w, B x) {
-  if (!isArr(x)) thrM("•FBytes: Non-array 𝕩");
+  if (isAtm(x) || RNK(x)!=1) thrM("•file.Bytes: 𝕩 must be a list");
   B p = path_rel(nfn_objU(d), w);
   path_wBytes(incG(p), x);
   dec(x);
@@ -755,13 +754,13 @@ B flines_c1(B d, B x) {
   return path_lines(path_rel(nfn_objU(d), x));
 }
 B flines_c2(B d, B w, B x) {
-  if (!isArr(x)) thrM("•FLines: Non-array 𝕩");
+  if (isAtm(x) || RNK(x)!=1) thrM("•file.Lines: 𝕩 must be a list");
   B nl, s = emptyCVec();
   usz ia = IA(x);
   SGet(x)
   for (u64 i = 0; i < ia; i++) {
     nl = Get(x, i);
-    if (!isArr(nl)) thrM("•FLines: Non-array element of 𝕩");
+    if (isAtm(s) || RNK(s)!=1) thrM("•file.Lines: Elements of 𝕩 must be lists of characters");
     s = vec_join(s, nl);
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
     s = vec_addN(s, m_c32('\n'));
@@ -877,11 +876,11 @@ B fexists_c1(B d, B x) {
 }
 
 B fName_c1(B t, B x) {
-  if (!isArr(x) || RNK(x)!=1) thrM("•file.Name: Argument must be a character vector");
+  if (isAtm(x) || RNK(x)!=1) thrM("•file.Name: Argument must be a string");
   return path_name(x);
 }
 B fParent_c1(B t, B x) {
-  if (!isArr(x) || RNK(x)!=1) thrM("•file.Parent: Argument must be a character vector");
+  if (isAtm(x) || RNK(x)!=1) thrM("•file.Parent: Argument must be a string");
   return path_parent(x);
 }
 
@@ -932,7 +931,7 @@ B getLine_c1(B t, B x) {
 }
 
 B fromUtf8_c1(B t, B x) {
-  if (!isArr(x)) thrM("•FromUTF8: Argument must be a character or number array");
+  if (isAtm(x) || RNK(x)!=1) thrM("•FromUTF8: Argument must be a character or number list");
   usz ia = IA(x);
   TALLOC(char, chrs, ia);
   SGetU(x)
@@ -944,7 +943,7 @@ B fromUtf8_c1(B t, B x) {
       chrs[i] = v;
     } else {
       i32 v = o2i(c);
-      if (v<=-128 | v>=256) thrF("•FromUTF8: Argument contained %i", v);
+      if (v<=-128 | v>=256) thrF("•FromUTF8: Argument contained the number %i", v);
       chrs[i] = v&0xff;
     }
   }
@@ -955,7 +954,7 @@ B fromUtf8_c1(B t, B x) {
 }
 
 B toUtf8_c1(B t, B x) {
-  if (!isArr(x)) thrM("•ToUTF8: Argument must be a character or number array");
+  if (isAtm(x) || RNK(x)!=1) thrM("•ToUTF8: Argument must be a character or number list");
   u64 len = utf8lenB(x);
   u8* rp; B r = m_c8arrv(&rp, len);
   toUTF8(x, (char*)rp);
@@ -1165,12 +1164,12 @@ B tFlush_c1(B t, B x) {
   return x;
 }
 B tOutRaw_c1(B t, B x) {
-  if (isAtm(x)) thrM("•term.OutRaw: 𝕩 must be an array");
+  if (isAtm(x) || RNK(x)!=1) thrM("•term.OutRaw: 𝕩 must be a list");
   file_wBytes(stdout, bi_N, x);
   return x;
 }
 B tErrRaw_c1(B t, B x) {
-  if (isAtm(x)) thrM("•term.ErrRaw: 𝕩 must be an array");
+  if (isAtm(x) || RNK(x)!=1) thrM("•term.ErrRaw: 𝕩 must be a list");
   file_wBytes(stderr, bi_N, x);
   return x;
 }
