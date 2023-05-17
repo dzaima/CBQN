@@ -131,7 +131,7 @@ void fprintsB(FILE* f, B x) {
       for (usz i = 0; i < ia; i++) {
         B c = GetU(x, i);
         if (isC32(c)) fprintCodepoint(f, o2cG(c));
-#if CATCH_ERRORS
+#if !CATCH_ERRORS
         else if (c.u==0 || noFill(c)) fprintf(f, " ");
 #endif
         else thrM("Trying to output non-character");
