@@ -107,38 +107,34 @@ B utf8DecodeA(I8Arr* a) { // consumes a
 void fprintsB(FILE* f, B x) {
   u8 xe = TI(x,elType);
   usz ia = IA(x);
+  #define BUF_SZ 1024
   if (ia==0) return;
-  if (xe==el_c32) {
-    fprintsU32(f, c32any_ptr(x), ia);
-  } else {
-    #define BUF_SZ 1024
-    if (elChr(xe)) {
-      if (xe==el_c32) {
-        fprintsU32(f, c32any_ptr(x), ia);
-      } else {
-        u32 buf[BUF_SZ];
-        usz i = 0;
-        while (i < ia) {
-          usz curr = ia-i;
-          if (curr>BUF_SZ) curr = BUF_SZ;
-          COPY_TO(buf, el_c32, 0, x, i, curr);
-          fprintsU32(f, buf, curr);
-          i+= curr;
-        }
-      }
+  if (elChr(xe)) {
+    if (xe==el_c32) {
+      fprintsU32(f, c32any_ptr(x), ia);
     } else {
-      SGetU(x)
-      for (usz i = 0; i < ia; i++) {
-        B c = GetU(x, i);
-        if (isC32(c)) fprintCodepoint(f, o2cG(c));
-#if !CATCH_ERRORS
-        else if (c.u==0 || noFill(c)) fprintf(f, " ");
-#endif
-        else thrM("Trying to output non-character");
+      u32 buf[BUF_SZ];
+      usz i = 0;
+      while (i < ia) {
+        usz curr = ia-i;
+        if (curr>BUF_SZ) curr = BUF_SZ;
+        COPY_TO(buf, el_c32, 0, x, i, curr);
+        fprintsU32(f, buf, curr);
+        i+= curr;
       }
     }
-    #undef BUF_SZ
+  } else {
+    SGetU(x)
+    for (usz i = 0; i < ia; i++) {
+      B c = GetU(x, i);
+      if (isC32(c)) fprintCodepoint(f, o2cG(c));
+#if !CATCH_ERRORS
+      else if (c.u==0 || noFill(c)) fprintf(f, " ");
+#endif
+      else thrM("Trying to output non-character");
+    }
   }
+  #undef BUF_SZ
 }
 
 u64 utf8lenB(B x) { // doesn't consume; may error as it verifies whether is all chars
