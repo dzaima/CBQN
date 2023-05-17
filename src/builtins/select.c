@@ -362,17 +362,7 @@ B select_c2(B t, B w, B x) {
 
 
 
-
-
-B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
-  usz xia = IA(x);
-  usz wia = IA(w);
-  SGetU(w)
-  if (TI(w,elType)!=el_i32) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
-  B arg = select_c2(t, incG(w), incG(x));
-  B rep = c1(o, arg);
-  if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
+B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊) x
   #if CHECK_VALID
     TALLOC(bool, set, xia);
     bool sparse = wia < xia/64;
@@ -381,9 +371,9 @@ B select_ucw(B t, B o, B w, B x) {
       if (sparse) for (usz i = 0; i < wia; i++) {                    \
         i64 cw = WI; if (RARE(cw<0)) cw+= (i64)xia; set[cw] = false; \
       }
-    #define EQ(F) if (set[cw] && (F)) thrM("𝔽⌾(a⊸⊏): Incompatible result elements"); set[cw] = true;
+    #define EQ(F) if (set[cw] && (F)) thrF("𝔽⌾(a⊸%c): Incompatible result elements", chr); set[cw] = true;
     #define FREE_CHECK TFREE(set)
-    SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 because CHECK_VALID", w, x);
+    SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because CHECK_VALID", w, x);
   #else
     #define SPARSE_INIT(GET)
     #define EQ(F)
@@ -393,7 +383,7 @@ B select_ucw(B t, B o, B w, B x) {
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   u8 re = TI(rep,elType);
-  SLOWIF(!reusable(x) && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 because not reusable", w, x);
+  SLOWIF(!reusable(x) && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   if (elInt(we)) {
     w = toI32Any(w);
     i32* wp = i32any_ptr(w);
@@ -490,7 +480,7 @@ B select_ucw(B t, B o, B w, B x) {
   MAKE_MUT_INIT(r, xia, el_or(xe, re));
   MUTG_INIT(r);
   mut_copyG(r, 0, x, 0, xia);
-  SGet(rep)
+  SGet(rep) SGetU(w)
   SPARSE_INIT(o2i64G(GetU(w, i)))
   for (usz i = 0; i < wia; i++) {
     i64 cw = o2i64G(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
@@ -504,4 +494,15 @@ B select_ucw(B t, B o, B w, B x) {
   #undef SPARSE_INIT
   #undef EQ
   #undef FREE_CHECK
+}
+
+B select_ucw(B t, B o, B w, B x) {
+  if (isAtm(x) || RNK(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
+  usz xia = IA(x);
+  usz wia = IA(w);
+  SGetU(w)
+  if (!elInt(TI(w,elType))) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
+  B rep = c1(o, C2(select, incG(w), incG(x)));
+  if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
+  return select_replace(U'⊏', w, x, rep, wia, xia);
 }
