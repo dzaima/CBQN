@@ -7,7 +7,7 @@
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - Add `CC=cc` if `clang` isn't installed
-    - Add `FFI=0` if your system doesn't have libffi (if `pkg-config` doesn't exist, extra configuration may be necessary to allow CBQN to find libffi)
+    - Add `FFI=0` if your system doesn't have libffi
     - Use `gmake` on BSD
     - Add `REPLXX=0` if C++ is unavailable (will remove line editing/coloring/name completion in the REPL)
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
@@ -39,15 +39,15 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 ### Build flags
 
 `CC=...` - choose a different C compiler (default is `clang`)  
-`CXX=...` - choose a different C++ compiler (default is `c++`)  
-`OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder of `BQN.js` and `BQN.wasm`, for everything else - the filename  
+`CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)  
+`OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename  
 `target_arch=(x86-64|aarch64|generic)` - target architecture. Inferred from `uname` by default. Used for deciding target optimizations.  
 `target_os=(linux|bsd|macos|windows)` - target OS. Inferred from `uname` by default. Used for determining default output names and slight configuration changes.  
 `j=8` - override the default parallel job count (default is the output of `nproc`)  
 `notui=1` - display build progress in a plain-text format  
 `version=...` - specify the version to report in `--version` (default is commit hash)
 
-`REPLXX=0` - disable REPLXX (as a result of which C++ won't be used)  
+`REPLXX=0` - disable REPLXX
 `singeli=0` - disable usage of Singeli  
 `FFI=0` - disable `•FFI`, thus not depending on libffi
 
@@ -95,6 +95,8 @@ AArch64 ARMv8-A (within Termux on Android 8):
   replxx: clang++ 15.0.4
 ```
 Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
+
+The build will additionally attempt to use `pkg-config` for determining how to include libffi, `uname` for `target_arch` and `target_os`, and `nproc` for parallel job count, but has defaults if any aren't present (`-lffi` for linking libffi (+ `-ldl` on non-BSD), arch → `generic`, os → `linux`, `j=4`), and the behavior of these can be overriden by build options.
 
 ### Precompiled bytecode
 
