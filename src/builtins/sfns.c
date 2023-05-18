@@ -1313,22 +1313,21 @@ B pick_ucw(B t, B o, B w, B x) {
     if (RARE(RNK(x)!=1)) goto def;
     pos = WRAP(o2i64(w), xia, thrF("𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡%R, %s≡≠𝕩)", w, xia));
   } else {
-    usz wia = IA(w);
-    usz* xsh = SH(x);
     ur xr = RNK(x);
-    if (xr==0) goto def;
+    if (RARE(xr==0)) goto def;
+    usz* xsh = SH(x);
     pos = pick_oneIndex(w, xr, xsh);
     if (pos == USZ_MAX) {
+      usz wia = IA(w);
       MAKE_MUT_INIT(r, wia, xia<I8_MAX? el_i8 : xia<I16_MAX? el_i16 : xia<I32_MAX? el_i32 : el_f64); MUTG_INIT(r);
       SGetU(w)
       for (usz i = 0; i < wia; i++) {
         usz c = pick_oneIndex(GetU(w,i), xr, xsh);
-        if (RARE(c==USZ_MAX)) { mut_pfree(r, i); return def_fn_ucw(t, o, w, x); }
+        if (RARE(c==USZ_MAX)) { mut_pfree(r, i); goto def; }
         mut_setG(r, i, m_usz(c));
       }
-      decG(w);
-      w = mut_fv(r);
-      B rep = c1(o, C2(select, incG(w), C1(shape, incG(x))));
+      w = mut_fcd(r, w);
+      B rep = isArr(o)? incG(o) : c1(o, C2(select, incG(w), C1(shape, incG(x))));
       if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
       return select_replace(U'⊑', w, x, rep, wia, xia);
     }
