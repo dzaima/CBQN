@@ -19,7 +19,7 @@ fn absFn{T}(r:*void, x:*void, len:u64) : u64 = {
   def VT = [bulk]T
   muLoop{bulk, tern{T==f64, 2, 1}, len, {is, M} => {
     def cx = loadBatch{*T~~x, is, VT}
-    if (T!=f64 and homAny{M{tree_fold{&, eachx{==, cx, VT**minvalue{T}}}}}) return{tupsel{0,is}*bulk}
+    if (T!=f64 and homAny{M{tree_fold{|, eachx{==, cx, VT**minvalue{T}}}}}) return{tupsel{0,is}*bulk}
     storeBatch{*T~~r, is, each{abs, cx}, M}
   }}
   len
