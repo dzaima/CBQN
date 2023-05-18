@@ -44,8 +44,8 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x)) r = m_hunit(c1(f, x));
   else if (isFun(f)) r = eachm_fn(f, x, c(Fun,f)->c1);
   else {
-    if (isMd(f)) if (isAtm(x) || IA(x)) { decR(x); thrM("Calling a modifier"); }
     usz ia = IA(x);
+    if (isMd(f) && ia>0) { decR(x); thrM("Calling a modifier"); }
     MAKE_MUT(rm, ia);
     mut_fill(rm, 0, f, ia);
     r = mut_fcd(rm, x);
