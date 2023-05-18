@@ -32,24 +32,25 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
   BSS2A X##_slc = TI(X,slice);   \
   incByG(X, (i64)X##_sn + ((i64)DX-1));
 
-#define S_SLICES(X, SLN) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1, SLN, 0)
 #define SLICE(X, S) taga(arr_shSetUO(X##_slc(X, S, X##_csz), X##_cr, X##_csh))
 #define SLICEI(X) ({ B r = SLICE(X, X##p); X##p+= X##_csz; r; })
 
 
 
 // Used by Insert in fold.c
-B insert_base(B f, B x, usz xia, bool has_w, B w) {
+B insert_base(B f, B x, bool has_w, B w) {
   assert(isArr(x) && RNK(x)>0);
-  S_SLICES(x, *x_sh)
-  usz p = xia;
+  usz* xsh = SH(x);
+  usz xn = xsh[0];
+  S_KSLICES(x, xsh, 1, xn, 0)
+  usz p = xn*x_csz;
   B r = w;
   if (!has_w) {
-    p -= x_csz;
+    p -= x_csz; xn--;
     r = SLICE(x, p);
   }
   FC2 fc2 = c2fn(f);
-  while(p!=0) {
+  while (xn--) {
     p-= x_csz;
     r = fc2(f, SLICE(x, p), r);
   }

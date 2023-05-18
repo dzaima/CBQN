@@ -329,12 +329,11 @@ static B m1c1(B t, B f, B x) { // consumes x
   return r;
 }
 extern B rt_insert;
-extern B insert_base(B f, B x, usz xia, bool has_w, B w); // from cells.c
+extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
-  usz xia = IA(x);
-  if (xia==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
+  if (*SH(x)==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
     ur xr = RNK(x);
@@ -354,13 +353,12 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       return taga(r);
     }
   }
-  return insert_base(f, x, xia, 0, bi_N);
+  return insert_base(f, x, 0, bi_N);
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
-  usz xia = IA(x);
   B r = w;
-  if (xia==0) { decG(x); return r; }
+  if (*SH(x)==0) { decG(x); return r; }
   
   if (isFun(f)) {
     if (RNK(x)==1 && isPervasiveDyExt(f)) {
@@ -373,7 +371,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
       }
     }
   }
-  return insert_base(f, x, xia, 1, w);
+  return insert_base(f, x, 1, w);
 }
 
 // Arithmetic fold/insert on rows of flat rank-2 array x
