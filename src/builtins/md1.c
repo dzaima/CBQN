@@ -42,8 +42,11 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   if (EACH_FILLS) xf = getFillR(x);
   
   if (isAtm(x)) r = m_hunit(c1(f, x));
-  else if (isFun(f)) r = eachm_fn(f, x, c(Fun,f)->c1);
-  else {
+  else if (isFun(f)) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_ltack || rtid==n_rtack) return x;
+    r = eachm_fn(f, x, c(Fun,f)->c1);
+  } else {
     usz ia = IA(x);
     if (isMd(f) && ia>0) { decR(x); thrM("Calling a modifier"); }
     MAKE_MUT(rm, ia);
@@ -72,10 +75,25 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   usz* rsh;
   
   FC2 fc2 = c2fn(f);
-  if (isFun(f) && TI(w,arrD1) && isPervasiveDyExt(f)) {
+  if (RARE(!isFun(f))) {
+    if (isMd(f) && ria>0) thrM("Calling a modifier");
+    MAKE_MUT(rm, ria);
+    mut_fill(rm, 0, f, ria);
+    Arr* ra = mut_fp(rm);
+    rsh = arr_shAlloc(ra, rr);
+    r = taga(ra);
+  } else if (v(f)->flags-1 == n_ltack) {
+    Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
+    r = C2(slash, m_i32(xia), taga(wd));
+    goto arith_finish;
+  } else if (v(f)->flags-1 == n_rtack) {
+    r = C2(shape, m_f64(ria), incG(x));
+    goto arith_finish;
+  } else if (TI(w,arrD1) && isPervasiveDyExt(f)) {
     if (TI(x,arrD1) && wia>=4 && xia<2560>>arrTypeBitsLog(TY(x))) {
       Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
       r = fc2(f, C2(slash, m_i32(xia), taga(wd)), C2(shape, m_f64(ria), incG(x)));
+      arith_finish:;
       if(RARE(!reusable(r))) r = taga(cpyWithShape(r));
       arr_shErase(a(r), 1);
     } else if (xia>7 && wia>0) {
