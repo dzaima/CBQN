@@ -186,6 +186,17 @@ def cvt{T, x:X & T==eltype{X}} = x
 def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
 def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
 
+def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = { # ∊ [start;start+count)
+  def TU = ty_u{TS}
+  (TU~~(x-TS**start))  <  TU**count
+}
+def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = { # ∊ [start;start+count)
+  def TS = ty_s{TU}
+  def h = 1 << (elwidth{TU}-1)
+  (TS~~(x-TU**(start-h)))  <  TS**(count-h)
+}
+def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1} # ∊ [start;end]
+def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;end)
 
 
 # tuple operations
@@ -194,6 +205,7 @@ def iota{n & knum{n}} = @collect(i to n) i
 def broadcast{n, v & knum{n}} = @collect(n) v
 
 def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
+def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
 
 
 

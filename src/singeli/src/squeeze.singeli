@@ -15,18 +15,6 @@ include './vecfold'
 
 def preserve_negative_zero = 0
 
-def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = {
-  def TU = ty_u{TS}
-  (TU~~(x-TS**start))  <  TU**count
-}
-def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = {
-  def TS = ty_s{TU}
-  def h = 1 << (elwidth{TU}-1)
-  (TS~~(x-TU**(start-h)))  <  TS**(count-h)
-}
-def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1}
-def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start}
-
 # SSE2 versions avoid any 64-bit integer comparsions
 def anySNaN{M, x:T & eltype{T}==u64} = {
   homAny{inRangeLen{M{x}<<1, (0xFFE<<52)+2, (1<<52)-2}}
