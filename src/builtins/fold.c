@@ -168,8 +168,9 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       thrM("´: No identity found");
     }
   }
+  if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   u8 xe = TI(x,elType);
-  if (isFun(f) && v(f)->flags) {
+  if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) { B r = IGet(x, 0   ); decG(x); return r; }
     if (rtid==n_rtack) { B r = IGet(x, ia-1); decG(x); return r; }
@@ -234,9 +235,10 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
 
 B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
+  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   usz ia = IA(x);
   u8 xe = TI(x,elType);
-  if (isFun(f) && v(f)->flags) {
+  if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) {
       B r = w;
@@ -322,6 +324,8 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
   neg: thrM("Didn't expect negative integer");
 }
 
+B select_c1(B, B);
+B select_c2(B, B, B);
 static B m1c1(B t, B f, B x) { // consumes x
   B fn = m1_d(inc(t), inc(f));
   B r = c1(fn, x);
@@ -333,12 +337,17 @@ extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
-  if (*SH(x)==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
-  if (isFun(f)) {
+  usz len = *SH(x);
+  if (len==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
+  if (len==1) return C1(select, x);
+  if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  ur xr = RNK(x);
+  if (xr==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
+  if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
-    ur xr = RNK(x);
-    if (xr==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
-    if (rtid == n_join) {
+    if (rtid==n_ltack) return C1(select, x);
+    if (rtid==n_rtack) return C2(select, m_f64(-1), x);
+    if (rtid==n_join) {
       if (xr==1) return x;
       ShArr* rsh;
       if (xr>2) {
@@ -357,19 +366,21 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
-  B r = w;
-  if (*SH(x)==0) { decG(x); return r; }
-  
-  if (isFun(f)) {
-    if (RNK(x)==1 && isPervasiveDyExt(f)) {
-      if (isAtm(w)) {
-        to_fold: return m_unit(fold_c2(d, w, x));
-      }
-      if (RNK(w)==0) {
-        B w0=w; w = IGet(w,0); decG(w0);
-        goto to_fold;
-      }
+  if (*SH(x)==0) { decG(x); return w; }
+  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  if (RNK(x)==1 && isPervasiveDyExt(f)) {
+    if (isAtm(w)) {
+      to_fold: return m_unit(fold_c2(d, w, x));
     }
+    if (RNK(w)==0) {
+      B w0=w; w = IGet(w,0); decG(w0);
+      goto to_fold;
+    }
+  }
+  if (v(f)->flags) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_ltack) { dec(w); return C1(select, x); }
+    if (rtid==n_rtack) { decG(x); return w; }
   }
   return insert_base(f, x, 1, w);
 }
