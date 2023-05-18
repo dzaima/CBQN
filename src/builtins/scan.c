@@ -178,14 +178,35 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   #endif
 }
 
+B fne_c1(B, B);
+B shape_c2(B, B, B);
+
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = RNK(x);
   usz ia = IA(x);
-  if (ia==0) return x;
+  if (*SH(x)<=1 || ia==0) return x;
+  if (RARE(!isFun(f))) {
+    if (isMd(f)) thrM("Calling a modifier");
+    B xf = getFillR(x);
+    MAKE_MUT(rm, ia);
+    usz csz = arr_csz(x);
+    mut_copy(rm, 0, x, 0, csz);
+    mut_fill(rm, csz, f, ia-csz);
+    return withFill(mut_fcd(rm, x), xf);
+  }
   u8 xe = TI(x,elType);
-  if (xr==1 && xe<=el_f64 && isFun(f) && v(f)->flags) {
+  if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
+    if (rtid==n_rtack) return x;
+    if (rtid==n_ltack) {
+      usz csz = arr_csz(x);
+      B s = C1(fne, incG(x));
+      Arr* r = TI(x,slice)(x, 0, csz);
+      return C2(shape, s, taga(r));
+    }
+    if (!(xr==1 && xe<=el_f64)) goto base;
+    
     if (xe==el_bit) {
       if (rtid==n_add                              ) return scan_add_bool(x, ia); // +
       if (rtid==n_or  |               rtid==n_ceil ) return scan_or(x, ia);       // ∨⌈
@@ -237,9 +258,21 @@ B add_c2(B, B, B);
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
+  if (isArr(w)? !ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1) : xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+  if (ia==0) { dec(w); return x; }
+  if (RARE(!isFun(f))) {
+    if (isMd(f)) thrM("Calling a modifier");
+    B xf = getFillR(x);
+    MAKE_MUT(rm, ia);
+    mut_fill(rm, 0, f, ia);
+    return withFill(mut_fcd(rm, x), xf);
+  }
   u8 xe = TI(x,elType);
-  if (xr==1 && elNum(xe) && isFun(f) && v(f)->flags && isF64(w)) {
+  if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
+    if (rtid==n_rtack) { dec(w); return x; }
+    if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
+    if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;
     
     if (rtid==n_floor) return scan2_min_num(w, x, xe, ia); // ⌊
     if (rtid==n_ceil ) return scan2_max_num(w, x, xe, ia); // ⌈
@@ -286,17 +319,12 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   FC2 fc2 = c2fn(f);
   
   if (isArr(w)) {
-    if (!ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1)) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-    if (ia!=0) {
-      usz csz = arr_csz(x);
-      SGet(w)
-      for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
-      for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
-    }
+    usz csz = arr_csz(x);
+    SGet(w)
+    for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
+    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
     decG(w);
   } else {
-    if (xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-    if (ia==0) return x;
     B pr = r.a[0] = fc2(f, w, xget(xa,0)); i++;
     for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(xa,i));
   }
