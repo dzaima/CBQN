@@ -1402,7 +1402,6 @@ B shape_uc1(B t, B o, B x) {
   return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
 }
 
-B reverse_uc1(B t, B o, B x) { return reverse_c1(m_f64(0), c1(o, reverse_c1(t, x))); }
 
 B reverse_ix(B t, B w, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽⁼: 𝕩 must have rank at least 1");
@@ -1411,17 +1410,16 @@ B reverse_ix(B t, B w, B x) {
   return rotate_highrank(1, w, x);
 }
 
-B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(m_f64(0), w, c1(o, reverse_c2(t, inc(w), x))); }
-
 NOINLINE B enclose_im(B t, B x) {
   if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
   B r = IGet(x, 0);
   dec(x);
   return r;
 }
-B enclose_uc1(B t, B o, B x) {
-  return enclose_im(t, c1(o, m_unit(x)));
-}
+
+B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(m_f64(0), w, c1(o, reverse_c2(t, inc(w), x))); }
+B reverse_uc1(B t, B o, B x) { return C1(reverse, c1(o, reverse_c1(t, x))); }
+B enclose_uc1(B t, B o, B x) { return enclose_im(m_f64(0), c1(o, m_unit(x))); }
 
 void sfns_init(void) {
   c(BFn,bi_pick)->uc1 = pick_uc1;
