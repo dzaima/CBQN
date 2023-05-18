@@ -38,6 +38,10 @@ B eachd_fn(B fo, B w, B x, FC2 f) {
   B rb;
   if (ria==0) {
     rb = rM==1? emptyHVec() : m_harrUc(bo).b;
+  } else if (f == arr_c2) {
+    MAKE_MUT(rm, ria);
+    mut_fill(rm, 0, fo, ria);
+    rb = mut_fc(rm, bo);
   } else {
     M_HARR(r, ria)
     if (wr==xr) {            SGet(x) SGet(w) for(usz ri=0; ri<ria; ri++) HARR_ADD(r, ri, f(fo, Get(w,ri), Get(x,ri))); }
