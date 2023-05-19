@@ -280,7 +280,20 @@ B eequal_c2(B t, B w, B x) {
   extern i32 fullCellFills;
   extern i32 cellFillErrored;
 #endif
+#if TEST_RANGE
+  #include "../utils/calls.h"
+#endif
 B internalTemp_c1(B t, B x) {
+  #if TEST_RANGE
+    i64 buf[2];
+    bool b = getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x));
+    f64* rp;
+    B r = m_f64arrv(&rp, 3);
+    rp[0] = buf[0];
+    rp[1] = buf[1];
+    rp[2] = b;
+    return r;
+  #endif
   #if TEST_CELL_FILLS
     if (isNum(x)) fullCellFills = o2iG(x);
     B r = m_i32(cellFillErrored);

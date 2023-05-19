@@ -22,11 +22,27 @@
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
+#include "../utils/calls.h"
 
+RangeFn getRange_fns[el_f64+1];
 #if SINGELI
+  extern RangeFn* const simd_getRangeRaw;
   #define SINGELI_FILE search
   #include "../utils/includeSingeli.h"
+#else
+  #define GETRANGE(T,X) bool getRange_##T(void* x0, i64* res, u64 ia) { \
+    assert(ia>0); T* x=x0; T min=*x,max=min; \
+    for (ux i=1; i<ia; i++) { T c=x[i]; X;   \
+      if(c<min)min=c; if(c>max)max=c;        \
+    }                                        \
+    res[0]=min; res[1]=max; return 1;        \
+  }
+  GETRANGE(i8,)
+  GETRANGE(i16,)
+  GETRANGE(i32,)
+  GETRANGE(f64, if (!q_fi64(c)) return 0)
 #endif
+
 
 #define C2i(F, W, X) C2(F, m_i32(W), X)
 extern B eq_c2(B,B,B);
@@ -447,7 +463,23 @@ B asNormalized(B x, usz n, bool nanBad) {
   return m_f64(0);
 }
 
+bool getRangeBool(void* xp, i64* res, u64 ia) {
+  assert(ia>0);
+  u64 x0 = 1 & ((u64*)xp)[0];
+  if (bit_has(xp, ia, !x0)) { res[0]=0; res[1]=1; }
+  else                      { res[0]=res[1]=x0; }
+  return true;
+}
 void search_init(void) {
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p= 0;    gc_add(enclosed_0=taga(a)); }
   { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p=~0ULL; gc_add(enclosed_1=taga(a)); }
+  getRange_fns[0] = getRangeBool;
+  #if SINGELI
+    for (i32 i=0; i<4; i++) getRange_fns[i+1] = simd_getRangeRaw[i];
+  #else
+    getRange_fns[1] = getRange_i8;
+    getRange_fns[2] = getRange_i16;
+    getRange_fns[3] = getRange_i32;
+    getRange_fns[4] = getRange_f64;
+  #endif
 }
