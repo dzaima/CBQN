@@ -751,7 +751,7 @@ B join_c1(B t, B x) {
         cam += cr < rm ? 1 : *csh++;
         if (!eqShPart(csh, esh, rm-1)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       }
-      if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) rf = bi_noFill;
+      if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) { dec(rf); rf = bi_noFill; }
     }
     if (rm==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
     
@@ -837,7 +837,7 @@ B join_c1(B t, B x) {
           ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=RNK(c); sh=SH(c); }
           if (cr != r1-rd) thrF("∾: Incompatible item ranks", base, c);
           if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
-          if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) rf = bi_noFill;
+          if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) { dec(rf); rf = bi_noFill; }
         }
       }
       tr -= a0;

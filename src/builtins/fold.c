@@ -71,7 +71,7 @@ static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum
 B sum_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum: Argument must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
-  if (ia==0) return m_f64(0);
+  if (ia==0) { decG(x); return m_f64(0); }
   u8 xe = TI(x,elType);
   if (!elNum(xe)) {
     x = any_squeeze(x); xe = TI(x,elType);
