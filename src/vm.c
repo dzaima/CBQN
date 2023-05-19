@@ -468,7 +468,7 @@ NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B to
   HArr* objArr = (HArr*)cpyHArr(objs);
   comp->objs = objArr;
   usz objAm = PIA(objArr);
-  for (usz i = 0; i < objAm; i++) objArr->a[i] = squeeze_deep(objArr->a[i]);
+  for (usz i = 0; i < objAm; i++) { B* c=objArr->a+i; B v=*c; *c=m_f64(0); *c = squeeze_deep(v); }
   
   if (!q_N(src) && !q_N(indices)) {
     if (isAtm(indices) || RNK(indices)!=1 || IA(indices)!=2) thrM("VM compiler: Bad indices");
