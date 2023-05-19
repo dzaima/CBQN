@@ -351,6 +351,7 @@ NOINLINE void print_fmt(char* p, ...) {
   decG(r);
 }
 NOINLINE void thrF(char* p, ...) {
+  NOGC_CHECK("throwing during noAlloc");
   va_list a;
   va_start(a, p);
   B r = do_fmt(emptyCVec(), p, a);

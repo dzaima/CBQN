@@ -327,7 +327,7 @@ typedef struct Arr {
   #define UD assert(false)
   extern bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
-  #define NOGC_CHECK if (cbqn_noAlloc && !gc_depth) fatal("allocating during noalloc");
+  #define NOGC_CHECK(M) do { if (cbqn_noAlloc && !gc_depth) fatal(M); } while (0)
   #define NOGC_S cbqn_NOGC_start()
   #define NOGC_E cbqn_noAlloc=false
 #else
@@ -337,7 +337,7 @@ typedef struct Arr {
   #define UD __builtin_unreachable()
   #define NOGC_S
   #define NOGC_E
-  #define NOGC_CHECK
+  #define NOGC_CHECK(M)
 #endif
 #if WARN_SLOW
   void warn_slow1(char* s, B x);

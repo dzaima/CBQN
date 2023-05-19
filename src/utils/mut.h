@@ -96,7 +96,7 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->
 // after that, the only valid operation on the Mut will be MUT_APPEND
 // using this append system will no longer prevent allocations from being done during the lifetime of the Mut
 #define MUT_APPEND_INIT(N) ux N##_ci = 0; NOGC_E;
-#define MUT_APPEND(N, X, XS, L) ({ ux l_ = (L); NOGC_CHECK; \
+#define MUT_APPEND(N, X, XS, L) ({ ux l_ = (L); NOGC_CHECK("MUT_APPEND during noalloc"); \
   mut_copy(N, N##_ci, X, XS, l_);  \
   N##_ci+= l_;                     \
   if (PTY(N->val) == t_harr) { NOGC_E; N->val->ia = N##_ci; } \

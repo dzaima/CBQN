@@ -1677,9 +1677,7 @@ void before_exit(void);
 NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
   // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
-  #if DEBUG
-    if (cbqn_noAlloc && !gc_depth) fatal("throwing during noAlloc");
-  #endif
+  NOGC_CHECK("throwing during noAlloc");
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if CATCH_ERRORS
   if (cf>cfStart) { // something wants to catch errors
