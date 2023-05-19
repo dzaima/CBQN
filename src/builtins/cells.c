@@ -32,24 +32,25 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
   BSS2A X##_slc = TI(X,slice);   \
   incByG(X, (i64)X##_sn + ((i64)DX-1));
 
-#define S_SLICES(X, SLN) usz* X##_sh = SH(X); S_KSLICES(X, X##_sh, 1, SLN, 0)
 #define SLICE(X, S) taga(arr_shSetUO(X##_slc(X, S, X##_csz), X##_cr, X##_csh))
 #define SLICEI(X) ({ B r = SLICE(X, X##p); X##p+= X##_csz; r; })
 
 
 
 // Used by Insert in fold.c
-B insert_base(B f, B x, usz xia, bool has_w, B w) {
+B insert_base(B f, B x, bool has_w, B w) {
   assert(isArr(x) && RNK(x)>0);
-  S_SLICES(x, *x_sh)
-  usz p = xia;
+  usz* xsh = SH(x);
+  usz xn = xsh[0];
+  S_KSLICES(x, xsh, 1, xn, 0)
+  usz p = xn*x_csz;
   B r = w;
   if (!has_w) {
-    p -= x_csz;
+    p -= x_csz; xn--;
     r = SLICE(x, p);
   }
   FC2 fc2 = c2fn(f);
-  while(p!=0) {
+  while (xn--) {
     p-= x_csz;
     r = fc2(f, SLICE(x, p), r);
   }
@@ -303,6 +304,29 @@ static ur cell_rank(f64 r, f64 k) { // ⎉k over arg rank r
   return k<0? (k+r<0? 0 : k+r) : (k>r? r : k);
 }
 
+// v˙⎉(-k) x
+static B const_cells(B x, ur k, usz* xsh, B v, u32 chr) { // consumes v, x
+  u32 vr;
+  if (isAtm(v) || RNK(v)==0) {
+    if (k!=1) { vr = 0; goto rank0; }
+    usz cam = xsh[0];
+    decG(x);
+    return C2(shape, m_usz(cam), v);
+  } else {
+    vr = RNK(v);
+    if (vr+k > UR_MAX) thrF("%c: Result rank too large", chr);
+    rank0:;
+    f64* shp; B sh = m_f64arrv(&shp, k+vr);
+    PLAINLOOP for (usz i=0; i<k; i++) shp[i] = xsh[i];
+    if (vr) {
+      usz* vsh = SH(v);
+      PLAINLOOP for (usz i=0; i<vr; i++) shp[k+i] = vsh[i];
+    }
+    decG(x);
+    return C2(shape, sh, v);
+  }
+}
+
 
 NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr);
 NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr);
@@ -318,6 +342,8 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
     switch(rtid) {
+      case n_ltack: case n_rtack:
+        return x;
       case n_lt:
         if (cam==0) goto noCells; // toCells/toKCells don't set outer array fill
         return k==1 && RNK(x)>1? toCells(x) : k==0? m_unit(x) : toKCells(x, k);
@@ -375,26 +401,8 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       if (rtid==n_after  && !isCallable(fd->g)) return for_cells_AS(fd->f, x, inc(fd->g), cr, xr, chr);
     }
   } else if (!isMd(f)) {
-    const_f:; inc(f);
-    u32 fr;
-    if (isAtm(f) || RNK(f)==0) {
-      if (k!=1) { fr = 0; goto const_f_cont; }
-      usz cam = xsh[0];
-      decG(x);
-      return C2(shape, m_usz(cam), f);
-    } else {
-      fr = RNK(f);
-      if (fr+k > UR_MAX) thrF("%c: Result rank too large", chr);
-      const_f_cont:;
-      f64* shp; B sh = m_f64arrv(&shp, fr+k);
-      PLAINLOOP for (usz i=0; i<k; i++) shp[i] = xsh[i];
-      if (isArr(f)) {
-        usz* fsh = SH(f);
-        PLAINLOOP for (usz i=0; i<fr; i++) shp[i+k] = fsh[i];
-      }
-      decG(x);
-      return C2(shape, sh, f);
-    }
+    const_f:;
+    return const_cells(x, k, xsh, inc(f), chr);
   }
   
   noSpecial:;
@@ -482,13 +490,19 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   ur wk = wr-wcr; assert(wk>0 && wcr<wr);
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
-  if (isFun(f) && IA(w)!=0) {
-    if (isPervasiveDy(f)) {
+  if (isFun(f)) {
+    u8 rtid = v(f)->flags-1;
+    if (rtid==n_ltack) { dec(x); return w; }
+    if (rtid==n_rtack) return const_cells(w, wk, wsh, x, chr);
+    if (IA(w)!=0 && isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
       if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
       if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>(2048*8)>>arrTypeBitsLog(TY(x)) && IA(w)!=IA(x))) goto generic;
       return c2(f, w, C2(shape, C1(fne, incG(w)), x));
     }
+  } else if (!isMd(f)) {
+    dec(x);
+    return const_cells(w, wk, wsh, inc(f), chr);
   }
   generic:;
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
@@ -501,8 +515,11 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
-  if (isFun(f) && IA(x)!=0) {
+  if (isFun(f)) {
+    if (IA(x)==0) goto generic;
     u8 rtid = v(f)->flags-1;
+    if (rtid==n_rtack) { dec(w); return x; }
+    if (rtid==n_ltack) return const_cells(x, xk, xsh, w, chr);
     if (rtid==n_select && xk==1 && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
     if (rtid==n_pick && xk==1 && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
     if ((rtid==n_shifta || rtid==n_shiftb) && xk==1 && xr==2 && isAtm(w)) {
@@ -526,6 +543,9 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
       if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
       return c2(f, C2(shape, C1(fne, incG(x)), w), x);
     }
+  } else if (!isMd(f)) {
+    dec(w);
+    return const_cells(x, xk, xsh, inc(f), chr);
   }
   generic:;
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
@@ -557,6 +577,8 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   if (isFun(f)) {
     if (wk==xk) {
       u8 rtid = v(f)->flags-1;
+      if (rtid==n_rtack) { decG(w); return x; }
+      if (rtid==n_ltack) { decG(x); return w; }
       if (rtid==n_feq || rtid==n_fne) {
         Arr* r = match_cells(rtid!=n_feq, w, x, wr, xr, wk, cam);
         if (r==NULL) goto generic;
@@ -571,6 +593,9 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
       if ((wk>mr?mr:wk) != (xk>mr?mr:xk) || !eqShPart(wsh, xsh, mr)) goto generic;
       return c2(f, w, x);
     }
+  } else if (!isMd(f)) {
+    dec(xkM? w : x);
+    return const_cells(xkM? x : w, zk, zsh, inc(f), chr);
   }
   generic:;
   
