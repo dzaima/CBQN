@@ -8,7 +8,7 @@ hCBQNFile ← •file.At "generated/cells_hCBQNOut.bqn"
 validFile ← •file.At "generated/cells_valid.bqn"
 
 cbqni ← {⊑"internal"<⊸∊•listsys? •BQN"•internal"; @}
-bqntype ← {cbqni≡@? 2; "harr"≡cbqni.Type ⊢⎉0 ""} # 0: full CBQN; 1: heapverify CBQN; 2: bqn.js
+bqntype ← {cbqni≡@? 2; ¬cbqni.HasFill +˜0⥊<↕0} # 0: full CBQN; 1: heapverify CBQN; 2: bqn.js
 
 SHRun ← {
   f←•BQN"•SH"
