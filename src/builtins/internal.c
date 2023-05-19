@@ -353,6 +353,10 @@ B iHasFill_c1(B t, B x) {
   return m_f64(1);
 }
 
+B iKeep_c1(B t, B x) {
+  return x;
+}
+
 B unshare_c1(B t, B x) {
   if (!isArr(x)) thrM("•internal.Unshare: Argument must be an array");
   B r = unshare(x);
@@ -374,8 +378,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp));
     #undef F
     gc_add(internalNS);
   }

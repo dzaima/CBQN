@@ -103,6 +103,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.GC`             | Run a garbage collection cycle |
 | `•internal.Type`           | Name of the internal type for an object |
 | `•internal.ElType`         | Element size type identifier; see `enum ElType` |
+| `•internal.Keep`           | Require the argument to stay alive up to this point in the program. Returns the argument, but without signaling to possible optimizations that the input and output will be equal |
 | `•internal.Refc`           | Reference count of the argument, if it's heap-allocated |
 | `•internal.IsPure`         | Whether the vm considers the argument pure (i.e. it can execute it safely for computing fills) |
 | `•internal.Info`           | General internal info about the object; a left argument of `1` gives more details |
