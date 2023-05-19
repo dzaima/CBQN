@@ -15,6 +15,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
+| `•ns`         | |
 | `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `Parent`, `MapBytes`, `CreateDir`, `Rename`, `Remove`, `Created`, `Modified`, `Accessed`, `Size` |
 | `•FChars`     | |
 | `•FBytes`     | |
@@ -44,10 +45,6 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 
 `•term.OutRaw` and `•term.ErrRaw` output the given bytes directly to the specific stream, without any trailing newline. May be removed once a proper interface for stream I/O has been made.
 
-## `•ns`
-
-`ns •ns.Get "abc"`, `ns •ns.Has "abc"`, and `•ns.Keys ns` for reading namespace information. Order of `•ns.Keys` result is undefined; `Get` & `Has` currently expect the key name to be normalized (i.e. lowercase & without underscores).
-
 ## `•_while_`
 
 While `𝕨𝔾𝕩`, execute `𝕩↩𝕨𝔽𝕩`. Equivalent to `{𝕨𝔾𝕩? 𝕨 𝕊 𝕨𝔽𝕩; 𝕩}`.
@@ -65,12 +62,6 @@ Get the hash of `𝕩`.
 Monadically, use the global secret value which will differ between CBQN sessions.
 
 Dyadically, use the integer left argument as the seed. Will be the same between multiple CBQN sessions, but may change between CBQN versions.
-
-## `•PrimInd`
-
-Return the primitive index of the argument.
-
-Might be removed in the future.
 
 ## `•Cmp`
 
