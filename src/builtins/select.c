@@ -467,6 +467,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊
     MAKE_MUT_INIT(r, xia, el_or(xe, re));
     MUTG_INIT(r);
     mut_copyG(r, 0, x, 0, xia);
+    NOGC_E;
     SGet(rep)
     for (usz i = 0; i < wia; i++) {
       i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
@@ -481,6 +482,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊
   MAKE_MUT_INIT(r, xia, el_or(xe, re));
   MUTG_INIT(r);
   mut_copyG(r, 0, x, 0, xia);
+  NOGC_E;
   SGet(rep) SGetU(w)
   SPARSE_INIT(o2i64G(GetU(w, i)))
   for (usz i = 0; i < wia; i++) {
