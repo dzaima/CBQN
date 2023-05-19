@@ -313,7 +313,6 @@ def isI64{x:T & eltype{T}==f64 & hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T
 def maskBlend{b:T, x:T, M} = x
 def maskBlend{b:T, x:T, M & M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
 
-include './debug'
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
   x:= *E~~x0
