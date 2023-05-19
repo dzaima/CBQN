@@ -235,15 +235,16 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
 
 B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
-  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   usz ia = IA(x);
+  if (RARE(ia==0)) { decG(x); return w; }
+  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  
   u8 xe = TI(x,elType);
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) {
-      B r = w;
-      if (ia) { dec(w); r=IGet(x, 0); }
-      decG(x); return r;
+      B r = IGet(x, 0);
+      dec(w); decG(x); return r;
     }
     if (rtid==n_rtack) { decG(x); return w; }
     if (!isF64(w) || xe>el_f64) goto base;
@@ -265,8 +266,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
       f64 r = sum_fns[sel](tyany_ptr(x), ia, wf);
       decG(x); return m_f64(r);
     }
-    if (rtid==n_floor) { f64 r=wf; if (ia>0) { f64 m=min_fns[xe-el_i8](tyany_ptr(x), ia); if (m<r) r=m; } decG(x); return m_f64(r); } // ⌊
-    if (rtid==n_ceil ) { f64 r=wf; if (ia>0) { f64 m=max_fns[xe-el_i8](tyany_ptr(x), ia); if (m>r) r=m; } decG(x); return m_f64(r); } // ⌈
+    if (rtid==n_floor) { f64 r=wf; f64 m=min_fns[xe-el_i8](tyany_ptr(x), ia); if (m<r) r=m; decG(x); return m_f64(r); } // ⌊
+    if (rtid==n_ceil ) { f64 r=wf; f64 m=max_fns[xe-el_i8](tyany_ptr(x), ia); if (m>r) r=m; decG(x); return m_f64(r); } // ⌈
     i32 wi = wf;
     if (rtid==n_mul | rtid==n_and) { // ×/∧
       void *xv = tyany_ptr(x);
