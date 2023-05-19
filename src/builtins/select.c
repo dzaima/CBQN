@@ -39,6 +39,7 @@
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
+#include "../utils/calls.h"
 #include "../builtins.h"
 
 #if SINGELI_AVX2
@@ -497,12 +498,22 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊
 }
 
 B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1 || isAtm(w)) return def_fn_ucw(t, o, w, x);
+  if (isAtm(x) || RNK(x)!=1 || isAtm(w)) { def: return def_fn_ucw(t, o, w, x); }
   usz xia = IA(x);
   usz wia = IA(w);
-  SGetU(w)
-  if (!elInt(TI(w,elType))) for (usz i = 0; i < wia; i++) if (!q_i64(GetU(w,i))) return def_fn_ucw(t, o, w, x);
-  B rep = c1(o, C2(select, incG(w), incG(x)));
+  u8 we = TI(w,elType);
+  if (!elInt(we) && IA(w)!=0) {
+    w = num_squeezeChk(w); we = TI(w,elType);
+    if (!elNum(we)) goto def;
+  }
+  B rep;
+  if (isArr(o)) {
+    i64 buf[2];
+    if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) thrF("𝔽⌾(a⊸⊏)𝕩: Indexing out-of-bounds (%l∊a, %H≡≢𝕩)", buf[1]>=xia?buf[1]:buf[0], x);
+    rep = incG(o);
+  } else {
+    rep = c1(o, C2(select, incG(w), incG(x)));
+  }
   if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
   return select_replace(U'⊏', w, x, rep, wia, xia);
 }
