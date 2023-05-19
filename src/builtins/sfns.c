@@ -1336,7 +1336,7 @@ B pick_ucw(B t, B o, B w, B x) {
   return pick_replaceOne(o, pos, x, xia);
 }
 
-static B takedrop_ucw(i64 wi, B o, u64 am, B x, ux xr) {
+static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
   usz xia = IA(x);
   usz csz = arr_csz(x);
   usz tk = csz*am; // taken element count
@@ -1347,9 +1347,9 @@ static B takedrop_ucw(i64 wi, B o, u64 am, B x, ux xr) {
   if (ash) { ash[0] = am; shcpy(ash+1, SH(x)+1, xr-1); }
   
   B rep = c1(o, taga(arg));
-  if (isAtm(rep)) thrM("𝔽⌾(n⊸↑): 𝔽 returned an atom");
+  if (isAtm(rep)) thrF("𝔽⌾(n⊸%c): 𝔽 returned an atom", take?U'↑':U'↓');
   usz* repsh = SH(rep);
-  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrF("𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", wi, rep);
+  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrF("𝔽⌾(n⊸%c)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", take?U'↑':U'↓', take? wi : -wi, rep);
   
   MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
   if (wi<0) {
@@ -1371,7 +1371,7 @@ B take_ucw(B t, B o, B w, B x) {
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
   if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ n, %H ≡ ≢𝕩)", wi, x);
-  return takedrop_ucw(wi, o, am, x, xr);
+  return takedrop_ucw(1, wi, o, am, x, xr);
 }
 
 B drop_ucw(B t, B o, B w, B x) {
@@ -1382,7 +1382,7 @@ B drop_ucw(B t, B o, B w, B x) {
   ur xr = RNK(x); if (xr==0) xr = 1;
   usz cam = SH(x)[0];
   if (am>cam) am = cam;
-  return takedrop_ucw(-wi, o, cam-am, x, xr);
+  return takedrop_ucw(0, -wi, o, cam-am, x, xr);
 }
 
 static B shape_uc1_t(B r, usz ia) {
