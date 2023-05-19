@@ -187,6 +187,7 @@ B bqn_repr(B x) {
 
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   PUSH_COMP;
+  str = chr_squeeze(str);
   Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL);
   dec(path); dec(args);
   POP_COMP; popCatch();
@@ -197,6 +198,7 @@ Block* bqn_comp(B str, B path, B args) { // consumes all
 }
 Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
   PUSH_COMP;
+  str = chr_squeeze(str);
   B vName = emptyHVec();
   B vDepth = emptyIVec();
   if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
