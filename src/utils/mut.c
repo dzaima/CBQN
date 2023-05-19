@@ -481,12 +481,12 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
 #define APD_POS_1() m->obj->ia
 #define APD_POS(EB) JOIN0(APD_POS_,EB)()
 
-#define APD_WIDEN(TY) do { apd_widen(m, x, apd_##TY##_fns); return; } while(0)
+#define APD_WIDEN(TY, A) do { apd_widen(m, A, apd_##TY##_fns); return; } while(0)
 #define APD_INC_POS(EB) 
 #define APD_MK0(E, FEB, EB, TY, TARR, CIA, T0, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) { T0 \
     usz cia=CIA; CS; u8 xe=TI(x,elType); (void)xe;  \
-    if (RARE(!(TARR))) APD_WIDEN(TY);               \
+    if (RARE(!(TARR))) APD_WIDEN(TY, x);            \
     APD_OR_FILL(FEB, x);                            \
     usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;    \
     COPY0_TO(m->a, E, p0, x, xe, cia);              \
@@ -494,23 +494,23 @@ ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_
 
 #define APD_SH1_CHK(N) if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m,x,N); return; }
 #define APD_SHH_CHK(N) if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m,x,N); return; }
-#define APD_WATOM(N, EB, E, WATOM) \
-  if (RARE(!q_##E(x))) APD_WIDEN(N); \
-  usz p0 = APD_POS(EB);           \
-  APD_POS(EB) = p0+1;             \
+#define APD_WATOM(N, A, EB, E, WATOM) \
+  if (RARE(!q_##E(x))) APD_WIDEN(N, A); \
+  usz p0 = APD_POS(EB);                 \
+  APD_POS(EB) = p0+1;                   \
   void* a = m->a; WATOM;
 
 #define APD_MK(E, EB, WATOM, TARR) \
   APD_MK0(E, EB, EB, sh1, TARR, m->cia, ,                   APD_SH1_CHK(1)) \
   APD_MK0(E, EB, EB, sh2, TARR, m->cia, , assert(m->cr>=2); APD_SHH_CHK(2)) \
-  APD_MK0(E, 0,  EB, tot, TARR, IA(x),  if (isAtm(x)) { APD_WATOM(tot, EB, E, WATOM); return; }, if (cia==0) return; ) \
+  APD_MK0(E, 0,  EB, tot, TARR, IA(x),  if (isAtm(x)) { APD_WATOM(tot, x, EB, E, WATOM); return; }, if (cia==0) return; ) \
   NOINLINE void apd_sh0_##E(ApdMut* m, B x) { \
-    APD_OR_FILL(EB, x);                       \
+    APD_OR_FILL(EB, x); B arr=x;              \
     if (isArr(x)) {                           \
       if (RARE(RNK(x)!=0)) { apd_sh_fail(m,x,0); return; } \
       x = IGetU(x,0);                         \
     }                                         \
-    APD_WATOM(sh0, EB, E, WATOM);             \
+    APD_WATOM(sh0, arr, EB, E, WATOM);             \
   }
 
 APD_MK(bit, 0, bitp_set((u64*)a,p0,o2bG(x)), xe==el_bit)
