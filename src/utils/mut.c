@@ -99,11 +99,10 @@ B vec_join(B w, B x) {
 }
 
 
-NOINLINE JoinFillslice fillslice_getJoin(B w, B x, usz ria) {
+NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
   usz wia = IA(w);
   assert(TY(w)==t_fillslice);
   FillSlice* s = c(FillSlice,w);
-  if (!fillEqualsGetFill(s->fill, x)) goto no;
   Arr* p = s->p;
   
   if (p->refc!=1) goto no;
@@ -113,6 +112,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, B x, usz ria) {
   if (PIA(p)!=wia) goto no;
   usz wsz = mm_sizeUsable((Value*)p);
   if (!(p->type==t_fillarr? fsizeof(FillArr,a,B,ria)<wsz : fsizeof(HArr,a,B,ria)<wsz)) goto no;
+  if (p->type==t_fillarr) { B* f = &((FillArr*)p)->fill; dec(*f); *f = bi_noFill; }
   
   ur sr = PRNK(s);
   if (sr<=1) {
@@ -121,7 +121,6 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, B x, usz ria) {
     usz* ssh = PSH(s);
     if (ssh != PSH(p)) arr_shReplace(p, sr, ptr_inc(shObjS(ssh)));
   }
-  
   B w2 = taga(ptr_inc(p));
   value_free((Value*)s);
   return (JoinFillslice){w2, rp};
