@@ -81,7 +81,7 @@ B eachm_fn(B fo, B x, FC1 f) {
       case t_fillslice: {
         FillSlice* s = c(FillSlice,x);
         Arr* p = s->p;
-        if (p->refc==1 && (p->type==t_fillarr || p->type==t_harr) && ((FillArr*)p)->a == s->a && PIA(p)==ia) {
+        if (p->refc==1 && ((p->type==t_fillarr && ((FillArr*)p)->a==s->a) || (p->type==t_harr && ((HArr*)p)->a==s->a)) && PIA(p)==ia) {
           ur sr = PRNK(s);
           if (sr<=1) {
             arr_shErase(p, sr);
