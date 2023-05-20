@@ -704,6 +704,7 @@ B repl_c1(B t, B x) {
 #if CATCH_ERRORS
 B lastErrMsg;
 B currentError_c1(B t, B x) {
+  if (isNsp(x)) thrM("•CurrentError: Namespace 𝕩 is reserved");
   dec(x);
   if (q_N(lastErrMsg)) thrM("•CurrentError: Not currently within any ⎊");
   return inc(lastErrMsg);

@@ -83,7 +83,7 @@ May be removed or renamed in the future.
 
 Get the current error message while within the catch side of `⎊`. Dynamically-scoped.
 
-Might return a more informative object in the future (e.g. whether the error came from an `!`, the compiler or a builtin, maybe stacktrace reading, etc; such a format is TBD).
+Argument must not be a namespace, as that is reserved for future changes.
 
 ## `•internal`
 
