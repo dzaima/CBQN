@@ -99,6 +99,37 @@ B vec_join(B w, B x) {
 }
 
 
+NOINLINE JoinFillslice fillslice_getJoin(B w, B x, usz ria) {
+  usz wia = IA(w);
+  assert(TY(w)==t_fillslice);
+  FillSlice* s = c(FillSlice,w);
+  if (!fillEqualsGetFill(s->fill, x)) goto no;
+  Arr* p = s->p;
+  
+  if (p->refc!=1) goto no;
+  if (p->type!=t_fillarr && p->type!=t_harr) goto no;
+  void* rp = p->type==t_fillarr? fillarr_ptr(p) : ((HArr*)p)->a;
+  if (rp != s->a) goto no;
+  if (PIA(p)!=wia) goto no;
+  usz wsz = mm_sizeUsable((Value*)p);
+  if (!(p->type==t_fillarr? fsizeof(FillArr,a,B,ria)<wsz : fsizeof(HArr,a,B,ria)<wsz)) goto no;
+  
+  ur sr = PRNK(s);
+  if (sr<=1) {
+    arr_shErase(p, sr);
+  } else {
+    usz* ssh = PSH(s);
+    if (ssh != PSH(p)) arr_shReplace(p, sr, ptr_inc(shObjS(ssh)));
+  }
+  
+  B w2 = taga(ptr_inc(p));
+  value_free((Value*)s);
+  return (JoinFillslice){w2, rp};
+  
+  no: return (JoinFillslice){m_f64(0), NULL};
+}
+
+
 
 #define CHK(REQ,NEL,N,...) if (!(REQ)) mut_to(m, NEL); m->fns->m_##N##G(m, __VA_ARGS__);
 #define CHK_S(REQ,X,N,...) CHK(REQ, el_or(m->fns->elType, selfElType(X)), N, __VA_ARGS__)

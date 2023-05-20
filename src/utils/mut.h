@@ -152,9 +152,13 @@ SHOULD_INLINE void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
 
 
 
+typedef struct { B w2; void* rp; } JoinFillslice;
+JoinFillslice fillslice_getJoin(B w, B x, usz ria); // either returns NULL in rp, or consumes w
+
 // if `consume==true`, consumes w,x and expects both args to be vectors
 // else, doesn't consume x, and decrements refcount of w iif *reusedW (won't free because the result will be w)
 FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
+  assert(isArr(w) && isArr(x));
   usz wia = IA(w);
   usz xia = IA(x);
   u64 ria = wia+xia;
@@ -162,7 +166,6 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
   u64 wsz = mm_sizeUsable(v(w));
   u8 wt = TY(w);
   u8 we = TI(w, elType);
-  // TODO f64∾i32, i32∾i8, c32∾c8 etc
   void* rp = tyany_ptr(w);
   switch (wt) {
     case t_bitarr: if (BITARR_SZ(   ria)<wsz && TI(x,elType)==el_bit) goto yes; break;
@@ -173,7 +176,15 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
     case t_c8arr:  if (TYARR_SZ(C8, ria)<wsz && TI(x,elType)==el_c8 ) goto yes; break;
     case t_c16arr: if (TYARR_SZ(C16,ria)<wsz && TI(x,elType)<=el_c16 && TI(x,elType)>=el_c8) goto yes; break;
     case t_c32arr: if (TYARR_SZ(C32,ria)<wsz && TI(x,elType)<=el_c32 && TI(x,elType)>=el_c8) goto yes; break;
-    case t_harr: if (fsizeof(HArr,a,B,ria)<wsz) { rp = harr_ptr(w); goto yes; } break;
+    case t_fillslice: {
+      JoinFillslice t = fillslice_getJoin(w, x, ria);
+      if (t.rp==NULL) goto no;
+      w = t.w2;
+      rp = t.rp;
+      goto yes;
+    }
+    case t_fillarr: if (fsizeof(FillArr,a,B,ria)<wsz) { rp = fillarr_ptr(a(w)); if (fillEqualsGetFill(c(FillArr,x)->fill, x)) goto yes; } break;
+    case t_harr:    if (fsizeof(HArr,   a,B,ria)<wsz) { rp =    harr_ptr(  w ); goto yes; } break;
   }
   no:; // failed to reuse
   MAKE_MUT_INIT(r, ria, el_or(TI(w,elType), TI(x,elType)));
