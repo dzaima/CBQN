@@ -23,25 +23,69 @@ B md2D_c1(B t,      B x) { Md2D* tc = c(Md2D, t); return ((Md2*)tc->m2)->c1(tc, 
 B md2D_c2(B t, B w, B x) { Md2D* tc = c(Md2D, t); return ((Md2*)tc->m2)->c2(tc, w, x); }
 B tr2D_c1(B t,      B x) { return c1(c(Atop,t)->g, c1(c(Atop,t)->h,    x)); }
 B tr2D_c2(B t, B w, B x) { return c1(c(Atop,t)->g, c2(c(Atop,t)->h, w, x)); }
+
+B fork_c1_general(B t, B x) {
+  B hr = c1(c(Fork,t)->h, inc(x));
+  B fr = c1(c(Fork,t)->f, x);
+  return c2(c(Fork,t)->g, fr, hr);
+}
+B fork_c1_fff(B t, B x) {
+  B hr = c1G(c(Fork,t)->h, inc(x));
+  B fr = c1G(c(Fork,t)->f, x);
+  return c2G(c(Fork,t)->g, fr, hr);
+}
+B fork_c1_vff(B t, B x) {
+  B hr = c1G(c(Fork,t)->h, x);
+  return c2G(c(Fork,t)->g, incG(c(Fork,t)->f), hr);
+}
+B fork_c1_nff(B t, B x) {
+  B hr = c1G(c(Fork,t)->h, x);
+  return c2G(c(Fork,t)->g, c(Fork,t)->f, hr);
+}
 B fork_c1(B t, B x) {
-  B f = c(Fork,t)->f; errMd(f);
-  B h = c(Fork,t)->h;
-  if (isFun(f)) {
-    B hr = c1(h, inc(x));
-    return c2(c(Fork,t)->g, c1G(f,x), hr);
-  } else {
-    return c2(c(Fork,t)->g, inc(f), c1(h,x));
-  }
+  FC1 fn;
+  B g = c(Fork,t)->g; if (!isFun(g)) { fn=fork_c1_general; goto go; }
+  B h = c(Fork,t)->h; if (!isFun(h)) { fn=fork_c1_general; goto go; }
+  B f = c(Fork,t)->f;
+  if (isFun(f)) { fn=fork_c1_fff; goto go; }
+  if (isVal(f)) { fn=fork_c1_vff; goto go; }
+  else          { fn=fork_c1_nff; goto go; }
+  
+  go:
+  c(Fun,t)->c1=fn;
+  return c(Fun,t)->c1(t, x);
+}
+
+B fork_c2_general(B t, B w, B x) {
+  B hr = c2(c(Fork,t)->h, inc(w), inc(x));
+  B fr = c2(c(Fork,t)->f, w, x);
+  return c2(c(Fork,t)->g, fr, hr);
+}
+B fork_c2_fff(B t, B w, B x) {
+  B hr = c2G(c(Fork,t)->h, inc(w), inc(x));
+  B fr = c2G(c(Fork,t)->f, w, x);
+  return c2G(c(Fork,t)->g, fr, hr);
+}
+B fork_c2_vff(B t, B w, B x) {
+  B hr = c2G(c(Fork,t)->h, w, x);
+  return c2G(c(Fork,t)->g, incG(c(Fork,t)->f), hr);
+}
+B fork_c2_nff(B t, B w, B x) {
+  B hr = c2G(c(Fork,t)->h, w, x);
+  return c2G(c(Fork,t)->g, c(Fork,t)->f, hr);
 }
 B fork_c2(B t, B w, B x) {
-  B f = c(Fork,t)->f; errMd(f);
-  B h = c(Fork,t)->h;
-  if (isFun(f)) {
-    B hr = c2(h, inc(w), inc(x));
-    return c2(c(Fork,t)->g, c2G(f,w,x), hr);
-  } else {
-    return c2(c(Fork,t)->g, inc(f), c2(h,w,x));
-  }
+  FC2 fn;
+  B g = c(Fork,t)->g; if (!isFun(g)) { fn=fork_c2_general; goto go; }
+  B h = c(Fork,t)->h; if (!isFun(h)) { fn=fork_c2_general; goto go; }
+  B f = c(Fork,t)->f;
+  if (isFun(f)) { fn=fork_c2_fff; goto go; }
+  if (isVal(f)) { fn=fork_c2_vff; goto go; }
+  else          { fn=fork_c2_nff; goto go; }
+  
+  go:
+  c(Fun,t)->c2=fn;
+  return c(Fun,t)->c2(t, w, x);
 }
 
 static B md1D_decompose(B x) { B r=m_hvec3(m_i32(4),inc(c(Md1D,x)->f),tag(ptr_inc(c(Md1D,x)->m1),MD1_TAG)                   ); decR(x); return r; }
