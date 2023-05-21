@@ -340,11 +340,11 @@ static NOINLINE void checkIndexList(B w, ur xr) {
   }
 }
 
-// calculate index 
-#define PICK_IDX(RES, GET, IA, OOB)        \
-  usz RES = 0;                             \
-  for (usz i=0, ia_=(IA); i < ia_; i++) {  \
-    c = c*xsh[i] + WRAP(GET, xsh[i], OOB); \
+// calculate index into variable RES; reads xsh, defines i for GET
+#define PICK_IDX(RES, GET, RNK, OOB)         \
+  usz RES = 0;                               \
+  for (usz i=0, rnk_=(RNK); i < rnk_; i++) { \
+    c = c*xsh[i] + WRAP(GET, xsh[i], OOB);   \
   }
 
 static i64 pick_convFloat(f64 f) {
