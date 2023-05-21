@@ -604,10 +604,9 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
     VTY(s, t_harr);
     usz ia = IA(s);
     B* sp = harr_ptr(s);
-    HArr_p r = m_harrUv(ia);
-    for (u64 i = 0; i < ia; i++) r.a[i] = v_get(pscs, sp[i], true);
-    NOGC_E;
-    return r.b;
+    M_HARR(r, ia);
+    for (u64 i = 0; i < ia; i++) HARR_ADD(r, i, v_get(pscs, sp[i], true));
+    return HARR_FV(r);
   } else if (isExt(s)) {
     Scope* sc = pscs[V_DEPTH(s)];
     B r = sc->ext->vars[V_POS(s)];
@@ -1724,6 +1723,7 @@ NOINLINE void freeThrown() {
 }
 
 NOINLINE NORETURN void thrM(char* s) {
+  NOGC_CHECK("throwing during noAlloc");
   thr(utf8Decode0(s));
 }
 NOINLINE NORETURN void thrOOM() {

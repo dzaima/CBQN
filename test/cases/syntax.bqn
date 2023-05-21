@@ -33,6 +33,9 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"↩: Reading variable that hasn't been set" % {a⊢↩↕10} ⋄ a←2
 !"↩: Updating variable that hasn't been set" % {a↩↕10} ⋄ a←2
 !"↩: Reading variable that hasn't been set" % {a (↕10)˙↩} ⋄ a←2
+!"↩: Reading variable that hasn't been set" % a←1 ⋄ {a‿b⊢↩↕2} ⋄ b←2
+!"↩: Updating variable that hasn't been set" % a←1 ⋄ {a‿b↩↕2} ⋄ b←2
+!"↩: Reading variable that hasn't been set" % a←1 ⋄ {a‿b (↕10)˙↩} ⋄ b←2
 !"Assignment: Mismatched shape for spread assignment" % a‿b←1
 !"Assignment: Mismatched shape for spread assignment" % a‿b←1‿2‿3
 !"Assignment: Mismatched shape for spread assignment" % ⟨a⟩←<1
