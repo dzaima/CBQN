@@ -5,9 +5,14 @@ test: testLib testShared
 testShared: buildShared
 	@LD_LIBRARY_PATH=../../ ./sharedTest > shared.got
 	@diff --color -su shared.expected shared.got
-	
+
 buildShared:
-	$(CC) -g sharedTest.c -o sharedTest -L../.. -lcbqn
+	mkdir -p sharedLibFolder && cp ../../libcbqn.so sharedLibFolder
+	$(CC) -g libTest.c -o sharedTest -LsharedLibFolder -lcbqn
+
+buildStatic:
+	mkdir -p staticLibFolder && cp ../../libcbqn.a staticLibFolder
+	$(CC) -g libTest.c -o staticTest -LstaticLibFolder -lcbqn -lm -lffi
 
 
 

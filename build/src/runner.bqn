@@ -45,6 +45,10 @@ _runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
         ⟨0, o∾e⟩
     } c
   ;
+    "staticlib"‿dst‿cmd:
+      •file.Remove⍟•file.Exists dst
+      𝕊 cmd
+  ;
   "singeli"‿dir‿dst‿singeliDir‿args‿src‿dep:
     prefix ← "si_"∾ (∧`'.'⊸≠)⊸/ •file.Name src
     argsFinal ← args∾⟨"-d" ⋄ dep ⋄ "-o" ⋄ dst ⋄ "-n" ⋄ prefix ⋄ src⟩

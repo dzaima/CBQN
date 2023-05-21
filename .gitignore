@@ -6,6 +6,8 @@
 *.cwasm
 libcbqn.so
 libcbqn.dylib
+cbqn.dll
+libcbqn.a
 *.exe
 *.dll
 
@@ -30,6 +32,9 @@ cbqn-jit.bqn
 /test/ffi/test.got
 /test/ffi/shared.got
 /test/ffi/sharedTest
+/test/ffi/staticTest
+/test/ffi/sharedLibFolder
+/test/ffi/staticLibFolder
 /test/ffi/lib.so
 /test/testDir/
 

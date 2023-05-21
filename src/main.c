@@ -899,7 +899,7 @@ void cbqn_evalSrc(char* src, i64 len) {
 int main() {
   repl_init();
 }
-#elif !CBQN_SHARED
+#elif !CBQN_LIB
 #if HAS_VERSION
 extern char* cbqn_versionString;
 #endif

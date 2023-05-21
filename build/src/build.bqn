@@ -43,7 +43,8 @@ opts ← ⟨
   ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
   ⟨0, "v",       "", "Version string to report by --version; v=0 to disable"∾@+10⟩
   
-  ⟨1, "shared", 0, "Build a shared library; default output depends on 'os' setting"⟩
+  ⟨1, "shared", 0, "Build a shared library"⟩
+  ⟨1, "static-lib", 0, "Build a static library"⟩
   ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
   ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
   ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
@@ -150,8 +151,8 @@ AtRoot ← rootDir⊸•file.At
 po ← { # parsed options
   ⟨
     verbose, J, rebuildAll, rebuildSingeli, tui, loud, output, clangd, versionName,
-    os, arch, native, has, avx2
-    emcc, wasm, replxx, singeli,
+    os, arch, native, has, avx2,
+    emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
     CBQNc, ccColor, singeliFlags, REPLXXc, Linker
@@ -171,19 +172,22 @@ po ← { # parsed options
   
   ErrBoth ← {a‿b: ∾⟨"Error: '",a,"' and '",b,"' cannot both be enabled"⟩}
   Max1 ← {𝕩 ErrBoth∘(2↑/˜) _assert_(1≥+´) GetOpt¨ 𝕩}
-  NotWith ← {¬GetOpt 𝕨?@; ErrBoth∘(𝕨⋈0⊑/⟜𝕩) _assert_(¬∨´) GetOpt¨ 𝕩}
+  NotWith ← {𝕩 {ErrBoth ⊑¨ 𝕩/¨𝕨}_assert_(¬·∧´∨´¨) GetOpt¨¨ 𝕩}∘⋈
   
   Max1 "REPLXX"‿"wasi"‿"emcc"
-  "shared" NotWith "REPLXX"‿"emcc"
+  Max1 "shared"‿"static-lib"
+  "static-lib"‿"shared" NotWith "REPLXX"‿"emcc"
   
   
-  shared ← GetOpt "shared"
+  sharedLib ← GetOpt "shared"
+  staticLib ⇐ GetOpt "static-lib"
+  lib ← staticLib ∨ sharedLib
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
   usz ⇐ •ParseFloat GetOpt "usz"
   {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
-  versionName ← {shared? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
+  versionName ← {sharedLib? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
   wasm ⇐ wasi∨emcc
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
@@ -223,19 +227,20 @@ po ← { # parsed options
     ⟩
   }⍟⊢ (arch≡"x86-64") ∧ singeli ∧ ¬avx2
   
-  pie ⇐ {(¬shared)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
+  pie ⇐ {(¬sharedLib∨staticLib)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
   {𝕊: pie ↩ 0}⍟⊢ wasm
   
   output ⇐ GetOpt "OUTPUT"
   output ↩ •wdpath•file.At {𝕊:
     wasi? "BQN.wasm";
     emcc? ".";
-    shared? {macos? "libcbqn.dylib"; windows? "cbqn.dll"; "libcbqn.so"};
+    staticLib? "libcbqn.a";
+    sharedLib? {macos? "libcbqn.dylib"; windows? "cbqn.dll"; "libcbqn.so"};
     windows? "BQN.exe";
     "BQN"
   }⍟(""≡⊢) output
   
-  exportSymbols ← ffi∨shared
+  exportSymbols ← ffi∨sharedLib
   
   defLibs ← @≡GetOpt "LD_LIBS"
   GetLibs ← { 𝕊:
@@ -293,8 +298,9 @@ po ← { # parsed options
     args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY"⟩
     args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ (   pie ∧ ¬shared) / ⟨"-fPIE"⟩
-    args∾↩ (          shared) / ⟨"-DCBQN_SHARED"⟩ ∾ (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
+    args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
+    args∾↩ (             lib) / ⟨"-DCBQN_LIB"⟩
+    args∾↩ (       sharedLib) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     args∾↩ (         windows) / ⟨"-DNO_MMAP"⟩
     args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
@@ -309,10 +315,10 @@ po ← { # parsed options
     args ← ⟨cxx, "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩
     args∾↩ GetOpt "REPLXX_FLAGS"
     args∾↩ GetOpt "CXXFLAGS"
-    args∾↩ (         ¬pie) / ⟨"-fno-pie"⟩
+    args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ GetOpt "CCFLAGS"
-    args∾↩ (pie ∧ ¬shared) / ⟨"-fPIE"⟩
-    args∾↩ (       shared) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
+    args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
+    args∾↩ (       sharedLib) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
     replxxc ↩ args
   }
@@ -320,26 +326,35 @@ po ← { # parsed options
   singeliFlags ← GetOpt "sf"
   
   Linker ⇐ { 𝕊:
-    rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
-    args ← ⟨{replxx? cxx; cc} DOpt "LD"⟩
-    args∾↩ defLibs / ⟨"-lm"⟩
-    args∾↩ ⟨⟩ DOpt "LD_LIBS"
-    args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
-    args∾↩ 1⊑GetLibs@
-    args∾↩ GetOpt "lf"
-    args∾↩ GetOpt "CCFLAGS"
-    args∾↩ GetOpt "LDFLAGS"
-    args∾↩ (          emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
-    args∾↩ (          wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
-    args∾↩ (shared ∧  wasi) / ⟨"-mexec-model=reactor", "-Wl,--export-dynamic", "-Wl,--export=malloc", "-Wl,--export=free"⟩
-    args∾↩ (shared ∧ ¬wasi) / ⟨"-shared"⟩
-    args∾↩ (shared ∧ macos) / ⟨"-install_name", "@rpath/libcbqn.dylib"⟩
-    args∾↩ (      rdynamic) / ⟨"-rdynamic"⟩
-    args∾↩ ((¬wasm)∧  ¬pie) / ⟨"-no-pie"⟩
-    args∾↩ (pie ∧  ¬shared) / ⟨"-fPIE", "-pie"⟩
-    args∾↩ (       windows) / ⟨"-lpthread"⟩
-    args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
-    {"linker: "∾•Repr 𝕩} _verboseLog args
+    args ← ⟨⟩
+    {
+      staticLib?
+        args∾↩ ⟨"ar" DOpt "LD"⟩
+        args∾↩ GetOpt "lf"
+        args∾↩ GetOpt "LDFLAGS"
+        args∾↩ ⟨"-rcs"⟩
+      ;
+        rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
+        args∾↩ ⟨{replxx? cxx; cc} DOpt "LD"⟩
+        args∾↩ defLibs / ⟨"-lm"⟩
+        args∾↩ ⟨⟩ DOpt "LD_LIBS"
+        args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
+        args∾↩ 1⊑GetLibs@
+        args∾↩ GetOpt "lf"
+        args∾↩ GetOpt "CCFLAGS"
+        args∾↩ GetOpt "LDFLAGS"
+        args∾↩ (           emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
+        args∾↩ (           wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
+        args∾↩ (sharedLib∧ wasi) / ⟨"-mexec-model=reactor", "-Wl,--export-dynamic", "-Wl,--export=malloc", "-Wl,--export=free"⟩
+        args∾↩ (sharedLib∧¬wasi) / ⟨"-shared"⟩
+        args∾↩ (sharedLib∧macos) / ⟨"-install_name", "@rpath/libcbqn.dylib"⟩
+        args∾↩ (       rdynamic) / ⟨"-rdynamic"⟩
+        args∾↩ ((¬wasm)∧   ¬pie) / ⟨"-no-pie"⟩
+        args∾↩ (pie∧ ¬sharedLib) / ⟨"-fPIE", "-pie"⟩
+        args∾↩ (        windows) / ⟨"-lpthread"⟩
+        args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
+        {"linker: "∾•Repr 𝕩} _verboseLog args
+    }
     linker ↩ args
   }
   
@@ -590,7 +605,8 @@ MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
   dst ← cache.File name
   GetCMD ← { 𝕊:
     args ← GetArgs@
-    ⟨"sh", rootDir, ⟨⊑args, "-o", dst⟩∾({𝕩.dst}¨ srcs)∾1↓args, @⟩
+    cmd ← ⟨"sh", rootDir, ⟨⊑args, "-o", dst⟩∾({𝕩.dst}¨ srcs)∾1↓args, @⟩
+    {po.staticLib? ⟨"staticlib", AtRoot dst, cmd⟩; cmd}
   }
   AddRule ⟨cache, name, dst, GetCMD, "link", srcs⟩
 }
