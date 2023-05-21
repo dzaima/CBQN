@@ -40,6 +40,10 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"Assignment: Mismatched shape for spread assignment" % ⟨⟩←⟨1⟩
 ⟨⟩←⟨⟩ %% ⟨⟩
 
+# mid-update assignment; precise behavior here isn't particularly important, but it should at least be consistent
+a←↕2 ⋄ a {𝕊: a←"foo" ⋄ {𝕊:a!↩0}⎊•CurrentError @}↩  ⋄ %% "foo"
+!"Reading variable that was optimized out by F↩ after error" % a←"foo" ⋄ ! "foo"≡{𝕊:a!↩@}⎊•CurrentError @ ⋄ •Type a
+
 # namespaces
 ⟨a,b⟩←•BQN"{x⇐1‿2⋄a⇐3‿4⋄y←5‿6⋄b⇐7‿8}" ⋄ a‿b %% ⟨3‿4 ⋄ 7‿8⟩
 

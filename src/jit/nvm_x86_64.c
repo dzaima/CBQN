@@ -216,9 +216,9 @@ INS B i_PRED2(B x, Scope* sc, u32* bc, Body* v1, Body* v2) { POS_UPD;
   return gotoNextBodyJIT(sc, q_N(sc->vars[2])? v1 : v2);
 }
 INS B i_SETNi(     B x, Scope* sc, u32 p         ) {          v_setI(sc, p, inc(x), false, false); return x; }
-INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true,  false); return x; }
-INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, false),x); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
-INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, false)  ); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
+INS B i_SETUi(     B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, inc(x), true,  true); return x; }
+INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, true),x); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
+INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, true)  ); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
 INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, false, false); }
 INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true,  false); }
 INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, false),x); dec(f); v_setI(sc, p, r, true, false); }
