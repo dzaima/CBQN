@@ -266,15 +266,15 @@ FORCE_INLINE B r_fB(f64 x) { return b(x); }
   \
   /* 8*/ F(fork) F(atop) F(md1D) F(md2D) \
   \
-  /*13*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
-  /*22*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
-  /*31*/ F(bitarr) \
+  /*12*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*21*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
+  /*30*/ F(bitarr) \
   \
-  /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
-  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
-  /*50*/ F(freed) F(invalid) F(harrPartial) F(customObj) F(mmapH) \
+  /*31*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) \
+  /*39*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
+  /*49*/ F(freed) F(invalid) F(harrPartial) F(customObj) F(mmapH) \
   \
-  /*55*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*54*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
