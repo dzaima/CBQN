@@ -923,27 +923,26 @@ B join_c2(B t, B w, B x) {
   }
   if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
-  bool reusedW;
-  B r = arr_join_inline(w, x, false, &reusedW);
+  bool usedW;
+  usz wia0 = IA(w);
+  B r = arr_join_inline(w, x, false, &usedW);
   if (c==1) {
     if (RNK(r)==0) SRNK(r,1);
   } else {
     assert(c>1);
     ur rnk0 = RNK(r);
     ShArr* sh0 = shObj(r);
-    usz wia;
     usz* wsh;
-    if (wr==1 && reusedW) {
-      wia = IA(w)-IA(x);
-      wsh = &wia;
+    if (wr==1 && usedW) {
+      wsh = &wia0;
     } else {
       wsh = SH(w); // when wr>1, shape object won't be disturbed by arr_join_inline
     }
     usz* xsh = SH(x);
-    SRNK(r, 0); // otherwise shape allocation failing may break things
+    SRNK(r, 0); // otherwise shape allocation failing may break things; leaves shape owned only here
     usz* rsh = arr_shAlloc(a(r), c);
     #if PRINT_JOIN_REUSE
-    printf(reusedW? "reuse:1;" : "reuse:0;");
+    printf(usedW? "reuse:1;" : "reuse:0;");
     #endif
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
@@ -961,7 +960,7 @@ B join_c2(B t, B w, B x) {
   }
   
   decG(x);
-  if (!reusedW) decG(w);
+  if (!usedW) decG(w);
   return qWithFill(r, f);
 }
 

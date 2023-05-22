@@ -156,9 +156,11 @@ typedef struct { B w2; void* rp; } JoinFillslice;
 JoinFillslice fillslice_getJoin(B w, usz ria); // either returns NULL in rp, or consumes w
 
 // consume==true: consumes w,x and expects both args to be vectors
-// consume==false: doesn't consume x, and decrements refcount of w iif *reusedW (won't free because the result will be w); result has arbitrary but valid shape
+// consume==false: doesn't consume x, and
+//   *usedW==true: consumes w, returns w or its backing array; if RNK(w)>1, result has the same shape as w, i.e. not updated
+//   *usedW==false: doesn't consume w; result has vector shape
 // returns possibly incorrect fills if arguments aren't equal class typed arrays
-FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
+FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* usedW) {
   assert(isArr(w) && isArr(x));
   usz wia = IA(w);
   usz xia = IA(x);
@@ -193,13 +195,13 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* reusedW) {
   mut_copyG(r, 0,   w, 0, wia);
   mut_copyG(r, wia, x, 0, xia);
   if (consume) { decG(x); decG(w); }
-  *reusedW = false;
+  *usedW = false;
   return mut_fv(r);
   
   yes:
   COPY_TO(rp, we, wia, x, 0, xia);
   if (consume) decG(x);
-  *reusedW = true;
+  *usedW = true;
   a(w)->ia = ria;
   return FL_KEEP(w,fl_squoze); // keeping fl_squoze as appending items can't make the largest item smaller
 }

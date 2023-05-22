@@ -181,6 +181,7 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 
 # ≍𝕩
 !"≍: Result rank too large (255≡=𝕩)" % ≍⍟256 1
+%USE tvar ⋄ 1‿2‿3‿4‿5‿64 {c𝕊e: {!∘≡¨⟜⊏ ⥊ ∾_tvar´ 𝕩}¨ ⟨4‿c, c⟩ ⋈⌜○({𝕩⥊<e}¨) ⟨0‿c, 1‿c, c⟩}⌜ ⟨1, 'a', 1‿2⟩
 
 # « & »
 !"shift: Lengths not matchable (⟨2⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 1‿2»↕3‿3
