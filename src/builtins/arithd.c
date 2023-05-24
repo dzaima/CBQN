@@ -484,12 +484,13 @@ static u64 gcd_u64(u64 a, u64 b) {
   u8 sh = az<bz? az : bz;
   
   b >>= bz;
-  while (a > 0) {
+  while (1) {
     a >>= az;
     u64 d = b - a;
-    az = CTZ(d);
     b = b<a? b : a;
+    if (d == 0) break;
     a = b<a? -d : d;
+    az = CTZ(d);
   }
   return b << sh;
 }
