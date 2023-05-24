@@ -982,7 +982,7 @@ void ffi_init(void) {
   NFnDesc* forbuildDesc;
   B forbuild_c1(B t, B x) {
     i32 id = o2i(nfn_objU(t));
-    switch (id) { default: fatal("bad id");
+    switch (id) { default: thrM("bad id");
       case 0: {
         char* s = toCStr(x);
         decG(x);
@@ -1038,20 +1038,23 @@ void ffi_init(void) {
         
         return m_vec2(m_f64(res), taga(buf));
       }
+      case 7: {
+        return m_f64(isatty(o2i(x)));
+      }
     }
   }
-  B names;
+  static B ffi_names;
   B ffiload_c2(B t, B w, B x) {
     B name = IGetU(x, 1);
     i32 id = 0;
-    while (id<IA(names) && !equal(IGetU(names, id), name)) id++;
+    while (id<IA(ffi_names) && !equal(IGetU(ffi_names, id), name)) id++;
     B r = m_nfn(forbuildDesc, m_f64(id));
     decG(x);
     return r;
   }
   
   void ffi_init(void) {
-    HArr_p a = m_harrUv(7);
+    HArr_p a = m_harrUv(8);
     a.a[0] = m_c8vec_0("chdir");
     a.a[1] = m_c8vec_0("fork");
     a.a[2] = m_c8vec_0("pipe");
@@ -1059,8 +1062,9 @@ void ffi_init(void) {
     a.a[4] = m_c8vec_0("write");
     a.a[5] = m_c8vec_0("close");
     a.a[6] = m_c8vec_0("poll");
+    a.a[7] = m_c8vec_0("isatty");
     NOGC_E;
-    names = a.b; gc_add(names);
+    ffi_names = a.b; gc_add(ffi_names);
     forbuildDesc = registerNFn(m_c8vec_0("(function for build)"), forbuild_c1, c2_bad);
   }
 #endif

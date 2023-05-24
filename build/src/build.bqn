@@ -22,7 +22,7 @@ opts ← ⟨
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
   ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"⟩
-  ⟨1, "notui",   0, "disable live-updating status display"∾@+10⟩
+  ⟨1, "notui",   @, "disable live-updating status display"∾@+10⟩
   ⟨1, "rebuild-singeli", 0, @⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
@@ -165,7 +165,7 @@ po ← { # parsed options
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •ParseFloat v; •ParseFloat⎊4 "4" TrySH ⟨"nproc"⟩}
   rebuildAll ⇐ GetOpt "rebuild"
   rebuildSingeli ⇐ GetOpt "rebuild-singeli"
-  tui ⇐ ¬GetOpt "notui"
+  tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
   loud ⇐ ¬GetOpt "quiet"
   
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"

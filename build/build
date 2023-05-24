@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 DIR="$(dirname $0)"
-PREV_BQN="$DIR/obj2/for_build2"
+PREV_BQN="$DIR/obj2/for_build3"
 if [ ! -f "$PREV_BQN" ]; then
   TMP_BQN="$DIR/obj2/for_build_tmp"
   if make -C "$DIR/.." for-build OUTPUT="$TMP_BQN"; then
