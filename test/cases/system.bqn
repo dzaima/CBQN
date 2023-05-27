@@ -13,7 +13,19 @@
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"
 !"Unknown system function •internal" % f←•ReBQN {system⇐"none"} ⋄ F "•internal.Type ↕10"
 f←•ReBQN {system⇐⟨"range"‿↕ ⋄ "add"‿+ ⋄ "reverse"‿⌽⟩} ⋄ F "•Reverse ¯5 •Add •Range 10" %% 4-↕10
+
 f←•ReBQN{⇐} ⋄ F "Ah"•internal.Variation"1↑""""" %% " "
+
+F←(•ReBQN{repl⇐"none"  })⎊({𝕩↑˜⊑𝕩⊐@+10}•CurrentError) ⋄ ⟨F"a←↕2", F"a←↕3", F"a"⟩ %% ⟨0‿1,0‿1‿2,"Undefined identifier"⟩
+F←(•ReBQN{repl⇐"loose" })⎊({𝕩↑˜⊑𝕩⊐@+10}•CurrentError) ⋄ ⟨F"a←↕2", F"a←↕3", F"a"⟩ %% ⟨0‿1,0‿1‿2,0‿1‿2⟩
+F←(•ReBQN{repl⇐"strict"})⎊({𝕩↑˜⊑𝕩⊐@+10}•CurrentError) ⋄ ⟨F"a←↕2", F"a←↕3", F"a"⟩ %% ⟨0‿1,"Redefinition",0‿1⟩
+
+f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "a⇐1"
+f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
+!"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"loose"} ⋄ F "a⇐1"
+!"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"loose"} ⋄ F "⇐"
+!"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"strict"} ⋄ F "a⇐1"
+!"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"strict"} ⋄ F "⇐"
 
 # •primitives
 !∧´2=•Type¨ ⊑¨•primitives

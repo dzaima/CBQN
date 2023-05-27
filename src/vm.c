@@ -141,7 +141,8 @@ typedef struct NextRequest {
 
 static B emptyARMM;
 
-Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos) {
+Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos, i32 nsResult) {
+  assert(sc!=NULL || nsResult==0);
   usz blIA = IA(block);
   if (blIA!=3) thrM("VM compiler: Bad block info size");
   SGetU(block)
@@ -314,8 +315,15 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             ret = true;
             break;
           case RETD: if(h!=1&h!=0) thrM("VM compiler: RETD expected to be called with no more than 1 item on the stack");
-            if (h==1) TSADD(newBC, POPS);
-            TSADD(newBC, RETD);
+            if (nsResult!=0 && depth==0) {
+              if (nsResult==-1) thrM("Cannot construct a namespace for a REPL result");
+              assert(nsResult==1);
+              if (h==0) thrM("No value for REPL expression to return");
+              TSADD(newBC, RETN);
+            } else {
+              if (h==1) TSADD(newBC, POPS);
+              TSADD(newBC, RETD);
+            }
             ret = true;
             break;
           case DFND: {
@@ -323,7 +331,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             if ((u32)id >= IA(allBlocks)) thrM("VM compiler: DFND index out-of-bounds");
             if (bDone[id]) thrM("VM compiler: DFND of the same block in multiple places");
             bDone[id] = true;
-            Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc);
+            Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc, 0);
             TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
             A64(ptr2u64(bl));
             TSADD(usedBlocks, bl);
@@ -444,7 +452,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc) {
+NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc, i32 nsResult) {
   usz bIA = IA(allBlocks);
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
@@ -481,7 +489,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   }
   TALLOC(bool,bDone,bIA);
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
-  Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0);
+  Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0, nsResult);
   TFREE(bDone);
   ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo);
   return ret;

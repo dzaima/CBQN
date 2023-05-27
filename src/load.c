@@ -105,12 +105,12 @@ B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄
 
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
   rt_group, rt_under, rt_find;
-Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
+Block* load_compObj(B x, B src, B path, Scope* sc, i32 nsResult) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
   if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
-  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
-                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc);
+  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc, nsResult)
+                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc, nsResult);
   decG(x);
   return r;
 }
@@ -121,11 +121,11 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
 
 #if RT_SRC
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
-  return compileAll(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
+  return compileAll(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL, 0);
 }
 #else
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
-  return compileAll(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL);
+  return compileAll(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL, 0);
 }
 #endif
 
@@ -145,7 +145,7 @@ void switchComp(void) {
 }
 #endif
 B compObj_c1(B t, B x) {
-  Block* block = load_compObj(x, bi_N, bi_N, NULL);
+  Block* block = load_compObj(x, bi_N, bi_N, NULL, 0);
   B res = evalFunBlock(block, 0);
   ptr_dec(block);
   return res;
@@ -188,7 +188,7 @@ B bqn_repr(B x) {
 static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
   str = chr_squeeze(str);
   PUSH_COMP;
-  Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL);
+  Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL, 0);
   dec(path); dec(args);
   POP_COMP; popCatch();
   return r;
@@ -196,13 +196,13 @@ static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // 
 Block* bqn_comp(B str, B path, B args) { // consumes all
   return bqn_compc(str, path, args, load_comp, load_compArg);
 }
-Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { // consumes str,path,args
+Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool loose, bool noNS) { // consumes str,path,args
   str = chr_squeeze(str);
   PUSH_COMP;
   B vName = emptyHVec();
   B vDepth = emptyIVec();
-  if (repl && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
-  i32 depth = repl? -1 : 0;
+  if (loose && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
+  i32 depth = loose? -1 : 0;
   Scope* csc = sc;
   while (csc) {
     B vars = listVars(csc);
@@ -212,13 +212,13 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool repl) { 
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2G(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc);
+  Block* r = load_compObj(c2G(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
   dec(path); dec(args);
   POP_COMP; popCatch();
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl);
+  return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl, false);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -335,7 +335,7 @@ B rebqn_exec(B str, B path, B args, B o) {
   B res;
   Block* block;
   if (replMode>0) {
-    block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2);
+    block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2, true);
     comp_currRe = prevRe;
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
@@ -512,7 +512,7 @@ void load_init() { // very last init function
   #ifdef PRECOMP
     Block* c = compileAll(
       #include "../build/interp"
-      , bi_N, bi_N, bi_N, bi_N, NULL
+      , bi_N, bi_N, bi_N, bi_N, NULL, 0
     );
     B interp = evalFunBlock(c, 0); ptr_dec(c);
     printI(interp);
