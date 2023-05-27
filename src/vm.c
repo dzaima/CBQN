@@ -444,7 +444,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compile(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc) {
+NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc) {
   usz bIA = IA(allBlocks);
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;

@@ -109,8 +109,8 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
   if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
-  Block* r = xia==6? compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
-                   : compile(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc);
+  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc)
+                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc);
   decG(x);
   return r;
 }
@@ -121,11 +121,11 @@ Block* load_compObj(B x, B src, B path, Scope* sc) { // consumes x,src
 
 #if RT_SRC
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
-  return compile(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
+  return compileAll(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL);
 }
 #else
 Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
-  return compile(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL);
+  return compileAll(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL);
 }
 #endif
 
@@ -510,7 +510,7 @@ void load_init() { // very last init function
   
   
   #ifdef PRECOMP
-    Block* c = compile(
+    Block* c = compileAll(
       #include "../build/interp"
       , bi_N, bi_N, bi_N, bi_N, NULL
     );
