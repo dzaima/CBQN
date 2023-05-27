@@ -85,8 +85,10 @@ f←•ReBQN{⇐} ⋄ F "Ah"•internal.Variation"1↑""""" %% " "
 •FLines "testfile.bqn" %% "abc"‿"def𝕩"
 
 "testfile3B.bqn" •file.Rename "testfile3.bqn"
+!"(file).Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
+!"(file).CreateDir: Failed to create directory" % •file.Createdir "testdirNested"
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List "." %% 1‿1‿0‿1‿1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List •file.path %% 1‿1‿0‿1‿1
 
