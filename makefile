@@ -111,7 +111,7 @@ else
 	i_OUTPUT_BIN := $(i_OUTPUT)
 endif
 ifeq ($(origin CC),command line)
-	i_CC := $(CC)
+	override i_CC := $(CC)
 	custom = 1
 endif
 ifeq ($(origin FFI),command line)
@@ -151,7 +151,7 @@ ifeq ($(i_REPLXX_1),1)
 	i_CC_PIE := -fPIE
 endif
 ifeq ($(origin PIE),command line)
-	i_PIE := $(PIE)
+	override i_PIE := $(PIE)
 	custom = 1
 endif
 ifeq ($(origin f),command line)
