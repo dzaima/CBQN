@@ -905,6 +905,7 @@ extern char* cbqn_versionString;
 #endif
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
+    cbqn_init();
     cbqn_init_replxx();
   #endif
   
