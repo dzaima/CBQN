@@ -963,7 +963,6 @@ B toUtf8_c1(B t, B x) {
   return r;
 }
 
-extern char** environ;
 
 #if __has_include(<spawn.h>) && __has_include(<fcntl.h>) && __has_include(<sys/wait.h>) && __has_include(<sys/poll.h>) && !WASM
 #define HAS_SH 1
@@ -971,6 +970,9 @@ extern char** environ;
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <poll.h>
+#if !defined(environ)
+extern char** environ;
+#endif
 typedef struct pollfd pollfd;
 void shClose(int fd) { if (close(fd)) fatal("bad file descriptor close"); }
 
