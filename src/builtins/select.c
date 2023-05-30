@@ -106,6 +106,13 @@ B select_c1(B t, B x) {
   decG(x);
   return taga(r);
 }
+
+B select_c2(B t, B w, B x);
+static NOINLINE NORETURN void select_properError(B w, B x) {
+  select_c2(w, w, taga(cpyHArr(x)));
+  fatal("select_properError");
+}
+
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
   ur xr = RNK(x);
@@ -113,7 +120,7 @@ B select_c2(B t, B w, B x) {
     watom:;
     if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz xn = *SH(x);
-    usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %H≡≢𝕩)", w, x));
+    usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
     if (xr==1) {
       B xf = getFillR(x);
       B xv = IGet(x, wi);
@@ -178,11 +185,11 @@ B select_c2(B t, B w, B x) {
   
   #if SINGELI_AVX2
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
-      if (!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds");
+      if (RARE(!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn))) select_properError(w, x);
     bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;
     #define BOOL_SPECIAL(W) \
       if (sizeof(W)==1 && bool_use_simd) { \
-        if (!avx2_select_bool128(wp, xp, rp, wia, xn)) thrM("⊏: Indexing out-of-bounds"); \
+        if (RARE(!avx2_select_bool128(wp, xp, rp, wia, xn))) select_properError(w, x); \
         goto setsh; \
       }
   #else
@@ -254,8 +261,8 @@ B select_c2(B t, B w, B x) {
     if (xl!=6) goto generic_l;                        \
     M_HARR(ra, wia); B* xp = arr_bptr(x);             \
     SLOWIF(xp==NULL) SLOW2("𝕨⊏𝕩", w, x);              \
-    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %H≡≢𝕩)", wp[i], x))])); } \
-    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %H≡≢𝕩)", wp[i], x)) )); } \
+    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
+    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
     r = a(withFill(HARR_FV(ra), xf)); goto setsh;     \
   }
   
@@ -276,7 +283,7 @@ B select_c2(B t, B w, B x) {
       if (xia<2) {
         u64* wp=bitarr_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
-        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %H≡≢𝕩)", x);
+        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
         x1 = x0;
       } else {
         x1 = GetU(x,1);
@@ -341,7 +348,7 @@ B select_c2(B t, B w, B x) {
     
     bad1:;
     mut_pfree(rm, i*csz);
-    thrF("⊏: Indexing out-of-bounds (%f∊𝕨, %H≡≢𝕩)", badw, x);
+    thrF("⊏: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
   }
   
   
