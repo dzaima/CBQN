@@ -416,7 +416,7 @@ B path_info(B path, i32 mode) {
 void mmX_dumpHeap(FILE* f);
 NOINLINE void writeNum(FILE* f, u64 v, i32 len) {
   u8 buf[8];
-  for (i32 i = 0; i < len; i++) buf[i] = (v>>(8*i)) & 0xff;
+  PLAINLOOP for (i32 i = 0; i < len; i++) buf[i] = (v>>(8*i)) & 0xff;
   fwrite(buf, 1, len, f);
 }
 static char* types_str[] = {
