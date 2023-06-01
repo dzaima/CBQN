@@ -15,20 +15,20 @@ ssize_t getline (char **lptr, size_t *n, FILE *fp) {
   HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
   
   if (!ReadConsoleW(hIn, &buf, chars, &read_chars, NULL)) {
-    fprintf(stderr, "Failed to read console input: %d", GetLastError());
+    fprintf(stderr, "Failed to read console input: %d", (int)GetLastError());
     goto error;
   }
 
   convertResult = WideCharToMultiByte(CP_UTF8, 0, buf, -1, NULL, 0, NULL, NULL);
   if (convertResult == 0) {
-    fprintf(stderr, "Failed to get MultiByte length: %d", GetLastError());
+    fprintf(stderr, "Failed to get MultiByte length: %d", (int)GetLastError());
     goto error;
   }
 
   m = *lptr = (char*) calloc(convertResult, sizeof(char));
 
   if (WideCharToMultiByte(CP_UTF8, 0, buf, -1, m, convertResult, NULL, NULL) == 0 ) {
-    fprintf(stderr, "Failed to convert wide characters: %d", GetLastError());
+    fprintf(stderr, "Failed to convert wide characters: %d", (int)GetLastError());
     free(m);
     goto error;
   }
