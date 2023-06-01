@@ -5,13 +5,17 @@
 #endif
 
 #if CBQN_EXPORT
+  #if defined(_WIN32) || defined(_WIN64)
+    #define BQN_EXP __attribute__((__visibility__("default"))) __declspec(dllexport)
+  #else
+    #define BQN_EXP __attribute__((__visibility__("default")))
+  #endif
   #include "../include/bqnffi.h"
   #include "utils/utf.h"
   #include "utils/cstr.h"
   #include "nfns.h"
   #include "ns.h"
   #include "utils/file.h"
-  #define EXPORT __attribute__((__visibility__("default")))
 // ..continuing under "#if CBQN_EXPORT"
 
 // base interface defs for when GC stuff needs to be added in
@@ -22,10 +26,10 @@ static BQNV makeX(B x) {
   return x.u;
 }
 
-EXPORT void bqn_free(BQNV v) {
+BQN_EXP void bqn_free(BQNV v) {
   dec(getB(v));
 }
-EXPORT BQNV bqn_copy(BQNV v) {
+BQN_EXP BQNV bqn_copy(BQNV v) {
   return makeX(inc(getB(v)));
 }
 
@@ -33,55 +37,55 @@ static void freeTagged(BQNV v) { }
 
 #define DIRECT_BQNV 1
 
-EXPORT double   bqn_toF64 (BQNV v) { double   r = o2fG(getB(v)); freeTagged(v); return r; }
-EXPORT uint32_t bqn_toChar(BQNV v) { uint32_t r = o2cG(getB(v)); freeTagged(v); return r; }
-EXPORT double   bqn_readF64 (BQNV v) { return o2fG(getB(v)); }
-EXPORT uint32_t bqn_readChar(BQNV v) { return o2cG(getB(v)); }
+BQN_EXP double   bqn_toF64 (BQNV v) { double   r = o2fG(getB(v)); freeTagged(v); return r; }
+BQN_EXP uint32_t bqn_toChar(BQNV v) { uint32_t r = o2cG(getB(v)); freeTagged(v); return r; }
+BQN_EXP double   bqn_readF64 (BQNV v) { return o2fG(getB(v)); }
+BQN_EXP uint32_t bqn_readChar(BQNV v) { return o2cG(getB(v)); }
 
-EXPORT void bqn_init() {
+BQN_EXP void bqn_init() {
   cbqn_init();
 }
 
 B type_c1(B t, B x);
-EXPORT int bqn_type(BQNV v) {
+BQN_EXP int bqn_type(BQNV v) {
   return o2i(type_c1(bi_N, inc(getB(v))));
 }
 
-EXPORT BQNV bqn_call1(BQNV f, BQNV x) {
+BQN_EXP BQNV bqn_call1(BQNV f, BQNV x) {
   return makeX(c1(getB(f), inc(getB(x))));
 }
-EXPORT BQNV bqn_call2(BQNV f, BQNV w, BQNV x) {
+BQN_EXP BQNV bqn_call2(BQNV f, BQNV w, BQNV x) {
   return makeX(c2(getB(f), inc(getB(w)), inc(getB(x))));
 }
 
-EXPORT BQNV bqn_eval(BQNV src) {
+BQN_EXP BQNV bqn_eval(BQNV src) {
   return makeX(bqn_exec(inc(getB(src)), bi_N, bi_N));
 }
-EXPORT BQNV bqn_evalCStr(const char* str) {
+BQN_EXP BQNV bqn_evalCStr(const char* str) {
   return makeX(bqn_exec(utf8Decode0(str), bi_N, bi_N));
 }
 
 
-EXPORT size_t bqn_bound(BQNV a) { return IA(getB(a)); }
-EXPORT size_t bqn_rank(BQNV a) { return RNK(getB(a)); }
-EXPORT void bqn_shape(BQNV a, size_t* buf) { B b = getB(a);
+BQN_EXP size_t bqn_bound(BQNV a) { return IA(getB(a)); }
+BQN_EXP size_t bqn_rank(BQNV a) { return RNK(getB(a)); }
+BQN_EXP void bqn_shape(BQNV a, size_t* buf) { B b = getB(a);
   ur r = RNK(b);
   usz* sh = SH(b);
   for (usz i = 0; i < r; i++) buf[i] = sh[i];
 }
-EXPORT BQNV bqn_pick(BQNV a, size_t pos) {
+BQN_EXP BQNV bqn_pick(BQNV a, size_t pos) {
   return makeX(IGet(getB(a),pos));
 }
 
 // TODO copy directly with some mut.h thing
-EXPORT void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (incG(getB(a))); memcpy(buf, i8any_ptr (c), IA(c) * 1); dec(c); }
-EXPORT void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(incG(getB(a))); memcpy(buf, i16any_ptr(c), IA(c) * 2); dec(c); }
-EXPORT void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(incG(getB(a))); memcpy(buf, i32any_ptr(c), IA(c) * 4); dec(c); }
-EXPORT void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(incG(getB(a))); memcpy(buf, f64any_ptr(c), IA(c) * 8); dec(c); }
-EXPORT void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (incG(getB(a))); memcpy(buf, c8any_ptr (c), IA(c) * 1); dec(c); }
-EXPORT void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); memcpy(buf, c16any_ptr(c), IA(c) * 2); dec(c); }
-EXPORT void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), IA(c) * 4); dec(c); }
-EXPORT void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
+BQN_EXP void bqn_readI8Arr (BQNV a, i8*   buf) { B c = toI8Any (incG(getB(a))); memcpy(buf, i8any_ptr (c), IA(c) * 1); dec(c); }
+BQN_EXP void bqn_readI16Arr(BQNV a, i16*  buf) { B c = toI16Any(incG(getB(a))); memcpy(buf, i16any_ptr(c), IA(c) * 2); dec(c); }
+BQN_EXP void bqn_readI32Arr(BQNV a, i32*  buf) { B c = toI32Any(incG(getB(a))); memcpy(buf, i32any_ptr(c), IA(c) * 4); dec(c); }
+BQN_EXP void bqn_readF64Arr(BQNV a, f64*  buf) { B c = toF64Any(incG(getB(a))); memcpy(buf, f64any_ptr(c), IA(c) * 8); dec(c); }
+BQN_EXP void bqn_readC8Arr (BQNV a, u8*   buf) { B c = toC8Any (incG(getB(a))); memcpy(buf, c8any_ptr (c), IA(c) * 1); dec(c); }
+BQN_EXP void bqn_readC16Arr(BQNV a, u16*  buf) { B c = toC16Any(incG(getB(a))); memcpy(buf, c16any_ptr(c), IA(c) * 2); dec(c); }
+BQN_EXP void bqn_readC32Arr(BQNV a, u32*  buf) { B c = toC32Any(incG(getB(a))); memcpy(buf, c32any_ptr(c), IA(c) * 4); dec(c); }
+BQN_EXP void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
   usz ia = IA(b);
   if (DIRECT_BQNV && sizeof(BQNV)==sizeof(B)) {
     COPY_TO(buf, el_B, 0, b, 0, ia);
@@ -96,15 +100,15 @@ EXPORT void bqn_readObjArr(BQNV a, BQNV* buf) { B b = getB(a);
   }
 }
 
-EXPORT bool bqn_hasField(BQNV ns, BQNV name) {
+BQN_EXP bool bqn_hasField(BQNV ns, BQNV name) {
   return !q_N(ns_getNU(getB(ns), getB(name), false));
 }
-EXPORT BQNV bqn_getField(BQNV ns, BQNV name) {
+BQN_EXP BQNV bqn_getField(BQNV ns, BQNV name) {
   return makeX(inc(ns_getNU(getB(ns), getB(name), true)));
 }
 
-EXPORT BQNV bqn_makeF64(double d) { return makeX(m_f64(d)); }
-EXPORT BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
+BQN_EXP BQNV bqn_makeF64(double d) { return makeX(m_f64(d)); }
+BQN_EXP BQNV bqn_makeChar(uint32_t c) { return makeX(m_c32(c)); }
 
 
 static usz calcIA(size_t rank, const size_t* shape) {
@@ -127,24 +131,24 @@ static void copyBData(B* r, const BQNV* data, usz ia) {
 #define CPYSH(R) usz* sh = arr_shAlloc((Arr*)(R), r0); \
   if (sh) PLAINLOOP for (size_t i = 0; RARE(i < r0); i++) sh[i] = sh0[i];
 
-EXPORT BQNV bqn_makeI8Arr (size_t r0, const size_t* sh0, const i8*   data) { usz ia=calcIA(r0,sh0); i8*  rp; Arr* r = m_i8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeI16Arr(size_t r0, const size_t* sh0, const i16*  data) { usz ia=calcIA(r0,sh0); i16* rp; Arr* r = m_i16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeI32Arr(size_t r0, const size_t* sh0, const i32*  data) { usz ia=calcIA(r0,sh0); i32* rp; Arr* r = m_i32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeF64Arr(size_t r0, const size_t* sh0, const f64*  data) { usz ia=calcIA(r0,sh0); f64* rp; Arr* r = m_f64arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*8); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeC8Arr (size_t r0, const size_t* sh0, const u8*   data) { usz ia=calcIA(r0,sh0); u8*  rp; Arr* r = m_c8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeC16Arr(size_t r0, const size_t* sh0, const u16*  data) { usz ia=calcIA(r0,sh0); u16* rp; Arr* r = m_c16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeC32Arr(size_t r0, const size_t* sh0, const u32*  data) { usz ia=calcIA(r0,sh0); u32* rp; Arr* r = m_c32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
-EXPORT BQNV bqn_makeObjArr(size_t r0, const size_t* sh0, const BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); copyBData(r.a,data,ia); NOGC_E; CPYSH(r.c); return makeX(r.b); }
+BQN_EXP BQNV bqn_makeI8Arr (size_t r0, const size_t* sh0, const i8*   data) { usz ia=calcIA(r0,sh0); i8*  rp; Arr* r = m_i8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeI16Arr(size_t r0, const size_t* sh0, const i16*  data) { usz ia=calcIA(r0,sh0); i16* rp; Arr* r = m_i16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeI32Arr(size_t r0, const size_t* sh0, const i32*  data) { usz ia=calcIA(r0,sh0); i32* rp; Arr* r = m_i32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeF64Arr(size_t r0, const size_t* sh0, const f64*  data) { usz ia=calcIA(r0,sh0); f64* rp; Arr* r = m_f64arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*8); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeC8Arr (size_t r0, const size_t* sh0, const u8*   data) { usz ia=calcIA(r0,sh0); u8*  rp; Arr* r = m_c8arrp (&rp,ia); CPYSH(r); memcpy(rp,data,ia*1); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeC16Arr(size_t r0, const size_t* sh0, const u16*  data) { usz ia=calcIA(r0,sh0); u16* rp; Arr* r = m_c16arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*2); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeC32Arr(size_t r0, const size_t* sh0, const u32*  data) { usz ia=calcIA(r0,sh0); u32* rp; Arr* r = m_c32arrp(&rp,ia); CPYSH(r); memcpy(rp,data,ia*4); return makeX(taga(r)); }
+BQN_EXP BQNV bqn_makeObjArr(size_t r0, const size_t* sh0, const BQNV* data) { usz ia=calcIA(r0,sh0); HArr_p r = m_harrUp(ia); copyBData(r.a,data,ia); NOGC_E; CPYSH(r.c); return makeX(r.b); }
 
-EXPORT BQNV bqn_makeI8Vec (size_t len, const i8*   data) { i8*  rp; B r = m_i8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
-EXPORT BQNV bqn_makeI16Vec(size_t len, const i16*  data) { i16* rp; B r = m_i16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
-EXPORT BQNV bqn_makeI32Vec(size_t len, const i32*  data) { i32* rp; B r = m_i32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
-EXPORT BQNV bqn_makeF64Vec(size_t len, const f64*  data) { f64* rp; B r = m_f64arrv(&rp,len); memcpy(rp,data,len*8); return makeX(r); }
-EXPORT BQNV bqn_makeC8Vec (size_t len, const u8*   data) { u8*  rp; B r = m_c8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
-EXPORT BQNV bqn_makeC16Vec(size_t len, const u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
-EXPORT BQNV bqn_makeC32Vec(size_t len, const u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
-EXPORT BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len); copyBData(r.a,data,len); NOGC_E;return makeX(r.b); }
-EXPORT BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(utf8Decode(str, len)); }
+BQN_EXP BQNV bqn_makeI8Vec (size_t len, const i8*   data) { i8*  rp; B r = m_i8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
+BQN_EXP BQNV bqn_makeI16Vec(size_t len, const i16*  data) { i16* rp; B r = m_i16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
+BQN_EXP BQNV bqn_makeI32Vec(size_t len, const i32*  data) { i32* rp; B r = m_i32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
+BQN_EXP BQNV bqn_makeF64Vec(size_t len, const f64*  data) { f64* rp; B r = m_f64arrv(&rp,len); memcpy(rp,data,len*8); return makeX(r); }
+BQN_EXP BQNV bqn_makeC8Vec (size_t len, const u8*   data) { u8*  rp; B r = m_c8arrv (&rp,len); memcpy(rp,data,len*1); return makeX(r); }
+BQN_EXP BQNV bqn_makeC16Vec(size_t len, const u16*  data) { u16* rp; B r = m_c16arrv(&rp,len); memcpy(rp,data,len*2); return makeX(r); }
+BQN_EXP BQNV bqn_makeC32Vec(size_t len, const u32*  data) { u32* rp; B r = m_c32arrv(&rp,len); memcpy(rp,data,len*4); return makeX(r); }
+BQN_EXP BQNV bqn_makeObjVec(size_t len, const BQNV* data) { HArr_p r = m_harrUv(len); copyBData(r.a,data,len); NOGC_E;return makeX(r.b); }
+BQN_EXP BQNV bqn_makeUTF8Str(size_t len, const char* str) { return makeX(utf8Decode(str, len)); }
 
 typedef struct BoundFn {
   struct NFn;
@@ -175,8 +179,8 @@ static B m_ffiFn(NFnDesc* desc, B obj, FC1 c1, FC2 c2, void* wc1, void* wc2) {
   r->w_c2 = wc2;
   return tag(r, FUN_TAG);
 }
-EXPORT BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), boundFn_c1, c2_bad, f, NULL)); }
-EXPORT BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), c1_bad, boundFn_c2, NULL, f)); }
+BQN_EXP BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), boundFn_c1, c2_bad, f, NULL)); }
+BQN_EXP BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), c1_bad, boundFn_c2, NULL, f)); }
 
 const static u8 typeMap[] = {
   [el_bit] = elt_unk,
@@ -186,18 +190,18 @@ const static u8 typeMap[] = {
   [el_i32] = elt_i32, [el_c32] = elt_c32,
   [el_f64] = elt_f64,
 };
-EXPORT BQNElType bqn_directArrType(BQNV a) {
+BQN_EXP BQNElType bqn_directArrType(BQNV a) {
   B b = getB(a);
   if (!isArr(b)) return elt_unk;
   return typeMap[TI(b,elType)];
 }
-EXPORT const i8*  bqn_directI8 (BQNV a) { return i8any_ptr (getB(a)); }
-EXPORT const i16* bqn_directI16(BQNV a) { return i16any_ptr(getB(a)); }
-EXPORT const i32* bqn_directI32(BQNV a) { return i32any_ptr(getB(a)); }
-EXPORT const f64* bqn_directF64(BQNV a) { return f64any_ptr(getB(a)); }
-EXPORT const u8*  bqn_directC8 (BQNV a) { return c8any_ptr (getB(a)); }
-EXPORT const u16* bqn_directC16(BQNV a) { return c16any_ptr(getB(a)); }
-EXPORT const u32* bqn_directC32(BQNV a) { return c32any_ptr(getB(a)); }
+BQN_EXP const i8*  bqn_directI8 (BQNV a) { return i8any_ptr (getB(a)); }
+BQN_EXP const i16* bqn_directI16(BQNV a) { return i16any_ptr(getB(a)); }
+BQN_EXP const i32* bqn_directI32(BQNV a) { return i32any_ptr(getB(a)); }
+BQN_EXP const f64* bqn_directF64(BQNV a) { return f64any_ptr(getB(a)); }
+BQN_EXP const u8*  bqn_directC8 (BQNV a) { return c8any_ptr (getB(a)); }
+BQN_EXP const u16* bqn_directC16(BQNV a) { return c16any_ptr(getB(a)); }
+BQN_EXP const u32* bqn_directC32(BQNV a) { return c32any_ptr(getB(a)); }
 
 void ffiFn_visit(Value* v) { mm_visit(((BoundFn*)v)->obj); }
 DEF_FREE(ffiFn) { dec(((BoundFn*)x)->obj); }
