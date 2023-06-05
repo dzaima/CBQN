@@ -6,10 +6,6 @@
 #include "../builtins.h"
 #include <math.h>
 
-B md2BI_uc1(Md2* t, B o, B f, B g,      B x) { return ((BMd2*)t)->uc1(t, o, f, g,    x); }
-B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g, w, x); }
-
-
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
@@ -247,13 +243,16 @@ static void print_md2BI(FILE* f, B x) { fprintf(f, "%s", pm2_repr(c(Md1,x)->extr
 static B md2BI_im(Md2D* d,      B x) { return ((BMd2*)d->m2)->im(d,    x); }
 static B md2BI_iw(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->iw(d, w, x); }
 static B md2BI_ix(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->ix(d, w, x); }
+static B md2BI_uc1(Md2* t, B o, B f, B g,      B x) { return ((BMd2*)t)->uc1(t, o, f, g,    x); }
+static B md2BI_ucw(Md2* t, B o, B f, B g, B w, B x) { return ((BMd2*)t)->ucw(t, o, f, g, w, x); }
+
 void md2_init(void) {
   TIi(t_md2BI,print) = print_md2BI;
-  TIi(t_md2BI,m2_uc1) = md2BI_uc1;
-  TIi(t_md2BI,m2_ucw) = md2BI_ucw;
   TIi(t_md2BI,m2_im) = md2BI_im;
   TIi(t_md2BI,m2_iw) = md2BI_iw;
   TIi(t_md2BI,m2_ix) = md2BI_ix;
+  TIi(t_md2BI,m2_uc1) = md2BI_uc1;
+  TIi(t_md2BI,m2_ucw) = md2BI_ucw;
   c(BMd2,bi_before)->uc1 = before_uc1;
   c(BMd2,bi_after)->im = after_im;
   c(BMd2,bi_before)->im = before_im;

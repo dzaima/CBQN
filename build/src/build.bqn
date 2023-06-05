@@ -21,8 +21,8 @@ opts ← ⟨
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
-  ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"⟩
-  ⟨1, "notui",   @, "disable live-updating status display"∾@+10⟩
+  ⟨1, "notui",   @, "disable live-updating status display"⟩
+  ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
   ⟨1, "rebuild-singeli", 0, @⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
@@ -49,8 +49,8 @@ opts ← ⟨
   ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
   ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
   
-  ⟨1, "FFI",       @, "Enable FFI through libffi; On by default, except for WASM builds"⟩
-  ⟨1, "pkgconfig", 1, "Attempt to use pkg-config to find libffi flags"⟩
+  ⟨1, "FFI",       @, "Enable FFI through libffi; On by default for linux, BSD, macos"⟩
+  ⟨1, "pkgconfig", 1, "Whether to attempt to use pkg-config to find libffi flags"⟩
   ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
