@@ -82,10 +82,6 @@ def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element
   spreadBits{T, b_getBatchLo{vcount{T}, x, n}}
 }
 
-def truncBits{n, v & n<=8}  = cast_i{u8, v}
-def truncBits{n, v & n==16} = cast_i{u16, v}
-def truncBits{n, v & n==32} = cast_i{u32, v}
-def truncBits{n, v & n==64} = cast_i{u64, v}
 def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 # load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it

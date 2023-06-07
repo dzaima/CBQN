@@ -78,9 +78,7 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
   while (ri < am) {
     r:u64 = 0
     if (hasarch{'AARCH64'}) {
-      def step{j, n & n==1} = op{wV{xi+j}, xV{xi+j}}
-      def step{j, n & n>=2} = packLo{step{j, n/2}, step{j+n/2, n/2}}
-      r = promote{u64, homMask{step{0, unr}}}
+      r = promote{u64, homMask{...each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
     } else {
       @unroll (j to unr) r|= promote{u64, homMask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT})
     }
@@ -130,7 +128,7 @@ def table{aa, F, w, G_bit, G_vec} = {
     ...each{{E}=>{
       def E2 = (if (aa and isunsigned{E} and ((match{F,__eq} | match{F,__ne})  |  (E==u32))) {ty_s{E}} else E)
       def bulk = w/width{E2}
-      G_vec{[bulk]E2, max{1, 8/bulk}}
+      G_vec{[bulk]E2, max{tern{hasarch{'AARCH64'},2,1}, 8/bulk}}
     }, tup{i8, i16, i32, f64, u8, u16, u32}}
   }
 }
