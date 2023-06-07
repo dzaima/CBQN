@@ -47,10 +47,11 @@ def    max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S,elwidth{T}}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
 def   addp{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vpadd', T}, a, b}
 
-def __shl{a:T,      s & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshl', '_n', T}, a, s};  def __shl{a:T,s==0 & nveci{T}} = a
-def __shr{a:T,      s & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshr', '_n', T}, a, s};  def __shr{a:T,s==0 & nveci{T}} = a
-def  shrn{a:T,      s & w128i{T} & elwidth{T}>8} = { def H=v_half{ty_half{T}}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
-def  shrm{a:T, d:T, s & w128u{T}} = emit{T, ntyp{'vsri', '_n', T}, a, d, s} # (a>>s) | (d & newZeroesIn(a>>s))
+def __shl{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshl', '_n', T}, a, s};  def __shl{a:T,s==0 & nveci{T}} = a
+def __shr{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshr', '_n', T}, a, s};  def __shr{a:T,s==0 & nveci{T}} = a
+def  shrn{a:T, s      & w128i{T} & elwidth{T}>8} = { def H=v_half{ty_half{T}}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
+def  shrm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
+def  shlm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
 def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M,elwidth{T}} & width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
 def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
@@ -66,6 +67,14 @@ def addpw {     x:T & nveci{T} & elwidth{T}<=32               } = emit{ty_dbl{T}
 def addpwa{a:D, x:T & nveci{T} & elwidth{T}<=32 & D==ty_dbl{T}} = emit{D,         ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 def mla{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
+def rbit{x:T & nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
+def rev{w, x:T & w==elwidth{T}} = x
+def rev{w==16, x:T & elwidth{T}<16} = emit{T, ntyp{'vrev16', T}, x} # reverse the order of elements in each w-bit window
+def rev{w==32, x:T & elwidth{T}<32} = emit{T, ntyp{'vrev32', T}, x}
+def rev{w==64, x:T & elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
+def popc{x:T & nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
+def clz{x:T & nvecu{T} & elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
+def cls{x:T & nveci{T} & elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
 
 def __eq{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vceq', T}, a, b}
 def __ge{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcge', T}, a, b}
@@ -102,6 +111,7 @@ def loadLow{ptr:P, w & w==elwidth{P}} = load{ptr}
 def undefPromote{T, x:X & w64{X} & w128{T} & eltype{T}==eltype{X}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
 def half{x:T, n==0 & w128{T}} = emit{v_half{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, n==1 & w128{T}} = emit{v_half{T}, ntyp0{'vget_high', T}, x}
+def pair{a:T, b:T & w64{T}} = emit{v_dbl{T}, ntyp0{'vcombine', T}, a, b}
 def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
 def copyLane{dst:D, di, src:S, si & w64{D}  & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
 def copyLane{dst:D, di, src:S, si & w128{D} & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
@@ -167,7 +177,8 @@ def homMask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
   truncBits{vcount{T}, fold_add{x & make{T, 1<<iota{vcount{T}}}}}
 }
 def homMask{x:T & nvecu{T} & T==[16]u8} = {
-  fold_add{addpw{x & make{[16]u8, 1<<(iota{16}&7)}} << make{[8]u16, merge{4**0, 4**8}}}
+  t:= [8]u16~~sel{[16]u8, x, make{[16]u8, 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15}}
+  fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
 def homMask{a:T,b:T & T==[16]u8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
@@ -183,7 +194,7 @@ def homMask{a:T,b:T,c:T,d:T & T==[16]u8} = {
 def homMask{...as & tuplen{as}>1 & elwidth{type{tupsel{0,as}}}>=32} = homMask{...each{{i}=>narrowPair{tupsel{i*2,as},tupsel{i*2+1,as}}, iota{tuplen{as}/2}}}
 def homMask{a:T,b:T & vcount{T}*2<=elwidth{T}} = {
   def n = vcount{T}
-  truncBits{n*2, fold_add{shrm{b,a,elwidth{T}-n} & make{T, (1<<iota{n}) | (1<<(iota{n}+n))}}}
+  truncBits{n*2, fold_add{shrm{a,elwidth{T}-n,b} & make{T, (1<<iota{n}) | (1<<(iota{n}+n))}}}
 }
 
 def andAllZero{x:T, y:T & nveci{T}} = ~bitAny{x&y}
