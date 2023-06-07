@@ -4,16 +4,24 @@ include 'util/tup'
 def bin_search{lt, w, wn, x, n, res} = {
   ws := w - 1
   l0 := wn + 1
-  @for (x, res over n) {
-    s := ws
-    l := l0; h := undefined{u64}
+  # Take a list of indices in x/res to allow unrolling
+  def search{inds} = {
+    xs:= each{bind{load,x}, inds} # Values
+    ss:= each{{_}=>ws, inds}      # Initial lower bound
+    l := l0; h := undefined{u64}  # Interval size l, same for all values
     while ((h=l/2) > 0) {
-      m := s + h
-      if (not lt{x, load{m}}) s = m
+      # Branchless update
+      def bin1{s, x, m} = { if (not lt{x, load{m}}) s = m }
+      each{bin1, ss, xs, each{bind{+,h}, ss}}
       l -= h
     }
-    res = cast_i{i32, s - ws}
+    each{{r,s} => store{res, r, cast_i{i32, s - ws}}, inds, ss}
   }
+  # Unroll by 4 then 1
+  def search{i, k} = search{each{bind{+,i}, iota{k}}}
+  j:u64 = 0
+  def searches{k} = { while (j+k <= n) { search{j, k}; j+=k } }
+  each{searches, tup{4, 1}}
 }
 
 fn bins_branchless{T, up}(w:*void, wn:u64, x:*void, xn:u64, r:*i32) : void = {
