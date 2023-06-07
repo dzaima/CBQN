@@ -652,7 +652,7 @@ cachedBin‿linkerCache ← {
   singeliObjs ← @
   singeliCache ← {
     ¬po.singeli? @;
-    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.avx2, po.has, po.singeliFlags, po.singeliDir⟩⟩
+    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.avx2, po.usz, po.has, po.singeliFlags, po.singeliDir⟩⟩
     
     # genArithTables
     ga ← "src/singeli/src/genArithTables.bqn"
