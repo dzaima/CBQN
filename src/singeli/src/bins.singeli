@@ -1,0 +1,26 @@
+include './base'
+include 'util/tup'
+
+def bin_search{lt, w, wn, x, n, res} = {
+  ws := w - 1
+  l0 := wn + 1
+  @for (x, res over n) {
+    s := ws
+    l := l0; h := undefined{u64}
+    while ((h=l/2) > 0) {
+      m := s + h
+      if (not lt{x, load{m}}) s = m
+      l -= h
+    }
+    res = cast_i{i32, s - ws}
+  }
+}
+
+fn bins_branchless{T, up}(w:*void, wn:u64, x:*void, xn:u64, r:*i32) : void = {
+  bin_search{if (up) <; else >, *T~~w, wn, *T~~x, xn, r}
+}
+
+exportT{
+  'si_bins',
+  join{table{bins_branchless, tup{i8,i16,i32,f64}, tup{1,0}}}
+}

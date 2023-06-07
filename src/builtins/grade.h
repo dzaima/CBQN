@@ -370,13 +370,17 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       for (i64 i = 0; i < (i64)wia-1; i++) if (wi[i] GRADE_UD(>,<) wi[i+1]) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
       FL_SET(w, fl);
     }
-    
+
+    #if SINGELI
+    si_bins[2*2 + GRADE_UD(0,1)](wi, wia, xi, xia, rp);
+    #else
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
       i32 *s = wi-1;
       for (usz l = wia+1, h; (h=l/2)>0; l-=h) { i32* m = s+h; if (!(c LT *m)) s = m; }
       rp[i] = s - (wi-1);
     }
+    #endif
   } else {
     gen:;
     SGetU(x)

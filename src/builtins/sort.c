@@ -3,6 +3,11 @@
 
 // Defines Sort, Grade, and Bins
 
+#if SINGELI
+  #define SINGELI_FILE bins
+  #include "../utils/includeSingeli.h"
+#endif
+
 #define CAT0(A,B) A##_##B
 #define CAT(A,B) CAT0(A,B)
 typedef struct BI32p { B k; i32 v; } BI32p;
