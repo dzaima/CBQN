@@ -80,6 +80,8 @@ shared-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1
 shared-c:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts=c
+static-bin:
+	@"${MAKE}" to-bqn-build FFI=0 LDFLAGS="-static"
 
 # mappings of old names
 o3-singeli: o3
