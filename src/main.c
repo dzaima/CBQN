@@ -911,6 +911,7 @@ int main(int argc, char* argv[]) {
   bool startREPL = argc==1;
   bool silentREPL = false;
   bool execStdin = false;
+  bool pp = false;
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
@@ -925,6 +926,7 @@ int main(int argc, char* argv[]) {
           "Usage: %s [options] [file.bqn [arguments]]\n"
           "Options:\n"
           "  -f file    execute the contents of the file with all further arguments as •args\n"
+          "  -F file    execute file like -f and pretty-print its last result\n"
           "  -e code    execute the argument as BQN\n"
           "  -p code    execute the argument as BQN and print its result pretty-printed\n"
           "  -o code    execute the argument as BQN and print its raw result\n"
@@ -954,6 +956,7 @@ int main(int argc, char* argv[]) {
         while ((c = *carg++)) {
           switch(c) { default: fprintf(stderr, "%s: Unknown option: -%c\n", argv[0], c); exit(1);
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
+            case 'F': pp = true;
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
               dec(gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-e)"), emptySVec()));
@@ -1024,6 +1027,10 @@ int main(int argc, char* argv[]) {
         execRes = gsc_exec_inplace(utf8DecodeA(stream_bytes(stdin)), m_c8vec_0("(-)"), args);
       } else {
         execRes = bqn_execFile(src, args);
+      }
+      if (pp) {
+        if (FORMATTER) { execRes = bqn_fmt(execRes); printsB(execRes); }
+        else { printI(execRes); }
       }
       dec(execRes);
       #if HEAP_VERIFY
