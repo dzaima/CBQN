@@ -16,11 +16,10 @@ def copyFromBits{T, loadFn, rp, l:u64} = {
   def bulk = vcount{T}
   def TU = ty_u{T}
   
-  maskedLoop{bulk, l, {i, M} => {
+  @maskedLoop{bulk}(sr in tup{'g',*eltype{T}~~rp} over i to l) {
     x:= loadFn{TU, i}
-    r:= x & TU ~~ T**1
-    storeBatch{*eltype{T}~~rp, i, T~~r, M}
-  }}
+    sr{T~~(x & TU ~~ T**1)}
+  }
 }
 
 
@@ -41,18 +40,12 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   } else if (R==u64) {
     # show{'R==u64', X, R}
     assert{((X==u8) | (X==u16)) | (X==u32)}
-    maskedLoop{bulk, l, {i, M} => { # TODO could maybe read 256 bits and use unpack to write >256
-      v:= loadBatch{xp, i, RV}
-      v|= RV ** (cbqn_c32Tag{} << 48)
-      storeBatch{rp, i, v, M}
-    }}
+    # TODO could maybe read 256 bits and use unpack to write >256
+    @maskedLoop{bulk}(sr in tup{'g',rp}, x in tup{RV,xp} over _ to l) sr{x | RV**(cbqn_c32Tag{}<<48)}
   } else if (X==u1 and R==u1) {
     # show{'u1u1', X, R}
     def V64 = [vw/64]u64
-    maskedLoop{vcount{V64}, cdiv{l, 64}, {i, M} => {
-      v:= loadBatch{xp, i, V64}
-      storeBatch{rp, i, v, M}
-    }}
+    @maskedLoop{vcount{V64}}(sr in tup{'g',rp}, x in tup{V64,xp} over _ to cdiv{l,64}) sr{x}
   } else if (X==u1) {
     # show{'X==u1', X, R}
     copyFromBits{[bulk]R, {T, i} => loadBatchBit{T, xp, i}, r, l}
@@ -66,16 +59,10 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     }
   } else if (width{X}<=width{R}) {
     # show{'w{X}<=w{R}', X, R}
-    muLoop{bulk, ur, l, {is, M} => {
-      def v = loadBatch{xp, is, RV}
-      storeBatch{rp, is, v, M}
-    }}
+    @muLoop{bulk,ur}(sr in tup{'g',rp}, x in tup{RV,xp} over _ to l) sr{x}
   } else {
     # show{'w{X}>w{R}', X, R}
-    muLoop{bulk, ur, l, {is, M} => {
-      def v = loadBatch{xp, is, XV}
-      storeBatch{rp, is, v, M}
-    }}
+    @muLoop{bulk,ur}(sr in tup{'g',rp}, x in tup{XV,xp} over _ to l) sr{x}
   }
 }
 

@@ -187,6 +187,8 @@ def widen{...x} = assert{'widen not supported', show{...x}}
 def narrow{...x} = assert{'narrow not supported', show{...x}}
 def unord{...x} = assert{'unord not supported', show{...x}}
 def floor{...x} = assert{'floor not supported', show{...x}}
+def loadBatchBit{...x} = assert{'loadBatchBit not supported', show{...x}}
+def b_getBatch{...x} = assert{'b_getBatch not supported', show{...x}}
 
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35
@@ -230,6 +232,12 @@ def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
 def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
 
 
+def load{p,i & kgen{p}} = p{i}
+def store{p,i,x & kgen{p}} = p{i,x}
+def tptr{l,s} = { # create "pointer" generator with given load & store definitions
+  def r{i} = l{i}
+  def r{i,x} = s{i,x}
+}
 
 def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0

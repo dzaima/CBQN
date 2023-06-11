@@ -19,11 +19,7 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   
   e0v:= VT**e0
   e1v:= VT**e1
-  
-  maskedLoop{bulk, len, {i, M} => {
-    cb:= loadBatchBit{VT, bits, i}
-    storeBatch{r, i, homBlend{e0v, e1v, cb}, M}
-  }}
+  @maskedLoop{bulk}(r in tup{'g',r}, b in tup{'b',VT,bits} over i to len) r{homBlend{e0v, e1v, b}}
 }
 
 fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {

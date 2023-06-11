@@ -59,33 +59,32 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   r1:= EV**0
   if (CHR) { # c8, c16, c32
     def hw = width{E}/2
-    maskedLoop{bulk, len, {i, M} => {
-      c:= EV~~loadBatch{xp, i, XV}
+    @maskedLoop{bulk}(xv in tup{XV,xp}, M in 'm' over _ to len) {
+      c:= EV~~xv
       if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
       if (B) {
         if (anyNonChar{M, c}) return{3}
       } else {
         if (anynePositive{EV**((1<<hw-1)<<hw) & c, EV**0, M}) return{lb{hw}-2}
       }
-    }}
+    }
     r2:= foldTotal{u32, r1}
     if (X>u32 and r2>=65536) return{2}
     if (X>u16 and r2>=256) return{1}
     0
   } else { # i8, i16, i32, f64
     if (X==i8) { # i8
-      maskedLoop{bulk, len, {i, M} => {
-        v0:= loadBatch{xp, i, XV}
+      @maskedLoop{bulk}(v0 in tup{XV,xp}, M in 'm' over _ to len) {
         if (anynePositive{EV**0xfe & EV~~v0, EV**0, M}) return{2}
-      }}
+      }
       0
     } else { # i16, i32, f64
       def case_B = makeOptBranch{B, tup{Size}, {iCont} => {
-        maskedLoop{bulk, iCont, len, {i, M} => {
-          def XU = [bulk]u64
-          v:= XU ~~ loadBatch{xp, i, XV}
+        def XU = [bulk]u64
+        @maskedLoop{bulk, iCont}(xv in tup{XV,xp}, M in 'm' over _ to len) {
+          v:= XU ~~ xv
           if (anySNaN{M, v}) return{0xffff_fffe} # not even a number
-        }}
+        }
         return{0xffff_ffff} # float
       }}
       
@@ -94,15 +93,12 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       }
       
       if (isint{X}) { # i16, i32
-        muLoop{bulk, 1, len, {is, M} => {
-          def v0 = loadBatch{xp, is, XV}
+        @muLoop{bulk, 1}(v0 in tup{XV,xp}, M in 'm' over _ to len) {
           r1|= M{tree_fold{|, each{{v} => getAcc{EV, v}, v0}}}
-        }}
+        }
       } else { # f64
         r2:= EV2**0
-        muLoop{bulk, hasarch{'AARCH64'}+1, len, {is, M} => {
-          def v0 = loadBatch{xp, is, XV}
-          
+        @muLoop{bulk, hasarch{'AARCH64'}+1, {} => { r1 = half{r2,0}|half{r2,1} }}(v0 in tup{XV,xp}, M in 'm' over is to len) {
           def int = {
             def {int, wdn} = {
               if (hasarch{'AARCH64'} and tuplen{is}==2) {
@@ -140,7 +136,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           def acc = { if (tuplen{is}==2) r2; else r1 }
           
           acc|= M{getAcc{type{acc}, int}}
-        }, {} => { r1 = half{r2,0}|half{r2,1} }}
+        }
       }
       
       

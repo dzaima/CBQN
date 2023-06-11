@@ -68,16 +68,6 @@ def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, 
 
 
 
-def maskedLoop{bulk, l, step} = maskedLoop{bulk, 0, l, step}
-
-def maskedLoop{bulk, i0, l, step} = {
-  m:u64 = l/bulk
-  @for (i from i0 to m) step{i, maskNone}
-  
-  left:= l & (bulk-1)
-  if (left!=0) step{m, maskAfter{left}}
-}
-
 def maskedLoopPositive{bulk, l:L, step} = {
   i:L = 0
   while(i < (l-1)/bulk) {
@@ -87,37 +77,88 @@ def maskedLoopPositive{bulk, l:L, step} = {
   step{i, maskAfter{l - i*bulk}}
 }
 
+
+# "harmless" pointer cast that'll only cast void*
+def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got ',p}}
+def hCast{T,p:P & match{T,eltype{P}}} = p
+def hCast{T,p:P & match{P,*void}} = *T~~p
+
+# masked loop arguments
+#  p:*T - regular pointer, loaded by the batch index(es)
+#  tup{VT,p:*T} - loadBatch/storeBatch vector data
+#  tup{'b',p:P} - b_getBatch
+#  tup{'b',VT,p:P} - loadBatchBit
+#  tup{'g',VT,p:*T} - gives a generator supporting g{} for loadBatch and g{newValue} for storeBatch
+#  tup{'g',p:*T} - the above, but without load support
+def mlExec{i, block, vars0, bulk, M} = {
+  def vproc2{T,p:P} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
+  def vproc2{S=='b',  p:P} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
+  def vproc2{S=='b',T,p:P} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
+  def vproc2{S=='g',  p:P} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
+  def vproc2{S=='g',T,p:P} = tptr{{i} => {
+    def dv{} = loadBatch{p, i, T}
+    def dv{x} = storeBatch{p, i, x, M}
+  }, '!'}
+  
+  def vproc{p:P & isptr{P}} = p
+  def vproc{S=='m'} = tptr{{_}=>M, '!'}
+  def vproc{t & ktup{t}} = vproc2{...t}
+  
+  exec{i, each{{c} => vproc{c}, vars0}, block}
+}
+
+# i0 - initial batch index; not used as begin because it's in a different scale compared to end
+def maskedLoop{bulk, i0}{vars,begin==0,end,block} = {
+  l:u64 = end
+  
+  m:u64 = l / bulk
+  @for (i from i0 to m) mlExec{i, block, vars, bulk, maskNone}
+  
+  left:= l & (bulk-1)
+  if (left!=0) mlExec{m, block, vars, bulk, maskAfter{left}}
+}
+def maskedLoop{bulk} = maskedLoop{bulk,0}
+
+
+
 # masked unrolled loop
 #  bulk: vector count
 #  unr: unroll amount
-#  l: length
-#  step: {is, M}=>operation
-#    'is' is a tuple of bulk indexes to process, usable as an arg to loadBatch/storeBatch to get a tuple of vectors
 #  fromunr (optional): {}=>{transition from unrolled to non-unrolled}
-def muLoop{bulk, unr, l, step, fromunr} = {
+#  loop args:
+#    begin must be 0
+#    end is scalar element count
+#    index given is a tuple of batch indexes to process
+def muLoop{bulk, unr, fromunr}{vars,begin==0,end,block} = {
+  l:u64 = end
+  def step = 123123123
+  
+  m:u64 = l / bulk
   if (unr==1) {
-    maskedLoop{bulk, l, {i, M} => step{tup{i}, M}}
+    @for (i from 0 to m) mlExec{tup{i}, block, vars, bulk, maskNone}
+    
+    left:= l & (bulk-1)
+    if (left!=0) mlExec{tup{m}, block, vars, bulk, maskAfter{left}}
   } else {
-    m:u64 = l/bulk
     if (m > 0) {
       i:u64 = 0
       if (unr <= m) {
         while ((i+unr) <= m) {
           def is = each{{j}=>i+j, iota{unr}}
-          step{each{{j}=>i+j, iota{unr}}, maskNone}
+          mlExec{each{{j}=>i+j, iota{unr}}, block, vars, bulk, maskNone}
           i+= unr
         }
         fromunr{}
       }
       if (unr==2) {
-        if (i!=m) step{tup{i}, maskNone}
+        if (i!=m) mlExec{tup{i}, block, vars, bulk, maskNone}
       } else {
-        @for(j from i to m) step{tup{j}, maskNone}
+        @for(j from i to m) mlExec{tup{j}, block, vars, bulk, maskNone}
       }
     }
     
     left:= l & (bulk-1)
-    if (left!=0) step{tup{m}, maskAfter{left}}
+    if (left!=0) mlExec{tup{m}, block, vars, bulk, maskAfter{left}}
   }
 }
-def muLoop{bulk, unr, l, step} = muLoop{bulk, unr, l, step, {}=>0}
+def muLoop{bulk, unr} = muLoop{bulk, unr, {}=>0}

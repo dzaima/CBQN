@@ -27,11 +27,8 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
-      maskedLoop{vw, l, {i, M} => {
-        cw:= load{*[vw/8]u8 ~~ w, i}
-        cx:= load{*[vw/8]u8 ~~ x, i}
-        if (anyneBit{cw,cx,M}) return{0}
-      }}
+      def BT = [vw/8]u8
+      @maskedLoop{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyneBit{w,x,M}) return{0}
     } else if (X==f64) { # bitarr ≡ f64arr
       def TF = [vw/64]f64
       def TU = [vw/64]u64
@@ -57,12 +54,10 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       
       # TODO compare with doing the comparison in vector registers
       badBits:= T ** ~(X~~1)
-      maskedLoop{bulk, l, {i, M} => {
-        cw:= b_getBatch{bulk, *u64~~w, i}
-        cx:= load{*T ~~ x, i}
-        if (~andAllZero{M{cx}, badBits}) return{0}
-        if (anyne{promote{u64,mask{sh{cx}}}, promote{u64,cw}, M}) return{0}
-      }}
+      @maskedLoop{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
+        if (~andAllZero{M{x}, badBits}) return{0}
+        if (anyne{promote{u64,mask{sh{x}}}, promote{u64,cw}, M}) return{0}
+      }
       1
     }
   } else { # everything not involving bitarrs (i.e. floats/ints, and chars)
