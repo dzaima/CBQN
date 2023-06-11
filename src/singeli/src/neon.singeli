@@ -23,12 +23,6 @@ def ntyp0{S, T} = merge{S, '_', nty{T}}
 def load{a:T, n & nvec{eltype{T}}} = emit{eltype{T}, ntyp{'vld1', eltype{T}}, *eltype{eltype{T}} ~~ (a+n)}
 def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a+n), v}
 
-def __adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
-def __subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
-def mul1{a:T,b:T & w64i{T}} = emit{ty_dbl{v_dbl{T}}, ntyp{'vmull', T}, a, b}
-def mul2{a:T,b:T & w128i{T}} = emit{ty_dbl{T}, ntyp0{'vmull_high', T}, a, b}
-def mul12{a:T,b:T & w128{T}} = tup{mul1{half{a,0}, half{b,0}}, mul2{a,b}}
-
 def  __or{a:T,b:T & nvecf{T}} = T~~ __or{ty_u{a}, ty_u{b}}
 def __and{a:T,b:T & nvecf{T}} = T~~__and{ty_u{a}, ty_u{b}}
 def __xor{a:T,b:T & nvecf{T}} = T~~__xor{ty_u{a}, ty_u{b}}
@@ -45,11 +39,19 @@ def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
 def    min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
 def    max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S,elwidth{T}}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
+def   adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
+def   subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
 def   addp{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vpadd', T}, a, b}
+def   addw{a:T,b:T & w64i{T}}  = emit{el_dbl{T}, ntyp{'vaddl', T}, a, b}
+def   subw{a:T,b:T & w64i{T}}  = emit{el_dbl{T}, ntyp{'vsubl', T}, a, b}
+def   mulw{a:T,b:T & w64i{T}}  = emit{el_dbl{T}, ntyp{'vmull', T}, a, b}
+
+def mulw2{a:T,b:T & w128i{T}} = emit{ty_dbl{T}, ntyp0{'vmull_high', T}, a, b}
+def mul12{a:T,b:T & w128{T}} = tup{mulw{half{a,0}, half{b,0}}, mulw2{a,b}}
 
 def __shl{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshl', '_n', T}, a, s};  def __shl{a:T,s==0 & nveci{T}} = a
 def __shr{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshr', '_n', T}, a, s};  def __shr{a:T,s==0 & nveci{T}} = a
-def  shrn{a:T, s      & w128i{T} & elwidth{T}>8} = { def H=v_half{ty_half{T}}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
+def  shrn{a:T, s      & w128i{T} & elwidth{T}>8} = { def H=el_half{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def  shrm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
 def  shlm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
@@ -144,10 +146,10 @@ def widen{T, x:X & w64{X} & isfloat{eltype{T}}!=isfloat{eltype{X}} & elwidth{T}>
 def widen{T, x:X & w128{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
 
 def narrow{T, x:X & w128{X} & eqqi{T,eltype{X}} & width{T}*2< elwidth{X}} = narrow{T, undefPromote{ty_half{X}, narrow{ty_half{eltype{X}}, x}}}
-def narrow{T, x:X & w128{X} & eqqi{T,eltype{X}} & width{T}*2==elwidth{X}} = emit{ty_half{v_half{X}}, ntyp0{'vmovn', X}, x}
+def narrow{T, x:X & w128{X} & eqqi{T,eltype{X}} & width{T}*2==elwidth{X}} = emit{el_half{X}, ntyp0{'vmovn', X}, x}
 def narrow{T, x:X & w128{X} & isfloat{T}!=isfloat{eltype{X}} & width{T}<elwidth{X}} = narrow{T, cvt{to_w{T, elwidth{X}}, x}}
 
-def narrowUpper{lowRes:L, x:X & w64i{L} & w128{X} & ty_dbl{v_dbl{L}}==X} = emit{[vcount{L}*2](eltype{L}), ntyp0{'vmovn_high', X}, lowRes, x}
+def narrowUpper{lowRes:L, x:X & w64i{L} & w128{X} & el_dbl{L}==X} = emit{[vcount{L}*2](eltype{L}), ntyp0{'vmovn_high', X}, lowRes, x}
 def narrowPair{a:T, b:T} = narrowUpper{narrow{ty_half{eltype{T}}, a}, b}
 def narrowPair{a:T, b:T & isint{eltype{T}}} = packLo{a, b}
 

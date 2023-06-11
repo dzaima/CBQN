@@ -31,8 +31,8 @@ def bqn_or{a, b} = (a+b)-(a*b)
 # + & -
 def arithChk1{F==__add, M, w:T, x:T, r:T} = tup{'topAny', M{(w^r) & (x^r)}}
 def arithChk1{F==__sub, M, w:T, x:T, r:T} = tup{'topAny', M{(w^x) & (w^r)}}
-def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', __adds{w,x}, r}
-def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', __subs{w,x}, r}
+def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', adds{w,x}, r}
+def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', subs{w,x}, r}
 
 
 

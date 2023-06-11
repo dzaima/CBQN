@@ -87,10 +87,10 @@ def __add{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_add_epi32', a, b}; def __sub
 def __add{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_add_epi64', a, b}; def __sub{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_sub_epi64', a, b}
 
 # saturating add/sub
-def __adds{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_adds_epi8',  a, b}; def __adds{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_adds_epu8',  a, b}
-def __subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}; def __subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
-def __adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}; def __adds{a:T,b:T & T==[16]u16} = emit{T, '_mm256_adds_epu16', a, b}
-def __subs{a:T,b:T & T==[16]i16} = emit{T, '_mm256_subs_epi16', a, b}; def __subs{a:T,b:T & T==[16]u16} = emit{T, '_mm256_subs_epu16', a, b}
+def adds{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_adds_epi8',  a, b}; def adds{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_adds_epu8',  a, b}
+def subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}; def subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
+def adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}; def adds{a:T,b:T & T==[16]u16} = emit{T, '_mm256_adds_epu16', a, b}
+def subs{a:T,b:T & T==[16]i16} = emit{T, '_mm256_subs_epi16', a, b}; def subs{a:T,b:T & T==[16]u16} = emit{T, '_mm256_subs_epu16', a, b}
 
 
 # structural operations
