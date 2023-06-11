@@ -281,6 +281,15 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 %USE tvar ⋄ a←¯5+↕10 ⋄ !¨ (⋈¨ 5+↕10)⊸≡¨ {1+⍟𝕩 ⋈10}_tvar a
 %USE tvar ⋄ a←¯5+↕10 ⋄ !¨ (⋈¨ 5+↕10)⊸≡¨ {1+⍟(𝕩{!𝕩≡⋈10 ⋄ 𝕗}) ⋈10}_tvar a
 
+# ◶
+!"◶: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
+!"◶: 𝕘 must have rank 1 when index is a number" % "ab" ⊢◶[1‿2,3‿4] 3
+!"⊑: Picking item at wrong rank (index 0‿0 in array of shape ⟨2⟩)" % ⊢◶+‿- 0‿0 # shouldn't reference ⊑ but whatever
+!"⊑: Picking item at wrong rank (index 1‿2 in array of shape ⟨3⟩)" % 1 +◶+‿-‿⊢ 0‿1
+10 +◶"ab"‿"cd" ¯9 %% "cd"
+⟨⋈1,⋈2,⋈0⟩◶"ab"‿"cd"‿1 @ %% "cd"‿1‿"ab"
+
+
 # ˘ & ⎉
 ≢ (1⥊˜ 0∾203⥊2)⎉50 1⥊˜ 0∾100⥊2 %% 1‿50‿1‿203/0‿2‿0‿2
 !"⎉: Result rank too large" % (1⥊˜ 0∾203⥊2)⎉49 1⥊˜ 0∾100⥊2
