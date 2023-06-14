@@ -142,7 +142,7 @@ def v_dbl {T & isvec{T}} = [vcount{T}*2](eltype{T})
 def v_half{T & isvec{T}} = [vcount{T}/2](eltype{T})
 # double element width without changing count
 def el_dbl {T & isvec{T}} = [vcount{T}](ty_dbl{eltype{T}})
-def el_half{T & isvec{T}} = [vcount{T}](ty_dbl{eltype{T}})
+def el_half{T & isvec{T}} = [vcount{T}](ty_half{eltype{T}})
 
 # test if vector has a specific width & element type
 def lvec{T, n, w} = 0
