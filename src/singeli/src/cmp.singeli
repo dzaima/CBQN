@@ -100,7 +100,7 @@ fn as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:Size) : void = {
 }
 
 fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {
-  @forNZ (dst, w in *u64~~wr, x in *u64~~xr over _ to cdiv{len,64}) dst = bitop{w,x}
+  @forNZ (dst, w in *u64~~wr, x in *u64~~xr over cdiv{len,64}) dst = bitop{w,x}
 }
 
 fn not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }

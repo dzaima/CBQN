@@ -59,7 +59,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
   r1:= EV**0
   if (CHR) { # c8, c16, c32
     def hw = width{E}/2
-    @maskedLoop{bulk}(xv in tup{XV,xp}, M in 'm' over _ to len) {
+    @maskedLoop{bulk}(xv in tup{XV,xp}, M in 'm' over len) {
       c:= EV~~xv
       if (X!=u16) r1|= M{c} # for u64, just accept the garbage top 32 bits and deal with them at the end
       if (B) {
@@ -74,14 +74,14 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
     0
   } else { # i8, i16, i32, f64
     if (X==i8) { # i8
-      @maskedLoop{bulk}(v0 in tup{XV,xp}, M in 'm' over _ to len) {
+      @maskedLoop{bulk}(v0 in tup{XV,xp}, M in 'm' over len) {
         if (anynePositive{EV**0xfe & EV~~v0, EV**0, M}) return{2}
       }
       0
     } else { # i16, i32, f64
       def case_B = makeOptBranch{B, tup{Size}, {iCont} => {
         def XU = [bulk]u64
-        @maskedLoop{bulk, iCont}(xv in tup{XV,xp}, M in 'm' over _ to len) {
+        @maskedLoop{bulk, iCont}(xv in tup{XV,xp}, M in 'm' over len) {
           v:= XU ~~ xv
           if (anySNaN{M, v}) return{0xffff_fffe} # not even a number
         }
@@ -93,7 +93,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       }
       
       if (isint{X}) { # i16, i32
-        @muLoop{bulk, 1}(v0 in tup{XV,xp}, M in 'm' over _ to len) {
+        @muLoop{bulk, 1}(v0 in tup{XV,xp}, M in 'm' over len) {
           r1|= M{tree_fold{|, each{{v} => getAcc{EV, v}, v0}}}
         }
       } else { # f64
