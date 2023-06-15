@@ -34,7 +34,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       def TU = [vw/64]u64
       f0:= TF**0.0
       f1:= TF**1.0
-      maskedLoopPositive{bulk, l, {i, M} => {
+      @maskedLoopPositive{bulk}(M in 'm' over i to l) {
         wu:= (if (hasarch{'AVX2'}) {
           cw:= b_getBatchLo{bulk, *u64~~w, i}
           topBlend{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
@@ -44,7 +44,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
         })
         cx:= load{*TF ~~ x, i}
         if (anynePositive{wu, cx, M}) return{0}
-      }}
+      }
     } else { # bitarr ≡ i8/i16/i32arr
       def T = [bulk]X
       def sh{c} = c << (width{X}-1)
@@ -65,11 +65,11 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     
     def R = [bulk]X
     
-    maskedLoopPositive{bulk, l, {i, M} => {
+    @maskedLoopPositive{bulk}(M in 'm' over i to l) {
       cw:= loadBatch{*W~~w, i, R}
       cx:= loadBatch{*X~~x, i, R}
       if (anynePositive{cw,cx,M}) return{0}
-    }}
+    }
   }
   1
 }

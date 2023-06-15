@@ -68,16 +68,6 @@ def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, 
 
 
 
-def maskedLoopPositive{bulk, l:L, step} = {
-  i:L = 0
-  while(i < (l-1)/bulk) {
-    step{i, maskNone}
-    ++i
-  }
-  step{i, maskAfter{l - i*bulk}}
-}
-
-
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got ',p}}
 def hCast{T,p:P & match{T,eltype{P}}} = p
@@ -118,6 +108,16 @@ def maskedLoop{bulk, i0}{vars,begin==0,end,iter} = {
   if (left!=0) mlExec{m, iter, vars, bulk, maskAfter{left}}
 }
 def maskedLoop{bulk} = maskedLoop{bulk,0}
+
+
+def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
+  i:L = 0
+  while(i < (end-1)/bulk) {
+    mlExec{i, iter, vars, bulk, maskNone}
+    ++i
+  }
+  mlExec{i, iter, vars, bulk, maskAfter{end - i*bulk}}
+}
 
 
 
