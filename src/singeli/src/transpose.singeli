@@ -54,14 +54,14 @@ def kernel{src:P, dst:P, kw, kh, w, h} = {
 }
 
 
-def for_mult{k}{vars,begin,end,block} = {
+def for_mult{k}{vars,begin,end,iter} = {
   assert{begin == 0}
-  @for (i to end/k) exec{k*i, vars, block}
+  @for (i to end/k) iter{k*i, vars}
 }
-def for_mult_max{k, m}{vars,begin,end,block} = {
+def for_mult_max{k, m}{vars,begin,end,iter} = {
   @for_mult{k} (i0 to end) {
     i:=i0; if (i>m) i = m
-    exec{i, vars, block}
+    iter{i, vars}
   }
 }
 

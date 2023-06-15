@@ -243,61 +243,61 @@ def tptr{l,s} = { # create "pointer" generator with given load & store definitio
   def r{i,x} = s{i,x}
 }
 
-def unroll{vars,begin,end,block & knum{begin} & knum{end}} = {
+def unroll{vars,begin,end,iter & knum{begin} & knum{end}} = {
   def f{i,l & i==l} = 0
   def f{i,l & i!=l} = {
-    exec{i, vars, block}
+    iter{i, vars}
     f{i+1, l}
   }
   f{begin,end}
 }
-def collect{vars,begin,end,block & knum{begin} & knum{end}} = {
+def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
   def f{s,e & s==e} = tup{}
   def f{s,e & s<e} = {
     def m = s + ((e-s)>>1)
     def r0 = f{s, m}
     merge{r0, f{m, e}}
   }
-  def f{s,e & s+1==e} = tup{exec{s, vars, block}}
+  def f{s,e & s+1==e} = tup{iter{s, vars}}
   f{begin,end}
 }
-def for{vars,begin,end,block} = {
+def for{vars,begin,end,iter} = {
   i:u64 = begin
   while (i < end) {
-    exec{i, vars, block}
+    iter{i, vars}
     ++i
   }
 }
-def forNZ{vars,begin,end,block} = {
+def forNZ{vars,begin,end,iter} = {
   i:u64 = begin
   assert{i!=end}
   while (i < end) {
-    exec{i, vars, block}
+    iter{i, vars}
     ++i
   }
 }
-def forUnroll{exp,unr}{vars,begin,end,block} = {
+def forUnroll{exp,unr}{vars,begin,end,iter} = {
   i:u64 = begin
   while ((i+unr) <= end) {
-    exec{each{{j}=>i+j, iota{unr}}, vars, block}
+    iter{each{{j}=>i+j, iota{unr}}, vars}
     i+= unr
   }
-  if (unr==2) { if (i!=end) exec{tup{i}, vars, block} }
+  if (unr==2) { if (i!=end) iter{tup{i}, vars} }
   else if (unr>1) {
     if (exp) {
       def stop = makelabel{}
       each{{j} => {
         if (i+j >= end) goto{stop}
-        exec{tup{i+j}, vars, block}
+        iter{tup{i+j}, vars}
       }, iota{unr}}
       setlabel{stop}
     } else {
-      @for(j from i to end) exec{tup{j}, vars, block}
+      @for(j from i to end) iter{tup{j}, vars}
     }
   }
 }
-def forXUnroll{unr}{vars,begin,end,block} = {
-  @forUnroll{unr}(is from begin to end) each{{i} => exec{i, vars, block}, is}
+def forXUnroll{unr}{vars,begin,end,iter} = {
+  @forUnroll{unr}(is from begin to end) each{{i} => iter{i, vars}, is}
 }
 
 

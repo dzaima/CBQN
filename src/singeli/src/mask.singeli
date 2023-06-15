@@ -104,7 +104,7 @@ def mlExec{i, block, vars0, bulk, M} = {
   def vproc{S=='m'} = tptr{{_}=>M, '!'}
   def vproc{t & ktup{t}} = vproc2{...t}
   
-  exec{i, each{{c} => vproc{c}, vars0}, block}
+  block{i, each{vproc, vars0}}
 }
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
