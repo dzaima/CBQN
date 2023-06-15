@@ -90,7 +90,7 @@ def hCast{T,p:P & match{P,*void}} = *T~~p
 #  tup{'b',VT,p:P} - loadBatchBit
 #  tup{'g',VT,p:*T} - gives a generator supporting g{} for loadBatch and g{newValue} for storeBatch
 #  tup{'g',p:*T} - the above, but without load support
-def mlExec{i, block, vars0, bulk, M} = {
+def mlExec{i, iter, vars0, bulk, M} = {
   def vproc2{T,p:P} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
   def vproc2{S=='b',  p:P} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
   def vproc2{S=='b',T,p:P} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
@@ -104,18 +104,18 @@ def mlExec{i, block, vars0, bulk, M} = {
   def vproc{S=='m'} = tptr{{_}=>M, '!'}
   def vproc{t & ktup{t}} = vproc2{...t}
   
-  block{i, each{vproc, vars0}}
+  iter{i, each{vproc, vars0}}
 }
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
-def maskedLoop{bulk, i0}{vars,begin==0,end,block} = {
+def maskedLoop{bulk, i0}{vars,begin==0,end,iter} = {
   l:u64 = end
   
   m:u64 = l / bulk
-  @for (i from i0 to m) mlExec{i, block, vars, bulk, maskNone}
+  @for (i from i0 to m) mlExec{i, iter, vars, bulk, maskNone}
   
   left:= l & (bulk-1)
-  if (left!=0) mlExec{m, block, vars, bulk, maskAfter{left}}
+  if (left!=0) mlExec{m, iter, vars, bulk, maskAfter{left}}
 }
 def maskedLoop{bulk} = maskedLoop{bulk,0}
 
@@ -129,36 +129,36 @@ def maskedLoop{bulk} = maskedLoop{bulk,0}
 #    begin must be 0
 #    end is scalar element count
 #    index given is a tuple of batch indexes to process
-def muLoop{bulk, unr, fromunr}{vars,begin==0,end,block} = {
+def muLoop{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
   l:u64 = end
   def step = 123123123
   
   m:u64 = l / bulk
   if (unr==1) {
-    @for (i from 0 to m) mlExec{tup{i}, block, vars, bulk, maskNone}
+    @for (i from 0 to m) mlExec{tup{i}, iter, vars, bulk, maskNone}
     
     left:= l & (bulk-1)
-    if (left!=0) mlExec{tup{m}, block, vars, bulk, maskAfter{left}}
+    if (left!=0) mlExec{tup{m}, iter, vars, bulk, maskAfter{left}}
   } else {
     if (m > 0) {
       i:u64 = 0
       if (unr <= m) {
         while ((i+unr) <= m) {
           def is = each{{j}=>i+j, iota{unr}}
-          mlExec{each{{j}=>i+j, iota{unr}}, block, vars, bulk, maskNone}
+          mlExec{each{{j}=>i+j, iota{unr}}, iter, vars, bulk, maskNone}
           i+= unr
         }
         fromunr{}
       }
       if (unr==2) {
-        if (i!=m) mlExec{tup{i}, block, vars, bulk, maskNone}
+        if (i!=m) mlExec{tup{i}, iter, vars, bulk, maskNone}
       } else {
-        @for(j from i to m) mlExec{tup{j}, block, vars, bulk, maskNone}
+        @for(j from i to m) mlExec{tup{j}, iter, vars, bulk, maskNone}
       }
     }
     
     left:= l & (bulk-1)
-    if (left!=0) mlExec{tup{m}, block, vars, bulk, maskAfter{left}}
+    if (left!=0) mlExec{tup{m}, iter, vars, bulk, maskAfter{left}}
   }
 }
 def muLoop{bulk, unr} = muLoop{bulk, unr, {}=>0}
