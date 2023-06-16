@@ -193,6 +193,9 @@ def unord{...x} = assert{'unord not supported', show{...x}}
 def floor{...x} = assert{'floor not supported', show{...x}}
 def loadBatchBit{...x} = assert{'loadBatchBit not supported', show{...x}}
 def b_getBatch{...x} = assert{'b_getBatch not supported', show{...x}}
+def extract{...x} = assert{'extract not supported', show{...x}}
+def abs{...x} = assert{'abs not supported', show{...x}}
+def homBlend{...x} = assert{'homBlend not supported', show{...x}}
 
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35
