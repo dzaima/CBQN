@@ -111,7 +111,7 @@ Namespace of various internal functions. May change at any time.
 
 # FFI
 
-Currently, there is no support for nested pointers or constant-length arrays, and limited support of structs.
+Currently there is no support for nested pointers, and limited support of structs.
 
 That is, the supported types are:
 - scalars (e.g. `i8`, `u64`);
