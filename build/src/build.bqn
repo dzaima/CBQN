@@ -45,6 +45,7 @@ opts ← ⟨
   
   ⟨1, "shared", 0, "Build a shared library"⟩
   ⟨1, "static-lib", 0, "Build a static library"⟩
+  ⟨1, "static-bin", 0, "Statically link the executable"⟩
   ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
   ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
   ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
@@ -181,6 +182,7 @@ po ← { # parsed options
   
   sharedLib ← GetOpt "shared"
   staticLib ⇐ GetOpt "static-lib"
+  staticBin ⇐ GetOpt "static-bin"
   lib ← staticLib ∨ sharedLib
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
@@ -189,6 +191,7 @@ po ← { # parsed options
   {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
   versionName ← {sharedLib? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
   wasm ⇐ wasi∨emcc
+  "Error: Static linking for wasm is pointless"_assert_¬ staticBin ∧ wasm
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   cxx ← GetOpt "CXX"
@@ -352,6 +355,7 @@ po ← { # parsed options
         args∾↩ ((¬wasm)∧   ¬pie) / ⟨"-no-pie"⟩
         args∾↩ (pie∧ ¬sharedLib) / ⟨"-fPIE", "-pie"⟩
         args∾↩ (        windows) / ⟨"-lpthread"⟩
+        args∾↩ (      staticBin) / ⟨"-static"⟩
         args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
         {"linker: "∾•Repr 𝕩} _verboseLog args
     }
