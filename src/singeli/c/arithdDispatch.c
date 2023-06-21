@@ -1,34 +1,9 @@
 #include "../../core.h"
 #include "../../utils/each.h"
+#include "../../builtins.h"
+#include "arithdDispatch.h"
 #include <math.h>
-// #define ARITH_DEBUG 1
 
-typedef u64 (*CheckedFn)(void* r, void* w, void* x, u64 len);
-typedef void (*UncheckedFn)(void* r, void* w, void* x, u64 len);
-#define FOR_ExecAA(F) \
-  F(fail) /* first to allow zero-initialization to be fail implicitly */ \
-  F(swap) /* swap 𝕨 and 𝕩, then run ex2 */ \
-  /* cast the specified argument up to the specified size, then either swap or don't, then run ex2 */ \
-  F(wi8_reg)  F(xi8_reg)  F(wi8_swap)  F(xi8_swap)  \
-  F(wi16_reg) F(xi16_reg) F(wi16_swap) F(xi16_swap) \
-  F(wi32_reg) F(xi32_reg) F(wi32_swap) F(xi32_swap) \
-  F(wf64_reg) F(xf64_reg) F(wf64_swap) F(xf64_swap) \
-  F(wc16_reg) F(xc16_reg) F(wc16_swap) F(xc16_swap) \
-  F(wc32_reg) F(xc32_reg) F(wc32_swap) F(xc32_swap) \
-  /* c_* - overflow-checked; u_* - no overflow check */ \
-  F(c_call_rbyte) /* arguments are already the wanted widths; result isn't a bitarr */ \
-  F(u_call_rbyte) /* ↑ */ \
-  F(e_call_rbyte) /* calls CheckedFn but errors on non-zero result */ \
-  F(u_call_bit) /* result and arguments are bitarrs */ \
-  F(u_call_wxf64sq) /* convert both args up to f64 if needed, make f64arr, and squeeze result; i.e. lazy float fallback case */ \
-  F(c_call_wxi8) /* convert both args (which need to be bitarrs) to i8arrs, and invoke checked function (no good reason for it to fail the check, but this allows reusing a c‿i8‿i8 impl) */ \
-  F(e_call_sqx) /* squeeze f64arr 𝕩, error if can't; else re-dispatch to new entry */
-
-enum ExecAA {
-  #define F(X) X,
-  FOR_ExecAA(F)
-  #undef F
-};
 
 #if ARITH_DEBUG
 char* execAA_repr(u8 ex) {
@@ -39,23 +14,6 @@ char* execAA_repr(u8 ex) {
   }
 }
 #endif
-
-
-typedef struct FnInfoAA {
-  union { CheckedFn cFn; UncheckedFn uFn; };
-  u8 ex1, ex2; // ExecAA
-  u8 type; // t_*; unused for u_call_bit
-  u8 width; // width in bytes; unused for u_call_bit
-} FnInfoAA;
-typedef struct EntAA {
-  FnInfoAA bundles[2];
-} EntAA;
-
-typedef struct DyTableAA {
-  EntAA entsAA[el_B*el_B]; // one for each instruction
-  FC2 mainFn;
-  char* repr;
-} DyTableAA;
 
 NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
   u8 we = TI(w, elType); if (we==el_B) goto rec;
@@ -155,25 +113,6 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
 }
 
 
-typedef struct DyTableSA DyTableSA;
-typedef bool (*ForBitsel)(DyTableSA*, B w, B* r);
-typedef u64 (*AtomArrFnC)(void* r, u64 w, void* x, u64 len);
-typedef B (*DyArithChrFn)(DyTableSA*, B, B, usz, u8);
-
-typedef struct {
-  //      >=el_i8        el_bit
-  union { AtomArrFnC f1; ForBitsel bitsel; };
-  union { AtomArrFnC f2; };
-} EntSA;
-
-
-struct DyTableSA {
-  EntSA ents[el_B];
-  FC2 mainFn;
-  char* repr;
-  u8 fill[2][2]; // 0:none 1:int 2:char
-  DyTableSA* chrAtom;
-};
 
 bool bad_forBitselNN_SA(DyTableSA* table, B w, B* r) { return false; }
 #define bad_forBitselCN_SA bad_forBitselNN_SA
@@ -191,7 +130,7 @@ u8 nextType[] = {
   [t_f64arr] = t_empty,
 };
 
-B dyArith_SA(DyTableSA* table, B w, B x) {
+NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
   usz ia = IA(x);
   u8 xe = TI(x,elType);
   
@@ -296,7 +235,7 @@ B dyArith_SA(DyTableSA* table, B w, B x) {
   cpy_i32: x = taga(cpyI32Arr(x)); width=2; e=&table->ents[el_i32]; goto f1;
   cpy_f64: x = taga(cpyF64Arr(x)); width=3; e=&table->ents[el_f64]; goto f1;
   
-  AtomArrFnC fn; B r;
+  ChkFnSA fn; B r;
   f1: fn = e->f1;
   u64 got = fn(m_tyarrlc(&r, width, x, type), wa, tyany_ptr(x), ia);
   if (got==ia) goto decG_ret;
@@ -362,3 +301,39 @@ static NOINLINE B or_SA(B t, B w, B x) {
 
 #define SINGELI_FILE arTables
 #include "../../utils/includeSingeli.h"
+
+DyTableAA* dyTableAAFor(B f) {
+  assert(isFun(f));
+  switch(v(f)->extra-1) { default: return NULL;
+    case n_add:   return &addDyTableAA;
+    case n_sub:   return &subDyTableAA;
+    case n_mul:   return &mulDyTableAA;
+    case n_and:   return &andDyTableAA;
+    case n_or:    return &orDyTableAA;
+    case n_floor: return &floorDyTableAA;
+    case n_ceil:  return &ceilDyTableAA;
+  }
+}
+
+DyTableSA* dyTableSAFor(B f, bool atomChar) {
+  assert(isFun(f));
+  switch(v(f)->extra-1) { default: return NULL;
+    case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
+    case n_sub:   return atomChar? &subDyTableCA : &subDyTableNA;
+    case n_mul:   return atomChar? NULL : &mulDyTableNA;
+    case n_and:   return atomChar? NULL : &andDyTableNA;
+    case n_floor: return atomChar? NULL : &floorDyTableNA;
+    case n_ceil:  return atomChar? NULL : &ceilDyTableNA;
+  }
+}
+DyTableSA* dyTableASFor(B f, bool atomChar) {
+  assert(isFun(f));
+  switch(v(f)->extra-1) { default: return NULL;
+    case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
+    case n_sub:   return atomChar? &subDyTableAC : &subDyTableAN;
+    case n_mul:   return atomChar? NULL : &mulDyTableNA;
+    case n_and:   return atomChar? NULL : &andDyTableNA;
+    case n_floor: return atomChar? NULL : &floorDyTableNA;
+    case n_ceil:  return atomChar? NULL : &ceilDyTableNA;
+  }
+}

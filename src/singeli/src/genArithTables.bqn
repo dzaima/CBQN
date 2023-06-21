@@ -10,7 +10,7 @@ i32←3 ⋄ c32←7
 f64←4
 u‿c‿e‿rsq‿xsq ← ↕5
 tmNoNext ← 1‿0‿1‿1‿1
-tmCheckedFn ← 0‿1‿1‿0‿0
+tmChkFnAA ← 0‿1‿1‿0‿0
 tmLit ← "uceue"
 
 tyWidth ← 99‿0‿1‿2‿3‿0‿1‿2 # in log2(bytes)
@@ -103,7 +103,7 @@ Make ← {𝕊ns:
   
   cSrc∾↩ ∾⟨
     "B ", cbqn, "_c2(B,B,B);", nl
-    "static DyTableAA ", cbqn,"DyTableAA = {", nl
+    "DyTableAA ", cbqn,"DyTableAA = {", nl
     "  .entsAA = {", nl
     ∾{ ⟨instrs, we‿xe⟩:
       {
@@ -117,7 +117,7 @@ Make ← {𝕊ns:
               ".ex1=",@⊸≢◶⟨"",∾⟜"_"⟩ cast,swap⊑"reg,"‿"swap,"⟩} two,
               ".ex", '1'+two, "=", ex,
               @⊸≢◶""‿{∾⟨",.type=t_",𝕩⊑tyName,"arr,.width=",•Repr 𝕩⊑tyWidth⟩} rt,
-              @⊸≢◶""‿{∾⟨",.uFn"‿",.cFn"⊑˜t⊑tmCheckedFn,"=",𝕩⟩} fn
+              @⊸≢◶""‿{∾⟨",.uFn"‿",.cFn"⊑˜t⊑tmChkFnAA,"=",𝕩⟩} fn
             ⟩
         }¨ instrs
         ∾⟨"    [",•Repr we,"*8+",•Repr xe,"] = {{{", i0, "}, {", i1, "}}},", nl⟩
@@ -150,7 +150,7 @@ Make ← {𝕊ns:
       P ← {∾⟨"{",𝕨,",",𝕩,"}"⟩}´
       
       cSrc∾↩ ∾⟨
-        "static DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
+        "DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
         "  .ents = {", nl
         "    {.bitsel=", hasNumArr◶⟨"bad", {𝕊:id∾swap/"R"}⟩ @, "_forBitsel", charAtm⊑"NC", "N_SA},", nl
         ∾{ 𝕊 num:
