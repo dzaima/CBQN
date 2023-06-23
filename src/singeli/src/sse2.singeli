@@ -156,11 +156,11 @@ def __mul{a:T,b:T & T==[4]f32} = emit{T, '_mm_mul_ps', a, b}; def __mul{a:T,b:T 
 def __div{a:T,b:T & T==[4]f32} = emit{T, '_mm_div_ps', a, b}; def __div{a:T,b:T & T==[2]f64} = emit{T, '_mm_div_pd', a, b}
 def   max{a:T,b:T & T==[4]f32} = emit{T, '_mm_max_ps', a, b}; def   max{a:T,b:T & T==[2]f64} = emit{T, '_mm_max_pd', a, b}
 def   min{a:T,b:T & T==[4]f32} = emit{T, '_mm_min_ps', a, b}; def   min{a:T,b:T & T==[2]f64} = emit{T, '_mm_min_pd', a, b}
-def  sqrt{a:[4]f32} = emit{[4]f32, '_mm_sqrt_ps', a};         def  sqrt{a:[2]f64} = emit{[2]f64, '_mm_sqrt_pd', a}
-def rsqrt{a:[4]f32} = emit{[4]f32, '_mm_rsqrt_ps', a}
-def   rcp{a:[4]f32} = emit{[4]f32, '_mm_rcp_ps', a}
-def   abs{a:[4]f32} = emit{[4]f32, '_mm_and_ps', a, v2f{[4]u32 ** 0x7FFFFFFF}}
-def   abs{a:[2]f64} = emit{[2]f64, '_mm_and_pd', a, v2d{[2]u64 ** ((cast{u64,1}<<63)-1)}}
+def   sqrt{a:[4]f32} = emit{[4]f32, '_mm_sqrt_ps', a};         def  sqrt{a:[2]f64} = emit{[2]f64, '_mm_sqrt_pd', a}
+def rsqrtE{a:[4]f32} = emit{[4]f32, '_mm_rsqrt_ps', a}
+def   rcpE{a:[4]f32} = emit{[4]f32, '_mm_rcp_ps', a}
+def    abs{a:[4]f32} = emit{[4]f32, '_mm_and_ps', a, v2f{[4]u32 ** 0x7FFFFFFF}}
+def    abs{a:[2]f64} = emit{[2]f64, '_mm_and_pd', a, v2d{[2]u64 ** ((cast{u64,1}<<63)-1)}}
 
 # mask stuff
 def andAllZero{x:T, y:T & w128i{T}} = homAll{(x & y) == T**0}
