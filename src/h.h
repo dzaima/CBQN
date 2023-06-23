@@ -283,6 +283,7 @@ enum Type {
   t_COUNT
 };
 #define IS_ANY_ARR(T) ((T)>=t_hslice & (T)<=t_bitarr)
+#define IS_DIRECT_TYARR(T) (((T)>=t_i8arr) & ((T)<=t_bitarr))
 #define IS_SLICE(T) ((T)<=t_f64slice)
 #define TO_SLICE(T) ((T) + t_hslice - t_harr) // Assumes T!=t_bitarr
 
