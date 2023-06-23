@@ -135,7 +135,7 @@ def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
   def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
   def ctype = tupsel{0,tupsel{0,checks}}
   assert{tree_fold{&, each{{c}=>match{ctype, tupsel{0,c}}, checks}}}
-  if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0, is}}
+  if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0,is}*vcount{TY}}
   each{{c} => TY~~c, values}
 }
 
