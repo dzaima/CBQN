@@ -2,6 +2,7 @@
 #include "../builtins.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
+#include "../singeli/c/arithdDispatch.h"
 #include <math.h>
 
 B fne_c1(B, B);
@@ -117,6 +118,7 @@ NOINLINE B toKCells(B x, ur k) {
 }
 
 B slash_c2(B, B, B);
+extern u8 nextWiderType[];
 NOINLINE B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr) { // assumes non-equal rank non-empty conforming typed array arguments, and that f won't use its first argument
   assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0);
   ur wr = RNK(w);
@@ -132,7 +134,7 @@ NOINLINE B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr) { // ass
   
   usz csz = shProd(bsh, mr, br);
   FC2 fc2 = c2fn(f);
-  if (csz<5120>>arrTypeBitsLog(TY(b))) {
+  if (csz<800>>arrTypeBitsLog(TY(b))) {
     B s = mr==wr? w : x; // smaller argument
     s = C2(slash, m_usz(csz), taga(arr_shVec(TI(s,slice)(s,0,IA(s)))));
     assert(reusable(s) && RNK(s)==1);
@@ -140,12 +142,82 @@ NOINLINE B leading_axis_arith(B f, B w, B x, usz* wsh, usz* xsh, ur mr) { // ass
     if (mr==wr) w=s; else x=s;
     return fc2(m_f64(0), w, x);
   } else {
-    M_APD_SH(r, mr, bsh);
+    B r;
+    #if SINGELI_SIMD
+      B s = mr==wr? w : x;
+      u8 se = TI(s,elType);
+      if (se==el_bit) goto base;
+      
+      bool sChr = !elNum(se);
+      DyTableSA* tb = mr==wr? dyTableSAFor(f, sChr) : dyTableASFor(f, sChr);
+      if (tb==NULL) goto base;
+      
+      u8 be = TI(b,elType);
+      if (be==el_bit) goto base;
+      
+      u8 sw = elWidthLogBits(se);
+      u8 bw = elWidthLogBits(be);
+      if (sw > bw) goto base; // could maybe be handled; but that'd need to widen b in the loop, otherwise the base is more cache-friendly
+      
+      if (sChr) {
+        goto base;
+      } else {
+        EntSA* e = &tb->ents[be];
+        u8 bwB = bw-3; // big argument element width in log2(bytes)
+        u8* rp;
+        if (reusable(b) && IS_DIRECT_TYARR(TY(b))) {
+          rp = tyany_ptr(b);
+          r = incG(REUSE(b));
+        } else {
+          rp = m_tyarrlc(&r, bwB, b, el2t(be));
+        }
+        
+        u8* bp = tyany_ptr(b);
+        SGetU(s)
+        u64 bbd = csz<<bwB; // result & argument cell size in bytes
+        ChkFnSA fn = e->f1;
+        if (bwB==3) for (usz i=0; i<cam; i++) { u64 got=fn(rp, r_Bu(GetU(s,i)), bp, csz); if (got!=csz) { bp+=got<<bwB; rp+=got<<bwB; goto n_widen; } bp+=bbd; rp+=bbd; }
+        else        for (usz i=0; i<cam; i++) { u64 got=fn(rp, o2iG(GetU(s,i)), bp, csz); if (got!=csz) { bp+=got<<bwB; rp+=got<<bwB; goto n_widen; } bp+=bbd; rp+=bbd; }
+        goto decG_ret;
+        
+        n_widen:;
+        B r0 = r;
+        u8* r0s = tyany_ptr(r);
+        u8* r0e = rp;
+        u8 nt = nextWiderType[TY(r0)];
+        if (nt==t_empty) { decG(r); goto base; } // potentially leaves the bigger argument partially mutated, but as long as the eventual error message doesn't care about the values, this doesn't matter
+        rp = m_tyarrlc(&r, bwB+1, b, nt);
+        u64 done0 = (r0e-r0s)>>bwB; // elements written so far
+        COPY_TO(rp, be+1, 0, r0, 0, done0);
+        rp+= done0<<(bwB+1);
+        decG(r0);
+        
+        u64 row0 = done0/csz; // partially-complete row number
+        u64 left0 = csz - (done0 - row0*csz); // items left in it
+        fn = e->f2;
+        if (fn(rp, bwB==3? r_Bu(GetU(s,row0)) : o2iG(GetU(s,row0)), bp, left0)!=0) goto n_fail;
+        bp+=  left0<<bwB;
+        rp+= (left0<<bwB)<<1;
+        if (bwB==3) for (usz i=row0+1; i<cam; i++) { if (fn(rp, r_Bu(GetU(s,i)), bp, csz)!=0) goto n_fail; bp+=bbd; rp+=bbd<<1; }
+        else        for (usz i=row0+1; i<cam; i++) { if (fn(rp, o2iG(GetU(s,i)), bp, csz)!=0) goto n_fail; bp+=bbd; rp+=bbd<<1; }
+        goto decG_ret;
+        
+        n_fail:;
+        decG(r);
+        goto base;
+      }
+      
+    base:;
+    #endif
+    M_APD_SH(ra, mr, bsh);
     S_KSLICES(b, bsh, mr, cam, 1) usz bp=0;
-    if (mr==wr) { SGetU(w); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), GetU(w,i), SLICEI(b))); }
-    else        { SGetU(x); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), SLICEI(b), GetU(x,i))); }
-    decG(w); decG(x);
-    return taga(APD_SH_GET(r, 0));
+    if (mr==wr) { SGetU(w); for (usz i=0; i<cam; i++) APDD(ra, fc2(m_f64(0), GetU(w,i), SLICEI(b))); }
+    else        { SGetU(x); for (usz i=0; i<cam; i++) APDD(ra, fc2(m_f64(0), SLICEI(b), GetU(x,i))); }
+    
+    r = taga(APD_SH_GET(ra, 0));
+    goto decG_ret;
+    
+    decG_ret:; decG(w); decG(x); return r;
   }
 }
 

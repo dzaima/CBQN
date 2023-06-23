@@ -57,7 +57,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     case wf64_swap: t=x; x=taga(cpyF64Arr(w)); w=t; goto do_ex2;  case xf64_swap: t=w; w=taga(cpyF64Arr(x)); x=t; goto do_ex2;
     case wc16_swap: t=x; x=taga(cpyC16Arr(w)); w=t; goto do_ex2;  case xc16_swap: t=w; w=taga(cpyC16Arr(x)); x=t; goto do_ex2;
     case wc32_swap: t=x; x=taga(cpyC32Arr(w)); w=t; goto do_ex2;  case xc32_swap: t=w; w=taga(cpyC32Arr(x)); x=t; goto do_ex2;
-    case swap: t=w; w=x; x=t; goto do_ex2;
+    case ex_swap: t=w; w=x; x=t; goto do_ex2;
     do_ex2: ex = fn->ex2; goto newEx;
     
     case c_call_rbyte: { c_call_rbyte:;
@@ -102,7 +102,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
       e = &table->entsAA[TI(w,elType)*8 + xe];
       goto newEnt;
     }
-    case fail: goto rec;
+    case ex_fail: goto rec;
   }
   
   rec:
@@ -123,11 +123,14 @@ B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(t
 u64 failAtomArr1(void* r, u64 w, void* x, u64 len) { return 0; }
 u64 failAtomArr2(void* r, u64 w, void* x, u64 len) { return 1; }
 
-u8 nextType[] = {
-  [t_i8arr ] = t_i16arr, [t_c8arr ] = t_c16arr,
-  [t_i16arr] = t_i32arr, [t_c16arr] = t_c32arr,
-  [t_i32arr] = t_f64arr, [t_c32arr] = t_empty,
-  [t_f64arr] = t_empty,
+u8 nextWiderType[] = {
+  [t_i8arr ] = t_i16arr, [t_i8slice ] = t_i16arr,
+  [t_i16arr] = t_i32arr, [t_i16slice] = t_i32arr,
+  [t_i32arr] = t_f64arr, [t_i32slice] = t_f64arr,
+  [t_f64arr] = t_empty,  [t_f64slice] = t_empty,
+  [t_c8arr ] = t_c16arr, [t_c8slice ] = t_c16arr,
+  [t_c16arr] = t_c32arr, [t_c16slice] = t_c32arr,
+  [t_c32arr] = t_empty,  [t_c32slice] = t_empty,
 };
 
 NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
@@ -241,7 +244,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
   if (got==ia) goto decG_ret;
   decG(r);
   
-  type = nextType[type];
+  type = nextWiderType[type];
   if (type==t_empty) goto rec;
   fn = e->f2;
   if (fn(m_tyarrlc(&r, width+1, x, type), wa, tyany_ptr(x), ia)==0) goto decG_ret;

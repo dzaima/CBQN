@@ -3,8 +3,8 @@
 // #define ARITH_DEBUG 1
 
 #define FOR_ExecAA(F) \
-  F(fail) /* first to allow zero-initialization to be fail implicitly */ \
-  F(swap) /* swap 𝕨 and 𝕩, then run ex2 */ \
+  F(ex_fail) /* first to allow zero-initialization to be fail implicitly */ \
+  F(ex_swap) /* swap 𝕨 and 𝕩, then run ex2 */ \
   /* cast the specified argument up to the specified size, then either swap or don't, then run ex2 */ \
   F(wi8_reg)  F(xi8_reg)  F(wi8_swap)  F(xi8_swap)  \
   F(wi16_reg) F(xi16_reg) F(wi16_swap) F(xi16_swap) \
