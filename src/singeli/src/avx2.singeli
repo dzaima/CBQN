@@ -65,7 +65,7 @@ def packQ{a:T,b:T & T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
 def packQ{a:T,b:T & T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 # super questionable pack - assumes high halves are zero
 def packQQ{a:T,b:T & T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
-def packQQ{a} = packQQ{tupsel{0,a}, tupsel{1,a}}
+def packQQ{{a, b}} = packQQ{a, b}
 
 
 # arith

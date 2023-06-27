@@ -124,8 +124,8 @@ def zip2{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
 
 def packLo{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
 def packHi{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp2', H}, H~~x, H~~y} }
-def packLo{x} = packLo{tupsel{0,x}, tupsel{1,x}}
-def packHi{x} = packHi{tupsel{0,x}, tupsel{1,x}}
+def packLo{{x, y}} = packLo{x, y}
+def packHi{{x, y}} = packHi{x, y}
 
 def trn1{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn2{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}

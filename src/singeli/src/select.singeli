@@ -66,8 +66,8 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
 }
 
 def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
-  def bblend {m}{ft} = {def {f,t} = ft; homBlend{f, t, type{f} ~~ m}}
-  def bblendn{m}{tf} = bblend{m}{reverse{tf}}
+  def bblend {m}{{f,t}} = homBlend{f, t, type{f} ~~ m}
+  def bblendn{m}{{t,f}} = bblend{m}{tup{f,t}}
   def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
   
   def bs{b, c, x} = cshuf{x, c}

@@ -222,12 +222,10 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
     
     def s0 = each{scan_plus, cx}
     
-    def s1 = {
-      if (tuplen{s0}==1) s0
-      else { def {v0,v1}=s0; tup{v0,v1+toLast{v0}} }
-    }
+    def s1{v0} = tup{v0}
+    def s1{v0,v1} = tup{v0,v1+toLast{v0}}
     
-    def cr = eachx{+, widenFull{R, s1}, cv}
+    def cr = eachx{+, widenFull{R, s1{...s0}}, cv}
     cv = toLast{tupsel{-1, cr}}
     
     assert{type{cv} == oneType{cr}}

@@ -49,12 +49,11 @@ def unreachable{} = emit{void, 'si_unreachable'}
 def assert{x:u1} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
-def oneType{vs} = {
-  def T = type{tupsel{0,vs}}
-  each{{x:C} => assert{C==T}, vs}
-  T
+def oneType{{h:H, ...t}} = {
+  each{{c:C} => assert{C==H}, t}
+  H
 }
-def oneType{vs & tuplen{vs}==0} = 1
+def oneType{{}} = {}
 
 def isreg   = kreg
 def isconst = kcon
@@ -202,7 +201,7 @@ oper &~ andnot infix none 35
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
-def packQ{a} = packQ{tupsel{0,a}, tupsel{1,a}}
+def packQ{{a, b}} = packQ{a, b}
 def cvt{T, x:X & T==eltype{X}} = x
 
 def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
@@ -215,7 +214,7 @@ def homMask{...vs & tuplen{vs}>1} = {
   tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
 }
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
-def ctzX{t} = { def {n,v}=t; ctz{v}/n } # ctz for a result of homMaskX
+def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
 
 def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = { # ∊ [start;start+count)
   def TU = ty_u{TS}
@@ -319,7 +318,7 @@ def tree_fold{F, x} = {
   def h = tuplen{x}>>1
   F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,tuplen{x}}}}
 }
-def tree_fold{F, x & tuplen{x}==1} = tupsel{0,x}
+def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
   def l = tree_fold{max, each{{x} => {if(ktup{x}) tuplen{x}; else 0}, args}}

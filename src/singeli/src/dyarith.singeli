@@ -74,7 +74,7 @@ def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & i32==eltype{T} & hasa
   # def bad = each{{v} => {
   #   ((T2~~v + T2**0x80000000) ^ T2**(cast{i64,1}<<63)) > T2**cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}
   # }, rp}
-  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'homAny', tupsel{0,bad}|tupsel{1,bad}}} this doesn't use M
+  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'homAny', tree_fold{|,bad}}} this doesn't use M
 }
 
 def arithChk2{F, M, w:T, x:T & match{F,__mul} & isvec{T} & hasarch{'AARCH64'}} = {
@@ -122,13 +122,13 @@ def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
 def runChecks{type=='~andAllZero', vals, M & ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
 def runChecks{type=='anyne',  vals, M} = {
-  def {_, xs, ys} = flip{vals}
-  if (tuplen{vals}==1) {
-    anyne{...xs, ...ys, M}
-  } else {
+  def i{vals} = {
+    def {_,xs,ys} = flip{vals}
     assert{M{0} == 0}
     ~homAll{tree_fold{&, each{==, xs, ys}}}
   }
+  def i{{{_,x,y}}} = anyne{x, y, M}
+  i{vals}
 }
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {

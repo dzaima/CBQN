@@ -36,7 +36,7 @@ def maskAfter{n} = {
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
   def mask{X, mode=='to homogeneous bits'} = maskOf{X,n}
   def mask{mode=='count'} = n
-  def mask{x & istup{x} & tuplen{x}==1} = tup{mask{tupsel{0,x}}}
+  def mask{{x}} = tup{mask{x}}
   def mask{x==0} = 1
 }
 
