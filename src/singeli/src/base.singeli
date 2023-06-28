@@ -202,6 +202,7 @@ def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
 def undefPromote{T, x:X & T==X} = T~~x
 def packQ{{a, b}} = packQ{a, b}
+def pair{{a, b}} = pair{a, b}
 def cvt{T, x:X & T==eltype{X}} = x
 
 def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
