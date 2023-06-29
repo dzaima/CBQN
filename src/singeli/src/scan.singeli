@@ -72,7 +72,7 @@ export{'avx2_scan_min_init_f64', avx2_scan_idem{f64, min}}; export{'avx2_scan_ma
 
 fn avx2_scan_idem_id{T, op}(x:*T, r:*T, len:u64) : void = {
   def m = 1 << (width{T}-1)
-  def id = (if (match{op,min}) m-1; else -m)
+  def id = (if (same{op,min}) m-1; else -m)
   avx2_scan_idem{T, op}(x, r, len, id)
 }
 export{'avx2_scan_min_i8',  avx2_scan_idem_id{i8 , min}}; export{'avx2_scan_max_i8',  avx2_scan_idem_id{i8 , max}}

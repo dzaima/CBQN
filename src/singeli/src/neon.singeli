@@ -8,7 +8,7 @@ def nvecu = genchk{nvec, {T} => isunsigned{T}}
 def nvecf = genchk{nvec, {T} => isfloat{T}}
 
 
-def reinterpret{T, v & match{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }
+def reinterpret{T, v & same{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }
 
 def nty{T== u8} =  'u8'; def nty{T== i8} =  's8'
 def nty{T==u16} = 'u16'; def nty{T==i16} = 's16'
@@ -89,9 +89,9 @@ def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
 def fold_addw{a:T & nveci{T}} = emit{ty_dbl{eltype{T}}, ntyp{'vaddlv', T}, a}
 def fold_min {a:T & nvec{T} & ~nveci{T,64}} = emit{eltype{T}, ntyp{'vminv', T}, a}
 def fold_max {a:T & nvec{T} & ~nveci{T,64}} = emit{eltype{T}, ntyp{'vmaxv', T}, a}
-def vfold{F, x:T & nvec{T} & ~nveci{T,64} & match{F, min}} = fold_min{x}
-def vfold{F, x:T & nvec{T} & ~nveci{T,64} & match{F, max}} = fold_max{x}
-def vfold{F, x:T & nvec{T} & match{F, +}} = fold_add{x}
+def vfold{F, x:T & nvec{T} & ~nveci{T,64} & same{F, min}} = fold_min{x}
+def vfold{F, x:T & nvec{T} & ~nveci{T,64} & same{F, max}} = fold_max{x}
+def vfold{F, x:T & nvec{T} & same{F, +}} = fold_add{x}
 
 # TODO don't rely on regular stores being unaligned
 local def storeu{ptr:P, e:T} = store{ptr, 0, e}

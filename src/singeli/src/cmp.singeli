@@ -23,15 +23,15 @@ fn cmpIX(dst:*u64, len:Size, x:u64, v:u1) : void = {
   fillbits{dst, len, v&~nan, x}
 }
 
-def eqne{op} = match{op,__eq}|match{op,__ne}
+def eqne{op} = same{op,__eq}|same{op,__ne}
 
 def pathAS{dst, len, T, op, x & issigned{T}} = {
   def R{f & eqne{op}} = {
     if (rare{floor{f}!=f}) fillbits{dst, len, op{0,1}, x} # also includes check for NaN/sNaN
     ftrunc{i64,f}
   }
-  def R{f & match{op,__lt}|match{op,__ge}} = ftrunc{i64,ceil{f}}
-  def R{f & match{op,__gt}|match{op,__le}} = ftrunc{i64,floor{f}}
+  def R{f & same{op,__lt}|same{op,__ge}} = ftrunc{i64,ceil{f}}
+  def R{f & same{op,__gt}|same{op,__le}} = ftrunc{i64,floor{f}}
   
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}
@@ -126,7 +126,7 @@ def table{aa, F, w, G_bit, G_vec} = {
   tup{
     G_bit{},
     ...each{{E}=>{
-      def E2 = (if (aa and isunsigned{E} and ((match{F,__eq} | match{F,__ne})  |  (E==u32))) {ty_s{E}} else E)
+      def E2 = (if (aa and isunsigned{E} and ((same{F,__eq} | same{F,__ne})  |  (E==u32))) {ty_s{E}} else E)
       def bulk = w/width{E2}
       G_vec{[bulk]E2, max{tern{hasarch{'AARCH64'},2,1}, 8/bulk}}
     }, tup{i8, i16, i32, f64, u8, u16, u32}}

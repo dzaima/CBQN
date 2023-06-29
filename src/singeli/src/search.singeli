@@ -156,7 +156,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
   def rval = mode == 'unique'
   def rind = mode == 'index'
   def storebit{i, v:T} = if (rbit) store{*T~~r0, i, v}
-  if (rbit or rval) assert{match{t,0}}
+  if (rbit or rval) assert{same{t,0}}
 
   btab:= *i8~~tab
   def settab_sub{x, v, i} = {
@@ -204,7 +204,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
       i0:= i; iw:= i/k
       v:= load{xv, iw}
       m:= bitsel{v} # Mask of possibly-new values
-      if (not match{t,0}) m^= uk~~promote{ik, t}
+      if (not same{t,0}) m^= uk~~promote{ik, t}
       i+= k
       if (i > n) m&= (~uk~~0)>>((-n)%k)
       # Any new values?

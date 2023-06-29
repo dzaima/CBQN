@@ -70,8 +70,8 @@ def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, 
 
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got ',p}}
-def hCast{T,p:P & match{T,eltype{P}}} = p
-def hCast{T,p:P & match{P,*void}} = *T~~p
+def hCast{T,p:P & same{T,eltype{P}}} = p
+def hCast{T,p:P & same{P,*void}} = *T~~p
 
 # masked loop arguments
 #  p:*T - regular pointer, loaded by the batch index(es)

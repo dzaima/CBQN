@@ -4,6 +4,7 @@ include 'util/kind'
 
 oper ~~ reinterpret infix right 55
 oper ** broadcast infix right 55
+def same = is
 def Size = u64
 def load{x} = *x
 def reinterpret{T, x:X & T==X} = x
@@ -49,11 +50,12 @@ def unreachable{} = emit{void, 'si_unreachable'}
 def assert{x:u1} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
-def oneType{{h:H, ...t}} = {
-  each{{c:C} => assert{C==H}, t}
-  H
+def oneVal{{h, ...t}} = {
+  each{{c} => assert{c==h}, t}
+  h
 }
-def oneType{{}} = {}
+def oneVal{{}} = {}
+def oneType{x} = oneVal{each{type, x}}
 
 def isreg   = kreg
 def isconst = kcon
@@ -62,9 +64,9 @@ def istup   = ktup
 
 def isunsigned{T} = isint{T} & ~issigned{T}
 
-def isvec {T} = 0; def isvec {T & istype{T}} = match{typekind{T},'vector'}
-def isprim{T} = 0; def isprim{T & istype{T}} = match{typekind{T},'primitive'}
-def isptr {T} = 0; def isptr {T & istype{T}} = match{typekind{T},'pointer'}
+def isvec {T} = 0; def isvec {T & istype{T}} = same{typekind{T},'vector'}
+def isprim{T} = 0; def isprim{T & istype{T}} = same{typekind{T},'primitive'}
+def isptr {T} = 0; def isptr {T & istype{T}} = same{typekind{T},'pointer'}
 
 
 def anyNum{x} = isconst{x} | knum{x}
