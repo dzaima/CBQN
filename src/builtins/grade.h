@@ -387,7 +387,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   }
 
   i32* rp; B r = m_i32arrc(&rp, x);
-  
+
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
@@ -410,7 +410,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       }
     } else { // character
       if (elNum(xe)) {
-        Arr* ra=allZeroes(xia); arr_shVec(ra);
+        Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
         decG(r); r=taga(ra); goto done;
       } else {
         w=toC32Any(w); x=toC32Any(x);
