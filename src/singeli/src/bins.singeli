@@ -10,6 +10,7 @@ include 'util/tup'
 def ceil_log2{n:u64} = 64 - clz{n+1}
 
 def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8 & hasarch{'AVX2'}} = {
+  assert{wn > 0}
   def T = i8; def I = u8
   def lt = if (up) <; else >
   def pre = (if (up) minvalue else maxvalue){T}

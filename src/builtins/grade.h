@@ -378,6 +378,10 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   
+  if (wia==0 | xia==0) {
+    Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
+    decG(w); decG(x); return taga(ra);
+  }
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
@@ -391,19 +395,16 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
-        if (!elInt(we) | !elInt(xe)) {
-          #if SINGELI
-          if (we<=el_f64 && xe<=el_f64) {
-            w=toF64Any(w); x=toF64Any(x);
-            f64* wi = tyany_ptr(w);
-            f64* xi = tyany_ptr(x);
-            si_bins[3*2 + GRADE_UD(0,1)](wi, wia, xi, xia, rp);
-            goto done;
-          }
-          #endif
-          goto gen;
-        }
+        #if SINGELI
+        u8 ze = we>xe? we : xe;
+        if (ze==el_bit) ze = el_i8;
+        if (ze > we) { switch (ze) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; case el_f64:w=toF64Any(w);break; } }
+        if (ze > xe) { switch (ze) { default:UD; case el_i8:x=toI8Any(x);break; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; case el_f64:x=toF64Any(x);break; } }
+        we = ze;
+        #else
+        if (!elInt(we) | !elInt(xe)) goto gen;
         w=toI32Any(w); x=toI32Any(x);
+        #endif
       } else {
         for (u64 i=0; i<xia; i++) rp[i]=wia;
         goto done;
@@ -413,15 +414,17 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
         decG(r); r=taga(ra); goto done;
       } else {
+        we = el_c32;
         w=toC32Any(w); x=toC32Any(x);
       }
     }
-    i32* wi = tyany_ptr(w);
-    i32* xi = tyany_ptr(x);
 
     #if SINGELI
-    si_bins[2*2 + GRADE_UD(0,1)](wi, wia, xi, xia, rp);
+    u8 k = elWidthLogBits(we) - 3;
+    si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp);
     #else
+    i32* wi = tyany_ptr(w);
+    i32* xi = tyany_ptr(x);
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
       i32 *s = wi-1;
@@ -430,7 +433,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     #endif
   } else {
+    #if !SINGELI
     gen:;
+    #endif
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = TO_BPTR(w);
