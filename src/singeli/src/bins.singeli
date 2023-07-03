@@ -1,7 +1,46 @@
 include './base'
+if (hasarch{'AVX2'}) {
+  include './sse'
+  include './avx'
+  include './avx2'
+}
+include './mask'
 include 'util/tup'
 
-def bin_search{lt, w, wn, x, n, res} = {
+def ceil_log2{n:u64} = 64 - clz{n+1}
+
+def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8 & hasarch{'AVX2'}} = {
+  def T = i8; def I = u8
+  def lt = if (up) <; else >
+  def pre = (if (up) minvalue else maxvalue){T}
+  def vl = 32
+  def V = [vl]T; def H = [vl/2]T
+  def U = [vl]I
+  log := ceil_log2{wn-1}
+  l := 1<<log
+  gap := l - cast_i{u8, wn}
+  off := U**(gap - 1)
+  def double{v} = pair{v,v}
+  wv := double{homBlend{load{*H~~(w-gap), 0}, H**pre, maskOf{H,gap}}}
+  h0 := U**(l/2)
+  j:u64 = 0
+  def tail = setlabel{}
+  while (j < n) {
+    xv:= load{*V~~(x+j), 0}
+    s := U**0
+    h := h0
+    @for (promote{u64,log}) {
+      s |= h &~ lt{xv, sel{H, wv, s | h}}
+      h = U~~(([width{V}/16]u16~~h) >> 1) # Type doesn't matter but u8 would fail
+    }
+    store{*U~~(res+j), 0, s - off}
+    j += vl
+  }
+  if (j != n) { j = n-vl; goto{tail} }
+}
+
+def bin_search_branchless{up, w, wn, x, n, res} = {
+  def lt = if (up) <; else >
   ws := w - 1
   l0 := wn + 1
   # Take a list of indices in x/res to allow unrolling
@@ -24,11 +63,17 @@ def bin_search{lt, w, wn, x, n, res} = {
   each{searches, tup{4, 1}}
 }
 
-fn bins_branchless{T, up}(w:*void, wn:u64, x:*void, xn:u64, r:*i32) : void = {
-  bin_search{if (up) <; else >, *T~~w, wn, *T~~x, xn, r}
+fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, r:*i32) : void = {
+  if (hasarch{'AVX2'} and T==i8 and wn<16 and xn>=32) {
+    bin_search_vec{up, *T~~w, wn, *T~~x, xn, *i8~~r}
+    # Slow and useless: need to allocate i8 result
+    j:=xn; while (j > 0) { --j; store{r, j, cast_i{i32, load{*i8~~r, j}}} }
+  } else {
+    bin_search_branchless{up, *T~~w, wn, *T~~x, xn, r}
+  }
 }
 
 exportT{
   'si_bins',
-  join{table{bins_branchless, tup{i8,i16,i32,f64}, tup{1,0}}}
+  join{table{bins, tup{i8,i16,i32,f64}, tup{1,0}}}
 }
