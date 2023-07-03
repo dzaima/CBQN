@@ -326,6 +326,42 @@ B GRADE_CAT(c1)(B t, B x) {
 }
 
 
+bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
+  assert(isArr(x) && RNK(x)==1); // TODO extend to >=1
+  usz xia = IA(x);
+  if (xia <= 1) return 1;
+
+  #define CMP(TEST) \
+    for (usz i=1; i<xia; i++) if (TEST) return 0; \
+    return 1;
+  #define CASE(T) case el_##T: { \
+    T* xp = T##any_ptr(x); CMP(xp[i-1] GRADE_UD(>,<) xp[i]) }
+  switch (TI(x,elType)) { default: UD;
+    CASE(i8) CASE(i16) CASE(i32) CASE(f64)
+    CASE(c8) CASE(c16) CASE(c32)
+    case el_bit: {
+      #define HI GRADE_UD(1,0)
+      u64* xp = bitarr_ptr(x);
+      u64 i = bit_find(xp, xia, HI);
+      usz iw = i/64;
+      u64 m = ~(u64)0;
+      u64 d = GRADE_UD(,~)xp[iw] ^ (m<<(i%64));
+      if (iw == xia/64) return (d &~ (m<<(xia%64))) == 0;
+      if (d) return 0;
+      usz o = iw + 1;
+      usz l = xia - 64*o;
+      return (bit_find(xp+o, l, !HI) == l);
+      #undef HI
+    }
+    case el_B: {
+      B* xp = TO_BPTR(x);
+      CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
+    }
+  }
+  #undef CASE
+  #undef CMP
+}
+
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
@@ -343,9 +379,14 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 xe = TI(x,elType); usz xia = IA(x);
   
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
-  i32* rp; B r = m_i32arrc(&rp, x);
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
+  if (CHECK_VALID && !FL_HAS(w,fl)) {
+    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    FL_SET(w, fl);
+  }
+
+  i32* rp; B r = m_i32arrc(&rp, x);
   
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
@@ -356,10 +397,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
             w=toF64Any(w); x=toF64Any(x);
             f64* wi = tyany_ptr(w);
             f64* xi = tyany_ptr(x);
-            if (CHECK_VALID && !FL_HAS(w,fl)) {
-              for (i64 i = 0; i < (i64)wia-1; i++) if (wi[i] GRADE_UD(>,<) wi[i+1]) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-              FL_SET(w, fl);
-            }
             si_bins[3*2 + GRADE_UD(0,1)](wi, wia, xi, xia, rp);
             goto done;
           }
@@ -381,10 +418,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     i32* wi = tyany_ptr(w);
     i32* xi = tyany_ptr(x);
-    if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if (wi[i] GRADE_UD(>,<) wi[i+1]) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w, fl);
-    }
 
     #if SINGELI
     si_bins[2*2 + GRADE_UD(0,1)](wi, wia, xi, xia, rp);
@@ -401,11 +434,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = TO_BPTR(w);
-    
-    if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wp[i], wp[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w, fl);
-    }
     
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x,i);
