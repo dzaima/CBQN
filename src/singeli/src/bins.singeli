@@ -25,8 +25,9 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8 & hasarch{'AVX2'}} = {
   wv := double{homBlend{load{*H~~(w-gap), 0}, H**pre, maskOf{H,gap}}}
   h0 := U**(l/2)
   j:u64 = 0
-  def tail = setlabel{}
-  while (j < n) {
+  def end = makelabel{}
+  assert{n >= vl}
+  while (1) {
     xv:= load{*V~~(x+j), 0}
     s := U**0
     h := h0
@@ -36,8 +37,9 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8 & hasarch{'AVX2'}} = {
     }
     store{*U~~(res+j), 0, s - off}
     j += vl
+    if (j > n-vl) { if (j == n) goto{end}; j = n-vl }
   }
-  if (j != n) { j = n-vl; goto{tail} }
+  setlabel{end}
 }
 
 def bin_search_branchless{up, w, wn, x, n, res} = {
