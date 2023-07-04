@@ -64,14 +64,24 @@ def bin_search_branchless{up, w, wn, x, n, res} = {
   each{searches, tup{4, 1}}
 }
 
-fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, r:*i32) : void = {
-  if (hasarch{'AVX2'} and T==i8 and wn<16 and xn>=32) {
-    bin_search_vec{up, *T~~w, wn, *T~~x, xn, *i8~~r}
-    # Slow and useless: need to allocate i8 result
-    j:=xn; while (j > 0) { --j; store{r, j, cast_i{i32, load{*i8~~r, j}}} }
-  } else {
-    bin_search_branchless{up, *T~~w, wn, *T~~x, xn, r}
+def B = u64
+fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, xb:B) : B = {
+  def alloc{T,ts} = {
+    u:*u64 = tup{0}
+    rpp:* *T = (* *T)~~u
+    r := emit{B, merge{'m_',ts,'arrc_wrapu'}, rpp, xb}
+    rp := load{rpp,0}
+    tup{r, rp}
   }
+  r := undefined{B}
+  if (hasarch{'AVX2'} and T==i8 and wn<16 and xn>=32) {
+    def {rt, rp} = alloc{i8, 'i8'}; r = rt
+    bin_search_vec{up, *T~~w, wn, *T~~x, xn, rp}
+  } else {
+    def {rt, rp} = alloc{i32, 'i32'}; r = rt
+    bin_search_branchless{up, *T~~w, wn, *T~~x, xn, rp}
+  }
+  r
 }
 
 exportT{

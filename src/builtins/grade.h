@@ -390,8 +390,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     FL_SET(w, fl);
   }
 
-  i32* rp; B r = m_i32arrc(&rp, x);
-
+  B r;
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
@@ -406,13 +405,15 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         w=toI32Any(w); x=toI32Any(x);
         #endif
       } else {
+        // TODO pull copy-scalar part out of Reshape
+        i32* rp; r = m_i32arrc(&rp, x);
         for (u64 i=0; i<xia; i++) rp[i]=wia;
         goto done;
       }
     } else { // character
       if (elNum(xe)) {
         Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
-        decG(r); r=taga(ra); goto done;
+        r=taga(ra); goto done;
       } else {
         we = el_c32;
         w=toC32Any(w); x=toC32Any(x);
@@ -421,8 +422,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
 
     #if SINGELI
     u8 k = elWidthLogBits(we) - 3;
-    si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp);
+    r = b(si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, x.u));
     #else
+    i32* rp; r = m_i32arrc(&rp, x);
     i32* wi = tyany_ptr(w);
     i32* xi = tyany_ptr(x);
     for (usz i = 0; i < xia; i++) {
@@ -436,6 +438,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     #if !SINGELI
     gen:;
     #endif
+    i32* rp; r = m_i32arrc(&rp, x);
+    
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = TO_BPTR(w);

@@ -5,7 +5,11 @@
 
 #if SINGELI
   #define SINGELI_FILE bins
+  #define m_i8arrc_wrapu(P, X) m_i8arrc(P, b(X)).u
+  #define m_i32arrc_wrapu(P, X) m_i32arrc(P, b(X)).u
   #include "../utils/includeSingeli.h"
+  #undef m_i8arrc_wrapu
+  #undef m_i32arrc_wrapu
 #endif
 
 #define CAT0(A,B) A##_##B
