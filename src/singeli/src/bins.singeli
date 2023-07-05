@@ -119,7 +119,26 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
   }
 }
 
-def bin_search_branchless{up, w, wn, x, n, res} = {
+def unroll_sizes = tup{4,1}
+def rtypes = tup{i8, i16, i32, f64}
+# Return index of smallest possible result type given max result value
+def get_rtype{len} = {
+  t:u8 = 0
+  def c{T, ...ts} = if (len>maxvalue{T}) { ++t; c{...ts} }
+  def c{T==f64} = {}
+  c{...rtypes}
+  t
+}
+fn write{T,k}(r:*void, i:u64, ...vs:k**u64) : void = {
+  each{{j,v} => store{*T~~r, i+j, cast_i{T,v}}, iota{k}, vs}
+}
+def make_wr{k} = {
+  def w = each{{T} => write{T,k}, rtypes}
+  a:*(type{tupsel{0,w}}) = w
+}
+def wr_arrs = each{make_wr, unroll_sizes}
+
+def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
   def lt = if (up) <; else >
   ws := w - 1
   l0 := wn + 1
@@ -134,33 +153,24 @@ def bin_search_branchless{up, w, wn, x, n, res} = {
       each{bin1, ss, xs, each{bind{+,h}, ss}}
       l -= h
     }
-    each{{r,s} => store{res, r, cast_i{i32, s - ws}}, inds, ss}
+    each{{s} => u64~~(s - ws), ss}
   }
   # Unroll by 4 then 1
   def search{i, k} = search{each{bind{+,i}, iota{k}}}
   j:u64 = 0
-  def searches{k} = { while (j+k <= n) { search{j, k}; j+=k } }
-  each{searches, tup{4, 1}}
+  def searches{k, wr_arr} = {
+    wr := load{wr_arr, rtype}
+    while (j+k <= n) { wr(res, j, ...search{j, k}); j+=k }
+  }
+  each{searches, unroll_sizes, wr_arrs}
 }
 
-def B = u64
-fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, xb:B) : B = {
-  def alloc{T,ts} = {
-    u:*u64 = tup{0}
-    rpp:* *T = (* *T)~~u
-    r := emit{B, merge{'m_',ts,'arrc_wrapu'}, rpp, xb}
-    rp := load{rpp,0}
-    tup{r, rp}
-  }
-  r := undefined{B}
+fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
   if (T==i8 and wn<128 and xn>=32) {
-    def {rt, rp} = alloc{i8, 'i8'}; r = rt
-    bin_search_vec{up, *T~~w, wn, *T~~x, xn, rp}
+    bin_search_vec{up, *T~~w, wn, *T~~x, xn, *i8~~rp}
   } else {
-    def {rt, rp} = alloc{i32, 'i32'}; r = rt
-    bin_search_branchless{up, *T~~w, wn, *T~~x, xn, rp}
+    bin_search_branchless{up, *T~~w, wn, *T~~x, xn, rp, rty}
   }
-  r
 }
 
 exportT{

@@ -443,7 +443,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
 
     #if SINGELI
     u8 k = elWidthLogBits(we) - 3;
-    r = b(si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, x.u));
+    u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1<<31) ? 2 : 3;
+    void *rp = m_tyarrc(&r, 1<<rl, x, el2t(el_i8+rl));
+    si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp, rl);
     #else
     i32* rp; r = m_i32arrc(&rp, x);
     i32* wi = tyany_ptr(w);
