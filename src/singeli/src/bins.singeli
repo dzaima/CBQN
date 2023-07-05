@@ -31,6 +31,58 @@ def ceil_log2{n:u64} = 64 - clz{n-1}
 # Shift as u16, since x86 is missing 8-bit shifts
 def shr16{v, n} = type{v}~~(([width{type{v}}/16]u16~~v) >> n)
 
+def rtypes = tup{i8, i16, i32, f64}
+# Return index of smallest possible result type given max result value
+def get_rtype{len} = {
+  t:u8 = 0
+  def c{T, ...ts} = if (len>maxvalue{T}) { ++t; c{...ts} }
+  def c{T==f64} = {}
+  c{...rtypes}
+  t
+}
+def rtype_arr{gen} = {
+  def t = each{gen, rtypes}
+  a:*(type{tupsel{0,t}}) = t
+}
+
+# Write the last index of v at t+v, for each unique v in w
+fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
+  def break = makelabel{}
+  i:u64 = 0; while (1) {
+    d:u64 = 16
+    id := i+d
+    wi := undefined{T}
+    if (id >= n) {
+      @for (w over j from i to n) store{t, w, j+1}
+      goto{break}
+    } else if ((wi = load{w, i}) == load{w, id}) {
+      md := n - i
+      d2 := undefined{u64}
+      while ((d2=d+d) < md and wi == load{w, i + d2}) d = d2
+      i += d
+      l := n - i; if (l > d) l = d
+      # Last instance of wi in [i,i+l); shrink l
+      while (l > 8) {
+        h := l/2
+        m := i + h
+        if (wi == load{w, m}) i = m
+        l -= h
+      }
+    } else {
+      @unroll (j to 8) store{t, load{w, i+j}, i+j+1}
+      i += 8
+    }
+  }
+  setlabel{break}
+}
+fn lookup_indices{I,T,R}(tab:*I, x:*T, rp:*void, xn:u64) : void = {
+  def m = 1<<width{T}
+  t := *R~~tab; ts := t+m/2
+  @for (tab, t over m) t = cast_i{R, tab}
+  @for (r in *R~~rp, x in *T~~x over xn) r = load{ts, x}
+}
+def lookup_i8_arr = rtype_arr{bind{lookup_indices,u64,i8}}
+
 def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
   assert{wn > 0}
   def T = i8; def I = u8
@@ -120,23 +172,10 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
 }
 
 def unroll_sizes = tup{4,1}
-def rtypes = tup{i8, i16, i32, f64}
-# Return index of smallest possible result type given max result value
-def get_rtype{len} = {
-  t:u8 = 0
-  def c{T, ...ts} = if (len>maxvalue{T}) { ++t; c{...ts} }
-  def c{T==f64} = {}
-  c{...rtypes}
-  t
-}
 fn write{T,k}(r:*void, i:u64, ...vs:k**u64) : void = {
   each{{j,v} => store{*T~~r, i+j, cast_i{T,v}}, iota{k}, vs}
 }
-def make_wr{k} = {
-  def w = each{{T} => write{T,k}, rtypes}
-  a:*(type{tupsel{0,w}}) = w
-}
-def wr_arrs = each{make_wr, unroll_sizes}
+def wr_arrs = each{{k} => rtype_arr{{T} => write{T,k}}, unroll_sizes}
 
 def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
   def lt = if (up) <; else >
@@ -168,6 +207,14 @@ def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
 fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
   if (T==i8 and wn<128 and xn>=32) {
     bin_search_vec{up, *T~~w, wn, *T~~x, xn, *i8~~rp}
+  } else if (T==i8 and xn>=64 and (xn>=1024 or (xn-32) >= cast_i{u64,1}<<(ceil_log2{wn}/2+1))) {
+    def T = i8; def I = u64
+    t0:*I = copy{256,0}
+    t:*I = t0 + 128
+    write_indices{I,T}(t, *T~~w, wn)
+    def for_dir = if (up) for else for_backwards
+    s:I=0; @for_dir (t0 over 256) { if (t0 > s) s = t0; t0 = s }
+    load{lookup_i8_arr,rty}(t0, *T~~x, rp, xn)
   } else {
     bin_search_branchless{up, *T~~w, wn, *T~~x, xn, rp, rty}
   }
