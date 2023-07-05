@@ -362,6 +362,8 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
   #undef CMP
 }
 
+extern B CAT(GRADE_UD(le,ge),c2)(B,B,B);
+
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
@@ -378,9 +380,29 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   
+  B r;
   if (wia==0 | xia==0) {
     Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
-    decG(w); decG(x); return taga(ra);
+    r=taga(ra); goto done;
+  }
+  if (wia==1) {
+    B c = IGet(w, 0);
+    if (LIKELY(we<el_B & xe<el_B)) {
+      decG(w);
+      return CAT(GRADE_UD(le,ge),c2)(m_f64(0), c, x);
+    } else {
+      SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
+      u64* rp; r = m_bitarrc(&rp, x);
+      B* xp = TO_BPTR(x);
+      u64 b = 0;
+      for (usz i = xia; ; ) {
+        i--;
+        b = 2*b + !(compare(xp[i], c) LT 0);
+        if (i%64 == 0) { rp[i/64]=b; if (!i) break; }
+      }
+      dec(c);
+    }
+    goto done;
   }
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
   
@@ -390,7 +412,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     FL_SET(w, fl);
   }
 
-  B r;
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
