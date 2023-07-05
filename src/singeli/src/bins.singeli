@@ -26,7 +26,7 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
   setlabel{end}
 }
 
-def ceil_log2{n:u64} = 64 - clz{n+1}
+def ceil_log2{n:u64} = 64 - clz{n-1}
 
 # Shift as u16, since x86 is missing 8-bit shifts
 def shr16{v, n} = type{v}~~(([width{type{v}}/16]u16~~v) >> n)
@@ -44,22 +44,24 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
     {i} => sel{H, v, i}
   }
   if (hasarch{'AVX2'} and wn < 16) {
-    log := ceil_log2{wn-1}
+    log := ceil_log2{wn+1}
     l := 1<<log
     gap := l - cast_i{u8, wn}
     off := U**(gap - 1)
     wv := homBlend{load{*H~~(w-gap), 0}, H**pre, maskOf{H,gap}}
     def selw = getsel{wv}
     h0 := U**(l/2)
-    @for_vec_overlap{vl} (j to n) {
-      xv:= load{*V~~(x+j), 0}
-      s := U**0
-      h := h0
-      @for (promote{u64,log}) {
-        s |= h &~ lt{xv, selw{s | h}}
-        h = shr16{h, 1}
+    @unroll (klog from 2 to 5) {
+      if (log==klog) @for_vec_overlap{vl} (j to n) {
+        xv:= load{*V~~(x+j), 0}
+        s := U**0
+        h := h0
+        @unroll (klog) {
+          s |= h &~ lt{xv, selw{s | h}}
+          h = shr16{h, 1}
+        }
+        store{*U~~(res+j), 0, s - off}
       }
-      store{*U~~(res+j), 0, s - off}
     }
   } else {
     assert{wn < 128} # Total must fit in i8
