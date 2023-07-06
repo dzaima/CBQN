@@ -95,7 +95,7 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
     v := pair{h,h}
     {i} => sel{H, v, i}
   }
-  if (hasarch{'AVX2'} and wn < 16) {
+  if (hasarch{'AVX2'} and wn < 8) {
     log := ceil_log2{wn+1}
     l := 1<<log
     gap := l - cast_i{u8, wn}
@@ -103,7 +103,7 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
     wv := homBlend{load{*H~~(w-gap), 0}, H**pre, maskOf{H,gap}}
     def selw = getsel{wv}
     h0 := U**(l/2)
-    @unroll (klog from 2 to 5) {
+    @unroll (klog from 2 to 4) {
       if (log==klog) @for_vec_overlap{vl} (j to n) {
         xv:= load{*V~~(x+j), 0}
         s := U**0
@@ -124,12 +124,25 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
       def for_dir = if (up) for else for_backwards
       s:i8=0; @for_dir (tab over len) { s += tab; tab = s }
     }
-    def getm{} = { m:=V**0; @unroll (v in *V~~t0 over 256/vl) m = max{m,v}; m }
-    if (hasarch{'AVX2'} and homAll{getm{} <= V**1}) {
+    def no_bittab = makelabel{}; def done = makelabel{}
+    if (hasarch{'AVX2'}) {
       # Convert to bit table
       def nb = 256/vl
+      nu:u8 = 0; def addu{b} = { nu+=popc{b}; b } # Number of uniques
       vb := U~~make{[nb](ty_u{vl}),
-        @collect (t in *V~~t0 over nb) homMask{t > V**0}
+        @collect (t in *V~~t0 over nb) addu{homMask{t > V**0}}
+      }
+      dup := promote{u64,nu} < wn
+      # Unique index to w index conversion
+      ui := undefined{V}; ui1 := undefined{V}
+      if (dup) {
+        if (nu > vl) goto{no_bittab}
+        # We'll subtract 1 when indexing so the initial 0 isn't needed
+        tui:*i8 = copy{vl, 0}; i:T = 0
+        @for (tui over promote{u64,nu}) { i += load{t, load{w, i}}; tui = i }
+        ui = load{*V~~tui, 0}
+        if (nu > 16) ui1 = shuf{[4]u64, ui, 4b3232}
+        ui = shuf{[4]u64, ui, 4b1010}
       }
       # Popcount on 8-bit values
       def sums{n} = if (n==1) tup{0} else { def s=sums{n/2}; merge{s,s+1} }
@@ -140,10 +153,10 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
         s{shr16{v,4}} + s{v}
       }
       # 32-byte select
-      vtop := U**(vl/2)
+      vtop := V**(vl/2)
       def getsel{v & width{type{v}}==256} = {
         hs := each{bind{shuf, [4]u64, v}, tup{4b3232, 4b1010}}
-        {i} => homBlend{...each{{h}=>sel{H,h,i}, hs}, i<vtop}
+        {i} => homBlend{...each{{h}=>sel{H,h,i}, hs}, V~~i<vtop}
       }
       def swap{v} = shuf{[4]u64, v, 4b1032} # For signedness
       # Bit table
@@ -154,7 +167,7 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
       # Exact values for multiples of 8
       store{*U~~t0, 0, vpopc{vb}}
       plus_scan{t0, 256/8}
-      def sel_c = getsel{swap{load{*V~~t0, 0}}}
+      def sel_c = getsel{swap{load{*V~~t0, 0} - V**dup}}
       # Top 5 bits select bytes from tables; bottom 3 select from mask
       bot3 := U**0x07
       @for_vec_overlap{vl} (j to n) {
@@ -162,12 +175,19 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
         xb := xv & bot3
         xt := shr16{xv &~ bot3, 3}
         ind := sel_c{xt} - vpopc{sel_b{xt} & U~~sel_m{xb}}
+        if (dup) {
+          i0 := V~~ind # Can contain -1
+          ind = sel{H, ui, i0}
+          if (nu > 16) ind = homBlend{sel{H,ui1,i0}, ind, i0<vtop}
+        }
         store{*U~~(res+j), 0, ind}
       }
-    } else {
-      plus_scan{t0, 256}
-      @for (res, x over n) res = load{t, x}
+      goto{done}
     }
+    setlabel{no_bittab}
+    plus_scan{t0, 256}
+    @for (res, x over n) res = load{t, x}
+    setlabel{done}
   }
 }
 
