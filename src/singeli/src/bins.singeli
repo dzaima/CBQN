@@ -167,7 +167,8 @@ def bin_search_vec{up, w:*i8, wn, x:*i8, n, res:*i8} = {
         s := U**0
         h := h0
         @unroll (klog) {
-          s |= h &~ lt{xv, selw{s | h}}
+          m := s | h
+          s = homBlend{m, s, lt{xv, selw{m}}}
           h = shr16{h, 1}
         }
         store{*U~~(res+j), 0, s - off}
