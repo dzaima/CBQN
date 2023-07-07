@@ -169,15 +169,18 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
   }
   dup := promote{u64,nu} < wn
   # Unique index to w index conversion
-  ui := undefined{V}; ui1 := undefined{V}
+  ui := undefined{V}; ui1 := undefined{V}; ui2 := each{undefined,tup{V,V}}
   if (dup) {
-    if (nu > vl) goto{no_bittab}
+    def maxu = 2*vl
+    if (nu > maxu) goto{no_bittab}
     # We'll subtract 1 when indexing so the initial 0 isn't needed
-    tui:*i8 = copy{vl, 0}; i:T = 0
+    tui:*i8 = copy{maxu, 0}; i:T = 0
     @for (tui over promote{u64,nu}) { i += load{t, load{w, i}}; tui = i }
-    ui = load{*V~~tui, 0}
+    def tv = bind{load, *V~~tui}
+    ui = tv{0}
     if (nu > 16) ui1 = shuf{[4]u64, ui, 4b3232}
     ui = shuf{[4]u64, ui, 4b1010}
+    if (nu > vl) ui2 = each{bind{shuf, [4]u64, tv{1}}, tup{4b1010, 4b3232}}
   }
   # Popcount on 8-bit values
   def sums{n} = if (n==1) tup{0} else { def s=sums{n/2}; merge{s,s+1} }
@@ -206,8 +209,13 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
     ind := sel_c{xt} - vpopc{sel_b{xt} & U~~sel_m{xb}}
     if (dup) {
       i0 := V~~ind # Can contain -1
-      ind = sel{H, ui, i0}
-      if (nu > 16) ind = homBlend{sel{H,ui1,i0}, ind, i0<V**(vl/2)}
+      def isel{u} = sel{H, u, i0}
+      ind = isel{ui}
+      if (nu > 16) {
+        b := V**0 < (i0 & V**(vl/2))
+        ind = homBlend{ind, isel{ui1}, b}
+        if (nu > 32) ind = homBlend{homBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
+      }
     }
     store{*U~~(res+j), 0, ind}
   }
