@@ -220,7 +220,7 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
 }
 
 def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
-  assert{wn > 1}
+  assert{wn > 1}; assert{wn < maxwn}
   def wd = width{T}
   def bytes = wd/8; def bb = bind{base,256}
   def vl = 256/wd
@@ -229,24 +229,22 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def lt = if (up) <; else >
   # Number of steps
   log := ceil_log2{wn+1}
-  l := 1<<log
-  gap := l - cast_i{u8, wn}
+  gap := 1<<log - cast_i{u8, wn}
   off := [vl]u8**(gap - 1)
   # Fill with minimum value at the beginning
   def pre = (if (up) minvalue else maxvalue){T}
-  wv := homBlend{load{*H~~(w-gap), 0}, H**pre, maskOf{H,gap}}
+  wv := homBlend{load{*H~~(w-gap)}, H**pre, maskOf{H,gap}}
   def selw = getsel{[16]u8~~wv}
-  # A bit in every byte
-  h0 := U**(bb{copy{bytes,bytes}} * (cast_i{ty_u{T},l}/2))
+  # Midpoint bits for each step
+  def lowbits = bb{copy{bytes,bytes}}
+  bits := each{{j} => U**(lowbits << j), iota{maxwn-1}}
   @unroll (klog from 2 to lb{maxwn}+1) {
     if (log==klog) @for_vec_overlap{vl} (j to xn) {
       xv:= load{*V~~(x+j), 0}
       s := U**bb{iota{bytes}}  # Select sequential bytes within each U
-      h := h0
-      @unroll (klog) {
-        m := s | h
+      @unroll (j to klog) {
+        m := s | tupsel{klog-1-j, bits}
         s = homBlend{m, s, lt{xv, V~~selw{to_el{u8,m}}}}
-        h = shr16{h, 1}
       }
       r := if (T==i8) s
            else half{narrow{u8, s>>(lb{bytes}+wd-8)}, 0}
