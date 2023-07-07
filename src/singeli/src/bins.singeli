@@ -147,7 +147,6 @@ def bins_lookup{I, T, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void} = {
 
 def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch{'AVX2'}} = {
   assert{wn < 128} # Total must fit in i8
-  def T = i8
   def vl = 32
   def V = [vl]T; def H = v_half{V}
   def U = [vl]u8
@@ -155,10 +154,7 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
 
   t0:*i8 = copy{256,0}
   t:*i8 = t0 + 128
-  @for (w over wn) store{t, w, 1+load{t, w}}
-  def plus_scan{tab, len} = {
-    s:i8=0; @for_dir{up} (tab over len) { s += tab; tab = s }
-  }
+  @for (w over j to wn) store{t, w, j+1}
 
   # Convert to bit table
   def no_bittab = makelabel{}; def done = makelabel{}
@@ -175,7 +171,7 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
     if (nu > maxu) goto{no_bittab}
     # We'll subtract 1 when indexing so the initial 0 isn't needed
     tui:*i8 = copy{maxu, 0}; i:T = 0
-    @for (tui over promote{u64,nu}) { i += load{t, load{w, i}}; tui = i }
+    @for (tui over promote{u64,nu}) { i = load{t, load{w, i}}; tui = i }
     def tv = bind{load, *V~~tui}
     ui = tv{0}
     if (nu > 16) ui1 = shuf{[4]u64, ui, 4b3232}
@@ -198,7 +194,7 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
   def sel_m = getsel{make{H, merge{ms - 256*(ms>127), 8**0}}}
   # Exact values for multiples of 8
   store{*U~~t0, 0, vpopc{vb}}
-  plus_scan{t0, 256/8}
+  st:i8=0; @for_dir{up} (t0 over 256/8) { st += t0; t0 = st }
   def sel_c = getsel{swap{load{*V~~t0, 0} - V**dup}}
   # Top 5 bits select bytes from tables; bottom 3 select from mask
   bot3 := U**0x07
@@ -222,7 +218,7 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
   goto{done}
   setlabel{no_bittab}
 
-  plus_scan{t0, 256}
+  max_scan{I, up}(t0, 256)
   @for (res, x over xn) res = load{t, x}
   setlabel{done}
 }
