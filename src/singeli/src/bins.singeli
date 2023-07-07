@@ -134,30 +134,36 @@ fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
   }
   setlabel{break}
 }
+fn write_indices{I,T & width{I}==8}(t:*I, w:*T, n:u64) : void = {
+  @for (w over j to n) store{t, w, j+1}
+}
 def bins_lookup{I, T, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void} = {
+  # Build table
   def tc = 1<<width{T}
   t0:*I = talloc{I, tc}
   @for (t0 over tc) t0 = 0
   t:*I = t0 + tc/2
   write_indices{I,T}(t, *T~~w, wn)
+  # Vector bit-table
+  def use_vectab = if (hasarch{'AVX2'} and I==i8 and T==i8) 1 else 0
+  def done = makelabel{}
+  if (use_vectab) bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done}
+  # Main scalar table
   max_scan{I, up}(t0, tc)
   @for (r in *I~~rp, x over xn) r = load{t, x}
+  if (use_vectab) setlabel{done}
   tfree{t0}
 }
 
-def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch{'AVX2'}} = {
+def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
   assert{wn < 128} # Total must fit in i8
   def vl = 32
+  def T = i8
   def V = [vl]T; def H = v_half{V}
   def U = [vl]u8
-  def res = *T~~rp
-
-  t0:*i8 = copy{256,0}
-  t:*i8 = t0 + 128
-  @for (w over j to wn) store{t, w, j+1}
 
   # Convert to bit table
-  def no_bittab = makelabel{}; def done = makelabel{}
+  def no_bittab = makelabel{}
   def nb = 256/vl
   nu:u8 = 0; def addu{b} = { nu+=popc{b}; b } # Number of uniques
   vb := U~~make{[nb](ty_u{vl}),
@@ -213,14 +219,10 @@ def bins_lookup{I==i8, T==i8, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void & hasarch
         if (nu > 32) ind = homBlend{homBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
-    store{*U~~(res+j), 0, ind}
+    store{*U~~(*T~~rp+j), 0, ind}
   }
   goto{done}
   setlabel{no_bittab}
-
-  max_scan{I, up}(t0, 256)
-  @for (res, x over xn) res = load{t, x}
-  setlabel{done}
 }
 
 def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
