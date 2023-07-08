@@ -31,7 +31,7 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
 def ceil_log2{n:u64} = 64 - clz{n-1}
 
 # Shift as u16, since x86 is missing 8-bit shifts
-def shr16{v, n} = type{v}~~(([width{type{v}}/16]u16~~v) >> n)
+def shr16{v:V, n} = V~~(to_el{u16, v} >> n)
 
 # Forward or backwards in-place max-scan
 # Assumes a whole number of vectors and minimum 0
@@ -224,9 +224,9 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
       def isel{u} = sel{H, u, i0}
       ind = isel{ui}
       if (nu > 16) {
-        b := V**0 < (i0 & V**(vl/2))
-        ind = homBlend{ind, isel{ui1}, b}
-        if (nu > 32) ind = homBlend{homBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
+        b := V~~(to_el{u16, i0} << (7 - lb{vl/2}))
+        ind = topBlend{ind, isel{ui1}, b}
+        if (nu > 32) ind = homBlend{topBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
     store{*U~~(*T~~rp+j), 0, ind}
