@@ -299,8 +299,10 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
         r += c
       }
       r -= off
-      rn := if (T==i8) r else half{narrow{u8, r}, 0}
-      store{*[vl]i8~~(*i8~~rp+j), 0, rn}
+      rn := if (T==i8) r
+            else if (T==i16) half{narrow{u8, r}, 0}
+            else extract{to_el{i64, narrow{u8, r}}, 0}
+      store{*type{rn}~~(*i8~~rp+j), 0, rn}
     }
   }
 }
@@ -345,8 +347,8 @@ fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
     else if (k+1 < tuplen{rtypes}) lookup{k+1}
   }
   # For >=8 i8 values, vector bit-table is as good as binary search
-  def wn_vec = if (T==i8) 8 else 32
-  if (hasarch{'AVX2'} and T<=i16 and wn < wn_vec and xn >= 256/width{T}) {
+  def wn_vec = if (T==i8) 8 else 2*256/width{T}
+  if (hasarch{'AVX2'} and T<=i32 and wn < wn_vec and xn >= 256/width{T}) {
     bin_search_vec{T, ...param, wn_vec}
   # Lookup table threshold has to account for cost of
   # populating the table (proportional to wn until it's large), and
