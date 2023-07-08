@@ -1,4 +1,5 @@
 include './base'
+def shufHalves{...x} = assert{'shufHalves not supported', show{...x}}
 if (hasarch{'AVX2'}) {
   include './sse'
   include './avx'
@@ -248,14 +249,24 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   off := [vl]u8**(gap - 1)
   # Fill with minimum value at the beginning
   def pre = (if (up) minvalue else maxvalue){T}
-  wv := homBlend{load{*V~~(w-gap)}, V**pre, maskOf{V,gap}}
-  # Separate even/odd elements if double width
+  wg := *V~~(w-gap)
+  wv := homBlend{load{wg}, V**pre, maskOf{V,gap}}
+  # Separate even/odd elements to double width, like Eytzinger
   def maxstep = lb{maxwn}
   def lstep = lb{vl/2}
-  def has_w1 = maxstep > lstep
-  if (has_w1 and wn >= vl/2) wv = uninterleave{wv}
-  def ms{h} = getsel{[16]u8~~half{wv,h}}
-  def selw = ms{0}; def selw1 = if (has_w1) ms{1} else 'undef'
+  def ex = maxstep - lstep
+  wv2 := wv
+  if (ex>=1 and wn >= vl/2) {
+    wv = uninterleave{wv}
+    if (ex>=2 and wn >= vl) {
+      t := uninterleave{load{wg, 1}}
+      wv2=              shufHalves{wv, t, 16b31}
+      wv = uninterleave{shufHalves{wv, t, 16b20}}
+    }
+  }
+  def ms{h} = getsel{to_el{u8,half{wv,h}}}
+  def selw = ms{0}; def selw1 = if (ex>=1) ms{1} else 'undef'
+  def selw2 = if (ex>=2) getsel{to_el{u8,wv2}} else 'undef'
   # Midpoint bits for each step
   def lowbits = bb{copy{bytes,bytes}}
   bits := each{{j} => U**(lowbits << j), iota{lstep}}
@@ -273,10 +284,17 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
         s = homBlend{m, s, lt{xv, as_u8{V,selw, m}}}
       }
       # Extra selection lanes
-      if (last and has_w1 and log>klog) {
-        c := lt{xv, as_u8{V,selw1, s}}
-        assert{T==i16} # Otherwise position of c is different
-        s = as_u8{U,+, s,c}; s += s
+      if (last and ex>=1 and log>=klog+1) {
+        def addbit{sel} = {
+          c := lt{xv, as_u8{V,sel, s}}
+          assert{T==i16} # Otherwise position of c is different
+          s = as_u8{U,+, s,c}; s = as_u8{U,+, s,s}
+        }
+        addbit{selw1}
+        if (ex>=2 and log>=klog+2) {
+          s = as_u8{U,+, s, U**bb{bytes-iota{bytes}}} # Undo part of last step
+          addbit{selw2}
+        }
       }
       r := if (T==i8) s
            else half{narrow{u8, s>>(lb{bytes}+wd-8)}, 0}
@@ -325,7 +343,7 @@ fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
     else if (k+1 < tuplen{rtypes}) lookup{k+1}
   }
   # For >=8 i8 values, vector bit-table is as good as binary search
-  def wn_vec = if (T==i8) 8 else 16
+  def wn_vec = if (T==i8) 8 else 32
   if (hasarch{'AVX2'} and T<=i16 and wn < wn_vec and xn >= 256/width{T}) {
     bin_search_vec{T, ...param, wn_vec}
   # Lookup table threshold has to account for cost of
