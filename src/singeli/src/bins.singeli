@@ -246,27 +246,30 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   # Number of steps
   log := ceil_log2{wn+1}
   gap := 1<<log - cast_i{u8, wn}
-  off := [vl]u8**(gap - 1)
   # Fill with minimum value at the beginning
   def pre = (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
   wv := homBlend{load{wg}, V**pre, maskOf{V,gap}}
-  # Separate even/odd elements to double width, like Eytzinger
+  # For multiple lanes, interleave like transpose
   def maxstep = lb{maxwn}
   def lstep = lb{vl/2}
   def ex = maxstep - lstep
-  wv2 := wv
+  wv2 := wv # Compiler complains if uninitialized
   if (ex>=1 and wn >= vl/2) {
     wv = uninterleave{wv}
+    --gap # Allows subtracting < instead of adding <=
     if (ex>=2 and wn >= vl) {
       t := uninterleave{load{wg, 1}}
-      wv2=              shufHalves{wv, t, 16b31}
+      wv2= uninterleave{shufHalves{wv, t, 16b31}}
       wv = uninterleave{shufHalves{wv, t, 16b20}}
+      gap -= 2
     }
   }
-  def ms{h} = getsel{to_el{u8,half{wv,h}}}
-  def selw = ms{0}; def selw1 = if (ex>=1) ms{1} else 'undef'
-  def selw2 = if (ex>=2) getsel{to_el{u8,wv2}} else 'undef'
+  def ms{v}{h} = getsel{to_el{u8,half{v,h}}}
+  def selw = ms{wv}{0}; def selw1 = if (ex>=1) ms{wv}{1} else 'undef'
+  def selw2 = if (ex>=2) each{ms{wv2}, iota{2}} else 'undef'
+  # Offset at end
+  off := U~~V**i8~~(gap - 1)
   # Midpoint bits for each step
   def lowbits = bb{copy{bytes,bytes}}
   bits := each{{j} => U**(lowbits << j), iota{lstep}}
@@ -279,26 +282,25 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       def as_u8{T,op, ...par} = T~~op{...each{bind{to_el,u8},par}}
       xv:= load{*V~~(x+j), 0}
       s := U**bb{iota{bytes}}  # Select sequential bytes within each U
+      def ltx{se,ind} = lt{xv, as_u8{V,se, ind}}
       @unroll (j to klog) {
         m := s | tupsel{klog-1-j,bits}
-        s = homBlend{m, s, lt{xv, as_u8{V,selw, m}}}
+        s = homBlend{m, s, ltx{selw, m}}
       }
+      r := if (T==i8) s else s>>(lb{bytes}+wd-8)
       # Extra selection lanes
       if (last and ex>=1 and log>=klog+1) {
-        def addbit{sel} = {
-          c := lt{xv, as_u8{V,sel, s}}
-          assert{T==i16} # Otherwise position of c is different
-          s = as_u8{U,+, s,c}; s = as_u8{U,+, s,s}
-        }
-        addbit{selw1}
+        r += r
+        c := ltx{selw1,s}
         if (ex>=2 and log>=klog+2) {
-          s = as_u8{U,+, s, U**bb{bytes-iota{bytes}}} # Undo part of last step
-          addbit{selw2}
+          r += r
+          each{{se} => c += ltx{se,s}, selw2}
         }
+        r += c
       }
-      r := if (T==i8) s
-           else half{narrow{u8, s>>(lb{bytes}+wd-8)}, 0}
-      store{*[vl]i8~~(*i8~~rp+j), 0, r - off}
+      r -= off
+      rn := if (T==i8) r else half{narrow{u8, r}, 0}
+      store{*[vl]i8~~(*i8~~rp+j), 0, rn}
     }
   }
 }
