@@ -19,15 +19,31 @@
 // SHOULD widen odd cell sizes under 8 bytes in sort and grade
 
 // Bins
+// Length 0 or 1 𝕨: trivial, or comparison
+// Stand-alone 𝕨 sortedness check
+//   SHOULD vectorize sortedness check on lists of numbers
 // Mixed integer and character arguments gives all 0 or ≠𝕨
-// Integers and characters: 4-byte branchless binary search
+// Non-Singeli, integers and characters:
+//   4-byte branchless binary search, 4-byte output
+// SHOULD support fast character searches
+// SHOULD special-case boolean 𝕨 or 𝕩
+// Different widths: widen narrower argument
+//   SHOULD narrow wider-type 𝕩 if it isn't much shorter
+//   SHOULD trim wider-type 𝕨 and possibly narrow
+// Same-width numbers:
+//   Output type based on ≠𝕨
+//   Short 𝕨: vector binary search (then linear on extra lanes)
+//   1- or 2-byte type, long enough 𝕩: lookup table from ⌈`
+//     Binary gallops to skip long repeated elements of 𝕨
+//     1-byte, no duplicates or few uniques: vector bit-table lookup
+//   General: interleaved branchless binary search
+//   COULD start interleaved search with a vector binary round
 // General case: branching binary search
-// SHOULD implement f64 branchless binary search
-// SHOULD interleave multiple branchless binary searches
-// SHOULD specialize bins on equal types at least
-// SHOULD implement table-based ⍋⍒ for small-range 𝕨
-// SHOULD special-case short 𝕨
+// COULD trim 𝕨 based on range of 𝕩
+// COULD optimize small-range 𝕨 with small-type methods
 // SHOULD partition 𝕩 when 𝕨 is large
+// COULD interpolation search for large 𝕩 and short 𝕨
+// COULD use linear search and galloping for sorted 𝕩
 
 #define GRADE_CAT(N) CAT(GRADE_UD(gradeUp,gradeDown),N)
 #define GRADE_NEG GRADE_UD(,-)

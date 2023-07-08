@@ -126,6 +126,7 @@ fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
       @for (w over j from i to n) store{t, w, j+1}
       goto{break}
     } else if ((wi = load{w, i}) == load{w, id}) {
+      # Gallop
       md := n - i
       d2 := undefined{u64}
       while ((d2=d+d) < md and wi == load{w, i + d2}) d = d2
@@ -236,6 +237,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
   setlabel{no_bittab}
 }
 
+# Binary search within vector registers
 def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   assert{wn > 1}; assert{wn < maxwn}
   def wd = width{T}
