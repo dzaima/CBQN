@@ -26,7 +26,7 @@
 // Non-Singeli, integers and characters:
 //   4-byte branchless binary search, 4-byte output
 // SHOULD support fast character searches
-// SHOULD special-case boolean 𝕨 or 𝕩
+// Boolean 𝕨 or 𝕩: lookup table (single binary search on boolean 𝕨)
 // Different widths: widen narrower argument
 //   SHOULD narrow wider-type 𝕩 if it isn't much shorter
 //   SHOULD trim wider-type 𝕨 and possibly narrow
@@ -378,7 +378,23 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
   #undef CMP
 }
 
+// Location of first 1 (ascending) or 0 (descending), by binary search
+static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
+  u64 c = GRADE_UD(,~)(u64)0;
+  u64 *s = x-1;
+  for (usz l = BIT_N(n)+1, h; (h=l/2)>0; l-=h) {
+    u64* m = s+h; if (!(c LT *m)) s = m;
+  }
+  ++s; // Word containing boundary
+  u64 b = 64*(s-x);
+  if (b >= n) return n;
+  u64 v = GRADE_UD(~,) *s;
+  if (b+63 >= n) v &= ~(u64)0 >> ((-n)%64);
+  return b + POPC(v);
+}
+
 extern B CAT(GRADE_UD(le,ge),c2)(B,B,B);
+extern B select_c2(B t, B w, B x);
 
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
@@ -431,11 +447,32 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (LIKELY(we<el_B & xe<el_B)) {
     if (elNum(we)) { // number
       if (elNum(xe)) {
+        if (RARE(we==el_bit | xe==el_bit)) {
+          if (we==el_bit) {
+            usz c1 = CAT(bit_boundary,GRADE_UD(up,dn))(bitarr_ptr(w), wia);
+            decG(w); // c1 and wia contain all information in w
+            if (xe==el_bit) {
+              r = bit_sel(x, m_f64(GRADE_UD(c1,wia)), m_f64(GRADE_UD(wia,c1)));
+            } else {
+              i8* bp; B b01 = m_i8arrv(&bp, 2);
+              GRADE_UD(bp[0]=0; bp[1]=1;, bp[0]=1; bp[1]=0;)
+              B i = GRADE_CAT(c2)(m_f64(0), b01, x);
+              f64* c; B rw = m_f64arrv(&c, 3); c[0]=0; c[1]=c1; c[2]=wia;
+              r = select_c2(m_f64(0), i, num_squeeze(rw));
+            }
+          } else { // xe==el_bit: 2-element lookup table
+            i8* bp; B b01 = m_i8arrv(&bp, 2); bp[0]=0; bp[1]=1;
+            B i = GRADE_CAT(c2)(m_f64(0), w, b01);
+            SGetU(i)
+            r = bit_sel(x, GetU(i,0), GetU(i,1));
+            decG(i);
+          }
+          return r;
+        }
         #if SINGELI
         u8 ze = we>xe? we : xe;
-        if (ze==el_bit) ze = el_i8;
-        if (ze > we) { switch (ze) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; case el_f64:w=toF64Any(w);break; } }
-        if (ze > xe) { switch (ze) { default:UD; case el_i8:x=toI8Any(x);break; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; case el_f64:x=toF64Any(x);break; } }
+        if (ze > we) { switch (ze) { default:UD; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; case el_f64:w=toF64Any(w);break; } }
+        if (ze > xe) { switch (ze) { default:UD; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; case el_f64:x=toF64Any(x);break; } }
         we = ze;
         #else
         if (!elInt(we) | !elInt(xe)) goto gen;
