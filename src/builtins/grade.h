@@ -27,8 +27,8 @@
 //   4-byte branchless binary search, 4-byte output
 // SHOULD support fast character searches
 // Boolean 𝕨 or 𝕩: lookup table (single binary search on boolean 𝕨)
-// Different widths: widen narrower argument
-//   SHOULD narrow wider-type 𝕩 if it isn't much shorter
+// Different widths: generally widen narrower argument
+//   Narrow wider-type 𝕩 instead if it isn't much shorter
 //   SHOULD trim wider-type 𝕨 and possibly narrow
 // Same-width numbers:
 //   Output type based on ≠𝕨
@@ -393,8 +393,10 @@ static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
   return b + POPC(v);
 }
 
-extern B CAT(GRADE_UD(le,ge),c2)(B,B,B);
+#define LE_C2 CAT(GRADE_UD(le,ge),c2)
+extern B LE_C2(B,B,B);
 extern B select_c2(B t, B w, B x);
+extern B mul_c2(B, B, B);
 
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
@@ -421,7 +423,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     B c = IGet(w, 0);
     if (LIKELY(we<el_B & xe<el_B)) {
       decG(w);
-      return CAT(GRADE_UD(le,ge),c2)(m_f64(0), c, x);
+      return LE_C2(m_f64(0), c, x);
     } else {
       SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
       u64* rp; r = m_bitarrc(&rp, x);
@@ -445,7 +447,10 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   }
 
   if (LIKELY(we<el_B & xe<el_B)) {
-    if (elNum(we)) { // number
+    #if SINGELI
+    B mult = bi_N;
+    #endif
+    if (elNum(we)) {
       if (elNum(xe)) {
         if (RARE(we==el_bit | xe==el_bit)) {
           if (we==el_bit) {
@@ -470,10 +475,30 @@ B GRADE_CAT(c2)(B t, B w, B x) {
           return r;
         }
         #if SINGELI
-        u8 ze = we>xe? we : xe;
-        if (ze > we) { switch (ze) { default:UD; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; case el_f64:w=toF64Any(w);break; } }
-        if (ze > xe) { switch (ze) { default:UD; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; case el_f64:x=toF64Any(x);break; } }
-        we = ze;
+        #define WIDEN(E, X) switch (E) { default:UD; case el_i16:X=toI16Any(X);break; case el_i32:X=toI32Any(X);break; case el_f64:X=toF64Any(X);break; }
+        if (xe > we) {
+          if (xia/4 < wia) { // Narrow x
+            assert(el_i8 <=we && we<=el_i32);
+            assert(el_i16<=xe && xe<=el_f64);
+            i32 pre = -1; pre<<=(8<<(we-el_i8))-1;
+            pre = GRADE_UD(pre,-1-pre); // Smallest value of w's type
+            i32 w0 = o2iG(IGetU(w,0));
+            // Saturation is correct except it can move low values past
+            // pre. Post-adjust with mult×r
+            if (w0 == pre) mult = LE_C2(m_f64(0), m_i32(pre), incG(x));
+            // Narrow x with saturating conversion
+            B xn; void *xp = m_tyarrc(&xn, elWidth(we), x, el2t(we));
+            u8 ind = xe<el_f64 ? (we-el_i8)+(xe-el_i16)
+                   : 3 + 2*(we-el_i8) + GRADE_UD(0,1);
+            si_saturate[ind](xp, tyany_ptr(x), xia);
+            decG(x); x = xn;
+          } else {
+            WIDEN(xe, w)
+            we = xe;
+          }
+        }
+        if (we > xe) WIDEN(we, x)
+        #undef WIDEN
         #else
         if (!elInt(we) | !elInt(xe)) goto gen;
         w=toI32Any(w); x=toI32Any(x);
@@ -484,7 +509,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         for (u64 i=0; i<xia; i++) rp[i]=wia;
         goto done;
       }
-    } else { // character
+    } else { // w is character
       if (elNum(xe)) {
         Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
         r=taga(ra); goto done;
@@ -499,6 +524,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1<<31) ? 2 : 3;
     void *rp = m_tyarrc(&r, 1<<rl, x, el2t(el_i8+rl));
     si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp, rl);
+    if (!q_N(mult)) r = mul_c2(m_f64(0), mult, r);
     #else
     i32* rp; r = m_i32arrc(&rp, x);
     i32* wi = tyany_ptr(w);
@@ -536,6 +562,7 @@ done:
   return r;
 }
 #undef GRADE_CHR
+#undef LE_C2
 
 #undef LT
 #undef FOR
