@@ -1,5 +1,5 @@
 include './base'
-def shufHalves{...x} = assert{'shufHalves not supported', show{...x}}
+include './cbqnDefs'
 if (hasarch{'AVX2'}) {
   include './sse'
   include './avx'
@@ -8,14 +8,8 @@ if (hasarch{'AVX2'}) {
 include './mask'
 include 'util/tup'
 
-def for_backwards{vars,begin,end,iter} = {
-  i:u64 = end
-  while (i > begin) {
-    --i
-    iter{i, vars}
-  }
-}
 def for_dir{up} = if (up) for else for_backwards
+
 def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
   assert{n >= vl}
   def end = makelabel{}
@@ -27,8 +21,6 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
   }
   setlabel{end}
 }
-
-def ceil_log2{n:u64} = 64 - clz{n-1}
 
 # Shift as u16, since x86 is missing 8-bit shifts
 def shr16{v:V, n} = V~~(to_el{u16, v} >> n)
@@ -70,13 +62,6 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
   }
 }
 
-def fmt_type{T} = {
-  def w = width{T}
-  merge{quality{T}, if (w==8) '8' else if (w==16) '16' else if (w==32) '32' else '64'}
-}
-def talloc{T, len} = emit{*T, 'TALLOCP', fmt_type{T}, len}
-def tfree{ptr} = emit{void, 'TFREE', ptr}
-
 def getsel{...x} = assert{'shuffling not supported', show{...x}}
 if (hasarch{'AVX2'}) {
   def getsel{h:H & lvec{H, 16, 8}} = {
@@ -103,6 +88,7 @@ def uninterleave{x:V & hasarch{'AVX2'}} = {
 
 def rtypes = tup{i8, i16, i32, f64}
 # Return index of smallest possible result type given max result value
+# (Unused; done in C for now)
 def get_rtype{len} = {
   t:u8 = 0
   def c{T, ...ts} = if (len>maxvalue{T}) { ++t; c{...ts} }
