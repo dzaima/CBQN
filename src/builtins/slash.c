@@ -818,12 +818,12 @@ B slash_c2(B t, B w, B x) {
             bool oo = o>=wv; xi+=d+oo; o-=wv&-oo;
           }
         }
-        goto decX_ret;
+        goto atmW_maybesh;
       }
       #endif
       if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
       else           { BOOL_REP_OVER(wv, xlen) }
-      goto decX_ret;
+      goto atmW_maybesh;
     } else {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
@@ -836,6 +836,8 @@ B slash_c2(B t, B w, B x) {
       #endif
       #undef CASE
     }
+    
+    atmW_maybesh:;
     if (xr > 1) {
       atmW_setsh:;
       usz* rsh = m_shArr(xr)->a;
