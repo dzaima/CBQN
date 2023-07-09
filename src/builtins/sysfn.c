@@ -1226,7 +1226,7 @@ B nKeys_c1(B t, B x) {
   return r.b;
 }
 B nGet_c2(B t, B w, B x) {
-  if (!isNsp(w)) thrM("•ns.Has: 𝕨 must be a namespace");
+  if (!isNsp(w)) thrM("•ns.Get: 𝕨 must be a namespace");
   vfyStr(x, "•ns.Get", "𝕩");
   x = name_normalize(x);
   B r = ns_getNU(w, x, true);
