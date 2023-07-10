@@ -933,10 +933,10 @@ B join_c2(B t, B w, B x) {
     ur rnk0 = RNK(r);
     ShArr* sh0 = shObj(r);
     usz* wsh;
-    if (wr==1 && usedW) {
+    if (wr<=1) {
       wsh = &wia0;
     } else {
-      wsh = SH(w); // when wr>1, shape object won't be disturbed by arr_join_inline
+      wsh = usedW? sh0->a : SH(w); // if usedW, arr_join_inline guarantees returning an array with shape of w if wr>1; otherwise, can just use w
     }
     usz* xsh = SH(x);
     SRNK(r, 0); // otherwise shape allocation failing may break things; leaves shape owned only here
