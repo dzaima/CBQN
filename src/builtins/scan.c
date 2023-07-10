@@ -124,13 +124,13 @@ B shape_c2(B, B, B);
     T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,wv); \
   break; }
 #define MINMAX2(NAME,C,INIT,BIT,BI,ORD) \
-  i32 wv=0; if (q_i32(w)) { wv=w.f; } else { x=taga(cpyF64Arr(x)); xe=el_f64; } \
+  i32 wv=0; if (q_i32(w)) { wv=o2fG(w); } else { x=taga(cpyF64Arr(x)); xe=el_f64; } \
   B r; switch (xe) { default:UD;           \
     case el_bit: if (wv C BI) r=C2(shape,m_f64(ia),w); else return scan_##BIT(x, ia); break; \
     MM2_ICASE(i8 ,NAME,C,I8_##INIT )       \
     MM2_ICASE(i16,NAME,C,I16_##INIT)       \
     MM_CASE(i32,NAME,C,wv)                 \
-    MM_CASE(f64,NAME,C,w.f)                \
+    MM_CASE(f64,NAME,C,o2fG(w))            \
   }                                        \
   decG(x); return FL_SET(r, fl_##ORD);
 SHOULD_INLINE B scan2_min_num(B w, B x, u8 xe, usz ia) { MINMAX2(min,<,MAX,and,1,dsc) }
@@ -220,7 +220,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_ceil ) return scan_max_num(x, xe, ia); // ⌈
     if (rtid==n_ne) { // ≠
       if (!elInt(xe)) goto base;
-      f64 x0 = IGetU(x,0).f;
+      f64 x0 = o2fG(IGetU(x,0));
       if (!q_fbit(x0)) goto base;
       u64* rp; B r = m_bitarrv(&rp, ia);
       bool c = x0;
