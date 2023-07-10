@@ -31,3 +31,11 @@ def cbqn_elType{T & T==u16} = 6
 def cbqn_elType{T & T==u32} = 7
 
 def cbqn_tyArrOffset{} = emit{u64, 'offsetof', 'TyArr', 'a'}
+
+def talloc{T, len} = emit{*T, 'TALLOCP', fmt_type{T}, len}
+def tfree{ptr} = emit{void, 'TFREE', ptr}
+def fmt_type{T} = {
+  def w = match (width{T}) { {_==8}=>'8'; {_==16}=>'16'; {_==32}=>'32'; {_==64}=>'64' }
+  merge{quality{T}, w}
+}
+def fmt_type{T & isptr{T}} = merge{'*',fmt_type{eltype{T}}}

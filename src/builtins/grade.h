@@ -19,15 +19,31 @@
 // SHOULD widen odd cell sizes under 8 bytes in sort and grade
 
 // Bins
+// Length 0 or 1 𝕨: trivial, or comparison
+// Stand-alone 𝕨 sortedness check
+//   SHOULD vectorize sortedness check on lists of numbers
 // Mixed integer and character arguments gives all 0 or ≠𝕨
-// Integers and characters: 4-byte branchless binary search
+// Non-Singeli, integers and characters:
+//   4-byte branchless binary search, 4-byte output
+// SHOULD support fast character searches
+// Boolean 𝕨 or 𝕩: lookup table (single binary search on boolean 𝕨)
+// Different widths: generally widen narrower argument
+//   Narrow wider-type 𝕩 instead if it isn't much shorter
+//   SHOULD trim wider-type 𝕨 and possibly narrow
+// Same-width numbers:
+//   Output type based on ≠𝕨
+//   Short 𝕨: vector binary search (then linear on extra lanes)
+//   1- or 2-byte type, long enough 𝕩: lookup table from ⌈`
+//     Binary gallops to skip long repeated elements of 𝕨
+//     1-byte, no duplicates or few uniques: vector bit-table lookup
+//   General: interleaved branchless binary search
+//   COULD start interleaved search with a vector binary round
 // General case: branching binary search
-// SHOULD implement f64 branchless binary search
-// SHOULD interleave multiple branchless binary searches
-// SHOULD specialize bins on equal types at least
-// SHOULD implement table-based ⍋⍒ for small-range 𝕨
-// SHOULD special-case short 𝕨
+// COULD trim 𝕨 based on range of 𝕩
+// COULD optimize small-range 𝕨 with small-type methods
 // SHOULD partition 𝕩 when 𝕨 is large
+// COULD interpolation search for large 𝕩 and short 𝕨
+// COULD use linear search and galloping for sorted 𝕩
 
 #define GRADE_CAT(N) CAT(GRADE_UD(gradeUp,gradeDown),N)
 #define GRADE_NEG GRADE_UD(,-)
@@ -326,6 +342,62 @@ B GRADE_CAT(c1)(B t, B x) {
 }
 
 
+bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
+  assert(isArr(x) && RNK(x)==1); // TODO extend to >=1
+  usz xia = IA(x);
+  if (xia <= 1) return 1;
+
+  #define CMP(TEST) \
+    for (usz i=1; i<xia; i++) if (TEST) return 0; \
+    return 1;
+  #define CASE(T) case el_##T: { \
+    T* xp = T##any_ptr(x); CMP(xp[i-1] GRADE_UD(>,<) xp[i]) }
+  switch (TI(x,elType)) { default: UD;
+    CASE(i8) CASE(i16) CASE(i32) CASE(f64)
+    CASE(c8) CASE(c16) CASE(c32)
+    case el_bit: {
+      #define HI GRADE_UD(1,0)
+      u64* xp = bitarr_ptr(x);
+      u64 i = bit_find(xp, xia, HI);
+      usz iw = i/64;
+      u64 m = ~(u64)0;
+      u64 d = GRADE_UD(,~)xp[iw] ^ (m<<(i%64));
+      if (iw == xia/64) return (d &~ (m<<(xia%64))) == 0;
+      if (d) return 0;
+      usz o = iw + 1;
+      usz l = xia - 64*o;
+      return (bit_find(xp+o, l, !HI) == l);
+      #undef HI
+    }
+    case el_B: {
+      B* xp = TO_BPTR(x);
+      CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
+    }
+  }
+  #undef CASE
+  #undef CMP
+}
+
+// Location of first 1 (ascending) or 0 (descending), by binary search
+static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
+  u64 c = GRADE_UD(,~)(u64)0;
+  u64 *s = x-1;
+  for (usz l = BIT_N(n)+1, h; (h=l/2)>0; l-=h) {
+    u64* m = s+h; if (!(c LT *m)) s = m;
+  }
+  ++s; // Word containing boundary
+  u64 b = 64*(s-x);
+  if (b >= n) return n;
+  u64 v = GRADE_UD(~,) *s;
+  if (b+63 >= n) v &= ~(u64)0 >> ((-n)%64);
+  return b + POPC(v);
+}
+
+#define LE_C2 CAT(GRADE_UD(le,ge),c2)
+extern B LE_C2(B,B,B);
+extern B select_c2(B t, B w, B x);
+extern B mul_c2(B, B, B);
+
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
@@ -342,51 +414,137 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   
+  B r;
+  if (wia==0 | xia==0) {
+    Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
+    r=taga(ra); goto done;
+  }
+  if (wia==1) {
+    B c = IGet(w, 0);
+    if (LIKELY(we<el_B & xe<el_B)) {
+      decG(w);
+      return LE_C2(m_f64(0), c, x);
+    } else {
+      SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
+      u64* rp; r = m_bitarrc(&rp, x);
+      B* xp = TO_BPTR(x);
+      u64 b = 0;
+      for (usz i = xia; ; ) {
+        i--;
+        b = 2*b + !(compare(xp[i], c) LT 0);
+        if (i%64 == 0) { rp[i/64]=b; if (!i) break; }
+      }
+      dec(c);
+    }
+    goto done;
+  }
   if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
-  i32* rp; B r = m_i32arrc(&rp, x);
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
-  
+  if (CHECK_VALID && !FL_HAS(w,fl)) {
+    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    FL_SET(w, fl);
+  }
+
   if (LIKELY(we<el_B & xe<el_B)) {
-    if (elNum(we)) { // number
+    #if SINGELI
+    B mult = bi_N;
+    #endif
+    if (elNum(we)) {
       if (elNum(xe)) {
+        if (RARE(we==el_bit | xe==el_bit)) {
+          if (we==el_bit) {
+            usz c1 = CAT(bit_boundary,GRADE_UD(up,dn))(bitarr_ptr(w), wia);
+            decG(w); // c1 and wia contain all information in w
+            if (xe==el_bit) {
+              r = bit_sel(x, m_f64(GRADE_UD(c1,wia)), m_f64(GRADE_UD(wia,c1)));
+            } else {
+              i8* bp; B b01 = m_i8arrv(&bp, 2);
+              GRADE_UD(bp[0]=0; bp[1]=1;, bp[0]=1; bp[1]=0;)
+              B i = GRADE_CAT(c2)(m_f64(0), b01, x);
+              f64* c; B rw = m_f64arrv(&c, 3); c[0]=0; c[1]=c1; c[2]=wia;
+              r = select_c2(m_f64(0), i, num_squeeze(rw));
+            }
+          } else { // xe==el_bit: 2-element lookup table
+            i8* bp; B b01 = m_i8arrv(&bp, 2); bp[0]=0; bp[1]=1;
+            B i = GRADE_CAT(c2)(m_f64(0), w, b01);
+            SGetU(i)
+            r = bit_sel(x, GetU(i,0), GetU(i,1));
+            decG(i);
+          }
+          return r;
+        }
+        #if SINGELI
+        #define WIDEN(E, X) switch (E) { default:UD; case el_i16:X=toI16Any(X);break; case el_i32:X=toI32Any(X);break; case el_f64:X=toF64Any(X);break; }
+        if (xe > we) {
+          if (xia/4 < wia) { // Narrow x
+            assert(el_i8 <=we && we<=el_i32);
+            assert(el_i16<=xe && xe<=el_f64);
+            i32 pre = -1; pre<<=(8<<(we-el_i8))-1;
+            pre = GRADE_UD(pre,-1-pre); // Smallest value of w's type
+            i32 w0 = o2iG(IGetU(w,0));
+            // Saturation is correct except it can move low values past
+            // pre. Post-adjust with mult×r
+            if (w0 == pre) mult = LE_C2(m_f64(0), m_i32(pre), incG(x));
+            // Narrow x with saturating conversion
+            B xn; void *xp = m_tyarrc(&xn, elWidth(we), x, el2t(we));
+            u8 ind = xe<el_f64 ? (we-el_i8)+(xe-el_i16)
+                   : 3 + 2*(we-el_i8) + GRADE_UD(0,1);
+            si_saturate[ind](xp, tyany_ptr(x), xia);
+            decG(x); x = xn;
+          } else {
+            WIDEN(xe, w)
+            we = xe;
+          }
+        }
+        if (we > xe) WIDEN(we, x)
+        #undef WIDEN
+        #else
         if (!elInt(we) | !elInt(xe)) goto gen;
         w=toI32Any(w); x=toI32Any(x);
+        #endif
       } else {
+        // TODO pull copy-scalar part out of Reshape
+        i32* rp; r = m_i32arrc(&rp, x);
         for (u64 i=0; i<xia; i++) rp[i]=wia;
         goto done;
       }
-    } else { // character
+    } else { // w is character
       if (elNum(xe)) {
-        Arr* ra=allZeroes(xia); arr_shVec(ra);
-        decG(r); r=taga(ra); goto done;
+        Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
+        r=taga(ra); goto done;
       } else {
+        we = el_c32;
         w=toC32Any(w); x=toC32Any(x);
       }
     }
+
+    #if SINGELI
+    u8 k = elWidthLogBits(we) - 3;
+    u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1<<31) ? 2 : 3;
+    void *rp = m_tyarrc(&r, 1<<rl, x, el2t(el_i8+rl));
+    si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp, rl);
+    if (!q_N(mult)) r = mul_c2(m_f64(0), mult, r);
+    #else
+    i32* rp; r = m_i32arrc(&rp, x);
     i32* wi = tyany_ptr(w);
     i32* xi = tyany_ptr(x);
-    if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if (wi[i] GRADE_UD(>,<) wi[i+1]) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w, fl);
-    }
-    
     for (usz i = 0; i < xia; i++) {
       i32 c = xi[i];
       i32 *s = wi-1;
       for (usz l = wia+1, h; (h=l/2)>0; l-=h) { i32* m = s+h; if (!(c LT *m)) s = m; }
       rp[i] = s - (wi-1);
     }
+    #endif
   } else {
+    #if !SINGELI
     gen:;
+    #endif
+    i32* rp; r = m_i32arrc(&rp, x);
+    
     SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     B* wp = TO_BPTR(w);
-    
-    if (CHECK_VALID && !FL_HAS(w,fl)) {
-      for (i64 i = 0; i < (i64)wia-1; i++) if (compare(wp[i], wp[i+1]) GRADE_UD(>,<) 0) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
-      FL_SET(w, fl);
-    }
     
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x,i);
@@ -404,6 +562,7 @@ done:
   return r;
 }
 #undef GRADE_CHR
+#undef LE_C2
 
 #undef LT
 #undef FOR
