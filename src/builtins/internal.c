@@ -253,7 +253,7 @@ static B unshare(B x) {
       Arr* r = arr_shCopy(m_fillarr0p(xia), x);
       fillarr_setFill(r, unshare(getFillR(x)));
       B* rp = fillarr_ptr(r);
-      B* xp = fillarr_ptr(a(x));
+      B* xp = arr_bptr(x);
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return unshareShape(r);
     }
