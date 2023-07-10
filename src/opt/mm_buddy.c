@@ -106,7 +106,7 @@ NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u
 void tailVerifyFree(void* ptr) {
   u64 filled; u64 ia; Arr* xa = ptr;
   u64 end = mm_size(ptr);
-  switch(PTY(xa)) { default: return;
+  switch(PTY(xa)) { default: goto clear;
     case t_bitarr: filled = BITARR_SZ(ia=PIA(xa)); break;
     case t_i8arr:  filled = TYARR_SZ(I8,  ia=PIA(xa)); break;
     case t_i16arr: filled = TYARR_SZ(I16, ia=PIA(xa)); break;
@@ -123,6 +123,11 @@ void tailVerifyFree(void* ptr) {
   #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end, ia)
   ITER_TAIL(F)
   #undef F
+  
+  clear:;
+  u64 clr = end-8;
+  if (clr>256) clr = 256;
+  memset(ptr+8, 'a', clr);
 }
 
 #endif
