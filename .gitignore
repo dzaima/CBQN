@@ -40,7 +40,7 @@ cbqn-jit.bqn
 
 # other
 /local/
-perf.*
+perf.data*
 
 # clangd
 compile_commands.json
