@@ -541,17 +541,14 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     gen:;
     #endif
     i32* rp; r = m_i32arrc(&rp, x);
-    
-    SGetU(x)
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
-    B* wp = TO_BPTR(w);
-    
+    SGetU(w) SGetU(x)
     for (usz i = 0; i < xia; i++) {
       B c = GetU(x,i);
       usz s = 0, e = wia+1;
       while (e-s > 1) {
         usz m = (s+e) / 2;
-        if (compare(c, wp[m-1]) LT 0) e = m;
+        if (compare(c, GetU(w,m-1)) LT 0) e = m;
         else s = m;
       }
       rp[i] = s;
