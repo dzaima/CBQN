@@ -31,8 +31,9 @@ def get_shufs{step, wv, len} = {
 def get_shuf_data{wv, len} = get_shufs{vcount{sdtype}, wv, len} # [len] byte-selector vectors for wv/sdtype (expanded to wider types by read_shuf_vecs)
 def get_shuf_data{wv} = get_shuf_data{wv, wv}
 
-# all shuffle vectors for 𝕨∊3…7
-def rcsh_vals = slice{basic_rep, 1} # Handle 2 specially
+# all shuffle vectors for 𝕨≤7
+def special_2 = ~hasarch{'AARCH64'} # handle 2 specially on x86-64
+def rcsh_vals = slice{basic_rep, special_2}
 rcsh_offs:*u8 = shiftright{0, scan{+,rcsh_vals}}
 rcsh_data:*i8 = join{join{each{get_shuf_data, rcsh_vals}}}
 
@@ -213,7 +214,7 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
     def specialize{k} = {
       if (wv==k) return{rep_const_shuffle{V, k, *V~~x, *V~~r, n}}
     }
-    specialize{2}
+    if (special_2) specialize{2}
     rep_const_shuffle_any(wv, lb{wT/8}, *i8~~x, *i8~~r, n)
   } else {
     kv := wv / vn
