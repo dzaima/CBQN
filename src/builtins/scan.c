@@ -273,9 +273,10 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
     if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;
+    if (!isF64(w)) goto base;
     
-    if (rtid==n_floor && isF64(w)) return scan2_min_num(w, x, xe, ia); // ⌊
-    if (rtid==n_ceil  && isF64(w)) return scan2_max_num(w, x, xe, ia); // ⌈
+    if (rtid==n_floor) return scan2_min_num(w, x, xe, ia); // ⌊
+    if (rtid==n_ceil ) return scan2_max_num(w, x, xe, ia); // ⌈
     
     if (rtid==n_add) { // +
       if (xe==el_bit) {
@@ -286,7 +287,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
         return wv==0? t : C2(add, w, t);
       }
       
-      if (isF64(w) && elInt(xe)) return scan_plus(o2fG(w), x, xe, ia);
+      if (elInt(xe)) return scan_plus(o2fG(w), x, xe, ia);
     }
     
     if (rtid==n_ne) { // ≠
