@@ -9,6 +9,7 @@
 
 #include <unistd.h>
 #if defined(_WIN32) || defined(_WIN64)
+  #include <windows.h>
   #include "../windows/getline.c"
 #endif
 #include <errno.h>
@@ -1150,6 +1151,26 @@ B tCharN_c1(B t, B x) {
   int n = fgetc(stdin);
   fcntl(0, F_SETFL, 0);
   return n>=0? m_c32(n) : m_f64(0);
+}
+#elif defined(_WIN32) || defined(_WIN64)
+#include <conio.h>
+B tRawMode_c1(B t, B x) {
+  HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+  DWORD dwMode;
+  GetConsoleMode(hIn, &dwMode);
+  if (o2b(x)) dwMode&= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+  else dwMode|= ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+  SetConsoleMode(hIn, dwMode);
+  return x;
+}
+B tCharN_c1(B t, B x) {
+  dec(x);
+  if (_kbhit()) {
+    int n = _getch();
+    return n>=0? m_c32(n) : m_f64(0);
+  } else {
+    return m_f64(0);
+  }
 }
 #else
 B tRawMode_c1(B t, B x) { thrM("•term.RawMode not available"); }
