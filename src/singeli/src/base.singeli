@@ -160,6 +160,9 @@ def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
+def pdep{...x} = assert{'pdep not supported', show{...x}}
+def pext{...x} = assert{'pext not supported', show{...x}}
+def popcRand{...x} = assert{'popcRand not supported', show{...x}}
 def andnz{...x} = assert{'andnz not supported', show{...x}}
 def topBlend{...x} = assert{'topBlend not supported', show{...x}}
 def topMask{...x} = assert{'topMask not supported', show{...x}}

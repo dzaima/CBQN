@@ -4,7 +4,7 @@
 // Boolean 𝕨 (Where/Compress) general case based on result type width
 // COULD use AVX-512
 // Size 1: pext, or bit-at-a-time
-//   SHOULD emulate pext if unavailable
+//   Emulate pext if unavailable
 //   COULD return boolean result from Where
 // Size 8, 16: pdep/pext, or branchless
 //   SHOULD try vector lookup-shuffle if unavailable or old AMD
@@ -70,15 +70,18 @@
     #define _pdep_u64 vg_pdep_u64
   #else
     #define vg_loadLUT64(p, i) p[i]
-    #define rand_popc64(X) POPC(X)
   #endif
   
   static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
   static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
-  #if SINGELI_AVX2
-    #define SINGELI_FILE slash
-    #include "../utils/includeSingeli.h"
-  #endif
+#endif
+#if !USE_VALGRIND
+  #define rand_popc64(X) POPC(X)
+#endif
+
+#if SINGELI
+  #define SINGELI_FILE slash
+  #include "../utils/includeSingeli.h"
 #endif
 
 #if SINGELI_AVX2 || SINGELI_NEON
@@ -437,13 +440,17 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
-      #if defined(__BMI2__)
+      #if defined(__BMI2__) || SINGELI
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
       for (usz i=0; i<BIT_N(wia); i++) {
         u64 wv = wp[i];
+        #if defined(__BMI2__)
         u64 v = _pext_u64(xp[i], wv);
+        #else
+        u64 v = si_pext_u64(xp[i], wv);
+        #endif
         u64 c = rand_popc64(wv);
         cw|= v<<ro;
         u64 ro2 = ro+c;
