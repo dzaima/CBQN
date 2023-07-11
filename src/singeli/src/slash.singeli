@@ -127,4 +127,6 @@ fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
   extract{x, 0}
 }
 
+fn pext{T & hasarch{'BMI2'}}(x:T, m:T) = pext{x, m}
+
 export{'si_pext_u64', pext{u64}}
