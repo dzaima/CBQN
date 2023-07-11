@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #if defined(_WIN32) || defined(_WIN64)
+  #include <direct.h>
   #include "../windows/realpath.c"
 #endif
 
@@ -338,7 +339,7 @@ void mmap_init() { }
 bool dir_create(B path) {
   char* p = toCStr(path);
   #if defined(_WIN32) || defined(_WIN64)
-    bool r = 0;
+    bool r = _mkdir(p) == 0;
   #else
     bool r = mkdir(p, S_IRWXU) == 0;
   #endif
