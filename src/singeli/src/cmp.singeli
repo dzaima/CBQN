@@ -13,11 +13,11 @@ if (hasarch{'AVX2'}) {
 include './bitops'
 
 
-def fillbits{dst:*u64, len:(Size), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
-def fillbits{dst:*u64, len:(Size), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
+def fillbits{dst:*u64, len:(ux), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
+def fillbits{dst:*u64, len:(ux), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
 def cmp_err{x} = { emit{void, 'cmp_err'}; return{}; }
 
-fn cmpIX(dst:*u64, len:Size, x:u64, v:u1) : void = {
+fn cmpIX(dst:*u64, len:ux, x:u64, v:u1) : void = {
   nan:u1 = q_f64{x}
   if (~(nan | q_chr{x})) cmp_err{x}
   fillbits{dst, len, v&~nan, x}
@@ -69,11 +69,11 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
 
 
 
-def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
-  xi:Size = 0
-  ri:Size = 0
+def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(ux)} = {
+  xi:ux = 0
+  ri:ux = 0
   def bulk = vcount{VT}*unr
-  am:Size = cdiv{len,bulk}
+  am:ux = cdiv{len,bulk}
   assert{am>0}
   while (ri < am) {
     r:u64 = 0
@@ -87,26 +87,26 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
     ri+= 1
   }
 }
-fn aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {
+fn aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= *VT~~xr; xs:= *eltype{VT}~~xr
   any2bit{VT, unr, op, load{ws,.}, load{wv,.}, load{xs,.}, load{xv,.}, dst, len}
 }
 
-fn as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:Size) : void = {
+fn as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:ux) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= VT**pathAS{dst, len, eltype{VT}, op, x}
   any2bit{VT, unr, op, load{ws,.}, load{wv,.}, {i}=>x, {i}=>xv, dst, len}
 }
 
-fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {
+fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
   @forNZ (dst, w in *u64~~wr, x in *u64~~xr over cdiv{len,64}) dst = bitop{w,x}
 }
 
-fn not(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }
-fn cpy(dst:*u64, x:*u64, len:Size) : void = { am:=cdiv{len,64}; emit{void, 'memcpy', dst, x, am*8} }
+fn not(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }
+fn cpy(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'memcpy', dst, x, am*8} }
 
-fn bitAS{op}(dst:*u64, wr:*void, x:u64, len:Size) : void = { # show{'bitAS'}
+fn bitAS{op}(dst:*u64, wr:*void, x:u64, len:ux) : void = { # show{'bitAS'}
   xf:f64 = interp_f64{x}
   r0:u1 = op{0,xf}
   r1:u1 = op{1,xf}

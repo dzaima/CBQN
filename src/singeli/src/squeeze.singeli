@@ -35,7 +35,7 @@ def cvtNarrow{T, x:X & width{T}< elwidth{X}} = narrow{T, x}
 def cvtWiden{T, x:X & elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}
 def cvtWiden{T, x:X & elwidth{T}> elwidth{X}} = widen{T, x}
 
-fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
+fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   assert{len>0}
   def bulk = vw / width{X}
   def XV = [bulk]X
@@ -79,7 +79,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
       }
       0
     } else { # i16, i32, f64
-      def case_B = makeOptBranch{B, tup{Size}, {iCont} => {
+      def case_B = makeOptBranch{B, tup{ux}, {iCont} => {
         def XU = [bulk]u64
         @maskedLoop{bulk, iCont}(xv in tup{XV,xp}, M in 'm' over len) {
           v:= XU ~~ xv

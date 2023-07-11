@@ -13,8 +13,6 @@ if (hasarch{'AVX2'}) {
 include './mask'
 include './vecfold'
 
-def ctzi{x} = promote{u64, ctz{x}}  # Count trailing zeros, as index
-
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
   def args = undef{M{...each{tupsel{0, .}, v1}}}
@@ -213,7 +211,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
       } else {
         # Add values to the table and filter m
         if (rbit) rv = m
-        im:= i0 + ctzi{m}
+        im:= i0 + ctz{m}
         xi:= load{x, im}
         settab1{xi, im}
         if ((m&(m-1)) != 0) { # More bits than one
@@ -225,7 +223,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
           if (rbit) rv&= e | -m # Don't remove first bit
           m&= e
           while (m != 0) {
-            im:= i0 + ctzi{m}
+            im:= i0 + ctz{m}
             new:= settab{uk, load{x, im}, im}
             m1:= m-1;  m&= m1         # Clear low bit
             if (rbit) rv&= m1 | new   # Clear if not new

@@ -162,7 +162,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
   # Convert to bit table
   def no_bittab = makelabel{}
   def nb = 256/vl
-  nu:u8 = 0; def addu{b} = { nu+=popc{b}; b } # Number of uniques
+  nu:u8 = 0; def addu{b} = { nu+=cast_i{u8,popc{b}}; b } # Number of uniques
   vb := U~~make{[nb](ty_u{vl}),
     @collect (t in *V~~t0 over nb) addu{homMask{t > V**0}}
   }
@@ -235,7 +235,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def lt = if (up) <; else >
   # Number of steps
   log := ceil_log2{wn+1}
-  gap := 1<<log - cast_i{u8, wn}
+  gap := 1<<log - wn
   # Fill with minimum value at the beginning
   def pre = (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
@@ -263,7 +263,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def selw = ms{wv}{0}; def selw1 = if (ex>=1) ms{wv}{1} else 'undef'
   def selw2 = if (ex>=2) each{ms{wv2}, iota{2}} else 'undef'
   # Offset at end
-  off := U~~V**i8~~(gap - 1)
+  off := U~~V**cast_i{i8, gap-1}
   # Midpoint bits for each step
   def lowbits = bb{copy{isub,isub}}
   bits := each{{j} => U**(lowbits << j), iota{lstep}}
@@ -348,7 +348,7 @@ fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
   # initializing the table (constant, much higher for i16)
   } else if (T==i8 and xn>=32 and (xn>=512 or xn >= wn>>6 + 32)) {
     lookup{0}
-  } else if (T==i16 and xn>=512 and (xn>=1<<14 or xn >= wn>>6 + (u64~~3<<(12+rty))/promote{u64,ceil_log2{wn}+2})) {
+  } else if (T==i16 and xn>=512 and (xn>=1<<14 or xn >= wn>>6 + (u64~~3<<(12+rty))/(ceil_log2{wn}+2))) {
     lookup{0}
   } else {
     bin_search_branchless{...param, rty}

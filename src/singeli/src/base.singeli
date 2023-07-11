@@ -2,7 +2,7 @@ include 'skin/c'
 include 'arch/c'
 include 'util/kind'
 
-def Size = u64
+def ux = u64
 config usz = u32
 
 def same = is
@@ -38,12 +38,12 @@ def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 # more arith
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
 def cdiv{a,b & knum{a} & knum{b}} = ((a+b-1)/b)>>0
-def popc{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_popcountll', x}
-def popc{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_popcount', x}
-def ctz{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_ctzll', x}
-def ctz{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_ctz', x}
-def clz{x:T & isint{T} & width{T}==64} = emit{u8, '__builtin_clzll', x}
-def clz{x:T & isint{T} & width{T}<=32} = emit{u8, '__builtin_clz', x}
+def popc{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_popcountll', x}
+def popc{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_popcount', x}
+def ctz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_ctzll', x}
+def ctz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_ctz', x}
+def clz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_clzll', x}
+def clz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_clz', x}
 # count-leading-zeros complement, less type-dependent
 def clzc{x:T & isint{T} & width{T}==64} = 64-clz{x}
 def clzc{x:T & isint{T} & width{T}<=32} = 32-clz{x}
@@ -244,14 +244,14 @@ def unroll{vars,begin,end,iter & knum{begin} & knum{end}} = {
   f{begin,end}
 }
 def for{vars,begin,end,iter} = {
-  i:u64 = begin
+  i:ux = begin
   while (i < end) {
     iter{i, vars}
     ++i
   }
 }
 def forNZ{vars,begin,end,iter} = {
-  i:u64 = begin
+  i:ux = begin
   assert{i!=end}
   while (i < end) {
     iter{i, vars}
@@ -259,14 +259,14 @@ def forNZ{vars,begin,end,iter} = {
   }
 }
 def for_backwards{vars,begin,end,iter} = {
-  i:u64 = end
+  i:ux = end
   while (i > begin) {
     --i
     iter{i, vars}
   }
 }
 def forUnroll{exp,unr}{vars,begin,end,iter} = {
-  i:u64 = begin
+  i:ux = begin
   while ((i+unr) <= end) {
     iter{each{{j}=>i+j, iota{unr}}, vars}
     i+= unr

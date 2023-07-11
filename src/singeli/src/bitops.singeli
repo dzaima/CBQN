@@ -1,26 +1,26 @@
 def ones{T, n} = (cast{T,1}<<cast{T,n}) - 1
 
-def b_get{x:*u64, n:(Size)} = {
+def b_get{x:*u64, n:(ux)} = {
   ((load{x,n>>6}>>(n&63)) & 1) != 0
 }
 
-def b_getBatchLo{sz, x:*u64, n:(Size) & sz==2} = (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2})
-def b_getBatchLo{sz, x:*u64, n:(Size) & sz==4} = (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4})
-def b_getBatchLo{sz, x:*u64, n:(Size) & sz>=8} = load{*ty_u{sz}~~x, n}
+def b_getBatchLo{sz, x:*u64, n:(ux) & sz==2} = (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2})
+def b_getBatchLo{sz, x:*u64, n:(ux) & sz==4} = (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4})
+def b_getBatchLo{sz, x:*u64, n:(ux) & sz>=8} = load{*ty_u{sz}~~x, n}
 
-def b_getBatch{sz, x:*u64, n:(Size) & sz==2} = b_getBatchLo{sz, x, n} & 3
-def b_getBatch{sz, x:*u64, n:(Size) & sz==4} = b_getBatchLo{sz, x, n} & 15
-def b_getBatch{sz, x:*u64, n:(Size) & sz>=8} = load{*ty_u{sz}~~x, n}
+def b_getBatch{sz, x:*u64, n:(ux) & sz==2} = b_getBatchLo{sz, x, n} & 3
+def b_getBatch{sz, x:*u64, n:(ux) & sz==4} = b_getBatchLo{sz, x, n} & 15
+def b_getBatch{sz, x:*u64, n:(ux) & sz>=8} = load{*ty_u{sz}~~x, n}
 
 
-def b_set{x:*u64, n:(Size), v:u1} = {
+def b_set{x:*u64, n:(ux), v:u1} = {
   m:u64 = cast{u64,1}<<(n&63)
   p:u64 = load{x,n>>6}
   if (v) store{x,n>>6,p |  m}
   else   store{x,n>>6,p & ~m}
 }
 
-def b_setBatch{sz, x:*u64, n:(Size), v} = {
+def b_setBatch{sz, x:*u64, n:(ux), v} = {
   vc:u64 = promote{u64,v}
   am:u64 = 64/sz
   w:u64 = load{x,n/am}
@@ -30,7 +30,7 @@ def b_setBatch{sz, x:*u64, n:(Size), v} = {
   store{x, n/am, w}
 }
 
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
+def b_setBatch{sz, x:*u64, n:(ux), v & sz==4} = {
   x8:= *u8 ~~ x
   
   #w:u64 = cast_i{u64, load{x8,n/2}}
@@ -49,10 +49,10 @@ def b_setBatch{sz, x:*u64, n:(Size), v & sz==4} = {
   
   store{x8, n/2, cast_i{u8,w}}
 }
-def b_setBatch{sz, x:*u64, n:(Size), v & sz== 8} = store{*u8  ~~ x, n, cast_i{u8, v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==16} = store{*u16 ~~ x, n, cast_i{u16,v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==32} = store{*u32 ~~ x, n, cast_i{u32,v}}
-def b_setBatch{sz, x:*u64, n:(Size), v & sz==64} = store{        x, n, cast_i{u64,v}}
+def b_setBatch{sz, x:*u64, n:(ux), v & sz== 8} = store{*u8  ~~ x, n, cast_i{u8, v}}
+def b_setBatch{sz, x:*u64, n:(ux), v & sz==16} = store{*u16 ~~ x, n, cast_i{u16,v}}
+def b_setBatch{sz, x:*u64, n:(ux), v & sz==32} = store{*u32 ~~ x, n, cast_i{u32,v}}
+def b_setBatch{sz, x:*u64, n:(ux), v & sz==64} = store{        x, n, cast_i{u64,v}}
 
 def spreadBits{T==[32]u8, a:u32} = {
   def idxs = iota{32}
@@ -78,7 +78,7 @@ def spreadBits{T, a & vcount{T} <= elwidth{T} & quality{eltype{T}}=='u'} = {
   b == (b & T ~~ re_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
-def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element being either all 0s or 1s
+def loadBatchBit{T, x:*u64, n:(ux)} = { # vector with type T with each element being either all 0s or 1s
   spreadBits{T, b_getBatchLo{vcount{T}, x, n}}
 }
 
