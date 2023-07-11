@@ -110,11 +110,11 @@ fn pext{T}(x:T, m:T) {
 
 fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
   def num = lb{width{T}}
-  def V = [2]T
-  m := V**ms
-  x := V**xs & m
+  def vec{s} = make{[2]T, s, 0}
+  m := vec{ms}
+  x := vec{xs} & m
   d := ~m << 1           # One bit of the position difference at x
-  c := V**(1<<64-1)
+  c := vec{1<<64-1}
   @unroll (i to num) {
     def sh = 1 << i
     def shift_at{v, s} = { v = (v&~s) | (v&s)>>sh }

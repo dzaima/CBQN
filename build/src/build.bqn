@@ -216,7 +216,7 @@ po ← { # parsed options
   
   has ⇐ Lowercase GetOpt "has"
   has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊has)/⋈"bmi2"
-  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"slow-pdep"
+  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
   {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
   
   avx2 ⇐ (arch≡"x86-64") ∧ singeli ∧ native ∨ ⊑"avx2"<⊸∊has
@@ -672,7 +672,7 @@ cachedBin‿linkerCache ← {
     
     singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩∾{
       po.native? ⟨⟩;
-      "-a" ⋈ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch) ∾ ∾ ','⊸∾¨ Uppercase ∊⟜"avx2"‿"bmi2"⊸/po.has
+      "-a" ⋈ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch) ∾ ∾ ','⊸∾¨ Uppercase ∊⟜"avx2"‿"bmi2"‿"pclmul"⊸/po.has
     }
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
