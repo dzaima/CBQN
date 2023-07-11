@@ -2,6 +2,12 @@ include './base'
 if (hasarch{'BMI2'}) {
   include './bmi2'
 }
+if (hasarch{'PCLMUL'}) {
+  include './sse'  # PCLMUL implies SSE4.2
+  def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
+} else {
+  def clmul{...x} = assert{'clmul not supported', show{...x}}
+}
 include 'util/tup'
 
 def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
@@ -100,6 +106,25 @@ fn pext{T}(x:T, m:T) {
   def s = 1<<g - 1
   def gr{sh} = (b & mod{s<<sh}) >> (o>>(sh-g) & s)
   fold{|, b&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
+}
+
+fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
+  def num = lb{width{T}}
+  def V = [2]T
+  m := V**ms
+  x := V**xs & m
+  d := ~m << 1           # One bit of the position difference at x
+  c := V**(1<<64-1)
+  @unroll (i to num) {
+    def sh = 1 << i
+    def shift_at{v, s} = { v = (v&~s) | (v&s)>>sh }
+    p := clmul{d, c, 0}  # xor-scan
+    d = d &~ p           # Remove even bits
+    p &= m
+    shift_at{m, p}
+    shift_at{x, p}
+  }
+  extract{x, 0}
 }
 
 export{'si_pext_u64', pext{u64}}
