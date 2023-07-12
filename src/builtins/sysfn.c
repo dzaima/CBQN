@@ -603,7 +603,7 @@ B rand_subset_c2(B t, B w, B x) {
     for (u64 xt=xi/4; xt>=(u64)wi; xt>>=1) sh++;
     u64 sz = ((xi-1)>>sh)+1 + wi;
     TALLOC(i32, hash, sz);
-    for (u64 i = 0; i < sz; i++) hash[i] = xi;
+    FILL_TO(hash, el_i32, 0, x, sz);
     for (i32 i = xi-wi; i < xi; i++) {
       i32 j = wy2u0k(wyrand(&seed), i+1);
       u64 p = (u64)j >> sh;

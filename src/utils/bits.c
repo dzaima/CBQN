@@ -35,13 +35,8 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
         case el_f64: goto t_f64;
       }
       t_bit:
-        if (f0) {
-          if (f1) { Arr* a = allOnes(ia); arr_shCopy(a, b); r = taga(a); goto dec_ret; }
-          else return bit_negate(b);
-        } else {
-          if (f1) return b;
-          else { Arr* a = allZeroes(ia); arr_shCopy(a, b); r = taga(a); goto dec_ret; }
-        }
+        if (f0) return f1? i64EachDec(1, b) : bit_negate(b);
+        else    return f1? b : i64EachDec(0, b);
       t_i8:  type=t_i8arr;  width=0; e0i=( u8)( i8)f0; e1i=( u8)( i8)f1; goto sel;
       t_i16: type=t_i16arr; width=1; e0i=(u16)(i16)f0; e1i=(u16)(i16)f1; goto sel;
       t_i32: type=t_i32arr; width=2; e0i=(u32)(i32)f0; e1i=(u32)(i32)f1; goto sel;

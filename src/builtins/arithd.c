@@ -187,7 +187,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     if (q_i32(w)) {
       i32 wi32 = o2iG(w);
       if (wi32>0 && (wi32&(wi32-1))==0) {
-        if (wi32==1) { Arr* ra=allZeroes(IA(x)); arr_shCopy(ra, x); r = taga(ra); decG(x); return r; }
+        if (wi32==1) return i64EachDec(0, x);
         if (xe==el_bit) return x; // if n>1 (true from the above), 0‿1 ≡ (2⋆n)|0‿1
         u8 elw = elWidth(xe);
         u32 mask0 = (u32)wi32;

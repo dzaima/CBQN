@@ -124,6 +124,49 @@ static void fill_words(void* rp, u64 v, u64 bytes) {
   for (usz i=0; i<wds; i++) p[i] = v;
   if (ext) memcpy(p+wds, &v, ext);
 }
+
+
+NOINLINE B i64EachDec(i64 v, B x) {
+  B r = taga(arr_shCopy(reshape_one(IA(x), m_f64(v)), x));
+  decG(x);
+  return r;
+}
+
+NOINLINE Arr* reshape_one(usz nia, B x) {
+  Arr* r;
+  #define FILL(E,T,V) T* rp; r = m_##E##arrp(&rp,nia); fill_words(rp, V, (u64)nia*sizeof(T));
+  if (isF64(x)) {
+    i32 n = (i32)x.f;
+    if (RARE(n!=x.f)) {
+      FILL(f64,f64,x.u)
+    } else if (n==(i8)n) { // memset can be faster than writing words
+      u8 b = n;
+      void* rp; u64 nb;
+      if (b <= 1) { u64* rp0; r = m_bitarrp(&rp0,nia); rp=rp0; nb = 8*BIT_N(nia); b=-n; }
+      else        { i8*  rp0; r = m_i8arrp (&rp0,nia); rp=rp0; nb = nia; }
+      memset(rp, b, nb);
+    } else {
+      if(n==(i16)n)  { FILL(i16,i16,(u16)n*0x0001000100010001U) }
+      else           { FILL(i32,i32,(u32)n*0x0000000100000001U) }
+    }
+  } else if (isC32(x)) {
+    u32 c = o2cG(x);
+    if      (c==(u8 )c) { u8* rp; r = m_c8arrp(&rp,nia); memset(rp, c, nia); }
+    else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001U) }
+    else                { FILL(c32,u32,c*0x0000000100000001U) }
+  } else {
+    incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
+    B rf = asFill(x);
+    r = m_fillarrp(nia);
+    if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
+    else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
+    fillarr_setFill(r, rf);
+    NOGC_E;
+  }
+  #undef FILL
+  return r;
+}
+
 B shape_c2(B t, B w, B x) {
   usz xia = isArr(x)? IA(x) : 1;
   usz nia = 1;
@@ -282,37 +325,8 @@ B shape_c2(B t, B w, B x) {
       }
     }
   } else {
-    unit:
-    #define FILL(E,T,V) T* rp; r = m_##E##arrp(&rp,nia); fill_words(rp, V, (u64)nia*sizeof(T));
-    if (isF64(x)) {
-      i32 n = (i32)x.f;
-      if (RARE(n!=x.f)) {
-        FILL(f64,f64,x.u)
-      } else if (n==(i8)n) { // memset can be faster than writing words
-        u8 b = n;
-        i8* rp; u64 nb = nia;
-        if (b <= 1)    { r = m_bitarrp((u64**)&rp,nia); nb = 8*BIT_N(nia); b=-b; }
-        else           { r = m_i8arrp (       &rp,nia); }
-        memset(rp, b, nb);
-      } else {
-        if(n==(i16)n)  { FILL(i16,i16,(u16)n*0x0001000100010001U) }
-        else           { FILL(i32,i32,(u32)n*0x0000000100000001U) }
-      }
-    } else if (isC32(x)) {
-      u32 c = o2cG(x);
-      if      (c==(u8 )c) { u8* rp; r = m_c8arrp(&rp,nia); memset(rp, c, nia); }
-      else if (c==(u16)c) { FILL(c16,u16,c*0x0001000100010001U) }
-      else                { FILL(c32,u32,c*0x0000000100000001U) }
-    } else {
-      incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
-      B rf = asFill(x);
-      r = m_fillarrp(nia);
-      if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
-      else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
-      fillarr_setFill(r, rf);
-      NOGC_E;
-    }
-    #undef FILL
+    unit:;
+    r = reshape_one(nia, x);
   }
   return taga(arr_shSetUO(r,nr,sh));
 }

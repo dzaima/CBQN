@@ -85,9 +85,7 @@ NOINLINE B list_range(B x) {
     ud_rec(rp, 0, xia, pos, sh);
     fillarr_setFill(r, incG(rp[0]));
   } else {
-    i32* fp;
-    fillarr_setFill(r, m_i32arrv(&fp, xia));
-    for (usz i = 0; i < xia; i++) fp[i] = 0;
+    fillarr_setFill(r, taga(arr_shVec(allZeroes(xia))));
   }
   return taga(r);
 }

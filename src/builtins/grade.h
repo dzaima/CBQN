@@ -414,11 +414,9 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   u8 we = TI(w,elType); usz wia = IA(w);
   u8 xe = TI(x,elType); usz xia = IA(x);
   
-  B r;
-  if (wia==0 | xia==0) {
-    Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
-    r=taga(ra); goto done;
-  }
+  B r; Arr* ra;
+  
+  if (wia==0 | xia==0) goto zeroes_done;
   if (wia==1) {
     B c = IGet(w, 0);
     if (LIKELY(we<el_B & xe<el_B)) {
@@ -504,19 +502,14 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         w=toI32Any(w); x=toI32Any(x);
         #endif
       } else {
-        // TODO pull copy-scalar part out of Reshape
-        i32* rp; r = m_i32arrc(&rp, x);
-        for (u64 i=0; i<xia; i++) rp[i]=wia;
-        goto done;
+        ra = reshape_one(xia, m_f64(wia));
+        goto copysh_done;
       }
     } else { // w is character
-      if (elNum(xe)) {
-        Arr* ra=allZeroes(xia); arr_shCopy(ra, x);
-        r=taga(ra); goto done;
-      } else {
-        we = el_c32;
-        w=toC32Any(w); x=toC32Any(x);
-      }
+      if (elNum(xe)) goto zeroes_done;
+      
+      we = el_c32;
+      w=toC32Any(w); x=toC32Any(x);
     }
 
     #if SINGELI
@@ -554,9 +547,17 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       rp[i] = s;
     }
   }
-done:
+  
+  done:
   decG(w);decG(x);
   return r;
+  
+  zeroes_done:;
+  ra = allZeroes(xia);
+  
+  copysh_done:;
+  r = taga(arr_shCopy(ra, x));
+  goto done;
 }
 #undef GRADE_CHR
 #undef LE_C2

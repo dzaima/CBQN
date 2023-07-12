@@ -304,9 +304,9 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     
     if (xe==el_bit && q_bit(w)) {
       // ⌊ & ⌈ handled above
-      if (rtid==n_or               ) { if (!o2bG(w)) return scan_or(x, ia);  B r = taga(arr_shVec(allOnes  (ia))); decG(x); return r; } // ∨
-      if (rtid==n_and | rtid==n_mul) { if ( o2bG(w)) return scan_and(x, ia); B r = taga(arr_shVec(allZeroes(ia))); decG(x); return r; } // ∧×
-      if (rtid==n_lt)                                return scan_lt(x, bitx(w), ia); // <
+      if (rtid==n_or               ) return !o2bG(w)? scan_or(x, ia)  : i64EachDec(1, x); // ∨
+      if (rtid==n_and | rtid==n_mul) return  o2bG(w)? scan_and(x, ia) : i64EachDec(0, x); // ∧×
+      if (rtid==n_lt)                return scan_lt(x, bitx(w), ia); // <
     }
   }
   base:;

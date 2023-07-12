@@ -329,14 +329,14 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         rt = ffi_type_pointer;
       } else { // largely copy-pasted from `case '{':`
         BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_starr, n+1);
-        for (int i = 0; i < n; i++) rp[i] = e;
+        PLAINLOOP for (int i = 0; i < n; i++) rp[i] = e;
         incBy(e.o, n-1);
         rp[n].structData = NULL;
         
         TAlloc* ao = ARBOBJ(sizeof(ffi_type*) * (n+1));
         rp[n].structData = ao;
         ffi_type** els = rt.elements = (ffi_type**) ao->data;
-        for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
+        PLAINLOOP for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
         els[n] = NULL;
       
         rt.type = FFI_TYPE_STRUCT;
@@ -344,7 +344,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         TALLOC(size_t, offsets, n);
         if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("FFI: Failed getting array offsets");
         if (rt.size>=U16_MAX) thrM("FFI: Array too large; limit is 65534 bytes");
-        for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
+        PLAINLOOP for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
         c(BQNFFIType, ro)->structSize = rt.size;
         TFREE(offsets);
       }
@@ -415,7 +415,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       TAlloc* ao = ARBOBJ(sizeof(ffi_type*) * (n+1));
       rp[n].structData = ao;
       ffi_type** els = rt.elements = (ffi_type**) ao->data;
-      for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
+      PLAINLOOP for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
       els[n] = NULL;
       TSFREE(es);
       rt.type = FFI_TYPE_STRUCT;
@@ -423,7 +423,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       TALLOC(size_t, offsets, n);
       if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("FFI: Failed getting struct offsets");
       if (rt.size>=U16_MAX) thrM("FFI: Struct too large; limit is 65534 bytes");
-      for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
+      PLAINLOOP for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
       c(BQNFFIType, ro)->structSize = rt.size;
       TFREE(offsets);
       break;
@@ -919,7 +919,7 @@ B ffiload_c2(B t, B w, B x) {
     if (sz<16) sz = 16;
     TAlloc* argsRaw = ARBOBJ(sz);
     ffi_type** argsRawArr = (ffi_type**)argsRaw->data;
-    for (usz i = 0; i < argn; i++) argsRawArr[i] = &args[i+1].t;
+    PLAINLOOP for (usz i = 0; i < argn; i++) argsRawArr[i] = &args[i+1].t;
     // for (usz i = 0; i < argn; i++) {
     //   ffi_type c = *argsRawArr[i];
     //   printf("%zu %d %d %p\n", c.size, c.alignment, c.type, c.elements);

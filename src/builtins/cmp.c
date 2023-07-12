@@ -3,9 +3,7 @@
 #include "../utils/calls.h"
 
 static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
-  u64 x = 0-(u64)v;
-  u64 am = (sz+63)/64; assert(am>0);
-  for (usz i = 0; i < am; i++) dst[i] = x;
+  memset((u8*)dst, v?0xff:0, BIT_N(sz)*8);
 }
 static NOINLINE void fillBitsDec(u64* dst, u64 sz, bool v, u64 x) {
   dec(b(x));

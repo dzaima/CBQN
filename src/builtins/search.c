@@ -218,8 +218,7 @@ B indexOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia==0 || xia==0) {
-      B r=taga(arr_shCopy(allZeroes(xia), x));
-      decG(w); decG(x); return r;
+      decG(w); return i64EachDec(0, x);
     }
     
     if (elNum(we) && elNum(xe)) { tyEls:
@@ -303,8 +302,7 @@ B memberOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia==0 || xia==0) {
-      r=taga(arr_shCopy(allZeroes(wia), w));
-      decG(w); goto dec_x;
+      decG(x); return i64EachDec(0, w);
     }
     
     if (elNum(we) && elNum(xe)) { tyEls:

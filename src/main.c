@@ -164,7 +164,7 @@ static NOINLINE i64 readInt(char** p) {
   static B sysvalNames, sysvalNamesNorm;
   
   NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
-    for (int i = s; i < e; i++) cols[i] = col;
+    PLAINLOOP for (int i = s; i < e; i++) cols[i] = col;
   }
   static bool chr_nl(u32 c) { return c==10 || c==13; }
   static bool chr_dig(u32 c) { return c>='0' && c<='9'; }
