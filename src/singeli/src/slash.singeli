@@ -14,6 +14,7 @@ if (hasarch{'AVX2'}) {
   include './avx'
   include './avx2'
 }
+include './mask'
 include 'util/tup'
 
 def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
@@ -70,7 +71,37 @@ export{'bmipopc_1slash16', slash1{comp16, i16, 0x0003000200010000, 0x00040004000
 itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
 i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
 
-fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64) : void = {
+# Modifies the input variable r
+# Assumes iter{} will increment r, by at most write_len
+def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
+  assert{isreg{r}}; assert{begin==0}
+  def T = eltype{type{r}}; def tw = width{T}
+  def ov = write_len-1
+  buf := emit{*T, 'alloca', 2*(ov+1)*width{T}/8}
+  r0 := r
+  end := r + sum - ov
+  i:u64 = 0; buf_used:u1 = 0
+  def restart = setlabel{}
+  while (r < end) {
+    iter{i, vars}
+    ++i
+  }
+  if (not buf_used) {
+    end += buf - r + ov
+    if (buf < end) {
+      r0 = r
+      r = buf
+      buf_used = 1; goto{restart}
+    }
+  } else {
+    def vc = 256/tw;
+    def R = [vc]T
+    if (ov>vc and end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+    homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
+  }
+}
+
+fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
   expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}
@@ -83,7 +114,7 @@ fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64) : void = {
     store{*V~~r, 0, sel{V, load{*V~~x,i}, s}}
     r+= pc
   }
-  @for (w in *u8~~wp over i to cdiv{l,8}) {
+  @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
     if (tw==32) {
       step{w, i}
     } else {
