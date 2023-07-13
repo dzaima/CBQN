@@ -67,41 +67,35 @@ export{'bmipopc_1slash8', slash1{comp8, i8, 0x0706050403020100, 0x08080808080808
 export{'bmipopc_1slash16', slash1{comp16, i16, 0x0003000200010000, 0x0004000400040004}}
 }
 
-itab:*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
-
-fn compress32{T==i32}(w:*u64, x:*T, r:*T, l:u64) : void = {
-  expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}}}}
-  def V = [8]i32
-  @for (w in *u8~~w, x in *V~~x over i to cdiv{l,8}) {
-    pc := popc{w}
-    ind := load{itab, w} # pext{base{256,iota{8}}, pdep{promote{u64, w}, base{256,8**1}}*255}
-    s := sel{[16]i8, V~~[4]u64**ind, expander}
-    store{*V~~r, 0, sel{V, x, s}}
-    r+= pc
-  }
-}
-
+itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
 i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
 
-fn compress64{T==i64}(wp:*u64, x:*T, r:*T, l:u64) : void = {
+fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64) : void = {
+  def tw = width{T}
   def V = [8]u32
-  expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>1}}}
-  trail := make{V, iota{8}%2}
+  expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}
+  def tab = if (tw==32) itab else i64tab
   def step{w,i} = {
     pc := popc{w}
-    s := trail | sel{[16]i8, V**load{i64tab,w}, expander}
+    ind := load{tab, w}; def I = type{ind}
+    s := sel{[16]i8, V~~[width{V}/width{I}]I**ind, expander}
+    if (tw==64) s |= make{V, iota{8}%2}
     store{*V~~r, 0, sel{V, load{*V~~x,i}, s}}
     r+= pc
   }
   @for (w in *u8~~wp over i to cdiv{l,8}) {
-    step{w&0xf, 2*i}
-    step{w>>4, 2*i+1}
+    if (tw==32) {
+      step{w, i}
+    } else {
+      step{w&0xf, 2*i}
+      step{w>>4, 2*i+1}
+    }
   }
 }
 
 if (hasarch{'AVX2'}) {
-export{'avx2_2slash32', compress32{i32}}
-export{'avx2_2slash64', compress64{i64}}
+export{'avx2_2slash32', avx2_compress{i32}}
+export{'avx2_2slash64', avx2_compress{i64}}
 }
 
 # pext, or boolean compress
