@@ -94,12 +94,63 @@ fn slash1{F, T, iota, add}(w:*u64, r:*T, l:u64, sum:u64) : void = {
   F{w, {} => {c:= x; x+= add; c}, r, l, sum}
 }
 
+def get_comp{T & width{T}==8 } = comp8
+def get_comp{T & width{T}==16} = comp16
+def slash1{T & hasarch{'BMI2'}} = {
+  def w = width{T}
+  def n = 64/w
+  def b = bind{base, 1<<w}
+  slash1{get_comp{T}, T, b{iota{n}}, b{n**n}}
+}
+def slash2{T & hasarch{'BMI2'}} = slash2{get_comp{T}, T}
+
+fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  def I = [32]i8
+  def S = [8]u32
+  def s8 = bind{sel,[16]u8}
+  def mI{t} = make{I, merge{t,t}}
+  io := mI{iota{16}}
+  tr4x4 := mI{join{flip{split{4,iota{16}}}}}
+
+  sumtab := mI{flat_table{{...a}=>fold{+,a}, ... 4**iota{2}} - 4}
+  def ind4{b} = shiftright{indices{reverse{b}}-iota{fold{+,b}},4**0}
+  def ind2x2{...b} = base{4, ind4{b}}
+  itab := mI{flat_table{ind2x2, ... 4**iota{2}}}
+
+  @for_special_buffered{r,32} (w in *u32~~w, x in *[32]T~~x over sum) {
+    def step{k==1} = { # Unused, ~15% slower
+      bit := I~~make{[32]u8, 1<<(iota{32}%8)}
+      sum := I~~(s8{I~~S**w, make{I,iota{32}>>3}}&bit != bit)
+      tup{sum + shl{[16]u8, sum, 1}, s8{x, io - sum}}
+    }
+    def step{k==2} = {
+      wv := I~~(S**w >> make{S,4*iota{8}}) & I**0xf
+      sum:= s8{sumtab, wv}
+      ws := s8{itab, s8{wv, mI{4*(iota{16}%4)}}}
+      w4 := io + s8{I~~(S~~ws >> make{S,2*(iota{8}%4)}) & I**3, tr4x4}
+      tup{shl{[16]u8, sum, 3}, s8{x, w4}}
+    }
+    def step{k & k>2} = {
+      {sum, res} := step{k-1}
+      ik := mI{zlow{k,iota{16}} + (1<<(k-1) - 1)}
+      ss := s8{sum, ik}
+      d := io - ss
+      tup{sum+ss, homBlend{res, s8{res,d}, d > ik}}
+    }
+    {_,r16} := step{4}
+
+    store{*[16]T~~r,                  0, half{r16, 0}}
+    store{*[16]T~~(r+popc{w&0xffff}), 0, half{r16, 1}}
+    r += popc{w}
+  }
+}
+
 # 8-bit writes ~8 bytes of garbage past end, 16-bit writes ~16 bytes
 if (hasarch{'BMI2'}) {
-export{'bmipopc_2slash8', slash2{comp8, i8}}
-export{'bmipopc_2slash16', slash2{comp16, i16}}
-export{'bmipopc_1slash8', slash1{comp8, i8, 0x0706050403020100, 0x0808080808080808}}
-export{'bmipopc_1slash16', slash1{comp16, i16, 0x0003000200010000, 0x0004000400040004}}
+export{'bmipopc_2slash8', slash2{i8}}
+export{'bmipopc_2slash16', slash2{i16}}
+export{'bmipopc_1slash8', slash1{i8}}
+export{'bmipopc_1slash16', slash1{i16}}
 }
 
 itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
