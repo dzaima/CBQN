@@ -5,10 +5,6 @@
 #define al        BN(al)
 #define alCap     BN(alCap)
 #define alSize    BN(alSize)
-#ifndef MMAP
-  usz getPageSize(void);
-  #define MMAP(SZ) mmap(NULL, (SZ)+getPageSize(), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
-#endif
 #define str0(X) #X
 #define str1(X) str0(X)
 
@@ -82,8 +78,9 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     if (mem==MAP_FAILED) thrOOM();
     if (ptr2u64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
     #if ALLOC_MODE==0
-    // ux off = offsetof(TyArr,a);
-    // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
+      mem+= ALLOC_PADDING;
+      // ux off = offsetof(TyArr,a);
+      // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
     #endif
     EmptyValue* c = (void*)mem;
   #endif
@@ -207,7 +204,6 @@ void BN(dumpHeap)(FILE* f) {
   fflush(f);
 }
 
-#undef MMAP
 #undef AllocInfo
 #undef buckets
 #undef al

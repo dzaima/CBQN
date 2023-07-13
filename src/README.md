@@ -150,6 +150,8 @@ See src/h.h for more basics
 
 An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
 
+Any such allocation is guaranteed to have at least 1024 bytes readable & writable both before & after the allocation, though of course the read values should not affect any visible behavior, and writes need to write back exactly the data that was there before.
+
 A heap-allocated object from type `B` can be cast to a `Value*` with `v(x)`, to an `Arr*` with `a(x)`, or to a specific pointer type with `c(Type,x)`.
 
 The reference count of any `B` object can be incremented/decremented with `inc(x)`/`dec(x)`, and any subtype of `Value*` can use `ptr_inc(x)`/`ptr_dec(x)`. `inc(x)` and `ptr_inc(x)` will return the argument, so you can use it inline. `dec(x)` and `ptr_dec(x)` will free the object if the refcount as a result goes to zero. `incBy` / `incByG` offset the reference count by the specified amount, but will not free the object if it results in a reference count of zero.

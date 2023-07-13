@@ -68,6 +68,7 @@ static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-
 #undef BN
 #undef BSZ
 #undef ALLOC_IMPL_MMX
+#undef MMAP
 
 
 // all the instructions to be called by the generated code
