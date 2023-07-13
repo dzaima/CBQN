@@ -163,7 +163,7 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
 static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   assert(len <= bsp_max);
   #if SINGELI_AVX2 && FAST_PDEP
-  if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len);
+  if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len, sum);
   #else
   if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
   #endif
@@ -236,18 +236,16 @@ static B where(B x, usz xia, u64 s) {
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
     #if SINGELI_AVX2 && FAST_PDEP
-    i8* rp = m_tyarrvO(&r, 1, s, t_i8arr, 8);
-    bmipopc_1slash8(xp, rp, xia);
-    FINISH_OVERALLOC_A(r, s, 8);
+    i8* rp = m_tyarrv(&r, 1, s, t_i8arr);
+    bmipopc_1slash8(xp, rp, xia, s);
     #else
     i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
     #if SINGELI_AVX2 && FAST_PDEP
     if (s >= xia/8) {
-      i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16);
-      bmipopc_1slash16(xp, rp, xia);
-      FINISH_OVERALLOC_A(r, s*2, 16);
+      i16* rp = m_tyarrv(&r, 2, s, t_i16arr);
+      bmipopc_1slash16(xp, rp, xia, s);
     }
     #else
     if (s >= xia/4+xia/8) {
@@ -278,7 +276,7 @@ static B where(B x, usz xia, u64 s) {
       }
       #if SINGELI_AVX2 && FAST_PDEP
       if (bs >= b/8+b/16) {
-        bmipopc_1slash16(xp, buf, b);
+        bmipopc_1slash16(xp, buf, b, bs);
         for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
       }
       #else
@@ -370,10 +368,9 @@ B grade_bool(B x, usz xia, bool up) {
     u64* xp1 = xp;
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
     #define BMI_GRADE(W) \
-      i##W* rp = m_tyarrvO(&r, W/8, xia, t_i##W##arr, W); \
-      bmipopc_1slash##W(xp0, rp   , xia);                 \
-      bmipopc_1slash##W(xp1, rp+l0, xia);                 \
-      FINISH_OVERALLOC_A(r, xia*(W/8), W);
+      i##W* rp = m_tyarrv(&r, W/8, xia, t_i##W##arr); \
+      bmipopc_1slash##W(xp0, rp   , xia, l0    );     \
+      bmipopc_1slash##W(xp1, rp+l0, xia, xia-l0);
     if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
     #undef BMI_GRADE
     decG(notx);
@@ -387,8 +384,8 @@ B grade_bool(B x, usz xia, bool up) {
     for (usz i=0; i<xia; i+=b) {
       for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
       usz b2 = b>xia-i? xia-i : b;
-      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
-      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2, s0); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2, s1); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
       xp1+= b2/64;
     }
     TFREE(buf);
@@ -490,11 +487,11 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       if (wsum>=wia/8 && groups_lt(wp,wia, wia/16)) r = compress_grouped(wp, x, wia, wsum, xt); \
       else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); }
     #if SINGELI_AVX2 && FAST_PDEP
-    case 3: WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,xt,  8); bmipopc_2slash8 (wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum,    8))
-    case 4: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,xt, 16); bmipopc_2slash16(wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum*2, 16))
-    case 5: WITH_SPARSE(32, 32, rp=m_tyarrv(&r,4,wsum,xt); avx2_2slash32(wp, xp, rp, wia, wsum)) break;
+    case 3: WITH_SPARSE( 8, 32, rp=m_tyarrv(&r,1,wsum,xt); bmipopc_2slash8 (wp, xp, rp, wia, wsum))
+    case 4: WITH_SPARSE(16, 16, rp=m_tyarrv(&r,2,wsum,xt); bmipopc_2slash16(wp, xp, rp, wia, wsum))
+    case 5: WITH_SPARSE(32, 32, rp=m_tyarrv(&r,4,wsum,xt); avx2_2slash32   (wp, xp, rp, wia, wsum))
     case 6: if (TI(x,elType)!=el_B) {
-            WITH_SPARSE(64, 16, rp=m_tyarrv(&r,8,wsum,xt); avx2_2slash64(wp, xp, rp, wia, wsum))
+            WITH_SPARSE(64, 16, rp=m_tyarrv(&r,8,wsum,xt); avx2_2slash64   (wp, xp, rp, wia, wsum))
       } // else follows
     #else
     case 3: WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })

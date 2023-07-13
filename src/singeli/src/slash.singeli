@@ -17,60 +17,6 @@ if (hasarch{'AVX2'}) {
 include './mask'
 include 'util/tup'
 
-def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
-def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
-
-def comp8{w:*u64, X, r:*i8, l:u64} = {
-  @for(w in *u8~~w over i to cdiv{l,8}) {
-    pc:= popc{w}
-    storeu{*u64~~r, 0, pext{promote{u64,X{}}, pdep{promote{u64, w}, cast{u64,0x0101010101010101}}*255}}
-    r+= pc
-  }
-}
-
-def tab{n,l} = {
-  def m=n-1; def t=tab{m,l}
-  def k = (1<<l - 1) << (m*l)
-  merge{t, k+t}
-}
-def tab{n==0,l} = tup{0}
-c16lut:*u64 = tab{4,16}
-
-def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_loadLUT64', p, i}
-
-def comp16{w:*u64, X, r:*i16, l:u64} = {
-  @for(w in *u8~~w over i to cdiv{l,8}) {
-    def step{w} = {
-      pc:= popcRand{w}
-      storeu{*u64~~r, 0, pext{promote{u64,X{}}, vgLoad{c16lut, w}}}
-      r+= pc
-    }
-    step{w&15}
-    step{w>>4} # this runs even if the above step was all that's required, so it'll act on the invalid result of "r+= pc", so we need to overallocate even more to compensate
-  }
-}
-
-fn slash2{F, T}(w:*u64, x:*T, r:*T, l:u64) : void = {
-  xv:= *u64~~x
-  F{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l}
-}
-
-fn slash1{F, T, iota, add}(w:*u64, r:*T, l:u64) : void = {
-  x:u64 = iota
-  F{w, {} => {c:= x; x+= add; c}, r, l}
-}
-
-# 8-bit writes ~8 bytes of garbage past end, 16-bit writes ~16 bytes
-if (hasarch{'BMI2'}) {
-export{'bmipopc_2slash8', slash2{comp8, i8}}
-export{'bmipopc_2slash16', slash2{comp16, i16}}
-export{'bmipopc_1slash8', slash1{comp8, i8, 0x0706050403020100, 0x0808080808080808}}
-export{'bmipopc_1slash16', slash1{comp16, i16, 0x0003000200010000, 0x0004000400040004}}
-}
-
-itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
-i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
-
 # Modifies the input variable r
 # Assumes iter{} will increment r, by at most write_len
 def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
@@ -95,11 +41,69 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
     }
   } else {
     def vc = 256/tw;
-    def R = [vc]T
-    if (ov>vc and end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
-    homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
+    if (hasarch{'AVX2'} and write_len >= vc) {
+      def R = [vc]T
+      if (ov>vc and end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+      homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
+    } else {
+      @for (r0, buf over u64~~(end-buf)) r0 = buf
+    }
   }
 }
+
+def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
+def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
+
+def comp8{w:*u64, X, r:*i8, l:u64, sum:u64} = {
+  @for_special_buffered{r,8} (w in *u8~~w over sum) {
+    pc:= popc{w}
+    storeu{*u64~~r, 0, pext{promote{u64,X{}}, pdep{promote{u64, w}, cast{u64,0x0101010101010101}}*255}}
+    r+= pc
+  }
+}
+
+def tab{n,l} = {
+  def m=n-1; def t=tab{m,l}
+  def k = (1<<l - 1) << (m*l)
+  merge{t, k+t}
+}
+def tab{n==0,l} = tup{0}
+c16lut:*u64 = tab{4,16}
+
+def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_loadLUT64', p, i}
+
+def comp16{w:*u64, X, r:*i16, l:u64, sum:u64} = {
+  @for_special_buffered{r,8} (w in *u8~~w over sum) {
+    def step{r, w} = {
+      storeu{*u64~~r, 0, pext{promote{u64,X{}}, vgLoad{c16lut, w}}}
+    }
+    rs:= r; r+= popc{w} # Measured slow incrementing at the end
+    h := w&0xf
+    step{rs, h}
+    step{rs+popcRand{h}, w>>4}
+  }
+}
+
+fn slash2{F, T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  xv:= *u64~~x
+  F{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l, sum}
+}
+
+fn slash1{F, T, iota, add}(w:*u64, r:*T, l:u64, sum:u64) : void = {
+  x:u64 = iota
+  F{w, {} => {c:= x; x+= add; c}, r, l, sum}
+}
+
+# 8-bit writes ~8 bytes of garbage past end, 16-bit writes ~16 bytes
+if (hasarch{'BMI2'}) {
+export{'bmipopc_2slash8', slash2{comp8, i8}}
+export{'bmipopc_2slash16', slash2{comp16, i16}}
+export{'bmipopc_1slash8', slash1{comp8, i8, 0x0706050403020100, 0x0808080808080808}}
+export{'bmipopc_1slash16', slash1{comp16, i16, 0x0003000200010000, 0x0004000400040004}}
+}
+
+itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
+i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
 
 fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
