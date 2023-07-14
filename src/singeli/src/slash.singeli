@@ -23,7 +23,7 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
   assert{isreg{r}}; assert{begin==0}
   def T = eltype{type{r}}; def tw = width{T}
   def ov = write_len-1
-  buf := emit{*T, 'alloca', 2*(ov+1)*width{T}/8}
+  buf := undefined{T, 2*(ov+1)}
   r0 := r
   end := r + sum - ov
   i:u64 = 0; buf_used:u1 = 0
