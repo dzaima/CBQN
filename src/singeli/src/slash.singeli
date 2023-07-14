@@ -145,18 +145,10 @@ fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = 
   }
 }
 
-# 8-bit writes ~8 bytes of garbage past end, 16-bit writes ~16 bytes
-if (hasarch{'BMI2'}) {
-export{'bmipopc_2slash8', slash2{i8}}
-export{'bmipopc_2slash16', slash2{i16}}
-export{'bmipopc_1slash8', slash1{i8}}
-export{'bmipopc_1slash16', slash1{i16}}
-}
-
 itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
 i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
 
-fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash2{T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
   expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}
@@ -179,9 +171,39 @@ fn avx2_compress{T & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void =
   }
 }
 
+fn slash2{T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  def f = match { {_==8}=>'8'; {_==16}=>'16'; {_==32}=>'32'; {_==64}=>'64' }
+  def wt = width{T}
+  def vl = 512/wt
+  def V = [vl]T
+  def wu = max{32,vl}
+  def load {a:T, n & 512==width{eltype{T}}} = emit{eltype{T}, '_mm512_loadu_si512', a+n}
+  @for (w in *(ty_u{vl})~~w, x in *V~~x over cdiv{l,vl}) {
+    def I = ty_u{wu}
+    def emitT{O, name, ...a} = emit{O, merge{'_mm512_',name,'_epi',f{wt}}, ...a}
+    def to_mask{a} = emit{[vl]u1, merge{'_cvtu',f{wu},'_mask',f{vl}}, a}
+    m := to_mask{promote{I,w}}
+    c := popc{w}
+    # The compress-store instruction performs very poorly on Zen4,
+    # and is also a lot worse than the following on Tiger Lake
+    # emitT{void, 'mask_compressstoreu', r, m, x}
+    cs := cast_i{I,promote{i64,1}<<c - 1}
+    if (wu==64) cs -= cast_i{I,c}>>6
+    v := emitT{V, 'mask_compress', x, m, x}
+    emitT{void, 'mask_storeu', r, to_mask{cs}, v}
+    r += c
+  }
+}
+
+if (hasarch{'BMI2'}) {
+export{'bmipopc_2slash8', slash2{i8}}
+export{'bmipopc_2slash16', slash2{i16}}
+export{'bmipopc_1slash8', slash1{i8}}
+export{'bmipopc_1slash16', slash1{i16}}
+}
 if (hasarch{'AVX2'}) {
-export{'avx2_2slash32', avx2_compress{i32}}
-export{'avx2_2slash64', avx2_compress{i64}}
+export{'avx2_2slash32', slash2{i32}}
+export{'avx2_2slash64', slash2{i64}}
 }
 
 # pext, or boolean compress
