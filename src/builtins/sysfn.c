@@ -837,6 +837,7 @@ static NFnDesc* fExistsDesc;
 static NFnDesc* fListDesc;
 static NFnDesc* fMapBytesDesc;
 static NFnDesc* createdirDesc;
+static NFnDesc* realpathDesc;
 static NFnDesc* renameDesc;
 static NFnDesc* removeDesc;
 
@@ -847,6 +848,9 @@ B createdir_c1(B d, B x) {
   B p = path_rel(nfn_objU(d), x);
   if (dir_create(p)) return p;
   thrM("(file).CreateDir: Failed to create directory");
+}
+B realpath_c1(B d, B x) {
+  return path_abs(path_rel(nfn_objU(d), x));
 }
 
 B rename_c2(B d, B w, B x) {
@@ -1656,7 +1660,7 @@ B invalidMd2_c2(Md2D* d, B w, B x) { thrM("Using an invalid 2-modifier"); }
 static void initFileNS() {
   if (fileInit) return;
   fileInit = true;
-  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","size","exists","name","parent","mapbytes","createdir","rename","remove");
+  file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","size","exists","name","parent","mapbytes","createdir","realpath","rename","remove");
   fCharsDesc   = registerNFn(m_c8vec_0("(file).Chars"), fchars_c1, fchars_c2);
   fileAtDesc   = registerNFn(m_c8vec_0("(file).At"), fileAt_c1, fileAt_c2);
   fLinesDesc   = registerNFn(m_c8vec_0("(file).Lines"), flines_c1, flines_c2);
@@ -1668,6 +1672,7 @@ static void initFileNS() {
   fAccessedDesc= registerNFn(m_c8vec_0("(file).Accessed"), faccessed_c1, c2_bad);
   fSizeDesc    = registerNFn(m_c8vec_0("(file).Size"), fsize_c1, c2_bad);
   createdirDesc= registerNFn(m_c8vec_0("(file).CreateDir"), createdir_c1, c2_bad);
+  realpathDesc = registerNFn(m_c8vec_0("(file).RealPath"), realpath_c1, c2_bad);
   renameDesc   = registerNFn(m_c8vec_0("(file).Rename"), c1_bad, rename_c2);
   removeDesc   = registerNFn(m_c8vec_0("(file).Remove"), remove_c1, c2_bad);
   fMapBytesDesc= registerNFn(m_c8vec_0("(file).MapBytes"), mapBytes_c1, c2_bad);
@@ -1723,7 +1728,7 @@ B sys_c1(B t, B x) {
           initFileNS();
           REQ_PATH;
           #define F(X) m_nfn(X##Desc, inc(path))
-          fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(rename), F(remove));
+          fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(realpath), F(rename), F(remove));
           #undef F
         }
         cr = incG(fileNS);
@@ -1771,7 +1776,7 @@ u32* dsv_text[] = {
   U"•bit._add",U"•bit._and",U"•bit._cast",U"•bit._mul",U"•bit._neg",U"•bit._not",U"•bit._or",U"•bit._sub",U"•bit._xor",
   
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
-  U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
+  U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.RealPath",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",
