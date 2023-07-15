@@ -2,8 +2,8 @@ include './base'
 if (hasarch{'BMI2'}) {
   include './bmi2'
 }
-if (hasarch{'PCLMUL'} or hasarch{'AVX2'}) {
-  include './sse'  # PCLMUL implies SSE4.2
+if (hasarch{'X86_64'}) {
+  include './sse'
 }
 if (hasarch{'PCLMUL'}) {
   def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
@@ -53,6 +53,15 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
 
 def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
 def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
+
+# Assumes w is trimmed, so the last 1 appears at index l-1
+fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  def bitp_get{arr, n} = (load{arr,n>>6} >> (n&63)) & 1
+  @for (x over i to l) {
+    store{r, 0, x}
+    r+= bitp_get{w,i}
+  }
+}
 
 def comp8{w:*u64, X, r:*i8, l:u64, sum:u64} = {
   @for_special_buffered{r,8} (w in *u8~~w over sum) {
@@ -198,15 +207,13 @@ fn slash2{T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x
 }
 
 if (hasarch{'BMI2'}) {
-export{'bmipopc_2slash8', slash2{i8}}
-export{'bmipopc_2slash16', slash2{i16}}
 export{'bmipopc_1slash8', slash1{i8}}
 export{'bmipopc_1slash16', slash1{i16}}
 }
-if (hasarch{'AVX2'}) {
-export{'avx2_2slash32', slash2{i32}}
-export{'avx2_2slash64', slash2{i64}}
-}
+export{'si_2slash8',  slash2{i8}}
+export{'si_2slash16', slash2{i16}}
+export{'si_2slash32', slash2{i32}}
+export{'si_2slash64', slash2{i64}}
 
 # pext, or boolean compress
 fn pext{T}(x:T, m:T) {
