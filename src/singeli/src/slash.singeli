@@ -118,26 +118,28 @@ fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = 
   itab := mI{flat_table{ind2x2, ... 4**iota{2}}}
 
   @for_special_buffered{r,32} (w in *u32~~w, x in *[32]T~~x over sum) {
-    def step{k==1} = { # Unused, ~15% slower
+    def step{k==1} = { # Unused, ~10% slower
       bit := I~~make{[32]u8, 1<<(iota{32}%8)}
       sum := I~~(s8{I~~S**w, make{I,iota{32}>>3}}&bit != bit)
-      tup{sum + shl{[16]u8, sum, 1}, s8{x, io - sum}}
+      tup{sum + shl{[16]u8, sum, 1}, io - sum}
     }
     def step{k==2} = {
       wv := I~~(S**w >> make{S,4*iota{8}}) & I**0xf
       sum:= s8{sumtab, wv}
       ws := s8{itab, s8{wv, mI{4*(iota{16}%4)}}}
       w4 := io + s8{I~~(S~~ws >> make{S,2*(iota{8}%4)}) & I**3, tr4x4}
-      tup{shl{[16]u8, sum, 3}, s8{x, w4}}
+      tup{shl{[16]u8, sum, 3}, w4}
     }
     def step{k & k>2} = {
-      {sum, res} := step{k-1}
-      ik := mI{zlow{k,iota{16}} + (1<<(k-1) - 1)}
+      def h = k-1
+      {sum, res} := step{h}
+      ik := mI{zlow{k,iota{16}} + (1<<h - 1)}
+      mh := mI{-(iota{16}>>h & 1)}
       ss := s8{sum, ik}
-      d := io - ss
-      tup{sum+ss, homBlend{res, s8{res,d}, d > ik}}
+      tup{sum+ss, max{res, s8{res & mh, io - ss}}}
     }
-    {_,r16} := step{4}
+    {_,j16} := step{4}
+    r16 := s8{x, j16}
 
     store{*[16]T~~r,                  0, half{r16, 0}}
     store{*[16]T~~(r+popc{w&0xffff}), 0, half{r16, 1}}
