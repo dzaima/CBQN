@@ -82,18 +82,18 @@ There aren't hard requirements for versions of any of those, but nevertheless he
 
 ```
 x86-64 (Linux):
-  gcc 9.5; gcc 11.3; clang 10.0.0; clang 14.0.0
+  gcc 9.5; gcc 12.1.0; clang 10.0.0; clang 17-trunk
   libffi 3.4.2
   cpu microarchitecture: Haswell
-  replxx: g++ 11.3.0
+  replxx: g++ 12.1.0
 x86 (Linux):
-  clang 14.0.0; known to break on gcc - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
+  clang 17-trunk; CBQN is known to break on gcc x86 - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
   running on the above x86-64 system, compiled with CCFLAGS=-m32
 AArch64 ARMv8-A (within Termux on Android 8):
   using a `lf=-landroid-spawn` make arg after `pkg install libandroid-spawn` to get •SH to work
-  clang 15.0.7
+  clang 16.0.6
   libffi 3.4.4 (structs were broken as of 3.4.3)
-  replxx: clang++ 15.0.4
+  replxx: clang++ 16.0.6
 ```
 Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
 
