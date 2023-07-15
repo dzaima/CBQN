@@ -63,6 +63,35 @@ fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   }
 }
 
+fn slash2{T==i8 & hasarch{'X86_64'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  def U = [16]u8
+  k1 := U**1
+  @for_special_buffered{r,16} (w in *u16~~w, x0 in *U~~x over sum) {
+    bm  := make{U, 1<<(iota{16}%8)}
+    rb  := make{U, replicate{8,each{bind{cast_i,u8},tup{w,w>>8}}}}
+    bit := rb&bm == bm  # Bits of w expanded to a byte each
+    x := x0&bit
+    dif := k1 + bit
+    # Prefix sum halves of dif
+    @unroll (k to 3) dif += U~~([2]i64~~dif << (8<<k))
+    pc  := each{{j} => 8 - (extract{[8]u16~~dif, j} >> 8), tup{3,7}}
+    dif = U~~([2]i64~~dif << 8)
+    # Shift each value in x down by the corresponding one in dif
+    b := k1
+    @unroll (k to 3) {
+      m := (dif & b) == b # Mask of positions to shift
+      x = shr{U, x&m, 1<<k} | (x&~m)
+      dif = max{dif, shr{U, dif&m, 1<<k}}
+      b += b
+    }
+    each{
+      {ins,c} => { emit{void, ins, *[8]u8~~r, x}; r+=c },
+      tup{'_mm_storel_pi','_mm_storeh_pi'},
+      pc
+    }
+  }
+}
+
 def comp8{w:*u64, X, r:*i8, l:u64, sum:u64} = {
   @for_special_buffered{r,8} (w in *u8~~w over sum) {
     pc:= popc{w}
