@@ -55,6 +55,7 @@ def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
 def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 # Assumes w is trimmed, so the last 1 appears at index l-1
+def thresh2{T} = 2
 fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def bitp_get{arr, n} = (load{arr,n>>6} >> (n&63)) & 1
   @for (x over i to l) {
@@ -63,6 +64,7 @@ fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   }
 }
 
+def thresh2{T==i8 & hasarch{'X86_64'}} = 4
 fn slash2{T==i8 & hasarch{'X86_64'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def U = [16]u8
   k1 := U**1
@@ -140,8 +142,11 @@ def slash1{T & hasarch{'BMI2'}} = {
   def b = bind{base, 1<<w}
   slash1{get_comp{T}, T, b{iota{n}}, b{n**n}}
 }
+def thresh2{T==i8  & hasarch{'BMI2'}} = 32
+def thresh2{T==i16 & hasarch{'BMI2'}} = 16
 def slash2{T & hasarch{'BMI2'}} = slash2{get_comp{T}, T}
 
+def thresh2{T==i8  & hasarch{'AVX2'}} = 32
 fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def I = [32]i8
   def S = [8]u32
@@ -188,6 +193,8 @@ fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = 
 itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
 i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
 
+def thresh2{T==i32 & hasarch{'AVX2'}} = 32
+def thresh2{T==i64 & hasarch{'AVX2'}} = 8
 fn slash2{T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
@@ -211,6 +218,10 @@ fn slash2{T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u6
   }
 }
 
+def thresh2{T==i8  & hasarch{'AVX512VBMI2'}} = 256
+def thresh2{T==i16 & hasarch{'AVX512VBMI2'}} = 128
+def thresh2{T==i32 & hasarch{'AVX512F'}}     = 64
+def thresh2{T==i64 & hasarch{'AVX512F'}}     = 16
 fn slash2{T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def f = match { {_==8}=>'8'; {_==16}=>'16'; {_==32}=>'32'; {_==64}=>'64' }
   def wt = width{T}
@@ -239,10 +250,10 @@ if (hasarch{'BMI2'}) {
 export{'bmipopc_1slash8', slash1{i8}}
 export{'bmipopc_1slash16', slash1{i16}}
 }
-export{'si_2slash8',  slash2{i8}}
-export{'si_2slash16', slash2{i16}}
-export{'si_2slash32', slash2{i32}}
-export{'si_2slash64', slash2{i64}}
+export{'si_2slash8' , slash2{i8 }}; export{'si_thresh_2slash8' , u64~~thresh2{i8 }}
+export{'si_2slash16', slash2{i16}}; export{'si_thresh_2slash16', u64~~thresh2{i16}}
+export{'si_2slash32', slash2{i32}}; export{'si_thresh_2slash32', u64~~thresh2{i32}}
+export{'si_2slash64', slash2{i64}}; export{'si_thresh_2slash64', u64~~thresh2{i64}}
 
 # pext, or boolean compress
 fn pext{T}(x:T, m:T) {

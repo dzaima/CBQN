@@ -477,36 +477,32 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       }                                              \
       TFREE(buf)
     #define COMPRESS_BLOCK(T) COMPRESS_BLOCK_PREP(T, )
-    #if SINGELI_AVX2
-    #define THR(C) C
-    #else
-    #define THR(C) 2
-    #endif
     #define WITH_SPARSE(W, CUTOFF, DENSE) { \
       i##W *xp=tyany_ptr(x), *rp;           \
-      if (wsum<wia/THR(CUTOFF)) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); } \
+      if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
       else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
       else { DENSE; }                       \
       break; }
-    #define BLOCK_OR_GROUPED(T) \
-      if (wsum>=wia/8 && groups_lt(wp,wia, wia/16)) r = compress_grouped(wp, x, wia, wsum, xt); \
-      else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); }
     #if SINGELI
-    case 3: WITH_SPARSE( 8, 32, rp=m_tyarrv(&r,1,wsum,xt); si_2slash8 (wp, xp, rp, wia, wsum))
-    case 4: WITH_SPARSE(16, 16, rp=m_tyarrv(&r,2,wsum,xt); si_2slash16(wp, xp, rp, wia, wsum))
-    case 5: WITH_SPARSE(32, 32, rp=m_tyarrv(&r,4,wsum,xt); si_2slash32(wp, xp, rp, wia, wsum))
+    #define DO(W) \
+      WITH_SPARSE(W, si_thresh_2slash##W, rp=m_tyarrv(&r,W/8,wsum,xt); si_2slash##W(wp, xp, rp, wia, wsum))
+    case 3: DO(8) case 4: DO(16) case 5: DO(32)
     case 6: if (TI(x,elType)!=el_B) {
-            WITH_SPARSE(64, 16, rp=m_tyarrv(&r,8,wsum,xt); si_2slash64(wp, xp, rp, wia, wsum))
+            DO(64)
       } // else follows
+    #undef DO
     #else
     case 3: WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
     case 4: WITH_SPARSE(16,  2, rp=m_tyarrv(&r,2,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
+    #define BLOCK_OR_GROUPED(T) \
+      if (wsum>=wia/8 && groups_lt(wp,wia, wia/16)) r = compress_grouped(wp, x, wia, wsum, xt); \
+      else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); }
     case 5: BLOCK_OR_GROUPED(i32) break;
     case 6:
       if (TI(x,elType)!=el_B) { BLOCK_OR_GROUPED(u64) }
+    #undef BLOCK_OR_GROUPED
     #endif
     #undef WITH_SPARSE
-    #undef THR
       else {
         B xf = getFillR(x);
         B* xp = arr_bptr(x);
@@ -523,7 +519,6 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         }
       }
       break;
-    #undef BLOCK_OR_GROUPED
     #undef COMPRESS_BLOCK
   }
   ur xr = RNK(x);
