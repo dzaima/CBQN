@@ -17,6 +17,8 @@ if (hasarch{'AVX2'}) {
 include './mask'
 include 'util/tup'
 
+def arg{c,T} = if (c) *T else tup{}
+
 # Modifies the input variable r
 # Assumes iter{} will increment r, by at most write_len
 def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
@@ -94,52 +96,41 @@ fn slash{c==1, T==i8 & hasarch{'X86_64'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : 
   }
 }
 
-def comp8{w:*u64, X, r:*i8, l:u64, sum:u64} = {
-  @for_special_buffered{r,8} (w in *u8~~w over sum) {
-    pc:= popc{w}
-    storeu{*u64~~r, 0, pext{promote{u64,X{}}, pdep{promote{u64, w}, cast{u64,0x0101010101010101}}*255}}
-    r+= pc
-  }
-}
-
-def tab{n,l} = {
-  def m=n-1; def t=tab{m,l}
+def tab{n,l} = if (n==0) tup{0} else {
+  def m = n-1
   def k = (1<<l - 1) << (m*l)
-  merge{t, k+t}
+  flat_table{+, tup{0,k}, tab{m,l}}
 }
-def tab{n==0,l} = tup{0}
 c16lut:*u64 = tab{4,16}
-
 def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_loadLUT64', p, i}
-
-def comp16{w:*u64, X, r:*i16, l:u64, sum:u64} = {
-  @for_special_buffered{r,8} (w in *u8~~w over sum) {
-    def step{r, w} = {
-      storeu{*u64~~r, 0, pext{promote{u64,X{}}, vgLoad{c16lut, w}}}
-    }
-    rs:= r; r+= popc{w} # Measured slow incrementing at the end
-    h := w&0xf
-    step{rs, h}
-    step{rs+popcRand{h}, w>>4}
-  }
-}
-def get_comp{T & width{T}==8 } = comp8
-def get_comp{T & width{T}==16} = comp16
 
 def thresh2{T==i8  & hasarch{'BMI2'}} = 32
 def thresh2{T==i16 & hasarch{'BMI2'}} = 16
-fn slash{c==1, T & hasarch{'BMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
-  xv:= *u64~~x
-  get_comp{T}{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l, sum}
-}
-
-fn slash{c==0, T & hasarch{'BMI2'}}(w:*u64, r:*T, l:u64, sum:u64) : void = {
+fn slash{c, T & hasarch{'BMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def wt = width{T}
-  def n = 64/wt
   def b = bind{base, 1<<wt}
-  x:u64 = b{iota{n}}
-  def add = b{n**n}
-  get_comp{T}{w, {} => {c:= x; x+= add; c}, r, l, sum}
+  def X = if (c) {
+    xv:= *u64~~x
+    {} => {c:= loadu{xv}; xv+= 1; c}
+  } else {
+    def n = 64/wt
+    x:u64 = b{iota{n}}
+    def add = b{n**n}
+    {} => {c:= x; x+= add; c}
+  }
+  @for_special_buffered{r,8} (w in *u8~~w over sum) {
+    pc:= popc{w}
+    def out{r,e} = storeu{*u64~~r, 0, pext{promote{u64,X{}}, e}}
+    if (wt == 8) {
+      out{r, pdep{promote{u64, w}, u64~~b{8**1}}*255}
+    } else {
+      def step{r, w} = out{r, vgLoad{c16lut, w}}
+      h := w&0xf
+      step{r, h}
+      step{r+popcRand{h}, w>>4}
+    }
+    r+= pc
+  }
 }
 
 def thresh2{T==i8  & hasarch{'AVX2'}} = 32
