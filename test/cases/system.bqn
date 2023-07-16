@@ -1,4 +1,4 @@
-# not tested here: •Out •Show •Exit •term •GetLine •Cmp •CurrentError •FFI •internal.HeapDump •file.MapBytes •file.RealPath
+# not tested here: •Out •Show •Exit •term •GetLine •Cmp •CurrentError •FFI •internal.HeapDump •file.MapBytes
 
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (•internal.ClearRefs@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
@@ -100,6 +100,7 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 !"(file).Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
+¯8↑•file.RealPath "testdirNested/.././" %% "/testDir"
 !"(file).CreateDir: Failed to create directory" % •file.Createdir "testdirNested"
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List "." %% 1‿1‿0‿1‿1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List •file.path %% 1‿1‿0‿1‿1
@@ -108,6 +109,9 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 •file.Remove "testfile2.bqn" %% 1
 •file.Remove "testfile3B.bqn" %% 1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn" ∊ •file.List "." %% 0‿0‿0
+
+!"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •file.RealPath "/dev/file that doesn't exist"
+!"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •Import "/dev/file that doesn't exist"
 
 
 

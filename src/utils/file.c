@@ -185,7 +185,7 @@ B path_abs(B path) {
   toUTF8(path, p);
   p[plen] = 0;
   char* res = realpath(p, NULL);
-  if (res==NULL) thrF("Failed to convert %R to absolute path", path);
+  if (res==NULL) thrF("Failed to resolve \"%R\": %S", path, strerror(errno));
   B r = utf8Decode0(res);
   free(res);
   dec(path);
