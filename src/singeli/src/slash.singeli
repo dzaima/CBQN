@@ -56,7 +56,7 @@ def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 # Assumes w is trimmed, so the last 1 appears at index l-1
 def thresh2{T} = 2
-fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==1, T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def bitp_get{arr, n} = (load{arr,n>>6} >> (n&63)) & 1
   @for (x over i to l) {
     store{r, 0, x}
@@ -65,7 +65,7 @@ fn slash2{T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
 }
 
 def thresh2{T==i8 & hasarch{'X86_64'}} = 4
-fn slash2{T==i8 & hasarch{'X86_64'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==1, T==i8 & hasarch{'X86_64'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def U = [16]u8
   k1 := U**1
   @for_special_buffered{r,16} (w in *u16~~w, x0 in *U~~x over sum) {
@@ -123,31 +123,27 @@ def comp16{w:*u64, X, r:*i16, l:u64, sum:u64} = {
     step{rs+popcRand{h}, w>>4}
   }
 }
-
-fn slash2{F, T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
-  xv:= *u64~~x
-  F{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l, sum}
-}
-
-fn slash1{F, T, iota, add}(w:*u64, r:*T, l:u64, sum:u64) : void = {
-  x:u64 = iota
-  F{w, {} => {c:= x; x+= add; c}, r, l, sum}
-}
-
 def get_comp{T & width{T}==8 } = comp8
 def get_comp{T & width{T}==16} = comp16
-def slash1{T & hasarch{'BMI2'}} = {
-  def w = width{T}
-  def n = 64/w
-  def b = bind{base, 1<<w}
-  slash1{get_comp{T}, T, b{iota{n}}, b{n**n}}
-}
+
 def thresh2{T==i8  & hasarch{'BMI2'}} = 32
 def thresh2{T==i16 & hasarch{'BMI2'}} = 16
-def slash2{T & hasarch{'BMI2'}} = slash2{get_comp{T}, T}
+fn slash{c==1, T & hasarch{'BMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+  xv:= *u64~~x
+  get_comp{T}{w, {} => {c:= loadu{xv}; xv+= 1; c}, r, l, sum}
+}
+
+fn slash{c==0, T & hasarch{'BMI2'}}(w:*u64, r:*T, l:u64, sum:u64) : void = {
+  def wt = width{T}
+  def n = 64/wt
+  def b = bind{base, 1<<wt}
+  x:u64 = b{iota{n}}
+  def add = b{n**n}
+  get_comp{T}{w, {} => {c:= x; x+= add; c}, r, l, sum}
+}
 
 def thresh2{T==i8  & hasarch{'AVX2'}} = 32
-fn slash2{T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==1, T==i8 & hasarch{'AVX2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def I = [32]i8
   def S = [8]u32
   def s8 = bind{sel,[16]u8}
@@ -195,7 +191,7 @@ i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080},
 
 def thresh2{T==i32 & hasarch{'AVX2'}} = 32
 def thresh2{T==i64 & hasarch{'AVX2'}} = 8
-fn slash2{T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==1, T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
   expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}
@@ -222,7 +218,7 @@ def thresh2{T==i8  & hasarch{'AVX512VBMI2'}} = 256
 def thresh2{T==i16 & hasarch{'AVX512VBMI2'}} = 128
 def thresh2{T==i32 & hasarch{'AVX512F'}}     = 64
 def thresh2{T==i64 & hasarch{'AVX512F'}}     = 16
-fn slash2{T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==1, T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
   def f = match { {_==8}=>'8'; {_==16}=>'16'; {_==32}=>'32'; {_==64}=>'64' }
   def wt = width{T}
   def vl = 512/wt
@@ -247,13 +243,13 @@ fn slash2{T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x
 }
 
 if (hasarch{'BMI2'}) {
-export{'bmipopc_1slash8', slash1{i8}}
-export{'bmipopc_1slash16', slash1{i16}}
+export{'bmipopc_1slash8',  slash{0, i8}}
+export{'bmipopc_1slash16', slash{0, i16}}
 }
-export{'si_2slash8' , slash2{i8 }}; export{'si_thresh_2slash8' , u64~~thresh2{i8 }}
-export{'si_2slash16', slash2{i16}}; export{'si_thresh_2slash16', u64~~thresh2{i16}}
-export{'si_2slash32', slash2{i32}}; export{'si_thresh_2slash32', u64~~thresh2{i32}}
-export{'si_2slash64', slash2{i64}}; export{'si_thresh_2slash64', u64~~thresh2{i64}}
+export{'si_2slash8' , slash{1, i8 }}; export{'si_thresh_2slash8' , u64~~thresh2{i8 }}
+export{'si_2slash16', slash{1, i16}}; export{'si_thresh_2slash16', u64~~thresh2{i16}}
+export{'si_2slash32', slash{1, i32}}; export{'si_thresh_2slash32', u64~~thresh2{i32}}
+export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh2{i64}}
 
 # pext, or boolean compress
 fn pext{T}(x:T, m:T) {
