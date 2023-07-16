@@ -57,11 +57,12 @@ def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
 def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 # Assumes w is trimmed, so the last 1 appears at index l-1
+def thresh1{T} = 2
 def thresh2{T} = 2
-fn slash{c==1, T}(w:*u64, x:*T, r:*T, l:u64, sum:u64) : void = {
+fn slash{c, T}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def bitp_get{arr, n} = (load{arr,n>>6} >> (n&63)) & 1
-  @for (x over i to l) {
-    store{r, 0, x}
+  @for (i to l) {
+    store{r, 0, if (c) load{x,i} else i}
     r+= bitp_get{w,i}
   }
 }
@@ -104,6 +105,7 @@ def tab{n,l} = if (n==0) tup{0} else {
 c16lut:*u64 = tab{4,16}
 def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_loadLUT64', p, i}
 
+def thresh1{T==i16 & hasarch{'BMI2'}} =  8
 def thresh2{T==i8  & hasarch{'BMI2'}} = 32
 def thresh2{T==i16 & hasarch{'BMI2'}} = 16
 fn slash{c, T & hasarch{'BMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -233,10 +235,8 @@ fn slash{c==1, T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u
   }
 }
 
-if (hasarch{'BMI2'}) {
-export{'bmipopc_1slash8',  slash{0, i8}}
-export{'bmipopc_1slash16', slash{0, i16}}
-}
+export{'si_1slash8' , slash{0, i8 }}
+export{'si_1slash16', slash{0, i16}}; export{'si_thresh_1slash16', u64~~thresh1{i16}}
 export{'si_2slash8' , slash{1, i8 }}; export{'si_thresh_2slash8' , u64~~thresh2{i8 }}
 export{'si_2slash16', slash{1, i16}}; export{'si_thresh_2slash16', u64~~thresh2{i16}}
 export{'si_2slash32', slash{1, i32}}; export{'si_thresh_2slash32', u64~~thresh2{i32}}

@@ -162,8 +162,8 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
 
 static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   assert(len <= bsp_max);
-  #if SINGELI_AVX2 && FAST_PDEP
-  if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len, sum);
+  #if SINGELI
+  if (sum >= len/si_thresh_1slash16) si_1slash16(src, (i16*)dst, len, sum);
   #else
   if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
   #endif
@@ -235,17 +235,17 @@ static B where(B x, usz xia, u64 s) {
   u64* xp = bitarr_ptr(x);
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
-    #if SINGELI_AVX2 && FAST_PDEP
+    #if SINGELI
     i8* rp = m_tyarrv(&r, 1, s, t_i8arr);
-    bmipopc_1slash8(xp, rp, xia, s);
+    si_1slash8(xp, rp, xia, s);
     #else
     i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
-    #if SINGELI_AVX2 && FAST_PDEP
-    if (s >= xia/8) {
+    #if SINGELI
+    if (s >= xia/si_thresh_1slash16) {
       i16* rp = m_tyarrv(&r, 2, s, t_i16arr);
-      bmipopc_1slash16(xp, rp, xia, s);
+      si_1slash16(xp, rp, xia, s);
     }
     #else
     if (s >= xia/4+xia/8) {
@@ -274,9 +274,9 @@ static B where(B x, usz xia, u64 s) {
       } else {
         bs = bit_sum(xp,b);
       }
-      #if SINGELI_AVX2 && FAST_PDEP
-      if (bs >= b/8+b/16) {
-        bmipopc_1slash16(xp, buf, b, bs);
+      #if SINGELI
+      if (bs >= b/si_thresh_1slash16+b/16) {
+        si_1slash16(xp, buf, b, bs);
         for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
       }
       #else
@@ -360,19 +360,19 @@ B grade_bool(B x, usz xia, bool up) {
   u64* xp = bitarr_ptr(x);
   u64 sum = bit_sum(xp, xia);
   u64 l0 = up? xia-sum : sum; // Length of first set of indices
-  #if SINGELI_AVX2 && FAST_PDEP
+  #if SINGELI
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(incG(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
-    #define BMI_GRADE(W) \
+    #define SI_GRADE(W) \
       i##W* rp = m_tyarrv(&r, W/8, xia, t_i##W##arr); \
-      bmipopc_1slash##W(xp0, rp   , xia, l0    );     \
-      bmipopc_1slash##W(xp1, rp+l0, xia, xia-l0);
-    if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
-    #undef BMI_GRADE
+      si_1slash##W(xp0, rp   , xia, l0    );          \
+      si_1slash##W(xp1, rp+l0, xia, xia-l0);
+    if (xia <= 128) { SI_GRADE(8) } else { SI_GRADE(16) }
+    #undef SI_GRADE
     decG(notx);
   } else if (xia <= 1ull<<31) {
     i32* rp0; r = m_i32arrv(&rp0, xia);
@@ -384,8 +384,8 @@ B grade_bool(B x, usz xia, bool up) {
     for (usz i=0; i<xia; i+=b) {
       for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
       usz b2 = b>xia-i? xia-i : b;
-      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2, s0); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
-      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2, s1); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      usz s0=bit_sum(xp0,b2); si_1slash8(xp0, (i8*)buf, b2, s0); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
+      usz s1=b2-s0;           si_1slash8(xp1, (i8*)buf, b2, s1); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
       xp1+= b2/64;
     }
     TFREE(buf);
