@@ -241,8 +241,11 @@ def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;
 
 # tuple operations
 def broadcast{T, v & isprim{T}} = v
-def iota{n & knum{n}} = @collect(i to n) i
-def broadcast{n, v & knum{n}} = @collect(n) v
+def iota{n & knum{n}} = range{n}
+def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
+  each{{i} => iter{i, vars}, range{end-begin}+begin}
+}
+def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
 
 def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
 def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
@@ -261,16 +264,6 @@ def unroll{vars,begin,end,iter & knum{begin} & knum{end}} = {
     iter{i, vars}
     f{i+1, l}
   }
-  f{begin,end}
-}
-def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
-  def f{s,e & s==e} = tup{}
-  def f{s,e & s<e} = {
-    def m = s + ((e-s)>>1)
-    def r0 = f{s, m}
-    merge{r0, f{m, e}}
-  }
-  def f{s,e & s+1==e} = tup{iter{s, vars}}
   f{begin,end}
 }
 def for{vars,begin,end,iter} = {
