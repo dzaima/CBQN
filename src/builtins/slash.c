@@ -366,6 +366,7 @@ B grade_bool(B x, usz xia, bool up) {
     B notx = bit_negate(incG(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
+    u64 q=xia%64; if (q) { usz e=xia/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
     #define SI_GRADE(W) \
       i##W* rp = m_tyarrv(&r, W/8, xia, t_i##W##arr); \
