@@ -29,6 +29,26 @@ if (hasarch{'AVX512F'}) {
 include './mask'
 include 'util/tup'
 
+def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
+def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
+
+def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
+def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
+
+def maketab{l,w} = { # Table from l bits to w-bit indices
+  def lw = l*w
+  fold{{t,k} => join{each{tup,t,k+(t<<w)%(1<<lw)}}, tup{base{1<<w,l**l}}, reverse{iota{l}}}
+}
+# 16-element tables
+i64tab  :*u32 = maketab{4,8}*2
+tab_4_16:*u64 = maketab{4,16}
+if (1) {
+  def use_table = 1
+  itab    :*u64 = maketab{8,8}
+} else {
+  def use_table = 0
+}
+
 def arg{c,T} = if (c) *T else if (T==i32) T else tup{}
 
 # Modifies the input variable r
@@ -64,9 +84,6 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
     }
   }
 }
-
-def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
-def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 
 # Assumes w is trimmed, so the last 1 appears at index l-1
 def thresh{c, T} = 2
@@ -148,7 +165,7 @@ def vgLoad{p:T, i & T == *u64} = emit{eltype{T}, 'vg_loadLUT64', p, i}
 
 def thresh{c, T==i8  & hasarch{'BMI2'}} = 32
 def thresh{c, T==i16 & hasarch{'BMI2'}} = 16
-fn slash{c, T & hasarch{'BMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+fn slash{c, T & T<=i16 & hasarch{'BMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def wt = width{T}
   def b = bind{base, 1<<wt}
   def X = if (c) {
@@ -175,7 +192,7 @@ fn slash{c, T & hasarch{'BMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : voi
   }
 }
 
-def thresh{c, T==i8  & hasarch{'AVX2'}} = 32
+def thresh{c, T==i8 & hasarch{'AVX2'}} = 32
 fn slash{c, T==i8 & hasarch{'AVX2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def I = [32]i8
   def S = [8]u32
@@ -227,12 +244,33 @@ fn slash{c, T==i8 & hasarch{'AVX2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) :
   }
 }
 
-itab  :*u64 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<64)}}, tup{0x8080808080808080}, reverse{iota{8}}}
-i64tab:*u32 = fold{{t,k} => join{each{tup,t,k+(t<<8)%(1<<32)}}, tup{0x80808080}, reverse{2*iota{4}}}
+# TODO avoid calling popcnt if it's not a single instruction
+def thresh{c==0, T==i8  & use_table} = 32
+def thresh{c==0, T==i16}             = 16
+fn slash{c==0, T & (if (T==i8) use_table else T==i16)}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+  def tw = width{T}
+  def n = 64/tw
+  def tab = if (tw==8) itab else tab_4_16
+  j:u64 = 0
+  def inc = base{1<<tw, n**n}
+  @for_special_buffered{r,8} (w in *u8~~w over sum) {
+    pc:= popc{w}
+    def step{r, w} = storeu{*u64~~r, 0, j + load{tab, w}}
+    if (tw==8) {
+      step{r,w}
+    } else {
+      h := w&0xf
+      step{r, h}; j += inc
+      step{r+popcRand{h}, w>>4}
+    }
+    j += inc
+    r += pc
+  }
+}
 
-def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
-def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
-fn slash{c, T & hasarch{'AVX2'} & width{T}>=32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c, T==i32 & hasarch{'AVX2'} & use_table} = 32
+def thresh{c, T==i64 & hasarch{'AVX2'}            } = 8
+fn slash{c, T & hasarch{'AVX2'} & (if (T==i32) use_table else T==i64)}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
   expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}

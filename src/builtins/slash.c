@@ -72,12 +72,13 @@
     #define vg_loadLUT64(p, i) p[i]
   #endif
   
-  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
-  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
 #endif
+
 #if !USE_VALGRIND
   #define rand_popc64(X) POPC(X)
 #endif
+static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
+static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
 
 #if SINGELI
   #define SINGELI_FILE slash
