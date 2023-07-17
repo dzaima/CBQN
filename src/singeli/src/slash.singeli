@@ -264,21 +264,22 @@ fn slash{c, T & hasarch{'AVX2'} & (if (T==i32) use_table else T==i64)}(wp:*u64, 
     {j} => { v:=i+VT~~j; i+=ii; v }
   }
   def tab = if (tw==32) itab else i64tab
-  def step{w} = {
-    pc := popc{w}
+  def step{r, w} = {
     ind := load{tab, w}; def I = type{ind}
     s := sel{[16]i8, V~~[width{V}/width{I}]I**ind, expander}
     if (tw==64) s |= make{V, iota{8}%2}
     store{*V~~r, 0, from_ind{s}}
-    r+= pc
   }
   @for_special_buffered{r,8} (w in *u8~~wp to sum) {
+    pc := popc{w}
     if (tw==32) {
-      step{w}
+      step{r,w}
     } else {
-      step{w&0xf}
-      step{w>>4}
+      h := w&0xf
+      step{r, h}
+      step{r+popcRand{h}, w>>4}
     }
+    r += pc
   }
 }
 
