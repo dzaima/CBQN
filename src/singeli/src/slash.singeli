@@ -268,6 +268,23 @@ fn slash{c==0, T & (if (T==i8) use_table else T==i16)}(w:*u64, x:arg{c,T}, r:*T,
   }
 }
 
+def thresh{c==1, T==i8  & hasarch{'SSSE3'} & use_table} = 64
+def thresh{c==1, T==i16 & hasarch{'SSSE3'} & use_table} = 32
+fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'} & use_table}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+  def tw = width{T}
+  def V = [16]i8
+  @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
+    pc := popc{w}
+    ind := load{itab, w}; def I = type{ind}
+    s := V~~make{[2]I, ind,0}
+    if (T==i16) { s+=s; s = V~~unpackLo{s, s+V**1} }
+    res := sel{V, load{*V~~(x+8*i)}, s}
+    if (T==i8) store{*u64~~r, 0, extract{[2]u64~~res, 0}}
+    else store{*V~~r, 0, res}
+    r+= pc
+  }
+}
+
 def thresh{c, T==i32 & hasarch{'AVX2'} & use_table} = 32
 def thresh{c, T==i64 & hasarch{'AVX2'}            } = 8
 fn slash{c, T & hasarch{'AVX2'} & (if (T==i32) use_table else T==i64)}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
