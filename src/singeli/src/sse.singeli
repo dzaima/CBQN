@@ -47,8 +47,8 @@ def topBlend{f:T, t:T, m:M & w128{T} & w128i{M,32}} = T ~~ emit{[4]f32, '_mm_ble
 def topBlend{f:T, t:T, m:M & w128{T} & w128i{M,64}} = T ~~ emit{[2]f64, '_mm_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 def topBlend{f:T, t:T, m:M & w128{T} & w128i{M, 8}} = T ~~ emit{[16]i8, '_mm_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
 # assumes all bits are the same in each mask item
-def homBlend{f:T, t:T, m:M & w128{T} & w128{M} & elwidth{M}!=16} = topBlend{f, t, m}
-def homBlend{f:T, t:T, m:M & w128{T} & w128{M,16}} = topBlend{f, t, [16]i8~~m}
+def homBlend{f:T, t:T, m:M & hasarch{'SSE4.1'} & w128{T} & w128{M} & elwidth{M}!=16} = topBlend{f, t, m}
+def homBlend{f:T, t:T, m:M & hasarch{'SSE4.1'} & w128{T} & w128{M,16}} = topBlend{f, t, [16]i8~~m}
 
 
 

@@ -74,10 +74,10 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
       buf_used = 1; goto{restart}
     }
   } else {
-    def vc = 256/tw;
-    if (hasarch{'AVX2'} and write_len >= vc) {
+    if (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
+      def vc = (if (hasarch{'AVX2'}) 256 else 128)/tw;
       def R = [vc]T
-      if (ov>vc and end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+      @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
       homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
     } else {
       @for (r0, buf over u64~~(end-buf)) r0 = buf
