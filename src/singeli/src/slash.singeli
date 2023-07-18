@@ -35,12 +35,19 @@ def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
 def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
 
-def maketab{l,w} = { # Table from l bits to w-bit indices
-  def lw = l*w
-  fold{{t,k} => join{each{tup,t,k+(t<<w)%(1<<lw)}}, tup{base{1<<w,l**l}}, reverse{iota{l}}}
+# Table from l bits to w-bit indices
+def maketab{l,w} = {
+  def bot = fold{
+    {t,k} => join{each{tup, t, k + t<<w}},
+    tup{0},
+    reverse{iota{l}}
+  }
+  # Store popcnt-1 in the high element
+  def top = (fold{bind{flat_table,+}, l**iota{2}} - 1)%(1<<w)
+  top<<(l*w-w) | bot  # Overlaps for all-1 value only
 }
 # 16-element tables
-i64tab  :*u32 = maketab{4,8}*2
+i64tab  :*u32 = (maketab{4,8}*2)%(1<<32)
 tab_4_16:*u64 = maketab{4,16}
 if (1) {
   def use_table = 1
@@ -48,6 +55,10 @@ if (1) {
 } else {
   def use_table = 0
 }
+# Recover popcount, for when POPCNT isn't there
+def has_popc = hasarch{'POPCNT'}
+def tab_popc{i, w} = (i>>(64-w) + 1) & (1<<w - 1)
+def popc_alt{v, i, w} = if (has_popc) popc{v} else tab_popc{i, w}
 
 def arg{c,T} = if (c) *T else if (T==i32) T else tup{}
 
@@ -207,7 +218,6 @@ fn slash{c, T==i8 & hasarch{'AVX2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) :
   }
 }
 
-# TODO avoid calling popcnt if it's not a single instruction
 def thresh{c==0, T==i8  & use_table} = 32
 def thresh{c==0, T==i16}             = 16
 fn slash{c==0, T & (if (T==i8) use_table else T==i16)}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -217,17 +227,16 @@ fn slash{c==0, T & (if (T==i8) use_table else T==i16)}(w:*u64, x:arg{c,T}, r:*T,
   j:u64 = 0
   def inc = base{1<<tw, n**n}
   @for_special_buffered{r,8} (w in *u8~~w over sum) {
-    pc:= popc{w}
-    def step{r, w} = storeu{*u64~~r, 0, j + load{tab, w}}
-    if (tw==8) {
-      step{r,w}
-    } else {
-      h := w&0xf
-      step{r, h}; j += inc
-      step{r+popcRand{h}, w>>4}
+    def rn = if (has_popc) r+popc{w} else 0
+    def step{w} = {
+      i := load{tab, w}
+      storeu{*u64~~r, 0, j + i}
+      r += popc_alt{w, i, tw}
+      j += inc
     }
-    j += inc
-    r += pc
+    if (tw==8) { step{w} }
+    else { step{w&0xf}; step{w>>4} }
+    if (has_popc) r = rn  # Shorter dependency chain
   }
 }
 
@@ -237,9 +246,9 @@ fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'} & use_table}(wp:*u64, x:arg{c,T}, r
   def tw = width{T}
   def V = [16]i8
   @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
-    pc := popc{w}
-    ind := load{itab, w}; def I = type{ind}
-    s := V~~make{[2]I, ind,0}
+    ind := load{itab, w}
+    pc := popc_alt{w, ind, 8}
+    s := V~~make{[2]u64, ind,0}
     if (T==i16) { s+=s; s = V~~unpackLo{s, s+V**1} }
     res := sel{V, load{*V~~(x+8*i)}, s}
     if (T==i8) store{*u64~~r, 0, extract{[2]u64~~res, 0}}
