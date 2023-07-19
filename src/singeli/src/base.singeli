@@ -160,6 +160,9 @@ def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
+def pdep{...x} = assert{'pdep not supported', show{...x}}
+def pext{...x} = assert{'pext not supported', show{...x}}
+def popcRand{...x} = assert{'popcRand not supported', show{...x}}
 def andnz{...x} = assert{'andnz not supported', show{...x}}
 def topBlend{...x} = assert{'topBlend not supported', show{...x}}
 def topMask{...x} = assert{'topMask not supported', show{...x}}
@@ -171,6 +174,8 @@ def unpackLo{...x} = assert{'unpackLo not supported', show{...x}}
 def unpackHi{...x} = assert{'unpackHi not supported', show{...x}}
 def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
 def packQ{...x} = assert{'packQ not supported', show{...x}}
+def shl{...x} = assert{'shl not supported', show{...x}}
+def shr{...x} = assert{'shr not supported', show{...x}}
 def __mulhi{...x} = assert{'__mulhi not supported', show{...x}}
 def fold_addw{...x} = assert{'fold_addw not supported', show{...x}}
 def vfold{...x} = assert{'vfold not supported', show{...x}}
@@ -204,6 +209,7 @@ def extract{...x} = assert{'extract not supported', show{...x}}
 def abs{...x} = assert{'abs not supported', show{...x}}
 def homBlend{...x} = assert{'homBlend not supported', show{...x}}
 def zip{...x} = assert{'zip not supported', show{...x}}
+def clmul{...x} = assert{'clmul not supported', show{...x}}
 
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35

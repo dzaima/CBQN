@@ -2,12 +2,16 @@
 // In the notes 𝕨 might indicate 𝕩 for Indices too
 
 // Boolean 𝕨 (Where/Compress) general case based on result type width
-// COULD use AVX-512
-// Size 1: pext, or bit-at-a-time
-//   SHOULD emulate pext if unavailable
+// Size 1: pext
+//   Emulate if unavailable
 //   COULD return boolean result from Where
-// Size 8, 16: pdep/pext, or branchless
-//   SHOULD try vector lookup-shuffle if unavailable or old AMD
+// Size 8, 16, 32, 64: mostly table-based
+//   Where: direct table lookup, widening for 16 and 32 if available
+//   Compress: table lookup plus shuffle
+//     AVX2 permutevar8x32 for 32 and 64 if available
+//     Sparse method using table-based Where fills in if no shuffle
+//   SHOULD implement for NEON
+//   AVX-512: compress instruction, separate store not compressstore
 // Size 32, 64: 16-bit indices from where_block_u16
 // Other sizes: always used grouped code
 // Adaptivity based on 𝕨 statistics
@@ -70,15 +74,19 @@
     #define _pdep_u64 vg_pdep_u64
   #else
     #define vg_loadLUT64(p, i) p[i]
-    #define rand_popc64(X) POPC(X)
   #endif
   
-  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
-  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
-  #if SINGELI_AVX2
-    #define SINGELI_FILE slash
-    #include "../utils/includeSingeli.h"
-  #endif
+#endif
+
+#if !USE_VALGRIND
+  #define rand_popc64(X) POPC(X)
+#endif
+static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
+static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
+
+#if SINGELI
+  #define SINGELI_FILE slash
+  #include "../utils/includeSingeli.h"
 #endif
 
 #if SINGELI_AVX2 || SINGELI_NEON
@@ -159,8 +167,8 @@ static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
 
 static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   assert(len <= bsp_max);
-  #if SINGELI_AVX2 && FAST_PDEP
-  if (sum >=       len/8) bmipopc_1slash16(src, (i16*)dst, len);
+  #if SINGELI
+  if (sum >= len/si_thresh_1slash16) si_1slash16(src, (i16*)dst, len, sum);
   #else
   if (sum >= len/4+len/8) WHERE_DENSE(src, dst, len, 0);
   #endif
@@ -232,19 +240,17 @@ static B where(B x, usz xia, u64 s) {
   u64* xp = bitarr_ptr(x);
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
-    #if SINGELI_AVX2 && FAST_PDEP
-    i8* rp = m_tyarrvO(&r, 1, s, t_i8arr, 8);
-    bmipopc_1slash8(xp, rp, xia);
-    FINISH_OVERALLOC_A(r, s, 8);
+    #if SINGELI
+    i8* rp = m_tyarrv(&r, 1, s, t_i8arr);
+    si_1slash8(xp, rp, xia, s);
     #else
     i8* rp; r=m_i8arrv(&rp,s); WHERE_SPARSE(xp,rp,s,0,);
     #endif
   } else if (xia <= 32768) {
-    #if SINGELI_AVX2 && FAST_PDEP
-    if (s >= xia/8) {
-      i16* rp = m_tyarrvO(&r, 2, s, t_i16arr, 16);
-      bmipopc_1slash16(xp, rp, xia);
-      FINISH_OVERALLOC_A(r, s*2, 16);
+    #if SINGELI
+    if (s >= xia/si_thresh_1slash16) {
+      i16* rp = m_tyarrv(&r, 2, s, t_i16arr);
+      si_1slash16(xp, rp, xia, s);
     }
     #else
     if (s >= xia/4+xia/8) {
@@ -273,10 +279,9 @@ static B where(B x, usz xia, u64 s) {
       } else {
         bs = bit_sum(xp,b);
       }
-      #if SINGELI_AVX2 && FAST_PDEP
-      if (bs >= b/8+b/16) {
-        bmipopc_1slash16(xp, buf, b);
-        for (usz j=0; j<bs; j++) rq[j] = i+buf[j];
+      #if SINGELI
+      if (bs >= b/si_thresh_1slash32) {
+        si_1slash32(xp, i, rq, b, bs);
       }
       #else
       if (bs >= b/2) {
@@ -359,36 +364,36 @@ B grade_bool(B x, usz xia, bool up) {
   u64* xp = bitarr_ptr(x);
   u64 sum = bit_sum(xp, xia);
   u64 l0 = up? xia-sum : sum; // Length of first set of indices
-  #if SINGELI_AVX2 && FAST_PDEP
+  #if SINGELI
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(incG(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
+    u64 q=xia%64; if (q) { usz e=xia/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
-    #define BMI_GRADE(W) \
-      i##W* rp = m_tyarrvO(&r, W/8, xia, t_i##W##arr, W); \
-      bmipopc_1slash##W(xp0, rp   , xia);                 \
-      bmipopc_1slash##W(xp1, rp+l0, xia);                 \
-      FINISH_OVERALLOC_A(r, xia*(W/8), W);
-    if (xia <= 128) { BMI_GRADE(8) } else { BMI_GRADE(16) }
-    #undef BMI_GRADE
+    #define SI_GRADE(W) \
+      i##W* rp = m_tyarrv(&r, W/8, xia, t_i##W##arr); \
+      si_1slash##W(xp0, rp   , xia, l0    );          \
+      si_1slash##W(xp1, rp+l0, xia, xia-l0);
+    if (xia <= 128) { SI_GRADE(8) } else { SI_GRADE(16) }
+    #undef SI_GRADE
     decG(notx);
   } else if (xia <= 1ull<<31) {
     i32* rp0; r = m_i32arrv(&rp0, xia);
     i32* rp1 = rp0 + l0;
     if (!up) { i32* t=rp1; rp1=rp0; rp0=t; }
-    usz b = 256; TALLOC(u8, buf, b);
+    usz b = 256;
     u64 xp0[4]; // 4 ≡ b/64
     u64* xp1 = xp;
     for (usz i=0; i<xia; i+=b) {
       for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
       usz b2 = b>xia-i? xia-i : b;
-      usz s0=bit_sum(xp0,b2); bmipopc_1slash8(xp0, (i8*)buf, b2); for (usz j=0; j<s0; j++) *rp0++ = i+buf[j];
-      usz s1=b2-s0;           bmipopc_1slash8(xp1, (i8*)buf, b2); for (usz j=0; j<s1; j++) *rp1++ = i+buf[j];
+      if (b2<b) { u64 q=b2%64; usz e=b2/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
+      usz s0=bit_sum(xp0,b2); si_1slash32(xp0, i, rp0, b2, s0); rp0+=s0;
+      usz s1=b2-s0;           si_1slash32(xp1, i, rp1, b2, s1); rp1+=s1;
       xp1+= b2/64;
     }
-    TFREE(buf);
   }
   #else
   if      (xia <= 128)      { BRANCHLESS_GRADE(i8) }
@@ -437,13 +442,17 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
-      #if defined(__BMI2__)
+      #if defined(__BMI2__) || SINGELI
       r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
       for (usz i=0; i<BIT_N(wia); i++) {
         u64 wv = wp[i];
+        #if defined(__BMI2__)
         u64 v = _pext_u64(xp[i], wv);
+        #else
+        u64 v = si_pext_u64(xp[i], wv);
+        #endif
         u64 c = rand_popc64(wv);
         cw|= v<<ro;
         u64 ro2 = ro+c;
@@ -474,25 +483,36 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       TFREE(buf)
     #define COMPRESS_BLOCK(T) COMPRESS_BLOCK_PREP(T, )
     #define WITH_SPARSE(W, CUTOFF, DENSE) { \
-      i##W *xp=tyany_ptr(x), *rp;           \
-      if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
-      else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
-      else { DENSE; }                       \
+      i##W *xp=tyany_ptr(x), *rp;                                                        \
+      if (CUTOFF!=1) {                                                                   \
+        if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
+        else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
+        else { DENSE; }                                                                  \
+      } else {                                                                           \
+        if (wsum>=wia/8 && groups_lt(wp,wia, wia/W)) r = compress_grouped(wp, x, wia, wsum, xt); \
+        else { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }                      \
+      }                                                                                  \
       break; }
-    #if SINGELI_AVX2 && FAST_PDEP
-    case 3: WITH_SPARSE( 8, 32, rp=m_tyarrvO(&r,1,wsum,xt,  8); bmipopc_2slash8 (wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum,    8))
-    case 4: WITH_SPARSE(16, 16, rp=m_tyarrvO(&r,2,wsum,xt, 16); bmipopc_2slash16(wp, xp, rp, wia); FINISH_OVERALLOC_A(r, wsum*2, 16))
+    #if SINGELI
+    #define DO(W) \
+      WITH_SPARSE(W, si_thresh_2slash##W, rp=m_tyarrv(&r,W/8,wsum,xt); si_2slash##W(wp, xp, rp, wia, wsum))
+    case 3: DO(8) case 4: DO(16) case 5: DO(32)
+    case 6: if (TI(x,elType)!=el_B) {
+            DO(64)
+      } // else follows
+    #undef DO
     #else
     case 3: WITH_SPARSE( 8,  2, rp=m_tyarrv(&r,1,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
     case 4: WITH_SPARSE(16,  2, rp=m_tyarrv(&r,2,wsum,xt); for (usz i=0; i<wia; i++) { *rp = xp[i]; rp+= bitp_get(wp,i); })
-    #endif
-    #undef WITH_SPARSE
     #define BLOCK_OR_GROUPED(T) \
       if (wsum>=wia/8 && groups_lt(wp,wia, wia/16)) r = compress_grouped(wp, x, wia, wsum, xt); \
       else { T* xp=tyany_ptr(x); T* rp=m_tyarrv(&r,sizeof(T),wsum,xt); COMPRESS_BLOCK(T); }
     case 5: BLOCK_OR_GROUPED(i32) break;
     case 6:
       if (TI(x,elType)!=el_B) { BLOCK_OR_GROUPED(u64) }
+    #undef BLOCK_OR_GROUPED
+    #endif
+    #undef WITH_SPARSE
       else {
         B xf = getFillR(x);
         B* xp = arr_bptr(x);
@@ -509,7 +529,6 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         }
       }
       break;
-    #undef BLOCK_OR_GROUPED
     #undef COMPRESS_BLOCK
   }
   ur xr = RNK(x);
