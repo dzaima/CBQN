@@ -56,8 +56,8 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i8==eltype{T} & hasarc
   }
 }
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i16==eltype{T} & hasarch{'X86_64'}} = {
-  rl:= __mul  {w,x}
-  rh:= __mulhi{w,x}
+  rl:= __mul{w,x}
+  rh:= mulHi{w,x}
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasarch{'X86_64'}} = {
@@ -69,7 +69,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasar
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = unpackQ{w, T**0}
   # def xp = unpackQ{x, T**0}
-  # def rp = each{__mul32, wp, xp}
+  # def rp = each{mul32, wp, xp}
   # def T2 = to_el{i64, T}
   # def bad = each{{v} => {
   #   ((T2~~v + T2**0x80000000) ^ T2**(cast{i64,1}<<63)) > T2**cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}
