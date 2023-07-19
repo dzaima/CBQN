@@ -2,12 +2,16 @@
 // In the notes 𝕨 might indicate 𝕩 for Indices too
 
 // Boolean 𝕨 (Where/Compress) general case based on result type width
-// COULD use AVX-512
 // Size 1: pext, or bit-at-a-time
 //   Emulate pext if unavailable
 //   COULD return boolean result from Where
-// Size 8, 16: pdep/pext, or branchless
-//   SHOULD try vector lookup-shuffle if unavailable or old AMD
+// Size 8, 16, 32, 64: mostly table-based
+//   Where: direct table lookup, widening for 16 and 32 if available
+//   Compress: table lookup plus shuffle
+//     AVX2 permutevar8x32 for 32 and 64 if available
+//     Sparse method using table-based Where fills in if no shuffle
+//   SHOULD implement for NEON
+//   AVX-512: compress instruction, separate store not compressstore
 // Size 32, 64: 16-bit indices from where_block_u16
 // Other sizes: always used grouped code
 // Adaptivity based on 𝕨 statistics
