@@ -212,7 +212,7 @@ fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
 }
 
 # i32 & i64 w/x & x+/w; 256 bits/step, 8 elts/iter; [8]i32 shuffle
-i64tab:*u64 = maketab{4,16,1,{x}=>(1+x)*0x100 + x} # 16 elts, 64B
+i64tab:*u64 = maketab{4,16,1,{x}=>(1+x)*0x100 + x} # 16 elts, 128B
 def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
 def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
 fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
