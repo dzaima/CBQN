@@ -38,15 +38,20 @@ def maketab{l,w,s} = {
   top<<(l*w-w+s) | bot  # Overlaps for all-1 value only
 }
 def maketab{l,w} = maketab{l,w,0}
-# 2KB table shared by many methods
-itab:*u64 = maketab{8,8}
+
+itab:*u64 = maketab{8,8} # 256 elts, 2KB; shared by many methods
 
 # Recover popcount, for when POPCNT isn't there
 def has_popc = hasarch{'POPCNT'}
 def tab_popc{i:I, w} = (i>>(width{I}-w) + 1) & (1<<w - 1)
 def popc_alt{v, i, w} = if (has_popc) popc{v} else tab_popc{i, w}
 
-def arg{c,T} = if (c) *T else if (T==i32) T else tup{}
+# slash{c, T} defines:
+#   if c==1: w/x
+#   if c==0 & (T==i8 or T==i16): /w
+#   if c==0 & T==i32: x + /w (assumes x is a multiple of 8 for topper)
+# if sum(w) < len/thresh{c,T}, sparse Where will be used
+def arg{c,T} = if (c) *T else if (T==i32) T else tup{} # type of x
 
 # Modifies the input variable r
 # Assumes iter{} will increment r, by at most write_len
@@ -121,7 +126,8 @@ def topper{T, U, k, x} = {
   tup{top, inc}
 }
 
-itab_4_16:*u64 = maketab{4,16}
+# i8 & i16 /w; 64 bits/iter; SWAR
+itab_4_16:*u64 = maketab{4,16} # 16 elts, 128B
 def thresh{c==0, T==i8 } = 32
 def thresh{c==0, T==i16} = 16
 fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -144,6 +150,7 @@ fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   }
 }
 
+# i16 /w & i32 x+/w; 8 elts/iter; 64 bit table input, expanded to 128 or 256 via topper
 def thresh{c==0, T==i16 & hasarch{'X86_64'}} = 32
 def thresh{c==0, T==i32 & hasarch{'X86_64'}} = 16
 fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -163,6 +170,7 @@ fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T
   }
 }
 
+# i8 & i16 w/x; 128 bits/iter; [16]i8 shuffle
 def thresh{c==1, T==i8  & hasarch{'SSSE3'}} = 64
 def thresh{c==1, T==i16 & hasarch{'SSSE3'}} = 32
 fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -179,7 +187,8 @@ fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, 
   }
 }
 
-i32tab:*u32 = maketab{4,8,2}
+# i32 w/x; 8 elts/iter into 2 steps; [16]i8 shuffle
+i32tab:*u32 = maketab{4,8,2} # 16 elts, 64B
 def thresh{c==1, T==i32 & hasarch{'SSSE3'}} = 8
 fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def V = [16]i8
@@ -201,7 +210,8 @@ fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
   }
 }
 
-i64tab:*u32 = maketab{4,8,1}
+# i32 & i64 w/x & x+/w; 256 bits/step, 8 elts/iter; [8]i32 shuffle
+i64tab:*u32 = maketab{4,8,1} # 16 elts, 64B
 def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
 def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
 fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -237,6 +247,7 @@ fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
   }
 }
 
+# everything; 512 bits/iter; AVX-512 compress
 def thresh{c, T==i8  & hasarch{'AVX512VBMI2'}} = 256
 def thresh{c, T==i16 & hasarch{'AVX512VBMI2'}} = 128
 def thresh{c, T==i32 & hasarch{'AVX512F'}}     = 64
