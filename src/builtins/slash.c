@@ -2,8 +2,8 @@
 // In the notes 𝕨 might indicate 𝕩 for Indices too
 
 // Boolean 𝕨 (Where/Compress) general case based on result type width
-// Size 1: pext, or bit-at-a-time
-//   Emulate pext if unavailable
+// Size 1: pext
+//   Emulate if unavailable
 //   COULD return boolean result from Where
 // Size 8, 16, 32, 64: mostly table-based
 //   Where: direct table lookup, widening for 16 and 32 if available
