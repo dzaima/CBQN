@@ -479,10 +479,15 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       TFREE(buf)
     #define COMPRESS_BLOCK(T) COMPRESS_BLOCK_PREP(T, )
     #define WITH_SPARSE(W, CUTOFF, DENSE) { \
-      i##W *xp=tyany_ptr(x), *rp;           \
-      if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
-      else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
-      else { DENSE; }                       \
+      i##W *xp=tyany_ptr(x), *rp;                                                        \
+      if (CUTOFF!=1) {                                                                   \
+        if (wsum<wia/CUTOFF) { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }      \
+        else if (groups_lt(wp,wia, wia/128)) r = compress_grouped(wp, x, wia, wsum, xt); \
+        else { DENSE; }                                                                  \
+      } else {                                                                           \
+        if (wsum>=wia/8 && groups_lt(wp,wia, wia/W)) r = compress_grouped(wp, x, wia, wsum, xt); \
+        else { rp=m_tyarrv(&r,W/8,wsum,xt); COMPRESS_BLOCK(i##W); }                      \
+      }                                                                                  \
       break; }
     #if SINGELI
     #define DO(W) \

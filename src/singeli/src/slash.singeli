@@ -95,7 +95,8 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
 }
 
 # Assumes w is trimmed, so the last 1 appears at index l-1
-def thresh{c, T} = 2
+def fast_where = hasarch{'X86_64'} & use_table
+def thresh{c, T} = if (fast_where) 1 else 2
 fn slash{c, T}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def bitp_get{arr, n} = (load{arr,n>>6} >> (n&63)) & 1
   @for (i to l) {
@@ -133,7 +134,9 @@ def topper{T, U, k, x} = {
   tup{top, inc}
 }
 
-def thresh{c, T & hasarch{'X86_64'} & T<=(if (c) i8 else i32)} = 4
+def thresh{c, T & hasarch{'X86_64'} & T<=(if (c) i8 else i32)} = {
+  if (fast_where) 1 else 4
+}
 fn slash{c, T & hasarch{'X86_64'} & T<=(if (c) i8 else i32)}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def U = [16]u8
   k1 := U**1
@@ -248,9 +251,9 @@ fn slash{c==0, T & (if (T==i8) use_table else T==i16)}(w:*u64, x:arg{c,T}, r:*T,
   }
 }
 
-def thresh{c==0, T==i16 & hasarch{'X86_64'}} = 32
-def thresh{c==0, T==i32 & hasarch{'X86_64'}} = 16
-fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c==0, T==i16 & hasarch{'X86_64'} & use_table} = 32
+def thresh{c==0, T==i32 & hasarch{'X86_64'} & use_table} = 16
+fn slash{c==0, T & hasarch{'X86_64'} & use_table & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def I = [16]i8
   j := I**(if (T==i16) 0 else cast_i{i8,x})
   def {top, inctop} = topper{T, I, 8, x}
