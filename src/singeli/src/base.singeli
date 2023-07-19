@@ -169,9 +169,6 @@ def topMask{...x} = assert{'topMask not supported', show{...x}}
 def packLo{...x} = assert{'packLo not supported', show{...x}}
 def packHi{...x} = assert{'packHi not supported', show{...x}}
 def mul12{...x} = assert{'mul12 not supported', show{...x}}
-def unpack{...x} = assert{'unpack not supported', show{...x}}
-def unpackLo{...x} = assert{'unpackLo not supported', show{...x}}
-def unpackHi{...x} = assert{'unpackHi not supported', show{...x}}
 def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
 def packQ{...x} = assert{'packQ not supported', show{...x}}
 def shl{...x} = assert{'shl not supported', show{...x}}
@@ -208,9 +205,14 @@ def b_getBatch{...x} = assert{'b_getBatch not supported', show{...x}}
 def extract{...x} = assert{'extract not supported', show{...x}}
 def abs{...x} = assert{'abs not supported', show{...x}}
 def homBlend{...x} = assert{'homBlend not supported', show{...x}}
-def zip{...x} = assert{'zip not supported', show{...x}}
 def clmul{...x} = assert{'clmul not supported', show{...x}}
+def zip{...x} = assert{'zip not supported', show{...x}}
+def zipLo{...x} = assert{'zipLo not supported', show{...x}}
+def zipHi{...x} = assert{'zipHi not supported', show{...x}}
 
+def mzip  {a:T, b:T} = each{{v}=>ty_dbl{T}~~v, zip{a, b}}
+def mzipLo{a:T, b:T} = ty_dbl{T} ~~ zipLo{a, b}
+def mzipHi{a:T, b:T} = ty_dbl{T} ~~ zipHi{a, b}
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35
 def widen{T, x:X & T==X} = x

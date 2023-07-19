@@ -152,19 +152,20 @@ fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
 }
 
 # i16 /w & i32 x+/w; 8 elts/iter; 64 bit table input, expanded to 128 or 256 via topper
-def thresh{c==0, T==i16 & hasarch{'X86_64'}} = 32
-def thresh{c==0, T==i32 & hasarch{'X86_64'}} = 16
-fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def simd128{} = hasarch{'X86_64'} | hasarch{'AARCH64'}
+def thresh{c==0, T==i16 & simd128{}} = 32
+def thresh{c==0, T==i32 & simd128{}} = 16
+fn slash{c==0, T & simd128{} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def I = [16]i8
   j := I**(if (T==i16) 0 else cast_i{i8,x})
   def {top, inctop} = topper{T, I, 8, x}
   @for_special_buffered{r,8} (w in *u8~~w over i to sum) {
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
-    v := unpackLo{j + I~~make{[2]u64, ind, 0}, tupsel{0,top}}
+    v := mzipLo{j + I~~make{[2]u64, ind, 0}, tupsel{0,top}}
     def st{k, v:V} = store{*V~~r, k, v}
     if (T==i16) st{0, v}
-    else each{st, iota{2}, unpack{v, tupsel{1,top}}}
+    else each{st, iota{2}, mzip{v, tupsel{1,top}}}
     r += pc
     j += I**8
     inctop{i, top}
@@ -172,15 +173,16 @@ fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T
 }
 
 # i8 & i16 w/x; 128 bits/iter; [16]i8 shuffle
-def thresh{c==1, T==i8  & hasarch{'SSSE3'}} = 64
-def thresh{c==1, T==i16 & hasarch{'SSSE3'}} = 32
-fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def shufb128{} = hasarch{'SSSE3'} | hasarch{'AARCH64'}
+def thresh{c==1, T==i8  & shufb128{}} = 64
+def thresh{c==1, T==i16 & shufb128{}} = 32
+fn slash{c==1, T & T<=i16 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def V = [16]i8
   @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
     s := V~~make{[2]u64, ind,0}
-    if (T==i16) { s+=s; s = V~~unpackLo{s, s+V**1} }
+    if (T==i16) { s+=s; s = V~~mzipLo{s, s+V**1} }
     res := sel{V, load{*V~~(x+8*i)}, s}
     if (T==i8) store{*u64~~r, 0, extract{[2]u64~~res, 0}}
     else store{*V~~r, 0, res}
@@ -190,8 +192,8 @@ fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, 
 
 # i32 w/x; 8 elts/iter into 2 steps; [16]i8 shuffle
 i32tab:*u32 = maketab{4,8,2} # 16 elts, 64B
-def thresh{c==1, T==i32 & hasarch{'SSSE3'}} = 8
-fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c==1, T==i32 & shufb128{}} = 8
+fn slash{c==1, T==i32 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def V = [16]i8
   expander := make{V, iota{16}>>2}
   trail := make{V, tail{2,iota{16}}}

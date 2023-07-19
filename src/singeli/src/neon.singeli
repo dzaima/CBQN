@@ -119,9 +119,9 @@ def copyLane{dst:D, di, src:S, si & w64{D}  & nvec{S} & eltype{D}==eltype{S}} = 
 def copyLane{dst:D, di, src:S, si & w128{D} & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
 def vshl{a:T, b:T, n & knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
 
-def zip1{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
-def zip2{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
-def zip{a:T, b:T & nvec{T}} = tup{zip1{a,b}, zip2{a,b}}
+def zipLo{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
+def zipHi{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
+def zip{a:T, b:T & nvec{T}} = tup{zipLo{a,b}, zipHi{a,b}}
 
 def packLo{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
 def packHi{x:T, y:T & nvec{T}} = { def H=ty_half{T}; emit{H, ntyp{'vuzp2', H}, H~~x, H~~y} }
