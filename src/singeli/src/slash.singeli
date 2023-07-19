@@ -26,10 +26,10 @@ def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
 def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
 
-# Table from l bits to w-bit indices, shifted left by s
-def maketab{l,w,s} = {
+# Table from l bits to w-bit indices, shifted left by s, and G applied afterwards
+def maketab{l,w,s,G} = {
   def bot = fold{
-    {t,k} => join{each{tup, t, k + t<<w}},
+    {t,k} => join{each{tup, t, G{k} + t<<w}},
     tup{0},
     reverse{iota{l}<<s}
   }
@@ -37,6 +37,7 @@ def maketab{l,w,s} = {
   def top = (fold{bind{flat_table,+}, l**iota{2}} - 1)%(1<<(w-s))
   top<<(l*w-w+s) | bot  # Overlaps for all-1 value only
 }
+def maketab{l,w,s} = maketab{l,w,s,{x}=>x}
 def maketab{l,w} = maketab{l,w,0}
 
 itab:*u64 = maketab{8,8} # 256 elts, 2KB; shared by many methods
@@ -211,7 +212,7 @@ fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
 }
 
 # i32 & i64 w/x & x+/w; 256 bits/step, 8 elts/iter; [8]i32 shuffle
-i64tab:*u32 = maketab{4,8,1} # 16 elts, 64B
+i64tab:*u64 = maketab{4,16,1,{x}=>(1+x)*0x100 + x} # 16 elts, 64B
 def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
 def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
 fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
@@ -229,9 +230,7 @@ fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
   }
   def tab = if (tw==32) itab else i64tab
   def step{r, w} = {
-    ind := load{tab, w}; def I = type{ind}
-    s := sel{[16]i8, V~~[width{V}/width{I}]I**ind, expander}
-    if (tw==64) s |= make{V, iota{8}%2}
+    s:= loadBatch{*u8~~(tab+w), 0, V}
     store{*V~~r, 0, from_ind{s}}
   }
   @for_special_buffered{r,8} (w in *u8~~wp to sum) {
