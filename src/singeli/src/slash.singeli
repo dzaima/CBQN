@@ -70,8 +70,8 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
       buf_used = 1; goto{restart}
     }
   } else {
-    if (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
-      def vc = (if (hasarch{'AVX2'}) 256 else 128)/tw;
+    if (has_simd) {
+      def vc = arch_defvw/tw;
       def R = [vc]T
       @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
       homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
