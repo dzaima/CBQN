@@ -11,6 +11,7 @@ if (hasarch{'AVX512F'}) {
     def p = each{{c}=>promote{eltype{T},c},reverse{xs}}
     emit{T, mti{'set',T}, ...p}
   }
+  def iota{T & isvec{T} & 512==width{T}} = make{T, iota{vcount{T}}}
   def broadcast{T, v & isvec{T} & 512==width{T}} = {
     emit{T, mti{'set1',T}, promote{eltype{T},v}}
   }
@@ -97,10 +98,9 @@ def getter{c, V, x} = {
     i:u64 = 0
     {} => { v:=load{*V~~x, i}; ++i; v }
   } else {
-    def k = vcount{V}
-    i := make{V, iota{k}}
+    i := iota{V}
     if (isreg{x}) i += V**cast_i{eltype{V},x}
-    ii := V**k
+    ii := V**vcount{V}
     {} => { v:=i; i+=ii; v }
   }
 }
