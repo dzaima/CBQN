@@ -2,8 +2,6 @@ include './base'
 include './sse'
 include './clmul'
 
-def unpacklo{a:T,b:T & T==[2]u64} = emit{T, '_mm_unpacklo_epi64', a, b}
-
 fn clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
@@ -19,7 +17,7 @@ fn clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   e := words/2
   c := V**init
   @for (rv, xv over e) {
-    rv = apply{unpacklo, (@collect (j to 2) xor64{xv, j, c})}
+    rv = apply{unpackLo, (@collect (j to 2) xor64{xv, j, c})}
   }
   if (words & 1) {
     storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
