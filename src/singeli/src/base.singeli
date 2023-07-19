@@ -160,55 +160,14 @@ def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
-def pdep{...x} = assert{'pdep not supported', show{...x}}
-def pext{...x} = assert{'pext not supported', show{...x}}
-def popcRand{...x} = assert{'popcRand not supported', show{...x}}
-def andnz{...x} = assert{'andnz not supported', show{...x}}
-def topBlend{...x} = assert{'topBlend not supported', show{...x}}
-def topMask{...x} = assert{'topMask not supported', show{...x}}
-def packLo{...x} = assert{'packLo not supported', show{...x}}
-def packHi{...x} = assert{'packHi not supported', show{...x}}
-def mul12{...x} = assert{'mul12 not supported', show{...x}}
-def unpackQ{...x} = assert{'unpackQ not supported', show{...x}}
-def packQ{...x} = assert{'packQ not supported', show{...x}}
-def shl{...x} = assert{'shl not supported', show{...x}}
-def shr{...x} = assert{'shr not supported', show{...x}}
-def mulHi{...x} = assert{'mulHi not supported', show{...x}}
-def fold_addw{...x} = assert{'fold_addw not supported', show{...x}}
-def vfold{...x} = assert{'vfold not supported', show{...x}}
-def narrowPair{...x} = assert{'narrowPair not supported', show{...x}}
-def pair{...x} = assert{'pair not supported', show{...x}}
-def cvt{...x} = assert{'cvt not supported', show{...x}}
-def shuf{...x} = assert{'shuf not supported', show{...x}}
-def shuf16Lo{...x} = assert{'shuf16Lo not supported', show{...x}}
-def shuf16Hi{...x} = assert{'shuf16Hi not supported', show{...x}}
-def shufHalves{...x} = assert{'shufHalves not supported', show{...x}}
-def homAll{...x} = assert{'homAll not supported', show{...x}}
-def homAny{...x} = assert{'homAny not supported', show{...x}}
-def homMask{...x} = assert{'homMask not supported', show{...x}}
-def andAllZero{...x} = assert{'andAllZero not supported', show{...x}}
-def loadLow{...x} = assert{'loadLow not supported', show{...x}}
-def storeLow{...x} = assert{'storeLow not supported', show{...x}}
-def sel{...x} = assert{'sel not supported', show{...x}}
-def make{...x} = assert{'make not supported', show{...x}}
-def half{...x} = assert{'half not supported', show{...x}}
-def topMaskStore{...x} = assert{'topMaskStore not supported', show{...x}}
-def homMaskStore{...x} = assert{'homMaskStore not supported', show{...x}}
-def topMaskStoreF{...x} = assert{'topMaskStoreF not supported', show{...x}}
-def homMaskStoreF{...x} = assert{'homMaskStoreF not supported', show{...x}}
-def widen{...x} = assert{'widen not supported', show{...x}}
-def narrow{...x} = assert{'narrow not supported', show{...x}}
-def unord{...x} = assert{'unord not supported', show{...x}}
-def floor{...x} = assert{'floor not supported', show{...x}}
-def loadBatchBit{...x} = assert{'loadBatchBit not supported', show{...x}}
-def b_getBatch{...x} = assert{'b_getBatch not supported', show{...x}}
-def extract{...x} = assert{'extract not supported', show{...x}}
-def abs{...x} = assert{'abs not supported', show{...x}}
-def homBlend{...x} = assert{'homBlend not supported', show{...x}}
-def clmul{...x} = assert{'clmul not supported', show{...x}}
-def zip{...x} = assert{'zip not supported', show{...x}}
-def zipLo{...x} = assert{'zipLo not supported', show{...x}}
-def zipHi{...x} = assert{'zipHi not supported', show{...x}}
+def {
+  abs,andAllZero,andnz,b_getBatch,clmul,cvt,extract,floor,fold_addw,half,
+  homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
+  loadLow,make,mul12,mulHi,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
+  pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
+  topBlend,topMask,topMaskStore,topMaskStoreF,unord,unpackQ,vfold,widen,
+  zip,zipHi,zipLo
+}
 
 def mzip  {a:T, b:T} = each{{v}=>ty_dbl{T}~~v, zip{a, b}}
 def mzipLo{a:T, b:T} = ty_dbl{T} ~~ zipLo{a, b}
