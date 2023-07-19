@@ -35,23 +35,24 @@ def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
 def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
 def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
 
-# Table from l bits to w-bit indices
-def maketab{l,w} = {
+# Table from l bits to w-bit indices, shifted left by s
+def maketab{l,w,s} = {
   def bot = fold{
     {t,k} => join{each{tup, t, k + t<<w}},
     tup{0},
-    reverse{iota{l}}
+    reverse{iota{l}<<s}
   }
   # Store popcnt-1 in the high element
-  def top = (fold{bind{flat_table,+}, l**iota{2}} - 1)%(1<<w)
-  top<<(l*w-w) | bot  # Overlaps for all-1 value only
+  def top = (fold{bind{flat_table,+}, l**iota{2}} - 1)%(1<<(w-s))
+  top<<(l*w-w+s) | bot  # Overlaps for all-1 value only
 }
+def maketab{l,w} = maketab{l,w,0}
 # 2KB table shared by many methods
 itab:*u64 = maketab{8,8}
 
 # Recover popcount, for when POPCNT isn't there
 def has_popc = hasarch{'POPCNT'}
-def tab_popc{i, w} = (i>>(64-w) + 1) & (1<<w - 1)
+def tab_popc{i:I, w} = (i>>(width{I}-w) + 1) & (1<<w - 1)
 def popc_alt{v, i, w} = if (has_popc) popc{v} else tab_popc{i, w}
 
 def arg{c,T} = if (c) *T else if (T==i32) T else tup{}
@@ -175,7 +176,6 @@ fn slash{c==0, T & hasarch{'X86_64'} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T
 def thresh{c==1, T==i8  & hasarch{'SSSE3'}} = 64
 def thresh{c==1, T==i16 & hasarch{'SSSE3'}} = 32
 fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
-  def tw = width{T}
   def V = [16]i8
   @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
     ind := load{itab, w}
@@ -189,7 +189,29 @@ fn slash{c==1, T & T<=i16 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, 
   }
 }
 
-i64tab:*u32 = (maketab{4,8}*2)%(1<<32)
+i32tab:*u32 = maketab{4,8,2}
+def thresh{c==1, T==i32 & hasarch{'SSSE3'}} = 8
+fn slash{c==1, T==i32 & hasarch{'SSSE3'}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+  def V = [16]i8
+  expander := make{V, iota{16}>>2}
+  trail := make{V, tail{2,iota{16}}}
+  def step{w,i} = {
+    ind := load{i32tab, w}
+    pc := popc_alt{w, ind, 6}
+    s := sel{[16]i8, V~~make{[4]u32, ind, ... 3**0}, expander} | trail
+    res := sel{V, load{*V~~(x+4*i)}, s}
+    store{*V~~r, 0, res}
+    r+= pc
+  }
+  @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
+    def rn = if (has_popc) r+popc{w} else 0
+    step{w&0xf, 2*i}
+    step{w>>4, 2*i+1}
+    if (has_popc) r = rn
+  }
+}
+
+i64tab:*u32 = maketab{4,8,1}
 def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
 def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
 fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
