@@ -82,8 +82,6 @@ def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element
   spreadBits{T, b_getBatchLo{vcount{T}, x, n}}
 }
 
-def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
-
 # load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it
 def loaduBitRaw{x:*u64, i} = {
   loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)

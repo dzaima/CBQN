@@ -2,18 +2,36 @@ include 'skin/c'
 include 'arch/c'
 include 'util/kind'
 
+def Size = u64
+config usz = u32
+
+def same = is
 oper ~~ reinterpret infix right 55
 oper ** broadcast infix right 55
-def same = is
-def Size = u64
-def load{x} = *x
+
+def isreg   = kreg
+def isconst = kcon
+def istype  = ktyp
+def istup   = ktup
+
+def isunsigned{T} = isint{T} & ~issigned{T}
+
+def isvec {T} = 0; def isvec {T & istype{T}} = same{typekind{T},'vector'}
+def isprim{T} = 0; def isprim{T & istype{T}} = same{typekind{T},'primitive'}
+def isptr {T} = 0; def isptr {T & istype{T}} = same{typekind{T},'pointer'}
+def elwidth{T} = width{eltype{T}}
+
+
+
+def load{p:P & isptr{P}} = load{p, 0}
+def store{p:P, v:V & isptr{P} & eltype{P}==v} = store{p, 0, v}
+def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
+def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
+
 def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{{n} => export{n, f}, ns}
 def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
-config usz = u32
-
-def elwidth{T} = width{eltype{T}}
 
 # more arith
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
@@ -61,18 +79,6 @@ def oneVal{{h, ...t}} = {
 }
 def oneVal{{}} = {}
 def oneType{x} = oneVal{each{type, x}}
-
-def isreg   = kreg
-def isconst = kcon
-def istype  = ktyp
-def istup   = ktup
-
-def isunsigned{T} = isint{T} & ~issigned{T}
-
-def isvec {T} = 0; def isvec {T & istype{T}} = same{typekind{T},'vector'}
-def isprim{T} = 0; def isprim{T & istype{T}} = same{typekind{T},'primitive'}
-def isptr {T} = 0; def isptr {T & istype{T}} = same{typekind{T},'pointer'}
-
 
 def anyNum{x} = isconst{x} | knum{x}
 def anyNum{x:T} = isprim{T}

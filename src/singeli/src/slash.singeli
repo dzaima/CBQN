@@ -20,9 +20,6 @@ if (hasarch{'AVX512F'}) {
 include './mask'
 include 'util/tup'
 
-def storeu{p:T, i, v:eltype{T} & *u64==T} = emit{void, 'storeu_u64', p+i, v}
-def loadu{p:T & *u64==T} = emit{eltype{T}, 'loadu_u64', p}
-
 def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
 def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
 
@@ -141,7 +138,7 @@ fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
     def rn = if (has_popc) r+popc{w} else 0
     def step{w} = {
       i := load{tab, w}
-      storeu{*u64~~r, 0, j + i}
+      storeu{*u64~~r, j + i}
       r += popc_alt{w, i, tw}
       j += inc
     }

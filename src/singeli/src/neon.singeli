@@ -93,10 +93,6 @@ def vfold{F, x:T & nvec{T} & ~nveci{T,64} & same{F, min}} = fold_min{x}
 def vfold{F, x:T & nvec{T} & ~nveci{T,64} & same{F, max}} = fold_max{x}
 def vfold{F, x:T & nvec{T} & same{F, +}} = fold_add{x}
 
-# TODO don't rely on regular stores being unaligned
-local def storeu{ptr:P, e:T} = store{ptr, 0, e}
-local def loadu{ptr:P} = load{ptr}
-
 def storeLow{ptr:P, w, x:T & nvec{T} & w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{to_el{E,T}~~x, 0}} }
 def storeLow{ptr:P, w, x:T & nvec{T} & w==width{T}} = store{*T~~ptr, 0, x}
 

@@ -293,7 +293,6 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 }
 
 #if SINGELI_SIMD
-  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
   #define SINGELI_FILE copy
   #include "./includeSingeli.h"
   typedef void (*copy_fn)(void*, void*, u64, void*);

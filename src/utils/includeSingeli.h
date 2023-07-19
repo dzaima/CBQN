@@ -13,6 +13,9 @@
     #define _mm_storeu_si32 custom_storeu_si32
   #endif
   
+  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
+  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
+  
   #define BCALL(N, X) N(b(X))
   #define interp_f64(X) b(X).f
   
