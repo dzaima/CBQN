@@ -209,6 +209,7 @@ def extract{...x} = assert{'extract not supported', show{...x}}
 def abs{...x} = assert{'abs not supported', show{...x}}
 def homBlend{...x} = assert{'homBlend not supported', show{...x}}
 def zip{...x} = assert{'zip not supported', show{...x}}
+def clmul{...x} = assert{'clmul not supported', show{...x}}
 
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35

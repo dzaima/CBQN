@@ -1,19 +1,8 @@
 include './base'
-if (hasarch{'BMI2'}) {
-  include './bmi2'
-}
-if (hasarch{'X86_64'}) {
-  include './sse'
-}
-if (hasarch{'PCLMUL'}) {
-  def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
-} else {
-  def clmul{...x} = assert{'clmul not supported', show{...x}}
-}
-if (hasarch{'AVX2'}) {
-  include './avx'
-  include './avx2'
-}
+if (hasarch{'X86_64'}) include './sse'
+if (hasarch{'PCLMUL'}) include './clmul'
+if (hasarch{'AVX2'}) { include './avx'; include './avx2' }
+if (hasarch{'BMI2'}) include './bmi2'
 if (hasarch{'AVX512F'}) {
   local def mti{s,T} = merge{'_mm512_',s,'_epi',fmtnat{elwidth{T}}}
   def load{a:T, n & 512==width{eltype{T}}} = emit{eltype{T}, '_mm512_loadu_si512', a+n}

@@ -1,7 +1,7 @@
 include './base'
 include './sse'
+include './clmul'
 
-def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
 def unpacklo{a:T,b:T & T==[2]u64} = emit{T, '_mm_unpacklo_epi64', a, b}
 
 fn clmul_scan_ne_any(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
