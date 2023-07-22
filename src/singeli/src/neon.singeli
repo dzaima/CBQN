@@ -2,10 +2,10 @@ def nvec{T} = 0
 def nvec{T & isvec{T}} = (width{T}==64) | (width{T}==128)
 def nvec{T,w} = 0
 def nvec{T,w & nvec{T}} = elwidth{T}==w
-def nveci = genchk{nvec, {T} => isint{T}}
-def nvecs = genchk{nvec, {T} =>   issigned{T}}
-def nvecu = genchk{nvec, {T} => isunsigned{T}}
-def nvecf = genchk{nvec, {T} => isfloat{T}}
+def nveci = genchk{nvec,      isint}
+def nvecs = genchk{nvec,   issigned}
+def nvecu = genchk{nvec, isunsigned}
+def nvecf = genchk{nvec,    isfloat}
 
 
 def reinterpret{T, v & same{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }

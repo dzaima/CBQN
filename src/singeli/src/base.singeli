@@ -106,10 +106,10 @@ def genchk{B, F} = {
   def r{T & ~isvec{T}} = 0
   r
 }
-def w256i = genchk{w256, {T} => isint{T}};      def w128i = genchk{w128, {T} => isint{T}};      def w64i = genchk{w64, {T} => isint{T}}
-def w256s = genchk{w256, {T} =>   issigned{T}}; def w128s = genchk{w128, {T} =>   issigned{T}}; def w64s = genchk{w64, {T} =>   issigned{T}}
-def w256u = genchk{w256, {T} => isunsigned{T}}; def w128u = genchk{w128, {T} => isunsigned{T}}; def w64u = genchk{w64, {T} => isunsigned{T}}
-def w256f = genchk{w256, {T} => isfloat{T}};    def w128f = genchk{w128, {T} => isfloat{T}};    def w64f = genchk{w64, {T} => isfloat{T}}
+def w256i = genchk{w256,      isint};  def w128i = genchk{w128,      isint};  def w64i = genchk{w64,      isint}
+def w256s = genchk{w256,   issigned};  def w128s = genchk{w128,   issigned};  def w64s = genchk{w64,   issigned}
+def w256u = genchk{w256, isunsigned};  def w128u = genchk{w128, isunsigned};  def w64u = genchk{w64, isunsigned}
+def w256f = genchk{w256,    isfloat};  def w128f = genchk{w128,    isfloat};  def w64f = genchk{w64,    isfloat}
 
 
 
