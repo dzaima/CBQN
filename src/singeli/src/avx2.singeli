@@ -156,17 +156,17 @@ def widen{T==[ 4]u64, x:X & X==[4]u32} = emit{T, '_mm256_cvtepu32_epi64', x}; de
 def narrow{T, x:X & w256i{X,32} & width{T}==8} = {
   a:= packQ{x, x}
   b:= packQ{a, a}
-  to_el{T, sel{[8]u32, b, make{[8]i32, 0,4,0,4,0,4,0,4}}}
+  re_el{T, sel{[8]u32, b, make{[8]i32, 0,4,0,4,0,4,0,4}}}
 }
-def narrow{T, x:X & w256i{X,32} & width{T}==16} = to_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
-def narrow{T, x:X & w256i{X,16} & width{T}== 8} = to_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
+def narrow{T, x:X & w256i{X,32} & width{T}==16} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
+def narrow{T, x:X & w256i{X,16} & width{T}== 8} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
 
 def narrow{T, x:X & w256f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
 def narrow{T, x:X & w256f{X,64} & T==i32} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
 
-def narrow{T, x:X & w256u{X,64} & T==u32} = to_el{T, sel{[8]i32, x, make{[8]i32, 2*iota{8}}}}
-def narrow{T, x:X & w256u{X,64} & T==u16} = to_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, (iota{32}>>1<<2) | (iota{32}&1)}}}
-def narrow{T, x:X & w256u{X,64} & T== u8} = to_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, 4*iota{32}}}}
+def narrow{T, x:X & w256u{X,64} & T==u32} = re_el{T, sel{[8]i32, x, make{[8]i32, 2*iota{8}}}}
+def narrow{T, x:X & w256u{X,64} & T==u16} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, (iota{32}>>1<<2) | (iota{32}&1)}}}
+def narrow{T, x:X & w256u{X,64} & T== u8} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, 4*iota{32}}}}
 
 
 def cvt2{T, x:X & T==i32 & X==[4]f64} = emit{[4]i32, '_mm256_cvtpd_epi32', x}

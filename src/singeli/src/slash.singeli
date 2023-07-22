@@ -112,7 +112,7 @@ def getter{c, V, x} = {
 # These can only change between loop iterations, provided the
 # given x for i32 is a multiple of the loop step
 def topper{T, U, k, x} = {
-  def make_top{S} = to_el{S,U}**(if (T<i32) 0 else cast_i{S, x>>width{S}})
+  def make_top{S} = re_el{S,U}**(if (T<i32) 0 else cast_i{S, x>>width{S}})
   top := each{make_top, replicate{{S}=>S<T, tup{i8,i16}}}
   def i_off = if (T<i32) 0 else { assert{x%k==0}; cast_i{u64, x/k} }
   # Increment top vector when i*k passes width of bottom vector

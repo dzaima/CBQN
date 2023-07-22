@@ -27,6 +27,8 @@ def load{p:P & isptr{P}} = load{p, 0}
 def store{p:P, v:V & isptr{P} & eltype{P}==v} = store{p, 0, v}
 def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
 def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
+def loadu{p:T               & elwidth{T}==8} = load{p}
+def storeu{p:T, v:eltype{T} & elwidth{T}==8} = store{p, v}
 
 def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{{n} => export{n, f}, ns}
@@ -126,35 +128,37 @@ def tern{c, t:T, f:T & anyInt{c}} = {
   res
 }
 
-# reinterpret vector element type to signed/unsigned
-def ty_s{w} = primtype{'i', w}
-def ty_u{w} = primtype{'u', w}
-
-def ty_u{T & isprim{T}} = ty_u{width{T}}
-def ty_s{T & isprim{T}} = ty_s{width{T}}
-
-def ty_u{T & isvec{T}} = [vcount{T}](ty_u{eltype{T}})
-def ty_s{T & isvec{T}} = [vcount{T}](ty_s{eltype{T}})
-def ty_u{x:T} = ty_u{T}~~x
-def ty_s{x:T} = ty_s{T}~~x
-
-# reinterpret vector as one with element type E
-def to_el{E, T & isvec{T}} = [width{T}/width{E}]E
-def to_el{E, x:T} = to_el{E,T} ~~ x
-
-# change width of primitive type
 def to_w{T, w} = primtype{quality{T}, w}
-# double/halve primitive or element type width
-def ty_dbl {T & isprim{T}} = to_w{T, width{T}*2}
-def ty_half{T & isprim{T}} = to_w{T, width{T}/2}
-def ty_dbl {T & isvec{T}} = to_el{ty_dbl {eltype{T}}, T}
-def ty_half{T & isvec{T}} = to_el{ty_half{eltype{T}}, T}
-# double/halve vector count
-def v_dbl {T & isvec{T}} = [vcount{T}*2](eltype{T})
-def v_half{T & isvec{T}} = [vcount{T}/2](eltype{T})
-# double element width without changing count
-def el_dbl {T & isvec{T}} = [vcount{T}](ty_dbl{eltype{T}})
-def el_half{T & isvec{T}} = [vcount{T}](ty_half{eltype{T}})
+
+def re_el{E, V} = [width{V}/width{E}]E
+def re_el{E, x:V} = re_el{E,V} ~~ x
+
+local def qualChange{q} = {
+  def f{w & knum{w}} = primtype{q, w}
+  def f{T & isprim{T}} = primtype{q, width{T}}
+  def f{T & isvec{T}} = re_el{f{eltype{T}}, T}
+  def f{x:T} = f{T}~~x
+}
+def ty_u = qualChange{'u'}
+def ty_s = qualChange{'i'}
+def ty_f = qualChange{'f'}
+
+def w_n{T, w & isprim{T}} = primtype{quality{T}, w}
+def w_d{T & isprim{T}} = to_w{T, width{T}*2} # double/halve primitive type width
+def w_h{T & isprim{T}} = to_w{T, width{T}/2}
+
+def n_d{T & isvec{T}} = [vcount{T}*2](eltype{T}) # double/halve vector count
+def n_h{T & isvec{T}} = [vcount{T}/2](eltype{T})
+
+def el_d{T & isvec{T}} = [vcount{T}](w_d{eltype{T}}) # double/halve element width, preserving count
+def el_h{T & isvec{T}} = [vcount{T}](w_h{eltype{T}})
+
+def el_m{T & isvec{T}} = re_el{w_d{eltype{T}}, T};  def el_m{x:T} = re_el{T}~~x # double/halve element width, preserving width
+def el_s{T & isvec{T}} = re_el{w_h{eltype{T}}, T};  def el_s{x:T} = re_el{T}~~x
+
+
+
+
 
 # test if vector has a specific width & element type
 def lvec{T, n, w} = 0
@@ -169,15 +173,15 @@ def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 def {
   abs,andAllZero,andnz,b_getBatch,clmul,cvt,extract,floor,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
-  loadLow,make,mul12,mulHi,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
+  loadLow,make,mulw,mulHi,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,unpackQ,vfold,widen,
   zip,zipHi,zipLo
 }
 
-def mzip  {a:T, b:T} = each{{v}=>ty_dbl{T}~~v, zip{a, b}}
-def mzipLo{a:T, b:T} = ty_dbl{T} ~~ zipLo{a, b}
-def mzipHi{a:T, b:T} = ty_dbl{T} ~~ zipHi{a, b}
+def mzip  {a:T, b:T} = each{{v}=>el_m{T}~~v, zip{a, b}}
+def mzipLo{a:T, b:T} = el_m{T} ~~ zipLo{a, b}
+def mzipHi{a:T, b:T} = el_m{T} ~~ zipHi{a, b}
 def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
 oper &~ andnot infix none 35
 def widen{T, x:X & T==X} = x
@@ -281,10 +285,6 @@ def forUnroll{exp,unr}{vars,begin,end,iter} = {
     }
   }
 }
-def forXUnroll{unr}{vars,begin,end,iter} = {
-  @forUnroll{unr}(is from begin to end) each{{i} => iter{i, vars}, is}
-}
-
 
 def makeBranch{Ts, F} = {
   def args = undef{Ts}

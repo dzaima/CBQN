@@ -48,7 +48,7 @@ def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n
 def storeBatch{ptr:P, n, x:T, M} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
-  def TF = to_el{E0, T}
+  def TF = re_el{E0, T}
   xu:= narrow{E0, x}
   
   if (M{0}) homMaskStoreF{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
@@ -60,7 +60,7 @@ def loadBatch{ptr:P, n, T} = {
   def rpos = ptr + n*vcount{T}
   def E0 = eltype{P}
   
-  widen{T, loadLow{*to_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
+  widen{T, loadLow{*re_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
 }
 
 def loadBatch {ptr:P, ns, T     & istup{ns}} = each{{n  } => loadBatch {ptr, n, T   }, ns}
@@ -73,13 +73,6 @@ def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got 
 def hCast{T,p:P & same{T,eltype{P}}} = p
 def hCast{T,p:P & same{P,*void}} = *T~~p
 
-# masked loop arguments
-#  p:*T - regular pointer, loaded by the batch index(es)
-#  tup{VT,p:*T} - loadBatch/storeBatch vector data
-#  tup{'b',p:P} - b_getBatch
-#  tup{'b',VT,p:P} - loadBatchBit
-#  tup{'g',VT,p:*T} - gives a generator supporting g{} for loadBatch and g{newValue} for storeBatch
-#  tup{'g',p:*T} - the above, but without load support
 def mlExec{i, iter, vars0, bulk, M} = {
   def vproc2{T,p:P} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
   def vproc2{S=='b',  p:P} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}

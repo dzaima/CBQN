@@ -51,7 +51,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i8==eltype{T} & hasarc
     tup{packQ{rp}, tup{'homAny', M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
     def bad = each{{v} => ty_s{v ^ (v>>15)}, rp}
-    def RU = to_el{u16,T}
+    def RU = re_el{u16,T}
     tup{packQ{rp}, tup{'~andAllZero', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
@@ -61,8 +61,8 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i16==eltype{T} & hasar
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasarch{'X86_64'}} = {
-  max:= to_el{f32, (ty_u{T})**0x4efffffe}
-  def cf32{x:X} = emit{to_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
+  max:= re_el{f32, (ty_u{T})**0x4efffffe}
+  def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
   tup{w*x, tup{'homAny', M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
@@ -70,7 +70,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasar
   # def wp = unpackQ{w, T**0}
   # def xp = unpackQ{x, T**0}
   # def rp = each{mul32, wp, xp}
-  # def T2 = to_el{i64, T}
+  # def T2 = re_el{i64, T}
   # def bad = each{{v} => {
   #   ((T2~~v + T2**0x80000000) ^ T2**(cast{i64,1}<<63)) > T2**cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}
   # }, rp}
@@ -78,7 +78,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasar
 }
 
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & hasarch{'AARCH64'}} = {
-  def r12 = mul12{w, x}
+  def r12 = mulw{w, x}
   rl:= packLo{r12}
   rh:= packHi{r12}
   tup{rl, tup{'homAny', M{rh != (rl >> (elwidth{T}-1))}}}
@@ -110,7 +110,7 @@ def runner{u, R, F} = {
   
   def run{F, M, w:VW, x:VX & c & R==u32 & (same{F,__add} | same{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
-    tup{to_el{R, VW}~~r, tup{'homAny', M{r > type{r}**1114111}}}
+    tup{re_el{R, VW}~~r, tup{'homAny', M{r > type{r}**1114111}}}
   }
   run
 }

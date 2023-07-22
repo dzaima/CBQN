@@ -75,7 +75,7 @@ def spreadBits{T==[16]u8, a:u16 & hasarch{'X86_64'}} = {
 
 def spreadBits{T, a & vcount{T} <= elwidth{T} & quality{eltype{T}}=='u'} = {
   b:= make{T, 1<<iota{vcount{T}}}
-  b == (b & T ~~ to_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
+  b == (b & T ~~ re_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
 def loadBatchBit{T, x:*u64, n:(Size)} = { # vector with type T with each element being either all 0s or 1s

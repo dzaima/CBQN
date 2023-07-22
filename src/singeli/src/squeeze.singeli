@@ -24,7 +24,7 @@ def anySNaN{M, x:T & T==[2]u64 & hasarch{'X86_64'} & ~hasarch{'SSE4.2'}} = {
 }
 def anyNonChar{M, x:T & isvec{T} & eltype{T}==u64} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
 def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
-  def H = to_el{u32, T}
+  def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
   topAny{M{T~~ne}}
 }

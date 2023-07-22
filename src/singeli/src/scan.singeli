@@ -194,7 +194,7 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
   def bulk = arch_defvw/b
   
   def wd = (X!=R) & (width{X}<32) # whether to widen the working copy one size
-  def WE = tern{wd, ty_dbl{X}, X} # working copy element type
+  def WE = tern{wd, w_d{X}, X} # working copy element type
   
   # maxFastA: max absolute value for accumulator
   # maxFastE: max absolute value for vector elements (not used if ~wd)

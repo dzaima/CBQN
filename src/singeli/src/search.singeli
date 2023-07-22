@@ -56,7 +56,7 @@ fn searchOne{A, E}(x:*void, e0:A, len:u64) : u64 = {
   search{E, x, len, {c:VT} => c == VT**e}
 }
 
-def isNegZero{x:T} = to_el{u64,x} == to_el{u64, T ** -f64~~0}
+def isNegZero{x:T} = re_el{u64,x} == re_el{u64, T ** -f64~~0}
 fn searchNormalizable{}(x:*f64, len:u64) : u64 = {
   search{f64, x, len, {c:VT} => isNegZero{c} | (c!=c)}
 }

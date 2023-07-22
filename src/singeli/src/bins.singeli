@@ -23,7 +23,7 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
 }
 
 # Shift as u16, since x86 is missing 8-bit shifts
-def shr16{v:V, n} = V~~(to_el{u16, v} >> n)
+def shr16{v:V, n} = V~~(re_el{u16, v} >> n)
 
 # Forward or backwards in-place max-scan
 # Assumes a whole number of vectors and minimum 0
@@ -69,7 +69,7 @@ if (hasarch{'AVX2'}) {
     {i} => sel{H, v, i}
   }
   def getsel{v:V & lvec{V, 32, 8}} = {
-    def H = v_half{V}
+    def H = n_h{V}
     vtop := V**(vcount{V}/2)
     hs := each{bind{shuf, [4]u64, v}, tup{4b3232, 4b1010}}
     {i} => homBlend{...each{{h}=>sel{H,h,i}, hs}, V~~i<vtop}
@@ -82,7 +82,7 @@ def uninterleave{x:V & hasarch{'AVX2'}} = {
   def vl = vcount{V}; def bytes = width{eltype{V}}/8
   def i = 2*iota{vl/4}
   def i2= join{table{+, bytes*merge{i,i+1}, iota{bytes}}}
-  t := V~~sel{[16]u8, to_el{u8,x}, make{[32]u8, merge{i2,i2}}}
+  t := V~~sel{[16]u8, re_el{u8,x}, make{[32]u8, merge{i2,i2}}}
   shuf{[4]u64, t, 4b3120}
 }
 
@@ -157,7 +157,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
   assert{wn < 128} # Total must fit in i8
   def vl = 32
   def T = i8
-  def V = [vl]T; def H = v_half{V}
+  def V = [vl]T; def H = n_h{V}
   def U = [vl]u8
 
   # Convert to bit table
@@ -212,7 +212,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
       def isel{u} = sel{H, u, i0}
       ind = isel{ui}
       if (nu > 16) {
-        b := V~~(to_el{u16, i0} << (7 - lb{vl/2}))
+        b := V~~(re_el{u16, i0} << (7 - lb{vl/2}))
         ind = topBlend{ind, isel{ui1}, b}
         if (nu > 32) ind = homBlend{topBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
@@ -260,7 +260,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       tup{wv, wv2} = each{un, tr_half{wv, un{load{wg, 1}}}}
     }
   }
-  def ms{v}{h} = getsel{to_el{I, if (lanes) half{v,h} else tupsel{h,v}}}
+  def ms{v}{h} = getsel{re_el{I, if (lanes) half{v,h} else tupsel{h,v}}}
   def selw = ms{wv}{0}; def selw1 = if (ex>=1) ms{wv}{1} else 'undef'
   def selw2 = if (ex>=2) each{ms{wv2}, iota{2}} else 'undef'
   # Offset at end
@@ -276,7 +276,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
     if (this) @for_vec_overlap{vl} (j to xn) {
       xv:= load{*V~~(x+j), 0}
       s := U**bb{iota{isub}}  # Select sequential bytes within each U
-      def ltx{se,ind} = lt{xv, V~~se{to_el{I,ind}}}
+      def ltx{se,ind} = lt{xv, V~~se{re_el{I,ind}}}
       @unroll (j to klog) {
         m := s | tupsel{klog-1-j,bits}
         s = homBlend{m, s, ltx{selw, m}}
@@ -295,7 +295,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       r -= off
       rn := if (T==i8) r
             else if (T==i16) half{narrow{u8, r}, 0}
-            else extract{to_el{i64, narrow{u8, r}}, 0}
+            else extract{re_el{i64, narrow{u8, r}}, 0}
       store{*type{rn}~~(*i8~~rp+j), 0, rn}
     }
   }

@@ -13,8 +13,9 @@
     #define _mm_storeu_si32 custom_storeu_si32
   #endif
   
-  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }
-  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
+  static void storeu_u64(u64* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, p, 8); return v; }
+  static void storeu_u32(u32* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(u32* p) { u32 v; memcpy(&v, p, 4); return v; }
+  static void storeu_u16(u16* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u16(u16* p) { u16 v; memcpy(&v, p, 2); return v; }
   
   #define BCALL(N, X) N(b(X))
   #define interp_f64(X) b(X).f
@@ -27,11 +28,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
-#ifdef SINGELI_DIR
 #include SINGELI_FILE1(../../build/obj2/SINGELI_DIR/SINGELI_FILE.c)
-#else
-#include SINGELI_FILE1(../singeli/gen/SINGELI_FILE.c)
-#endif
 #pragma GCC diagnostic pop
 
 #undef SINGELI_FILE
