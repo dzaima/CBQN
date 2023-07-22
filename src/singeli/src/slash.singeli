@@ -57,7 +57,8 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
   assert{isreg{r}}; assert{begin==0}
   def T = eltype{type{r}}; def tw = width{T}
   def ov = write_len-1
-  buf := undefined{T, 2*(ov+1)}
+  def bufn = 2*(ov+1)
+  buf := undefined{T, bufn}
   r0 := r
   end := r + sum - ov
   i:u64 = 0; buf_used:u1 = 0
@@ -75,9 +76,11 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
     }
   } else {
     if (has_simd) {
-      def vc = arch_defvw/tw;
+      def bufw = bufn * tw
+      def vc = tern{hasarch{'X86_64'} & (bufw==128), 128, arch_defvw} / tw;
       def R = [vc]T
       @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+      assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
       homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
     } else {
       @for (r0, buf over u64~~(end-buf)) r0 = buf
