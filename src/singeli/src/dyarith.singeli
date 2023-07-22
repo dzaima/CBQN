@@ -98,15 +98,15 @@ def runner{u, R, F} = {
   def run{F, M, w, x & u} = tup{F{w, x}, tup{'none'}} # trivial base implementation
   
   def toggleTop{x:X} = x ^ X**(1<<(elwidth{X}-1))
-  def run{F==__sub, M, w:VU, x:VU & is_u{VU}} = { # 'b'-'a'
+  def run{F==__sub, M, w:VU, x:VU & c & is_u{VU}} = { # 'b'-'a'
     def VS = ty_s{VU}
     run{F, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
   }
-  def run{F, M, w:VU, x:VS & is_u{VU} & is_s{VS}} = { # 'a'+3, 'a'-3
+  def run{F, M, w:VU, x:VS & c & is_u{VU} & is_s{VS}} = { # 'a'+3, 'a'-3
     def {res, ok} = run{F, M, VS~~toggleTop{w}, x}
     tup{toggleTop{VU~~res}, ok}
   }
-  def run{F==__add, M, w:VS, x:VU & is_s{VS} & is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
+  def run{F==__add, M, w:VS, x:VU & c & is_s{VS} & is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
   
   def run{F, M, w:VW, x:VX & c & R==u32 & (same{F,__add} | same{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
