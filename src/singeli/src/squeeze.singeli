@@ -102,8 +102,8 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:Size) : u32 = {
           def int = {
             def {int, wdn} = {
               if (hasarch{'AARCH64'} and tuplen{is}==2) {
-                def intp = narrowPair{...each{{v}=>cvt{i64,v}, v0}}
-                def wdn = each{{v}=>cvt{f64,v}, widen{intp}}
+                def intp = narrowPair{...each{cvt{i64,.}, v0}}
+                def wdn = each{cvt{f64,.}, widen{intp}}
                 tup{intp, wdn}
               } else {
                 def ints = each{{v} => cvtNarrow{ty_s{E}, v}, v0}

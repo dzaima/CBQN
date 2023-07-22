@@ -99,5 +99,5 @@ def loadBatchBit{T, x:*u64, is & ktup{is}} = {
   # assert{count*len <= 64}
   # bits:= b_getBatchLo{count*len, x, tupsel{0,is}}
   # @collect(i to len) spreadBits{T, truncBits{count, bits>>(i*count)}}
-  each{{i} => loadBatchBit{T, x, i}, is}
+  each{loadBatchBit{T, x, .}, is}
 }

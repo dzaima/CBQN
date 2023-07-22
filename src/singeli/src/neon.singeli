@@ -165,7 +165,7 @@ def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
 
 def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {
   def TE = eltype{T}
-  load{*T ~~ *TE ~~ each{{c}=>promote{eltype{T},c}, xs}, 0}
+  load{*T ~~ *TE ~~ each{promote{eltype{T},.}, xs}, 0}
 }
 def make{T, x & nvec{T} & istup{x}} = make{T, ...x}
 def iota{T & nvec{T}} = make{T, ...iota{vcount{T}}}

@@ -90,13 +90,13 @@ def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(Size)} = {
 fn aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= *VT~~xr; xs:= *eltype{VT}~~xr
-  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>load{xs,i}, {i}=>load{xv,i}, dst, len}
+  any2bit{VT, unr, op, load{ws,.}, load{wv,.}, load{xs,.}, load{xv,.}, dst, len}
 }
 
 fn as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:Size) : void = {
   wv:= *VT~~wr; ws:= *eltype{VT}~~wr
   xv:= VT**pathAS{dst, len, eltype{VT}, op, x}
-  any2bit{VT, unr, op, {i}=>load{ws,i}, {i}=>load{wv,i}, {i}=>x, {i}=>xv, dst, len}
+  any2bit{VT, unr, op, load{ws,.}, load{wv,.}, {i}=>x, {i}=>xv, dst, len}
 }
 
 fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:Size) : void = {

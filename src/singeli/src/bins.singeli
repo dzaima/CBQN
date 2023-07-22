@@ -65,16 +65,15 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
 def getsel{...x} = assert{'shuffling not supported', show{...x}}
 if (hasarch{'AVX2'}) {
   def getsel{h:H & lvec{H, 16, 8}} = {
-    v := pair{h,h}
-    {i} => sel{H, v, i}
+    sel{H, pair{h,h}, .}
   }
   def getsel{v:V & lvec{V, 32, 8}} = {
     def H = n_h{V}
     vtop := V**(vcount{V}/2)
-    hs := each{bind{shuf, [4]u64, v}, tup{4b3232, 4b1010}}
-    {i} => homBlend{...each{{h}=>sel{H,h,i}, hs}, V~~i<vtop}
+    hs := each{shuf{[4]u64, v, .}, tup{4b3232, 4b1010}}
+    {i} => homBlend{...each{sel{H,.,i}, hs}, V~~i<vtop}
   }
-  def getsel{v:V & lvec{V, 8, 32}} = { {i} => sel{V, v, i} }
+  def getsel{v:V & lvec{V, 8, 32}} = sel{V, v, .}
 }
 
 # Move evens to half 0 and odds to half 1
@@ -176,11 +175,11 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
     # We'll subtract 1 when indexing so the initial 0 isn't needed
     tui:*i8 = copy{maxu, 0}; i:T = 0
     @for (tui over promote{u64,nu}) { i = load{t, load{w, i}}; tui = i }
-    def tv = bind{load, *V~~tui}
+    def tv = load{*V~~tui, .}
     ui = tv{0}
     if (nu > 16) ui1 = shuf{[4]u64, ui, 4b3232}
     ui = shuf{[4]u64, ui, 4b1010}
-    if (nu > vl) ui2 = each{bind{shuf, [4]u64, tv{1}}, tup{4b1010, 4b3232}}
+    if (nu > vl) ui2 = each{shuf{[4]u64, tv{1}, .}, tup{4b1010, 4b3232}}
   }
   # Popcount on 8-bit values
   def sums{n} = if (n==1) tup{0} else { def s=sums{n/2}; merge{s,s+1} }
@@ -229,7 +228,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def wd = width{T}
   def I = if (wd<32) u8 else u32; def wi = width{I}
   def lanes = hasarch{'AVX2'} & (I==u8)
-  def isub = wd/wi; def bb = bind{base,1<<wi}
+  def isub = wd/wi; def bb = base{1<<wi, .}
   def vl = 256/wd; def svl = vl>>lanes
   def V = [vl]T
   def U = [vl](ty_u{T})
@@ -250,7 +249,7 @@ def bin_search_vec{T, up, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   if (ex>=1 and wn >= svl) {
     --gap # Allows subtracting < instead of adding <=
     def un = uninterleave
-    def tr_half{a, b} = each{bind{shufHalves,a,b}, tup{16b20, 16b31}}
+    def tr_half{a, b} = each{shufHalves{a,b,.}, tup{16b20, 16b31}}
     def un{{a,b}} = tr_half{un{a},un{b}}
     if (not lanes) tupsel{1,wv} = load{wg, 1}
     wv = un{wv}
@@ -313,7 +312,7 @@ def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
   l0 := wn + 1
   # Take a list of indices in x/res to allow unrolling
   def search{inds} = {
-    xs:= each{bind{load,x}, inds} # Values
+    xs:= each{load{x,.}, inds} # Values
     ss:= each{{_}=>ws, inds}      # Initial lower bound
     l := l0; h := undefined{u64}  # Interval size l, same for all values
     while ((h=l/2) > 0) {
@@ -380,6 +379,6 @@ exportT{
   'si_saturate',
   each{{a}=>saturate{...a}, merge{
     tup{tup{i16,i8}, tup{i32,i8}, tup{i32,i16}},
-    join{table{bind{tup,f64}, tup{i8,i16,i32}, tup{1,0}}}
+    join{table{tup{f64, ...}, tup{i8,i16,i32}, tup{1,0}}}
   }}
 }

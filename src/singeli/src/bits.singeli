@@ -26,6 +26,6 @@ fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
   bitsel{VL, T, *T~~r, bits, trunc{T,e0}, trunc{T,e1}, len}
 }
 
-def table{w} = each{{T} => bitsel_i{w, T}, tup{u8, u16, u32, u64}}
+def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
 exportT{'simd_bitsel', table{arch_defvw}}

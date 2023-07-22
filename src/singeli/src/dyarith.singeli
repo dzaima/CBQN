@@ -116,7 +116,7 @@ def runner{u, R, F} = {
 }
 
 # homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
-def runChecks_any{F, vals} = { F{tree_fold{|, each{{c}=>tupsel{1,c}, vals}}} }
+def runChecks_any{F, vals} = { F{tree_fold{|, each{tupsel{1,.}, vals}}} }
 def runChecks{type=='homAny', vals, M} = runChecks_any{homAny, vals}
 def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
@@ -133,7 +133,7 @@ def runChecks{type=='anyne',  vals, M} = {
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
   def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
-  def ctype = oneVal{each{{c}=>tupsel{0,c}, checks}}
+  def ctype = oneVal{each{tupsel{0,.}, checks}}
   if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0,is}*vcount{TY}}
   each{{c} => TY~~c, values}
 }

@@ -17,7 +17,7 @@ def ctzi{x} = promote{u64, ctz{x}}  # Count trailing zeros, as index
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
-  def args = undef{M{...each{{c}=>tupsel{0,c}, v1}}}
+  def args = undef{M{...each{tupsel{0, .}, v1}}}
   def am = tuplen{tupsel{0,v1}}
   each{{last, ...v2} => {
     if (last or C{...v2}) {
@@ -219,7 +219,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
         if ((m&(m-1)) != 0) { # More bits than one
           # Filter out values equal to the previous, or first new
           def pind = (iota{k}&15) - 1
-          prev:= make{VI, each{bind{max,0}, pind}}
+          prev:= make{VI, each{max{0, .}, pind}}
           e:= ~homMask{v == VI**TI~~xi}
           e&= base{2,pind<0} | ~homMask{v == sel{[16]i8, v, prev}}
           if (rbit) rv&= e | -m # Don't remove first bit

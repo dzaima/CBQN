@@ -34,7 +34,7 @@ def broadcast{T, v & w256i{T, 64}} = emit{T, '_mm256_set1_epi64x',promote{eltype
 def broadcast{T, v & w256f{T, 64}} = emit{T, '_mm256_set1_pd', v}
 def broadcast{T, v & w256f{T, 32}} = emit{T, '_mm256_set1_ps', v}
 
-local def makeGen{T,s,x} = emit{T, s, ...each{{c}=>promote{eltype{T},c}, x}}
+local def makeGen{T,s,x} = emit{T, s, ...each{promote{eltype{T}, .}, x}}
 def make{T, ...xs & w256f{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_pd', xs}
 def make{T, ...xs & w256f{T,32} & tuplen{xs}== 8} = makeGen{T, '_mm256_setr_ps', xs}
 def make{T, ...xs & w256i{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_epi64x', xs}

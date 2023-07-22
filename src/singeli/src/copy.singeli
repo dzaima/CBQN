@@ -48,7 +48,7 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     @maskedLoop{vcount{V64}}(sr in tup{'g',rp}, x in tup{V64,xp} over cdiv{l,64}) sr{x}
   } else if (X==u1) {
     # show{'X==u1', X, R}
-    copyFromBits{[bulk]R, {T, i} => loadBatchBit{T, xp, i}, r, l}
+    copyFromBits{[bulk]R, loadBatchBit{., xp, .}, r, l}
   } else if (R==u1) {
     # show{'R==u1', X, R}
     def XU = ty_u{XV}

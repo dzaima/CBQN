@@ -8,7 +8,7 @@ if (hasarch{'AVX512F'}) {
   local def mti{s,T} = merge{'_mm512_',s,'_epi',fmtnat{elwidth{T}}}
   def load{a:T, n & 512==width{eltype{T}}} = emit{eltype{T}, '_mm512_loadu_si512', a+n}
   def make{T, xs & 512==width{T} & tuplen{xs}==vcount{T}} = {
-    def p = each{{c}=>promote{eltype{T},c},reverse{xs}}
+    def p = each{promote{eltype{T},.}, reverse{xs}}
     emit{T, mti{'set',T}, ...p}
   }
   def iota{T & isvec{T} & 512==width{T}} = make{T, iota{vcount{T}}}
@@ -31,7 +31,7 @@ def maketab{l,w,s,G} = {
     reverse{iota{l}<<s}
   }
   # Store popcnt-1 in the high element
-  def top = (fold{bind{flat_table,+}, l**iota{2}} - 1)%(1<<(w-s))
+  def top = (fold{flat_table{+, ...}, l**iota{2}} - 1)%(1<<(w-s))
   top<<(l*w-w+s) | bot  # Overlaps for all-1 value only
 }
 def maketab{l,w,s} = maketab{l,w,s,{x}=>x}
@@ -217,7 +217,7 @@ def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
 fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
-  expander := make{[32]u8, merge{...each{{i}=>tup{i, ... 3**128}, iota{8}>>lb{tw/32}}}}
+  expander := make{[32]u8, merge{...each{tup{., ... 3**128}, iota{8}>>lb{tw/32}}}}
   def from_ind = if (c) {
     i:u64 = 0
     {j} => { v:=load{*V~~x, i}; ++i; sel{V, v, j} }

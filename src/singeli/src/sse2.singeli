@@ -39,7 +39,7 @@ def broadcast{T, v & w128f{T, 64}} = emit{T, '_mm_set1_pd', v}
 def broadcast{T, v & w128f{T, 32}} = emit{T, '_mm_set1_ps', v}
 
 # make from elements
-local def makeGen{T,s,x} = emit{T, s, ...each{{c}=>promote{eltype{T},c}, x}}
+local def makeGen{T,s,x} = emit{T, s, ...each{promote{eltype{T},.}, x}}
 def make{T, ...xs & w128f{T,64} & tuplen{xs}== 2} = makeGen{T, '_mm_setr_pd', xs}
 def make{T, ...xs & w128f{T,32} & tuplen{xs}== 4} = makeGen{T, '_mm_setr_ps', xs}
 def make{T, ...xs & w128i{T,64} & tuplen{xs}== 2} = makeGen{T, '_mm_set_epi64x', tup{tupsel{1,xs}, tupsel{0,xs}}}

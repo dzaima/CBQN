@@ -72,27 +72,27 @@ def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
   
   def bs{b, c, x} = cshuf{x, c}
   def bs{b, c, x & tuplen{b}>0} = {
-    tupsel{0,b}{each{bind{bs, slice{b,1}, c}, x}}
+    tupsel{0,b}{each{bs{slice{b,1}, c, .}, x}}
   }
   
   def i = iota{logv}
-  def vs = each{bind{broadcast,VI}, nsel<<reverse{i}}
+  def vs = each{broadcast{VI, .}, nsel<<reverse{i}}
   {c} => VD~~bs{each{bb{c},i==0,vs}, c, xd}
 }
 def makeshuf{VI, VD, x0, logv} = {
   x:= *VD~~x0
-  def halves{v} = each{bind{shuf, [4]u64, v}, tup{4b1010, 4b3232}}
-  def readx{l,o} = each{bind{readx,l-1}, o + iota{2}<<(l-2)}
+  def halves{v} = each{shuf{[4]u64, v, .}, tup{4b1010, 4b3232}}
+  def readx{l,o} = each{readx{l-1, .}, o + iota{2}<<(l-2)}
   def readx{l==0,o} = shuf{[4]u64, load{x}, 4b1010}
   def readx{l==1,o} = halves{load{x, o}}
   xd:= readx{logv, 0}
-  makeselx{VI,VD,16,xd,logv, bind{sel,[16]i8}}
+  makeselx{VI,VD,16,xd,logv, sel{[16]i8, ...}}
 }
 def makeperm{VI, VD, x0, logv} = {
   x:= *VD~~x0
-  def readx{l,o} = each{bind{readx,l-1}, o + iota{2}<<(l-1)}
+  def readx{l,o} = each{readx{l-1, .}, o + iota{2}<<(l-1)}
   def readx{l==0,o} = load{x, o}
-  makeselx{[8]i32,VD,8, readx{logv, 0}, logv, bind{sel,[8]i32}}
+  makeselx{[8]i32,VD,8, readx{logv, 0}, logv, sel{[8]i32, ...}}
 }
 
 fn select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {

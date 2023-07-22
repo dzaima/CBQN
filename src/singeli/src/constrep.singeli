@@ -39,7 +39,7 @@ rcsh_data:*i8 = join{join{each{get_shuf_data, rcsh_vals}}}
 
 # first 4 shuffle vectors for 11≤𝕨≤61; only uses the low half of the input
 def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
-rcsh4_dat:*i8 = join{join{each{{wv}=>get_shuf_data{wv, 4}, rcsh4_dom}}}
+rcsh4_dat:*i8 = join{join{each{get_shuf_data{., 4}, rcsh4_dom}}}
 rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 
 def read_shuf_vecs{l, ellw:u64, shp:P} = { # tuple of byte selectors in 1<<ellw
@@ -57,7 +57,7 @@ def read_shuf_vecs{l, ellw:u64, shp:P} = { # tuple of byte selectors in 1<<ellw
   
   def sh = each{{v}=>{r:=v}, l**V**0}
   def tlen{e} = cdiv{l, e}  # Length for e bytes, rounded up
-  def set{i} = { tupsel{i,sh} = each{bind{load,shp},i} }
+  def set{i} = { tupsel{i,sh} = each{load{shp,.}, i} }
   def ext{e} = {
     def m = tlen{2*e}; def n = tlen{e}  # m<n
     if (ellw <= lb{e}) set{slice{iota{n},m}}
@@ -94,9 +94,9 @@ if (hasarch{'AVX2'}) {
     def l = tuplen{sh}
     def h = l>>1
     def fs{v, s} = gen{sel{[16]i8, v, s}}
-    a := shuf{[4]u64, x, 4b1010}; each{bind{fs,a}, slice{sh,0,h}}
+    a := shuf{[4]u64, x, 4b1010}; each{fs{a,.}, slice{sh,0,h}}
     if (l%2) fs{x, tupsel{h, sh}}
-    b := shuf{[4]u64, x, 4b3232}; each{bind{fs,b}, slice{sh,-h}}
+    b := shuf{[4]u64, x, 4b3232}; each{fs{b,.}, slice{sh,-h}}
   }
   
   def get_rep_iter{V, wv==2}{x, gen} = {
@@ -105,7 +105,7 @@ if (hasarch{'AVX2'}) {
   }
   def get_rep_iter{V==[4]u64, wv} = {
     def step = 4
-    def sh = each{bind{base,4}, get_shufs{step, wv, wv}}
+    def sh = each{base{4,.}, get_shufs{step, wv, wv}}
     {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
   }
   

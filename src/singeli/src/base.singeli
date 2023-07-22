@@ -31,7 +31,7 @@ def loadu{p:T               & elwidth{T}==8} = load{p}
 def storeu{p:T, v:eltype{T} & elwidth{T}==8} = store{p, v}
 
 def reinterpret{T, x:X & T==X} = x
-def exportN{f, ...ns} = each{{n} => export{n, f}, ns}
+def exportN{f, ...ns} = each{export{.,f}, ns}
 def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
 
@@ -220,7 +220,7 @@ def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;
 def broadcast{T, v & isprim{T}} = v
 def iota{n & knum{n}} = range{n}
 def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
-  each{{i} => iter{i, vars}, range{end-begin}+begin}
+  each{iter{., vars}, range{end-begin}+begin}
 }
 def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
 

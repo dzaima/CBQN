@@ -89,7 +89,7 @@ def scan_assoc{op, a:T} = {
   l:= (type{b}~~make{[8]i32,0,0,0,-1,0,0,0,0}) & spread{b}
   op{b, sel{[8]i32, l, make{[8]i32,0,0,0,0, 3,3,3,3}}}
 }
-def scan_plus = bind{scan_assoc, +}
+def scan_plus = scan_assoc{+, .}
 
 # Associative scan
 fn avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
