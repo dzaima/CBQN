@@ -1,8 +1,6 @@
 %DEF k _k ← {𝔽○•internal.Keep}
 %DEF tcc %USE k ⋄ _tcc ← { ! ∧´ (<𝕨 𝔽_k˘⎊'e' 𝕩) ≡¨ (𝕨 𝔽˘⎊'e'•internal.Variation⟜𝕩)¨ "i"•internal.ListVariations 𝕩}
 
-•internal.Type¨ {𝕩-˜𝕩+2‿3⥊'¯'}¨ 0‿100‿100000 %% "c8arr"‿"c16arr"‿"c32arr" # assumed by test/cells.bqn
-
 1‿2 1⎉0 1 %% 1‿1
 1 1⎉0 1‿2 %% 1‿1
 ! 20‿1200≡≢⥊˘a←20‿30‿40⥊↕24 ⋄ ! 20‿30‿40 ≡ ≢a
