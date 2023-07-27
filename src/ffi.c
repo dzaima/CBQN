@@ -524,6 +524,33 @@ static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
 
+#define CPY_UNSIGNED(REL, UEL, DIRECT, WIDEN, WEL) \
+  if (TI(x,elType)<=el_##REL) return taga(DIRECT(x)); \
+  usz ia = IA(x);                                 \
+  B t = WIDEN(x); WEL* tp = WEL##any_ptr(t);      \
+  REL* rp; B r = m_##REL##arrv(&rp, ia);          \
+  for (usz i=0; i<ia; i++) ((UEL*)rp)[i] = tp[i]; \
+  decG(t); return r;
+
+// copy elements of x as unsigned integers (using a signed integer array type as a "container"); consumes argument
+// undefined behavior if x contains a number outside the respective unsigned range (incl. any negative numbers)
+NOINLINE B cpyU32Bits(B x) { CPY_UNSIGNED(i32, u32, cpyI32Arr, toF64Any, f64) }
+NOINLINE B cpyU16Bits(B x) { CPY_UNSIGNED(i16, u16, cpyI16Arr, toI32Any, i32) }
+NOINLINE B cpyU8Bits(B x)  { CPY_UNSIGNED(i8,  u8,  cpyI8Arr,  toI16Any, i16) }
+
+NOINLINE B cpyF32Bits(B x) { // copy x to a 32-bit float array (using an i32arr as a "container"). Unspecified rounding for numbers that aren't exactly floats, and undefined behavior on non-numbers
+  usz ia = IA(x);
+  B t = toF64Any(x); f64* tp = f64any_ptr(t);
+  i32* rp; B r = m_i32arrv(&rp, ia);
+  for (usz i=0; i<ia; i++) ((f32*)rp)[i]=tp[i];
+  dec(t); return r;
+}
+
+// versions of cpyU(8|16|32)Bits, but without a guarantee of returning a new array; consumes argument
+static B toU32Bits(B x) { return TI(x,elType)==el_i32? x : cpyU32Bits(x); }
+static B toU16Bits(B x) { return TI(x,elType)==el_i16? x : cpyU16Bits(x); }
+static B toU8Bits(B x)  { return TI(x,elType)==el_i8?  x : cpyU8Bits(x); }
+
 void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
@@ -563,10 +590,10 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
           case sty_i16: cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
           case sty_i32: cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
           case sty_f64: cG = mut? taga(cpyF64Arr(c)) : toF64Any(c); break;
-          case sty_u8:  { B t=toI16Any(c); i16* tp=i16any_ptr(t); i8*  gp; cG= m_i8arrv(&gp, ia); u8*    np=(u8*   )gp; for (usz i=0; i<ia; i++) np[i]=tp[i]; dec(t); break; }
-          case sty_u16: { B t=toI32Any(c); i32* tp=i32any_ptr(t); i16* gp; cG=m_i16arrv(&gp, ia); u16*   np=(u16*  )gp; for (usz i=0; i<ia; i++) np[i]=tp[i]; dec(t); break; }
-          case sty_u32: { B t=toF64Any(c); f64* tp=f64any_ptr(t); i32* gp; cG=m_i32arrv(&gp, ia); u32*   np=(u32*  )gp; for (usz i=0; i<ia; i++) np[i]=tp[i]; dec(t); break; }
-          case sty_f32: { B t=toF64Any(c); f64* tp=f64any_ptr(t); i32* gp; cG=m_i32arrv(&gp, ia); float* np=(float*)gp; for (usz i=0; i<ia; i++) np[i]=tp[i]; dec(t); break; }
+          case sty_u8:  cG = mut? cpyU8Bits (c) : toU8Bits (c); break;
+          case sty_u16: cG = mut? cpyU16Bits(c) : toU16Bits(c); break;
+          case sty_u32: cG = mut? cpyU32Bits(c) : toU32Bits(c); break;
+          case sty_f32: cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
         }
         
         ffiObjs = vec_addN(ffiObjs, cG);
