@@ -180,6 +180,7 @@ void incInts(int32_t* a, int16_t* b, int8_t* c) {
 }
 
 uint64_t ident_u64(uint64_t x) { return x; }
+int64_t ident_i64(int64_t x) { return x; }
 double ident_f64(double a) { return a; }
 
 void* pick_ptr(void** arr, int idx) {

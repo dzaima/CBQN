@@ -35,5 +35,5 @@ typedef struct { EqFn fn; u8 data; } EqFnObj;
 #define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
 #define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data)
 
-typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // writes min,max in res; returns 0 and leaves res undefined if either any (floor(x)≠x or abs>2⋆53), or (x≠(i64)x)
-extern RangeFn getRange_fns[el_f64+1];
+typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // writes min,max in res, assumes len≥1; returns 0 and leaves res undefined if either any (floor(x)≠x or abs>2⋆53), or (x≠(i64)x)
+extern RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64

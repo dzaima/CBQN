@@ -1,5 +1,5 @@
-%DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations
-%DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (•internal.ClearRefs@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
+%DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
+%DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
 %DEF k _k ← {𝔽○•internal.Keep}
 
 # batch checks

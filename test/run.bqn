@@ -21,7 +21,7 @@ Trim ← {((∨`⌾⌽∧∨`)𝕩≠' ')/𝕩}
   •Out "    fuzz perf"
   •Out "  For specific configurations:"
   •Out "    test_range // -DTEST_RANGE"
-  •Out "Lint all: test/run.bqn lint prims cells syntax system fills hash patterns under fuzz perf test_range"
+  •Out "Lint all: test/run.bqn lint prims cells syntax system fills hash patterns under fuzz perf ffi test_range"
   •Exit 0
 }⍟⊢ (0=≠•args) ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨•args
 

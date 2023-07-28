@@ -55,11 +55,16 @@ f ↩ "lib.so" •FFI ⟨"","incInts","&i32",  "&i16","&i8"⟩ ⋄ •Show F ⥊
 f ↩ "lib.so" •FFI ⟨"","incInts","&i32", "𝕨&i16","&i8"⟩ ⋄ •Show ⟨⥊20⟩ F ⥊¨ 10‿30
 f ↩ "lib.so" •FFI ⟨"","incInts","&i32",">𝕨&i16","&i8"⟩ ⋄ •Show ⟨20⟩ F ⥊¨ 10‿30
 
-Section "# u64 tests"
+Section "# u64 & i64 tests"
 f ↩ "lib.so" •FFI ⟨"u64",    "ident_u64",">u64:i32"⟩ ⋄ •Show F 1234‿12
 f ↩ "lib.so" •FFI ⟨"u64",    "ident_u64",">u64"    ⟩ ⋄ •Show F +´2⋆52‿20
+f ↩ "lib.so" •FFI ⟨"u64",    "ident_u64",">u64"    ⟩ ⋄ •Show F ¯1+2⋆53
 f ↩ "lib.so" •FFI ⟨"u64:i32","ident_u64",">u64"    ⟩ ⋄ •Show F 123456789123456
 f ↩ "lib.so" •FFI ⟨"u64:u1", "ident_u64",">u64:c8" ⟩ ⋄ •Show F "hellowor"
+
+f ↩ "lib.so" •FFI ⟨"i64:u1", "ident_i64",">i64:c8" ⟩ ⋄ •Show F "hellowor"
+f ↩ "lib.so" •FFI ⟨"i64", "ident_i64",">i64"⟩ ⋄ •Show F   ¯1+2⋆53
+f ↩ "lib.so" •FFI ⟨"i64", "ident_i64",">i64"⟩ ⋄ •Show F - ¯1+2⋆53
 
 Section "# malloc test"
 f ↩ "lib.so" •FFI "*:i32"‿"malloc"‿">u64" ⋄ •Show (•internal.Type⋈≠) malloc ← F 123
@@ -73,7 +78,7 @@ f ↩ "lib.so" •FFI ⟨"u64:i8","pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Sho
 f ↩ "lib.so" •FFI ⟨"u64",   "pick_u64",">*u64:i8",">𝕨i32"⟩ ⋄ •Show   1 F "000000001234560011122100"-'0'
 
 Section "# structs"
-s1 ← "{u8,i32,i16,u64:u16,f64}" ⋄ s2 ← ∾"{"‿s1‿","‿s1‿"}"
+s1 ← "{u8,i32,i16,u64:i16,f64}" ⋄ s2 ← ∾"{"‿s1‿","‿s1‿"}"
 f ↩ "lib.so" •FFI ⟨"i16", "thirdMember", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩
 f ↩ "lib.so" •FFI ⟨s1, "incMembers", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩
 f ↩ "lib.so" •FFI ⟨"&", "incMany", "&"∾s2, "u64"⟩ ⋄ •Show¨ F ⟨0‿3‿6+3⥊<0‿1+2⥊<⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩, 3⟩

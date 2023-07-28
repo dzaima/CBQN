@@ -1,5 +1,5 @@
-%DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations
-%DEF tvar2 %USE var ⋄ _tvar2_ ← {F _𝕣_ 𝕘 x: {F 𝕩 V x}¨ 𝕘 LV 𝕩; w F _𝕣_ 𝕘 x: (𝕘 LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ 𝕘 LV 𝕩}
+%DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
+%DEF tvar2 %USE var ⋄ _tvar2_ ← {F _𝕣_ 𝕘 x: (CLR@) ⊢ {F 𝕩 V x}¨ 𝕘 LV 𝕩; w F _𝕣_ 𝕘 x: (CLR@) ⊢ (𝕘 LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ 𝕘 LV 𝕩}
 %DEF fastone (
   _fastone ← { F _𝕣 𝕩:
     t ← 0

@@ -284,8 +284,8 @@ static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, 
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w);
   SGet(w)
-  B path = ia>0? vfyStr(Get(w,0),name,"path"    ) : inc(cdPath);
-  B file = ia>1? vfyStr(Get(w,1),name,"filename") : emptyCVec();
+  B path = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
+  B file = ia>1? vfyStr(Get(w,1),name,"Filename") : emptyCVec();
   B args = ia>2?        Get(w,2)                  : emptySVec();
   *fullpath = vec_join(vec_addN(path, m_c32('/')), file);
   decG(w);

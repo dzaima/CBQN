@@ -4,6 +4,10 @@
   #error "Expected CBQN_EXPORT if FFI is defined"
 #endif
 
+#ifndef FFI_CHECKS // option to disable extended correctness checks
+  #define FFI_CHECKS 1
+#endif
+
 #if CBQN_EXPORT
   #if defined(_WIN32) || defined(_WIN64)
     #define BQN_EXP __attribute__((__visibility__("default"))) __declspec(dllexport)
@@ -11,7 +15,7 @@
     #define BQN_EXP __attribute__((__visibility__("default")))
   #endif
   #include "../include/bqnffi.h"
-  #include "utils/utf.h"
+  #include "utils/calls.h"
   #include "utils/cstr.h"
   #include "nfns.h"
   #include "ns.h"
@@ -47,8 +51,11 @@ BQN_EXP void bqn_init() {
 }
 
 B type_c1(B t, B x);
+static i32 typeInt(B x) { // doesn't consume
+  return o2i(C1(type, inc(x)));
+}
 BQN_EXP int bqn_type(BQNV v) {
-  return o2i(type_c1(bi_N, inc(getB(v))));
+  return typeInt(getB(v));
 }
 
 BQN_EXP BQNV bqn_call1(BQNV f, BQNV x) {
@@ -156,6 +163,8 @@ typedef struct BoundFn {
   void* w_c2;
   #if FFI==2
     i32 mutCount;
+    i32 wLen; // 0: not needed; -1: is whole array; ≥1: length
+    i32 xLen; // 0: length 0 array; else, ↑
   #endif
 } BoundFn;
 NFnDesc* boundFnDesc;
@@ -310,7 +319,9 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
   bool parseRepr=false, canRetype=false, mut=false;
   u32 myWidth = 0; // used if parseRepr
   switch (c0) {
-    default: thrF("FFI: Error parsing type: Unexpected character '%c'", c0);
+    default:
+      if (c0 == '\0') thrF("FFI: Error parsing type: Unexpected end of input");
+      thrF("FFI: Error parsing type: Unexpected character '%c'", c0);
     case '[': {
       u32 n = readUInt(&c);
       if (*c++!=']') thrM("FFI: Bad array type");
@@ -374,7 +385,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     
     case 'a': {
       ro = m_c32(sty_a);
-      assert(sizeof(BQNV)==8); // ffi_type_uint64 must be the same as BQNV
+      assert(sizeof(BQNV)==8); // if changed, change the below ffi_type_uint64 too
       rt = ffi_type_uint64;
       break;
     }
@@ -405,7 +416,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         if (e.mutates) thrM("FFI: Structs currently cannot contain mutable references");
         u32 m = *c++;
         if (m=='}') break;
-        if (m!=',') thrM("FFI: Invalid struct member");
+        if (m!=',') thrM("FFI: Improper struct separator or end");
       }
       usz n = TSSIZE(es);
       BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_struct, n+1);
@@ -433,8 +444,8 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     c++;
     u8 t = *c++;
     u32 n = readUInt(&c);
-    if (t=='i' | t=='c') if (n!=8 & n!=16 & n!=32) { badW: thrF("Bad width in :%c%i", (u32)t, n); }
-    if (t=='u') if (n!=1 & n!=8 & n!=16 & n!=32) goto badW;
+    if (t=='i' | t=='c') if (n!=8 & n!=16 & n!=32) { badW: thrF("Unsupported width in :%c%i", (u32)t, n); }
+    if (t=='u') if (n!=1) goto badW;
     if (t=='f') if (n!=64) goto badW;
     
     if (isC32(ro) && n > myWidth*8) thrF("FFI: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
@@ -472,7 +483,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     while (true) {
       if      (*xp == U'𝕩') { if (side) thrM("FFI: Multiple occurrences of argument side specified"); side = 1; }
       else if (*xp == U'𝕨') { if (side) thrM("FFI: Multiple occurrences of argument side specified"); side = 2; }
-      else if (*xp == U'>') { if (whole) thrM("FFI: Multiple occurrences of '>'"); whole = true; }
+      else if (*xp == U'>') { if (whole) thrM("FFI: Multiple occurrences of '>' within one argument"); whole = true; }
       else break;
       xp++;
     }
@@ -482,7 +493,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     
     t = ffi_parseTypeStr(&xp, false, true);
     // printI(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
-    if (xp!=xpN) thrM("FFI: Bad type descriptor");
+    if (xp!=xpN) thrM("FFI: Garbage at end of type");
     t.onW = side;
     // keep .mutates
     t.wholeArg = whole;
@@ -523,6 +534,48 @@ static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
 
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
+#if FFI_CHECKS
+  static char* typeDesc(i32 typeNum) {
+    switch(typeNum) {
+      default: return "(unknown)";
+      case 0: return "an array";
+      case 1: return "a number";
+      case 2: return "a character";
+      case 3: return "a function";
+      case 4: return "a 1-modifier";
+      case 5: return "a 2-modifier";
+      case 6: return "a namespace";
+    }
+  }
+  static NOINLINE i32 nonNumber(B x) { // returns -1 if x is all numeric, otherwise •Type of the offending element
+    if (elNum(TI(x,elType))) return -1;
+    usz ia = IA(x); SGetU(x)
+    i32 r = -1;
+    for (ux i = 0; i < ia; i++) {
+      B c = GetU(x,i);
+      if (!isNum(c)) { r = typeInt(c); break; }
+    }
+    return r;
+  }
+  static NOINLINE void ffi_checkRange(B x, bool mut, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
+    if (IA(x)==0) return;
+    
+    char ref = mut? '&' : '*';
+    i32 nonNum = nonNumber(x);
+    if (nonNum!=-1) thrF("FFI: Array provided for %c%S contained %S", ref, desc, typeDesc(nonNum));
+    
+    if (min==max) return;
+    incG(x); x = elNum(TI(x,elType))? x : taga(cpyF64Arr(x));
+    
+    i64 buf[2];
+    if (!getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x))) thrF("Array provided for %c%S contained non-integer", ref, desc);
+    if (buf[0]<min) thrF("FFI: Array provided for %c%S contained %l", ref, desc, buf[0]);
+    if (buf[1]>max) thrF("FFI: Array provided for %c%S contained %l", ref, desc, buf[1]);
+    decG(x);
+  }
+#else
+  static void ffi_checkRange(B x, bool mut, char* desc, i64 min, i64 max) { }
+#endif
 
 #define CPY_UNSIGNED(REL, UEL, DIRECT, WIDEN, WEL) \
   if (TI(x,elType)<=el_##REL) return taga(DIRECT(x)); \
@@ -559,14 +612,14 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
       case sty_ptr: thrM("FFI: \"*\" unimplemented"); break;
-      case sty_u8:  if(f!=( u8)f) thrM("FFI: u8 argument not exact" ); *( u8*)ptr = f; break;
-      case sty_i8:  if(f!=( i8)f) thrM("FFI: i8 argument not exact" ); *( i8*)ptr = f; break;
-      case sty_u16: if(f!=(u16)f) thrM("FFI: u16 argument not exact"); *(u16*)ptr = f; break;
-      case sty_i16: if(f!=(i16)f) thrM("FFI: i16 argument not exact"); *(i16*)ptr = f; break;
-      case sty_u32: if(f!=(u32)f) thrM("FFI: u32 argument not exact"); *(u32*)ptr = f; break;
-      case sty_i32: if(f!=(i32)f) thrM("FFI: i32 argument not exact"); *(i32*)ptr = f; break;
-      case sty_u64: if(f!=(u64)f) thrM("FFI: u64 argument not exact"); if (                 (u64)f  >= (1ULL<<53)) thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = f; break;
-      case sty_i64: if(f!=(i64)f) thrM("FFI: i64 argument not exact"); if ((u64)((1ULL<<53)+(u64)f) >= (2ULL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = f; break;
+      case sty_u8:  {  u8 i = ( u8)f; if(f!=i) thrM("FFI: u8 argument not exact" ); *( u8*)ptr = i; break; }
+      case sty_i8:  {  i8 i = ( i8)f; if(f!=i) thrM("FFI: i8 argument not exact" ); *( i8*)ptr = i; break; }
+      case sty_u16: { u16 i = (u16)f; if(f!=i) thrM("FFI: u16 argument not exact"); *(u16*)ptr = i; break; }
+      case sty_i16: { i16 i = (i16)f; if(f!=i) thrM("FFI: i16 argument not exact"); *(i16*)ptr = i; break; }
+      case sty_u32: { u32 i = (u32)f; if(f!=i) thrM("FFI: u32 argument not exact"); *(u32*)ptr = i; break; }
+      case sty_i32: { i32 i = (i32)f; if(f!=i) thrM("FFI: i32 argument not exact"); *(i32*)ptr = i; break; }
+      case sty_u64: { u64 i = (u64)f; if(f!=i) thrM("FFI: u64 argument not exact"); if (i>=(1ULL<<53))                 thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = i; break; }
+      case sty_i64: { i64 i = (i64)f; if(f!=i) thrM("FFI: i64 argument not exact"); if (i>=(1LL<<53) || i<=-(1LL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = i; break; }
       case sty_f32: *(float* )ptr = f; break;
       case sty_f64: *(double*)ptr = f; break;
     }
@@ -585,22 +638,22 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         incG(c);
         B cG;
         bool mut = t->a[0].mutPtr;
-        switch(o2cG(e)) { default: thrF("FFI: \"*%S\" argument type NYI", sty_names[o2cG(e)]);
-          case sty_i8:  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
-          case sty_i16: cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
-          case sty_i32: cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
-          case sty_f64: cG = mut? taga(cpyF64Arr(c)) : toF64Any(c); break;
-          case sty_u8:  cG = mut? cpyU8Bits (c) : toU8Bits (c); break;
-          case sty_u16: cG = mut? cpyU16Bits(c) : toU16Bits(c); break;
-          case sty_u32: cG = mut? cpyU32Bits(c) : toU32Bits(c); break;
-          case sty_f32: cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
+        switch(o2cG(e)) { default: thrF("FFI: \"*%S\" argument type not yet implemented", sty_names[o2cG(e)]);
+          case sty_i8:  ffi_checkRange(c, mut, "i8",  I8_MIN,  I8_MAX);  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
+          case sty_i16: ffi_checkRange(c, mut, "i16", I16_MIN, I16_MAX); cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
+          case sty_i32: ffi_checkRange(c, mut, "i32", I32_MIN, I32_MAX); cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
+          case sty_f64: ffi_checkRange(c, mut, "f64", 0, 0);             cG = mut? taga(cpyF64Arr(c)) : toF64Any(c); break;
+          case sty_u8:  ffi_checkRange(c, mut, "u8",  0, U8_MAX);        cG = mut?     cpyU8Bits (c) : toU8Bits (c); break;
+          case sty_u16: ffi_checkRange(c, mut, "u16", 0, U16_MAX);       cG = mut?     cpyU16Bits(c) : toU16Bits(c); break;
+          case sty_u32: ffi_checkRange(c, mut, "u32", 0, U32_MAX);       cG = mut?     cpyU32Bits(c) : toU32Bits(c); break;
+          case sty_f32: ffi_checkRange(c, mut, "f64", 0, 0);             cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
         }
         
         ffiObjs = vec_addN(ffiObjs, cG);
         *(void**)ptr = tyany_ptr(cG);
       } else { // *{...} / &{...} / *[n]any
         BQNFFIType* t2 = c(BQNFFIType, e);
-        if (t2->ty!=cty_struct && t2->ty!=cty_starr) thrM("FFI: Unimplemented pointer element type");
+        if (t2->ty!=cty_struct && t2->ty!=cty_starr) thrM("FFI: Pointer element type not implemented");
         
         
         usz elSz = t2->structSize;
@@ -620,7 +673,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         u8 et = o2cG(o2);
         u8 etw = sty_w[et]*8;
         if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], (u32)reT, 1<<reW);
-        if (IA(c) != etw>>reW) thrM("FFI: Bad input array length");
+        if (IA(c) != etw>>reW) thrF("FFI: Bad array corresponding to \"%S:%c%i\": expected %s elements, got %s", sty_names[et], (u32)reT, 1<<reW, (usz)(etw>>reW), IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
@@ -674,7 +727,7 @@ B readSimple(u8 resCType, u8* ptr) {
   B r;
   switch(resCType) { default: UD; // thrM("FFI: Unimplemented type");
     case sty_void: r = m_c32(0); break;
-    case sty_ptr: thrM("FFI: \"*\" unimplemented"); break;
+    case sty_ptr: thrM("FFI: \"*\" not yet implemented"); break;
     case sty_a:   r = getB(*(BQNV*)ptr); break;
     case sty_i8:  r = m_i32(*( i8*)ptr); break;  case sty_u8:  r = m_i32(*( u8*)ptr); break;
     case sty_i16: r = m_i32(*(i16*)ptr); break;  case sty_u16: r = m_i32(*(u16*)ptr); break;
@@ -757,12 +810,21 @@ B libffiFn_c2(B t, B w, B x) {
   BoundFn* bf = c(BoundFn,t);
   B argObj = c(HArr,bf->obj)->a[0];
   
-  u32 flags = ptr2u64(bf->w_c1);
+  #define PROC_ARG(L, U, S, NG) \
+    Arr* L##a ONLY_GCC(=0);     \
+    AS2B L##f ONLY_GCC(=0);     \
+    if (bf->L##Len>0) {         \
+      if (FFI_CHECKS) {         \
+        if (!isArr(L)) thrM("FFI: Expected array " S); \
+        if (bf->L##Len>0 && IA(L)!=bf->L##Len) thrF("FFI: Wrong argument count in " S ": expected %s, got %s", bf->L##Len, IA(L)); \
+      }                         \
+      L##a = a(L);              \
+      L##f = TIv(L##a,getU);    \
+    } else { NG }
   
-  Arr* wa ONLY_GCC(=0); AS2B wf ONLY_GCC(=0);
-  Arr* xa ONLY_GCC(=0); AS2B xf ONLY_GCC(=0);
-  if (flags&1) { wa=a(w); wf=TIv(wa,getU); }
-  if (flags&2) { xa=a(x); xf=TIv(xa,getU); }
+  PROC_ARG(w, W, "𝕨", if (FFI_CHECKS && bf->wLen==0 && !q_N(w)) thrM("FFI: Unnecessary 𝕨 given");)
+  PROC_ARG(x, X, "𝕩", )
+  
   i32 idxs[2] = {0,0};
   
   u8* tmpAlloc = TALLOCP(u8, c(BQNFFIType,argObj)->staticAllocTotal);
@@ -775,7 +837,12 @@ B libffiFn_c2(B t, B w, B x) {
   BQNFFIEnt* ents = c(BQNFFIType,argObj)->a;
   for (usz i = 0; i < argn; i++) {
     BQNFFIEnt e = ents[i+1];
-    B o = e.wholeArg? (e.onW? w : x) : (e.onW? wf : xf)(e.onW?wa:xa, idxs[e.onW]++);
+    B o;
+    if (e.wholeArg) {
+      o = e.onW? w : x;
+    } else {
+      o = (e.onW? wf : xf)(e.onW?wa:xa, idxs[e.onW]++);
+    }
     genObj(e.o, o, e.extra2, tmpAlloc + e.staticOffset);
   }
   
@@ -811,6 +878,7 @@ B libffiFn_c2(B t, B w, B x) {
   i32 mutArgs = bf->mutCount;
   if (mutArgs) {
     usz objPos = 0;
+    u32 flags = ptr2u64(bf->w_c1);
     bool resSingle = flags&4;
     if (resSingle) {
       for (usz i = 0; i < argn; i++) {
@@ -868,9 +936,10 @@ B ffiload_c2(B t, B w, B x) {
   usz xia = IA(x);
   if (xia<2) thrM("FFI: Function specification must have at least two items");
   usz argn = xia-2;
+  if (argn >= U16_MAX) thrM("FFI: Too many arguments");
   SGetU(x)
   B name = GetU(x,1);
-  vfyStr(name, "FFI", "type");
+  vfyStr(name, "FFI", "Type");
   
   u64 staticAlloc = ffiTmpAlign(argn * sizeof(void*)); // initial alloc is the argument pointer list
   #define STATIC_ALLOC(O, SZ) ({ (O).staticOffset = staticAlloc; staticAlloc+= ffiTmpAlign(SZ); })
@@ -899,8 +968,8 @@ B ffiload_c2(B t, B w, B x) {
   #if FFI==2
     BQNFFIEnt* args; B argObj = m_bqnFFIType(&args, 255, argn+1);
     args[0] = tRes;
-    bool one [2]={0,0};
-    bool many[2]={0,0};
+    bool whole[2]={0,0};
+    i32 count[2]={0,0};
     i32 mutCount = 0;
     for (usz i = 0; i < argn; i++) {
       BQNFFIEnt e = ffi_parseType(GetU(x,i+2), false);
@@ -908,19 +977,21 @@ B ffiload_c2(B t, B w, B x) {
       STATIC_ALLOC(e, calcStaticSize(e));
       
       args[i+1] = e;
-      (e.wholeArg? one : many)[e.extra] = true;
+      if (e.wholeArg) whole[e.onW] = true;
+      count[e.onW]++;
       if (e.mutates) mutCount++;
     }
     if (staticAlloc > U16_MAX-64) thrM("FFI: Static argument size too large");
     c(BQNFFIType,argObj)->staticAllocTotal = ffiTmpAlign(staticAlloc);
-    if (one[0] && many[0]) thrM("FFI: Multiple arguments for 𝕩 specified, but one has '>'");
-    if (one[1] && many[1]) thrM("FFI: Multiple arguments for 𝕨 specified, but one has '>'");
+    if (count[0]>1 && whole[0]) thrM("FFI: Multiple arguments on 𝕩 specified, some with '>'");
+    if (count[1]>1 && whole[1]) thrM("FFI: Multiple arguments on 𝕨 specified, some with '>'");
+    if (count[0]==0 && count[1]>0) thrM("FFI: At least one argument should be in 𝕩");
   #else
     i32 mutCount = 0;
     for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
     (void)tRes;
   #endif
-  if (tRes.resSingle && mutCount!=1) thrF("FFI: Return was \"&\", but found %i mutated values", mutCount);
+  if (tRes.resSingle && mutCount!=1) thrF("FFI: Return value is specified as \"&\", but there are %i mutated values", mutCount);
   
   char* ws = NULL;
   if (w.u != m_c32(0).u) {
@@ -955,9 +1026,11 @@ B ffiload_c2(B t, B w, B x) {
     ffi_status s = ffi_prep_cif((ffi_cif*)cif->data, FFI_DEFAULT_ABI, argn, &args[0].t, argsRawArr);
     if (s!=FFI_OK) thrM("FFI: Error preparing call interface");
     // mm_free(argsRaw)
-    u32 flags = many[1] | many[0]<<1 | tRes.resSingle<<2;
+    u32 flags = tRes.resSingle<<2;
     B r = m_ffiFn(foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(argsRaw, OBJ_TAG)), libffiFn_c1, libffiFn_c2, TOPTR(void,flags), sym);
     c(BoundFn,r)->mutCount = mutCount;
+    c(BoundFn,r)->wLen = whole[1]? -1 : count[1];
+    c(BoundFn,r)->xLen = whole[0]? -1 : count[0];
     return r;
   #endif
 }
