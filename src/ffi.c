@@ -604,6 +604,12 @@ static B toU32Bits(B x) { return TI(x,elType)==el_i32? x : cpyU32Bits(x); }
 static B toU16Bits(B x) { return TI(x,elType)==el_i16? x : cpyU16Bits(x); }
 static B toU8Bits(B x)  { return TI(x,elType)==el_i8?  x : cpyU8Bits(x); }
 
+// read x as the specified type (assuming a container of the respective width signed integer array); consumes x
+NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*   xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16*  xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32*  xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readF32Bits(B x) { usz ia=IA(x); float*xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
+
 void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
@@ -770,14 +776,13 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     B f = objs[(*objPos)++];
     bool mut = t->a[0].mutPtr;
     if (mut) {
-      usz ia = IA(f);
       if (isC32(e)) {
         switch(o2cG(e)) { default: UD;
           case sty_i8: case sty_i16: case sty_i32: case sty_f64: return incG(f);
-          case sty_u8:  { u8*   tp=tyarr_ptr(f); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }
-          case sty_u16: { u16*  tp=tyarr_ptr(f); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }
-          case sty_u32: { u32*  tp=tyarr_ptr(f); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return num_squeeze(r); }
-          case sty_f32: { float*tp=tyarr_ptr(f); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=tp[i]; return r; }
+          case sty_u8:  return readU8Bits(f);
+          case sty_u16: return readU16Bits(f);
+          case sty_u32: return readU32Bits(f);
+          case sty_f32: return readF32Bits(f);
         }
       } else {
         BQNFFIType* t2 = c(BQNFFIType, e);
