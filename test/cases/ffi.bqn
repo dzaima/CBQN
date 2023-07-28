@@ -1,11 +1,12 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
-%DEF defs size_t ← "u64"
+%DEF defs size_t ← "u64" ⋄ size_tw ← 64
 
 
 # bad •FFI invocation
 # generally weird
-@ •FFI⎊9 ""‿"bqn_this symbol doesn't exist" %% 9
+"file that doesn't exist" •FFI⎊'e' ""‿"abort" %% 'e'
+@ •FFI⎊'e' ""‿"bqn_this symbol doesn't exist" %% 'e'
 !"FFI: Type must be a string" % @•FFI "hello"
 !"FFI: Error parsing type: Unexpected character '?'" % @•FFI""‿"bqn_init"‿"?"
 !"FFI: Bad array type" % @•FFI""‿"bqn_init"‿"["
@@ -50,12 +51,13 @@
 !"FFI: Structs currently cannot contain mutable references" % @•FFI""‿"bqn_init"‿"{&i32}"
 
 # :
-!"FFI: Garbage at end of type" % @•FFI""‿"bqn_init"‿"i32:"
-!"Unsupported width in :i0" % @•FFI""‿"bqn_init"‿"i32:i"
-!"Unsupported width in :i9" % @•FFI""‿"bqn_init"‿"i32:i9"
-!"Unsupported width in :u16" % @•FFI""‿"bqn_init"‿"i32:u16"
-!"Unsupported width in :i64" % @•FFI"i32:i64"‿"bqn_init"
-!"Unsupported width in :f32" % @•FFI""‿"bqn_init"‿"i32:f32"
+!"FFI: Unexpected character after "":""" % @•FFI""‿"bqn_init"‿"i32:"
+!"FFI: Unexpected character after "":""" % f←@•FFI""‿"bqn_init"‿">*u64:q8"
+!"FFI: Unsupported width in :i0" % @•FFI""‿"bqn_init"‿"i32:i"
+!"FFI: Unsupported width in :i9" % @•FFI""‿"bqn_init"‿"i32:i9"
+!"FFI: Unsupported width in :u16" % @•FFI""‿"bqn_init"‿"i32:u16"
+!"FFI: Unsupported width in :i64" % @•FFI"i32:i64"‿"bqn_init"
+!"FFI: Unsupported width in :f32" % @•FFI""‿"bqn_init"‿"i32:f32"
 !"FFI: number literal too large" % @•FFI""‿"bqn_init"‿"i32:u9999999999999999"
 !"FFI: Representation wider than the value for ""i32:f64""" % @•FFI""‿"bqn_init"‿"i32:f64"
 !"FFI: Garbage at end of type" % @•FFI""‿"bqn_init"‿"i32 hello world"
@@ -77,6 +79,9 @@
 %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&i16"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ¯32768‿32767 %% ¯32768‿32767
 %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&{i16}"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈¨¯32768‿32767 %% ⋈¨¯32768‿32767
 %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&f32"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⟨∞,¯∞,∞÷∞⟩∾10÷˜↕10 %% ⟨∞,¯∞,∞÷∞⟩∾0‿0.10000000149011612‿0.20000000298023224‿0.30000001192092896‿0.4000000059604645‿0.5‿0.6000000238418579‿0.699999988079071‿0.800000011920929‿0.8999999761581421
+%USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&i32"‿"*i16:u1"‿size_t ⋄ F ⟨⋈5, 32⥊1, 4⟩ %% ⋈¯1
+%USE defs ⋄ f←@•FFI⟨"&","memcpy","&i8","*i8",size_t∾":u1"⟩ ⋄ F ⟨¯100+↕10, ↕10, size_tw↑0‿0‿1⟩ %% (↕4)∾4↓¯100+↕10
+%USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&i16"‿"*i16:i32"‿size_t ⋄ F ⟨¯100+↕10, ⟨123+456×2⋆16, ¯2⟩, 8⟩ %% 123‿456‿¯2‿¯1∾4↓¯100+↕10
 
 
 
@@ -89,13 +94,6 @@
 !"FFI: Array provided for &u32 contained 4294967296" % f←@•FFI"&"‿"bqn_init"‿">&u32" ⋄ F ⋈2⋆32
 !"FFI: Array provided for &u16 contained ¯1" % f←@•FFI"&"‿"bqn_init"‿">&u16" ⋄ F ⋈¯1
 !"FFI: Array provided for &u32 contained ¯1" % f←@•FFI"&"‿"bqn_init"‿">&u32" ⋄ F ⋈¯1
-
-!"FFI: Array provided for &i16 contained 32768" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿32768
-!"FFI: Array provided for &i16 contained ¯32769" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿¯32769
-
-!"FFI: Array provided for &u8 contained an array" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ⟨↕300⟩
-!"FFI: Array provided for &i16 contained a character" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F "hi"
-!"FFI: Array provided for &f64 contained a namespace" % f←@•FFI"&"‿"bqn_init"‿">&f64" ⋄ F 1‿2‿{⇐}
 
 # bad scalars
 !"FFI: u8 argument not exact" % f←@•FFI""‿"bqn_init"‿">u8" ⋄ F 256
@@ -120,11 +118,6 @@
 
 
 # wrong argument internal structure
-!"FFI: Expected array corresponding to ""i32:i8""" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F @
-!"FFI: Bad array corresponding to ""i32:i8"": expected 4 elements, got 10" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F ↕10
-
-!"FFI: Expected array corresponding to a pointer" % f←@•FFI""‿"bqn_init"‿">*i32:i8" ⋄ F @
-
 !"FFI: Expected array corresponding to *{...}" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨@⟩
@@ -132,6 +125,31 @@
 !"FFI: Incorrect list length corresponding to a struct: expected 1, got 2" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨1‿2⟩
 !"FFI: Incorrect list length corresponding to an array: expected 2, got 0" % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F ⟨⟨⟩⟩
 !"FFI: Incorrect list length corresponding to an array: expected 2, got 3" % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F ⟨1‿2‿3⟩
+
+# bad :
+!"FFI: Expected array corresponding to ""i32:i8""" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F @
+!"FFI: Expected array corresponding to ""*i32:i8""" % f←@•FFI""‿"bqn_init"‿">*i32:i8" ⋄ F @
+
+!"FFI: Bad array corresponding to ""i32:i8"": expected 4 elements, got 10" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F ↕10
+!"FFI: Bad array corresponding to ""u64:u1"": expected 64 elements, got 128" % f←@•FFI""‿"bqn_init"‿">u64:u1" ⋄ F 128⥊1
+
+!"FFI: Array provided for :u1 contained 63" % f←@•FFI""‿"bqn_init"‿">u64:u1" ⋄ F ↕64
+!"FFI: Bad array corresponding to ""u64:i8"": expected 8 elements, got 64" % f←@•FFI""‿"bqn_init"‿">u64:i8" ⋄ F ↕64
+
+!"FFI: Expected array corresponding to ""*u64:i8""" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F @
+!"FFI: Array provided for :i8 contained 199" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F ↕200
+!"FFI: Array provided for :i8 contained 199" % f←@•FFI""‿"bqn_init"‿">&u64:i8" ⋄ F ↕200
+!"FFI: Array provided for :u1 contained 63" % f←@•FFI""‿"bqn_init"‿">&u64:u1" ⋄ F ↕64
+!"FFI: Bad array corresponding to ""*u64:i8"": expected a multiple of 8 elements, got 2" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F ↕2
+!"FFI: Bad array corresponding to ""*u32:i16"": expected a multiple of 2 elements, got 1" % f←@•FFI""‿"bqn_init"‿">*u32:i16" ⋄ F ↕1
+!"FFI: Bad array corresponding to ""&u64:u1"": expected a multiple of 64 elements, got 32" % f←@•FFI""‿"bqn_init"‿">&u64:u1" ⋄ F 32⥊0
+
+!"FFI: Array provided for &i16 contained 32768" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿32768
+!"FFI: Array provided for &i16 contained ¯32769" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿¯32769
+
+!"FFI: Array provided for &u8 contained an array" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ⟨↕300⟩
+!"FFI: Array provided for &i16 contained a character" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F "hi"
+!"FFI: Array provided for &f64 contained a namespace" % f←@•FFI"&"‿"bqn_init"‿">&f64" ⋄ F 1‿2‿{⇐}
 
 
 

@@ -265,6 +265,50 @@ static void printFFIType(FILE* f, B x) {
 
 #if FFI==2
 
+#if FFI_CHECKS
+  static char* typeDesc(i32 typeNum) {
+    switch(typeNum) {
+      default: return "(unknown)";
+      case 0: return "an array";
+      case 1: return "a number";
+      case 2: return "a character";
+      case 3: return "a function";
+      case 4: return "a 1-modifier";
+      case 5: return "a 2-modifier";
+      case 6: return "a namespace";
+    }
+  }
+  static NOINLINE i32 nonNumber(B x) { // returns -1 if x is all numeric, otherwise •Type of the offending element
+    if (elNum(TI(x,elType))) return -1;
+    usz ia = IA(x); SGetU(x)
+    i32 r = -1;
+    for (ux i = 0; i < ia; i++) {
+      B c = GetU(x,i);
+      if (!isNum(c)) { r = typeInt(c); break; }
+    }
+    return r;
+  }
+  static NOINLINE void ffi_checkRange(B x, i32 mode, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
+    if (IA(x)==0) return;
+    
+    char* ref = mode==1? "&" : mode==0? "*" : ":";
+    i32 nonNum = nonNumber(x);
+    if (nonNum!=-1) thrF("FFI: Array provided for %S%S contained %S", ref, desc, typeDesc(nonNum));
+    
+    if (min==max) return;
+    incG(x); x = elNum(TI(x,elType))? x : taga(cpyF64Arr(x));
+    
+    i64 buf[2];
+    if (!getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x))) thrF("FFI: Array provided for %S%S contained non-integer", ref, desc);
+    if (buf[0]<min) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[0]);
+    if (buf[1]>max) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[1]);
+    decG(x);
+  }
+#else
+  static void ffi_checkRange(B x, i32 mode, char* desc, i64 min, i64 max) { }
+#endif
+
+
 enum ScalarTy {
   sty_void, sty_a, sty_ptr,
   sty_u8, sty_u16, sty_u32, sty_u64,
@@ -444,9 +488,13 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     c++;
     u8 t = *c++;
     u32 n = readUInt(&c);
-    if (t=='i' | t=='c') if (n!=8 & n!=16 & n!=32) { badW: thrF("Unsupported width in :%c%i", (u32)t, n); }
-    if (t=='u') if (n!=1) goto badW;
-    if (t=='f') if (n!=64) goto badW;
+    if (t=='i' || t=='c') {
+      if (n!=8 & n!=16 & n!=32) { badW: thrF("FFI: Unsupported width in :%c%i", (u32)t, n); }
+    } else if (t=='u') {
+      if (n!=1) goto badW;
+    } else if (t=='f') {
+      if (n!=64) goto badW;
+    } else thrM("FFI: Unexpected character after \":\"");
     
     if (isC32(ro) && n > myWidth*8) thrF("FFI: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
     // TODO figure out what to do with i32:i32 etc
@@ -512,13 +560,13 @@ static usz ffiTmpAlign(usz n) {
 
 static B ffiObjs;
 
-static B toW(u8 reT, u8 reW, B x) {
+static NOINLINE B toW(u8 reT, u8 reW, B x) {
   switch(reW) { default: UD;
-    case 0: return taga(toBitArr(x)); break;
-    case 3: return reT=='c'?  toC8Any(x) :  toI8Any(x); break;
-    case 4: return reT=='c'? toC16Any(x) : toI16Any(x); break;
-    case 5: return reT=='c'? toC32Any(x) : toI32Any(x); break;
-    case 6: return toF64Any(x); break;
+    case 0:               ffi_checkRange(x, 2, "u1", 0, 1);              return taga(toBitArr(x)); break;
+    case 3: if (reT=='i') ffi_checkRange(x, 2, "i8",  I8_MIN,  I8_MAX);  return reT=='c'?  toC8Any(x) :  toI8Any(x); break;
+    case 4: if (reT=='i') ffi_checkRange(x, 2, "i16", I16_MIN, I16_MAX); return reT=='c'? toC16Any(x) : toI16Any(x); break;
+    case 5: if (reT=='i') ffi_checkRange(x, 2, "i32", I32_MIN, I32_MAX); return reT=='c'? toC32Any(x) : toI32Any(x); break;
+    case 6:               ffi_checkRange(x, 2, "f64", 0, 0);             return toF64Any(x); break;
   }
 }
 static u8 reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
@@ -533,49 +581,6 @@ static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
 }
 
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
-
-#if FFI_CHECKS
-  static char* typeDesc(i32 typeNum) {
-    switch(typeNum) {
-      default: return "(unknown)";
-      case 0: return "an array";
-      case 1: return "a number";
-      case 2: return "a character";
-      case 3: return "a function";
-      case 4: return "a 1-modifier";
-      case 5: return "a 2-modifier";
-      case 6: return "a namespace";
-    }
-  }
-  static NOINLINE i32 nonNumber(B x) { // returns -1 if x is all numeric, otherwise •Type of the offending element
-    if (elNum(TI(x,elType))) return -1;
-    usz ia = IA(x); SGetU(x)
-    i32 r = -1;
-    for (ux i = 0; i < ia; i++) {
-      B c = GetU(x,i);
-      if (!isNum(c)) { r = typeInt(c); break; }
-    }
-    return r;
-  }
-  static NOINLINE void ffi_checkRange(B x, bool mut, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
-    if (IA(x)==0) return;
-    
-    char ref = mut? '&' : '*';
-    i32 nonNum = nonNumber(x);
-    if (nonNum!=-1) thrF("FFI: Array provided for %c%S contained %S", ref, desc, typeDesc(nonNum));
-    
-    if (min==max) return;
-    incG(x); x = elNum(TI(x,elType))? x : taga(cpyF64Arr(x));
-    
-    i64 buf[2];
-    if (!getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x))) thrF("Array provided for %c%S contained non-integer", ref, desc);
-    if (buf[0]<min) thrF("FFI: Array provided for %c%S contained %l", ref, desc, buf[0]);
-    if (buf[1]>max) thrF("FFI: Array provided for %c%S contained %l", ref, desc, buf[1]);
-    decG(x);
-  }
-#else
-  static void ffi_checkRange(B x, bool mut, char* desc, i64 min, i64 max) { }
-#endif
 
 #define CPY_UNSIGNED(REL, UEL, DIRECT, WIDEN, WEL) \
   if (TI(x,elType)<=el_##REL) return taga(DIRECT(x)); \
@@ -605,10 +610,10 @@ static B toU16Bits(B x) { return TI(x,elType)==el_i16? x : cpyU16Bits(x); }
 static B toU8Bits(B x)  { return TI(x,elType)==el_i8?  x : cpyU8Bits(x); }
 
 // read x as the specified type (assuming a container of the respective width signed integer array); consumes x
-NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*   xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16*  xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32*  xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readF32Bits(B x) { usz ia=IA(x); float*xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
+NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
 
 void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
@@ -677,28 +682,32 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
       u8 reW = t->a[0].reWidth;
       if (isC32(o2)) { // scalar:any
         u8 et = o2cG(o2);
-        u8 etw = sty_w[et]*8;
+        u8 mul = (sty_w[et]*8) >> reW;
         if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], (u32)reT, 1<<reW);
-        if (IA(c) != etw>>reW) thrF("FFI: Bad array corresponding to \"%S:%c%i\": expected %s elements, got %s", sty_names[et], (u32)reT, 1<<reW, (usz)(etw>>reW), IA(c));
+        if (IA(c) != mul) thrF("FFI: Bad array corresponding to \"%S:%c%i\": expected %s elements, got %s", sty_names[et], (u32)reT, 1<<reW, (usz)mul, IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
       } else { // *scalar:any / &scalar:any
-        if (!isArr(c)) thrM("FFI: Expected array corresponding to a pointer");
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && isC32(ore)); // we shouldn't be generating anything else
-        incG(c);
-        B cG;
-        bool mut = t->a[0].mutPtr;
+        bool mut = t2->a[0].mutPtr;
+        
+        u8 et = o2cG(ore);
+        u8 mul = (sty_w[et]*8) >> reW;
+        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S%S:%c%i\"", mut?"&":"*", sty_names[et], (u32)reT, 1<<reW);
+        if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to \"%S%S:%c%i\": expected a multiple of %s elements, got %s", mut?"&":"*", sty_names[et], (u32)reT, 1<<reW, (usz)mul, IA(c));
+        
+        incG(c); B cG;
         if (mut) {
           Arr* cGp;
           switch(reW) { default: UD;
-            case 0: cGp = (Arr*) cpyBitArr(c); break;
-            case 3: cGp = reT=='c'? (Arr*) cpyC8Arr(c) : (Arr*) cpyI8Arr(c); break;
-            case 4: cGp = reT=='c'? (Arr*)cpyC16Arr(c) : (Arr*)cpyI16Arr(c); break;
-            case 5: cGp = reT=='c'? (Arr*)cpyC32Arr(c) : (Arr*)cpyI32Arr(c); break;
-            case 6: cGp = (Arr*) cpyF64Arr(c); break;
+            case 0:               ffi_checkRange(c, 2, "u1", 0, 1);              cGp = (Arr*) cpyBitArr(c); break;
+            case 3: if (reT=='i') ffi_checkRange(c, 2, "i8",  I8_MIN,  I8_MAX);  cGp = reT=='c'? (Arr*) cpyC8Arr(c) : (Arr*) cpyI8Arr(c); break;
+            case 4: if (reT=='i') ffi_checkRange(c, 2, "i16", I16_MIN, I16_MAX); cGp = reT=='c'? (Arr*)cpyC16Arr(c) : (Arr*)cpyI16Arr(c); break;
+            case 5: if (reT=='i') ffi_checkRange(c, 2, "i32", I32_MIN, I32_MAX); cGp = reT=='c'? (Arr*)cpyC32Arr(c) : (Arr*)cpyI32Arr(c); break;
+            case 6:               ffi_checkRange(c, 2, "f64", 0, 0);             cGp = (Arr*) cpyF64Arr(c); break;
           }
           cG = taga(cGp);
         } else cG = toW(reT, reW, c);
@@ -774,8 +783,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
   if (t->ty==cty_ptr) { // *any / &any
     B e = t->a[0].o;
     B f = objs[(*objPos)++];
-    bool mut = t->a[0].mutPtr;
-    if (mut) {
+    if (t->a[0].mutPtr) {
       if (isC32(e)) {
         switch(o2cG(e)) { default: UD;
           case sty_i8: case sty_i16: case sty_i32: case sty_f64: return incG(f);
@@ -801,10 +809,11 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
   } else if (t->ty==cty_repr) { // any:any
     B o2 = t->a[0].o;
     if (isC32(o2)) return m_f64(0); // scalar:any
-    // *scalar:any / &scalar:any
+    
+    BQNFFIType* t2 = c(BQNFFIType,o2); // *scalar:any / &scalar:any
+    assert(t2->ty == cty_ptr);
     B f = objs[(*objPos)++];
-    bool mut = t->a[0].mutPtr;
-    if (!mut) return m_f64(0);
+    if (!t2->a[0].mutPtr) return m_f64(0);
     return inc(f);
   } else thrM("FFI: Unimplemented type (buildObj)");
 }
@@ -1007,14 +1016,14 @@ B ffiload_c2(B t, B w, B x) {
   
   if (ws) freeCStr(ws);
   dec(w);
-  if (dl==NULL) thrF("Failed to load: %S", dlerror());
+  if (dl==NULL) thrF("FFI: Failed to load library: %S", dlerror());
   
   char* nameStr = toCStr(name);
   void* sym = dlsym(dl, nameStr);
   freeCStr(nameStr);
   dec(x);
   
-  if (sym==NULL) thrF("Failed to find symbol: %S", dlerror());
+  if (sym==NULL) thrF("FFI: Failed to find symbol: %S", dlerror());
   #if FFI==1
     return m_ffiFn(foreignFnDesc, bi_N, directFn_c1, directFn_c2, sym, sym);
   #else

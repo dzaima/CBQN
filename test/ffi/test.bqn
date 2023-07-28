@@ -39,16 +39,16 @@ f ↩ "lib.so" •FFI "f32"‿"sumF32Arr"‿"*f32:i32"‿"i32" ⋄ •Show F ⟨
 Section "# mutate i32*"
 f ↩ "lib.so" •FFI ⟨"","incI32s","&u32",      "i32"⟩ ⋄ •Show F ⟨1e8×20+↕10 ⋄ 10⟩
 f ↩ "lib.so" •FFI ⟨"","incI32s","&i32:u1",   "i32"⟩ ⋄ •Show ⊑F ⟨1‿0‿1‿0‿1‿0‿1‿0‿0‿1‿0‿1‿0‿0‿1‿1‿0‿1‿1‿0‿0‿0‿0‿1‿0‿1‿0‿1‿0‿0‿1‿0‿0‿0‿1‿0‿0‿0‿1‿0‿0‿0‿1‿1‿1‿0‿1‿1‿1‿1‿1‿1‿0‿0‿1‿1‿0‿0‿1‿0‿0‿1‿0‿0, 2⟩
-f ↩ "lib.so" •FFI ⟨"","incI32s","&i32:c8",   "i32"⟩ ⋄ •Show ⊑F ⟨"helloworld", 2⟩
-f ↩ "lib.so" •FFI ⟨"","incI32s",">𝕨&i32:c8",">i32"⟩ ⋄ •Show ⊑ "helloworld" F 2
+f ↩ "lib.so" •FFI ⟨"","incI32s","&i32:c8",   "i32"⟩ ⋄ •Show ⊑F ⟨"hello, world", 2⟩
+f ↩ "lib.so" •FFI ⟨"","incI32s",">𝕨&i32:c8",">i32"⟩ ⋄ •Show ⊑ "hello, world" F 2
 
-f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show ⊑F ⟨"helloworld", 2⟩
-f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8", "𝕨i32"⟩ ⋄ •Show ⊑ ⟨2⟩ F ⟨"helloworld"⟩
-f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",">𝕨i32"⟩ ⋄ •Show ⊑ 2 F ⟨"helloworld"⟩
-f ↩ "lib.so" •FFI ⟨"", "incI32s", ">&i32:c8",">𝕨i32"⟩ ⋄ •Show ⊑ 2 F "helloworld"
-f ↩ "lib.so" •FFI ⟨"", "incI32s",">𝕨&i32:c8", ">i32"⟩ ⋄ •Show ⊑ "helloworld" F 2
-f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show F ⟨"helloworld", 2⟩
-f ↩ "lib.so" •FFI ⟨"&","incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show F ⟨"helloworld", 2⟩
+f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show ⊑F ⟨"hello, world", 2⟩
+f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8", "𝕨i32"⟩ ⋄ •Show ⊑ ⟨2⟩ F ⟨"hello, world"⟩
+f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",">𝕨i32"⟩ ⋄ •Show ⊑ 2 F ⟨"hello, world"⟩
+f ↩ "lib.so" •FFI ⟨"", "incI32s", ">&i32:c8",">𝕨i32"⟩ ⋄ •Show ⊑ 2 F "hello, world"
+f ↩ "lib.so" •FFI ⟨"", "incI32s",">𝕨&i32:c8", ">i32"⟩ ⋄ •Show ⊑ "hello, world" F 2
+f ↩ "lib.so" •FFI ⟨"", "incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show F ⟨"hello, world", 2⟩
+f ↩ "lib.so" •FFI ⟨"&","incI32s",  "&i32:c8",  "i32"⟩ ⋄ •Show F ⟨"hello, world", 2⟩
 
 Section "# mutate i32*, i16*, i8*"
 f ↩ "lib.so" •FFI ⟨"","incInts","&i32",  "&i16","&i8"⟩ ⋄ •Show F ⥊¨ 10‿20‿30
