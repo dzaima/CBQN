@@ -49,7 +49,7 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 
 # •ns
 {abc⇐1 ⋄ dÊF⇐2}•ns.Get¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__"⟩ %% 1‿1‿1‿1‿2‿2
-!"No field named ""abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789"" found" % {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789_"
+!"Field named ""abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789"" not found" % {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789_"
 {abc⇐1 ⋄ dÊF⇐2 ⋄ n10⇐3}•ns.Has¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__", "àbc", "def", "", ↕0, "𝕨", "012", "n10", "n1_0"⟩ %% 1‿1‿1‿1‿1‿1‿0‿0‿0‿0‿0‿0‿1‿1
 ∨´{⇐}•ns.Has¨↑"abc123AEWQE___àÀ𝕨𝕩" %% 0
 !"•ns.Has: 𝕩 must be a string" % {⇐}•ns.Has ≍""

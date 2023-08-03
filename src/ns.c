@@ -3,10 +3,10 @@
 #include "vm.h"
 
 void m_nsDesc(Body* body, bool imm, u8 ty, i32 actualVam, B nameList, B varIDs, B exported) { // doesn't consume nameList
-  if (!isArr(varIDs) || !isArr(exported)) thrM("Bad namespace description information");
+  if (!isArr(varIDs) || !isArr(exported)) thrM("Internal error: Bad namespace description information");
   
   usz ia = IA(varIDs);
-  if (ia!=IA(exported)) thrM("Bad namespace description information");
+  if (ia!=IA(exported)) thrM("Internal error: Bad namespace description information");
   i32 off = (ty==0?0:ty==1?2:3) + (imm?0:3);
   i32 vam = ia+off;
   
@@ -37,6 +37,12 @@ B m_ns(Scope* sc, NSDesc* desc) { // consumes both
 }
 
 
+NORETURN NOINLINE static void ns_unk_B(B x) {
+  thrF("Field named %B not found", x);
+}
+NORETURN NOINLINE static void ns_unk_gid(i32 gid) {
+  ns_unk_B(gid2str(gid));
+}
 
 B ns_getU(B ns, i32 gid) { VTY(ns, t_ns);
   NS* n = c(NS, ns);
@@ -44,7 +50,7 @@ B ns_getU(B ns, i32 gid) { VTY(ns, t_ns);
   
   i32 ia = d->varAm;
   for (i32 i = 0; i < ia; i++) if (d->expGIDs[i]==gid) return n->sc->vars[i];
-  thrM("No key found");
+  ns_unk_gid(gid);
 }
 
 B ns_qgetU(B ns, i32 gid) { VTY(ns, t_ns);
@@ -64,7 +70,7 @@ B ns_getNU(B ns, B name, bool thrEmpty) { VTY(ns, t_ns);
     i32 ia = d->varAm;
     for (i32 i = 0; i < ia; i++) if (d->expGIDs[i]==gid) return n->sc->vars[i];
   }
-  if (thrEmpty) thrF("No field named %B found", name);
+  if (thrEmpty) ns_unk_B(name);
   return bi_N;
 }
 B ns_getC(B ns, char* name) {
@@ -88,7 +94,7 @@ void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
       return;
     }
   }
-  thrM("No key found");
+  ns_unk_B(name);
 }
 
 
@@ -159,7 +165,7 @@ i32 nns_pos(Body* body, B name) {
     i32 pos = body->varData[i+ia];
     if (pos>=0 && equal(name, GetU(nameList, pos))) { dec(name); return i; }
   }
-  thrM("No key found");
+  ns_unk_B(name);
 }
 
 
@@ -169,7 +175,7 @@ i32 pos2gid(Body* body, i32 pos) {
   if (LIKELY(gid!=-1)) return gid;
   
   i32 nlIdx = body->varData[pos+body->varAm];
-  if (nlIdx==-1) thrM("Cannot use special variable name as namespace key");
+  if (nlIdx==-1) thrM("Internal error: Cannot use special variable name as namespace key");
   return body->varData[pos] = str2gid(IGetU(body->bl->comp->nameList, nlIdx));
 }
 
