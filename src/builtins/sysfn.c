@@ -931,7 +931,9 @@ B getLine_c1(B t, B x) {
     if (ln) free(ln);
     return m_c32(0);
   }
-  B r = utf8Decode(ln, strlen(ln)-1);
+  u64 len = strlen(ln);
+  while (len && (ln[len-1]=='\r' || ln[len-1]=='\n')) len--;
+  B r = utf8Decode(ln, len);
   free(ln);
   return r;
 }
