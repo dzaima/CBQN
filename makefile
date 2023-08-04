@@ -93,7 +93,7 @@ heapverifyn-singeli: heapverifyn
 rtverifyn-singeli: rtverifyn
 
 # compiler setup
-i_CC := clang
+i_CC := cc
 i_PIE :=
 i_LIBS_LD := -lm
 i_LIBS_CC := -fvisibility=hidden

@@ -6,7 +6,6 @@
 
 1. `make`
     - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
-    - Add `CC=cc` if `clang` isn't installed
     - Add `FFI=0` if your system doesn't have libffi
     - Use `gmake` on BSD
     - Add `REPLXX=0` if C++ is unavailable (will remove line editing/coloring/name completion in the REPL)
@@ -38,7 +37,7 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 
 ### Build flags
 
-`CC=...` - choose a different C compiler (default is `clang`)  
+`CC=...` - choose a different C compiler (default is `clang`, or `cc` if unavailable; CBQN is more tuned for clang, but gcc also works)  
 `CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)  
 `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename  
 `target_arch=(x86-64|aarch64|generic)` - target architecture. Inferred from `uname` by default. Used for deciding target optimizations.  

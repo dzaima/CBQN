@@ -138,11 +138,15 @@ Options:
   {(⊑on⊐<Lowercase 𝕩)⊑gvs}
 }
 
-SH ← {
-  c‿o‿e ← •SH⎊{𝕊: 𝕩 {𝕊: ∾⟨"Error: Failed to spawn ",⊑𝕨⟩}_assert_⊢ 0} 𝕩
-  Log⍟(×≠) e
-  𝕩 {𝕊: ∾⟨"Error: ",⊑𝕨," exited with error code ",•Repr 𝕩⟩}_assert_(0=⊢) c
-  o
+SH ← { # if 𝕨≢@, returns 𝕨 if failed to spawn
+  defres ← 𝕨 ⊣ @
+  c‿o‿e ← •SH⎊{defres≢@? ¯1‿defres‿@; (∾⟨"Error: Failed to spawn ",⊑𝕩⟩)_assert_⊢ 0} 𝕩
+  {
+    c≡¯1? o;
+    Log⍟(×≠) e
+    𝕩 {𝕊: ∾⟨"Error: ",⊑𝕨," exited with error code ",•Repr 𝕩⟩}_assert_(0=⊢) c
+    o
+  }𝕩
 }
 TrySH ← {1⊑•SH⎊1‿𝕨‿"" 𝕩}
 
@@ -194,6 +198,17 @@ po ← { # parsed options
   "Error: Static linking for wasm is pointless"_assert_¬ staticBin ∧ wasm
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
+  ccClang ← {
+    clangd? 1;
+    
+    TryVersion ← {𝕩 SH cc‿"--version"}
+    
+    vs ← TryVersion {@≡GetOpt"CC"? ¯1; @}
+    
+    {𝕊: cc↩"cc" ⋄ Log "Note: default CC 'clang' wasn't found; building with 'cc'; add a `CC=cc` argument to hide" ⋄ vs↩TryVersion@}⍟⊢ vs≡¯1
+    ∨´"clang"⍷vs
+  }
+  
   cxx ← GetOpt "CXX"
   debug ⇐ GetOpt "debug"
   rtverify ⇐ GetOpt "rtverify"
@@ -262,7 +277,6 @@ po ← { # parsed options
   singeliDir  ⇐ singeli SubmoduleDir "singeli"  ⋄ "Singeli" LogDir singeliDir
   {𝕊: "Output location: "∾𝕩}_verboseLog output
   
-  ccClang ← {clangd? 1; ∨´"clang"⍷SH cc‿"--version"}
   ccColor ⇐ ((¬clangd) ∧ tui DOpt "color") / ⟨ccClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩
   
   cbqnc ← {
