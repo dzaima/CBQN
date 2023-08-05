@@ -26,7 +26,6 @@
 !"FFI: Too many arguments" % @•FFI""‿"bqn_init"∾70000⥊<"i32"
 
 # >/𝕨/𝕩
-!"FFI: At least one argument should be in 𝕩" % @•FFI""‿"bqn_init"‿"𝕨i32"‿"𝕨i32"
 !"FFI: Multiple occurrences of '>' within one argument" % @•FFI""‿"bqn_init"‿">>i32"
 !"FFI: Multiple occurrences of argument side specified" % @•FFI""‿"bqn_init"‿"𝕨𝕨i32"
 !"FFI: Multiple occurrences of argument side specified" % @•FFI""‿"bqn_init"‿"𝕩𝕩i32"
@@ -82,6 +81,7 @@
 %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&i32"‿"*i16:u1"‿size_t ⋄ F ⟨⋈5, 32⥊1, 4⟩ %% ⋈¯1
 %USE defs ⋄ f←@•FFI⟨"&","memcpy","&i8","*i8",size_t∾":u1"⟩ ⋄ F ⟨¯100+↕10, ↕10, size_tw↑0‿0‿1⟩ %% (↕4)∾4↓¯100+↕10
 %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&i16"‿"*i16:i32"‿size_t ⋄ F ⟨¯100+↕10, ⟨123+456×2⋆16, ¯2⟩, 8⟩ %% 123‿456‿¯2‿¯1∾4↓¯100+↕10
+%USE defs ⋄ f←@•FFI⟨size_t,"strlen","*i8"⟩ ⋄ ⟨⟩ F ⋈1‿2‿3‿0 %% 3
 
 
 
@@ -109,11 +109,17 @@
 
 
 # bad overall argument separation
-!"FFI: Expected array 𝕩" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ F @
-!"FFI: Unnecessary 𝕨 given" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ @ F 1‿2
+!"FFI: Expected list 𝕩" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ F @
+!"FFI: Expected list 𝕩" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ F ≍⟨↕2, ↕2⟩
+!"FFI: Expected list 𝕨" % f←@•FFI""‿"bqn_init"‿"𝕨i32"‿"𝕨i32" ⋄ (≍1‿2) F ⟨⟩
 !"FFI: Wrong argument count in 𝕩: expected 2, got 3" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ F ⟨↕2, ↕2, ↕2⟩
 !"FFI: Wrong argument count in 𝕩: expected 2, got 1" % f←@•FFI""‿"bqn_init"‿"i32"‿"i32" ⋄ F ⟨↕2⟩
 !"FFI: Wrong argument count in 𝕨: expected 2, got 3" % f←@•FFI""‿"bqn_init"‿"i32"‿"𝕨i32"‿"𝕨i32" ⋄ ⟨↕2, ↕2, ↕2⟩ F ⟨4⟩
+!"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init" ⋄ F ⟨1⟩
+!"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init" ⋄ F @
+!"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init"‿"𝕨i32"‿"𝕨i32" ⋄ 1‿2 F @
+!"FFI: 𝕨 must either be an empty list, or not present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ ⟨1,2⟩ F 1‿2‿3‿0
+!"FFI: 𝕨 must either be an empty list, or not present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ @ F 1‿2‿3‿0
 
 
 

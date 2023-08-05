@@ -18,6 +18,7 @@ bind ← "lib.so" •FFI "a"‿"bindAdd"‿">a" ⋄ g ← Bind 4 ⋄ •Show G 1
 Section "# namespaces"
 f ↩ "lib.so" •FFI "a"‿"getField"‿">𝕨a"‿"a"‿"a" ⋄ •Show {ab⇐1‿2 ⋄ cd⇐3‿4} F ⟨"ab" ⋄ "default"⟩
 f ↩ "lib.so" •FFI "a"‿"getField"‿">𝕨a"‿"a"‿"a" ⋄ •Show {ab⇐1‿2 ⋄ cd⇐3‿4} F ⟨"ef" ⋄ "default"⟩
+f ↩ "lib.so" •FFI "a"‿"getField"‿"𝕨a"‿"𝕨a"‿"𝕨a" ⋄ •Show ⟨{ab⇐1‿2 ⋄ cd⇐3‿4} ⋄ "ef" ⋄ "default"⟩ F ⟨⟩
 
 Section "# print args"
 f ↩ "lib.so" •FFI ""‿"printArgs"‿"i8"‿"i16"‿"i32"‿"u8"‿"u16"‿"u32"‿"f32"‿"f64" ⋄ •Show F ¯123‿¯12323‿¯212312312‿250‿50000‿3123456789‿π∾÷3

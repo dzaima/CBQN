@@ -824,20 +824,22 @@ B libffiFn_c2(B t, B w, B x) {
   BoundFn* bf = c(BoundFn,t);
   B argObj = c(HArr,bf->obj)->a[0];
   
-  #define PROC_ARG(L, U, S, NG) \
+  #define PROC_ARG(ISX, L, U, S) \
     Arr* L##a ONLY_GCC(=0);     \
     AS2B L##f ONLY_GCC(=0);     \
     if (bf->L##Len>0) {         \
       if (FFI_CHECKS) {         \
-        if (!isArr(L)) thrM("FFI: Expected array " S); \
+        if (isAtm(L) || RNK(L)!=1) thrM("FFI: Expected list " S); \
         if (bf->L##Len>0 && IA(L)!=bf->L##Len) thrF("FFI: Wrong argument count in " S ": expected %s, got %s", bf->L##Len, IA(L)); \
       }                         \
       L##a = a(L);              \
       L##f = TIv(L##a,getU);    \
-    } else { NG }
+    } else if (FFI_CHECKS && bf->L##Len==0 && (ISX? 1 : !q_N(w)) && (isAtm(L) || RNK(L)!=1 || IA(L)!=0)) { \
+      thrF("FFI: " S " must %S", ISX? "be an empty list" : "either be an empty list, or not present"); \
+    }
   
-  PROC_ARG(w, W, "𝕨", if (FFI_CHECKS && bf->wLen==0 && !q_N(w)) thrM("FFI: Unnecessary 𝕨 given");)
-  PROC_ARG(x, X, "𝕩", )
+  PROC_ARG(0, w, W, "𝕨")
+  PROC_ARG(1, x, X, "𝕩")
   
   i32 idxs[2] = {0,0};
   
@@ -999,7 +1001,6 @@ B ffiload_c2(B t, B w, B x) {
     c(BQNFFIType,argObj)->staticAllocTotal = ffiTmpAlign(staticAlloc);
     if (count[0]>1 && whole[0]) thrM("FFI: Multiple arguments on 𝕩 specified, some with '>'");
     if (count[1]>1 && whole[1]) thrM("FFI: Multiple arguments on 𝕨 specified, some with '>'");
-    if (count[0]==0 && count[1]>0) thrM("FFI: At least one argument should be in 𝕩");
   #else
     i32 mutCount = 0;
     for (usz i = 0; i < argn; i++) ffi_parseType(GetU(x,i+2), false);
