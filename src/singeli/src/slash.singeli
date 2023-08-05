@@ -351,4 +351,21 @@ fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
 
 fn pext{T & hasarch{'BMI2'}}(x:T, m:T) = pext{x, m}
 
-export{'si_pext_u64', pext{u64}}
+fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
+  cw:u64 = 0; # current word
+  ro:u64 = 0; # offset in word where next bit should be written; never 64
+  @for (w, x over i to cdiv{n,64}) {
+    v := pext{u64}(x, w)
+    c := cast_i{u64, popcRand{w}}
+    cw|= v<<ro
+    ro2 := ro+c
+    if (ro2 >= 64) {
+      store{r, 0, cw}; ++r
+      cw = 0; if (ro>0) cw = v>>(64-ro)
+    }
+    ro = ro2%64
+  }
+  if (ro > 0) store{r, 0, cw}
+}
+
+export{'si_compress_bool', compress_bool}

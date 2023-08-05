@@ -439,30 +439,11 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   switch(xl) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
-      u64* xp = bitarr_ptr(x); u64* rp;
-      #if defined(__BMI2__) || SINGELI
-      r = m_bitarrv(&rp,wsum);
-      u64 cw = 0; // current word
-      u64 ro = 0; // offset in word where next bit should be written; never 64
-      for (usz i=0; i<BIT_N(wia); i++) {
-        u64 wv = wp[i];
-        #if defined(__BMI2__)
-        u64 v = _pext_u64(xp[i], wv);
-        #else
-        u64 v = si_pext_u64(xp[i], wv);
-        #endif
-        u64 c = rand_popc64(wv);
-        cw|= v<<ro;
-        u64 ro2 = ro+c;
-        if (ro2>=64) {
-          *(rp++) = cw;
-          cw = ro? v>>(64-ro) : 0;
-        }
-        ro = ro2&63;
-      }
-      if (ro) *rp = cw;
+      u64* xp = bitarr_ptr(x);
+      u64* rp; r = m_bitarrv(&rp,wsum);
+      #if SINGELI
+      si_compress_bool(wp, xp, rp, wia);
       #else
-      r = m_bitarrv(&rp,wsum);
       for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); }
       #endif
       break;
