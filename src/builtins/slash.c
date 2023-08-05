@@ -441,7 +441,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     case 0: {
       u64* xp = bitarr_ptr(x); u64* rp;
       #if defined(__BMI2__) || SINGELI
-      r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
+      r = m_bitarrv(&rp,wsum);
       u64 cw = 0; // current word
       u64 ro = 0; // offset in word where next bit should be written; never 64
       for (usz i=0; i<BIT_N(wia); i++) {
