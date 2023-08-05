@@ -287,7 +287,7 @@ export{'si_2slash32', slash{1, i32}}; export{'si_thresh_2slash32', u64~~thresh{1
 export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1, i64}}
 
 # pext, or boolean compress
-fn pext{T}(x:T, m:T) {
+def pext_popc{x:T, m:T} = {
   def w = width{T}
   def mod{a} = a % (1<<w)
   def lowbits{k} = base{1<<k, cdiv{w,k}**1}
@@ -327,10 +327,11 @@ fn pext{T}(x:T, m:T) {
   o := z*lowbits{g}  # Offsets by prefix sum
   def s = 1<<g - 1
   def gr{sh} = (b & mod{s<<sh}) >> (o>>(sh-g) & s)
-  fold{|, b&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
+  pe := fold{|, b&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
+  tup{pe, w - o>>(w-g)}
 }
 
-fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
+def pext_popc{xs:T, ms:T & hasarch{'PCLMUL'} & T==u64} = {
   def num = lb{width{T}}
   def vec{s} = make{[2]T, s, 0}
   m := vec{ms}
@@ -346,18 +347,17 @@ fn pext{T & hasarch{'PCLMUL'} & T==u64}(xs:T, ms:T) {
     shift_at{m, p}
     shift_at{x, p}
   }
-  extract{x, 0}
+  tup{extract{x, 0}, popc{ms}}
 }
 
-fn pext{T & hasarch{'BMI2'}}(x:T, m:T) = pext{x, m}
+def pext_popc{x:T, m:T & hasarch{'BMI2'}} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
   cw:u64 = 0; # current word
   ro:u64 = 0; # offset in word where next bit should be written; never 64
   @for (w, x over i to cdiv{n,64}) {
-    v := pext{u64}(x, w)
-    c := cast_i{u64, popcRand{w}}
-    cw|= v<<ro
+    {v, c} := pext_popc{x, w}
+    cw |= v<<ro
     ro2 := ro+c
     if (ro2 >= 64) {
       store{r, 0, cw}; ++r
