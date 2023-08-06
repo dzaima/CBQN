@@ -288,7 +288,8 @@ export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1
 
 # pext, or boolean compress
 def pext_popc{x:T, m:T} = {
-  def w = width{T}
+  def w = if (isvec{T}) elwidth{T} else width{T}
+  def scal{v} = if (isvec{T}) T**v else v
   def mod{a} = a % (1<<w)
   def lowbits{k} = base{1<<k, cdiv{w,k}**1}
   # At each step, x and z are split into groups of length k
@@ -298,11 +299,18 @@ def pext_popc{x:T, m:T} = {
   def build{k & k > 1} = {
     def h = k>>1          # Increase size from h to k
     {x,z} := build{h}
-    def low = lowbits{k}  # Low bit in each new group
+    def low_s = lowbits{k}  # Low bit in each new group
+    def low = scal{low_s}
     if (k == 2) {
       z0 := z & low
       zm := z>>1 & low
       tup{ x - (x>>1 & z0), zm + z0 }
+    } else if (hasarch{'AVX2'} and isvec{T} and k >= 32) {
+      # We have variable shifts at these sizes
+      lh := scal{low_s*(1<<h - 1)}
+      zl := z & lh
+      def S = re_el{ty_u{k}, T}
+      tup{T~~(S~~(x&~lh) >> S~~zl) | (x&lh), T~~(S~~z >> h) + zl}
     } else {
       # SWAR shifter: shift x by sh*o, in length-k groups
       def shift{sh, o, x} = {
@@ -311,9 +319,9 @@ def pext_popc{x:T, m:T} = {
         if (2*sh<k/2) shift{2*sh, o>>1, s} else s
       }
       # Shift high x group down by low z, then add halves of z
-      odd:T = mod{low*(1<<k - 1<<h)} # Top half
+      odd:T = scal{mod{low_s*(1<<k - 1<<h)}} # Top half
       ze := z&~odd
-      z1 := ze + low*(1<<(k-1) - 1)  # z-1, as signed k-bit
+      z1 := ze + scal{low_s*(1<<(k-1) - 1)}  # z-1, as signed k-bit
       move := odd &~ (z1<<1)         # Only groups where z>0 move
       tup{
         (x&~move) | shift{1, z1, x&move}>>1,
@@ -323,12 +331,16 @@ def pext_popc{x:T, m:T} = {
   }
   # Finally, compose groups with regular shifts
   def g = 8
-  {b,z} := build{g}
-  o := z*lowbits{g}  # Offsets by prefix sum
-  def s = 1<<g - 1
-  def gr{sh} = (b & mod{s<<sh}) >> (o>>(sh-g) & s)
-  pe := fold{|, b&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
-  tup{pe, w - o>>(w-g)}
+  def build{k & ~isvec{T} & k > g} = {
+    {x,z} := build{g}
+    o := z*lowbits{g}  # Offsets by prefix sum
+    def s = 1<<g - 1
+    def gr{sh} = (x & mod{s<<sh}) >> (o>>(sh-g) & s)
+    pe := fold{|, x&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
+    tup{pe, o>>(w-g)}
+  }
+  def {pe, z} = build{w}
+  tup{pe, scal{w} - z}
 }
 
 def pext_popc{xs:T, ms:T & hasarch{'PCLMUL'} & T==u64} = {
@@ -350,13 +362,12 @@ def pext_popc{xs:T, ms:T & hasarch{'PCLMUL'} & T==u64} = {
   tup{extract{x, 0}, popc{ms}}
 }
 
-def pext_popc{x:T, m:T & hasarch{'BMI2'}} = tup{pext{x, m}, popc{m}}
+def pext_popc{x:T, m:T & hasarch{'BMI2'} & T==u64} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
   cw:u64 = 0; # current word
   ro:u64 = 0; # offset in word where next bit should be written; never 64
-  @for (w, x over i to cdiv{n,64}) {
-    {v, c} := pext_popc{x, w}
+  def add_bits{{v, c}} = {
     cw |= v<<ro
     ro2 := ro+c
     if (ro2 >= 64) {
@@ -364,6 +375,17 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
       cw = 0; if (ro>0) cw = v>>(64-ro)
     }
     ro = ro2%64
+  }
+  if (hasarch{'AVX2'}) {
+    def V = [4]u64
+    nv := n/256
+    @for (w in *V~~w, x in *V~~x over i to nv) {
+      vc := pext_popc{x, w}
+      @unroll (j to 4) add_bits{each{extract{., j}, vc}}
+    }
+    @for (w, x over i from nv*4 to cdiv{n,64}) add_bits{pext_popc{x, w}}
+  } else {
+    @for (w, x over i to cdiv{n,64}) add_bits{pext_popc{x, w}}
   }
   if (ro > 0) store{r, 0, cw}
 }
