@@ -286,9 +286,11 @@ export{'si_2slash16', slash{1, i16}}; export{'si_thresh_2slash16', u64~~thresh{1
 export{'si_2slash32', slash{1, i32}}; export{'si_thresh_2slash32', u64~~thresh{1, i32}}
 export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1, i64}}
 
+def scalwidth{T} = if (isvec{T}) elwidth{T} else width{T}
+
 # pext, or boolean compress
 def pext_popc{x:T, m:T} = {
-  def w = if (isvec{T}) elwidth{T} else width{T}
+  def w = scalwidth{T}
   def scal{v} = if (isvec{T}) T**v else v
   def mod{a} = a % (1<<w)
   def lowbits{k} = base{1<<k, cdiv{w,k}**1}
@@ -343,23 +345,28 @@ def pext_popc{x:T, m:T} = {
   tup{pe, scal{w} - z}
 }
 
-def pext_popc{xs:T, ms:T & hasarch{'PCLMUL'} & T==u64} = {
-  def num = lb{width{T}}
-  def vec{s} = make{[2]T, s, 0}
+def pext_popc{xs:T, ms:T & hasarch{'PCLMUL'} & width{T}<=128} = {
+  def vt = isvec{T}
+  def V = if (vt) T else [2]T
+  def vec{s} = if (vt) s else make{V, s, 0}
+  def clmul{a, b} = {
+    if (vt) zipLo{...@collect (j to 2) clmul{a,b,j}} else clmul{a, b, 0}
+  }
   m := vec{ms}
   x := vec{xs} & m
   d := ~m << 1           # One bit of the position difference at x
-  c := vec{1<<64-1}
-  @unroll (i to num) {
+  c := V**(1<<64-1)
+  @unroll (i to lb{scalwidth{T}}) {
     def sh = 1 << i
     def shift_at{v, s} = { v = (v&~s) | (v&s)>>sh }
-    p := clmul{d, c, 0}  # xor-scan
+    p := clmul{d, c}     # xor-scan
     d = d &~ p           # Remove even bits
     p &= m
     shift_at{m, p}
     shift_at{x, p}
   }
-  tup{extract{x, 0}, popc{ms}}
+  if (vt) tup{x, @collect (j to 2) popc{extract{ms,j}}}
+  else tup{extract{x, 0}, popc{ms}}
 }
 
 def pext_popc{x:T, m:T & hasarch{'BMI2'} & T==u64} = tup{pext{x, m}, popc{m}}
@@ -376,14 +383,16 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
     }
     ro = ro2%64
   }
-  if (hasarch{'AVX2'}) {
-    def V = [4]u64
-    nv := n/256
+  def extract{t, i & istup{t}} = tupsel{i,t}
+  if (hasarch{'PCLMUL'} or hasarch{'AVX2'}) {
+    def v = if (hasarch{'AVX2'}) 4 else 2
+    def V = [v]u64
+    nv := n/(v*64)
     @for (w in *V~~w, x in *V~~x over i to nv) {
       vc := pext_popc{x, w}
-      @unroll (j to 4) add_bits{each{extract{., j}, vc}}
+      @unroll (j to v) add_bits{each{extract{., j}, vc}}
     }
-    @for (w, x over i from nv*4 to cdiv{n,64}) add_bits{pext_popc{x, w}}
+    @for (w, x over i from nv*v to cdiv{n,64}) add_bits{pext_popc{x, w}}
   } else {
     @for (w, x over i to cdiv{n,64}) add_bits{pext_popc{x, w}}
   }
