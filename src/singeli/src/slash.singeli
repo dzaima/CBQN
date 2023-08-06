@@ -289,6 +289,7 @@ export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1
 def scalwidth{T} = if (isvec{T}) elwidth{T} else width{T}
 
 # pext, or boolean compress
+def pext_width{} = if (hasarch{'AVX2'}) 4 else 1
 def pext_popc{x:T, m:T} = {
   def w = scalwidth{T}
   def scal{v} = if (isvec{T}) T**v else v
@@ -345,6 +346,7 @@ def pext_popc{x:T, m:T} = {
   tup{pe, scal{w} - z}
 }
 
+def pext_width{..._ & hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
 def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   def clmul{a, b} = zipLo{...@collect (j to 2) clmul{a,b,j}}
   m := m0
@@ -363,6 +365,7 @@ def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   tup{x, @collect (j to 2) popc{extract{m0,j}}}
 }
 
+def pext_width{..._ & hasarch{'BMI2'}} = 1
 def pext_popc{x:T, m:T & hasarch{'BMI2'} & T==u64} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
@@ -378,8 +381,8 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
     ro = ro2%64
   }
   def extract{t, i & istup{t}} = tupsel{i,t}
-  if (hasarch{'PCLMUL'} or hasarch{'AVX2'}) {
-    def v = if (hasarch{'AVX2'}) 4 else 2
+  def v = pext_width{}
+  if (v > 1) {
     def V = [v]u64
     d := cdiv{n,64}; e := d/v
     @for (w in *V~~w, x in *V~~x over i to cdiv{d,v}) {
