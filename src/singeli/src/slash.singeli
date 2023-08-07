@@ -293,8 +293,7 @@ def pext_width{} = if (hasarch{'AVX2'}) 4 else 1
 def pext_popc{x:T, m:T} = {
   def w = scalwidth{T}
   def scal{v} = if (isvec{T}) T**v else v
-  def mod{a} = a % (1<<w)
-  def lowbits{k} = base{1<<k, cdiv{w,k}**1}
+  def lowbits{w,k} = base{1<<k, cdiv{w,k}**1}
   # At each step, x and z are split into groups of length k
   # - z tells how many bits in the group are NOT used
   # - x contains the bits, with z zeros above
@@ -302,7 +301,7 @@ def pext_popc{x:T, m:T} = {
   def build{k & k > 1} = {
     def h = k>>1          # Increase size from h to k
     {x,z} := build{h}
-    def low_s = lowbits{k}  # Low bit in each new group
+    def low_s = lowbits{w,k}  # Low bit in each new group
     def low = scal{low_s}
     if (k == 2) {
       z0 := z & low
@@ -322,7 +321,7 @@ def pext_popc{x:T, m:T} = {
         if (2*sh<k/2) shift{2*sh, o>>1, s} else s
       }
       # Shift high x group down by low z, then add halves of z
-      odd:T = scal{mod{low_s*(1<<k - 1<<h)}} # Top half
+      odd:T = scal{low_s*(1<<k - 1<<h)} # Top half
       ze := z&~odd
       z1 := ze + scal{low_s*(1<<(k-1) - 1)}  # z-1, as signed k-bit
       move := odd &~ (z1<<1)         # Only groups where z>0 move
@@ -332,16 +331,25 @@ def pext_popc{x:T, m:T} = {
       }
     }
   }
-  # Finally, compose groups with regular shifts
-  def g = 8
-  def build{k & ~isvec{T} & k > g} = {
-    {x,z} := build{g}
-    o := z*lowbits{g}  # Offsets by prefix sum
+  # Compose k/g groups with k/g-1 regular shifts
+  def multi_shift{x, z, g, k, sc} = {
+    o := z * sc{lowbits{k,g}}  # Offsets by prefix sum
     def s = 1<<g - 1
-    def gr{sh} = (x & mod{s<<sh}) >> (o>>(sh-g) & s)
-    pe := fold{|, x&s, each{gr, g*slice{iota{cdiv{w,g}},1}}}
-    tup{pe, o>>(w-g)}
+    def s0 = sc{s}
+    def oo{sh} = if (sh==g) z else o>>(sh-g)      # Offset for group
+    def gr{sh} = (x & sc{s<<sh}) >> (oo{sh} & s0) # Shifted group
+    pe := fold{|, x&s0, each{gr, g*slice{iota{k/g},1}}}
+    tup{pe, o>>(k-g)}
   }
+  def build{k==32 & hasarch{'AVX2'} & isvec{T}} = {
+    def S = re_el{ty_u{k}, T}
+    def c{T,vs} = each{{v}=>T~~v, vs}
+    c{T, multi_shift{...c{S, build{8}}, 8, k, {s}=>S**s}}
+  }
+  def build{k & ~isvec{T} & k > 8} = {
+    multi_shift{...build{8}, 8, k, {s}=>s}
+  }
+  # Final result
   def {pe, z} = build{w}
   tup{pe, scal{w} - z}
 }
