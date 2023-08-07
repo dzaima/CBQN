@@ -2,8 +2,11 @@
 // In the notes 𝕨 might indicate 𝕩 for Indices too
 
 // Boolean 𝕨 (Where/Compress) general case based on result type width
-// Size 1: pext
-//   Emulate if unavailable
+// Size 1: compress 64-bit units, possibly SIMD
+//   pext if BMI2 is present
+//   Pairwise combination, SIMD if AVX2
+//   SIMD shift-by-offset if there's CLMUL but no AVX2
+//     SHOULD use with polynomial multiply in NEON
 //   COULD return boolean result from Where
 // Size 8, 16, 32, 64: mostly table-based
 //   Where: direct table lookup, widening for 16 and 32 if available
@@ -18,7 +21,7 @@
 //   None for 8-bit Where, too short
 //   COULD try per-block adaptivity for 16-bit Compress
 //   Sparse if +´𝕨 is small, branchless unless it's very small
-//     Chosen per-argument for 8, 16 and per-block for larger
+//     Chosen per-argument for 1, 8, 16 and per-block for larger
 //     Careful when benchmarking, branch predictor has a long memory
 //   Grouped if +´»⊸≠𝕨 is small, always branching
 //     Chosen per-argument with a threshold that gives up early
