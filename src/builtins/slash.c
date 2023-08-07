@@ -442,8 +442,10 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp,wsum);
       #if SINGELI
-      si_compress_bool(wp, xp, rp, wia);
-      #else
+      if (wsum>=wia/si_thresh_compress_bool) {
+        si_compress_bool(wp, xp, rp, wia); break;
+      }
+      #endif
       u64 o = 0;
       usz j = 0;
       for (usz i=0; i<BIT_N(wia); i++) {
@@ -453,7 +455,6 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         }
       }
       usz q=(-j)%64; if (q) rp[j/64] = o>>q;
-      #endif
       break;
     }
     #define COMPRESS_BLOCK_PREP(T, PREP) \
