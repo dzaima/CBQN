@@ -444,7 +444,15 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       #if SINGELI
       si_compress_bool(wp, xp, rp, wia);
       #else
-      for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); }
+      u64 o = 0;
+      usz j = 0;
+      for (usz i=0; i<BIT_N(wia); i++) {
+        for (u64 v=wp[i], x=xp[i]; v; v&=v-1) {
+          o = o>>1 | (x>>CTZ(v))<<63;
+          ++j; if (j%64==0) rp[j/64-1] = o;
+        }
+      }
+      usz q=(-j)%64; if (q) rp[j/64] = o>>q;
       #endif
       break;
     }
