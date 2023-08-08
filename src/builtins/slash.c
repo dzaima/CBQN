@@ -2,8 +2,11 @@
 // In the notes 𝕨 might indicate 𝕩 for Indices too
 
 // Boolean 𝕨 (Where/Compress) general case based on result type width
-// Size 1: pext
-//   Emulate if unavailable
+// Size 1: compress 64-bit units, possibly SIMD
+//   pext if BMI2 is present
+//   Pairwise combination, SIMD if AVX2
+//   SIMD shift-by-offset if there's CLMUL but no AVX2
+//     SHOULD use with polynomial multiply in NEON
 //   COULD return boolean result from Where
 // Size 8, 16, 32, 64: mostly table-based
 //   Where: direct table lookup, widening for 16 and 32 if available
@@ -18,7 +21,7 @@
 //   None for 8-bit Where, too short
 //   COULD try per-block adaptivity for 16-bit Compress
 //   Sparse if +´𝕨 is small, branchless unless it's very small
-//     Chosen per-argument for 8, 16 and per-block for larger
+//     Chosen per-argument for 1, 8, 16 and per-block for larger
 //     Careful when benchmarking, branch predictor has a long memory
 //   Grouped if +´»⊸≠𝕨 is small, always branching
 //     Chosen per-argument with a threshold that gives up early
@@ -439,32 +442,22 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   switch(xl) {
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
-      u64* xp = bitarr_ptr(x); u64* rp;
-      #if defined(__BMI2__) || SINGELI
-      r = m_bitarrv(&rp,wsum+128); a(r)->ia = wsum;
-      u64 cw = 0; // current word
-      u64 ro = 0; // offset in word where next bit should be written; never 64
-      for (usz i=0; i<BIT_N(wia); i++) {
-        u64 wv = wp[i];
-        #if defined(__BMI2__)
-        u64 v = _pext_u64(xp[i], wv);
-        #else
-        u64 v = si_pext_u64(xp[i], wv);
-        #endif
-        u64 c = rand_popc64(wv);
-        cw|= v<<ro;
-        u64 ro2 = ro+c;
-        if (ro2>=64) {
-          *(rp++) = cw;
-          cw = ro? v>>(64-ro) : 0;
-        }
-        ro = ro2&63;
+      u64* xp = bitarr_ptr(x);
+      u64* rp; r = m_bitarrv(&rp,wsum);
+      #if SINGELI
+      if (wsum>=wia/si_thresh_compress_bool) {
+        si_compress_bool(wp, xp, rp, wia); break;
       }
-      if (ro) *rp = cw;
-      #else
-      r = m_bitarrv(&rp,wsum);
-      for (usz i=0, ri=0; i<wia; i++) { bitp_set(rp,ri,bitp_get(xp,i)); ri+= bitp_get(wp,i); }
       #endif
+      u64 o = 0;
+      usz j = 0;
+      for (usz i=0; i<BIT_N(wia); i++) {
+        for (u64 v=wp[i], x=xp[i]; v; v&=v-1) {
+          o = o>>1 | (x>>CTZ(v))<<63;
+          ++j; if (j%64==0) rp[j/64-1] = o;
+        }
+      }
+      usz q=(-j)%64; if (q) rp[j/64] = o>>q;
       break;
     }
     #define COMPRESS_BLOCK_PREP(T, PREP) \

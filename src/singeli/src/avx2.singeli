@@ -69,12 +69,12 @@ def packQQ{{a, b}} = packQQ{a, b}
 
 
 # arith
-def __mul{a:T,b:T & [16]i16==T} = emit{T, '_mm256_mullo_epi16', a, b}
-def mulHi{a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
-def mulHi{a:T,b:T & [16]u16==T} = emit{T, '_mm256_mulhi_epu16', a, b}
-def __mul{a:T,b:T & [ 8]i32==T} = emit{T, '_mm256_mullo_epi32', a, b}
-def mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
-def mul32{a:T,b:T & [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
+def __mul{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_mullo_epi16', a, b}
+def mulHi{a:T,b:T & [16]i16==T  } = emit{T, '_mm256_mulhi_epi16', a, b}
+def mulHi{a:T,b:T & [16]u16==T  } = emit{T, '_mm256_mulhi_epu16', a, b}
+def __mul{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_mullo_epi32', a, b}
+def mul32{a:T,b:T & [ 4]i64==T  } = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
+def mul32{a:T,b:T & [ 4]u64==T  } = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
 
 def abs{a:T & w256i{T,8 }} = emit{T, '_mm256_abs_epi8',  a}
 def abs{a:T & w256i{T,16}} = emit{T, '_mm256_abs_epi16', a}
