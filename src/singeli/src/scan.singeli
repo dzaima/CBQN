@@ -5,6 +5,11 @@ include './avx2'
 include './mask'
 include './f64'
 
+# Initialized scan, generic implementation
+fn scan_scal{T, op}(x:*T, r:*T, len:u64, m:T) : void = {
+  @for (x, r over len) r = m = op{m, x}
+}
+
 def sel8{v, t} = sel{[16]u8, v, make{[32]i8, t}}
 def sel8{v, t & istup{t} & tuplen{t}==16} = sel8{v, merge{t,t}}
 
@@ -45,7 +50,8 @@ def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
 }
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
-fn avx2_scan_idem{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
+def scan_idem = scan_scal
+fn scan_idem{T, op & hasarch{'AVX2'}}(x:*T, r:*T, len:u64, init:T) : void = {
   # Within each lane, scan using shifts by powers of 2. First k elements
   # when shifting by k don't need to change, so leave them alone.
   def w = width{T}
@@ -61,23 +67,22 @@ fn avx2_scan_idem{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
 
   scan_post{T, init, x, r, len, op, pre}
 }
-fn avx2_scan_idem{T==f64, op}(x:*T, r:*T, len:u64, init:T) : void = {
+fn scan_idem{T==f64, op & hasarch{'AVX2'}}(x:*T, r:*T, len:u64, init:T) : void = {
   def sh{s, a} = op{a, shuf{[4]u64, a, s}}
   scan_post{T, init, x, r, len, op, {a}=>sh{4b1110,sh{4b2200,a}}}
 }
-export{'avx2_scan_min_init_i8',  avx2_scan_idem{i8 , min}}; export{'avx2_scan_max_init_i8',  avx2_scan_idem{i8 , max}}
-export{'avx2_scan_min_init_i16', avx2_scan_idem{i16, min}}; export{'avx2_scan_max_init_i16', avx2_scan_idem{i16, max}}
-export{'avx2_scan_min_init_i32', avx2_scan_idem{i32, min}}; export{'avx2_scan_max_init_i32', avx2_scan_idem{i32, max}}
-export{'avx2_scan_min_init_f64', avx2_scan_idem{f64, min}}; export{'avx2_scan_max_init_f64', avx2_scan_idem{f64, max}}
 
-fn avx2_scan_idem_id{T, op}(x:*T, r:*T, len:u64) : void = {
-  def m = 1 << (width{T}-1)
-  def id = (if (same{op,min}) m-1; else -m)
-  avx2_scan_idem{T, op}(x, r, len, id)
+export{'si_scan_min_init_i8',  scan_idem{i8 , min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , max}}
+export{'si_scan_min_init_i16', scan_idem{i16, min}}; export{'si_scan_max_init_i16', scan_idem{i16, max}}
+export{'si_scan_min_init_i32', scan_idem{i32, min}}; export{'si_scan_max_init_i32', scan_idem{i32, max}}
+export{'si_scan_min_init_f64', scan_idem{f64, min}}; export{'si_scan_max_init_f64', scan_idem{f64, max}}
+
+fn scan_idem_id{T, op}(x:*T, r:*T, len:u64) : void = {
+  scan_idem{T, op}(x, r, len, (if (same{op,min}) maxvalue else minvalue){T})
 }
-export{'avx2_scan_min_i8',  avx2_scan_idem_id{i8 , min}}; export{'avx2_scan_max_i8',  avx2_scan_idem_id{i8 , max}}
-export{'avx2_scan_min_i16', avx2_scan_idem_id{i16, min}}; export{'avx2_scan_max_i16', avx2_scan_idem_id{i16, max}}
-export{'avx2_scan_min_i32', avx2_scan_idem_id{i32, min}}; export{'avx2_scan_max_i32', avx2_scan_idem_id{i32, max}}
+export{'si_scan_min_i8',  scan_idem_id{i8 , min}}; export{'si_scan_max_i8',  scan_idem_id{i8 , max}}
+export{'si_scan_min_i16', scan_idem_id{i16, min}}; export{'si_scan_max_i16', scan_idem_id{i16, max}}
+export{'si_scan_min_i32', scan_idem_id{i32, min}}; export{'si_scan_max_i32', scan_idem_id{i32, max}}
 
 # Assumes identity is 0
 def scan_assoc{op, a:T} = {
@@ -92,17 +97,22 @@ def scan_assoc{op, a:T} = {
 def scan_plus = scan_assoc{+, .}
 
 # Associative scan
-fn avx2_scan_assoc_0{T, op}(x:*T, r:*T, len:u64, init:T) : void = {
+def scan_assoc_0 = scan_scal
+fn scan_assoc_0{T, op & hasarch{'AVX2'}}(x:*T, r:*T, len:u64, init:T) : void = {
   # Prefix op on entire AVX register
-
   scan_post{T, init, x, r, len, op, scan_plus}
 }
-export{'avx2_scan_pluswrap_u8',  avx2_scan_assoc_0{u8 , +}}
-export{'avx2_scan_pluswrap_u16', avx2_scan_assoc_0{u16, +}}
-export{'avx2_scan_pluswrap_u32', avx2_scan_assoc_0{u32, +}}
+export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}
+export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
+export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
 
 # Boolean cumulative sum
-fn avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
+fn bcs{T}(x:*u64, r:*T, l:u64) : void = {
+  def bitp_get{arr, n} = (load{arr, n>>6} >> (n&63)) & 1
+  c:T = 0
+  @for (r over i to l) { c+= cast_i{T, bitp_get{x,i}}; r = c }
+}
+fn bcs{T & hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   def U = ty_u{T}
   def w = width{T}
   def vl= 256 / w
@@ -157,9 +167,9 @@ fn avx2_bcs{T}(x:*u64, r:*T, l:u64) : void = {
     step{load{xv, e}, e, st}
   }
 }
-export{'avx2_bcs8',  avx2_bcs{i8}}
-export{'avx2_bcs16', avx2_bcs{i16}}
-export{'avx2_bcs32', avx2_bcs{i32}}
+export{'si_bcs8',  bcs{i8}}
+export{'si_bcs16', bcs{i16}}
+export{'si_bcs32', bcs{i32}}
 
 
 
@@ -190,7 +200,23 @@ def maxabsval{T & issigned{T}} = -minvalue{T}
 def maxsafeint{T & issigned{T}} = maxvalue{T}
 def maxsafeint{T==f64} = 1<<53
 
-def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
+fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
+  i:u64 = 0
+  if (hasarch{'AVX2'}) simd_plus_scan_part{X,R}{x, c, r, len, i}
+  @forUnroll{1,1} (js from i to len) {
+    def vs = eachx{load, x, js}
+    each{{j, v} => {
+      def {b,n} = addChk{c, promote{R, v}}
+      if (rare{b}) return{j}
+      store{r, j, n}
+      c = n
+    }, js, vs}
+  }
+  len
+}
+# Sum as many vector registers as possible; modifies c and i
+def simd_plus_scan_part{X, R}{x:*X, c:(R), r:*R, len:u64, i:u64} = {
+  def b = max{width{R}/2, width{X}}
   def bulk = arch_defvw/b
   
   def wd = (X!=R) & (width{X}<32) # whether to widen the working copy one size
@@ -203,7 +229,6 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
   
   if (R!=f64) { def m = maxFastA + maxFastE*bulk; assert{m<=maxvalue{R}}; assert{-m>=minvalue{R}} }
   
-  i:u64 = 0
   cv:= [arch_defvw/width{R}]R ** c
   
   if (R==f64 and c != floor{c}) goto{'end'}
@@ -237,24 +262,13 @@ def simd_plus_scan{X, b, R}{x:*X, c:(R), r:*R, len:u64} = {
   
   setlabel{'end'}
   c = extract{cv, 0}
-  
-  @forUnroll{1,1} (js from i to len) {
-    def vs = eachx{load, x, js}
-    each{{j, v} => {
-      def {b,n} = addChk{c, promote{R, v}}
-      if (rare{b}) return{j}
-      store{r, j, n}
-      c = n
-    }, js, vs}
-  }
-  len
 }
-fn simd_plus_scanG{X, b, R}(x:*X, c:R, r:*R, len:u64) : void = simd_plus_scan{X,b,R}{x, c, r, len}
-fn simd_plus_scanC{X, b, R}(x:*X, c:R, r:*R, len:u64) : u64  = simd_plus_scan{X,b,R}{x, c, r, len}
+def plus_scanG{X, R} = plus_scan{X, R, void}
+def plus_scanC{X, R} = plus_scan{X, R, u64}
 
-export{'simd_scan_plus_i8_i32',  simd_plus_scanC{i8, 16, i32}}
-export{'simd_scan_plus_i16_i32', simd_plus_scanC{i16, 16, i32}}
-export{'simd_scan_plus_i32_i32', simd_plus_scanC{i32, 32, i32}}
+export{'si_scan_plus_i8_i32',  plus_scanC{i8,  i32}}
+export{'si_scan_plus_i16_i32', plus_scanC{i16, i32}}
+export{'si_scan_plus_i32_i32', plus_scanC{i32, i32}}
 
-export{'simd_scan_plus_i16_f64', simd_plus_scanG{i16, 32, f64}}
-export{'simd_scan_plus_i32_f64', simd_plus_scanG{i32, 32, f64}}
+export{'si_scan_plus_i16_f64', plus_scanG{i16, f64}}
+export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}

@@ -650,7 +650,7 @@ cachedBin‿linkerCache ← {
     "xag"‿"src/builtins/search.c"‿"search",   "xa."‿"src/builtins/fold.c"‿"fold",
     "xag"‿"src/builtins/sort.c"‿"bins"
     
-    "2.."‿"src/builtins/select.c"‿"select",   "2.."‿"src/builtins/scan.c"‿"scan",
+    "2.."‿"src/builtins/select.c"‿"select",   "xag"‿"src/builtins/scan.c"‿"scan",
     "2a."‿"src/builtins/slash.c"‿"constrep",  "2.."‿"src/builtins/scan.c"‿"neq",
     "xag"‿"src/builtins/slash.c"‿"slash",     "2.."‿"src/builtins/slash.c"‿"count"
   ⟩
