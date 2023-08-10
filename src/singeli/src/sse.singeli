@@ -11,18 +11,14 @@ def extract{x:T, i & w128i{T, 8} & knum{i}} = emit{eltype{T}, '_mm_extract_epi8'
 def extract{x:T, i & w128i{T,32} & knum{i}} = emit{eltype{T}, '_mm_extract_epi32', x, i}
 def extract{x:T, i & w128i{T,64} & knum{i}} = emit{eltype{T}, '_mm_extract_epi64', x, i}
 def andAllZero{x:T, y:T & w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
-def min{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_min_epu16', a, b}; def max{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_max_epu16', a, b}
-def min{a:T,b:T & T==[16]i8 } = emit{T, '_mm_min_epi8',  a, b}; def max{a:T,b:T & T==[16]i8 } = emit{T, '_mm_max_epi8',  a, b}
-def min{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_min_epu32', a, b}; def max{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_max_epu32', a, b}
-def min{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_min_epi32', a, b}; def max{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_max_epi32', a, b}
-def __le{a:T,b:T & w128u{T}} = a==min{a,b}
-def __ge{a:T,b:T & w128u{T}} = a==max{a,b}
 
 # arith
 def min{a:T,b:T & T==[16]i8 } = emit{T, '_mm_min_epi8',  a, b}; def max{a:T,b:T & T==[16]i8 } = emit{T, '_mm_max_epi8',  a, b}
 def min{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_min_epi32', a, b}; def max{a:T,b:T & T==[ 4]i32} = emit{T, '_mm_max_epi32', a, b}
 def min{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_min_epu16', a, b}; def max{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_max_epu16', a, b}
 def min{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_min_epu32', a, b}; def max{a:T,b:T & T==[ 4]u32} = emit{T, '_mm_max_epu32', a, b}
+def __le{a:T,b:T & w128u{T}} = a==min{a,b}
+def __ge{a:T,b:T & w128u{T}} = a==max{a,b}
 
 def __eq{a:T,b:T & w128i{T,64}} = emit{[2]u64, '_mm_cmpeq_epi64', a, b}
 
