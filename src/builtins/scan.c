@@ -12,18 +12,14 @@ static u64 vg_rand(u64 x) { return x; }
 #if SINGELI
   #define SINGELI_FILE scan
   #include "../utils/includeSingeli.h"
-  #if __PCLMUL__
-    #define SINGELI_FILE neq
-    #include "../utils/includeSingeli.h"
-  #endif
 #endif
 
 
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
-#if SINGELI_AVX2 && __PCLMUL__
-  clmul_scan_ne(p, xp, rp, BIT_N(ia));
+#if SINGELI
+  si_scan_ne(p, xp, rp, BIT_N(ia));
   #if USE_VALGRIND
   if (ia&63) rp[ia>>6] = vg_def_u64(rp[ia>>6]);
   #endif

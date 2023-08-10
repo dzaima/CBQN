@@ -1,5 +1,6 @@
 include './base'
 include './sse'
+include './clmul'
 include './avx'
 include './avx2'
 include './mask'
@@ -117,6 +118,40 @@ fn scan_assoc_0{T, op & hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void =
 export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}
 export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
 export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
+
+# xor scan
+fn scan_neq{}(p:u64, x:*u64, r:*u64, nw:u64) : void = {
+  @for (x, r over nw) {
+    def sc{v, k} = if (k==64) v else sc{v ^ (v<<k), 2*k}
+    r = p ^ sc{x, 1}
+    p = -(r>>63) # repeat sign bit
+  }
+}
+fn clmul_scan_ne_any{..._ & hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
+  def V = [2]u64
+  m := V**mark
+  def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
+    p := clmul{a, m, i}
+    t := shr{[16]u8, p, 8}
+    s := p ^ carry
+    carry = s ^ t
+    s
+  }
+  xv := *V ~~ x
+  rv := *V ~~ r
+  e := words/2
+  c := V**init
+  @for (rv, xv over e) {
+    rv = apply{zipLo, (@collect (j to 2) xor64{xv, j, c})}
+  }
+  if (words & 1) {
+    storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
+  }
+}
+fn scan_neq{..._ & hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+  clmul_scan_ne_any{}(*void~~x, *void~~r, init, nw, -(u64~~1))
+}
+export{'si_scan_ne', scan_neq{}}
 
 # Boolean cumulative sum
 fn bcs{T}(x:*u64, r:*T, l:u64) : void = {
