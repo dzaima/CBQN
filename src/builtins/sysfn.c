@@ -757,13 +757,13 @@ B flines_c1(B d, B x) {
 }
 B flines_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Lines: 𝕩 must be a list");
-  B nl, s = emptyCVec();
+  B s = emptyCVec();
   usz ia = IA(x);
   SGet(x)
   for (u64 i = 0; i < ia; i++) {
-    nl = Get(x, i);
-    if (isAtm(s) || RNK(s)!=1) thrM("•file.Lines: Elements of 𝕩 must be lists of characters");
-    s = vec_join(s, nl);
+    B l = Get(x, i);
+    if (isAtm(l) || RNK(l)!=1) thrM("•file.Lines: Elements of 𝕩 must be lists of characters");
+    s = vec_join(s, l);
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
     s = vec_addN(s, m_c32('\n'));
   }

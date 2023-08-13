@@ -76,6 +76,9 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 
 !"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
 !"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •file.Lines <"abcd"
+!"•file.Lines: Elements of 𝕩 must be lists of characters" % "testfile.bqn" •FLines "abcd"
+!"Expected character" % "testfile.bqn" •FLines ⋈"ab"‿"cd"
+!"Expected character" % "testfile.bqn" •FLines ⋈1‿2
 !"Expected character" % "testfile.bqn" •FChars ⋈"abcd"
 !"•file.Chars: 𝕩 must be a list of characters" % "testfile.bqn" •FChars <'a'
 !"Expected character" % "testfile.bqn" •FBytes ⋈"abcd"
