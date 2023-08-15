@@ -304,7 +304,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
 
 DyTableAA* dyTableAAFor(B f) {
   assert(isFun(f));
-  switch(v(f)->extra-1) { default: return NULL;
+  switch(v(f)->flags-1) { default: return NULL;
     case n_add:   return &addDyTableAA;
     case n_sub:   return &subDyTableAA;
     case n_mul:   return &mulDyTableAA;
@@ -317,7 +317,7 @@ DyTableAA* dyTableAAFor(B f) {
 
 DyTableSA* dyTableSAFor(B f, bool atomChar) {
   assert(isFun(f));
-  switch(v(f)->extra-1) { default: return NULL;
+  switch(v(f)->flags-1) { default: return NULL;
     case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
     case n_sub:   return atomChar? &subDyTableCA : &subDyTableNA;
     case n_mul:   return atomChar? NULL : &mulDyTableNA;
@@ -328,7 +328,7 @@ DyTableSA* dyTableSAFor(B f, bool atomChar) {
 }
 DyTableSA* dyTableASFor(B f, bool atomChar) {
   assert(isFun(f));
-  switch(v(f)->extra-1) { default: return NULL;
+  switch(v(f)->flags-1) { default: return NULL;
     case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
     case n_sub:   return atomChar? &subDyTableAC : &subDyTableAN;
     case n_mul:   return atomChar? NULL : &mulDyTableNA;
