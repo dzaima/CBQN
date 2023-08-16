@@ -196,7 +196,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
   def ms = if (up) 256-(1<<(1+iota{8})) else (1<<iota{8})-1
   def sel_m = getsel{make{H, merge{ms - 256*(ms>127), 8**0}}}
   # Exact values for multiples of 8
-  store{*U~~t0, 0, vpopc{vb}}
+  store{*V~~t0, 0, vpopc{vb}}
   st:i8=0; @for_dir{up} (t0 over 256/8) { st += t0; t0 = st }
   def sel_c = getsel{swap{load{*V~~t0, 0} - V**dup}}
   # Top 5 bits select bytes from tables; bottom 3 select from mask
@@ -216,7 +216,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
         if (nu > 32) ind = homBlend{topBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
-    store{*U~~(*T~~rp+j), 0, ind}
+    store{*V~~(*T~~rp+j), 0, ind}
   }
   goto{done}
   setlabel{no_bittab}

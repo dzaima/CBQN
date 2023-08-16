@@ -36,10 +36,10 @@ def transpose_square{VT, l, x & hasarch{'AVX2'}} = unpack_to{1, l/2, x}
 
 def load2{a:T, b:T} = pair{load{a}, load{b}}
 def store2{a:T, b:T, v:T2 & w128i{eltype{T}} & w256{T2}} = {
-  each{{p, i} => store{p, 0, half{v, i}}, tup{a,b}, iota{2}}
+  each{{p:P, i} => store{p, 0, eltype{P}~~half{v,i}}, tup{a,b}, iota{2}}
 }
-def load_k {VT, src,    l, w & w256{VT}} = each{{i}  =>load {*VT~~(src+i*w), 0   }, iota{l}}
-def store_k{VT, dst, x, l, h & w256{VT}} = each{{i,v}=>store{*VT~~(dst+i*h), 0, v}, iota{l}, x}
+def load_k {VT, src,    l, w & w256{VT}} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}
+def store_k{VT, dst, x, l, h & w256{VT}} = each{{i,v}=>store{*VT~~(dst+i*h), 0, VT~~v}, iota{l}, x}
 def load_k {VT, src,    l, w & w128{VT}} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
 def store_k{VT, dst, x, l, h & w128{VT}} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
 
@@ -112,7 +112,7 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
     assert{k == kh}
     def VT = [k]T
     def line_vecs = line_bytes / (width{VT}/8)
-    def store_line{p, vs} = each{store{p, ...}, iota{line_vecs}, vs}
+    def store_line{p:P, vs} = each{{i,v} => store{p, i, eltype{P}~~v}, iota{line_vecs}, vs}
     def get_lines{loadx} = {
       def vt{i} = transpose_square{VT, k, each{loadx, k*i + iota{k}}}
       each{tup, ...each{vt, iota{line_vecs}}}

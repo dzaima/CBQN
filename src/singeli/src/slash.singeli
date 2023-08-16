@@ -225,10 +225,9 @@ fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
     i:u64 = 0
     {j} => { v:=load{*V~~x, i}; ++i; sel{V, v, j} }
   } else if (T==i32) {
-    def VT = [8]T
-    i := VT**x
-    ii := VT**8
-    {j} => { v:=i+VT~~j; i+=ii; v }
+    i := V ** ty_u{x}
+    ii := V ** 8
+    {j} => { v:=i+V~~j; i+=ii; v }
   }
   def tab = if (tw==32) itab else i64tab
   def step{r, w} = {

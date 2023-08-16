@@ -23,8 +23,10 @@ def elwidth{T} = width{eltype{T}}
 
 
 
+def load{p:P,  n    & isvec{eltype{P}}} = assert{0}
+def store{p:P, n, v & isvec{eltype{P}}} = assert{0}
 def load{p:P & isptr{P}} = load{p, 0}
-def store{p:P, v:V & isptr{P} & eltype{P}==v} = store{p, 0, v}
+# def store{p:P, v & isptr{P}} = store{p, 0, v}
 def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
 def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
 def loadu{p:T               & elwidth{T}==8} = load{p}
