@@ -184,7 +184,7 @@ fn slash{c==1, T & T<=i16 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u6
     s := V~~make{[2]u64, ind,0}
     if (T==i16) { s+=s; s = V~~mzipLo{s, s+V**1} }
     res := sel{V, load{*V~~(x+8*i)}, s}
-    if (T==i8) store{*u64~~r, 0, extract{[2]u64~~res, 0}}
+    if (T==i8) storeu{*u64~~r, extract{[2]u64~~res, 0}}
     else store{*V~~r, 0, res}
     r+= pc
   }

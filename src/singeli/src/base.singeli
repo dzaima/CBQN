@@ -29,8 +29,11 @@ def load{p:P & isptr{P}} = load{p, 0}
 # def store{p:P, v & isptr{P}} = store{p, 0, v}
 def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
 def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
+def loadu{p:T               & issigned{eltype{T}}} = loadu {*ty_u{eltype{T}} ~~ p}
+def storeu{p:T, v:eltype{T} & issigned{eltype{T}}} = storeu{*ty_u{eltype{T}} ~~ p, ty_u{v}}
 def loadu{p:T               & elwidth{T}==8} = load{p}
 def storeu{p:T, v:eltype{T} & elwidth{T}==8} = store{p, v}
+
 
 def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{export{.,f}, ns}
