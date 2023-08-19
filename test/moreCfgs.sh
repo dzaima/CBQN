@@ -31,5 +31,5 @@ build/build f='-DUSE_PERF'            c && ./BQN -p 2+2 || exit
 build/build f='-DREPL_INTERRUPT=0'    c && ./BQN -p 2+2 || exit
 build/build f='-DREPL_INTERRUPT=1'    c && ./BQN -p 2+2 || exit
 build/build FFI=0                     c && ./BQN -p 2+2 || exit
-build/obj2/for_build3 test/precompiled.bqn "$1" "$PATH" '2+2' || exit
+build/obj2/for_build4 test/precompiled.bqn "$1" "$PATH" '2+2' || exit
 build/build f='-DNO_RT -DPRECOMP'     c && ./BQN        || exit
