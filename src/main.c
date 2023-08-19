@@ -274,10 +274,19 @@ static NOINLINE i64 readInt(char** p) {
       ws = rskip_name(chars, we);
       u32 last = ws>chars? *(ws-1) : 0;
       mode = last=='.'? 2 : last==U'•'? 1 : 0;
+      
       if (mode==2) {
-        u32* ws2 = rskip_name(chars, ws-1);
-        if (ws2>chars && U'•' == *(ws2-1)) { ws=ws2; mode = 1; }
+        u32* ws2 = ws;
+        while (--ws2 > chars && *ws2=='.') {
+          u32* ws3 = rskip_name(chars, ws2);
+          if (ws2==ws3 || ws3==chars) break;
+          ws2 = ws3;
+          
+          u32 last2 = *(ws2-1);
+          if (last2==U'•') { ws=ws2; mode=1; break; }
+        }
       }
+      
       if (mode==1) ws--;
     }
     
@@ -901,7 +910,7 @@ int main() {
 }
 #elif !CBQN_LIB
 #if HAS_VERSION
-extern char* cbqn_versionString;
+extern char* cbqn_versionInfo;
 #endif
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
@@ -940,7 +949,7 @@ int main(int argc, char* argv[]) {
           exit(0);
         } else if (!strcmp(carg, "--version")) {
           #if HAS_VERSION
-            printf("%s", cbqn_versionString);
+            printf("%s", cbqn_versionInfo);
           #else
             printf("CBQN, unknown version\n");
           #endif

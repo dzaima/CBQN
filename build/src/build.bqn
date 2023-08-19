@@ -713,17 +713,27 @@ cachedBin‿linkerCache ← {
     po.versionName≡@? @;
     srcFile ← linkerCache.File "versionInfo.c"
     List ← {¯2↓ ∾ ∾⟜", "¨ /´ <˘⍉> 𝕩}
-    src ← "char* cbqn_versionString = """∾(∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
-      "CBQN "∾{po.versionName≡""? "on commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; po.versionName}
-      "built with "⊸∾⍟(×≠) List ⟨
-       ⟨po.ffi, "FFI"⟩
-       ⟨po.singeli, "singeli "∾{po.native? "native "∾po.arch; po.arch≡"generic"? po.arch∾" (no SIMD)"; po.arch}∾∾' '∾¨po.has⟩
-       ⟨po.replxx, "replxx"⟩
-       ⟨¬po.o3, "optimizations disabled"⟩
-       {⟨×≠𝕩, "debugging checks enabled ("∾𝕩∾")"⟩} List ⟨po.debug‿"DEBUG", po.heapverify‿"heapverify", po.rtverify‿"rtverify"⟩
+    
+    vnameX‿vname ← {po.versionName≡""? "on "⊸∾⊸⋈ "commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; ⋈˜ po.versionName}
+    
+    src ← ∾⟨
+      "char* cbqn_versionInfo = """
+      
+      ∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
+        "CBQN "∾vnameX
+        "built with "⊸∾⍟(×≠) List ⟨
+         ⟨po.ffi, "FFI"⟩
+         ⟨po.singeli, "singeli "∾{po.native? "native "∾po.arch; po.arch≡"generic"? po.arch∾" (no SIMD)"; po.arch}∾∾' '∾¨po.has⟩
+         ⟨po.replxx, "replxx"⟩
+         ⟨¬po.o3, "optimizations disabled"⟩
+         {⟨×≠𝕩, "debugging checks enabled ("∾𝕩∾")"⟩} List ⟨po.debug‿"DEBUG", po.heapverify‿"heapverify", po.rtverify‿"rtverify"⟩
+        ⟩
       ⟩
       # "build invocation: "⊸∾⍟(×≠) ¯1↓∾∾⟜' '¨ •args
-    ⟩)∾""";"∾@+10
+      
+      """;", @+10
+      "char* cbqn_versionString = """∾vname∾""";", @+10
+    ⟩
     {
       •file.Exists AtRoot srcFile? src≡•FChars AtRoot srcFile? @; # don't update
       (AtRoot srcFile) •FChars src

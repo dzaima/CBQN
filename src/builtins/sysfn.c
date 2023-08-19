@@ -1645,7 +1645,8 @@ static Body* file_nsGen;
   F("args", U"•args", tag(16,VAR_TAG)) \
   F("listsys", U"•listsys", tag(17,VAR_TAG)) \
   OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tag(18,VAR_TAG))) \
-  F("ns", U"•ns", tag(19,VAR_TAG))
+  F("ns", U"•ns", tag(19,VAR_TAG)) \
+  F("platform", U"•platform", tag(20,VAR_TAG))
 
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
@@ -1682,6 +1683,72 @@ static void initFileNS() {
   fExistsDesc  = registerNFn(m_c8vec_0("(file).Exists"), fexists_c1, c2_bad);
   importDesc   = registerNFn(m_c32vec_0(U"•Import"), import_c1, import_c2);
   ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
+}
+
+#if HAS_VERSION
+extern char* cbqn_versionString;
+#endif
+
+static B platformNS;
+static B getPlatformNS(void) {
+  if (platformNS.u == 0) {
+    
+    #if defined(_WIN32) || defined(_WIN64)
+      char* os = "windows";
+    #elif __ANDROID__
+      char* os = "android";
+    #elif __linux__
+      char* os = "linux";
+    #elif __FreeBSD__ || __OpenBSD__
+      char* os = "bsd";
+    #elif __APPLE__ || __MACH__
+      char* os = "darwin";
+    #elif __unix || __unix__
+      char* os = "unix";
+    #else
+      char* os = "unknown";
+    #endif
+    
+    #if __x86_64__
+      char* arch = "x86-64";
+    #elif __i386__
+      char* arch = "x86";
+    #elif __aarch64__
+      char* arch = "aarch64";
+    #elif __arm__
+      char* arch = "aarch32";
+    #elif __riscv
+      #define F(X) #X
+      #define F2(X) F(X)
+      char* arch = "riscv" F2(__riscv_xlen);
+      #undef F2
+      #undef F
+    #else
+      char* arch = "unknown";
+    #endif
+    
+    #if WASM
+      char* env = "wasm";
+    #else
+      char* env = "native";
+    #endif
+    
+    #if HAS_VERSION
+      char* cbqn_ver = cbqn_versionString;
+    #else
+      char* cbqn_ver = "unknown";
+    #endif
+    
+    platformNS = m_nns(m_nnsDesc("os","environment","cpu","bqn"),
+      m_c8vec_0(os),
+      m_c8vec_0(env),
+      m_nns(m_nnsDesc("arch"), m_c8vec_0(arch)),
+      m_nns(m_nnsDesc("impl","implversion"), m_c8vec_0("CBQN"), m_c8vec_0(cbqn_ver)),
+    );
+    #undef F
+    gc_add(platformNS);
+  }
+  return incG(platformNS);
 }
 
 
@@ -1751,6 +1818,7 @@ B sys_c1(B t, B x) {
       case 17: cr = incG(curr_ns); break; // •listsys
       case 18: cr = incG(bi_compObj); break; // •CompObj
       case 19: cr = getNsNS(); break; // •ns
+      case 20: cr = getPlatformNS(); break;
     }
     HARR_ADD(r, i, cr);
   }
@@ -1783,7 +1851,10 @@ u32* dsv_text[] = {
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",
+  
   U"•ns.Get",U"•ns.Has",U"•ns.Keys",
+  U"•platform.bqn.impl",U"•platform.bqn.implVersion",U"•platform.cpu.arch",U"•platform.environment",U"•platform.os",
+  
   U"•rand.Deal",U"•rand.Range",U"•rand.Subset",
   U"•term.CharB",U"•term.CharN",U"•term.ErrRaw",U"•term.Flush",U"•term.OutRaw",U"•term.RawMode",
   NULL
