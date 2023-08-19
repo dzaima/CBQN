@@ -5,8 +5,6 @@
 #define al        BN(al)
 #define alCap     BN(alCap)
 #define alSize    BN(alSize)
-#define str0(X) #X
-#define str1(X) str0(X)
 
 typedef struct AllocInfo {
   Value* p;
@@ -63,7 +61,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   }
   
   #if LOG_GC || LOG_MM_MORE
-    fprintf(stderr, "allocating "N64u" more " str1(BN()) " heap (from allocation of "N64u"B/bucket %d)", sz, (u64)BSZ(bucket), (int)bucket);
+    fprintf(stderr, "allocating "N64u" more " STR1(BN()) " heap (from allocation of "N64u"B/bucket %d)", sz, (u64)BSZ(bucket), (int)bucket);
   #endif
   #if NO_MMAP
     EmptyValue* c = calloc(sz+getPageSize(), 1);
@@ -197,7 +195,7 @@ void BN(dumpHeap)(FILE* f) {
     u64 addrI = ptr2u64(ci.p);
     writeNum(f, ci.sz, 8);
     writeNum(f, addrI, 8);
-    char* prefix = str1(BN());
+    char* prefix = STR1(BN());
     fwrite(prefix, 1, strlen(prefix)+1, f);
     fwrite(ci.p, 1, ci.sz, f);
   }

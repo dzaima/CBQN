@@ -1718,11 +1718,7 @@ static B getPlatformNS(void) {
     #elif __arm__
       char* arch = "aarch32";
     #elif __riscv
-      #define F(X) #X
-      #define F2(X) F(X)
-      char* arch = "riscv" F2(__riscv_xlen);
-      #undef F2
-      #undef F
+      char* arch = "riscv" STR1(__riscv_xlen);
     #else
       char* arch = "unknown";
     #endif

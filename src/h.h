@@ -170,6 +170,8 @@ typedef size_t ux;
 
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)
+#define STR0(X) #X
+#define STR1(X) STR0(X)
 
 #if USE_REPLXX_IO
   #include <replxx.h>
