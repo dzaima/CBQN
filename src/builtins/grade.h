@@ -478,7 +478,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
           if (xia/4 < wia) { // Narrow x
             assert(el_i8 <=we && we<=el_i32);
             assert(el_i16<=xe && xe<=el_f64);
-            i32 pre = -1; pre<<=(8<<(we-el_i8))-1;
+            i32 pre = (i32) (U32_MAX << ((8<<(we-el_i8))-1));
             pre = GRADE_UD(pre,-1-pre); // Smallest value of w's type
             i32 w0 = o2iG(IGetU(w,0));
             // Saturation is correct except it can move low values past
