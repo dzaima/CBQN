@@ -492,6 +492,10 @@ FORCE_INLINE bool q_fi64(f64 x) { return x==(f64)(i64)     x; }  FORCE_INLINE bo
 FORCE_INLINE bool q_fu64(f64 x) { return x==(f64)(u64)     x; }  FORCE_INLINE bool q_u64(B x) { return q_fu64(x.f); }
 FORCE_INLINE bool q_fusz(f64 x) { return x==(f64)(usz)     x; }  FORCE_INLINE bool q_usz(B x) { return q_fusz(x.f); }
 /*no need for a q_ff64*/                                         FORCE_INLINE bool q_f64(B x) { return isF64(x); }
+FORCE_INLINE bool q_fu8 (f64 x) { return x==(f64)(u8 )(u32)x; }
+FORCE_INLINE bool q_fu16(f64 x) { return x==(f64)(u16)(u32)x; }
+FORCE_INLINE bool q_fu32(f64 x) { return x==(f64)(u32)     x; }
+
 FORCE_INLINE bool q_ibit(i64 x) { return x==0 | x==1; }
 FORCE_INLINE bool q_ubit(u64 x) { return x==0 | x==1; }
 FORCE_INLINE bool q_c8 (B x) { return x.u>>8  == ((u64)C32_TAG)<<40; }
@@ -499,6 +503,7 @@ FORCE_INLINE bool q_c16(B x) { return x.u>>16 == ((u64)C32_TAG)<<32; }
 FORCE_INLINE bool q_c32(B x) { return isC32(x); }
 FORCE_INLINE bool q_N   (B x) { return x.u==bi_N.u; } // is ·
 FORCE_INLINE bool noFill(B x) { return x.u==bi_noFill.u; }
+
 
 FORCE_INLINE bool  o2bG(B x) { return(x.u<<1)!=0;}  FORCE_INLINE bool  o2b(B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return o2bG(x); }
 FORCE_INLINE i32   o2iG(B x) { return (i32)x.f; }   FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) thrM("Expected integer");              return o2iG(x); }
