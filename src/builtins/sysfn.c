@@ -1699,8 +1699,10 @@ static B getPlatformNS(void) {
       char* os = "android";
     #elif __linux__
       char* os = "linux";
-    #elif __FreeBSD__ || __OpenBSD__
-      char* os = "bsd";
+    #elif __FreeBSD__
+      char* os = "freebsd";
+    #elif __OpenBSD__
+      char* os = "openbsd";
     #elif __APPLE__ || __MACH__
       char* os = "darwin";
     #elif __unix || __unix__
