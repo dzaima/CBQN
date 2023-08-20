@@ -7,6 +7,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•BQN`        | |
 | `•ReBQN`      | Supported options: `repl`; `primitives`; `system` that's not `"safe"` |
 | `•primitives` | |
+| `•platform`   | |
 | `•Import`     | |
 | `•FFI`        | see [FFI](#ffi) |
 | `•state`      | |
