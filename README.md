@@ -133,9 +133,51 @@ A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic
 
 Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and (if enabled) Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 
-## License
+## Licensing
 
-Most files here are copyright (c) 2021-2023 dzaima & others, [GNU GPLv3 only](licenses/LICENSE-GPLv3).
-Exceptions are:
+First, some exceptions to the general licensing:
 - timsort implementation - `src/builtins/sortTemplate.h`: [MIT](licenses/LICENSE-MIT-sort); [original repo](https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708)
 - Ryu - `src/utils/ryu.c` & files in `src/utils/ryu/`: [Apache 2.0](licenses/LICENSE-Apache2) or [Boost 1.0](licenses/LICENSE-Boost); [original repo](https://github.com/ulfjack/ryu/tree/75d5a85440ed356ad7b23e9e6002d71f62a6255c)
+
+Everything else (i.e. all files except `src/builtins/sortTemplate.h`, `src/utils/ryu.c`, and everything in `src/utils/ryu/`) may be treated as under any of the following licenses, as if they had the respective notice:
+
+- [GNU LGPLv3 only](licenses/LICENSE-LGPLv3)
+```
+Copyright (C) 2021-2023 dzaima and contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+- [GNU GPLv3 only](licenses/LICENSE-GPLv3)
+```
+Copyright (C) 2021-2023 dzaima and contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+- [MPL 2.0](licenses/LICENSE-MPL2)
+```
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+```

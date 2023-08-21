@@ -1,5 +1,5 @@
 #!/usr/bin/env bqn
-# Modified version of https://github.com/mlochbaum/BQN/blob/master/src/cjs.bqn, which is under the ISC license (https://github.com/mlochbaum/BQN/blob/master/LICENSE)
+# Modified version of https://github.com/mlochbaum/BQN/blob/master/src/cjs.bqn
 
 args←•args
 "Usage: ./cc.bqn path/to/mlochbaum/BQN [-i] <(r|r0|r1|r1x|c|cc|f|e|p) or an expression>"!2≤≠args
