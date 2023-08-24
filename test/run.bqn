@@ -188,9 +188,10 @@ Run ← { 𝕊 testname:
       ;@
     }⍟⊢ o.update
     skipm ← (×skipped)/∾⟨" (", •Repr skipped, " skipped)"⟩
+    ran ← (≠toRun)-skipped
     {
-      0=badCount? •Out filename∾": "∾(•Repr≠toRun)∾" passed!"∾skipm;
-      •Out ∾⟨•Repr (≠toRun)-badCount, '/', •Repr≠toRun⟩ ∾ ((¬o.errm)∧×badMessage)/∾⟨"; ", •Repr badMessage, " mismatched error message", (1≠badMessage)/"s"⟩∾skipm
+      0=badCount? •Out filename∾": "∾(•Repr ran)∾" passed!"∾skipm;
+      •Out ∾⟨•Repr ran-badCount, '/', •Repr ran, skipm⟩ ∾ ((¬o.errm)∧×badMessage)/∾⟨"; ", •Repr badMessage, " mismatched error message", (1≠badMessage)/"s"⟩∾skipm
       exitCode ↩ 1
     }
   }⍟o.run @
