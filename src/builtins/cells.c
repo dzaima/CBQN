@@ -329,7 +329,7 @@ static B const_cells(B x, ur k, usz* xsh, B v, u32 chr) { // consumes v, x
 
 
 NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr);
-NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr);
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr); // referenced in fns.c
 NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr);
 
 static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_unit(r) : r; }

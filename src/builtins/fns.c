@@ -3,6 +3,7 @@
 #include "../utils/calls.h"
 #include "../utils/mut.h"
 #include "../utils/talloc.h"
+#include "../utils/each.h"
 #include "../builtins.h"
 #include "../nfns.h"
 
@@ -224,19 +225,21 @@ B fne_c2(B t, B w, B x) {
 }
 
 
-extern B eq_c2(B, B, B);
-extern B slash_c1(B, B);
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr); // from cells.c
+B eq_c2(B, B, B);
+B feq_c2(B, B, B);
+B slash_c1(B, B);
 extern B rt_find;
 B find_c2(B t, B w, B x) {
   ur wr = isAtm(w) ? 0 : RNK(w);
   ur xr = isAtm(x) ? 0 : RNK(x);
   if (wr > xr) thrF("⍷: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   u8 xe, we ONLY_GCC(= 0);
+  B r;
   if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
     if (wr == 0) return C2(eq, w, x);
     usz wl = IA(w);
     usz xl = IA(x);
-    B r;
     if (wl > xl) { r = emptyIVec(); goto dec_ret; }
     if (wl == 0) { r = taga(arr_shVec(allOnes(xl+1))); goto dec_ret; }
     // Compare elements of w to slices of x
@@ -271,10 +274,31 @@ B find_c2(B t, B w, B x) {
       }
     }
     TFREE(eq_res);
-    dec_ret:;
-    decG(x); decG(w); return r;
+    goto dec_ret;
+  }
+  if (wr==0) { assert(wr==0); return eachd_fn(bi_feq, w, x, feq_c2); }
+  assert(wr>0 && xr>0);
+  
+  if (IA(x)==0) {
+    emptyres:;
+    Arr* ra = allZeroes(0);
+    usz* rsh = arr_shAlloc(ra, xr);
+    usz* wsh=SH(w); usz* xsh=SH(x);
+    shcpy(rsh, xsh, xr-wr);
+    xsh+=xr-wr; rsh+=xr-wr;
+    PLAINLOOP for (ux i = 0; i < wr; i++) rsh[i] = wsh[i]>xsh[i]? 0 : xsh[i]-wsh[i]+1;
+    r = taga(ra);
+    goto dec_ret;
+  }
+  
+  if (wr==1 && xr==2) {
+    if (IA(w) > SH(x)[1]) goto emptyres;
+    return for_cells_SA(bi_find, w, x, 1, 2, 0);
   }
   return c2rt(find, w, x);
+  
+  dec_ret:;
+  decG(x); decG(w); return r;
 }
 
 static H_b2i* prevImports;
