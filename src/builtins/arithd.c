@@ -137,7 +137,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   
-  #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA, INT_AS, INT_AA) B NAME##_c2_arr(B t, B w, B x) { \
+  #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA, INT_AS, INT_AA, FLT_SA) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
         if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
@@ -160,10 +160,10 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         }                                                         \
       } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
         if (elInt(xe)){INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
-        if (xe==el_f64) { Rf64(x);                    PF(x)   DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (xe==el_f64) { Rf64(x);             PF(x)  FLT_SA  DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); \
         if (elInt(we)){INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
-        if (we==el_f64) { Rf64(w);                    PF(w)   DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (we==el_f64) { Rf64(w);             PF(w)          DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
@@ -173,10 +173,10 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     , /*INT_SA*/
     , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
     , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
-    )
-  GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,)
-  GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,)
-  GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,)
+    , /*FLT_SA*/)
+  GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,,)
+  GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,,)
+  GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,,)
   static u64 repeatNum[] = {
     [el_i8 ] = 0x0101010101010101ULL,
     [el_i16] = 0x0001000100010001ULL,
@@ -211,6 +211,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     }
     , /*INT_AS*/ if (q_i32(x)) return modint_AS(w, x);
     , /*INT_AA*/ return modint_AA(w, x);
+    , /*FLT_SA*/ if (o2fG(w)==1) { for (usz i=0; i<ia; i++) rp[i] = xp[i]-floor(xp[i]); } else
   )
   #undef GC2f
   

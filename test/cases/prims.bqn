@@ -271,14 +271,18 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 # 𝕨|𝕩
 {x←2⥊𝕨|𝕩 ⋄ ! x •internal.EEqual 𝕨‿𝕨|𝕩‿𝕩 ⋄ ! x •internal.EEqual 𝕨|𝕩‿𝕩}⌜˜ ⍷∧∾⟜- ⟨π, ∞, 0÷0, 0.5, 0.1⟩∾(↕10)∾⥊(¯4+↕9)+⌜2⋆7‿8‿15‿31‿32
 (
-  # %SLOW
-  ⟨V⇐Variation, LV⇐ListVariations, CL⇐ClearRefs, EE⇐EEqual⟩←•internal
+  # AS/SA/AA over types, 2-item array; %SLOW
+  %USE var ⋄ EE←•internal.EEqual
   tests ← ⍷∧∾⟜- ⟨π, ∞, 0÷0, 0.5, 0.1⟩∾(↕10)∾⥊(¯4+↕9)+⌜2⋆7‿8‿15‿31‿32
   {w𝕊x:
     wl‿xl←2⥊¨w‿x
     w‿x ! ∧´(⊏EE¨⊢) ⥊ wl {⟨  w|(𝕩 V xl)  ⋄  (𝕨 V wl)|x  ⋄  (𝕨 V wl)|(𝕩 V xl)  ⟩}⌜○LV xl
-    CL@
+    CLR@
   }⌜˜ tests
+)
+(
+  # 1|scalar vs 1|f64arr over float exponents %SLOW
+  {𝕩! (1⊸| •internal.EEqual 1|¨⊢) ∾⟜- (2⋆𝕩)×1‿1.5∾1000•rand.Range 0}¨ ¯1080+↕2110
 )
 
 
