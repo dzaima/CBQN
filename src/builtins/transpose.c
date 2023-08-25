@@ -170,7 +170,7 @@ B transp_c2(B t, B w, B x) {
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("⍉: Length of 𝕨 must be at most rank of 𝕩");
 
   // Axis permutation
-  TALLOC(u8, alloc, xr*(sizeof(ur) + 3*sizeof(usz))); // ur* p, usz* rsh, usz* st, usz* ri
+  TALLOC(u8, alloc, xr*(sizeof(ur) + 3*sizeof(usz)) + sizeof(usz)); // ur* p, usz* rsh, usz* st, usz* ri
   ur* p = (ur*)alloc;
   if (isAtm(w)) {
     usz a=o2s(w);
@@ -191,7 +191,7 @@ B transp_c2(B t, B w, B x) {
 
   // Compute shape for the given axes
   usz* xsh = SH(x);
-  usz* rsh = (usz*)(p + xr); // Length xr
+  usz* rsh = ptr_roundUpToEl((usz*)(p + xr)); // Length xr
   usz dup = 0, max = 0, id = 0;
   usz no_sh = -(usz)1;
   for (usz j=0; j<xr; j++) rsh[j] = no_sh;

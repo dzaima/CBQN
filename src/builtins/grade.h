@@ -143,7 +143,7 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
   TFREE(c0)
 
 #define RADIX_SORT_i16(T, TYP, I) \
-  TALLOC(u8, alloc, (2*256+ROFF)*sizeof(T) + n*(2 + CHOOSE_SG_##TYP(0,sizeof(I)))); \
+  TALLOC(u8, alloc, (2*256+ROFF)*sizeof(T) + n*(2 + CHOOSE_SG_##TYP(0,sizeof(I))) + sizeof(i32)); \
   T* c0=(T*)alloc; T* c1=c0+256; T* c1o=c1+128;                              \
   for (usz j=0; j<2*256; j++) c0[j]=0;                                       \
   c1[0]=GRADE_UD(-n,c0[0]=n);                                                \
@@ -154,7 +154,7 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
   for (usz i=0; i<n; i++) { i16 v=xp[i]; r0[c0 [(u8)v     ]++]=v; }          \
   for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=v; }          \
   ,                                                                          \
-  I *g0 = (i32*)(r0+n);                                                      \
+  I *g0 = ptr_roundUpToEl((i32*)(r0+n));                                     \
   for (usz i=0; i<n; i++) { i16 v=xp[i]; T c=c0[(u8)v     ]++; r0[c]=v; g0[c]=i; } \
   for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=g0[i]; }      \
   )                                                                          \

@@ -6,6 +6,8 @@
 static void storeu_u64(u64* p, u64 v) { memcpy((char*)p, &v, 8); }  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, (char*)p, 8); return v; }
 static void storeu_u32(u32* p, u32 v) { memcpy((char*)p, &v, 4); }  static u32 loadu_u32(u32* p) { u32 v; memcpy(&v, (char*)p, 4); return v; }
 static void storeu_u16(u16* p, u16 v) { memcpy((char*)p, &v, 2); }  static u16 loadu_u16(u16* p) { u16 v; memcpy(&v, (char*)p, 2); return v; }
+#define ptr_roundUp(P, N) ({ AUTO p_ = (P); u64 n_ = (N); TOPTR(typeof(*p_), (ptr2u64(p_)+n_-1) & ~(n_-1)); })
+#define ptr_roundUpToEl(P) ({ AUTO p2_ = (P); ptr_roundUp(p2_, _Alignof(typeof(*p2_))); })
 
 void print_allocStats(void);
 void vm_pstLive(void);
