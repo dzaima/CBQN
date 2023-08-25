@@ -200,6 +200,7 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 %USE var ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄ !∘≡¨⟜⊏ r←{t•bit._cast 𝕩 V a}¨ LV a←4=↕128 ⋄ ⊑⊑r}¨ ↕4‿4
 ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
+⊑ 8‿32•bit._cast 3↓↕7 %% 100992003
 
 # •platform
 Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.os ⋄ Str •platform.cpu.arch ⋄ Str •platform.bqn.impl_version ⋄ Str •platform.environment
