@@ -216,6 +216,7 @@ static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
 extern void (*const simd_mark_firsts_u8)(void*,uint64_t,void*,void*);
 extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
+#define PRUP ptr_roundUpToEl
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
   u64 n = *SH(x);
@@ -281,18 +282,18 @@ B memberOf_c1(B t, B x) {
     u32* v0 = (u32*)xv;
     i8* r0 = rp;
     
-    TALLOC(u8, alloc, 6*n+(4+(tn>3*n?tn:3*n)+(2*rx+1)*sizeof(usz)));
+    TALLOC(u8, alloc, 6*n + (4 + (tn>3*n?tn:3*n) + (2*rx+1)*sizeof(usz)) + sizeof(u32));
     //                                         timeline
     // Allocations               len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc)+1; // rx   [+++................]     c0   rx  #
-    usz *c1 = (usz*)(c0+rx);   // rx    [++................]     c1   rx   #
-    u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]     k0    n    ##
-    u32 *v2 = (u32*)(k0+n);    //  n+1       [+.......]          v2  4*n+4    ########
-    u8  *k1 = (u8 *)(v2+n+1);  //  n         [+............]     k1    n              ##
-    u32 *v1 = (u32*)(k1);      //  n        [+-]                 v1  4*n              ########
-    u8  *r2 = (u8 *)(v2);      //  n              [+.....]       r2    n      ##
-    u8  *r1 = (u8 *)(k1+n);    //  n                   [+..]     r1    n                ##
-    u8  *tab= (u8 *)(r1);      // tn              [+]            tab  tn                #####
+    usz *c0 =      (usz*)(alloc)+1; // rx   [+++................]     c0   rx  #
+    usz *c1 =      (usz*)(c0+rx);   // rx    [++................]     c1   rx   #
+    u8  *k0 =      (u8 *)(c1+rx);   //  n        [+.............]     k0    n    ##
+    u32 *v2 = PRUP((u32*)(k0+n));   //  n+1       [+.......]          v2  4*n+4    ########
+    u8  *k1 =      (u8 *)(v2+n+1);  //  n         [+............]     k1    n              ##
+    u32 *v1 =      (u32*)(k1);      //  n        [+-]                 v1  4*n              ########
+    u8  *r2 =      (u8 *)(v2);      //  n              [+.....]       r2    n      ##
+    u8  *r1 =      (u8 *)(k1+n);    //  n                   [+..]     r1    n                ##
+    u8  *tab=      (u8 *)(r1);      // tn              [+]            tab  tn                #####
    
     RADIX_LOOKUP_32(1, =0)
     return taga(cpyBitArr(r));
@@ -393,18 +394,18 @@ B count_c1(B t, B x) {
     u32* v0 = (u32*)xv;
     i32* r0 = rp;
     
-    TALLOC(u8, alloc, 6*n+(4+4*(tn>n?tn:n)+(2*rx+1)*sizeof(usz)));
-    //                                         timeline
-    // Allocations               len  count radix hash deradix     bytes  layout:
-    usz *c0 = (usz*)(alloc)+1; // rx   [+++................]    c0    rx  #
-    usz *c1 = (usz*)(c0+rx);   // rx    [++................]    c1    rx   #
-    u8  *k0 = (u8 *)(c1+rx);   //  n        [+.............]    k0     n    ##
-    u8  *k1 = (u8 *)(k0+n);    //  n         [+............]    k1     n      ##
-    u32 *v2 = (u32*)(k1+n);    //  n+1       [+....-]           v2   4*n        ########
-    u32 *v1 = (u32*)(v2+n+1);  //  n        [+..]               v1   4*n                ########
-    u32 *r2 = (u32*)v2;        //  n              [+.....]      r2   4*n        ########
-    u32 *r1 = (u32*)v1;        //  n                   [+..]    r1   4*n                ########
-    u32 *tab= (u32*)v1;        // tn              [+]           tab 4*tn                ###########
+    TALLOC(u8, alloc, 6*n + (4 + 4*(tn>n?tn:n) + (2*rx+1)*sizeof(usz)) + sizeof(u32));
+    //                                                       timeline
+    // Allocations                             len  count radix hash deradix     bytes  layout:
+    usz *c0 =    (usz*)(alloc)+1; // rx   [+++................]    c0    rx  #
+    usz *c1 =    (usz*)(c0+rx);   // rx    [++................]    c1    rx   #
+    u8  *k0 =    (u8 *)(c1+rx);   //  n        [+.............]    k0     n    ##
+    u8  *k1 =    (u8 *)(k0+n);    //  n         [+............]    k1     n      ##
+    u32 *v2=PRUP((u32*)(k1+n));   //  n+1       [+....-]           v2   4*n        ########
+    u32 *v1 =    (u32*)(v2+n+1);  //  n        [+..]               v1   4*n                ########
+    u32 *r2 =    (u32*)v2;        //  n              [+.....]      r2   4*n        ########
+    u32 *r1 =    (u32*)v1;        //  n                   [+..]    r1   4*n                ########
+    u32 *tab=    (u32*)v1;        // tn              [+]           tab 4*tn                ###########
     
     RADIX_LOOKUP_32(0, ++)
     return num_squeeze(r);
