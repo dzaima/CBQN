@@ -822,7 +822,7 @@ B slash_c2(B t, B w, B x) {
           u64 mt = (u64)1<<(d+1);  // Bit d+1 may be needed, isn't pdep-ed
           usz tsh = d*wv-(d+1);
           for (usz xi=0, o=0, j=0; j<BIT_N(s); j++) {
-            xw = *(u64*)((u8*)xp+xi/8) >> (xi%8);
+            xw = loadu_u64((u64*)((u8*)xp+xi/8)) >> (xi%8);
             u64 ex = (xw&mt)<<tsh;
             u64 rw = _pdep_u64(xw, m);
             rp[j] = ((rw-ex)<<(wv-o))-(rw>>o|(xw&1));

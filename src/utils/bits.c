@@ -117,9 +117,6 @@ FORCE_INLINE void ab_add(ABState* state, u64 val, ux count) { // assumes bits pa
 }
 
 
-FORCE_INLINE u64 ruu64(void* p) { u64 r;  memcpy(&r, p, 8); return r; } // read byte-unaligned u64
-FORCE_INLINE void wuu64(void* p, u64 v) { memcpy(p, &v, 8); } // write byte-unaligned u64
-
 static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) { // consumes; for now assumes ncsz is either a multiple of 64, or one of 8,16,32
   assert((ncsz&7) == 0 && RNK(x)>=1 && pcsz<ncsz);
   // printf("zeroPadToCellBits0 ia=%d cam=%d pcsz=%d ncsz=%d\n", IA(x), cam, pcsz, ncsz);
@@ -257,8 +254,8 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
     ux rfu64 = ocsz>>6; // full u64 count per cell in x
     u64 msk = (1ull<<(ocsz&63))-1;
     for (ux i = 0; i < cam; i++) {
-      for (ux j = 0; j < rfu64; j++) ab_add(&ab, ruu64(j + (u64*)xp), 64);
-      ab_add(&ab, ruu64(rfu64 + (u64*)xp)&msk, ocsz&63);
+      for (ux j = 0; j < rfu64; j++) ab_add(&ab, loadu_u64(j + (u64*)xp), 64);
+      ab_add(&ab, loadu_u64(rfu64 + (u64*)xp)&msk, ocsz&63);
       rp+= ocsz>>6;
       xp+= xcsz>>3;
     }

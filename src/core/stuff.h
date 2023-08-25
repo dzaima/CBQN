@@ -3,6 +3,10 @@
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
+static void storeu_u64(u64* p, u64 v) { memcpy((char*)p, &v, 8); }  static u64 loadu_u64(u64* p) { u64 v; memcpy(&v, (char*)p, 8); return v; }
+static void storeu_u32(u32* p, u32 v) { memcpy((char*)p, &v, 4); }  static u32 loadu_u32(u32* p) { u32 v; memcpy(&v, (char*)p, 4); return v; }
+static void storeu_u16(u16* p, u16 v) { memcpy((char*)p, &v, 2); }  static u16 loadu_u16(u16* p) { u16 v; memcpy(&v, (char*)p, 2); return v; }
+
 void print_allocStats(void);
 void vm_pstLive(void);
 

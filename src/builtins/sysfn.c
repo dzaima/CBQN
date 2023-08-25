@@ -1058,7 +1058,7 @@ B sh_c2(B t, B w, B x) {
       iBuf = TALLOCP(char, iLen);
       toUTF8(inObj, iBuf);
     }
-  } else iBuf = NULL;
+  } else iBuf = "";
   #define FREE_INPUT do { if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); } } while(0)
   
   bool iDone = false;
