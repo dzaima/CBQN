@@ -189,6 +189,8 @@ def packQ{a:T,b:T & w128i{T}} = packs{a,b}
 
 def zipLo{a:T, b:T & w128i{T}} = emit{T, merge{'_mm_unpacklo_epi',fmtnat{elwidth{T}}}, a, b}
 def zipHi{a:T, b:T & w128i{T}} = emit{T, merge{'_mm_unpackhi_epi',fmtnat{elwidth{T}}}, a, b}
+def zipLo{a:T, b:T & w128f{T}} = emit{T, merge{'_mm_unpacklo_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
+def zipHi{a:T, b:T & w128f{T}} = emit{T, merge{'_mm_unpackhi_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
 def zip{a:T, b:T & w128i{T}} = tup{zipLo{a,b}, zipHi{a,b}}
 
 

@@ -98,13 +98,18 @@
 #if SINGELI_AVX2
   #define SINGELI_FILE count
   #include "../utils/includeSingeli.h"
-  
-  extern void (*const avx2_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
-  extern void (*const avx2_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
-  extern void (*const avx2_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
-  #define avx2_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
-  #define PLUS_SCAN(T) avx2_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
-  extern void (*const avx2_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
+#endif
+
+#if SINGELI
+  extern void (*const si_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
+  extern void (*const si_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
+  extern void (*const si_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
+  #define ALIAS(I,U) static void si_scan_pluswrap_##I(I* a, I* b, u64 c, I d) { si_scan_pluswrap_##U((U*)a, (U*)b, c, d); }
+  ALIAS(i8,u8) ALIAS(i16,u16) ALIAS(i32,u32)
+  #undef ALIAS
+  #define si_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
+  #define PLUS_SCAN(T) si_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
+  extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
 #else
   #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
@@ -548,7 +553,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
 
 #if SINGELI_AVX2
   #define IND_BY_SCAN \
-    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, avx2_scan_max_i32(rp+k,rp+k,e-k))
+    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, si_scan_max_i32(rp+k,rp+k,e-k))
 #else
   #define IND_BY_SCAN usz js=0; SUM_CORE(i32, xp[j], , 1)
 #endif

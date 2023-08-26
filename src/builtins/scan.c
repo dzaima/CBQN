@@ -9,21 +9,17 @@
 static u64 vg_rand(u64 x) { return x; }
 #endif
 
-#if SINGELI_AVX2
+#if SINGELI
   #define SINGELI_FILE scan
   #include "../utils/includeSingeli.h"
-  #if __PCLMUL__
-    #define SINGELI_FILE neq
-    #include "../utils/includeSingeli.h"
-  #endif
 #endif
 
 
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
-#if SINGELI_AVX2 && __PCLMUL__
-  clmul_scan_ne(p, xp, rp, BIT_N(ia));
+#if SINGELI
+  si_scan_ne(p, xp, rp, BIT_N(ia));
   #if USE_VALGRIND
   if (ia&63) rp[ia>>6] = vg_def_u64(rp[ia>>6]);
   #endif
@@ -78,8 +74,8 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   } else {
     void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
     #define SUM_BITWISE(T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
-    #if SINGELI_AVX2
-      #define SUM(W,T) avx2_bcs##W(xp, rp, ia);
+    #if SINGELI
+      #define SUM(W,T) si_bcs##W(xp, rp, ia);
     #else
       #define SUM(W,T) SUM_BITWISE(T)
     #endif
@@ -96,8 +92,8 @@ B scan_add_bool(B x, u64 ia) { // consumes x
 }
 
 // min/max-scan
-#if SINGELI_AVX2
-  #define MINMAX_SCAN(T,NAME,C,I) avx2_scan_##NAME##_init_##T(xp, rp, ia, I);
+#if SINGELI
+  #define MINMAX_SCAN(T,NAME,C,I) si_scan_##NAME##_init_##T(xp, rp, ia, I);
 #else
   #define MINMAX_SCAN(T,NAME,C,I) T c=I; for (usz i=0; i<ia; i++) { if (xp[i] C c)c=xp[i]; rp[i]=c; }
 #endif
@@ -155,16 +151,16 @@ static B scan_lt(B x, u64 p, usz ia) {
 static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   assert(xe!=el_bit && elNum(xe));
   B r; void* rp = m_tyarrv(&r, xe==el_f64? sizeof(f64) : sizeof(i32), ia, xe==el_f64? t_f64arr : t_i32arr);
-  #if SINGELI_AVX2
+  #if SINGELI
     switch(xe) { default:UD;
-      case el_i8:  { if (!q_fi32(r0) || simd_scan_plus_i8_i32 (i8any_ptr(x),  r0, rp, ia)!=ia) goto cs_i8_f64;  decG(x); return r; }
-      case el_i16: { if (!q_fi32(r0) || simd_scan_plus_i16_i32(i16any_ptr(x), r0, rp, ia)!=ia) goto cs_i16_f64; decG(x); return r; }
-      case el_i32: { if (!q_fi32(r0) || simd_scan_plus_i32_i32(i32any_ptr(x), r0, rp, ia)!=ia) goto cs_i32_f64; decG(x); return r; }
+      case el_i8:  { if (!q_fi32(r0) || si_scan_plus_i8_i32 (i8any_ptr(x),  r0, rp, ia)!=ia) goto cs_i8_f64;  decG(x); return r; }
+      case el_i16: { if (!q_fi32(r0) || si_scan_plus_i16_i32(i16any_ptr(x), r0, rp, ia)!=ia) goto cs_i16_f64; decG(x); return r; }
+      case el_i32: { if (!q_fi32(r0) || si_scan_plus_i32_i32(i32any_ptr(x), r0, rp, ia)!=ia) goto cs_i32_f64; decG(x); return r; }
       case el_f64: { f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];  ((f64*)rp)[i]=c; } decG(x); return r; }
     }
     cs_i8_f64: { x=taga(cpyI16Arr(x)); goto cs_i16_f64; }
-    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); simd_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
-    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); simd_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
   #else
     if (xe==el_i8  && q_fi32(r0)) { i8*  xp=i8any_ptr (x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
     if (xe==el_i16 && q_fi32(r0)) { i16* xp=i16any_ptr(x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
