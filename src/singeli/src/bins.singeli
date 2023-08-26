@@ -4,6 +4,8 @@ if (hasarch{'AVX2'}) {
   include './sse'
   include './avx'
   include './avx2'
+} else if (hasarch{'X86_64'}) {
+  include './sse'
 }
 include './mask'
 include 'util/tup'
@@ -27,36 +29,18 @@ def shr16{v:V, n} = V~~(re_el{u16, v} >> n)
 
 # Forward or backwards in-place max-scan
 # Assumes a whole number of vectors and minimum 0
+include './scan_common'
 fn max_scan{T, up}(x:*T, len:u64) : void = {
-  def w = width{T}
-  if (hasarch{'AVX2'} and T!=u64) {
+  if (hasarch{'X86_64'}) {
     def op = max
-    # TODO unify with scan.singeli avx2_scan_idem
-    def rev{a} = if (up) a else (tuplen{a}-1)-reverse{a}
-    def maker{T, l} = make{T, rev{l}}
-    def sel8{v, t} = sel{[16]u8, v, maker{[32]i8, t}}
-    def sel8{v, t & istup{t} & tuplen{t}==16} = sel8{v, merge{t,t}}
-    def shuf{T, v, n & istup{n}} = shuf{T, v, base{4,rev{n}}}
-    def spread{a:VT} = {
-      def w = elwidth{VT}
-      def b = w/8
-      if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}}; else a
-    }
-    def shift{k,l} = merge{iota{k},iota{l-k}}
-    def c8 {k, a} = op{a, shuf{[4]u32, a, shift{k,4}}}
-    def c32{k, a} = (if (w<=8*k) op{a, sel8{a, shift{k,16}}}; else a)
-    def pre{a} = {
-      b:= c8{2, c8{1, c32{2, c32{1, a}}}}
-      op{b, sel{[8]i32, spread{b}, maker{[8]i32, 3*(3<iota{8})}}}
-    }
-    def toLast{n:VT} = {
-      if (elwidth{VT}<=32) sel{[8]i32, spread{n}, [8]i32**(up*7)}
-      else shuf{[4]u64, n, up*4b3333}
-    }
-    def vl = 256/w
+    def pre = make_scan_idem{T, op, up}
+    def vl = (if (hasarch{'AVX2'}) 256 else 128)/width{T}
     def V = [vl]T
     p := V**0
-    @for_dir{up} (v in *V~~x over len/vl) { v = op{pre{v}, p}; p = toLast{v} }
+    @for_dir{up} (v in *V~~x over len/vl) {
+      v = op{pre{v}, p}
+      p = toLast{v, up}
+    }
   } else {
     m:T=0; @for_dir{up} (x over len) { if (x > m) m = x; x = m }
   }
