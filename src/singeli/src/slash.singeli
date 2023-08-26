@@ -1,21 +1,10 @@
 include './base'
-if (hasarch{'X86_64'}) include './sse'
-if (hasarch{'PCLMUL'}) include './clmul'
-if (hasarch{'AVX2'}) { include './avx'; include './avx2' }
-if (hasarch{'BMI2'}) include './bmi2'
-if (hasarch{'AARCH64'}) include './neon'
-if (hasarch{'AVX512F'}) {
-  local def mti{s,T} = merge{'_mm512_',s,'_epi',fmtnat{elwidth{T}}}
-  def load{a:T, n & 512==width{eltype{T}}} = emit{eltype{T}, '_mm512_loadu_si512', a+n}
-  def make{T, xs & 512==width{T} & tuplen{xs}==vcount{T}} = {
-    def p = each{promote{eltype{T},.}, reverse{xs}}
-    emit{T, mti{'set',T}, ...p}
-  }
-  def iota{T & isvec{T} & 512==width{T}} = make{T, iota{vcount{T}}}
-  def broadcast{T, v & isvec{T} & 512==width{T}} = {
-    emit{T, mti{'set1',T}, promote{eltype{T},v}}
-  }
-  def __add{a:T,b:T & 512==width{T}} = emit{T, mti{'add',T}, a, b}
+if (hasarch{'X86_64'}) {
+  include './x86_vec'
+  if (hasarch{'PCLMUL'}) include './clmul'
+  if (hasarch{'BMI2'}) include './bmi2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
 }
 include './mask'
 include 'util/tup'

@@ -5,19 +5,6 @@ def v2d{x:T & w128{T}} = [2]f64 ~~ x
 
 
 # load & store
-def load {a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_loadu_si128',       a+n}
-def loada{a:T, n & w128i{eltype{T}   }} = emit{eltype{T}, '_mm_load_si128',        a+n}
-def load {a:T, n & w128f{eltype{T},64}} = emit{eltype{T}, '_mm_loadu_pd', *f64 ~~ (a+n)}
-def loada{a:T, n & w128f{eltype{T},64}} = emit{eltype{T}, '_mm_load_pd',  *f64 ~~ (a+n)}
-def load {a:T, n & w128f{eltype{T},32}} = emit{eltype{T}, '_mm_loadu_ps', *f32 ~~ (a+n)}
-def loada{a:T, n & w128f{eltype{T},32}} = emit{eltype{T}, '_mm_load_ps',  *f32 ~~ (a+n)}
-def store {a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_storeu_si128',       a+n,  v}
-def storea{a:T, n, v & w128i{eltype{T}   }} = emit{void, '_mm_store_si128',        a+n,  v}
-def store {a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_storeu_pd', *f64 ~~ (a+n), v}
-def storea{a:T, n, v & w128f{eltype{T},64}} = emit{void, '_mm_store_pd',  *f64 ~~ (a+n), v}
-def store {a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_storeu_ps', *f32 ~~ (a+n), v}
-def storea{a:T, n, v & w128f{eltype{T},32}} = emit{void, '_mm_store_ps',  *f32 ~~ (a+n), v}
-
 def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
 def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
 def loadLow{ptr:P, w & w128{eltype{P}} & w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
@@ -30,96 +17,17 @@ def storeLow{ptr:P, w, x:T & w128{T} & w==128} = store{*T~~ptr, 0, x}
 
 
 
-# broadcast
-def broadcast{T, v & w128i{T,  8}} = emit{T, '_mm_set1_epi8',  promote{eltype{T},v}}
-def broadcast{T, v & w128i{T, 16}} = emit{T, '_mm_set1_epi16', promote{eltype{T},v}}
-def broadcast{T, v & w128i{T, 32}} = emit{T, '_mm_set1_epi32', promote{eltype{T},v}}
-def broadcast{T, v & w128i{T, 64}} = emit{T, '_mm_set1_epi64x',promote{eltype{T},v}}
-def broadcast{T, v & w128f{T, 64}} = emit{T, '_mm_set1_pd', v}
-def broadcast{T, v & w128f{T, 32}} = emit{T, '_mm_set1_ps', v}
-
-# make from elements
-local def makeGen{T,s,x} = emit{T, s, ...each{promote{eltype{T},.}, x}}
-def make{T, ...xs & w128f{T,64} & tuplen{xs}== 2} = makeGen{T, '_mm_setr_pd', xs}
-def make{T, ...xs & w128f{T,32} & tuplen{xs}== 4} = makeGen{T, '_mm_setr_ps', xs}
-def make{T, ...xs & w128i{T,64} & tuplen{xs}== 2} = makeGen{T, '_mm_set_epi64x', tup{tupsel{1,xs}, tupsel{0,xs}}}
-def make{T, ...xs & w128i{T,32} & tuplen{xs}== 4} = makeGen{T, '_mm_setr_epi32', xs}
-def make{T, ...xs & w128i{T,16} & tuplen{xs}== 8} = makeGen{T, '_mm_setr_epi16', xs}
-def make{T, ...xs & w128i{T, 8} & tuplen{xs}==16} = makeGen{T, '_mm_setr_epi8', xs}
-def make{T, x & w128{T} & istup{x}} = make{T, ...x}
-
-def iota{T & w128{T}} = make{T, ...iota{vcount{T}}}
-
-
-
-# integer comparison
-def __eq{a:T,b:T & w128i{T,8 }} = emit{ty_u{T}, '_mm_cmpeq_epi8',  a, b}
-def __eq{a:T,b:T & w128i{T,16}} = emit{ty_u{T}, '_mm_cmpeq_epi16', a, b}
-def __eq{a:T,b:T & w128i{T,32}} = emit{ty_u{T}, '_mm_cmpeq_epi32', a, b}
-def __eq{a:T,b:T & w128i{T,64}} = { t:= [4]i32~~a == [4]i32~~b; [2]u64~~(t & shuf{[4]i32, t, 4b2301}) }
-# signed comparison
-def __gt{a:T,b:T & w128s{T,8 }} = emit{ty_u{T}, '_mm_cmpgt_epi8',  a, b}
-def __gt{a:T,b:T & w128s{T,16}} = emit{ty_u{T}, '_mm_cmpgt_epi16', a, b}
-def __gt{a:T,b:T & w128s{T,32}} = emit{ty_u{T}, '_mm_cmpgt_epi32', a, b}
-def __lt{a:T,b:T & w128s{T}} = b>a
-def __ge{a:T,b:T & w128s{T}} = ~(b>a)
-def __le{a:T,b:T & w128s{T}} = ~(a>b)
-# unsigned comparison
-def __lt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} < ty_s{b^s} }
-def __gt{a:T,b:T & w128u{T}} = { s:=T**(1<<(elwidth{T}-1)); ty_s{a^s} > ty_s{b^s} }
-def __le{a:T,b:T & w128u{T}} = ~(a>b)
-def __ge{a:T,b:T & w128u{T}} = ~(a<b)
-def __le{a:T,b:T & w128u{T, 8}} = a==min{a,b}
-def __ge{a:T,b:T & w128u{T, 8}} = a==max{a,b}
-def __lt{a:T,b:T & w128u{T, 8}} = ~(a>=b)
-def __gt{a:T,b:T & w128u{T, 8}} = ~(a<=b)
-# rest of integer comparison
-def __ne{a:T,b:T & w128i{T}} = ~(b==a)
 # float comparison
-def __eq{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpeq_ps',  a, b}; def __eq{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpeq_pd',  a, b}
-def __ne{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpneq_ps', a, b}; def __ne{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpneq_pd', a, b}
-def __gt{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpgt_ps',  a, b}; def __gt{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpgt_pd',  a, b}
-def __ge{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpge_ps',  a, b}; def __ge{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpge_pd',  a, b}
-def __lt{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmplt_ps',  a, b}; def __lt{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmplt_pd',  a, b}
-def __le{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmple_ps',  a, b}; def __le{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmple_pd',  a, b}
 def unord{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
 def unord{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
 
 
 
-# bit arith
-def __xor{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_xor_ps', v2f{a}, v2f{b}}
-def __and{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_and_ps', v2f{a}, v2f{b}}
-def __or {a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_or_ps',  v2f{a}, v2f{b}}
-def __not{a:T & w128u{T}} = a ^ (T ** ~cast{eltype{T},0})
-def andnot{a:T, b:T & w128{T}} = T ~~ emit{[4]f32, '_mm_andnot_ps', v2f{b}, v2f{a}}
-
 # shift
-def __shl{a:T,b & w128i{T, 16} & knum{b}} = emit{T, '_mm_slli_epi16', a, b}
-def __shl{a:T,b & w128i{T, 32} & knum{b}} = emit{T, '_mm_slli_epi32', a, b}
-def __shl{a:T,b & w128i{T, 64} & knum{b}} = emit{T, '_mm_slli_epi64', a, b}
-def __shr{a:T,b & w128u{T, 16} & knum{b}} = emit{T, '_mm_srli_epi16', a, b}
-def __shr{a:T,b & w128u{T, 32} & knum{b}} = emit{T, '_mm_srli_epi32', a, b}
-def __shr{a:T,b & w128u{T, 64} & knum{b}} = emit{T, '_mm_srli_epi64', a, b}
-def __shr{a:T,b & w128s{T, 16} & knum{b}} = emit{T, '_mm_srai_epi16', a, b}
-def __shr{a:T,b & w128s{T, 32} & knum{b}} = emit{T, '_mm_srai_epi32', a, b}
-# no 64-bit arithmetic shift :/
-
 def shl{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bslli_si128', x, n}
 def shr{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
 
 # integer arith
-def __add{a:T,b:T & w128i{T,  8}} = emit{T, '_mm_add_epi8',  a, b}
-def __add{a:T,b:T & w128i{T, 16}} = emit{T, '_mm_add_epi16', a, b}
-def __add{a:T,b:T & w128i{T, 32}} = emit{T, '_mm_add_epi32', a, b}
-def __add{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_add_epi64', a, b}
-
-def __sub{a:T,b:T & w128i{T,  8}} = emit{T, '_mm_sub_epi8',  a, b}
-def __sub{a:T,b:T & w128i{T, 16}} = emit{T, '_mm_sub_epi16', a, b}
-def __sub{a:T,b:T & w128i{T, 32}} = emit{T, '_mm_sub_epi32', a, b}
-def __sub{a:T,b:T & w128i{T, 64}} = emit{T, '_mm_sub_epi64', a, b}
-
-def __mul{a:T,b:T & w128i{T, 16}} = emit{T, '_mm_mullo_epi16', a, b}
 def mulHi{a:T,b:T & [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
 def mulHi{a:T,b:T & [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
 def mul32{a:T,b:T & [2]u64==T} = emit{T, '_mm_mul_epu32',   a, b} # reads only low 32 bits of arguments
@@ -131,36 +39,9 @@ def __mul{a:T,b:T & [4]i32==T} = {
   [4]i32~~mzipLo{...sw{4b3120, lo, hi}}
 }
 
-def min{a:T,b:T & w128i{T}} = homBlend{a, b, a>b}
-def max{a:T,b:T & w128i{T}} = homBlend{a, b, a<b}
-def max{a:T,b:T & w128u{T,16}} = subs{a,b}+b
-def min{a:T,b:T & w128u{T,16}} = a-subs{a,b}
-def min{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_min_epi16', a, b}; def max{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_max_epi16', a, b}
-def min{a:T,b:T & T==[16]u8 } = emit{T, '_mm_min_epu8',  a, b}; def max{a:T,b:T & T==[16]u8 } = emit{T, '_mm_max_epu8',  a, b}
-
-def abs{a:T & w128i{T,8 }} = { def U=[16]u8; T~~min{U~~a, U**0 - U~~a} }
-def abs{a:T & w128i{T,16}} = max{a, T**0 - a}
-def abs{a:T & w128i{T,32}} = { t:= a>>31; (t^a) - t }
-def absu{a:T & w128i{T}} = ty_u{abs{a}}
-
-# saturating
-def adds{a:T,b:T & T==[16]i8 } = emit{T, '_mm_adds_epi8',  a, b}; def adds{a:T,b:T & T==[16]u8 } = emit{T, '_mm_adds_epu8',  a, b}
-def subs{a:T,b:T & T==[16]i8 } = emit{T, '_mm_subs_epi8',  a, b}; def subs{a:T,b:T & T==[16]u8 } = emit{T, '_mm_subs_epu8',  a, b}
-def adds{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_adds_epi16', a, b}; def adds{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_adds_epu16', a, b}
-def subs{a:T,b:T & T==[ 8]i16} = emit{T, '_mm_subs_epi16', a, b}; def subs{a:T,b:T & T==[ 8]u16} = emit{T, '_mm_subs_epu16', a, b}
-
 # float arith
-def __add{a:T,b:T & T==[4]f32} = emit{T, '_mm_add_ps', a, b}; def __add{a:T,b:T & T==[2]f64} = emit{T, '_mm_add_pd', a, b}
-def __sub{a:T,b:T & T==[4]f32} = emit{T, '_mm_sub_ps', a, b}; def __sub{a:T,b:T & T==[2]f64} = emit{T, '_mm_sub_pd', a, b}
-def __mul{a:T,b:T & T==[4]f32} = emit{T, '_mm_mul_ps', a, b}; def __mul{a:T,b:T & T==[2]f64} = emit{T, '_mm_mul_pd', a, b}
-def __div{a:T,b:T & T==[4]f32} = emit{T, '_mm_div_ps', a, b}; def __div{a:T,b:T & T==[2]f64} = emit{T, '_mm_div_pd', a, b}
-def   max{a:T,b:T & T==[4]f32} = emit{T, '_mm_max_ps', a, b}; def   max{a:T,b:T & T==[2]f64} = emit{T, '_mm_max_pd', a, b}
-def   min{a:T,b:T & T==[4]f32} = emit{T, '_mm_min_ps', a, b}; def   min{a:T,b:T & T==[2]f64} = emit{T, '_mm_min_pd', a, b}
-def   sqrt{a:[4]f32} = emit{[4]f32, '_mm_sqrt_ps', a};         def  sqrt{a:[2]f64} = emit{[2]f64, '_mm_sqrt_pd', a}
 def rsqrtE{a:[4]f32} = emit{[4]f32, '_mm_rsqrt_ps', a}
 def   rcpE{a:[4]f32} = emit{[4]f32, '_mm_rcp_ps', a}
-def    abs{a:[4]f32} = emit{[4]f32, '_mm_and_ps', a, v2f{[4]u32 ** 0x7FFFFFFF}}
-def    abs{a:[2]f64} = emit{[2]f64, '_mm_and_pd', a, v2d{[2]u64 ** ((cast{u64,1}<<63)-1)}}
 
 # mask stuff
 def andAllZero{x:T, y:T & w128i{T}} = homAll{(x & y) == T**0}
@@ -195,11 +76,6 @@ def zip{a:T, b:T & w128i{T}} = tup{zipLo{a,b}, zipHi{a,b}}
 
 
 def unpackQ{a:T, b:T & w128{T}} = mzip{a, b}
-
-def extract{x:T, i    & w128i{T,16} & knum{i}} = emit{eltype{T}, '_mm_extract_epi16', x, i}
-def extract{x:T, i==0 & w128i{T,32}} = emit{eltype{T}, '_mm_cvtsi128_si32', x}
-def extract{x:T, i==0 & w128i{T,64}} = emit{eltype{T}, '_mm_cvtsi128_si64', x}
-def extract{x:T, i==0 & w128f{T,64}} = emit{eltype{T}, '_mm_cvtsd_f64', x}
 
 def shuf{L, x:T, n & w128{T} & lvec{L,4,32} & knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
 def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}

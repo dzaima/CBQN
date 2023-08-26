@@ -1,58 +1,3 @@
-# min & max
-def min{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_min_epi8',  a, b}; def max{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_max_epi8',  a, b}
-def min{a:T,b:T & T==[16]i16} = emit{T, '_mm256_min_epi16', a, b}; def max{a:T,b:T & T==[16]i16} = emit{T, '_mm256_max_epi16', a, b}
-def min{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_min_epi32', a, b}; def max{a:T,b:T & T==[ 8]i32} = emit{T, '_mm256_max_epi32', a, b}
-def min{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_min_epu8',  a, b}; def max{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_max_epu8',  a, b}
-def min{a:T,b:T & T==[16]u16} = emit{T, '_mm256_min_epu16', a, b}; def max{a:T,b:T & T==[16]u16} = emit{T, '_mm256_max_epu16', a, b}
-def min{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_min_epu32', a, b}; def max{a:T,b:T & T==[ 8]u32} = emit{T, '_mm256_max_epu32', a, b}
-
-# signed comparison
-def __eq{a:T,b:T & T==[32]i8 } = emit{[32]u8,  '_mm256_cmpeq_epi8',  a, b}
-def __eq{a:T,b:T & T==[16]i16} = emit{[16]u16, '_mm256_cmpeq_epi16', a, b}
-def __eq{a:T,b:T & T==[ 8]i32} = emit{[ 8]u32, '_mm256_cmpeq_epi32', a, b}
-def __eq{a:T,b:T & T==[ 4]i64} = emit{[ 4]u64, '_mm256_cmpeq_epi64', a, b}
-def __gt{a:T,b:T & T==[32]i8 } = emit{[32]u8,  '_mm256_cmpgt_epi8',  a, b}
-def __gt{a:T,b:T & T==[16]i16} = emit{[16]u16, '_mm256_cmpgt_epi16', a, b}
-def __gt{a:T,b:T & T==[ 8]i32} = emit{[ 8]u32, '_mm256_cmpgt_epi32', a, b}
-def __gt{a:T,b:T & T==[ 4]i64} = emit{[ 4]u64, '_mm256_cmpgt_epi64', a, b}
-def __lt{a:T,b:T & w256s{T}} = b>a
-def __ge{a:T,b:T & w256s{T}} = ~(b>a)
-def __le{a:T,b:T & w256s{T}} = ~(a>b)
-# unsigned comparison
-def __eq{a:T,b:T & T==[32]u8 } = emit{[32]u8,  '_mm256_cmpeq_epi8',  a, b}
-def __eq{a:T,b:T & T==[16]u16} = emit{[16]u16, '_mm256_cmpeq_epi16', a, b}
-def __eq{a:T,b:T & T==[ 8]u32} = emit{[ 8]u32, '_mm256_cmpeq_epi32', a, b}
-def __eq{a:T,b:T & T==[ 4]u64} = emit{[ 4]u64, '_mm256_cmpeq_epi64', a, b}
-def __le{a:T,b:T & w256u{T}} = a==min{a,b}
-def __ge{a:T,b:T & w256u{T}} = a==max{a,b}
-def __lt{a:T,b:T & w256u{T}} = ~(a>=b)
-def __gt{a:T,b:T & w256u{T}} = ~(a<=b)
-# rest of comparison
-def __ne{a:T,b:T & w256i{T}} = ~(b==a)
-
-# cast-less bitwise fns
-def __xor{a:T, b:T & w256i{T}} = emit{T, '_mm256_xor_si256', a, b}
-def __and{a:T, b:T & w256i{T}} = emit{T, '_mm256_and_si256', a, b}
-def __or {a:T, b:T & w256i{T}} = emit{T, '_mm256_or_si256',  a, b}
-def andnot{a:T, b:T & w256i{T}} = emit{T, '_mm256_andnot_si256', b, a}
-
-# shift
-def __shl{a:T,b & w256i{T, 16} & knum{b}} = emit{T, '_mm256_slli_epi16', a, b}
-def __shl{a:T,b & w256i{T, 32} & knum{b}} = emit{T, '_mm256_slli_epi32', a, b}
-def __shl{a:T,b & w256i{T, 64} & knum{b}} = emit{T, '_mm256_slli_epi64', a, b}
-def __shr{a:T,b & w256u{T, 16} & knum{b}} = emit{T, '_mm256_srli_epi16', a, b}
-def __shr{a:T,b & w256u{T, 32} & knum{b}} = emit{T, '_mm256_srli_epi32', a, b}
-def __shr{a:T,b & w256u{T, 64} & knum{b}} = emit{T, '_mm256_srli_epi64', a, b}
-def __shr{a:T,b & w256s{T, 16} & knum{b}} = emit{T, '_mm256_srai_epi16', a, b}
-def __shr{a:T,b & w256s{T, 32} & knum{b}} = emit{T, '_mm256_srai_epi32', a, b}
-# no 64-bit arithmetic shift :/
-def __shl{a:T,b:S & w256i{T, 32} & w256i{S, 32}} = emit{T, '_mm256_sllv_epi32', a, b}
-def __shl{a:T,b:S & w256i{T, 64} & w256i{S, 64}} = emit{T, '_mm256_sllv_epi64', a, b}
-def __shr{a:T,b:S & w256u{T, 32} & w256i{S, 32}} = emit{T, '_mm256_srlv_epi32', a, b}
-def __shr{a:T,b:S & w256u{T, 64} & w256i{S, 64}} = emit{T, '_mm256_srlv_epi64', a, b}
-def __shr{a:T,b:S & w256s{T, 32} & w256i{S, 32}} = emit{T, '_mm256_srav_epi32', a, b}
-# still no 64-bit arithmetic shift :/
-
 # questionable pack
 def unpackQ{a:[32]i8,  b:[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
 def unpackQ{a:[16]i16, b:[16]i16} = { tup{emit{[ 8]i32, '_mm256_unpacklo_epi16', a, b}, emit{[ 8]i32, '_mm256_unpackhi_epi16', a, b}}}
@@ -69,29 +14,10 @@ def packQQ{{a, b}} = packQQ{a, b}
 
 
 # arith
-def __mul{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_mullo_epi16', a, b}
 def mulHi{a:T,b:T & [16]i16==T  } = emit{T, '_mm256_mulhi_epi16', a, b}
 def mulHi{a:T,b:T & [16]u16==T  } = emit{T, '_mm256_mulhi_epu16', a, b}
-def __mul{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_mullo_epi32', a, b}
 def mul32{a:T,b:T & [ 4]i64==T  } = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
 def mul32{a:T,b:T & [ 4]u64==T  } = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
-
-def abs{a:T & w256i{T,8 }} = emit{T, '_mm256_abs_epi8',  a}
-def abs{a:T & w256i{T,16}} = emit{T, '_mm256_abs_epi16', a}
-def abs{a:T & w256i{T,32}} = emit{T, '_mm256_abs_epi32', a}
-def absu{a:T & w256i{T}} = ty_u{abs{a}}
-
-def __add{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_add_epi8',  a, b}; def __sub{a:T,b:T & w256i{T,  8}} = emit{T, '_mm256_sub_epi8',  a, b}
-def __add{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_add_epi16', a, b}; def __sub{a:T,b:T & w256i{T, 16}} = emit{T, '_mm256_sub_epi16', a, b}
-def __add{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_add_epi32', a, b}; def __sub{a:T,b:T & w256i{T, 32}} = emit{T, '_mm256_sub_epi32', a, b}
-def __add{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_add_epi64', a, b}; def __sub{a:T,b:T & w256i{T, 64}} = emit{T, '_mm256_sub_epi64', a, b}
-
-# saturating add/sub
-def adds{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_adds_epi8',  a, b}; def adds{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_adds_epu8',  a, b}
-def subs{a:T,b:T & T==[32]i8 } = emit{T, '_mm256_subs_epi8',  a, b}; def subs{a:T,b:T & T==[32]u8 } = emit{T, '_mm256_subs_epu8',  a, b}
-def adds{a:T,b:T & T==[16]i16} = emit{T, '_mm256_adds_epi16', a, b}; def adds{a:T,b:T & T==[16]u16} = emit{T, '_mm256_adds_epu16', a, b}
-def subs{a:T,b:T & T==[16]i16} = emit{T, '_mm256_subs_epi16', a, b}; def subs{a:T,b:T & T==[16]u16} = emit{T, '_mm256_subs_epu16', a, b}
-
 
 # structural operations
 
@@ -112,9 +38,6 @@ def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T ~~ emit{[4]i64, '_mm256_perm
 
 def sel{L, x:T, i:I & w256{T} & lvec{L,8,32} & w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
 def sel{L, x:T, i:I & w256{T} & lvec{L,16,8} & w256{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
-
-def extract{x:T, i & w256i{T,8 } & knum{i}} = emit{eltype{T}, '_mm256_extract_epi8',  x, i}
-def extract{x:T, i & w256i{T,16} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi16', x, i}
 
 # masked store; F variants may not be a single instruction
 def topMaskStore{p:P, m:M, v:T & w256i{M, 32} & w256{T,elwidth{M}} & eltype{P}==T} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}

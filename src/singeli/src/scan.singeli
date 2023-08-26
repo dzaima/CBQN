@@ -1,8 +1,8 @@
 include './base'
-include './sse'
+if (hasarch{'X86_64'}) {
+  include './x86_vec'
+}
 include './clmul'
-include './avx'
-include './avx2'
 include './mask'
 include './f64'
 include './scan_common'

@@ -176,7 +176,7 @@ def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
 def {
-  abs,andAllZero,andnz,b_getBatch,clmul,cvt,extract,floor,fold_addw,half,
+  andAllZero,andnz,b_getBatch,clmul,cvt,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,mulw,mulHi,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
@@ -196,8 +196,10 @@ def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}
 def cvt{T, x:X & T==eltype{X}} = x
 
-def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
-def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
+def min{...x} = __min{...x}
+def max{...x} = __max{...x}
+def __min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
+def __max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
 
 def homMask{...vs & tuplen{vs}>1} = {
   def n = tuplen{vs}
