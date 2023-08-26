@@ -552,12 +552,12 @@ Run ← { 𝕊:
       UpdateLive (<DoneLine@)∾{
         𝕩≡≠work? "";
         FileLine 𝕩⊑work
-      }¨ (Ts work) ⊐tmap
+      }¨ (Ts work)⊐tmap
     }⍟⊢ t1>nextRedraw-0.02
     
     dm ← (0.1⌊nextRedraw-t1) WaitForOne Ts work
     lm ← ¬dm
-    {𝕊: Fail "Error: Fork died" ⋄ dm‿lm∧↩<dm≠¯1}⍟⊢ ∨´dm=¯1
+    {𝕊: Fail ∾⟨"Error: Fork processing ", •Repr (⊑(dm=¯1)/work).v.disp, " died"⟩ ⋄ dm‿lm∧↩<dm≠¯1}⍟⊢ ∨´dm=¯1
     done ← dm/work
     work ↩ lm/work
     {
