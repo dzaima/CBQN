@@ -91,7 +91,7 @@ SHOULD_INLINE bool canCompare64_norm(B* x, void** xp, usz n) {
 }
 static bool shouldWidenBitarr(B x, usz csz) { // assumes cells won't anymore have sizes of 0, 8, or 16 bits
   u8 xe = TI(x,elType);
-  ux bcsz = ((ux)csz)<<elWidthLogBits(xe);
+  ux bcsz = ((ux)csz)<<elwBitLog(xe);
   assert(csz!=0 && bcsz!=1 && bcsz!=8 && bcsz!=16);
   if (bcsz<64 && bcsz!=32) { assert(xe!=el_B); return true; } // not el_B because csz>0 → csz*sizeof(B) >= 64
   return false;

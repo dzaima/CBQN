@@ -270,7 +270,7 @@ B select_c2(B t, B w, B x) {
   switch (we) { default: UD;
     case el_bit: {
       if (xr!=1) {
-        if (xe!=el_B && (csz<<elWidthLogBits(xe)) < 128) {
+        if (xe!=el_B && (csz<<elwBitLog(xe)) < 128) {
           dec(xf);
           return C2(select, taga(cpyI8Arr(w)), x);
         } else {
@@ -318,7 +318,7 @@ B select_c2(B t, B w, B x) {
     SLOW2("𝕨⊏𝕩", w, x);
     SGetU(w)
     usz csz = arr_csz(x);
-    CFRes f = cf_get(1, csz<<elWidthLogBits(xe));
+    CFRes f = cf_get(1, csz<<elwBitLog(xe));
     
     MAKE_MUT_INIT(rm, ria, xe);
     usz i = 0; f64 badw;

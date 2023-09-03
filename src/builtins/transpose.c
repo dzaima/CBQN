@@ -68,7 +68,7 @@ typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);
-  transposeFns[elWidthLogBits(xe)-3](rv, xv, w, h, w, h);
+  transposeFns[elwByteLog(xe)](rv, xv, w, h, w, h);
 }
 // Return an array with data from x transposed as though it's shape h,w
 // Shape of result needs to be set afterwards!
@@ -274,7 +274,7 @@ B transp_c2(B t, B w, B x) {
         j0 -= rsh[a] * str;                                     \
       }                                                         \
     }
-  u8 xlw = elWidthLogBits(xe);
+  u8 xlw = elwBitLog(xe);
   if (csz >= (32*8) >> xlw) { // cell >= 32 bytes
     usz ria = csz * shProd(rsh, 0, na);
     MAKE_MUT_INIT(rm, ria, xe); MUTG_INIT(rm);

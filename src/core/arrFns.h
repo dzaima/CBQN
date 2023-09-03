@@ -53,8 +53,10 @@ extern u8 elType2type[];
 #define el2t(X) elType2type[X] // TODO maybe reorganize array types such that this can just be addition?
 extern u8 elTypeWidth[];
 #define elWidth(X) elTypeWidth[X]
-extern u8 elTypeWidthLogBits[];
-#define elWidthLogBits(X) elTypeWidthLogBits[X]
+extern u8 elwBitLogT[];
+#define elwBitLog(X) elwBitLogT[X]
+extern u8 elwByteLogT[];
+#define elwByteLog(X) elwByteLogT[X]
 extern u8 arrTypeWidthLog[];
 #define arrTypeWidthLog(X) arrTypeWidthLog[X]
 extern u8 arrTypeBitsLog[];

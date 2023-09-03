@@ -178,7 +178,7 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
 }
 NOINLINE B widenBitArr(B x, ur axis) {
   assert(isArr(x) && TI(x,elType)!=el_B && axis>=1 && RNK(x)>=axis);
-  usz pcsz = shProd(SH(x), axis, RNK(x))<<elWidthLogBits(TI(x,elType));
+  usz pcsz = shProd(SH(x), axis, RNK(x))<<elwBitLog(TI(x,elType));
   assert(pcsz!=0);
   usz ncsz;
   if (pcsz<=8) ncsz = 8;

@@ -52,7 +52,7 @@ extern B add_c2(B,B,B);
 extern B sub_c2(B,B,B);
 extern B mul_c2(B,B,B);
 
-static u64 elRange(u8 eltype) { return 1ull<<(1<<elWidthLogBits(eltype)); }
+static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
 
 #define TABLE(IN, FOR, TY, INIT, SET) \
   usz it = elRange(IN##e);   /* Range of writes        */                    \
@@ -90,7 +90,7 @@ static NOINLINE B toIntCell(B x, ux csz0, ur co) {
   ShArr* rsh;
   if (co>1) { rsh=m_shArr(co); shcpy(rsh->a,SH(x),co); }
   B r0 = widenBitArr(x, co);
-  usz csz = shProd(SH(r0),co,RNK(r0)) << elWidthLogBits(TI(r0,elType));
+  usz csz = shProd(SH(r0),co,RNK(r0)) << elwBitLog(TI(r0,elType));
   u8 t;
   if      (csz==8)  t = t_i8slice;
   else if (csz==16) t = t_i16slice;
@@ -129,8 +129,8 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
     u8 pe = TI(p,elType);
     if (ne<el_B && pe<el_B && elNum(ne)==elNum(pe)) {
       usz csz = arr_csz(p);
-      u8 neb = elWidthLogBits(ne);
-      u8 peb = elWidthLogBits(pe);
+      u8 neb = elwBitLog(ne);
+      u8 peb = elwBitLog(pe);
       u8 meb = neb>peb? neb : peb;
       ux rb = csz<<meb;
       if (rb!=0 && rb<=62) {

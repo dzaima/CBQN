@@ -12,15 +12,19 @@ u8 elTypeWidth[] = {
   [el_i8 ] = 1, [el_c8 ] = 1,
   [el_i16] = 2, [el_c16] = 2,
   [el_i32] = 4, [el_c32] = 4,
-  [el_bit] = 0, [el_f64] = 8,
-  [el_B] = 8
+  [el_f64] = 8, [el_B  ] = 8, [el_bit] = 0
 };
-u8 elTypeWidthLogBits[] = {
+u8 elwBitLogT[] = {
   [el_i8 ] = 3, [el_c8 ] = 3,
   [el_i16] = 4, [el_c16] = 4,
   [el_i32] = 5, [el_c32] = 5,
-  [el_bit] = 0, [el_f64] = 6,
-  [el_B] = 6
+  [el_f64] = 6, [el_B  ] = 6, [el_bit] = 0
+};
+u8 elwByteLogT[] = {
+  [el_i8 ] = 0, [el_c8 ] = 0,
+  [el_i16] = 1, [el_c16] = 1,
+  [el_i32] = 2, [el_c32] = 2,
+  [el_f64] = 3, [el_B  ] = 3, [el_bit] = 99
 };
 u8 arrTypeWidthLog[] = {
   [t_bitarr]=0, // 0 for mut.c hack to allow restoring a bitarr offset from array pointer & arrTypeWidthLog-"corrected" element pointer
