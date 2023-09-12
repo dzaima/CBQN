@@ -1,8 +1,5 @@
 include './base'
 include './cbqnDefs'
-include './sse'
-include './avx'
-include './avx2'
 include './mask'
 include './bitops'
 include 'util/tup'

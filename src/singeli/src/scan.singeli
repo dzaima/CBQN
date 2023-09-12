@@ -1,8 +1,5 @@
 include './base'
-include './sse'
 include './clmul'
-include './avx'
-include './avx2'
 include './mask'
 include './f64'
 include './scan_common'

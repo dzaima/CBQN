@@ -1,7 +1,4 @@
 include './base'
-include './sse'
-include './avx'
-include './avx2'
 include 'util/tup'
 include './vecfold'
 

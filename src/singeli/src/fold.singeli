@@ -1,13 +1,4 @@
 include './base'
-if (hasarch{'AVX2'}) {
-  include './sse'
-  include './avx'
-  include './avx2'
-} else if (hasarch{'X86_64'}) {
-  include './sse2'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
-}
 include './mask'
 
 def opsh64{op}{v:[4]f64, perm} = op{v, shuf{[4]u64, v, perm}}

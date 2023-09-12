@@ -6,19 +6,6 @@ def v2d{x:T & w256{T}} = [4]f64 ~~ x
 def undefPromote{T, x:X & w128{X} & w256{T} & eltype{T}==eltype{X}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 
 # load & store
-def load {a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_loadu_si256',       a+n}
-def loada{a:T, n & w256i{eltype{T}   }} = emit{eltype{T}, '_mm256_load_si256',        a+n}
-def load {a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_loadu_pd', *f64 ~~ (a+n)}
-def loada{a:T, n & w256f{eltype{T},64}} = emit{eltype{T}, '_mm256_load_pd',  *f64 ~~ (a+n)}
-def load {a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_loadu_ps', *f32 ~~ (a+n)}
-def loada{a:T, n & w256f{eltype{T},32}} = emit{eltype{T}, '_mm256_load_ps',  *f32 ~~ (a+n)}
-def store {a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_storeu_si256',       a+n,  v}
-def storea{a:T, n, v & w256i{eltype{T}   }} = emit{void, '_mm256_store_si256',        a+n,  v}
-def store {a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_storeu_pd', *f64 ~~ (a+n), v}
-def storea{a:T, n, v & w256f{eltype{T},64}} = emit{void, '_mm256_store_pd',  *f64 ~~ (a+n), v}
-def store {a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_storeu_ps', *f32 ~~ (a+n), v}
-def storea{a:T, n, v & w256f{eltype{T},32}} = emit{void, '_mm256_store_ps',  *f32 ~~ (a+n), v}
-
 def loadLow{ptr:P, w & w256{eltype{P}} & w<=128} = undefPromote{eltype{P}, loadLow{*n_h{eltype{P}} ~~ ptr, w}}
 def loadLow{ptr:P, w & w256{eltype{P}} & w==256} = load{ptr}
 
@@ -26,69 +13,15 @@ def storeLow{ptr:P, w, x:T & w256{T} & w<=128} = storeLow{ptr, w, half{x, 0}}
 def storeLow{ptr:P, w, x:T & w256{T} & w==256} = store{*T~~ptr, 0, x}
 
 
-# broadcast
-def broadcast{T, v & w256i{T,  8}} = emit{T, '_mm256_set1_epi8',  promote{eltype{T},v}}
-def broadcast{T, v & w256i{T, 16}} = emit{T, '_mm256_set1_epi16', promote{eltype{T},v}}
-def broadcast{T, v & w256i{T, 32}} = emit{T, '_mm256_set1_epi32', promote{eltype{T},v}}
-def broadcast{T, v & w256i{T, 64}} = emit{T, '_mm256_set1_epi64x',promote{eltype{T},v}}
-def broadcast{T, v & w256f{T, 64}} = emit{T, '_mm256_set1_pd', v}
-def broadcast{T, v & w256f{T, 32}} = emit{T, '_mm256_set1_ps', v}
-
-local def makeGen{T,s,x} = emit{T, s, ...each{promote{eltype{T}, .}, x}}
-def make{T, ...xs & w256f{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_pd', xs}
-def make{T, ...xs & w256f{T,32} & tuplen{xs}== 8} = makeGen{T, '_mm256_setr_ps', xs}
-def make{T, ...xs & w256i{T,64} & tuplen{xs}== 4} = makeGen{T, '_mm256_setr_epi64x', xs}
-def make{T, ...xs & w256i{T,32} & tuplen{xs}== 8} = makeGen{T, '_mm256_setr_epi32', xs}
-def make{T, ...xs & w256i{T,16} & tuplen{xs}==16} = makeGen{T, '_mm256_setr_epi16', xs}
-def make{T, ...xs & w256i{T, 8} & tuplen{xs}==32} = makeGen{T, '_mm256_setr_epi8', xs}
-def make{T, x & w256{T} & istup{x}} = make{T, ...x}
-
-def iota{T & w256{T}} = make{T, ...iota{vcount{T}}}
-
-# bit arith
-def __xor{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_xor_ps', v2f{a}, v2f{b}}
-def __and{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_and_ps', v2f{a}, v2f{b}}
-def __or {a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_or_ps',  v2f{a}, v2f{b}}
-def __not{a:T & w256u{T}} = a ^ (T ** ~cast{eltype{T},0})
-def andnot{a:T, b:T & w256{T}} = T ~~ emit{[8]f32, '_mm256_andnot_ps', v2f{b}, v2f{a}}
-
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
 local def f64cmpAVX{a,b,n} = [4]u64 ~~ emit{[4]f64, '_mm256_cmp_pd', a, b, n}
-def __eq{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b, 0}; def __eq{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 0}
-def __ne{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b, 4}; def __ne{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b, 4}
-def __gt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,30}; def __gt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,30}
-def __ge{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,29}; def __ge{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,29}
-def __lt{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,17}; def __lt{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,17}
-def __le{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,18}; def __le{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,18}
 def unord{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,3}
 def unord{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,3}
 
 # f32 arith
-def __add{a:T,b:T & T==[8]f32} = emit{T, '_mm256_add_ps', a, b}
-def __sub{a:T,b:T & T==[8]f32} = emit{T, '_mm256_sub_ps', a, b}
-def __mul{a:T,b:T & T==[8]f32} = emit{T, '_mm256_mul_ps', a, b}
-def __div{a:T,b:T & T==[8]f32} = emit{T, '_mm256_div_ps', a, b}
-def   max{a:T,b:T & T==[8]f32} = emit{T, '_mm256_max_ps', a, b}
-def   min{a:T,b:T & T==[8]f32} = emit{T, '_mm256_min_ps', a, b}
-def   sqrt{a:[8]f32} = emit{[8]f32, '_mm256_sqrt_ps', a}
 def rsqrtE{a:[8]f32} = emit{[8]f32, '_mm256_rsqrt_ps', a}
 def   rcpE{a:[8]f32} = emit{[8]f32, '_mm256_rcp_ps', a}
-def    abs{a:[8]f32} = emit{[8]f32, '_mm256_and_ps', a, v2f{[8]u32 ** 0x7FFFFFFF}}
-def  floor{a:[8]f32} = emit{[8]f32, '_mm256_floor_ps', a}
-def   ceil{a:[8]f32} = emit{[8]f32, '_mm256_ceil_ps', a}
-
-# f64 arith
-def __add{a:T,b:T & T==[4]f64} = emit{T, '_mm256_add_pd', a, b}
-def __sub{a:T,b:T & T==[4]f64} = emit{T, '_mm256_sub_pd', a, b}
-def __mul{a:T,b:T & T==[4]f64} = emit{T, '_mm256_mul_pd', a, b}
-def __div{a:T,b:T & T==[4]f64} = emit{T, '_mm256_div_pd', a, b}
-def   max{a:T,b:T & T==[4]f64} = emit{T, '_mm256_max_pd', a, b}
-def   min{a:T,b:T & T==[4]f64} = emit{T, '_mm256_min_pd', a, b}
-def  sqrt{a:[4]f64} = emit{[4]f64, '_mm256_sqrt_pd', a}
-def   abs{a:[4]f64} = emit{[4]f64, '_mm256_and_pd', a, v2d{[4]u64 ** ((cast{u64,1}<<63)-1)}}
-def floor{a:[4]f64} = emit{[4]f64, '_mm256_floor_pd', a}
-def  ceil{a:[4]f64} = emit{[4]f64, '_mm256_ceil_pd', a}
 
 # conversion
 def half{x:T, i & w256{T} & knum{i}} = n_h{T} ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
@@ -102,19 +35,6 @@ def widen{T, x:X & w256{X} & vcount{X}>vcount{T}} = widen{T, half{x,0}}
 
 
 # structural operations
-def extract{x:T, i & w256i{T,32} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi32', x, i}
-def extract{x:T, i & w256i{T,64} & knum{i}} = emit{eltype{T}, '_mm256_extract_epi64', x, i}
-def extract{x:T, i & w256f{T,64} & knum{i}} = emit{f64, '_mm256_cvtsd_f64', emit{T, '_mm256_permute4x64_pd', x, i}}
-def extract{x:T, i & w256f{T,32} & knum{i}} = {
-  t:= emit{[4]f32, '_mm256_extractf128_ps', x, i>>2}
-  emit{f32, '_mm_cvtss_f32', emit{[4]f32, '_mm_shuffle_ps', t, t, i}}
-}
-
-def insert{x:T, i, v & w256i{T, 8} & knum{i}} = emit{T, '_mm256_insert_epi8',  x, v, i}
-def insert{x:T, i, v & w256i{T,16} & knum{i}} = emit{T, '_mm256_insert_epi16', x, v, i}
-def insert{x:T, i, v & w256i{T,32} & knum{i}} = emit{T, '_mm256_insert_epi32', x, v, i}
-def insert{x:T, i, v & w256i{T,64} & knum{i}} = emit{T, '_mm256_insert_epi64', x, v, i}
-
 def topBlend{f:T, t:T, m:M & w256{T,32} & w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
 def topBlend{f:T, t:T, m:M & w256{T,64} & w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
 def homBlend{f:T, t:T, m:M & w256{T}} = topBlend{f, t, m}

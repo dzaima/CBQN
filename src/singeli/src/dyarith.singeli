@@ -1,15 +1,6 @@
 include './base'
-include './f64'
 include './cbqnDefs'
-if (hasarch{'AVX2'}) {
-  include './sse'
-  include './avx'
-  include './avx2'
-} else if (hasarch{'X86_64'}) {
-  include './sse2'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
-}
+include './f64'
 include './bitops'
 include './mask'
 include 'util/tup'

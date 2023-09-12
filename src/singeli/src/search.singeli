@@ -1,15 +1,4 @@
 include './base'
-if (hasarch{'AVX2'}) {
-  include './sse'
-  include './avx'
-  include './avx2'
-} else if (hasarch{'SSSE3'}) {
-  include './sse'
-} else if (hasarch{'X86_64'}) {
-  include './sse2'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
-}
 include './mask'
 include './vecfold'
 
