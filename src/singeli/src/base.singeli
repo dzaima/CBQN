@@ -231,31 +231,32 @@ def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
 
 if (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
-  def adds = __adds
-  def subs = __subs
-  def sqrt = __sqrt
-  def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
-  def make{T, ...xs & isvec{T}} = vec_make{T, ...xs}
   include './sse2'
   include './sse'
   include './avx'
   include './avx2'
 } else if (hasarch{'AARCH64'}) {
+  include 'arch/neon_intrin/basic'
   include './neon'
 } else {
-  def {adds,subs,sqrt}
+  def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
 }
+
+def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
+def make{T, ...xs & isvec{T}} = vec_make{T, ...xs}
+def iota{T & isvec{T}} = make{T, ...iota{vcount{T}}}
+def absu{a:T & isvec{T}} = ty_u{abs{a}}
 
 def floor = __floor
 def ceil = __ceil
 def abs = __abs
 def min = __min
 def max = __max
+def adds = __adds
+def subs = __subs
+def sqrt = __sqrt
 def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
 def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
-
-def absu{a:T & isvec{T}} = ty_u{abs{a}}
-def iota{T & isvec{T}} = make{T, ...iota{vcount{T}}}
 
 
 def load{p,i & kgen{p}} = p{i}

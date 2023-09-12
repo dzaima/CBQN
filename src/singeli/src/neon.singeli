@@ -20,36 +20,12 @@ def ntyp{S, ...S2, T & w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
 def ntyp{S, ...S2, T &  w64{T}} = merge{S,      ...S2, '_', nty{T}}
 def ntyp0{S, T} = merge{S, '_', nty{T}}
 
-def load{a:T, n & nvec{eltype{T}}} = emit{eltype{T}, ntyp{'vld1', eltype{T}}, *eltype{eltype{T}} ~~ (a+n)}
-def store{a:*V, n, v:V & nvec{V}} = emit{void, ntyp{'vst1', V}, *eltype{V} ~~ (a+n), v}
-
-def  __or{a:T,b:T & nvecf{T}} = T~~ __or{ty_u{a}, ty_u{b}}
-def __and{a:T,b:T & nvecf{T}} = T~~__and{ty_u{a}, ty_u{b}}
-def __xor{a:T,b:T & nvecf{T}} = T~~__xor{ty_u{a}, ty_u{b}}
-def  __add{a:T,b:T & nvec {T}} = emit{T, ntyp{'vadd', T}, a, b}
-def  __sub{a:T,b:T & nvec {T}} = emit{T, ntyp{'vsub', T}, a, b}
-def  __mul{a:T,b:T & nvec {T}} = emit{T, ntyp{'vmul', T}, a, b}
-def  __div{a:T,b:T & nvecf{T}} = emit{T, ntyp{'vdiv', T}, a, b}
-def  __and{a:T,b:T & nveci{T}} = emit{T, ntyp{'vand', T}, a, b}
-def   __or{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorr', T}, a, b}
-def  __xor{a:T,b:T & nveci{T}} = emit{T, ntyp{'veor', T}, a, b}
-def andnot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vbic', T}, a, b}
-def  ornot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorn', T}, a, b}
-def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
-def  __min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
-def  __max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
-def  __shl{a:T,b:S & nveci{T} & nveci{S,elwidth{T}}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
-def   adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
-def   subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
-def   addp{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vpadd', T}, a, b}
 def addwLo{a:T,b:T & w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
 def subwLo{a:T,b:T & w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
 def mulwLo{a:T,b:T & w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
 def mulwHi{a:T,b:T & w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
 def mulw  {a:T,b:T & w128{T}} = tup{mulwLo{half{a,0}, half{b,0}}, mulwHi{a,b}}
 
-def __shl{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshl', '_n', T}, a, s};  def __shl{a:T,s==0 & nveci{T}} = a
-def __shr{a:T, s      & nveci{T} & knum{s} & s>0 & s<elwidth{T}} = emit{T, ntyp{'vshr', '_n', T}, a, s};  def __shr{a:T,s==0 & nveci{T}} = a
 def  shrn{a:T, s      & w128i{T} & elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def  shrm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
 def  shlm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
@@ -57,12 +33,6 @@ def  shlm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a
 def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M,elwidth{T}} & width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
 def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
 
-def   __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
-def   __not{a:T & nvecu{T}} = T~~emit{re_el{u8,T}, ntyp{'vmvn', re_el{u8,T}}, a}
-def    sqrt{a:T & nvecf{T}} = emit{T, ntyp{'vsqrt', T}, a}
-def __floor{a:T & nvecf{T}} = emit{T, ntyp{'vrndm', T}, a}
-def  __ceil{a:T & nvecf{T}} = emit{T, ntyp{'vrndp', T}, a}
-def   __abs{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vabs', T}, a}
 def addpw {     x:T & nveci{T} & elwidth{T}<=32             } = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D, x:T & nveci{T} & elwidth{T}<=32 & D==el_m{T}} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 def mla{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
@@ -75,13 +45,6 @@ def rev{w==64, x:T & elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
 def popc{x:T & nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
 def clz{x:T & nvecu{T} & elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T & nveci{T} & elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
-
-def __eq{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vceq', T}, a, b}
-def __ge{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcge', T}, a, b}
-def __gt{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcgt', T}, a, b}
-def __lt{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vclt', T}, a, b}
-def __le{a:T,b:T & nvec{T}} = emit{ty_u{T}, ntyp{'vcle', T}, a, b}
-def __ne{a:T,b:T & nvec{T}} = ~(a==b)
 
 def fold_add {a:T & nvec{T}} = emit{eltype{T}, ntyp{'vaddv', T}, a}
 def fold_addw{a:T & nveci{T}} = emit{w_d{eltype{T}}, ntyp{'vaddlv', T}, a}
@@ -108,7 +71,6 @@ def undefPromote{T, x:X & w64{X} & w128{T} & eltype{T}==eltype{X}} = emit{T, nty
 def half{x:T, n==0 & w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, n==1 & w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T & w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
-def extract{x:T,n & nvec{T} & knum{n}} = emit{eltype{T}, ntyp{'vget', '_lane', T}, x, n}
 def copyLane{dst:D, di, src:S, si & w64{D}  & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
 def copyLane{dst:D, di, src:S, si & w128{D} & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
 def vshl{a:T, b:T, n & knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
@@ -158,15 +120,6 @@ def topAny{x:T & nvec{T}} = fold_min{ty_s{x}}<0
 def topAll{x:T & nvec{T}} = fold_max{ty_s{x}}<0
 def homAny{x:T & nvec{T}} = bitAny{x}
 def homAll{x:T & nvec{T}} = bitAll{x}
-
-
-def broadcast{T, x & nvec{T}} = emit{T, ntyp{'vdup', '_n', T}, x}
-
-def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {
-  def TE = eltype{T}
-  load{*T ~~ *TE ~~ each{promote{eltype{T},.}, xs}, 0}
-}
-def make{T, x & nvec{T} & istup{x}} = make{T, ...x}
 
 
 def homMask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {
