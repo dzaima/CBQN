@@ -36,8 +36,8 @@ def  __xor{a:T,b:T & nveci{T}} = emit{T, ntyp{'veor', T}, a, b}
 def andnot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vbic', T}, a, b}
 def  ornot{a:T,b:T & nveci{T}} = emit{T, ntyp{'vorn', T}, a, b}
 def  andnz{a:T,b:T & nveci{T}} = emit{T, ntyp{'vtst', T}, a, b}
-def    min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
-def    max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
+def  __min{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmin', T}, a, b}
+def  __max{a:T,b:T & nvec{T}}  = emit{T, ntyp{'vmax', T}, a, b}
 def  __shl{a:T,b:S & nveci{T} & nveci{S,elwidth{T}}} = emit{T, ntyp{'vshl', T}, a, ty_s{b}}
 def   adds{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqadd', T}, a, b}
 def   subs{a:T,b:T & nveci{T}} = emit{T, ntyp{'vqsub', T}, a, b}
@@ -57,13 +57,12 @@ def  shlm{a:T, s, d:T & nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a
 def bitBlend{f:T, t:T, m:M & nvec{T} & nvecu{M,elwidth{T}} & width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
 def homBlend{f:T, t:T, m:M & nvec{M}} = bitBlend{f, t, m}
 
-def __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
-def __not{a:T & nvecu{T}} = T~~emit{re_el{u8,T}, ntyp{'vmvn', re_el{u8,T}}, a}
-def  sqrt{a:T & nvecf{T}} = emit{T, ntyp{'vsqrt', T}, a}
-def floor{a:T & nvecf{T}} = emit{T, ntyp{'vrndm', T}, a}
-def  ceil{a:T & nvecf{T}} = emit{T, ntyp{'vrndp', T}, a}
-def   abs{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vabs', T}, a}
-def  absu{a:T & nveci{T}} = ty_u{abs{a}}
+def   __neg{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vneg', T}, a}
+def   __not{a:T & nvecu{T}} = T~~emit{re_el{u8,T}, ntyp{'vmvn', re_el{u8,T}}, a}
+def    sqrt{a:T & nvecf{T}} = emit{T, ntyp{'vsqrt', T}, a}
+def __floor{a:T & nvecf{T}} = emit{T, ntyp{'vrndm', T}, a}
+def  __ceil{a:T & nvecf{T}} = emit{T, ntyp{'vrndp', T}, a}
+def   __abs{a:T & (nvecs{T}|nvecf{T})} = emit{T, ntyp{'vabs', T}, a}
 def addpw {     x:T & nveci{T} & elwidth{T}<=32             } = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D, x:T & nveci{T} & elwidth{T}<=32 & D==el_m{T}} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 def mla{a:T, x:T, y:T & nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
@@ -168,7 +167,6 @@ def make{T, ...xs & nvec{T} & tuplen{xs}==vcount{T}} = {
   load{*T ~~ *TE ~~ each{promote{eltype{T},.}, xs}, 0}
 }
 def make{T, x & nvec{T} & istup{x}} = make{T, ...x}
-def iota{T & nvec{T}} = make{T, ...iota{vcount{T}}}
 
 
 def homMask{x:T & nvecu{T} & elwidth{T}>=vcount{T}} = {

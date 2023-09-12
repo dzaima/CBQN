@@ -1,5 +1,4 @@
 include './base'
-include './x86_vec'
 include 'util/tup'
 include './vecfold'
 

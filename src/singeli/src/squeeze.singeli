@@ -1,9 +1,4 @@
 include './base'
-if (hasarch{'X86_64'}) {
-  include './x86_vec'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
-}
 include './mask'
 include './cbqnDefs'
 include 'util/tup'

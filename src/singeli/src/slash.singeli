@@ -1,10 +1,7 @@
 include './base'
 if (hasarch{'X86_64'}) {
-  include './x86_vec'
   if (hasarch{'PCLMUL'}) include './clmul'
   if (hasarch{'BMI2'}) include './bmi2'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
 }
 include './mask'
 include 'util/tup'

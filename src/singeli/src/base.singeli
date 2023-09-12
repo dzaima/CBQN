@@ -176,7 +176,7 @@ def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
 
 # base cases
 def {
-  andAllZero,andnz,b_getBatch,clmul,cvt,fold_addw,half,
+  absu,andAllZero,andnz,b_getBatch,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,mulw,mulHi,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
@@ -195,11 +195,6 @@ def undefPromote{T, x:X & T==X} = T~~x
 def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}
 def cvt{T, x:X & T==eltype{X}} = x
-
-def min{...x} = __min{...x}
-def max{...x} = __max{...x}
-def __min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
-def __max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
 
 def homMask{...vs & tuplen{vs}>1} = {
   def n = tuplen{vs}
@@ -233,6 +228,34 @@ def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
 
 def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
 def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
+
+if (hasarch{'X86_64'}) {
+  include 'arch/iintrinsic/basic'
+  def adds = __adds
+  def subs = __subs
+  def sqrt = __sqrt
+  def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
+  def make{T, ...xs & isvec{T}} = vec_make{T, ...xs}
+  include './sse2'
+  include './sse'
+  include './avx'
+  include './avx2'
+} else if (hasarch{'AARCH64'}) {
+  include './neon'
+} else {
+  def {adds,subs,sqrt}
+}
+
+def floor = __floor
+def ceil = __ceil
+def abs = __abs
+def min = __min
+def max = __max
+def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
+def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
+
+def absu{a:T & isvec{T}} = ty_u{abs{a}}
+def iota{T & isvec{T}} = make{T, ...iota{vcount{T}}}
 
 
 def load{p,i & kgen{p}} = p{i}

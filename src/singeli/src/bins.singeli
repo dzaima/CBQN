@@ -1,8 +1,5 @@
 include './base'
 include './cbqnDefs'
-if (hasarch{'X86_64'}) {
-  include './x86_vec'
-}
 include './mask'
 include 'util/tup'
 

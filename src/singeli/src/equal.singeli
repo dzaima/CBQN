@@ -1,10 +1,5 @@
 include './base'
 include './cbqnDefs'
-if (hasarch{'X86_64'}) {
-  include './x86_vec'
-} else if (hasarch{'AARCH64'}) {
-  include './neon'
-}
 include './f64'
 include './mask'
 include './bitops'
