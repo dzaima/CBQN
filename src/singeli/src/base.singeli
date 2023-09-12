@@ -1,5 +1,6 @@
 include 'skin/c'
 include 'arch/c'
+include 'util/for'
 include 'util/kind'
 
 def ux = u64
@@ -266,34 +267,13 @@ def tptr{l,s} = { # create "pointer" generator with given load & store definitio
   def r{i,x} = s{i,x}
 }
 
-def unroll{vars,begin,end,iter & knum{begin} & knum{end}} = {
-  def f{i,l & i==l} = 0
-  def f{i,l & i!=l} = {
-    iter{i, vars}
-    f{i+1, l}
-  }
-  f{begin,end}
-}
-def for{vars,begin,end,iter} = {
-  i:ux = begin
-  while (i < end) {
-    iter{i, vars}
-    ++i
-  }
-}
+def unroll = for_const
 def forNZ{vars,begin,end,iter} = {
   i:ux = begin
   assert{i!=end}
   while (i < end) {
     iter{i, vars}
     ++i
-  }
-}
-def for_backwards{vars,begin,end,iter} = {
-  i:ux = end
-  while (i > begin) {
-    --i
-    iter{i, vars}
   }
 }
 def forUnroll{exp,unr}{vars,begin,end,iter} = {
