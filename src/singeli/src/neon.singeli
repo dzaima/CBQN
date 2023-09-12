@@ -10,11 +10,10 @@ def nvecf = genchk{nvec,    isfloat}
 
 def reinterpret{T, v & same{'pointer',typekind{T}} & ktup{v}} = { tmp:T=v }
 
-def nty{T== u8} =  'u8'; def nty{T== i8} =  's8'
-def nty{T==u16} = 'u16'; def nty{T==i16} = 's16'
-def nty{T==u32} = 'u32'; def nty{T==i32} = 's32'
-def nty{T==u64} = 'u64'; def nty{T==i64} = 's64'
-def nty{T==f32} = 'f32'; def nty{T==f64} = 'f64'
+def nty{T} = {
+  def q = quality{T}
+  merge{if (q=='i') 's' else q, fmtnat{width{T}}}
+}
 def nty{T & isvec{T}} = nty{eltype{T}}
 def ntyp{S, ...S2, T & w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
 def ntyp{S, ...S2, T &  w64{T}} = merge{S,      ...S2, '_', nty{T}}

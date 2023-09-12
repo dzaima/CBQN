@@ -22,6 +22,9 @@ def isprim{T} = 0; def isprim{T & istype{T}} = same{typekind{T},'primitive'}
 def isptr {T} = 0; def isptr {T & istype{T}} = same{typekind{T},'pointer'}
 def elwidth{T} = width{eltype{T}}
 
+oper &~ andnot infix none 35
+def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
+
 
 
 def load{p:P,  n    & isvec{eltype{P}}} = assert{0}
@@ -40,37 +43,6 @@ def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{export{.,f}, ns}
 def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
-
-# more arith
-def cdiv{a,b} = (a+b-1)/b # ceiling divide
-def cdiv{a,b & knum{a} & knum{b}} = ((a+b-1)/b)>>0
-def popc{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_popcountll', x}
-def popc{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_popcount', x}
-def ctz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_ctzll', x}
-def ctz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_ctz', x}
-def clz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_clzll', x}
-def clz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_clz', x}
-# count-leading-zeros complement, less type-dependent
-def clzc{x:T & isint{T} & width{T}==64} = 64-clz{x}
-def clzc{x:T & isint{T} & width{T}<=32} = 32-clz{x}
-
-def ceil_log2{n} = clzc{n-1}
-
-def truncBits{n, v & n<=8}  = cast_i{u8, v}
-def truncBits{n, v & n==16} = cast_i{u16, v}
-def truncBits{n, v & n==32} = cast_i{u32, v}
-def truncBits{n, v & n==64} = cast_i{u64, v}
-
-# base-2 log of a constant power of two
-def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
-def lb{n==1} = 0
-
-def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
-def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
-def bit {k,x} = x &  (1<<k)      # get the k-th bit
-
-# Convert tuple to number in little-endian base b
-def base{b,l} = { if (0==tuplen{l}) 0; else tupsel{0,l}+b*base{b,slice{l,1}} }
 
 # hints
 def rare{x & knum{x}} = x
@@ -119,8 +91,6 @@ def w256f = genchk{w256,    isfloat};  def w128f = genchk{w128,    isfloat};  de
 
 
 
-
-
 def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
 def trunc{T, x & knum{x}} = cast{T, x}
 
@@ -162,18 +132,35 @@ def el_h{T & isvec{T}} = [vcount{T}](w_h{eltype{T}})
 def el_m{T & isvec{T}} = re_el{w_d{eltype{T}}, T};  def el_m{x:T} = re_el{T}~~x # double/halve element width, preserving width
 def el_s{T & isvec{T}} = re_el{w_h{eltype{T}}, T};  def el_s{x:T} = re_el{T}~~x
 
-
-
-
-
-# test if vector has a specific width & element type
-def lvec{T, n, w} = 0
-def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
 # type stats
 def minvalue{T & isunsigned{T}} = 0
 def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
 def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
+
+
+
+
+# tuple operations
+def iota{n & knum{n}} = range{n}
+def broadcast{T, v & isprim{T}} = v
+def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
+def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
+  each{iter{., vars}, range{end-begin}+begin}
+}
+
+# convert tuple to number in little-endian base b
+def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
+
+
+
+# vector definitions
+def arch_defvw = if (hasarch{'AVX2'}) 256 else 128
+def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
+
+# test if vector has a specific width & element type
+def lvec{T, n, w} = 0
+def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
 
 # base cases
 def {
@@ -185,50 +172,8 @@ def {
   zip,zipHi,zipLo
 }
 
-def mzip  {a:T, b:T} = each{{v}=>el_m{T}~~v, zip{a, b}}
-def mzipLo{a:T, b:T} = el_m{T} ~~ zipLo{a, b}
-def mzipHi{a:T, b:T} = el_m{T} ~~ zipHi{a, b}
-def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
-oper &~ andnot infix none 35
-def widen{T, x:X & T==X} = x
-def narrow{T, x:X & T==eltype{X}} = x
-def undefPromote{T, x:X & T==X} = T~~x
-def packQ{{a, b}} = packQ{a, b}
-def pair{{a, b}} = pair{a, b}
-def cvt{T, x:X & T==eltype{X}} = x
-
-def homMask{...vs & tuplen{vs}>1} = {
-  def n = tuplen{vs}
-  def T = oneType{vs}
-  def RT = ty_u{max{8,vcount{T}*n}}
-  tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
-}
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
-
-def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = { # ∊ [start;start+count)
-  def TU = ty_u{TS}
-  (TU~~(x-TS**start))  <  TU**count
-}
-def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = { # ∊ [start;start+count)
-  def TS = ty_s{TU}
-  def h = 1 << (elwidth{TU}-1)
-  (TS~~(x-TU**(start-h)))  <  TS**(count-h)
-}
-def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1} # ∊ [start;end]
-def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;end)
-
-
-# tuple operations
-def broadcast{T, v & isprim{T}} = v
-def iota{n & knum{n}} = range{n}
-def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
-  each{iter{., vars}, range{end-begin}+begin}
-}
-def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
-
-def arch_defvw = tern{hasarch{'AVX2'}, 256, 128}
-def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
 
 if (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
@@ -243,6 +188,23 @@ if (hasarch{'X86_64'}) {
   def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
 }
 
+def homMask{...vs & tuplen{vs}>1} = {
+  def n = tuplen{vs}
+  def T = oneType{vs}
+  def RT = ty_u{max{8,vcount{T}*n}}
+  tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
+}
+def mzip  {a:T, b:T} = each{{v}=>el_m{T}~~v, zip{a, b}}
+def mzipLo{a:T, b:T} = el_m{T} ~~ zipLo{a, b}
+def mzipHi{a:T, b:T} = el_m{T} ~~ zipHi{a, b}
+def packQ{{a, b}} = packQ{a, b}
+def pair{{a, b}} = pair{a, b}
+
+def widen{T, x:X & T==X} = x
+def narrow{T, x:X & T==eltype{X}} = x
+def undefPromote{T, x:X & T==X} = T~~x
+def cvt{T, x:X & T==eltype{X}} = x
+
 def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
 def make{T, ...xs & isvec{T}} = vec_make{T, ...xs}
 def iota{T & isvec{T}} = make{T, ...iota{vcount{T}}}
@@ -256,8 +218,52 @@ def max = __max
 def adds = __adds
 def subs = __subs
 def sqrt = __sqrt
+
+
+
+# more arith
 def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
 def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
+def cdiv{a,b} = (a+b-1)/b # ceiling divide
+def cdiv{a,b & knum{a} & knum{b}} = ceil{a/b}
+def popc{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_popcountll', x}
+def popc{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_popcount', x}
+def ctz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_ctzll', x}
+def ctz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_ctz', x}
+def clz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_clzll', x}
+def clz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_clz', x}
+# count-leading-zeros complement, less type-dependent
+def clzc{x:T & isint{T} & width{T}==64} = 64-clz{x}
+def clzc{x:T & isint{T} & width{T}<=32} = 32-clz{x}
+
+def ceil_log2{n} = clzc{n-1}
+
+def truncBits{n, v & n<=8}  = cast_i{u8, v}
+def truncBits{n, v & n==16} = cast_i{u16, v}
+def truncBits{n, v & n==32} = cast_i{u32, v}
+def truncBits{n, v & n==64} = cast_i{u64, v}
+
+# base-2 log of a constant power of two
+def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
+def lb{n==1} = 0
+
+def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
+def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
+def bit {k,x} = x &  (1<<k)      # get the k-th bit
+
+# range logic
+def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = { # ∊ [start;start+count)
+  def TU = ty_u{TS}
+  (TU~~(x-TS**start))  <  TU**count
+}
+def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = { # ∊ [start;start+count)
+  def TS = ty_s{TU}
+  def h = 1 << (elwidth{TU}-1)
+  (TS~~(x-TU**(start-h)))  <  TS**(count-h)
+}
+def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1} # ∊ [start;end]
+def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;end)
+
 
 
 def load{p,i & kgen{p}} = p{i}
@@ -315,8 +321,8 @@ def tree_fold{F, x} = {
 def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
-  def l = tree_fold{max, each{{x} => {if(ktup{x}) tuplen{x}; else 0}, args}}
-  each{F, ...each{{x} => {if (istup{x}) x; else l**x}, args}}
+  def l = tree_fold{max, each{{x} => if(ktup{x}) tuplen{x} else 0, args}}
+  each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
 }
 
 def undef{T, n & istype{T}} = @collect(n) undef{T}
