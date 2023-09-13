@@ -193,7 +193,7 @@ po ← { # parsed options
   wasi ← GetOpt "wasi"
   usz ⇐ •ParseFloat GetOpt "usz"
   {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
-  versionName ← {sharedLib? @; "0"⊸≡◶⊢‿@ GetOpt "v"}
+  versionName ← "0"⊸≡◶⊢‿@ GetOpt "v"
   wasm ⇐ wasi∨emcc
   "Error: Static linking for wasm is pointless"_assert_¬ staticBin ∧ wasm
   
