@@ -44,6 +44,9 @@ endif
 	  os="$(target_os)" arch="$(target_arch)" has="$(has)" \
 	  shared="$(i_SHARED)" singeli="$(i_singeli_1)" replxx="$(i_REPLXX_1)" FFI="$(FFI)"
 
+all: o3 shared-o3 static-lib-o3
+alln: o3n shared-o3n static-lib-o3n
+
 # targets that go to build.bqn
 o3:
 	@"${MAKE}" to-bqn-build
@@ -78,10 +81,15 @@ emcc-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="emcc"
 shared-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1
+shared-o3n:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts="native"
 shared-c:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts=c
-static-o3:
+static-lib-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="static-lib"
+static-lib-o3n:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="static-lib native"
+
 static-bin:
 	@"${MAKE}" to-bqn-build FFI=0 i_build_opts="static-bin"
 
