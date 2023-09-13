@@ -80,6 +80,8 @@ shared-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1
 shared-c:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts=c
+static-o3:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="static-lib"
 static-bin:
 	@"${MAKE}" to-bqn-build FFI=0 i_build_opts="static-bin"
 
@@ -357,10 +359,16 @@ endif # replxx
 DESTDIR =
 PREFIX = /usr/local
 install: uninstall
-	cp -f BQN "$(DESTDIR)$(PREFIX)/bin/bqn"
+	[ -e BQN ] && cp -f BQN "$(DESTDIR)$(PREFIX)/bin/bqn"
+	cp -f include/bqnffi.h "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
+	[ -e libcbqn.a ] && cp -f libcbqn.a "$(DESTDIR)$(PREFIX)/lib/libcbqn.a"
+	[ -e libcbqn.so ] && cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"
 
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
+	rm -f "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
+	rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.a"
+	rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"
 
 clean-build:
 	rm -f build/obj/*/*.o
