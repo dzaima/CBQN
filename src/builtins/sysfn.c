@@ -1134,6 +1134,14 @@ B sh_c2(B t, B w, B x) {
   return m_hvec3(m_i32(code), s_outObj, s_errObj);
 }
 #else
+#if FOR_BUILD
+  #if __ANDROID__
+    #error "<spawn.h> or other related includes for posix_spawnp are missing for the 'make for-build' build. If building within termux, use `pkg install libandroid-spawn && make for-build lf=-landroid-spawn && make lf=-landroid-spawn`"
+  #else
+    #error "<spawn.h> or other related includes for posix_spawnp are missing for the 'make for-build' build"
+  #endif
+#endif
+
 #define HAS_SH 0
 B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
