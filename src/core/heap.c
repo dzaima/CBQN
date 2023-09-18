@@ -100,3 +100,14 @@ void heap_printInfo(bool sizes, bool types, bool freed, bool chain) {
   #endif
   fflush(stderr);
 }
+void heap_printInfoStr(char* str) {
+  bool sizes=0, types=0;
+  i32 freed=0;
+  char c;
+  while ((c=*(str++)) != 0) {
+    if (c=='t') types=1;
+    if (c=='s') sizes=1;
+    if (c=='f') freed++;
+  }
+  heap_printInfo(sizes, types, freed!=0, freed>=2);
+}

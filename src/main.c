@@ -601,7 +601,7 @@ static NOINLINE f64 timeBlockN(Block* block, i64 rep) {
 bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
-void heap_printInfo(bool sizes, bool types, bool freed, bool chain);
+void heap_printInfoStr(char* str);
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -667,15 +667,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       timeRep = am;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
-      bool sizes=0, types=0;
-      i32 freed=0;
-      char c;
-      while ((c=*(cmdE++)) != 0) {
-        if (c=='t') types=1;
-        if (c=='s') sizes=1;
-        if (c=='f') freed++;
-      }
-      heap_printInfo(sizes, types, freed!=0, freed>=2);
+      heap_printInfoStr(cmdE);
       return;
     } else if (isCmd(cmdS, &cmdE, "erase ")) {
       char* name = cmdE;

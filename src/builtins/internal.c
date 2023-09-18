@@ -345,6 +345,23 @@ B internalGC_c1(B t, B x) {
   #endif
 }
 
+
+void heap_printInfoStr(char* str);
+B vfyStr(B x, char* name, char* arg);
+B heapStats_c1(B t, B x) {
+  if (isC32(x)) {
+    f64* rp; B r = m_f64arrv(&rp, 2);
+    rp[0] = mm_heapAlloc;
+    rp[1] = mm_heapUsed();
+    return r;
+  }
+  vfyStr(x, "•internal.HeapStats", "𝕩");
+  char* cs = toCStr(x);
+  heap_printInfoStr(cs);
+  freeCStr(cs);
+  return m_f64(1);
+}
+
 B iHasFill_c1(B t, B x) {
   B f = getFillR(x);
   dec(x);
@@ -378,8 +395,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats));
     #undef F
     gc_add(internalNS);
   }
