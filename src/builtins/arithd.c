@@ -174,7 +174,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
     , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
     , /*FLT_SAI*/
-    , /*ANY_AS*/ if((r_f64u(o2fG(x)) & ((1ULL<<52)-1)) == 0 && elNum(we)) return num_squeeze(C2(mul, w, m_f64(1/o2fG(x))));
+    , /*ANY_AS*/ if((r_f64u(o2fG(x)) & ((1ULL<<52)-1)) == 0 && elNum(we)) return num_squeeze(C2(mul, w, m_f64(1/(o2fG(x)+0))));
   )
   GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,,,)
   GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,,,)
