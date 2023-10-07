@@ -105,9 +105,9 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
                     else pair{ints}
                   }
                   tup{intp, wdn}
-                } else if (tuplen{ints}==1 and hasarch{'X86_64'} and ~hasarch{'AVX'}) {
+                } else if (tuplen{ints}==1 and hasarch{'X86_64'} and ~hasarch{'AVX2'}) {
                   tup{tupsel{0, ints}, wdn}
-                }
+                } else assert{0}
               }
             }
             
