@@ -166,14 +166,14 @@ B ud_c2(B t, B w, B x) {
     for (usz i=0; i<fr-1; i++) ri[i]=0;
     for (usz i=0, j=0;;) {
       mut_copyG(r, i, x, j, k);
-      usz str = cia*xsh[xr-1];
+      usz str = cia*xsh[wr-1];
       i+= k;
       if (i == ria) break;
       j+= str;
-      for (usz a=fr-2, b=xr-2; RARE(++ri[a] == rsh[a]); ) {
+      for (usz a=fr-2, b=wr-2; RARE(++ri[a] == rsh[a]); ) {
         ri[a] = 0;
         j-= rsh[a] * str;
-        str *= xsh[b]; if (!b) { str=cia; b=xr; }
+        str *= xsh[b]; if (!b) { str=cia; b=wr; }
         a--; b--;
         j+= str;
       }
