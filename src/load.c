@@ -34,7 +34,7 @@ u64 mm_heapAlloc;
 //       bytecodeOffset,
 //       variableCount, // number of variable slots needed
 //       ( // optional extra info for namespace stuff
-//         [...variableIDs] // a number for each variable slot; indexes into nameList
+//         [...variableIDs], // a number for each variable slot; indexes into nameList
 //         [...exportMask] // a unique number for each variable
 //       )?
 //     ]*
@@ -73,14 +73,14 @@ char* pfn_repr(u8 u) {
   }
 }
 char* pm1_repr(u8 u) {
-  switch(u) { default: return"(unknown 1-modifier)";
+  switch(u) { default: return "(unknown 1-modifier)";
     #define F(N,X) case pm1_##N: return X;
     FOR_PM1(F,F,F)
     #undef F
   }
 }
 char* pm2_repr(u8 u) {
-  switch(u) { default: return"(unknown 2-modifier)";
+  switch(u) { default: return "(unknown 2-modifier)";
     #define F(N,X) case pm2_##N: return X;
     FOR_PM2(F,F,F)
     #undef F
@@ -446,14 +446,14 @@ void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
-    rt_undo    = Get(rtObjRaw, n_undo    );
-    rt_select  = Get(rtObjRaw, n_select  );
-    rt_slash   = Get(rtObjRaw, n_slash   );
-    rt_group   = Get(rtObjRaw, n_group   );
-    rt_under   = Get(rtObjRaw, n_under   );
-    rt_find    = Get(rtObjRaw, n_find    );
-    rt_depth   = Get(rtObjRaw, n_depth   );
-    rt_insert  = Get(rtObjRaw, n_insert  );
+    rt_undo    = Get(rtObjRaw, n_undo  );
+    rt_select  = Get(rtObjRaw, n_select);
+    rt_slash   = Get(rtObjRaw, n_slash );
+    rt_group   = Get(rtObjRaw, n_group );
+    rt_under   = Get(rtObjRaw, n_under );
+    rt_find    = Get(rtObjRaw, n_find  );
+    rt_depth   = Get(rtObjRaw, n_depth );
+    rt_insert  = Get(rtObjRaw, n_insert);
     
     for (usz i = 0; i < RT_LEN; i++) {
       #ifdef RT_WRAP

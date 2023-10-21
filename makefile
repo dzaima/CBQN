@@ -106,12 +106,6 @@ endif
 ifeq ($(origin OUTPUT),command line)
 	i_OUTPUT := $(OUTPUT)
 endif
-ifeq ($(i_emcc),1)
-	i_OUTPUT_FOLDER := $(i_OUTPUT)
-	i_OUTPUT_BIN := $(i_OUTPUT_FOLDER)/BQN.js
-else
-	i_OUTPUT_BIN := $(i_OUTPUT)
-endif
 ifeq ($(origin CC),command line)
 	override i_CC := $(CC)
 	custom = 1
@@ -231,13 +225,13 @@ endif
 
 # simple non-incremental builds
 single-o3:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 single-o3g:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 single-debug:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -DDEBUG -g -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -DDEBUG -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 single-c:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -o ${i_OUTPUT_BIN} src/opt/single.c $(ALL_LD_FLAGS)
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 
 # actual build
 run_incremental_0:
@@ -278,14 +272,11 @@ endif
 endif # run build
 
 run_incremental_1: ${bd}/BQN
-ifneq (${bd}/BQN,${i_OUTPUT_BIN})
-ifeq ($(i_emcc),1)
-	@cp -f ${bd}/BQN.wasm "${i_OUTPUT_FOLDER}/BQN.wasm"
-endif
+ifneq (${bd}/BQN,${i_OUTPUT})
 ifeq ($(WINDOWS),1)
-	@cp -f ${bd}/BQN.exe "${i_OUTPUT_BIN}"
+	@cp -f ${bd}/BQN.exe "${i_OUTPUT}"
 else
-	@cp -f ${bd}/BQN "${i_OUTPUT_BIN}"
+	@cp -f ${bd}/BQN "${i_OUTPUT}"
 endif
 endif
 	@echo ${postmsg}
