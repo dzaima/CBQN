@@ -21,7 +21,7 @@
 /*internal.c*/D(eequal,"•internal.EEqual") M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") \
 /*internal.c*/A(internalTemp,"•internal.Temp") M(iHasFill,"•internal.HasFill") M(iKeep,"•internal.Keep") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
-/*  atithd.c*/D(hypot,"•math.Hypot") D(comb,"•math.Comb") D(gcd,"•math.GCD") D(lcm,"•math.LCM") D(atan2,"•math.Atan2") D(atan2ix,"•math.Atan2⁼") D(atan2iw,"•math.Atan2˜⁼") \
+/*  arithd.c*/D(hypot,"•math.Hypot") D(comb,"•math.Comb") D(gcd,"•math.GCD") D(lcm,"•math.LCM") D(atan2,"•math.Atan2") D(atan2ix,"•math.Atan2⁼") D(atan2iw,"•math.Atan2˜⁼") \
 /*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") \
 /*  arithm.c*/M(sinh,"•math.Sinh") M(cosh,"•math.Cosh") M(tanh,"•math.Tanh") M(asinh,"•math.Asinh") M(acosh,"•math.Acosh") M(atanh,"•math.Atanh") \
 /*  arithm.c*/M(cbrt,"•math.Cbrt") M(log2,"•math.Log2") M(log10,"•math.Log10") M(log1p,"•math.Log1p") M(expm1,"•math.Expm1") M(fact,"•math.Fact") M(logfact,"•math.LogFact") \
