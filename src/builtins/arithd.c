@@ -470,14 +470,19 @@ static f64 comb(f64 k, f64 n) { // n choose k
   }
   return exp(lgamma(n+1) - lgamma(k+1) - lgamma(j+1));
 }
-static f64 bqn_atan2(f64 w, f64 x) { return atan2(w+0, x+0); }
+static f64 bqn_atan2  (f64 x, f64 w) { return atan2(x+0, w+0); }
+static f64 bqn_atan2ix(f64 x, f64 w) { return w * tan(x); }
+static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 
 #define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
   if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
   P2(n)                                                \
-  thrM("•math." #N ": Unexpected argument types");     \
+  thrM("•math." N ": Unexpected argument types");      \
 }
-MATH(atan2,Atan2,bqn_atan2) MATH(hypot,Hypot,hypot) MATH(comb,Comb,comb)
+MATH(atan2,"Atan2",bqn_atan2)
+MATH(atan2ix,"Atan2⁼",bqn_atan2ix)
+MATH(atan2iw,"Atan2˜⁼",bqn_atan2iw)
+MATH(hypot,"Hypot",hypot) MATH(comb,"Comb",comb)
 #undef MATH
 
 static u64 gcd_u64(u64 a, u64 b) {
@@ -522,5 +527,6 @@ B lcm_c2(B t, B w, B x) {
 #undef P2
 
 void arithd_init() {
-  
+  c(BFn, bi_atan2)->iw = atan2iw_c2;
+  c(BFn, bi_atan2)->ix = atan2ix_c2;
 }
