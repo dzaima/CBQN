@@ -623,14 +623,14 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
       case sty_ptr: thrM("FFI: \"*\" unimplemented"); break;
-      case sty_u8:  { if(!q_fu8 (f)) thrM("FFI: u8 argument not exact" ); *( u8*)ptr = ( u8)f; break; }
-      case sty_i8:  { if(!q_fi8 (f)) thrM("FFI: i8 argument not exact" ); *( i8*)ptr = ( i8)f; break; }
-      case sty_u16: { if(!q_fu16(f)) thrM("FFI: u16 argument not exact"); *(u16*)ptr = (u16)f; break; }
-      case sty_i16: { if(!q_fi16(f)) thrM("FFI: i16 argument not exact"); *(i16*)ptr = (i16)f; break; }
-      case sty_u32: { if(!q_fu32(f)) thrM("FFI: u32 argument not exact"); *(u32*)ptr = (u32)f; break; }
-      case sty_i32: { if(!q_fi32(f)) thrM("FFI: i32 argument not exact"); *(i32*)ptr = (i32)f; break; }
-      case sty_u64: { if(!q_fu64(f)) thrM("FFI: u64 argument not exact"); u64 i=(u64)f; if (i>=(1ULL<<53))                 thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = i; break; }
-      case sty_i64: { if(!q_fi64(f)) thrM("FFI: i64 argument not exact"); i64 i=(i64)f; if (i>=(1LL<<53) || i<=-(1LL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = i; break; }
+      case sty_u8:  { if(!q_fu8 (f)) thrM("FFI: improper value for u8" ); *( u8*)ptr = ( u8)f; break; }
+      case sty_i8:  { if(!q_fi8 (f)) thrM("FFI: improper value for i8" ); *( i8*)ptr = ( i8)f; break; }
+      case sty_u16: { if(!q_fu16(f)) thrM("FFI: improper value for u16"); *(u16*)ptr = (u16)f; break; }
+      case sty_i16: { if(!q_fi16(f)) thrM("FFI: improper value for i16"); *(i16*)ptr = (i16)f; break; }
+      case sty_u32: { if(!q_fu32(f)) thrM("FFI: improper value for u32"); *(u32*)ptr = (u32)f; break; }
+      case sty_i32: { if(!q_fi32(f)) thrM("FFI: improper value for i32"); *(i32*)ptr = (i32)f; break; }
+      case sty_u64: { if(!q_fu64(f)) thrM("FFI: improper value for u64"); u64 i=(u64)f; if (i>=(1ULL<<53))                 thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = i; break; }
+      case sty_i64: { if(!q_fi64(f)) thrM("FFI: improper value for i64"); i64 i=(i64)f; if (i>=(1LL<<53) || i<=-(1LL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = i; break; }
       case sty_f32: *(float* )ptr = f; break;
       case sty_f64: *(double*)ptr = f; break;
     }
@@ -835,9 +835,10 @@ B libffiFn_c2(B t, B w, B x) {
       L##a = a(L);              \
       L##f = TIv(L##a,getU);    \
     } else if (FFI_CHECKS && bf->L##Len==0 && (ISX? 1 : !q_N(w)) && (isAtm(L) || RNK(L)!=1 || IA(L)!=0)) { \
-      thrF("FFI: " S " must %S", ISX? "be an empty list" : "either be an empty list, or not present"); \
+      thrF("FFI: " S " must %S", ISX? "be an empty list" : "either be an empty list, or not be present"); \
     }
   
+  if (FFI_CHECKS && bf->wLen!=0 && q_N(w)) thrM("FFI: 𝕨 must be present");
   PROC_ARG(0, w, W, "𝕨")
   PROC_ARG(1, x, X, "𝕩")
   

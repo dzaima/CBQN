@@ -96,16 +96,18 @@
 !"FFI: Array provided for &u32 contained ¯1" % f←@•FFI"&"‿"bqn_init"‿">&u32" ⋄ F ⋈¯1
 
 # bad scalars
-!"FFI: u8 argument not exact" % f←@•FFI""‿"bqn_init"‿">u8" ⋄ F 256
-!"FFI: u16 argument not exact" % f←@•FFI""‿"bqn_init"‿">u16" ⋄ F ¯1
-!"FFI: u32 argument not exact" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F ¯1
-!"FFI: u64 argument not exact" % f←@•FFI""‿"bqn_init"‿">u64" ⋄ F ¯1
-!"FFI: u32 argument not exact" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F 2⋆32
-!"FFI: u32 argument not exact" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F 1e20
+!"FFI: improper value for u8" % f←@•FFI""‿"bqn_init"‿">u8" ⋄ F 256
+!"FFI: improper value for u16" % f←@•FFI""‿"bqn_init"‿">u16" ⋄ F ¯1
+!"FFI: improper value for u32" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F ¯1
+!"FFI: improper value for u64" % f←@•FFI""‿"bqn_init"‿">u64" ⋄ F ¯1
+!"FFI: improper value for u32" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F 2⋆32
+!"FFI: improper value for u32" % f←@•FFI""‿"bqn_init"‿">u32" ⋄ F 1e20
 !"FFI: u64 argument value ≥ 2⋆53" % f←@•FFI""‿"bqn_init"‿">u64" ⋄ F 2⋆53
 !"FFI: i64 argument absolute value ≥ 2⋆53" % f←@•FFI""‿"bqn_init"‿">i64" ⋄ F 2⋆53
 !"FFI: i64 argument absolute value ≥ 2⋆53" % f←@•FFI""‿"bqn_init"‿">i64" ⋄ F -2⋆53
-
+!"FFI: improper value for i32" % f←@•FFI""‿"bqn_init"‿">𝕨i32"‿">i64" ⋄ @ F 3
+!"FFI: improper value for i32" % f←@•FFI""‿"bqn_init"‿">𝕨i32"‿">i64" ⋄ ⟨1⟩ F 3
+!"FFI: improper value for i64" % f←@•FFI""‿"bqn_init"‿"i64" ⋄ F ⟨@⟩
 
 
 # bad overall argument separation
@@ -118,8 +120,11 @@
 !"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init" ⋄ F ⟨1⟩
 !"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init" ⋄ F @
 !"FFI: 𝕩 must be an empty list" % f←@•FFI""‿"bqn_init"‿"𝕨i32"‿"𝕨i32" ⋄ 1‿2 F @
-!"FFI: 𝕨 must either be an empty list, or not present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ ⟨1,2⟩ F 1‿2‿3‿0
-!"FFI: 𝕨 must either be an empty list, or not present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ @ F 1‿2‿3‿0
+!"FFI: 𝕨 must either be an empty list, or not be present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ ⟨1,2⟩ F 1‿2‿3‿0
+!"FFI: 𝕨 must either be an empty list, or not be present" % f←@•FFI""‿"bqn_init"‿"*i8" ⋄ @ F 1‿2‿3‿0
+!"FFI: 𝕨 must be present" % f←@•FFI""‿"bqn_init"‿"𝕨i32"‿"𝕨i32" ⋄ F ⟨⟩
+!"FFI: 𝕨 must be present" % f←@•FFI""‿"bqn_init"‿"𝕨i32"‿"i32" ⋄ F ⟨3⟩
+!"FFI: 𝕨 must be present" % f←@•FFI""‿"bqn_init"‿">𝕨i32"‿">i32" ⋄ F 3
 
 
 
@@ -166,4 +171,5 @@
 !"FFI: ""*u64"" argument type not yet implemented" % f←@•FFI""‿"bqn_init"‿">&u64" ⋄ F ↕10
 !"FFI: Pointer element type not implemented" % f←@•FFI""‿"bqn_init"‿">**u64" ⋄ F ⟨↕2⟩
 
-
+# unchecked stuff
+# !"FFI: Bad array corresponding to ""i64:c8"": expected 8 elements, got 1" % f←@•FFI""‿"bqn_init"‿">i64:c8" ⋄ F 8⥊2
