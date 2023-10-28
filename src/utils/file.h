@@ -24,7 +24,7 @@ bool path_remove(B path); // consumes
 
 void path_wChars(B path, B x); // consumes path
 void path_wBytes(B path, B x); // consumes path
-void file_wBytes(FILE* file, B name, B x); // doesn't consume
+void file_wBytes(FILE* file, char* name, B x); // doesn't consume
 
 B path_list(B path); // consumes
 char path_type(B path); // consumes; errors only if path isn't a string

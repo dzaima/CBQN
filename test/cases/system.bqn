@@ -1,4 +1,4 @@
-# not tested here: •Out •Show •Exit •term •GetLine •Cmp •CurrentError •FFI •internal.HeapDump •file.MapBytes
+# not tested here: •Out •Show •Exit •GetLine •Cmp •CurrentError •FFI •internal.HeapDump •file.MapBytes
 
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
@@ -62,7 +62,7 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 
 # files; tests are ordered!
 {•file.Exists 𝕩? ⊑•SH⟨"rmdir", •file.At 𝕩⟩; 0} "testdirNested" %% 0
-•file.Remove⍟•file.Exists¨ "testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn" ⋄ 1 %% 1
+•file.Remove⍟•file.Exists¨ "testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn"‿"badwrite" ⋄ 1 %% 1
 •file.At "/a/b" %% "/a/b"
 ! (•file.At "a/b") ≡ •file.path •file.At "a/b"
 "a/b" •file.At "c/d" %% "a/b/c/d"
@@ -85,6 +85,9 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 !"•file.Bytes: 𝕩 must be a list" % "testfile.bqn" •file.Bytes <'a'
 !"Path wasn't a list of characters" % 'a' •FChars "hi"
 !"Path wasn't a list of characters" % (4‿2⥊"testfile.bqn") •file.Chars "hi"
+!"Expected character" % "badwrite"•FChars ""‿""
+!"Expected character" % "badwrite"•FLines ⟨⟨"foo"⟩⟩
+!"•file.Chars: 𝕩 must be a list of characters" % "badwrite"•FChars @
 
 ! {𝕩≡•file.Name 𝕩 •FChars         "abc"∾(@+10)∾"def𝕩"}"testfile.bqn"
 ! {𝕩≡•file.Name 𝕩 •FBytes •ToUTF8 "abc"∾(@+10)∾"def𝕩"}"testfile2.bqn"
@@ -111,10 +114,14 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 •file.Remove "testfile.bqn" %% 1
 •file.Remove "testfile2.bqn" %% 1
 •file.Remove "testfile3B.bqn" %% 1
-"testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn" ∊ •file.List "." %% 0‿0‿0
+"testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn"‿"badwrite" ∊ •file.List "." %% 0‿0‿0‿0
 
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •file.RealPath "/dev/file that doesn't exist"
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •Import "/dev/file that doesn't exist"
+
+# some of •term
+!"Expected character" % •term.OutRaw 2⥊{⇐}
+!"•term.ErrRaw: 𝕩 must be a list" % •term.ErrRaw 2‿2⥊0
 
 
 

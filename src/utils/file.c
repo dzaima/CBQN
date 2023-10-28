@@ -217,37 +217,44 @@ void free_chars(CharBuf b) {
   if (b.alloc) TFREE(b.data);
 }
 
-void path_wChars(B path, B x) { // consumes path
+static u64 file_openWriteClose(B path, char* data, u64 len) {
   FILE* f = file_open(path, "write to", "wb");
-  
+  u64 written = fwrite(data, 1, len, f);
+  fclose(f);
+  return written;
+}
+static void file_checkWritten(B path, u64 written, u64 len) {
+  if (written != len) thrF("Error writing to file \"%R\"", path);
+}
+
+void path_wChars(B path, B x) { // consumes path
   u64 len = utf8lenB(x);
   TALLOC(char, val, len);
   toUTF8(x, val);
   
-  if (fwrite(val, 1, len, f) != len) { fclose(f); thrF("Error writing to file \"%R\"", path); }
+  u64 written = file_openWriteClose(path, val, len);
   TFREE(val);
+  file_checkWritten(path, written, len);
+  
   dec(path);
-  fclose(f);
-}
-void file_wBytes(FILE* f, B name, B x) {
-  u64 len = IA(x);
-  
-  CharBuf buf = get_chars(x);
-  
-  if (fwrite(buf.data, 1, len, f) != len) {
-    if (q_N(name)) thrM("Error writing to file");
-    else thrF("Error writing to file \"%R\"", name);
-  }
-  
-  free_chars(buf);
 }
 void path_wBytes(B path, B x) { // consumes path
-  FILE* f = file_open(path, "write to", "wb");
-  file_wBytes(f, path, x);
-  fclose(f);
+  u64 len = IA(x);
+  CharBuf buf = get_chars(x);
+  
+  u64 written = file_openWriteClose(path, buf.data, len);
+  free_chars(buf);
+  file_checkWritten(path, written, len);
+  
   dec(path);
 }
 
+void file_wBytes(FILE* f, char* name, B x) {
+  u64 len = IA(x);
+  CharBuf buf = get_chars(x);
+  if (fwrite(buf.data, 1, len, f) != len) thrF("Error writing data to %S", name);
+  free_chars(buf);
+}
 B path_list(B path) {
   DIR* d = dir_open(path);
   struct dirent *c;

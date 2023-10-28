@@ -1204,12 +1204,12 @@ B tFlush_c1(B t, B x) {
 }
 B tOutRaw_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•term.OutRaw: 𝕩 must be a list");
-  file_wBytes(stdout, bi_N, x);
+  file_wBytes(stdout, "stdout", x);
   return x;
 }
 B tErrRaw_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•term.ErrRaw: 𝕩 must be a list");
-  file_wBytes(stderr, bi_N, x);
+  file_wBytes(stderr, "stderr", x);
   return x;
 }
 
