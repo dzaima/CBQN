@@ -70,6 +70,7 @@ Alternatively, `build/build` (aka build.bqn) can be invoked manually, though not
 - `make wasi-reactor-o3` - build producing a WASI Reactor
 - `make debug` - unoptimized build with extra assertion checks (also includes `-g`)
 - `make static-bin` - build a statically linked executable (for a fully standalone binary, try `make static-bin CC=musl-gcc REPLXX=0`)
+- `make static-lib` - build a static library archive
 
 All of the above will go through build.bqn. If that causes problems, `make o3-makeonly` or `make c-makeonly` can be used. These still enable REPLXX by default, but do not support Singeli. Furthermore, these targets don't support some of the build flags that the others do.
 
