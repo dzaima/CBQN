@@ -208,7 +208,13 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 0 (•MakeRand 0).Subset 0 %% ⟨⟩
 {!(∧•rand.Deal 𝕩)≡↕𝕩}¨ ⥊ ¯1‿0‿1+⌜2⋆↕22 # %SLOW
 !"(rand).Range: Result rank too large (256≡≢𝕨)" % (256⥊1) •rand.Range 0
-! ≡˝ a←{r←•MakeRand 𝕩 ⋄ ⟨r.Range 1e9, 100 r.Range 1e9, r.Deal 100, 100 r.Deal 200, 100 r.Deal 200⟩}¨ 2‿2⥊↕2 ⋄ !∘≢¨´ ⊏a
+! ≡˝ a←{r←•MakeRand 𝕩 ⋄ ⟨r.Range 1e9, 100 r.Range 1e9, r.Deal 100, 100 r.Deal 200, 100 r.Deal 200, 100 r.Subset 200⟩}¨ 2‿2⥊↕2 ⋄ !∘≢¨´ ⊏a
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 800 r.Subset 1000}¨ ↕4
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 50 r.Subset 10000}¨ ↕4
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 10    r.Range 10000}¨ ↕4
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 10‿10 r.Range 128}¨ ↕4
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊:     r.Deal 1000}¨ ↕4
+r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 
 # •bit
 !"•bit._cast: 𝕩 must have rank at least 1" % 8‿1 •bit._cast 123

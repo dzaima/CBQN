@@ -596,7 +596,7 @@ B rand_subset_c2(B t, B w, B x) {
     }
     s = taga(cpyBitArr(s));
     if (invert) s = bit_negate(s);
-    return C1(slash, s);
+    r = C1(slash, s);
   } else {
     // Sorted "hash" set
     u64 sh = 0;
