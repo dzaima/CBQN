@@ -63,6 +63,19 @@ static inline u64 hash64(u64 x) {
   return x;
 }
 
+static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+
+#if SINGELI
+  #define SINGELI_FILE selfsearch
+  #include "../utils/includeSingeli.h"
+
+  #define TRY_HASHTAB_RET(NAME, W, RET) \
+    if (NAME##_c1_hash##W(rp, (u##W*)xv, n)) { decG(x); return RET; }
+#else
+  #define TRY_HASHTAB_RET(NAME, W, RET) (void)0;
+#endif
+
 static inline bool use_sorted(B x, u8 logw) {
   if (!FL_HAS(x, fl_asc|fl_dsc)) return 0;
   if (logw==6) return TI(x, elType) == el_f64;
@@ -146,73 +159,6 @@ u8 radix_offsets_2_usz(usz* c0, u32* v0, usz n) {
   }                                                                                             \
   decG(x); TFREE(alloc);
 
-static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
-static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
-
-// Resizing hash table, with fallback
-#define SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, AUXSIZE, AUXINIT, AUXEXTEND, AUXMOVE) \
-  usz log = 64 - CLZ(n);                                                 \
-  usz msl = (64 - CLZ(n+n/2)) + 1; if (RAD && msl>20) msl=20;            \
-  usz sh = W - (msl<14? msl : 12+(msl&1)); /* Shift to fit to table */   \
-  usz sz = 1 << (W - sh); /* Initial size */                             \
-  usz msz = 1ull << msl;  /* Max sz       */                             \
-  usz b = 64;  /* Block size */                                          \
-  /* Resize or abort if more than 1/2^thresh collisions/element */       \
-  usz thresh = THRESH;                                                   \
-  /* Filling e slots past the end requires e*(e+1)/2 collisions, so */   \
-  /* n entries with <2 each can fill <sqrt(4*n) */                       \
-  usz ext = n<=b? n : b + (1ull << (log/2 + 1));                         \
-  TALLOC(u8, halloc, (msz+ext)*(sizeof(T)+AUXSIZE));                     \
-  T* hash = (T*)halloc + msz-sz;                                         \
-  T x0 = hash##W(xp[0]); rp[0] = RES0;                                   \
-  memset##W(hash, x0, sz+ext);                                           \
-  AUXINIT                                                                \
-  usz cc = 0; /* Collision counter */                                    \
-  usz i=1; while (1) {                                                   \
-    usz e = n-i>b? i+b : n;                                              \
-    for (; i < e; i++) {                                                 \
-      T h = hash##W(xp[i]); T j0 = h>>sh, j = j0; T k;                   \
-      while (k=hash[j], k!=h & k!=x0) j++;                               \
-      cc += j-j0;                                                        \
-      RESWRITE                                                           \
-    }                                                                    \
-    if (i == n) break;                                                   \
-    i64 dc = (i64)cc - ((THRESHMUL*i)>>thresh);                          \
-    if (dc >= 0) {                                                       \
-      if (sz == msz || (RAD && i < n/2 && sz >= 1<<18)) break; /*Abort*/ \
-      /* Avoid resizing if close to the end */                           \
-      if (cc<STOP && (n-i)*dc < (i*((i64)n+i))>>(5+log-(W-sh))) continue;\
-      /* Resize hash, factor of 4 */                                     \
-      usz m = 2;                                                         \
-      usz dif = sz*((1<<m)-1);                                           \
-      sh -= m; sz <<= m;                                                 \
-      hash -= dif;                                                       \
-      usz j = 0;                                                         \
-      cc = 0;                                                            \
-      memset##W(hash, x0, dif);                                          \
-      AUXEXTEND                                                          \
-      for (j = dif; j < sz + ext; j++) {                                 \
-        T h = hash[j]; if (h==x0) continue; hash[j] = x0;                \
-        T k0 = h>>sh, k = k0; while (hash[k]!=x0) k++;                   \
-        cc += k-k0;                                                      \
-        hash[k] = h; AUXMOVE                                             \
-      }                                                                  \
-      if (cc >= STOP) break;                                             \
-      thresh = THRESH;                                                   \
-    }                                                                    \
-  }                                                                      \
-  TFREE(halloc);                                                         \
-  if (i==n) { decG(x); return RESULT; }
-#define SELFHASHTAB_VAL(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, INIT) \
-  SELFHASHTAB(T, W, RAD, STOP, RES0, RESULT, RESWRITE, THRESHMUL, THRESH, \
-    /*AUXSIZE*/sizeof(u32),                                \
-    /* AUXINIT */                                          \
-    u32* val = (u32*)(hash+sz+ext) + msz-sz;               \
-    memset32(val, 0, sz+ext);                              \
-    INIT ,                                                 \
-    /*AUXEXTEND*/val -= dif; memset32(val, 0, dif); ,      \
-    /*AUXMOVE*/u32 v = val[j]; val[j] = 0; val[k] = v;)
-
 extern void (*const simd_mark_firsts_u8)(void*,uint64_t,void*,void*);
 extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
@@ -268,14 +214,11 @@ B memberOf_c1(B t, B x) {
   } }
   if (lw==4) { if (n<8) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-  #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB( \
-    T, W, RAD, STOP,                                    \
-    1, taga(cpyBitArr(r)), hash[j]=h; rp[i]=k!=h;,      \
-    1, THRESH, 0,,,)
+  #define TRY_HASHTAB(W) TRY_HASHTAB_RET(memberOf, W, taga(cpyBitArr(r)))
   if (lw==5) {
     if (n<12) { BRUTE(32); }
     i8* rp; B r = m_i8arrv(&rp, n);
-    HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<15)? 3 : 5)
+    TRY_HASHTAB(32)
 
     // Radix-assisted lookup when hash table gives up
     usz rx = 256, tn = 1<<16; // Radix; table length
@@ -301,10 +244,10 @@ B memberOf_c1(B t, B x) {
   if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<20) { BRUTE(64); }
     i8* rp; B r = m_i8arrv(&rp, n);
-    HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
+    TRY_HASHTAB(64)
     decG(r); // Fall through
   }
-  #undef HASHTAB
+  #undef TRY_HASHTAB
   #undef BRUTE
   
   if (RNK(x)>1) {
@@ -377,18 +320,11 @@ B count_c1(B t, B x) {
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-  #define HASHTAB(T, W, RAD, STOP, THRESH) T* xp = (T*)xv; SELFHASHTAB_VAL( \
-    T, W, RAD, STOP,                                       \
-    /*RES0*/0, /*RETURN*/num_squeeze(r),                   \
-    /* RESWRITE */                                         \
-    bool e0=h==x0; rp[i]=val[j]+(ctr0&-(u32)e0);           \
-    hash[j]=h; val[j]+=!e0; ctr0+=e0; ,                    \
-    /*THRESHMUL*/1, THRESH,                                \
-    /*INIT*/u32 ctr0 = 1;)
+  #define TRY_HASHTAB(W) TRY_HASHTAB_RET(count, W, num_squeeze(r))
   if (lw==5) {
     if (n<20) { BRUTE(32); }
     i32* rp; B r = m_i32arrv(&rp, n);
-    HASHTAB(u32, 32, 1, n/2, sz==msz? 1 : sz>=(1<<14)? 3 : 5)
+    TRY_HASHTAB(32)
     // Radix-assisted lookup
     usz rx = 256, tn = 1<<16; // Radix; table length
     u32* v0 = (u32*)xv;
@@ -413,10 +349,10 @@ B count_c1(B t, B x) {
   if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<20) { BRUTE(64); }
     i32* rp; B r = m_i32arrv(&rp, n);
-    HASHTAB(u64, 64, 0, n, sz==msz? 0 : sz>=(1<<18)? 0 : sz>=(1<<14)? 3 : 5)
+    TRY_HASHTAB(64)
     decG(r); // Fall through
   }
-  #undef HASHTAB
+  #undef TRY_HASHTAB
   #undef BRUTE
   
   if (RNK(x)>1) {
@@ -485,18 +421,19 @@ B indexOf_c1(B t, B x) {
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-  
-  #define HASHTAB(T, W, THRESH) SELFHASHTAB_VAL(T, W, 0, 2*n, \
-    /*RES0*/0, /*RETURN*/reduceI32WidthBelow(r, ctr),      \
-    /* RESWRITE */                                         \
-    if (k!=h) { val[j]=ctr++; hash[j]=h; } rp[i]=val[j]; , \
-    /*THRESHMUL*/2, THRESH,                                \
-    /*INIT*/u32 ctr = 1;)
+
+  #if SINGELI
+    #define TRY_HASHTAB(W) \
+      u32 ctr = indexOf_c1_hash##W(rp, (u##W*)xv, n); \
+      if (ctr>0) { decG(x); return reduceI32WidthBelow(r, ctr); }
+  #else
+    #define TRY_HASHTAB(W) (void)0;
+  #endif
   if (lw==5) {
     if (n<12) { BRUTE(32); }
     B r;
     i32* rp; r = m_i32arrv(&rp, n);
-    i32* xp = tyany_ptr(x);
+    i32* xp = xv;
     i32 min=I32_MAX, max=I32_MIN;
     for (usz i = 0; i < n; i++) {
       i32 c = xp[i];
@@ -512,17 +449,16 @@ B indexOf_c1(B t, B x) {
       decG(x);
       return reduceI32WidthBelow(r, u);
     }
-    HASHTAB(u32, 32, sz==msz? 0 : sz>=(1<<18)? 1 : sz>=(1<<14)? 4 : 6)
+    TRY_HASHTAB(32)
     decG(r); // Fall through
   }
   if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<16) { BRUTE(64); }
     i32* rp; B r = m_i32arrv(&rp, n);
-    u64* xp = tyany_ptr(x);
-    HASHTAB(u64, 64, sz==msz? 0 : sz>=(1<<17)? 1 : sz>=(1<<13)? 4 : 6)
+    TRY_HASHTAB(64)
     decG(r); // Fall through
   }
-  #undef HASHTAB
+  #undef TRY_HASHTAB
   #undef BRUTE
   #undef DOTAB
   
