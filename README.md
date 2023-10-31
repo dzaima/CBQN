@@ -27,7 +27,7 @@ Thus, performance can be significantly improved by targeting the specific CPU vi
 
 On x86-64, a native build will enable usage of AVX2 (i.e. ability to use 256-bit SIMD vectors instead of 128-bit ones, among other things), and BMI2 if available. But, on aarch64, NEON is always available, so a native build won't give significant benefits.
 
-To produce a binary utilizing AVX2 not specific to any processor, it's possible to do `make o3 has=avx2`. (`has='avx2 bmi2'` for targeting both AVX2 & BMI2)
+To produce a binary utilizing AVX2 not specific to any processor, it's possible to do `make o3 has=avx2`. (`has=avx2,bmi2` for targeting both AVX2 & BMI2)
 
 Additionally, on AMD Zen 1 & Zen 2, `make o3n has=slow-pdep` will further improve certain builtins (Zen 1/2 support BMI2, but their implementation of `pdep`/`pext` is so slow that not using it for certain operations is very beneficial).
 

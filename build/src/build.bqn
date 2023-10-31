@@ -76,7 +76,8 @@ onExitList ← ⟨⟩
 OnExit ← {𝕊: {𝕏@}¨ onExitList}
 _assert_ ← { 𝔾𝕩?𝕩; Log 𝕨𝔽𝕩 ⋄ OnExit@ ⋄ •Exit 1}
 
-SepArgs ← {' ' ((¬-˜⊢×·+`»⊸>)∘≠⊔⊢) 𝕩}
+Split ← ((¬-˜⊢×·+`»⊸>)∘≠⊔⊢)
+SepArgs ← ' '⊸Split
 Lowercase ← {𝕩 - (-´"Aa")×(𝕩≥'A')∧𝕩≤'Z'}
 Uppercase ← {𝕩 - (-´"aA")×(𝕩≥'a')∧𝕩≤'z'}
 
@@ -229,7 +230,7 @@ po ← { # parsed options
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
-  has ⇐ Lowercase GetOpt "has"
+  has ⇐ ∾ ','Split¨Lowercase GetOpt "has"
   has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊has)/⋈"bmi2"
   {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
   {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
