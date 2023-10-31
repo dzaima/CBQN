@@ -43,26 +43,6 @@ extern B mul_c2(B, B, B);
 extern B scan_add_bool(B x, u64 ia);
 extern B scan_max_num(B x, u8 xe, u64 ia);
 
-// These hashes are stored in tables and must be invertible!
-#if defined(__SSE4_2__)
-#include <x86intrin.h>
-static inline u32 hash32(u32 x) { return _mm_crc32_u32(0x973afb51, x); }
-#else
-// Murmur3
-static inline u32 hash32(u32 x) {
-  x ^= x >> 16; x *= 0x85ebca6b;
-  x ^= x >> 13; x *= 0xc2b2ae35;
-  x ^= x >> 16;
-  return x;
-}
-#endif
-static inline u64 hash64(u64 x) {
-  x ^= x >> 33; x *= 0xff51afd7ed558ccd;
-  x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53;
-  x ^= x >> 33;
-  return x;
-}
-
 static NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
 static NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
 

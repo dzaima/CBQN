@@ -2,15 +2,53 @@ include './base'
 include './cbqnDefs'
 local include 'skin/cext'
 
-# Size-specific functions defined in C
-def hash_val{v:T} = emit{T, merge{'hash',fmtnat{width{T}}}, v}
+# Defined in C
 def memset{p:pT, v, l} = {
   emit{void, merge{'memset',fmtnat{elwidth{pT}}}, p, v, l}
 }
 
+# These hashes are stored in tables and must be invertible!
+# Murmur3
+def hash_val{x0:u32} = {
+  x := x0
+  x ^= x >> 16; x *= 0x85ebca6b
+  x ^= x >> 13; x *= 0xc2b2ae35
+  x ^= x >> 16; x
+}
+def hash_val{x0:u64} = {
+  x := x0
+  x ^= x >> 33; x *= 0xff51afd7ed558ccd
+  x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53
+  x ^= x >> 33; x
+}
+# CRC32
+def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
+  emit{u32, '_mm_crc32_u32', 0x973afb51, x}
+}
+
+def hash_resize{hash,vals, x0,sh,sz,ext,cc, m} = {
+  dif := sz*((1<<m)-1)
+  sh -= m; sz <<= m
+  hash -= dif
+  j:usz = 0
+  cc = 0
+  memset{hash, x0, dif}
+  each{{val} => { val -= dif; memset{val, 0, dif} }, vals}
+  @for (j from dif to sz + ext) {
+    h := hash->j
+    if (h != x0) {
+      hash <-{j} x0
+      k0 := h>>sh; k := k0; while (hash->k!=x0) ++k
+      cc += cast_i{usz, k-k0}
+      hash <-{k} h
+      each{{val} => { v := val->j; val <-{j} 0; val <-{k} v }, vals}
+    }
+  }
+}
+
 def names = tup{'memberOf', 'count', 'indexOf'}
 def prims = tup{'∊',        '⊒',     '⊐'      }
-def map{f,t,v} = if (v==tupsel{0,f}) tupsel{0,t} else map{slice{f,1}, slice{t,1}, v}
+def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
 def to_prim = map{names, prims, .}
 
 # Resizing hash table, with fallback
@@ -56,31 +94,27 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   sze := sz+ext  # Initial table to end of allocation
   hash := *T~~halloc + szo
   memset{hash, x0, sze}
-  val := *u32~~(hash+sze) + szo
-  if (aux) { memset{val, 0, sze} }
+  vals := if (aux) tup{*u32~~(hash+sze) + szo} else tup{}
+  each{memset{., 0, sze}, vals}
 
   def {output, write_res} = match (prim) {
     {('∊')} => tup{{b}=>b, {j,h,k,x0} => { hash<-{j}h; k!=h }}
     {('⊒')} => {
-      ctr0:u32 = 1
-      tup{
-        {b}=>b,
-        {j,h,k,x0} => {
-          e0:=promote{u32,h==x0}; vj:=val->j; c0:=ctr0
-          hash<-{j}h; val<-{j}vj+(e0^1); ctr0+=e0
-          vj + (c0 & -e0)
-        }
+      ctr0:u32 = 1; def {val} = vals
+      def res{j,h,k,x0} = {
+        e0:=promote{u32,h==x0}; vj:=val->j; c0:=ctr0
+        hash<-{j}h; val<-{j}vj+(e0^1); ctr0+=e0
+        vj + (c0 & -e0)
       }
+      tup{{b}=>b, res}
     }
     {('⊐')} => {
-      ctr:u32 = 1
-      tup{
-        {b}=>promote{u32,b}*ctr,
-        {j,h,k,x0} => {
-          if (k!=h) { val<-{j}ctr; ++ctr; hash<-{j}h }
-          val->j
-        }
+      ctr:u32 = 1; def {val} = vals
+      def res{j,h,k,x0} = {
+        if (k!=h) { val<-{j}ctr; ++ctr; hash<-{j}h }
+        val->j
       }
+      tup{{b}=>promote{u32,b}*ctr, res}
     }
   }
 
@@ -96,32 +130,15 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
       ++i
     }
     if (i == n) goto{break}
-    def p64{a} = i64~~promote{u64,a}
+    # Check collision counter and possibly resize
+    def p64 = promote{u64,.}
     dc := p64{cc} - p64{div_thresh{i}}
-    if (dc >= 0) {
+    if (i64~~dc >= 0) {
       if (sz == msz) goto{break} # Abort
       if (has_radix and i < n/2 and sz >= 1<<18) goto{break}
       # Avoid resizing if close to the end
-      if (not (cc<stop and p64{n-i}*dc < (p64{i}*p64{n+i})>>(5+log-(wt-sh)))) {
-        # Resize hash, factor of 4
-        def m = 2
-        dif := sz*((1<<m)-1)
-        sh -= m; sz <<= m
-        hash -= dif
-        j:usz = 0
-        cc = 0
-        memset{hash, x0, dif}
-        if (aux) { val -= dif; memset{val, 0, dif} }
-        @for (j from dif to sz + ext) {
-          h := hash->j
-          if (h != x0) {
-            hash <-{j} x0
-            k0 := h>>sh; k := k0; while (hash->k!=x0) ++k
-            cc += cast_i{usz, k-k0}
-            hash <-{k} h
-            if (aux) { v := val->j; val <-{j} 0; val <-{k} v }
-          }
-        }
+      if (cc>=stop or p64{n-i}*dc >= (p64{i}*p64{n+i})>>(5+log-(wt-sh))) {
+        hash_resize{hash,vals, x0,sh,sz,ext,cc, 2} # Resize hash, factor of 4
         if (cc >= stop) goto{break}
         set_thresh{}
       }
