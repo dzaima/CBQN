@@ -28,7 +28,7 @@ void ryu_init(void) { }
 #include "ryu/ryu_common.h"
 
 // Include either the small or the full lookup tables depending on the mode.
-#if defined(RYU_OPTIMIZE_SIZE)
+#if RYU_OPTIMIZE_SIZE
   #include "ryu/d2s_small_table.h"
 #else
   #include "ryu/d2s_full_table.h"
@@ -83,7 +83,7 @@ static inline floating_decimal_64 d2d(const uint64_t mantissa, const uint32_t ex
     e10 = (int32_t) q;
     const int32_t k = DOUBLE_POW5_INV_BITCOUNT + pow5bits((int32_t) q) - 1;
     const int32_t i = -e2 + (int32_t) q + k;
-#if defined(RYU_OPTIMIZE_SIZE)
+#if RYU_OPTIMIZE_SIZE
     uint64_t pow5[2];
     double_computeInvPow5(q, pow5);
     vr = mulShiftAll64(m2, pow5, i, &vp, &vm, mmShift);
@@ -118,7 +118,7 @@ static inline floating_decimal_64 d2d(const uint64_t mantissa, const uint32_t ex
     const int32_t i = -e2 - (int32_t) q;
     const int32_t k = pow5bits(i) - DOUBLE_POW5_BITCOUNT;
     const int32_t j = (int32_t) q - k;
-#if defined(RYU_OPTIMIZE_SIZE)
+#if RYU_OPTIMIZE_SIZE
     uint64_t pow5[2];
     double_computePow5(i, pow5);
     vr = mulShiftAll64(m2, pow5, j, &vp, &vm, mmShift);
@@ -558,7 +558,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
     // To that end, we use the DOUBLE_POW5_SPLIT table.
     int j = e2 - e10 - ceil_log2pow5(e10) + DOUBLE_POW5_BITCOUNT;
     assert(j >= 0);
-#if defined(RYU_OPTIMIZE_SIZE)
+#if RYU_OPTIMIZE_SIZE
     uint64_t pow5[2];
     double_computePow5(e10, pow5);
     m2 = mulShift64(m10, pow5, j);
@@ -575,7 +575,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
   } else {
     e2 = floor_log2(m10) + e10 - ceil_log2pow5(-e10) - (DOUBLE_MANTISSA_BITS + 1);
     int j = e2 - e10 + ceil_log2pow5(-e10) - 1 + DOUBLE_POW5_INV_BITCOUNT;
-#if defined(RYU_OPTIMIZE_SIZE)
+#if RYU_OPTIMIZE_SIZE
     uint64_t pow5[2];
     double_computeInvPow5(-e10, pow5);
     m2 = mulShift64(m10, pow5, j);

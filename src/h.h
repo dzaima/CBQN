@@ -1,43 +1,31 @@
 #pragma once
 
-#ifdef DEBUG
-  // #define DEBUG_VM
-#endif
 #ifndef CATCH_ERRORS
-  #define CATCH_ERRORS 1 // whether to allow catching errors
-#endif                   // currently means refcounts won't be accurate and can't be tested for
+  #define CATCH_ERRORS 1
+#endif
 #ifndef ENABLE_GC
-  #define ENABLE_GC    1 // whether to ever garbage-collect
-#endif
-#ifndef TYPED_ARITH
-  #define TYPED_ARITH  1 // whether to use typed arith
-#endif
-#ifndef VM_POS
-  #define VM_POS       1 // whether to store detailed execution position information for stacktraces
+  #define ENABLE_GC 1
 #endif
 #ifndef CHECK_VALID
-  #define CHECK_VALID  1 // whether to check for valid arguments in places where that would be detrimental to performance
-#endif                   // e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc
+  #define CHECK_VALID 1
+#endif
 #ifndef EACH_FILLS
-  #define EACH_FILLS   0 // whether to try to squeeze out fills for ¨ and ⌜
+  #define EACH_FILLS 0
 #endif
 #ifndef SFNS_FILLS
-  #define SFNS_FILLS   1 // whether to generate fills for structural functions (∾, ≍, etc)
-#endif
-#ifndef FAKE_RUNTIME
-  #define FAKE_RUNTIME 0 // whether to disable the self-hosted runtime
+  #define SFNS_FILLS 1
 #endif
 #ifndef MM
-  #define MM           1 // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
+  #define MM 1
 #endif
 #ifndef HEAP_MAX
-  #define HEAP_MAX ~0ULL // default heap max size
+  #define HEAP_MAX ~0ULL
 #endif
 #ifndef FORMATTER
-  #define FORMATTER 1  // use self-hosted formatter for output
+  #define FORMATTER 1
 #endif
 #ifndef RANDSEED
-  #define RANDSEED 0   // random seed used to make •rand (0 for using time)
+  #define RANDSEED 0
 #endif
 #ifndef FFI
   #define FFI 2
@@ -45,25 +33,6 @@
     #define CBQN_EXPORT 1
   #endif
 #endif
-
-// #define ALLOC_STAT   // store basic allocation statistics
-// #define ALLOC_SIZES  // store per-type allocation size statistics
-// #define USE_VALGRIND // whether to mark freed memory for valgrind
-// #define DONT_FREE    // don't actually ever free objects, such that they can be printed after being freed for debugging
-// #define OBJ_COUNTER  // store a unique allocation number with each object for easier analysis
-// #define ALL_R0       // use all of r0.bqn for runtime_0
-// #define ALL_R1       // use all of r1.bqn for runtime
-
-// #define JIT_START 2  // number of calls for when to start JITting (x86_64-only); default is 2, defined in vm.h
-// -1: never JIT
-//  0: JIT everything
-// >0: JIT after n non-JIT invocations; max ¯1+2⋆16
-
-// #define LOG_GC    // log GC stats
-// #define RT_PERF   // time runtime primitives
-// #define RT_VERIFY // compare native and runtime versions of primitives
-// #define NO_RT     // whether to completely disable self-hosted runtime loading
-
 
 #ifdef __OpenBSD__
   #define __wchar_t __wchar_t2 // horrible hack for BSD
@@ -77,7 +46,7 @@
 #if CATCH_ERRORS
 #include <setjmp.h>
 #endif
-#ifdef HEAP_VERIFY
+#if HEAP_VERIFY
   #undef CATCH_ERRORS
   #define CATCH_ERRORS 0
 #endif
@@ -92,13 +61,13 @@
   #define PROPER_FILLS 0
 #endif
 
-#if defined(ALL_R0) || defined (ALL_R1)
+#if ALL_R0 || ALL_R1
   #define WRAP_NNBI 1
 #endif
 
-#if defined(RT_PERF) || defined(RT_VERIFY)
+#if RT_PERF || RT_VERIFY
   #define RT_WRAP 1
-  #if defined(RT_PERF) && defined(RT_VERIFY)
+  #if RT_PERF && RT_VERIFY
     #error "can't have both RT_PERF and RT_VERIFY"
   #endif
 #endif
@@ -312,7 +281,7 @@ typedef struct Value {
   u8 flags;  // self-hosted primitive index (plus 1) for callable, fl_* flags for arrays
   u8 type;   // used by TI, among generally knowing what type of object this is
   ur extra;  // whatever object-specific stuff. Rank for arrays, internal id for functions
-  #ifdef OBJ_COUNTER
+  #if OBJ_COUNTER
   u64 uid;
   #endif
 } Value;
@@ -322,7 +291,7 @@ typedef struct Arr {
   usz* sh;
 } Arr;
 
-#ifdef DEBUG
+#if DEBUG
   NOINLINE NORETURN void assert_fail(char* expr, char* file, int line, const char fn[]);
   #define assert(X) do {if (!(X)) assert_fail(#X, __FILE__, __LINE__, __PRETTY_FUNCTION__);} while(0)
   B VALIDATE(B x);
@@ -450,7 +419,7 @@ void freeThrown(void);
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 
 void print_vmStack(void);
-#ifdef DEBUG
+#if DEBUG
   B validate(B x);
   Value* validateP(Value* x);
 #endif

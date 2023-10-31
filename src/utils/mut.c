@@ -55,10 +55,10 @@ NOINLINE void mut_to(Mut* m, u8 n) {
     m->fns = &mutFns[n];
     SPRNK(m->val, 1);
     m->val->sh = &m->val->ia;
-    #ifdef USE_VALGRIND
+    #if USE_VALGRIND
       VALGRIND_MAKE_MEM_DEFINED(m->val, mm_size((Value*)m->val)); // it's incomplete, but it's a typed array so garbage is acceptable
     #endif
-    #ifdef DEBUG
+    #if DEBUG
       if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
         usz ia = m->val->ia;
         f64* p = f64arr_ptr(taga(m->val));

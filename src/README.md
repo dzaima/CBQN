@@ -145,7 +145,7 @@ type field for heap-allocated objects:
   
   t_funWrap, t_md1Wrap, t_md2Wrap // types wrapping builtins for RT_WRAP; see rtwrap.c
 
-See src/h.h for more basics
+See src/h.h for more basic operations
 ```
 
 An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
@@ -393,4 +393,67 @@ B      g_t (void* x) // tag pointer with OBJ_TAG
 B      g_ta(void* x) // tag pointer with ARR_TAG
 B      g_tf(void* x) // tag pointer with FUN_TAG
 // invoke with "p g_p(whatever)"; requires a build with debug symbols to be usable, but e.g. "p (void)g_pst()" can be used without one
+```
+
+## Various `#define`s
+
+Most toggles require a value of `1` to be enabled.
+
+```c
+// (effective) usual default value is listed; (u) marks being not defined
+// default may change under some conditions (DEBUG, CATCH_ERRORS, heapverify, among maybe other things)
+// some things fully configured by the build system may not be listed
+
+// general config:
+#define REPL_INTERRUPT 0 // support ctrl+c for interrupting some REPL execution
+#define ENABLE_GC 1      // enable garbage collection
+#define MM 1             // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
+#define HEAP_MAX ~0ULL   // initial heap max size (overridden by -M)
+#define JIT_ENABLED (u)  // force-enable or force-disable JIT (x86_64-only)
+#define RANDSEED 0       // random seed used to make •rand (0 uses time)
+#define JIT_START 2      // number of calls for when to start JITting (x86_64-only); default is 2, defined in vm.h
+        // -1: never JIT (≈ JIT_ENABLED=0)
+        //  0: JIT everything
+        // >0: JIT after n non-JIT invocations; max ¯1+2⋆16
+
+// runtime configuration:
+#define ALL_R0 0 // use all of r0.bqn for runtime_0
+#define ALL_R1 0 // use all of r1.bqn for runtime
+#define NO_RT  0 // whether to completely disable self-hosted runtime loading
+#define CATCH_ERRORS 1 // allow catching errors; means refcounts might stay too high if forgotten over a throw-catch; disabled for heapverify
+#define FAKE_RUNTIME 0 // disable the self-hosted runtime
+#define FORMATTER    1 // use self-hosted formatter for output
+#define NO_EXPLAIN   0 // disable )explain
+#define NO_RYU       0 // disable usage of Ryu
+#define EACH_FILLS   0 // compute fills for ¨ and ⌜; may be forcibly disabled
+#define SFNS_FILLS   1 // compute fills for structural functions (∾, ≍, etc)
+#define CHECK_VALID  1 // check for valid arguments in places where that would be detrimental to performance
+        // e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc
+
+#define RYU_OPTIMIZE_SIZE 0 // reduce size of Ryu tables at the cost of some performance for number •Repr
+#define FFI_CHECKS   1 // check for valid arguments passed to FFI-d functions
+#define UNSAFE_SIZES 0 // disable safety checks on array length overflows
+
+// debugging stuff:
+#define DEBUG           0 // the regular debug build
+#define HEAP_VERIFY     0 // heapverify
+#define WARN_SLOW       0 // log on various slow operations
+#define USE_PERF        0 // write a /tmp/perf-<pid>.map for JITted things for linux perf
+#define GC_LOG_DETAILED 0 // slightly more stats on GC logging
+#define DEBUG_VM        0 // print evaluation of every bytecode
+#define USE_VALGRIND    0 // adjust memory manager & code for valgrind usage
+#define VERIFY_TAIL   (u) // number of bytes after the end of an array to verify not being improperly modified; 64 in DEBUG
+#define NEEQUAL_NEGZERO 0 // make negative zero not equal zero for •internal.EEqual
+#define RT_VERIFY_ARGS  1 // rtverify: preserve arguments for printing on failure
+
+// some somewhat-outdated/unmaintained things:
+#define RT_PERF   0   // time runtime primitives
+#define RT_VERIFY 0   // compare native and runtime versions of primitives
+#define ALLOC_STAT  0 // store basic allocation statistics
+#define ALLOC_SIZES 0 // store per-type allocation size statistics
+#define DONT_FREE 0   // don't actually ever free objects, such that they can be printed after being freed for debugging
+#define TYPED_ARITH 1 // enable specialized loops for typed arith
+#define VM_POS 1      // whether to store detailed execution position information for stacktraces
+#define OBJ_COUNTER 0 // store a unique allocation number with each object; superseded by the existence of https://rr-project.org/
+#define OBJ_TRACK (u) // object ID to track
 ```

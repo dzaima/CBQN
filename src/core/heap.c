@@ -1,13 +1,13 @@
 #include "../core.h"
 
-#ifdef HEAP_VERIFY
+#if HEAP_VERIFY
 u32 heapVerify_mode = -1;
 
 Value* heap_observed;
 Value* heap_curr;
 void heapVerify_checkFn(Value* v) {
   if (v->refc!=0) {
-    #ifdef OBJ_COUNTER
+    #if OBJ_COUNTER
       printf("delta %d for %s @ %p, uid "N64d": ", v->refc, type_repr(v->type), v, v->uid);
     #else
       printf("delta %d for %s @ %p: ", (i32)v->refc, type_repr(v->type), v);

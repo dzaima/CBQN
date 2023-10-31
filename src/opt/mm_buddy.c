@@ -4,7 +4,7 @@
 #endif
 #include "gc.c"
 
-#ifdef OBJ_COUNTER
+#if OBJ_COUNTER
   u64 currObjCounter;
 #endif
 

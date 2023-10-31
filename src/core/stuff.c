@@ -16,7 +16,7 @@ NORETURN NOINLINE void fatal(char* s) {
   #endif
   if (inErr) {
     fputs("\nCBQN encountered a fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
-    #ifdef DEBUG
+    #if DEBUG
       __builtin_trap();
     #endif
     exit(1);
@@ -28,7 +28,7 @@ NORETURN NOINLINE void fatal(char* s) {
   vm_pstLive(); fflush(stderr); fflush(stdout);
   print_vmStack(); fflush(stderr);
   before_exit();
-  #ifdef DEBUG
+  #if DEBUG
     __builtin_trap();
   #endif
   exit(1);
@@ -147,7 +147,7 @@ NOINLINE void fprintI(FILE* f, B x) {
     else if (o2cG(x)>=16) fprintf(f, "\\x%x", o2cG(x));
     else fprintf(f, "\\x0%x", o2cG(x));
   } else if (isVal(x)) {
-    #ifdef DEBUG
+    #if DEBUG
     if (isVal(x) && (TY(x)==t_freed || TY(x)==t_empty)) {
       u8 t = TY(x);
       v(x)->type = v(x)->flags;
@@ -444,18 +444,18 @@ B bqn_merge(B x, u32 type) {
   return taga(APD_SH_GET(r, type));
 }
 
-#ifdef ALLOC_STAT
+#if ALLOC_STAT
   u64* ctr_a = 0;
   u64* ctr_f = 0;
   u64 actrc = 21000;
   u64 talloc = 0;
-  #ifdef ALLOC_SIZES
+  #if ALLOC_SIZES
     u32** actrs;
   #endif
 #endif
 
 NOINLINE void print_allocStats() {
-  #ifdef ALLOC_STAT
+  #if ALLOC_STAT
     printf("total ever allocated: "N64u"\n", talloc);
     printf("allocated heap size:  "N64u"\n", mm_heapAlloc);
     printf("used heap size:       "N64u"\n", mm_heapUsed());
@@ -467,7 +467,7 @@ NOINLINE void print_allocStats() {
     u64 leakedCount = 0;
     for (i64 i = 0; i < t_COUNT; i++) leakedCount+= ctr_a[i]-ctr_f[i];
     printf("leaked object count: "N64u"\n", leakedCount);
-    #ifdef ALLOC_SIZES
+    #if ALLOC_SIZES
       for(i64 i = 0; i < actrc; i++) {
         u32* c = actrs[i];
         bool any = false;
@@ -501,10 +501,10 @@ void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fput
 void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fputc(10,stderr); fflush(stderr); ignore_bad_tag=false; }
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
-#ifdef DEBUG
+#if DEBUG
   bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start() { cbqn_noAlloc=true; }
-  #ifdef OBJ_COUNTER
+  #if OBJ_COUNTER
     #define PRINT_ID(X) fprintf(stderr, "Object ID: "N64u"\n", (X)->uid)
   #else
     #define PRINT_ID(X)

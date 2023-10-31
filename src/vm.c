@@ -692,14 +692,14 @@ FORCE_INLINE B gotoNextBody(Block* bl, Scope* sc, Body* body) {
   return execBodyInplaceI(body, nsc, bl);
 }
 
-#ifdef DEBUG_VM
+#if DEBUG_VM
 i32 bcDepth=-2;
 i32* vmStack;
 i32 bcCtr = 0;
 #endif
 #define BCPOS(B,P) (B->bl->map[(P)-(u32*)B->bl->bc])
 B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
-  #ifdef DEBUG_VM
+  #if DEBUG_VM
     bcDepth+= 2;
     if (!vmStack) vmStack = malloc(400);
     i32 stackNum = bcDepth>>1;
@@ -738,7 +738,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   #endif
   
   while(true) {
-    #ifdef DEBUG_VM
+    #if DEBUG_VM
       u32* sbc = bc;
       i32 bcPos = BCPOS(b,sbc);
       vmStack[stackNum] = bcPos;
@@ -937,20 +937,20 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       case RETN: goto end;
       
       default:
-        #ifdef DEBUG
+        #if DEBUG
           printf("todo %d\n", bc[-1]); bc++; break;
         #else
           UD;
         #endif
     }
-    #ifdef DEBUG_VM
+    #if DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) fprintf(stderr," ");
       print_BC(stderr,sbc,20); fprintf(stderr,"@%d out: ",BCPOS(b, sbc));
       for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fputc('\n',stderr); fflush(stderr);
     #endif
   }
   end:;
-  #ifdef DEBUG_VM
+  #if DEBUG_VM
     bcDepth-= 2;
   #endif
   B r = POP;
@@ -1183,7 +1183,7 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   #endif
 }
 void print_vmStack() {
-  #ifdef DEBUG_VM
+  #if DEBUG_VM
     printf("vm stack:");
     for (i32 i = 0; i < (bcDepth>>1) + 1; i++) { printf(" %d", vmStack[i]); fflush(stdout); }
     printf("\n"); fflush(stdout);
@@ -1392,7 +1392,7 @@ native_print:
     
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
-    #ifdef DEBUG
+    #if DEBUG
       if (pos!=-1) fprintf(stderr, N64d": ", pos);
       fprintf(stderr, "source unknown\n");
     #endif
@@ -1707,7 +1707,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
     before_exit();
-    #ifdef DEBUG
+    #if DEBUG
     __builtin_trap();
     #else
     exit(1);

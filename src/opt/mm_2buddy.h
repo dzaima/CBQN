@@ -5,7 +5,7 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   struct Value;
   EmptyValue* next;
 };
-#ifdef OBJ_COUNTER
+#if OBJ_COUNTER
   extern u64 currObjCounter;
 #endif
 extern u64 mm_heapAlloc;

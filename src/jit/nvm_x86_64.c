@@ -59,6 +59,7 @@ static void* mmap_nvm(u64 sz) {
   }
 }
 
+extern bool mem_log_enabled;
 #define MMAP(SZ) mmap_nvm(sz);
 #define  MUL 1
 #define ALLOC_MODE 1

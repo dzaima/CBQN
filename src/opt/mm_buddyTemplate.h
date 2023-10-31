@@ -8,7 +8,7 @@ FORCE_INLINE void BN(freeLink)(Value* x, bool link) {
   #else
     preFree(x, false);
   #endif
-  #ifdef DONT_FREE
+  #if DONT_FREE
     if (x->type!=t_freed) x->flags = x->type;
   #else
     u8 b = x->mmInfo&127;
@@ -36,7 +36,7 @@ static   void* BN(allocL)(i64 bucket, u8 type) {
   x->refc = 1;
   x->type = type;
   x->mmInfo = bucket;
-  #ifdef OBJ_COUNTER
+  #if OBJ_COUNTER
     x->uid = currObjCounter++;
     #ifdef OBJ_TRACK
     if (x->uid == OBJ_TRACK) {

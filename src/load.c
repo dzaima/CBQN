@@ -4,6 +4,10 @@
 #include "ns.h"
 #include "builtins.h"
 
+#ifndef FAKE_RUNTIME
+  #define FAKE_RUNTIME 0
+#endif
+
 #define PRECOMPILED_FILE(END) STR1(../build/BYTECODE_DIR/gen/END)
 
 #define FOR_INIT(F) \
@@ -402,14 +406,14 @@ void load_init() { // very last init function
   for (u64 i = 0; i < RT_LEN; i++) inc(fruntime[i]);
   B frtObj = m_caB(RT_LEN, fruntime);
   
-  #ifndef NO_RT
+  #if !NO_RT
     B provide[] = {
       /* actual provide: */
       bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch
       /* result list from commented-out •Out line in cc.bqn: */,
       bi_root,bi_not,bi_and,bi_or,bi_feq,bi_couple,bi_shifta,bi_shiftb,bi_reverse,bi_transp,bi_gradeUp,bi_gradeDown,bi_indexOf,bi_count,bi_memberOf,bi_cell,bi_rank
     };
-    #ifndef ALL_R0
+    #if !ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
     Block* runtime0_b = load_compImport("(self-hosted runtime0)",
@@ -427,7 +431,7 @@ void load_init() { // very last init function
       #endif
     );
     
-    #ifdef ALL_R0
+    #if ALL_R0
     dec(r0r);
     #endif
     
@@ -459,7 +463,7 @@ void load_init() { // very last init function
       #ifdef RT_WRAP
       r1Objs[i] = Get(rtObjRaw, i); gc_add(r1Objs[i]);
       #endif
-      #ifdef ALL_R1
+      #if ALL_R1
         bool nnbi = true;
         B r = Get(rtObjRaw, i);
       #else
@@ -632,7 +636,7 @@ B def_m2_im(Md2D* d,      B x) { return def_fn_im(tag(d,FUN_TAG),    x); }
 B def_m2_iw(Md2D* d, B w, B x) { return def_fn_iw(tag(d,FUN_TAG), w, x); }
 B def_m2_ix(Md2D* d, B w, B x) { return def_fn_ix(tag(d,FUN_TAG), w, x); }
 
-#ifdef DONT_FREE
+#if DONT_FREE
 static B empty_get(Arr* x, usz n) {
   x->type = x->flags;
   if (x->type==t_empty) fatal("getting from empty without old type data");
@@ -753,7 +757,7 @@ void base_init() { // very first init function
   TIi(t_empty,freeF) = empty_free; TIi(t_invalid,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
   TIi(t_invalid,visit) = freed_visit;
   TIi(t_freed,visit) = freed_visit;
-  #ifdef DONT_FREE
+  #if DONT_FREE
     TIi(t_empty,get) = empty_get;
     TIi(t_empty,getU) = empty_getU;
   #endif

@@ -917,7 +917,7 @@ B delay_c1(B t, B x) {
   return m_f64(ts.tv_sec-ts0.tv_sec+(ts.tv_nsec-ts0.tv_nsec)*1e-9);
 }
 B exit_c1(B t, B x) {
-  #ifdef HEAP_VERIFY
+  #if HEAP_VERIFY
     printf("(heapverify doesn't run on •Exit)\n");
   #endif
   bqn_exit(q_i32(x)? o2i(x) : 0);

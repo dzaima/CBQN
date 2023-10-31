@@ -15,6 +15,9 @@
 #ifndef EXT_ONLY_GLOBAL
   #define EXT_ONLY_GLOBAL 1
 #endif
+#ifndef VM_POS
+  #define VM_POS 1
+#endif
 
 enum {
   PUSH = 0x00, // N; push object from objs[N]

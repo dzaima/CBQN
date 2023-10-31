@@ -290,7 +290,7 @@ static usz depth(B x) { // doesn't consume
 
 
 
-#ifdef USE_VALGRIND
+#if USE_VALGRIND
   #include "../utils/valgrind.h"
 #else
   #define vg_def_p(X, L)
@@ -323,12 +323,12 @@ static FC2 c2fn(B f) {
 }
 
 // alloc stuff
-#ifdef ALLOC_STAT
+#if ALLOC_STAT
   extern u64* ctr_a;
   extern u64* ctr_f;
   extern u64 actrc;
   extern u64 talloc;
-  #ifdef ALLOC_SIZES
+  #if ALLOC_SIZES
     extern u32** actrs;
   #endif
 #endif
@@ -342,9 +342,9 @@ FORCE_INLINE void preAlloc(usz sz, u8 type) {
   #ifdef OOM_TEST
     if (--oomTestLeft==0) thrOOMTest();
   #endif
-  #ifdef ALLOC_STAT
+  #if ALLOC_STAT
     if (!ctr_a) {
-      #ifdef ALLOC_SIZES
+      #if ALLOC_SIZES
         actrs = malloc(sizeof(u32*)*actrc);
         for (i32 i = 0; i < actrc; i++) actrs[i] = calloc(t_COUNT, sizeof(u32));
       #endif
@@ -352,7 +352,7 @@ FORCE_INLINE void preAlloc(usz sz, u8 type) {
       ctr_f = calloc(t_COUNT, sizeof(u64));
     }
     assert(type<t_COUNT);
-    #ifdef ALLOC_SIZES
+    #if ALLOC_SIZES
       actrs[(sz+3)/4>=actrc? actrc-1 : (sz+3)/4][type]++;
     #endif
     ctr_a[type]++;
@@ -369,13 +369,13 @@ void tailVerifyReinit(void* ptr, u64 s, u64 e);
 #endif
 #define FINISH_OVERALLOC_A(A, S, L) FINISH_OVERALLOC(a(A), offsetof(TyArr,a)+(S), offsetof(TyArr,a)+(S)+(L));
 FORCE_INLINE void preFree(Value* x, bool mmx) {
-  #ifdef ALLOC_STAT
+  #if ALLOC_STAT
     ctr_f[x->type]++;
   #endif
   #if VERIFY_TAIL
     if (!mmx) tailVerifyFree(x);
   #endif
-  #ifdef DEBUG
+  #if DEBUG
     if (x->type==t_empty) fatal("double-free");
     // u32 undef;
     // x->refc = undef;

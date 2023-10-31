@@ -119,14 +119,14 @@ static NOINLINE i64 readInt(char** p) {
     ")escaped ",
     ")profile ", ")profile@",
     ")t ", ")t:", ")time ", ")time:",
-    ")mem", ")mem t", ")mem s", ")mem f",
+    ")mem", ")mem t", ")mem s", ")mem f", ")mem log",
     ")erase ",
     ")clearImportCache",
     ")kb",
     ")theme dark", ")theme light", ")theme none",
     ")exit", ")off",
     ")vars",
-    ")gc", ")gc off", ")gc on",
+    ")gc", ")gc off", ")gc on", ")gc log",
     ")internalPrint ", ")heapdump",
 #if NATIVE_COMPILER && !ONLY_NATIVE_COMP
     ")switchCompiler",
@@ -602,6 +602,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
 void heap_printInfoStr(char* str);
+extern bool gc_log_enabled, mem_log_enabled;
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -667,7 +668,12 @@ void cbqn_runLine0(char* ln, i64 read) {
       timeRep = am;
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
-      heap_printInfoStr(cmdE);
+      if (strcmp(cmdE,"log")==0) {
+        mem_log_enabled^= true;
+        printf("Allocation logging %s\n", mem_log_enabled? "enabled" : "disabled");
+      } else {
+        heap_printInfoStr(cmdE);
+      }
       return;
     } else if (isCmd(cmdS, &cmdE, "erase ")) {
       char* name = cmdE;
@@ -773,6 +779,9 @@ void cbqn_runLine0(char* ln, i64 read) {
             gc_disable();
             printf("GC disabled\n");
           }
+        } else if (strcmp(cmdE,"log")==0) {
+          gc_log_enabled^= true;
+          printf("GC logging %s\n", gc_log_enabled? "enabled" : "disabled");
         } else printf("Unknown GC command\n");
       #else
         printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");

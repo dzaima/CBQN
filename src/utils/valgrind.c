@@ -1,7 +1,3 @@
-#ifndef DBG_VG_OVERRIDES
-  #define DBG_VG_OVERRIDES 0
-#endif
-
 static void printBitDef(u8 val, u8 def) {
   printf("%s", def&1? val&1?"1":"0" : val&1?"¹":"⁰");
 }

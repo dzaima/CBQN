@@ -2,11 +2,14 @@
 
 #if ENABLE_GC
   static void mm_freeFreedAndMerge(void);
+  #include "../utils/time.h"
+  #if GC_LOG_DETAILED
+    bool gc_log_enabled = true;
+  #else
+    bool gc_log_enabled;
+  #endif
 #endif
 
-#ifdef LOG_GC
-  #include "../utils/time.h"
-#endif
 
 u64 gc_depth = 1;
 
@@ -48,20 +51,20 @@ void gc_visitRoots() {
 
 static void gc_tryFree(Value* v) {
   u8 t = v->type;
-  #if defined(DEBUG) && !defined(CATCH_ERRORS)
+  #if DEBUG && !CATCH_ERRORS
     if (t==t_freed) fatal("GC found t_freed\n");
   #endif
   if (t!=t_empty && !(v->mmInfo&0x80)) {
     if (t==t_shape || t==t_temp || t==t_talloc) return;
-    #ifdef DONT_FREE
+    #if DONT_FREE
       v->flags = t;
     #else
       #if CATCH_ERRORS
         if (t==t_freed) { mm_free(v); return; }
       #endif
     #endif
-    #ifdef LOG_GC
-      gc_freedBytes+= mm_size(v); gc_freedCount++;
+    #if GC_LOG_DETAILED
+      gcs_freedBytes+= mm_size(v); gcs_freedCount++;
     #endif
     v->type = t_freed;
     ptr_inc(v); // required as otherwise the object may free itself while not done reading its own fields
@@ -72,8 +75,8 @@ static void gc_tryFree(Value* v) {
   }
 }
 
-#ifdef LOG_GC
-  u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount, gc_unkRefsBytes, gc_unkRefsCount;
+#if GC_LOG_DETAILED
+  u64 gcs_visitBytes, gcs_visitCount, gcs_freedBytes, gcs_freedCount, gcs_unkRefsBytes, gcs_unkRefsCount; // GC stat counters
 #endif
 
 i32 visit_mode;
@@ -105,8 +108,8 @@ void gc_onVisit(Value* x) {
     case GC_MARK: {
       if (x->mmInfo&0x80) return;
       x->mmInfo|= 0x80;
-      #ifdef LOG_GC
-        gc_visitBytes+= mm_size(x); gc_visitCount++;
+      #if GC_LOG_DETAILED
+        gcs_visitBytes+= mm_size(x); gcs_visitCount++;
       #endif
       TIv(x,visit)(x);
       return;
@@ -133,8 +136,8 @@ static void gcv2_unmark_visit(Value* x) {
 #if ENABLE_GC
   static void gc_visitRefcNonzero(Value* x) {
     if (x->refc == 0) return;
-    #ifdef LOG_GC
-      gc_unkRefsBytes+= mm_size(x); gc_unkRefsCount++;
+    #if GC_LOG_DETAILED
+      gcs_unkRefsBytes+= mm_size(x); gcs_unkRefsCount++;
     #endif
     mm_visitP(x);
   }
@@ -164,20 +167,28 @@ static void gcv2_unmark_visit(Value* x) {
 u64 gc_lastAlloc;
 void gc_forceGC(bool toplevel) {
   #if ENABLE_GC
-    #ifdef LOG_GC
-      u64 start = nsTime();
-      gc_visitBytes = 0; gc_freedBytes = 0;
-      gc_visitCount = 0; gc_freedCount = 0;
-      gc_unkRefsBytes = 0; gc_unkRefsCount = 0;
-      u64 startSize = mm_heapUsed();
-    #endif
-      gc_run(toplevel);
+    u64 startTime=0, startSize=0;
+    if (gc_log_enabled) {
+      startTime = nsTime();
+      startSize = mm_heapUsed();
+      #if GC_LOG_DETAILED
+        gcs_visitBytes = 0; gcs_freedBytes = 0;
+        gcs_visitCount = 0; gcs_freedCount = 0;
+        gcs_unkRefsBytes = 0; gcs_unkRefsCount = 0;
+      #endif
+    }
+    gc_run(toplevel);
     u64 endSize = mm_heapUsed();
-    #ifdef LOG_GC
-      fprintf(stderr, "GC kept "N64d"B/"N64d" objs, freed "N64d"B, incl. directly "N64d"B/"N64d" objs", gc_visitBytes, gc_visitCount, startSize-endSize, gc_freedBytes, gc_freedCount);
-      fprintf(stderr, "; unknown refs: "N64d"B/"N64d" objs", gc_unkRefsBytes, gc_unkRefsCount);
-      fprintf(stderr, "; took %.3fms\n", (nsTime()-start)/1e6);
-    #endif
+    if (gc_log_enabled) {
+      fprintf(stderr, "GC: before: "N64d"B/"N64d"B", startSize, mm_heapAlloc);
+      #if GC_LOG_DETAILED
+        fprintf(stderr, "; kept "N64d"B="N64d" objs, freed "N64d"B, incl. directly "N64d"B="N64d" objs", gcs_visitBytes, gcs_visitCount, startSize-endSize, gcs_freedBytes, gcs_freedCount);
+        fprintf(stderr, "; unknown refs: "N64d"B="N64d" objs", gcs_unkRefsBytes, gcs_unkRefsCount);
+      #else
+        fprintf(stderr, "; freed "N64d"B, left "N64d"B", startSize-endSize, endSize);
+      #endif
+      fprintf(stderr, "; took %.3fms\n", (nsTime()-startTime)/1e6);
+    }
     gc_lastAlloc = endSize;
   #endif
 }

@@ -106,7 +106,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
 #define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x); }}
 
-#if !TYPED_ARITH
+#if defined(TYPED_ARITH) && !TYPED_ARITH
   #define AR_I_TO_ARR(NAME) P2(NAME)
   #define AR_F_TO_ARR AR_I_TO_ARR
 #else

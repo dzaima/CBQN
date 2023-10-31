@@ -4,8 +4,8 @@ extern u64 gc_depth;
 static void gc_disable() { gc_depth++; }
 static void gc_enable() { gc_depth--; }
 
-#ifdef LOG_GC
-extern u64 gc_visitBytes, gc_visitCount, gc_freedBytes, gc_freedCount;
+#if GC_LOG_DETAILED
+  extern u64 gcs_visitBytes, gcs_visitCount, gcs_freedBytes, gcs_freedCount;
 #endif
 
 extern void gc_onVisit(Value*);

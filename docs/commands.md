@@ -62,7 +62,8 @@ Get statistics on memory usage.
 
 `)mem t` to get usage per object type.  
 `)mem s` to get a breakdown of the number of objects with a specific size.  
-`)mem f` to get breakdown of free bucket counts per size.
+`)mem f` to get breakdown of free bucket counts per size.  
+`)mem log` enables/disabled printing a message on OS requests for more memory. 
 
 ## `)gc`
 
@@ -70,7 +71,10 @@ Force garbage collection.
 
 `)gc disable` disables automatic garabage collection, and `)gc enable` enables it again.
 
-Not a system function because currently CBQN doesn't support garbage collection in the middle of program execution.
+A plain `)gc` differs from `•internal.GC@` in that it can do precise marking as there's no in-progress C stack.
+
+`)gc log` enables/disables printing a message on GC.
+
 
 ## `)internalPrint expr`
 
