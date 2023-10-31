@@ -742,7 +742,7 @@ cachedBin‿linkerCache ← {
     objs∾↩ ⋈ MakeCCInv ⟨po.CBQNc, ⊢, linkerCache, "versionInfo", srcFile, ⟨⟩⟩
   }
   
-  res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; •file.Name po.output}, objs⟩
+  res ← MakeLinkerInv ⟨po.Linker, linkerCache, {po.emcc? "BQN.js"; "windows"≡po.os? •file.Name po.output; "res"}, objs⟩
   
   res.dst ⋈ linkerCache
 }
