@@ -26,6 +26,24 @@ def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
   emit{u32, '_mm_crc32_u32', 0x973afb51, x}
 }
 
+# Allocate and initialize resizing hash table
+# Initial size sz+ext and maximum size msz+ext
+# One region for each type in Ts initialized with value from v0s
+def hash_alloc{sz, msz, ext, Ts, v0s} = {
+  def ws = each{width,Ts}
+  each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
+  def add{}=0; def add{a,...r} = a+add{...r}
+  halloc := talloc{u8, (msz+ext)*add{...ws/8}}
+  szo := msz-sz  # Beginning of allocation to initial table
+  sze := sz+ext  # Initial table to end of allocation
+  def pe{{}} = halloc; def pl{{}} = tup{}
+  def pe{{..._, p}} = p+sze  # Next unallocated space given pointers so far
+  def pl{{...R, T}} = { def ps=pl{R}; tup{...ps, *T~~pe{ps}+szo} }
+  ptrs := pl{Ts}
+  each{memset{., ., sze}, ptrs, v0s}
+  tup{halloc, ptrs}
+}
+
 def hash_resize{hash,vals, x0,sh,sz,ext,cc, m} = {
   dif := sz*((1<<m)-1)
   sh -= m; sz <<= m
@@ -87,15 +105,12 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   # Filling e slots past the end requires e*(e+1)/2 collisions, so
   # n entries with <2 each can fill <sqrt(4*n)
   ext := tern{n<=b, n, b + (usz~~1 << (log/2 + 1))}
-  x0 := hash_val{xp->0}; rp <-{0} res0
+  x0 := hash_val{xp->0}
+  rp <-{0} res0
   def aux = prim!='∊'
-  halloc := talloc{u8, (msz+ext)*((wt + aux*width{u32})/8)}
-  szo := msz-sz  # Beginning of allocation to initial table
-  sze := sz+ext  # Initial table to end of allocation
-  hash := *T~~halloc + szo
-  memset{hash, x0, sze}
-  vals := if (aux) tup{*u32~~(hash+sze) + szo} else tup{}
-  each{memset{., 0, sze}, vals}
+  def {halloc,{hash,...vals}} = hash_alloc{
+    sz, msz, ext, merge{tup{T}, aux**u32}, merge{tup{x0}, aux**0}
+  }
 
   def {output, write_res} = match (prim) {
     {('∊')} => tup{{b}=>b, {j,h,k,x0} => { hash<-{j}h; k!=h }}
