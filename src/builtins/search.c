@@ -24,6 +24,10 @@
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
 
+// From selfsearch.c
+extern NOINLINE void memset32(u32* p, u32 v, usz l);
+extern NOINLINE void memset64(u64* p, u64 v, usz l);
+
 RangeFn getRange_fns[el_f64+1];
 #if SINGELI
   extern RangeFn* const simd_getRangeRaw;
@@ -344,6 +348,13 @@ B memberOf_c2(B t, B w, B x) {
         #endif
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
+      }
+      if (we==el_i32 && xe==el_i32) {
+        i8* rp; B r = m_i8arrc(&rp, w);
+        if (memberOf_c2_hash32(rp, tyany_ptr(x), xia, tyany_ptr(w), wia)) {
+          decG(w); decG(x); return taga(cpyBitArr(r));
+        }
+        decG(r);
       }
     }
     

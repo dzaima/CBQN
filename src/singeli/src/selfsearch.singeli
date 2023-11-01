@@ -1,68 +1,6 @@
 include './base'
-include './cbqnDefs'
 local include 'skin/cext'
-
-# Defined in C
-def memset{p:pT, v, l} = {
-  emit{void, merge{'memset',fmtnat{elwidth{pT}}}, p, v, l}
-}
-
-# These hashes are stored in tables and must be invertible!
-# Murmur3
-def hash_val{x0:u32} = {
-  x := x0
-  x ^= x >> 16; x *= 0x85ebca6b
-  x ^= x >> 13; x *= 0xc2b2ae35
-  x ^= x >> 16; x
-}
-def hash_val{x0:u64} = {
-  x := x0
-  x ^= x >> 33; x *= 0xff51afd7ed558ccd
-  x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53
-  x ^= x >> 33; x
-}
-# CRC32
-def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
-  emit{u32, '_mm_crc32_u32', 0x973afb51, x}
-}
-
-# Allocate and initialize resizing hash table
-# Initial size sz+ext and maximum size msz+ext
-# One region for each type in Ts initialized with value from v0s
-def hash_alloc{sz, msz, ext, Ts, v0s} = {
-  def ws = each{width,Ts}
-  each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
-  def add{}=0; def add{a,...r} = a+add{...r}
-  halloc := talloc{u8, (msz+ext)*add{...ws/8}}
-  szo := msz-sz  # Beginning of allocation to initial table
-  sze := sz+ext  # Initial table to end of allocation
-  def pe{{}} = halloc; def pl{{}} = tup{}
-  def pe{{..._, p}} = p+sze  # Next unallocated space given pointers so far
-  def pl{{...R, T}} = { def ps=pl{R}; tup{...ps, *T~~pe{ps}+szo} }
-  ptrs := pl{Ts}
-  each{memset{., ., sze}, ptrs, v0s}
-  tup{halloc, ptrs}
-}
-
-def hash_resize{hash,vals, x0,sh,sz,ext,cc, m} = {
-  dif := sz*((1<<m)-1)
-  sh -= m; sz <<= m
-  hash -= dif
-  j:usz = 0
-  cc = 0
-  memset{hash, x0, dif}
-  each{{val} => { val -= dif; memset{val, 0, dif} }, vals}
-  @for (j from dif to sz + ext) {
-    h := hash->j
-    if (h != x0) {
-      hash <-{j} x0
-      k0 := h>>sh; k := k0; while (hash->k!=x0) ++k
-      cc += cast_i{usz, k-k0}
-      hash <-{k} h
-      each{{val} => { v := val->j; val <-{j} 0; val <-{k} v }, vals}
-    }
-  }
-}
+include './hashmap'
 
 def names = tup{'memberOf', 'count', 'indexOf'}
 def prims = tup{'∊',        '⊒',     '⊐'      }
@@ -108,8 +46,8 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   x0 := hash_val{xp->0}
   rp <-{0} res0
   def aux = prim!='∊'
-  def {halloc,{hash,...vals}} = hash_alloc{
-    sz, msz, ext, merge{tup{T}, aux**u32}, merge{tup{x0}, aux**0}
+  def {{hash,...vals}, hash_free} = hash_alloc{
+    sz, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}
   }
 
   def {output, write_res} = match (prim) {
@@ -160,8 +98,8 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
     }
   }
   setlabel{break}
-  tfree{halloc}
-  output{i == n}  # Whether it finished
+  hash_free{}
+  output{i == n}  # Whether it finished, and unique count if ⊐
 }
 
 def exp_hash{T, name} = {
