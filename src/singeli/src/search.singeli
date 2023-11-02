@@ -333,8 +333,17 @@ exportT{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
 
 
 # Hash tables
-fn hashtab_memberOf{T}(rp:*i8, ip:*T, m:usz, fp:*T, n:usz) = {
+def names = tup{'memberOf', 'count', 'indexOf'}
+def prims = tup{'∊',        '⊒',     '⊐'      }
+def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
+def to_prim = map{names, prims, .}
+
+oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
+
+def rty{name} = if (to_prim{name}=='∊') i8 else i32
+fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
   def wt = width{T}
+  def prim = to_prim{name}
   def stop = m
 
   log := clzc{m}
@@ -348,35 +357,39 @@ fn hashtab_memberOf{T}(rp:*i8, ip:*T, m:usz, fp:*T, n:usz) = {
   # m entries with <2 each can fill <sqrt(4*m)
   ext := tern{m<=b, m, b + (usz~~1 << (log/2 + 1))}
   maxh := T~~maxvalue{T}
-  def {{hash,...vals}, hash_free} = hash_alloc{
-    sz, msz, ext, tup{T}, tup{maxh}
+  def aux = prim!='∊'
+  def {tabs, hash_free} = hash_alloc{
+    sz, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**0}
   }
+  def {hash,...vals} = tabs
 
   def lookup=makelabel{}; def abort=makelabel{}; def dup=makelabel{}
   cc:usz = 0       # Collision counter
   has_maxh:u1 = 0
+  def ind_maxh = each{{_}=>{mi:u32=0}, vals}
   i:usz=0; while (1) {
     e := tern{m-i>b, i+b, m}
     while (i < e) {
       h := hash_val{load{ip,i}}; j := h>>sh
-      k := load{hash, j}
+      each{{mi}=>{mi|=i&-((h==maxh)&~has_maxh)}, ind_maxh}
+      has_maxh |= h==maxh
+      kv := each{load{.,j}, tabs}; def {k,..._} = kv
       # Robin Hood insertion
-      if (k == maxh) {
-        has_maxh |= h==maxh
-        store{hash, j, h}
-      } else if (k != h) {
-        j0 := j; ji := j  # Save value; insertion point
+      if (k != maxh) {
+        if (k == h) goto{dup}
+        j0 := j; je := j  # Save value; end of chain (insert at j)
         do {
-          ++j; kn := load{hash,j}; if (kn==h) goto{dup}
+          ++je; knv := each{load{.,je}, tabs}; def {kn,..._} = knv
+          if (kn == h) goto{dup}
           def c = promote{T, h >= k}
-          store{hash, j-c, k}
-          ji += c
-          k = kn
+          each{store{.,je-c,.}, tabs, kv}
+          j += c
+          each{=, kv, knv}
         } while (k != maxh)
-        store{hash, ji, h}
-        cc += cast_i{usz, j-j0}
-        setlabel{dup}
+        cc += cast_i{usz, je-j0}
       }
+      each{store{., j, .}, tabs, tup{h,...aux**(m-i)}}
+      setlabel{dup}
       ++i
     }
     if (i == m) goto{lookup}
@@ -389,14 +402,22 @@ fn hashtab_memberOf{T}(rp:*i8, ip:*T, m:usz, fp:*T, n:usz) = {
   }
   setlabel{lookup}
   end := maxh>>sh + promote{T,ext} # Unreachable
-  if (has_maxh) { end=maxh>>sh; while (load{hash,end}!=maxh) ++end }
+  if (has_maxh) {
+    end=maxh>>sh; while (load{hash,end}!=maxh) ++end
+    each{store{.,end,.}, vals, ind_maxh}
+  }
   @for (rp, fp over n) {
     h := hash_val{fp}; j := h>>sh
     k:=undefined{T}; while ((k=load{hash,j}) < h) ++j
-    rp = promote{i8, (k==h) & (j<end)}
+    rp = (if (prim=='∊') promote{i8, (k==h) & (j<end)}
+          else i32~~(m - (load{tupsel{0,vals}, j} &- (k==h))))
   }
   setlabel{abort}
   hash_free{}
   i == m  # Whether it finished
 }
-export{'memberOf_c2_hash32', hashtab_memberOf{u32}}
+
+def exp_hash{T, name} = {
+  export{merge{name,'_c2_hash',fmtnat{width{T}}}, hashtab{T, name}}
+}
+each{{n}=>each{exp_hash{.,n},tup{u32}}, tup{'memberOf', 'indexOf'}}

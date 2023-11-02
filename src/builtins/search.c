@@ -268,6 +268,13 @@ B indexOf_c2(B t, B w, B x) {
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
       }
+      if (we==el_i32 && xe==el_i32) {
+        i32* rp; B r = m_i32arrc(&rp, x);
+        if (indexOf_c2_hash32(rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
+          decG(w); decG(x); return reduceI32Width(r, wia);
+        }
+        decG(r);
+      }
     }
     
     i32* rp; B r = m_i32arrc(&rp, x);
