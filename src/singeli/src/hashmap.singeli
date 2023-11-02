@@ -28,9 +28,13 @@ def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
 # Allocate and initialize resizing hash table
 # Initial size sz+ext and maximum size msz+ext
 # One region for each type in Ts initialized with value from v0s
-def hash_alloc{sz, msz, ext, Ts, v0s} = {
+def hash_alloc{logsz, msz, ext, Ts, v0s} = {
   def ws = each{width,Ts}
   each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
+  # Variables updated on resize
+  sz := usz~~1 << logsz
+  sh := tupsel{0,ws} - logsz
+
   def add{}=0; def add{a,...r} = a+add{...r}
   halloc := talloc{u8, (msz+ext)*add{...ws/8}}
   szo := msz-sz  # Beginning of allocation to initial table
@@ -40,25 +44,25 @@ def hash_alloc{sz, msz, ext, Ts, v0s} = {
   def pl{{...R, T}} = { def ps=pl{R}; tup{...ps, *T~~pe{ps}+szo} }
   ptrs := pl{Ts}
   each{memset{., ., sze}, ptrs, v0s}
-  tup{ptrs, {}=>tfree{halloc}}
-}
 
-def hash_resize{hash,vals, x0,sh,sz,ext,cc, m} = {
-  dif := sz*((1<<m)-1)
-  sh -= m; sz <<= m
-  hash -= dif
-  j:usz = 0
-  cc = 0
-  memset{hash, x0, dif}
-  each{{val} => { val -= dif; memset{val, 0, dif} }, vals}
-  @for (j from dif to sz + ext) {
-    h := hash->j
-    if (h != x0) {
-      hash <-{j} x0
-      k0 := h>>sh; k := k0; while (hash->k!=x0) ++k
-      cc += cast_i{usz, k-k0}
-      hash <-{k} h
-      each{{val} => { v := val->j; val <-{j} 0; val <-{k} v }, vals}
+  def hash_resize{cc, m} = {
+    dif := sz*((1<<m)-1)
+    sh -= m; sz <<= m
+    j:usz = 0
+    cc = 0
+    each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
+    def {hash, ...vals} = ptrs; def {h0, ...v0r} = v0s
+    @for (j from dif to sz + ext) {
+      h := hash->j
+      if (h != h0) {
+        hash <-{j} h0
+        k0 := h>>sh; k := k0; while (hash->k!=h0) ++k
+        cc += cast_i{usz, k-k0}
+        hash <-{k} h
+        each{{p,v0} => { v := p->j; p <-{j} v0; p <-{k} v }, vals, v0r}
+      }
     }
   }
+
+  tup{ptrs, sz, sh, hash_resize, {}=>tfree{halloc}}
 }

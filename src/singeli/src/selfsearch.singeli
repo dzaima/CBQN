@@ -16,11 +16,22 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   def {res0,stop} = if (prim=='∊') tup{1,n>>has_radix} else tup{0,2*n}
 
   log := clzc{n}
+  # Max size
   msl := clzc{n+n/2} + 1; if (has_radix and msl>20) msl=20
-  sh  := wt - tern{msl<14, msl, 12+(msl&1)}  # Shift to fit to table
-  sz  := usz~~1 << (wt - sh)  # Initial size
-  msz := usz~~1 << msl        # Max sz
+  msz := usz~~1 << msl
+  # Starting log-size
+  sl  := msl; if (msl>=14) sl = 12+(msl&1)
   b:usz = 64  # Block size
+
+  # Filling e slots past the end requires e*(e+1)/2 collisions, so
+  # n entries with <2 each can fill <sqrt(4*n)
+  ext := tern{n<=b, n, b + (usz~~1 << (log/2 + 1))}
+  x0 := hash_val{xp->0}
+  rp <-{0} res0
+  def aux = prim!='∊'
+  def {{hash,...vals}, sz, sh, hash_resize, hash_free} = hash_alloc{
+    sl, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}
+  }
 
   # Resize or abort if more than 1/2^thresh collisions/element
   def {set_thresh, div_thresh} = {
@@ -39,16 +50,6 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
     tup{set_thresh, div_thresh}
   }
   set_thresh{}
-
-  # Filling e slots past the end requires e*(e+1)/2 collisions, so
-  # n entries with <2 each can fill <sqrt(4*n)
-  ext := tern{n<=b, n, b + (usz~~1 << (log/2 + 1))}
-  x0 := hash_val{xp->0}
-  rp <-{0} res0
-  def aux = prim!='∊'
-  def {{hash,...vals}, hash_free} = hash_alloc{
-    sz, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}
-  }
 
   def {output, write_res} = match (prim) {
     {('∊')} => tup{{b}=>b, {j,h,k,x0} => { hash<-{j}h; k!=h }}
@@ -91,7 +92,7 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
       if (has_radix and i < n/2 and sz >= 1<<18) goto{break}
       # Avoid resizing if close to the end
       if (cc>=stop or p64{n-i}*dc >= (p64{i}*p64{n+i})>>(5+log-(wt-sh))) {
-        hash_resize{hash,vals, x0,sh,sz,ext,cc, 2} # Resize hash, factor of 4
+        hash_resize{cc, 2} # Factor of 4
         if (cc >= stop) goto{break}
         set_thresh{}
       }

@@ -347,10 +347,11 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
   def stop = m
 
   log := clzc{m}
+  # Max size
   msl := clzc{m} + 2
-  sh  := wt - tern{msl<14, msl, 12+(msl&1)}  # Shift to fit to table
-  sz  := usz~~1 << (wt - sh)  # Initial size
-  msz := usz~~1 << msl        # Max sz
+  msz := usz~~1 << msl
+  # Starting log-size
+  sl  := msl; if (msl>=14) sl = 12+(msl&1)
   b:usz = 64  # Block size
 
   # Filling e slots past the end requires e*(e+1)/2 collisions, so
@@ -358,8 +359,8 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
   ext := tern{m<=b, m, b + (usz~~1 << (log/2 + 1))}
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
-  def {tabs, hash_free} = hash_alloc{
-    sz, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**0}
+  def {tabs, sz, sh, hash_resize, hash_free} = hash_alloc{
+    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**0}
   }
   def {hash,...vals} = tabs
 
@@ -396,7 +397,7 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
     # Check collision counter and possibly resize (needs tuning)
     if (cc >= stop and sz == msz) goto{abort}
     if (16*cc >= stop and sz < msz) {
-      hash_resize{hash,vals, maxh,sh,sz,ext,cc, 2} # Resize hash, factor of 4
+      hash_resize{cc, 2} # Factor of 4
       if (cc >= stop) goto{abort}
     }
   }
