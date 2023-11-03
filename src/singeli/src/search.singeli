@@ -341,7 +341,8 @@ def to_prim = map{names, prims, .}
 oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
 
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
-fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
+def ity{name} = (to_prim{name}=='⊒')**(*u32)
+fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, ilink:ity{name}) = {
   def wt = width{T}
   def prim = to_prim{name}
   def stop = m
@@ -364,33 +365,47 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
   }
   def {hash,...vals} = tabs
 
+  each{store{.,0,0}, ilink}
+
   def lookup=makelabel{}; def abort=makelabel{}; def dup=makelabel{}
   cc:usz = 0       # Collision counter
   has_maxh:u1 = 0
-  def ind_maxh = each{{_}=>{mi:u32=0}, vals}
+  def ind_maxh = @collect (prim=='⊐') {mi:u32=0}
   i:usz=0; while (1) {
     e := tern{m-i>b, i+b, m}
     while (i < e) {
-      h := hash_val{load{ip,i}}; j := h>>sh
+      h := hash_val{load{ip,if (prim!='⊒') i else (m-i-1)}}; j := h>>sh
       each{{mi}=>{mi|=i&-((h==maxh)&~has_maxh)}, ind_maxh}
       has_maxh |= h==maxh
-      kv := each{load{.,j}, tabs}; def {k,..._} = kv
+      kv := each{load{.,j}, tabs}; def {k,...kr} = kv
       # Robin Hood insertion
+      j0 := j; je := j  # Save value; end of chain (insert at j)
       if (k != maxh) {
         if (k == h) goto{dup}
-        j0 := j; je := j  # Save value; end of chain (insert at j)
         do {
           ++je; knv := each{load{.,je}, tabs}; def {kn,..._} = knv
-          if (kn == h) goto{dup}
           def c = promote{T, h >= k}
-          each{store{.,je-c,.}, tabs, kv}
           j += c
+          if (kn == h) goto{dup}
+          each{store{.,je-c,.}, tabs, kv}
           each{=, kv, knv}
         } while (k != maxh)
         cc += cast_i{usz, je-j0}
       }
-      each{store{., j, .}, tabs, tup{h,...aux**(m-i)}}
-      setlabel{dup}
+      if (prim!='⊒') {
+        each{store{., j, .}, tabs, tup{h,...aux**(m-i)}}
+        setlabel{dup}
+      } else {
+        # maxh entry either stores 0 or is the last entry and stores an
+        # index, so this preserves all values
+        ++je; each{{p,v}=>store{p,je,v|load{p,je}}, vals, kr}
+        each{store{.,j,0}, vals}
+        store{hash, j, h}
+        setlabel{dup}
+        i1 := i+1
+        each{{p,q} => store{p, i1, i1-load{q,j}}, ilink, vals}
+        each{store{., j, .}, vals, tup{i1}}
+      }
       ++i
     }
     if (i == m) goto{lookup}
@@ -401,18 +416,28 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
       if (cc >= stop) goto{abort}
     }
   }
+
   setlabel{lookup}
   end := maxh>>sh + promote{T,ext} # Unreachable
-  if (has_maxh) {
+  if ((prim!='⊒') and has_maxh) {
     end=maxh>>sh; while (load{hash,end}!=maxh) ++end
     each{store{.,end,.}, vals, ind_maxh}
   }
   @for (rp, fp over n) {
     h := hash_val{fp}; j := h>>sh
     k:=undefined{T}; while ((k=load{hash,j}) < h) ++j
-    rp = (if (prim=='∊') promote{i8, (k==h) & (j<end)}
-          else i32~~(m - (load{tupsel{0,vals}, j} &- (k==h))))
+    rp = (match (prim) {
+      {('∊')} => promote{i8, (k==h) & (j<end)}
+      {('⊐')} => i32~~(m - (load{tupsel{0,vals}, j} &- (k==h)))
+      {('⊒')} => {
+        def {inds} = vals
+        ti := load{inds, j}; mi := ti &- (k==h)
+        store{inds, j, ti - load{tupsel{0,ilink},mi}}
+        i32~~(m - mi)
+      }
+    })
   }
+
   setlabel{abort}
   hash_free{}
   i == m  # Whether it finished
@@ -421,4 +446,4 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz) = {
 def exp_hash{T, name} = {
   export{merge{name,'_c2_hash',fmtnat{width{T}}}, hashtab{T, name}}
 }
-each{{n}=>each{exp_hash{.,n},tup{u32}}, tup{'memberOf', 'indexOf'}}
+each{{n}=>each{exp_hash{.,n},tup{u32}}, names}

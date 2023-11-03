@@ -422,6 +422,10 @@ B count_c2(B t, B w, B x) {
     we-= el_c8-el_i8; xe-= el_c8-el_i8;
     goto el8or16;
   } else {
+    if (we==el_i32 && xe==el_i32 &&
+        count_c2_hash32(rp, tyany_ptr(w), wia, tyany_ptr(x), xia, wnext)) {
+      goto dec_nwx;
+    }
     H_b2i* map = m_b2i(64);
     SGetU(x)
     SGetU(w)
@@ -438,6 +442,7 @@ B count_c2(B t, B w, B x) {
     }
     free_b2i(map);
   }
+  dec_nwx:;
   TFREE(wnext); decG(w); decG(x);
   return reduceI32Width(r, wia);
 }
