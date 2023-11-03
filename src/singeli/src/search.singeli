@@ -1,7 +1,7 @@
 include './base'
 include './mask'
 include './vecfold'
-include './hashmap'
+include './hashtab'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
@@ -333,16 +333,11 @@ exportT{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
 
 
 # Hash tables
-def names = tup{'memberOf', 'count', 'indexOf'}
-def prims = tup{'∊',        '⊒',     '⊐'      }
-def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
-def to_prim = map{names, prims, .}
-
 oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
 
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
 def ity{name} = (to_prim{name}=='⊒')**(*u32)
-fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, ilink:ity{name}) = {
+fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) = {
   def wt = width{T}
   def prim = to_prim{name}
   def stop = m
@@ -365,18 +360,70 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, ilink:ity{name}) 
   }
   def {hash,...vals} = tabs
 
-  each{store{.,0,0}, ilink}
+  def {set_tab, set_maxh, fixup, get_res} = match (prim) {
+    {('∊')} => {
+      has_maxh:u1 = 0
+      def set{j,je,kr,dup} = { setlabel{dup} }
+      def setm{found, i} = has_maxh |= found
+      end := maxh>>sh  # Clip trailing maxh if it shouldn't be in the table
+      def usem{} = {
+        if (has_maxh) { while (load{hash,end}!=maxh) ++end }
+        else end += promote{T,ext} # Unreachable
+      }
+      def get{found, j} = promote{i8, found & (j<end)}
+      tup{set, setm, usem, get}
+    }
+    {('⊐')} => {
+      def {inds} = vals
+      has_maxh:u1 = 0
+      ind_maxh:u32 = 0
+      def set{j,je,kr,dup} = {
+        store{inds, j, m-i}  # So it can be cleared with one &- in get{}
+        setlabel{dup}
+      }
+      def setm{found, i} = {
+        ind_maxh |= i &- (found&~has_maxh)
+        has_maxh |= found
+      }
+      def usem{} = {
+        if (has_maxh) {
+          end := maxh>>sh; while (load{hash,end}!=maxh) ++end
+          store{inds, end, ind_maxh}
+        }
+      }
+      def get{found, j} = i32~~(m - (load{inds, j} &- found))
+      tup{set, setm, usem, get}
+    }
+    {('⊒')} => {
+      def {inds} = vals; def {link} = links
+      store{link,0,0}
+      def set{j,je,{kr},dup} = {
+        # maxh entry either stores 0 or is the last entry and stores an
+        # index, so this preserves all values
+        ++je; store{inds, je, kr|load{inds,je}}
+        store{inds, j, 0}
+        setlabel{dup}
+        i1 := i+1
+        store{link, i1, i1-load{inds,j}}
+        store{inds, j, i1}
+      }
+      def get{found, j} = {
+        ti := load{inds, j}; mi := ti &- found
+        store{inds, j, ti - load{link,mi}}
+        i32~~(m - mi)
+      }
+      tup{set, {found,i}=>{}, {}=>{}, get}
+    }
+  }
 
   def lookup=makelabel{}; def abort=makelabel{}; def dup=makelabel{}
   cc:usz = 0       # Collision counter
-  has_maxh:u1 = 0
-  def ind_maxh = @collect (prim=='⊐') {mi:u32=0}
   i:usz=0; while (1) {
     e := tern{m-i>b, i+b, m}
     while (i < e) {
-      h := hash_val{load{ip,if (prim!='⊒') i else (m-i-1)}}; j := h>>sh
-      each{{mi}=>{mi|=i&-((h==maxh)&~has_maxh)}, ind_maxh}
-      has_maxh |= h==maxh
+      def ii = if (prim!='⊒') i else m-i-1
+      h := hash_val{load{ip,ii}}; j := h>>sh
+      set_maxh{h==maxh, i}
       kv := each{load{.,j}, tabs}; def {k,...kr} = kv
       # Robin Hood insertion
       j0 := j; je := j  # Save value; end of chain (insert at j)
@@ -392,20 +439,8 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, ilink:ity{name}) 
         } while (k != maxh)
         cc += cast_i{usz, je-j0}
       }
-      if (prim!='⊒') {
-        each{store{., j, .}, tabs, tup{h,...aux**(m-i)}}
-        setlabel{dup}
-      } else {
-        # maxh entry either stores 0 or is the last entry and stores an
-        # index, so this preserves all values
-        ++je; each{{p,v}=>store{p,je,v|load{p,je}}, vals, kr}
-        each{store{.,j,0}, vals}
-        store{hash, j, h}
-        setlabel{dup}
-        i1 := i+1
-        each{{p,q} => store{p, i1, i1-load{q,j}}, ilink, vals}
-        each{store{., j, .}, vals, tup{i1}}
-      }
+      store{hash, j, h}
+      set_tab{j, je, kr, dup}
       ++i
     }
     if (i == m) goto{lookup}
@@ -418,24 +453,11 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, ilink:ity{name}) 
   }
 
   setlabel{lookup}
-  end := maxh>>sh + promote{T,ext} # Unreachable
-  if ((prim!='⊒') and has_maxh) {
-    end=maxh>>sh; while (load{hash,end}!=maxh) ++end
-    each{store{.,end,.}, vals, ind_maxh}
-  }
+  fixup{}
   @for (rp, fp over n) {
     h := hash_val{fp}; j := h>>sh
-    k:=undefined{T}; while ((k=load{hash,j}) < h) ++j
-    rp = (match (prim) {
-      {('∊')} => promote{i8, (k==h) & (j<end)}
-      {('⊐')} => i32~~(m - (load{tupsel{0,vals}, j} &- (k==h)))
-      {('⊒')} => {
-        def {inds} = vals
-        ti := load{inds, j}; mi := ti &- (k==h)
-        store{inds, j, ti - load{tupsel{0,ilink},mi}}
-        i32~~(m - mi)
-      }
-    })
+    k := undefined{T}; while ((k=load{hash,j}) < h) ++j
+    rp = get_res{k==h, j}
   }
 
   setlabel{abort}

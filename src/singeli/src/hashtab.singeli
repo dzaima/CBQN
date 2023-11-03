@@ -1,6 +1,13 @@
 local include 'skin/cext'
 local include './cbqnDefs'  # talloc/tfree
 
+# Search primitives
+# Function params are passed as names to keep generated code readable
+def names = tup{'memberOf', 'count', 'indexOf'}
+def prims = tup{'∊',        '⊒',     '⊐'      }
+def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
+def to_prim = map{names, prims, .}
+
 # Defined in C
 def memset{p:pT, v, l} = {
   emit{void, merge{'memset',fmtnat{elwidth{pT}}}, p, v, l}

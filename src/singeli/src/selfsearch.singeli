@@ -1,11 +1,6 @@
 include './base'
 local include 'skin/cext'
-include './hashmap'
-
-def names = tup{'memberOf', 'count', 'indexOf'}
-def prims = tup{'∊',        '⊒',     '⊐'      }
-def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
-def to_prim = map{names, prims, .}
+include './hashtab'
 
 # Resizing hash table, with fallback
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
@@ -68,7 +63,7 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
         if (k!=h) { val<-{j}ctr; ++ctr; hash<-{j}h }
         val->j
       }
-      tup{{b}=>promote{u32,b}*ctr, res}
+      tup{{b}=>ctr & -promote{u32,b}, res}
     }
   }
 
