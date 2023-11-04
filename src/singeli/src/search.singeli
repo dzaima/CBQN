@@ -340,6 +340,10 @@ def ity{name} = (to_prim{name}=='⊒')**(*u32)
 fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) = {
   def wt = width{T}
   def prim = to_prim{name}
+  swap:u1 = 0
+  if (prim=='⊒' and (swap = n < m)) {
+    each{{a,b}=>{t:=a; a=b; b=t}, tup{ip,m}, tup{fp,n}}
+  }
   def stop = m
 
   log := clzc{m}
@@ -454,10 +458,37 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
 
   setlabel{lookup}
   fixup{}
-  @for (rp, fp over n) {
-    h := hash_val{fp}; j := h>>sh
-    k := undefined{T}; while ((k=load{hash,j}) < h) ++j
-    rp = get_res{k==h, j}
+  if (prim=='⊒' and swap) {
+    @for (rp over m) rp = i32~~n
+    @for (fp over i to n) {
+      h := hash_val{fp}; j := h>>sh
+      k := load{hash,j}
+      if (k <= h) {
+        while (k < h) { ++j; k = load{hash,j} }
+        if (k==h) {
+          def {inds} = vals; def {link} = links
+          ti := load{inds, j}
+          if (ti>0) {
+            store{inds, j, ti - load{link,ti}}
+          } else {
+            do {
+              jp:=j; ++j
+              h=load{hash,j}
+              if (h>>sh == j) h = maxh
+              store{hash, jp, h}
+              store{inds, jp, load{inds,j}}
+            } while (h!=maxh)
+          }
+          store{rp, m-ti, i}
+        }
+      }
+    }
+  } else {
+    @for (rp, fp over n) {
+      h := hash_val{fp}; j := h>>sh
+      k := undefined{T}; while ((k=load{hash,j}) < h) ++j
+      rp = get_res{k==h, j}
+    }
   }
 
   setlabel{abort}
