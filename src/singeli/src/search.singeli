@@ -522,16 +522,21 @@ def try_vec_memb{T, hash, hashlen, sh, maxh, has_maxh, rp, fp, n, done
     @for (rp, fp over _ from u*l to n) rp = promote{R, homAny{test{fp}}}
     goto{done}
   }
-  if (max_off < vl) {
-    hp := *V~~(hash + maxh>>sh)
-    hv := load{hp}
-    store{hp, 0, hv &~ (hv == V**(maxh &- ~has_maxh))}
-    def test{x} = {
-      h := hash_val{x}; j := h>>sh
-      V**h == load{*V~~(hash+j), 0}
+  def try{nv} = {
+    if (max_off < nv*vl) {
+      # Avoid matching maxh if it shouldn't be in the table
+      clear := V**(maxh &- ~has_maxh)
+      @for (hv in *V~~(hash + maxh>>sh) over vl) hv = hv &~ (hv == clear)
+      # Test against nv vectors
+      def test{x} = {
+        h := hash_val{x}; vh := V**h
+        def any{{...r,a}} = any{r}|a; def any{{a}}=a
+        any{@collect (k in *V~~(hash+h>>sh) over nv) vh == k}
+      }
+      memb{test}
     }
-    memb{test}
   }
+  each{try, tup{1,2}}
 }
 
 def exp_hash{T, name} = {
