@@ -371,6 +371,7 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
       def setm{found, i} = has_maxh |= found
       end := maxh>>sh  # Clip trailing maxh if it shouldn't be in the table
       def usem{} = {
+        try_vec_memb{T, hash, sz+ext, sh, maxh, has_maxh, rp, fp, n, abort}
         if (has_maxh) { while (load{hash,end}!=maxh) ++end }
         else end += promote{T,ext} # Unreachable
       }
@@ -494,6 +495,43 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
   setlabel{abort}
   hash_free{}
   i == m  # Whether it finished
+}
+
+def try_vec_memb{} = {}
+def try_vec_memb{T, hash, hashlen, sh, maxh, has_maxh, rp, fp, n, done
+                 & hasarch{'SSE4.2'} & T==u32} = {
+  # Hash h wants bin h>>sh, so the offset for h in slot i is (in infite-precision ints)
+  # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
+  # We maintain io = (i+1)<<sh-1
+  def vl = 4; def V = [vl]T
+  nh := hashlen/vl; o := hashlen-vl*nh
+  io := make{V, each{{k} => (o+k)<<sh - 1, 1+iota{vl}}}
+  id := V**(T~~vl<<sh)
+  mv := V**0
+  @for (h in *V~~(hash+o) over nh) { mv=max{mv, io-min{h,io}}; io+=id }
+  max_off := vfold{max, mv} >> sh
+
+  def memb{test} = {
+    def R = i8; def rw = width{R}; def u = width{T}/rw
+    l := n/u
+    @for (r in *T~~rp over i to l) {
+      c := V**0  # Will combine u results to avoid folding too much
+      @unroll (f in fp+u*i over a to u) c |= V**(1<<(rw*a)) & test{f}
+      r = vfold{|, c}
+    }
+    @for (rp, fp over _ from u*l to n) rp = promote{R, homAny{test{fp}}}
+    goto{done}
+  }
+  if (max_off < vl) {
+    hp := *V~~(hash + maxh>>sh)
+    hv := load{hp}
+    store{hp, 0, hv &~ (hv == V**(maxh &- ~has_maxh))}
+    def test{x} = {
+      h := hash_val{x}; j := h>>sh
+      V**h == load{*V~~(hash+j), 0}
+    }
+    memb{test}
+  }
 }
 
 def exp_hash{T, name} = {
