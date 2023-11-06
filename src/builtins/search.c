@@ -237,6 +237,18 @@ B indexOf_c2(B t, B w, B x) {
     }
 
     CHECK_CHRS_ELSE { tyEls: // Both numbers
+      if (wia>32 && xia<=(we<=el_i8?1:6)) {
+        SGetU(x);
+        B r;
+        #define IND(T) \
+          T* rp; r = m_##T##arrc(&rp, x); \
+          for (usz i=0; i<xia; i++) rp[i] = indexOfOne(w, GetU(x,i))
+        if (xia<I32_MAX) { IND(i32); r=reduceI32Width(r, wia); }
+        else { IND(f64); }
+        #undef IND
+        decG(w); decG(x); return r;
+      }
+
       if (we==el_bit) {
         u64* wp = bitarr_ptr(w);
         u64 w0 = 1 & wp[0];
@@ -329,6 +341,13 @@ B memberOf_c2(B t, B w, B x) {
     }
 
     CHECK_CHRS_ELSE { tyEls: // Both numbers
+      if (xia>32 && wia<=(xe<=el_i8?1:6)) {
+        SGetU(w);
+        i8* rp; r = m_i8arrc(&rp, w);
+        for (usz i=0; i<wia; i++) rp[i] = indexOfOne(x, GetU(w,i)) < xia;
+        decG(w); decG(x); return taga(cpyBitArr(r));
+      }
+
       #define WEQ(V) C2(eq, incG(w), V)
       if (xe==el_bit) {
         u64* xp = bitarr_ptr(x);
