@@ -202,6 +202,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done & hasarch{'AVX2'}} = {
 # Binary search within vector registers
 def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def up = prim != '⍒'
+  def search = (prim=='∊') | (prim=='⊐')
   assert{wn > 1}; assert{wn < maxwn}
   def wd = width{T}
   def I = if (wd<32) u8 else u32; def wi = width{I}
@@ -215,7 +216,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   log := ceil_log2{wn+1}
   gap := 1<<log - wn
   # Fill with minimum value at the beginning
-  def pre = if (prim=='∊') load{w} else (if (up) minvalue else maxvalue){T}
+  def pre = if (search) load{w} else (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
   wv0:= homBlend{load{wg}, V**pre, maskOf{V,gap}}
   # For multiple lanes, interleave like transpose
@@ -241,7 +242,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
   def selw = ms{wv}{0}; def selw1 = if (ex>=1) ms{wv}{1} else 'undef'
   def selw2 = if (ex>=2) each{ms{wv2}, iota{2}} else 'undef'
   # Offset at end
-  off := U~~V**cast_i{i8, gap-1}
+  off := U~~V**cast_i{i8, gap-(1-search)}
   # Midpoint bits for each step
   def lowbits = bb{copy{isub,isub}}
   bits := each{{j} => U**(lowbits << j), iota{lstep}}
@@ -263,7 +264,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       # b records if xv was found; c is added to the index
       def r_out = prim!='∊'
       def get_up{var,cmpx,use}{set,...a} = if (use) set{var, cmpx{...a}}
-      b := undefined{U}; def up_b = get_up{b, eqx, prim=='∊'}
+      b := undefined{U}; def up_b = get_up{b, eqx, search}
       c := undefined{U}; def up_c = get_up{c, ltx, r_out}
       up_b{=, selw, s}
       # Extra selection lanes
@@ -279,6 +280,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       }
       if (r_out) {
         r -= off
+        if (prim=='⊐') r = homBlend{U**cast_i{u8,wn}, r, b}
         rn := if (T==i8) r
               else if (T==i16) half{narrow{u8, r}, 0}
               else extract{re_el{i64, narrow{u8, r}}, 0}
@@ -294,12 +296,16 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
 }
 
 if (hasarch{'AVX2'}) {
-  fn avx2_search_bin{prim, T, maxwn}(rp:*u64, w:*void, wn:u64, x:*void, xn:u64) : void = {
+  fn avx2_search_bin{prim, T, maxwn}(rp:*(if (prim=='∊') u64 else i8), w:*void, wn:u64, x:*void, xn:u64) : void = {
     bin_search_vec{prim, T, *T~~w, wn, *T~~x, xn, rp, maxwn}
   }
   exportT{
     'avx2_member_sort',
     each{avx2_search_bin{'∊',.,.}, tup{i16,i32}, tup{32,16}}
+  }
+  exportT{
+    'avx2_indexOf_sort',
+    each{avx2_search_bin{'⊐',.,.}, tup{i8,i16,i32}, tup{64,32,16}}
   }
 }
 

@@ -48,17 +48,22 @@ RangeFn getRange_fns[el_f64+1];
 #endif
 #if SINGELI_AVX2
   extern void (**const avx2_member_sort)(uint64_t*,void*,uint64_t,void*,uint64_t);
+  extern void (**const avx2_indexOf_sort)(int8_t*,void*,uint64_t,void*,uint64_t);
 #endif
 
 
 #define C2i(F, W, X) C2(F, m_i32(W), X)
 extern B and_c1(B,B);
+extern B gradeDown_c1(B,B);
+extern B reverse_c1(B,B);
 extern B eq_c2(B,B,B);
 extern B ne_c2(B,B,B);
 extern B or_c2(B,B,B);
 extern B add_c2(B,B,B);
 extern B sub_c2(B,B,B);
 extern B mul_c2(B,B,B);
+extern B join_c2(B,B,B);
+extern B select_c2(B,B,B);
 
 static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
 
@@ -258,6 +263,17 @@ B indexOf_c2(B t, B w, B x) {
         return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
       }
       
+      #if SINGELI_AVX2
+      if (xia>=32 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<64>>(xe-el_i8) && we<=xe && !elChr(TI(x,elType))) {
+        B g = C1(reverse, C1(gradeDown, incG(w)));
+        w = C2(select, incG(g), w);
+        switch (xe) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; }
+        i8* rp; B r = m_i8arrc(&rp, x);
+        avx2_indexOf_sort[xe-el_i8](rp, tyany_ptr(w), wia, tyany_ptr(x), xia);
+        r = C2(select, r, C2(join, g, m_i8(wia)));
+        decG(w); decG(x); return r;
+      }
+      #endif
       if (wia<=(we<=el_i16?4:16) && xia>16) {
         SGetU(w);
         #define XEQ(I) C2(ne, GetU(w,I), incG(x))
