@@ -286,18 +286,21 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
         if (isvec{type{rn}}) store{rnp, 0, rn}
         else storeu{rnp, rn}
       } else {
-        out := homMask{b}; def B = type{out}; def wb = width{B}
-        store{*B~~rp, cdiv{j,wb}, out>>((-j)%wb)}
+        def B = ty_u{vl}; out := cast_i{B, homMask{b}}
+        store{*B~~rp, cdiv{j,vl}, out>>((-j)%vl)}
       }
     }
   }
 }
 
 if (hasarch{'AVX2'}) {
-  fn avx2_search_bin{prim, T}(rp:*u64, w:*T, wn:u64, x:*T, xn:u64) : void = {
-    bin_search_vec{prim, T, w, wn, x, xn, rp, 16}
+  fn avx2_search_bin{prim, T, maxwn}(rp:*u64, w:*void, wn:u64, x:*void, xn:u64) : void = {
+    bin_search_vec{prim, T, *T~~w, wn, *T~~x, xn, rp, maxwn}
   }
-  export{'avx2_member_sort_i32', avx2_search_bin{'∊',i32}}
+  exportT{
+    'avx2_member_sort',
+    each{avx2_search_bin{'∊',.,.}, tup{i16,i32}, tup{32,16}}
+  }
 }
 
 def unroll_sizes = tup{4,1}

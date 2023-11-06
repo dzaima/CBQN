@@ -47,7 +47,7 @@ RangeFn getRange_fns[el_f64+1];
   GETRANGE(f64, if (!q_fi64(c)) return 0)
 #endif
 #if SINGELI_AVX2
-  extern void (*const avx2_member_sort_i32)(uint64_t*,int32_t*,uint64_t,int32_t*,uint64_t);
+  extern void (**const avx2_member_sort)(uint64_t*,void*,uint64_t,void*,uint64_t);
 #endif
 
 
@@ -338,20 +338,19 @@ B memberOf_c2(B t, B w, B x) {
         decG(w); goto dec_x;
       }
       
-      u8 me = we>xe?we:xe;
-      if (xia<=(me==el_i8?1:me==el_i16?4:15) && wia>16) {
-        #if SINGELI_AVX2
-        if (we==xe && we==el_i32 && xia>1) {
-          x = C1(and, x); // sort
-          u64* rp; r = m_bitarrc(&rp, w);
-          avx2_member_sort_i32(rp, tyany_ptr(x), xia, tyany_ptr(w), wia);
-        } else
-        #endif
-        {
-          SGetU(x);
-          r = WEQ(GetU(x,0));
-          for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
-        }
+      #if SINGELI_AVX2
+      if (wia>=32>>(we-el_i8) && xia>1 && ((we==el_i16 && xia<32) || (we==el_i32 && xia<16)) && xe<=we && !elChr(TI(x,elType))) {
+        x = C1(and, x); // sort
+        if (xe<we) switch (we) { default:UD; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; }
+        u64* rp; r = m_bitarrc(&rp, w);
+        avx2_member_sort[we-el_i16](rp, tyany_ptr(x), xia, tyany_ptr(w), wia);
+        decG(w); goto dec_x;
+      }
+      #endif
+      if (xia<=(we==el_i8?1:we==el_i16?4:8) && wia>16) {
+        SGetU(x);
+        r = WEQ(GetU(x,0));
+        for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
         decG(w); goto dec_x;
       }
       #undef WEQ
