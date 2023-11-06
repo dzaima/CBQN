@@ -1,7 +1,6 @@
 #include "../core.h"
 #include "../utils/each.h"
 #include "../builtins.h"
-#include "../nfns.h"
 #include "../ns.h"
 #include <math.h>
 

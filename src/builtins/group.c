@@ -21,7 +21,6 @@
 #include "../core.h"
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
-#include "../builtins.h"
 #include "../utils/mut.h"
 
 extern B ud_c1(B, B);

@@ -34,7 +34,7 @@
 // COULD implement fast ⍉⍟n
 
 #include "../core.h"
-#include "../utils/each.h"
+#include "../utils/mut.h"
 #include "../utils/talloc.h"
 #include "../builtins.h"
 #include "../utils/calls.h"

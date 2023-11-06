@@ -40,7 +40,6 @@
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
-#include "../builtins.h"
 
 #if SINGELI_AVX2
   #define SINGELI_FILE select

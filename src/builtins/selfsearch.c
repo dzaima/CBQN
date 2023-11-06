@@ -33,7 +33,6 @@
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
-#include "../builtins.h"
 
 extern B shape_c1(B, B);
 extern B slash_c2(B, B, B);

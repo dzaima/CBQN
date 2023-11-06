@@ -1,5 +1,4 @@
 #pragma once
-#include "mut.h"
 
 B eachd_fn(B fo, B w, B x, FC2 f); // consumes w,x; assumes at least one is array
 B eachm_fn(B fo, B x, FC1 f); // consumes x; x must be array

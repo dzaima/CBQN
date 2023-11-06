@@ -13,7 +13,6 @@
 
 #include "../core.h"
 #include "../builtins.h"
-#include "../utils/calls.h"
 #include "../utils/mut.h"
 
 #if SINGELI_SIMD
