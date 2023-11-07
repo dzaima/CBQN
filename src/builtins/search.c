@@ -65,6 +65,13 @@ extern B mul_c2(B,B,B);
 extern B join_c2(B,B,B);
 extern B select_c2(B,B,B);
 
+B asNormalized(B x, usz n, bool nanBad);
+SHOULD_INLINE bool canCompare64_norm(B* w, usz wia, B* x, usz xia) {
+  B wn=asNormalized(*w,wia,true); if (wn.u == m_f64(0).u) return 0; *w=wn;
+  B xn=asNormalized(*x,xia,true); if (xn.u == m_f64(0).u) return 0; *x=xn;
+  return 1;
+}
+
 static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
 
 #define TABLE(IN, FOR, TY, INIT, SET) \
@@ -221,7 +228,9 @@ static NOINLINE usz indexOfOne(B l, B e) {
   } else
 
 B indexOf_c2(B t, B w, B x) {
+  bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
+    split = 1;
     B2 t = splitCells(x, w, 1);
     w = t.p;
     x = t.n;
@@ -300,13 +309,15 @@ B indexOf_c2(B t, B w, B x) {
         TABLE(w, x, i32, wia, i)
         return reduceI32Width(r, wia);
       }
-      if (we==el_i32 && xe==el_i32) {
+      #if SINGELI
+      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia))))) {
         i32* rp; B r = m_i32arrc(&rp, x);
-        if (indexOf_c2_hash32(rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
+        if (si_indexOf_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
           decG(w); decG(x); return reduceI32Width(r, wia);
         }
         decG(r);
       }
+      #endif
     }
     
     i32* rp; B r = m_i32arrc(&rp, x);
@@ -325,7 +336,9 @@ B indexOf_c2(B t, B w, B x) {
 
 B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
+  bool split = 0;
   if (isAtm(x) || RNK(x)!=1) {
+    split = 1;
     B2 t = splitCells(w, x, false);
     w = t.n;
     x = t.p;
@@ -403,13 +416,15 @@ B memberOf_c2(B t, B w, B x) {
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }
-      if (we==el_i32 && xe==el_i32) {
+      #if SINGELI
+      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia))))) {
         i8* rp; B r = m_i8arrc(&rp, w);
-        if (memberOf_c2_hash32(rp, tyany_ptr(x), xia, tyany_ptr(w), wia)) {
+        if (si_memberOf_c2_hash[we-el_i32](rp, tyany_ptr(x), xia, tyany_ptr(w), wia)) {
           decG(w); decG(x); return taga(cpyBitArr(r));
         }
         decG(r);
       }
+      #endif
     }
     
     H_Sb* set = m_Sb(64);
@@ -429,7 +444,9 @@ B memberOf_c2(B t, B w, B x) {
 #undef CHECK_CHRS_ELSE
 
 B count_c2(B t, B w, B x) {
+  bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
+    split = 1;
     B2 t = splitCells(x, w, 2);
     w = t.p;
     x = t.n;
@@ -469,10 +486,12 @@ B count_c2(B t, B w, B x) {
     we-= el_c8-el_i8; xe-= el_c8-el_i8;
     goto el8or16;
   } else {
-    if (we==el_i32 && xe==el_i32 &&
-        count_c2_hash32(rp, tyany_ptr(w), wia, tyany_ptr(x), xia, wnext)) {
+    #if SINGELI
+    if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia)))) &&
+        si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, wnext)) {
       goto dec_nwx;
     }
+    #endif
     H_b2i* map = m_b2i(64);
     SGetU(x)
     SGetU(w)
