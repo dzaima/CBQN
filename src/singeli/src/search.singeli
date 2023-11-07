@@ -469,9 +469,10 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
         if (k==h) {
           def {inds} = vals; def {link} = links
           ti := load{inds, j}
-          if (ti>0) {
-            store{inds, j, ti - load{link,ti}}
-            store{rp, m-ti, i}
+          store{rp, m-ti, i}
+          ti -= load{link, ti}
+          if (ti > 0) {
+            store{inds, j, ti}
           } else {
             do {
               jp:=j; ++j
