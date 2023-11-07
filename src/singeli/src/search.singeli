@@ -409,14 +409,10 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
         store{inds, j, 0}
         setlabel{dup}
         i1 := i+1
-        store{link, i1, i1-load{inds,j}}
+        store{link, i1, load{inds,j}}
         store{inds, j, i1}
       }
-      def get{found, j} = {
-        ti := load{inds, j}; mi := ti &- found
-        store{inds, j, ti - load{link,mi}}
-        i32~~(m - mi)
-      }
+      def get{found, j} = assert{0}
       tup{set, {found,i}=>{}, {}=>{}, get}
     }
   }
@@ -459,8 +455,9 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
 
   setlabel{lookup}
   fixup{}
-  if (prim=='⊒' and swap) {
-    @for (rp over m) rp = i32~~n
+  def prog_lookup{swap} = { # Progressive Index-of lookup
+    def rev{a,b} = if (swap) tup{b,a} else tup{a,b}
+    memset{*u32~~rp, ...rev{m,n}}
     @for (fp over i to n) {
       h := hash_val{fp}; j := h>>sh
       k := load{hash,j}
@@ -469,8 +466,8 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
         if (k==h) {
           def {inds} = vals; def {link} = links
           ti := load{inds, j}
-          store{rp, m-ti, i}
-          ti -= load{link, ti}
+          store{rp, ...rev{i, m-ti}}
+          ti = load{link, ti}
           if (ti > 0) {
             store{inds, j, ti}
           } else {
@@ -485,6 +482,9 @@ fn hashtab{T, name}(rp:*rty{name}, ip:*T, m:usz, fp:*T, n:usz, links:ity{name}) 
         }
       }
     }
+  }
+  if (prim=='⊒') {
+    if (not swap) prog_lookup{0} else prog_lookup{1}
   } else {
     @for (rp, fp over n) {
       h := hash_val{fp}; j := h>>sh
