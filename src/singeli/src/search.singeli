@@ -375,11 +375,23 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
           swap_sides{}; i=m  # i==m return value is kind of dumb
           @for (ip over m) { # Remove values in ip from hash
             h := hash_val{ip}; j := h>>sh
-            if (h == maxh) { has_maxh = 0 } else {
+            def shortcut = makelabel{}
+            if (h == maxh) {
+              if (uniq==0) goto{shortcut}
+              has_maxh = 0
+            } else {
               k := load{hash,j}
               if (k <= h) {
                 while (k < h) { ++j; k = load{hash,j} }
-                if (k==h) hash_remove{j,h}
+                if (k == h) {
+                  --uniq
+                  if (uniq==0 and not has_maxh) {
+                    setlabel{shortcut}
+                    @for (rp over n) rp = 1
+                    goto{abort}
+                  }
+                  hash_remove{j,h}
+                }
               }
             }
           }
@@ -432,6 +444,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
 
   def lookup=makelabel{}; def abort=makelabel{}; def dup=makelabel{}
   cc:usz = 0       # Collision counter
+  uniq:usz = 0     # Uniques inserted
   i:usz=0; while (1) {
     e := tern{m-i>b, i+b, m}
     while (i < e) {
@@ -453,6 +466,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         } while (k != maxh)
         cc += cast_i{usz, je-j0}
       }
+      if (prim=='∊') uniq += promote{usz,h!=maxh}
       store{hash, j, h}
       set_tab{j, je, kr, dup}
       ++i
