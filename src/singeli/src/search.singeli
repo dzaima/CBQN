@@ -384,7 +384,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
             }
           }
         }
-        try_vec_memb{T, hash, sz+ext, sh, maxh, has_maxh, swap, rp, fp, n, abort}
+        try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, abort}
         if (has_maxh) { while (load{hash,end}!=maxh) ++end }
         else end += promote{T,ext} # Unreachable
       }
@@ -516,20 +516,25 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
 }
 
 def try_vec_memb{..._} = {}
-def try_vec_memb{T, hash, hashlen, sh, maxh, has_maxh, swap, rp, fp, n, done
+def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
                  & hasarch{'SSE4.2'} & T==u32} = {
   # Hash h wants bin h>>sh, so the offset for h in slot i is (in infite-precision ints)
   # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
   # We maintain io = (i+1)<<sh-1
   def vl = 4; def V = [vl]T
-  nh := hashlen/vl; o := hashlen-vl*nh
-  io := make{V, each{{k} => (o+k)<<sh - 1, 1+iota{vl}}}
+  assert{sz%vl == 0}
+  io := make{V, each{{k} => T~~k<<sh - 1, 1+iota{vl}}}
   id := V**(T~~vl<<sh)
   mv := V**0
-  @for (h in *V~~(hash+o) over nh) { mv=max{mv, io-min{h,io}}; io+=id }
+  @for (h in *V~~hash over sz/vl) { mv=max{mv, io-min{h,io}}; io+=id }
   max_off := vfold{max, mv} >> sh
-  vswap := base{256,vl**1} * promote{T,swap}
+  # sz==1<<sh, so when i>=sz the above overflows
+  # And we have to handle maxh specially anyway
+  def mx{i,h} = { max_off = max{max_off, i-h>>sh} }
+  i:T=sz; h:T=i; while ((h=load{hash,i})<maxh) { mx{i,h}; ++i }
+  if (has_maxh) mx{i,maxh}
 
+  vswap := base{256,vl**1} * promote{T,swap}
   def memb{test} = {
     def R = i8; def rw = width{R}; def u = width{T}/rw
     l := n/u
