@@ -370,7 +370,7 @@ B memberOf_c2(B t, B w, B x) {
     }
 
     CHECK_CHRS_ELSE { tyEls: // Both numbers
-      if (xia>32 && wia<=(xe<=el_i8?1:6)) {
+      if (xia>32 && wia<=(xe<=el_i8?1:xe==el_i32?4:6)) {
         SGetU(w);
         i8* rp; r = m_i8arrc(&rp, w);
         for (usz i=0; i<wia; i++) rp[i] = indexOfOne(x, GetU(w,i)) < xia;
