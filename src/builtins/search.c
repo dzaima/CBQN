@@ -1,23 +1,34 @@
 // Dyadic search functions: Member Of (∊), Index of (⊐), Progressive Index of (⊒)
 
-// 𝕨⊐unit or unit∊𝕩: scalar loop with early-exit
-//   SHOULD use simd
-//   SHOULD unify implementations
-// 𝕩⊒unit or 𝕨⊒𝕩 where 1≥≠𝕩: defer to 𝕨⊐𝕩
-
-// Both arguments with rank≥1:
-//   High-rank inputs:
-//     Convert to a (lower-rank) typed integer array if cells are ≤62 bits
-//     COULD have special hashing for equal type >64 bit cells, skipping squeezing
-//     COULD try conditionally squeezing ahead-of-time, and not squeezing in bqn_hash
-//   p⊐n & n∊p with short p & long n: n⊸=¨ p
-//     bitarr⊐𝕩: more special arithmetic
-//     SHOULD have impls for long p & short n
-//   ≤16-bit elements: lookup tables
-//   Character elements: reinterpret as integer elements
-//   Otherwise, generic hashtable
-//     SHOULD handle up to 64 bit cells via proper typed hash tables
-//   SHOULD have fast path when cell sizes or element types doesn't match
+// 𝕨⊐unit or unit∊𝕩: SIMD shortcutting search
+// 𝕨⊒𝕩 where 1≥≠𝕩: defer to 𝕨⊐𝕩
+// High-rank inputs:
+//   Convert to a typed numeric list if cells are ≤62 bits
+//   COULD have hashing for equal-type >64 bit cells, to skip squeezing
+//   COULD try squeezing ahead-of-time to skip it in bqn_hash
+//   SHOULD have fast path when cell sizes don't match
+// One input empty: fast not-found
+// Character elements:
+//   Character versus number array is fast not-found for ∊ and ⊐
+//     SHOULD have fast character-number path for ⊒
+//   Reinterpret as integer elements
+// COULD try p=⌜n when all arguments are short (may not be faster?)
+// p⊐n & n∊p with short n: p⊸⊐¨n
+// p⊐n & n∊p with boolean p: based on ⊑p and p⊐¬⊑p
+// p⊐n & n∊p with short p:
+//   AVX2 binary search when applicable
+//   n⊸=¨p otherwise
+// ≤16-bit elements: lookup tables
+//   8-bit ∊ and ⊐: SSSE3 table
+//     SHOULD make 8-bit NEON table
+// 32- or 64-bit elements: hash tables
+//   Store hash in table and not element; Robin Hood ordering; resizing
+//   Reverse hash if searched-for is shorter
+//   Shortcutting for reverse hashes and non-reversed ⊒
+//   SIMD lookup for 32-bit ∊ if chain length is small enough
+//   SHOULD partition if hash table size gets large
+// SHOULD handle unequal search types better
+// Otherwise, generic hashtable
 
 #include "../core.h"
 #include "../utils/hash.h"
