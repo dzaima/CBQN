@@ -342,8 +342,8 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   def prim = to_prim{name}
   ip := *T~~iv; fp := *T~~fv
   def swap_sides{} = each{{a,b}=>{t:=a; a=b; b=t}, tup{ip,m}, tup{fp,n}}
-  swap:u1 = 0
-  if ((prim=='⊒' or prim=='∊') and (swap = n < m)) swap_sides{}
+  swap:u1 = n+(1024*(prim!='⊒')) < (if (prim!='∊') m else m-m/4)
+  if (swap) swap_sides{}
   def stop = m
 
   log := clzc{m}
@@ -439,6 +439,24 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       }
     }
   }
+  def ind_rev_lookup{uniq, has_maxh} = {
+    def shortcut = makelabel{}
+    @for (ip over i to m) {
+      h := hash_val{ip}; j := h>>sh
+      k := load{hash,j}
+      if (k <= h) {
+        while (k < h) { ++j; k = load{hash,j} }
+        def had_maxh{} = { s:=has_maxh; has_maxh=0; s }
+        if (k == h and (h<maxh or had_maxh{})) {
+          def {inds} = vals
+          store{rp, load{inds, j}, i}
+          --uniq; if (uniq==0) goto{shortcut}
+          hash_remove{j,h}
+        }
+      }
+    }
+    setlabel{shortcut}
+  }
   def prog_lookup{swap} = { # Progressive Index-of lookup
     def rev{a,b} = if (swap) tup{b,a} else tup{a,b}
     memset{*u32~~rp, ...rev{m,n}}
@@ -491,7 +509,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       lookup_all{{found, j} => promote{i8, swap ^ (found & (j<end))}}
     }
 
-    {('⊐'), inds} => {
+    {('⊐'), inds} => if (not swap) {
       has_maxh:u1 = 0
       ind_maxh:u32 = 0
       def dup = makelabel{}
@@ -509,6 +527,43 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         store{inds, end, ind_maxh}
       }
       lookup_all{{found, j} => i32~~(m - (load{inds, j} &- found))}
+    } else { # swap
+      # After insert_all, position i in rp contains:
+      # - ≠𝕨, if i is the first occurrence of its value in 𝕩, or
+      # - j-≠𝕩, where j<i is the index of the first occurrence
+      uniq:usz = 0
+      ind_maxh:usz = m
+      ri:i32 = 0  # Placed in rp (should be scoped to insert_all loop body)
+      def dup = makelabel{}; def skip_dup = makelabel{}
+      def set_maxh{found, i} = {
+        ri = cast_i{i32, n}  # Initialize to not-found
+        if (found) {
+          if (ind_maxh==m) ind_maxh = i
+          else ri = i32~~(ind_maxh - m)
+          goto{skip_dup}
+        }
+      }
+      def set{j,je,kr} = {
+        store{inds, j, i}
+        if (u1~~0) {
+          setlabel{dup}
+          ri = i32~~(load{inds, j} - m)
+          setlabel{skip_dup}
+        }
+        store{rp, i, ri}
+      }
+      insert_all{set, set_maxh, dup, uniq}
+      has_maxh := ind_maxh < m
+      # Lookup places correct result index at each first occurrence
+      swap_sides{}; i=m
+      if (has_maxh) {
+        ++uniq
+        end := maxh>>sh; while (load{hash,end}!=maxh) ++end
+        store{inds, end, ind_maxh}
+      }
+      ind_rev_lookup{uniq, has_maxh}
+      # Propagate to later occurrences
+      @for (r in rp over i to n) r = load{rp, min{i, u32~~r+n}}
     }
 
     {('⊒'), inds, link} => {

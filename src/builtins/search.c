@@ -251,7 +251,7 @@ B indexOf_c2(B t, B w, B x) {
     }
 
     CHECK_CHRS_ELSE { tyEls: // Both numbers
-      if (wia>32 && xia<=(we<=el_i8?1:6)) {
+      if (wia>32 && xia<=(we<=el_i8?1:3)) {
         SGetU(x);
         B r;
         #define IND(T) \
@@ -283,7 +283,7 @@ B indexOf_c2(B t, B w, B x) {
         decG(w); decG(x); return r;
       }
       #endif
-      if (wia<=(we<=el_i16?4:16) && xia>16) {
+      if (wia<=4 && xia>16) {
         SGetU(w);
         #define XEQ(I) C2(ne, GetU(w,I), incG(x))
         B r = XEQ(wia-1);
