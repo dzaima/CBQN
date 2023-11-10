@@ -17,10 +17,12 @@
 // p⊐n & n∊p with boolean p: based on ⊑p and p⊐¬⊑p
 // p⊐n & n∊p with short p:
 //   AVX2 binary search when applicable
+//     SHOULD apply vector binary search to characters (sort as ints)
 //   n⊸=¨p otherwise
 // ≤16-bit elements: lookup tables
 //   8-bit ∊ and ⊐: SSSE3 table
 //     SHOULD make 8-bit NEON table
+//   SHOULD have branchy reverse 16-bit table search
 // 32- or 64-bit elements: hash tables
 //   Store hash in table and not element; Robin Hood ordering; resizing
 //   Reverse hash if searched-for is shorter
@@ -35,9 +37,12 @@
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
 
-// From selfsearch.c
-extern NOINLINE void memset32(u32* p, u32 v, usz l);
-extern NOINLINE void memset64(u64* p, u64 v, usz l);
+extern NOINLINE void memset16(u16* p, u16 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+extern NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+extern NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+#define memset_i8          memset
+#define memset_i16(P,V,L)  memset16((u16*)(P), V, L)
+#define memset_i32(P,V,L)  memset32((u32*)(P), V, L)
 
 RangeFn getRange_fns[el_f64+1];
 #if SINGELI
@@ -97,7 +102,7 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
   if (IN.u != FOR.u) {                                                       \
     if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                              \
          { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                \
-    else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; } \
+    else { memset_##TY(tab-(ft/2-(ft==2)), INIT, ft); }                      \
   }                                                                          \
   /* Set */                                                                  \
   if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }      \
@@ -284,7 +289,7 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       #if SINGELI_AVX2
-      if (xia>=32 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<64>>(xe-el_i8) && we<=xe && !elChr(TI(x,elType))) {
+      if (xia>=32 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<(xe==el_i8?64:16) && we<=xe && !elChr(TI(x,elType))) {
         B g = C1(reverse, C1(gradeDown, incG(w)));
         w = C2(select, incG(g), w);
         switch (xe) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; }
@@ -304,21 +309,26 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        B r;
         #if SINGELI
         if (wia>256 && we==el_i8 && xe==el_i8) {
           TALLOC(u8, tab, 256*(1+sizeof(usz))); usz* ind = (usz*)(tab+256);
           void* fp = tyany_ptr(x);
           simd_index_tab_u8(tyany_ptr(w), wia, fp, xia, tab, ind);
           decG(w);
-          i32* rp; B r = m_i32arrc(&rp, x);
-          for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          #define LOOKUP(TY) \
+            TY* rp; r = m_##TY##arrc(&rp, x); \
+            for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          if (wia<=INT16_MAX) { LOOKUP(i16) } else { LOOKUP(i32) }
+          #undef LOOKUP
           TFREE(tab); decG(x);
-          return reduceI32Width(r, wia);
+          return r;
         }
         #endif
-        B r;
-        TABLE(w, x, i32, wia, i)
-        return reduceI32Width(r, wia);
+        if      (wia<= INT8_MAX) { TABLE(w, x,  i8, wia, i) }
+        else if (wia<=INT16_MAX) { TABLE(w, x, i16, wia, i) }
+        else                     { TABLE(w, x, i32, wia, i) }
+        return r;
       }
       #if SINGELI
       if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia))))) {

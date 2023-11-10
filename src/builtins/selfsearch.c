@@ -43,8 +43,9 @@ extern B mul_c2(B, B, B);
 extern B scan_add_bool(B x, u64 ia);
 extern B scan_max_num(B x, u8 xe, u64 ia);
 
-extern NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
-extern NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+// From search.c
+extern NOINLINE void memset32(u32* p, u32 v, usz l);
+extern NOINLINE void memset64(u64* p, u64 v, usz l);
 
 #if SINGELI
   #define SINGELI_FILE selfsearch

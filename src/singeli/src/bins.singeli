@@ -305,7 +305,7 @@ if (hasarch{'AVX2'}) {
   }
   exportT{
     'avx2_indexOf_sort',
-    each{avx2_search_bin{'⊐',.,.}, tup{i8,i16,i32}, tup{64,32,16}}
+    each{avx2_search_bin{'⊐',.,.}, tup{i8,i16,i32}, tup{64,16,16}}
   }
 }
 
