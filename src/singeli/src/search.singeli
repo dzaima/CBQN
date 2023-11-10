@@ -360,7 +360,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
   def {tabs, sz, sh, hash_resize, hash_free} = hash_alloc{
-    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**(if (prim=='⊐') 'any' else 0)}
+    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**'any'}
   }
   def {hash,...vals} = tabs
 
@@ -374,7 +374,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       while (i < e) {
         def ii = if (prim!='⊒') i else m-i-1
         h := hash_val{load{ip,ii}}; j := h>>sh
-        set_maxh{h==maxh, i}
+        set_maxh{h==maxh, i, j}
         kv := each{load{.,j}, tabs}; def {k,...kr} = kv
         # Robin Hood insertion
         j0 := j; je := j  # Save value; end of chain (insert at j)
@@ -392,7 +392,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         }
         each{{u} => { u += promote{usz,h!=maxh} }, uniq}
         store{hash, j, h}
-        set_tab{j, je, kr}
+        set_tab{j, h}
         ++i
       }
       if (i == m) goto{insert_finish}
@@ -404,6 +404,15 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       }
     }
     setlabel{insert_finish}
+  }
+  def get_end{} = {
+    end := maxh>>sh
+    while (load{hash,end}!=maxh) ++end
+    end
+  }
+  def sequester_maxh{j, found} = { j += cast_i{T, ext &- found} }
+  def unsequester_maxh{tab} = {
+    store{tab, get_end{}, load{tab, maxh>>sh + cast_i{T,ext}}}
   }
 
   def hash_remove{j,h} = {
@@ -469,11 +478,13 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         if (k==h) {
           def {inds} = vals; def {link} = links
           ti := load{inds, j}
-          store{rp, ...rev{i, m-ti}}
-          c -= promote{usz,ti>0}; if (c==0) goto{shortcut}
-          ti = load{link, ti}
-          if (ti > 0) store{inds, j, ti}
-          else hash_remove{j,h}
+          if (ti > 0) {
+            store{rp, ...rev{i, m-ti}}
+            --c; if (c==0) goto{shortcut}
+            ti = load{link, ti}
+            if (ti > 0 or h==maxh) store{inds, j, ti}
+            else hash_remove{j,h}
+          }
         }
       }
     }
@@ -494,8 +505,8 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       uniq:usz = 0  # Uniques inserted
       def dup = makelabel{}
       insert_all{
-        {j,je,kr} => setlabel{dup},
-        {found, i} => has_maxh |= found,
+        {j, h} => setlabel{dup},
+        {found, i, j} => has_maxh |= found,
         dup, uniq
       }
       if (swap) {
@@ -503,8 +514,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         memb_remove{uniq,has_maxh} # Remove values in ip from hash
       }
       try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, abort}
-      end := maxh>>sh  # Clip trailing maxh if it shouldn't be in the table
-      while (load{hash,end}!=maxh) ++end
+      end := get_end{}     # Clip trailing maxh if it shouldn't be in the table
       if (has_maxh) ++end  # Don't clip
       lookup_all{{found, j} => promote{i8, swap ^ (found & (j<end))}}
     }
@@ -513,52 +523,43 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       has_maxh:u1 = 0
       ind_maxh:u32 = 0
       def dup = makelabel{}
-      def set{j,je,kr} = {
+      def set{j, h} = {
         store{inds, j, m-i}  # So it can be cleared with one &- in get{}
         setlabel{dup}
       }
-      def set_maxh{found, i} = {
+      def set_maxh{found, i, j} = {
         ind_maxh |= i &- (found&~has_maxh)
         has_maxh |= found
       }
       insert_all{set, set_maxh, dup}
-      end := maxh>>sh; while (load{hash,end}!=maxh) ++end
-      store{inds, end, (m-ind_maxh) &- has_maxh}
+      store{inds, get_end{}, (m-ind_maxh) &- has_maxh}
       lookup_all{{found, j} => i32~~(m - (load{inds, j} &- found))}
     } else { # swap
       # After insert_all, position i in rp contains:
       # - ≠𝕨, if i is the first occurrence of its value in 𝕩, or
       # - j-≠𝕩, where j<i is the index of the first occurrence
       uniq:usz = 0
-      ind_maxh:usz = m
+      has_maxh:u1 = 0
       ri:i32 = 0  # Placed in rp (should be scoped to insert_all loop body)
-      def dup = makelabel{}; def skip_dup = makelabel{}
-      def set_maxh{found, i} = {
+      def dup = makelabel{}
+      def set_maxh{found, i, j} = {
+        sequester_maxh{j, found}
         ri = cast_i{i32, n}  # Initialize to not-found
-        if (found) {
-          if (ind_maxh==m) ind_maxh = i
-          else ri = i32~~(ind_maxh - m)
-          goto{skip_dup}
-        }
+        if (found & has_maxh) goto{dup}
+        has_maxh |= found
       }
-      def set{j,je,kr} = {
+      def set{j, h} = {
         store{inds, j, i}
         if (u1~~0) {
           setlabel{dup}
           ri = i32~~(load{inds, j} - m)
-          setlabel{skip_dup}
         }
         store{rp, i, ri}
       }
       insert_all{set, set_maxh, dup, uniq}
-      has_maxh := ind_maxh < m
       # Lookup places correct result index at each first occurrence
       swap_sides{}; i=m
-      if (has_maxh) {
-        ++uniq
-        end := maxh>>sh; while (load{hash,end}!=maxh) ++end
-        store{inds, end, ind_maxh}
-      }
+      if (has_maxh) { ++uniq; unsequester_maxh{inds} }
       ind_rev_lookup{uniq, has_maxh}
       # Propagate to later occurrences
       @for (r in rp over i to n) r = load{rp, min{i, u32~~r+n}}
@@ -566,18 +567,18 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
 
     {('⊒'), inds, link} => {
       store{link,0,0}
+      store{inds, maxh>>sh + cast_i{T,ext}, 0}
       def dup = makelabel{}
-      def set{j,je,{kr}} = {
-        # maxh entry either stores 0 or is the last entry and stores an
-        # index, so this preserves all values
-        ++je; store{inds, je, kr|load{inds,je}}
-        store{inds, j, 0}
+      def set{j, h} = {
+        store{inds, j, load{inds,j} &- (h==maxh)}
         setlabel{dup}
         i1 := i+1
         store{link, i1, load{inds,j}}
         store{inds, j, i1}
       }
-      insert_all{set, {found,i}=>{}, dup}
+      def set_maxh{found, i, j} = sequester_maxh{j, found}
+      insert_all{set, set_maxh, dup}
+      unsequester_maxh{inds}
       if (not swap) prog_lookup{0} else prog_lookup{1}
     }
   }
