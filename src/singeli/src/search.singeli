@@ -348,9 +348,9 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
 
   log := clzc{m}
   # Max size
-  msl := max{clzc{m+m/2}+1, min{ux~~14,clzc{m+n/4}}}
+  msl := max{clzc{(m+m/2)|4}+1, min{ux~~14,clzc{m+n/4}}}
   msz := usz~~1 << msl
-  # Starting log-size
+  # Starting log-size (try_vec_memb requires size>4)
   sl  := msl; if (msl>=14) sl = 12+(msl&1)
   b:usz = 64  # Block size
 
@@ -504,8 +504,8 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
       }
       try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, abort}
       end := maxh>>sh  # Clip trailing maxh if it shouldn't be in the table
-      if (has_maxh) { while (load{hash,end}!=maxh) ++end }
-      else end += promote{T,ext} # Unreachable
+      while (load{hash,end}!=maxh) ++end
+      if (has_maxh) ++end  # Don't clip
       lookup_all{{found, j} => promote{i8, swap ^ (found & (j<end))}}
     }
 
@@ -522,10 +522,8 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         has_maxh |= found
       }
       insert_all{set, set_maxh, dup}
-      if (has_maxh) {
-        end := maxh>>sh; while (load{hash,end}!=maxh) ++end
-        store{inds, end, ind_maxh}
-      }
+      end := maxh>>sh; while (load{hash,end}!=maxh) ++end
+      store{inds, end, (m-ind_maxh) &- has_maxh}
       lookup_all{{found, j} => i32~~(m - (load{inds, j} &- found))}
     } else { # swap
       # After insert_all, position i in rp contains:
@@ -596,6 +594,7 @@ def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
   # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
   # We maintain io = (i+1)<<sh-1
   def vl = 4; def V = [vl]T
+  assert{sz > 4}
   assert{sz%vl == 0}
   io := make{V, each{{k} => T~~k<<sh - 1, 1+iota{vl}}}
   id := V**(T~~vl<<sh)
