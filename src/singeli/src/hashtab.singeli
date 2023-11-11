@@ -60,8 +60,15 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, ordered} = {
     k:tupsel{0,Ts} = 0; --k
     each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
     def {hash, ...vals} = ptrs; def {h0, ...v0r} = v0s
-    @for (h in hash over j from dif to sz + ext) {
-      if (h != h0) {
+    s := sz+ext
+    i := dif
+    while (i < s) {
+      e := min{s-i, usz~~32}
+      b:u32 = 0
+      @for_backwards (h in hash+i over e) b = 2*b + promote{u32, h!=h0}
+      while (b!=0) {
+        j := i + cast_i{usz,ctz{b}}; b &= b-1
+        h := hash->j
         hash <-{j} h0
         k0 := h>>sh
         if (ordered) { k = max{k0, k+1} }  # k0 can't be less than k
@@ -73,6 +80,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, ordered} = {
         }
         each{move, vals, v0r}
       }
+      i += e
     }
   }
 
