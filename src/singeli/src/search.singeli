@@ -360,7 +360,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
   def {tabs, sz, sh, hash_resize, hash_free} = hash_alloc{
-    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**'any'}
+    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**'any'}, 1
   }
   def {hash,...vals} = tabs
 

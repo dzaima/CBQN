@@ -25,7 +25,7 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   rp <-{0} res0
   def aux = prim!='∊'
   def {{hash,...vals}, sz, sh, hash_resize, hash_free} = hash_alloc{
-    sl, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}
+    sl, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}, 0
   }
 
   # Resize or abort if more than 1/2^thresh collisions/element
