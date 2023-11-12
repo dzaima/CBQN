@@ -344,7 +344,6 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   def swap_sides{} = each{{a,b}=>{t:=a; a=b; b=t}, tup{ip,m}, tup{fp,n}}
   swap:u1 = n+(1024*(prim!='⊒')) < (if (prim!='∊') m else m-m/4)
   if (swap) swap_sides{}
-  def stop = m
 
   log := clzc{m}
   # Max size
@@ -356,11 +355,12 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
 
   # Filling e slots past the end requires e*(e+1)/2 collisions, so
   # m entries with <2 each can fill <sqrt(4*m)
-  ext := tern{m<=b, m, b + (usz~~1 << (log/2 + 1))}
+  def cc_stop = 2*m
+  ext := tern{m<=b, max{m,usz~~4}, b + (usz~~1 << (log/2 + 1))}
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
-  def {tabs, sz, sh, hash_resize, hash_free} = hash_alloc{
-    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**'any'}, 1
+  def {tabs, sz, sh, div_thresh, hash_resize, hash_free} = hash_alloc{
+    sl, msz, ext, tup{T, ...aux**u32}, tup{maxh, ...aux**'any'}, 0, 1
   }
   def {hash,...vals} = tabs
 
@@ -368,8 +368,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   i:usz = 0     # Saved to determine if hashing finished
   def insert_all{set_tab, set_maxh, dup, ...uniq} = {
     cc:usz = 0  # Collision counter
-    def insert_finish = makelabel{}
-    while (1) {
+    while (i < m) {
       e := tern{m-i>b, i+b, m}
       while (i < e) {
         def ii = if (prim!='⊒') i else m-i-1
@@ -395,15 +394,21 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
         set_tab{j, h}
         ++i
       }
-      if (i == m) goto{insert_finish}
-      # Check collision counter and possibly resize (needs tuning)
-      if (cc >= stop and sz == msz) goto{abort}
-      if (16*cc >= stop and sz < msz) {
-        hash_resize{cc, 2} # Factor of 4
-        if (cc >= stop) goto{abort}
+      # Check collision counter and possibly resize
+      def p64 = promote{u64,.}
+      dc := p64{cc} - p64{div_thresh{i}}
+      if (tern{i<m, i64~~dc>=0, sz<msz}) {
+        if (sz == msz) goto{abort}
+        rdc := p64{m-i}*dc  # 0 if i==m, no need to recompute
+        mm := p64{i}*p64{m+i}
+        def recheck = setlabel{}
+        if (cc>=cc_stop or p64{n/4}*p64{cc} + rdc >= mm>>(5+log-(wt-sh))) {
+          hash_resize{cc, 2} # Factor of 4
+          if (i==m and sz<msz) goto{recheck}
+          if (cc >= cc_stop) { i=0; goto{abort} }
+        }
       }
     }
-    setlabel{insert_finish}
   }
   def get_end{} = {
     end := maxh>>sh

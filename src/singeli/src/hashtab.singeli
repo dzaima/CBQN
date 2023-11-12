@@ -35,12 +35,13 @@ def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
 # Allocate and initialize resizing hash table
 # Initial size sz+ext and maximum size msz+ext
 # One region for each type in Ts initialized with value from v0s
-def hash_alloc{logsz, msz, ext, Ts, v0s, ordered} = {
+def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
   def ws = each{width,Ts}
+  def wt = tupsel{0,ws}
   each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
   # Variables updated on resize
   sz := usz~~1 << logsz
-  sh := tupsel{0,ws} - logsz
+  sh := wt - logsz
 
   def add{}=0; def add{a,...r} = a+add{...r}
   halloc := talloc{u8, (msz+ext)*add{...ws/8}}
@@ -56,6 +57,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, ordered} = {
   def hash_resize{cc, m} = {
     dif := sz*((1<<m)-1)
     sh -= m; sz <<= m
+    set_thresh{}
     cc = 0
     k:tupsel{0,Ts} = 0; --k
     each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
@@ -84,5 +86,18 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, ordered} = {
     }
   }
 
-  tup{ptrs, sz, sh, hash_resize, {}=>tfree{halloc}}
+  # Test for resize if more than 1/2^t collisions/element
+  t:usz = 0          # Shift amount
+  def div_thresh{i} = i>>t
+  # Threshold setter, re-applied on resize
+  def set_thresh{} = {
+    if      (sz==msz)                            t = 0
+    else if ((not has_radix) and sz>=(1<<24)/wt) t = 0
+    else if (                    sz>=(1<<20)/wt) t = 3
+    else                                         t = 5
+  }
+  tup{set_thresh, div_thresh}
+  set_thresh{}
+
+  tup{ptrs, sz, sh, div_thresh, hash_resize, {}=>tfree{halloc}}
 }
