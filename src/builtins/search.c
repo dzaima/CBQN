@@ -82,7 +82,7 @@ extern B join_c2(B,B,B);
 extern B select_c2(B,B,B);
 
 B asNormalized(B x, usz n, bool nanBad);
-SHOULD_INLINE bool canCompare64_norm(B* w, usz wia, B* x, usz xia) {
+SHOULD_INLINE bool canCompare64_norm2(B* w, usz wia, B* x, usz xia) {
   B wn=asNormalized(*w,wia,true); if (wn.u == m_f64(0).u) return 0; *w=wn;
   B xn=asNormalized(*x,xia,true); if (xn.u == m_f64(0).u) return 0; *x=xn;
   return 1;
@@ -244,7 +244,7 @@ static NOINLINE usz indexOfOne(B l, B e) {
   } else
 
 B indexOf_c2(B t, B w, B x) {
-  bool split = 0;
+  bool split = 0; (void) split;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 1);
@@ -331,7 +331,7 @@ B indexOf_c2(B t, B w, B x) {
         return r;
       }
       #if SINGELI
-      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia))))) {
+      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
         i32* rp; B r = m_i32arrc(&rp, x);
         if (si_indexOf_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
           decG(w); decG(x); return reduceI32Width(r, wia);
@@ -357,7 +357,7 @@ B indexOf_c2(B t, B w, B x) {
 
 B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
-  bool split = 0;
+  bool split = 0; (void) split;
   if (isAtm(x) || RNK(x)!=1) {
     split = 1;
     B2 t = splitCells(w, x, false);
@@ -438,7 +438,7 @@ B memberOf_c2(B t, B w, B x) {
         return taga(cpyBitArr(r));
       }
       #if SINGELI
-      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia))))) {
+      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
         i8* rp; B r = m_i8arrc(&rp, w);
         if (si_memberOf_c2_hash[we-el_i32](rp, tyany_ptr(x), xia, tyany_ptr(w), wia)) {
           decG(w); decG(x); return taga(cpyBitArr(r));
@@ -465,7 +465,7 @@ B memberOf_c2(B t, B w, B x) {
 #undef CHECK_CHRS_ELSE
 
 B count_c2(B t, B w, B x) {
-  bool split = 0;
+  bool split = 0; (void) split;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 2);
@@ -508,7 +508,7 @@ B count_c2(B t, B w, B x) {
     goto el8or16;
   } else {
     #if SINGELI
-    if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm(&w,wia,&x,xia)))) &&
+    if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
         si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, wnext)) {
       goto dec_nwx;
     }
@@ -529,7 +529,9 @@ B count_c2(B t, B w, B x) {
     }
     free_b2i(map);
   }
+  #if SINGELI
   dec_nwx:;
+  #endif
   TFREE(wnext); decG(w); decG(x);
   return reduceI32Width(r, wia);
 }
