@@ -31,16 +31,13 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   # Resize or abort if more than 1/2^thresh collisions/element
   def {set_thresh, div_thresh} = {
     t:usz = 0          # Shift amount
-    def o = prim=='⊐'  # Offset to allow effective t<0
-    def div_thresh{i} = ((1<<o)*i)>>t
-    def t0= has_radix*(prim=='∊')
-    def w = if (prim=='⊒') 1<<6 else wt<<o
+    def div_thresh{i} = i>>t
     # Threshold setter, re-applied on resize
     def set_thresh{} = {
-      if      (sz==msz)                           t = t0
-      else if ((not has_radix) and sz>=(1<<24)/w) t = 0+o
-      else if (                    sz>=(1<<20)/w) t = 3+o
-      else                                        t = 5+o
+      if      (sz==msz)                            t = 0
+      else if ((not has_radix) and sz>=(1<<24)/wt) t = 0
+      else if (                    sz>=(1<<20)/wt) t = 3
+      else                                         t = 5
     }
     tup{set_thresh, div_thresh}
   }
