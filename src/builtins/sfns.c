@@ -3,22 +3,6 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
-NOINLINE Arr* emptyArr(B x, ur xr) {
-  B xf = getFillR(x);
-  if (xr==1) {
-    if (isF64(xf)) return a(emptyIVec());
-    if (noFill(xf)) return a(emptyHVec());
-    if (isC32(xf)) return a(emptyCVec());
-  }
-  Arr* r;
-  if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
-  else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
-  else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
-  else                 { r = m_fillarrpEmpty(xf); }
-  if (xr<=1) arr_rnk01(r, xr);
-  return r;
-}
-
 static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without set shape; v is non-negative
   usz xia = IA(x);
   if (ria>xia) {

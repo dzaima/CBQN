@@ -167,8 +167,9 @@ void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s
 B widenBitArr(B x, ur axis); // consumes x, assumes bitarr; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes widenBitArr, overriding shape past axis to cr↑csh
 
-Arr* cpyWithShape(B x); // consumes; returns array with refcount 1 with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
-Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the fill of x; if xr>1, shape is unset
+Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
+Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set
+NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
 
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills

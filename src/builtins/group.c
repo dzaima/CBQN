@@ -84,7 +84,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   B* rp = fillarr_ptr(r);
   
   B xf = getFillR(x);
-  Arr* rf = m_fillarrpEmpty(xf);
+  Arr* rf = emptyWithFill(xf);
   if (xr==1) arr_shVec(rf); else arr_shChangeLen(rf, xr, xsh, 0);
   
   B z = taga(rf);
@@ -306,7 +306,7 @@ B group_c2(B t, B w, B x) {
         arr_shVec(c);
         rp[i] = taga(c);
       }
-      fillarr_setFill(r, taga(arr_shVec(m_fillarrpEmpty(xf))));
+      fillarr_setFill(r, taga(arr_shVec(emptyWithFill(xf))));
       SGet(x)
       NOGC_S;
       for (usz i = 0; i < xn; i++) {

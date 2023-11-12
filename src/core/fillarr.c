@@ -202,3 +202,33 @@ FORCE_INLINE B m_oneItemArr(B x, ur rr) {
 
 NOINLINE B m_unit(B x) { return m_oneItemArr(x, 0); }
 NOINLINE B m_vec1(B x) { return m_oneItemArr(x, 1); }
+
+
+NOINLINE Arr* emptyArr(B x, ur xr) {
+  B xf = getFillR(x);
+  if (xr==1) {
+    if (isF64(xf)) return a(emptyIVec());
+    if (noFill(xf)) return a(emptyHVec());
+    if (isC32(xf)) return a(emptyCVec());
+  }
+  Arr* r;
+  if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
+  else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
+  else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
+  else                 { r = m_fillarrpEmpty(xf); }
+  if (xr<=1) arr_rnk01(r, xr);
+  return r;
+}
+
+NOINLINE Arr* emptyWithFill(B fill) {
+  u8 type;
+  if (r_Bf(fill) == 0) { type = t_bitarr; goto tyarr; }
+  if (isC32(fill)) { type = t_c8arr; goto tyarr; }
+  if (noFill(fill)) return (Arr*) m_harrUp(0).c;
+  return m_fillarrpEmpty(fill);
+  
+  tyarr:;
+  Arr* r;
+  m_tyarrp(&r, 0, 0, type);
+  return r;
+}

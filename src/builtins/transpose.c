@@ -222,7 +222,7 @@ B transp_c2(B t, B w, B x) {
 
   // Empty result
   if (IA(x) == 0) {
-    Arr* ra = m_fillarrpEmpty(getFillR(x));
+    Arr* ra = emptyWithFill(getFillR(x));
     shSet(ra, rr, sh);
     decG(x);
     r = taga(ra); goto ret;
