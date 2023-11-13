@@ -613,7 +613,7 @@ def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
   # sz==1<<sh, so when i>=sz the above overflows
   # And we have to handle maxh specially anyway
   def mx{i,h} = { max_off = max{max_off, i-h>>sh} }
-  i:T=sz; h:T=i; while ((h=load{hash,i})<maxh) { mx{i,h}; ++i }
+  i:=cast_i{T,sz}; h:T=i; while ((h=load{hash,i})<maxh) { mx{i,h}; ++i }
   if (has_maxh) mx{i,maxh}
 
   vswap := base{256,vl**1} * promote{T,swap}
