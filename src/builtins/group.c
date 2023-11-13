@@ -108,6 +108,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     goto dec_ret;
   }
   TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
+  memset(pos, 0, sizeof(i32)*(2*ria+1));
   
   bool notB = TI(x,elType) != el_B;
   u8 xt = arrNewType(TY(x));
@@ -142,7 +143,6 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     usz i0 = ip[0];
     for (usz i=0; i<wia-1; i++) ip[i] = ip[i+1]-ip[i];
     ip[wia-1] = xn-ip[wia-1];
-    for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
     for (usz i = 0; i < wia; i++) len[wp[i]]+=ip[i];
     
     void* xp = tyany_ptr(x);
@@ -179,7 +179,6 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   }
   w = toI32Any(w);
   i32* wp = i32any_ptr(w);
-  for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
   for (usz i = 0; i < xn; i++) len[wp[i]]++; // overallocation makes this safe after n<-1 check
   
   u8 xk = xl - 3;
@@ -264,68 +263,25 @@ extern B rt_group;
 B group_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊔: 𝕩 must be an array");
   ur xr = RNK(x);
-  if (isArr(w) && RNK(w)==1 && xr>=1 && depth(w)==1) {
-    usz wia = IA(w);
-    usz* xsh = SH(x);
-    usz xn = *xsh;
-    if (wia-xn > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xn);
+  if (isArr(w) && RNK(w)==1 && xr>=1) {
     u8 we = TI(w,elType);
+    if (!elInt(we)) {
+      w = num_squeeze(w);
+      we = TI(w,elType);
+    }
     if (elInt(we)) {
+      usz wia = IA(w);
+      usz* xsh = SH(x);
+      usz xn = *xsh;
+      if (wia-(u64)xn > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xn);
       return group_simple(w, x, xr, wia, xn, xsh, we);
-    } else if (xr==1) {
-      SLOW2("𝕨⊔𝕩", w, x);
-      SGetU(w)
-      i64 ria = wia==xn? 0 : o2i64(GetU(w, xn));
-      if (ria<0) {
-        if (ria<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
-        ria = 0;
-      }
-      ria--;
-      for (usz i = 0; i < xn; i++) {
-        B cw = GetU(w, i);
-        if (!q_i64(cw)) goto base;
-        i64 c = o2i64G(cw);
-        if (c>ria) ria = c;
-        if (c<-1) thrM("⊔: 𝕨 can't contain elements less than ¯1");
-      }
-      if (ria > (i64)(USZ_MAX-1)) thrOOM();
-      ria++;
-      TALLOC(i32, lenO, ria+1); i32* len = lenO+1;
-      TALLOC(i32, pos, ria);
-      for (usz i = 0; i < ria; i++) len[i] = pos[i] = 0;
-      for (usz i = 0; i < xn; i++) len[o2i64G(GetU(w, i))]++;
-      
-      Arr* r = m_fillarr0p(ria);
-      B xf = incBy(getFillN(x), ria+1);
-      B* rp = fillarr_ptr(r);
-      for (usz i = 0; i < ria; i++) {
-        Arr* c = m_fillarrp(len[i]);
-        c->ia = 0;
-        fillarr_setFill(c, xf);
-        NOGC_E; // see comments in group_simple
-        arr_shVec(c);
-        rp[i] = taga(c);
-      }
-      fillarr_setFill(r, taga(arr_shVec(emptyWithFill(xf))));
-      SGet(x)
-      NOGC_S;
-      for (usz i = 0; i < xn; i++) {
-        i64 n = o2i64G(GetU(w, i));
-        if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
-      }
-      for (usz i = 0; i < ria; i++) a(rp[i])->ia = len[i];
-      NOGC_E;
-      decG(w); decG(x); TFREE(lenO); TFREE(pos);
-      return taga(r);
     }
   }
-  base:
   return c2rt(group, w, x);
 }
 B group_c1(B t, B x) {
   if (isArr(x) && RNK(x)==1 && TI(x,arrD1)) {
-    usz ia = IA(x);
-    B range = C1(ud, m_f64(ia));
+    B range = C1(ud, m_f64(IA(x)));
     return C2(group, x, range);
   }
   return c1rt(group, x);
