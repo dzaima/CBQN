@@ -338,6 +338,7 @@ oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
 def ity{name} = (to_prim{name}=='⊒')**(*u32)
 fn hashtab{T, name}(rp:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity{name}) = {
+  # iv,mi/ip,m - searched-in; fv,ni/fp,n - searched-for; may get swapped around & back
   def prim = to_prim{name}
   def U = if (prim=='∊') usz else u32
   m := cast_i{U,mi}; n := cast_i{U,ni}

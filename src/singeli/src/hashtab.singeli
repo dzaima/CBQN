@@ -36,6 +36,7 @@ def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
 # Allocate and initialize resizing hash table
 # Initial size sz+ext and maximum size msz+ext
 # One region for each type in Ts initialized with value from v0s
+# Allocates the maximum at the start, resizes downwards within the existing allocation
 def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
   def ws = each{width,Ts}
   def wt = tupsel{0,ws}
@@ -56,15 +57,18 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
   each{memset{., ., sze}, ptrs, v0s}
 
   def hash_resize{cc, m} = {
-    dif := sz*((1<<m)-1)
+    dif := sz*((1<<m)-1) # Number of elements of space to add
     sh -= m; sz <<= m
     set_thresh{}
-    cc = 0
-    k:tupsel{0,Ts} = 0; --k
+    cc = 0 # Collision counter
+    k:tupsel{0,Ts} = 0; --k # Index where to move an element to
     each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
     def {hash, ...vals} = ptrs; def {h0, ...v0r} = v0s
     s := sz+ext
     i := dif
+    
+    # Iterate over existing elements in blocks of e<=32
+    # Branchlessly skips over h0
     while (i < s) {
       e := min{s-i, usz~~32}
       b:u32 = 0
