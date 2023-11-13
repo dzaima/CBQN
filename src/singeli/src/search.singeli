@@ -337,9 +337,11 @@ oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
 
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
 def ity{name} = (to_prim{name}=='⊒')**(*u32)
-fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{name}) = {
-  def wt = width{T}
+fn hashtab{T, name}(rp:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity{name}) = {
   def prim = to_prim{name}
+  def U = if (prim=='∊') usz else u32
+  m := cast_i{U,mi}; n := cast_i{U,ni}
+  def wt = width{T}
   ip := *T~~iv; fp := *T~~fv
   def swap_sides{} = each{{a,b}=>{t:=a; a=b; b=t}, tup{ip,m}, tup{fp,n}}
   swap:u1 = n+(1024*(prim!='⊒')) < (if (prim!='∊') m else m-m/4)
@@ -351,12 +353,12 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   msz := usz~~1 << msl
   # Starting log-size (try_vec_memb requires size>4)
   sl  := msl; if (msl>=14) sl = 12+(msl&1)
-  b:usz = 64  # Block size
+  b:U = 64  # Block size
 
   # Filling e slots past the end requires e*(e+1)/2 collisions, so
   # m entries with <2 each can fill <sqrt(4*m)
-  def cc_stop = 2*m
-  ext := tern{m<=b, max{m,usz~~4}, b + (usz~~1 << (log/2 + 1))}
+  def cc_stop = 2*cast_i{u64,m}
+  ext := promote{usz, tern{m<=b, max{m,U~~4}, b + (U~~1 << (log/2 + 1))}}
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
   def {tabs, sz, sh, div_thresh, hash_resize, hash_free} = hash_alloc{
@@ -365,9 +367,9 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   def {hash,...vals} = tabs
 
   def abort = makelabel{}
-  i:usz = 0     # Saved to determine if hashing finished
+  i:U = 0     # Saved to determine if hashing finished
   def insert_all{set_tab, set_maxh, dup, ...uniq} = {
-    cc:usz = 0  # Collision counter
+    cc:u64 = 0  # Collision counter
     while (i < m) {
       e := tern{m-i>b, i+b, m}
       while (i < e) {
@@ -387,7 +389,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
             each{store{.,je-c,.}, tabs, kv}
             each{=, kv, knv}
           } while (k != maxh)
-          cc += cast_i{usz, je-j0}
+          cc += cast_i{u64, je-j0}
         }
         each{{u} => { u += promote{usz,h!=maxh} }, uniq}
         store{hash, j, h}
@@ -474,7 +476,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, m:usz, fv:*void, n:usz, links:ity{n
   def prog_lookup{swap} = { # Progressive Index-of lookup
     def rev{a,b} = if (swap) tup{b,a} else tup{a,b}
     memset{*u32~~rp, ...rev{m,n}}
-    c:usz = m; def shortcut = makelabel{}
+    c := m; def shortcut = makelabel{}
     @for (fp over i to n) {
       h := hash_val{fp}; j := h>>sh
       k := load{hash,j}

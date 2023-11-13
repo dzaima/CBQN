@@ -8,7 +8,8 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   def wt = width{T}
   def prim = to_prim{name}
   def has_radix = if (prim=='⊐') 0 else wt==32
-  def {res0,cc_stop} = if (prim=='∊') tup{1,n>>has_radix} else tup{0,2*n}
+  n64 := promote{u64,n}
+  def {res0,cc_stop} = if (prim=='∊') tup{1,n64>>has_radix} else tup{0,2*n64}
 
   log := clzc{n}
   # Max size
@@ -50,20 +51,20 @@ fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
   }
 
   def break=makelabel{}
-  cc:usz = 0 # Collision counter
+  cc:u64 = 0 # Collision counter
   i:usz=1; while (1) {
     e := tern{n-i>b, i+b, n}
     while (i < e) {
       h := hash_val{xp->i}; j0 := h>>sh; j := j0
       k:=undefined{T}; while (((k=hash->j)!=h) & (k!=x0)) ++j
-      cc += cast_i{usz, j-j0}
+      cc += cast_i{u64, j-j0}
       rp <-{i} write_res{j,h,k,x0}
       ++i
     }
     if (i == n) goto{break}
     # Check collision counter and possibly resize
     def p64 = promote{u64,.}
-    dc := p64{cc} - p64{div_thresh{i}}
+    dc := cc - p64{div_thresh{i}}
     if (i64~~dc >= 0) {
       if (sz == msz) goto{break} # Abort
       if (has_radix and i < n/2 and sz >= 1<<18) goto{break}

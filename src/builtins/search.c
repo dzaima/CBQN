@@ -331,7 +331,7 @@ B indexOf_c2(B t, B w, B x) {
         return r;
       }
       #if SINGELI
-      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
+      if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
         i32* rp; B r = m_i32arrc(&rp, x);
         if (si_indexOf_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
           decG(w); decG(x); return reduceI32Width(r, wia);
@@ -508,8 +508,8 @@ B count_c2(B t, B w, B x) {
     goto el8or16;
   } else {
     #if SINGELI
-    if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
-        si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, wnext)) {
+    if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
+        si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, (u32*)wnext)) {
       goto dec_nwx;
     }
     #endif
