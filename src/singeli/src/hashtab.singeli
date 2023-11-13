@@ -1,0 +1,108 @@
+local include 'skin/cext'
+local include './cbqnDefs'  # talloc/tfree
+
+# Search primitives
+# Function params are passed as names to keep generated code readable
+def names = tup{'memberOf', 'count', 'indexOf'}
+def prims = tup{'∊',        '⊒',     '⊐'      }
+def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
+def to_prim = map{names, prims, .}
+
+# Defined in C
+def memset{p:pT, v, l} = {
+  emit{void, merge{'memset',fmtnat{elwidth{pT}}}, p, v, l}
+}
+
+# These hashes are stored in tables and must be invertible!
+# Murmur3
+def hash_val{x0:u32} = {
+  x := x0
+  x ^= x >> 16; x *= 0x85ebca6b
+  x ^= x >> 13; x *= 0xc2b2ae35
+  x ^= x >> 16; x
+}
+def hash_val{x0:u64} = {
+  x := x0
+  x ^= x >> 33; x *= 0xff51afd7ed558ccd
+  x ^= x >> 33; x *= 0xc4ceb9fe1a85ec53
+  x ^= x >> 33; x
+}
+# CRC32
+if (hasarch{'SSE4.2'}) require{'x86intrin.h'}
+def hash_val{x:u32 & hasarch{'SSE4.2'}} = {
+  emit{u32, '_mm_crc32_u32', 0x973afb51, x}
+}
+
+# Allocate and initialize resizing hash table
+# Initial size sz+ext and maximum size msz+ext
+# One region for each type in Ts initialized with value from v0s
+# Allocates the maximum at the start, resizes downwards within the existing allocation
+def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
+  def ws = each{width,Ts}
+  def wt = tupsel{0,ws}
+  each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
+  # Variables updated on resize
+  sz := usz~~1 << logsz
+  sh := wt - logsz
+
+  def add{}=0; def add{a,...r} = a+add{...r}
+  halloc := talloc{u8, (msz+ext)*add{...ws/8}}
+  szo := msz-sz  # Beginning of allocation to initial table
+  sze := sz+ext  # Initial table to end of allocation
+  def pe{{}} = halloc; def pl{{}} = tup{}
+  def pe{{..._, p}} = p+sze  # Next unallocated space given pointers so far
+  def pl{{...R, T}} = { def ps=pl{R}; tup{...ps, *T~~pe{ps}+szo} }
+  ptrs := pl{Ts}
+  def memset{_, ('any'), _} = {} # Indicates initialization not needed
+  each{memset{., ., sze}, ptrs, v0s}
+
+  def hash_resize{cc, m} = {
+    dif := sz*((1<<m)-1) # Number of elements of space to add
+    sh -= m; sz <<= m
+    set_thresh{}
+    cc = 0 # Collision counter
+    k:tupsel{0,Ts} = 0; --k # Index where to move an element to
+    each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
+    def {hash, ...vals} = ptrs; def {h0, ...v0r} = v0s
+    s := sz+ext
+    i := dif
+    
+    # Iterate over existing elements in blocks of e<=32
+    # Branchlessly skips over h0
+    while (i < s) {
+      e := min{s-i, usz~~32}
+      b:u32 = 0
+      @for_backwards (h in hash+i over e) b = 2*b + promote{u32, h!=h0}
+      while (b!=0) {
+        j := i + cast_i{usz,ctz{b}}; b &= b-1
+        h := hash->j
+        hash <-{j} h0
+        k0 := h>>sh
+        if (ordered) { k = max{k0, k+1} }  # k0 can't be less than k
+        else { k = k0; while (hash->k!=h0) ++k }
+        cc += cast_i{ux, k-k0}
+        hash <-{k} h
+        def move{p,v0} = {
+          v := p->j; if (not same{v0,'any'}) p <-{j} v0; p <-{k} v
+        }
+        each{move, vals, v0r}
+      }
+      i += e
+    }
+  }
+
+  # Test for resize if more than 1/2^t collisions/element
+  t:usz = 0          # Shift amount
+  def div_thresh{i} = i>>t
+  # Threshold setter, re-applied on resize
+  def set_thresh{} = {
+    if      (sz==msz)                            t = 0
+    else if ((not has_radix) and sz>=(1<<24)/wt) t = 0
+    else if (                    sz>=(1<<20)/wt) t = 3
+    else                                         t = 5
+  }
+  tup{set_thresh, div_thresh}
+  set_thresh{}
+
+  tup{ptrs, sz, sh, div_thresh, hash_resize, {}=>tfree{halloc}}
+}

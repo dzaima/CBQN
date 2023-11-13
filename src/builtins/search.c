@@ -1,28 +1,48 @@
 // Dyadic search functions: Member Of (∊), Index of (⊐), Progressive Index of (⊒)
 
-// 𝕨⊐unit or unit∊𝕩: scalar loop with early-exit
-//   SHOULD use simd
-//   SHOULD unify implementations
-// 𝕩⊒unit or 𝕨⊒𝕩 where 1≥≠𝕩: defer to 𝕨⊐𝕩
-
-// Both arguments with rank≥1:
-//   High-rank inputs:
-//     Convert to a (lower-rank) typed integer array if cells are ≤62 bits
-//     COULD have special hashing for equal type >64 bit cells, skipping squeezing
-//     COULD try conditionally squeezing ahead-of-time, and not squeezing in bqn_hash
-//   p⊐n & n∊p with short p & long n: n⊸=¨ p
-//     bitarr⊐𝕩: more special arithmetic
-//     SHOULD have impls for long p & short n
-//   ≤16-bit elements: lookup tables
-//   Character elements: reinterpret as integer elements
-//   Otherwise, generic hashtable
-//     SHOULD handle up to 64 bit cells via proper typed hash tables
-//   SHOULD have fast path when cell sizes or element types doesn't match
+// 𝕨⊐unit or unit∊𝕩: SIMD shortcutting search
+// 𝕨⊒𝕩 where 1≥≠𝕩: defer to 𝕨⊐𝕩
+// High-rank inputs:
+//   Convert to a typed numeric list if cells are ≤62 bits
+//   COULD have hashing for equal-type >64 bit cells, to skip squeezing
+//   COULD try squeezing ahead-of-time to skip it in bqn_hash
+//   SHOULD have fast path when cell sizes don't match
+// One input empty: fast not-found
+// Character elements:
+//   Character versus number array is fast not-found for ∊ and ⊐
+//     SHOULD have fast character-number path for ⊒
+//   Reinterpret as integer elements
+// COULD try p=⌜n when all arguments are short (may not be faster?)
+// p⊐n & n∊p with short n: p⊸⊐¨n
+// p⊐n & n∊p with boolean p: based on ⊑p and p⊐¬⊑p
+// p⊐n & n∊p with short p:
+//   AVX2 binary search when applicable
+//     SHOULD apply vector binary search to characters (sort as ints)
+//   n⊸=¨p otherwise
+// ≤16-bit elements: lookup tables
+//   8-bit ∊ and ⊐: SSSE3 table
+//     SHOULD make 8-bit NEON table
+//   SHOULD have branchy reverse 16-bit table search
+// 32- or 64-bit elements: hash tables
+//   Store hash in table and not element; Robin Hood ordering; resizing
+//   Reverse hash if searched-for is shorter
+//   Shortcutting for reverse hashes and non-reversed ⊒
+//   SIMD lookup for 32-bit ∊ if chain length is small enough
+//   SHOULD partition if hash table size gets large
+// SHOULD handle unequal search types better
+// Otherwise, generic hashtable
 
 #include "../core.h"
 #include "../utils/hash.h"
 #include "../utils/talloc.h"
 #include "../utils/calls.h"
+
+extern NOINLINE void memset16(u16* p, u16 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+extern NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+extern NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
+#define memset_i8          memset
+#define memset_i16(P,V,L)  memset16((u16*)(P), V, L)
+#define memset_i32(P,V,L)  memset32((u32*)(P), V, L)
 
 RangeFn getRange_fns[el_f64+1];
 #if SINGELI
@@ -42,15 +62,31 @@ RangeFn getRange_fns[el_f64+1];
   GETRANGE(i32,)
   GETRANGE(f64, if (!q_fi64(c)) return 0)
 #endif
+#if SINGELI_AVX2
+  extern void (**const avx2_member_sort)(uint64_t*,void*,uint64_t,void*,uint64_t);
+  extern void (**const avx2_indexOf_sort)(int8_t*,void*,uint64_t,void*,uint64_t);
+#endif
 
 
 #define C2i(F, W, X) C2(F, m_i32(W), X)
+extern B and_c1(B,B);
+extern B gradeDown_c1(B,B);
+extern B reverse_c1(B,B);
 extern B eq_c2(B,B,B);
 extern B ne_c2(B,B,B);
 extern B or_c2(B,B,B);
 extern B add_c2(B,B,B);
 extern B sub_c2(B,B,B);
 extern B mul_c2(B,B,B);
+extern B join_c2(B,B,B);
+extern B select_c2(B,B,B);
+
+B asNormalized(B x, usz n, bool nanBad);
+SHOULD_INLINE bool canCompare64_norm2(B* w, usz wia, B* x, usz xia) {
+  B wn=asNormalized(*w,wia,true); if (wn.u == m_f64(0).u) return 0; *w=wn;
+  B xn=asNormalized(*x,xia,true); if (xn.u == m_f64(0).u) return 0; *x=xn;
+  return 1;
+}
 
 static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
 
@@ -66,7 +102,7 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
   if (IN.u != FOR.u) {                                                       \
     if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                              \
          { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                \
-    else { TY* to=tab-(ft/2-(ft==2)); for (i64 i=0; i<ft; i++) to[i]=INIT; } \
+    else { memset_##TY(tab-(ft/2-(ft==2)), INIT, ft); }                      \
   }                                                                          \
   /* Set */                                                                  \
   if (IN##e==el_i8) { for (usz i=m; i--;    ) tab[((i8 *)ip)[i]]=SET; }      \
@@ -191,18 +227,26 @@ static NOINLINE usz indexOfOne(B l, B e) {
     #endif
 }
 
-#define CHR_TO_INT if (elChr(we) && elChr(xe)) { \
-  if (we!=xe && we<=el_c16 && xe<=el_c16) { /* LUT uses signed integers, so needs equal-width args if we're gonna give unsigned ones */ \
-    if (we>xe) x=taga(cpyC16Arr(x)); \
-    else       w=taga(cpyC16Arr(w)); \
-    we = xe = el_i16;                \
-    goto tyEls;                      \
-  }                                  \
-  we-=el_c8-el_i8; xe-=el_c8-el_i8; goto tyEls; \
-}
+#define CHECK_CHRS_ELSE \
+  if (!elNum(we)) {                      \
+    if (elChr(we)) {                     \
+      if (elNum(xe)) goto none_found;    \
+      if (we!=xe && we<=el_c16 && xe<=el_c16) { /* LUT uses signed integers, so needs equal-width args if we're gonna give unsigned ones */ \
+        if (we>xe) x=taga(cpyC16Arr(x)); \
+        else       w=taga(cpyC16Arr(w)); \
+        we = xe = el_i16;                \
+        goto tyEls;                      \
+      }                                  \
+      we-=el_c8-el_i8; xe-=el_c8-el_i8; goto tyEls; \
+    }                                    \
+  } else if (!elNum(xe)) {               \
+    if (elChr(xe)) goto none_found;      \
+  } else
 
 B indexOf_c2(B t, B w, B x) {
+  bool split = 0; (void) split;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
+    split = 1;
     B2 t = splitCells(x, w, 1);
     w = t.p;
     x = t.n;
@@ -218,10 +262,23 @@ B indexOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia==0 || xia==0) {
-      decG(w); return i64EachDec(0, x);
+      none_found:
+      decG(w); return i64EachDec(wia, x);
     }
-    
-    if (elNum(we) && elNum(xe)) { tyEls:
+
+    CHECK_CHRS_ELSE { tyEls: // Both numbers
+      if (wia>32 && xia<=(we<=el_i8?1:3)) {
+        SGetU(x);
+        B r;
+        #define IND(T) \
+          T* rp; r = m_##T##arrc(&rp, x); \
+          for (usz i=0; i<xia; i++) rp[i] = indexOfOne(w, GetU(x,i))
+        if (xia<I32_MAX) { IND(i32); r=reduceI32Width(r, wia); }
+        else { IND(f64); }
+        #undef IND
+        decG(w); decG(x); return r;
+      }
+
       if (we==el_bit) {
         u64* wp = bitarr_ptr(w);
         u64 w0 = 1 & wp[0];
@@ -231,7 +288,18 @@ B indexOf_c2(B t, B w, B x) {
         return i==wia? r : C2(sub, r, C2i(mul, wia-i, C2i(eq, !w0, x)));
       }
       
-      if (wia<=(we<=el_i16?4:16) && xia>16) {
+      #if SINGELI_AVX2
+      if (xia>=32 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<(xe==el_i8?64:16) && we<=xe && !elChr(TI(x,elType))) {
+        B g = C1(reverse, C1(gradeDown, incG(w)));
+        w = C2(select, incG(g), w);
+        switch (xe) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; }
+        i8* rp; B r = m_i8arrc(&rp, x);
+        avx2_indexOf_sort[xe-el_i8](rp, tyany_ptr(w), wia, tyany_ptr(x), xia);
+        r = C2(select, r, C2(join, g, m_i8(wia)));
+        decG(w); decG(x); return r;
+      }
+      #endif
+      if (wia<=4 && xia>16) {
         SGetU(w);
         #define XEQ(I) C2(ne, GetU(w,I), incG(x))
         B r = XEQ(wia-1);
@@ -241,23 +309,37 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       if (xia+wia>20 && we<=el_i16 && xe<=el_i16) {
+        B r;
         #if SINGELI
         if (wia>256 && we==el_i8 && xe==el_i8) {
           TALLOC(u8, tab, 256*(1+sizeof(usz))); usz* ind = (usz*)(tab+256);
           void* fp = tyany_ptr(x);
           simd_index_tab_u8(tyany_ptr(w), wia, fp, xia, tab, ind);
           decG(w);
-          i32* rp; B r = m_i32arrc(&rp, x);
-          for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          #define LOOKUP(TY) \
+            TY* rp; r = m_##TY##arrc(&rp, x); \
+            for (usz i=0; i<xia; i++) rp[i]=ind[((u8*)fp)[i]];
+          if (wia<=INT16_MAX) { LOOKUP(i16) } else { LOOKUP(i32) }
+          #undef LOOKUP
           TFREE(tab); decG(x);
-          return reduceI32Width(r, wia);
+          return r;
         }
         #endif
-        B r;
-        TABLE(w, x, i32, wia, i)
-        return reduceI32Width(r, wia);
+        if      (wia<= INT8_MAX) { TABLE(w, x,  i8, wia, i) }
+        else if (wia<=INT16_MAX) { TABLE(w, x, i16, wia, i) }
+        else                     { TABLE(w, x, i32, wia, i) }
+        return r;
       }
-    } else { CHR_TO_INT; }
+      #if SINGELI
+      if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
+        i32* rp; B r = m_i32arrc(&rp, x);
+        if (si_indexOf_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia)) {
+          decG(w); decG(x); return reduceI32Width(r, wia);
+        }
+        decG(r);
+      }
+      #endif
+    }
     
     i32* rp; B r = m_i32arrc(&rp, x);
     H_b2i* map = m_b2i(64);
@@ -275,7 +357,9 @@ B indexOf_c2(B t, B w, B x) {
 
 B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
+  bool split = 0; (void) split;
   if (isAtm(x) || RNK(x)!=1) {
+    split = 1;
     B2 t = splitCells(w, x, false);
     w = t.n;
     x = t.p;
@@ -302,10 +386,18 @@ B memberOf_c2(B t, B w, B x) {
     u8 we = TI(w,elType); usz wia = IA(w);
     u8 xe = TI(x,elType); usz xia = IA(x);
     if (wia==0 || xia==0) {
+      none_found:
       decG(x); return i64EachDec(0, w);
     }
-    
-    if (elNum(we) && elNum(xe)) { tyEls:
+
+    CHECK_CHRS_ELSE { tyEls: // Both numbers
+      if (xia>32 && wia<=(xe<=el_i8?1:xe==el_i32?4:6)) {
+        SGetU(w);
+        i8* rp; r = m_i8arrc(&rp, w);
+        for (usz i=0; i<wia; i++) rp[i] = indexOfOne(x, GetU(w,i)) < xia;
+        decG(w); decG(x); return taga(cpyBitArr(r));
+      }
+
       #define WEQ(V) C2(eq, incG(w), V)
       if (xe==el_bit) {
         u64* xp = bitarr_ptr(x);
@@ -315,8 +407,16 @@ B memberOf_c2(B t, B w, B x) {
         decG(w); goto dec_x;
       }
       
-      u8 me = we>xe?we:xe;
-      if (xia<=(me==el_i8?1:me==el_i16?4:16) && wia>16) {
+      #if SINGELI_AVX2
+      if (wia>=32>>(we-el_i8) && xia>1 && ((we==el_i16 && xia<32) || (we==el_i32 && xia<16)) && xe<=we && !elChr(TI(x,elType))) {
+        x = C1(and, x); // sort
+        if (xe<we) switch (we) { default:UD; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; }
+        u64* rp; r = m_bitarrc(&rp, w);
+        avx2_member_sort[we-el_i16](rp, tyany_ptr(x), xia, tyany_ptr(w), wia);
+        decG(w); goto dec_x;
+      }
+      #endif
+      if (xia<=(we==el_i8?1:we==el_i16?4:8) && wia>16) {
         SGetU(x);
         r = WEQ(GetU(x,0));
         for (usz i=1; i<xia; i++) r = C2(or, r, WEQ(GetU(x,i)));
@@ -337,7 +437,16 @@ B memberOf_c2(B t, B w, B x) {
         TABLE(x, w, i8, 0, 1)
         return taga(cpyBitArr(r));
       }
-    } else { CHR_TO_INT; }
+      #if SINGELI
+      if (we==xe && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia))))) {
+        i8* rp; B r = m_i8arrc(&rp, w);
+        if (si_memberOf_c2_hash[we-el_i32](rp, tyany_ptr(x), xia, tyany_ptr(w), wia)) {
+          decG(w); decG(x); return taga(cpyBitArr(r));
+        }
+        decG(r);
+      }
+      #endif
+    }
     
     H_Sb* set = m_Sb(64);
     SGetU(x) SGetU(w)
@@ -353,10 +462,12 @@ B memberOf_c2(B t, B w, B x) {
   decG(x);
   return r;
 }
-#undef CHR_TO_INT
+#undef CHECK_CHRS_ELSE
 
 B count_c2(B t, B w, B x) {
+  bool split = 0; (void) split;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
+    split = 1;
     B2 t = splitCells(x, w, 2);
     w = t.p;
     x = t.n;
@@ -396,6 +507,12 @@ B count_c2(B t, B w, B x) {
     we-= el_c8-el_i8; xe-= el_c8-el_i8;
     goto el8or16;
   } else {
+    #if SINGELI
+    if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
+        si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, (u32*)wnext)) {
+      goto dec_nwx;
+    }
+    #endif
     H_b2i* map = m_b2i(64);
     SGetU(x)
     SGetU(w)
@@ -412,6 +529,9 @@ B count_c2(B t, B w, B x) {
     }
     free_b2i(map);
   }
+  #if SINGELI
+  dec_nwx:;
+  #endif
   TFREE(wnext); decG(w); decG(x);
   return reduceI32Width(r, wia);
 }

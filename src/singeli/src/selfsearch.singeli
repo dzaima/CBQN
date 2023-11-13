@@ -1,0 +1,86 @@
+include './base'
+local include 'skin/cext'
+include './hashtab'
+
+# Resizing hash table, with fallback
+def rty{name} = if (to_prim{name}=='∊') i8 else i32
+fn selfhashtab{T, name}(rp:*rty{name}, xp:*T, n:usz) = {
+  def wt = width{T}
+  def prim = to_prim{name}
+  def has_radix = if (prim=='⊐') 0 else wt==32
+  n64 := promote{u64,n}
+  def {res0,cc_stop} = if (prim=='∊') tup{1,n64>>has_radix} else tup{0,2*n64}
+
+  log := clzc{n}
+  # Max size
+  msl := clzc{n+n/2} + 1; if (has_radix and msl>20) msl=20
+  msz := usz~~1 << msl
+  # Starting log-size
+  sl  := msl; if (msl>=14) sl = 12+(msl&1)
+  b:usz = 64  # Block size
+
+  # Filling e slots past the end requires e*(e+1)/2 collisions, so
+  # n entries with <2 each can fill <sqrt(4*n)
+  ext := tern{n<=b, n, b + (usz~~1 << (log/2 + 1))}
+  x0 := hash_val{xp->0}
+  rp <-{0} res0
+  def aux = prim!='∊'
+  def {{hash,...vals}, sz, sh, div_thresh, hash_resize, hash_free} = hash_alloc{
+    sl, msz, ext, tup{T, ...aux**u32}, tup{x0, ...aux**0}, has_radix, 0
+  }
+
+  def {output, write_res} = match (prim) {
+    {('∊')} => tup{{b}=>b, {j,h,k,x0} => { hash<-{j}h; k!=h }}
+    {('⊒')} => {
+      ctr0:u32 = 1; def {val} = vals
+      def res{j,h,k,x0} = {
+        e0:=promote{u32,h==x0}; vj:=val->j; c0:=ctr0
+        hash<-{j}h; val<-{j}vj+(e0^1); ctr0+=e0
+        vj + (c0 & -e0)
+      }
+      tup{{b}=>b, res}
+    }
+    {('⊐')} => {
+      ctr:u32 = 1; def {val} = vals
+      def res{j,h,k,x0} = {
+        if (k!=h) { val<-{j}ctr; ++ctr; hash<-{j}h }
+        val->j
+      }
+      tup{{b}=>ctr & -promote{u32,b}, res}
+    }
+  }
+
+  def break=makelabel{}
+  cc:u64 = 0 # Collision counter
+  i:usz=1; while (1) {
+    e := tern{n-i>b, i+b, n}
+    while (i < e) {
+      h := hash_val{xp->i}; j0 := h>>sh; j := j0
+      k:=undefined{T}; while (((k=hash->j)!=h) & (k!=x0)) ++j
+      cc += cast_i{u64, j-j0}
+      rp <-{i} write_res{j,h,k,x0}
+      ++i
+    }
+    if (i == n) goto{break}
+    # Check collision counter and possibly resize
+    def p64 = promote{u64,.}
+    dc := cc - p64{div_thresh{i}}
+    if (i64~~dc >= 0) {
+      if (sz == msz) goto{break} # Abort
+      if (has_radix and i < n/2 and sz >= 1<<18) goto{break}
+      # Avoid resizing if close to the end
+      if (cc>=cc_stop or p64{n-i}*dc >= (p64{i}*p64{n+i})>>(5+log-(wt-sh))) {
+        hash_resize{cc, 2} # Factor of 4
+        if (cc >= cc_stop) goto{break}
+      }
+    }
+  }
+  setlabel{break}
+  hash_free{}
+  output{i == n}  # Whether it finished, and unique count if ⊐
+}
+
+def exp_hash{T, name} = {
+  export{merge{name,'_c1_hash',fmtnat{width{T}}}, selfhashtab{T, name}}
+}
+each{{n}=>each{exp_hash{.,n},tup{u32,u64}}, names}

@@ -1,5 +1,4 @@
 # Fold associative/commutative operation across a register
-# Used by squeeze.singeli, count.singeli
 
 def vfold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
   c:= x
