@@ -41,12 +41,12 @@ static Arr* arr_shChangeLen(Arr* a, ur r, usz* xsh, usz len) {
 static B m_shChangeLen(u8 xt, ur xr, usz* xsh, usz l, usz cw, usz csz) {
   return taga(arr_shChangeLen(m_arr(offsetof(TyArr, a)+l*cw, xt, l*csz), xr, xsh, l));
 }
-static void allocGroups(B* rp, usz ria, B z, u8 xt, ur xr, usz* xsh, i32* len, usz width, usz csz) {
+static void allocGroups(B* rp, usz ria, B z, u8 xt, ur xr, usz* xsh, usz* len, usz width, usz csz) {
   if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; if (!l) rp[j] = incG(z); else m_tyarrv(rp+j, width, l, xt); }
   else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : m_shChangeLen(xt, xr, xsh, l, width, csz); }
 }
 static Arr* m_bitarr_nop(usz ia) { return m_arr(BITARR_SZ(ia), t_bitarr, ia); }
-static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, i32* len, usz width) {
+static void allocBitGroups(B* rp, usz ria, B z, ur xr, usz* xsh, usz* len, usz width) {
   if (xr==1) for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : taga(arr_shVec(m_bitarr_nop(l))); }
   else       for (usz j = 0; j < ria; j++) { usz l=len[j]; rp[j] = !l ? incG(z) : taga(arr_shChangeLen(m_bitarr_nop(l*width), xr, xsh, l)); }
 }
@@ -107,8 +107,8 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     FILL_TO(rp, el_B, 0, z, ria);
     goto dec_ret;
   }
-  TALLOC(i32, pos, 2*ria+1); i32* len = pos+ria+1;
-  memset(pos, 0, sizeof(i32)*(2*ria+1));
+  TALLOC(usz, pos, 2*ria+1); usz* len = pos+ria+1;
+  memset(pos, 0, sizeof(usz)*(2*ria+1));
   
   bool notB = TI(x,elType) != el_B;
   u8 xt = arrNewType(TY(x));
