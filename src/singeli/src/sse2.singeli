@@ -28,8 +28,8 @@ def shl{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bslli_si128', x, n}
 def shr{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
 
 # integer arith
-def mulHi{a:T,b:T & [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
-def mulHi{a:T,b:T & [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
+def mulh{a:T,b:T & [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
+def mulh{a:T,b:T & [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
 def mul32{a:T,b:T & [2]u64==T} = emit{T, '_mm_mul_epu32',   a, b} # reads only low 32 bits of arguments
 def __mul{a:T,b:T & [4]i32==T} = {
   def mu{x, y} = [4]i32 ~~ mul32{[2]u64~~x, [2]u64~~y}

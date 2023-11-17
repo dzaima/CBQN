@@ -100,7 +100,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `__sub{a:VI, b:VI} : VI` - `a - b`
 - `__div{a:V, b:V} : V` - `a / b`
 - `__mul{a:V, b:V} : V` - `a * b`
-- `mulHi{a:VI, b:VI} : VI` - high half of multiplication
+- `mulh{a:VI, b:VI} : VI` - high half of multiplication
 <!-- -->
 - `__eq`, `__ne`, `__ge`, `__gt`, `__le`, `__lt` - comparison; `{a:V, b:V} : mt{V}`
 <!-- -->

@@ -48,7 +48,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i8==eltype{T} & hasarc
 }
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i16==eltype{T} & hasarch{'X86_64'}} = {
   rl:= __mul{w,x}
-  rh:= mulHi{w,x}
+  rh:=  mulh{w,x}
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
 def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasarch{'X86_64'}} = {

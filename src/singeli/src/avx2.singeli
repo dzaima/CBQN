@@ -14,10 +14,10 @@ def packQQ{{a, b}} = packQQ{a, b}
 
 
 # arith
-def mulHi{a:T,b:T & [16]i16==T  } = emit{T, '_mm256_mulhi_epi16', a, b}
-def mulHi{a:T,b:T & [16]u16==T  } = emit{T, '_mm256_mulhi_epu16', a, b}
-def mul32{a:T,b:T & [ 4]i64==T  } = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
-def mul32{a:T,b:T & [ 4]u64==T  } = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
+def mulh {a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
+def mulh {a:T,b:T & [16]u16==T} = emit{T, '_mm256_mulhi_epu16', a, b}
+def mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
+def mul32{a:T,b:T & [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
 
 # structural operations
 
