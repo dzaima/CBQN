@@ -380,7 +380,8 @@ static OptRes opt(u32* bc0) {
         if (!isVar(s.v)) goto defIns;
         cact = 2; RM(s.p);
         TSADD(data, s.v.u);
-        TSSIZE(stk)-= SETM==*sbc? 2 : 1;
+        TSSIZE(stk)-= SETM==*sbc? 3 : 2;
+        TSADD(stk, SREF(bi_optOut, -1));
         break;
       }
       case LSTO: case LSTM: { i32 len = *bc++;
