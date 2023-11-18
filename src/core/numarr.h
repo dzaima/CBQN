@@ -60,20 +60,31 @@ static inline u64 bit_find(u64* arr, u64 ia, bool v) {
 }
 
 // BitArr
+#if UNSAFE_SIZES
+  #define CHECK_BITARR_IA(IA)
+#elif USZ_64
+  #define CHECK_BITARR_IA(IA) if ((IA) > USZ_MAX) thrOOM()
+#else
+  #define CHECK_BITARR_IA(IA) if ((IA) > USZ_MAX-65) thrOOM() // make sure BIT_N doesn't overflow
+#endif
+
 #define BITARR_SZ(IA) fsizeof(BitArr, a, u64, BIT_N(IA))
 static B m_bitarrv(u64** p, usz ia) {
+  CHECK_BITARR_IA(ia);
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
   arr_shVec((Arr*)r);
   *p = (u64*)r->a;
   return taga(r);
 }
 static B m_bitarrc(u64** p, B x) { assert(isArr(x));
+  // no need for a CHECK_BITARR_IA, as bitarrs should have the least restrictive IA requirement
   BitArr* r = m_arr(BITARR_SZ(IA(x)), t_bitarr, IA(x));
   *p = (u64*)r->a;
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
 static Arr* m_bitarrp(u64** p, usz ia) {
+  CHECK_BITARR_IA(ia);
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
   *p = (u64*)r->a;
   return (Arr*)r;
