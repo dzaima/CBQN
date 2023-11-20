@@ -1,10 +1,24 @@
 SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory --no-builtin-rules --no-builtin-variables
 MAKEHERE = "$(MAKE) -f build/makefile"
+# note: do not manually define any i_… arguments, or incremental compiling may not work properly!
+
+
+
+# simple non-incremental builds
+single-o3:
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-o3g:
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-debug:
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -DDEBUG -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+single-c:
+	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
+
+
 
 # dependency files
 -include $(bd)/*.d
-
 # compiler setup
 i_CC := cc
 i_PIE :=
@@ -55,10 +69,6 @@ ifeq ($(origin LD_LIBS),command line)
 	i_LIBS_LD := $(LD_LIBS)
 	custom = 1
 endif
-ifeq ($(i_REPLXX_1),1)
-	i_PIE += -fPIE
-	i_CC_PIE := -fPIE
-endif
 ifeq ($(origin PIE),command line)
 	override i_PIE := $(PIE)
 	custom = 1
@@ -78,11 +88,6 @@ ifeq ($(origin CCFLAGS),command line)
 endif
 ifeq ($(origin LDFLAGS),command line)
 	custom = 1
-endif
-ifeq ($(i_REPLXX_1),1)
-	i_f+= -DREPLXX_STATIC=1
-	custom = 1
-	REPLXX_DIR = $(shell if [ -d build/replxxLocal ]; then echo build/replxxLocal; else echo build/replxxSubmodule; fi)
 endif
 BYTECODE_DIR = $(shell if [ -d build/bytecodeLocal ]; then echo bytecodeLocal; else echo bytecodeSubmodule; fi)
 ifeq ($(BYTECODE_DIR),bytecodeLocal)
@@ -106,9 +111,7 @@ endif
 ifeq ($(WINDOWS), 1)
 	i_f+= -DNO_MMAP
 	i_lf+= -lpthread
-	ifeq ($(i_REPLXX_1), 1)
-		i_f+= -DUSE_REPLXX_IO
-	endif
+	
 endif
 
 ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
@@ -129,22 +132,11 @@ ifeq ($(custom),)
 else
 	@[ -x "$$(command -v sha256sum)" ] && hashInput="sha256sum"; \
 	[  -x "$$(command -v shasum)" ] && hashInput="shasum -a 256"; \
-	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${i_REPLXX_1}" "${REPLXX_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" "${REPLXX_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
+	printf "%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s" "${i_CC}" "${ALL_CC_FLAGS}" "${ALL_LD_FLAGS}" "${CXXFLAGS}" "${i_CXX}" "${BYTECODE_DIR}" | $$hashInput | grep -oE '[0-9a-z]{64}' | head -c32
 endif
 else
 	@printf "%s" "$(force_build_dir)"
 endif
-
-
-# simple non-incremental builds
-single-o3:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
-single-o3g:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -O3 -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
-single-debug:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -DDEBUG -g -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
-single-c:
-	$(i_CC) $(ALL_CC_FLAGS) -DSINGLE_BUILD -o ${i_OUTPUT} src/opt/single.c $(ALL_LD_FLAGS)
 
 # actual build
 run_incremental_0:
@@ -154,11 +146,6 @@ endif
 ifeq ($(verbose),1)
 	@echo "build directory: $$("$(MAKEHERE)" builddir)"
 	@echo "  bytecode: build/$(BYTECODE_DIR)"
-ifeq ($(i_REPLXX_1),1)
-	@echo "  replxx: $(REPLXX_DIR)"
-else
-	@echo "  replxx: not used"
-endif
 	@echo "  cc invocation: $(CC_INC) \$$@.d -o \$$@ -c \$$<"
 	@echo "  ld invocation: $(i_LD) ${CCFLAGS} -o [build_dir]/BQN [build_dir]/*.o $(ALL_LD_FLAGS)"
 endif
@@ -172,9 +159,6 @@ else ifeq ($(origin builddir),command line)
 	@echo "$$("$(MAKEHERE)" builddir)"
 else # run build
 	
-ifeq ($(REPLXX_DIR),build/replxxSubmodule)
-	@git submodule update --init build/replxxSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
-endif
 ifeq ($(i_USE_BC_SUBMODULE),1)
 	@git submodule update --init build/bytecodeSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
 endif
@@ -231,24 +215,3 @@ bytecodeMessage:
 ifeq ($(i_USE_BC_SUBMODULE),1)
 	@echo "Using precompiled bytecode; see readme for how to build your own"
 endif
-
-
-
-# replxx
-ifeq ($(i_REPLXX_1),1)
-i_CXX := c++
-ifeq ($(origin CXX),command line)
-	i_CXX := $(CXX)
-endif
-i_LD = $(i_CXX)
-REPLXX_FLAGS = -std=c++11 -Os
-
-ALL_CC_FLAGS += -DUSE_REPLXX -I$(REPLXX_DIR)/include $(i_CC_PIE)
-
-CXX_INC = $(i_CXX) $(CCFLAGS) $(REPLXX_FLAGS) $(CXXFLAGS) -DREPLXX_STATIC=1 -I$(REPLXX_DIR)/include -MMD -MP -MF
-replxx_obj: ${addprefix ${bd}/, ConvertUTF.cpp.o wcwidth.cpp.o conversion.cxx.o escape.cxx.o history.cxx.o prompt.cxx.o replxx.cxx.o replxx_impl.cxx.o terminal.cxx.o util.cxx.o windows.cxx.o}
-${bd}/%.o: $(REPLXX_DIR)/src/%
-	@echo $<
-	@$(CXX_INC) $@.d -o $@ -c $<
-${bd}/BQN: replxx_obj
-endif # replxx
