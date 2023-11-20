@@ -174,6 +174,12 @@ def {
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
+def homMask{...vs & tuplen{vs}>1} = {
+  def n = tuplen{vs}
+  def T = oneType{vs}
+  def RT = ty_u{max{8,vcount{T}*n}}
+  tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
+}
 
 if (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
@@ -188,12 +194,6 @@ if (hasarch{'X86_64'}) {
   def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
 }
 
-def homMask{...vs & tuplen{vs}>1} = {
-  def n = tuplen{vs}
-  def T = oneType{vs}
-  def RT = ty_u{max{8,vcount{T}*n}}
-  tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
-}
 def mzip  {a:T, b:T} = each{{v}=>el_m{T}~~v, zip{a, b}}
 def mzipLo{a:T, b:T} = el_m{T} ~~ zipLo{a, b}
 def mzipHi{a:T, b:T} = el_m{T} ~~ zipHi{a, b}
