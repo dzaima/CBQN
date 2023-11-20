@@ -42,11 +42,16 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     copyFromBits{[bulk]R, loadBatchBit{., xp, .}, r, l}
   } else if (R==u1) {
     # show{'R==u1', X, R}
+    
     def XU = ty_u{XV}
-    @forNZ (i to cdiv{l,vcount{XV}}) {
-      v:= loadBatch{xp, i, XV}
-      r:= homMask{(XU~~v) == XU~~XV**1}
-      b_setBatch{vcount{XV}, rp, i, r} # TODO something more special for f64
+    def op{x} = (XU~~x) == XU~~XV**1
+    
+    def unr = max{8/bulk, 1}
+    def bulk2 = bulk*unr
+    xi:ux = 0
+    @forNZ (i to cdiv{l,bulk2}) {
+      b_setBatch{bulk2, rp, i, homMask{...each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
+      xi+= unr
     }
   } else if (width{X}<=width{R}) {
     # show{'w{X}<=w{R}', X, R}

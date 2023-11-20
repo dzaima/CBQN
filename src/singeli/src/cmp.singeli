@@ -61,21 +61,11 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
 
 
 def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(ux)} = {
-  xi:ux = 0
-  ri:ux = 0
   def bulk = vcount{VT}*unr
-  am:ux = cdiv{len,bulk}
-  assert{am>0}
-  while (ri < am) {
-    r:u64 = 0
-    if (hasarch{'AARCH64'}) {
-      r = promote{u64, homMask{...each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
-    } else {
-      @unroll (j to unr) r|= promote{u64, homMask{op{wV{xi+j}, xV{xi+j}}}} << (j*vcount{VT})
-    }
-    b_setBatch{bulk, dst, ri, r}
+  xi:ux = 0
+  @forNZ (ri to cdiv{len,bulk}) {
+    b_setBatch{bulk, dst, ri, homMask{...each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
     xi+= unr
-    ri+= 1
   }
 }
 fn aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
