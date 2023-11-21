@@ -52,6 +52,7 @@ def topMask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def topMask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
 def homMask{x:T & w128{T}} = topMask{x}
 def homMaskX{a:T & elwidth{T}==16} = tup{2, homMask{re_el{u8,a}}}
+def homMask{a:T, b:T & w128i{T,16}} = homMask{packs{ty_s{a},ty_s{b}}}
 
 def homAny{x:T & w128i{T}} = homMask{[16]u8 ~~ x} != 0
 def homAll{x:T & w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
