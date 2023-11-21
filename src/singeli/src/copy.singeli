@@ -46,7 +46,7 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     def XU = ty_u{XV}
     def op{x} = (XU~~x) == XU~~XV**1
     
-    def unr = max{8/bulk, 1}
+    def unr = if (hasarch{'X86_64'} and width{X}==16) 2 else max{8/bulk, 1}
     def bulk2 = bulk*unr
     xi:ux = 0
     @forNZ (i to cdiv{l,bulk2}) {
