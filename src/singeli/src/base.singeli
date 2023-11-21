@@ -178,7 +178,9 @@ def homMask{...vs & tuplen{vs}>1} = {
   def n = tuplen{vs}
   def T = oneType{vs}
   def RT = ty_u{max{8,vcount{T}*n}}
-  tree_fold{|, each{{v,i}=>promote{RT,homMask{v}}<<(i*vcount{T}), vs, iota{n}}}
+  def a = promote{RT, homMask{...slice{vs,0,n/2}}}
+  def b = promote{RT, homMask{...slice{vs,n/2}}}
+  (b<<(n/2 * vcount{T})) | a
 }
 
 if (hasarch{'X86_64'}) {
