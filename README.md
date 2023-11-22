@@ -48,7 +48,8 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 
 `REPLXX=0` - disable REPLXX
 `singeli=0` - disable usage of Singeli  
-`FFI=0` - disable `•FFI`, thus not depending on libffi
+`FFI=0` - disable `•FFI`, thus not depending on libffi  
+`usz=64` - support arrays with length over 2<sup>32</sup>
 
 `f=...` - add extra C compiler flags for CBQN file compilation  
 `lf=...` - add extra linking flags (`LDFLAGS` is a synonym)  
@@ -74,6 +75,14 @@ Alternatively, `build/build` (aka build.bqn) can be invoked manually, though not
 
 All of the above will go through build.bqn. If that causes problems, `make o3-makeonly` or `make c-makeonly` can be used. These still enable REPLXX by default, but do not support Singeli. Furthermore, these targets don't support some of the build flags that the others do.
 
+## Limitations
+
+- The current default is to use unsigned 32-bit integers for array lengths, limiting array size to about 2^32 elements. This can be switched to 64-bit via `usz=64`, but will have limited effect as some builtins don't have implementations for indices larger than 32-bit (search functions, `⊔`, `/𝕩`, `/⁼𝕩` & similar). Additionally, some things may fail even before 2^31 and may even crash CBQN.
+
+- Throwing & catching errors will leak memory: the garbage collector has no way to scan for objects on the C stack, and checks for objects with an incorrect reference count (comparing to the expected from other heap objects / GC roots) to estimate that. Error catching is implemented as a `longjmp`, thus making the GC permanently think those are still on the C stack. Between REPL lines, a full GC can run (as then there's a guarantee of no BQN code being mid-execution), but that doesn't apply to any other context.
+
+- Freeing highly nested objects will crash: object freeing is done recursively, and there is nothing preventing arbitrarily-nested objects.
+
 ## Requirements
 
 CBQN requires either gcc or clang as the C compiler (it defaults to `clang` as things are primarily optimized for it, but a `CC=cc` make arg can be added to use the default system compiler), and, optionally, libffi for `•FFI`, and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
@@ -95,7 +104,7 @@ AArch64 ARMv8-A (within Termux on Android 8):
   libffi 3.4.4 (structs were broken as of 3.4.3)
   replxx: clang++ 16.0.6
 ```
-Additionally, CBQN is known to compile as-is on macOS, but Windows builds need [WinBQN](https://github.com/actalley/WinBQN) to set up an appropriate Windows build environment, or be built from Linux by cross-compilation.
+Additionally, CBQN is known to compile as-is on macOS. Windows builds can be made by cross-compilation ([Docker setup](https://github.com/vylsaz/cbqn-win-docker-build)).
 
 The build will additionally attempt to use `pkg-config` for determining how to include libffi, `uname` for `target_arch` and `target_os`, and `nproc` for parallel job count, but has defaults if any aren't present (`-lffi` for linking libffi (+ `-ldl` on non-BSD), arch → `generic`, os → `linux`, `j=4`), and the behavior of these can be overriden by build options.
 
