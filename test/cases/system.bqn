@@ -177,8 +177,8 @@ t0←•MonoTime@ ⋄ ! 0.1≤•Delay 0.1 ⋄ ! 0.1≤(•MonoTime@)-t0
 
 
 # two assumptions made by the following tests
-%DEF nan nan←1‿64•bit._cast/51‿13 ⋄ nans ← nan∾-nan
-%USE nan ⋄ 64‿32•bit._cast nans %% 0‿¯524288‿0‿¯524288
+%DEF nan nan←⊑1‿64•bit._cast/51‿13 ⋄ nans ← nan∾-nan
+%USE nan ⋄ 64‿32•bit._cast nans %% 0‿¯524288‿0‿2146959360
 %USE nan ⋄ 64‿32•bit._cast (¯1⊸×≍⊢) (↕3)∾∞∾nan %% 2‿10⥊0‿¯2147483648‿0‿¯1074790400‿0‿¯1073741824‿0‿¯1048576‿0‿¯524288‿0‿0‿0‿1072693248‿0‿1073741824‿0‿2146435072‿0‿¯524288
 64‿32•bit._cast ⟨π, 0, •ParseFloat"-0"⟩ %% 1413754136‿1074340347‿0‿0‿0‿¯2147483648
 
