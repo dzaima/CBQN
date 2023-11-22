@@ -44,7 +44,8 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 `target_os=(linux|bsd|macos|windows)` - target OS. Inferred from `uname` by default. Used for determining default output names and slight configuration changes.  
 `j=8` - override the default parallel job count (default is the output of `nproc`)  
 `notui=1` - display build progress in a plain-text format  
-`version=...` - specify the version to report in `--version` (default is commit hash)
+`version=...` - specify the version to report in `--version` (default is commit hash)  
+`nogit=1` - error if something attempts to use `git`
 
 `REPLXX=0` - disable REPLXX
 `singeli=0` - disable usage of Singeli  
@@ -85,7 +86,8 @@ All of the above will go through build.bqn. If that causes problems, `make o3-ma
 
 ## Requirements
 
-CBQN requires either gcc or clang as the C compiler (it defaults to `clang` as things are primarily optimized for it, but a `CC=cc` make arg can be added to use the default system compiler), and, optionally, libffi for `•FFI`, and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
+
+CBQN requires either gcc or clang as the C compiler (by default it attempts `clang` as things are primarily optimized for clang, but, if unavailable, it'll fall back to `cc`; override with `CC=your-cc`), and, optionally, libffi for `•FFI` and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
 
 There aren't hard requirements for versions of any of those, but nevertheless here are some configurations that CBQN is tested on by dzaima:
 
@@ -106,7 +108,12 @@ AArch64 ARMv8-A (within Termux on Android 8):
 ```
 Additionally, CBQN is known to compile as-is on macOS. Windows builds can be made by cross-compilation ([Docker setup](https://github.com/vylsaz/cbqn-win-docker-build)).
 
-The build will additionally attempt to use `pkg-config` for determining how to include libffi, `uname` for `target_arch` and `target_os`, and `nproc` for parallel job count, but has defaults if any aren't present (`-lffi` for linking libffi (+ `-ldl` on non-BSD), arch → `generic`, os → `linux`, `j=4`), and the behavior of these can be overriden by build options.
+The build will attempt to use `pkg-config` to find libffi, `uname` to determine `target_arch` & `target_os`, and `nproc` for parallel job count, with defaults if unavailable (`-lffi` for linking libffi (+ `-ldl` on non-BSD), `target_arch=generic`, `target_os=linux`, `j=4`; these can of course also be specified manually).
+
+Furthermore, `git` is used to determine the version to present for `--version` (override with `version=...`), and to update submodules.
+
+Submodules are used for Singeli, replxx, and precompiled bytecode. To avoid automatic usage of `git`, link local copies to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
+
 
 ### Precompiled bytecode
 
@@ -129,19 +136,13 @@ In order to build everything from source, you can:
 
 Note that, after either of those, the compiled bytecode may become desynchronized if you later update CBQN without also rebuilding the bytecode. Usage of the submodule can be restored by removing `build/bytecodeLocal`.
 
-### Submodules
-
-Git submodules are used for Singeli, replxx, and bytecode. Thus, CBQN won't build if downloaded just as source files.
-
-Thus, you must either clone the repo (submodules will be automatically initialized/updated as needed), or use local copies of the submodules by linking/copying local versions to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
-
 ### Cross-compilation
 
-You must manually set up a cross-compilation environment. It's possible to pass flags to all CC/CXX/linking invocations via `CCFLAGS=...`, and `LDFLAGS=...` to pass ones to the linking step specifically (more configuration options [above](#configuration-options)).
+You must manually set up a cross-compilation environment. It's possible to pass flags to all CC/CXX/linking invocations via `CCFLAGS=...`, and `LDFLAGS=...` to pass ones to the linking step specifically (more configuration options [above](#build-flags)).
 
-A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as the default is to choose based on `uname`.
+A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as otherwise it'll choose based on `uname`.
 
-Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and (if enabled) Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
+Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 
 ## Licensing
 

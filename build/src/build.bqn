@@ -22,6 +22,7 @@ opts ← ⟨
   ⟨1, "verbose", 0, "Log more things"⟩
   ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
   ⟨1, "notui",   @, "disable live-updating status display"⟩
+  ⟨1, "nogit",   0, "error if something attempts to use git"⟩
   ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
   ⟨1, "rebuild-singeli", 0, @⟩
   
@@ -156,7 +157,7 @@ AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, rebuildSingeli, tui, loud, output, clangd, versionName,
+    verbose, J, rebuildAll, rebuildSingeli, tui, nogit, loud, output, clangd, versionName,
     os, arch, native, has, avx2,
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -173,6 +174,7 @@ po ← { # parsed options
   rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
   loud ⇐ ¬GetOpt "quiet"
+  nogit ⇐ GetOpt "nogit"
   
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
@@ -398,6 +400,7 @@ isFileTheSame ← {
   }
 }
 GitCmd ← {
+  𝕨 {"Error: git needed for "∾𝕨∾", but nogit=1 specified"}_assert_¬ po.nogit
   ¯1↓SH ⟨"git", "-C", rootDir⟩∾𝕩
 }
 updateSubmodule ← {
@@ -407,7 +410,7 @@ updateSubmodule ← {
     "Local"≡¯5↑𝕩? @;
     ⊑𝕩<⊸∊done? @;
     done∾↩ <𝕩
-    GitCmd ⟨"submodule", "update", "--init", AtRoot 𝕩⟩
+    ("updating "∾𝕩) GitCmd ⟨"submodule", "update", "--init", AtRoot 𝕩⟩
   }
 }
 
@@ -715,7 +718,7 @@ cachedBin‿linkerCache ← {
     srcFile ← linkerCache.File "versionInfo.c"
     List ← {¯2↓ ∾ ∾⟜", "¨ /´ <˘⍉> 𝕩}
     
-    vnameX‿vname ← {po.versionName≡""? "on "⊸∾⊸⋈ "commit "∾(GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; ⋈˜ po.versionName}
+    vnameX‿vname ← {po.versionName≡""? "on "⊸∾⊸⋈ "commit "∾("??"GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡"determining version"GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; ⋈˜ po.versionName}
     
     src ← ∾⟨
       "char* cbqn_versionInfo = """
