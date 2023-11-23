@@ -35,28 +35,26 @@
 (<1)+<1 %% <2
 @-@ %% 0
 !"-: Invalid character" % @-1
-!"+: Unexpected argument types" % @+@
-!"×: Unexpected argument types" % @×@
-!"÷: Unexpected argument types" % @÷@
-!"⋆: Unexpected argument types" % @⋆@
-!"√: Unexpected argument types" % @√@
-!"⌊: Unexpected argument types" % @⌊@
-!"⌈: Unexpected argument types" % @⌈@
-!"|: Unexpected argument types" % @|@
-!"∧: Unexpected argument types" % @∧@
-!"∨: Unexpected argument types" % @∨@
+{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 0}¨ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} 0}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+
+%USE var ⋄ a←4⥊@ ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ b←4⥊0 ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+
 !"-: Unexpected argument types" % 0-@
 !"÷: Unexpected argument types" % 0÷@
 !"+: Argument must consist of numbers" % +@
-!"-: Argument contained non-number" % -@
-!"×: Argument contained non-number" % ×@
-!"÷: Argument contained non-number" % ÷@
-!"⋆: Argument contained non-number" % ⋆@
-!"√: Argument contained non-number" % √@
-!"⌊: Argument contained non-number" % ⌊@
-!"⌈: Argument contained non-number" % ⌈@
-!"|: Argument contained non-number" % |@
-!"¬: Argument contained non-number" % ¬@
+⟨@, "abc", ⟨1,2,+⟩, {⇐}⟩ {(⊢!≡´) (": Argument contained non-number"∾˜•Repr 𝕩) ⋈ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨}⌜ -‿×‿÷‿⋆‿√‿⌊‿⌈‿|‿¬
 !"This function can't be called monadically" % ≤@
 !"This function can't be called monadically" % ≥@
 

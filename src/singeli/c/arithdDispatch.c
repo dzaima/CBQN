@@ -288,12 +288,14 @@ static NOINLINE B or_SA(B t, B w, B x) {
     return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }
   x = num_squeezeChk(x);
-  if (TI(x,elType)==el_bit) goto bitsel;
+  u8 xe = TI(x,elType);
+  if (xe==el_bit) goto bitsel;
+  if (!elNum(xe)) return arith_recd(or_c2, w, x);
+  x = toF64Any(x);
   
   f64* rp;
   B r = m_f64arrc(&rp, x);
   usz ia = a(x)->ia;
-  x = toF64Any(x);
   orSAc_f64_f64_f64(rp, w.u, tyany_ptr(x), ia);
   decG(x);
   return r;
