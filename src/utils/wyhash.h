@@ -172,7 +172,9 @@ static inline uint64_t wy2u0k(uint64_t r, uint64_t k){ _wymum(&r,&k); return k; 
 #endif
 
 //make your own secret
-static inline void make_secret(uint64_t seed, uint64_t *secret){
+void make_secret(uint64_t seed, uint64_t *secret);
+#if HASH_C
+NOINLINE void make_secret(uint64_t seed, uint64_t *secret) {
   uint8_t c[] = {15, 23, 27, 29, 30, 39, 43, 45, 46, 51, 53, 54, 57, 58, 60, 71, 75, 77, 78, 83, 85, 86, 89, 90, 92, 99, 101, 102, 105, 106, 108, 113, 114, 116, 120, 135, 139, 141, 142, 147, 149, 150, 153, 154, 156, 163, 165, 166, 169, 170, 172, 177, 178, 180, 184, 195, 197, 198, 201, 202, 204, 209, 210, 212, 216, 225, 226, 228, 232, 240 };
   for(size_t i=0;i<4;i++){
     uint8_t ok;
@@ -186,55 +188,8 @@ static inline void make_secret(uint64_t seed, uint64_t *secret){
     }while(!ok);
   }
 }
-
-/*  This is world's fastest hash map: 2x faster than bytell_hash_map.
-    It does not store the keys, but only the hash/signature of keys.
-    First we use pos=hash1(key) to approximately locate the bucket.
-    Then we search signature=hash2(key) from pos linearly.
-    If we find a bucket with matched signature we report the bucket
-    Or if we meet a bucket whose signifure=0, we report a new position to insert
-    The signature collision probability is very low as we usually searched N~10 buckets.
-    By combining hash1 and hash2, we acturally have 128 bit anti-collision strength.
-    hash1 and hash2 can be the same function, resulting lower collision resistance but faster.
-    The signature is 64 bit, but can be modified to 32 bit if necessary for save space.
-    The above two can be activated by define WYHASHMAP_WEAK_SMALL_FAST
-    simple examples:
-    const size_t  size=213432;
-    vector<wyhashmap_t> idx(size);  //  allocate the index of fixed size. idx MUST be zeroed.
-    vector<value_class> value(size);  //  we only care about the index, user should maintain his own value vectors.
-    string  key="dhskfhdsj" //  the object to be inserted into idx
-    size_t  pos=wyhashmap(idx.data(), idx.size(), key.c_str(), key.size(), 1);  //  get the position and insert
-    if(pos<size)  value[pos]++; //  we process the vallue
-    else  cerr<<"map is full\n";
-    pos=wyhashmap(idx.data(), idx.size(), key.c_str(), key.size(), 0);  // just lookup by setting insert=0
-    if(pos<size)  value[pos]++; //  we process the vallue
-    else  cerr<<"the key does not exist\n";
-*/
-#ifdef  WYHASHMAP_WEAK_SMALL_FAST // for small hashmaps whose size < 2^24 and acceptable collision
-typedef uint32_t  wyhashmap_t;
-#else
-typedef uint64_t  wyhashmap_t;
 #endif
 
-static  inline  size_t  wyhashmap(wyhashmap_t *idx, size_t  idx_size, const void *key, size_t key_size, uint8_t insert, const uint64_t secret[4]){
-  size_t  i=1;  uint64_t  h2; wyhashmap_t sig;
-  do{ sig=h2=wyhash(key,key_size,i,secret); i++;  }while(_unlikely_(!sig));
-#ifdef  WYHASHMAP_WEAK_SMALL_FAST
-  size_t  i0=wy2u0k(h2,idx_size);
-#else
-  size_t  i0=wy2u0k(wyhash(key,key_size,0,secret),idx_size);
-#endif
-  for(i=i0; i<idx_size&&idx[i]&&idx[i]!=sig;  i++);
-  if(_unlikely_(i==idx_size)){
-    for(i=0;  i<i0&&idx[i]&&idx[i]!=sig;  i++);
-    if(i==i0) return  idx_size;
-  }
-  if(!idx[i]){
-    if(insert)  idx[i]=sig;
-    else  return  idx_size;
-  }
-  return  i;
-}
 #endif
 
 /* The Unlicense
