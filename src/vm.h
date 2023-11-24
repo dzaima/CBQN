@@ -85,7 +85,6 @@ typedef struct ScopeExt ScopeExt;
 
 typedef struct Comp {
   struct Value;
-  B bc;
   B src;
   B path;
   B indices;

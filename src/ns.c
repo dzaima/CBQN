@@ -104,13 +104,12 @@ static i32* emptyi32ptr;
 static B emptyi32obj;
 Body* m_nnsDescF(i32 n, char** names) {
   if (emptyi32ptr==NULL) gc_add(emptyi32obj = m_i32arrv(&emptyi32ptr, 0));
-  incByG(emptyi32obj, 3);
+  incByG(emptyi32obj, 2);
   
   M_HARR(nl, n)
   for (usz i = 0; i < n; i++) HARR_ADD(nl, i, m_c8vec_0(names[i]));
   
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
-  comp->bc = emptyi32obj;
   comp->indices = bi_N;
   comp->src = bi_N;
   comp->path = bi_N;

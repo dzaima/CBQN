@@ -458,7 +458,6 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   u32* bc = (u32*)bca->a;
   usz bcIA = PIA(bca);
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
-  comp->bc = taga(bca);
   comp->indices = indices;
   comp->src = src;
   comp->path = path;
@@ -491,7 +490,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
   Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0, nsResult);
   TFREE(bDone);
-  ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo);
+  ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo); decG(taga(bca));
   return ret;
 }
 
@@ -1085,7 +1084,7 @@ DEF_FREE(block) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
-DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->objs); decR(c->bc); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
+DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->objs); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
 DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
@@ -1119,7 +1118,7 @@ void block_visit(Value* x) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) mm_visitP(c->bodies[i]);
 }
-void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->bc); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
