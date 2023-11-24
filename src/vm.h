@@ -120,22 +120,20 @@ struct Block {
 };
 struct Body {
   struct Value;
+  Block* bl; // non-owned pointer to corresponding block
+  union { u32* bc; i32 bcTmp; }; // pointer in bl->bc; bcTmp to make ubsan happy while this is reused as an offset
+  NSDesc* nsDesc;
 #if JIT_START != -1
   u8* nvm; // either NULL or a pointer to machine code
+  B nvmRefs;
 #endif
+  u32 maxStack;
 #if JIT_START > 0
   u16 callCount;
 #endif
-  union { u32* bc; i32 bcTmp; }; // pointer in bl->bc; bcTmp to make ubsan happy (god dammit C)
-  u32 maxStack;
   u16 maxPSC;
-  bool exists;
-#if JIT_START != -1
-  B nvmRefs;
-#endif
-  Block* bl; // non-owned pointer to corresponding block
-  NSDesc* nsDesc;
   u16 varAm;
+  bool exists; // whether this body represents a non-existing inverse
   i32 varData[]; // length varAm*2; first half is a gid per var (or -1 if not calculated yet), second half is indexes into nameList
 };
 
