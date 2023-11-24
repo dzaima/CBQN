@@ -707,6 +707,38 @@ B currentError_c1(B t, B x) {
 B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
 #endif
 
+static Body* hashmap_ns;
+static B hashmap_getName;   static NFnDesc* hashmap_getDesc;
+B hashmap_get_c2(B t, B w, B x) {
+  Scope* sc = c(NS,nfn_objU(t))->sc;
+  B k = sc->vars[0];
+  SGetU(k)
+  usz l = IA(k);
+  for (usz i=0; i<l; i++) if (equal(GetU(k,i), x)) {
+    dec(w); dec(x);
+    return IGet(sc->vars[1], i);
+  }
+  if (q_N(w)) thrM("(hashmap).Get: key not found");
+  dec(x); return w;
+}
+B hashmap_get_c1(B t, B x) { return hashmap_get_c2(t, bi_N, x); }
+static NOINLINE void hashmap_init() {
+  hashmap_ns = m_nnsDesc("keys", "vals", "get");
+  NSDesc* d = hashmap_ns->nsDesc;
+  d->expGIDs[0] = d->expGIDs[1] = -1;
+  hashmap_getName  = m_c8vec_0("get");  gc_add(hashmap_getName);  hashmap_getDesc  = registerNFn(m_c8vec_0("(hashmap).Get"), hashmap_get_c1, hashmap_get_c2);
+}
+B hashMap_c2(B t, B w, B x) {
+  if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("•HashMap: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
+  usz n = IA(w);
+  if (n != IA(x)) thrF("•HashMap: 𝕨 and 𝕩 must have the same length (%s≡≠𝕨, %s≡≠𝕩)", n, IA(x));
+  if (hashmap_ns==NULL) hashmap_init();
+  B ns = m_nns(hashmap_ns, w, x, m_nfn(hashmap_getDesc, bi_N));
+  Scope* sc = c(NS,ns)->sc;
+  for (i32 i = 2; i < 3; i++) nfn_swapObj(sc->vars[i], incG(ns));
+  return ns;
+}
+
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
@@ -1623,6 +1655,7 @@ static Body* file_nsGen;
   F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
   F("toutf8", U"•ToUTF8", bi_toUtf8) \
   F("currenterror", U"•CurrentError", bi_currentError) \
+  F("hashmap", U"•HashMap", bi_hashMap) \
   F("math", U"•math", tag(0,VAR_TAG)) \
   F("rand", U"•rand", tag(1,VAR_TAG)) \
   F("term", U"•term", tag(2,VAR_TAG)) \

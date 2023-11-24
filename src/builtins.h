@@ -15,6 +15,7 @@
 /*   sysfn.c*/D(nGet,"•ns.Get") D(nHas,"•ns.Has") M(nKeys,"•ns.Keys") \
 /*   sysfn.c*/M(fName,"•file.Name") M(fParent,"•file.Parent") \
 /*   sysfn.c*/M(tRawMode,"•term.RawMode") M(tFlush,"•term.Flush") M(tCharB,"•term.CharB") M(tCharN,"•term.CharN") M(tOutRaw,"•term.OutRaw") M(tErrRaw,"•term.ErrRaw") \
+/*   sysfn.c*/D(hashMap,"•HashMap") \
 /* inverse.c*/M(setInvReg,"(SetInvReg)") M(setInvSwap,"(SetInvSwap)") M(nativeInvReg,"(NativeInvReg)") M(nativeInvSwap,"(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/M(heapDump,"•internal.HeapDump") M(internalGC,"•internal.GC") M(heapStats,"•internal.HeapStats") \
