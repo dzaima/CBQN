@@ -185,8 +185,8 @@ void derv_init(void) {
   TIi(t_md1D,identity) = md1D_identity;
 }
 void dervPost_init(void) {
-  ucwWrapDesc = registerNFn(m_c8vec_0("(temporary function for ⌾)"), ucwWrap_c1, c2_bad);
-  uc1WrapDesc = registerNFn(m_c8vec_0("(temporary function for ⌾)"), uc1Wrap_c1, c2_bad);
+  ucwWrapDesc = registerNFn(m_c8vec_0("(tmp for Under)"), ucwWrap_c1, c2_bad);
+  uc1WrapDesc = registerNFn(m_c8vec_0("(tmp for Under)"), uc1Wrap_c1, c2_bad);
   TIi(t_fork,fn_uc1) = fork_uc1; // in post probably to make sure it's not used while not fully initialized or something? idk
   TIi(t_atop,fn_uc1) = atop_uc1;
   c(BMd2,bi_atop)->uc1 = atopM2_uc1;
