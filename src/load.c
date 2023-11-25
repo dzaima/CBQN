@@ -240,9 +240,9 @@ B bqn_exec(B str, B path, B args) { // consumes all
 B str_all, str_none;
 void init_comp(B* set, B prim, B sys) {
   if (q_N(prim)) {
-    set[0] = inc(def_comp);
-    set[1] = inc(def_rt);
-    set[2] = inc(def_glyphs);
+    set[re_comp]   = inc(def_comp);
+    set[re_rt]     = inc(def_rt);
+    set[re_glyphs] = inc(def_glyphs);
   } else {
     if (!isArr(prim) || RNK(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = IA(prim);
@@ -278,20 +278,21 @@ void init_comp(B* set, B prim, B sys) {
       prh.a[np[t]++] = v;
     }
     
-    set[1] = prh.b;
-    set[2] = inc(rb);
-    set[0] = c1(load_compgen, rb);
+    set[re_rt]     = prh.b;
+    set[re_glyphs] = inc(rb);
+    set[re_comp]   = c1(load_compgen, rb);
   }
+  
   if (q_N(sys)) {
     all_sys:
-    set[3] = inc(def_sysNames);
-    set[4] = inc(def_sysVals);
+    set[re_sysNames] = inc(def_sysNames);
+    set[re_sysVals]  = inc(def_sysVals);
   } else {
     if (!isArr(sys) || RNK(sys)!=1) thrM("•ReBQN: 𝕩.system must be a list");
     if (str_all.u==0) { gc_add(str_all = m_c8vec("all",3)); gc_add(str_none = m_c8vec("none",4)); }
     if (equal(sys, str_all)) goto all_sys;
     if (equal(sys, str_none)) {
-      set[3] = set[4] = emptyHVec();
+      set[re_sysNames] = set[re_sysVals] = emptyHVec();
     } else {
       usz ia = IA(sys); SGetU(sys)
       M_HARR(r1, ia);
@@ -303,15 +304,15 @@ void init_comp(B* set, B prim, B sys) {
         HARR_ADD(r1, i, Get(c,0));
         HARR_ADD(r2, i, Get(c,1));
       }
-      set[3] = HARR_FV(r1);
-      set[4] = HARR_FV(r2);
+      set[re_sysNames] = HARR_FV(r1);
+      set[re_sysVals]  = HARR_FV(r2);
     }
   }
 }
 B comps_getPrimitives(void) {
   B* o = harr_ptr(COMPS_CREF(re));
-  B r = o[3];
-  B g = o[4];
+  B r = o[re_rt];
+  B g = o[re_glyphs];
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
   M_HARR(ph, IA(r));
@@ -328,24 +329,24 @@ B comps_getPrimitives(void) {
 
 void comps_getSysvals(B* res) {
   B* o = harr_ptr(COMPS_CREF(re));
-  res[0] = o[5];
-  res[1] = o[6];
+  res[0] = o[re_sysNames];
+  res[1] = o[re_sysVals];
 }
 
 B rebqn_exec(B str, B path, B args, B re) {
   B* op = harr_ptr(re);
-  i32 replMode = o2iG(op[0]);
-  Scope* sc = c(Scope, op[1]);
+  i32 replMode = o2iG(op[re_mode]);
+  Scope* sc = c(Scope, op[re_scope]);
   B res;
   Block* block;
   if (replMode>0) {
-    block = bqn_compScc(str, path, args, re, op[2], op[3], sc, replMode==2, true);
+    block = bqn_compScc(str, path, args, re, op[re_comp], op[re_rt], sc, replMode==2, true);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInplace(block, sc);
   } else {
-    B rtsys = m_hvec2(inc(op[3]), incG(bi_sys));
-    block = bqn_compc(str, path, args, re, op[2], rtsys);
+    B rtsys = m_hvec2(inc(op[re_rt]), incG(bi_sys));
+    block = bqn_compc(str, path, args, re, op[re_comp], rtsys);
     decG(rtsys);
     res = evalFunBlock(block, 0);
   }
@@ -537,8 +538,13 @@ void load_init() { // very last init function
       #endif
       gc_add(load_compgen); gc_add(def_comp);
     #endif
-    def_re = m_caB(7, (B[]){m_c32('?'), m_c32('?'), m_c32('?'), incG(def_rt), incG(def_glyphs), incG(def_sysNames), incG(def_sysVals)});
-    gc_add(def_re);
+    HArr_p ps = m_harr0v(re_max);
+    ps.a[re_comp] = incG(def_comp);
+    ps.a[re_rt] = incG(def_rt);
+    ps.a[re_glyphs] = incG(def_glyphs);
+    ps.a[re_sysNames] = incG(def_sysNames);
+    ps.a[re_sysVals] = incG(def_sysVals);
+    gc_add(def_re = ps.b);
     
     #if FORMATTER
       Block* fmt_b = load_compImport("(formatter)",

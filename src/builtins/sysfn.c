@@ -686,10 +686,10 @@ B reBQN_c1(B t, B x) {
     scVal = tag(sc,OBJ_TAG);
   }
   ptr_dec(initBlock);
-  HArr_p d = m_harrUv(7); d.a[0] = m_f64(replVal); d.a[1] = scVal;
-  for (usz i=2; i<7; i++) d.a[i] = bi_N;
-  NOGC_E;
-  init_comp(d.a+2, prim, sys);
+  HArr_p d = m_harr0v(re_max);
+  d.a[re_mode] = m_i32(replVal);
+  d.a[re_scope] = scVal;
+  init_comp(d.a, prim, sys);
   decG(x);
   return m_nfn(reBQNDesc, d.b);
 }
