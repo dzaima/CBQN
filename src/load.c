@@ -239,6 +239,7 @@ B bqn_exec(B str, B path, B args) { // consumes all
   return res;
 }
 
+bool isStr(B x);
 B str_all, str_none;
 void init_comp(B* new_re, B* prev_re, B prim, B sys) {
   if (q_N(prim)) {
@@ -299,17 +300,48 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
       new_re[re_sysNames] = new_re[re_sysVals] = emptyHVec();
     } else {
       usz ia = IA(sys); SGetU(sys)
-      M_HARR(r1, ia);
-      M_HARR(r2, ia);
-      for (usz i = 0; i < ia; i++) {
+      M_HARR(nns, ia);
+      M_HARR(nvs, ia);
+      i8* inh; B inhA = m_i8arrv(&inh, ia);
+      for (usz i = 0; i < ia; i++) { // write defined system values, inherited ones get inserted later
         B c = GetU(sys,i);
-        if (!isArr(c) || RNK(c)!=1 || IA(c)!=2) thrM("•ReBQN: 𝕩.system must be either \"all\", \"none\", or a list of pairs");
-        SGet(c)
-        HARR_ADD(r1, i, Get(c,0));
-        HARR_ADD(r2, i, Get(c,1));
+        B nn, nv;
+        if (isStr(c)) {
+          nn = incG(c);
+          nv = bi_N;
+          inh[i] = 1;
+        } else {
+          if (!isArr(c) || RNK(c)!=1 || IA(c)!=2) thrM("•ReBQN: 𝕩.system must be either \"all\", \"none\", or a list of names or pairs of name & value");
+          SGet(c)
+          nn = Get(c,0);
+          nv = Get(c,1);
+          inh[i] = 0;
+        }
+        HARR_ADD(nns, i, nn);
+        HARR_ADD(nvs, i, nv);
       }
-      new_re[re_sysNames] = HARR_FV(r1);
-      new_re[re_sysVals]  = HARR_FV(r2);
+      B nnsA = HARR_FV(nns);
+      
+      // system value inheriting
+      B inhNs = C2(slash, incG(inhA), incG(nnsA));
+      usz inhN = IA(inhNs);
+      if (inhN>0) {
+        B prevN = prev_re[re_sysNames];
+        B prevV = prev_re[re_sysVals];
+        B idxs = C2(indexOf, incG(prevN), inhNs);
+        B inhNIs = C1(slash, incG(inhA));
+        SGetU(idxs) SGet(prevV) SGetU(inhNIs)
+        for (usz i = 0; i < inhN; i++) {
+          usz oi = o2sG(GetU(inhNIs,i));
+          usz idx = o2sG(GetU(idxs,i));
+          if (idx == IA(prevN)) thrF("•ReBQN: No system value \"%R\" to inherit", IGet(nnsA, oi));
+          HARR_O(nvs).a[oi] = Get(prevV, idx);
+        }
+        decG(inhNIs); decG(idxs);
+      } else decG(inhNs);
+      
+      new_re[re_sysNames] = nnsA;
+      new_re[re_sysVals]  = HARR_FV(nvs);
     }
   }
 }

@@ -270,13 +270,15 @@ B show_c1(B t, B x) {
   return x;
 }
 
-B vfyStr(B x, char* name, char* arg) {
-  if (isAtm(x) || RNK(x)!=1) thrF("%U: %U must be a string", name, arg);
-  if (!elChr(TI(x,elType))) {
-    usz ia = IA(x);
-    SGetU(x)
-    for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) thrF("%U: %U must be a string", name, arg);
-  }
+NOINLINE bool isStr(B x) {
+  if (isAtm(x) || RNK(x)!=1) return false;
+  if (elChr(TI(x,elType))) return true;
+  usz ia = IA(x); SGetU(x)
+  for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) return false;
+  return true;
+}
+NOINLINE B vfyStr(B x, char* name, char* arg) {
+  if (!isStr(x)) thrF("%U: %U must be a string", name, arg);
   return x;
 }
 
