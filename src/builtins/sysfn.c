@@ -1865,15 +1865,15 @@ u32* dsv_text[] = {
   NULL
 };
 
-B dsv_ns, dsv_vs;
+B def_sysNames, def_sysVals;
 void sysfn_init(void) {
   usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
   usz i = 0;
-  HArr_p dsv_ns0 = m_harrUv(dsv_num); dsv_ns=dsv_ns0.b; gc_add(dsv_ns);
+  HArr_p dsv_ns0 = m_harrUv(dsv_num); def_sysNames=dsv_ns0.b; gc_add(def_sysNames);
   for (usz i = 0; i < dsv_num; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
   NOGC_E;
   
-  HArr_p dsv_vs0 = m_harrUv(dsv_num); dsv_vs=dsv_vs0.b; gc_add(dsv_vs);
+  HArr_p dsv_vs0 = m_harrUv(dsv_num); def_sysVals=dsv_vs0.b; gc_add(def_sysVals);
   #define F(L,N,B) dsv_vs0.a[i] = inc(B); i++;
   FOR_DEFAULT_SYSVALS(F)
   #undef F

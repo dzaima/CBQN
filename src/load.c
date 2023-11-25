@@ -131,20 +131,21 @@ Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consum
 }
 #endif
 
-B load_comp;
-B load_re;
 B load_compgen;
-B load_rtObj;
-B load_compArg;
-B load_glyphs;
 B load_explain;
+
+B def_comp;
+B def_compArg;
+B def_re;
+B def_rt;
+B def_glyphs;
 
 
 #if NATIVE_COMPILER
 #include "opt/comp.c"
 B load_rtComp;
 void switchComp(void) {
-  load_comp = load_comp.u==load_rtComp.u? native_comp : load_rtComp;
+  def_comp = def_comp.u==load_rtComp.u? native_comp : load_rtComp;
 }
 #endif
 B compObj_c1(B t, B x) {
@@ -154,7 +155,7 @@ B compObj_c1(B t, B x) {
   return res;
 }
 B compObj_c2(B t, B w, B x) {
-  load_comp = x; gc_add(x);
+  def_comp = x; gc_add(x);
   return w;
 }
 
@@ -202,7 +203,7 @@ static NOINLINE Block* bqn_compc(B str, B path, B args, B re, B comp, B compArg)
   return r;
 }
 Block* bqn_comp(B str, B path, B args) { // consumes all
-  return bqn_compc(str, path, args, load_re, load_comp, load_compArg);
+  return bqn_compc(str, path, args, def_re, def_comp, def_compArg);
 }
 Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
   str = chr_squeeze(str);
@@ -226,7 +227,7 @@ Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool lo
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, load_re, load_comp, load_rtObj, sc, repl, false);
+  return bqn_compScc(str, path, args, def_re, def_comp, def_rt, sc, repl, false);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -236,13 +237,12 @@ B bqn_exec(B str, B path, B args) { // consumes all
   return res;
 }
 
-extern B dsv_ns, dsv_vs;
 B str_all, str_none;
 void init_comp(B* set, B prim, B sys) {
   if (q_N(prim)) {
-    set[0] = inc(load_comp);
-    set[1] = inc(load_rtObj);
-    set[2] = inc(load_glyphs);
+    set[0] = inc(def_comp);
+    set[1] = inc(def_rt);
+    set[2] = inc(def_glyphs);
   } else {
     if (!isArr(prim) || RNK(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = IA(prim);
@@ -284,8 +284,8 @@ void init_comp(B* set, B prim, B sys) {
   }
   if (q_N(sys)) {
     all_sys:
-    set[3] = inc(dsv_ns);
-    set[4] = inc(dsv_vs);
+    set[3] = inc(def_sysNames);
+    set[4] = inc(def_sysVals);
   } else {
     if (!isArr(sys) || RNK(sys)!=1) thrM("•ReBQN: 𝕩.system must be a list");
     if (str_all.u==0) { gc_add(str_all = m_c8vec("all",3)); gc_add(str_none = m_c8vec("none",4)); }
@@ -475,8 +475,8 @@ void load_init() { // very last init function
     decG(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
-    load_rtObj = FAKE_RUNTIME? frtObj : rtObj;
-    load_compArg = m_hvec2(load_rtObj, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    def_rt = FAKE_RUNTIME? frtObj : rtObj;
+    def_compArg = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
   #else
     B* runtime = fruntime;
     (void)frtObj;
@@ -486,14 +486,14 @@ void load_init() { // very last init function
       B r = fruntime[i];
       if (isVal(r)) v(r)->flags|= i+1;
     }
-    load_rtObj = frtObj;
-    load_compArg = m_hvec2(load_rtObj, incG(bi_sys));
+    def_rt = frtObj;
+    def_compArg = m_hvec2(def_rt, incG(bi_sys));
     rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
     rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
     rt_under=rt_depth = incByG(bi_invalidMd2, 2);
     rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
   #endif
-  gc_add(load_compArg);
+  gc_add(def_compArg);
   gc_add(rt_undo);
   gc_add(rt_select);
   gc_add(rt_slash);
@@ -521,7 +521,7 @@ void load_init() { // very last init function
     print_allocStats();
     exit(0);
   #else // use compiler
-    load_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(load_glyphs);
+    def_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(def_glyphs);
     
     #if !ONLY_NATIVE_COMP
       B prevAsrt = runtime[n_asrt];
@@ -531,14 +531,14 @@ void load_init() { // very last init function
       );
       runtime[n_asrt] = prevAsrt;
       load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
-      load_comp = c1(load_compgen, inc(load_glyphs));
+      def_comp = c1(load_compgen, inc(def_glyphs));
       #if NATIVE_COMPILER
-      load_rtComp = load_comp;
+      load_rtComp = def_comp;
       #endif
-      gc_add(load_compgen); gc_add(load_comp);
+      gc_add(load_compgen); gc_add(def_comp);
     #endif
-    load_re = m_caB(7, (B[]){m_c32('?'), m_c32('?'), m_c32('?'), incG(load_rtObj), incG(load_glyphs), incG(dsv_ns), incG(dsv_vs)});
-    gc_add(load_re);
+    def_re = m_caB(7, (B[]){m_c32('?'), m_c32('?'), m_c32('?'), incG(def_rt), incG(def_glyphs), incG(def_sysNames), incG(def_sysVals)});
+    gc_add(def_re);
     
     #if FORMATTER
       Block* fmt_b = load_compImport("(formatter)",
@@ -576,7 +576,7 @@ B bqn_explain(B str, B path) {
     thrM("Explainer not included in this CBQN build");
   #else
     if (load_explain.u==0) {
-      B* runtime = harr_ptr(load_rtObj);
+      B* runtime = harr_ptr(def_rt);
       Block* expl_b = load_compImport("(explain)",
         #include PRECOMPILED_FILE(explain)
       );
@@ -584,9 +584,8 @@ B bqn_explain(B str, B path) {
       gc_add(load_explain);
     }
     
-    B args = bi_N;
-    COMPS_PUSH(path, args, str, load_re);
-    B c = c2(load_comp, incG(load_compArg), inc(str));
+    COMPS_PUSH(path, bi_N, str, def_re);
+    B c = c2(def_comp, incG(def_compArg), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
     return ret;
@@ -798,7 +797,7 @@ void typesFinished_init() {
   #if NATIVE_COMPILER
     nativeCompiler_init();
     #if ONLY_NATIVE_COMP
-      load_comp = native_comp;
+      def_comp = native_comp;
     #endif
   #endif
 }

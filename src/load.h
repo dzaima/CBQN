@@ -11,6 +11,6 @@ enum {
 #define COMPS_REF(O,N) O->a[comps_##N]
 #define COMPS_CREF(N) COMPS_REF(comps_curr, N)
 
-extern B dsv_ns, dsv_vs;
+extern B def_sysNames, def_sysVals;
 B comps_getPrimitives(void);
 void comps_getSysvals(B* res);
