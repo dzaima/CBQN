@@ -132,6 +132,7 @@ Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consum
 #endif
 
 B load_comp;
+B load_re;
 B load_compgen;
 B load_rtObj;
 B load_compArg;
@@ -175,6 +176,7 @@ B bqn_repr(B x) {
 #endif
 
 NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
+  assert(!q_N(re));
   HArr* r = m_harr0v(comps_max).c;
   COMPS_REF(r, path)   = inc(path);
   COMPS_REF(r, args)   = inc(args);
@@ -185,12 +187,11 @@ NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
 }
 
 #define COMPS_PUSH(PATH, ARGS, STR, RE) \
-  HArr* compsP = comps_curr; \
-  HArr* compsN = m_comps(PATH, ARGS, STR, RE, envCurr-envStart); \
-  comps_curr = compsN; \
+  assert(comps_curr == NULL); \
+  HArr* compsN = comps_curr = m_comps(PATH, ARGS, STR, RE, envCurr-envStart); \
   if (CATCH) { COMPS_POP; rethrow(); }
 
-#define COMPS_POP ({ comps_curr = compsP; ptr_dec(compsN); })
+#define COMPS_POP ({ assert(comps_curr==compsN); ptr_dec(comps_curr); comps_curr = NULL; })
 
 static NOINLINE Block* bqn_compc(B str, B path, B args, B re, B comp, B compArg) { // consumes str,path,args
   str = chr_squeeze(str);
@@ -201,7 +202,7 @@ static NOINLINE Block* bqn_compc(B str, B path, B args, B re, B comp, B compArg)
   return r;
 }
 Block* bqn_comp(B str, B path, B args) { // consumes all
-  return bqn_compc(str, path, args, bi_N, load_comp, load_compArg);
+  return bqn_compc(str, path, args, load_re, load_comp, load_compArg);
 }
 Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
   str = chr_squeeze(str);
@@ -225,7 +226,7 @@ Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool lo
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, bi_N, load_comp, load_rtObj, sc, repl, false);
+  return bqn_compScc(str, path, args, load_re, load_comp, load_rtObj, sc, repl, false);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -308,9 +309,9 @@ void init_comp(B* set, B prim, B sys) {
   }
 }
 B comps_getPrimitives(void) {
-  B g, r;
-  if (q_N(COMPS_CREF(re))) { g=load_glyphs; r=load_rtObj; }
-  else { B* o = harr_ptr(COMPS_CREF(re)); g=o[4]; r=o[3]; }
+  B* o = harr_ptr(COMPS_CREF(re));
+  B r = o[3];
+  B g = o[4];
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
   M_HARR(ph, IA(r));
@@ -326,9 +327,9 @@ B comps_getPrimitives(void) {
 }
 
 void comps_getSysvals(B* res) {
-  B re = COMPS_CREF(re);
-  if (q_N(re)) { res[0]=dsv_ns; res[1]=dsv_vs; }
-  else { B* o=harr_ptr(re); res[0]=o[5]; res[1]=o[6]; }
+  B* o = harr_ptr(COMPS_CREF(re));
+  res[0] = o[5];
+  res[1] = o[6];
 }
 
 B rebqn_exec(B str, B path, B args, B re) {
@@ -365,10 +366,10 @@ static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32ar
 B invalidFn_c1(B t, B x);
 
 void comps_gcFn() {
-  mm_visitP(comps_curr);
+  if (comps_curr!=NULL) mm_visitP(comps_curr);
 }
 void load_init() { // very last init function
-  comps_curr = m_comps(bi_N, bi_N, bi_N, bi_N, 0);
+  comps_curr = NULL;
   gc_addFn(comps_gcFn);
   gc_add_ref(&rt_invFnReg);
   gc_add_ref(&rt_invFnSwap);
@@ -536,7 +537,8 @@ void load_init() { // very last init function
       #endif
       gc_add(load_compgen); gc_add(load_comp);
     #endif
-    
+    load_re = m_caB(7, (B[]){m_c32('?'), m_c32('?'), m_c32('?'), incG(load_rtObj), incG(load_glyphs), incG(dsv_ns), incG(dsv_vs)});
+    gc_add(load_re);
     
     #if FORMATTER
       Block* fmt_b = load_compImport("(formatter)",
@@ -583,7 +585,7 @@ B bqn_explain(B str, B path) {
     }
     
     B args = bi_N;
-    COMPS_PUSH(path, args, str, bi_N);
+    COMPS_PUSH(path, args, str, load_re);
     B c = c2(load_comp, incG(load_compArg), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
