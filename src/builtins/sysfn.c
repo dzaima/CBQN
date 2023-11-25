@@ -691,7 +691,7 @@ B rebqn_c1(B t, B x) {
   HArr_p d = m_harr0v(re_max);
   d.a[re_mode] = m_i32(replVal);
   d.a[re_scope] = scVal;
-  init_comp(d.a, prim, sys);
+  init_comp(d.a, def_re, prim, sys);
   decG(x);
   return m_nfn(rebqnResDesc, d.b);
 }

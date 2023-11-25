@@ -107,10 +107,10 @@ HArr* comps_curr;
 
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
   rt_group, rt_under, rt_find;
-Block* load_compObj(B x, B src, B path, Scope* sc, i32 nsResult) { // consumes x,src
+Block* load_buildBlock(B x, B src, B path, Scope* sc, i32 nsResult) { // consumes x,src
   SGet(x)
   usz xia = IA(x);
-  if (xia!=6 & xia!=4) thrM("load_compObj: bad item count");
+  if (xia!=6 & xia!=4) thrM("load_buildBlock: bad item count");
   Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc, nsResult)
                    : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc, nsResult);
   decG(x);
@@ -122,11 +122,11 @@ Block* load_compObj(B x, B src, B path, Scope* sc, i32 nsResult) { // consumes x
 #endif
 
 #if RT_SRC
-Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
+Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
   return compileAll(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL, 0);
 }
 #else
-Block* load_compImport(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
+Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
   return compileAll(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL, 0);
 }
 #endif
@@ -149,7 +149,7 @@ void switchComp(void) {
 }
 #endif
 B compObj_c1(B t, B x) {
-  Block* block = load_compObj(x, bi_N, bi_N, NULL, 0);
+  Block* block = load_buildBlock(x, bi_N, bi_N, NULL, 0);
   B res = evalFunBlock(block, 0);
   ptr_dec(block);
   return res;
@@ -198,7 +198,7 @@ static NOINLINE Block* bqn_compc(B str, B path, B args, B re) { // consumes str,
   str = chr_squeeze(str);
   COMPS_PUSH(path, args, str, re);
   B* o = harr_ptr(re);
-  Block* r = load_compObj(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, path, NULL, 0);
+  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, path, NULL, 0);
   dec(path); dec(args);
   COMPS_POP; popCatch();
   return r;
@@ -223,7 +223,7 @@ Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2G(o[re_comp], m_hvec4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  Block* r = load_buildBlock(c2G(o[re_comp], m_hvec4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
   dec(path); dec(args);
   COMPS_POP; popCatch();
   return r;
@@ -240,7 +240,7 @@ B bqn_exec(B str, B path, B args) { // consumes all
 }
 
 B str_all, str_none;
-void init_comp(B* set, B prim, B sys) {
+void init_comp(B* set, B prev_re, B prim, B sys) {
   if (q_N(prim)) {
     set[re_comp]     = inc(def_comp);
     set[re_compOpts] = inc(def_compOpts);
@@ -409,14 +409,14 @@ void load_init() { // very last init function
     #if !ALL_R0
     B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-    Block* runtime0_b = load_compImport("(self-hosted runtime0)",
+    Block* runtime0_b = load_importBlock("(self-hosted runtime0)",
       #include PRECOMPILED_FILE(runtime0)
     );
     B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
     B* runtime_0 = toHArr(r0r)->a;
     #endif
     
-    Block* runtime_b = load_compImport("(self-hosted runtime1)",
+    Block* runtime_b = load_importBlock("(self-hosted runtime1)",
       #if ALL_R0 || ALL_R1 || NO_EXTENDED_PROVIDE || RT_VERIFY
         #include PRECOMPILED_FILE(runtime1)
       #else
@@ -529,7 +529,7 @@ void load_init() { // very last init function
     #if !ONLY_NATIVE_COMP
       B prevAsrt = runtime[n_asrt];
       runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
-      Block* comp_b = load_compImport("(compiler)",
+      Block* comp_b = load_importBlock("(compiler)",
         #include PRECOMPILED_FILE(compiles)
       );
       runtime[n_asrt] = prevAsrt;
@@ -550,7 +550,7 @@ void load_init() { // very last init function
     gc_add(def_re = ps.b);
     
     #if FORMATTER
-      Block* fmt_b = load_compImport("(formatter)",
+      Block* fmt_b = load_importBlock("(formatter)",
         #include PRECOMPILED_FILE(formatter)
       );
       B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
@@ -586,7 +586,7 @@ B bqn_explain(B str, B path) {
   #else
     if (load_explain.u==0) {
       B* runtime = harr_ptr(def_rt);
-      Block* expl_b = load_compImport("(explain)",
+      Block* expl_b = load_importBlock("(explain)",
         #include PRECOMPILED_FILE(explain)
       );
       load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);

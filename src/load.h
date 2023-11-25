@@ -19,3 +19,7 @@ enum {
 extern B def_sysNames, def_sysVals;
 B comps_getPrimitives(void);
 void comps_getSysvals(B* res);
+
+extern B def_re;
+B rebqn_exec(B str, B path, B args, B re); // consumes str,path,args
+void init_comp(B* set, B prev_re, B prim, B sys); // doesn't consume; writes compiling info re_* into set

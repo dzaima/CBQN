@@ -157,8 +157,6 @@ Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl); // consumes str,
 Block* compileAll(B bcq, B objs, B blocks, B bodies, B indices, B tokenInfo, B src, B path, Scope* sc, i32 nsResult); // nsResult: 0: accept; -1: error; 1: convert to regular RETN
 Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* initVars);
 Body* m_body(i32 vam, i32 pos, u32 maxStack, u16 maxPSC); // leaves varData uninitialized
-void init_comp(B* set, B prim, B sys); // doesn't consume; writes into first 3 elements of set
-B rebqn_exec(B str, B path, B args, B o); // consumes str,path,args
 B listVars(Scope* sc); // doesn't consume; returns bi_N if not accessable
 
 typedef struct Nvm_res { u8* p; B refs; } Nvm_res;
