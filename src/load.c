@@ -329,7 +329,7 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
         B prevN = prev_re[re_sysNames];
         B prevV = prev_re[re_sysVals];
         B idxs = C2(indexOf, incG(prevN), inhNs);
-        B inhNIs = C1(slash, incG(inhA));
+        B inhNIs = C1(slash, inhA);
         SGetU(idxs) SGet(prevV) SGetU(inhNIs)
         for (usz i = 0; i < inhN; i++) {
           usz oi = o2sG(GetU(inhNIs,i));
@@ -338,7 +338,10 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
           HARR_O(nvs).a[oi] = Get(prevV, idx);
         }
         decG(inhNIs); decG(idxs);
-      } else decG(inhNs);
+      } else {
+        decG(inhNs);
+        decG(inhA);
+      }
       
       new_re[re_sysNames] = nnsA;
       new_re[re_sysVals]  = HARR_FV(nvs);

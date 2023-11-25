@@ -37,7 +37,7 @@ ps ← ⟨'÷'‿÷⟩ ⋄ f←•ReBQN {repl⇐"loose" ⋄ primitives⇐ps} ⋄
 f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"foo"‿⋈, "oldbqn"‿•BQN, "bqn"⟩} ⋄ {𝕏 "÷5"}¨ F "⟨•foo, •OldBQN, •BQN⟩" %% ⟨⋈"÷5", 0.2, ¯5⟩
 !"•ReBQN: No system value ""baz"" to inherit" % •ReBQN{system⇐⟨"foo"‿"bar", "bqn", "baz", "rebqn"⟩}
 !"•ReBQN: No system value ""bqn"" to inherit" % f←•ReBQN{system⇐⟨"baz"‿1, "rebqn", "foo"‿2⟩} ⋄ g←F"•ReBQN" ⋄ G {system⇐⟨"foo"‿"bar", "baz", "bqn", "rebqn"⟩}
-f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"foo"‿⋈, "bqn", "listsys"⟩} ⋄ F"•listsys" %% ⟨"foo","bqn","listsys"⟩
+f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈, "bqn", "listsys"⟩} ⋄ F"•primitives‿•listsys" %% ⟨⟨'÷'‿-⟩ ⋄ ⟨"primitives","foo","bqn","listsys"⟩⟩
 
 
 # •primitives
