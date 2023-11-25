@@ -203,10 +203,10 @@ static NOINLINE Block* bqn_compc(B str, B path, B args, B re) { // consumes str,
   COMPS_POP; popCatch();
   return r;
 }
-Block* bqn_comp(B str, B path, B args) { // consumes all
+Block* bqn_comp(B str, B path, B args) {
   return bqn_compc(str, path, args, def_re);
 }
-Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
+Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS) {
   str = chr_squeeze(str);
   COMPS_PUSH(path, args, str, re);
   B* o = harr_ptr(re);
@@ -240,12 +240,12 @@ B bqn_exec(B str, B path, B args) { // consumes all
 }
 
 B str_all, str_none;
-void init_comp(B* set, B prev_re, B prim, B sys) {
+void init_comp(B* new_re, B* prev_re, B prim, B sys) {
   if (q_N(prim)) {
-    set[re_comp]     = inc(def_comp);
-    set[re_compOpts] = inc(def_compOpts);
-    set[re_rt]       = inc(def_rt);
-    set[re_glyphs]   = inc(def_glyphs);
+    new_re[re_comp]     = inc(prev_re[re_comp]);
+    new_re[re_compOpts] = inc(prev_re[re_compOpts]);
+    new_re[re_rt]       = inc(prev_re[re_rt]);
+    new_re[re_glyphs]   = inc(prev_re[re_glyphs]);
   } else {
     if (!isArr(prim) || RNK(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = IA(prim);
@@ -281,22 +281,22 @@ void init_comp(B* set, B prev_re, B prim, B sys) {
       prh.a[np[t]++] = v;
     }
     
-    set[re_rt]       = prh.b;
-    set[re_glyphs]   = inc(rb);
-    set[re_comp]     = c1(load_compgen, rb);
-    set[re_compOpts] = m_hvec2(inc(prh.b), incG(bi_sys));
+    new_re[re_rt]       = prh.b;
+    new_re[re_glyphs]   = inc(rb);
+    new_re[re_comp]     = c1(load_compgen, rb);
+    new_re[re_compOpts] = m_hvec2(inc(prh.b), incG(bi_sys));
   }
   
   if (q_N(sys)) {
-    all_sys:
-    set[re_sysNames] = inc(def_sysNames);
-    set[re_sysVals]  = inc(def_sysVals);
+    inherit_sys:
+    new_re[re_sysNames] = inc(prev_re[re_sysNames]);
+    new_re[re_sysVals]  = inc(prev_re[re_sysVals]);
   } else {
     if (!isArr(sys) || RNK(sys)!=1) thrM("•ReBQN: 𝕩.system must be a list");
     if (str_all.u==0) { gc_add(str_all = m_c8vec("all",3)); gc_add(str_none = m_c8vec("none",4)); }
-    if (equal(sys, str_all)) goto all_sys;
+    if (equal(sys, str_all)) goto inherit_sys;
     if (equal(sys, str_none)) {
-      set[re_sysNames] = set[re_sysVals] = emptyHVec();
+      new_re[re_sysNames] = new_re[re_sysVals] = emptyHVec();
     } else {
       usz ia = IA(sys); SGetU(sys)
       M_HARR(r1, ia);
@@ -308,8 +308,8 @@ void init_comp(B* set, B prev_re, B prim, B sys) {
         HARR_ADD(r1, i, Get(c,0));
         HARR_ADD(r2, i, Get(c,1));
       }
-      set[re_sysNames] = HARR_FV(r1);
-      set[re_sysVals]  = HARR_FV(r2);
+      new_re[re_sysNames] = HARR_FV(r1);
+      new_re[re_sysVals]  = HARR_FV(r2);
     }
   }
 }
@@ -338,22 +338,25 @@ void comps_getSysvals(B* res) {
 }
 
 B rebqn_exec(B str, B path, B args, B re) {
-  B* op = harr_ptr(re);
-  i32 replMode = o2iG(op[re_mode]);
-  Scope* sc = c(Scope, op[re_scope]);
-  B res;
-  Block* block;
-  if (replMode>0) {
-    block = bqn_compScc(str, path, args, re, sc, replMode==2, true);
-    ptr_dec(sc->body);
-    sc->body = ptr_inc(block->bodies[0]);
-    res = execBlockInplace(block, sc);
-  } else {
-    block = bqn_compc(str, path, args, re);
-    res = evalFunBlock(block, 0);
-  }
+  Block* block = bqn_compc(str, path, args, re);
+  B res = evalFunBlock(block, 0);
   ptr_dec(block);
   return res;
+}
+B repl_exec(B str, B path, B args, B re) {
+  B* op = harr_ptr(re);
+  i32 replMode = o2iG(op[re_mode]);
+  if (replMode>0) {
+    Scope* sc = c(Scope, op[re_scope]);
+    Block* block = bqn_compScc(str, path, args, re, sc, replMode==2, true);
+    ptr_dec(sc->body);
+    sc->body = ptr_inc(block->bodies[0]);
+    B res = execBlockInplace(block, sc);
+    ptr_dec(block);
+    return res;
+  } else {
+    return rebqn_exec(str, path, args, re);
+  }
 }
 
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }

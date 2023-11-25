@@ -1,5 +1,6 @@
 #include "core.h"
 #include "vm.h"
+#include "load.h"
 #include "ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"

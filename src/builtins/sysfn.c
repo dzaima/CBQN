@@ -295,14 +295,14 @@ static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, 
 
 B bqn_c1(B t, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  return bqn_exec(x, bi_N, bi_N);
+  return rebqn_exec(x, bi_N, bi_N, nfn_objU(t));
 }
 
 B bqn_c2(B t, B w, B x) {
   vfyStr(x, "•BQN", "𝕩");
   B fullpath;
   B args = args_path(&fullpath, w, "•BQN");
-  return bqn_exec(x, fullpath, args);
+  return rebqn_exec(x, fullpath, args, nfn_objU(t));
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -691,7 +691,7 @@ B rebqn_c1(B t, B x) {
   HArr_p d = m_harr0v(re_max);
   d.a[re_mode] = m_i32(replVal);
   d.a[re_scope] = scVal;
-  init_comp(d.a, def_re, prim, sys);
+  init_comp(d.a, harr_ptr(nfn_objU(t)), prim, sys);
   decG(x);
   return m_nfn(rebqnResDesc, d.b);
 }
@@ -699,7 +699,7 @@ B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
   B fullpath;
   B args = args_path(&fullpath, w, "REPL");
-  return rebqn_exec(x, fullpath, args, nfn_objU(t));
+  return repl_exec(x, fullpath, args, nfn_objU(t));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
