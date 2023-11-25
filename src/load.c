@@ -135,7 +135,7 @@ B load_compgen;
 B load_explain;
 
 B def_comp;
-B def_compArg;
+B def_compOpts;
 B def_re;
 B def_rt;
 B def_glyphs;
@@ -194,20 +194,22 @@ NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
 
 #define COMPS_POP ({ assert(comps_curr==compsN); ptr_dec(comps_curr); comps_curr = NULL; })
 
-static NOINLINE Block* bqn_compc(B str, B path, B args, B re, B comp, B compArg) { // consumes str,path,args
+static NOINLINE Block* bqn_compc(B str, B path, B args, B re) { // consumes str,path,args
   str = chr_squeeze(str);
   COMPS_PUSH(path, args, str, re);
-  Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL, 0);
+  B* o = harr_ptr(re);
+  Block* r = load_compObj(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, path, NULL, 0);
   dec(path); dec(args);
   COMPS_POP; popCatch();
   return r;
 }
 Block* bqn_comp(B str, B path, B args) { // consumes all
-  return bqn_compc(str, path, args, def_re, def_comp, def_compArg);
+  return bqn_compc(str, path, args, def_re);
 }
-Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
+Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
   str = chr_squeeze(str);
   COMPS_PUSH(path, args, str, re);
+  B* o = harr_ptr(re);
   B vName = emptyHVec();
   B vDepth = emptyIVec();
   if (loose && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
@@ -221,13 +223,13 @@ Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool lo
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_compObj(c2G(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  Block* r = load_compObj(c2G(o[re_comp], m_hvec4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
   dec(path); dec(args);
   COMPS_POP; popCatch();
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, def_re, def_comp, def_rt, sc, repl, false);
+  return bqn_compScc(str, path, args, def_re, sc, repl, false);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -240,9 +242,10 @@ B bqn_exec(B str, B path, B args) { // consumes all
 B str_all, str_none;
 void init_comp(B* set, B prim, B sys) {
   if (q_N(prim)) {
-    set[re_comp]   = inc(def_comp);
-    set[re_rt]     = inc(def_rt);
-    set[re_glyphs] = inc(def_glyphs);
+    set[re_comp]     = inc(def_comp);
+    set[re_compOpts] = inc(def_compOpts);
+    set[re_rt]       = inc(def_rt);
+    set[re_glyphs]   = inc(def_glyphs);
   } else {
     if (!isArr(prim) || RNK(prim)!=1) thrM("•ReBQN: 𝕩.primitives must be a list");
     usz pia = IA(prim);
@@ -278,9 +281,10 @@ void init_comp(B* set, B prim, B sys) {
       prh.a[np[t]++] = v;
     }
     
-    set[re_rt]     = prh.b;
-    set[re_glyphs] = inc(rb);
-    set[re_comp]   = c1(load_compgen, rb);
+    set[re_rt]       = prh.b;
+    set[re_glyphs]   = inc(rb);
+    set[re_comp]     = c1(load_compgen, rb);
+    set[re_compOpts] = m_hvec2(inc(prh.b), incG(bi_sys));
   }
   
   if (q_N(sys)) {
@@ -340,14 +344,12 @@ B rebqn_exec(B str, B path, B args, B re) {
   B res;
   Block* block;
   if (replMode>0) {
-    block = bqn_compScc(str, path, args, re, op[re_comp], op[re_rt], sc, replMode==2, true);
+    block = bqn_compScc(str, path, args, re, sc, replMode==2, true);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInplace(block, sc);
   } else {
-    B rtsys = m_hvec2(inc(op[re_rt]), incG(bi_sys));
-    block = bqn_compc(str, path, args, re, op[re_comp], rtsys);
-    decG(rtsys);
+    block = bqn_compc(str, path, args, re);
     res = evalFunBlock(block, 0);
   }
   ptr_dec(block);
@@ -477,7 +479,7 @@ void load_init() { // very last init function
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
     def_rt = FAKE_RUNTIME? frtObj : rtObj;
-    def_compArg = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    def_compOpts = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
   #else
     B* runtime = fruntime;
     (void)frtObj;
@@ -488,13 +490,13 @@ void load_init() { // very last init function
       if (isVal(r)) v(r)->flags|= i+1;
     }
     def_rt = frtObj;
-    def_compArg = m_hvec2(def_rt, incG(bi_sys));
+    def_compOpts = m_hvec2(def_rt, incG(bi_sys));
     rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
     rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
     rt_under=rt_depth = incByG(bi_invalidMd2, 2);
     rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
   #endif
-  gc_add(def_compArg);
+  gc_add(def_compOpts);
   gc_add(rt_undo);
   gc_add(rt_select);
   gc_add(rt_slash);
@@ -540,6 +542,7 @@ void load_init() { // very last init function
     #endif
     HArr_p ps = m_harr0v(re_max);
     ps.a[re_comp] = incG(def_comp);
+    ps.a[re_compOpts] = incG(def_compOpts);
     ps.a[re_rt] = incG(def_rt);
     ps.a[re_glyphs] = incG(def_glyphs);
     ps.a[re_sysNames] = incG(def_sysNames);
@@ -591,7 +594,7 @@ B bqn_explain(B str, B path) {
     }
     
     COMPS_PUSH(path, bi_N, str, def_re);
-    B c = c2(def_comp, incG(def_compArg), inc(str));
+    B c = c2(def_comp, incG(def_compOpts), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
     return ret;
