@@ -1617,7 +1617,6 @@ static Body* file_nsGen;
   OPTSYS(HAS_SH)(F("sh", U"•SH", bi_sh)) \
   F("decompose", U"•Decompose", bi_decp) \
   F("while", U"•_while_", bi_while) \
-  F("bqn", U"•BQN", bi_bqn) \
   F("cmp", U"•Cmp", bi_cmp) \
   F("unixtime", U"•UnixTime", bi_unixTime) \
   F("monotime", U"•MonoTime", bi_monoTime) \
@@ -1629,7 +1628,6 @@ static Body* file_nsGen;
   F("fmt", U"•Fmt", bi_fmt) \
   F("glyph", U"•Glyph", bi_glyph) \
   F("makerand", U"•MakeRand", bi_makeRand) \
-  F("rebqn", U"•ReBQN", bi_reBQN) \
   F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
   F("toutf8", U"•ToUTF8", bi_toUtf8) \
   F("currenterror", U"•CurrentError", bi_currentError) \
@@ -1653,7 +1651,10 @@ static Body* file_nsGen;
   F("listsys", U"•listsys", tag(17,VAR_TAG)) \
   OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tag(18,VAR_TAG))) \
   F("ns", U"•ns", tag(19,VAR_TAG)) \
-  F("platform", U"•platform", tag(20,VAR_TAG))
+  F("platform", U"•platform", tag(20,VAR_TAG)) \
+  F("bqn", U"•BQN", tag(21,VAR_TAG)) \
+  F("rebqn", U"•ReBQN", tag(22,VAR_TAG)) \
+/* end of FOR_DEFAULT_SYSVALS */
 
 NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
@@ -1768,8 +1769,10 @@ B sys_c1(B t, B x) {
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
-  #define REQ_PATH ({ if(!path.u) path = q_N(COMPS_CREF(path))? bi_N : path_abs(path_parent(inc(COMPS_CREF(path)))); path; })
-  #define REQ_NAME ({ if(!name.u) name = path_name(inc(COMPS_CREF(path))); name; })
+  
+  #define CACHE_OBJ(NAME, COMP) ({ if (!NAME.u) NAME = (COMP); NAME; })
+  #define REQ_PATH CACHE_OBJ(path, q_N(COMPS_CREF(path))? bi_N : path_abs(path_parent(inc(COMPS_CREF(path)))))
+  #define REQ_NAME CACHE_OBJ(name, path_name(inc(COMPS_CREF(path))))
   
   M_HARR(r, IA(x))
   for (usz i = 0; i < IA(x); i++) {
@@ -1793,20 +1796,15 @@ B sys_c1(B t, B x) {
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
       case 11: if (q_N(COMPS_CREF(path))) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
       case 12: if (q_N(COMPS_CREF(path))) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
-      case 13: { // •wdpath
-        if (!wdpath.u) wdpath = path_abs(inc(cdPath));
-        cr = inc(wdpath);
-        break;
-      }
+      case 13: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; } // •wdpath
       case 14: { // •file
-        if(!fileNS.u) {
+        #define F(X) m_nfn(X##Desc, inc(path))
+        cr = incG(CACHE_OBJ(fileNS, ({
           initFileNS();
           REQ_PATH;
-          #define F(X) m_nfn(X##Desc, inc(path))
-          fileNS = m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(realpath), F(rename), F(remove));
-          #undef F
-        }
-        cr = incG(fileNS);
+          m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(realpath), F(rename), F(remove));
+        })));
+        #undef F
         break;
       }
       case 15: { // •state
@@ -1823,7 +1821,9 @@ B sys_c1(B t, B x) {
       case 17: cr = incG(curr_ns); break; // •listsys
       case 18: cr = incG(bi_compObj); break; // •CompObj
       case 19: cr = getNsNS(); break; // •ns
-      case 20: cr = getPlatformNS(); break;
+      case 20: cr = getPlatformNS(); break; // •platform
+      case 21: cr = incG(bi_bqn); break; // •BQN
+      case 22: cr = incG(bi_reBQN); break; // •ReBQN
     }
     HARR_ADD(r, i, cr);
   }
