@@ -46,7 +46,7 @@ ModifyCBQNFlags ← {
   
   # non-'utils/' headers & optional .c files
   {𝕩 WantsIncludes ⟨"core.h"⟩}¨ ⟨
-    "ns.h", "vm.h", "builtins.h"
+    "ns.h", "vm.h", "builtins.h", "load.h"
     "opt/mm_malloc.c", "opt/mm_buddy.c", "opt/mm_2buddy.c", "opt/mm_buddyTemplate.c", "opt/mm_buddyTemplate.h", "opt/gc.c", "opt/gc.h"
     "builtins/radix.h", "singeli/c/arithdDispatch.h"
     "jit/nvm.h"

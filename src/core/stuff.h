@@ -384,8 +384,3 @@ FORCE_INLINE void preFree(Value* x, bool mmx) {
   #endif
   // x->refc = 0x61616161;
 }
-
-extern i64 comp_currEnvPos;
-extern B comp_currPath;
-extern B comp_currArgs;
-extern B comp_currSrc;

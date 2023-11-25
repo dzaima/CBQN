@@ -6,6 +6,7 @@
 #include "../builtins.h"
 #include "../ns.h"
 #include "../nfns.h"
+#include "../load.h"
 
 #include <unistd.h>
 #if defined(_WIN32) || defined(_WIN64)
@@ -224,21 +225,21 @@ B casrt_c2(B t, B w, B x) {
       B s = IGet(w,1);
       AFMT("\n");
       usz pos = o2s(w0);
-      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), pos, pos+1);
       dec(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
       usz pos = o2s(IGetU(w0,0));
-      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, pos, pos+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), pos, pos+1);
       dec(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
-      s = vm_fmtPoint(comp_currSrc, s, comp_currPath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
       dec(w);
       thr(s);
     }
@@ -1591,8 +1592,6 @@ B getBitNS(void) {
 
 B getInternalNS(void);
 B getMathNS(void);
-B getPrimitives(void);
-void getSysvals(B* res);
 
 static Body* file_nsGen;
 
@@ -1760,7 +1759,7 @@ static B getPlatformNS(void) {
 
 B sys_c1(B t, B x) {
   assert(isArr(x));
-  B tmp[2]; getSysvals(tmp);
+  B tmp[2]; comps_getSysvals(tmp);
   B curr_ns = tmp[0];
   B curr_vs = tmp[1]; SGetU(curr_vs)
   B idxs = C2(indexOf, incG(curr_ns), incG(x)); SGetU(idxs)
@@ -1769,8 +1768,8 @@ B sys_c1(B t, B x) {
   B path = m_f64(0);
   B name = m_f64(0);
   B wdpath = m_f64(0);
-  #define REQ_PATH ({ if(!path.u) path = q_N(comp_currPath)? bi_N : path_abs(path_parent(inc(comp_currPath))); path; })
-  #define REQ_NAME ({ if(!name.u) name = path_name(inc(comp_currPath)); name; })
+  #define REQ_PATH ({ if(!path.u) path = q_N(COMPS_CREF(path))? bi_N : path_abs(path_parent(inc(COMPS_CREF(path)))); path; })
+  #define REQ_NAME ({ if(!name.u) name = path_name(inc(COMPS_CREF(path))); name; })
   
   M_HARR(r, IA(x))
   for (usz i = 0; i < IA(x); i++) {
@@ -1785,15 +1784,15 @@ B sys_c1(B t, B x) {
       case 1: cr = getRandNS(); break; // •rand
       case 2: cr = getTermNS(); break; // •term
       case 3: cr = getBitNS(); break; // •bit
-      case 4: cr = getPrimitives(); break; // •primitives
+      case 4: cr = comps_getPrimitives(); break; // •primitives
       case 5: cr = getInternalNS(); break; // •internal
       case 6: initFileNS(); cr = m_nfn(fCharsDesc, inc(REQ_PATH)); break; // •FChars
       case 7: initFileNS(); cr = m_nfn(fBytesDesc, inc(REQ_PATH)); break; // •FBytes
       case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
       case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: if (q_N(comp_currPath)) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
-      case 12: if (q_N(comp_currPath)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
+      case 11: if (q_N(COMPS_CREF(path))) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
+      case 12: if (q_N(COMPS_CREF(path))) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { // •wdpath
         if (!wdpath.u) wdpath = path_abs(inc(cdPath));
         cr = inc(wdpath);
@@ -1811,14 +1810,14 @@ B sys_c1(B t, B x) {
         break;
       }
       case 15: { // •state
-        if (q_N(comp_currArgs)) thrM("No arguments present for •state");
-        if (q_N(comp_currPath)) thrM("No path present for •state");
-        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(comp_currArgs));
+        if (q_N(COMPS_CREF(args))) thrM("No arguments present for •state");
+        if (q_N(COMPS_CREF(path))) thrM("No path present for •state");
+        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(COMPS_CREF(args)));
         break;
       }
       case 16: { // •args
-        if (q_N(comp_currArgs)) thrM("No arguments present for •args");
-        cr = inc(comp_currArgs);
+        if (q_N(COMPS_CREF(args))) thrM("No arguments present for •args");
+        cr = inc(COMPS_CREF(args));
         break;
       }
       case 17: cr = incG(curr_ns); break; // •listsys

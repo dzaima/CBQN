@@ -3,6 +3,7 @@
 #include "vm.h"
 #include "ns.h"
 #include "builtins.h"
+#include "load.h"
 
 #ifndef FAKE_RUNTIME
   #define FAKE_RUNTIME 0
@@ -102,12 +103,7 @@ B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
 
-// comp_currEnvPos/comp_currPath/comp_currArgs/comp_currSrc are only valid while evaluating through bqn_comp*; comp_currRe is valid at all times
-i64 comp_currEnvPos;
-B comp_currPath;
-B comp_currArgs;
-B comp_currSrc;
-B comp_currRe; // ⟨REPL mode ⋄ scope ⋄ compiler ⋄ runtime ⋄ glyphs ⋄ sysval names ⋄ sysval values⟩
+HArr* comps_curr;
 
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
   rt_group, rt_under, rt_find;
@@ -178,33 +174,38 @@ B bqn_repr(B x) {
 }
 #endif
 
-#define POP_COMP ({ \
-  comp_currPath   = prevPath; \
-  comp_currArgs   = prevArgs; \
-  comp_currSrc    = prevSrc;  \
-  comp_currEnvPos = prevEnvPos; })
+NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
+  HArr* r = m_harr0v(comps_max).c;
+  COMPS_REF(r, path)   = inc(path);
+  COMPS_REF(r, args)   = inc(args);
+  COMPS_REF(r, src)    = inc(src);
+  COMPS_REF(r, re)     = inc(re);
+  COMPS_REF(r, envPos) = m_f64(envPos);
+  return r;
+}
 
-#define PUSH_COMP \
-  B   prevPath   = comp_currPath  ; comp_currPath = path; \
-  B   prevArgs   = comp_currArgs  ; comp_currArgs = args; \
-  B   prevSrc    = comp_currSrc   ; comp_currSrc  = str;  \
-  i64 prevEnvPos = comp_currEnvPos; comp_currEnvPos = envCurr-envStart; \
-  if (CATCH) { POP_COMP; rethrow(); }
+#define COMPS_PUSH(PATH, ARGS, STR, RE) \
+  HArr* compsP = comps_curr; \
+  HArr* compsN = m_comps(PATH, ARGS, STR, RE, envCurr-envStart); \
+  comps_curr = compsN; \
+  if (CATCH) { COMPS_POP; rethrow(); }
 
-static NOINLINE Block* bqn_compc(B str, B path, B args, B comp, B compArg) { // consumes str,path,args
+#define COMPS_POP ({ comps_curr = compsP; ptr_dec(compsN); })
+
+static NOINLINE Block* bqn_compc(B str, B path, B args, B re, B comp, B compArg) { // consumes str,path,args
   str = chr_squeeze(str);
-  PUSH_COMP;
+  COMPS_PUSH(path, args, str, re);
   Block* r = load_compObj(c2G(comp, incG(compArg), inc(str)), str, path, NULL, 0);
   dec(path); dec(args);
-  POP_COMP; popCatch();
+  COMPS_POP; popCatch();
   return r;
 }
 Block* bqn_comp(B str, B path, B args) { // consumes all
-  return bqn_compc(str, path, args, load_comp, load_compArg);
+  return bqn_compc(str, path, args, bi_N, load_comp, load_compArg);
 }
-Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool loose, bool noNS) { // consumes str,path,args
+Block* bqn_compScc(B str, B path, B args, B re, B comp, B rt, Scope* sc, bool loose, bool noNS) { // consumes str,path,args
   str = chr_squeeze(str);
-  PUSH_COMP;
+  COMPS_PUSH(path, args, str, re);
   B vName = emptyHVec();
   B vDepth = emptyIVec();
   if (loose && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
@@ -220,11 +221,11 @@ Block* bqn_compScc(B str, B path, B args, Scope* sc, B comp, B rt, bool loose, b
   }
   Block* r = load_compObj(c2G(comp, m_hvec4(incG(rt), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
   dec(path); dec(args);
-  POP_COMP; popCatch();
+  COMPS_POP; popCatch();
   return r;
 }
 NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, sc, load_comp, load_rtObj, repl, false);
+  return bqn_compScc(str, path, args, bi_N, load_comp, load_rtObj, sc, repl, false);
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
@@ -306,10 +307,10 @@ void init_comp(B* set, B prim, B sys) {
     }
   }
 }
-B getPrimitives(void) {
+B comps_getPrimitives(void) {
   B g, r;
-  if (q_N(comp_currRe)) { g=load_glyphs; r=load_rtObj; }
-  else { B* o = harr_ptr(comp_currRe); g=o[4]; r=o[3]; }
+  if (q_N(COMPS_CREF(re))) { g=load_glyphs; r=load_rtObj; }
+  else { B* o = harr_ptr(COMPS_CREF(re)); g=o[4]; r=o[3]; }
   B* pr = harr_ptr(r);
   B* gg = harr_ptr(g);
   M_HARR(ph, IA(r));
@@ -324,39 +325,30 @@ B getPrimitives(void) {
   return HARR_FV(ph);
 }
 
-extern B dsv_ns, dsv_vs;
-void getSysvals(B* res) {
-  if (q_N(comp_currRe)) { res[0]=dsv_ns; res[1]=dsv_vs; }
-  else { B* o=harr_ptr(comp_currRe); res[0]=o[5]; res[1]=o[6]; }
+void comps_getSysvals(B* res) {
+  B re = COMPS_CREF(re);
+  if (q_N(re)) { res[0]=dsv_ns; res[1]=dsv_vs; }
+  else { B* o=harr_ptr(re); res[0]=o[5]; res[1]=o[6]; }
 }
 
-B rebqn_exec(B str, B path, B args, B o) {
-  B prevRe = comp_currRe;
-  if (CATCH) { comp_currRe = prevRe; rethrow(); }
-  comp_currRe = inc(o);
-  
-  B* op = harr_ptr(o);
+B rebqn_exec(B str, B path, B args, B re) {
+  B* op = harr_ptr(re);
   i32 replMode = o2iG(op[0]);
   Scope* sc = c(Scope, op[1]);
   B res;
   Block* block;
   if (replMode>0) {
-    block = bqn_compScc(str, path, args, sc, op[2], op[3], replMode==2, true);
-    comp_currRe = prevRe;
+    block = bqn_compScc(str, path, args, re, op[2], op[3], sc, replMode==2, true);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     res = execBlockInplace(block, sc);
   } else {
     B rtsys = m_hvec2(inc(op[3]), incG(bi_sys));
-    block = bqn_compc(str, path, args, op[2], rtsys);
+    block = bqn_compc(str, path, args, re, op[2], rtsys);
     decG(rtsys);
-    comp_currRe = prevRe;
     res = evalFunBlock(block, 0);
   }
   ptr_dec(block);
-  decG(o);
-  
-  popCatch();
   return res;
 }
 
@@ -372,15 +364,12 @@ static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32ar
 static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
 B invalidFn_c1(B t, B x);
 
+void comps_gcFn() {
+  mm_visitP(comps_curr);
+}
 void load_init() { // very last init function
-  comp_currPath = bi_N;
-  comp_currArgs = bi_N;
-  comp_currSrc  = bi_N;
-  comp_currRe   = bi_N;
-  gc_add_ref(&comp_currPath);
-  gc_add_ref(&comp_currArgs);
-  gc_add_ref(&comp_currSrc);
-  gc_add_ref(&comp_currRe);
+  comps_curr = m_comps(bi_N, bi_N, bi_N, bi_N, 0);
+  gc_addFn(comps_gcFn);
   gc_add_ref(&rt_invFnReg);
   gc_add_ref(&rt_invFnSwap);
   B fruntime[] = {
@@ -594,9 +583,9 @@ B bqn_explain(B str, B path) {
     }
     
     B args = bi_N;
-    PUSH_COMP;
+    COMPS_PUSH(path, args, str, bi_N);
     B c = c2(load_comp, incG(load_compArg), inc(str));
-    POP_COMP;
+    COMPS_POP;
     B ret = c2(load_explain, c, str);
     return ret;
   #endif

@@ -27,6 +27,14 @@ f ← •ReBQN{repl⇐"none"} ⋄ !6≡•Type F "⇐"
 !"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"strict"} ⋄ F "a⇐1"
 !"Cannot construct a namespace for a REPL result" % f ← •ReBQN{repl⇐"strict"} ⋄ F "⇐"
 
+# f←•ReBQN {primitives⇐⋈'÷'‿-} ⋄ ! ¯5 ≡ F"•BQN""÷5""" ⋄ b←F"•BQN" ⋄ ! ¯5 ≡ B "÷5" ⋄ ! 0.2 ≡ •BQN "÷5"
+# f←•ReBQN {primitives⇐⋈'÷'‿-} ⋄ a1 ← •bqn ⋄ r1 ← F"•BQN" ⋄ a2 ← A1"•BQN" ⋄ r2 ← R1"•BQN" ⋄ a3 ← A1"•ReBQN{⇐}" ⋄ r3 ← R1"•ReBQN{⇐}" ⋄ {𝕏"÷"}¨ ⟨a1,r1,a2,r2,a3,r3⟩ %% ⟨÷,-,÷,-,÷,-⟩
+f←•ReBQN {repl⇐"none"  ⋄ primitives⇐⋈'÷'‿÷} ⋄ ! "Unknown character: '-'" ≡ F⎊{𝕊: •CurrentError@} "-5" ⋄ ! 0.2 ≡ •BQN "÷5"
+f←•ReBQN {repl⇐"loose" ⋄ primitives⇐⋈'÷'‿÷} ⋄ ! "Unknown character: '-'" ≡ F⎊{𝕊: •CurrentError@} "-5" ⋄ ! 0.2 ≡ •BQN "÷5"
+ps ← ⟨'÷'‿÷⟩ ⋄ f←•ReBQN {repl⇐"none"  ⋄ primitives⇐ps} ⋄ ! ps ≡ F "•primitives" ⋄ ! •primitives ≡ •BQN "•primitives" ⋄ ! ps ≡ F "•primitives"
+ps ← ⟨'÷'‿÷⟩ ⋄ f←•ReBQN {repl⇐"loose" ⋄ primitives⇐ps} ⋄ ! ps ≡ F "•primitives" ⋄ ! •primitives ≡ •BQN "•primitives" ⋄ ! ps ≡ F "•primitives"
+
+
 # •primitives
 !∧´2=•Type¨ ⊑¨•primitives
 !¨ (•Type¨1⊑¨•primitives)∊3‿4‿5
