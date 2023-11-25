@@ -669,8 +669,10 @@ B getRandNS(void) {
   }
   return incG(randNS);
 }
-static NFnDesc* reBQNDesc;
-B reBQN_c1(B t, B x) {
+static NFnDesc* bqnDesc;
+static NFnDesc* rebqnDesc;
+static NFnDesc* rebqnResDesc;
+B rebqn_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
   B prim = ns_getC(x, "primitives");
@@ -691,7 +693,7 @@ B reBQN_c1(B t, B x) {
   d.a[re_scope] = scVal;
   init_comp(d.a, prim, sys);
   decG(x);
-  return m_nfn(reBQNDesc, d.b);
+  return m_nfn(rebqnResDesc, d.b);
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
@@ -1765,14 +1767,17 @@ B sys_c1(B t, B x) {
   B curr_vs = tmp[1]; SGetU(curr_vs)
   B idxs = C2(indexOf, incG(curr_ns), incG(x)); SGetU(idxs)
   
-  B fileNS = m_f64(0);
-  B path = m_f64(0);
-  B name = m_f64(0);
-  B wdpath = m_f64(0);
+  B path0 = COMPS_CREF(path);
+  B args = COMPS_CREF(args);
+  
+  #define CACHED(F) F(fileNS)F(path)F(name)F(wdpath)F(bqn)F(rebqn)
+  #define F(X) B X = m_f64(0);
+  CACHED(F)
+  #undef F
   
   #define CACHE_OBJ(NAME, COMP) ({ if (!NAME.u) NAME = (COMP); NAME; })
-  #define REQ_PATH CACHE_OBJ(path, q_N(COMPS_CREF(path))? bi_N : path_abs(path_parent(inc(COMPS_CREF(path)))))
-  #define REQ_NAME CACHE_OBJ(name, path_name(inc(COMPS_CREF(path))))
+  #define REQ_PATH CACHE_OBJ(path, q_N(path0)? bi_N : path_abs(path_parent(inc(path0))))
+  #define REQ_NAME CACHE_OBJ(name, path_name(inc(path0)))
   
   M_HARR(r, IA(x))
   for (usz i = 0; i < IA(x); i++) {
@@ -1794,8 +1799,8 @@ B sys_c1(B t, B x) {
       case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
       case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: if (q_N(COMPS_CREF(path))) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
-      case 12: if (q_N(COMPS_CREF(path))) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
+      case 11: if (q_N(path0)) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
+      case 12: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; } // •wdpath
       case 14: { // •file
         #define F(X) m_nfn(X##Desc, inc(path))
@@ -1808,31 +1813,31 @@ B sys_c1(B t, B x) {
         break;
       }
       case 15: { // •state
-        if (q_N(COMPS_CREF(args))) thrM("No arguments present for •state");
-        if (q_N(COMPS_CREF(path))) thrM("No path present for •state");
-        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(COMPS_CREF(args)));
+        if (q_N(args)) thrM("No arguments present for •state");
+        if (q_N(path0)) thrM("No path present for •state");
+        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(args));
         break;
       }
       case 16: { // •args
-        if (q_N(COMPS_CREF(args))) thrM("No arguments present for •args");
-        cr = inc(COMPS_CREF(args));
+        if (q_N(args)) thrM("No arguments present for •args");
+        cr = inc(args);
         break;
       }
       case 17: cr = incG(curr_ns); break; // •listsys
       case 18: cr = incG(bi_compObj); break; // •CompObj
       case 19: cr = getNsNS(); break; // •ns
       case 20: cr = getPlatformNS(); break; // •platform
-      case 21: cr = incG(bi_bqn); break; // •BQN
-      case 22: cr = incG(bi_reBQN); break; // •ReBQN
+      case 21: cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   incG(COMPS_CREF(re))))); break; // •BQN
+      case 22: cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, incG(COMPS_CREF(re))))); break; // •ReBQN
     }
     HARR_ADD(r, i, cr);
   }
   #undef REQ_PATH
   #undef REQ_NAME
-  dec(fileNS);
-  dec(path);
-  dec(name);
-  dec(wdpath);
+  #define F(X) dec(X);
+  CACHED(F)
+  #undef F
+  #undef CACHED
   decG(idxs);
   return HARR_FCD(r, x);
 }
@@ -1889,7 +1894,9 @@ void sysfn_init(void) {
   gc_add_ref(&importValList);
   gc_add_ref(&thrownMsg);
   
-  reBQNDesc = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
+  bqnDesc   = registerNFn(m_c32vec_0(U"•BQN"), bqn_c1, bqn_c2);
+  rebqnDesc = registerNFn(m_c32vec_0(U"•ReBQN"), rebqn_c1, c2_bad);
+  rebqnResDesc = registerNFn(m_c8vec_0("(REPL)"), repl_c1, repl_c2);
 }
 void sysfnPost_init(void) {
   c(BMd1,bi_bitcast)->im = bitcast_im;
