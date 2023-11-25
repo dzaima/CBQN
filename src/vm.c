@@ -458,6 +458,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   u32* bc = (u32*)bca->a;
   usz bcIA = PIA(bca);
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
+  NOGC_S;
   comp->indices = indices;
   comp->src = src;
   comp->path = path;
@@ -471,6 +472,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   comp->nameList = nameList;
   comp->blockAm = 0;
   comp->objs = NULL;
+  NOGC_E;
   // and now finally it's safe to allocate stuff
   HArr* objArr = (HArr*)cpyHArr(objs);
   comp->objs = objArr;
@@ -1118,7 +1120,7 @@ void block_visit(Value* x) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) mm_visitP(c->bodies[i]);
 }
-void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; mm_visitP(c->objs); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; if (c->objs!=NULL) mm_visitP(c->objs); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
