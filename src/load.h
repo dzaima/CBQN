@@ -23,7 +23,9 @@ void comps_getSysvals(B* res);
 
 typedef struct Block Block;
 typedef struct Scope Scope;
-Block* bqn_comp   (B str, B state); // consumes all
+B bqn_explain(B str); // consumes str
+B bqn_execFile(B path, B args); // consumes both
+Block* bqn_comp   (B str, B state); // consumes both
 Block* bqn_compSc (B str, B state, Scope* sc, bool repl); // consumes str,state
 Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS); // consumes str,state
 B      rebqn_exec (B str, B state, B re); // consumes str,state; runs in a new environment

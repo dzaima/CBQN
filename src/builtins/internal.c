@@ -302,7 +302,7 @@ B internalTemp_c1(B t, B x) {
   #endif
   #if NATIVE_COMPILER
     switchComp();
-    B r = bqn_exec(x, bi_N, bi_N);
+    B r = bqn_exec(x, bi_N);
     switchComp();
     return r;
   #endif

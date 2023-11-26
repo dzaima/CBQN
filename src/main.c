@@ -605,7 +605,6 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
 void heap_printInfoStr(char* str);
-B bqn_explain(B str);
 extern bool gc_log_enabled, mem_log_enabled;
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
@@ -900,9 +899,7 @@ void cbqn_runLine(char* ln, i64 len) {
 #if WASM
 void cbqn_evalSrc(char* src, i64 len) {
   B code = utf8Decode(src, len);
-  B res = bqn_exec(code, bi_N, bi_N);
-  
-  B resFmt = bqn_fmt(res);
+  B resFmt = bqn_fmt(bqn_exec(code, bi_N));
   printsB(resFmt); dec(resFmt);
   putchar('\n');
 }
