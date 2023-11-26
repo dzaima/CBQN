@@ -1,7 +1,8 @@
 #pragma once
 #include "utf.h"
+// unless otherwise specified, these assume that paths are strings
 
-B path_rel(B base, B rel); // consumes rel; assumes base is a char vector or bi_N
+B path_rel(B base, B rel, char* name); // consumes rel; assumes base is a string or bi_N, throws if !isStr(rel)
 B path_parent(B path); // consumes; returns the containing directory, with trailing slash
 B path_name(B path); // consumes; returns filename from a path
 B path_abs(B path); // consumes; returns absolute version of the path; propagates bi_N

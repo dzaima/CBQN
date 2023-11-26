@@ -1011,7 +1011,7 @@ B ffiload_c2(B t, B w, B x) {
   
   char* ws = NULL;
   if (w.u != m_c32(0).u) {
-    w = path_rel(nfn_objU(t), w);
+    w = path_rel(nfn_objU(t), w, "•FFI");
     ws = toCStr(w);
   }
   void* dl = dlopen(ws, RTLD_NOW);

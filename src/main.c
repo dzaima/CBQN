@@ -491,7 +491,7 @@ static NOINLINE i64 readInt(char** p) {
   }
   
   static NOINLINE B path_rel_dec(B base, B rel) {
-    B res = path_rel(base, rel);
+    B res = path_rel(base, rel, "main.c");
     dec(base);
     return res;
   }

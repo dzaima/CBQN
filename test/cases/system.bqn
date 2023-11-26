@@ -86,6 +86,8 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 •file.Exists "/dev/file that doesn't exist" %% 0
 !"Couldn't read file ""/dev/file that doesn't exist""" % •FChars "/dev/file that doesn't exist"
 ! (•path∾"/") ≡ •file.Parent •file.At "hi"
+!"•file.Parent: Path must be non-empty" % •file.Parent ""
+!"•file.Name: Path must be non-empty" % •file.Name ""
 
 !"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
 !"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •file.Lines <"abcd"
@@ -96,8 +98,6 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"•file.Chars: 𝕩 must be a list of characters" % "testfile.bqn" •FChars <'a'
 !"Expected character" % "testfile.bqn" •FBytes ⋈"abcd"
 !"•file.Bytes: 𝕩 must be a list" % "testfile.bqn" •file.Bytes <'a'
-!"Path wasn't a list of characters" % 'a' •FChars "hi"
-!"Path wasn't a list of characters" % (4‿2⥊"testfile.bqn") •file.Chars "hi"
 !"Expected character" % "badwrite"•FChars ""‿""
 !"Expected character" % "badwrite"•FLines ⟨⟨"foo"⟩⟩
 !"•file.Chars: 𝕩 must be a list of characters" % "badwrite"•FChars @
@@ -116,11 +116,11 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 •FLines "testfile.bqn" %% "abc"‿"def𝕩"
 
 "testfile3B.bqn" •file.Rename "testfile3.bqn"
-!"(file).Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
+!"•file.Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
 ¯8↑•file.RealPath "testdirNested/.././" %% "/testDir"
-!"(file).CreateDir: Failed to create directory" % •file.Createdir "testdirNested"
+!"•file.CreateDir: Failed to create directory" % •file.Createdir "testdirNested"
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List "." %% 1‿1‿0‿1‿1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List •file.path %% 1‿1‿0‿1‿1
 
@@ -131,6 +131,36 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •file.RealPath "/dev/file that doesn't exist"
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •Import "/dev/file that doesn't exist"
+
+# bad paths
+!"•file.At: Path must be a list of characters" % •file.At 1‿2
+!"•file.At: Path must be a list of characters" % •file.At 1‿2
+!"•file.At: Path must be a list of characters" % "foo" •file.At 1‿2
+!"•file.At: 𝕨 must be a string" % 1‿2 •file.At "foo"
+!"•file.List: Path must be a list of characters" % •file.List 1‿2
+!"•file.Bytes: Path must be a list of characters" % •file.Bytes 1‿2
+!"•file.Chars: Path must be a list of characters" % •file.Chars 1‿2
+!"•file.Lines: Path must be a list of characters" % •file.Lines 1‿2
+!"•file.Bytes: Path must be a list of characters" % 1‿2 •FBytes "abc"
+!"•file.Chars: Path must be a list of characters" % 1‿2 •FChars "abc"
+!"•file.Lines: Path must be a list of characters" % 1‿2 •FLines "abc"‿"def"
+!"•file.Type: Path must be a list of characters" % •file.Type 1‿2
+!"•file.Exists: Path must be a list of characters" % •file.Exists 1‿2
+!"•file.Name: Argument must be a string" % •file.Name 1‿2
+!"•file.Parent: Argument must be a string" % •file.Parent 1‿2
+!"•file.MapBytes: Path must be a list of characters" % •file.MapBytes 1‿2
+!"•file.CreateDir: Path must be a list of characters" % •file.CreateDir 1‿2
+!"•file.RealPath: Path must be a list of characters" % •file.RealPath 1‿2
+!"•file.Rename: Path must be a list of characters" % "foo" •file.Rename 1‿2
+!"•file.Rename: Path must be a list of characters" % 1‿2 •file.Rename "foo"
+!"•file.Remove: Path must be a list of characters" % •file.Remove 1‿2
+!"•file.Created: Path must be a list of characters" % •file.Created 1‿2
+!"•file.Modified: Path must be a list of characters" % •file.Modified 1‿2
+!"•file.Accessed: Path must be a list of characters" % •file.Accessed 1‿2
+!"•file.Size: Path must be a list of characters" % •file.Size 1‿2
+!"•file.Size: Path must be a list of characters" % •file.Size 2‿2⥊"abcd"
+
+
 
 # some of •term
 !"Expected character" % •term.OutRaw 2⥊{⇐}

@@ -270,20 +270,13 @@ B show_c1(B t, B x) {
   return x;
 }
 
-NOINLINE bool isStr(B x) {
-  if (isAtm(x) || RNK(x)!=1) return false;
-  if (elChr(TI(x,elType))) return true;
-  usz ia = IA(x); SGetU(x)
-  for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) return false;
-  return true;
-}
 NOINLINE B vfyStr(B x, char* name, char* arg) {
   if (!isStr(x)) thrF("%U: %U must be a string", name, arg);
   return x;
 }
 
 B cdPath;
-static B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
+static NOINLINE B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w);
   SGet(w)
@@ -721,28 +714,28 @@ B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching
 
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
-  return path_rel(nfn_objU(d), x);
+  return path_rel(nfn_objU(d), x, "•file.At");
 }
 B fileAt_c2(B d, B w, B x) {
-  vfyStr(w,"(file).At","𝕨");
-  B r = path_rel(w, x);
+  vfyStr(w,"•file.At","𝕨");
+  B r = path_rel(w, x, "•file.At");
   dec(w);
   return r;
 }
 static NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
-  return path_chars(path_rel(nfn_objU(d), x));
+  return path_chars(path_rel(nfn_objU(d), x, "•file.Chars"));
 }
 B fchars_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Chars: 𝕩 must be a list of characters");
-  B p = path_rel(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w, "•file.Chars");
   path_wChars(incG(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
-  I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x));
+  I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
   usz ia = PIA(tf);
   u8* rp; B r = m_c8arrv(&rp, ia);
   COPY_TO(rp, el_i8, 0, taga(tf), 0, ia);
@@ -751,14 +744,14 @@ B fbytes_c1(B d, B x) {
 }
 B fbytes_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Bytes: 𝕩 must be a list");
-  B p = path_rel(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w, "•file.Bytes");
   path_wBytes(incG(p), x);
   dec(x);
   return p;
 }
 static NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
-  return path_lines(path_rel(nfn_objU(d), x));
+  return path_lines(path_rel(nfn_objU(d), x, "•file.Lines"));
 }
 B flines_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Lines: 𝕩 must be a list");
@@ -773,7 +766,7 @@ B flines_c2(B d, B w, B x) {
     s = vec_addN(s, m_c32('\n'));
   }
   dec(x);
-  B p = path_rel(nfn_objU(d), w);
+  B p = path_rel(nfn_objU(d), w, "•file.Lines");
   path_wChars(incG(p), s);
   decG(s);
   return p;
@@ -783,7 +776,7 @@ static NFnDesc* importDesc;
 
 
 B import_c2(B d, B w, B x) {
-  return bqn_execFile(path_rel(nfn_objU(d), x), w);
+  return bqn_execFile(path_rel(nfn_objU(d), x, "•Import"), w);
 }
 
 // defined in fns.c
@@ -798,7 +791,7 @@ B import_c1(B d, B x) {
     importKeyList = emptyHVec();
     importValList = emptyHVec();
   }
-  B path = path_abs(path_rel(nfn_objU(d), x));
+  B path = path_abs(path_rel(nfn_objU(d), x, "•Import"));
   
   i32 prevIdx = getPrevImport(path);
   if (prevIdx>=0) {
@@ -847,56 +840,56 @@ static NFnDesc* renameDesc;
 static NFnDesc* removeDesc;
 
 B list_c1(B d, B x) {
-  return path_list(path_rel(nfn_objU(d), x));
+  return path_list(path_rel(nfn_objU(d), x, "•file.List"));
 }
 B createdir_c1(B d, B x) {
-  B p = path_rel(nfn_objU(d), x);
+  B p = path_rel(nfn_objU(d), x, "•file.CreateDir");
   if (dir_create(p)) return p;
-  thrM("(file).CreateDir: Failed to create directory");
+  thrM("•file.CreateDir: Failed to create directory");
 }
 B realpath_c1(B d, B x) {
-  return path_abs(path_rel(nfn_objU(d), x));
+  return path_abs(path_rel(nfn_objU(d), x, "•file.RealPath"));
 }
 
 B rename_c2(B d, B w, B x) {
   d = nfn_objU(d);
-  B p = path_rel(d, w);
-  if (path_rename(path_rel(d, x), p)) return p;
-  thrM("(file).Rename: Failed to rename file");
+  B p = path_rel(d, w, "•file.Rename");
+  if (path_rename(path_rel(d, x, "•file.Rename"), p)) return p;
+  thrM("•file.Rename: Failed to rename file");
 }
 
 B remove_c1(B d, B x) {
-  if (path_remove(path_rel(nfn_objU(d), x))) return m_i32(1);
-  thrM("(file).Remove: Failed to remove file");
+  if (path_remove(path_rel(nfn_objU(d), x, "•file.Remove"))) return m_i32(1);
+  thrM("•file.Remove: Failed to remove file");
 }
 
 B ftype_c1(B d, B x) {
-  char ty = path_type(path_rel(nfn_objU(d), x));
+  char ty = path_type(path_rel(nfn_objU(d), x, "•file.Type"));
   if (ty==0) thrM("•file.Type: Error while accessing file");
   return m_c32(ty);
 }
 
-B fcreated_c1 (B d, B x) { return path_info(path_rel(nfn_objU(d), x), 0); }
-B faccessed_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x), 1); }
-B fmodified_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x), 2); }
-B fsize_c1    (B d, B x) { return path_info(path_rel(nfn_objU(d), x), 3); }
+B fcreated_c1 (B d, B x) { return path_info(path_rel(nfn_objU(d), x, "•file.Created"), 0); }
+B faccessed_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x, "•file.Accessed"), 1); }
+B fmodified_c1(B d, B x) { return path_info(path_rel(nfn_objU(d), x, "•file.Modified"), 2); }
+B fsize_c1    (B d, B x) { return path_info(path_rel(nfn_objU(d), x, "•file.Size"), 3); }
 
 B fexists_c1(B d, B x) {
-  char ty = path_type(path_rel(nfn_objU(d), x));
+  char ty = path_type(path_rel(nfn_objU(d), x, "•file.Exists"));
   return m_f64(ty!=0);
 }
 
 B fName_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•file.Name: Argument must be a string");
+  if (!isStr(x)) thrM("•file.Name: Argument must be a string");
   return path_name(x);
 }
 B fParent_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•file.Parent: Argument must be a string");
+  if (!isStr(x)) thrM("•file.Parent: Argument must be a string");
   return path_parent(x);
 }
 
 B mapBytes_c1(B d, B x) {
-  return mmap_file(path_rel(nfn_objU(d), x));
+  return mmap_file(path_rel(nfn_objU(d), x, "•file.MapBytes"));
 }
 
 B unixTime_c1(B t, B x) {

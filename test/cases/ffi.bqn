@@ -5,6 +5,7 @@
 
 # bad •FFI invocation
 # generally weird
+!"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
 "file that doesn't exist" •FFI⎊'e' ""‿"abort" %% 'e'
 @ •FFI⎊'e' ""‿"bqn_this symbol doesn't exist" %% 'e'
 !"FFI: Type must be a string" % @•FFI "hello"

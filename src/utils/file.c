@@ -115,23 +115,14 @@ B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
 }
 
 
-static NOINLINE void guaranteeStr(B x) { // assumes x is an array
-  if (elChr(TI(x,elType))) return;
-  usz xia = IA(x);
-  SGetU(x)
-  for (usz i = 0; i < xia; i++) if (!isC32(GetU(x, i))) thrM("Path wasn't a list of characters");
-}
 
 
-B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi_N
+B path_rel(B base, B rel, char* name) {
   assert(isArr(base) || q_N(base));
-  if (!isArr(rel) || RNK(rel)!=1) thrM("Path wasn't a list of characters");
-  SGetU(rel)
+  if (!isStr(rel)) thrF("%U: Path must be a list of characters", name);
   usz ria = IA(rel);
-  if (RNK(rel)!=1) thrM("Path wasn't a list of characters");
-  guaranteeStr(rel);
   if (ria>0 && isAbsolutePath(rel)) return rel;
-  if (q_N(base)) thrM("Using relative path with no absolute base path known");
+  if (q_N(base)) thrM("%U: Using relative path with no absolute base path known");
   if (ria==0) { dec(rel); return incG(base); }
   usz bia = IA(base);
   if (bia==0) return rel;
@@ -141,17 +132,17 @@ B path_rel(B base, B rel) { // consumes rel; assumes base is a char vector or bi
   usz ri = 0;
   for (usz i = 0; i < bia-(has?1:0); i++) rp[ri++] = o2cG(GetU(base, i));
   rp[ri++] = PREFERRED_SEP;
+  SGetU(rel)
   for (usz i = 0; i < ria; i++) rp[ri++] = o2cG(GetU(rel, i));
   dec(rel);
   return r;
 }
 
 B path_parent(B path) {
-  assert(isArr(path));
-  SGetU(path)
+  assert(isStr(path));
   usz pia = IA(path);
-  if (pia==0) thrM("Empty file path");
-  guaranteeStr(path);
+  if (pia==0) thrM("•file.Parent: Path must be non-empty");
+  SGetU(path)
   for (i64 i = (i64)pia-2; i >= 0; i--) {
     if (isPathSep(o2cG(GetU(path, i)))) return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
@@ -162,10 +153,9 @@ B path_parent(B path) {
 }
 B path_name(B path) {
   assert(isArr(path));
-  SGetU(path)
   usz pia = IA(path);
-  if (pia==0) thrM("Empty file path");
-  guaranteeStr(path);
+  if (pia==0) thrM("•file.Name: Path must be non-empty");
+  SGetU(path)
   for (i64 i = (i64)pia-1; i >= 0; i--) {
     if (isPathSep(o2cG(GetU(path, i)))) {
       if (i == pia-1) thrF("File path ended with a slash: \"%R\"", path);
@@ -176,6 +166,7 @@ B path_name(B path) {
 }
 
 B path_abs(B path) {
+  assert(isStr(path));
   #if WASM
   return path; // lazy
   #else
@@ -334,9 +325,7 @@ void mmap_init(void) {
   // use default canStore
 }
 #else
-B mmap_file(B path) {
-  thrM("CBQN was compiled without •file.MapBytes support");
-}
+B mmap_file(B path) { thrM("CBQN was compiled without •file.MapBytes support"); }
 void mmap_init() { }
 #endif
 

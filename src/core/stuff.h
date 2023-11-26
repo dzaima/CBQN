@@ -228,6 +228,7 @@ char* pm1_repr(u8 u);
 char* pm2_repr(u8 u);
 char* eltype_repr(u8 u);
 bool isPureFn(B x); // doesn't consume
+bool isStr(B x); // doesn't consume; returns if x is a rank 1 array of characters (includes any empty array)
 B bqn_merge(B x, u32 type); // consumes
 
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)

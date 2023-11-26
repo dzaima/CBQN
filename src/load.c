@@ -235,7 +235,6 @@ B bqn_exec(B str, B path, B args) { // consumes all
   return evalFunBlockConsume(bqn_comp(str, path, args));
 }
 
-bool isStr(B x);
 B str_all, str_none;
 void init_comp(B* new_re, B* prev_re, B prim, B sys) {
   if (q_N(prim)) {

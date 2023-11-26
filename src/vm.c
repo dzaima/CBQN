@@ -1667,18 +1667,16 @@ void unwindCompiler() {
   #endif
 }
 
+NOINLINE bool isStr(B x) {
+  if (isAtm(x) || RNK(x)!=1) return false;
+  if (elChr(TI(x,elType))) return true;
+  usz ia = IA(x); SGetU(x)
+  for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) return false;
+  return true;
+}
 NOINLINE void printErrMsg(B msg) {
-  if (isArr(msg)) {
-    if (!elChr(TI(msg,elType))) {
-      SGetU(msg)
-      usz msgLen = IA(msg);
-      for (usz i = 0; i < msgLen; i++) if (!isC32(GetU(msg,i))) goto base;
-    }
-    fprintsB(stderr, msg);
-    return;
-  }
-  base:
-  fprintI(stderr, msg);
+  if (isStr(msg)) fprintsB(stderr, msg);
+  else fprintI(stderr, msg);
 }
 
 
