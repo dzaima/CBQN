@@ -485,8 +485,9 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
     for (i32 i = 0; i < 2; i++) {
       B ind = IGetU(indices,i);
       if (isAtm(ind) || RNK(ind)!=1 || IA(ind)!=bcIA) thrM("VM compiler: Bad indices");
-      SGetU(ind)
-      for (usz j = 0; j < bcIA; j++) o2i(GetU(ind,j));
+      if (!elInt(TI(ind,elType))) { SGetU(ind)
+        for (usz j = 0; j < bcIA; j++) o2i(GetU(ind,j));
+      }
     }
   }
   TALLOC(bool,bDone,bIA);
