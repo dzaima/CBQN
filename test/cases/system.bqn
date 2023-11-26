@@ -8,8 +8,22 @@
 # •BQN
 %USE tvar ⋄ !∘≡⟜" "¨ •BQN _tvar "1↑"""""
 ⟨⟩ •BQN "Ah"•internal.Variation"1↑""""" %% " "
+! ≡´ t←⟨•path,"custom-name", "arg"⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⊑t
+! ≡´ t←⟨•path,"custom-name"       ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "custom-name", ⟨⟩⟩    ≡ ⊑t
+! ≡´ t←⟨•path                     ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "",            ⟨⟩⟩    ≡ ⊑t
+! ≡´ t←⟨                          ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ !        ⟨"",            ⟨⟩⟩    ≡ 1↓⊑t
+!"•BQN: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
+!"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
+⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
+!"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•path"
+!"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•state"
+⟨"path that doesn't exist"⟩•BQN"2+2" %% 4
 
 # •ReBQN
+!"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
+!"REPL: Path must be a string" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
+f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"custom-name", "arg"⟩ F "•state"
+
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"
 !"Unknown system function •internal" % f←•ReBQN {system⇐"none"} ⋄ F "•internal.Type ↕10"
 f←•ReBQN {system⇐⟨"range"‿↕ ⋄ "add"‿+ ⋄ "reverse"‿⌽⟩} ⋄ F "•Reverse ¯5 •Add •Range 10" %% 4-↕10
