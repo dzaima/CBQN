@@ -175,12 +175,8 @@ B compObj_c2(B t, B w, B x) {
 
 #if FORMATTER
 B load_fmt, load_repr;
-B bqn_fmt(B x) { // consumes
-  return c1G(load_fmt, x);
-}
-B bqn_repr(B x) { // consumes
-  return c1G(load_repr, x);
-}
+B bqn_fmt(B x) { return c1G(load_fmt, x); }
+B bqn_repr(B x) { return c1G(load_repr, x); }
 #else
 B bqn_fmt(B x) { return x; }
 B bqn_repr(B x) { return x; }
