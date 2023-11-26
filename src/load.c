@@ -134,20 +134,15 @@ Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consu
 B load_compgen;
 B load_explain;
 
-B def_comp;
-B def_compOpts;
 B def_re;
 B def_rt;
 B def_glyphs;
 
-static void change_def_comp(B comp) {
-  def_comp = comp;
-  if (def_re.u != 0) { // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
-    B* re = harr_ptr(def_re);
-    B prev = re[re_comp];
-    re[re_comp] = comp;
-    dec(prev);
-  }
+static void change_def_comp(B comp) { // consumes
+  B* re = harr_ptr(def_re); // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
+  B prev = re[re_comp];
+  re[re_comp] = comp;
+  dec(prev);
 }
 
 
@@ -155,7 +150,7 @@ static void change_def_comp(B comp) {
 #include "opt/comp.c"
 B load_rtComp;
 void switchComp(void) {
-  change_def_comp(def_comp.u==load_rtComp.u? native_comp : load_rtComp);
+  change_def_comp(harr_ptr(def_re)[re_comp].u==load_rtComp.u? incG(native_comp) : incG(load_rtComp));
 }
 #endif
 B compObj_c1(B t, B x) {
@@ -447,6 +442,7 @@ void load_init() { // very last init function
   for (u64 i = 0; i < RT_LEN; i++) inc(fruntime[i]);
   B frtObj = m_caB(RT_LEN, fruntime);
   
+  B load_compOpts;
   #if !NO_RT
     B provide[] = {
       /* actual provide: */
@@ -527,7 +523,7 @@ void load_init() { // very last init function
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
     def_rt = FAKE_RUNTIME? frtObj : rtObj;
-    def_compOpts = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
+    load_compOpts = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
   #else
     B* runtime = fruntime;
     (void)frtObj;
@@ -538,13 +534,13 @@ void load_init() { // very last init function
       if (isVal(r)) v(r)->flags|= i+1;
     }
     def_rt = frtObj;
-    def_compOpts = m_hvec2(def_rt, incG(bi_sys));
-    rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 7);
+    load_compOpts = m_hvec2(def_rt, incG(bi_sys));
+    rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 6);
     rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
     rt_under=rt_depth = incByG(bi_invalidMd2, 2);
     rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
   #endif
-  gc_add(def_compOpts);
+  gc_add(load_compOpts);
   gc_add(rt_undo);
   gc_add(rt_select);
   gc_add(rt_slash);
@@ -574,7 +570,10 @@ void load_init() { // very last init function
   #else // use compiler
     def_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(def_glyphs);
     
-    #if !ONLY_NATIVE_COMP
+    B load_comp;
+    #if ONLY_NATIVE_COMP
+      load_comp = m_f64(0);
+    #else
       B prevAsrt = runtime[n_asrt];
       runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
       Block* comp_b = load_importBlock("(compiler)",
@@ -582,15 +581,15 @@ void load_init() { // very last init function
       );
       runtime[n_asrt] = prevAsrt;
       load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
-      def_comp = c1(load_compgen, inc(def_glyphs));
+      load_comp = c1(load_compgen, inc(def_glyphs));
       #if NATIVE_COMPILER
-      load_rtComp = def_comp;
+      load_rtComp = load_comp;
       #endif
-      gc_add(load_compgen); gc_add(def_comp);
+      gc_add(load_compgen); gc_add(load_comp);
     #endif
     HArr_p ps = m_harr0v(re_max);
-    ps.a[re_comp] = inc(def_comp);
-    ps.a[re_compOpts] = incG(def_compOpts);
+    ps.a[re_comp] = inc(load_comp);
+    ps.a[re_compOpts] = incG(load_compOpts);
     ps.a[re_rt] = incG(def_rt);
     ps.a[re_glyphs] = incG(def_glyphs);
     ps.a[re_sysNames] = incG(def_sysNames);
@@ -642,7 +641,8 @@ B bqn_explain(B str, B path) {
     }
     
     COMPS_PUSH(path, bi_N, str, def_re);
-    B c = c2(def_comp, incG(def_compOpts), inc(str));
+    B* o = harr_ptr(def_re);
+    B c = c2(o[re_comp], incG(o[re_compOpts]), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
     return ret;
@@ -854,7 +854,7 @@ void typesFinished_init() {
   #if NATIVE_COMPILER
     nativeCompiler_init();
     #if ONLY_NATIVE_COMP
-      change_def_comp(native_comp);
+      change_def_comp(incG(native_comp));
     #endif
   #endif
 }

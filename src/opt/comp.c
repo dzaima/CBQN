@@ -478,6 +478,6 @@ B nativeComp_c2(B t, B w, B x) {
 }
 
 void nativeCompiler_init() {
-  native_comp = m_nfn(registerNFn(m_c8vec("(native compiler)", 17), c1_bad, nativeComp_c2), bi_N);
+  native_comp = m_nfn(registerNFn(m_c8vec_0("(native compiler)"), c1_bad, nativeComp_c2), bi_N);
   gc_add(native_comp);
 }
