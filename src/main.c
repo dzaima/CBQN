@@ -797,14 +797,13 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
 #endif
     } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
-      B expl = bqn_explain(utf8Decode0(cmdE), replPath);
-      HArr* expla = toHArr(expl);
+      HArr* expla = toHArr(bqn_explain(utf8Decode0(cmdE), replPath));
       usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
         printsB(expla->a[i]);
         putchar('\n');
       }
-      dec(expl);
+      ptr_dec(expla);
       return;
     } else {
       printf("Unknown REPL command\n");
