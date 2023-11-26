@@ -132,11 +132,7 @@ Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consu
 #endif
 
 B load_compgen;
-B load_explain;
-
 B def_re;
-B def_rt;
-B def_glyphs;
 
 static void change_def_comp(B comp) { // consumes
   B* re = harr_ptr(def_re); // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
@@ -148,9 +144,9 @@ static void change_def_comp(B comp) { // consumes
 
 #if NATIVE_COMPILER
 #include "opt/comp.c"
-B load_rtComp;
+B load_fullComp;
 void switchComp(void) {
-  change_def_comp(harr_ptr(def_re)[re_comp].u==load_rtComp.u? incG(native_comp) : incG(load_rtComp));
+  change_def_comp(harr_ptr(def_re)[re_comp].u==load_fullComp.u? incG(native_comp) : incG(load_fullComp));
 }
 #endif
 B compObj_c1(B t, B x) {
@@ -173,12 +169,8 @@ B bqn_repr(B x) { // consumes
   return c1G(load_repr, x);
 }
 #else
-B bqn_fmt(B x) {
-  return x;
-}
-B bqn_repr(B x) {
-  return x;
-}
+B bqn_fmt(B x) { return x; }
+B bqn_repr(B x) { return x; }
 #endif
 
 NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
@@ -442,7 +434,7 @@ void load_init() { // very last init function
   for (u64 i = 0; i < RT_LEN; i++) inc(fruntime[i]);
   B frtObj = m_caB(RT_LEN, fruntime);
   
-  B load_compOpts;
+  B load_compOpts, load_rt;
   #if !NO_RT
     B provide[] = {
       /* actual provide: */
@@ -487,14 +479,14 @@ void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
-    rt_undo    = Get(rtObjRaw, n_undo  );
-    rt_select  = Get(rtObjRaw, n_select);
-    rt_slash   = Get(rtObjRaw, n_slash );
-    rt_group   = Get(rtObjRaw, n_group );
-    rt_under   = Get(rtObjRaw, n_under );
-    rt_find    = Get(rtObjRaw, n_find  );
-    rt_depth   = Get(rtObjRaw, n_depth );
-    rt_insert  = Get(rtObjRaw, n_insert);
+    gc_add(rt_undo    = Get(rtObjRaw, n_undo  ));
+    gc_add(rt_select  = Get(rtObjRaw, n_select));
+    gc_add(rt_slash   = Get(rtObjRaw, n_slash ));
+    gc_add(rt_group   = Get(rtObjRaw, n_group ));
+    gc_add(rt_under   = Get(rtObjRaw, n_under ));
+    gc_add(rt_find    = Get(rtObjRaw, n_find  ));
+    gc_add(rt_depth   = Get(rtObjRaw, n_depth ));
+    gc_add(rt_insert  = Get(rtObjRaw, n_insert));
     
     for (usz i = 0; i < RT_LEN; i++) {
       #ifdef RT_WRAP
@@ -522,9 +514,9 @@ void load_init() { // very last init function
     decG(rtObjRaw);
     B* runtime = runtimeH.a;
     B rtObj = runtimeH.b;
-    def_rt = FAKE_RUNTIME? frtObj : rtObj;
-    load_compOpts = m_hvec2(def_rt, incG(bi_sys)); gc_add(FAKE_RUNTIME? rtObj : frtObj);
-  #else
+    load_rt = FAKE_RUNTIME? frtObj : rtObj;
+    gc_add(   FAKE_RUNTIME? rtObj : frtObj);
+  #else // NO_RT
     B* runtime = fruntime;
     (void)frtObj;
     (void)rtComplete;
@@ -533,26 +525,20 @@ void load_init() { // very last init function
       B r = fruntime[i];
       if (isVal(r)) v(r)->flags|= i+1;
     }
-    def_rt = frtObj;
-    load_compOpts = m_hvec2(def_rt, incG(bi_sys));
-    rt_select=rt_slash=rt_group=rt_find=rt_invFnReg=rt_invFnSwap = incByG(bi_invalidFn, 6);
-    rt_undo=rt_insert = incByG(bi_invalidMd1, 2);
-    rt_under=rt_depth = incByG(bi_invalidMd2, 2);
-    rt_invFnRegFn=rt_invFnSwapFn = invalidFn_c1;
+    load_rt = frtObj;
+    
+    rt_select = rt_slash = rt_group = rt_find = bi_invalidFn;
+    rt_undo = rt_insert = bi_invalidMd1;
+    rt_under = rt_depth = bi_invalidMd2;
+    
+    rt_invFnRegFn = rt_invFnSwapFn = invalidFn_c1;
+    rt_invFnReg   = rt_invFnSwap   = incByG(bi_invalidFn, 2);
   #endif
-  gc_add(load_compOpts);
-  gc_add(rt_undo);
-  gc_add(rt_select);
-  gc_add(rt_slash);
-  gc_add(rt_group);
-  gc_add(rt_under);
-  gc_add(rt_find);
-  gc_add(rt_depth);
-  gc_add(rt_insert);
-  
+  load_compOpts = m_hvec2(load_rt, incG(bi_sys));
   
   
   #ifdef PRECOMP
+    decG(load_compOpts);
     Block* c = compileAll(
       #include "../build/interp"
       , bi_N, bi_N, bi_N, bi_N, NULL, 0
@@ -564,11 +550,9 @@ void load_init() { // very last init function
     #if HEAP_VERIFY
       cbqn_heapVerify();
     #endif
-    rtWrap_print();
-    print_allocStats();
-    exit(0);
+    bqn_exit(0);
   #else // use compiler
-    def_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")); gc_add(def_glyphs);
+    B load_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     
     B load_comp;
     #if ONLY_NATIVE_COMP
@@ -581,17 +565,18 @@ void load_init() { // very last init function
       );
       runtime[n_asrt] = prevAsrt;
       load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
-      load_comp = c1(load_compgen, inc(def_glyphs));
+      gc_add(load_compgen);
+      
+      load_comp = c1(load_compgen, incG(load_glyphs));
       #if NATIVE_COMPILER
-      load_rtComp = load_comp;
+        load_fullComp = load_comp;
       #endif
-      gc_add(load_compgen); gc_add(load_comp);
     #endif
     HArr_p ps = m_harr0v(re_max);
-    ps.a[re_comp] = inc(load_comp);
-    ps.a[re_compOpts] = incG(load_compOpts);
-    ps.a[re_rt] = incG(def_rt);
-    ps.a[re_glyphs] = incG(def_glyphs);
+    ps.a[re_comp] = load_comp;
+    ps.a[re_compOpts] = load_compOpts;
+    ps.a[re_rt] = incG(load_rt);
+    ps.a[re_glyphs] = load_glyphs;
     ps.a[re_sysNames] = incG(def_sysNames);
     ps.a[re_sysVals] = incG(def_sysVals);
     gc_add(def_re = ps.b);
@@ -602,10 +587,9 @@ void load_init() { // very last init function
       );
       B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
       B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
-      decG(fmtM);
-      SGet(fmtR)
-      load_fmt  = Get(fmtR, 0); gc_add(load_fmt);
-      load_repr = Get(fmtR, 1); gc_add(load_repr);
+      decG(fmtM); SGet(fmtR)
+      gc_add(load_fmt  = Get(fmtR, 0));
+      gc_add(load_repr = Get(fmtR, 1));
       decG(fmtR);
     #endif
     
@@ -627,12 +611,14 @@ void bqn_exit(i32 code) {
   exit(code);
 }
 
+static B load_explain;
 B bqn_explain(B str, B path) {
   #if NO_EXPLAIN
     thrM("Explainer not included in this CBQN build");
   #else
+    B* o = harr_ptr(def_re);
     if (load_explain.u==0) {
-      B* runtime = harr_ptr(def_rt);
+      B* runtime = harr_ptr(o[re_rt]);
       Block* expl_b = load_importBlock("(explain)",
         #include PRECOMPILED_FILE(explain)
       );
@@ -641,7 +627,6 @@ B bqn_explain(B str, B path) {
     }
     
     COMPS_PUSH(path, bi_N, str, def_re);
-    B* o = harr_ptr(def_re);
     B c = c2(o[re_comp], incG(o[re_compOpts]), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
