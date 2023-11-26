@@ -445,8 +445,8 @@ void load_init() { // very last init function
       Block* runtime0_b = load_importBlock("(self-hosted runtime0)",
         #include PRECOMPILED_FILE(runtime0)
       );
-      B r0r = evalFunBlockConsume(runtime0_b);
-      B* runtime_0 = toHArr(r0r)->a;
+      HArr* r0r = toHArr(evalFunBlockConsume(runtime0_b));
+      B* runtime_0 = r0r->a;
     #endif
     
     Block* runtime_b = load_importBlock("(self-hosted runtime1)",
@@ -458,7 +458,7 @@ void load_init() { // very last init function
     );
     
     #if ALL_R0
-      decG(r0r);
+      ptr_dec(r0r);
     #endif
     
     B rtRes = evalFunBlockConsume(runtime_b);
