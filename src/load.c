@@ -102,6 +102,11 @@ B r1Objs[RT_LEN];
 B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
+static NOINLINE B evalFunBlockConsume(Block* block) {
+  B r = evalFunBlock(block, NULL);
+  ptr_dec(block);
+  return r;
+}
 
 HArr* comps_curr;
 
@@ -150,10 +155,7 @@ void switchComp(void) {
 }
 #endif
 B compObj_c1(B t, B x) {
-  Block* block = load_buildBlock(x, bi_N, bi_N, NULL, 0);
-  B res = evalFunBlock(block, 0);
-  ptr_dec(block);
-  return res;
+  return evalFunBlockConsume(load_buildBlock(x, bi_N, bi_N, NULL, 0));
 }
 B compObj_c2(B t, B w, B x) {
   change_def_comp(x);
@@ -230,10 +232,7 @@ NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // con
 }
 
 B bqn_exec(B str, B path, B args) { // consumes all
-  Block* block = bqn_comp(str, path, args);
-  B res = evalFunBlock(block, 0);
-  ptr_dec(block);
-  return res;
+  return evalFunBlockConsume(bqn_comp(str, path, args));
 }
 
 bool isStr(B x);
@@ -370,10 +369,7 @@ void comps_getSysvals(B* res) {
 }
 
 B rebqn_exec(B str, B path, B args, B re) {
-  Block* block = bqn_compc(str, path, args, re);
-  B res = evalFunBlock(block, 0);
-  ptr_dec(block);
-  return res;
+  return evalFunBlockConsume(bqn_compc(str, path, args, re));
 }
 B repl_exec(B str, B path, B args, B re) {
   B* op = harr_ptr(re);
@@ -442,14 +438,15 @@ void load_init() { // very last init function
       /* result list from commented-out •Out line in cc.bqn: */,
       bi_root,bi_not,bi_and,bi_or,bi_feq,bi_couple,bi_shifta,bi_shiftb,bi_reverse,bi_transp,bi_gradeUp,bi_gradeDown,bi_indexOf,bi_count,bi_memberOf,bi_cell,bi_rank
     };
+    
     #if !ALL_R0
-    B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
+      B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-    Block* runtime0_b = load_importBlock("(self-hosted runtime0)",
-      #include PRECOMPILED_FILE(runtime0)
-    );
-    B r0r = evalFunBlock(runtime0_b, 0); ptr_dec(runtime0_b);
-    B* runtime_0 = toHArr(r0r)->a;
+      Block* runtime0_b = load_importBlock("(self-hosted runtime0)",
+        #include PRECOMPILED_FILE(runtime0)
+      );
+      B r0r = evalFunBlockConsume(runtime0_b);
+      B* runtime_0 = toHArr(r0r)->a;
     #endif
     
     Block* runtime_b = load_importBlock("(self-hosted runtime1)",
@@ -461,10 +458,10 @@ void load_init() { // very last init function
     );
     
     #if ALL_R0
-    dec(r0r);
+      decG(r0r);
     #endif
     
-    B rtRes = evalFunBlock(runtime_b, 0); ptr_dec(runtime_b);
+    B rtRes = evalFunBlockConsume(runtime_b);
     SGet(rtRes);
     B rtObjRaw = Get(rtRes,0);
     B setPrims = Get(rtRes,1);
@@ -543,7 +540,7 @@ void load_init() { // very last init function
       #include "../build/interp"
       , bi_N, bi_N, bi_N, bi_N, NULL, 0
     );
-    B interp = evalFunBlock(c, 0); ptr_dec(c);
+    B interp = evalFunBlockConsume(c);
     printI(interp);
     printf("\n");
     dec(interp);
@@ -564,8 +561,7 @@ void load_init() { // very last init function
         #include PRECOMPILED_FILE(compiles)
       );
       runtime[n_asrt] = prevAsrt;
-      load_compgen = evalFunBlock(comp_b, 0); ptr_dec(comp_b);
-      gc_add(load_compgen);
+      gc_add(load_compgen = evalFunBlockConsume(comp_b));
       
       load_comp = c1(load_compgen, incG(load_glyphs));
       #if NATIVE_COMPILER
@@ -585,7 +581,7 @@ void load_init() { // very last init function
       Block* fmt_b = load_importBlock("(formatter)",
         #include PRECOMPILED_FILE(formatter)
       );
-      B fmtM = evalFunBlock(fmt_b, 0); ptr_dec(fmt_b);
+      B fmtM = evalFunBlockConsume(fmt_b);
       B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
       decG(fmtM); SGet(fmtR)
       gc_add(load_fmt  = Get(fmtR, 0));
@@ -622,8 +618,7 @@ B bqn_explain(B str, B path) {
       Block* expl_b = load_importBlock("(explain)",
         #include PRECOMPILED_FILE(explain)
       );
-      load_explain = evalFunBlock(expl_b, 0); ptr_dec(expl_b);
-      gc_add(load_explain);
+      gc_add(load_explain = evalFunBlockConsume(expl_b));
     }
     
     COMPS_PUSH(path, bi_N, str, def_re);
