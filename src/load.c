@@ -140,12 +140,22 @@ B def_re;
 B def_rt;
 B def_glyphs;
 
+static void change_def_comp(B comp) {
+  def_comp = comp;
+  if (def_re.u != 0) { // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
+    B* re = harr_ptr(def_re);
+    B prev = re[re_comp];
+    re[re_comp] = comp;
+    dec(prev);
+  }
+}
+
 
 #if NATIVE_COMPILER
 #include "opt/comp.c"
 B load_rtComp;
 void switchComp(void) {
-  def_comp = def_comp.u==load_rtComp.u? native_comp : load_rtComp;
+  change_def_comp(def_comp.u==load_rtComp.u? native_comp : load_rtComp);
 }
 #endif
 B compObj_c1(B t, B x) {
@@ -155,7 +165,7 @@ B compObj_c1(B t, B x) {
   return res;
 }
 B compObj_c2(B t, B w, B x) {
-  def_comp = x; gc_add(x);
+  change_def_comp(x);
   return w;
 }
 
@@ -579,7 +589,7 @@ void load_init() { // very last init function
       gc_add(load_compgen); gc_add(def_comp);
     #endif
     HArr_p ps = m_harr0v(re_max);
-    ps.a[re_comp] = incG(def_comp);
+    ps.a[re_comp] = inc(def_comp);
     ps.a[re_compOpts] = incG(def_compOpts);
     ps.a[re_rt] = incG(def_rt);
     ps.a[re_glyphs] = incG(def_glyphs);
@@ -844,7 +854,7 @@ void typesFinished_init() {
   #if NATIVE_COMPILER
     nativeCompiler_init();
     #if ONLY_NATIVE_COMP
-      def_comp = native_comp;
+      change_def_comp(native_comp);
     #endif
   #endif
 }
