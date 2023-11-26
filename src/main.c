@@ -20,7 +20,7 @@
   #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
 #endif
 
-static B replPath;
+static B replPath, replName;
 static Scope* gsc;
 static bool init = false;
 
@@ -28,6 +28,7 @@ static NOINLINE void repl_init() {
   if (init) return;
   cbqn_init();
   replPath = m_c8vec_0("."); gc_add(replPath);
+  replName = m_c8vec_0("(REPL)"); gc_add(replName);
   Body* body = m_nnsDesc();
   B ns = m_nns(body);
   gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
@@ -557,8 +558,9 @@ static NOINLINE i64 readInt(char** p) {
 #endif
 
 
-NOINLINE B gsc_exec_inplace(B src, B path, B args) {
-  Block* block = bqn_compSc(src, path, args, gsc, true);
+B m_state(B path, B name, B args);
+NOINLINE B gsc_exec_inplace(B src, char* name, B args) {
+  Block* block = bqn_compSc(src, m_state(incG(replPath), m_c8vec_0(name), args), gsc, true);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
   gsc->body = ptr_inc(block->bodies[0]);
   B r = execBlockInplace(block, gsc);
@@ -580,7 +582,7 @@ void switchComp(void);
 static B escape_parser;
 static B simple_unescape(B x) {
   if (RARE(escape_parser.u==0)) {
-    escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N, bi_N);
+    escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N);
     gc_add(escape_parser);
   }
   return c1(escape_parser, x);
@@ -603,6 +605,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
 void heap_printInfoStr(char* str);
+B bqn_explain(B str);
 extern bool gc_log_enabled, mem_log_enabled;
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
@@ -797,7 +800,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
 #endif
     } else if (isCmd(cmdS, &cmdE, "e ") || isCmd(cmdS, &cmdE, "explain ")) {
-      HArr* expla = toHArr(bqn_explain(utf8Decode0(cmdE), replPath));
+      HArr* expla = toHArr(bqn_explain(utf8Decode0(cmdE)));
       usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
         printsB(expla->a[i]);
@@ -813,7 +816,7 @@ void cbqn_runLine0(char* ln, i64 read) {
     code = utf8Decode0(ln);
     output = 1;
   }
-  Block* block = bqn_compSc(code, incG(replPath), emptySVec(), gsc, true);
+  Block* block = bqn_compSc(code, m_state(incG(replPath), incG(replName), emptySVec()), gsc, true);
   
   ptr_dec(gsc->body);
   gsc->body = ptr_inc(block->bodies[0]);
@@ -967,12 +970,12 @@ int main(int argc, char* argv[]) {
             #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
             case 'f': repl_init(); REQARG(f); goto execFile;
             case 'e': { repl_init(); REQARG(e);
-              dec(gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-e)"), emptySVec()));
+              dec(gsc_exec_inplace(utf8Decode0(argv[i++]), "(-e)", emptySVec()));
               break;
             }
             case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
             case 'p': { repl_init(); REQARG(p);
-              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-p)"), emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-p)", emptySVec());
               if (FORMATTER) { r = bqn_fmt(r); printsB(r); }
               else { printI(r); }
               dec(r);
@@ -980,7 +983,7 @@ int main(int argc, char* argv[]) {
               break;
             }
             case 'o': { repl_init(); REQARG(o);
-              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), m_c8vec_0("(-o)"), emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-o)", emptySVec());
               printsB(r); dec(r);
               printf("\n");
               break;
@@ -1004,7 +1007,7 @@ int main(int argc, char* argv[]) {
               usz ia = IA(lines);
               SGet(lines)
               for (u64 i = 0; i < ia; i++) {
-                dec(gsc_exec_inplace(Get(lines, i), incG(replPath), emptySVec()));
+                dec(gsc_exec_inplace(Get(lines, i), "(-R)", emptySVec()));
               }
               break;
             }
@@ -1032,7 +1035,7 @@ int main(int argc, char* argv[]) {
       
       B execRes;
       if (execStdin) {
-        execRes = gsc_exec_inplace(utf8DecodeA(stream_bytes(stdin)), m_c8vec_0("(-)"), args);
+        execRes = gsc_exec_inplace(utf8DecodeA(stream_bytes(stdin)), "(stdin)", args);
       } else {
         execRes = bqn_execFile(src, args);
       }

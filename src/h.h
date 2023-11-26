@@ -376,9 +376,8 @@ B    withFill(B x, B f);  // consumes both
 
 void cbqn_init(void);
 NORETURN void bqn_exit(i32 code);
-B bqn_exec(B str, B path, B args); // consumes all
+B bqn_exec(B str, B state); // consumes all
 B bqn_execFile(B path, B args); // consumes
-B bqn_explain(B str, B path); // consumes str
 B bqn_fmt(B x); // consumes
 B bqn_repr(B x); // consumes
 

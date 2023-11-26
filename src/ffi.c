@@ -66,10 +66,10 @@ BQN_EXP BQNV bqn_call2(BQNV f, BQNV w, BQNV x) {
 }
 
 BQN_EXP BQNV bqn_eval(BQNV src) {
-  return makeX(bqn_exec(inc(getB(src)), bi_N, bi_N));
+  return makeX(bqn_exec(inc(getB(src)), bi_N));
 }
 BQN_EXP BQNV bqn_evalCStr(const char* str) {
-  return makeX(bqn_exec(utf8Decode0(str), bi_N, bi_N));
+  return makeX(bqn_exec(utf8Decode0(str), bi_N));
 }
 
 

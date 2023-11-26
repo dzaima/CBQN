@@ -102,6 +102,17 @@ B r1Objs[RT_LEN];
 B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
+static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
+static NOINLINE B m_lvB_1(B a               ) { return m_hvec1(a); }
+static NOINLINE B m_lvB_2(B a, B b          ) { return m_hvec2(a,b); }
+static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hvec3(a,b,c); }
+static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
+static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
+static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
+static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
+static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
+static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
+
 static NOINLINE B evalFunBlockConsume(Block* block) {
   B r = evalFunBlock(block, NULL);
   ptr_dec(block);
@@ -175,39 +186,44 @@ B bqn_fmt(B x) { return x; }
 B bqn_repr(B x) { return x; }
 #endif
 
-NOINLINE HArr* m_comps(B path, B args, B src, B re, i64 envPos) {
-  assert(!q_N(re));
+static NOINLINE void comps_push(B src, B state, B re) {
+  assert(comps_curr == NULL);
   HArr* r = m_harr0v(comps_max).c;
-  COMPS_REF(r, path)   = inc(path);
-  COMPS_REF(r, args)   = inc(args);
+  if (q_N(state)) {
+    COMPS_REF(r,path) = COMPS_REF(r,name) = COMPS_REF(r,args) = bi_N;
+  } else {
+    SGet(state)
+    COMPS_REF(r, path) = Get(state,0);
+    COMPS_REF(r, name) = Get(state,1);
+    COMPS_REF(r, args) = Get(state,2);
+    decG(state);
+  }
   COMPS_REF(r, src)    = inc(src);
   COMPS_REF(r, re)     = inc(re);
-  COMPS_REF(r, envPos) = m_f64(envPos);
-  return r;
+  COMPS_REF(r, envPos) = m_f64(envCurr-envStart);
+  comps_curr = r;
 }
 
-#define COMPS_PUSH(PATH, ARGS, STR, RE) \
-  assert(comps_curr == NULL); \
-  HArr* compsN = comps_curr = m_comps(PATH, ARGS, STR, RE, envCurr-envStart); \
+#define COMPS_PUSH(STR, STATE, RE)   \
+  comps_push(STR, STATE, RE);        \
   if (CATCH) { COMPS_POP; rethrow(); }
 
-#define COMPS_POP ({ assert(comps_curr==compsN); ptr_dec(comps_curr); comps_curr = NULL; })
+#define COMPS_POP ({ ptr_dec(comps_curr); comps_curr = NULL; })
 
-static NOINLINE Block* bqn_compc(B str, B path, B args, B re) { // consumes str,path,args
+static NOINLINE Block* bqn_compc(B str, B state, B re) { // consumes str,state
   str = chr_squeeze(str);
-  COMPS_PUSH(path, args, str, re);
+  COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
-  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, path, NULL, 0);
-  dec(path); dec(args);
+  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), NULL, 0);
   COMPS_POP; popCatch();
   return r;
 }
-Block* bqn_comp(B str, B path, B args) {
-  return bqn_compc(str, path, args, def_re);
+Block* bqn_comp(B str, B state) {
+  return bqn_compc(str, state, def_re);
 }
-Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS) {
+Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS) {
   str = chr_squeeze(str);
-  COMPS_PUSH(path, args, str, re);
+  COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
   B vName = emptyHVec();
   B vDepth = emptyIVec();
@@ -222,17 +238,16 @@ Block* bqn_compScc(B str, B path, B args, B re, Scope* sc, bool loose, bool noNS
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_buildBlock(c2G(o[re_comp], m_hvec4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, path, sc, sc!=NULL? (noNS? -1 : 1) : 0);
-  dec(path); dec(args);
+  Block* r = load_buildBlock(c2G(o[re_comp], m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, COMPS_CREF(path), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   COMPS_POP; popCatch();
   return r;
 }
-NOINLINE Block* bqn_compSc(B str, B path, B args, Scope* sc, bool repl) { // consumes str,path,args
-  return bqn_compScc(str, path, args, def_re, sc, repl, false);
+NOINLINE Block* bqn_compSc(B str, B state, Scope* sc, bool repl) {
+  return bqn_compScc(str, state, def_re, sc, repl, false);
 }
 
-B bqn_exec(B str, B path, B args) { // consumes all
-  return evalFunBlockConsume(bqn_comp(str, path, args));
+B bqn_exec(B str, B state) { // consumes all
+  return evalFunBlockConsume(bqn_comp(str, state));
 }
 
 B str_all, str_none;
@@ -280,7 +295,7 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
     new_re[re_rt]       = prh.b;
     new_re[re_glyphs]   = inc(rb);
     new_re[re_comp]     = c1(load_compgen, rb);
-    new_re[re_compOpts] = m_hvec2(inc(prh.b), incG(bi_sys));
+    new_re[re_compOpts] = m_lvB_2(inc(prh.b), incG(bi_sys));
   }
   
   if (q_N(sys)) {
@@ -354,7 +369,7 @@ B comps_getPrimitives(void) {
     usz l = IA(gg[gi]);
     u32* gp = c32arr_ptr(gg[gi]);
     for (usz i = 0; i < l; i++) {
-      HARR_ADDA(ph, m_hvec2(m_c32(gp[i]), inc(pr[i])));
+      HARR_ADDA(ph, m_lvB_2(m_c32(gp[i]), inc(pr[i])));
     }
     pr+= l;
   }
@@ -367,35 +382,25 @@ void comps_getSysvals(B* res) {
   res[1] = o[re_sysVals];
 }
 
-B rebqn_exec(B str, B path, B args, B re) {
-  return evalFunBlockConsume(bqn_compc(str, path, args, re));
+B rebqn_exec(B str, B state, B re) {
+  return evalFunBlockConsume(bqn_compc(str, state, re));
 }
-B repl_exec(B str, B path, B args, B re) {
+B repl_exec(B str, B state, B re) {
   B* op = harr_ptr(re);
   i32 replMode = o2iG(op[re_mode]);
   if (replMode>0) {
     Scope* sc = c(Scope, op[re_scope]);
-    Block* block = bqn_compScc(str, path, args, re, sc, replMode==2, true);
+    Block* block = bqn_compScc(str, state, re, sc, replMode==2, true);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     B res = execBlockInplace(block, sc);
     ptr_dec(block);
     return res;
   } else {
-    return rebqn_exec(str, path, args, re);
+    return rebqn_exec(str, state, re);
   }
 }
 
-static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
-static NOINLINE B m_lvB_1(B a               ) { return m_hvec1(a); }
-static NOINLINE B m_lvB_2(B a, B b          ) { return m_hvec2(a,b); }
-static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hvec3(a,b,c); }
-static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
-static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
-static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
-static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
-static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
-static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
 B invalidFn_c1(B t, B x);
 
 void comps_gcFn() {
@@ -466,7 +471,7 @@ void load_init() { // very last init function
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
     dec(rtRes);
-    dec(c1G(setPrims, m_hvec2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
+    dec(c1G(setPrims, m_lvB_2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
     dec(c2G(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
     
@@ -530,7 +535,7 @@ void load_init() { // very last init function
     rt_invFnRegFn = rt_invFnSwapFn = invalidFn_c1;
     rt_invFnReg   = rt_invFnSwap   = incByG(bi_invalidFn, 2);
   #endif
-  load_compOpts = m_hvec2(load_rt, incG(bi_sys));
+  load_compOpts = m_lvB_2(load_rt, incG(bi_sys));
   
   
   #ifdef PRECOMP
@@ -548,7 +553,7 @@ void load_init() { // very last init function
     #endif
     bqn_exit(0);
   #else // use compiler
-    B load_glyphs = m_hvec3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    B load_glyphs = m_lvB_3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     
     B load_comp;
     #if ONLY_NATIVE_COMP
@@ -591,8 +596,10 @@ void load_init() { // very last init function
   #endif // PRECOMP
 }
 
+NOINLINE B m_state(B path, B name, B args) { return m_lvB_3(path, name, args); }
 B bqn_execFile(B path, B args) { // consumes both
-  return bqn_exec(path_chars(inc(path)), path, args);
+  B state = m_state(path_parent(inc(path)), path_name(inc(path)), args);
+  return bqn_exec(path_chars(path), state);
 }
 
 void before_exit(void);
@@ -607,7 +614,7 @@ void bqn_exit(i32 code) {
 }
 
 static B load_explain;
-B bqn_explain(B str, B path) {
+B bqn_explain(B str) {
   #if NO_EXPLAIN
     thrM("Explainer not included in this CBQN build");
   #else
@@ -620,7 +627,7 @@ B bqn_explain(B str, B path) {
       gc_add(load_explain = evalFunBlockConsume(expl_b));
     }
     
-    COMPS_PUSH(path, bi_N, str, def_re);
+    COMPS_PUSH(str, bi_N, def_re);
     B c = c2(o[re_comp], incG(o[re_compOpts]), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);

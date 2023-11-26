@@ -276,28 +276,25 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
 }
 
 B cdPath;
-static NOINLINE B args_path(B* fullpath, B w, char* name) { // consumes w, returns args, writes to fullpath
+static NOINLINE B prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
-  usz ia = IA(w);
-  SGet(w)
-  B path = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
-  B file = ia>1? vfyStr(Get(w,1),name,"Filename") : emptyCVec();
-  B args = ia>2?        Get(w,2)                  : emptySVec();
-  *fullpath = vec_join(vec_addN(path, m_c32('/')), file);
+  usz ia = IA(w); SGet(w)
+  HArr_p r = m_harr0v(3);
+  r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
+  r.a[1] = ia>1? vfyStr(Get(w,1),name,"Filename") : emptyCVec();
+  r.a[2] = ia>2?        Get(w,2)                  : emptySVec();
   decG(w);
-  return args;
+  return r.b;
 }
 
 B bqn_c1(B t, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  return rebqn_exec(x, bi_N, bi_N, nfn_objU(t));
+  return rebqn_exec(x, bi_N, nfn_objU(t));
 }
 
 B bqn_c2(B t, B w, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  B fullpath;
-  B args = args_path(&fullpath, w, "•BQN");
-  return rebqn_exec(x, fullpath, args, nfn_objU(t));
+  return rebqn_exec(x, prep_state(w, "•BQN"), nfn_objU(t));
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -674,15 +671,15 @@ B rebqn_c1(B t, B x) {
   B sys = ns_getC(x, "system");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN: Invalid repl value");
-  Block* initBlock = bqn_comp(m_c8vec_0("\"(REPL initializer)\""), inc(cdPath), m_f64(0));
   B scVal;
   if (replVal==0) {
     scVal = bi_N;
   } else {
+    Block* initBlock = bqn_comp(m_c8vec_0("\"(REPL initializer)\""), bi_N);
     Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
     scVal = tag(sc,OBJ_TAG);
+    ptr_dec(initBlock);
   }
-  ptr_dec(initBlock);
   HArr_p d = m_harr0v(re_max);
   d.a[re_mode] = m_i32(replVal);
   d.a[re_scope] = scVal;
@@ -692,9 +689,7 @@ B rebqn_c1(B t, B x) {
 }
 B repl_c2(B t, B w, B x) {
   vfyStr(x, "REPL", "𝕩");
-  B fullpath;
-  B args = args_path(&fullpath, w, "REPL");
-  return repl_exec(x, fullpath, args, nfn_objU(t));
+  return repl_exec(x, prep_state(w, "REPL"), nfn_objU(t));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
@@ -1763,16 +1758,16 @@ B sys_c1(B t, B x) {
   B idxs = C2(indexOf, incG(curr_ns), incG(x)); SGetU(idxs)
   
   B path0 = COMPS_CREF(path);
+  B name = COMPS_CREF(name);
   B args = COMPS_CREF(args);
   
-  #define CACHED(F) F(fileNS)F(path)F(name)F(wdpath)F(bqn)F(rebqn)
+  #define CACHED(F) F(fileNS)F(path)F(wdpath)F(bqn)F(rebqn)
   #define F(X) B X = m_f64(0);
   CACHED(F)
   #undef F
   
   #define CACHE_OBJ(NAME, COMP) ({ if (!NAME.u) NAME = (COMP); NAME; })
-  #define REQ_PATH CACHE_OBJ(path, q_N(path0)? bi_N : path_abs(path_parent(inc(path0))))
-  #define REQ_NAME CACHE_OBJ(name, path_name(inc(path0)))
+  #define REQ_PATH CACHE_OBJ(path, q_N(path0)? bi_N : path_abs(incG(path0)))
   
   M_HARR(r, IA(x))
   for (usz i = 0; i < IA(x); i++) {
@@ -1794,7 +1789,7 @@ B sys_c1(B t, B x) {
       case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
       case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
       case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: if (q_N(path0)) thrM("No path present for •name"); cr = inc(REQ_NAME); break; // •name
+      case 11: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break; // •name
       case 12: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; } // •wdpath
       case 14: { // •file
@@ -1809,8 +1804,9 @@ B sys_c1(B t, B x) {
       }
       case 15: { // •state
         if (q_N(args)) thrM("No arguments present for •state");
+        if (q_N(name)) thrM("No name present for •state");
         if (q_N(path0)) thrM("No path present for •state");
-        cr = m_hvec3(inc(REQ_PATH), inc(REQ_NAME), inc(args));
+        cr = m_hvec3(inc(REQ_PATH), inc(name), inc(args));
         break;
       }
       case 16: { // •args
