@@ -611,48 +611,93 @@ typedef struct HashMap {
   u64 sz;  // count of allocated entries, a power of 2
   u64 a[];
 } HashMap;
+static u64 hashmap_size(usz sh) { return ((u64)1 << (64-sh)) + 32; }
+static const u64 empty = ~(u64)0;
+static const u64 hmask = ~(u32)0;
 
-B hashmap_build(B keys, usz n) {
-  usz ext = 32;
+usz hashmap_count(B hash) { return c(HashMap, hash)->pop; }
+
+HashMap* hashmap_alloc(usz pop, usz sh, u64 sz) {
+  HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,sz), t_hashmap);
+  map->pop = pop; map->sh = sh; map->sz = sz;
+  memset64(map->a, empty, sz);
+  return map;
+}
+
+NOINLINE HashMap* hashmap_resize(HashMap* old_map) {
+  usz sh = old_map->sh - 1;
+  if (sh < 32) thrM("•HashMap: hash size maximum exceeded");
+  u64 sz = hashmap_size(sh);
+  HashMap* map = hashmap_alloc(old_map->pop, sh, sz);
+  for (u64 i=0, j=-(u64)1; i<old_map->sz; i++) {
+    u64 h = old_map->a[i];
+    if (h == empty) continue;
+    j++; u64 jh = h>>sh; if (j < jh) j = jh;
+    map->a[j] = h;
+  }
+  mm_free((Value*)old_map);
+  return map->a[sz-1]==empty ? map : hashmap_resize(map);
+}
+
+// Expects already defined: u64* hp, u64 sh, B* keys
+#define HASHMAP_FIND(X, FOUND) \
+  u64 h = bqn_hash(X, wy_secret);    \
+  u64 m = hmask;                     \
+  u64 v = h &~ m;                    \
+  u64 j = h >> sh;                   \
+  u64 u; while ((u=hp[j]) < v) j++;  \
+  while (u < (v|m)) {                \
+    usz i = u&m;                     \
+    if (equal(X, keys[i])) { FOUND } \
+    u = hp[++j];                     \
+  }
+// Expects usz i to be the index if new (i in FOUND is index where found)
+#define HASHMAP_INSERT(X, FOUND) \
+  HASHMAP_FIND(X, FOUND)                                            \
+  u64 je=j; while (u!=empty) { u64 s=u; je++; u=hp[je]; hp[je]=s; } \
+  hp[j] = v | i;
+
+B hashmap_build(B key_arr, usz n) {
   usz sh = CLZ(n|16)-1;
-  u64 l = (u64)1 << (64-sh);
-  HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,l+ext), t_hashmap);
-  map->pop = n; map->sh = sh; map->sz = l;
+  u64 sz = hashmap_size(sh);
+  HashMap* map = hashmap_alloc(n, sh, sz);
   u64* hp = map->a;
-  B* kp = harr_ptr(keys);
-  u64 e = ~(u64)0;
-  u64 m = ~(u32)0;
-  memset64(hp, e, l+ext);
+  B* keys = harr_ptr(key_arr);
   for (usz i=0; i<n; i++) {
-    B key = kp[i];
-    u64 h = bqn_hash(key, wy_secret);
-    u64 v = (h &~ m) | i;
-    u64 j0 = h>>sh; u64 j = j0;
-    u64 u; while ((u=hp[j]) < v) j++;
-    if (u < (v|m) && equal(key, kp[u&m])) thrM("•HashMap: 𝕨 contained duplicate keys");
-    u64 je=j; while (u!=e) { u64 s=u; je++; u=hp[je]; hp[je]=s; }
-    hp[j] = v;
+    B key = keys[i];
+    HASHMAP_INSERT(key, thrM("•HashMap: 𝕨 contained duplicate keys");)
+    if (RARE(je == sz-1)) {
+      map=hashmap_resize(map);
+      hp=map->a; sh=map->sh; sz=map->sz;
+    }
   }
   return tag(map, OBJ_TAG);
 }
 
 B hashmap_lookup(B* vars, B w, B x) {
   HashMap* map = c(HashMap, vars[2]);
-  u64* hp = map->a;
-  u64 h = bqn_hash(x, wy_secret);
-  u64 m = ~(u32)0;
-  u64 v = h &~ m;
-  u64 j = h >> map->sh;
-  u64 u; while ((u=hp[j]) < v) j++;
-  B* k = harr_ptr(vars[0]); // keys
-  while (u < (v|m)) {
-    usz i = u&m;
-    if (equal(x, k[i])) {
-      dec(x); dec(w);
-      return inc(harr_ptr(vars[1])[i]);
-    }
-    u = hp[++j];
-  }
+  u64* hp = map->a; u64 sh = map->sh;
+  B* keys = harr_ptr(vars[0]);
+  HASHMAP_FIND(x, dec(w); dec(x); return inc(harr_ptr(vars[1])[i]);)
   if (q_N(w)) thrM("(hashmap).Get: key not found");
   dec(x); return w;
+}
+
+void hashmap_set(B* vars, B w, B x) {
+  HashMap* map = c(HashMap, vars[2]);
+  u64* hp = map->a; u64 sh = map->sh;
+  usz i = map->pop;
+  if (i>>(64-3-sh)>7 || hp[map->sz-1]!=empty) { // keep load <= 7/8
+    map=hashmap_resize(map);
+    vars[2] = tag(map, OBJ_TAG);
+    hp=map->a; sh=map->sh;
+  }
+  B* keys = harr_ptr(vars[0]);
+  HASHMAP_INSERT(
+    w,
+    B* s = harr_ptr(vars[1])+i; dec(*s); dec(w); *s=x; return;
+  )
+  map->pop++;
+  vars[0] = vec_addN(vars[0], w);
+  vars[1] = vec_addN(vars[1], x);
 }

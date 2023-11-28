@@ -45,6 +45,7 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 !"⊐: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊐1‿2
 !"⊒: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊒1‿2
 
-⟨"get"⟩ %% •ns.Keys "abc"‿"de"‿"fgh" •HashMap ↕3
 ⟨2⟩ %% ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fgh"
 ∞ %% ∞ ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fghi"
+3 %% ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Count@
+"B" %% ("b" ("a"‿"b" •HashMap "A"‿"C").Set "B").Get "b"
