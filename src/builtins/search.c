@@ -617,14 +617,14 @@ static const u64 hmask = ~(u32)0;
 
 usz hashmap_count(B hash) { return c(HashMap, hash)->pop; }
 
-HashMap* hashmap_alloc(usz pop, usz sh, u64 sz) {
+static HashMap* hashmap_alloc(usz pop, usz sh, u64 sz) {
   HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,sz), t_hashmap);
   map->pop = pop; map->sh = sh; map->sz = sz;
   memset64(map->a, empty, sz);
   return map;
 }
 
-NOINLINE HashMap* hashmap_resize(HashMap* old_map) {
+static NOINLINE HashMap* hashmap_resize(HashMap* old_map) {
   usz sh = old_map->sh - 1;
   if (sh < 32) thrM("•HashMap: hash size maximum exceeded");
   u64 sz = hashmap_size(sh);
@@ -637,6 +637,47 @@ NOINLINE HashMap* hashmap_resize(HashMap* old_map) {
   }
   mm_free((Value*)old_map);
   return map->a[sz-1]==empty ? map : hashmap_resize(map);
+}
+
+static NOINLINE void hashmap_compact(B* vars) {
+  B k = vars[0]; B* keys = harr_ptr(k);
+  B v = vars[1]; B* vals = harr_ptr(v);
+  assert(reusable(k) && reusable(v));
+  usz l0 = IA(k); usz l = l0;
+  while (l>0 && q_N(keys[l-1])) l--;
+  TALLOC(usz, ind_map, l+1);
+  ind_map[0] = -1; // Index by i+1 to maintain empty entries
+  usz j = 0;       // Number of entries seen
+  for (usz i=0; i<l; i++) {
+    B ki = keys[i];
+    keys[j] = ki;
+    vals[j] = vals[i];
+    ind_map[i+1] = j;
+    j += !q_N(ki);
+  }
+  IA(k) = IA(v) = j;
+  FINISH_OVERALLOC_A(k, j*sizeof(B), (l0-j)*sizeof(B));
+  FINISH_OVERALLOC_A(v, j*sizeof(B), (l0-j)*sizeof(B));
+  if (j > 0) {
+    HashMap* map = c(HashMap, vars[2]);
+    assert(j == map->pop);
+    u64 sz = map->sz;
+    u64* hp = map->a;
+    for (u64 i=0; i<sz; i++) {
+      u64 h = hp[i];
+      hp[i] = (h&~hmask) | ind_map[(u32)h + 1];
+    }
+  }
+  TFREE(ind_map);
+}
+B hashmap_keys_or_vals(B* vars, usz which) {
+  assert(which < 2);
+  B r = vars[which];
+  if (c(HashMap, vars[2])->pop == IA(r)) return r;
+  if (!reusable(vars[0])) vars[0] = taga(cpyHArr(vars[0]));
+  if (!reusable(vars[1])) vars[1] = taga(cpyHArr(vars[1]));
+  hashmap_compact(vars);
+  return vars[which];
 }
 
 // Expects already defined: u64* hp, u64 sh, B* keys
@@ -718,6 +759,7 @@ void hashmap_delete(B* vars, B x) {
     if (!reusable(vb)) { vars[1]=vb=taga(cpyHArr(vb)); }
     usz p = --(map->pop); dec(keys[i]); keys[i]=bi_N;
     B* s = harr_ptr(vb)+i; dec(*s); *s=bi_N;
+    if (p==0 || p+32 < IA(kb)/2) hashmap_compact(vars);
     return;
   )
   thrM("(hashmap).Delete: key not found");
