@@ -728,7 +728,8 @@ void hashmap_set(B* vars, B w, B x) {
   HashMap* map = c(HashMap, vars[2]);
   u64* hp = map->a; u64 sh = map->sh;
   if (map->pop>>(64-3-sh)>7 || hp[map->sz-1]!=empty) { // keep load <= 7/8
-    map=hashmap_resize(map);
+    vars[2] = bi_N; // hashmap_resize might free then alloc
+    map = hashmap_resize(map);
     vars[2] = tag(map, OBJ_TAG);
     hp=map->a; sh=map->sh;
   }
