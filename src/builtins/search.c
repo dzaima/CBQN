@@ -601,3 +601,58 @@ void search_init(void) {
     getRange_fns[4] = getRange_f64;
   #endif
 }
+
+
+// •HashMap implementation
+typedef struct HashMap {
+  struct Value;
+  u64 pop; // count of defined entries
+  u64 sh;  // shift to turn hash into index
+  u64 sz;  // count of allocated entries, a power of 2
+  u64 a[];
+} HashMap;
+
+B hashmap_build(B keys, usz n) {
+  usz ext = 32;
+  usz sh = CLZ(n|16)-1;
+  u64 l = (u64)1 << (64-sh);
+  HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,l+ext), t_hashmap);
+  map->pop = n; map->sh = sh; map->sz = l;
+  u64* hp = map->a;
+  SGetU(keys)
+  u64 e = ~(u64)0;
+  u64 m = ~(u32)0;
+  memset64(hp, e, l+ext);
+  for (usz i=0; i<n; i++) {
+    B key = GetU(keys,i);
+    u64 h = bqn_hash(key, wy_secret);
+    u64 v = (h &~ m) | i;
+    u64 j0 = h>>sh; u64 j = j0;
+    u64 u; while ((u=hp[j]) < v) j++;
+    if (u < (v|m) && equal(key, GetU(keys,u&m))) thrM("•HashMap: 𝕨 contained duplicate keys");
+    u64 je=j; while (u!=e) { u64 s=u; je++; u=hp[je]; hp[je]=s; }
+    hp[j] = v;
+  }
+  return tag(map, OBJ_TAG);
+}
+
+B hashmap_lookup(B* vars, B w, B x) {
+  HashMap* map = c(HashMap, vars[2]);
+  u64* hp = map->a;
+  u64 h = bqn_hash(x, wy_secret);
+  u64 m = ~(u32)0;
+  u64 v = h &~ m;
+  u64 j = h >> map->sh;
+  u64 u; while ((u=hp[j]) < v) j++;
+  B k = vars[0];
+  while (u < (v|m)) {
+    usz i = u&m;
+    if (equal(x, IGetU(k, i))) {
+      dec(x); dec(w);
+      return IGet(vars[1], i);
+    }
+    u = hp[++j];
+  }
+  if (q_N(w)) thrM("(hashmap).Get: key not found");
+  dec(x); return w;
+}

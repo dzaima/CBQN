@@ -707,65 +707,22 @@ B currentError_c1(B t, B x) {
 B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
 #endif
 
-typedef struct HashMap {
-  struct Value;
-  u64 pop; // count of defined entries
-  u64 sh;  // shift to turn hash into index
-  u64 sz;  // count of allocated entries, a power of 2
-  u64 a[];
-} HashMap;
 static Body* hashmap_ns;
 static B hashmap_getName;   static NFnDesc* hashmap_getDesc;
+// Hash object handling defined in search.c
+extern B hashmap_build(B keys, usz n);
+extern B hashmap_lookup(B* vars, B w, B x);
 B hashmap_get_c2(B t, B w, B x) {
-  Scope* sc = c(NS,nfn_objU(t))->sc;
-  HashMap* map = c(HashMap, sc->vars[2]);
-  u64* hp = map->a;
-  u64 h = bqn_hash(x, wy_secret);
-  u64 m = ~(u32)0;
-  u64 v = h &~ m;
-  u64 j = h >> map->sh;
-  u64 u; while ((u=hp[j]) < v) j++;
-  B k = sc->vars[0];
-  while (u < (v|m)) {
-    usz i = u&m;
-    if (equal(x, IGetU(k, i))) {
-      dec(x); dec(w);
-      return IGet(sc->vars[1], i);
-    }
-    u = hp[++j];
-  }
-  if (q_N(w)) thrM("(hashmap).Get: key not found");
-  dec(x); return w;
+  return hashmap_lookup(c(NS,nfn_objU(t))->sc->vars, w, x);
 }
-B hashmap_get_c1(B t, B x) { return hashmap_get_c2(t, bi_N, x); }
+B hashmap_get_c1(B t, B x) {
+  return hashmap_lookup(c(NS,nfn_objU(t))->sc->vars, bi_N, x);
+}
 static NOINLINE void hashmap_init() {
   hashmap_ns = m_nnsDesc("keys", "vals", "hash", "get");
   NSDesc* d = hashmap_ns->nsDesc;
   for (usz i = 0; i < 3; i++) d->expGIDs[i] = -1;
   hashmap_getName  = m_c8vec_0("get");  gc_add(hashmap_getName);  hashmap_getDesc  = registerNFn(m_c8vec_0("(hashmap).Get"), hashmap_get_c1, hashmap_get_c2);
-}
-B hashmap_build(B keys, usz n) {
-  usz ext = 32;
-  usz sh = CLZ(n|16)-1;
-  u64 l = (u64)1 << (64-sh);
-  HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,l+ext), t_hashmap);
-  map->pop = n; map->sh = sh; map->sz = l;
-  u64* hp = map->a;
-  SGetU(keys)
-  u64 e = ~(u64)0;
-  u64 m = ~(u32)0;
-  for (u64 j=0; j<l+ext; j++) hp[j] = e;
-  for (usz i=0; i<n; i++) {
-    B key = GetU(keys,i);
-    u64 h = bqn_hash(key, wy_secret);
-    u64 v = (h &~ m) | i;
-    u64 j0 = h>>sh; u64 j = j0;
-    u64 u; while ((u=hp[j]) < v) j++;
-    if (u < (v|m) && equal(key, GetU(keys,u&m))) thrM("•HashMap: 𝕨 contained duplicate keys");
-    u64 je=j; while (u!=e) { u64 s=u; je++; u=hp[je]; hp[je]=s; }
-    hp[j] = v;
-  }
-  return tag(map, OBJ_TAG);
 }
 B hashMap_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("•HashMap: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
