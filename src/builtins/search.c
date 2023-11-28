@@ -686,12 +686,12 @@ B hashmap_lookup(B* vars, B w, B x) {
 void hashmap_set(B* vars, B w, B x) {
   HashMap* map = c(HashMap, vars[2]);
   u64* hp = map->a; u64 sh = map->sh;
-  usz i = map->pop;
-  if (i>>(64-3-sh)>7 || hp[map->sz-1]!=empty) { // keep load <= 7/8
+  if (map->pop>>(64-3-sh)>7 || hp[map->sz-1]!=empty) { // keep load <= 7/8
     map=hashmap_resize(map);
     vars[2] = tag(map, OBJ_TAG);
     hp=map->a; sh=map->sh;
   }
+  usz i = IA(vars[0]);
   B* keys = harr_ptr(vars[0]);
   HASHMAP_INSERT(
     w,
@@ -700,4 +700,25 @@ void hashmap_set(B* vars, B w, B x) {
   map->pop++;
   vars[0] = vec_addN(vars[0], w);
   vars[1] = vec_addN(vars[1], x);
+}
+
+void hashmap_delete(B* vars, B x) {
+  HashMap* map = c(HashMap, vars[2]);
+  u64* hp = map->a; u64 sh = map->sh;
+  B kb = vars[0]; B* keys = harr_ptr(kb);
+  HASHMAP_FIND(x,
+    dec(x);
+    do {
+      u64 jp=j; j++;
+      u=hp[j]; if (u>>sh==j) u=empty;
+      hp[jp]=u;
+    } while (u!=empty);
+    B vb = vars[1];
+    if (!reusable(kb)) { vars[0]=kb=taga(cpyHArr(kb)); keys=harr_ptr(kb); }
+    if (!reusable(vb)) { vars[1]=vb=taga(cpyHArr(vb)); }
+    usz p = --(map->pop); dec(keys[i]); keys[i]=bi_N;
+    B* s = harr_ptr(vb)+i; dec(*s); *s=bi_N;
+    return;
+  )
+  thrM("(hashmap).Delete: key not found");
 }
