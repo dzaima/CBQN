@@ -729,6 +729,7 @@ B hashMap_c2(B t, B w, B x) {
   usz n = IA(w);
   if (n != IA(x)) thrF("•HashMap: 𝕨 and 𝕩 must have the same length (%s≡≠𝕨, %s≡≠𝕩)", n, IA(x));
   if (hashmap_ns==NULL) hashmap_init();
+  w = taga(toHArr(w)); x = taga(toHArr(x));
   B h = hashmap_build(w, n);
   B ns = m_nns(hashmap_ns, w, x, h, m_nfn(hashmap_getDesc, bi_N));
   Scope* sc = c(NS,ns)->sc;

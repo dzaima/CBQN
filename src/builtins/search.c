@@ -619,17 +619,17 @@ B hashmap_build(B keys, usz n) {
   HashMap* map = mm_alloc(fsizeof(HashMap,a,u64,l+ext), t_hashmap);
   map->pop = n; map->sh = sh; map->sz = l;
   u64* hp = map->a;
-  SGetU(keys)
+  B* kp = harr_ptr(keys);
   u64 e = ~(u64)0;
   u64 m = ~(u32)0;
   memset64(hp, e, l+ext);
   for (usz i=0; i<n; i++) {
-    B key = GetU(keys,i);
+    B key = kp[i];
     u64 h = bqn_hash(key, wy_secret);
     u64 v = (h &~ m) | i;
     u64 j0 = h>>sh; u64 j = j0;
     u64 u; while ((u=hp[j]) < v) j++;
-    if (u < (v|m) && equal(key, GetU(keys,u&m))) thrM("•HashMap: 𝕨 contained duplicate keys");
+    if (u < (v|m) && equal(key, kp[u&m])) thrM("•HashMap: 𝕨 contained duplicate keys");
     u64 je=j; while (u!=e) { u64 s=u; je++; u=hp[je]; hp[je]=s; }
     hp[j] = v;
   }
@@ -644,12 +644,12 @@ B hashmap_lookup(B* vars, B w, B x) {
   u64 v = h &~ m;
   u64 j = h >> map->sh;
   u64 u; while ((u=hp[j]) < v) j++;
-  B k = vars[0];
+  B* k = harr_ptr(vars[0]); // keys
   while (u < (v|m)) {
     usz i = u&m;
-    if (equal(x, IGetU(k, i))) {
+    if (equal(x, k[i])) {
       dec(x); dec(w);
-      return IGet(vars[1], i);
+      return inc(harr_ptr(vars[1])[i]);
     }
     u = hp[++j];
   }
