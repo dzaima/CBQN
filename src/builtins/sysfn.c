@@ -707,6 +707,60 @@ B currentError_c1(B t, B x) {
 B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
 #endif
 
+static Body* hashmap_ns;
+static B hashmap_getName;    static NFnDesc* hashmap_getDesc;
+static B hashmap_hasName;    static NFnDesc* hashmap_hasDesc;
+static B hashmap_setName;    static NFnDesc* hashmap_setDesc;
+static B hashmap_deleteName; static NFnDesc* hashmap_deleteDesc;
+static B hashmap_countName;  static NFnDesc* hashmap_countDesc;
+static B hashmap_keysName;   static NFnDesc* hashmap_keysDesc;
+static B hashmap_valuesName; static NFnDesc* hashmap_valuesDesc;
+// Hash object handling defined in search.c
+extern B hashmap_build(B keys, usz n);
+extern B hashmap_lookup(B* vars, B w, B x);
+extern void hashmap_set(B* vars, B w, B x);
+extern void hashmap_delete(B* vars, B x);
+extern usz hashmap_count(B hash);
+extern B hashmap_keys_or_vals(B* vars, usz which);
+#define VARS c(NS,nfn_objU(t))->sc->vars
+B hashmap_get_c1(B t, B x     ) { return hashmap_lookup(VARS, bi_N, x); }
+B hashmap_get_c2(B t, B w, B x) { return hashmap_lookup(VARS, w,    x); }
+B hashmap_set_c2(B t, B w, B x) { hashmap_set(VARS, w, x); return inc(nfn_objU(t)); }
+B hashmap_delete_c1(B t, B x  ) { hashmap_delete(VARS, x); return inc(nfn_objU(t)); }
+B hashmap_has_c1(B t, B x) {
+  B l = hashmap_lookup(VARS, bi_noVar, x);
+  if (l.u==bi_noVar.u) return m_f64(0);
+  dec(l); return m_f64(1);
+}
+B hashmap_count_c1(B t, B x) { dec(x); return m_usz(hashmap_count(VARS[2])); }
+B hashmap_keys_c1  (B t, B x) { dec(x); return inc(hashmap_keys_or_vals(VARS, 0)); }
+B hashmap_values_c1(B t, B x) { dec(x); return inc(hashmap_keys_or_vals(VARS, 1)); }
+#undef VARS
+static NOINLINE void hashmap_init() {
+  hashmap_ns = m_nnsDesc("keylist", "vallist", "hash", "get", "has", "set", "delete", "count", "keys", "values");
+  NSDesc* d = hashmap_ns->nsDesc;
+  for (usz i = 0; i < 3; i++) d->expGIDs[i] = -1;
+  hashmap_getName    = m_c8vec_0("get");    gc_add(hashmap_getName);    hashmap_getDesc    = registerNFn(m_c8vec_0("(hashmap).Get"),    hashmap_get_c1,    hashmap_get_c2);
+  hashmap_hasName    = m_c8vec_0("has");    gc_add(hashmap_hasName);    hashmap_hasDesc    = registerNFn(m_c8vec_0("(hashmap).Has"),    hashmap_has_c1,    c2_bad);
+  hashmap_setName    = m_c8vec_0("set");    gc_add(hashmap_setName);    hashmap_setDesc    = registerNFn(m_c8vec_0("(hashmap).Set"),    c1_bad,            hashmap_set_c2);
+  hashmap_deleteName = m_c8vec_0("delete"); gc_add(hashmap_deleteName); hashmap_deleteDesc = registerNFn(m_c8vec_0("(hashmap).Delete"), hashmap_delete_c1, c2_bad);
+  hashmap_countName  = m_c8vec_0("count");  gc_add(hashmap_countName);  hashmap_countDesc  = registerNFn(m_c8vec_0("(hashmap).Count"),  hashmap_count_c1,  c2_bad);
+  hashmap_keysName   = m_c8vec_0("keys");   gc_add(hashmap_keysName);   hashmap_keysDesc   = registerNFn(m_c8vec_0("(hashmap).Keys"),   hashmap_keys_c1,   c2_bad);
+  hashmap_valuesName = m_c8vec_0("values"); gc_add(hashmap_valuesName); hashmap_valuesDesc = registerNFn(m_c8vec_0("(hashmap).Values"), hashmap_values_c1, c2_bad);
+}
+B hashMap_c2(B t, B w, B x) {
+  if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("•HashMap: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
+  usz n = IA(w);
+  if (n != IA(x)) thrF("•HashMap: 𝕨 and 𝕩 must have the same length (%s≡≠𝕨, %s≡≠𝕩)", n, IA(x));
+  if (hashmap_ns==NULL) hashmap_init();
+  w = taga(toHArr(w)); x = taga(toHArr(x));
+  B h = hashmap_build(w, n);
+  B ns = m_nns(hashmap_ns, w, x, h, m_nfn(hashmap_getDesc, bi_N), m_nfn(hashmap_hasDesc, bi_N), m_nfn(hashmap_setDesc, bi_N), m_nfn(hashmap_deleteDesc, bi_N), m_nfn(hashmap_countDesc, bi_N), m_nfn(hashmap_keysDesc, bi_N), m_nfn(hashmap_valuesDesc, bi_N));
+  Scope* sc = c(NS,ns)->sc;
+  for (usz i = 3; i < 10; i++) nfn_swapObj(sc->vars[i], incG(ns));
+  return ns;
+}
+
 static NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
@@ -1623,6 +1677,7 @@ static Body* file_nsGen;
   F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
   F("toutf8", U"•ToUTF8", bi_toUtf8) \
   F("currenterror", U"•CurrentError", bi_currentError) \
+  F("hashmap", U"•HashMap", bi_hashMap) \
   F("math", U"•math", tag(0,VAR_TAG)) \
   F("rand", U"•rand", tag(1,VAR_TAG)) \
   F("term", U"•term", tag(2,VAR_TAG)) \
