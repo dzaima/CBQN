@@ -727,12 +727,6 @@ B hashmap_lookup(B* vars, B w, B x) {
 void hashmap_set(B* vars, B w, B x) {
   HashMap* map = c(HashMap, vars[2]);
   u64* hp = map->a; u64 sh = map->sh;
-  if (map->pop>>(64-3-sh)>7 || hp[map->sz-1]!=empty) { // keep load <= 7/8
-    vars[2] = bi_N; // hashmap_resize might free then alloc
-    map = hashmap_resize(map);
-    vars[2] = tag(map, OBJ_TAG);
-    hp=map->a; sh=map->sh;
-  }
   usz i = IA(vars[0]);
   B* keys = harr_ptr(vars[0]);
   HASHMAP_INSERT(
@@ -740,6 +734,12 @@ void hashmap_set(B* vars, B w, B x) {
     B* s = harr_ptr(vars[1])+i; dec(*s); dec(w); *s=x; return;
   )
   map->pop++;
+  if (map->pop>>(64-3-sh)>7 || je==map->sz-1) { // keep load <= 7/8
+    vars[2] = bi_N; // hashmap_resize might free then alloc
+    map = hashmap_resize(map);
+    vars[2] = tag(map, OBJ_TAG);
+    hp=map->a; sh=map->sh;
+  }
   vars[0] = vec_addN(vars[0], w);
   vars[1] = vec_addN(vars[1], x);
 }
