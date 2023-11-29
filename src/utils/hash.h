@@ -18,6 +18,9 @@ u64 bqn_hashObj(B x, const u64 secret[4]);
 static u64 bqn_hash(B x, const u64 secret[4]) { // doesn't consume
   u64 h;
   if (LIKELY(x.f==x.f)) {
+    #if TEST_BAD_HASH
+      return (u64)x.f;
+    #endif
     h = m_f64(x.f+0).u;
   } else if (isVal(x)) {
     return bqn_hashObj(x, secret);
