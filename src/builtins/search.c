@@ -609,7 +609,7 @@ typedef struct HashMap {
   u64 pop; // count of defined entries
   u64 sh;  // shift to turn hash into index
   u64 sz;  // count of allocated entries, a power of 2
-  u64 a[];
+  u64 a[]; // lower 32 bits: index into keys/vals; upper 32 bits: upper 32 bits of hash
 } HashMap;
 static u64 hashmap_size(usz sh) { return ((u64)1 << (64-sh)) + 32; }
 static const u64 empty = ~(u64)0;
