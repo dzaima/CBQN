@@ -7,6 +7,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•BQN`        | |
 | `•ReBQN`      | Supported options: `repl`; `primitives`; `system` that's not `"safe"` |
 | `•primitives` | |
+| `•_while_`    | |
 | `•platform`   | |
 | `•Import`     | |
 | `•FFI`        | see [FFI](#ffi) |
@@ -45,10 +46,6 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 ## `•term`
 
 `•term.OutRaw` and `•term.ErrRaw` output the given bytes directly to the specific stream, without any trailing newline. May be removed once a proper interface for stream I/O has been made.
-
-## `•_while_`
-
-While `𝕨𝔾𝕩`, execute `𝕩↩𝕨𝔽𝕩`. Equivalent to `{𝕨𝔾𝕩? 𝕨 𝕊 𝕨𝔽𝕩; 𝕩}`.
 
 ## `•GetLine`
 
@@ -123,7 +120,7 @@ That is, the supported types are:
 - structs of any of the above (except `&`-pointers) or other structs (e.g. `{*i8,*{*u32:i8,u64:i32}}`), except structs that are within `&` themselves cannot contain any pointers other than converted opaque pointers (e.g. `*{*i32,u64}`, `&{*:i32,u64}`, and `&{i32,u64}` are fine, but `&{*i32,u64}` is not);
 - the `a` type, which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
 
-# •SH
+# `•SH`
 
 The left argument can be a namespace, providing additional options.
 
