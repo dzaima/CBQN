@@ -311,19 +311,19 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   
   bool reuse = (TY(x)==t_harr && reusable(x)) | !ia;
   usz i = 0;
-  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
-  AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
+  HArr_p r = m_harr0c(x);
+  SGet(x)
   FC2 fc2 = c2fn(f);
   
   if (isArr(w)) {
     usz csz = arr_csz(x);
     SGet(w)
-    for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), xget(xa,i));
-    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
+    for (; i < csz; i++) r.a[i] = fc2(f, Get(w,i), Get(x,i));
+    for (; i < ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), Get(x,i));
     decG(w);
   } else {
-    B pr = r.a[0] = fc2(f, w, xget(xa,0)); i++;
-    for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), xget(xa,i));
+    B pr = r.a[0] = fc2(f, w, Get(x,0)); i++;
+    for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), Get(x,i));
   }
   if (!reuse) decG(x);
   return withFill(r.b, wf);
