@@ -12,6 +12,9 @@
 
 
 u64 gc_depth = 1;
+#ifdef GC_EVERY_NTH_ALLOC
+  u64 nth_alloc = 1;
+#endif
 
 
 vfn gc_roots[8];

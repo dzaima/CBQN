@@ -445,6 +445,7 @@ Most toggles require a value of `1` to be enabled.
 #define VERIFY_TAIL   (u) // number of bytes after the end of an array to verify not being improperly modified; 64 in DEBUG
 #define NEEQUAL_NEGZERO 0 // make negative zero not equal zero for •internal.EEqual
 #define RT_VERIFY_ARGS  1 // rtverify: preserve arguments for printing on failure
+#define GC_EVERY_NTH_ALLOC (u) // force a GC on every n'th allocation (<=1 to GC on every alloc)
 
 // some somewhat-outdated/unmaintained things:
 #define RT_PERF   0   // time runtime primitives

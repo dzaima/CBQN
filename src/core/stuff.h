@@ -340,9 +340,23 @@ static FC2 c2fn(B f) {
   NOINLINE NORETURN void thrOOMTest(void);
 #endif
 
+#ifdef GC_EVERY_NTH_ALLOC
+  extern u64 gc_depth;
+  extern u64 nth_alloc;
+#endif
 FORCE_INLINE void preAlloc(usz sz, u8 type) {
   #ifdef OOM_TEST
     if (--oomTestLeft==0) thrOOMTest();
+  #endif
+  #ifdef GC_EVERY_NTH_ALLOC
+    #if GC_EVERY_NTH_ALLOC<=1
+      if (gc_depth==0) gc_forceGC(false);
+    #else
+      if (gc_depth==0 && --nth_alloc == 0) {
+        gc_forceGC(false);
+        nth_alloc = GC_EVERY_NTH_ALLOC;
+      }
+    #endif
   #endif
   #if ALLOC_STAT
     if (!ctr_a) {
