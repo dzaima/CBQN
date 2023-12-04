@@ -152,12 +152,28 @@ SH ← { # if 𝕨≢@, returns 𝕨 if failed to spawn
 }
 TrySH ← {1⊑•SH⎊1‿𝕨‿"" 𝕩}
 
+nogit←1
+GitCmd ← {
+  𝕨 {"Error: git needed for "∾𝕨∾", but nogit=1 specified"}_assert_¬ nogit
+  ¯1↓SH ⟨"git", "-C", rootDir⟩∾𝕩
+}
+updateSubmodule ← {
+  done ← ⟨⟩
+  {
+    𝕩≡@? @;
+    "Local"≡¯5↑𝕩? @;
+    ⊑𝕩<⊸∊done? @;
+    done∾↩ <𝕩
+    ("updating "∾𝕩) GitCmd ⟨"submodule", "update", "--init", AtRoot 𝕩⟩
+  }
+}
+
 rootDir ← •file.Parent⍟2 •file.path
 AtRoot ← rootDir⊸•file.At
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, rebuildSingeli, tui, nogit, loud, output, clangd, versionName,
+    verbose, J, rebuildAll, rebuildSingeli, tui, loud, output, clangd, versionName,
     os, arch, native, has, avx2,
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -174,7 +190,7 @@ po ← { # parsed options
   rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
   loud ⇐ ¬GetOpt "quiet"
-  nogit ⇐ GetOpt "nogit"
+  nogit ↩ GetOpt "nogit"
   
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
@@ -329,6 +345,7 @@ po ← { # parsed options
     args∾↩ {
       native? ⟨"-march=native"⟩;
       ⟨⟩: ⟨⟩;
+      UpdateSubmodule singeliDir
       "Error: Cannot use has=... if Singeli isn't enabled"_assert_⊢ singeli
       (⟨singeliArch, 1⟩ •Import AtRoot singeliDir •file.At "arch.bqn").GetCFlags@
     } has
@@ -403,20 +420,6 @@ isFileTheSame ← {
     ks∾↩ <𝕨
     vs∾↩ <t←•file.Modified⎊"unknown" 𝕨
     𝕩 ≡ t
-  }
-}
-GitCmd ← {
-  𝕨 {"Error: git needed for "∾𝕨∾", but nogit=1 specified"}_assert_¬ po.nogit
-  ¯1↓SH ⟨"git", "-C", rootDir⟩∾𝕩
-}
-updateSubmodule ← {
-  done ← ⟨⟩
-  {
-    𝕩≡@? @;
-    "Local"≡¯5↑𝕩? @;
-    ⊑𝕩<⊸∊done? @;
-    done∾↩ <𝕩
-    ("updating "∾𝕩) GitCmd ⟨"submodule", "update", "--init", AtRoot 𝕩⟩
   }
 }
 
