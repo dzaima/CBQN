@@ -8,16 +8,13 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•ReBQN`      | Supported options: `repl`; `primitives`; `system` that's not `"safe"` |
 | `•primitives` | |
 | `•_while_`    | |
-| `•platform`   | |
 | `•Import`     | |
-| `•FFI`        | see [FFI](#ffi) |
 | `•state`      | |
 | `•args`       | |
 | `•path`       | |
 | `•name`       | |
 | `•wdpath`     | |
 | `•Exit`       | |
-| `•ns`         | |
 | `•file`       | Fields: `path`, `At`, `List`, `Bytes`, `Chars`, `Lines`, `Type`, `Exists`, `Name`, `Parent`, `MapBytes`, `CreateDir`, `RealPath`, `Rename`, `Remove`, `Created`, `Modified`, `Accessed`, `Size` |
 | `•FChars`     | |
 | `•FBytes`     | |
@@ -25,13 +22,17 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Out`        | |
 | `•Show`       | |
 | `•Repr`       | |
-| `•ParseFloat` | Should exactly round floats with up to 17 significant digits, but won't necessarily round correctly with more |
 | `•Fmt`        | |
+| `•ParseFloat` | Should exactly round floats with up to 17 significant digits, but won't necessarily round correctly with more |
 | `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
 | `•SH`         | See [•SH](#sh) |
+| `•FFI`        | see [FFI](#ffi) |
+| `•platform`   | |
 | `•Type`       | |
 | `•Glyph`      | |
 | `•Decompose`  | |
+| `•ns`         | |
+| `•HashMap`    | |
 | `•UnixTime`   | second-level precision |
 | `•MonoTime`   | up to nanosecond level precision, depending on system support |
 | `•Delay`      | |
