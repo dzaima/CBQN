@@ -232,21 +232,20 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   SLOW2("𝕎` 𝕩", f, x);
   B xf = getFillR(x);
   
-  bool reuse = TY(x)==t_harr && reusable(x);
-  HArr_p r = reuse? harr_parts(REUSE(x)) : m_harr0c(x);
-  AS2B xget = reuse? TI(x,getU) : TI(x,get); Arr* xa = a(x);
+  HArr_p r = m_harr0c(x);
+  SGet(x)
   FC2 fc2 = c2fn(f);
   
   if (xr==1) {
-    r.a[0] = xget(xa,0);
-    for (usz i=1; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), xget(xa,i));
+    r.a[0] = Get(x,0);
+    for (usz i=1; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), Get(x,i));
   } else {
     usz csz = arr_csz(x);
     usz i = 0;
-    for (; i<csz; i++) r.a[i] = xget(xa,i);
-    for (; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), xget(xa,i));
+    for (; i<csz; i++) r.a[i] = Get(x,i);
+    for (; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-csz]), Get(x,i));
   }
-  if (!reuse) decG(x);
+  decG(x);
   return withFill(r.b, xf);
 }
 
@@ -309,7 +308,6 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   SLOW3("𝕨 F` 𝕩", w, x, f);
   B wf = getFillR(w);
   
-  bool reuse = (TY(x)==t_harr && reusable(x)) | !ia;
   usz i = 0;
   HArr_p r = m_harr0c(x);
   SGet(x)
@@ -325,6 +323,6 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     B pr = r.a[0] = fc2(f, w, Get(x,0)); i++;
     for (; i < ia; i++) r.a[i] = pr = fc2(f, inc(pr), Get(x,i));
   }
-  if (!reuse) decG(x);
+  decG(x);
   return withFill(r.b, wf);
 }
