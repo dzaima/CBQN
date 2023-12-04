@@ -170,7 +170,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   }
   
   // Many ¯1s: filter out, then continue
-  if (xn>32 && neg>(bits?0:xn/4)+xn/8) {
+  if (xn>32 && neg > (bits? 0 : xn/16)) {
     if (wia>xn) w = C2(take, m_f64(xn), w);
     B m = C2(ne, m_f64(-1), incG(w));
     w = C2(slash, incG(m), w);
