@@ -15,7 +15,7 @@ NORETURN NOINLINE void fatal(char* s) {
     gc_depth=1;
   #endif
   if (inErr) {
-    fputs("\nCBQN encountered a fatal error during information printing of another fatal error. Exiting without printing more info.", stderr);
+    fputs("\nCBQN encountered a fatal error during information printing of another fatal error. Exiting without printing more info.\n", stderr);
     #if DEBUG
       __builtin_trap();
     #endif
