@@ -408,7 +408,7 @@ B memberOf_c2(B t, B w, B x) {
       }
       
       #if SINGELI_AVX2
-      if (wia>=32>>(we-el_i8) && xia>1 && ((we==el_i16 && xia<32) || (we==el_i32 && xia<16)) && xe<=we && !elChr(TI(x,elType))) {
+      if (we>=el_i16 && wia>=32>>(we-el_i8) && xia>1 && ((we==el_i16 && xia<32) || (we==el_i32 && xia<16)) && xe<=we && !elChr(TI(x,elType))) {
         x = C1(and, x); // sort
         if (xe<we) switch (we) { default:UD; case el_i16:x=toI16Any(x);break; case el_i32:x=toI32Any(x);break; }
         u64* rp; r = m_bitarrc(&rp, w);
