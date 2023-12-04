@@ -162,7 +162,7 @@ po ← { # parsed options
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
-    CBQNc, ccColor, singeliFlags, REPLXXc, Linker
+    CBQNc, ccColor, singeliFlags, singeliArch, REPLXXc, Linker
   ⟩⇐
   
   compat ← GetOpt "from-makefile"
@@ -237,6 +237,7 @@ po ← { # parsed options
   {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
   {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; remove 'has=...' or add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
   
+  singeliArch ⇐ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} arch) <⊸∾ Uppercase ∊⟜"avx2"‿"bmi2"‿"pclmul"⊸/ has
   avx2 ⇐ (arch≡"x86-64") ∧ singeli ∧ native ∨ ⊑"avx2"<⊸∊has
   
   {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
@@ -312,7 +313,6 @@ po ← { # parsed options
     args∾↩ (          replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
     args∾↩ (  debug DOpt "g") / ⟨"-g"⟩
     args∾↩ (              o3) / ⟨"-O3"⟩
-    args∾↩ (          native) / ⟨"-march=native"⟩
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
     args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
     args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY"⟩
@@ -325,7 +325,13 @@ po ← { # parsed options
     args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args∾↩ (          usz≡64) / ⟨"-DUSZ_64"⟩
-    args∾↩ {"slow-pdep": "-DSLOW_PDEP"; "-m"∾𝕩}¨ has
+    args∾↩ (∨´"slow-pdep"⊸≡¨ has) / ⟨"-DSLOW_PDEP"⟩
+    args∾↩ {
+      native? ⟨"-march=native"⟩;
+      ⟨⟩: ⟨⟩;
+      "Error: Cannot use has=... if Singeli isn't enabled"_assert_⊢ singeli
+      (⟨singeliArch, 1⟩ •Import AtRoot singeliDir •file.At "arch.bqn").GetCFlags@
+    } has
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     args
@@ -690,7 +696,7 @@ cachedBin‿linkerCache ← {
     
     singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩∾{
       po.native? ⟨⟩;
-      "-a" ⋈ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} po.arch) ∾ ∾ ','⊸∾¨ Uppercase ∊⟜"avx2"‿"bmi2"‿"pclmul"⊸/po.has
+      "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch
     }
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap

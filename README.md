@@ -37,15 +37,20 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 
 ### Build flags
 
+`notui=1` - display build progress in a plain-text format  
+`version=...` - specify the version to report in `--version` (default is commit hash)  
+`nogit=1` - error if something attempts to use `git`
 `CC=...` - choose a different C compiler (default is `clang`, or `cc` if unavailable; CBQN is more tuned for clang, but gcc also works)  
 `CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)  
 `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename  
 `target_arch=(x86-64|aarch64|generic)` - target architecture. Inferred from `uname` by default. Used for deciding target optimizations.  
 `target_os=(linux|bsd|macos|windows)` - target OS. Inferred from `uname` by default. Used for determining default output names and slight configuration changes.  
 `j=8` - override the default parallel job count (default is the output of `nproc`)  
-`notui=1` - display build progress in a plain-text format  
-`version=...` - specify the version to report in `--version` (default is commit hash)  
-`nogit=1` - error if something attempts to use `git`
+`has=...` - assume specified architecture extensions/properties (x86-64-only). Takes a comma-separated list which, beyond what is architecturally guaranteed, infer additional extensions as noted which hold on existing hardware (at least as of the time of writing):  
+- `pclmul` (implies SSE4.2)  
+- `avx2` (implies `pclmul`, POPCNT, BMI1)  
+- `bmi2` (implies `pclmul`, AVX1)  
+- `slow-pdep` (specifies Zen 1 & Zen 2's slow `pdep`/`pext`)
 
 `REPLXX=0` - disable REPLXX
 `singeli=0` - disable usage of Singeli  
