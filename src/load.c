@@ -399,7 +399,7 @@ B repl_exec(B str, B state, B re) {
 
 B invalidFn_c1(B t, B x);
 
-void comps_gcFn() {
+void comps_gcFn(void) {
   if (comps_curr!=NULL) mm_visitP(comps_curr);
 }
 void load_init() { // very last init function
