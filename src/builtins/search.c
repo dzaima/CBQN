@@ -289,7 +289,7 @@ B indexOf_c2(B t, B w, B x) {
       }
       
       #if SINGELI_AVX2
-      if (xia>=32 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<(xe==el_i8?64:16) && we<=xe && !elChr(TI(x,elType))) {
+      if (xia>=512 && wia>1 && el_i8<=xe && xe<=el_i32 && wia<(xe==el_i8?64:16) && we<=xe && !elChr(TI(x,elType))) {
         B g = C1(reverse, C1(gradeDown, incG(w)));
         w = C2(select, incG(g), w);
         switch (xe) { default:UD; case el_i8:w=toI8Any(w);break; case el_i16:w=toI16Any(w);break; case el_i32:w=toI32Any(w);break; }
