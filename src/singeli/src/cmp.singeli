@@ -60,11 +60,24 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
 
 
 
-def any2bit{VT, unr, op, wS, wV, xS, xV, dst:*u64, len:(ux)} = {
+def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:*u64, len:(ux)} = {
   def bulk = vcount{VT}*unr
   xi:ux = 0
+  
+  def T = eltype{VT}
+  def op = match (op0) {
+    {_ & ~hasarch{'X86_64'} | hasarch{'AVX512F'}} => op0
+    {(__le) & issigned{T}} => __gt
+    {(__ge) & issigned{T}} => __lt
+    {(__lt) & isunsigned{T}} => __ge
+    {(__gt) & isunsigned{T}} => __le
+    {(__ne) & isint{T}} => __eq
+    {_} => op0
+  }
+  def mask = if (same{op0, op}) homMask else ({...x} => ~homMask{...x})
+  
   @forNZ (ri to cdiv{len,bulk}) {
-    b_setBatch{bulk, dst, ri, homMask{...each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
+    b_setBatch{bulk, dst, ri, mask{...each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
     xi+= unr
   }
 }
