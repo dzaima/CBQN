@@ -293,6 +293,13 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   return c;
 }
 
+NOINLINE i64 bit_sum(u64* x, u64 am) {
+  i64 r = 0;
+  for (u64 i = 0; i < (am>>6); i++) r+= POPC(x[i]);
+  if (am&63) r+= POPC(x[am>>6]<<(64-am & 63));
+  return r;
+}
+
 u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, or if sum overflows u64
   assert(isArr(x));
   u64 r = 0;

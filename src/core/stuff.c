@@ -4,6 +4,7 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 #include <stdarg.h>
+#include <math.h>
 
 bool please_tail_call_err = true;
 
@@ -360,12 +361,6 @@ NOINLINE void thrF(char* p, ...) {
 }
 
 
-i64 bit_sum(u64* x, u64 am) {
-  i64 r = 0;
-  for (u64 i = 0; i < (am>>6); i++) r+= POPC(x[i]);
-  if (am&63) r+= POPC(x[am>>6]<<(64-am & 63));
-  return r;
-}
 
 usz depthF(B x) { // doesn't consume
   u64 r = 0;
