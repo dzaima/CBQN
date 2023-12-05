@@ -62,16 +62,20 @@
 2‿3‿0‿1/4‿3⥊↕⋈12 %% ⋈¨6‿3⥊0‿1‿2‿0‿1‿2‿3‿4‿5‿3‿4‿5‿3‿4‿5‿9‿10‿11
 2‿3‿0‿1/↕4 %% 6⥊0‿0‿1‿1‿1‿3
 2‿3‿0‿1/↕⋈4 %% ⋈¨6⥊0‿0‿1‿1‿1‿3
-!"Didn't expect negative integer" % 2‿¯3/↕2
+!"Expected non-negative integer, got ¯3" % 2‿¯3/↕2
+!"Expected non-negative integer, got ¯3e20" % 2‿¯3e20/↕2
 !"/: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 4)" % 1‿2‿3/4‿5‿6‿7
-!"Didn't expect negative integer" % (4/1000‿¯1000) / 8⥊1
-!"Didn't expect negative integer" % (4/1000‿¯1000) / 8⥊1
+!"Expected non-negative integer, got ¯1000" % (4/1000‿¯1000) / 8⥊1
+!"Expected non-negative integer, got ¯1000" % (4/1000‿¯1000) / 8⥊1
+%USE tvar ⋄ ∧⍷ ⥊ 2‿4e19 0∘/⎊(•CurrentError∘@) _tvar ↕2 %% ⟨"Integer out of range: 4e19"⟩
 
 # /𝕩
-!"Didn't expect negative integer" % / 4/1000‿¯1000
+!"Expected non-negative integer, got ¯1000" % / 4/1000‿¯1000
 !"/: Argument must have rank 1 (3‿3 ≡ ≢𝕩)" % /↕3‿3
 !"/: Argument must have rank 1 (⟨⟩ ≡ ≢𝕩)" % /0
-%USE tvar ⋄ ∧⍷ /⎊•CurrentError _tvar ¯1⌾(100⊸⊑) 200⥊10 %% "Didn't expect negative integer"‿"Expected integer" # TODO shouldn't have different error messages
+%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar ¯1⌾(100⊸⊑) 200⥊10 %% ⟨"Expected non-negative integer, got ¯1"⟩
+%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar 1e2⥊2⋆62 %% ⟨"Sum too big"⟩
+%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar 1e20⌾(100⊸⊑) 200⥊10 %% ⟨"Integer out of range: 1e20"⟩
 ! (//⁼)⊸≡8‿15‿25‿32‿90‿101‿155‿165‿584‿594‿894‿912‿1312‿1328‿1350‿1367‿1391‿1407‿1469‿1486‿1559‿1566‿1576‿1582‿1592‿1599‿1609‿1616‿1626‿1635‿4086‿4093‿4114‿4122‿4141‿4149‿4169‿4177
 
 # 𝕨⊏𝕩
@@ -83,10 +87,10 @@
 !"⊏: Indexing out-of-bounds (¯24∊𝕨, 4≡≠𝕩)" % 1‿¯24⊏↕4‿4
 !"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % (1‿¯26∾@)⊏@∾↕5
 !"⊏: Indexing out-of-bounds (¯26∊𝕨, 5≡≠𝕩)" % ¯26⊏↕5
-!"Expected integer" % ¯26.5⊏↕5
+!"Expected integer, got ¯26.5" % ¯26.5⊏↕5
 !"⊏: Indexing out-of-bounds (¯26∊𝕨, 5≡≠𝕩)" % 1‿¯26⊏↕5
 !"⊏: Indexing out-of-bounds (26∊𝕨, 5≡≠𝕩)" % 1‿26⊏↕5
-!"Expected integer" % 0‿1.1‿2 ⊏ ↕10
+!"Expected integer, got 1.1" % 0‿1.1‿2 ⊏ ↕10
 !"⊏: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % 0‿0‿1 ⊏ 1‿3⥊↕10000
 !"⊏: Indexing out-of-bounds (2∊𝕨, 2≡≠𝕩)" % (1+9=↕10)⊏⟨1‿2,3⟩
 %USE tvar ⋄ !∘≡¨⟜⊏ ∾ {⥊𝕨 ⊏⎊(•CurrentError∘⊢) _tvar 𝕩}´¨ ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
@@ -226,8 +230,8 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 !"⊔: ≠𝕨 must be either ≠𝕩 or one bigger (2≡≠𝕨, 3≡≠𝕩)" % 0‿0⊔↕3
 
 # ↕𝕩
-!"Expected non-negative integer" % ↕@
-!"Expected non-negative integer" % ↕"hi"
+!"Expected non-negative integer, got character" % ↕@
+!"Expected non-negative integer, got character" % ↕"hi"
 !"↕: Argument must be either an integer or integer list (had rank 2)" % ↕2‿2⥊1
 !"↕: Result rank too large (300≡≠𝕩)" % ↕300⥊1
 

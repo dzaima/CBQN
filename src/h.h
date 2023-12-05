@@ -95,6 +95,7 @@ typedef size_t ux;
 #define I32_MIN -2147483648
 #define I32_MAX  2147483647
 #define I64_MIN ((i64)(1ULL<<63))
+#define I64_MAX ((i64)((1ULL<<63)-1))
 #define CHR_MAX 1114111
 #define U8_MAX  ((u8 )~(u8 )0)
 #define U16_MAX ((u16)~(u16)0)
@@ -474,13 +475,15 @@ FORCE_INLINE bool q_N   (B x) { return x.u==bi_N.u; } // is ·
 FORCE_INLINE bool noFill(B x) { return x.u==bi_noFill.u; }
 
 
+NORETURN void expI_f64(f64 what); NORETURN void expI_B(B what);
+NORETURN void expU_f64(f64 what); NORETURN void expU_B(B what);
 FORCE_INLINE bool  o2bG(B x) { return(x.u<<1)!=0;}  FORCE_INLINE bool  o2b(B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return o2bG(x); }
-FORCE_INLINE i32   o2iG(B x) { return (i32)x.f; }   FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) thrM("Expected integer");              return o2iG(x); }
-FORCE_INLINE u32   o2cG(B x) { return (u32)x.u; }   FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character");            return o2cG(x); }
-FORCE_INLINE usz   o2sG(B x) { return (usz)x.f; }   FORCE_INLINE usz   o2s(B x) { if (!q_usz(x)) thrM("Expected non-negative integer"); return o2sG(x); }
-FORCE_INLINE f64   o2fG(B x) { return      x.f; }   FORCE_INLINE f64   o2f(B x) { if (!isNum(x)) thrM("Expected number");               return o2fG(x); }
-FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }   FORCE_INLINE i64 o2i64(B x) { if (!q_i64(x)) thrM("Expected integer");              return o2i64G(x); }
-FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }   FORCE_INLINE u64 o2u64(B x) { if (!q_u64(x)) thrM("Expected integer");              return o2u64G(x); }
+FORCE_INLINE i32   o2iG(B x) { return (i32)x.f; }   FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) expI_B(x);                  return o2iG(x); }
+FORCE_INLINE u32   o2cG(B x) { return (u32)x.u; }   FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character"); return o2cG(x); }
+FORCE_INLINE usz   o2sG(B x) { return (usz)x.f; }   FORCE_INLINE usz   o2s(B x) { if (!q_usz(x)) expU_B(x);                  return o2sG(x); }
+FORCE_INLINE f64   o2fG(B x) { return      x.f; }   FORCE_INLINE f64   o2f(B x) { if (!isNum(x)) thrM("Expected number");    return o2fG(x); }
+FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }   FORCE_INLINE i64 o2i64(B x) { if (!q_i64(x)) expI_B(x);                  return o2i64G(x); }
+FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }   FORCE_INLINE u64 o2u64(B x) { if (!q_u64(x)) expU_B(x);                  return o2u64G(x); }
 
 // some aliases for macro-generated code
 typedef u8 c8; typedef u16 c16; typedef u32 c32;

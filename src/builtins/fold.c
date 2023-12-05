@@ -300,6 +300,15 @@ NOINLINE i64 bit_sum(u64* x, u64 am) {
   return r;
 }
 
+NOINLINE static u64 usum_generic(B x, usz xia) {
+  SGetU(x)
+  u64 r = 0;
+  for (usz i = 0; i < xia; i++) {
+    u64 c = o2u64(GetU(x,i));
+    if (addOn(r,c)) thrM("Sum too big");
+  }
+  return r;
+}
 u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, or if sum overflows u64
   assert(isArr(x));
   u64 r = 0;
@@ -313,22 +322,19 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
     f64* p = f64any_ptr(x);
     for (usz i = 0; i < xia; i++) {
       f64 c = p[i];
+      if (!q_fu64(c)) expU_f64(c);
       u64 ci = (u64)c;
-      if (c!=ci) thrM("Expected integer");
       if (ci<0) goto neg;
       if (addOn(r,ci)) goto overflow;
     }
   } else {
-    SGetU(x)
-    for (usz i = 0; i < xia; i++) {
-      u64 c = o2u64(GetU(x,i));
-      if (c<0) thrM("Didn't expect negative integer");
-      if (addOn(r,c)) goto overflow;
-    }
+    return usum_generic(x, xia);
   }
+  
   return r;
+  
   overflow: thrM("Sum too big");
-  neg: thrM("Didn't expect negative integer");
+  neg: return usum_generic(x, xia); // ensure proper error message
 }
 
 B select_c1(B, B);

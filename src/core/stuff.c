@@ -360,6 +360,34 @@ NOINLINE void thrF(char* p, ...) {
   thr(r);
 }
 
+char* genericDesc(B x) {
+  if (isNum(x)) return "number";
+  if (isC32(x)) return "character";
+  if (isArr(x)) return "array";
+  if (isFun(x)) return "function";
+  if (isMd1(x)) return "1-modifier";
+  if (isMd2(x)) return "2-modifier";
+  if (isNsp(x)) return "namespace";
+  return "object of unknown type";
+}
+
+NOINLINE NORETURN void expI_B(B what) {
+  if (isF64(what)) expI_f64(o2fG(what));
+  thrF("Expected integer, got %S", genericDesc(what));
+}
+NOINLINE NORETURN void expU_B(B what) {
+  if (isF64(what)) expU_f64(o2fG(what));
+  thrF("Expected non-negative integer, got %S", genericDesc(what));
+}
+NOINLINE NORETURN void expI_f64(f64 what) {
+  if (what != floor(what)) thrF("Expected integer, got %f", what);
+  thrF("Integer out of range: %f", what);
+}
+NOINLINE NORETURN void expU_f64(f64 what) {
+  if (what != floor(what) || what < 0) thrF("Expected non-negative integer, got %f", what);
+  thrF("Integer out of range: %f", what);
+}
+
 
 
 usz depthF(B x) { // doesn't consume
