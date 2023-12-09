@@ -69,6 +69,24 @@
 !"Expected non-negative integer, got ¯1000" % (4/1000‿¯1000) / 8⥊1
 %USE tvar ⋄ ∧⍷ ⥊ 2‿4e19 0∘/⎊(•CurrentError∘@) _tvar ↕2 %% ⟨"Integer out of range: 4e19"⟩
 
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕1⟩/3
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕1⟩/<"ab"
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % (<↕1)/<"ab"
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % (<↕0)/<"ab"
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕10,↕10⟩ / 10⥊10
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕10,↕10,<0⟩ / 10‿10⥊10
+!"/: Simple 𝕨 must have rank 0 or 1 (2≡=𝕨)" % (2‿1⥊↕4) / 4‿4⥊↕16
+!"𝕨/𝕩: Compound 𝕨 must have rank at most 1" % (2‿1⥊<↕4) / 4‿4⥊↕16
+!"/: Simple 𝕨 must have rank 0 or 1 (2≡=𝕨)" % (1‿2⥊↕4) / ↕4
+!"𝕨/𝕩: Compound 𝕨 must have rank at most 1" % (1‿2⥊<↕4) / ↕4
+!"𝕨/𝕩: 𝕨 must consist of natural numbers" % ⟨↕4, 1‿2‿3.5‿4⟩ / 4‿4⥊↕16
+!"𝕨/𝕩: 𝕨 must consist of natural numbers" % ⟨↕4, 3.5⟩       / 4‿4⥊↕16
+⟨↕4, 0,   ↕5⟩ / 4‿4‿5⥊@ %% 6‿0‿10⥊@
+⟨↕4, 4⥊0, ↕5⟩ / 4‿4‿5⥊@ %% 6‿0‿10⥊@
+1‿0‿2    / ⋈¨ ["ab","cd","ef"] %% ⋈¨ ["ab","ef","ef"]
+(<1‿0‿2) / ⋈¨ ["ab","cd","ef"] %% ⋈¨ ["ab","ef","ef"]
+(⋈1‿0‿2) / ⋈¨ ["ab","cd","ef"] %% ⋈¨ ["ab","ef","ef"]
+
 # /𝕩
 !"Expected non-negative integer, got ¯1000" % / 4/1000‿¯1000
 !"/: Argument must have rank 1 (3‿3 ≡ ≢𝕩)" % /↕3‿3
