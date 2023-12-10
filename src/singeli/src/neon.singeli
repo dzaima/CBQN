@@ -72,6 +72,7 @@ def half{x:T, n==1 & w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T & w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
 def copyLane{dst:D, di, src:S, si & w64{D}  & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
 def copyLane{dst:D, di, src:S, si & w128{D} & nvec{S} & eltype{D}==eltype{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
+def broadcastSel{x:T, i & nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
 def vshl{a:T, b:T, n & knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
 
 def zipLo{a:T, b:T & nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}

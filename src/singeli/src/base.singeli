@@ -204,7 +204,7 @@ def pair{{a, b}} = pair{a, b}
 
 def widen{T, x:X & T==X} = x
 def narrow{T, x:X & T==eltype{X}} = x
-def undefPromote{T, x:X & T==X} = T~~x
+def undefPromote{T, x:X & T==X} = x
 def cvt{T, x:X & T==eltype{X}} = x
 
 def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
