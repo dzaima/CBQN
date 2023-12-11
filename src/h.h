@@ -269,7 +269,7 @@ enum Type {
 #define IS_SLICE(T) ((T)<=t_f64slice)
 #define TO_SLICE(T) ((T) + t_hslice - t_harr) // Assumes T!=t_bitarr
 
-enum ElType { // a⌈b shall return the type that can store both, if possible
+enum ElType { // if X can store a superset of elements of Y, X > Y
   el_bit=0,
   el_i8 =1,
   el_i16=2,
