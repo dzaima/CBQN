@@ -113,6 +113,10 @@ static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32ar
 static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
 static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
 
+static NOINLINE B m_importMap(void) {
+  return c2(bi_hashMap, emptyHVec(), emptyHVec());
+}
+
 static NOINLINE B evalFunBlockConsume(Block* block) {
   B r = evalFunBlock(block, NULL);
   ptr_dec(block);
@@ -288,6 +292,7 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
       prh.a[np[t]++] = v;
     }
     
+    new_re[re_map]      = m_importMap();
     new_re[re_rt]       = prh.b;
     new_re[re_glyphs]   = inc(rb);
     new_re[re_comp]     = c1(load_compgen, rb);
@@ -395,6 +400,13 @@ B repl_exec(B str, B state, B re) {
   } else {
     return rebqn_exec(str, state, re);
   }
+}
+
+void clearImportCache(void) {
+  B* where = harr_ptr(def_re)+re_map;
+  B prev = *where;
+  *where = m_importMap();
+  decG(prev);
 }
 
 B invalidFn_c1(B t, B x);
@@ -572,6 +584,7 @@ void load_init() { // very last init function
     ps.a[re_comp] = load_comp;
     ps.a[re_compOpts] = load_compOpts;
     ps.a[re_rt] = incG(load_rt);
+    ps.a[re_map] = m_importMap();
     ps.a[re_glyphs] = load_glyphs;
     ps.a[re_sysNames] = incG(def_sysNames);
     ps.a[re_sysVals] = incG(def_sysVals);
@@ -593,8 +606,15 @@ void load_init() { // very last init function
 }
 
 NOINLINE B m_state(B path, B name, B args) { return m_lvB_3(path, name, args); }
+static NOINLINE B fileState(B path, B args) { // consumes args
+  return m_state(path_parent(inc(path)), path_name(inc(path)), args);
+}
+B bqn_execFileRe(B path, B args, B re) {
+  B state = fileState(path, args);
+  return evalFunBlockConsume(bqn_compc(path_chars(path), state, re));
+}
 B bqn_execFile(B path, B args) { // consumes both
-  B state = m_state(path_parent(inc(path)), path_name(inc(path)), args);
+  B state = fileState(path, args);
   return bqn_exec(path_chars(path), state);
 }
 

@@ -825,53 +825,41 @@ static NFnDesc* importDesc;
 
 
 B import_c2(B d, B w, B x) {
-  return bqn_execFile(path_rel(nfn_objU(d), x, "•Import"), w);
+  B* o = harr_ptr(nfn_objU(d));
+  B path = path_abs(path_rel(o[0], x, "•Import"));
+  B re = o[1];
+  return bqn_execFileRe(path, w, re);
 }
 
-// defined in fns.c
-i32 getPrevImport(B path);
-void setPrevImport(B path, i32 pos);
-void clearImportCacheMap(void);
-
-static B importKeyList; // exists for GC roots as the hashmap doesn't
-static B importValList;
 B import_c1(B d, B x) {
-  if (importKeyList.u==0) {
-    importKeyList = emptyHVec();
-    importValList = emptyHVec();
-  }
-  B path = path_abs(path_rel(nfn_objU(d), x, "•Import"));
+  B* o = harr_ptr(nfn_objU(d));
+  B path = path_abs(path_rel(o[0], x, "•Import"));
+  B re = o[1];
+  B map = IGetU(re, re_map);
   
-  i32 prevIdx = getPrevImport(path);
-  if (prevIdx>=0) {
+  B tag_none    = tag(100000000, C32_TAG);
+  B tag_running = tag(100000001, C32_TAG);
+  B prevVal = c2(ns_getC(map, "get"), tag_none, incG(path));
+  if (prevVal.u == tag_running.u) thrF("•Import: cyclic import of \"%R\"", path);
+  if (prevVal.u != tag_none.u) {
     // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, IA(importKeyList));
-    dec(path);
-    return IGet(importValList, prevIdx);
+    decG(path);
+    return prevVal;
   }
-  if (prevIdx==-2) thrF("•Import: cyclic import of \"%R\"", path);
+  
+  B nsSet = ns_getC(map, "set");
+  decG(c2(nsSet, incG(path), tag_running));
   if (CATCH) {
-    setPrevImport(path, -1);
+    decG(c1(ns_getC(map, "delete"), incG(path)));
     rethrow();
   }
   
-  i32 prevLen = IA(importValList);
-  importKeyList = vec_addN(importKeyList, path);
-  importValList = vec_addN(importValList, bi_N);
-  
-  B r = bqn_execFile(incG(path), emptySVec());
-  
-  harr_ptr(importValList)[prevLen] = inc(r);
-  setPrevImport(path, prevLen);
+  B r = bqn_execFileRe(incG(path), emptySVec(), re);
   popCatch();
   
+  decG(c2(nsSet, path, inc(r))); // path finally consumed
+  
   return r;
-}
-void clearImportCache(void) {
-  if (importKeyList.u!=0) {
-    dec(importKeyList); importKeyList = m_f64(0);
-    dec(importValList); importValList = m_f64(0);
-  }
-  clearImportCacheMap();
 }
 
 
@@ -1716,7 +1704,7 @@ B invalidMd1_c2(Md1D* d, B w, B x) { thrM("Using an invalid 1-modifier"); }
 B invalidMd2_c1(Md2D* d,      B x) { thrM("Using an invalid 2-modifier"); }
 B invalidMd2_c2(Md2D* d, B w, B x) { thrM("Using an invalid 2-modifier"); }
 
-static void initFileNS() {
+static NOINLINE void initSysDesc() {
   if (fileInit) return;
   fileInit = true;
   file_nsGen = m_nnsDesc("path","at","list","bytes","chars","lines","type","created","accessed","modified","size","exists","name","parent","mapbytes","createdir","realpath","rename","remove");
@@ -1839,18 +1827,18 @@ B sys_c1(B t, B x) {
       case 3: cr = getBitNS(); break; // •bit
       case 4: cr = comps_getPrimitives(); break; // •primitives
       case 5: cr = getInternalNS(); break; // •internal
-      case 6: initFileNS(); cr = m_nfn(fCharsDesc, inc(REQ_PATH)); break; // •FChars
-      case 7: initFileNS(); cr = m_nfn(fBytesDesc, inc(REQ_PATH)); break; // •FBytes
-      case 8: initFileNS(); cr = m_nfn(fLinesDesc, inc(REQ_PATH)); break; // •FLines
-      case 9: initFileNS(); cr = m_nfn(importDesc, inc(REQ_PATH)); break; // •Import
-      case 10: initFileNS(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
+      case 6:  initSysDesc(); cr = m_nfn(fCharsDesc,  inc(REQ_PATH)); break; // •FChars
+      case 7:  initSysDesc(); cr = m_nfn(fBytesDesc,  inc(REQ_PATH)); break; // •FBytes
+      case 8:  initSysDesc(); cr = m_nfn(fLinesDesc,  inc(REQ_PATH)); break; // •FLines
+      case 9:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2(inc(REQ_PATH), incG(COMPS_CREF(re)))); break; // •Import
+      case 10: initSysDesc(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
       case 11: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break; // •name
       case 12: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
       case 13: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; } // •wdpath
       case 14: { // •file
         #define F(X) m_nfn(X##Desc, inc(path))
         cr = incG(CACHE_OBJ(fileNS, ({
-          initFileNS();
+          initSysDesc();
           REQ_PATH;
           m_nns(file_nsGen, q_N(path)? m_c32(0) : inc(path), F(fileAt), F(fList), F(fBytes), F(fChars), F(fLines), F(fType), F(fCreated), F(fAccessed), F(fModified), F(fSize), F(fExists), inc(bi_fName), inc(bi_fParent), F(fMapBytes), F(createdir), F(realpath), F(rename), F(remove));
         })));
@@ -1936,8 +1924,6 @@ void sysfn_init(void) {
   #endif
   cdPath = m_c8vec(".", 1); gc_add(cdPath);
   
-  gc_add_ref(&importKeyList);
-  gc_add_ref(&importValList);
   gc_add_ref(&thrownMsg);
   
   bqnDesc   = registerNFn(m_c32vec_0(U"•BQN"), bqn_c1, bqn_c2);

@@ -11,6 +11,7 @@ enum {
 };
 enum {
   re_comp, re_compOpts, re_rt, re_glyphs, re_sysNames, re_sysVals, // compiling info
+  re_map, // •HashMap of cached import results
   re_mode, re_scope, // only for repl_exec
   re_max
 };
@@ -25,6 +26,7 @@ typedef struct Block Block;
 typedef struct Scope Scope;
 B bqn_explain(B str); // consumes str
 B bqn_execFile(B path, B args); // consumes both
+B bqn_execFileRe(B path, B args, B re); // consumes path,args
 Block* bqn_comp   (B str, B state); // consumes both
 Block* bqn_compSc (B str, B state, Scope* sc, bool repl); // consumes str,state
 Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS); // consumes str,state

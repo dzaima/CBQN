@@ -301,24 +301,6 @@ B find_c2(B t, B w, B x) {
   decG(x); decG(w); return r;
 }
 
-static H_b2i* prevImports;
-i32 getPrevImport(B path) { // -1 for unset, -2 for unfinished
-  if (prevImports==NULL) prevImports = m_b2i(16);
-  
-  bool had; i32 prev = mk_b2i(&prevImports, path, &had);
-  if (had && prevImports->a[prev].val!=-1) return prevImports->a[prev].val;
-  prevImports->a[prev].val = -2;
-  return -1;
-}
-void setPrevImport(B path, i32 pos) {
-  bool had; i32 prev = mk_b2i(&prevImports, path, &had);
-  prevImports->a[prev].val = pos;
-}
-void clearImportCacheMap(void) {
-  if (prevImports!=NULL) free_b2i(prevImports);
-  prevImports = NULL;
-}
-
 static H_b2i* globalNames;
 B globalNameList;
 i32 str2gid(B s) {
@@ -373,7 +355,6 @@ B tack_uc1(B t, B o, B x) {
 
 
 void fun_gcFn(void) {
-  if (prevImports!=NULL) mm_visitP(prevImports);
   if (globalNames!=NULL) mm_visitP(globalNames);
 }
 static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extra)); }

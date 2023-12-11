@@ -1,1 +1,1 @@
-⟨{⇐}, "show.bqn", •args⟩
+⟨{⇐}, +, "show.bqn", •args⟩
