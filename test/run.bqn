@@ -167,7 +167,7 @@ Run ← { 𝕊 testname:
         {
           ¬ok? Bad "Expected value, but got error: "∾got;
           got •internal.EEqual exp? @;
-          ⟨"Expected: "∾•Repr exp ⋄ "Got:      "∾•Repr got⟩ Bad "Wrong value"
+          ⟨"Expected: "∾•Repr exp ⋄ "Got:      "∾•Repr⎊•Show got⟩ Bad "Wrong value"
           @
         }
         @

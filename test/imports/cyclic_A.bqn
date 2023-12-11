@@ -1,0 +1,1 @@
+•Import"cyclic_B.bqn"

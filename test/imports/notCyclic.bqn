@@ -1,0 +1,1 @@
+{•args≡0? 0; 10+(•args-1) •Import "notCyclic.bqn"}
