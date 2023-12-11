@@ -14,7 +14,7 @@
   import2 ← RE "•Import"
   r3 ← Import2 f ⋄ ! -‿"show.bqn"‿⟨⟩ ≡ 1↓r3
   r4 ← Import2 f ⋄ ! -‿"show.bqn"‿⟨⟩ ≡ 1↓r4
-  ! r1‿r3 ≡ ⍷⊑¨r1‿r2‿r3‿r4
+  ! (⊑¨r1‿r3) ≡ ⍷⊑¨r1‿r2‿r3‿r4
 )
 
 !"•Import: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic.bqn"
