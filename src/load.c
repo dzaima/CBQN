@@ -252,6 +252,7 @@ B bqn_exec(B str, B state) { // consumes all
 
 B str_all, str_none;
 void init_comp(B* new_re, B* prev_re, B prim, B sys) {
+  new_re[re_map] = m_importMap();
   if (q_N(prim)) {
     new_re[re_comp]     = inc(prev_re[re_comp]);
     new_re[re_compOpts] = inc(prev_re[re_compOpts]);
@@ -292,7 +293,6 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
       prh.a[np[t]++] = v;
     }
     
-    new_re[re_map]      = m_importMap();
     new_re[re_rt]       = prh.b;
     new_re[re_glyphs]   = inc(rb);
     new_re[re_comp]     = c1(load_compgen, rb);
