@@ -106,12 +106,15 @@ DESTDIR =
 PREFIX = /usr/local
 install:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
+	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
 	cp -f BQN "$(DESTDIR)$(PREFIX)/bin/bqn"
 	
+	mkdir -p "$(DESTDIR)$(PREFIX)/include"
 	cp -f include/bqnffi.h "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
 	
 	@if [ -f libcbqn.so ]; then \
 		rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
+		mkdir -p "$(DESTDIR)$(PREFIX)/lib"; \
 		cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
 		echo 'cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"'; \
 	else \
