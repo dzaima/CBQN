@@ -112,7 +112,7 @@ Body* m_nnsDescF(i32 n, char** names) {
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   comp->indices = bi_N;
   comp->src = bi_N;
-  comp->path = bi_N;
+  comp->fullpath = bi_N;
   comp->objs = c(HArr, emptyHVec());
   comp->blockAm = 0;
   comp->nameList = HARR_FV(nl);

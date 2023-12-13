@@ -453,7 +453,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B path, Scope* sc, i32 nsResult) {
+NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B fullpath, Scope* sc, i32 nsResult) {
   usz bIA = IA(allBlocks);
   I32Arr* bca = toI32Arr(bcq);
   u32* bc = (u32*)bca->a;
@@ -462,7 +462,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   NOGC_S;
   comp->indices = indices;
   comp->src = src;
-  comp->path = path;
+  comp->fullpath = fullpath;
   B nameList;
   if (q_N(tokenInfo)) {
     nameList = emptyHVec();
@@ -1088,7 +1088,7 @@ DEF_FREE(block) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) ptr_decR(c->bodies[i]);
 }
-DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->objs); decR(c->src); decR(c->indices); decR(c->path); decR(c->nameList); }
+DEF_FREE(comp)  { Comp*     c = (Comp    *)x; if (c->objs!=NULL) ptr_decR(c->objs); decR(c->src); decR(c->indices); decR(c->fullpath); decR(c->nameList); }
 DEF_FREE(funBl) { FunBlock* c = (FunBlock*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md1Bl) { Md1Block* c = (Md1Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
 DEF_FREE(md2Bl) { Md2Block* c = (Md2Block*)x; ptr_dec(c->sc); ptr_decR(c->bl); }
@@ -1122,7 +1122,7 @@ void block_visit(Value* x) {
   i32 am = c->bodyCount;
   for (i32 i = 0; i < am; i++) mm_visitP(c->bodies[i]);
 }
-void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; if (c->objs!=NULL) mm_visitP(c->objs); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->path); mm_visit(c->nameList); }
+void  comp_visit(Value* x) { Comp*     c = (Comp    *)x; if (c->objs!=NULL) mm_visitP(c->objs); mm_visit(c->src); mm_visit(c->indices); mm_visit(c->fullpath); mm_visit(c->nameList); }
 void funBl_visit(Value* x) { FunBlock* c = (FunBlock*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md1Bl_visit(Value* x) { Md1Block* c = (Md1Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
 void md2Bl_visit(Value* x) { Md2Block* c = (Md2Block*)x; mm_visitP(c->sc); mm_visitP(c->bl); }
@@ -1371,7 +1371,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     #endif
     if (CATCH) { freeThrown(); goto native_print; }
     
-    B msg = vm_fmtPoint(src, emptyCVec(), comp->path, cs, ce);
+    B msg = vm_fmtPoint(src, emptyCVec(), comp->fullpath, cs, ce);
     fprintsB(stderr, msg);
     dec(msg);
     fputc('\n', stderr);
@@ -1557,7 +1557,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
   while (c!=profiler_buf_c) {
     usz bcPos = c->bcPos;
     Comp* comp = c->comp;
-    B path = comp->path;
+    B path = comp->fullpath;
     i32 idx = profiler_index(&map, q_N(path) || isPathREPL(path)? tag(comp, OBJ_TAG) : path);
     if (idx == compCount) {
       compList = vec_addN(compList, tag(comp, OBJ_TAG));
@@ -1602,9 +1602,9 @@ void profiler_displayResults(void) {
       usz ia = IA(mapObj);
       for (usz i = 0; i < ia; i++) sum+= m[i];
       
-      if (q_N(c->path)) printf("(anonymous)");
-      else if (isPathREPL(c->path)) printf("(REPL)");
-      else printsB(c->path);
+      if (q_N(c->fullpath)) printf("(anonymous)");
+      else if (isPathREPL(c->fullpath)) printf("(REPL)");
+      else printsB(c->fullpath);
       if (q_N(c->src)) {
         printf(": "N64d" samples\n", sum);
       } else {

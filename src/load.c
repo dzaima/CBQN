@@ -127,12 +127,13 @@ HArr* comps_curr;
 
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
   rt_group, rt_under, rt_find;
-Block* load_buildBlock(B x, B src, B path, Scope* sc, i32 nsResult) { // consumes x,src
+Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { // consumes x,src
+  B fullpath = q_N(name)? inc(path) : q_N(path)? inc(name) : path_rel(path, inc(name), "(load_buildBlock)");
   SGet(x)
   usz xia = IA(x);
   if (xia!=6 & xia!=4) thrM("load_buildBlock: bad item count");
-  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, inc(path), sc, nsResult)
-                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, inc(path), sc, nsResult);
+  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, fullpath, sc, nsResult)
+                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, fullpath, sc, nsResult);
   decG(x);
   return r;
 }
@@ -170,7 +171,7 @@ void switchComp(void) {
 }
 #endif
 B compObj_c1(B t, B x) {
-  return evalFunBlockConsume(load_buildBlock(x, bi_N, bi_N, NULL, 0));
+  return evalFunBlockConsume(load_buildBlock(x, bi_N, bi_N, bi_N, NULL, 0));
 }
 B compObj_c2(B t, B w, B x) {
   change_def_comp(x);
@@ -214,7 +215,7 @@ static NOINLINE Block* bqn_compc(B str, B state, B re) { // consumes str,state
   str = chr_squeeze(str);
   COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
-  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), NULL, 0);
+  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), NULL, 0);
   COMPS_POP; popCatch();
   return r;
 }
@@ -238,7 +239,7 @@ Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS) {
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_buildBlock(c2G(o[re_comp], m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, COMPS_CREF(path), sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  Block* r = load_buildBlock(c2G(o[re_comp], m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   COMPS_POP; popCatch();
   return r;
 }
