@@ -981,6 +981,7 @@ int main(int argc, char* argv[]) {
             }
             case 'o': { repl_init(); REQARG(o);
               B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-o)", emptySVec());
+              if (isAtm(r) || RNK(r)!=1) thrM("(-o): Value to print must be a string");
               printsB(r); dec(r);
               printf("\n");
               break;
