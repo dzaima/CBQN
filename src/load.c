@@ -128,7 +128,7 @@ HArr* comps_curr;
 B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
   rt_group, rt_under, rt_find;
 Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { // consumes x,src
-  B fullpath = q_N(name)? inc(path) : q_N(path)? inc(name) : path_rel(path, inc(name), "(load_buildBlock)");
+  B fullpath = q_N(name)? inc(path) : q_N(path)? inc(name) : IA(path)==1 && IGetU(path,0).u==m_c32('.').u? inc(name) : path_rel(path, inc(name), "(load_buildBlock)");
   SGet(x)
   usz xia = IA(x);
   if (xia!=6 & xia!=4) thrM("load_buildBlock: bad item count");

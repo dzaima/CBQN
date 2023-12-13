@@ -1337,7 +1337,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 ln = 1;
   for (usz i = 0; i < srcS; i++) if(o2cG(GetU(src, i))=='\n') ln++;
   B s = prepend;
-  if (isArr(path) && (IA(path)>1 || (IA(path)==1 && IGetU(path,0).u!=m_c32('.').u))) AFMT("%R:%l:\n  ", path, ln);
+  if (isArr(path) && (IA(path)==0 || IGetU(path,0).u!=m_c32('(').u)) AFMT("%R:%l:\n  ", path, ln);
   else AFMT("at ");
   i64 padEnd = (i64)IA(s);
   i64 padStart = padEnd;
@@ -1542,9 +1542,6 @@ bool profiler_stop(void) {
 }
 
 
-static bool isPathREPL(B path) {
-  return isArr(path) && IA(path)==1 && IGetU(path,0).u==m_c32('.').u;
-}
 usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
   if (profiler_mode!=1) fatal("profiler_getResults called on mode!=1");
   Profiler_ent* c = profiler_buf_s;
@@ -1558,7 +1555,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
     usz bcPos = c->bcPos;
     Comp* comp = c->comp;
     B path = comp->fullpath;
-    i32 idx = profiler_index(&map, q_N(path) || isPathREPL(path)? tag(comp, OBJ_TAG) : path);
+    i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
     if (idx == compCount) {
       compList = vec_addN(compList, tag(comp, OBJ_TAG));
       i32* rp;
@@ -1603,7 +1600,6 @@ void profiler_displayResults(void) {
       for (usz i = 0; i < ia; i++) sum+= m[i];
       
       if (q_N(c->fullpath)) printf("(anonymous)");
-      else if (isPathREPL(c->fullpath)) printf("(REPL)");
       else printsB(c->fullpath);
       if (q_N(c->src)) {
         printf(": "N64d" samples\n", sum);
