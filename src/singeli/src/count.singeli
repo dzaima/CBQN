@@ -2,14 +2,17 @@ include './base'
 include 'util/tup'
 include './vecfold'
 
-fn sum_vec{T==[32]i8}(v:T) = vfold{+, [16]i16~~fold{+, unpackQ{v, T**0}}}
+if (hasarch{'SSE2'}) {
+  fn sum_vec{T}(v:T) = vfold{+, fold{+, unpackQ{v, T**0}}}
+  def fold_addw{v:T & eltype{T}==i8} = sum_vec{T}(v)
+}
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
 # Write counts /⁼x to tab and return ⌈´x
 fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
-  def vbits = 256
+  def vbits = arch_defvw
   def vec = vbits/width{T}
   def uT = ty_u{T}
   def V = [vec]T
@@ -36,7 +39,7 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
     if (mt > mx) mx = mt
 
     nc := uT~~(mt - jt)  # Number of counts to perform: last is implicit
-    if (nc <= 48) {
+    if (nc <= 24*vbits/128) {
       r0 = rv
       j0 := promote{u64, uT~~jt} # Starting count
       m := promote{u64, nc}      # Number of iterations
@@ -47,7 +50,7 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
         e := each{{j}=>V**j, j}
         @for (xv over b) each{{c,e} => c -= xv == e, c, e}
         def add_sum{c, j} = {
-          s := promote{usz, sum_vec{V}(V~~c)}
+          s := promote{usz, fold_addw{V~~c}}
           total -= s; inc{tab, j, s}
         }
         each{add_sum, c, j}

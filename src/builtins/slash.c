@@ -95,7 +95,7 @@
   #include "../utils/includeSingeli.h"
 #endif
 
-#if SINGELI_AVX2
+#if SINGELI_SIMD
   #define SINGELI_FILE count
   #include "../utils/includeSingeli.h"
 #endif
@@ -933,7 +933,7 @@ B slash_im(B t, B x) {
       }                                                                          \
       break;                                                                     \
     }
-#if SINGELI_AVX2
+#if SINGELI_SIMD
   #define SINGELI_COUNT_OR(N) if (N==8) { \
       TALLOC(usz, t, m/2);                                                     \
       for (usz j=0; j<m/2; j++) t[j]=0;                                        \
