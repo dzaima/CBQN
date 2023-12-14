@@ -708,13 +708,13 @@ B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching
 #endif
 
 static Body* hashmap_ns;
-static B hashmap_getName;    static NFnDesc* hashmap_getDesc;
-static B hashmap_hasName;    static NFnDesc* hashmap_hasDesc;
-static B hashmap_setName;    static NFnDesc* hashmap_setDesc;
-static B hashmap_deleteName; static NFnDesc* hashmap_deleteDesc;
-static B hashmap_countName;  static NFnDesc* hashmap_countDesc;
-static B hashmap_keysName;   static NFnDesc* hashmap_keysDesc;
-static B hashmap_valuesName; static NFnDesc* hashmap_valuesDesc;
+static NFnDesc* hashmap_getDesc;
+static NFnDesc* hashmap_hasDesc;
+static NFnDesc* hashmap_setDesc;
+static NFnDesc* hashmap_deleteDesc;
+static NFnDesc* hashmap_countDesc;
+static NFnDesc* hashmap_keysDesc;
+static NFnDesc* hashmap_valuesDesc;
 // Hash object handling defined in search.c
 extern B hashmap_build(B keys, usz n);
 extern B hashmap_lookup(B* vars, B w, B x);
@@ -740,13 +740,13 @@ static NOINLINE void hashmap_init() {
   hashmap_ns = m_nnsDesc("keylist", "vallist", "hash", "get", "has", "set", "delete", "count", "keys", "values");
   NSDesc* d = hashmap_ns->nsDesc;
   for (usz i = 0; i < 3; i++) d->expGIDs[i] = -1;
-  hashmap_getName    = m_c8vec_0("get");    gc_add(hashmap_getName);    hashmap_getDesc    = registerNFn(m_c8vec_0("(hashmap).Get"),    hashmap_get_c1,    hashmap_get_c2);
-  hashmap_hasName    = m_c8vec_0("has");    gc_add(hashmap_hasName);    hashmap_hasDesc    = registerNFn(m_c8vec_0("(hashmap).Has"),    hashmap_has_c1,    c2_bad);
-  hashmap_setName    = m_c8vec_0("set");    gc_add(hashmap_setName);    hashmap_setDesc    = registerNFn(m_c8vec_0("(hashmap).Set"),    c1_bad,            hashmap_set_c2);
-  hashmap_deleteName = m_c8vec_0("delete"); gc_add(hashmap_deleteName); hashmap_deleteDesc = registerNFn(m_c8vec_0("(hashmap).Delete"), hashmap_delete_c1, c2_bad);
-  hashmap_countName  = m_c8vec_0("count");  gc_add(hashmap_countName);  hashmap_countDesc  = registerNFn(m_c8vec_0("(hashmap).Count"),  hashmap_count_c1,  c2_bad);
-  hashmap_keysName   = m_c8vec_0("keys");   gc_add(hashmap_keysName);   hashmap_keysDesc   = registerNFn(m_c8vec_0("(hashmap).Keys"),   hashmap_keys_c1,   c2_bad);
-  hashmap_valuesName = m_c8vec_0("values"); gc_add(hashmap_valuesName); hashmap_valuesDesc = registerNFn(m_c8vec_0("(hashmap).Values"), hashmap_values_c1, c2_bad);
+  hashmap_getDesc    = registerNFn(m_c8vec_0("(hashmap).Get"),    hashmap_get_c1,    hashmap_get_c2);
+  hashmap_hasDesc    = registerNFn(m_c8vec_0("(hashmap).Has"),    hashmap_has_c1,    c2_bad);
+  hashmap_setDesc    = registerNFn(m_c8vec_0("(hashmap).Set"),    c1_bad,            hashmap_set_c2);
+  hashmap_deleteDesc = registerNFn(m_c8vec_0("(hashmap).Delete"), hashmap_delete_c1, c2_bad);
+  hashmap_countDesc  = registerNFn(m_c8vec_0("(hashmap).Count"),  hashmap_count_c1,  c2_bad);
+  hashmap_keysDesc   = registerNFn(m_c8vec_0("(hashmap).Keys"),   hashmap_keys_c1,   c2_bad);
+  hashmap_valuesDesc = registerNFn(m_c8vec_0("(hashmap).Values"), hashmap_values_c1, c2_bad);
 }
 B hashMap_c2(B t, B w, B x) {
   if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("•HashMap: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
