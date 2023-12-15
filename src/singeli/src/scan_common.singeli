@@ -22,7 +22,8 @@ def spread{a:VT, ...up} = {
 def toLast{n:VT, up & hasarch{'X86_64'} & w128{VT}} = {
   def l{v, w} = l{zip{up,v}, 2*w}
   def l{v, w & hasarch{'SSSE3'}} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
-  def l{v, w & w>=32} = shuf{[4]i32, v, 4**(up*3)}
+  def l{v, w==32} = shuf{[4]i32, v, 4**(up*3)}
+  def l{v, w==64} = shuf{[4]i32, v, (2*up) + tup{0,1,0,1}}
   l{n, elwidth{VT}}
 }
 def toLast{n:VT, up & hasarch{'AVX2'} & w256{VT}} = {
@@ -59,8 +60,8 @@ def make_scan_idem{T, op, up} = {
   prefix_byshift{op, shb}
 }
 def make_scan_idem{T==f64, op, up} = {
-  def sc{a} = op{a, zip{up,a}}
-  def sc{a & hasarch{'AVX2'}} = {
+  def sc{a:T & vcount{T}==2} = op{a, zip{~up,a}}
+  def sc{a:T & hasarch{'AVX2'} & w256{T}} = {
     def sh{s, a} = op{a, shuf{[4]u64, a, rev{up,s}}}
     sh{tup{0,1,1,1},sh{tup{0,0,2,2},a}}
   }
