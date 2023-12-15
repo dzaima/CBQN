@@ -443,6 +443,7 @@ bool isPureFn(B x) { // doesn't consume
 
 B bqn_merge(B x, u32 type) {
   assert(isArr(x));
+  if (TI(x,arrD1)) return x;
   usz xia = IA(x);
   ur xr = RNK(x);
   if (xia==0) {
