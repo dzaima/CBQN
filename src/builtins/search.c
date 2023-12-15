@@ -9,9 +9,9 @@
 //   SHOULD have fast path when cell sizes don't match
 // One input empty: fast not-found
 // Character elements:
-//   Character versus number array is fast not-found for ∊ and ⊐
-//     SHOULD have fast character-number path for ⊒
+//   Character versus number array is fast not-found
 //   Reinterpret as integer elements
+//     Mixed c8 & c16 get widened to c16 to use in signed 16-bit tables
 // COULD try p=⌜n when all arguments are short (may not be faster?)
 // p⊐n & n∊p with short n: p⊸⊐¨n
 // p⊐n & n∊p with boolean p: based on ⊑p and p⊐¬⊑p
@@ -227,7 +227,7 @@ static NOINLINE usz indexOfOne(B l, B e) {
     #endif
 }
 
-#define CHECK_CHRS_ELSE \
+#define CHECK_CHRS_ELSE /* runs block if arguments are numerical; goes to chrEls if arguments are char arrs, updating we/xe to integers; widens mixed c8,c16 to c16,c16 */ \
   if (!elNum(we)) {                      \
     if (elChr(we)) {                     \
       if (elNum(xe)) goto none_found;    \
@@ -235,9 +235,10 @@ static NOINLINE usz indexOfOne(B l, B e) {
         if (we>xe) x=taga(cpyC16Arr(x)); \
         else       w=taga(cpyC16Arr(w)); \
         we = xe = el_i16;                \
-        goto tyEls;                      \
+        goto chrEls;                     \
       }                                  \
-      we-=el_c8-el_i8; xe-=el_c8-el_i8; goto tyEls; \
+      we-= el_c8-el_i8;                  \
+      xe-= el_c8-el_i8; goto chrEls;     \
     }                                    \
   } else if (!elNum(xe)) {               \
     if (elChr(xe)) goto none_found;      \
@@ -266,7 +267,7 @@ B indexOf_c2(B t, B w, B x) {
       decG(w); return i64EachDec(wia, x);
     }
 
-    CHECK_CHRS_ELSE { tyEls: // Both numbers
+    CHECK_CHRS_ELSE { chrEls:
       if (wia>32 && xia<=(we<=el_i8?1:3)) {
         SGetU(x);
         B r;
@@ -390,7 +391,7 @@ B memberOf_c2(B t, B w, B x) {
       decG(x); return i64EachDec(0, w);
     }
 
-    CHECK_CHRS_ELSE { tyEls: // Both numbers
+    CHECK_CHRS_ELSE { chrEls:
       if (xia>32 && wia<=(xe<=el_i8?1:xe==el_i32?4:6)) {
         SGetU(w);
         i8* rp; r = m_i8arrc(&rp, w);
@@ -462,7 +463,6 @@ B memberOf_c2(B t, B w, B x) {
   decG(x);
   return r;
 }
-#undef CHECK_CHRS_ELSE
 
 B count_c2(B t, B w, B x) {
   bool split = 0; (void) split;
@@ -479,62 +479,66 @@ B count_c2(B t, B w, B x) {
   i32* rp; B r = m_i32arrc(&rp, x);
   TALLOC(usz, wnext, wia+1);
   wnext[wia] = wia;
-  if (we<=el_i16 && xe<=el_i16) {
-    if (we==el_bit) { w = toI8Any(w); we = TI(w,elType); }
-    if (xe==el_bit) { x = toI8Any(x); xe = TI(x,elType); }
-    el8or16:;
-    usz it = elRange(we);    // Range of writes
-    usz ft = elRange(xe);    // Range of lookups
-    usz t = it>ft? it : ft;  // Table allocation width
-    TALLOC(i32, tab0, t); i32* tab = tab0 + t/2;
-    usz m=wia, n=xia;
-    void* ip = tyany_ptr(w);
-    void* fp = tyany_ptr(x);
-    // Initialize
-    if (xe==el_i16 && n<ft/(64/sizeof(i32)))
-         { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=wia; }
-    else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=wia; }
-    // Set
-    #define SET(T) for (usz i=m; i--; ) { i32* p=tab+((T*)ip)[i]; wnext[i]=*p; *p=i; }
-    if (we==el_i8) { SET(i8) } else { SET(i16) }
-    #undef SET
-    // Lookup
-    #define GET(T) for (usz i=0; i<n; i++) { i32* p=tab+((T*)fp)[i]; *p=wnext[rp[i]=*p]; }
-    if (xe==el_i8) { GET(i8) } else { GET(i16) }
-    #undef GET
-    TFREE(tab0);
-  } else if (we>=el_c8 && we<=el_c16 && xe>=el_c8 && xe<=el_c16) {
-    we-= el_c8-el_i8; xe-= el_c8-el_i8;
-    goto el8or16;
-  } else {
+  if (wia==0 || xia==0) {
+    none_found:
+    TFREE(wnext); decG(r);
+    decG(w); return i64EachDec(wia, x);
+  }
+  CHECK_CHRS_ELSE { chrEls:
+    if (we<=el_i16 && xe<=el_i16) {
+      if (we==el_bit) { w = toI8Any(w); we = el_i8; }
+      if (xe==el_bit) { x = toI8Any(x); xe = el_i8; }
+      usz it = elRange(we);    // Range of writes
+      usz ft = elRange(xe);    // Range of lookups
+      usz t = it>ft? it : ft;  // Table allocation width
+      TALLOC(i32, tab0, t); i32* tab = tab0 + t/2;
+      usz m=wia, n=xia;
+      void* ip = tyany_ptr(w);
+      void* fp = tyany_ptr(x);
+      // Initialize
+      if (xe==el_i16 && n<ft/(64/sizeof(i32)))
+           { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=wia; }
+      else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=wia; }
+      // Set
+      #define SET(T) for (usz i=m; i--; ) { i32* p=tab+((T*)ip)[i]; wnext[i]=*p; *p=i; }
+      if (we==el_i8) { SET(i8) } else { SET(i16) }
+      #undef SET
+      // Lookup
+      #define GET(T) for (usz i=0; i<n; i++) { i32* p=tab+((T*)fp)[i]; *p=wnext[rp[i]=*p]; }
+      if (xe==el_i8) { GET(i8) } else { GET(i16) }
+      #undef GET
+      TFREE(tab0);
+      goto dec_nwx;
+    }
     #if SINGELI
-    if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
+    else if (we==xe && wia<=INT32_MAX && (we==el_i32 || (we==el_f64 && (split || canCompare64_norm2(&w,wia,&x,xia)))) &&
         si_count_c2_hash[we-el_i32](rp, tyany_ptr(w), wia, tyany_ptr(x), xia, (u32*)wnext)) {
       goto dec_nwx;
     }
     #endif
-    H_b2i* map = m_b2i(64);
-    SGetU(x)
-    SGetU(w)
-    for (usz i = wia; i--; ) {
-      bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
-      wnext[i] = had ? map->a[p].val : wia;
-      map->a[p].val = i;
-    }
-    for (usz i = 0; i < xia; i++) {
-      bool had; u64 p = getQ_b2i(map, GetU(x,i), &had);
-      usz j = wia;
-      if (had) { j = map->a[p].val; map->a[p].val = wnext[j]; }
-      rp[i] = j;
-    }
-    free_b2i(map);
   }
-  #if SINGELI
+  
+  H_b2i* map = m_b2i(64);
+  SGetU(x)
+  SGetU(w)
+  for (usz i = wia; i--; ) {
+    bool had; u64 p = mk_b2i(&map, GetU(w,i), &had);
+    wnext[i] = had ? map->a[p].val : wia;
+    map->a[p].val = i;
+  }
+  for (usz i = 0; i < xia; i++) {
+    bool had; u64 p = getQ_b2i(map, GetU(x,i), &had);
+    usz j = wia;
+    if (had) { j = map->a[p].val; map->a[p].val = wnext[j]; }
+    rp[i] = j;
+  }
+  free_b2i(map);
+  
   dec_nwx:;
-  #endif
   TFREE(wnext); decG(w); decG(x);
   return reduceI32Width(r, wia);
 }
+#undef CHECK_CHRS_ELSE
 
 // if nanBad and input contains a NaN, doesn't consume and returns m_f64(0)
 // otherwise, consumes and returns an array with -0 (and NaNs if !nanBad) normalized
