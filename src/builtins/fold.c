@@ -375,7 +375,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       return taga(r);
     }
   }
-  return insert_base(f, x, 0, bi_N);
+  return insert_base(f, x, 0, m_f64(0));
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");

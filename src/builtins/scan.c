@@ -177,6 +177,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 B fne_c1(B, B);
 B shape_c2(B, B, B);
 
+extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
   ur xr = RNK(x);
@@ -229,6 +230,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_or) { x=num_squeezeChk(x); xe=TI(x,elType); if (xe==el_bit) return scan_or(x, ia); }
   }
   base:;
+  if (xr>1 && ia >= 6 * (u64)*SH(x) && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));
   SLOW2("𝕎` 𝕩", f, x);
   B xf = getFillR(x);
   
@@ -305,6 +307,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     }
   }
   base:;
+  if (xr>1 && ia >= 6 * (u64)*SH(x) && isPervasiveDy(f)) return scan_arith(f, w, x, SH(x));
   SLOW3("𝕨 F` 𝕩", w, x, f);
   B wf = getFillR(w);
   

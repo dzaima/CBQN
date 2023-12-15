@@ -37,11 +37,11 @@ B takedrop_highrank(bool take, B w, B x); // from sfns.c
 
 
 
-// Used by Insert in fold.c
-B insert_base(B f, B x, bool has_w, B w) {
+B insert_base(B f, B x, bool has_w, B w) { // Used by Insert in fold.c
   assert(isArr(x) && RNK(x)>0);
   usz* xsh = SH(x);
   usz xn = xsh[0];
+  assert(!has_w || xn>0);
   S_KSLICES(x, xsh, 1, xn, 0)
   usz p = xn*x_csz;
   B r = w;
@@ -55,6 +55,29 @@ B insert_base(B f, B x, bool has_w, B w) {
     r = fc2(f, SLICE(x, p), r);
   }
   return r;
+}
+
+B scan_arith(B f, B w, B x, usz* xsh) { // Used by scan.c
+  bool has_w = w.u != m_f64(0).u;
+  assert(isArr(x) && (!has_w || isArr(w)));
+  ur xr = RNK(x);
+  usz xn = xsh[0];
+  assert(xr>1 && (!has_w || xn>0));
+  S_KSLICES(x, xsh, 1, xn, 0)
+  usz p = 0;
+  B c = w;
+  M_APD_SH(r, 1, xsh);
+  if (!has_w) {
+    APDD(r, incG(c = SLICE(x, 0)));
+    p+= x_csz;
+  }
+  FC2 fc2 = c2fn(f);
+  for (usz i = !has_w; i < xn; i++) {
+    APDD(r, incG(c = fc2(f, c, SLICE(x, p))));
+    p+= x_csz;
+  }
+  decG(c);
+  return taga(APD_SH_GET(r, 0));
 }
 
 
