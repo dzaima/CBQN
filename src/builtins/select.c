@@ -369,7 +369,8 @@ B select_c2(B t, B w, B x) {
 
 
 
-B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊) x
+extern u8 reuseElType[t_COUNT];
+B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊) x, assumes w is a typed (elNum) list of valid indices, only el_f64 if strictly necessary
   #if CHECK_VALID
     TALLOC(bool, set, xia);
     bool sparse = wia < xia/64;
@@ -380,126 +381,103 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊
       }
     #define EQ(F) if (set[cw] && (F)) thrF("𝔽⌾(a⊸%c): Incompatible result elements", chr); set[cw] = true;
     #define FREE_CHECK TFREE(set)
-    SLOWIF(xia>100 && wia<xia/20) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because CHECK_VALID", w, x);
   #else
     #define SPARSE_INIT(GET)
     #define EQ(F)
     #define FREE_CHECK
   #endif
   
-  u8 we = TI(w,elType);
+  #define READ_W(N,I) i64 N = (i64)wp[I]; if (RARE(N<0)) N+= (i64)xia
+  u8 we = TI(w,elType); assert(elNum(we));
   u8 xe = TI(x,elType);
-  u8 re = TI(rep,elType);
-  SLOWIF(!reusable(x) && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
-  if (elInt(we)) {
-    w = toI32Any(w);
-    i32* wp = i32any_ptr(w);
-    SPARSE_INIT(wp[i])
-    if (elNum(re) && elNum(xe)) {
-      u8 me = xe>re?xe:re;
-      bool reuse = reusable(x);
-      if (me==el_i32) {
-        I32Arr* xn = reuse? toI32Arr(REUSE(x)) : (I32Arr*)cpyI32Arr(x);
-        i32* xp = i32arrv_ptr(xn);
-        rep = toI32Any(rep); i32* rp = i32any_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia; // we're free to assume w is valid
-          i32 cr = rp[i];
-          EQ(cr != xp[cw]);
-          xp[cw] = cr;
-        }
-        decG(w); decG(rep); FREE_CHECK; return taga(xn);
-      } else if (me==el_i8) {
-        I8Arr* xn = reuse? toI8Arr(REUSE(x)) : (I8Arr*)cpyI8Arr(x);
-        i8* xp = i8arrv_ptr(xn);
-        rep = toI8Any(rep); i8* rp = i8any_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          i8 cr = rp[i];
-          EQ(cr != xp[cw]);
-          xp[cw] = cr;
-        }
-        decG(w); decG(rep); FREE_CHECK; return taga(xn);
-      } else if (me==el_i16) {
-        I16Arr* xn = reuse? toI16Arr(REUSE(x)) : (I16Arr*)cpyI16Arr(x);
-        i16* xp = i16arrv_ptr(xn);
-        rep = toI16Any(rep); i16* rp = i16any_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          i16 cr = rp[i];
-          EQ(cr != xp[cw]);
-          xp[cw] = cr;
-        }
-        decG(w); decG(rep); FREE_CHECK; return taga(xn);
-      } else if (me==el_bit) {
-        BitArr* xn = reuse? toBitArr(REUSE(x)) : (BitArr*)cpyBitArr(x);
-        u64* xp = bitarrv_ptr(xn);
-        rep = taga(toBitArr(rep)); u64* rp = bitarr_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          bool cr = bitp_get(rp, i);
-          EQ(cr != bitp_get(xp,cw));
-          bitp_set(xp,cw,cr);
-        }
-        decG(w); decG(rep); FREE_CHECK; return taga(xn);
-      } else if (me==el_f64) {
-        F64Arr* xn = reuse? toF64Arr(REUSE(x)) : (F64Arr*)cpyF64Arr(x);
-        f64* xp = f64arrv_ptr(xn);
-        rep = toF64Any(rep); f64* rp = f64any_ptr(rep);
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          f64 cr = rp[i];
-          EQ(cr != xp[cw]);
-          xp[cw] = cr;
-        }
-        decG(w); decG(rep); FREE_CHECK; return taga(xn);
-      } else UD;
-    }
-    if (reusable(x) && xe==re) {
-      if (TY(x)==t_harr) {
-        B* xp = harr_ptr(REUSE(x));
-        SGet(rep)
-        for (usz i = 0; i < wia; i++) {
-          i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-          B cr = Get(rep, i);
-          EQ(!equal(cr,xp[cw]));
-          dec(xp[cw]);
-          xp[cw] = cr;
-        }
-        decG(w); decG(rep); FREE_CHECK;
-        return x;
-      }
-    }
-    MAKE_MUT_INIT(r, xia, el_or(xe, re));
-    MUTG_INIT(r);
-    mut_copyG(r, 0, x, 0, xia);
+  u8 re = el_or(xe, TI(rep,elType));
+  Arr* ra;
+  // w = taga(cpyF64Arr(w)); we = el_f64; // test the float path
+  if (we==el_f64) {
+    f64* wp = f64any_ptr(w);
+    SPARSE_INIT((i64)wp[i])
+    
+    MAKE_MUT(r, xia);
+    mut_init_copy(r, x, re);
     NOGC_E;
-    SGet(rep)
+    MUTG_INIT(r); SGet(rep)
     for (usz i = 0; i < wia; i++) {
-      i64 cw = wp[i]; if (RARE(cw<0)) cw+= (i64)xia;
-      B cr = Get(rep, i);
-      EQ(!equal(mut_getU(r, cw), cr));
+      READ_W(cw, i);
+      B cn = Get(rep, i);
+      EQ(!equal(mut_getU(r, cw), cn));
       mut_rm(r, cw);
-      mut_setG(r, cw, cr);
+      mut_setG(r, cw, cn);
     }
-    decG(w); decG(rep); FREE_CHECK;
-    return mut_fcd(r, x);
+    ra = mut_fp(r);
+    goto dec_ret_ra;
   }
-  MAKE_MUT_INIT(r, xia, el_or(xe, re));
-  MUTG_INIT(r);
-  mut_copyG(r, 0, x, 0, xia);
-  NOGC_E;
-  SGet(rep) SGetU(w)
-  SPARSE_INIT(o2i64G(GetU(w, i)))
-  for (usz i = 0; i < wia; i++) {
-    i64 cw = o2i64G(GetU(w, i)); if (RARE(cw<0)) cw+= (i64)xia;
-    B cr = Get(rep, i);
-    EQ(!equal(mut_getU(r, cw), cr));
-    mut_rm(r, cw);
-    mut_setG(r, cw, cr);
+  assert(elInt(we));
+  
+  w = toI32Any(w);
+  i32* wp = i32any_ptr(w);
+  SPARSE_INIT(wp[i])
+  bool reuse = reusable(x) && re==reuseElType[TY(x)];
+  SLOWIF(!reuse && xia>100 && wia<xia/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
+  switch (re) { default: UD;
+    case el_i8:  rep = toI8Any(rep);  ra = reuse? a(REUSE(x)) : cpyI8Arr(x);  goto do_u8;
+    case el_c8:  rep = toC8Any(rep);  ra = reuse? a(REUSE(x)) : cpyC8Arr(x);  goto do_u8;
+    case el_i16: rep = toI16Any(rep); ra = reuse? a(REUSE(x)) : cpyI16Arr(x); goto do_u16;
+    case el_c16: rep = toC16Any(rep); ra = reuse? a(REUSE(x)) : cpyC16Arr(x); goto do_u16;
+    case el_i32: rep = toI32Any(rep); ra = reuse? a(REUSE(x)) : cpyI32Arr(x); goto do_u32;
+    case el_c32: rep = toC32Any(rep); ra = reuse? a(REUSE(x)) : cpyC32Arr(x); goto do_u32;
+    case el_f64: rep = toF64Any(rep); ra = reuse? a(REUSE(x)) : cpyF64Arr(x); goto do_u64;
+    case el_bit: {                    ra = reuse? a(REUSE(x)) : cpyBitArr(x);
+      TyArr* na = toBitArr(rep); rep = taga(na);
+      u64* np = bitarrv_ptr(na);
+      u64* rp = (void*)((TyArr*)ra)->a;
+      for (usz i = 0; i < wia; i++) {
+        READ_W(cw, i);
+        bool cn = bitp_get(np, i);
+        EQ(cn != bitp_get(rp, cw));
+        bitp_set(rp, cw, cn);
+      }
+      goto dec_ret_ra;
+    }
+    case el_B: {
+      ra = reuse? a(REUSE(x)) : cpyHArr(x);
+      B* rp = harrP_parts((HArr*)ra).a;
+      SGet(rep)
+      for (usz i = 0; i < wia; i++) {
+        READ_W(cw, i);
+        B cn = Get(rep, i);
+        EQ(!equal(cn,rp[cw]));
+        dec(rp[cw]);
+        rp[cw] = cn;
+      }
+      goto dec_ret_ra;
+    }
   }
-  decG(w); decG(rep); FREE_CHECK;
-  return mut_fcd(r, x);
+  
+  #define IMPL(T) do {              \
+    T* rp = (void*)((TyArr*)ra)->a; \
+    T* np = tyany_ptr(rep);         \
+    for (usz i = 0; i < wia; i++) { \
+      READ_W(cw, i);                \
+      T cn = np[i];                 \
+      EQ(cn != rp[cw]);             \
+      rp[cw] = cn;                  \
+    }                               \
+    goto dec_ret_ra;         \
+  } while(0)
+  
+  do_u8:  IMPL(u8);
+  do_u16: IMPL(u16);
+  do_u32: IMPL(u32);
+  do_u64: IMPL(u64);
+  #undef IMPL
+  
+  
+  
+  dec_ret_ra:;
+  decG(w); decG(rep);
+  FREE_CHECK;
+  return taga(ra);
+  
   #undef SPARSE_INIT
   #undef EQ
   #undef FREE_CHECK

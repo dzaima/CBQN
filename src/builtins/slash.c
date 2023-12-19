@@ -1010,6 +1010,16 @@ B slash_ucw(B t, B o, B w, B x) {
   if (wb && re!=el_B) {
     u64* d = bitarr_ptr(w);
     void* rp = r->a;
+    switch (re) { default: UD;
+      case el_bit:
+      case el_i8:  x = toI8Any(x);  rep = toI8Any(rep);  goto bit_u8;
+      case el_c8:  x = toC8Any(x);  rep = toC8Any(rep);  goto bit_u8;
+      case el_i16: x = toI16Any(x); rep = toI16Any(rep); goto bit_u16;
+      case el_c16: x = toC16Any(x); rep = toC16Any(rep); goto bit_u16;
+      case el_i32: x = toI32Any(x); rep = toI32Any(rep); goto bit_u32;
+      case el_c32: x = toC32Any(x); rep = toC32Any(rep); goto bit_u32;
+      case el_f64: x = toF64Any(x); rep = toF64Any(rep); goto bit_u64;
+    }
     
     #define IMPL(T) do {          \
       T* xp = tyany_ptr(x);       \
@@ -1022,24 +1032,12 @@ B slash_ucw(B t, B o, B w, B x) {
       goto dec_ret;               \
     } while(0)
     
-    #define WIDEN_GO(UT, T, B) x = to##UT##Any(x); rep = to##UT##Any(rep); goto bit_##B
-    
-    switch (re) {
-      case el_bit:
-      case el_i8:  x = toI8Any(x);  rep = toI8Any(rep);  goto bit_u8;
-      case el_c8:  x = toC8Any(x);  rep = toC8Any(rep);  goto bit_u8;
-      case el_i16: x = toI16Any(x); rep = toI16Any(rep); goto bit_u16;
-      case el_c16: x = toC16Any(x); rep = toC16Any(rep); goto bit_u16;
-      case el_i32: x = toI32Any(x); rep = toI32Any(rep); goto bit_u32;
-      case el_c32: x = toC32Any(x); rep = toC32Any(rep); goto bit_u32;
-      case el_f64: x = toF64Any(x); rep = toF64Any(rep); goto bit_u64;
-    }
     bit_u8:  IMPL(u8);
     bit_u16: IMPL(u16);
     bit_u32: IMPL(u32);
     bit_u64: IMPL(u64);
     #undef IMPL
-    #undef WIDEN_GO
+    
   } else {
     SGet(x) SGet(rep) MUTG_INIT(r);
     if (wb) {

@@ -175,7 +175,7 @@ Run ← { 𝕊 testname:
     }∘{currLn↩(⊑𝕩).ln ⋄ 1↓𝕩}¨ toRun
     
     {𝕊:
-      res‿desc ← ({@≡𝕩? 0; ¬⊑(@+10)∊𝕩}¨ results)⊸/¨ results‿toRun
+      res‿desc ← ({@≡𝕩? 0; (¬⊑(@+10)∊𝕩) ∧ ¬∨´"TEST FAIL"⍷𝕩}¨ results)⊸/¨ results‿toRun
       0≠≠res?
         •Out ∾⟨"Update ", •Repr≠res, " entr", (1<≠res)⊑"y"‿"ies", " in ", filename, "?"⟩
         {

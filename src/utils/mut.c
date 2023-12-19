@@ -2,9 +2,9 @@
 #include "mut.h"
 
 typedef struct { Arr* arr; void* els; } MadeArr;
-FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 n) {
+FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 el) {
   u64 sz;
-  switch(n) { default: UD;
+  switch(el) { default: UD;
     case el_bit:              sz = BITARR_SZ(   ia); break;
     case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
     case el_i16: case el_c16: sz = TYARR_SZ(I16,ia); break;
@@ -18,9 +18,9 @@ FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 n) {
   return (MadeArr){a, ((TyArr*)a)->a};
 }
 
-FORCE_INLINE void mut_init(Mut* m, u8 n) {
-  m->fns = &mutFns[n];
-  MadeArr a = mut_make_arr(m->ia, m->fns->valType, n);
+FORCE_INLINE void mut_init(Mut* m, u8 el) {
+  m->fns = &mutFns[el];
+  MadeArr a = mut_make_arr(m->ia, m->fns->valType, el);
   m->val = a.arr;
   m->a = a.els;
 }
@@ -38,6 +38,25 @@ NOINLINE Mut make_mut_init(ux ia, u8 el) {
   return r_val;
 }
 #endif
+
+static void* arr_ptr(Arr* t, u8 el) {
+  return el==el_B? (void*)((HArr*)t)->a : (void*)((TyArr*)t)->a;
+}
+
+u8 reuseElType[t_COUNT];
+void mut_init_copy(Mut* m, B x, u8 el) {
+  assert(m->fns == &mutFns[el_MAX]);
+  if (reusable(x) && reuseElType[TY(x)]==el) {
+    m->fns = &mutFns[el];
+    Arr* a = m->val = a(REUSE(x));
+    m->a = arr_ptr(a, el);
+  } else {
+    mut_to(m, el);
+    mut_copy(m, 0, x, 0, IA(x));
+    arr_shCopy(m->val, x);
+    decG(x);
+  }
+}
 
 static Arr* (*cpyFns[])(B) = {
   [el_bit] = cpyBitArr,
@@ -67,7 +86,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
     #endif
     Arr* t = cpyFns[n](taga(m->val));
     m->val = t;
-    m->a = n==el_B? (void*)((HArr*)t)->a : (void*)((TyArr*)t)->a;
+    m->a = arr_ptr(t, n);
   }
 }
 
@@ -703,15 +722,17 @@ void mutF_init(void) {
   FOR_TY(G)
   #undef G
   #undef F
-  mutFns[el_bit].elType = el_bit; mutFns[el_bit].valType = t_bitarr;
-  mutFns[el_i8 ].elType = el_i8 ; mutFns[el_i8 ].valType = t_i8arr;
-  mutFns[el_i16].elType = el_i16; mutFns[el_i16].valType = t_i16arr;
-  mutFns[el_i32].elType = el_i32; mutFns[el_i32].valType = t_i32arr;
-  mutFns[el_c8 ].elType = el_c8 ; mutFns[el_c8 ].valType = t_c8arr;
-  mutFns[el_c16].elType = el_c16; mutFns[el_c16].valType = t_c16arr;
-  mutFns[el_c32].elType = el_c32; mutFns[el_c32].valType = t_c32arr;
-  mutFns[el_f64].elType = el_f64; mutFns[el_f64].valType = t_f64arr;
-  mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;
+  for (ux i = 0; i < t_COUNT; i++) reuseElType[i] = el_MAX;
+  
+  mutFns[el_bit].elType = el_bit; mutFns[el_bit].valType = t_bitarr; reuseElType[t_bitarr] = el_bit;
+  mutFns[el_i8 ].elType = el_i8 ; mutFns[el_i8 ].valType = t_i8arr;  reuseElType[t_i8arr]  = el_i8;
+  mutFns[el_i16].elType = el_i16; mutFns[el_i16].valType = t_i16arr; reuseElType[t_i16arr] = el_i16;
+  mutFns[el_i32].elType = el_i32; mutFns[el_i32].valType = t_i32arr; reuseElType[t_i32arr] = el_i32;
+  mutFns[el_c8 ].elType = el_c8 ; mutFns[el_c8 ].valType = t_c8arr;  reuseElType[t_c8arr]  = el_c8;
+  mutFns[el_c16].elType = el_c16; mutFns[el_c16].valType = t_c16arr; reuseElType[t_c16arr] = el_c16;
+  mutFns[el_c32].elType = el_c32; mutFns[el_c32].valType = t_c32arr; reuseElType[t_c32arr] = el_c32;
+  mutFns[el_f64].elType = el_f64; mutFns[el_f64].valType = t_f64arr; reuseElType[t_f64arr] = el_f64;
+  mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;   reuseElType[t_harr]   = el_B;
   mutFns[el_MAX].elType = el_MAX; mutFns[el_MAX].valType = t_COUNT;
   for (u8 i = 0; i < el_MAX; i++) copyFns[i] = mutFns[i].m_copyG;
   for (u8 i = 0; i < el_MAX; i++) fillFns[i] = mutFns[i].m_fillG;

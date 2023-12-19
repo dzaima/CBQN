@@ -382,7 +382,7 @@ static B recPick(B w, B x) { // doesn't consume
           if (isAtm(c)) thrM("⊑: 𝕨 contained list with mixed-type elements");
           HARR_ADD(r, i, recPick(c, x));
         }
-        return HARR_FC(r, w);
+        return any_squeeze(HARR_FC(r, w));
       }
     }
   }
@@ -1322,7 +1322,7 @@ B pick_ucw(B t, B o, B w, B x) {
         if (RARE(c==USZ_MAX)) { mut_pfree(r, i); goto def; }
         mut_setG(r, i, m_usz(c));
       }
-      w = mut_fcd(r, w);
+      w = num_squeeze(mut_fcd(r, w));
       B rep = isArr(o)? incG(o) : c1(o, C2(select, incG(w), C1(shape, incG(x))));
       if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
       return select_replace(U'⊑', w, x, rep, wia, xia);

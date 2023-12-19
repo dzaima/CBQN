@@ -43,6 +43,7 @@ void mut_to(Mut* m, u8 n);
   #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = make_mut_init(IA, EL); Mut* N = &N##_val;
 #endif
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
+void mut_init_copy(Mut* m, B x, u8 el); // consumes x; initialize m to to a type-el array, copying in all elements of x; assumes el fits x; expects no further changes to type & to be completed with mut_fp, at which point it returns an array of the same shape as x
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   NOGC_E; assert(m->ia == m->val->ia);
