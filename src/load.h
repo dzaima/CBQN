@@ -10,7 +10,7 @@ enum {
   comps_max
 };
 enum {
-  re_comp, re_compOpts, re_rt, re_glyphs, re_sysNames, re_sysVals, // compiling info
+  re_compFn, re_compOpts, re_rt, re_glyphs, re_sysNames, re_sysVals, // compiling info
   re_map, // •HashMap of cached import results
   re_mode, re_scope, // only for repl_exec
   re_max

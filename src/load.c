@@ -157,8 +157,8 @@ B def_re;
 
 static void change_def_comp(B comp) { // consumes
   B* re = harr_ptr(def_re); // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
-  B prev = re[re_comp];
-  re[re_comp] = comp;
+  B prev = re[re_compFn];
+  re[re_compFn] = comp;
   dec(prev);
 }
 
@@ -167,7 +167,7 @@ static void change_def_comp(B comp) { // consumes
 #include "opt/comp.c"
 B load_fullComp;
 void switchComp(void) {
-  change_def_comp(harr_ptr(def_re)[re_comp].u==load_fullComp.u? incG(native_comp) : incG(load_fullComp));
+  change_def_comp(harr_ptr(def_re)[re_compFn].u==load_fullComp.u? incG(native_comp) : incG(load_fullComp));
 }
 #endif
 B compObj_c1(B t, B x) {
@@ -215,7 +215,7 @@ static NOINLINE Block* bqn_compc(B str, B state, B re) { // consumes str,state
   str = chr_squeeze(str);
   COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
-  Block* r = load_buildBlock(c2G(o[re_comp], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), NULL, 0);
+  Block* r = load_buildBlock(c2G(o[re_compFn], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), NULL, 0);
   COMPS_POP; popCatch();
   return r;
 }
@@ -239,7 +239,7 @@ Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS) {
     csc = csc->psc;
     depth++;
   }
-  Block* r = load_buildBlock(c2G(o[re_comp], m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  Block* r = load_buildBlock(c2G(o[re_compFn], m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   COMPS_POP; popCatch();
   return r;
 }
@@ -255,7 +255,7 @@ B str_all, str_none;
 void init_comp(B* new_re, B* prev_re, B prim, B sys) {
   new_re[re_map] = m_importMap();
   if (q_N(prim)) {
-    new_re[re_comp]     = inc(prev_re[re_comp]);
+    new_re[re_compFn]   = inc(prev_re[re_compFn]);
     new_re[re_compOpts] = inc(prev_re[re_compOpts]);
     new_re[re_rt]       = inc(prev_re[re_rt]);
     new_re[re_glyphs]   = inc(prev_re[re_glyphs]);
@@ -296,7 +296,7 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
     
     new_re[re_rt]       = prh.b;
     new_re[re_glyphs]   = inc(rb);
-    new_re[re_comp]     = c1(load_compgen, rb);
+    new_re[re_compFn]   = c1(load_compgen, rb);
     new_re[re_compOpts] = m_lvB_2(inc(prh.b), incG(bi_sys));
   }
   
@@ -582,7 +582,7 @@ void load_init() { // very last init function
       #endif
     #endif
     HArr_p ps = m_harr0v(re_max);
-    ps.a[re_comp] = load_comp;
+    ps.a[re_compFn] = load_comp;
     ps.a[re_compOpts] = load_compOpts;
     ps.a[re_rt] = incG(load_rt);
     ps.a[re_map] = m_importMap();
@@ -645,7 +645,7 @@ B bqn_explain(B str) {
     }
     
     COMPS_PUSH(str, bi_N, def_re);
-    B c = c2(o[re_comp], incG(o[re_compOpts]), inc(str));
+    B c = c2(o[re_compFn], incG(o[re_compOpts]), inc(str));
     COMPS_POP;
     B ret = c2(load_explain, c, str);
     return ret;
