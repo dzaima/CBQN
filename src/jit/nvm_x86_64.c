@@ -49,6 +49,8 @@ static void* mmap_nvm(u64 sz) {
     int noreplace = 0;
     #ifdef MAP_FIXED_NOREPLACE
       noreplace|= MAP_FIXED_NOREPLACE;
+    #elif __FreeBSD__
+      noreplace|= MAP_FIXED|MAP_EXCL;
     #endif
     void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS|noreplace, -1, 0);
     if (c==MAP_FAILED) continue;
