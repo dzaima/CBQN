@@ -1,5 +1,6 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
+%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ r !∘≡¨ ⊏r ⋄ ⊑r}
 %DEF k _k ← {𝔽○•internal.Keep}
 
 # batch checks
@@ -272,7 +273,9 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 !"⥊: Result rank too large" % (0∾300⥊2)⥊0
 
 # 𝕨⍷𝕩
-"ab" ⍷ 0‿5⥊"ab" %% 0‿4⥊0
+%USE eqvar ⋄ "ab" ⍷_eqvar "" %% ⟨⟩
+%USE eqvar ⋄ "" ⍷_eqvar "ab" %% 1‿1‿1
+%USE eqvar ⋄ "ab" ⍷_eqvar 0‿5⥊"ab" %% 0‿4⥊0
 'a'‿1 ⍷ 0‿5⥊⟨⟩ %% 0‿4⥊0
 "abc" ⍷ 5‿1⥊'a' %% 5‿0⥊0
 ⟨(<"ab")⍷<"aa", (<"ab")⍷<"ab"⟩ %% ⟨<0,<1⟩
