@@ -149,7 +149,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
   btab:= *i8~~tab
   def settab_sub{x, v, i} = {
     if (rval) store{*u8~~r0, u, x}
-    if (rind and v!=t) store{r0, x, i}
+    if (rind and v!=t) store{r0, x, cast_i{u32, i}}
     u+= u8~~i8~~(t - v)  # u tracks the total of btab
     store{btab, x, t}
     v
@@ -324,8 +324,8 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
       max1 = max{max1, x}
     }
   }
-  store{res, 0, min1}
-  store{res, 1, max1}
+  store{res, 0, cast_i{i64, min1}}
+  store{res, 1, cast_i{i64, max1}}
   1
 }
 
@@ -337,13 +337,13 @@ oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
 
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
 def ity{name} = (to_prim{name}=='⊒')**(*u32)
-fn hashtab{T, name}(rp:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity{name}) = {
+fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity{name}) = {
   # iv,mi/ip,m - searched-in; fv,ni/fp,n - searched-for; may get swapped around & back
   def prim = to_prim{name}
   def U = if (prim=='∊') usz else u32
   m := cast_i{U,mi}; n := cast_i{U,ni}
   def wt = width{T}
-  ip := *T~~iv; fp := *T~~fv
+  ip := *T~~iv; fp := *T~~fv; rp := if (prim=='∊') rpi else *u32~~rpi
   def swap_sides{} = each{{a,b}=>{t:=a; a=b; b=t}, tup{ip,m}, tup{fp,n}}
   swap:u1 = n+(1024*(prim!='⊒')) < (if (prim!='∊') m else m-m/4)
   if (swap) swap_sides{}
@@ -541,18 +541,18 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity
       }
       insert_all{set, set_maxh, dup}
       store{inds, get_end{}, (m-ind_maxh) &- has_maxh}
-      lookup_all{{found, j} => i32~~(m - (load{inds, j} &- found))}
+      lookup_all{{found, j} => m - (load{inds, j} &- found)}
     } else { # swap
       # After insert_all, position i in rp contains:
       # - ≠𝕨, if i is the first occurrence of its value in 𝕩, or
       # - j-≠𝕩, where j<i is the index of the first occurrence
       uniq:usz = 0
       has_maxh:u1 = 0
-      ri:i32 = 0  # Placed in rp (should be scoped to insert_all loop body)
+      ri:u32 = 0  # Placed in rp (should be scoped to insert_all loop body)
       def dup = makelabel{}
       def set_maxh{found, i, j} = {
         sequester_maxh{j, found}
-        ri = cast_i{i32, n}  # Initialize to not-found
+        ri = cast_i{u32, n}  # Initialize to not-found
         if (found & has_maxh) goto{dup}
         has_maxh |= found
       }
@@ -560,7 +560,7 @@ fn hashtab{T, name}(rp:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity
         store{inds, j, i}
         if (u1~~0) {
           setlabel{dup}
-          ri = i32~~(load{inds, j} - m)
+          ri = load{inds, j} - m
         }
         store{rp, i, ri}
       }

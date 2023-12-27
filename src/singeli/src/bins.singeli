@@ -85,7 +85,7 @@ fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
     id := i+d
     wi := undefined{T}
     if (id >= n) {
-      @for (w over j from i to n) store{t, w, cast_i{i64, j+1}}
+      @for (w over j from i to n) store{t, w, cast_i{I, j+1}}
       goto{break}
     } else if ((wi = load{w, i}) == load{w, id}) {
       # Gallop
@@ -102,14 +102,14 @@ fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
         l -= h
       }
     } else {
-      @unroll (j to 8) store{t, load{w, i+j}, cast_i{i64, i+j+1}}
+      @unroll (j to 8) store{t, load{w, i+j}, cast_i{I, i+j+1}}
       i += 8
     }
   }
   setlabel{break}
 }
 fn write_indices{I,T & width{I}==8}(t:*I, w:*T, n:u64) : void = {
-  @for (w over j to n) store{t, w, j+1}
+  @for (w over j to n) store{t, w, cast_i{I, j+1}}
 }
 def bins_lookup{I, T, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void} = {
   # Build table
