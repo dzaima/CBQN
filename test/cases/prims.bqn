@@ -1,6 +1,7 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
-%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ r !∘≡¨ ⊏r ⋄ ⊑r}
+%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
+%DEF evar %USE tvar ⋄ _evar ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@} _tvar 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: variation didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
 %DEF k _k ← {𝔽○•internal.Keep}
 
 # batch checks
@@ -68,7 +69,7 @@
 !"/: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 4)" % 1‿2‿3/4‿5‿6‿7
 !"Expected non-negative integer, got ¯1000" % (4/1000‿¯1000) / 8⥊1
 !"Expected non-negative integer, got ¯1000" % (4/1000‿¯1000) / 8⥊1
-%USE tvar ⋄ ∧⍷ ⥊ 2‿4e19 0∘/⎊(•CurrentError∘@) _tvar ↕2 %% ⟨"Integer out of range: 4e19"⟩
+!"Integer out of range: 4e19" % %USE evar ⋄ 2‿4e19 /_evar ↕2
 
 !"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕1⟩/3
 !"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % ⟨↕1⟩/<"ab"
@@ -92,9 +93,9 @@
 !"Expected non-negative integer, got ¯1000" % / 4/1000‿¯1000
 !"/: Argument must have rank 1 (3‿3 ≡ ≢𝕩)" % /↕3‿3
 !"/: Argument must have rank 1 (⟨⟩ ≡ ≢𝕩)" % /0
-%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar ¯1⌾(100⊸⊑) 200⥊10 %% ⟨"Expected non-negative integer, got ¯1"⟩
-%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar 1e2⥊2⋆62 %% ⟨"Sum too big"⟩
-%USE tvar ⋄ ∧⍷ 0∘/⎊•CurrentError _tvar 1e20⌾(100⊸⊑) 200⥊10 %% ⟨"Integer out of range: 1e20"⟩
+!"Expected non-negative integer, got ¯1" % %USE evar ⋄ /_evar ¯1⌾(100⊸⊑) 200⥊10
+!"Sum too big" % %USE evar ⋄ /_evar 1e2⥊2⋆62
+!"Integer out of range: 1e20" % %USE evar ⋄ /_evar 1e20⌾(100⊸⊑) 200⥊10
 ! (//⁼)⊸≡8‿15‿25‿32‿90‿101‿155‿165‿584‿594‿894‿912‿1312‿1328‿1350‿1367‿1391‿1407‿1469‿1486‿1559‿1566‿1576‿1582‿1592‿1599‿1609‿1616‿1626‿1635‿4086‿4093‿4114‿4122‿4141‿4149‿4169‿4177
 
 # 𝕨⊏𝕩
@@ -114,13 +115,13 @@
 !"⊏: Indexing out-of-bounds (2∊𝕨, 2≡≠𝕩)" % (1+9=↕10)⊏⟨1‿2,3⟩
 %USE tvar ⋄ !∘≡¨⟜⊏ ∾ {⥊𝕨 ⊏⎊(•CurrentError∘⊢) _tvar 𝕩}´¨ ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
 a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ 𝕨⊏⎊"e"𝕩}⟨1‿2,3‿4⟩ ⋄ ! 0‿1 ≡ a
-%USE tvar ⋄ {!∘≡¨⟜⊏⥊ 1‿¯1 {t←•internal.ElType 𝕩 ⋄ r←𝕨⊏𝕩 ⋄ t≥•internal.ElType r ⋄ r}_tvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
+%USE eqvar ⋄ {1‿¯1 {r←𝕨⊏𝕩 ⋄ ! 𝕩 ≥○•internal.ElType r ⋄ r}_eqvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
 
 # 𝕨⊑𝕩
 !"⊑: 𝕨 contained a non-integer" % ⟨0.1⟩⊑↕3
 !"⊑: 𝕨 contained a non-integer" % ⟨2⋆80⟩⊑↕3
-%USE tvar ⋄ !¨ 'e'= (≍1‿2) {⟨𝕨⟩⊑𝕩}⎊'e'_tvar ↕5‿5
-%USE tvar ⋄ !¨ 1‿2⊸≡¨ (1‿2) ⊑_tvar ↕5‿5
+!"⊑: Leaf arrays in 𝕨 must have rank 1 (element: (1‿2⥊1‿2))" % %USE evar ⋄ (≍1‿2) {⟨𝕨⟩⊑𝕩}_evar ↕5‿5
+%USE eqvar ⋄ 1‿2 ⊑_eqvar ↕5‿5 %% 1‿2
 
 # comparison
 w←1‿1⥊1 ⋄ x←1‿2⥊1           ⋄ {! (∾⟨•Repr𝕩,": Expected equal shape prefix (1‿1 ≡ ≢𝕨, 1‿2 ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
@@ -204,7 +205,7 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 
 # ≍𝕩
 !"≍: Result rank too large (255≡=𝕩)" % ≍⍟256 1
-%USE tvar ⋄ 1‿2‿3‿4‿5‿64 {c𝕊e: {!∘≡¨⟜⊏ ⥊ ∾_tvar´ 𝕩}¨ ⟨4‿c, c⟩ ⋈⌜○({𝕩⥊<e}¨) ⟨0‿c, 1‿c, c⟩}⌜ ⟨1, 'a', 1‿2⟩
+%USE eqvar ⋄ 1‿2‿3‿4‿5‿64 {c𝕊e: ∾_eqvar´¨ ⟨4‿c, c⟩ ⋈⌜○({𝕩⥊<e}¨) ⟨0‿c, 1‿c, c⟩}⌜ ⟨1, 'a', 1‿2⟩
 
 # « & »
 !"shift: Lengths not matchable (⟨2⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 1‿2»↕3‿3
@@ -317,9 +318,9 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 
 
 # ⍟
-%USE tvar ⋄ a←¯5+↕10 ⋄ !¨ (⋈¨ 5+↕10)⊸≡¨ {1⊸+⍟𝕩 ⋈10}_tvar a
-%USE tvar ⋄ a←¯5+↕10 ⋄ !¨ (⋈¨ 5+↕10)⊸≡¨ {1+⍟𝕩 ⋈10}_tvar a
-%USE tvar ⋄ a←¯5+↕10 ⋄ !¨ (⋈¨ 5+↕10)⊸≡¨ {1+⍟(𝕩{!𝕩≡⋈10 ⋄ 𝕗}) ⋈10}_tvar a
+%USE eqvar ⋄ a←¯5+↕10 ⋄ {1⊸+⍟𝕩 ⋈10}_eqvar a %% ⋈¨ 5+↕10
+%USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟𝕩 ⋈10}_eqvar a %% ⋈¨ 5+↕10
+%USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟(𝕩{!𝕩≡⋈10 ⋄ 𝕗}) ⋈10}_eqvar a %% ⋈¨ 5+↕10
 
 # ◶
 !"◶: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
