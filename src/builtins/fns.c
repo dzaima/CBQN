@@ -283,10 +283,12 @@ B find_c2(B t, B w, B x) {
     emptyres:;
     Arr* ra = allZeroes(0);
     usz* rsh = arr_shAlloc(ra, xr);
-    usz* wsh=SH(w); usz* xsh=SH(x);
-    shcpy(rsh, xsh, xr-wr);
-    xsh+=xr-wr; rsh+=xr-wr;
-    PLAINLOOP for (ux i = 0; i < wr; i++) rsh[i] = wsh[i]>xsh[i]? 0 : xsh[i]-wsh[i]+1;
+    if (rsh) {
+      usz* wsh=SH(w); usz* xsh=SH(x);
+      shcpy(rsh, xsh, xr-wr);
+      xsh+=xr-wr; rsh+=xr-wr;
+      PLAINLOOP for (ux i = 0; i < wr; i++) rsh[i] = wsh[i]>xsh[i]? 0 : xsh[i]-wsh[i]+1;
+    }
     r = taga(ra);
     goto dec_ret;
   }
