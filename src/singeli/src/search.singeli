@@ -149,7 +149,7 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
   btab:= *i8~~tab
   def settab_sub{x, v, i} = {
     if (rval) store{*u8~~r0, u, x}
-    if (rind and v!=t) store{r0, x, cast_i{u32, i}}
+    if (rind and v!=t) store{r0, x, cast_i{usz, i}}
     u+= u8~~i8~~(t - v)  # u tracks the total of btab
     store{btab, x, t}
     v
