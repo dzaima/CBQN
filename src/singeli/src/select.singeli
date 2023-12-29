@@ -92,7 +92,7 @@ def makeperm{VI, VD, x0, logv} = {
   makeselx{[8]i32,VD,8, readx{logv, 0}, logv, sel{[8]i32, ...}}
 }
 
-fn select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
+fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   w:= *TI ~~ w0
   x:= *TD ~~ x0
   r:= *TD ~~ r0
@@ -127,9 +127,9 @@ fn select{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   }
   1
 }
-def select{TI, TD} = select{256, TI, TD}
+def select_fn{TI, TD} = select_fn{256, TI, TD}
 
-exportT{'avx2_select_tab', join{table{select,
+exportT{'avx2_select_tab', join{table{select_fn,
   tup{i8, i16, i32},        # indices
   tup{u8, u16, u32, u64}}}} # values
 
