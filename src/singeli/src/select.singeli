@@ -1,3 +1,5 @@
+if (hasarch{'AVX2'}) {
+
 include './base'
 include './cbqnDefs'
 include './mask'
@@ -161,3 +163,5 @@ fn avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   1
 }
 export{'avx2_select_bool128', avx2_select_bool128}
+
+}

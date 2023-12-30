@@ -1,4 +1,6 @@
 include './base'
+if (hasarch{'AVX2'} | hasarch{'AARCH64'}) {
+
 include './mask'
 include 'util/tup'
 def incl{a,b} = slice{iota{b+1},a}
@@ -219,3 +221,5 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
 }
 
 exportT{'simd_constrep', each{rep_const, tup{i8, i16, i32, u64}}}
+
+}
