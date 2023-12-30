@@ -1,0 +1,33 @@
+local {
+  def ismask{M} = if (isvec{M}) u1==eltype{M} else 0
+  def suf{T} = {
+    if (isfloat{T}) (if (width{T}==32) 'ps' else 'pd')
+    else merge{'epi', fmtnat{width{T}}}
+  }
+  def suf{V & isvec{V}} = suf{eltype{V}}
+  def pref{w} = merge{'_mm', if (w==128) '' else fmtnat{w}, '_'}
+  def pref{V & isvec{V}} = pref{width{V}}
+}
+
+local def re_mask{M, sub} = {
+  def l = vcount{M}; def w = max{32,l}
+  sub{fmtnat{l}, fmtnat{w}, ty_u{w}}
+}
+def reinterpret{M, a:T & ismask{M} & width{T}==width{M}} = {
+  re_mask{M, {l,w,W} => emit{M, merge{'_cvtu',w,'_mask',l}, promote{W, a}}}
+}
+def reinterpret{T, a:M & ismask{M} & width{T}==width{M}} = {
+  re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
+}
+
+def maskStore{p:*V, m:M, v:V & ismask{M} & isvec{V} & vcount{M}==vcount{V}} = {
+  emit{void, merge{pref{V}, 'mask_storeu_', suf{V}}, p, m, v}
+}
+
+def topMaskReg{x:V} = emit{[vcount{V}]u1, merge{pref{V},'mov',suf{V},'_mask'}, x}
+def topMask{x:T & isvec{T} & 512==width{T}} = ty_u{vcount{T}}~~topMaskReg{x}
+def homMask{x:T & isvec{T} & 512==width{T}} = topMask{x}
+
+def maskToHom{T, x:M & ismask{M} & isvec{T} & vcount{M}==vcount{T}} = {
+  emit{T, merge{pref{T},'movm_',suf{T}}, x}
+}
