@@ -166,7 +166,7 @@ def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
 def {
   absu,andAllZero,andnz,b_getBatch,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
-  loadLow,make,mulw,mulh,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
+  loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,unpackQ,vfold,widen,
   zip,zipHi,zipLo

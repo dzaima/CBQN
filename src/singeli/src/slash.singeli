@@ -2,6 +2,7 @@ include './base'
 if (hasarch{'X86_64'}) {
   if (hasarch{'PCLMUL'}) include './clmul'
   if (hasarch{'BMI2'}) include './bmi2'
+  if (hasarch{'AVX512F'}) include './avx512'
 }
 include './mask'
 include 'util/tup'
@@ -244,21 +245,19 @@ fn slash{c, T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64,
   def vl = 512/wt
   def V = [vl]T
   def X = getter{c, V, x}
-  def wu = max{32,vl}
+  def I = ty_u{vl}
   @for (w in *(ty_u{vl})~~w over cdiv{l,vl}) {
-    def I = ty_u{wu}
     def emitT{O, name, ...a} = emit{O, merge{'_mm512_',name,'_epi',f{wt}}, ...a}
-    def to_mask{a} = emit{[vl]u1, merge{'_cvtu',f{wu},'_mask',f{vl}}, a}
-    m := to_mask{promote{I,w}}
+    m := [vl]u1~~w
     c := popc{w}
     x := X{}
     # The compress-store instruction performs very poorly on Zen4,
     # and is also a lot worse than the following on Tiger Lake
     # emitT{void, 'mask_compressstoreu', r, m, x}
     cs := cast_i{I,promote{i64,1}<<(c%64) - 1}
-    if (wu==64) cs -= cast_i{I,c}>>6
+    if (vl==64) cs -= cast_i{I,c}>>6
     v := emitT{V, 'mask_compress', x, m, x}
-    emitT{void, 'mask_storeu', r, to_mask{cs}, v}
+    maskStore{*V~~r, [vl]u1~~cs, v}
     r += c
   }
 }
