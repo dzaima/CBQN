@@ -1,5 +1,8 @@
 include './base'
-include './clmul'
+if (hasarch{'X86_64'}) {
+  if (hasarch{'PCLMUL'}) include './clmul'
+  if (hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}) include './avx512'
+}
 include './mask'
 include './f64'
 include './scan_common'
@@ -77,7 +80,7 @@ fn scan_neq{}(p:u64, x:*u64, r:*u64, nw:u64) : void = {
     p = -(r>>63) # repeat sign bit
   }
 }
-fn clmul_scan_ne_any{..._ & hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
+fn clmul_scan_ne_any{& hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
@@ -98,8 +101,33 @@ fn clmul_scan_ne_any{..._ & hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words
     storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
   }
 }
-fn scan_neq{..._ & hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{& hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
   clmul_scan_ne_any{}(*void~~x, *void~~r, init, nw, -(u64~~1))
+}
+fn scan_neq{& hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+  def emitM{T,s,...a} = emit{T, merge{'_mm512_',s}, ...a}
+  def V = [8]u64
+  def sse{a} = make{[2]u64, a, 0}
+  carry := sse{init}
+  # xor-scan on bytes
+  xmat := V**base{256, 1<<(8-iota{8}) - 1}
+  def xor8 = emitM{V, 'gf2p8affine_epi64_epi8', ., xmat, 0}
+  # Exclusive xor-scan on one word
+  def exor64 = clmul{., sse{1<<64 - 2}, 0}
+  @for (xv in *V~~x, rv in *V~~r over i to cdiv{nw,vcount{V}}) {
+    x8 := xor8{xv}
+    hb := sse{u64~~emitM{[64]u1, 'movepi8_mask', x8}}
+    xh := exor64{hb}  # Exclusive xor of high bits
+    xc := xh ^ carry
+    v  := x8 ^ emitM{V, 'movm_epi8', [64]u1~~extract{xc,0}}
+    carry = (xc ^ hb) ^ shuf{[4]u32, xh, 4b3232}
+    rem:= nw - 8*i
+    if (rem < 8) {
+      emitM{void, 'mask_storeu_epi64', *V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
+      return{}
+    }
+    rv = v
+  }
 }
 export{'si_scan_ne', scan_neq{}}
 

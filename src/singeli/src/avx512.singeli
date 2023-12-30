@@ -1,0 +1,11 @@
+local def re_mask{M, sub} = {
+  def l = vcount{M}; def w = max{32,l}
+  sub{fmtnat{l}, fmtnat{w}, ty_u{w}}
+}
+local def ismask{M} = if (isvec{M}) u1==eltype{M} else 0
+def reinterpret{M, a:T & ismask{M} & width{T}==width{M}} = {
+  re_mask{M, {l,w,W} => emit{M, merge{'_cvtu',w,'_mask',l}, promote{W, a}}}
+}
+def reinterpret{T, a:M & ismask{M} & width{T}==width{M}} = {
+  re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
+}
