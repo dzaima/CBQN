@@ -2,7 +2,7 @@
 
 // Transpose
 // One length-2 axis: dedicated code
-//   Boolean: pdep for height 2; pext for width 2
+//   Boolean: pdep or emulation for height 2; pext for width 2
 //     SHOULD use a generic implementation if BMI2 not present
 // SHOULD optimize other short lengths with pdep/pext and shuffles
 // Boolean 𝕩: convert to integer
@@ -40,6 +40,9 @@
 #include "../utils/calls.h"
 
 #ifdef __BMI2__
+  #if !SLOW_PDEP
+    #define FAST_PDEP 1
+  #endif
   #include <immintrin.h>
   #if USE_VALGRIND
     #define _pdep_u64 vg_pdep_u64
@@ -66,12 +69,27 @@ typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
 #endif
 
 
-#ifdef __BMI2__
 static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
   u32* x0 = (u32*)x0v; u32* x1 = (u32*)x1v;
-  for (usz i=0; i<BIT_N(n); i++) rp[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+  for (usz i=0; i<BIT_N(n); i++) {
+    #if FAST_PDEP
+    rp[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+    #else
+    #define STEP(V,M,SH) V = (V | V<<SH) & M;
+    #define EXPAND(V) \
+      STEP(V, 0x0000ffff0000ffff, 16) \
+      STEP(V, 0x00ff00ff00ff00ff,  8) \
+      STEP(V, 0x0f0f0f0f0f0f0f0f,  4) \
+      STEP(V, 0x3333333333333333,  2) \
+      STEP(V, 0x5555555555555555,  1)
+    u64 e0 = x0[i]; EXPAND(e0);
+    u64 e1 = x1[i]; EXPAND(e1);
+    rp[i] = e0 | e1<<1;
+    #undef EXPAND
+    #undef STEP
+    #endif
+  }
 }
-#endif
 
 // Interleave arrays, 𝕨≍⎉(-xk)𝕩. Doesn't consume.
 // Return bi_N if there isn't fast code.
@@ -84,12 +102,10 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   usz n = shProd(xsh, 0, xk);
   usz ia = 2*n*csz;
   Arr *r;
-  #ifdef __BMI2__
   if (csz==1 && xlw==0) {
     u64* rp; r=m_bitarrp(&rp, ia);
     interleave_bits(rp, bitarr_ptr(w), bitarr_ptr(x), ia);
   } else
-  #endif
   #if SINGELI
   if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
     void* rv;
@@ -125,12 +141,12 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
     
     r=a(qWithFill(p.b, xf));
   } else if (xe==el_bit) {
-    #ifdef __BMI2__
     if (h==2) {
       u64* rp; r=m_bitarrp(&rp, ia);
       Arr* x1o = TI(x,slice)(inc(x),w,w);
       interleave_bits(rp, bitarr_ptr(x), ((TyArr*)x1o)->a, ia);
       mm_free((Value*)x1o);
+    #ifdef __BMI2__
     } else if (w==2) {
       u64* xp = bitarr_ptr(x);
       u64* r0; r=m_bitarrp(&r0, ia);
@@ -142,9 +158,8 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
       }
       bit_cpyN(r0, h, r1, 0, h);
       TFREE(r1);
-    } else
     #endif
-    {
+    } else {
       *px = x = taga(cpyI8Arr(x)); xe=el_i8;
       void* rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
       void* xv = tyany_ptr(x);
