@@ -5,6 +5,7 @@ include 'util/kind'
 
 def ux = u64
 config usz = u32
+config SLOW_PDEP = 0
 
 def same = is
 oper ~~ reinterpret infix right 55
@@ -157,6 +158,7 @@ def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
 # vector definitions
 def arch_defvw = if (hasarch{'AVX2'}) 256 else 128
 def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
+def fast_BMI2{} = if (SLOW_PDEP) 0 else hasarch{'BMI2'}
 
 # test if vector has a specific width & element type
 def lvec{T, n, w} = 0

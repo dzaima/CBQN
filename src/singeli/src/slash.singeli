@@ -359,9 +359,9 @@ def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   tup{x, @collect (j to 2) popc{extract{m0,j}}}
 }
 
-def pext_width {& hasarch{'BMI2'}} = 1
-def thresh_bool{& hasarch{'BMI2'}} = 512
-def pext_popc{x:T, m:T & hasarch{'BMI2'} & T==u64} = tup{pext{x, m}, popc{m}}
+def pext_width {& fast_BMI2{}} = 1
+def thresh_bool{& fast_BMI2{}} = 512
+def pext_popc{x:T, m:T & fast_BMI2{} & T==u64} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
   cw:u64 = 0; # current word
