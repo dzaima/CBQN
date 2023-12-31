@@ -66,6 +66,44 @@ typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
 #endif
 
 
+#ifdef __BMI2__
+static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
+  u32* x0 = (u32*)x0v; u32* x1 = (u32*)x1v;
+  for (usz i=0; i<BIT_N(n); i++) rp[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+}
+#endif
+
+// Interleave arrays, 𝕨≍⎉(-xk)𝕩. Doesn't consume.
+// Return bi_N if there isn't fast code.
+B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
+  assert(RNK(w)==xr && xr>=1);
+  u8 xe = TI(x,elType); if (xe!=TI(w,elType) || xe==el_B) return bi_N;
+  usz csz = shProd(xsh, xk, xr);
+  if (csz & (csz-1)) return bi_N; // Not power of 2
+  u8 xlw = elwBitLog(xe);
+  usz n = shProd(xsh, 0, xk);
+  usz ia = 2*n*csz;
+  Arr *r;
+  #ifdef __BMI2__
+  if (csz==1 && xlw==0) {
+    u64* rp; r=m_bitarrp(&rp, ia);
+    interleave_bits(rp, bitarr_ptr(w), bitarr_ptr(x), ia);
+  } else
+  #endif
+  #if SINGELI
+  if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
+    void* rv;
+    if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
+    else rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
+    si_interleave[CTZ(csz<<xlw)-3](rv, tyany_ptr(w), tyany_ptr(x), n);
+  } else
+  #endif
+  return bi_N;
+  usz* sh = arr_shAlloc(r, xr+1);
+  shcpy(sh, xsh, xk); sh[xk]=2; shcpy(sh+xk+1, xsh+xk, xr-xk);
+  return taga(r);
+}
+
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);
   transposeFns[elwByteLog(xe)](rv, xv, w, h, w, h);
@@ -89,11 +127,9 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
   } else if (xe==el_bit) {
     #ifdef __BMI2__
     if (h==2) {
-      u32* x0 = (u32*)bitarr_ptr(x);
       u64* rp; r=m_bitarrp(&rp, ia);
       Arr* x1o = TI(x,slice)(inc(x),w,w);
-      u32* x1 = (u32*) ((TyArr*)x1o)->a;
-      for (usz i=0; i<BIT_N(ia); i++) rp[i] = _pdep_u64(x0[i], 0x5555555555555555) | _pdep_u64(x1[i], 0xAAAAAAAAAAAAAAAA);
+      interleave_bits(rp, bitarr_ptr(x), ((TyArr*)x1o)->a, ia);
       mm_free((Value*)x1o);
     } else if (w==2) {
       u64* xp = bitarr_ptr(x);
