@@ -95,7 +95,7 @@ static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
 // Return bi_N if there isn't fast code.
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   assert(RNK(w)==xr && xr>=1);
-  u8 xe = TI(x,elType); if (xe!=TI(w,elType) || xe==el_B) return bi_N;
+  u8 xe = TI(x,elType); if (xe!=TI(w,elType)) return bi_N;
   usz csz = shProd(xsh, xk, xr);
   if (csz & (csz-1)) return bi_N; // Not power of 2
   u8 xlw = elwBitLog(xe);
@@ -107,7 +107,17 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
     interleave_bits(rp, bitarr_ptr(w), bitarr_ptr(x), ia);
   } else
   #if SINGELI
-  if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
+  if (csz==1 && xe==el_B) {
+    B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
+    HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
+    si_interleave[3](p.a, wp, xp, n);
+    for (usz i=0; i<ia; i++) inc(p.a[i]);
+    NOGC_E;
+    B rb = p.b;
+    if (SFNS_FILLS) rb = qWithFill(rb, fill_both(w, x));
+    r = a(rb);
+  } else if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
+    assert(xe!=el_B);
     void* rv;
     if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
     else rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
