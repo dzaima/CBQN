@@ -661,7 +661,7 @@ cachedBin‿linkerCache ← {
     "xag"‿"src/builtins/scan.c"‿"scan",       "xa."‿"src/builtins/fold.c"‿"fold",
     "xag"‿"src/builtins/sort.c"‿"bins"
     
-    "x.."‿"src/builtins/select.c"‿"select",   "xa."‿"src/builtins/slash.c"‿"constrep",
+    "x.."‿"src/builtins/select.c"‿"select",   "xag"‿"src/builtins/slash.c"‿"constrep",
     "xag"‿"src/builtins/slash.c"‿"slash",     "xa."‿"src/builtins/slash.c"‿"count"
   ⟩
   objs ← ⟨⟩
