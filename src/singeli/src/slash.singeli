@@ -339,8 +339,8 @@ def pext_popc{x:T, m:T} = {
   tup{pe, scal{w} - z}
 }
 
-def pext_width {..._ & hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
-def thresh_bool{..._ & hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 32
+def pext_width {& hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
+def thresh_bool{& hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 32
 def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   def clmul{a, b} = zipLo{...@collect (j to 2) clmul{a,b,j}}
   m := m0
@@ -359,8 +359,8 @@ def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   tup{x, @collect (j to 2) popc{extract{m0,j}}}
 }
 
-def pext_width {..._ & hasarch{'BMI2'}} = 1
-def thresh_bool{..._ & hasarch{'BMI2'}} = 512
+def pext_width {& hasarch{'BMI2'}} = 1
+def thresh_bool{& hasarch{'BMI2'}} = 512
 def pext_popc{x:T, m:T & hasarch{'BMI2'} & T==u64} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
