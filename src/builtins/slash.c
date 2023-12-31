@@ -92,7 +92,7 @@
   extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
   #define SINGELI_FILE slash
   #include "../utils/includeSingeli.h"
-  #define SINGELI_FILE constrep
+  #define SINGELI_FILE replicate
   #include "../utils/includeSingeli.h"
 #endif
 
