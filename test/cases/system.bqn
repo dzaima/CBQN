@@ -124,12 +124,12 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !¨ 0≤{𝕏 "testfile.bqn"}¨ •file.Created‿•file.Accessed‿•file.Modified
 •file.Size "testfile.bqn" %% 11
 
-•FBytes¨ "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"
+•FBytes¨ "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn" %% ∾⟜(@+10)⌾(2⊸⊑) 3⥊< •ToUTF8 "abc"∾(@+10)∾"def𝕩"
 •FChars "testfile.bqn" %% "abc"∾(@+10)∾"def𝕩"
 •FBytes "testfile.bqn" %% @+97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169
 •FLines "testfile.bqn" %% "abc"‿"def𝕩"
 
-"testfile3B.bqn" •file.Rename "testfile3.bqn"
+•file.Name "testfile3B.bqn" •file.Rename "testfile3.bqn" %% "testfile3B.bqn"
 !"•file.Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
