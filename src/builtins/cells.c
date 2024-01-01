@@ -9,6 +9,7 @@ B shape_c2(B, B, B);
 B transp_c2(B, B, B);
 B fold_rows(Md1D* d, B x); // from fold.c
 B takedrop_highrank(bool take, B w, B x); // from sfns.c
+B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
 // X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
 #define S_KSLICES(X, XSH, K, SLN, DX)\
@@ -608,6 +609,10 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
         usz* rsh = arr_shAlloc(r, zk);
         if (rsh) shcpy(rsh, zsh, zk);
         decG(w); decG(x); return taga(r);
+      }
+      if (rtid==n_couple && wr==xr) {
+        B r = try_interleave_cells(w, x, xr, xk, xsh);
+        if (!q_N(r)) { decG(w); decG(x); return r; }
       }
     }
     if (isPervasiveDy(f)) {

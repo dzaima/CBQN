@@ -86,32 +86,19 @@
 #endif
 
 #if SINGELI
+  extern void (*const si_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
+  extern void (*const si_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
+  extern void (*const si_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
+  extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
   #define SINGELI_FILE slash
   #include "../utils/includeSingeli.h"
-#endif
-
-#if SINGELI_AVX2 || SINGELI_NEON
-  #define SINGELI_FILE constrep
+  #define SINGELI_FILE replicate
   #include "../utils/includeSingeli.h"
 #endif
 
 #if SINGELI_SIMD
   #define SINGELI_FILE count
   #include "../utils/includeSingeli.h"
-#endif
-
-#if SINGELI
-  extern void (*const si_scan_pluswrap_u8)(uint8_t* v0,uint8_t* v1,uint64_t v2,uint8_t v3);
-  extern void (*const si_scan_pluswrap_u16)(uint16_t* v0,uint16_t* v1,uint64_t v2,uint16_t v3);
-  extern void (*const si_scan_pluswrap_u32)(uint32_t* v0,uint32_t* v1,uint64_t v2,uint32_t v3);
-  #define ALIAS(I,U) static void si_scan_pluswrap_##I(I* a, I* b, u64 c, I d) { si_scan_pluswrap_##U((U*)a, (U*)b, c, d); }
-  ALIAS(i8,u8) ALIAS(i16,u16) ALIAS(i32,u32)
-  #undef ALIAS
-  #define si_scan_pluswrap_u64(V0,V1,V2,V3) for (usz i=k; i<e; i++) js=rp[i]+=js;
-  #define PLUS_SCAN(T) si_scan_pluswrap_##T(rp+k,rp+k,e-k,js); js=rp[e-1];
-  extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
-#else
-  #define PLUS_SCAN(T) for (usz i=k; i<e; i++) js=rp[i]+=js;
 #endif
 
 // Dense Where, still significantly worse than SIMD
@@ -537,32 +524,6 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   return r;
 }
 
-// Replicate using plus/max/xor-scan
-#define SCAN_CORE(WV, UPD, SET, SCAN) \
-  usz b = 1<<10;                       \
-  for (usz k=0, j=0, ij=WV; ; ) {      \
-    usz e = b<s-k? k+b : s;            \
-    for (usz i=k; i<e; i++) rp[i]=0;   \
-    SET;                               \
-    while (ij<e) { j++; UPD; ij+=WV; } \
-    SCAN;                              \
-    if (e==s) {break;}  k=e;           \
-  }
-#define SUM_CORE(T, WV, PREP, INC) \
-  SCAN_CORE(WV, PREP; rp[ij]+=INC, , PLUS_SCAN(T))
-
-#if SINGELI_AVX2
-  #define IND_BY_SCAN \
-    SCAN_CORE(xp[j], rp[ij]=j, rp[k]=j, si_scan_max_i32(rp+k,rp+k,e-k))
-#else
-  #define IND_BY_SCAN usz js=0; SUM_CORE(i32, xp[j], , 1)
-#endif
-
-#define REP_BY_SCAN(T, WV) \
-  T* xp = xv; T* rp = rv;                 \
-  T js=xp[0], px=js;                      \
-  SUM_CORE(T, WV, T sx=px, (px=xp[j])-sx)
-
 #define BOOL_REP_XOR_SCAN(WV) \
   usz b = 1<<12;                                       \
   u64 xx=xp[0], xs=xx>>63, js=-(xx&1); xx^=xx<<1;      \
@@ -622,14 +583,13 @@ B slash_c1(B t, B x) {
       for (u64 j = 0; j < c; j++) *rp++ = i;
     }
   } else {
+    #if SINGELI
     if (s/32 <= xia) { // Sparse case: type of x matters
-      #define SPARSE_IND(T) T* xp = T##any_ptr(x); IND_BY_SCAN
       i32* rp; r = m_i32arrv(&rp, s);
-      if      (xe == el_i8 ) { SPARSE_IND(i8 ); }
-      else if (xe == el_i16) { SPARSE_IND(i16); }
-      else                   { SPARSE_IND(i32); }
-      #undef SPARSE_IND
-    } else { // Dense case: only result type matters
+      si_indices_scan_i32[elwByteLog(xe)](tyany_ptr(x), rp, s);
+    } else
+    #endif
+    { // Dense case: only result type matters
       #define DENSE_IND(T) \
         T* rp; r = m_##T##arrv(&rp, s);          \
         for (u64 i = 0; i < xia; i++) {          \
@@ -748,17 +708,12 @@ B slash_c2(B t, B w, B x) {
       void* rv = m_tyarrlv(&r, xk, s, xt);
       if (rsh) { Arr* ra=a(r); SPRNK(ra,xr); ra->sh = rsh; ra->ia = s*arr_csz(x); }
       void* xv = tyany_ptr(x);
+      #if SINGELI
       if ((xk<3? s/64 : s/32) <= wia) { // Sparse case: use both types
-        #define CASE(L,XT) case L: { REP_BY_SCAN(XT, wp[j]) break; }
-        #define SPARSE_REP(WT) \
-          WT* wp = WT##any_ptr(w);                \
-          switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
-        if      (we == el_i8 ) { SPARSE_REP(i8 ); }
-        else if (we == el_i16) { SPARSE_REP(i16); }
-        else                   { SPARSE_REP(i32); }
-        #undef SPARSE_REP
-        #undef CASE
-      } else { // Dense case: only type of x matters
+        si_replicate_scan[4*elwByteLog(we) + xk](tyany_ptr(w), xv, rv, s);
+      } else
+      #endif
+      { // Dense case: only type of x matters
         #define CASE(L,T) case L: { \
           T* xp = xv; T* rp = rv;                    \
           for (usz i = 0; i < wia; i++) {            \
@@ -845,13 +800,18 @@ B slash_c2(B t, B w, B x) {
       u8 xk = xl-3;
       void* rv = m_tyarrv(&r, 1<<xk, s, xt);
       void* xv = tyany_ptr(x);
-      #if SINGELI_AVX2 || SINGELI_NEON
-      simd_constrep[xk](wv, xv, rv, xlen);
+      #if SINGELI
+      si_constrep[xk](wv, xv, rv, xlen);
       #else
-      #define CASE(L,T) case L: { REP_BY_SCAN(T, wv) break; }
+      #define CASE(L,T) case L: {                       \
+          T* xp = xv; T* rp = rv;                       \
+          for (usz i = 0; i < xlen; i++) {              \
+            for (i64 j = 0; j < wv; j++) *rp++ = xp[i]; \
+          }                                             \
+        } break;
       switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
-      #endif
       #undef CASE
+      #endif
     }
     
     atmW_maybesh:;

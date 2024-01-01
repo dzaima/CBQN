@@ -659,10 +659,10 @@ cachedBin‿linkerCache ← {
     "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
     "xag"‿"src/builtins/search.c"‿"search",   "xag"‿"src/builtins/selfsearch.c"‿"selfsearch"
     "xag"‿"src/builtins/scan.c"‿"scan",       "xa."‿"src/builtins/fold.c"‿"fold",
-    "xag"‿"src/builtins/sort.c"‿"bins"
+    "xag"‿"src/builtins/slash.c"‿"slash",     "xag"‿"src/builtins/slash.c"‿"replicate",
+    "xag"‿"src/builtins/sort.c"‿"bins",       "xa."‿"src/builtins/slash.c"‿"count"
     
-    "x.."‿"src/builtins/select.c"‿"select",   "xa."‿"src/builtins/slash.c"‿"constrep",
-    "xag"‿"src/builtins/slash.c"‿"slash",     "xa."‿"src/builtins/slash.c"‿"count"
+    "x.."‿"src/builtins/select.c"‿"select"
   ⟩
   objs ← ⟨⟩
   
@@ -694,10 +694,12 @@ cachedBin‿linkerCache ← {
       •file.Name ga, ⟨⟩
     ⟩
     
-    singeliArgs ← po.singeliFlags∾⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩∾{
-      po.native? ⟨⟩;
-      "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch
-    }
+    singeliArgs ← ∾⟨
+      po.singeliFlags
+      ⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩
+      (⊑"slow-pdep"<⊸∊po.has)/⟨"-c", "SLOW_PDEP=1"⟩
+      {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
+    ⟩
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     {𝕊: "Singeli-required C args: "∾•Repr po.siCFlags; @} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap

@@ -150,6 +150,14 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
   }
 }
 
+# Interleave n values of type T from x0 and x1 into r
+fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
+  rp := *T~~r0
+  @for (x0 in *T~~x0, x1 in *T~~x1 over i to n) {
+    store{rp, i*2, x0}; store{rp, i*2+1, x1}
+  }
+}
+
 fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : void = {
   # Scalar transpose defined in C
   def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
@@ -160,7 +168,7 @@ fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : void 
   if (hasarch{'AVX2'} and w>=k and h>=k) {
     transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
   } else {
-    if      (h==2 and h==hs) @for (x0 in xp, x1 in xp+ws over i to w) { store{rp, i*2, x0}; store{rp, i*2+1, x1} }
+    if      (h==2 and h==hs) interleave{T}(r0, x0, *void~~(xp+ws), w)
     else if (w==2 and w==ws) @for (r0 in rp, r1 in rp+hs over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
     else call_base{rp, xp, w, h}
   }
@@ -174,3 +182,5 @@ exportT{'simd_transpose', tup{
   transpose{i32, 8},
   transpose{i64, 4}
 }}
+
+exportT{'si_interleave', each{interleave, tup{i8, i16, i32, i64}}}

@@ -1,8 +1,72 @@
 include './base'
-if (hasarch{'AVX2'} | hasarch{'AARCH64'}) {
-
 include './mask'
 include 'util/tup'
+
+def ind_types = tup{i8, i16, i32}
+def dat_types = tup{...ind_types, u64}
+
+# Indices and Replicate using plus- or max-scan
+def scan_core{upd, set, scan, rp:pT, wp:W, s:(usz)} = {
+  def getw{j} = if (isptr{W}) cast_i{usz,load{wp,j}} else wp
+  b:usz = 1<<10
+  k:usz = 0; j:usz = 0; ij:=getw{j}
+  while (1) {
+    e := tern{b<s-k, k+b, s}
+    @for (rp over i from k to e) rp = 0
+    if (set) store{rp, k, cast_i{eltype{pT},j}}
+    while (ij<e) { ++j; upd{rp, j, ij}; ij+=getw{j} }
+    scan{rp+k, e-k}
+    if (e==s) return{}
+    k = e
+  }
+}
+def indrep_by_sum{T, rp:*T, wp, s:(usz), js, inc} = {
+  def scan{ptr, len} = @for (ptr over len) js=ptr+=js
+  def scan{ptr, len & width{T}<=32} = {
+    def scanfn = merge{'si_scan_pluswrap_u',fmtnat{width{T}}}
+    p := *ty_u{eltype{type{ptr}}}~~ptr
+    emit{void, scanfn, p, p, len, js}; js=load{ptr,len-1}
+  }
+  def upd{rp, j, ij} = store{rp, ij, load{rp,ij}+inc{j}}
+  scan_core{upd, 0, scan, rp, wp, s}
+}
+
+fn ind_by_scan_i32{W}(xv:*void, rp:*i32, s:usz) : void = {
+  xp := *W~~xv
+  if (hasarch{'X86_64'} & ~hasarch{'SSE4.1'}) { # no min instruction
+    js:i32 = 0
+    indrep_by_sum{i32, rp, xp, s, js, {j}=>1}
+  } else {
+    scan_core{
+      {rp,j,ij} => store{rp,ij,cast_i{i32,j}}, 1,
+      {ptr,len} => emit{void, 'si_scan_max_i32', ptr,ptr,len},
+      rp, xp, s
+    }
+  }
+}
+
+def rep_by_scan{T, wp, xv:*void, rv:*void, s} = {
+  xp := *T~~xv; js := *xp; px := js
+  def inc{j} = {sx:=px; px=load{xp,j}; px-sx}
+  indrep_by_sum{T, *T~~rv, wp, s, js, inc}
+}
+fn rep_by_scan{W, T}(wp:*void, xv:*void, rv:*void, s:usz) : void = {
+  rep_by_scan{T, *W~~wp, xv, rv, s}
+}
+
+exportT{'si_indices_scan_i32', each{ind_by_scan_i32, ind_types}}
+exportT{'si_replicate_scan', flat_table{rep_by_scan, ind_types, dat_types}}
+
+
+# Constant replicate
+if (not (hasarch{'AVX2'} | hasarch{'AARCH64'})) {
+
+fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
+  rep_by_scan{T, cast_i{usz,wv}, x, r, cast_i{usz, wv*n}}
+}
+
+} else {
+
 def incl{a,b} = slice{iota{b+1},a}
 
 # 1+˝∨`⌾⌽0=div|⌜range
@@ -220,6 +284,6 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   }
 }
 
-exportT{'simd_constrep', each{rep_const, tup{i8, i16, i32, u64}}}
-
 }
+
+exportT{'si_constrep', each{rep_const, dat_types}}
