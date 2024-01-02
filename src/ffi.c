@@ -900,16 +900,14 @@ B libffiFn_c2(B t, B w, B x) {
     if (resSingle) {
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
-        if (e.mutates) r = c;
+        if (e.mutates) r = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
       }
     } else {
       M_HARR(ra, mutArgs+(resVoid? 0 : 1));
       if (!resVoid) HARR_ADDA(ra, r);
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
-        if (e.mutates) HARR_ADDA(ra, c);
+        if (e.mutates) HARR_ADDA(ra, buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos));
       }
       r = HARR_FV(ra);
     }
