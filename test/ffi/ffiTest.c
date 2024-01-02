@@ -291,3 +291,32 @@ void arrstruct2Inc(ArrStruct2* b) {
     b[i].c[2]++;
   }
 }
+
+int32_t callWithinMutated(BQNV v, int32_t* data) {
+  data[3] = 30;
+  BQNV r = bqn_call1(v, v);
+  bqn_free(v);
+  bqn_free(r);
+  return 123;
+}
+
+typedef struct {
+  float a0_0;
+  int8_t* a0_1;
+  int8_t a0_2[5];
+} ManyArgs0;
+
+void manyargs(ManyArgs0 a0, int8_t (*a1)[7], int8_t a2[4], int8_t* mut) {
+  mut++;
+  *mut++ = (int8_t) a0.a0_0;
+  *mut++ = a0.a0_1[0];
+  *mut++ = a0.a0_1[9];
+  *mut++ = a0.a0_2[0];
+  *mut++ = a0.a0_2[4];
+  *mut++ = a1[0][0];
+  *mut++ = a1[0][6];
+  *mut++ = a1[1][0];
+  *mut++ = a1[1][6];
+  *mut++ = a2[0];
+  *mut++ = a2[3];
+}

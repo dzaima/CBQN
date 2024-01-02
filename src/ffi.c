@@ -558,8 +558,6 @@ static usz ffiTmpAlign(usz n) {
   return n;
 }
 
-static B ffiObjs;
-
 static NOINLINE B toW(u8 reT, u8 reW, B x) {
   switch(reW) { default: UD;
     case 0:               ffi_checkRange(x, 2, "u1", 0, 1);              return taga(toBitArr(x)); break;
@@ -615,6 +613,7 @@ NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m
 NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
 
+static B ffiObjsGlobal;
 void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
@@ -660,7 +659,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
           case sty_f32: ffi_checkRange(c, mut, "f64", 0, 0);             cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
         }
         
-        ffiObjs = vec_addN(ffiObjs, cG);
+        ffiObjsGlobal = vec_addN(ffiObjsGlobal, cG);
         *(void**)ptr = tyany_ptr(cG);
       } else { // *{...} / &{...} / *[n]any
         BQNFFIType* t2 = c(BQNFFIType, e);
@@ -674,7 +673,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
         SGetU(c)
         for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), anyMut, dataStruct + elSz*i);
         *(void**)ptr = dataStruct;
-        ffiObjs = vec_addN(ffiObjs, tag(TOBJ(dataAll), OBJ_TAG));
+        ffiObjsGlobal = vec_addN(ffiObjsGlobal, tag(TOBJ(dataAll), OBJ_TAG));
       }
     } else if (t->ty==cty_repr) { // any:any
       B o2 = t->a[0].o;
@@ -712,7 +711,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
           cG = taga(cGp);
         } else cG = toW(reT, reW, c);
         *(void**)ptr = tyany_ptr(cG);
-        ffiObjs = vec_addN(ffiObjs, cG);
+        ffiObjsGlobal = vec_addN(ffiObjsGlobal, cG);
       }
     } else if (t->ty==cty_struct || t->ty==cty_starr) {
       if (!isArr(c)) thrM("FFI: Expected array corresponding to a struct");
@@ -826,8 +825,6 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
 }
 
 B libffiFn_c2(B t, B w, B x) {
-  ffiObjs = emptyHVec();
-  
   BoundFn* bf = c(BoundFn,t);
   B argObj = c(HArr,bf->obj)->a[0];
   
@@ -859,6 +856,7 @@ B libffiFn_c2(B t, B w, B x) {
   usz argn = cif->nargs;
   
   BQNFFIEnt* ents = c(BQNFFIType,argObj)->a;
+  ffiObjsGlobal = emptyHVec(); // implicit parameter to genObj
   for (usz i = 0; i < argn; i++) {
     BQNFFIEnt e = ents[i+1];
     B o;
@@ -869,6 +867,7 @@ B libffiFn_c2(B t, B w, B x) {
     }
     genObj(e.o, o, e.extra2, tmpAlloc + e.staticOffset);
   }
+  B ffiObjs = ffiObjsGlobal; // load the global before ffi_call to prevent issues on recursive calls
   
   for (usz i = 0; i < argn; i++) argPtrs[i] = tmpAlloc + ents[i+1].staticOffset;
   void* res = tmpAlloc + ents[0].staticOffset;
@@ -923,7 +922,7 @@ B libffiFn_c2(B t, B w, B x) {
     assert(objPos == IA(ffiObjs));
   }
   
-  dec(w); dec(x); dec(ffiObjs);
+  dec(w); dec(x); decG(ffiObjs);
   return r;
 }
 B libffiFn_c1(B t, B x) { return libffiFn_c2(t, bi_N, x); }

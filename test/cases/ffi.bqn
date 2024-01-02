@@ -174,7 +174,3 @@
 
 # unchecked stuff
 # !"FFI: Bad array corresponding to ""i64:c8"": expected 8 elements, got 1" % f←@•FFI""‿"bqn_init"‿">i64:c8" ⋄ F 8⥊2
-
-# TODO test somewhere with appropriate signatures
-# f←@•FFI"&"‿"foo"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ F ⟨⟨1.2, ↕10, ↕5⟩, ⟨↕7, ↕7⟩, ↕4, ⟨123⟩⟩ %% ⟨123⟩
-# f←@•FFI ""‿"foo"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ F ⟨⟨1.2, ↕10, ↕5⟩, ⟨↕7, ↕7⟩, ↕4, ⟨123⟩⟩ %% ⟨⟨123⟩⟩
