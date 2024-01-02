@@ -780,7 +780,7 @@ B readAny(BQNFFIEnt e, u8* ptr) {
 B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
   if (isC32(ent.o)) return m_f64(0); // scalar
   BQNFFIType* t = c(BQNFFIType, ent.o);
-  if (t->ty==cty_ptr) { // *any / &any
+  if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any
     B e = t->a[0].o;
     B f = objs[(*objPos)++];
     if (t->a[0].mutPtr) {
@@ -815,7 +815,14 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     B f = objs[(*objPos)++];
     if (!t2->a[0].mutPtr) return m_f64(0);
     return inc(f);
-  } else thrM("FFI: Unimplemented type (buildObj)");
+  } else if (t->ty==cty_struct || t->ty==cty_starr) {
+    assert(!anyMut); // Structs currently cannot contain mutable references
+    
+    usz ia = t->ia-1;
+    for (usz i = 0; i < ia; i++) buildObj(t->a[i], false, objs, objPos); // just to forward objPos
+    
+    return m_f64(0);
+  } else thrF("FFI: Unimplemented type (buildObj: %i)", (i32)t->ty);
 }
 
 B libffiFn_c2(B t, B w, B x) {
@@ -900,17 +907,20 @@ B libffiFn_c2(B t, B w, B x) {
     if (resSingle) {
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        if (e.mutates) r = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
+        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
+        if (e.mutates) r = c;
       }
     } else {
       M_HARR(ra, mutArgs+(resVoid? 0 : 1));
       if (!resVoid) HARR_ADDA(ra, r);
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        if (e.mutates) HARR_ADDA(ra, buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos));
+        B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
+        if (e.mutates) HARR_ADDA(ra, c);
       }
       r = HARR_FV(ra);
     }
+    assert(objPos == IA(ffiObjs));
   }
   
   dec(w); dec(x); dec(ffiObjs);
