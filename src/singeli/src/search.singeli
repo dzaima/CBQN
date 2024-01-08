@@ -229,6 +229,8 @@ def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
     }
     setlabel{done}
   }
+  # When u==0 isn't immediately tested, first result can be overwritten
+  if (rval) store{*u8~~r0, 0, load{*u8~~x0}}
   u
 }
 
