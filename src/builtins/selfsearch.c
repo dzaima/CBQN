@@ -12,6 +12,8 @@
 //   Branchless, not vectorized (+´∧` structure for ⊐)
 //   COULD use direct all-pairs filter, not ∊⊸/, for short ⍷
 // Full-size table lookups for 1- and 2-byte 𝕩
+//   1-byte ∊ and ⍷, and ⊐ via ⍷⊸⊐: SSSE3/AVX2 table
+//     TRIED dedicated table constructor for ⊐, no significant speedup
 //   2-byte table can be "sparse" initialized with an extra pass over 𝕩
 //   4-byte ⊐ can use a small-range lookup table
 //   COULD add small-range 4-byte tables for ∊ and ⊒
@@ -39,6 +41,7 @@ extern B slash_c2(B, B, B);
 extern B ud_c1(B, B);
 extern B sub_c2(B, B, B);
 extern B mul_c2(B, B, B);
+extern B indexOf_c2(B, B, B);
 extern B scan_add_bool(B x, u64 ia);
 extern B scan_max_num(B x, u8 xe, u64 ia);
 
@@ -353,6 +356,7 @@ B count_c1(B t, B x) {
 static B reduceI32WidthBelow(B r, usz after) {
   return after<=2? taga(cpyBitArr(r)) : after<=I8_MAX+1? taga(cpyI8Arr(r)) : after<=I16_MAX+1? taga(cpyI16Arr(r)) : r;
 }
+B find_c1(B, B);
 
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
@@ -398,7 +402,17 @@ B indexOf_c1(B t, B x) {
     DOTAB(u##T)                                                \
     decG(x); TFREE(tab);                                       \
     return reduceI32WidthBelow(r, u)
-  if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
+  if (lw==3) {
+    if (n<12) { BRUTE(8); }
+    // If bit-table Mark Firsts is available
+    #if SINGELI && defined(__SSSE3__)
+    else if (n > 1<<12) {
+      B u = C1(find, incG(x));
+      return C2(indexOf, u, x);
+    }
+    #endif
+    else { LOOKUP(8); }
+  }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
 
