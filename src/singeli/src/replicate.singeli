@@ -144,7 +144,7 @@ def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = { # onreps{inputVect
     }}
     setlabel{end}
     q := nr & (step-1)
-    if (q) homMaskStoreF{rv+e, maskOf{V, q}, s}
+    if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, s}
   }
 }
 
@@ -219,7 +219,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   setlabel{end}
   
   q := (re+step) - r
-  if (q) homMaskStoreF{*V~~r, maskOf{V, q}, s}
+  if (q!=0) homMaskStoreF{*V~~r, maskOf{V, q}, s}
 }
 
 

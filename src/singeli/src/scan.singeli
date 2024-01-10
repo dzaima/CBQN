@@ -21,7 +21,7 @@ def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
   e:= len/step
   @for (xv, rv over e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
+  if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
 }
 def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
   def last{v, p} = op{pre{v}, p}
@@ -97,7 +97,7 @@ fn clmul_scan_ne_any{& hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64,
   @for (rv, xv over e) {
     rv = apply{zipLo, (@collect (j to 2) xor64{xv, j, c})}
   }
-  if (words & 1) {
+  if ((words & 1) == 1) {
     storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
   }
 }
