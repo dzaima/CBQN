@@ -97,8 +97,8 @@ fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
   @forNZ (dst, w in *u64~~wr, x in *u64~~xr over cdiv{len,64}) dst = bitop{w,x}
 }
 
-fn not(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }
-fn cpy(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'memcpy', dst, x, am*8} }
+fn bit_not(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }
+fn bit_cpy(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'memcpy', dst, x, am*8} }
 
 fn bitAS{op}(dst:*u64, wr:*void, x:u64, len:ux) : void = { # show{'bitAS'}
   xf:f64 = interp_f64{x}
@@ -112,8 +112,8 @@ fn bitAS{op}(dst:*u64, wr:*void, x:u64, len:ux) : void = { # show{'bitAS'}
     fillbits{dst, len, r0}
     return{}
   }
-  if (r0) call{not, dst, *u64~~wr, len}
-  else    call{cpy, dst, *u64~~wr, len}
+  if (r0) call{bit_not, dst, *u64~~wr, len}
+  else    call{bit_cpy, dst, *u64~~wr, len}
 }
 
 def table{aa, F, w, G_bit, G_vec} = {
