@@ -639,12 +639,12 @@ B take_c2(B t, B w, B x) {
   TAKEDROP_INIT(1);
   
   if (n>=0) {
-    CHECK_IA(n, 8);
+    if (n != (usz)n) thrOOM();
     a = take_impl(n, x);
     if (xr==1) return taga(arr_shVec(a));
   } else {
     n = -n;
-    CHECK_IA(n, 8);
+    if (n != (usz)n) thrOOM();
     usz xia = IA(x);
     if (n>xia) {
       B xf = getFillE(x);
