@@ -1660,7 +1660,7 @@ void unwindEnv(Env* envNew) {
 }
 void unwindCompiler() {
   #if UNWIND_COMPILER
-    unwindEnv(envStart+o2i64(COMPS_CREF(envPos)));
+    if (COMPS_ACTIVE()) unwindEnv(envStart+o2i64(COMPS_CREF(envPos)));
   #endif
 }
 
