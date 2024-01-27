@@ -319,7 +319,7 @@ B mmap_file(B path) {
   }
 #else
   HANDLE hFile = CreateFileA(
-    p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, 
+    p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   freeCStr(p);
   if (hFile==INVALID_HANDLE_VALUE) thrF("Failed to open file: %S", winError());
@@ -327,7 +327,7 @@ B mmap_file(B path) {
   if (!GetFileSizeEx(hFile, &fileSize)) {
     CloseHandle(hFile);
     thrF("Failed to get file size: %S", winError());
-  } 
+  }
   u64 len = fileSize.QuadPart;
   
   HANDLE hMapFile = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
