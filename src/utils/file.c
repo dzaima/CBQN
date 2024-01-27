@@ -259,24 +259,40 @@ B path_list(B path) {
   return res;
 }
 
-#if __has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP
+#if defined(_WIN32) || (__has_include(<sys/mman.h>) && __has_include(<fcntl.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP)
 
+#if !defined(_WIN32)
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#else
+#include <windows.h>
+#include "../windows/winError.c"
+#endif
 
 typedef struct MmapHolder {
   struct Arr;
+#if !defined(_WIN32)
   int fd;
   u64 size;
+#else
+  HANDLE hFile;
+  HANDLE hMapFile;
+#endif
   u8* a;
 } MmapHolder;
 
 void mmapH_visit(Value* v) { }
 DEF_FREE(mmapH) {
   MmapHolder* p = (MmapHolder*)x;
+#if !defined(_WIN32)
   if (munmap(p->a, p->size)) thrF("Failed to unmap: %S", strerror(errno));
   if (close(p->fd)) thrF("Failed to close file: %S", strerror(errno));
+#else
+  if (!UnmapViewOfFile(p->a)) thrF("Failed to unmap: %S", winError());
+  if (!CloseHandle(p->hMapFile)) thrF("Failed to close file mapping: %S", winError());
+  if (!CloseHandle(p->hFile)) thrF("Failed to close file: %S", winError());
+#endif
 }
 
 B info_c1(B,B);
@@ -290,6 +306,7 @@ static Arr* mmapH_slice(B x, usz s, usz ia) {
 B mmap_file(B path) {
   char* p = toCStr(path);
   dec(path);
+#if !defined(_WIN32)
   int fd = open(p, 0);
   freeCStr(p);
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
@@ -300,11 +317,41 @@ B mmap_file(B path) {
     close(fd);
     thrM("failed to mmap file");
   }
+#else
+  HANDLE hFile = CreateFileA(
+    p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
+    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  freeCStr(p);
+  if (hFile==INVALID_HANDLE_VALUE) thrF("Failed to open file: %S", winError());
+  LARGE_INTEGER fileSize;
+  if (!GetFileSizeEx(hFile, &fileSize)) {
+    CloseHandle(hFile);
+    thrF("Failed to get file size: %S", winError());
+  }
+  u64 len = fileSize.QuadPart;
+  
+  HANDLE hMapFile = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+  if (hMapFile==INVALID_HANDLE_VALUE) {
+    CloseHandle(hFile);
+    thrF("Failed to create file mapping: %S", winError());
+  } 
+  u8* data = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, 0);
+  if (data==NULL) {
+    CloseHandle(hFile);
+    CloseHandle(hMapFile);
+    thrF("Failed to map view of file: %S", winError());
+  }
+#endif
   
   MmapHolder* holder = m_arr(sizeof(MmapHolder), t_mmapH, len);
-  holder->fd = fd;
   holder->a = data;
+#if !defined(_WIN32)
+  holder->fd = fd;
   holder->size = len;
+#else
+  holder->hFile = hFile;
+  holder->hMapFile = hMapFile;
+#endif
   arr_shVec((Arr*)holder);
   return taga(arr_shVec(mmapH_slice(taga(holder), 0, len)));
 }
