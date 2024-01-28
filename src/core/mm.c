@@ -12,7 +12,7 @@ static u64 prepAllocSize(u64 sz) {
 }
 #define MMAP(SZ) mmap(NULL, prepAllocSize(SZ), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
 
-bool mem_log_enabled;
+GLOBAL bool mem_log_enabled;
 
 #if MM==0
   #include "../opt/mm_malloc.c"

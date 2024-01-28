@@ -49,9 +49,9 @@ typedef struct AsmStk {
   u8* c; // position for next write
   u8* e; // position past last writable position
 } AsmStk;
-static AsmStk asm_ins; // TODO add as root
-static AsmStk asm_rel;
-static i32 asm_depth = 0;
+static GLOBAL AsmStk asm_ins; // TODO add as root
+static GLOBAL AsmStk asm_rel;
+static GLOBAL i32 asm_depth = 0;
 
 static NOINLINE void asm_allocBuf(AsmStk* stk, u64 sz) {
   TAlloc* a = mm_alloc(sizeof(TAlloc) + sz, t_temp);

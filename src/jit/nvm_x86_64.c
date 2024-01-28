@@ -17,8 +17,8 @@
 
 #define ALLOC_IMPL_MMX 1
 // separate memory management system for executable code; isn't garbage-collected
-EmptyValue* mmX_buckets[64];
-u64 mmX_ctrs[64];
+GLOBAL EmptyValue* mmX_buckets[64];
+GLOBAL u64 mmX_ctrs[64];
 #define  BSZ(X) (1ull<<(X))
 #define BSZI(X) ((u8)(64-CLZ((X)-1ull)))
 #define  MMI(X) X
@@ -27,7 +27,7 @@ u64 mmX_ctrs[64];
 #define  MMI(X) X
 #define  ALSZ  20
 
-static u64 nvm_mmap_seed = 0;
+static GLOBAL u64 nvm_mmap_seed = 0;
 #ifdef __clang__
 #if __clang_major__ <= 12 // old clang versions get stuck in an infinite loop while optimizing this
 __attribute__((optnone))
@@ -61,7 +61,7 @@ static void* mmap_nvm(u64 sz) {
   }
 }
 
-extern bool mem_log_enabled;
+extern GLOBAL bool mem_log_enabled;
 #define MMAP(SZ) mmap_nvm(sz);
 #define  MUL 1
 #define ALLOC_MODE 1

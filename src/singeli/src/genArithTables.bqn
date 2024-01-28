@@ -103,7 +103,7 @@ Make ← {𝕊ns:
   
   cSrc∾↩ ∾⟨
     "B ", cbqn, "_c2(B,B,B);", nl
-    "DyTableAA ", cbqn,"DyTableAA = {", nl
+    "INIT_GLOBAL DyTableAA ", cbqn,"DyTableAA = {", nl
     "  .entsAA = {", nl
     ∾{ ⟨instrs, we‿xe⟩:
       {
@@ -150,7 +150,7 @@ Make ← {𝕊ns:
       P ← {∾⟨"{",𝕨,",",𝕩,"}"⟩}´
       
       cSrc∾↩ ∾⟨
-        "DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
+        "INIT_GLOBAL DyTableSA ", cbqn,"DyTable", ⌽⍟swap (charAtm⊑"NC")∾"A", " = {", nl
         "  .ents = {", nl
         "    {.bitsel=", hasNumArr◶⟨"bad", {𝕊:id∾swap/"R"}⟩ @, "_forBitsel", charAtm⊑"NC", "N_SA},", nl
         ∾{ 𝕊 num:

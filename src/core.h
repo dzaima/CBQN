@@ -26,7 +26,7 @@
 #include "core/arrFns.h"
 
 #ifdef RT_VERIFY
-  extern B r1Objs[RT_LEN];
+  extern GLOBAL B r1Objs[RT_LEN];
 #endif
 
 

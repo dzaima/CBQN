@@ -2,8 +2,8 @@
 #include "h.h"
 #include "nfns.h"
 
-static u32 nfn_curr;
-static B nfn_list;
+static GLOBAL u32 nfn_curr;
+static GLOBAL B nfn_list;
 
 NFnDesc* registerNFn(B name, FC1 c1, FC2 c2) {
   u32 id = nfn_curr++;

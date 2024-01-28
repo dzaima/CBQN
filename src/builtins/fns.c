@@ -91,8 +91,8 @@ NOINLINE B list_range(B x) {
   return taga(r);
 }
 
-Arr* bitUD[3];
-B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
+GLOBAL Arr* bitUD[3];
+GLOBAL B bit2x[2]; // ⟨0‿1 ⋄ 1‿0⟩
 B ud_c1(B t, B x) {
   if (!isAtm(x)) return list_range(x);
   usz xu = o2s(x);
@@ -229,7 +229,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr); // from cells.c
 B eq_c2(B, B, B);
 B feq_c2(B, B, B);
 B slash_c1(B, B);
-extern B rt_find;
+extern GLOBAL B rt_find;
 B find_c2(B t, B w, B x) {
   ur wr = isAtm(w) ? 0 : RNK(w);
   ur xr = isAtm(x) ? 0 : RNK(x);
@@ -303,8 +303,8 @@ B find_c2(B t, B w, B x) {
   decG(x); decG(w); return r;
 }
 
-static H_b2i* globalNames;
-B globalNameList;
+static GLOBAL H_b2i* globalNames;
+GLOBAL B globalNameList;
 i32 str2gid(B s) {
   if (globalNames==NULL) {
     globalNames = m_b2i(32);

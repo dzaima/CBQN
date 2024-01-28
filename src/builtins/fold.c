@@ -345,7 +345,7 @@ static B m1c1(B t, B f, B x) { // consumes x
   decG(fn);
   return r;
 }
-extern B rt_insert;
+extern GLOBAL B rt_insert;
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;

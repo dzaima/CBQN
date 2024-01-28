@@ -4,35 +4,35 @@
   static void mm_freeFreedAndMerge(void);
   #include "../utils/time.h"
   #if GC_LOG_DETAILED
-    bool gc_log_enabled = true;
+    GLOBAL bool gc_log_enabled = true;
   #else
-    bool gc_log_enabled;
+    GLOBAL bool gc_log_enabled;
   #endif
 #endif
 
 
-u64 gc_depth = 1;
+GLOBAL u64 gc_depth = 1;
 #ifdef GC_EVERY_NTH_ALLOC
-  u64 nth_alloc = 1;
+  GLOBAL u64 nth_alloc = 1;
 #endif
 
 
-vfn gc_roots[8];
-u32 gc_rootSz;
+GLOBAL vfn gc_roots[8];
+GLOBAL u32 gc_rootSz;
 void gc_addFn(vfn f) {
   if (gc_rootSz>=8) fatal("Too many GC root functions");
   gc_roots[gc_rootSz++] = f;
 }
 
-Value* gc_rootObjs[512];
-u32 gc_rootObjSz;
+GLOBAL Value* gc_rootObjs[512];
+GLOBAL u32 gc_rootObjSz;
 void gc_add(B x) {
   assert(isVal(x));
   if (gc_rootObjSz>=512) fatal("Too many GC root objects");
   gc_rootObjs[gc_rootObjSz++] = v(x);
 }
 
-B* gc_rootBRefs[64]; u32 gc_rootBRefsSz;
+GLOBAL B* gc_rootBRefs[64]; GLOBAL u32 gc_rootBRefsSz;
 void gc_add_ref(B* x) {
   if (gc_rootBRefsSz>=64) fatal("Too many GC root B refs");
   gc_rootBRefs[gc_rootBRefsSz++] = x;
@@ -79,10 +79,10 @@ static void gc_tryFree(Value* v) {
 }
 
 #if GC_LOG_DETAILED
-  u64 gcs_visitBytes, gcs_visitCount, gcs_freedBytes, gcs_freedCount, gcs_unkRefsBytes, gcs_unkRefsCount; // GC stat counters
+  GLOBAL u64 gcs_visitBytes, gcs_visitCount, gcs_freedBytes, gcs_freedCount, gcs_unkRefsBytes, gcs_unkRefsCount; // GC stat counters
 #endif
 
-i32 visit_mode;
+GLOBAL i32 visit_mode;
 enum {
   GC_DEC_REFC, // decrement refcount
   GC_INC_REFC, // increment refcount
@@ -167,7 +167,7 @@ static void gcv2_unmark_visit(Value* x) {
   }
 #endif
 
-u64 gc_lastAlloc;
+GLOBAL u64 gc_lastAlloc;
 void gc_forceGC(bool toplevel) {
   #if ENABLE_GC
     u64 startTime=0, startSize=0;
@@ -196,7 +196,7 @@ void gc_forceGC(bool toplevel) {
   #endif
 }
 
-static bool gc_wantTopLevelGC;
+static GLOBAL bool gc_wantTopLevelGC;
 bool gc_maybeGC(bool toplevel) {
   if (gc_depth) return false;
   u64 used = mm_heapUsed();

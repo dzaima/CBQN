@@ -61,16 +61,16 @@ void print_BCStream(FILE* f, u32* p) {
 }
 
 
-B thrownMsg;
-u64 envPrevHeight;
+GLOBAL B thrownMsg;
+GLOBAL u64 envPrevHeight;
 
-Env* envCurr; // pointer to current environment; included to make for simpler current position updating
-Env* envStart;
-Env* envEnd;
+GLOBAL Env* envCurr; // pointer to current environment; included to make for simpler current position updating
+GLOBAL Env* envStart;
+GLOBAL Env* envEnd;
 
-B* gStack; // points to after end
-B* gStackStart;
-B* gStackEnd;
+GLOBAL B* gStack; // points to after end
+GLOBAL B* gStackStart;
+GLOBAL B* gStackEnd;
 NOINLINE void gsReserveR(u64 am) { gsReserve(am); }
 void print_gStack() {
   B* c = gStackStart;
@@ -140,7 +140,7 @@ typedef struct NextRequest {
   u32 pos2; // ↑ for dyadic; U32_MAX if not wanted
 } NextRequest;
 
-static B emptyARMM;
+static GLOBAL B emptyARMM;
 
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos, i32 nsResult) {
   assert(sc!=NULL || nsResult==0);
@@ -1154,7 +1154,7 @@ void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 B block_decompose(B x) { return m_hvec2(m_i32(1), x); }
 
 #if !defined(_WIN32) && !defined(_WIN64)
-static usz pageSizeV;
+static GLOBAL usz pageSizeV;
 #endif
 
 usz getPageSize() {
@@ -1193,10 +1193,10 @@ void print_vmStack() {
   #endif
 }
 
-B oomMessage;
+GLOBAL B oomMessage;
 
 
-u32 bL_m[BC_SIZE] = { // bytecode length map
+u32 const bL_m[BC_SIZE] = { // bytecode length map
   [FN1C]=1, [FN2C]=1, [FN1O]=1, [FN2O]=1,
   [MD1C]=1, [MD2C]=1, [MD2R]=1,
   [TR2D]=1, [TR3D]=1, [TR3O]=1,
@@ -1217,7 +1217,7 @@ u32 bL_m[BC_SIZE] = { // bytecode length map
   
   [FN2Oi]=5, [SETH2]=5, [PRED2]=5,
 };
-i32 sD_m[BC_SIZE] = { // stack diff map
+i32 const sD_m[BC_SIZE] = { // stack diff map
   [PUSH ]= 1, [DYNO ]= 1, [DYNM]= 1, [DFND]= 1, [VARO]= 1, [VARM]= 1, [DFND0]= 1, [DFND1]=1, [DFND2]=1,
   [VARU ]= 1, [EXTO ]= 1, [EXTM]= 1, [EXTU]= 1, [SYSV]= 1, [ADDI]= 1, [ADDU ]= 1, [NOTM ]= 1,
   [FN1Ci]= 0, [FN1Oi]= 0, [CHKV]= 0, [VFYM]= 0, [FLDO]= 0, [FLDG]= 0, [FLDM]= 0, [RETD ]= 0, [ALIM ]=0,
@@ -1231,7 +1231,7 @@ i32 sD_m[BC_SIZE] = { // stack diff map
   
   [FAIL]=0
 };
-i32 sC_m[BC_SIZE] = { // stack consumed map
+i32 const sC_m[BC_SIZE] = { // stack consumed map
   [PUSH]=0, [DYNO]=0, [DYNM]=0, [DFND]=0, [VARO ]=0,[VARM ]=0,[NOTM ]=0, [VARU]=0, [EXTO]=0, [EXTM]=0,
   [EXTU]=0, [SYSV]=0, [ADDI]=0, [ADDU]=0, [DFND0]=0,[DFND1]=0,[DFND2]=0,
   
@@ -1247,7 +1247,7 @@ i32 sC_m[BC_SIZE] = { // stack consumed map
   
   [FAIL]=0
 };
-i32 sA_m[BC_SIZE]; // stack added map
+INIT_GLOBAL i32 sA_m[BC_SIZE]; // stack added map
 
 B funBl_uc1(B t, B o, B x) {
   return funBl_im(t, c1(o, c1(t, x)));
@@ -1300,9 +1300,9 @@ typedef struct CatchFrame {
   u64 envDepth;
   u64 cfDepth;
 } CatchFrame;
-CatchFrame* cf; // points to after end
-CatchFrame* cfStart;
-CatchFrame* cfEnd;
+GLOBAL CatchFrame* cf; // points to after end
+GLOBAL CatchFrame* cfStart;
+GLOBAL CatchFrame* cfEnd;
 
 #if CATCH_ERRORS
 jmp_buf* prepareCatch() {
@@ -1354,7 +1354,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   return s;
 }
 
-extern bool cbqn_initialized;
+extern GLOBAL bool cbqn_initialized;
 NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!q_N(src) && !q_N(comp->indices)) {
@@ -1439,10 +1439,10 @@ typedef union Profiler_ent {
   };
   u64 ip;
 } Profiler_ent;
-Profiler_ent* profiler_buf_s;
-Profiler_ent* profiler_buf_c;
-Profiler_ent* profiler_buf_e;
-bool profile_buf_full;
+GLOBAL Profiler_ent* profiler_buf_s;
+GLOBAL Profiler_ent* profiler_buf_c;
+GLOBAL Profiler_ent* profiler_buf_e;
+GLOBAL bool profile_buf_full;
 
 
 void profiler_bc_handler(int x) {
@@ -1509,8 +1509,8 @@ void* profiler_makeMap(void);
 i32 profiler_index(void** mapRaw, B comp);
 void profiler_freeMap(void* mapRaw);
 
-i32 profiler_mode; // 0: freed; 1: bytecode; 2: instruction pointers
-bool profiler_active;
+GLOBAL i32 profiler_mode; // 0: freed; 1: bytecode; 2: instruction pointers
+GLOBAL bool profiler_active;
 
 bool profiler_alloc(void) {
   profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);

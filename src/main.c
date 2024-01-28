@@ -20,12 +20,12 @@
   #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
 #endif
 
-static B replPath, replName;
-static Scope* gsc;
-static bool init = false;
+static GLOBAL B replPath, replName;
+static GLOBAL Scope* gsc;
+static GLOBAL bool repl_initialized = false;
 
 static NOINLINE void repl_init() {
-  if (init) return;
+  if (repl_initialized) return;
   cbqn_init();
   replPath = m_c8vec_0("."); gc_add(replPath);
   replName = m_c8vec_0("(REPL)"); gc_add(replName);
@@ -33,7 +33,7 @@ static NOINLINE void repl_init() {
   B ns = m_nns(body);
   gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
   ptr_dec(v(ns));
-  init = true;
+  repl_initialized = true;
 }
 
 typedef struct { bool r; char* e; } IsCmdTmp;
@@ -67,11 +67,11 @@ static NOINLINE i64 readInt(char** p) {
   #include <replxx.h>
   #include <errno.h>
   #include "utils/cstr.h"
-  Replxx* global_replxx;
-  static char* global_histfile;
-  static u32 cfg_prefixChar = U'\\';
+  GLOBAL Replxx* global_replxx;
+  static GLOBAL char* global_histfile;
+  static GLOBAL u32 cfg_prefixChar = U'\\';
   
-  static i8 themes[3][12][3] = {
+  static i8 const themes[3][12][3] = {
     // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
     { // 0: "none"
       {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1}, {-1,-1,-1},
@@ -109,13 +109,13 @@ static NOINLINE i64 readInt(char** p) {
   };
   
   typedef i8 Theme[12][3];
-  static ReplxxColor theme_replxx[12];
+  static GLOBAL ReplxxColor theme_replxx[12];
   
-  static i32 cfg_theme = 1;
-  static bool cfg_enableKeyboard = true;
-  static B cfg_path;
+  static GLOBAL i32 cfg_theme = 1;
+  static GLOBAL bool cfg_enableKeyboard = true;
+  static GLOBAL B cfg_path;
   
-  static char* command_completion[] = {
+  static char* const command_completion[] = {
     ")ex ",
     ")r ",
     ")escaped ",
@@ -148,7 +148,7 @@ static NOINLINE i64 readInt(char** p) {
   NOINLINE void cfg_set_theme(i32 num, bool writeCfg) {
     if (num>=3) return;
     cfg_theme = num;
-    i8 (*data)[3] = themes[num];
+    i8 const (*data)[3] = themes[num];
     for (int i = 0; i < 12; i++) {
       i8 v0 = data[i][0];
       i8 v1 = data[i][1];
@@ -162,8 +162,8 @@ static NOINLINE i64 readInt(char** p) {
     if (writeCfg) cfg_changed();
   }
   
-  extern u32* dsv_text[];
-  static B sysvalNames, sysvalNamesNorm;
+  extern u32* const dsv_text[];
+  static GLOBAL B sysvalNames, sysvalNamesNorm;
   
   NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
     PLAINLOOP for (int i = s; i < e; i++) cols[i] = col;
@@ -177,12 +177,12 @@ static NOINLINE i64 readInt(char** p) {
   static bool chr_num0(u32 c) { return chr_dig(c) || c==U'¯' || c==U'π' || c==U'∞'; }
   static bool chr_name0(u32 c) { return chr_low(c) || chr_upp(c) || c=='_'; }
   static bool chr_nameM(u32 c) { return chr_name0(c) || chr_num0(c); }
-  static u32* chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»𝔽𝔾𝕎𝕏𝕊";
-  static u32* chrs_m1 = U"`˜˘¨⁼⌜´˝˙";
-  static u32* chrs_m2 = U"∘⊸⟜○⌾⎉⚇⍟⊘◶⎊";
-  static u32* chrs_lit = U"⟨⟩[]·@‿";
-  static u32* chrs_dmd = U"←↩,⋄→⇐";
-  static u32* chrs_blk = U"{}𝕨𝕩𝕗𝕘𝕣𝕤:?;";
+  static u32* const chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»𝔽𝔾𝕎𝕏𝕊";
+  static u32* const chrs_m1 = U"`˜˘¨⁼⌜´˝˙";
+  static u32* const chrs_m2 = U"∘⊸⟜○⌾⎉⚇⍟⊘◶⎊";
+  static u32* const chrs_lit = U"⟨⟩[]·@‿";
+  static u32* const chrs_dmd = U"←↩,⋄→⇐";
+  static u32* const chrs_blk = U"{}𝕨𝕩𝕗𝕘𝕣𝕤:?;";
   NOINLINE bool chr_in(u32 val, u32* chrs) {
     while(*chrs) if (val == *(chrs++)) return true;
     return false;
@@ -406,9 +406,9 @@ static NOINLINE i64 readInt(char** p) {
     
     return (TmpState){.s = s, .pos = replace? pos : pos+1};
   }
-  static B b_pv;
-  static int b_pp;
-  static bool inBackslash;
+  static GLOBAL B b_pv;
+  static GLOBAL int b_pp;
+  static GLOBAL bool inBackslash;
   static void stopBackslash() { inBackslash = false; }
   NOINLINE void setPrev(B s, u64 pos) { // consumes
     decG(b_pv);
@@ -440,7 +440,7 @@ static NOINLINE i64 readInt(char** p) {
   B indexOf_c2(B, B, B);
   B pick_c1(B, B);
   
-  static B b_key, b_val;
+  static GLOBAL B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!cfg_enableKeyboard) return;
     CATCH_OOM(return)
@@ -535,7 +535,7 @@ static NOINLINE i64 readInt(char** p) {
     gc_add(b_val = m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
     sysvalNames = emptyHVec();
     sysvalNamesNorm = emptyHVec();
-    u32** c = dsv_text;
+    u32* const* c = dsv_text;
     while (*c) { bool unused;
       B str = m_c32vec_0(*(c++));
       sysvalNames = vec_addN(sysvalNames, str);
@@ -579,7 +579,7 @@ void clearImportCache(void);
 void switchComp(void);
 #endif
 
-static B escape_parser;
+static GLOBAL B escape_parser;
 static B simple_unescape(B x) {
   if (RARE(escape_parser.u==0)) {
     escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N);
@@ -605,7 +605,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
 void heap_printInfoStr(char* str);
-extern bool gc_log_enabled, mem_log_enabled;
+extern GLOBAL bool gc_log_enabled, mem_log_enabled;
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -911,7 +911,7 @@ int main() {
 }
 #elif !CBQN_LIB
 #if HAS_VERSION
-extern char* cbqn_versionInfo;
+extern char* const cbqn_versionInfo;
 #endif
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
@@ -1104,6 +1104,5 @@ int main(int argc, char* argv[]) {
     cbqn_heapVerify();
   #endif
   bqn_exit(0);
-  #undef INIT
 }
 #endif

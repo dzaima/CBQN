@@ -109,8 +109,8 @@ static B toConstant(B x) { // doesn't consume x
   }
   return bi_N;
 }
-static NFnDesc* ucwWrapDesc;
-static NFnDesc* uc1WrapDesc;
+static GLOBAL NFnDesc* ucwWrapDesc;
+static GLOBAL NFnDesc* uc1WrapDesc;
 
 static B fork_uc1(B t, B o, B x) {
   B f = toConstant(c(Fork, t)->f);

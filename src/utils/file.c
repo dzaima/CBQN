@@ -463,13 +463,13 @@ NOINLINE void writeNum(FILE* f, u64 v, i32 len) {
   PLAINLOOP for (i32 i = 0; i < len; i++) buf[i] = (v>>(8*i)) & 0xff;
   fwrite(buf, 1, len, f);
 }
-static char* types_str[] = {
+static char* const types_str[] = {
   #define F(X) #X,
   FOR_TYPE(F)
   #undef F
   NULL
 };
-static u8 types_val[] = {
+static u8 const types_val[] = {
   #define F(X) t_##X,
   FOR_TYPE(F)
   #undef F

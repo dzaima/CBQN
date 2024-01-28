@@ -142,10 +142,13 @@ typedef size_t ux;
 #define JOIN(A,B) JOIN0(A,B)
 #define STR0(X) #X
 #define STR1(X) STR0(X)
+#define INIT_GLOBAL __attribute__((visibility("hidden"))) // global variable set once during initialization, to the same value always
+#define GLOBAL INIT_GLOBAL // global variable mutated potentially multiple times, or set to a value referencing the heap
+
 
 #if USE_REPLXX_IO
   #include <replxx.h>
-  extern Replxx* global_replxx;
+  extern GLOBAL Replxx* global_replxx;
   #define printf(...) replxx_print(global_replxx, __VA_ARGS__)
   #define fprintf(f, ...) replxx_print(global_replxx, __VA_ARGS__)
 #endif
@@ -298,7 +301,7 @@ typedef struct Arr {
   B VALIDATE(B x);
   Value* VALIDATEP(Value* x);
   #define UD assert(false)
-  extern bool cbqn_noAlloc;
+  extern GLOBAL bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start(); // function to allow breakpointing
   #define NOGC_CHECK(M) do { if (cbqn_noAlloc && !gc_depth) fatal(M); } while (0)
   #define NOGC_S cbqn_NOGC_start()
@@ -347,7 +350,7 @@ static const B bi_noVar  = b((u64)0x7FF2000000000001ull); // tag(1,TAG_TAG);
 static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2,TAG_TAG);
 static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3,TAG_TAG);
 static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5,TAG_TAG);
-extern B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
+extern GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyHVec() incG(bi_emptyHVec)
 #define emptyIVec() incG(bi_emptyIVec)
 #define emptyCVec() incG(bi_emptyCVec)
@@ -394,7 +397,7 @@ jmp_buf* prepareCatch(void);
   #define CATCH false
   #define popCatch()
 #endif
-extern B thrownMsg;
+extern GLOBAL B thrownMsg;
 void freeThrown(void);
 
 
@@ -568,7 +571,7 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
   F(bool, arrD1) /* is always an array with depth 1 */ \
 
-#define F(TY,N) extern TY ti_##N[t_COUNT];
+#define F(TY,N) extern GLOBAL TY ti_##N[t_COUNT];
   FOR_TI(F)
 #undef F
 #define TIi(X,V) (ti_##V[X])

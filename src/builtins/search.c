@@ -44,7 +44,7 @@ extern NOINLINE void memset64(u64* p, u64 v, usz l) { for (usz i=0; i<l; i++) p[
 #define memset_i16(P,V,L)  memset16((u16*)(P), V, L)
 #define memset_i32(P,V,L)  memset32((u32*)(P), V, L)
 
-RangeFn getRange_fns[el_f64+1];
+INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
 #if SINGELI
   extern RangeFn* const simd_getRangeRaw;
   #define SINGELI_FILE search
@@ -356,7 +356,7 @@ B indexOf_c2(B t, B w, B x) {
   }
 }
 
-B enclosed_0, enclosed_1;
+GLOBAL B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
   bool split = 0; (void) split;
   if (isAtm(x) || RNK(x)!=1) {

@@ -730,7 +730,7 @@ cachedBin‿linkerCache ← {
     vnameX‿vname ← {po.versionName≡""? "on "⊸∾⊸⋈ "commit "∾("??"GitCmd ⟨"rev-parse", "HEAD"⟩)∾{""≡"determining version"GitCmd ⟨"status", "--porcelain", "src"⟩? ""; "-dirty"}; ⋈˜ po.versionName}
     
     src ← ∾⟨
-      "char* cbqn_versionInfo = """
+      "char* const cbqn_versionInfo = """
       
       ∾∾⟜"\n"¨ ×∘≠¨⊸/ ⟨
         "CBQN "∾vnameX
@@ -745,7 +745,7 @@ cachedBin‿linkerCache ← {
       # "build invocation: "⊸∾⍟(×≠) ¯1↓∾∾⟜' '¨ •args
       
       """;", @+10
-      "char* cbqn_versionString = """∾vname∾""";", @+10
+      "char* const cbqn_versionString = """∾vname∾""";", @+10
     ⟩
     {
       •file.Exists AtRoot srcFile? src≡•FChars AtRoot srcFile? @; # don't update

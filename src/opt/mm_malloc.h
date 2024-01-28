@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <malloc.h>
-extern u64 mm_heapAlloc;
-extern u64 mm_heapMax;
+extern GLOBAL u64 mm_heapAlloc;
+extern GLOBAL u64 mm_heapMax;
 
 static void mm_free(Value* x) {
   preFree(x, false);

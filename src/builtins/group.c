@@ -259,7 +259,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   return taga(r);
 }
 
-extern B rt_group;
+extern GLOBAL B rt_group;
 B group_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊔: 𝕩 must be an array");
   ur xr = RNK(x);

@@ -100,8 +100,8 @@ void ns_set(B ns, B name, B val) { VTY(ns, t_ns);
 
 
 
-static i32* emptyi32ptr;
-static B emptyi32obj;
+static GLOBAL i32* emptyi32ptr;
+static GLOBAL B emptyi32obj;
 Body* m_nnsDescF(i32 n, char** names) {
   if (emptyi32ptr==NULL) gc_add(emptyi32obj = m_i32arrv(&emptyi32ptr, 0));
   incByG(emptyi32obj, 2);

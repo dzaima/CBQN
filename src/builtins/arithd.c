@@ -25,7 +25,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
 
 #if SINGELI_SIMD
   #include "../singeli/c/arithdDispatch.c"
-  static AndBytesFn andBytes_fn = simd_andBytes;
+  static const AndBytesFn andBytes_fn = simd_andBytes;
 #else
   static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
     u64* x64 = (u64*)x; usz i;
@@ -35,7 +35,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
       for (usz j = 0; j < (numBytes&7); j++) r[i*8 + j] = v>>(j*8);
     }
   }
-  static AndBytesFn andBytes_fn = base_andBytes;
+  static const AndBytesFn andBytes_fn = base_andBytes;
 #endif
 
 B floor_c1(B t, B x);
@@ -180,7 +180,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,,,)
   GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,,,)
   GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,,,)
-  static u64 repeatNum[] = {
+  static u64 const repeatNum[] = {
     [el_i8 ] = 0x0101010101010101ULL,
     [el_i16] = 0x0001000100010001ULL,
     [el_i32] = 0x0000000100000001ULL,

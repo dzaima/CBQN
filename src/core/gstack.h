@@ -7,9 +7,9 @@
 #define ENV_SIZE 4096 // max recursion depth; GS_SIZE and C stack size may limit this
 #endif
 
-extern B* gStack; // points to after end
-extern B* gStackStart;
-extern B* gStackEnd;
+extern GLOBAL B* gStack; // points to after end
+extern GLOBAL B* gStackStart;
+extern GLOBAL B* gStackEnd;
 void print_gStack(void);
 
 static void gsReserve(u64 am) {

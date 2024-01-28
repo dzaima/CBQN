@@ -1,10 +1,10 @@
 #include "../core.h"
 
 #if HEAP_VERIFY
-u32 heapVerify_mode = -1;
+GLOBAL u32 heapVerify_mode = -1;
 
-Value* heap_observed;
-Value* heap_curr;
+GLOBAL Value* heap_observed;
+GLOBAL Value* heap_curr;
 void heapVerify_checkFn(Value* v) {
   if (v->refc!=0) {
     #if OBJ_COUNTER
@@ -32,15 +32,15 @@ void cbqn_heapVerify() {
 
 #endif
 
-static u64 heap_PICounts[t_COUNT];
-static u64 heap_PISizes[t_COUNT];
+static GLOBAL u64 heap_PICounts[t_COUNT];
+static GLOBAL u64 heap_PISizes[t_COUNT];
 
 NOINLINE void heap_PIFn(Value* v) {
   heap_PICounts[PTY(v)]++;
   heap_PISizes[PTY(v)]+= mm_size(v);
 }
 
-static u64 heap_PIFreed[128];
+static GLOBAL u64 heap_PIFreed[128];
 void heap_PIFreedFn(Value* v) {
   heap_PIFreed[v->mmInfo&127]++;
 }

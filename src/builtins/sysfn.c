@@ -275,7 +275,7 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
   return x;
 }
 
-B cdPath;
+GLOBAL B cdPath;
 static NOINLINE B prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
@@ -323,10 +323,10 @@ B hash_c1(B t, B x) {
 
 
 
-static Body* rand_ns;
-static B rand_rangeName;   static NFnDesc* rand_rangeDesc;
-static B rand_dealName;    static NFnDesc* rand_dealDesc;
-static B rand_subsetName;  static NFnDesc* rand_subsetDesc;
+static GLOBAL Body* rand_ns;
+static GLOBAL B rand_rangeName;   static GLOBAL NFnDesc* rand_rangeDesc;
+static GLOBAL B rand_dealName;    static GLOBAL NFnDesc* rand_dealDesc;
+static GLOBAL B rand_subsetName;  static GLOBAL NFnDesc* rand_subsetDesc;
 #define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
                    u64 seed = sc->vars[0].u | sc->vars[1].u<<32;
 #define RAND_END sc->vars[0].u = seed>>32; \
@@ -418,8 +418,8 @@ B rand_range_c2(B t, B w, B x) {
   return taga(r);
 }
 
-extern Arr* bitUD[3]; // from fns.c
-extern B bit2x[2];
+extern GLOBAL Arr* bitUD[3]; // from fns.c
+extern GLOBAL B bit2x[2];
 B intRange16(ux s, ux n);
 B intRange32(ux s, ux n);
 void intRange32Fill(i32* xp, ux s, ux n);
@@ -649,7 +649,7 @@ B makeRand_c1(B t, B x) {
   for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], incG(r));
   return r;
 }
-static B randNS;
+static GLOBAL B randNS;
 B getRandNS(void) {
   if (randNS.u == 0) {
     #if RANDSEED==0
@@ -661,9 +661,9 @@ B getRandNS(void) {
   }
   return incG(randNS);
 }
-static NFnDesc* bqnDesc;
-static NFnDesc* rebqnDesc;
-static NFnDesc* rebqnResDesc;
+static GLOBAL NFnDesc* bqnDesc;
+static GLOBAL NFnDesc* rebqnDesc;
+static GLOBAL NFnDesc* rebqnResDesc;
 B rebqn_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
@@ -696,7 +696,7 @@ B repl_c1(B t, B x) {
 }
 
 #if CATCH_ERRORS
-B lastErrMsg;
+GLOBAL B lastErrMsg;
 B currentError_c1(B t, B x) {
   if (isNsp(x)) thrM("•CurrentError: Namespace 𝕩 is reserved");
   dec(x);
@@ -707,14 +707,14 @@ B currentError_c1(B t, B x) {
 B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
 #endif
 
-static Body* hashmap_ns;
-static NFnDesc* hashmap_getDesc;
-static NFnDesc* hashmap_hasDesc;
-static NFnDesc* hashmap_setDesc;
-static NFnDesc* hashmap_deleteDesc;
-static NFnDesc* hashmap_countDesc;
-static NFnDesc* hashmap_keysDesc;
-static NFnDesc* hashmap_valuesDesc;
+static GLOBAL Body* hashmap_ns;
+static GLOBAL NFnDesc* hashmap_getDesc;
+static GLOBAL NFnDesc* hashmap_hasDesc;
+static GLOBAL NFnDesc* hashmap_setDesc;
+static GLOBAL NFnDesc* hashmap_deleteDesc;
+static GLOBAL NFnDesc* hashmap_countDesc;
+static GLOBAL NFnDesc* hashmap_keysDesc;
+static GLOBAL NFnDesc* hashmap_valuesDesc;
 // Hash object handling defined in search.c
 extern B hashmap_build(B keys, usz n);
 extern B hashmap_lookup(B* vars, B w, B x);
@@ -761,7 +761,7 @@ B hashMap_c2(B t, B w, B x) {
   return ns;
 }
 
-static NFnDesc* fileAtDesc;
+static GLOBAL NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
 }
@@ -771,7 +771,7 @@ B fileAt_c2(B d, B w, B x) {
   dec(w);
   return r;
 }
-static NFnDesc* fCharsDesc;
+static GLOBAL NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
   return path_chars(path_rel(nfn_objU(d), x, "•file.Chars"));
 }
@@ -782,7 +782,7 @@ B fchars_c2(B d, B w, B x) {
   dec(x);
   return p;
 }
-static NFnDesc* fBytesDesc;
+static GLOBAL NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
   I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
   usz ia = PIA(tf);
@@ -798,7 +798,7 @@ B fbytes_c2(B d, B w, B x) {
   dec(x);
   return p;
 }
-static NFnDesc* fLinesDesc;
+static GLOBAL NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
   return path_lines(path_rel(nfn_objU(d), x, "•file.Lines"));
 }
@@ -820,7 +820,7 @@ B flines_c2(B d, B w, B x) {
   decG(s);
   return p;
 }
-static NFnDesc* importDesc;
+static GLOBAL NFnDesc* importDesc;
 
 
 
@@ -863,18 +863,18 @@ B import_c1(B d, B x) {
 }
 
 
-static NFnDesc* fTypeDesc;
-static NFnDesc* fCreatedDesc;
-static NFnDesc* fAccessedDesc;
-static NFnDesc* fModifiedDesc;
-static NFnDesc* fSizeDesc;
-static NFnDesc* fExistsDesc;
-static NFnDesc* fListDesc;
-static NFnDesc* fMapBytesDesc;
-static NFnDesc* createdirDesc;
-static NFnDesc* realpathDesc;
-static NFnDesc* renameDesc;
-static NFnDesc* removeDesc;
+static GLOBAL NFnDesc* fTypeDesc;
+static GLOBAL NFnDesc* fCreatedDesc;
+static GLOBAL NFnDesc* fAccessedDesc;
+static GLOBAL NFnDesc* fModifiedDesc;
+static GLOBAL NFnDesc* fSizeDesc;
+static GLOBAL NFnDesc* fExistsDesc;
+static GLOBAL NFnDesc* fListDesc;
+static GLOBAL NFnDesc* fMapBytesDesc;
+static GLOBAL NFnDesc* createdirDesc;
+static GLOBAL NFnDesc* realpathDesc;
+static GLOBAL NFnDesc* renameDesc;
+static GLOBAL NFnDesc* removeDesc;
 
 B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x, "•file.List"));
@@ -1248,7 +1248,7 @@ B tErrRaw_c1(B t, B x) {
   return x;
 }
 
-static B termNS;
+static GLOBAL B termNS;
 B getTermNS(void) {
   if (termNS.u == 0) {
     #define F(X) incG(bi_##X),
@@ -1312,7 +1312,7 @@ B nHas_c2(B t, B w, B x) {
   decG(w); decG(x);
   return m_i32(!q_N(r));
 }
-static B nsNS;
+static GLOBAL B nsNS;
 B getNsNS(void) {
   if (nsNS.u == 0) {
     #define F(X) incG(bi_##X),
@@ -1612,7 +1612,7 @@ DEF_OP2(and) DEF_OP2(or) DEF_OP2(xor)
 DEF_OP2(add) DEF_OP2(sub) DEF_OP2(mul)
 #undef DEF_OP2
 
-static B bitNS;
+static GLOBAL B bitNS;
 B getBitNS(void) {
   if (bitNS.u == 0) {
     #define F(X) incG(bi_bit##X),
@@ -1627,7 +1627,7 @@ B getBitNS(void) {
 B getInternalNS(void);
 B getMathNS(void);
 
-static Body* file_nsGen;
+static GLOBAL Body* file_nsGen;
 
 #if FFI || FOR_BUILD
 #define FFIOPT 1
@@ -1691,10 +1691,10 @@ static Body* file_nsGen;
   F("rebqn", U"•ReBQN", tag(22,VAR_TAG)) \
 /* end of FOR_DEFAULT_SYSVALS */
 
-NFnDesc* ffiloadDesc;
+GLOBAL NFnDesc* ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
 B indexOf_c2(B t, B w, B x);
-bool fileInit;
+GLOBAL bool fileInit;
 
 
 B invalidFn_c1 (B     t,      B x) { thrM("Using an invalid function"); }
@@ -1729,10 +1729,10 @@ static NOINLINE void initSysDesc() {
 }
 
 #if HAS_VERSION
-extern char* cbqn_versionString;
+extern char* const cbqn_versionString;
 #endif
 
-static B platformNS;
+static GLOBAL B platformNS;
 static B getPlatformNS(void) {
   if (platformNS.u == 0) {
     
@@ -1877,14 +1877,14 @@ B sys_c1(B t, B x) {
 }
 
 
-static char* dsv_strs[] = {
+static char* const dsv_strs[] = {
   #define F(L,N,B) L,
   FOR_DEFAULT_SYSVALS(F)
   #undef F
 };
 
 
-u32* dsv_text[] = {
+u32* const dsv_text[] = {
   #define F(L,N,B) N,
   FOR_DEFAULT_SYSVALS(F)
   #undef F
@@ -1904,7 +1904,7 @@ u32* dsv_text[] = {
   NULL
 };
 
-B def_sysNames, def_sysVals;
+GLOBAL B def_sysNames, def_sysVals;
 void sysfn_init(void) {
   usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
   usz i = 0;

@@ -6,13 +6,13 @@ struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else ca
   EmptyValue* next;
 };
 #if OBJ_COUNTER
-  extern u64 currObjCounter;
+  extern GLOBAL u64 currObjCounter;
 #endif
-extern u64 mm_heapAlloc;
-extern u64 mm_heapMax;
+extern GLOBAL u64 mm_heapAlloc;
+extern GLOBAL u64 mm_heapMax;
 
-extern u64 mm_ctrs[128];
-extern EmptyValue* mm_buckets[128];
+extern GLOBAL u64 mm_ctrs[128];
+extern GLOBAL EmptyValue* mm_buckets[128];
 #define BSZ(X) (((X)&64? 3ull : 1ull)<<(X))
 #define  BN(X) mm_##X
 #include "mm_buddyTemplate.h"

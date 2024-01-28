@@ -3,14 +3,14 @@
 #include "../nfns.h"
 
 
-static NFnDesc* fn_invRegDesc;
-static NFnDesc* fn_invSwapDesc;
+static GLOBAL NFnDesc* fn_invRegDesc;
+static GLOBAL NFnDesc* fn_invSwapDesc;
 B fn_invReg_c1 (B t,      B x) { B f = nfn_objU(t); return TI(f, fn_im)(f,    x); }
 B fn_invReg_c2 (B t, B w, B x) { B f = nfn_objU(t); return TI(f, fn_ix)(f, w, x); }
 B fn_invSwap_c1(B t,      B x) { B f = nfn_objU(t); return TI(f, fn_is)(f,    x); }
 B fn_invSwap_c2(B t, B w, B x) { B f = nfn_objU(t); return TI(f, fn_iw)(f, w, x); }
 
-extern B rt_undo;
+extern GLOBAL B rt_undo;
 B undo_c1(Md1D* d, B x) { B f = d->f;
   if (isFun(f)) return TI(f, fn_im)(f, x);
   SLOW1("!runtime undo", x);

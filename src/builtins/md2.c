@@ -8,7 +8,7 @@ B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
 #if CATCH_ERRORS && !BI_CATCH_DISABLED
-extern B lastErrMsg; // sysfn.c
+extern GLOBAL B lastErrMsg; // sysfn.c
 
 B fillBy_c1(Md2D* d, B x) {
   B xf=getFillQ(x);
@@ -53,7 +53,7 @@ B catch_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 #endif
 
-extern B rt_undo;
+extern GLOBAL B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   #define UPD_BOUNDS(I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
   if (isArr(g)) {
@@ -218,7 +218,7 @@ B depthf_c2(B t, B w, B x) {
   if (isArr(w) || isArr(x)) return eachd_fn(t, w, x, depthf_c2);
   else return c2(t, w, x);
 }
-extern B rt_depth;
+extern GLOBAL B rt_depth;
 B depth_c1(Md2D* d, B x) {
   if (isF64(d->g) && o2fG(d->g)==0) {
     if (isArr(x)) return eachm_fn(d->f, x, depthf_c1);

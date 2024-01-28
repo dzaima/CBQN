@@ -9,7 +9,7 @@
 bool please_tail_call_err = true;
 
 void before_exit(void);
-bool inErr;
+GLOBAL bool inErr;
 NORETURN NOINLINE void fatal(char* s) {
   NOGC_E;
   #if MM!=0
@@ -61,8 +61,7 @@ NOINLINE B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }
 NOINLINE B arr_c1(B t,      B x) {         dec(x); return inc(t); }
 NOINLINE B arr_c2(B t, B w, B x) { dec(w); dec(x); return inc(t); }
 
-
-extern B rt_under, bi_before;
+extern GLOBAL B rt_under, bi_before;
 static B rtUnder_c1(B f, B g, B x) { // consumes x
   SLOW3("!runtime 𝕎⌾F 𝕩", f, x, g);
   B fn = m2_d(incG(rt_under), inc(f), inc(g));
@@ -87,7 +86,7 @@ B def_decompose(B x) {
   return m_hvec2(m_i32(isCallable(x)? (isImpureBuiltin(x)? 1 : 0) : -1),x);
 }
 
-B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
+GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
 NOINLINE TStack* ts_e(TStack* o, u32 elsz, u64 am) { u64 size = o->size;
   u64 alsz = mm_round(fsizeof(TStack, data, u8, (size+am)*elsz));
@@ -469,12 +468,12 @@ B bqn_merge(B x, u32 type) {
 }
 
 #if ALLOC_STAT
-  u64* ctr_a = 0;
-  u64* ctr_f = 0;
-  u64 actrc = 21000;
-  u64 talloc = 0;
+  GLOBAL u64* ctr_a = 0;
+  GLOBAL u64* ctr_f = 0;
+  GLOBAL u64 actrc = 21000;
+  GLOBAL u64 talloc = 0;
   #if ALLOC_SIZES
-    u32** actrs;
+    GLOBAL u32** actrs;
   #endif
 #endif
 
@@ -518,7 +517,7 @@ Arr*   g_a(B x) { return a(x); }
 B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
-bool ignore_bad_tag;
+GLOBAL bool ignore_bad_tag;
 void   g_p(B x) { fprintI(stderr,x); fputc(10,stderr); fflush(stderr); }
 void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fputc(10,stderr); fflush(stderr); }
 void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fputc(10,stderr); fflush(stderr); ignore_bad_tag=false; }
@@ -526,7 +525,7 @@ void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(inf
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #if DEBUG
-  bool cbqn_noAlloc;
+  GLOBAL bool cbqn_noAlloc;
   NOINLINE void cbqn_NOGC_start() { cbqn_noAlloc=true; }
   #if OBJ_COUNTER
     #define PRINT_ID(X) fprintf(stderr, "Object ID: "N64u"\n", (X)->uid)
@@ -572,7 +571,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   #else
     #define ONLY_ALWAYS
   #endif
-  extern bool cbqn_initialized;
+  extern GLOBAL bool cbqn_initialized;
   static void warn_ln(B x) {
     if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {

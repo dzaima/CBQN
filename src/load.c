@@ -20,8 +20,8 @@
 FOR_INIT(F)
 #undef F
 
-u64 mm_heapMax = HEAP_MAX;
-u64 mm_heapAlloc;
+GLOBAL u64 mm_heapMax = HEAP_MAX;
+GLOBAL u64 mm_heapAlloc;
 
 // compiler result:
 // [
@@ -48,23 +48,23 @@ u64 mm_heapAlloc;
 //   [%, %, [[...nameList], %], %]? // optional; % marks things i haven't bothered to understand
 // ]
 
-#define FA(N,X) B bi_##N; B N##_c1(B t, B x); B N##_c2(B t, B w, B x);
-#define FM(N,X) B bi_##N; B N##_c1(B t, B x);
-#define FD(N,X) B bi_##N; B N##_c2(B t, B w, B x);
+#define FA(N,X) GLOBAL B bi_##N; B N##_c1(B t, B x); B N##_c2(B t, B w, B x);
+#define FM(N,X) GLOBAL B bi_##N; B N##_c1(B t, B x);
+#define FD(N,X) GLOBAL B bi_##N; B N##_c2(B t, B w, B x);
 FOR_PFN(FA,FM,FD)
 #undef FA
 #undef FM
 #undef FD
-#define FA(N,X) B bi_##N; B N##_c1(Md1D* d, B x); B N##_c2(Md1D* d, B w, B x);
-#define FM(N,X) B bi_##N; B N##_c1(Md1D* d, B x);
-#define FD(N,X) B bi_##N; B N##_c2(Md1D* d, B w, B x);
+#define FA(N,X) GLOBAL B bi_##N; B N##_c1(Md1D* d, B x); B N##_c2(Md1D* d, B w, B x);
+#define FM(N,X) GLOBAL B bi_##N; B N##_c1(Md1D* d, B x);
+#define FD(N,X) GLOBAL B bi_##N; B N##_c2(Md1D* d, B w, B x);
 FOR_PM1(FA,FM,FD)
 #undef FA
 #undef FM
 #undef FD
-#define FA(N,X) B bi_##N; B N##_c1(Md2D*, B x); B N##_c2(Md2D*, B w, B x);
-#define FM(N,X) B bi_##N; B N##_c1(Md2D*, B x);
-#define FD(N,X) B bi_##N; B N##_c2(Md2D*, B w, B x);
+#define FA(N,X) GLOBAL B bi_##N; B N##_c1(Md2D*, B x); B N##_c2(Md2D*, B w, B x);
+#define FM(N,X) GLOBAL B bi_##N; B N##_c1(Md2D*, B x);
+#define FD(N,X) GLOBAL B bi_##N; B N##_c2(Md2D*, B w, B x);
 FOR_PM2(FA,FM,FD)
 #undef FA
 #undef FM
@@ -94,11 +94,11 @@ char* pm2_repr(u8 u) {
 
 
 
-#define F(TY,N) TY ti_##N[t_COUNT];
+#define F(TY,N) GLOBAL TY ti_##N[t_COUNT];
   FOR_TI(F)
 #undef F
 
-B r1Objs[RT_LEN];
+GLOBAL B r1Objs[RT_LEN];
 B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
@@ -123,10 +123,10 @@ static NOINLINE B evalFunBlockConsume(Block* block) {
   return r;
 }
 
-HArr* comps_curr;
+GLOBAL HArr* comps_curr;
 
-B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
-  rt_group, rt_under, rt_find;
+GLOBAL B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
+         rt_group, rt_under, rt_find;
 Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { // consumes x,src
   B fullpath = q_N(name)? inc(path) : q_N(path)? inc(name) : IA(path)==1 && IGetU(path,0).u==m_c32('.').u? inc(name) : path_rel(path, inc(name), "(load_buildBlock)");
   SGet(x)
@@ -152,8 +152,8 @@ Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consu
 }
 #endif
 
-B load_compgen;
-B def_re;
+GLOBAL B load_compgen;
+GLOBAL B def_re;
 
 static void change_def_comp(B comp) { // consumes
   B* re = harr_ptr(def_re); // not pretty changing in-place, but still should be fine and it's for an unsafe feature anyway
@@ -179,7 +179,7 @@ B compObj_c2(B t, B w, B x) {
 }
 
 #if FORMATTER
-B load_fmt, load_repr;
+GLOBAL B load_fmt, load_repr;
 B bqn_fmt(B x) { return c1G(load_fmt, x); }
 B bqn_repr(B x) { return c1G(load_repr, x); }
 #else
@@ -251,7 +251,7 @@ B bqn_exec(B str, B state) { // consumes all
   return evalFunBlockConsume(bqn_comp(str, state));
 }
 
-B str_all, str_none;
+GLOBAL B str_all, str_none;
 void init_comp(B* new_re, B* prev_re, B prim, B sys) {
   new_re[re_map] = m_importMap();
   if (q_N(prim)) {
@@ -630,7 +630,7 @@ void bqn_exit(i32 code) {
   exit(code);
 }
 
-static B load_explain;
+static GLOBAL B load_explain;
 B bqn_explain(B str) {
   #if NO_EXPLAIN
     thrM("Explainer not included in this CBQN build");
@@ -672,9 +672,9 @@ static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { fatal("cannot slice non-array!"); }
 
-B rt_invFnReg, rt_invFnSwap;
-FC1 rt_invFnRegFn;
-FC1 rt_invFnSwapFn;
+GLOBAL B rt_invFnReg, rt_invFnSwap;
+GLOBAL FC1 rt_invFnRegFn;
+GLOBAL FC1 rt_invFnSwapFn;
 B def_fn_im(B t,      B x) { B fn =  rt_invFnRegFn(rt_invFnReg,  inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
 B def_fn_is(B t,      B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW2("!runtime 𝕎⁼𝕩",  t, x);    B r = c1(fn,    x); dec(fn); return r; }
 B def_fn_iw(B t, B w, B x) { B fn = rt_invFnSwapFn(rt_invFnSwap, inc(t)); SLOW3("!runtime 𝕨F⁼𝕩", w, x, t); B r = c2(fn, w, x); dec(fn); return r; }
@@ -862,7 +862,7 @@ void typesFinished_init() {
   #endif
 }
 
-bool cbqn_initialized;
+GLOBAL bool cbqn_initialized;
 void cbqn_init() {
   if (cbqn_initialized) return;
   #define F(X) X##_init();

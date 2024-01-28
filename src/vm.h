@@ -190,10 +190,10 @@ FORCE_INLINE B execBodyInplaceI(Body* body, Scope* sc, Block* block) { // consum
   return evalBC(body, sc, block);
 }
 
-extern u32 bL_m[BC_SIZE];
-extern i32 sD_m[BC_SIZE];
-extern i32 sC_m[BC_SIZE];
-extern i32 sA_m[BC_SIZE];
+extern u32 const bL_m[BC_SIZE];
+extern i32 const sD_m[BC_SIZE];
+extern i32 const sC_m[BC_SIZE];
+extern INIT_GLOBAL i32 sA_m[BC_SIZE];
 static u32* nextBC       (u32* p) { return p + bL_m[*p]; }
 static i32  stackAdded   (u32* p) { return sA_m[*p]; }
 static i32  stackDiff    (u32* p) { if (*p==LSTO|*p==LSTM|*p==ARMO|*p==ARMM) return 1-p[1]; return sD_m[*p]; }
@@ -219,10 +219,10 @@ typedef struct Env {
   u64 pos; // if top bit set, ((u32)pos)>>1 is an offset into bytecode; otherwise, it's a pointer in the bytecode
   Scope* sc;
 } Env;
-extern Env* envCurr;
-extern Env* envStart;
-extern Env* envEnd;
-extern u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
+extern GLOBAL Env* envCurr;
+extern GLOBAL Env* envStart;
+extern GLOBAL Env* envEnd;
+extern GLOBAL u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
 static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr+1==envEnd) thrM("Stack overflow");
   Env* e = envCurr+1;

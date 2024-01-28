@@ -48,7 +48,7 @@ CMP_REC(ne, ne, swapped=0;)
 #undef CMP_REC
 
 #define CMPFN(A,F,S,T) A##_##F##S##_##T
-#define FN_LUT_T(B,F,S,...) Cmp##S##Fn B##_##F##S
+#define FN_LUT_T(B,F,S,...) INIT_GLOBAL Cmp##S##Fn B##_##F##S
 #define FN_LUT_C(B,A,F,S) FN_LUT_T(B,F,S)[] = {CMPFN(A,F,S,u1), CMPFN(A,F,S,i8), CMPFN(A,F,S,i16), CMPFN(A,F,S,i32), CMPFN(A,F,S,f64), CMPFN(A,F,S,u8), CMPFN(A,F,S,u16), CMPFN(A,F,S,u32)}
 #define FN_LUT_A(B,F,S) FN_LUT_T(B,F,S)[8]
 

@@ -52,8 +52,7 @@ enum PrimNumbers {
     /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_insert , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
     /* ⎉⚇⍟⎊        */ n_rank    , n_depth  , n_repeat, n_catch
 };
-extern FC1 rt_invFnRegFn;
-extern FC1 rt_invFnSwapFn;
+extern GLOBAL FC1 rt_invFnRegFn, rt_invFnSwapFn;
 
 
 #ifdef RT_WRAP
@@ -102,7 +101,7 @@ static bool isPervasiveDyExt(B x) {
   return false;
 }
 
-extern B
+extern GLOBAL B
 #define F(N,X) bi_##N,
 FOR_PFN(F,F,F)
 FOR_PM1(F,F,F)

@@ -1,5 +1,5 @@
 #pragma once
-extern HArr* comps_curr; // global-ish state, valid during compilation; comps_max elements
+extern GLOBAL HArr* comps_curr; // global-ish state, valid during compilation; comps_max elements
 enum {
   comps_path,
   comps_name,
@@ -19,7 +19,7 @@ enum {
 #define COMPS_CREF(N) COMPS_REF(comps_curr, N)
 #define COMPS_ACTIVE() (comps_curr!=NULL)
 
-extern B def_sysNames, def_sysVals;
+extern GLOBAL B def_sysNames, def_sysVals;
 B comps_getPrimitives(void);
 void comps_getSysvals(B* res);
 

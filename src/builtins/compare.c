@@ -89,7 +89,7 @@ bool atomEEqual(B w, B x) { // doesn't consume
 // Functions in eqFns compare segments for matching
 // data argument comes from eqFnData
 static const u8 n = 99;
-u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
+u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
   0,0,0,0,0,n,n,n,
   1,0,0,0,0,n,n,n,
   1,1,1,0,0,n,n,n,
@@ -144,7 +144,7 @@ u8 eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise
   #undef DEF_EQ
 #endif
 bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
-EqFn eqFns[] = {
+INIT_GLOBAL EqFn eqFns[] = {
   F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
   F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
   F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,

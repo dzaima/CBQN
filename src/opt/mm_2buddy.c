@@ -5,15 +5,15 @@
 #include "gc.c"
 
 #if OBJ_COUNTER
-  u64 currObjCounter;
+  GLOBAL u64 currObjCounter;
 #endif
 #if VERIFY_TAIL
   #error MM=2 doesn't support VERIFY_TAIL
 #endif
 
 #define ALLOC_MODE 0
-u64 mm_ctrs[128];
-EmptyValue* mm_buckets[128];
+GLOBAL u64 mm_ctrs[128];
+GLOBAL EmptyValue* mm_buckets[128];
 #define b1_buckets mm_buckets
 #define b1_allocL mm_allocL
 #define  ALSZ   20

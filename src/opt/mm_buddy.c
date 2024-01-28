@@ -8,8 +8,8 @@
   u64 currObjCounter;
 #endif
 
-u64 mm_ctrs[64];
-EmptyValue* mm_buckets[64];
+GLOBAL u64 mm_ctrs[64];
+GLOBAL EmptyValue* mm_buckets[64];
 #define  ALSZ   20
 #define  BSZ(X) (1ull<<(X))
 #define  MUL 1

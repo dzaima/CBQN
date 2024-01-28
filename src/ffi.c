@@ -167,8 +167,8 @@ typedef struct BoundFn {
     i32 xLen; // 0: length 0 array; else, ↑
   #endif
 } BoundFn;
-NFnDesc* boundFnDesc;
-NFnDesc* foreignFnDesc;
+GLOBAL NFnDesc* boundFnDesc;
+GLOBAL NFnDesc* foreignFnDesc;
 
 B boundFn_c1(B t,      B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_boundFn1)c->w_c1)(makeX(inc(c->obj)),           makeX(x))); }
 B boundFn_c2(B t, B w, B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_boundFn2)c->w_c2)(makeX(inc(c->obj)), makeX(w), makeX(x))); }
@@ -321,7 +321,7 @@ static const u8 sty_w[] = {
   [sty_i8]=1, [sty_i16]=2, [sty_i32]=4, [sty_i64]=8,
   [sty_f32]=4, [sty_f64]=8
 };
-static const char* sty_names[] = {
+static char* const sty_names[] = {
   [sty_void]="void", [sty_a]="a", [sty_ptr]="*",
   [sty_u8]="u8", [sty_u16]="u16", [sty_u32]="u32", [sty_u64]="u64",
   [sty_i8]="i8", [sty_i16]="i16", [sty_i32]="i32", [sty_i64]="i64",
@@ -567,8 +567,8 @@ static NOINLINE B toW(u8 reT, u8 reW, B x) {
     case 6:               ffi_checkRange(x, 2, "f64", 0, 0);             return toF64Any(x); break;
   }
 }
-static u8 reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
-static u8 reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr };
+static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
+static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr };
 static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
   u8* dst; B r;
   usz ia = (elW*8)>>reW;
@@ -613,7 +613,7 @@ NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m
 NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
 
-static B ffiObjsGlobal;
+static GLOBAL B ffiObjsGlobal;
 void genObj(B o, B c, bool anyMut, void* ptr) {
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar

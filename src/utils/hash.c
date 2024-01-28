@@ -87,7 +87,7 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
 }
 
 
-u64 wy_secret[4];
+INIT_GLOBAL u64 wy_secret[4];
 
 void hash_init(void) {
   u64 bad1=0xa0761d6478bd642full; // values wyhash64 is afraid of

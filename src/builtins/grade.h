@@ -254,8 +254,8 @@ B SORT_C1(B t, B x) {
 #endif
 
 
-extern Arr* bitUD[3]; // from fns.c
-extern B bit2x[2];
+extern GLOBAL Arr* bitUD[3]; // from fns.c
+extern GLOBAL B bit2x[2];
 extern B grade_bool(B x, usz ia, bool up); // slash.c
 
 #define GRADE_CHR GRADE_UD("⍋","⍒")

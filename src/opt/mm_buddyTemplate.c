@@ -10,9 +10,9 @@ typedef struct AllocInfo {
   Value* p;
   u64 sz;
 } AllocInfo;
-AllocInfo* al;
-u64 alCap;
-u64 alSize;
+GLOBAL AllocInfo* al;
+GLOBAL u64 alCap;
+GLOBAL u64 alSize;
 
 FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   c->mmInfo = MMI(to);
@@ -31,7 +31,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 }
 
 #if ALLOC_MODE==0 && ENABLE_GC
-  static bool BN(allocMore_rec);
+  static GLOBAL bool BN(allocMore_rec);
 #endif
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {

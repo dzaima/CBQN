@@ -163,7 +163,7 @@ B eq_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(0); } B r = m_i32(RNK(
 B ne_c1(B t, B x) { if (isAtm(x)) { decA(x); return m_i32(1); } B r = m_f64(*SH(x)); decG(x); return r; }
 
 
-static B mathNS;
+static GLOBAL B mathNS;
 B getMathNS(void) {
   if (mathNS.u == 0) {
     #define F(X) incG(bi_##X),

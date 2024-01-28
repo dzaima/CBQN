@@ -555,7 +555,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   }                               \
   if (ri%64) rp[j] = rc;
 
-extern B rt_slash;
+extern GLOBAL B rt_slash;
 B slash_c1(B t, B x) {
   if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
   u64 s = usum(x);

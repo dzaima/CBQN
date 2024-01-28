@@ -123,7 +123,7 @@ B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(t
 u64 failAtomArr1(void* r, u64 w, void* x, u64 len) { return 0; }
 u64 failAtomArr2(void* r, u64 w, void* x, u64 len) { return 1; }
 
-u8 nextType[] = {
+u8 const nextType[] = {
   [t_i8arr ] = t_i16arr, [t_c8arr ] = t_c16arr,
   [t_i16arr] = t_i32arr, [t_c16arr] = t_c32arr,
   [t_i32arr] = t_f64arr, [t_c32arr] = t_empty,

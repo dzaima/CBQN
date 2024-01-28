@@ -63,7 +63,7 @@ typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
   #define SINGELI_FILE transpose
   #include "../utils/includeSingeli.h"
 #else
-  static TranspFn transposeFns[] = {
+  static TranspFn const transposeFns[] = {
     transpose_i8, transpose_i16, transpose_i32, transpose_i64
   };
 #endif

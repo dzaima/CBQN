@@ -2,7 +2,7 @@
 #include "wyhash.h"
 #include "talloc.h"
 
-extern u64 wy_secret[4];
+extern INIT_GLOBAL u64 wy_secret[4];
 
 static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
   if (ia&63) {

@@ -43,7 +43,7 @@ static void* arr_ptr(Arr* t, u8 el) {
   return el==el_B? (void*)((HArr*)t)->a : (void*)((TyArr*)t)->a;
 }
 
-u8 reuseElType[t_COUNT];
+INIT_GLOBAL u8 reuseElType[t_COUNT];
 void mut_init_copy(Mut* m, B x, u8 el) {
   assert(m->fns == &mutFns[el_MAX]);
   if (reusable(x) && reuseElType[TY(x)]==el) {
@@ -58,7 +58,7 @@ void mut_init_copy(Mut* m, B x, u8 el) {
   }
 }
 
-static Arr* (*cpyFns[])(B) = {
+static Arr* (* const cpyFns[])(B) = {
   [el_bit] = cpyBitArr,
   [el_i8]  = cpyI8Arr,  [el_c8]  = cpyC8Arr,
   [el_i16] = cpyI16Arr, [el_c16] = cpyC16Arr,
@@ -322,17 +322,17 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   
   #define COPY_FN(X,R) simd_copy_##X##_##R
   #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, E, N, ...) \
-  static copy_fn copy0_##E##_fns[10];      \
+  static copy_fn const copy0_##E##_fns[10];       \
   NOINLINE void cpy##N##Arr_BF(void* xp, void* rp, u64 ia, Arr* xa) { \
-    AS2B fn = TIv(xa,GET);                 \
-    for (usz i=0; i<ia; i++) WR(fn(xa,i)); \
-  } \
+    AS2B fn = TIv(xa,GET);                        \
+    for (usz i=0; i<ia; i++) WR(fn(xa,i));        \
+  }                                               \
   static void cpy##N##Arr_B(void* xp, void* rp, u64 ia, void* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
     if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
     else cpy##N##Arr_BF(xp, rp, ia, xa);          \
   }                                               \
-  static copy_fn copy0_##E##_fns[] = __VA_ARGS__; \
+  static copy_fn const copy0_##E##_fns[] = __VA_ARGS__; \
   Arr* cpy##N##Arr(B x) {   \
     usz ia = IA(x);         \
     MAKE; arr_shCopy(r, x); \
@@ -354,13 +354,13 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
                              bit, Bit,          {COPY_FN(1,1),COPY_FN(i8,1),COPY_FN(i16,1),COPY_FN(i32,1),COPY_FN(f64,1),badCopy,      badCopy,       badCopy,       cpyBitArr_B,  COPY_FN(f64,1)})
   
   
-  copy_fn tcopy_i8_fns [] = {[t_bitarr]=simd_copy_1u_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
-  copy_fn tcopy_i16_fns[] = {[t_bitarr]=simd_copy_1u_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
-  copy_fn tcopy_i32_fns[] = {[t_bitarr]=simd_copy_1u_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
-  copy_fn tcopy_f64_fns[] = {[t_bitarr]=simd_copy_1u_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
-  copy_fn tcopy_c8_fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
-  copy_fn tcopy_c16_fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
-  copy_fn tcopy_c32_fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
+  INIT_GLOBAL copy_fn tcopy_i8_fns [] = {[t_bitarr]=simd_copy_1u_i8,  [t_i8arr]=simd_copy_i8_i8 ,[t_i8slice]=simd_copy_i8_i8};
+  INIT_GLOBAL copy_fn tcopy_i16_fns[] = {[t_bitarr]=simd_copy_1u_i16, [t_i8arr]=simd_copy_i8_i16,[t_i8slice]=simd_copy_i8_i16, [t_i16arr]=simd_copy_i16_i16,[t_i16slice]=simd_copy_i16_i16};
+  INIT_GLOBAL copy_fn tcopy_i32_fns[] = {[t_bitarr]=simd_copy_1u_i32, [t_i8arr]=simd_copy_i8_i32,[t_i8slice]=simd_copy_i8_i32, [t_i16arr]=simd_copy_i16_i32,[t_i16slice]=simd_copy_i16_i32, [t_i32arr]=simd_copy_i32_i32,[t_i32slice]=simd_copy_i32_i32};
+  INIT_GLOBAL copy_fn tcopy_f64_fns[] = {[t_bitarr]=simd_copy_1u_f64, [t_i8arr]=simd_copy_i8_f64,[t_i8slice]=simd_copy_i8_f64, [t_i16arr]=simd_copy_i16_f64,[t_i16slice]=simd_copy_i16_f64, [t_i32arr]=simd_copy_i32_f64,[t_i32slice]=simd_copy_i32_f64, [t_f64arr]=simd_copy_f64_f64,[t_f64slice]=simd_copy_f64_f64};
+  INIT_GLOBAL copy_fn tcopy_c8_fns [] = {[t_c8arr]=simd_copy_c8_c8 ,[t_c8slice]=simd_copy_c8_c8};
+  INIT_GLOBAL copy_fn tcopy_c16_fns[] = {[t_c8arr]=simd_copy_c8_c16,[t_c8slice]=simd_copy_c8_c16, [t_c16arr]=simd_copy_c16_c16,[t_c16slice]=simd_copy_c16_c16};
+  INIT_GLOBAL copy_fn tcopy_c32_fns[] = {[t_c8arr]=simd_copy_c8_c32,[t_c8slice]=simd_copy_c8_c32, [t_c16arr]=simd_copy_c16_c32,[t_c16slice]=simd_copy_c16_c32, [t_c32arr]=simd_copy_c32_c32,[t_c32slice]=simd_copy_c32_c32};
   
   #define COPY_FNS(E, NUM) \
     static void m_copyG_##E(void* a, usz ms, B x, usz xs, usz l) { \
@@ -514,8 +514,8 @@ NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
   Arr* apd_dbg_end(ApdMut* m, u32 ty) { fatal("ApdMut default .end invoked"); }
 #endif
 
-void apd_widen(ApdMut* m, B x, ApdFn** fns);
-ApdFn* apd_tot_fns[];  ApdFn* apd_sh0_fns[];  ApdFn* apd_sh1_fns[];  ApdFn* apd_sh2_fns[];
+void apd_widen(ApdMut* m, B x, ApdFn* const* fns);
+ApdFn* const apd_tot_fns[];  ApdFn* const apd_sh0_fns[];  ApdFn* const apd_sh1_fns[];  ApdFn* const apd_sh2_fns[];
 
 #define APD_OR_FILL_0(X)
 #define APD_OR_FILL_1(X) \
@@ -571,11 +571,11 @@ APD_MK(f64, 0,       ((f64*)a)[p0]=o2fG(x),  xe<=el_f64)  APD_MK(B,   1, ((B*)a)
 NOINLINE void apd_shE_T(ApdMut* m, B x) { APD_SHH_CHK(2) }
 NOINLINE void apd_shE_B(ApdMut* m, B x) { APD_SHH_CHK(2) }
 
-#define APD_FNS(N) ApdFn* apd_##N##_fns[] = {apd_##N##_bit,apd_##N##_i8,apd_##N##_i16,apd_##N##_i32,apd_##N##_f64,apd_##N##_c8,apd_##N##_c16,apd_##N##_c32,apd_##N##_B}
+#define APD_FNS(N) ApdFn* const apd_##N##_fns[] = {apd_##N##_bit,apd_##N##_i8,apd_##N##_i16,apd_##N##_i32,apd_##N##_f64,apd_##N##_c8,apd_##N##_c16,apd_##N##_c32,apd_##N##_B}
 APD_FNS(tot);
 APD_FNS(sh0); APD_FNS(sh1); APD_FNS(sh2);
 #undef APD_FNS
-ApdFn *apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_B};
+ApdFn* const apd_shE_fns[] = {apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_T,apd_shE_B};
 
 NOINLINE Arr* apd_ret_end(ApdMut* m, u32 ty) { NOGC_E; return m->obj; }
 NOINLINE Arr* apd_fill_end(ApdMut* m, u32 ty) {
@@ -666,7 +666,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   if (xe==el_B) NOGC_E;
 }
 
-NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
+NOINLINE void apd_widen(ApdMut* m, B x, ApdFn* const* fns) {
   u8 xe = isArr(x)? TI(x,elType) : selfElType(x);
   u8 pe = TIv(m->obj,elType);
   u8 re = el_or(xe, pe);
@@ -701,10 +701,10 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn** fns) {
 
 
 
-M_CopyF copyFns[el_MAX];
-M_FillF fillFns[el_MAX];
-MutFns mutFns[el_MAX+1];
-u8 el_orArr[el_MAX*16 + el_MAX+1];
+INIT_GLOBAL M_CopyF copyFns[el_MAX];
+INIT_GLOBAL M_FillF fillFns[el_MAX];
+INIT_GLOBAL MutFns mutFns[el_MAX+1];
+INIT_GLOBAL u8 el_orArr[el_MAX*16 + el_MAX+1];
 void mutF_init(void) {
   for (u8 i = 0; i <= el_MAX; i++) {
     for (u8 j = 0; j <= el_MAX; j++) {

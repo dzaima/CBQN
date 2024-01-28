@@ -25,7 +25,7 @@ struct MutFns {
   M_SetF  m_set,  m_setG;
   M_GetF m_getU;
 };
-extern MutFns mutFns[el_MAX+1];
+extern INIT_GLOBAL MutFns mutFns[el_MAX+1];
 
 struct Mut {
   MutFns* fns;
@@ -70,7 +70,7 @@ static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
   return m->val;
 }
 
-extern u8 el_orArr[];
+extern INIT_GLOBAL u8 el_orArr[];
 static u8 el_or(u8 a, u8 b) {
   return el_orArr[a*16 + b];
 }

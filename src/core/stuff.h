@@ -35,8 +35,8 @@ static void decSh(Value* x) { if (RARE(PRNK(x)>1)) decShObj(shObjP(x)); }
 
 typedef void (*M_CopyF)(void*, usz, B, usz, usz);
 typedef void (*M_FillF)(void*, usz, B, usz);
-extern M_CopyF copyFns[el_MAX];
-extern M_FillF fillFns[el_MAX];
+extern INIT_GLOBAL M_CopyF copyFns[el_MAX];
+extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 #define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
 #define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
 
@@ -327,23 +327,23 @@ static FC2 c2fn(B f) {
 
 // alloc stuff
 #if ALLOC_STAT
-  extern u64* ctr_a;
-  extern u64* ctr_f;
-  extern u64 actrc;
-  extern u64 talloc;
+  extern GLOBAL u64* ctr_a;
+  extern GLOBAL u64* ctr_f;
+  extern GLOBAL u64 actrc;
+  extern GLOBAL u64 talloc;
   #if ALLOC_SIZES
-    extern u32** actrs;
+    extern GLOBAL u32** actrs;
   #endif
 #endif
 
 #ifdef OOM_TEST
-  extern i64 oomTestLeft;
+  extern GLOBAL i64 oomTestLeft;
   NOINLINE NORETURN void thrOOMTest(void);
 #endif
 
 #ifdef GC_EVERY_NTH_ALLOC
-  extern u64 gc_depth;
-  extern u64 nth_alloc;
+  extern GLOBAL u64 gc_depth;
+  extern GLOBAL u64 nth_alloc;
 #endif
 FORCE_INLINE void preAlloc(usz sz, u8 type) {
   #ifdef OOM_TEST

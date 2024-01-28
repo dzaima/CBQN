@@ -58,7 +58,7 @@ static void cf_1(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)
 static void cf_2(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 2); }
 static void cf_3(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 3); }
 static void cf_4(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4); }
-static CFn cfs_0_4[] = {cf_0, cf_1, cf_2, cf_3, cf_4};
+static CFn const cfs_0_4[] = {cf_0, cf_1, cf_2, cf_3, cf_4};
 static void cf_8(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8); }
 static void cf_16(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); }
 static void cf_5_7  (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4);  memcpy(r+d, x+d, 4); }
@@ -92,7 +92,7 @@ FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
   f.fn(r, rs, x, xs, f.data);
 }
 
-extern B rt_select;
+extern GLOBAL B rt_select;
 B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
   ur xr = RNK(x);
@@ -369,7 +369,7 @@ B select_c2(B t, B w, B x) {
 
 
 
-extern u8 reuseElType[t_COUNT];
+extern INIT_GLOBAL u8 reuseElType[t_COUNT];
 B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia) { // rep⌾(w⊏⥊) x, assumes w is a typed (elNum) list of valid indices, only el_f64 if strictly necessary
   #if CHECK_VALID
     TALLOC(bool, set, xia);

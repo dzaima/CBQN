@@ -49,17 +49,17 @@ SHOULD_INLINE void* m_tyarrlbp(Arr** rp, usz w, usz ia, u8 type) M_TYARR(2, , , 
 SHOULD_INLINE void* m_tyarrlbv(B*    rp, usz w, usz ia, u8 type) M_TYARR(2, , arr_shVec((Arr*)r);, taga(r), )
 SHOULD_INLINE void* m_tyarrlbc(B*    rp, usz w, B x,    u8 type) M_TYARR(2, , arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
 
-extern u8 elType2type[];
+extern u8 const elType2type[];
 #define el2t(X) elType2type[X] // TODO maybe reorganize array types such that this can just be addition?
-extern u8 elTypeWidth[];
+extern u8 const elTypeWidth[];
 #define elWidth(X) elTypeWidth[X]
-extern u8 elwBitLogT[];
+extern u8 const elwBitLogT[];
 #define elwBitLog(X) elwBitLogT[X]
-extern u8 elwByteLogT[];
+extern u8 const elwByteLogT[];
 #define elwByteLog(X) elwByteLogT[X]
-extern u8 arrTypeWidthLog[];
+extern u8 const arrTypeWidthLog[];
 #define arrTypeWidthLog(X) arrTypeWidthLog[X]
-extern u8 arrTypeBitsLog[];
+extern u8 const arrTypeBitsLog[];
 #define arrTypeBitsLog(X) arrTypeBitsLog[X]
 #define arrNewType(X) el2t(TIi(X,elType))
 
