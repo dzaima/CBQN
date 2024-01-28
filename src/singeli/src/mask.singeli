@@ -74,18 +74,17 @@ def hCast{T,p:P & same{T,eltype{P}}} = p
 def hCast{T,p:P & same{P,*void}} = *T~~p
 
 def mlExec{i, iter, vars0, bulk, M} = {
-  def vproc2{T,p:P} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
-  def vproc2{S=='b',  p:P} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
-  def vproc2{S=='b',T,p:P} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
-  def vproc2{S=='g',  p:P} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
-  def vproc2{S=='g',T,p:P} = tptr{{i} => {
+  def vproc{p:P & isptr{P}} = p
+  def vproc{('m')} = tptr{{_}=>M, '!'}
+  
+  def vproc{{T,p:P}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
+  def vproc{{('b'),  p:P}} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
+  def vproc{{('b'),T,p:P}} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
+  def vproc{{('g'),  p:P}} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
+  def vproc{{('g'),T,p:P}} = tptr{{i} => {
     def dv{} = loadBatch{p, i, T}
     def dv{x} = storeBatch{p, i, x, M}
   }, '!'}
-  
-  def vproc{p:P & isptr{P}} = p
-  def vproc{S=='m'} = tptr{{_}=>M, '!'}
-  def vproc{t & ktup{t}} = vproc2{...t}
   
   iter{i, each{vproc, vars0}}
 }
