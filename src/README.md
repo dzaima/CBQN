@@ -171,7 +171,7 @@ TFREE(buf); // free buf
 
 TSALLOC(i32, stack, 10); // allocate an i32 stack with initially reserved 10 items (initial reserve must be positive!)
 TSADD(stack, 15); // add a single item
-TSADD(stack, (i32*){1,2,3}, 3); // add many items
+TSADDA(stack, (i32*){1,2,3}, 3); // add many items
 usz sz = TSSIZE(stack); // get the current height of the stack
 i32 item = stack[1]; // get the 2nd item
 TSFREE(stack); // free the stack
