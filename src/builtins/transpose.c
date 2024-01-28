@@ -105,9 +105,9 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   if (csz==1 && xlw==0) {
     u64* rp; r=m_bitarrp(&rp, ia);
     interleave_bits(rp, bitarr_ptr(w), bitarr_ptr(x), ia);
-  } else
+  }
   #if SINGELI
-  if (csz==1 && xe==el_B) {
+  else if (csz==1 && xe==el_B) {
     B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
     HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
     si_interleave[3](p.a, wp, xp, n);
@@ -122,9 +122,10 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
     if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
     else rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
     si_interleave[CTZ(csz<<xlw)-3](rv, tyany_ptr(w), tyany_ptr(x), n);
-  } else
+  }
   #endif
-  return bi_N;
+  else return bi_N;
+  
   usz* sh = arr_shAlloc(r, xr+1);
   shcpy(sh, xsh, xk); sh[xk]=2; shcpy(sh+xk+1, xsh+xk, xr-xk);
   return taga(r);
