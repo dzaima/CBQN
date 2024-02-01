@@ -200,10 +200,10 @@ B fne_c1(B t, B x) {
   usz or = 0;
   for (i32 i = 0; i < xr; i++) or|= sh[i];
   B r;
-  if      (or<=I8_MAX ) { i8*  rp; r = m_i8arrv (&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
-  else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
-  else if (or<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
-  else                  { f64* rp; r = m_f64arrv(&rp, xr); for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  if      (or<=I8_MAX ) { i8*  rp; r = m_i8arrv (&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else if (or<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
+  else                  { f64* rp; r = m_f64arrv(&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
   decG(x); return r;
 }
 B feq_c1(B t, B x) {

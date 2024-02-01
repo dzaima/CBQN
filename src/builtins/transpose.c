@@ -293,15 +293,15 @@ B transp_c2(B t, B w, B x) {
   // Add up stride for each axis
   ur na = max + 1;    // Number of result axes that moved
   usz* st = rsh + xr; // Length na
-  for (usz j=0; j<na; j++) st[j] = 0;
+  PLAINLOOP for (usz j=0; j<na; j++) st[j] = 0;
   usz csz = shProd(xsh, na+dup, xr);
-  for (usz i=na+dup, c=csz; i--; ) { st[p[i]]+=c; c*=xsh[i]; }
+  PLAINLOOP for (usz i=na+dup, c=csz; i--; ) { st[p[i]]+=c; c*=xsh[i]; }
 
   // Simplify axis structure
   // p is unused now; work only on csz, rsh, and st
   usz *lp = &csz; usz sz = csz;
   usz na0=na; usz* rsh0=rsh; usz* st0=st; rsh+=na0; st+=na0; na=0;
-  for (usz i=na0; i--; ) {
+  PLAINLOOP for (usz i=na0; i--; ) {
     usz l = rsh0[i]; if (l==1) continue;                    // Ignore
     usz s = st0[i]; if (s==sz) { *lp*=l; sz*=l; continue; } // Combine with lower
     na++; *--rsh=l; *--st=s; lp=rsh; sz=l*s;
@@ -316,7 +316,7 @@ B transp_c2(B t, B w, B x) {
   u8 xe = TI(x,elType);
   #define AXIS_LOOP(N_AX, I_INC, DO_INNER) \
     ur a0 = N_AX - 1;                                           \
-    usz* ri = st+na; for (usz i=0; i<a0; i++) ri[i]=0;          \
+    usz* ri = st+na; PLAINLOOP for (usz i=0; i<a0; i++) ri[i]=0;\
     usz l = rsh[a0];                                            \
     for (usz i=0, j0=0;;) {                                     \
       /* Hardcode one innermost loop: assume N_AX>=1 */         \
@@ -369,9 +369,9 @@ B transp_c2(B t, B w, B x) {
       usz i_skip = (w-1)*hs*csz;
       usz end = rf*csz - i_skip;
       ur a0 = na - 1;
-      if      (xlw<3) for (usz i=0; i<na; i++) st[i] >>= 3-xlw;
-      else if (xlw>3) for (usz i=0; i<na; i++) st[i] <<= xlw-3;
-      usz* ri = st+na; for (usz i=0; i<a0; i++) ri[i]=0;
+      if      (xlw<3) PLAINLOOP for (usz i=0; i<na; i++) st[i] >>= 3-xlw;
+      else if (xlw>3) PLAINLOOP for (usz i=0; i<na; i++) st[i] <<= xlw-3;
+      usz* ri = st+na; PLAINLOOP for (usz i=0; i<a0; i++) ri[i]=0;
       for (usz i=0, j=0;;) {
         tran(rp+i, xp+j, w, h, ws, hs);
         i += h*csz;
