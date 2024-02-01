@@ -323,10 +323,10 @@ B hash_c1(B t, B x) {
 
 
 
-static GLOBAL Body* rand_ns;
-static GLOBAL B rand_rangeName;   static GLOBAL NFnDesc* rand_rangeDesc;
-static GLOBAL B rand_dealName;    static GLOBAL NFnDesc* rand_dealDesc;
-static GLOBAL B rand_subsetName;  static GLOBAL NFnDesc* rand_subsetDesc;
+STATIC_GLOBAL Body* rand_ns;
+STATIC_GLOBAL B rand_rangeName;   STATIC_GLOBAL NFnDesc* rand_rangeDesc;
+STATIC_GLOBAL B rand_dealName;    STATIC_GLOBAL NFnDesc* rand_dealDesc;
+STATIC_GLOBAL B rand_subsetName;  STATIC_GLOBAL NFnDesc* rand_subsetDesc;
 #define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
                    u64 seed = sc->vars[0].u | sc->vars[1].u<<32;
 #define RAND_END sc->vars[0].u = seed>>32; \
@@ -649,7 +649,7 @@ B makeRand_c1(B t, B x) {
   for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], incG(r));
   return r;
 }
-static GLOBAL B randNS;
+STATIC_GLOBAL B randNS;
 B getRandNS(void) {
   if (randNS.u == 0) {
     #if RANDSEED==0
@@ -661,9 +661,9 @@ B getRandNS(void) {
   }
   return incG(randNS);
 }
-static GLOBAL NFnDesc* bqnDesc;
-static GLOBAL NFnDesc* rebqnDesc;
-static GLOBAL NFnDesc* rebqnResDesc;
+STATIC_GLOBAL NFnDesc* bqnDesc;
+STATIC_GLOBAL NFnDesc* rebqnDesc;
+STATIC_GLOBAL NFnDesc* rebqnResDesc;
 B rebqn_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
@@ -707,14 +707,14 @@ B currentError_c1(B t, B x) {
 B currentError_c1(B t, B x) { thrM("•CurrentError: No errors as error catching has been disabled"); }
 #endif
 
-static GLOBAL Body* hashmap_ns;
-static GLOBAL NFnDesc* hashmap_getDesc;
-static GLOBAL NFnDesc* hashmap_hasDesc;
-static GLOBAL NFnDesc* hashmap_setDesc;
-static GLOBAL NFnDesc* hashmap_deleteDesc;
-static GLOBAL NFnDesc* hashmap_countDesc;
-static GLOBAL NFnDesc* hashmap_keysDesc;
-static GLOBAL NFnDesc* hashmap_valuesDesc;
+STATIC_GLOBAL Body* hashmap_ns;
+STATIC_GLOBAL NFnDesc* hashmap_getDesc;
+STATIC_GLOBAL NFnDesc* hashmap_hasDesc;
+STATIC_GLOBAL NFnDesc* hashmap_setDesc;
+STATIC_GLOBAL NFnDesc* hashmap_deleteDesc;
+STATIC_GLOBAL NFnDesc* hashmap_countDesc;
+STATIC_GLOBAL NFnDesc* hashmap_keysDesc;
+STATIC_GLOBAL NFnDesc* hashmap_valuesDesc;
 // Hash object handling defined in search.c
 extern B hashmap_build(B keys, usz n);
 extern B hashmap_lookup(B* vars, B w, B x);
@@ -761,7 +761,7 @@ B hashMap_c2(B t, B w, B x) {
   return ns;
 }
 
-static GLOBAL NFnDesc* fileAtDesc;
+STATIC_GLOBAL NFnDesc* fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
 }
@@ -771,7 +771,7 @@ B fileAt_c2(B d, B w, B x) {
   dec(w);
   return r;
 }
-static GLOBAL NFnDesc* fCharsDesc;
+STATIC_GLOBAL NFnDesc* fCharsDesc;
 B fchars_c1(B d, B x) {
   return path_chars(path_rel(nfn_objU(d), x, "•file.Chars"));
 }
@@ -782,7 +782,7 @@ B fchars_c2(B d, B w, B x) {
   dec(x);
   return p;
 }
-static GLOBAL NFnDesc* fBytesDesc;
+STATIC_GLOBAL NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
   I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
   usz ia = PIA(tf);
@@ -798,7 +798,7 @@ B fbytes_c2(B d, B w, B x) {
   dec(x);
   return p;
 }
-static GLOBAL NFnDesc* fLinesDesc;
+STATIC_GLOBAL NFnDesc* fLinesDesc;
 B flines_c1(B d, B x) {
   return path_lines(path_rel(nfn_objU(d), x, "•file.Lines"));
 }
@@ -820,7 +820,7 @@ B flines_c2(B d, B w, B x) {
   decG(s);
   return p;
 }
-static GLOBAL NFnDesc* importDesc;
+STATIC_GLOBAL NFnDesc* importDesc;
 
 
 
@@ -863,18 +863,18 @@ B import_c1(B d, B x) {
 }
 
 
-static GLOBAL NFnDesc* fTypeDesc;
-static GLOBAL NFnDesc* fCreatedDesc;
-static GLOBAL NFnDesc* fAccessedDesc;
-static GLOBAL NFnDesc* fModifiedDesc;
-static GLOBAL NFnDesc* fSizeDesc;
-static GLOBAL NFnDesc* fExistsDesc;
-static GLOBAL NFnDesc* fListDesc;
-static GLOBAL NFnDesc* fMapBytesDesc;
-static GLOBAL NFnDesc* createdirDesc;
-static GLOBAL NFnDesc* realpathDesc;
-static GLOBAL NFnDesc* renameDesc;
-static GLOBAL NFnDesc* removeDesc;
+STATIC_GLOBAL NFnDesc* fTypeDesc;
+STATIC_GLOBAL NFnDesc* fCreatedDesc;
+STATIC_GLOBAL NFnDesc* fAccessedDesc;
+STATIC_GLOBAL NFnDesc* fModifiedDesc;
+STATIC_GLOBAL NFnDesc* fSizeDesc;
+STATIC_GLOBAL NFnDesc* fExistsDesc;
+STATIC_GLOBAL NFnDesc* fListDesc;
+STATIC_GLOBAL NFnDesc* fMapBytesDesc;
+STATIC_GLOBAL NFnDesc* createdirDesc;
+STATIC_GLOBAL NFnDesc* realpathDesc;
+STATIC_GLOBAL NFnDesc* renameDesc;
+STATIC_GLOBAL NFnDesc* removeDesc;
 
 B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x, "•file.List"));
@@ -1248,7 +1248,7 @@ B tErrRaw_c1(B t, B x) {
   return x;
 }
 
-static GLOBAL B termNS;
+STATIC_GLOBAL B termNS;
 B getTermNS(void) {
   if (termNS.u == 0) {
     #define F(X) incG(bi_##X),
@@ -1312,7 +1312,7 @@ B nHas_c2(B t, B w, B x) {
   decG(w); decG(x);
   return m_i32(!q_N(r));
 }
-static GLOBAL B nsNS;
+STATIC_GLOBAL B nsNS;
 B getNsNS(void) {
   if (nsNS.u == 0) {
     #define F(X) incG(bi_##X),
@@ -1612,7 +1612,7 @@ DEF_OP2(and) DEF_OP2(or) DEF_OP2(xor)
 DEF_OP2(add) DEF_OP2(sub) DEF_OP2(mul)
 #undef DEF_OP2
 
-static GLOBAL B bitNS;
+STATIC_GLOBAL B bitNS;
 B getBitNS(void) {
   if (bitNS.u == 0) {
     #define F(X) incG(bi_bit##X),
@@ -1627,7 +1627,7 @@ B getBitNS(void) {
 B getInternalNS(void);
 B getMathNS(void);
 
-static GLOBAL Body* file_nsGen;
+STATIC_GLOBAL Body* file_nsGen;
 
 #if FFI || FOR_BUILD
 #define FFIOPT 1
@@ -1732,7 +1732,7 @@ static NOINLINE void initSysDesc() {
 extern char* const cbqn_versionString;
 #endif
 
-static GLOBAL B platformNS;
+STATIC_GLOBAL B platformNS;
 static B getPlatformNS(void) {
   if (platformNS.u == 0) {
     

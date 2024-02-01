@@ -79,10 +79,10 @@ B info_c1(B t, B x) {
                          F(Af)   F(Sf)   F(AfInc)   F(SfInc) \
                          F(Ab)           F(AbInc)
 
-#define F(X) static GLOBAL B v_##X;
+#define F(X) STATIC_GLOBAL B v_##X;
 FOR_VARIATION(F)
 #undef F
-static GLOBAL B listVariations_def;
+STATIC_GLOBAL B listVariations_def;
 
 B listVariations_c2(B t, B w, B x) {
   if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
@@ -162,7 +162,7 @@ static bool u8_get(u8** cv, u8* cE, const char* x) {
   
 }
 
-static GLOBAL B variation_refs;
+STATIC_GLOBAL B variation_refs;
 B variation_c2(B t, B w, B x) {
   if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
   if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
@@ -380,7 +380,7 @@ B unshare_c1(B t, B x) {
   dec(x);
   return r;
 }
-static GLOBAL B internalNS;
+STATIC_GLOBAL B internalNS;
 B getInternalNS(void) {
   if (internalNS.u == 0) {
     #define F(X) v_##X = m_c8vec_0(#X);

@@ -381,8 +381,8 @@ static inline B to_chars(const floating_decimal_64 v, const bool sign, const boo
   return r;
 }
 
-static GLOBAL B fmt_nan, fmt_zero;
-static GLOBAL B fmt_inf[2];
+STATIC_GLOBAL B fmt_nan, fmt_zero;
+STATIC_GLOBAL B fmt_inf[2];
 B ryu_d2s(double f) {
   const uint64_t bits = double_to_bits(f); // decode the floating-point number, and unify normalized and subnormal cases.
   

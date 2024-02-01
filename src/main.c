@@ -20,9 +20,9 @@
   #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
 #endif
 
-static GLOBAL B replPath, replName;
-static GLOBAL Scope* gsc;
-static GLOBAL bool repl_initialized = false;
+STATIC_GLOBAL B replPath, replName;
+STATIC_GLOBAL Scope* gsc;
+STATIC_GLOBAL bool repl_initialized = false;
 
 static NOINLINE void repl_init() {
   if (repl_initialized) return;
@@ -68,8 +68,8 @@ static NOINLINE i64 readInt(char** p) {
   #include <errno.h>
   #include "utils/cstr.h"
   GLOBAL Replxx* global_replxx;
-  static GLOBAL char* global_histfile;
-  static GLOBAL u32 cfg_prefixChar = U'\\';
+  STATIC_GLOBAL char* global_histfile;
+  STATIC_GLOBAL u32 cfg_prefixChar = U'\\';
   
   static i8 const themes[3][12][3] = {
     // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
@@ -109,11 +109,11 @@ static NOINLINE i64 readInt(char** p) {
   };
   
   typedef i8 Theme[12][3];
-  static GLOBAL ReplxxColor theme_replxx[12];
+  STATIC_GLOBAL ReplxxColor theme_replxx[12];
   
-  static GLOBAL i32 cfg_theme = 1;
-  static GLOBAL bool cfg_enableKeyboard = true;
-  static GLOBAL B cfg_path;
+  STATIC_GLOBAL i32 cfg_theme = 1;
+  STATIC_GLOBAL bool cfg_enableKeyboard = true;
+  STATIC_GLOBAL B cfg_path;
   
   static char* const command_completion[] = {
     ")ex ",
@@ -163,7 +163,7 @@ static NOINLINE i64 readInt(char** p) {
   }
   
   extern u32* const dsv_text[];
-  static GLOBAL B sysvalNames, sysvalNamesNorm;
+  STATIC_GLOBAL B sysvalNames, sysvalNamesNorm;
   
   NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
     PLAINLOOP for (int i = s; i < e; i++) cols[i] = col;
@@ -406,9 +406,9 @@ static NOINLINE i64 readInt(char** p) {
     
     return (TmpState){.s = s, .pos = replace? pos : pos+1};
   }
-  static GLOBAL B b_pv;
-  static GLOBAL int b_pp;
-  static GLOBAL bool inBackslash;
+  STATIC_GLOBAL B b_pv;
+  STATIC_GLOBAL int b_pp;
+  STATIC_GLOBAL bool inBackslash;
   static void stopBackslash() { inBackslash = false; }
   NOINLINE void setPrev(B s, u64 pos) { // consumes
     decG(b_pv);
@@ -440,7 +440,7 @@ static NOINLINE i64 readInt(char** p) {
   B indexOf_c2(B, B, B);
   B pick_c1(B, B);
   
-  static GLOBAL B b_key, b_val;
+  STATIC_GLOBAL B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!cfg_enableKeyboard) return;
     CATCH_OOM(return)
@@ -579,7 +579,7 @@ void clearImportCache(void);
 void switchComp(void);
 #endif
 
-static GLOBAL B escape_parser;
+STATIC_GLOBAL B escape_parser;
 static B simple_unescape(B x) {
   if (RARE(escape_parser.u==0)) {
     escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N);

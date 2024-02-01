@@ -27,7 +27,7 @@ GLOBAL u64 mmX_ctrs[64];
 #define  MMI(X) X
 #define  ALSZ  20
 
-static GLOBAL u64 nvm_mmap_seed = 0;
+STATIC_GLOBAL u64 nvm_mmap_seed = 0;
 #ifdef __clang__
 #if __clang_major__ <= 12 // old clang versions get stuck in an infinite loop while optimizing this
 __attribute__((optnone))

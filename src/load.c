@@ -630,7 +630,7 @@ void bqn_exit(i32 code) {
   exit(code);
 }
 
-static GLOBAL B load_explain;
+STATIC_GLOBAL B load_explain;
 B bqn_explain(B str) {
   #if NO_EXPLAIN
     thrM("Explainer not included in this CBQN build");

@@ -32,15 +32,15 @@ void cbqn_heapVerify() {
 
 #endif
 
-static GLOBAL u64 heap_PICounts[t_COUNT];
-static GLOBAL u64 heap_PISizes[t_COUNT];
+STATIC_GLOBAL u64 heap_PICounts[t_COUNT];
+STATIC_GLOBAL u64 heap_PISizes[t_COUNT];
 
 NOINLINE void heap_PIFn(Value* v) {
   heap_PICounts[PTY(v)]++;
   heap_PISizes[PTY(v)]+= mm_size(v);
 }
 
-static GLOBAL u64 heap_PIFreed[128];
+STATIC_GLOBAL u64 heap_PIFreed[128];
 void heap_PIFreedFn(Value* v) {
   heap_PIFreed[v->mmInfo&127]++;
 }

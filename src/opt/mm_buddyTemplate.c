@@ -31,7 +31,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
 }
 
 #if ALLOC_MODE==0 && ENABLE_GC
-  static GLOBAL bool BN(allocMore_rec);
+  STATIC_GLOBAL bool BN(allocMore_rec);
 #endif
 
 static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {

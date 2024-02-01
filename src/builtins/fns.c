@@ -303,7 +303,7 @@ B find_c2(B t, B w, B x) {
   decG(x); decG(w); return r;
 }
 
-static GLOBAL H_b2i* globalNames;
+STATIC_GLOBAL H_b2i* globalNames;
 GLOBAL B globalNameList;
 i32 str2gid(B s) {
   if (globalNames==NULL) {

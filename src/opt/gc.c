@@ -196,7 +196,7 @@ void gc_forceGC(bool toplevel) {
   #endif
 }
 
-static GLOBAL bool gc_wantTopLevelGC;
+STATIC_GLOBAL bool gc_wantTopLevelGC;
 bool gc_maybeGC(bool toplevel) {
   if (gc_depth) return false;
   u64 used = mm_heapUsed();

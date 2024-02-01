@@ -140,7 +140,7 @@ typedef struct NextRequest {
   u32 pos2; // ↑ for dyadic; U32_MAX if not wanted
 } NextRequest;
 
-static GLOBAL B emptyARMM;
+STATIC_GLOBAL B emptyARMM;
 
 Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBlocks, B allBodies, B nameList, Scope* sc, i32 depth, i32 myPos, i32 nsResult) {
   assert(sc!=NULL || nsResult==0);
@@ -1154,7 +1154,7 @@ void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 B block_decompose(B x) { return m_hvec2(m_i32(1), x); }
 
 #if !defined(_WIN32) && !defined(_WIN64)
-static GLOBAL usz pageSizeV;
+STATIC_GLOBAL usz pageSizeV;
 #endif
 
 usz getPageSize() {
