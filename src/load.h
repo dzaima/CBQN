@@ -25,6 +25,7 @@ void comps_getSysvals(B* res);
 
 typedef struct Block Block;
 typedef struct Scope Scope;
+NOINLINE B load_fullpath(B path, B name); // doesn't consume
 B bqn_explain(B str); // consumes str
 B bqn_execFile(B path, B args); // consumes both
 B bqn_execFileRe(B path, B args, B re); // consumes path,args

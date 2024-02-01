@@ -216,6 +216,7 @@ B asrt_c2(B t, B w, B x) {
   thr(w);
 }
 B casrt_c2(B t, B w, B x) {
+  B fullpath = load_fullpath(COMPS_CREF(path), COMPS_CREF(name));
   if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
   unwindCompiler();
   dec(x);
@@ -225,21 +226,21 @@ B casrt_c2(B t, B w, B x) {
       B s = IGet(w,1);
       AFMT("\n");
       usz pos = o2s(w0);
-      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), pos, pos+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
       dec(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
       usz pos = o2s(IGetU(w0,0));
-      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), pos, pos+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
       dec(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
-      s = vm_fmtPoint(COMPS_CREF(src), s, COMPS_CREF(path), o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
       dec(w);
       thr(s);
     }
