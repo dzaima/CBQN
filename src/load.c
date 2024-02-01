@@ -824,7 +824,16 @@ void base_init() { // very first init function
   TIi(t_customObj,visit) = customObj_visit;
   TIi(t_arbObj,visit) = noop_visit;
   
-  assert((MD1_TAG>>1) == (MD2_TAG>>1)); // just to be sure it isn't changed incorrectly, `isMd` depends on this
+  // making sure that expected properties of constants hold
+  assert((MD1_TAG>>1) == (MD2_TAG>>1)); // dependencies: isMd
+  
+  // dependencies: v_tagCheck & the JIT equivalent
+  assert(v_bad17_read == (bi_noVar.u >>47));
+  assert(v_bad17_read == (bi_optOut.u>>47));
+  assert(v_bad17_read != (bi_N.u     >>47));
+  assert(v_bad18_write == (bi_noVar.u >>46));
+  assert(v_bad18_write != (bi_optOut.u>>46));
+  assert(v_bad18_write != (bi_N.u     >>46));
   
   #define FA(N,X) bi_##N = m_bfn(N##_c1, N##_c2, pf_##N);
   #define FM(N,X) bi_##N = m_bfn(N##_c1, c2_bad, pf_##N);

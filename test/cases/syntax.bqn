@@ -1,3 +1,5 @@
+%DEF jiteq _jiteq ← {r ← ⍷ (1⋈𝔽)⎊{𝕊: 0⋈•CurrentError@}¨ 4⥊<𝕩 ⋄ "TEST FAIL: all results weren't equal" ! 1=≠r ⋄ {0‿e: !e; 1‿e: e}⊑r}
+
 # body usage
 a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"No header matched argument" % { 𝕊a‿b: a+b ; d𝕊a‿b‿c: a+b+c} ↕⥊3
@@ -29,13 +31,13 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"No dyadic F˜⁼ undo header found for this 2-modifier block" % 1 +{𝔽𝔾𝕩}+˜⁼ 1
 
 # assignment
-!"Reading variable before its defined" % {a} ⋄ a←1
-!"↩: Reading variable that hasn't been set" % {a⊢↩↕10} ⋄ a←2
-!"↩: Updating variable that hasn't been set" % {a↩↕10} ⋄ a←2
-!"↩: Reading variable that hasn't been set" % {a (↕10)˙↩} ⋄ a←2
-!"↩: Reading variable that hasn't been set" % a←1 ⋄ {a‿b⊢↩↕2} ⋄ b←2
-!"↩: Updating variable that hasn't been set" % a←1 ⋄ {a‿b↩↕2} ⋄ b←2
-!"↩: Reading variable that hasn't been set" % a←1 ⋄ {a‿b (↕10)˙↩} ⋄ b←2
+!"Attempting to read variable which is not yet defined" % {a} ⋄ a←1
+!"Attempting to read variable which is not yet defined" % {a⊢↩↕10} ⋄ a←2
+!"Assignment: Attempting to modify variable which is not yet defined" % {a↩↕10} ⋄ a←2
+!"Attempting to read variable which is not yet defined" % {a (↕10)˙↩} ⋄ a←2
+!"Attempting to read variable which is not yet defined" % a←1 ⋄ {a‿b⊢↩↕2} ⋄ b←2
+!"Assignment: Attempting to modify variable which is not yet defined" % a←1 ⋄ {a‿b↩↕2} ⋄ b←2
+!"Attempting to read variable which is not yet defined" % a←1 ⋄ {a‿b (↕10)˙↩} ⋄ b←2
 !"Assignment: Mismatched shape for spread assignment" % a‿b←1
 !"Assignment: Mismatched shape for spread assignment" % a‿b←1‿2‿3
 !"Assignment: Mismatched shape for spread assignment" % ⟨a⟩←<1
@@ -43,9 +45,17 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"Assignment: Mismatched shape for spread assignment" % ⟨⟩←⟨1⟩
 ⟨⟩←⟨⟩ %% ⟨⟩
 
-# mid-update assignment; precise behavior here isn't particularly important, but it should at least be consistent
-a←↕2 ⋄ a {𝕊: a←"foo" ⋄ {𝕊:a!↩0}⎊•CurrentError @}↩  ⋄ %% "foo"
-!"Reading variable that was optimized out by F↩ after error" % a←"foo" ⋄ ! "foo"≡{𝕊:a!↩@}⎊•CurrentError @ ⋄ •Type a
+# mid-update variable behavior
+%USE jiteq ⋄ {𝕊: a←"foo" ⋄ {𝕊:a!↩@}⎊•CurrentError @ ⋄     1} _jiteq @ %% 1
+!"Attempting to read variable which isn't available due to incomplete or aborted F↩" % %USE jiteq ⋄ {𝕊: a←"foo" ⋄ ! "foo" ≡ {𝕊:a!↩@}⎊•CurrentError @ ⋄ a ⋄ 1} _jiteq @
+!"Attempting to read variable which isn't available due to incomplete or aborted F↩" % %USE jiteq ⋄ {𝕊: a←"foo" ⋄ a {𝕊:   ≠a}↩ ⋄ 1} _jiteq @
+!"Attempting to read variable which isn't available due to incomplete or aborted F↩" % %USE jiteq ⋄ {𝕊: a←1     ⋄ a {𝕊: a ⊢↩}↩ ⋄ 1} _jiteq @
+
+# not-yet-defined variable usage
+!"Attempting to read variable which is not yet defined" % %USE jiteq ⋄ {𝕊: {a ⊢↩    } ⋄ a←1} _jiteq @
+!"Attempting to read variable which is not yet defined" % %USE jiteq ⋄ {𝕊: {a ⊢↩ ⋄ 1} ⋄ a←1} _jiteq @
+!"Attempting to read variable which is not yet defined" % %USE jiteq ⋄ {𝕊: {a    ⋄ 1} ⋄ a←1} _jiteq @
+!"Assignment: Attempting to modify variable which is not yet defined" % %USE jiteq ⋄ {𝕊: {a‿a↩1‿2 ⋄ 1} ⋄ a←1} _jiteq @
 
 # namespaces
 ⟨a,b⟩←•BQN"{x⇐1‿2⋄a⇐3‿4⋄y←5‿6⋄b⇐7‿8}" ⋄ a‿b %% ⟨3‿4 ⋄ 7‿8⟩

@@ -197,7 +197,10 @@ ASMI(XOR,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x31); MRMr(o,i); ASME; }
 ASMI(AND,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x21); MRMr(o,i); ASME; }
 
 ASMI(XOR4, Reg o, Reg i) { ASMS; REX4(o,i); ASM1(0x31); MRMr(o,i); ASME; }
-ASMI(CMP,  Reg o, Reg i) { ASMS; REX8(o,i); ASM1(0x39); MRMr(o,i); ASME; }
+
+ASMI(CMP,  Reg o, Reg i)   { ASMS; REX8(o,i); ASM1(0x39); MRMr(o,i); ASME; }
+ASMI(CMP2i,Reg o, i16 imm) { ASMS; REX2(o,0); ASM1(0x81); MRM1(o,0xF8); ASM2(imm); ASME; }
+ASMI(CMP4i,Reg o, i32 imm) { ASMS; REX4(o,0); ASM1(0x81); MRM1(o,0xF8); ASM4(imm); ASME; }
 
 ASMI(ADDi, Reg o, i32 imm) { if(!imm) return; ASMS; REX8(o,0); if(imm==(i8)imm) { ASM1(0x83); MRM1(o,0xc0); ASM1(imm); } else { ASM1(0x81); MRM1(o,0xc0); ASM4(imm); } ASME; }
 ASMI(SUBi, Reg o, i32 imm) { if(!imm) return; ASMS; REX8(o,0); if(imm==(i8)imm) { ASM1(0x83); MRM1(o,0xe8); ASM1(imm); } else { ASM1(0x81); MRM1(o,0xe8); ASM4(imm); } ASME; }

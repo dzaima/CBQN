@@ -164,12 +164,12 @@ INS B i_MD2C(B f,B m, B g, u32* bc) { POS_UPD; return m2_d  (m,f,g); }
 INS B i_TR2D(B g,     B h         ) {          return m_atop(  g,h); }
 INS B i_TR3D(B f,B g, B h         ) {          return m_fork(f,g,h); }
 INS B i_TR3O(B f,B g, B h         ) {          return q_N(f)? m_atop(g,h) : m_fork(f,g,h); }
-INS B i_NOVAR(u32* bc, B* cStack) {
-  POS_UPD; GS_UPD; thrM("Reading variable before its defined");
+INS B i_BADREAD(u32* bc, B* cStack, B var) {
+  POS_UPD; GS_UPD; v_tagError(var, 0);
 }
 INS B i_EXTO(u32 p, Scope* sc, u32* bc, B* cStack) {
   B l = sc->ext->vars[p];
-  if(l.u==bi_noVar.u) { POS_UPD; GS_UPD; thrM("Reading variable before its defined"); }
+  if(isTag(l)) { POS_UPD; GS_UPD; v_tagError(l, false); }
   return inc(l);
 }
 INS B i_EXTU(u32 p, Scope* sc) {
@@ -225,8 +225,8 @@ INS B i_SETMi(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(
 INS B i_SETCi(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, true)  ); dec(f); v_setI(sc, p, inc(r), true, false); return r; }
 INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, false, false); }
 INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true,  false); }
-INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, false),x); dec(f); v_setI(sc, p, r, true, false); }
-INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, false)  ); dec(f); v_setI(sc, p, r, true, false); }
+INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, true),x); dec(f); v_setI(sc, p, r, true, false); }
+INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, true)  ); dec(f); v_setI(sc, p, r, true, false); }
 INS B i_FLDG(B ns, u32 p, Scope* sc) {
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, p));
@@ -647,7 +647,7 @@ Nvm_res m_nvm(Body* body) {
     #define LSC(R,D) { if(D) MOV8rmo(R,R_SP,VAR8(pscs,D)); else MOV(R,r_SC); } // TODO return r_SC directly without a pointless mov
     #define INCV(R) INC4mo(R, offsetof(Value,refc)); // ADD4mi(R_A3, 1); CCALL(i_INC);
     #ifdef __BMI2__ // TODO move to runtime detection maybe
-      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{J1(cA,lI);MOVi1l(U,0x30);BZHI(U,R,U);INCV(U);LBL1(lI);}
+      #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{J1(cA,lI);MOVi1l(U,48);BZHI(U,R,U);INCV(U);LBL1(lI);}
     #else
       #define INCB(R,T,U) IMM(T,0xfffffffffffffull);ADD(T,R);IMM(U,0x7fffffffffffeull);CMP(T,U);{J1(cA,lI);IMM(U,0xffffffffffffull);AND(U,R);INCV(U);LBL1(lI);}
     #endif
@@ -698,8 +698,8 @@ Nvm_res m_nvm(Body* body) {
       case EXTM: TOPs; { u64 d=*bc++; u64 p=*bc++; IMM(R_RES, tagu64((u64)d<<32 | (u32)p, EXT_TAG).u); } break;
       case VARO: TOPs; { u64 d=*bc++; u64 p=*bc++; LSC(R_A1,d);
         MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable
+        MOV(R_A2,R_RES); SHR8i(R_A2, 47); CMP4i(R_A2, v_bad17_read); { J1(cNE,lN); IMM(R_A0,off); MOV(R_A2,R_RES); INV(1,1,i_BADREAD); LBL1(lN); } // check for error
         INCB(R_RES,R_A2,R_A3); // increment refcount if one's needed
-        if (d) { IMM(R_A2, bi_noVar.u); CMP(R_A2,R_RES); J1(cNE,lN); IMM(R_A0,off); INV(1,1,i_NOVAR); LBL1(lN); } // check for error
       } break;
       case VARU: TOPs; { u64 d=*bc++; u64 p=*bc++;
         LSC(R_A1,d);            MOV8rmo(R_RES,R_A1,p*8+offsetof(Scope,vars)); // read variable

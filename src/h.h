@@ -176,7 +176,7 @@ typedef u8 ur;
                                                // .FF. .111111111110nnn................................................ sNaN aka tagged aka not f64, if nnn≠0
                                                // 7FF. 0111111111110................................................... direct value with no need of refcounting
 static const u16 C32_TAG = 0b0111111111110001; // 7FF1 0111111111110001................00000000000ccccccccccccccccccccc char
-static const u16 TAG_TAG = 0b0111111111110010; // 7FF2 0111111111110010................nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (0=nothing, 1=undefined var, 2=bad header; 3=optimized out; 4=error?; 5=no fill)
+static const u16 TAG_TAG = 0b0111111111110010; // 7FF2 0111111111110010nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn special value (see bi_N ect definitions further below)
 static const u16 VAR_TAG = 0b0111111111110011; // 7FF3 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
 static const u16 EXT_TAG = 0b0111111111110100; // 7FF4 0111111111110100ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn extended variable reference
 static const u16 RAW_TAG = 0b0111111111110101; // 7FF5 0111111111110101nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn raw 48 bits of data
@@ -346,11 +346,11 @@ u64 mm_heapUsed(void);
 #endif
 
 // some primitive actions
-static const B bi_N      = b((u64)0x7FF2000000000000ull); // tag(0,TAG_TAG); // make gcc happy
-static const B bi_noVar  = b((u64)0x7FF2000000000001ull); // tag(1,TAG_TAG);
-static const B bi_okHdr  = b((u64)0x7FF2000000000002ull); // tag(2,TAG_TAG);
-static const B bi_optOut = b((u64)0x7FF2000000000003ull); // tag(3,TAG_TAG);
-static const B bi_noFill = b((u64)0x7FF2000000000005ull); // tag(5,TAG_TAG);
+static const B bi_N      = b((u64)0x7FF2000000000000ull);
+static const B bi_noVar  = b((u64)0x7FF2C00000000001ull);
+static const B bi_okHdr  = b((u64)0x7FF2000000000002ull);
+static const B bi_optOut = b((u64)0x7FF2800000000003ull);
+static const B bi_noFill = b((u64)0x7FF2000000000005ull);
 extern GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyHVec() incG(bi_emptyHVec)
 #define emptyIVec() incG(bi_emptyIVec)

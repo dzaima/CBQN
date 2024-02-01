@@ -279,10 +279,16 @@ typedef struct WrappedObj {
 #define V_POS(X) ((u32)((X).u))
 #define V_DEPTH(X) ((u16)((X).u>>32))
 
+static u32 v_bad17_read  = (TAG_TAG<<1) | 1;
+static u32 v_bad18_write = (TAG_TAG<<2) | 3;
+SHOULD_INLINE bool v_checkBadRead(B x)  { return (x.u >> 47) == v_bad17_read; }
+SHOULD_INLINE bool v_checkBadWrite(B x) { return (x.u >> 46) == v_bad18_write; }
+NOINLINE NORETURN void v_tagError(B x, bool write);
+
 NOINLINE B v_getF(Scope* pscs[], B s); // doesn't consume
 FORCE_INLINE B v_getI(Scope* sc, u32 p, bool chk) {
   B r = sc->vars[p];
-  if (chk && r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
+  if (chk && v_checkBadRead(r)) v_tagError(r, false);
   sc->vars[p] = bi_optOut;
   return r;
 }
@@ -296,7 +302,7 @@ NOINLINE bool v_sethF(Scope* pscs[], B s, B x); // doesn't consume
 FORCE_INLINE void v_setI(Scope* sc, u32 p, B x, bool upd, bool chk) { // consumes x
   if (upd) {
     B prev = sc->vars[p];
-    if (chk && prev.u==bi_noVar.u) thrM("↩: Updating variable that hasn't been set");
+    if (chk && v_checkBadWrite(prev)) v_tagError(prev, true);
     sc->vars[p] = x;
     dec(prev);
   } else {

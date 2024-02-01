@@ -537,6 +537,12 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   return true;
 }
 
+NOINLINE NORETURN void v_tagError(B x, bool write) {
+  char* act = write? "Assignment: Attempting to modify" : "Attempting to read";
+  if (x.u == bi_noVar.u) thrF("%S variable which is not yet defined", act);
+  if (x.u == bi_optOut.u) thrF("%S variable which isn't available due to incomplete or aborted F↩", act);
+  fatal("Unexpected v_tagError argument");
+}
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   if (isArr(s)) { VTY(s, t_harr);
     B* sp = harr_ptr(s);
@@ -571,7 +577,7 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
     Scope* sc = pscs[V_DEPTH(s)];
     B prev = sc->ext->vars[V_POS(s)];
     if (upd) {
-      if (prev.u==bi_noVar.u) thrM("↩: Updating undefined variable");
+      if (v_checkBadWrite(prev)) v_tagError(prev, true);
       dec(prev);
     } else dec(prev);
     sc->ext->vars[V_POS(s)] = inc(x);
@@ -621,7 +627,7 @@ NOINLINE B v_getF(Scope* pscs[], B s) {
   } else if (isExt(s)) {
     Scope* sc = pscs[V_DEPTH(s)];
     B r = sc->ext->vars[V_POS(s)];
-    if (r.u==bi_noVar.u) thrM("↩: Reading variable that hasn't been set");
+    if (v_checkBadRead(r)) v_tagError(r, false);
     sc->ext->vars[V_POS(s)] = bi_optOut;
     return r;
   } else {
@@ -823,7 +829,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       case VARO: { u32 d = *bc++; u32 p = *bc++;
         B l = pscs[d]->vars[p];
-        if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
+        if(v_checkBadRead(l)) { POS_UPD; v_tagError(l, false); }
         ADD(inc(l));
         break;
       }
@@ -840,7 +846,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       }
       case EXTO: { u32 d = *bc++; u32 p = *bc++;
         B l = pscs[d]->ext->vars[p];
-        if(l.u==bi_noVar.u) { POS_UPD; thrM("Reading variable before its defined"); }
+        if(v_checkBadRead(l)) { POS_UPD; v_tagError(l, false); }
         ADD(inc(l));
         break;
       }
