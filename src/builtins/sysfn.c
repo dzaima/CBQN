@@ -1023,24 +1023,8 @@ void shClose(int fd) { if (close(fd)) fatal("bad file descriptor close"); }
 // #define shDbg(...) printf(__VA_ARGS__); fflush(stdout)
 #define shDbg(...)
 
-B sh_c2(B t, B w, B x) {
-  
-  // parse options
-  B inObj = bi_N;
-  bool raw = false;
-  if (!q_N(w)) {
-    if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
-    inObj = ns_getC(w, "stdin");
-    if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
-    B rawObj = ns_getC(w, "raw");
-    if (!q_N(rawObj)) raw = o2b(rawObj);
-  }
-  u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
-  
+static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
-  if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
-  usz xia = IA(x);
-  if (xia==0) thrM("•SH: 𝕩 must have at least one item");
   TALLOC(char*, argv, xia+1);
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
@@ -1152,46 +1136,19 @@ B sh_c2(B t, B w, B x) {
   int status;
   waitpid(pid, &status, 0);
   
-  dec(w); dec(x);
-  B s_outRaw = toC8Any(s_out);
-  B s_errRaw = toC8Any(s_err);
-  B s_outObj;
-  B s_errObj;
-  if (raw) {
-    s_outObj = s_outRaw;
-    s_errObj = s_errRaw;
-  } else {
-    s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
-    s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
-  }
-  int code = WIFEXITED(status)?   WEXITSTATUS(status)
-           : WIFSIGNALED(status)? WTERMSIG(status)+128
-           : -1;
-  return m_hvec3(m_i32(code), s_outObj, s_errObj);
+  *s_outp = s_out;
+  *s_errp = s_err;
+  return WIFEXITED(status)?   WEXITSTATUS(status)
+       : WIFSIGNALED(status)? WTERMSIG(status)+128
+       : -1;
 }
 #elif defined(_WIN32) || defined(_WIN64)
 #define HAS_SH 1
 #include "../windows/winError.c"
 #include "../windows/sh.c"
 
-B sh_c2(B t, B w, B x) {
-
-  // parse options
-  B inObj = bi_N;
-  bool raw = false;
-  if (!q_N(w)) {
-    if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
-    inObj = ns_getC(w, "stdin");
-    if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
-    B rawObj = ns_getC(w, "raw");
-    if (!q_N(rawObj)) raw = o2b(rawObj);
-  }
-  u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
-
+static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
-  if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
-  usz xia = IA(x);
-  if (xia==0) thrM("•SH: 𝕩 must have at least one item");
   u64 arglen = 0;
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
@@ -1240,30 +1197,11 @@ B sh_c2(B t, B w, B x) {
   }
 
   // prepare output
-  u8* op; 
-  B s_out = m_c8arrv(&op, oLen); 
-  if (oLen > 0 && oBuf != NULL) {
-    memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf);
-  }
-  u8* ep;
-  B s_err = m_c8arrv(&ep, eLen); 
-  if (eLen > 0 && eBuf != NULL) {
-    memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf);
-  }
-
-  dec(w); dec(x);
-  B s_outRaw = toC8Any(s_out);
-  B s_errRaw = toC8Any(s_err);
-  B s_outObj;
-  B s_errObj;
-  if (raw) {
-    s_outObj = s_outRaw;
-    s_errObj = s_errRaw;
-  } else {
-    s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
-    s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
-  }
-  return m_hvec3(m_i32((i32)code), s_outObj, s_errObj);
+  u8* op; *s_outp = m_c8arrv(&op, oLen); 
+  u8* ep; *s_errp = m_c8arrv(&ep, eLen); 
+  if (oLen > 0 && oBuf != NULL) memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf);
+  if (eLen > 0 && eBuf != NULL) memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf);
+  return (i32)code;
 }
 #else
 #if FOR_BUILD
@@ -1275,7 +1213,43 @@ B sh_c2(B t, B w, B x) {
 #endif
 
 #define HAS_SH 0
-B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
+#endif
+
+#if HAS_SH
+  B sh_c2(B t, B w, B x) {
+    // parse options
+    B inObj = bi_N;
+    bool raw = false;
+    if (!q_N(w)) {
+      if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
+      inObj = ns_getC(w, "stdin");
+      if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
+      B rawObj = ns_getC(w, "raw");
+      if (!q_N(rawObj)) raw = o2b(rawObj);
+    }
+    u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
+    
+    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
+    usz xia = IA(x);
+    if (xia==0) thrM("•SH: 𝕩 must have at least one item");
+    
+    B s_out, s_err;
+    i32 code = sh_core(raw, x, xia, inObj, iLen, &s_out, &s_err);
+    
+    dec(w); dec(x);
+    B s_outObj; B s_outRaw = toC8Any(s_out);
+    B s_errObj; B s_errRaw = toC8Any(s_err);
+    if (raw) {
+      s_outObj = s_outRaw;
+      s_errObj = s_errRaw;
+    } else {
+      s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
+      s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
+    }
+    return m_hvec3(m_i32(code), s_outObj, s_errObj);
+  }
+#else
+  B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 
