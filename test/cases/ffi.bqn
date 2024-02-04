@@ -253,6 +253,9 @@
 1 %USE TyEq ⟨"{i32:i8,i64}", "{i32,i64}"⟩
 1 %USE TyEq ⟨"*i32:i8", "*"⟩
 1 %USE TyEq ⟨"*i32:i8", "*:c32"⟩
+0 %USE TyEq ⟨"**", "*i8"⟩
+0 %USE TyEq ⟨"*{*}", "*{i8}"⟩
+0 %USE TyEq ⟨"*{i8}", "*{*}"⟩
 
 
 # !"FFI: Unimplemented result type" % @•FFI"*i32"‿"bqn_init"

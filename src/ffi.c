@@ -1281,11 +1281,19 @@ static B ptrty_simplify(B x) {
   return x;
 }
 static bool ptrty_equal(B a, B b) {
+  assert(isC32(a) || v(a)->type==t_ffiType);
+  assert(isC32(b) || v(b)->type==t_ffiType);
   if (!isC32(a)) a = ptrty_simplify(a);
-  if (a.u == m_c32(sty_ptr).u) return true;
+  if (a.u == m_c32(sty_void).u) return true;
   
   if (!isC32(b)) b = ptrty_simplify(b);
-  if (b.u == m_c32(sty_ptr).u) return true;
+  if (b.u == m_c32(sty_void).u) return true;
+  
+  if (a.u == b.u) return true;
+  // TODO get rid of sty_ptr and this, represent as cty_ptr(sty_void)
+  if (a.u == m_c32(sty_ptr).u) return !isC32(b) && c(BQNFFIType,b)->ty==cty_ptr; // both being sty_ptr is handled by the preceding a.u == b.u
+  if (b.u == m_c32(sty_ptr).u) return !isC32(a) && c(BQNFFIType,a)->ty==cty_ptr;
+  
   if (isC32(a) || isC32(b)) return a.u==b.u; // if only one is a character, this test trivially fails
   
   BQNFFIType* at = c(BQNFFIType,a);
