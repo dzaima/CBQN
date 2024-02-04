@@ -217,7 +217,7 @@ B asrt_c2(B t, B w, B x) {
 }
 B casrt_c2(B t, B w, B x) {
   if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
-  B fullpath = load_fullpath(COMPS_CREF(path), COMPS_CREF(name));
+  B fullpath = COMPS_ACTIVE()? load_fullpath(COMPS_CREF(path), COMPS_CREF(name)) : bi_N;
   unwindCompiler();
   dec(x);
   if (isArr(w) && IA(w)==2) {
