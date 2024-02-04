@@ -180,7 +180,7 @@ Run ← { 𝕊 testname:
         •Out ∾⟨"Update ", •Repr≠res, " entr", (1<≠res)⊑"y"‿"ies", " in ", filename, "?"⟩
         {
           ¬⊑"yY"∊˜⊑'n'∾˜•GetLine@? •Out "Not updating.";
-          [idxs, upd] ← ⍉>res {new𝕊⟨⟨ln⟩, "error", str, ·⟩: ln ⋈ ∾⟨"!", •Repr new, " %", str⟩}¨ desc
+          [idxs, upd] ← ⍉>res {new𝕊⟨⟨ln⟩, "error", str, ·⟩: ln ⋈ ∾⟨"!", •Repr new, " ", ⊑∘⊐⟜'%'⊸↓ ln⊑lns⟩}¨ desc
           "Refusing to write over changed file" ! lns ≡ •FLines fullfile
           fullfile •FLines lns {×≠𝕩? ⋈⁼𝕩; 𝕨}¨ (≠lns)↑idxs⊔upd
           •Out "Updated."
