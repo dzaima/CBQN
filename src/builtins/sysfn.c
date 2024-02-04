@@ -1120,7 +1120,7 @@ B sh_c2(B t, B w, B x) {
     bool any = false;
     if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_out = vec_join(s_out, incG(oBufObj)); }
     if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_err = vec_join(s_err, incG(oBufObj)); }
-     if (!iDone && ps[in_i].revents & POLLOUT) {
+    if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
       shDbg("written %zd/"N64u"\n", ww, iLen-iOff);
@@ -1228,16 +1228,18 @@ B sh_c2(B t, B w, B x) {
     }
   } else iBuf = "";
 
+  // run command
   DWORD code = -1;
   u64 oLen = 0; char* oBuf;
   u64 eLen = 0; char* eBuf;
   DWORD dwResult = winCmd(arg, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TFREE(arg)
-  if (dwResult != ERROR_SUCCESS) { 
+  if (dwResult != ERROR_SUCCESS) {
     thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
   }
 
+  // prepare output
   u8* op; 
   B s_out = m_c8arrv(&op, oLen); 
   if (oLen > 0 && oBuf != NULL) {

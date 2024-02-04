@@ -44,14 +44,18 @@ static char* winQuoteCmdArg(u64 len, char* source, char* target) {
   return target;
 }
 
-char *dataInp, *dataOut, *dataErr;
-u64 sizeInp, sizeOut, sizeErr;
+typedef struct {
+  HANDLE hndl;
+  char* buf;
+  u64 len;
+} ThreadIO;
 
-static DWORD WINAPI winThreadWriteIn(LPVOID arg) {
+static DWORD WINAPI winThreadWrite(LPVOID arg0) {
   DWORD dwResult = ERROR_SUCCESS;
-  HANDLE hndl = (HANDLE)arg;
-  char *wBuf = dataInp;
-  DWORD dwToWrite = sizeInp, dwWritten = 0, dwOff = 0;
+  ThreadIO* arg = arg0;
+  HANDLE hndl = arg->hndl;
+  char* wBuf = arg->buf;
+  DWORD dwToWrite = arg->len, dwWritten = 0, dwOff = 0;
 
   for (;;) {
     BOOL bOk = WriteFile(hndl, &wBuf[dwOff], dwToWrite-dwOff, &dwWritten, NULL);
@@ -64,40 +68,41 @@ static DWORD WINAPI winThreadWriteIn(LPVOID arg) {
   return dwResult;
 }
 
-#define winThreadRead(D) \
-static DWORD WINAPI winThreadRead##D(LPVOID arg) { \
-  DWORD dwResult = ERROR_SUCCESS; \
-  HANDLE hndl = (HANDLE)arg; \
-  u8 buf[1024] = {0}; \
-  const usz bufSize = sizeof(buf)/sizeof(u8); \
-  DWORD dwRead = 0, dwHasRead = 0; \
-  char *rBuf = NULL; \
-  for (;;) { \
-    ZeroMemory(buf, bufSize); \
-    BOOL bOk = ReadFile(hndl, buf, bufSize, &dwRead, NULL); \
-    if (!bOk) { \
-      DWORD dwErr = GetLastError(); \
-      if (dwErr == ERROR_BROKEN_PIPE) { break; } \
-      else { dwResult = dwErr; break; } \
-    } \
-    char *newBuf = (rBuf==NULL)? \
-      calloc(dwHasRead+dwRead, sizeof(char)) : \
-      realloc(rBuf, (dwHasRead+dwRead)*sizeof(char)); \
-    if (newBuf == NULL) { dwResult = GetLastError(); break; } \
-    rBuf = newBuf; \
-    memcpy(&rBuf[dwHasRead], buf, dwRead); \
-    dwHasRead += dwRead; \
-  } \
-  data##D = rBuf; \
-  size##D = dwHasRead; \
-  CloseHandle(hndl); \
-  return dwResult; \
+static DWORD WINAPI winThreadRead(LPVOID arg0) {
+  DWORD dwResult = ERROR_SUCCESS;
+  ThreadIO* arg = arg0;
+  HANDLE hndl = arg->hndl;
+  u8 buf[1024] = {0};
+  const usz bufSize = sizeof(buf)/sizeof(u8);
+  DWORD dwRead = 0, dwHasRead = 0;
+  char* rBuf = NULL;
+
+  for (;;) {
+    ZeroMemory(buf, bufSize);
+    BOOL bOk = ReadFile(hndl, buf, bufSize, &dwRead, NULL);
+    if (!bOk) {
+      DWORD dwErr = GetLastError();
+      if (dwErr == ERROR_BROKEN_PIPE) { break; }
+      else { dwResult = dwErr; break; }
+    }
+    char* newBuf = (rBuf==NULL)?
+      calloc(dwHasRead+dwRead, sizeof(char)) :
+      realloc(rBuf, (dwHasRead+dwRead)*sizeof(char));
+    if (newBuf == NULL) { dwResult = GetLastError(); break; }
+    rBuf = newBuf;
+    memcpy(&rBuf[dwHasRead], buf, dwRead);
+    dwHasRead += dwRead;
+  }
+
+  if (dwResult != ERROR_SUCCESS) {
+    if (dwHasRead > 0 && rBuf != NULL) { free(rBuf); }
+  } else {
+    arg->buf = rBuf;
+    arg->len = dwHasRead;
+  }
+  CloseHandle(hndl);
+  return dwResult;
 }
-
-winThreadRead(Out)
-winThreadRead(Err)
-
-#undef winThreadRead
 
 static DWORD winCmd(char* arg, 
   u64 iLen, char* iBuf, 
@@ -131,7 +136,7 @@ static DWORD winCmd(char* arg,
   si.hStdInput = hInpR;
   si.hStdOutput = hOutW;
   si.hStdError = hErrW;
-  si.dwFlags |= STARTF_USESTDHANDLES | STARTF_UNTRUSTEDSOURCE;
+  si.dwFlags |= STARTF_USESTDHANDLES;
 
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
@@ -145,18 +150,16 @@ static DWORD winCmd(char* arg,
   CloseHandle(hOutW);
   CloseHandle(hErrW);
 
-  // Now we are dealing with the globals and threads
-
-
-
-  dataInp = iBuf;
-  sizeInp = iLen;
+  // Spawn the thread to deal with redirected io
+  ThreadIO data0 = {hInpW, iBuf, iLen};
+  ThreadIO data1 = {hOutR, NULL, 0};
+  ThreadIO data2 = {hErrR, NULL, 0};
 
   DWORD exitCode = -1;
   HANDLE lpThreads[3];
-  lpThreads[0] = CreateThread(NULL, 0, winThreadWriteIn, (LPVOID)hInpW, 0, NULL);
-  lpThreads[1] = CreateThread(NULL, 0, winThreadReadOut, (LPVOID)hOutR, 0, NULL);
-  lpThreads[2] = CreateThread(NULL, 0, winThreadReadErr, (LPVOID)hErrR, 0, NULL);
+  lpThreads[0] = CreateThread(NULL, 0, winThreadWrite, (LPVOID)&data0, 0, NULL);
+  lpThreads[1] = CreateThread(NULL, 0, winThreadRead,  (LPVOID)&data1, 0, NULL);
+  lpThreads[2] = CreateThread(NULL, 0, winThreadRead,  (LPVOID)&data2, 0, NULL);
 
   for (int i = 0; i < 3; ++i) {
     if (lpThreads[i] == NULL) { dwResult = GetLastError(); goto error; }
@@ -180,16 +183,14 @@ static DWORD winCmd(char* arg,
 
   // Give outputs
   *code = exitCode;
-  *oLen = sizeOut; *oBuf = dataOut;
-  *eLen = sizeErr; *eBuf = dataErr;
+  *oLen = data1.len; *oBuf = data1.buf;
+  *eLen = data2.len; *eBuf = data2.buf;
 
 error:
   // Close handles
   for (int i = 0; i < 3; ++i) { CloseHandle(lpThreads[i]); }
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
-
-
 
   return dwResult;
 }
