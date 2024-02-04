@@ -146,7 +146,7 @@
 
 # bad :
 !"FFI: Expected array corresponding to ""i32:i8""" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F @
-!"FFI: Expected array corresponding to ""*i32:i8""" % f←@•FFI""‿"bqn_init"‿">*i32:i8" ⋄ F @
+!"FFI: Expected array or pointer object corresponding to ""*i32:i8""" % f←@•FFI""‿"bqn_init"‿">*i32:i8" ⋄ F @
 
 !"FFI: Bad array corresponding to ""i32:i8"": expected 4 elements, got 10" % f←@•FFI""‿"bqn_init"‿">i32:i8" ⋄ F ↕10
 !"FFI: Bad array corresponding to ""u64:u1"": expected 64 elements, got 128" % f←@•FFI""‿"bqn_init"‿">u64:u1" ⋄ F 128⥊1
@@ -154,7 +154,7 @@
 !"FFI: Array provided for :u1 contained 63" % f←@•FFI""‿"bqn_init"‿">u64:u1" ⋄ F ↕64
 !"FFI: Bad array corresponding to ""u64:i8"": expected 8 elements, got 64" % f←@•FFI""‿"bqn_init"‿">u64:i8" ⋄ F ↕64
 
-!"FFI: Expected array corresponding to ""*u64:i8""" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F @
+!"FFI: Expected array or pointer object corresponding to ""*u64:i8""" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F @
 !"FFI: Array provided for :i8 contained 199" % f←@•FFI""‿"bqn_init"‿">*u64:i8" ⋄ F ↕200
 !"FFI: Array provided for :i8 contained 199" % f←@•FFI""‿"bqn_init"‿">&u64:i8" ⋄ F ↕200
 !"FFI: Array provided for :u1 contained 63" % f←@•FFI""‿"bqn_init"‿">&u64:u1" ⋄ F ↕64
@@ -193,6 +193,7 @@
 %USE Walloc {{𝕊al: p←"{i16,i16,i16,i64}" Al 99 ⋄ p.Write ¯4‿10000‿¯30000‿7e12 ⋄ s←-○{CpyA 0∾˜⋈˜𝕩}´ ⟨p.Field 2, p⟩ ⋄ Cpy ⟨p.Add 1, p, s⟩ ⋄ p.Read¨ ↕2}} %% ⟨¯4‿10000‿¯30000‿7e12, ¯4‿10000‿0‿0⟩
 %USE Walloc {{𝕊al: p←"{i32,{i64,i64}}" Al 999 ⋄ {𝕩 p.Write ⟨𝕩×10,𝕩×20‿30⟩}¨ ↕4 ⋄ ((p.Field 1).Field 0).Read¨ ↕4 }} %% 20×↕4
 !"Cannot get a field of a pointer to a scalar" % %USE WallocE {{𝕊al: ("i32" Al 99).Field 0}}
+%USE Walloc {{𝕊al: p←"i16" Al 99 ⋄ raw ← Cpy 0∾˜⋈˜p.Add 3 ⋄ cpy2←@•FFI"*i16"‿"memcpy"‿"*:i8"‿"*:i8"‿size_t ⋄ p.Sub Cpy2 raw‿raw‿0 }} %% ¯3
 
 # garbage arguments
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Add '!'}}
@@ -257,6 +258,11 @@
 0 %USE TyEq ⟨"*{*}", "*{i8}"⟩
 0 %USE TyEq ⟨"*{i8}", "*{*}"⟩
 
+# passing pointer objects as arguments
+!"FFI: Pointer object type isn't compatible with argument type" % %USE WallocE {{𝕊al: f ← @•FFI""‿"bqn_init"‿">*i8" ⋄ p←"i16" Al 10 ⋄ F p}}
+%USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*:i8"‿"memcpy"‿"&i16:c8"‿"*i16:c8"‿size_t ⋄ ! a ≡ 1⊑F ⟨a, p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
+%USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ Cpy ⟨(p.Add 10).Cast"i16:c8", p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
+%USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*:i8"‿"memcpy"‿"&i16"   ‿"*:i8"   ‿size_t ⋄ ! a ≡ 1⊑F ⟨a, p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
 
 # !"FFI: Unimplemented result type" % @•FFI"*i32"‿"bqn_init"
 # !"FFI: Unimplemented result type" % @•FFI"&i32"‿"bqn_init"

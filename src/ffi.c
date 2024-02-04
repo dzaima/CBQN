@@ -682,6 +682,14 @@ static NOINLINE B ty_fmt(B o) {
 
 
 STATIC_GLOBAL B ffiObjsGlobal;
+static void genObj_ptr(void* res, B c, B expEl) {
+  B h = ptrobj_checkget(c);
+  #if FFI_CHECKS
+    if (!ptrty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
+  #endif
+  ffiObjsGlobal = vec_addN(ffiObjsGlobal, incG(c));
+  *(void**)res = ptrh_ptr(h);
+}
 void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
@@ -706,6 +714,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
     if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any
       B e = t->a[0].o;
       if (isAtm(c)) {
+        if (isNsp(c)) { genObj_ptr(ptr, c, e); return; }
         thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
       }
       usz ia = IA(c);
@@ -744,23 +753,27 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
       B o2 = t->a[0].o;
       u8 reT = t->a[0].reType;
       u8 reW = t->a[0].reWidth;
-      if (isC32(o2)) { // scalar:any
+      if (isC32(o2)) { // scalar:any (incl. *:any)
         u8 et = o2cG(o2);
+        bool eptr = et==sty_ptr;
         u8 mul = (sty_w[et]*8) >> reW;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
-        if (IA(c) != mul) thrF("FFI: Bad array corresponding to %R: expected %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
+        if (eptr && isNsp(c)) { genObj_ptr(ptr, c, o2); return; }
+        if (eptr) ffiObjsGlobal = vec_addN(ffiObjsGlobal, m_i32(0));
+        if (isAtm(c)) thrF("FFI: Expected array%S corresponding to %R", eptr?" or pointer object":"", ty_fmt(o));
+        if (IA(c) != mul) thrF("FFI: Bad array%S corresponding to %R: expected %s elements, got %s", eptr?" or pointer object":"", ty_fmt(o), (usz)mul, IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
       } else { // *scalar:any / &scalar:any
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
+        if (isNsp(c)) { genObj_ptr(ptr, c, ore); return; }
         assert(t2->ty==cty_ptr && isC32(ore)); // we shouldn't be generating anything else
         bool mut = t2->a[0].mutPtr;
         
         u8 et = o2cG(ore);
         u8 mul = (sty_w[et]*8) >> reW;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
+        if (!isArr(c)) thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
         if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to %R: expected a multiple of %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         
         incG(c); B cG;
@@ -852,7 +865,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     if (t->a[0].mutPtr) {
       if (isC32(e)) {
         switch(o2cG(e)) { default: UD;
-          case sty_i8: case sty_i16: case sty_i32: case sty_f64: return incG(f);
+          case sty_i8: case sty_i16: case sty_i32: case sty_f64: return inc(f);
           case sty_u8:  return readU8Bits(f);
           case sty_u16: return readU16Bits(f);
           case sty_u32: return readU32Bits(f);
@@ -874,7 +887,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     } else return m_f64(0);
   } else if (t->ty==cty_repr) { // any:any
     B o2 = t->a[0].o;
-    if (isC32(o2)) return m_f64(0); // scalar:any
+    if (isC32(o2)) return o2cG(o2)==sty_ptr? objs[(*objPos)++] : m_f64(0); // scalar:any
     
     BQNFFIType* t2 = c(BQNFFIType,o2); // *scalar:any / &scalar:any
     assert(t2->ty == cty_ptr);
