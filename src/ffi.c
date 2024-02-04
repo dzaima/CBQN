@@ -167,8 +167,8 @@ typedef struct BoundFn {
     i32 xLen; // 0: length 0 array; else, ↑
   #endif
 } BoundFn;
-GLOBAL NFnDesc* boundFnDesc;
-GLOBAL NFnDesc* foreignFnDesc;
+STATIC_GLOBAL NFnDesc* boundFnDesc;
+STATIC_GLOBAL NFnDesc* foreignFnDesc;
 
 B boundFn_c1(B t,      B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_boundFn1)c->w_c1)(makeX(inc(c->obj)),           makeX(x))); }
 B boundFn_c2(B t, B w, B x) { BoundFn* c = c(BoundFn,t); return getB(((bqn_boundFn2)c->w_c2)(makeX(inc(c->obj)), makeX(w), makeX(x))); }
@@ -234,20 +234,29 @@ DEF_FREE(ffiFn) { dec(((BoundFn*)x)->obj); }
 
 typedef struct BQNFFIEnt {
   union {
-    B o; // usual case
-    TAlloc* structData; // pointer stored in last element of cty_struct
+    struct { // regular BQNFFIEnt usage
+      union {
+        B o; // usual case
+        TAlloc* structData; // pointer stored in last element of cty_struct
+      };
+      #if FFI==2
+        ffi_type t;
+      #endif
+      //      generic    ffi_parseType ffi_parseTypeStr  cty_ptr    cty_repr
+      union { u8 extra;  u8 onW;       u8 canRetype;     u8 mutPtr; u8 reType;  };
+      union { u8 extra2; u8 mutates;   /*mutates*/                  u8 reWidth; };
+      union {
+        struct { u8 wholeArg; u8 resSingle; }; // ffi_parseType
+        u16 offset; // cty_struct, cty_starr
+      };
+      u16 staticOffset; // only at the top level; offset into allocation
+    };
+    
+    struct { // second element of a pointer holder
+      void* ptrh_ptr; // actual pointer
+      ux ptrh_stride; // stride size
+    };
   };
-#if FFI==2
-  ffi_type t;
-#endif
-  //      generic    ffi_parseType ffi_parseTypeStr  cty_ptr    cty_repr
-  union { u8 extra;  u8 onW;       u8 canRetype;     u8 mutPtr; u8 reType;  };
-  union { u8 extra2; u8 mutates;   /*mutates*/                  u8 reWidth; };
-  union {
-    struct { u8 wholeArg; u8 resSingle; }; // ffi_parseType
-    u16 offset; // cty_struct
-  };
-  u16 staticOffset; // only at the top level; offset into allocation
 } BQNFFIEnt;
 typedef struct BQNFFIType {
   struct Value;
@@ -328,14 +337,15 @@ static char* const sty_names[] = {
   [sty_f32]="f32", [sty_f64]="f64"
 };
 enum CompoundTy {
-  cty_ptr, // *... / &...
-  cty_repr, // something:type
-  cty_struct, // {...}
-  cty_starr, // struct-based array
-  cty_tlarr, // top-level array
+  cty_ptr, // *... / &...; .a = {{.mutPtr = startsWith("&"), .o=eltype}}
+  cty_tlarr, // top-level array; {{.o=eltype}}
+  cty_struct, // {...}; .a = {{.o=el0}, {.o=el1}, ..., {.o=elLast}, {.structData = ffi_type**}}
+  cty_starr, // struct-based array; same as cty_struct
+  cty_repr, // something:type; {{.o=el, .t=rt, .reType=one of "icuf", .reWidth=bit width of retype}}
+  cty_ptrh, // data holder for pointer objects; {{.o=eltype}, {.ptrh_ptr, .ptrh_stride}}
 };
 
-static B m_bqnFFIType(BQNFFIEnt** rp, u8 ty, usz ia) {
+static NOINLINE B m_bqnFFIType(BQNFFIEnt** rp, u8 ty, usz ia) {
   BQNFFIType* r = mm_alloc(fsizeof(BQNFFIType, a, BQNFFIEnt, ia), t_ffiType);
   r->ty = ty;
   r->ia = ia;
@@ -348,7 +358,7 @@ static u32 readUInt(u32** p) {
   u32* c = *p;
   u32 r = 0;
   while (*c>='0' & *c<='9') {
-    if (r >= U32_MAX/10 - 10) thrM("FFI: number literal too large");
+    if (r >= U32_MAX/10 - 10) thrM("Type parser: number literal too large");
     r = r*10 + *c-'0';
     c++;
   }
@@ -364,19 +374,19 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
   u32 myWidth = 0; // used if parseRepr
   switch (c0) {
     default:
-      if (c0 == '\0') thrF("FFI: Error parsing type: Unexpected end of input");
-      thrF("FFI: Error parsing type: Unexpected character '%c'", c0);
+      if (c0 == '\0') thrF("Type parser: Unexpected end of input");
+      thrF("Type parser: Unexpected character '%c'", c0);
     case '[': {
       u32 n = readUInt(&c);
-      if (*c++!=']') thrM("FFI: Bad array type");
-      if (n==0) thrM("FFI: 0-item arrays not supported");
+      if (*c++!=']') thrM("Type parser: Bad array type");
+      if (n==0) thrM("Type parser: 0-item arrays not supported");
       BQNFFIEnt e = ffi_parseTypeStr(&c, top, false);
       
       if (top) { // largely copy-pasted from `case '*': case '&':`
         myWidth = sizeof(void*);
         BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_tlarr, 1);
         rp[0] = e;
-        if (n>U16_MAX) thrM("FFI: Top-level array too large; limit is 65535 elements");
+        if (n>U16_MAX) thrM("Type parser: Top-level array too large; limit is 65535 elements");
         c(BQNFFIType, ro)->arrCount = n;
         mut|= rp[0].mutates;
         parseRepr = rp[0].canRetype;
@@ -398,8 +408,8 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         rt.type = FFI_TYPE_STRUCT;
         
         TALLOC(size_t, offsets, n);
-        if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("FFI: Failed getting array offsets");
-        if (rt.size>=U16_MAX) thrM("FFI: Array too large; limit is 65534 bytes");
+        if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("Type parser: Failed getting array offsets");
+        if (rt.size>=U16_MAX) thrM("Type parser: Array too large; limit is 65534 bytes");
         PLAINLOOP for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
         c(BQNFFIType, ro)->structSize = rt.size;
         TFREE(offsets);
@@ -412,7 +422,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       if (c0=='f') {
         if      (n==32) rt = ffi_type_float;
         else if (n==64) rt = ffi_type_double;
-        else thrM("FFI: Bad float width");
+        else thrM("Type parser: Bad float width");
         ro = m_c32(n==32? sty_f32 : sty_f64);
       } else {
         u32 scty;
@@ -420,7 +430,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         else if (n==16) { scty = c0=='i'? sty_i16 : sty_u16; rt = c0=='i'? ffi_type_sint16 : ffi_type_uint16; }
         else if (n==32) { scty = c0=='i'? sty_i32 : sty_u32; rt = c0=='i'? ffi_type_sint32 : ffi_type_uint32; }
         else if (n==64) { scty = c0=='i'? sty_i64 : sty_u64; rt = c0=='i'? ffi_type_sint64 : ffi_type_uint64; }
-        else thrM("FFI: Bad integer width");
+        else thrM("Type parser: Bad integer width");
         ro = m_c32(scty);
       }
       parseRepr = !inPtr; myWidth = sty_w[o2cG(ro)];
@@ -437,7 +447,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     
     case '*': case '&': {
       myWidth = sizeof(void*);
-      if (c0=='*' && (0==*c || ':'==*c)) {
+      if (c0=='*' && (0==*c || ':'==*c || '}'==*c || ','==*c)) {
         ro = m_c32(sty_ptr);
         parseRepr = !inPtr;
         canRetype = inPtr;
@@ -458,10 +468,10 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       TSALLOC(BQNFFIEnt, es, 4);
       while (true) {
         BQNFFIEnt e = TSADD(es, ffi_parseTypeStr(&c, false, false));
-        if (e.mutates) thrM("FFI: Structs currently cannot contain mutable references");
+        if (e.mutates) thrM("Type parser: Structs currently cannot contain mutable references");
         u32 m = *c++;
         if (m=='}') break;
-        if (m!=',') thrM("FFI: Improper struct separator or end");
+        if (m!=',') thrM("Type parser: Improper struct separator or end");
       }
       usz n = TSSIZE(es);
       BQNFFIEnt* rp; ro = m_bqnFFIType(&rp, cty_struct, n+1);
@@ -478,8 +488,8 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       rt.type = FFI_TYPE_STRUCT;
       
       TALLOC(size_t, offsets, n);
-      if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("FFI: Failed getting struct offsets");
-      if (rt.size>=U16_MAX) thrM("FFI: Struct too large; limit is 65534 bytes");
+      if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("Type parser: Failed getting struct offsets");
+      if (rt.size>=U16_MAX) thrM("Type parser: Struct too large; limit is 65534 bytes");
       PLAINLOOP for (usz i = 0; i < n; i++) rp[i].offset = offsets[i];
       c(BQNFFIType, ro)->structSize = rt.size;
       TFREE(offsets);
@@ -491,14 +501,14 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
     u8 t = *c++;
     u32 n = readUInt(&c);
     if (t=='i' || t=='c') {
-      if (n!=8 & n!=16 & n!=32) { badW: thrF("FFI: Unsupported width in :%c%i", (u32)t, n); }
+      if (n!=8 & n!=16 & n!=32) { badW: thrF("Type parser: Unsupported width in :%c%i", (u32)t, n); }
     } else if (t=='u') {
       if (n!=1) goto badW;
     } else if (t=='f') {
       if (n!=64) goto badW;
-    } else thrM("FFI: Unexpected character after \":\"");
+    } else thrM("Type parser: Unexpected character after \":\"");
     
-    if (isC32(ro) && n > myWidth*8) thrF("FFI: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
+    if (isC32(ro) && n > myWidth*8) thrF("Type parser: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
     // TODO figure out what to do with i32:i32 etc
     
     B roP = ro;
@@ -508,25 +518,32 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
   *src = c;
   return (BQNFFIEnt){.t=rt, .o=ro, .canRetype=canRetype, .extra2=mut};
 }
-
+static NOINLINE u32* parseType_pre(B arg, ux ia) { // doesn't consume; arg can be freed immediately after
+  TALLOC(u32, xp, ia+1);
+  xp[ia] = 0;
+  COPY_TO(xp, el_c32, 0, arg, 0, ia);
+  return xp;
+}
+static NOINLINE void parseType_post(u32* xp0, u32* xp, usz ia) {
+  if (xp0+ia != xp) thrM("Type parser: Garbage at end of type");
+  TFREE(xp0);
+}
 BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument side & other global decorators
   vfyStr(arg, "FFI", "type");
   usz ia = IA(arg);
   if (ia==0) {
-    if (!forRes) thrM("FFI: Argument type empty");
+    if (!forRes) thrM("Type parser: Type was empty");
     return (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=false};
   }
   arg = chr_squeezeChk(incG(arg));
   
-  MAKE_MUT_INIT(tmp, ia+1, el_c32); MUTG_INIT(tmp);
-  mut_copyG(tmp, 0, arg, 0, ia);
-  mut_setG(tmp, ia, m_c32(0));
-  u32* xp = tmp->a;
-  u32* xpN = xp + ia;
+  u32* xp0 = parseType_pre(arg, ia);
+  u32* xp = xp0;
   
   BQNFFIEnt t;
   if (xp[0]=='&' && xp[1]=='\0') {
     t = (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=true};
+    xp+= 1;
   } else {
     u8 side = 0;
     bool whole = false;
@@ -543,13 +560,14 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
     
     t = ffi_parseTypeStr(&xp, false, true);
     // printI(arg); printf(": "); printFFIType(stdout, t.o); printf("\n");
-    if (xp!=xpN) thrM("FFI: Garbage at end of type");
+    
     t.onW = side;
     // keep .mutates
     t.wholeArg = whole;
     t.resSingle = false;
   }
-  mut_pfree(tmp, 0);
+  parseType_post(xp0, xp, ia);
+  
   decG(arg);
   return t;
 }
@@ -614,16 +632,17 @@ NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m
 NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
+static void* ptrobj_checkget(B x); // doesn't consume
 
 STATIC_GLOBAL B ffiObjsGlobal;
-void genObj(B o, B c, bool anyMut, void* ptr) {
+void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
     u32 t = o2cG(o);
     f64 f = c.f;
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
-      case sty_ptr: thrM("FFI: \"*\" unimplemented"); break;
+      case sty_ptr: *(void**)ptr = ptrobj_checkget(c); break;
       case sty_u8:  { if(!q_fu8 (f)) thrM("FFI: improper value for u8" ); *( u8*)ptr = ( u8)f; break; }
       case sty_i8:  { if(!q_fi8 (f)) thrM("FFI: improper value for i8" ); *( i8*)ptr = ( i8)f; break; }
       case sty_u16: { if(!q_fu16(f)) thrM("FFI: improper value for u16"); *(u16*)ptr = (u16)f; break; }
@@ -727,23 +746,24 @@ void genObj(B o, B c, bool anyMut, void* ptr) {
   }
 }
 
-B readAny(BQNFFIEnt e, u8* ptr);
-
+B readAny(B o, u8* ptr);
 B readStruct(BQNFFIType* t, u8* ptr) {
   usz ia = t->ia-1;
   M_HARR(r, ia);
   for (usz i = 0; i < ia; i++) {
     void* c = ptr + t->a[i].offset;
-    HARR_ADD(r, i, readAny(t->a[i], c));
+    HARR_ADD(r, i, readAny(t->a[i].o, c));
   }
   return HARR_FV(r);
 }
 
+B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
+B m_ptrobj(void* ptr, B o, ux stride); // consumes o
 B readSimple(u8 resCType, u8* ptr) {
   B r;
   switch(resCType) { default: UD; // thrM("FFI: Unimplemented type");
     case sty_void: r = m_c32(0); break;
-    case sty_ptr: thrM("FFI: \"*\" not yet implemented"); break;
+    case sty_ptr: r = m_ptrobj_s(*(void**)ptr, m_c32(sty_void)); break;
     case sty_a:   r = getB(*(BQNV*)ptr); break;
     case sty_i8:  r = m_i32(*( i8*)ptr); break;  case sty_u8:  r = m_i32(*( u8*)ptr); break;
     case sty_i16: r = m_i32(*(i16*)ptr); break;  case sty_u16: r = m_i32(*(u16*)ptr); break;
@@ -764,18 +784,19 @@ B readRe(BQNFFIEnt e, u8* ptr) {
   return makeRe(reT, reW, ptr, etw);
 }
 
-B readAny(BQNFFIEnt e, u8* ptr) {
-  if (isC32(e.o)) {
-    return readSimple(o2cG(e.o), ptr);
+B readAny(B o, u8* ptr) { // doesn't consume
+  if (isC32(o)) {
+    return readSimple(o2cG(o), ptr);
   } else {
-    BQNFFIType* t = c(BQNFFIType, e.o);
+    BQNFFIType* t = c(BQNFFIType, o);
     if (t->ty == cty_repr) { // cty_repr, scalar:x
       return readRe(t->a[0], ptr);
-    } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}
-      return readStruct(c(BQNFFIType, e.o), ptr);
+    } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}, [n]...
+      return readStruct(c(BQNFFIType, o), ptr);
     }
   }
-  thrM("FFI: Unimplemented struct field type for reading");
+  
+  thrM("FFI: Unimplemented in-memory type for reading");
 }
 
 B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
@@ -894,9 +915,11 @@ B libffiFn_c2(B t, B w, B x) {
     BQNFFIType* t = c(BQNFFIType, ents[0].o);
     if (t->ty == cty_repr) { // cty_repr, scalar:x
       r = readRe(t->a[0], res);
-    } else { // {...}
+    } else if (t->ty == cty_struct) { // {...}
       r = readStruct(c(BQNFFIType, ents[0].o), res);
-    }
+    } else if (t->ty == cty_ptr) { // *...
+      r = m_ptrobj_s(*(void**)res, inc(t->a[0].o));
+    } else UD;
   }
   TFREE(tmpAlloc);
   
@@ -939,23 +962,25 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) {
 
 
 
-static u64 atomSize(B chr) {
+static u64 calcAtomSize(B chr) {
   return o2cG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
 }
-static u64 calcStaticSize(BQNFFIEnt e) {
-  if (isC32(e.o)) { // scalar
-    return atomSize(e.o);
-  } else {
-    BQNFFIType* t = c(BQNFFIType, e.o);
-    if (t->ty==cty_ptr || t->ty==cty_tlarr) return sizeof(void*); // *any / &any / top-level [n]any
-    else if (t->ty==cty_struct || t->ty==cty_starr) return t->structSize; // {...}
-    else if (t->ty==cty_repr) { // any:any
-      B o2 = t->a[0].o;
-      if (isC32(o2)) return atomSize(o2);
-      if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
-      return sizeof(void*);
-    } else thrM("FFI: Unimplemented type (size calculation)");
-  }
+static NOINLINE u64 calcMemSizeComplex(B o) {
+  BQNFFIType* t = c(BQNFFIType, o);
+  if (t->ty==cty_ptr || t->ty==cty_tlarr) return sizeof(void*); // *any / &any / top-level [n]any
+  else if (t->ty==cty_struct || t->ty==cty_starr) return t->structSize; // {...}
+  else if (t->ty==cty_repr) { // any:any
+    B o2 = t->a[0].o;
+    if (isC32(o2)) return calcAtomSize(o2);
+    if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
+    return sizeof(void*);
+  } else thrM("FFI: Unimplemented type (size calculation)");
+}
+static u64 calcMemSize(B o) {
+  return isC32(o)? sty_w[o2cG(o)] : calcMemSizeComplex(o);
+}
+static u64 calcStaticSize(B o) {
+  return isC32(o)? calcAtomSize(o) : calcMemSizeComplex(o);
 }
 
 B ffiload_c2(B t, B w, B x) {
@@ -974,20 +999,27 @@ B ffiload_c2(B t, B w, B x) {
   {
     B atomType;
     usz size;
-    if (isC32(tRes.o)) { atomType = tRes.o; goto calcRes; }
+    if (isC32(tRes.o)) { atomType = tRes.o; goto calcAtomSize; }
     
     BQNFFIType* t = c(BQNFFIType, tRes.o);
     if (t->ty == cty_repr) {
       B o2 = t->a[0].o;
       if (!isC32(o2)) thrM("FFI: Unimplemented result type");
       atomType = o2;
-      goto calcRes;
+      goto calcAtomSize;
     }
     if (t->ty==cty_struct) { size = t->structSize; goto allocRes; }
     if (t->ty==cty_tlarr) thrM("FFI: Cannot return array");
+    if (t->ty==cty_ptr) {
+      size = sizeof(void*);
+      goto allocRes;
+    }
     thrM("FFI: Unimplemented result type");
     
-    calcRes:; size = atomSize(atomType);
+    calcAtomSize:;
+      size = calcAtomSize(atomType);
+      goto allocRes;
+    
     allocRes:; STATIC_ALLOC(tRes, size);
   }
   
@@ -1000,7 +1032,7 @@ B ffiload_c2(B t, B w, B x) {
     for (usz i = 0; i < argn; i++) {
       BQNFFIEnt e = ffi_parseType(GetU(x,i+2), false);
       
-      STATIC_ALLOC(e, calcStaticSize(e));
+      STATIC_ALLOC(e, calcStaticSize(e.o));
       
       args[i+1] = e;
       if (e.wholeArg) whole[e.onW] = true;
@@ -1063,7 +1095,9 @@ B ffiload_c2(B t, B w, B x) {
 #define FFI_TYPE_FLDS(OBJ, PTR) \
   BQNFFIType* t = (BQNFFIType*) x;   \
   BQNFFIEnt* arr=t->a; usz ia=t->ia; \
-  if (t->ty==cty_struct || t->ty==cty_starr) { \
+  if (t->ty==cty_ptrh) {             \
+    ia = 1;                          \
+  } if (t->ty==cty_struct || t->ty==cty_starr) { \
     ia--;                            \
     if (arr[ia].structData!=NULL) {  \
       PTR(arr[ia].structData);       \
@@ -1089,9 +1123,184 @@ void ffiType_print(FILE* f, B x) {
   fprintf(f, "⟩");
 }
 
+
+
+STATIC_GLOBAL Body* ptrobj_ns;
+STATIC_GLOBAL NFnDesc* ptrReadDesc;
+STATIC_GLOBAL NFnDesc* ptrWriteDesc;
+STATIC_GLOBAL NFnDesc* ptrCastDesc;
+STATIC_GLOBAL NFnDesc* ptrAddDesc;
+STATIC_GLOBAL NFnDesc* ptrSubDesc;
+STATIC_GLOBAL NFnDesc* ptrFieldDesc;
+
+// ptrh - pointer holder - BQNFFIType object of {{.o=eltype}, {.ptrh_ptr, .ptrh_stride}}
+// eltype of sty_void is used for an untyped pointer
+static B ptrh_type(B n) { return c(BQNFFIType, n)->a[0].o; }
+static BQNFFIEnt* ptrh_more(B n) { return &c(BQNFFIType, n)->a[1]; }
+static void* ptrh_ptr(B n) { return ptrh_more(n)->ptrh_ptr; }
+static ux ptrh_stride(B n) { return ptrh_more(n)->ptrh_stride; }
+
+B m_ptrobj_s(void* ptr, B o) {
+  return m_ptrobj(ptr, o, calcMemSize(o));
+}
+B m_ptrobj(void* ptr, B o, ux stride) {
+  BQNFFIEnt* op;
+  B obj = m_bqnFFIType(&op, cty_ptrh, 2);
+  op[0].o = o;
+  op[1].ptrh_ptr = ptr;
+  op[1].ptrh_stride = stride;
+  
+  return m_nns(ptrobj_ns,
+    m_nfn(ptrReadDesc,  incG(obj)),
+    m_nfn(ptrWriteDesc, incG(obj)),
+    m_nfn(ptrCastDesc,  incG(obj)),
+    m_nfn(ptrAddDesc,   incG(obj)),
+    m_nfn(ptrSubDesc,   incG(obj)),
+    m_nfn(ptrFieldDesc, obj)
+  );
+}
+
+static B ptrobj_checkget_holder(B x) { // doesn't consume
+  if (!isNsp(x)) thrF("Expected pointer object, got %S", genericDesc(x));
+  if (c(NS,x)->desc != ptrobj_ns->nsDesc) thrM("Expected pointer object, got some other kind of namespace");
+  return nfn_objU(c(NS,x)->sc->vars[0]);
+}
+static NOINLINE void* ptrobj_checkget(B x) {
+  return ptrh_ptr(ptrobj_checkget_holder(x));
+}
+
+static void* ptrobj_elbase(B h, B off, bool negate) { // doesn't consume h, off doesn't matter
+  if (ptrh_type(h).u == m_c32(sty_void).u) thrM("Cannot offset an untyped pointer");
+  char* ptr = ptrh_ptr(h);
+  i64 el = o2i64(off);
+  if (negate) el = -el;
+  return ptr + ptrh_stride(h)*el;
+}
+static B ptrobjRead_c1(B t, B x) {
+  B h = nfn_objU(t);
+  return readAny(ptrh_type(h), ptrobj_elbase(h, x, false));
+}
+static B ptrobjWrite_c2(B t, B w, B x) {
+  B h = nfn_objU(t);
+  genObj(ptrh_type(h), x, false, ptrobj_elbase(h, w, false));
+  dec(x);
+  return m_f64(1);
+}
+static B ptrobjWrite_c1(B t, B x) { return ptrobjWrite_c2(t, m_f64(0), x); }
+
+static B ptrobjCast_c1(B t, B x) {
+  vfyStr(x, "Type parser", "Pointer type");
+  usz ia = IA(x);
+  void* ptr = ptrh_ptr(nfn_objU(t));
+  if (ia==0) {
+    decG(x);
+    return m_ptrobj(ptr, m_c32(sty_void), 0);
+  }
+  
+  u32* xp0 = parseType_pre(x, ia);
+  u32* xp = xp0;
+  decG(x);
+  BQNFFIEnt parsed = ffi_parseTypeStr(&xp, false, false);
+  B r = m_ptrobj_s(ptr, parsed.o);
+  parseType_post(xp0, xp, ia);
+  return r;
+}
+static B ptrobjField_c1(B t, B x) {
+  B h = nfn_objU(t);
+  
+  u64 fld = o2u64(x);
+  B el = ptrh_type(h);
+  if (isC32(el)) thrM("Cannot get a field of a pointer to a scalar");
+  BQNFFIType* elc = c(BQNFFIType, el);
+  
+  char* ptr = ptrh_ptr(h);
+  B elNew;
+  if (elc->ty == cty_starr || elc->ty == cty_struct) {
+    bool isStruct = elc->ty == cty_struct;
+    u64 n = elc->ia-1;
+    if (fld >= n) thrF(isStruct? "Cannot get field %l of a struct with %s fields" : "Cannot get pointer to element %l of an array with %s elements", fld, n);
+    BQNFFIEnt* fldptr = &elc->a[fld];
+    elNew = inc(fldptr->o);
+    ptr+= fldptr->offset;
+  } else {
+    thrM("Pointer object: Field must be applied to a pointer to a struct or array");
+  }
+  return m_ptrobj(ptr, elNew, ptrh_stride(h));
+}
+static B ptrobjAdd_c1(B t, B x) {
+  B h = nfn_objU(t);
+  return m_ptrobj(ptrobj_elbase(h, x, false), inc(ptrh_type(h)), ptrh_stride(h));
+}
+static B ptrty_simplify(B x) {
+  assert(!isC32(x));
+  BQNFFIType* xt = c(BQNFFIType,x);
+  if (xt->ty == cty_repr) return xt->a[0].o;
+  return x;
+}
+static bool ptrty_equal(B a, B b) {
+  if (!isC32(a)) a = ptrty_simplify(a);
+  if (a.u == m_c32(sty_ptr).u) return true;
+  
+  if (!isC32(b)) b = ptrty_simplify(b);
+  if (b.u == m_c32(sty_ptr).u) return true;
+  if (isC32(a) || isC32(b)) return a.u==b.u; // if only one is a character, this test trivially fails
+  
+  BQNFFIType* at = c(BQNFFIType,a);
+  BQNFFIType* bt = c(BQNFFIType,b);
+  if (at->ty != bt->ty) return false;
+  switch (at->ty) { default: UD;
+    case cty_ptr: case cty_tlarr: {
+      return ptrty_equal(at->a[0].o, bt->a[0].o);
+    }
+    case cty_repr: {
+      UD; // should be handled by ptrty_simplify
+      // if (at->a[0].reType != bt->a[0].reType) return false;
+      // if (at->a[0].reWidth != bt->a[0].reWidth) return false;
+      // if (!ptrty_equal(at->a[0].o, bt->a[0].o)) return false;
+      // return true;
+    }
+    case cty_struct: case cty_starr: {
+      if (at->ia != bt->ia) return false;
+      ux n = at->ia-1;
+      for (ux i = 0; i < n; i++) {
+        if (!ptrty_equal(at->a[i].o, bt->a[i].o)) return false;
+      }
+      return true;
+    }
+  }
+}
+static B ptrobjSub_c1(B t, B x) {
+  B h = nfn_objU(t);
+  if (isNum(x)) return m_ptrobj(ptrobj_elbase(h, x, true), inc(ptrh_type(h)), ptrh_stride(h));
+  if (isNsp(x)) {
+    B h2 = ptrobj_checkget_holder(x);
+    B t1 = ptrh_type(h);
+    B t2 = ptrh_type(h2);
+    if (t1.u==m_c32(sty_void).u || t2.u==m_c32(sty_void).u) thrM("(pointer).Sub ptr: Both pointers must be typed");
+    ux stride = ptrh_stride(h);
+    if (stride!=ptrh_stride(h2)) thrM("(pointer).Sub ptr: Arguments must have the same stride");
+    if (!ptrty_equal(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
+    ptrdiff_t diff = ptrh_ptr(h) - ptrh_ptr(h2);
+    ptrdiff_t eldiff = diff / (ptrdiff_t)stride;
+    if (eldiff*stride != diff) thrM("(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride");
+    decG(x);
+    return m_f64(eldiff);
+  }
+  thrF("(pointer).Sub: Unexpected argument type: %S", genericDesc(x));
+}
+
+
+
 void ffi_init(void) {
   boundFnDesc   = registerNFn(m_c8vec_0("(foreign function)"), boundFn_c1, boundFn_c2);
   foreignFnDesc = registerNFn(m_c8vec_0("(foreign function)"), directFn_c1, directFn_c2);
+  ptrobj_ns = m_nnsDesc("read","write","cast","add","sub","field"); // first field must be an nfn whose object is the ptrh (needed for ptrobj_checkget_holder)
+  ptrReadDesc  = registerNFn(m_c8vec_0("(pointer).Read"), ptrobjRead_c1, c2_bad);
+  ptrWriteDesc = registerNFn(m_c8vec_0("(pointer).Write"), ptrobjWrite_c1, ptrobjWrite_c2);
+  ptrCastDesc  = registerNFn(m_c8vec_0("(pointer).Cast"), ptrobjCast_c1, c2_bad);
+  ptrAddDesc   = registerNFn(m_c8vec_0("(pointer).Add"), ptrobjAdd_c1, c2_bad);
+  ptrSubDesc   = registerNFn(m_c8vec_0("(pointer).Sub"), ptrobjSub_c1, c2_bad);
+  ptrFieldDesc = registerNFn(m_c8vec_0("(pointer).Field"), ptrobjField_c1, c2_bad);
   TIi(t_ffiType,freeO) = ffiType_freeO;
   TIi(t_ffiType,freeF) = ffiType_freeF;
   TIi(t_ffiType,visit) = ffiType_visit;
