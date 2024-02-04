@@ -135,8 +135,8 @@
 
 
 # wrong argument internal structure
-!"FFI: Expected array corresponding to *..." % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F @
-!"FFI: Expected array corresponding to *..." % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
+!"FFI: Expected array or pointer object corresponding to ""*[2]i32""" % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F @
+!"FFI: Expected array or pointer object corresponding to ""*{...}""" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨@⟩
 !"FFI: Incorrect list length corresponding to a struct: expected 1, got 0" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨⟨⟩⟩
@@ -221,8 +221,6 @@
 !"(pointer).Sub ptr: Arguments must have compatible types" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Sub p.Cast "u8"}}
 !"(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "i32").Sub (p.Add 6).Cast "i32"}}
 !"Type parser: Structs currently cannot contain mutable references" % @•FFI ""‿"bqn_init"‿"{&i8}"
-# !"" % %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "{{i8,i16},i32}").Sub p.Cast "{{u8,i16},i32}"}}
-# !"" % %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "{{i8,*i16},i32}").Sub p.Cast "{{u8,*u16},i32}"}}
 
 # type comparison
 %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ t←"{{i8,i16,**i8,[12]i8,*:i32,i64:f64,*,*f64},i32,i64:c8}" ⋄ (p.Cast t).Sub p.Cast t}} %% 0 # ⎊-less test of most passing things to run under heapverify

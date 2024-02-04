@@ -338,10 +338,10 @@ static char* const sty_names[] = {
 };
 enum CompoundTy {
   cty_ptr, // *... / &...; .a = {{.mutPtr = startsWith("&"), .o=eltype}}
-  cty_tlarr, // top-level array; {{.o=eltype}}
+  cty_tlarr, // top-level array; {{.o=eltype}}, arrCount=n
   cty_struct, // {...}; .a = {{.o=el0}, {.o=el1}, ..., {.o=elLast}, {.structData = ffi_type**}}
   cty_starr, // struct-based array; same as cty_struct
-  cty_repr, // something:type; {{.o=el, .t=rt, .reType=one of "icuf", .reWidth=bit width of retype}}
+  cty_repr, // something:type; {{.o=el, .t=rt, .reType=one of "icuf", .reWidth=log bit width of retype}}
   cty_ptrh, // data holder for pointer objects; {{.o=eltype}, {.ptrh_ptr, .ptrh_stride}}
 };
 
@@ -632,7 +632,54 @@ NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m
 NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
-static void* ptrobj_checkget(B x); // doesn't consume
+static NOINLINE B ptrobj_checkget(B x); // doesn't consume
+static bool ptrty_equal(B a, B b);
+static B ptrh_type(B n); // returns ptrty
+static BQNFFIEnt* ptrh_more(B n);
+static void* ptrh_ptr(B n);
+
+static NOINLINE void ty_fmt_add(B* s0, B o) {
+  B s = *s0;
+  if (isC32(o)) {
+    A8(sty_names[o2cG(o)]);
+  } else {
+    BQNFFIType* t = c(BQNFFIType, o);
+    switch (t->ty) {
+      default:
+        A8("???");
+        break;
+      case cty_ptr:
+        ACHR(t->a[0].mutPtr? '&' : '*');
+        ty_fmt_add(&s, t->a[0].o);
+        break;
+      case cty_starr:
+        AFMT("[%i]", t->ia-1);
+        ty_fmt_add(&s, t->a[0].o);
+        break;
+      case cty_tlarr:
+        AFMT("[%i]", t->arrCount);
+        ty_fmt_add(&s, t->a[0].o);
+        break;
+      case cty_struct:
+        A8("{...}");
+        break;
+      case cty_repr:
+        ty_fmt_add(&s, t->a[0].o);
+        AFMT(":%c%i", (u32)t->a[0].reType, (i32)(1 << t->a[0].reWidth));
+        break;
+    }
+  }
+  *s0 = s;
+}
+static NOINLINE B ty_fmt(B o) {
+  B s = emptyCVec();
+  ACHR('"');
+  ty_fmt_add(&s, o);
+  ACHR('"');
+  return s;
+}
+
+
 
 STATIC_GLOBAL B ffiObjsGlobal;
 void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
@@ -642,7 +689,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
     f64 f = c.f;
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
-      case sty_ptr: *(void**)ptr = ptrobj_checkget(c); break;
+      case sty_ptr: *(void**)ptr = ptrh_ptr(ptrobj_checkget(c)); break;
       case sty_u8:  { if(!q_fu8 (f)) thrM("FFI: improper value for u8" ); *( u8*)ptr = ( u8)f; break; }
       case sty_i8:  { if(!q_fi8 (f)) thrM("FFI: improper value for i8" ); *( i8*)ptr = ( i8)f; break; }
       case sty_u16: { if(!q_fu16(f)) thrM("FFI: improper value for u16"); *(u16*)ptr = (u16)f; break; }
@@ -657,14 +704,12 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
     if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any
-      
       B e = t->a[0].o;
-      if (!isArr(c)) {
-        if (isC32(e)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cG(e)]);
-        else thrM("FFI: Expected array corresponding to *...");
+      if (isAtm(c)) {
+        thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
       }
       usz ia = IA(c);
-      if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to \"[%s]...\"", ia, (usz)t->arrCount);
+      if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to %R", ia, ty_fmt(o));
       if (isC32(e)) { // *num / &num
         incG(c);
         B cG;
@@ -686,7 +731,6 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
         BQNFFIType* t2 = c(BQNFFIType, e);
         if (t2->ty!=cty_struct && t2->ty!=cty_starr) thrM("FFI: Pointer element type not implemented");
         
-        
         usz elSz = t2->structSize;
         TALLOC(u8, dataAll, elSz*ia + sizeof(usz));
         void* dataStruct = dataAll+sizeof(usz);
@@ -703,8 +747,8 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
       if (isC32(o2)) { // scalar:any
         u8 et = o2cG(o2);
         u8 mul = (sty_w[et]*8) >> reW;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S:%c%i\"", sty_names[et], (u32)reT, 1<<reW);
-        if (IA(c) != mul) thrF("FFI: Bad array corresponding to \"%S:%c%i\": expected %s elements, got %s", sty_names[et], (u32)reT, 1<<reW, (usz)mul, IA(c));
+        if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
+        if (IA(c) != mul) thrF("FFI: Bad array corresponding to %R: expected %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, ¯\_(ツ)_/¯
         dec(cG);
@@ -716,8 +760,8 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
         
         u8 et = o2cG(ore);
         u8 mul = (sty_w[et]*8) >> reW;
-        if (!isArr(c)) thrF("FFI: Expected array corresponding to \"%S%S:%c%i\"", mut?"&":"*", sty_names[et], (u32)reT, 1<<reW);
-        if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to \"%S%S:%c%i\": expected a multiple of %s elements, got %s", mut?"&":"*", sty_names[et], (u32)reT, 1<<reW, (usz)mul, IA(c));
+        if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
+        if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to %R: expected a multiple of %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         
         incG(c); B cG;
         if (mut) {
@@ -1135,7 +1179,7 @@ STATIC_GLOBAL NFnDesc* ptrFieldDesc;
 
 // ptrh - pointer holder - BQNFFIType object of {{.o=eltype}, {.ptrh_ptr, .ptrh_stride}}
 // eltype of sty_void is used for an untyped pointer
-static B ptrh_type(B n) { return c(BQNFFIType, n)->a[0].o; }
+static B ptrh_type(B n) { return c(BQNFFIType, n)->a[0].o; } // returns ptrty
 static BQNFFIEnt* ptrh_more(B n) { return &c(BQNFFIType, n)->a[1]; }
 static void* ptrh_ptr(B n) { return ptrh_more(n)->ptrh_ptr; }
 static ux ptrh_stride(B n) { return ptrh_more(n)->ptrh_stride; }
@@ -1160,13 +1204,10 @@ B m_ptrobj(void* ptr, B o, ux stride) {
   );
 }
 
-static B ptrobj_checkget_holder(B x) { // doesn't consume
+static NOINLINE B ptrobj_checkget(B x) { // doesn't consume
   if (!isNsp(x)) thrF("Expected pointer object, got %S", genericDesc(x));
   if (c(NS,x)->desc != ptrobj_ns->nsDesc) thrM("Expected pointer object, got some other kind of namespace");
   return nfn_objU(c(NS,x)->sc->vars[0]);
-}
-static NOINLINE void* ptrobj_checkget(B x) {
-  return ptrh_ptr(ptrobj_checkget_holder(x));
 }
 
 static void* ptrobj_elbase(B h, B off, bool negate) { // doesn't consume h, off doesn't matter
@@ -1273,7 +1314,7 @@ static B ptrobjSub_c1(B t, B x) {
   B h = nfn_objU(t);
   if (isNum(x)) return m_ptrobj(ptrobj_elbase(h, x, true), inc(ptrh_type(h)), ptrh_stride(h));
   if (isNsp(x)) {
-    B h2 = ptrobj_checkget_holder(x);
+    B h2 = ptrobj_checkget(x);
     B t1 = ptrh_type(h);
     B t2 = ptrh_type(h2);
     if (t1.u==m_c32(sty_void).u || t2.u==m_c32(sty_void).u) thrM("(pointer).Sub ptr: Both pointers must be typed");
@@ -1294,7 +1335,7 @@ static B ptrobjSub_c1(B t, B x) {
 void ffi_init(void) {
   boundFnDesc   = registerNFn(m_c8vec_0("(foreign function)"), boundFn_c1, boundFn_c2);
   foreignFnDesc = registerNFn(m_c8vec_0("(foreign function)"), directFn_c1, directFn_c2);
-  ptrobj_ns = m_nnsDesc("read","write","cast","add","sub","field"); // first field must be an nfn whose object is the ptrh (needed for ptrobj_checkget_holder)
+  ptrobj_ns = m_nnsDesc("read","write","cast","add","sub","field"); // first field must be an nfn whose object is the ptrh (needed for ptrobj_checkget)
   ptrReadDesc  = registerNFn(m_c8vec_0("(pointer).Read"), ptrobjRead_c1, c2_bad);
   ptrWriteDesc = registerNFn(m_c8vec_0("(pointer).Write"), ptrobjWrite_c1, ptrobjWrite_c2);
   ptrCastDesc  = registerNFn(m_c8vec_0("(pointer).Cast"), ptrobjCast_c1, c2_bad);
