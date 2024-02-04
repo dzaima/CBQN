@@ -393,7 +393,8 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
         ffi_type** els = rt.elements = (ffi_type**) ao->data;
         PLAINLOOP for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
         els[n] = NULL;
-      
+        
+        rt.alignment = rt.size = 0;
         rt.type = FFI_TYPE_STRUCT;
         
         TALLOC(size_t, offsets, n);
@@ -473,6 +474,7 @@ BQNFFIEnt ffi_parseTypeStr(u32** src, bool inPtr, bool top) { // parse actual ty
       PLAINLOOP for (usz i = 0; i < n; i++) els[i] = &rp[i].t;
       els[n] = NULL;
       TSFREE(es);
+      rt.alignment = rt.size = 0;
       rt.type = FFI_TYPE_STRUCT;
       
       TALLOC(size_t, offsets, n);
