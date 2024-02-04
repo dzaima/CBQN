@@ -318,6 +318,8 @@ B mmap_file(B path) {
     thrM("failed to mmap file");
   }
 #else
+  // see https://learn.microsoft.com/en-us/windows/win32/memory/creating-a-view-within-a-file
+
   HANDLE hFile = CreateFileA(
     p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
