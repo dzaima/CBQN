@@ -968,7 +968,8 @@ B libffiFn_c2(B t, B w, B x) {
   TFREE(tmpAlloc);
   
   i32 mutArgs = bf->mutCount;
-  if (mutArgs) {
+  bool testBuildObj = false;
+  if (mutArgs || testBuildObj) {
     usz objPos = 0;
     u32 flags = ptr2u64(bf->w_c1);
     bool resSingle = flags&4;
@@ -986,7 +987,8 @@ B libffiFn_c2(B t, B w, B x) {
         B c = buildObj(e, e.mutates, harr_ptr(ffiObjs), &objPos);
         if (e.mutates) HARR_ADDA(ra, c);
       }
-      r = HARR_FV(ra);
+      if (testBuildObj && !mutArgs) { inc(r); HARR_ABANDON(ra); }
+      else r = HARR_FV(ra);
     }
     assert(objPos == IA(ffiObjs));
   }
