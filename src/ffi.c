@@ -661,7 +661,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
       B e = t->a[0].o;
       if (!isArr(c)) {
         if (isC32(e)) thrF("FFI: Expected array corresponding to \"*%S\"", sty_names[o2cG(e)]);
-        else thrM("FFI: Expected array corresponding to *{...}");
+        else thrM("FFI: Expected array corresponding to *...");
       }
       usz ia = IA(c);
       if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to \"[%s]...\"", ia, (usz)t->arrCount);

@@ -130,7 +130,8 @@
 
 
 # wrong argument internal structure
-!"FFI: Expected array corresponding to *{...}" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
+!"FFI: Expected array corresponding to *..." % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F @
+!"FFI: Expected array corresponding to *..." % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">{i32}" ⋄ F @
 !"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨@⟩
 !"FFI: Incorrect list length corresponding to a struct: expected 1, got 0" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨⟨⟩⟩
