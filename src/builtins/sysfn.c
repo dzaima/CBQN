@@ -1120,7 +1120,7 @@ B sh_c2(B t, B w, B x) {
     bool any = false;
     if (ps[out_i].revents & POLLIN) while(true) { i64 len = read(p_out[0], &oBuf[0], bufsz); shDbg("read stdout "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_out = vec_join(s_out, incG(oBufObj)); }
     if (ps[err_i].revents & POLLIN) while(true) { i64 len = read(p_err[0], &oBuf[0], bufsz); shDbg("read stderr "N64d"\n",len); if(len<=0) break; else any=true; *oBufIA = len; s_err = vec_join(s_err, incG(oBufObj)); }
-     if (!iDone && ps[in_i].revents & POLLOUT) {
+    if (!iDone && ps[in_i].revents & POLLOUT) {
       shDbg("writing "N64u"\n", iLen-iOff);
       ssize_t ww = write(p_in[1], iBuf+iOff, iLen-iOff);
       shDbg("written %zd/"N64u"\n", ww, iLen-iOff);
@@ -1168,6 +1168,102 @@ B sh_c2(B t, B w, B x) {
            : WIFSIGNALED(status)? WTERMSIG(status)+128
            : -1;
   return m_hvec3(m_i32(code), s_outObj, s_errObj);
+}
+#elif defined(_WIN32) || defined(_WIN64)
+#define HAS_SH 1
+#include "../windows/winError.c"
+#include "../windows/sh.c"
+
+B sh_c2(B t, B w, B x) {
+
+  // parse options
+  B inObj = bi_N;
+  bool raw = false;
+  if (!q_N(w)) {
+    if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
+    inObj = ns_getC(w, "stdin");
+    if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
+    B rawObj = ns_getC(w, "raw");
+    if (!q_N(rawObj)) raw = o2b(rawObj);
+  }
+  u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
+
+  // allocate args
+  if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
+  usz xia = IA(x);
+  if (xia==0) thrM("•SH: 𝕩 must have at least one item");
+  u64 arglen = 0;
+  SGetU(x)
+  for (u64 i = 0; i < xia; i++) {
+    B c = GetU(x, i);
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
+    u64 len = utf8lenB(c);
+    arglen += 1+2+2*len;
+    // space or 0, quotes, worst-case scenario (every character needs escaping)
+  }
+  TALLOC(char, arg, arglen);
+  char* pos = arg;
+  for (u64 i = 0; i < xia; i++) {
+    B c = GetU(x, i);
+    u64 len = utf8lenB(c);
+    TALLOC(char, cstr, len+1);
+    toUTF8(c, cstr);
+    cstr[len] = 0;
+    pos = winQuoteCmdArg(len, cstr, pos);
+    *(pos++) = (xia==i+1)? '\0' : ' ';
+    TFREE(cstr)
+    assert(pos <= arg+arglen);
+  }
+
+  // allocate stdin
+  char* iBuf;
+  CharBuf iBufRaw;
+  if (iLen>0) {
+    if (raw) {
+      iBufRaw = get_chars(inObj);
+      iBuf = iBufRaw.data;
+    } else {
+      iBuf = TALLOCP(char, iLen);
+      toUTF8(inObj, iBuf);
+    }
+  } else iBuf = "";
+
+  // run command
+  DWORD code = -1;
+  u64 oLen = 0; char* oBuf;
+  u64 eLen = 0; char* eBuf;
+  DWORD dwResult = winCmd(arg, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
+  if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
+  TFREE(arg)
+  if (dwResult != ERROR_SUCCESS) {
+    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
+  }
+
+  // prepare output
+  u8* op; 
+  B s_out = m_c8arrv(&op, oLen); 
+  if (oLen > 0 && oBuf != NULL) {
+    memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf);
+  }
+  u8* ep;
+  B s_err = m_c8arrv(&ep, eLen); 
+  if (eLen > 0 && eBuf != NULL) {
+    memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf);
+  }
+
+  dec(w); dec(x);
+  B s_outRaw = toC8Any(s_out);
+  B s_errRaw = toC8Any(s_err);
+  B s_outObj;
+  B s_errObj;
+  if (raw) {
+    s_outObj = s_outRaw;
+    s_errObj = s_errRaw;
+  } else {
+    s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
+    s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
+  }
+  return m_hvec3(m_i32((i32)code), s_outObj, s_errObj);
 }
 #else
 #if FOR_BUILD
