@@ -541,7 +541,7 @@ BQNFFIEnt ffi_parseType(B arg, bool forRes) { // doesn't consume; parse argument
   u32* xp = xp0;
   
   BQNFFIEnt t;
-  if (xp[0]=='&' && xp[1]=='\0') {
+  if (forRes && xp[0]=='&' && xp[1]=='\0') {
     t = (BQNFFIEnt){.t = ffi_type_void, .o=m_c32(sty_void), .resSingle=true};
     xp+= 1;
   } else {

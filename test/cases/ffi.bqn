@@ -64,6 +64,11 @@
 !"Type parser: Representation wider than the value for ""i32:f64""" % @•FFI""‿"bqn_init"‿"i32:f64"
 !"Type parser: Garbage at end of type" % @•FFI""‿"bqn_init"‿"i32 hello world"
 
+# pointers
+!"Type parser: Unexpected end of input" % @•FFI""‿"bqn_init"‿"&"
+!"Type parser: Unexpected character '}'" % @•FFI""‿"bqn_init"‿"{&}"
+!"Type parser: Unexpected character ':'" % @•FFI""‿"bqn_init"‿"&:i8"
+
 # return value
 !"FFI: Function specification must have at least two items" % @•FFI ⟨"&"⟩
 !"FFI: Return value is specified as ""&"", but there are 0 mutated values" % @•FFI"&"‿"bqn_init"‿">*i32"
@@ -87,7 +92,7 @@
 
 
 # bad array elements
-!"Type parser: Structs currently cannot contain mutable references" % size_t ← "u64" ⋄ size_tw ← 64 ⋄ f←@•FFI"&"‿"memcpy"‿"&{&i16}"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈∘⋈¨¯32768‿32767
+!"Type parser: Structs currently cannot contain mutable references" % %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&{&i16}"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈∘⋈¨¯32768‿32767
 
 !"FFI: Array provided for &u8 contained 299" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ↕300
 !"FFI: Array provided for &u8 contained ¯99" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F -↕100
@@ -175,7 +180,7 @@
 
 
 # pointer objects
-%DEF mm %USE defs ⋄ Calloc ← {1‿𝕩 {𝕏𝕨} @•FFI⟨"*"∾𝕨, "calloc", size_t, size_t⟩} ⋄ free ← @•FFI""‿"free"‿">*" ⋄ cpy ← @•FFI"*:i8"‿"memcpy"‿"*"‿"*"‿"u64" ⋄ CpyA ← +´(2⋆8×↕8)×256|Cpy
+%DEF mm %USE defs ⋄ Calloc ← {1‿𝕩 {𝕏𝕨} @•FFI⟨"*"∾𝕨, "calloc", size_t, size_t⟩} ⋄ free ← @•FFI""‿"free"‿">*" ⋄ cpy ← @•FFI"*:i8"‿"memcpy"‿"*"‿"*"‿size_t ⋄ CpyA ← +´(2⋆8×↕8)×256|Cpy
 %DEF WallocE %USE mm ⋄ {allocs←⟨⟩ ⋄ Clean←{Free¨allocs⋄𝕩} ⋄ Clean 𝕏⎊{𝕊: !•CurrentError Clean @} {{r ⊣ allocs∾↩ r← 𝕨 Calloc 𝕩}}}
 %DEF Walloc  %USE mm ⋄ {allocs←⟨⟩ ⋄ Clean←{Free¨allocs⋄𝕩} ⋄ Clean 𝕏                             {{r ⊣ allocs∾↩ r← 𝕨 Calloc 𝕩}}}
 
