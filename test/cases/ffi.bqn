@@ -42,7 +42,7 @@
 !"Type parser: number literal too large" % @•FFI""‿"bqn_init"‿"[999999999999]i32"
 !"Type parser: Top-level array too large; limit is 65535 elements" % @•FFI""‿"bqn_init"‿"[65536]i32"
 !"Type parser: Top-level array too large; limit is 65535 elements" % @•FFI""‿"bqn_init"‿"[4000000000]i32"
-!"Type parser: Array too large; limit is 65534 bytes" % @•FFI""‿"bqn_init"‿"*[20000]i32"
+!"Type parser: Object too large; limit is 65534 bytes" % @•FFI""‿"bqn_init"‿"*[20000]i32"
 !"FFI: Cannot return array" % @•FFI"[4]i32"‿"bqn_init"
 
 # structs
@@ -210,6 +210,7 @@
 !"Cannot offset an untyped pointer" % %USE WallocE {{𝕊al: ("" Al 99).Add 1}}
 
 # .Add, .Sub, .Cast
+!"Type parser: Unexpected end of input" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast "{"}}
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Cast "{i32,*i32}"}} %% 0
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Add 123}} %% ¯123
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Sub 123}} %% 123
