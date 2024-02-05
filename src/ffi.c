@@ -695,7 +695,7 @@ static void genObj_ptr(void* res, B c, B expEl) {
   ffiObjsGlobal = vec_addN(ffiObjsGlobal, incG(c));
   *(void**)res = ptrh_ptr(h);
 }
-void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
+void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
     u32 t = styG(o);
@@ -1243,7 +1243,10 @@ static B ptrobjRead_c1(B t, B x) {
 }
 static B ptrobjWrite_c2(B t, B w, B x) {
   B h = nfn_objU(t);
+  ffiObjsGlobal = emptyHVec();
   genObj(ptrh_type(h), x, false, ptrobj_elbase(h, w, false));
+  decG(ffiObjsGlobal);
+  
   dec(x);
   return m_f64(1);
 }
