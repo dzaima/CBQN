@@ -864,7 +864,7 @@ static B readAny(B o, u8* ptr) { // doesn't consume
     } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}, [n]...
       return readStruct(c(BQNFFIType, o), ptr);
     } else if (t->ty==cty_ptr) { // *...
-      return m_ptrobj_s(*(void**)ptr, m_c32(sty_void));
+      return m_ptrobj_s(*(void**)ptr, inc(t->a[0].o));
     }
   }
   
