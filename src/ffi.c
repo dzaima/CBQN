@@ -770,16 +770,16 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
       } else { // *scalar:any / &scalar:any / *:any
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
+        assert(t2->ty==cty_ptr && (isC32(ore) || ore.u==ty_voidptr.u));
         if (isNsp(c)) { genObj_ptr(ptr, c, ore); return; }
-        assert(t2->ty==cty_ptr && isC32(ore));
-        if (styG(ore) == sty_void) { // *:any
+        if (ore.u == m_c32(sty_void).u) { // *:any
           elSz = sizeof(void*);
           goto toScalarReinterpret;
         }
         bool mut = t2->mutPtr;
         
-        u8 et = styG(ore);
-        u8 mul = (sty_w[et]*8) >> reW;
+        elSz = isC32(ore)? sty_w[styG(ore)] : sizeof(void*);
+        u8 mul = (elSz*8) >> reW;
         if (!isArr(c)) thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
         if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to %R: expected a multiple of %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         
