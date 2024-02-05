@@ -320,3 +320,18 @@ void manyargs(ManyArgs0 a0, int8_t (*a1)[7], int8_t a2[4], int8_t* mut) {
   *mut++ = a2[0];
   *mut++ = a2[3];
 }
+
+typedef struct StructOfPtrs {
+  void* ptr1;
+  int32_t* ptr2;
+  int32_t* ptrs[2];
+} StructOfPtrs;
+
+
+StructOfPtrs operateOnStructOfPtrs(StructOfPtrs arg, StructOfPtrs ptr[2]) {
+  return (StructOfPtrs) {
+    .ptr1 = arg.ptr2,
+    .ptr2 = ptr[0].ptr1,
+    .ptrs = {arg.ptrs[0], ptr[1].ptrs[1]}
+  };
+}

@@ -123,6 +123,15 @@ Section "# nested"
   •Show F ⟨fn, ↕10⟩
 }
 
+Section "# Struct of pointers"
+{
+  malloc ← "lib.so" •FFI ⟨"*u8", "malloc", ">u64"⟩
+  p ← Malloc 100
+  sop ← "{*,*i32,[2]*}"
+  f ← "lib.so"•FFI ⟨sop, "operateOnStructOfPtrs", sop, "[2]"∾sop⟩
+  •Show {(𝕩.Cast "u8").Sub p}⚇0 F {(p.Add 𝕩).Cast ""}⚇0 ⟨1,2,3‿4⟩⊸+⚇0 ⟨10, 20‿30⟩
+}
+
 
 # erroring:
 
