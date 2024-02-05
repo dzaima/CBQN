@@ -254,10 +254,15 @@ typedef struct BQNFFIType {
   };
   BQNFFIEnt a[];
 } BQNFFIType;
+STATIC_GLOBAL B ty_voidptr;
 
 B vfyStr(B x, char* name, char* arg);
+static u32 styG(B x) {
+  assert(isC32(x));
+  return o2cG(x);
+}
 static void printFFIType(FILE* f, B x) {
-  if (isC32(x)) fprintf(f, "%d", o2cG(x));
+  if (isC32(x)) fprintf(f, "%d", styG(x));
   else fprintI(f, x);
 }
 
@@ -308,19 +313,19 @@ static void printFFIType(FILE* f, B x) {
 
 
 enum ScalarTy {
-  sty_void, sty_a, sty_ptr,
+  sty_void, sty_a,
   sty_u8, sty_u16, sty_u32, sty_u64,
   sty_i8, sty_i16, sty_i32, sty_i64,
   sty_f32, sty_f64
 };
 static const u8 sty_w[] = {
-  [sty_void]=0, [sty_a]=sizeof(BQNV), [sty_ptr]=sizeof(void*),
+  [sty_void]=0, [sty_a]=sizeof(BQNV),
   [sty_u8]=1, [sty_u16]=2, [sty_u32]=4, [sty_u64]=8,
   [sty_i8]=1, [sty_i16]=2, [sty_i32]=4, [sty_i64]=8,
   [sty_f32]=4, [sty_f64]=8
 };
 static char* const sty_names[] = {
-  [sty_void]="void", [sty_a]="a", [sty_ptr]="*",
+  [sty_void]="void", [sty_a]="a",
   [sty_u8]="u8", [sty_u16]="u16", [sty_u32]="u32", [sty_u64]="u64",
   [sty_i8]="i8", [sty_i16]="i16", [sty_i32]="i32", [sty_i64]="i64",
   [sty_f32]="f32", [sty_f64]="f64"
@@ -441,7 +446,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
         else thrM("Type parser: Bad integer width");
         ro = m_c32(scty);
       }
-      parseRepr = !inPtr; myWidth = sty_w[o2cG(ro)];
+      parseRepr = !inPtr; myWidth = sty_w[styG(ro)];
       canRetype = inPtr;
       break;
     }
@@ -456,7 +461,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
     case '*': case '&': {
       myWidth = sizeof(void*);
       if (c0=='*' && (0==*c || ':'==*c || '}'==*c || ','==*c)) {
-        ro = m_c32(sty_ptr);
+        ro = incG(ty_voidptr);
         parseRepr = !inPtr;
         canRetype = inPtr;
       } else {
@@ -512,7 +517,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
       if (n!=64) goto badW;
     } else thrM("Type parser: Unexpected character after \":\"");
     
-    if (isC32(ro) && n > myWidth*8) thrF("Type parser: Representation wider than the value for \"%S:%c%i\"", sty_names[o2cG(ro)], (u32)t, n);
+    if (isC32(ro) && n > myWidth*8) thrF("Type parser: Representation wider than the value for \"%S:%c%i\"", sty_names[styG(ro)], (u32)t, n);
     // TODO figure out what to do with i32:i32 etc
     
     B roP = ro;
@@ -596,16 +601,6 @@ static NOINLINE B toW(u8 reT, u8 reW, B x) {
     case 6:               ffi_checkRange(x, 2, "f64", 0, 0);             return toF64Any(x); break;
   }
 }
-static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
-static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr };
-static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
-  u8* dst; B r;
-  usz ia = (elW*8)>>reW;
-  if (reW) dst = m_tyarrv(&r, 1<<reW, ia, reT=='c'? reTyMapC[reW] : reTyMapI[reW]);
-  else { u64* d2; r = m_bitarrv(&d2, ia); dst = (u8*) d2; }
-  memcpy(dst, src, elW);
-  return r;
-}
 
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
@@ -641,15 +636,17 @@ NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m
 NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
+B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
+B m_ptrobj(void* ptr, B o, ux stride); // consumes o
 static NOINLINE B ptrobj_checkget(B x); // doesn't consume
-static bool ptrty_equal(B a, B b);
+static bool ty_equal(B a, B b);
 static B ptrh_type(B n); // returns ptrty
 static void* ptrh_ptr(B n);
 
 static NOINLINE void ty_fmt_add(B* s0, B o) {
   B s = *s0;
   if (isC32(o)) {
-    A8(sty_names[o2cG(o)]);
+    A8(sty_names[styG(o)]);
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
     switch (t->ty) {
@@ -693,7 +690,7 @@ STATIC_GLOBAL B ffiObjsGlobal;
 static void genObj_ptr(void* res, B c, B expEl) {
   B h = ptrobj_checkget(c);
   #if FFI_CHECKS
-    if (!ptrty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
+    if (!ty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
   #endif
   ffiObjsGlobal = vec_addN(ffiObjsGlobal, incG(c));
   *(void**)res = ptrh_ptr(h);
@@ -701,11 +698,10 @@ static void genObj_ptr(void* res, B c, B expEl) {
 void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
   // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
-    u32 t = o2cG(o);
+    u32 t = styG(o);
     f64 f = c.f;
     switch(t) { default: UD; // thrF("FFI: Unimplemented scalar type \"%S\"", sty_names[t]);
       case sty_a:   *(BQNV*)ptr = makeX(inc(c)); break;
-      case sty_ptr: *(void**)ptr = ptrh_ptr(ptrobj_checkget(c)); break;
       case sty_u8:  { if(!q_fu8 (f)) thrM("FFI: improper value for u8" ); *( u8*)ptr = ( u8)f; break; }
       case sty_i8:  { if(!q_fi8 (f)) thrM("FFI: improper value for i8" ); *( i8*)ptr = ( i8)f; break; }
       case sty_u16: { if(!q_fu16(f)) thrM("FFI: improper value for u16"); *(u16*)ptr = (u16)f; break; }
@@ -731,7 +727,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
         incG(c);
         B cG;
         bool mut = t->ty==cty_ptr? t->mutPtr : false;
-        switch(o2cG(e)) { default: thrF("FFI: \"*%S\" argument type not yet implemented", sty_names[o2cG(e)]);
+        switch(styG(e)) { default: thrF("FFI: \"*%S\" argument type not yet implemented", sty_names[styG(e)]);
           case sty_i8:  ffi_checkRange(c, mut, "i8",  I8_MIN,  I8_MAX);  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
           case sty_i16: ffi_checkRange(c, mut, "i16", I16_MIN, I16_MAX); cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
           case sty_i32: ffi_checkRange(c, mut, "i32", I32_MIN, I32_MAX); cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
@@ -761,25 +757,28 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
       B o2 = t->a[0].o;
       u8 reT = t->reType;
       u8 reW = t->reWidth;
-      if (isC32(o2)) { // scalar:any (incl. *:any)
-        u8 et = o2cG(o2);
-        bool eptr = et==sty_ptr;
-        u8 mul = (sty_w[et]*8) >> reW;
-        if (eptr && isNsp(c)) { genObj_ptr(ptr, c, o2); return; }
-        if (eptr) ffiObjsGlobal = vec_addN(ffiObjsGlobal, m_i32(0));
-        if (isAtm(c)) thrF("FFI: Expected array%S corresponding to %R", eptr?" or pointer object":"", ty_fmt(o));
-        if (IA(c) != mul) thrF("FFI: Bad array%S corresponding to %R: expected %s elements, got %s", eptr?" or pointer object":"", ty_fmt(o), (usz)mul, IA(c));
+      u8 elSz;
+      if (isC32(o2)) { // scalar:any
+        elSz = sty_w[styG(o2)];
+        toScalarReinterpret:;
+        u8 mul = (elSz*8) >> reW;
+        if (isAtm(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
+        if (IA(c) != mul) thrF("FFI: Bad array corresponding to %R: expected %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, but CBQN-allocations allow that; may write past the end, but that's fine too? maybe? idk actually; TODO
         dec(cG);
-      } else { // *scalar:any / &scalar:any
+      } else { // *scalar:any / &scalar:any / *:any
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         if (isNsp(c)) { genObj_ptr(ptr, c, ore); return; }
         assert(t2->ty==cty_ptr && isC32(ore));
+        if (styG(ore) == sty_void) { // *:any
+          elSz = sizeof(void*);
+          goto toScalarReinterpret;
+        }
         bool mut = t2->mutPtr;
         
-        u8 et = o2cG(ore);
+        u8 et = styG(ore);
         u8 mul = (sty_w[et]*8) >> reW;
         if (!isArr(c)) thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
         if (mul && (IA(c) & (mul-1)) != 0) thrF("FFI: Bad array corresponding to %R: expected a multiple of %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
@@ -811,8 +810,8 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume
   }
 }
 
-B readAny(B o, u8* ptr);
-B readStruct(BQNFFIType* t, u8* ptr) {
+static B readAny(B o, u8* ptr);
+static B readStruct(BQNFFIType* t, u8* ptr) {
   usz ia = t->ia-1;
   M_HARR(r, ia);
   for (usz i = 0; i < ia; i++) {
@@ -822,13 +821,10 @@ B readStruct(BQNFFIType* t, u8* ptr) {
   return HARR_FV(r);
 }
 
-B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
-B m_ptrobj(void* ptr, B o, ux stride); // consumes o
-B readSimple(u8 resCType, u8* ptr) {
+static B readSimple(u8 resCType, u8* ptr) {
   B r;
   switch(resCType) { default: UD; // thrM("FFI: Unimplemented type");
     case sty_void: r = m_c32(0); break;
-    case sty_ptr: r = m_ptrobj_s(*(void**)ptr, m_c32(sty_void)); break;
     case sty_a:   r = getB(*(BQNV*)ptr); break;
     case sty_i8:  r = m_i32(*( i8*)ptr); break;  case sty_u8:  r = m_i32(*( u8*)ptr); break;
     case sty_i16: r = m_i32(*(i16*)ptr); break;  case sty_u16: r = m_i32(*(u16*)ptr); break;
@@ -841,17 +837,26 @@ B readSimple(u8 resCType, u8* ptr) {
   return r;
 }
 
-B readRe(BQNFFIType* t, u8* ptr) {
-  u8 et = o2cG(t->a[0].o);
-  u8 reT = t->reType;
-  u8 reW = t->reWidth;
-  u8 etw = sty_w[et];
-  return makeRe(reT, reW, ptr, etw);
+static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
+static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr };
+static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
+  u8* dst; B r;
+  usz ia = (elW*8)>>reW;
+  if (reW) dst = m_tyarrv(&r, 1<<reW, ia, reT=='c'? reTyMapC[reW] : reTyMapI[reW]);
+  else { u64* d2; r = m_bitarrv(&d2, ia); dst = (u8*) d2; }
+  memcpy(dst, src, elW);
+  return r;
+}
+static B readRe(BQNFFIType* t, u8* ptr) {
+  B e = t->a[0].o;
+  assert(isC32(e) || e.u==ty_voidptr.u);
+  u8 etw = isC32(e)? sty_w[styG(e)] : sizeof(void*);
+  return makeRe(t->reType, t->reWidth, ptr, etw);
 }
 
-B readAny(B o, u8* ptr) { // doesn't consume
+static B readAny(B o, u8* ptr) { // doesn't consume
   if (isC32(o)) {
-    return readSimple(o2cG(o), ptr);
+    return readSimple(styG(o), ptr);
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
     if (t->ty == cty_repr) { // cty_repr, scalar:x
@@ -872,7 +877,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     B f = objs[(*objPos)++];
     if (t->ty==cty_ptr && t->mutPtr) {
       if (isC32(e)) {
-        switch(o2cG(e)) { default: UD;
+        switch(styG(e)) { default: UD;
           case sty_i8: case sty_i16: case sty_i32: case sty_f64: return inc(f);
           case sty_u8:  return readU8Bits(f);
           case sty_u16: return readU16Bits(f);
@@ -895,7 +900,7 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     } else return m_f64(0);
   } else if (t->ty==cty_repr) { // any:any
     B o2 = t->a[0].o;
-    if (isC32(o2)) return o2cG(o2)==sty_ptr? objs[(*objPos)++] : m_f64(0); // scalar:any
+    if (isC32(o2)) return m_f64(0); // scalar:any
     
     BQNFFIType* t2 = c(BQNFFIType,o2); // *scalar:any / &scalar:any
     assert(t2->ty == cty_ptr);
@@ -972,12 +977,12 @@ B libffiFn_c2(B t, B w, B x) {
   B r;
   bool resVoid = false;
   if (isC32(ents[0].o)) {
-    u32 resCType = o2cG(ents[0].o);
+    u32 resCType = styG(ents[0].o);
     r = readSimple(resCType, res);
     resVoid = resCType==sty_void;
   } else {
     BQNFFIType* t = c(BQNFFIType, ents[0].o);
-    if (t->ty == cty_repr) { // cty_repr, scalar:x
+    if (t->ty == cty_repr) { // scalar:any, *:any
       r = readRe(t, res);
     } else if (t->ty == cty_struct) { // {...}
       r = readStruct(c(BQNFFIType, ents[0].o), res);
@@ -1029,7 +1034,7 @@ BQNFFIEnt ffi_parseDecoratedType(B arg, bool forRes) {
 
 
 static u64 calcAtomSize(B chr) {
-  return o2cG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
+  return styG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
 }
 static NOINLINE u64 calcMemSizeComplex(B o) {
   BQNFFIType* t = c(BQNFFIType, o);
@@ -1043,7 +1048,7 @@ static NOINLINE u64 calcMemSizeComplex(B o) {
   } else thrM("FFI: Unimplemented type (size calculation)");
 }
 static u64 calcMemSize(B o) {
-  return isC32(o)? sty_w[o2cG(o)] : calcMemSizeComplex(o);
+  return isC32(o)? sty_w[styG(o)] : calcMemSizeComplex(o);
 }
 static u64 calcStaticSize(B o) {
   return isC32(o)? calcAtomSize(o) : calcMemSizeComplex(o);
@@ -1071,6 +1076,10 @@ B ffiload_c2(B t, B w, B x) {
     BQNFFIType* t = c(BQNFFIType, eRes.o);
     if (t->ty == cty_repr) {
       B o2 = t->a[0].o;
+      if (o2.u==ty_voidptr.u) {
+        size = sizeof(void*);
+        goto allocRes;
+      }
       if (!isC32(o2)) thrM("FFI: Unimplemented result type");
       atomType = o2;
       goto calcAtomSize;
@@ -1287,7 +1296,7 @@ static B ptrty_simplify(B x) {
   if (xt->ty == cty_repr) return xt->a[0].o;
   return x;
 }
-static bool ptrty_equal(B a, B b) {
+static bool ty_equal(B a, B b) {
   assert(isC32(a) || v(a)->type==t_ffiType);
   assert(isC32(b) || v(b)->type==t_ffiType);
   if (!isC32(a)) a = ptrty_simplify(a);
@@ -1296,11 +1305,6 @@ static bool ptrty_equal(B a, B b) {
   if (!isC32(b)) b = ptrty_simplify(b);
   if (b.u == m_c32(sty_void).u) return true;
   
-  if (a.u == b.u) return true;
-  // TODO get rid of sty_ptr and this, represent as cty_ptr(sty_void)
-  if (a.u == m_c32(sty_ptr).u) return !isC32(b) && c(BQNFFIType,b)->ty==cty_ptr; // both being sty_ptr is handled by the preceding a.u == b.u
-  if (b.u == m_c32(sty_ptr).u) return !isC32(a) && c(BQNFFIType,a)->ty==cty_ptr;
-  
   if (isC32(a) || isC32(b)) return a.u==b.u; // if only one is a character, this test trivially fails
   
   BQNFFIType* at = c(BQNFFIType,a);
@@ -1308,20 +1312,20 @@ static bool ptrty_equal(B a, B b) {
   if (at->ty != bt->ty) return false;
   switch (at->ty) { default: UD;
     case cty_ptr: case cty_tlarr: {
-      return ptrty_equal(at->a[0].o, bt->a[0].o);
+      return ty_equal(at->a[0].o, bt->a[0].o);
     }
     case cty_repr: {
       UD; // should be handled by ptrty_simplify
       // if (at->a[0].reType != bt->a[0].reType) return false;
       // if (at->a[0].reWidth != bt->a[0].reWidth) return false;
-      // if (!ptrty_equal(at->a[0].o, bt->a[0].o)) return false;
+      // if (!ty_equal(at->a[0].o, bt->a[0].o)) return false;
       // return true;
     }
     case cty_struct: case cty_starr: {
       if (at->ia != bt->ia) return false;
       ux n = at->ia-1;
       for (ux i = 0; i < n; i++) {
-        if (!ptrty_equal(at->a[i].o, bt->a[i].o)) return false;
+        if (!ty_equal(at->a[i].o, bt->a[i].o)) return false;
       }
       return true;
     }
@@ -1337,7 +1341,7 @@ static B ptrobjSub_c1(B t, B x) {
     if (t1.u==m_c32(sty_void).u || t2.u==m_c32(sty_void).u) thrM("(pointer).Sub ptr: Both pointers must be typed");
     ux stride = ptrh_stride(h);
     if (stride!=ptrh_stride(h2)) thrM("(pointer).Sub ptr: Arguments must have the same stride");
-    if (!ptrty_equal(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
+    if (!ty_equal(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
     ptrdiff_t diff = ptrh_ptr(h) - ptrh_ptr(h2);
     ptrdiff_t eldiff = diff / (ptrdiff_t)stride;
     if (eldiff*stride != diff) thrM("(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride");
@@ -1364,6 +1368,9 @@ void ffi_init(void) {
   TIi(t_ffiType,freeF) = ffiType_freeF;
   TIi(t_ffiType,visit) = ffiType_visit;
   TIi(t_ffiType,print) = ffiType_print;
+  BQNFFIType* t; gc_add(ty_voidptr = m_bqnFFIType(&t, cty_ptr, 1));
+  t->a[0].o = m_c32(sty_void);
+  t->mutPtr = false;
 }
 
 #else // i.e. FFI==0
