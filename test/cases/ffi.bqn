@@ -50,8 +50,8 @@
 !"Type parser: Improper struct separator or end" % @•FFI""‿"bqn_init"‿"{*i32*i32}"
 !"Type parser: Improper struct separator or end" % @•FFI""‿"bqn_init"‿"{*i32"
 !"Type parser: Unexpected end of input" % @•FFI""‿"bqn_init"‿"{*i32,"
-!"Type parser: Structs currently cannot contain mutable references" % @•FFI""‿"bqn_init"‿"{&i32}"
-# !"Type parser: Structs currently cannot contain mutable references" % @•FFI""‿"bqn_init"‿"{[2]&i32}" # TODO
+!"Type parser: '&' currently can only be used as the outermost type" % @•FFI""‿"bqn_init"‿"{&i32}"
+!"Type parser: '&' currently can only be used as the outermost type" % @•FFI""‿"bqn_init"‿"{[2]&i32}"
 
 # :
 !"Type parser: expected number" % @•FFI""‿"bqn_init"‿"i32:"
@@ -67,7 +67,7 @@
 
 # pointers
 !"Type parser: Unexpected end of input" % @•FFI""‿"bqn_init"‿"&"
-!"Type parser: Unexpected character '}'" % @•FFI""‿"bqn_init"‿"{&}"
+!"Type parser: '&' currently can only be used as the outermost type" % @•FFI""‿"bqn_init"‿"{&}"
 !"Type parser: Unexpected character ':'" % @•FFI""‿"bqn_init"‿"&:i8"
 
 # return value
@@ -93,7 +93,7 @@
 
 
 # bad array elements
-!"Type parser: Structs currently cannot contain mutable references" % %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&{&i16}"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈∘⋈¨¯32768‿32767
+!"Type parser: '&' currently can only be used as the outermost type" % %USE defs ⋄ f←@•FFI"&"‿"memcpy"‿"&{&i16}"‿"*i8"‿size_t ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈∘⋈¨¯32768‿32767
 
 !"FFI: Array provided for &u8 contained 299" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ↕300
 !"FFI: Array provided for &u8 contained ¯99" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F -↕100
@@ -224,7 +224,7 @@
 !"(pointer).Sub ptr: Arguments must have the same stride" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ ((p.Cast "{{i8,i16},i32}").Field 0).Sub p.Cast "{i8,i16}"}}
 !"(pointer).Sub ptr: Arguments must have compatible types" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Sub p.Cast "u8"}}
 !"(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "i32").Sub (p.Add 6).Cast "i32"}}
-!"Type parser: Structs currently cannot contain mutable references" % @•FFI ""‿"bqn_init"‿"{&i8}"
+!"Type parser: '&' currently can only be used as the outermost type" % @•FFI ""‿"bqn_init"‿"{&i8}"
 
 # type comparison
 %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ t←"{{i8,i16,**i8,[12]i8,*:i32,i64:f64,*,*f64},i32,i64:c8}" ⋄ (p.Cast t).Sub p.Cast t}} %% 0 # ⎊-less test of most passing things to run under heapverify
