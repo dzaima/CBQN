@@ -261,10 +261,6 @@ static u32 styG(B x) {
   assert(isC32(x));
   return o2cG(x);
 }
-static void printFFIType(FILE* f, B x) {
-  if (isC32(x)) fprintf(f, "%d", styG(x));
-  else fprintI(f, x);
-}
 
 #if FFI==2
 
@@ -687,7 +683,7 @@ static NOINLINE B ty_fmt(B o) {
 
 
 STATIC_GLOBAL B ffiObjsGlobal;
-static void genObj_ptr(void* res, B c, B expEl) {
+static void genObj_ptrobj(void* res, B c, B expEl) {
   B h = ptrobj_checkget(c);
   #if FFI_CHECKS
     if (!ty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
@@ -696,7 +692,6 @@ static void genObj_ptr(void* res, B c, B expEl) {
   *(void**)res = ptrh_ptr(h);
 }
 void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
-  // printFFIType(stdout,o); printf(" = "); printI(c); printf("\n");
   if (isC32(o)) { // scalar
     u32 t = styG(o);
     f64 f = c.f;
@@ -718,7 +713,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiO
     if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any / top-level [n]any
       B e = t->a[0].o;
       if (isAtm(c)) {
-        if (isNsp(c)) { genObj_ptr(ptr, c, e); return; }
+        if (isNsp(c)) { genObj_ptrobj(ptr, c, e); return; }
         thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
       }
       usz ia = IA(c);
@@ -771,7 +766,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiO
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && (isC32(ore) || ore.u==ty_voidptr.u));
-        if (isNsp(c)) { genObj_ptr(ptr, c, ore); return; }
+        if (isNsp(c)) { genObj_ptrobj(ptr, c, ore); return; }
         if (ore.u == m_c32(sty_void).u) { // *:any
           elSz = sizeof(void*);
           goto toScalarReinterpret;
@@ -867,7 +862,7 @@ static B readAny(B o, u8* ptr) { // doesn't consume
   thrM("FFI: Unimplemented in-memory type for reading");
 }
 
-B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
+B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
   if (isC32(ent.o)) return m_f64(0); // scalar
   BQNFFIType* t = c(BQNFFIType, ent.o);
   if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any / top-level [n]any
@@ -908,10 +903,10 @@ B buildObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     assert(!anyMut); // Structs currently cannot contain mutable references
     
     usz ia = t->ia-1;
-    for (usz i = 0; i < ia; i++) buildObj(t->a[i], false, objs, objPos); // just to forward objPos
+    for (usz i = 0; i < ia; i++) readUpdatedObj(t->a[i], false, objs, objPos); // just to forward objPos
     
     return m_f64(0);
-  } else thrF("FFI: Unimplemented type (buildObj: %i)", (i32)t->ty);
+  } else thrF("FFI: Unimplemented type (readUpdatedObj: %i)", (i32)t->ty);
 }
 
 B libffiFn_c2(B t, B w, B x) {
@@ -999,7 +994,7 @@ B libffiFn_c2(B t, B w, B x) {
     if (resSingle) {
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = buildObj(e, e.anyMut, harr_ptr(ffiObjs), &objPos);
+        B c = readUpdatedObj(e, e.anyMut, harr_ptr(ffiObjs), &objPos);
         if (e.anyMut) r = c;
       }
     } else {
@@ -1007,7 +1002,7 @@ B libffiFn_c2(B t, B w, B x) {
       if (!resVoid) HARR_ADDA(ra, r);
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = buildObj(e, e.anyMut, harr_ptr(ffiObjs), &objPos);
+        B c = readUpdatedObj(e, e.anyMut, harr_ptr(ffiObjs), &objPos);
         if (e.anyMut) HARR_ADDA(ra, c);
       }
       if (testBuildObj && !mutArgs) { inc(r); HARR_ABANDON(ra); }
@@ -1179,7 +1174,9 @@ void ffiType_print(FILE* f, B x) {
   if (t->ty==cty_struct || t->ty==cty_starr) ia--;
   for (usz i=0; i<ia; i++) {
     if (i) fprintf(f, ", ");
-    printFFIType(f, t->a[i].o);
+    B e = t->a[i].o;
+    if (isC32(e)) fprintf(f, "%d", styG(e));
+    else fprintI(f, e);
   }
   fprintf(f, "⟩");
 }
