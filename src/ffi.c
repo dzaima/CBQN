@@ -237,7 +237,7 @@ typedef struct BQNFFIEnt {
   union {
     void* ptrh_ptr; // cty_ptrh
     u64 structOffset; // cty_struct, cty_starr
-    struct { bool wholeArg, isMutated, resSingle, onW; u16 staticOffset; }; // cty_arglist, DecoratedType
+    struct { bool wholeArg, isMutated, resSingle, onW; u32 staticOffset; }; // cty_arglist, DecoratedType
   };
 } BQNFFIEnt;
 typedef struct BQNFFIType {
@@ -352,7 +352,6 @@ static ffi_type storeStructOffsets(BQNFFIType* rp, ffi_type** list, ux n) {
   
   TALLOC(size_t, offsets, n);
   if (ffi_get_struct_offsets(FFI_DEFAULT_ABI, &rt, offsets) != FFI_OK) thrM("Type parser: Failed getting struct offsets");
-  if (rt.size>=U16_MAX) thrM("Type parser: Object too large; limit is 65534 bytes");
   PLAINLOOP for (usz i = 0; i < n; i++) rp->a[i].structOffset = offsets[i];
   rp->structSize = rt.size;
   TFREE(offsets);
@@ -392,7 +391,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
         myWidth = sizeof(void*);
         BQNFFIType* rp; ro = m_bqnFFIType(&rp, cty_tlarr, 1);
         rp->a[0].o = e.o;
-        if (n>U16_MAX) thrM("Type parser: Top-level array too large; limit is 65535 elements");
+        if (n>U32_MAX) thrM("Type parser: Top-level array too large");
         rp->arrCount = n;
         parseRepr = e.canRetype;
         rt = ffi_type_pointer;
@@ -1098,7 +1097,7 @@ B ffiload_c2(B t, B w, B x) {
     count[e.onW]++;
     if (e.isMutated) mutCount++;
   }
-  if (staticAlloc > U16_MAX-64) thrM("FFI: Static argument size too large");
+  if (staticAlloc > U32_MAX-64) thrM("FFI: Static argument size too large");
   ap->staticAllocTotal = ffiTmpAlign(staticAlloc);
   if (count[0]>1 && whole[0]) thrM("FFI: Multiple arguments on 𝕩 specified, some with '>'");
   if (count[1]>1 && whole[1]) thrM("FFI: Multiple arguments on 𝕨 specified, some with '>'");
