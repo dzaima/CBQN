@@ -838,20 +838,16 @@ static B readSimple(u8 resCType, u8* ptr) {
 }
 
 static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
-static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr };
-static B makeRe(u8 reT, u8 reW/*log*/, u8* src, u32 elW/*bytes*/) {
-  u8* dst; B r;
-  usz ia = (elW*8)>>reW;
-  if (reW) dst = m_tyarrv(&r, 1<<reW, ia, reT=='c'? reTyMapC[reW] : reTyMapI[reW]);
-  else { u64* d2; r = m_bitarrv(&d2, ia); dst = (u8*) d2; }
-  memcpy(dst, src, elW);
-  return r;
-}
-static B readRe(BQNFFIType* t, u8* ptr) {
+static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr, [0]=t_bitarr };
+static B readRe(BQNFFIType* t, u8* src) {
   B e = t->a[0].o;
   assert(isC32(e) || e.u==ty_voidptr.u);
-  u8 etw = isC32(e)? sty_w[styG(e)] : sizeof(void*);
-  return makeRe(t->reType, t->reWidth, ptr, etw);
+  u8 elW = isC32(e)? sty_w[styG(e)] : sizeof(void*); // bytes
+  u8 reW = t->reWidth; // log bits
+  B r;
+  char* dst = m_tyarrlbv(&r, reW, (elW*8)>>reW, (t->reType=='c'? reTyMapC : reTyMapI)[reW]);
+  memcpy(dst, src, elW);
+  return r;
 }
 
 static B readAny(B o, u8* ptr) { // doesn't consume
