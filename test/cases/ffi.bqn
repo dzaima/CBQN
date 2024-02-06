@@ -76,6 +76,7 @@
 !"FFI: Return value is specified as ""&"", but there are 2 mutated values" % @•FFI"&"‿"bqn_init"‿"&i32"‿"&i32"
 !"FFI: Cannot return array" % @•FFI"[4]i32"‿"bqn_init"
 !"FFI: Unimplemented result type" % @•FFI"**:i8"‿"bqn_init"
+!"FFI: Result type cannot be mutated" % @•FFI"&i32"‿"bqn_init"
 
 
 # correct elements
@@ -168,9 +169,9 @@
 !"FFI: Array provided for &i16 contained 32768" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿32768
 !"FFI: Array provided for &i16 contained ¯32769" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F ¯32768‿¯32769
 
-!"FFI: Array provided for &u8 contained an array" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ⟨↕300⟩
-!"FFI: Array provided for &i16 contained a character" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F "hi"
-!"FFI: Array provided for &f64 contained a namespace" % f←@•FFI"&"‿"bqn_init"‿">&f64" ⋄ F 1‿2‿{⇐}
+!"FFI: Array provided for &u8 contained array" % f←@•FFI"&"‿"bqn_init"‿">&u8" ⋄ F ⟨↕300⟩
+!"FFI: Array provided for &i16 contained character" % f←@•FFI"&"‿"bqn_init"‿">&i16" ⋄ F "hi"
+!"FFI: Array provided for &f64 contained namespace" % f←@•FFI"&"‿"bqn_init"‿">&f64" ⋄ F 1‿2‿{⇐}
 
 
 
@@ -272,9 +273,6 @@
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*:i8"‿"memcpy"‿"&i16:c8"‿"*i16:c8"‿size_t ⋄ ! a ≡ 1⊑F ⟨a, p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ Cpy ⟨(p.Add 10).Cast"i16:c8", p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*:i8"‿"memcpy"‿"&i16"   ‿"*:i8"   ‿size_t ⋄ ! a ≡ 1⊑F ⟨a, p.Cast"", 8⟩ ⋄ p.Read¨ ↕20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
-
-# !"FFI: Unimplemented result type" % @•FFI"*i32"‿"bqn_init"
-# !"FFI: Unimplemented result type" % @•FFI"&i32"‿"bqn_init"
 
 # unchecked stuff
 # !"FFI: Bad array corresponding to ""i64:c8"": expected 8 elements, got 1" % f←@•FFI""‿"bqn_init"‿">i64:c8" ⋄ F 8⥊2

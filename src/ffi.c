@@ -237,7 +237,7 @@ typedef struct BQNFFIEnt {
   union {
     void* ptrh_ptr; // cty_ptrh
     u64 structOffset; // cty_struct, cty_starr
-    struct { bool wholeArg, isMutated, resSingle; bool onW; u16 staticOffset; }; // cty_arglist, DecoratedType
+    struct { bool wholeArg, isMutated, resSingle, onW; u16 staticOffset; }; // cty_arglist, DecoratedType
   };
 } BQNFFIEnt;
 typedef struct BQNFFIType {
@@ -265,34 +265,21 @@ static u32 styG(B x) {
 #if FFI==2
 
 #if FFI_CHECKS
-  static char* typeDesc(i32 typeNum) {
-    switch(typeNum) {
-      default: return "(unknown)";
-      case 0: return "an array";
-      case 1: return "a number";
-      case 2: return "a character";
-      case 3: return "a function";
-      case 4: return "a 1-modifier";
-      case 5: return "a 2-modifier";
-      case 6: return "a namespace";
-    }
-  }
-  static NOINLINE i32 nonNumber(B x) { // returns -1 if x is all numeric, otherwise •Type of the offending element
-    if (elNum(TI(x,elType))) return -1;
+  static B nonNumber(B x) { // returns m_f64(0) if x is all numeric, otherwise •Type of the offending element
+    if (elNum(TI(x,elType))) return m_f64(0);
     usz ia = IA(x); SGetU(x)
-    i32 r = -1;
     for (ux i = 0; i < ia; i++) {
       B c = GetU(x,i);
-      if (!isNum(c)) { r = typeInt(c); break; }
+      if (!isNum(c)) return inc(c);
     }
-    return r;
+    return m_f64(0);
   }
   static NOINLINE void ffi_checkRange(B x, i32 mode, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
     if (IA(x)==0) return;
     
     char* ref = mode==1? "&" : mode==0? "*" : ":";
-    i32 nonNum = nonNumber(x);
-    if (nonNum!=-1) thrF("FFI: Array provided for %S%S contained %S", ref, desc, typeDesc(nonNum));
+    B nonNum = nonNumber(x);
+    if (nonNum.u!=m_f64(0).u) thrF("FFI: Array provided for %S%S contained %S", ref, desc, genericDesc(nonNum));
     
     if (min==max) return;
     incG(x); x = elNum(TI(x,elType))? x : taga(cpyF64Arr(x));
@@ -635,7 +622,7 @@ B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
 B m_ptrobj(void* ptr, B o, ux stride); // consumes o
 static NOINLINE B ptrobj_checkget(B x); // doesn't consume
 static bool ty_equal(B a, B b);
-static B ptrh_type(B n); // returns ptrty
+static B ptrh_type(B n); // returns cty_ptr object
 static void* ptrh_ptr(B n);
 
 static NOINLINE void ty_fmt_add(B* s0, B o) {
@@ -860,12 +847,12 @@ static B readAny(B o, u8* ptr) { // doesn't consume
   thrM("FFI: Unimplemented in-memory type for reading");
 }
 
-B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
+B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B** objs) {
   if (isC32(ent.o)) return m_f64(0); // scalar
   BQNFFIType* t = c(BQNFFIType, ent.o);
   if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any / top-level [n]any
     B e = t->a[0].o;
-    B f = objs[(*objPos)++];
+    B f = *((*objs)++);
     if (t->ty==cty_ptr && t->mutPtr) {
       if (isC32(e)) {
         switch(styG(e)) { default: UD;
@@ -895,13 +882,13 @@ B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B* objs, usz* objPos) {
     
     BQNFFIType* t2 = c(BQNFFIType,o2); // *scalar:any / &scalar:any
     assert(t2->ty == cty_ptr);
-    B f = objs[(*objPos)++];
+    B f = *((*objs)++);
     return t2->mutPtr? inc(f) : m_f64(0);
   } else if (t->ty==cty_struct || t->ty==cty_starr) {
     assert(!anyMut); // Structs currently cannot contain mutable references
     
     usz ia = t->ia-1;
-    for (usz i = 0; i < ia; i++) readUpdatedObj(t->a[i], false, objs, objPos); // just to forward objPos
+    for (usz i = 0; i < ia; i++) readUpdatedObj(t->a[i], false, objs); // just to forward objPos
     
     return m_f64(0);
   } else thrF("FFI: Unimplemented type (readUpdatedObj: %i)", (i32)t->ty);
@@ -985,13 +972,13 @@ B libffiFn_c2(B t, B w, B x) {
   i32 mutArgs = bf->mutCount;
   bool testBuildObj = false;
   if (mutArgs || testBuildObj) {
-    usz objPos = 0;
     u32 flags = ptr2u64(bf->w_c1);
     bool resSingle = flags&4;
+    B* objsCurr = harr_ptr(ffiObjs);
     if (resSingle) {
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = readUpdatedObj(e, e.isMutated, harr_ptr(ffiObjs), &objPos);
+        B c = readUpdatedObj(e, e.isMutated, &objsCurr);
         if (e.isMutated) r = c;
       }
     } else {
@@ -999,13 +986,13 @@ B libffiFn_c2(B t, B w, B x) {
       if (!resVoid) HARR_ADDA(ra, r);
       for (usz i = 0; i < argn; i++) {
         BQNFFIEnt e = ents[i+1];
-        B c = readUpdatedObj(e, e.isMutated, harr_ptr(ffiObjs), &objPos);
+        B c = readUpdatedObj(e, e.isMutated, &objsCurr);
         if (e.isMutated) HARR_ADDA(ra, c);
       }
       if (testBuildObj && !mutArgs) { inc(r); HARR_ABANDON(ra); }
       else r = HARR_FV(ra);
     }
-    assert(objPos == IA(ffiObjs));
+    assert(objsCurr == harr_ptr(ffiObjs) + IA(ffiObjs));
   }
   
   dec(w); dec(x); decG(ffiObjs);
@@ -1026,7 +1013,7 @@ BQNFFIEnt ffi_parseDecoratedType(B arg, bool forRes) {
 static u64 calcAtomSize(B chr) {
   return styG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
 }
-static NOINLINE u64 calcMemSizeComplex(B o) {
+static NOINLINE u64 calcMemSizeCompound(B o) {
   BQNFFIType* t = c(BQNFFIType, o);
   if (t->ty==cty_ptr || t->ty==cty_tlarr) return sizeof(void*); // *any / &any / top-level [n]any
   else if (t->ty==cty_struct || t->ty==cty_starr) return t->structSize; // {...}
@@ -1038,10 +1025,10 @@ static NOINLINE u64 calcMemSizeComplex(B o) {
   } else thrM("FFI: Unimplemented type (size calculation)");
 }
 static u64 calcMemSize(B o) {
-  return isC32(o)? sty_w[styG(o)] : calcMemSizeComplex(o);
+  return isC32(o)? sty_w[styG(o)] : calcMemSizeCompound(o);
 }
 static u64 calcStaticSize(B o) {
-  return isC32(o)? calcAtomSize(o) : calcMemSizeComplex(o);
+  return isC32(o)? calcAtomSize(o) : calcMemSizeCompound(o);
 }
 
 B ffiload_c2(B t, B w, B x) {
@@ -1058,6 +1045,7 @@ B ffiload_c2(B t, B w, B x) {
   
   DecoratedType tRes = ffi_parseDecoratedType(GetU(x,0), true);
   BQNFFIEnt eRes = tRes.ent;
+  if (eRes.isMutated) thrM("FFI: Result type cannot be mutated");
   {
     B atomType;
     usz size;
@@ -1148,7 +1136,7 @@ B ffiload_c2(B t, B w, B x) {
 
 #define FFI_TYPE_FLDS(OBJ) \
   BQNFFIType* t = (BQNFFIType*) x;   \
-  BQNFFIEnt* arr=t->a; usz ia=t->ia;\
+  BQNFFIEnt* arr=t->a; usz ia=t->ia; \
   for (usz i = 0; i < ia; i++) OBJ(arr[i].o);
 
 DEF_FREE(ffiType) {
