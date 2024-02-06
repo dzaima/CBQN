@@ -353,6 +353,7 @@ static u32 readUInt(u32** p) {
     r = r*10 + *c-'0';
     c++;
   }
+  if (c == *p) thrM("Type parser: expected number");
   *p = c;
   return r;
 }
@@ -513,7 +514,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
       if (n!=64) goto badW;
     } else thrM("Type parser: Unexpected character after \":\"");
     
-    if (isC32(ro) && n > myWidth*8) thrF("Type parser: Representation wider than the value for \"%S:%c%i\"", sty_names[styG(ro)], (u32)t, n);
+    if (isC32(ro) && n > myWidth*8) thrF("Type parser: Representation wider than the value within", sty_names[styG(ro)], (u32)t, n);
     // TODO figure out what to do with i32:i32 etc
     
     B roP = ro;
@@ -722,7 +723,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiO
         incG(c);
         B cG;
         bool mut = t->ty==cty_ptr? t->mutPtr : false;
-        switch(styG(e)) { default: thrF("FFI: \"*%S\" argument type not yet implemented", sty_names[styG(e)]);
+        switch(styG(e)) { default: thrF("FFI: Unimplemented pointer element type within %R", ty_fmt(o));
           case sty_i8:  ffi_checkRange(c, mut, "i8",  I8_MIN,  I8_MAX);  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
           case sty_i16: ffi_checkRange(c, mut, "i16", I16_MIN, I16_MAX); cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
           case sty_i32: ffi_checkRange(c, mut, "i32", I32_MIN, I32_MAX); cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;

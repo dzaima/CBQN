@@ -11,11 +11,12 @@
 !"FFI: Type must be a string" % @•FFI "hello"
 !"FFI: Too many arguments" % @•FFI""‿"bqn_init"∾70000⥊<"i32"
 !"Type parser: Unexpected character '?'" % @•FFI""‿"bqn_init"‿"?"
-!"Type parser: Bad array type" % @•FFI""‿"bqn_init"‿"["
+!"Type parser: expected number" % @•FFI""‿"bqn_init"‿"["
 !"Type parser: Bad array type" % @•FFI""‿"bqn_init"‿"[0"
 !"Type parser: Unexpected end of input" % @•FFI""‿"bqn_init"‿"[1]"
+!"Type parser: expected number" % @•FFI""‿"bqn_init"‿"[]i32"
 !"Type parser: Unexpected end of input" % @•FFI""‿"bqn_init"‿"{"
-!"Type parser: Bad integer width" % @•FFI""‿"bqn_init"‿"i"
+!"Type parser: expected number" % @•FFI""‿"bqn_init"‿"i"
 !"Type parser: Bad float width" % @•FFI""‿"bqn_init"‿"f80"
 !"Type parser: Bad float width" % @•FFI""‿"bqn_init"‿"f128"
 !"Type parser: Bad float width" % @•FFI""‿"bqn_init"‿"f16"
@@ -53,15 +54,15 @@
 # !"Type parser: Structs currently cannot contain mutable references" % @•FFI""‿"bqn_init"‿"{[2]&i32}" # TODO
 
 # :
-!"Type parser: Unexpected character after "":""" % @•FFI""‿"bqn_init"‿"i32:"
+!"Type parser: expected number" % @•FFI""‿"bqn_init"‿"i32:"
 !"Type parser: Unexpected character after "":""" % f←@•FFI""‿"bqn_init"‿">*u64:q8"
-!"Type parser: Unsupported width in :i0" % @•FFI""‿"bqn_init"‿"i32:i"
+!"Type parser: expected number" % @•FFI""‿"bqn_init"‿"i32:i"
 !"Type parser: Unsupported width in :i9" % @•FFI""‿"bqn_init"‿"i32:i9"
 !"Type parser: Unsupported width in :u16" % @•FFI""‿"bqn_init"‿"i32:u16"
 !"Type parser: Unsupported width in :i64" % @•FFI"i32:i64"‿"bqn_init"
 !"Type parser: Unsupported width in :f32" % @•FFI""‿"bqn_init"‿"i32:f32"
 !"Type parser: number literal too large" % @•FFI""‿"bqn_init"‿"i32:u9999999999999999"
-!"Type parser: Representation wider than the value for ""i32:f64""" % @•FFI""‿"bqn_init"‿"i32:f64"
+!"Type parser: Representation wider than the value within" % @•FFI""‿"bqn_init"‿"i32:f64"
 !"Type parser: Garbage at end of type" % @•FFI""‿"bqn_init"‿"i32 hello world"
 
 # pointers
@@ -172,9 +173,9 @@
 
 
 # unimplemented stuff
-!"FFI: ""*i64"" argument type not yet implemented" % f←@•FFI""‿"bqn_init"‿">&i64" ⋄ F ↕10
-!"FFI: ""*i64"" argument type not yet implemented" % f←@•FFI""‿"bqn_init"‿">*i64" ⋄ F ↕10
-!"FFI: ""*u64"" argument type not yet implemented" % f←@•FFI""‿"bqn_init"‿">&u64" ⋄ F ↕10
+!"FFI: Unimplemented pointer element type within ""&i64""" % f←@•FFI""‿"bqn_init"‿">&i64" ⋄ F ↕10
+!"FFI: Unimplemented pointer element type within ""*i64""" % f←@•FFI""‿"bqn_init"‿">*i64" ⋄ F ↕10
+!"FFI: Unimplemented pointer element type within ""&u64""" % f←@•FFI""‿"bqn_init"‿">&u64" ⋄ F ↕10
 !"FFI: Pointer element type not implemented" % f←@•FFI""‿"bqn_init"‿">**u64" ⋄ F ⟨↕2⟩
 
 
