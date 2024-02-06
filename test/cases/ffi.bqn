@@ -138,8 +138,9 @@
 # wrong argument internal structure
 !"FFI: Expected array or pointer object corresponding to ""*[2]i32""" % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F @
 !"FFI: Expected array or pointer object corresponding to ""*{...}""" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F @
-!"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">{i32}" ⋄ F @
-!"FFI: Expected array corresponding to a struct" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨@⟩
+!"FFI: Expected array corresponding to ""{...}""" % f←@•FFI""‿"bqn_init"‿">{i32}" ⋄ F 0
+!"FFI: Expected array corresponding to ""{...}""" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨0⟩
+!"FFI: Expected array corresponding to ""[1]i32""" % f←@•FFI""‿"bqn_init"‿">*[1]i32" ⋄ F ⟨0⟩
 !"FFI: Incorrect list length corresponding to a struct: expected 1, got 0" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨⟨⟩⟩
 !"FFI: Incorrect list length corresponding to a struct: expected 1, got 2" % f←@•FFI""‿"bqn_init"‿">*{i32}" ⋄ F ⟨1‿2⟩
 !"FFI: Incorrect list length corresponding to an array: expected 2, got 0" % f←@•FFI""‿"bqn_init"‿">*[2]i32" ⋄ F ⟨⟨⟩⟩

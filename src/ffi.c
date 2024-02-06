@@ -609,7 +609,7 @@ FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
   for (usz i=0; i<ia; i++) ((UEL*)rp)[i] = tp[i]; \
   decG(t); return r;
 
-// copy elements of x as unsigned integers (using a signed integer array type as a "container"); consumes argument
+// copy elements of x to array of unsigned integers (using a signed integer array type as a "container"); consumes argument
 // undefined behavior if x contains a number outside the respective unsigned range (incl. any negative numbers)
 NOINLINE B cpyU32Bits(B x) { CPY_UNSIGNED(i32, u32, cpyI32Arr, toF64Any, f64) }
 NOINLINE B cpyU16Bits(B x) { CPY_UNSIGNED(i16, u16, cpyI16Arr, toI32Any, i32) }
@@ -763,7 +763,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiO
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, but CBQN-allocations allow that; may write past the end, but that's fine too? maybe? idk actually; TODO
         dec(cG);
-      } else { // *scalar:any / &scalar:any / *:any
+      } else { // *scalar:any / &scalar:any / *:any / **:any
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && (isC32(ore) || ore.u==ty_voidptr.u));
@@ -795,7 +795,7 @@ void genObj(B o, B c, bool anyMut, void* ptr) { // doesn't consume; mutates ffiO
         ffiObjsGlobal = vec_addN(ffiObjsGlobal, cG);
       }
     } else if (t->ty==cty_struct || t->ty==cty_starr) {
-      if (!isArr(c)) thrM("FFI: Expected array corresponding to a struct");
+      if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
       if (IA(c)!=t->ia-1) thrF("FFI: Incorrect list length corresponding to %S: expected %s, got %s", t->ty==cty_struct? "a struct" : "an array", (usz)(t->ia-1), IA(c));
       SGetU(c)
       for (usz i = 0; i < t->ia-1; i++) {
