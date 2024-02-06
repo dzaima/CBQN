@@ -1,4 +1,5 @@
 f←@
+sizet ← "u64"
 Section ← {•Out 𝕩∾˜@+10}
 
 f ↩ "lib.so" •FFI ""‿"do_nothing" ⋄ •Show F ⟨⟩
@@ -85,7 +86,7 @@ f ↩ "lib.so" •FFI ⟨s1, "incMembers", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9
 f ↩ "lib.so" •FFI ⟨"&", "incMany", "&"∾s2, "u64"⟩ ⋄ •Show¨ F ⟨0‿3‿6+3⥊<0‿1+2⥊<⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩, 3⟩
 
 {
-  calloc ← @•FFI"*:i32"‿"calloc"‿"u64"‿"u64" ⋄ mem ← Calloc 3‿4
+  calloc ← @•FFI"*:i32"‿"calloc"‿sizet‿sizet ⋄ mem ← Calloc 3‿4
   f ← "lib.so" •FFI "i32"‿"arrayRefOp"‿">&{*:i32,u64}"
   {𝕊: ⟨sum, ⟨arr‿sz⟩⟩ ← F ⟨mem‿3⟩ ⋄ •Show sum ∾ arr-mem}¨ ↕2
 }
@@ -94,7 +95,7 @@ Section "# self-ffi"
 •term.Flush@
 f ↩ @ •FFI ⟨"i32", "putchar", ">i32"⟩ ⋄ F¨ 10∾˜"text"-@
 •term.Flush@
-f ↩ @ •FFI ⟨"a", "bqn_makeChar", ">u64"⟩ ⋄ •Show F 120169
+f ↩ @ •FFI ⟨"a", "bqn_makeChar", ">u32"⟩ ⋄ •Show F 120169
 
 Section "# array types"
 
@@ -114,7 +115,7 @@ f ↩ "lib.so"•FFI  ""‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"�
 Section "# nested"
 {
   f ← "lib.so"•FFI "i32"‿"callWithinMutated"‿"a"‿"&i32"
-  g ← @ •FFI "*:i8"‿"memcpy"‿"&i8"‿"*i8"‿"u64"
+  g ← @ •FFI "*:i8"‿"memcpy"‿"&i8"‿"*i8"‿sizet
   Fn ← {
     ! 𝕩≡fn
     •Show 1⊑G ⟨5⥊0, 3+↕5, 4⟩
@@ -125,7 +126,7 @@ Section "# nested"
 
 Section "# Struct of pointers"
 {
-  malloc ← "lib.so" •FFI ⟨"*u8", "malloc", ">u64"⟩
+  malloc ← "lib.so" •FFI ⟨"*u8", "malloc", ">"∾sizet⟩
   p ← Malloc 100
   sop ← "{*,*i32,[2]*}"
   f ← "lib.so"•FFI ⟨sop, "operateOnStructOfPtrs", sop, "[2]"∾sop⟩
