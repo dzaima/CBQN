@@ -75,6 +75,7 @@
 !"FFI: Return value is specified as ""&"", but there are 0 mutated values" % @•FFI"&"‿"bqn_init"‿">*i32"
 !"FFI: Return value is specified as ""&"", but there are 2 mutated values" % @•FFI"&"‿"bqn_init"‿"&i32"‿"&i32"
 !"FFI: Cannot return array" % @•FFI"[4]i32"‿"bqn_init"
+!"FFI: Unimplemented result type" % @•FFI"**:i8"‿"bqn_init"
 
 
 # correct elements
@@ -195,6 +196,9 @@
 %USE Walloc {{𝕊al: p←"{i16,i16,i16,i64}" Al 99 ⋄ p.Write ¯4‿10000‿¯30000‿7e12 ⋄ s←-○{CpyA 0∾˜⋈˜𝕩}´ ⟨p.Field 2, p⟩ ⋄ Cpy ⟨p.Add 1, p, s⟩ ⋄ p.Read¨ ↕2}} %% ⟨¯4‿10000‿¯30000‿7e12, ¯4‿10000‿0‿0⟩
 %USE Walloc {{𝕊al: p←"{i32,{i64,i64}}" Al 999 ⋄ {𝕩 p.Write ⟨𝕩×10,𝕩×20‿30⟩}¨ ↕4 ⋄ ((p.Field 1).Field 0).Read¨ ↕4 }} %% 20×↕4
 !"Cannot get a field of a pointer to a scalar" % %USE WallocE {{𝕊al: ("i32" Al 99).Field 0}}
+!"ptr.Write: Cannot write array to ""*i32""" % %USE WallocE {{𝕊al: ("*i32" Al 99).Write 1‿2‿3}}
+!"ptr.Write: Cannot write array to ""*i32:i32""" % %USE WallocE {{𝕊al: ("*i32:i32"Al 99).Write ↕16}}
+%USE Walloc {{𝕊al: p←("" Al 99).Cast "*:i8" ⋄ a←"i32"Al 99 ⋄ a.Write 12345 ⋄ p.Write ar←Cpy a‿a‿0 ⋄ ! ar ≡ p.Read 0 ⋄ a.Read 0}} %% 12345
 %USE Walloc {{𝕊al: p←"i16" Al 99 ⋄ raw ← Cpy 0∾˜⋈˜p.Add 3 ⋄ cpy2←@•FFI"*i16"‿"memcpy"‿"*:i8"‿"*:i8"‿size_t ⋄ p.Sub Cpy2 raw‿raw‿0 }} %% ¯3
 
 # garbage arguments

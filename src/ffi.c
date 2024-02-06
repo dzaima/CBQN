@@ -681,16 +681,15 @@ static NOINLINE B ty_fmt(B o) {
 
 
 
-STATIC_GLOBAL B ffiObjsGlobal;
-static void genObj_ptrobj(void* res, B c, B expEl) {
+static void genObj_writePtr(void* res, B c, B expEl, B* sourceObjs) {
   B h = ptrobj_checkget(c);
   #if FFI_CHECKS
     if (!ty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
   #endif
-  ffiObjsGlobal = vec_addN(ffiObjsGlobal, incG(c));
   *(void**)res = ptrh_ptr(h);
+  if (sourceObjs!=NULL) *sourceObjs = vec_addN(*sourceObjs, incG(c)); 
 }
-void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
+void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
   if (isC32(o)) { // scalar
     u32 t = styG(o);
     f64 f = c.f;
@@ -712,9 +711,10 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
     if (t->ty==cty_ptr || t->ty==cty_tlarr) { // *any / &any / top-level [n]any
       B e = t->a[0].o;
       if (isAtm(c)) {
-        if (isNsp(c)) { genObj_ptrobj(ptr, c, e); return; }
+        if (isNsp(c)) { genObj_writePtr(ptr, c, e, sourceObjs); return; }
         thrF("FFI: Expected array or pointer object corresponding to %R", ty_fmt(o));
       }
+      if (sourceObjs==NULL) thrF("ptr.Write: Cannot write array to %R", ty_fmt(o));
       usz ia = IA(c);
       if (t->ty==cty_tlarr && t->arrCount!=ia) thrF("FFI: Incorrect item count of %s corresponding to %R", ia, ty_fmt(o));
       if (isC32(e)) { // *num / &num
@@ -732,8 +732,8 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
           case sty_f32: ffi_checkRange(c, mut, "f64", 0, 0);             cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
         }
         
-        ffiObjsGlobal = vec_addN(ffiObjsGlobal, cG);
         *(void**)ptr = tyany_ptr(cG);
+        *sourceObjs = vec_addN(*sourceObjs, cG);
       } else { // *{...} / &{...} / *[n]any
         BQNFFIType* t2 = c(BQNFFIType, e);
         if (t2->ty!=cty_struct && t2->ty!=cty_starr) thrM("FFI: Pointer element type not implemented");
@@ -743,9 +743,9 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
         void* dataStruct = dataAll+sizeof(usz);
         *((usz*)dataAll) = ia;
         SGetU(c)
-        for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), dataStruct + elSz*i);
+        for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), dataStruct + elSz*i, sourceObjs);
         *(void**)ptr = dataStruct;
-        ffiObjsGlobal = vec_addN(ffiObjsGlobal, tag(TOBJ(dataAll), OBJ_TAG));
+        *sourceObjs = vec_addN(*sourceObjs, tag(TOBJ(dataAll), OBJ_TAG));
       }
     } else if (t->ty==cty_repr) { // any:any
       B o2 = t->a[0].o;
@@ -765,11 +765,12 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && (isC32(ore) || ore.u==ty_voidptr.u));
-        if (isNsp(c)) { genObj_ptrobj(ptr, c, ore); return; }
+        if (isNsp(c)) { genObj_writePtr(ptr, c, ore, sourceObjs); return; }
         if (ore.u == m_c32(sty_void).u) { // *:any
           elSz = sizeof(void*);
           goto toScalarReinterpret;
         }
+        if (sourceObjs==NULL) thrF("ptr.Write: Cannot write array to %R", ty_fmt(o));
         bool mut = t2->mutPtr;
         
         elSz = isC32(ore)? sty_w[styG(ore)] : sizeof(void*);
@@ -790,7 +791,7 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
           cG = taga(cGp);
         } else cG = toW(reT, reW, c);
         *(void**)ptr = tyany_ptr(cG);
-        ffiObjsGlobal = vec_addN(ffiObjsGlobal, cG);
+        *sourceObjs = vec_addN(*sourceObjs, cG);
       }
     } else if (t->ty==cty_struct || t->ty==cty_starr) {
       if (!isArr(c)) thrF("FFI: Expected array corresponding to %R", ty_fmt(o));
@@ -798,7 +799,7 @@ void genObj(B o, B c, void* ptr) { // doesn't consume; mutates ffiObjsGlobal
       SGetU(c)
       for (usz i = 0; i < t->ia-1; i++) {
         BQNFFIEnt e = t->a[i];
-        genObj(e.o, GetU(c, i), e.structOffset + (u8*)ptr);
+        genObj(e.o, GetU(c, i), e.structOffset + (u8*)ptr, sourceObjs);
       }
     } else thrM("FFI: Unimplemented type (genObj)");
   }
@@ -816,19 +817,17 @@ static B readStruct(BQNFFIType* t, u8* ptr) {
 }
 
 static B readSimple(u8 resCType, u8* ptr) {
-  B r;
   switch(resCType) { default: UD; // thrM("FFI: Unimplemented type");
-    case sty_void: r = m_c32(0); break;
-    case sty_a:   r = getB(*(BQNV*)ptr); break;
-    case sty_i8:  r = m_i32(*( i8*)ptr); break;  case sty_u8:  r = m_i32(*( u8*)ptr); break;
-    case sty_i16: r = m_i32(*(i16*)ptr); break;  case sty_u16: r = m_i32(*(u16*)ptr); break;
-    case sty_i32: r = m_i32(*(i32*)ptr); break;  case sty_u32: r = m_f64(*(u32*)ptr); break;
-    case sty_i64: { i64 v = *(i64*)ptr; if (i64abs(v)>=(1ULL<<53)) thrM("FFI: i64 result absolute value ≥ 2⋆53"); r = m_f64(v); break; }
-    case sty_u64: { u64 v = *(u64*)ptr; if (       v >=(1ULL<<53)) thrM("FFI: u64 result ≥ 2⋆53");                r = m_f64(v); break; }
-    case sty_f32: r = m_f64(*(float* )ptr); break;
-    case sty_f64: r = m_f64(*(double*)ptr); break;
+    case sty_void:return m_c32(0);
+    case sty_a:   return getB(*(BQNV*)ptr);
+    case sty_i8:  return m_i32(*( i8*)ptr);  case sty_u8:  return m_i32(*( u8*)ptr);
+    case sty_i16: return m_i32(*(i16*)ptr);  case sty_u16: return m_i32(*(u16*)ptr);
+    case sty_i32: return m_i32(*(i32*)ptr);  case sty_u32: return m_f64(*(u32*)ptr);
+    case sty_i64: { i64 v = *(i64*)ptr; if (i64abs(v)>=(1ULL<<53)) thrM("FFI: i64 result absolute value ≥ 2⋆53"); return m_f64(v); }
+    case sty_u64: { u64 v = *(u64*)ptr; if (       v >=(1ULL<<53)) thrM("FFI: u64 result ≥ 2⋆53");                return m_f64(v); }
+    case sty_f32: return m_f64(*(float* )ptr);
+    case sty_f64: return m_f64(*(double*)ptr);
   }
-  return r;
 }
 
 static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
@@ -940,7 +939,7 @@ B libffiFn_c2(B t, B w, B x) {
   usz argn = cif->nargs;
   
   BQNFFIEnt* ents = argObj->a;
-  ffiObjsGlobal = emptyHVec(); // implicit parameter to genObj
+  B ffiObjs = emptyHVec(); // implicit parameter to genObj
   for (usz i = 0; i < argn; i++) {
     BQNFFIEnt e = ents[i+1];
     B o;
@@ -949,9 +948,8 @@ B libffiFn_c2(B t, B w, B x) {
     } else {
       o = (e.onW? wf : xf)(e.onW?wa:xa, idxs[e.onW]++);
     }
-    genObj(e.o, o, tmpAlloc + e.staticOffset);
+    genObj(e.o, o, tmpAlloc + e.staticOffset, &ffiObjs);
   }
-  B ffiObjs = ffiObjsGlobal; // load the global before ffi_call to prevent issues on recursive calls
   
   for (usz i = 0; i < argn; i++) argPtrs[i] = tmpAlloc + ents[i+1].staticOffset;
   void* res = tmpAlloc + ents[0].staticOffset;
@@ -1228,9 +1226,7 @@ static B ptrobjRead_c1(B t, B x) {
 }
 static B ptrobjWrite_c2(B t, B w, B x) {
   B h = nfn_objU(t);
-  ffiObjsGlobal = emptyHVec();
-  genObj(ptrh_type(h), x, ptrobj_elbase(h, w, false));
-  decG(ffiObjsGlobal);
+  genObj(ptrh_type(h), x, ptrobj_elbase(h, w, false), NULL);
   
   dec(x);
   return m_f64(1);
