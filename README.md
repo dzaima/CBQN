@@ -155,6 +155,9 @@ First, some exceptions to the general licensing:
 - timsort implementation - `src/builtins/sortTemplate.h`: [MIT](licenses/LICENSE-MIT-sort); [original repo](https://github.com/swenson/sort/tree/f79f2a525d03f102034b5a197c395f046eb82708)
 - Ryu - `src/utils/ryu.c` & files in `src/utils/ryu/`: [Apache 2.0](licenses/LICENSE-Apache2) or [Boost 1.0](licenses/LICENSE-Boost); [original repo](https://github.com/ulfjack/ryu/tree/75d5a85440ed356ad7b23e9e6002d71f62a6255c)
 
+
+Additionally, REPLXX (optional, included by default) has its own licensing at `build/replxxSubmodule/LICENSE.md`.
+
 Everything else (i.e. all files except `src/builtins/sortTemplate.h`, `src/utils/ryu.c`, and everything in `src/utils/ryu/`) may be treated as under any of the following licenses, as if they had the respective notice:
 
 - [GNU LGPLv3 only](licenses/LICENSE-LGPLv3)
