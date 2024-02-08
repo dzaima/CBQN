@@ -139,7 +139,7 @@ B ud_c2(B t, B w, B x) {
     empty|= m==0 | m==l;
     rsh[i] = l - m;
   }
-  for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
+  PLAINLOOP for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
   
   if (empty) {
     Arr* ra = arr_shSetUG(m_fillarrpEmpty(getFillR(x)), rr, sh);

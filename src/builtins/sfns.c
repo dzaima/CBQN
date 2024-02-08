@@ -697,7 +697,7 @@ B join_c1(B t, B x) {
       usz* fsh = SH(xf);
       if (xr>1) {
         usz* xsh = SH(x);
-        for (usz i = 0; i < xr; i++) sh[i] = xsh[i]*fsh[i];
+        PLAINLOOP for (usz i = 0; i < xr; i++) sh[i] = xsh[i]*fsh[i];
       }
       shcpy(sh+xr, fsh+xr, ir-xr);
     }
@@ -773,12 +773,12 @@ B join_c1(B t, B x) {
 
     usz xia = IA(x);
     usz* xsh = SH(x);
-    usz tlen = 4*xr+2*r0; for (usz a=0; a<xr; a++) tlen+=xsh[a];
-    TALLOC(usz, st, tlen);                                     // Temp buffer
-    st[xr-1]=1; for (ur a=xr; a-->1; ) st[a-1] = st[a]*xsh[a]; // Stride
-    usz* tsh0 = st+xr; usz* tsh = tsh0+xr+r0;                  // Test shapes
+    usz tlen = 4*xr+2*r0; PLAINLOOP for (usz a=0; a<xr; a++) tlen+=xsh[a];
+    TALLOC(usz, st, tlen); // Temp buffer
+    st[xr-1]=1; PLAINLOOP for (ur a=xr; a-->1; ) st[a-1] = st[a]*xsh[a]; // Stride
+    usz* tsh0 = st+xr; usz* tsh = tsh0+xr+r0; // Test shapes
     // Length buffer i is lp+lp[i]
-    usz* lp = tsh+xr+r0; lp[0]=xr; for (usz a=1; a<xr; a++) lp[a] = lp[a-1]+xsh[a-1];
+    usz* lp = tsh+xr+r0; lp[0]=xr; PLAINLOOP for (usz a=1; a<xr; a++) lp[a] = lp[a-1]+xsh[a-1];
 
     // Expand checked region from the root ⊑𝕩 along each axis in order,
     // so that a non-root element is checked when the axis of the first

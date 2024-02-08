@@ -1530,8 +1530,8 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
     if (ia<1 || ia>3) thrF("•bit._%U: 𝕗 must contain between 1 and 3 numbers (%s≡≠𝕗)", name, ia);
     SGetU(f)
     usz t[3];
-    for (usz i=0 ; i<ia; i++) t[i] = req2(o2s(GetU(f, i)), name);
-    for (usz i=ia; i<3 ; i++) t[i] = t[ia-1];
+    PLAINLOOP for (usz i=0 ; i<ia; i++) t[i] = req2(o2s(GetU(f, i)), name);
+    PLAINLOOP for (usz i=ia; i<3 ; i++) t[i] = t[ia-1];
     ow = t[0]; rw = t[1]; xw = t[2];
   }
   
