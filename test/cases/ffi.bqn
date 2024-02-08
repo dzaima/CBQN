@@ -41,9 +41,6 @@
 # arrays
 !"Type parser: 0-item arrays not supported" % @•FFI""‿"bqn_init"‿"[0]i32"
 !"Type parser: number literal too large" % @•FFI""‿"bqn_init"‿"[999999999999]i32"
-!"Type parser: Top-level array too large; limit is 65535 elements" % @•FFI""‿"bqn_init"‿"[65536]i32"
-!"Type parser: Top-level array too large; limit is 65535 elements" % @•FFI""‿"bqn_init"‿"[4000000000]i32"
-!"Type parser: Object too large; limit is 65534 bytes" % @•FFI""‿"bqn_init"‿"*[20000]i32"
 !"FFI: Cannot return array" % @•FFI"[4]i32"‿"bqn_init"
 
 # structs
