@@ -1,6 +1,7 @@
 #include "../core.h"
 #include "../utils/each.h"
 #include "../utils/talloc.h"
+#include "../utils/calls.h"
 #include "../nfns.h"
 #include "../builtins.h"
 
@@ -55,23 +56,25 @@ B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 
 extern GLOBAL B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
-  #define UPD_BOUNDS(I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
+  #define UPD_BOUNDS(B,I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
   if (isArr(g)) {
     usz ia = IA(g);
-    u8 xe = TI(g,elType);
-    if (elNum(xe)) {
-      incG(g);
-      if (xe<el_i32) g = taga(cpyI32Arr(g));
-      if (xe==el_f64) { f64* gp = f64any_ptr(g); NOUNROLL for (usz i=0; i<ia; i++) UPD_BOUNDS(o2i64(b(gp[i]))); }
-      else            { i32* gp = i32any_ptr(g); NOUNROLL for (usz i=0; i<ia; i++) UPD_BOUNDS(        gp[i]  ); }
-      decG(g);
+    u8 ge = TI(g,elType);
+    if (elNum(ge)) {
+      i64 bres[2];
+      if (!getRange_fns[ge](tyany_ptr(g), bres, ia)) thrM("⍟: 𝔾 contained non-integer (or integer was out of range)");
+      if (bres[0]<bound[0]) bound[0] = bres[0];
+      if (bres[1]>bound[1]) bound[1] = bres[1];
     } else {
       SGetU(g)
       for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
     }
   } else if (isNum(g)) {
-    UPD_BOUNDS(o2i64(g));
-  } else thrM("⍟: 𝔾 contained a non-number atom");
+    if (!q_i64(g)) thrM("⍟: 𝔾 contained non-integer (or integer was out of range)");
+    i64 c = o2i64G(g);
+    if (c<bound[0]) bound[0] = c;
+    if (c>bound[1]) bound[1] = c;
+  } else thrM("⍟: 𝔾 contained non-number");
 }
 B repeat_replaceR(B g, B* q);
 FORCE_INLINE B repeat_replace(B g, B* q) { // doesn't consume
