@@ -803,11 +803,12 @@ B slash_c2(B t, B w, B x) {
       #if SINGELI
       si_constrep[xk](wv, xv, rv, xlen);
       #else
-      #define CASE(L,T) case L: {                       \
-          T* xp = xv; T* rp = rv;                       \
-          for (usz i = 0; i < xlen; i++) {              \
-            for (i64 j = 0; j < wv; j++) *rp++ = xp[i]; \
-          }                                             \
+      #define CASE(L,T) case L: {                   \
+          T* xp = xv; T* rp = rv;                   \
+          for (usz i = 0; i < xlen; i++) {          \
+            T e = xp[i];                            \
+            for (i64 j = 0; j < wv; j++) *rp++ = e; \
+          }                                         \
         } break;
       switch (xk) { default: UD; CASE(0,u8) CASE(1,u16) CASE(2,u32) CASE(3,u64) }
       #undef CASE
