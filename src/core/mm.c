@@ -10,7 +10,7 @@ static u64 prepAllocSize(u64 sz) {
   if (psz < minTotPad) psz = minTotPad;
   return sz + psz;
 }
-#define MMAP(SZ) mmap(NULL, prepAllocSize(SZ), PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
+#define MMAP(SZ) mmap(NULL, SZ, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
 
 GLOBAL bool mem_log_enabled;
 
