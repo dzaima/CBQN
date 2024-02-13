@@ -160,68 +160,56 @@ B shape_c2(B t, B w, B x) {
     nr = 1;
     sh = NULL;
   } else {
-    if (isAtm(w)) w = m_unit(w);
+    if (RARE(isAtm(w))) w = m_unit(w);
     if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
     if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
     nr = IA(w);
     sh = nr<=1? NULL : m_shArr(nr);
-    if (TI(w,elType)==el_i32) {
-      i32* wi = i32any_ptr(w);
-      if (nr>1) for (i32 i = 0; i < nr; i++) sh->a[i] = wi[i];
-      bool bad=false, good=false;
-      for (i32 i = 0; i < nr; i++) {
-        if (wi[i]<0) thrF("⥊: 𝕨 contained %i", wi[i]);
-        bad|= mulOn(nia, wi[i]);
-        good|= wi[i]==0;
+    SGetU(w)
+    i32 unkPos = -1;
+    i32 unkInd ONLY_GCC(=0);
+    bool bad=false, good=false;
+    for (i32 i = 0; i < nr; i++) {
+      B c = GetU(w, i);
+      if (isF64(c)) {
+        usz v = o2s(c);
+        if (sh) sh->a[i] = v;
+        bad|= mulOn(nia, v);
+        good|= v==0;
+      } else {
+        if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
+        unkPos = i;
+        if (!isPrim(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        unkInd = ((i32)v(c)->flags) - 1;
+        good|= xia==0 | unkInd==n_floor;
       }
-      if (bad && !good) thrM("⥊: 𝕨 too large");
-    } else {
-      SGetU(w)
-      i32 unkPos = -1;
-      i32 unkInd ONLY_GCC(=0);
-      bool bad=false, good=false;
-      for (i32 i = 0; i < nr; i++) {
-        B c = GetU(w, i);
-        if (isF64(c)) {
-          usz v = o2s(c);
-          if (sh) sh->a[i] = v;
-          bad|= mulOn(nia, v);
-          good|= v==0;
-        } else {
-          if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-          if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
-          unkPos = i;
-          if (!isPrim(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-          unkInd = ((i32)v(c)->flags) - 1;
-          good|= xia==0 | unkInd==n_floor;
-        }
-      }
-      if (bad && !good) thrM("⥊: 𝕨 too large");
-      if (unkPos!=-1) {
-        if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-        if (nia==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
-        i64 div = xia/nia;
-        i64 mod = xia%nia;
-        usz item;
-        bool fill = false;
-        if (unkInd == n_atop) {
-          if (mod!=0) thrM("⥊: Shape must be exact when reshaping with ∘");
-          item = div;
-        } else if (unkInd == n_floor) {
-          item = div;
-        } else if (unkInd == n_reverse) {
-          item = mod? div+1 : div;
-        } else if (unkInd == n_take) {
-          item = mod? div+1 : div;
-          fill = true;
-        } else UD;
-        if (sh) sh->a[unkPos] = item;
-        nia = uszMul(nia, item);
-        if (fill) {
-          if (!isArr(x)) x = m_unit(x);
-          x = taga(arr_shVec(take_impl(nia, x)));
-          xia = nia;
-        }
+    }
+    if (bad && !good) thrM("⥊: 𝕨 too large");
+    if (unkPos!=-1) {
+      if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+      if (nia==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
+      i64 div = xia/nia;
+      i64 mod = xia%nia;
+      usz item;
+      bool fill = false;
+      if (unkInd == n_atop) {
+        if (mod!=0) thrM("⥊: Shape must be exact when reshaping with ∘");
+        item = div;
+      } else if (unkInd == n_floor) {
+        item = div;
+      } else if (unkInd == n_reverse) {
+        item = mod? div+1 : div;
+      } else if (unkInd == n_take) {
+        item = mod? div+1 : div;
+        fill = true;
+      } else UD;
+      if (sh) sh->a[unkPos] = item;
+      nia = uszMul(nia, item);
+      if (fill) {
+        if (!isArr(x)) x = m_unit(x);
+        x = taga(arr_shVec(take_impl(nia, x)));
+        xia = nia;
       }
     }
     decG(w);
@@ -377,7 +365,7 @@ static B recPick(B w, B x) { // doesn't consume
         return IGet(x,c);
       } else {
         M_HARR(r, ia);
-        for(usz i=0; i<ia; i++) {
+        for (usz i=0; i<ia; i++) {
           B c = GetU(w, i);
           if (isAtm(c)) thrM("⊑: 𝕨 contained list with mixed-type elements");
           HARR_ADD(r, i, recPick(c, x));
