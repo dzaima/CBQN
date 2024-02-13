@@ -11,7 +11,7 @@ static inline B arith_recm(FC1 f, B x) {
 }
 
 void bit_negatePtr(u64* rp, u64* xp, usz count) {
-  for (usz i = 0; i < count; i++) rp[i] = ~xp[i];
+  vfor (usz i = 0; i < count; i++) rp[i] = ~xp[i];
 }
 B bit_negate(B x) { // consumes
   u64* xp = bitarr_ptr(x);
@@ -48,10 +48,10 @@ B add_c1(B t, B x) {
   i64 ia = IA(x); INIT;               \
   void* xp = tyany_ptr(x);            \
   switch(xe) { default: UD;           \
-    case el_i8:  for(usz i=0; i<ia; i++) { i8  c = ((i8* )xp)[i]; EXPR(i8,  c==I8_MIN)  } break; \
-    case el_i16: for(usz i=0; i<ia; i++) { i16 c = ((i16*)xp)[i]; EXPR(i16, c==I16_MIN) } break; \
-    case el_i32: for(usz i=0; i<ia; i++) { i32 c = ((i32*)xp)[i]; EXPR(i32, c==I32_MIN) } break; \
-    case el_f64: for(usz i=0; i<ia; i++) { f64 c = ((f64*)xp)[i]; EXPR(f64, 0)          } break; \
+    case el_i8:   for(usz i=0; i<ia; i++) { i8  c = ((i8* )xp)[i]; EXPR(i8,  c==I8_MIN)  } break; \
+    case el_i16:  for(usz i=0; i<ia; i++) { i16 c = ((i16*)xp)[i]; EXPR(i16, c==I16_MIN) } break; \
+    case el_i32:  for(usz i=0; i<ia; i++) { i32 c = ((i32*)xp)[i]; EXPR(i32, c==I32_MIN) } break; \
+    case el_f64: vfor(usz i=0; i<ia; i++) { f64 c = ((f64*)xp)[i]; EXPR(f64, 0)          } break; \
   } \
   decG(x); return r; POST \
 }
@@ -75,11 +75,11 @@ B add_c1(B t, B x) {
   #define STILE_BODY(FEXPR) LOOP_BODY(B r; void* rp = m_tyarrlc(&r, elWidth(xe), x, el2t(xe));, STILE_EXPR, bad: tyarr_freeF(v(r));)
 #endif
 
-#define FLOAT_BODY(FEXPR) { i64 ia = IA(x);                  \
-  assert(xe==el_f64); f64* xp = f64any_ptr(x);               \
-  f64* rp; B r = m_f64arrc(&rp, x);                          \
-  for (usz i = 0; i < ia; i++) { f64 v=xp[i]; rp[i]=FEXPR; } \
-  decG(x); return num_squeeze(r);                            \
+#define FLOAT_BODY(FEXPR) { i64 ia = IA(x);                   \
+  assert(xe==el_f64); f64* xp = f64any_ptr(x);                \
+  f64* rp; B r = m_f64arrc(&rp, x);                           \
+  vfor (usz i = 0; i < ia; i++) { f64 v=xp[i]; rp[i]=FEXPR; } \
+  decG(x); return num_squeeze(r);                             \
 }
 B sub_c2(B,B,B);
 #define SUB_BODY(FEXPR) return sub_c2(t, m_f64(0), x);
@@ -101,7 +101,7 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
       u64 ia = IA(x);                       \
       f64* xp = f64any_ptr(x);              \
       f64* rp; B r = m_f64arrc(&rp, x);     \
-      for (i64 i = 0; i < ia; i++) {        \
+      vfor (i64 i = 0; i < ia; i++) {       \
         f64 xv=xp[i]; rp[i] = (F);          \
       }                                     \
       decG(x); return r;                    \

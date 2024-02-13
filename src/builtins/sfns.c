@@ -1066,18 +1066,18 @@ B reverse_c1(B t, B x) {
       case 0: {
         u64* rp; r = m_bitarrc(&rp, x);
         u64* xp=xv; usz g = BIT_N(n); usz e = g-1;
-        for (usz i = 0; i < g; i++) rp[i] = bit_reverse(xp[e-i]);
+        vfor (usz i = 0; i < g; i++) rp[i] = bit_reverse(xp[e-i]);
         if (n&63) {
           u64 sh=(-n)&63;
-          for (usz i=0; i<e; i++) rp[i]=rp[i]>>sh|rp[i+1]<<(64-sh);
+          vfor (usz i=0; i<e; i++) rp[i]=rp[i]>>sh|rp[i+1]<<(64-sh);
           rp[e]>>=sh;
         }
         break;
       }
-      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
       else {
         HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);

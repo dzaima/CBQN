@@ -78,7 +78,7 @@ BQN_EXP size_t bqn_rank(BQNV a) { return RNK(getB(a)); }
 BQN_EXP void bqn_shape(BQNV a, size_t* buf) { B b = getB(a);
   ur r = RNK(b);
   usz* sh = SH(b);
-  for (usz i = 0; i < r; i++) buf[i] = sh[i];
+  vfor (usz i = 0; i < r; i++) buf[i] = sh[i];
 }
 BQN_EXP BQNV bqn_pick(BQNV a, size_t pos) {
   return makeX(IGet(getB(a),pos));
@@ -590,7 +590,7 @@ FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
   usz ia = IA(x);                                 \
   B t = WIDEN(x); WEL* tp = WEL##any_ptr(t);      \
   REL* rp; B r = m_##REL##arrv(&rp, ia);          \
-  for (usz i=0; i<ia; i++) ((UEL*)rp)[i] = tp[i]; \
+  vfor (usz i=0; i<ia; i++) ((UEL*)rp)[i] = tp[i];\
   decG(t); return r;
 
 // copy elements of x to array of unsigned integers (using a signed integer array type as a "container"); consumes argument
@@ -603,7 +603,7 @@ NOINLINE B cpyF32Bits(B x) { // copy x to a 32-bit float array (using an i32arr 
   usz ia = IA(x);
   B t = toF64Any(x); f64* tp = f64any_ptr(t);
   i32* rp; B r = m_i32arrv(&rp, ia);
-  for (usz i=0; i<ia; i++) ((f32*)rp)[i]=tp[i];
+  vfor (usz i=0; i<ia; i++) ((f32*)rp)[i]=tp[i];
   dec(t); return r;
 }
 
@@ -613,10 +613,10 @@ static B toU16Bits(B x) { return TI(x,elType)==el_i16? x : cpyU16Bits(x); }
 static B toU8Bits(B x)  { return TI(x,elType)==el_i8?  x : cpyU8Bits(x); }
 
 // read x as the specified type (assuming a container of the respective width signed integer array); consumes x
-NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); for (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
+NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
 B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
 B m_ptrobj(void* ptr, B o, ux stride); // consumes o
 static NOINLINE B ptrobj_checkget(B x); // doesn't consume

@@ -4,7 +4,7 @@
 
 NOINLINE B m_caB(usz ia, B* a) {
   HArr_p r = m_harrUv(ia);
-  for (usz i = 0; i < ia; i++) r.a[i] = a[i];
+  vfor (usz i = 0; i < ia; i++) r.a[i] = a[i];
   NOGC_E;
   return r.b;
 }

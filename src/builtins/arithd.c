@@ -29,7 +29,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
 #else
   static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
     u64* x64 = (u64*)x; usz i;
-    for (i = 0; i < numBytes/8; i++) ((u64*)r)[i] = x64[i] & repeatedMask;
+    vfor (i = 0; i < numBytes/8; i++) ((u64*)r)[i] = x64[i] & repeatedMask;
     if (i*8 != numBytes) {
       u64 v = x64[i]&repeatedMask;
       for (usz j = 0; j < (numBytes&7); j++) r[i*8 + j] = v>>(j*8);
@@ -47,7 +47,7 @@ B shape_c2(B t, B w, B x);
 // floordiv will return float result only on ¯2147483648÷¯1 or n÷0, but may not otherwise squeeze integer types; integer argument requirement may be relaxed in the future
 // divint will return float result if there's a fractional result, or in overflow cases same as floordiv
 // TODO overflow-checked Singeli code for exact integer divint, and maybe floordiv_AA
-#define DIVLOOP(RE, WE, EXPR) RE* rp; B r=m_##RE##arrc(&rp, w); usz ia=IA(w); WE* wp=WE##any_ptr(w); for(ux i=0; i<ia; i++) rp[i] = (EXPR);
+#define DIVLOOP(RE, WE, EXPR) RE* rp; B r=m_##RE##arrc(&rp, w); usz ia=IA(w); WE* wp=WE##any_ptr(w); vfor(ux i=0; i<ia; i++) rp[i] = (EXPR);
 static B divint_AA(B w, B x) { // consumes both
   w = toI32Any(w);
   x = toI32Any(x); i32* xp = tyany_ptr(x);
@@ -133,7 +133,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   #define Ri16(A) i16* rp; r=m_i16arrc(&rp, A);
   #define Ri32(A) i32* rp; r=m_i32arrc(&rp, A);
   #define Rf64(A) f64* rp; r=m_f64arrc(&rp, A);
-  #define DOF(EXPR,A,W,X) { for (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
+  #define DOF(EXPR,A,W,X) { vfor (usz i = 0; i < ia; i++) { f64 wv=W; f64 xv=X; rp[i]=EXPR; } }
   #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
   #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
@@ -151,20 +151,20 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
           if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp=tyany_ptr(x); \
           Rf64(x);                                                \
           if (we==el_i32) { B w,x /*shadow*/;                     \
-            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
-            else            { DECOR for (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
+            if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
+            else            { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
           } else {          B w,x /*shadow*/;                     \
-            if (xe==el_i32) { DECOR for (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
-            else            { DECOR for (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
+            if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
+            else            { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
           }                                                       \
           decG(w); decG(x); return num_squeeze(r);                \
         }                                                         \
       } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
-        if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
-        if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR for (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); ANY_AS \
-        if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
-        if (we==el_f64){       Rf64(w);         PF(w)          DECOR for (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
@@ -214,7 +214,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     }
     , /*INT_AS*/ if (q_i32(x)) return modint_AS(w, x);
     , /*INT_AA*/ return modint_AA(w, x);
-    , /*FLT_SAI*/ if (o2fG(w)==1) { for (usz i=0; i<ia; i++) rp[i] = xp[i]-floor(xp[i]); } else
+    , /*FLT_SAI*/ if (o2fG(w)==1) { vfor (usz i=0; i<ia; i++) rp[i] = xp[i]-floor(xp[i]); } else
     , /*ANY_AS*/
   )
   #undef GC2f
@@ -271,13 +271,13 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     static NOINLINE B bitAA1(B w, B x, usz ia) {
       u64* rp; B r = m_bitarrc(&rp, x);
       u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
-      for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]|xp[i];
+      vfor (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]|xp[i];
       decG(w); decG(x); return r;
     }
     static NOINLINE B bitAA2(B w, B x, usz ia) {
       u64* rp; B r = m_bitarrc(&rp, x);
       u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
-      for (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]&xp[i];
+      vfor (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]&xp[i];
       decG(w); decG(x); return r;
     }
     
@@ -383,7 +383,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         if (we!=el_c32) w = taga(cpyC32Arr(w));
         u32* wp = c32any_ptr(w); usz wia = IA(w);
         i32* rp; r = m_i32arrc(&rp, w);
-        for (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
+        vfor (usz i = 0; i < wia; i++) rp[i] = (i32)wp[i] - xv;
         goto dec_ret;
       }
     })

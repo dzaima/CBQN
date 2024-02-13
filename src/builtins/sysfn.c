@@ -1566,7 +1566,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
     case op_neg: switch (ow) {
       default: thrF("•bit._%U: unhandled width %s", name, ow);
       #define CASE(W) case W: \
-        NOUNROLL for (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
+        NOUNROLL vfor (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
         break;
       CASE(8) CASE(16) CASE(32) CASE(64)
       #undef CASE
@@ -1643,11 +1643,11 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
     }
   if (noextend) {
     #define BINOP(O,P) case op_##O: { \
-      usz l = n/64; NOUNROLL for (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];      \
+      usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];     \
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wp[l] P xp[l])); \
       } break;
     #define CASE(W, Q, P) case W: \
-      NOUNROLL for (usz i=0; i<n/W; i++)                  \
+      NOUNROLL vfor (usz i=0; i<n/W; i++)                 \
         ((Q##W*)rp)[i] = ((Q##W*)wp)[i] P ((Q##W*)xp)[i]; \
       break;
     SWITCH
@@ -1659,12 +1659,12 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
       if (ow>64) thrF("•bit._%U: scalar extension with width over 64 unhandled", name); \
       u64 wv = *wp & (~(u64)0>>(64-ow));                                      \
       for (usz tw=ow; tw<64; tw*=2) wv|=wv<<tw;                               \
-      usz l = n/64; NOUNROLL for (usz i=0; i<l; i++) rp[i] = wv P xp[i];      \
+      usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wv P xp[i];     \
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wv P xp[l])); \
       } break;
     #define CASE(W, Q, P) case W: { \
       Q##W wv = *(Q##W*)wp;                   \
-      NOUNROLL for (usz i=0; i<n/W; i++)      \
+      NOUNROLL vfor (usz i=0; i<n/W; i++)     \
         ((Q##W*)rp)[i] = wv P ((Q##W*)xp)[i]; \
       } break;
     SWITCH

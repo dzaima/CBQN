@@ -123,13 +123,16 @@ typedef size_t ux;
 #if __clang__
   #define NOUNROLL _Pragma("clang loop unroll(disable)")
   #define NOVECTORIZE _Pragma("clang loop vectorize(disable)")
+  #define vfor _Pragma("clang loop vectorize(assume_safety)") for
 #elif __GNUC__
   #define EXACTLY_GCC 1
   #define NOUNROLL _Pragma("GCC unroll 1")
+  #define vfor _Pragma("GCC ivdep") for
   #define NOVECTORIZE
 #else
   #define NOUNROLL
   #define NOVECTORIZE
+  #define vfor for
 #endif
 #define PLAINLOOP NOUNROLL NOVECTORIZE
 #if EXACTLY_GCC

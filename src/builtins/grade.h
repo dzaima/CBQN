@@ -319,12 +319,12 @@ B GRADE_CAT(c1)(B t, B x) {
     }
     
     TALLOC(I32I32p, tmp, ia);
-    for (usz i = 0; i < ia; i++) {
+    vfor (usz i = 0; i < ia; i++) {
       tmp[i].v = i;
       tmp[i].k = xp[i];
     }
     CAT(GRADE_CAT(IP),tim_sort)(tmp, ia);
-    for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
+    vfor (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
     TFREE(tmp);
     goto decG_sq;
   }

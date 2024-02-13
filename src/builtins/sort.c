@@ -21,7 +21,7 @@ static NOINLINE void generic_grade(B x, usz ia, B r, i32* rp, void (*fn)(BI32p*,
     tmp[i].k = GetU(x,i);
   }
   fn(tmp, ia);
-  for (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
+  vfor (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
   TFREE(tmp);
 }
 

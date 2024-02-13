@@ -574,7 +574,7 @@ B asNormalized(B x, usz n, bool nanBad) {
       }
     #endif
   } else {
-    for (; i < n; i++) rp[i] = normalizeFloat(fp[i]);
+    vfor (; i < n; i++) rp[i] = normalizeFloat(fp[i]);
   }
   
   if (r.u!=x.u) decG(x);

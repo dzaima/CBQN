@@ -69,7 +69,7 @@ CMP_REC(ne, ne, swapped=0;)
   #define CMP_AA0(N, T, BODY) void base_##N##AA##_##T(u64* r, void* w, void* x, u64 l) { BODY }
   #define CMP_AA1(N, T, OP) CMP_AA0(N, T, BASE_CMP_LOOP(OP, ((T*)w)[i], ((T*)x)[i]))
   #define CMP_AA_F(N, OP, BX) \
-    CMP_AA0(N, u1, ({usz bia = BIT_N(l); for (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i], xv=((u64*)x)[i]; ((u64*)r)[i] = BX; }});) \
+    CMP_AA0(N, u1, ({usz bia = BIT_N(l); vfor (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i], xv=((u64*)x)[i]; ((u64*)r)[i] = BX; }});) \
     CMP_AA1(N, i8, OP) CMP_AA1(N, i16, OP) CMP_AA1(N, i32, OP) CMP_AA1(N, f64, OP) \
     const CmpAAFn base_##N##AA##_u32 = base_##N##AA##_i32;
   
@@ -104,7 +104,7 @@ CMP_REC(ne, ne, swapped=0;)
   
   #define CMP_SA1(N, T, Q, C, SLOW, OP) CMP_SA0(N, T, Q, SLOW, ({ T xv = C(x); BASE_CMP_LOOP(OP, ((T*)w)[i], xv) }))
   #define CMP_SA_F(N, OP, SLOW, BX) \
-    CMP_SA0(N, u1, bit, SLOW, ({usz bia = BIT_N(l); u64 xv=bitx(x); for (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i]; ((u64*)r)[i] = BX; }})) \
+    CMP_SA0(N, u1, bit, SLOW, ({usz bia = BIT_N(l); u64 xv=bitx(x); vfor (usz i=0; i<bia; i++) { u64 wv=((u64*)w)[i]; ((u64*)r)[i] = BX; }})) \
     CMP_SA1(N,i8,i8,o2iG,SLOW,OP) CMP_SA1(N,i16,i16,o2iG,SLOW,OP) CMP_SA1(N,i32,i32,o2iG,SLOW,OP) CMP_SA1(N,f64,f64,o2fG,SLOW,OP) \
     CMP_SA1(N,u8,c8,o2cG,SLOW,OP) CMP_SA1(N,u16,c16,o2cG,SLOW,OP) CMP_SA1(N,u32,c32,o2cG,SLOW,OP)
   

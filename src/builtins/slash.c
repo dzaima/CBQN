@@ -299,7 +299,7 @@ static B where(B x, usz xia, u64 s) {
       usz bs;
       if (b>xia-i) { b=xia-i; bs=s-(rp-rp0); } else { bs=bit_sum(xp,b); }
       where_block_u16(xp, buf, b, bs);
-      for (usz j=0; j<bs; j++) rp[j] = i+buf[j];
+      vfor (usz j=0; j<bs; j++) rp[j] = i+buf[j];
       rp+= bs;
       xp+= b/64;
     }
@@ -380,7 +380,7 @@ B grade_bool(B x, usz xia, bool up) {
     u64 xp0[4]; // 4 ≡ b/64
     u64* xp1 = xp;
     for (usz i=0; i<xia; i+=b) {
-      for (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
+      vfor (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
       usz b2 = b>xia-i? xia-i : b;
       if (b2<b) { u64 q=b2%64; usz e=b2/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
       usz s0=bit_sum(xp0,b2); si_1slash32(xp0, i, rp0, b2, s0); rp0+=s0;
@@ -888,7 +888,7 @@ B slash_im(B t, B x) {
         for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
         t[m/2]=xia; usz ria=0; for (u64 s=0; s<xia; ria++) s+=t[ria];            \
         if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");       \
-        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
+        i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
         TFREE(t);                                                                \
         r = num_squeeze(r);                                                      \
       }                                                                          \
@@ -901,7 +901,7 @@ B slash_im(B t, B x) {
       i8 max = avx2_count_i8(t, (i8*)xp, xia, 0);                              \
       if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
       usz ria=max+1;                                                           \
-      i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=t[i];  \
+      i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
       TFREE(t);                                                                \
       r = num_squeeze(r);                                                      \
     } else
