@@ -1074,15 +1074,15 @@ B reverse_c1(B t, B x) {
         }
         break;
       }
-      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (usz i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); for (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
       else {
         HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
-        if (xp!=NULL)  for (usz i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
-        else { SGet(x) for (usz i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
+        if (xp!=NULL)  for (ux i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
+        else { SGet(x) for (ux i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
         NOGC_E;
         r = rp.b;
         B xf = getFillR(x);
