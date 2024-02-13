@@ -62,7 +62,7 @@ static void* mmap_nvm(u64 sz) {
 }
 
 extern GLOBAL bool mem_log_enabled;
-#define MMAP(SZ) mmap_nvm(sz);
+#define MMAP(SZ) mmap_nvm(SZ)
 #define  MUL 1
 #define ALLOC_MODE 1
 #include "../opt/mm_buddyTemplate.c"
