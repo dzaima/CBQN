@@ -562,7 +562,7 @@ static NOINLINE void print_jit_line(Body* body, usz* bc, usz bcpos) {
     fprintf(jit_map, "    ");
     B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcpos));
     B inde = IGetU(comp->indices, 1); usz ce = o2s(IGetU(inde,bcpos))+1;
-    B msg = toC32Any(vm_fmtPoint(comp->src, emptyCVec(), comp->path, cs, ce));
+    B msg = toC32Any(vm_fmtPoint(comp->src, emptyCVec(), comp->fullpath, cs, ce));
     u32* p = c32any_ptr(msg);
     usz n = IA(msg);
     for (ux i = 0; i < n; i++) {
