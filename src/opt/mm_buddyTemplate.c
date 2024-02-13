@@ -61,21 +61,26 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   }
   
   if (mem_log_enabled) fprintf(stderr, "requesting "N64u" more " STR1(BN()) " heap (during allocation of "N64u"B t_%s)", sz, (u64)BSZ(bucket), type_repr(type));
+  u64 reqsz = sz;
+  #if ALLOC_MODE==0
+    reqsz = prepAllocSize(reqsz);
+  #endif
   #if NO_MMAP
-    EmptyValue* c = calloc(sz+getPageSize(), 1);
+    u8* mem = calloc(reqsz, 1);
     if (mem_log_enabled) fprintf(stderr, "\n");
   #else
-    u8* mem = MMAP(sz);
+    u8* mem = MMAP(reqsz);
     if (mem_log_enabled) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
     if (mem==MAP_FAILED) thrOOM();
-    if (ptr2u64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
-    #if ALLOC_MODE==0
-      mem+= ALLOC_PADDING;
-      // ux off = offsetof(TyArr,a);
-      // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
-    #endif
-    EmptyValue* c = (void*)mem;
   #endif
+  if (ptr2u64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
+  #if ALLOC_MODE==0
+    mem+= ALLOC_PADDING;
+    // ux off = offsetof(TyArr,a);
+    // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
+  #endif
+  EmptyValue* c = (void*)mem;
+  
   mm_heapAlloc+= sz;
   
   if (alSize+1>=alCap) {
