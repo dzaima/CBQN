@@ -128,7 +128,11 @@ typedef size_t ux;
   #define EXACTLY_GCC 1
   #define NOUNROLL _Pragma("GCC unroll 1")
   #define vfor _Pragma("GCC ivdep") for
-  #define NOVECTORIZE
+  #if __GNUC__ >= 14
+    #define NOVECTORIZE _Pragma("GCC novector")
+  #else
+    #define NOVECTORIZE
+  #endif
 #else
   #define NOUNROLL
   #define NOVECTORIZE
