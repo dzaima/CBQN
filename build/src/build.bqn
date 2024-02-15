@@ -270,7 +270,7 @@ po ← { # parsed options
     "BQN"
   }⍟(""≡⊢) output
   
-  exportSymbols ← ffi∨sharedLib
+  exportSymbols ← ffi∨lib
   
   defLibs ← @≡GetOpt "LD_LIBS"
   GetLibs ← { 𝕊:
