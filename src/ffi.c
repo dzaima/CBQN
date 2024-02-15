@@ -689,8 +689,8 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
       case sty_i32: { if(!q_fi32(f)) thrM("FFI: improper value for i32"); *(i32*)ptr = (i32)f; break; }
       case sty_u64: { if(!q_fu64(f)) thrM("FFI: improper value for u64"); u64 i=(u64)f; if (i>=(1ULL<<53))                 thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = i; break; }
       case sty_i64: { if(!q_fi64(f)) thrM("FFI: improper value for i64"); i64 i=(i64)f; if (i>=(1LL<<53) || i<=-(1LL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = i; break; }
-      case sty_f32: *(float* )ptr = f; break;
-      case sty_f64: *(double*)ptr = f; break;
+      case sty_f32: { if(!isNum(c))  thrM("FFI: improper value for f32"); *(float* )ptr = f; break; }
+      case sty_f64: { if(!isNum(c))  thrM("FFI: improper value for f64"); *(double*)ptr = f; break; }
     }
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
