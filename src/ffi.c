@@ -820,8 +820,10 @@ static u8 const reTyMapC[] = { [3]=t_c8arr, [4]=t_c16arr, [5]=t_c32arr };
 static u8 const reTyMapI[] = { [3]=t_i8arr, [4]=t_i16arr, [5]=t_i32arr, [6]=t_f64arr, [0]=t_bitarr };
 static B readRe(BQNFFIType* t, u8* src) {
   B e = t->a[0].o;
-  assert(isC32(e) || e.u==ty_voidptr.u);
-  u8 elW = isC32(e)? sty_w[styG(e)] : sizeof(void*); // bytes
+  u8 elW; // bytes
+  if (isC32(e)) elW = sty_w[styG(e)];
+  else if (e.u==ty_voidptr.u) elW = sizeof(void*);
+  else thrF("FFI: Cannot read from %R", ty_fmt(tag(t, OBJ_TAG)));
   u8 reW = t->reWidth; // log bits
   B r;
   char* dst = m_tyarrlbv(&r, reW, (elW*8)>>reW, (t->reType=='c'? reTyMapC : reTyMapI)[reW]);

@@ -196,6 +196,7 @@
 !"Cannot get a field of a pointer to a scalar" % %USE WallocE {{𝕊al: ("i32" Al 99).Field 0}}
 !"ptr.Write: Cannot write array to ""*i32""" % %USE WallocE {{𝕊al: ("*i32" Al 99).Write 1‿2‿3}}
 !"ptr.Write: Cannot write array to ""*i32:i32""" % %USE WallocE {{𝕊al: ("*i32:i32"Al 99).Write ↕16}}
+!"FFI: Cannot read from ""*i32:i32""" % %USE WallocE {{𝕊al: ("*i32:i32"Al 99).Read 0}}
 %USE Walloc {{𝕊al: p←("" Al 99).Cast "*:i8" ⋄ a←"i32"Al 99 ⋄ a.Write 12345 ⋄ p.Write ar←Cpy a‿a‿0 ⋄ ! ar ≡ p.Read 0 ⋄ a.Read 0}} %% 12345
 %USE Walloc {{𝕊al: p←"i16" Al 99 ⋄ raw ← Cpy 0∾˜⋈˜p.Add 3 ⋄ cpy2←@•FFI"*i16"‿"memcpy"‿"*:i8"‿"*:i8"‿size_t ⋄ p.Sub Cpy2 raw‿raw‿0 }} %% ¯3
 
