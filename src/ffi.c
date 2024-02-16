@@ -1012,13 +1012,14 @@ BQNFFIEnt ffi_parseDecoratedType(B arg, bool forRes) {
 static u64 calcAtomSize(B chr) {
   return styG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
 }
+static u64 calcMemSize(B o);
 static NOINLINE u64 calcMemSizeCompound(B o) {
   BQNFFIType* t = c(BQNFFIType, o);
   if (t->ty==cty_ptr || t->ty==cty_tlarr) return sizeof(void*); // *any / &any / top-level [n]any
   else if (t->ty==cty_struct || t->ty==cty_starr) return t->structSize; // {...}
   else if (t->ty==cty_repr) { // any:any
     B o2 = t->a[0].o;
-    if (isC32(o2)) return calcAtomSize(o2);
+    if (isC32(o2)) return calcMemSize(o2);
     if (c(BQNFFIType,o2)->ty != cty_ptr) thrM("FFI: Bad type with reinterpretation");
     return sizeof(void*);
   } else thrM("FFI: Unimplemented type (size calculation)");
