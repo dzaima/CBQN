@@ -1263,13 +1263,15 @@ static B pick_replaceOne(B fn, usz pos, B x, usz xia) {
   if (reusable(x) && TI(x,canStore)(rep)) { REUSE(x);
     u8 xt = TY(x);
     void* xp = tyany_ptr(x);
-    if      (xt==t_i8arr ) { ((i8* )xp)[pos] = o2iG(rep); return x; }
-    else if (xt==t_i16arr) { ((i16*)xp)[pos] = o2iG(rep); return x; }
-    else if (xt==t_i32arr) { ((i32*)xp)[pos] = o2iG(rep); return x; }
-    else if (xt==t_f64arr) { ((f64*)xp)[pos] = o2fG(rep); return x; }
-    else if (xt==t_c8arr ) { ((u8* )xp)[pos] = o2cG(rep); return x; }
-    else if (xt==t_c16arr) { ((u16*)xp)[pos] = o2cG(rep); return x; }
-    else if (xt==t_c32arr) { ((u32*)xp)[pos] = o2cG(rep); return x; }
+    switch (xt) {
+      case t_i8arr:  ((i8* )xp)[pos] = o2iG(rep); return x;
+      case t_i16arr: ((i16*)xp)[pos] = o2iG(rep); return x;
+      case t_i32arr: ((i32*)xp)[pos] = o2iG(rep); return x;
+      case t_f64arr: ((f64*)xp)[pos] = o2fG(rep); return x;
+      case t_c8arr:  ((u8* )xp)[pos] = o2cG(rep); return x;
+      case t_c16arr: ((u16*)xp)[pos] = o2cG(rep); return x;
+      case t_c32arr: ((u32*)xp)[pos] = o2cG(rep); return x;
+    }
   }
   MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), selfElType(rep))); MUTG_INIT(r);
   mut_setG(r, pos, rep);

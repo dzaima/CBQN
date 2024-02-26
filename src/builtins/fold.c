@@ -178,16 +178,17 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       u64* xp = bitarr_ptr(x);
       f64 r;
       switch (rtid) { default: goto base;
-        case n_add:                           r = bit_sum (xp, ia);            break;
-        case n_sub:                           r = bit_diff(xp, ia);            break;
-        case n_and: case n_mul: case n_floor: r = bit_has (xp, ia, 0) ^ 1;     break;
-        case n_or:              case n_ceil:  r = bit_has (xp, ia, 1)    ;     break;
-        case n_ne:                            r = fold_ne (xp, ia)          ;  break;
-        case n_eq:                            r = fold_ne (xp, ia) ^ (1&~ia);  break;
-        case n_lt:                            r = bit_find(xp, ia, 1) == ia-1; break;
-        case n_le:                            r = bit_find(xp, ia, 0) != ia-1; break;
-        case n_gt:                            r = bit_find(xp, ia, 0) & 1;     break;
-        case n_ge:                            r =~bit_find(xp, ia, 1) & 1;     break;
+        case n_mul: 
+        case n_and:case n_floor: r = bit_has (xp, ia, 0) ^ 1;     break;
+        case n_or: case n_ceil:  r = bit_has (xp, ia, 1);         break;
+        case n_add:              r = bit_sum (xp, ia);            break;
+        case n_sub:              r = bit_diff(xp, ia);            break;
+        case n_ne:               r = fold_ne (xp, ia);            break;
+        case n_eq:               r = fold_ne (xp, ia) ^ (1&~ia);  break;
+        case n_lt:               r = bit_find(xp, ia, 1) == ia-1; break;
+        case n_le:               r = bit_find(xp, ia, 0) != ia-1; break;
+        case n_gt:               r = bit_find(xp, ia, 0) & 1;     break;
+        case n_ge:               r =~bit_find(xp, ia, 1) & 1;     break;
       }
       decG(x); return m_f64(r);
     }
@@ -203,6 +204,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_ceil ) { f64 r=max_fns[xe-el_i8](tyany_ptr(x), ia); decG(x); return m_f64(r); } // ⌈
     if (rtid==n_mul | rtid==n_and) { // ×/∧
       void *xv = tyany_ptr(x);
+      assert(xe >= el_i8);
       u8 sel = xe - el_i8;
       f64 r = xe<=el_i32 ? prod_int_fns[sel](xv, ia, 1)
                          : prod_fns[sel](xv, ia, 1);
