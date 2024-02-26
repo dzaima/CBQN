@@ -751,11 +751,12 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
         assert(t2->ty==cty_ptr && (isC32(ore) || ore.u==ty_voidptr.u));
-        if (isNsp(c)) { genObj_writePtr(ptr, c, ore, sourceObjs); return; }
         if (ore.u == m_c32(sty_void).u) { // *:any
+          if (isNsp(c)) { genObj_writePtr(ptr, c, ore, NULL); return; }
           elSz = sizeof(void*);
           goto toScalarReinterpret;
         }
+        if (isNsp(c)) { genObj_writePtr(ptr, c, ore, sourceObjs); return; }
         if (sourceObjs==NULL) thrF("ptr.Write: Cannot write array to %R", ty_fmt(o));
         bool mut = t2->mutPtr;
         
@@ -879,7 +880,7 @@ B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B** objs) {
     } else return m_f64(0);
   } else if (t->ty==cty_repr) { // any:any
     B o2 = t->a[0].o;
-    if (isC32(o2)) return m_f64(0); // scalar:any
+    if (isC32(o2) || o2.u==ty_voidptr.u) return m_f64(0); // scalar:any
     
     BQNFFIType* t2 = c(BQNFFIType,o2); // *scalar:any / &scalar:any
     assert(t2->ty == cty_ptr);
@@ -993,6 +994,7 @@ B libffiFn_c2(B t, B w, B x) {
       if (testBuildObj && !mutArgs) { inc(r); HARR_ABANDON(ra); }
       else r = HARR_FV(ra);
     }
+    // printf("expected %d objects, got %d\n", (int)IA(ffiObjs), (int)(objsCurr-harr_ptr(ffiObjs)));
     assert(objsCurr == harr_ptr(ffiObjs) + IA(ffiObjs));
   }
   
