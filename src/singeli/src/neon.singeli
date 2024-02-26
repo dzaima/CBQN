@@ -87,7 +87,7 @@ def packHi{{x, y}} = packHi{x, y}
 def trn1{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn2{x:T, y:T & nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
-def sel{L, x:T, i:I & lvec{L,16,8} & w128{T} & nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, i}}
+def sel{L, x:T, i:I & lvec{L,16,8} & w128{T} & nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, ty_u{i}}}
 
 
 
