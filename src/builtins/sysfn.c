@@ -1884,7 +1884,7 @@ B sys_c1(B t, B x) {
   #define REQ_PATH CACHE_OBJ(path, q_N(path0)? bi_N : path_abs(incG(path0)))
   
   M_HARR(r, IA(x))
-  for (usz i = 0; i < IA(x); i++) {
+  for (ux i = 0; i < IA(x); i++) {
     i32 ci = o2iG(GetU(idxs,i));
     if (ci>=IA(curr_vs)) thrF("Unknown system function •%R", IGetU(x,i));
     B c = GetU(curr_vs,ci);
