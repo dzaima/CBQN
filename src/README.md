@@ -7,7 +7,7 @@ Run `build/build clangd` to generate a `compile_commands.json` file which clangd
 
 ## Conventions
 
-Functions starting with `m_` create a new object (some NaN-boxed, some heap-allocated).  
+Functions starting with `m_` makes a new object (some NaN-boxed, some heap-allocated).  
 Functions starting with `q_` are queries/predicates, and return a boolean.  
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
 Functions ending with `N` are non-inlined versions of another function.  
@@ -27,16 +27,14 @@ src/
     arithd.c    dyadic arithmetic functions
     arithm.c    monadic arithmetic functions (incl •math stuff)
     cmp.c       dyadic comparison functions
-    sort.c      sort/grade/bins
     md1.c       1-modifiers
     md2.c       2-modifiers
     sysfn.c     •-definitions
-    internal.c  •internal
   utils/      utilities included as needed
     file.h      file system operations
     hash.h      hashing things
-    mut.h       copying multiple arrays into a single array
-    talloc.h    temporary allocations (described more below)
+    mut.h       temporary mutable array operations
+    talloc.h    temporary buffer allocations (described more below)
     utf.h       UTF-8 things
   opt/        files which aren't needed for every build configuration
   gen/        generated files
@@ -76,15 +74,18 @@ Type checks (all are safe to execute on any B object):
   isC32(x)     C32_TAG  a character     no
   isAtm(x)      [many]  !isArr(x)       depends
   isVal(x)      [many]  heap-allocated  yes
+  isArr(x)     ARR_TAG  an array type   yes
   isFun(x)     FUN_TAG  a function      yes
   isMd1(x)     MD1_TAG  a 1-modifier    yes
   isMd2(x)     MD2_TAG  a 2-modifier    yes
   isMd (x)      [many]  any modifier    yes
   isCallable(x) [many]  isFun|isMd      yes
-  isArr(x)     ARR_TAG  an array type   yes
   isNsp(x)     NSP_TAG  a namespace     yes
   isObj(x)     OBJ_TAG  internal        yes
   and then there are some extra types for variable slot references for the VM & whatever; see h.h *_TAG definitions
+
+tag(x,*_TAG) // pointer → B
+taga(x) // pointer → array B; == tag(x, ARR_TAG)
 
 Functions for converting/using atom types:
   m_f64(x)  // f64 → B
@@ -111,8 +112,7 @@ Functions for converting/using atom types:
   q_fusz(x) q_usz(x)
   
   q_N(x)    // query if x is · (≡ bi_N)
-  noFill(x)    // query if x represents undefined fill (which returned by getFill*; aka test if equal to bi_noFill)
-  tag(x,*_TAG) // pointer → B
+  noFill(x) // query if x represents undefined fill (which returned by getFill*; aka test if equal to bi_noFill)
 
 type field for heap-allocated objects:
   // note that this is distinct from the tag; use TY(x) / PTY(x) to read this field
@@ -184,7 +184,7 @@ All virtual method accesses require that the argument is heap-allocated.
 
 You can get a virtual function of a `B` object with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
 
-Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h`, adding the `bi_` prefix, and invoking it with `c1`/`c2`. Note that these functions consume `w` and `x`, but leave the refcout of `f` untouched. (usually, which arguments are consumed is specified in a comment after either the function definition or prototype)
+Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h`, adding the `bi_` prefix, and invoking it with `c1`/`c2`. Note that these functions consume `w` and `x`, but leave the refcount of `f` untouched. (usually, which arguments are consumed is specified in a comment after either the function definition or prototype)
 
 Calling a modifier involves deriving it with `m1_d`/`m2_d`, using a regular `c1`/`c2`, and managing the refcounts of everything while at that.
 
@@ -214,8 +214,8 @@ The implementation should consume the `w`/`x` arguments, but not `t`/`d`.
 
 ```C
 // im - monadic inverse
-// ix - 𝕩-inverse - w⊸𝔽⁼ 𝕩 aka 𝕨 F⁼ 𝕩
-// iw - 𝕨-inverse - 𝔽⟜x⁼ w
+// ix - 𝕩-inverse - w⊸F⁼ x aka w F⁼ x
+// iw - 𝕨-inverse - F⟜x⁼ w
 // the calls for these must be in some `whatever_init()` function, and apply only to builtins specified in builtins.h
 c(BFn,bi_someFunction)->im = someFunction_im; // set the monadic inverse; someFunction_im has the signature of a regular monadic call implementation
 c(BFn,bi_someFunction)->ix = someFunction_ix; // etc
@@ -234,10 +234,10 @@ There exist various macros to view the main metadata of an array:
 | get shape                          | `SH(x)`   | `PSH(x)`                      | `usz*`        |
 | get item amount (product of shape) | `IA(x)`   | `PIA(x)`                      | `usz`         |
 | get rank                           | `RNK(x)`  | `PRNK(x)`                     | `ur`          |
-| set rank                           | `SRNK(x)` | `SPRNK(x)`                    | `N/A`         |
+| set rank                           | `SRNK(x)` | `SPRNK(x)`                    | N/A           |
 
 
-The shape pointer of a rank 0 or 1 array will point to the object's own `ia` field (the one read by `IA(x)`). Otherwise, it'll point inside a `t_shape` object (`ShArr*`'s `a` field).
+The shape pointer of a rank≤1 array will point to the object's own `ia` field (the one read by `IA(x)`). Otherwise, it'll point within a reference-counted `t_shape` object (`ShArr`'s `a` field).
 
 Allocating an array:
 ```C
@@ -245,12 +245,13 @@ i32* rp; B r = m_i32arrv(&rp, 123); // allocate a 123-element i32 vector
 i32* rp; B r = m_i32arrc(&rp, x); // allocate an array with the same shape as x (x must be an array; x isn't consumed)
 
 i32* rp; Arr* r = m_i32arrp(&rp, 123); // allocate a 123-element i32-array without allocating shape
-// then do one of these:
+// then at some point do one of these:
 arr_shVec(r); // set shape of r to a vector
 usz* sh = arr_shAlloc(r, 4); // allocate a rank 4 shape; write to sh the individual items; sh will be NULL for ranks 0 and 1
 arr_shCopy(r, x); // copy the shape object of x (doesn't consume x)
+// then get the final array:
 B result = taga(r);
-// see stuff.h for m_shArr/arr_shSetI/arr_shSetU for ways to batch-assign a single shape object to multiple objects
+// see stuff.h for m_shArr/arr_shSet* for ways to batch-assign a single shape object to multiple objects
 
 u32* rp; B r = m_c32arrv(%rp, 10); // 10-char string
 // etc for m_(i8|i16|i32|c8|c16|c32|f64)arr[vcp]
@@ -312,24 +313,23 @@ Retrieving data from arrays:
 ```C
 // generic methods:
 SGet(x) // initializes the getter for fast reads; the argument must be a variable name
-B c = Get(x,n); // in a loop, reating the n-th item
+B c = Get(x,n); // in a loop, reading the n-th item
 
 SGetU(x)
-B c = GetU(x,n); // alternatively, GetU can be used to not increment the result. Useful for temporary usage of the item
+B c = GetU(x,n); // alternatively, GetU can be used to not increment the result. Useful for temporary usage of the item or if it is known to not be heap-allocated (or code throws an error if it is)
 
-B c = IGet(x,n); // skip the initialize/call separation; don't use in loops
+B c = IGet(x,n); // skip the initialize/call separation; not suggested in loops
 B c = IGetU(x,n);
 
 // for specific array types:
-if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x)
-if (TI(x,elType)==el_c32) u32* xp = c32any_ptr(x); // ↑
-if (TI(x,elType)==el_f64) f64* xp = f64any_ptr(x); // ↑
+if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x); same for all other primitive element types (except bitarr which only has bitarr_ptr)
+if (TI(x,elType)!=el_B) void* xp = tyany_ptr(x); // alternative equivalent check: IS_ANY_ARR(TY(x)); tyarr_ptr if the input is also known to not be a slice
 if (TY(x)==t_harr) B* xp = harr_ptr(x);
 if (TY(x)==t_harr || TY(x)==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
 if (TY(x)==t_fillarr) B* xp = fillarr_ptr(x);
-B* xp = arr_bptr(x); // will return NULL if the array isn't backed by contiguous B*-s
+B* xp = arr_bptr(x); // will return NULL if the array isn't backed by a contiguous B*
 
-// functions to convert arrays to a specific type array: (all consume their argument, and assume that the elements fit in the desired type)
+// functions to convert arrays to a specific type array: (all consume their argument, and assume that the elements losslessly fit in the desired type)
 I8Arr* a = toI8Arr(x); // convert x to an I8Arr instance (returns the argument if it already is)
 I8Arr* a = (I8Arr*)cpyI8Arr(x); // get an I8Arr with reference count 1 with the same items & shape
 B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
@@ -341,7 +341,7 @@ B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
 
 ## Errors
 
-Throw an error with `thrM("some message")` or `thr(some B object)` or `thrOOM()`. What to do with active references at the time of the error is TBD when GC is actually completed, but you can just not worry about that for now.
+Throw an error with `thrM("some message")` or `thr(some B object)` or `thrOOM()`. Leaving reference counts at a higher-than-necessary reference count is acceptable.
 
 A fancier message can be created with `thrF(message, …)` with printf-like (but different!!) varargs (source in `do_fmt`):
 ```
@@ -371,18 +371,18 @@ There's also `fatal("message")` that (at least currently) is kept in optimized b
 
 ## Garbage collector
 
-The garbage collector can run either at the top level (currently, between lines of REPL input) at full capability, where all unreferenced objects will be freed, or potentially during any allocation at restricted capability, where any object with a reference count not matching the expected value is assumed as a GC root (which usually means the object is referenced from the C stack, but could also be a leak if an error unwound the stack past where the object in question would be freed or properly stored).
+The garbage collector can run either at the top level (currently, between lines of REPL input) at full capability, where all unreferenced objects will be freed, or potentially during any allocation in a severely restricted mode where any object with a reference count not matching the expected value is assumed as a GC root (intention being that it's referred to by live code on the C stack, but it could also be a leak if an error left reference counts too high).
 
-Therefore, any code that may result in allocations must ensure that the heap is at a valid state (that is, most allocated objects need all their pointer/object fields initialized (more precisely, anything used by the object's `void [type]_visit()` function), including all elements of `HArr`/`FillArr` arrays). Manually `mm_alloc`ing an object will result in an invalid initial state for most types, but higher-level allocation function helpers usually initialize them to a valid state (e.g. `m_c8arrv`, `m_tyarrp`, `m_md2D`, `m_scope`, `m_harr0p`, `m_fillarr0p`, `m_fillarrpEmpty`), but some do not (e.g. `m_harrUv`, `m_fillarrp`); those will need a `NOGC_E;` statement to be added after you've initialized them (and be careful to do that only when actually done - the debugging options for a GC during an incompletely-initialized heap aren't nice!)
+Therefore, at any point of execution where an allocation or error happens, the heap must be in a valid state (that is, most allocated objects need all their pointer/object fields initialized (more precisely, anything used by the object's `void [type]_visit()` function (and `[type]_free` if the object may be GC'd))). Manually `mm_alloc`ing an object will result in an invalid initial state for most types, but higher-level allocation function helpers usually initialize them to a valid state (e.g. `m_c8arrv`, `m_tyarrp`, `m_md2D`, `m_scope`, `m_harr0p`, `m_fillarr0p`, `m_fillarrpEmpty`), but some do not (e.g. `m_harrUv`, `m_fillarrp`); those will need a `NOGC_E;` statement to be added after you've initialized them (and be careful to do that only when actually done - the debugging options for a GC during an incompletely-initialized heap aren't nice!)
 
-To add a permanent GC root, use `gc_add(B x)`. To add dynamic roots, the options are `gc_add_ref(B* x)`, which check & use `*x` as a GC root, or `gc_addFn(vfn f)`, where the given function should invoke `mm_visit` or `mm_visitP` on the objects it wants to assume as roots. `gc_add` and `gc_add_ref` and `mm_visit` accept non-heap-allocated values (i.e. numbers, characters, `bi_N`), but `mm_visitP` must not be passed the null pointer.
+To add a permanent GC root, use `gc_add(B x)`. To add dynamic roots, the options are `gc_add_ref(B* x)`, which checks & uses `*x` as a GC root, or `gc_addFn(vfn f)`, where the given function should invoke `mm_visit` or `mm_visitP` on the objects it wants to assume as roots. `gc_add` and `gc_add_ref` and `mm_visit` accept non-heap-allocated values (i.e. numbers, characters, `bi_N`), but `mm_visitP` must not be passed the null pointer.
 
 ## GDB
 
 A couple functions for simple actions within GDB/LLDB are defined:
 
 ```C
-void g_pst()         // print a CBQN stacktrace; might not work if paused in the middle of stackframe manipulation, but it tries
+void g_pst()         // print a BQN stacktrace; might not work if paused in the middle of stackframe manipulation, but it tries
 void g_p(B x)        // print x
 void g_i(B x)        // print •internal.Info x
 void g_pv(Value* x)  // g_p but for an untagged value
@@ -392,7 +392,7 @@ Arr*   g_a(B x)      // untag a value to Arr*
 B      g_t (void* x) // tag pointer with OBJ_TAG
 B      g_ta(void* x) // tag pointer with ARR_TAG
 B      g_tf(void* x) // tag pointer with FUN_TAG
-// invoke with "p g_p(whatever)"; requires a build with debug symbols to be usable, but e.g. "p (void)g_pst()" can be used without one
+// invoke with "p g_p(whatever)"; requires a build with debug symbols for best experience, but e.g. "p (void)g_pst()" can be used without one
 ```
 
 ## Various `#define`s
@@ -437,6 +437,7 @@ Most toggles require a value of `1` to be enabled.
 // debugging stuff:
 #define DEBUG           0 // the regular debug build
 #define HEAP_VERIFY     0 // heapverify
+#define RT_VERIFY       0 // compare native and runtime versions of primitives
 #define WARN_SLOW       0 // log on various slow operations
 #define USE_PERF        0 // write a /tmp/perf-<pid>.map for JITted things for linux perf
 #define GC_LOG_DETAILED 0 // slightly more stats on GC logging
@@ -449,7 +450,6 @@ Most toggles require a value of `1` to be enabled.
 
 // some somewhat-outdated/unmaintained things:
 #define RT_PERF   0   // time runtime primitives
-#define RT_VERIFY 0   // compare native and runtime versions of primitives
 #define ALLOC_STAT  0 // store basic allocation statistics
 #define ALLOC_SIZES 0 // store per-type allocation size statistics
 #define DONT_FREE 0   // don't actually ever free objects, such that they can be printed after being freed for debugging
