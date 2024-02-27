@@ -195,7 +195,7 @@ static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {le
       for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*jump+n);
       NOGC_E; ra = (Arr*)rp.c;
     } else {
-      void* rp = m_tyarrp(&ra, elWidth(xe), cam, el2t(xe));
+      void* rp = m_tyarrlbp(&ra, elwBitLog(xe), cam, el2t(xe));
       void* xp = tyany_ptr(x);
       switch(xe) {
         case el_bit: for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*jump+n)); break;
