@@ -131,6 +131,12 @@ Section "# Struct of pointers"
   sop ← "{*,*i32,[2]*}"
   f ← "lib.so"•FFI ⟨sop, "operateOnStructOfPtrs", sop, "[2]"∾sop⟩
   •Show {(𝕩.Cast "u8").Sub p}⚇0 F {(p.Add 𝕩).Cast ""}⚇0 ⟨1,2,3‿4⟩⊸+⚇0 ⟨10, 20‿30⟩
+  
+  f ↩ "lib.so" •FFI "&"‿"updatePointerWithinPointer"‿">&{i32,*}"
+  •Show {x‿y: x ⋈ (y.Cast "u8").Sub p}¨ F {⟨𝕩×1000, p.Add 𝕩×100⟩}¨ ↕5
+  
+  f ↩ "lib.so" •FFI "&"‿"updatePointerWithinPointer"‿">&{i32,*u8}"
+  •Show {x‿y: x ⋈ y.Sub p}¨ F {⟨𝕩×1000, (p.Add 𝕩×100).Cast ""⟩}¨ ↕5
 }
 
 

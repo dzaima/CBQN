@@ -335,3 +335,14 @@ StructOfPtrs operateOnStructOfPtrs(StructOfPtrs arg, StructOfPtrs ptr[2]) {
     .ptrs = {arg.ptrs[0], ptr[1].ptrs[1]}
   };
 }
+
+typedef struct PtrWrapper {
+  int32_t x;
+  char* ptr;
+} PtrWrapper;
+void updatePointerWithinPointer(PtrWrapper* ptr) {
+  for (int i = 0; i < 5; i++) {
+    ptr[i].x+= i*10;
+    ptr[i].ptr+= i;
+  }
+}

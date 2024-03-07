@@ -729,7 +729,7 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
         void* dataStruct = dataAll+sizeof(usz);
         *((usz*)dataAll) = ia;
         SGetU(c)
-        for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), dataStruct + elSz*i, sourceObjs);
+        for (usz i = 0; i < ia; i++) genObj(t->a[0].o, GetU(c, i), dataStruct + elSz*i, NULL);
         *(void**)ptr = dataStruct;
         *sourceObjs = vec_addN(*sourceObjs, tag(TOBJ(dataAll), OBJ_TAG));
       }
