@@ -223,16 +223,19 @@ extern GLOBAL Env* envCurr;
 extern GLOBAL Env* envStart;
 extern GLOBAL Env* envEnd;
 extern GLOBAL u64 envPrevHeight; // envStart+prevEnvHeight gives envCurr+1 from before the error
+#define PROFILER_FENCE __asm__ volatile("" ::: "memory")
 static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr+1==envEnd) thrM("Stack overflow");
   Env* e = envCurr+1;
   e->sc = sc;
   e->pos = ptr2u64(bc);
+  PROFILER_FENCE;
   envCurr = e;
 }
 static inline void popEnv() {
   assert(envCurr>=envStart);
   envCurr--;
+  PROFILER_FENCE;
 }
 FORCE_INLINE i32 argCount(u8 ty, bool imm) { return (imm?0:3) + ty + (ty>0); }
 FORCE_INLINE i32 blockGivenVars(Block* bl) { return argCount(bl->ty, bl->imm); }
