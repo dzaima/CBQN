@@ -115,9 +115,9 @@ static NOINLINE NORETURN void select_properError(B w, B x) {
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
   ur xr = RNK(x);
+  if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
   if (isAtm(w)) {
     watom:;
-    if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
     usz xn = *SH(x);
     usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
     if (xr==1) {
