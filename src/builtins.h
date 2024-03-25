@@ -96,7 +96,7 @@ static bool isPervasiveDyExt(B x) {
   if (isPervasiveDy(x)) return true;
   if (TY(x)==t_md1D) {
     Md1D* d = c(Md1D, x);
-    if (d->m1->flags-1 == n_swap) return isPervasiveDy(d->f);
+    if (d->m1->flags-1 == n_swap && isFun(d->f)) return isPervasiveDy(d->f);
   }
   return false;
 }
