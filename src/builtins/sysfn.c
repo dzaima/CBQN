@@ -152,12 +152,18 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
 
 B grLen_both(i64 ria, B x) {
   usz ia = IA(x);
+  if (ia==0) return taga(arr_shVec(allZeroes(ria<=0? 0 : ria)));
   SGetU(x)
+  f64 xmaxf = -1;
   for (usz i = 0; i < ia; i++) {
-    i64 c = o2i64G(GetU(x, i));
-    if (c>ria) ria = c;
+    f64 c = o2fG(GetU(x, i));
+    if (c>xmaxf) xmaxf = c;
   }
-  if (ria > (i64)(USZ_MAX-1)) thrOOM();
+  if (xmaxf >= USZ_MAX) thrOOM();
+  if ((i64)xmaxf > ria) {
+    ria = (i64)xmaxf;
+    if (ria >= (i64)USZ_MAX) thrOOM();
+  }
   ria++;
   B r;
   {

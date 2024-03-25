@@ -248,6 +248,8 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 
 # ⊔
 !"⊔: ≠𝕨 must be either ≠𝕩 or one bigger (2≡≠𝕨, 3≡≠𝕩)" % 0‿0⊔↕3
+!"Out of memory" % ⟨∞⟩⊔"a"
+!"Out of memory" % ⟨1e50⟩⊔"a"
 
 # ↕𝕩
 !"Expected non-negative integer, got character" % ↕@
