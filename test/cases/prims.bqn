@@ -122,6 +122,8 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"⊏: 𝕩 cannot be a unit" % ⟨⟩⊏<"a"
 !"⊏: 𝕩 cannot be a unit" % ⟨⟩⊏<5
 !"⊏: 𝕩 cannot be an atom" % ⟨⟩⊏5
+!"Expected integer, got 1.5" % ⟨1.5⟩ ⊏ "ab"‿"cd"
+!"⊏: Indexing out-of-bounds (10∊𝕨, 2≡≠𝕩)" % ⟨10⟩ ⊏ "ab"‿"cd"
 
 # 𝕨⊑𝕩
 !"⊑: 𝕨 contained a non-integer" % ⟨0.1⟩⊑↕3

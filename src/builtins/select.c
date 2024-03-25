@@ -338,7 +338,8 @@ B select_c2(B t, B w, B x) {
       MUTG_INIT(rm);
       for (; i < wia; i++) {
         B cw = GetU(w, i); // assumed number from previous squeeze
-        usz c = WRAP(o2i64(cw), xn, { badw=o2fG(cw); goto bad1; });
+        if (!q_i64(cw)) { bad_cw: badw=o2fG(cw); goto bad1; }
+        usz c = WRAP(o2i64G(cw), xn, goto bad_cw; );
         mut_copyG(rm, i*csz, x, csz*c, csz);
       }
       r = a(withFill(mut_fv(rm), xf));
@@ -347,6 +348,7 @@ B select_c2(B t, B w, B x) {
     
     bad1:;
     mut_pfree(rm, i*csz);
+    if (!q_fi64(badw)) expI_f64(badw);
     thrF("⊏: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
   }
   
