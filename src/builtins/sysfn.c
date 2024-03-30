@@ -1404,58 +1404,56 @@ B getNsNS(void) {
 
 
 typedef struct CastType { usz s; bool c; } CastType;
-static bool isCharType(u8 t) {
-  return t==t_c8arr   || t==t_c16arr   || t==t_c32arr
-      || t==t_c8slice || t==t_c16slice || t==t_c32slice;
+static bool isCharArr(B x) {
+  return elChr(TI(x,elType));
 }
-static CastType getCastType(B e, B v) {
+static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (doesn't check if it can apply to val)
   usz s; bool c;
   if (isNum(e)) {
     s = o2s(e);
-    c = q_N(v) ? 0 : isCharType(TY(v));
+    if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast: unsupported width %s", s);
+    c = hasVal? isCharArr(val) : 0;
   } else {
     if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e)
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
     c = t=='c';
-    if (t=='n'); // generic number
-    else if (c     ) { if (s<8||s>32) thrM("•bit._cast: unsupported character width"); }
-    else if (t=='i') { if (s<8||s>32) thrM("•bit._cast: unsupported integer width"); }
-    else if (t=='u') { if (     s>32) thrM("•bit._cast: unsupported integer width"); }
-    else if (t=='f') { if (s!=64) thrM("•bit._cast: type f only supports width 64"); }
+    if      (c     ) { if (s!=8 && s!=16 && s!=32) { badWidth: thrF("•bit._cast: unsupported width %s for type '%c'", s, (char)t); } }
+    else if (t=='i') { if (s!=8 && s!=16 && s!=32) goto badWidth; }
+    else if (t=='u') { if (s!=1) goto badWidth; }
+    else if (t=='f') { if (s!=64) goto badWidth; }
     else thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufnc\"");
+    
   }
   return (CastType) { s, c };
+  
 }
 static B convert(CastType t, B x) {
-  switch (t.s) {
+  switch (t.s) { default: UD;
     case  1: return taga(toBitArr(x));
     case  8: return t.c ? toC8Any (x) : toI8Any (x);
     case 16: return t.c ? toC16Any(x) : toI16Any(x);
     case 32: return t.c ? toC32Any(x) : toI32Any(x);
     case 64: return toF64Any(x);
-    default: thrM("•bit._cast: unsupported input width");
   }
 }
 static TyArr* copy(CastType t, B x) {
-  switch (t.s) {
+  switch (t.s) { default: UD;
     case  1: return (TyArr*) (cpyBitArr(x));
     case  8: return (TyArr*) (t.c ? cpyC8Arr (x) : cpyI8Arr (x));
     case 16: return (TyArr*) (t.c ? cpyC16Arr(x) : cpyI16Arr(x));
     case 32: return (TyArr*) (t.c ? cpyC32Arr(x) : cpyI32Arr(x));
     case 64: return (TyArr*) (cpyF64Arr(x));
-    default: thrM("•bit._cast: unsupported input width");
   }
 }
 static u8 typeOfCast(CastType t) {
-  switch (t.s) {
+  switch (t.s) { default: UD;
     case  1: return t_bitarr;
     case  8: return t.c ? t_c8arr  : t_i8arr ;
     case 16: return t.c ? t_c16arr : t_i16arr;
     case 32: return t.c ? t_c32arr : t_i32arr;
     case 64: return t_f64arr;
-    default: thrM("•bit._cast: unsupported result width");
   }
 }
 static B set_bit_result(B r, u8 rt, ur rr, usz rl, usz *sh) {
@@ -1484,8 +1482,8 @@ B bitcast_impl(B el0, B el1, B x) {
   ur xr;
   if (!isArr(x) || (xr=RNK(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   
-  CastType xct = getCastType(el0, x);
-  CastType rct = getCastType(el1, bi_N);
+  CastType xct = getCastType(el0, true, x);
+  CastType rct = getCastType(el1, false, m_f64(0));
   usz* sh = SH(x);
   u64 s=xct.s*(u64)sh[xr-1], rl=s/rct.s;
   if (rl*rct.s != s) thrM("•bit._cast: incompatible lengths");
@@ -1553,7 +1551,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  x = convert((CastType){ xw, isCharType(TY(x)) }, x);
+  x = convert((CastType){ xw, isCharArr(x) }, x);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
@@ -1628,8 +1626,8 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   if ((t & (ow-1)) || (rl<<rws != t)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  w = convert((CastType){ ww, isCharType(TY(w)) }, w);
-  x = convert((CastType){ xw, isCharType(TY(x)) }, x);
+  w = convert((CastType){ ww, isCharArr(w) }, w);
+  x = convert((CastType){ xw, isCharArr(x) }, x);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
   arr_shCopyUnchecked(ra, x);

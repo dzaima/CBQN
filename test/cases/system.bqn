@@ -282,6 +282,26 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ⊑ 8‿32•bit._cast 3↓↕7 %% 100992003
+!"•bit._cast: incompatible lengths" % 1‿8•bit._cast 1⥊0
+!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 2⥊0
+!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 10⥊0
+
+!"•bit._cast: unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
+!"Integer out of range: 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0
+!"Integer out of range: ∞" % (2⥊∞)•bit._cast ⋈0
+
+!"•bit._cast: unsupported width 12" % 1‿12•bit._cast 11⥊0
+!"•bit._cast: unsupported width 12" % 12‿32•bit._cast (12×32)⥊0
+!"•bit._cast: unsupported width 12" % 8‿12•bit._cast (8×12)⥊0
+!"•bit._cast: unsupported width 0" % 0‿32•bit._cast 128⥊0
+!"•bit._cast: unsupported width 0" % 8‿0•bit._cast 128⥊0
+
+!"•bit._cast: unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 0 for type 'u'" % ⟨0‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 8 for type 'u'" % ⟨8‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 1 for type 'i'" % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
 
 # •platform
 Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.os ⋄ Str •platform.cpu.arch ⋄ Str •platform.bqn.impl_version ⋄ Str •platform.environment
