@@ -59,6 +59,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
   #define UPD_BOUNDS(B,I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
   if (isArr(g)) {
     usz ia = IA(g);
+    if (ia == 0) return;
     u8 ge = TI(g,elType);
     if (elNum(ge)) {
       i64 bres[2];
