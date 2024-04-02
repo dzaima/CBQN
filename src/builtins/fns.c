@@ -281,15 +281,40 @@ B find_c2(B t, B w, B x) {
   
   if (IA(x)==0) {
     emptyres:;
-    Arr* ra = allZeroes(0);
-    usz* rsh = arr_shAlloc(ra, xr);
-    if (rsh) {
+    usz ia = 0;
+    ShArr* sh = NULL;
+    if (xr > 1) {
+      sh = m_shArr(xr);
+      usz* rsh = sh->a;
       usz* wsh=SH(w); usz* xsh=SH(x);
-      shcpy(rsh, xsh, xr-wr);
-      xsh+=xr-wr; rsh+=xr-wr;
-      PLAINLOOP for (ux i = 0; i < wr; i++) rsh[i] = wsh[i]>xsh[i]? 0 : xsh[i]-wsh[i]+1;
+      
+      ia = 1;
+      PLAINLOOP for (ux i = 0; i < xr-wr; i++) {
+        usz c = xsh[i];
+        rsh[i] = c;
+        if (mulOn(ia, c)) {
+          shapeBig:;
+          mm_free((Value*)sh);
+          thrOOM();
+        }
+        shcpy(rsh, xsh, xr-wr);
+      }
+      
+      xsh+= xr-wr;
+      rsh+= xr-wr;
+      PLAINLOOP for (ux i = 0; i < wr; i++) {
+        usz c;
+        if (wsh[i] > xsh[i]) {
+          c = 0;
+          ia = 0;
+        } else {
+          c = xsh[i]+1u-wsh[i];
+          if (c==0 || mulOn(ia, c)) goto shapeBig;
+        }
+        rsh[i] = c;
+      }
     }
-    r = taga(ra);
+    r = taga(arr_shSetUO(allOnes(ia), xr, sh));
     goto dec_ret;
   }
   
