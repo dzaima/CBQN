@@ -2,6 +2,7 @@
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
 %DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
 %DEF evar %USE tvar ⋄ _evar ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@} _tvar 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: variation didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
+%DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
 %DEF k _k ← {𝔽○•internal.Keep}
 
 # batch checks
@@ -236,6 +237,17 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 
 # ⌽𝕩
 %USE var ⋄ {{! 𝕩 ≡ ⌽"Ai8"V⌽𝕩} 𝕩•rand.Range 2}¨ ↕1000
+
+# 𝕨⌽𝕩
+!"Integer out of range: 1e20" % %USE eqerr ⋄ ⟨1e20,⟨1e20⟩⟩ ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
+!"Expected integer, got NaN" %  %USE eqerr ⋄ ⟨0÷0, ⟨0÷0⟩⟩  ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
+!"Integer out of range: ∞" %    %USE eqerr ⋄ ⟨∞,   ⟨∞⟩⟩    ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
+!"Expected integer, got function" %  %USE eqerr ⋄ ⟨⊑  ⟩ ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
+!"Expected integer, got character" % %USE eqerr ⋄ ⟨'a'⟩ ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
+!"⌽: 𝕨 contained non-number" % %USE eqerr ⋄ ⟨3‿'a', 'a'‿3, 0‿'a', 'a'‿0⟩ ⌽_eqerr ⟨0‿0⥊0,0‿0‿0⥊0⟩
+!"Integer out of range: ∞" % %USE eqerr ⋄ ⟨3‿∞, ∞‿3, 0‿∞, ∞‿0⟩ ⌽_eqerr ⟨0‿0⥊0,0‿0‿0⥊0⟩
+(1+1e15) ⌽ ↕10 %% (1+↕9)∾0
+(-1+1e15) ⌽ ↕10 %% 9∾↕9
 
 # ↑𝕩 & ↓𝕩
 !"↑: Argument must have rank at least 1" % ↑0

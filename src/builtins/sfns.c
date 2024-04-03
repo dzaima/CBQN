@@ -1131,18 +1131,32 @@ static NOINLINE B rotate_highrank(bool inv, B w, B x) {
     goto decW_ret;
   }
   if (wia>xr) goto badlen;
-  if (wia==0 || IA(x)==0) { r=x; goto decW_ret; }
+  
+  if (wia==0) { r=x; goto decW_ret; }
+  if (!elNum(TI(w,elType))) {
+    w = num_squeeze(w);
+    if (!elNum(TI(w,elType))) thrF("⌽%U: 𝕨 contained non-number", INV);
+  }
+  bool origF64 = TI(w,elType)==el_f64;
+  w = toF64Any(w);
+  f64* wp = tyany_ptr(w);
+  if (origF64) for (ux i = 0; i < wia; i++) o2i64(m_f64(wp[i]));
+  
+  if (IA(x)==0) { r=x; goto decW_ret; }
   
   usz* xsh = SH(x);
-  SGetU(w)
   ur cr = wia-1;
   usz rot0, l0;
   usz csz = 1;
   while (1) {
-    usz xshc = xsh[cr];
     if (cr==0) goto lastaxis;
-    i64 wv = WRAP_ROT(o2i64(GetU(w, cr)), xshc);
-    if (wv!=0) { rot0 = inv? xshc-wv : wv; l0 = xshc; break; }
+    usz xshc = xsh[cr];
+    i64 wv = WRAP_ROT((i64)wp[cr], xshc);
+    if (wv != 0) {
+      rot0 = inv? xshc-wv : wv;
+      l0 = xshc;
+      break;
+    }
     csz*= xshc;
     cr--;
   }
@@ -1158,7 +1172,7 @@ static NOINLINE B rotate_highrank(bool inv, B w, B x) {
   usz ccsz = rSkip;
   for (usz i = cr; i-->0; ) {
     usz xshc = xsh[i];
-    i64 v = WRAP_ROT(o2i64(GetU(w, i)), xshc);
+    i64 v = WRAP_ROT((i64)wp[cr], xshc);
     if (inv && v!=0) v = xshc-v;
     pos[i] = rot[i] = v;
     xi+= v*ccsz;
@@ -1198,7 +1212,7 @@ B reverse_c2(B t, B w, B x) {
   if (isArr(w)) return rotate_highrank(0, w, x);
   if (isAtm(x) || RNK(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
   usz xia = IA(x);
-  if (xia==0) return x;
+  if (xia==0) { o2i64(w); return x; }
   usz cam = SH(x)[0];
   usz csz = arr_csz(x);
   i64 am = WRAP_ROT(o2i64(w), cam);
