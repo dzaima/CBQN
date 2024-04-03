@@ -162,9 +162,9 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       decG(x);
       if (isFun(f)) {
         B r = TI(f,identity)(f);
-        if (!q_N(r)) return inc(r);
+        if (!q_N(r)) return r;
       }
-      thrM("´: No identity found");
+      thrM("´: Identity not found");
     }
   }
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }

@@ -47,7 +47,7 @@ void wm2_visit(Value* x) { mm_visit(((WMd2*)x)->v); }
 
 B wfn_identity(B x) {
   B f = c(WFun,x)->v;
-  return inc(TI(f,identity)(f));
+  return TI(f,identity)(f);
 }
 
 
