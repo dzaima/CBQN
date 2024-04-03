@@ -63,6 +63,15 @@ extern u8 const arrTypeBitsLog[];
 #define arrTypeBitsLog(X) arrTypeBitsLog[X]
 #define arrNewType(X) el2t(TIi(X,elType))
 
+SHOULD_INLINE void arr_check_size(u64 sz, u8 type, usz ia) {
+  #if DEBUG
+    assert(IS_ANY_ARR(type) || type==t_harrPartial);
+    if (!IS_SLICE(type)) {
+      if (type==t_harr || type==t_harrPartial) assert(sz >= fsizeof(HArr,a,B,ia));
+      else assert(sz >= offsetof(TyArr,a) + (((ia<<arrTypeBitsLog(type))+7)>>3));
+    }
+  #endif
+}
 // Log of width in bits: max of 7, and also return 7 if not power of 2
 SHOULD_INLINE u8 cellWidthLog(B x) {
   assert(isArr(x) && RNK(x)>=1);

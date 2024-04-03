@@ -46,10 +46,15 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 
 #define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })
 
-static inline void* m_arr(u64 sz, u8 type, usz ia) {
+static inline void* m_arrUnchecked(u64 sz, u8 type, usz ia) {
   Arr* r = mm_alloc(sz, type);
   r->ia = ia;
   return r;
+}
+SHOULD_INLINE void arr_check_size(u64 sz, u8 type, usz ia);
+SHOULD_INLINE void* m_arr(u64 sz, u8 type, usz ia) {
+  arr_check_size(sz, type, ia);
+  return m_arrUnchecked(sz, type, ia);
 }
 static ShArr* m_shArr(ur r) {
   assert(r>1);
