@@ -330,7 +330,7 @@ po ← { # parsed options
     args∾↩ (              o3) / ⟨"-O3"⟩
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
     args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
-    args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY"⟩
+    args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY", "-DCATCH_ERRORS=0"⟩
     args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
