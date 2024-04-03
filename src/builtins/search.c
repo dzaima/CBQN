@@ -237,8 +237,10 @@ static NOINLINE usz indexOfOne(B l, B e) {
         we = xe = el_i16;                \
         goto chrEls;                     \
       }                                  \
-      we-= el_c8-el_i8;                  \
-      xe-= el_c8-el_i8; goto chrEls;     \
+      if (elChr(xe)) {                   \
+        we-= el_c8-el_i8;                \
+        xe-= el_c8-el_i8; goto chrEls;   \
+      }                                  \
     }                                    \
   } else if (!elNum(xe)) {               \
     if (elChr(xe)) goto none_found;      \
