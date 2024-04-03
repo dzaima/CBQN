@@ -1172,7 +1172,7 @@ static NOINLINE B rotate_highrank(bool inv, B w, B x) {
   usz ccsz = rSkip;
   for (usz i = cr; i-->0; ) {
     usz xshc = xsh[i];
-    i64 v = WRAP_ROT((i64)wp[cr], xshc);
+    i64 v = WRAP_ROT((i64)wp[i], xshc);
     if (inv && v!=0) v = xshc-v;
     pos[i] = rot[i] = v;
     xi+= v*ccsz;
