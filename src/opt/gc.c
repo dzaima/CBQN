@@ -54,7 +54,7 @@ void gc_visitRoots() {
 
 static void gc_tryFree(Value* v) {
   u8 t = v->type;
-  #if DEBUG && !CATCH_ERRORS
+  #if DEBUG && !USE_SETJMP
     if (t==t_freed) fatal("GC found t_freed\n");
   #endif
   if (t!=t_empty && !(v->mmInfo&0x80)) {
@@ -62,7 +62,7 @@ static void gc_tryFree(Value* v) {
     #if DONT_FREE
       v->flags = t;
     #else
-      #if CATCH_ERRORS
+      #if USE_SETJMP
         if (t==t_freed) { mm_free(v); return; }
       #endif
     #endif

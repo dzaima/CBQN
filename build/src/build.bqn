@@ -323,14 +323,14 @@ po ← { # parsed options
     args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"x86-64"‿"aarch64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
-    args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DCATCH_ERRORS=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
+    args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DUSE_SETJMP=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩
     args∾↩ (          replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
     args∾↩ (  debug DOpt "g") / ⟨"-g"⟩
     args∾↩ (              o3) / ⟨"-O3"⟩
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
     args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
-    args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY", "-DCATCH_ERRORS=0"⟩
+    args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY", "-DUSE_SETJMP=0"⟩
     args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩

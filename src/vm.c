@@ -1299,7 +1299,7 @@ void comp_init(void) {
 
 
 typedef struct CatchFrame {
-  #if CATCH_ERRORS
+  #if USE_SETJMP
     jmp_buf jmp;
   #endif
   u64 gsDepth;
@@ -1310,7 +1310,7 @@ GLOBAL CatchFrame* cf; // points to after end
 GLOBAL CatchFrame* cfStart;
 GLOBAL CatchFrame* cfEnd;
 
-#if CATCH_ERRORS
+#if USE_SETJMP
 jmp_buf* prepareCatch() {
   if (cf==cfEnd) {
     u64 n = cfEnd-cfStart;
@@ -1689,7 +1689,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
   NOGC_CHECK("throwing during noAlloc");
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
-#if CATCH_ERRORS
+#if USE_SETJMP
   if (cf>cfStart) { // something wants to catch errors
     cf--;
     
@@ -1715,7 +1715,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     #else
     exit(1);
     #endif
-#if CATCH_ERRORS
+#if USE_SETJMP
   }
 #endif
 }

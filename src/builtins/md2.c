@@ -8,9 +8,7 @@
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }
 
-#if CATCH_ERRORS && !BI_CATCH_DISABLED
-extern GLOBAL B lastErrMsg; // sysfn.c
-
+#if SEMANTIC_CATCH
 B fillBy_c1(Md2D* d, B x) {
   B xf=getFillQ(x);
   B r = c1(d->f, x);
@@ -30,7 +28,13 @@ B fillBy_c2(Md2D* d, B w, B x) {
   popCatch();
   return withFill(r, fill);
 }
+#else
+B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
+B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
+#endif
 
+#if defined(SEMANTIC_CATCH_BI)? SEMANTIC_CATCH_BI : SEMANTIC_CATCH
+extern GLOBAL B lastErrMsg; // sysfn.c
 typedef struct ReObj {
   struct CustomObj;
   B msg;
@@ -48,8 +52,6 @@ void pushRe(void) {
 B catch_c1(Md2D* d,      B x) { if(CATCH) { pushRe(); B r = c1(d->g,   x); dec(gsPop()); return r; } B r = c1(d->f,        inc(x)); popCatch();         dec(x); return r; }
 B catch_c2(Md2D* d, B w, B x) { if(CATCH) { pushRe(); B r = c2(d->g, w,x); dec(gsPop()); return r; } B r = c2(d->f, inc(w),inc(x)); popCatch(); dec(w); dec(x); return r; }
 #else
-B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
-B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 B catch_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 #endif

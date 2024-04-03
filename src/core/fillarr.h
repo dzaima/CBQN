@@ -59,9 +59,9 @@ static B getFillR(B x) { // doesn't consume; can return bi_noFill
   if (isC32(x)) return m_c32(' ');
   return bi_noFill;
 }
-static B getFillQ(B x) { // doesn't consume; returns 0 if !CATCH_ERRORS
+static B getFillQ(B x) { // doesn't consume; returns 0 if !SEMANTIC_CATCH
   B r = getFillR(x);
-  #if CATCH_ERRORS
+  #if SEMANTIC_CATCH
     return r;
   #endif
   return noFill(r)? m_f64(0) : r;

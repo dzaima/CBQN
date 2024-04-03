@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef CATCH_ERRORS
-  #define CATCH_ERRORS 1
+#ifndef USE_SETJMP
+  #define USE_SETJMP 1
 #endif
 #ifndef ENABLE_GC
   #define ENABLE_GC 1
@@ -43,14 +43,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#if CATCH_ERRORS
+#if USE_SETJMP
 #include <setjmp.h>
 #endif
 
 #define RT_LEN 64
 
-#if CATCH_ERRORS
-  #define PROPER_FILLS (EACH_FILLS&SFNS_FILLS)
+#ifndef SEMANTIC_CATCH
+  #define SEMANTIC_CATCH USE_SETJMP
+#endif
+#if SEMANTIC_CATCH
+  #define PROPER_FILLS (EACH_FILLS & SFNS_FILLS)
 #else
   #undef EACH_FILLS
   #define EACH_FILLS 0
@@ -393,7 +396,7 @@ NOINLINE NORETURN void rethrow(void);
 NOINLINE NORETURN void thrM(char* s);
 NOINLINE NORETURN void thrF(char* s, ...);
 NOINLINE NORETURN void thrOOM(void);
-#if CATCH_ERRORS
+#if USE_SETJMP
   jmp_buf* prepareCatch(void);
   #define CATCH setjmp(*prepareCatch()) // use as `if (CATCH) { /*handle error*/ freeThrown(); return; } /*potentially erroring thing*/ popCatch(); /*no errors yay*/`
   void popCatch(void);                  // note: popCatch() must always be called if no error is thrown, so no returns before it!

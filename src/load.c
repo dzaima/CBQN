@@ -659,7 +659,7 @@ B bqn_explain(B str) {
 
 
 static void freed_visit(Value* x) {
-  #if CATCH_ERRORS
+  #if USE_SETJMP
   fatal("visiting t_freed\n");
   #endif
 }

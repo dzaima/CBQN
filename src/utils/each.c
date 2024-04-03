@@ -121,7 +121,7 @@ B eachm_fn(B fo, B x, FC1 f) {
   return any_squeeze(HARR_FCD(r, x));
 }
 
-#if CATCH_ERRORS
+#if SEMANTIC_CATCH
 B arith_recd(FC2 f, B w, B x) {
   B fx = getFillR(x);
   if (noFill(fx)) return eachd_fn(bi_N, w, x, f);

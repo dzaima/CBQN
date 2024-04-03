@@ -401,7 +401,7 @@ Most toggles require a value of `1` to be enabled.
 
 ```c
 // (effective) usual default value is listed; (u) marks being not defined
-// default may change under some conditions (DEBUG, CATCH_ERRORS, heapverify, among maybe other things)
+// defaults may change under some conditions (DEBUG, USE_SETJMP, heapverify, among maybe other things)
 // some things fully configured by the build system may not be listed
 
 // general config:
@@ -420,7 +420,6 @@ Most toggles require a value of `1` to be enabled.
 #define ALL_R0 0 // use all of r0.bqn for runtime_0
 #define ALL_R1 0 // use all of r1.bqn for runtime
 #define NO_RT  0 // whether to completely disable self-hosted runtime loading
-#define CATCH_ERRORS 1 // allow catching errors; means refcounts might stay too high if forgotten over a throw-catch; disabled for heapverify
 #define FAKE_RUNTIME 0 // disable the self-hosted runtime
 #define FORMATTER    1 // use self-hosted formatter for output
 #define NO_EXPLAIN   0 // disable )explain
@@ -429,6 +428,9 @@ Most toggles require a value of `1` to be enabled.
 #define SFNS_FILLS   1 // compute fills for structural functions (∾, ≍, etc)
 #define CHECK_VALID  1 // check for valid arguments in places where that would be detrimental to performance
         // e.g. left argument sortedness of ⍋/⍒, incompatible changes in ⌾, etc
+#define USE_SETJMP   1 // whether setjmp is available & should be used for error catching (makes refcounts leakable)
+#define SEMANTIC_CATCH USE_SETJMP // whether catching should be assumed to be usable for operations which need to semantically change depending on that
+#define SEMANTIC_CATCH_BI SEMANTIC_CATCH // whether ⎊ will catch stuff
 
 #define RYU_OPTIMIZE_SIZE 0 // reduce size of Ryu tables at the cost of some performance for number •Repr
 #define FFI_CHECKS   1 // check for valid arguments passed to FFI-d functions

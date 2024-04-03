@@ -83,12 +83,12 @@ B scan_arith(B f, B w, B x, usz* xsh) { // Used by scan.c
 
 
 #if TEST_CELL_FILLS
-  i32 fullCellFills = 2*CATCH_ERRORS;
+  i32 fullCellFills = 2*SEMANTIC_CATCH;
   i32 cellFillErrored = 0;
   #define DO_CELL_CATCH (fullCellFills==2)
   #define SET_FILL_ERRORED cellFillErrored = 1
 #else
-  #define DO_CELL_CATCH CATCH_ERRORS
+  #define DO_CELL_CATCH SEMANTIC_CATCH
   #define SET_FILL_ERRORED
 #endif
 

@@ -701,7 +701,7 @@ B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
 }
 
-#if CATCH_ERRORS
+#if USE_SETJMP
 GLOBAL B lastErrMsg;
 B currentError_c1(B t, B x) {
   if (isNsp(x)) thrM("•CurrentError: Namespace 𝕩 is reserved");
@@ -1992,7 +1992,7 @@ void sysfn_init(void) {
   #undef F
   NOGC_E;
   
-  #if CATCH_ERRORS
+  #if USE_SETJMP
   lastErrMsg = bi_N;
   gc_add_ref(&lastErrMsg);
   #endif
