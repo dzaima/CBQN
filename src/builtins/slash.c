@@ -743,7 +743,8 @@ B slash_c2(B t, B w, B x) {
       goto decX_ret;
     }
     if (xlen == 0) return x;
-    usz s = xlen * wv;
+    usz s = xlen;
+    if (mulOn(s, wv)) thrOOM();
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
       B xf = getFillR(x);
       if (xr!=1) {
