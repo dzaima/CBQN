@@ -601,7 +601,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   ur rr0 = m->rr0; // need to be read before union fields are written
   usz* rsh0 = m->rsh0; // ↑
   
-  ux ria;
+  usz ria;
   if (rr0==1) ria = *rsh0;
   else if (rr0!=0) ria = shProd(rsh0, 0, rr0);
   else ria = 1;
@@ -632,7 +632,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
     else            { m->apd=apd_sh2_fns[xe]; m->cr=xr; } // csh written on result shape creation
     rr+= xr;
     m->cia = xia;
-    ria*= xia;
+    if (mulOn(ria, xia)) thrOOM();
     pos0 = xia;
   }
   if (xe==el_B) {
