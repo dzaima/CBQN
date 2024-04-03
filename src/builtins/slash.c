@@ -175,7 +175,7 @@ static void where_block_u16(u64* src, u16* dst, usz len, usz sum) {
   }
 }
 
-static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected to return a refcount-1 array (at least when rank≥1)
+static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected to return a refcount-1 array (at least when rank≥1), expects argument with non-empty cells
   B r;
   usz csz = arr_csz(x);
   u8 xl = arrTypeBitsLog(TY(x));
@@ -323,22 +323,26 @@ static NOINLINE bool groups_lt(u64* wp, usz len, usz max) {
   return 1;
 }
 
-static NOINLINE B zeroCells(B x) { // doesn't consume
+static NOINLINE B reshapeToEmpty(B x, usz leading) { // doesn't consume; changes leading axis to the given one, assumes result is empty
   u8 xe = TI(x,elType);
   B r; ur xr = RNK(x);
   if (xr==1) {
     if (xe==el_B) { B xf = getFillR(x); r = noFill(xf)? emptyHVec() : taga(arr_shVec(m_fillarrpEmpty(xf))); }
     else r = elNum(xe)? emptyIVec() : emptyCVec();
   } else {
+    assert(xr > 1);
     Arr* ra;
     if (xe==el_B) { B xf = getFillR(x); ra = noFill(xf)? (Arr*)m_harrUp(0).c : m_fillarrpEmpty(xf); }
     else m_tyarrp(&ra, 1, 0, elNum(xe)? t_bitarr : t_c8arr);
     usz* rsh = arr_shAlloc(ra, xr);
     shcpy(rsh+1, SH(x)+1, xr-1);
-    rsh[0] = 0;
+    rsh[0] = leading;
     r = taga(ra);
   }
   return r;
+}
+static B zeroCells(B x) { // doesn't consume
+  return reshapeToEmpty(x, 0);
 }
 
 B grade_bool(B x, usz xia, bool up) {
@@ -429,9 +433,13 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   wia = 64*(ie+1) - CLZ(we);
   usz wsum = bit_sum(wp, wia);
   if (wsum == wia0) return incG(x);
+  assert(wsum > 0);
   
   B r;
   switch(xl) {
+    case 7:
+      if (IA(x)==0) return reshapeToEmpty(x, wsum); // handle empty cell case
+      // fallthrough
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
       u64* xp = bitarr_ptr(x);
