@@ -150,22 +150,21 @@ B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
   return x;
 }
 
-B grLen_both(i64 ria, B x) {
+B grLen_both(i64 ria, B x) { // assumes integer x
+  B r;
   usz ia = IA(x);
-  if (ia==0) return taga(arr_shVec(allZeroes(ria<=0? 0 : ria)));
+  if (ia==0) {
+    r = taga(arr_shVec(allZeroes(ria<=0? 0 : ria)));
+    goto r_r;
+  }
   SGetU(x)
   f64 xmaxf = -1;
   for (usz i = 0; i < ia; i++) {
     f64 c = o2fG(GetU(x, i));
     if (c>xmaxf) xmaxf = c;
   }
-  if (xmaxf >= USZ_MAX) thrOOM();
-  if ((i64)xmaxf > ria) {
-    ria = (i64)xmaxf;
-    if (ria >= (i64)USZ_MAX) thrOOM();
-  }
-  ria++;
-  B r;
+  if (xmaxf >= USZ_MAX-1) thrOOM();
+  if ((i64)xmaxf > ria-1) ria = 1 + (i64)xmaxf;
   {
     u64* rp; r = m_bitarrv(&rp, ria);
     for (usz i = 0; i < BIT_N(ria); i++) rp[i] = 0;
@@ -187,8 +186,8 @@ B grLen_both(i64 ria, B x) {
   }
   r_r: decG(x); return r;
 }
-B grLen_c1(B t,      B x) { return grLen_both(         -1, x); } // assumes valid arguments
-B grLen_c2(B t, B w, B x) { return grLen_both(o2i64G(w)-1, x); } // assumes valid arguments
+B grLen_c1(B t,      B x) { return grLen_both(        0, x); }
+B grLen_c2(B t, B w, B x) { return grLen_both(o2i64G(w), x); }
 
 B grOrd_c2(B t, B w, B x) { // assumes valid arguments
   usz wia = IA(w);
