@@ -33,11 +33,11 @@ static void* tyany_ptr(B x) {
 }
 // width in bytes; overalloc is a byte count
 SHOULD_INLINE void* m_tyarrp (Arr** rp, usz w, usz ia, u8 type          ) M_TYARR(0,     , , r, )
-SHOULD_INLINE void* m_tyarrpO(Arr** rp, usz w, usz ia, u8 type, usz over) M_TYARR(0,+over, , r, )
+SHOULD_INLINE void* m_tyarrpO(Arr** rp, usz w, usz ia, u8 type, u64 over) M_TYARR(0,+over, , r, )
 SHOULD_INLINE void* m_tyarrv (B*    rp, usz w, usz ia, u8 type          ) M_TYARR(0,     , arr_shVec((Arr*)r);, taga(r), )
-SHOULD_INLINE void* m_tyarrvO(B*    rp, usz w, usz ia, u8 type, usz over) M_TYARR(0,+over, arr_shVec((Arr*)r);, taga(r), )
+SHOULD_INLINE void* m_tyarrvO(B*    rp, usz w, usz ia, u8 type, u64 over) M_TYARR(0,+over, arr_shVec((Arr*)r);, taga(r), )
 SHOULD_INLINE void* m_tyarrc (B*    rp, usz w, B x,    u8 type          ) M_TYARR(0,     , arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
-SHOULD_INLINE void* m_tyarrcO(B*    rp, usz w, B x,    u8 type, usz over) M_TYARR(0,+over, arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
+SHOULD_INLINE void* m_tyarrcO(B*    rp, usz w, B x,    u8 type, u64 over) M_TYARR(0,+over, arr_shCopy((Arr*)r,x);, taga(r), usz ia = IA(x);)
 
 // width in log2(bytes)
 SHOULD_INLINE void* m_tyarrlp(Arr** rp, usz w, usz ia, u8 type) M_TYARR(1, , , r, )
