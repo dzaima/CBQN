@@ -1,6 +1,7 @@
 #pragma once
 
 extern GLOBAL u64 gc_depth;
+extern GLOBAL bool gc_running;
 static void gc_disable() { gc_depth++; }
 static void gc_enable() { gc_depth--; }
 

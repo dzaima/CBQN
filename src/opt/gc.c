@@ -168,8 +168,11 @@ static void gcv2_unmark_visit(Value* x) {
 #endif
 
 GLOBAL u64 gc_lastAlloc;
+GLOBAL bool gc_running;
 void gc_forceGC(bool toplevel) {
   #if ENABLE_GC
+    if (gc_running) fatal("starting GC while GC is in the middle of running");
+    gc_running = 1;
     u64 startTime=0, startSize=0;
     if (gc_log_enabled) {
       startTime = nsTime();
@@ -193,6 +196,7 @@ void gc_forceGC(bool toplevel) {
       fprintf(stderr, "; took %.3fms\n", (nsTime()-startTime)/1e6);
     }
     gc_lastAlloc = endSize;
+    gc_running = 0;
   #endif
 }
 
