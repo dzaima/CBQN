@@ -281,7 +281,7 @@ B find_c2(B t, B w, B x) {
   
   if (IA(x)==0) {
     emptyres:;
-    usz ia = 0;
+    usz ia = IA(w)==0;
     ShArr* sh = NULL;
     if (xr > 1) {
       sh = m_shArr(xr);
