@@ -416,7 +416,10 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   
   B r; Arr* ra;
   
-  if (wia==0 | xia==0) goto zeroes_done;
+  if (wia==0 | xia==0) {
+    ra = allZeroes(xia);
+    goto copysh_done;
+  }
   if (wia==1) {
     B c = IGet(w, 0);
     if (LIKELY(we<el_B & xe<el_B)) {
@@ -502,11 +505,14 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         w=toI32Any(w); x=toI32Any(x);
         #endif
       } else {
-        ra = reshape_one(xia, m_f64(wia));
+        ra = GRADE_UD(reshape_one(xia, m_f64(wia)), allZeroes(xia));
         goto copysh_done;
       }
     } else { // w is character
-      if (elNum(xe)) goto zeroes_done;
+      if (elNum(xe)) {
+        ra = GRADE_UD(allZeroes(xia), reshape_one(xia, m_f64(wia)));
+        goto copysh_done;
+      }
       
       we = el_c32;
       w=toC32Any(w); x=toC32Any(x);
@@ -551,9 +557,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   done:
   decG(w);decG(x);
   return r;
-  
-  zeroes_done:;
-  ra = allZeroes(xia);
   
   copysh_done:;
   r = taga(arr_shCopy(ra, x));
