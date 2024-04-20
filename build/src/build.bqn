@@ -22,7 +22,7 @@ opts ← ⟨
   ⟨1, "verbose",  0, "Log more things"⟩
   ⟨2, "rebuild", ⟨⟩, "Forcibly rebuild cbqn/replxx/singeli/linker"⟩
   ⟨2, "clean",   ⟨⟩, "Clean cbqn/replxx/singeli/linker and exit"⟩
-  ⟨1, "dry",      0, "Dry run: don't run/modify/delete anything other than submodules"⟩
+  ⟨1, "dry-run",  0, "Don't run/modify/delete anything (except submodules)"⟩
   ⟨1,"stored-warn",0,"Print stored warnings from cached build steps"⟩
   ⟨1, "notui",    @, "Disable live-updating status display"⟩
   ⟨1, "nogit",    0, "Error if something attempts to use git"⟩
@@ -194,7 +194,7 @@ po ← { # parsed options
   loud ⇐ ¬GetOpt "quiet"
   nogit ↩ GetOpt "nogit"
   
-  dry ⇐ GetOpt "dry"
+  dry ⇐ GetOpt "dry-run"
   CacheList ← {
     vs ← ∾','Split⟜Lowercase¨ GetOpt 𝕩
     {
