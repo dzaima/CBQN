@@ -50,9 +50,10 @@ INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
   #define SINGELI_FILE search
   #include "../utils/includeSingeli.h"
 #else
-  #define GETRANGE(T,X) bool getRange_##T(void* x0, i64* res, u64 ia) { \
+  #define GETRANGE(T,CHK) bool getRange_##T(void* x0, i64* res, u64 ia) { \
     assert(ia>0); T* x=x0; T min=*x,max=min; \
-    for (ux i=1; i<ia; i++) { T c=x[i]; X;   \
+    { T c=min; CHK; (void)c; }               \
+    for (ux i=1; i<ia; i++) { T c=x[i]; CHK; \
       {if(c<min)min=c;} {if(c>max)max=c;}    \
     }                                        \
     res[0]=min; res[1]=max; return 1;        \

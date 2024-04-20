@@ -371,6 +371,8 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 !"Integer out of range: 1e20" % 1⊸+⍟1e20 0
 !"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5⟩
 !"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1e20⟩
+!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨9, 1.5⟩
+!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5, 9⟩
 
 # ◶
 !"◶: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
