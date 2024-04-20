@@ -1,8 +1,8 @@
 t0g ← •MonoTime@
 #!build/obj2/for_build
 # todo:
-#   clean
 #   forcing bytecode/singeli/replxx directories to whatever's applicable
+#   cache warning messages
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
 ⟨Serialize, Deserialize⟩ ← •Import "serialize.bqn"
@@ -20,11 +20,12 @@ opts ← ⟨
   
   ⟨0, "j",       @, "Number of parallel jobs"⟩
   ⟨1, "verbose", 0, "Log more things"⟩
-  ⟨1, "rebuild", 0, "Forcibly rebuild everything"⟩
-  ⟨1, "notui",   @, "disable live-updating status display"⟩
-  ⟨1, "nogit",   0, "error if something attempts to use git"⟩
+  ⟨2, "rebuild",⟨⟩, "Forcibly rebuild cbqn/replxx/singeli/linker"⟩
+  ⟨2, "clean",  ⟨⟩, "Instead of building, clean cbqn/replxx/singeli/linker"⟩
+  ⟨1, "dry",     0, "Dry run: don't run/modify/delete anything other than submodules"⟩
+  ⟨1, "notui",   @, "Disable live-updating status display"⟩
+  ⟨1, "nogit",   0, "Error if something attempts to use git"⟩
   ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
-  ⟨1, "rebuild-singeli", 0, @⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
@@ -170,10 +171,11 @@ updateSubmodule ← {
 
 rootDir ← •file.Parent⍟2 •file.path
 AtRoot ← rootDir⊸•file.At
+allCaches ← ⟨"cbqn", "singeli", "replxx", "linker"⟩
 
 po ← { # parsed options
   ⟨
-    verbose, J, rebuildAll, rebuildSingeli, tui, loud, output, clangd, versionName,
+    verbose, J, clean, rebuild, tui, loud, output, clangd, versionName,
     os, arch, native, has,
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -186,11 +188,21 @@ po ← { # parsed options
   clangd ← GetOpt "clangd"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •ParseFloat v; •ParseFloat⎊4 ¯1↓"4" TrySH ⟨"nproc"⟩}
-  rebuildAll ⇐ GetOpt "rebuild"
-  rebuildSingeli ⇐ GetOpt "rebuild-singeli"
   tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
   loud ⇐ ¬GetOpt "quiet"
   nogit ↩ GetOpt "nogit"
+  
+  dry ⇐ GetOpt "dry"
+  CacheList ← {
+    vs ← ∾','Split⟜Lowercase¨ GetOpt 𝕩
+    {
+      vs≡⟨"all"⟩? allCaches;
+      𝕩 {∾⟨"Error: Invalid target in ",𝕨," list: ",⊑𝕩⟩}_assert_(0=≠) vs (¬∘∊/⊣) allCaches
+      vs
+    }𝕩
+  }
+  clean   ⇐ CacheList "clean"
+  rebuild ⇐ CacheList "rebuild"
   
   {𝕊: _verboseLog ↩ {Log𝕨𝔽𝕩⋄𝕩}}⍟⊢ verbose⇐GetOpt "verbose"
   
@@ -422,10 +434,14 @@ isFileTheSame ← {
 }
 
 # gets/creates a directory of cacheable objects; key is the unique identifier of when it can be reused
-GetCache ← { 𝕊 basename‿desc‿key:
+madeCaches ← ⟨⟩
+GetCache ← {madeCaches∾↩𝕩⋄𝕩} { 𝕊 basename‿desc‿key:
   folderHash ⇐ Hash key
   folder ⇐ allObjDir•file.At basename∾"-"∾folderHash
   MkDir AtRoot folder
+  
+  name ⇐ basename
+  ! ⊑(<name) ∊ allCaches
   
   File ⇐ folder⊸•file.At
   {𝕊: desc∾": "∾AtRoot𝕩} _verboseLog folder
@@ -462,13 +478,20 @@ GetCache ← { 𝕊 basename‿desc‿key:
     newKs∾↩ <key
     newVs∾↩ <data
   }
-  onExitList∾↩ {{𝕊: dataPath •FBytes ⟨8,8‿'c'⟩•bit._cast FinalData@}⍟{𝕊: 0≠≠newKs}}
+  onExitList∾↩ {{𝕊: dataPath •FBytes ⟨8,8‿'c'⟩•bit._cast FinalData@}⍟{𝕊: (0≠≠newKs) ∧ ¬po.dry}}
 }
 
 ruleKs‿ruleVs ← ⟨⟩‿⟨⟩
 
 # dependency resolution & thread management
 Run ← { 𝕊:
+  0≢≠po.clean?
+    {
+      Log⍟(po.verbose∨po.dry) ∾⟨"recursively deleting ", AtRoot 𝕩.folder⟩
+      SH⍟(¬po.dry) ⟨"rm", "-r", "--", AtRoot 𝕩.folder⟩
+    }¨ (⊢ /˜ {𝕩.name}¨ ∊ po.clean˙) madeCaches
+    •Exit 0
+    ;
   ruleDeps ← {{𝕩.dst}¨ 𝕩.ruleDeps}¨ ruleVs
   ruleSrcs0 ← ruleKs⊐∾ruleDeps
   ! ∧´ ruleSrcs0<≠ruleKs
@@ -479,8 +502,9 @@ Run ← { 𝕊:
   
   Require ← {
     v ← 𝕩⊑ruleVs
-    rebuild ← po.rebuildAll
-    {𝕊: rebuild∨↩ ".singeli"≡¯8↑v.disp}⍟⊢ po.rebuildSingeli
+    # rebuild ← po.rebuildAll
+    # {𝕊: rebuild∨↩ ".singeli"≡¯8↑v.disp}⍟⊢ po.rebuildSingeli
+    rebuild ← ⊑(<v.cache.name)∊po.rebuild
     chi ← 𝕩⊑ruleSrcs
     chr ← Require¨ chi
     rebuild∨↩ ∨´ chr
@@ -550,7 +574,7 @@ Run ← { 𝕊:
       t ← ¯1⊑free ⋄ free↓˜↩ ¯1
       
       i ← RequestJob@ ⋄ v←i⊑ruleVs
-      t.Request v.CMD@
+      t.Request "dry"⊸⋈⍟po.dry v.CMD@
       work∾↩ {t⇐t, i⇐i, v⇐v, t0⇐•MonoTime@}
       
     }•_while_{𝕊: ∧´0<≠¨ left‿free}⍟¬ stopping
@@ -771,7 +795,7 @@ outPath ← •wdpath •file.At po.output
       SH ⟨"cp", AtRoot linkerCache.File "BQN.wasm", outPath •file.At "BQN.wasm"⟩
     ;
       SH ⟨"cp", "-f", AtRoot cachedBin, outPath⟩
-  }⍟⊢ success
+  }⍟⊢ success ∧ ¬po.dry
   OnExit@
   •Exit ¬success
 }

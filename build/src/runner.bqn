@@ -57,5 +57,9 @@ _runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
   "runbqn"‿dir‿file‿args‿deps:
     args deps _runSingeli_ dir file
   ;
+  "dry"‿args:
+    ⟨dir⟩ ← 1↑args
+    Good ⟨dir, 1, 2, "", "", ⟨⟩⟩
+  ;
     0⋈"unknown command"
 }
