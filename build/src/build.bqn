@@ -18,14 +18,15 @@ opts ← ⟨
   ⟨1, "NO_LDL",  0, @⟩
   ⟨1, "no_fPIC", 0, @⟩
   
-  ⟨0, "j",       @, "Number of parallel jobs"⟩
-  ⟨1, "verbose", 0, "Log more things"⟩
-  ⟨2, "rebuild",⟨⟩, "Forcibly rebuild cbqn/replxx/singeli/linker"⟩
-  ⟨2, "clean",  ⟨⟩, "Instead of building, clean cbqn/replxx/singeli/linker"⟩
-  ⟨1, "dry",     0, "Dry run: don't run/modify/delete anything other than submodules"⟩
-  ⟨1, "notui",   @, "Disable live-updating status display"⟩
-  ⟨1, "nogit",   0, "Error if something attempts to use git"⟩
-  ⟨1, "quiet",   0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
+  ⟨0, "j",        @, "Number of parallel jobs"⟩
+  ⟨1, "verbose",  0, "Log more things"⟩
+  ⟨2, "rebuild", ⟨⟩, "Forcibly rebuild cbqn/replxx/singeli/linker"⟩
+  ⟨2, "clean",   ⟨⟩, "Clean cbqn/replxx/singeli/linker and exit"⟩
+  ⟨1, "dry",      0, "Dry run: don't run/modify/delete anything other than submodules"⟩
+  ⟨1,"stored-warn",0,"Print stored warnings from cached build steps"⟩
+  ⟨1, "notui",    @, "Disable live-updating status display"⟩
+  ⟨1, "nogit",    0, "Error if something attempts to use git"⟩
+  ⟨1, "quiet",    0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
   ⟨0, "LD",    @, "Linker of the final binary; defaults to CC, or CXX if REPLXX=1"⟩
@@ -36,13 +37,13 @@ opts ← ⟨
   
   ⟨0, "OUTPUT",  "", "Output location; defaults to ./BQN for regular builds"⟩
   ⟨2, "f",       ⟨⟩, "C flags for CBQN files"⟩
-  ⟨2, "CCFLAGS", ⟨⟩, "flags for all CC/CXX invocations (both object file & linking)"⟩
-  ⟨2, "CXXFLAGS",⟨⟩, "flags for C++ object file creation invocations"⟩
-  ⟨2, "lf",      ⟨⟩, "linker flags"⟩
+  ⟨2, "CCFLAGS", ⟨⟩, "Flags for all CC/CXX invocations (both object file & linking)"⟩
+  ⟨2, "CXXFLAGS",⟨⟩, "Flags for C++ object file creation invocations"⟩
+  ⟨2, "lf",      ⟨⟩, "Linker flags"⟩
   ⟨2, "sf",      ⟨⟩, "Singeli flags"⟩
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
-  ⟨2, "rm_f",    ⟨⟩, "forcibly remove C compiler flag(s)"⟩
-  ⟨2, "rm_lf",   ⟨⟩, "forcibly remove linker flag(s)"⟩
+  ⟨2, "rm_f",    ⟨⟩, "Forcibly remove C compiler flag(s)"⟩
+  ⟨2, "rm_lf",   ⟨⟩, "Forcibly remove linker flag(s)"⟩
   ⟨0, "v",       "", "Version string to report by --version; v=0 to disable"∾@+10⟩
   
   ⟨1, "shared", 0, "Build a shared library"⟩
@@ -175,7 +176,7 @@ allCaches ← ⟨"cbqn", "singeli", "replxx", "linker"⟩
 
 po ← { # parsed options
   ⟨
-    verbose, J, clean, rebuild, tui, loud, output, clangd, versionName,
+    verbose, J, clean, rebuild, warnStored, tui, loud, output, clangd, versionName,
     os, arch, native, has,
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -189,6 +190,7 @@ po ← { # parsed options
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •ParseFloat v; •ParseFloat⎊4 ¯1↓"4" TrySH ⟨"nproc"⟩}
   tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
+  warnStored ⇐ GetOpt "stored-warn"
   loud ⇐ ¬GetOpt "quiet"
   nogit ↩ GetOpt "nogit"
   
@@ -447,7 +449,7 @@ GetCache ← {madeCaches∾↩𝕩⋄𝕩} { 𝕊 basename‿desc‿key:
   {𝕊: desc∾": "∾AtRoot𝕩} _verboseLog folder
   
   dataPath ← AtRoot File "data"
-  dataVersion ← 0
+  dataVersion ← 1
   prevKs‿prevVs ← {a‿b: a≡dataVersion? b; ⟨⟩‿⟨⟩} •file.Exists◶⟨@, {Deserialize ⟨8‿'c',8⟩•bit._cast •FBytes 𝕩}⟩ dataPath
   
   Find ⇐ {
@@ -458,7 +460,7 @@ GetCache ← {madeCaches∾↩𝕩⋄𝕩} { 𝕊 basename‿desc‿key:
   IsUpToDate ⇐ {
     𝕊:
       𝕩.found0≢@?
-      fileInfo‿depInfo ← 𝕩.found0
+      ⟨fileInfo,·⟩‿depInfo ← 𝕩.found0
       fileInfo≢@?
       ∧´ AtRoot⊸IsFileTheSame´¨ fileInfo?
       depInfo≡𝕩.DepHash@
@@ -482,6 +484,7 @@ GetCache ← {madeCaches∾↩𝕩⋄𝕩} { 𝕊 basename‿desc‿key:
 }
 
 ruleKs‿ruleVs ← ⟨⟩‿⟨⟩
+anyStoredWarnings ← 0
 
 # dependency resolution & thread management
 Run ← { 𝕊:
@@ -510,11 +513,17 @@ Run ← { 𝕊:
     rebuild∨↩ ∨´ chr
     # rebuild∨↩ ¬•file.Exists AtRoot 𝕩⊑ruleKs # not really needed unless someone deletes a specific file without deleting the data file
     rebuild∨↩ ¬v.cache.IsUpToDate v
-    {
-      ruleN (+´chr)⊸+⌾(𝕩⊸⊑)↩
-      ruleP ∾⟜𝕩¨⌾((chr/chi)⊸⊏)↩
-      req∾↩ 𝕩
-    }⍟rebuild 𝕩
+    rebuild◶⟨
+      {𝕊: {
+        po.warnStored? Log ∾⟨"Previous warning from ",v.disp,":"⟩ ⋄ Log 𝕩;
+        anyStoredWarnings ↩ 1
+      }⍟(×≠) 1⊑0⊑v.found0}
+      {
+        ruleN (+´chr)⊸+⌾(𝕩⊸⊑)↩
+        ruleP ∾⟜𝕩¨⌾((chr/chi)⊸⊏)↩
+        req∾↩ 𝕩
+      }
+    ⟩ 𝕩
     rebuild
   }
   anyRebuilt ← Require ⊑ruleKs⊐<𝕩
@@ -534,7 +543,7 @@ Run ← { 𝕊:
         v v.cache.Update @
       }
       { 𝕊:
-        v v.cache.Update 3⊑tb
+        v v.cache.Update ⟨3⊑tb, 1⊑tb⟩
         ps ← i⊑ruleP
         ruleN -⟜1⌾(ps⊸⊏)↩
         left∾↩ (0=ps⊏ruleN)/ps
@@ -604,7 +613,7 @@ Run ← { 𝕊:
     free∾↩ Ts done
   }•_while_{𝕊: (0<≠work) ∨ (¬stopping)∧0<≠left}@
   
-  Log⍟po.loud ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build"⟩
+  Log⍟po.loud ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build", anyStoredWarnings/"; cached build steps had warnings - view with stored-warn=1"⟩
   
   ¬stopping
 }
