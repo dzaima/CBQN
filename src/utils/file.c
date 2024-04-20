@@ -345,7 +345,7 @@ B mmap_file(B path) {
   }
 #endif
   
-  MmapHolder* holder = m_arr(sizeof(MmapHolder), t_mmapH, len);
+  MmapHolder* holder = m_arrUnchecked(sizeof(MmapHolder), t_mmapH, len);
   holder->a = data;
 #if !defined(_WIN32)
   holder->fd = fd;
