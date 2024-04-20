@@ -460,8 +460,9 @@ GetCache ← {madeCaches∾↩𝕩⋄𝕩} { 𝕊 basename‿desc‿key:
   IsUpToDate ⇐ {
     𝕊:
       𝕩.found0≢@?
-      ⟨fileInfo,·⟩‿depInfo ← 𝕩.found0
-      fileInfo≢@?
+      info‿depInfo ← 𝕩.found0
+      info≢@?
+      ⟨fileInfo,·⟩ ← info
       ∧´ AtRoot⊸IsFileTheSame´¨ fileInfo?
       depInfo≡𝕩.DepHash@
     ;
