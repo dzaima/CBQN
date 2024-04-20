@@ -673,8 +673,10 @@ B slash_c2(B t, B w, B x) {
       usz csz = arr_csz(x);
       MAKE_MUT_INIT(r0, s*csz, TI(x,elType)); MUTG_INIT(r0);
       SGetU(w)
-      if (csz!=1) {   usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); for(ux j=0;j<c;j++) { mut_copyG(r0, ri, x, i*csz, csz); ri+= csz; } } }
-      else { SGetU(x) usz ri=0; for (ux i=0; i<wia; i++) { usz c=o2s(GetU(w, i)); if (c)              { mut_fillG(r0, ri, GetU(x, i), c); ri+= c;   } } }
+      B wc; usz ri=0;
+      if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_usz(wc=GetU(w,i))) goto pfree; usz c=o2sG(wc); for(ux j=0;j<c;j++) { mut_copyG(r0, ri, x, i*csz, csz); ri+= csz; } } }
+      else { SGetU(x) for (ux i=0; i<wia; i++) { if (!q_usz(wc=GetU(w,i))) goto pfree; usz c=o2sG(wc); if (c)              { mut_fillG(r0, ri, GetU(x, i), c); ri+= c;   } } }
+      if (0) { pfree: mut_pfree(r0, ri); expI_B(wc); }
       Arr* ra = mut_fp(r0);
       if (xr == 1) {
         arr_shVec(ra);
