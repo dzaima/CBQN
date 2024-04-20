@@ -82,14 +82,19 @@ ModifyCBQNFlags ← {
 }
 
 objects ← ⟨⟩
-Finish ⇐ { 𝕊:
+Finish ⇐ { 𝕊 write:
   objects ModifyCBQNFlags⌾(({"src/"≡4↑⊑𝕩}¨ objects)⊸/)↩
   FileObj ← { name‿flags:
     "file"‿"directory"‿"arguments" JObj ⟨JStr name, JStr AtRoot "", ", " JArr JStr¨ flags⟩
   }
   res ← (","∾n) JArr FileObj¨ objects
   resPath ← AtRoot "compile_commands.json"
-  resPath •FChars res
-  •Out "Wrote clangd compile commands to "∾•file.At resPath
+  {
+    write?
+      resPath •FChars res
+      •Out "Wrote clangd compile commands to "∾•file.At resPath
+    ;
+      •Out "Would write clangd compile commands to "∾•file.At resPath
+  }
 }
 _add ⇐ {objects∾↩ <⟨𝕩, (𝔽@)∾<𝕩⟩}

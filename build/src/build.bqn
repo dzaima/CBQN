@@ -795,7 +795,7 @@ cachedBin‿linkerCache ← {
 
 outPath ← •wdpath •file.At po.output
 {
-  po.clangd? clangd.Finish@;
+  po.clangd? clangd.Finish ¬po.dry;
   # else, regular build
   success ← Run cachedBin
   { 𝕊:
