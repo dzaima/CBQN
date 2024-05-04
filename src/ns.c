@@ -189,7 +189,7 @@ static void ns_visit(Value* x) {
   mm_visitP(c->sc);
 }
 static void ns_print(FILE* f, B x) {
-  fputc('{', f);
+  fprintf(f, "{");
   NSDesc* desc = c(NS,x)->desc;
   Scope* sc = c(NS,x)->sc;
   i32 am = desc->varAm;
@@ -204,7 +204,7 @@ static void ns_print(FILE* f, B x) {
       fprintI(f, sc->vars[i]);
     }
   }
-  fputc('}', f);
+  fprintf(f, "}");
 }
 B nsFmt(B x) { // consumes
   B s = emptyCVec();

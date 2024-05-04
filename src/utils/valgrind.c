@@ -18,7 +18,7 @@ void vg_printDump_p(char* name, void* data, u64 len) {
       printBitDef(cd>>j, cv>>j);
     }
   }
-  putchar('\n');
+  printf("\n");
 }
 
 void vg_printDefined_u64(char* name, u64 x) {

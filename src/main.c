@@ -749,7 +749,7 @@ void cbqn_runLine0(char* ln, i64 read) {
           if (i!=0) printf(", ");
           printsB(rp[i]);
         }
-        putchar('\n');
+        printf("\n");
       }
       return;
     } else if (isCmd(cmdS, &cmdE, "gc ")) {
@@ -803,7 +803,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       usz ia=PIA(expla);
       for(usz i=0; i<ia; i++) {
         printsB(expla->a[i]);
-        putchar('\n');
+        printf("\n");
       }
       ptr_dec(expla);
       return;
@@ -865,9 +865,9 @@ void cbqn_runLine0(char* ln, i64 read) {
     if (output!=2 && FORMATTER) {
       B resFmt = bqn_fmt(res);
       printsB(resFmt); dec(resFmt);
-      putchar('\n');
+      printf("\n");
     } else {
-      printI(res); putchar('\n'); fflush(stdout);
+      printI(res); printf("\n"); fflush(stdout);
       dec(res);
     }
   } else dec(res);
@@ -877,7 +877,7 @@ void cbqn_runLine0(char* ln, i64 read) {
 void cbqn_runLine(char* ln, i64 len) {
   if(CATCH) {
     cbqn_takeInterrupts(false);
-    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n', stderr);
+    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fprintf(stderr, "\n");
     vm_pst(envCurr+1, envStart+envPrevHeight);
     freeThrown();
     #if HEAP_VERIFY
@@ -901,7 +901,7 @@ void cbqn_evalSrc(char* src, i64 len) {
   B code = utf8Decode(src, len);
   B resFmt = bqn_fmt(bqn_exec(code, bi_N));
   printsB(resFmt); dec(resFmt);
-  putchar('\n');
+  printf("\n");
 }
 #endif
 
@@ -1092,7 +1092,7 @@ int main(int argc, char* argv[]) {
         char* ln = NULL;
         size_t gl = 0;
         i64 read = getline(&ln, &gl, stdin);
-        if (read<=0 || ln[0]==0) { if(!silentREPL) putchar('\n'); break; }
+        if (read<=0 || ln[0]==0) { if(!silentREPL) printf("\n"); break; }
         if (ln[read-1]==10) ln[--read] = 0;
         if (ln[read-1]==13) ln[--read] = 0;
         cbqn_runLine(ln, read);

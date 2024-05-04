@@ -260,7 +260,7 @@ B casrt_c1(B t, B x) {
 B sys_c1(B t, B x);
 B out_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•Out: Argument must be a string");
-  printsB(x); putchar('\n');
+  printsB(x); printf("\n");
   return x;
 }
 B show_c1(B t, B x) {
@@ -271,7 +271,7 @@ B show_c1(B t, B x) {
     #else
       printI(x);
     #endif
-    putchar('\n');
+    printf("\n");
   #endif
   return x;
 }

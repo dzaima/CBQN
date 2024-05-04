@@ -45,16 +45,16 @@ void print_BC(FILE* f, u32* p, i32 w) {
       buf[clen++] = (c&15)>9? 'A'+(c&15)-10 : '0'+(c&15);
       c>>= 4;
     } while(c);
-    fputc(' ', f);
-    for (i32 i = 0; i < clen; i++) fputc(buf[clen-i-1], f);
+    fprintf(f, " ");
+    for (i32 i = 0; i < clen; i++) fprintf(f, "%c", buf[clen-i-1]);
     len+= clen+1;
   }
   len = w-len;
-  while(len-->0) fputc(' ', f);
+  while(len-->0) fprintf(f, " ");
 }
 void print_BCStream(FILE* f, u32* p) {
   while(true) {
-    print_BC(f, p, 10); fputc(10, f);
+    print_BC(f, p, 10); fprintf(f, "\n");
     if (*p == RETD || *p == RETN) return;
     p = nextBC(p);
   }
@@ -170,7 +170,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
   bool boArr = isArr(bodyObj);
   i32 boCount = boArr? IA(bodyObj) : 1;
   if (boCount<1 || boCount>5) thrM("VM compiler: Unexpected body list length");
-  // if (boArr) { printI(bodyObj); putchar('\n'); }
+  // if (boArr) { printI(bodyObj); printf("\n"); }
   i32 firstMPos = failBodyI;
   
   for (i32 i = 0; i < 6; i+= 2) {
@@ -207,7 +207,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
       bodyPs[1] = bodyPs[3] = I32_MAX;
       mCount = dCount = 1;
     }
-    // for (int i = 0; i < mapLen+2; i++) printf("%d ", bodyPs[i]); putchar('\n'); printf("things: %d %d\n", mCount, dCount);
+    // for (int i = 0; i < mapLen+2; i++) printf("%d ", bodyPs[i]); printf("\n"); printf("things: %d %d\n", mCount, dCount);
     
     TALLOC(Body*, bodyMap, mapLen+2); // map from index in bodyPs to the corresponding body
     TSALLOC(NextRequest, bodyReqs, 10); // list of SETH/PRED-s to fill out when bodyMap is complete
@@ -753,7 +753,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       vmStack[stackNum] = bcPos;
       for(i32 i = 0; i < bcDepth; i++) fprintf(stderr," ");
       print_BC(stderr,sbc,20); fprintf(stderr,"@%d  in: ",bcPos);
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fputc('\n',stderr); fflush(stderr);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fprintf(stderr,"\n"); fflush(stderr);
       bcCtr++;
       for (i32 i = 0; i < sc->varAm; i++) VALIDATE(sc->vars[i]);
     #endif
@@ -955,7 +955,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
     #if DEBUG_VM
       for(i32 i = 0; i < bcDepth; i++) fprintf(stderr," ");
       print_BC(stderr,sbc,20); fprintf(stderr,"@%d out: ",BCPOS(b, sbc));
-      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fputc('\n',stderr); fflush(stderr);
+      for (i32 i = 0; i < lgStack-origStack; i++) { if(i)fprintf(stderr,"; "); fprintI(stderr,origStack[i]); } fprintf(stderr,"\n"); fflush(stderr);
     #endif
   }
   end:;
@@ -1380,7 +1380,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     B msg = vm_fmtPoint(src, emptyCVec(), comp->fullpath, cs, ce);
     fprintsB(stderr, msg);
     dec(msg);
-    fputc('\n', stderr);
+    fprintf(stderr, "\n");
     popCatch();
     return;
     
@@ -1393,10 +1393,10 @@ native_print:
     usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintCodepoint(stderr, chr); srcE++; }
     if (ce>srcE) ce = srcE;
     cs-= srcS; ce-= srcS;
-    fputc('\n', stderr);
-    for (i32 i = 0; i < cs+start; i++) fputc(' ', stderr);
-    for (i32 i = cs; i < ce; i++) fputc('^', stderr);
-    fputc('\n', stderr);
+    fprintf(stderr, "\n");
+    for (i32 i = 0; i < cs+start; i++) fprintf(stderr, " ");
+    for (i32 i = cs; i < ce; i++) fprintf(stderr, "^");
+    fprintf(stderr, "\n");
     return;
     
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
@@ -1686,7 +1686,7 @@ NOINLINE void printErrMsg(B msg) {
 void before_exit(void);
 NOINLINE NORETURN void throwImpl(bool rethrow) {
   // printf("gStack %p-%p:\n", gStackStart, gStack); B* c = gStack;
-  // while (c>gStackStart) { printI(*--c); putchar('\n'); } printf("gStack printed\n");
+  // while (c>gStackStart) { printI(*--c); printf("\n"); } printf("gStack printed\n");
   NOGC_CHECK("throwing during noAlloc");
   if (!rethrow) envPrevHeight = envCurr-envStart + 1;
 #if USE_SETJMP
@@ -1705,7 +1705,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   } else { // uncaught error
 #endif
     assert(cf==cfStart);
-    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fputc('\n',stderr); fflush(stderr);
+    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fprintf(stderr,"\n"); fflush(stderr);
     Env* envEnd = envStart+envPrevHeight;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);

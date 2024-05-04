@@ -13,7 +13,7 @@ void heapVerify_checkFn(Value* v) {
       printf("delta %d for %s @ %p: ", (i32)v->refc, type_repr(v->type), v);
     #endif
     heap_observed = v;
-    printI(tag(v,OBJ_TAG)); putchar('\n');
+    printI(tag(v,OBJ_TAG)); printf("\n");
   }
 }
 

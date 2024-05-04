@@ -160,7 +160,7 @@ usz addObj(B* objs, B val) { // consumes val
 i32 nc_ty(B x) { return o2iG(IGetU(x, 0)); }
 
 B nc_generate(B p1) { // consumes
-  // printf("p1: "); printI(p1); putchar('\n');
+  // printf("p1: "); printI(p1); printf("\n");
   
   usz p1ia = IA(p1);
   B listFinal;
@@ -201,7 +201,7 @@ B nc_generate(B p1) { // consumes
     }
   }
   decG(p1);
-  // printf("p2: "); printI(p2); putchar('\n');
+  // printf("p2: "); printI(p2); printf("\n");
   
   // parse as either tacit or explicit
   SGetU(p2)
@@ -215,7 +215,7 @@ B nc_generate(B p1) { // consumes
   while(i>0) {
     B en1 = GetU(p2, i-1);
     u8 en1t = nc_ty(en1);
-    // printf("e @ %d: ", i); printI(e); putchar('\n');
+    // printf("e @ %d: ", i); printI(e); printf("\n");
     
     if (en1t==4 || en1t==5) { // assignment
       if (!explicit && i!=1) thrM("Native compiler: Assignment in the middle of tacit code");
@@ -255,7 +255,7 @@ B nc_generate(B p1) { // consumes
     e = m_hvec2(m_f64(explicit? 3 : 0), bc);
     i-= 1;
   }
-  // printf("e: "); printI(e); putchar('\n');
+  // printf("e: "); printI(e); printf("\n");
   decG(p2);
   return e;
 }
@@ -293,7 +293,7 @@ B nc_parseStatements(B tokens, usz i0, usz* i1, u32 close, B* objs, Vars vars) {
     B ct;
     if (i==tia) ct = m_c32(0);
     else ct = GetU(tokens, i++);
-    // printf("next token: "); printI(ct); putchar('\n');
+    // printf("next token: "); printI(ct); printf("\n");
     
     if (isC32(ct)) {
       u32 ctc = o2cG(ct);

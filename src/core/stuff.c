@@ -518,10 +518,10 @@ B      g_t (void* x) { return tag(x,OBJ_TAG); }
 B      g_ta(void* x) { return tag(x,ARR_TAG); }
 B      g_tf(void* x) { return tag(x,FUN_TAG); }
 GLOBAL bool ignore_bad_tag;
-void   g_p(B x) { fprintI(stderr,x); fputc(10,stderr); fflush(stderr); }
-void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fputc(10,stderr); fflush(stderr); }
-void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fputc(10,stderr); fflush(stderr); ignore_bad_tag=false; }
-void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fputc(10,stderr); fflush(stderr); ignore_bad_tag=false; }
+void   g_p(B x) { fprintI(stderr,x); fprintf(stderr,"\n"); fflush(stderr); }
+void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); }
+void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
+void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
 void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #if DEBUG
@@ -536,7 +536,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if (x->refc<=0 || (x->refc>>28) == 'a' || x->type==t_empty) {
       PRINT_ID(x);
       fprintf(stderr, "bad refcount for type %d @ %p: %d\nattempting to print: ", x->type, x, x->refc); fflush(stderr);
-      fprintI(stderr, tag(x,OBJ_TAG)); fputc('\n', stderr); fflush(stderr);
+      fprintI(stderr, tag(x,OBJ_TAG)); fprintf(stderr, "\n"); fflush(stderr);
       fatal("");
     }
     if (TIv(x,isArr)) {
@@ -578,7 +578,7 @@ void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
       fprintf(stderr, "atom: ");
       if (cbqn_initialized && FORMATTER) { fprintsB(stderr, x = bqn_fmt(inc(x))); dec(x); }
       else fprintI(stderr, x);
-      fputc('\n', stderr);
+      fprintf(stderr, "\n");
     }
   }
   void warn_slow1(char* s, B x) {
