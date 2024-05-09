@@ -18,6 +18,7 @@ opts ← ⟨
   ⟨1, "NO_LDL",  0, @⟩
   ⟨1, "no_fPIC", 0, @⟩
   
+  ⟨0, "v",       "", "Version string to report by --version; v=0 to disable"⟩
   ⟨0, "j",        @, "Number of parallel jobs"⟩
   ⟨1, "verbose",  0, "Log more things"⟩
   ⟨2, "rebuild", ⟨⟩, "Forcibly rebuild cbqn/replxx/singeli/linker"⟩
@@ -43,8 +44,7 @@ opts ← ⟨
   ⟨2, "sf",      ⟨⟩, "Singeli flags"⟩
   ⟨2, "LDFLAGS", ⟨⟩, @⟩
   ⟨2, "rm_f",    ⟨⟩, "Forcibly remove C compiler flag(s)"⟩
-  ⟨2, "rm_lf",   ⟨⟩, "Forcibly remove linker flag(s)"⟩
-  ⟨0, "v",       "", "Version string to report by --version; v=0 to disable"∾@+10⟩
+  ⟨2, "rm_lf",   ⟨⟩, "Forcibly remove linker flag(s)"∾@+10⟩
   
   ⟨1, "shared", 0, "Build a shared library"⟩
   ⟨1, "static-lib", 0, "Build a static library"⟩
@@ -378,19 +378,20 @@ po ← { # parsed options
     replxxc ↩ args
   }
   
-  singeliFlags ← GetOpt "sf"
+  singeliFlags ⇐ GetOpt "sf"
   
-  Linker ⇐ { 𝕊:
+  linker ⇐ {
+    bin ← @
     args ← ⟨⟩
     {
       staticLib?
-        args∾↩ ⟨"ar" DOpt "LD"⟩
+        bin ↩ "ar" DOpt "LD"
         args∾↩ GetOpt "lf"
         args∾↩ GetOpt "LDFLAGS"
         args∾↩ ⟨"-rcs"⟩
       ;
         rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
-        args∾↩ ⟨{replxx? cxx; cc} DOpt "LD"⟩
+        bin ↩ {replxx? cxx; cc} DOpt "LD"
         args∾↩ defLibs / ⟨"-lm"⟩
         args∾↩ ⟨⟩ DOpt "LD_LIBS"
         args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
@@ -409,12 +410,12 @@ po ← { # parsed options
         args∾↩ (        windows) / ⟨"-lpthread"⟩
         args∾↩ (      staticBin) / ⟨"-static"⟩
         args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
-        {"linker: "∾•Repr 𝕩} _verboseLog args
     }
-    linker ↩ args
+    {"key":bin‿args; srcs‿dst: ⟨bin, "-o", dst⟩ ∾ srcs ∾ args}
   }
+  {"linker: "∾•Repr Linker ⟨"src1"‿"src2"‿"...", "dst"⟩} _verboseLog@
   
-  {𝕊: CBQNc@ ⋄ REPLXXc⍟replxx @ ⋄ Linker@}⍟⊢ verbose
+  {𝕊: CBQNc@ ⋄ REPLXXc⍟replxx @}⍟⊢ verbose
 }
 
 Hash ← {(32↑∾"0a"+↕¨10‿26)⊏˜{𝕨+2×𝕩}˝5‿⌊⥊32‿1•bit._cast∾(↕4)•Hash¨<𝕩}
@@ -667,8 +668,7 @@ MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src sho
 MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
   dst ← cache.File name
   GetCMD ← { 𝕊:
-    args ← GetArgs@
-    cmd ← ⟨"sh", rootDir, ⟨⊑args, "-o", dst⟩∾({𝕩.dst}¨ srcs)∾1↓args, @⟩
+    cmd ← ⟨"sh", rootDir, GetArgs ⟨{𝕩.dst}¨ srcs, dst⟩, @⟩
     {po.staticLib? ⟨"staticlib", AtRoot dst, cmd⟩; cmd}
   }
   AddRule ⟨cache, name, dst, GetCMD, "link", srcs⟩
@@ -756,7 +756,7 @@ cachedBin‿linkerCache ← {
   }
   
   linkerDeps ← @⊸≢¨⊸/ ⟨cbqnCache, replxxCache, singeliCache⟩
-  linkerCache ← GetCache ⟨"linker", "linker cached result location", ⟨po.Linker@, {𝕩.folderHash}¨ linkerDeps⟩⟩
+  linkerCache ← GetCache ⟨"linker", "linker cached result location", ⟨po.Linker "key", {𝕩.folderHash}¨ linkerDeps⟩⟩
   {
     po.versionName≡@? @;
     srcFile ← linkerCache.File "versionInfo.c"
