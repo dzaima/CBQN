@@ -383,12 +383,14 @@ po ← { # parsed options
   linker ⇐ {
     bin ← @
     args ← ⟨⟩
+    Cmd ← !
     {
       staticLib?
         bin ↩ "ar" DOpt "LD"
         args∾↩ GetOpt "lf"
         args∾↩ GetOpt "LDFLAGS"
         args∾↩ ⟨"-rcs"⟩
+        Cmd ↩ {srcs‿dst: ⟨bin⟩∾args∾⟨dst⟩∾srcs}
       ;
         rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
         bin ↩ {replxx? cxx; cc} DOpt "LD"
@@ -410,8 +412,9 @@ po ← { # parsed options
         args∾↩ (        windows) / ⟨"-lpthread"⟩
         args∾↩ (      staticBin) / ⟨"-static"⟩
         args ↩ args (¬∘∊/⊣) GetOpt "rm_lf"
+        Cmd ↩ {srcs‿dst: ⟨bin, "-o", dst⟩∾srcs∾args}
     }
-    {"key":bin‿args; srcs‿dst: ⟨bin, "-o", dst⟩ ∾ srcs ∾ args}
+    {"key":bin‿args; srcs‿dst: Cmd srcs‿dst}
   }
   {"linker: "∾•Repr Linker ⟨"src1"‿"src2"‿"...", "dst"⟩} _verboseLog@
   
