@@ -1,10 +1,10 @@
 include './base'
 include './mask'
 
-def opsh64{op}{v:[4]f64, perm} = op{v, shuf{[4]u64, v, perm}}
-def opsh32{op}{v:[2]f64, perm} = op{v, shuf{[4]u32, v, perm}}
-def mix{op, v:[4]f64 & hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 4b2301}, 4b1032} }
-def mix{op, v:[2]f64 & hasarch{'X86_64'}} = opsh32{op}{v, 4b1032}
+def opsh64{op}{v:([4]f64), perm} = op{v, shuf{[4]u64, v, perm}}
+def opsh32{op}{v:([2]f64), perm} = op{v, shuf{[4]u32, v, perm}}
+def mix{op, v:([4]f64) if hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 4b2301}, 4b1032} }
+def mix{op, v:([2]f64) if hasarch{'X86_64'}} = opsh32{op}{v, 4b1032}
 
 def reduce_pairwise{op, plog, x:*T, len, init:T} = {
   # Pairwise combination to shorten dependency chains

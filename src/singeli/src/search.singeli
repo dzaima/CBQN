@@ -5,8 +5,8 @@ include './hashtab'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
-  def args = undef{M{...each{tupsel{0, .}, v1}}}
-  def am = tuplen{tupsel{0,v1}}
+  def args = undef{M{...each{select{., 0}, v1}}}
+  def am = length{select{v1,0}}
   each{{last, ...v2} => {
     if (last or C{...v2}) {
       each{=, args, M{...v2}}
@@ -18,7 +18,7 @@ def findFirst{C, M, F, ...v1} = {
   F{...args}
 }
 
-def search{E, x, n:u64, OP} = {
+def search{E, x, n:(u64), OP} = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
   def end = makeBranch{
@@ -60,7 +60,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   0
 }
 
-if (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
+if_inline (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
   export{'simd_search_u8',  searchOne{u64, u8}}
   export{'simd_search_u16', searchOne{u64, u16}}
   export{'simd_search_u32', searchOne{u64, u32}}
@@ -79,7 +79,7 @@ def simd_bittab = hasarch{'SSSE3'}
 def bittab_init{tab, z} = {
   @for (t in *TI~~tab over 256) t = z
 }
-def bittab_init{tab, z & simd_bittab} = {
+def bittab_init{tab, z if simd_bittab} = {
   init:= VI**z
   @unroll (t in *VI~~tab over 256/vcount{VI}) t = init
 }
@@ -111,7 +111,7 @@ def readbytes{vtab}{} = {
 }
 
 # Look up bits from table
-def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void} = {
+def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void)} = {
   x:= *u8~~x0
   t:= *TI~~tab
   r:= *u64~~r0
@@ -124,7 +124,7 @@ def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void} = {
     x+=k; rem-=k; ++r
   }
 }
-def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & simd_bittab} = {
+def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void) if simd_bittab} = {
   def {bitsel, _} = bittab_selector{readbytes{*VI~~tab}}
   def k = vcount{VI}
   @for (x in *VI~~x0, r in *ty_u{k}~~r0 over cdiv{n,k}) r = bitsel{x}
@@ -139,7 +139,7 @@ def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & simd_bittab} = {
 # - 'mask':   Mark Firsts of x0
 # - 'unique': Deduplicate of x0
 # - 'index':  First index of value x at r0+x
-def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
+def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
   def rbit = mode == 'mask'
   def rval = mode == 'unique'
   def rind = mode == 'index'
@@ -291,15 +291,15 @@ def acc{unr, init:T} = {
   def op{S=='get'} = a0v
   def op{S=='tr', F} = { a0v = tree_fold{F, a1} }
   def op{S=='upd', is, F} = {
-    if (tuplen{is}==1) a0 = F{a0}
+    if (length{is}==1) a0 = F{a0}
     else               a1 = F{a1}
   }
 }
-def isI64{x:T & eltype{T}==f64 & hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
-def isI64{x:T & eltype{T}==f64 & hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
+def isI64{x:T if eltype{T}==f64 and hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
+def isI64{x:T if eltype{T}==f64 and hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
 def maskBlend{b:T, x:T, M} = x
-def maskBlend{b:T, x:T, M & M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
+def maskBlend{b:T, x:T, M if M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
@@ -600,7 +600,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
 
 def try_vec_memb{..._} = {}
 def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
-                 & hasarch{'SSE4.2'} & T==u32} = {
+                 if hasarch{'SSE4.2'} and T==u32} = {
   # Hash h wants bin h>>sh, so the offset for h in slot i is (in infite-precision ints)
   # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
   # We maintain io = (i+1)<<sh-1

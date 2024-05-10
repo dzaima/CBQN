@@ -2,9 +2,9 @@ include './base'
 include 'util/tup'
 include './vecfold'
 
-if (hasarch{'SSE2'}) {
+if_inline (hasarch{'SSE2'}) {
   fn sum_vec{T}(v:T) = vfold{+, fold{+, unpackQ{v, T**0}}}
-  def fold_addw{v:T & eltype{T}==i8} = sum_vec{T}(v)
+  def fold_addw{v:T if eltype{T}==i8} = sum_vec{T}(v)
 }
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
@@ -46,7 +46,7 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
       total := trunc{usz, r0}    # To compute last count
       def count_each{js, num} = {
         j := @collect (k to num) trunc{T, js+k}
-        c := copy{tuplen{j}, [vec]uT ** 0}
+        c := copy{length{j}, [vec]uT ** 0}
         e := each{{j}=>V**j, j}
         @for (xv over b) each{{c,e} => c -= xv == e, c, e}
         def add_sum{c, j} = {

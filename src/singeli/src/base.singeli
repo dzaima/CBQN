@@ -18,40 +18,40 @@ def istup   = ktup
 
 def isunsigned{T} = isint{T} & ~issigned{T}
 
-def isvec {T} = 0; def isvec {T & istype{T}} = same{typekind{T},'vector'}
-def isprim{T} = 0; def isprim{T & istype{T}} = same{typekind{T},'primitive'}
-def isptr {T} = 0; def isptr {T & istype{T}} = same{typekind{T},'pointer'}
+def isvec {T} = 0; def isvec {T if istype{T}} = same{typekind{T},'vector'}
+def isprim{T} = 0; def isprim{T if istype{T}} = same{typekind{T},'primitive'}
+def isptr {T} = 0; def isptr {T if istype{T}} = same{typekind{T},'pointer'}
 def elwidth{T} = width{eltype{T}}
 
 oper &~ andnot infix none 35
-def andnot{a, b & anyNum{a} & anyNum{b}} = a & ~b
+def andnot{a, b if anyNum{a} and anyNum{b}} = a & ~b
 
 
 
-def load{p:P,  n    & isvec{eltype{P}}} = assert{0}
-def store{p:P, n, v & isvec{eltype{P}}} = assert{0}
-def load{p:P & isptr{P}} = load{p, 0}
-# def store{p:P, v & isptr{P}} = store{p, 0, v}
-def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
-def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
-def loadu{p:T               & issigned{eltype{T}}} = loadu {*ty_u{eltype{T}} ~~ p}
-def storeu{p:T, v:eltype{T} & issigned{eltype{T}}} = storeu{*ty_u{eltype{T}} ~~ p, ty_u{v}}
-def loadu{p:T               & elwidth{T}==8} = load{p}
-def storeu{p:T, v:eltype{T} & elwidth{T}==8} = store{p, v}
+def load{p:P,  n    if isvec{eltype{P}}} = assert{0}
+def store{p:P, n, v if isvec{eltype{P}}} = assert{0}
+def load{p:P if isptr{P}} = load{p, 0}
+# def store{p:P, v if isptr{P}} = store{p, 0, v}
+def loadu{p:T                 if isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
+def storeu{p:T, v:(eltype{T}) if isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
+def loadu{p:T                 if issigned{eltype{T}}} = loadu {*ty_u{eltype{T}} ~~ p}
+def storeu{p:T, v:(eltype{T}) if issigned{eltype{T}}} = storeu{*ty_u{eltype{T}} ~~ p, ty_u{v}}
+def loadu{p:T                 if elwidth{T}==8} = load{p}
+def storeu{p:T, v:(eltype{T}) if elwidth{T}==8} = store{p, v}
 
 
-def reinterpret{T, x:X & T==X} = x
+def reinterpret{T, x:X if T==X} = x
 def exportN{f, ...ns} = each{export{.,f}, ns}
-def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
+def exportT{name, fs} = { v:*type{select{fs,0}} = fs; export{name, v} }
 
 
 # hints
-def rare{x & knum{x}} = x
-def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
-def assert{x & x==0} = assert{'failed assertion'}
-def assert{x & x==1} = 1
+def rare{x if knum{x}} = x
+def rare{x:(u1)} = emit{u1, '__builtin_expect', x, 0}
+def assert{x if x==0} = assert{'failed assertion'}
+def assert{x if x==1} = 1
 def unreachable{} = emit{void, 'si_unreachable'}
-def assert{x:u1} = { if (not x) emit{void, 'si_unreachable'} }
+def assert{x:(u1)} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
 def oneVal{{h, ...t}} = {
@@ -65,24 +65,24 @@ def anyNum{x} = isconst{x} | knum{x}
 def anyNum{x:T} = isprim{T}
 
 def anyInt{x} = 0
-def anyInt{x & knum{x}} = (x>>0) == x
-def anyInt{x & isreg{x}|isconst{x}} = isint{x}
+def anyInt{x if knum{x}} = (x>>0) == x
+def anyInt{x if isreg{x}|isconst{x}} = isint{x}
 
 # vector width/type checks
-def w64 {T}   = 0; def w64 {T   & isvec{T}} = width{T}==64
-def w128{T}   = 0; def w128{T   & isvec{T}} = width{T}==128
-def w256{T}   = 0; def w256{T   & isvec{T}} = width{T}==256
-def w64 {T,w} = 0; def w64 {T,w & w64{T}}   = elwidth{T}==w
-def w128{T,w} = 0; def w128{T,w & w128{T}}  = elwidth{T}==w
-def w256{T,w} = 0; def w256{T,w & w256{T}}  = elwidth{T}==w
+def w64 {T}   = 0; def w64 {T   if isvec{T}} = width{T}==64
+def w128{T}   = 0; def w128{T   if isvec{T}} = width{T}==128
+def w256{T}   = 0; def w256{T   if isvec{T}} = width{T}==256
+def w64 {T,w} = 0; def w64 {T,w if w64{T}}   = elwidth{T}==w
+def w128{T,w} = 0; def w128{T,w if w128{T}}  = elwidth{T}==w
+def w256{T,w} = 0; def w256{T,w if w256{T}}  = elwidth{T}==w
 
 # width+type checks
 def genchk{B, F} = {
   def r{T} = 0
-  def r{T & B{T}} = F{eltype{T}}
+  def r{T if B{T}} = F{eltype{T}}
   def r{T,w} = 0
-  def r{T,w & B{T}} = F{eltype{T}} & (elwidth{T}==w)
-  def r{T & ~isvec{T}} = 0
+  def r{T,w if B{T}} = F{eltype{T}} & (elwidth{T}==w)
+  def r{T if ~isvec{T}} = 0
   r
 }
 def w256i = genchk{w256,      isint};  def w128i = genchk{w128,      isint};  def w64i = genchk{w64,      isint}
@@ -92,14 +92,14 @@ def w256f = genchk{w256,    isfloat};  def w128f = genchk{w128,    isfloat};  de
 
 
 
-def trunc{T, x:U & isint{T} & isint{U} & T<=U} = emit{T, '', x}
-def trunc{T, x & knum{x}} = cast{T, x}
+def trunc{T, x:U if isint{T} and isint{U} and T<=U} = emit{T, '', x}
+def trunc{T, x if knum{x}} = cast{T, x}
 
-def tern{c, T, F & anyInt{c}} = {
+def tern{c, T, F if anyInt{c}} = {
   if(c) T
   else F
 }
-def tern{c, t:T, f:T & anyInt{c}} = {
+def tern{c, t:T, f:T if anyInt{c}} = {
   res:T = f
   if (c) res = t
   res
@@ -111,47 +111,47 @@ def re_el{E, V} = [width{V}/width{E}]E
 def re_el{E, x:V} = re_el{E,V} ~~ x
 
 local def qualChange{q} = {
-  def f{w & knum{w}} = primtype{q, w}
-  def f{T & isprim{T}} = primtype{q, width{T}}
-  def f{T & isvec{T}} = re_el{f{eltype{T}}, T}
+  def f{w if knum{w}} = primtype{q, w}
+  def f{T if isprim{T}} = primtype{q, width{T}}
+  def f{T if isvec{T}} = re_el{f{eltype{T}}, T}
   def f{x:T} = f{T}~~x
 }
 def ty_u = qualChange{'u'}
 def ty_s = qualChange{'i'}
 def ty_f = qualChange{'f'}
 
-def w_n{T, w & isprim{T}} = primtype{quality{T}, w}
-def w_d{T & isprim{T}} = to_w{T, width{T}*2} # double/halve primitive type width
-def w_h{T & isprim{T}} = to_w{T, width{T}/2}
+def w_n{T, w if isprim{T}} = primtype{quality{T}, w}
+def w_d{T if isprim{T}} = to_w{T, width{T}*2} # double/halve primitive type width
+def w_h{T if isprim{T}} = to_w{T, width{T}/2}
 
-def n_d{T & isvec{T}} = [vcount{T}*2](eltype{T}) # double/halve vector count
-def n_h{T & isvec{T}} = [vcount{T}/2](eltype{T})
+def n_d{T if isvec{T}} = [vcount{T}*2](eltype{T}) # double/halve vector count
+def n_h{T if isvec{T}} = [vcount{T}/2](eltype{T})
 
-def el_d{T & isvec{T}} = [vcount{T}](w_d{eltype{T}}) # double/halve element width, preserving count
-def el_h{T & isvec{T}} = [vcount{T}](w_h{eltype{T}})
+def el_d{T if isvec{T}} = [vcount{T}](w_d{eltype{T}}) # double/halve element width, preserving count
+def el_h{T if isvec{T}} = [vcount{T}](w_h{eltype{T}})
 
-def el_m{T & isvec{T}} = re_el{w_d{eltype{T}}, T};  def el_m{x:T} = re_el{T}~~x # double/halve element width, preserving width
-def el_s{T & isvec{T}} = re_el{w_h{eltype{T}}, T};  def el_s{x:T} = re_el{T}~~x
+def el_m{T if isvec{T}} = re_el{w_d{eltype{T}}, T};  def el_m{x:T} = re_el{T}~~x # double/halve element width, preserving width
+def el_s{T if isvec{T}} = re_el{w_h{eltype{T}}, T};  def el_s{x:T} = re_el{T}~~x
 
 # type stats
-def minvalue{T & isunsigned{T}} = 0
-def maxvalue{T & isunsigned{T}} = (1<<width{T})-1
-def minvalue{T & issigned{T}} = - (1<<(width{T}-1))
-def maxvalue{T & issigned{T}} = (1<<(width{T}-1))-1
+def minvalue{T if isunsigned{T}} = 0
+def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
+def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
+def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 
 
 
 
 # tuple operations
-def iota{n & knum{n}} = range{n}
-def broadcast{T, v & isprim{T}} = v
-def broadcast{n, v & knum{n}} = each{{_}=>v, range{n}}
-def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
+def iota{n if knum{n}} = range{n}
+def broadcast{T, v if isprim{T}} = v
+def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
+def collect{vars,begin,end,iter if knum{begin} and knum{end}} = {
   each{iter{., vars}, range{end-begin}+begin}
 }
 
 # convert tuple to number in little-endian base b
-def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
+def base{b,l} = if (0==length{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
 
 
 
@@ -162,7 +162,7 @@ def fast_BMI2{} = if (SLOW_PDEP) 0 else hasarch{'BMI2'}
 
 # test if vector has a specific width & element type
 def lvec{T, n, w} = 0
-def lvec{T, n, w & isvec{T} & vcount{T}==n & elwidth{T}==w} = 1
+def lvec{T, n, w if isvec{T} and vcount{T}==n and elwidth{T}==w} = 1
 
 # base cases
 def {
@@ -176,8 +176,8 @@ def {
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
-def homMask{...vs & tuplen{vs}>1} = {
-  def n = tuplen{vs}
+def homMask{...vs if length{vs}>1} = {
+  def n = length{vs}
   def T = oneType{vs}
   def RT = ty_u{max{8,vcount{T}*n}}
   def a = promote{RT, homMask{...slice{vs,0,n/2}}}
@@ -185,13 +185,13 @@ def homMask{...vs & tuplen{vs}>1} = {
   (b<<(n/2 * vcount{T})) | a
 }
 
-if (hasarch{'X86_64'}) {
+if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
   include './sse2'
   include './sse'
   include './avx'
   include './avx2'
-} else if (hasarch{'AARCH64'}) {
+} else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
   include './neon'
 } else {
@@ -204,15 +204,15 @@ def mzipHi{a:T, b:T} = el_m{T} ~~ zipHi{a, b}
 def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}
 
-def widen{T, x:X & T==X} = x
-def narrow{T, x:X & T==eltype{X}} = x
-def undefPromote{T, x:X & T==X} = x
-def cvt{T, x:X & T==eltype{X}} = x
+def widen{T, x:X if T==X} = x
+def narrow{T, x:X if T==eltype{X}} = x
+def undefPromote{T, x:X if T==X} = x
+def cvt{T, x:X if T==eltype{X}} = x
 
-def broadcast{T, v & isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
-def make{T, ...xs & isvec{T}} = vec_make{T, ...xs}
-def iota{T & isvec{T}} = make{T, ...iota{vcount{T}}}
-def absu{a:T & isvec{T}} = ty_u{abs{a}}
+def broadcast{T, v if isvec{T}} = vec_broadcast{T, promote{eltype{T},v}}
+def make{T, ...xs if isvec{T}} = vec_make{T, ...xs}
+def iota{T if isvec{T}} = make{T, ...iota{vcount{T}}}
+def absu{a:T if isvec{T}} = ty_u{abs{a}}
 
 def floor = __floor
 def ceil = __ceil
@@ -226,29 +226,29 @@ def sqrt = __sqrt
 
 
 # more arith
-def min{a, b & anyNum{a} & anyNum{b}} = tern{a<b, a, b}
-def max{a, b & anyNum{a} & anyNum{b}} = tern{a>b, a, b}
+def min{a, b if anyNum{a} and anyNum{b}} = tern{a<b, a, b}
+def max{a, b if anyNum{a} and anyNum{b}} = tern{a>b, a, b}
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
-def cdiv{a,b & knum{a} & knum{b}} = ceil{a/b}
-def popc{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_popcountll', x}
-def popc{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_popcount', x}
-def ctz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_ctzll', x}
-def ctz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_ctz', x}
-def clz{x:T & isint{T} & width{T}==64} = emit{ux, '__builtin_clzll', x}
-def clz{x:T & isint{T} & width{T}<=32} = emit{ux, '__builtin_clz', x}
+def cdiv{a,b if knum{a} and knum{b}} = ceil{a/b}
+def popc{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_popcountll', x}
+def popc{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_popcount', x}
+def ctz{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_ctzll', x}
+def ctz{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_ctz', x}
+def clz{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_clzll', x}
+def clz{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_clz', x}
 # count-leading-zeros complement, less type-dependent
-def clzc{x:T & isint{T} & width{T}==64} = 64-clz{x}
-def clzc{x:T & isint{T} & width{T}<=32} = 32-clz{x}
+def clzc{x:T if isint{T} and width{T}==64} = 64-clz{x}
+def clzc{x:T if isint{T} and width{T}<=32} = 32-clz{x}
 
 def ceil_log2{n} = clzc{n-1}
 
-def truncBits{n, v & n<=8}  = cast_i{u8, v}
-def truncBits{n, v & n==16} = cast_i{u16, v}
-def truncBits{n, v & n==32} = cast_i{u32, v}
-def truncBits{n, v & n==64} = cast_i{u64, v}
+def truncBits{n, v if n<=8}  = cast_i{u8, v}
+def truncBits{n, v if n==16} = cast_i{u16, v}
+def truncBits{n, v if n==32} = cast_i{u32, v}
+def truncBits{n, v if n==64} = cast_i{u64, v}
 
 # base-2 log of a constant power of two
-def lb{n & knum{n} & (n>>1<<1) == n & n>0} = lb{n>>1}+1
+def lb{n if knum{n} and (n>>1<<1) == n and n>0} = lb{n>>1}+1
 def lb{n==1} = 0
 
 def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
@@ -256,11 +256,11 @@ def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
 def bit {k,x} = x &  (1<<k)      # get the k-th bit
 
 # range logic
-def inRangeLen{x:TS, start, count & issigned{eltype{TS}}} = { # ∊ [start;start+count)
+def inRangeLen{x:TS, start, count if issigned{eltype{TS}}} = { # ∊ [start;start+count)
   def TU = ty_u{TS}
   (TU~~(x-TS**start))  <  TU**count
 }
-def inRangeLen{x:TU, start, count & isunsigned{eltype{TU}}} = { # ∊ [start;start+count)
+def inRangeLen{x:TU, start, count if isunsigned{eltype{TU}}} = { # ∊ [start;start+count)
   def TS = ty_s{TU}
   def h = 1 << (elwidth{TU}-1)
   (TS~~(x-TU**(start-h)))  <  TS**(count-h)
@@ -270,8 +270,8 @@ def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;
 
 
 
-def load{p,i & kgen{p}} = p{i}
-def store{p,i,x & kgen{p}} = p{i,x}
+def load{p,i if kgen{p}} = p{i}
+def store{p,i,x if kgen{p}} = p{i,x}
 def tptr{l,s} = { # create "pointer" generator with given load & store definitions
   def r{i} = l{i}
   def r{i,x} = s{i,x}
@@ -319,17 +319,17 @@ def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defin
 
 
 def tree_fold{F, x} = {
-  def h = tuplen{x}>>1
-  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,tuplen{x}}}}
+  def h = length{x}>>1
+  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,length{x}}}}
 }
 def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
-  def l = tree_fold{max, each{{x} => if(ktup{x}) tuplen{x} else 0, args}}
+  def l = tree_fold{max, each{{x} => if(ktup{x}) length{x} else 0, args}}
   each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
 }
 
-def undef{T, n & istype{T}} = @collect(n) undef{T}
-def undef{Ts & istup{Ts}} = each{undef, Ts}
+def undef{T, n if istype{T}} = @collect(n) undef{T}
+def undef{Ts if istup{Ts}} = each{undef, Ts}
 def undef{x:T} = undef{T}
-def undef{T & istype{T}} = { reg:=undefined{T} }
+def undef{T if istype{T}} = { reg:=undefined{T} }

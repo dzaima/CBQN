@@ -1,2 +1,2 @@
-def clmul{a:T, b:T, imm & w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
+def clmul{a:T, b:T, imm if w128i{T}} = emit{T, '_mm_clmulepi64_si128', a, b, imm}
 def clmul{a, b} = clmul{a, b, 0}

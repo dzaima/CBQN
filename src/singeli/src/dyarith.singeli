@@ -6,15 +6,15 @@ include './mask'
 include 'util/tup'
 
 
-def rootty{T & isprim{T}} = T
-def rootty{T & isvec{T}} = eltype{T}
+def rootty{T if isprim{T}} = T
+def rootty{T if isvec{T}} = eltype{T}
 
 def is_s{X} = issigned{rootty{X}}
 def is_u{X} = isunsigned{rootty{X}}
 
 def ty_sc{O, R} = R # keep floats as-is
-def ty_sc{O, R & is_s{O} & is_u{R}} = ty_s{R}
-def ty_sc{O, R & is_u{O} & is_s{R}} = ty_u{R}
+def ty_sc{O, R if is_s{O} and is_u{R}} = ty_s{R}
+def ty_sc{O, R if is_u{O} and is_s{R}} = ty_u{R}
 
 def bqn_or{a, b} = (a+b)-(a*b)
 
@@ -22,18 +22,18 @@ def bqn_or{a, b} = (a+b)-(a*b)
 # + & -
 def arithChk1{F==__add, M, w:T, x:T, r:T} = tup{'topAny', M{(w^r) & (x^r)}}
 def arithChk1{F==__sub, M, w:T, x:T, r:T} = tup{'topAny', M{(w^x) & (w^r)}}
-def arithChk1{F==__add, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', adds{w,x}, r}
-def arithChk1{F==__sub, M, w:T, x:T, r:T & isvec{T} & tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', subs{w,x}, r}
+def arithChk1{F==__add, M, w:T, x:T, r:T if isvec{T} and tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', adds{w,x}, r}
+def arithChk1{F==__sub, M, w:T, x:T, r:T if isvec{T} and tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', subs{w,x}, r}
 
 
 
-def arithChk2{F, M, w:T, x:T & is_s{T} & (same{F,__add} | same{F,__sub})} = {
+def arithChk2{F, M, w:T, x:T if is_s{T} and (same{F,__add} or same{F,__sub})} = {
   r:= F{w,x}
   tup{r, arithChk1{F, M, w, x, r}}
 }
 
 # ×
-def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i8==eltype{T} & hasarch{'X86_64'}} = {
+def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i8==eltype{T} and hasarch{'X86_64'}} = {
   def wp = unpackQ{w, T ~~ (T**0 > w)}
   def xp = unpackQ{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
@@ -46,12 +46,12 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i8==eltype{T} & hasarc
     tup{packQ{rp}, tup{'~andAllZero', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
-def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i16==eltype{T} & hasarch{'X86_64'}} = {
+def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i16==eltype{T} and hasarch{'X86_64'}} = {
   rl:= __mul{w,x}
   rh:=  mulh{w,x}
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
-def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasarch{'X86_64'}} = {
+def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i32==eltype{T} and hasarch{'X86_64'}} = {
   max:= re_el{f32, (ty_u{T})**0x4efffffe}
   def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
@@ -68,7 +68,7 @@ def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & i32==eltype{T} & hasar
   # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'homAny', tree_fold{|,bad}}} this doesn't use M
 }
 
-def arithChk2{F, M, w:T, x:T & same{F,__mul} & isvec{T} & hasarch{'AARCH64'}} = {
+def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and hasarch{'AARCH64'}} = {
   def r12 = mulw{w, x}
   rl:= packLo{r12}
   rh:= packHi{r12}
@@ -82,24 +82,24 @@ def runner{u, R, F} = {
   
   def run{F, M, w, x} = { show{'todo', c, R, F, w, x}; emit{void,'__builtin_abort'}; w }
   
-  def run{F, M, w:T, x:T & c & R!=u32} = {
+  def run{F, M, w:T, x:T if c and R!=u32} = {
     arithChk2{F, M, w, x}
   }
   
-  def run{F, M, w, x & u} = tup{F{w, x}, tup{'none'}} # trivial base implementation
+  def run{F, M, w, x if u} = tup{F{w, x}, tup{'none'}} # trivial base implementation
   
   def toggleTop{x:X} = x ^ X**(1<<(elwidth{X}-1))
-  def run{F==__sub, M, w:VU, x:VU & c & is_u{VU}} = { # 'b'-'a'
+  def run{F==__sub, M, w:VU, x:VU if c and is_u{VU}} = { # 'b'-'a'
     def VS = ty_s{VU}
     run{F, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
   }
-  def run{F, M, w:VU, x:VS & c & is_u{VU} & is_s{VS}} = { # 'a'+3, 'a'-3
+  def run{F, M, w:VU, x:VS if c and is_u{VU} and is_s{VS}} = { # 'a'+3, 'a'-3
     def {res, ok} = run{F, M, VS~~toggleTop{w}, x}
     tup{toggleTop{VU~~res}, ok}
   }
-  def run{F==__add, M, w:VS, x:VU & c & is_s{VS} & is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
+  def run{F==__add, M, w:VS, x:VU if c and is_s{VS} and is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
   
-  def run{F, M, w:VW, x:VX & c & R==u32 & (same{F,__add} | same{F,__sub})} = { # 'a'+1, 'a'-1
+  def run{F, M, w:VW, x:VX if c and R==u32 and (same{F,__add} | same{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
     tup{re_el{R, VW}~~r, tup{'homAny', M{r > type{r}**1114111}}}
   }
@@ -107,11 +107,11 @@ def runner{u, R, F} = {
 }
 
 # homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
-def runChecks_any{F, vals} = { F{tree_fold{|, each{tupsel{1,.}, vals}}} }
+def runChecks_any{F, vals} = { F{tree_fold{|, each{select{.,1}, vals}}} }
 def runChecks{type=='homAny', vals, M} = runChecks_any{homAny, vals}
 def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
-def runChecks{type=='~andAllZero', vals, M & ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
+def runChecks{type=='~andAllZero', vals, M if ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
 def runChecks{type=='anyne',  vals, M} = {
   def i{vals} = {
     def {_,xs,ys} = flip{vals}
@@ -124,8 +124,8 @@ def runChecks{type=='anyne',  vals, M} = {
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
   def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
-  def ctype = oneVal{each{tupsel{0,.}, checks}}
-  if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0,is}*vcount{TY}}
+  def ctype = oneVal{each{select{.,0}, checks}}
+  if (rare{runChecks{ctype, checks, M}}) overflow{select{is,0}*vcount{TY}}
   each{{c} => TY~~c, values}
 }
 
@@ -182,12 +182,12 @@ fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 
   
   def run = runner{(R==f64) | (mode>=2), R, F}
   def getW{v} = trunc{W, v}
-  def getW{v & W==f64} = interp_f64{v}
+  def getW{v if W==f64} = interp_f64{v}
   cw:= ty_sc{W, TY}**getW{w}
   
   def unr = tern{mode>=2, 2, 1} # same as in arithAAimpl
   @muLoop{bulk, unr}(sr in tup{'g',*R~~r}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
-    def cws = tuplen{is}**cw
+    def cws = length{is}**cw
     sr{arithProcess{F, run, overflow, M, is, tern{swap,cx,cws}, tern{swap,cws,cx}, TY}}
   }
   

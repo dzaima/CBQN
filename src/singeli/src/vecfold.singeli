@@ -1,6 +1,6 @@
 # Fold associative/commutative operation across a register
 
-def vfold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
+def vfold{F, x:T if w128{T} and hasarch{'X86_64'}} = {
   c:= x
   def EW = elwidth{T}
   if (EW<=64) c = F{c, shuf{[4]u32, c, 4b1032}}
@@ -9,4 +9,4 @@ def vfold{F, x:T & w128{T} & hasarch{'X86_64'}} = {
   if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{eltype{T}, v}, cast_i{eltype{T}, v>>8}} }
   else extract{c, 0}
 }
-def vfold{F, x:T & w256{T} & hasarch{'X86_64'}} = vfold{F, F{half{x, 0}, half{x, 1}}}
+def vfold{F, x:T if w256{T} and hasarch{'X86_64'}} = vfold{F, F{half{x, 0}, half{x, 1}}}

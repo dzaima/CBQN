@@ -3,25 +3,25 @@ local def maskInit1{w} = {
     merge{(w/8-1)**255, (1<<x)-1, (w/8)**0}
   }, iota{8}}}
 }
-mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n & width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
-mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n & width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
+mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
+mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n if width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
 mask256:*i64 = merge{4 ** -1,  4 ** 0}
 local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
 
 # get homogeneous mask of first n items; 0 ≤ n ≤ vcount{T}
-def maskOf{T,n & width{T}==256} = maskOfImpl{T, n, 256}
-def maskOf{T,n & width{T}==128} = maskOfImpl{T, n, 128}
-def maskOf{T,n & width{T}== 64} = maskOfImpl{T, n,  64}
+def maskOf{T,n if width{T}==256} = maskOfImpl{T, n, 256}
+def maskOf{T,n if width{T}==128} = maskOfImpl{T, n, 128}
+def maskOf{T,n if width{T}== 64} = maskOfImpl{T, n,  64}
 
-def anyne{x:T, y:T, M & M{0}==0 & isvec{T}} = ~homAll{x==y}
-def anyne{x:T, y:T, M & M{0}==1 & isvec{T}} =  homAny{M{x!=y}}
-def anyne{x:T, y:T, M & M{0}==0 & anyInt{x}} = x!=y
-def anyne{x:T, y:T, M & M{0}==1 & anyInt{x}} = M{x^y} != 0
+def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~homAll{x==y}
+def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  homAny{M{x!=y}}
+def anyne{x:T, y:T, M if M{0}==0 and anyInt{x}} = x!=y
+def anyne{x:T, y:T, M if M{0}==1 and anyInt{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
-def anynePositive{x:T, y:T, M & M{0}==0} = anyne{x, y, M}
-def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T}} = {
+def anynePositive{x:T, y:T, M if M{0}==0} = anyne{x, y, M}
+def anynePositive{x:T, y:T, M if M{0}==1 and isvec{T}} = {
   def {n,m} = homMaskX{x==y}
   def E = tern{type{m}==u64, u64, u32}
   (promote{E,~m} << (width{E}-M{'count'}*n)) != 0
@@ -30,8 +30,8 @@ def anynePositive{x:T, y:T, M & M{0}==1 & isvec{T}} = {
 def maskNone{x} = x
 def maskNone{x, mode=='all bits zeroes'} = andAllZero{x, x}
 def maskAfter{n} = {
-  def mask{x:X & isvec{X}} = x & (X~~maskOf{X,n})
-  def mask{x:X & anyInt{x}} = x & ((1<<n) - 1)
+  def mask{x:X if isvec{X}} = x & (X~~maskOf{X,n})
+  def mask{x:X if anyInt{x}} = x & ((1<<n) - 1)
   def mask{x:X, mode=='all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
   def mask{X, mode=='to sign bits'} = maskOf{X,n}
   def mask{X, mode=='to homogeneous bits'} = maskOf{X,n}
@@ -42,7 +42,7 @@ def maskAfter{n} = {
 
 
 
-def loadLowBatch{T, ptr:P, w, n & eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/elwidth{P})), w}
+def loadLowBatch{T, ptr:P, w, n if eltype{P}==eltype{T}} = loadLow{*T ~~ (ptr + n*(w/elwidth{P})), w}
 
 # store vcount{T} items into the n'th batch of ptr elements, compressing the items if needed; masked by M
 def storeBatch{ptr:P, n, x:T, M} = {
@@ -63,18 +63,18 @@ def loadBatch{ptr:P, n, T} = {
   widen{T, loadLow{*re_el{E0, T} ~~ rpos, vcount{T}*width{E0}}}
 }
 
-def loadBatch {ptr:P, ns, T     & istup{ns}} = each{{n  } => loadBatch {ptr, n, T   }, ns}
-def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, x, M}, ns, xs}
+def loadBatch {ptr:P, ns, T     if istup{ns}} = each{{n  } => loadBatch {ptr, n, T   }, ns}
+def storeBatch{ptr:P, ns, xs, M if istup{ns}} = each{{n,x} => storeBatch{ptr, n, x, M}, ns, xs}
 
 
 
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got ',p}}
-def hCast{T,p:P & same{T,eltype{P}}} = p
-def hCast{T,p:P & same{P,*void}} = *T~~p
+def hCast{T,p:*T} = p
+def hCast{T,p:(*void)} = *T~~p
 
 def mlExec{i, iter, vars0, bulk, M} = {
-  def vproc{p:P & isptr{P}} = p
+  def vproc{p:P if isptr{P}} = p
   def vproc{('m')} = tptr{{_}=>M, '!'}
   
   def vproc{{T,p:P}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
