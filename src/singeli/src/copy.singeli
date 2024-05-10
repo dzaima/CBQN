@@ -3,7 +3,7 @@ include './mask'
 include './cbqnDefs'
 include './bitops'
 
-def copyFromBits{T, loadFn, rp, l:u64} = {
+def copyFromBits{T, loadFn, rp, l:(u64)} = {
   def bulk = vcount{T}
   def TU = ty_u{T}
   

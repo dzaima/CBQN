@@ -32,12 +32,12 @@ def load{p:P,  n    & isvec{eltype{P}}} = assert{0}
 def store{p:P, n, v & isvec{eltype{P}}} = assert{0}
 def load{p:P & isptr{P}} = load{p, 0}
 # def store{p:P, v & isptr{P}} = store{p, 0, v}
-def loadu{p:T               & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
-def storeu{p:T, v:eltype{T} & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
-def loadu{p:T               & issigned{eltype{T}}} = loadu {*ty_u{eltype{T}} ~~ p}
-def storeu{p:T, v:eltype{T} & issigned{eltype{T}}} = storeu{*ty_u{eltype{T}} ~~ p, ty_u{v}}
-def loadu{p:T               & elwidth{T}==8} = load{p}
-def storeu{p:T, v:eltype{T} & elwidth{T}==8} = store{p, v}
+def loadu{p:T                 & isunsigned{eltype{T}}} = emit{eltype{T}, merge{'loadu_u',fmtnat{elwidth{T}}}, p}
+def storeu{p:T, v:(eltype{T}) & isunsigned{eltype{T}}} = emit{void,     merge{'storeu_u',fmtnat{elwidth{T}}}, p, v}
+def loadu{p:T                 & issigned{eltype{T}}} = loadu {*ty_u{eltype{T}} ~~ p}
+def storeu{p:T, v:(eltype{T}) & issigned{eltype{T}}} = storeu{*ty_u{eltype{T}} ~~ p, ty_u{v}}
+def loadu{p:T                 & elwidth{T}==8} = load{p}
+def storeu{p:T, v:(eltype{T}) & elwidth{T}==8} = store{p, v}
 
 
 def reinterpret{T, x:X & T==X} = x
@@ -47,11 +47,11 @@ def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
 
 # hints
 def rare{x & knum{x}} = x
-def rare{x:u1} = emit{u1, '__builtin_expect', x, 0}
+def rare{x:(u1)} = emit{u1, '__builtin_expect', x, 0}
 def assert{x & x==0} = assert{'failed assertion'}
 def assert{x & x==1} = 1
 def unreachable{} = emit{void, 'si_unreachable'}
-def assert{x:u1} = { if (not x) emit{void, 'si_unreachable'} }
+def assert{x:(u1)} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
 def oneVal{{h, ...t}} = {

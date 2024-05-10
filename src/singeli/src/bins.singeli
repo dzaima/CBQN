@@ -111,7 +111,7 @@ fn write_indices{I,T}(t:*I, w:*T, n:u64) : void = {
 fn write_indices{I,T & width{I}==8}(t:*I, w:*T, n:u64) : void = {
   @for (w over j to n) store{t, w, cast_i{I, j+1}}
 }
-def bins_lookup{I, T, up, w:*T, wn:u64, x:*T, xn:u64, rp:*void} = {
+def bins_lookup{I, T, up, w:*T, wn:(u64), x:*T, xn:(u64), rp:(*void)} = {
   # Build table
   def tc = 1<<width{T}
   t0:*I = talloc{I, tc}

@@ -1,4 +1,4 @@
 include 'debug/printf' # printf & lprintf
 
-def assert{x:u1} = { if (not x) emit{void, '__builtin_trap'} }
+def assert{x:(u1)} = { if (not x) emit{void, '__builtin_trap'} }
 def test_assert = assert # test_assert is guaranteed to either not exist, or always trap on bad input

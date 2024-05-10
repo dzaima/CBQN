@@ -20,7 +20,7 @@ def scan_core{upd, set, scan, rp:pT, wp:W, s:(usz)} = {
     k = e
   }
 }
-def indrep_by_sum{T, rp:*T, wp, s:(usz), js, inc} = {
+def indrep_by_sum{T, rp:(*T), wp, s:(usz), js, inc} = {
   def scan{ptr, len} = @for (ptr over len) js=ptr+=js
   def scan{ptr, len & width{T}<=32} = {
     def scanfn = merge{'si_scan_pluswrap_u',fmtnat{width{T}}}
@@ -45,7 +45,7 @@ fn ind_by_scan_i32{W}(xv:*void, rp:*i32, s:usz) : void = {
   }
 }
 
-def rep_by_scan{T, wp, xv:*void, rv:*void, s} = {
+def rep_by_scan{T, wp, xv:(*void), rv:(*void), s} = {
   xp := *T~~xv; js := *xp; px := js
   def inc{j} = {sx:=px; px=load{xp,j}; px-sx}
   indrep_by_sum{T, *T~~rv, wp, s, js, inc}
@@ -101,7 +101,7 @@ def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
 rcsh4_dat:*i8 = join{join{each{get_shuf_data{., 4}, rcsh4_dom}}}
 rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 
-def read_shuf_vecs{l, ellw:u64, shp:P} = { # tuple of byte selectors in 1<<ellw
+def read_shuf_vecs{l, ellw:(u64), shp:P} = { # tuple of byte selectors in 1<<ellw
   def V = eltype{P}
   def double{x:X & hasarch{'AVX2'}} = {
     s:=shuf{[4]u64, x, 4b3120}; s+=s
@@ -126,7 +126,7 @@ def read_shuf_vecs{l, ellw:u64, shp:P} = { # tuple of byte selectors in 1<<ellw
   sh
 }
 
-def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:u64} = { # onreps{inputVector, {nextOutputVector} => ...}
+def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:(u64)} = { # onreps{inputVector, {nextOutputVector} => ...}
   def step = vcount{V}
   nv := n / step
   j:u64 = 0
@@ -168,7 +168,7 @@ if (hasarch{'AVX2'}) {
     {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
   }
   
-  def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:u64} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
+  def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:(u64)} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
   
 } else if (hasarch{'AARCH64'}) {
   
@@ -176,7 +176,7 @@ if (hasarch{'AVX2'}) {
     each{{s} => gen{sel{[16]u8, x, s}}, sh}
   }
   
-  def rep_const_shuffle{V, wv==2, xv0:*V, rv0:*V, n:u64} = {
+  def rep_const_shuffle{V, wv==2, xv0:*V, rv0:*V, n:(u64)} = {
     def E = ty_u{eltype{V}}
     rv:= *E~~rv0
     @for (x in *E~~xv0 over i to n) { # autovectorized well enough, probably
@@ -240,7 +240,7 @@ fn rep_const_shuffle_any(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   each{try, rcsh_vals}
 }
 
-def rep_const_broadcast{T, kv, loop, wv:u64, x:*T, r:*T, n:u64} = {
+def rep_const_broadcast{T, kv, loop, wv:(u64), x:*T, r:*T, n:(u64)} = {
   assert{kv > 0}
   def V = [arch_defvw/width{T}]T
   @for (x over n) {

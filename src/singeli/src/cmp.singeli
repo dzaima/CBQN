@@ -4,11 +4,11 @@ include './f64'
 include './bitops'
 
 
-def fillbits{dst:*u64, len:(ux), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
-def fillbits{dst:*u64, len:(ux), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
+def fillbits{dst:(*u64), len:(ux), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
+def fillbits{dst:(*u64), len:(ux), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
 def cmp_err{x} = { emit{void, 'cmp_err'}; return{}; }
 
-fn cmpIX(dst:*u64, len:ux, x:u64, v:u1) : void = {
+fn cmpIX(dst:(*u64), len:ux, x:(u64), v:(u1)) : void = {
   nan:u1 = q_f64{x}
   if (~(nan | q_chr{x})) cmp_err{x}
   fillbits{dst, len, v&~nan, x}
@@ -60,7 +60,7 @@ def pathAS{dst, len, T, op, x & isunsigned{T}} = {
 
 
 
-def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:*u64, len:(ux)} = {
+def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
   def bulk = vcount{VT}*unr
   xi:ux = 0
   

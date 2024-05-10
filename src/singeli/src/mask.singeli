@@ -70,8 +70,8 @@ def storeBatch{ptr:P, ns, xs, M & istup{ns}} = each{{n,x} => storeBatch{ptr, n, 
 
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{show{'expected pointer with element',T,'or void but got ',p}}
-def hCast{T,p:P & same{T,eltype{P}}} = p
-def hCast{T,p:P & same{P,*void}} = *T~~p
+def hCast{T,p:*T} = p
+def hCast{T,p:(*void)} = *T~~p
 
 def mlExec{i, iter, vars0, bulk, M} = {
   def vproc{p:P & isptr{P}} = p

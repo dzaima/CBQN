@@ -40,8 +40,8 @@ def __mul{a:T,b:T & [4]i32==T} = {
 }
 
 # float arith
-def rsqrtE{a:[4]f32} = emit{[4]f32, '_mm_rsqrt_ps', a}
-def   rcpE{a:[4]f32} = emit{[4]f32, '_mm_rcp_ps', a}
+def rsqrtE{a:([4]f32)} = emit{[4]f32, '_mm_rsqrt_ps', a}
+def   rcpE{a:([4]f32)} = emit{[4]f32, '_mm_rcp_ps', a}
 
 # mask stuff
 def andAllZero{x:T, y:T & w128i{T}} = homAll{(x & y) == T**0}
@@ -94,15 +94,15 @@ def widen{T==[2]f64, x:X & w128s{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}
 def widen{T==[2]f64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
 def widen{T==[2]f64, x:X & X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
 
-def narrow{T==i16, x:[4]i32} = packs{x,x}
-def narrow{T==i8,  x:[8]i16} = packs{x,x}
-def narrow{T==u8,  x:[8]u16} = packs{x,x}
-def narrow{T==u16, x:[4]u32} = [8]u16~~shuf{[4]i32, shuf16Hi{shuf16Lo{x, 4b3320}, 4b3320}, 4b3320}
-def narrow{T==i8,  x:[4]i32} = narrow{T, narrow{i16, x}}
-def narrow{T==u8,  x:[4]u32} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{x}}}
-def narrow{T==u8,  x:[2]u64} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{f{x}}}}
-def narrow{T==u16, x:[2]u64} = shuf16Lo{[8]u16~~shuf{[4]i32, x, 4b3320}, 4b3320}
-def narrow{T==u32, x:[2]u64} = [4]u32~~shuf{[4]i32, x, 4b3320}
+def narrow{T==i16, x:([4]i32)} = packs{x,x}
+def narrow{T==i8,  x:([8]i16)} = packs{x,x}
+def narrow{T==u8,  x:([8]u16)} = packs{x,x}
+def narrow{T==u16, x:([4]u32)} = [8]u16~~shuf{[4]i32, shuf16Hi{shuf16Lo{x, 4b3320}, 4b3320}, 4b3320}
+def narrow{T==i8,  x:([4]i32)} = narrow{T, narrow{i16, x}}
+def narrow{T==u8,  x:([4]u32)} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{x}}}
+def narrow{T==u8,  x:([2]u64)} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{f{x}}}}
+def narrow{T==u16, x:([2]u64)} = shuf16Lo{[8]u16~~shuf{[4]i32, x, 4b3320}, 4b3320}
+def narrow{T==u32, x:([2]u64)} = [4]u32~~shuf{[4]i32, x, 4b3320}
 
 def narrow{T, x:X & w128f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
-def narrow{T==i32, x:[2]f64} = emit{[4]i32, '_mm_cvtpd_epi32', x}
+def narrow{T==i32, x:([2]f64)} = emit{[4]i32, '_mm_cvtpd_epi32', x}

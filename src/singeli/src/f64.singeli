@@ -1,15 +1,15 @@
-def ceil{x:f64} = emit{f64, 'ceil', x}
-def floor{x:f64} = emit{f64, 'floor', x}
-def abs{x:f64} = emit{f64, 'fabs', x}
+def ceil{x:(f64)} = emit{f64, 'ceil', x}
+def floor{x:(f64)} = emit{f64, 'floor', x}
+def abs{x:(f64)} = emit{f64, 'fabs', x}
 
 def NaN = 0.0/0.0
-def isNaN{x:f64} = x!=x
-def qNaN{x:u64} = (x<<1) == (cast{u64, 0x8ff8} << 49)
+def isNaN{x:(f64)} = x!=x
+def qNaN{x:(u64)} = (x<<1) == (cast{u64, 0x8ff8} << 49)
 
-def ftrunc{T, x:f64 &  i8==T} = emit{i8,  '', x}
-def ftrunc{T, x:f64 & i16==T} = emit{i16, '', x}
-def ftrunc{T, x:f64 & i32==T} = emit{i32, '', x} # maybe explicitly use _mm_cvtsd_si32?
-def ftrunc{T, x:f64 & i64==T} = emit{i64, '', x}
+def ftrunc{T, x:(f64) &  i8==T} = emit{i8,  '', x}
+def ftrunc{T, x:(f64) & i16==T} = emit{i16, '', x}
+def ftrunc{T, x:(f64) & i32==T} = emit{i32, '', x} # maybe explicitly use _mm_cvtsd_si32?
+def ftrunc{T, x:(f64) & i64==T} = emit{i64, '', x}
 def fext{x} = emit{f64, '', x}
 
-def interp_f64{x:u64} = emit{f64, 'interp_f64', x}
+def interp_f64{x:(u64)} = emit{f64, 'interp_f64', x}

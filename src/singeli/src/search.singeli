@@ -18,7 +18,7 @@ def findFirst{C, M, F, ...v1} = {
   F{...args}
 }
 
-def search{E, x, n:u64, OP} = {
+def search{E, x, n:(u64), OP} = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
   def end = makeBranch{
@@ -111,7 +111,7 @@ def readbytes{vtab}{} = {
 }
 
 # Look up bits from table
-def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void} = {
+def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void)} = {
   x:= *u8~~x0
   t:= *TI~~tab
   r:= *u64~~r0
@@ -124,7 +124,7 @@ def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void} = {
     x+=k; rem-=k; ++r
   }
 }
-def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & simd_bittab} = {
+def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void) & simd_bittab} = {
   def {bitsel, _} = bittab_selector{readbytes{*VI~~tab}}
   def k = vcount{VI}
   @for (x in *VI~~x0, r in *ty_u{k}~~r0 over cdiv{n,k}) r = bitsel{x}
@@ -139,7 +139,7 @@ def bittab_lookup{x0:*void, n:u64, r0:*void, tab:*void & simd_bittab} = {
 # - 'mask':   Mark Firsts of x0
 # - 'unique': Deduplicate of x0
 # - 'index':  First index of value x at r0+x
-def do_bittab{x0:*void, n:u64, tab:*void, u:u8, t, mode, r0} = {
+def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
   def rbit = mode == 'mask'
   def rval = mode == 'unique'
   def rind = mode == 'index'

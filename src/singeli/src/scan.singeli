@@ -12,7 +12,7 @@ fn scan_scal{T, op}(x:*T, r:*T, len:u64, m:T) : void = {
   @for (x, r over len) r = m = op{m, x}
 }
 
-def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
+def scan_loop{T, init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   def step = arch_defvw/width{T}
   def V = [step]T
   p:= V**init
@@ -23,7 +23,7 @@ def scan_loop{T, init, x:*T, r:*T, len:u64, scan, scan_last} = {
   q:= len & (step-1)
   if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
 }
-def scan_post{T, init, x:*T, r:*T, len:u64, op, pre} = {
+def scan_post{T, init, x:*T, r:*T, len:(u64), op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
@@ -149,7 +149,7 @@ fn bcs{T & hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
   def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, T**0}
   
-  def sumlanes{x:u32} = {
+  def sumlanes{x:(u32)} = {
     b:= [8]u32**x >> make{[8]u32, 4*tail{1, iota{8}}}
     s:= sel8{[32]u8~~b, ii32>>3 + bit{2}}
     p:= s & make{[32]u8, (1<<(1+tail{2})) - 1}  # Prefixes
@@ -157,12 +157,12 @@ fn bcs{T & hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
     d+= sel8{d, bit{2}*(1+bit{3}>>2)-1}
     d + sel8{d, bit{3}-1}
   }
-  def step{x:u32, i, store1} = {
+  def step{x:(u32), i, store1} = {
     d:= sumlanes{x}
     if (w==8) d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 4b1100}
     j:= (w/8)*i
     def out{v, k} = each{out, widen{v}, 2*k+iota{2}}
-    def out{v0:[vl]T, k} = {
+    def out{v0:([vl]T), k} = {
       v := V~~v0 + c
       # Update carry at the lane boundary
       if (w!=32 or tail{1,k}) {
@@ -239,7 +239,7 @@ fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
   len
 }
 # Sum as many vector registers as possible; modifies c and i
-def simd_plus_scan_part{X, R}{x:*X, c:(R), r:*R, len:u64, i:u64} = {
+def simd_plus_scan_part{X, R}{x:(*X), c:(R), r:(*R), len:(u64), i:(u64)} = {
   def b = max{width{R}/2, width{X}}
   def bulk = arch_defvw/b
   

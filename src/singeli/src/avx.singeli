@@ -20,8 +20,8 @@ def unord{a:T,b:T & T==[8]f32} = f32cmpAVX{a,b,3}
 def unord{a:T,b:T & T==[4]f64} = f64cmpAVX{a,b,3}
 
 # f32 arith
-def rsqrtE{a:[8]f32} = emit{[8]f32, '_mm256_rsqrt_ps', a}
-def   rcpE{a:[8]f32} = emit{[8]f32, '_mm256_rcp_ps', a}
+def rsqrtE{a:([8]f32)} = emit{[8]f32, '_mm256_rsqrt_ps', a}
+def   rcpE{a:([8]f32)} = emit{[8]f32, '_mm256_rcp_ps', a}
 
 # conversion
 def half{x:T, i & w256{T} & knum{i}} = n_h{T} ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
