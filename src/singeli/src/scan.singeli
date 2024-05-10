@@ -35,7 +35,7 @@ def scan_post{T, init, x:*T, r:*T, len:(u64), op, pre} = {
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
 def scan_idem = scan_scal
-fn scan_idem{T, op & hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
+fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   scan_post{T, init, x, r, len, op, make_scan_idem{T, op}}
 }
 
@@ -54,7 +54,7 @@ export{'si_scan_min_i32', scan_idem_id{i32, min}}; export{'si_scan_max_i32', sca
 # Assumes identity is 0
 def scan_assoc{op} = {
   def shl0{v, k} = shl{[16]u8, v, k/8} # Lanewise
-  def shl0{v:V, k==128 & hasarch{'AVX2'}} = {
+  def shl0{v:V, k==128 if hasarch{'AVX2'}} = {
     # Broadcast end of lane 0 to entire lane 1
     l:= V~~make{[8]i32,0,0,0,-1,0,0,0,0} & spread{v}
     sel{[8]i32, l, make{[8]i32, 3*(3<iota{8})}}
@@ -65,7 +65,7 @@ def scan_plus = scan_assoc{+}
 
 # Associative scan
 def scan_assoc_0 = scan_scal
-fn scan_assoc_0{T, op & hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
+fn scan_assoc_0{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   # Prefix op on entire AVX register
   scan_post{T, init, x, r, len, op, scan_plus}
 }
@@ -80,7 +80,7 @@ fn scan_neq{}(p:u64, x:*u64, r:*u64, nw:u64) : void = {
     p = -(r>>63) # repeat sign bit
   }
 }
-fn clmul_scan_ne_any{& hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
+fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
@@ -101,10 +101,10 @@ fn clmul_scan_ne_any{& hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64,
     storeLow{rv+e, 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
   }
 }
-fn scan_neq{& hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{if hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
   clmul_scan_ne_any{}(*void~~x, *void~~r, init, nw, -(u64~~1))
 }
-fn scan_neq{& hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
   def V = [8]u64
   def sse{a} = make{[2]u64, a, 0}
   carry := sse{init}
@@ -136,7 +136,7 @@ fn bcs{T}(x:*u64, r:*T, l:u64) : void = {
   c:T = 0
   @for (r over i to l) { c+= cast_i{T, bitp_get{x,i}}; r = c }
 }
-fn bcs{T & hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
+fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   def U = ty_u{T}
   def w = width{T}
   def vl= 256 / w
@@ -202,7 +202,7 @@ def addChk{a:T, b:T} = {
   def bad = emit{u1, '__builtin_add_overflow', a, b, mem}
   tup{bad, load{mem}}
 }
-def addChk{a:T, b:T & T==f64} = tup{0, a+b}
+def addChk{a:T, b:T if T==f64} = tup{0, a+b}
 
 def widenFull{E, xs} = {
   merge{...each{{x:X} => {
@@ -219,9 +219,9 @@ def widenFull{E, xs} = {
   }, xs}}
 }
 
-def floor{x & knum{x}} = x - (x%1)
-def maxabsval{T & issigned{T}} = -minvalue{T}
-def maxsafeint{T & issigned{T}} = maxvalue{T}
+def floor{x if knum{x}} = x - (x%1)
+def maxabsval{T if issigned{T}} = -minvalue{T}
+def maxsafeint{T if issigned{T}} = maxvalue{T}
 def maxsafeint{T==f64} = 1<<53
 
 fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {

@@ -1,13 +1,13 @@
 def bcall{T, f, x} = emit{T, 'BCALL', f, x}
-def from_B{T, x & T==f64} = bcall{T, 'o2fG', x}
-def from_B{T, x & T<=i32 &   issigned{T}} = bcall{T, 'o2iG', x}
-def from_B{T, x & T<=u32 & isunsigned{T}} = bcall{T, 'o2cG', x}
+def from_B{T, x if T==f64} = bcall{T, 'o2fG', x}
+def from_B{T, x if T<=i32 and   issigned{T}} = bcall{T, 'o2iG', x}
+def from_B{T, x if T<=u32 and isunsigned{T}} = bcall{T, 'o2cG', x}
 
 def q_f64{x} = bcall{u1, 'q_f64', x}
 def q_chr{x} = bcall{u1, 'q_c32', x}
-def q_chr{T,x & T==u8 } = bcall{u1, 'q_c8',  x}
-def q_chr{T,x & T==u16} = bcall{u1, 'q_c16', x}
-def q_chr{T,x & T==u32} = bcall{u1, 'q_c32', x}
+def q_chr{T,x if T==u8 } = bcall{u1, 'q_c8',  x}
+def q_chr{T,x if T==u16} = bcall{u1, 'q_c16', x}
+def q_chr{T,x if T==u32} = bcall{u1, 'q_c32', x}
 
 def cbqn_c32Tag{} = emit{u64, '', 'C32_TAG'}
 def cbqn_tagTag{} = emit{u64, '', 'TAG_TAG'}
@@ -21,18 +21,18 @@ def cbqn_nspTag{} = emit{u64, '', 'NSP_TAG'}
 def cbqn_objTag{} = emit{u64, '', 'OBJ_TAG'}
 def cbqn_arrTag{} = emit{u64, '', 'ARR_TAG'}
 
-def cbqn_elType{T & T==u1 } = 0
-def cbqn_elType{T & T==i8 } = 1
-def cbqn_elType{T & T==i16} = 2
-def cbqn_elType{T & T==i32} = 3
-def cbqn_elType{T & T==f64} = 4
-def cbqn_elType{T & T==u8 } = 5
-def cbqn_elType{T & T==u16} = 6
-def cbqn_elType{T & T==u32} = 7
+def cbqn_elType{T if T==u1 } = 0
+def cbqn_elType{T if T==i8 } = 1
+def cbqn_elType{T if T==i16} = 2
+def cbqn_elType{T if T==i32} = 3
+def cbqn_elType{T if T==f64} = 4
+def cbqn_elType{T if T==u8 } = 5
+def cbqn_elType{T if T==u16} = 6
+def cbqn_elType{T if T==u32} = 7
 
 def cbqn_tyArrOffset{} = emit{u64, 'offsetof', 'TyArr', 'a'}
 
 def talloc{T, len} = emit{*T, 'TALLOCP', fmt_type{T}, len}
 def tfree{ptr} = emit{void, 'TFREE', ptr}
 def fmt_type{T} = merge{quality{T}, fmtnat{width{T}}}
-def fmt_type{T & isptr{T}} = merge{'*',fmt_type{eltype{T}}}
+def fmt_type{T if isptr{T}} = merge{'*',fmt_type{eltype{T}}}

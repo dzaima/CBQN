@@ -16,13 +16,13 @@ fn cmpIX(dst:(*u64), len:ux, x:(u64), v:(u1)) : void = {
 
 def eqne{op} = same{op,__eq}|same{op,__ne}
 
-def pathAS{dst, len, T, op, x & issigned{T}} = {
-  def R{f & eqne{op}} = {
+def pathAS{dst, len, T, op, x if issigned{T}} = {
+  def R{f if eqne{op}} = {
     if (rare{floor{f}!=f}) fillbits{dst, len, op{0,1}, x} # also includes check for NaN/sNaN
     ftrunc{i64,f}
   }
-  def R{f & same{op,__lt}|same{op,__ge}} = ftrunc{i64,ceil{f}}
-  def R{f & same{op,__gt}|same{op,__le}} = ftrunc{i64,floor{f}}
+  def R{f if same{op,__lt} or same{op,__ge}} = ftrunc{i64,ceil{f}}
+  def R{f if same{op,__gt} or same{op,__le}} = ftrunc{i64,floor{f}}
   
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}
@@ -40,7 +40,7 @@ def pathAS{dst, len, T, op, x & issigned{T}} = {
   xT
 }
 
-def pathAS{dst, len, T, op, x & T==f64} = {
+def pathAS{dst, len, T, op, x if T==f64} = {
   if (rare{~q_f64{x}}) {
     if (~eqne{op}) if (~q_chr{x}) cmp_err{x}
     fillbits{dst, len, op{0,1}, x}
@@ -48,7 +48,7 @@ def pathAS{dst, len, T, op, x & T==f64} = {
   from_B{T,x}
 }
 
-def pathAS{dst, len, T, op, x & isunsigned{T}} = {
+def pathAS{dst, len, T, op, x if isunsigned{T}} = {
   if (rare{~q_chr{x}}) {
     if (~eqne{op}) if (~q_f64{x}) cmp_err{x}
     fillbits{dst, len, op{1,0}, x}
@@ -66,12 +66,12 @@ def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
   
   def T = eltype{VT}
   def op = match (op0) {
-    {_ & ~hasarch{'X86_64'} | hasarch{'AVX512F'}} => op0
-    {(__le) & issigned{T}} => __gt
-    {(__ge) & issigned{T}} => __lt
-    {(__lt) & isunsigned{T}} => __ge
-    {(__gt) & isunsigned{T}} => __le
-    {(__ne) & isint{T}} => __eq
+    {_ if not hasarch{'X86_64'} or hasarch{'AVX512F'}} => op0
+    {(__le) if issigned{T}} => __gt
+    {(__ge) if issigned{T}} => __lt
+    {(__lt) if isunsigned{T}} => __ge
+    {(__gt) if isunsigned{T}} => __le
+    {(__ne) if isint{T}} => __eq
     {_} => op0
   }
   def mask = if (same{op0, op}) homMask else ({...x} => ~homMask{...x})

@@ -29,7 +29,7 @@ def hash_val{x0:(u64)} = {
 }
 # CRC32
 if_inline (hasarch{'SSE4.2'}) require{'x86intrin.h'}
-def hash_val{x:(u32) & hasarch{'SSE4.2'}} = {
+def hash_val{x:(u32) if hasarch{'SSE4.2'}} = {
   emit{u32, '_mm_crc32_u32', 0x973afb51, x}
 }
 

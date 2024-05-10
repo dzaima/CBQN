@@ -79,7 +79,7 @@ def simd_bittab = hasarch{'SSSE3'}
 def bittab_init{tab, z} = {
   @for (t in *TI~~tab over 256) t = z
 }
-def bittab_init{tab, z & simd_bittab} = {
+def bittab_init{tab, z if simd_bittab} = {
   init:= VI**z
   @unroll (t in *VI~~tab over 256/vcount{VI}) t = init
 }
@@ -124,7 +124,7 @@ def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void)} = {
     x+=k; rem-=k; ++r
   }
 }
-def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void) & simd_bittab} = {
+def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void) if simd_bittab} = {
   def {bitsel, _} = bittab_selector{readbytes{*VI~~tab}}
   def k = vcount{VI}
   @for (x in *VI~~x0, r in *ty_u{k}~~r0 over cdiv{n,k}) r = bitsel{x}
@@ -295,11 +295,11 @@ def acc{unr, init:T} = {
     else               a1 = F{a1}
   }
 }
-def isI64{x:T & eltype{T}==f64 & hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
-def isI64{x:T & eltype{T}==f64 & hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
+def isI64{x:T if eltype{T}==f64 and hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
+def isI64{x:T if eltype{T}==f64 and hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
 def maskBlend{b:T, x:T, M} = x
-def maskBlend{b:T, x:T, M & M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
+def maskBlend{b:T, x:T, M if M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
@@ -600,7 +600,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
 
 def try_vec_memb{..._} = {}
 def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
-                 & hasarch{'SSE4.2'} & T==u32} = {
+                 if hasarch{'SSE4.2'} and T==u32} = {
   # Hash h wants bin h>>sh, so the offset for h in slot i is (in infite-precision ints)
   # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
   # We maintain io = (i+1)<<sh-1

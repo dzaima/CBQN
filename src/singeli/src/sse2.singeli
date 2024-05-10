@@ -1,37 +1,37 @@
 # compact casting for the annoying intrinsic type system
-def v2i{x:T & w128{T}} = if(isint{eltype{T}}) x else [16]u8 ~~ x
-def v2f{x:T & w128{T}} = [4]f32 ~~ x
-def v2d{x:T & w128{T}} = [2]f64 ~~ x
+def v2i{x:T if w128{T}} = if(isint{eltype{T}}) x else [16]u8 ~~ x
+def v2f{x:T if w128{T}} = [4]f32 ~~ x
+def v2d{x:T if w128{T}} = [2]f64 ~~ x
 
 
 # load & store
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
-def loadLow{ptr:P, w & w128{eltype{P}} & w==128} = load{ptr}
+def loadLow{ptr:P, w if w128{eltype{P}} and w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
+def loadLow{ptr:P, w if w128{eltype{P}} and w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
+def loadLow{ptr:P, w if w128{eltype{P}} and w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
+def loadLow{ptr:P, w if w128{eltype{P}} and w==128} = load{ptr}
 
-def storeLow{ptr:P, w, x:T & w128{T} & w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T & w128{T} & w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T & w128{T} & w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T & w128{T} & w==128} = store{*T~~ptr, 0, x}
+def storeLow{ptr:P, w, x:T if w128{T} and w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T if w128{T} and w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T if w128{T} and w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
+def storeLow{ptr:P, w, x:T if w128{T} and w==128} = store{*T~~ptr, 0, x}
 
 
 
 # float comparison
-def unord{a:T,b:T & T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
-def unord{a:T,b:T & T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
+def unord{a:T,b:T if T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
+def unord{a:T,b:T if T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
 
 
 
 # shift
-def shl{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bslli_si128', x, n}
-def shr{S==[16]u8, x:T, n & w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
+def shl{S==[16]u8, x:T, n if w128{T}} = T ~~ emit{T, '_mm_bslli_si128', x, n}
+def shr{S==[16]u8, x:T, n if w128{T}} = T ~~ emit{T, '_mm_bsrli_si128', x, n}
 
 # integer arith
-def mulh{a:T,b:T & [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
-def mulh{a:T,b:T & [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
-def mul32{a:T,b:T & [2]u64==T} = emit{T, '_mm_mul_epu32',   a, b} # reads only low 32 bits of arguments
-def __mul{a:T,b:T & [4]i32==T} = {
+def mulh{a:T,b:T if [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
+def mulh{a:T,b:T if [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
+def mul32{a:T,b:T if [2]u64==T} = emit{T, '_mm_mul_epu32',   a, b} # reads only low 32 bits of arguments
+def __mul{a:T,b:T if [4]i32==T} = {
   def mu{x, y} = [4]i32 ~~ mul32{[2]u64~~x, [2]u64~~y}
   def sw{n, ...vs} = each{{c} => shuf{[4]i32, c, n}, vs}
   lo:= mu{a, b}
@@ -44,55 +44,55 @@ def rsqrtE{a:([4]f32)} = emit{[4]f32, '_mm_rsqrt_ps', a}
 def   rcpE{a:([4]f32)} = emit{[4]f32, '_mm_rcp_ps', a}
 
 # mask stuff
-def andAllZero{x:T, y:T & w128i{T}} = homAll{(x & y) == T**0}
+def andAllZero{x:T, y:T if w128i{T}} = homAll{(x & y) == T**0}
 
-def topMask{x:T & w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
-def topMask{x:T & w128{T, 16}} = topMask{packs{[8]i16~~x, [8]i16**0}}
-def topMask{x:T & w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
-def topMask{x:T & w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
-def homMask{x:T & w128{T}} = topMask{x}
-def homMaskX{a:T & elwidth{T}==16} = tup{2, homMask{re_el{u8,a}}}
-def homMask{a:T, b:T & w128i{T,16}} = homMask{packs{ty_s{a},ty_s{b}}}
+def topMask{x:T if w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
+def topMask{x:T if w128{T, 16}} = topMask{packs{[8]i16~~x, [8]i16**0}}
+def topMask{x:T if w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
+def topMask{x:T if w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
+def homMask{x:T if w128{T}} = topMask{x}
+def homMaskX{a:T if elwidth{T}==16} = tup{2, homMask{re_el{u8,a}}}
+def homMask{a:T, b:T if w128i{T,16}} = homMask{packs{ty_s{a},ty_s{b}}}
 
-def homAny{x:T & w128i{T}} = homMask{[16]u8 ~~ x} != 0
-def homAll{x:T & w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
+def homAny{x:T if w128i{T}} = homMask{[16]u8 ~~ x} != 0
+def homAll{x:T if w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
 
-def topAny{x:T & w128i{T}} = topMask{x} != 0
-def topAll{x:T & w128i{T}} = topMask{x} == (1<<vcount{T})-1
-def topAny{x:T & w128i{T, 16}} = homAny{[8]i16~~x  <  [8]i16**0}
-def topAll{x:T & w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
+def topAny{x:T if w128i{T}} = topMask{x} != 0
+def topAll{x:T if w128i{T}} = topMask{x} == (1<<vcount{T})-1
+def topAny{x:T if w128i{T, 16}} = homAny{[8]i16~~x  <  [8]i16**0}
+def topAll{x:T if w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
 
 # bits of other things SSE2 has
-def packs{a:T,b:T & T==[8]i16} = emit{[16]i8,  '_mm_packs_epi16', a, b}
-def packs{a:T,b:T & T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
-def packs{a:T,b:T & T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
-def packQ{a:T,b:T & w128i{T}} = packs{a,b}
+def packs{a:T,b:T if T==[8]i16} = emit{[16]i8,  '_mm_packs_epi16', a, b}
+def packs{a:T,b:T if T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
+def packs{a:T,b:T if T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
+def packQ{a:T,b:T if w128i{T}} = packs{a,b}
 
 
-def zipLo{a:T, b:T & w128i{T}} = emit{T, merge{'_mm_unpacklo_epi',fmtnat{elwidth{T}}}, a, b}
-def zipHi{a:T, b:T & w128i{T}} = emit{T, merge{'_mm_unpackhi_epi',fmtnat{elwidth{T}}}, a, b}
-def zipLo{a:T, b:T & w128f{T}} = emit{T, merge{'_mm_unpacklo_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
-def zipHi{a:T, b:T & w128f{T}} = emit{T, merge{'_mm_unpackhi_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
-def zip{a:T, b:T & w128i{T}} = tup{zipLo{a,b}, zipHi{a,b}}
+def zipLo{a:T, b:T if w128i{T}} = emit{T, merge{'_mm_unpacklo_epi',fmtnat{elwidth{T}}}, a, b}
+def zipHi{a:T, b:T if w128i{T}} = emit{T, merge{'_mm_unpackhi_epi',fmtnat{elwidth{T}}}, a, b}
+def zipLo{a:T, b:T if w128f{T}} = emit{T, merge{'_mm_unpacklo_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
+def zipHi{a:T, b:T if w128f{T}} = emit{T, merge{'_mm_unpackhi_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
+def zip{a:T, b:T if w128i{T}} = tup{zipLo{a,b}, zipHi{a,b}}
 
 
-def unpackQ{a:T, b:T & w128{T}} = mzip{a, b}
+def unpackQ{a:T, b:T if w128{T}} = mzip{a, b}
 
-def shuf{L, x:T, n & w128{T} & lvec{L,4,32} & knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
+def shuf{L, x:T, n if w128{T} and lvec{L,4,32} and knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
 def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}
 def shuf16Hi{x:T, n} = T~~emit{[8]i16, '_mm_shufflehi_epi16', x, n}
 
-def homBlend{f:T, t:T, m:M & w128{T} & w128i{M,elwidth{T}}} = T ~~ ((M~~t & m) | (M~~f &~ m))
-def homMaskStoreF{p:P, m:M, v:T & w128i{M} & w128{T,elwidth{M}} & eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
+def homBlend{f:T, t:T, m:M if w128{T} and w128i{M,elwidth{T}}} = T ~~ ((M~~t & m) | (M~~f &~ m))
+def homMaskStoreF{p:P, m:M, v:T if w128i{M} and w128{T,elwidth{M}} and eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
 
-def widen{T, x:X & w128i{T} & w128i{X} & w128s{T}==w128s{X} & elwidth{T}>elwidth{X}} = {
+def widen{T, x:X if w128i{T} and w128i{X} and w128s{T}==w128s{X} and elwidth{T}>elwidth{X}} = {
   def s{v} = s{mzipLo{v, v}}
-  def s{v:V & V==T} = v
+  def s{v:V if V==T} = v
   s{x} >> (elwidth{T} - elwidth{X})
 }
-def widen{T==[2]f64, x:X & w128s{X} & elwidth{X}<32} = widen{T, widen{[4]i32, x}}
-def widen{T==[2]f64, x:X & X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
-def widen{T==[2]f64, x:X & X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
+def widen{T==[2]f64, x:X if w128s{X} and elwidth{X}<32} = widen{T, widen{[4]i32, x}}
+def widen{T==[2]f64, x:X if X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
+def widen{T==[2]f64, x:X if X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
 
 def narrow{T==i16, x:([4]i32)} = packs{x,x}
 def narrow{T==i8,  x:([8]i16)} = packs{x,x}
@@ -104,5 +104,5 @@ def narrow{T==u8,  x:([2]u64)} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{f{x}}}}
 def narrow{T==u16, x:([2]u64)} = shuf16Lo{[8]u16~~shuf{[4]i32, x, 4b3320}, 4b3320}
 def narrow{T==u32, x:([2]u64)} = [4]u32~~shuf{[4]i32, x, 4b3320}
 
-def narrow{T, x:X & w128f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
+def narrow{T, x:X if w128f{X,64} and T<i32} = narrow{T, narrow{i32, x}}
 def narrow{T==i32, x:([2]f64)} = emit{[4]i32, '_mm_cvtpd_epi32', x}

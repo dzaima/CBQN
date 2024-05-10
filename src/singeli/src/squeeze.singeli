@@ -7,24 +7,24 @@ include './vecfold'
 def preserve_negative_zero = 0
 
 # SSE2 versions avoid any 64-bit integer comparsions
-def anySNaN{M, x:T & eltype{T}==u64} = {
+def anySNaN{M, x:T if eltype{T}==u64} = {
   homAny{inRangeLen{M{x}<<1, (0xFFE<<52)+2, (1<<52)-2}}
 }
-def anySNaN{M, x:T & T==[2]u64 & hasarch{'X86_64'} & ~hasarch{'SSE4.2'}} = {
+def anySNaN{M, x:T if T==[2]u64 and hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = {
   topAny{M{andnot{unord{[2]f64~~x, [2]f64~~x}, [2]u64~~([4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000))}}}
 }
-def anyNonChar{M, x:T & isvec{T} & eltype{T}==u64} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
-def anyNonChar{M, x:T & isvec{T} & hasarch{'X86_64'}} = {
+def anyNonChar{M, x:T if isvec{T} and eltype{T}==u64} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
+def anyNonChar{M, x:T if isvec{T} and hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
   topAny{M{T~~ne}}
 }
 
 
-def cvtNarrow{T, x:X & width{T}==elwidth{X}} = cvt{T, x}
-def cvtNarrow{T, x:X & width{T}< elwidth{X}} = narrow{T, x}
-def cvtWiden{T, x:X & elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}
-def cvtWiden{T, x:X & elwidth{T}> elwidth{X}} = widen{T, x}
+def cvtNarrow{T, x:X if width{T}==elwidth{X}} = cvt{T, x}
+def cvtNarrow{T, x:X if width{T}< elwidth{X}} = narrow{T, x}
+def cvtWiden{T, x:X if elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}
+def cvtWiden{T, x:X if elwidth{T}> elwidth{X}} = widen{T, x}
 
 fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   assert{len>0}
@@ -36,7 +36,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   
   # fold with either Max or Bitwise Or, truncating/zero-extending to TE
   def foldTotal{TE, x:T} = cast_i{TE, vfold{|, x}}
-  def foldTotal{TE, x:T & hasarch{'AARCH64'}} = {
+  def foldTotal{TE, x:T if hasarch{'AARCH64'}} = {
     if (elwidth{T}==64) {
       if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
       else vfold{max, narrow{TE, x}}

@@ -1,97 +1,97 @@
 # questionable pack
-def unpackQ{a:T,b:T & T==[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
-def unpackQ{a:T,b:T & T==[16]i16} = { tup{emit{[ 8]i32, '_mm256_unpacklo_epi16', a, b}, emit{[ 8]i32, '_mm256_unpackhi_epi16', a, b}}}
-def unpackQ{a:T,b:T & T==[ 8]i32} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi32', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi32', a, b}}}
-def unpackQ{a:T,b:T & T==[ 4]i64} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi64', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi64', a, b}}}
+def unpackQ{a:T,b:T if T==[32]i8 } = { tup{emit{[16]i16, '_mm256_unpacklo_epi8',  a, b}, emit{[16]i16, '_mm256_unpackhi_epi8',  a, b}}}
+def unpackQ{a:T,b:T if T==[16]i16} = { tup{emit{[ 8]i32, '_mm256_unpacklo_epi16', a, b}, emit{[ 8]i32, '_mm256_unpackhi_epi16', a, b}}}
+def unpackQ{a:T,b:T if T==[ 8]i32} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi32', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi32', a, b}}}
+def unpackQ{a:T,b:T if T==[ 4]i64} = { tup{emit{[ 4]i64, '_mm256_unpacklo_epi64', a, b}, emit{[ 4]i64, '_mm256_unpackhi_epi64', a, b}}}
 # inverse of questionable pack; these saturate the argument
-def packQ{a:T,b:T & T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}
-def packQ{a:T,b:T & T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
-def packQ{a:T,b:T & T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
-def packQ{a:T,b:T & T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
+def packQ{a:T,b:T if T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}
+def packQ{a:T,b:T if T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
+def packQ{a:T,b:T if T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
+def packQ{a:T,b:T if T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 # super questionable pack - assumes high halves are zero
-def packQQ{a:T,b:T & T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
+def packQQ{a:T,b:T if T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
 def packQQ{{a, b}} = packQQ{a, b}
 
 
 # arith
-def mulh {a:T,b:T & [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
-def mulh {a:T,b:T & [16]u16==T} = emit{T, '_mm256_mulhi_epu16', a, b}
-def mul32{a:T,b:T & [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
-def mul32{a:T,b:T & [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
+def mulh {a:T,b:T if [16]i16==T} = emit{T, '_mm256_mulhi_epi16', a, b}
+def mulh {a:T,b:T if [16]u16==T} = emit{T, '_mm256_mulhi_epu16', a, b}
+def mul32{a:T,b:T if [ 4]i64==T} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
+def mul32{a:T,b:T if [ 4]u64==T} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
 
 # structural operations
 
-def shl{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
-def shr{S==[16]u8, x:T, n & w256{T} & knum{n}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
+def shl{S==[16]u8, x:T, n if w256{T} and knum{n}} = T ~~ emit{T, '_mm256_bslli_epi128', x, n}
+def shr{S==[16]u8, x:T, n if w256{T} and knum{n}} = T ~~ emit{T, '_mm256_bsrli_epi128', x, n}
 
-def blend{L==[8]u16, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}
-def blend{L==[8]u32, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}
-def blend{L==[4]u64, a:T, b:T, m & w256{T} & knum{m}} = T ~~ emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}
+def blend{L==[8]u16, a:T, b:T, m if w256{T} and knum{m}} = T ~~ emit{[16]i16, '_mm256_blend_epi16', v2i{a}, v2i{b}, m}
+def blend{L==[8]u32, a:T, b:T, m if w256{T} and knum{m}} = T ~~ emit{[ 8]i32, '_mm256_blend_epi32', v2i{a}, v2i{b}, m}
+def blend{L==[4]u64, a:T, b:T, m if w256{T} and knum{m}} = T ~~ emit{[ 4]f64, '_mm256_blend_pd',    v2d{a}, v2d{b}, m}
 
-def topBlend{f:T, t:T, m:M & w256{T,  8} & w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
-def homBlend{f:T, t:T, m:M & w256{T,  8} & w256i{M, 8}} = topBlend{f, t, m}
-def homBlend{f:T, t:T, m:M & w256{T, 16} & w256i{M,16}} = T ~~ topBlend{[32]i8~~f, [32]i8~~t, [32]i8~~m}
+def topBlend{f:T, t:T, m:M if w256{T,  8} and w256i{M, 8}} = T ~~ emit{[32]i8, '_mm256_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
+def homBlend{f:T, t:T, m:M if w256{T,  8} and w256i{M, 8}} = topBlend{f, t, m}
+def homBlend{f:T, t:T, m:M if w256{T, 16} and w256i{M,16}} = T ~~ topBlend{[32]i8~~f, [32]i8~~t, [32]i8~~m}
 
-def shuf{L, x:T, n & lvec{L,4,32} & w256{T} & knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
-def shuf{L, x:T, n & lvec{L,4,64} & w256{T} & knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}
-def shufHalves{x:T, y:T, n & w256{T} & knum{n}} = T ~~ emit{[4]i64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
+def shuf{L, x:T, n if lvec{L,4,32} and w256{T} and knum{n}} = T ~~ emit{[8]i32, '_mm256_shuffle_epi32',  v2i{x}, n}
+def shuf{L, x:T, n if lvec{L,4,64} and w256{T} and knum{n}} = T ~~ emit{[4]f64, '_mm256_permute4x64_pd', v2d{x}, n}
+def shufHalves{x:T, y:T, n if w256{T} and knum{n}} = T ~~ emit{[4]i64, '_mm256_permute2x128_si256', v2i{x}, v2i{y}, n}
 
-def sel{L, x:T, i:I & w256{T} & lvec{L,8,32} & w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
-def sel{L, x:T, i:I & w256{T} & lvec{L,16,8} & w256{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
+def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = T ~~ emit{[32]u8, '_mm256_permutevar8x32_epi32', v2i{x}, i}
+def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = T ~~ emit{[32]u8, '_mm256_shuffle_epi8',         v2i{x}, i}
 
 # masked store; F variants may not be a single instruction
-def topMaskStore{p:P, m:M, v:T & w256i{M, 32} & w256{T,elwidth{M}} & eltype{P}==T} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}
-def topMaskStore{p:P, m:M, v:T & w256i{M, 64} & w256{T,elwidth{M}} & eltype{P}==T} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
-def homMaskStore{p:P, m:M, v:T & w256i{M}     & w256{T,elwidth{M}} & eltype{P}==T} = topMaskStore{p, m, v}
+def topMaskStore{p:P, m:M, v:T if w256i{M, 32} and w256{T,elwidth{M}} and eltype{P}==T} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}
+def topMaskStore{p:P, m:M, v:T if w256i{M, 64} and w256{T,elwidth{M}} and eltype{P}==T} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
+def homMaskStore{p:P, m:M, v:T if w256i{M}     and w256{T,elwidth{M}} and eltype{P}==T} = topMaskStore{p, m, v}
 
-def topMaskStoreF{p:P, m:M, v:T & w256i{M} & elwidth{T}>=32} = topMaskStore{p,m,v}
-def homMaskStoreF{p:P, m:M, v:T & w256i{M} & elwidth{T}>=32} = topMaskStore{p,m,v}
-def homMaskStoreF{p:P, m:M, v:T & w256i{M} & elwidth{T}<=16 & w256{T,elwidth{M}} & eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
+def topMaskStoreF{p:P, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
+def homMaskStoreF{p:P, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
+def homMaskStoreF{p:P, m:M, v:T if w256i{M} and elwidth{T}<=16 and w256{T,elwidth{M}} and eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
 
 # mask stuff
-def topMask{x:T & w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
-def topMask{x:T & w256{T, 16}} = {
+def topMask{x:T if w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
+def topMask{x:T if w256{T, 16}} = {
   msk:u32 = topMask{emit{[32]u8, '_mm256_packs_epi16', x, [16]u16**0}}
   (msk&255) | (msk>>8)
 }
 
-def homAny{x:T & w256i{T}} = ~emit{u1, '_mm256_testz_si256', v2i{x}, v2i{x}}
-def homAll{x:T & w256i{T}} = homMask{[32]u8 ~~ x} == 0xffff_ffff
-def topAny{x:T & w256i{T}} = topMask{x} != 0
-def topAll{x:T & w256i{T}} = topMask{x} == (1<<vcount{T})-1
-def homMask{a:T, b:T & w256i{T,16}} = homMask{shuf{[4]u64, packQ{ty_s{a},ty_s{b}}, 4b3120}}
+def homAny{x:T if w256i{T}} = ~emit{u1, '_mm256_testz_si256', v2i{x}, v2i{x}}
+def homAll{x:T if w256i{T}} = homMask{[32]u8 ~~ x} == 0xffff_ffff
+def topAny{x:T if w256i{T}} = topMask{x} != 0
+def topAll{x:T if w256i{T}} = topMask{x} == (1<<vcount{T})-1
+def homMask{a:T, b:T if w256i{T,16}} = homMask{shuf{[4]u64, packQ{ty_s{a},ty_s{b}}, 4b3120}}
 
-def topAny{x:T & w256i{T,32}} = ~emit{u1, '_mm256_testz_ps', v2f{x}, v2f{x}}
-def topAny{x:T & w256i{T,64}} = ~emit{u1, '_mm256_testz_pd', v2d{x}, v2d{x}}
-def homAny{x:T & w256i{T} & elwidth{T}>=32} = topAny{x}
+def topAny{x:T if w256i{T,32}} = ~emit{u1, '_mm256_testz_ps', v2f{x}, v2f{x}}
+def topAny{x:T if w256i{T,64}} = ~emit{u1, '_mm256_testz_pd', v2d{x}, v2d{x}}
+def homAny{x:T if w256i{T} and elwidth{T}>=32} = topAny{x}
 
-def topAny{x:T & w256i{T,16}} = homAny{[16]i16~~x  <  [16]i16**0}
-def topAll{x:T & w256i{T,16}} = homAll{[16]i16~~x  <  [16]i16**0}
+def topAny{x:T if w256i{T,16}} = homAny{[16]i16~~x  <  [16]i16**0}
+def topAll{x:T if w256i{T,16}} = homAll{[16]i16~~x  <  [16]i16**0}
 
 
 # conversion
-def widen{T==[16]u16, x:X & X==[16]u8} = emit{T, '_mm256_cvtepu8_epi16',  x}; def widen{T==[16]i16, x:X & X==[16]i8} = emit{T, '_mm256_cvtepi8_epi16',  x}
-def widen{T==[ 8]u32, x:X & X==[16]u8} = emit{T, '_mm256_cvtepu8_epi32',  x}; def widen{T==[ 8]i32, x:X & X==[16]i8} = emit{T, '_mm256_cvtepi8_epi32',  x}
-def widen{T==[ 8]u32, x:X & X==[8]u16} = emit{T, '_mm256_cvtepu16_epi32', x}; def widen{T==[ 8]i32, x:X & X==[8]i16} = emit{T, '_mm256_cvtepi16_epi32', x}
-def widen{T==[ 4]u64, x:X & X==[16]u8} = emit{T, '_mm256_cvtepu8_epi64',  x}; def widen{T==[ 4]i64, x:X & X==[16]i8} = emit{T, '_mm256_cvtepi8_epi64',  x}
-def widen{T==[ 4]u64, x:X & X==[8]u16} = emit{T, '_mm256_cvtepu16_epi64', x}; def widen{T==[ 4]i64, x:X & X==[8]i16} = emit{T, '_mm256_cvtepi16_epi64', x}
-def widen{T==[ 4]u64, x:X & X==[4]u32} = emit{T, '_mm256_cvtepu32_epi64', x}; def widen{T==[ 4]i64, x:X & X==[4]i32} = emit{T, '_mm256_cvtepi32_epi64', x}
+def widen{T==[16]u16, x:X if X==[16]u8} = emit{T, '_mm256_cvtepu8_epi16',  x}; def widen{T==[16]i16, x:X if X==[16]i8} = emit{T, '_mm256_cvtepi8_epi16',  x}
+def widen{T==[ 8]u32, x:X if X==[16]u8} = emit{T, '_mm256_cvtepu8_epi32',  x}; def widen{T==[ 8]i32, x:X if X==[16]i8} = emit{T, '_mm256_cvtepi8_epi32',  x}
+def widen{T==[ 8]u32, x:X if X==[8]u16} = emit{T, '_mm256_cvtepu16_epi32', x}; def widen{T==[ 8]i32, x:X if X==[8]i16} = emit{T, '_mm256_cvtepi16_epi32', x}
+def widen{T==[ 4]u64, x:X if X==[16]u8} = emit{T, '_mm256_cvtepu8_epi64',  x}; def widen{T==[ 4]i64, x:X if X==[16]i8} = emit{T, '_mm256_cvtepi8_epi64',  x}
+def widen{T==[ 4]u64, x:X if X==[8]u16} = emit{T, '_mm256_cvtepu16_epi64', x}; def widen{T==[ 4]i64, x:X if X==[8]i16} = emit{T, '_mm256_cvtepi16_epi64', x}
+def widen{T==[ 4]u64, x:X if X==[4]u32} = emit{T, '_mm256_cvtepu32_epi64', x}; def widen{T==[ 4]i64, x:X if X==[4]i32} = emit{T, '_mm256_cvtepi32_epi64', x}
 
-def narrow{T, x:X & w256i{X,32} & width{T}==8} = {
+def narrow{T, x:X if w256i{X,32} and width{T}==8} = {
   a:= packQ{x, x}
   b:= packQ{a, a}
   re_el{T, sel{[8]u32, b, make{[8]i32, 0,4,0,4,0,4,0,4}}}
 }
-def narrow{T, x:X & w256i{X,32} & width{T}==16} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
-def narrow{T, x:X & w256i{X,16} & width{T}== 8} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
+def narrow{T, x:X if w256i{X,32} and width{T}==16} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
+def narrow{T, x:X if w256i{X,16} and width{T}== 8} = re_el{T, shuf{[4]u64, packQ{x, x}, 4b3120}}
 
-def narrow{T, x:X & w256f{X,64} & T<i32} = narrow{T, narrow{i32, x}}
-def narrow{T, x:X & w256f{X,64} & T==i32} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
+def narrow{T, x:X if w256f{X,64} and T<i32} = narrow{T, narrow{i32, x}}
+def narrow{T, x:X if w256f{X,64} and T==i32} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
 
-def narrow{T, x:X & w256u{X,64} & T==u32} = re_el{T, sel{[8]i32, x, make{[8]i32, 2*iota{8}}}}
-def narrow{T, x:X & w256u{X,64} & T==u16} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, (iota{32}>>1<<2) | (iota{32}&1)}}}
-def narrow{T, x:X & w256u{X,64} & T== u8} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, 4*iota{32}}}}
+def narrow{T, x:X if w256u{X,64} and T==u32} = re_el{T, sel{[8]i32, x, make{[8]i32, 2*iota{8}}}}
+def narrow{T, x:X if w256u{X,64} and T==u16} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, (iota{32}>>1<<2) | (iota{32}&1)}}}
+def narrow{T, x:X if w256u{X,64} and T== u8} = re_el{T, sel{[16]i8, narrow{u32,x}, make{[32]i8, 4*iota{32}}}}
 
 
-def cvt2{T, x:X & T==i32 & X==[4]f64} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
-def cvt2{T, x:X & T==f64 & X==[4]i32} = emit{[4]f64, '_mm256_cvtepi32_pd', x}
+def cvt2{T, x:X if T==i32 and X==[4]f64} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
+def cvt2{T, x:X if T==f64 and X==[4]i32} = emit{[4]f64, '_mm256_cvtepi32_pd', x}

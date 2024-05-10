@@ -4,7 +4,7 @@ include './vecfold'
 
 if_inline (hasarch{'SSE2'}) {
   fn sum_vec{T}(v:T) = vfold{+, fold{+, unpackQ{v, T**0}}}
-  def fold_addw{v:T & eltype{T}==i8} = sum_vec{T}(v)
+  def fold_addw{v:T if eltype{T}==i8} = sum_vec{T}(v)
 }
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}

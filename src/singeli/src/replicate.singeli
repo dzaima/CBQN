@@ -22,7 +22,7 @@ def scan_core{upd, set, scan, rp:pT, wp:W, s:(usz)} = {
 }
 def indrep_by_sum{T, rp:(*T), wp, s:(usz), js, inc} = {
   def scan{ptr, len} = @for (ptr over len) js=ptr+=js
-  def scan{ptr, len & width{T}<=32} = {
+  def scan{ptr, len if width{T}<=32} = {
     def scanfn = merge{'si_scan_pluswrap_u',fmtnat{width{T}}}
     p := *ty_u{eltype{type{ptr}}}~~ptr
     emit{void, scanfn, p, p, len, js}; js=load{ptr,len-1}
@@ -103,12 +103,12 @@ rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 
 def read_shuf_vecs{l, ellw:(u64), shp:P} = { # tuple of byte selectors in 1<<ellw
   def V = eltype{P}
-  def double{x:X & hasarch{'AVX2'}} = {
+  def double{x:X if hasarch{'AVX2'}} = {
     s:=shuf{[4]u64, x, 4b3120}; s+=s
     r:=each{bind{~~,[32]i8},unpackQ{s, s + X**1}}
     r
   }
-  def double{x:X & hasarch{'AARCH64'}} = {
+  def double{x:X if hasarch{'AARCH64'}} = {
     s:= x+x
     zip{s, s + X**1}
   }
@@ -193,8 +193,8 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   def step = vcount{V}     # Bytes written
   def wvb = wv << ellw
   def hs = (h*step) / wvb  # Actual step size in argument elements
-  def shufbase{i & hasarch{'AVX2'}} = shuf{[4]u64, load{*V~~(x+i)}, 4b1010}
-  def shufbase{i & hasarch{'AARCH64'}} = load{*V~~(x+i)}
+  def shufbase{i if hasarch{'AVX2'}} = shuf{[4]u64, load{*V~~(x+i)}, 4b1010}
+  def shufbase{i if hasarch{'AARCH64'}} = load{*V~~(x+i)}
   def shufrun{a, s} = sel{[16]i8, a, s} # happens to be the same across AVX2 & NEON
   
   i:u64 = 0

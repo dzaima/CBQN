@@ -7,8 +7,8 @@ if_inline (hasarch{'X86_64'}) {
 include './mask'
 include 'util/tup'
 
-def popcRand{x:T & isint{T} & width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
-def popcRand{x:T & isint{T} & width{T}<=32} = emit{u8, 'rand_popc64', x}
+def popcRand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
+def popcRand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}
 
 # Table from l bits to w-bit indices, shifted left by s, and G applied afterwards
 def maketab{l,w,s,G} = {
@@ -64,7 +64,7 @@ def for_special_buffered{r, write_len}{vars,begin,sum,iter} = {
   } else {
     if (has_simd) {
       def bufw = bufn * tw
-      def vc = tern{hasarch{'X86_64'} & (bufw==128), 128, arch_defvw} / tw;
+      def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw} / tw;
       def R = [vc]T
       @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
@@ -118,7 +118,7 @@ def topper{T, U, k, x} = {
 itab_4_16:*u64 = maketab{4,16} # 16 elts, 128B
 def thresh{c==0, T==i8 } = 32
 def thresh{c==0, T==i16} = 16
-fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+fn slash{c==0, T if T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def n = 64/tw
   def tab = if (tw==8) itab else itab_4_16
@@ -140,9 +140,9 @@ fn slash{c==0, T & T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
 
 # i16 /w & i32 x+/w; 8 elts/iter; 64 bit table input, expanded to 128 or 256 via topper
 def simd128{} = hasarch{'X86_64'} | hasarch{'AARCH64'}
-def thresh{c==0, T==i16 & simd128{}} = 32
-def thresh{c==0, T==i32 & simd128{}} = 16
-fn slash{c==0, T & simd128{} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c==0, T==i16 if simd128{}} = 32
+def thresh{c==0, T==i32 if simd128{}} = 16
+fn slash{c==0, T if simd128{} and i16<=T and T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def I = [16]i8
   j := I**(if (T==i16) 0 else cast_i{i8,x})
   def {top, inctop} = topper{T, I, 8, x}
@@ -161,9 +161,9 @@ fn slash{c==0, T & simd128{} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64,
 
 # i8 & i16 w/x; 128 bits/iter; [16]i8 shuffle
 def shufb128{} = hasarch{'SSSE3'} | hasarch{'AARCH64'}
-def thresh{c==1, T==i8  & shufb128{}} = 64
-def thresh{c==1, T==i16 & shufb128{}} = 32
-fn slash{c==1, T & T<=i16 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c==1, T==i8  if shufb128{}} = 64
+def thresh{c==1, T==i16 if shufb128{}} = 32
+fn slash{c==1, T if T<=i16 and shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def V = [16]i8
   @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
     ind := load{itab, w}
@@ -179,8 +179,8 @@ fn slash{c==1, T & T<=i16 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u6
 
 # i32 w/x; 8 elts/iter into 2 steps; [16]i8 shuffle
 i32tab:*u32 = maketab{4,8,2} # 16 elts, 64B
-def thresh{c==1, T==i32 & shufb128{}} = 8
-fn slash{c==1, T==i32 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c==1, T==i32 if shufb128{}} = 8
+fn slash{c==1, T==i32 if shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def V = [16]i8
   expander := make{V, iota{16}>>2}
   trail := make{V, tail{2,iota{16}}}
@@ -202,9 +202,9 @@ fn slash{c==1, T==i32 & shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) :
 
 # i32 & i64 w/x & x+/w; 256 bits/step, 8 elts/iter; [8]i32 shuffle
 i64tab:*u64 = maketab{4,16,1,{x}=>(1+x)*0x100 + x} # 16 elts, 128B
-def thresh{c, T==i32 & hasarch{'AVX2'}} = 32
-def thresh{c, T==i64 & hasarch{'AVX2'}} = 8
-fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c, T==i32 if hasarch{'AVX2'}} = 32
+def thresh{c, T==i64 if hasarch{'AVX2'}} = 8
+fn slash{c, T if hasarch{'AVX2'} and T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def tw = width{T}
   def V = [8]u32
   expander := make{[32]u8, merge{...each{tup{., ... 3**128}, iota{8}>>lb{tw/32}}}}
@@ -235,11 +235,11 @@ fn slash{c, T & hasarch{'AVX2'} & T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:
 }
 
 # everything; 512 bits/iter; AVX-512 compress
-def thresh{c, T==i8  & hasarch{'AVX512VBMI2'}} = 256
-def thresh{c, T==i16 & hasarch{'AVX512VBMI2'}} = 128
-def thresh{c, T==i32 & hasarch{'AVX512F'}}     = 64
-def thresh{c, T==i64 & hasarch{'AVX512F'}}     = 16
-fn slash{c, T & hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
+def thresh{c, T==i8  if hasarch{'AVX512VBMI2'}} = 256
+def thresh{c, T==i16 if hasarch{'AVX512VBMI2'}} = 128
+def thresh{c, T==i32 if hasarch{'AVX512F'}}     = 64
+def thresh{c, T==i64 if hasarch{'AVX512F'}}     = 16
+fn slash{c, T if hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
   def f = fmtnat
   def wt = width{T}
   def vl = 512/wt
@@ -283,7 +283,7 @@ def pext_popc{x:T, m:T} = {
   # - z tells how many bits in the group are NOT used
   # - x contains the bits, with z zeros above
   def build{k==1} = tup{x&m, ~m}
-  def build{k & k > 1} = {
+  def build{k if k > 1} = {
     def h = k>>1          # Increase size from h to k
     {x,z} := build{h}
     def low_s = lowbits{w,k}  # Low bit in each new group
@@ -326,12 +326,12 @@ def pext_popc{x:T, m:T} = {
     pe := fold{|, x&s0, each{gr, g*slice{iota{k/g},1}}}
     tup{pe, o>>(k-g)}
   }
-  def build{k==32 & hasarch{'AVX2'} & isvec{T}} = {
+  def build{k==32 if hasarch{'AVX2'} and isvec{T}} = {
     def S = re_el{ty_u{k}, T}
     def c{T,vs} = each{{v}=>T~~v, vs}
     c{T, multi_shift{...c{S, build{8}}, 8, k, {s}=>S**s}}
   }
-  def build{k & ~isvec{T} & k > 8} = {
+  def build{k if not isvec{T} and k > 8} = {
     multi_shift{...build{8}, 8, k, {s}=>s}
   }
   # Final result
@@ -339,9 +339,9 @@ def pext_popc{x:T, m:T} = {
   tup{pe, scal{w} - z}
 }
 
-def pext_width {& hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
-def thresh_bool{& hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 32
-def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
+def pext_width {if hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
+def thresh_bool{if hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 32
+def pext_popc{x0:V, m0:V if hasarch{'PCLMUL'} and V==[2]u64} = {
   def clmul{a, b} = zipLo{...@collect (j to 2) clmul{a,b,j}}
   m := m0
   x := x0 & m
@@ -359,9 +359,9 @@ def pext_popc{x0:V, m0:V & hasarch{'PCLMUL'} & V==[2]u64} = {
   tup{x, @collect (j to 2) popc{extract{m0,j}}}
 }
 
-def pext_width {& fast_BMI2{}} = 1
-def thresh_bool{& fast_BMI2{}} = 512
-def pext_popc{x:T, m:T & fast_BMI2{} & T==u64} = tup{pext{x, m}, popc{m}}
+def pext_width {if fast_BMI2{}} = 1
+def thresh_bool{if fast_BMI2{}} = 512
+def pext_popc{x:T, m:T if fast_BMI2{} and T==u64} = tup{pext{x, m}, popc{m}}
 
 fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
   cw:u64 = 0; # current word
@@ -375,7 +375,7 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
     }
     ro = ro2%64
   }
-  def extract{t, i & istup{t}} = select{t,i}
+  def extract{t, i if istup{t}} = select{t,i}
   def v = pext_width{}
   if (v > 1) {
     def V = [v]u64
