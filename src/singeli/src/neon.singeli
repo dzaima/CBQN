@@ -140,7 +140,7 @@ def homMask{a:T,b:T,c:T,d:T & T==[16]u8} = {
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
-def homMask{...as & tuplen{as}>1 & elwidth{type{tupsel{0,as}}}>=32} = homMask{...each{{i}=>narrowPair{tupsel{i*2,as},tupsel{i*2+1,as}}, iota{tuplen{as}/2}}}
+def homMask{...as & length{as}>1 & elwidth{type{select{as,0}}}>=32} = homMask{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
 def homMask{a:T,b:T & vcount{T}*2<=elwidth{T}} = {
   def n = vcount{T}
   truncBits{n*2, fold_add{shrm{a,elwidth{T}-n,b} & make{T, (1<<iota{n}) | (1<<(iota{n}+n))}}}

@@ -5,8 +5,8 @@ include './hashtab'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
-  def args = undef{M{...each{tupsel{0, .}, v1}}}
-  def am = tuplen{tupsel{0,v1}}
+  def args = undef{M{...each{select{., 0}, v1}}}
+  def am = length{select{v1,0}}
   each{{last, ...v2} => {
     if (last or C{...v2}) {
       each{=, args, M{...v2}}
@@ -291,7 +291,7 @@ def acc{unr, init:T} = {
   def op{S=='get'} = a0v
   def op{S=='tr', F} = { a0v = tree_fold{F, a1} }
   def op{S=='upd', is, F} = {
-    if (tuplen{is}==1) a0 = F{a0}
+    if (length{is}==1) a0 = F{a0}
     else               a1 = F{a1}
   }
 }

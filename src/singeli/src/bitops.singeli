@@ -94,10 +94,10 @@ def loaduBitTrunc{x:(*u64), i, n & knum{n}} = truncBits{n, loaduBit{x, i, n}}
 
 
 def loadBatchBit{T, x:(*u64), is & ktup{is}} = {
-  # def len = tuplen{is}
+  # def len = length{is}
   # def count = vcount{T}
   # assert{count*len <= 64}
-  # bits:= b_getBatchLo{count*len, x, tupsel{0,is}}
+  # bits:= b_getBatchLo{count*len, x, select{is,0}}
   # @collect(i to len) spreadBits{T, truncBits{count, bits>>(i*count)}}
   each{loadBatchBit{T, x, .}, is}
 }

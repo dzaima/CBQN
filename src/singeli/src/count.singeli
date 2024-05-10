@@ -46,7 +46,7 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
       total := trunc{usz, r0}    # To compute last count
       def count_each{js, num} = {
         j := @collect (k to num) trunc{T, js+k}
-        c := copy{tuplen{j}, [vec]uT ** 0}
+        c := copy{length{j}, [vec]uT ** 0}
         e := each{{j}=>V**j, j}
         @for (xv over b) each{{c,e} => c -= xv == e, c, e}
         def add_sum{c, j} = {

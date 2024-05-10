@@ -39,7 +39,7 @@ def hash_val{x:(u32) & hasarch{'SSE4.2'}} = {
 # Allocates the maximum at the start, resizes downwards within the existing allocation
 def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
   def ws = each{width,Ts}
-  def wt = tupsel{0,ws}
+  def wt = select{ws,0}
   each{assert, slice{ws,0,-1} >= slice{ws,1}} # Doesn't do alignment
   # Variables updated on resize
   sz := usz~~1 << logsz
@@ -61,7 +61,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
     sh -= m; sz <<= m
     set_thresh{}
     cc = 0 # Collision counter
-    k:tupsel{0,Ts} = 0; --k # Index where to move an element to
+    k:select{Ts,0} = 0; --k # Index where to move an element to
     each{{p,v} => { p -= dif; memset{p, v, dif} }, ptrs, v0s}
     def {hash, ...vals} = ptrs; def {h0, ...v0r} = v0s
     s := sz+ext

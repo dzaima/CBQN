@@ -149,10 +149,10 @@ fn slash{c==0, T & simd128{} & i16<=T & T<=i32}(w:*u64, x:arg{c,T}, r:*T, l:u64,
   @for_special_buffered{r,8} (w in *u8~~w over i to sum) {
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
-    v := mzipLo{j + I~~make{[2]u64, ind, 0}, tupsel{0,top}}
+    v := mzipLo{j + I~~make{[2]u64, ind, 0}, select{top,0}}
     def st{k, v:V} = store{*V~~r, k, v}
     if (T==i16) st{0, v}
-    else each{st, iota{2}, mzip{v, tupsel{1,top}}}
+    else each{st, iota{2}, mzip{v, select{top,1}}}
     r += pc
     j += I**8
     inctop{i, top}
@@ -375,7 +375,7 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
     }
     ro = ro2%64
   }
-  def extract{t, i & istup{t}} = tupsel{i,t}
+  def extract{t, i & istup{t}} = select{t,i}
   def v = pext_width{}
   if (v > 1) {
     def V = [v]u64

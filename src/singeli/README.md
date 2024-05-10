@@ -148,10 +148,10 @@ Some may also support one scalar argument or arguments with different widths.
 <!-- -->
 - `zip{a:T,b:T} : tup{T, T}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
 - `mzip{a:T,b:T} : tup{el_dbl{T}, el_dbl{T}}` - reinterpreted `zip{a, b}`
-- `zipLo{a:T,b:T} : T` - `tupsel{0, zip{a, b}}`
-- `zipHi{a:T,b:T} : T` - `tupsel{1, zip{a, b}}`
-- `mzipLo{a:T,b:T} : T` - `tupsel{0, mzip{a, b}}`
-- `mzipHi{a:T,b:T} : T` - `tupsel{1, mzip{a, b}}`
+- `zipLo{a:T,b:T} : T` - `select{zip{a, b}, 0}`
+- `zipHi{a:T,b:T} : T` - `select{zip{a, b}, 1}`
+- `mzipLo{a:T,b:T} : T` - `select{mzip{a, b}, 0}`
+- `mzipHi{a:T,b:T} : T` - `select{mzip{a, b}, 1}`
 
 ## Mask stuff
 

@@ -42,7 +42,7 @@ def storeu{p:T, v:(eltype{T}) & elwidth{T}==8} = store{p, v}
 
 def reinterpret{T, x:X & T==X} = x
 def exportN{f, ...ns} = each{export{.,f}, ns}
-def exportT{name, fs} = { v:*type{tupsel{0,fs}} = fs; export{name, v} }
+def exportT{name, fs} = { v:*type{select{fs,0}} = fs; export{name, v} }
 
 
 # hints
@@ -151,7 +151,7 @@ def collect{vars,begin,end,iter & knum{begin} & knum{end}} = {
 }
 
 # convert tuple to number in little-endian base b
-def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
+def base{b,l} = if (0==length{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
 
 
 
@@ -176,8 +176,8 @@ def {
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
-def homMask{...vs & tuplen{vs}>1} = {
-  def n = tuplen{vs}
+def homMask{...vs & length{vs}>1} = {
+  def n = length{vs}
   def T = oneType{vs}
   def RT = ty_u{max{8,vcount{T}*n}}
   def a = promote{RT, homMask{...slice{vs,0,n/2}}}
@@ -319,13 +319,13 @@ def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defin
 
 
 def tree_fold{F, x} = {
-  def h = tuplen{x}>>1
-  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,tuplen{x}}}}
+  def h = length{x}>>1
+  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,length{x}}}}
 }
 def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
-  def l = tree_fold{max, each{{x} => if(ktup{x}) tuplen{x} else 0, args}}
+  def l = tree_fold{max, each{{x} => if(ktup{x}) length{x} else 0, args}}
   each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
 }
 

@@ -107,7 +107,7 @@ def runner{u, R, F} = {
 }
 
 # homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
-def runChecks_any{F, vals} = { F{tree_fold{|, each{tupsel{1,.}, vals}}} }
+def runChecks_any{F, vals} = { F{tree_fold{|, each{select{.,1}, vals}}} }
 def runChecks{type=='homAny', vals, M} = runChecks_any{homAny, vals}
 def runChecks{type=='topAny', vals, M} = runChecks_any{topAny, vals}
 def runChecks{type=='none',   vals, M} = 0
@@ -124,8 +124,8 @@ def runChecks{type=='anyne',  vals, M} = {
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
   def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
-  def ctype = oneVal{each{tupsel{0,.}, checks}}
-  if (rare{runChecks{ctype, checks, M}}) overflow{tupsel{0,is}*vcount{TY}}
+  def ctype = oneVal{each{select{.,0}, checks}}
+  if (rare{runChecks{ctype, checks, M}}) overflow{select{is,0}*vcount{TY}}
   each{{c} => TY~~c, values}
 }
 
@@ -187,7 +187,7 @@ fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 
   
   def unr = tern{mode>=2, 2, 1} # same as in arithAAimpl
   @muLoop{bulk, unr}(sr in tup{'g',*R~~r}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
-    def cws = tuplen{is}**cw
+    def cws = length{is}**cw
     sr{arithProcess{F, run, overflow, M, is, tern{swap,cx,cws}, tern{swap,cws,cx}, TY}}
   }
   

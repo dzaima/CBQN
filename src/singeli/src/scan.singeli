@@ -275,12 +275,12 @@ def simd_plus_scan_part{X, R}{x:(*X), c:(R), r:(*R), len:(u64), i:(u64)} = {
     def s1{v0,v1} = tup{v0,v1+toLast{v0}}
     
     def cr = eachx{+, widenFull{R, s1{...s0}}, cv}
-    cv = toLast{tupsel{-1, cr}}
+    cv = toLast{select{cr, -1}}
     
     assert{type{cv} == oneType{cr}}
-    assert{vcount{type{cv}} * tuplen{cr} == bulk}
+    assert{vcount{type{cv}} * length{cr} == bulk}
     
-    each{{c:T, j} => store{*T~~(r+i), j, c}, cr, iota{tuplen{cr}}}
+    each{{c:T, j} => store{*T~~(r+i), j, c}, cr, iota{length{cr}}}
     i = i2
   }
   

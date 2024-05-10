@@ -74,7 +74,7 @@ def get_rtype{len} = {
 }
 def rtype_arr{gen} = {
   def t = each{gen, rtypes}
-  a:*(type{tupsel{0,t}}) = t
+  a:*(type{select{t,0}}) = t
 }
 
 # Write the last index of v at t+v, for each unique v in w
@@ -230,7 +230,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
     def un = uninterleave
     def tr_half{a, b} = each{shufHalves{a,b,.}, tup{16b20, 16b31}}
     def un{{a,b}} = tr_half{un{a},un{b}}
-    if (not lanes) tupsel{1,wv} = load{wg, 1}
+    if (not lanes) select{wv,1} = load{wg, 1}
     wv = un{wv}
     if (ex>=2 and wn >= 2*svl) {
       assert{lanes} # Different transpose pattern needed
@@ -238,7 +238,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       tup{wv, wv2} = each{un, tr_half{wv, un{load{wg, 1}}}}
     }
   }
-  def ms{v}{h} = getsel{re_el{I, if (lanes) half{v,h} else tupsel{h,v}}}
+  def ms{v}{h} = getsel{re_el{I, if (lanes) half{v,h} else select{v,h}}}
   def selw = ms{wv}{0}; def selw1 = if (ex>=1) ms{wv}{1} else 'undef'
   def selw2 = if (ex>=2) each{ms{wv2}, iota{2}} else 'undef'
   # Offset at end
@@ -257,7 +257,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn & hasarch{'AVX2'}} = {
       def cmpx{cmp}{se,ind} = cmp{xv, V~~se{re_el{I,ind}}}
       def ltx = cmpx{lt}; def eqx = cmpx{==}
       @unroll (j to klog) {
-        m := s | tupsel{klog-1-j,bits}
+        m := s | select{bits,klog-1-j}
         s = homBlend{m, s, ltx{selw, m}}
       }
       r := if (isub==1) s else s>>(lb{isub}+wd-wi)
@@ -345,8 +345,8 @@ def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
 fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
   def param = tup{up, *T~~w, wn, *T~~x, xn, rp}
   def lookup{k} = {
-    if (rty == k) bins_lookup{tupsel{k,rtypes}, T, ...param}
-    else if (k+1 < tuplen{rtypes}) lookup{k+1}
+    if (rty == k) bins_lookup{select{rtypes,k}, T, ...param}
+    else if (k+1 < length{rtypes}) lookup{k+1}
   }
   # For >=8 i8 values, vector bit-table is as good as binary search
   def wn_vec = if (T==i8) 8 else 2*256/width{T}
@@ -377,7 +377,7 @@ fn saturate{F,T,...up}(dst:*void, src:*void, n:u64) : void = {
   def a = minvalue{T}; af := cast_i{F,a}
   def b = maxvalue{T}; bf := cast_i{F,b}
   @for (d in *T~~dst, xf in *F~~src over n) {
-    x := if (F==f64) (if (tupsel{0,up}) floor else ceil){xf} else xf
+    x := if (F==f64) (if (select{up,0}) floor else ceil){xf} else xf
     d = cast_i{T, x}
     if (x<af) d = a
     if (x>bf) d = b

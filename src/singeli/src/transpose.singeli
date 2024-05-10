@@ -7,9 +7,9 @@ include './bitops'
 # Group l (power of 2) elements into paired groups of length o
 # e.g. pairs{2, iota{8}} = {{0,1,4,5}, {2,3,6,7}}
 def pairs{o, x} = {
-  def i = iota{tuplen{x}/2}
+  def i = iota{length{x}/2}
   def g = 2*i - i%o
-  tupsel{tup{g, g+o}, x}
+  select{x, tup{g, g+o}}
 }
 def unpack_pass{o, x} = merge{...each{unpackQ, ...pairs{o, x}}}
 def permute_pass{o, x} = {

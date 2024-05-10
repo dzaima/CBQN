@@ -116,7 +116,7 @@ def read_shuf_vecs{l, ellw:(u64), shp:P} = { # tuple of byte selectors in 1<<ell
   
   def sh = each{{v}=>{r:=v}, l**V**0}
   def tlen{e} = cdiv{l, e}  # Length for e bytes, rounded up
-  def set{i} = { tupsel{i,sh} = each{load{shp,.}, i} }
+  def set{i} = { select{sh,i} = each{load{shp,.}, i} }
   def ext{e} = {
     def m = tlen{2*e}; def n = tlen{e}  # m<n
     if (ellw <= lb{e}) set{slice{iota{n},m}}
@@ -150,11 +150,11 @@ def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:(u64)} = { # onreps{inputVe
 
 if_inline (hasarch{'AVX2'}) {
   def rep_iter_from_sh{sh}{x, gen} = {
-    def l = tuplen{sh}
+    def l = length{sh}
     def h = l>>1
     def fs{v, s} = gen{sel{[16]i8, v, s}}
     a := shuf{[4]u64, x, 4b1010}; each{fs{a,.}, slice{sh,0,h}}
-    if (l%2) fs{x, tupsel{h, sh}}
+    if (l%2) fs{x, select{sh, h}}
     b := shuf{[4]u64, x, 4b3232}; each{fs{b,.}, slice{sh,-h}}
   }
   
@@ -201,7 +201,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   re := r + n*wvb - h*step
   while (r <= re) {
     a := shufbase{i}
-    @unroll (j to h) store{*V~~r, j, shufrun{a, tupsel{j,sh}}}
+    @unroll (j to h) store{*V~~r, j, shufrun{a, select{sh,j}}}
     i += hs << ellw
     r += hs*wvb
   }
@@ -211,7 +211,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   
   def end = makelabel{}
   @unroll (j to h) {
-    s = shufrun{a, tupsel{j,sh}}
+    s = shufrun{a, select{sh,j}}
     if (r > re) goto{end}
     store{*V~~r, 0, s}
     r+= step
@@ -230,11 +230,11 @@ fn rcsh_sub{wv, V}(ellw:u64, x:*i8, r:*i8, n:u64, sh:*V) : void = {
 }
 
 fn rep_const_shuffle_any(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
-  if (wv > tupsel{-1,rcsh_vals}) {
+  if (wv > select{rcsh_vals,-1}) {
     return{rep_const_shuffle_partial4(wv, ellw, x, r, n)}
   }
   n <<= ellw
-  ri := wv - tupsel{0,rcsh_vals}
+  ri := wv - select{rcsh_vals,0}
   sh := *sdtype~~rcsh_data + load{rcsh_offs,ri}
   def try{k} = { if (wv==k) rcsh_sub{k, sdtype}(ellw, x, r, n, sh) }
   each{try, rcsh_vals}

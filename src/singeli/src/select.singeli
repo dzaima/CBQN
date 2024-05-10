@@ -70,8 +70,8 @@ def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
   def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
   
   def bs{b, c, x} = cshuf{x, c}
-  def bs{b, c, x & tuplen{b}>0} = {
-    tupsel{0,b}{each{bs{slice{b,1}, c, .}, x}}
+  def bs{b, c, x & length{b}>0} = {
+    select{b,0}{each{bs{slice{b,1}, c, .}, x}}
   }
   
   def i = iota{logv}
