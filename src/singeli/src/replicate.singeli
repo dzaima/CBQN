@@ -59,7 +59,7 @@ exportT{'si_replicate_scan', flat_table{rep_by_scan, ind_types, dat_types}}
 
 
 # Constant replicate
-if (not (hasarch{'AVX2'} | hasarch{'AARCH64'})) {
+if_inline (not (hasarch{'AVX2'} | hasarch{'AARCH64'})) {
 
 fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   rep_by_scan{T, cast_i{usz,wv}, x, r, cast_i{usz, wv*n}}
@@ -148,7 +148,7 @@ def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:(u64)} = { # onreps{inputVe
   }
 }
 
-if (hasarch{'AVX2'}) {
+if_inline (hasarch{'AVX2'}) {
   def rep_iter_from_sh{sh}{x, gen} = {
     def l = tuplen{sh}
     def h = l>>1

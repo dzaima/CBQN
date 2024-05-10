@@ -185,13 +185,13 @@ def homMask{...vs & tuplen{vs}>1} = {
   (b<<(n/2 * vcount{T})) | a
 }
 
-if (hasarch{'X86_64'}) {
+if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
   include './sse2'
   include './sse'
   include './avx'
   include './avx2'
-} else if (hasarch{'AARCH64'}) {
+} else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
   include './neon'
 } else {

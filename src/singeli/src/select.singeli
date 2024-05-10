@@ -1,4 +1,4 @@
-if (hasarch{'AVX2'}) {
+if_inline (hasarch{'AVX2'}) {
 
 include './base'
 include './cbqnDefs'

@@ -60,7 +60,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   0
 }
 
-if (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
+if_inline (hasarch{'X86_64'} | hasarch{'AARCH64'}) {
   export{'simd_search_u8',  searchOne{u64, u8}}
   export{'simd_search_u16', searchOne{u64, u16}}
   export{'simd_search_u32', searchOne{u64, u32}}
