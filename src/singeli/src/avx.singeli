@@ -25,8 +25,8 @@ def   rcpE{a:([8]f32)} = emit{[8]f32, '_mm256_rcp_ps', a}
 
 # conversion
 def half{x:T, i if w256{T} and knum{i}} = n_h{T} ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
-def half{x:T, i==0 if w256{T}}          = n_h{T} ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
-def pair{a:T,b:T if width{T}==128} = n_d{T} ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
+def half{x:T, (0) if w256{T}}           = n_h{T} ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
+def pair{a:T,b:T if w128{T}}            = n_d{T} ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 
 def widen{T==[4]f64, x:X if X==[4]i32} = emit{T, '_mm256_cvtepi32_pd', x}
 def widen{T==[4]f64, x:X if X==[4]f32} = emit{T, '_mm256_cvtps_pd', x}

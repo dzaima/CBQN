@@ -14,7 +14,7 @@ fn cmpIX(dst:(*u64), len:ux, x:(u64), v:(u1)) : void = {
   fillbits{dst, len, v&~nan, x}
 }
 
-def eqne{op} = same{op,__eq}|same{op,__ne}
+def eqne{op} = same{op,__eq} or same{op,__ne}
 
 def pathAS{dst, len, T, op, x if issigned{T}} = {
   def R{f if eqne{op}} = {

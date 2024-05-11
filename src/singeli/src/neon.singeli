@@ -1,14 +1,10 @@
-def nvec{T} = 0
-def nvec{T if isvec{T}} = (width{T}==64) | (width{T}==128)
-def nvec{T,w} = 0
-def nvec{T,w if nvec{T}} = elwidth{T}==w
+def nvec{T} = isvec{T} and (width{T}==64 or width{T}==128)
+def nvec{T,w} = nvec{T} and elwidth{T}==w
 def nveci = genchk{nvec,      isint}
 def nvecs = genchk{nvec,   issigned}
 def nvecu = genchk{nvec, isunsigned}
 def nvecf = genchk{nvec,    isfloat}
 
-
-def reinterpret{T, v if same{'pointer',typekind{T}} and ktup{v}} = { tmp:T=v }
 
 def nty{T} = {
   def q = quality{T}
@@ -32,7 +28,7 @@ def  shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (
 def bitBlend{f:T, t:T, m:M if nvec{T} and nvecu{M,elwidth{T}} and width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
 def homBlend{f:T, t:T, m:M if nvec{M}} = bitBlend{f, t, m}
 
-def addpw {     x:T if nveci{T} and elwidth{T}<=32             } = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
+def addpw {     x:T if nveci{T} and elwidth{T}<=32               } = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D, x:T if nveci{T} and elwidth{T}<=32 and D==el_m{T}} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
@@ -67,8 +63,8 @@ def loadLow{ptr:P, w if w==elwidth{P}} = load{ptr}
 
 
 def undefPromote{T, x:X if w64{X} and w128{T} and eltype{T}==eltype{X}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
-def half{x:T, n==0 if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
-def half{x:T, n==1 if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
+def half{x:T, (0) if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
+def half{x:T, (1) if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
 def copyLane{dst:D, di, src:S, si if w64{D}  and nvec{S} and eltype{D}==eltype{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
 def copyLane{dst:D, di, src:S, si if w128{D} and nvec{S} and eltype{D}==eltype{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
@@ -125,7 +121,7 @@ def homAll{x:T if nvec{T}} = bitAll{x}
 def homMask{x:T if nvecu{T} and elwidth{T}>=vcount{T}} = {
   truncBits{vcount{T}, fold_add{x & make{T, 1<<iota{vcount{T}}}}}
 }
-def homMask{x:T if nvecu{T} and T==[16]u8} = {
+def homMask{x:T if T==[16]u8} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }

@@ -5,9 +5,9 @@ def from_B{T, x if T<=u32 and isunsigned{T}} = bcall{T, 'o2cG', x}
 
 def q_f64{x} = bcall{u1, 'q_f64', x}
 def q_chr{x} = bcall{u1, 'q_c32', x}
-def q_chr{T,x if T==u8 } = bcall{u1, 'q_c8',  x}
-def q_chr{T,x if T==u16} = bcall{u1, 'q_c16', x}
-def q_chr{T,x if T==u32} = bcall{u1, 'q_c32', x}
+def q_chr{(u8 ),x} = bcall{u1, 'q_c8',  x}
+def q_chr{(u16),x} = bcall{u1, 'q_c16', x}
+def q_chr{(u32),x} = bcall{u1, 'q_c32', x}
 
 def cbqn_c32Tag{} = emit{u64, '', 'C32_TAG'}
 def cbqn_tagTag{} = emit{u64, '', 'TAG_TAG'}
@@ -21,14 +21,14 @@ def cbqn_nspTag{} = emit{u64, '', 'NSP_TAG'}
 def cbqn_objTag{} = emit{u64, '', 'OBJ_TAG'}
 def cbqn_arrTag{} = emit{u64, '', 'ARR_TAG'}
 
-def cbqn_elType{T if T==u1 } = 0
-def cbqn_elType{T if T==i8 } = 1
-def cbqn_elType{T if T==i16} = 2
-def cbqn_elType{T if T==i32} = 3
-def cbqn_elType{T if T==f64} = 4
-def cbqn_elType{T if T==u8 } = 5
-def cbqn_elType{T if T==u16} = 6
-def cbqn_elType{T if T==u32} = 7
+def cbqn_elType{(u1 )} = 0
+def cbqn_elType{(i8 )} = 1
+def cbqn_elType{(i16)} = 2
+def cbqn_elType{(i32)} = 3
+def cbqn_elType{(f64)} = 4
+def cbqn_elType{(u8 )} = 5
+def cbqn_elType{(u16)} = 6
+def cbqn_elType{(u32)} = 7
 
 def cbqn_tyArrOffset{} = emit{u64, 'offsetof', 'TyArr', 'a'}
 

@@ -170,7 +170,7 @@ if_inline (hasarch{'AVX2'}) {
   
   def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:(u64)} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
   
-} else if (hasarch{'AARCH64'}) {
+} else if_inline (hasarch{'AARCH64'}) {
   
   def rep_iter_from_sh{sh}{x, gen} = {
     each{{s} => gen{sel{[16]u8, x, s}}, sh}

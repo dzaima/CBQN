@@ -30,7 +30,7 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     else emit{void, 'memcpy', r, x, l*(width{X}/8)}
   } else if (R==u64) {
     # show{'R==u64', X, R}
-    assert{((X==u8) | (X==u16)) | (X==u32)}
+    assert{X==u8 or X==u16 or X==u32}
     # TODO could maybe read 256 bits and use unpack to write >256
     @maskedLoop{bulk}(sr in tup{'g',rp}, x in tup{RV,xp} over l) sr{x | RV**(cbqn_c32Tag{}<<48)}
   } else if (X==u1 and R==u1) {
@@ -85,9 +85,9 @@ def gen{p} = {
   def tm = tup{0,   0,   0,    0,    0,    1,   1,    1,    2}
   each{{tx0,nx,mx} => {
     each{{tr0,nr,mr} => {
-      if ((mx==mr or mx==2 or mr==2) and (if (mx==2) mr==1; else 1)) {
-        def tr = if (mx==0 and mr==2) f64; else if (tx0==tr0 and mx==1) ty_s{tx0}; else tr0
-        def tx = if (mr==0 and mx==2) f64; else if (tx0==tr0 and mx==1) ty_s{tx0}; else tx0
+      if ((mx==mr or mx==2 or mr==2) and (if (mx==2) mr==1 else 1)) {
+        def tr = if (mx==0 and mr==2) f64 else if (tx0==tr0 and mx==1) ty_s{tx0} else tr0
+        def tx = if (mr==0 and mx==2) f64 else if (tx0==tr0 and mx==1) ty_s{tx0} else tx0
         export{merge{p, nx, '_', nr}, copy{tx, tr}}
       }
     }, ts, tn, tm}

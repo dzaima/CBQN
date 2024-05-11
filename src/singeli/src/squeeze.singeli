@@ -124,7 +124,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
             }
             int
           }
-          def acc = { if (length{is}==2) r2; else r1 }
+          def acc = { if (length{is}==2) r2 else r1 }
           
           acc|= M{getAcc{type{acc}, int}}
         }

@@ -1,4 +1,4 @@
-def pdep{x:(u64), m:(u64)} = emit{u64, '_pdep_u64', x, m}
-def pdep{x:(u32), m:(u32)} = emit{u32, '_pdep_u32', x, m}
-def pext{x:(u64), m:(u64)} = emit{u64, '_pext_u64', x, m}
-def pext{x:(u32), m:(u32)} = emit{u32, '_pext_u32', x, m}
+def pdep{x:T, m:T if T==u64} = emit{T, '_pdep_u64', x, m}
+def pdep{x:T, m:T if T==u32} = emit{T, '_pdep_u32', x, m}
+def pext{x:T, m:T if T==u64} = emit{T, '_pext_u64', x, m}
+def pext{x:T, m:T if T==u32} = emit{T, '_pext_u32', x, m}

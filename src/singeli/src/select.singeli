@@ -37,7 +37,7 @@ def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
   xlf:= VI**cast_i{TI, xl}
   @maskedLoop{ri}(cw0 in tup{VI,w}, M in 'm' over i to wl) {
     cw:= wrapChk{cw0, VI,xlf, M}
-    is:= (if (ext>1) i<<lb{ext}; else i)
+    is:= (if (ext>1) i<<lb{ext} else i)
     def se{e, c, o} = {
       c2:= shuf{[4]u64, c+c, 4b3120}
       each{
@@ -57,7 +57,7 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
   xlf:= VI**cast_i{TI, xl}
   @maskedLoop{ri}(cw0 in tup{VI,w}, M in 'm' over i to wl) {
     cw:= wrapChk{cw0, VI,xlf, M}
-    is:= (if (ext>1) i<<lb{ext}; else i)
+    is:= (if (ext>1) i<<lb{ext} else i)
     def part{o} = widen{[8]i32, re_el{i8, shuf{[4]u64, cw, 4b3210+o}}}
     def se{o} = storeExp{r, is+o, selx{part{o}}, M, ext, rd, wl}
     each{se, iota{ext}}
@@ -67,7 +67,7 @@ def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
 def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
   def bblend {m}{{f,t}} = homBlend{f, t, type{f} ~~ m}
   def bblendn{m}{{t,f}} = bblend{m}{tup{f,t}}
-  def bb{c}{f, v} = (if (f) bblendn{c<v}; else bblend{(c&v)==v})
+  def bb{c}{f, v} = (if (f) bblendn{c<v} else bblend{(c&v)==v})
   
   def bs{b, c, x} = cshuf{x, c}
   def bs{b, c, x if length{b}>0} = {

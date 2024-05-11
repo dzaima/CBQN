@@ -15,7 +15,7 @@ def zip{up, x} = (if (up) zipHi else zipLo){x,x}
 def spread{a:VT, ...up} = {
   def w = elwidth{VT}
   def b = w/8
-  if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}, ...up}; else a
+  if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}, ...up} else a
 }
 
 # Set all elements with the last element of the input

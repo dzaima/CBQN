@@ -146,7 +146,7 @@ fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   c:= V**0
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
-  def sums{n} = (if (n==0) tup{0}; else { def s=sums{n-1}; merge{s,s+1} })
+  def sums{n} = (if (n==0) tup{0} else { def s=sums{n-1}; merge{s,s+1} })
   def widen{v:T} = unpackQ{shuf{[4]u64, v, 4b3120}, T**0}
   
   def sumlanes{x:(u32)} = {

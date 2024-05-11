@@ -16,11 +16,11 @@ def isconst = kcon
 def istype  = ktyp
 def istup   = ktup
 
-def isunsigned{T} = isint{T} & ~issigned{T}
+def isunsigned{T} = isint{T} and not issigned{T}
 
-def isvec {T} = 0; def isvec {T if istype{T}} = same{typekind{T},'vector'}
-def isprim{T} = 0; def isprim{T if istype{T}} = same{typekind{T},'primitive'}
-def isptr {T} = 0; def isptr {T if istype{T}} = same{typekind{T},'pointer'}
+def isvec {T} = istype{T} and same{typekind{T},'vector'}
+def isprim{T} = istype{T} and same{typekind{T},'primitive'}
+def isptr {T} = istype{T} and same{typekind{T},'pointer'}
 def elwidth{T} = width{eltype{T}}
 
 oper &~ andnot infix none 35
@@ -40,16 +40,17 @@ def loadu{p:T                 if elwidth{T}==8} = load{p}
 def storeu{p:T, v:(eltype{T}) if elwidth{T}==8} = store{p, v}
 
 
-def reinterpret{T, x:X if T==X} = x
+def reinterpret{T, x:T} = x
 def exportN{f, ...ns} = each{export{.,f}, ns}
-def exportT{name, fs} = { v:*type{select{fs,0}} = fs; export{name, v} }
+def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 
 # hints
 def rare{x if knum{x}} = x
 def rare{x:(u1)} = emit{u1, '__builtin_expect', x, 0}
-def assert{x if x==0} = assert{'failed assertion'}
-def assert{x if x==1} = 1
+def assert{c, ...msg} = { if (not same{c,1}) { show{...msg}; 0{} } }
+def assert{(0)} = assert{0, 'failed assertion'}
+def assert{(1)} = 1
 def unreachable{} = emit{void, 'si_unreachable'}
 def assert{x:(u1)} = { if (not x) emit{void, 'si_unreachable'} }
 
@@ -61,28 +62,21 @@ def oneVal{{h, ...t}} = {
 def oneVal{{}} = {}
 def oneType{x} = oneVal{each{type, x}}
 
-def anyNum{x} = isconst{x} | knum{x}
+def anyNum{x} = knum{x}
 def anyNum{x:T} = isprim{T}
 
-def anyInt{x} = 0
-def anyInt{x if knum{x}} = (x>>0) == x
-def anyInt{x if isreg{x}|isconst{x}} = isint{x}
+def anyInt{x} = knum{x} and (x>>0) == x
+def anyInt{x:T} = isint{T}
 
 # vector width/type checks
-def w64 {T}   = 0; def w64 {T   if isvec{T}} = width{T}==64
-def w128{T}   = 0; def w128{T   if isvec{T}} = width{T}==128
-def w256{T}   = 0; def w256{T   if isvec{T}} = width{T}==256
-def w64 {T,w} = 0; def w64 {T,w if w64{T}}   = elwidth{T}==w
-def w128{T,w} = 0; def w128{T,w if w128{T}}  = elwidth{T}==w
-def w256{T,w} = 0; def w256{T,w if w256{T}}  = elwidth{T}==w
+def w64 {T} = isvec{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
+def w128{T} = isvec{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
+def w256{T} = isvec{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}==w
 
 # width+type checks
 def genchk{B, F} = {
-  def r{T} = 0
-  def r{T if B{T}} = F{eltype{T}}
-  def r{T,w} = 0
-  def r{T,w if B{T}} = F{eltype{T}} & (elwidth{T}==w)
-  def r{T if ~isvec{T}} = 0
+  def r{T  } = B{T} and F{eltype{T}}
+  def r{T,w} = B{T} and F{eltype{T}} and elwidth{T}==w
   r
 }
 def w256i = genchk{w256,      isint};  def w128i = genchk{w128,      isint};  def w64i = genchk{w64,      isint}
@@ -95,10 +89,7 @@ def w256f = genchk{w256,    isfloat};  def w128f = genchk{w128,    isfloat};  de
 def trunc{T, x:U if isint{T} and isint{U} and T<=U} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}
 
-def tern{c, T, F if anyInt{c}} = {
-  if(c) T
-  else F
-}
+def tern{c, T, F if anyInt{c}} = if(c) T else F
 def tern{c, t:T, f:T if anyInt{c}} = {
   res:T = f
   if (c) res = t
@@ -151,18 +142,18 @@ def collect{vars,begin,end,iter if knum{begin} and knum{end}} = {
 }
 
 # convert tuple to number in little-endian base b
-def base{b,l} = if (0==length{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
+def base{b,{}} = 0
+def base{b,{h,...t}} = h + b*base{b,t}
 
 
 
 # vector definitions
 def arch_defvw = if (hasarch{'AVX2'}) 256 else 128
-def has_simd = hasarch{'X86_64'} | hasarch{'AARCH64'}
-def fast_BMI2{} = if (SLOW_PDEP) 0 else hasarch{'BMI2'}
+def has_simd = hasarch{'X86_64'} or hasarch{'AARCH64'}
+def fast_BMI2{} = hasarch{'BMI2'} and not SLOW_PDEP
 
 # test if vector has a specific width & element type
-def lvec{T, n, w} = 0
-def lvec{T, n, w if isvec{T} and vcount{T}==n and elwidth{T}==w} = 1
+def lvec{T, n, w} = isvec{T} and vcount{T}==n and elwidth{T}==w
 
 # base cases
 def {
@@ -235,10 +226,9 @@ def popc{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_popcount', x}
 def ctz{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_ctzll', x}
 def ctz{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_ctz', x}
 def clz{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_clzll', x}
-def clz{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_clz', x}
+def clz{x:T if isint{T} and width{T}==32} = emit{ux, '__builtin_clz', x}
 # count-leading-zeros complement, less type-dependent
-def clzc{x:T if isint{T} and width{T}==64} = 64-clz{x}
-def clzc{x:T if isint{T} and width{T}<=32} = 32-clz{x}
+def clzc{x:T if isint{T}} = width{T} - clz{x}
 
 def ceil_log2{n} = clzc{n-1}
 
@@ -249,7 +239,7 @@ def truncBits{n, v if n==64} = cast_i{u64, v}
 
 # base-2 log of a constant power of two
 def lb{n if knum{n} and (n>>1<<1) == n and n>0} = lb{n>>1}+1
-def lb{n==1} = 0
+def lb{(1)} = 0
 
 def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
 def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
@@ -292,8 +282,9 @@ def forUnroll{exp,unr}{vars,begin,end,iter} = {
     iter{each{{j}=>i+j, iota{unr}}, vars}
     i+= unr
   }
-  if (unr==2) { if (i!=end) iter{tup{i}, vars} }
-  else if (unr>1) {
+  if (unr==2) {
+    if (i!=end) iter{tup{i}, vars}
+  } else if (unr>1) {
     if (exp) {
       def stop = makelabel{}
       each{{j} => {
@@ -313,7 +304,7 @@ def makeBranch{Ts, F} = {
   def start = setlabel{}
   F{...args}
   setlabel{skip}
-  {...vs} => { each{=, args, vs}; goto{start} }
+  {...vs} => { args = vs; goto{start} }
 }
 def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defined'
 
