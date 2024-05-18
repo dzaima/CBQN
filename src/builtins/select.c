@@ -372,7 +372,7 @@ B select_c2(B t, B w, B x) {
 
 
 extern INIT_GLOBAL u8 reuseElType[t_COUNT];
-B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep⌾(w⊏⥊) x, assumes w is a typed (elNum) list of valid indices, only el_f64 if strictly necessary
+B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep⌾(w⊏xl‿xcsz⥊⊢) x, assumes w is a typed (elNum) list of valid indices, only el_f64 if strictly necessary
   #if CHECK_VALID
     TALLOC(bool, set, xl);
     bool sparse = wia < xl/64;
@@ -401,7 +401,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
     f64* wp = f64any_ptr(w);
     SPARSE_INIT((i64)wp[i])
     
-    MAKE_MUT(r, xl * xcsz);
+    MAKE_MUT(r, xl*xcsz);
     mut_init_copy(r, x, re);
     NOGC_E;
     MUTG_INIT(r); SGet(rep)
@@ -418,10 +418,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         for (usz j = 0; j < xcsz; j++) {
-          B cn = Get(rep, i * xcsz + j);
-          EQ(!equal(mut_getU(r, cw * xcsz + j), cn));
-          mut_rm(r, cw * xcsz + j);
-          mut_setG(r, cw * xcsz + j, cn);
+          B cn = Get(rep, i*xcsz + j);
+          EQ(!equal(mut_getU(r, cw*xcsz + j), cn));
+          mut_rm(r, cw*xcsz + j);
+          mut_setG(r, cw*xcsz + j, cn);
         }
         DONE_CW;
       }
@@ -460,9 +460,9 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           for (usz j = 0; j < xcsz; j++) {
-            bool cn = bitp_get(np, i * xcsz + j);
-            EQ(cn != bitp_get(rp, cw * xcsz + j));
-            bitp_set(rp, cw * xcsz + j, cn);
+            bool cn = bitp_get(np, i*xcsz + j);
+            EQ(cn != bitp_get(rp, cw*xcsz + j));
+            bitp_set(rp, cw*xcsz + j, cn);
           }
           DONE_CW;
         }
@@ -487,10 +487,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           for (usz j = 0; j < xcsz; j++) {
-            B cn = Get(rep, i * xcsz + j);
-            EQ(!equal(cn,rp[cw * xcsz + j]));
-            dec(rp[cw * xcsz + j]);
-            rp[cw * xcsz + j] = cn;
+            B cn = Get(rep, i*xcsz + j);
+            EQ(!equal(cn,rp[cw*xcsz + j]));
+            dec(rp[cw*xcsz + j]);
+            rp[cw*xcsz + j] = cn;
           }
           DONE_CW;
         }
@@ -519,7 +519,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
         DONE_CW;                      \
       }                               \
     }                                 \
-    goto dec_ret_ra;         \
+    goto dec_ret_ra;                  \
   } while(0)
   
   do_u8:  IMPL(u8);
@@ -542,7 +542,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
 }
 
 B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || RNK(x)==0 || isAtm(w)) { def: return def_fn_ucw(t, o, w, x); }
+  if (isAtm(x) || isAtm(w)) { def: return def_fn_ucw(t, o, w, x); }
   usz xia = IA(x);
   usz wia = IA(w);
   u8 we = TI(w,elType);
@@ -551,7 +551,7 @@ B select_ucw(B t, B o, B w, B x) {
     if (!elNum(we)) goto def;
   }
   B rep;
-  if (isArr(o)) {
+  if (isArr(o) && RNK(x)>0) {
     i64 buf[2];
     if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) thrF("𝔽⌾(a⊸⊏)𝕩: Indexing out-of-bounds (%l∊a, %H≡≢𝕩)", buf[1]>=xia?buf[1]:buf[0], x);
     rep = incG(o);
@@ -563,6 +563,5 @@ B select_ucw(B t, B o, B w, B x) {
   usz rr = RNK(rep);
   bool ok = !isAtm(rep) && xr+wr==rr+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
   if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (%H ≡ shape of a, %2H ≡ shape of ⊏𝕩, %H ≡ shape of result of 𝔽)", w, xr-1, SH(x)+1, rep);
-  usz xcsz = arr_csz(x);
-  return select_replace(U'⊏', w, x, rep, wia, SH(x)[0], xcsz);
+  return select_replace(U'⊏', w, x, rep, wia, *SH(x), arr_csz(x));
 }
