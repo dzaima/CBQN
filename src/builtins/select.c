@@ -412,7 +412,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
         EQ(!equal(mut_getU(r, cw), cn));
         mut_rm(r, cw);
         mut_setG(r, cw, cn);
-	DONE_CW;
+        DONE_CW;
       }
     } else {
       for (usz i = 0; i < wia; i++) {
@@ -500,25 +500,25 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
   }
   
   #define IMPL(T) do {                \
-    T* rp = (void*)((TyArr*)ra)->a;      \
-    T* np = tyany_ptr(rep);              \
-    if (xcsz==1) {                       \
-      for (usz i = 0; i < wia; i++) {    \
-        READ_W(cw, i);                   \
-        T cn = np[i];                    \
-        EQ(cn != rp[cw]);                \
-        rp[cw] = cn;                     \
-        DONE_CW;                         \
-      }                                  \
-    } else {                             \
-      EqFnObj eq = EQFN_GET(re,re);      \
-      for (usz i = 0; i < wia; i++) {    \
-        READ_W(cw, i);                   \
-	EQ(!EQFN_CALL(eq,rp+cw*xcsz,np+i*xcsz,xcsz)); \
-	COPY_TO(rp,re,cw*xcsz,rep,i*xcsz,xcsz); \
-	DONE_CW;                         \
-      }                                  \
-    }                                    \
+    T* rp = (void*)((TyArr*)ra)->a;   \
+    T* np = tyany_ptr(rep);           \
+    if (xcsz==1) {                    \
+      for (usz i = 0; i < wia; i++) { \
+        READ_W(cw, i);                \
+        T cn = np[i];                 \
+        EQ(cn != rp[cw]);             \
+        rp[cw] = cn;                  \
+        DONE_CW;                      \
+      }                               \
+    } else {                          \
+      EqFnObj eq = EQFN_GET(re,re);   \
+      for (usz i = 0; i < wia; i++) { \
+        READ_W(cw, i);                \
+        EQ(!EQFN_CALL(eq,rp+cw*xcsz,np+i*xcsz,xcsz)); \
+        COPY_TO(rp,re,cw*xcsz,rep,i*xcsz,xcsz); \
+        DONE_CW;                      \
+      }                               \
+    }                                 \
     goto dec_ret_ra;         \
   } while(0)
   
