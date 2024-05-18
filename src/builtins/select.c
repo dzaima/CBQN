@@ -499,7 +499,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
     }
   }
   
-  #define IMPL(T) do {                   \
+  #define IMPL(T) do {                \
     T* rp = (void*)((TyArr*)ra)->a;      \
     T* np = tyany_ptr(rep);              \
     if (xcsz==1) {                       \
@@ -511,14 +511,12 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
         DONE_CW;                         \
       }                                  \
     } else {                             \
+      EqFnObj eq = EQFN_GET(re,re);      \
       for (usz i = 0; i < wia; i++) {    \
         READ_W(cw, i);                   \
-        for (usz j = 0; j < xcsz; j++) { \
-          T cn = np[i * xcsz + j];       \
-          EQ(cn != rp[cw * xcsz + j]);   \
-          rp[cw * xcsz + j] = cn;        \
-        }                                \
-        DONE_CW;                         \
+	EQ(!EQFN_CALL(eq,rp+cw*xcsz,np+i*xcsz,xcsz)); \
+	COPY_TO(rp,re,cw*xcsz,rep,i*xcsz,xcsz); \
+	DONE_CW;                         \
       }                                  \
     }                                    \
     goto dec_ret_ra;         \
