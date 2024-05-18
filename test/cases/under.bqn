@@ -8,8 +8,8 @@
 # ⊏ & ⊑
 !"𝔽⌾(a⊸⊑): Incompatible result elements" % 10‿20⌾(⟨1‿2,1‿2⟩⊸⊑) 4‿5⥊↕9
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % 10‿20⌾(3‿3⊸⊏) ↕10
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(2‿3⊸⊏) ↕10
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 1⊸∾⌾(2‿3⊸⊏) ↕10
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ shape of a, ⟨⟩ = shape of ⊏𝕩, ⟨3⟩ ≡ shape of result of 𝔽)" % 10‿20‿30⌾(2‿3⊸⊏) ↕10
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ shape of a, ⟨⟩ = shape of ⊏𝕩, ⟨3⟩ ≡ shape of result of 𝔽)" % 1⊸∾⌾(2‿3⊸⊏) ↕10
 !"𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
 !"𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 1⊸∾⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
 
