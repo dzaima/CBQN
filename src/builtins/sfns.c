@@ -1302,7 +1302,7 @@ B pick_uc1(B t, B o, B x) {
 
 
 
-B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xia);
+B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcia);
 B select_ucw(B t, B o, B w, B x);
 B select_c2(B,B,B);
 B pick_ucw(B t, B o, B w, B x) {
@@ -1329,7 +1329,7 @@ B pick_ucw(B t, B o, B w, B x) {
       w = num_squeeze(mut_fcd(r, w));
       B rep = isArr(o)? incG(o) : c1(o, C2(select, incG(w), C1(shape, incG(x))));
       if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
-      return select_replace(U'⊑', w, x, rep, wia, xia);
+      return select_replace(U'⊑', w, x, rep, wia, xia, 1);
     }
     decG(w);
   }
