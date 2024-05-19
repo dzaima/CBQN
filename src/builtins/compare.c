@@ -107,13 +107,14 @@ u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; oth
 #else
   #define F(X) equal_##X
   bool F(1_1)(void* w, void* x, u64 l, u64 d) {
+    assert(l>0);
     u64* wp = w; u64* xp = x;
     usz q = l/64;
     for (usz i=0; i<q; i++) if (wp[i] != xp[i]) return false;
     usz r = (-l)%64; return r==0 || (wp[q]^xp[q])<<r == 0;
   }
   #define DEF_EQ_U1(N, T) \
-    bool F(1_##N)(void* w, void* x, u64 l, u64 d) {                    \
+    bool F(1_##N)(void* w, void* x, u64 l, u64 d) { assert(l>0);       \
       if (d!=0) { void* t=w; w=x; x=t; }                               \
       u64* wp = w; T* xp = x;                                          \
       for (usz i=0; i<l; i++) if (bitp_get(wp,i)!=xp[i]) return false; \
@@ -127,7 +128,7 @@ u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; oth
 
   #define DEF_EQ_I(NAME, S, T, INIT) \
     bool F(NAME)(void* w, void* x, u64 l, u64 d) {            \
-      INIT                                                    \
+      assert(l>0); INIT                                       \
       S* wp = w; T* xp = x;                                   \
       for (usz i=0; i<l; i++) if (wp[i]!=xp[i]) return false; \
       return true;                                            \
@@ -143,7 +144,7 @@ u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; oth
   #undef DEF_EQ_I
   #undef DEF_EQ
 #endif
-bool notEq(void* a, void* b, u64 l, u64 data) { return false; }
+bool notEq(void* a, void* b, u64 l, u64 data) { assert(l>0); return false; }
 INIT_GLOBAL EqFn eqFns[] = {
   F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
   F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,

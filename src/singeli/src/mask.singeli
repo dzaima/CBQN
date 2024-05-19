@@ -103,6 +103,7 @@ def maskedLoop{bulk} = maskedLoop{bulk,0}
 
 
 def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
+  assert{end > 0}
   i:L = 0
   while(i < (end-1)/bulk) {
     mlExec{i, iter, vars, bulk, maskNone}

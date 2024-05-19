@@ -15,6 +15,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   def vw = arch_defvw
   def bulk = vw / width{X}
   if (W!=X) if (d!=0) swap{w,x}
+  assert{l>0}
   
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
