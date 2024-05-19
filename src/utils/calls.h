@@ -26,14 +26,13 @@ CMP_DEF(le, AS);
 #define CMP_AA_IMM(FN, ELT, WHERE, WP, XP, LEN) CMP_AA_CALL(CMP_AA_FN(FN, ELT), WHERE, WP, XP, LEN)
 #define CMP_AS_IMM(FN, ELT, WHERE, WP, X,  LEN) CMP_AS_CALL(CMP_AS_FN(FN, ELT), WHERE, WP, X, LEN)
 
-// Check if the l elements starting at a and b match
 typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
 extern INIT_GLOBAL EqFn eqFns[];
 extern u8 const eqFnData[];
 #define EQFN_INDEX(W_ELT, X_ELT) ((W_ELT)*8 + (X_ELT))
 typedef struct { EqFn fn; u8 data; } EqFnObj;
 #define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
-#define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data)
+#define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data) // check if L elements starting at a and b match; assumes L≥1
 
 typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // writes min,max in res, assumes len≥1; returns 0 and leaves res undefined if either any (floor(x)≠x or abs>2⋆53), or (x≠(i64)x)
 extern INIT_GLOBAL RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64
