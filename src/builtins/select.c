@@ -372,14 +372,15 @@ B select_c2(B t, B w, B x) {
 
 
 extern INIT_GLOBAL u8 reuseElType[t_COUNT];
-B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep⌾(w⊏xl‿xcsz⥊⊢) x, assumes w is a typed (elNum) list of valid indices, only el_f64 if strictly necessary
+B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consumes all; (⥊rep)⌾(⥊w⊏cam‿csz⥊⊢) x; assumes csz>0, that w is a typed (elNum) list of valid indices (squeeze already attempted on el_f64), and that rep has the proper element count
+  assert(csz > 0);
   #if CHECK_VALID
-    TALLOC(bool, set, xl);
-    bool sparse = wia < xl/64;
-    if (!sparse) for (i64 i = 0; i < xl; i++) set[i] = false;
+    TALLOC(bool, set, cam);
+    bool sparse = wia < cam/64;
+    if (!sparse) for (i64 i = 0; i < cam; i++) set[i] = false;
     #define SPARSE_INIT(WI) \
       if (sparse) for (usz i = 0; i < wia; i++) {                   \
-        i64 cw = WI; if (RARE(cw<0)) cw+= (i64)xl; set[cw] = false; \
+        i64 cw = WI; if (RARE(cw<0)) cw+= (i64)cam; set[cw] = false; \
       }
     #define EQ(ITER,F) if (set[cw]) ITER if (F) thrF("𝔽⌾(a⊸%c): Incompatible result elements", chr); set[cw] = true;
     #define EQ1(F) EQ(,F)
@@ -391,7 +392,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
     #define FREE_CHECK
   #endif
   
-  #define READ_W(N,I) i64 N = (i64)wp[I]; if (RARE(N<0)) N+= (i64)xl
+  #define READ_W(N,I) i64 N = (i64)wp[I]; if (RARE(N<0)) N+= (i64)cam
   u8 we = TI(w,elType); assert(elNum(we));
   u8 xe = TI(x,elType);
   u8 re = el_or(xe, TI(rep,elType));
@@ -401,11 +402,11 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
     f64* wp = f64any_ptr(w);
     SPARSE_INIT((i64)wp[i])
     
-    MAKE_MUT(r, xl*xcsz);
+    MAKE_MUT(r, cam*csz);
     mut_init_copy(r, x, re);
     NOGC_E;
     MUTG_INIT(r); SGet(rep)
-    if (xcsz==1) {
+    if (csz==1) {
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         B cn = Get(rep, i);
@@ -416,9 +417,9 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
     } else {
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
-        EQ(for (usz j = 0; j < xcsz; j++),!equal(mut_getU(r, cw*xcsz + j), Get(rep, i*xcsz + j)));
-        for (usz j = 0; j < xcsz; j++) mut_rm(r, cw*xcsz + j);
-        mut_copyG(r, cw*xcsz, rep, i*xcsz, xcsz);
+        EQ(for (usz j = 0; j < csz; j++), !equal(mut_getU(r, cw*csz + j), Get(rep, i*csz + j)));
+        for (usz j = 0; j < csz; j++) mut_rm(r, cw*csz + j);
+        mut_copyG(r, cw*csz, rep, i*csz, csz);
       }
     }
     ra = mut_fp(r);
@@ -430,7 +431,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
   i32* wp = i32any_ptr(w);
   SPARSE_INIT(wp[i])
   bool reuse = reusable(x) && re==reuseElType[TY(x)];
-  SLOWIF(!reuse && xl>100 && wia<xl/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
+  SLOWIF(!reuse && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   switch (re) { default: UD;
     case el_i8:  rep = toI8Any(rep);  ra = reuse? a(REUSE(x)) : cpyI8Arr(x);  goto do_u8;
     case el_c8:  rep = toC8Any(rep);  ra = reuse? a(REUSE(x)) : cpyC8Arr(x);  goto do_u8;
@@ -443,7 +444,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
       TyArr* na = toBitArr(rep); rep = taga(na);
       u64* np = bitarrv_ptr(na);
       u64* rp = (void*)((TyArr*)ra)->a;
-      if (xcsz==1) {
+      if (csz==1) {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           bool cn = bitp_get(np, i);
@@ -453,8 +454,8 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
       } else {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          EQ(for (usz j = 0; j < xcsz; j++), bitp_get(np, i*xcsz + j) != bitp_get(rp, cw*xcsz + j));
-          COPY_TO(rp, el_bit, cw*xcsz, rep, i*xcsz, xcsz);
+          EQ(for (usz j = 0; j < csz; j++), bitp_get(np, i*csz + j) != bitp_get(rp, cw*csz + j));
+          COPY_TO(rp, el_bit, cw*csz, rep, i*csz, csz);
         }
       }
       goto dec_ret_ra;
@@ -463,8 +464,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
       ra = reuse? a(REUSE(x)) : cpyHArr(x);
       B* rp = harrP_parts((HArr*)ra).a;
       SGet(rep)
-      if (xcsz==1)
-      {
+      if (csz==1) {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           B cn = Get(rep, i);
@@ -475,34 +475,26 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
       } else {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          EQ(for (usz j = 0; j < xcsz; j++), !equal(Get(rep, i*xcsz + j), rp[cw*xcsz + j]));
-          for (usz j = 0; j < xcsz; j++) dec(rp[cw*xcsz + j]);
-          COPY_TO(rp, el_B, cw*xcsz, rep, i*xcsz, xcsz);
+          EQ(for (usz j = 0; j < csz; j++), !equal(Get(rep, i*csz + j), rp[cw*csz + j]));
+          for (usz j = 0; j < csz; j++) dec(rp[cw*csz + j]);
+          COPY_TO(rp, el_B, cw*csz, rep, i*csz, csz);
         }
       }
       goto dec_ret_ra;
     }
   }
   
-  #define IMPL(T) do {                \
-    T* rp = (void*)((TyArr*)ra)->a;   \
-    T* np = tyany_ptr(rep);           \
-    if (xcsz==1) {                    \
-      for (usz i = 0; i < wia; i++) { \
-        READ_W(cw, i);                \
-        T cn = np[i];                 \
-        EQ1(cn != rp[cw]);            \
-        rp[cw] = cn;                  \
-      }                               \
-    } else {                          \
-      EqFnObj eq = EQFN_GET(re,re);   \
-      for (usz i = 0; i < wia; i++) { \
-        READ_W(cw, i);                \
-        EQ1(!EQFN_CALL(eq, rp+cw*xcsz, np+i*xcsz, xcsz)); \
-        COPY_TO(rp, re, cw*xcsz, rep, i*xcsz, xcsz); \
-      }                               \
-    }                                 \
-    goto dec_ret_ra;                  \
+  #define IMPL(T) do {              \
+    if (csz!=1) goto do_tycell;     \
+    T* rp = (void*)((TyArr*)ra)->a; \
+    T* np = tyany_ptr(rep);         \
+    for (usz i = 0; i < wia; i++) { \
+      READ_W(cw, i);                \
+      T cn = np[i];                 \
+      EQ1(cn != rp[cw]);            \
+      rp[cw] = cn;                  \
+    }                               \
+    goto dec_ret_ra;                \
   } while(0)
   
   do_u8:  IMPL(u8);
@@ -510,6 +502,18 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep�
   do_u32: IMPL(u32);
   do_u64: IMPL(u64);
   #undef IMPL
+  
+  do_tycell:;
+  u8 cwidth = csz * elWidth(re);
+  u8* rp = (u8*) ((TyArr*)ra)->a;
+  u8* np = tyany_ptr(rep);
+  EqFnObj eq = EQFN_GET(re,re);
+  for (usz i = 0; i < wia; i++) {
+    READ_W(cw, i);
+    EQ1(!EQFN_CALL(eq, rp + cw*cwidth, np + i*cwidth, csz));
+    COPY_TO(rp, re, cw*csz, rep, i*csz, csz);
+  }
+  goto dec_ret_ra;
   
   
   
@@ -546,5 +550,7 @@ B select_ucw(B t, B o, B w, B x) {
   usz rr = RNK(rep);
   bool ok = !isAtm(rep) && xr+wr==rr+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
   if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (%H ≡ shape of a, %2H ≡ shape of ⊏𝕩, %H ≡ shape of result of 𝔽)", w, xr-1, SH(x)+1, rep);
-  return select_replace(U'⊏', w, x, rep, wia, *SH(x), arr_csz(x));
+  usz csz = arr_csz(x);
+  if (csz == 0) { decG(rep); decG(w); return x; }
+  return select_replace(U'⊏', w, x, rep, wia, *SH(x), csz);
 }
