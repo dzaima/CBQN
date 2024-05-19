@@ -381,13 +381,13 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
       if (sparse) for (usz i = 0; i < wia; i++) {                   \
         i64 cw = WI; if (RARE(cw<0)) cw+= (i64)xl; set[cw] = false; \
       }
-    #define EQ(F) if (set[cw] && (F)) thrF("ùîΩ‚åæ(a‚ä∏%c): Incompatible result elements", chr);
-    #define DONE_CW set[cw] = true;
+    #define EQ(ITER,F) if (set[cw]) ITER if (F) thrF("ùîΩ‚åæ(a‚ä∏%c): Incompatible result elements", chr); set[cw] = true;
+    #define EQ1(F) EQ(,F)
     #define FREE_CHECK TFREE(set)
   #else
     #define SPARSE_INIT(GET)
-    #define EQ(F)
-    #define DONE_CW
+    #define EQ(ITER,F)
+    #define EQ1(F)
     #define FREE_CHECK
   #endif
   
@@ -409,21 +409,16 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         B cn = Get(rep, i);
-        EQ(!equal(mut_getU(r, cw), cn));
+        EQ1(!equal(mut_getU(r, cw), cn));
         mut_rm(r, cw);
         mut_setG(r, cw, cn);
-        DONE_CW;
       }
     } else {
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
-        for (usz j = 0; j < xcsz; j++) {
-          B cn = Get(rep, i*xcsz + j);
-          EQ(!equal(mut_getU(r, cw*xcsz + j), cn));
-          mut_rm(r, cw*xcsz + j);
-          mut_setG(r, cw*xcsz + j, cn);
-        }
-        DONE_CW;
+        EQ(for (usz j = 0; j < xcsz; j++),!equal(mut_getU(r, cw*xcsz + j), Get(rep, i*xcsz + j)));
+        for (usz j = 0; j < xcsz; j++) mut_rm(r, cw*xcsz + j);
+        mut_copyG(r, cw*xcsz, rep, i*xcsz, xcsz);
       }
     }
     ra = mut_fp(r);
@@ -452,19 +447,14 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           bool cn = bitp_get(np, i);
-          EQ(cn != bitp_get(rp, cw));
+          EQ1(cn != bitp_get(rp, cw));
           bitp_set(rp, cw, cn);
-          DONE_CW;
         }
       } else {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          for (usz j = 0; j < xcsz; j++) {
-            bool cn = bitp_get(np, i*xcsz + j);
-            EQ(cn != bitp_get(rp, cw*xcsz + j));
-            bitp_set(rp, cw*xcsz + j, cn);
-          }
-          DONE_CW;
+          EQ(for (usz j = 0; j < xcsz; j++), bitp_get(np, i*xcsz + j) != bitp_get(rp, cw*xcsz + j));
+          COPY_TO(rp, el_bit, cw*xcsz, rep, i*xcsz, xcsz);
         }
       }
       goto dec_ret_ra;
@@ -478,21 +468,16 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           B cn = Get(rep, i);
-          EQ(!equal(cn,rp[cw]));
+          EQ1(!equal(cn,rp[cw]));
           dec(rp[cw]);
           rp[cw] = cn;
-          DONE_CW;
         }
       } else {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          for (usz j = 0; j < xcsz; j++) {
-            B cn = Get(rep, i*xcsz + j);
-            EQ(!equal(cn,rp[cw*xcsz + j]));
-            dec(rp[cw*xcsz + j]);
-            rp[cw*xcsz + j] = cn;
-          }
-          DONE_CW;
+          EQ(for (usz j = 0; j < xcsz; j++), !equal(Get(rep, i*xcsz + j), rp[cw*xcsz + j]));
+          for (usz j = 0; j < xcsz; j++) dec(rp[cw*xcsz + j]);
+          COPY_TO(rp, el_B, cw*xcsz, rep, i*xcsz, xcsz);
         }
       }
       goto dec_ret_ra;
@@ -506,17 +491,15 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
       for (usz i = 0; i < wia; i++) { \
         READ_W(cw, i);                \
         T cn = np[i];                 \
-        EQ(cn != rp[cw]);             \
+        EQ1(cn != rp[cw]);            \
         rp[cw] = cn;                  \
-        DONE_CW;                      \
       }                               \
     } else {                          \
       EqFnObj eq = EQFN_GET(re,re);   \
       for (usz i = 0; i < wia; i++) { \
         READ_W(cw, i);                \
-        EQ(!EQFN_CALL(eq,rp+cw*xcsz,np+i*xcsz,xcsz)); \
-        COPY_TO(rp,re,cw*xcsz,rep,i*xcsz,xcsz); \
-        DONE_CW;                      \
+        EQ1(!EQFN_CALL(eq, rp+cw*xcsz, np+i*xcsz, xcsz)); \
+        COPY_TO(rp, re, cw*xcsz, rep, i*xcsz, xcsz); \
       }                               \
     }                                 \
     goto dec_ret_ra;                  \
@@ -537,7 +520,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcsz) { // rep‚å
   
   #undef SPARSE_INIT
   #undef EQ
-  #undef DONE_CW
+  #undef EQ1
   #undef FREE_CHECK
 }
 
