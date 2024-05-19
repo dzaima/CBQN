@@ -66,11 +66,11 @@ src/
 
 ## Base
 
-`B` represents any BQN object. It's a 64-bit NaN-boxed value; some of the NaN-boxed values, determined by the top 16 bits, are heap-allocated (i.e. low 48 bits are a `Value*`), some aren't:
+`B`, a 64-bit NaN-boxed value, represents any BQN object. Some of the NaN-boxed types, determined by the top 16 bits, are heap-allocated (i.e. low 48 bits are a `Value*`), some aren't. The heap-allocated ones are reference-counted.
 ```C
 Type checks (all are safe to execute on any B object):
   test           tag    description     heap-allocated
-  isF64(x)     F64_TAG  a number        no
+  isF64(x)       N/A    a number        no
   isC32(x)     C32_TAG  a character     no
   isAtm(x)      [many]  !isArr(x)       depends
   isVal(x)      [many]  heap-allocated  yes
@@ -148,7 +148,7 @@ type field for heap-allocated objects:
 See src/h.h for more basic operations
 ```
 
-An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free an object regardless of its reference count.
+An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free a heap-allocated object regardless of its reference count.
 
 Any such allocation is guaranteed to have at least 1024 bytes readable & writable both before & after the allocation, though of course the read values should not affect any visible behavior, and writes need to write back exactly the data that was there before.
 
