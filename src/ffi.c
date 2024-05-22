@@ -1210,7 +1210,7 @@ static void* ptrobj_elbase(B h, B off, bool negate) { // doesn't consume h, off 
   char* ptr = ptrh_ptr(h);
   i64 el = o2i64(off);
   if (negate) el = -el;
-  return ptr + ptrh_stride(h)*el;
+  return ptr + el * (i64)ptrh_stride(h);
 }
 static B ptrobjRead_c1(B t, B x) {
   B h = nfn_objU(t);
