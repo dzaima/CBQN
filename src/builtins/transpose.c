@@ -52,7 +52,8 @@
 #define DECL_BASE(T) \
   static NOINLINE void transpose_##T(void* rv, void* xv, u64 bw, u64 bh, u64 w, u64 h) {   \
     T* rp=rv; T* xp=xv;                                                                    \
-    PLAINLOOP for(ux y=0;y<bh;y++) NOVECTORIZE for(ux x=0;x<bw;x++) rp[x*h+y] = xp[y*w+x]; \
+    if (bh<bw) { PLAINLOOP for(ux y=0;y<bh;y++) NOVECTORIZE for(ux x=0;x<bw;x++) rp[x*h+y] = xp[y*w+x]; } \
+    else       { PLAINLOOP for(ux x=0;x<bw;x++) NOVECTORIZE for(ux y=0;y<bh;y++) rp[x*h+y] = xp[y*w+x]; } \
   }
 DECL_BASE(i8) DECL_BASE(i16) DECL_BASE(i32) DECL_BASE(i64)
 #undef DECL_BASE
