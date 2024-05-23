@@ -124,7 +124,7 @@ typedef struct { B n, p; } B2;
 static NOINLINE B toIntCell(B x, ux csz0, ur co) {
   assert(TI(x,elType)!=el_B);
   usz ria = shProd(SH(x), 0, co);
-  ShArr* rsh;
+  ShArr* rsh ONLY_GCC(=0);
   if (co>1) { rsh=m_shArr(co); shcpy(rsh->a,SH(x),co); }
   B r0 = widenBitArr(x, co);
   usz csz = shProd(SH(r0),co,RNK(r0)) << elwBitLog(TI(r0,elType));
