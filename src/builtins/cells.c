@@ -450,10 +450,12 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       Md1D* fd = c(Md1D,f);
       u8 rtid = fd->m1->flags-1;
       if (rtid==n_const) { f=fd->f; goto const_f; }
-      if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && k==1 && xr==2 && isFun(fd->f) && isPervasiveDyExt(fd->f)) { // TODO extend to any rank x with cr==1
+      if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B && k==1 && xr==2 && isFun(fd->f)) { // TODO extend to any rank x with cr==1
         usz *sh = SH(x); usz m = sh[1];
-        if (m == 1) return select_cells(0, x, cam, k, false);
-        if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
+        u8 frtid = v(fd->f)->flags-1;
+        if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
+        if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
+        if (isPervasiveDyExt(fd->f) && m <= 64 && m < sh[0]) return fold_rows(fd, x);
       }
     } else if (TY(f) == t_md2D) {
       Md2D* fd = c(Md2D,f);
