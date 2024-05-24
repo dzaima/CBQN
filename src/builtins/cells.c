@@ -7,7 +7,8 @@
 B fne_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
-B fold_rows(Md1D* d, B x); // from fold.c
+B fold_rows(Md1D* d, B x);     // from fold.c
+B fold_rows_bit(Md1D* d, B x); // from fold.c
 B takedrop_highrank(bool take, B w, B x); // from sfns.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
@@ -455,7 +456,10 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         u8 frtid = v(fd->f)->flags-1;
         if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
         if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
-        if (isPervasiveDyExt(fd->f) && m <= 64 && m < sh[0]) return fold_rows(fd, x);
+        if (isPervasiveDyExt(fd->f)) {
+          if (TI(x,elType)==el_bit) { B r = fold_rows_bit(fd, x); if (!q_N(r)) return r; }
+          if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
+        }
       }
     } else if (TY(f) == t_md2D) {
       Md2D* fd = c(Md2D,f);
