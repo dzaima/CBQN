@@ -1,37 +1,37 @@
 # compact casting for the annoying intrinsic type system
-def v2i{x:T if w256{T}} = if(isint{eltype{T}}) x else [32]u8 ~~ x
+def v2i{x:T=[_]E if w256{T}} = if(isint{E}) x else [32]u8 ~~ x
 def v2f{x:T if w256{T}} = [8]f32 ~~ x
 def v2d{x:T if w256{T}} = [4]f64 ~~ x
 
-def undefPromote{T, x:X if w128{X} and w256{T} and eltype{T}==eltype{X}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
+def undefPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 
 # load & store
-def loadLow{ptr:P, w if w256{eltype{P}} and w<=128} = undefPromote{eltype{P}, loadLow{*n_h{eltype{P}} ~~ ptr, w}}
-def loadLow{ptr:P, w if w256{eltype{P}} and w==256} = load{ptr}
+def loadLow{ptr:*T, w if w256{T} and w<=128} = undefPromote{T, loadLow{*n_h{T} ~~ ptr, w}}
+def loadLow{ptr:*T, w if w256{T} and w==256} = load{ptr}
 
-def storeLow{ptr:P, w, x:T if w256{T} and w<=128} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:P, w, x:T if w256{T} and w==256} = store{*T~~ptr, 0, x}
+def storeLow{ptr:*T, w, x:X if w256{X} and w<=128} = storeLow{ptr, w, half{x, 0}}
+def storeLow{ptr:*T, w, x:X if w256{X} and w==256} = store{*X~~ptr, 0, x}
 
 
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
 local def f64cmpAVX{a,b,n} = [4]u64 ~~ emit{[4]f64, '_mm256_cmp_pd', a, b, n}
-def unord{a:T,b:T if T==[8]f32} = f32cmpAVX{a,b,3}
-def unord{a:T,b:T if T==[4]f64} = f64cmpAVX{a,b,3}
+def unord{a:T, b:T==[8]f32} = f32cmpAVX{a,b,3}
+def unord{a:T, b:T==[4]f64} = f64cmpAVX{a,b,3}
 
 # f32 arith
-def rsqrtE{a:([8]f32)} = emit{[8]f32, '_mm256_rsqrt_ps', a}
-def   rcpE{a:([8]f32)} = emit{[8]f32, '_mm256_rcp_ps', a}
+def rsqrtE{a:T==[8]f32} = emit{T, '_mm256_rsqrt_ps', a}
+def   rcpE{a:T==[8]f32} = emit{T, '_mm256_rcp_ps', a}
 
 # conversion
 def half{x:T, i if w256{T} and knum{i}} = n_h{T} ~~ emit{[8]i16, '_mm256_extracti128_si256', v2i{x}, i}
-def half{x:T, (0) if w256{T}}           = n_h{T} ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
+def half{x:T, 0 if w256{T}}             = n_h{T} ~~ emit{[8]i16, '_mm256_castsi256_si128', v2i{x}}
 def pair{a:T,b:T if w128{T}}            = n_d{T} ~~ emit{[8]i32, '_mm256_setr_m128i', a, b}
 
-def widen{T==[4]f64, x:X if X==[4]i32} = emit{T, '_mm256_cvtepi32_pd', x}
-def widen{T==[4]f64, x:X if X==[4]f32} = emit{T, '_mm256_cvtps_pd', x}
-def widen{T==[4]f64, x:X if w128i{X} and elwidth{X}<32} = widen{T, widen{[4]i32, x}}
-def widen{T, x:X if w256{X} and vcount{X}>vcount{T}} = widen{T, half{x,0}}
+def widen{T==[4]f64, x:([4]i32)} = emit{T, '_mm256_cvtepi32_pd', x}
+def widen{T==[4]f64, x:([4]f32)} = emit{T, '_mm256_cvtps_pd', x}
+def widen{T==[4]f64, x:X=[_]U if w128i{X} and width{U}<32} = widen{T, widen{[4]i32, x}}
+def widen{T=[k]_, x:X=[l]_ if w256{X} and l>k} = widen{T, half{x,0}}
 
 
 # structural operations
@@ -50,5 +50,5 @@ def homMask{x:T if w256{T}} = topMask{x}
 def homAny{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
 def homAll{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
 
-def topAny{x:T if w256i{T} and elwidth{T}>=32} = topMask{x} != 0
-def topAll{x:T if w256i{T} and elwidth{T}>=32} = topMask{x} == (1<<vcount{T})-1
+def topAny{x:T=[_]E if w256i{T} and width{E}>=32} = topMask{x} != 0
+def topAll{x:T=[k]E if w256i{T} and width{E}>=32} = topMask{x} == (1<<k)-1

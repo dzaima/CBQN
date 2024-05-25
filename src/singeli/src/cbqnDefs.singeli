@@ -21,18 +21,14 @@ def cbqn_nspTag{} = emit{u64, '', 'NSP_TAG'}
 def cbqn_objTag{} = emit{u64, '', 'OBJ_TAG'}
 def cbqn_arrTag{} = emit{u64, '', 'ARR_TAG'}
 
-def cbqn_elType{(u1 )} = 0
-def cbqn_elType{(i8 )} = 1
-def cbqn_elType{(i16)} = 2
-def cbqn_elType{(i32)} = 3
-def cbqn_elType{(f64)} = 4
-def cbqn_elType{(u8 )} = 5
-def cbqn_elType{(u16)} = 6
-def cbqn_elType{(u32)} = 7
+def cbqn_elType = match {
+  {(u1)} => 0; {(i8)} => 1; {(i16)} => 2; {(i32)} => 3; {(f64)} => 4
+               {(u8)} => 5; {(u16)} => 6; {(u32)} => 7
+}
 
 def cbqn_tyArrOffset{} = emit{u64, 'offsetof', 'TyArr', 'a'}
 
 def talloc{T, len} = emit{*T, 'TALLOCP', fmt_type{T}, len}
 def tfree{ptr} = emit{void, 'TFREE', ptr}
 def fmt_type{T} = merge{quality{T}, fmtnat{width{T}}}
-def fmt_type{T if isptr{T}} = merge{'*',fmt_type{eltype{T}}}
+def fmt_type{*T} = merge{'*',fmt_type{T}}

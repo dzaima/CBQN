@@ -3,13 +3,12 @@ include './mask'
 include './cbqnDefs'
 include './bitops'
 
-def copyFromBits{T, loadFn, rp, l:(u64)} = {
-  def bulk = vcount{T}
-  def TU = ty_u{T}
+def copyFromBits{V=[bulk]T, loadFn, rp, l:(u64)} = {
+  def U = ty_u{V}
   
-  @maskedLoop{bulk}(sr in tup{'g',*eltype{T}~~rp} over i to l) {
-    x:= loadFn{TU, i}
-    sr{T~~(x & TU ~~ T**1)}
+  @maskedLoop{bulk}(sr in tup{'g',*T~~rp} over i to l) {
+    x:= loadFn{U, i}
+    sr{V~~(x & U ~~ V**1)}
   }
 }
 
@@ -74,7 +73,7 @@ fn copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   def RV = [bulk]R
   rp:= *R~~r
   
-  copyFromBits{RV, {T, i} => spreadBits{T, loaduBitTrunc{*u64~~x0, xs+i*vcount{T}, vcount{T}}}, r, l}
+  copyFromBits{RV, {T=[k]_, i} => spreadBits{T, loaduBitTrunc{*u64~~x0, xs+i*k, k}}, r, l}
   # }
 }
 

@@ -4,13 +4,17 @@ def b_get{x:(*u64), n:(ux)} = {
   ((load{x,n>>6}>>(n&63)) & 1) != 0
 }
 
-def b_getBatchLo{sz, x:(*u64), n:(ux) if sz==2} = (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2})
-def b_getBatchLo{sz, x:(*u64), n:(ux) if sz==4} = (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4})
-def b_getBatchLo{sz, x:(*u64), n:(ux) if sz>=8} = load{*ty_u{sz}~~x, n}
+def b_getBatchLo{sz, x:(*u64), n:(ux)} = match (sz) {
+  {2} => (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2})
+  {4} => (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4})
+  {sz if sz>=8} => load{*ty_u{sz}~~x, n}
+}
 
-def b_getBatch{sz, x:(*u64), n:(ux) if sz==2} = b_getBatchLo{sz, x, n} & 3
-def b_getBatch{sz, x:(*u64), n:(ux) if sz==4} = b_getBatchLo{sz, x, n} & 15
-def b_getBatch{sz, x:(*u64), n:(ux) if sz>=8} = load{*ty_u{sz}~~x, n}
+def b_getBatch{sz, x:(*u64), n:(ux)} = match (sz) {
+  {2} => b_getBatchLo{sz, x, n} & 3
+  {4} => b_getBatchLo{sz, x, n} & 15
+  {sz if sz>=8} => load{*ty_u{sz}~~x, n}
+}
 
 
 def b_set{x:(*u64), n:(ux), v:(u1)} = {
@@ -20,39 +24,40 @@ def b_set{x:(*u64), n:(ux), v:(u1)} = {
   else   store{x,n>>6,p & ~m}
 }
 
-def b_setBatch{sz, x:(*u64), n:(ux), v} = {
-  vc:u64 = promote{u64,v}
-  am:u64 = 64/sz
-  w:u64 = load{x,n/am}
-  sh:u64 = (n&(am-1)) * sz
-  w&= ~(ones{u64,sz}<<sh)
-  w|= (vc<<sh)
-  store{x, n/am, w}
-}
-
-def b_setBatch{sz, x:(*u64), n:(ux), v if sz==4} = {
-  x8:= *u8 ~~ x
-  
-  #w:u64 = cast_i{u64, load{x8,n/2}}
-  #sh:u64 = (n&1) * 4
-  #w&= ~(15<<sh)
-  #w|=  (cast_i{u64,v}<<sh)
-  
-  w:u8 = load{x8,n/2}
-  if ((n&1)==1) {
-    w&= ~(cast{u8,15}<<4)
-    w|=  (cast_i{u8,v}<<4)
-  } else {
-    w&= ~(cast{u8,15})
-    w|=  (cast_i{u8,v}<<0)
+def b_setBatch{sz, x:(*u64), n:(ux), v} = match (sz) {
+  {4} => {
+    x8:= *u8 ~~ x
+    
+    #w:u64 = cast_i{u64, load{x8,n/2}}
+    #sh:u64 = (n&1) * 4
+    #w&= ~(15<<sh)
+    #w|=  (cast_i{u64,v}<<sh)
+    
+    w:u8 = load{x8,n/2}
+    if ((n&1)==1) {
+      w&= ~(cast{u8,15}<<4)
+      w|=  (cast_i{u8,v}<<4)
+    } else {
+      w&= ~(cast{u8,15})
+      w|=  (cast_i{u8,v}<<0)
+    }
+    
+    store{x8, n/2, cast_i{u8,w}}
   }
-  
-  store{x8, n/2, cast_i{u8,w}}
+  { 8} => store{*u8  ~~ x, n, cast_i{u8, v}}
+  {16} => store{*u16 ~~ x, n, cast_i{u16,v}}
+  {32} => store{*u32 ~~ x, n, cast_i{u32,v}}
+  {64} => store{        x, n, cast_i{u64,v}}
+  {sz} => {
+    vc:u64 = promote{u64,v}
+    am:u64 = 64/sz
+    w:u64 = load{x,n/am}
+    sh:u64 = (n&(am-1)) * sz
+    w&= ~(ones{u64,sz}<<sh)
+    w|= (vc<<sh)
+    store{x, n/am, w}
+  }
 }
-def b_setBatch{sz, x:(*u64), n:(ux), v if sz== 8} = store{*u8  ~~ x, n, cast_i{u8, v}}
-def b_setBatch{sz, x:(*u64), n:(ux), v if sz==16} = store{*u16 ~~ x, n, cast_i{u16,v}}
-def b_setBatch{sz, x:(*u64), n:(ux), v if sz==32} = store{*u32 ~~ x, n, cast_i{u32,v}}
-def b_setBatch{sz, x:(*u64), n:(ux), v if sz==64} = store{        x, n, cast_i{u64,v}}
 
 def spreadBits{T==[32]u8, a:(u32)} = {
   def idxs = iota{32}
@@ -64,22 +69,23 @@ def spreadBits{T==[32]u8, a:(u32)} = {
 }
 
 def spreadBits{T==[16]u8, a:(u16) if hasarch{'AARCH64'}} = {
-  b:= sel{[16]u8, [16]u8~~[8]u16**a, make{[16]i8, iota{16}>=8}}
-  andnz{b, make{[16]u8, 1<<(iota{16}&7)}}
+  b:= sel{T, T~~[8]u16**a, make{[16]i8, iota{16}>=8}}
+  andnz{b, make{T, 1<<(iota{16}&7)}}
 }
 def spreadBits{T==[16]u8, a:(u16) if hasarch{'X86_64'}} = {
-  b:= [16]u8~~[8]u16**a
-  exp:= [16]u8~~shuf{[4]i32, shuf16Lo{mzipLo{b, b}, 4b1100}, 4b1100}
-  (exp & make{[16]u8, 1<<(iota{16}&7)}) != [16]u8**0
+  b:= T~~[8]u16**a
+  exp:= T~~shuf{[4]i32, shuf16Lo{mzipLo{b, b}, 4b1100}, 4b1100}
+  (exp & make{T, 1<<(iota{16}&7)}) != T**0
 }
 
-def spreadBits{T, a if vcount{T} <= elwidth{T} and quality{eltype{T}}=='u'} = {
-  b:= make{T, 1<<iota{vcount{T}}}
-  b == (b & T ~~ re_el{type{a}, T}**a) # not just T**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
+def spreadBits{V=[k]T, a:A if k<=width{T} and quality{T}=='u'} = {
+  b:= make{V, 1<<iota{k}}
+  b == (b & V ~~ re_el{A, V}**a) # not just V**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
-def loadBatchBit{T, x:(*u64), n:(ux)} = { # vector with type T with each element being either all 0s or 1s
-  spreadBits{T, b_getBatchLo{vcount{T}, x, n}}
+# vector with type V with each element being either all 0s or 1s
+def loadBatchBit{V=[k]T, x:(*u64), n:(ux)} = {
+  spreadBits{V, b_getBatchLo{k, x, n}}
 }
 
 # load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it
@@ -87,15 +93,15 @@ def loaduBitRaw{x:(*u64), i} = {
   loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)
 }
 def loaduBit{x:(*u64), i, n} = {
-  assert{(n<58) | (((n==58) | (n==60)) & (i%n == 0))}
+  assert{(n<58) | ((n==58 or n==60) & (i%n == 0))}
   loaduBitRaw{x, i}
 }
 def loaduBitTrunc{x:(*u64), i, n if knum{n}} = truncBits{n, loaduBit{x, i, n}}
 
 
-def loadBatchBit{T, x:(*u64), is if ktup{is}} = {
+def loadBatchBit{T, x:(*u64), {...is}} = {
   # def len = length{is}
-  # def count = vcount{T}
+  # def [count]_ = T
   # assert{count*len <= 64}
   # bits:= b_getBatchLo{count*len, x, select{is,0}}
   # @collect(i to len) spreadBits{T, truncBits{count, bits>>(i*count)}}

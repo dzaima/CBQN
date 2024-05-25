@@ -27,9 +27,9 @@ def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 4b3120}, x}
 # Square kernel where width is a full vector
 def transpose_square{VT, l, x if hasarch{'AVX2'}} = unpack_to{1, l/2, x}
 
-def load2{a:T, b:T} = pair{load{a}, load{b}}
-def store2{a:T, b:T, v:T2 if w128i{eltype{T}} and w256{T2}} = {
-  each{{p:P, i} => store{p, 0, eltype{P}~~half{v,i}}, tup{a,b}, iota{2}}
+def load2{a:*T, b:*T} = pair{load{a}, load{b}}
+def store2{a:*T, b:*T, v:T2 if w128i{T} and w256{T2}} = {
+  each{{p, i} => store{p, 0, T~~half{v,i}}, tup{a,b}, iota{2}}
 }
 def load_k {VT, src,    l, w if w256{VT}} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}
 def store_k{VT, dst, x, l, h if w256{VT}} = each{{i,v}=>store{*VT~~(dst+i*h), 0, VT~~v}, iota{l}, x}
@@ -37,8 +37,7 @@ def load_k {VT, src,    l, w if w128{VT}} = each{{i}  =>{p:=src+  i*w; load2 {*V
 def store_k{VT, dst, x, l, h if w128{VT}} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
 
 # Transpose kernel of size kw,kh in size w,h array
-def kernel{src:P, dst:P, kw, kh, w, h} = {
-  def T = eltype{P}
+def kernel{src:*T, dst:*T, kw, kh, w, h} = {
   def n = (kw*kh*width{T}) / 256             # Number of vectors
   def xvs = load_k{[kw]T, src, n, w}
   def xt  = unpack_to{n==kh, n/2, xvs}       # Transpose n by n
@@ -105,7 +104,7 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
     assert{k == kh}
     def VT = [k]T
     def line_vecs = line_bytes / (width{VT}/8)
-    def store_line{p:P, vs} = each{{i,v} => store{p, i, eltype{P}~~v}, iota{line_vecs}, vs}
+    def store_line{p:*T, vs} = each{{i,v} => store{p, i, T~~v}, iota{line_vecs}, vs}
     def get_lines{loadx} = {
       def vt{i} = transpose_square{VT, k, each{loadx, k*i + iota{k}}}
       each{tup, ...each{vt, iota{line_vecs}}}
