@@ -93,7 +93,7 @@ def loaduBitRaw{x:(*u64), i} = {
   loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)
 }
 def loaduBit{x:(*u64), i, n} = {
-  assert{(n<58) | ((n==58 or n==60) & (i%n == 0))}
+  assert{n<58 or ((n==58 or n==60) and (i%n == 0))}
   loaduBitRaw{x, i}
 }
 def loaduBitTrunc{x:(*u64), i, n if knum{n}} = truncBits{n, loaduBit{x, i, n}}

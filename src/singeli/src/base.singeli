@@ -169,8 +169,7 @@ def homMask{...vs if length{vs}>1} = {
   def RT = ty_u{max{8,k*n}}
   def sl{...a} = promote{RT, homMask{...slice{vs,...a}}}
   def h = n/2
-  def a = sl{0,h}
-  (sl{h} << (h * k)) | a
+  (sl{h} << (h * k)) | sl{0,h}
 }
 
 if_inline (hasarch{'X86_64'}) {
