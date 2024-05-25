@@ -70,3 +70,91 @@ fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   else extract{mix{op, r}, 0}
 }
 export{'si_sum_f64', fold_assoc_0{f64,+}}
+
+
+fn xor_words(init:u64, x:*u64, l:usz):u64 = {
+  @for (x over l) init ^= x
+  init
+}
+def bit_output{rp:*T} = {
+  buf:u64 = 0                    # Buffer for result bits
+  def output{i, bit, mod} = {
+    buf = buf>>1 | promote{u64, bit}<<63
+    if ((i+1)%64==0) { store{rp, 0, mod{buf}}; ++rp }
+  }
+  def fixbuf{mod} = { buf = mod{buf} }
+  def flush_bits{n, mod} = {
+    q:=(-n)%64; if (q!=0) store{rp, 0, mod{buf} >> q}
+  }
+  def flush_bits{n} = flush_bits{n, {b}=>b}
+  tup{output, fixbuf, flush_bits}
+}
+# word and alignment of start of next row
+def next_start{i, m} = {
+  bn := promote{u64, i+1} * promote{u64, m}
+  tup{bn/64, bn%64}
+}
+fn xor_rows_bit(xp:*u64, rp:*u64, n:usz, m:usz, eq:u1) : void = {
+  def p64 = promote{u64, .}
+  def fixout = ^{-(p64{eq} &~ p64{m}), .}  # ne to eq conversion
+  def {add_bit, _, flush_bits} = bit_output{rp}
+  def add_bit{i, bit} = add_bit{i, bit, fixout}
+  def xor_loop{len} = {
+    o:u64 = 0  # Carry
+    j:u64 = 0; @for (i to n) {
+      def {jn, sh} = next_start{i, m}
+      s := xor_words(o, xp + j, len)
+      e := load{xp, jn}
+      s ^= e & (if (not same{l,1}) -p64{jn >= j + p64{l}} else j - jn)
+      o  = e >> sh
+      add_bit{i, popc{s ^ o}}
+      j = jn+1
+    }
+  }
+  l := m/64
+  if (m < 128) xor_loop{1}
+  else if (m%64==0) {
+    @for (i to n) add_bit{i, popc{xor_words(0, xp+l*i, l)}}
+  }
+  else xor_loop{l}
+  flush_bits{n, fixout}
+}
+
+fn or_rows_bit(xp:*u64, rp:*u64, n:usz, m:usz, op_and:u1) : void = {
+  def p64 = promote{u64, .}
+  def {add_bit, set_out, flush_bits} = bit_output{rp}
+  if (m < 128) {
+    c:u64 = (p64{m}-1) &- op_and # a row gives 1 if its sum is >c
+    o:u64 = 0
+    j:u64 = 0; @for (i to n) {
+      def {jn, sh} = next_start{i, m}
+      s := o + popc{load{xp,j}}
+      e := load{xp,jn}
+      s += popc{e & (j - jn)}  # mask is 0 if j==jn, or -1
+      o  = popc{e >> sh}
+      add_bit{i, s > c+o, {rw}=>rw}
+      j = jn+1
+    }
+  } else {
+    rx := -promote{u64, op_and}; id := ~rx
+    def fixout = ^{rx, .}
+    o:u64 = 0  # Saved bits
+    j:u64 = 0; @for (i to n) {
+      def {jn, sh} = next_start{i, m}
+      e := load{xp,jn} ^ rx
+      m := ~(u64~~0) << sh
+      rb:u64 = 1
+      if ((o | (e &~ m)) == 0) { # Search for shortcut
+        @for (i from j to jn-1) if (load{xp,i} != id) goto{'found'}
+        rb = 0; setlabel{'found'}
+      }
+      o = e & m
+      add_bit{i, rb, fixout}
+      j = jn+1
+    }
+    set_out{fixout}
+  }
+  flush_bits{n}
+}
+export{'si_xor_rows_bit', xor_rows_bit}
+export{'si_or_rows_bit', or_rows_bit}

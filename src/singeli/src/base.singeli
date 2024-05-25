@@ -26,6 +26,8 @@ def elwidth{T} = width{eltype{T}}
 oper &~ andnot infix none 35
 def andnot{a, b if anyNum{a} and anyNum{b}} = a & ~b
 
+oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
+
 
 
 def load {p:*[_]_, n   } = assert{0}
