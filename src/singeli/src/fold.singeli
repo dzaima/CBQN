@@ -20,7 +20,13 @@ def reduce_pairwise{op, plog, x:*T, len, init:T} = {
   r
 }
 
-fn fold_idem{T==f64, op}(x:*T, len:u64) : T = {
+fn fold_idem{T, op}(x:*T, len:u64) : T = {
+  assert{len > 0}
+  a := load{x, 0}
+  @for (x over _ from 1 to len) a = op{a, x}
+  a
+}
+fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   def bulk = arch_defvw/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
@@ -45,10 +51,15 @@ fn fold_idem{T==f64, op}(x:*T, len:u64) : T = {
   extract{r, 0}
 }
 
-export{'simd_fold_min_f64', fold_idem{f64,min}}
-export{'simd_fold_max_f64', fold_idem{f64,max}}
+export{'si_fold_min_f64', fold_idem{f64,min}}
+export{'si_fold_max_f64', fold_idem{f64,max}}
 
-fn fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
+fn fold_assoc_0{T, op}(x:*T, len:u64) : T = {
+  a:T = 0
+  @for (x over len) a = op{a, x}
+  a
+}
+fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   def bulk = arch_defvw/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
@@ -58,4 +69,4 @@ fn fold_assoc_0{T==f64, op}(x:*T, len:u64) : T = {
   if (hasarch{'AARCH64'}) vfold{op, r}
   else extract{mix{op, r}, 0}
 }
-export{'simd_sum_f64', fold_assoc_0{f64,+}}
+export{'si_sum_f64', fold_assoc_0{f64,+}}
