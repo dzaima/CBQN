@@ -146,12 +146,12 @@ Some may also support one scalar argument or arguments with different widths.
 - `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1} → [1,2,3,4]`
 - `sel{VI1, a:V, b:VI2} : V2` - shuffle `a` by indices `b` in `VI1`-long lanes; arch-specific behavior on out-of-bounds values
 <!-- -->
-- `zip{a:T,b:T} : tup{T, T}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
-- `mzip{a:T,b:T} : tup{el_dbl{T}, el_dbl{T}}` - reinterpreted `zip{a, b}`
-- `zipLo{a:T,b:T} : T` - `select{zip{a, b}, 0}`
-- `zipHi{a:T,b:T} : T` - `select{zip{a, b}, 1}`
-- `mzipLo{a:T,b:T} : T` - `select{mzip{a, b}, 0}`
-- `mzipHi{a:T,b:T} : T` - `select{mzip{a, b}, 1}`
+- `zip{a:V,b:V} : tup{V, V}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
+- `mzip{a:V,b:V} : tup{el_dbl{V}, el_dbl{V}}` - reinterpreted `zip{a, b}`
+- `zipLo{a:V,b:V} : V` - `select{zip{a, b}, 0}`
+- `zipHi{a:V,b:V} : V` - `select{zip{a, b}, 1}`
+- `mzipLo{a:V,b:V} : V` - `select{mzip{a, b}, 0}`
+- `mzipHi{a:V,b:V} : V` - `select{mzip{a, b}, 1}`
 
 ## Mask stuff
 
@@ -176,11 +176,11 @@ Alignment requirements are target-specific, but at most one element.
 For unaligned scalar loads & stores, `loadu` & `storeu` should be used.
 
 - `loadu{p:*E} : E` - load scalar from unaligned memory
-- `storeu{p:*E, a:V} : void` - store scalar to unaligned memory
+- `storeu{p:*E, a:E} : void` - store scalar to unaligned memory
 - `load{p:*V} : V` - load full vector
 - `store{p:*V, a:V} : void` - store full vector
 - `loadLow{p:*V, w} : V` - load to low `w` bits
-- `storeLow{p:*V, w, a:V}` - store low `w` bits
+- `storeLow{p:*E, w, a:[n]E}` - store low `w` bits
 - `homMaskStore{p:*V, m:mt{V}, a:V}` - conditionally store elements based on mask; won't touch masked-off elements
 - `topMaskStore{p:*V, m:V, a:V}` - conditionally store elements based on top bit of `m`; won't touch masked-off elements
 - `homMaskStoreF` - `homMaskStore` but may touch masked-off elements and thus be supported on more types
@@ -207,7 +207,7 @@ For float conversions, the used rounding mode is unspecified.
 
 - `mul32{a:VI, b:VI} : VI` - multiply, reading only low 32 bits
 - `blend{L, a:V, b:V, m}` - blend `L`-sized blocks via the immediate
-- `shuf{L, x:T, n} : T` - shuffle by immediate in `L`-sized lanes
+- `shuf{L, x:V, n} : V` - shuffle by immediate in `L`-sized lanes
 - `packQ` - pack 128-bit lanes (`packs`/`packus`) for 16-bit & 32-bit elements
 - `packQQ` - `packQ` but also defined for 64-bit elements, assuming the high halves are zeroes
 - `packs` - 128-bit `packs`/`packus`

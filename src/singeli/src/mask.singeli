@@ -44,25 +44,25 @@ def maskAfter{n} = {
 
 def loadLowBatch{V=[_]T, ptr:*T, w, n} = loadLow{*V ~~ (ptr + n*(w/width{T})), w}
 
-# store k items into the n'th batch of ptr elements, compressing the items if needed; masked by M
-def storeBatch{ptr:*E0, n, x:V=[k]T, M} = {
-  def rpos = ptr + n*k
-  def TF = re_el{E0, V}
+# store the i-th batch of k elements to ptr, narrowing elements if needed; masked by M
+def storeBatch{ptr:*E0, i, x:[k]E1, M} = {
+  def rpos = ptr + i*k
+  def TF = re_el{E0, [k]E1}
   xu:= narrow{E0, x}
   
   if (M{0}) homMaskStoreF{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
   else storeLow{rpos, k*width{E0}, xu}
 }
 
-# (sign/zero)-extend n'th batch of k elements of ptr into elements of V
-def loadBatch{ptr:*E0, n, V=[k]T} = {
-  def rpos = ptr + n*k
-  widen{V, loadLow{*re_el{E0, V} ~~ rpos, k*width{E0}}}
+# (sign/zero)-extend the i-th batch of k elements at ptr to [k]E1
+def loadBatch{ptr:*E0, i, [k]E1} = {
+  def rpos = ptr + i*k
+  def TF = re_el{E0, [k]E1}
+  widen{[k]E1, loadLow{*TF~~rpos, k*width{E0}}}
 }
 
-def loadBatch {ptr:P, {...ns}, T    } = each{{n  } => loadBatch {ptr, n, T   }, ns}
-def storeBatch{ptr:P, {...ns}, xs, M} = each{{n,x} => storeBatch{ptr, n, x, M}, ns, xs}
-
+def loadBatch {ptr:*E, {...ns}, T    } = each{loadBatch {ptr, ., T   }, ns}
+def storeBatch{ptr:*E, {...ns}, xs, M} = each{storeBatch{ptr, ., ., M}, ns, xs}
 
 
 # "harmless" pointer cast that'll only cast void*
@@ -71,14 +71,14 @@ def hCast{T,p:*T} = p
 def hCast{T,p:(*void)} = *T~~p
 
 def mlExec{i, iter, vars0, bulk, M} = {
-  def vproc{p:*T} = p
+  def vproc{p:*E} = p
   def vproc{'m'} = tptr{{_}=>M, '!'}
   
-  def vproc{{T,p:P}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
-  def vproc{{'b',  p:P}} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
-  def vproc{{'b',T,p:P}} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
-  def vproc{{'g',  p:P}} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
-  def vproc{{'g',T,p:P}} = tptr{{i} => {
+  def vproc{{T,p:*E}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
+  def vproc{{'b',  p:*E}} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
+  def vproc{{'b',T,p:*E}} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
+  def vproc{{'g',  p:*E}} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
+  def vproc{{'g',T,p:*E}} = tptr{{i} => {
     def dv{} = loadBatch{p, i, T}
     def dv{x} = storeBatch{p, i, x, M}
   }, '!'}

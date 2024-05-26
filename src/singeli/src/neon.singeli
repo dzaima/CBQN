@@ -34,9 +34,9 @@ def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 def rbit{x:T if nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
 def rev{(width{T}), x:[_]T} = x
-def rev{w==16, x:T if elwidth{T}<16} = emit{T, ntyp{'vrev16', T}, x} # reverse the order of elements in each w-bit window
-def rev{w==32, x:T if elwidth{T}<32} = emit{T, ntyp{'vrev32', T}, x}
-def rev{w==64, x:T if elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
+def rev{16, x:T if nveci{T} and elwidth{T}<16} = emit{T, ntyp{'vrev16', T}, x} # reverse the order of elements in each w-bit window
+def rev{32, x:T if nveci{T} and elwidth{T}<32} = emit{T, ntyp{'vrev32', T}, x}
+def rev{64, x:T if nveci{T} and elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
 def popc{x:T if nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
 def clz{x:T if nvecu{T} and elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T if nveci{T} and elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
@@ -49,14 +49,14 @@ def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, min}} = fold_min{x}
 def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, max}} = fold_max{x}
 def vfold{F, x:T if nvec{T} and same{F, +}} = fold_add{x}
 
-def storeLow{ptr:*P, w, x:T if nvec{T} and w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{re_el{E,T}~~x, 0}} }
-def storeLow{ptr:*P, w, x:T if nvec{T} and w==width{T}} = store{*T~~ptr, 0, x}
+def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{re_el{E,T}~~x, 0}} }
+def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w==width{T}} = store{*T~~ptr, 0, x}
 
-def loadLow{ptr:*T, w if w<=64} = { # a broadcast load
-  def L=re_el{ty_u{w}, T}
-  T ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
+def loadLow{ptr:*V, w if w<=64} = { # implemented via a broadcast load
+  def L=re_el{ty_u{w}, V}
+  V ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
 }
-def loadLow{ptr:*T, (width{T})} = load{ptr}
+def loadLow{ptr:*V, (width{V})} = load{ptr}
 
 
 
@@ -65,8 +65,8 @@ def undefPromote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombin
 def half{x:T, (0) if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, (1) if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
-def copyLane{dst:D=[_]T, di, src:S=[_]T, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
-def copyLane{dst:D=[_]T, di, src:S=[_]T, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
+def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
+def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
 def broadcastSel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
 def vshl{a:T, b:T, n if knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
 
@@ -92,16 +92,16 @@ def cvt{T==f64, x:X=[k]_ if nveci{X,64}} = emit{[k]T, ntyp{'vcvt', '_f64', X}, x
 def cvt{T==i64, x:X=[k]_ if nvecf{X,64}} = emit{[k]T, ntyp{'vcvt', '_s64', X}, x}
 def cvt{T==u64, x:X=[k]_ if nvecf{X,64}} = emit{[k]T, ntyp{'vcvt', '_u64', X}, x}
 
-def widen{T, x:X if w64{X} and eqqi{eltype{T},eltype{X}} and elwidth{T}==elwidth{X}*2} = emit{T, ntyp{'vmovl', X}, x}
-def widen{T, x:X if w64{X} and eqqi{eltype{T},eltype{X}} and elwidth{T}> elwidth{X}*2} = widen{T, widen{el_s{T}, x}}
-def widen{T=[k]E, x:X if w64{X} and isfloat{E}!=isfloat{eltype{X}} and elwidth{T}>elwidth{X}} = cvt{E, widen{[k](to_w{eltype{X},elwidth{T}}), x}}
-def widen{T=[k]E, x:X if w128{X} and vcount{X}>k} = widen{T, half{x,0}}
+def widen{R=[_]RE, x:X=[_]XE if w64{X} and eqqi{RE,XE} and width{RE}==width{XE}*2} = emit{R, ntyp{'vmovl', X}, x}
+def widen{R=[_]RE, x:X=[_]XE if w64{X} and eqqi{RE,XE} and width{RE}> width{XE}*2} = widen{R, widen{el_s{R}, x}}
+def widen{R=[rn]RE, x:X=[xn]XE if w64{X} and isfloat{RE}!=isfloat{XE} and width{RE}>width{XE}} = cvt{RE, widen{[rn]to_w{XE,width{RE}}, x}}
+def widen{R=[rn]RE, x:X=[xn]XE if w128{X} and xn>rn} = widen{R, half{x,0}}
 
-def narrow{T, x:X if w128{X} and eqqi{T,eltype{X}} and width{T}*2< elwidth{X}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{eltype{X}}, x}}}
-def narrow{T, x:X if w128{X} and eqqi{T,eltype{X}} and width{T}*2==elwidth{X}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
-def narrow{T, x:X if w128{X} and isfloat{T}!=isfloat{eltype{X}} and width{T}<elwidth{X}} = narrow{T, cvt{to_w{T, elwidth{X}}, x}}
+def narrow{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{E}, x}}}
+def narrow{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
+def narrow{T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
 
-def narrowUpper{lowRes:L=[k]T, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]T, ntyp0{'vmovn_high', X}, lowRes, x}
+def narrowUpper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
 def narrowPair{a:T=[_]E, b:T} = narrowUpper{narrow{w_h{E}, a}, b}
 def narrowPair{a:T=[_]E, b:T if isint{E}} = packLo{a, b}
 
@@ -136,8 +136,8 @@ def homMask{a:T,b:T,c:T,d:T==[16]u8} = {
   extract{[2]u64~~addp{t3,t3},0}
 }
 def homMask{...as={a0:[_]E, _, ..._} if width{E}>=32} = homMask{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
-def homMask{a:T,b:T=[n]E if n*2<=width{E}} = {
-  truncBits{n*2, fold_add{shrm{a,width{E}-n,b} & make{T, (1<<iota{n}) | (1<<(iota{n}+n))}}}
+def homMask{a:T,b:T=[k]E if k*2<=width{E}} = {
+  truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{T, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
 def andAllZero{x:T, y:T if nveci{T}} = ~bitAny{x&y}

@@ -114,11 +114,11 @@ def w_h{T if isprim{T}} = to_w{T, width{T}/2}
 def n_d{[k]T} = [k*2]T # double/halve vector count
 def n_h{[k]T} = [k/2]T
 
-def el_d{[k]T} = [k](w_d{T}) # double/halve element width, preserving count
-def el_h{[k]T} = [k](w_h{T})
+def el_d{[k]T} = [k]w_d{T} # double/halve element width, preserving count
+def el_h{[k]T} = [k]w_h{T}
 
-def el_m{V=[_]T} = re_el{w_d{T}, V};  def el_m{x:T} = re_el{T}~~x # double/halve element width, preserving width
-def el_s{V=[_]T} = re_el{w_h{T}, V};  def el_s{x:T} = re_el{T}~~x
+def el_m{V=[_]T} = re_el{w_d{T}, V} # double/halve element width, preserving width
+def el_s{V=[_]T} = re_el{w_h{T}, V}
 
 # type stats
 def minvalue{T if isunsigned{T}} = 0

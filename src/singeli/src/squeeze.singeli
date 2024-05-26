@@ -21,10 +21,10 @@ def anyNonChar{M, x:T=[_]_ if hasarch{'X86_64'}} = {
 }
 
 
-def cvtNarrow{T, x:[_]X if width{T}==width{X}} = cvt{T, x}
-def cvtNarrow{T, x:[_]X if width{T}< width{X}} = narrow{T, x}
-def cvtWiden{  [_]T, x:[_]X if width{T}==width{X}} = cvt{T, x}
-def cvtWiden{V=[_]T, x:[_]X if width{T}> width{X}} = widen{V, x}
+def cvtNarrow{DE, x:[_]XE if width{DE}==width{XE}} = cvt{DE, x}
+def cvtNarrow{DE, x:[_]XE if width{DE}< width{XE}} = narrow{DE, x}
+def cvtWiden{  [_]DE, x:[_]XE if width{DE}==width{XE}} = cvt{DE, x}
+def cvtWiden{D=[_]DE, x:[_]XE if width{DE}> width{XE}} = widen{D, x}
 
 fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   assert{len>0}

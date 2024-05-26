@@ -6,11 +6,11 @@ def v2d{x:T if w256{T}} = [4]f64 ~~ x
 def undefPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 
 # load & store
-def loadLow{ptr:*T, w if w256{T} and w<=128} = undefPromote{T, loadLow{*n_h{T} ~~ ptr, w}}
-def loadLow{ptr:*T, w if w256{T} and w==256} = load{ptr}
+def loadLow{ptr:*V, w if w256{V} and w<=128} = undefPromote{V, loadLow{*n_h{V} ~~ ptr, w}}
+def loadLow{ptr:*V, w if w256{V} and w==256} = load{ptr}
 
-def storeLow{ptr:*T, w, x:X if w256{X} and w<=128} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:*T, w, x:X if w256{X} and w==256} = store{*X~~ptr, 0, x}
+def storeLow{ptr:*E, w, x:X=[_]E if w256{X} and w<=128} = storeLow{ptr, w, half{x, 0}}
+def storeLow{ptr:*E, w, x:X=[_]E if w256{X} and w==256} = store{*X~~ptr, 0, x}
 
 
 # float comparison

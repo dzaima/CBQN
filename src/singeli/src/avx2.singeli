@@ -44,8 +44,8 @@ def topMaskStore{p:*T, m:M, v:T if w256i{M, 32} and w256{T,elwidth{M}}} = emit{v
 def topMaskStore{p:*T, m:M, v:T if w256i{M, 64} and w256{T,elwidth{M}}} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
 def homMaskStore{p:*T, m:M, v:T if w256i{M}     and w256{T,elwidth{M}}} = topMaskStore{p, m, v}
 
-def topMaskStoreF{p:*P, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
-def homMaskStoreF{p:*P, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
+def topMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
+def homMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
 def homMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}<=16 and w256{T,elwidth{M}}} = store{p, 0, homBlend{load{p}, v, m}}
 
 # mask stuff
