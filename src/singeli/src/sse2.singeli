@@ -1,25 +1,25 @@
 # compact casting for the annoying intrinsic type system
-def v2i{x:T if w128{T}} = if(isint{eltype{T}}) x else [16]u8 ~~ x
+def v2i{x:V=[_]T if w128{V}} = if(isint{T}) x else [16]u8 ~~ x
 def v2f{x:T if w128{T}} = [4]f32 ~~ x
 def v2d{x:T if w128{T}} = [2]f64 ~~ x
 
 
 # load & store
-def loadLow{ptr:P, w if w128{eltype{P}} and w== 16} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
-def loadLow{ptr:P, w if w128{eltype{P}} and w== 32} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
-def loadLow{ptr:P, w if w128{eltype{P}} and w== 64} = eltype{P} ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
-def loadLow{ptr:P, w if w128{eltype{P}} and w==128} = load{ptr}
+def loadLow{ptr:*T, w if w128{T} and w== 16} = T ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
+def loadLow{ptr:*T, w if w128{T} and w== 32} = T ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
+def loadLow{ptr:*T, w if w128{T} and w== 64} = T ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
+def loadLow{ptr:*T, w if w128{T} and w==128} = load{ptr}
 
-def storeLow{ptr:P, w, x:T if w128{T} and w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T if w128{T} and w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T if w128{T} and w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
-def storeLow{ptr:P, w, x:T if w128{T} and w==128} = store{*T~~ptr, 0, x}
+def storeLow{ptr:*P, w, x:T if w128{T} and w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
+def storeLow{ptr:*P, w, x:T if w128{T} and w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
+def storeLow{ptr:*P, w, x:T if w128{T} and w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
+def storeLow{ptr:*P, w, x:T if w128{T} and w==128} = store{*T~~ptr, 0, x}
 
 
 
 # float comparison
-def unord{a:T,b:T if T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
-def unord{a:T,b:T if T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
+def unord{a:T,b:T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
+def unord{a:T,b:T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
 
 
 
@@ -51,21 +51,21 @@ def topMask{x:T if w128{T, 16}} = topMask{packs{[8]i16~~x, [8]i16**0}}
 def topMask{x:T if w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def topMask{x:T if w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
 def homMask{x:T if w128{T}} = topMask{x}
-def homMaskX{a:T if elwidth{T}==16} = tup{2, homMask{re_el{u8,a}}}
+def homMaskX{a:[_]T if width{T}==16} = tup{2, homMask{re_el{u8,a}}}
 def homMask{a:T, b:T if w128i{T,16}} = homMask{packs{ty_s{a},ty_s{b}}}
 
 def homAny{x:T if w128i{T}} = homMask{[16]u8 ~~ x} != 0
 def homAll{x:T if w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
 
-def topAny{x:T if w128i{T}} = topMask{x} != 0
-def topAll{x:T if w128i{T}} = topMask{x} == (1<<vcount{T})-1
+def topAny{x:T      if w128i{T}} = topMask{x} != 0
+def topAll{x:T=[k]_ if w128i{T}} = topMask{x} == (1<<k)-1
 def topAny{x:T if w128i{T, 16}} = homAny{[8]i16~~x  <  [8]i16**0}
 def topAll{x:T if w128i{T, 16}} = homAll{[8]i16~~x  <  [8]i16**0}
 
 # bits of other things SSE2 has
-def packs{a:T,b:T if T==[8]i16} = emit{[16]i8,  '_mm_packs_epi16', a, b}
-def packs{a:T,b:T if T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
-def packs{a:T,b:T if T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
+def packs{a:T,b:T==[8]i16} = emit{[16]i8,  '_mm_packs_epi16', a, b}
+def packs{a:T,b:T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
+def packs{a:T,b:T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
 def packQ{a:T,b:T if w128i{T}} = packs{a,b}
 
 
@@ -83,16 +83,16 @@ def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}
 def shuf16Hi{x:T, n} = T~~emit{[8]i16, '_mm_shufflehi_epi16', x, n}
 
 def homBlend{f:T, t:T, m:M if w128{T} and w128i{M,elwidth{T}}} = T ~~ ((M~~t & m) | (M~~f &~ m))
-def homMaskStoreF{p:P, m:M, v:T if w128i{M} and w128{T,elwidth{M}} and eltype{P}==T} = store{p, 0, homBlend{load{p}, v, m}}
+def homMaskStoreF{p:*T, m:M, v:T if w128i{M} and w128{T,elwidth{M}}} = store{p, 0, homBlend{load{p}, v, m}}
 
 def widen{T, x:X if w128i{T} and w128i{X} and w128s{T}==w128s{X} and elwidth{T}>elwidth{X}} = {
   def s{v} = s{mzipLo{v, v}}
-  def s{v:V if V==T} = v
+  def s{v:(T)} = v
   s{x} >> (elwidth{T} - elwidth{X})
 }
 def widen{T==[2]f64, x:X if w128s{X} and elwidth{X}<32} = widen{T, widen{[4]i32, x}}
-def widen{T==[2]f64, x:X if X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
-def widen{T==[2]f64, x:X if X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
+def widen{T==[2]f64, x:X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
+def widen{T==[2]f64, x:X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
 
 def narrow{T==i16, x:([4]i32)} = packs{x,x}
 def narrow{T==i8,  x:([8]i16)} = packs{x,x}

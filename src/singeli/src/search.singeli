@@ -85,7 +85,7 @@ def bittab_init{tab, z if simd_bittab} = {
 }
 
 def bittab_selector{loadtab} = {
-  def nv = vcount{VI}
+  def [nv]_ = VI
   {t0, t1}:= loadtab{}
   low:= VI**7
   hi4:= VI**(-(1<<4))
@@ -101,7 +101,7 @@ def bittab_selector{loadtab} = {
 }
 
 def readbytes{vtab}{} = {
-  def k = vcount{VI}; def l = 128/vcount{VI}
+  def [k]_ = VI; def l = 128/k
   def side{i} = {
     def U = arch_vec{ty_u{k}}
     def m = @collect (vtab over _ from i to i+l) homMask{vtab}
@@ -126,7 +126,7 @@ def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void)} = {
 }
 def bittab_lookup{x0:(*void), n:(u64), r0:(*void), tab:(*void) if simd_bittab} = {
   def {bitsel, _} = bittab_selector{readbytes{*VI~~tab}}
-  def k = vcount{VI}
+  def [k]_ = VI
   @for (x in *VI~~x0, r in *ty_u{k}~~r0 over cdiv{n,k}) r = bitsel{x}
 }
 
@@ -175,7 +175,7 @@ def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
     # Do first few values with a scalar loop
     # Avoids the cost of ever loading the table into vectors for n<=48
     i:u64 = 32; if (n<=48) i=n
-    def k = vcount{VI}; def uk = ty_u{k}; def ik = ty_s{k}
+    def [k]_ = VI; def uk = ty_u{k}; def ik = ty_s{k}
     {rw,rv} := undef{tup{u64,uk}} # Bit results, used if rbit
     if (rbit) rw = 0
     @for (x over j to i) {
@@ -295,8 +295,8 @@ def acc{unr, init:T} = {
     else               a1 = F{a1}
   }
 }
-def isI64{x:T if eltype{T}==f64 and hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
-def isI64{x:T if eltype{T}==f64 and hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
+def isI64{x:T=[_](f64) if hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
+def isI64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
 def maskBlend{b:T, x:T, M} = x
 def maskBlend{b:T, x:T, M if M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
@@ -306,10 +306,10 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   x:= *E~~x0
   min1:E = *x
   max1:E = *x
-  if (has_simd and not (E==f64 and not (hasarch{'AARCH64'} or hasarch{'SSE4.1'}))) {
+  if (has_simd and (not E==f64 or hasarch{'AARCH64'} or hasarch{'SSE4.1'})) {
     def bulk = arch_defvw/width{E}
     def VT = [bulk]E
-    def unr = tern{(E==f64) & hasarch{'X86_64'}, 1, 2}
+    def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
     def minA = acc{2, VT**min1}
     def maxA = acc{2, VT**min1}
     @muLoop{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
@@ -599,8 +599,8 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
 }
 
 def try_vec_memb{..._} = {}
-def try_vec_memb{T, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
-                 if hasarch{'SSE4.2'} and T==u32} = {
+def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
+                 if hasarch{'SSE4.2'}} = {
   # Hash h wants bin h>>sh, so the offset for h in slot i is (in infite-precision ints)
   # i-h>>sh = i+((1<<sh-1)-h)>>sh = (((i+1)<<sh-1)-h)>>sh
   # We maintain io = (i+1)<<sh-1

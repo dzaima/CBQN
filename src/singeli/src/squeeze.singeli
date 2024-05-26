@@ -7,24 +7,24 @@ include './vecfold'
 def preserve_negative_zero = 0
 
 # SSE2 versions avoid any 64-bit integer comparsions
-def anySNaN{M, x:T if eltype{T}==u64} = {
+def anySNaN{M, x:[_](u64)} = {
   homAny{inRangeLen{M{x}<<1, (0xFFE<<52)+2, (1<<52)-2}}
 }
-def anySNaN{M, x:T if T==[2]u64 and hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = {
+def anySNaN{M, x:T==[2]u64 if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = {
   topAny{M{andnot{unord{[2]f64~~x, [2]f64~~x}, [2]u64~~([4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000))}}}
 }
-def anyNonChar{M, x:T if isvec{T} and eltype{T}==u64} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
-def anyNonChar{M, x:T if isvec{T} and hasarch{'X86_64'}} = {
+def anyNonChar{M, x:[_](u64)} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
+def anyNonChar{M, x:T=[_]_ if hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
   topAny{M{T~~ne}}
 }
 
 
-def cvtNarrow{T, x:X if width{T}==elwidth{X}} = cvt{T, x}
-def cvtNarrow{T, x:X if width{T}< elwidth{X}} = narrow{T, x}
-def cvtWiden{T, x:X if elwidth{T}==elwidth{X}} = cvt{eltype{T}, x}
-def cvtWiden{T, x:X if elwidth{T}> elwidth{X}} = widen{T, x}
+def cvtNarrow{T, x:[_]X if width{T}==width{X}} = cvt{T, x}
+def cvtNarrow{T, x:[_]X if width{T}< width{X}} = narrow{T, x}
+def cvtWiden{  [_]T, x:[_]X if width{T}==width{X}} = cvt{T, x}
+def cvtWiden{V=[_]T, x:[_]X if width{T}> width{X}} = widen{V, x}
 
 fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   assert{len>0}
@@ -35,14 +35,11 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   def EV = tern{(width{E}*bulk == 64) & hasarch{'X86_64'}, EV2, [bulk]E}
   
   # fold with either Max or Bitwise Or, truncating/zero-extending to TE
-  def foldTotal{TE, x:T} = cast_i{TE, vfold{|, x}}
-  def foldTotal{TE, x:T if hasarch{'AARCH64'}} = {
-    if (elwidth{T}==64) {
-      if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
-      else vfold{max, narrow{TE, x}}
-    } else {
-      vfold{max, x}
-    }
+  def foldTotal{TE, x:[_]T} = cast_i{TE, vfold{|, x}}
+  def foldTotal{TE, x:[_]T if hasarch{'AARCH64'}} = {
+    if (width{T}!=64) vfold{max, x}
+    else if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
+    else vfold{max, narrow{TE, x}}
   }
   
   # show{XV, EV, CHR, B}
@@ -79,8 +76,8 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         return{0xffff_ffff} # float
       }}
       
-      def getAcc{EV, x:T} = {
-        ((EV ** ~(eltype{EV})~~1) & EV~~x)  ^  EV~~(x >> (elwidth{T}-1))
+      def getAcc{EV=[_]E, x:[_]T} = {
+        ((EV ** ~E~~1) & EV~~x)  ^  EV~~(x >> (width{T}-1))
       }
       
       if (isint{X}) { # i16, i32
@@ -89,7 +86,10 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         }
       } else { # f64
         r2:= EV2**0
-        @muLoop{bulk, hasarch{'AARCH64'}+1, {} => { r1 = half{r2,0}|half{r2,1} }}(v0 in tup{XV,xp}, M in 'm' over is to len) {
+        @muLoop{
+          bulk, hasarch{'AARCH64'}+1,
+          {} => { r1 = half{r2,0}|half{r2,1} }
+        }(v0 in tup{XV,xp}, M in 'm' over is to len) {
           def int = {
             def {int, wdn} = {
               if (hasarch{'AARCH64'} and length{is}==2) {
@@ -99,15 +99,12 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
               } else {
                 def ints = each{{v} => cvtNarrow{ty_s{E}, v}, v0}
                 def wdn = each{{v} => cvtWiden{XV, v}, ints}
-                if (vcount{type{select{ints,0}}} == bulk) {
-                  def intp = {
-                    if (length{ints}==1) select{ints, 0}
-                    else pair{ints}
-                  }
-                  tup{intp, wdn}
-                } else if (length{ints}==1 and hasarch{'X86_64'} and ~hasarch{'AVX2'}) {
-                  tup{select{ints, 0}, wdn}
-                } else assert{0}
+                def intp = match (...ints) {
+                  {i:[(bulk)]_} => i
+                  {i if hasarch{'X86_64'} and not hasarch{'AVX2'}} => i
+                  {i:T=[(bulk)]_, j:T} => pair{ints}
+                }
+                tup{intp, wdn}
               }
             }
             
@@ -124,7 +121,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
             }
             int
           }
-          def acc = { if (length{is}==2) r2 else r1 }
+          def acc = if (length{is}==2) r2 else r1
           
           acc|= M{getAcc{type{acc}, int}}
         }

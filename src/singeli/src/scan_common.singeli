@@ -12,8 +12,8 @@ def sel8{v, t, up} = sel8{v, rev{up,t}}
 def zip{up, x} = (if (up) zipHi else zipLo){x,x}
 
 # Fill last 4 bytes with last element, in each lane
-def spread{a:VT, ...up} = {
-  def w = elwidth{VT}
+def spread{a:[_]T, ...up} = {
+  def w = width{T}
   def b = w/8
   if (w<=16) sel8{a,merge{iota{12},(16-b)+iota{4}%b}, ...up} else a
 }
@@ -39,7 +39,7 @@ def prefix_byshift{op, sh} = {
   {v:T} => pre{v, if (isvec{T}) elwidth{T} else 1}
 }
 
-def get_id{op,T} = (match (op) { {_==min}=>maxvalue; {_==max}=>minvalue }){T}
+def get_id{op,T} = (match (op) { {(min)}=>maxvalue; {(max)}=>minvalue }){T}
 
 def make_scan_idem{T, op, up} = {
   # Within each lane, scan using shifts by powers of 2. First k elements
@@ -59,8 +59,8 @@ def make_scan_idem{T, op, up} = {
   }
   prefix_byshift{op, shb}
 }
-def make_scan_idem{T==f64, op, up} = {
-  def sc{a:T if vcount{T}==2} = op{a, zip{~up,a}}
+def make_scan_idem{(f64), op, up} = {
+  def sc{a:[2]T} = op{a, zip{~up,a}}
   def sc{a:T if hasarch{'AVX2'} and w256{T}} = {
     def sh{s, a} = op{a, shuf{[4]u64, a, rev{up,s}}}
     sh{tup{0,1,1,1},sh{tup{0,0,2,2},a}}

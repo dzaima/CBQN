@@ -7,7 +7,7 @@ include 'util/tup'
 
 
 def rootty{T if isprim{T}} = T
-def rootty{T if isvec{T}} = eltype{T}
+def rootty{[_]T} = T
 
 def is_s{X} = issigned{rootty{X}}
 def is_u{X} = isunsigned{rootty{X}}
@@ -20,10 +20,10 @@ def bqn_or{a, b} = (a+b)-(a*b)
 
 
 # + & -
-def arithChk1{F==__add, M, w:T, x:T, r:T} = tup{'topAny', M{(w^r) & (x^r)}}
-def arithChk1{F==__sub, M, w:T, x:T, r:T} = tup{'topAny', M{(w^x) & (w^r)}}
-def arithChk1{F==__add, M, w:T, x:T, r:T if isvec{T} and tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', adds{w,x}, r}
-def arithChk1{F==__sub, M, w:T, x:T, r:T if isvec{T} and tern{hasarch{'X86_64'}, elwidth{T}<=16, 1}} = tup{'anyne', subs{w,x}, r}
+def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'topAny', M{(w^r) & (x^r)}}
+def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'topAny', M{(w^x) & (w^r)}}
+def arithChk1{(__add), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', adds{w,x}, r}
+def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', subs{w,x}, r}
 
 
 
@@ -33,7 +33,7 @@ def arithChk2{F, M, w:T, x:T if is_s{T} and (same{F,__add} or same{F,__sub})} = 
 }
 
 # ×
-def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i8==eltype{T} and hasarch{'X86_64'}} = {
+def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
   def wp = unpackQ{w, T ~~ (T**0 > w)}
   def xp = unpackQ{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
@@ -46,12 +46,12 @@ def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i8==eltype{T} and
     tup{packQ{rp}, tup{'~andAllZero', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
-def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i16==eltype{T} and hasarch{'X86_64'}} = {
+def arithChk2{F=(__mul), M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {
   rl:= __mul{w,x}
   rh:=  mulh{w,x}
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
-def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i32==eltype{T} and hasarch{'X86_64'}} = {
+def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   max:= re_el{f32, (ty_u{T})**0x4efffffe}
   def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
@@ -68,11 +68,11 @@ def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and i32==eltype{T} an
   # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'homAny', tree_fold{|,bad}}} this doesn't use M
 }
 
-def arithChk2{F, M, w:T, x:T if same{F,__mul} and isvec{T} and hasarch{'AARCH64'}} = {
+def arithChk2{F=(__mul), M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
   def r12 = mulw{w, x}
   rl:= packLo{r12}
   rh:= packHi{r12}
-  tup{rl, tup{'homAny', M{rh != (rl >> (elwidth{T}-1))}}}
+  tup{rl, tup{'homAny', M{rh != (rl >> (width{E}-1))}}}
 }
 
 
@@ -88,7 +88,7 @@ def runner{u, R, F} = {
   
   def run{F, M, w, x if u} = tup{F{w, x}, tup{'none'}} # trivial base implementation
   
-  def toggleTop{x:X} = x ^ X**(1<<(elwidth{X}-1))
+  def toggleTop{x:X=[_]E} = x ^ X**(1<<(width{E}-1))
   def run{F==__sub, M, w:VU, x:VU if c and is_u{VU}} = { # 'b'-'a'
     def VS = ty_s{VU}
     run{F, M, VS~~toggleTop{w}, VS~~toggleTop{x}}
@@ -99,7 +99,7 @@ def runner{u, R, F} = {
   }
   def run{F==__add, M, w:VS, x:VU if c and is_s{VS} and is_u{VU}} = run{F, M, x, w} # 3+'a' → 'a'+3
   
-  def run{F, M, w:VW, x:VX if c and R==u32 and (same{F,__add} | same{F,__sub})} = { # 'a'+1, 'a'-1
+  def run{F, M, w:VW, x:VX if c and R==u32 and (same{F,__add} or same{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
     tup{re_el{R, VW}~~r, tup{'homAny', M{r > type{r}**1114111}}}
   }

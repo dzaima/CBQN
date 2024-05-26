@@ -6,25 +6,25 @@ def ind_types = tup{i8, i16, i32}
 def dat_types = tup{...ind_types, u64}
 
 # Indices and Replicate using plus- or max-scan
-def scan_core{upd, set, scan, rp:pT, wp:W, s:(usz)} = {
+def scan_core{upd, set, scan, rp:*T, wp:W, s:(usz)} = {
   def getw{j} = if (isptr{W}) cast_i{usz,load{wp,j}} else wp
   b:usz = 1<<10
   k:usz = 0; j:usz = 0; ij:=getw{j}
   while (1) {
     e := tern{b<s-k, k+b, s}
     @for (rp over i from k to e) rp = 0
-    if (set) store{rp, k, cast_i{eltype{pT},j}}
+    if (set) store{rp, k, cast_i{T,j}}
     while (ij<e) { ++j; upd{rp, j, ij}; ij+=getw{j} }
     scan{rp+k, e-k}
     if (e==s) return{}
     k = e
   }
 }
-def indrep_by_sum{T, rp:(*T), wp, s:(usz), js, inc} = {
+def indrep_by_sum{T, rp:*T, wp, s:(usz), js, inc} = {
   def scan{ptr, len} = @for (ptr over len) js=ptr+=js
-  def scan{ptr, len if width{T}<=32} = {
+  def scan{ptr:*E, len if width{T}<=32} = {
     def scanfn = merge{'si_scan_pluswrap_u',fmtnat{width{T}}}
-    p := *ty_u{eltype{type{ptr}}}~~ptr
+    p := *ty_u{E}~~ptr
     emit{void, scanfn, p, p, len, js}; js=load{ptr,len-1}
   }
   def upd{rp, j, ij} = store{rp, ij, load{rp,ij}+inc{j}}
@@ -33,7 +33,7 @@ def indrep_by_sum{T, rp:(*T), wp, s:(usz), js, inc} = {
 
 fn ind_by_scan_i32{W}(xv:*void, rp:*i32, s:usz) : void = {
   xp := *W~~xv
-  if (hasarch{'X86_64'} & ~hasarch{'SSE4.1'}) { # no min instruction
+  if (hasarch{'X86_64'} and not hasarch{'SSE4.1'}) { # no min instruction
     js:i32 = 0
     indrep_by_sum{i32, rp, xp, s, js, {j}=>1}
   } else {
@@ -59,7 +59,7 @@ exportT{'si_replicate_scan', flat_table{rep_by_scan, ind_types, dat_types}}
 
 
 # Constant replicate
-if_inline (not (hasarch{'AVX2'} | hasarch{'AARCH64'})) {
+if_inline (not (hasarch{'AVX2'} or hasarch{'AARCH64'})) {
 
 fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   rep_by_scan{T, cast_i{usz,wv}, x, r, cast_i{usz, wv*n}}
@@ -101,8 +101,7 @@ def rcsh4_dom = replicate{bind{>=,64}, replicate{fact_tab==1, fact_inds}}
 rcsh4_dat:*i8 = join{join{each{get_shuf_data{., 4}, rcsh4_dom}}}
 rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 
-def read_shuf_vecs{l, ellw:(u64), shp:P} = { # tuple of byte selectors in 1<<ellw
-  def V = eltype{P}
+def read_shuf_vecs{l, ellw:(u64), shp:*V} = { # tuple of byte selectors in 1<<ellw
   def double{x:X if hasarch{'AVX2'}} = {
     s:=shuf{[4]u64, x, 4b3120}; s+=s
     r:=each{bind{~~,[32]i8},unpackQ{s, s + X**1}}
@@ -126,8 +125,7 @@ def read_shuf_vecs{l, ellw:(u64), shp:P} = { # tuple of byte selectors in 1<<ell
   sh
 }
 
-def rep_const_shuffle{V, wv, onreps, xv:*V, rv:*V, n:(u64)} = { # onreps{inputVector, {nextOutputVector} => ...}
-  def step = vcount{V}
+def rep_const_shuffle{wv, onreps, xv:*V=[step]T, rv:*V, n:(u64)} = { # onreps{inputVector, {nextOutputVector} => ...}
   nv := n / step
   j:u64 = 0
   def write{v} = { store{rv, j, v}; ++j }
@@ -168,7 +166,7 @@ if_inline (hasarch{'AVX2'}) {
     {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
   }
   
-  def rep_const_shuffle{V, wv, xv:*V, rv:*V, n:(u64)} = rep_const_shuffle{V, wv, get_rep_iter{V, wv}, xv, rv, n}
+  def rep_const_shuffle{wv, xv:*V, rv:*V, n:(u64)} = rep_const_shuffle{wv, get_rep_iter{V, wv}, xv, rv, n}
   
 } else if_inline (hasarch{'AARCH64'}) {
   
@@ -176,8 +174,8 @@ if_inline (hasarch{'AVX2'}) {
     each{{s} => gen{sel{[16]u8, x, s}}, sh}
   }
   
-  def rep_const_shuffle{V, wv==2, xv0:*V, rv0:*V, n:(u64)} = {
-    def E = ty_u{eltype{V}}
+  def rep_const_shuffle{wv==2, xv0:*V=[_]T, rv0:*V, n:(u64)} = {
+    def E = ty_u{T}
     rv:= *E~~rv0
     @for (x in *E~~xv0 over i to n) { # autovectorized well enough, probably
       store{rv, i*2, x}
@@ -190,7 +188,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   def h = 4
   def V = sdtype
   def sh = read_shuf_vecs{h, ellw, *V~~rcsh4_dat + h*load{rcsh4_lkup,wv}}
-  def step = vcount{V}     # Bytes written
+  def [step]_ = V          # Bytes written
   def wvb = wv << ellw
   def hs = (h*step) / wvb  # Actual step size in argument elements
   def shufbase{i if hasarch{'AVX2'}} = shuf{[4]u64, load{*V~~(x+i)}, 4b1010}
@@ -226,7 +224,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
 
 fn rcsh_sub{wv, V}(ellw:u64, x:*i8, r:*i8, n:u64, sh:*V) : void = {
   def st = read_shuf_vecs{wv, ellw, sh}
-  rep_const_shuffle{V, wv, rep_iter_from_sh{st}, *V~~x, *V~~r, n}
+  rep_const_shuffle{wv, rep_iter_from_sh{st}, *V~~x, *V~~r, n}
 }
 
 fn rep_const_shuffle_any(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
@@ -271,7 +269,7 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
   def max_shuffle = 2*vn
   if (wv <= max_shuffle) {
     def specialize{k} = {
-      if (wv==k) return{rep_const_shuffle{V, k, *V~~x, *V~~r, n}}
+      if (wv==k) return{rep_const_shuffle{k, *V~~x, *V~~r, n}}
     }
     if (special_2) specialize{2}
     rep_const_shuffle_any(wv, lb{wT/8}, *i8~~x, *i8~~r, n)

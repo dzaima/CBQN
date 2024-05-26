@@ -9,8 +9,8 @@ def map{{f,...fs}, {t,...ts}, v} = if (v==f) t else map{fs, ts, v}
 def to_prim = map{names, prims, .}
 
 # Defined in C
-def memset{p:pT, v, l} = {
-  emit{void, merge{'memset',fmtnat{elwidth{pT}}}, p, v, l}
+def memset{p:*T, v, l} = {
+  emit{void, merge{'memset',fmtnat{width{T}}}, p, v, l}
 }
 
 # These hashes are stored in tables and must be invertible!

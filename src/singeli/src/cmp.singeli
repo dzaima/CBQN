@@ -32,7 +32,7 @@ def pathAS{dst, len, T, op, x if issigned{T}} = {
       if (isNaN{xf}) { call{cmpIX, dst, len, x, op{0,1}}; return{}; }
     }
   }
-  if (~hasarch{'X86_64'}) nanchk{}
+  if (not hasarch{'X86_64'}) nanchk{}
   if (rare{promote{i64, xT}!=xi64}) {
     if (hasarch{'X86_64'}) nanchk{}
     fillbits{dst, len, op{0,xf}}
@@ -40,9 +40,9 @@ def pathAS{dst, len, T, op, x if issigned{T}} = {
   xT
 }
 
-def pathAS{dst, len, T, op, x if T==f64} = {
+def pathAS{dst, len, T==f64, op, x} = {
   if (rare{~q_f64{x}}) {
-    if (~eqne{op}) if (~q_chr{x}) cmp_err{x}
+    if (not eqne{op} and ~q_chr{x}) cmp_err{x}
     fillbits{dst, len, op{0,1}, x}
   }
   from_B{T,x}
@@ -50,7 +50,7 @@ def pathAS{dst, len, T, op, x if T==f64} = {
 
 def pathAS{dst, len, T, op, x if isunsigned{T}} = {
   if (rare{~q_chr{x}}) {
-    if (~eqne{op}) if (~q_f64{x}) cmp_err{x}
+    if (not eqne{op} and ~q_f64{x}) cmp_err{x}
     fillbits{dst, len, op{1,0}, x}
   }
   xc32:u32 = from_B{u32,x}
@@ -60,11 +60,10 @@ def pathAS{dst, len, T, op, x if isunsigned{T}} = {
 
 
 
-def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
-  def bulk = vcount{VT}*unr
+def any2bit{VT=[k]T, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
+  def bulk = k*unr
   xi:ux = 0
   
-  def T = eltype{VT}
   def op = match (op0) {
     {_ if not hasarch{'X86_64'} or hasarch{'AVX512F'}} => op0
     {(__le) if issigned{T}} => __gt
@@ -81,15 +80,15 @@ def any2bit{VT, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
     xi+= unr
   }
 }
-fn aa2bit{VT, unr, op}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
-  wv:= *VT~~wr; ws:= *eltype{VT}~~wr
-  xv:= *VT~~xr; xs:= *eltype{VT}~~xr
+fn aa2bit{VT=[_]T, unr, op}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
+  wv:= *VT~~wr; ws:= *T~~wr
+  xv:= *VT~~xr; xs:= *T~~xr
   any2bit{VT, unr, op, load{ws,.}, load{wv,.}, load{xs,.}, load{xv,.}, dst, len}
 }
 
-fn as2bit{VT, unr, op}(dst:*u64, wr:*void, x:u64, len:ux) : void = {
-  wv:= *VT~~wr; ws:= *eltype{VT}~~wr
-  xv:= VT**pathAS{dst, len, eltype{VT}, op, x}
+fn as2bit{VT=[_]T, unr, op}(dst:*u64, wr:*void, x:u64, len:ux) : void = {
+  wv:= *VT~~wr; ws:= *T~~wr
+  xv:= VT**pathAS{dst, len, T, op, x}
   any2bit{VT, unr, op, load{ws,.}, load{wv,.}, {i}=>x, {i}=>xv, dst, len}
 }
 
@@ -120,7 +119,7 @@ def table{aa, F, w, G_bit, G_vec} = {
   tup{
     G_bit{},
     ...each{{E}=>{
-      def E2 = (if (aa and isunsigned{E} and ((same{F,__eq} | same{F,__ne})  |  (E==u32))) {ty_s{E}} else E)
+      def E2 = (if (aa and isunsigned{E} and (eqne{F} or E==u32)) {ty_s{E}} else E)
       def bulk = w/width{E2}
       def unr = if (hasarch{'X86_64'} and width{E2}==16) 2 else max{8/bulk,1}
       G_vec{[bulk]E2, max{tern{hasarch{'AARCH64'},2,1}, unr}}

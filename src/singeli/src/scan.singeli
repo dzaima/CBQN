@@ -12,7 +12,7 @@ fn scan_scal{T, op}(x:*T, r:*T, len:u64, m:T) : void = {
   @for (x, r over len) r = m = op{m, x}
 }
 
-def scan_loop{T, init, x:*T, r:*T, len:(u64), scan, scan_last} = {
+def scan_loop{init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   def step = arch_defvw/width{T}
   def V = [step]T
   p:= V**init
@@ -23,20 +23,20 @@ def scan_loop{T, init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   q:= len & (step-1)
   if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
 }
-def scan_post{T, init, x:*T, r:*T, len:(u64), op, pre} = {
+def scan_post{init, x:*T, r:*T, len:(u64), op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
     p = toLast{n}
     n
   }
-  scan_loop{T, init, x, r, len, scan, last}
+  scan_loop{init, x, r, len, scan, last}
 }
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
 def scan_idem = scan_scal
 fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
-  scan_post{T, init, x, r, len, op, make_scan_idem{T, op}}
+  scan_post{init, x, r, len, op, make_scan_idem{T, op}}
 }
 
 export{'si_scan_min_init_i8',  scan_idem{i8 , min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , max}}
@@ -67,7 +67,7 @@ def scan_plus = scan_assoc{+}
 def scan_assoc_0 = scan_scal
 fn scan_assoc_0{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   # Prefix op on entire AVX register
-  scan_post{T, init, x, r, len, op, scan_plus}
+  scan_post{init, x, r, len, op, scan_plus}
 }
 export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}
 export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
@@ -202,11 +202,10 @@ def addChk{a:T, b:T} = {
   def bad = emit{u1, '__builtin_add_overflow', a, b, mem}
   tup{bad, load{mem}}
 }
-def addChk{a:T, b:T if T==f64} = tup{0, a+b}
+def addChk{a:T, b:T==f64} = tup{0, a+b}
 
 def widenFull{E, xs} = {
-  merge{...each{{x:X} => {
-    def n = vcount{X}
+  merge{...each{{x:X=[n]T} => {
     def tb = width{E} * n
     if (tb<=arch_defvw) tup{widen{[n]E, x}}
     else if (1) {
@@ -226,7 +225,7 @@ def maxsafeint{T==f64} = 1<<53
 
 fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
   i:u64 = 0
-  if (hasarch{'AVX2'}) simd_plus_scan_part{X,R}{x, c, r, len, i}
+  if (hasarch{'AVX2'}) simd_plus_scan_part{x, c, r, len, i}
   @forUnroll{1,1} (js from i to len) {
     def vs = eachx{load, x, js}
     each{{j, v} => {
@@ -239,7 +238,7 @@ fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
   len
 }
 # Sum as many vector registers as possible; modifies c and i
-def simd_plus_scan_part{X, R}{x:(*X), c:(R), r:(*R), len:(u64), i:(u64)} = {
+def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
   def b = max{width{R}/2, width{X}}
   def bulk = arch_defvw/b
   
