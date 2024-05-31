@@ -1438,10 +1438,13 @@ NOINLINE void vm_pstLive() {
   Profiler_ent* bn = profiler_buf_c+1; \
   if (RARE(bn>=profiler_buf_e)) { profile_buf_full = true; return; }
 
+static const usz ENT_SP_GC = 0;
+#define ENT_SP_END 1
+
 typedef union Profiler_ent {
   struct {
     Comp* comp;
-    usz bcPos;
+    usz bcPos; // ~ENT_SP_* for special entries
   };
   u64 ip;
 } Profiler_ent;
@@ -1458,8 +1461,10 @@ void profiler_bc_handler(int x) {
   Env e = *envCurr;
   Comp* comp = e.sc->body->bl->comp;
   i32 bcPos = e.pos&1? ((u32)e.pos)>>1 : BCPOS(e.sc->body, TOPTR(u32, e.pos));
-  
-  *profiler_buf_c = (Profiler_ent){.comp = ptr_inc(comp), .bcPos = bcPos};
+  Profiler_ent ent;
+  if (gc_running) ent = (Profiler_ent){.comp = NULL, .bcPos = ~ENT_SP_GC};
+  else ent = (Profiler_ent){.comp = ptr_inc(comp), .bcPos = bcPos};
+  *profiler_buf_c = ent;
   profiler_buf_c = bn;
 }
 
@@ -1548,7 +1553,7 @@ bool profiler_stop(void) {
 }
 
 
-usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
+usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP_END], bool keyPath) {
   if (profiler_mode!=1) fatal("profiler_getResults called on mode!=1");
   Profiler_ent* c = profiler_buf_s;
   
@@ -1559,26 +1564,30 @@ usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) {
   
   while (c!=profiler_buf_c) {
     usz bcPos = c->bcPos;
-    Comp* comp = c->comp;
-    B path = comp->fullpath;
-    i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
-    if (idx == compCount) {
-      compList = vec_addN(compList, tag(comp, OBJ_TAG));
-      i32* rp;
-      usz ia = q_N(comp->src)? 1 : IA(comp->src);
-      mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
-      for (i32 i = 0; i < ia; i++) rp[i] = 0;
-      compCount++;
+    if (bcPos == ~ENT_SP_GC) {
+      specialResults[~bcPos]++;
+    } else {
+      Comp* comp = c->comp;
+      B path = comp->fullpath;
+      i32 idx = profiler_index(&map, q_N(path)? tag(comp, OBJ_TAG) : path);
+      if (idx == compCount) {
+        compList = vec_addN(compList, tag(comp, OBJ_TAG));
+        i32* rp;
+        usz ia = q_N(comp->src)? 1 : IA(comp->src);
+        mapList = vec_addN(mapList, m_i32arrv(&rp, ia));
+        for (i32 i = 0; i < ia; i++) rp[i] = 0;
+        compCount++;
+      }
+      usz cs;
+      if (q_N(comp->src)) cs = 0;
+      else {
+        B inds = IGetU(comp->indices, 0); cs = o2s(IGetU(inds,bcPos));
+        // B inde = IGetU(comp->indices, 1); ce = o2s(IGetU(inde,bcPos));
+      }
+      i32* cMap = i32arr_ptr(IGetU(mapList, idx));
+      // for (usz i = cs; i <= ce; i++) cMap[i]++;
+      cMap[cs]++;
     }
-    usz cs;
-    if (q_N(comp->src)) cs = 0;
-    else {
-      B inds = IGetU(comp->indices, 0); cs = o2s(IGetU(inds,bcPos));
-      // B inde = IGetU(comp->indices, 1); ce = o2s(IGetU(inde,bcPos));
-    }
-    i32* cMap = i32arr_ptr(IGetU(mapList, idx));
-    // for (usz i = cs; i <= ce; i++) cMap[i]++;
-    cMap[cs]++;
     c++;
   }
   profiler_freeMap(map);
@@ -1593,7 +1602,10 @@ void profiler_displayResults(void) {
   printf("Got %zu samples\n", count);
   if (profiler_mode==1) {
     B compList, mapList;
-    usz compCount = profiler_getResults(&compList, &mapList, true);
+    u64 specialResults[ENT_SP_END];
+    usz compCount = profiler_getResults(&compList, &mapList, specialResults, true);
+    
+    if (specialResults[ENT_SP_GC] > 0) printf("GC: "N64d" samples\n", specialResults[ENT_SP_GC]);
     
     SGetU(compList) SGetU(mapList)
     for (usz i = 0; i < compCount; i++) {
@@ -1651,7 +1663,7 @@ bool profiler_alloc() {
 bool profiler_start(i32 mode, i64 hz) { return false; }
 bool profiler_stop() { return false; }
 void profiler_free() { thrM("Profiler not supported"); }
-usz profiler_getResults(B* compListRes, B* mapListRes, bool keyPath) { thrM("Profiler not supported"); }
+usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP_END], bool keyPath) { thrM("Profiler not supported"); }
 void profiler_displayResults() { thrM("Profiler not supported"); }
 #endif
 
