@@ -329,3 +329,20 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   decG(x);
   return withFill(r.b, wf);
 }
+
+B scan_rows_bit(Md1D* fd, B x) {
+  assert(isArr(x) && RNK(x)==2 && TI(x,elType)==el_bit);
+  #if SINGELI
+  if (!v(fd->f)->flags) return bi_N;
+  u8 rtid = v(fd->f)->flags-1;
+  if (rtid==n_and|rtid==n_or) {
+    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
+    u64* xp = bitarr_ptr(x);
+    u64* rp; B r = m_bitarrc(&rp, x);
+    if (rtid==n_and) si_scan_rows_and(xp, rp, n, m);
+    else             si_scan_rows_or (xp, rp, n, m);
+    decG(x); return r;
+  }
+  #endif
+  return bi_N;
+}

@@ -9,6 +9,7 @@ B shape_c2(B, B, B);
 B transp_c2(B, B, B);
 B fold_rows(Md1D* d, B x);     // from fold.c
 B fold_rows_bit(Md1D* d, B x); // from fold.c
+B scan_rows_bit(Md1D* d, B x); // from scan.c
 B takedrop_highrank(bool take, B w, B x); // from sfns.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
@@ -459,6 +460,17 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         if (isPervasiveDyExt(fd->f)) {
           if (TI(x,elType)==el_bit) { B r = fold_rows_bit(fd, x); if (!q_N(r)) return r; }
           if (m <= 64 && m < sh[0]) return fold_rows(fd, x);
+        }
+      }
+      if (rtid==n_scan) {
+        if (cr==0) goto base;
+        usz *sh = SH(x); usz m = sh[k];
+        if (m<=1 || IA(x)==0) return x;
+        if (!isFun(fd->f)) goto base;
+        u8 frtid = v(fd->f)->flags-1;
+        if (frtid==n_rtack) return x;
+        if (k==1 && xr==2 && isPervasiveDyExt(fd->f) && TI(x,elType)==el_bit) {
+          B r = scan_rows_bit(fd, x); if (!q_N(r)) return r;
         }
       }
     } else if (TY(f) == t_md2D) {

@@ -295,3 +295,86 @@ export{'si_scan_plus_i32_i32', plus_scanC{i32, i32}}
 
 export{'si_scan_plus_i16_f64', plus_scanG{i16, f64}}
 export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}
+
+
+
+# Row-wise boolean scan
+fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
+  def qand = not id
+  assert{l > 0}
+  nw := cdiv{n*l, 64}
+  def res_m1{x,c,m} = { # result word with carry c, popc{m}<=1
+    if (qand) x &~ ((x+c) &  (x+m))
+    else      x | ((-x-c) &~ (x-m))
+  }
+  if (l < 64) {
+    if ((l & (l-1)) == 0) {
+      if (l == 2) {
+        @for (r in dst, x in src over nw) {
+          r = (if (qand) x & (x<<1 | 64w2b01) else x | (x<<1 & 64w2b10))
+        }
+      } else {
+        m:u64 = (~u64~~0) / ((u64~~1 << l)-1)
+        t := m << (l-1)
+        @for (r in dst, x in src over nw) {
+          r = (if (qand) x &~ ((t&x) ^ ((x&~t) + m))
+               else      x | ~((t&~x) ^ ((x|t) - m)))
+        }
+      }
+      # could use for l>=8; not much faster and takes up space
+      # def rowwise{T} = @for (r in *T~~dst, x in *T~~src over (64/width{T})*nw) r = x &~ (x+1)
+    } else {
+      d:usz = 64 % l
+      m:u64 = (~u64~~0 >> d) / ((u64~~1 << l)-1)
+      m = m<<l | 1
+      c:u64 = 0  # carry
+      @for (r in dst, x in src over nw) {
+        s:= (if (qand) (x &~ m) >> 1 else ~(x | m) >> 1   )
+        a:= (if (qand) s + (x&(m|c)) else s + ((m|c) &~ x))
+        r = (if (qand) s ^ a         else ~(s ^ a)        )
+        c = a >> 63
+        m = m>>d | m<<(l-d)
+      }
+    }
+  } else if (l < 160) {
+    q:usz = 0   # distance to next row boundary
+    c:u64 = id  # carry
+    @for (r in dst, x in src over nw) {
+      b:= q<64  # whether there's a boundary
+      p:= q%64  # its position
+      q-= 64 - (l &- b)
+      r = res_m1{x, c, promote{u64, b} << p}
+      c = r >> 63
+    }
+  } else {
+    ib:usz = 0  # row bit index
+    wn:usz = 0  # starting word of next row
+    c:u64 = id  # carry
+    def word{bit} = bit * ((1<<64) - 1)
+    @for (i to n) {
+      iw:= wn
+      r := res_m1{load{src, iw}, c, u64~~1 << (ib%64)}
+      store{dst, iw, r}; ++iw
+      ib+= l; wn = ib/64
+      c = r>>63
+      if (c != id) while (iw < wn) {
+        x:= load{src, iw}
+        if (x != word{not id}) {
+          c = id
+          store{dst, iw, if (qand) x &~ (x+1) else x | -x}; ++iw
+          goto{'shortcut'}
+        }
+        store{dst, iw, x}; ++iw
+      }
+      setlabel{'shortcut'}
+      @for (r in dst over _ from iw to wn) r = word{id}
+    }
+    if (ib%64 != 0) {
+      x:= load{src, wn}
+      store{dst, wn, if (qand) x &~ (x+c) else x | (-x-c)}
+    }
+  }
+}
+
+export{'si_scan_rows_and', scan_rows_andor{0}}
+export{'si_scan_rows_or',  scan_rows_andor{1}}
