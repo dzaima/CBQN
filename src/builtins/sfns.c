@@ -889,7 +889,10 @@ B join_c1(B t, B x) {
   }
 }
 B join_c2(B t, B w, B x) {
-  if (isAtm(w)) w = m_unit(w);
+  if (isAtm(w)) {
+    if (isAtm(x)) return pair_c2(t, w, x);
+    w = m_unit(w);
+  }
   ur wr = RNK(w);
   if (isAtm(x)) {
     if (wr==1 && inplace_add(w, x)) return w;
