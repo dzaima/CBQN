@@ -376,5 +376,50 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
   }
 }
 
+fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
+  def scan_word = prefix_byshift{^, <<}
+  assert{l > 0}
+  nl := n*l
+  nw := cdiv{nl, 64}
+  if (l < 64) {
+    if ((l & (l-1)) == 0) {
+      m:u64 = (~u64~~0) / ((u64~~1 << l)-1)
+      @for (r, x over nw) {
+        s:= scan_word{x}
+        b:= s<<1 & m  # last bit of previous row
+        r = s ^ (b<<l - b)
+      }
+    } else {
+      d:usz = 64 % l
+      m:u64 = (~u64~~0 >> d) / ((u64~~1 << l)-1)
+      m = m<<l | 1
+      c:u64 = 0  # carry
+      @for (x, r over nw) {
+        s:= scan_word{x}
+        f:= (m-1)&~m  # bits before first full row
+        b:= s<<1 & m  # last bit of previous row
+        r = s ^ ((c & f) | (b<<l - b))
+        c = -(r>>63)
+        m = m>>d | m<<(l-d)
+      }
+    }
+  } else {
+    i :usz = 0  # row bit index
+    iw:usz = 0  # starting word
+    c:u64 = 0   # carry
+    while (1) {
+      i+= l; ii := iw; iw = cdiv{i, 64}
+      scan_neq{}(c, x+ii, r+ii, promote{u64,iw-ii})
+      if (i == nl) return{}
+      s:= load{r, iw-1}
+      q := i%64
+      s^= -(s<<1 & u64~~1<<q)
+      store{r, iw-1, s}
+      c = -((s &- (q>0)) >> 63)
+    }
+  }
+}
+
 export{'si_scan_rows_and', scan_rows_andor{0}}
 export{'si_scan_rows_or',  scan_rows_andor{1}}
+export{'si_scan_rows_ne',  scan_rows_neq}

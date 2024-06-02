@@ -335,12 +335,13 @@ B scan_rows_bit(Md1D* fd, B x) {
   #if SINGELI
   if (!v(fd->f)->flags) return bi_N;
   u8 rtid = v(fd->f)->flags-1;
-  if (rtid==n_and|rtid==n_or) {
+  if (rtid==n_and|rtid==n_or|rtid==n_ne) {
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrc(&rp, x);
-    if (rtid==n_and) si_scan_rows_and(xp, rp, n, m);
-    else             si_scan_rows_or (xp, rp, n, m);
+    if      (rtid==n_and) si_scan_rows_and(xp, rp, n, m);
+    else if (rtid==n_or ) si_scan_rows_or (xp, rp, n, m);
+    else                  si_scan_rows_ne (xp, rp, n, m);
     decG(x); return r;
   }
   if (rtid==n_add && SH(x)[1]<128) {
