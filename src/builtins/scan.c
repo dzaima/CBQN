@@ -343,6 +343,25 @@ B scan_rows_bit(Md1D* fd, B x) {
     else             si_scan_rows_or (xp, rp, n, m);
     decG(x); return r;
   }
+  if (rtid==n_add && SH(x)[1]<128) {
+    usz ia = IA(x); usz m = SH(x)[1];
+    usz bl = 128; // block size
+    i8 buf[bl]; i8 c = 0;
+    u64* xp = bitarr_ptr(x);
+    i8* rp; B r = m_i8arrc(&rp, x);
+    for (usz i = 0, j = m; i < ia; i += bl) {
+      usz len = ia - i; if (len > bl) len = bl;
+      usz e = i + len;
+      si_bcs8(xp + i/64, buf, len);
+      memset(rp+i, -c, len);
+      i8* bi = buf-i;
+      assert(j > i); for (; j < e; j += m) rp[j] = bi[j-1];
+      si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
+      for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];
+      if (j == e) { j += m; c = 0; } else c = rp[e-1];
+    }
+    decG(x); return r;
+  }
   #endif
   return bi_N;
 }
