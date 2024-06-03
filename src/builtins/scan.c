@@ -35,6 +35,12 @@ B scan_ne(B x, u64 p, u64 ia) { // consumes x
 #endif
   decG(x); return r;
 }
+B scan_eq(B x, u64 ia) { // consumes x
+  B r = scan_ne(x, 0, ia);
+  u64* rp = bitarr_ptr(r);
+  for (usz i = 0; i < BIT_N(ia); i++) rp[i] ^= 0xAAAAAAAAAAAAAAAA;
+  return r;
+}
 
 static B scan_or(B x, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
@@ -209,6 +215,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (rtid==n_or  |               rtid==n_ceil ) return scan_or(x, ia);       // ∨⌈
       if (rtid==n_and | rtid==n_mul | rtid==n_floor) return scan_and(x, ia);      // ∧×⌊
       if (rtid==n_ne                               ) return scan_ne(x, 0, ia);    // ≠
+      if (rtid==n_eq                               ) return scan_eq(x,    ia);    // =
       if (rtid==n_lt)                                return scan_lt(x, 0, ia);    // <
       goto base;
     }
@@ -335,14 +342,15 @@ B scan_rows_bit(Md1D* fd, B x) {
   #if SINGELI
   if (!v(fd->f)->flags) return bi_N;
   u8 rtid = v(fd->f)->flags-1;
-  if (rtid==n_and|rtid==n_or|rtid==n_ne) {
+  if (rtid==n_and|rtid==n_or|rtid==n_ne|rtid==n_eq) {
+    if (rtid==n_eq) x = bit_negate(x);
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrc(&rp, x);
     if      (rtid==n_and) si_scan_rows_and(xp, rp, n, m);
     else if (rtid==n_or ) si_scan_rows_or (xp, rp, n, m);
     else                  si_scan_rows_ne (xp, rp, n, m);
-    decG(x); return r;
+    decG(x); return rtid==n_eq ? bit_negate(r) : r;
   }
   if (rtid==n_add && SH(x)[1]<128) {
     usz ia = IA(x); usz m = SH(x)[1];
