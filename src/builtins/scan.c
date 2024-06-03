@@ -9,6 +9,12 @@
 static u64 vg_rand(u64 x) { return x; }
 #endif
 
+B slash_c1(B, B);
+B shape_c2(B, B, B);
+B fne_c1(B, B);
+B sub_c2(B, B, B);
+B add_c2(B, B, B);
+
 #if SINGELI
   #define SINGELI_FILE scan
   #include "../utils/includeSingeli.h"
@@ -57,7 +63,6 @@ static B scan_and(B x, u64 ia) { // consumes x
   decG(x); return FL_SET(r, fl_dsc|fl_squoze);
 }
 
-B slash_c1(B t, B x);
 B scan_add_bool(B x, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64 xs = bit_sum(xp, ia);
@@ -119,7 +124,6 @@ B scan_max_num(B x, u8 xe, u64 ia) { MINMAX(max,>,MIN,or ,asc) }
 #undef MINMAX
 // Initialized: try to convert 𝕨 to type of 𝕩
 // (could do better for out-of-range floats)
-B shape_c2(B, B, B);
 #define MM2_ICASE(T,N,C,I) \
   case el_##T : { \
     if (wv!=(T)wv) { if (wv C 0) { r=C2(shape,m_f64(ia),w); break; } else wv=I; } \
@@ -180,9 +184,6 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   #endif
 }
 
-B fne_c1(B, B);
-B shape_c2(B, B, B);
-
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
@@ -210,14 +211,17 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     }
     if (!(xr==1 && xe<=el_f64)) goto base;
     
-    if (xe==el_bit) {
-      if (rtid==n_add                              ) return scan_add_bool(x, ia); // +
-      if (rtid==n_or  |               rtid==n_ceil ) return scan_or(x, ia);       // ∨⌈
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) return scan_and(x, ia);      // ∧×⌊
-      if (rtid==n_ne                               ) return scan_ne(x, 0, ia);    // ≠
-      if (rtid==n_eq                               ) return scan_eq(x,    ia);    // =
-      if (rtid==n_lt)                                return scan_lt(x, 0, ia);    // <
-      goto base;
+    if (xe==el_bit) switch (rtid) { default: goto base;
+      case n_add:                           return scan_add_bool(x, ia); // +
+      case n_or:              case n_ceil:  return scan_or(x, ia);       // ∨⌈
+      case n_and: case n_mul: case n_floor: return scan_and(x, ia);      // ∧×⌊
+      case n_ne:                            return scan_ne(x, 0, ia);    // ≠
+      case n_eq:                            return scan_eq(x,    ia);    // =
+      case n_lt:                            return scan_lt(x, 0, ia);    // <
+      case n_le:                            return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
+      case n_gt:                            x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
+      case n_ge:                            x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
+      case n_sub:                           return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
     }
     if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
@@ -258,7 +262,6 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   return withFill(r.b, xf);
 }
 
-B add_c2(B, B, B);
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
