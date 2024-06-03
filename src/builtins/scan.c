@@ -12,8 +12,9 @@ static u64 vg_rand(u64 x) { return x; }
 B slash_c1(B, B);
 B shape_c2(B, B, B);
 B fne_c1(B, B);
-B sub_c2(B, B, B);
 B add_c2(B, B, B);
+B sub_c2(B, B, B);
+B mul_c2(B, B, B);
 
 #if SINGELI
   #define SINGELI_FILE scan
@@ -340,45 +341,50 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   return withFill(r.b, wf);
 }
 
-B scan_rows_bit(Md1D* fd, B x) {
+B scan_rows_bit(u8 rtid, B x) {
   assert(isArr(x) && RNK(x)==2 && TI(x,elType)==el_bit);
   #if SINGELI
-  if (!v(fd->f)->flags) return bi_N;
-  u8 rtid = v(fd->f)->flags-1;
-  if (rtid==n_and|rtid==n_or|rtid==n_ne|rtid==n_eq|rtid==n_ltack) {
-    if (rtid==n_eq) x = bit_negate(x);
-    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
-    u64* xp = bitarr_ptr(x);
-    u64* rp; B r = m_bitarrc(&rp, x);
-    if      (rtid==n_and  ) si_scan_rows_and  (xp, rp, n, m);
-    else if (rtid==n_or   ) si_scan_rows_or   (xp, rp, n, m);
-    else if (rtid==n_ltack) si_scan_rows_ltack(xp, rp, n, m);
-    else                    si_scan_rows_ne   (xp, rp, n, m);
-    decG(x); return rtid==n_eq ? bit_negate(r) : r;
-  }
-  if (rtid==n_add && SH(x)[1]<128) {
-    usz ia = IA(x); usz m = SH(x)[1];
-    usz bl = 128; // block size
-    i8 buf[bl]; i8 c = 0;
-    u64* xp = bitarr_ptr(x);
-    i8* rp; B r = m_i8arrc(&rp, x);
-    u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
-    u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);
-    for (usz i = 0, j = m; i < ia; i += bl) {
-      usz len = ia - i; if (len > bl) len = bl;
-      usz e = i + len;
-      si_bcs8(xp + i/64, buf, len);
-      memset(rp+i, -c, len);
-      i8* bi = buf-i;
-      assert(j > i);
-      if (mk) while (j+mk <= e) { *(u64*)(rp+j) = *(u64*)(bi+j-1) & mm; j+=mk; }
-      for (; j < e; j += m) rp[j] = bi[j-1];
-      si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
-      for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];
-      if (j == e) { j += m; c = 0; } else c = rp[e-1];
+  switch (rtid) { default: return bi_N;
+    case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x)));
+    case n_and: case n_or: case n_ne: case n_ltack: {
+      usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
+      u64* xp = bitarr_ptr(x);
+      u64* rp; B r = m_bitarrc(&rp, x);
+      switch (rtid) { default:UD;
+        case n_and:   si_scan_rows_and  (xp, rp, n, m); break;
+        case n_or:    si_scan_rows_or   (xp, rp, n, m); break;
+        case n_ne:    si_scan_rows_ne   (xp, rp, n, m); break;
+        case n_ltack: si_scan_rows_ltack(xp, rp, n, m); break;
+      }
+      decG(x); return r;
     }
-    decG(x); return r;
+    case n_add: case n_sub: {
+      usz ia = IA(x); usz m = SH(x)[1];
+      if (m >= 128) return bi_N;
+      usz bl = 128; // block size
+      i8 buf[bl]; i8 c = 0;
+      u64* xp = bitarr_ptr(x);
+      i8* rp; B r = m_i8arrc(&rp, x);
+      u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
+      u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);
+      for (usz i = 0, j = m; i < ia; i += bl) {
+        usz len = ia - i; if (len > bl) len = bl;
+        usz e = i + len;
+        si_bcs8(xp + i/64, buf, len);
+        memset(rp+i, -c, len);
+        i8* bi = buf-i;
+        assert(j > i);
+        if (mk) while (j+mk <= e) { *(u64*)(rp+j) = *(u64*)(bi+j-1) & mm; j+=mk; }
+        for (; j < e; j += m) rp[j] = bi[j-1];
+        si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
+        for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];
+        if (j == e) { j += m; c = 0; } else c = rp[e-1];
+      }
+      if (rtid!=n_sub) { decG(x); return r; }
+      return C2(sub, C2(mul, m_f64(2), scan_rows_bit(n_ltack, x)), r);
+    }
   }
-  #endif
+  #else
   return bi_N;
+  #endif
 }
