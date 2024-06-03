@@ -299,6 +299,20 @@ export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}
 
 
 # Row-wise boolean scan
+def aligned_mask{l} = (~u64~~0) / ((u64~~1 << l)-1)
+def loop_with_unaligned_mask{x, r, nw, l, step} = {
+  d:usz = 64 % l
+  m:u64 = (~u64~~0 >> d) / ((u64~~1 << l)-1)
+  m = m<<l | 1
+  c:u64 = 0  # carry (initial value never matters)
+  @for (x, r over nw) {
+    match (step{x, c, m}) {
+      {{nr,nc}} => { r=nr; c=nc }
+       {nr}     => { r=nr; c = -(r>>63) }
+    }
+    m = m>>d | m<<(l-d)
+  }
+}
 fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
   def qand = not id
   assert{l > 0}
@@ -314,7 +328,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
           r = (if (qand) x & (x<<1 | 64w2b01) else x | (x<<1 & 64w2b10))
         }
       } else {
-        m:u64 = (~u64~~0) / ((u64~~1 << l)-1)
+        m:u64 = aligned_mask{l}
         t := m << (l-1)
         @for (r in dst, x in src over nw) {
           r = (if (qand) x &~ ((t&x) ^ ((x&~t) + m))
@@ -324,17 +338,12 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
       # could use for l>=8; not much faster and takes up space
       # def rowwise{T} = @for (r in *T~~dst, x in *T~~src over (64/width{T})*nw) r = x &~ (x+1)
     } else {
-      d:usz = 64 % l
-      m:u64 = (~u64~~0 >> d) / ((u64~~1 << l)-1)
-      m = m<<l | 1
-      c:u64 = 0  # carry
-      @for (r in dst, x in src over nw) {
+      loop_with_unaligned_mask{src, dst, nw, l, {x, c, m} => {
         s:= (if (qand) (x &~ m) >> 1 else ~(x | m) >> 1   )
         a:= (if (qand) s + (x&(m|c)) else s + ((m|c) &~ x))
-        r = (if (qand) s ^ a         else ~(s ^ a)        )
-        c = a >> 63
-        m = m>>d | m<<(l-d)
-      }
+        tup{(if (qand) s ^ a         else ~(s ^ a)        ),
+            a >> 63} # new c
+      }}
     }
   } else if (l < 160) {
     q:usz = 0   # distance to next row boundary
@@ -347,15 +356,15 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
       c = r >> 63
     }
   } else {
-    ib:usz = 0  # row bit index
+    i :usz = 0  # row bit index
     wn:usz = 0  # starting word of next row
     c:u64 = id  # carry
     def word{bit} = bit * ((1<<64) - 1)
-    @for (i to n) {
+    @for (n) {
       iw:= wn
-      r := res_m1{load{src, iw}, c, u64~~1 << (ib%64)}
+      r := res_m1{load{src, iw}, c, u64~~1 << (i%64)}
       store{dst, iw, r}; ++iw
-      ib+= l; wn = ib/64
+      i+= l; wn = i/64
       c = r>>63
       if (c != id) while (iw < wn) {
         x:= load{src, iw}
@@ -369,7 +378,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
       setlabel{'shortcut'}
       @for (r in dst over _ from iw to wn) r = word{id}
     }
-    if (ib%64 != 0) {
+    if (i%64 != 0) {
       x:= load{src, wn}
       store{dst, wn, if (qand) x &~ (x+c) else x | (-x-c)}
     }
@@ -383,25 +392,19 @@ fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
   nw := cdiv{nl, 64}
   if (l < 64) {
     if ((l & (l-1)) == 0) {
-      m:u64 = (~u64~~0) / ((u64~~1 << l)-1)
+      m:u64 = aligned_mask{l}
       @for (r, x over nw) {
         s:= scan_word{x}
         b:= s<<1 & m  # last bit of previous row
         r = s ^ (b<<l - b)
       }
     } else {
-      d:usz = 64 % l
-      m:u64 = (~u64~~0 >> d) / ((u64~~1 << l)-1)
-      m = m<<l | 1
-      c:u64 = 0  # carry
-      @for (x, r over nw) {
+      loop_with_unaligned_mask{x, r, nw, l, {x, c, m} => {
         s:= scan_word{x}
         f:= (m-1)&~m  # bits before first full row
         b:= s<<1 & m  # last bit of previous row
-        r = s ^ ((c & f) | (b<<l - b))
-        c = -(r>>63)
-        m = m>>d | m<<(l-d)
-      }
+        s ^ ((c & f) | (b<<l - b))
+      }}
     }
   } else {
     i :usz = 0  # row bit index
@@ -420,6 +423,40 @@ fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
   }
 }
 
-export{'si_scan_rows_and', scan_rows_andor{0}}
-export{'si_scan_rows_or',  scan_rows_andor{1}}
-export{'si_scan_rows_ne',  scan_rows_neq}
+fn scan_rows_left(x:*u64, r:*u64, n:usz, l:usz) : void = {
+  def scan_word = prefix_byshift{^, <<}
+  assert{l > 0}
+  nl := n*l
+  nw := cdiv{nl, 64}
+  if (l < 64) {
+    if ((l & (l-1)) == 0) {
+      m:u64 = aligned_mask{l}
+      @for (r, x over nw) { b:= x & m; r = b<<l - b }
+    } else {
+      loop_with_unaligned_mask{x, r, nw, l, {x, c, m} => {
+        f:= (m-1)&~m  # bits before first full row
+        b:= x & m
+        (c & f) | (b<<l - b)
+      }}
+    }
+  } else {
+    i :usz = 0  # row bit index
+    wn:usz = 0  # starting word of next row
+    c:u64 = 0   # carry
+    @for (n) {
+      iw:= wn
+      m := u64~~1 << (i%64)
+      xw:= -(load{x, iw} & m)
+      store{r, iw, (c & (m-1)) | xw}
+      c = -(xw>>63)
+      i+= l; wn = i/64
+      @for (r in r over _ from iw+1 to wn) r = c
+    }
+    if (i%64 != 0) store{r, wn, c}
+  }
+}
+
+export{'si_scan_rows_and',   scan_rows_andor{0}}
+export{'si_scan_rows_or',    scan_rows_andor{1}}
+export{'si_scan_rows_ne',    scan_rows_neq}
+export{'si_scan_rows_ltack', scan_rows_left}

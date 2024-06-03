@@ -345,14 +345,15 @@ B scan_rows_bit(Md1D* fd, B x) {
   #if SINGELI
   if (!v(fd->f)->flags) return bi_N;
   u8 rtid = v(fd->f)->flags-1;
-  if (rtid==n_and|rtid==n_or|rtid==n_ne|rtid==n_eq) {
+  if (rtid==n_and|rtid==n_or|rtid==n_ne|rtid==n_eq|rtid==n_ltack) {
     if (rtid==n_eq) x = bit_negate(x);
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrc(&rp, x);
-    if      (rtid==n_and) si_scan_rows_and(xp, rp, n, m);
-    else if (rtid==n_or ) si_scan_rows_or (xp, rp, n, m);
-    else                  si_scan_rows_ne (xp, rp, n, m);
+    if      (rtid==n_and  ) si_scan_rows_and  (xp, rp, n, m);
+    else if (rtid==n_or   ) si_scan_rows_or   (xp, rp, n, m);
+    else if (rtid==n_ltack) si_scan_rows_ltack(xp, rp, n, m);
+    else                    si_scan_rows_ne   (xp, rp, n, m);
     decG(x); return rtid==n_eq ? bit_negate(r) : r;
   }
   if (rtid==n_add && SH(x)[1]<128) {
