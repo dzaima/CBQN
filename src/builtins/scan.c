@@ -358,13 +358,17 @@ B scan_rows_bit(Md1D* fd, B x) {
     i8 buf[bl]; i8 c = 0;
     u64* xp = bitarr_ptr(x);
     i8* rp; B r = m_i8arrc(&rp, x);
+    u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
+    u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);
     for (usz i = 0, j = m; i < ia; i += bl) {
       usz len = ia - i; if (len > bl) len = bl;
       usz e = i + len;
       si_bcs8(xp + i/64, buf, len);
       memset(rp+i, -c, len);
       i8* bi = buf-i;
-      assert(j > i); for (; j < e; j += m) rp[j] = bi[j-1];
+      assert(j > i);
+      if (mk) while (j+mk <= e) { *(u64*)(rp+j) = *(u64*)(bi+j-1) & mm; j+=mk; }
+      for (; j < e; j += m) rp[j] = bi[j-1];
       si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
       for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];
       if (j == e) { j += m; c = 0; } else c = rp[e-1];
