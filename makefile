@@ -1,4 +1,4 @@
-SHELL = /usr/bin/env bash
+SHELL = /usr/bin/env sh
 MAKEFLAGS+= --no-print-directory --no-builtin-rules --no-builtin-variables
 
 default: o3
