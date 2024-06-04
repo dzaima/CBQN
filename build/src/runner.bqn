@@ -25,7 +25,7 @@ _runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
   "sh"‿dir‿cmd‿depf:
     t0 ← •MonoTime@
     Chdir @∾˜ •ToUTF8 dir
-    c‿o‿e ← •SH⎊{𝕊: ⟨'e',"",∾⟨"Failed to spawn '", ⊑cmd, "': ", •CurrentError@, {"c++"≡⊑cmd? "; install a C++ compiler to 'c++', or add an argument of CXX=path/to/c++-compiler"; ""}⟩⟩} cmd
+    c‿o‿e ← •SH⎊{𝕊: ⟨'e',"",∾⟨"Failed to spawn '", ⊑cmd, "': ", •CurrentError@, {"c++"≡⊑cmd? "; install a C++ compiler as 'c++', or add an argument of CXX=c++-compiler"; ""}⟩⟩} cmd
     t1 ← •MonoTime@
     {
       0: @≡depf?
