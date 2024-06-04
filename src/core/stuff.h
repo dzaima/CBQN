@@ -40,7 +40,7 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 #define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
 #define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
 
-#define TYARR_SZ(T,IA) fsizeof(TyArr, a, T##Atom, IA)
+#define TYARR_SZ(T,IA) fsizeof(TyArr, a, T##Atom, (u64)(IA))
 #define TYARR_SZ2(T,IA) TYARR_SZ(T,IA)
 #define TYARR_SZW(W,IA) (offsetof(TyArr, a) + (W)*(IA))
 
