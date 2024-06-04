@@ -485,7 +485,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
     }
     if (bad && !good) thrOOM();
     
-    CHECK_IA(ria, 8);
+    CHECK_IA(ria, 1);
     
     if (cellStart<=0) {
       if (xr==rr) {
