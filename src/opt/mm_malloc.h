@@ -17,7 +17,7 @@ static void* mm_alloc(u64 sz, u8 type) {
   return x;
 }
 
-
+#define gc_running 0
 static void gc_disable() { }
 static void gc_enable() { }
 static void mm_visit(B x) { }
