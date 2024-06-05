@@ -225,19 +225,39 @@ static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {le
   return taga(ra);
 }
 
+static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) {
+  switch(e) { default: UD;
+    case el_bit: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) bitp_set(rp, p, o2bG(v)); break;
+    case el_c8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u8 *)rp)[p] = o2cG(v); break;
+    case el_c16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u16*)rp)[p] = o2cG(v); break;
+    case el_c32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u32*)rp)[p] = o2cG(v); break;
+    case el_i8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i8 *)rp)[p] = o2iG(v); break;
+    case el_i16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i16*)rp)[p] = o2iG(v); break;
+    case el_i32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i32*)rp)[p] = o2iG(v); break;
+    case el_f64: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((f64*)rp)[p] = o2fG(v); break;
+  }
+}
+
 static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »⎉1 or «⎉1
   assert(cam!=0 && csz!=0);
-  MAKE_MUT_INIT(r, IA(x), e); MUTG_INIT(r);
-  bool after = rtid==n_shifta;
-  usz xi=after, ri=!after, fi=after?csz-1:0;
-  incBy(f, cam-1); // cam≠0 → cam-1 ≥ 0
-  for (usz i = 0; i < cam; i++) {
-    mut_copyG(r, ri, x, xi, csz-1);
-    mut_setG(r, fi, f);
-    xi+= csz;
-    ri+= csz;
-    fi+= csz;
+  usz xia = IA(x);
+  if (csz==1) {
+    Arr* r = arr_shCopy(reshape_one(xia, f), x);
+    decG(x);
+    return taga(r);
   }
+  MAKE_MUT_INIT(r, xia, e); MUTG_INIT(r);
+  bool after = rtid==n_shifta;
+  usz p = after? csz-1 : 0;
+  mut_copyG(r, after? 0 : 1, x, after, xia-1);
+  if (e==el_B) {
+    mut_setG(r, after? xia-1 : 0, m_f64(0));
+    incBy(f, cam-1); // cam≠0 → cam-1 ≥ 0
+    for (; p < xia; p+= csz) {
+      mut_rm(r, p);
+      mut_setG(r, p, f);
+    }
+  } else set_column_typed(r->a, f, e, p, csz, cam);
   return mut_fcd(r, x);
 }
 
