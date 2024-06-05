@@ -164,7 +164,7 @@ B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 Arr* allZeroes(usz ia); // ia⥊0 with undefined shape
 Arr* allOnes(usz ia); // ia⥊1 with undefined shape
 
-Arr* reshape_one(usz nia, B x); // nia⥊1↑⥊x with undefined shape
+Arr* reshape_one(usz nia, B x); // nia⥊<x with undefined shape; consumes x
 B i64EachDec(i64 v, B x); // v¨ x; consumes x
 
 B bit_negate(B x); // consumes
