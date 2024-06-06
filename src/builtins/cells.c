@@ -225,16 +225,31 @@ static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {le
   return taga(ra);
 }
 
-static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) {
+static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) { // may write to all elements 0 ≤ i < stride×n, and after that too for masked stores
+  assert(p < stride);
   switch(e) { default: UD;
-    case el_bit: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) bitp_set(rp, p, o2bG(v)); break;
-    case el_c8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u8 *)rp)[p] = o2cG(v); break;
-    case el_c16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u16*)rp)[p] = o2cG(v); break;
-    case el_c32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u32*)rp)[p] = o2cG(v); break;
-    case el_i8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i8 *)rp)[p] = o2iG(v); break;
-    case el_i16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i16*)rp)[p] = o2iG(v); break;
-    case el_i32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i32*)rp)[p] = o2iG(v); break;
-    case el_f64: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((f64*)rp)[p] = o2fG(v); break;
+    case el_bit: if (stride<64 && n>64) goto bit_special;
+                 NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) bitp_set(rp, p, o2bG(v));return;
+    case el_c8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u8 *)rp)[p] = o2cG(v); return;
+    case el_c16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u16*)rp)[p] = o2cG(v); return;
+    case el_c32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u32*)rp)[p] = o2cG(v); return;
+    case el_i8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i8 *)rp)[p] = o2iG(v); return;
+    case el_i16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i16*)rp)[p] = o2iG(v); return;
+    case el_i32: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((i32*)rp)[p] = o2iG(v); return;
+    case el_f64: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((f64*)rp)[p] = o2fG(v); return;
+  }
+  {
+    bit_special:;
+    bool b = o2bG(v);
+    B m1 = taga(arr_shVec(b? allZeroes(stride) : allOnes(stride)));
+    bitp_set(bitarr_ptr(m1), p, b);
+    B m = C2(shape, m_f64(stride*n+8), m1); // +8 to make the following loops reading past-the-end read acceptable values
+    assert(TI(m,elType)==el_bit);
+    u8* mp = (u8*)bitarr_ptr(m);
+    if (b) for (ux i = 0; i < (stride*n+7)/8; i++) ((u8*)rp)[i]|= mp[i]; // TODO call some general fns for this
+    else   for (ux i = 0; i < (stride*n+7)/8; i++) ((u8*)rp)[i]&= mp[i];
+    decG(m);
+    return;
   }
 }
 
@@ -257,7 +272,9 @@ static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »
       mut_rm(r, p);
       mut_setG(r, p, f);
     }
-  } else set_column_typed(r->a, f, e, p, csz, cam);
+  } else {
+    set_column_typed(r->a, f, e, p, csz, cam);
+  }
   return mut_fcd(r, x);
 }
 
