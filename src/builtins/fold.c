@@ -14,6 +14,7 @@
 #include "../core.h"
 #include "../builtins.h"
 #include "../utils/mut.h"
+#include "../utils/calls.h"
 
 #if SINGELI
   #define SINGELI_FILE fold
@@ -512,12 +513,23 @@ B fold_rows_bit(Md1D* fd, B x) {
   if (rtid==n_add) return sum_rows_bit(x);
   #if SINGELI
   if (rtid==n_ne|rtid==n_eq|rtid==n_or|rtid==n_and) {
+    bool andor = rtid==n_or|rtid==n_and;
     usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
-    if (m <= 64) return bi_N;
+    if (andor && m < 256) while (m%8 == 0) {
+      usz f = CTZ(m|32);
+      m >>= f; usz c = m*n;
+      u64* yp; B y = m_bitarrv(&yp, c);
+      u8 e = el_i8 + f-3;
+      CmpASFn cmp = rtid==n_or ? CMP_AS_FN(ne, e) : CMP_AS_FN(eq, e);
+      CMP_AS_CALL(cmp, yp, bitarr_ptr(x), m_f64((rtid==n_or)-1), c);
+      decG(x); if (m==1) return y;
+      x = y;
+    }
+    if (!andor && m <= 64) return bi_N;
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrv(&rp, n);
-    if (rtid==n_ne|rtid==n_eq) si_xor_rows_bit(xp, rp, n, m, rtid==n_eq);
-    else                        si_or_rows_bit(xp, rp, n, m, rtid==n_and);
+    if (andor) si_or_rows_bit(xp, rp, n, m, rtid==n_and);
+    else      si_xor_rows_bit(xp, rp, n, m, rtid==n_eq);
     decG(x); return r;
   }
   #endif
