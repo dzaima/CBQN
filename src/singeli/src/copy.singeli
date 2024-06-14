@@ -49,7 +49,7 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
     def bulk2 = bulk*unr
     xi:ux = 0
     @forNZ (i to cdiv{l,bulk2}) {
-      b_setBatch{bulk2, rp, i, homMask{...each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
+      b_setBatch{bulk2, rp, i, homMask{each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
       xi+= unr
     }
   } else if (width{X}<=width{R}) {

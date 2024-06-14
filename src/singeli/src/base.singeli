@@ -171,6 +171,7 @@ def homMask{...vs if length{vs}>1} = {
   def h = n/2
   (sl{h} << (h * k)) | sl{0,h}
 }
+def homMask{x if ktup{x}} = homMask{...x}
 
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
