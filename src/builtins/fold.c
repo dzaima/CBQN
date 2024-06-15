@@ -17,6 +17,8 @@
 #include "../utils/calls.h"
 
 #if SINGELI
+  extern uint64_t* const si_spaced_masks;
+  #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE fold
   #include "../utils/includeSingeli.h"
 #endif

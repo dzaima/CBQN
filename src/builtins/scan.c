@@ -17,6 +17,8 @@ B sub_c2(B, B, B);
 B mul_c2(B, B, B);
 
 #if SINGELI
+  extern uint64_t* const si_spaced_masks;
+  #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE scan
   #include "../utils/includeSingeli.h"
 #endif

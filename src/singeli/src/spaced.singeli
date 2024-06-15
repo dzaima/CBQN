@@ -1,0 +1,14 @@
+def mask_of{l} = emit{u64, 'get_spaced_mask', l} # see slash.singeli
+
+def aligned_spaced_mask{l} = {
+  assert{l <= 64}
+  assert{l&(l-1) == 0}
+  mask_of{l}
+}
+
+def unaligned_spaced_mask_mod{l:T} = {
+  assert{l < 64}
+  def m = mask_of{l}
+  def d = cast_i{T, ctz{m}} # = 64%l
+  tup{m>>d | m<<(l-d), d}
+}

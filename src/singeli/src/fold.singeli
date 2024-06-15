@@ -1,6 +1,7 @@
 include './base'
 include './mask'
 if_inline (hasarch{'BMI2'}) include './bmi2'
+include './spaced'
 
 include 'util/tup'
 
@@ -123,12 +124,6 @@ fn xor_rows_bit(xp:*u64, rp:*u64, n:usz, m:usz, eq:u1) : void = {
   flush_bits{n, fixout}
 }
 
-def unaligned_mask{l} = {
-  def d = 64 % l
-  def m = (~u64~~0 >> d) / ((u64~~1 << l)-1)
-  tup{m<<l | 1, d}
-}
-
 def or_rows_bit_lt64{xp, rp, n, l, op_and} = {
   nw := cdiv{n*l,64}
   xx := -promote{u64, op_and}
@@ -173,9 +168,9 @@ def or_rows_bit_lt64{xp, rp, n, l, op_and} = {
     }
     if (op_and) loop{{x} => x & ((x&~t) + m)}
     else        loop{{x} => x | ((x| t) - m)}
-  } else { # odd row length
-    d:usz = 64 % l
-    e := ((~u64~~0 >> d) / ((u64~~1 << l)-1)) << (l-1)
+  } else {
+    {e0, d} := unaligned_spaced_mask_mod{l}
+    e := e0 << (l-1)
     r:u64 = 0
     rh := *u32~~rp
     ri:ux = 0
@@ -193,8 +188,7 @@ def or_rows_bit_lt64{xp, rp, n, l, op_and} = {
         }
       }
     } else {
-      dm:= 64/l
-      e0:= e<<1 | 1
+      dm:= cast_i{usz, popc{e}}
       c:u64 = 0
       def loop{...par} = {
         @for (xo in xp over nw) {
@@ -226,15 +220,15 @@ def or_rows_bit_lt64{xp, rp, n, l, op_and} = {
       } else if (l < 8) {
         assert{l > 4}
         ld:= l-1; lld:= l*ld
-        {mult0, _} := unaligned_mask{ld}
+        {mult0, _} := unaligned_spaced_mask_mod{ld}
         mult0 &= u64~~1<<lld - 1
-        {mult1, _} := unaligned_mask{lld}
+        {mult1, _} := unaligned_spaced_mask_mod{lld}
         ll:= l*l
-        {tk, tkd} := unaligned_mask{ll}; tk <<= tkd
+        {tk, tkd} := unaligned_spaced_mask_mod{ll}; tk <<= tkd
         topk := tk - tk>>l; topk|= topk<<ll | topk>>ll
         loop{tup{mult0,mult1}, tup{topk}}
       } else {
-        {mult, _} := unaligned_mask{l-1}
+        {mult, _} := unaligned_spaced_mask_mod{l-1}
         loop{tup{mult}, tup{}}
       }
     }

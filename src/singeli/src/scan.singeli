@@ -5,6 +5,7 @@ if_inline (hasarch{'X86_64'}) {
 }
 include './mask'
 include './f64'
+include './spaced'
 include 'util/tup'
 include './scan_common'
 
@@ -300,14 +301,8 @@ export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}
 
 
 # Row-wise boolean scan
-def aligned_mask{l} = (~u64~~0) / ((u64~~1 << l)-1)
-def unaligned_mask{l} = {
-  def d = 64 % l
-  def m = (~u64~~0 >> d) / ((u64~~1 << l)-1)
-  tup{m<<l | 1, d}
-}
 def loop_with_unaligned_mask{x, r, nw, l, step} = {
-  {m, d} := unaligned_mask{l}
+  {m, d} := unaligned_spaced_mask_mod{l}
   c:u64 = 0  # carry (initial value never matters)
   @for (x, r over nw) {
     match (step{x, c, m}) {
@@ -318,7 +313,7 @@ def loop_with_unaligned_mask{x, r, nw, l, step} = {
   }
 }
 def avx2_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
-  {ms, d} := unaligned_mask{l}
+  {ms, d} := unaligned_spaced_mask_mod{l}
   def V = [4]u64
   d4:usz = width{V} % l
   m:= make{V, scan{{a,_} => a>>d | a<<(l-d), tup{ms, ...iota{3}}}}
@@ -347,7 +342,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
           r = (if (qand) x & (x<<1 | 64w2b01) else x | (x<<1 & 64w2b10))
         }
       } else {
-        m:u64 = aligned_mask{l}
+        m:u64 = aligned_spaced_mask{l}
         t := m << (l-1)
         @for (r in dst, x in src over nw) {
           r = (if (qand) x &~ ((t&x) ^ ((x&~t) + m))
@@ -422,7 +417,7 @@ fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
   nw := cdiv{nl, 64}
   if (l < 64) {
     if ((l & (l-1)) == 0) {
-      m:u64 = aligned_mask{l}
+      m:u64 = aligned_spaced_mask{l}
       @for (r, x over nw) {
         s:= scan_word{x}
         b:= s<<1 & m  # last bit of previous row
@@ -472,7 +467,7 @@ fn scan_rows_left(x:*u64, r:*u64, n:usz, l:usz) : void = {
   nw := cdiv{nl, 64}
   if (l < 64) {
     if ((l & (l-1)) == 0) {
-      m:u64 = aligned_mask{l}
+      m:u64 = aligned_spaced_mask{l}
       @for (r, x over nw) { b:= x & m; r = b<<l - b }
     } else if (hasarch{'AVX2'}) {
       def scan_words{x, m} = { b:= x&m; b<<l - b }
