@@ -61,6 +61,9 @@ def oneVal{{h, ...t}} = {
 }
 def oneVal{{}} = {}
 def oneType{x} = oneVal{each{type, x}}
+def allSame{{h, ...t}} = tree_fold{&, each{is{h,.}, t}}
+def allSame{{_}} = 1
+def allSame{{}} = 1
 
 def anyNum = match { {x:T}=>isprim{T}; {x} => knum{x} }
 def anyInt = match { {x:T}=>isint{T} ; {x} => knum{x} and (x>>0) == x }

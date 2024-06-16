@@ -120,18 +120,18 @@ def homAll{x:T if nvec{T}} = bitAll{x}
 def homMask{x:T=[k]E if nvecu{T} and width{E}>=k} = {
   truncBits{k, fold_add{x & make{T, 1<<iota{k}}}}
 }
-def homMask{x:T==[16]u8} = {
+def homMask{x:T=[16]E if width{E}==8} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
-def homMask{a:T,b:T==[16]u8} = {
+def homMask{a:T,b:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
-  fold_add{addpw{addpw{addp{a&m, b&m}}}<<make{[4]u32,iota{4}*8}}
+  fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
 }
-def homMask{a:T,b:T,c:T,d:T==[16]u8} = {
+def homMask{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
-  t1:= addp{a&m, b&m}
-  t2:= addp{c&m, d&m}
+  t1:= addp{ty_u{a}&m, ty_u{b}&m}
+  t2:= addp{ty_u{c}&m, ty_u{d}&m}
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
