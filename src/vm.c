@@ -503,7 +503,10 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
 FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   assert(TY(s) == t_arrMerge);
   B o = c(WrappedObj,s)->obj;
-  if (!isArr(x) || RNK(x)==0) thrF("[…]%c𝕩: 𝕩 cannot have rank 0", upd? U'↩' : U'←');
+  if (!isArr(x) || RNK(x)==0) {
+    if (hdr) return false;
+    else thrF("[…]%c𝕩: 𝕩 cannot have rank 0", upd? U'↩' : U'←');
+  }
   
   B* op = harr_ptr(o);
   usz oia = IA(o);
