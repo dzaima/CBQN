@@ -2,6 +2,7 @@ include './base'
 include './mask'
 include './vecfold'
 include './hashtab'
+include 'util/tup'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}
@@ -74,7 +75,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
 def arch_vec{T} = [arch_defvw/width{T}]T
 def TI = i8     # Table values
 def VI = arch_vec{TI}
-def simd_bittab = hasarch{'SSSE3'}
+def simd_bittab = hasarch{'SSSE3'} or hasarch{'AARCH64'}
 
 def bittab_init{tab, z} = {
   @for (t in *TI~~tab over 256) t = z
@@ -90,12 +91,20 @@ def bittab_selector{loadtab} = {
   low:= VI**7
   hi4:= VI**(-(1<<4))
   b  := VI~~make{[nv]u8, 1 << (iota{nv} & 7)}
-  def selector{x} = {
+  
+  def selector{x if hasarch{'X86_64'}} = {
     top := hi4 + VI~~((arch_vec{u32}~~(x&~low))>>3)
     byte:= sel{[16]i8, t0, hi4^top} | sel{[16]i8, t1, top}
     mask:= sel{[16]i8, b, x & low}
     homMask{(mask & byte) == mask}
   }
+  
+  def selector{x:([16]i8) if hasarch{'AARCH64'}} = {
+    byte:= [16]u8~~sel{tup{t0,t1}, ty_u{x}>>3}
+    mask:= [16]u8**1 << ty_u{x & low}
+    res:= homMask{(mask & byte) == mask}
+  }
+  
   def reload{} = { tup{t0,t1} = loadtab{} }
   tup{selector, reload}
 }
@@ -104,8 +113,12 @@ def readbytes{vtab}{} = {
   def [k]_ = VI; def l = 128/k
   def side{i} = {
     def U = arch_vec{ty_u{k}}
-    def m = @collect (vtab over _ from i to i+l) homMask{vtab}
+    def m = @collect (vtab over _ from i to i+l) homMask{vtab} # TODO multi-value homMask
     VI~~make{U, if (vcount{U}>l) merge{m,m} else m}
+  }
+  def side{i if hasarch{'AARCH64'}} = {
+    def m = each{homMask, split{4, @collect (vtab over _ from i to i+l) vtab}}
+    VI~~make{[2]u64, m}
   }
   each{side, l*iota{2}}
 }

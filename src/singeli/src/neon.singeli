@@ -86,6 +86,11 @@ def trn1{x:T, y:T if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn2{x:T, y:T if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
 def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, ty_u{i}}}
+def sel{{x0:T}, i:I} = sel{T, x0, i}
+def sel{{...xs}, i:I if length{xs}>=2 and length{xs}<=4 and allSame{each{type,xs}} and lvec{oneType{xs},16,8} and nvec{I, 8}} = {
+  def T = oneType{xs}
+  re_el{eltype{T}, emit{I, ntyp{merge{'unpacked_vqtbl',fmtnat{length{xs}}}, I}, ...each{reinterpret{[16]u8,.}, xs}, ty_u{i}}}
+}
 
 
 
