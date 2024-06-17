@@ -76,70 +76,67 @@ fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
 export{'si_sum_f64', fold_assoc_0{f64,+}}
 
 
+# Short-row boolean folds: main challenge is bit packing
 def fold_rows_bit_lt64{
-  op, run_loop2, run_loop4, pext_res, mult_in, xx, rx, rxs,
+  op, run_loop2, run_loop4, pext_res, mult_in,
+  xx, rx, # input and output xor for cases not specialized to individual functions
+  rxs,    # output xor only, where and/or are specialized
   xp, rp, n, l
 } = {
   nw := cdiv{n*l,64}
-  def loop_pext{T, get, b} = {
-    @for (x in xp, r in *T~~rp over nw) r = cast_i{T, rxs{pext{get{x}, b}}}
+  def loop_T{T, proc_word} = {
+    @for (x in xp, r in *T~~rp over nw) r = cast_i{T, rxs{proc_word{x}}}
   }
   if (l == 2) {
-    t:u64 = 64w2b10
-    run_loop2{
-      if (fast_BMI2{}) {
-        {op} => loop_pext{u32, {x}=>op{x, x<<1}, t}
-      } else {
-        def all = 1<<64-1
-        ms:5**u64 = reverse{slice{scan{{x,s}=>x^((x<<s)&all), all, reverse{1<<range{6}}}, 1}}
-        {op} => {
-          def T = u32
-          @for (x in xp, r in *T~~rp over nw) {
-            a := op{x, x>>1}
-            each{{m, sh} => { a &= m; a |= a>>sh }, ms, 1<<range{5}}
-            r = cast_i{T, rxs{a}}
-          }
-        }
-      }
-    }
+    def extract = if (fast_BMI2{}) pext{., u64~~64w2b01} else {
+      # repeated shift-or-mask
+      def step{x, {m, sh}} = { def a=x&m; a|a>>sh }
+      def ss = 1<<iota{5}
+      def ms = (1<<64 - 1) / (1 + 1<<ss)
+      fold{step, ., each{tup, ms, ss}}
+    } 
+    run_loop2{{op} => loop_T{u32, {x} => extract{op{x, x>>1}}}}
   } else if (l == 4) {
     m:u64 = 64w2b0001; t := m<<3
-    run_loop4{m, t,
-      if (fast_BMI2{}) {
-        loop_pext{u16, ., t}
-      } else {
-        {get} => {
-          def T = u16
-          @for (x in xp, r in *T~~rp over nw) {
-            a := get{x} & t
-            a = (a * 4r2b001) & (64w0xf000)
-            a = (a * fold{+, 1<<(12*iota{4})}) >> (3*16)
-            r = cast_i{T, rxs{a}}
-          }
-        }
+    def extract = if (fast_BMI2{}) pext{., t} else {
+      {x} => {
+        a:= x & t
+        a = (a * 4r2b001) & 64w0xf000
+        a = (a * 4r0x001) >> (64-16)
       }
     }
-  } else {
+    run_loop4{m, t, {get} => loop_T{u16, {x} => extract{get{x}}}}
+  } else { # generic width<64
     {e0, d} := unaligned_spaced_mask_mod{l}
-    e := e0 << (l-1)
-    r:u64 = 0
-    rh := *u32~~rp
-    ri:ux = 0
-    if (fast_BMI2{}) {
-      c:u64 = 0
-      @for (x in xp over i to nw) {
-        r |= pext_res{xx{x}, e, c} << ri
-        ri += popc{e}
-        e = e>>d | e<<(l-d)
+    e := e0 << (l-1) # ending bit of each row
+    c:u64 = 0        # carry, use depends on algorithm
+    def {write_bits, flush_bits} = {
+      r:u64 = 0
+      rh := *u32~~rp
+      ri:ux = 0
+      def write{rb, n_bits} = {
+        r |= rb << ri
+        ri += promote{ux, n_bits}
         if (ri >= 32) {
           store{rh, 0, cast_i{u32,rx{r}}}; ++rh;
           r >>= 32; ri -= 32
         }
       }
+      def flush{} = if (ri > 0) store{rh, 0, cast_i{u32,rx{r}}}
+      tup{write, flush}
+    }
+    def finish_step{...a} = {
+      write_bits{...a}
+      e = e>>d | e<<(l-d) # update end mask for next iteration
+    }
+    if (fast_BMI2{}) {
+      @for (x in xp over nw) finish_step{pext_res{xx{x}, e, c}, popc{e}}
     } else {
-      dm:= cast_i{usz, popc{e}}
-      e0 |= -promote{u64, l & (l-1) == 0}
-      c:u64 = 0
+      # Emulate pext with 1, 2, or 3 multiply/mask steps.
+      # To move size-a groups spaced at distance b together,
+      # the multiplier has up to b/a bits spaced by b-a.
+      dm:= cast_i{usz, popc{e}}       # minimum output bits per word
+      dm-= promote{usz, l&(l-1) == 0} # for divisors of 64, e0 effectively overflows; subtract 1 to correct
       def loop{...par} = {
         @for (xo in xp over nw) {
           x:= xx{xo}
@@ -152,18 +149,13 @@ def fold_rows_bit_lt64{
             mult_in{x, e, c}
           }
           nb:= dm + promote{usz, e>=e0} # = popc{e}
+          # the multiply-mask sequence (last "mask" is the shift by (64 - nb))
           def extract = match {
-            {{...qs, q}, {...bs, b}} => (extract{qs, bs} & b) * q
             {       {q},         {}} => (s & e) * (q << clz{e})
+            {{...qs, q}, {...bs, b}} => (extract{qs, bs} & b) * q
           }
           rb:= extract{...par} >> (64 - nb)
-          r |= mod_rb{rb} << ri
-          ri += promote{ux, nb}
-          if (ri >= 32) {
-            store{rh, 0, cast_i{u32,rx{r}}}; ++rh;
-            r >>= 32; ri -= 32
-          }
-          e = e>>d | e<<(l-d)
+          finish_step{mod_rb{rb}, nb}
         }
       }
       if (l == 3) {
@@ -187,7 +179,7 @@ def fold_rows_bit_lt64{
         loop{tup{mult}, tup{}}
       }
     }
-    if (ri > 0) store{rh, 0, cast_i{u32,rx{r}}}
+    flush_bits{}
   }
 }
 
