@@ -527,7 +527,6 @@ B fold_rows_bit(Md1D* fd, B x) {
       decG(x); if (m==1) return y;
       x = y;
     }
-    if (!andor && m <= 64) return bi_N;
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrv(&rp, n);
     if (andor) si_or_rows_bit(xp, rp, n, m, rtid==n_and);
