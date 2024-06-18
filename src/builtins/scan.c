@@ -343,25 +343,26 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   return withFill(r.b, wf);
 }
 
-B scan_rows_bit(u8 rtid, B x) {
-  assert(isArr(x) && RNK(x)==2 && TI(x,elType)==el_bit);
+// scan cells of size m, stride 1
+B scan_rows_bit(u8 rtid, B x, usz m) {
+  assert(isArr(x) && TI(x,elType)==el_bit);
   #if SINGELI
   switch (rtid) { default: return bi_N;
-    case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x)));
+    case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x), m));
     case n_and: case n_or: case n_ne: case n_ltack: {
-      usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
+      usz ia = IA(x);
       u64* xp = bitarr_ptr(x);
       u64* rp; B r = m_bitarrc(&rp, x);
       switch (rtid) { default:UD;
-        case n_and:   si_scan_rows_and  (xp, rp, n, m); break;
-        case n_or:    si_scan_rows_or   (xp, rp, n, m); break;
-        case n_ne:    si_scan_rows_ne   (xp, rp, n, m); break;
-        case n_ltack: si_scan_rows_ltack(xp, rp, n, m); break;
+        case n_and:   si_scan_rows_and  (xp, rp, ia, m); break;
+        case n_or:    si_scan_rows_or   (xp, rp, ia, m); break;
+        case n_ne:    si_scan_rows_ne   (xp, rp, ia, m); break;
+        case n_ltack: si_scan_rows_ltack(xp, rp, ia, m); break;
       }
       decG(x); return r;
     }
     case n_add: case n_sub: {
-      usz ia = IA(x); usz m = SH(x)[1];
+      usz ia = IA(x);
       if (m >= 128) return bi_N;
       usz bl = 128; // block size
       i8 buf[bl]; i8 c = 0;
@@ -383,7 +384,7 @@ B scan_rows_bit(u8 rtid, B x) {
         if (j == e) { j += m; c = 0; } else c = rp[e-1];
       }
       if (rtid!=n_sub) { decG(x); return r; }
-      return C2(sub, C2(mul, m_f64(2), scan_rows_bit(n_ltack, x)), r);
+      return C2(sub, C2(mul, m_f64(2), scan_rows_bit(n_ltack, x, m)), r);
     }
   }
   #else

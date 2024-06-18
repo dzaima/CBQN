@@ -327,10 +327,10 @@ def avx2_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
   }
 }
 
-fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
+fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
   def qand = not id
   assert{l > 0}
-  nw := cdiv{n*l, 64}
+  nw := cdiv{nl, 64}
   def res_m1{x,c,m} = { # result word with carry c, popc{m}<=1
     if (qand) x &~ ((x+c) &  (x+m))
     else      x | ((-x-c) &~ (x-m))
@@ -385,7 +385,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
     wn:usz = 0  # starting word of next row
     c:u64 = id  # carry
     def word{bit} = bit * ((1<<64) - 1)
-    @for (n) {
+    we:= nl/64; while (wn < we) {
       iw:= wn
       r := res_m1{load{src, iw}, c, u64~~1 << (i%64)}
       store{dst, iw, r}; ++iw
@@ -410,10 +410,9 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, n:usz, l:usz) : void = {
   }
 }
 
-fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
+fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   def scan_word = prefix_byshift{^, <<}
   assert{l > 0}
-  nl := n*l
   nw := cdiv{nl, 64}
   if (l < 64) {
     if ((l & (l-1)) == 0) {
@@ -460,10 +459,9 @@ fn scan_rows_neq(x:*u64, r:*u64, n:usz, l:usz) : void = {
   }
 }
 
-fn scan_rows_left(x:*u64, r:*u64, n:usz, l:usz) : void = {
+fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   def scan_word = prefix_byshift{^, <<}
   assert{l > 0}
-  nl := n*l
   nw := cdiv{nl, 64}
   if (l < 64) {
     if ((l & (l-1)) == 0) {
@@ -484,7 +482,7 @@ fn scan_rows_left(x:*u64, r:*u64, n:usz, l:usz) : void = {
     i :usz = 0  # row bit index
     wn:usz = 0  # starting word of next row
     c:u64 = 0   # carry
-    @for (n) {
+    we:= nl/64; while (wn < we) {
       iw:= wn
       m := u64~~1 << (i%64)
       xw:= -(load{x, iw} & m)
