@@ -177,6 +177,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 
 // fast special-case implementations
+extern void (*const si_select_cells_bit_lt64)(uint64_t*,uint64_t*,uint32_t,uint32_t,uint32_t); // from fold.c (fold.singeli)
 static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
@@ -200,7 +201,13 @@ static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {le
       void* rp = m_tyarrlbp(&ra, elwBitLog(xe), cam, el2t(xe));
       void* xp = tyany_ptr(x);
       switch(xe) {
-        case el_bit: for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*jump+n)); break;
+        case el_bit:
+          #if SINGELI
+          if (jump < 64) si_select_cells_bit_lt64(xp, rp, cam, jump, n);
+          else
+          #endif
+          for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*jump+n));
+          break;
         case el_i8:  case el_c8:  PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*jump+n]; break;
         case el_i16: case el_c16: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*jump+n]; break;
         case el_i32: case el_c32: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*jump+n]; break;
