@@ -440,8 +440,7 @@ B fold_rows(Md1D* fd, B x) {
   }
 }
 
-B sum_rows_bit(B x) {
-  usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
+B sum_rows_bit(B x, usz n, usz m) {
   u64* xp = bitarr_ptr(x);
   if (m < 128) {
     if (m == 2) return bi_N; // Transpose is faster
@@ -508,15 +507,16 @@ B sum_rows_bit(B x) {
   }
 }
 
-B fold_rows_bit(Md1D* fd, B x) {
-  assert(isArr(x) && RNK(x)==2 && TI(x,elType)==el_bit);
+// Fold n cells of size m, stride 1
+// Return a vector regardless of argument shape, or bi_N if not handled
+B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
+  assert(isArr(x) && TI(x,elType)==el_bit && IA(x)==n*m);
   if (!v(fd->f)->flags) return bi_N;
   u8 rtid = v(fd->f)->flags-1;
-  if (rtid==n_add) return sum_rows_bit(x);
+  if (rtid==n_add) return sum_rows_bit(x, n, m);
   #if SINGELI
   if (rtid==n_ne|rtid==n_eq|rtid==n_or|rtid==n_and) {
     bool andor = rtid==n_or|rtid==n_and;
-    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     if (andor && m < 256) while (m%8 == 0) {
       usz f = CTZ(m|32);
       m >>= f; usz c = m*n;
