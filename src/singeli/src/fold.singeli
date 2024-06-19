@@ -140,6 +140,7 @@ def fold_rows_bit_lt64{
       dm:= cast_i{usz, popc{el}}      # minimum output bits per word
       dm-= promote{usz, l&(l-1) == 0} # for divisors of 64, e0 effectively overflows; subtract 1 to correct
       def loop{...par} = {
+        et:= e0 << clz{e0}
         @for (xo in xp over nw) {
           x:= xx{xo}
           def {s, mod_rb} = if (length{select{par,0}} == 3) {
@@ -153,7 +154,7 @@ def fold_rows_bit_lt64{
           nb:= dm + promote{usz, e>=e0} # = popc{e}
           # the multiply-mask sequence (last "mask" is the shift by (64 - nb))
           def extract = match {
-            {       {q},         {}} => (s & e) * (q << clz{e})
+            {       {q},         {}} => (et &~ (et - (s & e))) * q
             {{...qs, q}, {...bs, b}} => (extract{qs, bs} & b) * q
           }
           rb:= extract{...par} >> (64 - nb)

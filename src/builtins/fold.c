@@ -11,6 +11,34 @@
 
 // •math.Sum: +´ with faster and more precise SIMD code for i32, f64
 
+// Insert with rank (˝˘ or ˝⎉k), or fold on flat array
+// SHOULD optimize dyadic insert with rank
+// Length 1, ⊣⊢: implemented as ⊏˘
+// SHOULD reshape identity for fast ˝˘ on empty rows
+// Boolean operand, cell size 1:
+//   +: popcount
+//     Rows length ≤64: extract rows, popcount each
+//       TRIED scan-based version, faster for width 3 only
+//       COULD have bit-twiddling versions of +˝˘ on very short rows
+//     >64: popcount, boundary corrections (clang auto-vectorizes)
+//   ∨∧≠=, rows <64: extract from scan or windowed op
+//     Dedicated auto-vectorizing code for sizes 2, 4
+//     Extract is generic with multiplies or BMI2 (SHOULD add SIMD)
+//     COULD use CLMUL for faster windowed ≠
+//   ∨∧:
+//     SHOULD handle ∨∧ synonyms for boolean fold on rows
+//     Multiples of 8 <256: comparison function, recurse if needed
+//     Rows 64<l<128: popcount+compare (linearity makes boundaries cleaner)
+//     ≥128: word-at-a-time search (SHOULD use SIMD if larger)
+//   ≠=:
+//     Multiples of 8 >24: read word, mask, last bit of popcount
+//     Rows l<64: word-based scan, correct with SWAR
+//     ≥64: xor words (auto-vectorizes), correct boundary, popcount
+//   COULD implement boolean -˝˘ with xor, +˝˘, offset
+// Arithmetic on rank 2, short rows: transpose then insert, blocked
+//   SHOULD extend transpose-insert code to any frame and cell rank
+//   SHOULD have dedicated +⌊⌈ insert with rank
+
 #include "../core.h"
 #include "../builtins.h"
 #include "../utils/mut.h"

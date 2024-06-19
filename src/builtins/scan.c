@@ -1,9 +1,48 @@
+// Scan (`)
+// Empty 𝕩, and length 1 if no 𝕨: return 𝕩
+// Generic operand:
+//   Constant: copy
+//   ⊢ identity, ⊣ reshape 𝕨 or first cell
+// Boolean operand, rank 1:
+//   + AVX2 expansion (SHOULD have better generic, add SSE, NEON)
+//   ∨⌈ ∧×⌊ search+copy, then memset (COULD vectorize search)
+//   ≠ SWAR shifts, CLMUL, VPCLMUL (SHOULD add SSE, NEON)
+//   < SWAR
+//   =≤≥>- in terms of ≠<∨∧+ with adjustments
+// Arithmetic operand, rank 1:
+//   ⌈⌊ Scalar, SSE, AVX in log(vector width) steps
+//   + Overflow-checked scalar or AVX2
+//   Ad-hoc boolean-valued handling for ≠∨
+// SHOULD extend rank 1 special cases to cell bound 1
+// Higher-rank arithmetic, non-tiny cells: apply operand cell-wise
+//   SHOULD have dedicated high-rank scan optimizations
+
+// Scan with rank (`˘ or `⎉k)
+// SHOULD optimize dyadic scan with rank
+// Empty 𝕩, length 1, ⊢: return 𝕩
+// Boolean operand, cell size 1:
+//   ≠∨∧⊣ and synonyms, rows <64: SWAR, AVX2 (SHOULD add SSE, NEON)
+//     Power of two row size: autovectorized
+//     COULD have dedicated SIMD for CPU widths, little improvement
+//   ⊣ SWAR for <64, select for ≥
+//   ∨⌈ ∧×⌊ SWAR with addition for small rows, search for large
+//     Rows 64≤l<160: SWAR specialized for ≤1 boundary
+//     Large rows: word-at-a-time search
+//   ≠ power-of-two shifts for <64, rank-1 scans and boundary corrections if ≥
+//     SHOULD have a better intermediate-size (< ~256) SIMD method
+//   + scan in blocks, correct with mask, ⌊`, subtract
+//   = as ≠`⌾¬, - as (2×⊣`)-+`
+// SHOULD optimize non-boolean scan with rank
+
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
 #include <math.h>
 #define F64_MIN -INFINITY
 #define F64_MAX  INFINITY
+
+#define CASE_N_AND case n_and: case n_mul: case n_floor
+#define CASE_N_OR  case n_or:              case n_ceil
 
 #if !USE_VALGRIND
 static u64 vg_rand(u64 x) { return x; }
@@ -215,16 +254,16 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     if (!(xr==1 && xe<=el_f64)) goto base;
     
     if (xe==el_bit) switch (rtid) { default: goto base;
-      case n_add:                           return scan_add_bool(x, ia); // +
-      case n_or:              case n_ceil:  return scan_or(x, ia);       // ∨⌈
-      case n_and: case n_mul: case n_floor: return scan_and(x, ia);      // ∧×⌊
-      case n_ne:                            return scan_ne(x, 0, ia);    // ≠
-      case n_eq:                            return scan_eq(x,    ia);    // =
-      case n_lt:                            return scan_lt(x, 0, ia);    // <
-      case n_le:                            return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
-      case n_gt:                            x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
-      case n_ge:                            x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
-      case n_sub:                           return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
+      case n_add: return scan_add_bool(x, ia); // +
+      CASE_N_OR:  return scan_or(x, ia);       // ∨⌈
+      CASE_N_AND: return scan_and(x, ia);      // ∧×⌊
+      case n_ne:  return scan_ne(x, 0, ia);    // ≠
+      case n_eq:  return scan_eq(x,    ia);    // =
+      case n_lt:  return scan_lt(x, 0, ia);    // <
+      case n_le:  return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
+      case n_gt:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
+      case n_ge:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
+      case n_sub: return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
     }
     if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
@@ -349,13 +388,13 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
   #if SINGELI
   switch (rtid) { default: return bi_N;
     case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x), m));
-    case n_and: case n_or: case n_ne: case n_ltack: {
+    CASE_N_AND: CASE_N_OR: case n_ne: case n_ltack: {
       usz ia = IA(x);
       u64* xp = bitarr_ptr(x);
       u64* rp; B r = m_bitarrc(&rp, x);
       switch (rtid) { default:UD;
-        case n_and:   si_scan_rows_and  (xp, rp, ia, m); break;
-        case n_or:    si_scan_rows_or   (xp, rp, ia, m); break;
+        CASE_N_AND:   si_scan_rows_and  (xp, rp, ia, m); break;
+        CASE_N_OR:    si_scan_rows_or   (xp, rp, ia, m); break;
         case n_ne:    si_scan_rows_ne   (xp, rp, ia, m); break;
         case n_ltack: si_scan_rows_ltack(xp, rp, ia, m); break;
       }
