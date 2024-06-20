@@ -21,12 +21,11 @@
 //       TRIED scan-based version, faster for width 3 only
 //       COULD have bit-twiddling versions of +˝˘ on very short rows
 //     >64: popcount, boundary corrections (clang auto-vectorizes)
-//   ∨∧≠=, rows <64: extract from scan or windowed op
+//   ∨∧≠= and synonyms, rows <64: extract from scan or windowed op
 //     Dedicated auto-vectorizing code for sizes 2, 4
 //     Extract is generic with multiplies or BMI2 (SHOULD add SIMD)
 //     COULD use CLMUL for faster windowed ≠
-//   ∨∧:
-//     SHOULD handle ∨∧ synonyms for boolean fold on rows
+//   ∨∧ and synonyms:
 //     Multiples of 8 <256: comparison function, recurse if needed
 //     Rows 64<l<128: popcount+compare (linearity makes boundaries cleaner)
 //     ≥128: word-at-a-time search (SHOULD use SIMD if larger)
@@ -543,21 +542,22 @@ B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
   u8 rtid = v(fd->f)->flags-1;
   if (rtid==n_add) return sum_rows_bit(x, n, m);
   #if SINGELI
-  if (rtid==n_ne|rtid==n_eq|rtid==n_or|rtid==n_and) {
-    bool andor = rtid==n_or|rtid==n_and;
+  bool is_or = rtid==n_or |rtid==n_ceil;
+  bool andor = rtid==n_and|rtid==n_floor|rtid==n_mul|is_or;
+  if (rtid==n_ne|rtid==n_eq|andor) {
     if (andor && m < 256) while (m%8 == 0) {
       usz f = CTZ(m|32);
       m >>= f; usz c = m*n;
       u64* yp; B y = m_bitarrv(&yp, c);
       u8 e = el_i8 + f-3;
-      CmpASFn cmp = rtid==n_or ? CMP_AS_FN(ne, e) : CMP_AS_FN(eq, e);
-      CMP_AS_CALL(cmp, yp, bitarr_ptr(x), m_f64((rtid==n_or)-1), c);
+      CmpASFn cmp = is_or ? CMP_AS_FN(ne, e) : CMP_AS_FN(eq, e);
+      CMP_AS_CALL(cmp, yp, bitarr_ptr(x), m_f64(is_or-1), c);
       decG(x); if (m==1) return y;
       x = y;
     }
     u64* xp = bitarr_ptr(x);
     u64* rp; B r = m_bitarrv(&rp, n);
-    if (andor) si_or_rows_bit(xp, rp, n, m, rtid==n_and);
+    if (andor) si_or_rows_bit(xp, rp, n, m, !is_or);
     else      si_xor_rows_bit(xp, rp, n, m, rtid==n_eq);
     decG(x); return r;
   }
