@@ -73,11 +73,15 @@ SHOULD_INLINE void arr_check_size(u64 sz, u8 type, usz ia) {
   #endif
 }
 // Log of width in bits: max of 7, and also return 7 if not power of 2
-SHOULD_INLINE u8 cellWidthLog(B x) {
+SHOULD_INLINE u8 multWidthLog(usz n, u8 lw) { // Of n elements, 1<<lw bit
+  if (n & (n-1)) return 7;      // Not power of 2
+  return lw + CTZ(n | 128>>lw); // Max of 7; also handle n==0
+}
+SHOULD_INLINE u8 kCellWidthLog(B x, ur k) {
   assert(isArr(x) && RNK(x)>=1);
   u8 lw = arrTypeBitsLog(TY(x));
-  if (LIKELY(RNK(x)==1)) return lw;
-  usz csz = arr_csz(x);
-  if (csz & (csz-1)) return 7;    // Not power of 2
-  return lw + CTZ(csz | 128>>lw); // Max of 7; also handle csz==0
+  ur xr = RNK(x);
+  if (LIKELY(xr <= k)) return lw;
+  return multWidthLog(shProd(SH(x), k, xr), lw);
 }
+SHOULD_INLINE u8 cellWidthLog(B x) { return kCellWidthLog(x, 1); }
