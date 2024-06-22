@@ -1059,7 +1059,7 @@ static u64 bit_reverse(u64 x) {
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
   usz n = *SH(x);
-  if (n==0) return x;
+  if (n<=1) return x;
   u8 xl = cellWidthLog(x);
   u8 xt = arrNewType(TY(x));
   if (xl<=6 && (xl>=3 || xl==0)) {
