@@ -459,6 +459,23 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       case n_transp: {
         return cr<=1? x : transp_cells(xr-1, k, x);
       }
+      // trivial cases for unhandled functions
+      case n_reverse: case n_and: case n_or: case n_find:
+        if (cr == 0) break;
+        if (xsh[k] <= 1) return x;
+        break;
+      case n_gradeUp: case n_gradeDown: case n_indexOf: case n_memberOf: case n_count: {
+        if (cr == 0) break;
+        usz l = xsh[k];
+        if (l <= 1) {
+          usz ia = l*cam;
+          Arr* r = rtid==n_memberOf? allOnes(ia) : allZeroes(ia);
+          usz* rsh = arr_shAlloc(r, k+1);
+          shcpy(rsh, xsh, k+1);
+          decG(x); return taga(r);
+        }
+        break;
+      }
     }
     
     if (TY(f) == t_md1D) {
