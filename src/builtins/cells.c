@@ -461,7 +461,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       if (rtid==n_const) { f=fd->f; goto const_f; }
       usz *sh = SH(x);
       if ((rtid==n_fold || rtid==n_insert) && TI(x,elType)!=el_B
-          && isFun(fd->f) && 1==shProd(sh, k+1, xr)) {
+          && isFun(fd->f) && 1==shProd(sh, k+1, xr) && sh[k] > 0) {
         usz m = sh[k];
         u8 frtid = v(fd->f)->flags-1;
         if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
