@@ -481,42 +481,45 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
     if (TY(f) == t_md1D) {
       Md1D* fd = c(Md1D,f);
       u8 rtid = fd->m1->flags-1;
-      if (rtid==n_const) { f=fd->f; goto const_f; }
-      usz *sh = SH(x);
-      if (((rtid==n_fold && cr==1) || rtid==n_insert) && TI(x,elType)!=el_B
-          && isFun(fd->f) && sh[k] > 0) {
-        usz m = sh[k];
-        u8 frtid = v(fd->f)->flags-1;
-        if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
-        if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
-        if (isPervasiveDyExt(fd->f) && 1==shProd(sh, k+1, xr)) {
-          if (TI(x,elType)==el_bit) {
-            incG(x); // keep shape alive
-            B r = fold_rows_bit(fd, x, shProd(sh, 0, k), m);
-            if (!q_N(r)) {
-              if (xr > 2) {
-                usz* rsh = arr_shAlloc(a(r), xr-1);
-                shcpy(rsh, sh, k);
-                shcpy(rsh+k, sh+k+1, xr-1-k);
+      switch(rtid) {
+        case n_const: f=fd->f; goto const_f;
+        case n_cell: cr-= cr>0; return for_cells_c1(fd->f, xr, cr, xr-cr, x, U'˘');
+        case n_fold: if (cr != 1) break; // else fall through
+        case n_insert: if (TI(x,elType)!=el_B && isFun(fd->f) && xsh[k]>0) {
+          usz m = xsh[k];
+          u8 frtid = v(fd->f)->flags-1;
+          if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
+          if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
+          if (isPervasiveDyExt(fd->f) && 1==shProd(xsh, k+1, xr)) {
+            if (TI(x,elType)==el_bit) {
+              incG(x); // keep shape alive
+              B r = fold_rows_bit(fd, x, cam, m);
+              if (!q_N(r)) {
+                if (xr > 2) {
+                  usz* rsh = arr_shAlloc(a(r), xr-1);
+                  shcpy(rsh, xsh, k);
+                  shcpy(rsh+k, xsh+k+1, xr-1-k);
+                }
+                decG(x); return r;
               }
-              decG(x); return r;
+              decG(x);
             }
-            decG(x);
+            // TODO extend to any rank
+            if (xr==2 && k==1 && m<=64 && m<xsh[0]) return fold_rows(fd, x);
           }
-          // TODO extend to any rank
-          if (xr==2 && k==1 && m<=64 && m<sh[0]) return fold_rows(fd, x);
-        }
-      }
-      if (rtid==n_scan) {
-        if (cr==0) goto noSpecial;
-        usz *sh = SH(x); usz m = sh[k];
-        if (m<=1 || IA(x)==0) return x;
-        if (!isFun(fd->f)) goto base;
-        u8 frtid = v(fd->f)->flags-1;
-        if (frtid==n_rtack) return x;
-        if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
-            && 1==shProd(sh, k+1, xr)) {
-          B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+        } break;
+        case n_scan: {
+          if (cr==0) break;
+          usz m = xsh[k];
+          if (m<=1 || IA(x)==0) return x;
+          if (!isFun(fd->f)) break;
+          u8 frtid = v(fd->f)->flags-1;
+          if (frtid==n_rtack) return x;
+          if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
+              && 1==shProd(xsh, k+1, xr)) {
+            B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+          }
+          break;
         }
       }
     } else if (TY(f) == t_md2D) {
