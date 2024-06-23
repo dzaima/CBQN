@@ -381,22 +381,39 @@ static B m1c1(B t, B f, B x) { // consumes x
   decG(fn);
   return r;
 }
-extern GLOBAL B rt_insert;
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  ur xr;
+  if (isAtm(x) || (xr=RNK(x))==0) thrM("˝: 𝕩 must have rank at least 1");
   usz len = *SH(x);
-  if (len==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
+  if (len==0) {
+    if (isFun(f)) {
+      B id = TI(f,identity)(f);
+      if (!q_N(id)) {
+        if (isArr(id)) { decG(x); return id; } // arithmetic with table
+        usz* xsh = SH(x);
+        Arr* r = reshape_one(shProd(xsh, 1, xr), id);
+        if (xr == 2) arr_shVec(r); else {
+          usz* rsh = arr_shAlloc(r, xr-1);
+          shcpy(rsh, xsh+1, xr-1);
+        }
+        decG(x); return taga(r);
+      } else if (v(f)->flags == n_join+1) {
+        if (xr <= 1) thrM("˝: Identity does not exist");
+        goto join;
+      }
+    }
+    thrM("˝: Identity not found");
+  }
   if (len==1) return C1(select, x);
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
-  ur xr = RNK(x);
   if (xr==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) return C1(select, x);
     if (rtid==n_rtack) return C2(select, m_f64(-1), x);
-    if (rtid==n_join) {
+    if (rtid==n_join) { join:;
       if (xr==1) return x;
       ShArr* rsh;
       if (xr>2) {

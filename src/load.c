@@ -129,7 +129,7 @@ NOINLINE B load_fullpath(B path, B name) {
 
 GLOBAL HArr* comps_curr;
 
-GLOBAL B rt_undo, rt_select, rt_slash, rt_insert, rt_depth,
+GLOBAL B rt_undo, rt_select, rt_slash, rt_depth,
          rt_group, rt_under, rt_find;
 Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { // consumes x,src
   B fullpath = load_fullpath(path, name);
@@ -500,7 +500,6 @@ void load_init() { // very last init function
     gc_add(rt_under   = Get(rtObjRaw, n_under ));
     gc_add(rt_find    = Get(rtObjRaw, n_find  ));
     gc_add(rt_depth   = Get(rtObjRaw, n_depth ));
-    gc_add(rt_insert  = Get(rtObjRaw, n_insert));
     
     for (usz i = 0; i < RT_LEN; i++) {
       #ifdef RT_WRAP
@@ -542,7 +541,7 @@ void load_init() { // very last init function
     load_rt = frtObj;
     
     rt_select = rt_slash = rt_group = rt_find = bi_invalidFn;
-    rt_undo = rt_insert = bi_invalidMd1;
+    rt_undo = bi_invalidMd1;
     rt_under = rt_depth = bi_invalidMd2;
     
     rt_invFnRegFn = rt_invFnSwapFn = invalidFn_c1;
