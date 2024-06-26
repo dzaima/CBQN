@@ -414,7 +414,7 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
         usz e = i + len;
         si_bcs8(xp + i/64, buf, len);
         memset(rp+i, -c, len);
-        i8* bi = buf-i;
+        i8* bi = buf; bi-=i; // yeah this makes the pointer go out of bounds, but whatever
         assert(j > i);
         if (mk) while (j+mk <= e) { storeu_u64(rp+j, loadu_u64(bi+j-1) & mm); j+=mk; }
         for (; j < e; j += m) rp[j] = bi[j-1];
