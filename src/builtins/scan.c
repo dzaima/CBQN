@@ -407,7 +407,7 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
       i8 buf[bl]; i8 c = 0;
       u64* xp = bitarr_ptr(x);
       i8* rp; B r = m_i8arrc(&rp, x);
-      u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
+      static const u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
       u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);
       for (usz i = 0, j = m; i < ia; i += bl) {
         usz len = ia - i; if (len > bl) len = bl;
