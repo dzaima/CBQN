@@ -26,6 +26,8 @@ def elwidth{T} = width{eltype{T}}
 oper &~ andnot infix none 35
 def andnot{a, b if anyNum{a} and anyNum{b}} = a & ~b
 
+oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
+
 
 
 def load {p:*[_]_, n   } = assert{0}
@@ -156,7 +158,7 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 
 # base cases
 def {
-  absu,andAllZero,andnz,b_getBatch,clmul,cvt,extract,fold_addw,half,
+  absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,

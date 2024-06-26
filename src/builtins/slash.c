@@ -777,7 +777,11 @@ B slash_c2(B t, B w, B x) {
       u64* rp; r = m_bitarrv(&rp, s);
       #if FAST_PDEP
       if (wv <= 52) {
-        u64 m = (u64)-1 / (((u64)1<<wv)-1); // TODO table lookup
+        #if SINGELI
+        u64 m = si_spaced_masks[wv-1];
+        #else
+        u64 m = (u64)-1 / (((u64)1<<wv)-1);
+        #endif
         u64 xw = 0;
         usz d = POPC(m); // == 64/wv
         if (m & 1) {  // Power of two

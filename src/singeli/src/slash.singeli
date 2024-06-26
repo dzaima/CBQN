@@ -400,3 +400,11 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
 
 export{'si_compress_bool', compress_bool}
 export{'si_thresh_compress_bool', u64~~thresh_bool{}}
+
+# Spaced boolean masks, such as 2b000001000001...0000010000 for 6
+# Mask i is the smallest possible mask containing 1 every i bits:
+# there would be a 1 just past the top bit.
+# The number of trailing zeros is 64%i , and the popcount is 64/i .
+def get_spaced_masks{i} = (1<<64 - 1<<(64%i)) / (1<<i - 1)
+spaced_masks:*u64 = get_spaced_masks{1 + iota{64}}
+export{'si_spaced_masks', spaced_masks}

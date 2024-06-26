@@ -11,18 +11,52 @@
 
 // •math.Sum: +´ with faster and more precise SIMD code for i32, f64
 
+// Insert with rank (˝˘ or ˝⎉k), or fold on flat array
+// SHOULD optimize dyadic insert with rank
+// Length 1, ⊣⊢: implemented as ⊏˘
+// SHOULD reshape identity for fast ˝˘ on empty rows
+// Boolean operand, cell size 1:
+//   +: popcount
+//     Rows length ≤64: extract rows, popcount each
+//       TRIED scan-based version, faster for width 3 only
+//       COULD have bit-twiddling versions of +˝˘ on very short rows
+//     >64: popcount, boundary corrections (clang auto-vectorizes)
+//   ∨∧≠= and synonyms, rows <64: extract from scan or windowed op
+//     Dedicated auto-vectorizing code for sizes 2, 4
+//     Extract is generic with multiplies or BMI2 (SHOULD add SIMD)
+//     COULD use CLMUL for faster windowed ≠
+//   ∨∧ and synonyms:
+//     Multiples of 8 <256: comparison function, recurse if needed
+//     Rows 64<l<128: popcount+compare (linearity makes boundaries cleaner)
+//     ≥128: word-at-a-time search (SHOULD use SIMD if larger)
+//   ≠=:
+//     Multiples of 8 >24: read word, mask, last bit of popcount
+//     Rows l<64: word-based scan, correct with SWAR
+//     ≥64: xor words (auto-vectorizes), correct boundary, popcount
+//   COULD implement boolean -˝˘ with xor, +˝˘, offset
+// Arithmetic on rank 2, short rows: transpose then insert, blocked
+//   SHOULD extend transpose-insert code to any frame and cell rank
+//   SHOULD have dedicated +⌊⌈ insert with rank
+
 #include "../core.h"
 #include "../builtins.h"
 #include "../utils/mut.h"
+#include "../utils/calls.h"
 
-#if SINGELI_SIMD
+#if SINGELI
+  extern uint64_t* const si_spaced_masks;
+  #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE fold
   #include "../utils/includeSingeli.h"
 #endif
 
-static bool fold_ne(u64* x, u64 am) {
+static u64 xor_words(u64* x, u64 l) {
   u64 r = 0;
-  for (u64 i = 0; i < (am>>6); i++) r^= x[i];
+  for (u64 i = 0; i < l; i++) r^= x[i];
+  return r;
+}
+static bool fold_ne(u64* x, u64 am) {
+  u64 r = xor_words(x, am>>6);
   if (am&63) r^= x[am>>6]<<(64-am & 63);
   return POPC(r) & 1;
 }
@@ -92,8 +126,8 @@ B sum_c1(B t, B x) {
     }
     r += s;
   } else {
-    #if SINGELI_SIMD
-      r = simd_sum_f64(xv, ia);
+    #if SINGELI
+      r = si_sum_f64(xv, ia);
     #else
       r=0; for (usz i=0; i<ia; i++) r+=((f64*)xv)[i];
     #endif
@@ -133,9 +167,9 @@ static f64 (*const prod_fns[])(void*, usz, f64) = { prod_i8, prod_i16, prod_i32,
   static f64 min_##T(void* xv, usz ia) { MIN_MAX(T,<) } \
   static f64 max_##T(void* xv, usz ia) { MIN_MAX(T,>) }
 DEF_MIN_MAX(i8) DEF_MIN_MAX(i16) DEF_MIN_MAX(i32)
-#if SINGELI_SIMD
-  static f64 min_f64(void* xv, usz ia) { return simd_fold_min_f64(xv,ia); }
-  static f64 max_f64(void* xv, usz ia) { return simd_fold_max_f64(xv,ia); }
+#if SINGELI
+  static f64 min_f64(void* xv, usz ia) { return si_fold_min_f64(xv,ia); }
+  static f64 max_f64(void* xv, usz ia) { return si_fold_max_f64(xv,ia); }
 #else
   DEF_MIN_MAX(f64)
 #endif
@@ -431,4 +465,103 @@ B fold_rows(Md1D* fd, B x) {
     }
     return mut_fv(r);
   }
+}
+
+B sum_rows_bit(B x, usz n, usz m) {
+  u64* xp = bitarr_ptr(x);
+  if (m < 128) {
+    if (m == 2) return bi_N; // Transpose is faster
+    i8* rp; B r = m_i8arrv(&rp, n);
+    if (m <= 64) {
+      if (m%8 == 0) {
+        usz k = m/8; u64 b = (m==64? 0 : 1ull<<m)-1;
+        for (usz i=0; i<n; i++) rp[i] = POPC(b & loadu_u64((u8*)xp+k*i));
+      } else {
+        if (m<=58 || m==60) {
+          u64 b = (1ull<<m)-1;
+          for (usz i=0, j=0; i<n; i++, j+=m) {
+            u64 xw = loadu_u64((u8*)xp+j/8) >> (j%8);
+            rp[i] = POPC(b & xw);
+          }
+        } else {
+          // Row may not fit in an aligned word
+          // Read a word containing the last bit, combine with saved bits
+          u64 b = ~(~(u64)0 >> m);
+          u64 prev = 0;
+          for (usz i=0, j=m; i<n; i++, j+=m) {
+            u64 xw = loadu_u64(((u64*) ((u8*)xp + (j+7)/8)) - 1);
+            usz sh = (-j)%8;
+            rp[i] = POPC(b & (xw<<sh | prev));
+            prev = xw >> (m-sh);
+          }
+        }
+      }
+    } else { // 64<m<128, specialization of unaligned case below
+      u64 o = 0;
+      for (usz i=0, j=0; i<n; i++) {
+        u64 in = (i+1)*m;
+        u64 s = o + POPC(xp[j]);
+        usz jn = in/64;
+        u64 e = xp[jn];
+        s += POPC(e & ((u64)j - (u64)jn)); // mask is 0 if j==jn, or -1
+        o  = POPC(e >> (in%64));
+        rp[i] = s - o;
+        j = jn+1;
+      }
+    }
+    decG(x); return r;
+  } else if (m < 1<<15) {
+    i16* rp; B r = m_i16arrv(&rp, n);
+    usz l = m/64;
+    if (m%64==0) {
+      for (usz i=0; i<n; i++) rp[i] = bit_sum(xp+l*i, m);
+    } else {
+      u64 o = 0; // Carry
+      for (usz i=0, j=0; i<n; i++) {
+        u64 in = (i+1)*m; // bit index of start of next row
+        u64 s = o + bit_sum(xp + j, 64*l);
+        usz jn = in/64;
+        u64 e = xp[jn];
+        s += POPC(e &- (u64)(jn >= j+l));
+        o  = POPC(e >> (in%64));
+        rp[i] = s - o;
+        j = jn+1;
+      }
+    }
+    decG(x); return r;
+  } else {
+    return bi_N;
+  }
+}
+
+// Fold n cells of size m, stride 1
+// Return a vector regardless of argument shape, or bi_N if not handled
+B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
+  assert(isArr(x) && TI(x,elType)==el_bit && IA(x)==n*m);
+  if (!v(fd->f)->flags) return bi_N;
+  u8 rtid = v(fd->f)->flags-1;
+  if (rtid==n_add) return sum_rows_bit(x, n, m);
+  #if SINGELI
+  bool is_or = rtid==n_or |rtid==n_ceil;
+  bool andor = rtid==n_and|rtid==n_floor|rtid==n_mul|is_or;
+  if (rtid==n_ne|rtid==n_eq|andor) {
+    if (n==0) { decG(x); return taga(arr_shVec(allZeroes(0))); }
+    if (andor && m < 256) while (m%8 == 0) {
+      usz f = CTZ(m|32);
+      m >>= f; usz c = m*n;
+      u64* yp; B y = m_bitarrv(&yp, c);
+      u8 e = el_i8 + f-3;
+      CmpASFn cmp = is_or ? CMP_AS_FN(ne, e) : CMP_AS_FN(eq, e);
+      CMP_AS_CALL(cmp, yp, bitarr_ptr(x), m_f64(is_or-1), c);
+      decG(x); if (m==1) return y;
+      x = y;
+    }
+    u64* xp = bitarr_ptr(x);
+    u64* rp; B r = m_bitarrv(&rp, n);
+    if (andor) si_or_rows_bit(xp, rp, n, m, !is_or);
+    else      si_xor_rows_bit(xp, rp, n, m, rtid==n_eq);
+    decG(x); return r;
+  }
+  #endif
+  return bi_N;
 }

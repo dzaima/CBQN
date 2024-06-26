@@ -696,7 +696,7 @@ cachedBin‿linkerCache ← {
     "xa."‿"src/builtins/squeeze.c"‿"squeeze", "xa."‿"src/utils/mut.c"‿"copy",
     "xa."‿"src/utils/bits.c"‿"bits",          "xag"‿"src/builtins/transpose.c"‿"transpose",
     "xag"‿"src/builtins/search.c"‿"search",   "xag"‿"src/builtins/selfsearch.c"‿"selfsearch"
-    "xag"‿"src/builtins/scan.c"‿"scan",       "xa."‿"src/builtins/fold.c"‿"fold",
+    "xag"‿"src/builtins/scan.c"‿"scan",       "xag"‿"src/builtins/fold.c"‿"fold",
     "xag"‿"src/builtins/slash.c"‿"slash",     "xag"‿"src/builtins/slash.c"‿"replicate",
     "xag"‿"src/builtins/sort.c"‿"bins",       "xa."‿"src/builtins/slash.c"‿"count"
     

@@ -335,8 +335,6 @@ exportT{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
 
 
 # Hash tables
-oper &- ({v:T,m} => v & -promote{T,m}) infix left 35
-
 def rty{name} = if (to_prim{name}=='∊') i8 else i32
 def ity{name} = (to_prim{name}=='⊒')**(*u32)
 fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:ity{name}) = {

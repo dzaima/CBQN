@@ -1,3 +1,39 @@
+// Scan (`)
+// Empty 𝕩, and length 1 if no 𝕨: return 𝕩
+// Generic operand:
+//   Constant: copy
+//   ⊢ identity, ⊣ reshape 𝕨 or first cell
+// Boolean operand, rank 1:
+//   + AVX2 expansion (SHOULD have better generic, add SSE, NEON)
+//   ∨⌈ ∧×⌊ search+copy, then memset (COULD vectorize search)
+//   ≠ SWAR shifts, CLMUL, VPCLMUL (SHOULD add SSE, NEON)
+//   < SWAR
+//   =≤≥>- in terms of ≠<∨∧+ with adjustments
+// Arithmetic operand, rank 1:
+//   ⌈⌊ Scalar, SSE, AVX in log(vector width) steps
+//   + Overflow-checked scalar or AVX2
+//   Ad-hoc boolean-valued handling for ≠∨
+// SHOULD extend rank 1 special cases to cell bound 1
+// Higher-rank arithmetic, non-tiny cells: apply operand cell-wise
+//   SHOULD have dedicated high-rank scan optimizations
+
+// Scan with rank (`˘ or `⎉k)
+// SHOULD optimize dyadic scan with rank
+// Empty 𝕩, length 1, ⊢: return 𝕩
+// Boolean operand, cell size 1:
+//   ≠∨∧⊣ and synonyms, rows <64: SWAR, AVX2 (SHOULD add SSE, NEON)
+//     Power of two row size: autovectorized
+//     COULD have dedicated SIMD for CPU widths, little improvement
+//   ⊣ SWAR for <64, select for ≥
+//   ∨⌈ ∧×⌊ SWAR with addition for small rows, search for large
+//     Rows 64≤l<160: SWAR specialized for ≤1 boundary
+//     Large rows: word-at-a-time search
+//   ≠ power-of-two shifts for <64, rank-1 scans and boundary corrections if ≥
+//     SHOULD have a better intermediate-size (< ~256) SIMD method
+//   + scan in blocks, correct with mask, ⌊`, subtract
+//   = as ≠`⌾¬, - as (2×⊣`)-+`
+// SHOULD optimize non-boolean scan with rank
+
 #include "../core.h"
 #include "../utils/mut.h"
 #include "../builtins.h"
@@ -5,11 +41,23 @@
 #define F64_MIN -INFINITY
 #define F64_MAX  INFINITY
 
+#define CASE_N_AND case n_and: case n_mul: case n_floor
+#define CASE_N_OR  case n_or:              case n_ceil
+
 #if !USE_VALGRIND
 static u64 vg_rand(u64 x) { return x; }
 #endif
 
+B slash_c1(B, B);
+B shape_c2(B, B, B);
+B fne_c1(B, B);
+B add_c2(B, B, B);
+B sub_c2(B, B, B);
+B mul_c2(B, B, B);
+
 #if SINGELI
+  extern uint64_t* const si_spaced_masks;
+  #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE scan
   #include "../utils/includeSingeli.h"
 #endif
@@ -35,6 +83,12 @@ B scan_ne(B x, u64 p, u64 ia) { // consumes x
 #endif
   decG(x); return r;
 }
+B scan_eq(B x, u64 ia) { // consumes x
+  B r = scan_ne(x, 0, ia);
+  u64* rp = bitarr_ptr(r);
+  for (usz i = 0; i < BIT_N(ia); i++) rp[i] ^= 0xAAAAAAAAAAAAAAAA;
+  return r;
+}
 
 static B scan_or(B x, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
@@ -51,7 +105,6 @@ static B scan_and(B x, u64 ia) { // consumes x
   decG(x); return FL_SET(r, fl_dsc|fl_squoze);
 }
 
-B slash_c1(B t, B x);
 B scan_add_bool(B x, u64 ia) { // consumes x
   u64* xp = bitarr_ptr(x);
   u64 xs = bit_sum(xp, ia);
@@ -113,7 +166,6 @@ B scan_max_num(B x, u8 xe, u64 ia) { MINMAX(max,>,MIN,or ,asc) }
 #undef MINMAX
 // Initialized: try to convert 𝕨 to type of 𝕩
 // (could do better for out-of-range floats)
-B shape_c2(B, B, B);
 #define MM2_ICASE(T,N,C,I) \
   case el_##T : { \
     if (wv!=(T)wv) { if (wv C 0) { r=C2(shape,m_f64(ia),w); break; } else wv=I; } \
@@ -174,9 +226,6 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   #endif
 }
 
-B fne_c1(B, B);
-B shape_c2(B, B, B);
-
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
@@ -204,13 +253,17 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     }
     if (!(xr==1 && xe<=el_f64)) goto base;
     
-    if (xe==el_bit) {
-      if (rtid==n_add                              ) return scan_add_bool(x, ia); // +
-      if (rtid==n_or  |               rtid==n_ceil ) return scan_or(x, ia);       // ∨⌈
-      if (rtid==n_and | rtid==n_mul | rtid==n_floor) return scan_and(x, ia);      // ∧×⌊
-      if (rtid==n_ne                               ) return scan_ne(x, 0, ia);    // ≠
-      if (rtid==n_lt)                                return scan_lt(x, 0, ia);    // <
-      goto base;
+    if (xe==el_bit) switch (rtid) { default: goto base;
+      case n_add: return scan_add_bool(x, ia); // +
+      CASE_N_OR:  return scan_or(x, ia);       // ∨⌈
+      CASE_N_AND: return scan_and(x, ia);      // ∧×⌊
+      case n_ne:  return scan_ne(x, 0, ia);    // ≠
+      case n_eq:  return scan_eq(x,    ia);    // =
+      case n_lt:  return scan_lt(x, 0, ia);    // <
+      case n_le:  return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
+      case n_gt:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
+      case n_ge:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
+      case n_sub: return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
     }
     if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
@@ -251,7 +304,6 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   return withFill(r.b, xf);
 }
 
-B add_c2(B, B, B);
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
@@ -328,4 +380,53 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   }
   decG(x);
   return withFill(r.b, wf);
+}
+
+// scan cells of size m, stride 1
+B scan_rows_bit(u8 rtid, B x, usz m) {
+  assert(isArr(x) && TI(x,elType)==el_bit);
+  #if SINGELI
+  switch (rtid) { default: return bi_N;
+    case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x), m));
+    CASE_N_AND: CASE_N_OR: case n_ne: case n_ltack: {
+      usz ia = IA(x);
+      u64* xp = bitarr_ptr(x);
+      u64* rp; B r = m_bitarrc(&rp, x);
+      switch (rtid) { default:UD;
+        CASE_N_AND:   si_scan_rows_and  (xp, rp, ia, m); break;
+        CASE_N_OR:    si_scan_rows_or   (xp, rp, ia, m); break;
+        case n_ne:    si_scan_rows_ne   (xp, rp, ia, m); break;
+        case n_ltack: si_scan_rows_ltack(xp, rp, ia, m); break;
+      }
+      decG(x); return r;
+    }
+    case n_add: case n_sub: {
+      usz ia = IA(x);
+      if (m >= 128) return bi_N;
+      usz bl = 128; // block size
+      i8 buf[bl]; i8 c = 0;
+      u64* xp = bitarr_ptr(x);
+      i8* rp; B r = m_i8arrc(&rp, x);
+      static const u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
+      u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);
+      for (usz i = 0, j = m; i < ia; i += bl) {
+        usz len = ia - i; if (len > bl) len = bl;
+        usz e = i + len;
+        si_bcs8(xp + i/64, buf, len);
+        memset(rp+i, -c, len);
+        i8* bi = buf; bi-=i; // yeah this makes the pointer go out of bounds, but whatever
+        assert(j > i);
+        if (mk) while (j+mk <= e) { storeu_u64(rp+j, loadu_u64(bi+j-1) & mm); j+=mk; }
+        for (; j < e; j += m) rp[j] = bi[j-1];
+        si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
+        for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];
+        if (j == e) { j += m; c = 0; } else c = rp[e-1];
+      }
+      if (rtid!=n_sub) { decG(x); return r; }
+      return C2(sub, C2(mul, m_f64(2), scan_rows_bit(n_ltack, x, m)), r);
+    }
+  }
+  #else
+  return bi_N;
+  #endif
 }
