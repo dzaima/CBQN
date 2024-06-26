@@ -998,7 +998,10 @@ B shiftb_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
-  
+  if (ia==csz) { // length 1
+    Arr* r = arr_shCopy(reshape_one(ia, xf), x);
+    decG(x); return taga(r);
+  }
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, csz, x, 0, ia-csz);
   mut_fillG(r, 0, xf, csz);
@@ -1025,6 +1028,10 @@ B shifta_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
+  if (ia==csz) { // length 1
+    Arr* r = arr_shCopy(reshape_one(ia, xf), x);
+    decG(x); return taga(r);
+  }
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, 0, x, csz, ia-csz);
   mut_fillG(r, ia-csz, xf, csz);
