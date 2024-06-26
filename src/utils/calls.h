@@ -16,7 +16,7 @@ CMP_DEF(ge, AS); CMP_DEF(ge, AA);
 CMP_DEF(lt, AS);
 CMP_DEF(le, AS);
 
-// will write up to 8×⌈len÷64 bytes to WHERE, i.e. whole u64-s
+// will write up to 8×⌈len÷64 bytes to WHERE, i.e. whole u64-s; LEN must not be 0
 #define CMP_AA_FN(FN, ELT) cmp_fns_##FN##AA[ELT]
 #define CMP_AS_FN(FN, ELT) cmp_fns_##FN##AS[ELT]
 
