@@ -455,8 +455,12 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         return taga(arr_shReplace(r, k+1, rsh));
       }
       case n_shifta: case n_shiftb: {
-        if (IA(x)==0) goto noSpecial;
-        if (cr!=1) goto base;
+        if (IA(x)==0) return x;
+        if (cr!=1) {
+          if (cr==0) goto base;
+          if (!(xsh[k]==1 // handled by fill case
+             || shProd(xsh, k+1, xr)==1)) goto base;
+        }
         B xf = getFillR(x);
         if (noFill(xf)) goto base;
         return shift_cells(xf, x, cam, xsh[k], TI(x,elType), rtid);
