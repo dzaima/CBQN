@@ -545,6 +545,7 @@ B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
   bool is_or = rtid==n_or |rtid==n_ceil;
   bool andor = rtid==n_and|rtid==n_floor|rtid==n_mul|is_or;
   if (rtid==n_ne|rtid==n_eq|andor) {
+    if (n==0) { decG(x); return taga(arr_shVec(allZeroes(0))); }
     if (andor && m < 256) while (m%8 == 0) {
       usz f = CTZ(m|32);
       m >>= f; usz c = m*n;
