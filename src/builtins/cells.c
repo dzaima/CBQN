@@ -656,38 +656,52 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
   if (isFun(f)) {
-    if (IA(x)==0) goto generic;
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_rtack) { dec(w); return x; }
-    if (rtid==n_ltack) return const_cells(x, xk, xsh, w, chr);
-    if (rtid==n_select && xk==1 && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
-    if (rtid==n_pick && xk==1 && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
-    if ((rtid==n_shifta || rtid==n_shiftb) && xk==1 && xr==2 && isAtm(w)) {
-      if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
-      return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
-    }
-    if (rtid==n_take || rtid==n_drop) {
-      if (xcr==0 || !isF64(w)) goto generic;
-      bool take = rtid==n_take;
-      f64* ap;
-      B a = m_f64arrv(&ap, xk+1);
-      if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
-      else { usz* xsh=SH(x); PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
-      ap[xk] = o2fG(w);
-      return takedrop_highrank(take, a, x);
-    }
-    if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
-    if (isPervasiveDy(f)) {
-      if (isAtm(w)) return c2(f, w, x);
-      if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
-      return c2(f, C2(shape, C1(fne, incG(x)), w), x);
+    switch(rtid) {
+      case n_rtack: dec(w); return x;
+      case n_ltack: return const_cells(x, xk, xsh, w, chr);
+      case n_select: if (isF64(w) && xcr>=1) {
+        usz l = xsh[xk];
+        return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
+      } break;
+      case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
+        usz l = xsh[xk];
+        return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
+      } break;
+      case n_shifta: case n_shiftb: if (isAtm(w)) {
+        if (IA(x)==0) return x;
+        if (xcr!=1) {
+          if (xcr==0) break;
+          if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
+        }
+        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+        return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
+      } break;
+      case n_take: case n_drop: {
+        if (xcr==0 || !isF64(w)) break;
+        bool take = rtid==n_take;
+        f64* ap;
+        B a = m_f64arrv(&ap, xk+1);
+        if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
+        else { PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
+        ap[xk] = o2fG(w);
+        return takedrop_highrank(take, a, x);
+      } break;
+      case n_transp:
+        if (q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
+        break;
+      default: if (isPervasiveDy(f)) {
+        if (isAtm(w)) return c2(f, w, x);
+        if (IA(x)==0) break;
+        if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) break;
+        if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) break;
+        return c2(f, C2(shape, C1(fne, incG(x)), w), x);
+      }
     }
   } else if (!isMd(f)) {
     dec(w);
     return const_cells(x, xk, xsh, inc(f), chr);
   }
-  generic:;
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
   M_APD_SH(r, xk, xsh); FC2 fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
