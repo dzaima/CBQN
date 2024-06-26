@@ -309,7 +309,7 @@ fn or_rows_bit(xp:*u64, rp:*u64, n:usz, l:usz, op_and:u1) : void = {
       j = jn+1
     }
   } else {
-    rx := -promote{u64, op_and}; id := ~rx
+    rx := -promote{u64, op_and}
     def fixout = ^{rx, .}
     o:u64 = 0  # Saved bits
     j:u64 = 0; @for (i to n) {
@@ -318,7 +318,7 @@ fn or_rows_bit(xp:*u64, rp:*u64, n:usz, l:usz, op_and:u1) : void = {
       l := ~(u64~~0) << sh
       rb:u64 = 1
       if ((o | (e &~ l)) == 0) { # Search for shortcut
-        @for (i from j to jn-1) if (load{xp,i} != id) goto{'found'}
+        @for (i from j to jn) if (load{xp,i} != rx) goto{'found'}
         rb = 0; setlabel{'found'}
       }
       o = e & l
