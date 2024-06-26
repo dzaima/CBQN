@@ -485,7 +485,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         }
       }
       if (rtid==n_scan) {
-        if (cr==0) goto base;
+        if (cr==0) goto noSpecial;
         usz *sh = SH(x); usz m = sh[k];
         if (m<=1 || IA(x)==0) return x;
         if (!isFun(fd->f)) goto base;
