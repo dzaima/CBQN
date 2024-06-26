@@ -7,8 +7,13 @@
 B fne_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
-B fold_rows(Md1D* d, B x);                   // from fold.c
-B fold_rows_bit(Md1D* d, B x, usz n, usz m); // from fold.c
+
+// from fold.c:
+B fold_rows(Md1D* d, B x);
+B fold_rows_bit(Md1D* d, B x, usz n, usz m);
+B insert_cells_join(B x, usz* xsh, ur cr, ur k);
+B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid);
+
 B scan_rows_bit(u8, B x, usz m);             // from scan.c
 B takedrop_highrank(bool take, B w, B x);    // from sfns.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
@@ -485,9 +490,12 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         case n_const: f=fd->f; goto const_f;
         case n_cell: cr-= cr>0; return for_cells_c1(fd->f, xr, cr, xr-cr, x, U'˘');
         case n_fold: if (cr != 1) break; // else fall through
-        case n_insert: if (TI(x,elType)!=el_B && isFun(fd->f) && xsh[k]>0) {
-          usz m = xsh[k];
+        case n_insert: if (cr>0 && isFun(fd->f)) {
           u8 frtid = v(fd->f)->flags-1;
+          if (frtid==n_join && rtid==n_insert) return insert_cells_join(x, xsh, cr, k);
+          usz m = xsh[k];
+          if (m==0) return insert_cells_identity(x, fd->f, xsh, xr, k, rtid);
+          if (TI(x,elType)==el_B) break;
           if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
           if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
           if (isPervasiveDyExt(fd->f) && 1==shProd(xsh, k+1, xr)) {

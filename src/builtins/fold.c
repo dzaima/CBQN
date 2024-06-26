@@ -14,7 +14,8 @@
 // Insert with rank (˝˘ or ˝⎉k), or fold on flat array
 // SHOULD optimize dyadic insert with rank
 // Length 1, ⊣⊢: implemented as ⊏˘
-// SHOULD reshape identity for fast ˝˘ on empty rows
+// ∾˝ with rank: reshape argument
+// Arithmetic on empty: reshape identity
 // Boolean operand, cell size 1:
 //   +: popcount
 //     Rows length ≤64: extract rows, popcount each
@@ -449,6 +450,38 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
     if (rtid==n_rtack) { decG(x); return w; }
   }
   return insert_base(f, x, 1, w);
+}
+
+B insert_cells_join(B x, usz* xsh, ur cr, ur k) {
+  assert(k > 0);
+  if (cr <= 1) {
+    if (xsh[k]==0) thrM("˝: Identity does not exist");
+    return x;
+  }
+  ur rr = k+cr-1; // result rank (>1)
+  ShArr* rsh;
+  rsh = m_shArr(rr);
+  shcpy(rsh->a, xsh, k);
+  rsh->a[k] = xsh[k] * xsh[k+1];
+  shcpy(rsh->a+k+1, xsh+k+2, cr-2);
+  Arr* r = TI(x,slice)(x, 0, IA(x));
+  arr_shSetUG(r, rr, rsh);
+  decG(x); return taga(r);
+}
+B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid) {
+  B id;
+  if (!isFun(f) || q_N(id = TI(f,identity)(f))) thrF("%c: Identity not found", rtid==n_fold? U'´' : U'˝');
+  bool cs = !isArr(id); // if x cell shape is used (not table)
+  usz ria = shProd(xsh, 0, k);
+  if (cs) ria*= shProd(xsh, k+1, xr);
+  Arr* r = reshape_one(ria, id);
+  ur rr = cs? xr-1 : k;
+  if (rr == 1) arr_shVec(r); else {
+    usz* rsh = arr_shAlloc(r, rr);
+    shcpy(rsh, xsh, k);
+    if (cs) shcpy(rsh+k, xsh+k+1, rr-k);
+  }
+  decG(x); return taga(r);
 }
 
 // Arithmetic fold/insert on rows of flat rank-2 array x
