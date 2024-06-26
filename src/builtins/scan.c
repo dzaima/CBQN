@@ -416,7 +416,7 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
         memset(rp+i, -c, len);
         i8* bi = buf-i;
         assert(j > i);
-        if (mk) while (j+mk <= e) { *(u64*)(rp+j) = *(u64*)(bi+j-1) & mm; j+=mk; }
+        if (mk) while (j+mk <= e) { storeu_u64(rp+j, loadu_u64(bi+j-1) & mm); j+=mk; }
         for (; j < e; j += m) rp[j] = bi[j-1];
         si_scan_max_init_i8(rp+i, rp+i, len, I8_MIN);
         for (usz k = i; k < e; k++) rp[k] = bi[k] - rp[k];

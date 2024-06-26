@@ -475,12 +475,12 @@ B sum_rows_bit(B x, usz n, usz m) {
     if (m <= 64) {
       if (m%8 == 0) {
         usz k = m/8; u64 b = (m==64? 0 : 1ull<<m)-1;
-        for (usz i=0; i<n; i++) rp[i] = POPC(b & *(u64*)((u8*)xp+k*i));
+        for (usz i=0; i<n; i++) rp[i] = POPC(b & loadu_u64((u8*)xp+k*i));
       } else {
         if (m<=58 || m==60) {
           u64 b = (1ull<<m)-1;
           for (usz i=0, j=0; i<n; i++, j+=m) {
-            u64 xw = *(u64*)((u8*)xp+j/8) >> (j%8);
+            u64 xw = loadu_u64((u8*)xp+j/8) >> (j%8);
             rp[i] = POPC(b & xw);
           }
         } else {
@@ -489,7 +489,7 @@ B sum_rows_bit(B x, usz n, usz m) {
           u64 b = ~(~(u64)0 >> m);
           u64 prev = 0;
           for (usz i=0, j=m; i<n; i++, j+=m) {
-            u64 xw = ((u64*)((u8*)xp+(j+7)/8))[-1];
+            u64 xw = loadu_u64(((u64*) ((u8*)xp + (j+7)/8)) - 1);
             usz sh = (-j)%8;
             rp[i] = POPC(b & (xw<<sh | prev));
             prev = xw >> (m-sh);
