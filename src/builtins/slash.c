@@ -845,7 +845,7 @@ B slash_c2(B t, B w, B x) {
 }
 
 B slash_im(B t, B x) {
-  if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be an array");
+  if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be a list");
   u8 xe = TI(x,elType);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
