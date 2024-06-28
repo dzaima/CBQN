@@ -11,6 +11,7 @@ Trim ← {((∨`⌾⌽∧∨`)𝕩≠' ')/𝕩}
   •Out "  noerr            Disable erroring tests (ones expected to, or which contain ⎊)"
   •Out "  heapverify       Disable tests that aren't runnable in heapverify"
   •Out "  debug            Disable tests that aren't runnable in debug"
+  •Out "  no-catch         Disable catching errors in tests not expected to error"
   •Out "  update-messages  Auto-update error messages in tests"
   •Out "  ignore-messages  Don't warn about incorrect error messages"
   •Out "  bin-search       Binary search for some property. Next argument should be /[01]*/, with a 1 appended every time the property is matched, and a 0 otherwise"
@@ -35,7 +36,7 @@ o ← {
     search ↩ search∾1
     args ↩ (¬n∨𝕩)/args
   }⍟(∨´) "bin-search"⊸≡¨ args
-  named ← "run"‿"lint"‿"update-messages"‿"slow"‿"ignore-messages"‿"noerr"‿"heapverify"‿"debug"
+  named ← "run"‿"lint"‿"update-messages"‿"slow"‿"ignore-messages"‿"noerr"‿"heapverify"‿"debug"‿"no-catch"
   i ← named⊐args
   run    ⇐ ∨´i=0
   lint   ⇐ ∨´i=1
@@ -45,10 +46,13 @@ o ← {
   noerr  ⇐ ∨´i=5
   heapverify ⇐ ∨´i=6
   debug      ⇐ ∨´i=7
+  noCatch    ⇐ ∨´i=8
   noerr∨↩ heapverify
   files ⇐ (i=≠named)/args
   run ↩ update ∨ ¬∨´lint‿update
 }
+
+_catch_ ← {o.noCatch? 𝔽; 𝔽⎊𝔾}
 
 searchRefine ← {
   searchI ← 0
@@ -145,7 +149,7 @@ Run ← { 𝕊 testname:
     results ← {
       "eval"‿str: {
         o.noerr? ⊑'⎊'∊str? skipped+↩1;
-        Eval⎊{𝕊: Bad "Expected success, got error: "∾ErrMsg@} str
+        Eval _catch_ {𝕊: Bad "Expected success, got error: "∾ErrMsg@} str
         @
       };
       "error"‿str‿exp: {
@@ -162,7 +166,7 @@ Run ← { 𝕊 testname:
       };
       "equal"‿str‿exp: {
         o.noerr? ⊑'⎊'∊str? skipped+↩1;
-        ok‿got ← (1⋈Eval)⎊(0⋈ErrMsg) str
+        ok‿got ← (1⋈Eval)_catch_(0⋈ErrMsg) str
         exp ↩ EvalS exp
         {
           ¬ok? Bad "Expected value, but got error: "∾got;
