@@ -64,7 +64,7 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
       Md2D* xv = c(Md2D,x);
       hashbuf[0] = bqn_hash(xv->g, secret);
       hashbuf[1] = bqn_hash(xv->f, secret);
-      hashbuf[2] = bqn_hash(tag(xv->m2, MD1_TAG), secret);
+      hashbuf[2] = bqn_hash(tag(xv->m2, MD2_TAG), secret);
       break;
     }
     case t_fork: {
