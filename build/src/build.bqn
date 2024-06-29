@@ -67,7 +67,8 @@ opts ← ⟨
   ⟨1, "debug",      0, "Debug: '-DDEBUG -g'; enables various sanity checks"⟩
   ⟨1, "g",          @, "Debug: '-g'; enable debug symbols"⟩
   ⟨1, "rtverify",   0, "Debug: compare builtin results with the self-hosted runtime"⟩
-  ⟨1, "heapverify", 0, "Debug: check reference count correctness"∾@+10⟩
+  ⟨1, "heapverify", 0, "Debug: check reference count correctness"⟩
+  ⟨1, "ubsan",      0, "Debug: enable compiler undefined behavior sanitizer"∾@+10⟩
   
   ⟨0, "CXX", "c++", "C++ compiler (for replxx)"⟩
   ⟨2, "REPLXX_FLAGS", ⟨"-std=c++11", "-Os"⟩, "default replxx C++ build flags"⟩
@@ -246,6 +247,7 @@ po ← { # parsed options
   debug ⇐ GetOpt "debug"
   rtverify ⇐ GetOpt "rtverify"
   heapverify ⇐ GetOpt "heapverify"
+  ubsan ⇐ GetOpt "ubsan"
   o3 ⇐ (¬custom) DOpt "O3"
   
   uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∨´ (@≡GetOpt)¨ "os"‿"arch"
@@ -308,6 +310,8 @@ po ← { # parsed options
     UpdateSubmodule singeliDir
     (⟨{native? ⟨⟩; singeliArch}, 1⟩ •Import AtRoot singeliDir •file.At "arch.bqn").GetCFlags@
   }
+  allFlags ← GetOpt "CCFLAGS"
+  allFlags∾↩ ubsan/⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
   
   ccColor ⇐ ((¬clangd) ∧ tui DOpt "color") / ⟨ccClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩
   
@@ -332,7 +336,7 @@ po ← { # parsed options
     
     
     args∾↩ GetOpt "f"
-    args∾↩ GetOpt "CCFLAGS"
+    args∾↩ allFlags
     args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? ⊑ "-mavx2" <⊸∊ siCFlags; 0} / ⋈"-DSINGELI_AVX2"
     args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"x86-64"‿"aarch64") / ⟨"-DSINGELI_SIMD"⟩
@@ -371,7 +375,7 @@ po ← { # parsed options
     args∾↩ GetOpt "REPLXX_FLAGS"
     args∾↩ GetOpt "CXXFLAGS"
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ GetOpt "CCFLAGS"
+    args∾↩ allFlags
     args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
     args∾↩ (       sharedLib) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
@@ -399,7 +403,7 @@ po ← { # parsed options
         args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
         args∾↩ 1⊑GetLibs@
         args∾↩ GetOpt "lf"
-        args∾↩ GetOpt "CCFLAGS"
+        args∾↩ allFlags
         args∾↩ GetOpt "LDFLAGS"
         args∾↩ (           emcc) / ⟨"-s", "EXPORTED_FUNCTIONS=_main,_cbqn_runLine,_cbqn_evalSrc", "-s", "EXPORTED_RUNTIME_METHODS=ccall,cwrap", "-s", "ALLOW_MEMORY_GROWTH=1"⟩
         args∾↩ (           wasi) / ⟨"-lwasi-emulated-mman", "--target=wasm32-wasi", "-Wl,-z,stack-size=8388608", "-Wl,--initial-memory=67108864"⟩
