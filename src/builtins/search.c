@@ -738,7 +738,7 @@ void hashmap_set(B* vars, B w, B x) {
   B* keys = harr_ptr(vars[0]);
   HASHMAP_INSERT(
     w,
-    B* s = harr_ptr(vars[1])+i; dec(*s); dec(w); *s=x; return;
+    B vs = vars[1]; if (!reusable(vs)) vars[1] = vs = taga(cpyHArr(vs)); B* s = harr_ptr(vs)+i; dec(*s); dec(w); *s=x; return;
   )
   map->pop++;
   if (map->pop>>(64-3-sh)>7 || je==map->sz-1) { // keep load <= 7/8

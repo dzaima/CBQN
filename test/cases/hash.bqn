@@ -59,3 +59,5 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 !"•HashMap: 𝕨 contained duplicate keys" % "strs" •HashMap "stri"
 !"(hashmap).Get: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fg"
 !"(hashmap).Delete: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Delete 'a'
+m ← 1‿2 •HashMap v←•internal.Unshare 'a'‿4 ⋄ 1 m.Set 9 ⋄ ⟨v, m.Keys@, m.Values@⟩ %% ⟨'a'‿4, 1‿2, 9‿4⟩
+m ← 1‿2 •HashMap •internal.Unshare 'a'‿4 ⋄ v←m.Values@ ⋄ 1 m.Set 9 ⋄ ⟨v, m.Keys@, m.Values@⟩ %% ⟨'a'‿4, 1‿2, 9‿4⟩
