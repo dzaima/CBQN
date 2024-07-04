@@ -170,7 +170,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
     if (mr==wr) w=s; else x=s;
     return fc2(m_f64(0), w, x);
   } else {
-    M_APD_SH(r, mr, bsh);
+    M_APD_SH_N(r, mr, bsh, cam);
     S_KSLICES(b, bsh, mr, cam, 1) usz bp=0;
     if (mr==wr) { SGetU(w); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), GetU(w,i), SLICEI(b))); }
     else        { SGetU(x); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), SLICEI(b), GetU(x,i))); }
@@ -569,7 +569,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   
   base:;
   
-  M_APD_SH(r, k, xsh);
+  M_APD_SH_N(r, k, xsh, cam);
   S_KSLICES(x, xsh, k, cam, 1); FC1 fc1 = c1fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc1(f, SLICEI(x)));
   decG(x);
@@ -646,7 +646,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   }
   generic:;
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
-  M_APD_SH(r, wk, wsh); FC2 fc2 = c2fn(f);
+  M_APD_SH_N(r, wk, wsh, cam); FC2 fc2 = c2fn(f);
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
   decG(w); return taga(APD_SH_GET(r, chr));
 }
@@ -703,7 +703,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
     return const_cells(x, xk, xsh, inc(f), chr);
   }
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
-  M_APD_SH(r, xk, xsh); FC2 fc2 = c2fn(f);
+  M_APD_SH_N(r, xk, xsh, cam); FC2 fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
   decG(x); return taga(APD_SH_GET(r, chr));
 }
@@ -757,7 +757,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   }
   generic:;
   
-  M_APD_SH(r, zk, zsh);
+  M_APD_SH_N(r, zk, zsh, cam);
   S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp=0;
   S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp=0;
   FC2 fc2 = c2fn(f);

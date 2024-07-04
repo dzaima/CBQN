@@ -665,6 +665,37 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
   else m->apd(m, x);
   if (xe==el_B) NOGC_E;
 }
+// used if this is the only append: only need to add leading 1s to shape
+NOINLINE void apd_reshape(ApdMut* m, B x) {
+  ur rr0 = m->rr0; // need to be read before union fields are written
+  for (ur i=0; i<rr0; i++) assert(m->rsh0[i] == 1);
+
+  inc(x);
+  if (isAtm(x)) x = m_unit(x);
+
+  if (rr0 > 0) {
+    ur xr = RNK(x);
+    if (rr0 + xr > UR_MAX) {
+      m->failEl = x;
+      m->end = apd_rnk_err;
+      return;
+    }
+    ur rr = rr0 + xr;
+    Arr* r = cpyWithShape(x);
+    if (rr <= 1) {
+      arr_shErase(r, rr);
+    } else {
+      usz* xsh = PSH(r);
+      ShArr* rsh = m_shArr(rr);
+      PLAINLOOP for (ur i=0; i<rr0; i++) rsh->a[i] = 1;
+      shcpy(rsh->a + rr0, xsh, xr);
+      arr_shReplace(r, rr, rsh);
+    }
+    x = taga(r);
+  }
+  m->obj = a(x);
+  m->end = apd_ret_end;
+}
 
 NOINLINE void apd_widen(ApdMut* m, B x, ApdFn* const* fns) {
   u8 xe = isArr(x)? TI(x,elType) : selfElType(x);

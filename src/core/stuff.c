@@ -460,7 +460,7 @@ B bqn_merge(B x, u32 type) {
     return taga(r);
   }
   
-  M_APD_SH(r, xr, SH(x));
+  M_APD_SH_N(r, xr, SH(x), xia);
   SGetU(x)
   for (usz i = 0; i < xia; i++) APD(r, GetU(x, i));
   decG(x);
