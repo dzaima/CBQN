@@ -512,19 +512,24 @@ B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid) {
   decG(x); return taga(r);
 }
 
-// Arithmetic fold/insert on rows of flat rank-2 array x
+// Arithmetic fold/insert on -k-cells of flat array x
+// Return a vector regardless of argument shape
 B transp_c1(B, B);
-B join_c2(B, B, B);
-B fold_rows(Md1D* fd, B x) {
-  assert(isArr(x) && RNK(x)==2);
+B fold_rows(Md1D* fd, B x, usz n, usz m) {
+  assert(isArr(x) && IA(x)==n*m);
   // Target block size trying to avoid power-of-two lengths, from:
   // {𝕩/˜⌊´⊸= +˝˘ +˝¬∨`2|>⌊∘÷⟜2⍟(↕12) ⌊0.5+32÷˜𝕩÷⌜1+↕64} +⟜↕2⋆16
   u64 block = (116053*8) >> arrTypeBitsLog(TY(x));
   if (TI(x,elType)==el_bit || IA(x)/2 <= block) {
+    if (RNK(x) > 2) {
+      Arr* xc = cpyWithShape(x);
+      ShArr* sh = m_shArr(2);
+      sh->a[0] = n; sh->a[1] = m;
+      x = taga(arr_shReplace(xc, 2, sh));
+    }
     x = C1(transp, x);
     return insert_c1(fd, x);
   } else {
-    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     usz b = (block + m - 1) / m; // Normal block length
     usz b_max = b + b/4;         // Last block max length
     MAKE_MUT(r, n); MUT_APPEND_INIT(r);
