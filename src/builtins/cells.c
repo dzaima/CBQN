@@ -16,6 +16,7 @@ B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid);
 
 B scan_rows_bit(u8, B x, usz m);             // from scan.c
 B takedrop_highrank(bool take, B w, B x);    // from sfns.c
+B rotate_highrank(bool inv, B w, B x);       // from sfns.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
 // X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
@@ -687,6 +688,14 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
         ap[xk] = o2fG(w);
         return takedrop_highrank(take, a, x);
       } break;
+      case n_reverse: {
+        if (xcr==0 || !isF64(w)) break;
+        f64* ap;
+        B a = m_f64arrv(&ap, xk+1);
+        FILL_TO(ap, el_f64, 0, m_f64(0), xk);
+        ap[xk] = o2fG(w);
+        return rotate_highrank(0, a, x);
+      }
       case n_transp:
         if (q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
         break;

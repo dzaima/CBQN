@@ -1122,7 +1122,7 @@ B reverse_c1(B t, B x) {
 B reverse_c2(B t, B w, B x);
 
 #define WRAP_ROT(V, L) ({ i64 v_ = (V); usz l_ = (L); if ((u64)v_ >= (u64)l_) { v_%= (i64)l_; if(v_<0) v_+= l_; } v_; })
-static NOINLINE B rotate_highrank(bool inv, B w, B x) {
+NOINLINE B rotate_highrank(bool inv, B w, B x) {
   #define INV (inv? "⁼" : "")
   if (RNK(w)>1) thrF("⌽%U: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", INV, w);
   B r;
