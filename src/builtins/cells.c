@@ -7,6 +7,8 @@
 B fne_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
+B take_c2(B, B, B);
+B join_c2(B, B, B);
 
 // from fold.c:
 B fold_rows(Md1D* d, B x);
@@ -679,21 +681,38 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
         return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
       } break;
       case n_take: case n_drop: {
-        if (xcr==0 || !isF64(w)) break;
         bool take = rtid==n_take;
-        f64* ap;
-        B a = m_f64arrv(&ap, xk+1);
-        if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
-        else { PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
-        ap[xk] = o2fG(w);
+        B a;
+        if (isF64(w)) {
+          if (xcr < 1) break;
+          f64* ap;
+          a = m_f64arrv(&ap, xk+1);
+          if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
+          else { PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
+          ap[xk] = o2fG(w);
+        } else {
+          if (!isArr(w) || RNK(w)>1) break;
+          usz wia = IA(w);
+          if (xcr < wia) break; // needs rank extension in the middle of x's shape
+          if (!take) a = C2(take, m_f64(-(i32)(xk+wia)), w);
+          else a = C2(join, C2(take, m_f64(xk), C1(fne, incG(x))), w); // (k↑≢𝕩)∾𝕨
+        }
         return takedrop_highrank(take, a, x);
       } break;
       case n_reverse: {
-        if (xcr==0 || !isF64(w)) break;
-        f64* ap;
-        B a = m_f64arrv(&ap, xk+1);
-        FILL_TO(ap, el_f64, 0, m_f64(0), xk);
-        ap[xk] = o2fG(w);
+        B a;
+        if (isF64(w)) {
+          if (xcr < 1) break;
+          f64* ap;
+          a = m_f64arrv(&ap, xk+1);
+          FILL_TO(ap, el_f64, 0, m_f64(0), xk);
+          ap[xk] = o2fG(w);
+        } else {
+          if (!isArr(w) || RNK(w)>1) break;
+          usz wia = IA(w);
+          if (xcr < wia) break;
+          a = C2(take, m_f64(-(i32)(xk+wia)), w);
+        }
         return rotate_highrank(0, a, x);
       }
       case n_transp:
