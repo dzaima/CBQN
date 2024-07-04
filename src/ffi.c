@@ -940,7 +940,7 @@ B libffiFn_c2(B t, B w, B x) {
     genObj(e.o, o, tmpAlloc + e.staticOffset, &ffiObjs);
   }
   
-  for (usz i = 0; i < argn; i++) argPtrs[i] = tmpAlloc + ents[i+1].staticOffset;
+  PLAINLOOP for (usz i = 0; i < argn; i++) argPtrs[i] = tmpAlloc + ents[i+1].staticOffset;
   void* res = tmpAlloc + ents[0].staticOffset;
   
   // for (usz i = 0; i < argObj->staticAllocTotal; i++) { // simple hexdump of the allocation
