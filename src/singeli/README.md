@@ -152,6 +152,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `zipHi{a:V,b:V} : V` - `select{zip{a, b}, 1}`
 - `mzipLo{a:V,b:V} : V` - `select{mzip{a, b}, 0}`
 - `mzipHi{a:V,b:V} : V` - `select{mzip{a, b}, 1}`
+- `zip128{,Lo,Hi}`, `mzip128{,Lo,Hi}` - within-128-bit-lane versions of the above
 
 ## Mask stuff
 
@@ -211,7 +212,6 @@ For float conversions, the used rounding mode is unspecified.
 - `packQ` - pack 128-bit lanes (`packs`/`packus`) for 16-bit & 32-bit elements
 - `packQQ` - `packQ` but also defined for 64-bit elements, assuming the high halves are zeroes
 - `packs` - 128-bit `packs`/`packus`
-- `unpackQ` - unpack in 128-bit lanes (like `mzip`)
 - `shuf16Hi`, `shuf16Lo` - 16-bit shuffles with immediate
 - `shufHalves`
 
@@ -242,7 +242,7 @@ For float conversions, the used rounding mode is unspecified.
 - `mla` - multiply-add
 - `mls` - multiply-subtract
 - `ornot` - a|~b
-- `packLo`, packHi
+- `packLo`, `packHi`
 - `popc` - popcount of each byte
 - `rbit` - reverse bits in bytes
 - `rev` - reverse elements in lanes

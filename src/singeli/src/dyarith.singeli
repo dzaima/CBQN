@@ -34,8 +34,8 @@ def arithChk2{F, M, w:T, x:T if is_s{T} and (same{F,__add} or same{F,__sub})} = 
 
 # ×
 def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
-  def wp = unpackQ{w, T ~~ (T**0 > w)}
-  def xp = unpackQ{x, T ~~ (T**0 > x)}
+  def wp = mzip128{w, T ~~ (T**0 > w)}
+  def xp = mzip128{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
   if (M{0}) { # masked check
     def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
@@ -58,8 +58,8 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   tup{w*x, tup{'homAny', M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
-  # def wp = unpackQ{w, T**0}
-  # def xp = unpackQ{x, T**0}
+  # def wp = mzip128{w, T**0}
+  # def xp = mzip128{x, T**0}
   # def rp = each{mul32, wp, xp}
   # def T2 = re_el{i64, T}
   # def bad = each{{v} => {

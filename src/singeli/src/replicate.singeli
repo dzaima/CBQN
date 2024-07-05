@@ -104,7 +104,7 @@ rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 def read_shuf_vecs{l, ellw:(u64), shp:*V} = { # tuple of byte selectors in 1<<ellw
   def double{x:X if hasarch{'AVX2'}} = {
     s:=shuf{[4]u64, x, 4b3120}; s+=s
-    r:=each{bind{~~,[32]i8},unpackQ{s, s + X**1}}
+    r:=each{bind{~~,[32]i8},mzip128{s, s + X**1}}
     r
   }
   def double{x:X if hasarch{'AARCH64'}} = {
@@ -158,7 +158,7 @@ if_inline (hasarch{'AVX2'}) {
   
   def get_rep_iter{V, wv==2}{x, gen} = {
     def s = shuf{[4]u64, x, 4b3120}
-    each{{q}=>gen{V~~q}, unpackQ{s, s}}
+    each{{q}=>gen{V~~q}, mzip128{s, s}}
   }
   def get_rep_iter{V==[4]u64, wv} = {
     def step = 4

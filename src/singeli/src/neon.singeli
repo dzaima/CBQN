@@ -72,7 +72,6 @@ def vshl{a:T, b:T, n if knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
 
 def zipLo{a:T, b:T if nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
 def zipHi{a:T, b:T if nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
-def zip{a:T, b:T if nvec{T}} = tup{zipLo{a,b}, zipHi{a,b}}
 
 def packLo{x:T, y:T if nvec{T}} = { def H=el_s{T}; emit{H, ntyp{'vuzp1', H}, H~~x, H~~y} }
 def packHi{x:T, y:T if nvec{T}} = { def H=el_s{T}; emit{H, ntyp{'vuzp2', H}, H~~x, H~~y} }

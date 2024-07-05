@@ -42,7 +42,7 @@ def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
       c2:= shuf{[4]u64, c+c, 4b3120}
       each{
         {c,o} => se{e*2, VI~~c, o},
-        unpackQ{c2, c2 + VI**1},
+        mzip128{c2, c2 + VI**1},
         2*o + iota{2}
       }
     }

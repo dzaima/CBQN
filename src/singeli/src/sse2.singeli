@@ -68,15 +68,11 @@ def packs{a:T,b:T==[4]i32} = emit{[ 8]i16, '_mm_packs_epi32', a, b}
 def packs{a:T,b:T==[8]u16} = emit{[16]u8,  '_mm_packus_epi16', a, b}
 def packQ{a:T,b:T if w128i{T}} = packs{a,b}
 
-
-def zipLo{a:T, b:T if w128i{T}} = emit{T, merge{'_mm_unpacklo_epi',fmtnat{elwidth{T}}}, a, b}
-def zipHi{a:T, b:T if w128i{T}} = emit{T, merge{'_mm_unpackhi_epi',fmtnat{elwidth{T}}}, a, b}
-def zipLo{a:T, b:T if w128f{T}} = emit{T, merge{'_mm_unpacklo_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
-def zipHi{a:T, b:T if w128f{T}} = emit{T, merge{'_mm_unpackhi_p',if (elwidth{T}==32) 's' else 'd'}, a, b}
-def zip{a:T, b:T if w128i{T}} = tup{zipLo{a,b}, zipHi{a,b}}
-
-
-def unpackQ{a:T, b:T if w128{T}} = mzip{a, b}
+def x86_postfix{T if isint{T}} = merge{'_epi',fmtnat{width{T}}}
+def x86_postfix{(f32)} = '_ps'
+def x86_postfix{(f64)} = '_pd'
+def zipLo{a:T, b:T if w128{T}} = emit{T, merge{'_mm_unpacklo',x86_postfix{eltype{T}}}, a, b}
+def zipHi{a:T, b:T if w128{T}} = emit{T, merge{'_mm_unpackhi',x86_postfix{eltype{T}}}, a, b}
 
 def shuf{L, x:T, n if w128{T} and lvec{L,4,32} and knum{n}} = T ~~ emit{[4]i32, '_mm_shuffle_epi32', v2i{x}, n}
 def shuf16Lo{x:T, n} = T~~emit{[8]i16, '_mm_shufflelo_epi16', x, n}

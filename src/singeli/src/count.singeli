@@ -3,7 +3,7 @@ include 'util/tup'
 include './vecfold'
 
 if_inline (hasarch{'SSE2'}) {
-  fn sum_vec{T}(v:T) = vfold{+, fold{+, unpackQ{v, T**0}}}
+  fn sum_vec{T}(v:T) = vfold{+, fold{+, mzip128{v, T**0}}}
   def fold_addw{v:T=[_](i8)} = sum_vec{T}(v)
 }
 

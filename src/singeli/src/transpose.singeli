@@ -11,7 +11,11 @@ def pairs{o, x} = {
   def g = 2*i - i%o
   select{x, tup{g, g+o}}
 }
-def unpack_pass{o, x} = merge{...each{unpackQ, ...pairs{o, x}}}
+
+def unpack_typed{a, b} = mzip128{a, b}
+def unpack_typed{a:T, b:T if elwidth{T}==64} = zip128{a, b}
+def unpack_pass{o, x} = merge{...each{unpack_typed, ...pairs{o, x}}}
+
 def permute_pass{o, x} = {
   def p = pairs{o, x}
   def h{s} = each{{a,b}=>emit{[8]i32, '_mm256_permute2f128_si256', a,b,s}, ...p}
