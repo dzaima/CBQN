@@ -161,7 +161,7 @@ def {
   absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
-  pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,storeLow,
+  pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,vfold,widen,
   zipHi,zipLo
 }
@@ -270,6 +270,9 @@ def inRangeLen{x:TU=[_]T, start, count if isunsigned{T}} = { # ∊ [start;start+
 def inRangeIncl{x:T, start, end} = inRangeLen{x, start, end-start+1} # ∊ [start;end]
 def inRangeExcl{x:T, start, end} = inRangeLen{x, start, end-start} # ∊ [start;end)
 
+# check if all tuple elements are in a given range
+def inrange{t, min, max} = tree_fold{&, (t>=min) & (t<max)}
+def inrange{t, s, e, min, max} = inrange{slice{t,s,e}, min, max}
 
 
 def load{p,i if kgen{p}} = p{i}
