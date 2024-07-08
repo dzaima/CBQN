@@ -92,6 +92,7 @@ Namespace of various internal functions. May change at any time.
 |----------------------------|-------------|
 | `•internal.GC`             | Run a garbage collection cycle |
 | `•internal.Type`           | Name of the internal type for an object |
+| `•internal.ObjFlags`       | Monadically, get the flags of `𝕩`. Dyadically, set the flags of `𝕩` to `𝕨`. |
 | `•internal.ElType`         | Element size type identifier; see `enum ElType` |
 | `•internal.Keep`           | Require the argument to stay alive up to this point in the program. Returns the argument, but without signaling to possible optimizations that the input and output will be equal |
 | `•internal.Refc`           | Reference count of the argument, if it's heap-allocated |
