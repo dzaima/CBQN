@@ -43,7 +43,10 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x)) r = m_hunit(c1(f, x));
   else if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_ltack || rtid==n_rtack) return x;
+    if (rtid==n_ltack || rtid==n_rtack) {
+      if (EACH_FILLS) decG(xf);
+      return EACH_FILLS || TI(x,arrD1) || IA(x)==0? x : any_squeeze(withFill(x, bi_noFill));
+    }
     r = eachm_fn(f, x, c(Fun,f)->c1);
   } else {
     usz ia = IA(x);
