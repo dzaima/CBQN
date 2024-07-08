@@ -57,13 +57,13 @@ CMP_REC(ne, ne, swapped=0;)
 #else
   void cmpA_init(void) { }
   #define BASE_CMP_LOOP(OP, W, X) \
-    for (usz j = 0; j < (l+7)>>3; j++) { \
-      u8 c = 0;                          \
-      for (usz k = 0; k < 8; k++) {      \
-        usz i = j*8+k;                   \
-        c|= ((W) OP (X))<<k;             \
-      }                                  \
-      ((u8*)r)[j] = c;                   \
+    for (ux j = 0; j < (l+7)>>3; j++) { \
+      u8 c = 0;                         \
+      for (ux k = 0; k < 8; k++) {      \
+        ux i = j*8+k;                   \
+        c|= ((W) OP (X))<<k;            \
+      }                                 \
+      ((u8*)r)[j] = c;                  \
     }
   
   #define CMP_AA0(N, T, BODY) void base_##N##AA##_##T(u64* r, void* w, void* x, u64 l) { BODY }
