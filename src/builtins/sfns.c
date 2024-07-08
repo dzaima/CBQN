@@ -998,7 +998,10 @@ B shiftb_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
-  
+  if (ia==csz) { // length 1
+    Arr* r = arr_shCopy(reshape_one(ia, xf), x);
+    decG(x); return taga(r);
+  }
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, csz, x, 0, ia-csz);
   mut_fillG(r, 0, xf, csz);
@@ -1025,6 +1028,10 @@ B shifta_c1(B t, B x) {
   if (ia==0) return x;
   B xf = getFillE(x);
   usz csz = arr_csz(x);
+  if (ia==csz) { // length 1
+    Arr* r = arr_shCopy(reshape_one(ia, xf), x);
+    decG(x); return taga(r);
+  }
   MAKE_MUT_INIT(r, ia, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
   mut_copyG(r, 0, x, csz, ia-csz);
   mut_fillG(r, ia-csz, xf, csz);
@@ -1059,7 +1066,7 @@ static u64 bit_reverse(u64 x) {
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
   usz n = *SH(x);
-  if (n==0) return x;
+  if (n<=1) return x;
   u8 xl = cellWidthLog(x);
   u8 xt = arrNewType(TY(x));
   if (xl<=6 && (xl>=3 || xl==0)) {
@@ -1115,7 +1122,7 @@ B reverse_c1(B t, B x) {
 B reverse_c2(B t, B w, B x);
 
 #define WRAP_ROT(V, L) ({ i64 v_ = (V); usz l_ = (L); if ((u64)v_ >= (u64)l_) { v_%= (i64)l_; if(v_<0) v_+= l_; } v_; })
-static NOINLINE B rotate_highrank(bool inv, B w, B x) {
+NOINLINE B rotate_highrank(bool inv, B w, B x) {
   #define INV (inv? "⁼" : "")
   if (RNK(w)>1) thrF("⌽%U: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", INV, w);
   B r;

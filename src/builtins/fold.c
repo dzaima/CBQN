@@ -14,7 +14,8 @@
 // Insert with rank (˝˘ or ˝⎉k), or fold on flat array
 // SHOULD optimize dyadic insert with rank
 // Length 1, ⊣⊢: implemented as ⊏˘
-// SHOULD reshape identity for fast ˝˘ on empty rows
+// ∾˝ with rank: reshape argument
+// Arithmetic on empty: reshape identity
 // Boolean operand, cell size 1:
 //   +: popcount
 //     Rows length ≤64: extract rows, popcount each
@@ -375,28 +376,58 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
 
 B select_c1(B, B);
 B select_c2(B, B, B);
+B shape_c1(B, B);
 static B m1c1(B t, B f, B x) { // consumes x
   B fn = m1_d(inc(t), inc(f));
   B r = c1(fn, x);
   decG(fn);
   return r;
 }
-extern GLOBAL B rt_insert;
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
+  ur xr;
+  if (isAtm(x) || (xr=RNK(x))==0) thrM("˝: 𝕩 must have rank at least 1");
   usz len = *SH(x);
-  if (len==0) { SLOW2("!𝕎˝𝕩", f, x); return m1c1(rt_insert, f, x); }
+  if (len==0) {
+    if (isFun(f)) {
+      B id = TI(f,identity)(f);
+      if (!q_N(id)) {
+        if (isArr(id)) { decG(x); return id; } // arithmetic with table
+        usz* xsh = SH(x);
+        Arr* r = reshape_one(shProd(xsh, 1, xr), id);
+        if (xr == 2) arr_shVec(r); else {
+          usz* rsh = arr_shAlloc(r, xr-1);
+          shcpy(rsh, xsh+1, xr-1);
+        }
+        decG(x); return taga(r);
+      } else if (v(f)->flags == n_join+1) {
+        if (xr <= 1) thrM("˝: Identity does not exist");
+        goto join;
+      }
+    }
+    thrM("˝: Identity not found");
+  }
   if (len==1) return C1(select, x);
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
-  ur xr = RNK(x);
-  if (xr==1 && isPervasiveDyExt(f)) return m_unit(fold_c1(d, x));
+  if (isPervasiveDyExt(f)) {
+    if (xr==1) return m_unit(fold_c1(d, x));
+    if (len==IA(x)) {
+      B r = m_vec1(fold_c1(d, C1(shape, x)));
+      ur rr = xr - 1;
+      if (rr > 1) {
+        ShArr* rsh = m_shArr(rr);
+        PLAINLOOP for (ur i=0; i<rr; i++) rsh->a[i] = 1;
+        arr_shReplace(a(r), rr, rsh);
+      }
+      return r;
+    }
+  }
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) return C1(select, x);
     if (rtid==n_rtack) return C2(select, m_f64(-1), x);
-    if (rtid==n_join) {
+    if (rtid==n_join) { join:;
       if (xr==1) return x;
       ShArr* rsh;
       if (xr>2) {
@@ -414,17 +445,32 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   return insert_base(f, x, 0, m_f64(0));
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("˝: 𝕩 must have rank at least 1");
-  if (*SH(x)==0) { decG(x); return w; }
+  ur xr;
+  if (isAtm(x) || (xr=RNK(x))==0) thrM("˝: 𝕩 must have rank at least 1");
+  usz len = *SH(x);
+  if (len==0) { decG(x); return w; }
   if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
-  if (RNK(x)==1 && isPervasiveDyExt(f)) {
-    if (isAtm(w)) {
-      to_fold: return m_unit(fold_c2(d, w, x));
-    }
-    if (RNK(w)==0) {
+  if (isPervasiveDyExt(f) && len==IA(x)) {
+    // 1-element arrays are always conformable
+    // final rank is higher of w, cell rank of x
+    ur rr = xr - 1;
+    if (isArr(w)) {
+      if (IA(w) != 1) goto skip;
+      ur wr = RNK(w); if (wr>rr) rr = wr;
       B w0=w; w = IGet(w,0); decG(w0);
-      goto to_fold;
     }
+    if (xr > 1) x = C1(shape, x);
+    B r = m_unit(fold_c2(d, w, x));
+    if (rr > 0) {
+      if (rr == 1) arr_shVec(a(r));
+      else {
+        ShArr* rsh = m_shArr(rr);
+        PLAINLOOP for (ur i=0; i<rr; i++) rsh->a[i] = 1;
+        arr_shReplace(a(r), rr, rsh);
+      }
+    }
+    return r;
+    skip:;
   }
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
@@ -434,19 +480,56 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   return insert_base(f, x, 1, w);
 }
 
-// Arithmetic fold/insert on rows of flat rank-2 array x
+B insert_cells_join(B x, usz* xsh, ur cr, ur k) {
+  assert(k > 0);
+  if (cr <= 1) {
+    if (xsh[k]==0) thrM("˝: Identity does not exist");
+    return x;
+  }
+  ur rr = k+cr-1; // result rank (>1)
+  ShArr* rsh;
+  rsh = m_shArr(rr);
+  shcpy(rsh->a, xsh, k);
+  rsh->a[k] = xsh[k] * xsh[k+1];
+  shcpy(rsh->a+k+1, xsh+k+2, cr-2);
+  Arr* r = TI(x,slice)(x, 0, IA(x));
+  arr_shSetUG(r, rr, rsh);
+  decG(x); return taga(r);
+}
+B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid) {
+  B id;
+  if (!isFun(f) || q_N(id = TI(f,identity)(f))) thrF("%c: Identity not found", rtid==n_fold? U'´' : U'˝');
+  bool cs = !isArr(id); // if x cell shape is used (not table)
+  usz ria = shProd(xsh, 0, k);
+  if (cs) ria*= shProd(xsh, k+1, xr);
+  Arr* r = reshape_one(ria, id);
+  ur rr = cs? xr-1 : k;
+  if (rr == 1) arr_shVec(r); else {
+    usz* rsh = arr_shAlloc(r, rr);
+    shcpy(rsh, xsh, k);
+    if (cs) shcpy(rsh+k, xsh+k+1, rr-k);
+  }
+  decG(x); return taga(r);
+}
+
+// Arithmetic fold/insert on -k-cells of flat array x
+// Return a vector regardless of argument shape
 B transp_c1(B, B);
-B join_c2(B, B, B);
-B fold_rows(Md1D* fd, B x) {
-  assert(isArr(x) && RNK(x)==2);
+B fold_rows(Md1D* fd, B x, usz n, usz m) {
+  assert(isArr(x) && IA(x)==n*m);
   // Target block size trying to avoid power-of-two lengths, from:
   // {𝕩/˜⌊´⊸= +˝˘ +˝¬∨`2|>⌊∘÷⟜2⍟(↕12) ⌊0.5+32÷˜𝕩÷⌜1+↕64} +⟜↕2⋆16
   u64 block = (116053*8) >> arrTypeBitsLog(TY(x));
   if (TI(x,elType)==el_bit || IA(x)/2 <= block) {
+    if (RNK(x) > 2) {
+      Arr* xc = cpyWithShape(x);
+      ShArr* sh = m_shArr(2);
+      sh->a[0] = n; sh->a[1] = m;
+      x = taga(arr_shReplace(xc, 2, sh));
+    }
     x = C1(transp, x);
     return insert_c1(fd, x);
   } else {
-    usz *sh = SH(x); usz n = sh[0]; usz m = sh[1];
     usz b = (block + m - 1) / m; // Normal block length
     usz b_max = b + b/4;         // Last block max length
     MAKE_MUT(r, n); MUT_APPEND_INIT(r);

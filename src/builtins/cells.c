@@ -7,10 +7,18 @@
 B fne_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
-B fold_rows(Md1D* d, B x);                   // from fold.c
-B fold_rows_bit(Md1D* d, B x, usz n, usz m); // from fold.c
+B take_c2(B, B, B);
+B join_c2(B, B, B);
+
+// from fold.c:
+B fold_rows(Md1D* d, B x, usz n, usz m);
+B fold_rows_bit(Md1D* d, B x, usz n, usz m);
+B insert_cells_join(B x, usz* xsh, ur cr, ur k);
+B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid);
+
 B scan_rows_bit(u8, B x, usz m);             // from scan.c
 B takedrop_highrank(bool take, B w, B x);    // from sfns.c
+B rotate_highrank(bool inv, B w, B x);       // from sfns.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
 // X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
@@ -165,7 +173,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
     if (mr==wr) w=s; else x=s;
     return fc2(m_f64(0), w, x);
   } else {
-    M_APD_SH(r, mr, bsh);
+    M_APD_SH_N(r, mr, bsh, cam);
     S_KSLICES(b, bsh, mr, cam, 1) usz bp=0;
     if (mr==wr) { SGetU(w); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), GetU(w,i), SLICEI(b))); }
     else        { SGetU(x); for (usz i=0; i<cam; i++) APDD(r, fc2(m_f64(0), SLICEI(b), GetU(x,i))); }
@@ -178,52 +186,58 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 // fast special-case implementations
 extern void (*const si_select_cells_bit_lt64)(uint64_t*,uint64_t*,uint32_t,uint32_t,uint32_t); // from fold.c (fold.singeli)
-static NOINLINE B select_cells(usz n, B x, usz cam, usz k, bool leaf) { // n {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
+static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
   usz* xsh = SH(x);
   usz csz = shProd(xsh, k+1, xr);
-  usz take = leaf? 1 : csz;
-  usz jump = xsh[k] * csz;
-  assert(cam*jump == IA(x));
+  usz l = xsh[k];
+  assert(0<=ind && ind<l);
+  assert(cam*l*csz == IA(x));
   Arr* ra;
-  if (take==jump) {
+  usz take = leaf? 1 : csz;
+  if (l==1 && take==csz) {
     ra = cpyWithShape(incG(x));
     arr_shErase(ra, 1);
-  } else if (take==1) {
+  } else {
     u8 xe = TI(x,elType);
-    if (xe==el_B) {
+    u8 ewl= elwBitLog(xe);
+    u8 xl = leaf? ewl : multWidthLog(csz, ewl);
+    usz ria = cam*take;
+    if (xl>=7 || (xl<3 && xl>0)) { // generic case
+      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
+      usz jump = l * csz;
+      usz xi = take*ind;
+      usz ri = 0;
+      for (usz i = 0; i < cam; i++) {
+        mut_copyG(rm, ri, x, xi, take);
+        xi+= jump;
+        ri+= take;
+      }
+      ra = mut_fp(rm);
+    } else if (xe==el_B) {
+      assert(take == 1);
       SGet(x)
-      HArr_p rp = m_harrUv(cam);
-      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*jump+n);
+      HArr_p rp = m_harrUv(ria);
+      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
       NOGC_E; ra = (Arr*)rp.c;
     } else {
-      void* rp = m_tyarrlbp(&ra, elwBitLog(xe), cam, el2t(xe));
+      void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
       void* xp = tyany_ptr(x);
-      switch(xe) {
-        case el_bit:
+      switch(xl) {
+        case 0:
           #if SINGELI
-          if (jump < 64) si_select_cells_bit_lt64(xp, rp, cam, jump, n);
+          if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
           else
           #endif
-          for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*jump+n));
+          for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
           break;
-        case el_i8:  case el_c8:  PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*jump+n]; break;
-        case el_i16: case el_c16: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*jump+n]; break;
-        case el_i32: case el_c32: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*jump+n]; break;
-        case el_f64:              PLAINLOOP for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*jump+n]; break;
+        case 3: PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
+        case 4: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
+        case 5: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
+        case 6: PLAINLOOP for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
       }
     }
-  } else {
-    MAKE_MUT_INIT(rm, cam*take, TI(x,elType)); MUTG_INIT(rm);
-    usz xi = take*n;
-    usz ri = 0;
-    for (usz i = 0; i < cam; i++) {
-      mut_copyG(rm, ri, x, xi, take);
-      xi+= jump;
-      ri+= take;
-    }
-    ra = mut_fp(rm);
   }
   usz* rsh = arr_shAlloc(ra, leaf? k : xr-1);
   if (rsh) {
@@ -444,8 +458,12 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
         return taga(arr_shReplace(r, k+1, rsh));
       }
       case n_shifta: case n_shiftb: {
-        if (IA(x)==0) goto noSpecial;
-        if (cr!=1) goto base;
+        if (IA(x)==0) return x;
+        if (cr!=1) {
+          if (cr==0) goto base;
+          if (!(xsh[k]==1 // handled by fill case
+             || shProd(xsh, k+1, xr)==1)) goto base;
+        }
         B xf = getFillR(x);
         if (noFill(xf)) goto base;
         return shift_cells(xf, x, cam, xsh[k], TI(x,elType), rtid);
@@ -453,47 +471,74 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
       case n_transp: {
         return cr<=1? x : transp_cells(xr-1, k, x);
       }
+      // trivial cases for unhandled functions
+      case n_reverse: case n_and: case n_or: case n_find:
+        if (cr == 0) break;
+        if (xsh[k] <= 1) return x;
+        break;
+      case n_gradeUp: case n_gradeDown: case n_indexOf: case n_memberOf: case n_count: {
+        if (cr == 0) break;
+        usz l = xsh[k];
+        if (l <= 1) {
+          usz ia = l*cam;
+          Arr* r = rtid==n_memberOf? allOnes(ia) : allZeroes(ia);
+          usz* rsh = arr_shAlloc(r, k+1);
+          shcpy(rsh, xsh, k+1);
+          decG(x); return taga(r);
+        }
+        break;
+      }
     }
     
     if (TY(f) == t_md1D) {
       Md1D* fd = c(Md1D,f);
       u8 rtid = fd->m1->flags-1;
-      if (rtid==n_const) { f=fd->f; goto const_f; }
-      usz *sh = SH(x);
-      if (((rtid==n_fold && cr==1) || rtid==n_insert) && TI(x,elType)!=el_B
-          && isFun(fd->f) && 1==shProd(sh, k+1, xr) && sh[k] > 0) {
-        usz m = sh[k];
-        u8 frtid = v(fd->f)->flags-1;
-        if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
-        if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
-        if (isPervasiveDyExt(fd->f)) {
-          if (TI(x,elType)==el_bit) {
-            incG(x); // keep shape alive
-            B r = fold_rows_bit(fd, x, shProd(sh, 0, k), m);
-            if (!q_N(r)) {
-              if (xr > 2) {
-                usz* rsh = arr_shAlloc(a(r), xr-1);
-                shcpy(rsh, sh, k);
-                shcpy(rsh+k, sh+k+1, xr-1-k);
-              }
-              decG(x); return r;
+      switch(rtid) {
+        case n_const: f=fd->f; goto const_f;
+        case n_cell: cr-= cr>0; return for_cells_c1(fd->f, xr, cr, xr-cr, x, U'˘');
+        case n_fold: if (cr != 1) break; // else fall through
+        case n_insert: if (cr>0 && isFun(fd->f)) {
+          u8 frtid = v(fd->f)->flags-1;
+          if (frtid==n_join && rtid==n_insert) return insert_cells_join(x, xsh, cr, k);
+          usz m = xsh[k];
+          if (m==0) return insert_cells_identity(x, fd->f, xsh, xr, k, rtid);
+          if (TI(x,elType)==el_B) break;
+          if (m==1 || frtid==n_ltack) return select_cells(0  , x, cam, k, false);
+          if (        frtid==n_rtack) return select_cells(m-1, x, cam, k, false);
+          if (isPervasiveDyExt(fd->f) && 1==shProd(xsh, k+1, xr)) {
+            B r;
+            // special cases always return rank 1
+            // incG(x) preserves the shape to restore afterwards if needed
+            if (TI(x,elType)==el_bit) {
+              incG(x); r = fold_rows_bit(fd, x, cam, m);
+              if (q_N(r)) decG(x); // will try fold_rows
+              else goto finish_fold;
             }
-            decG(x);
+            if (m<=64 && m<cam) {
+              incG(x); r = fold_rows    (fd, x, cam, m);
+            }
+            else break;
+            finish_fold:
+            if (xr > 2) {
+              usz* rsh = arr_shAlloc(a(r), xr-1);
+              shcpy(rsh, xsh, k);
+              shcpy(rsh+k, xsh+k+1, xr-1-k);
+            }
+            decG(x); return r;
           }
-          // TODO extend to any rank
-          if (xr==2 && k==1 && m<=64 && m<sh[0]) return fold_rows(fd, x);
-        }
-      }
-      if (rtid==n_scan) {
-        if (cr==0) goto noSpecial;
-        usz *sh = SH(x); usz m = sh[k];
-        if (m<=1 || IA(x)==0) return x;
-        if (!isFun(fd->f)) goto base;
-        u8 frtid = v(fd->f)->flags-1;
-        if (frtid==n_rtack) return x;
-        if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
-            && 1==shProd(sh, k+1, xr)) {
-          B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+        } break;
+        case n_scan: {
+          if (cr==0) break;
+          usz m = xsh[k];
+          if (m<=1 || IA(x)==0) return x;
+          if (!isFun(fd->f)) break;
+          u8 frtid = v(fd->f)->flags-1;
+          if (frtid==n_rtack) return x;
+          if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
+              && 1==shProd(xsh, k+1, xr)) {
+            B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+          }
+          break;
         }
       }
     } else if (TY(f) == t_md2D) {
@@ -531,7 +576,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with arr
   
   base:;
   
-  M_APD_SH(r, k, xsh);
+  M_APD_SH_N(r, k, xsh, cam);
   S_KSLICES(x, xsh, k, cam, 1); FC1 fc1 = c1fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc1(f, SLICEI(x)));
   decG(x);
@@ -608,7 +653,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   }
   generic:;
   S_KSLICES(w, wsh, wk, cam, 1) incBy(x, cam-1);
-  M_APD_SH(r, wk, wsh); FC2 fc2 = c2fn(f);
+  M_APD_SH_N(r, wk, wsh, cam); FC2 fc2 = c2fn(f);
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
   decG(w); return taga(APD_SH_GET(r, chr));
 }
@@ -618,40 +663,79 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
   if (isFun(f)) {
-    if (IA(x)==0) goto generic;
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_rtack) { dec(w); return x; }
-    if (rtid==n_ltack) return const_cells(x, xk, xsh, w, chr);
-    if (rtid==n_select && xk==1 && isF64(w) && xr==2)              return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, false);
-    if (rtid==n_pick && xk==1 && TI(x,arrD1) && xr==2 && isF64(w)) return select_cells(WRAP(o2i64(w), SH(x)[1], thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, cam)), x, cam, 1, true);
-    if ((rtid==n_shifta || rtid==n_shiftb) && xk==1 && xr==2 && isAtm(w)) {
-      if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
-      return shift_cells(w, x, SH(x)[0], SH(x)[1], el_or(TI(x,elType), selfElType(w)), rtid);
-    }
-    if (rtid==n_take || rtid==n_drop) {
-      if (xcr==0 || !isF64(w)) goto generic;
-      bool take = rtid==n_take;
-      f64* ap;
-      B a = m_f64arrv(&ap, xk+1);
-      if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
-      else { usz* xsh=SH(x); PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
-      ap[xk] = o2fG(w);
-      return takedrop_highrank(take, a, x);
-    }
-    if (rtid==n_transp && q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
-    if (isPervasiveDy(f)) {
-      if (isAtm(w)) return c2(f, w, x);
-      if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) goto generic;
-      return c2(f, C2(shape, C1(fne, incG(x)), w), x);
+    switch(rtid) {
+      case n_rtack: dec(w); return x;
+      case n_ltack: return const_cells(x, xk, xsh, w, chr);
+      case n_select: if (isF64(w) && xcr>=1) {
+        usz l = xsh[xk];
+        return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
+      } break;
+      case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
+        usz l = xsh[xk];
+        return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
+      } break;
+      case n_shifta: case n_shiftb: if (isAtm(w)) {
+        if (IA(x)==0) return x;
+        if (xcr!=1) {
+          if (xcr==0) break;
+          if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
+        }
+        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+        return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
+      } break;
+      case n_take: case n_drop: {
+        bool take = rtid==n_take;
+        B a;
+        if (isF64(w)) {
+          if (xcr < 1) break;
+          f64* ap;
+          a = m_f64arrv(&ap, xk+1);
+          if (!take) { FILL_TO(ap, el_f64, 0, m_f64(0), xk); }
+          else { PLAINLOOP for (usz i=0; i<xk; i++) ap[i] = xsh[i]; }
+          ap[xk] = o2fG(w);
+        } else {
+          if (!isArr(w) || RNK(w)>1) break;
+          usz wia = IA(w);
+          if (xcr < wia) break; // needs rank extension in the middle of x's shape
+          if (!take) a = C2(take, m_f64(-(i32)(xk+wia)), w);
+          else a = C2(join, C2(take, m_f64(xk), C1(fne, incG(x))), w); // (k↑≢𝕩)∾𝕨
+        }
+        return takedrop_highrank(take, a, x);
+      } break;
+      case n_reverse: {
+        B a;
+        if (isF64(w)) {
+          if (xcr < 1) break;
+          f64* ap;
+          a = m_f64arrv(&ap, xk+1);
+          FILL_TO(ap, el_f64, 0, m_f64(0), xk);
+          ap[xk] = o2fG(w);
+        } else {
+          if (!isArr(w) || RNK(w)>1) break;
+          usz wia = IA(w);
+          if (xcr < wia) break;
+          a = C2(take, m_f64(-(i32)(xk+wia)), w);
+        }
+        return rotate_highrank(0, a, x);
+      }
+      case n_transp:
+        if (q_usz(w)) { usz a=o2sG(w); if (a<xcr) return transp_cells(a+xk, xk, x); }
+        break;
+      default: if (isPervasiveDy(f)) {
+        if (isAtm(w)) return c2(f, w, x);
+        if (IA(x)==0) break;
+        if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) break;
+        if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) break;
+        return c2(f, C2(shape, C1(fne, incG(x)), w), x);
+      }
     }
   } else if (!isMd(f)) {
     dec(w);
     return const_cells(x, xk, xsh, inc(f), chr);
   }
-  generic:;
   S_KSLICES(x, xsh, xk, cam, 1) incBy(w, cam-1);
-  M_APD_SH(r, xk, xsh); FC2 fc2 = c2fn(f);
+  M_APD_SH_N(r, xk, xsh, cam); FC2 fc2 = c2fn(f);
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
   decG(x); return taga(APD_SH_GET(r, chr));
 }
@@ -705,7 +789,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
   }
   generic:;
   
-  M_APD_SH(r, zk, zsh);
+  M_APD_SH_N(r, zk, zsh, cam);
   S_KSLICES(w, wsh, wk, xkM? cam0 : cam, 1) usz wp=0;
   S_KSLICES(x, xsh, xk, xkM? cam : cam0, 1) usz xp=0;
   FC2 fc2 = c2fn(f);

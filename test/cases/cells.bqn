@@ -21,6 +21,51 @@
 !"˘: Argument frames don't agree (⟨3⟩ ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩, common frame of 1 axes)" % "abc" ⊢˘ "ab"
 ! ∧´{𝕊: ! (∾≡{𝕨∾𝕩}´) (<•rand.Range∘≠⊸⊑ ⟨"ab",1‿2,⟨⟩,↕0,""⟩) ∾˜ (4•rand.Range≠)⊸⊏ ⟨1, {⇐}, 'a', <'a', <{⇐}, "ab", ↕0, ""⟩}¨↕10000
 
+# error cases that could be affected by special code
+!"∧: Argument cannot have rank 0" % ∧˘↕2
+!"∨: Argument cannot have rank 0" % ∨˘"a"
+!"Expected non-negative integer, got ¯3" % 2‿¯3/⎉1 6‿2⥊0
+!"/: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 4)" % 1‿2‿3⊸/˘≍4‿5‿6‿7
+!"/: Simple 𝕨 must have rank 0 or 1 (2≡=𝕨)" % (2‿3‿1⥊↕4) /˘ ↕2
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % (<↕0)/˘○(5⊸⥊)<"ab"
+!"⊏: Indexing out-of-bounds (24∊𝕨, 4≡≠𝕩)" % 1‿24⊏⎉1↕4‿4
+!"⊏: Indexing out-of-bounds (4∊𝕨, 4≡≠𝕩)" % ⊏⎉1˜6‿4⥊↕24
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % 0‿@‿¯1⊏⎉1 5‿2⥊0.5
+!"Expected integer, got ¯5.25" % ¯5.25⊏˘∘‿4⥊↕24
+!"⊏: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % 0‿0‿1 ⊏˘○(≍˘) 10000×↕3
+!"⊏: 𝕩 cannot be a unit" % 0⊏˘5⥊<"a"
+!"⊏: 𝕩 cannot be a unit" % (3‿0⥊⟨⟩)⊏˘↕3
+!"Expected integer, got 0.1" % 0.1⊑˘3‿5⥊↕15
+!"⊑: 𝕩 must be a list when 𝕨 is a number (3‿4 ≡ ≢𝕩)" % 5⊑˘↕2‿3‿4
+!">: Result rank too large (80 ≡ =𝕩, 205 ≡ =⊑𝕩)" % >⎉80 (200⥊1)⥊<(205⥊1)⥊1
+!"⎉: Result rank too large (195 ≡ =𝕩, 210 ≡ =𝔽v)" % >⎉5 (200⥊1)⥊<(205⥊1)⥊1
+!"∾: Lengths not matchable (⟨6⟩ ≡ ≢𝕨, 1‿1 ≡ ≢𝕩)" % ("abc"∾"def")∾˘○(3/≍)≍"a"
+!"∾: Argument ranks must differ by 1 or less (0≡=𝕨, 2≡=𝕩)" % 1∾˘↕3‿3‿3
+!"∾: Lengths not matchable (4‿2 ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % (3‿4‿2⥊4)∾˘3‿3‿3⥊5
+!"≍: 𝕨 and 𝕩 must have equal shapes (3‿4 ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % (↕3‿4)≍⎉2 2‿3‿3⥊↕18
+!"≍: Result rank too large (255≡=𝕩)" % ≍⎉∞ 0⥊˜255⥊1
+!"shift: Lengths not matchable (⟨6⟩ ≡ ≢𝕨, 1‿1 ≡ ≢𝕩)" % ("abc"∾"def")«˘○(3/≍)≍"a"
+!"shift: =𝕨 must be =𝕩 or ¯1+=𝕩 (0≡=𝕨, 2≡=𝕩)" % 1«˘↕2‿2‿2
+!"»: Argument cannot be a scalar" % »⎉0 2‿3‿1⥊↕6
+!"⌽: Argument cannot be a unit" % ⌽˘↕10
+!"Expected integer, got 1.5" % 1.5↑˘↕2‿3‿2
+!"↑: 𝕨 must have rank at most 1 (1‿2 ≡ ≢𝕨)" % (≍1‿2)⊸↑˘↕2‿3‿2
+!"↓: 𝕨 must have rank at most 1 (4‿2 ≡ ≢𝕨)" % (4‿2⥊↕8)↓˘○≍@
+!"Integer out of range: 1e20" % 1e20⌽˘3‿10⥊10
+!"Expected number" % 3‿4‿@⌽˘↕3‿4
+!"Expected integer, got 0.5" % 0.5⊸⌽˘4‿3⥊↕12
+!"↑: Argument must have rank at least 1" % ↑˘↕2
+!"↓: Argument must have rank at least 1" % ↓⎉0 2‿1⥊0
+!"⊐: 𝕩 cannot have rank 0" % ⊐˘"abcd"
+!"⊒: Argument cannot have rank 0" % ⊒˘"abcd"
+!"∊: Argument cannot have rank 0" % ∊˘"abcd"
+!"⍋: 𝕨 must be sorted" % 0‿2‿1⊸⍋˘ 3‿4⥊↕12
+!"`: Shape of 𝕨 must match the cell of 𝕩 (⟨2⟩ ≡ ≢𝕨, 2‿3 ≡ ≢𝕩)" % (2‿2⥊1)+`˘2‿2‿3⥊0.4
+!"`: Shape of 𝕨 must match the cell of 𝕩 (⟨⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 2+`˘↕3‿3‿3
+!"´: Argument must be a list (3‿3 ≡ ≢𝕩)" % +´˘2‿3‿3⥊↕18
+!"´: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % 1+´˘2‿3‿3⥊↕18
+!"˝: 𝕩 must have rank at least 1" % +˝˘˘10‿10⥊↕100
+
 %USE tcc ⋄ ⟨2, 20, ¯2, ¯20, 0⟩ {𝕨 ↑_tcc 𝕩 ⋄ 𝕨 ↓_tcc 𝕩}⌜ ⟨<4, ↕5, 4‿5⥊↕20, 4‿5‿6⥊↕120⟩
 %USE tcc ⋄ ⟨<, ≍, ⊏, ⥊⟩ {𝕎 _tcc 𝕩}⌜ ⟨<4, ↕5, 4‿5⥊↕20, 4‿5‿6⥊↕120, 2‿3‿4‿5⥊↕120⟩
 %USE tcc ⋄ ⟨<, ≍, ⥊⟩ {𝕎 _tcc 𝕩}⌜ ⟨<4, ↕5, 4‿5⥊↕20, 4‿5‿6⥊↕120, 2‿3‿4‿5⥊↕120⟩
