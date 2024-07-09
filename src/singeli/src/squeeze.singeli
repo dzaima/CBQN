@@ -55,17 +55,30 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
       minv = min{minv, M{minc}}
       maxv = max{maxv, M{maxc}}
     }
-    def me{} = fold_total{u32, mix_neg{minv} | mix_pos{maxv}}
-    def me{if hasarch{'AARCH64'}} = {
-      mint:= ty_u{vfold{min, minv}}
-      maxt:= ty_u{vfold{max, maxv}} &~ 1
-      cast_i{u32, tern{mint==0, maxt, max{maxt, -mint-1} | 2}}
-    }
     def me{M, vs} = {
       minc:= zeroPromote{T, tree_fold{min, vs}} # could pack pairs in v to low & high halves, but an extra min costs the same or less than an insert
       maxc:= zeroPromote{T, tree_fold{max, vs}}
       me{M, minc, maxc}
     }
+    
+    def me{if hasarch{'AARCH64'}} = {
+      mint:= ty_u{vfold{min, minv}}
+      maxt:= ty_u{vfold{max, maxv}} &~ 1
+      cast_i{u32, tern{mint==0, maxt, max{maxt, -mint-1} | 2}}
+    }
+    def me{} = fold_total{u32, mix_neg{minv} | mix_pos{maxv}}
+    def me{'minmax'} = 1
+  }
+  
+  def int_acc{T=[_]E if E==i32 and hasarch{'X86_64'} and not hasarch{'SSE4.1'}} = {
+    acc:= T**0
+    def me{M, vs} = {
+      def curr = M{tree_fold{|, each{mix, vs}}}
+      acc|= curr
+      curr
+    }
+    def me{} = fold_total{u32, acc}
+    def me{'minmax'} = 0
   }
   
   if (CHR) { # c16/c32/B → char
@@ -88,14 +101,19 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
     0
   } else if (X==i32 or X==i16) {
     # TODO aarch64 path?
-    # TODO SSE2 i32 is extremely slow due to lack of min/max
     def EH = w_h{X}
     def acc = int_acc{XV}
-    @muLoop{bulk, 4}(xs in xb, M in 'm' over len) {
-      minc:= tree_fold{min, xs}
-      maxc:= tree_fold{max, xs}
-      if (homAny{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
-      acc{M, minc, maxc}
+    if (acc{'minmax'}) {
+      @muLoop{bulk, 4}(xs in xb, M in 'm' over len) {
+        minc:= tree_fold{min, xs}
+        maxc:= tree_fold{max, xs}
+        if (homAny{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
+        acc{M, minc, maxc}
+      }
+    } else {
+      @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
+        if (homAny{acc{M, xs} > XV**maxvalue{EH}}) return{0xffff_ffff}
+      }
     }
     acc{}
   } else if (X==i8) {
