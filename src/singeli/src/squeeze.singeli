@@ -5,13 +5,16 @@ include './cbqnDefs'
 include 'util/tup'
 include './vecfold'
 
-def is_sNaN{x:[_]u64} = inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}
+def is_sNaN{x:[_]u64} = tup{homAny, inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
 def is_sNaN{x:[2]u64 if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = { # avoiding i64 comparisons
   def nan = unord{[2]f64~~x, [2]f64~~x}
-  def qnan = [2]u64~~([4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000))
-  nan &~ qnan
+  def qnan = re_el{u64, [4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000)}
+  tup{topAny, nan &~ qnan}
 }
-def any_sNaN{M, ...xs} = homAny{M{tree_fold{|, each{is_sNaN, xs}}}}
+def any_sNaN{M, ...xs} = {
+  def {any, are} = flip{each{is_sNaN, xs}}
+  oneVal{any}{M{tree_fold{|, are}}}
+}
 
 def any_nonC32{M, x:[_](u64)} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
 def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {

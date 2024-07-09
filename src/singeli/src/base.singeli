@@ -59,7 +59,7 @@ def assert{x:(u1)} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
 def oneVal{{h, ...t}} = {
-  each{{c} => assert{c==h}, t}
+  each{{c} => assert{same{c,h}}, t}
   h
 }
 def oneVal{{}} = {}
