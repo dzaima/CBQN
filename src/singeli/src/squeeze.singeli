@@ -40,6 +40,11 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
     else if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
     else vfold{max, narrow{TE, x}}
   }
+  
+  def mix_pos{x:T=[_]E} = x & (T ** ~E~~1)
+  def mix_neg{x:T=[_]E} = mix_pos{x} ^ T~~(x!=T**0)
+  def mix{x:T} = mix_pos{x} ^ (x >> (width{T}-1))
+  
   def int_acc{T} = {
     minv:= T**0
     maxv:= T**0
@@ -47,7 +52,8 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
       minv = min{minv, M{minc}}
       maxv = max{maxv, M{maxc}}
     }
-    def me{} = {
+    def me{} = fold_total{u32, mix_neg{minv} | mix_pos{maxv}}
+    def me{if hasarch{'AARCH64'}} = {
       mint:= ty_u{vfold{min, minv}}
       maxt:= ty_u{vfold{max, maxv}} &~ 1
       cast_i{u32, tern{mint==0, maxt, max{maxt, -mint-1} | 2}}
@@ -78,7 +84,6 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
     if (X>u16 and tot_max>=256) return{1}
     0
   } else if (X==i32 or X==i16) {
-    # TODO simpler path for len≤unr×bulk?
     # TODO aarch64 path?
     # TODO SSE2 i32 is extremely slow due to lack of min/max
     def EH = w_h{X}
