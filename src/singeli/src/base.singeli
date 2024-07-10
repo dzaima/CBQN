@@ -24,7 +24,8 @@ def isptr {T} = istype{T} and same{typekind{T},'pointer'}
 def elwidth{T} = width{eltype{T}}
 
 oper &~ andnot infix none 35
-def andnot{a, b if anyNum{a} and anyNum{b}} = a & ~b
+def andnot{a, b:T if anyNum{a} and isprim{T}} = a & ~b
+def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
@@ -159,10 +160,10 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 # base cases
 def {
   absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
-  homAll,homAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
-  loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowPair,packHi,packLo,packQ,pair,pdep,
+  homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
+  loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packHi,packLo,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
-  topBlend,topMask,topMaskStore,topMaskStoreF,unord,vfold,widen,
+  topBlend,topMask,topMaskStore,topMaskStoreF,unord,vfold,widen,widenUpper,
   zipHi,zipLo
 }
 
@@ -210,6 +211,7 @@ def pair{{a, b}} = pair{a, b}
 def widen{T, x:T} = x
 def narrow{T, x:[_]T} = x
 def undefPromote{T, x:T} = x
+def zeroPromote{T, x:T} = x
 def cvt{T, x:[_]T} = x
 
 def broadcast{V=[_]T, v} = vec_broadcast{V, promote{T,v}}

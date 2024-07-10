@@ -64,6 +64,9 @@ def loadBatch{ptr:*E0, i, [k]E1} = {
 def loadBatch {ptr:*E, {...ns}, T    } = each{loadBatch {ptr, ., T   }, ns}
 def storeBatch{ptr:*E, {...ns}, xs, M} = each{storeBatch{ptr, ., ., M}, ns, xs}
 
+# TODO also similar homAny & use those more
+def homAll{(maskNone), ...xs} = homAll{...xs}
+def homAll{M, x:T if kgen{M}} = ~homAny{M{~x}} # TODO better
 
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}
