@@ -227,7 +227,7 @@ INS void i_SETNv(B x, Scope* sc, u32 p         ) {          v_setI(sc, p, x, fal
 INS void i_SETUv(B x, Scope* sc, u32 p, u32* bc) { POS_UPD; v_setI(sc, p, x, true,  false); }
 INS void i_SETMv(B f, B x, Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c2(f,v_getI(sc, p, true),x); dec(f); v_setI(sc, p, r, true, false); }
 INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_getI(sc, p, true)  ); dec(f); v_setI(sc, p, r, true, false); }
-INS B i_FLDG(B ns, u32 p, Scope* sc) {
+INS B i_FLDG(B ns, u32 p, Scope* sc, u32* bc) { POS_UPD;
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, p));
   dec(ns);
@@ -724,7 +724,7 @@ Nvm_res m_nvm(Body* body) {
       case SETUv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETUv); NORES(1); break; } // (     B x, Scope* sc, u32 p, u32* bc)
       case SETMv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,1,1); LSC(R_A2,d); IMM(R_A3,p); IMM(R_A4,off); CCALL(i_SETMv); NORES(2); break; } // (B f, B x, Scope* sc, u32 p, u32* bc)
       case SETCv:TOPp; { u64 d=*bc++; u64 p=*bc++; GET(R_A1,0,2); LSC(R_A1,d); IMM(R_A2,p); IMM(R_A3,off); CCALL(i_SETCv); NORES(1); break; } // (B f,      Scope* sc, u32 p, u32* bc)
-      case FLDG: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); CCALL(i_FLDG); break; // (B, u32 p, Scope* sc)
+      case FLDG: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); MOV(R_A2,r_SC); IMM(R_A3,off); CCALL(i_FLDG); break; // (B, u32 p, Scope* sc, u32* bc)
       case ALIM: TOPp; GET(R_A1,0,2); IMM(R_A1,*bc++); CCALL(i_ALIM); break; // (B, u32 l)
       case VFYM: TOPp; GET(R_A1,0,2);   CCALL(i_VFYM); break; // (B)
       case CHKV: TOPp; IMM(R_A1,off); INV(2,0,i_CHKV); break; // (B, u32* bc, S)
