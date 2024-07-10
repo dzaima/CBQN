@@ -107,12 +107,13 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
       @muLoop{bulk, 4}(xs in xb, M in 'm' over len) {
         minc:= tree_fold{min, xs}
         maxc:= tree_fold{max, xs}
-        if (homAny{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
+        if (M{0}==0 and homAny{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
         acc{M, minc, maxc}
       }
     } else {
       @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
-        if (homAny{acc{M, xs} > XV**maxvalue{EH}}) return{0xffff_ffff}
+        def mixed = acc{M, xs}
+        if (M{0}==0 and homAny{mixed > XV**maxvalue{EH}}) return{0xffff_ffff}
       }
     }
     acc{}
