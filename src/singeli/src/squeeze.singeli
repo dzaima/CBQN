@@ -39,7 +39,7 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
   # fold with either Max or Bitwise Or, truncating/zero-extending elements to TE
   def fold_total{TE, x:[_]T} = cast_i{TE, vfold{|, x}}
   def fold_total{TE, x:[_]T if hasarch{'AARCH64'}} = {
-    if (width{T}!=64) vfold{max, x}
+    if (width{T}!=64) cast_i{TE, vfold{max, x}}
     else if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
     else vfold{max, narrow{TE, x}}
   }
