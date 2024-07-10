@@ -31,7 +31,7 @@ def any_nonC32{(maskNone), x:[k]u64, y:[k]u64} = {
   anyne{hi, T32**cast_i{u32, cbqn_c32Tag{}<<16}, maskNone}
 }
 
-fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void, len:ux) : u32 = {
+fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   def bulk = vw / width{X}
   def XV = [bulk]X
   def xb = tup{XV,*X~~x0}
@@ -82,7 +82,7 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
   }
   
   if (CHR) { # c16/c32/B → char
-    mt:= XV**0
+    mt:= XV**0 # unused for c16
     @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
       def orx = M{tree_fold{|, xs}}
       if (B) {
@@ -95,12 +95,10 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
       mt|= orx
     }
     def tot_max = fold_total{u32, if (B) mt & XV**32w2b1 else mt}
-    # lprintf{tup{'x0', XV & make{XV, cycle{vcount{MT}, tup{32w0xf, 0}}}}, tot_max}
     if (X>u32 and tot_max>=65536) return{2}
     if (X>u16 and tot_max>=256) return{1}
     0
   } else if (X==i32 or X==i16) {
-    # TODO aarch64 path?
     def EH = w_h{X}
     def acc = int_acc{XV}
     if (acc{'minmax'}) {
@@ -150,9 +148,7 @@ fn squeeze{vw, X, CHR, B if CHR or X==i32 or X==i16 or X==i8 or X==f64}(x0:*void
       }
     }
     acc{}
-  } else {
-    assert{0}
-  }
+  } else assert{0}
 }
 
 export{'avx2_squeeze_i8',   squeeze{arch_defvw, i8,  0, 0}}
