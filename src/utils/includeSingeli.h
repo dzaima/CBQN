@@ -11,6 +11,9 @@
     #define _mm_loadu_si32 custom_loadu_si32
     #define _mm_storeu_si16 custom_storeu_si16
     #define _mm_storeu_si32 custom_storeu_si32
+    #if __GNUC__<=9
+      #define _mm256_zextsi128_si256(X) _mm256_setr_m128i(X, _mm_setzero_si128())
+    #endif
   #endif
   
   
