@@ -108,11 +108,11 @@ def runner{u, R, F} = {
 
 # homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
 def runChecks_any{F, vals} = { F{tree_fold{|, each{select{.,1}, vals}}} }
-def runChecks{('homAny'), vals, M} = runChecks_any{homAny, vals}
-def runChecks{('topAny'), vals, M} = runChecks_any{topAny, vals}
-def runChecks{('none'),   vals, M} = 0
-def runChecks{('~andAllZero'), vals, M if ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
-def runChecks{('anyne'),  vals, M} = {
+def runChecks{'homAny', vals, M} = runChecks_any{homAny, vals}
+def runChecks{'topAny', vals, M} = runChecks_any{topAny, vals}
+def runChecks{'none',   vals, M} = 0
+def runChecks{'~andAllZero', vals, M if ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
+def runChecks{'anyne',  vals, M} = {
   def i{vals} = {
     def {_,xs,ys} = flip{vals}
     assert{M{0} == 0}

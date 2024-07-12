@@ -249,7 +249,7 @@ def truncBits{n, v if n==64} = cast_i{u64, v}
 
 # base-2 log of a constant power of two
 def lb{n if knum{n} and (n>>1<<1) == n and n>0} = lb{n>>1}+1
-def lb{(1)} = 0
+def lb{1} = 0
 
 def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
 def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits

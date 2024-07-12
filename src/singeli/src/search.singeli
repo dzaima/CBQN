@@ -521,7 +521,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
   }
 
   match (prim, ...vals, ...links) {
-    {('∊')} => {
+    {'∊'} => {
       has_maxh:u1 = 0
       uniq:usz = 0  # Uniques inserted
       def dup = makelabel{}
@@ -540,7 +540,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
       lookup_all{{found, j} => promote{i8, swap ^ (found & (j<end))}}
     }
 
-    {('⊐'), inds} => if (not swap) {
+    {'⊐', inds} => if (not swap) {
       has_maxh:u1 = 0
       ind_maxh:u32 = 0
       def dup = makelabel{}
@@ -586,7 +586,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
       @for (r in rp over i to n) r = load{rp, min{i, u32~~r+n}}
     }
 
-    {('⊒'), inds, link} => {
+    {'⊒', inds, link} => {
       store{link,0,0}
       store{inds, maxh>>sh + cast_i{T,ext}, 0}
       def dup = makelabel{}
