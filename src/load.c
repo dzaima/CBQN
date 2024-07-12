@@ -182,10 +182,16 @@ B compObj_c2(B t, B w, B x) {
   return w;
 }
 
+#if __clang__
+  #define NO_TAIL_CALLS __attribute__((disable_tail_calls))
+#else
+  #define NO_TAIL_CALLS __attribute__((optimize("-fno-optimize-sibling-calls")))
+#endif
+
 #if FORMATTER
 GLOBAL B load_fmt, load_repr;
-B bqn_fmt(B x) { return c1G(load_fmt, x); }
-B bqn_repr(B x) { return c1G(load_repr, x); }
+NO_TAIL_CALLS B bqn_fmt(B x) { return c1G(load_fmt, x); }
+NO_TAIL_CALLS B bqn_repr(B x) { return c1G(load_repr, x); }
 #else
 B bqn_fmt(B x) { return x; }
 B bqn_repr(B x) { return x; }
