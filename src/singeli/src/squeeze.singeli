@@ -88,7 +88,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
       if (B) {
         if (any_nonC32{M, ...xs}) return{3}
       } else {
-        def bad = if (hasarch{'AARCH64'}) bitAny{if (length{xs}==2) packHi{...xs} else packHi{orx,orx}}
+        def bad = if (hasarch{'AARCH64'}) bitAny{if (length{xs}==2) pack{...xs,1} else pack{orx,orx,1}}
         else ~andAllZero{orx, ~XV**maxvalue{w_h{X}}}
         if (bad) return{lb{width{X}}-3}
       }
@@ -140,7 +140,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         assert{hasarch{'AARCH64'}}
         def k = length{xs}
         def int = each{cvt{i64,.}, xs}
-        def int32 = if (k==2) packLo{...int} else packLo{...int, [bulk]i64**0}
+        def int32 = if (k==2) pack{...int, 0} else pack{...int, [bulk]i64**0, 0}
         def wd = each{{G} => cvt{f64,G{int32}}, slice{tup{widen{[bulk]i64,.}, widenUpper}, 0, k}}
         
         if (~homAll{M, tree_fold{&, each{==, wd, xs}}}) case_B{select{is, 0}}

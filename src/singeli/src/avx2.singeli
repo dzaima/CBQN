@@ -1,5 +1,5 @@
-def zip128Lo{a:T, b:T if w256{T}} = emit{T, merge{'_mm256_unpacklo',x86_postfix{eltype{T}}}, a, b}
-def zip128Hi{a:T, b:T if w256{T}} = emit{T, merge{'_mm256_unpackhi',x86_postfix{eltype{T}}}, a, b}
+def zip128{a:T, b:T, 0 if w256{T}} = emit{T, merge{'_mm256_unpacklo',x86_postfix{eltype{T}}}, a, b}
+def zip128{a:T, b:T, 1 if w256{T}} = emit{T, merge{'_mm256_unpackhi',x86_postfix{eltype{T}}}, a, b}
 
 # questionable pack; these saturate the argument
 def packQ{a:T,b:T==[16]i16} = emit{[32]i8,  '_mm256_packs_epi16', a, b}

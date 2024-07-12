@@ -146,13 +146,13 @@ Some may also support one scalar argument or arguments with different widths.
 - `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1} → [1,2,3,4]`
 - `sel{VI1, a:V, b:VI2} : V2` - shuffle `a` by indices `b` in `VI1`-long lanes; arch-specific behavior on out-of-bounds values
 <!-- -->
-- `zip{a:V,b:V} : tup{V, V}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
-- `mzip{a:V,b:V} : tup{el_dbl{V}, el_dbl{V}}` - reinterpreted `zip{a, b}`
-- `zipLo{a:V,b:V} : V` - `select{zip{a, b}, 0}`
-- `zipHi{a:V,b:V} : V` - `select{zip{a, b}, 1}`
-- `mzipLo{a:V,b:V} : V` - `select{mzip{a, b}, 0}`
-- `mzipHi{a:V,b:V} : V` - `select{mzip{a, b}, 1}`
-- `zip128{,Lo,Hi}`, `mzip128{,Lo,Hi}` - within-128-bit-lane versions of the above
+- `zip{a:V, b:V} : tup{V, V}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
+- `mzip{a:V, b:V} : tup{el_dbl{V}, el_dbl{V}}` - reinterpreted `zip{a, b}`
+- `pack{a:V, b:V} : tup{}`
+- `zip{a:V, b:V, k} : V` - `select{zip{a, b}, k}`
+- `mzip{a:V, b:V, k} : V` - `select{mzip{a, b}, k}`
+- `pack{a:V, b:V, k} : V` - `select{pack{a, b}, k}`
+- `zip128`, `mzip128` - within-128-bit-lane versions of the above
 
 ## Mask stuff
 
@@ -242,7 +242,6 @@ For float conversions, the used rounding mode is unspecified.
 - `mla` - multiply-add
 - `mls` - multiply-subtract
 - `ornot` - a|~b
-- `packLo`, `packHi`
 - `popc` - popcount of each byte
 - `rbit` - reverse bits in bytes
 - `rev` - reverse elements in lanes

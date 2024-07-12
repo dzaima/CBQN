@@ -161,10 +161,9 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 def {
   absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
-  loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packHi,packLo,packQ,pair,pdep,
+  loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,vfold,widen,widenUpper,
-  zipHi,zipLo
 }
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
@@ -192,18 +191,15 @@ if_inline (hasarch{'X86_64'}) {
   def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
 }
 
-def zip128Lo{a:T, b:T if width{T}==128} = zipLo{a, b}
-def zip128Hi{a:T, b:T if width{T}==128} = zipHi{a, b}
-def zip   {a:T, b:T} = tup{zipLo   {a,b}, zipHi   {a,b}}
-def zip128{a:T, b:T} = tup{zip128Lo{a,b}, zip128Hi{a,b}}
+def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
+def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
 
-local def make_mzip{l, h} = tup{
-  {a:T, b:T} => el_m{T} ~~ l{a, b},
-  {a:T, b:T} => el_m{T} ~~ h{a, b},
-  {a:T, b:T} => each{{z} => el_m{T}~~z{a, b}, tup{l, h}}
+def mzip   {a:T, b:T, k} = el_m{T} ~~ zip   {a, b, k}
+def mzip128{a:T, b:T, k} = el_m{T} ~~ zip128{a, b, k}
+local def extend kpair{op} = {
+  def op{a:T, b:T} = tup{op{a,b,0}, op{a,b,1}}
 }
-def {mzipLo,    mzipHi,    mzip   } = make_mzip{zipLo,    zipHi}
-def {mzip128Lo, mzip128Hi, mzip128} = make_mzip{zip128Lo, zip128Hi}
+extend ({...f}=>each{kpair,f}){pack, zip, zip128, mzip, mzip128}
 
 def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}

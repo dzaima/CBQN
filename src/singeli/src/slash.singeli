@@ -149,7 +149,7 @@ fn slash{c==0, T if simd128{} and i16<=T and T<=i32}(w:*u64, x:arg{c,T}, r:*T, l
   @for_special_buffered{r,8} (w in *u8~~w over i to sum) {
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
-    v := mzipLo{j + I~~make{[2]u64, ind, 0}, select{top,0}}
+    v := mzip{j + I~~make{[2]u64, ind, 0}, select{top,0}, 0}
     def st{k, v:V} = store{*V~~r, k, v}
     if (T==i16) st{0, v}
     else each{st, iota{2}, mzip{v, select{top,1}}}
@@ -169,7 +169,7 @@ fn slash{c==1, T if T<=i16 and shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
     s := V~~make{[2]u64, ind,0}
-    if (T==i16) { s+=s; s = V~~mzipLo{s, s+V**1} }
+    if (T==i16) { s+=s; s = V~~mzip{s, s+V**1, 0} }
     res := sel{V, load{*V~~(x+8*i)}, s}
     if (T==i8) storeu{*u64~~r, extract{[2]u64~~res, 0}}
     else store{*V~~r, 0, res}
@@ -342,7 +342,7 @@ def pext_popc{x:T, m:T} = {
 def pext_width {if hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 2
 def thresh_bool{if hasarch{'PCLMUL'} > hasarch{'AVX2'}} = 32
 def pext_popc{x0:V, m0:V if hasarch{'PCLMUL'} and V==[2]u64} = {
-  def clmul{a, b} = zipLo{...@collect (j to 2) clmul{a,b,j}}
+  def clmul{a, b} = zip{...@collect (j to 2) clmul{a,b,j}, 0}
   m := m0
   x := x0 & m
   d := ~m << 1           # One bit of the position difference at x

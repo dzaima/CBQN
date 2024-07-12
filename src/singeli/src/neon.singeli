@@ -70,20 +70,18 @@ def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, nt
 def broadcastSel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
 def vshl{a:T, b:T, n if knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
 
-def zipLo{a:T, b:T if nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
-def zipHi{a:T, b:T if nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
+def zip{a:T, b:T, 0 if nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
+def zip{a:T, b:T, 1 if nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
 
-def unzipLo{x:T, y:T if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
-def unzipHi{x:T, y:T if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
-def packLo{x:T, y:T if nvec{T}} = unzipLo{el_s{T}~~x, el_s{T}~~y}
-def packHi{x:T, y:T if nvec{T}} = unzipHi{el_s{T}~~x, el_s{T}~~y}
-def packLo{{x, y}} = packLo{x, y}
-def packHi{{x, y}} = packHi{x, y}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzipLo{x,y}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzipHi{x,y}
+def unzip{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
+def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
+def pack{x:T, y:T, 0 if nvec{T}} = unzip{el_s{T}~~x, el_s{T}~~y, 0}
+def pack{x:T, y:T, 1 if nvec{T}} = unzip{el_s{T}~~x, el_s{T}~~y, 1}
+def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzip{x,y,0}
+def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzip{x,y,1}
 
-def trn1{x:T, y:T if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
-def trn2{x:T, y:T if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
+def trn{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
+def trn{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
 def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, ty_u{i}}}
 def sel{{x0:T}, i:I} = sel{T, x0, i}
@@ -112,7 +110,7 @@ def narrow     {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<w
 
 def narrowUpper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
 def narrowPair{a:T=[_]E, b:T} = narrowUpper{narrow{w_h{E}, a}, b}
-def narrowPair{a:T=[_]E, b:T if isint{E}} = packLo{a, b}
+def narrowPair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
 
 def widenUpper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
 def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widenUpper{x}}

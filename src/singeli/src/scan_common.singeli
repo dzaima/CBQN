@@ -9,7 +9,7 @@ local def rev{t} = { def l=length{t}; def j=l-1; select{j-t, j-range{l}} }
 local def rev{up,t} = if (up) t else rev{t}
 def sel8{v, t, up} = sel8{v, rev{up,t}}
 
-def zip{up, x} = (if (up) zipHi else zipLo){x,x}
+def zip{up, x if knum{up}} = zip{x, x, up}
 
 # Fill last 4 bytes with last element, in each lane
 def spread{a:[_]T, ...up} = {

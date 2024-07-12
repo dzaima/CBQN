@@ -70,8 +70,8 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
 
 def arithChk2{F=(__mul), M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
   def r12 = mulw{w, x}
-  rl:= packLo{r12}
-  rh:= packHi{r12}
+  rl:= pack{...r12, 0}
+  rh:= pack{...r12, 1}
   tup{rl, tup{'homAny', M{rh != (rl >> (width{E}-1))}}}
 }
 
