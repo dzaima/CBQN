@@ -241,6 +241,8 @@ def clz{x:T if isint{T} and width{T}==32} = emit{ux, '__builtin_clz', x}
 def clzc{x:T if isint{T}} = width{T} - clz{x}
 
 def ceil_log2{n} = clzc{n-1}
+def ceil_log2{n if knum{n} and n>0} = ceil_log2{(n+1)>>1}+1
+def ceil_log2{1} = 0
 
 def truncBits{n, v if n<=8}  = cast_i{u8, v}
 def truncBits{n, v if n==16} = cast_i{u16, v}
