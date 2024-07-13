@@ -365,10 +365,14 @@ B rand_range_c2(B t, B w, B x) {
   
   RAND_START;
   Arr* r;
-  if (max<1) {
-    if (max!=0) thrM("(rand).Range: 𝕩 cannot be negative");
-    f64* rp; r = m_f64arrp(&rp, am);
-    PLAINLOOP for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
+  if (max<=1) {
+    if (max==0) {
+      f64* rp; r = m_f64arrp(&rp, am);
+      PLAINLOOP for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
+    } else {
+      if (max!=1) thrM("(rand).Range: 𝕩 cannot be negative");
+      r = allZeroes(am);
+    }
   } else if (max > (1ULL<<31)) {
     if (max >= 1LL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");
     f64* rp; r = m_f64arrp(&rp, am);
