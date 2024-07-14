@@ -494,7 +494,7 @@ B insert_cells_join(B x, usz* xsh, ur cr, ur k) {
   shcpy(rsh->a+k+1, xsh+k+2, cr-2);
   Arr* r = TI(x,slice)(x, 0, IA(x));
   arr_shSetUG(r, rr, rsh);
-  decG(x); return taga(r);
+  return taga(r);
 }
 B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid) {
   B id;
