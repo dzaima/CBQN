@@ -145,7 +145,7 @@ Note that, after either of those, the compiled bytecode may become desynchronize
 
 You must manually set up a cross-compilation environment. It's possible to pass flags to all CC/CXX/linking invocations via `CCFLAGS=...`, and `LDFLAGS=...` to pass ones to the linking step specifically (more configuration options [above](#build-flags)).
 
-A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as otherwise it'll choose based on `uname`.
+A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as otherwise it'll choose based on `uname`. Similarly, `target_os=(linux|bsd|macos|windows)` should be present if the target OS differs from the host.
 
 Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 
