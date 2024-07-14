@@ -31,8 +31,8 @@ oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
 
 
-def load {p:*[_]_, n   } = assert{0}
-def store{p:*[_]_, n, v} = assert{0}
+def load {p:*[_]_, n   } = assert{0,'bad load',p,n}
+def store{p:*[_]_, n, v} = assert{0,'bad store',p,n,v}
 def load{p:*_} = load{p, 0}
 # def store{p:*_, v} = store{p, 0, v}
 def loadu {p:*T      if isunsigned{T}} = emit{T,    merge{'loadu_u', fmtnat{width{T}}}, p}
@@ -163,7 +163,7 @@ def {
   homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
   pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
-  topBlend,topMask,topMaskStore,topMaskStoreF,unord,vfold,widen,widenUpper,
+  topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,widen,widenUpper,
 }
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
@@ -196,6 +196,8 @@ def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
 
 def mzip   {a:T, b:T, k} = el_m{T} ~~ zip   {a, b, k}
 def mzip128{a:T, b:T, k} = el_m{T} ~~ zip128{a, b, k}
+def pack   {a:T, b:T, k} = unzip{el_s{T}~~a, el_s{T}~~b, k}
+
 local def extend kpair{op} = {
   def op{a:T, b:T} = tup{op{a,b,0}, op{a,b,1}}
 }
@@ -326,6 +328,7 @@ def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defin
 
 def tree_fold{F, x} = {
   def h = length{x}>>1
+  assert{h>0, 'tree_fold of empty'}
   F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,length{x}}}}
 }
 def tree_fold{F, {x}} = x

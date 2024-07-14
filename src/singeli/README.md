@@ -143,16 +143,19 @@ Some may also support one scalar argument or arguments with different widths.
 - `half{a:V, n} : count_half{V}` - extract either the low (`n==0`) or high (`n==1`) half of `a`
 - `pair{a:V, b:V} : count_dbl{V}` - make a vector from halves
 - `undefPromote{V2, a:V} : V` - promote `a` to a wider type, leaving the upper part undefined
-- `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1} → [1,2,3,4]`
+- `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1}` → `[1,2,3,4]`
 - `sel{VI1, a:V, b:VI2} : V2` - shuffle `a` by indices `b` in `VI1`-long lanes; arch-specific behavior on out-of-bounds values
-<!-- -->
-- `zip{a:V, b:V} : tup{V, V}` - `zip{[0,1,2,3], [4,5,6,7]} → tup{[0,4,1,5], [2,6,3,7]}`
-- `mzip{a:V, b:V} : tup{el_dbl{V}, el_dbl{V}}` - reinterpreted `zip{a, b}`
-- `pack{a:V, b:V} : tup{}`
-- `zip{a:V, b:V, k} : V` - `select{zip{a, b}, k}`
-- `mzip{a:V, b:V, k} : V` - `select{mzip{a, b}, k}`
-- `pack{a:V, b:V, k} : V` - `select{pack{a, b}, k}`
-- `zip128`, `mzip128` - within-128-bit-lane versions of the above
+
+## Zip & unzip
+
+All of these optionally accept a third argument of a constant `0` or `1` indicating which result element to give.
+
+Some of them define variants which operate within 128-bit lanes, via a `128` postfix to the name (e.g. `zip128`).
+
+- `zip{a:V, b:V} : tup{V, V}` - `zip{[0,1,2,3], [4,5,6,7]}` → `tup{[0,4,1,5], [2,6,3,7]}`
+- `mzip{a:V, b:V} : tup{el_m{V}, el_m{V}}` - reinterpreted `zip{a, b}`
+- `unzip{a:V, b:V} : tup{V, V}` - `unzip{[0,1,2,3], [4,5,6,7]}` → `tup{[0,2,4,6], [1,3,5,7]}`
+- `pack{a:V, b:V} : tup{el_s{V}, el_s{V}}` - `unzip{el_s{V}~~a, el_s{V}~~b}`; i.e. low half of each element element in first result, high in second
 
 ## Mask stuff
 
