@@ -30,10 +30,10 @@ BitSlash ← {ty‿dy‿max𝕊n:
   f ← dy ⊑ ⟨/∘⊢ ⋄ {𝕩/ty V 𝕨 R 100}⟩
   {𝕊:
     # 𝕩⊸{•Show 𝕨}⍟⊢ 0=10000|𝕩
-    t1←20 RH 100
-    n←R max
-    x←n F n↑RB2 128+n
-    t2←20 RH 100
+    t1 ← 20 RH 100
+    n  ← R max
+    x  ← n F n↑RB2 128+n
+    t2 ← 20 RH 100
     x↩0 ⋄ t1 CH↩ ⋄ t2 CH↩
   }¨↕n
 }
