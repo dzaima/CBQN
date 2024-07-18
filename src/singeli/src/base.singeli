@@ -164,7 +164,7 @@ def {
   absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
-  pext,popcRand,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
+  pext,popcRand,rbit,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,widen,widenUpper,
 }
 

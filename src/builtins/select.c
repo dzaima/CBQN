@@ -41,7 +41,7 @@
 #include "../utils/mut.h"
 #include "../utils/calls.h"
 
-#if SINGELI_AVX2
+#if SINGELI
   #define SINGELI_FILE select
   #include "../utils/includeSingeli.h"
 #endif
@@ -185,12 +185,7 @@ B select_c2(B t, B w, B x) {
   #if SINGELI_AVX2
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (RARE(!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn))) select_properError(w, x);
-    bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;
-    #define BOOL_SPECIAL(W) \
-      if (sizeof(W)==1 && bool_use_simd) { \
-        if (RARE(!avx2_select_bool128(wp, xp, rp, wia, xn))) select_properError(w, x); \
-        goto setsh; \
-      }
+    
   #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
     #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
@@ -214,6 +209,17 @@ B select_c2(B t, B w, B x) {
         }                                             \
         if (wt) TFREE(wt);                            \
       }
+  #endif
+    
+  #if SINGELI_SIMD
+    bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;
+    
+    #define BOOL_SPECIAL(W) \
+      if (sizeof(W)==1 && bool_use_simd) { \
+        if (RARE(!simd_select_bool128(wp, xp, rp, wia, xn))) select_properError(w, x); \
+        goto setsh; \
+      }
+  #else
     bool bool_use_simd = 0;
     #define BOOL_SPECIAL(W)
   #endif
