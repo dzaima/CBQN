@@ -15,6 +15,12 @@ def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
 def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
 def ntyp0{S, T} = merge{S, '_', nty{T}}
 
+def __lt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcltz', T}, a}
+def __le{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vclez', T}, a}
+def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
+def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
+def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
+
 def addwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
 def subwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
 def mulwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
