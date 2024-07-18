@@ -137,7 +137,13 @@ def homMask{x:T=[16]E if width{E}==8} = {
 }
 def homMask{a:T,b:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
-  fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
+  s:= make{[16]u8, (range{16}>>2) | ((range{16}&3)<<2)}
+  # fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
+  fold_add{[4]u32~~sel{[16]u8, addp{ty_u{a}&m, ty_u{b}&m}, s}}
+  
+  # def {l,h} = each{{i} => sel{tup{a,b}, make{[16]u8, ((range{16}&3)<<3) + (range{16}>>2) + i}}, tup{0, 4}}
+  # t:= shrm{l, 4, h} & make{[16]u8, (1<<(range{16}>>2)) * 0x11}
+  # fold_add{[4]u32~~t}
 }
 def homMask{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
