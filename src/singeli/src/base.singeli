@@ -80,6 +80,7 @@ def w256{T} = isvec{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}
 def genchk{B, F} = match {
   {V=[_]T   } => B{V} and F{T}
   {V=[_]T, w} => B{V} and F{T} and width{T}==w
+  {..._} => 0
 }
 def w256i = genchk{w256,      isint};  def w128i = genchk{w128,      isint};  def w64i = genchk{w64,      isint}
 def w256s = genchk{w256,   issigned};  def w128s = genchk{w128,   issigned};  def w64s = genchk{w64,   issigned}
