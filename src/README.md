@@ -36,6 +36,9 @@ src/
     mut.h       temporary mutable array operations
     talloc.h    temporary buffer allocations (described more below)
     utf.h       UTF-8 things
+  singeli/    Singeli-specific things
+    src/        *.singeli files
+    c/          C files specifically for Singeli stuff
   opt/        files which aren't needed for every build configuration
   gen/        generated files
   jit/        simple JIT compiler for x86-64
