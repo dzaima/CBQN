@@ -51,6 +51,7 @@ def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 # hints
 def rare{x if knum{x}} = x
 def rare{x:(u1)} = emit{u1, '__builtin_expect', x, 0}
+def likely{x:(u1)} = emit{u1, '__builtin_expect', x, 1}
 def assert{c, ...msg} = { if (not same{c,1}) { show{...msg}; 0{} } }
 def assert{0} = assert{0, 'failed assertion'}
 def assert{1} = 1
@@ -315,6 +316,21 @@ def forUnroll{exp,unr}{vars,begin,end,iter} = {
     }
   }
 }
+
+def for_blocks{blsz}{vars,begin,end,iter} = {
+  i0:ux = begin
+  i1:ux = end
+  if (rare{i1>blsz}) i1 = blsz
+  def el = makelabel{}
+  while(1) {
+    iter{tup{i0,i1}, vars}
+    if (likely{i1 == end}) goto{el}
+    i0 = i1
+    i1 = min{i1+blsz, ux~~end}
+  }
+  setlabel{el}
+}
+def for_blocks{0}{vars,begin,end,iter} = iter{tup{begin,end}, vars}
 
 def makeBranch{Ts, F} = {
   def args = undef{Ts}
