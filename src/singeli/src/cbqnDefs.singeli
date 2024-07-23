@@ -32,3 +32,29 @@ def talloc{T, len} = emit{*T, 'TALLOCP', fmt_type{T}, len}
 def tfree{ptr} = emit{void, 'TFREE', ptr}
 def fmt_type{T} = merge{quality{T}, fmtnat{width{T}}}
 def fmt_type{*T} = merge{'*',fmt_type{T}}
+
+def el_bit = 0
+def el_i8  = 1
+def el_i16 = 2
+def el_i32 = 3
+def el_f64 = 4
+def el_c8  = 5
+def el_c16 = 6
+def el_c32 = 7
+def el_B   = 8
+
+def get_range{elt, data:*_, len:ux if anyNum{elt} and (not knum{elt} or (elt>=el_bit and elt<=el_f64))} = {
+  def fns = emit{*fntype{*void, *i64, u64, u1}, '', 'getRange_fns'}
+  buf:*i64 = undefined{i64, 2}
+  def ok = load{fns, elt}(*void~~data, buf, len)
+  tup{ok, load{buf,0}, load{buf,1}}
+}
+
+def get_range{data:*E, len} = get_range{match(E) {
+  {(u1)} => el_bit
+  {(i8)} => el_i8
+  {(i16)} => el_i16
+  {(i32)} => el_i32
+  {(f64)} => el_f64
+}, data, len}
+def get_range{data:*E, s, e} = get_range{data+s, e-s}
