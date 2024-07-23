@@ -41,9 +41,11 @@ def topBlend{f:T, t:T, m:M if w256{T,64} and w256i{M,64}} = T ~~ emit{[4]f64, '_
 def homBlend{f:T, t:T, m:M if w256{T}} = topBlend{f, t, m}
 
 # shuffles
-def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => tree_fold{&, l==h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
+# TODO rename to shuf, move shuf to shuf_imm or something
+def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
   T~~emit{[8]f32, '_mm256_shuffle_ps', v2f{a}, v2f{b}, base{4, slice{is,0,4} & 3}}
 }
+def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufInd{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
 
 # mask stuff
 def andAllZero{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}

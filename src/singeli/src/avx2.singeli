@@ -93,3 +93,20 @@ def narrow{T, x:X if w256u{X,64} and T== u8} = re_el{T, sel{[16]i8, narrow{u32,x
 
 def cvt2{(i32), x:X==[4]f64} = emit{[4]i32, '_mm256_cvtpd_epi32', x}
 def cvt2{(f64), x:X==[4]i32} = emit{[4]f64, '_mm256_cvtepi32_pd', x}
+
+
+def unzip128{a:[k]E, b:[k]E, 0 if hasarch{'X86_64'} and isunsigned{E}} = {
+  def ED = w_d{E}
+  def c = make{[k]E, maxvalue{E} * (1-(1 & range{k}))}
+  packQ{re_el{ED,a&c}, re_el{ED,b&c}}
+}
+def unzip128{a:[k]E, b:[k]E, 1 if hasarch{'X86_64'} and isunsigned{E}} = {
+  def ED = w_d{E}
+  def ew = width{E}
+  packQ{re_el{ED,a} >> ew, re_el{ED,b} >> ew}
+}
+def unzip128{a:T, b:T==[8](u32), k} = shufInd{a, b, tup{0,2,8,10, 4,6,12,14}+k}
+def unzip128{a:T, b:T==[4](u64), k} = shufInd{a, b, tup{0,4,2,6}+k}
+
+def unzip{a:T, b:T, k if w128u{T} and hasarch{'SSE2'}} = unzip128{a, b, k}
+def unzip{a:T, b:T, k if w256u{T} and hasarch{'AVX2'}} = shuf{[4]u64, unzip128{a, b, k}, 4b3120}

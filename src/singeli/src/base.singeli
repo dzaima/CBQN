@@ -203,7 +203,7 @@ def pack   {a:T, b:T, k} = unzip{el_s{T}~~a, el_s{T}~~b, k}
 local def extend kpair{op} = {
   def op{a:T, b:T} = tup{op{a,b,0}, op{a,b,1}}
 }
-extend ({...f}=>each{kpair,f}){pack, zip, zip128, mzip, mzip128}
+extend ({...f}=>each{kpair,f}){pack, zip, zip128, mzip, mzip128, unzip, unzip128}
 
 def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}
