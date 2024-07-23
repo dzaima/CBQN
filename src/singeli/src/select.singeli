@@ -1,28 +1,32 @@
-if_inline (hasarch{'AVX2'}) {
-
 include './base'
 include './cbqnDefs'
 include './mask'
 include './bitops'
 include 'util/tup'
 
-# def:T - masked original content
-# b:B - pointer to data to index; if width{B}<elwidth{T}, padding bytes are garbage read after wanted position
-# idx - actual (unscaled) index list
-def gather{d:T, b:B, idx:([8]i32), M if w256{T,32}} = {
-  if (M{0}) T ~~ emit{[8]i32, '_mm256_mask_i32gather_epi32', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
-  else      T ~~ emit{[8]i32, '_mm256_i32gather_epi32',         *void~~b, idx,                      elwidth{B}/8}
-}
-def gather{d:T, b:B, idx:([4]i32), M if w256{T,64}} = {
-  if (M{0}) T ~~ emit{[4]i64, '_mm256_mask_i32gather_epi64', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
-  else      T ~~ emit{[4]i64, '_mm256_i32gather_epi64',         *void~~b, idx,                      elwidth{B}/8}
+def {wrapChk, gather}
+if_inline (hasarch{'AVX2'}) {
+  # def:T - masked original content
+  # b:B - pointer to data to index; if width{B}<elwidth{T}, padding bytes are garbage read after wanted position
+  # idx - actual (unscaled) index list
+  def gather{d:T, b:B, idx:([8]i32), M if w256{T,32}} = {
+    if (M{0}) T ~~ emit{[8]i32, '_mm256_mask_i32gather_epi32', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
+    else      T ~~ emit{[8]i32, '_mm256_i32gather_epi32',         *void~~b, idx,                      elwidth{B}/8}
+  }
+  def gather{d:T, b:B, idx:([4]i32), M if w256{T,64}} = {
+    if (M{0}) T ~~ emit{[4]i64, '_mm256_mask_i32gather_epi64', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
+    else      T ~~ emit{[4]i64, '_mm256_i32gather_epi64',         *void~~b, idx,                      elwidth{B}/8}
+  }
+
+  def wrapChk{cw0, VI,xlf, M} = {
+    cw:= cw0 + (xlf & VI~~(cw0<VI**0))
+    if (homAny{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
+    cw
+  }
 }
 
-def wrapChk{cw0, VI,xlf, M} = {
-  cw:= cw0 + (xlf & VI~~(cw0<VI**0))
-  if (homAny{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
-  cw
-}
+
+if_inline (hasarch{'AVX2'}) {
 
 def storeExp{dst, ind, val, M, ext, rd, wl} = {
   def s{M} = storeBatch{dst, ind, val, M}
@@ -135,33 +139,34 @@ exportT{'avx2_select_tab', join{table{select_fn,
   tup{i8, i16, i32},        # indices
   tup{u8, u16, u32, u64}}}} # values
 
-
-fn avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
-  def TI = i8
-  def VI = [32]TI
-  w:= *VI  ~~ w0
-  r:= *u32 ~~ r0
-  xlf:= VI**cast_i{TI, xl}
-  
-  if (wl>32 and xl<=16) {
-    xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 4b1010}
-    @maskedLoop{32}(cw0 in w, sr in r, M in 'm' over wl) {
-      cw:= wrapChk{cw0, VI,xlf, M}
-      sr = homMask{sel{[16]i8, xb, cw}}
-    }
-  } else {
-    x:= shuf{[4]u64, load{*VI ~~ x0}, 4b1010}
-    low:= VI**7
-    b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
-    @maskedLoop{32}(cw0 in w, sr in r, M in 'm' over wl) {
-      cw:= wrapChk{cw0, VI,xlf, M}
-      byte:= sel{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
-      mask:= sel{[16]i8, b, cw & low}
-      sr = homMask{(mask & byte) == mask}
-    }
-  }
-  1
 }
-export{'avx2_select_bool128', avx2_select_bool128}
 
+if_inline(hasarch{'AVX2'}) {
+  fn avx2_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
+    def TI = i8
+    def VI = [32]TI
+    w:= *VI  ~~ w0
+    r:= *u32 ~~ r0
+    xlf:= VI**cast_i{TI, xl}
+    
+    if (wl>32 and xl<=16) {
+      xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 4b1010}
+      @maskedLoop{32}(cw0 in w, sr in r, M in 'm' over wl) {
+        cw:= wrapChk{cw0, VI,xlf, M}
+        sr = homMask{sel{[16]i8, xb, cw}}
+      }
+    } else {
+      x:= shuf{[4]u64, load{*VI ~~ x0}, 4b1010}
+      low:= VI**7
+      b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
+      @maskedLoop{32}(cw0 in w, sr in r, M in 'm' over wl) {
+        cw:= wrapChk{cw0, VI,xlf, M}
+        byte:= sel{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
+        mask:= sel{[16]i8, b, cw & low}
+        sr = homMask{(mask & byte) == mask}
+      }
+    }
+    1
+  }
+  export{'avx2_select_bool128', avx2_select_bool128}
 }
