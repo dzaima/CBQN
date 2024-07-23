@@ -186,13 +186,27 @@ B nc_generate(B p1) { // consumes
       if (!(e0t==0 || e0t==3)) thrM("Native compiler: Unexpected type in expression");
       while (j<p1ia) {
         B e1 = GetU(p1, j);
-        if (nc_ty(IGetU(p1,j))!=1) break;
-        B bc = nc_emptyI32Vec();
-        nc_ijoin(&bc, IGetU(e1, 1));
-        nc_ijoin(&bc, IGetU(e,  1));
-        nc_iadd(&bc, MD1C);
-        decG(e);
-        e = m_hvec2(m_f64(0), bc);
+        u8 e1t = nc_ty(e1);
+        if (e1t==1) {
+          B bc = nc_emptyI32Vec();
+          nc_ijoin(&bc, IGetU(e1, 1));
+          nc_ijoin(&bc, IGetU(e,  1));
+          nc_iadd(&bc, MD1C);
+          decG(e);
+          e = m_hvec2(m_f64(0), bc);
+        } else if (e1t==2) {
+          if (j+1 == p1ia) thrM("Native compiler: Expression ended in 2-modifier");
+          B e2 = GetU(p1, ++j);
+          u8 e2t = nc_ty(e2);
+          if (!(e2t==0 || e2t==3)) thrM("Native compiler: Improper 2-modifier e2 operand");
+          B bc = nc_emptyI32Vec();
+          nc_ijoin(&bc, IGetU(e2, 1));
+          nc_ijoin(&bc, IGetU(e1, 1));
+          nc_ijoin(&bc, IGetU(e,  1));
+          nc_iadd(&bc, MD2C);
+          decG(e);
+          e = m_hvec2(m_f64(0), bc);
+        } else break;
         j++;
       }
       
