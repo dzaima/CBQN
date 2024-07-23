@@ -195,24 +195,24 @@ B select_c2(B t, B w, B x) {
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
     #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
-      if (sizeof(W) >= 4) {                          \
+      if (sizeof(W) >= 4) {                           \
         switch(xl) { default:UD; CASEW(3,u8); CASEW(4,u16); CASEW(5,u32); CASEW(6,u64); } \
-      } else {                                       \
-        W* wt = NULL;                                \
+      } else {                                        \
+        W* wt = NULL;                                 \
         for (usz bl=(1<<14)/sizeof(W), i0=0, i1=0; i0<wia; i0=i1) { \
-          i1+=bl; if (i1>wia) i1=wia;                \
+          i1+=bl; if (i1>wia) i1=wia;                 \
           W min=wp[i0], max=min; for (usz i=i0+1; i<i1; i++) { W e=wp[i]; if (e>max) max=e; if (e<min) min=e; } \
-          if (min<-(i64)xn) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", min, xn); \
-          if (max>=(i64)xn) thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", max, xn); \
-          W* ip=wp; usz off=xn;                      \
-          if (max>=0) { off=0; if (RARE(min<0)) {    \
+          if (min<-(i64)xn) select_properError(w, x); \
+          if (max>=(i64)xn) select_properError(w, x); \
+          W* ip=wp; usz off=xn;                       \
+          if (max>=0) { off=0; if (RARE(min<0)) {     \
             if (RARE(xn > (1ULL<<(sizeof(W)*8-1)))) { w=taga(NEXT(w)); mm_free((Value*)r); return C2(select, w, x); } \
-            if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0;\
+            if (!wt) {wt=TALLOCP(W,i1-i0);} ip=wt-i0; \
             for (usz i=i0; i<i1; i++) { W e=wp[i]; ip[i]=e+((W)xn & (W)-(e<0)); } \
-          } }                                        \
+          } }                                         \
           switch(xl) { default:UD; CASE(3,u8); CASE(4,u16); CASE(5,u32); CASE(6,u64); } \
-        }                                            \
-        if (wt) TFREE(wt);                           \
+        }                                             \
+        if (wt) TFREE(wt);                            \
       }
     bool bool_use_simd = 0;
     #define BOOL_SPECIAL(W)
@@ -244,7 +244,7 @@ B select_c2(B t, B w, B x) {
       u64 b=0;                                        \
       for (usz i = wia; ; ) {                         \
         i--;                                          \
-        usz n = WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)); \
+        usz n = WRAP(wp[i], xn, select_properError(w, x)); \
         b = 2*b + ((((u8*)xp)[n/8] >> (n%8)) & 1);    \
         if (i%64 == 0) { rp[i/64]=b; if (!i) break; } \
       }                                               \
