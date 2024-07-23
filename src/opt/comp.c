@@ -48,6 +48,11 @@ NOINLINE B nc_pop(B* wp) {
   assert(isArr(w) && v(w)->refc==1 && IA(w)>0);
   B r = IGetU(w, a(w)->ia-1);
   a(w)->ia--;
+  #if VERIFY_TAIL
+    assert(TY(w) == t_harr);
+    ux start = offsetof(HArr, a) + a(w)->ia * sizeof(B);
+    FINISH_OVERALLOC(a(w), start, start+sizeof(B));
+  #endif
   return r;
 }
 
