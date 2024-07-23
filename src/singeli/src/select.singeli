@@ -148,8 +148,8 @@ exportT{'si_wrap_inds', each{wrap_inds, tup{i8}}}
   }, select_rows_parts}}}}
   
   def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
-  exportP{u8, 'select_rows_max_indn',   each{{row} => oneVal{      each{select{.,1}, row}}, select_rows_parts}}
-  exportP{u8, 'select_rows_min_logcsz', each{{row} => lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
+  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else oneVal{      each{select{.,1}, row}}, select_rows_parts}}
+  exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
 })
 
 
