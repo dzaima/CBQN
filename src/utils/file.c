@@ -296,11 +296,8 @@ DEF_FREE(mmapH) {
 }
 
 B info_c1(B,B);
-static Arr* mmapH_slice(B x, usz s, usz ia) {
-  TySlice* r = m_arr(sizeof(TySlice), t_c8slice, ia);
-  r->a = c(MmapHolder,x)->a + s;
-  r->p = a(x);
-  return (Arr*)r;
+static NOINLINE Arr* mmapH_slice(B x, usz s, usz ia) {
+  return m_tyslice(c(MmapHolder,x)->a + s, a(x), t_c8slice, ia);
 }
 
 B mmap_file(B path) {

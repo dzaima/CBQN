@@ -85,3 +85,11 @@ SHOULD_INLINE u8 kCellWidthLog(B x, ur k) {
   return multWidthLog(shProd(SH(x), k, xr), lw);
 }
 SHOULD_INLINE u8 cellWidthLog(B x) { return kCellWidthLog(x, 1); }
+
+static Arr* m_tyslice(void* data, Arr* parent, u8 eltype, ux ia) {
+  assert(eltype!=el_bit && eltype!=el_B);
+  Arr* a = m_arr(sizeof(TySlice), t_i8slice + eltype-el_i8, ia);
+  ((TySlice*) a)->p = parent;
+  ((TySlice*) a)->a = data;
+  return a;
+}
