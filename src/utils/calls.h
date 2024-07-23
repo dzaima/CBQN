@@ -36,3 +36,6 @@ typedef struct { EqFn fn; u8 data; } EqFnObj;
 
 typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // writes min,max in res, assumes len≥1; returns 0 and leaves res undefined if either any (floor(x)≠x or abs>2⋆53), or (x≠(i64)x)
 extern INIT_GLOBAL RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64
+
+typedef void (*BitSelFn)(void*,u64*,u64,u64,u64);
+extern INIT_GLOBAL BitSelFn* bitselFns;

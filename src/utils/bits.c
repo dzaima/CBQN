@@ -1,11 +1,20 @@
 #include "../core.h"
+#include "../utils/calls.h"
 #include "mut.h"
 
 
 #if SINGELI_SIMD
   #define SINGELI_FILE bits
   #include "../utils/includeSingeli.h"
-  #define bitselFns simd_bitsel
+  INIT_GLOBAL BitSelFn* bitselFns = simd_bitsel;
+#else
+  #define BITSEL_DEF(E) void bitsel_##E(void* rp, u64* bp, u64 e0i, u64 e1i, u64 ia) { for (usz i=0; i<ia; i++) ((E*)rp)[i] = bitp_get(bp,i)? e1i : e0i; }
+  BITSEL_DEF(u8)
+  BITSEL_DEF(u16)
+  BITSEL_DEF(u32)
+  BITSEL_DEF(u64)
+  INIT_GLOBAL BitSelFn bitselFnsRaw[] = {bitsel_u8, bitsel_u16, bitsel_u32, bitsel_u64};
+  INIT_GLOBAL BitSelFn* bitselFns = bitselFnsRaw;
 #endif
 
 #if defined(__BMI2__) && !SLOW_PDEP
@@ -53,16 +62,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
     
     sel:;
     void* rp = m_tyarrlc(&r, width, b, type);
-    #if SINGELI_SIMD
-      bitselFns[width](rp, bp, e0i, e1i, ia);
-    #else
-      switch(width) {
-        case 0: for (usz i=0; i<ia; i++) (( u8*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-        case 1: for (usz i=0; i<ia; i++) ((u16*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-        case 2: for (usz i=0; i<ia; i++) ((u32*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-        case 3: for (usz i=0; i<ia; i++) ((u64*)rp)[i] = bitp_get(bp,i)? e1i : e0i; break;
-      }
-    #endif
+    bitselFns[width](rp, bp, e0i, e1i, ia);
     goto dec_ret;
   }
   
