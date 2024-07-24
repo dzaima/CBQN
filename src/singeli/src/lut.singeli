@@ -168,8 +168,8 @@ def lut_gen{mode, E==u8, nt, ni if hasarch{'AARCH64'} and nt<=16*4 and ni<=16} =
   {is:([16]u8)} => tup{sel{lut, is}}
 }}}}
 
-def lut_gen{mode, E, nt, ni if (E==u16 or E==u64)} = zip_halves{mode, E, nt, ni}
-# def lut_gen{mode, E, nt, ni if (E==u16 or E==u64) and mode=='c'} = widen_inds{mode, E, nt, max{ni,16}, 2}
+def lut_gen{mode, E, nt, ni if (E==u16 or E==u64) and mode=='i'} = zip_halves{mode, E, nt, ni}
+def lut_gen{mode, E, nt, ni if (E==u16 or E==u64) and mode=='c'} = widen_inds{mode, E, nt, max{ni,16}, 2}
 def lut_gen{mode, E, nt, ni if E==u32 and hasarch{'AARCH64'}} = zip_halves{mode, E, nt, ni}
 # def lut_gen{mode, E, nt, ni if E==u32 and hasarch{'AARCH64'}} = widen_inds{mode, E, nt, ni, 2}
 def lut_gen{mode, E, nt, ni if E==u64 and hasarch{'AARCH64'}} = widen_inds{mode, E, nt, ni, 2}
