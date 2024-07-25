@@ -44,6 +44,8 @@
 #if SINGELI
   #define SINGELI_FILE select
   #include "../utils/includeSingeli.h"
+  typedef bool (*SimdSelectFn)(void* w0, void* x0, void* r0, u64 wl, u64 xl);
+  #define SIMD_SELECT(WE, XL) ({ AUTO we_=(WE); AUTO xl_=(XL); assert(we_>=el_i8 && we_<=el_i32 && xl_>=3 && xl_<=6); si_select_tab[4*(we_-el_i8)+xl_-3]; })
 #endif
 
 typedef void (*CFn)(void* r, ux rs, void* x, ux xs, ux data);
@@ -182,9 +184,9 @@ B select_c2(B t, B w, B x) {
   u8 we = TI(w,elType);
   
   
-  #if SINGELI_AVX2
+  #if SINGELI_AVX2 || SINGELI_NEON
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
-      if (RARE(!avx2_select_tab[4*(we-el_i8)+xl-3](wp, xp, rp, wia, xn))) select_properError(w, x);
+      if (RARE(!SIMD_SELECT(we, xl)(wp, xp, rp, wia, xn))) select_properError(w, x);
     
   #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
@@ -211,7 +213,7 @@ B select_c2(B t, B w, B x) {
       }
   #endif
     
-  #if SINGELI_SIMD
+  #if SINGELI_AVX2 || SINGELI_NEON
     bool bool_use_simd = we==el_i8 && xl==0 && xia<=128;
     
     #define BOOL_SPECIAL(W) \

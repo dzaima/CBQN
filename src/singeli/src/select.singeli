@@ -2,9 +2,12 @@ include './base'
 include './cbqnDefs'
 include './mask'
 include './bitops'
+include './lut'
 include 'util/tup'
 
-def {wrapChk, gather}
+def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
+
+def gather
 if_inline (hasarch{'AVX2'}) {
   # def:T - masked original content
   # b:B - pointer to data to index; if width{B}<elwidth{T}, padding bytes are garbage read after wanted position
@@ -19,106 +22,63 @@ if_inline (hasarch{'AVX2'}) {
   }
 }
 
-def wrapChk{cw0, VI,xlf, M} = {
+def wrapChk{cw0:VI, xlf, M} = {
   cw:= cw0 + (xlf & VI~~(cw0<VI**0))
   if (homAny{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
   cw
 }
-def wrapChk{cw0:VI, xlf, M} = wrapChk{cw0, VI,xlf, M}
 
-
-
-if_inline (hasarch{'AVX2'}) {
-
-def storeExp{dst, ind, val, M, ext, rd, wl} = {
-  def s{M} = storeBatch{dst, ind, val, M}
-  if (ext==1 or not M{0}) s{M}
-  else   if (ind*rd+rd <= wl) s{maskNone}
-  else { if (ind*rd    <  wl) s{maskAfter{wl & (rd-1)}}; return{1} }
-}
-
-def shuf_select{ri, rd, TI, w, r, wl, xl, selx} = {
-  def VI = [ri]TI
-  def ext = ri/rd
-  xlf:= VI**cast_i{TI, xl}
-  @maskedLoop{ri}(cw0 in tup{VI,w}, M in 'm' over i to wl) {
-    cw:= wrapChk{cw0, VI,xlf, M}
-    is:= (if (ext>1) i<<lb{ext} else i)
-    def se{e, c, o} = {
-      c2:= shuf{[4]u64, c+c, 4b3120}
-      each{
-        {c,o} => se{e*2, VI~~c, o},
-        mzip128{c2, c2 + VI**1},
-        2*o + iota{2}
-      }
+def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
+  r:= r0
+  def left = if (M{0}) { left:ux = M{'count'} } else 0
+  def lastMaskedStore = makeOptBranch{M{0}, tup{oneType{vs}}, {c} => {
+    storeBatch{r, 0, c, maskAfter{left}}
+    end{}
+  }}
+  
+  each{{i, c: [k]_} => {
+    if (M{0}) {
+      if (i+1 == length{vs} or left<k) lastMaskedStore{c}
+      left-= k
     }
-    def se{e==ext, c, o} = storeExp{r, is+o, selx{c}, M, ext, rd, wl}
-    se{1, cw, 0}
-  }
+    storeBatch{r, 0, c, maskNone}
+    r+= k
+  }, inds{vs}, vs}
+  r
 }
 
-def perm_select{ri, rd, TI, w, r, wl, xl, selx} = {
-  def VI = [ri]TI
-  def ext = ri/rd
-  xlf:= VI**cast_i{TI, xl}
-  @maskedLoop{ri}(cw0 in tup{VI,w}, M in 'm' over i to wl) {
-    cw:= wrapChk{cw0, VI,xlf, M}
-    is:= (if (ext>1) i<<lb{ext} else i)
-    def part{o} = widen{[8]i32, re_el{i8, shuf{[4]u64, cw, 4b3210+o}}}
-    def se{o} = storeExp{r, is+o, selx{part{o}}, M, ext, rd, wl}
-    each{se, iota{ext}}
-  }
-}
 
-def makeselx{VI, VD, nsel, xd, logv, cshuf} = {
-  def bblend {m}{{f,t}} = homBlend{f, t, type{f} ~~ m}
-  def bblendn{m}{{t,f}} = bblend{m}{tup{f,t}}
-  def bb{c}{f, v} = (if (f) bblendn{c<v} else bblend{(c&v)==v})
-  
-  def bs{b, c, x} = cshuf{x, c}
-  def bs{b, c, x if length{b}>0} = {
-    select{b,0}{each{bs{slice{b,1}, c, .}, x}}
-  }
-  
-  def i = iota{logv}
-  def vs = each{broadcast{VI, .}, nsel<<reverse{i}}
-  {c} => VD~~bs{each{bb{c},i==0,vs}, c, xd}
-}
-def makeshuf{VI, VD, x0, logv} = {
-  x:= *VD~~x0
-  def halves{v} = each{shuf{[4]u64, v, .}, tup{4b1010, 4b3232}}
-  def readx{l,o} = each{readx{l-1, .}, o + iota{2}<<(l-2)}
-  def readx{l==0,o} = shuf{[4]u64, load{x}, 4b1010}
-  def readx{l==1,o} = halves{load{x, o}}
-  xd:= readx{logv, 0}
-  makeselx{VI,VD,16,xd,logv, sel{[16]i8, ...}}
-}
-def makeperm{VI, VD, x0, logv} = {
-  x:= *VD~~x0
-  def readx{l,o} = each{readx{l-1, .}, o + iota{2}<<(l-1)}
-  def readx{l==0,o} = load{x, o}
-  makeselx{[8]i32,VD,8, readx{logv, 0}, logv, sel{[8]i32, ...}}
-}
 
-fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
+fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { # TODO don't require SIMD?
   w:= *TI ~~ w0
   x:= *TD ~~ x0
   r:= *TD ~~ r0
-  
-  def wd = width{TD}; def rd = rw/wd
-  def wi = width{TI}; def ri = rw/wi
-  def reg_select{sel,make}{l} = {
-    sel{ri, rd, TI, w, r, wl, xl, make{[ri]TI,[rd]TD, x,l}}
+  def wd = width{TD}
+  def wi = width{TI}
+  if (TI==i8) { # TODO some minimum bound on wl?
+    def trytab{nt} = match(lut_gen{'i', TD, nt, 2}) {
+      {{nt, ni, G}} => {
+        if (xl <= nt) {
+          def VI = [ni]TI
+          def xlf = VI**cast_i{TI, xl}
+          # show{TD, nt, ni, G}
+          # lprintf{'LUT of ', VI, ' ⊏ ', [nt]TD, ' with ', wl, ' ≡  ≠𝕨, ', xl, ' ≡ ≠𝕩'}
+          def lut = G{x}
+          @maskedLoop{ni}(w0 in tup{VI,w}, M in 'm' over wl) {
+            def w = wrapChk{w0, xlf, M}
+            def rs = lut{ty_u{w}}
+            r = masked_multistore{r, rs, M, {} => return{1}}
+          }
+          return{1}
+        }
+        trytab{nt+1}
+      }
+      {x} => {}
+    }
+    trytab{2}
   }
-  def shuf_select = reg_select{shuf_select, makeshuf}
-  def perm_select = reg_select{perm_select, makeperm}
-  if      (wi==8 and wd==32 and xl*wd<=256   ) perm_select{0}
-  else if (wi==8 and wd==32 and xl*wd<=256<<1) perm_select{1}
-  else if (wi==8 and wd<=16 and xl*wd<=128   ) shuf_select{0}
-  else if (wi==8 and wd<=16 and xl*wd<=128<<1) shuf_select{1}
-  else if (wi==8 and wd<=16 and xl*wd<=128<<2) shuf_select{2}
-  else if (wi==8 and wd<= 8 and xl*wd<=128<<3) shuf_select{3}
-  else {
+  
+  if (hasarch{'AVX2'}) {
     def TIE = i32
     def TDE = tern{wd<32, u32, TD}
     def bulk = rw / width{TDE}
@@ -127,23 +87,52 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     def xlf = VI**cast_i{TIE, xl}
     
     @maskedLoop{bulk}(cw0 in tup{VI,w}, sr in tup{'g',r}, M in 'm' over wl) {
-      cw:= wrapChk{cw0, VI,xlf, M}
+      cw:= wrapChk{cw0, xlf, M}
       got:= gather{VD**0, x, cw, M}
       if (TDE!=TD) got&= VD**((1<<wd)-1)
       sr{got}
     }
+  } else {
+    def ix = ty_s{ux}
+    def wrap{w0:T if quality{T}=='i'} = {
+      def w1 = promote{ix, w0}
+      tern{w1<0, xl + ux~~w1, ux~~w1}
+    }
+    if (wi>=32) {
+      @for (r, w0 in w over wl) {
+        def w2 = wrap{w0}
+        if (rare{w2>=xl}) return{0}
+        r = load{x, w2}
+      }
+    } else {
+      def block_size = (1<<14) / (wi/8)
+      @for_blocks{block_size}(bl to wl) {
+        def {s,e} = bl
+        def {ok, min, max} = get_range{w, s, e}
+        if (not ok) return{0}
+        if (rare{max >= i64~~xl}) return{0}
+        if (min < 0) {
+          if (rare{min < -i64~~xl}) return{0}
+          # TODO use wrap_inds
+          @for (w, r over _ from s to e) r = load{x, wrap{w}}
+        } else {
+          @for (w, r over _ from s to e) r = load{x, promote{ux,ty_u{w}}}
+        }
+      }
+    }
   }
   1
 }
-def select_fn{TI, TD} = select_fn{256, TI, TD}
+def select_fn{TI, TD} = select_fn{arch_defvw, TI, TD}
 
-exportT{'avx2_select_tab', join{table{select_fn,
-  tup{i8, i16, i32},        # indices
-  tup{u8, u16, u32, u64}}}} # values
-
+exportT{'si_select_tab', join{table{select_fn,
+  tup{i8, i16, i32},       # indices
+  tup{u8, u16, u32, u64}}} # values
 }
 
-if_inline(hasarch{'AVX2'} or hasarch{'AARCH64'}) {
+
+
+(if(has_sel) {
   fn simd_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     def TI = i8
     def VI = [arch_defvw/8]TI
@@ -180,4 +169,7 @@ if_inline(hasarch{'AVX2'} or hasarch{'AARCH64'}) {
     1
   }
   export{'simd_select_bool128', simd_select_bool128}
-}
+})
+
+
+
