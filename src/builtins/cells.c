@@ -419,8 +419,8 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr);
 static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_unit(r) : r; }
 static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_unit(r) : r; }
 // monadic ˘ & ⎉
-B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x, with array x, xr>0, 0≤cr<xr, k≡xr-cr
-  assert(isArr(x) && xr>0 && k>0 && cr<xr);
+B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x, xr>0, 0≤cr<xr, k≡xr-cr
+  assert(isArr(x) && xr>0 && k>0 && cr<xr && k == xr-cr);
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k); // from k>0 this will always include at least one item of shape; therefore, cam≡0 → IA(x)≡0 and IA(x)≢0 → cam≢0
   if (isFun(f)) {
@@ -632,7 +632,7 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk, u32 chr) {
   return r;
 }
 
-NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
+NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr w; array w, wr>0, 0≤wcr<wr, k≡wr-wcr
   assert(isArr(w));
   ur wk = wr-wcr; assert(wk>0 && wcr<wr);
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
@@ -657,7 +657,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) {
   for (usz i=0,wp=0; i<cam; i++) APDD(r, fc2(f, SLICEI(w), x));
   decG(w); return taga(APD_SH_GET(r, chr));
 }
-NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
+NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr x; array x, xr>0, 0≤xcr<xr, k≡xr-xcr
   assert(isArr(x));
   ur xk = xr-xcr; assert(xk>0 && xcr<xr);
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
@@ -739,7 +739,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) {
   for (usz i=0,xp=0; i<cam; i++) APDD(r, fc2(f, w, SLICEI(x)));
   decG(x); return taga(APD_SH_GET(r, chr));
 }
-NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) {
+NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr‿xcr x; array w & x, wr>0, 0≤wcr<wr, xr>0, 0≤xcr<xr
   assert(isArr(w) && isArr(x));
   ur wr = RNK(w); ur wk = wr-wcr; usz* wsh = SH(w); assert(wk>0 && wcr<wr);
   ur xr = RNK(x); ur xk = xr-xcr; usz* xsh = SH(x); assert(xk>0 && xcr<xr);
