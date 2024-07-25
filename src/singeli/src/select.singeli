@@ -49,6 +49,111 @@ def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
 
 
 
+fn wrap_inds{TI if issigned{TI}}(src:*void, dst:*void, n:u64, cyc0:u64) : void = {
+  def cyc = cast_i{TI,cyc0}
+  if (has_simd) {
+    def bulk = arch_defvw / width{TI}
+    def VT = [bulk]TI
+    @maskedLoop{bulk}(src in tup{VT, *TI~~src}, dst in tup{VT, *TI~~dst} over n) {
+      dst = homBlend{src, src + VT**cyc, src < VT**0}
+    }
+  } else {
+    @for (src in *TI~~src, dst in *TI~~dst over n) dst = tern{src<0, src+cyc, src}
+  }
+}
+exportT{'si_wrap_inds', each{wrap_inds, tup{i8}}}
+
+
+
+(if (has_sel) {
+  fn select_rows_fn{TD, nt, ni, G}(inds:*u8, x0:*void, xbump:u64, r0:*void, rbump:u64, r1:*void) : ux = G{inds, *TD~~x0, xbump, *TD~~r0, rbump, r1} # TG,nt,ni args just for prettier names for debugging
+  
+  def select_rows{TD} = {
+    def try_nt{nt} = match(lut_gen{'c', TD, nt, 2}) {
+      {{nt, ni, G}} => {
+        def r = tup{nt, ni, select_rows_fn{TD, nt, ni, {inds, x0, xbump, r0, rbump, r1} => {
+          # lprintf{'inds=', [ni]u8, ' tab=', [nt]TD, ' xbump=', xbump, ' rbump=', rbump, ' allowed=', (*u8~~r1) - *u8~~r0}
+          def iv = load{*[ni]u8~~inds, 0}
+          x:*TD = x0
+          r:*TD = r0
+          iters:ux = 0
+          while (*void~~(r + ni) <= r1) {
+            def rs = G{x}{iv}
+            masked_multistore{r, rs, maskNone, '!'}
+            x+= xbump
+            r+= rbump
+            ++iters
+          }
+          iters
+        }}}
+        merge{tup{r}, try_nt{nt+1}}
+      }
+      {..._} => tup{}
+    }
+    
+    try_nt{2}
+  }
+  def select_rows_parts = each{select_rows, tup{u8, u16, u32, u64}}
+  def max_nt = fold{max, each{select{.,0}, join{select_rows_parts}}}
+  def max_ni = fold{max, each{select{.,1}, join{select_rows_parts}}}
+  def select_rows_tab_h = lb{max_nt}+1
+  
+  # >{t ← (¯1+⌊16÷𝕩)⌾(¯1⊸⊑) ⌊𝕩÷˜↕16 ⋄ ⟨𝕩, ⌊16÷𝕩, 1+¯1⊑t, t⟩}¨ 2↓↕8
+  # >{t←(¯1+𝕩-𝕩|16)⌾(¯1⊸⊑) 𝕩|↕16 ⋄ ⟨𝕩, 𝕩 - 1+¯1⊑t, t⟩}¨ 2↓↕8
+  repeat_tab:*u8 = join{each{{k} => merge{
+    merge{range{15}%k, k - 16%k - 1}, # TODO top not used, can clean up
+    merge{(range{15}/k)>>0, ((16/k)>>0) - 1}
+  }, 1+range{8}}}
+  fn simd_repeat_inds(src:*u8, dst:*u8, start:u8, csz:u8) : ux = { # src and dst may be the same
+    assert{(start>=1) & (start<=16)}
+    assert{start < max_ni}
+    def V = [16]u8
+    def VU16 = re_el{u16, V}
+    def px{x} = promote{ux, x}
+    
+    shufr:u8 = 1 # number of repeats produced by shuffle path
+    v:= load{*V~~src, 0}
+    if (start <= 8) {
+      tab:= *V~~(repeat_tab + 32 * (start-1))
+      def l0 = load{tab, 0}
+      def l1 = load{tab, 1}
+      v = sel{V, v, l0}
+      v+= V~~(VU16~~l1 * broadcast{VU16, csz})
+      shufr = extract{l1, 15}+1
+    }
+    
+    def shufe = px{shufr} * px{start} # number of elements produced by shuffle path
+    
+    cdst:= dst
+    r:ux = 0
+    do {
+      r+= px{shufr}
+      store{*V~~cdst, 0, v}
+      v+= broadcast{V, csz * shufr}
+      cdst+= shufe
+    } while (max_ni>16 and cdst+start <= dst + max_ni)
+    # lprintf{shufr, r, ux~~(cdst - dst) / px{start}}
+    # lprintf{load{*[max_ni]u8~~dst}, cdst - dst}
+    r
+  }
+  export{'simd_repeat_inds', simd_repeat_inds}
+  
+  def null_fn = select_rows_fn{void, 'BAD', 0, {..._} => { emit{void,'fatal','"bad select_rows"'}; 0 }}
+  export{'null_fn', null_fn}
+  export{'select_rows_tab_h', ux~~select_rows_tab_h}
+  exportT{'select_rows_tab', join{flip{each{{row} => {
+    def a = each{select{.,0}, row} + 0 # +0 to work around findmatches bug
+    def b = 1<<range{select_rows_tab_h}
+    each{match { {{i}}=>select{select{row,i},2}; {{}}=>null_fn }, findmatches{a, b}}
+  }, select_rows_parts}}}}
+  
+  def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
+  exportP{u8, 'select_rows_max_indn',   each{{row} => oneVal{      each{select{.,1}, row}}, select_rows_parts}}
+  exportP{u8, 'select_rows_min_logcsz', each{{row} => lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
+})
+
+
+
 fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { # TODO don't require SIMD?
   w:= *TI ~~ w0
   x:= *TD ~~ x0

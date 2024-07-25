@@ -546,7 +546,18 @@ Arr* customizeShape(B x); // from cells.c
 
 B select_cells_base(B inds, B x0, ux csz, ux cam);
 
+#define CLZC(X) (64-(CLZ((u64)(X))))
+
+#ifdef SELECT_ROWS_PRINTF
+  #undef SELECT_ROWS_PRINTF
+  #define SELECT_ROWS_PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define SELECT_ROWS_PRINTF(...)
+#endif
+
+#define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
 B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool shouldBoundsCheck) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
+  u8 inds_buf[INDS_BUF_MAX]; (void)inds_buf;
   assert(csz!=0 && cam!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
@@ -582,9 +593,85 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   
   #if SINGELI
   {
+    bool fast = ie==el_i8; (void) fast;
+    
+    // TODO under shouldBoundsCheck (and probably rename that)
+    i64 bounds[2];
+    if (!getRange_fns[ie](inds, bounds, indn)) goto generic;
+    if (bounds[1] >= (i64)csz) goto generic;
+    if (bounds[0] < 0) {
+      if (bounds[0] < -(i64)csz) goto generic;
+      if (csz < 128 && indn < INDS_BUF_MAX) {
+        assert(ie == el_i8);
+        si_wrap_inds[ie-el_i8](inds, inds_buf, indn, csz);
+        inds = inds_buf;
+      } else {
+        fast = false;
+      }
+    }
+    
     u8* rp = m_tyarrv_same(&r, indn * cam, x);
     
     ux slow_cam = cam;
+    #if SINGELI_AVX2 || SINGELI_NEON
+    ux lnt = CLZC(csz-1); // ceil-log2 of number of elements in table
+    if (fast && lnt < select_rows_tab_h) {
+      u8 max_indn = select_rows_max_indn[lb];
+      if (indn > max_indn) goto no_fast;
+      u8 min_lnt = select_rows_min_logcsz[lb];
+      ux used_lnt;
+      SELECT_ROWS_PRINTF("csz: %zu/%d; inds: %d/%d\n", csz, 1<<min_lnt, (int)indn, max_indn);
+      
+      ux indn_real = indn;
+      ux rep;
+      if (indn*2 <= max_indn) {
+        assert(max_indn<=32); // otherwise inds_buf hard-coded size may need to change
+        rep = simd_repeat_inds(inds, inds_buf, indn, csz);
+        indn_real = rep*indn;
+        SELECT_ROWS_PRINTF("rep: %zu; inds: %zu→%zu; csz: %zu→%zu - raw repeat\n", rep, indn, indn*rep, csz, csz*rep);
+        PLAINLOOP while (rep*indn > max_indn) rep--; // simd_repeat_inds over-estimates
+        SELECT_ROWS_PRINTF("rep: %zu; inds: %zu→%zu; csz: %zu→%zu - valid inds\n", rep, indn, indn*rep, csz, csz*rep);
+        
+        used_lnt = min_lnt;
+        ux fine_csz = 1ULL<<(min_lnt+1); // TODO have a proper per-element-type LUT of "target LUT size"
+        if (csz < fine_csz) {
+          ux cap = fine_csz / csz;
+          if (rep > cap) rep = cap;
+        } else rep = 1;
+        
+        ux new_lnt = CLZC(csz*rep-1);
+        if (new_lnt > used_lnt) used_lnt = new_lnt;
+        
+        SELECT_ROWS_PRINTF("rep: %zu; inds: %zu→%zu; csz: %zu→%zu - valid table\n", rep, indn, indn*rep, csz, csz*rep);
+        inds = inds_buf;
+        
+      } else {
+        rep = 1;
+        used_lnt = lnt<min_lnt? min_lnt : lnt;
+      }
+      
+      assert(indn*rep <= max_indn);
+      AUTO fn = select_rows_tab[used_lnt*4 + lb];
+      if (fn == null_fn) goto no_fast;
+      ux done = fn(inds, xp, csz*rep, rp, indn*rep, rp + cam*rbump) * rep;
+      ux left = cam - done;
+      SELECT_ROWS_PRINTF("done_rows: %zu; left_rows: %zu; left_els: %zu; left_max: %zu\n", done, left, indn*left, indn_real);
+      if (left) {
+        xp+= done * xbump;
+        rp+= done * rbump;
+        if (left*csz <= 127) {
+          assert(indn*left <= indn_real);
+          bool ok = SIMD_SELECT(ie, lb+3)(inds, xp, rp, indn*left, I64_MAX); assert(ok);
+        } else {
+          slow_cam = left;
+          goto no_fast;
+        }
+      }
+      
+      goto decG_ret;
+    }
+    no_fast:;
+    #endif
     
     SimdSelectFn fn = SIMD_SELECT(ie, lb+3);
     for (ux i = 0; i < slow_cam; i++) {
