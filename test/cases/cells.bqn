@@ -1,5 +1,10 @@
+%DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
+%DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
+%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
+%DEF evar %USE tvar ⋄ _evar ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@} _tvar 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: variation didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
+%DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
 %DEF k _k ← {𝔽○•internal.Keep}
-%DEF tcc %USE k ⋄ _tcc ← { ! ∧´ (<𝕨 𝔽_k˘⎊'e' 𝕩) ≡¨ (𝕨 𝔽˘⎊'e'•internal.Variation⟜𝕩)¨ "i"•internal.ListVariations 𝕩}
+%DEF tcc %USE k ⋄ %USE var ⋄ _tcc ← { ! ∧´ (<𝕨 𝔽_k˘⎊'e' 𝕩) ≡¨ (𝕨 𝔽˘⎊'e'V⟜𝕩)¨ "i"LV𝕩}
 
 1‿2 1⎉0 1 %% 1‿1
 1 1⎉0 1‿2 %% 1‿1
@@ -77,6 +82,11 @@
 %USE tcc ⋄ ⟨⊏⟩ {𝕎 _tcc 𝕩}⌜ ⟨4‿5⥊↕20, 4‿5‿6⥊↕120, 2‿3‿4‿5⥊↕120⟩
 %USE tcc ⋄ ⊏_tcc 4‿2⥊↕8 ⋄ 1⊏_tcc 4‿2⥊↕8 ⋄ ⊏_tcc ↕4‿2 ⋄ 1⊏_tcc ↕4‿2
 %USE tcc ⋄ ⊑_tcc 4‿2⥊↕8 ⋄ 1⊑_tcc 4‿2⥊↕8 ⋄ ⊑_tcc ↕4‿2 ⋄ 1⊑_tcc ↕4‿2
+
+%USE eqvar ⋄ 0‿0‿0‿0 {𝕨⊸⊏˘𝕩}_eqvar ≍˘↕5 %% 5‿4⥊⌊4÷˜↕20
+%USE eqvar ⋄ 0‿¯1‿0‿¯1 {𝕨⊸⊏˘𝕩}_eqvar ≍˘↕5 %% 5‿4⥊⌊4÷˜↕20
+!"⊏: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % %USE evar ⋄ 0‿¯1‿1‿¯1 {𝕨⊸⊏˘𝕩}_evar ≍˘↕5
+!"⊏: Indexing out-of-bounds (¯2∊𝕨, 1≡≠𝕩)" % %USE evar ⋄ 0‿¯1‿¯2‿¯1 {𝕨⊸⊏˘𝕩}_evar ≍˘↕5
 
 (
   %USE IS_HEAPVERIFY
