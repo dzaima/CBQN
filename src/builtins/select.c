@@ -576,9 +576,11 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
   u8* xp = tyany_ptr(x);
+  bool fast; (void) fast;
+  i64 bounds[2];
   
   if (ie==el_bit) {
-    if (true /*csz>=8 || indn>=32*/) { // TODO enable & properly tune
+    if (csz>32 || indn>32 || indn>INDS_BUF_MAX) { // TODO properly tune
       u8* rp = m_tyarrv_same(&r, indn * cam, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
@@ -587,16 +589,24 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
       }
       goto decG_ret;
     } else {
-      thrM("TODO widen");
+      assert(inds_buf != inds);
+      bitselFns[0](inds_buf, inds, 0, 1, indn); // TODO use a widening copy
+      inds = inds_buf;
+      ie = el_i8;
+      bounds[0] = 0;
+      bounds[1] = 1; // might be an over-estimate, hopefully doesn't matter (and csz≥2 anyway)
+      #if SINGELI
+      fast = true;
+      goto skip_bounds_check;
+      #endif
     }
   }
   
   #if SINGELI
   {
-    bool fast = ie==el_i8; (void) fast;
+    fast = ie==el_i8;
     
     // TODO under shouldBoundsCheck (and probably rename that)
-    i64 bounds[2];
     if (!getRange_fns[ie](inds, bounds, indn)) goto generic;
     if (bounds[1] >= (i64)csz) goto generic;
     if (bounds[0] < 0) {
@@ -609,6 +619,7 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
         fast = false;
       }
     }
+    skip_bounds_check:;
     
     u8* rp = m_tyarrv_same(&r, indn * cam, x);
     
