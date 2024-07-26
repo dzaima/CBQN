@@ -64,6 +64,7 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 %USE eqvar ⋄ 1⊸+⌾((2/↕5)⊸⊏) _eqvar    ↕10 %%    <⟜5⊸+ ↕10
 %USE eqvar ⋄ 1⊸+⌾((2/↕5)⊸⊏) _eqvar ≍˘ ↕10 %% ≍˘ <⟜5⊸+ ↕10
 %USE eqvar ⋄ •internal.Keep⌾((2/↕5)⊸⊏) _eqvar 10‿0‿4⥊0 %% 10‿0‿4⥊0
+%USE eqvar ⋄ (<⟨⟩) {•internal.Keep⌾(𝕨⊸⊏) 𝕩}_eqvar¨ ⟨0‿1, "ab"‿"cd"⟩ %% ⟨0‿1, "ab"‿"cd"⟩
 
 
 # ⥊

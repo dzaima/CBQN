@@ -423,7 +423,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   #endif
   
   #define READ_W(N,I) i64 N = (i64)wp[I]; if (RARE(N<0)) N+= (i64)cam
-  u8 we = TI(w,elType); assert(elNum(we));
+  u8 we = TI(w,elType); assert(elNum(we) || wia==0);
   u8 xe = TI(x,elType);
   u8 re = el_or(xe, TI(rep,elType));
   Arr* ra;
@@ -455,7 +455,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     ra = mut_fp(r);
     goto dec_ret_ra;
   }
-  assert(elInt(we));
+  assert(elInt(we) || wia==0);
   
   w = toI32Any(w);
   i32* wp = i32any_ptr(w);
