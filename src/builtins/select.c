@@ -557,10 +557,12 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
 B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool shouldBoundsCheck) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
-  u8 inds_buf[INDS_BUF_MAX]; (void)inds_buf;
   assert(csz!=0 && cam!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
+  
+  u8 inds_buf[INDS_BUF_MAX]; (void)inds_buf;
+  bool generic_allowed = true; // whether required interpretation of x hasn't changed from its real one
   if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
     i64 bounds[2];
     if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic; // could put under shouldBoundsCheck but ideally things setting that to false should handle size-1 cells themselves
@@ -575,13 +577,14 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   u8 lb = arrTypeWidthLog(TY(x));
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
+  ux ria = indn * cam;
   u8* xp = tyany_ptr(x);
   bool fast; (void) fast;
   i64 bounds[2];
   
   if (ie==el_bit) {
     if (csz>32 || indn>32 || indn>INDS_BUF_MAX) { // TODO properly tune
-      u8* rp = m_tyarrv_same(&r, indn * cam, x);
+      u8* rp = m_tyarrv_same(&r, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
         xp+= xbump;
@@ -603,6 +606,7 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   }
   
   #if SINGELI
+  assert(INDS_BUF_MAX_COPY == INDS_BUF_MAX);
   {
     fast = ie==el_i8;
     
@@ -621,7 +625,23 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
     }
     skip_bounds_check:;
     
-    u8* rp = m_tyarrv_same(&r, indn * cam, x);
+    #if SINGELI_AVX2 || SINGELI_NEON
+      if (fast) {
+        generic_allowed = false;
+        ux sh = select_rows_widen[lb](inds, inds_buf, indn); // TODO null element in table for guaranteed-zero
+        if (sh!=0) {
+          SELECT_ROWS_PRINTF("widening indices by factor of %d:\n", 1<<sh);
+          SELECT_ROWS_PRINTF("  src: lb=%d, ie=%d, csz=%zu, indn=%zu\n", lb, ie, csz, indn);
+          inds = inds_buf;
+          lb-= sh;
+          csz<<= sh;
+          indn<<= sh;
+          SELECT_ROWS_PRINTF("  dst: lb=%d, ie=%d, csz=%zu, indn=%zu\n", lb, ie, csz, indn);
+        }
+      }
+    #endif
+    
+    u8* rp = m_tyarrv_same(&r, ria, x);
     
     ux slow_cam = cam;
     #if SINGELI_AVX2 || SINGELI_NEON
@@ -695,6 +715,7 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   #endif
   
   generic:;
+  assert(generic_allowed);
   B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), ie, indn)));
   r = select_cells_base(indo, x, csz, cam);
   return r;

@@ -49,12 +49,14 @@ def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
 
 
 
+def vptr{VT=[_]E, ptr} = tup{VT, *E~~ptr}
+
 fn wrap_inds{TI if issigned{TI}}(src:*void, dst:*void, n:u64, cyc0:u64) : void = {
   def cyc = cast_i{TI,cyc0}
   if (has_simd) {
     def bulk = arch_defvw / width{TI}
     def VT = [bulk]TI
-    @maskedLoop{bulk}(src in tup{VT, *TI~~src}, dst in tup{VT, *TI~~dst} over n) {
+    @maskedLoop{bulk}(src in vptr{VT, src}, dst in vptr{VT, dst} over n) {
       dst = homBlend{src, src + VT**cyc, src < VT**0}
     }
   } else {
@@ -65,6 +67,8 @@ exportT{'si_wrap_inds', each{wrap_inds, tup{i8}}}
 
 
 
+def inds_buf_max = 64
+export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
 (if (has_sel) {
   fn select_rows_fn{TD, nt, ni, G}(inds:*u8, x0:*void, xbump:u64, r0:*void, rbump:u64, r1:*void) : ux = G{inds, *TD~~x0, xbump, *TD~~r0, rbump, r1} # TG,nt,ni args just for prettier names for debugging
   
@@ -150,6 +154,27 @@ exportT{'si_wrap_inds', each{wrap_inds, tup{i8}}}
   def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
   exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else oneVal{      each{select{.,1}, row}}, select_rows_parts}}
   exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
+  
+  def select_rows_better = scan{{p,{v,i}} => if (length{v}==0) p else i, 0, each{tup, select_rows_parts, range{4}}}
+  exportP{u8, 'select_rows_better', select_rows_better+1}
+  
+  fn select_rows_widen{sh}(src:*void, dst:*void, n:ux) : ux = {
+    if (sh != 0) {
+      def bulk = (arch_defvw/8) >> sh
+      def WV = [bulk<<sh]u8
+      if ((n<<sh) > inds_buf_max) return{0}
+      @for_backwards (i to inds_buf_max/(width{WV}/8)) {
+        def s = load{*[bulk]u8~~src, i}
+        def v = raw_widen_inds{bulk, sh, s}
+        store{*WV~~dst, i, v}
+      }
+    }
+    sh
+  }
+  exportT{'select_rows_widen', each{{t0, t1} => {
+    def {S, D} = each{select{tup{u8,u16,u32,u64},.}, tup{t0, t1}}
+    select_rows_widen{t1-t0}
+  }, select_rows_better, range{4}}}
 })
 
 
