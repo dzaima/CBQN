@@ -81,8 +81,11 @@ def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
 
 def raw_widen_inds{[k]D, x:[k0]S if k0>=k} = { # : [k*sc]S
   def sc = width{D} / width{S}
-  def add = make{[k*sc]S, range{k*sc} % sc}
-  if (hasarch{'AVX2'} and [k]D == [4]u64 and S==u32) {
+  def RV = [k*sc]S
+  def add = make{RV, range{k*sc} % sc}
+  if (hasarch{'AARCH64'} and [k]D == [2]u64 and S==u8) {
+    (RV~~sel{[16]u8, x, make{[16]u8, range{16}>>3}}<<3) + add
+  } else if (hasarch{'AVX2'} and [k]D == [4]u64 and S==u32) {
     (sel{[8]u32, undefPromote{[8]u32, x}, make{[8]u32, range{8}>>1}}<<sc) + add
   } else {
     def wd = widen{[k]D, x}
@@ -188,3 +191,5 @@ def lut_gen{mode, E==u64, nt, ni if nt>16 and hasarch{'AVX2'}} = 0
 
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and (E==u16 or E==u32)} = zip_halves{mode, E, nt, ni}
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and E==u64} = widen_inds{mode, E, nt, ni, 2}
+
+def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='c' and E>=u16} = 0

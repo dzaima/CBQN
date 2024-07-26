@@ -5,6 +5,10 @@ include './bitops'
 include './lut'
 include 'util/tup'
 
+def arch_minvw = 128
+def arch_minv{T=[_]E if width{T}< arch_minvw} = [arch_minvw / width{E}]E
+def arch_minv{T      if width{T}>=arch_minvw} = T
+
 def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
 
 def gather
@@ -164,7 +168,8 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
       def WV = [bulk<<sh]u8
       if ((n<<sh) > inds_buf_max) return{0}
       @for_backwards (i to inds_buf_max/(width{WV}/8)) {
-        def s = load{*[bulk]u8~~src, i}
+        def V = [bulk]u8
+        def s = loadLow{*arch_minv{V}~~(*u8~~src + i*bulk), width{V}}
         def v = raw_widen_inds{bulk, sh, s}
         store{*WV~~dst, i, v}
       }
