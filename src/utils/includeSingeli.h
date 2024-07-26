@@ -37,6 +37,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wunused-label"
 #include SINGELI_FILE1(../../build/obj2/SINGELI_DIR/SINGELI_FILE.c)
 #pragma GCC diagnostic pop
 
