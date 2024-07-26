@@ -2,6 +2,7 @@
 
 // First Cell is just a slice
 
+// Select - 𝕨 ⊏ 𝕩
 // Complications in Select mostly come from range checks and negative 𝕨
 // Atom or enclosed atom 𝕨 and rank-1 𝕩: make new array
 // Atom or enclosed atom 𝕨 and high-rank 𝕩: slice
@@ -16,18 +17,21 @@
 //     TRIED pext, doesn't seem faster (mask built with shifts anyway)
 // 𝕩 with cell sizes of 1, 2, 4, or 8 bytes:
 //   Small 𝕩 and i8 𝕨 with Singeli: use shuffles
+//     COULD try to squeeze 𝕨 to i8 if small enough 𝕩
 //   Boolean 𝕨: use bit_sel for blend or similar
 //   Integer 𝕨 with Singeli: fused wrap, range-check, and gather
 //     COULD try selecting from boolean with gather
 //     COULD detect <Skylake where gather is slow
 //   i32 𝕨: wrap, check, select one index at a time
-//   i8 and i16 𝕨: separate range check in blocks to auto-vectorize
+//   i8 and i16 𝕨: separate range check in blocks to vectorize it
+//     COULD wrap 𝕨 to a temp buffer
+//     COULD copy 𝕩 to a buffer indexable directly by positive and negative indices
 // Generic cell size 𝕩:
 //   Computes a function that copies the necessary amount of bytes/bits
 //   Specializes over i8/i16/i32 𝕨
 // SHOULD implement nested 𝕨
 
-// Under Select ⌾(i⊸⊏)
+// Under Select - F⌾(i⊸⊏) 𝕩
 // Specialized for rank-1 numeric 𝕩
 // SHOULD apply to characters as well
 // No longer needs to range-check but indices can be negative
@@ -35,6 +39,24 @@
 // Must check collisions if CHECK_VALID; uses a byte set
 //   Sparse initialization if 𝕨 is much smaller than 𝕩
 //   COULD call Mark Firsts (∊) for very short 𝕨 to avoid allocation
+
+// Select Cells - inds⊸⊏⎉1 x
+// Squeeze indices if too wide for given x
+// Boolean indices:
+//   Short inds and short cells: Widen to i8
+//   Otheriwse: bitsel call per cell
+// 1, 2, 4 or 8-byte data elements & short cells & short index list:
+//   Split indices to available native shuffle width (e.g. 2‿1⊸⊏˘ n‿5⥊i16 → 2‿3‿0‿1⊸⊏˘ n‿10⥊i8)
+//   Repeat indices if using ≤0.5x of shuffle width (e.g. 0‿0‿2⊸⊏˘ n‿3⥊i8 → 0‿0‿2‿3‿3‿5⊸⊏˘ n‿6⥊i8)
+//   SHOULD disregard actual cell width if index range is small
+//   COULD merge indices ranges into wider element (e.g. 0‿1‿6‿7⊸⊏˘ n‿10⥊i16 → 0‿3⊸⊏˘ n‿5⥊i32)
+//   COULD split into multiple indices blocks
+// Long inds / long cells:
+//   Direct call to select function per cell
+//     COULD have a more direct call that avoids overflow checking & wrapping
+//   COULD generate full list of indices via arith
+// 1-element cells: use (≠inds)/⥊x after checking ∧´0=inds
+// SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ⍉⎉k, probably more
 
 #include "../core.h"
 #include "../utils/talloc.h"
