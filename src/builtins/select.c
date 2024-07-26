@@ -639,7 +639,9 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
       if (bounds[0] < -(i64)csz) goto generic;
       if (csz < 128 && indn < INDS_BUF_MAX) {
         assert(ie == el_i8);
-        si_wrap_inds[ie-el_i8](inds, inds_buf, indn, csz);
+        si_wrap_inds[0](inds, inds_buf, indn, csz);
+        bounds[0] = 0;
+        bounds[1] = csz-1;
         inds = inds_buf;
       } else {
         fast = false;
@@ -650,7 +652,7 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
     #if SINGELI_AVX2 || SINGELI_NEON
       if (fast) {
         generic_allowed = false;
-        ux sh = select_rows_widen[lb](inds, inds_buf, indn); // TODO null element in table for guaranteed-zero
+        ux sh = select_rows_widen[lb](inds, inds_buf, bounds[1], indn); // TODO null element in table for guaranteed-zero
         if (sh!=0) {
           SELECT_ROWS_PRINTF("widening indices by factor of %d:\n", 1<<sh);
           SELECT_ROWS_PRINTF("  src: lb=%d, ie=%d, csz=%zu, indn=%zu\n", lb, ie, csz, indn);
