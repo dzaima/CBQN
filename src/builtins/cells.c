@@ -9,6 +9,7 @@ B shape_c2(B, B, B);
 B transp_c2(B, B, B);
 B take_c2(B, B, B);
 B join_c2(B, B, B);
+B select_c2(B, B, B);
 
 // from fold.c:
 B fold_rows(Md1D* d, B x, usz n, usz m);
@@ -19,6 +20,8 @@ B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid);
 B scan_rows_bit(u8, B x, usz m);             // from scan.c
 B takedrop_highrank(bool take, B w, B x);    // from sfns.c
 B rotate_highrank(bool inv, B w, B x);       // from sfns.c
+
+B select_rows_B(B x, ux csz, ux cam, B inds);       // from select.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
 // X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
@@ -47,6 +50,12 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 #define SLICEI(X) ({ B r = SLICE(X, X##p); X##p+= X##_csz; r; })
 
 
+Arr* customizeShape(B x) { // potentially copy array for shape customizing
+  if (reusable(x) && RNK(x)<=1) return a(x);
+  return TI(x,slice)(x,0,IA(x));
+}
+
+
 
 B insert_base(B f, B x, bool has_w, B w) { // Used by Insert in fold.c
   assert(isArr(x) && RNK(x)>0);
@@ -66,6 +75,21 @@ B insert_base(B f, B x, bool has_w, B w) { // Used by Insert in fold.c
     r = fc2(f, SLICE(x, p), r);
   }
   return r;
+}
+
+B select_cells_base(B inds, B x0, ux csz, ux cam) { // consumes inds,x0; Used by select.c
+  assert(cam!=0);
+  Arr* xa = customizeShape(x0);
+  usz* xsh = arr_shAlloc(xa, 2);
+  xsh[0] = cam;
+  xsh[1] = csz;
+  B x = taga(xa);
+  assert(RNK(x)==2);
+  S_KSLICES(x, xsh, 1, cam, 0) incBy(inds, cam-1);
+  usz shBuf[] = {cam};
+  M_APD_SH_N(r, 1, shBuf, cam);
+  for (usz i=0,xp=0; i<cam; i++) APDD(r, C2(select, inds, SLICEI(x)));
+  return taga(APD_SH_GET(r, '\0'));
 }
 
 B scan_arith(B f, B w, B x, usz* xsh) { // Used by scan.c
@@ -667,10 +691,22 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
     switch(rtid) {
       case n_rtack: dec(w); return x;
       case n_ltack: return const_cells(x, xk, xsh, w, chr);
-      case n_select: if (isF64(w) && xcr>=1) {
-        usz l = xsh[xk];
-        return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
-      } break;
+      case n_select:
+        if (isArr(w) && RNK(w)==1 && xcr==1) {
+          assert(xr > 1);
+          ux wia = IA(w);
+          ShArr* rsh = m_shArr(xr);
+          shcpy(rsh->a, xsh, xk);
+          rsh->a[xk] = wia;
+          Arr* r = customizeShape(select_rows_B(x, shProd(xsh,xk,xr), cam, w));
+          arr_shSetUG(r, xr, rsh);
+          return taga(r);
+        }
+        if (isF64(w) && xcr>=1) {
+          usz l = xsh[xk];
+          return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
+        }
+        break;
       case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
         usz l = xsh[xk];
         return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);

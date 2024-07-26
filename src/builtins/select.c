@@ -536,6 +536,104 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   #undef FREE_CHECK
 }
 
+static void* m_tyarrv_same(B* r, usz ia, B src) { // makes a new typed array with same element type as src, but new ia
+  u8 se = TI(src,elType); assert(se!=el_bit && se!=el_B);
+  return m_tyarrlv(r, arrTypeWidthLog(TY(src)), ia, arrNewType(TY(src)));
+}
+
+B slash_c2(B, B, B);
+Arr* customizeShape(B x); // from cells.c
+
+B select_cells_base(B inds, B x0, ux csz, ux cam);
+
+B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool shouldBoundsCheck) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
+  assert(csz!=0 && cam!=0);
+  assert(csz*cam == IA(x));
+  assert(ie<=el_i32);
+  if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
+    i64 bounds[2];
+    if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic; // could put under shouldBoundsCheck but ideally things setting that to false should handle size-1 cells themselves
+    return C2(slash, m_f64(indn), taga(arr_shVec(customizeShape(x))));
+  }
+  
+  u8 xe = TI(x,elType);
+  assert(xe!=el_bit && xe!=el_B);
+  assert(csz>=2);
+  
+  B r;
+  u8 lb = arrTypeWidthLog(TY(x));
+  ux xbump = csz<<lb;
+  ux rbump = indn<<lb;
+  u8* xp = tyany_ptr(x);
+  
+  if (ie==el_bit) {
+    if (true /*csz>=8 || indn>=32*/) { // TODO enable & properly tune
+      u8* rp = m_tyarrv_same(&r, indn * cam, x);
+      for (ux i = 0; i < cam; i++) {
+        bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
+        xp+= xbump;
+        rp+= rbump;
+      }
+      goto decG_ret;
+    } else {
+      thrM("TODO widen");
+    }
+  }
+  
+  #if SINGELI
+  {
+    u8* rp = m_tyarrv_same(&r, indn * cam, x);
+    
+    ux slow_cam = cam;
+    
+    SimdSelectFn fn = SIMD_SELECT(ie, lb+3);
+    for (ux i = 0; i < slow_cam; i++) {
+      fn(inds, xp, rp, indn, csz);
+      xp+= xbump;
+      rp+= rbump;
+    }
+    goto decG_ret;
+  }
+  #endif
+  
+  generic:;
+  B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), ie, indn)));
+  r = select_cells_base(indo, x, csz, cam);
+  return r;
+  
+  decG_ret:;
+  decG(x);
+  return r;
+}
+
+B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸⊏˘ cam‿csz⥊x
+  assert(csz*cam == IA(x));
+  if (csz==0) goto generic;
+  if (cam<=1) {
+    if (cam==0) return taga(emptyArr(x, 1));
+    return C2(select, inds, taga(arr_shVec(TI(x,slice)(x, 0, IA(x)))));
+  }
+  
+  ux in = IA(inds);
+  u8 ie = TI(inds,elType);
+  if (csz<=2? ie!=el_bit : csz<128? ie>el_i8 : !elInt(ie)) {
+    inds = num_squeeze(inds);
+    ie = TI(inds,elType);
+    if (!elInt(ie)) goto generic;
+  }
+  void* ip = tyany_ptr(inds);
+  
+  u8 xe = TI(x,elType);
+  if ((xe!=el_bit && xe!=el_B) || csz==1) {
+    B r = select_rows_typed(x, csz, cam, (u8*)ip, in, ie, 1);
+    decG(inds);
+    return r;
+  }
+  
+  generic:;
+  return select_cells_base(inds, x, csz, cam);
+}
+
 B select_ucw(B t, B o, B w, B x) {
   if (isAtm(x) || isAtm(w)) { def: return def_fn_ucw(t, o, w, x); }
   usz xia = IA(x);
