@@ -194,3 +194,4 @@ def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and (E==u16 or E==u32)} = zip_
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and E==u64} = widen_inds{mode, E, nt, ni, 2}
 
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='c' and E>=u16} = 0
+def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='i' and E==u64 and nt>16} = 0
