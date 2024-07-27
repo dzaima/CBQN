@@ -141,8 +141,8 @@ def zip_halves{mode, E, nt, ni} = match(lut_gen{mode, w_h{E}, nt, ni}) { # e.g. 
 }
 
 # lut_gen order is very important!
-def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=128 and ni<=32} = blend_halves{mode, E, 128, 32} # TODO probably don't
-def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=64 and ni<=32} = blend_halves{mode, E, 64, 32} # TODO probably don't
+def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=128 and ni<=32} = blend_halves{mode, E, 128, 32}
+def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=64 and ni<=32} = blend_halves{mode, E, 64, 32}
 def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=32 and ni<=32} = blend_halves{mode, E, 32, 32}
 
 # generate inds to utilize top bit of pshufb zeroing to replace vpblendvb with with vpor
@@ -165,7 +165,7 @@ def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=16 and ni<=32} = tup{
   {is:([32]u8)} => tup{sel{[16]u8, lut, is}}
 }}}
 
-def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=32 and ni<=16} = blend_halves{mode, E, 32, 16} # TODO probably don't
+def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=32 and ni<=16} = blend_halves{mode, E, 32, 16}
 def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=16 and ni<=16} = blend_halves{mode, E, 16, 16}
 
 def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=8 and ni<=16} = tup{8, 16, loader{{TG} => {
