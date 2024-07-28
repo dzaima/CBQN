@@ -55,7 +55,7 @@
 //   Direct call to select function per cell
 //     COULD have a more direct call that avoids overflow checking & wrapping
 //   COULD generate full list of indices via arith
-// 1-element cells: use (≠inds)/⥊x after checking ∧´0=inds
+// 1-element cells: use (≠inds)/⥊x after checking ∧´inds∊0‿¯1
 // Used for ⌽⎉1
 // SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ⍉⎉k, probably more
 
@@ -579,7 +579,7 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 #endif
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
-B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
+B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊x
   assert(csz!=0 && cam!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
@@ -588,21 +588,22 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (i
   bool generic_allowed = true; // whether required interpretation of x hasn't changed from its real one
   if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
     i64 bounds[2];
-    if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic;
+    if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic_any;
     return C2(slash, m_f64(indn), taga(arr_shVec(customizeShape(x))));
   }
   
-  u8 xe = TI(x,elType);
-  assert(xe!=el_bit && xe!=el_B);
   assert(csz>=2);
   
-  B r;
+  u8 xe = TI(x,elType);
   u8 lb = arrTypeWidthLog(TY(x));
+  u8* xp = tyany_ptr(x);
+  if (xe==el_bit || xe==el_B) goto generic_any;
+  
+  B r;
+  ux ria = indn * cam;
+  bool fast; (void) fast;
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
-  ux ria = indn * cam;
-  u8* xp = tyany_ptr(x);
-  bool fast; (void) fast;
   i64 bounds[2];
   
   if (ie==el_bit) {
@@ -628,15 +629,16 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (i
     }
   }
   
+  
   #if SINGELI
   assert(INDS_BUF_MAX_COPY == INDS_BUF_MAX);
   {
     fast = ie==el_i8;
     
-    if (!getRange_fns[ie](inds, bounds, indn)) goto generic;
-    if (bounds[1] >= (i64)csz) goto generic;
+    if (!getRange_fns[ie](inds, bounds, indn)) goto generic_int;
+    if (bounds[1] >= (i64)csz) goto generic_int;
     if (bounds[0] < 0) {
-      if (bounds[0] < -(i64)csz) goto generic;
+      if (bounds[0] < -(i64)csz) goto generic_int;
       if (csz < 128 && indn < INDS_BUF_MAX) {
         assert(ie == el_i8);
         si_wrap_inds[0](inds, inds_buf, indn, csz);
@@ -738,11 +740,18 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (i
   }
   #endif
   
-  generic:;
-  assert(generic_allowed);
+  generic_any:;
+  if (ie==el_bit) {
+    u64* rp;
+    B indo = m_bitarrv(&rp, indn);
+    memcpy(rp, inds, (indn+7)>>3);
+    assert(generic_allowed);
+    return select_cells_base(indo, x, csz, cam);
+  }
+  generic_int:;
+  assert(ie!=el_bit && generic_allowed);
   B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), ie, indn)));
-  r = select_cells_base(indo, x, csz, cam);
-  return r;
+  return select_cells_base(indo, x, csz, cam);
   
   decG_ret:;
   decG(x);
@@ -766,12 +775,9 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   }
   void* ip = tyany_ptr(inds);
   
-  u8 xe = TI(x,elType);
-  if ((xe!=el_bit && xe!=el_B) || csz==1) {
-    B r = select_rows_typed(x, csz, cam, (u8*)ip, in, ie);
-    decG(inds);
-    return r;
-  }
+  B r = select_rows_direct(x, csz, cam, (u8*)ip, in, ie);
+  decG(inds);
+  return r;
   
   generic:;
   return select_cells_base(inds, x, csz, cam);

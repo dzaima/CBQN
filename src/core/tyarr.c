@@ -31,7 +31,8 @@ u8 const arrTypeWidthLog[] = {
   [t_i8arr ]=0, [t_i8slice ]=0, [t_c8arr ]=0, [t_c8slice ]=0,
   [t_i16arr]=1, [t_i16slice]=1, [t_c16arr]=1, [t_c16slice]=1,
   [t_i32arr]=2, [t_i32slice]=2, [t_c32arr]=2, [t_c32slice]=2,
-  [t_f64arr]=3, [t_f64slice]=3
+  [t_f64arr]=3, [t_f64slice]=3,
+  [t_harr  ]=3, [t_hslice  ]=3, [t_fillarr]=3,[t_fillslice]=3
 };
 u8 const arrTypeBitsLog[] = {
   [t_bitarr]=0,
