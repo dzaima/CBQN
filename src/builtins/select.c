@@ -559,9 +559,15 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   #undef FREE_CHECK
 }
 
-static void* m_tyarrv_same(B* r, usz ia, B src) { // makes a new typed array with same element type as src, but new ia
-  u8 se = TI(src,elType); assert(se!=el_bit && se!=el_B);
-  return m_tyarrlv(r, arrTypeWidthLog(TY(src)), ia, arrNewType(TY(src)));
+static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same element type as src, but new ia
+  u8 se = TI(src,elType); assert(se!=el_bit);
+  if (se==el_B) {
+    HArr_p p = m_harr0v(ia);
+    *r = p.b;
+    return p.a;
+  } else {
+    return m_tyarrlv(r, arrTypeWidthLog(TY(src)), ia, arrNewType(TY(src)));
+  }
 }
 
 B slash_c2(B, B, B);
@@ -596,8 +602,15 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   u8 xe = TI(x,elType);
   u8 lb = arrTypeWidthLog(TY(x));
-  u8* xp = tyany_ptr(x);
-  if (xe==el_bit || xe==el_B) goto generic_any;
+  u8* xp;
+  if (xe==el_B) {
+    if (sizeof(B) != 8) goto generic_any;
+    xp = (u8*) arr_bptr(x);
+    if (xp == NULL) goto generic_any;
+  } else {
+    if (xe == el_bit) goto generic_any;
+    xp = tyany_ptr(x);
+  }
   
   B r;
   ux ria = indn * cam;
@@ -608,7 +621,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   if (ie==el_bit) {
     if (csz>32 || indn>32 || indn>INDS_BUF_MAX) { // TODO properly tune
-      u8* rp = m_tyarrv_same(&r, ria, x);
+      u8* rp = m_arrv_same(&r, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
         xp+= xbump;
@@ -667,7 +680,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       }
     #endif
     
-    u8* rp = m_tyarrv_same(&r, ria, x);
+    u8* rp = m_arrv_same(&r, ria, x);
     
     ux slow_cam = cam;
     #if SINGELI_AVX2 || SINGELI_NEON
@@ -748,12 +761,18 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
     assert(generic_allowed);
     return select_cells_base(indo, x, csz, cam);
   }
+  goto generic_int;
+  
   generic_int:;
   assert(ie!=el_bit && generic_allowed);
   B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), ie, indn)));
   return select_cells_base(indo, x, csz, cam);
   
   decG_ret:;
+  if (xe==el_B) {
+    B* rp = harr_ptr(r);
+    for (ux i = 0; i < ria; i++) inc(rp[i]); // TODO if only a few columns are selected, could incBy in a stride per selected column
+  }
   decG(x);
   return r;
 }

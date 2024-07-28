@@ -32,4 +32,5 @@
   Test {{@ + 𝕩 •rand.Range 100}}
   Test {{@ + 𝕩 •rand.Range 1000}}
   Test {{@ + 𝕩 •rand.Range 1114111}}
+  Test {{⊑⟜"foo"‿@¨ 𝕩 •rand.Range 2}}
 )
