@@ -580,7 +580,7 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
 B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊x
-  assert(csz!=0 && cam!=0);
+  assert(csz!=0 && cam!=0 && indn!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
   
@@ -767,6 +767,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   }
   
   ux in = IA(inds);
+  if (in == 0) return taga(emptyArr(x, 1));
   u8 ie = TI(inds,elType);
   if (csz<=2? ie!=el_bit : csz<128? ie>el_i8 : !elInt(ie)) {
     inds = num_squeeze(inds);

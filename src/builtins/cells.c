@@ -503,7 +503,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       case n_reverse: {
         if (cr == 0) break;
         ux csz = xsh[k];
-        if (csz <= 1) return x;
+        if (csz <= 1 || IA(x)==0) return x;
         u8 xe = TI(x,elType);
         if (cr==1 && csz<=64 && xe!=el_bit && xe!=el_B && csz < (128*8 >> arrTypeBitsLog(TY(x)))) {
           incG(x); // TODO proper shape moving
