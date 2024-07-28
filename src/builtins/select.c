@@ -44,13 +44,13 @@
 // Squeeze indices if too wide for given x
 // Boolean indices:
 //   Short inds and short cells: Widen to i8
-//   Otheriwse: bitsel call per cell
+//   Otherwise: bitsel call per cell
 // 1, 2, 4 or 8-byte data elements & short cells & short index list:
 //   Split indices to available native shuffle width (e.g. 2‿1⊸⊏˘ n‿5⥊i16 → 2‿3‿0‿1⊸⊏˘ n‿10⥊i8)
 //   Repeat indices if using ≤0.5x of shuffle width (e.g. 0‿0‿2⊸⊏˘ n‿3⥊i8 → 0‿0‿2‿3‿3‿5⊸⊏˘ n‿6⥊i8)
 //   SHOULD disregard actual cell width if index range is small
-//   COULD merge indices ranges into wider element (e.g. 0‿1‿6‿7⊸⊏˘ n‿10⥊i16 → 0‿3⊸⊏˘ n‿5⥊i32)
-//   COULD split into multiple indices blocks
+//   COULD merge to wider elements if indices are in runs (e.g. 0‿1‿6‿7⊸⊏˘ n‿10⥊i16 → 0‿3⊸⊏˘ n‿5⥊i32)
+//   COULD split into multiple index blocks
 // Long inds / long cells:
 //   Direct call to select function per cell
 //     COULD have a more direct call that avoids overflow checking & wrapping
@@ -578,7 +578,7 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 #endif
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
-B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool shouldBoundsCheck) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
+B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊z; xe cannot be el_bit or el_B, unless csz==1; ie must be ≤el_i8 if csz≤128
   assert(csz!=0 && cam!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
@@ -587,7 +587,7 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   bool generic_allowed = true; // whether required interpretation of x hasn't changed from its real one
   if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
     i64 bounds[2];
-    if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic; // could put under shouldBoundsCheck but ideally things setting that to false should handle size-1 cells themselves
+    if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic;
     return C2(slash, m_f64(indn), taga(arr_shVec(customizeShape(x))));
   }
   
@@ -632,7 +632,6 @@ B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie, bool should
   {
     fast = ie==el_i8;
     
-    // TODO under shouldBoundsCheck (and probably rename that)
     if (!getRange_fns[ie](inds, bounds, indn)) goto generic;
     if (bounds[1] >= (i64)csz) goto generic;
     if (bounds[0] < 0) {
@@ -768,7 +767,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   
   u8 xe = TI(x,elType);
   if ((xe!=el_bit && xe!=el_B) || csz==1) {
-    B r = select_rows_typed(x, csz, cam, (u8*)ip, in, ie, 1);
+    B r = select_rows_typed(x, csz, cam, (u8*)ip, in, ie);
     decG(inds);
     return r;
   }
