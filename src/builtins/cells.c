@@ -17,12 +17,16 @@ B fold_rows_bit(Md1D* d, B x, usz n, usz m);
 B insert_cells_join(B x, usz* xsh, ur cr, ur k);
 B insert_cells_identity(B x, B f, usz* xsh, ur xr, ur k, u8 rtid);
 
-B scan_rows_bit(u8, B x, usz m);             // from scan.c
-B takedrop_highrank(bool take, B w, B x);    // from sfns.c
-B rotate_highrank(bool inv, B w, B x);       // from sfns.c
+// from scan.c:
+B scan_rows_bit(u8, B x, usz m);
+B takedrop_highrank(bool take, B w, B x);
+B rotate_highrank(bool inv, B w, B x);
 
-B select_rows_B(B x, ux csz, ux cam, B inds);       // from select.c
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
+
+// from select.c:
+B select_rows_B(B x, ux csz, ux cam, B inds);
+B select_rows_typed(B x, ux csz, ux cam, void* inds, ux indn, u8 ie);
 
 // X - variable name; XSH - its shape; K - number of leading axes that get iterated over; SLN - number of slices that will be made; DX - additional refcount count to add to x
 #define S_KSLICES(X, XSH, K, SLN, DX)\
@@ -442,6 +446,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr);
 
 static NOINLINE B c1wrap(B f,      B x) { B r = c1(f,    x); return isAtm(r)? m_unit(r) : r; }
 static NOINLINE B c2wrap(B f, B w, B x) { B r = c2(f, w, x); return isAtm(r)? m_unit(r) : r; }
+static u8 reverse_inds_64[128] = {63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0}; // 64 trailing elements for overreading loads
 // monadic ˘ & ⎉
 B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x, xr>0, 0≤cr<xr, k≡xr-cr
   assert(isArr(x) && xr>0 && k>0 && cr<xr && k == xr-cr);
@@ -495,8 +500,22 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       case n_transp: {
         return cr<=1? x : transp_cells(xr-1, k, x);
       }
+      case n_reverse: {
+        if (cr == 0) break;
+        ux csz = xsh[k];
+        if (csz <= 1) return x;
+        u8 xe = TI(x,elType);
+        if (cr==1 && csz<=64 && xe!=el_bit && xe!=el_B && csz < (128*8 >> arrTypeBitsLog(TY(x)))) {
+          incG(x); // TODO proper shape moving
+          Arr* r = customizeShape(select_rows_typed(x, csz, cam, reverse_inds_64+64-csz, csz, el_i8));
+          arr_shCopy(r, x);
+          decG(x);
+          return taga(r);
+        }
+        break;
+      }
       // trivial cases for unhandled functions
-      case n_reverse: case n_and: case n_or: case n_find:
+      case n_and: case n_or: case n_find:
         if (cr == 0) break;
         if (xsh[k] <= 1) return x;
         break;

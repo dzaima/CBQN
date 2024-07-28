@@ -56,6 +56,7 @@
 //     COULD have a more direct call that avoids overflow checking & wrapping
 //   COULD generate full list of indices via arith
 // 1-element cells: use (≠inds)/⥊x after checking ∧´0=inds
+// Used for ⌽⎉1
 // SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ⍉⎉k, probably more
 
 #include "../core.h"
