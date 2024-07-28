@@ -15,14 +15,6 @@ Trim ← {((∨`⌾⌽∧∨`)𝕩≠' ')/𝕩}
   •Out "  update-messages  Auto-update error messages in tests"
   •Out "  ignore-messages  Don't warn about incorrect error messages"
   •Out "  bin-search       Binary search for some property. Next argument should be /[01]*/, with a 1 appended every time the property is matched, and a 0 otherwise"
-  •Out "Files:"
-  •Out "  General:"
-  •Out "    prims cells syntax system fills hash patterns under"
-  •Out "  More special:"
-  •Out "    fuzz perf"
-  •Out "  For specific configurations:"
-  •Out "    test_range // -DTEST_RANGE"
-  •Out "Lint all: test/run.bqn lint prims cells syntax system fills hash patterns under fuzz perf ffi test_range"
   •Exit 0
 }⍟⊢ (0=≠•args) ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨•args
 
