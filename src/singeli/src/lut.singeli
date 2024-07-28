@@ -115,21 +115,13 @@ def zip_halves{mode, E, nt, ni} = match(lut_gen{mode, w_h{E}, nt, ni}) { # e.g. 
     def prevs = each{G, d}
     def run_zip{zipper, is} = {
       def {lo, hi} = each{{prev}=>prev{is}, prevs}
-      join{flip{each{zipper, lo, hi}}}
+      join{each{zipper, lo, hi}}
     }
     def me{is:([ni]u8)} = {
       run_zip{mzip, is}
     }
-    def me{is:([ni]u8) if hasarch{'AARCH64'} and E==u32 and ni==16} = {
-      def is2 = sel{[16]u8, is, make{[16]u8, 0,1,2,3, 8,9,10,11, 4,5,6,7, 12,13,14,15}}
-      run_zip{mzip, is2}
-    }
-    def me{is:([ni]u8) if hasarch{'AARCH64'} and E==u64 and ni==16} = {
-      def is2 = sel{[16]u8, is, make{[16]u8, 0,1,8,9,2,3,10,11,4,5,12,13,6,7,14,15}}
-      run_zip{mzip, is2}
-    }
     def me{is:([ni]u8) if hasarch{'X86_64'} and E==u64 and ni==16} = {
-      def is2 = sel{[16]u8, is, make{[16]u8, 0,1,8,9,2,3,10,11,4,5,12,13,6,7,14,15}}
+      def is2 = sel{[16]u8, is, make{[16]u8, 0,1,4,5,2,3,6,7,8,9,12,13,10,11,14,15}}
       run_zip{mzip128, is2}
     }
     def me{is:([ni]u8) if hasarch{'X86_64'} and E==u16 and ni==32} = {
