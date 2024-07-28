@@ -505,7 +505,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         ux csz = xsh[k];
         if (csz<=1 || IA(x)==0) return x;
         u8 xe = TI(x,elType);
-        if (cr==1 && csz<=64 && xe!=el_bit && csz < (128*8 >> arrTypeBitsLog(TY(x)))) {
+        if (cr==1 && csz<=64 && xe!=el_bit && csz <= (128*8 >> arrTypeBitsLog(TY(x)))) {
           incG(x); // TODO proper shape moving
           Arr* r = customizeShape(select_rows_direct(x, csz, cam, reverse_inds_64+64-csz, csz, el_i8));
           arr_shCopy(r, x);
