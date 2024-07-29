@@ -25,13 +25,13 @@ typedef TyArr BitArr;
 #define BIT_N(IA) (((IA)+63) >> 6) // u64 count needed to store IA bits
 
 static inline void bitp_set(u64* arr, u64 n, bool v) {
-  u64 m = ((u64)1)<<(n&63);
-  if (v) arr[n>>6]|=  m;
-  else   arr[n>>6]&= ~m;
+  u64 m = ((u64)1)<<(n&7);
+  if (v) ((u8*)arr)[n>>3]|=  m;
+  else   ((u8*)arr)[n>>3]&= ~m;
   // arr[n>>6] = (arr[n>>6]&(~m)) | (((u64)v)<<(n&63));
 }
 static inline bool bitp_get(u64* arr, u64 n) {
-  return (arr[n>>6] >> (n&63)) & 1;
+  return (((u8*)arr)[n>>3] >> (n&7)) & 1;
 }
 static inline u64 bitp_l0(u64* arr, u64 ia) { // last u64 of the array, with the tail set to 0s
   return ia&63? arr[ia>>6]&((1ULL<<(ia&63))-1) : 0;
