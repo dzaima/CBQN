@@ -29,7 +29,7 @@ NORETURN NOINLINE void fatal(char* s) {
   vm_pstLive(); fflush(stderr); fflush(stdout);
   print_vmStack(); fflush(stderr);
   before_exit();
-  #if DEBUG
+  #if DEBUG || USE_VALGRIND
     __builtin_trap();
   #endif
   exit(1);

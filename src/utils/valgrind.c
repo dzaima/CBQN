@@ -53,7 +53,7 @@ B vg_validateResult(B x) {
         u64 exp = (1ULL<<left) - 1;
         u64 got = vg_getDefined_u64(last);
         if ((got&exp) != exp) {
-          printf("Expected %d defined trailing bits, got:\n", left);
+          printf("Expected %d defined trailing bits in object at %p, got:\n", left, v(x));
           vg_printDefined_u64(NULL, last);
           fatal("");
         }
@@ -68,7 +68,7 @@ B vg_validateResult(B x) {
     len = sizeof(B) * ia;
   }
   if (VALGRIND_CHECK_MEM_IS_DEFINED(data, len)) {
-    printf("Expected "N64d" defined bytes, got:\n", len);
+    printf("Expected "N64d" defined bytes in object at %p, got:\n", len, v(x));
     vg_printDump_p(NULL, data, len);
     fatal("");
   }

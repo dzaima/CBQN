@@ -69,16 +69,6 @@
     #define FAST_PDEP 1
   #endif
   #include <immintrin.h>
-  
-  #if USE_VALGRIND
-    #define _pext_u32 vg_pext_u64
-    #define _pext_u64 vg_pext_u64
-    #define _pdep_u32 vg_pdep_u64
-    #define _pdep_u64 vg_pdep_u64
-  #else
-    #define vg_loadLUT64(p, i) p[i]
-  #endif
-  
 #endif
 
 #if !USE_VALGRIND

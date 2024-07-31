@@ -24,6 +24,17 @@
     #define unpacked_vqtbl4q_u8(A,B,C,D,I) vqtbl4q_u8((uint8x16x4_t){A,B,C,D}, I)
   #endif
   
+  #if USE_VALGRIND
+    #if defined(__amd64__)
+      #include<immintrin.h>
+      #define _pext_u32 vg_pext_u64
+      #define _pext_u64 vg_pext_u64
+      #define _pdep_u32 vg_pdep_u64
+      #define _pdep_u64 vg_pdep_u64
+    #endif
+  #else
+    #define vg_loadLUT64(p, i) p[i]
+  #endif
   
   #define BCALL(N, X) N(b(X))
   #define interp_f64(X) b(X).f
