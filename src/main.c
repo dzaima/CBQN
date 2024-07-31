@@ -260,6 +260,8 @@ static NOINLINE i64 readInt(char** p) {
     return c;
   }
   NOINLINE void completion_impl(const char* inp, void* res, bool hint, int* dist) {
+    if (!*inp) return;
+    
     CATCH_OOM(return)
     B inpB = toC32Any(utf8Decode0(inp));
     u32* chars = c32any_ptr(inpB);
