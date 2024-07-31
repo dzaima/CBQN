@@ -68,6 +68,7 @@ static NOINLINE i64 readInt(char** p) {
   #include <errno.h>
   #include "utils/cstr.h"
   GLOBAL Replxx* global_replxx;
+  INIT_GLOBAL bool replxx_read_only = false;
   STATIC_GLOBAL char* global_histfile;
   STATIC_GLOBAL u32 cfg_prefixChar = U'\\';
   
@@ -957,6 +958,11 @@ int main(int argc, char* argv[]) {
             printf("CBQN, unknown version\n");
           #endif
           exit(0);
+        #if USE_REPLXX
+        } else if (!strcmp(carg, "--replxx-read-only")) {
+          replxx_read_only = true;
+          continue;
+        #endif
         } else {
           printf("%s: Unknown option: %s\n", argv[0], carg);
           exit(1);
@@ -1080,7 +1086,7 @@ int main(int argc, char* argv[]) {
         }
         replxx_history_add(global_replxx, ln);
         cbqn_runLine((char*)ln, strlen(ln));
-        replxx_history_save(global_replxx, histfile);
+        if (!replxx_read_only) replxx_history_save(global_replxx, histfile);
       }
     }
     else
