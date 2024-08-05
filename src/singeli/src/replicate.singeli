@@ -290,19 +290,25 @@ exportT{'si_constrep', each{rep_const, dat_types}}
 
 
 # Constant replicate on boolean
-fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = 0
-fn rep_const_bool{if hasarch{'BMI2'}}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
-  if (wv > 52) return{0}
+fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
+  def has_pdep = hasarch{'BMI2'}
+  if (wv > 32) return{0}
+  if (not has_pdep and wv <= 8) return{0}
   m:u64 = spaced_mask_of{wv}
   xw:u64 = 0
   d := cast_i{usz, popc{m}} # == 64/wv
   nw := cdiv{rlen, 64}
   if (m&1 != 0) {  # Power of two
     i := -usz~~1
+    def expand = if (has_pdep) pdep{., m} else {
+      mult:u64 = spaced_mask_of{wv-1} >> d
+      xm := (u64~~1 << d) - 1
+      {xw} => ((xw&xm)*mult) & m
+    }
     @for (r over j to nw) {
       xw >>= d
       if ((j&(wv-1))==0) { ++i; xw = load{x, i} }
-      rw := pdep{xw, m}
+      rw := expand{xw}
       r = (rw<<wv) - rw
     }
   } else {
@@ -312,10 +318,15 @@ fn rep_const_bool{if hasarch{'BMI2'}}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
     tsh := d*wv-(d+1)
     xb := *u8~~x
     xi:usz=0; o:usz=0
+    def expand = if (has_pdep) pdep{., m} else {
+      {mult, _} := unaligned_spaced_mask_mod{wv-1}
+      xm := mt - 1
+      {xw} => ((xw&xm)*mult) & m
+    }
     @for (r over j to nw) {
       xw = loadu{*u64~~(xb + xi/8)} >> (xi%8)
       ex := (xw & mt) << tsh
-      rw := pdep{xw, m}
+      rw := expand{xw}
       r = ((rw-ex)<<(wv-o)) - (rw>>o|(xw&1))
       o += q
       oo := o>=wv; xi+=d+promote{usz,oo}; o-=wv&-oo
