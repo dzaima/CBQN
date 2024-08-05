@@ -291,6 +291,44 @@ exportT{'si_constrep', each{rep_const, dat_types}}
 
 # Constant replicate on boolean
 fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
+  if (hasarch{'SSSE3'} and wv==3) {
+    def vl = 16; def V = [vl]u8
+    nv := cdiv{rlen, width{V}}
+    i:usz = 0; j:usz = 0
+    rv := *V~~r
+    def end = makelabel{}; while (j < nv) {
+      xv := load{*V~~x, i}; ++i
+      # 01234567 to 05316427 on each byte
+      def bv{bs} = fold{flat_table{+,...}, reverse{each{tup{0,.}, 1<<bs}}}
+      {t0, t4} := each{{is} => make{V, bv{is}}, split{4, 3*iota{8} % 8}}
+      m4 := V**0xf
+      xv = sel{V, t0, xv & m4} | sel{V, t4, V~~([8]u16~~xv>>4) & m4}
+      # Overhang from previous 64-bit elements
+      def os = 8-3                              # right shift
+      def ix = __floor{64*slice{iota{3},1} / 3} # bits that overhang within a word
+      def ib = __floor{ix / 8}                  # byte index
+      def io = 8*ib + 3*ix%8                    # where they are in xv
+      def wi = split{2, tup{255, ...ib, 255, ...8+ib}}
+      def W = [2]u64
+      xo := V~~((W~~xv & W**fold{|, 1<<io}) >> os)
+      xo += xo > V**0
+      # Permute and mask bytes
+      def step{jj, oi, ind, mask} = {
+        b := W~~(sel{V, xv, ind} & mask)
+        r := V~~((b<<3) - b)
+        o := sel{V, xo, make{V, flat_table{max, oi, 255*(0<iota{8})}}}
+        store{rv, j, r|o}; ++j; if (jj<2 and j==nv) goto{end}
+      }
+      def make3V{vs} = each{make{V,.}, split{vl, vs}}
+      each{step,
+        iota{3}, wi,
+        make3V{replicate{3, iota{vl}}},
+        make3V{8w2b001 << ((-8)*iota{3*vl} % 3)}
+      }
+    }
+    setlabel{end}
+    return{1}
+  }
   def has_pdep = hasarch{'BMI2'}
   if (wv > 32) return{0}
   if (not has_pdep and wv <= 8) return{0}
