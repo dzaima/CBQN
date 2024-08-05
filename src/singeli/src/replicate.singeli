@@ -1,5 +1,7 @@
 include './base'
+if_inline (hasarch{'BMI2'}) include './bmi2'
 include './mask'
+include './spaced'
 
 def ind_types = tup{i8, i16, i32}
 def dat_types = tup{...ind_types, u64}
@@ -284,3 +286,41 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
 }
 
 exportT{'si_constrep', each{rep_const, dat_types}}
+
+
+
+# Constant replicate on boolean
+fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = 0
+fn rep_const_bool{if hasarch{'BMI2'}}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
+  if (wv > 52) return{0}
+  m:u64 = spaced_mask_of{wv}
+  xw:u64 = 0
+  d := cast_i{usz, popc{m}} # == 64/wv
+  nw := cdiv{rlen, 64}
+  if (m&1 != 0) {  # Power of two
+    i := -usz~~1
+    @for (r over j to nw) {
+      xw >>= d
+      if ((j&(wv-1))==0) { ++i; xw = load{x, i} }
+      rw := pdep{xw, m}
+      r = (rw<<wv) - rw
+    }
+  } else {
+    q := cast_i{usz, ctz{m}}  # == 64%wv
+    m = m<<(wv-q) | 1
+    mt := u64~~1 << (d+1)  # Bit d+1 may be needed, isn't pdep-ed
+    tsh := d*wv-(d+1)
+    xb := *u8~~x
+    xi:usz=0; o:usz=0
+    @for (r over j to nw) {
+      xw = loadu{*u64~~(xb + xi/8)} >> (xi%8)
+      ex := (xw & mt) << tsh
+      rw := pdep{xw, m}
+      r = ((rw-ex)<<(wv-o)) - (rw>>o|(xw&1))
+      o += q
+      oo := o>=wv; xi+=d+promote{usz,oo}; o-=wv&-oo
+    }
+  }
+  1
+}
+export{'si_constrep_bool', rep_const_bool{}}
