@@ -165,8 +165,8 @@ Temporary allocations can be made with `utils/talloc.h`:
 ```C
 #include "utils/talloc.h"
 TALLOC(char, buf, 123); // allocate char* buf with 123 elements
-char* buf = TALLOCP(char, 123); // alternative syntax, useful if buf is declared elsewhere
 // buf is now a regular char* and can be stored/passed around as needed
+char* buf = TALLOCP(char, 123); // alternative syntax, useful if buf is declared elsewhere
 buf = TREALLOC(buf, 456); // extend buf; may reuse, may allocate new space; won't ever truncate
 TFREE(buf); // free buf
 // if the size is guaranteed to be small enough, using VLAs is potentially fine
@@ -176,7 +176,7 @@ TSALLOC(i32, stack, 10); // allocate an i32 stack with initially reserved 10 ite
 TSADD(stack, 15); // add a single item
 TSADDA(stack, (i32*){1,2,3}, 3); // add many items
 usz sz = TSSIZE(stack); // get the current height of the stack
-i32 item = stack[1]; // get the 2nd item
+// stack is an i32*, pointing to the bottom of the stack
 TSFREE(stack); // free the stack
 // note that TSALLOC creates multiple local variables, and as such cannot be passed around to other functions
 ```
