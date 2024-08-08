@@ -37,7 +37,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
       f64 f0 = o2fG(e0);
       f64 f1 = o2fG(e1);
       switch (t0) { default: UD;
-        case el_bit: if (f1==0||f1==1) goto t_bit;
+        case el_bit: if (q_fbit(f1)) goto t_bit;
         case el_i8:  if (q_fi8(f1)) goto t_i8; if (q_fi16(f1)) goto t_i16; if (q_fi32(f1)) goto t_i32; goto t_f64; // not using fallthrough to allow deduplicating float→int conversion
         case el_i16:                           if (q_fi16(f1)) goto t_i16; if (q_fi32(f1)) goto t_i32; goto t_f64;
         case el_i32:                                                       if (q_fi32(f1)) goto t_i32; goto t_f64;
