@@ -711,7 +711,11 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       case n_rtack: dec(w); return x;
       case n_ltack: return const_cells(x, xk, xsh, w, chr);
       case n_select:
-        if (isArr(w) && RNK(w)==1 && xcr==1 && TI(w,arrD1)) { // TODO handle RNK(w)!=1
+        if (isArr(w) && RNK(w)==1 && xcr==1) { // TODO handle RNK(w)!=1
+          if (!TI(w,arrD1)) {
+            w = num_squeezeChk(w);
+            if (!TI(w,arrD1)) break;
+          }
           assert(xr > 1);
           ux wia = IA(w);
           ShArr* rsh = m_shArr(xr);

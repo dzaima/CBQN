@@ -559,15 +559,18 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   #undef FREE_CHECK
 }
 
-static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same element type as src, but new ia
-  u8 se = TI(src,elType); assert(se!=el_bit);
+static void* m_arrv_same_t(B* r, usz ia, u8 ty) {
+  u8 se = TIi(ty,elType);
   if (se==el_B) {
     HArr_p p = m_harr0v(ia);
     *r = p.b;
     return p.a;
   } else {
-    return m_tyarrlv(r, arrTypeWidthLog(TY(src)), ia, arrNewType(TY(src)));
+    return m_tyarrlbv(r, arrTypeBitsLog(ty), ia, arrNewType(ty));
   }
+}
+static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same element type as src, but new ia
+  return m_arrv_same_t(r, ia, TY(src));
 }
 
 B slash_c2(B, B, B);
@@ -585,7 +588,7 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 #endif
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
-B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊x
+B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊x; if inds are valid and csz<=128, ie must be <=el_i8
   assert(csz!=0 && cam!=0 && indn!=0);
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
@@ -597,30 +600,38 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
     if (!getRange_fns[ie](inds, bounds, indn) || bounds[0]<-1 || bounds[1]>0) goto generic_any;
     return C2(slash, m_f64(indn), taga(arr_shVec(customizeShape(x))));
   }
-  
   assert(csz>=2);
   
+  ux ria = indn * cam;
+  B r;
+  u8* xp;
   u8 xe = TI(x,elType);
   u8 lb = arrTypeWidthLog(TY(x));
-  u8* xp;
+  
   if (xe==el_B) {
     if (sizeof(B) != 8) goto generic_any;
     xp = (u8*) arr_bptr(x);
     if (xp == NULL) goto generic_any;
   } else {
-    if (xe == el_bit) goto generic_any;
     xp = tyany_ptr(x);
+    if (xe == el_bit) {
+      #if SINGELI_AVX2 || SINGELI_NEON
+        if (indn<=8 && csz<=8) goto bit_ok;
+      #endif
+      goto generic_any;
+      goto bit_ok; bit_ok:;
+    }
   }
   
-  B r;
-  ux ria = indn * cam;
   bool fast; (void) fast;
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
   i64 bounds[2];
   
   if (ie==el_bit) {
+    // TODO path for xe==el_bit + long indn
     if (csz>32 || indn>32 || indn>INDS_BUF_MAX) { // TODO properly tune
+      assert(xe!=el_bit && (csz>8 || indn>8));
       u8* rp = m_arrv_same(&r, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
@@ -663,6 +674,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       }
     }
     skip_bounds_check:;
+    assert(ie==el_i8 || csz>128);
     
     #if SINGELI_AVX2 || SINGELI_NEON
       if (fast) {
@@ -680,11 +692,68 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       }
     #endif
     
+    #if SINGELI_AVX2 || SINGELI_NEON
+      if (xe==el_bit) {
+        assert(ie==el_i8 && csz<=8 && indn<=8 && csz>=2 && indn>=1);
+        // TODO si_select_cells_bit_lt64 for indn==1
+        static const u8 rep_lut[9] = {0,3,2,1,1,0,0,0,0};
+        u8 exp = rep_lut[csz>indn? csz : indn];
+        ux rindn = indn<<exp;
+        ux rcsz = csz<<exp;
+        assert(rcsz<=8 && rindn<=8);
+        
+        ux rcam = (cam + (1<<exp)-1)>>exp;
+        
+        if (rcsz!=8) {
+          Arr* xa = customizeShape(x);
+          usz* xsh = arr_shAlloc(xa, 2);
+          xsh[0] = rcam;
+          xsh[1] = rcsz;
+          // leave ia unchanged, desynchronizing from product of shape; TODO really really shouldn't do that, and instead pass cam & csz directly to bit widener
+          x = widenBitArr(taga(xa), 1);
+          xp = tyany_ptr(x);
+          SELECT_ROWS_PRINTF("8bit: widen %zu‿%zu → ⟨%zu,%zu→8⟩\n", cam, csz, rcam, rcsz);
+        }
+        
+        if (exp!=0) {
+          simd_repeat_inds(inds, inds_buf, indn, csz);
+          inds = inds_buf;
+        }
+        
+        u64* rp;
+        ux ria0 = rindn!=8? 8*rcam : ria;
+        r = m_bitarrv(&rp, ria0);
+        SELECT_ROWS_PRINTF("8bit: indn=%zu rindn=%zu csz=%zu rcsz=%zu cam=%zu ria0=%zu rcam=%zu\n", indn, rindn, csz, rcsz, cam, ria0, rcam);
+        si_select_rows_8bit(inds, rindn, xp, rp, (ria0+7)/8);
+        
+        if (rindn!=8) {
+          SELECT_ROWS_PRINTF("8bit: narrow %zu → %zu\n", rcsz, csz);
+          usz* rsh = arr_shAlloc(a(r), 2);
+          rsh[0] = rcam;
+          rsh[1] = 8;
+          
+          usz tgt = rindn;
+          r = narrowWidenedBitArr(r, 1, 1, &tgt); // TODO this assumes trailing zeroes
+          
+          Arr* ra = arr_shVec(customizeShape(r));
+          r = taga(ra);
+          
+          ux ria1 = ra->ia;
+          assert(ria <= ria1);
+          FINISH_OVERALLOC(ra, offsetof(TyArr,a) + (ria+7)/8, offsetof(TyArr,a) + (ria1+7)/8);
+          ra->ia = ria;
+        }
+        
+        goto decG_ret;
+      }
+    #endif
+    
     u8* rp = m_arrv_same(&r, ria, x);
     
     ux slow_cam = cam;
     #if SINGELI_AVX2 || SINGELI_NEON
     ux lnt = CLZC(csz-1); // ceil-log2 of number of elements in table
+    
     if (fast && lnt < select_rows_tab_h) {
       u8 max_indn = select_rows_max_indn[lb];
       if (indn > max_indn) goto no_fast;
@@ -788,7 +857,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   ux in = IA(inds);
   if (in == 0) return taga(emptyArr(x, 1));
   u8 ie = TI(inds,elType);
-  if (csz<=2? ie!=el_bit : csz<128? ie>el_i8 : !elInt(ie)) {
+  if (csz<=2? ie!=el_bit : csz<=128? ie>el_i8 : !elInt(ie)) {
     inds = num_squeeze(inds);
     ie = TI(inds,elType);
     if (!elInt(ie)) goto generic;

@@ -9,8 +9,6 @@ def arch_minvw = if (hasarch{'AARCH64'}) 64 else 128
 def arch_minv{T=[_]E if width{T}< arch_minvw} = [arch_minvw / width{E}]E
 def arch_minv{T      if width{T}>=arch_minvw} = T
 
-def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
-
 def gather
 if_inline (hasarch{'AVX2'}) {
   # def:T - masked original content
@@ -306,6 +304,16 @@ exportT{'si_select_tab', join{table{select_fn,
     1
   }
   export{'simd_select_bool128', simd_select_bool128}
+  
+  fn si_select_rows_8bit(inds:*u8, indn:ux, src:*void, dst:*void, rows:ux) : void = { # leaves zeroes in result cells above indn
+    def bulk = arch_defvw / 8
+    def V = [bulk]u8
+    def lut = shuf_u8bits{inds, indn}
+    @maskedLoop{bulk}(src in tup{V,*u8~~src}, dst in tup{V,*u8~~dst} over rows) {
+      dst = lut{src}
+    }
+  }
+  export{'si_select_rows_8bit', si_select_rows_8bit}
 })
 
 
