@@ -59,15 +59,22 @@ def unreachable{} = emit{void, 'si_unreachable'}
 def assert{x:(u1)} = { if (not x) emit{void, 'si_unreachable'} }
 
 # various checks
+def all{{...vs}} = tree_fold{&, vs}
+def all{{}} = 1
+def all{G, ...vs if kgen{G}} = if (all{each{{c}=>length{c}==0, vs}}) 1 else G{...each{select{.,0}, vs}} and all{G, ...each{slice{.,1}, vs}}
+
 def oneVal{{h, ...t}} = {
   each{{c} => assert{same{c,h}}, t}
   h
 }
 def oneVal{{}} = {}
 def oneType{x} = oneVal{each{type, x}}
-def allSame{{h, ...t}} = tree_fold{&, each{is{h,.}, t}}
+def allSame{{h, ...t}} = all{is{h,.}, t}
 def allSame{{_}} = 1
 def allSame{{}} = 1
+
+def try_same_type{_, default} = default
+def try_same_type{{h:T, ...t} if all{hastype{.,T}, t}, _} = T
 
 def anyNum = match { {x:T}=>isprim{T}; {x} => knum{x} }
 def anyInt = match { {x:T}=>isint{T} ; {x} => knum{x} and (x>>0) == x }
@@ -257,9 +264,10 @@ def truncBits{n, v if n==64} = cast_i{u64, v}
 def lb{n if knum{n} and (n>>1<<1) == n and n>0} = lb{n>>1}+1
 def lb{1} = 0
 
-def zlow{n,x} = (x >> n) << n    # zero out n least significant bits
-def tail{n,x} = x & ((1<<n) - 1) # get the n least significant bits
-def bit {k,x} = x &  (1<<k)      # get the k-th bit
+def tail{n} = (1<<n) - 1      # mask of the n least significant bits
+def zlow{n,x} = (x >> n) << n # zero out n least significant bits
+def tail{n,x} = x & tail{n}   # get the n least significant bits
+def bit {k,x} = x &  (1<<k)   # get the k-th bit
 
 # range logic
 def inRangeLen{x:TS=[_]T, start, count if issigned{T}} = { # ∊ [start;start+count)
