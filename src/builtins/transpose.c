@@ -12,6 +12,7 @@
 //     i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
 //   COULD use half-width or smaller kernels to improve odd sizes
 //   Scalar transpose or loop used for overhang of 1
+//   SHOULD add NEON
 
 // Reorder Axes
 // If 𝕨 indicates the identity permutation, return 𝕩
