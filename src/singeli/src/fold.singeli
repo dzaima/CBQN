@@ -2,7 +2,6 @@ include './base'
 include './mask'
 if_inline (hasarch{'BMI2'}) include './bmi2'
 include './spaced'
-include 'util/tup'
 include './scan_common'
 
 def opsh64{op}{v:([4]f64), perm} = op{v, shuf{[4]u64, v, perm}}

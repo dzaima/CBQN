@@ -1,7 +1,6 @@
 include './base'
 include './cbqnDefs'
 include './mask'
-include 'util/tup'
 
 def for_dir{up} = if (up) for else for_backwards
 

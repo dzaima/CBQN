@@ -1,5 +1,3 @@
-local include 'util/tup'
-
 def xrange{s, e} = s + range{e-s}
 
 def shuf_imm = shuf

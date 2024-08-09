@@ -2,7 +2,6 @@ include './debug'
 include './base'
 include './mask'
 include './cbqnDefs'
-include 'util/tup'
 include './vecfold'
 
 def is_sNaN{x:[_]u64} = tup{homAny, inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}}

@@ -2,7 +2,6 @@ include './base'
 include './mask'
 include './vecfold'
 include './hashtab'
-include 'util/tup'
 
 def findFirst{C, M, F, ...v1} = {
   def exit = makelabel{}

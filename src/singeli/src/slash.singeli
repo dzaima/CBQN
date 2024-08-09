@@ -5,7 +5,6 @@ if_inline (hasarch{'X86_64'}) {
   if_inline (hasarch{'AVX512F'}) include './avx512'
 }
 include './mask'
-include 'util/tup'
 
 def popcRand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
 def popcRand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}

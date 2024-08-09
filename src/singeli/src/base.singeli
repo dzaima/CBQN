@@ -2,6 +2,7 @@ include 'skin/c'
 include 'arch/c'
 include 'util/for'
 include 'util/kind'
+include 'util/tup'
 
 def ux = u64
 config usz = u32
@@ -18,10 +19,14 @@ def istup   = ktup
 
 def isunsigned{T} = isint{T} and not issigned{T}
 
-def isvec {T} = istype{T} and same{typekind{T},'vector'}
-def isprim{T} = istype{T} and same{typekind{T},'primitive'}
-def isptr {T} = istype{T} and same{typekind{T},'pointer'}
+def isvec {T} = istype{T} and same{typekind{T}, 'vector'} # TODO rename these to better reflect that they apply to types
+def isprim{T} = istype{T} and same{typekind{T}, 'primitive'}
+def isptr {T} = istype{T} and same{typekind{T}, 'pointer'}
 def elwidth{T} = width{eltype{T}}
+
+def reinterpret{T, x:T} = x
+def exportN{f, ...ns} = each{export{.,f}, ns}
+def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
 def andnot{a, b:T if anyNum{a} and isprim{T}} = a & ~b
@@ -29,6 +34,19 @@ def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
+def reverse_scan{G, v} = reverse{scan{{a,b}=>G{b,a}, reverse{v}}}
+
+def tree_fold{F, x} = {
+  def h = length{x}>>1
+  assert{h>0, 'tree_fold of empty'}
+  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,length{x}}}}
+}
+def tree_fold{F, {x}} = x
+
+def eachx{F, ...args} = {
+  def l = tree_fold{max, each{{x} => if(istup{x}) length{x} else 0, args}}
+  each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
+}
 
 
 def load {p:*[_]_, n   } = assert{0,'bad load',p,n}
@@ -42,10 +60,6 @@ def storeu{p:*T, v:T if issigned{T}} = storeu{*ty_u{T} ~~ p, ty_u{v}}
 def loadu {p:*T      if width{T}==8} = load{p}
 def storeu{p:*T, v:T if width{T}==8} = store{p, v}
 
-
-def reinterpret{T, x:T} = x
-def exportN{f, ...ns} = each{export{.,f}, ns}
-def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 
 # hints
@@ -75,6 +89,15 @@ def allSame{{}} = 1
 
 def try_same_type{_, default} = default
 def try_same_type{{h:T, ...t} if all{hastype{.,T}, t}, _} = T
+
+def broadcast{T, v if isprim{T}} = v
+def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
+
+# type stats
+def minvalue{T if isunsigned{T}} = 0
+def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
+def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
+def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 
 def anyNum = match { {x:T}=>isprim{T}; {x} => knum{x} }
 def anyInt = match { {x:T}=>isint{T} ; {x} => knum{x} and (x>>0) == x }
@@ -134,27 +157,6 @@ def el_h{[k]T} = [k]w_h{T}
 
 def el_m{V=[_]T} = re_el{w_d{T}, V} # double/halve element width, preserving width
 def el_s{V=[_]T} = re_el{w_h{T}, V}
-
-# type stats
-def minvalue{T if isunsigned{T}} = 0
-def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
-def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
-def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
-
-
-
-
-# tuple operations
-def iota{n if knum{n}} = range{n}
-def broadcast{T, v if isprim{T}} = v
-def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
-def collect{vars,begin,end,iter if knum{begin} and knum{end}} = {
-  each{iter{., vars}, range{end-begin}+begin}
-}
-
-# convert tuple to number in little-endian base b
-def base{b,{}} = 0
-def base{b,{h,...t}} = h + b*base{b,t}
 
 
 
@@ -255,6 +257,10 @@ def ceil_log2{n} = clzc{n-1}
 def ceil_log2{n if knum{n} and n>0} = ceil_log2{(n+1)>>1}+1
 def ceil_log2{1} = 0
 
+# convert tuple to number in little-endian base b
+def base{b,{}} = 0
+def base{b,{h,...t}} = h + b*base{b,t}
+
 def truncBits{n, v if n<=8}  = cast_i{u8, v}
 def truncBits{n, v if n==16} = cast_i{u16, v}
 def truncBits{n, v if n==32} = cast_i{u32, v}
@@ -349,19 +355,6 @@ def makeBranch{Ts, F} = {
   {...vs} => { args = vs; goto{start} }
 }
 def makeOptBranch{enable, Ts, F} = if (enable) makeBranch{Ts, F} else 'not defined'
-
-
-def tree_fold{F, x} = {
-  def h = length{x}>>1
-  assert{h>0, 'tree_fold of empty'}
-  F{tree_fold{F, slice{x,0,h}}, tree_fold{F, slice{x,h,length{x}}}}
-}
-def tree_fold{F, {x}} = x
-
-def eachx{F, ...args} = {
-  def l = tree_fold{max, each{{x} => if(istup{x}) length{x} else 0, args}}
-  each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
-}
 
 def undef{T, n if istype{T}} = @collect(n) undef{T}
 def undef{Ts if istup{Ts}} = each{undef, Ts}

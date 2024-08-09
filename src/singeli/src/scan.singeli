@@ -6,7 +6,6 @@ if_inline (hasarch{'X86_64'}) {
 include './mask'
 include './f64'
 include './spaced'
-include 'util/tup'
 include './scan_common'
 
 # Initialized scan, generic implementation
