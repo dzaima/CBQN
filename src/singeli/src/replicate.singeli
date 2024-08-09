@@ -1,5 +1,4 @@
 include './base'
-if_inline (hasarch{'BMI2'}) include './bmi2'
 include './mask'
 include './spaced'
 
@@ -291,51 +290,58 @@ exportT{'si_constrep', each{rep_const, dat_types}}
 
 # Constant replicate on boolean
 fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = {
-  def has_pdep = 0  # Obselete, kept here for descriptiveness
-  if (wv > 32) return{0}
-  m:u64 = spaced_mask_of{wv}
-  xw:u64 = 0
-  d := cast_i{usz, popc{m}} # == 64/wv
+  if (wv > 64) return{0}
   nw := cdiv{rlen, 64}
-  if (wv&1 != 0) {
-    rep_const_bool_generic_odd{wv, x, r, nw, m, d}
-  } else if (not has_pdep and wv <= 8) {
-    return{0}
-  } else if (m&1 != 0) {  # Power of two
-    i := -usz~~1
-    def expand = if (has_pdep) pdep{., m} else {
-      mult:u64 = spaced_mask_of{wv-1} >> d
-      xm := (u64~~1 << d) - 1
-      {xw} => ((xw&xm)*mult) & m
-    }
-    @for (r over j to nw) {
-      xw >>= d
-      if ((j&(wv-1))==0) { ++i; xw = load{x, i} }
-      rw := expand{xw}
-      r = (rw<<wv) - rw
+  if (wv&1 == 0) {
+    p := ctz{wv | 8} # Power of two for second replicate
+    wf := wv>>p
+    if (wf == 1) {
+      rep_const_bool_div8{wv, x, r, nw}
+    } else {
+      tlen := rlen>>p
+      wq := usz~~1<<p
+      if (p == 1 or (p == 2 and wv>=52)) { # Expanding odd second is faster
+        tlen = rlen / wf
+        t:=wf; wf=wq; wq=t
+      }
+      t := r + cdiv{rlen, 64} - cdiv{tlen, 64}
+      rep_const_bool{}(wf, x, t, tlen)
+      rep_const_bool{}(wq, t, r, rlen)
     }
   } else {
-    q := cast_i{usz, ctz{m}}  # == 64%wv
-    m = m<<(wv-q) | 1
-    mt := u64~~1 << (d+1)  # Bit d+1 may be needed, isn't pdep-ed
-    tsh := d*wv-(d+1)
-    xb := *u8~~x
-    xi:usz=0; o:usz=0
-    def expand = if (has_pdep) pdep{., m} else {
-      {mult, _} := unaligned_spaced_mask_mod{wv-1}
-      xm := mt - 1
-      {xw} => ((xw&xm)*mult) & m
-    }
-    @for (r over j to nw) {
-      xw = loadu{*u64~~(xb + xi/8)} >> (xi%8)
-      ex := (xw & mt) << tsh
-      rw := expand{xw}
-      r = ((rw-ex)<<(wv-o)) - (rw>>o|(xw&1))
-      o += q
-      oo := o>=wv; xi+=d+promote{usz,oo}; o-=wv&-oo
-    }
+    m:u64 = spaced_mask_of{wv}
+    d := cast_i{usz, popc{m}} # == 64/wv
+    rep_const_bool_generic_odd{wv, x, r, nw, m, d}
   }
   1
+}
+
+def rep_const_bool_div8{wv, x, r, nw} = {
+  def run{k} = {
+    # 2 -> 64w0x33, 12 -> 64w0x000f, etc.
+    def getm{sh} = base{2, iota{64}&sh == 0}
+    def osh{v, s} = v | v<<s
+    def expand = match (k) {
+      {2} => fold{
+        {v, sh} => osh{v, sh} & getm{sh},
+        ., 1 << reverse{iota{5}}
+      }
+      {4} => fold{
+        {v, sh} => osh{osh{v, sh}, 2*sh} & getm{sh},
+        ., tup{12, 3}
+      }
+      {8} => {
+        def mult = base{1<<7, 8**1}
+        {x} => (x | ((x&~1) * mult)) & 64w0x01
+      }
+    }
+    @for (xt in *ty_u{64/k}~~x, r over nw) {
+      def v = expand{promote{u64, xt}}
+      r = v<<k - v
+    }
+  }
+  def cases{k} = if (wv==k) run{k} else if (k<8) cases{2*k}
+  cases{2}
 }
 
 def rep_const_bool_generic_odd{k, xp, rp, nw, m, d} = {
@@ -350,7 +356,7 @@ def rep_const_bool_generic_odd{k, xp, rp, nw, m, d} = {
     def bits = (k*iota{1<<lw} >> merge{0, replicate{1<<i, i}}) & 1
     ~u64~~base{2, bits}
   }
-  swtab:*u64 = each{swdat{6,.}, 1+2*iota{16}}
+  swtab:*u64 = each{swdat{6,.}, 1+2*iota{32}}
   def swap_lens = reverse{2 << iota{5}}
   swap_data := load{swtab, k>>1}
   swsel:u64 = ~u64~~0
@@ -441,7 +447,7 @@ fn rep_const_bool{if hasarch{'SSSE3'}}(wv:usz, x:*u64, r:*u64, rlen:usz) : u1 = 
   if (wv&1 == 0) {
     p := ctz{wv | 8} # Power of two for second replicate
     if (wv>>p == 1) {
-      rep_const_bool_ssse3_div8{wv, x, r, rlen}
+      rep_const_bool_div8{wv, x, r, rlen}
     } else {
       tlen := rlen>>p
       t := r + cdiv{rlen, 64} - cdiv{tlen, 64}
@@ -482,7 +488,7 @@ def get_boolvec_writer{V, r, rlen} = {
   tup{output, flush}
 }
 
-def rep_const_bool_ssse3_div8{wv, x, r, rlen} = { # wv in 2,4,8
+def rep_const_bool_div8{wv, x, r, rlen if hasarch{'SSSE3'}} = { # wv in 2,4,8
   oper // ({a,b}=>floor{a/b}) infix left  40
   def avx2 = hasarch{'AVX2'}
   def vl = if (avx2) 32 else 16
