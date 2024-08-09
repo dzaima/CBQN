@@ -23,8 +23,6 @@ def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
 exportT{'simd_bitsel', table{arch_defvw}}
 
-def padd{E, ptr:P, am} = { ptr = P~~(am + *E~~ptr) }
-
 fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
   assert{cam>0}
   assert{(csz>1) & (csz<8)}
@@ -33,7 +31,7 @@ fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
   bitalign{tup{2,8,csz}, 8, {s, align} => {
     @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
       dst = align{load{*V~~src}}
-      padd{u8, src, bulk*s/8}
+      ptr_add{u8, src, bulk*s/8}
     }
   }}
 }
@@ -50,8 +48,8 @@ export{'si_bitwiden_n_8', bitwiden_n_8}
     bitalign{8, tup{2,8,csz}, {s, align} => {
       def get{} = align{load{*V~~src}}
       def next{} = {
-        padd{u8, src, bulk}
-        padd{u8, dstC, bulk*s/8}
+        ptr_add{u8, src, bulk}
+        ptr_add{u8, dstC, bulk*s/8}
       }
       while (dstC+bulk < dstE) {
         store{*V~~dstC, 0, get{}}

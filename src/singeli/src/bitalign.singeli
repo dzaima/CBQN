@@ -152,8 +152,6 @@ def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V=([16]u8)} => {
   (r0 | r1) & V**cast_i{u8, tail{s}}
 }}
 
-oper // ({a,b}=>floor{a/b}) infix left  40
-
 def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
   def props = memoize{{d} => {
     def indz = range{16*d/8}
@@ -182,7 +180,6 @@ def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
   }{d-2}
   
   def needs_blender = each{{c} => not all{-1==select{props{c},2}}, irange}
-  def reverse_scan{G, v} = reverse{scan{{a,b}=>G{b,a}, reverse{v}}}
   def blender = makevtabs{16, replicate{reverse_scan{|, needs_blender}, irange},
     tup{i8, {d,r} => select{props{d},2}},
   }
@@ -197,8 +194,6 @@ def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
     if (do_blend) r01 | sel{[16]u8, r01, ...blender{d-2}}
     else r01
   }
-  
-  def bit_lut{bits, idx} = ((u64~~base{2,bits} >> idx) & 1) != 0
   
   if (bit_lut{merge{2**0, needs_blender}, d}) G{d, run{1}}
   else G{d, run{0}}

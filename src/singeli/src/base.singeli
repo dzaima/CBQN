@@ -34,6 +34,10 @@ def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
+oper // ({a,b}=>floor{a/b}) infix left 40
+
+def ptr_add{E, ptr:P, am} = { ptr = P~~(am + *E~~ptr) }
+
 def reverse_scan{G, v} = reverse{scan{{a,b}=>G{b,a}, reverse{v}}}
 
 def tree_fold{F, x} = {
@@ -274,6 +278,16 @@ def tail{n} = (1<<n) - 1      # mask of the n least significant bits
 def zlow{n,x} = (x >> n) << n # zero out n least significant bits
 def tail{n,x} = x & tail{n}   # get the n least significant bits
 def bit {k,x} = x &  (1<<k)   # get the k-th bit
+
+def bit_lut{bits, idx if length{bits}<64 and all{(bits&1) == bits}} = ((base{2,bits} >> idx) & 1) != 0
+
+# Generalized flat transpose of iota{1<<length{bs}}
+# select{tr_iota{bs}, x} sends bit i of x to position select{bs, i}
+def tr_iota{...bs} = {
+  def axes = each{tup{0,.}, 1<<bs}
+  fold{flat_table{|,...}, reverse{axes}}
+}
+def tr_iota{{...bs}} = tr_iota{...bs}
 
 # range logic
 def inRangeLen{x:TS=[_]T, start, count if issigned{T}} = { # ∊ [start;start+count)
