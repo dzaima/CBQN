@@ -57,7 +57,7 @@
 //   COULD generate full list of indices via arith
 // 1-element cells: use (≠inds)/⥊x after checking ∧´inds∊0‿¯1
 // Used for ⌽⎉1
-// SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ⍉⎉k, probably more
+// SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ↓⎉k, ↕⎉k, ⍉⎉k, probably more
 
 #include "../core.h"
 #include "../utils/talloc.h"
