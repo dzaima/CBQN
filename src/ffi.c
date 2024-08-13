@@ -585,25 +585,24 @@ static NOINLINE B toW(u8 reT, u8 reW, B x) {
 
 FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
 
-#define CPY_UNSIGNED(REL, UEL, DIRECT, WIDEN, WEL) \
+#define CPY_UNSIGNED(REL, DIRECT, WIDEN, WEL, NARROW) \
   if (TI(x,elType)<=el_##REL) return taga(DIRECT(x)); \
   usz ia = IA(x);                                 \
   B t = WIDEN(x); WEL* tp = WEL##any_ptr(t);      \
   REL* rp; B r = m_##REL##arrv(&rp, ia);          \
-  vfor (usz i=0; i<ia; i++) ((UEL*)rp)[i] = tp[i];\
-  decG(t); return r;
+  NARROW; decG(t); return r;
 
-// copy elements of x to array of unsigned integers (using a signed integer array type as a "container"); consumes argument
+// copy elements of x to array of unsigned integers (output being a signed intered array as a "container"); consumes argument
 // undefined behavior if x contains a number outside the respective unsigned range (incl. any negative numbers)
-NOINLINE B cpyU32Bits(B x) { CPY_UNSIGNED(i32, u32, cpyI32Arr, toF64Any, f64) }
-NOINLINE B cpyU16Bits(B x) { CPY_UNSIGNED(i16, u16, cpyI16Arr, toI32Any, i32) }
-NOINLINE B cpyU8Bits(B x)  { CPY_UNSIGNED(i8,  u8,  cpyI8Arr,  toI16Any, i16) }
+NOINLINE B cpyU32Bits(B x) { CPY_UNSIGNED(i32, cpyI32Arr, toF64Any, f64, vfor (usz i=0; i<ia; i++) ((u32*)rp)[i] = tp[i];) }
+NOINLINE B cpyU16Bits(B x) { CPY_UNSIGNED(i16, cpyI16Arr, toI32Any, i32, COPY_TO_FROM(rp, el_c16, tp, el_c32, ia)) }
+NOINLINE B cpyU8Bits(B x)  { CPY_UNSIGNED(i8,  cpyI8Arr,  toI16Any, i16, COPY_TO_FROM(rp, el_c8,  tp, el_c16, ia)) }
 
-NOINLINE B cpyF32Bits(B x) { // copy x to a 32-bit float array (using an i32arr as a "container"). Unspecified rounding for numbers that aren't exactly floats, and undefined behavior on non-numbers
+NOINLINE B cpyF32Bits(B x) { // copy x to a 32-bit float array (output being an i32arr as a "container"). Unspecified rounding for numbers that aren't exactly floats, and undefined behavior on non-numbers
   usz ia = IA(x);
   B t = toF64Any(x); f64* tp = f64any_ptr(t);
   i32* rp; B r = m_i32arrv(&rp, ia);
-  vfor (usz i=0; i<ia; i++) ((f32*)rp)[i]=tp[i];
+  vfor (usz i=0; i<ia; i++) ((f32*)rp)[i] = tp[i];
   dec(t); return r;
 }
 
