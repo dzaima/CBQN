@@ -3,6 +3,7 @@ include './cbqnDefs'
 include './f64'
 include './bitops'
 include './mask'
+include './bitalign'
 
 def bitsel{VL, T, r, bits, e0, e1, len} = {
   def bulk = VL/width{T}
@@ -20,3 +21,20 @@ fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
 def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
 exportT{'simd_bitsel', table{arch_defvw}}
+
+def padd{E, ptr:P, am} = { ptr = P~~(am + *E~~ptr) }
+
+fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
+  assert{cam>0}
+  assert{(csz>1) & (csz<8)}
+  def bulk = arch_defvw / 8
+  def V = [bulk]u8
+  def rbytes = cdiv{csz*cam, 8}
+  bitalign{tup{2,8,csz}, 8, {s, align} => {
+    @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
+      dst = align{load{*V~~src}}
+      padd{u8, src, bulk*s/8}
+    }
+  }}
+}
+export{'si_bitwiden_n_8', bitwiden_n_8}

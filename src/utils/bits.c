@@ -132,11 +132,18 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
   usz* rsh = arr_shAlloc(r, lr+1);
   shcpy(rsh, SH(x), lr);
   rsh[lr] = ncsz;
+  if (PIA(r)==0) goto decG_ret;
   u64* xp = tyany_ptr(x);
   
   // TODO widen 8/16-bit cells to 16/32 via cpyC(16|32)Arr
   if (ncsz<=64 && (ncsz&(ncsz-1)) == 0) {
     u64 tmsk = (1ull<<pcsz)-1;
+    #if SINGELI_SIMD
+      if (ncsz==8) {
+        si_bitwiden_n_8(xp, rp, pcsz, cam);
+        goto decG_ret;
+      }
+    #endif
     #if FAST_PDEP
       if (ncsz<32) {
         assert(ncsz==8 || ncsz==16);
@@ -173,6 +180,7 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
       rp+= ncsz>>6;
     }
   }
+  decG_ret:;
   decG(x);
   return taga(r);
 }
