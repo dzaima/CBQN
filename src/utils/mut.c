@@ -316,35 +316,35 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   #include "./includeSingeli.h"
   typedef void (*copy_fn)(void*, void*, u64, void*);
   
-  static void badCopy(void* xp, void* rp, u64 len, void* xRaw) {
+  static void badCopy(void* rp, void* xp, u64 len, void* xRaw) {
     fatal("Copying wrong array type");
   }
   
   #define COPY_FN(X,R) simd_copy_##X##_##R
   #define MAKE_CPY(TY, MAKE, GET, WR, XRP, H2T, E, N, ...) \
   static copy_fn const copy0_##E##_fns[10];       \
-  NOINLINE void cpy##N##Arr_BF(void* xp, void* rp, u64 ia, Arr* xa) { \
+  NOINLINE void cpy##N##Arr_BF(void* rp, void* xp, u64 ia, Arr* xa) { \
     AS2B fn = TIv(xa,GET);                        \
     for (usz i=0; i<ia; i++) WR(fn(xa,i));        \
   }                                               \
-  static void cpy##N##Arr_B(void* xp, void* rp, u64 ia, void* xRaw) { \
+  static void cpy##N##Arr_B(void* rp, void* xp, u64 ia, void* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
     if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
-    else cpy##N##Arr_BF(xp, rp, ia, xa);          \
+    else cpy##N##Arr_BF(rp, xp, ia, xa);          \
   }                                               \
   static copy_fn const copy0_##E##_fns[] = __VA_ARGS__; \
   Arr* cpy##N##Arr(B x) {   \
     usz ia = IA(x);         \
     MAKE; arr_shCopy(r, x); \
     if (ia>0) {             \
-      copy0_##E##_fns[TI(x,elType)](tyany_ptr(x), XRP, ia, a(x)); \
+      copy0_##E##_fns[TI(x,elType)](XRP, tyany_ptr(x), ia, a(x)); \
     }                       \
     if (TY) ptr_decT(a(x)); \
     else decG(x);           \
     NOGC_E; return (Arr*)r; \
   }
   #define BIT_PUT(V) bitp_set((u64*)rp, i, o2bG(V))
-  #define H2T_COPY(E) copy0_##E##_fns[el_MAX](bxp, rp, ia, xRaw)
+  #define H2T_COPY(E) copy0_##E##_fns[el_MAX](rp, bxp, ia, xRaw)
   #define MAKE_TYCPY(T, E, F, ...) MAKE_CPY(1, T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia), getU, ((T##Atom*)rp)[i] = F, rp, H2T_COPY(E), E, T, __VA_ARGS__)
   #define MAKE_CCPY(T,E) MAKE_TYCPY(T, E, o2cG, {badCopy,     badCopy,      badCopy,       badCopy,       badCopy,       COPY_FN(c8,E),COPY_FN(c16,E),COPY_FN(c32,E),cpy##T##Arr_B,COPY_FN(B,E)})
   #define MAKE_ICPY(T,E) MAKE_TYCPY(T, E, o2fG, {COPY_FN(1,E),COPY_FN(i8,E),COPY_FN(i16,E),COPY_FN(i32,E),COPY_FN(f64,E),badCopy,      badCopy,       badCopy,       cpy##T##Arr_B,COPY_FN(f64,E)})
@@ -367,9 +367,9 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       if (l==0) return;       \
       u8 xt = TY(x);          \
       u8* xp = tyany_ptr(x);  \
-      tcopy_##E##_fns[xt]((xs << arrTypeWidthLog(xt)) + xp, ms + (E*)a, l, a(x)); \
+      tcopy_##E##_fns[xt](ms + (E*)a, (xs << arrTypeWidthLog(xt)) + xp, l, a(x)); \
     }                         \
-    FORCE_INLINE void copy0_##E(void* a, usz ms, B x, u8 xe, usz l) { copy0_##E##_fns[xe](tyany_ptr(x), ms+(E*)a, l, a(x)); }
+    FORCE_INLINE void copy0_##E(void* a, usz ms, B x, u8 xe, usz l) { copy0_##E##_fns[xe](ms+(E*)a, tyany_ptr(x), l, a(x)); }
   
   MAKE_ICPY(I8 , i8)  COPY_FNS(i8,  1)
   MAKE_ICPY(I16, i16) COPY_FNS(i16, 1)

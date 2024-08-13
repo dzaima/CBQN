@@ -13,7 +13,7 @@ def copyFromBits{V=[bulk]T, loadFn, rp, l:(u64)} = {
 }
 
 
-fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   def vw = arch_defvw
   assert{l!=0}
   
@@ -61,7 +61,7 @@ fn copy{X, R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
   }
 }
 
-fn copy_ubit{R}(x: *void, r: *void, l:u64, xRaw: *void) : void = {
+fn copy_ubit{R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   assert{l!=0}
   x0:= (*u8~~xRaw) + cbqn_tyArrOffset{}
   xs:= u64~~((*u8~~x) - x0)
