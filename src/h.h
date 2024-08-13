@@ -114,6 +114,8 @@ typedef size_t ux;
 #define POPC(X) __builtin_popcountll(X)
 #define LIKELY(X) __builtin_expect((X)!=0,1)
 #define RARE(X) __builtin_expect((X)!=0,0)
+#define ARBITRARY(T) ((T)0) // to be potentially replaced with something better if such arrives
+#define GUARANTEED(V) ({ AUTO v_ = (V); __builtin_constant_p(v_) && v_; })
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // value, result type, field name; reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
 #define N64x "%"SCNx64
