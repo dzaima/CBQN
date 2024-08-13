@@ -138,7 +138,7 @@ static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) {
   // TODO widen 8/16-bit cells to 16/32 via cpyC(16|32)Arr
   if (ncsz<=64 && (ncsz&(ncsz-1)) == 0) {
     u64 tmsk = (1ull<<pcsz)-1;
-    #if SINGELI_SIMD
+    #if SINGELI_AARCH64 || SINGELI_AVX2
       if (ncsz==8) {
         si_bitwiden_n_8(xp, rp, pcsz, cam);
         goto decG_ret;

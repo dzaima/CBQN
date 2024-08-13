@@ -3,8 +3,6 @@ def __shr{(u16)}{a:T, b} = T~~(re_el{u16,a}>>b)
 def broadcast{[(n*2)]E, x:[n]E} = pair{x, x}
 def pow2_up{v, least} = max{least, 1<<ceil_log2{v}} # least ⌈ ⌈⌾(2⊸⋆⁼) v
 
-def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
-
 # make a LUT of at least nt elements in tab, to be indexed by [ni_real≥ni]u8
 # E must be unsigned
 # mode is a hint on expected usage:

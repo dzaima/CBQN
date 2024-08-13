@@ -23,19 +23,21 @@ def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
 exportT{'simd_bitsel', table{arch_defvw}}
 
-fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
-  assert{cam>0}
-  assert{(csz>1) & (csz<8)}
-  def bulk = arch_defvw / 8
-  def V = [bulk]u8
-  bitalign{tup{2,8,csz}, 8, {s, align} => {
-    @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
-      dst = align{load{*V~~src}}
-      ptr_add{u8, src, bulk*s/8}
-    }
-  }}
-}
-export{'si_bitwiden_n_8', bitwiden_n_8}
+(if (has_sel) {
+  fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
+    assert{cam>0}
+    assert{(csz>1) & (csz<8)}
+    def bulk = arch_defvw / 8
+    def V = [bulk]u8
+    bitalign{tup{2,8,csz}, 8, {s, align} => {
+      @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
+        dst = align{load{*V~~src}}
+        ptr_add{u8, src, bulk*s/8}
+      }
+    }}
+  }
+  export{'si_bitwiden_n_8', bitwiden_n_8}
+})
 
 (if (hasarch{'AARCH64'}) {
   fn bitnarrow_8_n(src:*void, dst:*void, csz:ux, cam:ux) : void = {
