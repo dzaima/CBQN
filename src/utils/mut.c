@@ -228,7 +228,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
   #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
 #endif
 #define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
-#define PTR_COPY(X, R) for (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
+#define PTR_COPY(X, R) vfor (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
 
 NOINLINE void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l) {
   bit_cpy(r, rs, x, xs, l);
@@ -314,7 +314,6 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 #if SINGELI_SIMD
   #define SINGELI_FILE copy
   #include "./includeSingeli.h"
-  typedef void (*copy_fn)(void*, void*, u64, void*);
   
   static void badCopy(void* rp, void* xp, u64 len, void* xRaw) {
     fatal("Copying wrong array type");
@@ -378,27 +377,102 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   MAKE_CCPY(C8,  c8)  COPY_FNS(c8,  0)
   MAKE_CCPY(C16, c16) COPY_FNS(c16, 0)
   MAKE_CCPY(C32, c32) COPY_FNS(c32, 0)
+  
+  INIT_GLOBAL copy_fn tcopy_all[] = {
+    [el_bit*8 + el_bit] = simd_copy_1_1,
+    [el_bit*8 +  el_i8] = simd_copy_i8_1,
+    [el_bit*8 + el_i16] = simd_copy_i16_1,
+    [el_bit*8 + el_i32] = simd_copy_i32_1,
+    [el_bit*8 + el_f64] = simd_copy_f64_1,
+    
+    #define NUM_ROW(E) \
+      [el_##E*8 + el_bit] = simd_copy_1u_##E, \
+      [el_##E*8 +  el_i8] = simd_copy_i8_##E, \
+      [el_##E*8 + el_i16] = simd_copy_i16_##E, \
+      [el_##E*8 + el_i32] = simd_copy_i32_##E, \
+      [el_##E*8 + el_f64] = simd_copy_f64_##E,
+    NUM_ROW(i8)
+    NUM_ROW(i16)
+    NUM_ROW(i32)
+    NUM_ROW(f64)
+    #undef NUM_ROW
+    
+    #define CHR_ROW(E) \
+      [el_##E*8 +  el_c8] = simd_copy_c8_##E, \
+      [el_##E*8 + el_c16] = simd_copy_c16_##E, \
+      [el_##E*8 + el_c32] = simd_copy_c32_##E,
+    CHR_ROW(c8)
+    CHR_ROW(c16)
+    CHR_ROW(c32)
+    #undef CHR_ROW
+    [(el_B+1)*8 + (el_B+1)] = NULL // make the rest of the entries at least segfault
+  };
+  
   static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) { bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l); }
   FORCE_INLINE void copy0_bit(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_bit(a, ms, x, 0, l); }
   FORCE_INLINE void copy0_B  (void* a, usz ms, B x, u8 xe, usz l) { m_copyG_B  (a, ms, x, 0, l); }
   #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copy0_##RE(WHERE, MS, X, XE, LEN) // assumptions: x fits; LEN≠0
+  
   #undef COPY_FNS
   #undef COPY_FN
   
 #else
   #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copyFns[el_##RE](WHERE, MS, X, 0, LEN)
   
+  void basic_copy_bit_bit(void* rp, void* xp, u64 len) { bit_cpyN(rp, 0, xp, 0, len); }
+  #define BASIC_COPY_BIT_NUM(XE) 
+  
+  #define BASIC_COPY_NUM(RE, XE) void basic_copy_##XE##_##RE(void* rp, void* xp, u64 len) { vfor (ux i = 0; i < len; i++) ((RE*)rp)[i] = ((XE*)xp)[i]; }
+  #define BASIC_COPY_NUM_ROW(RE) BASIC_COPY_NUM(RE, i8) BASIC_COPY_NUM(RE, i16) BASIC_COPY_NUM(RE, i32) BASIC_COPY_NUM(RE, f64)
+  BASIC_COPY_NUM_ROW(i8) BASIC_COPY_NUM_ROW(i16) BASIC_COPY_NUM_ROW(i32) BASIC_COPY_NUM_ROW(f64)
+  #undef BASIC_COPY_NUM_ROW
+  #undef BASIC_COPY_NUM
+  
+  #define BASIC_COPY_CHR(RE, XE) void basic_copy_##XE##_##RE(void* rp, void* xp, u64 len) { vfor (ux i = 0; i < len; i++) ((RE*)rp)[i] = ((XE*)xp)[i]; }
+  #define BASIC_COPY_CHR_ROW(RE) BASIC_COPY_CHR(RE, u8) BASIC_COPY_CHR(RE, u16) BASIC_COPY_CHR(RE, u32)
+  BASIC_COPY_CHR_ROW(u8) BASIC_COPY_CHR_ROW(u16) BASIC_COPY_CHR_ROW(u32)
+  #undef BASIC_COPY_CHR_ROW
+  #undef BASIC_COPY_CHR
+  
+  #define BASIC_COPY_BIT(E) \
+    void basic_copy_bit_##E  (void* rp, void* xp, u64 len) { for (usz i = 0; i < len; i++) ((E*)rp)[i] = bitp_get(xp, i); } \
+    void basic_copy_##E##_bit(void* rp, void* xp, u64 len) { for (usz i = 0; i < len; i++) bitp_set(rp, i, ((E*)xp)[i]!=0); }
+  BASIC_COPY_BIT(i8) BASIC_COPY_BIT(i16) BASIC_COPY_BIT(i32) BASIC_COPY_BIT(f64)
+  #undef BASIC_COPY_BIT
+  
+  INIT_GLOBAL basic_copy_fn basic_copy_all[] = {
+    #define NUM_ROW(E) \
+      [el_##E*8 + el_bit] = basic_copy_bit_##E, \
+      [el_##E*8 +  el_i8] = basic_copy_i8_##E,  \
+      [el_##E*8 + el_i16] = basic_copy_i16_##E, \
+      [el_##E*8 + el_i32] = basic_copy_i32_##E, \
+      [el_##E*8 + el_f64] = basic_copy_f64_##E,
+    NUM_ROW(bit)
+    NUM_ROW(i8)
+    NUM_ROW(i16)
+    NUM_ROW(i32)
+    NUM_ROW(f64)
+    #undef NUM_ROW
+    
+    #define CHR_ROW(CE, UE) \
+      [el_##CE*8 +  el_c8] = basic_copy_u8_##UE, \
+      [el_##CE*8 + el_c16] = basic_copy_u16_##UE, \
+      [el_##CE*8 + el_c32] = basic_copy_u32_##UE,
+    CHR_ROW(c8,  u8)
+    CHR_ROW(c16, u16)
+    CHR_ROW(c32, u32)
+    #undef CHR_ROW
+    [(el_B+1)*8 + (el_B+1)] = NULL // make the rest of the entries at least segfault
+  };
+  
   #define MAKE_ICPY(T,E) Arr* cpy##T##Arr(B x) { \
     usz ia = IA(x);        \
     E* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);      \
     u8 xe = TI(x,elType);  \
-    if      (xe==el_bit) { u64* xp = bitarr_ptr(x);  for(usz i=0; i<ia; i++) rp[i]=bitp_get(xp,i); } \
-    else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else if (xe==el_i16) { i16* xp = i16any_ptr(x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else if (xe==el_i32) { i32* xp = i32any_ptr(x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else if (xe==el_f64) { f64* xp = f64any_ptr(x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else {                 \
+    if (elNum(xe)) {       \
+      COPY_TO_FROM(rp, el_##E, tyany_ptr(x), xe, ia); \
+    } else {               \
       B* xp = arr_bptr(x); \
       if (xp!=NULL) { vfor (usz i=0; i<ia; i++) rp[i]=o2fG(xp[i]    ); } \
       else { SGetU(x)  for (usz i=0; i<ia; i++) rp[i]=o2fG(GetU(x,i)); } \
@@ -413,10 +487,9 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     T##Atom* rp; Arr* r = m_##E##arrp(&rp, ia); \
     arr_shCopy(r, x);      \
     u8 xe = TI(x,elType);  \
-    if      (xe==el_c8 ) { u8*  xp = c8any_ptr (x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else if (xe==el_c16) { u16* xp = c16any_ptr(x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else if (xe==el_c32) { u32* xp = c32any_ptr(x); vfor(usz i=0; i<ia; i++) rp[i]=xp[i]; } \
-    else {                 \
+    if (elChr(xe)) {       \
+      COPY_TO_FROM(rp, el_##E, tyany_ptr(x), xe, ia); \
+    } else {               \
       B* xp = arr_bptr(x); \
       if (xp!=NULL) { vfor (usz i=0; i<ia; i++) rp[i]=o2cG(xp[i]    ); } \
       else { SGetU(x)  for (usz i=0; i<ia; i++) rp[i]=o2cG(GetU(x,i)); } \
@@ -451,12 +524,9 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     u64* rp; Arr* r = m_bitarrp(&rp, ia);
     arr_shCopy(r, x);
     u8 xe = TI(x,elType);
-    if      (xe==el_bit) { u64* xp = bitarr_ptr(x); vfor(usz i=0; i<BIT_N(ia); i++) rp[i] = xp[i]; }
-    else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for(usz i=0; i<ia; i++) bitp_set(rp,i,xp[i]); }
-    else if (xe==el_i16) { i16* xp = i16any_ptr(x); for(usz i=0; i<ia; i++) bitp_set(rp,i,xp[i]); }
-    else if (xe==el_i32) { i32* xp = i32any_ptr(x); for(usz i=0; i<ia; i++) bitp_set(rp,i,xp[i]); }
-    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for(usz i=0; i<ia; i++) bitp_set(rp,i,xp[i]); }
-    else {
+    if (elNum(xe)) {
+      COPY_TO_FROM(rp, el_bit, tyany_ptr(x), xe, ia);
+    } else {
       B* xp = arr_bptr(x);
       if (xp!=NULL) { for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fG(xp[i]    )); }
       else { SGetU(x) for (usz i=0; i<ia; i++) bitp_set(rp,i,o2fG(GetU(x,i))); }

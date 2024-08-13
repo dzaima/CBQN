@@ -37,6 +37,26 @@ typedef void (*M_CopyF)(void*, usz, B, usz, usz);
 typedef void (*M_FillF)(void*, usz, B, usz);
 extern INIT_GLOBAL M_CopyF copyFns[el_MAX];
 extern INIT_GLOBAL M_FillF fillFns[el_MAX];
+#if SINGELI_SIMD
+  typedef void (*copy_fn)(void*, void*, u64, void*);
+  extern INIT_GLOBAL copy_fn tcopy_all[];
+  #define COPY_TO_FROM(RP, RE, XP, XE, LEN) ({ \
+    u8 re_ = (RE); \
+    u8 xe_ = (XE); \
+    assert(re_ < el_B && xe_ < el_B); \
+    void* xp_ = (XP); \
+    tcopy_all[re_*8+xe_](RP, xp_, LEN, GUARANTEED(xe_!=el_bit)? ARBITRARY(void*) : (u8*)xp_ - offsetof(TyArr,a)); \
+  })
+#else
+  typedef void (*basic_copy_fn)(void*, void*, u64);
+  extern INIT_GLOBAL basic_copy_fn basic_copy_all[];
+  #define COPY_TO_FROM(RP, RE, XP, XE, LEN) ({ \
+    u8 re_ = (RE); \
+    u8 xe_ = (XE); \
+    assert(re_ < el_B && xe_ < el_B); \
+    basic_copy_all[re_*8+xe_](RP, XP, LEN); \
+  })
+#endif
 #define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
 #define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
 

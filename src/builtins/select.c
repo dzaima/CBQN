@@ -641,7 +641,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       goto decG_ret;
     } else {
       assert(inds_buf != inds);
-      bitselFns[0](inds_buf, inds, 0, 1, indn); // TODO use a widening copy
+      COPY_TO_FROM(inds_buf, el_i8, inds, el_bit, indn);
       inds = inds_buf;
       ie = el_i8;
       bounds[0] = 0;
