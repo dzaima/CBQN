@@ -1,3 +1,4 @@
+include 'debug/printf'
 include './base'
 include './cbqnDefs'
 include './f64'
@@ -29,7 +30,6 @@ fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
   assert{(csz>1) & (csz<8)}
   def bulk = arch_defvw / 8
   def V = [bulk]u8
-  def rbytes = cdiv{csz*cam, 8}
   bitalign{tup{2,8,csz}, 8, {s, align} => {
     @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
       dst = align{load{*V~~src}}
@@ -38,3 +38,30 @@ fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
   }}
 }
 export{'si_bitwiden_n_8', bitwiden_n_8}
+
+(if (hasarch{'AARCH64'}) {
+  fn bitnarrow_8_n(src:*void, dst:*void, csz:ux, cam:ux) : void = {
+    assert{cam>0}
+    assert{(csz>1) & (csz<8)}
+    def bulk = arch_defvw / 8
+    def V = [bulk]u8
+    dstC:= *u8~~dst
+    dstE:= *u8~~dst + cdiv{csz*cam, 8}
+    bitalign{8, tup{2,8,csz}, {s, align} => {
+      def get{} = align{load{*V~~src}}
+      def next{} = {
+        padd{u8, src, bulk}
+        padd{u8, dstC, bulk*s/8}
+      }
+      while (dstC+bulk < dstE) {
+        store{*V~~dstC, 0, get{}}
+        next{}
+      }
+      while (dstC < dstE) {
+        storeBatch{dstC, 0, get{}, maskAfter{dstE - dstC}}
+        next{}
+      }
+    }}
+  }
+  export{'si_bitnarrow_8_n', bitnarrow_8_n}
+})

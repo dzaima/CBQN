@@ -225,6 +225,7 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
   usz* rsh = arr_shAlloc(r, axis+cr);
   shcpy(rsh, SH(x), axis);
   shcpy(rsh+axis, csh, cr);
+  if (PIA(r)==0) goto decG_ret;
   
   u8* xp = tyany_ptr(x);
   // FILL_TO(rp, el_bit, 0, m_f64(1), PIA(r));
@@ -251,7 +252,14 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
       else               for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz);
     #else
       switch(xcsz) { default: UD;
-        case  8: for (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], ocsz); break; // all assume zero padding
+        case 8:
+          #if SINGELI_NEON
+            if (xcsz==8 && ocsz!=1) {
+              si_bitnarrow_8_n(xp, rp, ocsz, cam);
+              goto decG_ret;
+            }
+          #endif
+        for          (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], ocsz); break; // all assume zero padding
         case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], ocsz); break;
         case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz); break;
         case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz); break;
@@ -269,6 +277,7 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
     }
   }
   ab_done(ab);
+  decG_ret:;
   decG(x);
   return taga(r);
 }
