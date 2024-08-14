@@ -46,6 +46,9 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 
 #define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })
 
+static void tyarrv_freeP(Arr* x) { assert(PRNK(x)<=1 && IS_DIRECT_TYARR(PTY(x))); mm_free((Value*)x); }
+static void tyarrv_free(B x) { tyarrv_freeP(a(x)); }
+
 static inline void* m_arrUnchecked(u64 sz, u8 type, usz ia) {
   Arr* r = mm_alloc(sz, type);
   r->ia = ia;
