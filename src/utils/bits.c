@@ -121,6 +121,59 @@ FORCE_INLINE void ab_add(ABState* state, u64 val, ux count) { // assumes bits pa
 
 
 
+NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for now assumes the bits to be dropped are zero, xcsz is a multiple of 8, and that there's at most 63 padding bits
+  assert((xcsz&7) == 0 && rcsz<xcsz && rcsz!=0);
+  // FILL_TO(rp, el_bit, 0, m_f64(1), PIA(r));
+  ABState ab = ab_new(rp);
+  if (xcsz<=64 && (xcsz&(xcsz-1)) == 0) {
+    #if FAST_PDEP
+      if (xcsz<32) {
+        assert(xcsz==8 || xcsz==16);
+        bool c8 = xcsz==8;
+        u64 tmsk = (1ull<<rcsz)-1;
+        u64 msk0 = tmsk * (c8? 0x0101010101010101 : 0x0001000100010001);
+        ux am = c8? cam/8 : cam/4;
+        u32 count = POPC(msk0);
+        // printf("narrow base %04lx %016lx count=%d am=%zu\n", tmsk, msk0, count, am);
+        for (ux i=0; i<am; i++) { ab_add(&ab, _pext_u64(*(u64*)xp, msk0), count); xp = 1+(u64*)xp; }
+        u32 tb = c8? cam&7 : (cam&3)<<1;
+        if (tb) {
+          u64 msk1 = msk0 & ((1ull<<tb*8)-1);
+          // printf("narrow tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
+          ab_add(&ab, _pext_u64(*(u64*)xp, msk1), POPC(msk1));
+        }
+      }
+      else if (xcsz==32) for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], rcsz);
+      else               for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], rcsz);
+    #else
+      switch(xcsz) { default: UD;
+        case 8:
+          #if SINGELI_NEON
+            if (xcsz==8 && rcsz!=1) {
+              si_bitnarrow_8_n(xp, rp, rcsz, cam);
+              goto decG_ret;
+            }
+          #endif
+        for          (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], rcsz); break; // all assume zero padding
+        case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], rcsz); break;
+        case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], rcsz); break;
+        case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], rcsz); break;
+      }
+    #endif
+  } else {
+    assert(xcsz-rcsz<64);
+    ux rfu64 = rcsz>>6; // full u64 count per cell in x
+    u64 msk = (1ull<<(rcsz&63))-1;
+    for (ux i = 0; i < cam; i++) {
+      for (ux j = 0; j < rfu64; j++) ab_add(&ab, loadu_u64(j + (u64*)xp), 64);
+      ab_add(&ab, loadu_u64(rfu64 + (u64*)xp)&msk, rcsz&63);
+      rp = (rcsz>>6) + (u64*)rp;
+      xp = (xcsz>>3) + (u8*)xp;
+    }
+  }
+  ab_done(ab);
+}
+
 NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for now assumes rcsz is either a multiple of 64, or one of 8,16,32
   assert(rcsz > xcsz && ((rcsz&63) == 0 || rcsz==8 || rcsz==16 || rcsz==32));
   
@@ -249,57 +302,7 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
   shcpy(rsh, SH(x), axis);
   shcpy(rsh+axis, csh, cr);
   if (PIA(r)==0) goto decG_ret;
-  
-  u8* xp = tyany_ptr(x);
-  // FILL_TO(rp, el_bit, 0, m_f64(1), PIA(r));
-  ABState ab = ab_new(rp);
-  if (xcsz<=64 && (xcsz&(xcsz-1)) == 0) {
-    #if FAST_PDEP
-      if (xcsz<32) {
-        assert(xcsz==8 || xcsz==16);
-        bool c8 = xcsz==8;
-        u64 tmsk = (1ull<<ocsz)-1;
-        u64 msk0 = tmsk * (c8? 0x0101010101010101 : 0x0001000100010001);
-        ux am = c8? cam/8 : cam/4;
-        u32 count = POPC(msk0);
-        // printf("narrow base %04lx %016lx count=%d am=%zu\n", tmsk, msk0, count, am);
-        for (ux i=0; i<am; i++) { ab_add(&ab, _pext_u64(*(u64*)xp, msk0), count); xp+= 8; }
-        u32 tb = c8? cam&7 : (cam&3)<<1;
-        if (tb) {
-          u64 msk1 = msk0 & ((1ull<<tb*8)-1);
-          // printf("narrow tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
-          ab_add(&ab, _pext_u64(*(u64*)xp, msk1), POPC(msk1));
-        }
-      }
-      else if (xcsz==32) for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz);
-      else               for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz);
-    #else
-      switch(xcsz) { default: UD;
-        case 8:
-          #if SINGELI_NEON
-            if (xcsz==8 && ocsz!=1) {
-              si_bitnarrow_8_n(xp, rp, ocsz, cam);
-              goto decG_ret;
-            }
-          #endif
-        for          (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], ocsz); break; // all assume zero padding
-        case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], ocsz); break;
-        case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], ocsz); break;
-        case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], ocsz); break;
-      }
-    #endif
-  } else {
-    assert(xcsz-ocsz<64);
-    ux rfu64 = ocsz>>6; // full u64 count per cell in x
-    u64 msk = (1ull<<(ocsz&63))-1;
-    for (ux i = 0; i < cam; i++) {
-      for (ux j = 0; j < rfu64; j++) ab_add(&ab, loadu_u64(j + (u64*)xp), 64);
-      ab_add(&ab, loadu_u64(rfu64 + (u64*)xp)&msk, ocsz&63);
-      rp+= ocsz>>6;
-      xp+= xcsz>>3;
-    }
-  }
-  ab_done(ab);
+  bitnarrow(rp, ocsz, tyany_ptr(x), xcsz, cam);
   decG_ret:;
   decG(x);
   return taga(r);
