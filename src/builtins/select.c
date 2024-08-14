@@ -705,13 +705,12 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         ux rcam = (cam + (1<<exp)-1)>>exp;
         
         if (rcsz!=8) {
-          Arr* xa = customizeShape(x);
-          usz* xsh = arr_shAlloc(xa, 2);
-          xsh[0] = rcam;
-          xsh[1] = rcsz;
-          // leave ia unchanged, desynchronizing from product of shape; TODO really really shouldn't do that, and instead pass cam & csz directly to bit widener
-          x = widenBitArr(taga(xa), 1);
-          xp = tyany_ptr(x);
+          u64* xp2;
+          B x2 = m_bitarrv(&xp2, 8*cam);
+          bitwiden(xp2, 8, xp, rcsz, cam);
+          decG(x);
+          x = x2;
+          xp = (void*) xp2;
           SELECT_ROWS_PRINTF("8bit: widen %zu‿%zu → ⟨%zu,%zu→8⟩\n", cam, csz, rcam, rcsz);
         }
         
@@ -728,20 +727,17 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         
         if (rindn!=8) {
           SELECT_ROWS_PRINTF("8bit: narrow %zu → %zu\n", rcsz, csz);
-          usz* rsh = arr_shAlloc(a(r), 2);
-          rsh[0] = rcam;
-          rsh[1] = 8;
           
-          usz tgt = rindn;
-          r = narrowWidenedBitArr(r, 1, 1, &tgt); // TODO this assumes trailing zeroes
+          u64* rp2;
+          B r2 = m_bitarrv(&rp2, 8*rcam);
+          bitnarrow(rp2, rindn, rp, 8, rcam);
+          tyarrv_free(r);
+          r = r2;
           
-          Arr* ra = arr_shVec(customizeShape(r));
-          r = taga(ra);
-          
-          ux ria1 = ra->ia;
+          ux ria1 = IA(r);
           assert(ria <= ria1);
-          FINISH_OVERALLOC(ra, offsetof(TyArr,a) + (ria+7)/8, offsetof(TyArr,a) + (ria1+7)/8);
-          ra->ia = ria;
+          FINISH_OVERALLOC(a(r), offsetof(TyArr,a) + (ria+7)/8, offsetof(TyArr,a) + (ria1+7)/8);
+          a(r)->ia = ria;
         }
         
         goto decG_ret;
