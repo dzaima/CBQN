@@ -394,9 +394,9 @@ def rep_const_bool_div8{wv, x, r, nw if hasarch{'SSE2'}} = {
   def __shl{x:(V), a} = V~~(H~~x << a)
   def __shr{x:(V), a} = V~~(H~~x >> a)
 
-  def {output, done, flush} = get_boolvec_writer{V, r, nw}
+  def {output, check_done, flush} = get_boolvec_writer{V, r, nw}
   def run24{x, get_halves} = {
-    i:usz = 0; while (1) {
+    i:usz = 0; while (1) { check_done{}
       xv := load{*V~~(x+i)}; ++i
       def getr = zip128{...get_halves{xv}, .}
       output{V~~getr{0}}
@@ -407,7 +407,7 @@ def rep_const_bool_div8{wv, x, r, nw if hasarch{'SSE2'}} = {
     {xv} => { p := pre{xv}; tup{exh{p}, exh{p>>sh}} }
   }
   def run8{rep_bytes} = {
-    i:usz = 0; while (1) {
+    i:usz = 0; while (1) { check_done{}
       xh := load{*[16]u8~~(*ty_u{vl}~~x + i)}; ++i
       xv := if (avx2) pair{xh, xh} else xh
       xe := rep_bytes{xv}
@@ -471,8 +471,6 @@ def sel_imm{V=([16]u8), x:X, {...inds}} = {
   assert{l==16 or l==n}
   sel{V, x, make{I, cycle{n, inds}}}
 }
-
-def advance_spaced_mask{k, m, sh} = m<<(k-sh) | m>>sh
 
 # Data for the permutation that sends bit i to k*i % width{T}
 def modperm_dat{T, k} = {

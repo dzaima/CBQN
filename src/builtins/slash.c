@@ -38,8 +38,13 @@
 // COULD consolidate refcount updates for nested 𝕩
 
 // Replicate by constant
-// Boolean uses pdep, ≠`, or overwriting
-//   SHOULD make a shift/mask replacement for pdep
+// Boolean uses specialized small-𝕨 methods, ≠`, or overwriting
+//   𝕨≤64: Singeli generic and SIMD methods
+//     𝕨=2,4,8: Various shift, shuffle, and zip-based loops
+//     odd 𝕨: Modular permutation
+//       COULD use pdep or similar to avoid overhead on small results
+//     Otherwise, factor into power of 2 times odd
+//       COULD fuse 2×odd, since 2/odd/ has a larger intermediate
 // Other typed 𝕩 uses +`, or lots of Singeli
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
 // Otherwise, cell-by-cell copying
