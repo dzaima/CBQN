@@ -1,4 +1,6 @@
 def xrange{s, e} = s + range{e-s}
+def __shl{(u64)}{a:T, b} = T~~(re_el{u64,a}<<b)
+def __shr{(u64)}{a:T, b} = T~~(re_el{u64,a}>>b)
 
 def shuf_imm = shuf
 def shuf_impl{rw, ...iw, data} = assert{0, 'shuffling failed', ...data{'info'}}
@@ -70,6 +72,8 @@ local def perm_shufb{x, is} = {
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and not same{perm_shufb{...data{u8}},'!'}} = perm_shufb{...data{u8}}
 def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; sel{[16]u8, pair{x, x}, make{[32]i8, is}} }
 
+def shuf_impl{512, 512, data if hasarch{'AVX512F'} and data{'h','nz',u8}} = { def {x,is} = data{u8}; sel{[64]u8, x, make{[64]u8, is}} }
+
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; sel{[8]u32, x, make{[8]u32, is}} }
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, base{4,is}} }
 
@@ -82,8 +86,33 @@ def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; s
 
 
 
-def __shl{(u64)}{a:T, b} = T~~(re_el{u64,a}<<b)
-def __shr{(u64)}{a:T, b} = T~~(re_el{u64,a}>>b)
+
+def switchall{selected, options, G} = {
+  def end = makelabel{}
+  each{{option} => {
+    if (selected == option) {
+      G{option}
+      goto{end}
+    }
+  }, options}
+  unreachable{}
+  setlabel{end}
+}
+
+def makevtabs{k, is, ...ts} = {
+  tab:*u8 = join{each{{s} => join{
+    each{{{E, t}} => {
+      if (kgen{t}) t{s, range{k}} & 0xff
+      else t
+    }, ts}
+  }, is}}
+  {i} => {
+    def ctab = length{ts}*i + *[k]u8~~tab
+    each{{j, {E,_}} => re_el{E,load{ctab,j}}, inds{ts}, ts}
+  }
+}
+
+
 
 def bitalign{s, 8 if s<7, a:V=[k](u8) if hasarch{'X86_64'}} = {
   def V16 = re_el{u16,V}
@@ -107,38 +136,22 @@ def bitalign{7, 8, a:V=[k](u8) if hasarch{'X86_64'}} = {
   homBlend{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
 }
 
-def switchall{selected, options, G} = {
-  def end = makelabel{}
-  each{{option} => {
-    if (selected == option) {
-      G{option}
-      goto{end}
-    }
-  }, options}
-  unreachable{}
-  setlabel{end}
-}
-
-def bitalign{{2,8,s}, 8, G} = {
+def bitalign{{2,8,s}, 8, G if hasarch{'X86_64'}} = {
   switchall{s, xrange{2,8}, {s} => {
     G{s, bitalign{s, 8, .}}
   }}
 }
 
+def bitalign{{2,8,s}, 8, G if hasarch{'AVX512VBMI'}} = G{s, {a:V=[k](u8)} => {
+  def V16 = re_el{u16,V}
+  def muls{x} = V ~~ (V16~~x * V16**cast_i{u16,s})
+  def cyc = make{V, cycle{k, range{8}}}
+  def b = sel{V, a, cyc + muls{make{V, replicate{8, range{k/8}}}}}
+  def c = multishift{re_el{u64,b}, muls{cyc}}
+  c & V**cast_i{u8, tail{s}}
+}}
 
 
-def makevtabs{k, is, ...ts} = {
-  tab:*u8 = join{each{{s} => join{
-    each{{{E, t}} => {
-      if (kgen{t}) t{s, range{k}} & 0xff
-      else t
-    }, ts}
-  }, is}}
-  {i} => {
-    def ctab = length{ts}*i + *[k]u8~~tab
-    each{{j, {E,_}} => re_el{E,load{ctab,j}}, inds{ts}, ts}
-  }
-}
 
 def __shl{a:([16]u8), sh:([16]i8) if hasarch{'AARCH64'}} = a << [16]u8~~sh
 def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V=([16]u8)} => {
