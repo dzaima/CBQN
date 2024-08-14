@@ -337,7 +337,7 @@ po ← { # parsed options
     
     args∾↩ GetOpt "f"
     args∾↩ allFlags
-    args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? ⊑ "-mavx2" <⊸∊ siCFlags; 0} / ⋈"-DSINGELI_AVX2"
+    args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? "-mssse3"‿"-mavx2" ∊ siCFlags; 0} / "-DSINGELI_SSSE3"‿"-DSINGELI_AVX2"
     args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"x86-64"‿"aarch64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
