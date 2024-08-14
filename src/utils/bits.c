@@ -154,7 +154,7 @@ NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for n
               goto decG_ret;
             }
           #endif
-        for          (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], rcsz); break; // all assume zero padding
+        /* 8 */  for (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], rcsz); break; // all assume zero padding
         case 16: for (ux i=0; i<cam; i++) ab_add(&ab, ((u16*)xp)[i], rcsz); break;
         case 32: for (ux i=0; i<cam; i++) ab_add(&ab, ((u32*)xp)[i], rcsz); break;
         case 64: for (ux i=0; i<cam; i++) ab_add(&ab, ((u64*)xp)[i], rcsz); break;
