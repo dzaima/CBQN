@@ -768,7 +768,7 @@ B slash_c2(B t, B w, B x) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
       #if SINGELI
-      if (si_constrep_bool(wv, xp, rp, s)) ; // Handles small wv
+      if (wv <= 64) si_constrep_bool(wv, xp, rp, s);
       else
       #endif
       if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
