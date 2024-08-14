@@ -78,7 +78,7 @@ def makefact{divisor, range} = {
   fold{+, 1, reverse{scan{|, reverse{t}}}}
 }
 def fact_size = 128
-def fact_inds = slice{iota{fact_size},8}
+def fact_inds = slice{iota{fact_size+1},8}
 def fact_tab = makefact{basic_rep, fact_inds}
 factors:*u8 = fact_tab
 
