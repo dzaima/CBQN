@@ -1,7 +1,6 @@
 include './base'
 if_inline (hasarch{'X86_64'}) {
   if_inline (hasarch{'PCLMUL'}) include './clmul'
-  if_inline (hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}) include './avx512'
 }
 include './mask'
 include './f64'

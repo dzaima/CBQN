@@ -200,6 +200,7 @@ if_inline (hasarch{'X86_64'}) {
   include './sse'
   include './avx'
   include './avx2'
+  include './avx512'
 } else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
   include './neon'
