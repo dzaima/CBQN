@@ -1427,9 +1427,17 @@ NOINLINE B enclose_im(B t, B x) {
   return r;
 }
 
+NOINLINE B pair_im(B t, B x) {
+  if (isAtm(x) || RNK(x)!=1 || IA(x)!=1) thrM("⋈⁼: Argument wasn't a length-1 list");
+  B r = IGet(x, 0);
+  dec(x);
+  return r;
+}
+
 B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(m_f64(0), w, c1(o, reverse_c2(t, inc(w), x))); }
 B reverse_uc1(B t, B o, B x) { return C1(reverse, c1(o, reverse_c1(t, x))); }
 B enclose_uc1(B t, B o, B x) { return enclose_im(m_f64(0), c1(o, m_unit(x))); }
+B pair_uc1(B t, B o, B x) { return pair_im(m_f64(0), c1(o, m_vec1(x))); }
 
 void sfns_init(void) {
   c(BFn,bi_pick)->uc1 = pick_uc1;
@@ -1444,4 +1452,6 @@ void sfns_init(void) {
   c(BFn,bi_drop)->ucw = drop_ucw;
   c(BFn,bi_lt)->im = enclose_im;
   c(BFn,bi_lt)->uc1 = enclose_uc1;
+  c(BFn,bi_pair)->im = pair_im;
+  c(BFn,bi_pair)->uc1 = pair_uc1;
 }
