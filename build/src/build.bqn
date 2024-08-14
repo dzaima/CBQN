@@ -266,10 +266,10 @@ po ← { # parsed options
   
   has ⇐ ∾ ','Split¨Lowercase GetOpt "has"
   has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊has)/⋈"bmi2"
-  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
+  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
   {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; remove 'has=...' or add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
   
-  singeliArch ⇐ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} arch) <⊸∾ Uppercase ∊⟜"avx2"‿"bmi2"‿"pclmul"⊸/ has
+  singeliArch ⇐ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} arch) <⊸∾ Uppercase ∊⟜"ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"⊸/ has
   
   {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
   
