@@ -151,7 +151,7 @@ NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for n
           #if SINGELI_NEON
             if (xcsz==8 && rcsz!=1) {
               si_bitnarrow_8_n(xp, rp, rcsz, cam);
-              goto decG_ret;
+              return;
             }
           #endif
         /* 8 */  for (ux i=0; i<cam; i++) ab_add(&ab, ((u8* )xp)[i], rcsz); break; // all assume zero padding
