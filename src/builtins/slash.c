@@ -38,8 +38,13 @@
 // COULD consolidate refcount updates for nested 𝕩
 
 // Replicate by constant
-// Boolean uses pdep, ≠`, or overwriting
-//   SHOULD make a shift/mask replacement for pdep
+// Boolean uses specialized small-𝕨 methods, ≠`, or overwriting
+//   𝕨≤64: Singeli generic and SIMD methods
+//     𝕨=2,4,8: Various shift, shuffle, and zip-based loops
+//     odd 𝕨: Modular permutation
+//       COULD use pdep or similar to avoid overhead on small results
+//     Otherwise, factor into power of 2 times odd
+//       COULD fuse 2×odd, since 2/odd/ has a larger intermediate
 // Other typed 𝕩 uses +`, or lots of Singeli
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
 // Otherwise, cell-by-cell copying
@@ -82,6 +87,8 @@
   extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
   #define SINGELI_FILE slash
   #include "../utils/includeSingeli.h"
+  extern uint64_t* const si_spaced_masks;
+  #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE replicate
   #include "../utils/includeSingeli.h"
 #endif
@@ -765,38 +772,9 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitarr_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
-      #if FAST_PDEP
-      if (wv <= 52) {
-        #if SINGELI
-        u64 m = si_spaced_masks[wv-1];
-        #else
-        u64 m = (u64)-1 / (((u64)1<<wv)-1);
-        #endif
-        u64 xw = 0;
-        usz d = POPC(m); // == 64/wv
-        if (m & 1) {  // Power of two
-          for (usz i=-1, j=0; j<BIT_N(s); j++) {
-            xw >>= d;
-            if ((j&(wv-1))==0) xw = xp[++i];
-            u64 rw = _pdep_u64(xw, m);
-            rp[j] = (rw<<wv)-rw;
-          }
-        } else {
-          usz q = CTZ(m);  // == 64%wv
-          m = m<<(wv-q) | 1;
-          u64 mt = (u64)1<<(d+1);  // Bit d+1 may be needed, isn't pdep-ed
-          usz tsh = d*wv-(d+1);
-          for (usz xi=0, o=0, j=0; j<BIT_N(s); j++) {
-            xw = loadu_u64((u64*)((u8*)xp+xi/8)) >> (xi%8);
-            u64 ex = (xw&mt)<<tsh;
-            u64 rw = _pdep_u64(xw, m);
-            rp[j] = ((rw-ex)<<(wv-o))-(rw>>o|(xw&1));
-            o += q;
-            bool oo = o>=wv; xi+=d+oo; o-=wv&-oo;
-          }
-        }
-        goto atmW_maybesh;
-      }
+      #if SINGELI
+      if (wv <= 64) si_constrep_bool(wv, xp, rp, s);
+      else
       #endif
       if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
       else           { BOOL_REP_OVER(wv, xlen) }

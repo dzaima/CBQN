@@ -12,3 +12,5 @@ def unaligned_spaced_mask_mod{l:T} = {
   def d = cast_i{T, ctz{m}} # = 64%l
   tup{m>>d | m<<(l-d), d}
 }
+
+def advance_spaced_mask{k, m, sh} = m<<(k-sh) | m>>sh
