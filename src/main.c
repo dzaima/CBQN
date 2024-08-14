@@ -488,7 +488,7 @@ static NOINLINE i64 readInt(char** p) {
   
   void before_exit(void) {
     if (global_replxx!=NULL && global_histfile!=NULL) {
-      replxx_history_save(global_replxx, global_histfile);
+      if (!replxx_read_only) replxx_history_save(global_replxx, global_histfile);
       replxx_end(global_replxx);
       global_replxx = NULL;
     }
