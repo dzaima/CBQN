@@ -95,6 +95,9 @@ static inline u64 rbuu64(u64* p, ux off) { // read bit-unaligned u64; aka 64↑o
     return m0==0? v0 : v0>>m0 | v1<<(64-m0);
   #endif
 }
+static inline u64 rbuu58(u64* p, ux off) { // k↑off↓p, assuming off is a multiple of k, and k∊60∾↕59
+  return loadu_u64((u8*)p + (off>>3)) >> (off&7);
+}
 
 typedef struct {
   u64* ptr;
@@ -157,7 +160,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
         ux am = c8? cam/8 : cam/4;
         u32 count = POPC(msk0);
         // printf("widen base %04lx %016lx count=%d am=%zu\n", tmsk, msk0, count, am);
-        for (ux i=0; i<am; i++) { *rp64 = _pdep_u64(rbuu64(xp, i*count), msk0); rp64++; }
+        for (ux i=0; i<am; i++) { *rp64 = _pdep_u64(rbuu58(xp, i*count), msk0); rp64++; }
         u32 tb = c8? cam&7 : (cam&3)<<1;
         if (tb) {
           u64 msk1 = msk0 & ((1ull<<tb*8)-1);
@@ -165,13 +168,13 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
           *rp64 = _pdep_u64(rbuu64(xp, am*count), msk1);
         }
       }
-      else if (rcsz==32) for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk;
+      else if (rcsz==32) for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu58(xp, i*xcsz)&tmsk;
       else               for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk;
     #else
       switch(rcsz) { default: UD;
-        case  8: for (ux i=0; i<cam; i++) ((u8* )rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
-        case 16: for (ux i=0; i<cam; i++) ((u16*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
-        case 32: for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
+        case  8: for (ux i=0; i<cam; i++) ((u8* )rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
+        case 16: for (ux i=0; i<cam; i++) ((u16*)rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
+        case 32: for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
         case 64: for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
       }
     #endif
