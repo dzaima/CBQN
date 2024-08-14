@@ -6,6 +6,13 @@ local {
   def suf{[_]T} = suf{T}
   def pref{w} = merge{'_mm', if (w==128) '' else fmtnat{w}, '_'}
   def pref{V=[_]_} = pref{width{V}}
+  
+  def has512{V=[_]E} = if (width{V}==512) hasarch{'AVX512F'} else hasarch{'AVX512VL'}
+  def has512{V, post} = has512{V} and hasarch{merge{'AVX512', post}}
+  
+  def has512e{V=[_]E if width{E}>=32} = has512{V}
+  def has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
+  def has512e{V=[_]E, post} = has512e{V} and has512{V, post}
 }
 
 local def re_mask{[l]_, sub} = {
@@ -19,7 +26,7 @@ def reinterpret{T, a:M=[l==width{T}](u1)} = {
   re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
 }
 
-def maskStore{p:*V, m:[l](u1), v:V=[l]_} = {
+def maskStore{p:*V, m:[l](u1), v:V=[l]_ if has512e{V}} = {
   emit{void, merge{pref{V}, 'mask_storeu_', suf{V}}, p, m, v}
 }
 
@@ -28,3 +35,7 @@ def topMask{x:V=[k]_ if 512==width{V}} = ty_u{k}~~topMaskReg{x}
 def homMask{x:V=[_]_ if 512==width{V}} = topMask{x}
 
 def maskToHom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
+
+def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, merge{pref{V}, 'permutexvar_', suf{V}}, i, x}
+
+def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, merge{pref{V}, 'multishift_epi64_epi8'}, i, a}
