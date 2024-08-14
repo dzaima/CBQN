@@ -117,70 +117,90 @@ FORCE_INLINE void ab_add(ABState* state, u64 val, ux count) { // assumes bits pa
 }
 
 
-static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) { // consumes; for now assumes ncsz is either a multiple of 64, or one of 8,16,32
-  assert((ncsz&7) == 0 && RNK(x)>=1 && pcsz<ncsz);
-  // printf("zeroPadToCellBits0 ia=%d cam=%d pcsz=%d ncsz=%d\n", IA(x), cam, pcsz, ncsz);
-  if (pcsz==1) {
-    if (ncsz== 8) return taga(cpyI8Arr(x));
-    if (ncsz==16) return taga(cpyI16Arr(x));
-    if (ncsz==32) return taga(cpyI32Arr(x));
+
+NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for now assumes rcsz is either a multiple of 64, or one of 8,16,32
+  assert(rcsz > xcsz && ((rcsz&63) == 0 || rcsz==8 || rcsz==16 || rcsz==32));
+  
+  if (rcsz<=32 && (xcsz&(xcsz-1)) == 0) {
+    if (xcsz==1) {
+      assert(rcsz==8 || rcsz==16 || rcsz==32);
+      COPY_TO_FROM(rp, rcsz==16? el_i16 : rcsz>16? el_i32 : el_i8, xp, el_bit, cam);
+      return;
+    }
+    if (xcsz==8) {
+      assert(rcsz==16 || rcsz==32);
+      COPY_TO_FROM(rp, rcsz==16? el_c16 : el_c32, xp, el_c8, cam);
+      return;
+    }
+    if (xcsz==16) {
+      assert(rcsz==32);
+      COPY_TO_FROM(rp, el_c32, xp, el_c16, cam);
+      return;
+    }
   }
   
-  if (lr==UR_MAX) thrM("Rank too large");
-  u64* rp;
-  Arr* r = m_bitarrp(&rp, cam*ncsz);
-  usz* rsh = arr_shAlloc(r, lr+1);
-  shcpy(rsh, SH(x), lr);
-  rsh[lr] = ncsz;
-  if (PIA(r)==0) goto decG_ret;
-  u64* xp = tyany_ptr(x);
-  
-  // TODO widen 8/16-bit cells to 16/32 via cpyC(16|32)Arr
-  if (ncsz<=64 && (ncsz&(ncsz-1)) == 0) {
-    u64 tmsk = (1ull<<pcsz)-1;
+  u64* rp64 = rp;
+  if (rcsz<=64) {
+    assert((rcsz&(rcsz-1)) == 0);
     #if SINGELI_AARCH64 || SINGELI_AVX2
-      if (ncsz==8) {
-        si_bitwiden_n_8(xp, rp, pcsz, cam);
-        goto decG_ret;
+      if (rcsz==8) {
+        si_bitwiden_n_8(xp, rp, xcsz, cam);
+        return;
       }
     #endif
+    u64 tmsk = (1ull<<xcsz)-1;
     #if FAST_PDEP
-      if (ncsz<32) {
-        assert(ncsz==8 || ncsz==16);
-        bool c8 = ncsz==8;
+      if (rcsz<32) {
+        assert(rcsz==8 || rcsz==16);
+        bool c8 = rcsz==8;
         u64 msk0 = tmsk * (c8? 0x0101010101010101 : 0x0001000100010001);
         ux am = c8? cam/8 : cam/4;
         u32 count = POPC(msk0);
         // printf("widen base %04lx %016lx count=%d am=%zu\n", tmsk, msk0, count, am);
-        for (ux i=0; i<am; i++) { *(u64*)rp = _pdep_u64(rbuu64(xp, i*count), msk0); rp++; }
+        for (ux i=0; i<am; i++) { *rp64 = _pdep_u64(rbuu64(xp, i*count), msk0); rp64++; }
         u32 tb = c8? cam&7 : (cam&3)<<1;
         if (tb) {
           u64 msk1 = msk0 & ((1ull<<tb*8)-1);
           // printf("widen tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
-          *(u64*)rp = _pdep_u64(rbuu64(xp, am*count), msk1);
+          *rp64 = _pdep_u64(rbuu64(xp, am*count), msk1);
         }
       }
-      else if (ncsz==32) for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*pcsz)&tmsk;
-      else               for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*pcsz)&tmsk;
+      else if (rcsz==32) for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk;
+      else               for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk;
     #else
-      switch(ncsz) { default: UD;
-        case  8: for (ux i=0; i<cam; i++) ((u8* )rp)[i] = rbuu64(xp, i*pcsz)&tmsk; break;
-        case 16: for (ux i=0; i<cam; i++) ((u16*)rp)[i] = rbuu64(xp, i*pcsz)&tmsk; break;
-        case 32: for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*pcsz)&tmsk; break;
-        case 64: for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*pcsz)&tmsk; break;
+      switch(rcsz) { default: UD;
+        case  8: for (ux i=0; i<cam; i++) ((u8* )rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
+        case 16: for (ux i=0; i<cam; i++) ((u16*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
+        case 32: for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
+        case 64: for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
       }
     #endif
   } else {
-    assert((ncsz&63) == 0 && ncsz-pcsz < 64 && (pcsz&63) != 0);
-    ux pfu64 = pcsz>>6; // previous full u64 count in cell
-    u64 msk = (1ull<<(pcsz&63))-1;
+    assert((rcsz&63) == 0 && rcsz-xcsz < 64 && (xcsz&63) != 0);
+    ux pfu64 = xcsz>>6; // previous full u64 count in cell
+    u64 msk = (1ull<<(xcsz&63))-1;
     for (ux i = 0; i < cam; i++) {
-      for (ux j = 0; j < pfu64; j++) rp[j] = rbuu64(xp, i*pcsz + j*64);
-      rp[pfu64] = rbuu64(xp, i*pcsz + pfu64*64) & msk;
-      rp+= ncsz>>6;
+      for (ux j = 0; j < pfu64; j++) rp64[j] = rbuu64(xp, i*xcsz + j*64);
+      rp64[pfu64] = rbuu64(xp, i*xcsz + pfu64*64) & msk;
+      rp64+= rcsz>>6;
     }
   }
-  decG_ret:;
+}
+
+
+
+static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) { // consumes; for now assumes ncsz is either a multiple of 64, or one of 8,16,32
+  assert((ncsz&7) == 0 && RNK(x)>=1 && pcsz<ncsz);
+  // printf("zeroPadToCellBits0 ia=%d cam=%d pcsz=%d ncsz=%d\n", IA(x), cam, pcsz, ncsz);
+  
+  if (lr==UR_MAX) thrM("Rank too large");
+  u64* rp;
+  ux ria = cam*ncsz;
+  Arr* r = m_bitarrp(&rp, ria);
+  usz* rsh = arr_shAlloc(r, lr+1);
+  shcpy(rsh, SH(x), lr);
+  rsh[lr] = ncsz;
+  if (ria > 0) bitwiden(rp, ncsz, tyany_ptr(x), pcsz, cam);
   decG(x);
   return taga(r);
 }
