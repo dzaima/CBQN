@@ -245,21 +245,6 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
 
 
 
-static NOINLINE B zeroPadToCellBits0(B x, usz lr, usz cam, usz pcsz, usz ncsz) { // consumes; for now assumes ncsz is either a multiple of 64, or one of 8,16,32
-  assert((ncsz&7) == 0 && RNK(x)>=1 && pcsz<ncsz);
-  // printf("zeroPadToCellBits0 ia=%d cam=%d pcsz=%d ncsz=%d\n", IA(x), cam, pcsz, ncsz);
-  
-  if (lr==UR_MAX) thrM("Rank too large");
-  u64* rp;
-  ux ria = cam*ncsz;
-  Arr* r = m_bitarrp(&rp, ria);
-  usz* rsh = arr_shAlloc(r, lr+1);
-  shcpy(rsh, SH(x), lr);
-  rsh[lr] = ncsz;
-  if (ria > 0) bitwiden(rp, ncsz, tyany_ptr(x), pcsz, cam);
-  decG(x);
-  return taga(r);
-}
 NOINLINE B widenBitArr(B x, ur axis) {
   assert(isArr(x) && TI(x,elType)!=el_B && axis>=1 && RNK(x)>=axis);
   usz pcsz = shProd(SH(x), axis, RNK(x))<<elwBitLog(TI(x,elType));
@@ -273,7 +258,18 @@ NOINLINE B widenBitArr(B x, ur axis) {
   else ncsz = (pcsz+63)&~(usz)63;
   if (ncsz==pcsz) return x;
   
-  return zeroPadToCellBits0(x, axis, shProd(SH(x), 0, axis), pcsz, ncsz);
+  usz cam = shProd(SH(x), 0, axis);
+  
+  if (axis==UR_MAX) thrM("Rank too large");
+  u64* rp;
+  ux ria = cam*ncsz;
+  Arr* r = m_bitarrp(&rp, ria);
+  usz* rsh = arr_shAlloc(r, axis+1);
+  shcpy(rsh, SH(x), axis);
+  rsh[axis] = ncsz;
+  if (ria > 0) bitwiden(rp, ncsz, tyany_ptr(x), pcsz, cam);
+  decG(x);
+  return taga(r);
 }
 
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bits to be dropped are zero, origCellBits is a multiple of 8, and that there's at most 63 padding bits
@@ -293,7 +289,6 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
     arr_shReplace(r, axis+cr, rsh);
     return taga(r);
   }
-  
   
   usz cam = shProd(SH(x), 0, axis);
   u64* rp;
