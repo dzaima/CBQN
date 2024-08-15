@@ -390,7 +390,7 @@ B rand_range_c2(B t, B w, B x) {
     u64 aFilled = u64am<<3;
     assert(aFilled >= aExact);
     r = m_arr(offsetof(TyArr,a) + aFilled, t, am);
-    void* rp = ((TyArr*)r)->a;
+    void* rp = tyarrv_ptr((TyArr*)r);
     if (max & (max-1)) { // not power of two
       if      (t==t_i32arr) PLAINLOOP for (usz i = 0; i < am; i++) ((i32*)rp)[i] = wy2u0k(wyrand(&seed), max);
       else if (t==t_i16arr) PLAINLOOP for (usz i = 0; i < am; i++) ((i16*)rp)[i] = wy2u0k(wyrand(&seed), max);

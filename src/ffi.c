@@ -1388,7 +1388,7 @@ void ffi_init(void) {
         usz maxlen =    o2s(Get(x,2));
         decG(x);
         assert(PIA(buf)==maxlen);
-        int res = read(fd, ((TyArr*)buf)->a, maxlen);
+        int res = read(fd, tyarrv_ptr((TyArr*)buf), maxlen);
         return m_vec2(m_f64(res), taga(buf));
       }
       case 4: {
@@ -1397,7 +1397,7 @@ void ffi_init(void) {
         Arr* buf = cpyI8Arr(Get(x,1));
         usz maxlen =    o2s(Get(x,2));
         decG(x);
-        int res = write(fd, ((TyArr*)buf)->a, maxlen);
+        int res = write(fd, tyarrv_ptr((TyArr*)buf), maxlen);
         ptr_dec(buf);
         return m_f64(res);
       }
@@ -1406,7 +1406,7 @@ void ffi_init(void) {
       }
       case 6: {
         SGet(x)
-        Arr* buf = cpyI16Arr(Get(x,0)); i16* a = (i16*)((TyArr*)buf)->a;
+        Arr* buf = cpyI16Arr(Get(x,0)); i16* a = (i16*)tyarrv_ptr((TyArr*)buf);
         int nfds =       o2i(Get(x,1));
         int timeout =    o2s(Get(x,2));
         decG(x);

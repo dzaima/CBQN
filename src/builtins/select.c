@@ -474,7 +474,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     case el_bit: {                    ra = reuse? a(REUSE(x)) : cpyBitArr(x);
       TyArr* na = toBitArr(rep); rep = taga(na);
       u64* np = bitarrv_ptr(na);
-      u64* rp = (void*)((TyArr*)ra)->a;
+      u64* rp = bitarrv_ptr((TyArr*)ra);
       if (csz==1) {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
@@ -517,7 +517,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   
   #define IMPL(T) do {              \
     if (csz!=1) goto do_tycell;     \
-    T* rp = (void*)((TyArr*)ra)->a; \
+    T* rp = tyarrv_ptr((TyArr*)ra); \
     T* np = tyany_ptr(rep);         \
     for (usz i = 0; i < wia; i++) { \
       READ_W(cw, i);                \
@@ -536,7 +536,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   
   do_tycell:;
   u8 cwidth = csz * elWidth(re);
-  u8* rp = (u8*) ((TyArr*)ra)->a;
+  u8* rp = (u8*) tyarrv_ptr((TyArr*)ra);
   u8* np = tyany_ptr(rep);
   EqFnObj eq = EQFN_GET(re,re);
   for (usz i = 0; i < wia; i++) {

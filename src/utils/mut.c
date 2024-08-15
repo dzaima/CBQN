@@ -15,7 +15,7 @@ FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 el) {
       return (MadeArr){(Arr*)t.c, t.c->a};
   }
   Arr* a = m_arr(sz, type, ia);
-  return (MadeArr){a, ((TyArr*)a)->a};
+  return (MadeArr){a, tyarrv_ptr((TyArr*)a)};
 }
 
 FORCE_INLINE void mut_init(Mut* m, u8 el) {
@@ -40,7 +40,7 @@ NOINLINE Mut make_mut_init(ux ia, u8 el) {
 #endif
 
 static void* arr_ptr(Arr* t, u8 el) {
-  return el==el_B? (void*)((HArr*)t)->a : (void*)((TyArr*)t)->a;
+  return el==el_B? (void*)((HArr*)t)->a : tyarrv_ptr((TyArr*)t);
 }
 
 INIT_GLOBAL u8 reuseElType[t_COUNT];
