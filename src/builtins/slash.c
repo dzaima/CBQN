@@ -362,7 +362,7 @@ B grade_bool(B x, usz xia, bool up) {
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(incG(x));
-    u64* xp0 = bitany_ptr(notx);
+    u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
     u64 q=xia%64; if (q) { usz e=xia/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }

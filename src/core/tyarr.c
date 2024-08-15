@@ -75,7 +75,7 @@ NOINLINE B m_c32vec_0(u32* s) { usz sz=0; while(s[sz]) sz++; return m_c32vec(s, 
 
 static Arr* bitarr_slice(B x, usz s, usz ia) {
   u64* rp; Arr* r = m_bitarrp(&rp, ia);
-  bit_cpy(rp, 0, bitany_ptr(x), s, ia);
+  bit_cpy(rp, 0, bitarr_ptr(x), s, ia);
   ptr_dec(v(x));
   return r;
 }
