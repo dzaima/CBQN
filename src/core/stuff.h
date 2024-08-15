@@ -184,13 +184,13 @@ static bool eqShape(B w, B x) { assert(isArr(w) && isArr(x)); return ptr_eqShape
 B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 
 
-Arr* allZeroes(usz ia); // ia⥊0 with undefined shape
-Arr* allOnes(usz ia); // ia⥊1 with undefined shape
+Arr* allZeroes(usz ia); // ia⥊0 with undefined shape; always produces new array
+Arr* allOnes(usz ia); // ia⥊1 with undefined shape; always produces new array
 
 Arr* reshape_one(usz nia, B x); // nia⥊<x with undefined shape; consumes x
 B i64EachDec(i64 v, B x); // v¨ x; consumes x
 
-B bit_negate(B x); // consumes
+B bit_negate(B x); // consumes; always produces new array
 void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s
 B widenBitArr(B x, ur axis); // consumes x, assumes bitarr; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes widenBitArr, overriding shape past axis to cr↑csh

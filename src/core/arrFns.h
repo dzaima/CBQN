@@ -14,12 +14,22 @@ static B* arrV_bptr(Arr* x) {
   if (PTY(x)==t_fillslice) return ((FillSlice*)x)->a;
   return NULL;
 }
-static void* tyarr_ptr(B x)   { assert(IS_ANY_ARR(TY(x)) && !IS_SLICE(TY(x))); return c(TyArr,x)->a; }
-static void* tyslice_ptr(B x) { assert(IS_ANY_ARR(TY(x)) &&  IS_SLICE(TY(x))); return c(TySlice,x)->a; }
-static void* tyany_ptr(B x) {
-  assert(IS_ANY_ARR(TY(x)));
-  return IS_SLICE(TY(x))? c(TySlice,x)->a : c(TyArr,x)->a;
+
+static void* tyarrv_ptr(TyArr* x) {
+  assert(IS_ANY_ARR(PTY(x)) && !IS_SLICE(PTY(x)));
+  return x->a;
 }
+static void* tyanyv_ptr(Arr* x) {
+  assert(IS_ANY_ARR(PTY(x)));
+  return IS_SLICE(PTY(x))? ((TySlice*)x)->a : ((TyArr*)x)->a;
+}
+static void* tyslicev_ptr(Arr* x) {
+  assert(IS_SLICE(PTY(x)));
+  return ((TySlice*)x)->a;
+}
+
+static void* tyarr_ptr(B x) { return tyarrv_ptr(c(TyArr,x)); }
+static void* tyany_ptr(B x) { return tyanyv_ptr(a(x)); }
 
 #define M_TYARR(WM, OVER, MID, RV, PRE) { PRE \
   Arr* r = m_arr((offsetof(TyArr, a) + (      \

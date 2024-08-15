@@ -89,8 +89,10 @@ static Arr* m_bitarrp(u64** p, usz ia) {
   *p = (u64*)r->a;
   return (Arr*)r;
 }
-static u64* bitarr_ptr(B x) { VTY(x, t_bitarr); return (u64*)c(BitArr,x)->a; }
-static u64* bitarrv_ptr(TyArr* x) { return (u64*)x->a; }
+static u64* bitarrv_ptr(TyArr* x) { VTY(taga(x), t_bitarr); return (u64*)((BitArr*)x)->a; }
+static u64* bitanyv_ptr(Arr*   x) { VTY(taga(x), t_bitarr); return (u64*)((BitArr*)x)->a; }
+static u64* bitarr_ptr(B x) { return bitarrv_ptr(c(TyArr,x)); }
+static u64* bitany_ptr(B x) { return bitanyv_ptr(a(x)); }
 
 
 Arr* cpyI8Arr (B x); // consumes

@@ -157,7 +157,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
     if (h==2) {
       u64* rp; r=m_bitarrp(&rp, ia);
       Arr* x1o = TI(x,slice)(inc(x),w,w);
-      interleave_bits(rp, bitarr_ptr(x), ((TyArr*)x1o)->a, ia);
+      interleave_bits(rp, bitarr_ptr(x), bitanyv_ptr(x1o), ia);
       mm_free((Value*)x1o);
     #ifdef __BMI2__
     } else if (w==2) {
