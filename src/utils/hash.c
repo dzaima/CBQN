@@ -20,9 +20,9 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
     switch(xe) { default: UD;
       case el_bit:
       #if TEST_BAD_HASH
-        if (xia>=64) return *(u64*)bitarr_ptr(x);
+        if (xia>=64) return *(u64*)bitany_ptr(x);
       #endif
-        bcl(x,xia);        bytes = (xia+7)>>3; data = bitarr_ptr(x); break;
+        bcl(x,xia);        bytes = (xia+7)>>3; data = bitany_ptr(x); break;
       case el_i8:  case el_c8:  bytes = xia*1; data = tyany_ptr(x); break;
       case el_i16: case el_c16: bytes = xia*2; data = tyany_ptr(x); break;
       case el_i32: case el_c32: bytes = xia*4; data = tyany_ptr(x); break;

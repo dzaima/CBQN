@@ -193,7 +193,7 @@ B SORT_C1(B t, B x) {
   u8 xe = TI(x,elType);
   B r;
   if (xe==el_bit) {
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     u64* rp; r = m_bitarrv(&rp, n);
     usz sum = bit_sum(xp, n);
     u64 n0 = GRADE_UD(n-sum, sum);
@@ -357,7 +357,7 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
     CASE(c8) CASE(c16) CASE(c32)
     case el_bit: {
       #define HI GRADE_UD(1,0)
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64 i = bit_find(xp, xia, HI);
       usz iw = i/64;
       u64 m = ~(u64)0;
@@ -455,7 +455,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
       if (elNum(xe)) {
         if (RARE(we==el_bit | xe==el_bit)) {
           if (we==el_bit) {
-            usz c1 = CAT(bit_boundary,GRADE_UD(up,dn))(bitarr_ptr(w), wia);
+            usz c1 = CAT(bit_boundary,GRADE_UD(up,dn))(bitany_ptr(w), wia);
             decG(w); // c1 and wia contain all information in w
             if (xe==el_bit) {
               r = bit_sel(x, m_f64(GRADE_UD(c1,wia)), m_f64(GRADE_UD(wia,c1)));

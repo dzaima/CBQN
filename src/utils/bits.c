@@ -27,7 +27,7 @@ NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz
 
 NOINLINE B bit_sel(B b, B e0, B e1) {
   u8 t0 = selfElType(e0);
-  u64* bp = bitarr_ptr(b);
+  u64* bp = bitany_ptr(b);
   usz ia = IA(b);
   B r;
   {

@@ -6,7 +6,7 @@ extern INIT_GLOBAL u64 wy_secret[4];
 
 static void bcl(B x, usz ia) { // clean up bitarr tail bits to zero
   if (ia&63) {
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     xp[ia>>6]&= (1ULL<<(ia&63)) - 1;
   }
 }

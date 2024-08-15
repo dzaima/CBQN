@@ -237,7 +237,7 @@ B shape_c2(B t, B w, B x) {
         u64* rq; r = m_bitarrp(&rq, nia);
         rp = (u8*)rq;
         usz nw = BIT_N(nia);
-        u64* xp = bitarr_ptr(x);
+        u64* xp = bitany_ptr(x);
         u64 b = xia;
         if (b % 8) {
           if (b < 64) {

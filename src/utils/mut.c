@@ -234,7 +234,7 @@ NOINLINE void bit_cpyN(u64* r, usz rs, u64* x, usz xs, usz l) {
   bit_cpy(r, rs, x, xs, l);
 }
 
-DEF_COPY(bit, { bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l); return; })
+DEF_COPY(bit, { bit_cpyN((u64*)a, ms, bitany_ptr(x), xs, l); return; })
 DEF_COPY(i8 , { i8*  rp = ms+(i8*)a; void* xp = tyany_ptr(x);
   switch (xt) { default: UD;
     case t_bitarr:                  BIT_COPY(i8)
@@ -288,7 +288,7 @@ NOINLINE void m_copyG_B_generic(void* a, B* mpo, B x, usz xs, usz l) {
 DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) {
   B* mpo = ms+(B*)a;
   switch(TY(x)) {
-    case t_bitarr: { u64* xp = bitarr_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(bitp_get(xp, xs+i)); return; }
+    case t_bitarr: { u64* xp = bitany_ptr(x); for (usz i = 0; i < l; i++) mpo[i] = m_i32(bitp_get(xp, xs+i)); return; }
     case t_i8arr:  case t_i8slice:  { i8*  xp = i8any_ptr (x); vfor (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
     case t_i16arr: case t_i16slice: { i16* xp = i16any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
     case t_i32arr: case t_i32slice: { i32* xp = i32any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_i32(xp[i+xs]); return; }
@@ -408,7 +408,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     [(el_B+1)*8 + (el_B+1)] = NULL // make the rest of the entries at least segfault
   };
   
-  static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) { bit_cpyN((u64*)a, ms, bitarr_ptr(x), xs, l); }
+  static void m_copyG_bit(void* a, usz ms, B x, usz xs, usz l) { bit_cpyN((u64*)a, ms, bitany_ptr(x), xs, l); }
   FORCE_INLINE void copy0_bit(void* a, usz ms, B x, u8 xe, usz l) { m_copyG_bit(a, ms, x, 0, l); }
   FORCE_INLINE void copy0_B  (void* a, usz ms, B x, u8 xe, usz l) { m_copyG_B  (a, ms, x, 0, l); }
   #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copy0_##RE(WHERE, MS, X, XE, LEN) // assumptions: x fits; LEN≠0
@@ -502,7 +502,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     usz ia = IA(x);
     HArr_p r = m_harrUc(x);
     u8 xe = TI(x,elType);
-    if      (xe==el_bit) { u64* xp = bitarr_ptr(x);  for(usz i=0; i<ia; i++) r.a[i]=m_f64(bitp_get(xp, i)); }
+    if      (xe==el_bit) { u64* xp = bitany_ptr(x);  for(usz i=0; i<ia; i++) r.a[i]=m_f64(bitp_get(xp, i)); }
     else if (xe==el_i8 ) { i8*  xp = i8any_ptr (x); vfor(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); vfor(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }
     else if (xe==el_i32) { i32* xp = i32any_ptr(x); vfor(usz i=0; i<ia; i++) r.a[i]=m_f64(xp[i]); }

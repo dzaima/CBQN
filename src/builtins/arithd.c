@@ -239,7 +239,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   #else
     static NOINLINE B bit_sel1Fn(FC2 f, B w, B x, bool bitX) { // consumes both
       B b = bitX? x : w;
-      u64* bp = bitarr_ptr(b);
+      u64* bp = bitany_ptr(b);
       usz ia = IA(b);
       
       bool b0 = ia? bp[0]&1 : 0;
@@ -270,13 +270,13 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     static B bitAA0(B w, B x, usz ia) { UD; }
     static NOINLINE B bitAA1(B w, B x, usz ia) {
       u64* rp; B r = m_bitarrc(&rp, x);
-      u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
+      u64* wp=bitany_ptr(w); u64* xp=bitany_ptr(x);
       vfor (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]|xp[i];
       decG(w); decG(x); return r;
     }
     static NOINLINE B bitAA2(B w, B x, usz ia) {
       u64* rp; B r = m_bitarrc(&rp, x);
-      u64* wp=bitarr_ptr(w); u64* xp=bitarr_ptr(x);
+      u64* wp=bitany_ptr(w); u64* xp=bitany_ptr(x);
       vfor (usz i=0; i<BIT_N(ia); i++) rp[i] = wp[i]&xp[i];
       decG(w); decG(x); return r;
     }

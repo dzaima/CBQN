@@ -214,11 +214,11 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
       case 3: for (usz i = 0; i < xn; i++) { i32 n = wp[i]; if (n>=0) ((u64*)tyarr_ptr(rp[n]))[pos[n]++] = ((u64*)xp)[i]; } break;
     }
   } else if (xl == 0) { // 1-bit cells
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     allocBitGroups(rp, ria, z, xr, xsh, len, width);
     for (usz i = 0; i < xn; i++) {
       bool b = bitp_get(xp,i); i32 n = wp[i];
-      if (n>=0) bitp_set(bitarr_ptr(rp[n]), pos[n]++, b);
+      if (n>=0) bitp_set(bitany_ptr(rp[n]), pos[n]++, b);
     }
   } else { // Generic case
     for (usz i = 0; i < ria; i++) {

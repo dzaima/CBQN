@@ -255,7 +255,7 @@ B count_c1(B t, B x) {
   if (csz==0) { decG(x); return C1(ud, m_f64(n)); }
   u8 lw = cellWidthLog(x);
   if (lw==0) {
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     B r;
     #define COUNT_BOOL(T) \
       T* rp; r = m_##T##arrv(&rp, n);         \
@@ -479,7 +479,7 @@ B find_c1(B t, B x) {
   if (n<=1) return x;
   u8 xe = TI(x,elType);
   if (xe==el_bit && RNK(x)==1) {
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     u64 x0 = 1 & *xp;
     usz i = bit_find(xp, n, !x0); decG(x);
     u64* rp; B r = m_bitarrv(&rp, 1 + (i<n));

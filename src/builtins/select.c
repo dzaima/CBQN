@@ -269,7 +269,7 @@ B select_c2(B t, B w, B x) {
   
   
   #define TYPE(W, NEXT) { W* wp = W##any_ptr(w);      \
-    if (xl==0) { u64* xp=bitarr_ptr(x);               \
+    if (xl==0) { u64* xp=bitany_ptr(x);               \
       u64* rp; r = m_bitarrp(&rp, ria);               \
       BOOL_SPECIAL(W)                                 \
       u64 b=0;                                        \
@@ -311,7 +311,7 @@ B select_c2(B t, B w, B x) {
       B x0 = GetU(x, 0);
       B x1;
       if (xia<2) {
-        u64* wp=bitarr_ptr(w);
+        u64* wp=bitany_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
         if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
         x1 = x0;

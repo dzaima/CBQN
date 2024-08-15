@@ -214,7 +214,7 @@ static inline bool inplace_add(B w, B x) { // consumes x if returns true; fails 
     u64 wsz = mm_sizeUsable(v(w));
     u8 wt = TY(w);
     switch (wt) {
-      case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { bitp_set(bitarr_ptr(w),wia,o2bG(x)); goto ok; } break;
+      case t_bitarr: if (BITARR_SZ(   ria)<wsz && q_bit(x)) { bitp_set(bitany_ptr(w),wia,o2bG(x)); goto ok; } break;
       case t_i8arr:  if (TYARR_SZ(I8, ria)<wsz && q_i8 (x)) { i8arr_ptr (w)[wia]=o2iG(x); goto ok; } break;
       case t_i16arr: if (TYARR_SZ(I16,ria)<wsz && q_i16(x)) { i16arr_ptr(w)[wia]=o2iG(x); goto ok; } break;
       case t_i32arr: if (TYARR_SZ(I32,ria)<wsz && q_i32(x)) { i32arr_ptr(w)[wia]=o2iG(x); goto ok; } break;

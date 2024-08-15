@@ -210,7 +210,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_rtack) { B r = IGet(x, ia-1); decG(x); return r; }
     if (xe>el_f64) goto base;
     if (xe==el_bit) {
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       f64 r;
       switch (rtid) { default: goto base;
         case n_mul: 
@@ -287,7 +287,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
     f64 wf = o2fG(w);
     if (xe==el_bit) {
       i32 wi = wf; if (wi!=wf) goto base;
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       if (rtid==n_add) { B r = m_f64(wi            + bit_sum (xp, ia)); decG(x); return r; }
       if (rtid==n_sub) { B r = m_f64((ia&1?-wi:wi) + bit_diff(xp, ia)); decG(x); return r; }
       if (wi!=(wi&1)) goto base;
@@ -351,7 +351,7 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
   u64 r = 0;
   usz xia = IA(x);
   u8 xe = TI(x,elType);
-  if      (xe==el_bit) return bit_sum(bitarr_ptr(x), xia);
+  if      (xe==el_bit) return bit_sum(bitany_ptr(x), xia);
   else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); i8  m=0; for (usz i = 0; i < xia; ) { usz b=1<< 8; i16 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u16)s)) goto overflow; } }
   else if (xe==el_i16) { i16* p = i16any_ptr(x); i16 m=0; for (usz i = 0; i < xia; ) { usz b=1<<16; i32 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u32)s)) goto overflow; } }
   else if (xe==el_i32) { i32* p = i32any_ptr(x); i32 m=0; for (usz i = 0; i < xia; i++) { m|=p[i]; if (addOn(r,p[i])) { if (m<0) goto neg; else goto overflow; } } if (m<0) goto neg; }
@@ -551,7 +551,7 @@ B fold_rows(Md1D* fd, B x, usz n, usz m) {
 }
 
 B sum_rows_bit(B x, usz n, usz m) {
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   if (m < 128) {
     if (m == 2) return bi_N; // Transpose is faster
     i8* rp; B r = m_i8arrv(&rp, n);
@@ -635,11 +635,11 @@ B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
       u64* yp; B y = m_bitarrv(&yp, c);
       u8 e = el_i8 + f-3;
       CmpASFn cmp = is_or ? CMP_AS_FN(ne, e) : CMP_AS_FN(eq, e);
-      CMP_AS_CALL(cmp, yp, bitarr_ptr(x), m_f64(is_or-1), c);
+      CMP_AS_CALL(cmp, yp, bitany_ptr(x), m_f64(is_or-1), c);
       decG(x); if (m==1) return y;
       x = y;
     }
-    u64* xp = bitarr_ptr(x);
+    u64* xp = bitany_ptr(x);
     u64* rp; B r = m_bitarrv(&rp, n);
     if (andor) si_or_rows_bit(xp, rp, n, m, !is_or);
     else      si_xor_rows_bit(xp, rp, n, m, rtid==n_eq);

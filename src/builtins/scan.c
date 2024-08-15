@@ -64,7 +64,7 @@ B mul_c2(B, B, B);
 
 
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
 #if SINGELI
   si_scan_ne(p, xp, rp, BIT_N(ia));
@@ -85,20 +85,20 @@ B scan_ne(B x, u64 p, u64 ia) { // consumes x
 }
 B scan_eq(B x, u64 ia) { // consumes x
   B r = scan_ne(x, 0, ia);
-  u64* rp = bitarr_ptr(r);
+  u64* rp = bitany_ptr(r);
   for (usz i = 0; i < BIT_N(ia); i++) rp[i] ^= 0xAAAAAAAAAAAAAAAA;
   return r;
 }
 
 static B scan_or(B x, u64 ia) { // consumes x
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0;
   decG(x); return FL_SET(r, fl_asc|fl_squoze);
 }
 static B scan_and(B x, u64 ia) { // consumes x
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL;
@@ -106,7 +106,7 @@ static B scan_and(B x, u64 ia) { // consumes x
 }
 
 B scan_add_bool(B x, u64 ia) { // consumes x
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64 xs = bit_sum(xp, ia);
   if (xs<=1) return xs==0? x : scan_or(x, ia);
   B r;
@@ -189,7 +189,7 @@ SHOULD_INLINE B scan2_max_num(B w, B x, u8 xe, usz ia) { MINMAX2(max,>,MIN,or ,0
 #undef MINMAX_SCAN
 
 static B scan_lt(B x, u64 p, usz ia) {
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
   u64 m10 = 0x5555555555555555;
   for (usz i=0; i<n; i++) {
@@ -261,9 +261,9 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       case n_eq:  return scan_eq(x,    ia);    // =
       case n_lt:  return scan_lt(x, 0, ia);    // <
       case n_le:  return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
-      case n_gt:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
-      case n_ge:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
-      case n_sub: return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
+      case n_gt:  x=bit_negate(x); *bitany_ptr(x)^= 1; return scan_and(x, ia); // >
+      case n_ge:  x=bit_negate(x); *bitany_ptr(x)^= 1; return scan_or (x, ia); // ≥
+      case n_sub: return C2(sub, m_f64(2 * (*bitany_ptr(x) & 1)), scan_add_bool(x, ia)); // -
     }
     if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
@@ -341,7 +341,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     
     if (rtid==n_ne) { // ≠
       bool wBit = q_bit(w);
-      if (xe==el_bit) return scan_ne(x, -(u64)(wBit? o2bG(w) : 1&~*bitarr_ptr(x)), ia);
+      if (xe==el_bit) return scan_ne(x, -(u64)(wBit? o2bG(w) : 1&~*bitany_ptr(x)), ia);
       if (!wBit || !elInt(xe)) goto base;
       bool c = o2bG(w);
       u64* rp; B r = m_bitarrv(&rp, ia);
@@ -390,7 +390,7 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
     case n_eq: return bit_negate(scan_rows_bit(n_ne, bit_negate(x), m));
     CASE_N_AND: CASE_N_OR: case n_ne: case n_ltack: {
       usz ia = IA(x);
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64* rp; B r = m_bitarrc(&rp, x);
       switch (rtid) { default:UD;
         CASE_N_AND:   si_scan_rows_and  (xp, rp, ia, m); break;
@@ -405,7 +405,7 @@ B scan_rows_bit(u8 rtid, B x, usz m) {
       if (m >= 128) return bi_N;
       usz bl = 128; // block size
       i8 buf[bl]; i8 c = 0;
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       i8* rp; B r = m_i8arrc(&rp, x);
       static const u64 ms[7] = { 0x00ff00ff00ff00ff, 0x00ff0000ff0000ff, 0x000000ff000000ff, 0x0000ff00000000ff, 0x00ff0000000000ff, 0xff000000000000ff, 0 };
       u64 mm = ms[m-2>6? 6 : m-2]; usz mk = m*(POPC(mm)/8);

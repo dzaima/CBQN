@@ -227,7 +227,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected 
 
 static B where(B x, usz xia, u64 s) {
   B r;
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
   if (xia <= 128) {
     #if SINGELI
@@ -355,14 +355,14 @@ B grade_bool(B x, usz xia, bool up) {
       r0+=b; r1++;                     \
     }
   B r;
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64 sum = bit_sum(xp, xia);
   u64 l0 = up? xia-sum : sum; // Length of first set of indices
   #if SINGELI
   if (xia < 16) { BRANCHLESS_GRADE(i8) }
   else if (xia <= 1<<15) {
     B notx = bit_negate(incG(x));
-    u64* xp0 = bitarr_ptr(notx);
+    u64* xp0 = bitany_ptr(notx);
     u64* xp1 = xp;
     u64 q=xia%64; if (q) { usz e=xia/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
@@ -418,7 +418,7 @@ void filter_ne_i32(i32* rp, i32* xp, usz len, usz sum, i32 val) {
 
 extern B take_c2(B, B, B);
 static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
-  u64* wp = bitarr_ptr(w);
+  u64* wp = bitany_ptr(w);
   u64 we = 0;
   usz ie = wia/64;
   usz q=wia%64; if (q) we = wp[ie] &= ((u64)1<<q) - 1;
@@ -439,7 +439,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
       // fallthrough
     default: r = compress_grouped(wp, x, wia, wsum, xt); break;
     case 0: {
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64* rp; r = m_bitarrv(&rp,wsum);
       #if SINGELI
       if (wsum>=wia/si_thresh_compress_bool) {
@@ -697,7 +697,7 @@ B slash_c2(B t, B w, B x) {
     }
     
     if (xl == 0) {
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s); if (rsh) { SPRNK(a(r),xr); a(r)->sh = rsh; }
       if (s/1024 <= wia) {
         #define SPARSE_REP(T) T* wp=T##any_ptr(w); BOOL_REP_XOR_SCAN(wp[j])
@@ -770,7 +770,7 @@ B slash_c2(B t, B w, B x) {
       goto decX_ret;
     }
     if (xl == 0) {
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
       #if SINGELI
       if (wv <= 64) si_constrep_bool(wv, xp, rp, s);
@@ -820,7 +820,7 @@ B slash_im(B t, B x) {
   B r;
   switch(xe) { default: UD;
     case el_bit: {
-      usz sum = bit_sum(bitarr_ptr(x), xia);
+      usz sum = bit_sum(bitany_ptr(x), xia);
       usz ria = 1 + (sum>0);
       f64* rp; r = m_f64arrv(&rp, ria);
       rp[sum>0] = sum; rp[0] = xia - sum;
@@ -952,7 +952,7 @@ B slash_ucw(B t, B o, B w, B x) {
   usz repI = 0;
   bool wb = TY(w) == t_bitarr;
   if (wb && re!=el_B) {
-    u64* d = bitarr_ptr(w);
+    u64* d = bitany_ptr(w);
     void* rp = r->a;
     switch (re) { default: UD;
       case el_bit:
@@ -985,7 +985,7 @@ B slash_ucw(B t, B o, B w, B x) {
   } else {
     SGet(x) SGet(rep) MUTG_INIT(r);
     if (wb) {
-      u64* d = bitarr_ptr(w);
+      u64* d = bitany_ptr(w);
       for (usz i = 0; i < ia; i++) mut_setG(r, i, bitp_get(d, i)? Get(rep,repI++) : Get(x,i));
     } else {
       SGetU(rep)

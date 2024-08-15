@@ -293,10 +293,10 @@ static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) { // ma
     bit_special:;
     bool b = o2bG(v);
     B m1 = taga(arr_shVec(b? allZeroes(stride) : allOnes(stride)));
-    bitp_set(bitarr_ptr(m1), p, b);
+    bitp_set(bitany_ptr(m1), p, b);
     B m = C2(shape, m_f64(stride*n+8), m1); // +8 to make the following loops reading past-the-end read acceptable values
     assert(TI(m,elType)==el_bit);
-    u8* mp = (u8*)bitarr_ptr(m);
+    u8* mp = (u8*)bitany_ptr(m);
     if (b) for (ux i = 0; i < (stride*n+7)/8; i++) ((u8*)rp)[i]|= mp[i]; // TODO call some general fns for this
     else   for (ux i = 0; i < (stride*n+7)/8; i++) ((u8*)rp)[i]&= mp[i];
     decG(m);

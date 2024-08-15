@@ -325,7 +325,7 @@ B c = IGet(x,n); // skip the initialize/call separation; not suggested in loops
 B c = IGetU(x,n);
 
 // for specific array types:
-if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x); same for all other primitive element types (except bitarr which only has bitarr_ptr)
+if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x); same for all other primitive element types (bitarr has bitany_ptr but no slice type yet)
 if (TI(x,elType)!=el_B) void* xp = tyany_ptr(x); // alternative equivalent check: IS_ANY_ARR(TY(x)); tyarr_ptr if the input is also known to not be a slice
 if (TY(x)==t_harr) B* xp = harr_ptr(x);
 if (TY(x)==t_harr || TY(x)==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!

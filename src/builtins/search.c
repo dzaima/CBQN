@@ -284,7 +284,7 @@ B indexOf_c2(B t, B w, B x) {
       }
 
       if (we==el_bit) {
-        u64* wp = bitarr_ptr(w);
+        u64* wp = bitany_ptr(w);
         u64 w0 = 1 & wp[0];
         u64 i = bit_find(wp, wia, !w0); decG(w);
         if (i!=wia) incG(x);
@@ -404,7 +404,7 @@ B memberOf_c2(B t, B w, B x) {
 
       #define WEQ(V) C2(eq, incG(w), V)
       if (xe==el_bit) {
-        u64* xp = bitarr_ptr(x);
+        u64* xp = bitany_ptr(x);
         u64 x0 = 1 & xp[0];
         r = WEQ(m_usz(x0));
         if (bit_has(xp, xia, !x0)) r = C2(or, r, WEQ(m_usz(!x0)));

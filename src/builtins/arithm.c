@@ -14,7 +14,7 @@ void bit_negatePtr(u64* rp, u64* xp, usz count) {
   vfor (usz i = 0; i < count; i++) rp[i] = ~xp[i];
 }
 B bit_negate(B x) { // consumes
-  u64* xp = bitarr_ptr(x);
+  u64* xp = bitany_ptr(x);
   u64* rp; B r = m_bitarrc(&rp, x);
   bit_negatePtr(rp, xp, BIT_N(IA(x)));
   decG(x);

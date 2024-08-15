@@ -106,7 +106,7 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   Arr *r;
   if (csz==1 && xlw==0) {
     u64* rp; r=m_bitarrp(&rp, ia);
-    interleave_bits(rp, bitarr_ptr(w), bitarr_ptr(x), ia);
+    interleave_bits(rp, bitany_ptr(w), bitany_ptr(x), ia);
   }
   #if SINGELI
   else if (csz==1 && xe==el_B) {
@@ -157,11 +157,11 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
     if (h==2) {
       u64* rp; r=m_bitarrp(&rp, ia);
       Arr* x1o = TI(x,slice)(inc(x),w,w);
-      interleave_bits(rp, bitarr_ptr(x), bitanyv_ptr(x1o), ia);
+      interleave_bits(rp, bitany_ptr(x), bitanyv_ptr(x1o), ia);
       mm_free((Value*)x1o);
     #ifdef __BMI2__
     } else if (w==2) {
-      u64* xp = bitarr_ptr(x);
+      u64* xp = bitany_ptr(x);
       u64* r0; r=m_bitarrp(&r0, ia);
       TALLOC(u64, r1, BIT_N(h));
       for (usz i=0; i<BIT_N(ia); i++) {
