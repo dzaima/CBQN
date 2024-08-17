@@ -180,6 +180,7 @@ def {
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
   pext,popcRand,rbit,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,widen,widenUpper,
+  multishift,
 }
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
