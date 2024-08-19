@@ -11,6 +11,7 @@
 //   =≤≥>- in terms of ≠<∨∧+ with adjustments
 // Arithmetic operand, rank 1:
 //   ⌈⌊ Scalar, SSE, AVX in log(vector width) steps (SHOULD add NEON)
+//     Check in 6-vector blocks to quickly write result if constant
 //   + Overflow-checked scalar or AVX2
 //   Ad-hoc boolean-valued handling for ≠∨
 // SHOULD extend rank 1 special cases to cell bound 1
