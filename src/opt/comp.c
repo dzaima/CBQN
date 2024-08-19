@@ -3,7 +3,11 @@
 #include "../ns.h"
 #include "../utils/mut.h"
 // minimal compiler, capable of running mlochbaum/BQN/src/bootstrap/boot2.bqn
-// supports •-values, 1-modifiers, value and function class variables
+// supports:
+//   parentheses, ⟨…⟩ literals, •-values
+//   non-destructuring variable assignment
+//   function, 1-modifier, and 2-modifier invocation
+//   value and function class variables, namespace .-access
 // input must be either an immediate expression, or a block potentially containing 𝕨 or 𝕩
 // goal is to either error, or compile correctly
 
