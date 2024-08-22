@@ -1434,10 +1434,17 @@ NOINLINE B pair_im(B t, B x) {
   return r;
 }
 
+B select_c1(B,B);
+NOINLINE B couple_im(B t, B x) {
+  if (isAtm(x) || RNK(x)==0 || *SH(x)!=1) thrM("≍⁼: Argument must have a leading axis of 1");
+  return C1(select,x);
+}
+
 B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(m_f64(0), w, c1(o, reverse_c2(t, inc(w), x))); }
-B reverse_uc1(B t, B o, B x) { return C1(reverse, c1(o, reverse_c1(t, x))); }
+B reverse_uc1(B t, B o, B x) { return C1(reverse,          c1(o, reverse_c1(t, x))); }
 B enclose_uc1(B t, B o, B x) { return enclose_im(m_f64(0), c1(o, m_unit(x))); }
-B pair_uc1(B t, B o, B x) { return pair_im(m_f64(0), c1(o, m_vec1(x))); }
+B pair_uc1   (B t, B o, B x) { return pair_im   (m_f64(0), c1(o, m_vec1(x))); }
+B couple_uc1 (B t, B o, B x) { return couple_im (m_f64(0), c1(o, couple_c1(t, x))); }
 
 void sfns_init(void) {
   c(BFn,bi_pick)->uc1 = pick_uc1;
@@ -1454,4 +1461,6 @@ void sfns_init(void) {
   c(BFn,bi_lt)->uc1 = enclose_uc1;
   c(BFn,bi_pair)->im = pair_im;
   c(BFn,bi_pair)->uc1 = pair_uc1;
+  c(BFn,bi_couple)->im = couple_im;
+  c(BFn,bi_couple)->uc1 = couple_uc1;
 }
