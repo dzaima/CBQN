@@ -5,6 +5,7 @@
 #include <math.h>
 
 B fne_c1(B, B);
+B shape_c1(B, B);
 B shape_c2(B, B, B);
 B transp_c2(B, B, B);
 B take_c2(B, B, B);
@@ -583,6 +584,18 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           }
           break;
         }
+        case n_undo: if (isFun(fd->f)) {
+          u8 frtid = v(fd->f)->flags-1;
+          if (frtid==n_couple && cr!=0 && xsh[k]==1) {
+            assert(xr>=2);
+            if (xr==2) return C1(shape, x);
+            Arr* r = cpyWithShape(x); xsh=PSH(r);
+            ShArr* rsh = m_shArr(xr-1);
+            shcpy(rsh->a, xsh, k);
+            shcpy(rsh->a+k, xsh+k+1, xr-k-1);
+            return taga(arr_shReplace(r, xr-1, rsh));
+          }
+        } break;
       }
     } else if (TY(f) == t_md2D) {
       Md2D* fd = c(Md2D,f);
