@@ -217,6 +217,7 @@ B mul_c2(B,B,B);
 B ud_c1(B,B);
 B tbl_c2(Md1D*,B,B);
 B select_c2(B,B,B);
+Arr* customizeShape(B x); // from cells.c
 
 static void shSet(Arr* ra, ur rr, ShArr* sh) {
   if (RARE(rr <= 1)) arr_shVec(ra);
@@ -398,9 +399,7 @@ B transp_c2(B t, B w, B x) {
   ShArr* zsh = m_shArr(2);
   zsh->a[0] = IA(x)/csz;
   zsh->a[1] = csz;
-  Arr* z = TI(x,slice)(x, 0, IA(x));
-  arr_shSetUG(z, 2, zsh);
-  x = taga(z);
+  x = taga(arr_shSetUG(customizeShape(x), 2, zsh));
   // (+⌜´st×⟜↕¨rsh)⊏⥊𝕩
   B ind = bi_N;
   for (ur k=na; k--; ) {
