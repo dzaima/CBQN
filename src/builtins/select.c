@@ -830,7 +830,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   generic_int:;
   assert(ie!=el_bit && generic_allowed);
-  B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), ie, indn)));
+  B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), t_i8arr + ie-el_i8, indn)));
   return select_cells_base(indo, x, csz, cam);
   
   decG_ret:;

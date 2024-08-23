@@ -1,4 +1,4 @@
-# not tested here: •Out •Show •Exit •GetLine •Cmp •CurrentError •FFI •internal.HeapDump •file.MapBytes
+# not tested here: •Out •Show •Exit •GetLine •Cmp •CurrentError •FFI •internal.HeapDump
 
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
@@ -129,6 +129,7 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 •FChars "testfile.bqn" %% "abc"∾(@+10)∾"def𝕩"
 •FBytes "testfile.bqn" %% @+97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169
 •FLines "testfile.bqn" %% "abc"‿"def𝕩"
+! 97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169 ≡ @-˜ •file.MapBytes "testfile.bqn"
 
 •file.Name "testfile3B.bqn" •file.Rename "testfile3.bqn" %% "testfile3B.bqn"
 !"•file.Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
