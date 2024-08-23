@@ -73,7 +73,7 @@ extern u8 const arrTypeBitsLog[];
 #define arrTypeBitsLog(X) arrTypeBitsLog[X]
 #define arrNewType(X) el2t(TIi(X,elType))
 
-SHOULD_INLINE void arr_check_size(u64 sz, u8 type, usz ia) {
+SHOULD_INLINE void arr_check_size(u64 sz, u8 type, u64 ia) {
   #if DEBUG
     assert(IS_ANY_ARR(type) || type==t_harrPartial);
     if (!IS_SLICE(type)) {

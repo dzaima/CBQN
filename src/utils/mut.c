@@ -2,10 +2,10 @@
 #include "mut.h"
 
 typedef struct { Arr* arr; void* els; } MadeArr;
-FORCE_INLINE MadeArr mut_make_arr(usz ia, u8 type, u8 el) {
+FORCE_INLINE MadeArr mut_make_arr(u64 ia, u8 type, u8 el) {
   u64 sz;
   switch(el) { default: UD;
-    case el_bit:              sz = BITARR_SZ(   ia); break;
+    case el_bit:              sz = BITARR_SZ(   ia); CHECK_BITARR_IA(ia); break;
     case el_i8:  case el_c8:  sz = TYARR_SZ(I8, ia); break;
     case el_i16: case el_c16: sz = TYARR_SZ(I16,ia); break;
     case el_i32: case el_c32: sz = TYARR_SZ(I32,ia); break;
@@ -26,13 +26,13 @@ FORCE_INLINE void mut_init(Mut* m, u8 el) {
 }
 
 #if __clang__
-NOINLINE void make_mut_init(Mut* rp, ux ia, u8 el) {
+NOINLINE void make_mut_init(Mut* rp, u64 ia, u8 el) {
   MAKE_MUT(r, ia)
   mut_init(r, el);
   *rp = r_val;
 }
 #else
-NOINLINE Mut make_mut_init(ux ia, u8 el) {
+NOINLINE Mut make_mut_init(u64 ia, u8 el) {
   MAKE_MUT(r, ia)
   mut_init(r, el);
   return r_val;
@@ -653,7 +653,7 @@ NOINLINE Arr* apd_fill_end(ApdMut* m, u32 ty) {
   return a(withFill(taga(m->obj), m->fill));
 }
 
-SHOULD_INLINE Arr* apd_setArr(ApdMut* m, usz ia, u8 xe) {
+SHOULD_INLINE Arr* apd_setArr(ApdMut* m, u64 ia, u8 xe) {
   MadeArr a = mut_make_arr(ia, el2t(xe), xe);
   m->obj = a.arr;
   m->a = a.els;

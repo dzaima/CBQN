@@ -69,7 +69,7 @@ static inline u64 bit_find(u64* arr, u64 ia, bool v) {
 #endif
 
 #define BITARR_SZ(IA) fsizeof(BitArr, a, u64, BIT_N(IA))
-static B m_bitarrv(u64** p, usz ia) {
+static B m_bitarrv(u64** p, u64 ia) {
   CHECK_BITARR_IA(ia);
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
   arr_shVec((Arr*)r);
@@ -83,7 +83,7 @@ static B m_bitarrc(u64** p, B x) { assert(isArr(x));
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
-static Arr* m_bitarrp(u64** p, usz ia) {
+static Arr* m_bitarrp(u64** p, u64 ia) {
   CHECK_BITARR_IA(ia);
   BitArr* r = m_arr(BITARR_SZ(ia), t_bitarr, ia);
   *p = (u64*)r->a;

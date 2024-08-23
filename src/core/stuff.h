@@ -69,13 +69,13 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 static void tyarrv_freeP(Arr* x) { assert(PRNK(x)<=1 && IS_DIRECT_TYARR(PTY(x))); mm_free((Value*)x); }
 static void tyarrv_free(B x) { tyarrv_freeP(a(x)); }
 
-static inline void* m_arrUnchecked(u64 sz, u8 type, usz ia) {
+static inline void* m_arrUnchecked(u64 sz, u8 type, u64 ia) {
   Arr* r = mm_alloc(sz, type);
   r->ia = ia;
   return r;
 }
-SHOULD_INLINE void arr_check_size(u64 sz, u8 type, usz ia);
-SHOULD_INLINE void* m_arr(u64 sz, u8 type, usz ia) {
+SHOULD_INLINE void arr_check_size(u64 sz, u8 type, u64 ia);
+SHOULD_INLINE void* m_arr(u64 sz, u8 type, u64 ia) {
   arr_check_size(sz, type, ia);
   return m_arrUnchecked(sz, type, ia);
 }

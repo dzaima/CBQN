@@ -4,7 +4,7 @@
 typedef TyArr JOIN(TU,Arr);
 typedef TP(,) JOIN(TU,Atom);
 
-SHOULD_INLINE B TP(m_,arrv) (TEl** p, usz ia) {
+SHOULD_INLINE B TP(m_,arrv) (TEl** p, u64 ia) {
   CHECK_IA(ia, sizeof(TEl));
   TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, ia);
   arr_shVec((Arr*)r);
@@ -19,7 +19,7 @@ SHOULD_INLINE B TP(m_,arrc) (TEl** p, B x) { assert(isArr(x));
   arr_shCopy((Arr*)r, x);
   return taga(r);
 }
-SHOULD_INLINE Arr* TP(m_,arrp) (TEl** p, usz ia) {
+SHOULD_INLINE Arr* TP(m_,arrp) (TEl** p, u64 ia) {
   CHECK_IA(ia, sizeof(TEl));
   TyArr* r = m_arr(TYARR_SZ2(TU,ia), T_ARR, ia);
   *p = (TEl*)r->a;

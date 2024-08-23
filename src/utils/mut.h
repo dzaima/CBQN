@@ -29,17 +29,17 @@ extern INIT_GLOBAL MutFns mutFns[el_MAX+1];
 
 struct Mut {
   MutFns* fns;
-  usz ia;
+  u64 ia;
   Arr* val;
   void* a;
 };
 
 void mut_to(Mut* m, u8 n);
 #if __clang__ && __has_attribute(noescape) // workaround for clang not realizing that stack-returned structs aren't captured
-  void make_mut_init(__attribute__((noescape)) Mut* rp, ux ia, u8 el);
+  void make_mut_init(__attribute__((noescape)) Mut* rp, u64 ia, u8 el);
   #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val; Mut* N = &N##_val; make_mut_init(N, IA, EL);
 #else
-  Mut make_mut_init(ux ia, u8 el);
+  Mut make_mut_init(u64 ia, u8 el);
   #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = make_mut_init(IA, EL); Mut* N = &N##_val;
 #endif
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
@@ -165,7 +165,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* usedW) {
   assert(isArr(w) && isArr(x));
   usz wia = IA(w);
   usz xia = IA(x);
-  u64 ria = wia+xia;
+  u64 ria = wia + (u64)xia;
   if (!reusable(w)) goto no;
   u64 wsz = mm_sizeUsable(v(w));
   u8 wt = TY(w);
@@ -259,7 +259,7 @@ struct ApdMut {
   };
   
   union {
-    struct { ux ia0; }; // tot init
+    struct { u64 ia0; }; // tot init
     struct { usz* rsh0; ur rr0; }; // sh init
     struct { usz* csh; usz cia; ur cr; }; // sh2 & shE (& cia also for sh1)
   };
