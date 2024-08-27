@@ -237,12 +237,32 @@ B memberOf_c1(B t, B x) {
     if (shouldWidenBitarr(x, csz)) return C1(memberOf, widenBitArr(x, 1));
     x = toCells(x);
   }
-  u64* rp; B r = m_bitarrv(&rp, n);
-  H_Sb* set = m_Sb(64);
+  
+  assert(n > 0);
   SGetU(x)
-  for (usz i = 0; i < n; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
-  free_Sb(set); decG(x);
-  return r;
+  usz i = 0;
+  {
+    B x0 = GetU(x, 0);
+    while (i < n) {
+      B c = GetU(x, i);
+      if (!equal(c, x0)) {
+        u64* rp; B r = m_bitarrv(&rp, n);
+        memset(rp, 0, (i+7)>>3);
+        rp[0] = 1;
+        
+        H_Sb* set = m_Sb(64);
+        ins_Sb(&set, x0);
+        for (; i < n; i++) bitp_set(rp, i, !ins_Sb(&set, GetU(x,i)));
+        free_Sb(set); decG(x);
+        return r;
+      }
+      i++;
+    }
+    decG(x);
+    Arr* r = allZeroes(n);
+    bitarrv_ptr((TyArr*) r)[0] = 1;
+    return taga(arr_shVec(r));
+  }
 }
 
 B count_c1(B t, B x) {
