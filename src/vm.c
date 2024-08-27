@@ -1166,7 +1166,7 @@ B block_decompose(B x) { return m_hvec2(m_i32(1), x); }
 STATIC_GLOBAL usz pageSizeV;
 #endif
 
-usz getPageSize() {
+ux getPageSize() {
   #if defined(_WIN32) || defined(_WIN64)
     #if !NO_MMAP
       #error "Windows builds must have NO_MMAP=1"

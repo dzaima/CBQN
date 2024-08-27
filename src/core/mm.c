@@ -3,7 +3,7 @@
 
 #include "../core.h"
 
-usz getPageSize(void);
+ux getPageSize(void);
 static u64 prepAllocSize(u64 sz) {
   u64 psz = getPageSize();
   u64 minTotPad = ALLOC_PADDING*2 + 128;
