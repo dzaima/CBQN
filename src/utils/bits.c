@@ -198,7 +198,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
   u64* rp64 = rp;
   if (rcsz<=64) {
     assert((rcsz&(rcsz-1)) == 0);
-    #if SINGELI_AARCH64 || SINGELI_AVX2
+    #if SINGELI_NEON || SINGELI_AVX2
       if (rcsz==8) {
         si_bitwiden_n_8(xp, rp, xcsz, cam);
         return;
