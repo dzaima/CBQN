@@ -100,29 +100,22 @@ static B md2D_uc1(B t, B o, B x) {
   return TIv(m,m2_uc1)(m, o, f, g, x);
 }
 
-static B toConstant(B x) { // doesn't consume x
-  if (!isCallable(x)) return inc(x);
-  if (TY(x) == t_md1D) {
-    Md1D* d = c(Md1D,x);
-    Md1* m1 = d->m1;
-    if (PTY(m1)==t_md1BI && m1->flags==n_const) return inc(d->f);
-  }
-  return bi_N;
-}
 STATIC_GLOBAL NFnDesc* ucwWrapDesc;
 STATIC_GLOBAL NFnDesc* uc1WrapDesc;
 
 static B fork_uc1(B t, B o, B x) {
-  B f = toConstant(c(Fork, t)->f);
+  B f;
   B g = c(Fork, t)->g;
   B h = c(Fork, t)->h;
-  if (RARE(q_N(f) | !isFun(g) | !isFun(h))) { dec(f); return def_fn_uc1(t, o, x); }
-  B args[] = {g, o, f};
-  B tmp = m_nfn(ucwWrapDesc, tag(args, RAW_TAG));
-  B r = TI(h,fn_uc1)(h,tmp,x);
-  // f is consumed by the eventual ucwWrap call. this hopes that everything is nice and calls o only once, and within the under call, so any user-facing Under interface must assert that that'll stay the case
-  decG(tmp);
-  return r;
+  if (LIKELY(isFun(g) && isFun(h) && toConstant(c(Fork, t)->f, &f))) {
+    B args[] = {g, o, f};
+    B tmp = m_nfn(ucwWrapDesc, tag(args, RAW_TAG));
+    B r = TI(h,fn_uc1)(h,tmp,x);
+    // f is consumed by the eventual ucwWrap call. this hopes that everything is nice and calls o only once, and within the under call, so any user-facing Under interface must assert that that'll stay the case
+    decG(tmp);
+    return r;
+  }
+  return def_fn_uc1(t, o, x);
 }
 static B ucwWrap_c1(B t, B x) {
   B* args = c(B, nfn_objU(t));

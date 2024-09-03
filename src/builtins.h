@@ -102,6 +102,16 @@ static bool isPervasiveDyExt(B x) {
   return false;
 }
 
+static bool toConstant(B x, B* out) { // doesn't consume x; if possible, writes an owned reference to out, else leaves out unmodified
+  if (!isCallable(x)) { *out = inc(x); return true; }
+  if (TY(x) == t_md1D) {
+    Md1D* d = c(Md1D,x);
+    Md1* m1 = d->m1;
+    if (PTY(m1)==t_md1BI && m1->flags==n_const) { *out = inc(d->f); return true; }
+  }
+  return false;
+}
+
 extern GLOBAL B
 #define F(N,X) bi_##N,
 FOR_PFN(F,F,F)
