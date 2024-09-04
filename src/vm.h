@@ -32,8 +32,8 @@ enum {
   POPS = 0x06, // pop object from stack
   RETN = 0x07, // returns top of stack
   RETD = 0x08, // return a namespace of exported items
-  LSTO = 0x0B, // N; push a vector of top N items
-  LSTM = 0x0C, // N; push a mutable vector of top N items
+  LSTO = 0x0B, // N; push a list of top N items
+  LSTM = 0x0C, // N; push a mutable list of top N items
   ARMO = 0x0D, // N; push an array whose cells are the top N items
   ARMM = 0x0E, // N; push a mutable array whose cells are the top N items
   

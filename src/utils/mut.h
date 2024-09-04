@@ -156,10 +156,10 @@ SHOULD_INLINE void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
 typedef struct { B w2; void* rp; } JoinFillslice;
 JoinFillslice fillslice_getJoin(B w, usz ria); // either returns NULL in rp, or consumes w
 
-// consume==true: consumes w,x and expects both args to be vectors
+// consume==true: consumes w,x and expects both args to be lists
 // consume==false: doesn't consume x, and
 //   *usedW==true: consumes w, returns w or its backing array; if RNK(w)>1, result has the same shape as w, i.e. not updated
-//   *usedW==false: doesn't consume w; result has vector shape
+//   *usedW==false: doesn't consume w; result has list shape
 // returns possibly incorrect fills if arguments aren't equal class typed arrays
 FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* usedW) {
   assert(isArr(w) && isArr(x));

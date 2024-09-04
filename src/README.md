@@ -244,12 +244,12 @@ The shape pointer of a rank≤1 array will point to the object's own `ia` field 
 
 Allocating an array:
 ```C
-i32* rp; B r = m_i32arrv(&rp, 123); // allocate a 123-element i32 vector
+i32* rp; B r = m_i32arrv(&rp, 123); // allocate a 123-element i32 list
 i32* rp; B r = m_i32arrc(&rp, x); // allocate an array with the same shape as x (x must be an array; x isn't consumed)
 
 i32* rp; Arr* r = m_i32arrp(&rp, 123); // allocate a 123-element i32-array without allocating shape
 // then at some point do one of these:
-arr_shVec(r); // set shape of r to a vector
+arr_shVec(r); // set shape of r to a list
 usz* sh = arr_shAlloc(r, 4); // allocate a rank 4 shape; write to sh the individual items; sh will be NULL for ranks 0 and 1
 arr_shCopy(r, x); // copy the shape object of x (doesn't consume x)
 // then get the final array:
@@ -262,7 +262,7 @@ u32* rp; B r = m_c32arrv(%rp, 10); // 10-char string
 
 // arbitrary object arrays:
 // initialized with all elements being 0.0s, which you can replace with `r.a[i]=val`, and get the result with `r.b`; simple, but may not be optimal
-HArr_p r = m_harr0v(10); // new 10-item vector
+HArr_p r = m_harr0v(10); // new 10-item list
 HArr_p r = m_harr0c(10, x); // new 10-item array with the same shape as x
 HArr_p r = m_harr0p(10); // new 10-item array without any set shape. Use the arr_shWhatever(r.c, …)
 
@@ -271,7 +271,7 @@ M_HARR(r, 123) // allocate a 123-item arbitrary object array
 HARR_ADD(r, i, val); // write val to the next position in the array. The 'i' variable is just a hint, all calls must be consecutive either way
 HARR_ADDA(r, val); // the above but without needing the useless 'i' parameter
 // then do one of these to get the finished object:
-B result = HARR_FV(r); // sets shape to a vector
+B result = HARR_FV(r); // sets shape to a list
 B result = HARR_FC(r, x); // copies the shape of x, doesn't consume x
 B result = HARR_FCD(r, x); // copies the shape of x and consumes it
 usz* sh = HARR_FA(r, 4); // allocate shape for a rank 4 array. To get the result `B` object, do HARR_O(r).b later
@@ -279,7 +279,7 @@ Arr* result = HARR_FP(r); // don't allocate/set any shape
 // If at any point you want to free the object before finishing it, do HARR_ABANDON(r)
 
 // If you're sure GC cannot happen (that includes no allocating) before all items in the array are set, you can use:
-HArr_p r = m_harrUv(10); // 10-item vector
+HArr_p r = m_harrUv(10); // 10-item list
 HArr_p r = m_harrUc(10, x); // 10-item array with the same shape as x
 HArr_p r = m_harrUp(10); // 10-item array without any set shape. Use the arr_shWhatever(r.c, …)
 // run `NOGC_E;` after filling in the items to resume allowing allocations (not necessary if item count is 0)

@@ -283,7 +283,7 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
 
 GLOBAL B cdPath;
 static NOINLINE B prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
-  if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a vector with at most 3 items, but had shape %H", name, w);
+  if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("%U: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
   HArr_p r = m_harr0v(3);
   r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
@@ -1038,7 +1038,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf8lenB(c);
     TALLOC(char, cstr, len+1);
     toUTF8(c, cstr);
@@ -1162,7 +1162,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a vector of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf8lenB(c);
     arglen += 1+2+2*len;
     // space or 0, quotes, worst-case scenario (every character needs escaping)
@@ -1238,7 +1238,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     }
     u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
     
-    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a vector of strings");
+    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a list of strings");
     usz xia = IA(x);
     if (xia==0) thrM("•SH: 𝕩 must have at least one item");
     
