@@ -2,6 +2,7 @@ def bcall{T, f, x} = emit{T, 'BCALL', f, x}
 def from_B{T, x if T==f64} = bcall{T, 'o2fG', x}
 def from_B{T, x if T<=i32 and   issigned{T}} = bcall{T, 'o2iG', x}
 def from_B{T, x if T<=u32 and isunsigned{T}} = bcall{T, 'o2cG', x}
+def fatal{msg} = emit{void, 'fatal', merge{'"', msg, '"'}}
 
 def q_f64{x} = bcall{u1, 'q_f64', x}
 def q_chr{x} = bcall{u1, 'q_c32', x}
