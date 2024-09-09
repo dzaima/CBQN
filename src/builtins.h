@@ -107,7 +107,7 @@ static bool toConstant(B x, B* out) { // doesn't consume x; if possible, writes 
   if (TY(x) == t_md1D) {
     Md1D* d = c(Md1D,x);
     Md1* m1 = d->m1;
-    if (PTY(m1)==t_md1BI && m1->flags==n_const) { *out = inc(d->f); return true; }
+    if (PTY(m1)==t_md1BI && m1->flags-1 == n_const) { *out = inc(d->f); return true; }
   }
   return false;
 }
