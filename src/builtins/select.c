@@ -493,7 +493,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     }
     case el_B: {
       ra = reuse? a(REUSE(x)) : cpyHArr(x);
-      B* rp = harrP_parts((HArr*)ra).a;
+      B* rp = harrv_ptr(ra);
       SGet(rep)
       if (csz==1) {
         for (usz i = 0; i < wia; i++) {

@@ -28,19 +28,19 @@ static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
 static Arr* harr_slice  (B x, usz s, usz ia) { return m_hslice(a(x), c(HArr,x)->a+s, ia); }
 static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); decG(x); return r; }
 
-static B harr_get   (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return inc(((HArr*  )x)->a[n]); }
-static B hslice_get (Arr* x, usz n) { assert(PTY(x)==t_hslice); return inc(((HSlice*)x)->a[n]); }
-static B harr_getU  (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return     ((HArr*  )x)->a[n] ; }
-static B hslice_getU(Arr* x, usz n) { assert(PTY(x)==t_hslice); return     ((HSlice*)x)->a[n] ; }
+static B harr_get   (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return inc(harrv_ptr  (x)[n]); }
+static B hslice_get (Arr* x, usz n) { assert(PTY(x)==t_hslice); return inc(hslicev_ptr(x)[n]); }
+static B harr_getU  (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return     harrv_ptr  (x)[n] ; }
+static B hslice_getU(Arr* x, usz n) { assert(PTY(x)==t_hslice); return     hslicev_ptr(x)[n] ; }
 DEF_FREE(harr) {
   decSh(x);
-  B* p = ((HArr*)x)->a; // don't use harr_ptr so type isn't checked
+  B* p = ((HArr*)x)->a; // don't use harrv_ptr so type isn't checked
   usz ia = PIA((Arr*)x);
   for (usz i = 0; i < ia; i++) dec(p[i]);
 }
 static void harr_visit(Value* x) {
   VISIT_SHAPE(x);
-  usz ia = PIA((Arr*)x); B* p = ((HArr*)x)->a;
+  usz ia = PIA((Arr*)x); B* p = harrv_ptr(x);
   for (usz i = 0; i < ia; i++) mm_visit(p[i]);
 }
 static bool harr_canStore(B x) { return true; }
@@ -48,7 +48,7 @@ static bool harr_canStore(B x) { return true; }
 
 
 DEF_FREE(harrP) { assert(PTY(x)==t_harrPartial|PTY(x)==t_freed);
-  B* p   = ((HArr*)x)->a;
+  B* p = ((HArr*)x)->a; // don't use harrv_ptr so type isn't checked
   usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) dec(p[i]);
 }
@@ -58,7 +58,7 @@ void harr_abandon_impl(HArr* p) { assert(PTY(p) == t_harrPartial);
   mm_free((Value*) p);
 }
 static void harrP_visit(Value* x) { assert(PTY(x) == t_harrPartial);
-  B* p   = ((HArr*)x)->a;
+  B* p = harrv_ptr(x);
   usz am = PIA((HArr*)x);
   for (usz i = 0; i < am; i++) mm_visit(p[i]);
 }
@@ -78,7 +78,7 @@ static void harrP_print(FILE* f, B x) {
 
 #if DEBUG
   static void harr_freeT(Value* x) {
-    B* p = ((HArr*)x)->a;
+    B* p = harrv_ptr(x);
     usz ia = PIA((Arr*)x);
     for (usz i = 0; i < ia; i++) assert(!isVal(p[i]));
     tyarr_freeF(x);

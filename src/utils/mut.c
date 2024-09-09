@@ -40,7 +40,7 @@ NOINLINE Mut make_mut_init(u64 ia, u8 el) {
 #endif
 
 static void* arr_ptr(Arr* t, u8 el) {
-  return el==el_B? (void*)((HArr*)t)->a : tyarrv_ptr((TyArr*)t);
+  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
 }
 
 INIT_GLOBAL u8 reuseElType[t_COUNT];
@@ -126,7 +126,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
   
   if (p->refc!=1) goto no;
   if (p->type!=t_fillarr && p->type!=t_harr) goto no;
-  void* rp = p->type==t_fillarr? fillarr_ptr(p) : ((HArr*)p)->a;
+  void* rp = p->type==t_fillarr? fillarr_ptr(p) : harrv_ptr(p);
   if (rp != s->a) goto no;
   if (PIA(p)!=wia) goto no;
   usz wsz = mm_sizeUsable((Value*)p);
