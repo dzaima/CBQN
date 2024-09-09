@@ -40,6 +40,7 @@ o ← {
   debug      ⇐ ∨´i=7
   noCatch    ⇐ ∨´i=8
   noerr∨↩ heapverify
+  update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args
   run ↩ update ∨ ¬∨´lint‿update
 }
