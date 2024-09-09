@@ -4,8 +4,18 @@
 
 
 #if SINGELI_SIMD
+  extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64);
+  static void blendArrScalarBits(void* r, void* zero, bool one, void* mask, u64 n) {
+    if (one) orAAu_bit_bit_bit(r, zero, mask, n);
+    else CMP_AA_CALL(CMP_AA_FN(gt, el_bit), r, zero, mask, n);
+  }
+  
   #define SINGELI_FILE bits
   #include "../utils/includeSingeli.h"
+
+  typedef void (*BlendArrScalarFn)(void* r, void* zero, u64 one, void* mask, u64 n);
+  INIT_GLOBAL BlendArrScalarFn* blendArrScalarFns = si_blend_arr_scalar;
+  
   INIT_GLOBAL BitSelFn* bitselFns = simd_bitsel;
 #else
   #define BITSEL_DEF(E) void bitsel_##E(void* rp, u64* bp, u64 e0i, u64 e1i, u64 ia) { for (usz i=0; i<ia; i++) ((E*)rp)[i] = bitp_get(bp,i)? e1i : e0i; }

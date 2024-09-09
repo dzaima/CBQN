@@ -301,6 +301,8 @@ static NOINLINE B or_SA(B t, B w, B x) {
   return r;
 }
 
+extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64); // used in bits.c
+
 #define SINGELI_FILE arTables
 #include "../../utils/includeSingeli.h"
 

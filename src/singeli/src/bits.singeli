@@ -22,6 +22,21 @@ def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
 exportT{'simd_bitsel', table{arch_defvw}}
 
+fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : void = {
+  if (same{E,'!'}) {
+    fatal{'bad blend'}
+  } else if (E==u1) {
+    emit{void, 'blendArrScalarBits', rp, zero, cast_i{E, one0}, mask, len}
+  } else {
+    def bulk = arch_defvw / width{E}
+    def VT = [bulk]E
+    def one = VT**cast_i{E, one0}
+    @maskedLoop{bulk}(r in tup{VT,*E~~rp}, zero in tup{VT,*E~~zero}, mask in tup{'b',VT,mask} over i to len) r = homBlend{zero, one, mask}
+  }
+}
+
+exportT{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u16, u32, u64}}}
+
 (if (has_sel) {
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
