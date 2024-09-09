@@ -145,7 +145,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
   Arr* r;
   if (xe==el_B) {
     B xf = getFillR(x);
-    B* xp = TO_BPTR(x);
+    B* xp = TO_BPTR_RUN(x, *px = x);
     
     HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
     transpose_move(p.a, xp, el_f64, w, h);

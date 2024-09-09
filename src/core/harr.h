@@ -115,7 +115,8 @@ static B* hslice_ptr(B x) { return hslicev_ptr(a(x)); }
 
 Arr* cpyHArr(B x); // consumes
 static HArr* toHArr(B x) { return TY(x)==t_harr? c(HArr,x) : (HArr*) cpyHArr(x); }
-#define TO_BPTR(X) ({ B* bp_ = arr_bptr(X); if (bp_==NULL) { HArr* nha_ = (HArr*)cpyHArr(X); X=taga(nha_); bp_=nha_->a; }; bp_; })
+#define TO_BPTR_RUN(X, F) ({ B* bp_ = arr_bptr(X); if (bp_==NULL) { HArr* nha_ = (HArr*)cpyHArr(X); X=taga(nha_); bp_=nha_->a; F; }; bp_; })
+#define TO_BPTR(X) TO_BPTR_RUN(X, )
 
 B m_caB(usz ia, B* a);
 
