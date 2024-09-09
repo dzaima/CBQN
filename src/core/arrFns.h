@@ -1,17 +1,21 @@
 #pragma once
 
 static B* arr_bptr(B x) { assert(isArr(x));
-  if (TY(x)==t_harr) return harr_ptr(x);
-  if (TY(x)==t_fillarr) return fillarrv_ptr(a(x));
-  if (TY(x)==t_hslice) return hslice_ptr(x);
-  if (TY(x)==t_fillslice) return fillslicev_ptr(a(x));
+  #if !ARR_BPTR_NEVER
+    if (TY(x)==t_harr) return harr_ptr(x);
+    if (TY(x)==t_fillarr) return fillarrv_ptr(a(x));
+    if (TY(x)==t_hslice) return hslice_ptr(x);
+    if (TY(x)==t_fillslice) return fillslicev_ptr(a(x));
+  #endif
   return NULL;
 }
-static B* arrV_bptr(Arr* x) {
-  if (PTY(x)==t_harr) return harrv_ptr(x);
-  if (PTY(x)==t_fillarr) return fillarrv_ptr(x);
-  if (PTY(x)==t_hslice) return hslicev_ptr(x);
-  if (PTY(x)==t_fillslice) return fillslicev_ptr(x);
+static B* arrv_bptr(Arr* x) {
+  #if !ARR_BPTR_NEVER
+    if (PTY(x)==t_harr) return harrv_ptr(x);
+    if (PTY(x)==t_fillarr) return fillarrv_ptr(x);
+    if (PTY(x)==t_hslice) return hslicev_ptr(x);
+    if (PTY(x)==t_fillslice) return fillslicev_ptr(x);
+  #endif
   return NULL;
 }
 

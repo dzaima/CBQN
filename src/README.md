@@ -330,6 +330,9 @@ if (TI(x,elType)!=el_B) void* xp = tyany_ptr(x); // alternative equivalent check
 if (TY(x)==t_harr) B* xp = harr_ptr(x); // similarly, hslice_ptr, fillarrv_ptr, fillslicev_ptr for specific types
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by a contiguous B*
 // while currently there are no types with eltype el_B for which arr_bptr isn't NULL, that could change in the future and so should still be handled
+// testable with f=-DARR_BPTR_NEVER, which makes arr_bptr
+
+// most arr_* fns have a arrv_* variant that takes an untagged pointer instead of B
 
 // functions to convert arrays to a specific type array: (all consume their argument, and assume that the elements losslessly fit in the desired type)
 I8Arr* a = toI8Arr(x); // convert x to an I8Arr instance (returns the argument if it already is)

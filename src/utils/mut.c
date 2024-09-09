@@ -295,11 +295,13 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     case t_c8arr:  case t_c8slice:  { u8*  xp = c8any_ptr (x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
+    #if !ARR_BPTR_NEVER
     case t_harr: case t_hslice: case t_fillarr: case t_fillslice:;
       B* xp = arr_bptr(x)+xs;
       for (usz i = 0; i < l; i++) inc(xp[i]);
       memcpy(mpo, xp, l*sizeof(B));
       return;
+    #endif
     case t_f64arr: case t_f64slice:
       assert(sizeof(B)==sizeof(f64));
       memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
@@ -327,7 +329,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     for (usz i=0; i<ia; i++) WR(fn(xa,i));        \
   }                                               \
   static void cpy##N##Arr_B(void* rp, void* xp, u64 ia, void* xRaw) { \
-    Arr* xa = (Arr*)xRaw; B* bxp = arrV_bptr(xa); \
+    Arr* xa = (Arr*)xRaw; B* bxp = arrv_bptr(xa); \
     if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
     else cpy##N##Arr_BF(rp, xp, ia, xa);          \
   }                                               \
