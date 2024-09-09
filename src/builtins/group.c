@@ -81,7 +81,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   if (ria > (i64)(USZ_MAX)) thrOOM();
   
   Arr* r = m_fillarr0p(ria);
-  B* rp = fillarr_ptr(r);
+  B* rp = fillarrv_ptr(r);
   
   B xf = getFillR(x);
   Arr* rf = emptyWithFill(xf);
@@ -237,14 +237,14 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     if (csz == 1) {
       for (usz i = 0; i < xn; i++) {
         i32 n = wp[i];
-        if (n>=0) fillarr_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
+        if (n>=0) fillarrv_ptr(a(rp[n]))[pos[n]++] = Get(x, i);
       }
     } else {
       for (usz i = 0; i < xn; i++) {
         i32 n = wp[i];
         if (n<0) continue;
         usz p = (pos[n]++)*csz;
-        B* rnp = fillarr_ptr(a(rp[n])) + p;
+        B* rnp = fillarrv_ptr(a(rp[n])) + p;
         for (usz j = 0; j < csz; j++) rnp[j] = Get(x, i*csz + j);
       }
     }

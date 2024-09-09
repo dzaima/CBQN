@@ -46,8 +46,8 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
     dec(bf);
     Arr* ra = arr_shVec(m_fillarrp(2));
     fillarr_setFill(ra, af);
-    fillarr_ptr(ra)[0] = a;
-    fillarr_ptr(ra)[1] = b;
+    fillarrv_ptr(ra)[0] = a;
+    fillarrv_ptr(ra)[1] = b;
     NOGC_E;
     return taga(ra);
   }
@@ -141,8 +141,8 @@ NOINLINE Arr* reshape_one(usz nia, B x) {
     incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
     B rf = asFill(x);
     r = m_fillarrp(nia);
-    if (sizeof(B)==8) fill_words(fillarr_ptr(r), x.u, (u64)nia*8);
-    else for (usz i = 0; i < nia; i++) fillarr_ptr(r)[i] = x;
+    if (sizeof(B)==8) fill_words(fillarrv_ptr(r), x.u, (u64)nia*8);
+    else for (usz i = 0; i < nia; i++) fillarrv_ptr(r)[i] = x;
     fillarr_setFill(r, rf);
     NOGC_E;
   }
@@ -1266,11 +1266,11 @@ static B pick_replaceOne(B fn, usz pos, B x, usz xia) {
       if (!(TY(x)==t_harr && reusable(x))) x = taga(cpyHArr(x));
       xp = harr_ptr(x);
     } else if (TY(x)==t_fillarr && reusable(x)) {
-      xp = fillarr_ptr(a(x));
+      xp = fillarrv_ptr(a(x));
     } else {
       Arr* x2 = m_fillarrp(xia);
       fillarr_setFill(x2, getFillR(x));
-      xp = fillarr_ptr(x2);
+      xp = fillarrv_ptr(x2);
       COPY_TO(xp, el_B, 0, x, 0, xia);
       NOGC_E;
       arr_shCopy(x2, x);

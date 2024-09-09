@@ -72,7 +72,7 @@ B eachm_fn(B fo, B x, FC1 f) {
       case t_fillarr: {
         dec(c(FillArr,x)->fill);
         c(FillArr,x)->fill = bi_noFill;
-        xp = fillarr_ptr(a(x));
+        xp = fillarrv_ptr(a(x));
         break;
       }
       case t_harr: {

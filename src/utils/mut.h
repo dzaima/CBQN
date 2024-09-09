@@ -187,7 +187,7 @@ FORCE_INLINE B arr_join_inline(B w, B x, bool consume, bool* usedW) {
       rp = t.rp;
       goto yes;
     }
-    case t_fillarr: if (fsizeof(FillArr,a,B,ria)<wsz) { rp = fillarr_ptr(a(w)); dec(c(FillArr,w)->fill); c(FillArr,w)->fill = bi_noFill; goto yes; } break;
+    case t_fillarr: if (fsizeof(FillArr,a,B,ria)<wsz) { rp = fillarrv_ptr(a(w)); dec(c(FillArr,w)->fill); c(FillArr,w)->fill = bi_noFill; goto yes; } break;
     case t_harr:    if (fsizeof(HArr,   a,B,ria)<wsz) { rp =    harr_ptr(  w ); goto yes; } break;
   }
   no:; // failed to reuse

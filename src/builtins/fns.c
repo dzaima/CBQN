@@ -82,7 +82,7 @@ NOINLINE B list_range(B x) {
   if (rsh) shcpy(rsh, sh, xia);
   
   if (ria) {
-    B* rp = fillarr_ptr(r);
+    B* rp = fillarrv_ptr(r);
     ud_rec(rp, 0, xia, pos, sh);
     fillarr_setFill(r, incG(rp[0]));
   } else {

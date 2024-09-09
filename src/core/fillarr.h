@@ -83,7 +83,8 @@ static Arr* m_fillarrp(usz ia) { // needs a NOGC_E after fill & all elements are
   return r;
 }
 static void fillarr_setFill(Arr* x, B fill) { assert(PTY(x)==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
-static B* fillarr_ptr(Arr* x) { assert(PTY(x)==t_fillarr); return ((FillArr*)x)->a; }
+static B* fillarrv_ptr  (Arr* x) { assert(PTY(x)==t_fillarr);   return ((FillArr*)x)->a; }
+static B* fillslicev_ptr(Arr* x) { assert(PTY(x)==t_fillslice); return ((FillSlice*)x)->a; }
 static Arr* m_fillarrpEmpty(B fill) {
   Arr* r = m_fillarrp(0);
   fillarr_setFill(r, fill);
@@ -93,7 +94,7 @@ static Arr* m_fillarrpEmpty(B fill) {
 static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & elements set to m_f64(0)
   Arr* r = arr_shVec(m_fillarrp(ia));
   fillarr_setFill(r, m_f64(0));
-  FILL_TO(fillarr_ptr(r), el_B, 0, m_f64(0), ia);
+  FILL_TO(fillarrv_ptr(r), el_B, 0, m_f64(0), ia);
   NOGC_E;
   return r;
 }

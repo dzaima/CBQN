@@ -167,7 +167,7 @@ NOINLINE B m_funit(B x) {
 }
 NOINLINE B m_fvec1(B x) {
   Arr* ra = arr_shVec(m_fillarrp(1));
-  fillarr_ptr(ra)[0] = x;
+  fillarrv_ptr(ra)[0] = x;
   fillarr_setFill(ra, m_f64(0));
   NOGC_E;
   fillarr_setFill(ra, asFill(inc(x)));

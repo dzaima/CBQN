@@ -126,7 +126,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
   
   if (p->refc!=1) goto no;
   if (p->type!=t_fillarr && p->type!=t_harr) goto no;
-  void* rp = p->type==t_fillarr? fillarr_ptr(p) : harrv_ptr(p);
+  void* rp = p->type==t_fillarr? fillarrv_ptr(p) : harrv_ptr(p);
   if (rp != s->a) goto no;
   if (PIA(p)!=wia) goto no;
   usz wsz = mm_sizeUsable((Value*)p);

@@ -2,16 +2,16 @@
 
 static B* arr_bptr(B x) { assert(isArr(x));
   if (TY(x)==t_harr) return harr_ptr(x);
-  if (TY(x)==t_fillarr) return fillarr_ptr(a(x));
+  if (TY(x)==t_fillarr) return fillarrv_ptr(a(x));
   if (TY(x)==t_hslice) return hslice_ptr(x);
-  if (TY(x)==t_fillslice) return c(FillSlice,x)->a;
+  if (TY(x)==t_fillslice) return fillslicev_ptr(a(x));
   return NULL;
 }
 static B* arrV_bptr(Arr* x) {
   if (PTY(x)==t_harr) return harrv_ptr(x);
-  if (PTY(x)==t_fillarr) return fillarr_ptr(x);
+  if (PTY(x)==t_fillarr) return fillarrv_ptr(x);
   if (PTY(x)==t_hslice) return hslicev_ptr(x);
-  if (PTY(x)==t_fillslice) return ((FillSlice*)x)->a;
+  if (PTY(x)==t_fillslice) return fillslicev_ptr(x);
   return NULL;
 }
 
