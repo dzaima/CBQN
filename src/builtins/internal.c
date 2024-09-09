@@ -244,7 +244,7 @@ static B unshare(B x) {
     case t_c32arr: case t_c32slice: return unshareShape((Arr*)cpyC32Arr(incG(x)));
     case t_f64arr: case t_f64slice: return unshareShape((Arr*)cpyF64Arr(incG(x)));
     case t_harr: case t_hslice: {
-      B* xp = hany_ptr(x);
+      B* xp = TY(x)==t_harr? harr_ptr(x) : hslice_ptr(x);
       M_HARR(r, xia)
       for (usz i = 0; i < xia; i++) HARR_ADD(r, i, unshare(xp[i]));
       return unshareShape(a(HARR_FC(r, x)));

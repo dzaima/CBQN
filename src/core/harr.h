@@ -110,10 +110,8 @@ static B m_hunit(B x) { // consumes
 
 static B* harrv_ptr(void* x) { u8 t = PTY((Value*)x); assert(t==t_harr || t==t_harrPartial); return ((HArr*)x)->a; }
 static B* hslicev_ptr(void* x) { VTY(taga(x),t_hslice); return ((HSlice*)x)->a; }
-static B* hanyv_ptr(void* x) { return PTY((Value*)x)==t_hslice? hslicev_ptr(x) : harrv_ptr(x); }
 static B* harr_ptr(B x) { return harrv_ptr(a(x)); }
 static B* hslice_ptr(B x) { return hslicev_ptr(a(x)); }
-static B* hany_ptr(B x) { return hanyv_ptr(a(x)); }
 
 Arr* cpyHArr(B x); // consumes
 static HArr* toHArr(B x) { return TY(x)==t_harr? c(HArr,x) : (HArr*) cpyHArr(x); }

@@ -327,10 +327,9 @@ B c = IGetU(x,n);
 // for specific array types:
 if (TI(x,elType)==el_i32) i32* xp = i32any_ptr(x); // for either t_i32arr or t_i32slice; for t_i32arr only, there's i32arr_ptr(x); same for all other primitive element types (bitarr has bitany_ptr but no slice type yet)
 if (TI(x,elType)!=el_B) void* xp = tyany_ptr(x); // alternative equivalent check: IS_ANY_ARR(TY(x)); tyarr_ptr if the input is also known to not be a slice
-if (TY(x)==t_harr) B* xp = harr_ptr(x);
-if (TY(x)==t_harr || TY(x)==t_hslice) B* xp = hany_ptr(x); // note that elType==el_B doesn't imply hany_ptr is safe!
-if (TY(x)==t_fillarr) B* xp = fillarr_ptr(x);
+if (TY(x)==t_harr) B* xp = harr_ptr(x); // similarly, hslice_ptr, fillarrv_ptr, fillslicev_ptr for specific types
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by a contiguous B*
+// while currently there are no types with eltype el_B for which arr_bptr isn't NULL, that could change in the future and so should still be handled
 
 // functions to convert arrays to a specific type array: (all consume their argument, and assume that the elements losslessly fit in the desired type)
 I8Arr* a = toI8Arr(x); // convert x to an I8Arr instance (returns the argument if it already is)
