@@ -23,7 +23,7 @@ B scan_rows_bit(u8, B x, usz m);
 B takedrop_highrank(bool take, B w, B x);
 B rotate_highrank(bool inv, B w, B x);
 
-B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
+B interleave_cells(B w, B x, ur xr, ur xk, usz* xsh); // from transpose.c
 
 // from select.c:
 B select_rows_B(B x, ux csz, ux cam, B inds);
@@ -700,10 +700,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
       case n_rtack: return const_cells(w, wk, wsh, x, chr);
       case n_couple: if (RNK(w)==1) {
         x = taga(arr_shVec(reshape_one(IA(w), x)));
-        B r = try_interleave_cells(w, x, 1, 1, wsh);
-        assert(!q_N(r));
-        decG(w); decG(x);
-        return r;
+        return interleave_cells(w, x, 1, 1, wsh);
       } break;
     }
     if (IA(w)!=0 && isPervasiveDy(f)) {
@@ -754,10 +751,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         break;
       case n_couple: if (RNK(x)==1) {
         w = taga(arr_shVec(reshape_one(IA(x), w)));
-        B r = try_interleave_cells(w, x, 1, 1, xsh);
-        assert(!q_N(r));
-        decG(w); decG(x);
-        return r;
+        return interleave_cells(w, x, 1, 1, xsh);
       } break;
       case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
         usz l = xsh[xk];
@@ -861,8 +855,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
         decG(w); decG(x); return taga(r);
       }
       if (rtid==n_couple && wr==xr) {
-        B r = try_interleave_cells(w, x, xr, xk, xsh);
-        if (!q_N(r)) { decG(w); decG(x); return r; }
+        return interleave_cells(w, x, xr, xk, xsh);
       }
     }
     if (isPervasiveDy(f)) {

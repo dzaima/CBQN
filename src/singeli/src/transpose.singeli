@@ -186,4 +186,4 @@ exportT{'simd_transpose', tup{
   transpose{i64, 4}
 }}
 
-exportT{'si_interleave', each{interleave, tup{i8, i16, i32, i64}}}
+exportT{'interleave_fns', each{interleave, tup{i8, i16, i32, i64}}}
