@@ -1028,7 +1028,7 @@ B slash_ucw(B t, B o, B w, B x) {
     return r;
   }
   #endif
-  notConstEach:;
+  goto notConstEach; notConstEach:;
   
   B arg = C2(slash, incG(w), incG(x));
   usz argIA = IA(arg);
