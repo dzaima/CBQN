@@ -695,8 +695,17 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   if (isFun(f)) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_ltack) { dec(x); return w; }
-    if (rtid==n_rtack) return const_cells(w, wk, wsh, x, chr);
+    switch (rtid) {
+      case n_ltack: dec(x); return w;
+      case n_rtack: return const_cells(w, wk, wsh, x, chr);
+      case n_couple: if (RNK(w)==1) {
+        x = taga(arr_shVec(reshape_one(IA(w), x)));
+        B r = try_interleave_cells(w, x, 1, 1, wsh);
+        assert(!q_N(r));
+        decG(w); decG(x);
+        return r;
+      } break;
+    }
     if (IA(w)!=0 && isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
       if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
@@ -743,6 +752,13 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
           return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
         }
         break;
+      case n_couple: if (RNK(x)==1) {
+        w = taga(arr_shVec(reshape_one(IA(x), w)));
+        B r = try_interleave_cells(w, x, 1, 1, xsh);
+        assert(!q_N(r));
+        decG(w); decG(x);
+        return r;
+      } break;
       case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
         usz l = xsh[xk];
         return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);

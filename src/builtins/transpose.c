@@ -93,23 +93,59 @@ static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
   }
 }
 
+B toBPtrAny(B x) {
+  if (arr_bptr(x)!=NULL) return x;
+  return taga(cpyHArr(x));
+}
+
+NOINLINE
+B toElTypeArr(u8 re, B x) { // consumes x; returns an array with the given element type (re==el_B guarantees TO_BPTR working)
+  switch (re) { default: UD;
+    case el_bit: return toBitAny(x);
+    case el_i8:  return toI8Any(x);
+    case el_i16: return toI16Any(x);
+    case el_i32: return toI32Any(x);
+    case el_f64: return toF64Any(x);
+    case el_c8:  return toC8Any(x);
+    case el_c16: return toC16Any(x);
+    case el_c32: return toC32Any(x);
+    case el_B: return toBPtrAny(x);
+  }
+}
+
+
 // Interleave arrays, 𝕨≍⎉(-xk)𝕩. Doesn't consume.
-// Return bi_N if there isn't fast code.
+// Assumes w and x have same shape.
+// Return bi_N if there isn't fast code. Guaranteed to succeed on rank 1 w & x.
 B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   assert(RNK(w)==xr && xr>=1);
-  u8 xe = TI(x,elType); if (xe!=TI(w,elType)) return bi_N;
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
   usz csz = shProd(xsh, xk, xr);
   if (csz & (csz-1)) return bi_N; // Not power of 2
-  u8 xlw = elwBitLog(xe);
+  
+  u8 re = we==xe? we : el_or(we, xe);
+  if (0) { to_equal_types:;
+    // delay doing this until it's known that there will be code that can utilize it
+    incG(w); B w2 = re==we? w : toElTypeArr(re, w);
+    incG(x); B x2 = re==xe? x : toElTypeArr(re, x);
+    B r = try_interleave_cells(w2, x2, xr, xk, SH(x));
+    assert(!q_N(r));
+    decG(w2); decG(x2);
+    return r;
+  }
+  
+  u8 xlw = elwBitLog(re);
   usz n = shProd(xsh, 0, xk);
   usz ia = 2*n*csz;
   Arr *r;
-  if (csz==1 && xlw==0) {
+  if (csz==1 && xlw==0) { // we & xe are trivially el_bit
     u64* rp; r=m_bitarrp(&rp, ia);
     interleave_bits(rp, bitany_ptr(w), bitany_ptr(x), ia);
   }
   #if SINGELI
-  else if (csz==1 && xe==el_B) {
+  else if (csz==1 && re==el_B) {
+    if (we!=xe) goto to_equal_types;
     B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
     HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
     si_interleave[3](p.a, wp, xp, n);
@@ -119,10 +155,11 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
     if (SFNS_FILLS) rb = qWithFill(rb, fill_both(w, x));
     r = a(rb);
   } else if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
-    assert(xe!=el_B);
+    if (we!=xe) goto to_equal_types;
+    assert(re!=el_B);
     void* rv;
     if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
-    else rv = m_tyarrp(&r,elWidth(xe),ia,el2t(xe));
+    else rv = m_tyarrp(&r,elWidth(re),ia,el2t(re));
     si_interleave[CTZ(csz<<xlw)-3](rv, tyany_ptr(w), tyany_ptr(x), n);
   }
   #endif

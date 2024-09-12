@@ -116,6 +116,14 @@
 !"≍⁼: Argument must have a leading axis of 1" % ≍⁼⎉¯2 1‿1⥊10
 !"≍⁼: Argument must have a leading axis of 1" % ≍⁼⎉0 ⋈10
 
+%USE eqvar ⋄ (100⥊5↑1) ≍˘_eqvar 100⥊7↑1 %% 0=(↕100) |˜⌜ 5‿7
+%USE eqvar ⋄ ('a'+100⥊↕5) ≍˘_eqvar 100⥊↕7 %% 'a'‿0 +⎉1 (↕100) |˜⌜ 5‿7
+%USE eqvar ⋄   1⊸(≍˘)_eqvar 100⥊7↑1 %% 100‿2⥊ (    ¬2|↕200) ⌈ 2/0=7|↕100
+%USE eqvar ⋄ 1e9⊸(≍˘)_eqvar 100⥊7↑1 %% 100‿2⥊ (1e9×¬2|↕200) ⌈ 2/0=7|↕100
+%USE eqvar ⋄  ≍˘⟜  1 _eqvar 100⥊7↑1 %% 100‿2⥊ (     2|↕200) ⌈ 2/0=7|↕100
+%USE eqvar ⋄  ≍˘⟜1e9 _eqvar 100⥊7↑1 %% 100‿2⥊ (1e9× 2|↕200) ⌈ 2/0=7|↕100
+%USE eqvar ⋄  ≍˘⟜'!' _eqvar 100⥊7↑1 %% ∾⟜'!'○•internal.Keep˘ 0=7|↕100
+
 (
   %USE IS_HEAPVERIFY
   # big ˝˘ & `˘ tester
