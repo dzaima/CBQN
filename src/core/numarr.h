@@ -112,7 +112,7 @@ static B toI8Any (B x) { u8 t=TY(x); return t==t_i8arr  || t==t_i8slice ? x : ta
 static B toI16Any(B x) { u8 t=TY(x); return t==t_i16arr || t==t_i16slice? x : taga(cpyI16Arr(x)); }
 static B toI32Any(B x) { u8 t=TY(x); return t==t_i32arr || t==t_i32slice? x : taga(cpyI32Arr(x)); }
 static B toF64Any(B x) { u8 t=TY(x); return t==t_f64arr || t==t_f64slice? x : taga(cpyF64Arr(x)); }
-
+static B toBitAny(B x) { return taga(toBitArr(x)); }
 
 B m_cai32(usz ia, i32* a);
 B m_caf64(usz sz, f64* a);

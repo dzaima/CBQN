@@ -1,23 +1,22 @@
 #pragma once
 
-static B* arr_bptr(B x) { assert(isArr(x));
-  #if !ARR_BPTR_NEVER
-    if (TY(x)==t_harr) return harr_ptr(x);
-    if (TY(x)==t_fillarr) return fillarrv_ptr(a(x));
-    if (TY(x)==t_hslice) return hslice_ptr(x);
-    if (TY(x)==t_fillslice) return fillslicev_ptr(a(x));
-  #endif
-  return NULL;
+#define ARRV_BPTR_BODY switch (PTY(xa)) {      \
+  case t_harr:      return harrv_ptr(xa);      \
+  case t_fillarr:   return fillarrv_ptr(xa);   \
+  case t_hslice:    return hslicev_ptr(xa);    \
+  case t_fillslice: return fillslicev_ptr(xa); \
 }
-static B* arrv_bptr(Arr* x) {
-  #if !ARR_BPTR_NEVER
-    if (PTY(x)==t_harr) return harrv_ptr(x);
-    if (PTY(x)==t_fillarr) return fillarrv_ptr(x);
-    if (PTY(x)==t_hslice) return hslicev_ptr(x);
-    if (PTY(x)==t_fillslice) return fillslicev_ptr(x);
-  #endif
-  return NULL;
-}
+
+static B* arrv_bptrG(Arr* xa) {          ARRV_BPTR_BODY; UD; }
+static B* arr_bptrG(B x) { Arr* xa=a(x); ARRV_BPTR_BODY; UD; }
+
+#if ARR_BPTR_NEVER
+  static B* arr_bptr(B x) { return NULL; }
+  static B* arrv_bptr(Arr* x) { return NULL; }
+#else
+  static B* arr_bptr(B x) { Arr* xa=a(x); ARRV_BPTR_BODY; return NULL; }
+  static B* arrv_bptr(Arr* xa) {          ARRV_BPTR_BODY; return NULL; }
+#endif
 
 static void* tyarrv_ptr(TyArr* x) {
   assert(IS_ANY_ARR(PTY(x)) && !IS_SLICE(PTY(x)));

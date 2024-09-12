@@ -330,7 +330,8 @@ if (TI(x,elType)!=el_B) void* xp = tyany_ptr(x); // alternative equivalent check
 if (TY(x)==t_harr) B* xp = harr_ptr(x); // similarly, hslice_ptr, fillarrv_ptr, fillslicev_ptr for specific types
 B* xp = arr_bptr(x); // will return NULL if the array isn't backed by a contiguous B*
 // while currently there are no types with eltype el_B for which arr_bptr isn't NULL, that could change in the future and so should still be handled
-// testable with f=-DARR_BPTR_NEVER, which makes arr_bptr
+// testable with f=-DARR_BPTR_NEVER, which makes arr_bptr & arrv_bptr always return NULL
+// use arr_bptrG & arrv_bptrG if you know that the input is B*-backed and want to rely on it (never returns NULL; unaffected by ARR_BPTR_NEVER)
 
 // most arr_* fns have a arrv_* variant that takes an untagged pointer instead of B
 
