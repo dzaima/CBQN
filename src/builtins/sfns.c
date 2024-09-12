@@ -60,6 +60,11 @@ B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
 B pair_c1(B t,      B x) { return m_vec1(x); }
 B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
 
+Arr* customizeShape(B x) {
+  if (reusable(x) && RNK(x)<=1) return a(x);
+  return TI(x,slice)(x,0,IA(x));
+}
+
 Arr* cpyWithShape(B x) {
   Arr* xv = a(x);
   if (reusable(x)) return xv;

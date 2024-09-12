@@ -198,7 +198,8 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes 
 void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam);
 void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam);
 
-Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x; to allocate a new shape in its place, the previous one needs to be freed, rank set to 1, and then shape & rank set to the new ones
+Arr* customizeShape(B x); // consumes; returns new array with unset shape
+Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x (SH(x) will be dangling, PSH(result) must be used to access it)
 Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set
 NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
 

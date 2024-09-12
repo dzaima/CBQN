@@ -574,8 +574,6 @@ static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same e
 }
 
 B slash_c2(B, B, B);
-Arr* customizeShape(B x); // from cells.c
-
 B select_cells_base(B inds, B x0, ux csz, ux cam);
 
 #define CLZC(X) (64-(CLZ((u64)(X))))

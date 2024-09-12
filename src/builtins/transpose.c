@@ -262,7 +262,6 @@ B mul_c2(B,B,B);
 B ud_c1(B,B);
 B tbl_c2(Md1D*,B,B);
 B select_c2(B,B,B);
-Arr* customizeShape(B x); // from cells.c
 
 static void shSet(Arr* ra, ur rr, ShArr* sh) {
   if (RARE(rr <= 1)) arr_shVec(ra);

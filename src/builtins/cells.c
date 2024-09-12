@@ -55,12 +55,6 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie);
 #define SLICEI(X) ({ B r = SLICE(X, X##p); X##p+= X##_csz; r; })
 
 
-Arr* customizeShape(B x) { // potentially copy array for shape customizing
-  if (reusable(x) && RNK(x)<=1) return a(x);
-  return TI(x,slice)(x,0,IA(x));
-}
-
-
 
 B insert_base(B f, B x, bool has_w, B w) { // Used by Insert in fold.c
   assert(isArr(x) && RNK(x)>0);
