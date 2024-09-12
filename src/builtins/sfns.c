@@ -3,21 +3,28 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
-static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without set shape; v is non-negative
-  usz xia = IA(x);
-  if (ria>xia) {
-    B xf = getFillE(x);
-    MAKE_MUT_INIT(r, ria, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
-    mut_copyG(r, 0, x, 0, xia);
-    mut_fillG(r, xia, xf, ria-xia);
-    decG(x);
-    if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); } // TODO dec(xf) not required? maybe define as a helper fn?
-    return a(withFill(mut_fv(r), xf));
-  } else {
-    return TI(x,slice)(x,0,ria);
-  }
+Arr* customizeShape(B x) {
+  if (reusable(x) && RNK(x)<=1) return a(x);
+  return TI(x,slice)(x,0,IA(x));
 }
 
+Arr* cpyWithShape(B x) {
+  Arr* xv = a(x);
+  if (reusable(x)) return xv;
+  ur xr = PRNK(xv);
+  Arr* r;
+  if (xr<=1) {
+    r = TIv(xv,slice)(x, 0, PIA(xv));
+    arr_rnk01(r, xr);
+  } else {
+    usz* sh = PSH(xv);
+    ptr_inc(shObjS(sh));
+    r = TIv(xv,slice)(x, 0, PIA(xv));
+    r->sh = sh;
+  }
+  SPRNK(r, xr);
+  return r;
+}
 
 FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   if (isAtm(a)&isAtm(b)) {
@@ -55,49 +62,23 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   return m_hvec2(a,b);
 }
 
+static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without set shape; v is non-negative
+  usz xia = IA(x);
+  if (ria>xia) {
+    B xf = getFillE(x);
+    MAKE_MUT_INIT(r, ria, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
+    mut_copyG(r, 0, x, 0, xia);
+    mut_fillG(r, xia, xf, ria-xia);
+    decG(x);
+    if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); } // TODO dec(xf) not required? maybe define as a helper fn?
+    return a(withFill(mut_fv(r), xf));
+  } else {
+    return TI(x,slice)(x,0,ria);
+  }
+}
+
 B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
 
-B pair_c1(B t,      B x) { return m_vec1(x); }
-B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
-
-Arr* customizeShape(B x) {
-  if (reusable(x) && RNK(x)<=1) return a(x);
-  return TI(x,slice)(x,0,IA(x));
-}
-
-Arr* cpyWithShape(B x) {
-  Arr* xv = a(x);
-  if (reusable(x)) return xv;
-  ur xr = PRNK(xv);
-  Arr* r;
-  if (xr<=1) {
-    r = TIv(xv,slice)(x, 0, PIA(xv));
-    arr_rnk01(r, xr);
-  } else {
-    usz* sh = PSH(xv);
-    ptr_inc(shObjS(sh));
-    r = TIv(xv,slice)(x, 0, PIA(xv));
-    r->sh = sh;
-  }
-  SPRNK(r, xr);
-  return r;
-}
-
-B shape_c1(B t, B x) {
-  if (isAtm(x)) return m_vec1(x);
-  if (RNK(x)==1) return x;
-  usz ia = IA(x);
-  if (ia==1 && TI(x,elType)<el_B) {
-    B n = IGet(x,0);
-    decG(x);
-    return m_vec1(n);
-  }
-  if (reusable(x)) { FL_KEEP(x, fl_squoze);
-    decSh(v(x)); arr_shVec(a(x));
-    return x;
-  }
-  return taga(arr_shVec(TI(x,slice)(x, 0, ia)));
-}
 static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes x, and sh if nr>1
   B r; Arr* ra;
   if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
@@ -112,7 +93,6 @@ static void fill_words(void* rp, u64 v, u64 bytes) {
   for (usz i=0; i<wds; i++) p[i] = v;
   if (ext) memcpy(p+wds, &v, ext);
 }
-
 
 NOINLINE B i64EachDec(i64 v, B x) {
   B r = taga(arr_shCopy(reshape_one(IA(x), m_f64(v)), x));
@@ -153,6 +133,25 @@ NOINLINE Arr* reshape_one(usz nia, B x) {
   }
   #undef FILL
   return r;
+}
+
+B pair_c1(B t,      B x) { return m_vec1(x); }
+B pair_c2(B t, B w, B x) { return m_vec2Base(w, x, true); }
+
+B shape_c1(B t, B x) {
+  if (isAtm(x)) return m_vec1(x);
+  if (RNK(x)==1) return x;
+  usz ia = IA(x);
+  if (ia==1 && TI(x,elType)<el_B) {
+    B n = IGet(x,0);
+    decG(x);
+    return m_vec1(n);
+  }
+  if (reusable(x)) { FL_KEEP(x, fl_squoze);
+    decSh(v(x)); arr_shVec(a(x));
+    return x;
+  }
+  return taga(arr_shVec(TI(x,slice)(x, 0, ia)));
 }
 
 B shape_c2(B t, B w, B x) {
