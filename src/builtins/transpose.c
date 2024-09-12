@@ -146,9 +146,11 @@ B try_interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) {
   #if SINGELI
   else if (csz==1 && re==el_B) {
     if (we!=xe) goto to_equal_types;
+    incG(w); incG(x);
     B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
     HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
     si_interleave[3](p.a, wp, xp, n);
+    decG(w); decG(x);
     for (usz i=0; i<ia; i++) inc(p.a[i]);
     NOGC_E;
     B rb = p.b;
