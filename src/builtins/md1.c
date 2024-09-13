@@ -51,9 +51,8 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   } else {
     usz ia = IA(x);
     if (isMd(f) && ia>0) { decR(x); thrM("Calling a modifier"); }
-    MAKE_MUT(rm, ia);
-    mut_fill(rm, 0, f, ia);
-    r = mut_fcd(rm, x);
+    r = taga(arr_shCopy(reshape_one(ia, inc(f)), x));
+    decG(x);
   }
   
   if (EACH_FILLS) return homFil1(f, r, xf);
