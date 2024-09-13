@@ -44,7 +44,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     if (gc_maybeGC(false)) goto alloc_rec;
   #endif
   
-  if (mm_heapAlloc+sz >= mm_heapMax) {
+  if (mm_heapAlloc+sz > mm_heapMax) {
     #if ALLOC_MODE==0 && ENABLE_GC
       if (!BN(allocMore_rec)) {
         gc_forceGC(false);
