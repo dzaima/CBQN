@@ -46,7 +46,7 @@ static void gc_resetTag(Value* x) {
   x->mmInfo&= 0x7F;
 }
 
-void gc_visitRoots() {
+NOINLINE void gc_visitRoots() {
   for (u32 i = 0; i < gc_rootSz; i++) gc_roots[i]();
   for (u32 i = 0; i < gc_rootObjSz; i++) mm_visitP(gc_rootObjs[i]);
   for (u32 i = 0; i < gc_rootBRefsSz; i++) mm_visit(*gc_rootBRefs[i]);
@@ -145,24 +145,38 @@ static void gcv2_unmark_visit(Value* x) {
     mm_visitP(x);
   }
   
+  static NOINLINE void gc_run_toplevel_1() {
+    mm_forHeap(gc_resetTag);
+  }
+  static NOINLINE void gc_run_nontoplevel_1() {
+    visit_mode = GC_DEC_REFC;
+    mm_forHeap(gcv2_unmark_visit);
+  }
+  static NOINLINE void gc_run_nontoplevel_2() {
+    visit_mode = GC_MARK;
+    mm_forHeap(gc_visitRefcNonzero);
+  }
+  static NOINLINE void gc_run_nontoplevel_3() {
+    visit_mode = GC_INC_REFC;
+    mm_forHeap(gcv2_visit);
+  }
+  static NOINLINE void gc_run_tryFree() {
+    mm_forHeap(gc_tryFree);
+  }
+  
   static void gc_run(bool toplevel) {
     if (toplevel) {
-      mm_forHeap(gc_resetTag);
+      gc_run_toplevel_1();
     } else {
-      visit_mode = GC_DEC_REFC;
-      mm_forHeap(gcv2_unmark_visit);
-      
-      visit_mode = GC_MARK;
-      mm_forHeap(gc_visitRefcNonzero);
-      
-      visit_mode = GC_INC_REFC;
-      mm_forHeap(gcv2_visit);
+      gc_run_nontoplevel_1();
+      gc_run_nontoplevel_2();
+      gc_run_nontoplevel_3();
     }
     
     visit_mode = GC_MARK;
     gc_visitRoots();
     
-    mm_forHeap(gc_tryFree);
+    gc_run_tryFree();
     mm_freeFreedAndMerge();
   }
 #endif

@@ -1,4 +1,3 @@
-#include "../utils/file.h"
 #include "../utils/interrupt.h"
 #define AllocInfo BN(AllocInfo)
 #define buckets   BN(buckets)
@@ -139,7 +138,7 @@ void BN(forFreedHeap)(V2v f) {
   }
 }
 #if ALLOC_MODE==0 && ENABLE_GC
-static void BN(freeFreedAndMerge)() {
+static NOINLINE void BN(freeFreedAndMerge)() {
   for (u64 i = 0; i < 64; i++) buckets[i] = NULL;
   
   for (u64 i = 0; i < alSize; i++) {
