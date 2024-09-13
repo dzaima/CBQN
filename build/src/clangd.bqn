@@ -47,7 +47,7 @@ ModifyCBQNFlags ← {
   # non-'utils/' headers & optional .c files
   {𝕩 WantsIncludes ⟨"core.h"⟩}¨ ⟨
     "ns.h", "vm.h", "builtins.h", "load.h"
-    "opt/mm_malloc.c", "opt/mm_buddy.c", "opt/mm_2buddy.c", "opt/mm_buddyTemplate.c", "opt/mm_buddyTemplate.h", "opt/gc.c", "opt/gc.h"
+    "opt/mm_malloc.c", "opt/mm_buddyTemplate.h", "opt/gc.c", "opt/gc.h"
     "builtins/radix.h", "singeli/c/arithdDispatch.h"
     "jit/nvm.h"
   ⟩
@@ -63,8 +63,10 @@ ModifyCBQNFlags ← {
   
   
   # give the expected environment for configuration-specific files
-  "opt/mm_2buddy.c" WantsFlags ⟨"-DMM=2"⟩
-  "opt/mm_malloc.c" WantsFlags ⟨"-DMM=0"⟩
+  "opt/mm_buddyTemplate.c"‿"opt/mm_buddy.c"‿"opt/mm_2buddy.c" WantsIncludes¨ <⟨"core/mm.c"⟩
+  "opt/mm_malloc.h"‿"opt/mm_malloc.c" WantsFlags¨ <⟨"-DMM=0"⟩
+  "opt/mm_buddy.h" ‿"opt/mm_buddy.c"  WantsFlags¨ <⟨"-DMM=1"⟩
+  "opt/mm_2buddy.h"‿"opt/mm_2buddy.c" WantsFlags¨ <⟨"-DMM=2"⟩
   "utils/valgrind.h" WantsFlags ⟨"-DUSE_VALGRIND"⟩
   "core/heap.h" WantsFlags ⟨"-DHEAP_VERIFY"⟩
   {𝕩 WantsFlags ⟨"-DSINGELI"⟩}¨ "singeli/c/" FilterPrefix filenames
@@ -72,6 +74,7 @@ ModifyCBQNFlags ← {
   # template files
   "builtins/sortTemplate.h" WantsIncludes ⟨"core.h", "utils/talloc.h"⟩
   "builtins/sortTemplate.h" WantsFlags ⟨"-DSORT_NAME=", "-DSORT_TYPE=B", "-DSORT_CMP=compare"⟩
+  "opt/mm_buddyTemplate.c"‿"opt/mm_buddyTemplate.h" WantsFlags¨ <⟨"-DBN(X)=mm_##X", "-DMMI(X)=X", "-DBSZ(X)=(1ull<<(X))", "-DALSZ=20", "-DMM=1"⟩
   
   # deduplicate flag files
   gfk ← ⍷flagK

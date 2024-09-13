@@ -23,4 +23,6 @@ GLOBAL bool mem_log_enabled;
 #else
   #error "bad MM value"
 #endif
+#ifndef CLANGD
 #undef MMAP
+#endif
