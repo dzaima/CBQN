@@ -18,7 +18,7 @@ Arr* cpyWithShape(B x) {
     arr_rnk01(r, xr);
   } else {
     usz* sh = PSH(xv);
-    ptr_inc(shObjS(sh));
+    ptr_inc(shObjS(sh)); // TODO handle leak when slice allocation errors
     r = TIv(xv,slice)(x, 0, PIA(xv));
     r->sh = sh;
   }
@@ -62,7 +62,39 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   return m_hvec2(a,b);
 }
 
-static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without set shape; v is non-negative
+static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset shape, assumes ria≤≠⥊x
+  if (reusable(x)) {
+    usz xia = IA(x);
+    u64 tgt = mm_sizeUsable(v(x)) / 4; // ÷4 to, even at minimum initial bucket utilization, require at least halving size before stopping in-place truncation
+    switch (TY(x)) {
+      default: goto base;
+      case t_bitarr: if (BITARR_SZ(   ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_i8arr:  if (TYARR_SZ(I8, ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_i16arr: if (TYARR_SZ(I16,ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_i32arr: if (TYARR_SZ(I32,ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_c8arr:  if (TYARR_SZ(C8, ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_c16arr: if (TYARR_SZ(C16,ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_c32arr: if (TYARR_SZ(C32,ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_f64arr: if (TYARR_SZ(F64,ria)<tgt) goto base; else goto inplace_tyarr;
+      case t_harr:    if (fsizeof(HArr,   a,B,ria)<tgt) goto base; else goto inplace_b;
+      case t_fillarr: if (fsizeof(FillArr,a,B,ria)<tgt) goto base; else goto inplace_b;
+    }
+    
+    inplace_b:;
+    B* xp = arr_bptrG(x);
+    for (ux i = ria; i < xia; i++) dec(xp[i]);
+    
+    inplace_tyarr:
+    reinit_portion(a(x), ria, xia);
+    arr_shErase(a(x), 1);
+    a(x)->ia = ria;
+    return a(x);
+  }
+  base:;
+  return TI(x,slice)(x,0,ria);
+}
+
+static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 with unset shape; v is non-negative
   usz xia = IA(x);
   if (ria>xia) {
     B xf = getFillE(x);
@@ -73,18 +105,14 @@ static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 without
     if (r->fns->elType!=el_B) { dec(xf); return mut_fp(r); } // TODO dec(xf) not required? maybe define as a helper fn?
     return a(withFill(mut_fv(r), xf));
   } else {
-    return TI(x,slice)(x,0,ria);
+    return take_head(ria, x);
   }
 }
 
 B m_vec2(B a, B b) { return m_vec2Base(a, b, false); }
 
 static B truncReshape(B x, usz xia, usz nia, ur nr, ShArr* sh) { // consumes x, and sh if nr>1
-  B r; Arr* ra;
-  if (reusable(x) && xia==nia) { r = x; decSh(v(x)); ra = (Arr*)v(r); }
-  else { ra = TI(x,slice)(x, 0, nia); r = taga(ra); }
-  arr_shSetUO(ra, nr, sh);
-  return r;
+  return taga(arr_shSetUO(take_head(nia, x), nr, sh));
 }
 static void fill_words(void* rp, u64 v, u64 bytes) {
   usz wds = bytes/8;
@@ -495,9 +523,9 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       if (xr==rr) {
         decShObj(rsh);
       } else {
-        Arr* ra = TI(x,slice)(x,0,IA(x));
+        Arr* xa = customizeShape(x);
         PLAINLOOP for (usz i = 0; i < rr-xr; i++) rsh->a[i] = 1;
-        x = VALIDATE(taga(arr_shSetUG(ra, rr, rsh)));
+        x = VALIDATE(taga(arr_shSetUG(xa, rr, rsh)));
       }
       if (cellStart==-1) { // printf("equal shape\n");
         r = x;
@@ -613,8 +641,8 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   if (xr>1) {             \
     csz = arr_csz(x);     \
     xsh = SH(x);          \
-    ptr_inc(shObjS(xsh)); \
     if (mulOn(n, csz)) thrOOM(); \
+    ptr_inc(shObjS(xsh)); /* TODO handle leak if further allocation fails */ \
   } else xr=1;            \
 
 #define TAKEDROP_SHAPE(SH0)     \
@@ -655,14 +683,21 @@ B take_c2(B t, B w, B x) {
 B drop_c2(B t, B w, B x) {
   TAKEDROP_INIT(0);
   
-  u64 na = n<0? -n : n;
   usz xia = IA(x);
-  if (RARE(na>=xia)) { a = emptyArr(x, xr); decG(x); }
-  else {
-    a = TI(x,slice)(x, n<0? 0 : na, xia-na);
-    if (xr==1) return taga(arr_shVec(a));
+  if (n<0) {
+    if (RARE(-n >= xia)) { empty:;
+      a = emptyArr(x, xr);
+      decG(x);
+      goto res;
+    }
+    a = take_head(xia+n, x);
+  } else {
+    if (RARE(n >= xia)) goto empty;
+    a = TI(x,slice)(x, n, xia-n);
   }
   
+  res:;
+  if (xr==1) return taga(arr_shVec(a));
   TAKEDROP_SHAPE(wva>=*xsh? 0 : *xsh-wva);
 }
 
@@ -961,11 +996,15 @@ B couple_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
   ur xr = RNK(x);
   if (xr==UR_MAX) thrF("≍: Result rank too large (%i≡=𝕩)", xr);
-  usz ia = IA(x);
-  Arr* r = TI(x,slice)(incG(x), 0, ia);
-  usz* sh = arr_shAlloc(r, xr+1);
-  if (sh) { sh[0] = 1; shcpy(sh+1, SH(x), xr); }
-  decG(x);
+  Arr* r = cpyWithShape(x);
+  if (xr==0) {
+    arr_shVec(r);
+  } else {
+    ShArr* sh = m_shArr(xr+1);
+    sh->a[0] = 1;
+    shcpy(sh->a+1, PSH(r), xr);
+    arr_shReplace(r, xr+1, sh);
+  }
   return taga(r);
 }
 B couple_c2(B t, B w, B x) {
