@@ -7,7 +7,7 @@
   extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64);
   static void blendArrScalarBits(void* r, void* zero, bool one, void* mask, u64 n) {
     if (one) orAAu_bit_bit_bit(r, zero, mask, n);
-    else CMP_AA_CALL(CMP_AA_FN(gt, el_bit), r, zero, mask, n);
+    else CMP_AA_IMM(gt, el_bit, r, zero, mask, n);
   }
   
   #define SINGELI_FILE bits
