@@ -84,9 +84,9 @@ NOINLINE void dumpByte(bool exp, bool has, void* ptr, u64 o) {
   printf("%02x", v);
   if (col) printf("\x1b[0m");
 }
-NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u64 allocFilled, u64 allocTotal, u64 ia) {
+NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u64 allocFilled, u64 allocTotal, u64 ia, int ty) {
   printf("Corrupted tail @ %p + "N64d", checked length %d\n", ptr, off, len);
-  printf("Allocation filled with "N64d" bytes, total allocation "N64d", IA=="N64d"\n", allocFilled, allocTotal, ia);
+  printf("Allocation filled with "N64d" bytes, total allocation "N64d", IA=="N64d", type==%d\n", allocFilled, allocTotal, ia, ty);
   printf("Expected: x=%016"SCNx64" / u="N64u"\nGot:      x=%016"SCNx64" / u="N64u"\n\n", exp, exp, got, got);
   fflush(stdout); fflush(stderr);
   
@@ -120,7 +120,7 @@ void tailVerifyFree(void* ptr) {
     case t_talloc:  filled = ia = *(u64*)((u8*)ptr + end - 8); end-= 8; break;
   }
   verifyEnd(ptr, end, 8, filled);
-  #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end, ia)
+  #define F(G, X, O, L) if ((G) != (X)) tailFail(G, X, ptr, O, L, filled, end, ia, PTY(xa))
   ITER_TAIL(F)
   #undef F
   
