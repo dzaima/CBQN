@@ -93,13 +93,7 @@ static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
   }
 }
 
-B toBPtrAny(B x) {
-  if (arr_bptr(x)!=NULL) return x;
-  return taga(cpyHArr(x));
-}
-
-NOINLINE
-B toElTypeArr(u8 re, B x) { // consumes; returns an array with the given element type (re==el_B guarantees TO_BPTR working)
+NOINLINE B toElTypeArr(u8 re, B x) { // consumes; returns an array with the given element type (re==el_B guarantees TO_BPTR working)
   switch (re) { default: UD;
     case el_bit: return toBitAny(x);
     case el_i8:  return toI8Any(x);
@@ -109,14 +103,11 @@ B toElTypeArr(u8 re, B x) { // consumes; returns an array with the given element
     case el_c8:  return toC8Any(x);
     case el_c16: return toC16Any(x);
     case el_c32: return toC32Any(x);
-    case el_B: return toBPtrAny(x);
+    case el_B: TO_BPTR(x); return x;
   }
 }
 
-
-// interleave arrays, 𝕨≍⎉(-xk)𝕩
-B interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) { // consumes w,x
-  assert(RNK(w)==xr && xr>=1);
+Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊⎉(-k) 𝕩; result has unset shape
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   
@@ -125,44 +116,47 @@ B interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) { // consumes w,x
     // delay doing this until it's known that there will be code that can utilize it
     if (re!=we) w = toElTypeArr(re, w);
     if (re!=xe) x = toElTypeArr(re, x);
-    return interleave_cells(w, x, xr, xk, SH(x));
+    return join_cells(w, x, k);
   }
   
   Arr *r;
   u8 xlw = elwBitLog(re);
-  usz n = shProd(xsh, 0, xk);
-  usz csz = shProd(xsh, xk, xr);
-  usz ia = 2*n*csz;
-  
-  if (csz & (csz-1)) {
-    goto generic;
-  } else if (csz==1 && xlw==0) { // we & xe are trivially el_bit
-    u64* rp; r=m_bitarrp(&rp, ia);
-    interleave_bits(rp, bitany_ptr(w), bitany_ptr(x), ia);
-  #if SINGELI
-  } else if (csz==1 && re==el_B) {
-    if (we!=xe) goto to_equal_types;
-    B* wp = TO_BPTR(w); B* xp = TO_BPTR_RUN(x, xsh = SH(x));
-    
-    HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
-    interleave_fns[3](p.a, wp, xp, n);
-    for (usz i=0; i<ia; i++) inc(p.a[i]);
-    NOGC_E;
-    r = (Arr*) p.c;
-    goto add_fill;
-  } else if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
-    if (we!=xe) goto to_equal_types;
-    assert(re!=el_B);
-    void* rv;
-    if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
-    else rv = m_tyarrp(&r,elWidth(re),ia,el2t(re));
-    interleave_fns[CTZ(csz<<xlw)-3](rv, tyany_ptr(w), tyany_ptr(x), n);
-  #endif
+  usz n = shProd(SH(w), 0, k);
+  usz wcsz = shProd(SH(w), k, RNK(w));
+  usz xcsz = shProd(SH(x), k, RNK(x));
+  usz ia = IA(w)+IA(x);
+  if (wcsz == xcsz) {
+    usz csz = wcsz;
+    if (csz & (csz-1)) {
+      goto generic;
+    } else if (csz==1 && xlw==0) { // we & xe are trivially el_bit
+      u64* rp; r=m_bitarrp(&rp, ia);
+      interleave_bits(rp, bitany_ptr(w), bitany_ptr(x), ia);
+#if SINGELI
+    } else if (csz==1 && re==el_B) {
+      if (we!=xe) goto to_equal_types;
+      B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
+      
+      HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
+      interleave_fns[3](p.a, wp, xp, n);
+      for (usz i=0; i<ia; i++) inc(p.a[i]);
+      NOGC_E;
+      r = (Arr*) p.c;
+      goto add_fill;
+    } else if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
+      if (we!=xe) goto to_equal_types;
+      assert(re!=el_B);
+      void* rv;
+      if (xlw==0) { u64* rp; r = m_bitarrp(&rp, ia); rv=rp; }
+      else rv = m_tyarrp(&r,elWidth(re),ia,el2t(re));
+      interleave_fns[CTZ(csz<<xlw)-3](rv, tyany_ptr(w), tyany_ptr(x), n);
+#endif
+    } else goto generic;
   } else { generic:;
     MAKE_MUT_INIT(rm, ia, re); MUTG_INIT(rm);
-    for (ux o = 0; o < n*csz; o+= csz) {
-      mut_copyG(rm, o*2,     w, o, csz);
-      mut_copyG(rm, o*2+csz, x, o, csz);
+    for (ux ow=0, ox=0, or=0; or < ia; or+= wcsz+xcsz) {
+      mut_copyG(rm, or,      w, ow, wcsz);  ow+= wcsz;
+      mut_copyG(rm, or+wcsz, x, ox, xcsz);  ox+= xcsz;
     }
     r = a(mut_fv(rm));
     goto add_fill;
@@ -172,10 +166,21 @@ B interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) { // consumes w,x
     if (SFNS_FILLS) r = a(qWithFill(taga(r), fill_both(w, x)));
   }
   
-  usz* sh = arr_shAlloc(r, xr+1);
-  shcpy(sh, xsh, xk); sh[xk]=2; shcpy(sh+xk+1, xsh+xk, xr-xk);
   decG(w); decG(x);
-  return taga(r);
+  return r;
+}
+
+B join_c2(B, B, B);
+
+B interleave_cells(B w, B x, ur k) { // consumes w,x; interleave arrays, 𝕨 ≍⎉(-xk) 𝕩; assumes equal-shape args
+  ux xr = RNK(x);
+  if (xr==0) return C2(join, w, x);
+  ShArr* rsh = m_shArr(xr+1); // TODO handle leak if join_cells fails
+  usz* xsh = SH(x);
+  shcpy(rsh->a, xsh, k);
+  rsh->a[k] = 2;
+  shcpy(rsh->a+k+1, xsh+k, xr-k);
+  return taga(arr_shSetUG(join_cells(w, x, k), xr+1, rsh));
 }
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
