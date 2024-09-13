@@ -1,7 +1,5 @@
 #include "../core.h"
 #include "../utils/calls.h"
-#include "mut.h"
-
 
 #if SINGELI_SIMD
   extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64);
