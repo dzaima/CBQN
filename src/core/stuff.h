@@ -413,8 +413,10 @@ void tailVerifyAlloc(void* ptr, u64 origSz, i64 logAlloc, u8 type);
 void tailVerifyFree(void* ptr);
 void tailVerifyReinit(void* ptr, u64 s, u64 e);
 #define FINISH_OVERALLOC(P, S, E) tailVerifyReinit(P, S, E)
+NOINLINE void reinit_portion(Arr* a, usz s, usz e);
 #else
 #define FINISH_OVERALLOC(P, S, E)
+#define reinit_portion(...)
 #endif
 #define FINISH_OVERALLOC_A(A, S, L) FINISH_OVERALLOC(a(A), offsetof(TyArr,a)+(S), offsetof(TyArr,a)+(S)+(L));
 FORCE_INLINE void preFree(Value* x, bool mmx) {

@@ -130,4 +130,18 @@ void tailVerifyFree(void* ptr) {
   memset(ptr+8, 'a', clr);
 }
 
+NOINLINE void reinit_portion(Arr* a, usz s, usz e) {
+  ux sb, eb, head;
+  switch (PTY(a)) { default: UD;
+    case t_bitarr: sb = BIT_N(s)*8; eb = BIT_N(e)*8;  head = offsetof(TyArr,a); break;
+    case t_i8arr:  case t_c8arr:  sb = s;   eb = e;   head = offsetof(TyArr,a); break;
+    case t_i16arr: case t_c16arr: sb = s*2; eb = e*2; head = offsetof(TyArr,a); break;
+    case t_i32arr: case t_c32arr: sb = s*4; eb = e*4; head = offsetof(TyArr,a); break;
+    case t_f64arr:                sb = s*8; eb = e*8; head = offsetof(TyArr,a); break;
+    case t_fillarr: head = offsetof(FillArr,a); sb = s*sizeof(B); eb = e*sizeof(B); break;
+    case t_harr:    head = offsetof(HArr,a);    sb = s*sizeof(B); eb = e*sizeof(B); break;
+  }
+  FINISH_OVERALLOC(a, head+sb, head+eb);
+  return;
+}
 #endif
