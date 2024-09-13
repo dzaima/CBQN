@@ -66,29 +66,45 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
   if (reusable(x)) {
     usz xia = IA(x);
     u64 tgt = mm_sizeUsable(v(x)) / 4; // ÷4 to, even at minimum initial bucket utilization, require at least halving size before stopping in-place truncation
-    switch (TY(x)) {
+    u64 used;
+    u8 xt = TY(x);
+    switch (xt) {
       default: goto base;
-      case t_bitarr: if (BITARR_SZ(   ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_i8arr:  if (TYARR_SZ(I8, ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_i16arr: if (TYARR_SZ(I16,ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_i32arr: if (TYARR_SZ(I32,ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_c8arr:  if (TYARR_SZ(C8, ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_c16arr: if (TYARR_SZ(C16,ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_c32arr: if (TYARR_SZ(C32,ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_f64arr: if (TYARR_SZ(F64,ria)<tgt) goto base; else goto inplace_tyarr;
-      case t_harr:    if (fsizeof(HArr,   a,B,ria)<tgt) goto base; else goto inplace_b;
-      case t_fillarr: if (fsizeof(FillArr,a,B,ria)<tgt) goto base; else goto inplace_b;
+      case t_bitarr: used = BITARR_SZ(   ria); goto try_tyarr;
+      case t_i8arr:  used = TYARR_SZ(I8, ria); goto try_tyarr;
+      case t_i16arr: used = TYARR_SZ(I16,ria); goto try_tyarr;
+      case t_i32arr: used = TYARR_SZ(I32,ria); goto try_tyarr;
+      case t_c8arr:  used = TYARR_SZ(C8, ria); goto try_tyarr;
+      case t_c16arr: used = TYARR_SZ(C16,ria); goto try_tyarr;
+      case t_c32arr: used = TYARR_SZ(C32,ria); goto try_tyarr;
+      case t_f64arr: used = TYARR_SZ(F64,ria); goto try_tyarr;
+      case t_harr:    used = fsizeof(HArr,   a,B,ria); goto try_b;
+      case t_fillarr: used = fsizeof(FillArr,a,B,ria); goto try_b;
     }
     
-    inplace_b:;
+    try_b:;
+    if (used < tgt) goto try_copy;
     B* xp = arr_bptrG(x);
     for (ux i = ria; i < xia; i++) dec(xp[i]);
+    goto inplace_ok;
     
-    inplace_tyarr:
+    try_tyarr:;
+    if (used < tgt) goto try_copy;
+    
+    inplace_ok:;
     reinit_portion(a(x), ria, xia);
     arr_shErase(a(x), 1);
     a(x)->ia = ria;
     return a(x);
+    
+    try_copy:;
+    // if (used > 64) goto base;
+    MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
+    mut_copyG(rm, 0, x, 0, ria);
+    Arr* r = mut_fp(rm);
+    if (xt==t_fillarr) r = a(withFill(taga(arr_shVec(r)), getFillR(x)));
+    decG(x);
+    return r;
   }
   base:;
   return TI(x,slice)(x,0,ria);
