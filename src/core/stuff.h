@@ -106,24 +106,27 @@ static usz* arr_shAlloc(Arr* x, ur r) { // sets rank, allocates & returns shape 
   }
 }
 static Arr* arr_shSetI(Arr* x, ur r, ShArr* sh) { // set rank and assign and increment shape if needed
+  assert(PRNK(x)<=1);
   SPRNK(x,r);
   if (r>1) x->sh = ptr_inc(sh)->a;
   else     x->sh = &x->ia;
   return x;
 }
 static Arr* arr_shSetUO(Arr* x, ur r, ShArr* sh) { // set rank, and consume & assign shape if r>1
+  assert(PRNK(x)<=1);
   SPRNK(x,r);
   if (r>1) x->sh = sh->a;
   else     x->sh = &x->ia;
   return x;
 }
 static Arr* arr_shSetUG(Arr* x, ur r, ShArr* sh) { // arr_shSetUO but guaranteed r>1, i.e. always consumes sh
-  assert(r>1);
+  assert(r>1 && PRNK(x)<=1);
   SPRNK(x,r);
   x->sh = sh->a;
   return x;
 }
-static Arr* arr_shCopyUnchecked(Arr* n, B o) {
+static Arr* arr_shCopyUnchecked(Arr* n, B o) { // copy shape & rank from o to n
+  assert(PRNK(n)<=1);
   ur r = SPRNK(n,RNK(o));
   if (r<=1) {
     n->sh = &n->ia;
@@ -133,6 +136,10 @@ static Arr* arr_shCopyUnchecked(Arr* n, B o) {
     n->sh = sh;
   }
   return n;
+}
+static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n; verifies that ia of both match
+  assert(isArr(o) && IA(o)==n->ia);
+  return arr_shCopyUnchecked(n, o);
 }
 static Arr* arr_shErase(Arr* x, ur r) { // replace x's shape with rank 0 or 1
   assert(r<=1);
@@ -152,10 +159,6 @@ static Arr* arr_shReplace(Arr* x, ur r, ShArr* sh) { // replace x's shape with a
   x->sh = sh->a;
   if (xr>1) decShObj(shObjS(prevsh));
   return x;
-}
-static Arr* arr_shCopy(Arr* n, B o) { // copy shape & rank from o to n
-  assert(isArr(o) && IA(o)==n->ia);
-  return arr_shCopyUnchecked(n, o);
 }
 static void shcpy(usz* dst, usz* src, ux len) {
   PLAINLOOP for (ux i = 0; i < len; i++) dst[i] = src[i];
