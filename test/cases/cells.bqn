@@ -132,10 +132,9 @@
     {𝕊f: {{f Test 0‿1⥊˜ 𝕩⊏0‿2‿4‿8‿32}¨ ↕𝕩⥊3 ⋄ 1}¨ ranks}¨ +‿∧‿∨‿=‿≠‿⊣‿⊢
   }
   
-  # TODO replace ○⊢ with some pureness-preserving •internal.Keep
   # w F _thing x tests F _thing⎉w x
-  _testFoldCells ← {∨´𝕗=⊢‿⊣? 0=×´(-𝕨)↑≢𝕩? 1; heapverify? 0=≠⥊𝕩? 1 ⊣ 𝔽˝⎉𝕨 𝕩; ! (𝔽˝⎉𝕨  ≡ 𝔽˝○⊢⎉𝕨) 𝕩}
-  _testScanCells ← {                         heapverify? 0=≠⥊𝕩? 1 ⊣ 𝔽`⎉𝕨 𝕩; ! (𝔽`⎉𝕨  ≡ 𝔽`○⊢⎉𝕨) 𝕩}
+  _testFoldCells ← {∨´𝕗=⊢‿⊣? 0=×´(-𝕨)↑≢𝕩? 1; heapverify? 0=≠⥊𝕩? 1 ⊣ 𝔽˝⎉𝕨 𝕩; ! (𝔽˝⎉𝕨  ≡ 𝔽˝○•internal.PureKeep⎉𝕨) 𝕩}
+  _testScanCells ← {                         heapverify? 0=≠⥊𝕩? 1 ⊣ 𝔽`⎉𝕨 𝕩; ! (𝔽`⎉𝕨  ≡ 𝔽`○•internal.PureKeep⎉𝕨) 𝕩}
   
   {1 𝕨 _testFoldCells 𝕩} _basicArgs 2‿3‿4
   {1 𝕨 _testScanCells 𝕩} _basicArgs 2‿3‿4
