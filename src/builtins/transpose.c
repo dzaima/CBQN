@@ -160,9 +160,9 @@ B interleave_cells(B w, B x, ur xr, ur xk, usz* xsh) { // consumes w,x
   #endif
   } else { generic:;
     MAKE_MUT_INIT(rm, ia, re); MUTG_INIT(rm);
-    for (ux o = 0; o < n; o+= csz) {
-      mut_copyG(rm, o*2,   w, o, csz);
-      mut_copyG(rm, o*2+1, x, o, csz);
+    for (ux o = 0; o < n*csz; o+= csz) {
+      mut_copyG(rm, o*2,     w, o, csz);
+      mut_copyG(rm, o*2+csz, x, o, csz);
     }
     r = a(mut_fv(rm));
     goto add_fill;
