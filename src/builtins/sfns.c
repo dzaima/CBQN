@@ -94,6 +94,7 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
     inplace_ok:;
     reinit_portion(a(x), ria, xia);
     arr_shErase(a(x), 1);
+    FL_KEEP(x, fl_asc|fl_dsc);
     a(x)->ia = ria;
     return a(x);
     

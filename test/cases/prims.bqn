@@ -260,6 +260,10 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 !"↑: Argument must have rank at least 1" % ↑0
 !"↓: Argument must have rank at least 1" % ↓<0
 
+# 𝕨↓𝕩 & 𝕨↑𝕩
+≠⍷•Hash¨ ⟨¯1↓•internal.Squeeze 1e9∾˜↕10000, ↕10000⟩ %% 1
+≠⍷•Hash¨ ⟨10000↑•internal.Squeeze 1e9∾˜↕10000, ↕10000⟩ %% 1
+
 # ¨
   1 {𝕊:1‿2}¨ 1 %% <1‿2
   1 {𝕊:1‿2}¨<1 %% <1‿2
