@@ -453,11 +453,11 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
 
 // consumes all; assumes arguments are valid (verifies some stuff, but definitely not everything)
 // if sc isn't NULL, this block must only be evaluated directly in that scope precisely once
-NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B fullpath, Scope* sc, i32 nsResult) {
+NOINLINE Block* compileAll(B bc_obj, B objs, B allBlocks, B allBodies, B indices, B tokenInfo, B src, B fullpath, Scope* sc, i32 nsResult) {
   usz bIA = IA(allBlocks);
-  I32Arr* bca = toI32Arr(bcq);
-  u32* bc = (u32*)bca->a;
-  usz bcIA = PIA(bca);
+  bc_obj = toI32Any(bc_obj);
+  u32* bc = (u32*)i32any_ptr(bc_obj);
+  usz bcIA = IA(bc_obj);
   Comp* comp = mm_alloc(sizeof(Comp), t_comp);
   NOGC_S;
   comp->indices = indices;
@@ -494,7 +494,7 @@ NOINLINE Block* compileAll(B bcq, B objs, B allBlocks, B allBodies, B indices, B
   for (usz i = 0; i < bIA; i++) bDone[i] = false;
   Block* ret = compileBlock(IGetU(allBlocks, 0), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, 0, 0, nsResult);
   TFREE(bDone);
-  ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo); decG(taga(bca));
+  ptr_dec(comp); decG(allBlocks); decG(allBodies); dec(tokenInfo); decG(bc_obj);
   return ret;
 }
 
