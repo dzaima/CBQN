@@ -121,7 +121,7 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
   
   Arr *r;
   u8 xlw = elwBitLog(re);
-  usz n = shProd(SH(w), 0, k);
+  usz n = shProd(SH(w), 0, k); (void)n;
   usz wcsz = shProd(SH(w), k, RNK(w));
   usz xcsz = shProd(SH(x), k, RNK(x));
   usz ia = IA(w)+IA(x);
@@ -171,17 +171,6 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
 }
 
 B join_c2(B, B, B);
-
-B interleave_cells(B w, B x, ur k) { // consumes w,x; interleave arrays, 𝕨 ≍⎉(-xk) 𝕩; assumes equal-shape args
-  ux xr = RNK(x);
-  if (xr==0) return C2(join, w, x);
-  ShArr* rsh = m_shArr(xr+1); // TODO handle leak if join_cells fails
-  usz* xsh = SH(x);
-  shcpy(rsh->a, xsh, k);
-  rsh->a[k] = 2;
-  shcpy(rsh->a+k+1, xsh+k, xr-k);
-  return taga(arr_shSetUG(join_cells(w, x, k), xr+1, rsh));
-}
 
 static void transpose_move(void* rv, void* xv, u8 xe, usz w, usz h) {
   assert(xe!=el_bit); assert(xe!=el_B);

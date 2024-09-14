@@ -23,7 +23,18 @@ B scan_rows_bit(u8, B x, usz m);
 B takedrop_highrank(bool take, B w, B x);
 B rotate_highrank(bool inv, B w, B x);
 
-B interleave_cells(B w, B x, ur k); // from transpose.c
+Arr* join_cells(B w, B x, ur k); // from transpose.c
+
+NOINLINE B interleave_cells(B w, B x, ur k) { // consumes w,x; interleave arrays, 𝕨 ≍⎉(-xk) 𝕩; assumes equal-shape args
+  ux xr = RNK(x);
+  if (xr==0) return C2(join, w, x);
+  ShArr* rsh = m_shArr(xr+1); // TODO handle leak if join_cells fails
+  usz* xsh = SH(x);
+  shcpy(rsh->a, xsh, k);
+  rsh->a[k] = 2;
+  shcpy(rsh->a+k+1, xsh+k, xr-k);
+  return taga(arr_shSetUG(join_cells(w, x, k), xr+1, rsh));
+}
 
 // from select.c:
 B select_rows_B(B x, ux csz, ux cam, B inds);
