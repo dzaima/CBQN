@@ -1,3 +1,3 @@
-#!./BQN
+#!/usr/bin/env bqn
 # a version of genRuntime that also generates source maps, so that errors in the runtime or compiler get error messages
 ({𝕩∾<"src"}⍟(2≤≠) •args) •Import "genRuntime"

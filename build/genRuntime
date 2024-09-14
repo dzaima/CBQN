@@ -5,11 +5,12 @@ bqnSrc‿outputPath ← •wdpath⊸•file.At¨ 2↑•args
 
 rtSrc ← ⊑(<"src")∊2↓•args
 
-CC ← {𝕨 •FChars (⟨1,bqnSrc⟩∾(rtSrc/⟨"-i"⟩)∾⟨𝕩⟩) •Import "cc.bqn"}
-(outputPath•file.At "gen/src"      )•FChars "#define RT_SRC "∾('0'+rtSrc)∾@+10
-(outputPath•file.At "gen/compiles" )CC"cc"
-(outputPath•file.At "gen/runtime0" )CC"r0"
-(outputPath•file.At "gen/runtime1" )CC"r1"
-(outputPath•file.At "gen/runtime1x")CC"r1x"
-(outputPath•file.At "gen/formatter")CC"f"
-(outputPath•file.At "gen/explain"  )CC"eu"
+CC ← { dst‿type‿name:
+  (outputPath•file.At dst) •FChars (⟨1, bqnSrc⟩∾(rtSrc/⟨"-i"⟩)∾⟨"-n", name, type⟩) •Import "cc.bqn"
+}
+CC ⟨"gen/compiles",  "cc",  "(compiler)"⟩
+CC ⟨"gen/runtime0",  "r0",  "(self-hosted runtime0)"⟩
+CC ⟨"gen/runtime1",  "r1",  "(self-hosted runtime1)"⟩
+CC ⟨"gen/runtime1x", "r1x", "(self-hosted runtime1x)"⟩
+CC ⟨"gen/formatter", "f",   "(formatter)"⟩
+CC ⟨"gen/explain",   "eu",  "(explain)"⟩

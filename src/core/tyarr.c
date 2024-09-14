@@ -97,12 +97,14 @@ static void bitarr_init(void) {
   TIi(t_bitarr,canStore) = bitarr_canStore;
 }
 
+INIT_GLOBAL Arr* staticSliceRoot;
 void tyarr_init(void) {
   i8arr_init(); i16arr_init(); i32arr_init(); bitarr_init();
   c8arr_init(); c16arr_init(); c32arr_init(); f64arr_init();
   
-  { u64* tmp; bi_emptyIVec = m_bitarrv(&tmp, 0); gc_add(bi_emptyIVec); }
-  { u8*  tmp; bi_emptyCVec = m_c8arrv (&tmp, 0); gc_add(bi_emptyCVec); }
+  { u64* tmp; gc_add(bi_emptyIVec = m_bitarrv(&tmp, 0)); }
+  { u8*  tmp; gc_add(bi_emptyCVec = m_c8arrv (&tmp, 0)); }
+  { u8*  tmp; gc_add(taga(arr_shVec(staticSliceRoot = m_c8arrp(&tmp, 0)))); }
   
   Arr* emptySVec = arr_shVec(m_fillarrpEmpty(emptyCVec()));
   bi_emptySVec = taga(emptySVec); gc_add(bi_emptySVec);

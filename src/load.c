@@ -23,6 +23,8 @@ FOR_INIT(F)
 GLOBAL u64 mm_heapMax = HEAP_MAX;
 GLOBAL u64 mm_heapAlloc;
 
+extern Arr* staticSliceRoot;
+
 // compiler result:
 // [
 //   [...bytecode],
@@ -142,19 +144,12 @@ Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { //
   return r;
 }
 
-#if !(ONLY_NATIVE_COMP && !FORMATTER && NO_RT && NO_EXPLAIN)
-#include PRECOMPILED_FILE(src)
-#endif
-
-#if RT_SRC
-Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
+static NOINLINE Block* load_importBlock_src(char* name, B bc, B objs, B blocks, B bodies, B inds, B src) { // consumes all
   return compileAll(bc, objs, blocks, bodies, inds, bi_N, src, m_c8vec_0(name), NULL, 0);
 }
-#else
-Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
+static NOINLINE Block* load_importBlock(char* name, B bc, B objs, B blocks, B bodies) { // consumes all
   return compileAll(bc, objs, blocks, bodies, bi_N, bi_N, bi_N, m_c8vec_0(name), NULL, 0);
 }
-#endif
 
 GLOBAL B load_compgen;
 GLOBAL B def_re;
@@ -465,20 +460,20 @@ void load_init() { // very last init function
     #if !ALL_R0
       B runtime_0[] = {bi_floor,bi_ceil,bi_stile,bi_lt,bi_gt,bi_ne,bi_ge,bi_rtack,bi_ltack,bi_join,bi_pair,bi_take,bi_drop,bi_select,bi_const,bi_swap,bi_each,bi_fold,bi_atop,bi_over,bi_before,bi_after,bi_cond,bi_repeat};
     #else
-      Block* runtime0_b = load_importBlock("(self-hosted runtime0)",
+      Block* runtime0_b = ({
         #include PRECOMPILED_FILE(runtime0)
-      );
+      });
       HArr* r0r = toHArr(evalFunBlockConsume(runtime0_b));
       B* runtime_0 = r0r->a;
     #endif
     
-    Block* runtime_b = load_importBlock("(self-hosted runtime1)",
+    Block* runtime_b = ({
       #if ALL_R0 || ALL_R1 || NO_EXTENDED_PROVIDE || RT_VERIFY
         #include PRECOMPILED_FILE(runtime1)
       #else
         #include PRECOMPILED_FILE(runtime1x)
       #endif
-    );
+    });
     
     #if ALL_R0
       ptr_dec(r0r);
@@ -579,9 +574,9 @@ void load_init() { // very last init function
     #else
       B prevAsrt = runtime[n_asrt];
       runtime[n_asrt] = bi_casrt; // horrible but GC is off so it's fiiiiiine
-      Block* comp_b = load_importBlock("(compiler)",
+      Block* comp_b = ({
         #include PRECOMPILED_FILE(compiles)
-      );
+      });
       runtime[n_asrt] = prevAsrt;
       gc_add(load_compgen = evalFunBlockConsume(comp_b));
       
@@ -601,9 +596,9 @@ void load_init() { // very last init function
     gc_add(def_re = ps.b);
     
     #if FORMATTER
-      Block* fmt_b = load_importBlock("(formatter)",
+      Block* fmt_b = ({
         #include PRECOMPILED_FILE(formatter)
-      );
+      });
       B fmtM = evalFunBlockConsume(fmt_b);
       B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
       decG(fmtM); SGet(fmtR)
@@ -647,9 +642,9 @@ B bqn_explain(B str) {
     B* o = harr_ptr(def_re);
     if (load_explain.u==0) {
       B* runtime = harr_ptr(o[re_rt]);
-      Block* expl_b = load_importBlock("(explain)",
+      Block* expl_b = ({
         #include PRECOMPILED_FILE(explain)
-      );
+      });
       gc_add(load_explain = evalFunBlockConsume(expl_b));
     }
     
