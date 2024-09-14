@@ -20,7 +20,8 @@
   #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
 #endif
 
-STATIC_GLOBAL B replPath, replName;
+STATIC_GLOBAL B replPath;
+GLOBAL B replName; // used in vm.c
 STATIC_GLOBAL Scope* gsc;
 STATIC_GLOBAL bool repl_initialized = false;
 

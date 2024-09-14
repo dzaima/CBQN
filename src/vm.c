@@ -1334,6 +1334,7 @@ void popCatch() {
 }
 #endif
 
+extern GLOBAL B replName; // from main.c
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes prepend
   SGetU(src)
   usz srcL = IA(src);
@@ -1346,8 +1347,8 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 ln = 1;
   for (usz i = 0; i < srcS; i++) if(o2cG(GetU(src, i))=='\n') ln++;
   B s = prepend;
-  if (isArr(path) && (IA(path)==0 || IGetU(path,0).u!=m_c32('(').u)) AFMT("%R:%l:\n  ", path, ln);
-  else AFMT("at ");
+  if (!isArr(path) || path.u==replName.u) AFMT("at ");
+  else AFMT("%R:%l:\n  ", path, ln);
   i64 padEnd = (i64)IA(s);
   i64 padStart = padEnd;
   SGetU(s)
