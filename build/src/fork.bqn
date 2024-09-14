@@ -17,7 +17,7 @@ Pipe ← { 𝕊: readfd‿writefd ⇐
 BiDiFork ← { 𝕊:
   p1 ← Pipe@
   p2 ← Pipe@
-  pid ⇐ Libc_fork@
+  pid ⇐ Libc_fork⟨⟩
   ! pid≥0
   parent ⇐ pid=0
   CloseWR ← {! ¬∨´ Libc_close¨ {𝕨.writefd‿𝕩.readfd}´ ⌽⍟parent 𝕩}
