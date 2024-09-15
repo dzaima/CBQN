@@ -27,33 +27,79 @@ FmtComp ← {
     𝕩 ↩ i ⊏⟜out⌾((i<≠out)⊸/) 𝕩 # Replace
     ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩        # Insert \
   }
-
+  
   U32Len ← (≠ - ·+´ ≥⟜55296 ∧ ≤⟜56319)-⟜@ # for dzaima/BQN; shouldn't break things in proper BQN impls, as surrogate values don't map to valid codepoints
-
+  
   CStr ← {"""" (∾∾⊣) Esc 𝕩}
-
-  OStr ← { # A BQN string
+  
+  List ← (0<≠)◶⟨"",1↓·∾","⊸∾¨⟩
+  
+  lf ← ⥊@+10
+  Cache ← {
+    tag ← 𝕩
+    values ← ⟨⟩
+    Add ⇐ {(values∾↩ <𝕩) ⊢ tag⋈≠values}
+    Done ⇐ { 𝕊:
+      unq ← ⊐values
+      uncomp ⇐ {(⍋≠¨ 𝕩/values) ⊏ /𝕩} ∊unq # compressed index → canonical original index; sort by length to make length predictable
+      comp ⇐ (uncomp⊏unq)⊐unq             # original index → compressed index
+      counts ⇐ /⁼comp                     # compressed index → count of such
+      compvals ⇐ uncomp⊏values            # compressed index → data
+      n ⇐ ≠uncomp
+    }
+  }
+  
+  intarrCache ← Cache 1
+  Li ← intarrCache.Add
+  _Lo ← {{∾⟨"m_lvB_", F≠𝕩, "(", List 𝕩, ")"⟩} 𝔽¨𝕩}
+  OStr2C ← { # A BQN string
     a←∧´𝕩<128+@
     ∾⟨a⊑"m_c32vec"‿"m_c8vec","(",a¬⊸⥊"U","",CStr𝕩,",",•Repr U32Len 𝕩,")"⟩
   }
-  OChr ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
-  ONum ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾F∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
-  OAny ← ≡◶⟨@⊸≤◶ONum‿OChr, OStr, ⊑⟩
-
-  List ← (0<≠)◶⟨"",1↓·∾","⊸∾¨⟩
-  ShortList ← {"m_lv"∾𝕨∾"_"∾(F≠𝕩)∾"("∾(List𝕩)∾")"}
-  LongList ← {"m_ca"∾𝕨∾"("∾(F≠𝕩)∾",("∾𝕨∾"[]){"∾(List𝕩)∾"})"}
-  ConstList ← {"m_ca"∾𝕨∾"("∾(F≠𝕩)∾",({static "∾𝕨∾" l_[]={"∾(List𝕩)∾"};l_;}))"}
-  _makeList ← {𝕨 (≠∘⊢>4˙)◶⟨ShortList,𝕗⊑LongList‿ConstList⟩ 𝕩}
-  Li ←  {"i32" 1 _makeList F¨𝕩}
-  _Lo ← {"B"   0 _makeList 𝔽¨𝕩}
+  OChr2C ← {"m_c32(U'"∾(Esc⥊𝕩)∾"')"} # A BQN character
+  ONum2C ← {s←"-"/˜𝕩<0 ⋄ ∞⊸=∘|◶⟨"m_f64("∾")"∾˜s∾F∘| ⋄ "m_f64("∾s∾"1.0/0.0)"⟩𝕩} # Format number
+  OAny2C ← ≡◶⟨@⊸≤◶ONum2C‿OChr2C, OStr2C, ⊑⟩
   
-  a ← ((≠𝕩)↑⟨Li ⋄ OAny¨ ⋄ {0=⌈´=¨𝕩? Li 𝕩; =◶⟨ONum,Li¨⟩¨ 𝕩}¨ ⋄ (Li 2⊸↑)¨ ⋄ Li¨ ⋄ OStr⟩) {𝕎𝕩}¨ 𝕩
-  a {2=•Type⊑𝕩? 𝕩; 𝕊_Lo 𝕩}¨↩
+  TmpNum ← 0⊸⋈
+  # 0‿123: number
+  # 1‿n: int arr ref
+  # ⟨a,b,c⟩: obj arr
+  # "foo": literal code
+  a ← ((≠𝕩)↑⟨Li ⋄ OAny2C¨ ⋄ {0=⌈´=¨𝕩? Li 𝕩; =◶⟨TmpNum,Li¨⟩¨ 𝕩}¨ ⋄ (Li 2⊸↑)¨ ⋄ Li¨ ⋄ OStr2C⟩) {𝕎𝕩}¨ 𝕩
+  
+  iarrs ← intarrCache.Done@ ⋄ Li↩!
+  
+  ! ⟨⟩ ≡ ⊑iarrs.compvals
+  
+  init ← ⟨⟩
+  a {
+    1‿i: n ← i⊑iarrs.comp ⋄ (0=n) ⊑ ⟨∾⟨"iarrs[",F n,"]"⟩, "iarrs0"⟩; # special-case first array (i.e. empty array) as there isn't enough aliasing info for the compiler to deduplicate loads
+    2=•Type⊑𝕩? 𝕩;
+    0‿n: ONum2C n;
+    ⟨0‿a, 0‿b, ⟨c, d⟩⟩: cs≡⌊cs←a‿b? ∧´cs≥0? ∧´cs<4? ∾⟨"m_blockinfo(", F a+b×4, ", ", 𝕊 c, ", ", 𝕊 d, ")"⟩;
+    4≥≠𝕩? 𝕊_Lo 𝕩;
+    n ← "a" ∾ F ≠init
+    np ← n∾"p"
+    init∾↩< ∾⟨lf
+      "B ", n, "; B* ", np, " = m_lvBn(&", n, ", ", F ≠𝕩, ");", lf
+      "assume_separate_storage(", np, ", ", "iarrs", ");", lf # allow the compiler to vectorize copying from iarrs to np if so beneficial
+    ⟩ ∾ (⍋{⊑'('∊𝕩}¨)⊸⊏ {∾⟨np,"[", F 𝕩, "] = ", 𝕨, ";", lf⟩}¨⟜↕⟜≠ 𝕊¨ 𝕩
+    n
+  }¨↩
+  
   ∾⟨
-    "load_importBlock", srcmap/"_src", "(", CStr name, ",", ⥊@+10,
-      (","∾@+10) Join a
-      ⥊@+10
+    "B iarrs[", F iarrs.n, "];", lf
+    "static const i32 iarrs_data[] = {", lf
+      ∾ ∾⟜lf¨ {∾⟨∾∾⟜','¨ F¨ 𝕨, " // ", F 𝕩⟩}¨⟜↕⟜≠ iarrs.compvals
+    "};", lf
+    "static const u32 iarrs_lens[] = {", ','Join F∘≠¨ iarrs.compvals, "};", lf
+    "init_intarrs(iarrs, iarrs_data, iarrs_lens, ", F iarrs.n, ");", lf
+    "B iarrs0 = iarrs[0];", lf
+    ∾{0𝕊𝕩: ""; ∾⟨"incByG(iarrs[", F 𝕩, "], ", F 𝕨, ");", lf⟩}¨⟜↕⟜≠ iarrs.counts-1
+    ∾init
+    "load_importBlock", srcmap/"_src", "(", CStr name, ",", lf
+      (','∾lf) Join "  "⊸∾¨ a
+      lf
     ");"
   ⟩
 }

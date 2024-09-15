@@ -23,8 +23,6 @@ FOR_INIT(F)
 GLOBAL u64 mm_heapMax = HEAP_MAX;
 GLOBAL u64 mm_heapAlloc;
 
-extern Arr* staticSliceRoot;
-
 // compiler result:
 // [
 //   [...bytecode],
@@ -104,16 +102,35 @@ GLOBAL B r1Objs[RT_LEN];
 B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
+static NOINLINE B* m_lvBn(B* dst, ux n) { HArr_p p = m_harr0v(n); *dst = p.b; return p.a; } // m_harrUv might be fine for initial init as it doesn't run with GC, but explain is loaded later
 static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
 static NOINLINE B m_lvB_1(B a               ) { return m_hvec1(a); }
 static NOINLINE B m_lvB_2(B a, B b          ) { return m_hvec2(a,b); }
 static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hvec3(a,b,c); }
 static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
-static NOINLINE B m_lvi32_0(                          ) { return emptyIVec(); }
-static NOINLINE B m_lvi32_1(i32 a                     ) { i32* rp; B r = m_i32arrv(&rp,1); rp[0]=a; return r; }
-static NOINLINE B m_lvi32_2(i32 a, i32 b              ) { i32* rp; B r = m_i32arrv(&rp,2); rp[0]=a; rp[1]=b; return r; }
-static NOINLINE B m_lvi32_3(i32 a, i32 b, i32 c       ) { i32* rp; B r = m_i32arrv(&rp,3); rp[0]=a; rp[1]=b; rp[2]=c; return r; }
-static NOINLINE B m_lvi32_4(i32 a, i32 b, i32 c, i32 d) { i32* rp; B r = m_i32arrv(&rp,4); rp[0]=a; rp[1]=b; rp[2]=c; rp[3]=d; return r; }
+static NOINLINE B m_blockinfo(ux info, B c, B d) {
+  return m_lvB_3(m_f64(info&3), m_f64(info>>2), m_lvB_2(c, d));
+}
+
+#ifndef __has_builtin
+  #define __has_builtin(x) 0
+#endif
+#if __has_builtin(__builtin_assume_separate_storage)
+  #define assume_separate_storage(A, B) __builtin_assume_separate_storage(A, B)
+#else
+  #define assume_separate_storage(A, B)
+#endif
+
+extern Arr* staticSliceRoot;
+
+static NOINLINE void init_intarrs(B* dst, const i32* all_data, const u32* lengths, ux n) {
+  ptr_incBy(staticSliceRoot, n);
+  for (ux i = 0; i < n; i++) {
+    ux len = lengths[i];
+    dst[i] = taga(arr_shVec(m_tyslice((i32*) all_data, staticSliceRoot, t_i32slice, len)));
+    all_data+= len;
+  }
+}
 
 static NOINLINE B m_importMap(void) {
   return c2(bi_hashMap, emptyHVec(), emptyHVec());
