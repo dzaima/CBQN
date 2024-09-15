@@ -429,7 +429,6 @@ void freeThrown(void);
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 
-void print_vmStack(void);
 #if DEBUG
   B validate(B x);
   Value* validateP(Value* x);

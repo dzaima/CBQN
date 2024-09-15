@@ -1194,13 +1194,13 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   mprotect(*end, ps, PROT_NONE); // idk first way i found to force erroring on overflow
   #endif
 }
-void print_vmStack() {
-  #if DEBUG_VM
+#if DEBUG_VM
+  void print_vmStack() {
     printf("vm stack:");
     for (i32 i = 0; i < (bcDepth>>1) + 1; i++) { printf(" %d", vmStack[i]); fflush(stdout); }
     printf("\n"); fflush(stdout);
-  #endif
-}
+  }
+#endif
 
 GLOBAL B oomMessage;
 

@@ -9,6 +9,9 @@
 bool please_tail_call_err = true;
 
 void before_exit(void);
+#if DEBUG_VM
+  void print_vmStack(void);
+#endif
 GLOBAL bool inErr;
 NORETURN NOINLINE void fatal(char* s) {
   NOGC_E;
@@ -27,7 +30,9 @@ NORETURN NOINLINE void fatal(char* s) {
   fputs(s, stderr); fflush(stderr);
   fputc('\n', stderr); fflush(stderr);
   vm_pstLive(); fflush(stderr); fflush(stdout);
-  print_vmStack(); fflush(stderr);
+  #if DEBUG_VM
+    print_vmStack(); fflush(stderr);
+  #endif
   before_exit();
   #if DEBUG || USE_VALGRIND
     __builtin_trap();
