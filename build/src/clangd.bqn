@@ -13,11 +13,12 @@ JObj ← {∾⟨'{',n,¯2↓∾(JStr¨𝕨) {∾⟨"  ",𝕨,": ",𝕩,',',n⟩}
 
 
 
-
+precompFiles ← ⥊"bytecodeLocal"‿"bytecodeSubmodule" {∾⟨"../build/",𝕨,"/gen/",𝕩⟩}⌜ "compiles"‿"explain"‿"formatter"‿"runtime0"‿"runtime1"‿"runtime1x"
 Files ⇐ {
   res ← ⟨⟩
   {'d'=•file.Type AtRoot 𝕩? 𝕊¨ 𝕩⊸•file.At¨ •file.List AtRoot 𝕩; res∾↩ <𝕩} 𝕩
   {⊑(<¯2↑𝕩)∊".c"‿".h"}¨⊸/ res
+  res ∾ 𝕩⊸•file.At¨ precompFiles
 }
 
 ModifyCBQNFlags ← {
@@ -61,6 +62,8 @@ ModifyCBQNFlags ← {
   "singeli/c/cmp.c" WantsIncludes ⟨"builtins/cmp.c"⟩
   "utils/hashmapTemplate.h" WantsIncludes ⟨"utils/hash.h"⟩
   
+  precompFiles WantsIncludes¨ <⟨"load.c"⟩
+  precompFiles WantsFlags¨ <⟨"-xc"⟩
   
   # give the expected environment for configuration-specific files
   "opt/mm_buddyTemplate.c"‿"opt/mm_buddy.c"‿"opt/mm_2buddy.c" WantsIncludes¨ <⟨"core/mm.c"⟩
