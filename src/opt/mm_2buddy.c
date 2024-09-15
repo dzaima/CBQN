@@ -16,6 +16,7 @@ GLOBAL u64 mm_ctrs[128];
 GLOBAL EmptyValue* mm_buckets[128];
 #define b1_buckets mm_buckets
 #define b1_allocL mm_allocL
+#define b1_ctrs mm_ctrs
 #define  ALSZ   20
 #define  BSZ(X) (1ull<<(X))
 #define  MUL 1
@@ -27,6 +28,7 @@ GLOBAL EmptyValue* mm_buckets[128];
 
 #define b3_buckets (mm_buckets+64)
 #define b3_allocL mm_allocL
+#define b3_ctrs (mm_ctrs+64)
 #define  ALSZ   20
 #define  BSZ(X) (3ull<<(X))
 #define  MUL 3
@@ -59,8 +61,5 @@ void mm_dumpHeap(FILE* f) {
 }
 
 u64 mm_heapUsed() {
-  u64 r = 0;
-  for (i32 i = 0; i < 64; i++) r+= mm_ctrs[i   ] * (1ull<<i);
-  for (i32 i = 0; i < 64; i++) r+= mm_ctrs[i+64] * (3ull<<i);
-  return r;
+  return b1_heapUsed() + b3_heapUsed();
 }

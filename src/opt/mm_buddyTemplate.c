@@ -186,6 +186,12 @@ static NOINLINE void BN(freeFreedAndMerge)() {
 }
 #endif
 
+NOINLINE u64 BN(heapUsed)() {
+  u64 r = 0;
+  for (i32 i = 0; i < 64; i++) r+= BN(ctrs)[i]*BSZ(i);
+  return r;
+}
+
 void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {

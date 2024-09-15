@@ -17,11 +17,6 @@ GLOBAL EmptyValue* mm_buckets[64];
 #define   BN(X) mm_##X
 #include "mm_buddyTemplate.c"
 
-u64 mm_heapUsed() {
-  u64 r = 0;
-  for (i32 i = 0; i < 64; i++) r+= mm_ctrs[i]*BSZ(i);
-  return r;
-}
 #undef BN
 #undef BSZ
 

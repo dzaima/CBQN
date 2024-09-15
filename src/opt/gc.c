@@ -190,7 +190,7 @@ void gc_forceGC(bool toplevel) {
     u64 startTime=0, startSize=0;
     if (gc_log_enabled) {
       startTime = nsTime();
-      startSize = mm_heapUsed();
+      startSize = tot_heapUsed();
       #if GC_LOG_DETAILED
         gcs_visitBytes = 0; gcs_freedBytes = 0;
         gcs_visitCount = 0; gcs_freedCount = 0;
@@ -198,7 +198,7 @@ void gc_forceGC(bool toplevel) {
       #endif
     }
     gc_run(toplevel);
-    u64 endSize = mm_heapUsed();
+    u64 endSize = tot_heapUsed();
     if (gc_log_enabled) {
       fprintf(stderr, "GC: before: "N64d"B/"N64d"B", startSize, mm_heapAlloc);
       #if GC_LOG_DETAILED
@@ -217,7 +217,7 @@ void gc_forceGC(bool toplevel) {
 STATIC_GLOBAL bool gc_wantTopLevelGC;
 bool gc_maybeGC(bool toplevel) {
   if (gc_depth) return false;
-  u64 used = mm_heapUsed();
+  u64 used = tot_heapUsed();
   if (used > gc_lastAlloc*2 || (toplevel && gc_wantTopLevelGC)) {
     if (toplevel) gc_wantTopLevelGC = false;
     gc_forceGC(toplevel);

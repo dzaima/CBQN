@@ -348,7 +348,7 @@ void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic 
 void gc_add_ref(B* x); // add x as a root reference
 bool gc_maybeGC(bool toplevel); // gc if that seems necessary; returns if did gc
 void gc_forceGC(bool toplevel); // force a gc; who knows what happens if gc is disabled (probably should error)
-u64 mm_heapUsed(void);
+u64 tot_heapUsed(void);
 #if HEAP_VERIFY
   void cbqn_heapVerify(void);
 #endif

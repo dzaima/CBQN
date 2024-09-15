@@ -352,7 +352,7 @@ B heapStats_c1(B t, B x) {
   if (isC32(x)) {
     f64* rp; B r = m_f64arrv(&rp, 2);
     rp[0] = mm_heapAlloc;
-    rp[1] = mm_heapUsed();
+    rp[1] = tot_heapUsed();
     return r;
   }
   vfyStr(x, "•internal.HeapStats", "𝕩");

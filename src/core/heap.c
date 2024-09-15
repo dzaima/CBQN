@@ -48,7 +48,7 @@ void heap_PIFreedFn(Value* v) {
 void mm_forFreedHeap(V2v f);
 void heap_printInfo(bool sizes, bool types, bool freed, bool chain) {
   u64 total = mm_heapAlloc;
-  u64 used = mm_heapUsed();
+  u64 used = tot_heapUsed();
   fprintf(stderr, "RAM allocated: "N64u"\n", total);
   fprintf(stderr, "heap in use: "N64u"\n", used);
   #if MM!=0
