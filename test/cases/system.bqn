@@ -54,6 +54,7 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"foo"‿⋈, "oldbqn"‿�
 !"•ReBQN: No system value ""bqn"" to inherit" % f←•ReBQN{system⇐⟨"baz"‿1, "rebqn", "foo"‿2⟩} ⋄ g←F"•ReBQN" ⋄ G {system⇐⟨"foo"‿"bar", "baz", "bqn", "rebqn"⟩}
 f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈, "bqn", "listsys"⟩} ⋄ F"•primitives‿•listsys" %% ⟨⟨'÷'‿-⟩ ⋄ ⟨"primitives","foo","bqn","listsys"⟩⟩
 
+# TODO test stacktrace of {𝕏"!0"}•ReBQN{⇐}
 
 # •primitives
 !∧´2=•Type¨ ⊑¨•primitives
