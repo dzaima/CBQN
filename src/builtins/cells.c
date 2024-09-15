@@ -693,6 +693,16 @@ static NOINLINE B rank2_empty(B f, B w, ur wk, B x, ur xk, u32 chr) {
   return r;
 }
 
+SHOULD_INLINE bool unpack_unit(B* r) {
+  B x = *r;
+  if (isAtm(x)) return true;
+  if (RNK(x)!=0) return false;
+  B x2 = IGet(x,0);
+  decG(x);
+  *r = x2;
+  return true;
+}
+
 NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr w; array w, wr>0, 0≤wcr<wr, k≡wr-wcr
   assert(isArr(w));
   ur wk = wr-wcr; assert(wk>0 && wcr<wr);
@@ -704,6 +714,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
       case n_ltack: dec(x); return w;
       case n_rtack: return const_cells(w, wk, wsh, x, chr);
       case n_couple: if (RNK(w)==1) {
+        if (!unpack_unit(&x)) break;
         x = taga(arr_shVec(reshape_one(IA(w), x)));
         return interleave_cells(w, x, 1);
       } break;
@@ -755,6 +766,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         }
         break;
       case n_couple: if (RNK(x)==1) {
+        if (!unpack_unit(&w)) break;
         w = taga(arr_shVec(reshape_one(IA(x), w)));
         return interleave_cells(w, x, 1);
       } break;
