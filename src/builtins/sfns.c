@@ -188,9 +188,7 @@ B shape_c1(B t, B x) {
   if (RNK(x)==1) return x;
   usz ia = IA(x);
   if (ia==1 && TI(x,elType)<el_B) {
-    B n = IGet(x,0);
-    decG(x);
-    return m_vec1(n);
+    return m_vec1(TO_GET(x,0));
   }
   if (reusable(x)) { FL_KEEP(x, fl_squoze);
     decSh(v(x)); arr_shVec(a(x));
@@ -271,9 +269,7 @@ B shape_c2(B t, B w, B x) {
     } else {
       if (xia <= 1) {
         if (RARE(xia == 0)) thrM("⥊: Empty 𝕩 and non-empty result");
-        B n = IGet(x,0);
-        decG(x);
-        x = n;
+        x = TO_GET(x, 0);
         goto unit;
       }
       if (xia <= nia/2) x = any_squeeze(x);
@@ -359,9 +355,7 @@ B pick_c1(B t, B x) {
     // dec(x);
     // return r;
   }
-  B r = IGet(x, 0);
-  decG(x);
-  return r;
+  return TO_GET(x, 0);
 }
 
 static NOINLINE void checkIndexList(B w, ur xr) {
@@ -438,9 +432,7 @@ B pick_c2(B t, B w, B x) {
   if (isNum(w)) {
     if (RNK(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
     usz p = WRAP(o2i64(w), IA(x), thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
-    B r = IGet(x, p);
-    decG(x);
-    return r;
+    return TO_GET(x, p);
   }
   if (!isArr(w)) thrM("⊑: 𝕨 must be a numeric array");
   B r = recPick(w, x);
@@ -960,8 +952,8 @@ B join_c2(B t, B w, B x) {
   ur c = wr>xr?wr:xr;
   if (c==0) {
     HArr_p r = m_harrUv(2);
-    r.a[0] = IGet(w,0); decG(w);
-    r.a[1] = IGet(x,0); decG(x);
+    r.a[0] = TO_GET(w, 0);
+    r.a[1] = TO_GET(x, 0);
     NOGC_E;
     return qWithFill(r.b, f);
   }
@@ -1482,16 +1474,12 @@ B reverse_ix(B t, B w, B x) {
 
 NOINLINE B enclose_im(B t, B x) {
   if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
-  B r = IGet(x, 0);
-  dec(x);
-  return r;
+  return TO_GET(x, 0);
 }
 
 NOINLINE B pair_im(B t, B x) {
   if (isAtm(x) || RNK(x)!=1 || IA(x)!=1) thrM("⋈⁼: Argument wasn't a length-1 list");
-  B r = IGet(x, 0);
-  dec(x);
-  return r;
+  return TO_GET(x, 0);
 }
 
 B select_c1(B,B);

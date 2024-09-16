@@ -621,7 +621,7 @@ B slash_c2(B t, B w, B x) {
     if (depth(w)>1) goto base;
     ur wr = RNK(w);
     if (wr>1) thrF("/: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
-    if (wr<1) { B v=IGet(w, 0); decG(w); w=v; goto atom; }
+    if (wr<1) { w = TO_GET(w, 0); goto atom; }
     wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   } else {

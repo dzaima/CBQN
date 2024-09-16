@@ -373,9 +373,7 @@ B memberOf_c2(B t, B w, B x) {
   ur wr = RNK(w);
   if (wr>0) goto many;
   
-  B w0 = IGet(w, 0);
-  dec(w);
-  w = w0;
+  w = TO_GET(w, 0);
   goto single;
   
   B r;

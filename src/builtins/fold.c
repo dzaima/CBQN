@@ -190,9 +190,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       decG(x);
       return c2(f, x0, x1);
     } else if (ia==1) {
-      B r = IGet(x,0);
-      decG(x);
-      return r;
+      return TO_GET(x,0);
     } else {
       decG(x);
       if (isFun(f)) {
@@ -206,8 +204,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   u8 xe = TI(x,elType);
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
-    if (rtid==n_ltack) { B r = IGet(x, 0   ); decG(x); return r; }
-    if (rtid==n_rtack) { B r = IGet(x, ia-1); decG(x); return r; }
+    if (rtid==n_ltack) return TO_GET(x, 0);
+    if (rtid==n_rtack) return TO_GET(x, ia-1);
     if (xe>el_f64) goto base;
     if (xe==el_bit) {
       u64* xp = bitany_ptr(x);
@@ -279,8 +277,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (v(f)->flags) {
     u8 rtid = v(f)->flags-1;
     if (rtid==n_ltack) {
-      B r = IGet(x, 0);
-      dec(w); decG(x); return r;
+      dec(w);
+      return TO_GET(x, 0);
     }
     if (rtid==n_rtack) { decG(x); return w; }
     if (!isF64(w) || xe>el_f64) goto base;
@@ -457,7 +455,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
     if (isArr(w)) {
       if (IA(w) != 1) goto skip;
       ur wr = RNK(w); if (wr>rr) rr = wr;
-      B w0=w; w = IGet(w,0); decG(w0);
+      w = TO_GET(w, 0);
     }
     if (xr > 1) x = C1(shape, x);
     B r = m_unit(fold_c2(d, w, x));

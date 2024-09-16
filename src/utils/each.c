@@ -7,8 +7,8 @@ static inline B hmv(HArr_p p, usz n) { B r = p.a[n]; p.a[n] = m_f64(0); return r
 
 B eachd_fn(B fo, B w, B x, FC2 f) {
   ur wr, xr; // if rank is 0, respective w/x will be disclosed
-  if (isArr(w)) { wr=RNK(w); if (wr==0) { B c=IGet(w, 0); decG(w); w=c; } } else wr=0;
-  if (isArr(x)) { xr=RNK(x); if (xr==0) { B c=IGet(x, 0); decG(x); x=c; } } else xr=0;
+  if (isArr(w)) { wr=RNK(w); if (wr==0) w = TO_GET(w,0); } else wr=0;
+  if (isArr(x)) { xr=RNK(x); if (xr==0) x = TO_GET(x,0); } else xr=0;
   bool wg = wr>xr;
   ur rM = wg? wr : xr;
   ur rm = wg? xr : wr;

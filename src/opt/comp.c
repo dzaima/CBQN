@@ -438,8 +438,7 @@ B nc_parseBlock(B tokens, usz i0, u32 end, bool isBlock, B* objs, u32* varCount)
   #endif
   i1 = nc_skipSeparators(tokens, i1);
   if (i1 != IA(tokens)) thrM("Native compiler: Code present after block end");
-  B r = IGet(r0, 1);
-  decG(r0);
+  B r = TO_GET(r0, 1);
   decG(toFree);
   return r;
 }

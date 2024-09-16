@@ -658,7 +658,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
     kf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);
-    kf = IGetU(g, gia==2).f;
+    kf = o2fG(IGetU(g, gia==2));
     decA(gi);
   }
   if (isAtm(x)) return c1wrap(f, x);
@@ -697,9 +697,7 @@ SHOULD_INLINE bool unpack_unit(B* r) {
   B x = *r;
   if (isAtm(x)) return true;
   if (RNK(x)!=0) return false;
-  B x2 = IGet(x,0);
-  decG(x);
-  *r = x2;
+  *r = TO_GET(x,0);
   return true;
 }
 
@@ -780,7 +778,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
           if (xcr==0) break;
           if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
         }
-        if (isArr(w)) { B w0=w; w = IGet(w,0); decG(w0); }
+        if (isArr(w)) w = TO_GET(w, 0);
         return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
       } break;
       case n_take: case n_drop: {

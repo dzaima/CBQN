@@ -592,6 +592,7 @@ typedef B (*D2C2)(Md2D*, B, B);
 #define SGet(X) Arr* X##_arr = a(X); AS2B X##_get = TIv(X##_arr,get);
 #define IGet(X,N) ({ Arr* x_ = a(X); TIv(x_,get)(x_,N); })
 #define Get(X,N) X##_get(X##_arr,N)
+#define TO_GET(X,N) ({ B x_2 = (X); B r = IGet(x_2,N); decG(x_2); r; })
 
 
 enum Flags {
