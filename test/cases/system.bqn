@@ -15,6 +15,13 @@
 !"•BQN: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
 !"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
 ⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
+!"No path present for •path" % •BQN"•path"
+!"No arguments present for •args" % •BQN"•args"
+!"No name present for •name" % •BQN"•name"
+!"No arguments present for •state" % •BQN"•state"
+! •path‿""‿"" ≡ ⟨•path⟩•BQN"•state"
+! ""‿"" ≡ ¯2↑⟨⟩•BQN"•state"
+"args"‿"path"‿"name"‿"helloworld"‿"state"∊•BQN"•listsys" %% 1‿1‿1‿0‿1
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•path"
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•state"
 ⟨"path that doesn't exist"⟩•BQN"2+2" %% 4
