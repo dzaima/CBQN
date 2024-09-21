@@ -882,52 +882,60 @@ B join_c1(B t, B x) {
       }
       st[a] = len;
     }
-
-    // Move the data
+    
+    // Shapes known correct; move the data
     usz* csh = tr ? SH(x0) + r0-tr : NULL;  // Trailing shape
     usz csz = shProd(csh, 0, tr);
-    MAKE_MUT(r, shProd(st, 0, xr)*csz);
-    // Element index and effective shape, updated progressively
-    usz *ei =tsh;  for (usz i=0; i<xr; i++) ei [i]=0;
-    usz ri = 0;
-    usz *ll = lp+lp[xr-1];
-    for (usz i = 0;;) {
-      B e = GetU(x, i);
-      usz l = ll[ei[xr-1]] * csz;
-      if (RARE(isAtm(e))) {
-        assert(l==1);
-        mut_set(r, ri, inc(e));
-      } else {
-        usz eia = IA(e);
-        if (eia) {
-          usz rj = ri;
-          usz *ii=tsh0; for (usz k=0; k<xr-1; k++) ii[k]=0;
-          usz str0 = st[xr-1]*csz;
-          for (usz j=0;;) {
-            mut_copy(r, rj, e, j, l);
-            j+=l; if (j==eia) break;
-            usz str = str0;
-            rj += str;
-            for (usz a = xr-2; RARE(++ii[a] == lp[lp[a]+ei[a]]); a--) {
-              rj -= ii[a]*str;
-              ii[a] = 0;
-              str *= st[a];
+    usz ria = shProd(st, 0, xr);
+    if (mulOn(ria, csz)) thrOOM();
+    Arr* ra;
+    if (ria>0) {
+      MAKE_MUT(r, ria);
+      // Element index and effective shape, updated progressively
+      usz *ei =tsh;  for (usz i=0; i<xr; i++) ei [i]=0;
+      usz ri = 0;
+      usz *ll = lp+lp[xr-1];
+      for (usz i = 0;;) {
+        B e = GetU(x, i);
+        usz l = ll[ei[xr-1]] * csz;
+        if (RARE(isAtm(e))) {
+          assert(l==1);
+          mut_set(r, ri, inc(e));
+        } else {
+          usz eia = IA(e);
+          if (eia) {
+            usz rj = ri;
+            usz *ii=tsh0; for (usz k=0; k<xr-1; k++) ii[k]=0;
+            usz str0 = st[xr-1]*csz;
+            for (usz j=0;;) {
+              mut_copy(r, rj, e, j, l);
+              j+=l; if (j==eia) break;
+              usz str = str0;
               rj += str;
+              for (usz a = xr-2; RARE(++ii[a] == lp[lp[a]+ei[a]]); a--) {
+                rj -= ii[a]*str;
+                ii[a] = 0;
+                str *= st[a];
+                rj += str;
+              }
             }
           }
         }
+        if (++i == xia) break;
+        ri += l;
+        usz str = csz;
+        for (usz a = xr-1; RARE(++ei[a] == xsh[a]); ) {
+          ei[a] = 0;
+          str *= st[a];
+          a--;
+          ri += (lp[lp[a]+ei[a]]-1) * str;
+        }
       }
-      if (++i == xia) break;
-      ri += l;
-      usz str = csz;
-      for (usz a = xr-1; RARE(++ei[a] == xsh[a]); ) {
-        ei[a] = 0;
-        str *= st[a];
-        a--;
-        ri += (lp[lp[a]+ei[a]]-1) * str;
-      }
+      ra = mut_fp(r);
+    } else {
+      ra = (Arr*) m_harrUp(0).c;
     }
-    Arr* ra = mut_fp(r);
+    
     usz* sh = arr_shAlloc(ra, xr+tr);
     shcpy(sh   , st , xr);
     shcpy(sh+xr, csh, tr);

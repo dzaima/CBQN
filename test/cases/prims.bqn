@@ -193,6 +193,12 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 ∾⟨"ab", 12, "de"⟩ %% ⟨'a','b',12,'d','e'⟩
 !"∾: Item trailing shapes must be equal (contained arrays with shapes 3‿3 and 3‿4)" % ∾⟨↕3‿3,↕3‿4⟩
 !"∾: Item trailing shapes must be equal (contained arrays with shapes ⟨2⟩ and 3‿3)" % ∾⟨1‿2,↕3‿3⟩
+!"∾: Item ranks along an axis can differ by at most one (contained ranks 1 and 3 along axis 0)" % ∾2‿1 ⥊ ⥊⟜0¨ ⟨0‿2‿3, 0⟩
+!"∾: Incompatible item shapes (contained arrays with shapes 1‿0 and 1‿0 along axis 1)" % ∾ {1‿𝕩⥊0}¨ [0‿1, 0‿0]
+!"∾: Incompatible item ranks" % ∾ ⥊⟜0¨ [0‿1⋈0‿1, 0‿1⋈1]
+∾3‿3⥊<1‿0‿3⥊0 %% 3‿0‿3⥊0
+∾3‿3⥊<0‿0⥊⟨⟩ %% 0‿0⥊⟨⟩
+⊑1↑⥊∾3‿3⥊<1‿0‿3⥊<"hi" %% "  "
 
 # 𝕨∾𝕩
 !"∾: Lengths not matchable (⟨6⟩ ≡ ≢𝕨, 1‿1 ≡ ≢𝕩)" % ("abc"∾"def")∾≍"a"
