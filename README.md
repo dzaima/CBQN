@@ -39,7 +39,7 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 
 `notui=1` - display build progress in a plain-text format  
 `version=...` - specify the version to report in `--version` (default is commit hash)  
-`nogit=1` - error if something attempts to use `git`
+`nogit=1` - error if something attempts to use `git`  
 `CC=...` - choose a different C compiler (default is `clang`, or `cc` if unavailable; CBQN is more tuned for clang, but gcc also works)  
 `CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)  
 `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename  
