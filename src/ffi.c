@@ -265,7 +265,7 @@ static u32 styG(B x) {
 #if FFI==2
 
 #if FFI_CHECKS
-  static B nonNumber(B x) { // returns m_f64(0) if x is all numeric, otherwise •Type of the offending element
+  static B nonNumber(B x) { // returns m_f64(0) if x is all numeric, otherwise the offending element
     if (elNum(TI(x,elType))) return m_f64(0);
     usz ia = IA(x); SGetU(x)
     for (ux i = 0; i < ia; i++) {
@@ -274,7 +274,16 @@ static u32 styG(B x) {
     }
     return m_f64(0);
   }
-  static NOINLINE void ffi_checkRange(B x, i32 mode, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
+  static B nonChar(B x) { // returns bi_N if x is all characters, otherwise the offending element
+    if (elChr(TI(x,elType))) return bi_N;
+    usz ia = IA(x); SGetU(x)
+    for (ux i = 0; i < ia; i++) {
+      B c = GetU(x,i);
+      if (!isC32(c)) return inc(c);
+    }
+    return bi_N;
+  }
+  static NOINLINE void ffi_numRange(B x, i32 mode, char* desc, i64 min, i64 max) { // doesn't consume; assumes non-array has already been checked for; if min==max, doesn't check range
     if (IA(x)==0) return;
     
     char* ref = mode==1? "&" : mode==0? "*" : ":";
@@ -290,8 +299,30 @@ static u32 styG(B x) {
     if (buf[1]>max) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[1]);
     decG(x);
   }
+  static bool elChrOk(B x, u64 max) {
+    u8 xe = TI(x,elType);
+    if (xe==el_c8) return true;
+    if (xe==el_c16 && max>=U16_MAX) return true;
+    if (xe==el_c32 && max>=U32_MAX) return true;
+    return false;
+  }
+  static NOINLINE void ffi_anyRange(B x, char type, char* desc, i64 umax) { // doesn't consume; assumes non-array has already been checked for
+    if (type=='i') {
+      ffi_numRange(x, 2, desc, (-umax)>>1, umax>>1);
+    } else {
+      if (IA(x)==0) return;
+      B nonChr = nonChar(x);
+      if (nonChr.u!=bi_N.u) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
+      if (elChrOk(x, umax)) return;
+      B sq = chr_squeeze(incG(x));
+      bool ok = elChrOk(sq, umax);
+      decG(sq);
+      if (!ok) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
+    }
+  }
 #else
-  static void ffi_checkRange(B x, i32 mode, char* desc, i64 min, i64 max) { }
+  static void ffi_numRange(B x, i32 mode, char* desc, i64 min, i64 max) { }
+  static void ffi_anyRange(B x, i32 mode, char* desc, i64 umax, char type) { }
 #endif
 
 
@@ -575,11 +606,11 @@ static usz ffiTmpAlign(usz n) {
 
 static NOINLINE B toW(u8 reT, u8 reW, B x) {
   switch(reW) { default: UD;
-    case 0:               ffi_checkRange(x, 2, "u1", 0, 1);              return taga(toBitArr(x)); break;
-    case 3: if (reT=='i') ffi_checkRange(x, 2, "i8",  I8_MIN,  I8_MAX);  return reT=='c'?  toC8Any(x) :  toI8Any(x); break;
-    case 4: if (reT=='i') ffi_checkRange(x, 2, "i16", I16_MIN, I16_MAX); return reT=='c'? toC16Any(x) : toI16Any(x); break;
-    case 5: if (reT=='i') ffi_checkRange(x, 2, "i32", I32_MIN, I32_MAX); return reT=='c'? toC32Any(x) : toI32Any(x); break;
-    case 6:               ffi_checkRange(x, 2, "f64", 0, 0);             return toF64Any(x); break;
+    case 0: ffi_numRange(x, 2,   "u1", 0, 1);     return taga(toBitArr(x)); break;
+    case 3: ffi_anyRange(x, reT, "i8",  U8_MAX);  return reT=='c'?  toC8Any(x) :  toI8Any(x); break;
+    case 4: ffi_anyRange(x, reT, "i16", U16_MAX); return reT=='c'? toC16Any(x) : toI16Any(x); break;
+    case 5: ffi_anyRange(x, reT, "i32", U32_MAX); return reT=='c'? toC32Any(x) : toI32Any(x); break;
+    case 6: ffi_numRange(x, 2,   "f64", 0, 0);    return toF64Any(x); break;
   }
 }
 
@@ -707,14 +738,14 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
         B cG;
         bool mut = t->ty==cty_ptr? t->mutPtr : false;
         switch(styG(e)) { default: thrF("FFI: Unimplemented pointer element type within %R", ty_fmt(o));
-          case sty_i8:  ffi_checkRange(c, mut, "i8",  I8_MIN,  I8_MAX);  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
-          case sty_i16: ffi_checkRange(c, mut, "i16", I16_MIN, I16_MAX); cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
-          case sty_i32: ffi_checkRange(c, mut, "i32", I32_MIN, I32_MAX); cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
-          case sty_f64: ffi_checkRange(c, mut, "f64", 0, 0);             cG = mut? taga(cpyF64Arr(c)) : toF64Any(c); break;
-          case sty_u8:  ffi_checkRange(c, mut, "u8",  0, U8_MAX);        cG = mut?     cpyU8Bits (c) : toU8Bits (c); break;
-          case sty_u16: ffi_checkRange(c, mut, "u16", 0, U16_MAX);       cG = mut?     cpyU16Bits(c) : toU16Bits(c); break;
-          case sty_u32: ffi_checkRange(c, mut, "u32", 0, U32_MAX);       cG = mut?     cpyU32Bits(c) : toU32Bits(c); break;
-          case sty_f32: ffi_checkRange(c, mut, "f64", 0, 0);             cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
+          case sty_i8:  ffi_numRange(c, mut, "i8",  I8_MIN,  I8_MAX);  cG = mut? taga(cpyI8Arr (c)) : toI8Any (c); break;
+          case sty_i16: ffi_numRange(c, mut, "i16", I16_MIN, I16_MAX); cG = mut? taga(cpyI16Arr(c)) : toI16Any(c); break;
+          case sty_i32: ffi_numRange(c, mut, "i32", I32_MIN, I32_MAX); cG = mut? taga(cpyI32Arr(c)) : toI32Any(c); break;
+          case sty_f64: ffi_numRange(c, mut, "f64", 0, 0);             cG = mut? taga(cpyF64Arr(c)) : toF64Any(c); break;
+          case sty_u8:  ffi_numRange(c, mut, "u8",  0, U8_MAX);        cG = mut?     cpyU8Bits (c) : toU8Bits (c); break;
+          case sty_u16: ffi_numRange(c, mut, "u16", 0, U16_MAX);       cG = mut?     cpyU16Bits(c) : toU16Bits(c); break;
+          case sty_u32: ffi_numRange(c, mut, "u32", 0, U32_MAX);       cG = mut?     cpyU32Bits(c) : toU32Bits(c); break;
+          case sty_f32: ffi_numRange(c, mut, "f64", 0, 0);             cG = cpyF32Bits(c); break; // no direct f32 type, so no direct reference option
         }
         
         *(void**)ptr = tyany_ptr(cG);
@@ -768,11 +799,11 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
         if (mut) {
           Arr* cGp;
           switch(reW) { default: UD;
-            case 0:               ffi_checkRange(c, 2, "u1", 0, 1);              cGp = (Arr*) cpyBitArr(c); break;
-            case 3: if (reT=='i') ffi_checkRange(c, 2, "i8",  I8_MIN,  I8_MAX);  cGp = reT=='c'? (Arr*) cpyC8Arr(c) : (Arr*) cpyI8Arr(c); break;
-            case 4: if (reT=='i') ffi_checkRange(c, 2, "i16", I16_MIN, I16_MAX); cGp = reT=='c'? (Arr*)cpyC16Arr(c) : (Arr*)cpyI16Arr(c); break;
-            case 5: if (reT=='i') ffi_checkRange(c, 2, "i32", I32_MIN, I32_MAX); cGp = reT=='c'? (Arr*)cpyC32Arr(c) : (Arr*)cpyI32Arr(c); break;
-            case 6:               ffi_checkRange(c, 2, "f64", 0, 0);             cGp = (Arr*) cpyF64Arr(c); break;
+            case 0: ffi_numRange(c, 2,   "u1", 0, 1);     cGp = (Arr*) cpyBitArr(c); break;
+            case 3: ffi_anyRange(c, reT, "i8",  U8_MAX);  cGp = reT=='c'? (Arr*) cpyC8Arr(c) : (Arr*) cpyI8Arr(c); break;
+            case 4: ffi_anyRange(c, reT, "i16", U16_MAX); cGp = reT=='c'? (Arr*)cpyC16Arr(c) : (Arr*)cpyI16Arr(c); break;
+            case 5: ffi_anyRange(c, reT, "i32", U32_MAX); cGp = reT=='c'? (Arr*)cpyC32Arr(c) : (Arr*)cpyI32Arr(c); break;
+            case 6: ffi_numRange(c, 2,   "f64", 0, 0);    cGp = (Arr*) cpyF64Arr(c); break;
           }
           cG = taga(cGp);
         } else cG = toW(reT, reW, c);
