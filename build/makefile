@@ -92,8 +92,7 @@ endif
 BYTECODE_DIR = $(shell if [ -d build/bytecodeLocal ]; then echo bytecodeLocal; else echo bytecodeSubmodule; fi)
 ifeq ($(BYTECODE_DIR),bytecodeLocal)
 	custom = 1
-endif
-ifeq ($(BYTECODE_DIR),bytecodeSubmodule)
+else
 ifeq ($(i_USE_BC_SUBMODULE),)
 	i_USE_BC_SUBMODULE=1
 endif
@@ -160,7 +159,11 @@ else ifeq ($(origin builddir),command line)
 else # run build
 	
 ifeq ($(i_USE_BC_SUBMODULE),1)
-	@git submodule update --init build/bytecodeSubmodule || (echo 'Failed to initialize submodule; clone CBQN as a git repo, or place local copies in build/ (see README.md#submodules).' && false)
+ifeq ($(nogit),1)
+	@echo "git needed for updating build/singeliSubmodule, but nogit=1 specified" && false
+else
+	@git submodule update --init build/bytecodeSubmodule || (echo 'Failed to initialize build/bytecodeSubmodule; clone CBQN as a git repo, or place a local copy in build/bytecodeLocal (see README.md).' && false)
+endif
 endif
 	@export bd=$$("$(MAKEHERE)" builddir); \
 	[ "build/obj/" = "$$bd" ] && echo "Neither shasum nor sha256sum was found; cannot use custom configurations" && exit 1; \
