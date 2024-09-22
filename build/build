@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 DIR="$(dirname $0)"
 PREV_BQN="$DIR/obj2/for_build4"
 if [ ! -f "$PREV_BQN" ]; then

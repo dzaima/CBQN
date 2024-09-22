@@ -1,4 +1,3 @@
-SHELL = /usr/bin/env bash
 MAKEFLAGS+= --no-print-directory --no-builtin-rules --no-builtin-variables
 MAKEHERE = "$(MAKE) -f build/makefile"
 # note: do not manually define any i_… arguments, or incremental compiling may not work properly!

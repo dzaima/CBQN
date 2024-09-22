@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 path/to/mlochbaum/BQN"
   exit
