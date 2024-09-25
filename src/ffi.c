@@ -322,7 +322,7 @@ static u32 styG(B x) {
   }
 #else
   static void ffi_numRange(B x, i32 mode, char* desc, i64 min, i64 max) { }
-  static void ffi_anyRange(B x, i32 mode, char* desc, i64 umax, char type) { }
+  static void ffi_anyRange(B x, char type, char* desc, i64 umax) { }
 #endif
 
 
