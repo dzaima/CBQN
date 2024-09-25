@@ -291,12 +291,28 @@ static u32 styG(B x) {
     if (nonNum.u!=m_f64(0).u) thrF("FFI: Array provided for %S%S contained %S", ref, desc, genericDesc(nonNum));
     
     if (min==max) return;
-    incG(x); x = elNum(TI(x,elType))? x : taga(cpyF64Arr(x));
-    
+    u8 xe = TI(x,elType);
+    incG(x);
+    if (!elNum(xe)) {
+      x = taga(cpyF64Arr(x));
+      xe = TI(x,elType);
+    }
+    i64 emax;
+    switch (xe) {
+      case el_i8:  emax=I8_MAX; goto echk;
+      case el_i16: emax=I16_MAX; goto echk;
+      case el_i32: emax=I32_MAX; goto echk;
+      echk:;
+      i64 emin = -emax-1;
+      if (emin>=min && emax<=max) goto ok;
+      default:; // fallthrough
+    }
     i64 buf[2];
-    if (!getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x))) thrF("FFI: Array provided for %S%S contained non-integer", ref, desc);
+    if (!getRange_fns[xe](tyany_ptr(x), buf, IA(x))) thrF("FFI: Array provided for %S%S contained non-integer", ref, desc);
     if (buf[0]<min) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[0]);
     if (buf[1]>max) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[1]);
+    
+    ok:;
     decG(x);
   }
   static bool elChrOk(B x, u64 max) {
