@@ -69,11 +69,11 @@ FmtComp ← {
   
   iarrs ← intarrCache.Done@ ⋄ Li↩!
   
-  ! ⟨⟩ ≡ ⊑iarrs.compvals
+  hasEmpty ← ⟨⟩ ≡ ⊑iarrs.compvals
   
   init ← ⟨⟩
   a {
-    1‿i: n ← i⊑iarrs.comp ⋄ (0=n) ⊑ ⟨∾⟨"iarrs[",F n,"]"⟩, "iarrs0"⟩; # special-case first array (i.e. empty array) as there isn't enough aliasing info for the compiler to deduplicate loads
+    1‿i: n ← i⊑iarrs.comp ⋄ (hasEmpty∧0=n) ⊑ ⟨∾⟨"iarrs[",F n,"]"⟩, "iarrs0"⟩; # special-case first array (i.e. empty array) as there isn't enough aliasing info for the compiler to deduplicate loads
     2=•Type⊑𝕩? 𝕩;
     0‿n: ONum2C n;
     ⟨0‿a, 0‿b, ⟨c, d⟩⟩: cs≡⌊cs←a‿b? ∧´cs≥0? ∧´cs<4? ∾⟨"m_blockinfo(", F a+b×4, ", ", 𝕊 c, ", ", 𝕊 d, ")"⟩;
@@ -94,7 +94,7 @@ FmtComp ← {
     "};", lf
     "static const u32 iarrs_lens[] = {", ','Join F∘≠¨ iarrs.compvals, "};", lf
     "init_intarrs(iarrs, iarrs_data, iarrs_lens, ", F iarrs.n, ");", lf
-    "B iarrs0 = iarrs[0];", lf
+    hasEmpty / "B iarrs0 = iarrs[0];", lf
     ∾{0𝕊𝕩: ""; ∾⟨"incByG(iarrs[", F 𝕩, "], ", F 𝕨, ");", lf⟩}¨⟜↕⟜≠ iarrs.counts-1
     ∾init
     "load_importBlock", srcmap/"_src", "(", CStr name, ",", lf

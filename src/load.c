@@ -570,10 +570,9 @@ void load_init() { // very last init function
   
   #ifdef PRECOMP
     decG(load_compOpts);
-    Block* c = compileAll(
+    Block* c = ({
       #include "../build/interp"
-      , bi_N, bi_N, bi_N, bi_N, NULL, 0
-    );
+    });
     B interp = evalFunBlockConsume(c);
     printI(interp);
     printf("\n");
