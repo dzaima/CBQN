@@ -4,7 +4,11 @@ B asFill(B x) { // consumes
   if (isArr(x)) {
     u8 xe = TI(x,elType);
     usz ia = IA(x);
-    if (elNum(xe)) return i64EachDec(0, x);
+    if (elNum(xe)) {
+      B r = taga(arr_shCopy(allZeroes(ia), x));
+      decG(x);
+      return r;
+    }
     if (elChr(xe)) {
       u8* rp; B r = m_c8arrc(&rp, x);
       for (usz i = 0; i < ia; i++) rp[i] = ' ';
