@@ -86,7 +86,7 @@ endif
 	@build/build from-makefile CC="$(CC)" CXX="$(CXX)" PIE="$(ENABLE_PIE)" OUTPUT="$(OUTPUT)" j="$(j)" \
 	  verbose="$(verbose)" notui="$(notui)" v="$(version)" stored-warn="$(stored-warn)" \
 	  f="$(f)" lf="$(lf)" CCFLAGS="$(CCFLAGS)" LDFLAGS="$(LDFLAGS)" REPLXX_FLAGS="$(REPLXX_FLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" \
+	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" target-from-cc="$(target_from_cc)" \
 	  c="$(build_c)" debug="$(debug)" $(i_build_opts) $(build_opts) \
 	  os="$(target_os)" arch="$(target_arch)" has="$(has)" usz="$(usz)" nogit="$(nogit)" \
 	  shared="$(i_SHARED)" singeli="$(i_singeli_1)" replxx="$(i_REPLXX_1)" FFI="$(FFI)"

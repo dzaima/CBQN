@@ -37,31 +37,32 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 
 ### Build flags
 
-`notui=1` - display build progress in a plain-text format  
-`version=...` - specify the version to report in `--version` (default is commit hash)  
-`nogit=1` - error if something attempts to use `git`  
-`CC=...` - choose a different C compiler (default is `clang`, or `cc` if unavailable; CBQN is more tuned for clang, but gcc also works)  
-`CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)  
-`OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename  
-`target_arch=(x86-64|aarch64|generic)` - target architecture. Inferred from `uname` by default. Used for deciding target optimizations.  
-`target_os=(linux|bsd|macos|windows)` - target OS. Inferred from `uname` by default. Used for determining default output names and slight configuration changes.  
-`j=8` - override the default parallel job count (default is the output of `nproc`)  
-`has=...` - assume specified architecture extensions/properties (x86-64-only). Takes a comma-separated list which, beyond what is architecturally guaranteed, infer additional extensions as noted which hold on existing hardware (at least as of the time of writing):  
-- `pclmul` (implies SSE4.2)  
-- `avx2` (implies `pclmul`, POPCNT, BMI1)  
-- `bmi2` (implies `pclmul`, AVX1)  
-- `slow-pdep` (specifies Zen 1 & Zen 2's slow `pdep`/`pext`)
-
-`REPLXX=0` - disable REPLXX
-`singeli=0` - disable usage of Singeli  
-`FFI=0` - disable `•FFI`, thus not depending on libffi  
-`usz=64` - support arrays with length over 2<sup>32</sup>
-
-`f=...` - add extra C compiler flags for CBQN file compilation  
-`lf=...` - add extra linking flags (`LDFLAGS` is a synonym)  
-`CCFLAGS=...` - add flags for all CC/CXX/linking invocations  
-`REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)  
-`CXXFLAGS=...` - add additional CXX flags
+- `notui=1` - display build progress in a plain-text format
+- `version=...` - specify the version to report in `--version` (default is commit hash)
+- `nogit=1` - error if something attempts to use `git`
+- `CC=...` - choose a different C compiler (default is `clang`, or `cc` if unavailable; CBQN is more tuned for clang, but gcc also works)
+- `CXX=...` - choose a different C++ compiler; needed only for REPLXX (default is `c++`)
+- `j=8` - override the default parallel job count (default is the output of `nproc`)
+- `OUTPUT=path/to/somewhere` - change output location; for `emcc-o3` it will be the destination folder for `BQN.js` and `BQN.wasm`, for everything else - the filename
+- `target_arch=(x86-64|aarch64|generic)` - target architecture; if abscent, inferred from `uname`, or `CC` if `target_from_cc=1`; used for enabling architecture-specific optimizations
+- `target_os=(linux|bsd|macos|windows)` - target OS; if abscent, inferred from `uname`, or `CC` if `target_from_cc=1`; used for determining default output names and slight configuration changes
+- `target_from_cc=1` - infer the target architecture and OS from C macros that `CC` defines via `-dM -E`; additionally infers available extensions, allowing e.g. `make f=-march=x86-64-v3 - target_from_cc=1` to optimize assuming AVX2, which would otherwise need `has=avx2`
+- `has=...` - assume specified architecture extensions/properties (x86-64-only); takes a comma-separated list which, beyond what is architecturally guaranteed, infer additional extensions as noted which hold on existing hardware (at least as of the time of writing):
+  - `pclmul` (implies SSE4.2)
+  - `avx2` (implies `pclmul`, POPCNT, BMI1)
+  - `bmi2` (implies `avx2`)
+  - `slow-pdep` (implies `bmi2`; specifies Zen 1 & Zen 2's slow `pdep`/`pext`)
+<!-- separator -->
+- `REPLXX=0` - disable REPLXX
+- `singeli=0` - disable usage of Singeli
+- `FFI=0` - disable `•FFI`, thus not depending on libffi
+- `usz=64` - support arrays with length over 2<sup>32</sup>
+<!-- separator -->
+- `f=...` - add extra C compiler flags for CBQN file compilation
+- `lf=...` - add extra linking flags (`LDFLAGS` is a synonym)
+- `CCFLAGS=...` - add flags for all CC/CXX/linking invocations
+- `REPLXX_FLAGS=...` - override replxx build flags (default is `-std=c++11 -Os`)
+- `CXXFLAGS=...` - add additional CXX flags
 
 Alternatively, `build/build` (aka build.bqn) can be invoked manually, though note that it has slightly different argument naming (see `build/build --help`) and doesn't have predefined build types (i.e. `make o3ng` is done as `build/build replxx singeli native g`)
 
@@ -113,12 +114,11 @@ AArch64 ARMv8-A (within Termux on Android 8):
 ```
 Additionally, CBQN is known to compile as-is on macOS. Windows builds can be made by cross-compilation ([Docker setup](https://github.com/vylsaz/cbqn-win-docker-build)).
 
-The build will attempt to use `pkg-config` to find libffi, `uname` to determine `target_arch` & `target_os`, and `nproc` for parallel job count, with defaults if unavailable (`-lffi` for linking libffi (+ `-ldl` on non-BSD), `target_arch=generic`, `target_os=linux`, `j=4`; these can of course also be specified manually).
+The build will attempt to use `pkg-config` to find libffi, `uname` to determine `target_arch` & `target_os` if not using `target_from_cc`, and `nproc` for parallel job count, with defaults if unavailable (`-lffi` for linking libffi (+ `-ldl` on non-BSD), `target_arch=generic`, `target_os=linux`, `j=4`; these can of course also be specified manually).
 
-Furthermore, `git` is used to determine the version to present for `--version` (override with `version=...`), and to update submodules.
+Git submodules are used for Singeli, replxx, and precompiled bytecode. To avoid automatic usage of `git` here, link local copies to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
 
-Submodules are used for Singeli, replxx, and precompiled bytecode. To avoid automatic usage of `git`, link local copies to `build/singeliLocal`, `build/replxxLocal`, and `build/bytecodeLocal`.
-
+Furthermore, `git` is used to determine the version that `--version` should display (override with `version=...`). Use `nogit=1` to disallow automatic `git` usage.
 
 ### Precompiled bytecode
 
@@ -145,7 +145,9 @@ Note that, after either of those, the compiled bytecode may become desynchronize
 
 You must manually set up a cross-compilation environment. It's possible to pass flags to all CC/CXX/linking invocations via `CCFLAGS=...`, and `LDFLAGS=...` to pass ones to the linking step specifically (more configuration options [above](#build-flags)).
 
-A `target_arch=(x86-64|aarch64|generic)` make argument must be present (`generic` will work always, but a more specific argument will enable significant optimizations), as otherwise it'll choose based on `uname`. Similarly, `target_os=(linux|bsd|macos|windows)` should be present if the target OS differs from the host.
+A `target_arch=(x86-64|aarch64|generic)` make argument should be added (`generic` will work always, but a more specific argument will enable significant optimizations), as otherwise it'll choose based on `uname`. Similarly, `target_os=(linux|bsd|macos|windows)` should be present if the target OS differs from the host.
+
+Alternatively, the `target_from_cc=1` make argument can be used, replacing the need of `target_arch` and `target_os` (although they can be still set, overriding the values inferred from CC).
 
 Furthermore, all build targets (except `-makeonly` ones) will need a non-cross-compiled version of CBQN at build time to run build.bqn and Singeli. For those, a `make for-build` will need to be ran before the primary build, configured to not cross-compile. (this step only needs a C compiler (default is `CC=cc` here), and doesn't need libffi, nor a C++ compiler).
 

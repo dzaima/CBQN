@@ -34,6 +34,7 @@ opts ← ⟨
   ⟨1, "color", @, "Whether to enable colored diagnostics; default based on notui"⟩
   ⟨0, "os",    @, "Target OS (linux, bsd, macos)"⟩ # used for .so vs .dylib, and changing linker flags for bsd
   ⟨0, "arch",  @, "Target architecture (x86-64, aarch64, generic)"⟩ # used for selecting Singeli target
+  ⟨1, "target-from-cc",0, "Detect arch, OS, and target-supported extensions from CC"⟩
   ⟨1, "pie",   @, "Position-independent executable; default based on OS & arch"∾@+10⟩
   
   ⟨0, "OUTPUT",  "", "Output location; defaults to ./BQN for regular builds"⟩
@@ -51,14 +52,14 @@ opts ← ⟨
   ⟨1, "static-bin", 0, "Statically link the executable"⟩
   ⟨1, "wasi",   0, "Build with WASI; default output name is BQN.wasm"⟩
   ⟨1, "emcc",   0, "Build with emscripten; outputs two files - BQN.wasm and BQN.js"⟩
-  ⟨1, "clangd", 0, "Don't build, instead generate a compile_commands.json for clangd"∾@+10⟩
+  ⟨1, "clangd", 0, "Generate a compile_commands.json for clangd"∾@+10⟩
   
-  ⟨1, "FFI",       @, "Enable FFI through libffi; On by default for linux, BSD, macos"⟩
+  ⟨1, "FFI",       @, "Enable FFI through libffi; off by default for Windows"⟩
   ⟨1, "pkgconfig", 1, "Whether to attempt to use pkg-config to find libffi flags"⟩
-  ⟨1, "singeli",   0, "Enable compilation with Singeli"⟩
+  ⟨1, "singeli",   0, "Enable Singeli usage"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨0, "usz", "32", "Size of array length fields in bits; default 32, can be 32 or 64"⟩
+  ⟨0, "usz", "32", "Size of array length fields in bits; 32 or 64 (default: 32)"⟩
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
   ⟨1, "native", @, "Use '-march=native'"⟩
@@ -182,10 +183,12 @@ po ← { # parsed options
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
     bytecodeDir, replxxDir, singeliDir,
-    CBQNc, ccColor, singeliFlags, siCFlags, singeliArch, REPLXXc, Linker
+    CBQNc, ccColor, singeliFlags, singeliCFlags, singeliArch, REPLXXc, Linker
   ⟩⇐
   
   compat ← GetOpt "from-makefile"
+  compatTgt ← compat/"target_"
+  
   custom ← GetOpt "c"
   clangd ← GetOpt "clangd"
   DOpt ← {@⊸≡◶⟨⊢,𝕨⟩ GetOpt 𝕩}
@@ -194,6 +197,7 @@ po ← { # parsed options
   warnStored ⇐ GetOpt "stored-warn"
   loud ⇐ ¬GetOpt "quiet"
   nogit ↩ GetOpt "nogit"
+  truecc ⇐ GetOpt "target-from-cc"
   
   dry ⇐ GetOpt "dry-run"
   CacheList ← {
@@ -234,12 +238,10 @@ po ← { # parsed options
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   ccClang ← {
     clangd? 1;
-    
     TryVersion ← {𝕩 SH cc‿"--version"}
-    
     vs ← TryVersion {@≡GetOpt"CC"? ¯1; @}
     
-    {𝕊: cc↩"cc" ⋄ Log "Note: default CC 'clang' wasn't found; building with 'cc'; add a `CC=cc` argument to hide" ⋄ vs↩TryVersion@}⍟⊢ vs≡¯1
+    {𝕊: Log⍟loud "Note: default CC '"∾cc∾"' wasn't found; using 'cc'; add 'CC=cc' to hide" ⋄ cc↩"cc" ⋄ vs↩TryVersion@}⍟⊢ vs≡¯1
     ∨´"clang"⍷vs
   }
   
@@ -250,31 +252,83 @@ po ← { # parsed options
   ubsan ⇐ GetOpt "ubsan"
   o3 ⇐ (¬custom) DOpt "O3"
   
-  uname ← ⊢◶""‿{𝕊: Lowercase "" TrySH "uname"‿"-sm"} ∨´ (@≡GetOpt)¨ "os"‿"arch"
-  InUname ← {𝕊: ∨´ 𝕩⍷uname}
+  allFlags ← GetOpt "CCFLAGS"
+  minCCFlags ← allFlags ∾ GetOpt "f"
   
-  os ⇐ Lowercase {InUname"linux"? "linux"; InUname"darwin"? "macos"; InUname"bsd"? "bsd"; "linux"} DOpt "os"
-  linux‿bsd‿macos‿windows ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"‿"windows"
+  CDefines ← {𝕊: cDefines ↩ (@+10) Split SH ⟨cc⟩ ∾ minCCFlags ∾ ⟨"-dM", "-E", "-"⟩}
   
-  arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
-  {𝕊: arch ↩ "generic"}⍟⊢ wasm
-  {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch<⊸∊⊢) "x86-64"‿"aarch64"‿"generic"
+  Uname ← {𝕊: uname ↩ Lowercase "" TrySH "uname"‿"-sm"}
+  InUname ← {𝕊: ∨´ 𝕩⍷Uname@}
   
-  ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
   singeli ⇐ GetOpt "singeli"
   replxx ⇐ GetOpt "REPLXX"
   
+  SubmoduleDir ← "build"⊸•file.At⍟(@≢⊢) {𝕨≡0?@; •file.Exists r←AtRoot "build"•file.At 𝕩∾"Local"? r; 𝕩∾"Submodule"}
+  LogDir ← {𝕩≡@? 𝕨∾": not used"; 𝕨∾" directory: "∾AtRoot 𝕩}_verboseLog
+  bytecodeDir ⇐ 1       SubmoduleDir "bytecode" ⋄ "Bytecode" LogDir bytecodeDir
+  replxxDir   ⇐ replxx  SubmoduleDir "replxx"   ⋄ "REPLXX" LogDir replxxDir
+  singeliDir  ⇐ singeli SubmoduleDir "singeli"  ⋄ "Singeli" LogDir singeliDir
+  
+  arch ⇐ {'-'¨⌾(('_'=𝕩)⊸/)𝕩} Lowercase {truecc∨wasm? "generic"; InUname"x86_64"? "x86-64"; ∨´InUname¨"aarch64"‿"arm64"? "aarch64"; "generic"} DOpt "arch"
+  {𝕊: "Error: Unsupported arch; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑arch<⊸∊⊢) "x86-64"‿"aarch64"‿"riscv64"‿"generic"
+  arch {"riscv64": "RV64"; "generic": "NONE"; Uppercase {'_'¨⌾(('-'=𝕩)⊸/)𝕩} 𝕩}↩ # translate to Singeli
+  
   has ⇐ ∾ ','Split¨Lowercase GetOpt "has"
-  has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊has)/⋈"bmi2"
-  {𝕊: "Error: Unsupported 'has' options; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
-  {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; remove 'has=...' or add an argument of "∾compat⊑"arch=x86-64"‿"target_arch=x86-64"}_assert_¬ (arch≢"x86-64") ∧ 0≠≠has
+  has ↩ ∧⍷has ∾ (⊑"slow-pdep"<⊸∊ has) / ⟨"bmi2"⟩
+  {𝕊: "Error: Invalid 'has' value; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(∧´has∊⊢) "ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"‿"slow-pdep"
+  "Error: Cannot use 'has=...' if Singeli isn't enabled"_assert_⊢ singeli ∨ ⟨⟩≡has
   
-  singeliArch ⇐ ({"x86-64":"X86_64"; "aarch64":"AARCH64"; "none"} arch) <⊸∾ Uppercase ∊⟜"ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"⊸/ has
+  {𝕊: has∾↩ (∨´(("#define __tune_znver"⊸∾∾⟜"__ 1")¨ "12")∊CDefines@) / ⟨"slow-pdep"⟩}⍟⊢ truecc
   
-  {𝕊: "Target: "∾os∾" "∾arch∾ 1↓ ∾", "⊸∾¨ has∾native/⋈"native"} _verboseLog@
+  singeliArch ⇐ @
+  singeliCFlags ⇐ ⟨⟩
   
-  pie ⇐ {(¬sharedLib∨staticLib)∧linux∧arch≡"x86-64"? 0; 1} DOpt "pie"
-  {𝕊: pie ↩ 0}⍟⊢ wasm
+  {
+    ¬singeli? @;
+    UpdateSubmodule singeliDir
+    SingeliUtil ← {𝕨 •Import AtRoot singeliDir •file.At 𝕩}
+    singeliArch ↩ {
+      truecc ∧ @≡GetOpt"arch"?
+        archutil ← SingeliUtil "archutil.bqn"
+        foundArch ← archutil.ParseCDefines CDefines@
+        arch ↩ ⊑foundArch
+        foundArch
+      ;
+        Uppercase ⟨arch⟩
+    }
+    {
+      arch≡"X86_64"?
+        singeliArch∾↩ Uppercase ∊⟜"ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"⊸/ has
+        ArchInfo ← {(⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn").GetCFlags @}
+        singeliCFlags ↩ ArchInfo 1
+        {𝕊: Log "Note: inferred the following C flags:"∾∾' '⊸∾¨𝕩}⍟(loud ∧ ×∘≠) singeliCFlags (¬∘∊/⊣) ArchInfo 0
+      ;@
+    }
+  }
+  
+  {𝕊: "Error: Cannot have 'has' options on architecture '"∾arch∾"'; remove 'has=...' or use '"∾compatTgt∾"arch=x86-64'"}_assert_¬ (arch≢"X86_64") ∧ 0≠≠has
+  
+  os ⇐ GetOpt "os"
+  {
+    os≢@?
+      os Lowercase ↩;
+    ¬truecc?
+      os ↩ {InUname"linux"? "linux"; InUname"darwin"? "macos"; InUname"bsd"? "bsd"; "linux"};
+    osKeys‿osVals ← <˘⍉>⟨
+      ⟨"_WIN32", "windows"⟩
+      ⟨"__FreeBSD__", "bsd"⟩
+      ⟨"__OpenBSD__", "bsd"⟩
+      ⟨"__APPLE__", "macos"⟩
+      ⟨"__MACH__", "macos"⟩
+      ⟨"__linux", "linux"⟩
+    ⟩
+    osOpts ← ⍷ osVals /˜ osKeys∊{𝕩↑˜⊑𝕩⊐' '}¨ 8↓¨ ("#define "≡8↑⊢)¨⊸/ CDefines@
+    {𝕊: "Error: Couldn't detect OS from C-defined macros; add explicit '"∾compatTgt∾"os=...'"} _assert_⊢ 1=≠osOpts
+    os ↩ ⋈⁼ osOpts
+  }
+  linux‿bsd‿macos‿windows ← os⊸≡¨ {𝕊: "Error: Unsupported OS; options:"∾1↓∾", "⊸∾¨𝕩}_assert_(⊑os<⊸∊⊢) "linux"‿"bsd"‿"macos"‿"windows"
+  
+  {𝕊: ∾⟨"Target: ", os, " ", Lowercase arch, 1↓ ∾", "⊸∾¨ has∾native/⋈"native"⟩} _verboseLog@
   
   output ⇐ GetOpt "OUTPUT"
   output ↩ •wdpath•file.At {𝕊:
@@ -285,6 +339,12 @@ po ← { # parsed options
     windows? "BQN.exe";
     "BQN"
   }⍟(""≡⊢) output
+  {𝕊: "Output location: "∾𝕩}_verboseLog output
+  
+  pie ⇐ {(¬sharedLib∨staticLib)∧linux∧arch≡"X86_64"? 0; 1} DOpt "pie"
+  {𝕊: pie ↩ 0}⍟⊢ wasm
+  
+  ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
   
   exportSymbols ← ffi∨lib
   
@@ -297,21 +357,6 @@ po ← { # parsed options
       ⟨⟨⟩, ⟨"-lffi"⟩⟩
     }
   }
-  
-  SubmoduleDir ← "build"⊸•file.At⍟(@≢⊢) {𝕨≡0?@; •file.Exists r←AtRoot "build"•file.At 𝕩∾"Local"? r; 𝕩∾"Submodule"}
-  LogDir ← {𝕩≡@? 𝕨∾": not used"; 𝕨∾" directory: "∾AtRoot 𝕩}_verboseLog
-  bytecodeDir ⇐ 1       SubmoduleDir "bytecode" ⋄ "Bytecode" LogDir bytecodeDir
-  replxxDir   ⇐ replxx  SubmoduleDir "replxx"   ⋄ "REPLXX" LogDir replxxDir
-  singeliDir  ⇐ singeli SubmoduleDir "singeli"  ⋄ "Singeli" LogDir singeliDir
-  {𝕊: "Output location: "∾𝕩}_verboseLog output
-  
-  siCFlags ⇐ {
-    ¬singeli? @;
-    UpdateSubmodule singeliDir
-    (⟨{native? ⟨⟩; singeliArch}, 1⟩ •Import AtRoot singeliDir •file.At "arch.bqn").GetCFlags@
-  }
-  allFlags ← GetOpt "CCFLAGS"
-  allFlags∾↩ ubsan/⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
   
   ccColor ⇐ ((¬clangd) ∧ tui DOpt "color") / ⟨ccClang⊑"-fdiagnostics-color=always"‿"-fcolor-diagnostics"⟩
   
@@ -334,12 +379,11 @@ po ← { # parsed options
     ⟩
     args∾↩ 0⊑GetLibs@
     
-    
-    args∾↩ GetOpt "f"
-    args∾↩ allFlags
-    args∾↩ (singeli ∧ arch≡ "x86-64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? "-mssse3"‿"-mavx2" ∊ siCFlags; 0} / "-DSINGELI_SSSE3"‿"-DSINGELI_AVX2"
-    args∾↩ (singeli ∧ arch≡"aarch64") / ⟨"-DSINGELI_NEON"⟩
-    args∾↩ (singeli ∧ ⊑arch<⊸∊"x86-64"‿"aarch64") / ⟨"-DSINGELI_SIMD"⟩
+    args∾↩ minCCFlags
+    args∾↩ ubsan / ⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
+    args∾↩ (singeli ∧ arch≡ "X86_64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? ⟨"-mavx2"⟩ ∊ singeliCFlags; 0} / ⋈"-DSINGELI_AVX2"
+    args∾↩ (singeli ∧ arch≡"AARCH64") / ⟨"-DSINGELI_NEON"⟩
+    args∾↩ (singeli ∧ ⊑arch<⊸∊"X86_64"‿"AARCH64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
     args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DUSE_SETJMP=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
     args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩
@@ -358,13 +402,8 @@ po ← { # parsed options
     args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args∾↩ (          usz≡64) / ⟨"-DUSZ_64"⟩
-    args∾↩ (∨´"slow-pdep"⊸≡¨ has) / ⟨"-DSLOW_PDEP"⟩
-    args∾↩ {
-      native? ⟨"-march=native"⟩;
-      ⟨⟩: ⟨⟩;
-      "Error: Cannot use has=... if Singeli isn't enabled"_assert_⊢ singeli
-      siCFlags
-    } has
+    args∾↩ (⊑"slow-pdep"<⊸∊ has) / ⟨"-DSLOW_PDEP"⟩
+    args∾↩ {native? ⟨"-march=native"⟩; singeliCFlags}
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     args
@@ -694,7 +733,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
   cbqnSrc ↩ cbqnSrc clangd.Files "src"
-  singeliMap ← 1↓¨ ({∨´ (⥊⊑po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
+  singeliMap ← 1↓¨ ({⊑ ({"X86_64":'x'; "AARCH64":'a'; "RV64":'g'; "NONE":'g'} po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
     "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/builtins/compare.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
     "xa."‿"src/builtins/squeeze.c"‿"squeeze", "xa."‿"src/utils/mut.c"‿"copy",
@@ -722,7 +761,7 @@ cachedBin‿linkerCache ← {
   singeliObjs ← @
   singeliCache ← {
     ¬po.singeli? @;
-    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.arch, po.usz, po.has, po.singeliFlags, po.singeliDir⟩⟩
+    singeliCache ← GetCache ⟨"singeli", "Singeli generated code location", ⟨po.native, po.singeliArch, po.arch, po.usz, po.has, po.singeliFlags, po.singeliDir⟩⟩
     
     # genArithTables
     ga ← "src/singeli/src/genArithTables.bqn"
@@ -738,11 +777,11 @@ cachedBin‿linkerCache ← {
     singeliArgs ← ∾⟨
       po.singeliFlags
       ⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩
-      (⊑"slow-pdep"<⊸∊po.has)/⟨"-c", "SLOW_PDEP=1"⟩
+      (⊑"slow-pdep"<⊸∊ po.has) / ⟨"-c", "SLOW_PDEP=1"⟩
       {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
     ⟩
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
-    {𝕊: "Singeli-required C args: "∾•Repr po.siCFlags; @} _verboseLog @
+    {𝕊: "Singeli-determined C arch: "∾•Repr po.singeliCFlags; @} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
     
     singeliCache
