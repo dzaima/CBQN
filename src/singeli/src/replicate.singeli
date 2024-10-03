@@ -2,7 +2,7 @@ include './base'
 include './mask'
 include './spaced'
 
-def ind_types = tup{i8, i16, i32}
+def ind_types = tup{u8, u16, u32}
 def dat_types = tup{...ind_types, u64}
 
 # Indices and Replicate using plus- or max-scan
