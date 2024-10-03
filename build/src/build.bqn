@@ -254,6 +254,7 @@ po ← { # parsed options
   
   allFlags ← GetOpt "CCFLAGS"
   minCCFlags ← allFlags ∾ GetOpt "f"
+  ubsanFlags ← ubsan / ⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
   
   CDefines ← {𝕊: cDefines ↩ (@+10) Split SH ⟨cc⟩ ∾ minCCFlags ∾ ⟨"-dM", "-E", "-"⟩}
   
@@ -380,7 +381,7 @@ po ← { # parsed options
     args∾↩ 0⊑GetLibs@
     
     args∾↩ minCCFlags
-    args∾↩ ubsan / ⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
+    args∾↩ ubsanFlags
     args∾↩ (singeli ∧ arch≡ "X86_64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? ⟨"-mavx2"⟩ ∊ singeliCFlags; 0} / ⋈"-DSINGELI_AVX2"
     args∾↩ (singeli ∧ arch≡"AARCH64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"X86_64"‿"AARCH64") / ⟨"-DSINGELI_SIMD"⟩
@@ -437,6 +438,7 @@ po ← { # parsed options
       ;
         rdynamic ← (¬wasi) ∧ exportSymbols ∧ ¬windows
         bin ↩ {replxx? cxx; cc} DOpt "LD"
+        args∾↩ ubsanFlags
         args∾↩ defLibs / ⟨"-lm"⟩
         args∾↩ ⟨⟩ DOpt "LD_LIBS"
         args∾↩ ((¬GetOpt "NO_LDL") ∧ defLibs ∧ ffi ∧ ¬bsd) / ⟨"-ldl"⟩
