@@ -20,8 +20,7 @@ build/build f='-DALL_R1'              c && ./BQN -p 2+2 || exit
 build/build f='-DALL_R0 -DALL_R1'     c && ./BQN -p 2+2 || exit
 build/build f='-DSFNS_FILLS=0'        c && ./BQN -p 2+2 || exit
 build/build f='-DFORMATTER=0'         c && ./BQN -p 2+2 || exit
-build/build f='-DVMPOS=0'             c && ./BQN -p 2+2 || exit
-build/build f='-DFFI_CHECKS'          c && ./BQN -p 2+2 || exit
+build/build f='-DFFI_CHECKS=0'        c && ./BQN -p 2+2 || exit
 build/build f='-DDONT_FREE'           c && ./BQN -p 2+2 || exit
 build/build f='-DOBJ_COUNTER'         c && ./BQN -p 2+2 || exit
 build/build f='-DNO_RT'               c && ./BQN -p 2+2 || exit
