@@ -191,7 +191,9 @@ def homMask{...vs if length{vs}>1} = {
   def RT = ty_u{max{8,k*n}}
   def sl{...a} = promote{RT, homMask{...slice{vs,...a}}}
   def h = n/2
-  (sl{h} << (h * k)) | sl{0,h}
+  def lo = sl{0,h}
+  def hi = sl{h}
+  (hi << (h*k)) | lo
 }
 def homMask{x if ktup{x}} = homMask{...x}
 
