@@ -177,7 +177,7 @@ NOINLINE Arr* reshape_one(usz nia, B x) {
     NOGC_E;
   }
   #undef FILL
-  return r;
+  return FLV_SET(r, fl_asc|fl_dsc|fl_squoze);
 }
 
 B pair_c1(B t,      B x) { return m_vec1(x); }
