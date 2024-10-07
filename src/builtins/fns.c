@@ -99,10 +99,11 @@ B ud_c1(B t, B x) {
   if (LIKELY(xu<=I8_MAX+1)) {
     if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
     i8* rp; B r = m_i8arrv(&rp, xu);
+    FL_SET(r, fl_asc|fl_squoze);
     NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  return intRange(0, xu);
+  return FL_SET(intRange(0, xu), fl_asc|fl_squoze);
 }
 
 B slash_c2(B t, B w, B x);
