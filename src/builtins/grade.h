@@ -188,7 +188,7 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
 B SORT_C1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
   usz n = *SH(x);
-  if (n <= 1) return x;
+  if (n <= 1 || FL_HAS(x,GRADE_UD(fl_asc,fl_dsc))) return x;
   if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)), 0);
   u8 xe = TI(x,elType);
   B r;
