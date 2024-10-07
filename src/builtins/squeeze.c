@@ -169,10 +169,36 @@ B chr_squeeze(B x) {
   /*when known typed:*/ r_x:   return FL_SET(x, fl_squoze);
 }
 
-B any_squeeze(B x) {
+NOINLINE B int_squeeze_sorted(B x) {
+  usz xia = IA(x);
+  if (xia==0) {
+    already_squoze:;
+    return FL_SET(x, fl_squoze);
+  }
+  SGetU(x);
+  u8 x0e = selfElType_i32(o2iG(GetU(x, 0)));
+  u8 x1e = selfElType_i32(o2iG(GetU(x, xia-1)));
+  u8 xse = x0e>x1e? x0e : x1e;
+  u8 xe = TI(x,elType);
+  if (xe == xse) goto already_squoze;
+  Arr* ra;
+  switch (xse) { default: UD;
+    case el_i16: ra = (Arr*)cpyI16Arr(x); break;
+    case el_i8:  ra = (Arr*)cpyI8Arr (x); break;
+    case el_bit: ra = (Arr*)cpyBitArr(x); break;
+  }
+  return taga(FLV_SET(ra, fl_squoze));
+}
+
+NOINLINE B any_squeeze(B x) {
   assert(isArr(x));
-  if (FL_HAS(x,fl_squoze)) return x;
-  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
+  if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) {
+    if (FL_HAS(x, fl_squoze)) return x;
+    u8 xe = TI(x,elType);
+    if (elInt(xe)) return int_squeeze_sorted(x);
+    // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
+  }
+  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
   B x0 = IGetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);
