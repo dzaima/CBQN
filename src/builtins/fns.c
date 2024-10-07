@@ -199,7 +199,7 @@ B fne_c1(B t, B x) {
   ur xr = RNK(x);
   usz* sh = SH(x);
   usz or = 0;
-  for (i32 i = 0; i < xr; i++) or|= sh[i];
+  NOUNROLL for (i32 i = 0; i < xr; i++) or|= sh[i];
   B r;
   if      (or<=I8_MAX ) { i8*  rp; r = m_i8arrv (&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
   else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
