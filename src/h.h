@@ -600,12 +600,16 @@ enum Flags {
   fl_asc=2, // sorted ascending (non-descending)
   fl_dsc=4, // sorted descending (non-ascending)
 };
+#define FL_GET(X) (v(X)->flags)
+#define FLV_GET(X) ((X)->flags)
 #define FL_SET(X,F)  ({ B    x_ = (X); v(x_)->flags|= (F); x_; })
 #define FLV_SET(X,F) ({ AUTO x_ = (X);    x_->flags|= (F); x_; })
 #define FL_KEEP(X,F)  ({ B    x_ = (X); v(x_)->flags&= (F); x_; })
 #define FLV_KEEP(X,F) ({ AUTO x_ = (X);    x_->flags&= (F); x_; })
 #define FL_HAS(X,F) ((v(X)->flags&(F)) != 0)
 #define FLV_HAS(X,F) (((X)->flags&(F)) != 0)
+#define FL_HAS_ALL(X,F) ((v(X)->flags&(F)) == (F))
+#define FLV_HAS_ALL(X,F) (((X)->flags&(F)) == (F))
 
 // refcount stuff
 static bool reusable(B x) { return v(x)->refc==1; }
