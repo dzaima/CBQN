@@ -847,8 +847,8 @@ B import_c1(B d, B x) {
   B re = o[1];
   B map = IGetU(re, re_map);
   
-  B tag_none    = tag(100000000, C32_TAG);
-  B tag_running = tag(100000001, C32_TAG);
+  B tag_none    = tagu64(100000000, C32_TAG);
+  B tag_running = tagu64(100000001, C32_TAG);
   B prevVal = c2(ns_getC(map, "get"), tag_none, incG(path));
   if (prevVal.u == tag_running.u) thrF("•Import: cyclic import of \"%R\"", path);
   if (prevVal.u != tag_none.u) {
@@ -1744,29 +1744,29 @@ STATIC_GLOBAL Body* file_nsGen;
   F("toutf8", U"•ToUTF8", bi_toUtf8) \
   F("currenterror", U"•CurrentError", bi_currentError) \
   F("hashmap", U"•HashMap", bi_hashMap) \
-  F("math", U"•math", tag(0,VAR_TAG)) \
-  F("rand", U"•rand", tag(1,VAR_TAG)) \
-  F("term", U"•term", tag(2,VAR_TAG)) \
-  F("bit", U"•bit", tag(3,VAR_TAG)) \
-  F("primitives", U"•primitives", tag(4,VAR_TAG)) \
-  F("internal", U"•internal", tag(5,VAR_TAG)) \
-  F("fchars", U"•FChars", tag(6,VAR_TAG)) \
-  F("fbytes", U"•FBytes", tag(7,VAR_TAG)) \
-  F("flines", U"•FLines", tag(8,VAR_TAG)) \
-  F("import", U"•Import", tag(9,VAR_TAG)) \
-  OPTSYS(FFIOPT)(F("ffi", U"•FFI", tag(10,VAR_TAG))) \
-  F("name", U"•name", tag(11,VAR_TAG)) \
-  F("path", U"•path", tag(12,VAR_TAG)) \
-  F("wdpath", U"•wdpath", tag(13,VAR_TAG)) \
-  F("file", U"•file", tag(14,VAR_TAG)) \
-  F("state", U"•state", tag(15,VAR_TAG)) \
-  F("args", U"•args", tag(16,VAR_TAG)) \
-  F("listsys", U"•listsys", tag(17,VAR_TAG)) \
-  OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tag(18,VAR_TAG))) \
-  F("ns", U"•ns", tag(19,VAR_TAG)) \
-  F("platform", U"•platform", tag(20,VAR_TAG)) \
-  F("bqn", U"•BQN", tag(21,VAR_TAG)) \
-  F("rebqn", U"•ReBQN", tag(22,VAR_TAG)) \
+  F("math", U"•math", tagu64(0,VAR_TAG)) \
+  F("rand", U"•rand", tagu64(1,VAR_TAG)) \
+  F("term", U"•term", tagu64(2,VAR_TAG)) \
+  F("bit", U"•bit", tagu64(3,VAR_TAG)) \
+  F("primitives", U"•primitives", tagu64(4,VAR_TAG)) \
+  F("internal", U"•internal", tagu64(5,VAR_TAG)) \
+  F("fchars", U"•FChars", tagu64(6,VAR_TAG)) \
+  F("fbytes", U"•FBytes", tagu64(7,VAR_TAG)) \
+  F("flines", U"•FLines", tagu64(8,VAR_TAG)) \
+  F("import", U"•Import", tagu64(9,VAR_TAG)) \
+  OPTSYS(FFIOPT)(F("ffi", U"•FFI", tagu64(10,VAR_TAG))) \
+  F("name", U"•name", tagu64(11,VAR_TAG)) \
+  F("path", U"•path", tagu64(12,VAR_TAG)) \
+  F("wdpath", U"•wdpath", tagu64(13,VAR_TAG)) \
+  F("file", U"•file", tagu64(14,VAR_TAG)) \
+  F("state", U"•state", tagu64(15,VAR_TAG)) \
+  F("args", U"•args", tagu64(16,VAR_TAG)) \
+  F("listsys", U"•listsys", tagu64(17,VAR_TAG)) \
+  OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tagu64(18,VAR_TAG))) \
+  F("ns", U"•ns", tagu64(19,VAR_TAG)) \
+  F("platform", U"•platform", tagu64(20,VAR_TAG)) \
+  F("bqn", U"•BQN", tagu64(21,VAR_TAG)) \
+  F("rebqn", U"•ReBQN", tagu64(22,VAR_TAG)) \
 /* end of FOR_DEFAULT_SYSVALS */
 
 GLOBAL NFnDesc* ffiloadDesc;

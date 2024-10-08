@@ -198,7 +198,9 @@ static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110............
 #define ftag(X) ((u64)(X) << 48)
 #define ptr2u64(X) ((u64)(uintptr_t)(X))
 #define tagu64(V, T) b((u64)(V) | ftag(T))
-#define tag(V, T) b(ptr2u64(V) | ftag(T))
+#define TOPTR(T,X) ((T*)(uintptr_t)(X))
+#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
+#define tag(V, T) ({ void* tagv_ = (V); b(ptr2u64(tagv_) | ftag(T)); })
 #define taga(V) tag(V,ARR_TAG)
 
 typedef union B {
@@ -410,8 +412,7 @@ extern GLOBAL B thrownMsg;
 void freeThrown(void);
 
 
-#define TOPTR(T,X) ((T*)(uintptr_t)(X))
-#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
+
 #define v(X) c(Value, X)
 #define a(X) c(Arr  , X)
 
