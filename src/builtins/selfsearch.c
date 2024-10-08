@@ -275,7 +275,12 @@ B memberOf_c1(B t, B x) {
       i++;
     }
     allSame:;
-    decG(x);
+    if (v(x)->refc > 1) {
+      FL_SET(x, fl_asc|fl_dsc);
+      incByG(x, -1);
+    } else {
+      decG(x);
+    }
     Arr* r = allZeroes(n);
     bitarrv_ptr((TyArr*) r)[0] = 1;
     return taga(arr_shVec(r));
