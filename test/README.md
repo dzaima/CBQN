@@ -43,6 +43,8 @@ tests:
 
 # flags addable anywhere in code:
   %SLOW # enable only if 'slow' argument present
-  %NDEBUG # disable if 'debug' argument present
-  %NHEAPVERIFY # disable if 'heapverify' argument present
+  %!DEBUG # disable if 'debug' argument present
+  %!HEAPVERIFY # disable if 'heapverify' argument present
+  %!PROPER_FILLS # enable only if has PROPER_FILLS==0
+  %PROPER_FILLS # enable only if has PROPER_FILLS==1
 ```
