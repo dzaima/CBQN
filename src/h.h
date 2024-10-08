@@ -9,12 +9,6 @@
 #ifndef CHECK_VALID
   #define CHECK_VALID 1
 #endif
-#ifndef EACH_FILLS
-  #define EACH_FILLS 0
-#endif
-#ifndef SFNS_FILLS
-  #define SFNS_FILLS 1
-#endif
 #ifndef MM
   #define MM 1
 #endif
@@ -52,12 +46,14 @@
 #ifndef SEMANTIC_CATCH
   #define SEMANTIC_CATCH USE_SETJMP
 #endif
-#if SEMANTIC_CATCH
-  #define PROPER_FILLS (EACH_FILLS & SFNS_FILLS)
-#else
-  #undef EACH_FILLS
-  #define EACH_FILLS 0
-  #define PROPER_FILLS 0
+#ifndef EACH_FILLS
+  #define EACH_FILLS 0 // must stay 0 if !SEMANTIC_CATCH
+#endif
+#ifndef SFNS_FILLS
+  #define SFNS_FILLS 1
+#endif
+#ifndef PROPER_FILLS
+  #define PROPER_FILLS (SEMANTIC_CATCH & EACH_FILLS & SFNS_FILLS)
 #endif
 
 #if ALL_R0 || ALL_R1
