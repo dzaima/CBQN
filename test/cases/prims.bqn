@@ -286,7 +286,7 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 ⊢¨ {a←𝕩 ⋄ 2‿3‿1⥊𝕩} 6⥊<"a"   %% 2‿3‿1⥊<"a"
 ⊢¨ {a←𝕩 ⋄ 2‿3⥊⥊𝕩} 2‿3⥊<"a"  %% 2‿3⥊<"a"
 ⊢¨ 2‿3⥊<"a"                 %% 2‿3⥊<"a"
-%USE tvar ⋄ {•Repr∘𝕩⍟¬⊸! (⊢¨ ≡○(10⊸↑) •internal.PureKeep¨) 𝕩}_tvar¨ ⟨⊔↕2, ⊔↕0, ↕5, ↕0, "hello", ""⟩
+%USE tvar ⋄ {a ← •internal.PureKeep¨_tvar 𝕩 ⋄ b ← ⊢¨_tvar 𝕩 ⋄ a •Repr∘𝕩 {𝔽⍟¬⊸! 𝕨 ≡○(10⊸↑⎊'e') 𝕩}¨ b}¨ ⟨⊔↕2, ⊔↕0, ↕5, ↕0, "hello", ""⟩
 
 # ⊔
 !"⊔: ≠𝕨 must be either ≠𝕩 or one bigger (2≡≠𝕨, 3≡≠𝕩)" % 0‿0⊔↕3
