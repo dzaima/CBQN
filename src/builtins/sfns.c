@@ -718,7 +718,8 @@ B join_c1(B t, B x) {
   ur xr = RNK(x);
   usz xia = IA(x);
   if (xia==0) {
-    B xf = getFillE(x);
+    B xf = getFillR(x);
+    if (noFill(xf)) return x;
     if (isAtm(xf)) {
       decA(xf); decG(x);
       if (!PROPER_FILLS && xr==1) return emptyHVec();
