@@ -335,16 +335,16 @@ static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »
   return mut_fcd(r, x);
 }
 
-static B allBit(bool b, usz n) {
-  return taga(arr_shVec(b ? allOnes(n) : allZeroes(n)));
+static Arr* allBit(bool b, usz n) {
+  return b ? allOnes(n) : allZeroes(n);
 }
 static NOINLINE Arr* match_cells(bool ne, B w, B x, ur wr, ur xr, ur k, usz len) {
   usz* wsh = SH(w);
   if (wr!=xr || (wr>k && !eqShPart(wsh+k, SH(x)+k, wr-k))) {
-    return a(allBit(ne, len));
+    return allBit(ne, len);
   }
   usz csz = shProd(wsh, k, wr);
-  if (csz==0) return a(allBit(!ne, len));
+  if (csz==0) return allBit(!ne, len);
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we>el_c32 || xe>el_c32) return NULL;
@@ -530,7 +530,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         usz l = xsh[k];
         if (l <= 1) {
           usz ia = l*cam;
-          Arr* r = rtid==n_memberOf? allOnes(ia) : allZeroes(ia);
+          Arr* r = allBit(rtid==n_memberOf, ia);
           usz* rsh = arr_shAlloc(r, k+1);
           shcpy(rsh, xsh, k+1);
           decG(x); return taga(r);
