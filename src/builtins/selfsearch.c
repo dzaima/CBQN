@@ -174,7 +174,7 @@ B memberOf_c1(B t, B x) {
   if (sameness == 1) goto allSame;
   if (RARE(sameness == 2)) {
     decG(x);
-    return taga(arr_shVec(allOnes(n)));
+    return taga(arr_shVec(allOnesFl(n)));
   }
   
   if (use_sorted(x, lw)) {
@@ -403,7 +403,7 @@ B find_c1(B, B);
 B indexOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
-  if (n<=1) { zeroRes: decG(x); return n? taga(arr_shVec(allZeroes(n))) : emptyIVec(); }
+  if (n<=1) { zeroRes: decG(x); return n? taga(arr_shVec(allZeroesFl(n))) : emptyIVec(); }
   if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
   
   usz csz = arr_csz(x);

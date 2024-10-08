@@ -417,7 +417,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   B r; Arr* ra;
   
   if (wia==0 | xia==0) {
-    ra = allZeroes(xia);
+    ra = allZeroesFl(xia);
     goto copysh_done;
   }
   if (wia==1) {
@@ -505,12 +505,12 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         w=toI32Any(w); x=toI32Any(x);
         #endif
       } else {
-        ra = GRADE_UD(reshape_one(xia, m_f64(wia)), allZeroes(xia));
+        ra = GRADE_UD(reshape_one(xia, m_f64(wia)), allZeroesFl(xia));
         goto copysh_done;
       }
     } else { // w is character
       if (elNum(xe)) {
-        ra = GRADE_UD(allZeroes(xia), reshape_one(xia, m_f64(wia)));
+        ra = GRADE_UD(allZeroesFl(xia), reshape_one(xia, m_f64(wia)));
         goto copysh_done;
       }
       

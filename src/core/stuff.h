@@ -189,6 +189,8 @@ B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 
 Arr* allZeroes(usz ia); // ia⥊0 with undefined shape; always produces new array
 Arr* allOnes(usz ia); // ia⥊1 with undefined shape; always produces new array
+Arr* allZeroesFl(usz ia); // allZeroes but marked as fl_asc|fl_dsc
+Arr* allOnesFl(usz ia); // allOnes but marked as fl_asc|fl_dsc
 
 Arr* reshape_one(usz nia, B x); // nia⥊<x with undefined shape, with fl_asc, fl_dsc, and fl_squoze set; consumes x
 B i64EachDec(i64 v, B x); // v¨ x; consumes x

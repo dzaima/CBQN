@@ -242,7 +242,7 @@ B find_c2(B t, B w, B x) {
     usz wl = IA(w);
     usz xl = IA(x);
     if (wl > xl) { r = emptyIVec(); goto dec_ret; }
-    if (wl == 0) { r = taga(arr_shVec(allOnes(xl+1))); goto dec_ret; }
+    if (wl == 0) { r = taga(arr_shVec(allOnesFl(xl+1))); goto dec_ret; }
     // Compare elements of w to slices of x
     usz rl = xl - wl + 1; // Result length
     u8* xp = tyany_ptr(x);
@@ -315,7 +315,7 @@ B find_c2(B t, B w, B x) {
         rsh[i] = c;
       }
     }
-    r = taga(arr_shSetUO(allOnes(ia), xr, sh));
+    r = taga(arr_shSetUO(allOnesFl(ia), xr, sh));
     goto dec_ret;
   }
   

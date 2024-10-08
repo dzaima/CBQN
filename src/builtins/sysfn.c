@@ -371,7 +371,7 @@ B rand_range_c2(B t, B w, B x) {
       PLAINLOOP for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
     } else {
       if (max!=1) thrM("(rand).Range: 𝕩 cannot be negative");
-      r = allZeroes(am);
+      r = allZeroesFl(am);
     }
   } else if (max > (1ULL<<31)) {
     if (max >= 1LL<<53) thrM("(rand).Range: 𝕩 must be less than 2⋆53");

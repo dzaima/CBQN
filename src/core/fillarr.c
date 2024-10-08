@@ -5,7 +5,7 @@ B asFill(B x) { // consumes
     u8 xe = TI(x,elType);
     usz ia = IA(x);
     if (elNum(xe)) {
-      B r = taga(arr_shCopy(allZeroes(ia), x));
+      B r = taga(arr_shCopy(allZeroesFl(ia), x));
       decG(x);
       return r;
     }

@@ -33,6 +33,9 @@
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
 NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] = ~0ULL; return r; }
 
+NOINLINE Arr* allZeroesFl(usz ia) { return FLV_SET(allZeroes(ia), fl_asc|fl_dsc|fl_squoze); }
+NOINLINE Arr* allOnesFl  (usz ia) { return FLV_SET(allOnes  (ia), fl_asc|fl_dsc|fl_squoze); }
+
 NOINLINE B bit_sel(B b, B e0, B e1) {
   u8 t0 = selfElType(e0);
   u64* bp = bitany_ptr(b);
