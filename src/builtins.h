@@ -8,9 +8,9 @@
 /*    sfns.c*/A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") A(transp,"⍉") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /*   sysfn.c*/M(iPureKeep,"•internal.PureKeep") \
-/* everything before the definition of •Type is defined to be pure, and everything after is not */ \
+/* everything before the definition of •Type is defined to be pure, and everything after is not */ M(type,"•Type") \
+/*   sysfn.c*/M(decp,"•Decompose") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") \
 /*   sysfn.c*/A(invalidFn, "(invalid fn)") A(grLen,"•GroupLen") D(grOrd,"•GroupOrd") A(compObj, "•CompObj") A(fill,"•FillFn") M(sys,"•getsys") M(primInd,"•PrimInd") M(glyph,"•Glyph") \
-/*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") \
 /*   sysfn.c*/A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(toUtf8,"•ToUTF8") M(currentError,"•CurrentError") D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime")\
 /*   sysfn.c*/M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(exit,"•Exit") M(getLine,"•GetLine") \
 /*   sysfn.c*/D(nGet,"•ns.Get") D(nHas,"•ns.Has") M(nKeys,"•ns.Keys") \
