@@ -114,7 +114,7 @@ static inline uint64_t _wyr4(const uint8_t *p) {
 }
 #endif
 
-#ifdef __BMI2__
+#if __BMI2__ && __x86_64__
 #include <x86intrin.h>
 #endif
 
@@ -122,7 +122,7 @@ static inline uint64_t _wyr4(const uint8_t *p) {
 FORCE_INLINE uint64_t wyhash(const void *key, size_t len, uint64_t seed, const uint64_t *secret){
   const uint8_t *p = (const uint8_t *)key; seed^=*secret; uint64_t a, b;
   if (_likely_(len<=16)) {
-    #ifdef __BMI2__
+    #if __BMI2__ && __x86_64__
       if (len>8) { a = _wyr8(p); b = _bzhi_u64(_wyr8(p+8), (len-8)*8); }
       else       { a = 0;        b = _bzhi_u64(_wyr8(p  ),  len   *8); }
     #else

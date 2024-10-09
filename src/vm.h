@@ -4,7 +4,7 @@
 #endif
 
 #if defined(JIT_ENABLED)? JIT_ENABLED : ( \
-  (defined(__x86_64) || defined(__amd64__)) \
+  defined(__x86_64__) \
   && (__APPLE__ || __MACH__ || __linux__ || __FreeBSD__ || __unix || __unix__) \
   && (defined(__linux__)? defined(MAP_FIXED_NOREPLACE) : 1) \
   && defined(MAP_32BIT) && MM!=0 \

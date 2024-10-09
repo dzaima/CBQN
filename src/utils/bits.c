@@ -25,7 +25,7 @@
   INIT_GLOBAL BitSelFn* bitselFns = bitselFnsRaw;
 #endif
 
-#if defined(__BMI2__) && !SLOW_PDEP
+#if __BMI2__ && __x86_64__ && !SLOW_PDEP
   #define FAST_PDEP 1
   #include <immintrin.h>
 #endif

@@ -40,7 +40,7 @@
 #include "../builtins.h"
 #include "../utils/calls.h"
 
-#ifdef __BMI2__
+#if __BMI2__ && __x86_64__
   #if !SLOW_PDEP
     #define FAST_PDEP 1
   #endif
@@ -198,7 +198,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
       Arr* x1o = TI(x,slice)(incG(x),w,w);
       interleave_bits(rp, bitany_ptr(x), bitanyv_ptr(x1o), ia);
       mm_free((Value*)x1o);
-    #ifdef __BMI2__
+    #if __BMI2__ && __x86_64__
     } else if (w==2) {
       u64* xp = bitany_ptr(x);
       u64* r0; r=m_bitarrp(&r0, ia);
