@@ -53,7 +53,7 @@ B decp_c1(B t, B x) {
 
 B primInd_c1(B t, B x) {
   if (!isVal(x)) return m_i32(RT_LEN);
-  if (isPrim(x)) { B r = m_i32(v(x)->flags-1); dec(x); return r; }
+  if (isPrim(x)) { B r = m_i32(RTID(x)); dec(x); return r; }
   dec(x);
   return m_i32(RT_LEN);
 }
@@ -68,7 +68,7 @@ B glyph_c1(B t, B x) {
     x = rtWrap_unwrap(x);
   #endif
   if (isPrim(x)) {
-    B r = m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[v(x)->flags-1]);
+    B r = m_c32(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"[RTID(x)]);
     decG(x);
     return r;
   }

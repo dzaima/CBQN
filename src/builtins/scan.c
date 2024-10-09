@@ -243,8 +243,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     return withFill(mut_fcd(rm, x), xf);
   }
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_rtack) return x;
     if (rtid==n_ltack) {
       usz csz = arr_csz(x);
@@ -318,8 +318,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     return withFill(mut_fcd(rm, x), xf);
   }
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
     if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;

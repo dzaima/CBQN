@@ -459,7 +459,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k); // from k>0 this will always include at least one item of shape; therefore, cam≡0 → IA(x)≡0 and IA(x)≢0 → cam≢0
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch(rtid) {
       case n_ltack: case n_rtack:
         return x;
@@ -541,13 +541,13 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
     
     if (TY(f) == t_md1D) {
       Md1D* fd = c(Md1D,f);
-      u8 rtid = fd->m1->flags-1;
+      u8 rtid = PRTID(fd->m1);
       switch(rtid) {
         case n_const: f=fd->f; goto const_f;
         case n_cell: cr-= cr>0; return for_cells_c1(fd->f, xr, cr, xr-cr, x, U'˘');
         case n_fold: if (cr != 1) break; // else fall through
         case n_insert: if (cr>0 && isFun(fd->f)) {
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_join && rtid==n_insert) return insert_cells_join(x, xsh, cr, k);
           usz m = xsh[k];
           if (m==0) return insert_cells_identity(x, fd->f, xsh, xr, k, rtid);
@@ -581,7 +581,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           usz m = xsh[k];
           if (m<=1 || IA(x)==0) return x;
           if (!isFun(fd->f)) break;
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_rtack) return x;
           if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
               && 1==shProd(xsh, k+1, xr)) {
@@ -590,7 +590,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           break;
         }
         case n_undo: if (isFun(fd->f)) {
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_couple && cr!=0 && xsh[k]==1) {
             assert(xr>=2);
             if (xr==2) return C1(shape, x);
@@ -604,7 +604,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       }
     } else if (TY(f) == t_md2D) {
       Md2D* fd = c(Md2D,f);
-      u8 rtid = fd->m2->flags-1;
+      u8 rtid = PRTID(fd->m2);
       if (rtid==n_before && !isCallable(fd->f)) return for_cells_SA(fd->g, inc(fd->f), x, cr, xr, chr);
       if (rtid==n_after  && !isCallable(fd->g)) return for_cells_AS(fd->f, x, inc(fd->g), cr, xr, chr);
     }
@@ -707,7 +707,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch (rtid) {
       case n_ltack: dec(x); return w;
       case n_rtack: return const_cells(w, wk, wsh, x, chr);
@@ -739,7 +739,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch(rtid) {
       case n_rtack: dec(w); return x;
       case n_ltack: return const_cells(x, xk, xsh, w, chr);
@@ -859,7 +859,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
   
   if (isFun(f)) {
     if (wk==xk) {
-      u8 rtid = v(f)->flags-1;
+      u8 rtid = RTID(f);
       if (rtid==n_rtack) { decG(w); return x; }
       if (rtid==n_ltack) { decG(x); return w; }
       if (rtid==n_feq || rtid==n_fne) {

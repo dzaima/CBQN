@@ -228,7 +228,7 @@ B shape_c2(B t, B w, B x) {
         if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
         unkPos = i;
         if (!isPrim(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-        unkInd = ((i32)v(c)->flags) - 1;
+        unkInd = RTID(c);
         good|= xia==0 | unkInd==n_floor;
       }
     }

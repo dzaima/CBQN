@@ -424,6 +424,9 @@ void freeThrown(void);
 #define TY(X)  PTY(v(X))
 #define RNK(X) PRNK(v(X))
 
+#define RTID_NONE -1
+#define PRTID(X) ((X)->flags-1)
+#define RTID(X) PRTID(v(X))
 #define NID(X) ((X)->extra)
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
@@ -454,7 +457,7 @@ FORCE_INLINE bool isNum(B x) { return isF64(x); }
 
 FORCE_INLINE bool isAtm(B x) { return !isArr(x); }
 FORCE_INLINE bool isCallable(B x) { return isMd(x) | isFun(x); }
-FORCE_INLINE bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
+FORCE_INLINE bool isPrim(B x) { return isCallable(x) && RTID(x)!=RTID_NONE; }
 
 
 // make objects

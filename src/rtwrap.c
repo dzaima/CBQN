@@ -209,7 +209,7 @@ B rtWrap_wrap(B t, bool nnbi) {
   #endif
   if (isFun(t)) {
     #if RT_VERIFY
-      if(v(t)->flags==0) return t;
+      if(RTID(t) == RTID_NONE) return t;
     #endif
     WFun* r = mm_alloc(sizeof(WFun), t_funWrap);
     r->extra = v(t)->extra;
@@ -220,7 +220,7 @@ B rtWrap_wrap(B t, bool nnbi) {
     r->prev = lastWF;
     lastWF = r;
     #if RT_VERIFY
-      r->r1 = r1Objs[v(t)->flags-1];
+      r->r1 = r1Objs[RTID(t)];
     #elif RT_PERF
       r->c1t = 0; r->c1a = 0;
       r->c2t = 0; r->c2a = 0;
@@ -242,12 +242,11 @@ B rtWrap_wrap(B t, bool nnbi) {
       return tag(r,MD1_TAG);
     }
     if (isMd2(t)) {
-      Md2* fc = c(Md2,t);
       WMd2* r = mm_alloc(sizeof(WMd2), t_md2Wrap);
+      r->extra = v(t)->extra;
+      r->flags = v(t)->flags;
       r->c1 = wm2_c1;
       r->c2 = wm2_c2;
-      r->extra = fc->extra;
-      r->flags = fc->flags;
       r->v = t;
       r->prev = lastWM2;
       lastWM2 = r;

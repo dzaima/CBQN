@@ -986,7 +986,7 @@ B slash_ucw(B t, B o, B w, B x) {
     if (xe==el_B) goto notConstEach;
     
     Md1D* od = c(Md1D,o);
-    if (od->m1->flags-1 != n_each) goto notConstEach;
+    if (PRTID(od->m1) != n_each) goto notConstEach;
     B f = od->f;
     B c;
     if (!toConstant(f, &c)) goto notConstEach;

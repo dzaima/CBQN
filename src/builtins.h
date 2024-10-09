@@ -82,15 +82,15 @@ static inline bool isImpureBuiltin(B x) {
 }
 
 // these assume x is a function
-static inline bool isPervasiveDy (B x) { return (u8)(v(x)->flags-1) <= n_ge; }
-static inline bool isPervasiveMon(B x) { return (u8)(v(x)->flags-1) <= n_stile; }
+static inline bool isPervasiveDy (B x) { return (u8)RTID(x) <= n_ge; }
+static inline bool isPervasiveMon(B x) { return (u8)RTID(x) <= n_stile; }
 
 static bool isPervasiveDyExt(B x) {
   assert(isFun(x));
   if (isPervasiveDy(x)) return true;
   if (TY(x)==t_md1D) {
     Md1D* d = c(Md1D, x);
-    if (d->m1->flags-1 == n_swap && isFun(d->f)) return isPervasiveDy(d->f);
+    if (PRTID(d->m1) == n_swap && isFun(d->f)) return isPervasiveDy(d->f);
   }
   return false;
 }
@@ -100,7 +100,7 @@ static bool toConstant(B x, B* out) { // doesn't consume x; if possible, writes 
   if (TY(x) == t_md1D) {
     Md1D* d = c(Md1D,x);
     Md1* m1 = d->m1;
-    if (PTY(m1)==t_md1BI && m1->flags-1 == n_const) { *out = inc(d->f); return true; }
+    if (PTY(m1)==t_md1BI && PRTID(m1) == n_const) { *out = inc(d->f); return true; }
   }
   return false;
 }

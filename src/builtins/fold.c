@@ -202,8 +202,8 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
   }
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_ltack) return TO_GET(x, 0);
     if (rtid==n_rtack) return TO_GET(x, ia-1);
     if (xe>el_f64) goto base;
@@ -274,8 +274,8 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_ltack) {
       dec(w);
       return TO_GET(x, 0);
@@ -399,7 +399,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
           shcpy(rsh, xsh+1, xr-1);
         }
         decG(x); return taga(r);
-      } else if (v(f)->flags == n_join+1) {
+      } else if (RTID(f) == n_join) {
         if (xr <= 1) thrM("˝: Identity does not exist");
         goto join;
       }
@@ -421,8 +421,8 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       return r;
     }
   }
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_ltack) return C1(select, x);
     if (rtid==n_rtack) return C2(select, m_f64(-1), x);
     if (rtid==n_join) { join:;
@@ -470,8 +470,8 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
     return r;
     skip:;
   }
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_ltack) { dec(w); return C1(select, x); }
     if (rtid==n_rtack) { decG(x); return w; }
   }
@@ -619,8 +619,8 @@ B sum_rows_bit(B x, usz n, usz m) {
 // Return a vector regardless of argument shape, or bi_N if not handled
 B fold_rows_bit(Md1D* fd, B x, usz n, usz m) {
   assert(isArr(x) && TI(x,elType)==el_bit && IA(x)==n*m);
-  if (!v(fd->f)->flags) return bi_N;
-  u8 rtid = v(fd->f)->flags-1;
+  if (RTID(fd->f) == RTID_NONE) return bi_N;
+  u8 rtid = RTID(fd->f);
   if (rtid==n_add) return sum_rows_bit(x, n, m);
   #if SINGELI
   bool is_or = rtid==n_or |rtid==n_ceil;

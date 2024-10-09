@@ -42,7 +42,7 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   
   if (isAtm(x)) r = m_hunit(c1(f, x));
   else if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
       if (EACH_FILLS) dec(xf);
       return TI(x,arrD1) || IA(x)==0? x : any_squeeze(EACH_FILLS? x : withFill(x, bi_noFill));
@@ -83,11 +83,11 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     Arr* ra = mut_fp(rm);
     rsh = arr_shAlloc(ra, rr);
     r = taga(ra);
-  } else if (v(f)->flags-1 == n_ltack) {
+  } else if (RTID(f) == n_ltack) {
     Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
     r = C2(slash, m_i32(xia), taga(wd));
     goto arith_finish;
-  } else if (v(f)->flags-1 == n_rtack) {
+  } else if (RTID(f) == n_rtack) {
     r = C2(shape, m_f64(ria), incG(x));
     goto arith_finish;
   } else if (TI(w,arrD1) && isPervasiveDyExt(f)) {
