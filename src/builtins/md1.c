@@ -169,7 +169,7 @@ B timed_c1(Md1D* d, B x) { B f = d->f;
   return m_f64((ens-sns)*1e-9);
 }
 
-static void print_md1BI(FILE* f, B x) { fprintf(f, "%s", pm1_repr(c(Md1,x)->extra)); }
+static void print_md1BI(FILE* f, B x) { fprintf(f, "%s", pm1_repr(NID(c(BMd1,x)))); }
 static B md1BI_im(Md1D* d,      B x) { return ((BMd1*)d->m1)->im(d,    x); }
 static B md1BI_iw(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->iw(d, w, x); }
 static B md1BI_ix(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->ix(d, w, x); }

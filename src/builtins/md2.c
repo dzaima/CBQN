@@ -243,7 +243,7 @@ B depth_c2(Md2D* d, B w, B x) {
 }
 
 
-static void print_md2BI(FILE* f, B x) { fprintf(f, "%s", pm2_repr(c(Md1,x)->extra)); }
+static void print_md2BI(FILE* f, B x) { fprintf(f, "%s", pm2_repr(NID(c(BMd2,x)))); }
 static B md2BI_im(Md2D* d,      B x) { return ((BMd2*)d->m2)->im(d,    x); }
 static B md2BI_iw(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->iw(d, w, x); }
 static B md2BI_ix(Md2D* d, B w, B x) { return ((BMd2*)d->m2)->ix(d, w, x); }

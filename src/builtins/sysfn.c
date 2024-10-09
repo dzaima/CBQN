@@ -73,9 +73,9 @@ B glyph_c1(B t, B x) {
     return r;
   }
   u8 ty = TY(x);
-  if (ty==t_funBI) { B r = utf8Decode0(pfn_repr(c(Fun,x)->extra)); decG(x); return r; }
-  if (ty==t_md1BI) { B r = utf8Decode0(pm1_repr(c(Md1,x)->extra)); decG(x); return r; }
-  if (ty==t_md2BI) { B r = utf8Decode0(pm2_repr(c(Md2,x)->extra)); decG(x); return r; }
+  if (ty==t_funBI) { B r = utf8Decode0(pfn_repr(NID(c(BFn, x)))); decG(x); return r; }
+  if (ty==t_md1BI) { B r = utf8Decode0(pm1_repr(NID(c(BMd1,x)))); decG(x); return r; }
+  if (ty==t_md2BI) { B r = utf8Decode0(pm2_repr(NID(c(BMd2,x)))); decG(x); return r; }
   if (ty==t_nfn) { B r = nfn_name(x); decG(x); return r; }
   if (ty==t_funBl) { decG(x); return m_c8vec_0("(function block)"); }
   if (ty==t_md1Bl) { decG(x); return m_c8vec_0("(1-modifier block)"); }

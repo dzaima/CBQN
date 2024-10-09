@@ -75,9 +75,9 @@ static const i32 firstImpurePM1 = pm1_timed;
 static const i32 firstImpurePM2 = pm2_while;
 
 static inline bool isImpureBuiltin(B x) {
-  if (isFun(x)) return !v(x)->extra || v(x)->extra>=firstImpurePFN;
-  if (isMd1(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM1;
-  if (isMd2(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM2;
+  if (isFun(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePFN; }
+  if (isMd1(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePM1; }
+  if (isMd2(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePM2; }
   return false;
 }
 

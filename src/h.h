@@ -424,6 +424,8 @@ void freeThrown(void);
 #define TY(X)  PTY(v(X))
 #define RNK(X) PRNK(v(X))
 
+#define NID(X) ((X)->extra)
+
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 
 #if DEBUG

@@ -385,7 +385,7 @@ B tack_uc1(B t, B o, B x) {
 void fun_gcFn(void) {
   if (globalNames!=NULL) mm_visitP(globalNames);
 }
-static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extra)); }
+static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(NID(c(BFn,x)))); }
 static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }
