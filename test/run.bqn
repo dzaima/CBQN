@@ -42,6 +42,7 @@ o ← {
   
   pr ← {⟨P⇐Properties⟩: @P@; 32‿0} •internal
   properFills ⇐ 1⊑pr
+  usz ⇐ ⊑pr
   noerr∨↩ heapverify
   update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args
@@ -100,6 +101,7 @@ Run ← { 𝕊 testname:
         enabled∧↩ ¬ o.debug ∧ Flag "%!DEBUG"
         enabled∧↩ ¬ o.heapverify ∧ Flag "%!HEAPVERIFY"
         enabled∧↩ {0‿0: 1; 1‿0: o.properfills; 0‿1: ¬o.properfills} Flag¨ "%PROPER_FILLS"‿"%!PROPER_FILLS"
+        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%USZ64"
         
         ln ⇐ i-1
         str ⇐ str # at end to let Flag have updated it
