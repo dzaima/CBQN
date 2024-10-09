@@ -834,9 +834,9 @@ void base_init() { // very first init function
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
   TIi(t_talloc,visit) = noop_visit;
-  TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
-  TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
-  TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
+  TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
+  TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = TIi(t_funBI,freeO) = builtin_free;
+  TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = TIi(t_funBI,freeF) = builtin_free;
   TIi(t_funBI,visit) = funBI_visit;
   TIi(t_hashmap,visit) = noop_visit;
   TIi(t_customObj,freeO) = customObj_freeO;
