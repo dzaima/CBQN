@@ -288,7 +288,6 @@ B def_fn_is(B t,      B x);
 B def_fn_im(B t,      B x);  B def_m1_im(Md1D* d,      B x);  B def_m2_im(Md2D* d,      B x);
 B def_fn_iw(B t, B w, B x);  B def_m1_iw(Md1D* d, B w, B x);  B def_m2_iw(Md2D* d, B w, B x);
 B def_fn_ix(B t, B w, B x);  B def_m1_ix(Md1D* d, B w, B x);  B def_m2_ix(Md2D* d, B w, B x);
-B def_decompose(B x);
 
 void noop_visit(Value* x);
 #if HEAP_VERIFY

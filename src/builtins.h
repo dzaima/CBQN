@@ -74,13 +74,6 @@ static const i32 firstImpurePFN = pf_type;
 static const i32 firstImpurePM1 = pm1_timed;
 static const i32 firstImpurePM2 = pm2_while;
 
-static inline bool isImpureBuiltin(B x) {
-  if (isFun(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePFN; }
-  if (isMd1(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePM1; }
-  if (isMd2(x)) { u8 nid = NID(v(x)); return nid==0 || nid>=firstImpurePM2; }
-  return false;
-}
-
 // these assume x is a function
 static inline bool isPervasiveDy (B x) { return (u8)RTID(x) <= n_ge; }
 static inline bool isPervasiveMon(B x) { return (u8)RTID(x) <= n_stile; }

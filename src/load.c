@@ -686,6 +686,12 @@ static void def_visit(Value* x) { fatal("undefined visit for object\n"); }
 static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
+static NOINLINE B makeDecompose(i32 i, B x) { return m_hvec2(m_i32(i), x); }
+static B def_decompose(B x) { assert(!isCallable(x)); return makeDecompose(-1, x); }
+static B funBI_decompose(B x) { return makeDecompose(NID(c(BFn, x))>=firstImpurePFN? 1 : 0, x); }
+static B md1BI_decompose(B x) { return makeDecompose(NID(c(BMd1,x))>=firstImpurePM1? 1 : 0, x); }
+static B md2BI_decompose(B x) { return makeDecompose(NID(c(BMd2,x))>=firstImpurePM2? 1 : 0, x); }
+B block_decompose(B x) { return makeDecompose(1, x); }
 static B def_get(Arr* x, usz n) { fatal("def_get"); }
 static B def_getU(Arr* x, usz n) { fatal("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
@@ -834,10 +840,15 @@ void base_init() { // very first init function
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
   TIi(t_talloc,visit) = noop_visit;
+  
   TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = TIi(t_funBI,freeO) = builtin_free;
   TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = TIi(t_funBI,freeF) = builtin_free;
   TIi(t_funBI,visit) = funBI_visit;
+  TIi(t_funBI,decompose) = funBI_decompose;
+  TIi(t_md1BI,decompose) = md1BI_decompose;
+  TIi(t_md2BI,decompose) = md2BI_decompose;
+  
   TIi(t_hashmap,visit) = noop_visit;
   TIi(t_customObj,freeO) = customObj_freeO;
   TIi(t_customObj,freeF) = customObj_freeF;

@@ -56,7 +56,6 @@ NOINLINE i32 compareF(B w, B x) {
 NOINLINE bool atomEqualF(B w, B x) {
   if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
-  if (dcf == def_decompose) return false;
   B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
@@ -75,7 +74,6 @@ bool atomEEqual(B w, B x) { // doesn't consume
   if (!isVal(w) | !isVal(x)) return false;
   if (TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
-  if (dcf == def_decompose) return false;
   B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
   if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }

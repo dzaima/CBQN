@@ -87,9 +87,6 @@ B def_m1_uc1(Md1* t, B o, B f,           B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_T
 B def_m1_ucw(Md1* t, B o, B f,      B w, B x) { B t2 = m1_d(tag(ptr_inc(t),MD1_TAG),inc(f)       ); B r = rtUnder_cw(o, t2, w, x); decG(t2); return r; }
 B def_m2_uc1(Md2* t, B o, B f, B g,      B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_c1(o, t2,    x); decG(t2); return r; }
 B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x) { B t2 = m2_d(tag(ptr_inc(t),MD2_TAG),inc(f),inc(g)); B r = rtUnder_cw(o, t2, w, x); decG(t2); return r; }
-B def_decompose(B x) {
-  return m_hvec2(m_i32(isCallable(x)? (isImpureBuiltin(x)? 1 : 0) : -1),x);
-}
 
 GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 
