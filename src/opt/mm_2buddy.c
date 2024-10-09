@@ -39,7 +39,7 @@ GLOBAL EmptyValue* mm_buckets[128];
 #undef BSZ
 #undef ALLOC_MODE
 
-NOINLINE void* mm_allocS(i64 bucket, u8 type) {
+NOINLINE void* mm_allocS(ux bucket, u8 type) {
   return bucket&64? b3_allocS(bucket, type) : b1_allocS(bucket, type);
 }
 

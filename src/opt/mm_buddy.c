@@ -52,7 +52,7 @@ static void tailVerifyInit(void* ptr, u64 filled, u64 end, u64 allocEnd) {
   ITER_TAIL(F)
   #undef F
 }
-void tailVerifyAlloc(void* ptr, u64 filled, i64 logAlloc, u8 type) {
+void tailVerifyAlloc(void* ptr, u64 filled, ux logAlloc, u8 type) {
   u64 end = 1ULL<<logAlloc;
   tailVerifyInit(ptr, sizeof(Value), end, end); // `sizeof(Value)` instead of `filled` to permit, without reinit, decreasing used size without having written anything to the space
   if (type==t_talloc) ((u64*)((u8*)ptr + end - 8))[0] = filled-8; // -8 because TALLOCP does a +8
