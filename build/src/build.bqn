@@ -1,5 +1,4 @@
 t0g ← •MonoTime@
-#!build/obj2/for_build
 # todo:
 #   forcing bytecode/singeli/replxx directories to whatever's applicable
 #   cache warning messages
