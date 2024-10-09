@@ -39,7 +39,9 @@ o ← {
   heapverify ⇐ ∨´i=6
   debug      ⇐ ∨´i=7
   noCatch    ⇐ ∨´i=8
-  properFills ⇐ {noerr? 0; 1 0∘↑⎊1 ⟨⟩}
+  
+  pr ← {⟨P⇐Properties⟩: @P@; 32‿0} •internal
+  properFills ⇐ 1⊑pr
   noerr∨↩ heapverify
   update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args

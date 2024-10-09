@@ -383,6 +383,15 @@ B iHasFill_c1(B t, B x) {
 B iPureKeep_c1(B t, B x) { return x; }
 B iKeep_c1(B t, B x) { return x; }
 
+B iProperties_c2(B t, B w, B x) {
+  if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("•internal.Properties: bad arg");
+  i32* rp;
+  B r = m_i32arrv(&rp, 2);
+  rp[0] = sizeof(usz)*8;
+  rp[1] = PROPER_FILLS;
+  return r;
+}
+
 B unshare_c1(B t, B x) {
   if (!isArr(x)) thrM("•internal.Unshare: Argument must be an array");
   B r = unshare(x);
@@ -404,8 +413,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties));
     #undef F
     gc_add(internalNS);
   }
