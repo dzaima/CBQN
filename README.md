@@ -56,7 +56,7 @@ For native builds, targeted extensions are determined by `/proc/cpuinfo` (or `sy
 - `REPLXX=0` - disable REPLXX
 - `singeli=0` - disable usage of Singeli
 - `FFI=0` - disable `•FFI`, thus not depending on libffi
-- `usz=64` - support arrays with length over 2<sup>32</sup>
+- `usz=32` - use 32-bit integers for array lengths (default is 64-bit)
 <!-- separator -->
 - `f=...` - add extra C compiler flags for CBQN file compilation
 - `lf=...` - add extra linking flags (`LDFLAGS` is a synonym)

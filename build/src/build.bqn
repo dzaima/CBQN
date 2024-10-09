@@ -59,7 +59,7 @@ opts ← ⟨
   ⟨1, "singeli",   0, "Enable Singeli usage"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨0, "usz", "32", "Size of array length fields in bits; 32 or 64 (default: 32)"⟩
+  ⟨0, "usz", "64", "Size of array length fields in bits; 32 or 64 (default: 64)"⟩
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
   ⟨1, "native", @, "Use '-march=native'"⟩
