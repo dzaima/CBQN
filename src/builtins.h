@@ -55,13 +55,6 @@ enum PrimNumbers {
 };
 extern GLOBAL FC1 rt_invFnRegFn, rt_invFnSwapFn;
 
-
-#ifdef RT_WRAP
-#define Q_BI(X, T) ({ B x_ = (X); isFun(x_) && v(x_)->flags-1 == n_##T; })
-#else
-#define Q_BI(X, T) ((X).u == bi_##T.u)
-#endif
-
 enum PrimFns { pf_none,
   #define F(N,X) pf_##N,
   FOR_PFN(F,F,F)
