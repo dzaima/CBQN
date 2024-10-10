@@ -757,11 +757,11 @@ void def_fallbackTriv(Value* v) { // used while vtables aren't yet fully loaded;
   TIv(v,freeF)(v);
 }
 
-static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
+static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 nid) {
   BFn* f = mm_alloc(sizeof(BFn), t_funBI);
   f->c1 = c1;
   f->c2 = c2;
-  f->extra = id;
+  f->nid = nid;
   f->ident = bi_N;
   f->uc1 = def_fn_uc1;
   f->ucw = def_fn_ucw;
@@ -774,11 +774,11 @@ static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
   B r = tag(f,FUN_TAG); gc_add(r);
   return r;
 }
-static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 id) {
+static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 nid) {
   BMd1* m = mm_alloc(sizeof(BMd1), t_md1BI);
   m->c1 = c1;
   m->c2 = c2;
-  m->extra = id;
+  m->nid = nid;
   m->im = def_m1_im;
   m->iw = def_m1_iw;
   m->ix = def_m1_ix;
@@ -786,11 +786,11 @@ static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 id) {
   return r;
 }
 
-static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 id) {
+static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 nid) {
   BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI);
   m->c1 = c1;
   m->c2 = c2;
-  m->extra = id;
+  m->nid = nid;
   m->im = def_m2_im;
   m->iw = def_m2_iw;
   m->ix = def_m2_ix;

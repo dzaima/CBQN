@@ -427,7 +427,7 @@ void freeThrown(void);
 #define RTID_NONE -1
 #define PRTID(X) ((X)->flags-1)
 #define RTID(X) PRTID(v(X))
-#define NID(X) ((X)->extra)
+#define NID(X) ((X)->nid)
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 

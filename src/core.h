@@ -32,6 +32,7 @@
 
 typedef struct BFn {
   struct Fun;
+  u8 nid;
   B ident;
   FC2 uc1;
   BBBB2B ucw;
@@ -41,6 +42,7 @@ typedef struct BFn {
 } BFn;
 typedef struct BMd1 {
   struct Md1;
+  u8 nid;
   D1C1 im;
   D1C2 iw;
   D1C2 ix;
@@ -48,6 +50,7 @@ typedef struct BMd1 {
 
 typedef struct BMd2 {
   struct Md2;
+  u8 nid;
   D2C1 im;
   D2C2 iw;
   D2C2 ix;
