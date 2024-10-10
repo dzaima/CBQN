@@ -42,5 +42,6 @@ void nfn_init(void) {
   TIi(t_nfn,visit) = nfn_visit; TIi(t_nfnDesc,visit) = nfnDesc_visit;
   TIi(t_nfn,print) = nfn_print; TIi(t_nfnDesc,print) = nfnDesc_print;
   TIi(t_nfn,decompose) = block_decompose;
+  TIi(t_nfn,byRef) = true;
   gc_add_ref(&nfn_list);
 }

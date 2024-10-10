@@ -580,6 +580,7 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(B2B, decompose) /* consumes; must return a HArr */ \
   F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
   F(bool, arrD1) /* is always an array with depth 1 */ \
+  F(bool, byRef) /* is always compared by reference */ \
 
 #define F(TY,N) extern GLOBAL TY ti_##N[t_COUNT];
   FOR_TI(F)

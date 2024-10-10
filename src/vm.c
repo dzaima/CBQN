@@ -1271,9 +1271,13 @@ void comp_init(void) {
   TIi(t_fldAlias,freeO) = alias_freeO; TIi(t_fldAlias,freeF) = alias_freeF; TIi(t_fldAlias,visit) = alias_visit; TIi(t_fldAlias,print) = alias_print;
   TIi(t_vfyObj  ,freeO) = wrobj_freeO; TIi(t_vfyObj  ,freeF) = wrobj_freeF; TIi(t_vfyObj  ,visit) = wrobj_visit; TIi(t_vfyObj  ,print) = vfymO_print;
   TIi(t_arrMerge,freeO) = wrobj_freeO; TIi(t_arrMerge,freeF) = wrobj_freeF; TIi(t_arrMerge,visit) = wrobj_visit; TIi(t_arrMerge,print) = marrO_print;
-  TIi(t_funBl   ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print; TIi(t_funBl,decompose) = block_decompose;
-  TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
-  TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
+  TIi(t_funBl   ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print;
+  TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print;
+  TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print;
+  
+  TIi(t_funBl,decompose) = block_decompose; TIi(t_funBl,byRef) = true;
+  TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,byRef) = true; TIi(t_md1Bl,m1_d)=md1Bl_d;
+  TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,byRef) = true; TIi(t_md2Bl,m2_d)=md2Bl_d;
   
   TIi(t_funBl,fn_uc1) = funBl_uc1;
   TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;

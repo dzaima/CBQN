@@ -828,6 +828,7 @@ void base_init() { // very first init function
     TIi(i,fn_is) = def_fn_is;
     TIi(i,fn_iw) = def_fn_iw; TIi(i,m1_iw) = def_m1_iw; TIi(i,m2_iw) = def_m2_iw;
     TIi(i,fn_ix) = def_fn_ix; TIi(i,m1_ix) = def_m1_ix; TIi(i,m2_ix) = def_m2_ix;
+    TIi(i,byRef) = false;
   }
   TIi(t_empty,freeO) = empty_free; TIi(t_invalid,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
   TIi(t_empty,freeF) = empty_free; TIi(t_invalid,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
@@ -844,6 +845,7 @@ void base_init() { // very first init function
   TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = TIi(t_funBI,freeO) = builtin_free;
   TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = TIi(t_funBI,freeF) = builtin_free;
+  TIi(t_md1BI,byRef) = TIi(t_md2BI,byRef) = TIi(t_funBI,byRef) = true;
   TIi(t_funBI,visit) = funBI_visit;
   TIi(t_funBI,decompose) = funBI_decompose;
   TIi(t_md1BI,decompose) = md1BI_decompose;

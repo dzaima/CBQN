@@ -54,7 +54,7 @@ NOINLINE i32 compareF(B w, B x) {
 }
 
 NOINLINE bool atomEqualF(B w, B x) {
-  if (TY(w)!=TY(x)) return false;
+  if (TY(w)!=TY(x) || TI(w,byRef)) return false;
   B2B dcf = TI(w,decompose);
   B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
@@ -72,7 +72,7 @@ bool atomEEqual(B w, B x) { // doesn't consume
     if (isF64(w)&isF64(x)) return w.f==x.f;
   #endif
   if (!isVal(w) | !isVal(x)) return false;
-  if (TY(w)!=TY(x)) return false;
+  if (TY(w)!=TY(x) || TI(w,byRef)) return false;
   B2B dcf = TI(w,decompose);
   B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
   B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
