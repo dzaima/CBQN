@@ -1,9 +1,9 @@
 #include "core.h"
+#if RT_WRAP
 #include "vm.h"
-#if RT_PERF
 #include "builtins.h"
-#endif
 #include "utils/time.h"
+#endif
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
 
@@ -209,7 +209,9 @@ B rtWrap_wrap(B t, bool nnbi) {
   #endif
   if (isFun(t)) {
     #if RT_VERIFY
-      if(RTID(t) == RTID_NONE) return t;
+      if (RTID(t) == RTID_NONE) return t;
+      u8 rtid = RTID(t);
+      if (rtid==n_stile || rtid==n_floor || rtid==n_ceil || rtid==n_lt || rtid==n_gt) return t;
     #endif
     WFun* r = mm_alloc(sizeof(WFun), t_funWrap);
     r->extra = v(t)->extra;
