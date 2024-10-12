@@ -47,7 +47,7 @@ def make_scan_idem{T, op, up} = {
     def w=width{T}; def c = k/w
     def merger{a,b} = if (up) merge{a,b} else merge{b,a}
     def id = make{V, merger{c**get_id{op,T}, (width{V}/w-c)**0}}
-    (if (up) shl else shr){[16]u8, v, k/8} | id
+    (if (up) vec_shift_right_128 else vec_shift_left_128){v, c} | id
   }
   def shb{v, k if hasarch{'SSSE3'}} = sel8{v, shift{k/8,16}}
   def shb{v, k if k>=32} = vec_shuffle{[4]u32, v, shift{k/32,4}}
