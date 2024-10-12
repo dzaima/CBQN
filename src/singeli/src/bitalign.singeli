@@ -2,7 +2,7 @@ def xrange{s, e} = s + range{e-s}
 def __shl{(u64)}{a:T, b} = T~~(re_el{u64,a}<<b)
 def __shr{(u64)}{a:T, b} = T~~(re_el{u64,a}>>b)
 
-def shuf_imm = shuf
+def shuf_imm = vec_shuffle
 def shuf_impl{rw, ...iw, data} = assert{0, 'shuffling failed', ...data{'info'}}
 
 def type0{vs} = type{select{vs,0}}
@@ -56,7 +56,7 @@ local def perm_split{x:X, lanes, chunks} = {
     def si0 = join{each{index_of, u, gr}*b + lanes%b}
     def si = tern{join{lanes>=0}, si0, 0xff}
     # def si = join{each{{u,g,l} => l>=0) index_of{u,g}*b + lanes%b else 0xff, u, gr, lanes}}
-    sel{[16]u8,
+    vec_shuffle{[16]u8,
       new_shuf{re_el{ty_u{b*8},X}, x, join{each{shiftright{.,chunks**0}, u}}},
       make{X, si}
     }
@@ -70,18 +70,18 @@ local def perm_shufb{x, is} = {
 }
 # TODO accept narrower inputs
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and not same{perm_shufb{...data{u8}},'!'}} = perm_shufb{...data{u8}}
-def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; sel{[16]u8, pair{x, x}, make{[32]i8, is}} }
+def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; vec_shuffle{[16]u8, pair{x, x}, is} }
 
 def shuf_impl{512, 512, data if hasarch{'AVX512F'} and data{'h','nz',u8}} = { def {x,is} = data{u8}; sel{[64]u8, x, make{[64]u8, is}} }
 
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; sel{[8]u32, x, make{[8]u32, is}} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, base{4,is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; vec_shuffle{[8]u32, x, is} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, is} }
 
 def in_chunks{c, is} = { def ls = split{c, is}; all{{l, s} => all{(l<0) | ((l>=s) & (l<s+c))}, ls, inds{ls}*c} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[32]u8, is}} }
-def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; vec_shuffle{[16]u8, x, is} }
+def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; vec_shuffle{[16]u8, x, is} }
 
-def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; vec_shuffle{[16]u8, x, is} }
 
 
 

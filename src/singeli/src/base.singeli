@@ -178,8 +178,8 @@ def {
   absu,andAllZero,andnz,b_getBatch,blend,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
-  pext,popcRand,rbit,sel,shl,shr,shuf,shuf16Hi,shuf16Lo,shufHalves,shufInd,storeLow,
-  topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,widen,widenUpper,
+  pext,popcRand,rbit,sel,shl,shr,shufInd,storeLow,
+  topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,
   multishift,vshl,
 }
 
@@ -199,6 +199,7 @@ def homMask{x if ktup{x}} = homMask{...x}
 
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
+  include 'arch/iintrinsic/select'
   include './sse2'
   include './sse'
   include './avx'
@@ -206,9 +207,11 @@ if_inline (hasarch{'X86_64'}) {
   include './avx512'
 } else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
+  include 'arch/neon_intrin/select'
   include './neon'
+  def {vec_shuffle16_lo}
 } else {
-  def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
+  def {__adds,__subs,__sqrt,vec_broadcast,vec_make,vec_shuffle16_lo}
 }
 
 def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
