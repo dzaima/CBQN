@@ -15,6 +15,21 @@
 %USE fill ⋄ {𝕊: a←10⥊<1‿2 ⋄ {        a∾↩𝕩⋄@}¨(𝕩⥊<<1‿2)∾<<1‿2‿3 ⋄ a!'e'≡Fill a}¨ ↕100
 %USE fill ⋄ {𝕊: a←10⥊<1‿2 ⋄ {a↩0↑a ⋄ a∾↩𝕩⋄@}¨(𝕩⥊<<1‿2)∾<<1‿2‿3 ⋄ a!'e'≡Fill a}¨ ↕100
 
+%USE fill ⋄ Fill ≠¨  ⟨⟩ %!EACH_FILLS %% 'e'
+%USE fill ⋄ Fill ≠¨  ⟨⟩ %EACH_FILLS  %% 0
+%USE fill ⋄ Fill ≠∘⊢¨⟨⟩              %% 'e'
+%USE fill ⋄ Fill   ⊢¨⟨⟩              %% 'e'
+%USE fill ⋄ Fill ⊢∘⊢¨⟨⟩              %% 'e'
+
+%USE fill ⋄ Fill ≠¨  "" %!EACH_FILLS %% ' '
+%USE fill ⋄ Fill ≠¨  "" %EACH_FILLS  %% 0
+%USE fill ⋄ Fill ≠∘⊢¨"" %!EACH_FILLS %% ' '
+%USE fill ⋄ Fill   ⊢¨"" %!EACH_FILLS %% ' '
+%USE fill ⋄ Fill ⊢∘⊢¨"" %!EACH_FILLS %% ' '
+%USE fill ⋄ Fill ≠∘⊢¨"" %EACH_FILLS  %% 0
+%USE fill ⋄ Fill   ⊢¨"" %EACH_FILLS  %% ' '
+%USE fill ⋄ Fill ⊢∘⊢¨"" %EACH_FILLS  %% ' '
+
 # TODO:
 # ⟨↑‿3⥊↕10 ⋄ ↑‿3⥊<¨↕10 ⋄ ↑‿3⥊<˘↕10⟩
 # 5‿¯5↑⌜⟨↕2 ⋄ "ab" ⋄ <¨↕2 ⋄ <˘↕2⟩

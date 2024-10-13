@@ -386,9 +386,10 @@ B iKeep_c1(B t, B x) { return x; }
 B iProperties_c2(B t, B w, B x) {
   if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("•internal.Properties: bad arg");
   i32* rp;
-  B r = m_i32arrv(&rp, 2);
+  B r = m_i32arrv(&rp, 3);
   rp[0] = sizeof(usz)*8;
   rp[1] = PROPER_FILLS;
+  rp[2] = EACH_FILLS;
   return r;
 }
 

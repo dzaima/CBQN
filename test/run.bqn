@@ -40,9 +40,10 @@ o ← {
   debug      ⇐ ∨´i=7
   noCatch    ⇐ ∨´i=8
   
-  pr ← {⟨P⇐Properties⟩: @P@; 32‿0} •internal
+  pr ← 32‿0‿0 {𝕩∾(≠𝕩)↓𝕨} {⟨P⇐Properties⟩: 3↑@P@; ⟨⟩} •internal
+  usz ⇐ 0⊑pr
   properFills ⇐ 1⊑pr
-  usz ⇐ ⊑pr
+  eachFills   ⇐ 2⊑pr
   noerr∨↩ heapverify
   update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args
@@ -100,8 +101,10 @@ Run ← { 𝕊 testname:
         enabled ⇐ ¬ (¬o.slow) ∧ Flag "%SLOW"
         enabled∧↩ ¬ o.debug ∧ Flag "%!DEBUG"
         enabled∧↩ ¬ o.heapverify ∧ Flag "%!HEAPVERIFY"
-        enabled∧↩ {0‿0: 1; 1‿0: o.properfills; 0‿1: ¬o.properfills} Flag¨ "%PROPER_FILLS"‿"%!PROPER_FILLS"
+        enabled∧↩ {0‿0: 1; 1‿0: o.properFills; 0‿1: ¬o.properFills} Flag¨ "%PROPER_FILLS"‿"%!PROPER_FILLS"
+        enabled∧↩ {0‿0: 1; 1‿0: o.eachFills  ; 0‿1: ¬o.eachFills  } Flag¨ "%EACH_FILLS"‿"%!EACH_FILLS"
         enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%USZ64"
+        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%EACHFILLS"
         
         ln ⇐ i-1
         str ⇐ str # at end to let Flag have updated it
