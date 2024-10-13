@@ -141,7 +141,7 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
     xh := exor64{hb}  # Exclusive xor of high bits (xh ^ hb for inclusive)
     xc := xh ^ carry
     v  := x8 ^ V~~maskToHom{[64]u8, [64]u1~~extract{xc,0}}
-    carry = (xc ^ hb) ^ vec_shuffle{u64, xh, 1,1}
+    carry = (xc ^ hb) ^ shuf{u64, xh, 1,1}
     rem:= nw - 8*i
     if (rem < 8) {
       maskStore{*V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
@@ -169,19 +169,19 @@ fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0} else { def s=sums{n-1}; merge{s,s+1} })
-  def widen{v:T} = mzip128{vec_shuffle{[4]u64, v, 0,2,1,3}, T**0}
+  def widen{v:T} = mzip128{shuf{[4]u64, v, 0,2,1,3}, T**0}
   
   def sumlanes{x:(u32)} = {
     b:= [8]u32**x >> make{[8]u32, 4*tail{1, iota{8}}}
-    s:= vec_shuffle{16, [32]u8~~b, ii32>>3 + bit{2}}
+    s:= shuf{16, [32]u8~~b, ii32>>3 + bit{2}}
     p:= s & make{[32]u8, (1<<(1+tail{2})) - 1}  # Prefixes
-    d:= vec_shuffle{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
-    d+= vec_shuffle{16, d, bit{2}*(1+bit{3}>>2)-1}
-    d + vec_shuffle{16, d, bit{3}-1}
+    d:= shuf{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
+    d+= shuf{16, d, bit{2}*(1+bit{3}>>2)-1}
+    d + shuf{16, d, bit{3}-1}
   }
   def step{x:(u32), i, store1} = {
     d:= sumlanes{x}
-    if (w==8) d+= [32]u8~~vec_shuffle{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 0,0,1,1}
+    if (w==8) d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 0,0,1,1}
     j:= (w/8)*i
     def out{v, k} = each{out, widen{v}, 2*k+iota{2}}
     def out{v0:([vl]T), k} = {
@@ -341,7 +341,7 @@ def avx2_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
   @maskedLoop{4} (x in tup{V, xp},
                   r in tup{V, rp} over promote{u64,nw}) {
     s := scan_words{x, m}
-    pc:= c; c = vec_shuffle{-(s>>63), 3,0,1,2}
+    pc:= c; c = shuf{-(s>>63), 3,0,1,2}
     r  = apply_carry{s, blend{c, pc, 1,0,0,0}, (m-V**1)&~m}
     m  = m>>d4 | m<<(l-d4)
   }

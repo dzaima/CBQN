@@ -20,7 +20,7 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
 def shr16{v:V, n} = V~~(re_el{u16, v} >> n)
 
 # Copy half of a vector to the other half
-def dup_half{vec,half} = vec_shuffle{[4]u64, vec, 2*half+tup{0,1,0,1}}
+def dup_half{vec,half} = shuf{[4]u64, vec, 2*half+tup{0,1,0,1}}
 
 # Forward or backwards in-place max-scan
 # Assumes a whole number of vectors and minimum 0
@@ -44,15 +44,15 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
 def getsel{...x} = assert{'shuffling not supported', show{...x}}
 if_inline (hasarch{'AVX2'}) {
   def getsel{h:H=[16]T if width{T}==8} = {
-    vec_shuffle{H, pair{h,h}, .}
+    shuf{H, pair{h,h}, .}
   }
   def getsel{v:V=[vl==32]T if width{T}==8} = {
     def H = n_h{V}
     vtop := V**(vl/2)
     hs := each{dup_half{v, .}, tup{1,0}}
-    {i} => homBlend{...each{vec_shuffle{H,.,i}, hs}, V~~i<vtop}
+    {i} => homBlend{...each{shuf{H,.,i}, hs}, V~~i<vtop}
   }
-  def getsel{v:V=[8]T if width{T}==32} = vec_shuffle{V, v, .}
+  def getsel{v:V=[8]T if width{T}==32} = shuf{V, v, .}
 }
 
 # Move evens to half 0 and odds to half 1
@@ -60,8 +60,8 @@ def uninterleave{x:V=[vl]T if hasarch{'AVX2'}} = {
   def bytes = width{T}/8
   def i = 2*iota{vl/4}
   def i2= flat_table{+, bytes*merge{i,i+1}, iota{bytes}}
-  t := vec_shuffle{[16]u8, x, i2}
-  vec_shuffle{[4]u64, t, 0,2,1,3}
+  t := shuf{[16]u8, x, i2}
+  shuf{[4]u64, t, 0,2,1,3}
 }
 
 def rtypes = tup{i8, i16, i32, f64}
@@ -169,7 +169,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
     s{shr16{v,4}} + s{v}
   }
   # Bit table
-  def swap{v} = vec_shuffle{[4]u64, v, 2,3,0,1} # For signedness
+  def swap{v} = shuf{[4]u64, v, 2,3,0,1} # For signedness
   def sel_b = getsel{swap{vb}}
   # Masks for filtering bit table
   def ms = if (up) 256-(1<<(1+iota{8})) else (1<<iota{8})-1
@@ -187,7 +187,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
     ind := sel_c{xt} - vpopc{sel_b{xt} & U~~sel_m{xb}}
     if (dup) {
       i0 := V~~ind # Can contain -1
-      def isel{u} = vec_shuffle{H, u, i0}
+      def isel{u} = shuf{H, u, i0}
       ind = isel{ui}
       if (nu > 16) {
         b := V~~(re_el{u16, i0} << (7 - lb{vl/2}))

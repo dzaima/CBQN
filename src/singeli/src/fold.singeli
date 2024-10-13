@@ -4,7 +4,7 @@ if_inline (hasarch{'BMI2'}) include './bmi2'
 include './spaced'
 include './scan_common'
 
-def opsh64{op}{v:[_](f64), ...perm} = op{v, vec_shuffle{v, ...perm}}
+def opsh64{op}{v:[_](f64), ...perm} = op{v, shuf{v, ...perm}}
 def mix{op, v:([4]f64) if hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 1,0}, 2,3,0,1} }
 def mix{op, v:([2]f64) if hasarch{'X86_64'}} = opsh64{op}{v, 1,0}
 

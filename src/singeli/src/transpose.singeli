@@ -26,7 +26,7 @@ def unpack_to{f, l, x} = {
   pass{l, if (l==1) x else unpack_to{0, l/2, x}}
 }
 # Last pass for square kernel packed in halves
-def shuf_pass{x} = each{{v} => vec_shuffle{[4]i64, v, 0,2,1,3}, x}
+def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 0,2,1,3}, x}
 
 # Square kernel where width is a full vector
 def transpose_square{VT, l, x if hasarch{'AVX2'}} = unpack_to{1, l/2, x}

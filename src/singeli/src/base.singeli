@@ -241,6 +241,7 @@ def broadcast{V=[_]T, v} = vec_broadcast{V, promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}
 def iota{V=[k]_} = make{V, ...iota{k}}
 def absu{a:[_]_} = ty_u{abs{a}}
+def shuf = vec_shuffle
 
 def floor = __floor
 def ceil = __ceil

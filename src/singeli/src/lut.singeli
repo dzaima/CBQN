@@ -40,7 +40,7 @@ def unzip_load{E, n, TG if width{E}*n <= arch_defvw} = each{tup, unzip{TG{[n]E, 
 
 def widen_tup{u32, is:([16]u8)} = tup{ # compiler will deduplicate all the repeated calls of this on the same is
   widen{[8]u32, is},
-  widen{[8]u32, vec_shuffle{[2]u64, is, 1,1}},
+  widen{[8]u32, shuf{[2]u64, is, 1,1}},
 }
 
 def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
@@ -86,9 +86,9 @@ def raw_widen_inds{[k]D, x:[k0]S if k0>=k} = { # : [k*sc]S
   def add = make{RV, range{k*sc} % sc}
   if (hasarch{'AARCH64'} and [k]D == [2]u64 and S==u8) {
     def x16 = undefPromote{[16]u8, x}
-    (RV~~vec_shuffle{[16]u8, x16, range{16}>>3}<<3) + add
+    (RV~~shuf{[16]u8, x16, range{16}>>3}<<3) + add
   } else if (hasarch{'AVX2'} and [k]D == [4]u64 and S==u32) {
-    (vec_shuffle{[8]u32, undefPromote{[8]u32, x}, range{8}>>1}<<sc) + add
+    (shuf{[8]u32, undefPromote{[8]u32, x}, range{8}>>1}<<sc) + add
   } else {
     def wd = widen{[k]D, x}
     re_el{S, wd * [k]D**base{1<<width{S}, sc**sc}} + add
@@ -122,11 +122,11 @@ def zip_halves{mode, E, nt, ni} = match(lut_gen{mode, w_h{E}, nt, ni}) { # e.g. 
       run_zip{mzip, is}
     }
     def me{is:([ni]u8) if hasarch{'X86_64'} and E==u64 and ni==16} = {
-      def is2 = vec_shuffle{u8, is, tr_iota{0,2,1,3}}
+      def is2 = shuf{u8, is, tr_iota{0,2,1,3}}
       run_zip{mzip128, is2}
     }
     def me{is:([ni]u8) if hasarch{'X86_64'} and E==u16 and ni==32} = {
-      def is2 = vec_shuffle{u64, is, tr_iota{1,0}}
+      def is2 = shuf{u64, is, tr_iota{1,0}}
       run_zip{mzip128, is2}
     }
   }}}
@@ -149,13 +149,13 @@ def lut_gen{'c',  E==u8, nt, ni if hasarch{'AVX2'} and nt<=64 and ni<=32} = { de
     def top = [32]u8**128
     def isp = each{{i} => is | (top &~ tree_fold{&, each{{m, o} => if (bit{o,i}!=0) m else ~m, bits, bi}}), range{vn}}
     
-    tup{tree_fold{|, each{vec_shuffle{[16]u8,.,.}, luts, isp}}}
+    tup{tree_fold{|, each{shuf{[16]u8,.,.}, luts, isp}}}
   }
 }}}}
 
 def lut_gen{mode, E==u8, nt, ni if hasarch{'AVX2'} and nt<=16 and ni<=32} = tup{16, 32, loader{{TG} => {
   lut:[32]u8 = [32]u8**TG{[16]u8, 0}
-  {is:([32]u8)} => tup{vec_shuffle{[16]u8, lut, is}}
+  {is:([32]u8)} => tup{shuf{[16]u8, lut, is}}
 }}}
 
 def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=32 and ni<=16} = blend_halves{mode, E, 32, 16}
@@ -163,7 +163,7 @@ def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=16 and ni<=16} = ble
 
 def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=8 and ni<=16} = tup{8, 16, loader{{TG} => {
   def lut = TG{[8]u32, 0}
-  def me{'idxs', is:([16]u8)} = each{{wis} => tup{wis, vec_shuffle{[8]u32, lut, wis}}, widen_tup{u32,is}} # TODO inline, or properly outline
+  def me{'idxs', is:([16]u8)} = each{{wis} => tup{wis, shuf{[8]u32, lut, wis}}, widen_tup{u32,is}} # TODO inline, or properly outline
   def me{is:([16]u8)} = each{{{_,v}}=>v, me{'idxs', is}}
 }}}
 
@@ -191,8 +191,8 @@ def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='c' and E>=u16} = 0
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='i' and E==u64 and nt>16} = 0
 
 
-def lut16{tab:([16]u8), idxs:([16]u8)} = vec_shuffle{[16]u8, tab, idxs}
-def lut16{tab:([16]u8), idxs:([32]u8) if hasarch{'X86_64'}} = vec_shuffle{[16]u8, pair{tab, tab}, idxs}
+def lut16{tab:([16]u8), idxs:([16]u8)} = shuf{[16]u8, tab, idxs}
+def lut16{tab:([16]u8), idxs:([32]u8) if hasarch{'X86_64'}} = shuf{[16]u8, pair{tab, tab}, idxs}
 
 def shuf_u8bits{inds:*u8, ni} = 0
 def shuf_u8bits{inds:*u8, ni if has_sel} = {

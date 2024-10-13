@@ -3,8 +3,8 @@
 def vfold{F, x:V=[_]T if w128{V} and hasarch{'X86_64'}} = {
   c:= x
   def EW = width{T}
-  if (EW<=64) c = F{c, vec_shuffle{u64, c, 1,0}}
-  if (EW<=32) c = F{c, vec_shuffle{u32, c, 1,0}}
+  if (EW<=64) c = F{c, shuf{u64, c, 1,0}}
+  if (EW<=32) c = F{c, shuf{u32, c, 1,0}}
   if (EW<=16) c = F{c, vec_shuffle16_lo{c, tup{1,0,3,2}}}
   if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{T, v}, cast_i{T, v>>8}} }
   else extract{c, 0}
