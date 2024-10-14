@@ -83,7 +83,7 @@ endif
 ifeq ($(origin clean),command line)
 	@echo "Error: build-specific 'clean' unsupported"; false
 endif
-	@build/build from-makefile CC="$(CC)" CXX="$(CXX)" PIE="$(ENABLE_PIE)" OUTPUT="$(OUTPUT)" j="$(j)" \
+	@MAKE="$(MAKE)" build/build from-makefile CC="$(CC)" CXX="$(CXX)" PIE="$(ENABLE_PIE)" OUTPUT="$(OUTPUT)" j="$(j)" \
 	  verbose="$(verbose)" notui="$(notui)" v="$(version)" stored-warn="$(stored-warn)" \
 	  f="$(f)" lf="$(lf)" CCFLAGS="$(CCFLAGS)" LDFLAGS="$(LDFLAGS)" REPLXX_FLAGS="$(REPLXX_FLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  LD_LIBS="$(LD_LIBS)" NO_LDL="$(NO_LDL)" no_fPIC="$(no_fPIC)" target-from-cc="$(target_from_cc)" \
