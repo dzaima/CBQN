@@ -490,8 +490,11 @@ def modperm_shuf_step{x:V=[_]T, l, m if l%8==0} = {
   (x &~ m) | (swap_elts{x, l/8} & m)
 }
 # Reverse each pair of elements
-def swap_elts{x:V=[_]_, el_bytes} = {
-  if (any_sel or (hasarch{'SSE2'} and el_bytes >= 2)) {
+def swap_elts{x:V=[k]_, el_bytes} = {
+  if (hasarch{'AARCH64'}) {
+    if (el_bytes == 8) vshl{x, x, k/2}
+    else V~~rev{el_bytes*16, re_el{ty_u{8*el_bytes}, V} ~~ x}
+  } else if (any_sel or (hasarch{'SSE2'} and el_bytes >= 2)) {
     def wd = min{el_bytes, 8}
     def l = el_bytes/wd
     def i = iota{l}

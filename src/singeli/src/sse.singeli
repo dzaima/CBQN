@@ -1,6 +1,5 @@
 ### SSSE3 ###
 def sel{L, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = T ~~ emit{[16]u8, '_mm_shuffle_epi8', v2i{x}, i}
-def vshl{a:V=[_]T, b:V, n if hasarch{'SSSE3'}} = vec_merge_shift_right{a, b, n}
 
 
 ### SSE4.1 ###

@@ -178,9 +178,9 @@ def {
   absu,andAllZero,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
   homAll,homAny,bitAll,bitAny,homBlend,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
-  pext,popcRand,rbit,sel,shl,shr,shufInd,storeLow,
+  pext,popcRand,rbit,rev,sel,shl,shr,shufInd,storeLow,
   topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,
-  multishift,vshl,
+  multishift,
 }
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
@@ -209,14 +209,13 @@ if_inline (hasarch{'X86_64'}) {
   include 'arch/neon_intrin/basic'
   include 'arch/neon_intrin/select'
   include './neon'
+  def {vec_shuffle16_lo}
 } else {
-  def {__adds,__subs,__sqrt,vec_broadcast,vec_make}
-}
-
-if_inline (not hasarch{'X86_64'}) {
-  def {vec_shift_left_128,vec_shift_right_128,vec_shuffle16_lo}
-  def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
-  def zip128{a:T, b:T, k if width{T}==128} = zip{a, b, k}
+  def {
+    __adds,__subs,__sqrt,vec_broadcast,vec_make,
+    vec_shift_left_128,vec_shift_right_128,vec_merge_shift_right,
+    vec_shuffle16_lo
+  }
 }
 
 def mzip   {a:T, b:T, k} = el_m{T} ~~ zip   {a, b, k}
@@ -242,6 +241,7 @@ def make{V=[_]_, ...xs} = vec_make{V, ...xs}
 def iota{V=[k]_} = make{V, ...iota{k}}
 def absu{a:[_]_} = ty_u{abs{a}}
 def shuf = vec_shuffle
+def vshl = vec_merge_shift_right
 
 def floor = __floor
 def ceil = __ceil

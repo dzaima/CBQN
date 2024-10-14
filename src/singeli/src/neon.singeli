@@ -31,8 +31,8 @@ def  shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, n
 def  shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
 def  shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
-def bitBlend{f:T, t:T, m:M if nvec{T} and nvecu{M,elwidth{T}} and width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
-def homBlend{f:T, t:T, m:M if nvec{M}} = bitBlend{f, t, m}
+def bitBlend{f:T=[_]_, t:T, m:M=[_]_} = blend_bit{f, t, m}
+def homBlend{f:T=[_]_, t:T, m:M=[_]_} = blend_hom{f, t, m}
 
 def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
@@ -40,9 +40,7 @@ def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 def rbit{x:T if nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
 def rev{(width{T}), x:[_]T} = x
-def rev{16, x:T if nveci{T} and elwidth{T}<16} = emit{T, ntyp{'vrev16', T}, x} # reverse the order of elements in each w-bit window
-def rev{32, x:T if nveci{T} and elwidth{T}<32} = emit{T, ntyp{'vrev32', T}, x}
-def rev{64, x:T if nveci{T} and elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
+def rev{w, x:[k]T if w > width{T}} = reverse_units{w/width{T}, x}
 def popc{x:T if nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
 def clz{x:T if nvecu{T} and elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T if nveci{T} and elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
@@ -74,10 +72,6 @@ def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
 def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
 def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
 def broadcastSel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
-def vshl{a:T, b:T, n if knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
-
-def zip{a:T, b:T, 0 if nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
-def zip{a:T, b:T, 1 if nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
 
 def unzip{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
 def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
