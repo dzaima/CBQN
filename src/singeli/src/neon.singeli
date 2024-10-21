@@ -81,12 +81,8 @@ def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} 
 def trn{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
-def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, ty_u{i}}}
-def sel{{x0:T}, i:I} = sel{T, x0, i}
-def sel{{...xs}, i:I if length{xs}>=2 and length{xs}<=4 and allSame{each{type,xs}} and lvec{oneType{xs},16,8} and nvec{I, 8}} = {
-  def T = oneType{xs}
-  re_el{eltype{T}, emit{I, ntyp{merge{'unpacked_vqtbl',fmtnat{length{xs}}}, I}, ...each{reinterpret{[16]u8,.}, xs}, ty_u{i}}}
-}
+def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = vec_select{eltype{L}, x, i}
+def sel{{...xs}, i:I if length{xs}>=1 and length{xs}<=4 and allSame{each{type,xs}} and lvec{oneType{xs},16,8} and nvec{I, 8}} = vec_select{xs, i}
 
 
 
@@ -126,7 +122,7 @@ def homMask{x:T=[k]E if nvecu{T} and width{E}>=k} = {
   truncBits{k, fold_add{x & make{T, 1<<iota{k}}}}
 }
 def homMask{x:T=[16]E if width{E}==8} = {
-  t:= [8]u16~~sel{[16]u8, x, make{[16]u8, 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15}}
+  t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
 def homMask{a:T,b:T=[16]E if width{E}==8} = {

@@ -1,5 +1,5 @@
 ### SSSE3 ###
-def sel{L, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = T ~~ emit{[16]u8, '_mm_shuffle_epi8', v2i{x}, i}
+def sel{L=[_]E, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = vec_select{E, x, i}
 
 
 ### SSE4.1 ###
