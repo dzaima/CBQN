@@ -36,14 +36,13 @@ def widen{T=[k]_, x:X=[l]_ if w256{X} and l>k} = widen{T, half{x,0}}
 
 
 # structural operations
-def topBlend{f:T, t:T, m:M if w256{T,32} and w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def topBlend{f:T, t:T, m:M if w256{T,64} and w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
-def homBlend{f:T, t:T, m:M if w256{T}} = topBlend{f, t, m}
+def topBlend{f:T, t:T, m:M if w256{T,32} and w256i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, v2f{m}}
+def topBlend{f:T, t:T, m:M if w256{T,64} and w256i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, v2d{m}}
 
 # shuffles
 # TODO rename to shuf, move shuf to shuf_imm or something
 def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
-  T~~emit{[8]f32, '_mm256_shuffle_ps', v2f{a}, v2f{b}, base{4, slice{is,0,4} & 3}}
+  vec_shuffle{[4]f32, tup{a, b}, slice{is,0,4} & 3}
 }
 def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufInd{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
 

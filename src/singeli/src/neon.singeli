@@ -32,7 +32,6 @@ def  shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (
 def  shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
 def bitBlend{f:T=[_]_, t:T, m:M=[_]_} = blend_bit{f, t, m}
-def homBlend{f:T=[_]_, t:T, m:M=[_]_} = blend_hom{f, t, m}
 
 def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate

@@ -4,7 +4,7 @@ def packQ{a:T,b:T==[ 8]i32} = emit{[16]i16, '_mm256_packs_epi32', a, b}
 def packQ{a:T,b:T==[16]u16} = emit{[32]u8,  '_mm256_packus_epi16', a, b}
 def packQ{a:T,b:T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 # super questionable pack - assumes high halves are zero
-def packQQ{a:T,b:T==[4]i64} = emit{[8]i32, '_mm256_shuffle_epi32', a, 4b1120} | emit{[8]i32, '_mm256_shuffle_epi32', b, 4b2011}
+def packQQ{a:T,b:T==[4]i64} = vec_shuffle{[4]i32, a, 0,2,1,1} | vec_shuffle{[4]i32, b, 1,1,0,2}
 def packQQ{{a, b}} = packQQ{a, b}
 
 
@@ -21,8 +21,6 @@ def blend{([8]u32), a:T, b:T, m if w256{T} and ktup{m}} = T ~~ blend_units{[ 8]i
 def blend{([4]u64), a:T, b:T, m if w256{T} and ktup{m}} = T ~~ blend_units{[ 4]f64~~a, [ 4]f64~~b, m}
 
 def topBlend{f:T, t:T, m:M if w256{T,  8} and w256i{M, 8}} = blend_top{f, t, m}
-def homBlend{f:T, t:T, m:M if w256{T,  8} and w256i{M, 8}} = topBlend{f, t, m}
-def homBlend{f:T, t:T, m:M if w256{T, 16} and w256i{M,16}} = T ~~ topBlend{[32]i8~~f, [32]i8~~t, [32]i8~~m}
 
 def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = vec_shuffle{L, x, i}
 def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = vec_shuffle{L, x, i}
@@ -34,7 +32,7 @@ def homMaskStore{p:*T, m:M, v:T if w256i{M}     and w256{T,elwidth{M}}} = topMas
 
 def topMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
 def homMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = topMaskStore{p,m,v}
-def homMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}<=16 and w256{T,elwidth{M}}} = store{p, 0, homBlend{load{p}, v, m}}
+def homMaskStoreF{p:*T, m:M, v:T if w256i{M} and elwidth{T}<=16 and w256{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}
 
 # mask stuff
 def topMask{x:T if w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}

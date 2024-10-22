@@ -23,8 +23,6 @@ def andAllZero{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz
 def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
 def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}
 def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M, 8}} =      blend_top{    f ,     t , m}
-# assumes all bits are the same in each mask item
-def homBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128{M}} = blend_hom{f, t, m}
 
 
 
