@@ -74,6 +74,54 @@ fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
 export{'si_sum_f64', fold_assoc_0{f64,+}}
 
 
+fn select_rows_byte(x0:*void, r0:*void, n:usz, l:usz) : usz = {
+  if (hasarch{'AVX2'} and n>=32 and l<20 and (l&1)==1) {
+    def V = [32]u8
+    def swap_by{x, m} = homBlend{x, shuf{[4]u64, x, 2,3,0,1}, m}
+    l8 := cast_i{u8, l}
+    li := cast_i{u8, l + 2 * ((l-1) + (l&2))}  # Inverse mod 32
+    ie := make{[16]u16, 2*iota{16}}
+    def mu16{k} = {
+      k16 := [16]u16 ** k
+      (shuf{V~~(ie * k16), 0,0} + V~~(k16 << 8)) & V**31
+    }
+    sii := mu16{li}
+    ms := (V**16 & sii) == (V**16 &~ iota{V})
+    si := mu16{l8}
+    # Blend masks
+    def mg = { # Iteration i should select where mg == V**i
+      vs := V**0xff - scan_assoc_id0{+}{si < V**l8}
+      swap_by{shuf{[16]u8, vs, sii}, ms}
+    }
+    mgo := mg - V**(l8 & 3)
+    mgm := (mgo - V**1) & V**3
+    m4s := @collect (i to 3) mgm == V**i
+    # Main loop
+    xv := *V~~x0
+    nv := n / 32
+    @for (r in *V~~r0 over i to nv) {
+      r = load{xv,0}; ++xv
+      if ((l & 2) != 0) {
+        def {m0, _, m2} = m4s
+        re := homBlend{load{xv,0}, load{xv,1}, m2}
+        r = homBlend{re, r, m0}
+        xv += 2
+      }
+      mh := mgo
+      @for (l/4) {
+        {l0, ...ls} := each{load{xv,.}, iota{4}}
+        r4 := fold{homBlend, l0, ls, m4s}
+        r = homBlend{r, r4, mh < V**4}
+        mh -= V**4; xv += 4
+      }
+      r = shuf{[16]u8, swap_by{r, ms}, si}
+    }
+    return{32 * nv}
+  }
+  0
+}
+
+
 # Short-row boolean folds: main challenge is bit packing
 def fold_rows_bit_lt64{
   op, run_loop2, run_loop4, pext_res, mult_in,
@@ -330,3 +378,4 @@ fn or_rows_bit(xp:*u64, rp:*u64, n:usz, l:usz, op_and:u1) : void = {
 export{'si_xor_rows_bit', xor_rows_bit}
 export{'si_or_rows_bit', or_rows_bit}
 export{'si_select_cells_bit_lt64', select_rows_bit_lt64}
+export{'si_select_cells_byte', select_rows_byte}

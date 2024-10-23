@@ -220,6 +220,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 // fast special-case implementations
 extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
+extern usz (*const si_select_cells_byte)(void*,void*,usz,usz);
 static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
@@ -258,18 +259,23 @@ static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind
     } else {
       void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
       void* xp = tyany_ptr(x);
-      switch(xl) {
-        case 0:
-          #if SINGELI
-          if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
-          else
-          #endif
-          for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
-          break;
-        case 3: PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
-        case 4: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
-        case 5: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
-        case 6: PLAINLOOP for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
+      if (xl == 0) {
+        #if SINGELI
+        if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
+        else
+        #endif
+        for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
+      } else {
+        usz i0 = 0;
+        #if SINGELI
+        if (xl==3) i0 = si_select_cells_byte((u8*)xp + (ind<<(xl-3)), rp, cam, l);
+        #endif
+        switch(xl) { default: UD;
+          case 3: PLAINLOOP for (usz i=i0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
+          case 4: PLAINLOOP for (usz i=i0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
+          case 5: PLAINLOOP for (usz i=i0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
+          case 6: PLAINLOOP for (usz i=i0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
+        }
       }
     }
   }
