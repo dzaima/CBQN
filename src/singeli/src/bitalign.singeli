@@ -56,7 +56,7 @@ local def perm_split{x:X, lanes, chunks} = {
     def si0 = join{each{index_of, u, gr}*b + lanes%b}
     def si = tern{join{lanes>=0}, si0, 0xff}
     # def si = join{each{{u,g,l} => l>=0) index_of{u,g}*b + lanes%b else 0xff, u, gr, lanes}}
-    sel{[16]u8,
+    shuf{[16]u8,
       new_shuf{re_el{ty_u{b*8},X}, x, join{each{shiftright{.,chunks**0}, u}}},
       make{X, si}
     }
@@ -70,18 +70,18 @@ local def perm_shufb{x, is} = {
 }
 # TODO accept narrower inputs
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and not same{perm_shufb{...data{u8}},'!'}} = perm_shufb{...data{u8}}
-def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; sel{[16]u8, pair{x, x}, make{[32]i8, is}} }
+def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; shuf{[16]u8, pair{x, x}, is} }
 
 def shuf_impl{512, 512, data if hasarch{'AVX512F'} and data{'h','nz',u8}} = { def {x,is} = data{u8}; sel{[64]u8, x, make{[64]u8, is}} }
 
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; sel{[8]u32, x, make{[8]u32, is}} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, base{4,is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; shuf{[8]u32, x, is} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, is} }
 
 def in_chunks{c, is} = { def ls = split{c, is}; all{{l, s} => all{(l<0) | ((l>=s) & (l<s+c))}, ls, inds{ls}*c} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[32]u8, is}} }
-def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
+def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
 
-def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
 
 
 
@@ -130,9 +130,9 @@ def bitalign{s, 8 if s<7, a:V=[k](u8) if hasarch{'X86_64'}} = {
 def bitalign{7, 8, a:V=[k](u8) if hasarch{'X86_64'}} = {
   def V16 = re_el{u16,V}
   
-  def b = new_shuf{a, range{k} - (((range{k}+2)/8)>>0)}
-  def c = blend{[8]u16, b, b <<{u64} 4, 2b01100110}
-  def d = (V16~~c * make{V16, cycle{k/2, 1<<tup{2,0,2,0}}}) >> 2 # TODO ofence constant for clang
+  def b = V16~~new_shuf{a, range{k} - (((range{k}+2)/8)>>0)}
+  def c = blend_units{b, b <<{u64} 4, tup{0,1,1,0}}
+  def d = (c * make{V16, cycle{k/2, 1<<tup{2,0,2,0}}}) >> 2 # TODO ofence constant for clang
   homBlend{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
 }
 

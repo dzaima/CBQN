@@ -122,7 +122,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
       tab:= *V~~(repeat_tab + 32 * (start-1))
       def l0 = load{tab, 0}
       def l1 = load{tab, 1}
-      v = sel{V, v, l0}
+      v = shuf{V, v, l0}
       v+= V~~(VU16~~l1 * broadcast{VU16, csz})
       shufr = extract{l1, 15}+1
     }
@@ -278,24 +278,24 @@ exportT{'si_select_tab', join{table{select_fn,
       def xrev = rbit{load{*VU ~~ x0}}
       @maskedLoop{16}(cw0 in w, r in *u16~~r0, M in 'm' over i to wl) {
         def cw = ty_u{wrapChk{cw0, xlf, M}}
-        def byte = sel{[16]u8, xrev, cw>>3}
+        def byte = shuf{[16]u8, xrev, cw>>3}
         r = homMask{ty_s{byte << (cw & VU**7)} < VI**0}
       }
     } else {
       if (wl>32 and xl<=16) {
-        xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 4b1010}
+        xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 0,1,0,1}
         @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
-          sr = homMask{sel{[16]i8, xb, cw}}
+          sr = homMask{shuf{[16]i8, xb, cw}}
         }
       } else {
-        x:= shuf{[4]u64, load{*VI ~~ x0}, 4b1010}
+        x:= shuf{[4]u64, load{*VI ~~ x0}, 0,1,0,1}
         low:= VI**7
         b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
         @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
-          byte:= sel{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
-          mask:= sel{[16]i8, b, cw & low}
+          byte:= shuf{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
+          mask:= shuf{[16]i8, b, cw & low}
           sr = homMask{(mask & byte) == mask}
         }
       }

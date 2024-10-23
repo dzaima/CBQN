@@ -63,7 +63,7 @@ def spreadBits{T==[32]u8, a:(u32)} = {
   def idxs = iota{32}
   b:= [8]u32**a
   c:= [32]u8~~b
-  d:= sel{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
+  d:= shuf{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
   e:= make{[32]u8, 1<<tail{3, idxs}}
   e == (d&e)
 }
@@ -74,7 +74,7 @@ def spreadBits{T==[16]u8, a:(u16) if hasarch{'AARCH64'}} = {
 }
 def spreadBits{T==[16]u8, a:(u16) if hasarch{'X86_64'}} = {
   b:= T~~[8]u16**a
-  exp:= T~~shuf{[4]i32, shuf16Lo{mzip{b,b,0}, 4b1100}, 4b1100}
+  exp:= T~~shuf{[4]i32, vec_shuffle16_lo{mzip{b,b,0}, tup{0,0,1,1}}, 0,0,1,1}
   (exp & make{T, 1<<(iota{16}&7)}) != T**0
 }
 

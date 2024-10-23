@@ -103,7 +103,7 @@ rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 
 def read_shuf_vecs{l, ellw:(u64), shp:*V} = { # tuple of byte selectors in 1<<ellw
   def double{x:X if hasarch{'AVX2'}} = {
-    s:=shuf{[4]u64, x, 4b3120}; s+=s
+    s:=shuf{u64, x, 0,2,1,3}; s+=s
     r:=each{bind{~~,[32]i8},mzip128{s, s + X**1}}
     r
   }
@@ -150,19 +150,19 @@ if_inline (hasarch{'AVX2'}) {
   def rep_iter_from_sh{sh}{x, gen} = {
     def l = length{sh}
     def h = l>>1
-    def fs{v, s} = gen{sel{[16]i8, v, s}}
-    a := shuf{[4]u64, x, 4b1010}; each{fs{a,.}, slice{sh,0,h}}
+    def fs{v, s} = gen{shuf{[16]i8, v, s}}
+    a := shuf{u64, x, 0,1,0,1}; each{fs{a,.}, slice{sh,0,h}}
     if (l%2) fs{x, select{sh, h}}
-    b := shuf{[4]u64, x, 4b3232}; each{fs{b,.}, slice{sh,-h}}
+    b := shuf{u64, x, 2,3,2,3}; each{fs{b,.}, slice{sh,-h}}
   }
   
   def get_rep_iter{V, wv==2}{x, gen} = {
-    def s = shuf{[4]u64, x, 4b3120}
+    def s = shuf{u64, x, 0,2,1,3}
     each{{q}=>gen{V~~q}, mzip128{s, s}}
   }
   def get_rep_iter{V==[4]u64, wv} = {
     def step = 4
-    def sh = each{base{4,.}, get_shufs{step, wv, wv}}
+    def sh = get_shufs{step, wv, wv}
     {x, gen} => each{{s}=>gen{shuf{V, x, s}}, sh}
   }
   
@@ -171,7 +171,7 @@ if_inline (hasarch{'AVX2'}) {
 } else { # has_bytesel_128
   
   def rep_iter_from_sh{sh}{x, gen} = {
-    each{{s} => gen{sel{[16]u8, x, s}}, sh}
+    each{{s} => gen{shuf{[16]u8, x, s}}, sh}
   }
   
   def rep_const_shuffle{wv==2, xv0:*V=[_]T, rv0:*V, n:(u64)} = {
@@ -191,9 +191,9 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   def [step]_ = V          # Bytes written
   def wvb = wv << ellw
   def hs = (h*step) / wvb  # Actual step size in argument elements
-  def shufbase{i if hasarch{'AVX2'}} = shuf{[4]u64, load{*V~~(x+i)}, 4b1010}
+  def shufbase{i if hasarch{'AVX2'}} = shuf{u64, load{*V~~(x+i)}, 0,1,0,1}
   def shufbase{i if has_bytesel_128} = load{*V~~(x+i)}
-  def shufrun{a, s} = sel{[16]i8, a, s} # happens to be the same across AVX2 & NEON
+  def shufrun{a, s} = shuf{[16]i8, a, s} # happens to be the same across AVX2 & NEON
   
   i:u64 = 0
   re := r + n*wvb - h*step
@@ -442,18 +442,18 @@ def rep_const_bool_div8{wv, x, r, nw if has_simd} = {
       run8{{x} => z{z{z{x}}}}
     }
   } else { # any_sel
-    def selH = sel{[16]u8, ., .}
+    def selH = shuf{[16]u8, ., .}
     def makeTab{t} = selH{mkV{if (avx2) merge{t,t} else t}, .}
     def id{xv} = xv
     if (wv == 2) {
-      def init = if (avx2) shuf{[4]u64, ., 4b3120} else id
+      def init = if (avx2) shuf{u64, ., 0,2,1,3} else id
       # Expander for half byte
       def tabr = makeTab{tr_iota{2*iota{4}} * 2b11}
       m4 := V**0xf
       run24{*V~~x, init, {x} => tabr{x & m4}, 4}
     } else if (wv == 4) {
       # Unzip 32-bit elements (result lanes) across AVX2 lanes
-      def pre = if (avx2) sel{[8]u32, ., make{[8]u32,tr_iota{1,2,0}}} else id
+      def pre = if (avx2) shuf{[8]u32, ., make{[8]u32,tr_iota{1,2,0}}} else id
       def init{xv} = { u:=pre{xv}; zip128{u,u,0} }
       # Expander for two bits in either bottom or next-to-bottom position
       def tabr = makeTab{tr_iota{0,4,0,4} * 2b1111}
@@ -465,17 +465,6 @@ def rep_const_bool_div8{wv, x, r, nw if has_simd} = {
     }
   }
   flush{}
-}
-
-def sel_imm{V=[4]T, x, {...inds} if hasarch{'SSE2'} and (T==u32 or T==u64)} = {
-  assert{length{inds} == 4}
-  shuf{V, x, base{4, inds}}
-}
-def sel_imm{V=([16]u8), x:X, {...inds}} = {
-  def I = re_el{u8,X}; def [n]_ = I
-  def l = length{inds}
-  assert{l==16 or l==n}
-  sel{V, x, make{I, cycle{n, inds}}}
 }
 
 # Data for the permutation that sends bit i to k*i % width{T}
@@ -501,17 +490,15 @@ def modperm_shuf_step{x:V=[_]T, l, m if l%8==0} = {
   (x &~ m) | (swap_elts{x, l/8} & m)
 }
 # Reverse each pair of elements
-def swap_elts{x:V=[_]_, el_bytes} = {
-  def selx{n, wd} = {
+def swap_elts{x:V=[k]_, el_bytes} = {
+  if (hasarch{'AARCH64'}) {
+    if (el_bytes == 8) vshl{x, x, k/2}
+    else V~~rev{el_bytes*16, re_el{ty_u{8*el_bytes}, V} ~~ x}
+  } else if (any_sel or (hasarch{'SSE2'} and el_bytes >= 2)) {
+    def wd = min{el_bytes, 8}
     def l = el_bytes/wd
-    def i = iota{n}
-    def rev = i + (l - 2*(i&l))
-    sel_imm{[n]ty_u{wd*8}, x, rev}
-  }
-  if (hasarch{'SSE2'} and el_bytes >= 4) {
-    selx{4, max{4, el_bytes/2}}
-  } else if (any_sel) {
-    selx{16, 1}
+    def i = iota{l}
+    shuf{ty_u{wd*8}, x, merge{i+l, i}}
   } else {
     def sh = el_bytes*8
     xe := re_el{ty_u{2*sh}, V} ~~ x
@@ -526,7 +513,7 @@ def extract_modperm_mask{full:W, lane, l} = {
   def n = (if (f) 256 else 128) / w          # and number of elements
   def o = l / w                              # Extract [o,2*o)
   def i = o + iota{n}%o
-  sel_imm{[n]ty_u{w}, if (f) full else lane, i}
+  shuf{ty_u{w}, if (f) full else lane, i}
 }
 def proc_mod_dat{swap_data:W} = {
   def ww = width{W}; def avx2 = ww==256
@@ -534,7 +521,7 @@ def proc_mod_dat{swap_data:W} = {
     def lens = reverse{1 << slice{iota{lb{hi}}, lb{lo}}}
     fold{{x,s}=>s{x}, ., each{get_swap, lens}}
   }
-  swap_lane := if (avx2) shuf{W, swap_data, 4b1010} else swap_data
+  swap_lane := if (avx2) shuf{swap_data, 0,1,0,1} else swap_data
   # Transform width-w units with shifts only
   def get_shiftperm{data, w} = {
     dat := data
@@ -551,20 +538,20 @@ def proc_mod_dat{swap_data:W} = {
   # Within-byte transformation
   def get_byteperm{} = {
     def V = re_el{u8, W}
-    def sw_bytes = sel{[16]u8, swap_lane, V**0}
+    def sw_bytes = shuf{u8, swap_lane, 16**0}
     m4 := W~~V**0xf
     t0 := fold{{v,a}=>modperm_shift_step{v,...a}, W~~make{V,iota{vcount{V}}%16}, tup{
       tup{4, sw_bytes &~ m4},
       tup{2, ({v} => v | v<<4){sw_bytes & W~~V**0xc}}
     }}
     t4 := (t0&m4)<<4 | (t0&~m4)>>4
-    def selI{v,i} = sel{[16]u8, v, V~~i}
+    def selI{v,i} = shuf{[16]u8, v, V~~i}
     {xv} => selI{t0, xv & m4} | selI{t4, (xv>>4) & m4}
   }
   def {partwidth, partperm} = {
     def sh{w, d} = tup{w, get_shiftperm{d, w}}
     if      (ww==64)      sh{64, swap_data}
-    else if (not any_sel) sh{32, shuf{[4]u32, swap_data, 4b0000}}
+    else if (not any_sel) sh{32, shuf{u32, swap_data, 0,0,0,0}}
     else                  tup{8, get_byteperm{}}
   }
   # Fill in higher steps
@@ -647,7 +634,7 @@ def rep_const_bool_odd_mask4{
   def sub_carry{a, c} = match (M) {
     {[l](u64)} => {
       ca := if (hasarch{'SSE4.2'} or hasarch{'AARCH64'}) { def S = [l]i64; S~~c > S**0 }
-            else { def S = [2*l]i32; cm := S~~c; cm != shuf{S, cm, 4b2301} }
+            else { cm := [2*l]i32~~c; cm != shuf{cm, 1,0} }
       a + M~~ca
     }
     {_} => a - promote{u64, c != 0}
@@ -656,9 +643,9 @@ def rep_const_bool_odd_mask4{
   while (1) {
     x:M = get_modperm_x{}
     def vrot1 = ifvec{{x} => {
-      if (w256{M}) shuf{M, x, 4b2103}
+      if (w256{M}) shuf{x, 3,0,1,2}
       else if (any_sel) vshl{x, x, vcount{type{x}}-1}
-      else shuf{[4]u32, x, 4b1032}
+      else shuf{x, 1,0}
     }}
     xo := x<<k | vrot1{x>>(64-k)}
     # Write result word given starting bits
@@ -712,23 +699,23 @@ def rep_const_bool_small_odd{W=[wl](u64), max_wv, wv, get_perm_x, output} = {
       def ix = 64*slice{iota{k},1} // k  # bits that overhang within a word
       def ib = ix // ew                  # byte index
       def io = ew*ib + k*ix%ew           # where they are in xv
-      def wi = split{wl, dup{tup{255, ...ib, 255, ...se+ib}}}
+      def wi = split{wl, dup{tup{-1, ...ib, -1, ...se+ib}}}
       xo := ov_bytes{(xv & W**fold{|, 1<<io}) >> (ew-k)}
       # Permute and mask bytes
       def step{jj, oi, ind, mask} = {
         def hk = (k-1) / 2
         def getv = if (not lanes or jj==hk) ({x}=>x)
-                   else sel_imm{[4]u64, ., 2*(jj>hk) + iota{4}%2}
-        def selx{x, i} = sel_imm{[128/ew]ty_u{ew}, getv{x}, i}
+                   else shuf{[4]u64, ., 2*(jj>hk) + iota{4}%2}
+        def selx{x, i} = shuf{[128/ew]ty_u{ew}, getv{x}, i}
         b := selx{xv, ind} & make{W, mask}
         r := (b<<k) - b
-        def selx_nz{x, i} = { def nz = i!=255; selx{x, i * nz} & W~~make{[4]i32, -nz} }
-        o := (if (ew==8) selx else selx_nz){xo, flat_table{max, oi, 255*(0<iota{se})}}
+        def selx_nz{x, i} = { def nz = i != -1; selx{x, i * nz} & W~~make{[4]i32, -nz} }
+        o := (if (ew==8) selx else selx_nz){xo, flat_table{min, oi, 255-256*(0<iota{se})}}
         output{r|o}
       }
       each{step,
         iota{k}, wi,
-        split{ne, replicate{k, iota{ne}}},
+        split{ne, replicate{k, dup{iota{ne/(1+lanes)}}}},
         split{wl, each{base{2,.}, split{64, cycle{k*ww, 0==iota{k}}}}}
       }
     }

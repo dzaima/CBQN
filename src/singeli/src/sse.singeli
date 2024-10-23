@@ -1,6 +1,5 @@
 ### SSSE3 ###
-def sel{L, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = T ~~ emit{[16]u8, '_mm_shuffle_epi8', v2i{x}, i}
-def vshl{a:V=[_]T, b:V, n if hasarch{'SSSE3'}} = V~~emit{[16]u8, '_mm_alignr_epi8', v2i{b}, v2i{a}, n*(width{T}/8)}
+def sel{L=[_]E, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = vec_select{E, x, i}
 
 
 ### SSE4.1 ###
@@ -21,12 +20,9 @@ def narrow{(i16), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [8]i16
 
 # mask stuff
 def andAllZero{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,32}} = T ~~ emit{[4]f32, '_mm_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,64}} = T ~~ emit{[2]f64, '_mm_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M, 8}} = T ~~ emit{[16]i8, '_mm_blendv_epi8', v2i{f}, v2i{t}, v2i{m}}
-# assumes all bits are the same in each mask item
-def homBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128{M} and elwidth{M}!=16} = topBlend{f, t, m}
-def homBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128{M,16}} = topBlend{f, t, [16]i8~~m}
+def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
+def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}
+def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M, 8}} =      blend_top{    f ,     t , m}
 
 
 
