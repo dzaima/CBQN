@@ -219,7 +219,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 
 // fast special-case implementations
-extern void (*const si_select_cells_bit_lt64)(uint64_t*,uint64_t*,uint32_t,uint32_t,uint32_t); // from fold.c (fold.singeli)
+extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
 static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
