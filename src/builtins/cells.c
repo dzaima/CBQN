@@ -220,7 +220,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 // fast special-case implementations
 extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
-extern usz (*const si_select_cells_byte)(void*,void*,usz,usz);
+extern usz (*const si_select_cells_byte)(void*,void*,usz,usz,u8);
 static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
@@ -268,7 +268,7 @@ static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind
       } else {
         usz i0 = 0;
         #if SINGELI
-        if (xl==3) i0 = si_select_cells_byte((u8*)xp + (ind<<(xl-3)), rp, cam, l);
+        i0 = si_select_cells_byte((u8*)xp + (ind<<(xl-3)), rp, cam, l, xl-3);
         #endif
         switch(xl) { default: UD;
           case 3: PLAINLOOP for (usz i=i0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
