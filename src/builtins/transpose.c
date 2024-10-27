@@ -9,10 +9,10 @@
 //   SHOULD have bit matrix transpose kernel
 // CPU sizes: native or SIMD code
 //   Large SIMD kernels used when they fit, overlapping for odd sizes
-//     i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
+//     SSE, NEON i8:  8×8 ; i16:  8×8; i32: 4×4; f64: scalar
+//     AVX       i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
 //   COULD use half-width or smaller kernels to improve odd sizes
 //   Scalar transpose or loop used for overhang of 1
-//   SHOULD add NEON
 
 // Reorder Axes
 // If 𝕨 indicates the identity permutation, return 𝕩
