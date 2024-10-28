@@ -74,13 +74,48 @@ fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
 export{'si_sum_f64', fold_assoc_0{f64,+}}
 
 
+def select_rows_pow2{T, x0, r0, nv, k} = {
+  def V = [arch_defvw / width{T}]T
+  xv := *V~~x0
+  @for (r in *V~~r0 over i to nv) {
+    def {mask, unzip0} = if (hasarch{'AARCH64'}) {
+      tup{{x}=>x, unzip{..., 0}}
+    } else {
+      m := make{V, - (iota{vcount{V}}%k == 0)} # Mask off high bits
+      def D = el_m{V}; def uz{a, b} = packQ{D~~a, D~~b}
+      tup{&{m, .}, uz}
+    }
+    xs := each{load{xv, .}, iota{k}}
+    r = tree_fold{unzip0, each{mask, xs}}
+    if (width{V} > 128) { # Lane axis wasn't packed, need to shuffle to bottom
+      def tr{E,a, r} = shuf{[1<<a]E, r, tr_iota{shiftright{a-1, iota{a}}}}
+      def lc = k > 4
+      if (lc) r = tr{u64,2, r}
+      r = tr{ty_u{128/k}, lb{k} + (not lc), r}
+    }
+    xv += k
+  }
+}
+
 fn select_rows_byte(x0:*void, r0:*void, n:usz, l:usz, e:u8) : usz = {
   n <<= e
   def vl = arch_defvw / 8
   def vh = vl / 2
   def thr = min{vl+2, 20}
+  if ((not has_simd) or n < vl or l >= usz~~thr>>e) return{0}
+  if (has_simd and (l & (l-1)) == 0) {
+    nv := n / vl
+    def try_unzip{T, k} = if (k < thr and l == k) {
+      select_rows_pow2{T, x0, r0, nv, k}
+      goto{'ret'}
+    }
+    if      (e==0) { @unroll (p from 1 to 5) try_unzip{i8 , 1<<p} }
+    else if (e==1) { @unroll (p from 1 to 4) try_unzip{i16, 1<<p} }
+    else return{0}
+    setlabel{'ret'}; return{(usz~~vl>>e) * nv}
+  }
   def has_blend = hasarch{'SSE4.1'} or hasarch{'AARCH64'}
-  if (has_blend and n>=vl and l < usz~~thr>>e and (l&1)!=0) {
+  if (has_blend and (l&1)!=0) {
     def V = [vl]u8; def H = [vh]u16
     l8 := cast_i{u8, l}
     li := cast_i{u8, l + 2 * ((l-1) + (l&2))}  # Inverse mod vl
