@@ -78,15 +78,27 @@ def select_rows_pow2{T, x0, r0, nv, k} = {
   def V = [arch_defvw / width{T}]T
   xv := *V~~x0
   @for (r in *V~~r0 over i to nv) {
-    def {mask, unzip0} = if (hasarch{'AARCH64'}) {
-      tup{{x}=>x, unzip{..., 0}}
-    } else {
-      m := make{V, - (iota{vcount{V}}%k == 0)} # Mask off high bits
-      def D = el_m{V}; def uz{a, b} = packQ{D~~a, D~~b}
-      tup{&{m, .}, uz}
-    }
     xs := each{load{xv, .}, iota{k}}
-    r = tree_fold{unzip0, each{mask, xs}}
+    def unzip0 = if (not hasarch{'X86_64'}) {
+      unzip{..., 0} # Sane instruction set
+    } else {
+      def w = width{T}
+      if (w <= 16) {
+        # Pack instructions
+        m := make{V, - (iota{vcount{V}}%k == 0)}
+        xs = each{&{m, .}, xs} # Mask off high bits
+        def D = el_m{V}
+        {a, b} => packQ{D~~a, D~~b}
+      } else {
+        # Two-vector shuffles
+        # Could also be used for 1/2-byte with ending gap >= 4 bytes,
+        # less instructions but it doesn't seem faster
+        def c = 128/w
+        def sh = shuf{[c]ty_f{w}, ., 2*iota{c} % c}
+        {...ab} => sh{ab}
+      }
+    }
+    r = tree_fold{unzip0, xs}
     if (width{V} > 128) { # Lane axis wasn't packed, need to shuffle to bottom
       def tr{E,a, r} = shuf{[1<<a]E, r, tr_iota{shiftright{a-1, iota{a}}}}
       def lc = k > 4
@@ -102,16 +114,19 @@ fn select_rows_byte(x0:*void, r0:*void, n:usz, l:usz, e:u8) : usz = {
   def vl = arch_defvw / 8
   def vh = vl / 2
   def thr = min{vl+2, 20}
-  if ((not has_simd) or n < vl or l >= usz~~thr>>e) return{0}
+  if ((not has_simd) or n < vl or l > usz~~thr>>e) return{0}
   if (has_simd and (l & (l-1)) == 0) {
     nv := n / vl
     def try_unzip{T, k} = if (k < thr and l == k) {
       select_rows_pow2{T, x0, r0, nv, k}
       goto{'ret'}
     }
-    if      (e==0) { @unroll (p from 1 to 5) try_unzip{i8 , 1<<p} }
-    else if (e==1) { @unroll (p from 1 to 4) try_unzip{i16, 1<<p} }
-    else return{0}
+    # 10 loops: i8 2,4,8,16; i16 2,4,8; i32 2,4; i64 2
+    @unroll (ek to 4) if (e == ek) {
+      def T = ty_s{8<<ek}
+      @unroll (p from 1 to 5-ek) try_unzip{T, 1<<p}
+    }
+    return{0}
     setlabel{'ret'}; return{(usz~~vl>>e) * nv}
   }
   def has_blend = hasarch{'SSE4.1'} or hasarch{'AARCH64'}
