@@ -693,7 +693,7 @@ def rep_const_bool_small_odd{W=[wl](u64), max_wv, wv, get_perm_x, output} = {
   def fixed_loop{k} = {
     assert{wv == k}
     while (1) {
-      # e.g. 01234567 to 05316427 on each byte for k==3, ew==8
+      # e.g. 01234567 to 03614725 on each byte for k==3, ew==8
       xv := get_perm_x{}
       # Overhang from previous 64-bit elements
       def ix = 64*slice{iota{k},1} // k  # bits that overhang within a word
