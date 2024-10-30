@@ -219,9 +219,8 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 
 // fast special-case implementations
-extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
-extern usz (*const si_select_cells_byte)(void*,void*,usz,usz,u8);
-static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
+B select_cells_single(usz ind, B x, usz cam, usz l, usz csz, bool leaf); // from select.c
+static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
   usz* xsh = SH(x);
@@ -229,63 +228,15 @@ static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind
   usz l = xsh[k];
   assert(0<=ind && ind<l);
   assert(cam*l*csz == IA(x));
-  Arr* ra;
-  usz take = leaf? 1 : csz;
-  if (l==1 && take==csz) {
-    ra = cpyWithShape(incG(x));
-    arr_shErase(ra, 1);
-  } else {
-    u8 xe = TI(x,elType);
-    u8 ewl= elwBitLog(xe);
-    u8 xl = leaf? ewl : multWidthLog(csz, ewl);
-    usz ria = cam*take;
-    if (xl>=7 || (xl<3 && xl>0)) { // generic case
-      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
-      usz jump = l * csz;
-      usz xi = take*ind;
-      usz ri = 0;
-      for (usz i = 0; i < cam; i++) {
-        mut_copyG(rm, ri, x, xi, take);
-        xi+= jump;
-        ri+= take;
-      }
-      ra = mut_fp(rm);
-    } else if (xe==el_B) {
-      assert(take == 1);
-      SGet(x)
-      HArr_p rp = m_harrUv(ria);
-      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
-      NOGC_E; ra = (Arr*)rp.c;
-    } else {
-      void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
-      void* xp = tyany_ptr(x);
-      if (xl == 0) {
-        #if SINGELI
-        if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
-        else
-        #endif
-        for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
-      } else {
-        usz i0 = 0;
-        #if SINGELI
-        i0 = si_select_cells_byte((u8*)xp + (ind<<(xl-3)), rp, cam, l, xl-3);
-        #endif
-        switch(xl) { default: UD;
-          case 3: PLAINLOOP for (usz i=i0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
-          case 4: PLAINLOOP for (usz i=i0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
-          case 5: PLAINLOOP for (usz i=i0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
-          case 6: PLAINLOOP for (usz i=i0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
-        }
-      }
-    }
-  }
+  B r = select_cells_single(ind, x, cam, l, csz, leaf);
+  Arr* ra = a(r);
   usz* rsh = arr_shAlloc(ra, leaf? k : xr-1);
   if (rsh) {
     shcpy(rsh, xsh, k);
     if (!leaf) shcpy(rsh+k, xsh+k+1, xr-1-k);
   }
   decG(x);
-  return taga(ra);
+  return r;
 }
 
 static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) { // may write to all elements 0 ≤ i < stride×n, and after that too for masked stores
