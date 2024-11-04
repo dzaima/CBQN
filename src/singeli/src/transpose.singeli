@@ -88,6 +88,20 @@ def kernel_part{part_w}{src:*T, dst:*T, kw, kh, w, h} = {
 }
 def kernel = kernel_part{0}
 
+def kernel_part_h{part_h}{src:*T==i8, dst:*T, kw==16, kh==16, w, h} = {
+  def n = (kw*kh*width{T}) / arch_defvw
+  def VT = [kw]T
+  off := part_h - kh/2
+  def xvs = @unroll (i to n) { s := src + i*w; load2{*VT~~s, *VT~~(s+off*w)} }
+  def rvs = halved_pass{n, unpack_to{0, n/2, xvs}}
+  @unroll (j to 2) {
+    def is = 2*iota{2} + j
+    d := dst + j*off
+    def store_q{v, i} = { store{*u64~~d, 0, extract{v,i}}; d += h }
+    each{{r} => each{store_q{[4]u64~~r,.}, is}, rvs}
+  }
+}
+
 
 def for_mult{k}{vars,begin,end,iter} = {
   assert{begin == 0}
@@ -351,6 +365,10 @@ fn transpose{T, {k, kh}}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : voi
   if (has_simd and use_kpart and h>=kh and w>=k/2 and w<k) {
     @for_mult_max{kh, h-kh} (i to h+(-h)%kh) {
       kernel_part{w}{xp+i*ws, rp+i, k, kh, ws, hs}
+    }
+  } else if (hasarch{'AVX2'} and width{T}==8 and w>=k and h>=kh/2 and h<kh) {
+    @for_mult_max{k, w-k} (i to w+(-w)%k) {
+      kernel_part_h{h}{xp+i, rp+i*hs, k, kh, ws, hs}
     }
   } else if (has_simd and k!=0 and w>=k and h>=k) {
     transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
