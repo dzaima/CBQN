@@ -206,11 +206,41 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
   }
 }
 
-# Interleave n values of type T from each of x0 and x1 into r
+# Unzip 2*n values
+def uninterleave{r0:*T, r1:*T, xp:*T, n} = {
+  @for (r0, r1 over i to n) {
+    r0 = load{xp, i*2}; r1 = load{xp, i*2+1}
+  }
+}
+# Zip n values of type T from each of x0 and x1 into r
 fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
   rp := *T~~r0
   @for (x0 in *T~~x0, x1 in *T~~x1 over i to n) {
     store{rp, i*2, x0}; store{rp, i*2+1, x1}
+  }
+}
+# SIMD implementations
+def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd} = {
+  def l = arch_defvw / width{T}
+  def V = [l]T
+  rv0 := *V~~r0; rv1 := *V~~r1; xv := *V~~xp
+  nv := n / l
+  def uz = if (not hasarch{'X86_64'}) unzip else ({...xs} => {
+    def reinterpret{V, xs if ktup{xs}} = each{~~{V,.}, xs}
+    def q = tr_quads{arch_defvw/128}
+    def k = flat_table{+, iota{2}, 2 * iota{64 / width{T}}}
+    def px = each{shuf{., k}, xs}
+    V~~each{q, zip128{...re_el{u64,V}~~px}}
+  })
+  @for (r0 in rv0, r1 in rv1 over i to nv) {
+    tup{r0, r1} = uz{...each{load{xv+2*i, .}, iota{2}}}
+  }
+  if (n % l > 0) {
+    xb := xv + 2*nv
+    x0 := load{xb}
+    x1 := V**0; if (n&(l/2) != 0) x1 = load{xb, 1}
+    mask := maskOf{V, n%l}
+    each{homMaskStoreF{., mask, .}, tup{rv0+nv,rv1+nv}, uz{x0,x1}}
   }
 }
 fn interleave{T if has_simd}(r:*void, x0:*void, x1:*void, n:u64) : void = {
@@ -398,7 +428,7 @@ fn transpose{T, {k, kh}}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : voi
     transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
   } else {
     if      (h==2 and h==hs) interleave{T}(r0, x0, *void~~(xp+ws), w)
-    else if (w==2 and w==ws) @for (r0 in rp, r1 in rp+hs over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
+    else if (w==2 and w==ws) uninterleave{rp, rp+hs, xp, h}
     else call_base{rp, xp, w, h}
   }
 }
