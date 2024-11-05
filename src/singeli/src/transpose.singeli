@@ -206,11 +206,35 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
   }
 }
 
-# Interleave n values of type T from x0 and x1 into r
+# Interleave n values of type T from each of x0 and x1 into r
 fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
   rp := *T~~r0
   @for (x0 in *T~~x0, x1 in *T~~x1 over i to n) {
     store{rp, i*2, x0}; store{rp, i*2+1, x1}
+  }
+}
+fn interleave{T if has_simd}(r:*void, x0:*void, x1:*void, n:u64) : void = {
+  def l = arch_defvw / width{T}
+  def V = [l]T
+  xv0 := *V~~x0; xv1 := *V~~x1; rv := *V~~r
+  nv := n / l
+  def q = tr_quads{arch_defvw/128}
+  @for (x0 in xv0, x1 in xv1 over i to nv) {
+    each{store{rv+2*i, ., .}, iota{2}, zip128{q{x0},q{x1}}}
+  }
+  if (n % l > 0) {
+    def xs = each{load{.,nv}, tup{xv0,xv1}}
+    def get_r = zip128{...each{q, xs}, .}
+    r0 := get_r{0}
+    rb := rv + 2*nv
+    nr := 2*n; m := nr%l
+    mask := maskOf{V, m}
+    if (nr&l == 0) {
+      homMaskStoreF{rb, mask, r0}
+    } else {
+      store{rb, 0, r0}
+      if (m > 0) homMaskStoreF{rb+1, mask, get_r{1}}
+    }
   }
 }
 
