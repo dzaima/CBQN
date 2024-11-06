@@ -520,7 +520,7 @@ B find_c1(B t, B x) {
   usz n = *SH(x);
   if (n<=1) return x;
   u8 xe = TI(x,elType);
-  u8 sameness = fast_sameness(x, xe);
+  u8 sameness = IA(x)==0? 1 : fast_sameness(x, xe);
   if (sameness == 1) return C2(take, m_i32(1), x);
   if (RARE(sameness == 2)) return x;
   if (xe==el_bit && RNK(x)==1) {
