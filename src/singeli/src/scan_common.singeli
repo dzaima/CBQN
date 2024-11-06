@@ -66,3 +66,13 @@ def make_scan_idem{(f64), op, up} = {
   sc
 }
 def make_scan_idem{T, op} = make_scan_idem{T, op, 1}
+
+def scan_assoc_id0{op} = {
+  def shl0{v:[_]T, k} = vec_shift_right_128{v, k/width{T}} # Lanewise
+  def shl0{v:V, k==128 if hasarch{'AVX2'}} = {
+    # Broadcast end of lane 0 to entire lane 1
+    l:= V~~make{[8]i32,0,0,0,-1,0,0,0,0} & spread{v}
+    sel{[8]i32, l, make{[8]i32, 3*(3<iota{8})}}
+  }
+  prefix_byshift{op, shl0}
+}

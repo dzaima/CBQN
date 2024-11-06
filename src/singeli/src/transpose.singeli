@@ -4,6 +4,8 @@ include './f64'
 include './mask'
 include './bitops'
 
+def avx2 = hasarch{'AVX2'}
+
 # Group l (power of 2) elements into paired groups of length o
 # e.g. pairs{2, iota{8}} = {{0,1,4,5}, {2,3,6,7}}
 def pairs{o, x} = {
@@ -22,31 +24,82 @@ def permute_pass{o, x} = {
   merge{h{0,2}, h{1,3}}
 }
 def unpack_to{f, l, x} = {
-  def pass = if (f) permute_pass else unpack_pass
+  def pass = if (avx2 and f) permute_pass else unpack_pass
   pass{l, if (l==1) x else unpack_to{0, l/2, x}}
 }
 # Last pass for square kernel packed in halves
-def shuf_pass{x} = each{{v} => shuf{[4]i64, v, 0,2,1,3}, x}
+def halved_pass{n, x} = {
+  if (not avx2) unpack_pass{n/2, x}
+  else each{{v} => shuf{[4]i64, v, 0,2,1,3}, x}
+}
 
 # Square kernel where width is a full vector
-def transpose_square{VT, l, x if hasarch{'AVX2'}} = unpack_to{1, l/2, x}
+def transpose_square{VT, l, x if avx2} = unpack_to{1, l/2, x}
 
-def load2{a:*T, b:*T} = pair{load{a}, load{b}}
-def store2{a:*T, b:*T, v:T2 if w128i{T} and w256{T2}} = {
-  each{{p, i} => store{p, 0, T~~half{v,i}}, tup{a,b}, iota{2}}
+def load2{a:*T, b:*T} = match (width{T}) {
+  {64} => {
+    def v = each{{p}=>loadLow{*[2]u64~~p, 64}, tup{a,b}}
+    n_d{T}~~zip{...v, 0}
+  }
+  {128} => pair{load{a}, load{b}}
 }
-def load_k {VT, src,    l, w if w256{VT}} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}
-def store_k{VT, dst, x, l, h if w256{VT}} = each{{i,v}=>store{*VT~~(dst+i*h), 0, VT~~v}, iota{l}, x}
-def load_k {VT, src,    l, w if w128{VT}} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
-def store_k{VT, dst, x, l, h if w128{VT}} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
+def store2{a:*T, b:*T, v:T2 if 2*width{T} == width{T2}} = match (width{T}) {
+  { 64} => each{{p, v} => storeLow{*u64~~p, 64, [2]u64~~v}, tup{a,b}, tup{v, shuf{u64, v, 1,0}}}
+  {128} => each{{p, i} => store{p, 0, T~~half{v,i}}, tup{a,b}, iota{2}}
+}
+def store1of2{a:*T, v:T2 if 2*width{T} == width{T2}} = match (width{T}) {
+  { 64} => storeLow{*u64~~a, 64, [2]u64~~v}
+  {128} => store{a, 0, T~~half{v,0}}
+}
+def load_k {VT, src,    l, w} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}
+def store_k{VT, dst, x, l, h} = each{{i,v}=>store{*VT~~(dst+i*h), 0, VT~~v}, iota{l}, x}
+def load_k {VT, src,    l, w if width{VT} < arch_defvw} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
+def store_k{VT, dst, x, l, h if width{VT} < arch_defvw} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
 
 # Transpose kernel of size kw,kh in size w,h array
-def kernel{src:*T, dst:*T, kw, kh, w, h} = {
-  def n = (kw*kh*width{T}) / 256             # Number of vectors
+def kernel_part{part_w}{src:*T, dst:*T, kw, kh, w, h} = {
+  def n = (kw*kh*width{T}) / arch_defvw      # Number of vectors
   def xvs = load_k{[kw]T, src, n, w}
   def xt  = unpack_to{n==kh, n/2, xvs}       # Transpose n by n
-  def rvs = if (n==kw) xt else shuf_pass{xt} # To kh by kh for packed square
-  store_k{[kh]T, dst, rvs, n, h}
+  def rvs = if (n==kw) xt else halved_pass{n,xt} # To kh by kh for packed square
+  def stores = store_k{[kh]T, ..., h}
+  if (same{part_w, 0}) {
+    stores{dst, rvs, n}
+  } else {
+    # Write w results, kw/2 <= n < kw
+    d := dst
+    def vd = kw / n  # Number of writes for each output vector (1 or 2)
+    def store_slice{rv, len} = {
+      stores{d, slice{rv,0,len}, len}
+      d += len*vd*h
+    }
+    store_slice{rvs, n/2} # Unconditionally store first half
+    rt := slice{rvs,n/2}  # Remaining tail
+    def wtail{b} = {
+      if ((part_w & (vd*b)) != 0) {
+        store_slice{rt, b}
+        slice{rt,0,b} = slice{rt,b,2*b}
+      }
+      if (b>1) wtail{b/2}
+    }
+    wtail{n/4}
+    if (vd>1 and (part_w & 1) != 0) store1of2{*[kh]T~~d, select{rt,0}}
+  }
+}
+def kernel = kernel_part{0}
+
+def kernel_part_h{part_h}{src:*T==i8, dst:*T, kw==16, kh==16, w, h} = {
+  def n = (kw*kh*width{T}) / arch_defvw
+  def VT = [kw]T
+  off := part_h - kh/2
+  def xvs = @unroll (i to n) { s := src + i*w; load2{*VT~~s, *VT~~(s+off*w)} }
+  def rvs = halved_pass{n, unpack_to{0, n/2, xvs}}
+  @unroll (j to 2) {
+    def is = 2*iota{2} + j
+    d := dst + j*off
+    def store_q{v, i} = { store{*u64~~d, 0, extract{v,i}}; d += h }
+    each{{r} => each{store_q{[4]u64~~r,.}, is}, rvs}
+  }
 }
 
 
@@ -153,37 +206,264 @@ def transpose_with_kernel{T, k, kh, call_base, rp:*T, xp:*T, w, h, ws, hs} = {
   }
 }
 
-# Interleave n values of type T from x0 and x1 into r
+# Unzip 2*n values
+def uninterleave{r0:*T, r1:*T, xp:*T, n} = {
+  @for (r0, r1 over i to n) {
+    r0 = load{xp, i*2}; r1 = load{xp, i*2+1}
+  }
+}
+# Zip n values of type T from each of x0 and x1 into r
 fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
   rp := *T~~r0
   @for (x0 in *T~~x0, x1 in *T~~x1 over i to n) {
     store{rp, i*2, x0}; store{rp, i*2+1, x1}
   }
 }
-
-fn transpose{T, k, kh}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : void = {
-  # Scalar transpose defined in C
-  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
-  def call_base{...a} = emit{void, merge{'transpose_',ts}, ...a, ws, hs}
-  
-  rp:*T = *T~~r0
-  xp:*T = *T~~x0
-  if (hasarch{'AVX2'} and w>=k and h>=k) {
-    transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
-  } else {
-    if      (h==2 and h==hs) interleave{T}(r0, x0, *void~~(xp+ws), w)
-    else if (w==2 and w==ws) @for (r0 in rp, r1 in rp+hs over i to h) { r0 = load{xp, i*2}; r1 = load{xp, i*2+1} }
-    else call_base{rp, xp, w, h}
+# SIMD implementations
+def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd and (not hasarch{'X86_64'} or width{T}>=32 or hasarch{'SSSE3'})} = {
+  def l = arch_defvw / width{T}
+  def V = [l]T
+  rv0 := *V~~r0; rv1 := *V~~r1; xv := *V~~xp
+  nv := n / l
+  def uz = if (not hasarch{'X86_64'}) unzip else ({...xs} => {
+    def reinterpret{V, xs if ktup{xs}} = each{~~{V,.}, xs}
+    def q = tr_quads{arch_defvw/128}
+    def k = flat_table{+, iota{2}, 2 * iota{64 / width{T}}}
+    def px = each{shuf{., k}, xs}
+    V~~each{q, zip128{...re_el{u64,V}~~px}}
+  })
+  @for (r0 in rv0, r1 in rv1 over i to nv) {
+    tup{r0, r1} = uz{...each{load{xv+2*i, .}, iota{2}}}
+  }
+  if (n % l > 0) {
+    xb := xv + 2*nv
+    x0 := load{xb}
+    x1 := V**0; if (n&(l/2) != 0) x1 = load{xb, 1}
+    mask := maskOf{V, n%l}
+    each{homMaskStoreF{., mask, .}, tup{rv0+nv,rv1+nv}, uz{x0,x1}}
+  }
+}
+fn interleave{T if has_simd}(r:*void, x0:*void, x1:*void, n:u64) : void = {
+  def l = arch_defvw / width{T}
+  def V = [l]T
+  xv0 := *V~~x0; xv1 := *V~~x1; rv := *V~~r
+  nv := n / l
+  def q = tr_quads{arch_defvw/128}
+  @for (x0 in xv0, x1 in xv1 over i to nv) {
+    each{store{rv+2*i, ., .}, iota{2}, zip128{q{x0},q{x1}}}
+  }
+  if (n % l > 0) {
+    def xs = each{load{.,nv}, tup{xv0,xv1}}
+    def get_r = zip128{...each{q, xs}, .}
+    r0 := get_r{0}
+    rb := rv + 2*nv
+    nr := 2*n; m := nr%l
+    mask := maskOf{V, m}
+    if (nr&l == 0) {
+      homMaskStoreF{rb, mask, r0}
+    } else {
+      store{rb, 0, r0}
+      if (m > 0) homMaskStoreF{rb+1, mask, get_r{1}}
+    }
   }
 }
 
-def transpose{T, k} = transpose{T, k, k}
+# Utilities for kernels based on modular permutation
+def rotcol{xs, mg:I} = {
+  def w = length{xs}
+  @unroll (kl to ceil_log2{w}) { def k = 1<<kl
+    def vk = I**k; def m = (mg & vk) == vk
+    def bl{x,y} = { x = homBlend{x,y,m} }
+    x0 := select{xs, 0}
+    def xord = select{xs, k*iota{w} % w}
+    each{bl, xord, shiftleft{xord, tup{x0}}}
+  }
+}
+def get_modperm_lane_shuf{c} = {
+  def cross{s, i} = homBlend{s, shuf{[4]u64, s, 2,3,0,1}, i&c == c}
+  {x, i} => cross{shuf{16, x, i}, i}
+}
+def tr_quads = match { {1}=>({x}=>x); {2}=>shuf{[4]u64, ., 0,2,1,3} }
 
-exportT{'simd_transpose', tup{
-  transpose{i8 , 16},
-  transpose{i16, 8, 16},
-  transpose{i32, 8},
-  transpose{i64, 4}
-}}
+def loop_fixed_height{xp, rp, w, k, st, kern} = {
+  @for_mult_max{k, w-k} (i to w+(-w)%k) kern{xp+i, rp+i*st}
+}
+def loop_fixed_width{xp, rp, h, k, st, kern} = {
+  @for_mult_max{k, h-k} (i to h+(-h)%k) kern{xp+i*st, rp+i}
+}
 
-exportT{'interleave_fns', each{interleave, tup{i8, i16, i32, i64}}}
+# Transpose a contiguous kernel of width w*p from x to r with stride rst
+def modular_kernel{w,p if w%2==1 and 2%p==0}{xp:*T, rp0:*T, rst:(u64)} = {
+  def h = arch_defvw / 8
+  def ih = iota{h}; def iw = iota{w}
+  def I = [h]u8; def V = I
+  def e = width{T} / 8
+  # Load a shape h,w slice of x, but consider as shape w,h
+  def xsp = each{load{*V~~xp, .}, iw}
+  # Modular permutation of (reshaped argument) columns
+  xs := select{xsp, find_index{h/e*iw % w, iw}}
+  # Rotate each column by its index
+  rotcol{reverse{xs}, make{I, (ih // e) % w}}
+  # Modular permutation of rows, and write to result
+  rp := rp0
+  mp := make{I, ih%e + (p*(ih - ih%e) + (ih//(h/p))*e)%16*w%h}
+  mi := I**e
+  def perm = if (h==16) shuf else {
+    def sh = get_modperm_lane_shuf{I**16}
+    def q = tr_quads{p}; if (p>1) mp = q{mp}
+    {x, i} => q{sh{x, i}}
+  }
+  def perm_store{x} = {
+    match (p) {
+      {1} => store{*V~~rp, 0, perm{x, mp}}
+      {2} => { def U = [h/2]u8; store2{*U~~rp, *U~~(rp+w*rst), perm{x, mp}} }
+    }
+    rp += rst; mp += mi
+    if (hasarch{'AARCH64'}) mp &= I**15 # Implicit on x86, value stays below h+w
+  }
+  each{perm_store, xs}
+}
+def modular_kernel{2,2}{xp:*T, rp0:*T, rst:(u64)} = {
+  def h = arch_defvw / 8
+  def V = [h]u8; def U = n_h{V}
+  def ih = iota{h}%16; def e = width{T} / 8
+  # Permutation to unzip by 4 within each lane
+  uz := make{V, (4*(ih//e) + ih//(16/4))*e%16 + ih%e}
+  # Unzipping code for the resulting 4-byte units
+  def {st, proc, zipx} = match (h) {
+    {16} => tup{2, {x} => [4]f32~~x,         {xs,i} => V~~zip128{...xs,i}}
+    {32} => tup{1, shuf{[4]u64, ., 0,2,1,3}, {xs,i} => shuf{[4]f32, xs, i + tup{0,2,0,2}}}
+  }
+  def xsp = each{load{*V~~xp, .}, iota{2}}
+  xs := each{proc, each{shuf{16, ., uz}, xsp}}
+  @unroll (i to 2) {
+    rp := rp0 + st*i*rst
+    store2{*U~~rp, *U~~(rp + (2/st)*rst), zipx{xs,i}}
+  }
+}
+def transpose_fixed_width{rp:*T, xp:*T, wk, h, hs} = {
+  def p = if (wk%2) 1 else 2; def w = wk/p
+  def vl = arch_defvw / (p*width{T})
+  loop_fixed_width{xp, rp, h, vl, wk, modular_kernel{w,p}{., ., hs}}
+}
+def transpose_fixed_width{rp:*T, xp:*T, 2, h, hs} = {
+  uninterleave{rp, rp+hs, xp, h}
+}
+
+# Transpose a kernel of height w*p from x with stride xst to contiguous r
+# w and h are named for the result, not argument, to match modular_kernel
+def modular_kernel_rev{w,p if w%2==1 and 2%p==0}{xp0:*T, rp:*T, xst:(u64)} = {
+  def h = arch_defvw / 8
+  def ih = iota{h}; def iw = iota{w}
+  def I = [h]u8; def V = I
+  def e = width{T} / 8
+  # Read rows, modular permutation on each
+  def rotbit{x, l,m,h} = x%l + (x-x%l)*(h/m)%h + x//m*l
+  def wi = w + 2 * ((w-1) + (w&2))  # Inverse mod 32
+  def mpd = rotbit{ih%e + (ih - ih%e)%16*wi%h, e,e*p,h}
+  mp := make{I, if (h==16 or p==1) mpd else rotbit{mpd, 8,16,h}}
+  def rot_mp = {
+    def rot_lane = shuf{16, ., make{I, (ih-e)%16}}
+    def cross = if (h==16) ({x}=>x) else ^{make{I, 16*(ih%16<e)}, .}
+    {mp} => cross{rot_lane{mp}}
+  }
+  def perm = if (h==16) shuf else {
+    def sh = get_modperm_lane_shuf{I**16}
+    def q = tr_quads{p}
+    {x, i} => sh{q{x}, i}
+  }
+  xp := xp0
+  xs := @collect (w) {
+    x := match (p) {
+      {1} => perm{load{*V~~xp, 0}, mp}
+      {2} => { def U = [h/2]u8; perm{load2{*U~~xp, *U~~(xp+w*xst)}, mp} }
+    }
+    xp += xst; mp = rot_mp{mp}
+    x
+  }
+  # Rotate each column by its index
+  rotcol{xs, make{I, (ih // e) % w}}
+  # Permute vectors and store
+  each{store{*V~~rp, ., .}, iw, select{xs, h/e*iw % w}}
+}
+def modular_kernel_rev{2,2}{xp0:*T, rp:*T, xst:(u64)} = {
+  def V = [arch_defvw / width{T}]T; def U = n_h{V}
+  xl := @unroll (i to 2) {
+    xp := xp0 + i*xst
+    x := load2{*U~~xp, *U~~(xp + 2*xst)}
+    if (arch_defvw==128) x else shuf{[8]u32, x, tr_iota{1,2,0}}
+  }
+  xs := unpack_typed{...unpack_typed{...xl}}
+  each{store{*V~~rp, ., .}, iota{2}, each{~~{V,.},xs}}
+}
+def transpose_fixed_height{rp:*T, xp:*T, w, ws, hk} = {
+  def p = if (hk%2) 1 else 2; def h = hk/p
+  def vl = arch_defvw / (p*width{T})
+  loop_fixed_height{xp, rp, w, vl, hk, modular_kernel_rev{h,p}{., ., ws}}
+}
+def transpose_fixed_height{rp:*T, xp:*T, w, ws, 2} = {
+  interleave{T}(*void~~rp, *void~~xp, *void~~(xp+ws), w)
+}
+
+fn transpose{T, {k, kh}}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : void = {
+  rp:*T = *T~~r0
+  xp:*T = *T~~x0
+  def wT = width{T}
+  def vl = arch_defvw / wT
+  # Transposes with code dedicated to a particular width or height
+  def try_fixed_dim{tr, l, lst, nl, l_max} = {
+    def incl{l} = if (k>4) 1 else l!=4
+    if (l<l_max and incl{l} and l==lst) {
+      if (l == 2) { tr{2}; return{} }
+      def has_blend = hasarch{'SSE4.1'} or hasarch{'AARCH64'}
+      if (has_blend and nl>=vl/2 and (l%2==0 or nl>=vl)) {
+        def try{ls} = {
+          def i = length{ls}>>1
+          if (l < select{ls,i}) try{slice{ls, 0,i}} else try{slice{ls, i}}
+        }
+        def try{{lk}} = tr{lk}
+        try{replicate{{i} => i<l_max and incl{i}, slice{iota{8},3}}}
+        return{}
+      }
+    }
+  }
+  # Small width: fixed, or over-reading partial kernel
+  def use_part_w = wT<=16 and k>max{4,8/wT}
+  def w_max = 1 + (if (use_part_w) max{4, k/2-1} else 7)
+  if (has_simd and w < max{w_max, k}) {
+    try_fixed_dim{transpose_fixed_width {rp, xp, ., h, hs}, w, ws, h, w_max}
+    if (use_part_w and h>=kh and w>=k/2 and w<k) {
+      loop_fixed_width{xp, rp, h, kh, ws, kernel_part{w}{., ., k, kh, ws, hs}}
+      return{}
+    }
+  }
+  # Small height: fixed, or kernel with overlapping writes
+  # Overlapping is slower than over-reading, so it's only used when needed
+  if (has_simd and h < max{8, k}) {
+    try_fixed_dim{transpose_fixed_height{rp, xp, w, ws, .}, h, hs, w, 8}
+    if (k>8 and w>=k and h>=kh/2) {
+      loop_fixed_height{xp, rp, w, k, hs, kernel_part_h{h}{., ., k, kh, ws, hs}}
+      return{}
+    }
+  }
+  # Scalar transpose defined in C
+  def ts = if (T==i8) 'i8' else if (T==i16) 'i16' else if (T==i32) 'i32' else 'i64'
+  def call_base{...a} = emit{void, merge{'transpose_',ts}, ...a, ws, hs}
+  # Full kernels
+  # May have w<k or h<k if not has_blend, or >2D transpose with w!=ws or h!=hs
+  if (has_simd and k!=0 and w>=k and h>=k) {
+    transpose_with_kernel{T, k, kh, call_base, rp, xp, w, h, ws, hs}
+  } else {
+    call_base{rp, xp, w, h}
+  }
+}
+
+def transpose{T, k if knum{k}} = transpose{T, tup{k, k}}
+
+def tr_types   =               tup{i8,    i16,    i32, i64}
+def tr_kernels = if (not avx2) tup{ 8,     8,      4,   0 }
+                 else          tup{16, tup{8, 16}, 8,   4 }
+
+exportT{'simd_transpose', each{transpose, tr_types, tr_kernels}}
+
+exportT{'interleave_fns', each{interleave, tr_types}}

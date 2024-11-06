@@ -1,18 +1,22 @@
 // Transpose and Reorder Axes (⍉)
 
 // Transpose
-// One length-2 axis: dedicated code
-//   Boolean: pdep or emulation for height 2; pext for width 2
-//     SHOULD use a generic implementation if BMI2 not present
-// SHOULD optimize other short lengths with pdep/pext and shuffles
 // Boolean 𝕩: convert to integer
+//   pdep or emulation for height 2; pext for width 2
+//     SHOULD switch to shuffles and modular permutation
 //   SHOULD have bit matrix transpose kernel
 // CPU sizes: native or SIMD code
 //   Large SIMD kernels used when they fit, overlapping for odd sizes
-//     i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
-//   COULD use half-width or smaller kernels to improve odd sizes
-//   Scalar transpose or loop used for overhang of 1
-//   SHOULD add NEON
+//     SSE, NEON i8:  8×8 ; i16:  8×8; i32: 4×4; f64: scalar
+//     AVX2      i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
+//     COULD use half-width or smaller kernels to improve odd sizes
+//     Scalar transpose or loop used for overhang of 1
+//   Partial kernels for at least half-kernel height/width
+//     Short width: over-read, then skip some writes
+//     Short height, i8 AVX2 only: overlap input rows and output words
+//   Smaller heights and widths: dedicated kernels
+//     Zipping, unzipping, shuffling for powers of 2
+//     Modular permutation for odd numbers, possibly times 2
 
 // Reorder Axes
 // If 𝕨 indicates the identity permutation, return 𝕩
