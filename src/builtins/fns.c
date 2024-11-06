@@ -5,7 +5,6 @@
 #include "../utils/talloc.h"
 #include "../utils/each.h"
 #include "../builtins.h"
-#include "../nfns.h"
 
 
 NOINLINE B intRange16(ux s, ux n) { // s+↕n with i16arr result

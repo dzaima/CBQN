@@ -913,12 +913,12 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   
   ux in = IA(inds);
   if (in == 0) return taga(emptyArr(x, 1));
-  u8 ie = TI(inds,elType);
   if (in == 1) {
     B w = IGetU(inds,0); if (!isF64(w)) goto generic;
     B r = select_cells_single(WRAP(o2i64(w), csz, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, csz)), x, cam, csz, 1, false);
     decG(x); decG(inds); return r;
   }
+  u8 ie = TI(inds,elType);
   if (csz<=2? ie!=el_bit : csz<=128? ie>el_i8 : !elInt(ie)) {
     inds = num_squeeze(inds);
     ie = TI(inds,elType);

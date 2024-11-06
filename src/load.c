@@ -31,7 +31,7 @@ GLOBAL u64 mm_heapAlloc;
 //     [
 //       type, // 0: function; 1: 1-modifier; 2: 2-modifier
 //       immediateness, // 0: non-immediate; 1: immediate
-//       ambivalentIndex OR [monadicIndices, dyadicIndices], // indexes into body data array
+//       ambivalentIndex OR [...caseIndices], // indexes into body data array; cases being some set of monadic, dyadic, and inverses
 //     ]*
 //   ],
 //   [ // body data
