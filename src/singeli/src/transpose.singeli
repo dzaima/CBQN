@@ -220,7 +220,7 @@ fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
   }
 }
 # SIMD implementations
-def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd} = {
+def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd and (not hasarch{'X86_64'} or width{T}>=32 or hasarch{'SSSE3'})} = {
   def l = arch_defvw / width{T}
   def V = [l]T
   rv0 := *V~~r0; rv1 := *V~~r1; xv := *V~~xp
