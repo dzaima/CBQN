@@ -100,7 +100,16 @@ debugn-singeli: debugn
 heapverifyn-singeli: heapverifyn
 rtverifyn-singeli: rtverifyn
 
-
+ifeq ($(OS),Windows_NT)
+    DLLEXT := .dll
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        DLLEXT := .dylib
+    else
+        DLLEXT := .so
+    endif
+endif
 
 DESTDIR =
 PREFIX = /usr/local
@@ -112,13 +121,13 @@ install:
 	mkdir -p "$(DESTDIR)$(PREFIX)/include"
 	cp -f include/bqnffi.h "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
 	
-	@if [ -f libcbqn.so ]; then \
-		rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
+	@if [ -f libcbqn$(DLLEXT) ]; then \
+		rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn$(DLLEXT)"; \
 		mkdir -p "$(DESTDIR)$(PREFIX)/lib"; \
-		cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
-		echo 'cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"'; \
+		cp -f libcbqn$(DLLEXT) "$(DESTDIR)$(PREFIX)/lib/libcbqn$(DLLEXT)"; \
+		echo 'cp -f libcbqn$(DLLEXT) "$(DESTDIR)$(PREFIX)/lib/libcbqn$(DLLEXT)"'; \
 	else \
-		echo "Not installing libcbqn.so as it wasn't built"; \
+		echo "Not installing libcbqn$(DLLEXT) as it wasn't built"; \
 	fi
 
 
@@ -126,7 +135,7 @@ install:
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
 	rm -f "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
-	rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"
+	rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn$(DLLEXT)"
 
 clean-build:
 	rm -f build/obj/*/*.o
