@@ -94,7 +94,11 @@ Finish ⇐ { 𝕊 write:
     "file"‿"directory"‿"arguments" JObj ⟨JStr name, JStr AtRoot "", ", " JArr JStr¨ flags⟩
   }
   res ← (","∾n) JArr FileObj¨ objects
-  resPath ← AtRoot "compile_commands.json"
+  {
+    •Out {write? "Removing"; "Would remove"} ∾ " old "∾𝕩
+    •file.Remove⍟write 𝕩
+  }⍟•file.Exists AtRoot "compile_commands.json"
+  resPath ← AtRoot "build/compile_commands.json"
   {
     write?
       resPath •FChars res

@@ -44,7 +44,7 @@ perf.data*
 
 # clangd
 compile_commands.json
-/.cache/
+.cache/
 
 # things not used anymore, but still may be present in existing clones
 /SingeliClone/
