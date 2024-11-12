@@ -689,10 +689,10 @@ AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
   res
 }
 
-clangd ← {¬po.clangd? {_add⇐{𝕨𝔽_𝕣𝕩:@} ⋄ Files⇐⊣}; ⟨AtRoot⟩ •Import "clangd.bqn"}
+clangd ← {¬po.clangd? {_addC⇐{𝕨𝔽_𝕣𝕩:@} ⋄ AddSingeli⇐{𝕊:@} ⋄ SingeliInit⇐⊢ ⋄ CFiles⇐⊣}; ⟨AtRoot⟩ •Import "clangd.bqn"}
 
 MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
-  GetArgs clangd._add src
+  GetArgs clangd._addC src
   dst ← cache.File id∾".o"
   GetCMD ← { 𝕊:
     Init @
@@ -703,6 +703,7 @@ MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src shoul
 }
 
 MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
+  args clangd.AddSingeli src
   dst ← cache.File id∾".c"
   GetCMD ← { 𝕊:
     Init @
@@ -733,7 +734,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/jit/", "nvm.c"⟩
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
-  cbqnSrc ↩ cbqnSrc clangd.Files "src"
+  cbqnSrc ↩ cbqnSrc clangd.CFiles "src"
   singeliMap ← 1↓¨ ({⊑ ({"X86_64":'x'; "AARCH64":'a'; "RV64":'g'; "NONE":'g'} po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
     "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/builtins/compare.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
@@ -781,6 +782,7 @@ cachedBin‿linkerCache ← {
       (⊑"slow-pdep"<⊸∊ po.has) / ⟨"-c", "SLOW_PDEP=1"⟩
       {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
     ⟩
+    clangd.SingeliInit ⟨po.singeliDir, po.arch⟩
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     {𝕊: "Singeli-determined C arch: "∾•Repr po.singeliCFlags; @} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap
