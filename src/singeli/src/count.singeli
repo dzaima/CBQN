@@ -3,7 +3,7 @@ include './vecfold'
 
 if_inline (hasarch{'SSE2'}) {
   fn sum_vec{T}(v:T) = vfold{+, fold{+, mzip128{v, T**0}}}
-  def fold_addw{v:T=[_](i8)} = sum_vec{T}(v)
+  def fold_addw{v:T=[_](u8)} = sum_vec{T}(v)
 }
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
@@ -49,7 +49,7 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
         e := each{{j}=>V**j, j}
         @for (xv over b) each{{c,e} => c -= xv == e, c, e}
         def add_sum{c, j} = {
-          s := promote{usz, fold_addw{V~~c}}
+          s := promote{usz, fold_addw{c}}
           total -= s; inc{tab, j, s}
         }
         each{add_sum, c, j}
