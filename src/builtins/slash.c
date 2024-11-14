@@ -826,7 +826,7 @@ B slash_im(B t, B x) {
       rp[sum>0] = sum; rp[0] = xia - sum;
       r = num_squeeze(r); break;
     }
-#define IIND_INT(N) \
+#define IIND_INT(N, CHECK_RIA) \
     if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
     usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
     u##N max=xp[a-1];                                                        \
@@ -856,32 +856,35 @@ B slash_im(B t, B x) {
       break;                                                                 \
     }                                                                        \
     usz ria = (usz)max + 1;                                                  \
+    CHECK_RIA                                                                \
     i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
-    for (usz i = 0; i < xia; i++) rp[xp[i]]++;                               \
-    r = num_squeeze(r);
+    for (usz i = 0; i < xia; i++) rp[xp[i]]++;
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
-      if (xia < m/2) {                                                           \
-        IIND_INT(N)                                                              \
+      usz mh = m/2, sa = SINGELI_COUNT_ALLOC;                                    \
+      if (xia < mh) {                                                            \
+        IIND_INT(N, if (RIA_SMALL(N)) { sa=mh=ria; goto small_range##N; })       \
       } else {                                                                   \
-        TALLOC(usz, t, SINGELI_COUNT_ALLOC);                                     \
-        for (usz j=0; j<m/2; j++) t[j]=0;                                        \
+        small_range##N: TALLOC(usz, t, sa);                                      \
+        for (usz j=0; j<mh; j++) t[j]=0;                                         \
         SINGELI_COUNT(N)                                                         \
         i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
         TFREE(t);                                                                \
-        r = num_squeeze(r);                                                      \
       }                                                                          \
+      r = num_squeeze(r);                                                        \
       break;                                                                     \
     }
 #if SINGELI_SIMD
+  #define RIA_SMALL(N) N==16 && ria<mh && ria+ria/2+64<=xia
   #define SINGELI_COUNT_ALLOC m/2
   #define SINGELI_COUNT(N) \
       i##N max = simd_count_i##N(t, xp, xia, 0);                               \
       if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
       usz ria=max+1;
 #else
+  #define RIA_SMALL(N) 0
   #define SINGELI_COUNT_ALLOC m
   #define SINGELI_COUNT(N) \
       for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
@@ -890,9 +893,10 @@ B slash_im(B t, B x) {
 #endif
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
+#undef RIA_SMALL
 #undef SINGELI_COUNT_ALLOC
 #undef SINGELI_COUNT
-    case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32) r = num_squeeze(r); break; }
+    case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32,) r = num_squeeze(r); break; }
 #undef IIND_INT
     case el_f64: {
       f64* xp = f64any_ptr(x);
