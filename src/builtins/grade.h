@@ -97,9 +97,9 @@ extern void (*const si_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
     if (e==n) {break;}  k=e;                                  \
   }
 #define WRITE_SPARSE(T) WRITE_SPARSE_##T
-extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
+extern i8 (*const simd_count_i8)(usz*, i8*, u64, i8);
 #define SINGELI_COUNT_OR(T) \
-  if (1==sizeof(T)) avx2_count_i8(c0o, (i8*)xp, n, -128); else
+  if (1==sizeof(T)) simd_count_i8(c0o, (i8*)xp, n, -128); else
 #else
 #define COUNT_THRESHOLD 16
 #define WRITE_SPARSE(T) \
