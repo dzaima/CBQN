@@ -837,11 +837,11 @@ B slash_im(B t, B x) {
       if (xia < ria/8) {                                                     \
         u8 maxcount = 0;                                                     \
         TALLOC(u8, tab, ria);                                                \
-        for (usz i=0; i<xia; i++)           tab[xp[i]]=0;                    \
-        for (usz i=0; i<xia; i++) maxcount|=tab[xp[i]]++;                    \
+        for (usz i=0; i<xia; i++)             tab[xp[i]]=0;                  \
+        for (usz i=0; i<xia; i++) maxcount|=++tab[xp[i]];                    \
         TFREE(tab);                                                          \
-        if (maxcount==0) a=xia;                                              \
-        else if (N>=16 && maxcount<127) {                                    \
+        if (maxcount<=1) a=xia;                                              \
+        else if (N>=16 && maxcount<128) {                                    \
           i8* rp; r = m_i8arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
           for (usz i = 0; i < xia; i++) rp[xp[i]]++;                         \
           break;                                                             \
