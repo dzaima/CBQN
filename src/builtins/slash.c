@@ -826,7 +826,7 @@ B slash_im(B t, B x) {
       rp[sum>0] = sum; rp[0] = xia - sum;
       r = num_squeeze(r); break;
     }
-#define IIND_INT(N, CHECK_RIA) \
+#define TRY_SMALL_OUT(N) \
     if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
     usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
     u##N max=xp[a-1];                                                        \
@@ -841,11 +841,7 @@ B slash_im(B t, B x) {
         for (usz i=0; i<xia; i++) maxcount|=++tab[xp[i]];                    \
         TFREE(tab);                                                          \
         if (maxcount<=1) a=xia;                                              \
-        else if (N>=16 && maxcount<128) {                                    \
-          i8* rp; r = m_i8arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
-          for (usz i = 0; i < xia; i++) rp[xp[i]]++;                         \
-          break;                                                             \
-        }                                                                    \
+        else if (N>=16 && maxcount<128) { INIT_RES(8) FILL_RES break; }      \
       }                                                                      \
     }                                                                        \
     if (a==xia) { /* Unique argument */                                      \
@@ -855,9 +851,11 @@ B slash_im(B t, B x) {
       for (usz i=0; i<xia; i++) bitp_set(rp, xp[i], 1);                      \
       break;                                                                 \
     }                                                                        \
-    usz ria = (usz)max + 1;                                                  \
-    CHECK_RIA                                                                \
-    i##N* rp; r = m_i##N##arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0; \
+    usz ria = (usz)max + 1;
+#define INIT_RES(N) \
+    i##N* rp; r = m_i##N##arrv(&rp, ria); \
+    for (usz i=0; i<ria; i++) rp[i]=0;
+#define FILL_RES \
     for (usz i = 0; i < xia; i++) rp[xp[i]]++;
 #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
@@ -865,7 +863,9 @@ B slash_im(B t, B x) {
       usz m=1<<N;                                                                \
       usz mh = m/2, sa = SINGELI_COUNT_ALLOC;                                    \
       if (xia < mh) {                                                            \
-        IIND_INT(N, if (RIA_SMALL(N)) { sa=mh=ria; goto small_range##N; })       \
+        TRY_SMALL_OUT(N)                                                         \
+        if (RIA_SMALL(N)) { sa=mh=ria; goto small_range##N; }                    \
+        INIT_RES(N) FILL_RES                                                     \
       } else {                                                                   \
         small_range##N: TALLOC(usz, t, sa);                                      \
         for (usz j=0; j<mh; j++) t[j]=0;                                         \
@@ -896,8 +896,21 @@ B slash_im(B t, B x) {
 #undef RIA_SMALL
 #undef SINGELI_COUNT_ALLOC
 #undef SINGELI_COUNT
-    case el_i32: { i32* xp = i32any_ptr(x); IIND_INT(32,) r = num_squeeze(r); break; }
-#undef IIND_INT
+    case el_i32: {
+      i32* xp = i32any_ptr(x);
+      TRY_SMALL_OUT(32)
+      INIT_RES(32)
+#if SINGELI_SIMD
+      simd_count_i32_i32(rp, xp, xia);
+#else
+      FILL_RES
+#endif
+      r = num_squeeze(r);
+      break;
+    }
+#undef TRY_SMALL_OUT
+#undef INIT_RES
+#undef FILL_RES
     case el_f64: {
       f64* xp = f64any_ptr(x);
       usz i,j; f64 max=-1;

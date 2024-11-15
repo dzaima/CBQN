@@ -3,11 +3,24 @@ include './vecfold'
 
 if_inline (hasarch{'SSE2'}) {
   fn sum_vec{T}(v:T) = vfold{+, fold{+, mzip128{v, T**0}}}
-  def fold_addw{v:T=[_]E if E<=u16} = sum_vec{T}(v)
+  def fold_addw{v:T=[_]E if E<=u32} = sum_vec{T}(v)
 }
 
 def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
+
+def block_loop{V=[vec]T, n, iter} = {
+  def block = (2048*8) / width{V} # Target vectors per block
+  def b_max = block + block/4     # Last block max length
+  assert{b_max < 1<<width{T}}     # Don't overflow count in vector section
+  i:u64 = 0
+  while (i < n) {
+    # Number of elements to handle in this iteration
+    r:u64 = n - i; if (r > vec*b_max) r = vec*block
+    iter{r}
+    i += r
+  }
+}
 
 # Write counts /⁼x to tab and return ⌈´x
 fn count{T}(tab:*usz, xp:*void, n:u64, min_allowed:T) : T = {
@@ -15,15 +28,9 @@ fn count{T}(tab:*usz, xp:*void, n:u64, min_allowed:T) : T = {
   def vec = vbits/width{T}
   def uT = ty_u{T}
   def V = [vec]T
-  def block = (2048*8) / vbits  # Target vectors per block
-  def b_max = block + block/4   # Last block max length
-  assert{b_max < 1<<width{T}}   # Don't overflow count in vector section
   x := *T~~xp
-  mx:T = min_allowed            # Maximum of x
-  i:u64 = 0
-  while (i < n) {
-    # Number of elements to handle in this iteration
-    r:u64 = n - i; if (r > vec*b_max) r = vec*block
+  mx:T = min_allowed  # Maximum of x
+  block_loop{V, n, {r} => { # Handle r elements
     b := r / vec  # Vector case does b full vectors if it runs
     rv:= b * vec
     r0:u64 = 0    # Elements actually handled by vector case
@@ -58,9 +65,8 @@ fn count{T}(tab:*usz, xp:*void, n:u64, min_allowed:T) : T = {
 
     # Scalar fallback and cleanup
     @for (x over _ from r0 to r) inc{tab, x}
-    i += r
     x += r
-  }
+  }}
   mx
 }
 
@@ -86,7 +92,7 @@ def count_by_sum{T, V, U, xv, b, tab, r0, j0, m} = {
 
 # Count adjacent equal elements at once, breaking at w-element groups
 # May read up to index r from x, hitting one element that's not counted
-def count_with_runs{V, vec, x, tab, r} = {
+def count_with_runs{V, vec, x, tab:*T, r} = {
   def w = width{ux}
   m0:ux = 1 << (w-1) # Last element in each chunk ends a run
   bw := r / w
@@ -100,17 +106,37 @@ def count_with_runs{V, vec, x, tab, r} = {
       m |= promote{ux, homMask{lv{jv} != lv{jv+1}}} << jv
     }
     # Iterate over runs
-    jp:usz = - usz~~1
+    jp:T = - T~~1
     while (m > m0) @unroll (2) {
-      j := trunc{usz, ctz{m}}
-      inc{tab, load{xo, j}, j - jp}
+      j := trunc{T, ctz{m}}
+      inc{tab, load{xo, j}, cast_i{T, j - jp}}
       jp = j; m &= m-1
     }
     # One step if popc{m} was odd, reducing branch mispredictions above
-    inc{tab, load{xo, w-1}, ((w-1) - jp) & -trunc{usz, m>>(w-1)}}
+    inc{tab, load{xo, w-1}, ((w-1) - jp) & -trunc{T, m>>(w-1)}}
   }
   bw * w
 }
 
+# Condensed version without count_by_sum
+fn count_i32_i32(tab:*i32, x:*i32, n:u64) : void = {
+  def T = i32
+  def vbits = arch_defvw
+  def vec = vbits/width{T}
+  def V = [vec]T
+  block_loop{V, n, {r} => {
+    b := r / vec
+    xv := *V~~x
+    dc := -(load{xv} != load{*V~~(x+1)})
+    @for (xv, xp in *V~~(x-1) over _ from 1 to b) dc -= xp != xv
+    dt := promote{u64, fold_addw{dc}}
+    r0:u64 = 0
+    if (dt < b * (vec/2)) r0 = count_with_runs{V, vec, x, tab, r}
+    @for (x over _ from r0 to r) inc{tab, x}
+    x += r
+  }}
+}
+
 export{'simd_count_i8',  count{i8}}
 export{'simd_count_i16', count{i16}}
+export{'simd_count_i32_i32', count_i32_i32}
