@@ -842,6 +842,7 @@ B slash_im(B t, B x) {
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
   B r;
+  retry:
   switch(xe) { default: UD;
     case el_bit: {
       usz sum = bit_sum(bitany_ptr(x), xia);
@@ -957,21 +958,12 @@ B slash_im(B t, B x) {
       break;
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
-      SLOW1("/⁼", x);
+      x = num_squeezeChk(x);
+      xe = TI(x,elType);
+      if (elNum(xe)) goto retry;
       B* xp = TO_BPTR(x);
-      usz i,j; i64 max=-1;
-      for (i = 0; i < xia; i++) { i64 c=o2i64(xp[i]); if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { i64 c=o2i64(xp[j]); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
-      if (max > USZ_MAX-1) thrOOM();
-      usz ria = max+1;
-      if (i==xia) {
-        u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) bitp_set(rp, o2i64G(xp[i]), 1);
-      } else {
-        i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
-        for (usz i = 0; i < xia; i++) rp[o2i64G(xp[i])]++;
-      }
-      break;
+      for (usz i=0; i<xia; i++) o2i64(xp[i]);
+      UD;
     }
   }
   decG(x); return r;
