@@ -812,6 +812,30 @@ B slash_c2(B t, B w, B x) {
   return c2rt(slash, w, x);
 }
 
+#if SINGELI_SIMD
+static B finish_sorted_count(B r, usz* ov, usz* oc, usz on) {
+  // Overflow values in ov are sorted but not unique
+  // Set mo to the greatest sum of oc for equal ov values
+  usz mo = 0, pv = 0, c = 0;
+  for (usz i=0; i<on; i++) {
+    usz sv = pv; pv = ov[i];
+    c = c*(sv==pv) + oc[i];
+    if (c>mo) mo=c;
+  }
+  // Since mo is a multiple of 128 and all of r is less than 128,
+  // values in r can't affect the result type
+  #define RESIZE(T, UT) \
+    r = taga(cpy##UT##Arr(r)); T* rp = tyany_ptr(r); \
+    for (usz i=0; i<on; i++) rp[ov[i]]+= oc[i];
+  if (mo == 0); // No overflow, r is correct already
+  else if (mo < I16_MAX) { RESIZE(i16, I16) }
+  else if (mo < I32_MAX) { RESIZE(i32, I32) }
+  else                   { RESIZE(f64, F64) }
+  #undef RESIZE
+  return r;
+}
+#endif
+
 B slash_im(B t, B x) {
   if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be a list");
   u8 xe = TI(x,elType);
@@ -831,6 +855,7 @@ B slash_im(B t, B x) {
     usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
     u##N max=xp[a-1];                                                        \
     if (a<xia) {                                                             \
+      SINGELI_COUNT_SORTED(N)                                                \
       for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }          \
       if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers"); \
       usz ria = max + 1;                                                     \
@@ -862,7 +887,7 @@ B slash_im(B t, B x) {
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
       usz mh = m/2, sa = SINGELI_COUNT_ALLOC;                                    \
-      if (xia < mh) {                                                            \
+      if (xia < mh || HAS_SINGELI_COUNT_SORTED) {                                \
         TRY_SMALL_OUT(N)                                                         \
         if (RIA_SMALL(N)) { sa=mh=ria; goto small_range##N; }                    \
         INIT_RES(N) FILL_RES                                                     \
@@ -883,6 +908,18 @@ B slash_im(B t, B x) {
       i##N max = simd_count_i##N(t, xp, xia, 0);                               \
       if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
       usz ria=max+1;
+  #define HAS_SINGELI_COUNT_SORTED FL_HAS(x,fl_asc)
+  #define SINGELI_COUNT_SORTED(N) \
+      if (FL_HAS(x,fl_asc)) {                                                \
+        usz ria = xp[xia-1] + 1;                                             \
+        usz os = xia/128;                                                    \
+        INIT_RES(8)                                                          \
+        TALLOC(usz, ov, 2*os); usz* oc = ov+os;                              \
+        usz on = si_count_sorted_i##N((u8*)rp, ov, oc, xp, xia);             \
+        r = finish_sorted_count(r, ov, oc, on);                              \
+        TFREE(ov);                                                           \
+        break;                                                               \
+      }
 #else
   #define RIA_SMALL(N) 0
   #define SINGELI_COUNT_ALLOC m
@@ -890,6 +927,8 @@ B slash_im(B t, B x) {
       for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
       t[m/2]=xia; usz ria=0; for (u64 s=0; s<xia; ria++) s+=t[ria];            \
       if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");
+  #define HAS_SINGELI_COUNT_SORTED 0
+  #define SINGELI_COUNT_SORTED(N)
 #endif
     CASE_SMALL(8) CASE_SMALL(16)
 #undef CASE_SMALL
