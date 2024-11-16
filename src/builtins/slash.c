@@ -850,12 +850,22 @@ B slash_im(B t, B x) {
       rp[sum>0] = sum; rp[0] = xia - sum;
       r = num_squeeze(r); break;
     }
-#define TRY_SMALL_OUT(N) \
+#if SINGELI_SIMD
+  #define TRY_SMALL_OUT(N) \
     if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
     usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
     u##N max=xp[a-1];                                                        \
     if (a<xia) {                                                             \
-      SINGELI_COUNT_SORTED(N)                                                \
+      if (FL_HAS(x,fl_asc)) {                                                \
+        usz ria = xp[xia-1] + 1;                                             \
+        usz os = xia/128;                                                    \
+        INIT_RES(8)                                                          \
+        TALLOC(usz, ov, 2*os); usz* oc = ov+os;                              \
+        usz on = si_count_sorted_i##N((u8*)rp, ov, oc, xp, xia);             \
+        r = finish_sorted_count(r, ov, oc, on);                              \
+        TFREE(ov);                                                           \
+        break;                                                               \
+      }                                                                      \
       for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }          \
       if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers"); \
       usz ria = max + 1;                                                     \
@@ -877,79 +887,60 @@ B slash_im(B t, B x) {
       break;                                                                 \
     }                                                                        \
     usz ria = (usz)max + 1;
-#define INIT_RES(N) \
+  #define INIT_RES(N) \
     i##N* rp; r = m_i##N##arrv(&rp, ria); \
     for (usz i=0; i<ria; i++) rp[i]=0;
-#define FILL_RES \
+  #define FILL_RES \
     for (usz i = 0; i < xia; i++) rp[xp[i]]++;
-#define CASE_SMALL(N) \
+  #define CASE_SMALL(N) \
     case el_i##N: {                                                              \
       i##N* xp = i##N##any_ptr(x);                                               \
       usz m=1<<N;                                                                \
-      usz mh = m/2, sa = SINGELI_COUNT_ALLOC;                                    \
-      if (xia < mh || HAS_SINGELI_COUNT_SORTED) {                                \
+      usz sa = m/2;                                                              \
+      if (xia < sa || FL_HAS(x,fl_asc)) {                                        \
         TRY_SMALL_OUT(N)                                                         \
-        if (RIA_SMALL(N)) { sa=mh=ria; goto small_range##N; }                    \
+        if (N==16 && ria<sa && ria+ria/2+64<=xia) { sa=ria; goto small_range##N; } \
         INIT_RES(N) FILL_RES                                                     \
       } else {                                                                   \
         small_range##N: TALLOC(usz, t, sa);                                      \
-        for (usz j=0; j<mh; j++) t[j]=0;                                         \
-        SINGELI_COUNT(N)                                                         \
+        for (usz j=0; j<sa; j++) t[j]=0;                                         \
+        i##N max = simd_count_i##N(t, xp, xia, 0);                               \
+        if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
+        usz ria=max+1;                                                           \
         i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
         TFREE(t);                                                                \
       }                                                                          \
       r = num_squeeze(r);                                                        \
       break;                                                                     \
     }
-#if SINGELI_SIMD
-  #define RIA_SMALL(N) N==16 && ria<mh && ria+ria/2+64<=xia
-  #define SINGELI_COUNT_ALLOC m/2
-  #define SINGELI_COUNT(N) \
-      i##N max = simd_count_i##N(t, xp, xia, 0);                               \
-      if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");       \
-      usz ria=max+1;
-  #define HAS_SINGELI_COUNT_SORTED FL_HAS(x,fl_asc)
-  #define SINGELI_COUNT_SORTED(N) \
-      if (FL_HAS(x,fl_asc)) {                                                \
-        usz ria = xp[xia-1] + 1;                                             \
-        usz os = xia/128;                                                    \
-        INIT_RES(8)                                                          \
-        TALLOC(usz, ov, 2*os); usz* oc = ov+os;                              \
-        usz on = si_count_sorted_i##N((u8*)rp, ov, oc, xp, xia);             \
-        r = finish_sorted_count(r, ov, oc, on);                              \
-        TFREE(ov);                                                           \
-        break;                                                               \
-      }
-#else
-  #define RIA_SMALL(N) 0
-  #define SINGELI_COUNT_ALLOC m
-  #define SINGELI_COUNT(N) \
-      for (usz i=0; i<xia; i++) t[(u##N)xp[i]]++;                              \
-      t[m/2]=xia; usz ria=0; for (u64 s=0; s<xia; ria++) s+=t[ria];            \
-      if (ria>m/2) thrM("/⁼: Argument cannot contain negative numbers");
-  #define HAS_SINGELI_COUNT_SORTED 0
-  #define SINGELI_COUNT_SORTED(N)
-#endif
     CASE_SMALL(8) CASE_SMALL(16)
-#undef CASE_SMALL
-#undef RIA_SMALL
-#undef SINGELI_COUNT_ALLOC
-#undef SINGELI_COUNT
+  #undef CASE_SMALL
     case el_i32: {
       i32* xp = i32any_ptr(x);
       TRY_SMALL_OUT(32)
       INIT_RES(32)
-#if SINGELI_SIMD
       simd_count_i32_i32(rp, xp, xia);
-#else
-      FILL_RES
-#endif
       r = num_squeeze(r);
       break;
     }
-#undef TRY_SMALL_OUT
-#undef INIT_RES
-#undef FILL_RES
+  #undef TRY_SMALL_OUT
+  #undef INIT_RES
+  #undef FILL_RES
+#else
+  #define CASE(N) case el_i##N: { \
+      i##N* xp = i##N##any_ptr(x);                                             \
+      u##N max=xp[0];                                                          \
+      for (usz i=1; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
+      if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
+      usz ria = max + 1;                                                       \
+      TALLOC(usz, t, ria);                                                     \
+      for (usz j=0; j<ria; j++) t[j]=0;                                        \
+      for (usz i = 0; i < xia; i++) t[xp[i]]++;                                \
+      i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
+      TFREE(t);                                                                \
+      r = num_squeeze(r); break; }
+    CASE(8) CASE(16) CASE(32)
+#endif
     case el_f64: {
       f64* xp = f64any_ptr(x);
       usz i,j; f64 max=-1;
