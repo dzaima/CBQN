@@ -951,10 +951,10 @@ B slash_im(B t, B x) {
     case el_i32: {
       i32* xp = i32any_ptr(x);
       TRY_SMALL_OUT(32)
+      if (xia>I32_MAX) thrM("/⁼: Argument too large");
       INIT_RES(32,ria)
       simd_count_i32_i32(rp, xp, xia);
-      r = num_squeeze(r);
-      break;
+      r = num_squeeze(r); break;
     }
   #undef TRY_SMALL_OUT
   #undef INIT_RES
@@ -968,10 +968,12 @@ B slash_im(B t, B x) {
       TALLOC(usz, t, ria);                                                     \
       for (usz j=0; j<ria; j++) t[j]=0;                                        \
       for (usz i = 0; i < xia; i++) t[xp[i]]++;                                \
-      i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; \
+      if (xia<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; } \
+      else              { f64* rp; r = m_f64arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; } \
       TFREE(t);                                                                \
       r = num_squeeze(r); break; }
     CASE(8) CASE(16) CASE(32)
+  #undef CASE
 #endif
     case el_f64: {
       f64* xp = f64any_ptr(x);
@@ -983,6 +985,7 @@ B slash_im(B t, B x) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
+        if (xia>I32_MAX) thrM("/⁼: Argument too large");
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[(usz)xp[i]]++;
       }
