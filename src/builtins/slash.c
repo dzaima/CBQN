@@ -54,14 +54,21 @@
 // Indices inverse (/⁼), a lot like Group
 // Always gives a squeezed result for integer 𝕩
 // Boolean 𝕩: just count 1s
-// Long i8 and i16 𝕩: count into zeroed buffer before anything else
-//   Only zero positive part; if total is too small there were negatives
-//   Cutoff is set so short 𝕩 gives a result of the same type
+// Without SINGELI_SIMD, just write to large-type table and squeeze
+//   COULD do many /⁼ optimizations without SIMD
 // Scan for strictly ascending 𝕩
-//   COULD vectorize with find-compare
-// Unsigned maximum for integers to avoid a separate negative check
-// If (≠÷⌈´)𝕩 is small, find result type with a sparse u8 table
-//   COULD use a u16 table for i32 𝕩 to detect i16 result
+//   SHOULD vectorize, maybe with find-compare
+// Sorted indices: i8 counter and index+count overflow
+//   Work in blocks of 128, try galloping if one has start equal to end
+//   Otherwise use runs-adaptive count (not sums, they're rarely better)
+// Long i8 and i16 𝕩: allocate full-range to skip initial range check
+// If (≠÷⌈´)𝕩 is small, detect u1 and i8 result with a sparse u8 table
+// General-case i8 to i32 𝕩: dedicated SIMD functions
+//   i8 and i16 𝕩: i16 counter and index overflow (implicit count 1<<15)
+//     Flush to overflow every 1<<15 writes
+//     Get range in 2KB blocks to enable count by compare and sum
+//   Run detection used partly to mitigate write stalls from repeats
+//   COULD also alternate writes to multiple tables if 𝕩 is long enough
 
 #include "../core.h"
 #include "../utils/mut.h"
