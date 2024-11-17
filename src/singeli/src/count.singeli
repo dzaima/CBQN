@@ -6,31 +6,24 @@ if_inline (hasarch{'SSE2'}) {
   def fold_addw{v:T=[_]E if E<=u32} = sum_vec{T}(v)
 }
 
-def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
+def inc{ptr:*T, ind, v} = store{ptr, ind, trunc{T,v} + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
-def block_loop{V=[vec]T, n, iter} = {
-  def block = (2048*8) / width{V} # Target vectors per block
-  def b_max = block + block/4     # Last block max length
-  assert{b_max < 1<<width{T}}     # Don't overflow count in vector section
-  i:u64 = 0
-  while (i < n) {
-    # Number of elements to handle in this iteration
-    r:u64 = n - i; if (r > vec*b_max) r = vec*block
-    iter{r}
-    i += r
-  }
-}
-
-# Write counts /⁼x to tab and return ⌈´x
-fn count{T}(tab:*usz, xp:*void, n:u64, min_allowed:T) : T = {
+# Write counts (2⋆15)|/⁼x to tab, overflows to ov, and return ⌈´x
+fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
   def vbits = arch_defvw
   def vec = vbits/width{T}
   def uT = ty_u{T}
   def V = [vec]T
+  def block = (2048*8) / vbits  # Target vectors per block
+  def b_max = block + block/4   # Last block max length
+  assert{b_max < 1<<width{T}}   # Don't overflow count in vector section
   x := *T~~xp
   mx:T = min_allowed  # Maximum of x
-  block_loop{V, n, {r} => { # Handle r elements
+  i:u64 = 0
+  while (i < n) {
+    # Number of elements to handle in this iteration
+    r:u64 = n - i; if (r > vec*b_max) r = vec*block
     b := r / vec  # Vector case does b full vectors if it runs
     rv:= b * vec
     r0:u64 = 0    # Elements actually handled by vector case
@@ -65,9 +58,35 @@ fn count{T}(tab:*usz, xp:*void, n:u64, min_allowed:T) : T = {
 
     # Scalar fallback and cleanup
     @for (x over _ from r0 to r) inc{tab, x}
+    i += r
     x += r
-  }}
+
+    # Keep counts below 1<<15 with the overflow list
+    # Count from the end to include i==n and handle a long last block nicely
+    if ((i-n)%(1<<15) < block*vec and i >= 1<<15) {
+      ov += flush_counts(tab+min_allowed, ov, cast_i{usz,ty_u{mx+min_allowed}} + 1)
+    }
+  }
+  store{ov, 0, maxvalue{u16}} # End marker: note x values fit in i16
   mx
+}
+
+fn flush_counts(tab:*u16, ov:*u16, n:usz) : usz = {
+  def vl = arch_defvw/16
+  def V = [vl]u16
+  def bot = 1<<15 - 1
+  on:usz = 0
+  @for (t in *V~~tab over jv to cdiv{n, vl}) if (rare{topAny{t}}) {
+    o := if (hasarch{'X86_64'}) topMask{t} else homMask{t > V**bot}
+    if (jv == n/vl) o &= type{o}~~1<<(n%vl) - 1
+    while (o > 0) {
+      jv := jv*vl + cast_i{usz, ctz{o}}
+      store{tab, jv, load{tab, jv} & bot}
+      store{ov, on, trunc{u16, jv}}; ++on
+      o &= o-1
+    }
+  }
+  on
 }
 
 # Sum comparisons against each value (except one) in the range
@@ -87,7 +106,7 @@ def count_by_sum{T, V, U, xv, b, tab, r0, j0, m} = {
   m4 := m / 4
   @for (j4 to m4) count_each{j0 + 4*j4, 4}
   @for (j from 4*m4 to m) count_each{j0 + j, 1}
-  inc{tab, trunc{T, j0 + m}, trunc{usz,total}}
+  inc{tab, trunc{T, j0 + m}, total}
 }
 
 # Count adjacent equal elements at once, breaking at w-element groups
@@ -137,7 +156,7 @@ def inc_marked_runs{x, tab:*T, m, m0} = {
   jp:T = - T~~1
   while (m > m0) @unroll (2) {
     j := trunc{T, ctz{m}}
-    inc{tab, load{x, j}, cast_i{T, j - jp}}
+    inc{tab, load{x, j}, j - jp}
     jp = j; m &= m-1
   }
   # One step if popc{m} was odd, reducing branch mispredictions above
