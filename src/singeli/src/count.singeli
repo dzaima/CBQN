@@ -46,7 +46,7 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
     # Fast cases
     dt := promote{u64, fold_addw{dc}}
     nc := uT~~(mt - jt)  # Number of counts to perform: last is implicit
-    if (dt < b * (vec/2) and dt*8 < b * promote{u64,nc}) {
+    if (dt < b * (vec/2) and (b + dt)*4 < b * promote{u64,nc}) {
       r0 = count_with_runs{x, tab, r}
     } else if (nc <= 24*vbits/128) {
       r0 = rv
