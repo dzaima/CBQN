@@ -417,6 +417,7 @@ FORCE_INLINE void preAlloc(usz sz, u8 type) {
 #if VERIFY_TAIL
 void tailVerifyAlloc(void* ptr, u64 origSz, ux logAlloc, u8 type);
 void tailVerifyFree(void* ptr);
+void tailVerifySetMinTallocSize(void* ptr, u64 bytes);
 void tailVerifyReinit(void* ptr, u64 s, u64 e);
 #define FINISH_OVERALLOC(P, S, E) tailVerifyReinit(P, S, E)
 NOINLINE void reinit_portion(Arr* a, usz s, usz e);

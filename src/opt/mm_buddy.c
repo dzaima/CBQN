@@ -47,6 +47,19 @@ FORCE_INLINE u64 limitLen(u64 l) {
   }                                                           \
 }
 
+static u64* tallocSizePtr(void* ptr, u64 end) {
+  return (u64*)((u8*)ptr + end - 8);
+}
+void tailVerifySetMinTallocSize(void* ptr, u64 bytes) {
+  u64 end = mm_size(ptr);
+  if (bytes >= mm_sizeUsable(ptr)) {
+    printf("Bad tailVerifySetMinTallocSize: setting to "N64u" bytes, "N64u" available\n", bytes, mm_sizeUsable(ptr));
+    __builtin_trap();
+  }
+  u64 prev = *tallocSizePtr(ptr, end);
+  if (prev > bytes) return;
+  *tallocSizePtr(ptr, end) = bytes;
+}
 static void tailVerifyInit(void* ptr, u64 filled, u64 end, u64 allocEnd) {
   #define F(W, X, O, L) W = X
   ITER_TAIL(F)
@@ -55,7 +68,7 @@ static void tailVerifyInit(void* ptr, u64 filled, u64 end, u64 allocEnd) {
 void tailVerifyAlloc(void* ptr, u64 filled, ux logAlloc, u8 type) {
   u64 end = 1ULL<<logAlloc;
   tailVerifyInit(ptr, sizeof(Value), end, end); // `sizeof(Value)` instead of `filled` to permit, without reinit, decreasing used size without having written anything to the space
-  if (type==t_talloc) ((u64*)((u8*)ptr + end - 8))[0] = filled-8; // -8 because TALLOCP does a +8
+  if (type==t_talloc) *tallocSizePtr(ptr, end) = filled-8; // -8 because TALLOCP does a +8
 }
 void verifyEnd(void* ptr, u64 sz, u64 start, u64 end) {
   if (end+VERIFY_TAIL > sz) {
