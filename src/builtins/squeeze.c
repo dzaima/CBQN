@@ -44,10 +44,10 @@ B num_squeeze(B x) {
   switch (xe) { default: UD;
     case el_bit: goto r_x;
     #if SINGELI_SIMD
-      case el_i8:  { or = avx2_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
-      case el_i16: { or = avx2_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
-      case el_i32: { or = avx2_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
-      case el_f64: { or = avx2_squeeze_f64(f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
+      case el_i8:  { or = si_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
+      case el_i16: { or = si_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
+      case el_i32: { or = si_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
+      case el_f64: { or = si_squeeze_f64(f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
     #else
       case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c;                        } if(or>      1) goto r_x; goto mostBit; }
       case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or> I8_MAX) goto r_x; goto mostI8; }
@@ -70,7 +70,7 @@ B num_squeeze(B x) {
   if (xp==NULL) goto r_f;
   
   #if SINGELI_SIMD
-    or = avx2_squeeze_numB(xp, ia);
+    or = si_squeeze_numB(xp, ia);
     if (-2==(i32)or) goto r_x;
     if (-1==(i32)or) goto r_f64;
     goto mostI32;
@@ -118,8 +118,8 @@ B chr_squeeze(B x) {
   switch(xe) { default: UD;
     case el_c8: goto r_x;
     #if SINGELI_SIMD
-    case el_c16: { u32 t = avx2_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
-    case el_c32: { u32 t = avx2_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
+    case el_c16: { u32 t = si_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
+    case el_c32: { u32 t = si_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
     #else
     case el_c16: {
       u16* xp = c16any_ptr(x);
@@ -143,7 +143,7 @@ B chr_squeeze(B x) {
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
     #if SINGELI_SIMD
-    u32 t = avx2_squeeze_chrB(xp, ia);
+    u32 t = si_squeeze_chrB(xp, ia);
     if      (t==0) goto r_c8;
     else if (t==1) goto r_c16;
     else if (t==2) goto r_c32;
