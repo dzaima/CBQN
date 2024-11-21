@@ -837,7 +837,7 @@ static B finish_small_count(B r, u16* ov) {
     }
     if (RARE(on > 0)) { // Overflowed i32!
       r = taga(cpyF64Arr(r)); f64* rp = tyany_ptr(r);
-      for (usz i=0; i<on; i++) rp[ov[i]]+= 1<<31;
+      for (usz i=0; i<on; i++) rp[ov[i]]+= 1U<<31;
     }
     FL_SET(r, fl_squoze);
   }
