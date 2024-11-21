@@ -3,22 +3,23 @@ include './vecfold'
 
 if_inline (hasarch{'SSE2'}) {
   fn sum_vec{T}(v:T) = vfold{+, fold{+, mzip128{v, T**0}}}
-  def fold_addw{v:T=[_](u8)} = sum_vec{T}(v)
+  def fold_addw{v:T=[_]E if E<=u32} = sum_vec{T}(v)
 }
 
-def inc{ptr, ind, v} = store{ptr, ind, v + load{ptr, ind}}
+def inc{ptr:*T, ind, v} = store{ptr, ind, trunc{T,v} + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
-# Write counts /⁼x to tab and return ⌈´x
-fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
+# Write counts (2⋆15)|/⁼x to tab, overflows to ov, and return ⌈´x
+fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
   def vbits = arch_defvw
   def vec = vbits/width{T}
-  def uT = ty_u{T}
+  def TU = ty_u{T}
   def V = [vec]T
   def block = (2048*8) / vbits  # Target vectors per block
   def b_max = block + block/4   # Last block max length
   assert{b_max < 1<<width{T}}   # Don't overflow count in vector section
-  mx:T = min_allowed            # Maximum of x
+  x := *T~~xp
+  mx:T = min_allowed  # Maximum of x
   i:u64 = 0
   while (i < n) {
     # Number of elements to handle in this iteration
@@ -28,44 +29,201 @@ fn count{T}(tab:*usz, x:*T, n:u64, min_allowed:T) : T = {
     r0:u64 = 0    # Elements actually handled by vector case
 
     # Find range to check for suitability; return a negative if found
+    # Also record number of differences dc
+    # (double-counts at index vec but it doesn't need to be exact)
     xv := *V~~x
     jv := load{xv}; mv := jv
-    @for (xv over _ from 1 to b) { jv = min{jv, xv}; mv = max{mv, xv} }
+    ne := jv != load{*V~~(x+1)}; dc := -ne
+    # Quickly skip ahead if initial values are all equal
+    a:u64 = 1
+    if (not homAny{ne} and b>=4) {
+      def eq_k{k} = homAll{tree_fold{&, @unroll(x in xv+a over k) x==jv}}
+      def skip_eq{k} = if (eq_k{k}) { a=2*k; skip_eq{2*k} }
+      def skip_eq{k==4} = while (a<=b-k and eq_k{k}) a+=k
+      skip_eq{1}
+    }
+    # Now start analysis
+    @for (xv, xp in *V~~(x-1) over _ from a to b) {
+      jv = min{jv, xv}; mv = max{mv, xv}
+      dc -= xp != xv
+    }
     @for (x over _ from rv to r) { if (x<min_allowed) return{x}; if (x>mx) mx=x }
     jt := vfold{min, jv}
     mt := vfold{max, mv}
     if (jt < min_allowed) return{jt}
     if (mt > mx) mx = mt
 
-    nc := uT~~(mt - jt)  # Number of counts to perform: last is implicit
-    if (nc <= 24*vbits/128) {
+    # Fast cases
+    dt := promote{u64, fold_addw{dc}}
+    nc := TU~~(mt - jt)  # Number of counts to perform: last is implicit
+    if (dt < b * (vec/2) and (b + dt)*4 < b * promote{u64,nc}) {
+      r0 = count_with_runs{x, tab, r}
+    } else if (nc <= 24*vbits/128) {
       r0 = rv
-      j0 := promote{u64, uT~~jt} # Starting count
-      m := promote{u64, nc}      # Number of iterations
-      total := trunc{usz, r0}    # To compute last count
-      def count_each{js, num} = {
-        j := @collect (k to num) trunc{T, js+k}
-        c := copy{length{j}, [vec]uT ** 0}
-        e := each{{j}=>V**j, j}
-        @for (xv over b) each{{c,e} => c -= xv == e, c, e}
-        def add_sum{c, j} = {
-          s := promote{usz, fold_addw{c}}
-          total -= s; inc{tab, j, s}
-        }
-        each{add_sum, c, j}
+      count_by_sum{T, V, [vec]TU, xv, b, tab, r0,
+        promote{u64, TU~~jt}, # Starting count
+        promote{u64, nc}      # Number of iterations
       }
-      m4 := m / 4
-      @for (j4 to m4) count_each{j0 + 4*j4, 4}
-      @for (j from 4*m4 to m) count_each{j0 + j, 1}
-      inc{tab, trunc{T, j0 + m}, trunc{usz,total}}
     }
 
     # Scalar fallback and cleanup
     @for (x over _ from r0 to r) inc{tab, x}
     i += r
     x += r
+
+    # Keep counts below 1<<15 with the overflow list
+    # Count from the end to include i==n and handle a long last block nicely
+    if ((i-n)%(1<<15) < block*vec and i >= 1<<15) {
+      ov += flush_counts(tab+min_allowed, ov, cast_i{usz,ty_u{mx+min_allowed}} + 1)
+    }
   }
+  store{ov, 0, maxvalue{u16}} # End marker: note x values fit in i16
   mx
 }
 
-export{'avx2_count_i8', count{i8}}
+fn flush_counts(tab:*u16, ov:*u16, n:usz) : usz = {
+  def vl = arch_defvw/16
+  def V = [vl]u16
+  def bot = 1<<15 - 1
+  on:usz = 0
+  @for (t in *V~~tab over jv to cdiv{n, vl}) if (rare{topAny{t}}) {
+    o := if (hasarch{'X86_64'}) topMask{t} else homMask{t > V**bot}
+    if (jv == n/vl) o &= type{o}~~1<<(n%vl) - 1
+    while (o > 0) {
+      jv := jv*vl + cast_i{usz, ctz{o}}
+      store{tab, jv, load{tab, jv} & bot}
+      store{ov, on, trunc{u16, jv}}; ++on
+      o &= o-1
+    }
+  }
+  on
+}
+
+# Sum comparisons against each value (except one) in the range
+def count_by_sum{T, V, U, xv, b, tab, r0, j0, m} = {
+  total := trunc{usz, r0}    # To compute last count
+  def count_each{js, num} = {
+    j := @collect (k to num) trunc{T, js+k}
+    c := length{j} ** U**0
+    e := each{{j}=>V**j, j}
+    @for (xv over b) each{{c,e} => c -= xv == e, c, e}
+    def add_sum{c, j} = {
+      s := promote{usz, fold_addw{c}}
+      total -= s; inc{tab, j, s}
+    }
+    each{add_sum, c, j}
+  }
+  m4 := m / 4
+  @for (j4 to m4) count_each{j0 + 4*j4, 4}
+  @for (j from 4*m4 to m) count_each{j0 + j, 1}
+  inc{tab, trunc{T, j0 + m}, total}
+}
+
+# Count adjacent equal elements at once, breaking at w-element groups
+# May read up to index n from x, hitting one element that's not counted
+def count_with_runs{x, tab, n} = {
+  def w = width{ux}
+  m0:ux = 1 << (w-1) # Last element in each chunk ends a run
+  bw := n / w
+  @for (i to bw) {
+    xo := x + i*w
+    m := m0; mark_run_ends{xo, m}
+    inc_marked_runs{xo, tab, m, m0}
+  }
+  bw * w  # Number of elements handled
+}
+# Switch to the normal scalar count if there aren't enough runs
+def count_adapt_runs{x0, tab, n} = {
+  def w = width{ux}
+  m0:ux = 1 << (w-1)
+  x := x0; r := n
+  while (r > 0) {
+    def skip_runs = makelabel{}
+    b:usz = w
+    if (rare{b > r}) { b = r; goto{skip_runs} }
+    m := m0; mark_run_ends{x, m}
+    if (popc{m} < w/2) {
+      inc_marked_runs{x, tab, m, m0}
+    } else {
+      setlabel{skip_runs}
+      @for (x over b) inc{tab, x}
+    }
+    x += b; r -= b
+  }
+}
+def mark_run_ends{x:*T, m:(ux)} = {
+  def vec = arch_defvw/width{T}
+  def V = [vec]T
+  @unroll (j to width{ux} / vec) {
+    def jv = j*vec
+    def lv{k} = load{*V~~(x + k)}
+    m |= promote{ux, homMask{lv{jv} != lv{jv+1}}} << jv
+  }
+}
+def inc_marked_runs{x, tab:*T, m, m0} = {
+  def w = width{ux}
+  # Iterate over runs marked in m
+  jp:T = - T~~1
+  while (m > m0) @unroll (2) {
+    j := trunc{T, ctz{m}}
+    inc{tab, load{x, j}, j - jp}
+    jp = j; m &= m-1
+  }
+  # One step if popc{m} was odd, reducing branch mispredictions above
+  inc{tab, load{x, w-1}, ((w-1) - jp) & -trunc{T, m>>(w-1)}}
+}
+
+# No count_by_sum: build each run mask then decide whether to use it
+fn count_i32_i32(tab:*i32, x:*i32, n:usz) : void = count_adapt_runs{x, tab, n}
+
+# For i←/⁼x, store r←128|i, and i-r sparsely: x is ∧(/r)∾oc/ov
+# ov is sorted but may not be unique, and oc contains multiples of 128
+# Return the shared length of ov and oc
+fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
+  def V = [arch_defvw/width{T}]T
+  def block = 128
+  i:usz = 0
+  on:usz = 0
+  def overflow{xu,c} = { store{ov, on, xu}; store{oc, on, c}; ++on }
+  while (i < n) {
+    rem := n - i
+    xo := x + i
+    xi := load{xo}
+    def overflow{c} = overflow{cast_i{usz,xi}, c}
+    xe := xo-1; def bxi{j} = xi == load{xe, j}
+    if (block <= rem and bxi{block}) {
+      # Gallop to find last block ending in xi
+      d:usz = block
+      d2 := undefined{usz}
+      while ((d2=d+d) <= rem and bxi{d2}) d = d2
+      l := min{(rem &~ (block-1)) - d, d}
+      # Target is in [d,d+l); shrink l
+      while (l > block) {
+        h := (l/2) &~ (block-1)
+        m := d + h
+        if (bxi{m}) d = m
+        l -= h
+      }
+      overflow{d}
+      rem -= d; if (rem == 0) return{on}
+      i += d; xo += d; xi = load{xo}
+    }
+    # Count the next block normally
+    rem = min{rem, usz~~block} # TODO get rid of the need of the usz~~ here
+    count_adapt_runs{xo, r, rem}
+    rxi := load{r, xi}
+    if (rxi >= block) {
+      store{r, xi, rxi - block}
+      overflow{block}
+    }
+    i += rem
+  }
+  on
+}
+
+export{'simd_count_i8',  count{i8}}
+export{'simd_count_i16', count{i16}}
+export{'simd_count_i32_i32', count_i32_i32}
+export{'si_count_sorted_i8',  count_sorted{i8}}
+export{'si_count_sorted_i16', count_sorted{i16}}
+export{'si_count_sorted_i32', count_sorted{i32}}

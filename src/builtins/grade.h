@@ -97,9 +97,27 @@ extern void (*const si_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
     if (e==n) {break;}  k=e;                                  \
   }
 #define WRITE_SPARSE(T) WRITE_SPARSE_##T
-extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
-#define SINGELI_COUNT_OR(T) \
-  if (1==sizeof(T)) avx2_count_i8(c0o, (i8*)xp, n, -128); else
+extern i8 (*const simd_count_i8)(u16*, u16*, void*, u64, i8);
+#define COUNTING_SORT_i8 \
+  usz C=1<<8;                                          \
+  TALLOC(u16, c0, C+(n>>15)+1);                        \
+  u16 *c0o=c0+C/2; u16 *ov=c0+C;                       \
+  for (usz j=0; j<C; j++) c0[j]=0;                     \
+  simd_count_i8(c0o, ov, xp, n, -128);                 \
+  if (n/COUNT_THRESHOLD <= C) { /* Scan-based */       \
+    i8 j=GRADE_UD(-C/2,C/2-1);                         \
+    usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
+    WRITE_SPARSE(i8)                                   \
+    TFREE(c0)                                          \
+  } else { /* Branchy, and ov may have entries */      \
+    TALLOC(usz, cw, C);                                \
+    NOUNROLL for (usz i=0; i<C; i++) cw[i]=c0[i];      \
+    u16 oe=-1;                                         \
+    for (usz i=0; ov[i]!=oe; i++) cw[ov[i]]+= 1<<15;   \
+    TFREE(c0)                                          \
+    FOR(j,C) for (usz c=cw[j]; c--; ) *rp++ = j-C/2;   \
+    TFREE(cw)                                          \
+  }
 #else
 #define COUNT_THRESHOLD 16
 #define WRITE_SPARSE(T) \
@@ -107,14 +125,14 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
   usz js = j;                                            \
   while (ij<n) { rp[ij]GRADE_UD(++,--); ij+=c0o[GRADE_UD(++j,--j)]; } \
   for (usz i=0; i<n; i++) js=rp[i]+=js;
-#define SINGELI_COUNT_OR(T)
+#define COUNTING_SORT_i8 COUNTING_SORT(i8)
 #endif
 
 #define COUNTING_SORT(T) \
   usz C=1<<(8*sizeof(T));                              \
   TALLOC(usz, c0, C); usz *c0o=c0+C/2;                 \
   for (usz j=0; j<C; j++) c0[j]=0;                     \
-  SINGELI_COUNT_OR(T) for (usz i=0; i<n; i++) c0o[xp[i]]++; \
+  for (usz i=0; i<n; i++) c0o[xp[i]]++;                \
   if (n/(COUNT_THRESHOLD*sizeof(T)) <= C) { /* Scan-based */ \
     T j=GRADE_UD(-C/2,C/2-1);                          \
     usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
@@ -211,7 +229,7 @@ B SORT_C1(B t, B x) {
     } else if (n < 256) {
       RADIX_SORT_i8(u8, SORT);
     } else {
-      COUNTING_SORT(i8);
+      COUNTING_SORT_i8;
     }
   } else if (xe==el_i16) {
     i16* xp = i16any_ptr(x);
@@ -247,7 +265,7 @@ B SORT_C1(B t, B x) {
 #undef SORT_C1
 #undef INSERTION_SORT
 #undef COUNTING_SORT
-#undef SINGELI_COUNT_OR
+#undef COUNTING_SORT_i8
 #if SINGELI_AVX2
 #undef WRITE_SPARSE_i8
 #undef WRITE_SPARSE_i16

@@ -15,6 +15,8 @@ def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
 def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
 def ntyp0{S, T} = merge{S, '_', nty{T}}
 
+def __neg{a:T if nvecu{T}} = T~~(-ty_s{T}~~a)
+
 def __lt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcltz', T}, a}
 def __le{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vclez', T}, a}
 def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
