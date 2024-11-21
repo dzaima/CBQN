@@ -13,7 +13,7 @@ def inc{ptr, ind} = inc{ptr, ind, 1}
 fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
   def vbits = arch_defvw
   def vec = vbits/width{T}
-  def uT = ty_u{T}
+  def TU = ty_u{T}
   def V = [vec]T
   def block = (2048*8) / vbits  # Target vectors per block
   def b_max = block + block/4   # Last block max length
@@ -55,13 +55,13 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
 
     # Fast cases
     dt := promote{u64, fold_addw{dc}}
-    nc := uT~~(mt - jt)  # Number of counts to perform: last is implicit
+    nc := TU~~(mt - jt)  # Number of counts to perform: last is implicit
     if (dt < b * (vec/2) and (b + dt)*4 < b * promote{u64,nc}) {
       r0 = count_with_runs{x, tab, r}
     } else if (nc <= 24*vbits/128) {
       r0 = rv
-      count_by_sum{T, V, [vec]uT, xv, b, tab, r0,
-        promote{u64, uT~~jt}, # Starting count
+      count_by_sum{T, V, [vec]TU, xv, b, tab, r0,
+        promote{u64, TU~~jt}, # Starting count
         promote{u64, nc}      # Number of iterations
       }
     }
@@ -104,7 +104,7 @@ def count_by_sum{T, V, U, xv, b, tab, r0, j0, m} = {
   total := trunc{usz, r0}    # To compute last count
   def count_each{js, num} = {
     j := @collect (k to num) trunc{T, js+k}
-    c := copy{length{j}, U**0}
+    c := length{j} ** U**0
     e := each{{j}=>V**j, j}
     @for (xv over b) each{{c,e} => c -= xv == e, c, e}
     def add_sum{c, j} = {
@@ -196,7 +196,7 @@ fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
       d:usz = block
       d2 := undefined{usz}
       while ((d2=d+d) <= rem and bxi{d2}) d = d2
-      l := (rem &~ (block-1)) - d; if (l > d) l = d
+      l := min{(rem &~ (block-1)) - d, d}
       # Target is in [d,d+l); shrink l
       while (l > block) {
         h := (l/2) &~ (block-1)
@@ -209,7 +209,7 @@ fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
       i += d; xo += d; xi = load{xo}
     }
     # Count the next block normally
-    if (rem > block) rem = block
+    rem = min{rem, usz~~block} # TODO get rid of the need of the usz~~ here
     count_adapt_runs{xo, r, rem}
     rxi := load{r, xi}
     if (rxi >= block) {

@@ -932,7 +932,7 @@ B slash_im(B t, B x) {
       usz sa = 1<<(N-1);                                                     \
       if (xia < sa || FL_HAS(x,fl_asc)) {                                    \
         TRY_SMALL_OUT(N)                                                     \
-        if (N==8) UD;                                                        \
+        assert(N != 8);                                                      \
         sa = ria;                                                            \
       }                                                                      \
       INIT_RES(16,sa)                                                        \
