@@ -219,7 +219,7 @@ fn slash{c, T if hasarch{'AVX2'} and T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, s
     s:= loadBatch{*u8~~(tab+w), 0, V}
     store{*V~~r, 0, from_ind{s}}
   }
-  @for_special_buffered{r,8} (w in *u8~~wp to sum) {
+  @for_special_buffered{r,8} (w in *u8~~wp over sum) {
     pc := popc{w}
     if (tw==32) {
       step{r,w}
