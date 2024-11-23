@@ -282,11 +282,13 @@ po ← { # parsed options
   
   singeliArch ⇐ @
   singeliCFlags ⇐ ⟨⟩
+  SingeliArchInfo ⇐ ! # takes arg of infer
   
   {
     ¬singeli? @;
     UpdateSubmodule singeliDir
     SingeliUtil ← {𝕨 •Import AtRoot singeliDir •file.At 𝕩}
+    SingeliArchInfo ↩ {⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn"}
     singeliArch ↩ {
       truecc ∧ @≡GetOpt"arch"?
         archutil ← SingeliUtil "archutil.bqn"
@@ -299,9 +301,8 @@ po ← { # parsed options
     {
       arch≡"X86_64"?
         singeliArch∾↩ Uppercase ∊⟜"ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"⊸/ has
-        ArchInfo ← {(⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn").GetCFlags @}
-        singeliCFlags ↩ ArchInfo 1
-        {𝕊: Log "Note: inferred the following C flags:"∾∾' '⊸∾¨𝕩}⍟(loud ∧ ×∘≠) singeliCFlags (¬∘∊/⊣) ArchInfo 0
+        singeliCFlags ↩ (SingeliArchInfo 1).GetCFlags @
+        {𝕊: Log "Note: inferred the following C flags:"∾∾' '⊸∾¨𝕩}⍟(loud ∧ ×∘≠) singeliCFlags (¬∘∊/⊣) (SingeliArchInfo 0).GetCFlags @
       ;@
     }
   }
@@ -782,7 +783,7 @@ cachedBin‿linkerCache ← {
       (⊑"slow-pdep"<⊸∊ po.has) / ⟨"-c", "SLOW_PDEP=1"⟩
       {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
     ⟩
-    clangd.SingeliInit ⟨po.singeliDir, po.arch⟩
+    clangd.SingeliInit po
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     {𝕊: "Singeli-determined C arch: "∾•Repr po.singeliCFlags; @} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap

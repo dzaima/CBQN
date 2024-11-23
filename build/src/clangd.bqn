@@ -34,8 +34,8 @@ singeliObjects ← ⟨⟩
 AddSingeli ⇐ {
   singeliObjects∾↩ <𝕨‿𝕩
 }
-SingeliInit ⇐ {
-  singeliState ↩ 𝕩
+SingeliInit ⇐ { 𝕊 po:
+  singeliState ↩ ⟨po.singeliDir, 1↓∾ ','⊸∾¨ {𝕩.basearch/𝕩.feats} po.SingeliArchInfo 1⟩
 }
 
 
