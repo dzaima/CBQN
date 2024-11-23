@@ -25,6 +25,7 @@
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•path"
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•state"
 ⟨"path that doesn't exist"⟩•BQN"2+2" %% 4
+!"•file.Chars: Using relative path with no absolute base path known" % f←•BQN"•FChars" ⋄ F "a"
 
 # •ReBQN
 !"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"

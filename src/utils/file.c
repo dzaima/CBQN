@@ -122,7 +122,7 @@ B path_rel(B base, B rel, char* name) {
   if (!isStr(rel)) thrF("%U: Path must be a list of characters", name);
   usz ria = IA(rel);
   if (ria>0 && isAbsolutePath(rel)) return rel;
-  if (q_N(base)) thrM("%U: Using relative path with no absolute base path known");
+  if (q_N(base)) thrF("%U: Using relative path with no absolute base path known", name);
   if (ria==0) { dec(rel); return incG(base); }
   usz bia = IA(base);
   if (bia==0) return rel;
