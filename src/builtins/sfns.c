@@ -3,6 +3,7 @@
 #include "../utils/talloc.h"
 #include "../builtins.h"
 
+// TODO clear sortedness flags on customizeShape & cpyWithShape
 Arr* customizeShape(B x) {
   if (reusable(x) && RNK(x)<=1) return a(x);
   return TI(x,slice)(x,0,IA(x));
@@ -1473,6 +1474,35 @@ B shape_uc1(B t, B o, B x) {
   return truncReshape(shape_uc1_t(c1(o, shape_c1(t, x)), xia), xia, xia, xr, sh);
 }
 
+B shape_ucw(B t, B o, B w, B x) {
+  if (!isArr(x)) return def_fn_ucw(t, o, w, x);
+  B arg = shape_c2(t, inc(w), incG(x));
+  usz xia = IA(x);
+  usz aia = IA(arg);
+  if (aia > xia) {
+    decG(arg);
+    return def_fn_ucw(t, o, w, x);
+  }
+  dec(w);
+  B rep = c1(o, incG(arg));
+  if (!isArr(rep) || !eqShape(arg, rep)) thrF("𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (%H ≡ ≢a⥊𝕩, %H ≡ shape of result of 𝔽)", arg, rep);
+  
+  B r;
+  if (xia == aia) {
+    r = taga(arr_shCopy(customizeShape(rep), x));
+    decG(x);
+  } else {
+    MAKE_MUT_INIT(rm, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(rm);
+    mut_copyG(rm, 0, rep, 0, aia);
+    mut_copyG(rm, aia, x, aia, xia-aia);
+    decG(rep);
+    r = mut_fcd(rm, x);
+  }
+  
+  decG(arg);
+  return r;
+}
+
 
 B reverse_ix(B t, B w, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽⁼: 𝕩 must have rank at least 1");
@@ -1511,6 +1541,7 @@ void sfns_init(void) {
   c(BFn,bi_reverse)->ucw = reverse_ucw;
   c(BFn,bi_pick)->ucw = pick_ucw;
   c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
+  c(BFn,bi_shape)->ucw = shape_ucw;
   c(BFn,bi_shape)->uc1 = shape_uc1;
   c(BFn,bi_take)->ucw = take_ucw;
   c(BFn,bi_drop)->ucw = drop_ucw;

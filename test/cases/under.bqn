@@ -87,6 +87,22 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 # !% ⊢⌾⥊ 4 # TODO enable
 # !% ⊢⌾(3⥊⊢) 4 # TODO enable
 
+⍉⌾(2‿2⊸⥊) ↕10 %% 0‿2‿1‿3‿4‿5‿6‿7‿8‿9
+1⊸+⌾(10‿2⊸⥊) ↕7 %% 1‿2‿3‿4‿5‿6‿7
+{!𝕩≡<0 ⋄ <9}⌾(⟨⟩⊸⥊) ↕7 %% 9‿1‿2‿3‿4‿5‿6
+⌽⌾(∘‿2⊸⥊) ↕10 %% 8‿9‿6‿7‿4‿5‿2‿3‿0‿1
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (⟨⟩ ≡ ≢a⥊𝕩, ⟨⟩ ≡ shape of result of 𝔽)" % ⊑⌾(⟨⟩⊸⥊) ↕7
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ ≢a⥊𝕩, ⟨⟩ ≡ shape of result of 𝔽)" % 0⌾(2⊸⥊) ↕10
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ ≢a⥊𝕩, ⟨1⟩ ≡ shape of result of 𝔽)" % 1⊸↓⌾(2⊸⥊) ↕10
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (2‿2 ≡ ≢a⥊𝕩, 1‿2 ≡ shape of result of 𝔽)" % 1⊸↓⌾(2‿2⊸⥊) ↕10
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (2‿2 ≡ ≢a⥊𝕩, ⟨⟩ ≡ shape of result of 𝔽)" % ⊑⌾(2‿2⊸⥊) ↕10
+!"𝔽⌾(a⊸⥊): 𝔽 must return an array with the same shape as its input (3‿2 ≡ ≢a⥊𝕩, 2‿3 ≡ shape of result of 𝔽)" % ⍉⌾(3‿2⊸⥊) ↕10
+!"⁼: Inverse not found" % ⊑⌾(2‿20⊸⥊) ↕10
+!"⁼: Inverse not found" % ⍉⌾(3‿20⊸⥊) ↕10
+1⊸+⌾(2‿2⊸⥊) 5 %% <6
+!"⌾: Incompatible result elements in structural Under" % 1‿2⊸+⌾(2‿2⊸⥊) 5
+10‿20‿30⊸+˘⌾(4‿3⊸⥊) 1‿2‿3 %% 11‿22‿33
+
 
 # /
 !"/: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 10)" % 1⊸∾⌾(1‿0‿1⊸/) ↕10
