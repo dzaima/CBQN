@@ -38,7 +38,7 @@ local def loader{G} = {
 def unzip_load{E, n, TG} = each{merge, unzip_load{E, n/2, TG}, unzip_load{E, n/2, TG{'offset', E, n}}}
 def unzip_load{E, n, TG if width{E}*n <= arch_defvw} = each{tup, unzip{TG{[n]E, 0}, TG{[n]E, 1}}}
 
-def widen_tup{u32, is:([16]u8)} = tup{ # compiler will deduplicate all the repeated calls of this on the same is
+def widen_tup{(u32), is:([16]u8)} = tup{ # compiler will deduplicate all the repeated calls of this on the same is
   widen{[8]u32, is},
   widen{[8]u32, shuf{[2]u64, is, 1,1}},
 }
@@ -194,8 +194,8 @@ def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='i' and E==u64 and n
 def lut16{tab:([16]u8), idxs:([16]u8)} = shuf{[16]u8, tab, idxs}
 def lut16{tab:([16]u8), idxs:([32]u8) if hasarch{'X86_64'}} = shuf{[16]u8, pair{tab, tab}, idxs}
 
-def shuf_u8bits{inds:*u8, ni} = 0
-def shuf_u8bits{inds:*u8, ni if has_sel} = {
+def shuf_u8bits{inds:(*u8), ni} = 0
+def shuf_u8bits{inds:(*u8), ni if has_sel} = {
   def I = [16]u8
   v0:= I**0
   v1:= I**0
