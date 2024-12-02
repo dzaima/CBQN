@@ -701,19 +701,24 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       case n_rtack: dec(w); return x;
       case n_ltack: return const_cells(x, xk, xsh, w, chr);
       case n_select:
-        if (isArr(w) && RNK(w)==1 && xcr==1) { // TODO handle RNK(w)!=1
+        if (isArr(w) && xcr==1) {
           if (!TI(w,arrD1)) {
             w = num_squeezeChk(w);
             if (!TI(w,arrD1)) break;
           }
           assert(xr > 1);
-          ux wia = IA(w);
-          ShArr* rsh = m_shArr(xr);
+          ur wr = RNK(w);
+          if (wr == 0) {
+            usz ind = WRAP(o2i64(IGetU(w,0)), xsh[xk], break);
+            decG(w);
+            return select_cells(ind, x, cam, xk, false);
+          }
+          ur rr = xk+wr;
+          ShArr* rsh = m_shArr(rr);
           shcpy(rsh->a, xsh, xk);
-          rsh->a[xk] = wia;
+          shcpy(rsh->a+xk, SH(w), wr);
           Arr* r = customizeShape(select_rows_B(x, shProd(xsh,xk,xr), cam, w));
-          arr_shSetUG(r, xr, rsh);
-          return taga(r);
+          return taga(arr_shSetUG(r, rr, rsh));
         }
         if (isF64(w) && xcr>=1) {
           usz l = xsh[xk];
