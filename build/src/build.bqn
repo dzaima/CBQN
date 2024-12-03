@@ -1,7 +1,5 @@
 t0g ← •MonoTime@
-# todo:
-#   forcing bytecode/singeli/replxx directories to whatever's applicable
-#   cache warning messages
+# todo: forcing bytecode/singeli/replxx directories to whatever's applicable
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
 ⟨Serialize, Deserialize⟩ ← •Import "serialize.bqn"
