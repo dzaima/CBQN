@@ -842,7 +842,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w FâŽ‰wcrâ€
       return c2(f, w, x);
     }
   } else if (!isMd(f)) {
-    dec(xkM? w : x);
+    decG(xkM? w : x);
     return const_cells(xkM? x : w, zk, zsh, inc(f), chr);
   }
   generic:;

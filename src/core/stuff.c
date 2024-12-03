@@ -458,7 +458,7 @@ B bqn_merge(B x, u32 type) {
       shcpy       (rsh   , SH(x),  xr);
       if(xfr)shcpy(rsh+xr, SH(xf), xfr);
     }
-    decG(x); dec(xf);
+    decG(x); decG(xf);
     return taga(r);
   }
   

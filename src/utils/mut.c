@@ -95,7 +95,7 @@ NOINLINE B vec_addF(B w, B x) {
   MAKE_MUT_INIT(r, wia+1, el_or(TI(w,elType), selfElType(x))); MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
   mut_setG(r, wia, x);
-  dec(w);
+  decG(w);
   return mut_fv(r);
 }
 NOINLINE B vec_addN(B w, B x) {
@@ -568,7 +568,7 @@ Arr* apd_sh_err(ApdMut* m, u32 ty) {
 }
 Arr* apd_rnk_err(ApdMut* m, u32 ty) {
   ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
-  dec(m->failEl);
+  decG(m->failEl);
   thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", apd_ty_base(ty), m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
 }
 NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {

@@ -533,9 +533,9 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
     B* xp = harr_ptr(cells);
     for (usz i = 0; i < oia; i++) {
       if (!hdr) v_set (pscs, op[i], xp[i], upd, true, false, false);
-      else if (!v_seth(pscs, op[i], xp[i])) { dec(cells); return false; }
+      else if (!v_seth(pscs, op[i], xp[i])) { decG(cells); return false; }
     }
-    dec(cells);
+    decG(cells);
   }
   return true;
 }
@@ -899,7 +899,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       case FLDG: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, p)));
-        dec(ns);
+        decG(ns);
         break;
       }
       case ALIM: { P(o) GS_UPD; u32 l = *bc++;
@@ -1651,8 +1651,8 @@ void profiler_displayResults(void) {
         }
       }
     }
-    dec(compList);
-    dec(mapList);
+    decG(compList);
+    decG(mapList);
 #if PROFILE_IP
   } else if (profiler_mode==2) {
     f64* rp; B r = m_f64arrv(&rp, count);

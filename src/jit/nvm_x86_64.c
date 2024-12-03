@@ -230,7 +230,7 @@ INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_ge
 INS B i_FLDG(B ns, u32 p, Scope* sc, u32* bc) { POS_UPD;
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, p));
-  dec(ns);
+  decG(ns);
   return r;
 }
 INS B i_VFYM(B o) { // TODO this and ALIM allocate and thus can error on OOM
@@ -488,7 +488,7 @@ static OptRes opt(u32* bc0) {
   bc = bc0; pos = 0;
   TSFREE(data);
   TSFREE(actions);
-  if (IA(refs)==0) { dec(refs); refs=m_f64(0); }
+  if (IA(refs)==0) { decG(refs); refs=m_f64(0); }
   return (OptRes){.bc = rbc, .offset = roff, .refs = refs};
 }
 #undef SREF

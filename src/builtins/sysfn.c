@@ -53,8 +53,8 @@ B decp_c1(B t, B x) {
 
 B primInd_c1(B t, B x) {
   if (!isVal(x)) return m_i32(RT_LEN);
-  if (isPrim(x)) { B r = m_i32(RTID(x)); dec(x); return r; }
-  dec(x);
+  if (isPrim(x)) { B r = m_i32(RTID(x)); decG(x); return r; }
+  decG(x);
   return m_i32(RT_LEN);
 }
 
@@ -232,21 +232,21 @@ B casrt_c2(B t, B w, B x) {
       AFMT("\n");
       usz pos = o2s(w0);
       s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
-      dec(w);
+      decG(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
       usz pos = o2s(IGetU(w0,0));
       s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
-      dec(w);
+      decG(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
       s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
-      dec(w);
+      decG(w);
       thr(s);
     }
   }
@@ -789,7 +789,7 @@ B fchars_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Chars: 𝕩 must be a list of characters");
   B p = path_rel(nfn_objU(d), w, "•file.Chars");
   path_wChars(incG(p), x);
-  dec(x);
+  decG(x);
   return p;
 }
 STATIC_GLOBAL NFnDesc* fBytesDesc;
@@ -805,7 +805,7 @@ B fbytes_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•file.Bytes: 𝕩 must be a list");
   B p = path_rel(nfn_objU(d), w, "•file.Bytes");
   path_wBytes(incG(p), x);
-  dec(x);
+  decG(x);
   return p;
 }
 STATIC_GLOBAL NFnDesc* fLinesDesc;
@@ -824,7 +824,7 @@ B flines_c2(B d, B w, B x) {
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
     s = vec_addN(s, m_c32('\n'));
   }
-  dec(x);
+  decG(x);
   B p = path_rel(nfn_objU(d), w, "•file.Lines");
   path_wChars(incG(p), s);
   decG(s);
@@ -1012,7 +1012,7 @@ B toUtf8_c1(B t, B x) {
   u64 len = utf8lenB(x);
   u8* rp; B r = m_c8arrv(&rp, len);
   toUTF8(x, (char*)rp);
-  dec(x);
+  decG(x);
   return r;
 }
 
@@ -1245,15 +1245,15 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     B s_out, s_err;
     i32 code = sh_core(raw, x, xia, inObj, iLen, &s_out, &s_err);
     
-    dec(w); dec(x);
+    dec(w); decG(x);
     B s_outObj; B s_outRaw = toC8Any(s_out);
     B s_errObj; B s_errRaw = toC8Any(s_err);
     if (raw) {
       s_outObj = s_outRaw;
       s_errObj = s_errRaw;
     } else {
-      s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); dec(s_outRaw);
-      s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); dec(s_errRaw);
+      s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); decG(s_outRaw);
+      s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); decG(s_errRaw);
     }
     return m_hvec3(m_i32(code), s_outObj, s_errObj);
   }

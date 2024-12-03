@@ -197,7 +197,7 @@ B variation_c2(B t, B w, B x) {
     if (slice) {
       Arr* slice = TI(res,slice)(incG(res), 0, IA(res));
       arr_shCopy(slice, res);
-      dec(res);
+      decG(res);
       res = taga(slice);
     }
     
@@ -218,7 +218,7 @@ B clearRefs_c1(B t, B x) {
   dec(x);
   if (!isArr(variation_refs)) return m_f64(0);
   usz res = IA(variation_refs);
-  dec(variation_refs);
+  decG(variation_refs);
   variation_refs = m_f64(0);
   return m_f64(res);
 }
@@ -396,7 +396,7 @@ B iProperties_c2(B t, B w, B x) {
 B unshare_c1(B t, B x) {
   if (!isArr(x)) thrM("•internal.Unshare: Argument must be an array");
   B r = unshare(x);
-  dec(x);
+  decG(x);
   return r;
 }
 STATIC_GLOBAL B internalNS;

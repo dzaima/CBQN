@@ -427,7 +427,7 @@ static B recPick(B w, B x) { // doesn't consume
 
 B pick_c2(B t, B w, B x) {
   if (RARE(isAtm(x))) {
-    if (isArr(w) && RNK(w)==1 && IA(w)==0) { dec(w); return x; }
+    if (isArr(w) && RNK(w)==1 && IA(w)==0) { decG(w); return x; }
     x = m_unit(x);
   }
   if (isNum(w)) {
@@ -465,7 +465,7 @@ FORCE_INLINE B affixes(B x, i32 post) {
       shcpy(sh, csh, xr-1);
       HARR_ADD(r, i, taga(c));
     }
-    dec(x);
+    decG(x);
   }
   B rf = incG(HARR_O(r).a[post? cam : 0]);
   return withFill(HARR_FV(r), rf);
@@ -740,7 +740,7 @@ B join_c1(B t, B x) {
       shcpy(sh+xr, fsh+xr, ir-xr);
     }
     B xff = getFillR(xf);
-    dec(xf); decG(x);
+    decG(xf); decG(x);
     return withFill(r.b, xff);
 
   } else if (xr==1) {
@@ -1432,7 +1432,7 @@ static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
     mut_copyG(r, tk, x, tk, lv);
   }
   
-  dec(rep);
+  decG(rep);
   return mut_fcd(r, x);
 }
 

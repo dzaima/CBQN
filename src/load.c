@@ -501,7 +501,7 @@ void load_init() { // very last init function
     B rtObjRaw = Get(rtRes,0);
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
-    dec(rtRes);
+    decG(rtRes);
     dec(c1G(setPrims, m_lvB_2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
     dec(c2G(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     

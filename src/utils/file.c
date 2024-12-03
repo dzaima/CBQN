@@ -123,7 +123,7 @@ B path_rel(B base, B rel, char* name) {
   usz ria = IA(rel);
   if (ria>0 && isAbsolutePath(rel)) return rel;
   if (q_N(base)) thrF("%U: Using relative path with no absolute base path known", name);
-  if (ria==0) { dec(rel); return incG(base); }
+  if (ria==0) { decG(rel); return incG(base); }
   usz bia = IA(base);
   if (bia==0) return rel;
   SGetU(base)
@@ -134,7 +134,7 @@ B path_rel(B base, B rel, char* name) {
   rp[ri++] = PREFERRED_SEP;
   SGetU(rel)
   for (usz i = 0; i < ria; i++) rp[ri++] = o2cG(GetU(rel, i));
-  dec(rel);
+  decG(rel);
   return r;
 }
 
@@ -147,7 +147,7 @@ B path_parent(B path) {
     if (isPathSep(o2cG(GetU(path, i)))) return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
   if (isAbsolutePath(path)) return path;
-  dec(path);
+  decG(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = PREFERRED_SEP;
   return r;
 }
