@@ -1082,6 +1082,7 @@ static u64 calcStaticSize(B o) {
 }
 
 B ffiload_c2(B t, B w, B x) {
+  if (!isArr(x) || RNK(x)!=1) thrM("•FFI: 𝕩 must be a list");
   usz xia = IA(x);
   if (xia<2) thrM("FFI: Function specification must have at least two items");
   usz argn = xia-2;

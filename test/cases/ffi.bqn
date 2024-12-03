@@ -5,6 +5,8 @@
 
 # bad •FFI invocation
 # generally weird
+!"•FFI: 𝕩 must be a list" % @•FFI @
+!"•FFI: 𝕩 must be a list" % @•FFI 2‿2⥊<"a"
 !"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
 !"This function can't be called monadically" % •FFI ""‿"bqn_init"
 @ •FFI⎊{𝕊: 28↑•CurrentError@} ""‿"bqn_this symbol doesn't exist" %% "FFI: Failed to find symbol: "
