@@ -127,12 +127,14 @@ Finish ⇐ { 𝕊 write:
     "clangd compile commands" res _doWrite AtRoot "build/compile_commands.json"
   }
   
+  AtRootRel ← "../"⊸•file.At
+  
   {
     singeliState≡@? @;
     dir‿arch ← singeliState
-    cmd0 ← ⟨"-a", arch, "-l", "="∾AtRoot dir •file.At "include"⟩
+    cmd0 ← ⟨"-a", arch, "-l", "="∾AtRootRel dir •file.At "include"⟩
     res ← TLArr { cmd‿name:
-      "file"‿"arguments" JObj ⟨JStr AtRoot name, ", " JArr JStr¨ cmd0 ∾ cmd⟩
+      "file"‿"arguments" JObj ⟨JStr AtRootRel name, ", " JArr JStr¨ cmd0 ∾ cmd⟩
     }¨ singeliObjects
     "Singeli compile commands" res _doWrite AtRoot "build/.singeli_compile_commands.json"
   }
