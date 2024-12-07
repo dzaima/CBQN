@@ -46,6 +46,7 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 !"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ shape of a, ⟨⟩ ≡ shape of ⊏𝕩, ⟨3⟩ ≡ shape of result of 𝔽)" % 10‿20‿30⌾(2‿3⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨2⟩ ≡ shape of a, ⟨⟩ ≡ shape of ⊏𝕩, ⟨3⟩ ≡ shape of result of 𝔽)" % 1⊸∾⌾(2‿3⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨3⟩ ≡ shape of a, ⟨10⟩ ≡ shape of ⊏𝕩, 2‿10 ≡ shape of result of 𝔽)" % %USE evar ⋄ 1⊸↓⌾(2‿3‿4⊸⊏)_evar 10‿10⥊0
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (⟨1⟩ ≡ shape of a, ⟨⟩ ≡ shape of ⊏𝕩, ⟨⟩ ≡ shape of result of 𝔽)" % %USE evar ⋄ ⟨0⟩ {1⌾(𝕨⊸⊏)𝕩}_evar ⟨0⟩
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % 3‿4⌾(1‿1⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % 3‿4⌾(1‿¯9⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % %USE evar ⋄ 3‿4  {𝕨⌾(1‿¯9⊸⊏) 𝕩}_evar ↕10
