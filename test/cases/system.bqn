@@ -260,9 +260,10 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 {15 𝕏 10}¨ ⟨•math.GCD,•math.LCM⟩ %% 5‿30
 ⌊1e5×{0.1 𝕏 0.2}¨ ⟨•math.Atan2,•math.Comb,•math.Hypot,•math.Atan2⁼,•math.Atan2˜⁼⟩ %% 110714‿96959‿22360‿2027‿49331
 ⌊1e5×{=˜◶99‿⊢¨ 𝕏 0.1‿3}¨ ⟨•math.Acos,•math.Acosh,•math.Asin,•math.Asinh,•math.Atan,•math.Atanh,•math.Cbrt,•math.Cos,•math.Cosh,•math.Erf,•math.ErfC,•math.Expm1,•math.Fact,•math.Log10,•math.Log1p,•math.Log2,•math.LogFact,•math.Sin,•math.Sinh,•math.Tan,•math.Tanh⟩ %% ⟨147062‿9900000,9900000‿176274,10016‿9900000,9983‿181844,9966‿124904,10033‿9900000,46415‿144224,99500‿¯99000,100500‿1006766,11246‿99997,88753‿2,10517‿1908553,95135‿600000,¯100000‿47712,9531‿138629,¯332193‿158496,¯4988‿179175,9983‿14112,10016‿1001787,10033‿¯14255,9966‿99505⟩
+{𝕩 ! 1‿2 (𝕏 ≡ 𝕏¨) 3‿4}¨ ⟨•math.Atan2,•math.Comb,•math.Hypot,•math.Atan2⁼,•math.Atan2˜⁼,•math.GCD,•math.LCM⟩
 !"•math.GCD: Inputs other than natural numbers not yet supported" % 1.5 •math.GCD 3
 !"•math.LCM: Inputs other than natural numbers not yet supported" % 3 •math.LCM 1.5
-!"•math.GCD: Unexpected argument types" % "foo" •math.LCM 3
+!"•math.LCM: Unexpected argument types" % "foo" •math.LCM 3
 !"•math.GCD: Unexpected argument types" % 3 •math.GCD {+}
 !"•math.Sin: Argument contained non-number" % •math.Sin "foo"
 !"•math.Log10: Argument contained non-number" % •math.Log10 "foo"

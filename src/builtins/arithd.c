@@ -521,8 +521,8 @@ B lcm_c2(B t, B w, B x) {
     if (!q_u64(w) || !q_u64(x)) thrM("•math.LCM: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(o2u64G(w), o2u64G(x)));
   }
-  P2(gcd)
-  thrM("•math.GCD: Unexpected argument types");
+  P2(lcm)
+  thrM("•math.LCM: Unexpected argument types");
 }
 
 #undef P2
