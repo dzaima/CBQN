@@ -530,4 +530,5 @@ B lcm_c2(B t, B w, B x) {
 void arithd_init() {
   c(BFn, bi_atan2)->iw = atan2iw_c2;
   c(BFn, bi_atan2)->ix = atan2ix_c2;
+  c(BFn, bi_pow)->ix = log_c2;
 }

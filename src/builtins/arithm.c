@@ -184,7 +184,6 @@ void arithm_init(void) {
   #define INVERSE_PAIR(F,G) \
     c(BFn,bi_##F)->im = G##_c1; \
     c(BFn,bi_##G)->im = F##_c1;
-  c(BFn,bi_sub)->im = sub_c1;
   INVERSE_PAIR(sin, asin)
   INVERSE_PAIR(cos, acos)
   INVERSE_PAIR(tan, atan)
@@ -192,7 +191,10 @@ void arithm_init(void) {
   INVERSE_PAIR(cosh, acosh)
   INVERSE_PAIR(tanh, atanh)
   INVERSE_PAIR(expm1, log1p)
+  #undef INVERSE_PAIR
+  
+  c(BFn,bi_sub)->im = sub_c1;
+  c(BFn,bi_pow)->im = log_c1;
   c(BFn,bi_fact)->im = fact_inv_c1;
   c(BFn,bi_logfact)->im = logfact_inv_c1;
-  #undef INVERSE_PAIR
 }
