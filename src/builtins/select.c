@@ -953,8 +953,7 @@ B select_ucw(B t, B o, B w, B x) {
   }
   usz xr = RNK(x);
   usz wr = RNK(w);
-  usz rr;
-  bool ok = isArr(rep) && xr+wr==(rr=RNK(rep))+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
+  bool ok = isArr(rep) && xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
   if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (%H ≡ shape of a, %2H ≡ shape of ⊏𝕩, %H ≡ shape of result of 𝔽)", w, xr-1, SH(x)+1, rep);
   usz csz = arr_csz(x);
   if (csz == 0) { decG(rep); decG(w); return x; }

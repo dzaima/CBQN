@@ -420,13 +420,13 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
   ur wr = RNK(w);
-  ur xr = RNK(x);
   
   if (wr > 1) {
+    ur xr = RNK(x);
     if (wr > xr+1) thrM(GRADE_CHR": =𝕨 cannot be greater than =𝕩");
     i32 nxr = xr-wr+1;
-    x = toKCells(x, nxr); xr = nxr;
-    w = toCells(w);       xr = 1;
+    x = toKCells(x, nxr);
+    w = toCells(w);
   }
   
   u8 we = TI(w,elType); usz wia = IA(w);

@@ -1609,7 +1609,7 @@ void profiler_displayResults(void) {
   printf("Got %zu samples\n", count);
   if (profiler_mode==1) {
     B compList, mapList;
-    u64 specialResults[ENT_SP_END];
+    u64 specialResults[ENT_SP_END] = {0};
     usz compCount = profiler_getResults(&compList, &mapList, specialResults, true);
     
     if (specialResults[ENT_SP_GC] > 0) printf("GC: "N64d" samples\n", specialResults[ENT_SP_GC]);

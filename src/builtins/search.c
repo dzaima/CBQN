@@ -743,7 +743,7 @@ void hashmap_set(B* vars, B w, B x) {
     vars[2] = bi_N; // hashmap_resize might free then alloc
     map = hashmap_resize(map);
     vars[2] = tag(map, OBJ_TAG);
-    hp=map->a; sh=map->sh;
+    // hp=map->a; sh=map->sh;
   }
   vars[0] = vec_addN(vars[0], w);
   vars[1] = vec_addN(vars[1], x);
