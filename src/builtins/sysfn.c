@@ -1154,31 +1154,43 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 #elif defined(_WIN32) || defined(_WIN64)
 #define HAS_SH 1
 #include "../windows/winError.c"
+#include "../windows/utf16.c"
 #include "../windows/sh.c"
 
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
-  u64 arglen = 0;
+  TSALLOC(WCHAR, arg, 8);
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
     if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
-    u64 len = utf8lenB(c);
-    arglen += 1+2+2*len;
-    // space or 0, quotes, worst-case scenario (every character needs escaping)
-  }
-  TALLOC(char, arg, arglen);
-  char* pos = arg;
-  for (u64 i = 0; i < xia; i++) {
-    B c = GetU(x, i);
-    u64 len = utf8lenB(c);
-    TALLOC(char, cstr, len+1);
-    toUTF8(c, cstr);
-    cstr[len] = 0;
-    pos = winQuoteCmdArg(len, cstr, pos);
-    *(pos++) = (xia==i+1)? '\0' : ' ';
-    TFREE(cstr)
-    assert(pos <= arg+arglen);
+    u64 len = utf16lenB(c);
+    TALLOC(WCHAR, wstr, len);
+    toUTF16(c, wstr);
+
+    // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+    u64 backslashes = 0;
+    bool quote = len==0 || NULL!=wcspbrk(wstr, L" \t\n\v\"");
+    if (quote) { TSADD(arg, L'\"'); }
+    for (u64 j = 0; j < len; ++j) {
+      WCHAR x = wstr[j];
+      if (x==L'\\') {
+        backslashes += 1;
+      } else {
+        if (x==L'\"') {
+          for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(arg, L'\\'); }
+        }
+        backslashes = 0;
+      }
+      TSADD(arg, x);
+    }
+    if (quote) {
+      for (u64 k = 0; k < backslashes; ++k) { TSADD(arg, L'\\'); }
+      TSADD(arg, L'\"');
+    }
+
+    TSADD(arg, (xia==i+1)? L'\0' : L' ');
+    TFREE(wstr);
   }
 
   // allocate stdin
@@ -1200,7 +1212,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   u64 eLen = 0; char* eBuf;
   DWORD dwResult = winCmd(arg, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
-  TFREE(arg)
+  TSFREE(arg);
   if (dwResult != ERROR_SUCCESS) {
     thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
   }
@@ -1208,8 +1220,8 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   // prepare output
   u8* op; *s_outp = m_c8arrv(&op, oLen); 
   u8* ep; *s_errp = m_c8arrv(&ep, eLen); 
-  if (oLen > 0 && oBuf != NULL) memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf);
-  if (eLen > 0 && eBuf != NULL) memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf);
+  if (oBuf!=NULL) { memcpy(op, oBuf, oLen*sizeof(char)); TFREE(oBuf); }
+  if (eBuf!=NULL) { memcpy(ep, eBuf, eLen*sizeof(char)); TFREE(eBuf); }
   return (i32)code;
 }
 #else
