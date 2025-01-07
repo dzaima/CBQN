@@ -2,6 +2,8 @@
 
 [CBQN-specific documentation](docs/README.md) • [source code overview](src/README.md)
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/cbqn.svg)](https://repology.org/project/cbqn/versions)
+
 ## Running
 
 1. `make`
