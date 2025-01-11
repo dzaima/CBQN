@@ -6,14 +6,35 @@
 #include <unistd.h>
 #include <errno.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
   #include <direct.h>
-  #include "../windows/realpath.c"
   #include "../windows/utf16.c"
   // use wide char functions for unicode support / longer paths (potentially)
-  // opendir() is provided by mingw and does unicode convertion already
+  #include "../windows/realpath.c"
 #endif
 
+#if !defined(_WIN32)
+  typedef char* OsStr;
+  #define OS_C(C) C
+  #define toOsStr     toCStr
+  #define freeOsStr   freeCStr
+  #define OsStrDecode0 utf8Decode0
+#else 
+  typedef WCHAR* OsStr;
+  #define OS_C(C) L##C
+  #define toOsStr     toWStr
+  #define freeOsStr   freeWStr
+  #define OsStrDecode0 utf16Decode0
+  #define DIR       _WDIR
+  #define dirent    _wdirent
+  #define opendir   _wopendir
+  #define readdir   _wreaddir
+  #define closedir  _wclosedir
+  #define mkdir(P, IGNORE) _wmkdir(P)
+  #define access _waccess
+  #define rename _wrename
+  #define unlink _wunlink
+#endif
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
 #if !defined(_WIN32)
@@ -33,12 +54,9 @@ FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   return f;
 }
 static DIR* dir_open(B path) { // doesn't consume
-  u64 plen = utf8lenB(path);
-  TALLOC(char, p, plen+1);
-  toUTF8(path, p);
-  p[plen] = 0;
+  OsStr p = toOsStr(path);
   DIR* f = opendir(p);
-  TFREE(p);
+  freeOsStr(p);
   if (f==NULL) thrF("Couldn't open directory \"%R\"", path);
   return f;
 }
@@ -184,16 +202,13 @@ B path_abs(B path) {
   return path; // lazy
   #else
   if (q_N(path)) return path;
-  u64 plen = utf8lenB(path);
-  TALLOC(char, p, plen+1);
-  toUTF8(path, p);
-  p[plen] = 0;
-  char* res = realpath(p, NULL);
+  OsStr p = toOsStr(path);
+  OsStr res = realpath(p, NULL);
   if (res==NULL) thrF("Failed to resolve \"%R\": %S", path, strerror(errno));
-  B r = utf8Decode0(res);
+  B r = OsStrDecode0(res);
   free(res);
   dec(path);
-  TFREE(p);
+  freeOsStr(p);
   return r;
   #endif
 }
@@ -264,8 +279,10 @@ B path_list(B path) {
   struct dirent *c;
   B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
-    char* name = c->d_name;
-    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, utf8Decode(name, strlen(name)));
+    OsStr name = c->d_name;
+    if (name[0]==OS_C('.')? !(name[1]==0 || (name[1]==OS_C('.')&&name[2]==0)) : true) {
+      res = vec_addN(res, OsStrDecode0(name));
+    }
   }
   closedir(d);
   dec(path);
@@ -393,61 +410,39 @@ void mmap_init() { }
 #include <sys/stat.h>
 
 bool dir_create(B path) {
-#if !defined(_WIN32)
-  char* p = toCStr(path);
+  OsStr p = toOsStr(path);
   bool r = mkdir(p, S_IRWXU) == 0;
-  freeCStr(p);
-#else
-  WCHAR* p = toWStr(path);
-  bool r = _wmkdir(p) == 0;
-  freeWStr(p);
-#endif
+  freeOsStr(p);
   return r;
 }
 
 bool path_rename(B old_path, B new_path) {
-#if !defined(_WIN32)
-  char* old = toCStr(old_path);
-  char* new = toCStr(new_path);
+  OsStr old = toOsStr(old_path);
+  OsStr new = toOsStr(new_path);
   // TODO Fix race condition, e.g., with renameat2 on Linux, etc.
   bool ok = access(new, F_OK) != 0 && rename(old, new) == 0;
-  freeCStr(new);
-  freeCStr(old);
-#else
-  WCHAR* old = toWStr(old_path);
-  WCHAR* new = toWStr(new_path);
-  bool ok = _waccess(new, F_OK) != 0 && _wrename(old, new) == 0;
-  freeWStr(new);
-  freeWStr(old);
-#endif
+  freeOsStr(new);
+  freeOsStr(old);
   dec(old_path);
   return ok;
 }
 
 bool path_remove(B path) {
-#if !defined(_WIN32)
-  char* p = toCStr(path);
+  OsStr p = toOsStr(path);
   bool ok = unlink(p) == 0;
-  freeCStr(p);
-#else
-  WCHAR* p = toWStr(path);
-  bool ok = _wunlink(p) == 0;
-  freeWStr(p);
-#endif
+  freeOsStr(p);
   dec(path);
   return ok;
 }
 
 int path_stat(struct stat* s, B path) { // doesn't consume; get stat of s; errors if path isn't string; returns non-zero on failure
+  OsStr p = toOsStr(path);
 #if !defined(_WIN32)
-  char* p = toCStr(path);
   int r = stat(p, s);
-  freeCStr(p);
 #else
-  WCHAR* p = toWStr(path);
   int r = wstat(p, s);
-  freeWStr(p);
 #endif
+  freeOsStr(p);
   return r;
 }
 

@@ -64,6 +64,10 @@ static B utf16Decode(const WCHAR* s, i64 len) {
 #undef UTF16_SURROGATE
 }
 
+static B utf16Decode0(const WCHAR* s) {
+  return utf16Decode(s, wcslen(s));
+}
+
 static WCHAR* toWStr(B x) { // doesn't consume
   u64 len = utf16lenB(x);
   TALLOC(WCHAR, p, len+1);
