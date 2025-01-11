@@ -9,13 +9,26 @@
 #if defined(_WIN32) || defined(_WIN64)
   #include <direct.h>
   #include "../windows/realpath.c"
+  #include "../windows/utf16.c"
+  // use wide char functions for unicode support / longer paths (potentially)
+  // opendir() is provided by mingw and does unicode convertion already
 #endif
 
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
+#if !defined(_WIN32)
   char* p = toCStr(path);
   FILE* f = fopen(p, mode);
   freeCStr(p);
+#else
+  WCHAR wmode[8] = {0};
+  u64 len = strlen(mode);
+  assert(len<(sizeof(wmode)/sizeof(WCHAR)));
+  for (u64 i = 0; i<len; ++i) wmode[i] = (WCHAR)mode[i];
+  WCHAR *p = toWStr(path);
+  FILE* f = _wfopen(p, wmode);
+  freeWStr(p);
+#endif
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
   return f;
 }
@@ -301,9 +314,9 @@ static NOINLINE Arr* mmapH_slice(B x, usz s, usz ia) {
 }
 
 B mmap_file(B path) {
+#if !defined(_WIN32)
   char* p = toCStr(path);
   dec(path);
-#if !defined(_WIN32)
   int fd = open(p, 0);
   freeCStr(p);
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
@@ -316,11 +329,12 @@ B mmap_file(B path) {
   }
 #else
   // see https://learn.microsoft.com/en-us/windows/win32/memory/creating-a-view-within-a-file
-
-  HANDLE hFile = CreateFileA(
+  WCHAR* p = toWStr(path);
+  dec(path);
+  HANDLE hFile = CreateFileW(
     p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  freeCStr(p);
+  freeWStr(p);
   if (hFile==INVALID_HANDLE_VALUE) thrF("Failed to open file: %S", winError());
   LARGE_INTEGER fileSize;
   if (!GetFileSizeEx(hFile, &fileSize)) {
@@ -329,7 +343,7 @@ B mmap_file(B path) {
   }
   u64 len = fileSize.QuadPart;
   
-  HANDLE hMapFile = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+  HANDLE hMapFile = CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
   if (hMapFile==INVALID_HANDLE_VALUE) {
     CloseHandle(hFile);
     thrF("Failed to create file mapping: %S", winError());
@@ -341,7 +355,7 @@ B mmap_file(B path) {
     thrF("Failed to map view of file: %S", winError());
   }
 #endif
-  
+
   MmapHolder* holder = m_arrUnchecked(sizeof(MmapHolder), t_mmapH, len);
   holder->a = data;
 #if !defined(_WIN32)
@@ -379,39 +393,61 @@ void mmap_init() { }
 #include <sys/stat.h>
 
 bool dir_create(B path) {
+#if !defined(_WIN32)
   char* p = toCStr(path);
-  #if defined(_WIN32) || defined(_WIN64)
-    bool r = _mkdir(p) == 0;
-  #else
-    bool r = mkdir(p, S_IRWXU) == 0;
-  #endif
+  bool r = mkdir(p, S_IRWXU) == 0;
   freeCStr(p);
+#else
+  WCHAR* p = toWStr(path);
+  bool r = _wmkdir(p) == 0;
+  freeWStr(p);
+#endif
   return r;
 }
 
 bool path_rename(B old_path, B new_path) {
+#if !defined(_WIN32)
   char* old = toCStr(old_path);
   char* new = toCStr(new_path);
   // TODO Fix race condition, e.g., with renameat2 on Linux, etc.
   bool ok = access(new, F_OK) != 0 && rename(old, new) == 0;
   freeCStr(new);
   freeCStr(old);
+#else
+  WCHAR* old = toWStr(old_path);
+  WCHAR* new = toWStr(new_path);
+  bool ok = _waccess(new, F_OK) != 0 && _wrename(old, new) == 0;
+  freeWStr(new);
+  freeWStr(old);
+#endif
   dec(old_path);
   return ok;
 }
 
 bool path_remove(B path) {
+#if !defined(_WIN32)
   char* p = toCStr(path);
   bool ok = unlink(p) == 0;
   freeCStr(p);
+#else
+  WCHAR* p = toWStr(path);
+  bool ok = _wunlink(p) == 0;
+  freeWStr(p);
+#endif
   dec(path);
   return ok;
 }
 
 int path_stat(struct stat* s, B path) { // doesn't consume; get stat of s; errors if path isn't string; returns non-zero on failure
+#if !defined(_WIN32)
   char* p = toCStr(path);
   int r = stat(p, s);
   freeCStr(p);
+#else
+  WCHAR* p = toWStr(path);
+  int r = wstat(p, s);
+  freeWStr(p);
+#endif
   return r;
 }
 

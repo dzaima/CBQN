@@ -26,13 +26,13 @@ FORCE_INLINE void utf16_w(WCHAR** buf_i, u32 c)
   *buf_i = buf;
 }
 
-void toUTF16(B x, WCHAR* p) {
+static void toUTF16(B x, WCHAR* p) {
   SGetU(x)
   usz ia = IA(x);
   for (u64 i = 0; i < ia; ++i) utf16_w(&p, o2cG(GetU(x,i)));
 }
 
-B utf16Decode(const WCHAR* s, i64 len) {
+static B utf16Decode(const WCHAR* s, i64 len) {
 #define UTF16_MASK 0xFC00
 #define UTF16_IS_HI(WC) ((UTF16_MASK&(WC))==0xD800) /* 0xD800..0xDBFF */
 #define UTF16_IS_LO(WC) ((UTF16_MASK&(WC))==0xDC00) /* 0xDC00..0xDFFF */
@@ -64,13 +64,13 @@ B utf16Decode(const WCHAR* s, i64 len) {
 #undef UTF16_SURROGATE
 }
 
-static WCHAR* toWideStr(B x) { // doesn't consume
+static WCHAR* toWStr(B x) { // doesn't consume
   u64 len = utf16lenB(x);
   TALLOC(WCHAR, p, len+1);
   toUTF16(x, p);
   p[len] = 0;
   return p;
 }
-static void freeWideStr(WCHAR* p) {
+static void freeWStr(WCHAR* p) {
   TFREE(p);
 }
