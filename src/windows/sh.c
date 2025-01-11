@@ -1,5 +1,4 @@
 #include <windows.h>
-#include "../utils/talloc.h"
 
 typedef struct {
   HANDLE hndl;
@@ -29,28 +28,33 @@ static DWORD WINAPI winThreadRead(LPVOID arg0) {
   DWORD dwResult = ERROR_SUCCESS;
   ThreadIO* arg = arg0;
   HANDLE hndl = arg->hndl;
-  u8 buf[1024] = {0};
+  u8 buf[4096] = {0};
   const usz bufSize = sizeof(buf)/sizeof(u8);
-  DWORD dwRead = 0;
-  TSALLOC(char, rBuf, 8);
-
+  DWORD dwRead = 0, dwHasRead = 0;
+  char* rBuf = NULL;
   for (;;) {
     ZeroMemory(buf, bufSize);
     BOOL bOk = ReadFile(hndl, buf, bufSize, &dwRead, NULL);
+    if (dwRead == 0) { break; }
     if (!bOk) {
-      DWORD dwErr = GetLastError();
-      if (dwErr == ERROR_BROKEN_PIPE) { break; }
-      else { dwResult = dwErr; break; }
+      dwResult = GetLastError();
+      break;
     }
-    TSADDA(rBuf, buf, dwRead);
+    char* newBuf = (rBuf == NULL)?
+      calloc(dwHasRead+dwRead, sizeof(char)) :
+      realloc(rBuf, (dwHasRead+dwRead)*sizeof(char));
+    if (newBuf == NULL) { dwResult = GetLastError(); break; }
+    rBuf = newBuf;
+    memcpy(&rBuf[dwHasRead], buf, dwRead);
+    dwHasRead += dwRead;
   }
 
-  if (dwResult == ERROR_SUCCESS) {
-    arg->len = TSSIZE(rBuf);
-    arg->buf = TALLOCP(char, arg->len);
-    memcpy(arg->buf, rBuf, arg->len);
+  if (dwResult != ERROR_SUCCESS) {
+    if (rBuf != NULL) { free(rBuf); }
+  } else {
+    arg->buf = rBuf;
+    arg->len = dwHasRead;
   }
-  TSFREE(rBuf);
   CloseHandle(hndl);
   return dwResult;
 }

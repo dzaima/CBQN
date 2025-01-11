@@ -1220,8 +1220,8 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   // prepare output
   u8* op; *s_outp = m_c8arrv(&op, oLen); 
   u8* ep; *s_errp = m_c8arrv(&ep, eLen); 
-  if (oBuf!=NULL) { memcpy(op, oBuf, oLen*sizeof(char)); TFREE(oBuf); }
-  if (eBuf!=NULL) { memcpy(ep, eBuf, eLen*sizeof(char)); TFREE(eBuf); }
+  if (oBuf!=NULL) { memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf); }
+  if (eBuf!=NULL) { memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf); }
   return (i32)code;
 }
 #else
