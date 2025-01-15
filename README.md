@@ -5,13 +5,16 @@
 ## Running
 
 1. `make`
-    - Third-party packages and other ways to run BQN are listed [here](https://mlochbaum.github.io/BQN/running.html)
     - Add `FFI=0` if your system doesn't have libffi
     - Use `gmake` on BSD
     - Add `REPLXX=0` if C++ is unavailable (will remove line editing/coloring/name completion in the REPL)
     - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
     - `make clean` to get to a clean build state
 2. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL
+
+Alternatively, third-party packages (and other ways to run BQN) are listed [here](https://mlochbaum.github.io/BQN/running.html); CBQN packaging status:
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/cbqn.svg)](https://repology.org/project/cbqn/versions)
 
 ## Configuration options
 
