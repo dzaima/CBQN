@@ -179,7 +179,7 @@ B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
 }
 
 B before_uc1(Md2* t, B o, B f, B g, B x) {
-  if (!isFun(g)) return def_m2_uc1(t, o, f, g, x);
+  if (!isFun(g) || isCallable(f)) return def_m2_uc1(t, o, f, g, x);
   return TI(g,fn_ucw)(g, o, inc(f), x);
 }
 B before_im(Md2D* d, B x) { return isFun(d->g) && !isCallable(d->f)? TI(d->g,fn_ix)(d->g, inc(d->f), x) : def_m2_im(d, x); }
