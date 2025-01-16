@@ -1153,9 +1153,9 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 }
 #elif defined(_WIN32) || defined(_WIN64)
 #define HAS_SH 1
-#include "../windows/winError.c"
-#include "../windows/utf16.c"
-#include "../windows/sh.c"
+#include "../windows/winError.h"
+#include "../windows/utf16.h"
+#include "../windows/sh.h"
 
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args

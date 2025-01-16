@@ -8,7 +8,7 @@
 
 #if defined(_WIN32)
   #include <direct.h>
-  #include "../windows/utf16.c"
+  #include "../windows/utf16.h"
   // use wide char functions for unicode support / longer paths (potentially)
   #include "../windows/realpath.c"
 #endif
@@ -297,7 +297,7 @@ B path_list(B path) {
 #include <unistd.h>
 #else
 #include <windows.h>
-#include "../windows/winError.c"
+#include "../windows/winError.h"
 #endif
 
 typedef struct MmapHolder {
