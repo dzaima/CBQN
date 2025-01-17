@@ -456,7 +456,7 @@ FORCE_INLINE bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<
 FORCE_INLINE bool isNum(B x) { return isF64(x); }
 
 FORCE_INLINE bool isAtm(B x) { return !isArr(x); }
-FORCE_INLINE bool isCallable(B x) { return isMd(x) | isFun(x); }
+FORCE_INLINE bool isCallable(B x) { u16 tag = x.u>>48; return tag>=MD1_TAG && tag<=FUN_TAG; }
 FORCE_INLINE bool isPrim(B x) { return isCallable(x) && RTID(x)!=RTID_NONE; }
 
 

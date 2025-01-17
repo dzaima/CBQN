@@ -859,6 +859,8 @@ void base_init() { // very first init function
   
   // making sure that expected properties of constants hold
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // dependencies: isMd
+  assert(MD1_TAG+1 == MD2_TAG); // dependencies: isCallable
+  assert(MD2_TAG+1 == FUN_TAG); // dependencies: isCallable
   
   // dependencies: v_tagCheck & the JIT equivalent
   assert(v_bad17_read == (bi_noVar.u >>47));
