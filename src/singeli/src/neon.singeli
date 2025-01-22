@@ -37,6 +37,17 @@ def bitBlend{f:T=[_]_, t:T, m:M=[_]_} = blend_bit{f, t, m}
 
 def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
+
+# narrowing add/subtract, high half
+def addnHi{a:V, b:V} = emit{el_h{V}, ntyp0{'vaddhn', V}, a, b}
+def subnHi{a:V, b:V} = emit{el_h{V}, ntyp0{'vsubhn', V}, a, b}
+def addnHiUpper{lo:[k]RE, a:V=[k]XE, b:V if width{XE}==width{RE}*2} = emit{[k*2]RE, ntyp0{'vaddhn_high', V}, lo, a, b}
+def subnHiUpper{lo:[k]RE, a:V=[k]XE, b:V if width{XE}==width{RE}*2} = emit{[k*2]RE, ntyp0{'vsubhn_high', V}, lo, a, b}
+
+# pairwise min/max
+def minp{a:V, b:V} = emit{V, ntyp{'vpmin', V}, a, b}
+def maxp{a:V, b:V} = emit{V, ntyp{'vpmax', V}, a, b}
+
 def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 def rbit{x:T if nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
@@ -110,13 +121,27 @@ def narrowPair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
 def widenUpper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
 def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widenUpper{x}}
 
-def bitAny{x:T} = fold_max{re_el{u32, x}}!=0
-def bitAll{x:T} = fold_min{re_el{u32, x}}==0xffff_ffff
+def homAll{x:V if nvec{V}} = bitAll{x}
 
-def topAny{x:T if nvec{T}} = fold_min{ty_s{x}}<0
-def topAll{x:T if nvec{T}} = fold_max{ty_s{x}}<0
-def homAny{x:T if nvec{T}} = bitAny{x}
-def homAll{x:T if nvec{T}} = bitAll{x}
+local def bit_any_lo64{x:V} = extract{re_el{u64,x}, 0} != 0
+local def hom_any_lo64{x:V} = extract{re_el{f64,x}, 0} != 0.0 # safe to use float comparison as homogeneity guarantees not hitting -0.0; https://lemire.me/blog/2025/01/20/checking-whether-an-arm-neon-register-is-zero/
+local def bit_all_lo64{x:V} = extract{re_el{i64,x}, 0} == -1 # no special hom_all_lo64 possible with float comparison
+local def min_pack{x} = re_el{u64, minp{...2**re_el{u32,x}}}
+local def max_pack{x} = re_el{u64, maxp{...2**re_el{u32,x}}}
+def bitAny{x:V if  w64{V}} = bit_any_lo64{x}
+def bitAny{x:V if w128{V}} = bit_any_lo64{max_pack{x}}
+def homAny{x:V if  w64{V}} = hom_any_lo64{x}
+def homAny{x:V if w128{V}} = hom_any_lo64{max_pack{x}}
+def bitAll{x:V if  w64{V}} = bit_all_lo64{x}
+def bitAll{x:V if w128{V}} = bit_all_lo64{min_pack{x}}
+
+def homAll{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subnHi{[8]u16**16r2b1, [8]u16~~x}}
+def homAny{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
+# TODO multi-vector homAny for ew≥16 via addhn?
+
+
+def topAny{x:V if nvec{V}} = fold_min{ty_s{x}}<0
+def topAll{x:V if nvec{V}} = fold_max{ty_s{x}}<0
 
 
 def homMask{x:T=[k]E if nvecu{T} and width{E}>=k} = {
