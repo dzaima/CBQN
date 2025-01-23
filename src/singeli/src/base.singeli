@@ -117,12 +117,10 @@ def genchk{B, F} = match {
   {V=[_]T, w} => B{V} and F{T} and width{T}==w
   {..._} => 0
 }
-def w256i = genchk{w256,      isint};  def w128i = genchk{w128,      isint};  def w64i = genchk{w64,      isint}
-def w256s = genchk{w256,   issigned};  def w128s = genchk{w128,   issigned};  def w64s = genchk{w64,   issigned}
-def w256u = genchk{w256, isunsigned};  def w128u = genchk{w128, isunsigned};  def w64u = genchk{w64, isunsigned}
-def w256f = genchk{w256,    isfloat};  def w128f = genchk{w128,    isfloat};  def w64f = genchk{w64,    isfloat}
-
-
+def genchks{B} = each{genchk{B,.}, tup{isint, issigned, isunsigned, isfloat}}
+def { w64i, w64s, w64u, w64f} = genchks{w64}
+def {w128i,w128s,w128u,w128f} = genchks{w128}
+def {w256i,w256s,w256u,w256f} = genchks{w256}
 
 def trunc{T, x:U if isint{T} and isint{U} and T<=U} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}

@@ -1,9 +1,6 @@
 def nvec{T} = isvec{T} and (width{T}==64 or width{T}==128)
 def nvec{T,w} = nvec{T} and elwidth{T}==w
-def nveci = genchk{nvec,      isint}
-def nvecs = genchk{nvec,   issigned}
-def nvecu = genchk{nvec, isunsigned}
-def nvecf = genchk{nvec,    isfloat}
+def {nveci,nvecs,nvecu,nvecf} = genchks{nvec}
 
 
 def nty{T} = {
