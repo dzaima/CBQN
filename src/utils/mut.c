@@ -225,7 +225,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 #if SINGELI_SIMD
   #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
-  #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
+  #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { MAYBE_UNUSED u8 xt=TY(x); BODY }
 #endif
 #define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
 #define PTR_COPY(X, R) vfor (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
@@ -603,7 +603,7 @@ ApdFn* const apd_tot_fns[];  ApdFn* const apd_sh0_fns[];  ApdFn* const apd_sh1_f
 #define APD_INC_POS(EB) 
 #define APD_MK0(E, FEB, EB, TY, TARR, CIA, T0, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) { T0 \
-    usz cia=CIA; CS; u8 xe=TI(x,elType); (void)xe;  \
+    usz cia=CIA; CS; MAYBE_UNUSED u8 xe=TI(x,elType); \
     if (RARE(!(TARR))) APD_WIDEN(TY, x);            \
     APD_OR_FILL(FEB, x);                            \
     usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;    \

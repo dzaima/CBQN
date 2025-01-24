@@ -52,7 +52,7 @@ INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
 #else
   #define GETRANGE(T,CHK) bool getRange_##T(void* x0, i64* res, u64 ia) { \
     assert(ia>0); T* x=x0; T min=*x,max=min; \
-    { T c=min; CHK; (void)c; }               \
+    { MAYBE_UNUSED T c=min; CHK; }           \
     for (ux i=1; i<ia; i++) { T c=x[i]; CHK; \
       {if(c<min)min=c;} {if(c>max)max=c;}    \
     }                                        \
@@ -248,7 +248,7 @@ static NOINLINE usz indexOfOne(B l, B e) {
   } else
 
 B indexOf_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 1);
@@ -361,7 +361,7 @@ B indexOf_c2(B t, B w, B x) {
 
 GLOBAL B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (isAtm(x) || RNK(x)!=1) {
     split = 1;
     B2 t = splitCells(w, x, false);
@@ -466,7 +466,7 @@ B memberOf_c2(B t, B w, B x) {
 }
 
 B count_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 2);

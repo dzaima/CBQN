@@ -654,7 +654,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
   
-  u8 inds_buf[INDS_BUF_MAX]; (void)inds_buf;
+  MAYBE_UNUSED u8 inds_buf[INDS_BUF_MAX];
   bool generic_allowed = true; // whether required interpretation of x hasn't changed from its real one
   if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
     i64 bounds[2];
@@ -684,7 +684,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
     }
   }
   
-  bool fast; (void) fast;
+  MAYBE_UNUSED bool fast;
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
   i64 bounds[2];

@@ -125,7 +125,7 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
   
   Arr *r;
   u8 xlw = elwBitLog(re);
-  usz n = shProd(SH(w), 0, k); (void)n;
+  MAYBE_UNUSED usz n = shProd(SH(w), 0, k);
   usz wcsz = shProd(SH(w), k, RNK(w));
   usz xcsz = shProd(SH(x), k, RNK(x));
   usz ia = IA(w)+IA(x);
