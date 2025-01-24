@@ -317,7 +317,7 @@ B GRADE_CAT(c1)(B t, B x) {
     u64 range = max - (i64)min + 1;
     if (range/2 < ia) {
       // First try to invert it as a permutation
-      if (range==ia && sum==(u32)(i32)((i64)ia*(min+max)/2)) {
+      if (range == ia && sum == (u32)(ia * (min+(i64)max)/2)) {
         for (usz i = 0; i < ia; i++) rp[i]=ia;
         for (usz i = 0; i < ia; i++) { i32 v=xp[i]; GRADE_UD(rp[v-min],rp[max-v])=i; }
         bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
