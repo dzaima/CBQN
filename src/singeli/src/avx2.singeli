@@ -39,18 +39,18 @@ def topMask{x:T if w256{T, 16}} = {
   (msk&255) | (msk>>8)
 }
 
-def homAny{x:T if w256i{T}} = ~emit{u1, '_mm256_testz_si256', v2i{x}, v2i{x}}
-def homAll{x:T if w256i{T}} = homMask{[32]u8 ~~ x} == 0xffff_ffff
-def topAny{x:T      if w256i{T}} = topMask{x} != 0
-def topAll{x:T=[k]_ if w256i{T}} = topMask{x} == (1<<k)-1
+def any_hom{x:T if w256i{T}} = ~emit{u1, '_mm256_testz_si256', v2i{x}, v2i{x}}
+def all_hom{x:T if w256i{T}} = homMask{[32]u8 ~~ x} == 0xffff_ffff
+def any_top{x:T      if w256i{T}} = topMask{x} != 0
+def all_top{x:T=[k]_ if w256i{T}} = topMask{x} == (1<<k)-1
 def homMask{a:T, b:T if w256i{T,16}} = homMask{vec_shuffle{[4]u64, packQ{ty_s{a},ty_s{b}}, 0,2,1,3}}
 
-def topAny{x:T if w256i{T,32}} = ~emit{u1, '_mm256_testz_ps', v2f{x}, v2f{x}}
-def topAny{x:T if w256i{T,64}} = ~emit{u1, '_mm256_testz_pd', v2d{x}, v2d{x}}
-def homAny{x:T if w256i{T} and elwidth{T}>=32} = topAny{x}
+def any_top{x:T if w256i{T,32}} = ~emit{u1, '_mm256_testz_ps', v2f{x}, v2f{x}}
+def any_top{x:T if w256i{T,64}} = ~emit{u1, '_mm256_testz_pd', v2d{x}, v2d{x}}
+def any_hom{x:T if w256i{T} and elwidth{T}>=32} = any_top{x}
 
-def topAny{x:T if w256i{T,16}} = homAny{[16]i16~~x  <  [16]i16**0}
-def topAll{x:T if w256i{T,16}} = homAll{[16]i16~~x  <  [16]i16**0}
+def any_top{x:T if w256i{T,16}} = any_hom{[16]i16~~x  <  [16]i16**0}
+def all_top{x:T if w256i{T,16}} = all_hom{[16]i16~~x  <  [16]i16**0}
 
 
 # conversion

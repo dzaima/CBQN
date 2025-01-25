@@ -161,12 +161,15 @@ Some of them define variants which operate within 128-bit lanes, via a `128` pos
 
 Homogeneous definitions (i.e. ones with `hom` in their name) assume that each element in the mask type has all its bits equal.
 
-- `homAll{a:VI} : u1` - whether all elements are set
-- `homAny{a:VI} : u1` - whether any element is set
-- `topAny{a:VI} : u1` - whether all elements have their top bit set
-- `topAll{a:VI} : u1` - whether any element has its top bit set
+- `all_hom{a:VI} : u1` - whether all elements are set
+- `any_hom{a:VI} : u1` - whether any element is set
+- `any_top{a:VI} : u1` - whether all elements have their top bit set
+- `all_top{a:VI} : u1` - whether any element has its top bit set
+- `any_bit{a:VI} : u1` - whether any bit in any element is set
+- `all_bit{a:VI} : u1` - whether all bits in all elements is set
 - `blend_hom{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
 - `blend_top{f:V, t:V, m:V} : V` - blend by top bit of `m`
+- `blend_bit{f:V, t:V, m:M} : V` - bitwise blend
 - `homMask{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
 - `homMask{...vs} : uint` - merged mask of `each{homMask,vs}`
 - `topMask{a:VI} : uint` - integer mask of the top bit of each element
@@ -236,9 +239,6 @@ For float conversions, the used rounding mode is unspecified.
 - `mulwLo`, `mulwHi`, `mulw` - widening multiply
 - `andnz` - element-wise (a&b)!=0? ~0 : 0
 <!-- -->
-- `bitAll` - are all bits 1s
-- `bitAny` - is any bit a 1
-- `bitBlend` - blend by bits
 - `clz` - count leading zeroes
 - `cls` - count leading sign bits
 - `copyLane`
@@ -308,7 +308,7 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @maskedLoop
   ) {
     # x, r, and b now have type VT
     r1:= r + x - b # subtracting b because it's all 1s for a one
-    if (homAny{M{r1 < r}}) return{0} # detect overflow
+    if (any_hom{M{r1 < r}}) return{0} # detect overflow
     r = r1 # will be mask-stored if needed
   }
   1
@@ -327,7 +327,7 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x un
   ) {
     def r0 = r{}
     def r1 = each{-, each{+,r0,x}, b}
-    if (homAny{M{tree_fold{|, each{<,r1,r0}}}}) return{0}
+    if (any_hom{M{tree_fold{|, each{<,r1,r0}}}}) return{0}
     r{r1}
   }
   1

@@ -25,7 +25,7 @@ if_inline (hasarch{'AVX2'}) {
 
 def wrapChk{cw0:VI, xlf, M} = {
   cw:= cw0 + (xlf & VI~~(cw0<VI**0))
-  if (homAny{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
+  if (any_hom{M{ty_u{cw} >= ty_u{xlf}}}) return{0}
   cw
 }
 

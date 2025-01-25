@@ -27,9 +27,9 @@ def search{E, x, n:(u64), OP} = {
   }
   @muLoop{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
-    if (homAny{M{tree_fold{|, eq}}}) {
+    if (any_hom{M{tree_fold{|, eq}}}) {
       findFirst{
-        {i,c} => homAny{c},
+        {i,c} => any_hom{c},
         {i,c} => tup{i,c},
         end,
         is, eq
@@ -54,7 +54,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
   @maskedLoop{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
-    if (homAny{M{x!=x}}) return{1}
+    if (any_hom{M{x!=x}}) return{1}
     sr{x + VT**0}
   }
   0
@@ -325,7 +325,7 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
     def minA = acc{2, VT**min1}
     def maxA = acc{2, VT**min1}
     @muLoop{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
-      if (E==f64 and homAny{M{tree_fold{|, each{{c} => ~isI64{c}, cx}}}}) return{0}
+      if (E==f64 and any_hom{M{tree_fold{|, each{{c} => ~isI64{c}, cx}}}}) return{0}
       minA{'upd', is, {a} => eachx{maskBlend, a, each{min, a, cx}, M}} # blend
       maxA{'upd', is, {a} => eachx{maskBlend, a, each{max, a, cx}, M}} # blend
     }
@@ -637,7 +637,7 @@ def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
       @unroll (f in fp+u*i over a to u) c |= V**(1<<(rw*a)) & test{f}
       r = vswap ^ vfold{|, c}
     }
-    @for (rp, fp over _ from u*l to n) rp = promote{R, swap ^ homAny{test{fp}}}
+    @for (rp, fp over _ from u*l to n) rp = promote{R, swap ^ any_hom{test{fp}}}
     goto{done}
   }
   def try{nv} = {

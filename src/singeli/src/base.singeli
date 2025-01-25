@@ -174,7 +174,7 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 # base cases
 def {
   absu,andAllZero,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
-  homAll,homAny,bitAll,bitAny,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
+  all_hom,any_hom,all_bit,any_bit,all_top,any_top,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
   pext,popcRand,rbit,rev,sel,shl,shr,shufInd,storeLow,
   blend_top,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,

@@ -14,8 +14,8 @@ def maskOf{T,n if w256{T}} = maskOfImpl{T, n, 256}
 def maskOf{T,n if w128{T}} = maskOfImpl{T, n, 128}
 def maskOf{T,n if  w64{T}} = maskOfImpl{T, n,  64}
 
-def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~homAll{x==y}
-def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  homAny{M{x!=y}}
+def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~all_hom{x==y}
+def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M{x!=y}}
 def anyne{x:T, y:T, M if M{0}==0 and anyInt{x}} = x!=y
 def anyne{x:T, y:T, M if M{0}==1 and anyInt{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
@@ -64,9 +64,9 @@ def loadBatch{ptr:*E0, i, [k]E1} = {
 def loadBatch {ptr:*E, {...ns}, T    } = each{loadBatch {ptr, ., T   }, ns}
 def storeBatch{ptr:*E, {...ns}, xs, M} = each{storeBatch{ptr, ., ., M}, ns, xs}
 
-# TODO also similar homAny & use those more
-def homAll{(maskNone), ...xs} = homAll{...xs}
-def homAll{M, x:T if kgen{M}} = ~homAny{M{~x}} # TODO better
+# TODO also similar any_hom & use those more
+def all_hom{(maskNone), ...xs} = all_hom{...xs}
+def all_hom{M, x:T if kgen{M}} = ~any_hom{M{~x}} # TODO better
 
 # "harmless" pointer cast that'll only cast void*
 def hCast{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}

@@ -18,8 +18,8 @@ def bqn_or{a, b} = (a+b)-(a*b)
 
 
 # + & -
-def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'topAny', M{(w^r) & (x^r)}}
-def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'topAny', M{(w^x) & (w^r)}}
+def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'any_top', M{(w^r) & (x^r)}}
+def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'any_top', M{(w^x) & (w^r)}}
 def arithChk1{(__add), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', adds{w,x}, r}
 def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', subs{w,x}, r}
 
@@ -37,7 +37,7 @@ def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
   def rp = each{__mul, wp, xp}
   if (M{0}) { # masked check
     def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
-    tup{packQ{rp}, tup{'homAny', M{packQ{bad}}}}
+    tup{packQ{rp}, tup{'any_hom', M{packQ{bad}}}}
   } else { # unmasked check; can do check in a simpler way
     def bad = each{{v} => ty_s{v ^ (v>>15)}, rp}
     def RU = re_el{u16,T}
@@ -53,7 +53,7 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   max:= re_el{f32, (ty_u{T})**0x4efffffe}
   def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, tup{'homAny', M{abs{f32mul} >= max}}}
+  tup{w*x, tup{'any_hom', M{abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = mzip128{w, T**0}
@@ -63,12 +63,12 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   # def bad = each{{v} => {
   #   ((T2~~v + T2**0x80000000) ^ T2**(cast{i64,1}<<63)) > T2**cast_i{i64, (cast{u64,1}<<63) | 0xFFFFFFFF}
   # }, rp}
-  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'homAny', tree_fold{|,bad}}} this doesn't use M
+  # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'any_hom', tree_fold{|,bad}}} this doesn't use M
 }
 
 def arithChk2{F=(__mul), M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
   def {rl, rh} = pack{...mulw{w, x}}
-  tup{rl, tup{'homAny', M{rh != (rl >> (width{E}-1))}}}
+  tup{rl, tup{'any_hom', M{rh != (rl >> (width{E}-1))}}}
 }
 
 
@@ -97,22 +97,22 @@ def runner{u, R, F} = {
   
   def run{F, M, w:VW, x:VX if c and R==u32 and (same{F,__add} or same{F,__sub})} = { # 'a'+1, 'a'-1
     r:= F{ty_u{w}, ty_u{x}}
-    tup{re_el{R, VW}~~r, tup{'homAny', M{r > type{r}**1114111}}}
+    tup{re_el{R, VW}~~r, tup{'any_hom', M{r > type{r}**1114111}}}
   }
   run
 }
 
-# homAny, topAny already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
+# any_hom, any_top already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
 def runChecks_any{F, vals} = { F{tree_fold{|, each{select{.,1}, vals}}} }
-def runChecks{'homAny', vals, M} = runChecks_any{homAny, vals}
-def runChecks{'topAny', vals, M} = runChecks_any{topAny, vals}
+def runChecks{'any_hom', vals, M} = runChecks_any{any_hom, vals}
+def runChecks{'any_top', vals, M} = runChecks_any{any_top, vals}
 def runChecks{'none',   vals, M} = 0
 def runChecks{'~andAllZero', vals, M if ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
 def runChecks{'anyne',  vals, M} = {
   def i{vals} = {
     def {_,xs,ys} = flip{vals}
     assert{M{0} == 0}
-    ~homAll{tree_fold{&, each{==, xs, ys}}}
+    ~all_hom{tree_fold{&, each{==, xs, ys}}}
   }
   def i{{{_,x,y}}} = anyne{x, y, M}
   i{vals}

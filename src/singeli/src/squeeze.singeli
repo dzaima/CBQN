@@ -3,22 +3,22 @@ include './mask'
 include './cbqnDefs'
 include './vecfold'
 
-def is_sNaN{x:[_](u64)} = tup{homAny, inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
+def is_sNaN{x:[_](u64)} = tup{any_hom, inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
 def is_sNaN{x:[2](u64) if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = { # avoiding i64 comparisons
   def nan = unord{[2]f64~~x, [2]f64~~x}
   def qnan = re_el{u64, [4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000)}
-  tup{topAny, nan &~ qnan}
+  tup{any_top, nan &~ qnan}
 }
 def any_sNaN{M, ...xs} = {
   def {any, are} = flip{each{is_sNaN, xs}}
   oneVal{any}{M{tree_fold{|, are}}}
 }
 
-def any_nonC32{M, x:[_](u64)} = homAny{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
+def any_nonC32{M, x:[_](u64)} = any_hom{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
 def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
-  topAny{M{T~~ne}}
+  any_top{M{T~~ne}}
 }
 def any_nonC32{(maskNone), x:[k](u64), y:[k](u64)} = {
   def T32 = [k*2]u32
@@ -86,7 +86,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
       if (B) {
         if (any_nonC32{M, ...xs}) return{3}
       } else {
-        def bad = if (hasarch{'AARCH64'}) bitAny{if (length{xs}==2) pack{...xs,1} else pack{orx,orx,1}}
+        def bad = if (hasarch{'AARCH64'}) any_bit{if (length{xs}==2) pack{...xs,1} else pack{orx,orx,1}}
         else ~andAllZero{orx, ~XV**maxvalue{w_h{X}}}
         if (bad) return{lb{width{X}}-3}
       }
@@ -103,13 +103,13 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
       @muLoop{bulk, 4}(xs in xb, M in 'm' over len) {
         minc:= tree_fold{min, xs}
         maxc:= tree_fold{max, xs}
-        if (M{0}==0 and homAny{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
+        if (M{0}==0 and any_hom{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
         acc{M, minc, maxc}
       }
     } else {
       @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
         def mixed = acc{M, xs}
-        if (M{0}==0 and homAny{mixed > XV**maxvalue{EH}}) return{0xffff_ffff}
+        if (M{0}==0 and any_hom{mixed > XV**maxvalue{EH}}) return{0xffff_ffff}
       }
     }
     acc{}
@@ -132,7 +132,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     @muLoop{bulk, 2}(xs in xb, M in 'm' over is to len) {
       if (hasarch{'X86_64'}) {
         def ns = each{narrow{i32,.}, xs}
-        if (homAny{M{tree_fold{|, each{{ns,x} => widen{XV,ns}!=x, ns, xs}}}}) case_B{select{is, 0}}
+        if (any_hom{M{tree_fold{|, each{{ns,x} => widen{XV,ns}!=x, ns, xs}}}}) case_B{select{is, 0}}
         acc{M, ns}
       } else {
         assert{hasarch{'AARCH64'}}
@@ -141,7 +141,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         def int32 = if (k==2) pack{...int, 0} else pack{...int, [bulk]i64**0, 0}
         def wd = each{{G} => cvt{f64,G{int32}}, slice{tup{widen{[bulk]i64,.}, widenUpper}, 0, k}}
         
-        if (~homAll{M, tree_fold{&, each{==, wd, xs}}}) case_B{select{is, 0}}
+        if (~all_hom{M, tree_fold{&, each{==, wd, xs}}}) case_B{select{is, 0}}
         acc{M, tup{int32}}
       }
     }

@@ -56,7 +56,7 @@ def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
   #   def [_]IE = oneType{is}
   #   def shl = if (IE==u8) __shl{u16} else __shl
   #   def bm = shl{is, width{IE}-1 - lb{nth}}
-  #   each{{l,h} => topBlend{l,h,bm}, lo{is}, hi{is}}
+  #   each{{l,h} => blend_top{l,h,bm}, lo{is}, hi{is}}
   # }
   def me{is:[_](u8) if hasarch{'X86_64'} and E==u32} = {
     each{{l,h,m} => blend_top{l,h,m}, lo{is}, hi{is}, each{{c} => c << (31 - lb{nth}), widen_tup{E, is}}}
@@ -76,7 +76,7 @@ def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
   # if (mode=='c') hi{'xor', lo}
   # def me{is:I=[_](u8) if mode=='c'} = {
   #   def bm = (is & I**lb{nth})
-  #   each{{l,h} => topBlend{l,h,bm}, lo{is}, hi{is}}
+  #   each{{l,h} => blend_top{l,h,bm}, lo{is}, hi{is}}
   # }
 }}}
 

@@ -53,8 +53,8 @@ def topMask{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def topMask{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
 def homMask{x:T if w256{T}} = topMask{x}
 
-def homAny{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
-def homAll{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
+def any_hom{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
+def all_hom{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
 
-def topAny{x:T=[_]E if w256i{T} and width{E}>=32} = topMask{x} != 0
-def topAll{x:T=[k]E if w256i{T} and width{E}>=32} = topMask{x} == (1<<k)-1
+def any_top{x:T=[_]E if w256i{T} and width{E}>=32} = topMask{x} != 0
+def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = topMask{x} == (1<<k)-1
