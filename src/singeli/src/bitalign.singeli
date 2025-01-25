@@ -125,7 +125,7 @@ def bitalign{s, 8 if s<7, a:V=[k](u8) if hasarch{'X86_64'}} = {
   re_el{u8, d|e}
   # def d = re_el{u8, c >> (8 -s)}
   # def e = re_el{u8, c >> (16-s*2)}
-  # homBlend{e, d, make{V, cycle{k, tup{0, 0xff}}}} & V**tail{s}
+  # blend_hom{e, d, make{V, cycle{k, tup{0, 0xff}}}} & V**tail{s}
 }
 def bitalign{7, 8, a:V=[k](u8) if hasarch{'X86_64'}} = {
   def V16 = re_el{u16,V}
@@ -133,7 +133,7 @@ def bitalign{7, 8, a:V=[k](u8) if hasarch{'X86_64'}} = {
   def b = V16~~new_shuf{a, range{k} - (((range{k}+2)/8)>>0)}
   def c = blend_units{b, b <<{u64} 4, tup{0,1,1,0}}
   def d = (c * make{V16, cycle{k/2, 1<<tup{2,0,2,0}}}) >> 2 # TODO ofence constant for clang
-  homBlend{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
+  blend_hom{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
 }
 
 def bitalign{{2,8,s}, 8, G if hasarch{'X86_64'}} = {

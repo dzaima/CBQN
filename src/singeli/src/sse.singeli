@@ -20,10 +20,5 @@ def narrow{(i16), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [8]i16
 
 # mask stuff
 def andAllZero{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}
-def topBlend{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128{T} and w128i{M, 8}} =      blend_top{    f ,     t , m}
-
-
-
-### SSE4.2 ###
+def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
+def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}

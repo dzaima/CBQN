@@ -50,7 +50,7 @@ if_inline (hasarch{'AVX2'}) {
     def H = n_h{V}
     vtop := V**(vl/2)
     hs := each{dup_half{v, .}, tup{1,0}}
-    {i} => homBlend{...each{shuf{H,.,i}, hs}, V~~i<vtop}
+    {i} => blend_hom{...each{shuf{H,.,i}, hs}, V~~i<vtop}
   }
   def getsel{v:V=[8]T if width{T}==32} = shuf{V, v, .}
 }
@@ -191,8 +191,8 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
       ind = isel{ui}
       if (nu > 16) {
         b := V~~(re_el{u16, i0} << (7 - lb{vl/2}))
-        ind = topBlend{ind, isel{ui1}, b}
-        if (nu > 32) ind = homBlend{topBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
+        ind = blend_top{ind, isel{ui1}, b}
+        if (nu > 32) ind = blend_hom{blend_top{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
     store{*V~~(*T~~rp+j), 0, ind}
@@ -220,7 +220,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   # Fill with minimum value at the beginning
   def pre = if (search) load{w} else (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
-  wv0:= homBlend{load{wg}, V**pre, maskOf{V,gap}}
+  wv0:= blend_hom{load{wg}, V**pre, maskOf{V,gap}}
   # For multiple lanes, interleave like transpose
   def maxstep = lb{maxwn}
   def lstep = lb{svl}
@@ -260,7 +260,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
       def ltx = cmpx{lt}; def eqx = cmpx{==}
       @unroll (j to klog) {
         m := s | select{bits,klog-1-j}
-        s = homBlend{m, s, ltx{selw, m}}
+        s = blend_hom{m, s, ltx{selw, m}}
       }
       r := if (isub==1) s else s>>(lb{isub}+wd-wi)
       # b records if xv was found; c is added to the index
@@ -282,7 +282,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
       }
       if (r_out) {
         r -= off
-        if (prim=='⊐') r = homBlend{U**cast_i{u8,wn}, r, b}
+        if (prim=='⊐') r = blend_hom{U**cast_i{u8,wn}, r, b}
         rn := if (T==i8) r
               else if (T==i16) half{narrow{u8, r}, 0}
               else extract{re_el{i64, narrow{u8, r}}, 0}

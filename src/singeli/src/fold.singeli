@@ -141,7 +141,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
   sii := mu16{li}
   def swap_ms = if (vl == 16) ({x}=>x) else {
     ms := (V**16 & sii) == (V**16 &~ iota{V})
-    {x} => homBlend{x, shuf{[4]u64, x, 2,3,0,1}, ms}
+    {x} => blend_hom{x, shuf{[4]u64, x, 2,3,0,1}, ms}
   }
 
   # Blend masks
@@ -164,16 +164,16 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
       r := load{xv,0}; ++xv
       if ((l & 2) != 0) {
         def {m0, _, m2} = m4s
-        re := homBlend{load{xv,0}, load{xv,1}, m2}
-        r = homBlend{re, r, m0}
+        re := blend_hom{load{xv,0}, load{xv,1}, m2}
+        r = blend_hom{re, r, m0}
         xv += 2
       }
       # Then the rest in groups of 4
       mh := mgo
       @for (l/4) {
         {l0, ...ls} := each{load{xv,.}, iota{4}}
-        r4 := fold{homBlend, l0, ls, m4s}
-        r = homBlend{r, r4, mh < V**4}
+        r4 := fold{blend_hom, l0, ls, m4s}
+        r = blend_hom{r, r4, mh < V**4}
         mh -= V**4; xv += 4
       }
       def write{r} = {
@@ -195,7 +195,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
       o  := V**(u8~~1<<el)
       bl := i & elo < o
       sh := i - o
-      {r} => { ra = homBlend{shuf{[16]u8, ra, sh}, r, bl} }
+      {r} => { ra = blend_hom{shuf{[16]u8, ra, sh}, r, bl} }
     }
     il := make{V, iota{vl} % 16}
     # Shuffle to undo interleaving of add_res

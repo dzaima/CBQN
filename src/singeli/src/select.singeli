@@ -58,7 +58,7 @@ fn wrap_inds{TI if issigned{TI}}(src:*void, dst:*void, n:u64, cyc0:u64) : void =
     def bulk = arch_defvw / width{TI}
     def VT = [bulk]TI
     @maskedLoop{bulk}(src in vptr{VT, src}, dst in vptr{VT, dst} over n) {
-      dst = homBlend{src, src + VT**cyc, src < VT**0}
+      dst = blend_hom{src, src + VT**cyc, src < VT**0}
     }
   } else {
     @for (src in *TI~~src, dst in *TI~~dst over n) dst = tern{src<0, src+cyc, src}

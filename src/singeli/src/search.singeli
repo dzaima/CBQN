@@ -311,7 +311,7 @@ def isI64{x:T=[_](f64) if hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
 def isI64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
 def maskBlend{b:T, x:T, M} = x
-def maskBlend{b:T, x:T, M if M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
+def maskBlend{b:T, x:T, M if M{0}} = blend_hom{b, x, M{T, 'to homogeneous bits'}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}

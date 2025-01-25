@@ -273,14 +273,14 @@ def rotcol{xs, mg:I} = {
   def w = length{xs}
   @unroll (kl to ceil_log2{w}) { def k = 1<<kl
     def vk = I**k; def m = (mg & vk) == vk
-    def bl{x,y} = { x = homBlend{x,y,m} }
+    def bl{x,y} = { x = blend_hom{x,y,m} }
     x0 := select{xs, 0}
     def xord = select{xs, k*iota{w} % w}
     each{bl, xord, shiftleft{xord, tup{x0}}}
   }
 }
 def get_modperm_lane_shuf{c} = {
-  def cross{s, i} = homBlend{s, shuf{[4]u64, s, 2,3,0,1}, i&c == c}
+  def cross{s, i} = blend_hom{s, shuf{[4]u64, s, 2,3,0,1}, i&c == c}
   {x, i} => cross{shuf{16, x, i}, i}
 }
 def tr_quads = match { {1}=>({x}=>x); {2}=>shuf{[4]u64, ., 0,2,1,3} }

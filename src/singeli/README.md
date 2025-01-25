@@ -165,8 +165,8 @@ Homogeneous definitions (i.e. ones with `hom` in their name) assume that each el
 - `homAny{a:VI} : u1` - whether any element is set
 - `topAny{a:VI} : u1` - whether all elements have their top bit set
 - `topAll{a:VI} : u1` - whether any element has its top bit set
-- `homBlend{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
-- `topBlend{f:V, t:V, m:V} : V` - blend by top bit of `m`
+- `blend_hom{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
+- `blend_top{f:V, t:V, m:V} : V` - blend by top bit of `m`
 - `homMask{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
 - `homMask{...vs} : uint` - merged mask of `each{homMask,vs}`
 - `topMask{a:VI} : uint` - integer mask of the top bit of each element

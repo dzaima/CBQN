@@ -36,8 +36,8 @@ def widen{T=[k]_, x:X=[l]_ if w256{X} and l>k} = widen{T, half{x,0}}
 
 
 # structural operations
-def topBlend{f:T, t:T, m:M if w256{T,32} and w256i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, v2f{m}}
-def topBlend{f:T, t:T, m:M if w256{T,64} and w256i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, v2d{m}}
+def blend_top{f:T, t:T, m:M if w256i{T,32} and w256i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, v2f{m}}
+def blend_top{f:T, t:T, m:M if w256i{T,64} and w256i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, v2d{m}}
 
 # shuffles
 # TODO rename to shuf, move shuf to shuf_imm or something

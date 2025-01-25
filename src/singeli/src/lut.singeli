@@ -59,17 +59,17 @@ def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
   #   each{{l,h} => topBlend{l,h,bm}, lo{is}, hi{is}}
   # }
   def me{is:[_](u8) if hasarch{'X86_64'} and E==u32} = {
-    each{{l,h,m} => topBlend{l,h,m}, lo{is}, hi{is}, each{{c} => c << (31 - lb{nth}), widen_tup{E, is}}}
+    each{{l,h,m} => blend_top{l,h,m}, lo{is}, hi{is}, each{{c} => c << (31 - lb{nth}), widen_tup{E, is}}}
   }
   
   def me{is:[_](u8) if hasarch{'X86_64'} and E==u8} = {
     def bm = is <<{u16} (7 - lb{nth}) # TODO for outermost bit could do a cmpgt, increasing port diversity
-    each{{l,h} => topBlend{l,h,bm}, lo{is}, hi{is}}
+    each{{l,h} => blend_top{l,h,bm}, lo{is}, hi{is}}
   }
   # def me{is:[_](u8) if hasarch{'AARCH64'} and E==u8} = { # only for one outermost blend
   #   def end = type{is}**(nth-1)
   #   def bm = is > end
-  #   each{{l,h} => homBlend{l,h,bm}, lo{is & end}, hi{is & end}}
+  #   each{{l,h} => blend_hom{l,h,bm}, lo{is & end}, hi{is & end}}
   # }
   
   # TODO xor-ing could still be worth it for lower repeated levels where the index transformation can be deduped; and outermost can do a cmpgt

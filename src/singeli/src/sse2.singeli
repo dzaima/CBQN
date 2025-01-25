@@ -67,7 +67,7 @@ def packQ{a:T,b:T if w128i{T}} = packs{a,b}
 def x86_shufps_range{is, hi} = inrange{is,0,2, 0,4} and inrange{is,2,4, hi,hi+4}
 def shufInd{a:T, b:T=[4]E, {...is} if width{E}==32 and length{is}==4 and x86_shufps_range{is, 4}} = vec_shuffle{[4]f32, tup{a, b}, is&3}
 
-def homMaskStoreF{p:*T, m:M, v:T if w128i{M} and w128{T,elwidth{M}}} = store{p, 0, homBlend{load{p}, v, m}}
+def homMaskStoreF{p:*T, m:M, v:T if w128i{M} and w128{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}
 
 def widen{T, x:X if w128i{T} and w128i{X} and w128s{T}==w128s{X} and elwidth{T}>elwidth{X}} = {
   def s{v} = s{mzip{v,v,0}}

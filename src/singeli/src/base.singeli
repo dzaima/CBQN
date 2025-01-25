@@ -177,12 +177,13 @@ def {
   homAll,homAny,bitAll,bitAny,homMask,homMaskStore,homMaskStoreF,loadBatchBit,
   loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,packQ,pair,pdep,
   pext,popcRand,rbit,rev,sel,shl,shr,shufInd,storeLow,
-  topBlend,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,
+  blend_top,topMask,topMaskStore,topMaskStoreF,unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,
   multishift,
 }
 
-def bitBlend{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
-def blend_hom{f:T, t:T, m:M} = bitBlend{f, t, m} # extended by arch/*/select
+# extended by arch/*/select where applicable
+def blend_bit{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
+def blend_hom{f:T, t:T, m:M} = blend_bit{f, t, m}
 
 def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
@@ -243,7 +244,6 @@ def iota{V=[k]_} = make{V, ...iota{k}}
 def absu{a:[_]_} = ty_u{abs{a}}
 def shuf = vec_shuffle
 def vshl = vec_merge_shift_right
-def homBlend = blend_hom
 
 def floor = __floor
 def ceil = __ceil
