@@ -498,8 +498,8 @@ B count_c2(B t, B w, B x) {
       void* fp = tyany_ptr(x);
       // Initialize
       if (xe==el_i16 && n<ft/(64/sizeof(i32)))
-           { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=wia; }
-      else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=wia; }
+           { for (usz i=0; i<n;  i++) tab[((i16*)fp)[i]] = wia; }
+      else { for (i64 i=0; i<ft; i++) tab[i - (i64)ft/2] = wia; }
       // Set
       #define SET(T) for (usz i=m; i--; ) { i32* p=tab+((T*)ip)[i]; wnext[i]=*p; *p=i; }
       if (we==el_i8) { SET(i8) } else { SET(i16) }
