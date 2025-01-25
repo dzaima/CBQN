@@ -49,12 +49,12 @@ def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufI
 # mask stuff
 def andAllZero{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 
-def topMask{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
-def topMask{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
-def homMask{x:T if w256{T}} = topMask{x}
+def top_to_int{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
+def top_to_int{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
+def hom_to_int{x:T if w256{T}} = top_to_int{x}
 
-def any_hom{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
-def all_hom{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
+def any_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} != 0
+def all_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} == 0xff
 
-def any_top{x:T=[_]E if w256i{T} and width{E}>=32} = topMask{x} != 0
-def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = topMask{x} == (1<<k)-1
+def any_top{x:T=[_]E if w256i{T} and width{E}>=32} = top_to_int{x} != 0
+def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = top_to_int{x} == (1<<k)-1

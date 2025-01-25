@@ -175,8 +175,8 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 def {
   absu,andAllZero,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
   all_bit,any_bit,blend_bit,
-  all_hom,any_hom,blend_hom,homMask,homMaskStore,homMaskStoreF,
-  all_top,any_top,blend_top,topMask,topMaskStore,topMaskStoreF,
+  all_hom,any_hom,blend_hom,hom_to_int,homMaskStore,homMaskStoreF,
+  all_top,any_top,blend_top,top_to_int,topMaskStore,topMaskStoreF,
   loadBatchBit,loadLow,make,maskStore,maskToHom,mulw,mulh,narrow,narrowTrunc,narrowPair,
   packQ,pair,pdep,pext,popcRand,rbit,rev,sel,shl,shr,shufInd,storeLow,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widenUpper,multishift,
@@ -186,19 +186,19 @@ def {
 def blend_bit{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
 def blend_hom{f:T, t:T, m:M} = blend_bit{f, t, m}
 
-def homMaskX{a:T} = tup{1, homMask{a}} # tup{n,mask}; mask with each bit repeated n times
-def ctzX{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
-def homMask{...vs if length{vs}>1} = {
+def hom_to_int_ext{a:T} = tup{1, hom_to_int{a}} # tup{n,mask}; mask with each bit repeated n times
+def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
+def hom_to_int{...vs if length{vs}>1} = {
   def n = length{vs}
   def [k]_ = oneType{vs}
   def RT = ty_u{max{8,k*n}}
-  def sl{...a} = promote{RT, homMask{...slice{vs,...a}}}
+  def sl{...a} = promote{RT, hom_to_int{...slice{vs,...a}}}
   def h = n/2
   def lo = sl{0,h}
   def hi = sl{h}
   (hi << (h*k)) | lo
 }
-def homMask{x if ktup{x}} = homMask{...x}
+def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'

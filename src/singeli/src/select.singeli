@@ -279,14 +279,14 @@ exportT{'si_select_tab', join{table{select_fn,
       @maskedLoop{16}(cw0 in w, r in *u16~~r0, M in 'm' over i to wl) {
         def cw = ty_u{wrapChk{cw0, xlf, M}}
         def byte = shuf{[16]u8, xrev, cw>>3}
-        r = homMask{ty_s{byte << (cw & VU**7)} < VI**0}
+        r = hom_to_int{ty_s{byte << (cw & VU**7)} < VI**0}
       }
     } else {
       if (wl>32 and xl<=16) {
         xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 0,1,0,1}
         @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
-          sr = homMask{shuf{[16]i8, xb, cw}}
+          sr = hom_to_int{shuf{[16]i8, xb, cw}}
         }
       } else {
         x:= shuf{[4]u64, load{*VI ~~ x0}, 0,1,0,1}
@@ -296,7 +296,7 @@ exportT{'si_select_tab', join{table{select_fn,
           cw:= wrapChk{cw0, xlf, M}
           byte:= shuf{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
           mask:= shuf{[16]i8, b, cw & low}
-          sr = homMask{(mask & byte) == mask}
+          sr = hom_to_int{(mask & byte) == mask}
         }
       }
     }

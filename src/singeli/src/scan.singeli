@@ -128,7 +128,7 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
   def exor64 = clmul{., sse{1<<64 - 2}, 0}
   @for (xv in *V~~x, rv in *V~~r over i to cdiv{nw,vcount{V}}) {
     x8 := xor8{xv}
-    hb := sse{topMask{[64]u8~~x8}}
+    hb := sse{top_to_int{[64]u8~~x8}}
     xh := exor64{hb}  # Exclusive xor of high bits (xh ^ hb for inclusive)
     xc := xh ^ carry
     v  := x8 ^ V~~maskToHom{[64]u8, [64]u1~~extract{xc,0}}

@@ -23,7 +23,7 @@ def search{E, x, n:(u64), OP} = {
   def VT = [bulk]E
   def end = makeBranch{
     tup{u64, ty_u{VT}},
-    {i,c} => return{i*bulk + promote{u64, ctzX{homMaskX{c}}}}
+    {i,c} => return{i*bulk + promote{u64, ctz_ext{hom_to_int_ext{c}}}}
   }
   @muLoop{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
@@ -95,13 +95,13 @@ def bittab_selector{loadtab} = {
     top := hi4 + VI~~((arch_vec{u32}~~(x&~low))>>3)
     byte:= sel{[16]i8, t0, hi4^top} | sel{[16]i8, t1, top}
     mask:= sel{[16]i8, b, x & low}
-    homMask{(mask & byte) == mask}
+    hom_to_int{(mask & byte) == mask}
   }
   
   def selector{x:([16]i8) if hasarch{'AARCH64'}} = {
     byte:= [16]u8~~sel{tup{t0,t1}, ty_u{x}>>3}
     mask:= [16]u8**1 << ty_u{x & low}
-    res:= homMask{(mask & byte) == mask}
+    res:= hom_to_int{(mask & byte) == mask}
   }
   
   def reload{} = { tup{t0,t1} = loadtab{} }
@@ -112,11 +112,11 @@ def readbytes{vtab}{} = {
   def [k]_ = VI; def l = 128/k
   def side{i} = {
     def U = arch_vec{ty_u{k}}
-    def m = @collect (vtab over _ from i to i+l) homMask{vtab} # TODO multi-value homMask
+    def m = @collect (vtab over _ from i to i+l) hom_to_int{vtab} # TODO multi-value hom_to_int
     VI~~make{U, if (vcount{U}>l) merge{m,m} else m}
   }
   def side{i if hasarch{'AARCH64'}} = {
-    def m = each{homMask, split{4, @collect (vtab over _ from i to i+l) vtab}}
+    def m = each{hom_to_int, split{4, @collect (vtab over _ from i to i+l) vtab}}
     VI~~make{[2]u64, m}
   }
   each{side, l*iota{2}}
@@ -220,8 +220,8 @@ def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
           # Filter out values equal to the previous, or first new
           def pind = (iota{k}&15) - 1
           prev:= make{VI, each{max{0, .}, pind}}
-          e:= ~homMask{v == VI**TI~~xi}
-          e&= base{2,pind<0} | ~homMask{v == sel{[16]i8, v, prev}}
+          e:= ~hom_to_int{v == VI**TI~~xi}
+          e&= base{2,pind<0} | ~hom_to_int{v == sel{[16]i8, v, prev}}
           if (rbit) rv&= e | -m # Don't remove first bit
           m&= e
           while (m != 0) {

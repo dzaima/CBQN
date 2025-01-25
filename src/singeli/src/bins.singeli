@@ -143,7 +143,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
   def nb = 256/vl
   nu:u8 = 0; def addu{b} = { nu+=cast_i{u8,popc{b}}; b } # Number of uniques
   vb := U~~make{[nb](ty_u{vl}),
-    @collect (t in *V~~t0 over nb) addu{homMask{t > V**0}}
+    @collect (t in *V~~t0 over nb) addu{hom_to_int{t > V**0}}
   }
   dup := promote{u64,nu} < wn
   # Unique index to w index conversion
@@ -290,7 +290,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
         if (isvec{type{rn}}) store{rnp, 0, rn}
         else storeu{rnp, rn}
       } else {
-        def B = ty_u{vl}; out := cast_i{B, homMask{b}}
+        def B = ty_u{vl}; out := cast_i{B, hom_to_int{b}}
         store{*B~~rp, cdiv{j,vl}, out>>((-j)%vl)}
       }
     }

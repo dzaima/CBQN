@@ -31,8 +31,8 @@ def maskStore{p:*V, m:[l](u1), v:V=[l]_ if has512e{V}} = {
 }
 
 def topMaskReg{x:V=[k]_} = emit{[k]u1, merge{pref{V},'mov',suf{V},'_mask'}, x}
-def topMask{x:V=[k]_ if 512==width{V}} = ty_u{k}~~topMaskReg{x}
-def homMask{x:V=[_]_ if 512==width{V}} = topMask{x}
+def top_to_int{x:V=[k]_ if 512==width{V}} = ty_u{k}~~topMaskReg{x}
+def hom_to_int{x:V=[_]_ if 512==width{V}} = top_to_int{x}
 
 def maskToHom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
 

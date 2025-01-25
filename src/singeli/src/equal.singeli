@@ -41,8 +41,8 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       def T = [bulk]X
       def sh{c} = c << (width{X}-1)
       def sh{c if X==u8} = T ~~ (re_el{u16,c}<<7)
-      def mask{x:X if hasarch{'X86_64'}} = topMask{x}
-      def mask{x:X if hasarch{'AARCH64'}} = homMask{andnz{x, ~T**0}}
+      def mask{x:X if hasarch{'X86_64'}} = top_to_int{x}
+      def mask{x:X if hasarch{'AARCH64'}} = hom_to_int{andnz{x, ~T**0}}
       
       # TODO compare with doing the comparison in vector registers
       badBits:= T ** ~(X~~1)

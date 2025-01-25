@@ -22,7 +22,7 @@ def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
 def anynePositive{x:T, y:T, M if M{0}==0} = anyne{x, y, M}
 def anynePositive{x:T, y:T, M if M{0}==1 and isvec{T}} = {
-  def {n,m} = homMaskX{x==y}
+  def {n,m} = hom_to_int_ext{x==y}
   def E = tern{type{m}==u64, u64, u32}
   (promote{E,~m} << (width{E}-M{'count'}*n)) != 0
 }

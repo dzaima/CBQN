@@ -42,19 +42,19 @@ def   rcpE{a:([4]f32)} = emit{[4]f32, '_mm_rcp_ps', a}
 # mask stuff
 def andAllZero{x:T, y:T if w128i{T}} = all_hom{(x & y) == T**0}
 
-def topMask{x:T if w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
-def topMask{x:T if w128{T, 16}} = topMask{packs{[8]i16~~x, [8]i16**0}}
-def topMask{x:T if w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
-def topMask{x:T if w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
-def homMask{x:T if w128{T}} = topMask{x}
-def homMaskX{a:[_]T if width{T}==16} = tup{2, homMask{re_el{u8,a}}}
-def homMask{a:T, b:T if w128i{T,16}} = homMask{packs{ty_s{a},ty_s{b}}}
+def top_to_int{x:T if w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
+def top_to_int{x:T if w128{T, 16}} = top_to_int{packs{[8]i16~~x, [8]i16**0}}
+def top_to_int{x:T if w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
+def top_to_int{x:T if w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
+def hom_to_int{x:T if w128{T}} = top_to_int{x}
+def hom_to_int_ext{a:[_]T if width{T}==16} = tup{2, hom_to_int{re_el{u8,a}}}
+def hom_to_int{a:T, b:T if w128i{T,16}} = hom_to_int{packs{ty_s{a},ty_s{b}}}
 
-def any_hom{x:T if w128i{T}} = homMask{[16]u8 ~~ x} != 0
-def all_hom{x:T if w128i{T}} = homMask{[16]u8 ~~ x} == 0xffff
+def any_hom{x:T if w128i{T}} = hom_to_int{[16]u8 ~~ x} != 0
+def all_hom{x:T if w128i{T}} = hom_to_int{[16]u8 ~~ x} == 0xffff
 
-def any_top{x:T      if w128i{T}} = topMask{x} != 0
-def all_top{x:T=[k]_ if w128i{T}} = topMask{x} == (1<<k)-1
+def any_top{x:T      if w128i{T}} = top_to_int{x} != 0
+def all_top{x:T=[k]_ if w128i{T}} = top_to_int{x} == (1<<k)-1
 def any_top{x:T if w128i{T, 16}} = any_hom{[8]i16~~x  <  [8]i16**0}
 def all_top{x:T if w128i{T, 16}} = all_hom{[8]i16~~x  <  [8]i16**0}
 

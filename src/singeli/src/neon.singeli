@@ -139,14 +139,14 @@ def any_top{x:V if nvec{V}} = fold_min{ty_s{x}}<0
 def all_top{x:V if nvec{V}} = fold_max{ty_s{x}}<0
 
 
-def homMask{x:T=[k]E if nvecu{T} and width{E}>=k} = {
+def hom_to_int{x:T=[k]E if nvecu{T} and width{E}>=k} = {
   truncBits{k, fold_add{x & make{T, 1<<iota{k}}}}
 }
-def homMask{x:T=[16]E if width{E}==8} = {
+def hom_to_int{x:T=[16]E if width{E}==8} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
-def homMask{a:T,b:T=[16]E if width{E}==8} = {
+def hom_to_int{a:T,b:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   s:= make{[16]u8, (range{16}>>2) | ((range{16}&3)<<2)}
   # fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
@@ -156,21 +156,21 @@ def homMask{a:T,b:T=[16]E if width{E}==8} = {
   # t:= shrm{l, 4, h} & make{[16]u8, (1<<(range{16}>>2)) * 0x11}
   # fold_add{[4]u32~~t}
 }
-def homMask{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
+def hom_to_int{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   t1:= addp{ty_u{a}&m, ty_u{b}&m}
   t2:= addp{ty_u{c}&m, ty_u{d}&m}
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
-def homMask{...as={a0:[_]E, _, ..._} if width{E}>=32} = homMask{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
-def homMask{a:T,b:T=[k]E if k*2<=width{E}} = {
+def hom_to_int{...as={a0:[_]E, _, ..._} if width{E}>=32} = hom_to_int{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
+def hom_to_int{a:T,b:T=[k]E if k*2<=width{E}} = {
   truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{T, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
 def andAllZero{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 
-def homMaskX{a:T=[k]E if E!=u64} = {
+def hom_to_int_ext{a:T=[k]E if E!=u64} = {
   def h = width{E}/2
   tup{h, truncBits{k*h, extract{[1]u64~~shrn{el_m{T}~~a, h}, 0}}}
 }

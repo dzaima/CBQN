@@ -87,7 +87,7 @@ fn flush_counts(tab:*u16, ov:*u16, n:usz) : usz = {
   def bot = 1<<15 - 1
   on:usz = 0
   @for (t in *V~~tab over jv to cdiv{n, vl}) if (rare{any_top{t}}) {
-    o := if (hasarch{'X86_64'}) topMask{t} else homMask{t > V**bot}
+    o := if (hasarch{'X86_64'}) top_to_int{t} else hom_to_int{t > V**bot}
     if (jv == n/vl) o &= type{o}~~1<<(n%vl) - 1
     while (o > 0) {
       jv := jv*vl + cast_i{usz, ctz{o}}
@@ -157,7 +157,7 @@ def mark_run_ends{x:*T, m:(ux)} = {
   @unroll (j to width{ux} / vec) {
     def jv = j*vec
     def lv{k} = load{*V~~(x + k)}
-    m |= promote{ux, homMask{lv{jv} != lv{jv+1}}} << jv
+    m |= promote{ux, hom_to_int{lv{jv} != lv{jv+1}}} << jv
   }
 }
 def inc_marked_runs{x, tab:*T, m, m0} = {

@@ -170,11 +170,11 @@ Homogeneous definitions (i.e. ones with `hom` in their name) assume that each el
 - `blend_hom{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
 - `blend_top{f:V, t:V, m:V} : V` - blend by top bit of `m`
 - `blend_bit{f:V, t:V, m:M} : V` - bitwise blend
-- `homMask{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
-- `homMask{...vs} : uint` - merged mask of `each{homMask,vs}`
-- `topMask{a:VI} : uint` - integer mask of the top bit of each element
-- `homMaskX{a:VI} : tup{knum, uint}` - integer mask where each element is represented by `knum` bits (possibly more efficient to calculate than `homMask`)
-- `ctzX{tup{knum, uint}}` - count trailing zeroes from a result of `homMaskX`
+- `hom_to_int{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
+- `hom_to_int{...vs} : uint` - merged mask of `each{hom_to_int,vs}`
+- `top_to_int{a:VI} : uint` - integer mask of the top bit of each element
+- `hom_to_int_ext{a:VI} : tup{knum, uint}` - integer mask where each element is represented by `knum` bits (possibly more efficient to calculate than `hom_to_int`)
+- `ctz_ext{tup{knum, uint}}` - count trailing zeroes from a result of `hom_to_int_ext`
 
 ## Load/store
 
