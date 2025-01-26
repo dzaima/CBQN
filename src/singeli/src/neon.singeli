@@ -3,14 +3,15 @@ def nvec{T,w} = nvec{T} and elwidth{T}==w
 def {nveci,nvecs,nvecu,nvecf} = genchks{nvec}
 
 
-def nty{T} = {
+local def nty{T} = {
   def q = quality{T}
   merge{if (q=='i') 's' else q, fmtnat{width{T}}}
 }
-def nty{[_]T} = nty{T}
-def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
-def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
-def ntyp0{S, T} = merge{S, '_', nty{T}}
+local def nty{[_]T} = nty{T}
+local def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
+local def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
+local def ntyp0{S, T} = merge{S, '_', nty{T}}
+local def eqqi{A, B} = isint{A} and isint{B} and quality{A}==quality{B} # equal quality integers
 
 def __neg{a:T if nvecu{T}} = T~~(-ty_s{T}~~a)
 
@@ -23,8 +24,8 @@ def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
 def addw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
 def subw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
 def mulw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
-def mulwUpper{a:T,b:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
-def mulwSplit{a:T,b:T if w128{T}} = tup{mulw{half{a,0}, half{b,0}}, mulwUpper{a,b}}
+def mulw_upper{a:T,b:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
+def mulw_split{a:T,b:T if w128{T}} = tup{mulw{half{a,0}, half{b,0}}, mulw_upper{a,b}}
 
 def shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
@@ -34,14 +35,14 @@ def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, nty
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 
 # narrowing add/subtract, high half
-def addnHi{a:V, b:V} = emit{el_h{V}, ntyp0{'vaddhn', V}, a, b}
-def subnHi{a:V, b:V} = emit{el_h{V}, ntyp0{'vsubhn', V}, a, b}
-def addnHiUpper{lo:[k]RE, a:V=[k]XE, b:V if width{XE}==width{RE}*2} = emit{[k*2]RE, ntyp0{'vaddhn_high', V}, lo, a, b}
-def subnHiUpper{lo:[k]RE, a:V=[k]XE, b:V if width{XE}==width{RE}*2} = emit{[k*2]RE, ntyp0{'vsubhn_high', V}, lo, a, b}
+def addhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vaddhn', V}, a, b}
+def subhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vsubhn', V}, a, b}
+def addhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vaddhn_high', V}, lo, a, b}
+def subhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vsubhn_high', V}, lo, a, b}
 
 # pairwise min/max
-def minp{a:V, b:V} = emit{V, ntyp{'vpmin', V}, a, b}
-def maxp{a:V, b:V} = emit{V, ntyp{'vpmax', V}, a, b}
+def minp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmin', V}, a, b}
+def maxp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmax', V}, a, b}
 
 def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
@@ -69,14 +70,13 @@ def loadLow{ptr:*V, (width{V})} = load{ptr}
 
 
 
-
 def undefPromote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
 def half{x:T, (0) if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, (1) if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
-def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
-def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
-def broadcastSel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
+def copy_lane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
+def copy_lane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
+def broadcast_sel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
 
 def unzip{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
 def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
@@ -91,8 +91,6 @@ def sel{{...xs}, i:I if length{xs}>=1 and length{xs}<=4 and allSame{each{type,xs
 
 
 
-local def eqqi{A, B} = isint{A} and isint{B} and quality{A}==quality{B} # equal quality integers
-
 def cvt{T==f64, x:X=[k]_ if nveci{X,64}} = emit{[k]T, ntyp{'vcvt', '_f64', X}, x}
 def cvt{T==i64, x:X=[k]_ if nvecf{X,64}} = emit{[k]T, ntyp{'vcvt', '_s64', X}, x}
 def cvt{T==u64, x:X=[k]_ if nvecf{X,64}} = emit{[k]T, ntyp{'vcvt', '_u64', X}, x}
@@ -102,17 +100,17 @@ def widen{R=[_]RE, x:X=[_]XE if w64{X} and eqqi{RE,XE} and width{RE}> width{XE}*
 def widen{R=[rn]RE, x:X=[xn]XE if w64{X} and isfloat{RE}!=isfloat{XE} and width{RE}>width{XE}} = cvt{RE, widen{[rn]to_w{XE,width{RE}}, x}}
 def widen{R=[rn]RE, x:X=[xn]XE if w128{X} and xn>rn} = widen{R, half{x,0}}
 
-def narrow     {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{E}, x}}}
-def narrowTrunc{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
-def narrow     {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = narrowTrunc{T, x}
-def narrow     {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
+def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{E}, x}}}
+def narrow_trunc{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
+def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = narrow_trunc{T, x}
+def narrow      {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
 
-def narrowUpper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
-def narrowPair{a:T=[_]E, b:T} = narrowUpper{narrow{w_h{E}, a}, b}
-def narrowPair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
+def narrow_upper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
+def narrow_pair{a:T=[_]E, b:T} = narrow_upper{narrow{w_h{E}, a}, b}
+def narrow_pair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
 
-def widenUpper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
-def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widenUpper{x}}
+def widen_upper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
+def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widen_upper{x}}
 
 def all_hom{x:V if nvec{V}} = all_bit{x}
 
@@ -128,7 +126,7 @@ def any_hom{x:V if w128{V}} = hom_any_lo64{max_pack{x}}
 def all_bit{x:V if  w64{V}} = bit_all_lo64{x}
 def all_bit{x:V if w128{V}} = bit_all_lo64{min_pack{x}}
 
-def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subnHi{[8]u16**16r2b1, [8]u16~~x}}
+def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subhn{[8]u16**16r2b1, [8]u16~~x}}
 def any_hom{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
 # TODO multi-vector any_hom for ew≥16 via addhn?
 
@@ -161,7 +159,7 @@ def hom_to_int{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
-def hom_to_int{...as={a0:[_]E, _, ..._} if width{E}>=32} = hom_to_int{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
+def hom_to_int{...as={a0:[_]E, _, ..._} if width{E}>=32} = hom_to_int{...each{{i}=>narrow_pair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
 def hom_to_int{a:T,b:T=[k]E if k*2<=width{E}} = {
   truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{T, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }

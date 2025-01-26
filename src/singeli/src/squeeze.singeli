@@ -139,7 +139,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         def k = length{xs}
         def int = each{cvt{i64,.}, xs}
         def int32 = if (k==2) pack{...int, 0} else pack{...int, [bulk]i64**0, 0}
-        def wd = each{{G} => cvt{f64,G{int32}}, slice{tup{widen{[bulk]i64,.}, widenUpper}, 0, k}}
+        def wd = each{{G} => cvt{f64,G{int32}}, slice{tup{widen{[bulk]i64,.}, widen_upper}, 0, k}}
         
         if (~all_hom{M, tree_fold{&, each{==, wd, xs}}}) case_B{select{is, 0}}
         acc{M, tup{int32}}
