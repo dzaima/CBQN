@@ -46,8 +46,6 @@ def maxp{a:V, b:V} = emit{V, ntyp{'vpmax', V}, a, b}
 def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 def rbit{x:T if nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
-def rev{(width{T}), x:[_]T} = x
-def rev{w, x:[k]T if w > width{T}} = reverse_units{w/width{T}, x} # reverse the order of elements in each w-bit window
 def popc{x:T if nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
 def clz{x:T if nvecu{T} and elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T if nveci{T} and elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
