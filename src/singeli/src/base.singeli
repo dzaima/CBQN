@@ -22,6 +22,8 @@ def isunsigned{T} = isint{T} and not issigned{T}
 def isvec {T} = istype{T} and same{typekind{T}, 'vector'} # TODO rename these to better reflect that they apply to types
 def isprim{T} = istype{T} and same{typekind{T}, 'primitive'}
 def isptr {T} = istype{T} and same{typekind{T}, 'pointer'}
+def any_num = match { {x:T}=>isprim{T}; {x} => knum{x} }
+def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def elwidth{T} = width{eltype{T}}
 
 def reinterpret{T, x:T} = x
@@ -29,7 +31,7 @@ def exportN{f, ...ns} = each{export{.,f}, ns}
 def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
-def andnot{a, b:T if anyNum{a} and isprim{T}} = a & ~b
+def andnot{a, b:T if any_num{a} and isprim{T}} = a & ~b
 def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
@@ -103,9 +105,6 @@ def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
 def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 
-def anyNum = match { {x:T}=>isprim{T}; {x} => knum{x} }
-def anyInt = match { {x:T}=>isint{T} ; {x} => knum{x} and (x>>0) == x }
-
 # vector width/type checks
 def w64 {T} = isvec{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
 def w128{T} = isvec{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
@@ -125,8 +124,8 @@ def {w256i,w256s,w256u,w256f} = genchks{w256}
 def trunc{T, x:U if isint{T} and isint{U} and T<=U} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}
 
-def tern{c, T, F if anyInt{c}} = if(c) T else F
-def tern{c, t:T, f:T if anyInt{c}} = {
+def tern{c, T, F if any_int{c}} = if(c) T else F
+def tern{c, t:T, f:T if any_int{c}} = {
   res:T = f
   if (c) res = t
   res
@@ -137,15 +136,15 @@ def to_w{T, w} = primtype{quality{T}, w}
 def re_el{E, V} = [width{V}/width{E}]E
 def re_el{E, x:V} = re_el{E,V} ~~ x
 
-local def qualChange{q} = {
+local def change_qual{q} = {
   def f{w if knum{w}} = primtype{q, w}
   def f{T if isprim{T}} = primtype{q, width{T}}
   def f{V=[_]T} = re_el{f{T}, V}
   def f{x:T} = f{T}~~x
 }
-def ty_u = qualChange{'u'}
-def ty_s = qualChange{'i'}
-def ty_f = qualChange{'f'}
+def ty_u = change_qual{'u'}
+def ty_s = change_qual{'i'}
+def ty_f = change_qual{'f'}
 
 def w_n{T, w if isprim{T}} = primtype{quality{T}, w}
 def w_d{T if isprim{T}} = to_w{T, width{T}*2} # double/halve primitive type width
@@ -258,8 +257,8 @@ def sqrt = __sqrt
 
 
 # more arith
-def min{a, b if anyNum{a} and anyNum{b}} = tern{a<b, a, b}
-def max{a, b if anyNum{a} and anyNum{b}} = tern{a>b, a, b}
+def min{a, b if any_num{a} and any_num{b}} = tern{a<b, a, b}
+def max{a, b if any_num{a} and any_num{b}} = tern{a>b, a, b}
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
 def cdiv{a,b if knum{a} and knum{b}} = ceil{a/b}
 def popc{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_popcountll', x}

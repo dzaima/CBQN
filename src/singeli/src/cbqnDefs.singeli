@@ -44,7 +44,7 @@ def el_c16 = 6
 def el_c32 = 7
 def el_B   = 8
 
-def get_range{elt, data:*_, len:ux if anyNum{elt} and (not knum{elt} or (elt>=el_bit and elt<=el_f64))} = {
+def get_range{elt, data:*_, len:ux if any_num{elt} and (not knum{elt} or (elt>=el_bit and elt<=el_f64))} = {
   def fns = emit{*fntype{*void, *i64, u64, u1}, '', 'getRange_fns'}
   buf:*i64 = undefined{i64, 2}
   def ok = load{fns, elt}(*void~~data, buf, len)

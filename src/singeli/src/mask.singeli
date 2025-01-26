@@ -16,8 +16,8 @@ def maskOf{T,n if  w64{T}} = maskOfImpl{T, n,  64}
 
 def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~all_hom{x==y}
 def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M{x!=y}}
-def anyne{x:T, y:T, M if M{0}==0 and anyInt{x}} = x!=y
-def anyne{x:T, y:T, M if M{0}==1 and anyInt{x}} = M{x^y} != 0
+def anyne{x:T, y:T, M if M{0}==0 and any_int{x}} = x!=y
+def anyne{x:T, y:T, M if M{0}==1 and any_int{x}} = M{x^y} != 0
 def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
 def anynePositive{x:T, y:T, M if M{0}==0} = anyne{x, y, M}
@@ -36,7 +36,7 @@ def maskAfter{n} = {
   def mask{'count'} = n
   def mask{{x}} = tup{mask{x}}
   def mask{x:X if isvec{X}} = x & (X~~maskOf{X,n})
-  def mask{x:X if anyInt{x}} = x & ((1<<n) - 1)
+  def mask{x:X if any_int{x}} = x & ((1<<n) - 1)
   def mask{0} = 1
 }
 
