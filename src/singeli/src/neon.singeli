@@ -176,10 +176,9 @@ def hom_to_int{a:V,b:V=[k]E if nvecu{V} and k*2<=width{E}} = {
 
 def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 
-def hom_to_int_ext{a:T=[k]E if E!=u64} = {
-  def h = width{E}/2
-  tup{h, trunc_bits{k*h, extract{[1]u64~~shrn{el_m{T}~~a, h}, 0}}}
-}
+def hom_to_int_ext{a:V=[_]E if w128u{V}} = tup{width{E}/2, extract{[1]u64~~narrow_trunc{w_h{E}, a}, 0}} # E==u8 fully handled by the below cases
+def hom_to_int_ext{a:V=[_]E if w64u{V}} = tup{width{E}, extract{[1]u64~~a, 0}}
+def hom_to_int_ext{a:([16]u8)} = tup{4, extract{[1]u64~~shrn{re_el{u16,a}, 4}, 0}}
 
 
 def store_blended_hom{p:*T, m:M, v:T if nveci{M} and nvec{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}
