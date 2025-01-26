@@ -20,11 +20,11 @@ def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
 def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
 def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
 
-def addwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
-def subwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
-def mulwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
-def mulwHi{a:T,b:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
-def mulw  {a:T,b:T if w128{T}} = tup{mulwLo{half{a,0}, half{b,0}}, mulwHi{a,b}}
+def addw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
+def subw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
+def mulw{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
+def mulwUpper{a:T,b:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
+def mulwSplit{a:T,b:T if w128{T}} = tup{mulw{half{a,0}, half{b,0}}, mulwUpper{a,b}}
 
 def shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))

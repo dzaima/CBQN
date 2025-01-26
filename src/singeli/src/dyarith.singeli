@@ -67,7 +67,7 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
 }
 
 def arithChk2{F=(__mul), M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
-  def {rl, rh} = pack{...mulw{w, x}}
+  def {rl, rh} = pack{...mulwSplit{w, x}}
   tup{rl, tup{'any_hom', M{rh != (rl >> (width{E}-1))}}}
 }
 
