@@ -31,7 +31,7 @@ def exportN{f, ...ns} = each{export{.,f}, ns}
 def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
-def andnot{a, b:T if any_num{a} and isprim{T}} = a & ~b
+def andnot{a, b:T if any_int{a} and isprim{T}} = a & ~b
 def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
