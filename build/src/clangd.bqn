@@ -132,7 +132,7 @@ Finish ⇐ { 𝕊 write:
   {
     singeliState≡@? @;
     dir‿arch ← singeliState
-    cmd0 ← ⟨"-a", arch, "-l", "="∾AtRootRel dir •file.At "include"⟩
+    cmd0 ← ⟨"-a", arch, "-l", "="∾dir •file.At "include"⟩
     res ← TLArr { cmd‿name:
       "file"‿"arguments" JObj ⟨JStr AtRootRel name, ", " JArr JStr¨ cmd0 ∾ cmd⟩
     }¨ singeliObjects
