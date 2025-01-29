@@ -106,8 +106,8 @@ def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} 
 def narrow      {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
 
 def narrow_upper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
-def narrow_pair{a:T=[_]E, b:T} = narrow_upper{narrow{w_h{E}, a}, b}
-def narrow_pair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
+def narrow_pair{a:T=[_]E, b:T if nvec{T}} = narrow_upper{narrow{w_h{E}, a}, b}
+def narrow_pair{a:T, b:T if nveci{T}} = pack{a, b, 0}
 
 def widen_upper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
 def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widen_upper{x}}
@@ -130,38 +130,41 @@ def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subhn{[8]u16**16r
 def any_hom{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
 # TODO multi-vector any_hom for ew≥16 via addhn?
 
-
 def any_top{x:V if nvec{V}} = fold_min{ty_s{x}}<0
 def all_top{x:V if nvec{V}} = fold_max{ty_s{x}}<0
 
 
-def hom_to_int{x:T=[k]E if nvecu{T} and width{E}>=k} = {
-  truncBits{k, fold_add{x & make{T, 1<<iota{k}}}}
+
+local def all_type{G, vs} = all{match { {x:T}=>G{T}; {_}=>0 }, vs}
+def hom_to_int{...vs if all_type{nvec,vs} and not all_type{nvecu,vs}} = hom_to_int{...each{ty_u, vs}}
+
+def hom_to_int{x:V=[k]E if nvecu{V} and width{E}>=k} = {
+  truncBits{k, fold_add{x & make{V, 1<<iota{k}}}}
 }
-def hom_to_int{x:T=[16]E if width{E}==8} = {
+def hom_to_int{x:V=([16]u8)} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
-def hom_to_int{a:T,b:T=[16]E if width{E}==8} = {
+def hom_to_int{a:V,b:V=([16]u8)} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   s:= make{[16]u8, (range{16}>>2) | ((range{16}&3)<<2)}
-  # fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
-  fold_add{[4]u32~~sel{[16]u8, addp{ty_u{a}&m, ty_u{b}&m}, s}}
+  # fold_add{addpw{addpw{addp{a&m, b&m}}}<<make{[4]u32,iota{4}*8}}
+  fold_add{[4]u32~~sel{[16]u8, addp{a&m, b&m}, s}}
   
   # def {l,h} = each{{i} => sel{tup{a,b}, make{[16]u8, ((range{16}&3)<<3) + (range{16}>>2) + i}}, tup{0, 4}}
   # t:= shrm{l, 4, h} & make{[16]u8, (1<<(range{16}>>2)) * 0x11}
   # fold_add{[4]u32~~t}
 }
-def hom_to_int{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
+def hom_to_int{a:V,b:V,c:V,d:V=([16]u8)} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
-  t1:= addp{ty_u{a}&m, ty_u{b}&m}
-  t2:= addp{ty_u{c}&m, ty_u{d}&m}
+  t1:= addp{a & m, b & m}
+  t2:= addp{c & m, d & m}
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
-def hom_to_int{...as={a0:[_]E, _, ..._} if width{E}>=32} = hom_to_int{...each{{i}=>narrow_pair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
-def hom_to_int{a:T,b:T=[k]E if k*2<=width{E}} = {
-  truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{T, (1<<iota{k}) | (1<<(iota{k}+k))}}}
+def hom_to_int{...as={a0:V=[_]E, _, ..._} if w128u{V} and width{E}>=32} = hom_to_int{...each{{i}=>narrow_pair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
+def hom_to_int{a:V,b:V=[k]E if nvecu{V} and k*2<=width{E}} = {
+  truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{V, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
 def andAllZero{x:T, y:T if nveci{T}} = ~any_bit{x&y}

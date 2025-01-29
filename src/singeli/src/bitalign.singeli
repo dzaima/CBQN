@@ -41,7 +41,7 @@ def new_shuf{...vs0 if isvec{try_same_type{vs0,'!'}}, {...is}} = { # : [length{i
 }
 def new_shuf{w if istype{w} or knum{w}, ...vs if isvec{try_same_type{vs,'!'}} and (not isvec{w} or width{w} == width{type0{vs}}), {...is}} = {
   def S = type0{vs}
-  def D = if (isvec{w}) w else re_el{if (isprim{w}) w else primtype{'u',w}, S}
+  def D = if (isvec{w}) w else re_el{if (isprim{w}) w else ty_u{w}, S}
   S~~new_shuf{...each{{c} => reinterpret{D, c}, vs}, is}
 }
 
