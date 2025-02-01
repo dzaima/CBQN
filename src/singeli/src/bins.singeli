@@ -376,13 +376,13 @@ include './f64'
 require{'math.h'}
 fn saturate{F,T,...up}(dst:*void, src:*void, n:u64) : void = {
   # Auto-vectorizes, although not that well for f64
-  def a = minvalue{T}; af := cast_i{F,a}
-  def b = maxvalue{T}; bf := cast_i{F,b}
+  def a = minvalue{T}
+  def b = maxvalue{T}
   @for (d in *T~~dst, xf in *F~~src over n) {
     x := if (F==f64) (if (select{up,0}) floor else ceil){xf} else xf
     d = cast_i{T, x}
-    if (x<af) d = a
-    if (x>bf) d = b
+    if (not x<b) d = b
+    if (x<a) d = a
   }
 }
 

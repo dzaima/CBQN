@@ -412,9 +412,13 @@ static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
 }
 
 #define LE_C2 CAT(GRADE_UD(le,ge),c2)
-extern B LE_C2(B,B,B);
-extern B select_c2(B t, B w, B x);
-extern B mul_c2(B, B, B);
+extern B lt_c2(B,B,B);
+extern B le_c2(B,B,B);
+extern B gt_c2(B,B,B);
+extern B ge_c2(B,B,B);
+extern B ne_c2(B,B,B);
+extern B select_c2(B,B,B);
+extern B mul_c2(B,B,B);
 
 B GRADE_CAT(c2)(B t, B w, B x) {
   if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
@@ -442,6 +446,11 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     B c = IGet(w, 0);
     if (LIKELY(we<el_B & xe<el_B)) {
       decG(w);
+      if (we==el_f64 && elNum(xe) && q_nan(c)) return GRADE_UD(
+        C2(ne, incG(x), x),
+        i64EachDec(1, x)
+      );
+      if (GRADE_UD(1,0) && xe==el_f64) return bit_negate(C2(lt, x, c)); // handle NaNs in x properly
       return LE_C2(m_f64(0), c, x);
     } else {
       SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
@@ -493,6 +502,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
           }
           return r;
         }
+        if (we==el_f64 && q_nan(IGetU(w,GRADE_UD(wia-1,0)))) goto gen;
+        
         #if SINGELI
         #define WIDEN(E, X) switch (E) { default:UD; case el_i16:X=toI16Any(X);break; case el_i32:X=toI32Any(X);break; case el_f64:X=toF64Any(X);break; }
         if (xe > we) {
@@ -554,9 +565,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     #endif
   } else {
-    #if !SINGELI
     gen:;
-    #endif
     i32* rp; r = m_i32arrc(&rp, x);
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     SGetU(w) SGetU(x)
