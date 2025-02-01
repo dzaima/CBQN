@@ -176,7 +176,7 @@ def {
   all_hom,any_hom,blend_hom,hom_to_int,store_masked_hom,store_blended_hom,
   all_top,any_top,blend_top,top_to_int,store_masked_top,store_blended_top,
   loadBatchBit,load_low,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
-  pair,pdep,pext,rbit,sel,shufInd,store_low,
+  pair,pdep,pext,rbit,sel,shufInd,store_low,reverse_units,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widen_upper,multishift,
 }
 
