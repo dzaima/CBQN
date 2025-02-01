@@ -19,7 +19,7 @@ local def loader{G} = {
   }
   def proc{TG if kgen{TG}} = TG
   def proc{vs if ktup{vs}} = {
-    def S = oneType{vs}
+    def S = one_type{vs}
     def loader_vtg{Q, i} = {
       if (width{Q} == width{S}) Q~~select{vs,i}
       else if (width{Q}*2 == width{S}) Q~~half{select{vs, i>>1}, i&1}
@@ -53,7 +53,7 @@ def blend_halves{mode, E, nt, ni} = tup{nt, ni, loader{{TG} => {
   
   # def me{'is', is:[_](u8)} = lo{'is', is}
   # def me{...is} = {
-  #   def [_]IE = oneType{is}
+  #   def [_]IE = one_type{is}
   #   def shl = if (IE==u8) __shl{u16} else __shl
   #   def bm = shl{is, width{IE}-1 - lb{nth}}
   #   each{{l,h} => blend_top{l,h,bm}, lo{is}, hi{is}}

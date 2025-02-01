@@ -32,7 +32,7 @@ def wrapChk{cw0:VI, xlf, M} = {
 def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
   r:= r0
   def left = if (M{0}) { left:ux = M{'count'} } else 0
-  def lastMaskedStore = makeOptBranch{M{0}, tup{oneType{vs}}, {c} => {
+  def lastMaskedStore = makeOptBranch{M{0}, tup{one_type{vs}}, {c} => {
     storeBatch{r, 0, c, maskAfter{left}}
     end{}
   }}
@@ -153,7 +153,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
   }, select_rows_parts}}}}
   
   def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
-  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else oneVal{      each{select{.,1}, row}}, select_rows_parts}}
+  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else one_val{      each{select{.,1}, row}}, select_rows_parts}}
   exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
   
   def select_rows_better = scan{{p,{v,i}} => if (length{v}==0) p else i, 0, each{tup, select_rows_parts, range{4}}}

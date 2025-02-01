@@ -27,7 +27,7 @@ def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def elwidth{T} = width{eltype{T}}
 
 def reinterpret{T, x:T} = x
-def export_tab{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
+def export_tab{name, fs} = { v:*one_type{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
 def andnot{a, b:T if any_int{a} and isprim{T}} = a & ~b
@@ -82,15 +82,15 @@ def all{{...vs}} = tree_fold{&, vs}
 def all{{}} = 1
 def all{G, ...vs if kgen{G}} = if (all{each{{c}=>length{c}==0, vs}}) 1 else G{...each{select{.,0}, vs}} and all{G, ...each{slice{.,1}, vs}}
 
-def oneVal{{h, ...t}} = {
+def one_val{{h, ...t}} = {
   each{{c} => assert{same{c,h}}, t}
   h
 }
-def oneVal{{}} = {}
-def oneType{x} = oneVal{each{type, x}}
-def allSame{{h, ...t}} = all{is{h,.}, t}
-def allSame{{_}} = 1
-def allSame{{}} = 1
+def one_val{{}} = {}
+def one_type{x} = one_val{each{type, x}}
+def all_same{{h, ...t}} = all{same{h,.}, t}
+def all_same{{_}} = 1
+def all_same{{}} = 1
 
 def try_same_type{_, default} = default
 def try_same_type{{h:T, ...t} if all{hastype{.,T}, t}, _} = T
@@ -188,7 +188,7 @@ def hom_to_int_ext{a:T} = tup{1, hom_to_int{a}} # tup{n,mask}; mask with each bi
 def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
 def hom_to_int{...vs if length{vs}>1} = {
   def n = length{vs}
-  def [k]_ = oneType{vs}
+  def [k]_ = one_type{vs}
   def RT = ty_u{max{8,k*n}}
   def sl{...a} = promote{RT, hom_to_int{...slice{vs,...a}}}
   def h = n/2

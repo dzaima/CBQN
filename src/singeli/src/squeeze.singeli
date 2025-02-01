@@ -11,7 +11,7 @@ def is_sNaN{x:[2](u64) if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = { # avo
 }
 def any_sNaN{M, ...xs} = {
   def {any, are} = flip{each{is_sNaN, xs}}
-  oneVal{any}{M{tree_fold{|, are}}}
+  one_val{any}{M{tree_fold{|, are}}}
 }
 
 def any_nonC32{M, x:[_](u64)} = any_hom{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}

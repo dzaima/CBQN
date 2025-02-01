@@ -120,7 +120,7 @@ def runChecks{'anyne',  vals, M} = {
 
 def arithProcess{F, run, overflow, M, is, cw, cx, TY} = {
   def {values, checks} = flip{each{{w1, x1} => run{F, M, w1, x1}, cw, cx}}
-  def ctype = oneVal{each{select{.,0}, checks}}
+  def ctype = one_val{each{select{.,0}, checks}}
   if (rare{runChecks{ctype, checks, M}}) overflow{select{is,0}*vcount{TY}}
   each{{c} => TY~~c, values}
 }

@@ -36,8 +36,9 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 - `eachx{F, ...args}` - `each` but broadcasting non-tuples
 - `undef{T}` - return register of type `T` with undefined value; maps over a tuple of types
 - `undef{T, n}` - a tuple of `n` different undefined registers
-- `oneVal{xs}` - assert that `xs` is a tuple of equivalent (as per `==`) items, and return the first
-- `oneType{xs}` - `oneVal` but over the types of the items
+- `one_val{xs}` - assert that `xs` is a tuple of equivalent (as per `same`) items, and return the first
+- `one_type{xs}` - `oneVal` but over the types of the items
+- `all_same{xs}` - whether all values of `xs` are the same
 
 ## Loops & branches
 
