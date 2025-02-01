@@ -171,7 +171,7 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 
 # base cases
 def {
-  absu,andAllZero,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
+  absu,and_bit_none,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
   all_bit,any_bit,blend_bit,
   all_hom,any_hom,blend_hom,hom_to_int,store_masked_hom,store_blended_hom,
   all_top,any_top,blend_top,top_to_int,store_masked_top,store_blended_top,

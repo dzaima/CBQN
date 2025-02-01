@@ -131,7 +131,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `shr{U, a:V, n}` - shift vector elements within blocks of `U`
 - `unord{a:VF, b:VF} : mt{VI}` - `(a==NaN) | (b==NaN)`
 <!-- -->
-- `andAllZero{a:VI, b:VI} : u1` - whether `a&b` is all zeroes
+- `and_bit_none{a:VI, b:VI} : u1` - `~any_bit{a & b}`
 
 ## Structural operations
 

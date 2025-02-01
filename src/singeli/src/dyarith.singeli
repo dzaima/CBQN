@@ -41,7 +41,7 @@ def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
   } else { # unmasked check; can do check in a simpler way
     def bad = each{{v} => ty_s{v ^ (v>>15)}, rp}
     def RU = re_el{u16,T}
-    tup{packQ{rp}, tup{'~andAllZero', RU~~tree_fold{|, bad}, RU**0xff80}}
+    tup{packQ{rp}, tup{'and_some', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
 def arithChk2{F=(__mul), M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {
@@ -102,13 +102,13 @@ def runner{u, R, F} = {
   run
 }
 
-# any_hom, any_top already give masked vals; anyne doesn't, and ~andAllZero assumes no masking
+# any_hom, any_top already give masked vals; anyne doesn't, and and_some assumes no masking
 def runChecks_any{F, vals} = { F{tree_fold{|, each{select{.,1}, vals}}} }
-def runChecks{'any_hom', vals, M} = runChecks_any{any_hom, vals}
-def runChecks{'any_top', vals, M} = runChecks_any{any_top, vals}
-def runChecks{'none',   vals, M} = 0
-def runChecks{'~andAllZero', vals, M if ~M{0}} = ~tree_fold{&, each{andAllZero, ...slice{flip{vals}, 1}}}
-def runChecks{'anyne',  vals, M} = {
+def runChecks{'any_hom',  vals, M} = runChecks_any{any_hom, vals}
+def runChecks{'any_top',  vals, M} = runChecks_any{any_top, vals}
+def runChecks{'none',     vals, M} = 0
+def runChecks{'and_some', vals, M if ~M{0}} = ~tree_fold{&, each{and_bit_none, ...slice{flip{vals}, 1}}}
+def runChecks{'anyne',    vals, M} = {
   def i{vals} = {
     def {_,xs,ys} = flip{vals}
     assert{M{0} == 0}

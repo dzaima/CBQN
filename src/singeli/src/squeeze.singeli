@@ -87,7 +87,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         if (any_nonC32{M, ...xs}) return{3}
       } else {
         def bad = if (hasarch{'AARCH64'}) any_bit{if (length{xs}==2) pack{...xs,1} else pack{orx,orx,1}}
-        else ~andAllZero{orx, ~XV**maxvalue{w_h{X}}}
+        else ~and_bit_none{orx, ~XV**maxvalue{w_h{X}}}
         if (bad) return{lb{width{X}}-3}
       }
       mt|= orx
@@ -115,7 +115,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     acc{}
   } else if (X==i8) {
     @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
-      if (~andAllZero{M{tree_fold{|, xs}}, XV ** -2}) return{2}
+      if (~and_bit_none{M{tree_fold{|, xs}}, XV ** -2}) return{2}
     }
     0
   } else if (X==f64) {

@@ -28,9 +28,9 @@ def anynePositive{x:T, y:T, M if M{0}==1 and isvec{T}} = {
 }
 
 def maskNone{x} = x
-def maskNone{x, 'all bits zeroes'} = andAllZero{x, x}
+def maskNone{x, 'all bits zeroes'} = and_bit_none{x, x}
 def maskAfter{n} = {
-  def mask{x:X, 'all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
+  def mask{x:X, 'all bits zeroes'} = and_bit_none{x, X~~maskOfBit{X,n}}
   def mask{X, 'to sign bits'} = maskOf{X,n}
   def mask{X, 'to homogeneous bits'} = maskOf{X,n}
   def mask{'count'} = n

@@ -47,7 +47,7 @@ def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} 
 def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufInd{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
 
 # mask stuff
-def andAllZero{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
+def and_bit_none{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 
 def top_to_int{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def top_to_int{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}

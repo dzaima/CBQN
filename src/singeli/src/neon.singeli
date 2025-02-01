@@ -167,7 +167,7 @@ def hom_to_int{a:V,b:V=[k]E if nvecu{V} and k*2<=width{E}} = {
   truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{V, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
-def andAllZero{x:T, y:T if nveci{T}} = ~any_bit{x&y}
+def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 
 def hom_to_int_ext{a:T=[k]E if E!=u64} = {
   def h = width{E}/2

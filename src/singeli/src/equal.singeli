@@ -47,7 +47,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       # TODO compare with doing the comparison in vector registers
       badBits:= T ** ~(X~~1)
       @maskedLoop{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
-        if (~andAllZero{M{x}, badBits}) return{0}
+        if (~and_bit_none{M{x}, badBits}) return{0}
         if (anyne{promote{u64,mask{sh{x}}}, promote{u64,cw}, M}) return{0}
       }
       1

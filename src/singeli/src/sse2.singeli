@@ -40,7 +40,7 @@ def rsqrtE{a:([4]f32)} = emit{[4]f32, '_mm_rsqrt_ps', a}
 def   rcpE{a:([4]f32)} = emit{[4]f32, '_mm_rcp_ps', a}
 
 # mask stuff
-def andAllZero{x:T, y:T if w128i{T}} = all_hom{(x & y) == T**0}
+def and_bit_none{x:T, y:T if w128i{T}} = all_hom{(x & y) == T**0}
 
 def top_to_int{x:T if w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
 def top_to_int{x:T if w128{T, 16}} = top_to_int{packs{[8]i16~~x, [8]i16**0}}

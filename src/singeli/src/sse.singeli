@@ -4,7 +4,7 @@ def sel{L=[_]E, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w1
 
 ### SSE4.1 ###
 def packs{a:T,b:T if hasarch{'SSE4.1'} and T==[4]u32} = emit{[ 8]u16, '_mm_packus_epi32', a, b}
-def andAllZero{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
+def and_bit_none{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 
 # conversion
 def widen{T==[8]u16, x:X==[16]u8 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu8_epi16',  x}; def widen{T==[8]i16, x:X if hasarch{'SSE4.1'} and X==[16]i8} = emit{T, '_mm_cvtepi8_epi16',  x}
@@ -19,6 +19,6 @@ def narrow{(i8 ), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [16]i8
 def narrow{(i16), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [8]i16~~x, make{[16]i8, 0,1,4,5, 8,9,12,13, 0,0,0,0, 0,0,0,0}}
 
 # mask stuff
-def andAllZero{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
+def and_bit_none{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
 def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}
