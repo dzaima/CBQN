@@ -50,7 +50,7 @@ def storeBatch{ptr:*E0, i, x:[k]E1, M} = {
   def TF = re_el{E0, [k]E1}
   xu:= narrow{E0, x}
   
-  if (M{0}) homMaskStoreF{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
+  if (M{0}) store_blended_hom{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
   else storeLow{rpos, k*width{E0}, xu}
 }
 

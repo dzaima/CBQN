@@ -175,4 +175,4 @@ def hom_to_int_ext{a:T=[k]E if E!=u64} = {
 }
 
 
-def homMaskStoreF{p:*T, m:M, v:T if nveci{M} and nvec{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}
+def store_blended_hom{p:*T, m:M, v:T if nveci{M} and nvec{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}

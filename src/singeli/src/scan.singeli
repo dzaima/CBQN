@@ -21,7 +21,7 @@ def scan_loop{init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   e:= len/step
   @for (xv, rv over e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
+  if (q!=0) store_blended_hom{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
 }
 def get_scan_last{op, pre} = {
   def last{v, p} = op{pre{v}, p}
@@ -58,7 +58,7 @@ fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   }
   @for (xv, rv over _ from ek*k to e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, last{load{xv,e}, p}}
+  if (q!=0) store_blended_hom{rv+e, maskOf{V, q}, last{load{xv,e}, p}}
 }
 
 export{'si_scan_min_init_i8',  scan_idem{i8 , min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , max}}
@@ -131,11 +131,11 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
     hb := sse{top_to_int{[64]u8~~x8}}
     xh := exor64{hb}  # Exclusive xor of high bits (xh ^ hb for inclusive)
     xc := xh ^ carry
-    v  := x8 ^ V~~maskToHom{[64]u8, [64]u1~~extract{xc,0}}
+    v  := x8 ^ V~~mask_to_hom{[64]u8, [64]u1~~extract{xc,0}}
     carry = (xc ^ hb) ^ shuf{u64, xh, 1,1}
     rem:= nw - 8*i
     if (rem < 8) {
-      maskStore{*V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
+      store_masked_hom{*V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
       return{}
     }
     rv = v
@@ -197,7 +197,7 @@ fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
       if (jv+vl <= l) {
         store{p, j, v}
       } else {
-        if (jv < l) homMaskStoreF{rv+j, maskOf{V, l - jv}, v}
+        if (jv < l) store_blended_hom{rv+j, maskOf{V, l - jv}, v}
         return{}
       }
     }
