@@ -15,4 +15,4 @@ fn absFn{T}(r:*void, x:*void, len:u64) : u64 = {
   len
 }
 
-exportT{'simd_abs', each{absFn, tup{i8, i16, i32, f64}}}
+export_tab{'simd_abs', each{absFn, tup{i8, i16, i32, f64}}}

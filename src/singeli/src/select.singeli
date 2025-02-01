@@ -64,7 +64,7 @@ fn wrap_inds{TI if issigned{TI}}(src:*void, dst:*void, n:u64, cyc0:u64) : void =
     @for (src in *TI~~src, dst in *TI~~dst over n) dst = tern{src<0, src+cyc, src}
   }
 }
-exportT{'si_wrap_inds', each{wrap_inds, tup{i8}}}
+export_tab{'si_wrap_inds', each{wrap_inds, tup{i8}}}
 
 
 
@@ -146,7 +146,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
   def null_fn = select_rows_fn{void, 'BAD', 0, {..._} => { emit{void,'fatal','"bad select_rows"'}; 0 }}
   export{'null_fn', null_fn}
   export{'select_rows_tab_h', ux~~select_rows_tab_h}
-  exportT{'select_rows_tab', join{flip{each{{row} => {
+  export_tab{'select_rows_tab', join{flip{each{{row} => {
     def a = each{select{.,0}, row} + 0 # +0 to work around findmatches bug
     def b = 1<<range{select_rows_tab_h}
     each{match { {{i}}=>select{select{row,i},2}; {{}}=>null_fn }, findmatches{a, b}}
@@ -175,7 +175,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
     }
     sh
   }
-  exportT{'select_rows_widen', each{{t0, t1} => {
+  export_tab{'select_rows_widen', each{{t0, t1} => {
     def {S, D} = each{select{tup{u8,u16,u32,u64},.}, tup{t0, t1}}
     select_rows_widen{t1-t0}
   }, select_rows_better, range{4}}}
@@ -259,7 +259,7 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { 
 }
 def select_fn{TI, TD} = select_fn{arch_defvw, TI, TD}
 
-exportT{'si_select_tab', join{table{select_fn,
+export_tab{'si_select_tab', join{table{select_fn,
   tup{i8, i16, i32},       # indices
   tup{u8, u16, u32, u64}}} # values
 }

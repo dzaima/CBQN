@@ -464,6 +464,6 @@ def tr_types   =               tup{i8,    i16,    i32, i64}
 def tr_kernels = if (not avx2) tup{ 8,     8,      4,   0 }
                  else          tup{16, tup{8, 16}, 8,   4 }
 
-exportT{'simd_transpose', each{transpose, tr_types, tr_kernels}}
+export_tab{'simd_transpose', each{transpose, tr_types, tr_kernels}}
 
-exportT{'interleave_fns', each{interleave, tr_types}}
+export_tab{'interleave_fns', each{interleave, tr_types}}

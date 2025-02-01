@@ -130,9 +130,9 @@ def tableAA{w, F, F_bit} = table{1, F, w, {} => bitAA{F_bit}, {V, u} => aa2bit{V
 def tableAS{w, F       } = table{0, F, w, {} => bitAS{F},     {V, u} => as2bit{V, u, F}}
 
 
-exportT{'simd_eqAS', tableAS{arch_defvw, __eq}}; exportT{'simd_eqAA', tableAA{arch_defvw, __eq, {a,b}=>a ^ ~b}}
-exportT{'simd_neAS', tableAS{arch_defvw, __ne}}; exportT{'simd_neAA', tableAA{arch_defvw, __ne, {a,b}=>a ^  b}}
-exportT{'simd_gtAS', tableAS{arch_defvw, __gt}}; exportT{'simd_gtAA', tableAA{arch_defvw, __gt, {a,b}=>a & ~b}}
-exportT{'simd_geAS', tableAS{arch_defvw, __ge}}; exportT{'simd_geAA', tableAA{arch_defvw, __ge, {a,b}=>a | ~b}}
-exportT{'simd_ltAS', tableAS{arch_defvw, __lt}}
-exportT{'simd_leAS', tableAS{arch_defvw, __le}}
+export_tab{'simd_eqAS', tableAS{arch_defvw, __eq}}; export_tab{'simd_eqAA', tableAA{arch_defvw, __eq, {a,b}=>a ^ ~b}}
+export_tab{'simd_neAS', tableAS{arch_defvw, __ne}}; export_tab{'simd_neAA', tableAA{arch_defvw, __ne, {a,b}=>a ^  b}}
+export_tab{'simd_gtAS', tableAS{arch_defvw, __gt}}; export_tab{'simd_gtAA', tableAA{arch_defvw, __gt, {a,b}=>a & ~b}}
+export_tab{'simd_geAS', tableAS{arch_defvw, __ge}}; export_tab{'simd_geAA', tableAA{arch_defvw, __ge, {a,b}=>a | ~b}}
+export_tab{'simd_ltAS', tableAS{arch_defvw, __lt}}
+export_tab{'simd_leAS', tableAS{arch_defvw, __le}}

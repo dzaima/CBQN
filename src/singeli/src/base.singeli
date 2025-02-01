@@ -27,8 +27,7 @@ def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def elwidth{T} = width{eltype{T}}
 
 def reinterpret{T, x:T} = x
-def exportN{f, ...ns} = each{export{.,f}, ns}
-def exportT{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
+def export_tab{name, fs} = { v:*oneType{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
 def andnot{a, b:T if any_int{a} and isprim{T}} = a & ~b

@@ -20,7 +20,7 @@ fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
 
 def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
-exportT{'simd_bitsel', table{arch_defvw}}
+export_tab{'simd_bitsel', table{arch_defvw}}
 
 fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : void = {
   if (same{E,'!'}) {
@@ -35,7 +35,7 @@ fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : vo
   }
 }
 
-exportT{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u16, u32, u64}}}
+export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u16, u32, u64}}}
 
 (if (has_sel) {
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {

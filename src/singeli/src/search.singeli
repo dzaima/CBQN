@@ -343,7 +343,7 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   1
 }
 
-exportT{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
+export_tab{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
 
 
 # Hash tables
@@ -658,6 +658,6 @@ def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
 }
 
 def exp_hash{name} = {
-  exportT{merge{'si_',name,'_c2_hash'}, each{hashtab{., name}, tup{u32,u64}}}
+  export_tab{merge{'si_',name,'_c2_hash'}, each{hashtab{., name}, tup{u32,u64}}}
 }
 each{exp_hash, names}

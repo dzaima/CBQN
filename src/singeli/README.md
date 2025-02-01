@@ -29,8 +29,7 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 
 - `reinterpret` is available as `~~`
 <!-- -->
-- `exportN{f, 'name1', 'name2', ...}` - export single function under many names
-- `exportT{'name', fs}` - export list of functions as the specified name
+- `export_tab{'name', fs}` - export list of functions as the specified name
 - `iota{knum}` - tuple `tup{0,1,...,knum-1}`
 - `broadcast{knum,v}` (`knum**v`) - tuple with `knum` items, all `v`
 - `tern{c, t, f}` - ternary - if `c`, return `t`, else `f`

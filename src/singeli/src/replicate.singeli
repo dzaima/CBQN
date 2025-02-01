@@ -54,8 +54,8 @@ fn rep_by_scan{W, T}(wp:*void, xv:*void, rv:*void, s:usz) : void = {
   rep_by_scan{T, *W~~wp, xv, rv, s}
 }
 
-exportT{'si_indices_scan_i32', each{ind_by_scan_i32, ind_types}}
-exportT{'si_replicate_scan', flat_table{rep_by_scan, ind_types, dat_types}}
+export_tab{'si_indices_scan_i32', each{ind_by_scan_i32, ind_types}}
+export_tab{'si_replicate_scan', flat_table{rep_by_scan, ind_types, dat_types}}
 
 
 # Constant replicate
@@ -284,7 +284,7 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
 
 }
 
-exportT{'si_constrep', each{rep_const, dat_types}}
+export_tab{'si_constrep', each{rep_const, dat_types}}
 
 
 
