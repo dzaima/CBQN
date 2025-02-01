@@ -59,14 +59,14 @@ def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, min}} = fold_min{x}
 def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, max}} = fold_max{x}
 def vfold{F, x:T if nvec{T} and same{F, +}} = fold_add{x}
 
-def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{re_el{E,T}~~x, 0}} }
-def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w==width{T}} = store{*T~~ptr, 0, x}
+def store_low{ptr:*E, w, x:T=[_]E if nvec{T} and w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{re_el{E,T}~~x, 0}} }
+def store_low{ptr:*E, w, x:T=[_]E if nvec{T} and w==width{T}} = store{*T~~ptr, 0, x}
 
-def loadLow{ptr:*V, w if w<=64} = { # implemented via a broadcast load
+def load_low{ptr:*V, w if w<=64} = { # implemented via a broadcast load
   def L=re_el{ty_u{w}, V}
   V ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
 }
-def loadLow{ptr:*V, (width{V})} = load{ptr}
+def load_low{ptr:*V, (width{V})} = load{ptr}
 
 
 

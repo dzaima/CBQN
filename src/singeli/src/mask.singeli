@@ -42,8 +42,6 @@ def maskAfter{n} = {
 
 
 
-def loadLowBatch{V=[_]T, ptr:*T, w, n} = loadLow{*V ~~ (ptr + n*(w/width{T})), w}
-
 # store the i-th batch of k elements to ptr, narrowing elements if needed; masked by M
 def storeBatch{ptr:*E0, i, x:[k]E1, M} = {
   def rpos = ptr + i*k
@@ -51,14 +49,14 @@ def storeBatch{ptr:*E0, i, x:[k]E1, M} = {
   xu:= narrow{E0, x}
   
   if (M{0}) store_blended_hom{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
-  else storeLow{rpos, k*width{E0}, xu}
+  else store_low{rpos, k*width{E0}, xu}
 }
 
 # (sign/zero)-extend the i-th batch of k elements at ptr to [k]E1
 def loadBatch{ptr:*E0, i, [k]E1} = {
   def rpos = ptr + i*k
   def TF = re_el{E0, [k]E1}
-  widen{[k]E1, loadLow{*TF~~rpos, k*width{E0}}}
+  widen{[k]E1, load_low{*TF~~rpos, k*width{E0}}}
 }
 
 def loadBatch {ptr:*E, {...ns}, T    } = each{loadBatch {ptr, ., T   }, ns}

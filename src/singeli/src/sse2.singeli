@@ -5,15 +5,15 @@ def v2d{x:T if w128{T}} = [2]f64 ~~ x
 
 
 # load & store
-def loadLow{ptr:*V, w if w128{V} and w== 16} = V ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
-def loadLow{ptr:*V, w if w128{V} and w== 32} = V ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
-def loadLow{ptr:*V, w if w128{V} and w== 64} = V ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
-def loadLow{ptr:*V, w if w128{V} and w==128} = load{ptr}
+def load_low{ptr:*V, w if w128{V} and w== 16} = V ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
+def load_low{ptr:*V, w if w128{V} and w== 32} = V ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
+def load_low{ptr:*V, w if w128{V} and w== 64} = V ~~ emit{[16]u8, '_mm_loadu_si64', ptr}
+def load_low{ptr:*V, w if w128{V} and w==128} = load{ptr}
 
-def storeLow{ptr:*E, w, x:T=[_]E if w128{T} and w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
-def storeLow{ptr:*E, w, x:T=[_]E if w128{T} and w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
-def storeLow{ptr:*E, w, x:T=[_]E if w128{T} and w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
-def storeLow{ptr:*E, w, x:T=[_]E if w128{T} and w==128} = store{*T~~ptr, 0, x}
+def store_low{ptr:*E, w, x:T=[_]E if w128{T} and w== 16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
+def store_low{ptr:*E, w, x:T=[_]E if w128{T} and w== 32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
+def store_low{ptr:*E, w, x:T=[_]E if w128{T} and w== 64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
+def store_low{ptr:*E, w, x:T=[_]E if w128{T} and w==128} = store{*T~~ptr, 0, x}
 
 
 

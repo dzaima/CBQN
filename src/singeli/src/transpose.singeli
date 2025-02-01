@@ -38,17 +38,17 @@ def transpose_square{VT, l, x if avx2} = unpack_to{1, l/2, x}
 
 def load2{a:*T, b:*T} = match (width{T}) {
   {64} => {
-    def v = each{{p}=>loadLow{*[2]u64~~p, 64}, tup{a,b}}
+    def v = each{{p}=>load_low{*[2]u64~~p, 64}, tup{a,b}}
     n_d{T}~~zip{...v, 0}
   }
   {128} => pair{load{a}, load{b}}
 }
 def store2{a:*T, b:*T, v:T2 if 2*width{T} == width{T2}} = match (width{T}) {
-  { 64} => each{{p, v} => storeLow{*u64~~p, 64, [2]u64~~v}, tup{a,b}, tup{v, shuf{u64, v, 1,0}}}
+  { 64} => each{{p, v} => store_low{*u64~~p, 64, [2]u64~~v}, tup{a,b}, tup{v, shuf{u64, v, 1,0}}}
   {128} => each{{p, i} => store{p, 0, T~~half{v,i}}, tup{a,b}, iota{2}}
 }
 def store1of2{a:*T, v:T2 if 2*width{T} == width{T2}} = match (width{T}) {
-  { 64} => storeLow{*u64~~a, 64, [2]u64~~v}
+  { 64} => store_low{*u64~~a, 64, [2]u64~~v}
   {128} => store{a, 0, T~~half{v,0}}
 }
 def load_k {VT, src,    l, w} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}

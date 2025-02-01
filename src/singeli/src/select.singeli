@@ -168,7 +168,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
       if (max >= (inds_buf_max>>sh)) return{0}
       
       @for_backwards (i to inds_buf_max/(width{WV}/8)) {
-        def s = loadLow{*arch_minv{V}~~(*u8~~src + i*bulk), width{V}}
+        def s = load_low{*arch_minv{V}~~(*u8~~src + i*bulk), width{V}}
         def v = raw_widen_inds{bulk, sh, s}
         store{*WV~~dst, i, v}
       }
