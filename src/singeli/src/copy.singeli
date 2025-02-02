@@ -38,7 +38,7 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
     @maskedLoop{vcount{V64}}(sr in tup{'g',rp}, x in tup{V64,xp} over cdiv{l,64}) sr{x}
   } else if (X==u1) {
     # show{'X==u1', X, R}
-    copyFromBits{[bulk]R, loadBatchBit{., xp, .}, r, l}
+    copyFromBits{[bulk]R, load_expand_bits{., xp, .}, r, l}
   } else if (R==u1) {
     # show{'R==u1', X, R}
     
@@ -49,7 +49,7 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
     def bulk2 = bulk*unr
     xi:ux = 0
     @forNZ (i to cdiv{l,bulk2}) {
-      b_setBatch{bulk2, rp, i, hom_to_int{each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
+      store_bits{bulk2, rp, i, hom_to_int{each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
       xi+= unr
     }
   } else if (width{X}<=width{R}) {
@@ -73,7 +73,7 @@ fn copy_ubit{R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   def RV = [bulk]R
   rp:= *R~~r
   
-  copyFromBits{RV, {T=[k]_, i} => spreadBits{T, loaduBitTrunc{*u64~~x0, xs+i*k, k}}, r, l}
+  copyFromBits{RV, {T=[k]_, i} => expand_bits{T, loadu_bits_trunc{*u64~~x0, xs+i*k, k}}, r, l}
   # }
 }
 

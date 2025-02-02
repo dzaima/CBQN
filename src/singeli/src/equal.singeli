@@ -28,10 +28,10 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       f1:= TF**1.0
       @maskedLoopPositive{bulk}(M in 'm' over i to l) {
         wu:= (if (hasarch{'AVX2'}) {
-          cw:= b_getBatchLo{bulk, *u64~~w, i}
+          cw:= load_bits_lo{bulk, *u64~~w, i}
           blend_top{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
         } else {
-          cw:= loadBatchBit{TU, *u64~~w, i}
+          cw:= load_expand_bits{TU, *u64~~w, i}
           blend_hom{f0, f1, cw}
         })
         cx:= load{*TF ~~ x, i}

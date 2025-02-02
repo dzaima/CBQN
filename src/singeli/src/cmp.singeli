@@ -76,7 +76,7 @@ def any2bit{VT=[k]T, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
   def mask = if (same{op0, op}) hom_to_int else ({x} => ~hom_to_int{x})
   
   @forNZ (ri to cdiv{len,bulk}) {
-    b_setBatch{bulk, dst, ri, mask{each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
+    store_bits{bulk, dst, ri, mask{each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
     xi+= unr
   }
 }

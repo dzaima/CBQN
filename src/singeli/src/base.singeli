@@ -171,11 +171,11 @@ def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
 
 # base cases
 def {
-  absu,and_bit_none,andnz,b_getBatch,blend,blend_units,clmul,cvt,extract,fold_addw,half,
+  absu,and_bit_none,andnz,load_bits,blend,blend_units,clmul,cvt,extract,fold_addw,half,
   all_bit,any_bit,blend_bit,
   all_hom,any_hom,blend_hom,hom_to_int,store_masked_hom,store_blended_hom,
   all_top,any_top,blend_top,top_to_int,store_masked_top,store_blended_top,
-  loadBatchBit,load_low,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
+  load_expand_bits,load_low,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
   pair,pdep,pext,rbit,sel,shufInd,store_low,reverse_units,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widen_upper,multishift,
 }
@@ -277,10 +277,10 @@ def ceil_log2{1} = 0
 def base{b,{}} = 0
 def base{b,{h,...t}} = h + b*base{b,t}
 
-def truncBits{n, v if n<=8}  = cast_i{u8, v}
-def truncBits{n, v if n==16} = cast_i{u16, v}
-def truncBits{n, v if n==32} = cast_i{u32, v}
-def truncBits{n, v if n==64} = cast_i{u64, v}
+def trunc_bits{n, v if n<=8}  = cast_i{u8, v}
+def trunc_bits{n, v if n==16} = cast_i{u16, v}
+def trunc_bits{n, v if n==32} = cast_i{u32, v}
+def trunc_bits{n, v if n==64} = cast_i{u64, v}
 
 # base-2 log of a constant power of two
 def lb{n if knum{n} and (n>>1<<1) == n and n>0} = lb{n>>1}+1

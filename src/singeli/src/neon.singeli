@@ -139,7 +139,7 @@ local def all_type{G, vs} = all{match { {x:T}=>G{T}; {_}=>0 }, vs}
 def hom_to_int{...vs if all_type{nvec,vs} and not all_type{nvecu,vs}} = hom_to_int{...each{ty_u, vs}}
 
 def hom_to_int{x:V=[k]E if nvecu{V} and width{E}>=k} = {
-  truncBits{k, fold_add{x & make{V, 1<<iota{k}}}}
+  trunc_bits{k, fold_add{x & make{V, 1<<iota{k}}}}
 }
 def hom_to_int{x:V=([16]u8)} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
@@ -164,14 +164,14 @@ def hom_to_int{a:V,b:V,c:V,d:V=([16]u8)} = {
 }
 def hom_to_int{...as={a0:V=[_]E, _, ..._} if w128u{V} and width{E}>=32} = hom_to_int{...each{{i}=>narrow_pair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
 def hom_to_int{a:V,b:V=[k]E if nvecu{V} and k*2<=width{E}} = {
-  truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{V, (1<<iota{k}) | (1<<(iota{k}+k))}}}
+  trunc_bits{k*2, fold_add{shrm{a,width{E}-k,b} & make{V, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
 def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 
 def hom_to_int_ext{a:T=[k]E if E!=u64} = {
   def h = width{E}/2
-  tup{h, truncBits{k*h, extract{[1]u64~~shrn{el_m{T}~~a, h}, 0}}}
+  tup{h, trunc_bits{k*h, extract{[1]u64~~shrn{el_m{T}~~a, h}, 0}}}
 }
 
 

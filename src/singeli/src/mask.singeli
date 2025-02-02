@@ -76,8 +76,8 @@ def mlExec{i, iter, vars0, bulk, M} = {
   def vproc{'m'} = tptr{{_}=>M, '!'}
   
   def vproc{{T,p:*E}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
-  def vproc{{'b',  p:*E}} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
-  def vproc{{'b',T,p:*E}} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
+  def vproc{{'b',  p:*E}} = tptr{{i} => load_bits{bulk, hCast{u64,p}, i}, '!'}
+  def vproc{{'b',T,p:*E}} = tptr{{i} => load_expand_bits{T, hCast{u64,p}, i}, '!'}
   def vproc{{'g',  p:*E}} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
   def vproc{{'g',T,p:*E}} = tptr{{i} => {
     def dv{} = loadBatch{p, i, T}

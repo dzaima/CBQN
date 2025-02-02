@@ -280,8 +280,8 @@ Tuples can be used in the iterated variable list for various things:
 ```
 p:*T - regular pointer
 tup{VT,p:*T} - loadBatch/storeBatch vector data
-tup{'b',p:P} - b_getBatch (bits.singeli)
-tup{'b',VT,p:P} - loadBatchBit (bits.singeli)
+tup{'b',p:P} - load_bits (bits.singeli)
+tup{'b',VT,p:P} - load_expand_bits (bits.singeli)
 tup{'g',VT,p:*T} - gives a generator, used as g{} to loadBatch and g{newValue} to storeBatch
 tup{'g',p:*T} - the above, but without load support
 'm' - get the mask object - either maskNone or some maskAfter{n}
@@ -337,18 +337,6 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x un
 <!--
 
 bitops.singeli
-  b_get
-  b_getBatch
-  b_getBatchLo
-  b_set
-  b_setBatch
-  loadBatchBit
-  loadu
-  loaduBit
-  loaduBitRaw
-  loaduBitTrunc
-  ones
-  spreadBits
 bmi2.singeli
   pdep
   pext

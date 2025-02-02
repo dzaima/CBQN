@@ -283,7 +283,7 @@ export_tab{'si_select_tab', join{table{select_fn,
       }
     } else {
       if (wl>32 and xl<=16) {
-        xb:= shuf{[4]u64, spreadBits{[32]u8, load{*u32~~x0}}, 0,1,0,1}
+        xb:= shuf{[4]u64, expand_bits{[32]u8, load{*u32~~x0}}, 0,1,0,1}
         @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
           sr = hom_to_int{shuf{[16]i8, xb, cw}}
