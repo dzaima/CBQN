@@ -48,7 +48,7 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
     def unr = if (hasarch{'X86_64'} and width{X}==16) 2 else max{8/bulk, 1}
     def bulk2 = bulk*unr
     xi:ux = 0
-    @forNZ (i to cdiv{l,bulk2}) {
+    @for_nz (i to cdiv{l,bulk2}) {
       store_bits{bulk2, rp, i, hom_to_int{each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
       xi+= unr
     }

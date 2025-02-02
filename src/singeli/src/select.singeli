@@ -32,7 +32,7 @@ def wrapChk{cw0:VI, xlf, M} = {
 def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
   r:= r0
   def left = if (M{0}) { left:ux = M{'count'} } else 0
-  def lastMaskedStore = makeOptBranch{M{0}, tup{one_type{vs}}, {c} => {
+  def lastMaskedStore = make_opt_branch{M{0}, tup{one_type{vs}}, {c} => {
     storeBatch{r, 0, c, maskAfter{left}}
     end{}
   }}

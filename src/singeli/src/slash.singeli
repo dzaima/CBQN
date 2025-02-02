@@ -5,8 +5,8 @@ if_inline (hasarch{'X86_64'}) {
 }
 include './mask'
 
-def popcRand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
-def popcRand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}
+def popc_rand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
+def popc_rand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}
 
 # Table from l bits to w-bit indices, shifted left by s, and G applied afterwards
 def maketab{l,w,s,G} = {
@@ -226,7 +226,7 @@ fn slash{c, T if hasarch{'AVX2'} and T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, s
     } else {
       h := w&0xf
       step{r, h}
-      step{r+popcRand{h}, w>>4}
+      step{r+popc_rand{h}, w>>4}
     }
     r += pc
   }

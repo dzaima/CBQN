@@ -239,7 +239,7 @@ def maxsafeint{T==f64} = 1<<53
 fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
   i:u64 = 0
   if (hasarch{'AVX2'}) simd_plus_scan_part{x, c, r, len, i}
-  @forUnroll{1,1} (js from i to len) {
+  @for_unroll_block{1,1} (js from i to len) {
     def vs = eachx{load, x, js}
     each{{j, v} => {
       def {b,n} = addChk{c, promote{R, v}}

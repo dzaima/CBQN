@@ -21,7 +21,7 @@ def findFirst{C, M, F, ...v1} = {
 def search{E, x, n:(u64), OP} = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
-  def end = makeBranch{
+  def end = make_branch{
     tup{u64, ty_u{VT}},
     {i,c} => return{i*bulk + promote{u64, ctz_ext{hom_to_int_ext{c}}}}
   }

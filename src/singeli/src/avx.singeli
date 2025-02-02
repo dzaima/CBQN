@@ -3,11 +3,11 @@ def v2i{x:T=[_]E if w256{T}} = if(isint{E}) x else [32]u8 ~~ x
 def v2f{x:T if w256{T}} = [8]f32 ~~ x
 def v2d{x:T if w256{T}} = [4]f64 ~~ x
 
-def undefPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
-def zeroPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
+def undef_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
+def zero_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
 
 # load & store
-def load_low{ptr:*V, w if w256{V} and w<=128} = undefPromote{V, load_low{*n_h{V} ~~ ptr, w}}
+def load_low{ptr:*V, w if w256{V} and w<=128} = undef_promote{V, load_low{*n_h{V} ~~ ptr, w}}
 def load_low{ptr:*V, w if w256{V} and w==256} = load{ptr}
 
 def store_low{ptr:*E, w, x:X=[_]E if w256{X} and w<=128} = store_low{ptr, w, half{x, 0}}
@@ -41,10 +41,10 @@ def blend_top{f:T, t:T, m:M if w256i{T,64} and w256i{M,64}} = T ~~ blend_top{v2d
 
 # shuffles
 # TODO rename to shuf, move shuf to shuf_imm or something
-def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
+def shuf_ind{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
   vec_shuffle{[4]f32, tup{a, b}, slice{is,0,4} & 3}
 }
-def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufInd{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
+def shuf_ind{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shuf_ind{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
 
 # mask stuff
 def and_bit_none{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}

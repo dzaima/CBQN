@@ -70,7 +70,7 @@ def load_low{ptr:*V, (width{V})} = load{ptr}
 
 
 
-def undefPromote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
+def undef_promote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
 def half{x:T, (0) if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, (1) if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
@@ -80,8 +80,8 @@ def broadcast_sel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq
 
 def unzip{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
 def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzip{x,y,0}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzip{x,y,1}
+def shuf_ind{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzip{x,y,0}
+def shuf_ind{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzip{x,y,1}
 
 def trn{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
@@ -100,7 +100,7 @@ def widen{R=[_]RE, x:X=[_]XE if w64{X} and eqqi{RE,XE} and width{RE}> width{XE}*
 def widen{R=[rn]RE, x:X=[xn]XE if w64{X} and isfloat{RE}!=isfloat{XE} and width{RE}>width{XE}} = cvt{RE, widen{[rn]to_w{XE,width{RE}}, x}}
 def widen{R=[rn]RE, x:X=[xn]XE if w128{X} and xn>rn} = widen{R, half{x,0}}
 
-def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{E}, x}}}
+def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undef_promote{el_s{X}, narrow{w_h{E}, x}}}
 def narrow_trunc{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
 def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = narrow_trunc{T, x}
 def narrow      {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}

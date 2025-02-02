@@ -75,7 +75,7 @@ def any2bit{VT=[k]T, unr, op0, wS, wV, xS, xV, dst:(*u64), len:(ux)} = {
   }
   def mask = if (same{op0, op}) hom_to_int else ({x} => ~hom_to_int{x})
   
-  @forNZ (ri to cdiv{len,bulk}) {
+  @for_nz (ri to cdiv{len,bulk}) {
     store_bits{bulk, dst, ri, mask{each{{j}=>op{wV{xi+j}, xV{xi+j}}, iota{unr}}}}
     xi+= unr
   }
@@ -93,7 +93,7 @@ fn as2bit{VT=[_]T, unr, op}(dst:*u64, wr:*void, x:u64, len:ux) : void = {
 }
 
 fn bitAA{bitop}(dst:*u64, wr:*void, xr:*void, len:ux) : void = {
-  @forNZ (dst, w in *u64~~wr, x in *u64~~xr over cdiv{len,64}) dst = bitop{w,x}
+  @for_nz (dst, w in *u64~~wr, x in *u64~~xr over cdiv{len,64}) dst = bitop{w,x}
 }
 
 fn bit_not(dst:*u64, x:*u64, len:ux) : void = { am:=cdiv{len,64}; emit{void, 'bit_negatePtr', dst, x, am} }

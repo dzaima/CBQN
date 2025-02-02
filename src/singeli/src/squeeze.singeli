@@ -3,7 +3,7 @@ include './mask'
 include './cbqnDefs'
 include './vecfold'
 
-def is_sNaN{x:[_](u64)} = tup{any_hom, inRangeLen{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
+def is_sNaN{x:[_](u64)} = tup{any_hom, in_range_len{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
 def is_sNaN{x:[2](u64) if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = { # avoiding i64 comparisons
   def nan = unord{[2]f64~~x, [2]f64~~x}
   def qnan = re_el{u64, [4]u32**0xFFF8_0000 == ([4]u32~~x | [4]u32**0x8000_0000)}
@@ -14,7 +14,7 @@ def any_sNaN{M, ...xs} = {
   one_val{any}{M{tree_fold{|, are}}}
 }
 
-def any_nonC32{M, x:[_](u64)} = any_hom{M{~inRangeLen{x, cbqn_c32Tag{}<<48, 1<<48}}}
+def any_nonC32{M, x:[_](u64)} = any_hom{M{~in_range_len{x, cbqn_c32Tag{}<<48, 1<<48}}}
 def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
@@ -22,7 +22,7 @@ def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
 }
 def any_nonC32{(maskNone), x:[k](u64), y:[k](u64)} = {
   def T32 = [k*2]u32
-  def hi = shufInd{T32~~x, T32~~y, match(k) {
+  def hi = shuf_ind{T32~~x, T32~~y, match(k) {
     {2} => tup{1,3,5,7}
     {4} => tup{1,3,9,11,5,7,13,15} # all odd indices, in the order that vshufps can handle
   }}
@@ -54,8 +54,8 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
       maxv = max{maxv, M{maxc}}
     }
     def me{M, vs} = {
-      minc:= zeroPromote{T, tree_fold{min, vs}} # could pack pairs in v to low & high halves, but an extra min costs the same or less than an insert
-      maxc:= zeroPromote{T, tree_fold{max, vs}}
+      minc:= zero_promote{T, tree_fold{min, vs}} # could pack pairs in v to low & high halves, but an extra min costs the same or less than an insert
+      maxc:= zero_promote{T, tree_fold{max, vs}}
       me{M, minc, maxc}
     }
     
@@ -119,7 +119,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     }
     0
   } else if (X==f64) {
-    def case_B = makeBranch{tup{ux}, {bulkCont} => {
+    def case_B = make_branch{tup{ux}, {bulkCont} => {
       def i0 = bulkCont*bulk
       x:= i0 + *u64~~x0
       if (B) @muLoop{bulk, 2}(xs in tup{[bulk]u64, x}, M in 'm' over len-i0) {

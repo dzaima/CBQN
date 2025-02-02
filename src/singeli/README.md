@@ -43,19 +43,17 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 ## Loops & branches
 
 - `@for` - generate body once, with indices `s,s+1,...,e-2,e-1`
-- `@forNZ` - `@for`, but assumed to run at least once
-- `@for_backwards` - `@for`, but indices go backwards `e-1,e-2,...,s+1,s`
-- `@forUnroll{exp, unr}` - generate a main loop body that takes a tuple of `unr` indices to process. Handle the tail via processing one index at a time; if `exp==1`, that's done via `unr` generated bodies, otherwise it's a loop
+- `@for_nz` - `@for`, but assumed to run at least once
+- `@for_unroll_block{exp, unr}` - generate a main loop body that takes a tuple of `unr` indices to process. Handle the tail via processing one index at a time; if `exp==1`, that's done via `unr` generated bodies, otherwise it's a loop
 - `@unroll(n)` - generate body `n` times
-- `@collect(n)` - generate body `n` times, and collect the results as a tuple
 <!-- -->
-- `makeBranch{Ts, G=={...x:Ts}=>{}} == {...x:Ts}=>{}` - make a code segment that takes arguments of types `Ts`, and can be jumped to by invoking the result of the `makeBranch`
-- `makeOptBranch{enable, Ts, G}` - `makeBranch` but only generated & invokable when `enable==1`
+- `make_branch{Ts, G=={...x:Ts}=>{}} == {...x:Ts}=>{}` - make a code segment that takes arguments of types `Ts`, and can be jumped to by invoking the result of the `make_branch`
+- `make_opt_ranch{enable, Ts, G}` - `make_branch` but only generated & invokable when `enable==1`
 
 ## Scalar operations
 
 - `popc{x:EI} : uint` - population count
-- `popcRand{x:EI} : uint` - population count; under valgrind, return a random value in the set of possible ones if the input is partly undefined
+- `popc_rand{x:EI} : uint` - population count; under valgrind, return a random value in the set of possible ones if the input is partly undefined
 - `ctz{x:EI} : uint` - count trailing zeroes; if `x==0`, the result is undefined
 - `clz{x:EI} : uint` - count leading zeroes; if `x==0`, the result is undefined
 - `clzc{x:EI} : uint` - `width{EI}-clz{x}`; if `x==0`, the result is undefined
@@ -142,7 +140,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `insert{a:V, i, b:eltype{V}} : V` - a copy of `a` with the `i`-th element replaced with `b`
 - `half{a:V, n} : count_half{V}` - extract either the low (`n==0`) or high (`n==1`) half of `a`
 - `pair{a:V, b:V} : count_dbl{V}` - make a vector from halves
-- `undefPromote{V2, a:V} : V` - promote `a` to a wider type, leaving the upper part undefined
+- `undef_promote{V2, a:V} : V` - promote `a` to a wider type, leaving the upper part undefined
 - `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1}` → `[1,2,3,4]`
 - `sel{VI1, a:V, b:VI2} : V2` - shuffle `a` by indices `b` in `VI1`-long lanes; arch-specific behavior on out-of-bounds values
 
@@ -234,9 +232,7 @@ For float conversions, the used rounding mode is unspecified.
 - `addp` - add pairwise
 - `addpw` - add pairwise, widening
 - `addpwa` - add pairwise, widening; accumulate
-- `addwLo` - widening add
-- `subwLo` - widening subtract
-- `mulwLo`, `mulwHi`, `mulw` - widening multiply
+- `addw`, `subw`, `mulw` - widening add/subtract/multiply
 - `andnz` - element-wise (a&b)!=0? ~0 : 0
 <!-- -->
 - `clz` - count leading zeroes

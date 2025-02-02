@@ -91,8 +91,8 @@ def unzip128{a:[k]E, b:[k]E, 1 if hasarch{'X86_64'} and isunsigned{E}} = {
   def ew = width{E}
   packQ{re_el{ED,a} >> ew, re_el{ED,b} >> ew}
 }
-def unzip128{a:T, b:T==[8](u32), k} = shufInd{a, b, tup{0,2,8,10, 4,6,12,14}+k}
-def unzip128{a:T, b:T==[4](u64), k} = shufInd{a, b, tup{0,4,2,6}+k}
+def unzip128{a:T, b:T==[8](u32), k} = shuf_ind{a, b, tup{0,2,8,10, 4,6,12,14}+k}
+def unzip128{a:T, b:T==[4](u64), k} = shuf_ind{a, b, tup{0,4,2,6}+k}
 
 def unzip{a:T, b:T, k if w128u{T} and hasarch{'SSE2'}} = unzip128{a, b, k}
 def unzip{a:T, b:T, k if w256u{T} and hasarch{'AVX2'}} = vec_shuffle{[4]u64, unzip128{a, b, k}, 0,2,1,3}
