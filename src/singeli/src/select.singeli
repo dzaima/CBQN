@@ -57,7 +57,7 @@ fn wrap_inds{TI if issigned{TI}}(src:*void, dst:*void, n:u64, cyc0:u64) : void =
   if (has_simd) {
     def bulk = arch_defvw / width{TI}
     def VT = [bulk]TI
-    @maskedLoop{bulk}(src in vptr{VT, src}, dst in vptr{VT, dst} over n) {
+    @for_masked{bulk}(src in vptr{VT, src}, dst in vptr{VT, dst} over n) {
       dst = blend_hom{src, src + VT**cyc, src < VT**0}
     }
   } else {
@@ -198,7 +198,7 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { 
           # show{TD, nt, ni, G}
           # lprintf{'LUT of ', VI, ' ⊏ ', [nt]TD, ' with ', wl, ' ≡  ≠𝕨, ', xl, ' ≡ ≠𝕩'}
           def lut = G{x}
-          @maskedLoop{ni}(w0 in tup{VI,w}, M in 'm' over wl) {
+          @for_masked{ni}(w0 in tup{VI,w}, M in 'm' over wl) {
             def w = wrapChk{w0, xlf, M}
             def rs = lut{ty_u{w}}
             r = masked_multistore{r, rs, M, {} => return{1}}
@@ -220,7 +220,7 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { 
     def VD = [bulk]TDE
     def xlf = VI**cast_i{TIE, xl}
     
-    @maskedLoop{bulk}(cw0 in tup{VI,w}, sr in tup{'g',r}, M in 'm' over wl) {
+    @for_masked{bulk}(cw0 in tup{VI,w}, sr in tup{'g',r}, M in 'm' over wl) {
       cw:= wrapChk{cw0, xlf, M}
       got:= gather{VD**0, x, cw, M}
       if (TDE!=TD) got&= VD**((1<<wd)-1)
@@ -276,7 +276,7 @@ export_tab{'si_select_tab', join{table{select_fn,
     
     if (hasarch{'AARCH64'}) {
       def xrev = rbit{load{*VU ~~ x0}}
-      @maskedLoop{16}(cw0 in w, r in *u16~~r0, M in 'm' over i to wl) {
+      @for_masked{16}(cw0 in w, r in *u16~~r0, M in 'm' over i to wl) {
         def cw = ty_u{wrapChk{cw0, xlf, M}}
         def byte = shuf{[16]u8, xrev, cw>>3}
         r = hom_to_int{ty_s{byte << (cw & VU**7)} < VI**0}
@@ -284,7 +284,7 @@ export_tab{'si_select_tab', join{table{select_fn,
     } else {
       if (wl>32 and xl<=16) {
         xb:= shuf{[4]u64, expand_bits{[32]u8, load{*u32~~x0}}, 0,1,0,1}
-        @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
+        @for_masked{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
           sr = hom_to_int{shuf{[16]i8, xb, cw}}
         }
@@ -292,7 +292,7 @@ export_tab{'si_select_tab', join{table{select_fn,
         x:= shuf{[4]u64, load{*VI ~~ x0}, 0,1,0,1}
         low:= VI**7
         b  := VI~~make{[32]u8, 1 << (iota{32} & 7)}
-        @maskedLoop{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
+        @for_masked{32}(cw0 in w, sr in *u32~~r0, M in 'm' over wl) {
           cw:= wrapChk{cw0, xlf, M}
           byte:= shuf{[16]i8, x, VI~~(([8]u32~~(cw&~low))>>3)}
           mask:= shuf{[16]i8, b, cw & low}
@@ -308,7 +308,7 @@ export_tab{'si_select_tab', join{table{select_fn,
     def bulk = arch_defvw / 8
     def V = [bulk]u8
     def lut = shuf_u8bits{inds, indn}
-    @maskedLoop{bulk}(src in tup{V,*u8~~src}, dst in tup{V,*u8~~dst} over rows) {
+    @for_masked{bulk}(src in tup{V,*u8~~src}, dst in tup{V,*u8~~dst} over rows) {
       dst = lut{src}
     }
   }

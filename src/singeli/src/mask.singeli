@@ -89,7 +89,7 @@ local def ml_exec{i, iter, vars0, bulk, M} = {
 }
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
-def maskedLoop{bulk, i0}{vars,begin==0,end,iter} = {
+def for_masked{bulk, i0}{vars,begin==0,end,iter} = {
   l:u64 = end
   
   m:u64 = l / bulk
@@ -98,10 +98,10 @@ def maskedLoop{bulk, i0}{vars,begin==0,end,iter} = {
   left:= l & (bulk-1)
   if (left!=0) ml_exec{m, iter, vars, bulk, mask_first{left}}
 }
-def maskedLoop{bulk} = maskedLoop{bulk,0}
+def for_masked{bulk} = for_masked{bulk,0}
 
 
-def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
+def for_masked_pos{bulk}{vars,begin==0,end:L,iter} = {
   assert{end > 0}
   i:L = 0
   while(i < (end-1)/bulk) {
@@ -121,7 +121,7 @@ def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
 #    begin must be 0
 #    end is scalar element count
 #    index given is a tuple of batch indexes to process
-def muLoop{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
+def for_mu{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
   l:u64 = end
   
   m:u64 = l / bulk
@@ -152,4 +152,4 @@ def muLoop{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
     if (left!=0) ml_exec{tup{m}, iter, vars, bulk, mask_first{left}}
   }
 }
-def muLoop{bulk, unr} = muLoop{bulk, unr, {}=>0}
+def for_mu{bulk, unr} = for_mu{bulk, unr, {}=>0}

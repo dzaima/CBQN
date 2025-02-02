@@ -81,7 +81,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   
   if (CHR) { # c16/c32/B → char
     mt:= XV**0 # unused for c16
-    @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
+    @for_mu{bulk, 2}(xs in xb, M in 'm' over len) {
       def orx = M{tree_fold{|, xs}}
       if (B) {
         if (any_nonC32{M, ...xs}) return{3}
@@ -100,21 +100,21 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     def EH = w_h{X}
     def acc = int_acc{XV}
     if (acc{'minmax'}) {
-      @muLoop{bulk, 4}(xs in xb, M in 'm' over len) {
+      @for_mu{bulk, 4}(xs in xb, M in 'm' over len) {
         minc:= tree_fold{min, xs}
         maxc:= tree_fold{max, xs}
         if (M{0}==0 and any_hom{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
         acc{M, minc, maxc}
       }
     } else {
-      @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
+      @for_mu{bulk, 2}(xs in xb, M in 'm' over len) {
         def mixed = acc{M, xs}
         if (M{0}==0 and any_hom{mixed > XV**maxvalue{EH}}) return{0xffff_ffff}
       }
     }
     acc{}
   } else if (X==i8) {
-    @muLoop{bulk, 2}(xs in xb, M in 'm' over len) {
+    @for_mu{bulk, 2}(xs in xb, M in 'm' over len) {
       if (~and_bit_none{M{tree_fold{|, xs}}, XV ** -2}) return{2}
     }
     0
@@ -122,14 +122,14 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     def case_B = make_branch{tup{ux}, {bulkCont} => {
       def i0 = bulkCont*bulk
       x:= i0 + *u64~~x0
-      if (B) @muLoop{bulk, 2}(xs in tup{[bulk]u64, x}, M in 'm' over len-i0) {
+      if (B) @for_mu{bulk, 2}(xs in tup{[bulk]u64, x}, M in 'm' over len-i0) {
         if (any_sNaN{M, ...xs}) return{0xffff_fffe} # not even a number
       }
       return{0xffff_ffff} # float
     }}
     
     def acc = int_acc{re_el{i32, XV}}
-    @muLoop{bulk, 2}(xs in xb, M in 'm' over is to len) {
+    @for_mu{bulk, 2}(xs in xb, M in 'm' over is to len) {
       if (hasarch{'X86_64'}) {
         def ns = each{narrow{i32,.}, xs}
         if (any_hom{M{tree_fold{|, each{{ns,x} => widen{XV,ns}!=x, ns, xs}}}}) case_B{select{is, 0}}

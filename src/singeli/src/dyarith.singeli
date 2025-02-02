@@ -130,13 +130,13 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   if (R==u1) {
     def bulk = vw/64
     def VT = [bulk]u64
-    @maskedLoop{bulk}(r in tup{'g',*u64~~r}, cw in tup{VT,*u64~~w}, cx in tup{VT,*u64~~x} over cdiv{len, 64}) r{F{cw,cx}}
+    @for_masked{bulk}(r in tup{'g',*u64~~r}, cw in tup{VT,*u64~~w}, cx in tup{VT,*u64~~x} over cdiv{len, 64}) r{F{cw,cx}}
   } else if (same{F,__mul} and W!=u1 and X==u1 and W==R) { # 0‿1‿1‿1‿1‿0‿1‿1×3‿1‿4‿1‿5‿9‿2‿6
     def bulk = vw / width{W}
     def TU = ty_u{R}
     def TV = [bulk]TU
     
-    @muLoop{bulk, 2}(sr in tup{'g',*TU~~r}, cw in tup{TV,*TU~~w}, cx in tup{'b',TV,x} over len) {
+    @for_mu{bulk, 2}(sr in tup{'g',*TU~~r}, cw in tup{TV,*TU~~w}, cx in tup{'b',TV,x} over len) {
       sr{each{&, cw, cx}}
     }
   } else {
@@ -147,7 +147,7 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
     def run = runner{same{overflow, 0}, R, F}
     
     def unr = tern{mode==0, 2, 1} # 2x unroll non-overflowing cases; suppresses clang's default unrolling, which unrolls a lot more; 2x appears to be plenty
-    @muLoop{bulk, unr}(sr in tup{'g',*R~~r}, cw in tup{ty_sc{W,TY},*W~~w}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
+    @for_mu{bulk, unr}(sr in tup{'g',*R~~r}, cw in tup{ty_sc{W,TY},*W~~w}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
       sr{arithProcess{F, run, overflow, M, is, cw, cx, TY}}
     }
   }
@@ -182,7 +182,7 @@ fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 
   cw:= ty_sc{W, TY}**getW{w}
   
   def unr = tern{mode>=2, 2, 1} # same as in arithAAimpl
-  @muLoop{bulk, unr}(sr in tup{'g',*R~~r}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
+  @for_mu{bulk, unr}(sr in tup{'g',*R~~r}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
     def cws = length{is}**cw
     sr{arithProcess{F, run, overflow, M, is, tern{swap,cx,cws}, tern{swap,cws,cx}, TY}}
   }
@@ -199,7 +199,7 @@ fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   def T8 = [bulk]u8
   def T64 = [bulk/8]u64
   maskFull:= T8~~T64**maskU64
-  @maskedLoop{bulk}(sr in tup{'g',r}, cx in tup{T8,x} over len) sr{cx & maskFull}
+  @for_masked{bulk}(sr in tup{'g',r}, cx in tup{T8,x} over len) sr{cx & maskFull}
 }
 
 export{'simd_andBytes', andBytes{arch_defvw}}

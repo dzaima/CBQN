@@ -20,13 +20,13 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       def BT = [vw/8]u8
-      @maskedLoop{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyne_bit{w,x,M}) return{0}
+      @for_masked{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyne_bit{w,x,M}) return{0}
     } else if (X==f64) { # bitarr ≡ f64arr
       def TF = [vw/64]f64
       def TU = [vw/64]u64
       f0:= TF**0.0
       f1:= TF**1.0
-      @maskedLoopPositive{bulk}(M in 'm' over i to l) {
+      @for_masked_pos{bulk}(M in 'm' over i to l) {
         wu:= (if (hasarch{'AVX2'}) {
           cw:= load_bits_lo{bulk, *u64~~w, i}
           blend_top{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
@@ -46,7 +46,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       
       # TODO compare with doing the comparison in vector registers
       badBits:= T ** ~(X~~1)
-      @maskedLoop{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
+      @for_masked{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
         if (~and_bit_none{M{x}, badBits}) return{0}
         if (anyne{promote{u64,mask{sh{x}}}, promote{u64,cw}, M}) return{0}
       }
@@ -57,7 +57,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     
     def R = [bulk]X
     
-    @maskedLoopPositive{bulk}(M in 'm' over i to l) {
+    @for_masked_pos{bulk}(M in 'm' over i to l) {
       cw:= load_widen{*W~~w, i, R}
       cx:= load_widen{*X~~x, i, R}
       if (anyne_positive{cw,cx,M}) return{0}

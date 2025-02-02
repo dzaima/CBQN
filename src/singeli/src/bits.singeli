@@ -11,7 +11,7 @@ def bitsel{VL, T, r, bits, e0, e1, len} = {
   
   e0v:= VT**e0
   e1v:= VT**e1
-  @maskedLoop{bulk}(r in tup{'g',r}, b in tup{'b',VT,bits} over i to len) r{blend_hom{e0v, e1v, b}}
+  @for_masked{bulk}(r in tup{'g',r}, b in tup{'b',VT,bits} over i to len) r{blend_hom{e0v, e1v, b}}
 }
 
 fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
@@ -31,7 +31,7 @@ fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : vo
     def bulk = arch_defvw / width{E}
     def VT = [bulk]E
     def one = VT**cast_i{E, one0}
-    @maskedLoop{bulk}(r in tup{VT,*E~~rp}, zero in tup{VT,*E~~zero}, mask in tup{'b',VT,mask} over i to len) r = blend_hom{zero, one, mask}
+    @for_masked{bulk}(r in tup{VT,*E~~rp}, zero in tup{VT,*E~~zero}, mask in tup{'b',VT,mask} over i to len) r = blend_hom{zero, one, mask}
   }
 }
 
@@ -44,7 +44,7 @@ export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u
     def bulk = arch_defvw / 8
     def V = [bulk]u8
     bitalign{tup{2,8,csz}, 8, {s, align} => {
-      @maskedLoop{bulk}(dst in tup{V,*u8~~dst} over cam) {
+      @for_masked{bulk}(dst in tup{V,*u8~~dst} over cam) {
         dst = align{load{*V~~src}}
         ptr_add{u8, src, bulk*s/8}
       }

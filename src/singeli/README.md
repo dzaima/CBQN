@@ -264,12 +264,12 @@ To test whether a mask object `M` is `mask_none` or `mask_first`, `M{0}` can be 
 
 ### Loops
 
-- `@maskedLoop{bulk}` - loop that generates its body twice, once with a `mask_none` mask, and once with a `mask_first{n}` one to handle the tail.
+- `@for_masked{bulk}` - loop that generates its body twice, once with a `mask_none` mask, and once with a `mask_first{n}` one to handle the tail.
 
-- `@muLoop{bulk, unr}` - masked & unrolled loop - generates its body three times (or two if `unr==1`) - once for unrolled main loop, once for the unrolling leftover, and once for the masked end.
+- `@for_mu{bulk, unr}` - masked & unrolled loop - generates its body three times (or two if `unr==1`) - once for unrolled main loop, once for the unrolling leftover, and once for the masked end.
   Unrolling is handled by passing a tuple of indices to process as the index variable (the tail generated bodies get a tuple of the one index)
 
-- `@muLoop{bulk, unr, fromunr}` - `fromunr` is additionally ran after exiting the unrolled loop (such that you can have separate accumulators for the unrolled bit, and convert them to single-vector acccumulators for the tail).
+- `@for_mu{bulk, unr, fromunr}` - `fromunr` is additionally ran after exiting the unrolled loop (such that you can have separate accumulators for the unrolled bit, and convert them to single-vector acccumulators for the tail).
 
 
 Tuples can be used in the iterated variable list for various things:
@@ -287,15 +287,15 @@ Stores via those will implicitly do a masked store when required.
 
 Loads will load past the end, so `M in 'm'` must be used to mask off elements if they're used for something other than the above stores.
 
-For `muLoop`, `M in 'm'` still gives a single generator, but it's only ever `mask_first{n}` when there's only one index.
+For `for_mu`, `M in 'm'` still gives a single generator, but it's only ever `mask_first{n}` when there's only one index.
 
 Example usage for a loop that adds `u16` and bit boolean elements to a `u32` accumulator, early-exiting on overflow:
 ```
-fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @maskedLoop
+fn acc_u32_u16_bit_u1(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @for_masked
   def bulk = 8
   def VT = [8]u32
   
-  @maskedLoop{bulk}(
+  @for_masked{bulk}(
     r in tup{VT, r},
     x in tup{VT, x},
     b in tup{'b', VT, bits},
@@ -309,12 +309,13 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @maskedLoop
   }
   1
 }
+export {'acc_u32_u16_bit_u1', acc_u32_u16_bit_u1}
 
-fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x unrolled
+fn acc_u32_u16_bit_u2(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @for_mu, 2x unrolled
   def bulk = 8
   def VT = [8]u32
   
-  @muLoop{bulk,2}(
+  @for_mu{bulk,2}(
     r in tup{'g', VT, r},
     x in tup{VT, x},
     b in tup{'b', VT, bits},
@@ -328,6 +329,7 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x un
   }
   1
 }
+export {'acc_u32_u16_bit_u2', acc_u32_u16_bit_u2}
 ```
 
 <!--

@@ -329,7 +329,7 @@ def avx2_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
   d4:usz = width{V} % l
   m:= make{V, scan{{a,_} => a>>d | a<<(l-d), tup{ms, ...iota{3}}}}
   c:= V**0
-  @maskedLoop{4} (x in tup{V, xp},
+  @for_masked{4} (x in tup{V, xp},
                   r in tup{V, rp} over promote{u64,nw}) {
     s := scan_words{x, m}
     pc:= c; c = shuf{-(s>>63), 3,0,1,2}

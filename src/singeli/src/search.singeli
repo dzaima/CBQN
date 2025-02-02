@@ -25,7 +25,7 @@ def search{E, x, n:(u64), OP} = {
     tup{u64, ty_u{VT}},
     {i,c} => return{i*bulk + promote{u64, ctz_ext{hom_to_int_ext{c}}}}
   }
-  @muLoop{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
+  @for_mu{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
     if (any_hom{M{tree_fold{|, eq}}}) {
       findFirst{
@@ -53,7 +53,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   def E = f64
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
-  @maskedLoop{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
+  @for_masked{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
     if (any_hom{M{x!=x}}) return{1}
     sr{x + VT**0}
   }
@@ -324,7 +324,7 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
     def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
     def minA = acc{2, VT**min1}
     def maxA = acc{2, VT**min1}
-    @muLoop{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
+    @for_mu{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
       if (E==f64 and any_hom{M{tree_fold{|, each{{c} => ~isI64{c}, cx}}}}) return{0}
       minA{'upd', is, {a} => eachx{maskBlend, a, each{min, a, cx}, M}} # blend
       maxA{'upd', is, {a} => eachx{maskBlend, a, each{max, a, cx}, M}} # blend
