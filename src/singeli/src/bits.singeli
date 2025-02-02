@@ -72,7 +72,7 @@ export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u
         next{}
       }
       while (dstC < dstE) {
-        storeBatch{dstC, 0, get{}, maskAfter{dstE - dstC}}
+        store_narrow{dstC, 0, get{}, mask_first{dstE - dstC}}
         next{}
       }
     }}

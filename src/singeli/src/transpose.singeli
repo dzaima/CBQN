@@ -239,7 +239,7 @@ def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd and (not hasarch{'X86_64'} o
     xb := xv + 2*nv
     x0 := load{xb}
     x1 := V**0; if (n&(l/2) != 0) x1 = load{xb, 1}
-    mask := maskOf{V, n%l}
+    mask := mask_of_first{V, n%l}
     each{store_blended_hom{., mask, .}, tup{rv0+nv,rv1+nv}, uz{x0,x1}}
   }
 }
@@ -258,7 +258,7 @@ fn interleave{T if has_simd}(r:*void, x0:*void, x1:*void, n:u64) : void = {
     r0 := get_r{0}
     rb := rv + 2*nv
     nr := 2*n; m := nr%l
-    mask := maskOf{V, m}
+    mask := mask_of_first{V, m}
     if (nr&l == 0) {
       store_blended_hom{rb, mask, r0}
     } else {

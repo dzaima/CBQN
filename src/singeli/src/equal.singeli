@@ -20,7 +20,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       def BT = [vw/8]u8
-      @maskedLoop{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyneBit{w,x,M}) return{0}
+      @maskedLoop{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyne_bit{w,x,M}) return{0}
     } else if (X==f64) { # bitarr ≡ f64arr
       def TF = [vw/64]f64
       def TU = [vw/64]u64
@@ -35,7 +35,7 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
           blend_hom{f0, f1, cw}
         })
         cx:= load{*TF ~~ x, i}
-        if (anynePositive{wu, cx, M}) return{0}
+        if (anyne_positive{wu, cx, M}) return{0}
       }
     } else { # bitarr ≡ i8/i16/i32arr
       def T = [bulk]X
@@ -58,9 +58,9 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     def R = [bulk]X
     
     @maskedLoopPositive{bulk}(M in 'm' over i to l) {
-      cw:= loadBatch{*W~~w, i, R}
-      cx:= loadBatch{*X~~x, i, R}
-      if (anynePositive{cw,cx,M}) return{0}
+      cw:= load_widen{*W~~w, i, R}
+      cx:= load_widen{*X~~x, i, R}
+      if (anyne_positive{cw,cx,M}) return{0}
     }
   }
   1

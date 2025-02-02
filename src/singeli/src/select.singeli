@@ -33,7 +33,7 @@ def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
   r:= r0
   def left = if (M{0}) { left:ux = M{'count'} } else 0
   def lastMaskedStore = make_opt_branch{M{0}, tup{one_type{vs}}, {c} => {
-    storeBatch{r, 0, c, maskAfter{left}}
+    store_narrow{r, 0, c, mask_first{left}}
     end{}
   }}
   
@@ -42,7 +42,7 @@ def masked_multistore{r0, vs, M, end} = { # returns bumped-forwards r
       if (i+1 == length{vs} or left<k) lastMaskedStore{c}
       left-= k
     }
-    storeBatch{r, 0, c, maskNone}
+    store_narrow{r, 0, c, mask_none}
     r+= k
   }, inds{vs}, vs}
   r
@@ -84,7 +84,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
           iters:ux = 0
           while (*void~~(r + ni) <= r1) {
             def rs = G{x}{iv}
-            masked_multistore{r, rs, maskNone, '!'}
+            masked_multistore{r, rs, mask_none, '!'}
             x+= xbump
             r+= rbump
             ++iters

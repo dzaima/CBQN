@@ -66,7 +66,7 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
       def R = [vc]T
       @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
-      store_blended_hom{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
+      store_blended_hom{*R~~r0, mask_of_first{R, end-buf}, load{*R~~buf}}
     } else {
       @for (r0, buf over u64~~(end-buf)) r0 = buf
     }
@@ -216,7 +216,7 @@ fn slash{c, T if hasarch{'AVX2'} and T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, s
   }
   def tab = if (tw==32) itab else i64tab
   def step{r, w} = {
-    s:= loadBatch{*u8~~(tab+w), 0, V}
+    s:= load_widen{*u8~~(tab+w), 0, V}
     store{*V~~r, 0, from_ind{s}}
   }
   @for_special_buffered{r,8} (w in *u8~~wp over sum) {

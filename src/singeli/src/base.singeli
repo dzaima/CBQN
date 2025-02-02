@@ -251,7 +251,6 @@ def min = __min
 def max = __max
 def adds = __adds
 def subs = __subs
-def sqrt = __sqrt
 
 
 

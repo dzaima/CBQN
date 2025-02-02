@@ -220,7 +220,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   # Fill with minimum value at the beginning
   def pre = if (search) load{w} else (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
-  wv0:= blend_hom{load{wg}, V**pre, maskOf{V,gap}}
+  wv0:= blend_hom{load{wg}, V**pre, mask_of_first{V,gap}}
   # For multiple lanes, interleave like transpose
   def maxstep = lb{maxwn}
   def lstep = lb{svl}

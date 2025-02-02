@@ -237,7 +237,7 @@ For float conversions, the used rounding mode is unspecified.
 <!-- -->
 - `clz` - count leading zeroes
 - `cls` - count leading sign bits
-- `copyLane`
+- `copy_lane`
 - `mla` - multiply-add
 - `mls` - multiply-subtract
 - `ornot` - a|~b
@@ -249,22 +249,22 @@ For float conversions, the used rounding mode is unspecified.
 - `trn1`, `trn2` - 2×2 transposes from pairs of elements across the two arguments
 
 <!--
-  widenUpper{x:V}, widen{x:V}
+  widen_upper{x:V}
   narrowPair, narrowUpper
 -->
 ## mask.singeli
 
-- `maskOf{TU, n}` - get a mask of type `TU` whose first `n` elements are all `1`s, and the remaining are `0`s. `0≤n≤vcount{TU}`
-- `maskNone` - a mask generator that matches all items
-- `maskAfter{n}` - a mask generator that patches the first `n` items
-- `loadBatch{p:*E, n, V}` - load the `n`-th batch of `vcount{V}` elements from `*E`; if `E` isn't `eltype{V}`, the result is sign- or zero-extended.
-- `storeBatch{p:*E, n, x:V, M}` - store equivalent of the `loadBatch`; if `E` isn't `eltype{V}`, `x` is narrowed via `narrow{}`
+- `mask_of_first{TU, n}` - get a mask of type `TU` whose first `n` elements are all `1`s, and the remaining are `0`s. `0≤n≤vcount{TU}`
+- `mask_none` - a mask generator that matches all items
+- `mask_first{n}` - a mask generator that enables the first `n` items
+- `load_widen{p:*E, n, [k]W}` - load the `n`-th batch of `k` elements from `p`; if `W` isn't `E`, the result is sign- or zero-extended.
+- `store_narrow{p:*E, n, x:[k]N, M}` - store equivalent of the `load_widen`; if `E` isn't `N`, `x` is narrowed via `narrow{}`
 
-To test whether a mask object `M` is `maskNone` or `maskAfter`, `M{0}` can be used - `maskNone{0}` is `0`, but `maskAfter{n}{0}` is `1`.
+To test whether a mask object `M` is `mask_none` or `mask_first`, `M{0}` can be used - `mask_none{0}` is `0`, but `mask_first{n}{0}` is `1`.
 
 ### Loops
 
-- `@maskedLoop{bulk}` - loop that generates its body twice, once with a `maskNone` mask, and once with a `maskAfter{n}` one to handle the tail.
+- `@maskedLoop{bulk}` - loop that generates its body twice, once with a `mask_none` mask, and once with a `mask_first{n}` one to handle the tail.
 
 - `@muLoop{bulk, unr}` - masked & unrolled loop - generates its body three times (or two if `unr==1`) - once for unrolled main loop, once for the unrolling leftover, and once for the masked end.
   Unrolling is handled by passing a tuple of indices to process as the index variable (the tail generated bodies get a tuple of the one index)
@@ -275,19 +275,19 @@ To test whether a mask object `M` is `maskNone` or `maskAfter`, `M{0}` can be us
 Tuples can be used in the iterated variable list for various things:
 ```
 p:*T - regular pointer
-tup{VT,p:*T} - loadBatch/storeBatch vector data
+tup{VT,p:*T} - load_widen/store_narrow vector data
 tup{'b',p:P} - load_bits (bits.singeli)
 tup{'b',VT,p:P} - load_expand_bits (bits.singeli)
-tup{'g',VT,p:*T} - gives a generator, used as g{} to loadBatch and g{newValue} to storeBatch
+tup{'g',VT,p:*T} - gives a generator, used as g{} to load_widen and g{newValue} to store_narrow
 tup{'g',p:*T} - the above, but without load support
-'m' - get the mask object - either maskNone or some maskAfter{n}
+'m' - get the mask object - either mask_none or some mask_first{n}
 ```
 
 Stores via those will implicitly do a masked store when required.
 
 Loads will load past the end, so `M in 'm'` must be used to mask off elements if they're used for something other than the above stores.
 
-For `muLoop`, `M in 'm'` still gives a single generator, but it's only ever `maskAfter{n}` when there's only one index.
+For `muLoop`, `M in 'm'` still gives a single generator, but it's only ever `mask_first{n}` when there's only one index.
 
 Example usage for a loop that adds `u16` and bit boolean elements to a `u32` accumulator, early-exiting on overflow:
 ```

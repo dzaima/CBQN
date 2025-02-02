@@ -142,7 +142,7 @@ def rep_const_shuffle{wv, onreps, xv:*V=[step]T, rv:*V, n:(u64)} = { # onreps{in
     }}
     setlabel{end}
     q := nr & (step-1)
-    if (q!=0) store_blended_hom{rv+e, maskOf{V, q}, s}
+    if (q!=0) store_blended_hom{rv+e, mask_of_first{V, q}, s}
   }
 }
 
@@ -217,7 +217,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   setlabel{end}
   
   q := (re+step) - r
-  if (q!=0) store_blended_hom{*V~~r, maskOf{V, q}, s}
+  if (q!=0) store_blended_hom{*V~~r, mask_of_first{V, q}, s}
 }
 
 
@@ -373,7 +373,7 @@ def get_boolvec_writer{V, r, nw} = {
   def flush{} = {
     setlabel{l_flush}
     q := nw & (vwords-1)
-    if (q != 0) store_blended_hom{rv, V~~maskOf{re_el{u64,V}, q}, last_res}
+    if (q != 0) store_blended_hom{rv, V~~mask_of_first{re_el{u64,V}, q}, last_res}
     setlabel{done}
   }
   tup{output, check_done, flush}
