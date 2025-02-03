@@ -26,7 +26,7 @@ def reinterpret{T, a:M=[l==width{T}](u1)} = {
   re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
 }
 
-def store_masked_hom{p:*V, m:[l](u1), v:V=[l]_ if has512e{V}} = {
+def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, merge{pref{V}, 'mask_storeu_', suf{V}}, p, m, v}
 }
 
