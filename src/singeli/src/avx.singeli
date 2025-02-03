@@ -6,13 +6,8 @@ def v2d{x:T if w256{T}} = [4]f64 ~~ x
 def undef_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 def zero_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
 
-# load & store
-def load_low{ptr:*V, w if w256{V} and w<=128} = undef_promote{V, load_low{*n_h{V} ~~ ptr, w}}
-def load_low{ptr:*V, w if w256{V} and w==256} = load{ptr}
-
-def store_low{ptr:*E, w, x:X=[_]E if w256{X} and w<=128} = store_low{ptr, w, half{x, 0}}
-def store_low{ptr:*E, w, x:X=[_]E if w256{X} and w==256} = store{*X~~ptr, 0, x}
-
+def load{V=[_]E, ptr:*E, vl if w256{V} and vl*width{E}<=128} = undef_promote{V, load{n_h{V}, ptr, vl}}
+def store{ptr:*E, x:V=[k]E, vl if w256{V} and vl*width{E}<=128} = store{ptr, half{x, 0}, vl}
 
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}

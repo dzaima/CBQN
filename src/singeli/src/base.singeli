@@ -54,8 +54,8 @@ def eachx{F, ...args} = {
 }
 
 
-def load {p:*[_]_, n   } = assert{0,'bad load',p,n}
-def store{p:*[_]_, n, v} = assert{0,'bad store',p,n,v}
+def load {...args if match (...args) { {ptr:*E, idx      if not isvec{E}}=>0; {..._}=>1 } } = assert{0, 'bad load', ...args}
+def store{...args if match (...args) { {ptr:*E, idx, val if not isvec{E}}=>0; {..._}=>1 } } = assert{0, 'bad store', ...args}
 def load{p:*_} = load{p, 0}
 # def store{p:*_, v} = store{p, 0, v}
 def loadu {p:*T      if isunsigned{T}} = emit{T,    merge{'loadu_u', fmtnat{width{T}}}, p}
@@ -198,10 +198,16 @@ def hom_to_int{...vs if length{vs}>1} = {
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 
-def load{V=[_]_, ptr:*_} = assert{0, 'bad load', V, ptr}
-def store{ptr:*_, val:[_]_} = assert{0, 'bad store', ptr, val}
+
+
+def load{V=[k]E, ptr:*E, k} = load{V, ptr}
+def store{ptr:*E, val:V=[k]E, k} = store{ptr, val}
+
 def load{V=[k]E, ptr:*E} = load{*V~~ptr}
 def store{ptr:*E, val:V=[k]E} = store{*V~~ptr, 0, val}
+
+def load_low{ptr:*V=[k]E, w} = load{V, *E~~ptr, w/width{E}}
+def store_low{ptr:*E, w, val:V=[k]E} = store{ptr, val, w/width{E}}
 
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
