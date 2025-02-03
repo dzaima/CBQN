@@ -175,8 +175,8 @@ def {
   all_bit,any_bit,blend_bit,
   all_hom,any_hom,blend_hom,hom_to_int,store_masked_hom,store_blended_hom,
   all_top,any_top,blend_top,top_to_int,store_masked_top,store_blended_top,
-  load_expand_bits,load_low,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
-  pair,pdep,pext,rbit,sel,shuf_ind,store_low,reverse_units,
+  load_expand_bits,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
+  pair,pdep,pext,rbit,sel,shuf_ind,reverse_units,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widen_upper,multishift,
 }
 
@@ -198,16 +198,12 @@ def hom_to_int{...vs if length{vs}>1} = {
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 
+def load{V=[k]E, ptr:*E   } = load{*V~~ptr, 0}
+def load{V=[k]E, ptr:*E, k} = load{*V~~ptr, 0}
+def store{ptr:*E, val:V=[k]E   } = store{*V~~ptr, 0, val}
+def store{ptr:*E, val:V=[k]E, k} = store{*V~~ptr, 0, val}
 
 
-def load{V=[k]E, ptr:*E, k} = load{V, ptr}
-def store{ptr:*E, val:V=[k]E, k} = store{ptr, val}
-
-def load{V=[k]E, ptr:*E} = load{*V~~ptr}
-def store{ptr:*E, val:V=[k]E} = store{*V~~ptr, 0, val}
-
-def load_low{ptr:*V=[k]E, w} = load{V, *E~~ptr, w/width{E}}
-def store_low{ptr:*E, w, val:V=[k]E} = store{ptr, val, w/width{E}}
 
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'

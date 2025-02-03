@@ -50,14 +50,14 @@ def store_narrow{ptr:*E0, i, x:[k]E1, M} = {
   xu:= narrow{E0, x}
   
   if (M{0}) store_blended_hom{*TF~~rpos, M{TF, 'to homogeneous bits'}, undef_promote{TF, xu}}
-  else store_low{rpos, k*width{E0}, xu}
+  else store{rpos, xu, k}
 }
 
 # (sign/zero)-extend the i-th batch of k elements at ptr to [k]E1
 def load_widen{ptr:*E0, i, [k]E1} = {
   def rpos = ptr + i*k
   def TF = re_el{E0, [k]E1}
-  widen{[k]E1, load_low{*TF~~rpos, k*width{E0}}}
+  widen{[k]E1, load{TF, rpos, k}}
 }
 
 def load_widen  {ptr:*E, {...ns}, T    } = each{load_widen  {ptr, ., T   }, ns}

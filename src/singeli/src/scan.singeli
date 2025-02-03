@@ -111,7 +111,7 @@ fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64
     rv = zip{...(@collect (j to 2) xor64{xv, j, c}), 0}
   }
   if ((words & 1) == 1) {
-    store_low{*u64~~(rv+e), 64, clmul{load_low{xv+e, 64}, m, 0} ^ c}
+    store{*u64~~(rv+e), clmul{load{V, *u64~~(xv+e), 1}, m, 0} ^ c, 1}
   }
 }
 fn scan_neq{if hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
