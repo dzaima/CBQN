@@ -197,6 +197,20 @@ def hom_to_int{...vs if length{vs}>1} = {
   (hi << (h*k)) | lo
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
+def first_hom{x:[_]_} = ctz_ext{hom_to_int_ext{x}}
+def popc_hom{x:[_]_} = {
+  def {n,v} = hom_to_int_ext{x}
+  popc{v} / n
+}
+def try_first_hom{x:[_]_} = {
+  def ex = hom_to_int_ext{x}
+  val:ux = 0
+  ok:u1 = 0
+  if (select{ex,1} != 0) {
+    ok = 1
+    val = ctz_ext{ex}
+  }
+}
 
 def load{V=[k]E, ptr:*E   } = load{*V~~ptr, 0}
 def load{V=[k]E, ptr:*E, k} = load{*V~~ptr, 0}

@@ -3,7 +3,7 @@ include './mask'
 include './vecfold'
 include './hashtab'
 
-def findFirst{C, M, F, ...v1} = {
+def find_first{C, M, F, ...v1} = {
   def exit = makelabel{}
   def args = undef{M{...each{select{., 0}, v1}}}
   def am = length{select{v1,0}}
@@ -23,12 +23,12 @@ def search{E, x, n:(u64), OP} = {
   def VT = [bulk]E
   def end = make_branch{
     tup{u64, ty_u{VT}},
-    {i,c} => return{i*bulk + promote{u64, ctz_ext{hom_to_int_ext{c}}}}
+    {i,c} => return{i*bulk + promote{u64, first_hom{c}}}
   }
   @for_mu{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
     if (any_hom{M{tree_fold{|, eq}}}) {
-      findFirst{
+      find_first{
         {i,c} => any_hom{c},
         {i,c} => tup{i,c},
         end,
