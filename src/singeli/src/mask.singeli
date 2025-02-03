@@ -28,7 +28,7 @@ def anyne_positive{x:V=[_]_, y:V, M if M{0}==1} = {
 }
 
 def mask_none{x} = x
-def mask_none{x, 'all bits zeroes'} = and_bit_none{x, x}
+def mask_none{x, 'all bits zeroes'} = ~any_bit{x}
 
 def mask_first{n} = {
   def mask{x:X, 'all bits zeroes'} = and_bit_none{x, X~~mask_of_first_bits{X,n}}

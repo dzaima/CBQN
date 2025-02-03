@@ -206,6 +206,7 @@ if_inline (hasarch{'X86_64'}) {
   include './avx'
   include './avx2'
   include './avx512'
+  def any_bit{x:[_]_} = ~and_bit_none{x, x}
 } else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
   include 'arch/neon_intrin/select'
