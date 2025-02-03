@@ -175,13 +175,13 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
   def ms = if (up) 256-(1<<(1+iota{8})) else (1<<iota{8})-1
   def sel_m = getsel{make{H, merge{ms - 256*(ms>127), 8**0}}}
   # Exact values for multiples of 8
-  store{*V~~t0, 0, vpopc{vb}}
+  store{t0, vpopc{vb}}
   st:i8=0; @for_dir{up} (t0 over 256/8) { st += t0; t0 = st }
-  def sel_c = getsel{swap{load{*V~~t0, 0} - V**dup}}
+  def sel_c = getsel{swap{load{V, t0} - V**dup}}
   # Top 5 bits select bytes from tables; bottom 3 select from mask
   bot3 := U**0x07
   @for_vec_overlap{vl} (j to xn) {
-    xv := load{*U~~(x+j), 0}
+    xv := U~~load{V, x+j}
     xb := xv & bot3
     xt := shr16{xv &~ bot3, 3}
     ind := sel_c{xt} - vpopc{sel_b{xt} & U~~sel_m{xb}}
@@ -195,7 +195,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
         if (nu > 32) ind = blend_hom{blend_top{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
-    store{*V~~(*T~~rp+j), 0, ind}
+    store{*T~~rp+j, ind}
   }
   goto{done}
   setlabel{no_bittab}
@@ -254,7 +254,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
     def last = klog==lstep
     def this = if (not last) log==klog else log>=klog
     if (this) @for_vec_overlap{vl} (j to xn) {
-      xv:= load{*V~~(x+j), 0}
+      xv:= load{V, x+j}
       s := U**bb{iota{isub}}  # Select sequential bytes within each U
       def cmpx{cmp}{se,ind} = cmp{xv, V~~se{re_el{I,ind}}}
       def ltx = cmpx{lt}; def eqx = cmpx{==}

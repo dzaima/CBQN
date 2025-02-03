@@ -198,6 +198,11 @@ def hom_to_int{...vs if length{vs}>1} = {
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 
+def load{V=[_]_, ptr:*_} = assert{0, 'bad load', V, ptr}
+def store{ptr:*_, val:[_]_} = assert{0, 'bad store', ptr, val}
+def load{V=[k]E, ptr:*E} = load{*V~~ptr}
+def store{ptr:*E, val:V=[k]E} = store{*V~~ptr, 0, val}
+
 if_inline (hasarch{'X86_64'}) {
   include 'arch/iintrinsic/basic'
   include 'arch/iintrinsic/select'

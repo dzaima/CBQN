@@ -64,9 +64,9 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
       def bufw = bufn * tw
       def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw} / tw;
       def R = [vc]T
-      @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+      @unroll ((ov/vc)>>0) if (end-buf>vc) { store{r0, load{R, buf}}; r0+=vc; buf+=vc }
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
-      store_blended_hom{*R~~r0, mask_of_first{R, end-buf}, load{*R~~buf}}
+      store_blended_hom{*R~~r0, mask_of_first{R, end-buf}, load{R, buf}}
     } else {
       @for (r0, buf over u64~~(end-buf)) r0 = buf
     }
