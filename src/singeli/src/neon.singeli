@@ -21,18 +21,14 @@ def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
 def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
 def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
 
-def widening_op{root, el}{lo, hi, both} = {
-  def extend ext_lo  {G} = { def G{a:T=[_]E,b:T if w64{T}  and el{E}} = emit{el_d{T}, ntyp{root, T}, a, b} }
-  def extend ext_hi  {G} = { def G{a:T=[_]E,b:T if w128{T} and el{E}} = emit{el_m{T}, ntyp0{merge{root,'_high'}, T}, a, b} }
-  def extend ext_both{G} = { def G{a:T=[_]E,b:T if w128{T} and el{E}} = tup{lo{half{a,0}, half{b,0}}, hi{a,b}} }
-  def lo = ext_lo{lo}
-  def hi = ext_hi{hi}
-  ext_both{both}
-}
-
+def widening_op{root, el} = { def extend _{lo, hi, lh} = {
+  def lo{a:T=[_]E, b:T if w64{T}  and el{E}} = emit{el_d{T}, ntyp{root, T}, a, b}
+  def hi{a:T=[_]E, b:T if w128{T} and el{E}} = emit{el_m{T}, ntyp0{merge{root,'_high'}, T}, a, b}
+  def lh{a:T=[_]E, b:T if w128{T} and el{E}} = tup{lo{half{a,0}, half{b,0}}, hi{a,b}}
+}}
 extend (widening_op{'vmull', {E} => isint{E} and width{E}<=32}){mulw, mulw_upper, mulw_split}
-extend (widening_op{'vaddl', {E} => isint{E}}){addw, addw_upper, addw_split}
-extend (widening_op{'vsubl', {E} => isint{E}}){subw, subw_upper, subw_split}
+extend (widening_op{'vaddl', isint}){addw, addw_upper, addw_split}
+extend (widening_op{'vsubl', isint}){subw, subw_upper, subw_split}
 
 def shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
