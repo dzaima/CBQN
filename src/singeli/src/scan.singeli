@@ -135,7 +135,7 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
     carry = (xc ^ hb) ^ shuf{u64, xh, 1,1}
     rem:= nw - 8*i
     if (rem < 8) {
-      store_masked_hom{*V~~(r+i), [8]u1~~(~(u8~~0xff<<rem)), v}
+      store_masked_hom{*V~~r + i, [8]u1~~(~(u8~~0xff<<rem)), v}
       return{}
     }
     rv = v
