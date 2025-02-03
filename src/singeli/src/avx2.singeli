@@ -24,13 +24,13 @@ def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = vec_shuffle{L,
 def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = vec_shuffle{L, x, i}
 
 # masked store; F variants may not be a single instruction
-def store_masked_top{p:*T, m:M, v:T if w256i{M, 32} and w256{T,elwidth{M}}} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}
-def store_masked_top{p:*T, m:M, v:T if w256i{M, 64} and w256{T,elwidth{M}}} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
-def store_masked_hom{p:*T, m:M, v:T if w256i{M}     and w256{T,elwidth{M}}} = store_masked_top{p, m, v}
+def store_masked_top{p:*E, m:M=[k]_, v:V=[k]E if w256{V, 32} and w256i{M}} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}
+def store_masked_top{p:*E, m:M=[k]_, v:V=[k]E if w256{V, 64} and w256i{M}} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
+def store_masked_hom{p:*E, m:M=[k]_, v:V=[k]E if w256{V    } and w256i{M}} = store_masked_top{p,m,v}
 
-def store_blended_top{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = store_masked_top{p,m,v}
-def store_blended_hom{p:*T, m:M, v:T if w256i{M} and elwidth{T}>=32} = store_masked_top{p,m,v}
-def store_blended_hom{p:*T, m:M, v:T if w256i{M} and elwidth{T}<=16 and w256{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}
+def store_blended_top{p:*E, m:M=[k]_, v:V=[k]E if w256i{M} and width{E}>=32} = store_masked_top{p,m,v}
+def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if w256i{M} and width{E}>=32} = store_masked_top{p,m,v}
+def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if w256i{M} and width{E}<=16 and w256{V,elwidth{M}}} = store{p, blend_hom{load{V, p}, v, m}}
 
 # mask stuff
 def top_to_int{x:T if w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}

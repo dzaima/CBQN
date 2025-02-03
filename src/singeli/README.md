@@ -186,8 +186,8 @@ For unaligned scalar loads & stores, `loadu` & `storeu` should be used.
 - `store{p:*E, a:[k]E} : void` - store full vector
 - `load{[k]E, p:*E, vl} : [k]E` - load first `vl` elements of vector (memory of upper ones won't be touched, and their values are unspecified)
 - `store{p:*E, a:[k]E, vl} : void` - store first `vl` elements (upper ones won't be touched)
-- `store_masked_hom{p:*V, m:mt{V}, a:V}` - conditionally store elements based on mask; won't touch masked-off elements
-- `store_masked_top{p:*V, m:V, a:V}` - conditionally store elements based on top bit of `m`; won't touch masked-off elements
+- `store_masked_hom{p:*E, m:mt{V}, a:V=[_]E}` - conditionally store elements based on mask; won't touch masked-off elements; `p` may also be `p:*V`
+- `store_masked_top{p:*E, m:V, a:V=[_]E}` - conditionally store elements based on top bit of `m`; won't touch masked-off elements; `p` may also be `p:*V`
 - `store_blended_hom` - `store_masked_hom` but may touch masked-off elements and thus be supported on more types
 - `store_blended_top` - `store_masked_top` but may touch masked-off elements and thus be supported on more types
 

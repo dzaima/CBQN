@@ -77,6 +77,8 @@ def load{V=[_]E, ptr:*E, vl if nvec{V} and vl*width{E}<=64} = { # implemented vi
   V ~~ emit{L, ntyp{'vld1', '_dup', L}, *U~~ptr}
 }
 
+def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if nveci{M,width{E}} and nvec{V}} = store{p, blend_hom{load{V, p}, v, m}}
+
 
 
 def undef_promote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
@@ -181,6 +183,3 @@ def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 def hom_to_int_ext{a:V=[_]E if w128u{V}} = tup{width{E}/2, extract{[1]u64~~narrow_trunc{w_h{E}, a}, 0}} # E==u8 fully handled by the below cases
 def hom_to_int_ext{a:V=[_]E if w64u{V}} = tup{width{E}, extract{[1]u64~~a, 0}}
 def hom_to_int_ext{a:([16]u8)} = tup{4, extract{[1]u64~~shrn{re_el{u16,a}, 4}, 0}}
-
-
-def store_blended_hom{p:*T, m:M, v:T if nveci{M} and nvec{T,elwidth{M}}} = store{p, 0, blend_hom{load{p}, v, m}}

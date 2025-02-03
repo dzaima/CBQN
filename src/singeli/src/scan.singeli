@@ -16,8 +16,8 @@ def scan_loop{init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   def step = arch_defvw/width{T}
   def V = [step]T
   p:= V**init
-  xv:= *V ~~ x
-  rv:= *V ~~ r
+  xv:= *V~~x
+  rv:= *V~~r
   e:= len/step
   @for (xv, rv over e) rv = scan{xv,p}
   q:= len & (step-1)
@@ -135,7 +135,7 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
     carry = (xc ^ hb) ^ shuf{u64, xh, 1,1}
     rem:= nw - 8*i
     if (rem < 8) {
-      store_masked_hom{*V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
+      store_masked_hom{r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
       return{}
     }
     rv = v

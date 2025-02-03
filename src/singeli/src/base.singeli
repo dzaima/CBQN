@@ -202,6 +202,14 @@ def load{V=[k]E, ptr:*E   } = load{*V~~ptr, 0}
 def load{V=[k]E, ptr:*E, k} = load{*V~~ptr, 0}
 def store{ptr:*E, val:V=[k]E   } = store{*V~~ptr, 0, val}
 def store{ptr:*E, val:V=[k]E, k} = store{*V~~ptr, 0, val}
+local def extend accept_vec_ptr{op} = {
+  def op{ptr:*[k]E, m:M, val:[k]E} = op{*E~~ptr, m, val}
+}
+def extend_each{G}{...fs} = each{G, fs}
+extend (extend_each{accept_vec_ptr}){
+  store_masked_hom,store_blended_hom,
+  store_masked_top,store_blended_top,
+}
 
 
 
@@ -234,7 +242,7 @@ def pack   {a:T, b:T, k} = unzip{el_s{T}~~a, el_s{T}~~b, k}
 local def extend kpair{op} = {
   def op{a:T, b:T} = tup{op{a,b,0}, op{a,b,1}}
 }
-extend ({...f}=>each{kpair,f}){pack, zip, zip128, mzip, mzip128, unzip, unzip128}
+extend (extend_each{kpair}){pack, zip, zip128, mzip, mzip128, unzip, unzip128}
 
 def packQ{{a, b}} = packQ{a, b}
 def pair{{a, b}} = pair{a, b}

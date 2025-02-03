@@ -217,7 +217,7 @@ fn rep_const_shuffle_partial4(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
   setlabel{end}
   
   q := (re+step) - r
-  if (q!=0) store_blended_hom{*V~~r, mask_of_first{V, q}, s}
+  if (q!=0) store_blended_hom{r, mask_of_first{V, q}, s}
 }
 
 
