@@ -135,7 +135,7 @@ def all_bit{x:V if w128{V}} = bit_all_lo64{min_pack{x}}
 
 def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subhn{[8]u16**16r2b1, [8]u16~~x}}
 def any_hom{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
-# TODO multi-vector any_hom for ew≥16 via addhn?
+def any_hom{a:V, b:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{addhn{re_el{u16,a}, re_el{u16,b}}} # re_el to try to avoid https://github.com/llvm/llvm-project/issues/125611 in some cases
 
 def any_top{x:V if nvec{V}} = fold_min{ty_s{x}}<0
 def all_top{x:V if nvec{V}} = fold_max{ty_s{x}}<0
