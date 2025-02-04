@@ -31,7 +31,7 @@ def arithChk2{F, M, w:T, x:T if is_s{T} and (same{F,__add} or same{F,__sub})} = 
 }
 
 # ×
-def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
+def arithChk2{F==__mul, M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
   def wp = mzip128{w, T ~~ (T**0 > w)}
   def xp = mzip128{x, T ~~ (T**0 > x)}
   def rp = each{__mul, wp, xp}
@@ -44,12 +44,12 @@ def arithChk2{F=(__mul), M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
     tup{packQ{rp}, tup{'and_some', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
-def arithChk2{F=(__mul), M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {
+def arithChk2{F==__mul, M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {
   rl:= __mul{w,x}
   rh:=  mulh{w,x}
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
-def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
+def arithChk2{F==__mul, M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   max:= re_el{f32, (ty_u{T})**0x4efffffe}
   def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
@@ -66,7 +66,7 @@ def arithChk2{F=(__mul), M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   # tup{packQQ{each{{v} => v & T2**0xFFFFFFFF, rp}}, tup{'any_hom', tree_fold{|,bad}}} this doesn't use M
 }
 
-def arithChk2{F=(__mul), M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
+def arithChk2{F==__mul, M, w:T=[_]E, x:T if hasarch{'AARCH64'}} = {
   def {rl, rh} = pack{...mulw_split{w, x}}
   tup{rl, tup{'any_hom', M{rh != (rl >> (width{E}-1))}}}
 }

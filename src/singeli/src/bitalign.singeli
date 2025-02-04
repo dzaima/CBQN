@@ -154,7 +154,7 @@ def bitalign{{2,8,s}, 8, G if hasarch{'AVX512VBMI'}} = G{s, {a:V=[k](u8)} => {
 
 
 def __shl{a:([16]u8), sh:([16]i8) if hasarch{'AARCH64'}} = a << [16]u8~~sh
-def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V=([16]u8)} => {
+def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V==[16]u8} => {
   def {shuf1, shift1, shuf2, shift2} = makevtabs{16, xrange{2,8},
     tup{u8, {s,r} =>  r   *s>>3},  tup{i8, {s,r} =>   -  r   *s%8},
     tup{u8, {s,r} => (r+1)*s>>3},  tup{i8, {s,r} => s - (r+1)*s%8},
@@ -197,7 +197,7 @@ def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
     tup{i8, {d,r} => select{props{d},2}},
   }
   
-  def run{do_blend}{a:V=([16]u8)} = {
+  def run{do_blend}{a:V==[16]u8} = {
     def shuf1 = shuf0 + V**1
     def shift1 = shift0 + [16]i8**cast_i{i8,d}
     def b = a & V**cast_i{u8, tail{d}}

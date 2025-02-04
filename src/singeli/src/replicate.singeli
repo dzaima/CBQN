@@ -378,7 +378,7 @@ def get_boolvec_writer{V, r, nw} = {
   }
   tup{output, check_done, flush}
 }
-def get_boolvec_writer{T=(u64), r:*T, nw} = {
+def get_boolvec_writer{T==u64, r:*T, nw} = {
   def done = makelabel{}
   j:usz = 0
   def output{rw} = {

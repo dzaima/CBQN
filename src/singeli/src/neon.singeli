@@ -148,11 +148,11 @@ def hom_to_int{...vs if all_type{nvec,vs} and not all_type{nvecu,vs}} = hom_to_i
 def hom_to_int{x:V=[k]E if nvecu{V} and width{E}>=k} = {
   trunc_bits{k, fold_add{x & make{V, 1<<iota{k}}}}
 }
-def hom_to_int{x:V=([16]u8)} = {
+def hom_to_int{x:V==[16]u8} = {
   t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
-def hom_to_int{a:V,b:V=([16]u8)} = {
+def hom_to_int{a:V,b:V==[16]u8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   s:= make{[16]u8, (range{16}>>2) | ((range{16}&3)<<2)}
   # fold_add{addpw{addpw{addp{a&m, b&m}}}<<make{[4]u32,iota{4}*8}}
@@ -162,7 +162,7 @@ def hom_to_int{a:V,b:V=([16]u8)} = {
   # t:= shrm{l, 4, h} & make{[16]u8, (1<<(range{16}>>2)) * 0x11}
   # fold_add{[4]u32~~t}
 }
-def hom_to_int{a:V,b:V,c:V,d:V=([16]u8)} = {
+def hom_to_int{a:V,b:V,c:V,d:V==[16]u8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   t1:= addp{a & m, b & m}
   t2:= addp{c & m, d & m}
