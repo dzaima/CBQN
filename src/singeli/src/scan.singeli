@@ -278,7 +278,7 @@ def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
     def cx0 = tup{load{*[bulk]X~~(x+i)}}
     def cx = if(wd) widenFull{WE,cx0} else cx0
     if (~wd) { # within-vector overflow check; widening gives range space for this to not happen
-      if (rare{any_hom{tree_fold{|, each{{c:T} => absu{c} >= (ty_u{T}**maxFastE), cx}}}}) goto{'end'}
+      if (rare{any_hom{...each{{c:T} => absu{c} >= (ty_u{T}**maxFastE), cx}}}) goto{'end'}
     }
     
     def s0 = each{scan_plus, cx}

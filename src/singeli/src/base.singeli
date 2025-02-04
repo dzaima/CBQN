@@ -11,6 +11,7 @@ config SLOW_PDEP = 0
 def same = is
 oper ~~ reinterpret infix right 55
 oper ** broadcast infix right 55
+def extend_each{G, ...args}{...fs} = each{{f, ...args} => (if (length{args}>0) G{...args} else G){f}, fs, ...args}
 
 def isreg   = kreg
 def isconst = kcon
@@ -184,6 +185,25 @@ def {
 def blend_bit{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
 def blend_hom{f:T, t:T, m:M} = blend_bit{f, t, m}
 
+local def anyall{is_all} = { def extend _{me} = {
+  def me{...vs if length{vs}>1 and not same{try_same_type{vs,'!'},'!'}} = {
+    def {a,b} = split{length{vs}/2, vs}
+    me{...each{tern{is_all,&,|}, a, b}}
+  }
+  # def me{v:[k]E, vl if any_num{vl}} = {
+  #   def {n,m:M} = hom_to_int_ext{v}
+  #   if (is_all) {
+  #     all:M = maxvalue{M}
+  #     (m | (all << (vl*n))) == all
+  #   } else {
+  #     (m << (width{M} - vl*n)) != 0
+  #   }
+  # }
+  def me{...vs, v:[k]_, k} = me{...vs, v}
+}}
+extend (extend_each{anyall{1}}){all_hom, all_top}
+extend (extend_each{anyall{0}}){any_hom, any_top}
+
 def hom_to_int_ext{a:T} = tup{1, hom_to_int{a}} # tup{n,mask}; mask with each bit repeated n times
 def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
 def hom_to_int{...vs if length{vs}>1} = {
@@ -199,8 +219,8 @@ def hom_to_int{...vs if length{vs}>1} = {
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 def first_hom{x:[_]_} = ctz_ext{hom_to_int_ext{x}}
 def popc_hom{x:[_]_} = {
-  def {n,v} = hom_to_int_ext{x}
-  popc{v} / n
+  def {n,m} = hom_to_int_ext{x}
+  popc{m} / n
 }
 def try_first_hom{x:[_]_} = {
   def ex = hom_to_int_ext{x}
@@ -219,7 +239,6 @@ def store{ptr:*E, val:V=[k]E, k} = store{*V~~ptr, 0, val}
 local def extend accept_vec_ptr{op} = {
   def op{ptr:*[k]E, m:M, val:[k]E} = op{*E~~ptr, m, val}
 }
-def extend_each{G}{...fs} = each{G, fs}
 extend (extend_each{accept_vec_ptr}){
   store_masked_hom,store_blended_hom,
   store_masked_top,store_blended_top,

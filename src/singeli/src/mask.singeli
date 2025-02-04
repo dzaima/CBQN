@@ -15,7 +15,7 @@ def mask_of_first{T,n if w128{T}} = mask_of_impl{T, n, 128}
 def mask_of_first{T,n if  w64{T}} = mask_of_impl{T, n,  64}
 
 def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~all_hom{x==y}
-def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M{x!=y}}
+def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M, x!=y}
 def anyne{x:T, y:T, M if M{0}==0 and any_int{x}} = x!=y
 def anyne{x:T, y:T, M if M{0}==1 and any_int{x}} = M{x^y} != 0
 def anyne_bit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
@@ -63,9 +63,15 @@ def load_widen{ptr:*E0, i, [k]E1} = {
 def load_widen  {ptr:*E, {...ns}, T    } = each{load_widen  {ptr, ., T   }, ns}
 def store_narrow{ptr:*E, {...ns}, xs, M} = each{store_narrow{ptr, ., ., M}, ns, xs}
 
-# TODO also similar any_hom & use those more
-def all_hom{M, x:T if kgen{M}} = ~any_hom{M{~x}} # TODO better
-def all_hom{(mask_none), ...xs} = all_hom{...xs}
+local def anyall{is_all}{inv} = { def extend _{me} = {
+  def me{M if kgen{M}, ...vs} = me{...vs, ...(if (M{0}) tup{M{'count'}} else tup{})}
+  def me{v:[k]E, vl if any_num{vl} and not same{vl,k}} = {
+    if (is_all) ~inv{}{mask_first{vl}{~v}}
+    else me{mask_first{vl}{v}}
+  }
+}}
+extend (extend_each{anyall{1}, tup{{}=>any_hom, {}=>any_top}}){all_hom, all_top}
+extend (extend_each{anyall{0}, tup{{}=>all_hom, {}=>all_top}}){any_hom, any_top}
 
 # "harmless" pointer cast that'll only cast void*
 local def cast_h{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}

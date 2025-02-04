@@ -18,7 +18,7 @@ def any_nonC32{M, x:[_](u64)} = any_hom{M{~in_range_len{x, cbqn_c32Tag{}<<48, 1<
 def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
-  any_top{M{T~~ne}}
+  any_top{M, T~~ne}
 }
 def any_nonC32{(mask_none), x:[k](u64), y:[k](u64)} = {
   def T32 = [k*2]u32
@@ -103,7 +103,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
       @for_mu{bulk, 4}(xs in xb, M in 'm' over len) {
         minc:= tree_fold{min, xs}
         maxc:= tree_fold{max, xs}
-        if (M{0}==0 and any_hom{M{(minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}}) return{0xffff_ffff}
+        if (M{0}==0 and any_hom{M, (minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}) return{0xffff_ffff}
         acc{M, minc, maxc}
       }
     } else {
@@ -132,7 +132,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     @for_mu{bulk, 2}(xs in xb, M in 'm' over is to len) {
       if (hasarch{'X86_64'}) {
         def ns = each{narrow{i32,.}, xs}
-        if (any_hom{M{tree_fold{|, each{{ns,x} => widen{XV,ns}!=x, ns, xs}}}}) case_B{select{is, 0}}
+        if (any_hom{M, ...each{{ns,x} => widen{XV,ns}!=x, ns, xs}}) case_B{select{is, 0}}
         acc{M, ns}
       } else {
         assert{hasarch{'AARCH64'}}
@@ -141,7 +141,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
         def int32 = if (k==2) pack{...int, 0} else pack{...int, [bulk]i64**0, 0}
         def wd = each{{G} => cvt{f64,G{int32}}, slice{tup{widen{[bulk]i64,.}, widen_upper}, 0, k}}
         
-        if (~all_hom{M, tree_fold{&, each{==, wd, xs}}}) case_B{select{is, 0}}
+        if (~all_hom{M, ...each{==, wd, xs}}) case_B{select{is, 0}}
         acc{M, tup{int32}}
       }
     }
