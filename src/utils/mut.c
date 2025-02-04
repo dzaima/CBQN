@@ -81,7 +81,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
       if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
         usz ia = m->val->ia;
         f64* p = f64arr_ptr(taga(m->val));
-        for (usz i = 0; i < ia; i++) if (!isF64(b(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
+        for (usz i = 0; i < ia; i++) if (!isF64(r_fB(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
       }
     #endif
     Arr* t = cpyFns[n](taga(m->val));

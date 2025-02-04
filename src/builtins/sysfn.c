@@ -654,7 +654,7 @@ static NOINLINE void rand_init() {
 B makeRand_c1(B t, B x) {
   if (!isNum(x)) thrM("•MakeRand 𝕩: 𝕩 must be a number");
   if (rand_ns==NULL) rand_init();
-  B r = m_nns(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
+  B r = m_nns(rand_ns, r_uB(x.u>>32), r_uB(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
   Scope* sc = c(NS,r)->sc;
   for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], incG(r));
   return r;

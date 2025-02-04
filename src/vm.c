@@ -767,11 +767,11 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case ADDI: {
-        ADD(incG(b(L64)));
+        ADD(incG(r_uB(L64)));
         break;
       }
       case ADDU: {
-        ADD(b(L64));
+        ADD(r_uB(L64));
         break;
       }
       case FN1C: { P(f)P(x)

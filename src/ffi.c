@@ -24,7 +24,7 @@
 
 // base interface defs for when GC stuff needs to be added in
 static B getB(BQNV v) {
-  return b(v);
+  return r_uB(v);
 }
 static BQNV makeX(B x) {
   return x.u;

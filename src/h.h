@@ -194,27 +194,26 @@ static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppp
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
 #define ftag(X) ((u64)(X) << 48)
 #define ptr2u64(X) ((u64)(uintptr_t)(X))
-#define tagu64(V, T) b((u64)(V) | ftag(T))
+#define tagu64(V, T) r_uB((u64)(V) | ftag(T))
 #define TOPTR(T,X) ((T*)(uintptr_t)(X))
 #define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
-#define tag(V, T) ({ void* tagv_ = (V); b(ptr2u64(tagv_) | ftag(T)); })
+#define tag(V, T) ({ void* tagv_ = (V); r_uB(ptr2u64(tagv_) | ftag(T)); })
 #define taga(V) tag(V,ARR_TAG)
 
 typedef union B {
   u64 u;
   f64 f;
 } B;
-#define b(x) ((B)(x))
 
 typedef union { u32 u; f32 f; } F32R;
-FORCE_INLINE u64 r_f64u(f64 x) { return ((B) x).u; }
-FORCE_INLINE f64 r_u64f(u64 x) { return ((B) x).f; }
-FORCE_INLINE u32 r_f32u(f32 x) { return ((F32R) x).u; }
-FORCE_INLINE f32 r_u32f(u32 x) { return ((F32R) x).f; }
+FORCE_INLINE u64 r_f64u(f64 x) { return (B){.f=x}.u; }
+FORCE_INLINE f64 r_u64f(u64 x) { return (B){.u=x}.f; }
+FORCE_INLINE u32 r_f32u(f32 x) { return (F32R){.f=x}.u; }
+FORCE_INLINE f32 r_u32f(u32 x) { return (F32R){.u=x}.f; }
 FORCE_INLINE u64 r_Bu(B x) { return x.u; }
 FORCE_INLINE f64 r_Bf(B x) { return x.f; }
-FORCE_INLINE B r_uB(u64 x) { return b(x); }
-FORCE_INLINE B r_fB(f64 x) { return b(x); }
+FORCE_INLINE B r_uB(u64 x) { return (B){.u=x}; }
+FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
   #define IF_WRAP(X) X
@@ -353,11 +352,11 @@ u64 tot_heapUsed(void);
 #endif
 
 // some primitive actions
-static const B bi_N      = b((u64)0x7FF2000000000000ull);
-static const B bi_noVar  = b((u64)0x7FF2C00000000001ull);
-static const B bi_okHdr  = b((u64)0x7FF2000000000002ull);
-static const B bi_optOut = b((u64)0x7FF2800000000003ull);
-static const B bi_noFill = b((u64)0x7FF2000000000005ull);
+static const B bi_N      = (B) {.u = (u64)0x7FF2000000000000ull };
+static const B bi_noVar  = (B) {.u = (u64)0x7FF2C00000000001ull };
+static const B bi_okHdr  = (B) {.u = (u64)0x7FF2000000000002ull };
+static const B bi_optOut = (B) {.u = (u64)0x7FF2800000000003ull };
+static const B bi_noFill = (B) {.u = (u64)0x7FF2000000000005ull };
 extern GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyHVec() incG(bi_emptyHVec)
 #define emptyIVec() incG(bi_emptyIVec)
@@ -451,7 +450,7 @@ FORCE_INLINE bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
 FORCE_INLINE bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
 FORCE_INLINE bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
 // FORCE_INLINE bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
-// FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
+// FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(r_Bu(m_f64(1.0/0.0))<<1)); }
 FORCE_INLINE bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
 FORCE_INLINE bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
 FORCE_INLINE bool isNum(B x) { return isF64(x); }
@@ -462,7 +461,7 @@ FORCE_INLINE bool isPrim(B x) { return isCallable(x) && RTID(x)!=RTID_NONE; }
 
 
 // make objects
-static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
+static B m_f64(f64 n) { assert(isF64(r_fB(n))); return r_fB(n); } // assert just to make sure we're actually creating a float
 static B m_c32(u32 n) { return tagu64(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return m_f64(n); }
