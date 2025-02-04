@@ -64,8 +64,8 @@ def load_widen  {ptr:*E, {...ns}, T    } = each{load_widen  {ptr, ., T   }, ns}
 def store_narrow{ptr:*E, {...ns}, xs, M} = each{store_narrow{ptr, ., ., M}, ns, xs}
 
 # TODO also similar any_hom & use those more
-def all_hom{(mask_none), ...xs} = all_hom{...xs}
 def all_hom{M, x:T if kgen{M}} = ~any_hom{M{~x}} # TODO better
+def all_hom{(mask_none), ...xs} = all_hom{...xs}
 
 # "harmless" pointer cast that'll only cast void*
 local def cast_h{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}
