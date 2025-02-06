@@ -427,7 +427,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   
   if (wr > 1) {
     ur xr = RNK(x);
-    if (wr > xr+1) thrM("𝕨"GRADE_CHR"𝕩": =𝕨 cannot be greater than =𝕩");
+    if (wr > xr+1) thrM("𝕨"GRADE_CHR"𝕩: =𝕨 cannot be greater than =𝕩");
     i32 nxr = xr-wr+1;
     x = toKCells(x, nxr);
     w = toCells(w);

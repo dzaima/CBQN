@@ -569,7 +569,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
 
 extern GLOBAL B rt_slash;
 B slash_c1(B t, B x) {
-  if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/: Argument must have rank 1 (%H ≡ ≢𝕩)", x);
+  if (RARE(isAtm(x)) || RARE(RNK(x)!=1)) thrF("/𝕩: 𝕩 must have rank 1 (%H ≡ ≢𝕩)", x);
   u64 s = usum(x);
   if (s>=USZ_MAX) thrOOM();
   if (s==0) { decG(x); return emptyIVec(); }
@@ -627,7 +627,7 @@ B slash_c2(B t, B w, B x) {
   if (isArr(w)) {
     if (depth(w)>1) goto base;
     ur wr = RNK(w);
-    if (wr>1) thrF("/: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
+    if (wr>1) thrF("𝕨/𝕩: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
     if (wr<1) { w = TO_GET(w, 0); goto atom; }
     wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
@@ -635,9 +635,9 @@ B slash_c2(B t, B w, B x) {
     atom:
     if (!q_i32(w)) goto base;
     wv = o2iG(w);
-    if (wv < 0) thrM("/: 𝕨 cannot be negative");
+    if (wv < 0) thrM("𝕨/𝕩: 𝕨 cannot be negative");
   }
-  if (isAtm(x) || RNK(x)==0) thrM("/: 𝕩 must have rank at least 1 for simple 𝕨");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨/𝕩: 𝕩 must have rank at least 1 for simple 𝕨");
   ur xr = RNK(x);
   usz xlen = *SH(x);
   u8 xl = cellWidthLog(x);
@@ -645,7 +645,7 @@ B slash_c2(B t, B w, B x) {
   
   B r;
   if (wv < 0) { // Array w
-    if (RARE(wia!=xlen)) thrF("/: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
+    if (RARE(wia!=xlen)) thrF("𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
     
     u64 s;
     u8 we = TI(w,elType);
@@ -867,7 +867,7 @@ static B finish_sorted_count(B r, usz* ov, usz* oc, usz on) {
 #endif
 
 B slash_im(B t, B x) {
-  if (!isArr(x) || RNK(x)!=1) thrM("/⁼: Argument must be a list");
+  if (!isArr(x) || RNK(x)!=1) thrM("/⁼𝕩: 𝕩 must be a list");
   u8 xe = TI(x,elType);
   usz xia = IA(x);
   if (xia==0) { decG(x); return emptyIVec(); }
@@ -886,7 +886,7 @@ B slash_im(B t, B x) {
     i##N* rp; r = m_i##N##arrv(&rp, RIA); \
     for (usz i=0; i<RIA; i++) rp[i]=0;
   #define TRY_SMALL_OUT(N) \
-    if (xp[0]<0) thrM("/⁼: Argument cannot contain negative numbers");       \
+    if (xp[0]<0) thrM("/⁼𝕩: 𝕩 cannot contain negative numbers");       \
     usz a=1; while (a<xia && xp[a]>xp[a-1]) a++;                             \
     u##N max=xp[a-1];                                                        \
     usz rmax=xia;                                                            \
@@ -902,7 +902,7 @@ B slash_im(B t, B x) {
         break;                                                               \
       }                                                                      \
       for (usz i=a; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }          \
-      if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers"); \
+      if ((i##N)max<0) thrM("/⁼𝕩: 𝕩 cannot contain negative numbers"); \
       usz ria = max + 1;                                                     \
       if (xia < ria/8) {                                                     \
         u8 maxcount = 0;                                                     \
@@ -939,7 +939,7 @@ B slash_im(B t, B x) {
       usz os = xia>>15;                                                      \
       TALLOC(u16, ov, os+1);                                                 \
       i##N max = simd_count_i##N((u16*)rp, (u16*)ov, xp, xia, 0);            \
-      if (max < 0) thrM("/⁼: Argument cannot contain negative numbers");     \
+      if (max < 0) thrM("/⁼𝕩: 𝕩 cannot contain negative numbers");     \
       usz ria = (usz)max + 1;                                                \
       if (ria < sa) r = C2(take, m_f64(ria), r);                             \
       r = finish_small_count(r, ov);                                         \
@@ -951,7 +951,7 @@ B slash_im(B t, B x) {
     case el_i32: {
       i32* xp = i32any_ptr(x);
       TRY_SMALL_OUT(32)
-      if (xia>I32_MAX) thrM("/⁼: Argument too large");
+      if (xia>I32_MAX) thrM("/⁼𝕩: 𝕩 too large");
       INIT_RES(32,ria)
       simd_count_i32_i32(rp, xp, xia);
       r = num_squeeze(r); break;
@@ -963,7 +963,7 @@ B slash_im(B t, B x) {
       i##N* xp = i##N##any_ptr(x);                                             \
       u##N max=xp[0];                                                          \
       for (usz i=1; i<xia; i++) { u##N c=xp[i]; if (c>max) max=c; }            \
-      if ((i##N)max<0) thrM("/⁼: Argument cannot contain negative numbers");   \
+      if ((i##N)max<0) thrM("/⁼𝕩: 𝕩 cannot contain negative numbers");   \
       usz ria = max + 1;                                                       \
       TALLOC(usz, t, ria);                                                     \
       for (usz j=0; j<ria; j++) t[j]=0;                                        \
@@ -978,14 +978,14 @@ B slash_im(B t, B x) {
     case el_f64: {
       f64* xp = f64any_ptr(x);
       usz i,j; f64 max=-1;
-      for (i = 0; i < xia; i++) { f64 c=xp[i]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { f64 c=xp[j]; if (c!=(usz)c) thrM("/⁼: Argument must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
+      for (i = 0; i < xia; i++) { f64 c=xp[i]; if (c!=(usz)c) thrM("/⁼𝕩: 𝕩 must consist of natural numbers"); if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { f64 c=xp[j]; if (c!=(usz)c) thrM("/⁼𝕩: 𝕩 must consist of natural numbers"); max=c>max?c:max; if (c<0) thrM("/⁼: Argument cannot contain negative numbers"); }
       usz ria = max+1; if (ria==0) thrOOM();
       if (i==xia) {
         u64* rp; r = m_bitarrv(&rp, ria); for (usz i=0; i<BIT_N(ria); i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) bitp_set(rp, xp[i], 1);
       } else {
-        if (xia>I32_MAX) thrM("/⁼: Argument too large");
+        if (xia>I32_MAX) thrM("/⁼𝕩: 𝕩 too large");
         i32* rp; r = m_i32arrv(&rp, ria); for (usz i=0; i<ria; i++) rp[i]=0;
         for (usz i = 0; i < xia; i++) rp[(usz)xp[i]]++;
       }
