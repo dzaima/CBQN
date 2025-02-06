@@ -8,9 +8,9 @@
 !"•FFI: 𝕩 must be a list" % @•FFI @
 !"•FFI: 𝕩 must be a list" % @•FFI 2‿2⥊<"a"
 !"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
-!"This function can't be called monadically" % •FFI ""‿"bqn_init"
+!"Fn𝕩: This function can't be called monadically" % •FFI ""‿"bqn_init"
 @ •FFI⎊{𝕊: 28↑•CurrentError@} ""‿"bqn_this symbol doesn't exist" %% "FFI: Failed to find symbol: "
-!"FFI: Type must be a string" % @•FFI "hello"
+!"FFI𝕩: Type must be a string" % @•FFI "hello"
 !"FFI: Too many arguments" % @•FFI""‿"bqn_init"∾70000⥊<"i32"
 !"Type parser: Unexpected character '?'" % @•FFI""‿"bqn_init"‿"?"
 !"Type parser: expected number" % @•FFI""‿"bqn_init"‿"["
@@ -223,7 +223,7 @@
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Add '!'}}
 !"(pointer).Sub: Unexpected argument type: character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Sub '!'}}
 !"Expected non-negative integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Field '!'}}
-!"Type parser: Pointer type must be a string" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast '!'}}
+!"Type parser𝕩: Pointer type must be a string" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast '!'}}
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Read '!'}}
 !"FFI: improper value for i8" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Write '!'}}
 

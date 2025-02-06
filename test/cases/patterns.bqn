@@ -16,7 +16,7 @@
 !"Calling a modifier" % 4 {˜}˝↕1
 !"Calling a modifier" % 4 {∘}`↕1
 !"Calling a modifier" % {∘}¨↕1
-!"Cannot call a modifier" % {˜}¨˜↕1
+!"𝕨_Mod_𝕩: Cannot call a modifier" % {˜}¨˜↕1
 4 {˜}˙´↕1 %% ˜
 4 {˜}˙˝↕1 %% ˜
 4 {∘}˙`↕1 %% ⟨∘⟩
