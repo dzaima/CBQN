@@ -85,9 +85,9 @@ FOR_VARIATION(F)
 STATIC_GLOBAL B listVariations_def;
 
 B listVariations_c2(B t, B w, B x) {
-  if (!isArr(x)) thrM("•internal.ListVariations: 𝕩 must be an array");
+  if (!isArr(x)) thrM("𝕨•internal.ListVariations𝕩: 𝕩 must be an array");
   
-  if (!isArr(w) || RNK(w)!=1) thrM("•internal.ListVariations: 𝕨 must be a list");
+  if (!isArr(w) || RNK(w)!=1) thrM("𝕨•internal.ListVariations𝕩: 𝕨 must be a list");
   usz wia = IA(w);
   SGetU(w)
   bool c_incr=false, c_rmFill=false;
@@ -95,7 +95,7 @@ B listVariations_c2(B t, B w, B x) {
     u32 c = o2c(GetU(w, i));
     if (c=='i') c_incr=true;
     else if (c=='f') c_rmFill=true;
-    else thrF("internal.ListVariations: Unknown option '%c' in 𝕨", c);
+    else thrF("𝕨internal.ListVariations𝕩: Unknown option '%c' in 𝕨", c);
   }
   decG(w);
   
@@ -164,13 +164,13 @@ static bool u8_get(u8** cv, u8* cE, const char* x) {
 
 STATIC_GLOBAL B variation_refs;
 B variation_c2(B t, B w, B x) {
-  if (!isArr(w)) thrM("•internal.Variation: Non-array 𝕨");
-  if (!isArr(x)) thrM("•internal.Variation: Non-array 𝕩");
+  if (!isArr(w)) thrM("𝕨•internal.Variation𝕩: Non-array 𝕨");
+  if (!isArr(x)) thrM("𝕨•internal.Variation𝕩: Non-array 𝕩");
   usz xia = IA(x);
   C8Arr* wc = toC8Arr(w);
   u8* wp = c8arrv_ptr(wc);
   u8* wpE = wp+PIA(wc);
-  if (PIA(wc)==0) thrM("•internal.Variation: Zero-length 𝕨");
+  if (PIA(wc)==0) thrM("𝕨•internal.Variation𝕩: Zero-length 𝕨");
   B res;
   if (*wp == 'A' || *wp == 'S') {
     bool slice = *wp == 'S';
@@ -192,7 +192,7 @@ B variation_c2(B t, B w, B x) {
       NOGC_E;
       
       res = taga(r);
-    } else thrF("•internal.Variation: Bad type \"%R\"", taga(wc));
+    } else thrF("𝕨•internal.Variation𝕩: Bad type \"%R\"", taga(wc));
     
     if (slice) {
       Arr* slice = TI(res,slice)(incG(res), 0, IA(res));
@@ -207,8 +207,8 @@ B variation_c2(B t, B w, B x) {
       }
       variation_refs = vec_addN(variation_refs, incG(res));
     }
-    if (wp!=wpE) thrM("•internal.Variation: Bad 𝕨");
-  } else thrM("•internal.Variation: Bad start of 𝕨");
+    if (wp!=wpE) thrM("𝕨•internal.Variation𝕩: Bad 𝕨");
+  } else thrM("𝕨•internal.Variation𝕩: Bad start of 𝕨");
   decG(x);
   ptr_dec(wc);
   return res;
@@ -257,7 +257,7 @@ static B unshare(B x) {
       for (usz i = 0; i < xia; i++) rp[i] = unshare(xp[i]);
       return unshareShape(r);
     }
-    default: thrF("•internal.Unshare: Cannot unshare array with type %i=%S", TY(x), type_repr(TY(x)));
+    default: thrF("𝕨•internal.Unshare𝕩: Cannot unshare array with type %i=%S", TY(x), type_repr(TY(x)));
   }
 }
 
@@ -384,7 +384,7 @@ B iPureKeep_c1(B t, B x) { return x; }
 B iKeep_c1(B t, B x) { return x; }
 
 B iProperties_c2(B t, B w, B x) {
-  if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("•internal.Properties: bad arg");
+  if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("𝕨•internal.Properties𝕩: bad arg");
   i32* rp;
   B r = m_i32arrv(&rp, 3);
   rp[0] = sizeof(usz)*8;
@@ -394,7 +394,7 @@ B iProperties_c2(B t, B w, B x) {
 }
 
 B unshare_c1(B t, B x) {
-  if (!isArr(x)) thrM("•internal.Unshare: Argument must be an array");
+  if (!isArr(x)) thrM("•internal.Unshare𝕩: 𝕩 must be an array");
   B r = unshare(x);
   decG(x);
   return r;

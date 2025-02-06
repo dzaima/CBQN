@@ -229,7 +229,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("`𝕩: 𝕩 cannot have rank 0");
   ur xr = RNK(x);
   usz ia = IA(x);
   if (*SH(x)<=1 || ia==0) return x;
@@ -306,9 +306,9 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
 }
 
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨`𝕩: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
-  if (isArr(w)? !ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1) : xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+  if (isArr(w)? !ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1) : xr!=1) thrF("𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   if (ia==0) { dec(w); return x; }
   if (RARE(!isFun(f))) {
     if (isMd(f)) thrM("Calling a modifier");

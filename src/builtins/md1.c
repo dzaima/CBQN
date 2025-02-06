@@ -70,7 +70,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr = RNK(w); usz wia = IA(w);
   ur xr = RNK(x); usz xia = IA(x);
   ur rr = wr+xr;  usz ria = uszMul(wia, xia);
-  if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (rr<xr) thrF("𝕨⌜𝕩: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   B r;
   usz* rsh;
@@ -154,7 +154,7 @@ B swap_c2(Md1D* d, B w, B x) { return c2(d->f,     x , w); }
 
 B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
-  if (am<=0) thrM("•_timed: 𝕨 must be an integer greater than 1");
+  if (am<=0) thrM("𝕨•_timed𝕩: 𝕨 must be an integer greater than 1");
   incBy(x, am-1);
   FC1 fc1 = c1fn(f);
   u64 sns = nsTime();
