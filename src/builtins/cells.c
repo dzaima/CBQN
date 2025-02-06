@@ -340,7 +340,7 @@ static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
   ur cr = RNK(x)-k;
   usz* sh = SH(x)+k;
   usz csz = 1;
-  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF("%c𝕩: Empty argument too large (%H ≡ ≢𝕩)", chr, x);
+  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF("%c: Empty argument too large (%H ≡ ≢𝕩)", chr, x);
   MAKE_MUT(fc, csz);
   mut_fill(fc, 0, xf, csz); dec(xf);
   Arr* ca = mut_fp(fc);
@@ -433,7 +433,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         return select_cells(0, x, cam, k, true);
       case n_couple: {
         Arr* r = cpyWithShape(x); xsh=PSH(r);
-        if (xr==UR_MAX) thrF("≍%c𝕩: Result rank too large (%i≡=𝕩)", chr, xr);
+        if (xr==UR_MAX) thrF("≍%U 𝕩: Result rank too large (%i≡=𝕩)", chr==U'˘'? "˘" : "⎉𝕘", xr);
         ShArr* rsh = m_shArr(xr+1);
         shcpy(rsh->a, xsh, k);
         rsh->a[k] = 1;

@@ -20,7 +20,7 @@
 !"˘: Result rank too large" % (0∾254⥊2)⊸⥊∘1˘ 0‿2⥊1
 !"⎉: Result rank too large" % (0∾254⥊2)⊸⥊∘1⎉¯1 0‿2⥊1
 !"⎉: Result rank too large" % (1⥊˜ 0∾204⥊2)⎉50 1⥊˜ 0∾100⥊2
-!"⎉: Result rank too large (204 ≡ =𝕩, 200 ≡ =𝔽v)" % {𝕊:(200⥊1)⥊1}⎉1 (205⥊1)⥊1
+!"𝔽⎉𝕘: Result rank too large (204 ≡ =𝕩, 200 ≡ =𝔽v)" % {𝕊:(200⥊1)⥊1}⎉1 (205⥊1)⥊1
 
 !"𝕨⎉𝕩: Argument frames don't agree (⟨3⟩ ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩, common frame of 1 axes)" % "abc" ⊢⎉0 "ab"
 !"𝕨˘𝕩: Argument frames don't agree (⟨3⟩ ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩, common frame of 1 axes)" % "abc" ⊢˘ "ab"
@@ -42,8 +42,8 @@
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % (3‿0⥊⟨⟩)⊏˘↕3
 !"Expected integer, got 0.1" % 0.1⊑˘3‿5⥊↕15
 !"𝕨⊑𝕩: 𝕩 must be a list when 𝕨 is a number (3‿4 ≡ ≢𝕩)" % 5⊑˘↕2‿3‿4
-!">: Result rank too large (80 ≡ =𝕩, 205 ≡ =⊑𝕩)" % >⎉80 (200⥊1)⥊<(205⥊1)⥊1
-!"⎉: Result rank too large (195 ≡ =𝕩, 210 ≡ =𝔽v)" % >⎉5 (200⥊1)⥊<(205⥊1)⥊1
+!">𝕩: Result rank too large (80 ≡ =𝕩, 205 ≡ =⊑𝕩)" % >⎉80 (200⥊1)⥊<(205⥊1)⥊1
+!"𝔽⎉𝕘: Result rank too large (195 ≡ =𝕩, 210 ≡ =𝔽v)" % >⎉5 (200⥊1)⥊<(205⥊1)⥊1
 !"𝕨∾𝕩: Lengths not matchable (⟨6⟩ ≡ ≢𝕨, 1‿1 ≡ ≢𝕩)" % ("abc"∾"def")∾˘○(3/≍)≍"a"
 !"𝕨∾𝕩: Argument ranks must differ by 1 or less (0≡=𝕨, 2≡=𝕩)" % 1∾˘↕3‿3‿3
 !"𝕨∾𝕩: Lengths not matchable (4‿2 ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % (3‿4‿2⥊4)∾˘3‿3‿3⥊5
@@ -65,12 +65,12 @@
 !"⊒𝕩: 𝕩 cannot have rank 0" % ⊒˘"abcd"
 !"∊𝕩: 𝕩 cannot have rank 0" % ∊˘"abcd"
 !"𝕨⍋𝕩: 𝕨 must be sorted" % 0‿2‿1⊸⍋˘ 3‿4⥊↕12
-!"𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨2⟩ ≡ ≢𝕨, 2‿3 ≡ ≢𝕩)" % (2‿2⥊1)+`˘2‿2‿3⥊0.4
-!"𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 2+`˘↕3‿3‿3
-!"´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % +´˘2‿3‿3⥊↕18
-!"𝕨´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % 1+´˘2‿3‿3⥊↕18
-!"˝𝕩: 𝕩 must have rank at least 1" % +˝˘˘10‿10⥊↕100
-!"˝𝕩: 𝕩 must have rank at least 1" % ∾˝⎉¯2 2‿3⥊9
+!"𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨2⟩ ≡ ≢𝕨, 2‿3 ≡ ≢𝕩)" % (2‿2⥊1)+`˘2‿2‿3⥊0.4
+!"𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 2+`˘↕3‿3‿3
+!"𝔽´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % +´˘2‿3‿3⥊↕18
+!"𝕨𝔽´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % 1+´˘2‿3‿3⥊↕18
+!"𝔽˝𝕩: 𝕩 must have rank at least 1" % +˝˘˘10‿10⥊↕100
+!"𝔽˝𝕩: 𝕩 must have rank at least 1" % ∾˝⎉¯2 2‿3⥊9
 
 {∾˝˘ ⥊⟜(↕×´) 2+↕𝕩}¨ 2‿3‿4‿5 %% ⥊⟜(↕×´)¨   ⟨2‿3,2‿12,2‿12‿5,2‿12‿5‿6⟩
 {∾˝˘ (2+↕𝕩)⥊<"hi"}¨ 2‿3‿4‿5 %% ⥊⟜(<"hi")¨ ⟨2‿3,2‿12,2‿12‿5,2‿12‿5‿6⟩

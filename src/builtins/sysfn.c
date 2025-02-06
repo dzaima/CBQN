@@ -277,7 +277,7 @@ B show_c1(B t, B x) {
 }
 
 NOINLINE B vfyStr(B x, char* name, char* arg) {
-  if (!isStr(x)) thrF("%U𝕩: %U must be a string", name, arg);
+  if (!isStr(x)) thrF("%U: %U must be a string", name, arg);
   return x;
 }
 
@@ -1038,7 +1038,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH𝕩: 𝕩 must be a list of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf8lenB(c);
     TALLOC(char, cstr, len+1);
     toUTF8(c, cstr);
@@ -1051,7 +1051,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   int p_in[2];
   int p_out[2];
   int p_err[2];
-  if (pipe(p_in) || pipe(p_out) || pipe(p_err)) thrM("•SH𝕩: Failed to create process: Couldn't create pipes"); // TODO these pipes will easily leak
+  if (pipe(p_in) || pipe(p_out) || pipe(p_err)) thrM("•SH: Failed to create process: Couldn't create pipes"); // TODO these pipes will easily leak
   shDbg("pipes: %d %d %d %d %d %d\n", p_in[0], p_in[1], p_out[0], p_out[1], p_err[0], p_err[1]);
   fcntl(p_in[1], F_SETFL, O_NONBLOCK); // make our side of pipes never block because we're working on multiple
   fcntl(p_out[0], F_SETFL, O_NONBLOCK);
@@ -1065,7 +1065,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   
   // spawn the actual process
   pid_t pid;
-  if(posix_spawnp(&pid, argv[0], &a, NULL, argv, environ) != 0) thrF("•SH𝕩: Failed to create process: %S", strerror(errno));
+  if(posix_spawnp(&pid, argv[0], &a, NULL, argv, environ) != 0) thrF("•SH: Failed to create process: %S", strerror(errno));
   posix_spawn_file_actions_destroy(&a); // used now
   shClose(p_in[0]); // close the useless pipes on this side
   shClose(p_out[1]);
@@ -1163,7 +1163,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH𝕩: 𝕩 must be a list of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf16lenB(c);
     TALLOC(WCHAR, wstr, len);
     toUTF16(c, wstr);
@@ -1214,7 +1214,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TSFREE(arg);
   if (dwResult != ERROR_SUCCESS) {
-    thrF("•SH𝕩: Failed to run command: %S", winErrorEx(dwResult)); 
+    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
   }
 
   // prepare output
@@ -1242,17 +1242,17 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     B inObj = bi_N;
     bool raw = false;
     if (!q_N(w)) {
-      if (!isNsp(w)) thrM("𝕨•SH𝕩: 𝕨 must be a namespace");
+      if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
       inObj = ns_getC(w, "stdin");
-      if (!q_N(inObj) && !isArr(inObj)) thrM("𝕨•SH𝕩: Invalid stdin value");
+      if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
       B rawObj = ns_getC(w, "raw");
       if (!q_N(rawObj)) raw = o2b(rawObj);
     }
     u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
     
-    if (isAtm(x) || RNK(x)>1) thrM("𝕨•SH𝕩: 𝕩 must be a list of strings");
+    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a list of strings");
     usz xia = IA(x);
-    if (xia==0) thrM("𝕨•SH𝕩: 𝕩 must have at least one item");
+    if (xia==0) thrM("•SH: 𝕩 must have at least one item");
     
     B s_out, s_err;
     i32 code = sh_core(raw, x, xia, inObj, iLen, &s_out, &s_err);
@@ -1270,7 +1270,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     return m_hvec3(m_i32(code), s_outObj, s_errObj);
   }
 #else
-  B sh_c2(B t, B w, B x) { thrM("𝕨•SH𝕩: CBQN was compiled without <spawn.h>"); }
+  B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 
@@ -1426,19 +1426,19 @@ static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (
   usz s; bool c;
   if (isNum(e)) {
     s = o2s(e);
-    if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast𝕩: unsupported width %s", s);
+    if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast: unsupported width %s", s);
     c = hasVal? isCharArr(val) : 0;
   } else {
-    if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast𝕩: 𝕗 elements must be numbers or two-element lists");
+    if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
     SGetU(e)
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
     c = t=='c';
-    if      (c     ) { if (s!=8 && s!=16 && s!=32) { badWidth: thrF("•bit._cast𝕩: unsupported width %s for type '%c'", s, (char)t); } }
+    if      (c     ) { if (s!=8 && s!=16 && s!=32) { badWidth: thrF("•bit._cast: unsupported width %s for type '%c'", s, (char)t); } }
     else if (t=='i') { if (s!=8 && s!=16 && s!=32) goto badWidth; }
     else if (t=='u') { if (s!=1) goto badWidth; }
     else if (t=='f') { if (s!=64) goto badWidth; }
-    else thrM("•bit._cast𝕩: type descriptor in 𝕗 must be one of \"iufnc\"");
+    else thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufnc\"");
     
   }
   return (CastType) { s, c };
@@ -1495,14 +1495,14 @@ static B set_bit_result(B r, u8 rt, ur rr, usz rl, usz *sh) {
 
 B bitcast_impl(B el0, B el1, B x) {
   ur xr;
-  if (!isArr(x) || (xr=RNK(x))<1) thrM("•bit._cast𝕩: 𝕩 must have rank at least 1");
+  if (!isArr(x) || (xr=RNK(x))<1) thrM("•bit._cast: 𝕩 must have rank at least 1");
   
   CastType xct = getCastType(el0, true, x);
   CastType rct = getCastType(el1, false, m_f64(0));
   usz* sh = SH(x);
   u64 s=xct.s*(u64)sh[xr-1], rl=s/rct.s;
-  if (rl*rct.s != s) thrM("•bit._cast𝕩: incompatible lengths");
-  if (rl>=USZ_MAX) thrM("•bit._cast𝕩: output too large");
+  if (rl*rct.s != s) thrM("•bit._cast: incompatible lengths");
+  if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
   B r = convert(xct, x);
   u8 rt = typeOfCast(rct);
   if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(TY(r)))) {
@@ -1522,12 +1522,12 @@ B bitcast_impl(B el0, B el1, B x) {
 }
 
 B bitcast_c1(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast𝕩: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,0), GetU(f,1), x);
 }
 B bitcast_im(Md1D* d, B x) { B f = d->f;
-  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast𝕩: 𝕗 must be a 2-element list (from‿to)");
+  if (!isArr(f) || RNK(f)!=1 || IA(f)!=2) thrM("•bit._cast: 𝕗 must be a 2-element list (from‿to)");
   SGetU(f)
   return bitcast_impl(GetU(f,1), GetU(f,0), x);
 }
@@ -1787,12 +1787,12 @@ B indexOf_c2(B t, B w, B x);
 GLOBAL bool fileInit;
 
 
-B invalidFn_c1 (B     t,      B x) { thrM("Fn𝕩: Using an invalid function"); }
-B invalidFn_c2 (B     t, B w, B x) { thrM("𝕨Fn𝕩: Using an invalid function"); }
-B invalidMd1_c1(Md1D* d,      B x) { thrM("_Mod𝕩: Using an invalid 1-modifier"); }
-B invalidMd1_c2(Md1D* d, B w, B x) { thrM("𝕨_Mod𝕩: Using an invalid 1-modifier"); }
-B invalidMd2_c1(Md2D* d,      B x) { thrM("_Mod_𝕩: Using an invalid 2-modifier"); }
-B invalidMd2_c2(Md2D* d, B w, B x) { thrM("𝕨_Mod_𝕩: Using an invalid 2-modifier"); }
+B invalidFn_c1 (B     t,      B x) { thrM("Using an invalid function"); }
+B invalidFn_c2 (B     t, B w, B x) { thrM("Using an invalid function"); }
+B invalidMd1_c1(Md1D* d,      B x) { thrM("Using an invalid 1-modifier"); }
+B invalidMd1_c2(Md1D* d, B w, B x) { thrM("Using an invalid 1-modifier"); }
+B invalidMd2_c1(Md2D* d,      B x) { thrM("Using an invalid 2-modifier"); }
+B invalidMd2_c2(Md2D* d, B w, B x) { thrM("Using an invalid 2-modifier"); }
 
 static NOINLINE void initSysDesc() {
   if (fileInit) return;

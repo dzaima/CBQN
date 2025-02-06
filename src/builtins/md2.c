@@ -144,8 +144,8 @@ B pick_c2(B t, B w, B x);
 B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   B fr = c1iX(f, x);
   if (isNum(fr)) {
-    if (isAtm(g)||RNK(g)!=1) thrM("◶𝕩: 𝕘 must have rank 1 when index is a number");
-    usz fri = WRAP(o2i64(fr), IA(g), thrM("◶𝕩: Index out of bounds of 𝕘"));
+    if (isAtm(g)||RNK(g)!=1) thrM("𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number");
+    usz fri = WRAP(o2i64(fr), IA(g), thrM("𝔽◶𝕘𝕩: Index out of bounds of 𝕘"));
     return c1(IGetU(g, fri), x);
   } else {
     B fn = C2(pick, fr, inc(g));
@@ -157,8 +157,8 @@ B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
 B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   B fr = c2iWX(d->f, w, x);
   if (isNum(fr)) {
-    if (isAtm(g)||RNK(g)!=1) thrM("𝕨◶𝕩: 𝕘 must have rank 1 when index is a number");
-    usz fri = WRAP(o2i64(fr), IA(g), thrM("𝕨◶𝕩: Index out of bounds of 𝕘"));
+    if (isAtm(g)||RNK(g)!=1) thrM("𝕨𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number");
+    usz fri = WRAP(o2i64(fr), IA(g), thrM("𝕨𝔽◶𝕘𝕩: Index out of bounds of 𝕘"));
     return c2(IGetU(g, fri), w, x);
   } else {
     B fn = C2(pick, fr, inc(g));

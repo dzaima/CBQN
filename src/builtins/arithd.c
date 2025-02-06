@@ -168,7 +168,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
-    thrM("𝕨" SYMB "𝕩: Unexpected argument types");                     \
+    thrM("𝕨" SYMB "𝕩: Unexpected argument types");                \
   }
   GC2f("÷", div  , w.f/(x.f+0),
     , /*INT_SA*/
@@ -407,7 +407,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
 #define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
   MORE; AR_I_TO_ARR(NAME)                      \
-  thrM("𝕨"CHR "𝕩: Unexpected argument types");     \
+  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
@@ -431,7 +431,7 @@ B not_c2(B t, B w, B x) {
 #define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
   AR_F_TO_ARR(NAME)                            \
-  thrM("𝕨"CHR "𝕩: Unexpected argument types");     \
+  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
 }
 AR_F_SCALAR("÷", div  ,       w.f/(x.f+0))
 AR_F_SCALAR("⋆", pow  , pow(w.f+0, x.f))
@@ -478,7 +478,7 @@ static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 #define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
   if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
   P2(n)                                                \
-  thrM("𝕨•math𝕩." N ": Unexpected argument types");      \
+  thrM("𝕨•math." N "𝕩: Unexpected argument types");    \
 }
 MATH(atan2,"Atan2",bqn_atan2)
 MATH(atan2ix,"Atan2⁼",bqn_atan2ix)

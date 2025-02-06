@@ -28,10 +28,10 @@
 ! {𝕩 ≡ ⍷2/𝕩} ⟨(0÷0)⊸+, (0÷0)⊸+⟩
 
 # comparison
-w←1‿1⥊1 ⋄ x←1‿2⥊1           ⋄ {! (∾⟨•Repr𝕩,": Expected equal shape prefix (1‿1 ≡ ≢𝕨, 1‿2 ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
-w←1‿1⥊1 ⋄ x←1‿2⥊1 ⋄ w‿x <¨↩ ⋄ {! (∾⟨•Repr𝕩,": Expected equal shape prefix (1‿1 ≡ ≢𝕨, 1‿2 ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
-w←1‿1⥊1 ⋄ x←2⥊1             ⋄ {! (∾⟨•Repr𝕩,": Expected equal shape prefix (1‿1 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
-w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expected equal shape prefix (1‿1 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
+w←1‿1⥊1 ⋄ x←1‿2⥊1           ⋄ {! (∾⟨"𝕨",•Repr𝕩,"𝕩: Expected equal shape prefix (1‿1 ≡ ≢𝕨, 1‿2 ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
+w←1‿1⥊1 ⋄ x←1‿2⥊1 ⋄ w‿x <¨↩ ⋄ {! (∾⟨"𝕨",•Repr𝕩,"𝕩: Expected equal shape prefix (1‿1 ≡ ≢𝕨, 1‿2 ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
+w←1‿1⥊1 ⋄ x←2⥊1             ⋄ {! (∾⟨"𝕨",•Repr𝕩,"𝕩: Expected equal shape prefix (1‿1 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
+w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,"𝕩: Expected equal shape prefix (1‿1 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)"⟩) ≡ w 𝕏⎊(•CurrentError∘@) x}¨ =‿≠‿<‿>‿≤‿≥
 !"Invalid comparison" % <˜{⇐}
 !"Invalid comparison" % ≤˜{⇐}
 !"Invalid comparison" % >˜{⇐}
@@ -61,28 +61,28 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨•Repr𝕩,": Expe
 (<1)+<1 %% <2
 @-@ %% 0
 !"𝕨-𝕩: Invalid character" % @-1
-{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-{r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 0}¨ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+{r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+{r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} @}¨ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+{r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 0}¨ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 
-%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ 0 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ @ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨 V a}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 
-%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} 0}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} @}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ (LV a) {r←•Repr𝕩 ⋄ (⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘𝕏⎊{𝕊: •CurrentError@} 0}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 
-%USE var ⋄ a←4⥊@ ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊0 ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
-%USE var ⋄ a←4⥊@ ⋄ b←4⥊0 ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) (r∾": Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨+,    ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊0 ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
+%USE var ⋄ a←4⥊@ ⋄ b←4⥊0 ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 
 !"𝕨-𝕩: Unexpected argument types" % 0-@
 !"𝕨÷𝕩: Unexpected argument types" % 0÷@
 !"+𝕩: Argument must consist of numbers" % +@
-⟨@, "abc", ⟨1,2,+⟩, {⇐}⟩ {(⊢!≡´) (": Argument contained non-number"∾˜•Repr 𝕩) ⋈ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨}⌜ -‿×‿÷‿⋆‿√‿⌊‿⌈‿|‿¬
-!"Fn𝕩: This function can't be called monadically" % ≤@
-!"Fn𝕩: This function can't be called monadically" % ≥@
+⟨@, "abc", ⟨1,2,+⟩, {⇐}⟩ {(⊢!≡´) ("𝕩: 𝕩 contained non-number"∾˜•Repr 𝕩) ⋈ 0∘𝕏⎊{𝕊: •CurrentError@} 𝕨}⌜ -‿×‿÷‿⋆‿√‿⌊‿⌈‿|‿¬
+!"This function can't be called monadically" % ≤@
+!"This function can't be called monadically" % ≥@
 
 # 𝕨/𝕩
 2‿3‿0‿1/4‿3⥊↕⋈12 %% ⋈¨6‿3⥊0‿1‿2‿0‿1‿2‿3‿4‿5‿3‿4‿5‿3‿4‿5‿9‿10‿11
@@ -170,15 +170,15 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 %USE eqvar ⋄ 1‿2 ⊑_eqvar ↕5‿5 %% 1‿2
 
 # >𝕩
-!">: Result rank too large (200 ≡ =𝕩, 205 ≡ =⊑𝕩)" % > (200⥊1)⥊<(205⥊1)⥊1
-!">: Incompatible element shapes (encountered shapes ⟨2⟩ and 4‿5)" % > ↕¨⟨2, 4‿5⟩
-!">: Incompatible element shapes (encountered shapes 2‿3 and ⟨4⟩)" % > ↕¨⟨2‿3, 4⟩
-!">: Incompatible element shapes (encountered shapes 2‿3 and 4‿5)" % > ↕¨⟨2‿3, 4‿5⟩
-!">: Incompatible element shapes (encountered shapes 2‿0 and 4‿5)" % > ↕¨⟨2‿0, 4‿5⟩
-!">: Incompatible element shapes (encountered shapes ⟨0⟩ and 4‿5)" % > ↕¨⟨0, 4‿5⟩
-!">: Incompatible element shapes (encountered shapes ⟨0⟩ and ⟨⟩)" % > ↕¨⟨0, ⟨⟩⟩
-!">: Incompatible element shapes (encountered shapes 2‿3 and ⟨⟩)" % > ↕¨⟨2‿3, ⟨⟩⟩
-!">: Incompatible element shapes (encountered shapes 4‿5 and 4‿6)" % ≢>2‿3⥊⟨4‿5⥊↕20,4‿6⥊↕1⟩
+!">𝕩: Result rank too large (200 ≡ =𝕩, 205 ≡ =⊑𝕩)" % > (200⥊1)⥊<(205⥊1)⥊1
+!">𝕩: Incompatible element shapes (encountered shapes ⟨2⟩ and 4‿5)" % > ↕¨⟨2, 4‿5⟩
+!">𝕩: Incompatible element shapes (encountered shapes 2‿3 and ⟨4⟩)" % > ↕¨⟨2‿3, 4⟩
+!">𝕩: Incompatible element shapes (encountered shapes 2‿3 and 4‿5)" % > ↕¨⟨2‿3, 4‿5⟩
+!">𝕩: Incompatible element shapes (encountered shapes 2‿0 and 4‿5)" % > ↕¨⟨2‿0, 4‿5⟩
+!">𝕩: Incompatible element shapes (encountered shapes ⟨0⟩ and 4‿5)" % > ↕¨⟨0, 4‿5⟩
+!">𝕩: Incompatible element shapes (encountered shapes ⟨0⟩ and ⟨⟩)" % > ↕¨⟨0, ⟨⟩⟩
+!">𝕩: Incompatible element shapes (encountered shapes 2‿3 and ⟨⟩)" % > ↕¨⟨2‿3, ⟨⟩⟩
+!">𝕩: Incompatible element shapes (encountered shapes 4‿5 and 4‿6)" % ≢>2‿3⥊⟨4‿5⥊↕20,4‿6⥊↕1⟩
 !"∾𝕩: Item trailing shapes must be equal (contained arrays with shapes ⟨2⟩ and ⟨3⟩ and later higher-rank array)" % ∾⟨1‿1, 1‿1‿1, ⟨1⟩, 2‿2⥊1⟩
 !"∾𝕩: Item trailing shapes must be equal (contained arrays with shapes 1‿4 and ⟨0⟩)" % ∾⟨1‿4⥊"abcd",⟨⟩⟩
 >⟨<'a',1⟩ %% 'a'‿1
@@ -445,7 +445,7 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 %USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟𝕩 ⋈10}_eqvar a %% ⋈¨ 5+↕10
 %USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟(𝕩{!𝕩≡⋈10 ⋄ 𝕗}) ⋈10}_eqvar a %% ⋈¨ 5+↕10
 !∘0⍟⟨↕0, ⟨⟩, ""⟩ 0 %% ⟨⟨⟩,⟨⟩,⟨⟩⟩
-!"_Mod𝕩: Calling a modifier" % 1⊸+⍟{∘} 0
+!"Calling a modifier" % 1⊸+⍟{∘} 0
 !"⍟: 𝔾 contained non-number" % 1⊸+⍟⟨1,∘,3⟩ 0
 !"Expected integer, got 1.5" % 1⊸+⍟1.5 0
 !"Integer out of range: 1e20" % 1⊸+⍟1e20 0
@@ -455,8 +455,10 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5, 9⟩
 
 # ◶
-!"◶𝕩: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
-!"𝕨◶𝕩: 𝕘 must have rank 1 when index is a number" % "ab" ⊢◶[1‿2,3‿4] 3
+!"𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
+!"𝕨𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number" % "ab" ⊢◶[1‿2,3‿4] 3
+!"𝕨𝔽◶𝕘𝕩: Index out of bounds of 𝕘" % 1 2◶⊢‿- 3
+!"𝔽◶𝕘𝕩: Index out of bounds of 𝕘" % 2◶⊢‿- 3
 !"𝕨⊑𝕩: Picking item at wrong rank (index 0‿0 in array of shape ⟨2⟩)" % ⊢◶+‿- 0‿0 # shouldn't reference ⊑ but whatever
 !"𝕨⊑𝕩: Picking item at wrong rank (index 1‿2 in array of shape ⟨3⟩)" % 1 +◶+‿-‿⊢ 0‿1
 10 +◶"ab"‿"cd" ¯9 %% "cd"
@@ -467,22 +469,39 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 ≢ (1⥊˜ 0∾203⥊2)⎉50 1⥊˜ 0∾100⥊2 %% 1‿50‿1‿203/0‿2‿0‿2
 !"⎉: Result rank too large" % (1⥊˜ 0∾203⥊2)⎉49 1⥊˜ 0∾100⥊2
 !"˘: Result rank too large" % ((255⥊1)⥊1)˘ 1‿2
+!"˘: Empty argument too large (0‿1000000000‿1000000000‿1000000000 ≡ ≢𝕩)" % 2 •internal.PureKeep˘ 0‿1e9‿1e9‿1e9⥊0
+!"˘: Empty argument too large (0‿1000000000‿1000000000‿1000000000 ≡ ≢𝕩)" % •internal.PureKeep˘ 0‿1e9‿1e9‿1e9⥊0
+!"⎉: Empty argument too large (0‿0‿1000000000‿1000000000‿1000000000 ≡ ≢𝕩)" % 2 •internal.PureKeep⎉3 0‿0‿1e9‿1e9‿1e9⥊0
+!"⎉: Empty argument too large (0‿0‿1000000000‿1000000000‿1000000000 ≡ ≢𝕩)" % •internal.PureKeep⎉3 0‿0‿1e9‿1e9‿1e9⥊0
+!"≍˘ 𝕩: Result rank too large (255≡=𝕩)" % ≍˘ (255⥊1)⥊1
+!"≍⎉𝕘 𝕩: Result rank too large (255≡=𝕩)" % ≍⎉100 (255⥊1)⥊1
+!"𝔽˘: Incompatible result shapes (encountered shapes ⟨0⟩ and ⟨10⟩)" % {↕⊑𝕩}˘ 4‿10⥊↕100
+!"𝔽˘: Incompatible result shapes (encountered shapes ⟨0⟩ and ⟨10⟩)" % 3 {↕⊑𝕩}˘ 4‿10⥊↕100
+!"𝔽⎉𝕘: Incompatible result shapes (encountered shapes ⟨0⟩ and ⟨10⟩)" % {↕⊑𝕩}⎉1 4‿10⥊↕100
+!"𝔽⎉𝕘: Incompatible result shapes (encountered shapes ⟨0⟩ and ⟨10⟩)" % 3 {↕⊑𝕩}⎉1 4‿10⥊↕100
 
 # `
-!"𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (2‿2 ≡ ≢𝕨, 3‿2‿3 ≡ ≢𝕩)" % (2‿2⥊1)+`↕3‿2‿3
-!"𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (2‿2 ≡ ≢𝕨, 3‿3‿2 ≡ ≢𝕩)" % (2‿2⥊1)+`↕3‿3‿2
-!"𝕨`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 2+`↕3‿3
+!"𝔽`𝕩: 𝕩 cannot have rank 0" % ⊢`0
+!"𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (2‿2 ≡ ≢𝕨, 3‿2‿3 ≡ ≢𝕩)" % (2‿2⥊1)+`↕3‿2‿3
+!"𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (2‿2 ≡ ≢𝕨, 3‿3‿2 ≡ ≢𝕩)" % (2‿2⥊1)+`↕3‿3‿2
+!"𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (⟨⟩ ≡ ≢𝕨, 3‿3 ≡ ≢𝕩)" % 2+`↕3‿3
 
 # ´
-!"´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % +´↕3‿3
-!"𝕨´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % 2+´↕3‿3
+!"𝔽´𝕩: 𝕩 must be a list (⟨⟩ ≡ ≢𝕩)" % +´0
+!"𝔽´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % +´↕3‿3
+!"𝕨𝔽´𝕩: 𝕩 must be a list (3‿3 ≡ ≢𝕩)" % 2+´↕3‿3
+!"𝔽´𝕩: Identity not found" % •internal.Keep´⟨⟩
 +⌜´↕0 %% <0
 ×⌜´↕0 %% <1
 +⌜⌜⌜´↕0 %% <<<0
 ×⌜⌜⌜´↕0 %% <<<1
 
+# ˝
+!"𝔽˝𝕩: 𝕩 must have rank at least 1" % ⊢˝0
+!"𝔽˝𝕩: Identity not found" % •internal.Keep˝⟨⟩
+
 # ⌜
-!"𝕨⌜𝕩: Result rank too large (200≡=𝕨, 200≡=𝕩)" % +⌜˜(200⥊1)⥊1
+!"𝕨𝔽⌜𝕩: Result rank too large (200≡=𝕨, 200≡=𝕩)" % +⌜˜(200⥊1)⥊1
 
 # ˜
 5˜˝ "ab" %% 5

@@ -12,8 +12,8 @@
 ! ≡´ t←⟨•path,"custom-name"       ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "custom-name", ⟨⟩⟩    ≡ ⊑t
 ! ≡´ t←⟨•path                     ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "",            ⟨⟩⟩    ≡ ⊑t
 ! ≡´ t←⟨                          ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ !        ⟨"",            ⟨⟩⟩    ≡ 1↓⊑t
-!"•BQN𝕩: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
-!"•BQN𝕩: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
+!"•BQN: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
+!"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
 ⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
 !"No path present for •path" % •BQN"•path"
 !"No arguments present for •args" % •BQN"•args"
@@ -28,8 +28,8 @@
 !"•file.Chars: Using relative path with no absolute base path known" % f←•BQN"•FChars" ⋄ F "a"
 
 # •ReBQN
-!"REPL𝕩: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
-!"REPL𝕩: Path must be a string" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
+!"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
+!"REPL: Path must be a string" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
 f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"custom-name", "arg"⟩ F "•state"
 
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"
@@ -89,10 +89,10 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"Field named ""abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789"" not found" % {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789_"
 {abc⇐1 ⋄ dÊF⇐2 ⋄ n10⇐3}•ns.Has¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__", "àbc", "def", "", ↕0, "𝕨", "012", "n10", "n1_0"⟩ %% 1‿1‿1‿1‿1‿1‿0‿0‿0‿0‿0‿0‿1‿1
 ∨´{⇐}•ns.Has¨↑"abc123AEWQE___àÀ𝕨𝕩" %% 0
-!"•ns.Has𝕩: 𝕩 must be a string" % {⇐}•ns.Has ≍""
-!"•ns.Has𝕩: 𝕩 must be a string" % {⇐}•ns.Has 1‿2
-!"•ns.Get𝕩: 𝕩 must be a string" % {⇐}•ns.Get ≍""
-!"•ns.Get𝕩: 𝕩 must be a string" % {⇐}•ns.Get 1‿2
+!"•ns.Has: 𝕩 must be a string" % {⇐}•ns.Has ≍""
+!"•ns.Has: 𝕩 must be a string" % {⇐}•ns.Has 1‿2
+!"•ns.Get: 𝕩 must be a string" % {⇐}•ns.Get ≍""
+!"•ns.Get: 𝕩 must be a string" % {⇐}•ns.Get 1‿2
 {m←𝕩 ⋄ ⟨{𝕩 ⋈ m•ns.Get 𝕩}¨ •ns.Keys m ⋄ {m•ns.Has⋈𝕩}¨ "abcABC"⟩}¨ ⟨{a⇐1⋄b⇐↕10} ⋄ {a⇐'a'⋄b←2‿3⋄cde⇐𝕩}"abc"⟩ %% ⟨⟨⟨⟨"a",1⟩,⟨"b",0‿1‿2‿3‿4‿5‿6‿7‿8‿9⟩⟩,1‿1‿0‿1‿1‿0⟩,⟨⟨⟨"a",'a'⟩,⟨"cde","abc"⟩⟩,1‿0‿0‿1‿0‿0⟩⟩
 
 
@@ -161,7 +161,7 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"•file.At: Path must be a list of characters" % •file.At 1‿2
 !"•file.At: Path must be a list of characters" % •file.At 1‿2
 !"•file.At: Path must be a list of characters" % "foo" •file.At 1‿2
-!"•file.At𝕩: 𝕨 must be a string" % 1‿2 •file.At "foo"
+!"•file.At: 𝕨 must be a string" % 1‿2 •file.At "foo"
 !"•file.List: Path must be a list of characters" % •file.List 1‿2
 !"•file.Bytes: Path must be a list of characters" % •file.Bytes 1‿2
 !"•file.Chars: Path must be a list of characters" % •file.Chars 1‿2
@@ -235,7 +235,11 @@ v←1 ⋄ ! •BQN∘•Repr⊸≡ ⟨+,1‿2,+¨,(+V)(V+V),2‿2⥊↕4⟩
 # •Delay
 t0←•MonoTime@ ⋄ ! 0.1≤•Delay 0.1 ⋄ ! 0.1≤(•MonoTime@)-t0
 
-# •_timed tested at perf.bqn
+# •_timed tested more at perf.bqn
+!"𝕨𝔽•_timed𝕩: 𝕨 must be an integer greater than 0" % 0 ⊢•_timed 2
+!"Expected integer, got character" % @ ⊢•_timed 2
+a←1 ⋄ a ⊣ {𝕊: a+↩𝕩}•_timed 10 %% 11
+a←3 ⋄ 12 {𝕊: a+↩𝕩}•_timed 10 ⋄ a %% 123
 
 # •math
 ! ∧´0=⌊|1e10×{(+´𝕩)-•math.Sum 𝕩}¨ ↑1000•rand.Range 0
@@ -267,9 +271,9 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 !"𝕨•math.GCD𝕩: Unexpected argument types" % 3 •math.GCD {+}
 !"•math.Sin𝕩: 𝕩 contained non-number" % •math.Sin "foo"
 !"•math.Log10𝕩: 𝕩 contained non-number" % •math.Log10 "foo"
-!"𝕨•math𝕩.Atan2: Unexpected argument types" % 1 •math.Atan2 'a'
-!"𝕨•math𝕩.Atan2⁼: Unexpected argument types" % 1 •math.Atan2⁼ {⇐}
-!"𝕨•math𝕩.Atan2˜⁼: Unexpected argument types" % {⇐} •math.Atan2˜⁼ 'b'
+!"𝕨•math.Atan2𝕩: Unexpected argument types" % 1 •math.Atan2 'a'
+!"𝕨•math.Atan2⁼𝕩: Unexpected argument types" % 1 •math.Atan2⁼ {⇐}
+!"𝕨•math.Atan2˜⁼𝕩: Unexpected argument types" % {⇐} •math.Atan2˜⁼ 'b'
 
 # •rand / •MakeRand
 0 (•MakeRand 0).Range¨↕2 %% ⟨⟩‿⟨⟩
@@ -287,35 +291,35 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊:     r.Deal 1000}¨ ↕4
 r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 
 # •bit
-!"•bit._cast𝕩: 𝕩 must have rank at least 1" % 8‿1 •bit._cast 123
+!"•bit._cast: 𝕩 must have rank at least 1" % 8‿1 •bit._cast 123
 (↕10) {! (𝕨⥊¯1) ≡ 1‿𝕩•bit._cast (𝕨×𝕩)⥊1}⌜ 8‿16‿32
 %USE var ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄ 1≠⊑t? !∘≡¨⟜⊏ r←{t•bit._cast 𝕩 V a}¨ LV a←  ↕128 ⋄ ⊑⊑r; @}¨ ↕4‿4
 %USE var ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄       !∘≡¨⟜⊏ r←{t•bit._cast 𝕩 V a}¨ LV a←4=↕128 ⋄ ⊑⊑r}¨ ↕4‿4
 ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ⊑ 8‿32•bit._cast 3↓↕7 %% 100992003
-!"•bit._cast𝕩: incompatible lengths" % 1‿8•bit._cast 1⥊0
-!"•bit._cast𝕩: incompatible lengths" % 8‿32•bit._cast 2⥊0
-!"•bit._cast𝕩: incompatible lengths" % 8‿32•bit._cast 10⥊0
+!"•bit._cast: incompatible lengths" % 1‿8•bit._cast 1⥊0
+!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 2⥊0
+!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 10⥊0
 
-!"•bit._cast𝕩: unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
-!"•bit._cast𝕩: unsupported width 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ64
+!"•bit._cast: unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
+!"•bit._cast: unsupported width 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ64
 !"Integer out of range: 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ32
 !"Integer out of range: 1.180591620717411e21" % (2⥊2⋆70)•bit._cast ⋈0
 !"Integer out of range: ∞" % (2⥊∞)•bit._cast ⋈0
 
-!"•bit._cast𝕩: unsupported width 12" % 1‿12•bit._cast 11⥊0
-!"•bit._cast𝕩: unsupported width 12" % 12‿32•bit._cast (12×32)⥊0
-!"•bit._cast𝕩: unsupported width 12" % 8‿12•bit._cast (8×12)⥊0
-!"•bit._cast𝕩: unsupported width 0" % 0‿32•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 0" % 8‿0•bit._cast 128⥊0
+!"•bit._cast: unsupported width 12" % 1‿12•bit._cast 11⥊0
+!"•bit._cast: unsupported width 12" % 12‿32•bit._cast (12×32)⥊0
+!"•bit._cast: unsupported width 12" % 8‿12•bit._cast (8×12)⥊0
+!"•bit._cast: unsupported width 0" % 0‿32•bit._cast 128⥊0
+!"•bit._cast: unsupported width 0" % 8‿0•bit._cast 128⥊0
 
-!"•bit._cast𝕩: unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 0 for type 'u'" % ⟨0‿'u',32⟩•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 8 for type 'u'" % ⟨8‿'u',32⟩•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
-!"•bit._cast𝕩: unsupported width 1 for type 'i'" % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 0 for type 'u'" % ⟨0‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 8 for type 'u'" % ⟨8‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 1 for type 'i'" % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
 
 # •platform
 Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.os ⋄ Str •platform.cpu.arch ⋄ Str •platform.bqn.impl_version ⋄ Str •platform.environment
@@ -362,7 +366,7 @@ Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.o
 
 # •internal.Keep
 •internal.Keep ↕10 %% ↕10
-!"𝕨Fn𝕩: This function can't be called dyadically" % 1 •internal.Keep 1
+!"This function can't be called dyadically" % 1 •internal.Keep 1
 # •internal.Refc
 •internal.Refc •internal.Unshare ↕10 %% 1
 a←•internal.Unshare ↕10 ⋄ b←10⥊<a ⋄ ! 11 ≡ •internal.Refc a ⋄ •internal.Keep b
