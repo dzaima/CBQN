@@ -101,7 +101,7 @@ B repr_c1(B t, B x) {
     #if FORMATTER
       return bqn_repr(x);
     #else
-      thrM("•Repr𝕩: Cannot represent non-numbers with -DFORMATTER=0");
+      thrM("•Repr 𝕩: Cannot represent non-numbers with -DFORMATTER=0");
     #endif
   }
 }
@@ -1163,7 +1163,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH 𝕩: 𝕩 must be a list of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf16lenB(c);
     TALLOC(WCHAR, wstr, len);
     toUTF16(c, wstr);
@@ -1214,7 +1214,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TSFREE(arg);
   if (dwResult != ERROR_SUCCESS) {
-    thrF("•SH 𝕩: Failed to run command: %S", winErrorEx(dwResult)); 
+    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
   }
 
   // prepare output
@@ -1242,17 +1242,17 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     B inObj = bi_N;
     bool raw = false;
     if (!q_N(w)) {
-      if (!isNsp(w)) thrM("𝕨 •SH 𝕩: 𝕨 must be a namespace");
+      if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
       inObj = ns_getC(w, "stdin");
-      if (!q_N(inObj) && !isArr(inObj)) thrM("𝕨 •SH 𝕩: Invalid stdin value");
+      if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
       B rawObj = ns_getC(w, "raw");
       if (!q_N(rawObj)) raw = o2b(rawObj);
     }
     u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
     
-    if (isAtm(x) || RNK(x)>1) thrM("𝕨 •SH 𝕩: 𝕩 must be a list of strings");
+    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a list of strings");
     usz xia = IA(x);
-    if (xia==0) thrM("𝕨 •SH 𝕩: 𝕩 must have at least one item");
+    if (xia==0) thrM("•SH: 𝕩 must have at least one item");
     
     B s_out, s_err;
     i32 code = sh_core(raw, x, xia, inObj, iLen, &s_out, &s_err);
@@ -1270,7 +1270,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     return m_hvec3(m_i32(code), s_outObj, s_errObj);
   }
 #else
-  B sh_c2(B t, B w, B x) { thrM("𝕨 •SH 𝕩: CBQN was compiled without <spawn.h>"); }
+  B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 

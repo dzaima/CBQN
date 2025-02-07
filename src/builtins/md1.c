@@ -154,7 +154,7 @@ B swap_c2(Md1D* d, B w, B x) { return c2(d->f,     x , w); }
 
 B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
-  if (am<=0) thrM("𝕨𝔽•_timed𝕩: 𝕨 must be an integer greater than 0");
+  if (am<=0) thrM("𝕨 𝔽•_timed 𝕩: 𝕨 must be an integer greater than 0");
   incBy(x, am-1);
   FC1 fc1 = c1fn(f);
   u64 sns = nsTime();

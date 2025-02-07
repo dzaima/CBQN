@@ -148,7 +148,7 @@ B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("
 static NOINLINE B arith_recm_slow(f64 (*fn)(f64), FC1 rec, B x, char* s) {
   if (isF64(x)) return m_f64(fn(x.f));
   if(isArr(x)) return arith_recm(rec, x);
-  thrF("•math.%S𝕩: 𝕩 contained non-number", s);
+  thrF("•math.%S 𝕩: 𝕩 contained non-number", s);
 }
 #define MATH(n,N) B n##_c1(B t, B x) { return arith_recm_slow(n, n##_c1, x, #N); }
 MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1)

@@ -54,8 +54,8 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 (((•HashMap˜↕4).Delete 1).Set´ 1‿"one").Keys@ %% 0‿2‿3‿1
 (((•HashMap˜↕4).Delete 1).Set´ 1‿"one").Values@ %% 0‿2‿3‿"one"
 ({𝕩.Set´"xy"}⍟4•HashMap˜↕0).Count@ %% 1
-!"𝕨•HashMap𝕩: Arguments must be lists (⟨⟩≡≢𝕨, ⟨3⟩≡≢𝕩)" % 'a' •HashMap "str"
-!"𝕨•HashMap𝕩: 𝕨 and 𝕩 must have the same length (4≡≠𝕨, 3≡≠𝕩)" % "stri" •HashMap "str"
+!"𝕨 •HashMap 𝕩: Arguments must be lists (⟨⟩≡≢𝕨, ⟨3⟩≡≢𝕩)" % 'a' •HashMap "str"
+!"𝕨 •HashMap 𝕩: 𝕨 and 𝕩 must have the same length (4≡≠𝕨, 3≡≠𝕩)" % "stri" •HashMap "str"
 !"•HashMap: 𝕨 contained duplicate keys" % "strs" •HashMap "stri"
 !"(hashmap).Get: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fg"
 !"(hashmap).Delete: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Delete 'a'

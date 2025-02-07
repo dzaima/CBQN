@@ -478,7 +478,7 @@ static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 #define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
   if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
   P2(n)                                                \
-  thrM("𝕨•math." N "𝕩: Unexpected argument types");    \
+  thrM("𝕨 •math." N " 𝕩: Unexpected argument types");  \
 }
 MATH(atan2,"Atan2",bqn_atan2)
 MATH(atan2ix,"Atan2⁼",bqn_atan2ix)
@@ -510,19 +510,19 @@ static u64 lcm_u64(u64 a, u64 b) {
 }
 B gcd_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
-    if (!q_u64(w) || !q_u64(x)) thrM("𝕨•math.GCD𝕩: Inputs other than natural numbers not yet supported");
+    if (!q_u64(w) || !q_u64(x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(gcd_u64(o2u64G(w), o2u64G(x)));
   }
   P2(gcd)
-  thrM("𝕨•math.GCD𝕩: Unexpected argument types");
+  thrM("𝕨 •math.GCD 𝕩: Unexpected argument types");
 }
 B lcm_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
-    if (!q_u64(w) || !q_u64(x)) thrM("𝕨•math.LCM𝕩: Inputs other than natural numbers not yet supported");
+    if (!q_u64(w) || !q_u64(x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(o2u64G(w), o2u64G(x)));
   }
   P2(lcm)
-  thrM("𝕨•math.LCM𝕩: Unexpected argument types");
+  thrM("𝕨 •math.LCM 𝕩: Unexpected argument types");
 }
 
 #undef P2

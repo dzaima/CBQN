@@ -103,13 +103,13 @@ static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16,
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
 
 B sum_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum 𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (ia==0) { decG(x); return m_f64(0); }
   u8 xe = TI(x,elType);
   if (!elNum(xe)) {
     x = any_squeeze(x); xe = TI(x,elType);
-    if (!elNum(xe)) thrF("•math.Sum𝕩: 𝕩 elements must be numbers", x);
+    if (!elNum(xe)) thrF("•math.Sum 𝕩: 𝕩 elements must be numbers", x);
   }
   f64 r;
   void* xv = tyany_ptr(x);
