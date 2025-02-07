@@ -110,26 +110,26 @@ B fmt_c1(B t, B x) {
   #if FORMATTER
     return bqn_fmt(x);
   #else
-    thrM("•Fmt𝕩: •Fmt isn't supported with -DFORMATTER=0");
+    thrM("•Fmt 𝕩: •Fmt isn't supported with -DFORMATTER=0");
   #endif
 }
 
 #if NO_RYU
-B parseFloat_c1(B t, B x) { thrM("•ParseFloat𝕩: Not supported with Ryu disabled"); }
+B parseFloat_c1(B t, B x) { thrM("•ParseFloat 𝕩: Not supported with Ryu disabled"); }
 #else
 B parseFloat_c1(B t, B x) {
-  if (isAtm(x)) thrM("•ParseFloat𝕩: Expected a character list argument");
+  if (isAtm(x)) thrM("•ParseFloat 𝕩: Expected a character list argument");
   if (TI(x,elType)!=el_c8) {
     x = chr_squeeze(x);
-    if (TI(x,elType)!=el_c8) thrM("•ParseFloat𝕩: Expected a character list argument");
+    if (TI(x,elType)!=el_c8) thrM("•ParseFloat 𝕩: Expected a character list argument");
   }
   usz ia = IA(x);
-  if (RNK(x)!=1) thrM("•ParseFloat𝕩: Input must have rank 1");
-  if (ia==0) thrM("•ParseFloat𝕩: Input was empty");
-  if (ia >= (1<<20)) thrM("•ParseFloat𝕩: Input too long"); // assumption by ryu_s2d_n
+  if (RNK(x)!=1) thrM("•ParseFloat 𝕩: Input must have rank 1");
+  if (ia==0) thrM("•ParseFloat 𝕩: Input was empty");
+  if (ia >= (1<<20)) thrM("•ParseFloat 𝕩: Input too long"); // assumption by ryu_s2d_n
   u8* data = c8any_ptr(x);
   f64 res;
-  if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat𝕩: Malformed input");
+  if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat 𝕩: Malformed input");
   decG(x);
   return m_f64(res);
 }
@@ -259,7 +259,7 @@ B casrt_c1(B t, B x) {
 
 B sys_c1(B t, B x);
 B out_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•Out𝕩: 𝕩 must be a string");
+  if (isAtm(x) || RNK(x)!=1) thrM("•Out 𝕩: 𝕩 must be a string");
   printsB(x); printf("\n");
   return x;
 }
@@ -339,7 +339,7 @@ STATIC_GLOBAL B rand_subsetName;  STATIC_GLOBAL NFnDesc* rand_subsetDesc;
                  sc->vars[1].u = seed&0xFFFFFFFF;
 B rand_range_c1(B t, B x) {
   i64 xv = o2i64(x);
-  if (xv<0) thrM("(rand).Range𝕩: 𝕩 cannot be negative");
+  if (xv<0) thrM("(rand).Range 𝕩: 𝕩 cannot be negative");
   RAND_START;
   u64 rnd = wyrand(&seed);
   RAND_END;
@@ -349,7 +349,7 @@ B rand_range_c2(B t, B w, B x) {
   usz am = 1;
   i64 max = o2i64(x);
   if (isArr(w)) {
-    if (RNK(w) > 1) thrM("𝕨(rand).Range𝕩: 𝕨 must be a valid shape");
+    if (RNK(w) > 1) thrM("𝕨 (rand).Range 𝕩: 𝕨 must be a valid shape");
     SGetU(w);
     usz wia = IA(w);
     bool bad=false, good=false;
@@ -370,11 +370,11 @@ B rand_range_c2(B t, B w, B x) {
       f64* rp; r = m_f64arrp(&rp, am);
       PLAINLOOP for (usz i = 0; i < am; i++) rp[i] = wy2u01(wyrand(&seed));
     } else {
-      if (max!=1) thrM("𝕨(rand).Range𝕩: 𝕩 cannot be negative");
+      if (max!=1) thrM("𝕨 (rand).Range 𝕩: 𝕩 cannot be negative");
       r = allZeroesFl(am);
     }
   } else if (max > (1ULL<<31)) {
-    if (max >= 1LL<<53) thrM("𝕨(rand).Range𝕩: 𝕩 must be less than 2⋆53");
+    if (max >= 1LL<<53) thrM("𝕨 (rand).Range 𝕩: 𝕩 must be less than 2⋆53");
     f64* rp; r = m_f64arrp(&rp, am);
     PLAINLOOP for (usz i = 0; i < am; i++) rp[i] = wy2u0k(wyrand(&seed), max);
   } else {
@@ -416,7 +416,7 @@ B rand_range_c2(B t, B w, B x) {
     if (wia<2) {
       arr_rnk01(r, wia);
     } else {
-      if (wia>UR_MAX) thrF("𝕨(rand).Range𝕩: Result rank too large (%s≡≢𝕨)", wia);
+      if (wia>UR_MAX) thrF("𝕨 (rand).Range 𝕩: Result rank too large (%s≡≢𝕨)", wia);
       usz* sh = arr_shAlloc(r, wia);
       SGetU(w);
       for (usz i = 0; i < wia; i++) sh[i] = o2sG(GetU(w, i));
@@ -437,7 +437,7 @@ void intRange32Fill(i32* xp, ux s, ux n);
 B rand_deal_c1(B t, B x) {
   i32 xi = o2i(x);
   if (RARE(xi<=1)) {
-    if (xi<0) thrM("(rand).Deal𝕩: 𝕩 cannot be negative");
+    if (xi<0) thrM("(rand).Deal 𝕩: 𝕩 cannot be negative");
     return taga(ptr_inc(bitUD[xi]));
   }
 
@@ -516,10 +516,10 @@ B rand_deal_c1(B t, B x) {
 B rand_deal_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
-  if (RARE(xi<0)) thrM("𝕨(rand).Deal𝕩: 𝕩 cannot be negative");
-  if (RARE(wi<0)) thrM("𝕨(rand).Deal𝕩: 𝕨 cannot be negative");
+  if (RARE(xi<0)) thrM("𝕨 (rand).Deal 𝕩: 𝕩 cannot be negative");
+  if (RARE(wi<0)) thrM("𝕨 (rand).Deal 𝕩: 𝕨 cannot be negative");
   if (wi==0) return emptyIVec();
-  if (RARE(wi>xi)) thrM("𝕨(rand).Deal𝕩: 𝕨 cannot exceed 𝕩");
+  if (RARE(wi>xi)) thrM("𝕨 (rand).Deal 𝕩: 𝕨 cannot exceed 𝕩");
   if (wi==xi) return rand_deal_c1(t, x);
   B r;
   RAND_START;
@@ -578,9 +578,9 @@ extern void filter_ne_i32(i32* dst, i32* src, usz len, usz sum, i32 val); // sla
 B rand_subset_c2(B t, B w, B x) {
   i32 wi = o2i(w);
   i32 xi = o2i(x);
-  if (RARE(wi<0)) thrM("𝕨(rand).Subset𝕩: 𝕨 cannot be negative");
-  if (RARE(xi<0)) thrM("𝕨(rand).Subset𝕩: 𝕩 cannot be negative");
-  if (RARE(wi>xi)) thrM("𝕨(rand).Subset𝕩: 𝕨 cannot exceed 𝕩");
+  if (RARE(wi<0)) thrM("𝕨 (rand).Subset 𝕩: 𝕨 cannot be negative");
+  if (RARE(xi<0)) thrM("𝕨 (rand).Subset 𝕩: 𝕩 cannot be negative");
+  if (RARE(wi>xi)) thrM("𝕨 (rand).Subset 𝕩: 𝕨 cannot exceed 𝕩");
   if (wi==0) return emptyIVec();
   if (wi==xi) return ud_c1(t, x); // Only one complete subset; will hang without this
   
@@ -652,7 +652,7 @@ static NOINLINE void rand_init() {
   rand_subsetName = m_c8vec_0("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_c8vec_0("(rand).Subset"),       c1_bad, rand_subset_c2);
 }
 B makeRand_c1(B t, B x) {
-  if (!isNum(x)) thrM("•MakeRand𝕩: 𝕩 must be a number");
+  if (!isNum(x)) thrM("•MakeRand 𝕩: 𝕩 must be a number");
   if (rand_ns==NULL) rand_init();
   B r = m_nns(rand_ns, b(x.u>>32), b(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
   Scope* sc = c(NS,r)->sc;
@@ -675,12 +675,12 @@ STATIC_GLOBAL NFnDesc* bqnDesc;
 STATIC_GLOBAL NFnDesc* rebqnDesc;
 STATIC_GLOBAL NFnDesc* rebqnResDesc;
 B rebqn_c1(B t, B x) {
-  if (!isNsp(x)) thrM("•ReBQN𝕩: Argument must be a namespace");
+  if (!isNsp(x)) thrM("•ReBQN 𝕩: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
   B prim = ns_getC(x, "primitives");
   B sys = ns_getC(x, "system");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
-  if (replVal==3) thrM("•ReBQN𝕩: Invalid repl value");
+  if (replVal==3) thrM("•ReBQN 𝕩: Invalid repl value");
   B scVal;
   if (replVal==0) {
     scVal = bi_N;
@@ -708,13 +708,13 @@ B repl_c1(B t, B x) {
 #if USE_SETJMP
 GLOBAL B lastErrMsg;
 B currentError_c1(B t, B x) {
-  if (isNsp(x)) thrM("•CurrentError𝕩: Namespace 𝕩 is reserved");
+  if (isNsp(x)) thrM("•CurrentError 𝕩: Namespace 𝕩 is reserved");
   dec(x);
-  if (q_N(lastErrMsg)) thrM("•CurrentError𝕩: Not currently within any ⎊");
+  if (q_N(lastErrMsg)) thrM("•CurrentError 𝕩: Not currently within any ⎊");
   return inc(lastErrMsg);
 }
 #else
-B currentError_c1(B t, B x) { thrM("•CurrentError𝕩: No errors as error catching has been disabled"); }
+B currentError_c1(B t, B x) { thrM("•CurrentError 𝕩: No errors as error catching has been disabled"); }
 #endif
 
 STATIC_GLOBAL Body* hashmap_ns;
@@ -759,9 +759,9 @@ static NOINLINE void hashmap_init() {
   hashmap_valuesDesc = registerNFn(m_c8vec_0("(hashmap).Values"), hashmap_values_c1, c2_bad);
 }
 B hashMap_c2(B t, B w, B x) {
-  if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("𝕨•HashMap𝕩: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
+  if (!isArr(w) || RNK(w)!=1 || !isArr(x) || RNK(x)!=1) thrF("𝕨 •HashMap 𝕩: Arguments must be lists (%H≡≢𝕨, %H≡≢𝕩)", w, x);
   usz n = IA(w);
-  if (n != IA(x)) thrF("𝕨•HashMap𝕩: 𝕨 and 𝕩 must have the same length (%s≡≠𝕨, %s≡≠𝕩)", n, IA(x));
+  if (n != IA(x)) thrF("𝕨 •HashMap 𝕩: 𝕨 and 𝕩 must have the same length (%s≡≠𝕨, %s≡≠𝕩)", n, IA(x));
   if (hashmap_ns==NULL) hashmap_init();
   w = taga(toHArr(w)); x = taga(toHArr(x));
   B h = hashmap_build(w, n);
@@ -786,7 +786,7 @@ B fchars_c1(B d, B x) {
   return path_chars(path_rel(nfn_objU(d), x, "•file.Chars"));
 }
 B fchars_c2(B d, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("𝕨•file.Chars𝕩: 𝕩 must be a list of characters");
+  if (isAtm(x) || RNK(x)!=1) thrM("𝕨 •file.Chars 𝕩: 𝕩 must be a list of characters");
   B p = path_rel(nfn_objU(d), w, "•file.Chars");
   path_wChars(incG(p), x);
   decG(x);
@@ -802,7 +802,7 @@ B fbytes_c1(B d, B x) {
   return r;
 }
 B fbytes_c2(B d, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("𝕨•file.Bytes𝕩: 𝕩 must be a list");
+  if (isAtm(x) || RNK(x)!=1) thrM("𝕨 •file.Bytes 𝕩: 𝕩 must be a list");
   B p = path_rel(nfn_objU(d), w, "•file.Bytes");
   path_wBytes(incG(p), x);
   decG(x);
@@ -813,13 +813,13 @@ B flines_c1(B d, B x) {
   return path_lines(path_rel(nfn_objU(d), x, "•file.Lines"));
 }
 B flines_c2(B d, B w, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("𝕨•file.Lines𝕩: 𝕩 must be a list");
+  if (isAtm(x) || RNK(x)!=1) thrM("𝕨 •file.Lines 𝕩: 𝕩 must be a list");
   B s = emptyCVec();
   usz ia = IA(x);
   SGet(x)
   for (u64 i = 0; i < ia; i++) {
     B l = Get(x, i);
-    if (isAtm(l) || RNK(l)!=1) thrM("𝕨•file.Lines𝕩: Elements of 𝕩 must be lists of characters");
+    if (isAtm(l) || RNK(l)!=1) thrM("𝕨 •file.Lines 𝕩: Elements of 𝕩 must be lists of characters");
     s = vec_join(s, l);
     //if (windows) s = vec_add(s, m_c32('\r')); TODO figure out whether or not this is a thing that should be done
     s = vec_addN(s, m_c32('\n'));
@@ -850,7 +850,7 @@ B import_c1(B d, B x) {
   B tag_none    = tagu64(100000000, C32_TAG);
   B tag_running = tagu64(100000001, C32_TAG);
   B prevVal = c2(ns_getC(map, "get"), tag_none, incG(path));
-  if (prevVal.u == tag_running.u) thrF("•Import𝕩: cyclic import of \"%R\"", path);
+  if (prevVal.u == tag_running.u) thrF("•Import 𝕩: cyclic import of \"%R\"", path);
   if (prevVal.u != tag_none.u) {
     // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, IA(importKeyList));
     decG(path);
@@ -892,7 +892,7 @@ B list_c1(B d, B x) {
 B createdir_c1(B d, B x) {
   B p = path_rel(nfn_objU(d), x, "•file.CreateDir");
   if (dir_create(p)) return p;
-  thrM("•file.CreateDir𝕩: Failed to create directory");
+  thrM("•file.CreateDir 𝕩: Failed to create directory");
 }
 B realpath_c1(B d, B x) {
   return path_abs(path_rel(nfn_objU(d), x, "•file.RealPath"));
@@ -902,17 +902,17 @@ B rename_c2(B d, B w, B x) {
   d = nfn_objU(d);
   B p = path_rel(d, w, "•file.Rename");
   if (path_rename(path_rel(d, x, "•file.Rename"), p)) return p;
-  thrM("𝕨•file.Rename𝕩: Failed to rename file");
+  thrM("𝕨 •file.Rename 𝕩: Failed to rename file");
 }
 
 B remove_c1(B d, B x) {
   if (path_remove(path_rel(nfn_objU(d), x, "•file.Remove"))) return m_i32(1);
-  thrM("•file.Remove𝕩: Failed to remove file");
+  thrM("•file.Remove 𝕩: Failed to remove file");
 }
 
 B ftype_c1(B d, B x) {
   char ty = path_type(path_rel(nfn_objU(d), x, "•file.Type"));
-  if (ty==0) thrM("•file.Type𝕩: Error while accessing file");
+  if (ty==0) thrM("•file.Type 𝕩: Error while accessing file");
   return m_c32(ty);
 }
 
@@ -927,11 +927,11 @@ B fexists_c1(B d, B x) {
 }
 
 B fName_c1(B t, B x) {
-  if (!isStr(x)) thrM("•file.Name𝕩: Argument must be a string");
+  if (!isStr(x)) thrM("•file.Name 𝕩: Argument must be a string");
   return path_name(x);
 }
 B fParent_c1(B t, B x) {
-  if (!isStr(x)) thrM("•file.Parent𝕩: Argument must be a string");
+  if (!isStr(x)) thrM("•file.Parent 𝕩: Argument must be a string");
   return path_parent(x);
 }
 
@@ -951,7 +951,7 @@ B monoTime_c1(B t, B x) {
 }
 B delay_c1(B t, B x) {
   f64 sf = o2f(x);
-  if (sf<0 || sf>1ULL<<63) thrF("•Delay𝕩: Bad argument: %f", sf);
+  if (sf<0 || sf>1ULL<<63) thrF("•Delay 𝕩: Bad argument: %f", sf);
   struct timespec ts,ts0;
   u64 s = (u64)sf;
   ts.tv_sec = (u64)sf;
@@ -985,7 +985,7 @@ B getLine_c1(B t, B x) {
 }
 
 B fromUtf8_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•FromUTF8𝕩: 𝕩 must be a character or number list");
+  if (isAtm(x) || RNK(x)!=1) thrM("•FromUTF8 𝕩: 𝕩 must be a character or number list");
   usz ia = IA(x);
   TALLOC(char, chrs, ia);
   SGetU(x)
@@ -993,11 +993,11 @@ B fromUtf8_c1(B t, B x) {
     B c = GetU(x,i);
     if (isC32(c)) {
       u32 v = o2cG(c);
-      if (v>=256) thrF("•FromUTF8𝕩: 𝕩 contained a character with codepoint %i", v);
+      if (v>=256) thrF("•FromUTF8 𝕩: 𝕩 contained a character with codepoint %i", v);
       chrs[i] = v;
     } else {
       i32 v = o2i(c);
-      if (v<=-128 | v>=256) thrF("•FromUTF8𝕩: 𝕩 contained the number %i", v);
+      if (v<=-128 | v>=256) thrF("•FromUTF8 𝕩: 𝕩 contained the number %i", v);
       chrs[i] = v&0xff;
     }
   }
@@ -1008,7 +1008,7 @@ B fromUtf8_c1(B t, B x) {
 }
 
 B toUtf8_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•ToUTF8𝕩: 𝕩 must be a character or number list");
+  if (isAtm(x) || RNK(x)!=1) thrM("•ToUTF8 𝕩: 𝕩 must be a character or number list");
   u64 len = utf8lenB(x);
   u8* rp; B r = m_c8arrv(&rp, len);
   toUTF8(x, (char*)rp);
@@ -1163,7 +1163,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
-    if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
+    if (isAtm(c) || RNK(c)!=1) thrM("•SH 𝕩: 𝕩 must be a list of strings");
     u64 len = utf16lenB(c);
     TALLOC(WCHAR, wstr, len);
     toUTF16(c, wstr);
@@ -1214,7 +1214,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TSFREE(arg);
   if (dwResult != ERROR_SUCCESS) {
-    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
+    thrF("•SH 𝕩: Failed to run command: %S", winErrorEx(dwResult)); 
   }
 
   // prepare output
@@ -1242,17 +1242,17 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     B inObj = bi_N;
     bool raw = false;
     if (!q_N(w)) {
-      if (!isNsp(w)) thrM("•SH: 𝕨 must be a namespace");
+      if (!isNsp(w)) thrM("𝕨 •SH 𝕩: 𝕨 must be a namespace");
       inObj = ns_getC(w, "stdin");
-      if (!q_N(inObj) && !isArr(inObj)) thrM("•SH: Invalid stdin value");
+      if (!q_N(inObj) && !isArr(inObj)) thrM("𝕨 •SH 𝕩: Invalid stdin value");
       B rawObj = ns_getC(w, "raw");
       if (!q_N(rawObj)) raw = o2b(rawObj);
     }
     u64 iLen = q_N(inObj)? 0 : (raw? IA(inObj) : utf8lenB(inObj));
     
-    if (isAtm(x) || RNK(x)>1) thrM("•SH: 𝕩 must be a list of strings");
+    if (isAtm(x) || RNK(x)>1) thrM("𝕨 •SH 𝕩: 𝕩 must be a list of strings");
     usz xia = IA(x);
-    if (xia==0) thrM("•SH: 𝕩 must have at least one item");
+    if (xia==0) thrM("𝕨 •SH 𝕩: 𝕩 must have at least one item");
     
     B s_out, s_err;
     i32 code = sh_core(raw, x, xia, inObj, iLen, &s_out, &s_err);
@@ -1270,7 +1270,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     return m_hvec3(m_i32(code), s_outObj, s_errObj);
   }
 #else
-  B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
+  B sh_c2(B t, B w, B x) { thrM("𝕨 •SH 𝕩: CBQN was compiled without <spawn.h>"); }
 #endif
 B sh_c1(B t, B x) { return sh_c2(t, bi_N, x); }
 
@@ -1315,8 +1315,8 @@ B tCharN_c1(B t, B x) {
   }
 }
 #else
-B tRawMode_c1(B t, B x) { thrM("•term.RawMode𝕩: •term.RawMode not available"); }
-B tCharN_c1(B t, B x) { thrM("•term.CharN𝕩: •term.CharN not available"); }
+B tRawMode_c1(B t, B x) { thrM("•term.RawMode 𝕩: •term.RawMode not available"); }
+B tCharN_c1(B t, B x) { thrM("•term.CharN 𝕩: •term.CharN not available"); }
 #endif
 
 B tCharB_c1(B t, B x) {
@@ -1330,12 +1330,12 @@ B tFlush_c1(B t, B x) {
   return x;
 }
 B tOutRaw_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•term.OutRaw𝕩: 𝕩 must be a list");
+  if (isAtm(x) || RNK(x)!=1) thrM("•term.OutRaw 𝕩: 𝕩 must be a list");
   file_wBytes(stdout, "stdout", x);
   return x;
 }
 B tErrRaw_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrM("•term.ErrRaw𝕩: 𝕩 must be a list");
+  if (isAtm(x) || RNK(x)!=1) thrM("•term.ErrRaw 𝕩: 𝕩 must be a list");
   file_wBytes(stderr, "stderr", x);
   return x;
 }
@@ -1374,7 +1374,7 @@ static NOINLINE B name_normalize(B x) {
 }
 
 B nKeys_c1(B t, B x) {
-  if (!isNsp(x)) thrM("•ns.Keys𝕩: 𝕩 must be a namespace");
+  if (!isNsp(x)) thrM("•ns.Keys 𝕩: 𝕩 must be a namespace");
   NSDesc* desc = c(NS,x)->desc;
   ux am = desc->varAm;
   ux eam = 0;
@@ -1389,7 +1389,7 @@ B nKeys_c1(B t, B x) {
   return r.b;
 }
 B nGet_c2(B t, B w, B x) {
-  if (!isNsp(w)) thrM("𝕨•ns.Get𝕩: 𝕨 must be a namespace");
+  if (!isNsp(w)) thrM("𝕨•ns.Get 𝕩: 𝕨 must be a namespace");
   vfyStr(x, "•ns.Get", "𝕩");
   x = name_normalize(x);
   B r = ns_getNU(w, x, true);
@@ -1397,7 +1397,7 @@ B nGet_c2(B t, B w, B x) {
   return inc(r);
 }
 B nHas_c2(B t, B w, B x) {
-  if (!isNsp(w)) thrM("𝕨•ns.Has𝕩: 𝕨 must be a namespace");
+  if (!isNsp(w)) thrM("𝕨•ns.Has 𝕩: 𝕨 must be a namespace");
   vfyStr(x, "•ns.Has", "𝕩");
   x = name_normalize(x);
   B r = ns_getNU(w, x, false);
