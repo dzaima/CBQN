@@ -452,7 +452,7 @@ B bqn_merge(B x, u32 type) {
     if (isAtm(xf)) { dec(xf); return x; }
     i32 xfr = RNK(xf);
     Arr* r = emptyWithFill(getFillR(xf));
-    if (xr+xfr > UR_MAX) thrM(">: Result rank too large");
+    if (xr+xfr > UR_MAX) thrM(">𝕩: Result rank too large");
     usz* rsh = arr_shAlloc(r, xr+xfr);
     if (rsh) {
       shcpy       (rsh   , SH(x),  xr);

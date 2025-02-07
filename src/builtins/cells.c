@@ -433,7 +433,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         return select_cells(0, x, cam, k, true);
       case n_couple: {
         Arr* r = cpyWithShape(x); xsh=PSH(r);
-        if (xr==UR_MAX) thrF("≍%c: Result rank too large (%i≡=𝕩)", chr, xr);
+        if (xr==UR_MAX) thrF("≍%U 𝕩: Result rank too large (%i≡=𝕩)", chr==U'˘'? "˘" : "⎉𝕘", xr);
         ShArr* rsh = m_shArr(xr+1);
         shcpy(rsh->a, xsh, k);
         rsh->a[k] = 1;
@@ -722,7 +722,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         }
         if (isF64(w) && xcr>=1) {
           usz l = xsh[xk];
-          return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
+          return select_cells(WRAP(o2i64(w), l, thrF("𝕨⊏𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
         }
         break;
       case n_couple: if (RNK(x)==1) {
@@ -732,7 +732,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       } break;
       case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
         usz l = xsh[xk];
-        return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
+        return select_cells(WRAP(o2i64(w), l, thrF("𝕨⊑𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
       } break;
       case n_shifta: case n_shiftb: if (isAtm(w)) {
         if (IA(x)==0) return x;
@@ -811,7 +811,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
   usz cam0 = 1;
   for (usz i = 0; i < k; i++) {
     usz wl = wsh[i], xl = xsh[i];
-    if (wl != xl) thrF("%c: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
+    if (wl != xl) thrF("𝕨%c𝕩: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
     cam0*= wsh[i];
   }
   usz ext = shProd(zsh, k, zk);

@@ -126,10 +126,10 @@ FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
 
 extern GLOBAL B rt_select;
 B select_c1(B t, B x) {
-  if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
+  if (isAtm(x)) thrM("⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
-  if (xr==0) thrM("⊏: Argument cannot be rank 0");
-  if (SH(x)[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
+  if (xr==0) thrM("⊏𝕩: 𝕩 cannot be rank 0");
+  if (SH(x)[0]==0) thrF("⊏𝕩: 𝕩 shape cannot start with 0 (%H ≡ ≢𝕩)", x);
   usz ia = shProd(SH(x), 1, xr);
   Arr* r = TI(x,slice)(incG(x), 0, ia);
   usz* sh = arr_shAlloc(r, xr-1);
@@ -145,13 +145,13 @@ static NOINLINE NORETURN void select_properError(B w, B x) {
 }
 
 B select_c2(B t, B w, B x) {
-  if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
+  if (isAtm(x)) thrM("𝕨⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
-  if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
+  if (xr==0) thrM("𝕨⊏𝕩: 𝕩 cannot be a unit");
   if (isAtm(w)) {
     watom:;
     usz xn = *SH(x);
-    usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
+    usz wi = WRAP(o2i64(w), xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
     if (xr==1) {
       B xf = getFillR(x);
       B xv = IGet(x, wi);
@@ -220,7 +220,7 @@ B select_c2(B t, B w, B x) {
     
   #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (sizeof(W) >= 4) {                           \
         switch(xl) { default:UD; CASEW(3,u8); CASEW(4,u16); CASEW(5,u32); CASEW(6,u64); } \
@@ -298,8 +298,8 @@ B select_c2(B t, B w, B x) {
     if (xl!=6) goto generic_l;                        \
     M_HARR(ra, wia); B* xp = arr_bptr(x);             \
     SLOWIF(xp==NULL) SLOW2("𝕨⊏𝕩", w, x);              \
-    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
-    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
+    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
+    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
     r = a(withFill(HARR_FV(ra), xf)); goto setsh;     \
   }
   
@@ -320,7 +320,7 @@ B select_c2(B t, B w, B x) {
       if (xia<2) {
         u64* wp=bitany_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
-        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
+        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
         x1 = x0;
       } else {
         x1 = GetU(x,1);
@@ -387,14 +387,14 @@ B select_c2(B t, B w, B x) {
     bad1:;
     mut_pfree(rm, i*csz);
     if (!q_fi64(badw)) expI_f64(badw);
-    thrF("⊏: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
+    thrF("𝕨⊏𝕩: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
   }
   
   
   
   setsh:
   if (rr>1) {
-    if (rr > UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+    if (rr > UR_MAX) thrF("𝕨⊏𝕩: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     ShArr* sh = m_shArr(rr);
     shcpy(sh->a, SH(w), wr);
     shcpy(sh->a+wr, SH(x)+1, xr-1);
@@ -915,7 +915,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   if (in == 0) return taga(emptyArr(x, 1));
   if (in == 1) {
     B w = IGetU(inds,0); if (!isF64(w)) goto generic;
-    B r = select_cells_single(WRAP(o2i64(w), csz, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, csz)), x, cam, csz, 1, false);
+    B r = select_cells_single(WRAP(o2i64(w), csz, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, csz)), x, cam, csz, 1, false);
     decG(x); decG(inds); return r;
   }
   u8 ie = TI(inds,elType);

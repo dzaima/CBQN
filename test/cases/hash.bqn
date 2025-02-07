@@ -38,12 +38,12 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 {b←•internal.Unshare a←"Ai8"•internal.Variation ∾⟨16⥊0‿0‿0‿0‿0‿0‿0‿¯128, 8⥊0, 8↑2⟩ ⋄ c←8‿64•bit._cast a ⋄ ! 1‿0‿0‿1≡∊c ⋄ •internal.Keep •Hash c ⋄ ! a≡b} # make sure sign bit doesn't mutate away
 
 # error messages
-!"∊: 𝕩 cannot have rank 0" % 1‿2‿3∊0
-!"⊐: 𝕨 cannot have rank 0" % 0⊐1‿2‿3
-!"⊒: 𝕨 cannot have rank 0" % 0⊒1‿2‿3
-!"∊: Rank of 𝕨 must be at least the cell rank of 𝕩 (⟨2⟩ ≡ ≢𝕨, 2‿2‿2 ≡ ≢𝕩)" % 1‿2∊2‿2‿2⥊1‿2
-!"⊐: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊐1‿2
-!"⊒: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊒1‿2
+!"𝕨∊𝕩: 𝕩 cannot have rank 0" % 1‿2‿3∊0
+!"𝕨⊐𝕩: 𝕨 cannot have rank 0" % 0⊐1‿2‿3
+!"𝕨⊒𝕩: 𝕨 cannot have rank 0" % 0⊒1‿2‿3
+!"𝕨∊𝕩: Rank of 𝕨 must be at least the cell rank of 𝕩 (⟨2⟩ ≡ ≢𝕨, 2‿2‿2 ≡ ≢𝕩)" % 1‿2∊2‿2‿2⥊1‿2
+!"𝕨⊐𝕩: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊐1‿2
+!"𝕨⊒𝕩: Rank of 𝕩 must be at least the cell rank of 𝕨 (2‿2‿2 ≡ ≢𝕨, ⟨2⟩ ≡ ≢𝕩)" % (2‿2‿2⥊1‿2)⊒1‿2
 
 # hashmap
 ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fgh" %% ⟨2⟩
@@ -54,8 +54,8 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 (((•HashMap˜↕4).Delete 1).Set´ 1‿"one").Keys@ %% 0‿2‿3‿1
 (((•HashMap˜↕4).Delete 1).Set´ 1‿"one").Values@ %% 0‿2‿3‿"one"
 ({𝕩.Set´"xy"}⍟4•HashMap˜↕0).Count@ %% 1
-!"•HashMap: Arguments must be lists (⟨⟩≡≢𝕨, ⟨3⟩≡≢𝕩)" % 'a' •HashMap "str"
-!"•HashMap: 𝕨 and 𝕩 must have the same length (4≡≠𝕨, 3≡≠𝕩)" % "stri" •HashMap "str"
+!"𝕨 •HashMap 𝕩: Arguments must be lists (⟨⟩≡≢𝕨, ⟨3⟩≡≢𝕩)" % 'a' •HashMap "str"
+!"𝕨 •HashMap 𝕩: 𝕨 and 𝕩 must have the same length (4≡≠𝕨, 3≡≠𝕩)" % "stri" •HashMap "str"
 !"•HashMap: 𝕨 contained duplicate keys" % "strs" •HashMap "stri"
 !"(hashmap).Get: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Get "fg"
 !"(hashmap).Delete: key not found" % ("abc"‿"de"‿"fgh" •HashMap ⥊¨↕3).Delete 'a'

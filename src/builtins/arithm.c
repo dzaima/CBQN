@@ -23,7 +23,7 @@ B bit_negate(B x) { // consumes
 
 B add_c1(B t, B x) {
   if (isF64(x)) return x;
-  if (!isArr(x)) thrM("+: Argument must consist of numbers");
+  if (!isArr(x)) thrM("+𝕩: Argument must consist of numbers");
   if (elNum(TI(x,elType))) return x;
   decG(eachm_fn(m_f64(0), incG(x), add_c1));
   return x;
@@ -35,7 +35,7 @@ B add_c1(B t, B x) {
 
 #define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \
   if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); } \
-  if (RARE(!isArr(x))) thrM(SYMB ": Argument contained non-number"); \
+  if (RARE(!isArr(x))) thrM(SYMB "𝕩: 𝕩 contained non-number"); \
   u8 xe = TI(x,elType);                               \
   if (elNum(xe)) {                                    \
     if (xe<=TMIN) return RMIN;                        \
@@ -112,8 +112,8 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
   thrM(MSG);                                \
 }
 
-GC1f( div, 1/(xv+0), "÷: Argument contained non-number")
-GC1f(root, sqrt(xv), "√: Argument contained non-number")
+GC1f( div, 1/(xv+0), "÷𝕩: 𝕩 contained non-number")
+GC1f(root, sqrt(xv), "√𝕩: 𝕩 contained non-number")
 #undef GC1i
 #undef LOOP_BODY
 #undef SIGN_EXPR
@@ -142,13 +142,13 @@ NOINLINE f64 logfact_inv(f64 y) {
 f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆: Argument contained non-number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼: Argument contained non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆𝕩: 𝕩 contained non-number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼𝕩: 𝕩 contained non-number"); }
 #undef P1
 static NOINLINE B arith_recm_slow(f64 (*fn)(f64), FC1 rec, B x, char* s) {
   if (isF64(x)) return m_f64(fn(x.f));
   if(isArr(x)) return arith_recm(rec, x);
-  thrF("•math.%S: Argument contained non-number", s);
+  thrF("•math.%S 𝕩: 𝕩 contained non-number", s);
 }
 #define MATH(n,N) B n##_c1(B t, B x) { return arith_recm_slow(n, n##_c1, x, #N); }
 MATH(cbrt,Cbrt) MATH(log2,Log2) MATH(log10,Log10) MATH(log1p,Log1p) MATH(expm1,Expm1)

@@ -103,13 +103,13 @@ static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16,
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
 
 B sum_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum: Argument must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum 𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (ia==0) { decG(x); return m_f64(0); }
   u8 xe = TI(x,elType);
   if (!elNum(xe)) {
     x = any_squeeze(x); xe = TI(x,elType);
-    if (!elNum(xe)) thrF("•math.Sum: Argument elements must be numbers", x);
+    if (!elNum(xe)) thrF("•math.Sum 𝕩: 𝕩 elements must be numbers", x);
   }
   f64 r;
   void* xv = tyany_ptr(x);
@@ -180,7 +180,7 @@ static f64 (*const min_fns[])(void*, usz) = { min_i8, min_i16, min_i32, min_f64 
 static f64 (*const max_fns[])(void*, usz) = { max_i8, max_i16, max_i32, max_f64 };
 
 B fold_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)!=1) thrF("´: Argument must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("𝔽´𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (ia<=2) {
     if (ia==2) {
@@ -197,7 +197,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
         B r = TI(f,identity)(f);
         if (!q_N(r)) return r;
       }
-      thrM("´: Identity not found");
+      thrM("𝔽´𝕩: Identity not found");
     }
   }
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
@@ -268,7 +268,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
 }
 
 B fold_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)!=1) thrF("´: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
+  if (isAtm(x) || RNK(x)!=1) thrF("𝕨𝔽´𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (RARE(ia==0)) { decG(x); return w; }
   if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
@@ -385,7 +385,7 @@ extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
   ur xr;
-  if (isAtm(x) || (xr=RNK(x))==0) thrM("˝: 𝕩 must have rank at least 1");
+  if (isAtm(x) || (xr=RNK(x))==0) thrM("𝔽˝𝕩: 𝕩 must have rank at least 1");
   usz len = *SH(x);
   if (len==0) {
     if (isFun(f)) {
@@ -400,11 +400,11 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
         }
         decG(x); return taga(r);
       } else if (RTID(f) == n_join) {
-        if (xr <= 1) thrM("˝: Identity does not exist");
+        if (xr <= 1) thrM("𝔽˝𝕩: Identity does not exist");
         goto join;
       }
     }
-    thrM("˝: Identity not found");
+    thrM("𝔽˝𝕩: Identity not found");
   }
   if (len==1) return C1(select, x);
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
@@ -444,7 +444,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
 }
 B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   ur xr;
-  if (isAtm(x) || (xr=RNK(x))==0) thrM("˝: 𝕩 must have rank at least 1");
+  if (isAtm(x) || (xr=RNK(x))==0) thrM("𝕨˝𝕩: 𝕩 must have rank at least 1");
   usz len = *SH(x);
   if (len==0) { decG(x); return w; }
   if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }

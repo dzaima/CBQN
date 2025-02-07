@@ -77,7 +77,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     case el_bit: ria = xn? 1+bit_has(wp0,xn,1) : wia? bitp_get(wp0,0) : 0; break;
   }
   #undef CASE
-  if (bad) thrM("⊔: 𝕨 can't contain elements less than ¯1");
+  if (bad) thrM("𝕨⊔𝕩: 𝕨 can't contain elements less than ¯1");
   if (ria > (i64)(USZ_MAX)) thrOOM();
   
   Arr* r = m_fillarr0p(ria);
@@ -261,7 +261,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
 
 extern GLOBAL B rt_group;
 B group_c2(B t, B w, B x) {
-  if (isAtm(x)) thrM("⊔: 𝕩 must be an array");
+  if (isAtm(x)) thrM("𝕨⊔𝕩: 𝕩 must be an array");
   ur xr = RNK(x);
   if (isArr(w) && RNK(w)==1 && xr>=1) {
     u8 we = TI(w,elType);
@@ -273,7 +273,7 @@ B group_c2(B t, B w, B x) {
       usz wia = IA(w);
       usz* xsh = SH(x);
       usz xn = *xsh;
-      if (wia-(u64)xn > 1) thrF("⊔: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xn);
+      if (wia-(u64)xn > 1) thrF("𝕨⊔𝕩: ≠𝕨 must be either ≠𝕩 or one bigger (%s≡≠𝕨, %s≡≠𝕩)", wia, xn);
       return group_simple(w, x, xr, wia, xn, xsh, we);
     }
   }

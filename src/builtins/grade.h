@@ -204,7 +204,7 @@ extern i8 (*const simd_count_i8)(u16*, u16*, void*, u64, i8);
 
 #define SORT_C1 CAT(GRADE_UD(and,or),c1)
 B SORT_C1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")"𝕩: 𝕩 cannot have rank 0");
   usz n = *SH(x);
   if (n <= 1 || FL_HAS(x,GRADE_UD(fl_asc,fl_dsc))) return x;
   if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)), 0);
@@ -278,7 +278,7 @@ extern B grade_bool(B x, usz ia, bool up); // slash.c
 
 #define GRADE_CHR GRADE_UD("⍋","⍒")
 B GRADE_CAT(c1)(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
+  if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR"𝕩: 𝕩 cannot be a unit");
   if (RNK(x)>1) x = toCells(x);
   usz ia = IA(x);
   B r;
@@ -292,7 +292,7 @@ B GRADE_CAT(c1)(B t, B x) {
   
   u8 xe = TI(x,elType);
   if (xe==el_bit) return grade_bool(x, ia, GRADE_UD(1,0));
-  if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
+  if (ia>I32_MAX) thrM(GRADE_CHR"𝕩: 𝕩 too large");
   i32* rp; r = m_i32arrv(&rp, ia);
   if (xe==el_i8 && ia>8) {
     i8* xp = i8any_ptr(x); usz n=ia;
@@ -421,13 +421,13 @@ extern B select_c2(B,B,B);
 extern B mul_c2(B,B,B);
 
 B GRADE_CAT(c2)(B t, B w, B x) {
-  if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
+  if (isAtm(w) || RNK(w)==0) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
   ur wr = RNK(w);
   
   if (wr > 1) {
     ur xr = RNK(x);
-    if (wr > xr+1) thrM(GRADE_CHR": =𝕨 cannot be greater than =𝕩");
+    if (wr > xr+1) thrM("𝕨"GRADE_CHR"𝕩: =𝕨 cannot be greater than =𝕩");
     i32 nxr = xr-wr+1;
     x = toKCells(x, nxr);
     w = toCells(w);
@@ -466,11 +466,11 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     goto done;
   }
-  if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
+  if (wia>I32_MAX-10) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 too big");
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
   if (CHECK_VALID && !FL_HAS(w,fl)) {
-    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 must be sorted"GRADE_UD(," in descending order"));
     FL_SET(w, fl);
   }
 

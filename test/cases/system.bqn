@@ -113,18 +113,18 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"•file.Parent: Path must be non-empty" % •file.Parent ""
 !"•file.Name: Path must be non-empty" % •file.Name ""
 
-!"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
-!"•file.Lines: 𝕩 must be a list" % "testfile.bqn" •file.Lines <"abcd"
-!"•file.Lines: Elements of 𝕩 must be lists of characters" % "testfile.bqn" •FLines "abcd"
+!"𝕨 •file.Lines 𝕩: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
+!"𝕨 •file.Lines 𝕩: 𝕩 must be a list" % "testfile.bqn" •file.Lines <"abcd"
+!"𝕨 •file.Lines 𝕩: Elements of 𝕩 must be lists of characters" % "testfile.bqn" •FLines "abcd"
 !"Expected character" % "testfile.bqn" •FLines ⋈"ab"‿"cd"
 !"Expected character" % "testfile.bqn" •FLines ⋈1‿2
 !"Expected character" % "testfile.bqn" •FChars ⋈"abcd"
-!"•file.Chars: 𝕩 must be a list of characters" % "testfile.bqn" •FChars <'a'
+!"𝕨 •file.Chars 𝕩: 𝕩 must be a list of characters" % "testfile.bqn" •FChars <'a'
 !"Expected character" % "testfile.bqn" •FBytes ⋈"abcd"
-!"•file.Bytes: 𝕩 must be a list" % "testfile.bqn" •file.Bytes <'a'
+!"𝕨 •file.Bytes 𝕩: 𝕩 must be a list" % "testfile.bqn" •file.Bytes <'a'
 !"Expected character" % "badwrite"•FChars ""‿""
 !"Expected character" % "badwrite"•FLines ⟨⟨"foo"⟩⟩
-!"•file.Chars: 𝕩 must be a list of characters" % "badwrite"•FChars @
+!"𝕨 •file.Chars 𝕩: 𝕩 must be a list of characters" % "badwrite"•FChars @
 
 ! {𝕩≡•file.Name 𝕩 •FChars         "abc"∾(@+10)∾"def𝕩"}"testfile.bqn"
 ! {𝕩≡•file.Name 𝕩 •FBytes •ToUTF8 "abc"∾(@+10)∾"def𝕩"}"testfile2.bqn"
@@ -141,11 +141,11 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 ! 97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169 ≡ @-˜ •file.MapBytes "testfile.bqn"
 
 •file.Name "testfile3B.bqn" •file.Rename "testfile3.bqn" %% "testfile3B.bqn"
-!"•file.Rename: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
+!"𝕨 •file.Rename 𝕩: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
 ¯8↑•file.RealPath "testdirNested/.././" %% "/testDir"
-!"•file.CreateDir: Failed to create directory" % •file.Createdir "testdirNested"
+!"•file.CreateDir 𝕩: Failed to create directory" % •file.Createdir "testdirNested"
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List "." %% 1‿1‿0‿1‿1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List •file.path %% 1‿1‿0‿1‿1
 
@@ -171,8 +171,8 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"•file.Lines: Path must be a list of characters" % 1‿2 •FLines "abc"‿"def"
 !"•file.Type: Path must be a list of characters" % •file.Type 1‿2
 !"•file.Exists: Path must be a list of characters" % •file.Exists 1‿2
-!"•file.Name: Argument must be a string" % •file.Name 1‿2
-!"•file.Parent: Argument must be a string" % •file.Parent 1‿2
+!"•file.Name 𝕩: Argument must be a string" % •file.Name 1‿2
+!"•file.Parent 𝕩: Argument must be a string" % •file.Parent 1‿2
 !"•file.MapBytes: Path must be a list of characters" % •file.MapBytes 1‿2
 !"•file.CreateDir: Path must be a list of characters" % •file.CreateDir 1‿2
 !"•file.RealPath: Path must be a list of characters" % •file.RealPath 1‿2
@@ -189,7 +189,7 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 
 # some of •term
 !"Expected character" % •term.OutRaw 2⥊{⇐}
-!"•term.ErrRaw: 𝕩 must be a list" % •term.ErrRaw 2‿2⥊0
+!"•term.ErrRaw 𝕩: 𝕩 must be a list" % •term.ErrRaw 2‿2⥊0
 
 
 
@@ -235,13 +235,17 @@ v←1 ⋄ ! •BQN∘•Repr⊸≡ ⟨+,1‿2,+¨,(+V)(V+V),2‿2⥊↕4⟩
 # •Delay
 t0←•MonoTime@ ⋄ ! 0.1≤•Delay 0.1 ⋄ ! 0.1≤(•MonoTime@)-t0
 
-# •_timed tested at perf.bqn
+# •_timed tested more at perf.bqn
+!"𝕨 𝔽•_timed 𝕩: 𝕨 must be an integer greater than 0" % 0 ⊢•_timed 2
+!"Expected integer, got character" % @ ⊢•_timed 2
+a←1 ⋄ a ⊣ {𝕊: a+↩𝕩}•_timed 10 %% 11
+a←3 ⋄ 12 {𝕊: a+↩𝕩}•_timed 10 ⋄ a %% 123
 
 # •math
 ! ∧´0=⌊|1e10×{(+´𝕩)-•math.Sum 𝕩}¨ ↑1000•rand.Range 0
-!"•math.Sum: Argument must be a list (⟨⟩ ≡ ≢𝕩)" % •math.Sum 2
-!"•math.Sum: Argument must be a list (2‿2 ≡ ≢𝕩)" % •math.Sum 2‿2⥊1
-!"•math.Sum: Argument elements must be numbers" % •math.Sum 1‿'a'
+!"•math.Sum 𝕩: 𝕩 must be a list (⟨⟩ ≡ ≢𝕩)" % •math.Sum 2
+!"•math.Sum 𝕩: 𝕩 must be a list (2‿2 ≡ ≢𝕩)" % •math.Sum 2‿2⥊1
+!"•math.Sum 𝕩: 𝕩 elements must be numbers" % •math.Sum 1‿'a'
 
 
 
@@ -261,15 +265,15 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 ⌊1e5×{0.1 𝕏 0.2}¨ ⟨•math.Atan2,•math.Comb,•math.Hypot,•math.Atan2⁼,•math.Atan2˜⁼⟩ %% 110714‿96959‿22360‿2027‿49331
 ⌊1e5×{=˜◶99‿⊢¨ 𝕏 0.1‿3}¨ ⟨•math.Acos,•math.Acosh,•math.Asin,•math.Asinh,•math.Atan,•math.Atanh,•math.Cbrt,•math.Cos,•math.Cosh,•math.Erf,•math.ErfC,•math.Expm1,•math.Fact,•math.Log10,•math.Log1p,•math.Log2,•math.LogFact,•math.Sin,•math.Sinh,•math.Tan,•math.Tanh⟩ %% ⟨147062‿9900000,9900000‿176274,10016‿9900000,9983‿181844,9966‿124904,10033‿9900000,46415‿144224,99500‿¯99000,100500‿1006766,11246‿99997,88753‿2,10517‿1908553,95135‿600000,¯100000‿47712,9531‿138629,¯332193‿158496,¯4988‿179175,9983‿14112,10016‿1001787,10033‿¯14255,9966‿99505⟩
 {𝕩 ! 1‿2 (𝕏 ≡ 𝕏¨) 3‿4}¨ ⟨•math.Atan2,•math.Comb,•math.Hypot,•math.Atan2⁼,•math.Atan2˜⁼,•math.GCD,•math.LCM⟩
-!"•math.GCD: Inputs other than natural numbers not yet supported" % 1.5 •math.GCD 3
-!"•math.LCM: Inputs other than natural numbers not yet supported" % 3 •math.LCM 1.5
-!"•math.LCM: Unexpected argument types" % "foo" •math.LCM 3
-!"•math.GCD: Unexpected argument types" % 3 •math.GCD {+}
-!"•math.Sin: Argument contained non-number" % •math.Sin "foo"
-!"•math.Log10: Argument contained non-number" % •math.Log10 "foo"
-!"•math.Atan2: Unexpected argument types" % 1 •math.Atan2 'a'
-!"•math.Atan2⁼: Unexpected argument types" % 1 •math.Atan2⁼ {⇐}
-!"•math.Atan2˜⁼: Unexpected argument types" % {⇐} •math.Atan2˜⁼ 'b'
+!"𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported" % 1.5 •math.GCD 3
+!"𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported" % 3 •math.LCM 1.5
+!"𝕨 •math.LCM 𝕩: Unexpected argument types" % "foo" •math.LCM 3
+!"𝕨 •math.GCD 𝕩: Unexpected argument types" % 3 •math.GCD {+}
+!"•math.Sin 𝕩: 𝕩 contained non-number" % •math.Sin "foo"
+!"•math.Log10 𝕩: 𝕩 contained non-number" % •math.Log10 "foo"
+!"𝕨 •math.Atan2 𝕩: Unexpected argument types" % 1 •math.Atan2 'a'
+!"𝕨 •math.Atan2⁼ 𝕩: Unexpected argument types" % 1 •math.Atan2⁼ {⇐}
+!"𝕨 •math.Atan2˜⁼ 𝕩: Unexpected argument types" % {⇐} •math.Atan2˜⁼ 'b'
 
 # •rand / •MakeRand
 0 (•MakeRand 0).Range¨↕2 %% ⟨⟩‿⟨⟩
@@ -277,7 +281,7 @@ E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾
 (•MakeRand 0).Deal 0 %% ⟨⟩
 0 (•MakeRand 0).Subset 0 %% ⟨⟩
 {!(∧•rand.Deal 𝕩)≡↕𝕩}¨ ⥊ ¯1‿0‿1+⌜2⋆↕22 # %SLOW
-!"(rand).Range: Result rank too large (256≡≢𝕨)" % (256⥊1) •rand.Range 0
+!"𝕨 (rand).Range 𝕩: Result rank too large (256≡≢𝕨)" % (256⥊1) •rand.Range 0
 ! ≡˝ a←{r←•MakeRand 𝕩 ⋄ ⟨r.Range 1e9, 100 r.Range 1e9, r.Deal 100, 100 r.Deal 200, 100 r.Deal 200, 100 r.Subset 200⟩}¨ 2‿2⥊↕2 ⋄ !∘≢¨´ ⊏a
 r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 800 r.Subset 1000}¨ ↕4
 r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 50 r.Subset 10000}¨ ↕4

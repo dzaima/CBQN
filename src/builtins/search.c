@@ -154,11 +154,11 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #define SYMB (mode==0? "∊" : mode==1? "⊐" : "⊒")
   #define ARG_N (mode? "𝕩" : "𝕨")
   #define ARG_P (mode? "𝕨" : "𝕩")
-  if (isAtm(p) || RNK(p)==0) thrF("%U: %U cannot have rank 0", SYMB, ARG_P);
+  if (isAtm(p) || RNK(p)==0) thrF("𝕨%U𝕩: %U cannot have rank 0", SYMB, ARG_P);
   ur pr = RNK(p);
   if (isAtm(n)) n = m_unit(n);
   ur nr = RNK(n);
-  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
+  if (nr < pr-1) thrF("𝕨%U𝕩: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
   ur pcr = pr-1;
   ur nco = nr-pcr;
   if (nco>0 && eqShPart(SH(n)+nco, SH(p)+1, pcr)) {

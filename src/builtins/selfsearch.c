@@ -155,7 +155,7 @@ extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
 #define PRUP ptr_roundUpToEl
 B memberOf_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("∊𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allOnes(1))) : emptyIVec(); }
   
@@ -288,10 +288,10 @@ B memberOf_c1(B t, B x) {
 }
 
 B count_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⊒𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
-  if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
+  if (n>(usz)I32_MAX+1) thrM("⊒𝕩: 𝕩 length >2⋆31 not supported");
   
   usz csz = arr_csz(x);
   if (csz==0) { decG(x); return C1(ud, m_f64(n)); }
@@ -401,10 +401,10 @@ static B reduceI32WidthBelow(B r, usz after) {
 B find_c1(B, B);
 
 B indexOf_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⊐𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
   if (n<=1) { zeroRes: decG(x); return n? taga(arr_shVec(allZeroesFl(n))) : emptyIVec(); }
-  if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
+  if (n>(usz)I32_MAX+1) thrM("⊐𝕩: 𝕩 length >2⋆31 not supported");
   
   usz csz = arr_csz(x);
   if (csz==0) goto zeroRes;
@@ -516,7 +516,7 @@ B indexOf_c1(B t, B x) {
 }
 
 B find_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⍷𝕩: 𝕩 cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
   u8 xe = TI(x,elType);

@@ -209,8 +209,8 @@ B shape_c2(B t, B w, B x) {
     sh = NULL;
   } else {
     if (RARE(isAtm(w))) w = m_unit(w);
-    if (RNK(w)>1) thrM("⥊: 𝕨 must have rank at most 1");
-    if (IA(w)>UR_MAX) thrM("⥊: Result rank too large");
+    if (RNK(w)>1) thrM("𝕨⥊𝕩: 𝕨 must have rank at most 1");
+    if (IA(w)>UR_MAX) thrM("𝕨⥊𝕩: Result rank too large");
     nr = IA(w);
     sh = nr<=1? NULL : m_shArr(nr);
     SGetU(w)
@@ -225,24 +225,24 @@ B shape_c2(B t, B w, B x) {
         bad|= mulOn(nia, v);
         good|= v==0;
       } else {
-        if (isArr(c) || !isVal(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-        if (unkPos!=-1) thrM("⥊: 𝕨 contained multiple computed axes");
+        if (isArr(c) || !isVal(c)) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (unkPos!=-1) thrM("𝕨⥊𝕩: 𝕨 contained multiple computed axes");
         unkPos = i;
-        if (!isPrim(c)) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (!isPrim(c)) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
         unkInd = RTID(c);
         good|= xia==0 | unkInd==n_floor;
       }
     }
-    if (bad && !good) thrM("⥊: 𝕨 too large");
+    if (bad && !good) thrM("𝕨⥊𝕩: 𝕨 too large");
     if (unkPos!=-1) {
-      if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("⥊: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-      if (nia==0) thrM("⥊: Can't compute axis when the rest of the shape is empty");
+      if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+      if (nia==0) thrM("𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty");
       i64 div = xia/nia;
       i64 mod = xia%nia;
       usz item;
       bool fill = false;
       if (unkInd == n_atop) {
-        if (mod!=0) thrM("⥊: Shape must be exact when reshaping with ∘");
+        if (mod!=0) thrM("𝕨⥊𝕩: Shape must be exact when reshaping with ∘");
         item = div;
       } else if (unkInd == n_floor) {
         item = div;
@@ -269,7 +269,7 @@ B shape_c2(B t, B w, B x) {
       return truncReshape(x, xia, nia, nr, sh);
     } else {
       if (xia <= 1) {
-        if (RARE(xia == 0)) thrM("⥊: Empty 𝕩 and non-empty result");
+        if (RARE(xia == 0)) thrM("𝕨⥊𝕩: Empty 𝕩 and non-empty result");
         x = TO_GET(x, 0);
         goto unit;
       }
@@ -351,7 +351,7 @@ B shape_c2(B t, B w, B x) {
 B pick_c1(B t, B x) {
   if (isAtm(x)) return x;
   if (RARE(IA(x)==0)) {
-    thrM("⊑: Argument cannot be empty");
+    thrM("⊑𝕩: 𝕩 cannot be empty");
     // B r = getFillE(x);
     // dec(x);
     // return r;
@@ -362,10 +362,10 @@ B pick_c1(B t, B x) {
 static NOINLINE void checkIndexList(B w, ur xr) {
   SGetU(w)
   usz ia = IA(w);
-  for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("⊑: 𝕨 contained list with mixed-type elements");
+  for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
   if (ia>xr+xr+10) {
-    if (RNK(w)!=1) thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element in 𝕨 has shape %H)", w);
-    thrF("⊑: Leaf array in 𝕨 too large (has shape %H)", w);
+    if (RNK(w)!=1) thrF("𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element in 𝕨 has shape %H)", w);
+    thrF("𝕨⊑𝕩: Leaf array in 𝕨 too large (has shape %H)", w);
   }
 }
 
@@ -378,7 +378,7 @@ static NOINLINE void checkIndexList(B w, ur xr) {
 
 static i64 pick_convFloat(f64 f) {
   if (LIKELY(q_fi64(f))) return (i64)f;
-  thrM("⊑: 𝕨 contained a non-integer");
+  thrM("𝕨⊑𝕩: 𝕨 contained a non-integer");
 }
 
 static B recPick(B w, B x) { // doesn't consume
@@ -394,7 +394,7 @@ static B recPick(B w, B x) { // doesn't consume
     case el_c8: case el_c16: case el_c32: case el_bit:
     case el_B: {
       if (ia==0) {
-        if (xr!=0) thrM("⊑: 𝕩 must be a unit if 𝕨 contains an empty array");
+        if (xr!=0) thrM("𝕨⊑𝕩: 𝕩 must be a unit if 𝕨 contains an empty array");
         return IGet(x,0);
       }
       SGetU(w)
@@ -403,7 +403,7 @@ static B recPick(B w, B x) { // doesn't consume
         if (ia!=xr) goto wrl;
         PICK_IDX(c, ({
           B cw = GetU(w,i);
-          if (!isNum(cw)) thrM("⊑: 𝕨 contained list with mixed-type elements");
+          if (!isNum(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
           o2i64(cw);
         }), ia, goto oob);
         return IGet(x,c);
@@ -411,7 +411,7 @@ static B recPick(B w, B x) { // doesn't consume
         M_HARR(r, ia);
         for (usz i=0; i<ia; i++) {
           B c = GetU(w, i);
-          if (isAtm(c)) thrM("⊑: 𝕨 contained list with mixed-type elements");
+          if (isAtm(c)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
           HARR_ADD(r, i, recPick(c, x));
         }
         return any_squeeze(HARR_FC(r, w));
@@ -420,9 +420,9 @@ static B recPick(B w, B x) { // doesn't consume
   }
   #undef PICK
   
-  wrr: checkIndexList(w, xr); thrF("⊑: Leaf arrays in 𝕨 must have rank 1 (element: %B)", w); // wrong index rank
-  wrl: checkIndexList(w, xr); thrF("⊑: Picking item at wrong rank (index %B in array of shape %H)", w, x); // wrong index length
-  oob: checkIndexList(w, xr); thrF("⊑: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
+  wrr: checkIndexList(w, xr); thrF("𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element: %B)", w); // wrong index rank
+  wrl: checkIndexList(w, xr); thrF("𝕨⊑𝕩: Picking item at wrong rank (index %B in array of shape %H)", w, x); // wrong index length
+  oob: checkIndexList(w, xr); thrF("𝕨⊑𝕩: Indexing out-of-bounds (index %B in array of shape %H)", w, x);
 }
 
 B pick_c2(B t, B w, B x) {
@@ -431,18 +431,18 @@ B pick_c2(B t, B w, B x) {
     x = m_unit(x);
   }
   if (isNum(w)) {
-    if (RNK(x)!=1) thrF("⊑: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
-    usz p = WRAP(o2i64(w), IA(x), thrF("⊑: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
+    if (RNK(x)!=1) thrF("𝕨⊑𝕩: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
+    usz p = WRAP(o2i64(w), IA(x), thrF("𝕨⊑𝕩: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
     return TO_GET(x, p);
   }
-  if (!isArr(w)) thrM("⊑: 𝕨 must be a numeric array");
+  if (!isArr(w)) thrM("𝕨⊑𝕩: 𝕨 must be a numeric array");
   B r = recPick(w, x);
   decG(w); decG(x);
   return r;
 }
 
 FORCE_INLINE B affixes(B x, i32 post) {
-  if (!isArr(x) || RNK(x)==0) thrM(post? "↓: Argument must have rank at least 1" : "↑: Argument must have rank at least 1");
+  if (!isArr(x) || RNK(x)==0) thrM(post? "↓𝕩: 𝕩 must have rank at least 1" : "↑𝕩: 𝕩 must have rank at least 1");
   ur xr = RNK(x);
   usz* xsh = SH(x);
   u64 cam = *xsh;
@@ -480,9 +480,9 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   #define SYMB (take? "↑" : "↓")
   if (!isArr(w)) goto nonint;
   ur wr = RNK(w);
-  if (wr>1) thrF("%U: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", SYMB, w);
+  if (wr>1) thrF("𝕨%U𝕩: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", SYMB, w);
   usz wia = IA(w);
-  if (wia >= UR_MAX) thrF("%U: Result rank too large", SYMB);
+  if (wia >= UR_MAX) thrF("𝕨%U𝕩: Result rank too large", SYMB);
   B r, w0;
   if (wia<=1) {
     if (wia==0) { r = x; goto decW_ret; }
@@ -551,7 +551,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       B xf = getFillR(x);
       if (anyFill && noFill(xf)) {
         #if PROPER_FILLS
-          thrM("↑: fill element required for overtaking, but 𝕩 doesn't have one");
+          thrM("𝕨↑𝕩: fill element required for overtaking, but 𝕩 doesn't have one");
         #else
           xf = m_f64(0);
         #endif
@@ -636,7 +636,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   decW_ret: decG(w);
   return r;
   
-  nonint: thrF("%U: 𝕨 must consist of integers", SYMB);
+  nonint: thrF("𝕨%U𝕩: 𝕨 must consist of integers", SYMB);
   #undef SYMB
 }
 
@@ -714,7 +714,7 @@ B drop_c2(B t, B w, B x) {
 
 
 B join_c1(B t, B x) {
-  if (isAtm(x)) thrM("∾: Argument must be an array");
+  if (isAtm(x)) thrM("∾𝕩: 𝕩 must be an array");
 
   ur xr = RNK(x);
   usz xia = IA(x);
@@ -724,10 +724,10 @@ B join_c1(B t, B x) {
     if (isAtm(xf)) {
       decA(xf); decG(x);
       if (!PROPER_FILLS && xr==1) return emptyHVec();
-      thrM("∾: Empty array 𝕩 cannot have an atom fill element");
+      thrM("∾𝕩: Empty array 𝕩 cannot have an atom fill element");
     }
     ur ir = RNK(xf);
-    if (ir<xr) thrF("∾: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
+    if (ir<xr) thrF("∾𝕩: Empty array 𝕩 fill rank must be at least rank of 𝕩 (shape %H and fill shape %H)", x, xf);
     HArr_p r = m_harrUp(0);
     usz* sh = arr_shAlloc((Arr*)r.c, ir);
     if (sh) {
@@ -763,20 +763,20 @@ B join_c1(B t, B x) {
       B c = GetU(x, i);
       ur cr = isAtm(c) ? 0 : RNK(c);
       if (cr == 0) {
-        if (rm > 1) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
+        if (rm > 1) thrF("∾𝕩: Item ranks in a list can differ by at most one (contained ranks %i and %i)", 0, rm);
         rd=rm; cam++;
       } else {
         usz* csh = SH(c);
         ur cd = rm - cr;
         if (RARE(cd > rd)) {
-          if ((ur)(cd+1-rd) > 2-rd) thrF("∾: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
+          if ((ur)(cd+1-rd) > 2-rd) thrF("∾𝕩: Item ranks in a list can differ by at most one (contained ranks %i and %i)", rm-rd*(cr==rm), cr);
           if (cr > rr) { // Previous elements were cells
             assert(rd==0 && rr>0);
             esh--;
             usz l = *esh;
             for (usz j=1; j<i; j++) {
               B xj = GetU(x,j);
-              if (l != *SH(xj)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H and later higher-rank array)", x0, xj);
+              if (l != *SH(xj)) thrF("∾𝕩: Item trailing shapes must be equal (contained arrays with shapes %H and %H and later higher-rank array)", x0, xj);
             }
             rr=cr; cam=i;
           }
@@ -784,11 +784,11 @@ B join_c1(B t, B x) {
           rd = 1;
         }
         cam += cr < rm ? 1 : *csh++;
-        if (!eqShPart(csh, esh, rm-1)) thrF("∾: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
+        if (!eqShPart(csh, esh, rm-1)) thrF("∾𝕩: Item trailing shapes must be equal (contained arrays with shapes %H and %H)", x0, c);
       }
       if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) { dec(rf); rf = bi_noFill; }
     }
-    if (rm==0) thrM("∾: Some item rank must be equal or greater than rank of argument");
+    if (rm==0) thrM("∾𝕩: Some item rank must be equal or greater than rank of argument");
     
     usz csz = shProd(esh, 0, rr-1);
     M_APD_TOT(r, cam*csz);
@@ -827,7 +827,7 @@ B join_c1(B t, B x) {
       usz n = xsh[a];
       usz *ll = lp+lp[a];
       if (n == 1) {
-        if (!tr) thrM("∾: Ranks of argument items too small");
+        if (!tr) thrM("∾𝕩: Ranks of argument items too small");
         st[a] = ll[0] = SH(x0)[r0-tr];
         tr--; continue;
       }
@@ -840,11 +840,11 @@ B join_c1(B t, B x) {
       usz r1s=r0; for (usz i=1; i<n; i++) if (ll[i]>r1s) r1s=ll[i];
       ur r1 = r1s;
       ur a0 = r1==r0;  // Root has axis a
-      if (tr < a0) thrM("∾: Ranks of argument items too small");
+      if (tr < a0) thrM("∾𝕩: Ranks of argument items too small");
       for (usz i=0; i<n; i++) {
         ur rd = r1 - ll[i];
         if (rd) {
-          if (rd>1) thrF("∾: Item ranks along an axis can differ by at most one (contained ranks %i and %i along axis %i)", ll[i], r1, a);
+          if (rd>1) thrF("∾𝕩: Item ranks along an axis can differ by at most one (contained ranks %i and %i along axis %i)", ll[i], r1, a);
           ll[i] = -1;
         } else {
           B c = GetU(x, i*step);
@@ -870,8 +870,8 @@ B join_c1(B t, B x) {
           bool rd = ll[i]==-1;
           tsh[lr] = ll[i];
           ur cr=0; usz* sh=NULL; if (!isAtm(c)) { cr=RNK(c); sh=SH(c); }
-          if (cr != r1-rd) thrF("∾: Incompatible item ranks", base, c);
-          if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
+          if (cr != r1-rd) thrF("∾𝕩: Incompatible item ranks", base, c);
+          if (!eqShPart(rd?tsh0:tsh, sh, cr)) thrF("∾𝕩: Incompatible item shapes (contained arrays with shapes %H and %H along axis %i)", base, c, a);
           if (SFNS_FILLS && !noFill(rf) && !fillEqualsGetFill(rf, c)) { dec(rf); rf = bi_noFill; }
         }
       }
@@ -967,7 +967,7 @@ B join_c2(B t, B w, B x) {
     NOGC_E;
     return qWithFill(r.b, f);
   }
-  if (c-wr > 1 || c-xr > 1) thrF("∾: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (c-wr > 1 || c-xr > 1) thrF("𝕨∾𝕩: Argument ranks must differ by 1 or less (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   bool usedW;
   usz wia0 = IA(w);
@@ -993,7 +993,7 @@ B join_c2(B t, B w, B x) {
     for (i32 i = 1; i < c; i++) {
       usz s = xsh[i+xr-c];
       if (RARE(wsh[i+wr-c] != s)) {
-        B msg = make_fmt("∾: Lengths not matchable (%2H ≡ ≢𝕨, %H ≡ ≢𝕩)", wr, wsh, x);
+        B msg = make_fmt("𝕨∾𝕩: Lengths not matchable (%2H ≡ ≢𝕨, %H ≡ ≢𝕩)", wr, wsh, x);
         if (rnk0>1) decShObj(sh0);
         mm_free((Value*)shObjS(rsh));
         arr_shVec(a(r));
@@ -1014,7 +1014,7 @@ B join_c2(B t, B w, B x) {
 B couple_c1(B t, B x) {
   if (isAtm(x)) return m_vec1(x);
   ur xr = RNK(x);
-  if (xr==UR_MAX) thrF("≍: Result rank too large (%i≡=𝕩)", xr);
+  if (xr==UR_MAX) thrF("≍𝕩: Result rank too large (%i≡=𝕩)", xr);
   Arr* r = cpyWithShape(x);
   if (xr==0) {
     arr_shVec(r);
@@ -1030,10 +1030,10 @@ B couple_c2(B t, B w, B x) {
   if (isAtm(w)&isAtm(x)) return m_vec2(w, x);
   if (isAtm(w)) w = m_unit(w);
   if (isAtm(x)) x = m_unit(x);
-  if (!eqShape(w, x)) thrF("≍: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+  if (!eqShape(w, x)) thrF("𝕨≍𝕩: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   usz ia = IA(w);
   ur wr = RNK(w);
-  if (wr==UR_MAX) thrM("≍: Result rank too large");
+  if (wr==UR_MAX) thrM("𝕨≍𝕩: Result rank too large");
   MAKE_MUT_INIT(r, ia*2, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);
@@ -1055,7 +1055,7 @@ static inline void shift_check(B w, B x) {
 }
 
 B shiftb_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("»: Argument cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("»𝕩: 𝕩 cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
   B xf = getFillE(x);
@@ -1070,7 +1070,7 @@ B shiftb_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shiftb_c2(B t, B w, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("»: 𝕩 cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨»𝕩: 𝕩 cannot be a scalar");
   if (isAtm(w)) w = m_unit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
@@ -1085,7 +1085,7 @@ B shiftb_c2(B t, B w, B x) {
 }
 
 B shifta_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("«: Argument cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("«𝕩: 𝕩 cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
   B xf = getFillE(x);
@@ -1100,7 +1100,7 @@ B shifta_c1(B t, B x) {
   return qWithFill(mut_fcd(r, x), xf);
 }
 B shifta_c2(B t, B w, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("«: 𝕩 cannot be a scalar");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨«𝕩: 𝕩 cannot be a scalar");
   if (isAtm(w)) w = m_unit(w);
   shift_check(w, x);
   B f = fill_both(w, x);
@@ -1126,7 +1126,7 @@ static u64 bit_reverse(u64 x) {
   return c;
 }
 B reverse_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⌽: Argument cannot be a unit");
+  if (isAtm(x) || RNK(x)==0) thrM("⌽𝕩: 𝕩 cannot be a unit");
   usz n = *SH(x);
   if (n<=1) return x;
   u8 xl = cellWidthLog(x);
@@ -1282,7 +1282,7 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
 }
 B reverse_c2(B t, B w, B x) {
   if (isArr(w)) return rotate_highrank(0, w, x);
-  if (isAtm(x) || RNK(x)==0) thrM("⌽: 𝕩 must have rank at least 1 for atom 𝕨");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨⌽𝕩: 𝕩 must have rank at least 1 for atom 𝕨");
   usz xia = IA(x);
   if (xia==0) { o2i64(w); return x; }
   usz cam = SH(x)[0];
@@ -1312,13 +1312,13 @@ static usz pick_oneIndex(B w, usz xr, usz* xsh) { // throws if guaranteed bad; r
       if (!isNum(GetU(w,0))) return USZ_MAX;
       PICK_IDX(c, ({
         B cw = GetU(w,i);
-        if (!isNum(cw)) thrM("⊑: 𝕨 contained list with mixed-type elements");
+        if (!isNum(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
         o2i64(cw);
       }), xr, goto oob);
       return c;
     }
   }
-  oob: checkIndexList(w, xr); thrF("⊑: Indexing out-of-bounds (index %B in array of shape %2H)", w, xr, xsh);
+  oob: checkIndexList(w, xr); thrF("𝕨⊑𝕩: Indexing out-of-bounds (index %B in array of shape %2H)", w, xr, xsh);
 }
 
 static B pick_replaceOne(B fn, usz pos, B x, usz xia) {
