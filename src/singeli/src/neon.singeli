@@ -119,8 +119,6 @@ def narrow_pair{a:T, b:T if nveci{T}} = pack{a, b, 0}
 def widen_upper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
 def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widen_upper{x}}
 
-def all_hom{x:V if nvec{V}} = all_bit{x}
-
 local def bit_any_lo64{x:V} = extract{re_el{u64,x}, 0} != 0
 local def hom_any_lo64{x:V} = extract{re_el{f64,x}, 0} != 0.0 # safe to use float comparison as homogeneity guarantees not hitting -0.0; https://lemire.me/blog/2025/01/20/checking-whether-an-arm-neon-register-is-zero/
 local def bit_all_lo64{x:V} = extract{re_el{i64,x}, 0} == -1 # no special hom_all_lo64 possible with float comparison
@@ -133,6 +131,8 @@ def any_hom{x:V if w128{V}} = hom_any_lo64{max_pack{x}}
 def all_bit{x:V if  w64{V}} = bit_all_lo64{x}
 def all_bit{x:V if w128{V}} = bit_all_lo64{min_pack{x}}
 
+def all_hom{x:V if nvec{V}} = all_bit{x}
+def all_hom{x:V==[16]u8} = ~hom_any_lo64{subhn{re_el{u16,x}==0, re_el{u16,x}}}
 def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subhn{[8]u16**16r2b1, [8]u16~~x}}
 def any_hom{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
 def any_hom{a:V, b:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{addhn{re_el{u16,a}, re_el{u16,b}}} # re_el to try to avoid https://github.com/llvm/llvm-project/issues/125611 in some cases
