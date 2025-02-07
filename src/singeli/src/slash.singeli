@@ -1,7 +1,7 @@
 include './base'
 if_inline (hasarch{'X86_64'}) {
   if_inline (hasarch{'PCLMUL'}) include './clmul'
-  if_inline (hasarch{'BMI2'}) include './bmi2'
+  if_inline (hasarch{'BMI2'}) include './bmi'
 }
 include './mask'
 

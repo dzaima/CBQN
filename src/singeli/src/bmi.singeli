@@ -1,0 +1,11 @@
+def x86_tzcnt{x:T if (T==u16 or T==u32 or T==u64) and hasarch{'BMI'  }} = emit{T, merge{'_tzcnt_u',fmtnat{width{T}}}, x}
+def x86_lzcnt{x:T if (          T==u32 or T==u64) and hasarch{'LZCNT'}} = emit{T, merge{'_lzcnt_u',fmtnat{width{T}}}, x}
+
+def pdep{x:T, m:T==u64 if hasarch{'BMI2'}} = emit{T, '_pdep_u64', x, m}
+def pdep{x:T, m:T==u32 if hasarch{'BMI2'}} = emit{T, '_pdep_u32', x, m}
+def pext{x:T, m:T==u64 if hasarch{'BMI2'}} = emit{T, '_pext_u64', x, m}
+def pext{x:T, m:T==u32 if hasarch{'BMI2'}} = emit{T, '_pext_u32', x, m}
+
+# only low 8 bits of n matter, so any int is fine
+def bzhi{x:T==u64, n if any_int{n} and hasarch{'BMI2'}} = emit{T, '_bzhi_u64', x, n}
+def bzhi{x:T==u32, n if any_int{n} and hasarch{'BMI2'}} = emit{T, '_bzhi_u32', x, n}

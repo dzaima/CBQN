@@ -42,6 +42,8 @@ def addhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vaddhn', V}, a, b}
 def subhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vsubhn', V}, a, b}
 def addhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vaddhn_high', V}, lo, a, b}
 def subhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vsubhn_high', V}, lo, a, b}
+def raddhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vraddhn', V}, a, b}
+def rsubhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vrsubhn', V}, a, b}
 
 # pairwise min/max
 def minp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmin', V}, a, b}

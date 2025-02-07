@@ -1,6 +1,6 @@
 include './base'
 include './mask'
-if_inline (hasarch{'BMI2'}) include './bmi2'
+if_inline (hasarch{'BMI2'}) include './bmi'
 include './spaced'
 include './scan_common'
 
