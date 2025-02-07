@@ -37,7 +37,7 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
     # Quickly skip ahead if initial values are all equal
     a:u64 = 1
     if (not any_hom{ne} and b>=4) {
-      def eq_k{k} = all_hom{tree_fold{&, @unroll(x in xv+a over k) x==jv}}
+      def eq_k{k} = all_hom{...@unroll(x in xv+a over k) x==jv}
       def skip_eq{k} = if (eq_k{k}) { a=2*k; skip_eq{2*k} }
       def skip_eq{k==4} = while (a<=b-k and eq_k{k}) a+=k
       skip_eq{1}
