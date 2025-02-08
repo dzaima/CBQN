@@ -23,6 +23,10 @@
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
+#define RED        "\033[31m"
+#define GRAY       "\033[90m"
+#define WHITE      "\033[97m"
+#define RESET      "\033[0m"
 
 char* bc_repr(u32 p) {
   switch(p) { default: return "(unknown)";
@@ -1350,11 +1354,13 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   i64 ln = 1;
   for (usz i = 0; i < srcS; i++) if(o2cG(GetU(src, i))=='\n') ln++;
   B s = prepend;
+  AFMT(GRAY);
   if (!isArr(path) || path.u==replName.u || IA(path)==0) AFMT("at ");
-  else AFMT("%R:%l:\n  ", path, ln);
+  else AFMT("%R:"RESET"%l"GRAY":\n  ", path, ln);
   i64 padEnd = (i64)IA(s);
   i64 padStart = padEnd;
   SGetU(s)
+  AFMT(RESET);
   while (padStart>0 && o2cG(GetU(s,padStart-1))!='\n') padStart--;
   
   AJOIN(taga(arr_shVec(TI(src,slice)(incG(src),srcS, srcE-srcS))));
@@ -1363,7 +1369,9 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
   ACHR('\n');
   for (i64 i = padStart; i < padEnd; i++) ACHR(' ');
   for (u64 i = 0; i < cs; i++) ACHR(o2cG(GetU(src, srcS+i))=='\t'? '\t' : ' '); // ugh tabs
+  AFMT(RED);
   for (u64 i = cs; i < ce; i++) ACHR('^');
+  AFMT(RESET);
   return s;
 }
 
