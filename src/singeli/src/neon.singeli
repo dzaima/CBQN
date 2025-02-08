@@ -21,7 +21,7 @@ def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
 def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
 def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
 
-def widening_op{root, el} = { def extend _{lo, hi, lh} = {
+local def widening_op{root, el} = { def extend _{lo, hi, lh} = {
   def lo{a:T=[_]E, b:T if w64{T}  and el{E}} = emit{el_d{T}, ntyp{root, T}, a, b}
   def hi{a:T=[_]E, b:T if w128{T} and el{E}} = emit{el_m{T}, ntyp0{merge{root,'_high'}, T}, a, b}
   def lh{a:T=[_]E, b:T if w128{T} and el{E}} = tup{lo{half{a,0}, half{b,0}}, hi{a,b}}
@@ -38,12 +38,14 @@ def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, nty
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 
 # narrowing add/subtract, high half
-def addhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vaddhn', V}, a, b}
-def subhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vsubhn', V}, a, b}
-def addhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vaddhn_high', V}, lo, a, b}
-def subhn_upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{'vsubhn_high', V}, lo, a, b}
-def raddhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vraddhn', V}, a, b}
-def rsubhn{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{'vrsubhn', V}, a, b}
+local def narrowing_op{name} = { def extend _{lower, upper} = {
+  def lower{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{name, V}, a, b}
+  def upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{merge{name, '_high'}, V}, lo, a, b}
+}}
+extend (narrowing_op{'vaddhn'}){addhn,addhn_upper}
+extend (narrowing_op{'vsubhn'}){subhn,subhn_upper}
+extend (narrowing_op{'vraddhn'}){raddhn,raddhn_upper} # & rounding variants
+extend (narrowing_op{'vrsubhn'}){rsubhn,rsubhn_upper}
 
 # pairwise min/max
 def minp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmin', V}, a, b}
