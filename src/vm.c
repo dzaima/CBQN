@@ -1732,7 +1732,7 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   } else { // uncaught error
 #endif
     assert(cf==cfStart);
-    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fprintf(stderr,"\n"); fflush(stderr);
+    fprintf(stderr, RED "Error" RESET ": "); printErrMsg(thrownMsg); fprintf(stderr,"\n"); fflush(stderr);
     Env* envEnd = envStart+envPrevHeight;
     unwindEnv(envStart-1);
     vm_pst(envCurr+1, envEnd);
