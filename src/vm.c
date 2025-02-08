@@ -23,10 +23,10 @@
                   F(SETNi)F(SETUi)F(SETMi)F(SETCi)F(SETNv)F(SETUv)F(SETMv)F(SETCv)F(PRED1)F(PRED2)F(SETH1)F(SETH2) \
                   F(DFND0)F(DFND1)F(DFND2)F(FAIL)
 
-#define RED        "\033[31m"
-#define GRAY       "\033[90m"
-#define WHITE      "\033[97m"
-#define RESET      "\033[0m"
+#define RED       "\033[31m"
+#define GRAY      "\033[90m"
+#define WHITE     "\033[97m"
+#define RESET     "\033[0m"
 
 char* bc_repr(u32 p) {
   switch(p) { default: return "(unknown)";
