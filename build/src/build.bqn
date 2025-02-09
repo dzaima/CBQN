@@ -706,8 +706,7 @@ MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src sho
   dst ← cache.File id∾".c"
   GetCMD ← { 𝕊:
     Init @
-    dep ← AtRoot cache.File id∾".d"
-    ⟨"singeli", rootDir, AtRoot dst, AtRoot po.singeliDir, args, AtRoot src, dep⟩
+    ⟨"singeli", rootDir, AtRoot dst, AtRoot po.singeliDir, args, AtRoot src⟩
   }
   AddRule ⟨cache, id, dst, GetCMD, •file.Name src, customDeps⟩
 }

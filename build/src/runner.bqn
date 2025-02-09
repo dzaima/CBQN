@@ -7,17 +7,16 @@ Good ← { 𝕊 dir‿t0‿t1‿o‿e‿deps:
   ⟨1, o∾e, t1-t0, deps ⋈¨ (•file.Modified dir•file.At⊢)¨ deps⟩
 }
 
-_runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
+_runImport_ ← { runArgs Process _𝕣_ dir runFile: # Process returns {deps‿o‿e⇐}, with e⇐@ for no error
   t0 ← •MonoTime@
-  e←@ ⋄ deps←@
+  o←@ ⋄ e←@ ⋄ deps←@
   {𝕊:
-    runArgs •Import runFile
-    deps ↩ GetDeps@
+    deps‿o‿e ↩ Process runArgs •Import runFile
   }⎊{𝕊: e↩•CurrentError@} @
   t1 ← •MonoTime@
   {
     e≢@? ⟨0, e⟩;
-    Good ⟨dir,t0,t1,"","",deps⟩
+    Good ⟨dir,t0,t1,o,"",deps⟩
   }
 }
 
@@ -49,13 +48,18 @@ _runSingeli_ ← { runArgs GetDeps _𝕣_ dir runFile:
       •file.Remove⍟•file.Exists dst
       𝕊 cmd
   ;
-  "singeli"‿dir‿dst‿singeliDir‿args‿src‿dep:
+  "singeli"‿dir‿dst‿singeliDir‿args‿src:
     prefix ← "si_"∾ (∧`'.'⊸≠)⊸/ •file.Name src
-    argsFinal ← args∾⟨"-d" ⋄ dep ⋄ "-o" ⋄ dst ⋄ "-n" ⋄ prefix ⋄ src⟩
-    argsFinal {𝕊: src<⊸∾ SimplifyPath¨ singeliDir⊸•file.At¨ •FLines dep}_runSingeli_ dir singeliDir •file.At "singeli"
+    argsFinal ← args∾⟨"-oe", "bqn", "-os", "none", "-o" ⋄ dst ⋄ "-n" ⋄ prefix ⋄ src⟩
+    Process ← { 𝕊 res:
+      deps ⇐ src<⊸∾ SimplifyPath¨ res.deplog
+      o ⇐ ∾ ∾⟜(@+10)¨ res.show
+      e ⇐ {⟨⟩: @; ⋈⁼𝕩} res.errout
+    }
+    argsFinal Process _runImport_ dir singeliDir •file.At "singeli"
   ;
   "runbqn"‿dir‿file‿args‿deps:
-    args deps _runSingeli_ dir file
+    args {deps⇐deps, o⇐"", e⇐@} _runImport_ dir file
   ;
   "dry"‿args:
     ⟨dir⟩ ← 1↑args
