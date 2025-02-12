@@ -16,10 +16,6 @@ def mul32{a:T,b:T==[ 4]u64} = emit{T, '_mm256_mul_epu32',   a, b} # reads only l
 
 # structural operations
 
-def blend{([8]u16), a:T, b:T, m if w256{T} and ktup{m}} = T ~~ blend_units{[16]i16~~a, [16]i16~~b, m}
-def blend{([8]u32), a:T, b:T, m if w256{T} and ktup{m}} = T ~~ blend_units{[ 8]i32~~a, [ 8]i32~~b, m}
-def blend{([4]u64), a:T, b:T, m if w256{T} and ktup{m}} = T ~~ blend_units{[ 4]f64~~a, [ 4]f64~~b, m}
-
 def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = vec_shuffle{L, x, i}
 def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = vec_shuffle{L, x, i}
 
