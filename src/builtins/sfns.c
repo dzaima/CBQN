@@ -1186,7 +1186,7 @@ B reverse_c2(B t, B w, B x);
 #define WRAP_ROT(V, L) ({ i64 v_ = (V); usz l_ = (L); if ((u64)v_ >= (u64)l_) { v_%= (i64)l_; if(v_<0) v_+= l_; } v_; })
 NOINLINE B rotate_highrank(bool inv, B w, B x) {
   #define INV (inv? "⁼" : "")
-  if (RNK(w)>1) thrF("⌽%U: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", INV, w);
+  if (RNK(w)>1) thrF("𝕨⌽%U𝕩: 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", INV, w);
   B r;
   usz wia = IA(w);
   if (isAtm(x) || RNK(x)==0) {
@@ -1207,7 +1207,7 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   if (wia==0) { r=x; goto decW_ret; }
   if (!elNum(TI(w,elType))) {
     w = num_squeeze(w);
-    if (!elNum(TI(w,elType))) thrF("⌽%U: 𝕨 contained non-number", INV);
+    if (!elNum(TI(w,elType))) thrF("𝕨⌽%U𝕩: 𝕨 contained non-number", INV);
   }
   bool origF64 = TI(w,elType)==el_f64;
   w = toF64Any(w);
@@ -1277,7 +1277,7 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   
   decW_ret: decG(w);
   return r;
-  badlen: thrF("⌽%U: Length of list 𝕨 must be at most rank of 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩⟩", INV, wia, x);
+  badlen: thrF("𝕨⌽%U𝕩: Length of list 𝕨 must be at most rank of 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩⟩", INV, wia, x);
   #undef INV
 }
 B reverse_c2(B t, B w, B x) {
@@ -1505,9 +1505,9 @@ B shape_ucw(B t, B o, B w, B x) {
 
 
 B reverse_ix(B t, B w, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⌽⁼: 𝕩 must have rank at least 1");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨⌽⁼𝕩: 𝕩 must have rank at least 1");
   if (isF64(w)) return C2(reverse, m_f64(-o2fG(w)), x);
-  if (isAtm(w)) thrM("⌽⁼: 𝕨 must consist of integers");
+  if (isAtm(w)) thrM("𝕨⌽⁼𝕩: 𝕨 must consist of integers");
   return rotate_highrank(1, w, x);
 }
 
