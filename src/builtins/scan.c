@@ -192,11 +192,12 @@ SHOULD_INLINE B scan2_max_num(B w, B x, u8 xe, usz ia) { MINMAX2(max,>,MIN,or ,0
 static B scan_lt(B x, u64 p, usz ia) {
   u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
-  u64 m10 = 0x5555555555555555;
+  u64 m = 0x5555555555555555;
   for (usz i=0; i<n; i++) {
     u64 x = xp[i];
-    u64 c  = (m10 & ~(x<<1)) & ~(p>>63);
-    rp[i] = p = x & (m10 ^ (x + c));
+    u64 u = -(p>>63) &~ (x+1);
+    u64 c = ((x<<1) | m) - x;
+    rp[i] = p = x & (m ^ c ^ u);
   }
   decG(x); return r;
 }
