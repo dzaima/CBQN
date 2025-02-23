@@ -342,6 +342,10 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
   def qand = not id
   assert{l > 0}
   nw := cdiv{nl, 64}
+  def scan_mask{x:T, m:T} = {
+    if (qand) { p:= (x &~ m) >> 1; (x - p) ^ p }
+    else      { p:= (x |  m) >> 1; (p - x) ^ p }
+  }
   def res_m1{x,c,m} = { # result word with carry c, popc{m}<=1
     if (qand) x &~ ((x+c) &  (x+m))
     else      x | ((-x-c) &~ (x-m))
@@ -354,25 +358,15 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
         }
       } else {
         m:u64 = aligned_spaced_mask{l}
-        t := m << (l-1)
-        @for (r in dst, x in src over nw) {
-          r = (if (qand) x &~ ((t&x) ^ ((x&~t) + m))
-               else      x | ~((t&~x) ^ ((x|t) - m)))
-        }
+        @for (r in dst, x in src over nw) r = scan_mask{x, m}
       }
       # could use for l>=8; not much faster and takes up space
       # def rowwise{T} = @for (r in *T~~dst, x in *T~~src over (64/width{T})*nw) r = x &~ (x+1)
     } else if (hasarch{'AVX2'}) {
-      def scan_words{x, m:V} = {
-        mb:= m | V**1
-        p:= if (qand) (x &~ m) >> 1 else ~(x | m) >> 1
-        a:= if (qand) p + (mb & x)  else p + (mb &~ x)
-            if (qand) p ^ a         else ~(p ^ a)
-      }
       def apply_carry{s, c, f} = {
-            if (qand) s & (~f | c) else s | (f & c)
+        if (qand) s & (~f | c) else s | (f & c)
       }
-      avx2_loop_with_unaligned_mask{src, dst, nw, l, scan_words, apply_carry}
+      avx2_loop_with_unaligned_mask{src, dst, nw, l, scan_mask, apply_carry}
     } else {
       loop_with_unaligned_mask{src, dst, nw, l, {x, c, m} => {
         s:= (if (qand) (x &~ m) >> 1 else ~(x | m) >> 1   )
