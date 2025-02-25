@@ -39,7 +39,7 @@ def get_scan_last{op, pre} = {
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
 def scan_idem = scan_scal
-fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
+fn scan_idem{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
   def {scan, last} = get_scan_last{op, make_scan_idem{T, op}}
   def cmp = match (op) { {(min)} => (>); {(max)} => (<) }
   def step = arch_defvw/width{T}
@@ -82,8 +82,8 @@ def scan_plus = scan_assoc_id0{+}
 
 # Associative scan
 def scan_assoc_0 = scan_scal
-fn scan_assoc_0{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
-  # Prefix op on entire AVX register
+fn scan_assoc_0{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
+  # Prefix op on entire SIMD register
   scan_loop{init, x, r, len, ...get_scan_last{op, scan_plus}}
 }
 export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}

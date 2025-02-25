@@ -1,5 +1,6 @@
 # Used by scan.singeli and bins.singeli
 
+def has_sel8 = hasarch{'SSSE3'} or hasarch{'AARCH64'}
 def sel8{v:V, t} = sel{[16]u8, v, make{re_el{i8,V}, t}}
 def sel8{v:V, t if w256{V} and istup{t} and length{t}==16} = sel8{v, merge{t,t}}
 
@@ -17,9 +18,9 @@ def spread{a:[_]T, ...up} = {
 }
 
 # Set all elements with the last element of the input
-def toLast{n:VT, up if hasarch{'X86_64'} and w128{VT}} = {
+def toLast{n:VT, up if has_simd and w128{VT}} = {
   def l{v, w} = l{zip{up,v}, 2*w}
-  def l{v, w if hasarch{'SSSE3'}} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
+  def l{v, w if has_sel8} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
   def l{v, w==32} = shuf{[4]i32, v, 4**(up*3)}
   def l{v, w==64} = shuf{[2]i64, v, 2** up   }
   l{n, elwidth{VT}}
@@ -49,7 +50,7 @@ def make_scan_idem{T, op, up} = {
     def id = make{V, merger{c**get_id{op,T}, (width{V}/w-c)**0}}
     (if (up) vec_shift_right_128 else vec_shift_left_128){v, c} | id
   }
-  def shb{v, k if hasarch{'SSSE3'}} = sel8{v, shift{k/8,16}}
+  def shb{v, k if has_sel8} = sel8{v, shift{k/8,16}}
   def shb{v, k if k>=32} = shuf{[4]u32, v, shift{k/32,4}}
   def shb{v, k if k==128 and hasarch{'AVX2'}} = {
     # After lanewise scan, broadcast end of lane 0 to entire lane 1
