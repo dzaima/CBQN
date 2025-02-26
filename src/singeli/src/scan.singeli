@@ -579,24 +579,28 @@ fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         (c & f) | apply_mask{x, m}
       }}
     }
-  } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < (if (hasarch{'SSE4.1'} and not hasarch{'AVX2'}) 72 else 176)) {
+  } else if ((hasarch{'AVX2'} or hasarch{'AARCH64'}) and l < 176) {
     def scan_words{x:V, m:V, _} = {
       s:= -(x & m)
       tup{s, s>>63 | (m == V**0)}
     }
     vec_loop_with_loose_mask{x, r, nw, l, 0, scan_words, apply_carry}
   } else {
-    i :usz = 0  # row bit index
-    wn:usz = 0  # starting word of next row
-    c:u64 = 0   # carry
+    assert{l >= 64}
+    k:= l/64 - 1 # at least k full aligned words in a row
+    i :usz = 0   # row bit index
+    wn:usz = 0   # starting word of next row
+    c:u64 = 0    # carry
     we:= nl/64; while (wn < we) {
       iw:= wn
       m := u64~~1 << (i%64)
       xw:= -(load{x, iw} & m)
-      store{r, iw, (c & (m-1)) | xw}
+      r0:= (c & (m-1)) | xw
       c = -(xw>>63)
       i+= l; wn = i/64
-      @for (r in r over _ from iw+1 to wn) r = c
+      store{r, wn-1, c}
+      store{r, iw, r0}
+      @for (r in r+iw+1 over k) r = c
     }
     if (i%64 != 0) store{r, wn, c}
   }
