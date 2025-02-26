@@ -458,25 +458,16 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
             a >> 63} # new c
       }}
     }
-  } else if (l < (if (hasarch{'AVX2'}) 256 else 160)) {
-    if (hasarch{'SSE4.1'} or hasarch{'AARCH64'}) {
-      def scan_words{x:V, m:V, _} = {
-        s:= (if (qand) x &~ ((x+V**1) &  (x+m))
-             else      x |  ((-x)     &~ (x-m)))
-        p:= (if (qand) x&~m == ~V**0
-             else      x| m ==  V**0)
-        k:= s>>63 | p  # Carry of 0 or 1, but -1 to propagate previous
-        tup{s, k}
-      }
-      vec_loop_with_loose_mask{src, dst, nw, l, id, scan_words, apply_carry}
-    } else {
-      def get_m = loose_mask_gen{u64, l}
-      c:u64 = id  # carry
-      @for (r in dst, x in src over nw) {
-        r = res_m1{x, c, get_m{}}
-        c = r >> 63
-      }
+  } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < (if (hasarch{'AVX2'}) 256 else 160)) {
+    def scan_words{x:V, m:V, _} = {
+      s:= (if (qand) x &~ ((x+V**1) &  (x+m))
+           else      x |  ((-x)     &~ (x-m)))
+      p:= (if (qand) x&~m == ~V**0
+           else      x| m ==  V**0)
+      k:= s>>63 | p  # Carry of 0 or 1, but -1 to propagate previous
+      tup{s, k}
     }
+    vec_loop_with_loose_mask{src, dst, nw, l, id, scan_words, apply_carry}
   } else {
     i :usz = 0  # row bit index
     wn:usz = 0  # starting word of next row
@@ -538,7 +529,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         s ^ ((c & f) | (b<<l - b))
       }}
     }
-  } else if (has_simd and l < (if (hasarch{'SSSE3'} and not hasarch{'AVX2'}) 256 else 320)) {
+  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 256)) {
     def scan_words{x:V, m:V, ml:V} = {
       s:= scan_words{x}
       s^= -(s<<1 & m)
@@ -588,7 +579,7 @@ fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         (c & f) | apply_mask{x, m}
       }}
     }
-  } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < 176) {
+  } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < (if (hasarch{'SSE4.1'} and not hasarch{'AVX2'}) 72 else 176)) {
     def scan_words{x:V, m:V, _} = {
       s:= -(x & m)
       tup{s, s>>63 | (m == V**0)}
