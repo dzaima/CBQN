@@ -90,11 +90,37 @@ export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}
 export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
 export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
 
+def rotate_right{x:[l]_} = shuf{x, (iota{l}-1)%l}
+def broadcast_last{x:[l]_} = shuf{x, l**(l-1)}
+def blend_first{x:V=[l]_, y:V} = blend{x, y, 0 < iota{l}}
+def shift_first{c:V=[l]_, p:V} = {
+  if (l==2) zip{c, p, 0}
+  else blend_first{c, rotate_right{p}}
+}
+
 # xor scan
-fn scan_neq{}(p:u64, x:*u64, r:*u64, nw:u64) : void = {
+def vec_prefix_byshift{op, sh} = {
+  def pre{v:V, k} = if (k < elwidth{V}) pre{op{v, sh{v,k}}, 2*k} else v
+  {v:T} => pre{v, 1}
+}
+def scan_word_ne = prefix_byshift{^, <<}
+def scan_words_ne = vec_prefix_byshift{^, <<}
+
+fn scan_neq{}(c:u64, x:*u64, r:*u64, nw:u64) : void = {
   @for (x, r over nw) {
-    r = p ^ prefix_byshift{^, <<}{x}
-    p = -(r>>63) # repeat sign bit
+    r = c ^ scan_word_ne{x}
+    c = -(r>>63) # repeat sign bit
+  }
+}
+fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:u64) : void = {
+  def vl = arch_defvw / 64
+  def V = [vl]u64
+  c := V**c0
+  @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over nw) {
+    s:= scan_words_ne{x}
+    p:= scan_assoc_id0{^}{-(s>>63)} ^ c
+    r = s ^ shift_first{c, p}
+    c = broadcast_last{p}
   }
 }
 fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
@@ -316,9 +342,6 @@ export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}
 
 
 # Row-wise boolean scan
-def rotate_right{x:[vl]_} = shuf{x, (iota{vl}-1)%vl}
-def blend_first{x:V=[vl]_, y:V} = blend{x, y, 0 < iota{vl}}
-
 # Create masks of the given type with spacing l>=64
 def loose_mask_gen{(u64), l} = {
   q:usz = 0   # distance to next row boundary
@@ -407,9 +430,9 @@ def vec_loop_with_loose_mask{xp, rp, nw, l, id, scan_words, propagate, fix_carry
     {s, k}:= scan_words{x, m, ml}
     # Propagate carries and adjust result
     p:= propagate{k, c}
-    t:= (if (vl==2) zip{c, p, 0} else blend_first{c, rotate_right{p}})
+    t:= shift_first{c, p}
     r = apply_carry{s, -fix_carry{t}, ml}
-    c = shuf{V, p, vl**(vl-1)}
+    c = broadcast_last{p}
   }
 }
 def vec_loop_with_loose_mask{...a={xp, rp, nw, l, id, scan_words}, apply_carry} = {
@@ -499,14 +522,8 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
 }
 
 fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
-  def scan_word = prefix_byshift{^, <<}
-  def scan_words = {
-    def vec_prefix_byshift{op, sh} = {
-      def pre{v:V, k} = if (k < elwidth{V}) pre{op{v, sh{v,k}}, 2*k} else v
-      {v:T} => pre{v, 1}
-    }
-    vec_prefix_byshift{^, <<}
-  }
+  def scan_word  = scan_word_ne
+  def scan_words = scan_words_ne
   def apply_carry{s, c, f} = s ^ (f & c)
   assert{l > 0}
   nw := cdiv{nl, 64}
@@ -529,7 +546,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         s ^ ((c & f) | (b<<l - b))
       }}
     }
-  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 256)) {
+  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 200)) {
     def scan_words{x:V, m:V, ml:V} = {
       s:= scan_words{x}
       s^= -(s<<1 & m)
