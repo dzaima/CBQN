@@ -92,6 +92,7 @@ export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
 
 def rotate_right{x:[l]_} = shuf{x, (iota{l}-1)%l}
 def broadcast_last{x:[l]_} = shuf{x, l**(l-1)}
+def broadcast_last{x:[l]_ if hasarch{'AARCH64'}} = broadcast_sel{x, l-1}
 def blend_first{x:V=[l]_, y:V} = blend{x, y, 0 < iota{l}}
 def shift_first{c:V=[l]_, p:V} = {
   if (l==2) zip{c, p, 0}
@@ -438,6 +439,7 @@ def vec_loop_with_loose_mask{xp, rp, nw, l, id, scan_words, propagate, fix_carry
 def vec_loop_with_loose_mask{...a={xp, rp, nw, l, id, scan_words}, apply_carry} = {
   def passthrough{k, c} = {
     def bl{b,a} = b ^ ((b^a) & -(b>>63))
+    def bl{b:B,a if hasarch{'AARCH64'}} = blend_bit{b,a, ty_s{b} < 0}
     def bl{b,a if hasarch{'SSE4.1'}} = blend_top{b,a, b}
     bl{make_scan_idem{f64, bl}{k}, c}  # Can't be -1 now
   }
@@ -596,7 +598,7 @@ fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         (c & f) | apply_mask{x, m}
       }}
     }
-  } else if ((hasarch{'AVX2'} or hasarch{'AARCH64'}) and l < 176) {
+  } else if (hasarch{'AVX2'} and l < 176) {
     def scan_words{x:V, m:V, _} = {
       s:= -(x & m)
       tup{s, s>>63 | (m == V**0)}
