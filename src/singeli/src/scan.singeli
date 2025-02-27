@@ -357,24 +357,6 @@ def loose_mask_gen{V=[vl]T, l} = { # Slow, for ≠` only
   def get = loose_mask_gen{T, l}
   {} => make{V, @collect (vl) get{}}
 }
-def loose_mask_gen{V=[vl](u64), l if hasarch{'SSSE3'}} = {
-  # Shuffles can substitute for variable shifts, in a pinch
-  assert{l < 256}
-  def I = re_el{i8, V}; def [il]_ = I
-  def U = [il]u8
-  q := make{I, (-128) ^ (-8*iota{il})}  # distance to next row boundary, -128
-  l8:= cast_i{u8, l}; vl:= I**i8~~l8
-  def q_mod{} = { q+= vl &~ I~~(q < I**0) }
-  q_mod{}
-  o:u8 = width{V}; while (o>l8) { o-=l8; q_mod{} }
-  oo:= I**i8~~(o - 128)
-  s := make{U, 1<<(iota{il}%8)}
-  {} => {
-    m:= shuf{s, q & I**7} & (q < I**(8-128))
-    q+= (vl & I~~(q < oo)) - I~~U**o
-    V~~m
-  }
-}
 def has_vecshift = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def loose_mask_gen{V=[vl](u64), l if has_vecshift} = {
   q := -make{V, 64*iota{vl}}  # distance to next row boundary
@@ -484,15 +466,24 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
       }}
     }
   } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < (if (hasarch{'AVX2'}) 256 else 160)) {
-    def scan_words{x:V, m:V, _} = {
-      s:= (if (qand) x &~ ((x+V**1) &  (x+m))
-           else      x |  ((-x)     &~ (x-m)))
-      p:= (if (qand) x&~m == ~V**0
-           else      x| m ==  V**0)
-      k:= s>>63 | p  # Carry of 0 or 1, but -1 to propagate previous
-      tup{s, k}
+    if (hasarch{'SSE4.1'}) {
+      def scan_words{x:V, m:V, _} = {
+        s:= (if (qand) x &~ ((x+V**1) &  (x+m))
+             else      x |  ((-x)     &~ (x-m)))
+        p:= (if (qand) x&~m == ~V**0
+             else      x| m ==  V**0)
+        k:= s>>63 | p  # Carry of 0 or 1, but -1 to propagate previous
+        tup{s, k}
+      }
+      vec_loop_with_loose_mask{src, dst, nw, l, id, scan_words, apply_carry}
+    } else {
+      def get_m = loose_mask_gen{u64, l}
+      c:u64 = id  # carry
+      @for (r in dst, x in src over nw) {
+        r = res_m1{x, c, get_m{}}
+        c = r >> 63
+      }
     }
-    vec_loop_with_loose_mask{src, dst, nw, l, id, scan_words, apply_carry}
   } else {
     i :usz = 0  # row bit index
     wn:usz = 0  # starting word of next row
@@ -548,7 +539,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         s ^ ((c & f) | (b<<l - b))
       }}
     }
-  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 200)) {
+  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 192)) {
     def scan_words{x:V, m:V, ml:V} = {
       s:= scan_words{x}
       s^= -(s<<1 & m)
@@ -557,7 +548,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
     }
     def propagate{k:V=[vl]_, c:V} = {
       def bl{b,a} = b ^ (a &~ -(b>>63))
-      def bl{b,a if hasarch{'SSE4.1'}} = blend_top{a^b,b, b}
+      def bl{b,a if hasarch{'AVX2'}} = blend_top{a^b,b, b}
                 k = bl{k, vec_shift_right_128{k, 1}}
       if (vl>2) k = bl{k, shuf{V, blend{V**0, k, 0,1,0,1}, 0,0,1,1}}
                     bl{k, c}
