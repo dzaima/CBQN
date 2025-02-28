@@ -70,7 +70,7 @@ B mul_c2(B, B, B);
 
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
 #if SINGELI
   si_scan_ne(p, xp, rp, BIT_N(ia));
   #if USE_VALGRIND
@@ -97,14 +97,14 @@ B scan_eq(B x, u64 ia) { // consumes x
 
 static B scan_or(B x, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0;
   decG(x); return FL_SET(r, fl_asc|fl_squoze);
 }
 static B scan_and(B x, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL;
   decG(x); return FL_SET(r, fl_dsc|fl_squoze);
@@ -130,7 +130,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
     decG(ones);
     r = mut_fv(r0);
   } else {
-    void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
+    void* rp = m_tyarrc(&r, elWidth(re), x, el2t(re));
     #define SUM_BITWISE(T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
     #if SINGELI
       #define SUM(W,T) si_bcs##W(xp, rp, ia);
@@ -156,7 +156,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   #define MINMAX_SCAN(T,NAME,C,I) T c=I; for (usz i=0; i<ia; i++) { if (xp[i] C c)c=xp[i]; rp[i]=c; }
 #endif
 #define MM_CASE(T,N,C,I) \
-  case el_##T : { T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,I); break; }
+  case el_##T : { T* xp=T##any_ptr(x); T* rp; r=m_##T##arrc(&rp, x); MINMAX_SCAN(T,N,C,I); break; }
 #define MINMAX(NAME,C,INIT,BIT,ORD) \
   B r; switch (xe) { default:UD;           \
     case el_bit: return scan_##BIT(x, ia); \
@@ -174,7 +174,7 @@ B scan_max_num(B x, u8 xe, u64 ia) { MINMAX(max,>,MIN,or ,asc) }
 #define MM2_ICASE(T,N,C,I) \
   case el_##T : { \
     if (wv!=(T)wv) { if (wv C 0) { r=C2(shape,m_f64(ia),w); break; } else wv=I; } \
-    T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,wv); \
+    T* xp=T##any_ptr(x); T* rp; r=m_##T##arrc(&rp, x); MINMAX_SCAN(T,N,C,wv); \
   break; }
 #define MINMAX2(NAME,C,INIT,BIT,BI,ORD) \
   i32 wv=0; if (q_i32(w)) { wv=o2fG(w); } else { x=taga(cpyF64Arr(x)); xe=el_f64; } \
@@ -195,7 +195,7 @@ SHOULD_INLINE B scan2_max_num(B w, B x, u8 xe, usz ia) { MINMAX2(max,>,MIN,or ,0
 
 static B scan_lt(B x, u64 p, usz ia) {
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
+  u64* rp; B r=m_bitarrc(&rp,x); usz n=BIT_N(ia);
   u64 m = 0x5555555555555555;
   for (usz i=0; i<n; i++) {
     u64 x = xp[i];
@@ -208,7 +208,7 @@ static B scan_lt(B x, u64 p, usz ia) {
 
 static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   assert(xe!=el_bit && elNum(xe));
-  B r; void* rp = m_tyarrv(&r, xe==el_f64? sizeof(f64) : sizeof(i32), ia, xe==el_f64? t_f64arr : t_i32arr);
+  B r; void* rp = m_tyarrc(&r, xe==el_f64? sizeof(f64) : sizeof(i32), x, xe==el_f64? t_f64arr : t_i32arr);
   #if SINGELI
     switch(xe) { default:UD;
       case el_i8:  { if (!q_fi32(r0) || si_scan_plus_i8_i32 (i8any_ptr(x),  r0, rp, ia)!=ia) goto cs_i8_f64;  decG(x); return r; }
@@ -217,8 +217,8 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
       case el_f64: { f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];  ((f64*)rp)[i]=c; } decG(x); return r; }
     }
     cs_i8_f64: { x=taga(cpyI16Arr(x)); goto cs_i16_f64; }
-    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
-    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrc(&rp, x); si_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrc(&rp, x); si_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
   #else
     if (xe==el_i8  && q_fi32(r0)) { i8*  xp=i8any_ptr (x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
     if (xe==el_i16 && q_fi32(r0)) { i16* xp=i16any_ptr(x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
@@ -226,7 +226,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
     if (xe==el_f64) {   res_float:; f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];                     ((f64*)rp)[i]=c; } decG(x); return r; }
     base:;
     decG(r);
-    f64* rp2; r = m_f64arrv(&rp2, ia); rp = rp2;
+    f64* rp2; r = m_f64arrc(&rp2, x); rp = rp2;
     x = toF64Any(x);
     goto res_float;
   #endif
@@ -257,7 +257,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       Arr* r = TI(x,slice)(x, 0, csz);
       return C2(shape, s, taga(r));
     }
-    if (!(xr==1 && xe<=el_f64)) goto base;
+    if (xe > el_f64) goto base;
+    if (xr!=1 && arr_csz(x)!=1) goto base;
     
     if (xe==el_bit) switch (rtid) { default: goto base;
       case n_add: return scan_add_bool(x, ia); // +
@@ -278,7 +279,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (!elInt(xe)) goto base;
       f64 x0 = o2fG(IGetU(x,0));
       if (!q_fbit(x0)) goto base;
-      u64* rp; B r = m_bitarrv(&rp, ia);
+      u64* rp; B r = m_bitarrc(&rp, x);
       bool c = x0;
       rp[0] = c;
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
@@ -327,7 +328,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     u8 rtid = RTID(f);
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
-    if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;
+    if (!(elNum(xe) && xe<=el_f64)) goto base;
+    if (xr!=1 && arr_csz(x)!=1) goto base;
     if (!isF64(w)) goto base;
     
     if (rtid==n_floor) return scan2_min_num(w, x, xe, ia); // ⌊
@@ -350,7 +352,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
       if (xe==el_bit) return scan_ne(x, -(u64)(wBit? o2bG(w) : 1&~*bitany_ptr(x)), ia);
       if (!wBit || !elInt(xe)) goto base;
       bool c = o2bG(w);
-      u64* rp; B r = m_bitarrv(&rp, ia);
+      u64* rp; B r = m_bitarrc(&rp, x);
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
