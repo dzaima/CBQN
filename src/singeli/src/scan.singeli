@@ -638,6 +638,15 @@ fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
       s:= l; while (s < 64) { c = opf{c, c<<s}; s += s }
       r = flip{c}
     }
+  } else if (l < 128) {
+    q:= l%64
+    c:= flip{u64~~0}
+    p:= load{x,0}
+    store{r,0, p}
+    @for (r, x over _ from 1 to nw) {
+      r = op{x, c>>(64-q) | p<<q}
+      c = p; p = r
+    }
   } else {
     fw:= cdiv{l, 64}  # words in first cell
     @for (r, x over fw) r = x
