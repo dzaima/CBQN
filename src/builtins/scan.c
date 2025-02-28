@@ -258,7 +258,24 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       return C2(shape, s, taga(r));
     }
     if (xe > el_f64) goto base;
-    if (xr!=1 && arr_csz(x)!=1) goto base;
+    if (xr != 1) { usz csz = arr_csz(x); if (csz != 1) {
+      #if SINGELI
+      i8 t = -1; bool neg = 0;
+      if (xe==el_bit) switch (rtid) {
+        CASE_N_OR:                   t=0; break;
+        CASE_N_AND:                  t=1; break;
+        case n_eq: neg=1; case n_ne: t=2; break;
+      }
+      if (t != -1) {
+        if (neg) x = bit_negate(x);
+        u64* rp; B r=m_bitarrc(&rp,x);
+        si_scan_bool_stride[t](bitany_ptr(x), rp, ia, csz);
+        if (neg) r = bit_negate(r);
+        decG(x); return r;
+      }
+      #endif
+      goto base;
+    }}
     
     if (xe==el_bit) switch (rtid) { default: goto base;
       case n_add: return scan_add_bool(x, ia); // +

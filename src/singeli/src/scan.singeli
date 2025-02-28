@@ -620,3 +620,36 @@ export{'si_scan_rows_and',   scan_rows_andor{0}}
 export{'si_scan_rows_or',    scan_rows_andor{1}}
 export{'si_scan_rows_ne',    scan_rows_neq}
 export{'si_scan_rows_ltack', scan_rows_left}
+
+
+# Strided boolean scans
+fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
+  assert{l > 1}
+  def {flip,opf} = if (same{op, &}) tup{~,|} else tup{{x}=>x,op}
+  nw:= cdiv{nl, 64}
+  if (l <= 64) {
+    c:u64 = 0  # carry l bits, no matter the alignment
+    @for (r, x over nw) {
+      c = opf{flip{x}, c >> (64-l)}
+      s:= l; while (s < 64) { c = opf{c, c<<s}; s += s }
+      r = flip{c}
+    }
+  } else {
+    fw:= cdiv{l, 64}  # words in first cell
+    @for (r, x over fw) r = x
+    if (l%64 == 0) {
+      @for (r, x, p in r-fw over _ from fw to nw) r = op{x, p}
+    } else {
+      q:= l%64
+      c:= flip{u64~~0}
+      @for (r, x, p in r-(fw-1) over _ from fw-1 to nw) {
+        r = op{x, c>>(64-q) | p<<q}
+        c = p
+      }
+    }
+  }
+}
+export_tab{
+  'si_scan_bool_stride', 
+  each{scan_stride_bool_assoc, tup{|, &, ^}}
+}
