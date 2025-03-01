@@ -273,6 +273,13 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
         if (neg) r = bit_negate(r);
         decG(x); return r;
       }
+      if (rtid==n_floor | rtid==n_ceil) {
+        // boolean was handled as CASE_N_AND
+        B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
+        void* xp = tyany_ptr(x);
+        si_scan_stride_minmax[4*(rtid==n_ceil) + xe-el_i8](xp, rp, ia, csz);
+        decG(x); return r;
+      }
       #endif
       goto base;
     }}
