@@ -261,6 +261,7 @@ B sys_c1(B t, B x);
 B out_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("•Out 𝕩: 𝕩 must be a string");
   printsB(x); printf("\n");
+  fflush(stdout);
   return x;
 }
 B show_c1(B t, B x) {
@@ -272,6 +273,7 @@ B show_c1(B t, B x) {
       printI(x);
     #endif
     printf("\n");
+    fflush(stdout);
   #endif
   return x;
 }
