@@ -158,18 +158,18 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 ⊢⌾< 4 %% 4
 (<5)⌾< 4 %% 5
 {<"cd"}⌾< "ab" %% "cd"
-!"<⁼: Argument wasn't a rank 0 array" % 4⌾< "ab"
-!"<⁼: Argument wasn't a rank 0 array" % {⇐}⌾< "ab"
-!"<⁼: Argument wasn't a rank 0 array" % ≍⌾< 2
+!"<⁼𝕩: Argument wasn't a rank 0 array" % 4⌾< "ab"
+!"<⁼𝕩: Argument wasn't a rank 0 array" % {⇐}⌾< "ab"
+!"<⁼𝕩: Argument wasn't a rank 0 array" % ≍⌾< 2
 
 # ⋈
 ⊢⌾⋈ 4 %% 4
 (⋈5)⌾⋈ 4 %% 5
 {⋈"cd"}⌾⋈ "ab" %% "cd"
-!"⋈⁼: Argument wasn't a length-1 list" % 4⌾⋈ "ab"
-!"⋈⁼: Argument wasn't a length-1 list" % {⇐}⌾⋈ "ab"
-!"⋈⁼: Argument wasn't a length-1 list" % ≍⌾⋈ 2
-!"⋈⁼: Argument wasn't a length-1 list" % (<4)⌾⋈ 2
+!"⋈⁼𝕩: Argument wasn't a length-1 list" % 4⌾⋈ "ab"
+!"⋈⁼𝕩: Argument wasn't a length-1 list" % {⇐}⌾⋈ "ab"
+!"⋈⁼𝕩: Argument wasn't a length-1 list" % ≍⌾⋈ 2
+!"⋈⁼𝕩: Argument wasn't a length-1 list" % (<4)⌾⋈ 2
 
 # k⊸⌽
 !"𝕨⌽⁼𝕩: 𝕩 must have rank at least 1" % 1⌾(2⊸⌽) ↕10

@@ -1512,18 +1512,18 @@ B reverse_ix(B t, B w, B x) {
 }
 
 NOINLINE B enclose_im(B t, B x) {
-  if (isAtm(x) || RNK(x)!=0) thrM("<⁼: Argument wasn't a rank 0 array");
+  if (isAtm(x) || RNK(x)!=0) thrM("<⁼𝕩: Argument wasn't a rank 0 array");
   return TO_GET(x, 0);
 }
 
 NOINLINE B pair_im(B t, B x) {
-  if (isAtm(x) || RNK(x)!=1 || IA(x)!=1) thrM("⋈⁼: Argument wasn't a length-1 list");
+  if (isAtm(x) || RNK(x)!=1 || IA(x)!=1) thrM("⋈⁼𝕩: Argument wasn't a length-1 list");
   return TO_GET(x, 0);
 }
 
 B select_c1(B,B);
 NOINLINE B couple_im(B t, B x) {
-  if (isAtm(x) || RNK(x)==0 || *SH(x)!=1) thrM("≍⁼: Argument must have a leading axis of 1");
+  if (isAtm(x) || RNK(x)==0 || *SH(x)!=1) thrM("≍⁼𝕩: Argument must have a leading axis of 1");
   return C1(select,x);
 }
 
