@@ -100,8 +100,11 @@ def shift_first{c:V=[l]_, p:V} = {
 
 
 # Strided scans
-fn scan_stride_assoc{op, T}(xv:*void, rv:*void, ia:usz, l:usz) : void = {
-  def id = match (op) { {(min)} => maxvalue; {(max)} => minvalue }
+fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) : Ret = {
+  def id = match (op) {
+    {(min)} => maxvalue; {(max)} => minvalue
+    {(+)} => ({_}=>0)
+  }
   def f = width{T}/8; def vl = 16/f
   x:= *T~~xv; r:= *T~~rv
   def has_shuf = hasarch{'SSSE3'} or hasarch{'AARCH64'}
@@ -112,8 +115,9 @@ fn scan_stride_assoc{op, T}(xv:*void, rv:*void, ia:usz, l:usz) : void = {
       spr:= I**16 - j + iv
       inds:= @collect (k) {
         v:= iv - (j &~ I~~(iv<j))
-        j += j
         spr = shuf{spr, v}
+        if (same{op, +}) v = iv - j
+        j += j
         v
       }
       def V = [vl]T
@@ -121,6 +125,7 @@ fn scan_stride_assoc{op, T}(xv:*void, rv:*void, ia:usz, l:usz) : void = {
       @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over ia) {
         def sc{v, i} = op{shuf{i8, v, i}, v}
         r = c = op{shuf{i8, c, spr}, fold{sc, x, inds}}
+        check_over{x, r} # For +, infers other argument as r-x
       }
     }
     if (f==1 and l<4) small{3} else small{if (f<=2) 2 else 1}
@@ -131,6 +136,7 @@ fn scan_stride_assoc{op, T}(xv:*void, rv:*void, ia:usz, l:usz) : void = {
       r = p = op{p, x}
     }
   } else {
+    def op_chk{p, x} = { r:= op{p, x}; check_over{p, x, r}; r }
     @for (r, x over l) r = x
     if (has_shuf and T<=i32 and l<256/f) {
       def I = [16]i8
@@ -145,24 +151,41 @@ fn scan_stride_assoc{op, T}(xv:*void, rv:*void, ia:usz, l:usz) : void = {
         p:= load{*V~~x}; store{*V~~r, 0, p}
         @for_masked{vl} (x in tup{V, x+o}, r in tup{V, r+o} over ia-o) {
           p = rot{p}
-          r = op{bl{c, p}, x}
+          r = op_chk{bl{c, p}, x}
           c = p; p = r
         }
       } else {
         @for_masked{vl} (x in tup{V, x+o}, r in tup{V, r+o}, p in tup{V, r} over ia-o) {
           q:= rot{p}
-          r = op{bl{c, q}, x}
+          r = op_chk{bl{c, q}, x}
           c = q
         }
+      }
+    } else if (same{op, +} and T<=i32 and has_simd) {
+      def vl = arch_defvw/width{T}; def V = [vl]T
+      @for_masked{vl} (x in tup{V, x+l}, r in tup{V, r+l}, p in tup{V, r} over ia-l) {
+        r = op_chk{p, x}
       }
     } else {
       @for (r, x, p in r-l over _ from l to ia) r = op{p, x}
     }
   }
+  1
 }
+def scan_stride_assoc{op, T} = scan_stride_assoc{op, T, void, {..._}=>{}}
+def check_add_over{w:V=[_]E, x:V, r:V} = {
+  o:= (if (not hasarch{'X86_64'} or width{E}<=16) any_hom{subs{r,w} != x}
+       else any_top{(w^r) & (x^r)})
+  if (o) return{0}
+}
+def check_add_over{x, r} = check_add_over{r-x, x, r}
 export_tab{'si_scan_stride_minmax',
   flat_table{scan_stride_assoc, tup{min,max}, tup{i8,i16,i32,f64}}
 }
+export_tab{'si_scan_stride_add', tup{
+  ...each{scan_stride_assoc{+, ., u1, check_add_over}, tup{i8,i16,i32}},
+  scan_stride_assoc{+, f64, u1, {..._}=>{}}
+}}
 
 
 # xor scan

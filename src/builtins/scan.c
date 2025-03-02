@@ -280,6 +280,23 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
         si_scan_stride_minmax[4*(rtid==n_ceil) + xe-el_i8](xp, rp, ia, csz);
         decG(x); return r;
       }
+      if (rtid==n_add) {
+        if (xe==el_bit) { x = toI8Any(x); xe=el_i8; }
+        restart:
+        B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
+        void* xp = tyany_ptr(x);
+        bool done = si_scan_stride_add[xe-el_i8](xp, rp, ia, csz);
+        if (!done) {
+          decG(r);
+          switch (++xe) {
+            case el_i16: x = toI16Any(x); break;
+            case el_i32: x = toI32Any(x); break;
+            case el_f64: x = toF64Any(x); break;
+          }
+          goto restart;
+        }
+        decG(x); return r;
+      }
       #endif
       goto base;
     }}
