@@ -104,6 +104,7 @@ rtverifyn-singeli: rtverifyn
 
 
 
+libname = $(if $(filter Darwin,$(shell uname -s)),libcbqn.dylib,libcbqn.so)
 DESTDIR =
 PREFIX = /usr/local
 install:
@@ -113,22 +114,20 @@ install:
 	
 	mkdir -p "$(DESTDIR)$(PREFIX)/include"
 	cp -f include/bqnffi.h "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
-	
-	@if [ -f libcbqn.so ]; then \
-		rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
-		mkdir -p "$(DESTDIR)$(PREFIX)/lib"; \
-		cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"; \
-		echo 'cp -f libcbqn.so "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"'; \
-	else \
-		echo "Not installing libcbqn.so as it wasn't built"; \
+	@ LIB=$(libname);                                         \
+	if [ -f $$LIB ]; then                                     \
+		rm -f "$(DESTDIR)$(PREFIX)/lib/$$LIB";                  \
+		mkdir -p "$(DESTDIR)$(PREFIX)/lib";                     \
+		      cp -f  $$LIB  "$(DESTDIR)$(PREFIX)/lib/$$LIB";    \
+		echo 'cp -f '$$LIB' "$(DESTDIR)$(PREFIX)/lib/'$$LIB'"'; \
+	else                                                      \
+		echo "Not installing $$LIB as it wasn't built";         \
 	fi
-
-
 
 uninstall:
 	rm -f "$(DESTDIR)$(PREFIX)/bin/bqn"
 	rm -f "$(DESTDIR)$(PREFIX)/include/bqnffi.h"
-	rm -f "$(DESTDIR)$(PREFIX)/lib/libcbqn.so"
+	rm -f "$(DESTDIR)$(PREFIX)/lib/$(libname)"
 
 clean-build:
 	rm -f build/obj/*/*.o
