@@ -93,6 +93,9 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 !"•ns.Has: 𝕩 must be a string" % {⇐}•ns.Has 1‿2
 !"•ns.Get: 𝕩 must be a string" % {⇐}•ns.Get ≍""
 !"•ns.Get: 𝕩 must be a string" % {⇐}•ns.Get 1‿2
+!"𝕨 •ns.Get 𝕩: 𝕨 must be a namespace" % 1•ns.Get "hi"
+!"𝕨 •ns.Has 𝕩: 𝕨 must be a namespace" % 1•ns.Has "hi"
+!"•ns.Keys 𝕩: 𝕩 must be a namespace" % •ns.Keys 1
 {m←𝕩 ⋄ ⟨{𝕩 ⋈ m•ns.Get 𝕩}¨ •ns.Keys m ⋄ {m•ns.Has⋈𝕩}¨ "abcABC"⟩}¨ ⟨{a⇐1⋄b⇐↕10} ⋄ {a⇐'a'⋄b←2‿3⋄cde⇐𝕩}"abc"⟩ %% ⟨⟨⟨⟨"a",1⟩,⟨"b",0‿1‿2‿3‿4‿5‿6‿7‿8‿9⟩⟩,1‿1‿0‿1‿1‿0⟩,⟨⟨⟨"a",'a'⟩,⟨"cde","abc"⟩⟩,1‿0‿0‿1‿0‿0⟩⟩
 
 
